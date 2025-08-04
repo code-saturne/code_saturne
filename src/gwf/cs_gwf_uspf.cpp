@@ -45,13 +45,13 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
-#include "cdo/cs_equation_bc.h"
-#include "gwf/cs_gwf_soil.h"
 #include "base/cs_log.h"
-#include "mesh/cs_mesh_location.h"
 #include "base/cs_parall.h"
 #include "base/cs_param_types.h"
 #include "base/cs_post.h"
+#include "cdo/cs_equation_bc.h"
+#include "gwf/cs_gwf_soil.h"
+#include "mesh/cs_mesh_location.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cdo/cs_dbg.h"
@@ -118,16 +118,19 @@ _uspf_update_darcy_arrays(const cs_cdo_connect_t    *connect,
   CS_NO_WARN_IF_UNUSED(connect);
   CS_NO_WARN_IF_UNUSED(cdoq);
 
-  cs_adv_field_t  *adv = darcy->adv_field;
+  cs_adv_field_t *adv = darcy->adv_field;
 
   assert(darcy->flux_val != nullptr);
   assert(adv != nullptr);
   if (adv->definition->type != CS_XDEF_BY_ARRAY)
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid definition of the advection field", __func__);
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              " %s: Invalid definition of the advection field",
+              __func__);
 
-  cs_gwf_uspf_t *mc = static_cast<cs_gwf_uspf_t *>(darcy->update_input);
-  cs_equation_t *eq = mc->richards;
+  cs_gwf_uspf_t *mc       = static_cast<cs_gwf_uspf_t *>(darcy->update_input);
+  cs_equation_t *eq       = mc->richards;
   cs_real_t     *dof_vals = nullptr, *cell_vals = nullptr;
 
   cs_gwf_get_value_pointers(mc->richards, &dof_vals, &cell_vals);
@@ -164,8 +167,8 @@ _uspf_update_darcy_arrays(const cs_cdo_connect_t    *connect,
                                        t_eval,
                                        adv);
 
-  cs_field_t *bdy_nflx
-    = cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
+  cs_field_t *bdy_nflx =
+    cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
 
   if (bdy_nflx != nullptr) { // Values of the Darcy flux at boundary face exist
 
@@ -175,7 +178,6 @@ _uspf_update_darcy_arrays(const cs_cdo_connect_t    *connect,
     /* Set the new values of the field related to the normal boundary flux */
 
     cs_advection_field_across_boundary(adv, t_eval, bdy_nflx->val);
-
   }
 }
 
@@ -213,7 +215,7 @@ cs_gwf_uspf_create(void)
                                  "hydraulic_head", /* variable name */
                                  CS_EQUATION_TYPE_GROUNDWATER,
                                  1,
-                                 CS_BC_SYMMETRY);
+                                 CS_BC_HMG_NEUMANN);
 
   /* Define the Darcy flux structure.
 
@@ -225,9 +227,8 @@ cs_gwf_uspf_create(void)
 
   mc->darcy = cs_gwf_darcy_flux_create(cs_flag_dual_face_byc);
 
-  cs_advection_field_status_t  adv_status =
-    CS_ADVECTION_FIELD_GWF |
-    CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX;
+  cs_advection_field_status_t adv_status =
+    CS_ADVECTION_FIELD_GWF | CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX;
 
   mc->darcy->adv_field = cs_advection_field_add("darcy_field", adv_status);
 
@@ -256,14 +257,14 @@ cs_gwf_uspf_create(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_free(cs_gwf_uspf_t   **p_mc)
+cs_gwf_uspf_free(cs_gwf_uspf_t **p_mc)
 {
   if (p_mc == nullptr)
     return;
   if (*p_mc == nullptr)
     return;
 
-  cs_gwf_uspf_t  *mc = *p_mc;
+  cs_gwf_uspf_t *mc = *p_mc;
 
   cs_gwf_darcy_flux_free(&(mc->darcy));
 
@@ -281,7 +282,7 @@ cs_gwf_uspf_free(cs_gwf_uspf_t   **p_mc)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_log_setup(cs_gwf_uspf_t   *mc)
+cs_gwf_uspf_log_setup(cs_gwf_uspf_t *mc)
 {
   if (mc == nullptr)
     return;
@@ -301,20 +302,21 @@ cs_gwf_uspf_log_setup(cs_gwf_uspf_t   *mc)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_init(cs_gwf_uspf_t          *mc,
-                 cs_property_type_t      perm_type)
+cs_gwf_uspf_init(cs_gwf_uspf_t *mc, cs_property_type_t perm_type)
 {
   if (mc == nullptr)
     return;
 
-  cs_equation_t  *eq = mc->richards;
+  cs_equation_t *eq = mc->richards;
 
   if (eq == nullptr)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               "%s: The Richards equation is not defined. Stop execution.\n",
               __func__);
 
-  cs_equation_param_t  *eqp = cs_equation_get_param(eq);
+  cs_equation_param_t *eqp = cs_equation_get_param(eq);
   assert(eqp != nullptr);
 
   /* Add the property related to the diffusion term */
@@ -375,56 +377,61 @@ cs_gwf_uspf_init(cs_gwf_uspf_t          *mc,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_init_setup(cs_flag_t            flag,
-                       cs_flag_t            post_flag,
-                       int                  perm_dim,
-                       cs_gwf_uspf_t       *mc)
+cs_gwf_uspf_init_setup(cs_flag_t      flag,
+                       cs_flag_t      post_flag,
+                       int            perm_dim,
+                       cs_gwf_uspf_t *mc)
 {
   if (mc == nullptr)
     return;
 
   if (mc->richards == nullptr)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               "%s: The Richards equation is not defined. Stop execution.\n",
               __func__);
   assert(cs_equation_is_steady(mc->richards) == false);
 
-  cs_equation_param_t  *eqp = cs_equation_get_param(mc->richards);
+  cs_equation_param_t *eqp = cs_equation_get_param(mc->richards);
   assert(eqp != nullptr);
 
   /* Set additional fields */
 
-  const int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE | CS_FIELD_CDO;
-  const int  c_loc_id = cs_mesh_location_get_id_by_name("cells");
-  const int  v_loc_id = cs_mesh_location_get_id_by_name("vertices");
-  const int  log_key = cs_field_key_id("log");
-  const int  post_key = cs_field_key_id("post_vis");
+  const int field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE | CS_FIELD_CDO;
+  const int c_loc_id   = cs_mesh_location_get_id_by_name("cells");
+  const int v_loc_id   = cs_mesh_location_get_id_by_name("vertices");
+  const int log_key    = cs_field_key_id("log");
+  const int post_key   = cs_field_key_id("post_vis");
 
   /* Handle gravity effects */
 
   if (flag & CS_GWF_GRAVITATION) {
-
     switch (eqp->space_scheme) {
-    case CS_SPACE_SCHEME_CDOVB:
-    case CS_SPACE_SCHEME_CDOVCB:
-      mc->pressure_head = cs_field_create("pressure_head",
-                                          field_mask,
-                                          v_loc_id,
-                                          1,
-                                          true); /* has_previous */
-      break;
+      case CS_SPACE_SCHEME_CDOVB:
+      case CS_SPACE_SCHEME_CDOVCB:
+        mc->pressure_head = cs_field_create("pressure_head",
+                                            field_mask,
+                                            v_loc_id,
+                                            1,
+                                            true); /* has_previous */
+        break;
 
-    case CS_SPACE_SCHEME_CDOFB:
-    case CS_SPACE_SCHEME_HHO_P0:
-      mc->pressure_head = cs_field_create("pressure_head",
-                                          field_mask,
-                                          c_loc_id,
-                                          1,
-                                          true); /* has_previous */
-      break;
+      case CS_SPACE_SCHEME_CDOFB:
+      case CS_SPACE_SCHEME_HHO_P0:
+        mc->pressure_head = cs_field_create("pressure_head",
+                                            field_mask,
+                                            c_loc_id,
+                                            1,
+                                            true); /* has_previous */
+        break;
 
-    default:
-      bft_error(__FILE__, __LINE__, 0, " %s: Invalid space scheme.", __func__);
+      default:
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
+                  " %s: Invalid space scheme.",
+                  __func__);
     }
 
     cs_field_set_key_int(mc->pressure_head, log_key, 1);
@@ -434,7 +441,7 @@ cs_gwf_uspf_init_setup(cs_flag_t            flag,
 
   /* Field for the liquid saturation */
 
-  int  pty_mask = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY | CS_FIELD_CDO;
+  int pty_mask       = CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY | CS_FIELD_CDO;
   mc->moisture_field = cs_field_create("liquid_saturation",
                                        pty_mask,
                                        c_loc_id,
@@ -463,7 +470,7 @@ cs_gwf_uspf_init_setup(cs_flag_t            flag,
   mc->capacity_field = cs_field_create("soil_capacity",
                                        pty_mask,
                                        c_loc_id,
-                                       1,   /* dimension */
+                                       1, /* dimension */
                                        true);
 
   cs_field_set_key_int(mc->capacity_field, log_key, 1);
@@ -484,51 +491,54 @@ cs_gwf_uspf_init_setup(cs_flag_t            flag,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_finalize_setup(const cs_cdo_connect_t         *connect,
-                           const cs_cdo_quantities_t      *cdoq,
-                           cs_flag_t                       flag,
-                           cs_gwf_uspf_t                  *mc)
+cs_gwf_uspf_finalize_setup(const cs_cdo_connect_t    *connect,
+                           const cs_cdo_quantities_t *cdoq,
+                           cs_flag_t                  flag,
+                           cs_gwf_uspf_t             *mc)
 {
-  const cs_field_t  *hydraulic_head = cs_equation_get_field(mc->richards);
-  const cs_param_space_scheme_t  richards_scheme =
+  const cs_field_t *hydraulic_head = cs_equation_get_field(mc->richards);
+  const cs_param_space_scheme_t richards_scheme =
     cs_equation_get_space_scheme(mc->richards);
-  const cs_lnum_t  n_cells = connect->n_cells;
+  const cs_lnum_t n_cells = connect->n_cells;
 
   /* Set the Darcian flux (in the volume and at the boundary) */
 
-  cs_gwf_darcy_flux_define(connect, cdoq,
+  cs_gwf_darcy_flux_define(connect,
+                           cdoq,
                            richards_scheme,
-                           mc,                         /* context */
-                           _uspf_update_darcy_arrays,  /* update function */
+                           mc,                        /* context */
+                           _uspf_update_darcy_arrays, /* update function */
                            mc->darcy);
 
   /* Allocate a head array defined at cells and used to update the soil
      properties */
 
   switch (richards_scheme) {
-
-  case CS_SPACE_SCHEME_CDOVB:
-  case CS_SPACE_SCHEME_CDOVCB:
-    BFT_MALLOC(mc->head_in_law, n_cells, cs_real_t);
+    case CS_SPACE_SCHEME_CDOVB:
+    case CS_SPACE_SCHEME_CDOVCB:
+      BFT_MALLOC(mc->head_in_law, n_cells, cs_real_t);
 #if defined(DEBUG) && !defined(NDEBUG)
-    cs_array_real_fill_zero(n_cells, mc->head_in_law);
+      cs_array_real_fill_zero(n_cells, mc->head_in_law);
 #endif
-    break;
+      break;
 
-  case CS_SPACE_SCHEME_CDOFB:
+    case CS_SPACE_SCHEME_CDOFB:
 
-    if (flag & CS_GWF_GRAVITATION)
-      mc->head_in_law = mc->pressure_head->val;
-    else
-      mc->head_in_law = hydraulic_head->val;
+      if (flag & CS_GWF_GRAVITATION)
+        mc->head_in_law = mc->pressure_head->val;
+      else
+        mc->head_in_law = hydraulic_head->val;
 
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Fb space scheme not fully implemented.", __func__);
-    break;
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                "%s: Fb space scheme not fully implemented.",
+                __func__);
+      break;
 
-  default:
-    bft_error(__FILE__, __LINE__, 0, "%s: Invalid space scheme.", __func__);
-    break;
+    default:
+      bft_error(__FILE__, __LINE__, 0, "%s: Invalid space scheme.", __func__);
+      break;
 
   } /* Switch on Richards scheme */
 
@@ -561,27 +571,27 @@ cs_gwf_uspf_finalize_setup(const cs_cdo_connect_t         *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_update(const cs_mesh_t                *mesh,
-                   const cs_cdo_connect_t         *connect,
-                   const cs_cdo_quantities_t      *cdoq,
-                   const cs_time_step_t           *ts,
-                   cs_flag_t                       update_flag,
-                   cs_flag_t                       option_flag,
-                   cs_gwf_uspf_t                  *mc)
+cs_gwf_uspf_update(const cs_mesh_t           *mesh,
+                   const cs_cdo_connect_t    *connect,
+                   const cs_cdo_quantities_t *cdoq,
+                   const cs_time_step_t      *ts,
+                   cs_flag_t                  update_flag,
+                   cs_flag_t                  option_flag,
+                   cs_gwf_uspf_t             *mc)
 {
-  cs_real_t  time_eval = ts->t_cur;
-  bool  cur2prev = false;
+  cs_real_t time_eval = ts->t_cur;
+  bool      cur2prev  = false;
 
   if (update_flag & CS_FLAG_CURRENT_TO_PREVIOUS) {
-
     time_eval = cs_equation_get_time_eval(ts, mc->richards);
-    cur2prev = true;
-
+    cur2prev  = true;
   }
 
   /* Update head */
 
-  cs_gwf_update_head(connect, cdoq, mc->richards,
+  cs_gwf_update_head(connect,
+                     cdoq,
+                     mc->richards,
                      option_flag,
                      mc->pressure_head,
                      mc->head_in_law,
@@ -589,7 +599,7 @@ cs_gwf_uspf_update(const cs_mesh_t                *mesh,
 
   /* Update the advection field related to the groundwater flow module */
 
-  cs_gwf_darcy_flux_t  *darcy = mc->darcy;
+  cs_gwf_darcy_flux_t *darcy = mc->darcy;
 
   darcy->update_func(connect, cdoq, time_eval, cur2prev, darcy);
 
@@ -597,12 +607,15 @@ cs_gwf_uspf_update(const cs_mesh_t                *mesh,
   if (cs_flag_test(darcy->flux_location, cs_flag_dual_face_byc))
     cs_dbg_darray_to_listing("DARCIAN_FLUX_DFbyC",
                              connect->c2e->idx[cdoq->n_cells],
-                             darcy->flux_val, 8);
+                             darcy->flux_val,
+                             8);
   else if (cs_flag_test(darcy->flux_location, cs_flag_primal_cell)) {
-    cs_field_t  *vel = cs_advection_field_get_field(darcy->adv_field,
-                                                    CS_MESH_LOCATION_CELLS);
+    cs_field_t *vel =
+      cs_advection_field_get_field(darcy->adv_field, CS_MESH_LOCATION_CELLS);
     cs_dbg_darray_to_listing("DARCIAN_FLUX_CELL",
-                             3*cdoq->n_cells, vel->val, 3);
+                             3 * cdoq->n_cells,
+                             vel->val,
+                             3);
   }
 #endif
 
@@ -610,11 +623,9 @@ cs_gwf_uspf_update(const cs_mesh_t                *mesh,
    * Handle the permeability, the moisture content and the soil capacity */
 
   if (cur2prev) {
-
     cs_field_current_to_previous(mc->permeability_field);
     cs_field_current_to_previous(mc->moisture_field);
     cs_field_current_to_previous(mc->capacity_field);
-
   }
 
   /* Update soil properties with the new head values */
@@ -637,19 +648,19 @@ cs_gwf_uspf_update(const cs_mesh_t                *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_compute(const cs_mesh_t               *mesh,
-                    const cs_cdo_connect_t        *connect,
-                    const cs_cdo_quantities_t     *cdoq,
-                    const cs_time_step_t          *time_step,
-                    cs_flag_t                      flag,
-                    cs_gwf_uspf_t                 *mc)
+cs_gwf_uspf_compute(const cs_mesh_t           *mesh,
+                    const cs_cdo_connect_t    *connect,
+                    const cs_cdo_quantities_t *cdoq,
+                    const cs_time_step_t      *time_step,
+                    cs_flag_t                  flag,
+                    cs_gwf_uspf_t             *mc)
 {
   CS_NO_WARN_IF_UNUSED(flag);
 
   if (mc == nullptr)
     return;
 
-  cs_equation_t  *richards = mc->richards;
+  cs_equation_t *richards = mc->richards;
   assert(richards != nullptr);
   assert(cs_equation_get_type(richards) == CS_EQUATION_TYPE_GROUNDWATER);
   assert(!cs_equation_is_steady(richards));
@@ -661,9 +672,12 @@ cs_gwf_uspf_compute(const cs_mesh_t               *mesh,
 
   cs_equation_solve(cur2prev, mesh, richards);
 
-    /* Update the variables related to the groundwater flow system */
+  /* Update the variables related to the groundwater flow system */
 
-  cs_gwf_uspf_update(mesh, connect, cdoq, time_step,
+  cs_gwf_uspf_update(mesh,
+                     connect,
+                     cdoq,
+                     time_step,
                      CS_FLAG_CURRENT_TO_PREVIOUS,
                      flag,
                      mc);
@@ -682,10 +696,10 @@ cs_gwf_uspf_compute(const cs_mesh_t               *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_extra_op(const cs_cdo_connect_t         *connect,
-                     const cs_cdo_quantities_t      *cdoq,
-                     cs_flag_t                       post_flag,
-                     cs_gwf_uspf_t                  *mc)
+cs_gwf_uspf_extra_op(const cs_cdo_connect_t    *connect,
+                     const cs_cdo_quantities_t *cdoq,
+                     cs_flag_t                  post_flag,
+                     cs_gwf_uspf_t             *mc)
 {
   assert(mc != nullptr);
 
@@ -714,12 +728,12 @@ cs_gwf_uspf_extra_op(const cs_cdo_connect_t         *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_uspf_extra_post(int                        mesh_id,
-                       cs_lnum_t                  n_cells,
-                       const cs_lnum_t            cell_ids[],
-                       cs_flag_t                  post_flag,
-                       const cs_gwf_uspf_t        *mc,
-                       const cs_time_step_t       *time_step)
+cs_gwf_uspf_extra_post(int                   mesh_id,
+                       cs_lnum_t             n_cells,
+                       const cs_lnum_t       cell_ids[],
+                       cs_flag_t             post_flag,
+                       const cs_gwf_uspf_t  *mc,
+                       const cs_time_step_t *time_step)
 {
   CS_NO_WARN_IF_UNUSED(n_cells);
   CS_NO_WARN_IF_UNUSED(cell_ids);
@@ -735,8 +749,7 @@ cs_gwf_uspf_extra_post(int                        mesh_id,
      are postprocessed if needed using the standard field process */
 
   if (post_flag & CS_GWF_POST_SOIL_STATE) {
-
-    const int  *soil_state = cs_gwf_soil_get_soil_state();
+    const int *soil_state = cs_gwf_soil_get_soil_state();
 
     if (soil_state != nullptr)
       cs_post_write_var(mesh_id,

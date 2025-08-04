@@ -399,7 +399,7 @@ static cs_equation_param_t _equation_param_default
    .b_gradient_r = 2,
    .b_diff_flux_rc = 1,
 
-   .default_bc = CS_BC_SYMMETRY,
+   .default_bc = CS_BC_HMG_NEUMANN,
    .n_bc_defs = 0,
    .bc_defs = nullptr,
 

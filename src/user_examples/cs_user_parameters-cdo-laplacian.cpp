@@ -91,7 +91,7 @@ cs_user_model(void)
     cs_equation_add_user("Laplacian", /* equation name */
                          "potential", /* associated variable field name */
                          1,           /* dimension of the unknown */
-                      CS_BC_SYMMETRY); /* default boundary condition */
+                         CS_BC_HMG_NEUMANN); /* default boundary condition */
   }
   /*! [param_cdo_laplacian_init] */
 }

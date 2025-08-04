@@ -516,7 +516,7 @@ typedef struct {
    *
    * \var default_bc
    * Default boundary condition related to this equation. Valid choices:
-   * - \ref CS_BC_SYMMETRY
+   * - \ref CS_BC_HMG_NEUMANN
    * - \ref CS_BC_HMG_DIRICHLET
    *
    * \var n_bc_defs

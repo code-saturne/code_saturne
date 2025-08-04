@@ -161,6 +161,7 @@ cs_cdo_bc_face_define(cs_param_bc_type_t   default_bc,
   cs_flag_t  default_flag = cs_cdo_bc_get_flag(default_bc);
 
   if (!(default_flag & CS_CDO_BC_HMG_DIRICHLET) &&
+      !(default_flag & CS_CDO_BC_HMG_NEUMANN) &&
       !(default_flag & CS_CDO_BC_SYMMETRY))
     bft_error(__FILE__, __LINE__, 0,
               _(" %s: Incompatible type of boundary condition by default.\n"
@@ -190,12 +191,13 @@ cs_cdo_bc_face_define(cs_param_bc_type_t   default_bc,
     case CS_CDO_BC_FULL_NEUMANN:
       bc->n_nhmg_neu_faces += z->n_elts;
       break;
+    case CS_CDO_BC_HMG_NEUMANN:
+      bc->n_hmg_neu_faces += z->n_elts;
+      break;
     case CS_CDO_BC_SYMMETRY:
-      if (dim > 1)
-        /* For vector-valued equations only */
-        bc->n_sliding_faces += z->n_elts;
-      else
-        bc->n_hmg_neu_faces += z->n_elts;
+      assert(dim > 1);
+      /* For vector-valued equations only */
+      bc->n_sliding_faces += z->n_elts;
       break;
     case CS_CDO_BC_ROBIN:
     case CS_CDO_BC_WALL_PRESCRIBED:
@@ -242,16 +244,23 @@ cs_cdo_bc_face_define(cs_param_bc_type_t   default_bc,
 
       assert(bc->def_ids[i] == CS_CDO_BC_DEFAULT_DEF);
       bc->flag[i] = default_flag;
-      if (default_flag & CS_CDO_BC_HMG_DIRICHLET)
+      if (default_flag & CS_CDO_BC_HMG_DIRICHLET) {
         bc->n_hmg_dir_faces++;
-      else if (default_flag & CS_CDO_BC_SYMMETRY)
-        if (dim > 1)
-          bc->n_sliding_faces++;
-        else
-          bc->n_hmg_neu_faces++;
-      else
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: Invalid type of default boundary condition", __func__);
+      }
+      else if (default_flag & CS_CDO_BC_HMG_NEUMANN) {
+        bc->n_hmg_neu_faces++;
+      }
+      else if (default_flag & CS_CDO_BC_SYMMETRY) {
+        assert(dim > 1);
+        bc->n_sliding_faces++;
+      }
+      else {
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
+                  "%s: Invalid type of default boundary condition",
+                  __func__);
+      }
 
     } /* Unset face */
   } /* Loop on border faces */
@@ -305,15 +314,14 @@ cs_cdo_bc_face_define(cs_param_bc_type_t   default_bc,
       bc->nhmg_neu_ids[shift[CS_BC_NEUMANN]] = i;
       shift[CS_BC_NEUMANN] += 1;
       break;
+    case CS_CDO_BC_HMG_NEUMANN:
+      bc->hmg_neu_ids[shift[CS_BC_HMG_NEUMANN]] = i;
+      shift[CS_BC_HMG_NEUMANN] += 1;
+      break;
     case CS_CDO_BC_SYMMETRY:
-      if (dim > 1) {
-        bc->sliding_ids[shift[CS_BC_SYMMETRY]] = i;
-        shift[CS_BC_SYMMETRY] += 1;
-      }
-      else {
-        bc->hmg_neu_ids[shift[CS_BC_SYMMETRY]] = i;
-        shift[CS_BC_SYMMETRY] += 1;
-      }
+      assert(dim > 1);
+      bc->sliding_ids[shift[CS_BC_SYMMETRY]] = i;
+      shift[CS_BC_SYMMETRY] += 1;
       break;
     case CS_CDO_BC_ROBIN:
     case CS_CDO_BC_WALL_PRESCRIBED:

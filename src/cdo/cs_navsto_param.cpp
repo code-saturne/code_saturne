@@ -1362,12 +1362,12 @@ cs_navsto_set_outlets(cs_navsto_param_t    *nsp)
 
       /* Add the homogeneous Neumann on the normal component */
 
-      cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
-                                              9,    /* dim */
-                                              bdy->zone_ids[i],
-                                              CS_FLAG_STATE_UNIFORM, /* state */
-                                              CS_CDO_BC_SYMMETRY,
-                                              (void *)&zero);
+      cs_xdef_t *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
+                                             9, /* dim */
+                                             bdy->zone_ids[i],
+                                             CS_FLAG_STATE_UNIFORM, /* state */
+                                             CS_CDO_BC_HMG_NEUMANN,
+                                             (void *)&zero);
       cs_equation_add_xdef_bc(eqp, d);
 
       int  new_id = nsp->n_velocity_bc_defs;
@@ -1442,12 +1442,12 @@ cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t *nsp,
 
   cs_real_33_t  zero = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
 
-  cs_xdef_t  *du = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
-                                           9, /* dim */
-                                           z_id,
-                                           CS_FLAG_STATE_UNIFORM, /* state */
-                                           CS_CDO_BC_SYMMETRY,
-                                           (void *)zero);
+  cs_xdef_t *du = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
+                                          9, /* dim */
+                                          z_id,
+                                          CS_FLAG_STATE_UNIFORM, /* state */
+                                          CS_CDO_BC_HMG_NEUMANN,
+                                          (void *)zero);
 
   int  unew_id = nsp->n_velocity_bc_defs;
 

@@ -64,10 +64,9 @@ BEGIN_C_DECLS
 
 #define CS_CDO_BC_FULL_NEUMANN          (1 << 1)
 
-/*!  4: Homogeneous Neumann boundary conditions
-        Apply a sliding condition (for vector-valued equations) */
+/*!  4: Homogeneous Neumann boundary conditionsè */
 
-#define CS_CDO_BC_SYMMETRY              (1 << 2)
+#define CS_CDO_BC_HMG_NEUMANN           (1 << 2)
 
 /*!  8: Dirichlet boundary conditions */
 
@@ -88,6 +87,10 @@ BEGIN_C_DECLS
 /*! 128: Apply a wall function/law to prescribe the value at a wall */
 
 #define CS_CDO_BC_WALL_PRESCRIBED       (1 << 7)
+
+/*! 256: Apply a sliding condition (for vector-valued equations) */
+
+#define CS_CDO_BC_SYMMETRY              (1 << 8)
 
 /*! @} */
 
@@ -188,7 +191,10 @@ cs_cdo_bc_get_desc(cs_flag_t   bc_flag,
     sprintf(desc, "%s", "Dirichlet");
     break;
   case CS_CDO_BC_SYMMETRY:
-    sprintf(desc, "%s", "Homogeneous Neumann or Sliding for vectors");
+    sprintf(desc, "%s", "Sliding for vectors");
+    break;
+  case CS_CDO_BC_HMG_NEUMANN:
+    sprintf(desc, "%s", "Homogeneous Neumann");
     break;
   case CS_CDO_BC_NEUMANN:
     sprintf(desc, "%s", "Neumann");
@@ -202,7 +208,6 @@ cs_cdo_bc_get_desc(cs_flag_t   bc_flag,
   case CS_CDO_BC_TANGENTIAL_DIRICHLET:
     sprintf(desc, "%s", "Dirichlet on the tangential component");
     break;
-
   case CS_CDO_BC_WALL_PRESCRIBED:
     sprintf(desc, "%s", "Prescribed wall with wall functions");
     break;
@@ -246,6 +251,9 @@ cs_cdo_bc_get_flag(cs_param_bc_type_t   bc_type)
     break;
   case CS_BC_NEUMANN_FULL:
     ret_flag = CS_CDO_BC_FULL_NEUMANN;
+    break;
+  case CS_BC_HMG_NEUMANN:
+    ret_flag = CS_CDO_BC_HMG_NEUMANN;
     break;
   case CS_BC_GENERALIZED_SYM:
     bft_error(__FILE__, __LINE__, 0,
@@ -307,10 +315,12 @@ cs_cdo_bc_is_neumann(cs_flag_t    flag)
 {
   if (flag & CS_CDO_BC_NEUMANN)
     return true;
-  else if (flag & CS_CDO_BC_SYMMETRY)
+  else if (flag & CS_CDO_BC_HMG_NEUMANN)
     return true;
-  else
-    return false;
+  else if (flag & CS_CDO_BC_FULL_NEUMANN)
+    return true;
+
+  return false;
 }
 
 /*----------------------------------------------------------------------------*/

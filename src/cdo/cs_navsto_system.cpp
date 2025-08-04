@@ -45,6 +45,10 @@
 #include "base/cs_mem.h"
 
 #include "base/cs_array.h"
+#include "base/cs_log.h"
+#include "base/cs_post.h"
+#include "base/cs_volume_zone.h"
+#include "cdo/cs_cdo_bc.h"
 #include "cdo/cs_cdofb_ac.h"
 #include "cdo/cs_cdofb_monolithic.h"
 #include "cdo/cs_cdofb_monolithic_sles.h"
@@ -53,13 +57,10 @@
 #include "cdo/cs_evaluate.h"
 #include "cdo/cs_flag.h"
 #include "cdo/cs_hho_stokes.h"
-#include "base/cs_log.h"
 #include "cdo/cs_macfb_monolithic.h"
 #include "cdo/cs_macfb_monolithic_sles.h"
 #include "cdo/cs_macfb_navsto.h"
 #include "cdo/cs_navsto_coupling.h"
-#include "base/cs_post.h"
-#include "base/cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -437,12 +438,11 @@ cs_navsto_system_activate(const cs_boundary_t          *boundaries,
   }
 
   if (post_flag & CS_NAVSTO_POST_STREAM_FUNCTION) {
-
     navsto->stream_function_eq = cs_equation_add(CS_NAVSTO_STREAM_EQNAME,
                                                  "stream_function",
                                                  CS_EQUATION_TYPE_NAVSTO,
                                                  1,
-                                                 CS_BC_SYMMETRY);
+                                                 CS_BC_HMG_NEUMANN);
 
     cs_equation_param_t *eqp
       = cs_equation_get_param(navsto->stream_function_eq);
@@ -460,7 +460,6 @@ cs_navsto_system_activate(const cs_boundary_t          *boundaries,
      * system */
 
     cs_equation_param_set(eqp, CS_EQKEY_SOLVER_RTOL, "1e-6");
-
   }
 
   /* Create the main structure to handle the turbulence modelling */

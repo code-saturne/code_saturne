@@ -46,11 +46,11 @@
 
 #include "base/cs_array.h"
 #include "base/cs_field.h"
-#include "gwf/cs_gwf_priv.h"
-#include "gwf/cs_gwf_soil.h"
 #include "base/cs_log.h"
 #include "base/cs_param_types.h"
 #include "base/cs_post.h"
+#include "gwf/cs_gwf_priv.h"
+#include "gwf/cs_gwf_soil.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cdo/cs_dbg.h"
@@ -117,13 +117,16 @@ _sspf_update_darcy_arrays(const cs_cdo_connect_t    *connect,
   CS_NO_WARN_IF_UNUSED(connect);
   CS_NO_WARN_IF_UNUSED(cdoq);
 
-  cs_adv_field_t  *adv = darcy->adv_field;
+  cs_adv_field_t *adv = darcy->adv_field;
 
   assert(darcy->flux_val != nullptr);
   assert(adv != nullptr);
   if (adv->definition->type != CS_XDEF_BY_ARRAY)
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid definition of the advection field", __func__);
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              " %s: Invalid definition of the advection field",
+              __func__);
 
   cs_gwf_sspf_t *mc = static_cast<cs_gwf_sspf_t *>(darcy->update_input);
   cs_equation_t *eq = mc->richards;
@@ -134,7 +137,7 @@ _sspf_update_darcy_arrays(const cs_cdo_connect_t    *connect,
   // the Richards equation (arrays are stored in the equation context so need
   // to perform a FREE after usage)
 
-  cs_real_t  *h_v_values = nullptr, *h_c_values = nullptr;
+  cs_real_t *h_v_values = nullptr, *h_c_values = nullptr;
 
   cs_gwf_get_value_pointers(eq, &h_v_values, &h_c_values);
 
@@ -169,8 +172,8 @@ _sspf_update_darcy_arrays(const cs_cdo_connect_t    *connect,
                                        t_eval,
                                        adv);
 
-  cs_field_t  *bdy_nflx
-    = cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
+  cs_field_t *bdy_nflx =
+    cs_advection_field_get_field(adv, CS_MESH_LOCATION_BOUNDARY_FACES);
 
   if (bdy_nflx != nullptr) { // Values of the Darcy flux at boundary face exist
 
@@ -180,7 +183,6 @@ _sspf_update_darcy_arrays(const cs_cdo_connect_t    *connect,
     // Set the new values of the field related to the normal boundary flux
 
     cs_advection_field_across_boundary(adv, t_eval, bdy_nflx->val);
-
   }
 }
 
@@ -214,7 +216,7 @@ cs_gwf_sspf_create(void)
                                  "hydraulic_head", /* variable name */
                                  CS_EQUATION_TYPE_GROUNDWATER,
                                  1,
-                                 CS_BC_SYMMETRY);
+                                 CS_BC_HMG_NEUMANN);
 
   /* Add a property related to the moisture content (It should be a constant
      in each soil). This is closely related to the soil porosity. */
@@ -231,10 +233,9 @@ cs_gwf_sspf_create(void)
 
   mc->darcy = cs_gwf_darcy_flux_create(cs_flag_dual_face_byc);
 
-  cs_advection_field_status_t  adv_status =
-    CS_ADVECTION_FIELD_GWF |
-    CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX |
-    CS_ADVECTION_FIELD_STEADY;
+  cs_advection_field_status_t adv_status = CS_ADVECTION_FIELD_GWF |
+                                           CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX |
+                                           CS_ADVECTION_FIELD_STEADY;
 
   mc->darcy->adv_field = cs_advection_field_add("darcy_field", adv_status);
 
@@ -251,14 +252,14 @@ cs_gwf_sspf_create(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_free(cs_gwf_sspf_t   **p_mc)
+cs_gwf_sspf_free(cs_gwf_sspf_t **p_mc)
 {
   if (p_mc == nullptr)
     return;
   if ((*p_mc) == nullptr)
     return;
 
-  cs_gwf_sspf_t  *mc = *p_mc;
+  cs_gwf_sspf_t *mc = *p_mc;
 
   cs_gwf_darcy_flux_free(&(mc->darcy));
 
@@ -276,7 +277,7 @@ cs_gwf_sspf_free(cs_gwf_sspf_t   **p_mc)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_log_setup(cs_gwf_sspf_t   *mc)
+cs_gwf_sspf_log_setup(cs_gwf_sspf_t *mc)
 {
   if (mc == nullptr)
     return;
@@ -297,22 +298,22 @@ cs_gwf_sspf_log_setup(cs_gwf_sspf_t   *mc)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_init(cs_gwf_sspf_t       *mc,
-                 cs_property_t       *abs_perm,
-                 cs_flag_t            flag)
+cs_gwf_sspf_init(cs_gwf_sspf_t *mc, cs_property_t *abs_perm, cs_flag_t flag)
 {
   if (mc == nullptr)
     return;
 
-  cs_equation_t  *eq = mc->richards;
+  cs_equation_t *eq = mc->richards;
 
   if (eq == nullptr)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               "%s: The Richards equation is not defined. Stop execution.\n",
               __func__);
   assert(cs_equation_is_steady(eq) == true);
 
-  cs_equation_param_t  *eqp = cs_equation_get_param(eq);
+  cs_equation_param_t *eqp = cs_equation_get_param(eq);
   assert(eqp != nullptr);
 
   /* Add the diffusion term to the Richards equation by associating the
@@ -366,56 +367,58 @@ cs_gwf_sspf_init(cs_gwf_sspf_t       *mc,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_init_setup(cs_flag_t           flag,
-                       cs_gwf_sspf_t      *mc)
+cs_gwf_sspf_init_setup(cs_flag_t flag, cs_gwf_sspf_t *mc)
 {
   if (mc == nullptr)
     return;
 
-  cs_equation_t  *eq = mc->richards;
-  cs_equation_param_t  *eqp = cs_equation_get_param(eq);
+  cs_equation_t       *eq  = mc->richards;
+  cs_equation_param_t *eqp = cs_equation_get_param(eq);
   assert(eqp != nullptr);
   assert(cs_equation_is_steady(eq) == true);
 
   /* Set the "has_previous" variable */
 
-  bool  has_previous = false;
+  bool has_previous = false;
   if (flag & CS_GWF_FORCE_RICHARDS_ITERATIONS)
     has_previous = true;
 
   /* Add new fields if needed */
 
-  const int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE | CS_FIELD_CDO;
-  const int  c_loc_id = cs_mesh_location_get_id_by_name("cells");
-  const int  v_loc_id = cs_mesh_location_get_id_by_name("vertices");
-  const int  log_key = cs_field_key_id("log");
-  const int  post_key = cs_field_key_id("post_vis");
+  const int field_mask = CS_FIELD_INTENSIVE | CS_FIELD_VARIABLE | CS_FIELD_CDO;
+  const int c_loc_id   = cs_mesh_location_get_id_by_name("cells");
+  const int v_loc_id   = cs_mesh_location_get_id_by_name("vertices");
+  const int log_key    = cs_field_key_id("log");
+  const int post_key   = cs_field_key_id("post_vis");
 
   /* Handle gravity effects */
 
   if (flag & CS_GWF_GRAVITATION) {
-
     switch (eqp->space_scheme) {
-    case CS_SPACE_SCHEME_CDOVB:
-    case CS_SPACE_SCHEME_CDOVCB:
-      mc->pressure_head = cs_field_create("pressure_head",
-                                          field_mask,
-                                          v_loc_id,
-                                          1,
-                                          has_previous);
-      break;
+      case CS_SPACE_SCHEME_CDOVB:
+      case CS_SPACE_SCHEME_CDOVCB:
+        mc->pressure_head = cs_field_create("pressure_head",
+                                            field_mask,
+                                            v_loc_id,
+                                            1,
+                                            has_previous);
+        break;
 
-    case CS_SPACE_SCHEME_CDOFB:
-    case CS_SPACE_SCHEME_HHO_P0:
-      mc->pressure_head = cs_field_create("pressure_head",
-                                          field_mask,
-                                          c_loc_id,
-                                          1,
-                                          has_previous);
-      break;
+      case CS_SPACE_SCHEME_CDOFB:
+      case CS_SPACE_SCHEME_HHO_P0:
+        mc->pressure_head = cs_field_create("pressure_head",
+                                            field_mask,
+                                            c_loc_id,
+                                            1,
+                                            has_previous);
+        break;
 
-    default:
-      bft_error(__FILE__, __LINE__, 0, " %s: Invalid space scheme.", __func__);
+      default:
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
+                  " %s: Invalid space scheme.",
+                  __func__);
     }
 
     cs_field_set_key_int(mc->pressure_head, log_key, 1);
@@ -436,9 +439,9 @@ cs_gwf_sspf_init_setup(cs_flag_t           flag,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_finalize_setup(const cs_cdo_connect_t        *connect,
-                           const cs_cdo_quantities_t     *cdoq,
-                           cs_gwf_sspf_t                 *mc)
+cs_gwf_sspf_finalize_setup(const cs_cdo_connect_t    *connect,
+                           const cs_cdo_quantities_t *cdoq,
+                           cs_gwf_sspf_t             *mc)
 {
   if (mc == nullptr)
     return;
@@ -473,22 +476,20 @@ cs_gwf_sspf_finalize_setup(const cs_cdo_connect_t        *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_update(const cs_mesh_t              *mesh,
-                   const cs_cdo_connect_t       *connect,
-                   const cs_cdo_quantities_t    *cdoq,
-                   const cs_time_step_t         *ts,
-                   cs_flag_t                     update_flag,
-                   cs_flag_t                     option_flag,
-                   cs_gwf_sspf_t                *mc)
+cs_gwf_sspf_update(const cs_mesh_t           *mesh,
+                   const cs_cdo_connect_t    *connect,
+                   const cs_cdo_quantities_t *cdoq,
+                   const cs_time_step_t      *ts,
+                   cs_flag_t                  update_flag,
+                   cs_flag_t                  option_flag,
+                   cs_gwf_sspf_t             *mc)
 {
-  cs_real_t  time_eval = ts->t_cur;
-  bool  cur2prev = false;
+  cs_real_t time_eval = ts->t_cur;
+  bool      cur2prev  = false;
 
   if (update_flag & CS_FLAG_CURRENT_TO_PREVIOUS) {
-
     time_eval = cs_equation_get_time_eval(ts, mc->richards);
-    cur2prev = true;
-
+    cur2prev  = true;
   }
 
   /* Update the pressure head */
@@ -512,15 +513,16 @@ cs_gwf_sspf_update(const cs_mesh_t              *mesh,
   if (cs_flag_test(darcy->flux_location, cs_flag_dual_face_byc))
     cs_dbg_darray_to_listing("DARCIAN_FLUX_DFbyC",
                              connect->c2e->idx[cdoq->n_cells],
-                             darcy->flux_val, 8);
+                             darcy->flux_val,
+                             8);
 
   else if (cs_flag_test(darcy->flux_location, cs_flag_primal_cell)) {
-
-    cs_field_t  *vel = cs_advection_field_get_field(darcy->adv_field,
-                                                    CS_MESH_LOCATION_CELLS);
+    cs_field_t *vel =
+      cs_advection_field_get_field(darcy->adv_field, CS_MESH_LOCATION_CELLS);
     cs_dbg_darray_to_listing("DARCIAN_FLUX_CELL",
-                             3*cdoq->n_cells, vel->val, 3);
-
+                             3 * cdoq->n_cells,
+                             vel->val,
+                             3);
   }
 #endif
 
@@ -548,34 +550,35 @@ cs_gwf_sspf_update(const cs_mesh_t              *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_compute_steady_state(const cs_mesh_t             *mesh,
-                                 const cs_cdo_connect_t      *connect,
-                                 const cs_cdo_quantities_t   *cdoq,
-                                 const cs_time_step_t        *time_step,
-                                 cs_flag_t                    flag,
-                                 cs_gwf_sspf_t               *mc)
+cs_gwf_sspf_compute_steady_state(const cs_mesh_t           *mesh,
+                                 const cs_cdo_connect_t    *connect,
+                                 const cs_cdo_quantities_t *cdoq,
+                                 const cs_time_step_t      *time_step,
+                                 cs_flag_t                  flag,
+                                 cs_gwf_sspf_t             *mc)
 {
   if (mc == nullptr)
     return;
 
-  cs_equation_t  *richards = mc->richards;
+  cs_equation_t *richards = mc->richards;
   assert(richards != nullptr);
   assert(cs_equation_get_type(richards) == CS_EQUATION_TYPE_GROUNDWATER);
 
   if (cs_equation_is_steady(richards) ||
       flag & CS_GWF_FORCE_RICHARDS_ITERATIONS) {
-
     /* Build and solve the linear system related to the Richards equations */
 
     cs_equation_solve_steady_state(mesh, richards);
 
     /* Update the variables related to the groundwater flow system */
 
-    cs_gwf_sspf_update(mesh, connect, cdoq, time_step,
+    cs_gwf_sspf_update(mesh,
+                       connect,
+                       cdoq,
+                       time_step,
                        CS_FLAG_CURRENT_TO_PREVIOUS,
                        flag,
                        mc);
-
   }
 }
 
@@ -594,24 +597,23 @@ cs_gwf_sspf_compute_steady_state(const cs_mesh_t             *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_compute(const cs_mesh_t              *mesh,
-                    const cs_cdo_connect_t       *connect,
-                    const cs_cdo_quantities_t    *cdoq,
-                    const cs_time_step_t         *time_step,
-                    cs_flag_t                     flag,
-                    cs_gwf_sspf_t                *mc)
+cs_gwf_sspf_compute(const cs_mesh_t           *mesh,
+                    const cs_cdo_connect_t    *connect,
+                    const cs_cdo_quantities_t *cdoq,
+                    const cs_time_step_t      *time_step,
+                    cs_flag_t                  flag,
+                    cs_gwf_sspf_t             *mc)
 {
   if (mc == nullptr)
     return;
 
-  cs_equation_t  *richards = mc->richards;
+  cs_equation_t *richards = mc->richards;
   assert(richards != nullptr);
   assert(cs_equation_get_type(richards) == CS_EQUATION_TYPE_GROUNDWATER);
 
   bool cur2prev = true;
 
   if (!cs_equation_is_steady(richards)) {
-
     /* Build and solve the linear system related to the Richards equations. By
        default, a current to previous operation is performed. */
 
@@ -619,31 +621,32 @@ cs_gwf_sspf_compute(const cs_mesh_t              *mesh,
 
     /* Update the variables related to the groundwater flow system */
 
-    cs_gwf_sspf_update(mesh, connect, cdoq, time_step,
+    cs_gwf_sspf_update(mesh,
+                       connect,
+                       cdoq,
+                       time_step,
                        CS_FLAG_CURRENT_TO_PREVIOUS,
                        flag,
                        mc);
-
   }
   else {
-
     /* Richards is steady but one can force the resolution */
 
     if (flag & CS_GWF_FORCE_RICHARDS_ITERATIONS) {
-
       /* Build and solve the linear system related to the Richards equations */
 
       cs_equation_solve_steady_state(mesh, richards);
 
       /* Update the variables related to the groundwater flow system */
 
-      cs_gwf_sspf_update(mesh, connect, cdoq, time_step,
+      cs_gwf_sspf_update(mesh,
+                         connect,
+                         cdoq,
+                         time_step,
                          CS_FLAG_CURRENT_TO_PREVIOUS,
                          flag,
                          mc);
-
     }
-
   }
 }
 
@@ -660,17 +663,18 @@ cs_gwf_sspf_compute(const cs_mesh_t              *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_extra_op(const cs_cdo_connect_t         *connect,
-                     const cs_cdo_quantities_t      *cdoq,
-                     cs_flag_t                       post_flag,
-                     cs_gwf_sspf_t                  *mc)
+cs_gwf_sspf_extra_op(const cs_cdo_connect_t    *connect,
+                     const cs_cdo_quantities_t *cdoq,
+                     cs_flag_t                  post_flag,
+                     cs_gwf_sspf_t             *mc)
 {
   assert(mc != nullptr);
 
   if (cs_flag_test(post_flag, CS_GWF_POST_DARCY_FLUX_BALANCE) == false)
     return; /* Nothing to do */
 
-  cs_gwf_darcy_flux_balance(connect, cdoq,
+  cs_gwf_darcy_flux_balance(connect,
+                            cdoq,
                             cs_equation_get_param(mc->richards),
                             mc->darcy);
 }
@@ -691,13 +695,13 @@ cs_gwf_sspf_extra_op(const cs_cdo_connect_t         *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gwf_sspf_extra_post(int                        mesh_id,
-                       cs_lnum_t                  n_cells,
-                       const cs_lnum_t            cell_ids[],
-                       cs_flag_t                  post_flag,
-                       const cs_property_t       *abs_perm,
-                       const cs_gwf_sspf_t       *mc,
-                       const cs_time_step_t      *time_step)
+cs_gwf_sspf_extra_post(int                   mesh_id,
+                       cs_lnum_t             n_cells,
+                       const cs_lnum_t       cell_ids[],
+                       cs_flag_t             post_flag,
+                       const cs_property_t  *abs_perm,
+                       const cs_gwf_sspf_t  *mc,
+                       const cs_time_step_t *time_step)
 {
   if (mesh_id != CS_POST_MESH_VOLUME)
     return; /* Only postprocessings in the volume are defined */
@@ -705,18 +709,15 @@ cs_gwf_sspf_extra_post(int                        mesh_id,
   assert(mc != nullptr);
 
   if (post_flag & CS_GWF_POST_PERMEABILITY) {
-
     cs_real_t *permeability = nullptr;
-    int  dim = cs_property_get_dim(abs_perm);
-    int  post_dim = (dim == 1) ? 1 : 9;
+    int        dim          = cs_property_get_dim(abs_perm);
+    int        post_dim     = (dim == 1) ? 1 : 9;
 
     if (dim > 1) {
-
-      BFT_MALLOC(permeability, post_dim*n_cells, cs_real_t);
+      BFT_MALLOC(permeability, post_dim * n_cells, cs_real_t);
 
       for (cs_lnum_t i = 0; i < n_cells; i++) {
-
-        cs_real_t  tensor[3][3];
+        cs_real_t tensor[3][3];
 
         cs_property_get_cell_tensor(cell_ids[i],
                                     time_step->t_cur,
@@ -724,22 +725,18 @@ cs_gwf_sspf_extra_post(int                        mesh_id,
                                     false, /* inversion */
                                     tensor);
 
-        cs_real_t  *_cell_perm = permeability + post_dim*i;
+        cs_real_t *_cell_perm = permeability + post_dim * i;
         for (int ki = 0; ki < 3; ki++)
           for (int kj = 0; kj < 3; kj++)
-            _cell_perm[3*ki+kj] = tensor[ki][kj];
-
+            _cell_perm[3 * ki + kj] = tensor[ki][kj];
       }
-
     }
     else {
-
       BFT_MALLOC(permeability, n_cells, cs_real_t);
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
         permeability[c_id] = cs_property_get_cell_value(cell_ids[c_id],
                                                         time_step->t_cur,
                                                         abs_perm);
-
     }
 
     cs_post_write_var(mesh_id,
@@ -759,7 +756,6 @@ cs_gwf_sspf_extra_post(int                        mesh_id,
   } /* Postprocessing of the permeability */
 
   if (post_flag & CS_GWF_POST_LIQUID_SATURATION) {
-
     cs_real_t *liquid_saturation = nullptr;
     BFT_MALLOC(liquid_saturation, n_cells, cs_real_t);
 

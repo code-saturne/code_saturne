@@ -43,9 +43,9 @@
 
 #include "base/cs_array.h"
 #include "base/cs_field_default.h"
-#include "pprt/cs_physical_model.h"
-#include "cdo/cs_reco.h"
 #include "base/cs_syr_coupling.h"
+#include "cdo/cs_reco.h"
+#include "pprt/cs_physical_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -80,7 +80,7 @@ BEGIN_C_DECLS
  * Local Macro definitions
  *============================================================================*/
 
-#define CS_THERMAL_SYSTEM_DBG  0
+#define CS_THERMAL_SYSTEM_DBG 0
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -117,14 +117,12 @@ _is_solved_with_temperature(void)
     return false;
 
   else {
-
     if (cs_thermal_system->model & CS_THERMAL_MODEL_USE_TEMPERATURE)
       return true;
     if (cs_thermal_system->model & CS_THERMAL_MODEL_USE_ENTHALPY)
       return false;
     if (cs_thermal_system->model & CS_THERMAL_MODEL_USE_TOTAL_ENERGY)
       return false;
-
   }
 
   return true; /* This is the default choice */
@@ -147,9 +145,9 @@ _init_thermal_system(void)
 
   /* Flags */
 
-  thm->model = 0;
+  thm->model   = 0;
   thm->numeric = 0;
-  thm->post = 0;
+  thm->post    = 0;
 
   /* Equation */
 
@@ -192,10 +190,13 @@ cs_real_t
 cs_thermal_system_get_reference_temperature(void)
 {
   if (cs_thermal_system == nullptr)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " %s: A reference temperature is requested but no thermal"
               " system is activated.\n"
-              " Please check your settings.", __func__);
+              " Please check your settings.",
+              __func__);
 
   return cs_thermal_system->ref_temperature;
 }
@@ -210,13 +211,16 @@ cs_thermal_system_get_reference_temperature(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_thermal_system_set_reference_temperature(cs_real_t    ref)
+cs_thermal_system_set_reference_temperature(cs_real_t ref)
 {
   if (cs_thermal_system == nullptr)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " %s: A reference temperature is requested but no thermal"
               " system is activated.\n"
-              " Please check your settings.", __func__);
+              " Please check your settings.",
+              __func__);
 
   cs_thermal_system->ref_temperature = ref;
 }
@@ -289,16 +293,16 @@ cs_thermal_system_is_activated(void)
 /*----------------------------------------------------------------------------*/
 
 cs_thermal_system_t *
-cs_thermal_system_activate(cs_thermal_model_type_t    model,
-                           cs_flag_t                  numeric,
-                           cs_flag_t                  post)
+cs_thermal_system_activate(cs_thermal_model_type_t model,
+                           cs_flag_t               numeric,
+                           cs_flag_t               post)
 {
   cs_thermal_system_t *thm = nullptr;
   if (cs_thermal_system == nullptr)
     thm = _init_thermal_system();
   else
-    thm = cs_thermal_system;    /* Previously allocated when setting the
-                                   reference temperature for instance */
+    thm = cs_thermal_system; /* Previously allocated when setting the
+                                reference temperature for instance */
 
   /* Set the physical model type */
 
@@ -307,9 +311,9 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
 
   /* Set flags */
 
-  thm->model = model;
+  thm->model   = model;
   thm->numeric = numeric;
-  thm->post = post;
+  thm->post    = post;
 
   bool has_time = true;
   if (model & CS_THERMAL_MODEL_STEADY)
@@ -332,7 +336,7 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
 
   /* Thermal conductivity */
 
-  cs_property_type_t  pty_type = CS_PROPERTY_ISO;
+  cs_property_type_t pty_type = CS_PROPERTY_ISO;
   if (model & CS_THERMAL_MODEL_ANISOTROPIC_CONDUCTIVITY)
     pty_type = CS_PROPERTY_ANISO;
   thm->lambda = cs_property_add(CS_THERMAL_LAMBDA_NAME, pty_type);
@@ -344,27 +348,25 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
   cs_equation_param_t *eqp = nullptr;
 
   if (model & CS_THERMAL_MODEL_USE_ENTHALPY) {
-
     eq = cs_equation_add(CS_THERMAL_EQNAME,
                          "enthalpy",
                          CS_EQUATION_TYPE_THERMAL,
                          1,
-                         CS_BC_SYMMETRY);
-
-
+                         CS_BC_HMG_NEUMANN);
   }
   else if (model & CS_THERMAL_MODEL_USE_TOTAL_ENERGY) {
-
     eq = cs_equation_add(CS_THERMAL_EQNAME,
                          "total_energy",
                          CS_EQUATION_TYPE_THERMAL,
                          1,
-                         CS_BC_SYMMETRY);
+                         CS_BC_HMG_NEUMANN);
 
     /* TODO */
-    bft_error(__FILE__, __LINE__, 0, " %s: Not yet fully available.\n",
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              " %s: Not yet fully available.\n",
               __func__);
-
   }
   else { /* Default settings: use temperature as variable */
 
@@ -373,7 +375,7 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
                          "temperature",
                          CS_EQUATION_TYPE_THERMAL,
                          1,
-                         CS_BC_SYMMETRY);
+                         CS_BC_HMG_NEUMANN);
 
     /* Always add a diffusion term */
 
@@ -381,11 +383,9 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
     cs_equation_add_diffusion(eqp, thm->lambda);
 
     if (has_time) {
-
-      thm->unsteady_property = cs_property_add_as_product("rho.cp",
-                                                          thm->rho, thm->cp);
+      thm->unsteady_property =
+        cs_property_add_as_product("rho.cp", thm->rho, thm->cp);
       cs_equation_add_time(eqp, thm->unsteady_property);
-
     }
 
   } /* Use temperature as variable */
@@ -398,9 +398,7 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
   /* Add an advection term  */
 
   if (thm->model & CS_THERMAL_MODEL_NAVSTO_ADVECTION) {
-
-    cs_equation_add_advection(eqp,
-                              cs_advection_field_by_name("mass_flux"));
+    cs_equation_add_advection(eqp, cs_advection_field_by_name("mass_flux"));
 
     /* Set the space discretization by default. One should be consistent with
        the space scheme used for solving the Navier-Stokes system. Either with
@@ -411,24 +409,20 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
     cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
 
     if (thm->model & CS_THERMAL_MODEL_USE_TEMPERATURE) {
-
       /* The formulation used for the thermal equation with temperature as main
          unknown needs a non-conservative formulation of the advective term */
 
       cs_equation_add_advection_scaling_property(eqp, thm->cp);
       cs_equation_param_set(eqp, CS_EQKEY_ADV_FORMULATION, "non_conservative");
-
     }
 
     cs_equation_param_set(eqp, CS_EQKEY_ADV_SCHEME, "upwind");
-
   }
   else { /* Stand-alone i.e. not associated to the Navier--Stokes system */
 
     cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
     cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "bubble");
     cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "frac23");
-
   }
 
   /* Linear algebra default settings */
@@ -451,7 +445,7 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
 void
 cs_thermal_system_destroy(void)
 {
-  cs_thermal_system_t  *thm = cs_thermal_system;
+  cs_thermal_system_t *thm = cs_thermal_system;
 
   if (thm == nullptr)
     return;
@@ -481,7 +475,7 @@ cs_thermal_system_destroy(void)
 cs_equation_t *
 cs_thermal_system_get_equation(void)
 {
-  cs_thermal_system_t  *thm = cs_thermal_system;
+  cs_thermal_system_t *thm = cs_thermal_system;
 
   if (thm == nullptr)
     return nullptr;
@@ -500,22 +494,22 @@ cs_thermal_system_get_equation(void)
 cs_real_t *
 cs_thermal_system_get_face_temperature(void)
 {
-  cs_thermal_system_t  *thm = cs_thermal_system;
+  cs_thermal_system_t *thm = cs_thermal_system;
 
   if (thm == nullptr)
     return nullptr;
 
   else {
-
     if (_is_solved_with_temperature())
       return cs_equation_get_face_values(thm->thermal_eq, false);
 
     else
-      bft_error(__FILE__, __LINE__, 0,
+      bft_error(__FILE__,
+                __LINE__,
+                0,
                 "%s: The thermal is not solved with the temperature.\n"
                 " Conversion and interpolation are not done automatically.",
                 __func__);
-
   }
 
   return nullptr;
@@ -532,49 +526,49 @@ cs_thermal_system_get_face_temperature(void)
 void
 cs_thermal_system_init_setup(void)
 {
-  cs_thermal_system_t  *thm = cs_thermal_system;
+  cs_thermal_system_t *thm = cs_thermal_system;
 
   if (thm == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_thm));
 
-  cs_param_space_scheme_t  space_scheme =
+  cs_param_space_scheme_t space_scheme =
     cs_equation_get_space_scheme(thm->thermal_eq);
 
-  int  location_support = CS_MESH_LOCATION_NONE; /* Not set */
+  int location_support = CS_MESH_LOCATION_NONE; /* Not set */
   switch (space_scheme) {
+    case CS_SPACE_SCHEME_CDOVB:
+    case CS_SPACE_SCHEME_CDOVCB:
+      location_support = CS_MESH_LOCATION_VERTICES;
+      break;
 
-  case CS_SPACE_SCHEME_CDOVB:
-  case CS_SPACE_SCHEME_CDOVCB:
-    location_support = CS_MESH_LOCATION_VERTICES;
-    break;
+    case CS_SPACE_SCHEME_CDOFB:
+    case CS_SPACE_SCHEME_HHO_P0:
+    case CS_SPACE_SCHEME_HHO_P1:
+    case CS_SPACE_SCHEME_HHO_P2:
+      location_support = CS_MESH_LOCATION_CELLS;
+      break;
 
-  case CS_SPACE_SCHEME_CDOFB:
-  case CS_SPACE_SCHEME_HHO_P0:
-  case CS_SPACE_SCHEME_HHO_P1:
-  case CS_SPACE_SCHEME_HHO_P2:
-    location_support = CS_MESH_LOCATION_CELLS;
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid space scheme for the thermal system.", __func__);
-    break;
-
+    default:
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                "%s: Invalid space scheme for the thermal system.",
+                __func__);
+      break;
   }
 
   /* Prepare parameters for the creation of fields */
 
-  const int  field_mask = CS_FIELD_INTENSIVE | CS_FIELD_CDO;
-  const int  log_key = cs_field_key_id("log");
-  const int  post_key = cs_field_key_id("post_vis");
+  const int field_mask = CS_FIELD_INTENSIVE | CS_FIELD_CDO;
+  const int log_key    = cs_field_key_id("log");
+  const int post_key   = cs_field_key_id("post_vis");
 
-  bool  has_previous = true;
+  bool has_previous = true;
   if (thm->model & CS_THERMAL_MODEL_STEADY)
     has_previous = false;
 
   if ((thm->model & CS_THERMAL_MODEL_USE_ENTHALPY) ||
       (thm->model & CS_THERMAL_MODEL_USE_TOTAL_ENERGY)) {
-
     /* Temperature field is always created. Since the variable solved is either
        the "enthalpy" or the "total_energy", one creates a field for the
        temperature */
@@ -587,16 +581,14 @@ cs_thermal_system_init_setup(void)
 
     cs_field_set_key_int(thm->temperature, log_key, 1);
     cs_field_set_key_int(thm->temperature, post_key, 1);
-
   }
 
   if (thm->post & CS_THERMAL_POST_ENTHALPY) {
-
-    thm->enthalpy =  cs_field_find_or_create("enthalpy",
-                                             field_mask,
-                                             location_support,
-                                             1,
-                                             has_previous);
+    thm->enthalpy = cs_field_find_or_create("enthalpy",
+                                            field_mask,
+                                            location_support,
+                                            1,
+                                            has_previous);
 
     cs_field_set_key_int(thm->enthalpy, log_key, 1);
     cs_field_set_key_int(thm->enthalpy, post_key, 1);
@@ -622,15 +614,15 @@ cs_thermal_system_init_setup(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_thermal_system_finalize_setup(const cs_cdo_connect_t     *connect,
-                                 const cs_cdo_quantities_t  *quant,
-                                 const cs_time_step_t       *time_step)
+cs_thermal_system_finalize_setup(const cs_cdo_connect_t    *connect,
+                                 const cs_cdo_quantities_t *quant,
+                                 const cs_time_step_t      *time_step)
 {
   CS_UNUSED(connect);
   CS_UNUSED(quant);
   CS_UNUSED(time_step);
 
-  cs_thermal_system_t  *thm = cs_thermal_system;
+  cs_thermal_system_t *thm = cs_thermal_system;
 
   if (thm == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_thm));
@@ -651,12 +643,12 @@ cs_thermal_system_finalize_setup(const cs_cdo_connect_t     *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_thermal_system_compute_steady_state(const cs_mesh_t              *mesh,
-                                       const cs_cdo_connect_t       *connect,
-                                       const cs_cdo_quantities_t    *quant,
-                                       const cs_time_step_t         *time_step)
+cs_thermal_system_compute_steady_state(const cs_mesh_t           *mesh,
+                                       const cs_cdo_connect_t    *connect,
+                                       const cs_cdo_quantities_t *quant,
+                                       const cs_time_step_t      *time_step)
 {
-  cs_thermal_system_t  *thm = cs_thermal_system;
+  cs_thermal_system_t *thm = cs_thermal_system;
 
   if (thm == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_thm));
@@ -667,7 +659,10 @@ cs_thermal_system_compute_steady_state(const cs_mesh_t              *mesh,
   /* Update fields and properties which are related to the evolution of the
      variable solved in thermal_eq */
 
-  cs_thermal_system_update(mesh, connect, quant, time_step,
+  cs_thermal_system_update(mesh,
+                           connect,
+                           quant,
+                           time_step,
                            true); /* operate current to previous ? */
 }
 
@@ -684,13 +679,13 @@ cs_thermal_system_compute_steady_state(const cs_mesh_t              *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_thermal_system_compute(bool                          cur2prev,
-                          const cs_mesh_t              *mesh,
-                          const cs_cdo_connect_t       *connect,
-                          const cs_cdo_quantities_t    *quant,
-                          const cs_time_step_t         *time_step)
+cs_thermal_system_compute(bool                       cur2prev,
+                          const cs_mesh_t           *mesh,
+                          const cs_cdo_connect_t    *connect,
+                          const cs_cdo_quantities_t *quant,
+                          const cs_time_step_t      *time_step)
 {
-  cs_thermal_system_t  *thm = cs_thermal_system;
+  cs_thermal_system_t *thm = cs_thermal_system;
 
   if (thm == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_thm));
@@ -698,11 +693,10 @@ cs_thermal_system_compute(bool                          cur2prev,
 
   /* CHT code coupling (if needed) */
   if (cs_syr_coupling_n_couplings() > 0) {
-
     cs_lnum_t *cpl_ids = nullptr;
     CS_MALLOC(cpl_ids, mesh->n_b_faces, cs_lnum_t);
 
-    cs_real_t *t_bnd = nullptr;
+    cs_real_t *t_bnd  = nullptr;
     cs_real_t *hf_bnd = nullptr;
     cs_real_t *tf_bnd = nullptr;
     CS_MALLOC(t_bnd, mesh->n_b_faces, cs_real_t);
@@ -737,16 +731,14 @@ cs_thermal_system_compute(bool                          cur2prev,
       // Recieve Tf,Hf values
       cs_syr_coupling_recv_tf_hf(icpl, 0, nullptr, tf_bnd, hf_bnd);
 
-
       // Apply Tf, Hf to boundary condition defintion (xdef)
       for (cs_lnum_t e_id = 0; e_id < n_cpl_elts; e_id++) {
-        cs_lnum_t face_id = cpl_ids[e_id];
-        cs_real_t *_face_vals = _cht_robin_vals + 3*face_id;
-        _face_vals[0] = hf_bnd[e_id];
-        _face_vals[1] = tf_bnd[e_id];
-        _face_vals[2] = 0.;
+        cs_lnum_t  face_id    = cpl_ids[e_id];
+        cs_real_t *_face_vals = _cht_robin_vals + 3 * face_id;
+        _face_vals[0]         = hf_bnd[e_id];
+        _face_vals[1]         = tf_bnd[e_id];
+        _face_vals[2]         = 0.;
       }
-
     }
 
     CS_FREE(t_bnd);
@@ -777,17 +769,17 @@ cs_thermal_system_compute(bool                          cur2prev,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_thermal_system_init_values(const cs_mesh_t             *mesh,
-                              const cs_cdo_connect_t      *connect,
-                              const cs_cdo_quantities_t   *quant,
-                              const cs_time_step_t        *ts)
+cs_thermal_system_init_values(const cs_mesh_t           *mesh,
+                              const cs_cdo_connect_t    *connect,
+                              const cs_cdo_quantities_t *quant,
+                              const cs_time_step_t      *ts)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(ts);
   CS_UNUSED(connect);
   CS_UNUSED(quant);
 
-  cs_thermal_system_t  *thm = cs_thermal_system;
+  cs_thermal_system_t *thm = cs_thermal_system;
 
   if (thm == nullptr)
     return;
@@ -809,11 +801,11 @@ cs_thermal_system_init_values(const cs_mesh_t             *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_thermal_system_update(const cs_mesh_t             *mesh,
-                         const cs_cdo_connect_t      *connect,
-                         const cs_cdo_quantities_t   *quant,
-                         const cs_time_step_t        *ts,
-                         bool                         cur2prev)
+cs_thermal_system_update(const cs_mesh_t           *mesh,
+                         const cs_cdo_connect_t    *connect,
+                         const cs_cdo_quantities_t *quant,
+                         const cs_time_step_t      *ts,
+                         bool                       cur2prev)
 {
   CS_UNUSED(mesh);
   CS_UNUSED(ts);
@@ -821,7 +813,7 @@ cs_thermal_system_update(const cs_mesh_t             *mesh,
   CS_UNUSED(quant);
   CS_UNUSED(cur2prev);
 
-  cs_thermal_system_t  *thm = cs_thermal_system;
+  cs_thermal_system_t *thm = cs_thermal_system;
 
   if (thm == nullptr)
     return;
@@ -839,13 +831,13 @@ cs_thermal_system_update(const cs_mesh_t             *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_thermal_system_extra_op(const cs_cdo_connect_t      *connect,
-                           const cs_cdo_quantities_t   *cdoq)
+cs_thermal_system_extra_op(const cs_cdo_connect_t    *connect,
+                           const cs_cdo_quantities_t *cdoq)
 {
   CS_UNUSED(connect);
   CS_UNUSED(cdoq);
 
-  cs_thermal_system_t  *thm = cs_thermal_system;
+  cs_thermal_system_t *thm = cs_thermal_system;
 
   if (thm == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_thm));
@@ -876,17 +868,17 @@ cs_thermal_system_extra_op(const cs_cdo_connect_t      *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_thermal_system_extra_post(void                      *input,
-                             int                        mesh_id,
-                             int                        cat_id,
-                             int                        ent_flag[5],
-                             cs_lnum_t                  n_cells,
-                             cs_lnum_t                  n_i_faces,
-                             cs_lnum_t                  n_b_faces,
-                             const cs_lnum_t            cell_ids[],
-                             const cs_lnum_t            i_face_ids[],
-                             const cs_lnum_t            b_face_ids[],
-                             const cs_time_step_t      *time_step)
+cs_thermal_system_extra_post(void                 *input,
+                             int                   mesh_id,
+                             int                   cat_id,
+                             int                   ent_flag[5],
+                             cs_lnum_t             n_cells,
+                             cs_lnum_t             n_i_faces,
+                             cs_lnum_t             n_b_faces,
+                             const cs_lnum_t       cell_ids[],
+                             const cs_lnum_t       i_face_ids[],
+                             const cs_lnum_t       b_face_ids[],
+                             const cs_time_step_t *time_step)
 {
   CS_UNUSED(mesh_id);
   CS_UNUSED(cat_id);
@@ -914,7 +906,7 @@ cs_thermal_system_extra_post(void                      *input,
 void
 cs_thermal_system_log_setup(void)
 {
-  cs_thermal_system_t  *thm = cs_thermal_system;
+  cs_thermal_system_t *thm = cs_thermal_system;
 
   if (thm == nullptr)
     return;
@@ -956,7 +948,6 @@ void
 cs_thermal_system_cht_boundary_conditions_setup(void)
 {
   if (cs_syr_coupling_n_couplings() > 0) {
-
     /* Initialize CHT array */
     if (_cht_robin_vals != nullptr)
       CS_FREE(_cht_robin_vals);
@@ -971,18 +962,19 @@ cs_thermal_system_cht_boundary_conditions_setup(void)
     for (int z_id = 0; z_id < cs_boundary_zone_n_zones(); z_id++) {
       const cs_zone_t *z = cs_boundary_zone_by_id(z_id);
       if (cs_syr_coupling_is_bnd_zone_coupled(z)) {
-        bft_printf("Setting a coupled (CHT) Robin boundary condition for zone %s.\n",
-                   z->name);
-        cs_equation_add_bc_by_array(eqp,
-                                    CS_PARAM_BC_ROBIN,
-                                    z->name,
-                                    cs_flag_boundary_face,
-                                    _cht_robin_vals,
-                                    false,  /* not owner */
-                                    true); /* not full length -> we use a subset of array */
+        bft_printf(
+          "Setting a coupled (CHT) Robin boundary condition for zone %s.\n",
+          z->name);
+        cs_equation_add_bc_by_array(
+          eqp,
+          CS_PARAM_BC_ROBIN,
+          z->name,
+          cs_flag_boundary_face,
+          _cht_robin_vals,
+          false, /* not owner */
+          true); /* not full length -> we use a subset of array */
       }
     }
-
   }
 }
 

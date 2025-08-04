@@ -2927,13 +2927,11 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t           *pot_f,
       const cs_lnum_t  c_id = f2c->ids[bf_id + fidx_shift];
 
       switch (face_bc->flag[bf_id]) {
+        case CS_CDO_BC_HMG_NEUMANN:
+          bflux[bf_id] = 0.;
+          break;
 
-      case CS_CDO_BC_SYMMETRY:
-        bflux[bf_id] = 0.;
-        break;
-
-      case CS_CDO_BC_NEUMANN:
-        {
+        case CS_CDO_BC_NEUMANN: {
           /* Set the local mesh structure for the current cell */
 
           cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
@@ -2946,8 +2944,7 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t           *pot_f,
                                           eqp,
                                           cm,
                                           bflux + bf_id);
-        }
-        break;
+        } break;
 
       default:
         { /* Reconstruct a normal flux at the boundary face */

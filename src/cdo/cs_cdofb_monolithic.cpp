@@ -1821,9 +1821,9 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t *nsp,
 
   /* Processing of the pressure boundary condition */
 
-  sc->pressure_bc = cs_cdo_bc_face_define(CS_BC_SYMMETRY, /* Default */
-                                          true,      /* Steady BC up to now */
-                                          1,         /* Dimension */
+  sc->pressure_bc = cs_cdo_bc_face_define(CS_BC_HMG_NEUMANN, /* Default */
+                                          true, /* Steady BC up to now */
+                                          1,    /* Dimension */
                                           nsp->n_pressure_bc_defs,
                                           nsp->pressure_bc_defs,
                                           quant->n_b_faces);
