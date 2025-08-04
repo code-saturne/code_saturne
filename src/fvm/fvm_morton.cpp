@@ -854,17 +854,16 @@ fvm_morton_get_coord_extents(int               dim,
                              cs_coord_t        g_extents[])
 #endif
 {
-  size_t  i, j;
-
   /* Get global min/max coordinates */
 
-  for (j = 0; j < (size_t)dim; j++) {
+  for (size_t j = 0; j < (size_t)dim; j++) {
     g_extents[j]       = DBL_MAX;
     g_extents[j + dim] = -DBL_MAX;
   }
 
-  for (i = 0; i < n_coords; i++) {
-    for (j = 0; j < (size_t)dim; j++) {
+# pragma omp parallel for if (n_coords > CS_THR_MIN)
+  for (size_t i = 0; i < n_coords; i++) {
+    for (size_t j = 0; j < (size_t)dim; j++) {
       if (coords[i*dim + j] < g_extents[j])
         g_extents[j] = coords[i*dim + j];
       if (coords[i*dim + j] > g_extents[j + dim])
@@ -906,17 +905,16 @@ fvm_morton_get_global_extents(int               dim,
                               cs_coord_t        g_extents[])
 #endif
 {
-  size_t  i, j;
-
   /* Get global min/max coordinates */
 
-  for (i = 0; i < (size_t)dim; i++) {
+  for (size_t i = 0; i < (size_t)dim; i++) {
     g_extents[i]       = DBL_MAX;
     g_extents[i + dim] = -DBL_MAX;
   }
 
-  for (i = 0; i < n_extents; i++) {
-    for (j = 0; j < (size_t)dim; j++) {
+# pragma omp parallel for if (n_extents > CS_THR_MIN)
+  for (size_t i = 0; i < n_extents; i++) {
+    for (size_t j = 0; j < (size_t)dim; j++) {
       g_extents[j]     = cs::min(g_extents[j],
                                  extents[i*dim*2 + j]);
       g_extents[j+dim] = cs::max(g_extents[j + dim],
@@ -994,19 +992,18 @@ fvm_morton_encode_coords(int                dim,
                          const cs_coord_t   coords[],
                          fvm_morton_code_t  m_code[])
 {
-  size_t i, j;
-  cs_coord_t s[3], d[3], n[3];
+  cs_coord_t s[3], d[3];
   cs_coord_t d_max = 0.0;
 
   fvm_morton_int_t  refinement = 1u << level;
 
-  for (i = 0; i < (size_t)dim; i++) {
+  for (size_t i = 0; i < (size_t)dim; i++) {
     s[i] = extents[i];
     d[i] = extents[i+dim] - extents[i];
     d_max = cs::max(d_max, d[i]);
   }
 
-  for (i = 0; i < (size_t)dim; i++) { /* Reduce effective dimension */
+  for (size_t i = 0; i < (size_t)dim; i++) { /* Reduce effective dimension */
     if (d[i] < d_max * 1e-10)
       d[i] = d_max * 1e-10;
   }
@@ -1014,9 +1011,11 @@ fvm_morton_encode_coords(int                dim,
   switch(dim) {
 
   case 3:
-    for (i = 0; i < n_coords; i++) {
+#   pragma omp parallel for if (n_coords > CS_THR_MIN)
+    for (size_t i = 0; i < n_coords; i++) {
+      cs_coord_t n[3];
       m_code[i].L = level;
-      for (j = 0; j < 3; j++) {
+      for (size_t j = 0; j < 3; j++) {
         n[j] = (coords[i*dim + j] - s[j]) / d[j];
         m_code[i].X[j] = cs::min((fvm_morton_int_t)floor(n[j]*refinement),
                                  refinement - 1);
@@ -1025,9 +1024,11 @@ fvm_morton_encode_coords(int                dim,
     break;
 
   case 2:
-    for (i = 0; i < n_coords; i++) {
+#   pragma omp parallel for if (n_coords > CS_THR_MIN)
+    for (size_t i = 0; i < n_coords; i++) {
+      cs_coord_t n[2];
       m_code[i].L = level;
-      for (j = 0; j < 2; j++) {
+      for (size_t j = 0; j < 2; j++) {
         n[j] = (coords[i*dim + j] - s[j]) / d[j];
         m_code[i].X[j] = cs::min((fvm_morton_int_t)floor(n[j]*refinement),
                                  refinement - 1);
@@ -1037,7 +1038,9 @@ fvm_morton_encode_coords(int                dim,
     break;
 
   case 1:
-    for (i = 0; i < n_coords; i++) {
+#   pragma omp parallel for if (n_coords > CS_THR_MIN)
+    for (size_t i = 0; i < n_coords; i++) {
+      cs_coord_t n[1];
       m_code[i].L = level;
       n[0] = (coords[i] - s[0]) / d[0];
       m_code[i].X[0] = cs::min((fvm_morton_int_t)floor(n[0]*refinement),
