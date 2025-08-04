@@ -1497,11 +1497,14 @@ cs_sles_amgx_log(const void  *context,
 void
 cs_sles_amgx_library_info(cs_log_t  log_type)
 {
+  char *version, *date, *time;
+  AMGX_get_build_info_strings(&version, &date, &time);
+
   int major = 0, minor = 0;
   AMGX_get_api_version(&major, &minor);
 
   cs_log_printf(log_type,
-                "    AmgX %d.%d\n", major, minor);
+                "    AmgX %s (API version %d.%d)\n", version, major, minor);
 }
 
 /*----------------------------------------------------------------------------*/
