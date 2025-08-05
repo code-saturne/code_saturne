@@ -1251,7 +1251,8 @@ _implicit_euler_build(const cs_navsto_param_t *nsp,
       if (tp->model->itytur == 2 || tp->model->itytur == 6)
         cs_cdofb_vecteq_init_turb_bc(cm, mom_eqp, mom_eqb,
                                      mu_l/rho,
-                                     kener[c_id], csys, cb);
+                                     kener[c_id], vel_c_n + 3*c_id,
+                                     csys, cb);
 
       /* 1- SETUP THE NAVSTO LOCAL BUILDER *
        * ================================= *

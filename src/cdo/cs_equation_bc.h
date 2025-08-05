@@ -466,6 +466,7 @@ cs_equation_bc_cw_robin(cs_real_t                    t_eval,
  * \param[in]      nu          laminar kinematic viscosity
  * \param[in]      k           turbulent kinetic energy
  * \param[in]      hfc         distance from cell center to the wall
+ * \param[in]      uc          cell velocity
  * \param[in, out] rob_values  array storing Robin values to use
  */
 /*----------------------------------------------------------------------------*/
@@ -476,9 +477,10 @@ cs_equation_bc_cw_turb_smooth_wall(cs_real_t                  t_eval,
                                    short int                  f,
                                    const cs_equation_param_t *eqp,
                                    const cs_cell_mesh_t      *cm,
-                                   const double               nu,
-                                   const double               k,
-                                   const double               hfc,
+                                   const cs_real_t            nu,
+                                   const cs_real_t            k,
+                                   const cs_real_t            hfc,
+                                   const cs_real_t           *uc,
                                    double                    *rob_values);
 
 /*----------------------------------------------------------------------------*/

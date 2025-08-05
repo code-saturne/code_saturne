@@ -48,7 +48,6 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
-#include "cdo/cs_cdo_turbulence.h"
 #include "cdo/cs_equation.h"
 #include "base/cs_log.h"
 
@@ -148,30 +147,6 @@ _get_momentum_param(cs_navsto_param_t    *nsp)
     return nullptr;
 
   }  /* Switch */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Free an input context structure (in the following case,
- *        a real number array is freed)
- *
- * \param[in, out] input    structure to be freed
- *
- * \return a NULL pointer
- */
-/*----------------------------------------------------------------------------*/
-
-static void *
-_free_input_context(void  *input)
-{
-  if (input == nullptr)
-    return input;
-
-  cs_real_t  *_input = static_cast<cs_real_t *>(input);
-
-  CS_FREE(_input);
-
-  return nullptr;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1233,11 +1208,6 @@ cs_navsto_set_fixed_walls(cs_navsto_param_t *nsp)
 
   cs_xdef_t *d = nullptr;
 
-  cs_real_t *_input = nullptr;
-  if (nsp->turbulence->model->model != CS_TURB_NONE) {
-    CS_MALLOC(_input, 3, cs_real_t);
-  }
-
   for (int i = 0; i < bdy->n_boundaries; i++) {
     if (    bdy->types[i] & CS_BOUNDARY_WALL
         && !(bdy->types[i] & CS_BOUNDARY_SLIDING_WALL)) {
@@ -1254,17 +1224,12 @@ cs_navsto_set_fixed_walls(cs_navsto_param_t *nsp)
                                     (void *)zero);
       }
       else {
-        cs_xdef_analytic_context_t anai = {
-          .z_id = bdy->zone_ids[i], .func = cs_turb_compute_wall_bc_coeffs,
-          .input = _input, .free_input = _free_input_context
-        };
-
-        d = cs_xdef_boundary_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
+        d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
                                     3,    /* dim */
                                     bdy->zone_ids[i],
                                     CS_FLAG_STATE_UNIFORM, /* state */
                                     CS_CDO_BC_WALL_PRESCRIBED,
-                                    &anai);
+                                    (void *)zero);
       }
 
       int  new_id = nsp->n_velocity_bc_defs;

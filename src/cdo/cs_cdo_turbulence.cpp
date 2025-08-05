@@ -45,6 +45,7 @@
 #include "base/cs_mem.h"
 
 #include "base/cs_post.h"
+#include "base/cs_wall_functions.h"
 #include "turb/cs_turbulence_model.h"
 #include "cdo/cs_reco.h"
 
@@ -1009,43 +1010,41 @@ cs_turb_compute_k_eps(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Function used to define the exchange coefficients for
- *         tangential and normal components
+ *         tangential and normal components.
  *
- *         This prototype follows the one defined for all analytic functions.
- *         elt_ids is optional. If not NULL, it enables to access in coords
- *         at the right location and the same thing to fill retval if compact
- *         is set to false
- *
- * \param[in]      time     when ?
- * \param[in]      n_elts   number of elements to consider
- * \param[in]      elt_ids  list of elements ids (to access coords and fill)
- * \param[in]      coords   where ?
- * \param[in]      compact  true:no indirection, false:indirection for filling
- * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
- * \param[in, out] retval   result of the function
+ * \param[in]      eqp         pointer to a cs_equation_param_t
+ * \param[in]      cm          pointer to a cs_cell_mesh_t structure
+ * \param[in]      nu          laminar kinematic viscosity
+ * \param[in]      k           turbulent kinetic energy
+ * \param[in]      hfc         distance from cell center to the wall
+ * \param[in]      uct         norm of tangential components of cell velocity
+ * \param[in, out] retval      exchange coefficients result
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turb_compute_wall_bc_coeffs(cs_real_t           time,
-                               cs_lnum_t           n_pts,
-                               const cs_lnum_t    *pt_ids,
-                               const cs_real_t    *xyz,
-                               bool                compact,
-                               void               *input,
-                               cs_real_t          *res)
+cs_turb_compute_wall_bc_coeffs(const cs_equation_param_t  *eqp,
+                               const double                nu,
+                               const double                k,
+                               const double                hfc,
+                               const double                uct,
+                               cs_real_t                  *res)
 {
-  const double *_input = static_cast<double *> (input);
-  const double nu = _input[0];
-  const double k = _input[1];
-  const double hfc = _input[2];
+  const double ypluli = cs_get_glob_wall_functions()->ypluli;
 
-  double ustar = sqrt(sqrt(cs_turb_cmu)*k);
+  double re = sqrt(k)*hfc/nu;
+  double g = exp(-re/11.);
+
+  double ustar = sqrt((1.-g)*sqrt(cs_turb_cmu)*k + g*nu*uct/hfc);
+
   double yplus = hfc*ustar/nu;
 
   double h_t = ustar*cs_turb_xkappa/(log(2.0*yplus) + cs_turb_cstlog - 2.0);
 
-  res[3] = cs::max(h_t, 0.0);
+  if (yplus > ypluli) /* In the logarithm zone */
+    res[0] = cs::max(h_t, 0.0);
+  else /* In the linear zone */
+    res[0] = eqp->strong_pena_bc_coeff;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -274,6 +274,7 @@ cs_cdofb_vecteq_init_cell_system(const cs_cell_mesh_t         *cm,
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      nu          laminar kinematic viscosity
  * \param[in]      k           turbulent kinetic energy
+ * \param[in]      uc          cell velocity
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
  */
@@ -285,6 +286,7 @@ cs_cdofb_vecteq_init_turb_bc(const cs_cell_mesh_t         *cm,
                              const cs_equation_builder_t  *eqb,
                              const cs_real_t               nu,
                              const cs_real_t               k,
+                             const cs_real_t              *uc,
                              cs_cell_sys_t                *csys,
                              cs_cell_builder_t            *cb);
 

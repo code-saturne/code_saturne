@@ -44,6 +44,7 @@
 #include "base/cs_array.h"
 #include "base/cs_boundary_zone.h"
 #include "cdo/cs_cdo_toolbox.h"
+#include "cdo/cs_cdo_turbulence.h"
 #include "cdo/cs_evaluate.h"
 #include "cdo/cs_xdef.h"
 
@@ -2153,8 +2154,9 @@ cs_equation_bc_cw_robin(cs_real_t                  t_eval,
  * \param[in]      eqp         pointer to a cs_equation_param_t
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
  * \param[in]      nu          laminar kinematic viscosity
- * \param[in]      k           turbulent kinetic energy
+ * \param[in]      kener       turbulent kinetic energy
  * \param[in]      hfc         distance from cell center to the wall
+ * \param[in]      uc          norm of tangential components of cell velocity
  * \param[in, out] rob_values  array storing Robin values to use
  */
 /*----------------------------------------------------------------------------*/
@@ -2165,49 +2167,124 @@ cs_equation_bc_cw_turb_smooth_wall(cs_real_t                  t_eval,
                                    short int                  f,
                                    const cs_equation_param_t *eqp,
                                    const cs_cell_mesh_t      *cm,
-                                   const double               nu,
-                                   const double               k,
-                                   const double               hfc,
+                                   const cs_real_t            nu,
+                                   const cs_real_t            kener,
+                                   const cs_real_t            hfc,
+                                   const cs_real_t           *uc,
                                    double                    *rob_values)
 {
   assert(rob_values != nullptr && cm != nullptr && eqp != nullptr);
   assert(def_id > -1);
-  assert(eqp->dim == 3);
 
-  cs_xdef_t *def = eqp->bc_defs[def_id];
-  cs_real_t  parameter[9] = {0.0};
+  /* Define the array storing the Dirichlet values */
 
-  cs_xdef_analytic_context_t *ac = (cs_xdef_analytic_context_t *)def->context;
+  const cs_xdef_t  *def = eqp->bc_defs[def_id];
 
-  cs_real_t *_input = static_cast<cs_real_t *>(ac->input);
+  assert(eqp->dim == def->dim);
 
-  _input[0] = nu, _input[1] = k, _input[2] = hfc;
+  short int dim = eqp->dim;
 
-  cs_real_t parameters[9] = {0.0};
+  if (def->meta & CS_CDO_BC_WALL_PRESCRIBED) {
 
-  /* Call analytical function to compute wall BC exchange coeffs */
-  ac->func(t_eval,
-           1,
-           nullptr,
-           cm->face[f].center,
-           true, /* dense output ? */
-           ac->input,
-           parameters);
+    /* Evaluate the boundary condition at each boundary face */
+    switch (def->type) {
 
-  /* u0_x, u0_y, u0_z */
-  rob_values[9 * f]     = parameters[0];
-  rob_values[9 * f + 1] = parameters[1];
-  rob_values[9 * f + 2] = parameters[2];
+    case CS_XDEF_BY_VALUE: {
+      const cs_real_t *parameters = (cs_real_t *)def->context;
 
-  /* exchange coefficients */
-  rob_values[9 * f + 3] = parameters[3];
-  rob_values[9 * f + 4] = parameters[4];
-  rob_values[9 * f + 5] = parameters[5];
+      for (short int k = 0; k < dim; k++) /* Only set u0 */
+        rob_values[3*dim*f + k] = parameters[k];
+    } break;
 
-  /* beta_x, beta_y, beta_z*/
-  rob_values[9 * f + 6] = parameters[6];
-  rob_values[9 * f + 7] = parameters[7];
-  rob_values[9 * f + 8] = parameters[8];
+    case CS_XDEF_BY_ANALYTIC_FUNCTION: {
+      cs_real_t  buffer_params[16];
+      memset(buffer_params, 0, 16 * sizeof(cs_real_t));
+
+      cs_xdef_analytic_context_t *ac = (cs_xdef_analytic_context_t *)def->context;
+
+      ac->func(t_eval,
+               1,
+               nullptr,
+               cm->face[f].center,
+               true, /* dense output ? */
+               ac->input,
+               buffer_params);
+
+      for (short int k = 0; k < dim; k++) /* Only set u0 */
+        rob_values[3*dim*f + k] = buffer_params[k];
+    } break;
+
+    case CS_XDEF_BY_ARRAY: {
+      const cs_xdef_array_context_t *cx
+        = static_cast<const cs_xdef_array_context_t *>(def->context);
+
+      assert(cx->stride == 3*dim);
+      assert(cs_flag_test(cx->value_location, cs_flag_primal_face) ||
+             cs_flag_test(cx->value_location, cs_flag_boundary_face));
+
+      cs_lnum_t bf_id = cm->f_ids[f] - cm->bface_shift;
+      assert(bf_id > -1);
+      const cs_real_t *parameters;
+
+      if (cx->full_length)
+        parameters = cx->values + 3*dim*bf_id;
+
+      else {
+
+        assert(cx->full2subset != nullptr);
+        cs_lnum_t id = cx->full2subset[bf_id];
+        assert(id > -1);
+        parameters = cx->values + 3*dim*id;
+      }
+      for (short int k = 0; k < dim; k++) /* Only set u0 */
+        rob_values[3*dim*f + k] = parameters[k];
+    } break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                _(" Invalid type of definition.\n"
+                  " Stop computing the Robin value.\n"));
+
+    } /* switch def_type */
+
+    /* Relative cell velocity */
+    cs_real_3_t ur =  {uc[0] - rob_values[9 * f],
+                       uc[1] - rob_values[9 * f + 1],
+                       uc[2] - rob_values[9 * f + 2]};
+
+    const cs_quant_t  pfq = cm->face[f];
+    const cs_real_t  *ni = pfq.unitv;
+
+    /* Normal components to wall */
+    cs_real_t urn_norm = ur[0]*ni[0] + ur[1]*ni[1] + ur[2]*ni[2];
+    cs_real_3_t urn = {urn_norm*ni[0], urn_norm*ni[1], urn_norm*ni[2]};
+
+    /* Tangential components to wall */
+    cs_real_3_t urt = {ur[0] - urn[0],
+                       ur[1] - urn[1],
+                       ur[2] - urn[2]};
+
+    cs_real_t urt_norm = cs_math_3_norm(urt);
+    cs_real_t ht = 0.;
+
+    cs_turb_compute_wall_bc_coeffs(eqp, nu, kener, hfc, urt_norm, &ht);
+
+    /* u0_x, u0_y, u0_z */
+    // rob_values[9 * f]     = set before
+    // rob_values[9 * f + 1] = set before
+    // rob_values[9 * f + 2] = set before
+
+    /* exchange coefficients */
+    rob_values[9 * f + 3] = ht;
+    rob_values[9 * f + 4] = ht;
+    rob_values[9 * f + 5] = ht;
+
+    /* beta_x, beta_y, beta_z*/
+    rob_values[9 * f + 6] = 0.0;
+    rob_values[9 * f + 7] = 0.0;
+    rob_values[9 * f + 8] = 0.0;
+
+  } /* Definition based on User set U_wall BC */
 }
 
 /*----------------------------------------------------------------------------*/
