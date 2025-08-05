@@ -41,8 +41,11 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
 #include "bft/bft_printf.h"
+
+#include "base/cs_mem.h"
+#include "base/cs_dispatch.h"
+#include "base/cs_reducers.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -822,7 +825,87 @@ _bucket_sampling(int                      dim,
 
 #endif /* FM_HAVE_MPI */
 
+END_C_DECLS
+
+/*----------------------------------------------------------------------------
+ * Determine the global extents associated with a set of coordinates
+ *
+ * template parameters:
+ *   dim: spatial dimension
+ *
+ * parameters:
+ *   n_coords  <-- local number of coordinates
+ *   coords    <-- entity coordinates; size: n_entities*dim (interlaced)
+ *   extents   --> global extents (size: dim*2)
+ *---------------------------------------------------------------------------*/
+
+template <cs_lnum_t dim>
+void
+_get_coord_extents(cs_lnum_t         n_coords,
+                   const cs_coord_t  coords[],
+                   cs_coord_t        extents[])
+{
+  cs_dispatch_context ctx;
+
+  struct cs_double_n<dim*2> rd;
+  struct cs_reduce_min_max_nr<dim> reducer;
+
+  ctx.parallel_for_reduce
+    (n_coords, rd, reducer,
+     [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_double_n<dim*2> &res) {
+       for (cs_lnum_t j = 0; j < 3; j++) {
+         res.r[j]       = coords[c_id*dim + j];
+         res.r[j + dim] = coords[c_id*dim + j];
+       }
+     });
+
+  ctx.wait();
+
+  for (cs_lnum_t i = 0; i < dim*2; i++)
+    extents[i] = rd.r[i];
+}
+
+/*----------------------------------------------------------------------------
+ * Determine the global extents associated with a set of local extents
+ *
+ * template parameters:
+ *   dim: spatial dimension
+ *
+ * parameters:
+ *   n_extents <-- local number of coordinates
+ *   extents   <-- entity coordinates; size: n_entities*dim*2 (interlaced)
+ *   g_extents --> global extents (size: dim*2)
+ *---------------------------------------------------------------------------*/
+
+template <cs_lnum_t dim>
+void
+_get_global_extents(cs_lnum_t         n_extents,
+                    const cs_coord_t  extents[],
+                    cs_coord_t        g_extents[])
+{
+  cs_dispatch_context ctx;
+
+  struct cs_double_n<dim*2> rd;
+  struct cs_reduce_min_max_nr<dim> reducer;
+
+  ctx.parallel_for_reduce
+    (n_extents, rd, reducer,
+     [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_double_n<dim*2> &res) {
+       for (cs_lnum_t j = 0; j < 3; j++) {
+         res.r[j]       = extents[c_id*dim*2 + j];
+         res.r[j + dim] = extents[c_id*dim*2 + j + dim];
+       }
+     });
+
+  ctx.wait();
+
+  for (cs_lnum_t i = 0; i < dim*2; i++)
+    g_extents[i] = rd.r[i];
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+BEGIN_C_DECLS
 
 /*============================================================================
  * Public function definitions
@@ -856,18 +939,25 @@ fvm_morton_get_coord_extents(int               dim,
 {
   /* Get global min/max coordinates */
 
-  for (size_t j = 0; j < (size_t)dim; j++) {
-    g_extents[j]       = DBL_MAX;
-    g_extents[j + dim] = -DBL_MAX;
-  }
+  if (dim == 3)
+    _get_coord_extents<3>(n_coords,  coords, g_extents);
 
-# pragma omp parallel for if (n_coords > CS_THR_MIN)
-  for (size_t i = 0; i < n_coords; i++) {
+  else if (dim == 2)
+    _get_coord_extents<2>(n_coords,  coords, g_extents);
+
+  else {
     for (size_t j = 0; j < (size_t)dim; j++) {
-      if (coords[i*dim + j] < g_extents[j])
-        g_extents[j] = coords[i*dim + j];
-      if (coords[i*dim + j] > g_extents[j + dim])
-        g_extents[j + dim] = coords[i*dim + j];
+      g_extents[j]       = DBL_MAX;
+      g_extents[j + dim] = -DBL_MAX;
+    }
+
+    for (size_t i = 0; i < n_coords; i++) {
+      for (size_t j = 0; j < (size_t)dim; j++) {
+        if (coords[i*dim + j] < g_extents[j])
+          g_extents[j] = coords[i*dim + j];
+        if (coords[i*dim + j] > g_extents[j + dim])
+          g_extents[j + dim] = coords[i*dim + j];
+      }
     }
   }
 
@@ -905,20 +995,28 @@ fvm_morton_get_global_extents(int               dim,
                               cs_coord_t        g_extents[])
 #endif
 {
-  /* Get global min/max coordinates */
 
-  for (size_t i = 0; i < (size_t)dim; i++) {
-    g_extents[i]       = DBL_MAX;
-    g_extents[i + dim] = -DBL_MAX;
-  }
+  if (dim == 3)
+    _get_global_extents<3>(n_extents, extents, g_extents);
 
-# pragma omp parallel for if (n_extents > CS_THR_MIN)
-  for (size_t i = 0; i < n_extents; i++) {
-    for (size_t j = 0; j < (size_t)dim; j++) {
-      g_extents[j]     = cs::min(g_extents[j],
-                                 extents[i*dim*2 + j]);
-      g_extents[j+dim] = cs::max(g_extents[j + dim],
-                                 extents[i*dim*2 + j + dim]);
+  if (dim == 2)
+    _get_global_extents<2>(n_extents, extents, g_extents);
+
+  else {
+    /* Get global min/max coordinates */
+
+    for (size_t i = 0; i < (size_t)dim; i++) {
+      g_extents[i]       = DBL_MAX;
+      g_extents[i + dim] = -DBL_MAX;
+    }
+
+    for (size_t i = 0; i < n_extents; i++) {
+      for (size_t j = 0; j < (size_t)dim; j++) {
+        g_extents[j]     = cs::min(g_extents[j],
+                                   extents[i*dim*2 + j]);
+        g_extents[j+dim] = cs::max(g_extents[j + dim],
+                                   extents[i*dim*2 + j + dim]);
+      }
     }
   }
 
