@@ -4,6 +4,10 @@ Release 2.0.4 (unreleased)
 Bug fixes:
 ----------
 
+- Fixes in ple_locator:
+  * Fix crash when no input points intersect the mesh extents.
+  * Fixed distance/location update in some cases.
+
 - Fix detection of GCC compiler with some Cray versions.
 
 Changes:
