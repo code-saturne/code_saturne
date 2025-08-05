@@ -1850,8 +1850,10 @@ _intersects_local(ple_locator_t       *this_locator,
 
   /* Copy only element (and not point) extents */
 
-  for (j = 0; j < stride2; j++)
-    intersects.extents[j] = extents[j];
+  if (intersects.n > 0) {
+    for (j = 0; j < stride2; j++)
+      intersects.extents[j] = extents[j];
+  }
 
   return intersects;
 }
@@ -2006,7 +2008,7 @@ _locate_all_local(ple_locator_t               *this_locator,
         if (_location[j] > -1) {
           k = id[j];
           if (distance != NULL) {
-            if (distance[k] <= _distance[j])
+            if (distance[k] > -1.0 && distance[k] <= _distance[j])
               continue;
             else
               distance[k] = _distance[j];
