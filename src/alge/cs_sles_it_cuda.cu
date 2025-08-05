@@ -105,7 +105,7 @@
  *  Global variables
  *============================================================================*/
 
-static bool _use_cublas = true;//false;
+static bool _use_cublas = false;
 
 /*============================================================================
  * Private function and kernel definitions
