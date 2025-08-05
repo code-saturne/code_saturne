@@ -1206,6 +1206,9 @@ cs_navsto_set_fixed_walls(cs_navsto_param_t *nsp)
 
   const cs_boundary_t  *bdy = nsp->boundaries;
 
+  cs_flag_t bc_type = (nsp->turbulence->model->model == CS_TURB_NONE) ?
+                       CS_CDO_BC_HMG_DIRICHLET : CS_CDO_BC_WALL_PRESCRIBED;
+
   cs_xdef_t *d = nullptr;
 
   for (int i = 0; i < bdy->n_boundaries; i++) {
@@ -1215,22 +1218,12 @@ cs_navsto_set_fixed_walls(cs_navsto_param_t *nsp)
       /* Homogeneous Dirichlet on the velocity field. Nothing to enforce on the
          pressure field */
 
-      if (nsp->turbulence->model->model == CS_TURB_NONE) {
-        d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
-                                    3, /* dim */
-                                    bdy->zone_ids[i],
-                                    CS_FLAG_STATE_UNIFORM, /* state */
-                                    CS_CDO_BC_HMG_DIRICHLET,
-                                    (void *)zero);
-      }
-      else {
-        d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
-                                    3,    /* dim */
-                                    bdy->zone_ids[i],
-                                    CS_FLAG_STATE_UNIFORM, /* state */
-                                    CS_CDO_BC_WALL_PRESCRIBED,
-                                    (void *)zero);
-      }
+      d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
+                                  3, /* dim */
+                                  bdy->zone_ids[i],
+                                  CS_FLAG_STATE_UNIFORM, /* state */
+                                  bc_type,
+                                  (void *)zero);
 
       int  new_id = nsp->n_velocity_bc_defs;
 
@@ -1466,13 +1459,18 @@ cs_navsto_set_velocity_wall_by_value(cs_navsto_param_t    *nsp,
               " %s: Zone \"%s\" is not related to a sliding wall boundary.\n"
               " Please check your settings.", __func__, z_name);
 
+  nsp->boundaries->types[bdy_id] |= CS_BOUNDARY_WALL;
+
   /* Add a new cs_xdef_t structure */
+
+  cs_flag_t bc_type = (nsp->turbulence->model->model == CS_TURB_NONE) ?
+                       CS_CDO_BC_DIRICHLET : CS_CDO_BC_WALL_PRESCRIBED;
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
                                           3,    /* dim */
                                           z_id,
                                           CS_FLAG_STATE_UNIFORM, /* state */
-                                          CS_CDO_BC_DIRICHLET,
+                                          bc_type,
                                           (void *)values);
 
   int  new_id = nsp->n_velocity_bc_defs;

@@ -1877,19 +1877,8 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t *nsp,
     case CS_TURB_K_EPSILON_LS:
     case CS_TURB_K_EPSILON_QUAD:
     case CS_TURB_K_OMEGA:
-      switch (mom_eqp->default_enforcement) {
-        case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
-          sc->apply_sliding_wall = cs_cdofb_prescribed_smooth_wall;
-          sc->apply_fixed_wall   = cs_cdofb_prescribed_smooth_wall;
-          break;
-
-        default:
-          bft_error(__FILE__,
-                    __LINE__,
-                    0,
-                    " %s: Invalid type of algorithm to enforce Wall BC.",
-                    __func__);
-      }
+      sc->apply_sliding_wall = cs_cdofb_prescribed_smooth_wall;
+      sc->apply_fixed_wall   = cs_cdofb_prescribed_smooth_wall;
       break;
 
     default:
