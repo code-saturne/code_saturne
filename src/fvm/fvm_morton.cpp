@@ -846,6 +846,7 @@ _get_coord_extents(cs_lnum_t         n_coords,
                    cs_coord_t        extents[])
 {
   cs_dispatch_context ctx;
+  ctx.set_use_gpu(false);  // Until coords are allocated on GPU
 
   struct cs_double_n<dim*2> rd;
   struct cs_reduce_min_max_nr<dim> reducer;
@@ -884,6 +885,7 @@ _get_global_extents(cs_lnum_t         n_extents,
                     cs_coord_t        g_extents[])
 {
   cs_dispatch_context ctx;
+  ctx.set_use_gpu(false);  // Until coords are allocated on GPU
 
   struct cs_double_n<dim*2> rd;
   struct cs_reduce_min_max_nr<dim> reducer;
