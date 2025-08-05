@@ -461,7 +461,7 @@ _triangle_box_surface_intersection(const cs_real_t  box_extents[6],
     cs_real_t ra = (cs_real_t)rand() / (cs_real_t)RAND_MAX;
     cs_real_t rb = (cs_real_t)rand() / (cs_real_t)RAND_MAX;
 
-    if (ra+rb >= 1.0){
+    if (ra+rb >= 1.0) {
       ra = 1.0-ra;
       rb = 1.0-rb;
     }
@@ -547,7 +547,7 @@ _exact_triangle_box_surface_intersection(const cs_real_t  box_extents[6],
   cs_real_t coords[10][3];
 
   /* Polygon init */
-  for (int i = 0; i < nv; i ++){
+  for (int i = 0; i < nv; i ++) {
     for (int dir = 0; dir < 3; dir ++)
       coords[i][dir] = tria_coords[i][dir];
   }
@@ -556,15 +556,15 @@ _exact_triangle_box_surface_intersection(const cs_real_t  box_extents[6],
   cs_real_t plane[6][6];
   cs_real_t e[3][3] = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
 
-  for (int i = 0; i < 3; i++){
-    for (int j = 0; j < 3; j++){
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
       plane[i][j]   = box_extents[j];
       plane[i][j+3] = -e[i][j];
     }
   }
 
-  for (int i = 3; i < 6; i++){
-    for (int j = 0; j < 3; j++){
+  for (int i = 3; i < 6; i++) {
+    for (int j = 0; j < 3; j++) {
       plane[i][j]   = box_extents[j+3];
       plane[i][j+3] = e[i-3][j];
     }
@@ -908,7 +908,7 @@ _tetrahedron_plane_volume_intersection(cs_real_t x1[3],
       /* Lookink for the point located outside */
       cs_real_t *a = nullptr, *b = nullptr, *c = nullptr, *d = nullptr;
 
-      if (v1_is_inside == 0){
+      if (v1_is_inside == 0) {
         a = &x1[0];
         b = &x2[0];
         c = &x3[0];
@@ -1223,7 +1223,7 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
     }
 
     /* Check if the file is ASCII or Binary */
-    char temp[6] ;
+    char temp[6];
     fread(temp, 5, 1, fp);
     temp[5] = '\0';
     int test = strcmp(temp, "solid");
@@ -1895,13 +1895,13 @@ cs_stl_intersection(cs_stl_mesh_t *stl_mesh,
 #endif
 
   // Compute intersections by boxes (transfer ownership)
-  fvm_neighborhood_by_boxes( cell_neighborhood,
-                             dim,
-                             n_boxes,
-                             box_gnum,
-                             extents,
-                             nullptr,
-                             nullptr );
+  fvm_neighborhood_by_boxes(cell_neighborhood,
+                            dim,
+                            n_boxes,
+                            box_gnum,
+                            extents,
+                            nullptr,
+                            nullptr);
 
   cs_lnum_t  n_elts = 0;
   cs_gnum_t *elt_num = nullptr;
@@ -1909,11 +1909,11 @@ cs_stl_intersection(cs_stl_mesh_t *stl_mesh,
   cs_gnum_t *neighbor_num = nullptr;
 
   // Get the data back
-  fvm_neighborhood_transfer_data( cell_neighborhood,
-                                  &n_elts,
-                                  &elt_num,
-                                  &neighbor_index,
-                                  &neighbor_num );
+  fvm_neighborhood_transfer_data(cell_neighborhood,
+                                 &n_elts,
+                                 &elt_num,
+                                 &neighbor_index,
+                                 &neighbor_num);
 
   cs_gnum_t _n_cells = n_cells;
   cs_lnum_t _n_selected_cells = 0;
@@ -2091,8 +2091,8 @@ cs_stl_refine(cs_stl_mesh_t *stl_mesh,
        * around the original STL selected cells */
       int nn = 1;
 
-      for (int k = 0; k < n_add_layer ; k++){
-        for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++){
+      for (int k = 0; k < n_add_layer; k++) {
+        for (cs_lnum_t face_id = 0; face_id < m->n_i_faces; face_id++) {
           cs_lnum_t c1 = m->i_face_cells[face_id][0];
           cs_lnum_t c2 = m->i_face_cells[face_id][1];
           if (cell_tag[c1] == 0 && cell_tag[c2] == nn)
