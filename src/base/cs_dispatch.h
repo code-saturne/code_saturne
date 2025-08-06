@@ -407,7 +407,9 @@ public:
           sum_sblock += sum_block;
         }
 
+        #ifdef _OPENMP
         #pragma omp atomic
+        #endif
         sum += sum_sblock;
       }
     }
@@ -462,7 +464,9 @@ public:
           }
         }
 
+        #ifdef _OPENMP
         #pragma omp critical
+        #endif
         {
           reducer.combine(result, result_sblock);
         }
@@ -1804,7 +1808,9 @@ cs_dispatch_sum(T                       *dest,
     *dest += src;
   }
   else if (sum_type == CS_DISPATCH_SUM_ATOMIC) {
+    #ifdef _OPENMP
     #pragma omp atomic
+    #endif
     *dest += src;
   }
 }
@@ -1899,7 +1905,9 @@ cs_dispatch_sum(T                       *dest,
   }
   else if (sum_type == CS_DISPATCH_SUM_ATOMIC) {
     for (size_t i = 0; i < dim; i++) {
+      #ifdef _OPENMP
       #pragma omp atomic
+      #endif
       dest[i] += src[i];
     }
   }
