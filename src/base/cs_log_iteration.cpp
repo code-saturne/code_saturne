@@ -863,7 +863,7 @@ _log_fields_and_functions(void)
         if (have_weight && (f->type & CS_FUNCTION_INTENSIVE))
           use_weight = true;
 
-        CS_MALLOC(_f_val, f_dim*_n_elts, cs_real_t);
+        CS_MALLOC_HD(_f_val, f_dim*_n_elts, cs_real_t, cs_alloc_mode);
         f_val = _f_val;
 
         const cs_time_step_t *ts = cs_glob_time_step;
