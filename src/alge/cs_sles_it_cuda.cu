@@ -773,14 +773,12 @@ _x0_ymr_dot_yy(cs_lnum_t                       n,
 template <size_t block_size>
 __global__ static void
 _smaxpy_dot_yy(cs_lnum_t                       n,
-               const cs_real_t   *__restrict__ alpha,
+               cs_real_t                       alpha,
                const cs_real_t   *__restrict__ x,
                cs_real_t         *__restrict__ y,
                double            *__restrict__ sum_block)
 {
   __shared__ double sdata[block_size];
-
-  cs_real_t _alpha = - *alpha;
 
   cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
   size_t tid = threadIdx.x;
@@ -789,7 +787,7 @@ _smaxpy_dot_yy(cs_lnum_t                       n,
   sdata[tid] = 0.0;
 
   while (ii < n) {
-    cs_real_t r = _alpha*x[ii] + y[ii];
+    cs_real_t r = alpha*x[ii] + y[ii];
     y[ii] = r;
     sdata[tid] += r*r;
 
@@ -817,14 +815,12 @@ _smaxpy_dot_yy(cs_lnum_t                       n,
 template <size_t block_size>
 __global__ static void
 _y_scale_dot_xy(cs_lnum_t                      n,
-                const cs_real_t  *__restrict__ alpha,
+                cs_real_t                      alpha,
                 const cs_real_t  *__restrict__ x,
                 cs_real_t        *__restrict__ y,
                 double           *__restrict__ sum_block)
 {
   __shared__ double sdata[block_size];
-
-  cs_real_t _alpha = *alpha;
 
   cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
   size_t tid = threadIdx.x;
@@ -833,7 +829,7 @@ _y_scale_dot_xy(cs_lnum_t                      n,
   sdata[tid] = 0.0;
 
   while (ii < n) {
-    cs_real_t r = _alpha * y[ii];
+    cs_real_t r = alpha * y[ii];
     y[ii] = r;
     sdata[tid] += x[ii]*r;
 
@@ -851,14 +847,14 @@ _y_scale_dot_xy(cs_lnum_t                      n,
  * parameters:
  *   n_c_iter <-- number of restart iterations
  *   n_gkj    <-- number of gkj terms (diagonal matrix)
- *   mgkj     <-- - Gamma
+ *   gkj      <-- Gamma
  *   gkj_inv  <-> Inverse of Gamma
  *----------------------------------------------------------------------------*/
 
 __global__ static void
 _gcr_gkj_inv(int                            n_c_iter,
              int                            n_gkj,
-             const cs_real_t  *__restrict__ mgkj,
+             const cs_real_t  *__restrict__ gkj,
              cs_real_t        *__restrict__ gkj_inv)
 {
   int kk = blockIdx.x*blockDim.x + threadIdx.x;
@@ -877,14 +873,14 @@ _gcr_gkj_inv(int                            n_c_iter,
     for (int ii = 0; ii < kk; ii++) {
       for (int jj = 0; jj < kk; jj++)
         gkj_inv[(kk + 1) * kk / 2 + ii]
-          -=   ((ii <= jj) ? gkj_inv[(jj + 1) * jj / 2 + ii] : 0.0)
-             * mgkj[(kk + 1) * kk / 2  + jj];
+          +=   ((ii <= jj) ? gkj_inv[(jj + 1) * jj / 2 + ii] : 0.0)
+             * gkj[(kk + 1) * kk / 2  + jj];
     }
 
     for (int jj = 0; jj < kk; jj++)
-      gkj_inv[(kk + 1) * kk / 2 + jj] /= mgkj[(kk + 1) * kk / 2 + kk];
+      gkj_inv[(kk + 1) * kk / 2 + jj] /= - gkj[(kk + 1) * kk / 2 + kk];
 
-    gkj_inv[(kk + 1) * kk / 2 + kk] = 1.0 / -mgkj[(kk + 1) * kk / 2 + kk];
+    gkj_inv[(kk + 1) * kk / 2 + kk] = 1.0 / gkj[(kk + 1) * kk / 2 + kk];
   }
 }
 
@@ -909,7 +905,7 @@ _gcr_gkj_inv_1(const cs_real_t  *__restrict__ gkj,
   if (abs(gkj[0]) <= 0)
     gkj_inv[0] = 1.0;
   else
-    gkj_inv[0] = -1.0 / gkj[0];
+    gkj_inv[0] = 1.0 / gkj[0];
 }
 
 /*----------------------------------------------------------------------------
@@ -2378,7 +2374,7 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
 {
   CS_PROFILE_FUNC_RANGE();
 
-  cs_sles_convergence_state_t cvg= CS_SLES_ITERATING;
+  cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
 
   bool local_stream = false;
   cudaStream_t stream;
@@ -2452,18 +2448,18 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
    * gkj_inv stores the inverse of gkj */
 
   cs_lnum_t n_gkj = (n_k_per_restart + 1) * n_k_per_restart / 2;
-  cs_lnum_t aux_arrays_size = n_gkj + (n_k_per_restart+1) + 1 + 1;
-
+  cs_lnum_t aux_arrays_size =  CS_SIMD_SIZE(n_gkj)
+                             + CS_SIMD_SIZE(n_k_per_restart+1) + 1;
   double *_aux_arrays;
   CS_MALLOC_HD(_aux_arrays, aux_arrays_size, double,
                CS_ALLOC_HOST_DEVICE_SHARED);
 
-  double *__restrict__ mgkj = _aux_arrays;
-  double *__restrict__ alpha = _aux_arrays + n_gkj;
-  double *__restrict__ scale = alpha + n_k_per_restart+1;
+  double *__restrict__ gkj = _aux_arrays;
+  double *__restrict__ alpha = _aux_arrays + CS_SIMD_SIZE(n_gkj);
 
   cs_real_t *gkj_inv;
-  CS_MALLOC_HD(gkj_inv, n_gkj, cs_real_t, CS_ALLOC_DEVICE);
+  //  CS_MALLOC_HD(gkj_inv, n_gkj, cs_real_t, CS_ALLOC_DEVICE);
+  CS_MALLOC_HD(gkj_inv, n_gkj, cs_real_t, CS_ALLOC_HOST_DEVICE_SHARED);
 
   const unsigned int blocksize = CS_BLOCKSIZE;
   const unsigned int blocksize_rsb = 512; /* cs_blas_cuda_reduce_single_block */
@@ -2471,10 +2467,9 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
   cs_cuda_grid_size(n_rows, blocksize);
 
   unsigned int gridsize = cs_cuda_grid_size(n_rows, blocksize);
-  unsigned int gridsize_blas1 = min(gridsize, 640);
+  unsigned int gridsize_blas1 = cs_cuda_grid_size(n_rows, blocksize_rsb);
 
-  double *sum_block, *res;
-  cs_blas_cuda_get_2_stage_reduce_buffers(n_rows, 1, gridsize, sum_block, res);
+  cs_device_context ctx(gridsize_blas1, blocksize_rsb, stream);
 
   cs_blas_cuda_set_stream(stream);
   if (local_stream)
@@ -2494,21 +2489,26 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
     if (_vx == vx) {
       cs_matrix_vector_multiply_d(a, vx, rk);  /* rk = A.x0 */
 
-      _ymx_dot_yy<blocksize_rsb><<<gridsize_blas1, blocksize_rsb, 0, stream>>>
-        (n_rows, rhs, rk, sum_block);
+      ctx.parallel_for_reduce_sum(n_rows, residual, [=] CS_F_HOST_DEVICE
+                                  (cs_lnum_t ii,
+                                   CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+
+        rk[ii] -= rhs[ii];
+        sum += rk[ii]*rk[ii];
+      });
     }
     else {
-      _x0_ymr_dot_yy<blocksize_rsb><<<gridsize_blas1, blocksize_rsb, 0, stream>>>
-        (n_rows, rhs, vx, rk, sum_block);
+      ctx.parallel_for_reduce_sum(n_rows, residual, [=] CS_F_HOST_DEVICE
+                                  (cs_lnum_t ii,
+                                   CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+
+        vx[ii] = 0;
+        rk[ii] = -rhs[ii];
+        sum += rk[ii]*rk[ii];
+      });
     }
 
-    cs_blas_cuda_reduce_single_block
-      <blocksize_rsb, 1><<<1, blocksize_rsb, 0, stream>>>
-      (gridsize_blas1, sum_block, res);
-
-    _sync_reduction_sum(c, stream, 1, res);
-
-    cudaMemcpy(&residual, res, sizeof(double), cudaMemcpyDeviceToHost);
+    _sync_reduction_sum(c, stream, 1, &residual);
     residual = sqrt(residual);
 
     if (n_restart == 0)
@@ -2551,39 +2551,41 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
         cs_real_t *ck_j = ck + jj * wa_size;
 
         int ii_jn = (n_c_iter + 1) * n_c_iter / 2 + jj;
-        mgkj[ii_jn] = - _dot_product(c, stream, ck_j, ck_n);
+        gkj[ii_jn] = _dot_product(c, stream, ck_j, ck_n);
 
-        /* changed sign directly above to allow use of axpy */
-
-        cs_blas_cuda_axpy(n_rows, &mgkj[ii_jn], ck_j, ck_n);
+        ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+          ck_n[ii] += - gkj[ii_jn] * ck_j[ii];
+        });
       }
 
       const int iter_shift = (n_c_iter+1) * n_c_iter / 2 + n_c_iter;
-      mgkj[iter_shift] = - sqrt(_dot_product(c, stream, ck_n, ck_n));
+      gkj[iter_shift] = sqrt(_dot_product(c, stream, ck_n, ck_n));
 
-      if (abs(mgkj[iter_shift]) > 0) {
-        *scale = 1. / (- mgkj[iter_shift]);
+      if (abs(gkj[iter_shift]) > 0) {
+        double scale = 1. / gkj[iter_shift];
 
-        _y_scale_dot_xy
-          <blocksize_rsb><<<gridsize_blas1, blocksize_rsb, 0, stream>>>
-          (n_rows, scale, rk, ck_n, sum_block);
-        cs_blas_cuda_reduce_single_block
-          <blocksize_rsb, 1><<<1, blocksize_rsb, 0, stream>>>
-          (gridsize, sum_block, &alpha[n_c_iter]);
+        ctx.parallel_for_reduce_sum(n_rows, alpha[n_c_iter], [=] CS_F_HOST_DEVICE
+                                    (cs_lnum_t ii,
+                                     CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+
+          ck_n[ii] *= scale;
+          sum += ck_n[ii]*rk[ii];
+        });
+
         _sync_reduction_sum(c, stream, 1, &alpha[n_c_iter]);
 
       }
       else
         alpha[n_c_iter] = 0.;
 
-      _smaxpy_dot_yy<blocksize_rsb><<<gridsize_blas1, blocksize_rsb, 0, stream>>>
-        (n_rows, &alpha[n_c_iter], ck_n, rk, sum_block);
-      cs_blas_cuda_reduce_single_block
-        <blocksize_rsb, 1><<<1, blocksize_rsb, 0, stream>>>
-        (gridsize, sum_block, res);
-      _sync_reduction_sum(c, stream, 1, res);
+      ctx.parallel_for_reduce_sum(n_rows, residual, [=] CS_F_HOST_DEVICE
+                                  (cs_lnum_t ii,
+                                   CS_DISPATCH_REDUCER_TYPE(double) &sum) {
 
-      cudaMemcpy(&residual, res, sizeof(double), cudaMemcpyDeviceToHost);
+        rk[ii] += - alpha[n_c_iter] * ck_n[ii];
+        sum += rk[ii]*rk[ii];
+      });
+      _sync_reduction_sum(c, stream, 1, &residual);
       residual = sqrt(residual);
 
       n_c_iter += 1;
@@ -2608,10 +2610,10 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
 
     if (n_c_iter == 1)
       _gcr_gkj_inv_1<<<1, CS_CUDA_WARP_SIZE, 0, stream>>>
-        (mgkj, gkj_inv);
+        (gkj, gkj_inv);
     else
       _gcr_gkj_inv<<<1, CS_CUDA_WARP_SIZE, 0, stream>>>
-        ((int)n_c_iter, n_gkj, mgkj, gkj_inv);
+        ((int)n_c_iter, n_gkj, gkj, gkj_inv);
 
     /* Compute the solution */
     _gcr_update_vx<<<gridsize, blocksize, 0, stream>>>
