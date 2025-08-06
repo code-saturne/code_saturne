@@ -46,6 +46,13 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_mem.h"
+#include "base/cs_dispatch.h"
+
+#if defined(__CUDACC__)
+#include "alge/cs_blas_cuda.h"
+#include "alge/cs_matrix_spmv.h"
+#include "alge/cs_matrix_spmv_cuda.h"
+#endif
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -1074,6 +1081,159 @@ _jacobi(cs_sles_it_t              *c,
 }
 
 /*----------------------------------------------------------------------------
+ * Solution of A.vx = Rhs using relaxed (weighed) Jacobi.
+ *
+ * On entry, vx is considered initialized.
+ *
+ * parameters:
+ *   c               <-- pointer to solver context info
+ *   a               <-- linear equation matrix
+ *   diag_block_size <-- diagonal block size
+ *   convergence     <-- convergence information structure
+ *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
+ *   vx              <-> system solution
+ *   aux_size        <-- number of elements in aux_vectors (in bytes)
+ *   aux_vectors     --- optional working area (allocation otherwise)
+ *
+ * returns:
+ *   convergence state
+ *----------------------------------------------------------------------------*/
+
+static cs_sles_convergence_state_t
+_relaxed_jacobi(cs_sles_it_t              *c,
+                const cs_matrix_t         *a,
+                cs_lnum_t                  diag_block_size,
+                cs_sles_it_convergence_t  *convergence,
+                const cs_real_t           *rhs,
+                cs_real_t                 *vx_ini,
+                cs_real_t                 *vx,
+                size_t                     aux_size,
+                void                      *aux_vectors)
+{
+  cs_real_t *_aux_vectors;
+  cs_real_t *restrict vx_tmp;
+
+  cs_real_t wk = 1.0;
+
+  cs_real_t w[4] = {1., 1., 1., 1.};
+
+  // Scheduled relaxation variants:
+  // https://doi.org/10.1007/s12046-023-02407-6
+
+  if (c->type == CS_SLES_SR_JACOBI) {
+    if (convergence->n_iterations_max == 2) {
+      w[0] = 1.7319;
+      w[1] = 0.5695;
+    }
+    else if (convergence->n_iterations_max >= 3) {
+      w[0] = 2.2473;
+      w[1] = 0.8573;
+      w[2] = 0.5296;
+    }
+  }
+
+  unsigned n_iter = 0;
+
+  cs_dispatch_context ctx;
+
+  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
+
+#if defined(__CUDACC__)
+  bool local_stream = false;
+  cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
+  if (amode > CS_ALLOC_HOST) {
+    if (stream == 0) {
+      local_stream = true;
+      stream = cs_cuda_get_stream(0);
+    }
+    cs_blas_cuda_set_stream(stream);
+    if (local_stream)
+      cs_matrix_spmv_cuda_set_stream(stream);
+    ctx.set_cuda_stream(stream);
+  }
+#endif
+
+  /* Allocate or map work arrays */
+  /*-----------------------------*/
+
+  assert(c->setup_data != nullptr);
+
+  const cs_real_t  *restrict ad_inv = c->setup_data->ad_inv;
+
+  const cs_lnum_t n_rows = c->setup_data->n_rows;
+
+  {
+    const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
+    const size_t n_wa = 1;
+    const size_t wa_size = CS_SIMD_SIZE(n_cols);
+
+    if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+      CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, amode);
+    else
+      _aux_vectors = (cs_real_t *)aux_vectors;
+
+    vx_tmp = _aux_vectors;
+  }
+
+  int iter_ini = 0;
+
+  /* First iteration simplified if vx == 0
+     ------------------------------------- */
+
+  cs_real_t *restrict vx_n = vx;
+  cs_real_t *restrict vx_np = vx_tmp;
+
+  if (vx_ini != vx) {
+    assert(vx_ini == nullptr);
+    wk = w[0];
+
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      vx_n[ii] = wk * rhs[ii]*ad_inv[ii];
+    });
+
+    iter_ini = 1;
+  }
+
+  /* Current iteration */
+  /*-------------------*/
+
+  for (n_iter = iter_ini; n_iter < convergence->n_iterations_max; n_iter++) {
+
+    wk = w[cs::min(3u, n_iter)];
+    cs_real_t o_m_wk = 1.0 - wk;
+
+    /* Swap vx_np and vx_n */
+    {cs_real_t *vx_t = vx_n; vx_n = vx_np; vx_np = vx_t;}
+
+    /* Compute Vx <- (1-w).Vx + w.(A-diag).Rk */
+
+    cs_matrix_vector_multiply_partial(a, CS_MATRIX_SPMV_E, vx_np, vx_n);
+
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      vx_n[ii] = o_m_wk*vx_np[ii] + wk*(rhs[ii]-vx_n[ii])*ad_inv[ii];
+    });
+
+  }
+
+  if (vx_n != vx) {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      vx[ii] = vx_n[ii];
+    });
+  }
+
+  ctx.wait();
+
+  if (_aux_vectors != aux_vectors)
+    CS_FREE(_aux_vectors);
+
+  convergence->n_iterations = n_iter;
+
+  return CS_SLES_MAX_ITERATION;
+}
+
+/*----------------------------------------------------------------------------
  * Solution of A.vx = Rhs using block Jacobi.
  *
  * On entry, vx is considered initialized.
@@ -1121,7 +1281,6 @@ _block_3_jacobi(cs_sles_it_t              *c,
 
   const cs_real_t  *restrict ad_inv = c->setup_data->ad_inv;
 
-  const cs_lnum_t n_rows = c->setup_data->n_rows;
   const cs_lnum_t n_blocks = c->setup_data->n_rows / 3;
 
   {
@@ -1239,7 +1398,6 @@ _block_jacobi(cs_sles_it_t              *c,
 
   const cs_real_t  *restrict ad_inv = c->setup_data->ad_inv;
 
-  const cs_lnum_t n_rows = c->setup_data->n_rows;
   const cs_lnum_t n_blocks = c->setup_data->n_rows / diag_block_size;
 
   {
@@ -1311,6 +1469,143 @@ _block_jacobi(cs_sles_it_t              *c,
     CS_FREE(_aux_vectors);
 
   convergence->n_iterations = n_iter;
+
+  return CS_SLES_MAX_ITERATION;
+}
+
+/*----------------------------------------------------------------------------
+ * Solution of A.vx = Rhs using Jacobi.
+ *
+ * On entry, vx is considered initialized.
+ *
+ * parameters:
+ *   c               <-- pointer to solver context info
+ *   a               <-- linear equation matrix
+ *   diag_block_size <-- diagonal block size
+ *   convergence     <-- convergence information structure
+ *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
+ *   vx              <-> system solution
+ *   aux_size        <-- number of elements in aux_vectors (in bytes)
+ *   aux_vectors     --- optional working area (allocation otherwise)
+ *
+ * returns:
+ *   convergence state
+ *----------------------------------------------------------------------------*/
+
+static cs_sles_convergence_state_t
+_l1_jacobi(cs_sles_it_t              *c,
+           const cs_matrix_t         *a,
+           cs_lnum_t                  diag_block_size,
+           cs_sles_it_convergence_t  *convergence,
+           const cs_real_t           *rhs,
+           cs_real_t                 *vx_ini,
+           cs_real_t                 *vx,
+           size_t                     aux_size,
+           void                      *aux_vectors)
+{
+  cs_real_t *_aux_vectors = nullptr;
+  cs_real_t *vx_tmp = nullptr;
+
+  unsigned n_iter = 0;
+
+  cs_dispatch_context ctx;
+
+  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
+
+#if defined(__CUDACC__)
+  bool local_stream = false;
+  cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
+  if (amode > CS_ALLOC_HOST) {
+    if (stream == 0) {
+      local_stream = true;
+      stream = cs_cuda_get_stream(0);
+    }
+    cs_blas_cuda_set_stream(stream);
+    if (local_stream)
+      cs_matrix_spmv_cuda_set_stream(stream);
+    ctx.set_cuda_stream(stream);
+  }
+#endif
+
+  /* Allocate or map work arrays */
+  /*-----------------------------*/
+
+  assert(c->setup_data != nullptr);
+
+  const cs_real_t  *restrict l1_inv = c->setup_data->ad_inv;
+
+  const cs_lnum_t n_rows = c->setup_data->n_rows;
+
+  {
+    const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
+    const size_t n_wa = 1;
+    const size_t wa_size = CS_SIMD_SIZE(n_cols);
+
+    if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+      CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, amode);
+    else
+      _aux_vectors = (cs_real_t *)aux_vectors;
+
+    vx_tmp = _aux_vectors;
+  }
+
+  int iter_ini = 0;
+
+  /* First iteration simplified if vx == 0
+     ------------------------------------- */
+
+  cs_real_t *restrict vx_n = vx;
+  cs_real_t *restrict vx_np = vx_tmp;
+
+  if (vx_ini != vx) {
+    assert(vx_ini == nullptr);
+
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      vx_n[ii] = rhs[ii]*l1_inv[ii];
+    });
+
+    iter_ini = 1;
+  }
+
+  /* Current iteration */
+  /*-------------------*/
+
+  for (n_iter = iter_ini; n_iter < convergence->n_iterations_max; n_iter++) {
+
+    /* Swap vx_np and vx_n */
+    {cs_real_t *vx_t = vx_n; vx_n = vx_np; vx_np = vx_t;}
+
+    /* Compute Vx <- Vx - (B - A.Rk)/L1 */
+
+    cs_matrix_vector_multiply(a, vx_np, vx_n);
+
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      vx_n[ii] = vx_np[ii] + (rhs[ii]-vx_n[ii]) * l1_inv[ii];
+    });
+
+  }
+
+  if (vx_n != vx) {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      vx[ii] = vx_n[ii];
+    });
+  }
+
+  ctx.wait();
+
+  if (_aux_vectors != aux_vectors)
+    CS_FREE(_aux_vectors);
+
+  convergence->n_iterations = n_iter;
+
+#if defined(__CUDACC__)
+  cs_blas_cuda_set_stream(0);
+  if (local_stream) {
+    cs_matrix_spmv_cuda_set_stream(0);
+  }
+#endif
 
   return CS_SLES_MAX_ITERATION;
 }
@@ -2145,6 +2440,9 @@ cs_multigrid_smoother_create(cs_sles_it_type_t    smoother_type,
   case CS_SLES_JACOBI:
   case CS_SLES_P_GAUSS_SEIDEL:
   case CS_SLES_P_SYM_GAUSS_SEIDEL:
+  case CS_SLES_L1_JACOBI:
+  case CS_SLES_R_JACOBI:
+  case CS_SLES_SR_JACOBI:
   case CS_SLES_TS_F_GAUSS_SEIDEL:
   case CS_SLES_TS_B_GAUSS_SEIDEL:
     break;
@@ -2250,6 +2548,7 @@ cs_multigrid_smoother_setup(void               *context,
   }
 
   bool block_nn_inverse = false;
+  bool l1_inverse = false;
 
   if (   c->type == CS_SLES_JACOBI
       || (   c->type >= CS_SLES_P_GAUSS_SEIDEL
@@ -2261,12 +2560,15 @@ cs_multigrid_smoother_setup(void               *context,
     block_nn_inverse = true;
   }
 
-  else if (   c->type == CS_SLES_TS_F_GAUSS_SEIDEL
-           || c->type == CS_SLES_TS_B_GAUSS_SEIDEL) {
+  else if (   c->type >= CS_SLES_L1_JACOBI
+           && c->type <= CS_SLES_TS_B_GAUSS_SEIDEL) {
     /* Force to closest Jacobi type in case matrix type is not adapted */
-    if (cs_matrix_get_type(a) != CS_MATRIX_MSR) {
-      c->type = CS_SLES_JACOBI;
-      c->n_max_iter = 2;
+    if (   c->type == CS_SLES_TS_B_GAUSS_SEIDEL
+        || c->type <= CS_SLES_TS_B_GAUSS_SEIDEL) {
+      if (cs_matrix_get_type(a) != CS_MATRIX_MSR) {
+        c->type = CS_SLES_JACOBI;
+        c->n_max_iter = 2;
+      }
     }
     block_nn_inverse = true;
   }
@@ -2319,6 +2621,31 @@ cs_multigrid_smoother_setup(void               *context,
 
   case CS_SLES_PCR3:
     c->solve = _conjugate_residual_3;
+    break;
+
+  case CS_SLES_L1_JACOBI:
+    if (diag_block_size == 1) {
+      c->solve = _l1_jacobi;
+      l1_inverse = true;
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _(" %s: Setup of linear equation on \"%s\"\n"
+                  "L1 jacobi not available for block diagonal size > 1."),
+                __func__, name);
+    break;
+
+  case CS_SLES_R_JACOBI:
+    [[fallthrough]];
+  case CS_SLES_SR_JACOBI:
+    if (diag_block_size == 1) {
+      c->solve = _relaxed_jacobi;
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _(" %s: Setup of linear equation on \"%s\"\n"
+                  "Relaxed jacobi not available for block diagonal size > 1."),
+                __func__, name);
     break;
 
   case CS_SLES_JACOBI:
@@ -2374,7 +2701,7 @@ cs_multigrid_smoother_setup(void               *context,
   /* Setup preconditioner and/or auxiliary data */
 
   cs_sles_it_setup_priv(c, name, a, verbosity, diag_block_size,
-                        block_nn_inverse);
+                        block_nn_inverse, l1_inverse);
 
   /* Now finish */
   assert(c->update_stats == false);

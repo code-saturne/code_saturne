@@ -162,6 +162,138 @@ _fact_lu(cs_lnum_t         i,
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute diagonal (scalar or block) inverse.
+ *
+ * \param[in, out] ctx               reference to dispatch context
+ * \param[in]      n_rows            number of matrix rows
+ * \param[in]      diag_block_size   diagonal block size
+ * \param[in]      ad                pointer to matrix diagonal
+ * \param[out]     ad_inv
+            pointer to matrix diagonal inverse
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_setup_ad_block_nn_inv(cs_dispatch_context  &ctx,
+                       cs_lnum_t             n_rows,
+                       int                   diag_block_size,
+                       const cs_real_t      *ad,
+                       cs_real_t            *ad_inv)
+{
+  if (diag_block_size == 1) {
+
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+      ad_inv[i] = 1.0 / ad[i];
+    });
+
+  }
+  else {
+
+    const cs_lnum_t  n_blocks = n_rows / diag_block_size;
+
+    switch(diag_block_size) {
+    case 3:
+      {
+        const cs_real_33_t *b_ad
+          = reinterpret_cast<const cs_real_33_t *>(ad);
+        cs_real_33_t *b_ad_inv
+          = reinterpret_cast<cs_real_33_t *>(ad_inv);
+        ctx.parallel_for(n_blocks, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+          cs_math_matrix_gauss_inverse(b_ad[i], b_ad_inv[i]);
+        });
+      }
+      break;
+
+    case 6:
+      {
+        const cs_real_66_t *b_ad
+          = reinterpret_cast<const cs_real_66_t *>(ad);
+        cs_real_66_t *b_ad_inv
+          = reinterpret_cast<cs_real_66_t *>(ad_inv);
+        ctx.parallel_for(n_blocks, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+          cs_math_matrix_gauss_inverse(b_ad[i], b_ad_inv[i]);
+        });
+      }
+      break;
+
+    default:
+      ctx.parallel_for(n_blocks, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+        _fact_lu(i, diag_block_size, ad, ad_inv);
+      });
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute diagonal (scalar or block) L1 inverse
+ *
+ * \param[in, out] ctx               reference to dispatch context
+ * \param[in]      n_rows            number of matrix rows
+ * \param[in]      a                 diagonal block size
+ * \param[in]      l1_inv            pointer to matrix diagonal l1 inverse
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_setup_ad_l1_inv(cs_dispatch_context  &ctx,
+                 cs_lnum_t             n_rows,
+                 const cs_matrix_t    *a,
+                 cs_real_t            *l1_inv)
+{
+  cs_matrix_type_t matrix_type = cs_matrix_get_type(a);
+
+  if (matrix_type == CS_MATRIX_MSR) {
+
+    const cs_lnum_t  *row_index;
+    const cs_real_t  *d_val, *x_val;
+
+    cs_matrix_get_msr_arrays(a,
+                             &row_index,
+                             nullptr,
+                             &d_val,
+                             &x_val);
+
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+      cs_lnum_t s_id = row_index[i];
+      cs_lnum_t e_id = row_index[i+1];
+      cs_real_t s1 = d_val[i];
+      for (cs_lnum_t j = s_id; j < e_id; j++)
+        s1 += cs::abs(x_val[j]);
+
+      l1_inv[i] = 1.0 / s1;
+    });
+
+  }
+  else if (matrix_type == CS_MATRIX_CSR) {
+
+    const cs_lnum_t  *row_index, *col_id;
+    const cs_real_t  *val;
+
+    cs_matrix_get_csr_arrays(a,
+                             &row_index,
+                             &col_id,
+                             &val);
+
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+      cs_lnum_t s_id = row_index[i];
+      cs_lnum_t e_id = row_index[i+1];
+      cs_real_t s1 = 0;
+      for (cs_lnum_t j = s_id; j < e_id; j++) {
+        if (col_id[j] != i)
+          s1 += cs::abs(val[j]);
+        else
+          s1 += val[j];
+      }
+
+      l1_inv[i] = 1.0 / s1;
+    });
+
+  }
+}
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -217,6 +349,8 @@ cs_sles_it_convergence_init(cs_sles_it_convergence_t  *convergence,
  * \param[in]      block_nn_inverse  if diagonal block size is 3 or 6, compute
  *                                   inverse of block if true, inverse of block
  *                                   diagonal otherwise
+ * \param[in]      l1_inv            if diagonal block size is 1, compute
+ *                                   inverse of L1 norm instead of diagonal
  */
 /*----------------------------------------------------------------------------*/
 
@@ -226,7 +360,8 @@ cs_sles_it_setup_priv(cs_sles_it_t       *c,
                       const cs_matrix_t  *a,
                       int                 verbosity,
                       int                 diag_block_size,
-                      bool                block_nn_inverse)
+                      bool                block_nn_inverse,
+                      bool                l1_inv)
 {
   cs_sles_it_setup_t *sd = c->setup_data;
 
@@ -296,55 +431,24 @@ cs_sles_it_setup_priv(cs_sles_it_t       *c,
         t_start = std::chrono::high_resolution_clock::now();
 
       const cs_real_t  *restrict ad = cs_matrix_get_diagonal(a);
+      cs_real_t *ad_inv = sd->_ad_inv;
 
       cs_dispatch_context  ctx;
       ctx.set_use_gpu(c->on_device && amode > CS_ALLOC_HOST);
 
-      cs_real_t *ad_inv = sd->_ad_inv;
+      if (l1_inv == false || diag_block_size > 1)
+        _setup_ad_block_nn_inv(ctx,
+                               n_rows,
+                               diag_block_size,
+                               ad,
+                               ad_inv);
 
-      if (diag_block_size == 1) {
 
-        ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
-          ad_inv[i] = 1.0 / ad[i];
-        });
-
-      }
-      else {
-
-        const cs_lnum_t  n_blocks = sd->n_rows / diag_block_size;
-
-        switch(diag_block_size) {
-        case 3:
-          {
-            const cs_real_33_t *b_ad
-              = reinterpret_cast<const cs_real_33_t *>(ad);
-            cs_real_33_t *b_ad_inv
-              = reinterpret_cast<cs_real_33_t *>(ad_inv);
-            ctx.parallel_for(n_blocks, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
-              cs_math_matrix_gauss_inverse(b_ad[i], b_ad_inv[i]);
-            });
-          }
-          break;
-
-        case 6:
-          {
-            const cs_real_66_t *b_ad
-              = reinterpret_cast<const cs_real_66_t *>(ad);
-            cs_real_66_t *b_ad_inv
-              = reinterpret_cast<cs_real_66_t *>(ad_inv);
-            ctx.parallel_for(n_blocks, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
-              cs_math_matrix_gauss_inverse(b_ad[i], b_ad_inv[i]);
-            });
-          }
-          break;
-
-        default:
-          ctx.parallel_for(n_blocks, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
-            _fact_lu(i, diag_block_size, ad, ad_inv);
-          });
-        }
-
-      }
+      else
+        _setup_ad_l1_inv(ctx,
+                         n_rows,
+                         a,
+                         ad_inv);
 
       ctx.wait();
       if (c->on_device && ctx.use_gpu() == false)

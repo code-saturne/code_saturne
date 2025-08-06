@@ -598,6 +598,8 @@ cs_sles_it_convergence_init(cs_sles_it_convergence_t  *convergence,
  *   diag_block_size  <-- diagonal block size
  *   block_nn_inverse <-- if diagonal block size is 3 or 6, compute inverse of
  *                        block if true, inverse of block diagonal otherwise
+ *   l1_inv           <-- if diagonal block size is 1, compute
+ *                        inverse of L1 norm instead of diagonal
  *----------------------------------------------------------------------------*/
 
 void
@@ -606,7 +608,8 @@ cs_sles_it_setup_priv(cs_sles_it_t       *c,
                       const cs_matrix_t  *a,
                       int                 verbosity,
                       int                 diag_block_size,
-                      bool                block_nn_inverse);
+                      bool                block_nn_inverse,
+                      bool                l1_inv);
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 

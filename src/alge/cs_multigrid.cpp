@@ -4962,7 +4962,7 @@ cs_multigrid_set_solver_options(cs_multigrid_t     *mg,
       case CS_SLES_P_SYM_GAUSS_SEIDEL:
         info->type[i+3] = CS_SLES_JACOBI;
         if (i == 0 && info->n_max_iter[i+3] == 1)
-          info->n_max_iter[i+3] = 2;
+          info->n_max_iter[i+3] *= 3;
         else
           info->n_max_iter[i+3] *= 3;
         break;

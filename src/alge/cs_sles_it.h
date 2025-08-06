@@ -54,6 +54,8 @@ BEGIN_C_DECLS
 
 typedef enum {
 
+  /* Iterative solvers */
+
   CS_SLES_PCG,                 /*!< Preconditioned conjugate gradient */
   CS_SLES_FCG,                 /*!< Preconditions flexible conjugate gradient,
                                     described in \cite Notay:2015 */
@@ -72,6 +74,12 @@ typedef enum {
 
   CS_SLES_N_IT_TYPES,          /*!< Number of resolution algorithms
                                     excluding smoother only */
+
+  /* Multigrid smoothers */
+
+  CS_SLES_L1_JACOBI,           /*!< L1-Jacobi smoother */
+  CS_SLES_R_JACOBI,            /*!< Weighted (relaxed) Jacobi smoother */
+  CS_SLES_SR_JACOBI,           /*!< Scheduled relaxation Jacobi smoother */
 
   CS_SLES_TS_F_GAUSS_SEIDEL,   /*!< Truncated forward Gauss-Seidel smoother */
   CS_SLES_TS_B_GAUSS_SEIDEL,   /*!< Truncated backward Gauss-Seidel smoother */

@@ -147,6 +147,9 @@ const char *cs_sles_it_type_name[]
      N_("3-layer conjugate residual"),
      N_("User-defined iterative solver"),
      N_("None"), /* Smoothers beyond this */
+     N_("L1-Jacobi"),
+     N_("Relaxed Jacobi"),
+     N_("Scheduled-relaxation Jacobi"),
      N_("Truncated forward Gauss-Seidel"),
      N_("Truncated backwards Gauss-Seidel"),
 };
@@ -4751,7 +4754,7 @@ cs_sles_it_setup(void               *context,
   /* Setup preconditioner and/or auxiliary data */
 
   cs_sles_it_setup_priv(c, name, a, verbosity, diag_block_size,
-                        block_nn_inverse);
+                        block_nn_inverse, false);
 
   /* Now finish */
 
