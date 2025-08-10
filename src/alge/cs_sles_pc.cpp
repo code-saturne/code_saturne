@@ -567,9 +567,9 @@ _sles_pc_poly_apply_poly(void                *context,
 {
   cs_sles_pc_poly_t *c = static_cast<cs_sles_pc_poly_t *>(context);
 
-#if defined(HAVE_CUDA)
-  if (c->accelerated)
-    return cs_sles_pc_cuda_apply_poly(context, x_in, x_out);
+  cs_dispatch_context  ctx;
+#if defined(HAVE_ACCEL)
+  ctx.set_use_gpu(c->accelerated);
 #endif
 
   const cs_lnum_t n_rows = c->n_rows;
@@ -588,31 +588,39 @@ _sles_pc_poly_apply_poly(void                *context,
   const cs_real_t *restrict ad_inv = c->ad_inv;
 
   if (x_in == nullptr) {
-
     cs_real_t *restrict _r = c->aux + CS_SIMD_SIZE(c->n_cols);
 
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       _r[ii] = x_out[ii];
+      x_out[ii] *= ad_inv[ii];
+    });
 
     r = _r;
-
   }
-
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-    x_out[ii] = r[ii] * ad_inv[ii];
+  else {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      x_out[ii] = x_in[ii] * ad_inv[ii];
+    });
+  }
 
   for (int deg_id = 1; deg_id <= c->poly_degree; deg_id++) {
 
     /* Compute Wk = (A-diag).Gk */
 
+#if defined(HAVE_ACCEL)
+    if (c->accelerated) {
+      ctx.wait();
+      cs_matrix_vector_multiply_partial_d(a, CS_MATRIX_SPMV_E, x_out, w);
+    }
+    else
+      cs_matrix_vector_multiply_partial(c->a, CS_MATRIX_SPMV_E, x_out, w);
+#else
     cs_matrix_vector_multiply_partial(c->a, CS_MATRIX_SPMV_E, x_out, w);
+#endif
 
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       x_out[ii] = (r[ii] - w[ii]) * ad_inv[ii];
-
+    });
   }
 
   return CS_SLES_PC_CONVERGED;
