@@ -67,8 +67,8 @@ typedef enum {
   CS_SLES_GCR,                 /*!< Generalized conjugate residual  */
   CS_SLES_GMRES,               /*!< Preconditioned GMRES
                                     (generalized minimal residual) */
-  CS_SLES_P_GAUSS_SEIDEL,      /*!< Process-local Gauss-Seidel */
-  CS_SLES_P_SYM_GAUSS_SEIDEL,  /*!< Process-local symmetric Gauss-Seidel */
+  CS_SLES_P_GAUSS_SEIDEL,      /*!< Hybrid Gauss-Seidel */
+  CS_SLES_P_SYM_GAUSS_SEIDEL,  /*!< Hybrid symmetric Gauss-Seidel */
   CS_SLES_PCR3,                /*!< 3-layer conjugate residual */
   CS_SLES_USER_DEFINED,        /*!< User-defined iterative solver */
 
@@ -79,7 +79,8 @@ typedef enum {
 
   CS_SLES_L1_JACOBI,           /*!< L1-Jacobi smoother */
   CS_SLES_R_JACOBI,            /*!< Weighted (relaxed) Jacobi smoother */
-  CS_SLES_SR_JACOBI,           /*!< Scheduled relaxation Jacobi smoother */
+  CS_SLES_RJ2,                 /*!< Scheduled relaxed Jacobi smoother, M=2 */
+  CS_SLES_RJ3,                 /*!< Scheduled relaxed Jacobi smoother, M=3 */
 
   CS_SLES_TS_F_GAUSS_SEIDEL,   /*!< Truncated forward Gauss-Seidel smoother */
   CS_SLES_TS_B_GAUSS_SEIDEL,   /*!< Truncated backward Gauss-Seidel smoother */

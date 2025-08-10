@@ -142,14 +142,15 @@ const char *cs_sles_it_type_name[]
      N_("BiCGstab2"),
      N_("GCR"),
      N_("GMRES"),
-     N_("Gauss-Seidel"),
-     N_("Symmetric Gauss-Seidel"),
+     N_("Hybrid Gauss-Seidel"),
+     N_("Hybrid symmetric Gauss-Seidel"),
      N_("3-layer conjugate residual"),
      N_("User-defined iterative solver"),
      N_("None"), /* Smoothers beyond this */
      N_("L1-Jacobi"),
      N_("Relaxed Jacobi"),
-     N_("Scheduled-relaxation Jacobi"),
+     N_("Scheduled-relaxation Jacobi, M=2"),
+     N_("Scheduled-relaxation Jacobi, M=3"),
      N_("Truncated forward Gauss-Seidel"),
      N_("Truncated backwards Gauss-Seidel"),
 };
@@ -179,7 +180,8 @@ _setup_category(cs_sles_it_type_t  solver_type)
 
   if (   solver_type == CS_SLES_JACOBI
       || solver_type == CS_SLES_P_GAUSS_SEIDEL
-      || solver_type == CS_SLES_P_SYM_GAUSS_SEIDEL)
+      || solver_type == CS_SLES_P_SYM_GAUSS_SEIDEL
+      || solver_type >= CS_SLES_L1_JACOBI)
     retval = 2;
 
   else if (solver_type >= CS_SLES_USER_DEFINED)

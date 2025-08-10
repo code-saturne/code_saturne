@@ -1116,22 +1116,24 @@ _relaxed_jacobi(cs_sles_it_t              *c,
   cs_real_t *restrict vx_tmp;
 
   cs_real_t wk = 1.0;
+  int wk_m = 1;
 
-  cs_real_t w[4] = {2./3., 2./3., 2./3., 2./3.};
+  cs_real_t w[3] = {2./3., 1.0, 1.0};
 
   // Scheduled relaxation variants:
+  // https://dx.doi.org/10.1016/j.jcp.2016.12.010
   // https://doi.org/10.1007/s12046-023-02407-6
 
-  if (c->type == CS_SLES_SR_JACOBI) {
-    if (convergence->n_iterations_max == 2) {
-      w[0] = 1.7319;
-      w[1] = 0.5695;
-    }
-    else if (convergence->n_iterations_max >= 3) {
-      w[0] = 2.2473;
-      w[1] = 0.8573;
-      w[2] = 0.5296;
-    }
+  if (c->type == CS_SLES_RJ2) {
+    w[0] = 1.7319;
+    w[1] = 0.5695;
+    wk_m = 2;
+  }
+  if (c->type == CS_SLES_RJ3) {
+    w[0] = 2.2473;
+    w[1] = 0.8573;
+    w[2] = 0.5296;
+    wk_m = 3;
   }
 
   unsigned n_iter = 0;
@@ -1206,9 +1208,9 @@ _relaxed_jacobi(cs_sles_it_t              *c,
   /* Current iteration */
   /*-------------------*/
 
-  for (n_iter = iter_ini; n_iter < convergence->n_iterations_max; n_iter++) {
+  for (n_iter = iter_ini; n_iter < c->n_max_iter; n_iter++) {
 
-    wk = w[cs::min(3u, n_iter)];
+    wk = w[n_iter % wk_m];
     cs_real_t o_m_wk = 1.0 - wk;
 
     /* Swap vx_np and vx_n */
@@ -1216,8 +1218,15 @@ _relaxed_jacobi(cs_sles_it_t              *c,
 
     /* Compute Vx <- (1-w).Vx + w.(A-diag).Rk */
 
-    ctx.wait();
-    cs_matrix_vector_multiply_partial(a, CS_MATRIX_SPMV_E, vx_np, vx_n);
+    if (amode == CS_ALLOC_HOST)
+      cs_matrix_vector_multiply_partial(a, CS_MATRIX_SPMV_E, vx_np, vx_n);
+
+#if defined(HAVE_ACCEL)
+    else {
+      ctx.wait();
+      cs_matrix_vector_multiply_partial_d(a, CS_MATRIX_SPMV_E, vx_np, vx_n);
+    }
+#endif
 
     ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       vx_n[ii] = o_m_wk*vx_np[ii] + wk*(rhs[ii]-vx_n[ii])*ad_inv[ii];
@@ -2446,16 +2455,26 @@ cs_multigrid_smoother_create(cs_sles_it_type_t    smoother_type,
   switch (smoother_type) {      /* Valid choices */
 
   case CS_SLES_JACOBI:
+    [[fallthrough]];
   case CS_SLES_P_GAUSS_SEIDEL:
+    [[fallthrough]];
   case CS_SLES_P_SYM_GAUSS_SEIDEL:
+    [[fallthrough]];
   case CS_SLES_L1_JACOBI:
+    [[fallthrough]];
   case CS_SLES_R_JACOBI:
-  case CS_SLES_SR_JACOBI:
+    [[fallthrough]];
+  case CS_SLES_RJ2:
+    [[fallthrough]];
+  case CS_SLES_RJ3:
+    [[fallthrough]];
   case CS_SLES_TS_F_GAUSS_SEIDEL:
+    [[fallthrough]];
   case CS_SLES_TS_B_GAUSS_SEIDEL:
     break;
 
   case CS_SLES_PCG:
+    [[fallthrough]];
   case CS_SLES_FCG:
     if (poly_degree < 0)
       c->_pc = cs_sles_pc_none_create();
@@ -2645,9 +2664,18 @@ cs_multigrid_smoother_setup(void               *context,
 
   case CS_SLES_R_JACOBI:
     [[fallthrough]];
-  case CS_SLES_SR_JACOBI:
+  case CS_SLES_RJ2:
+    [[fallthrough]];
+  case CS_SLES_RJ3:
     if (diag_block_size == 1) {
       c->solve = _relaxed_jacobi;
+      unsigned wk_m = 1;
+      if (c->type == CS_SLES_RJ2)
+        wk_m = 2;
+      else if (c->type == CS_SLES_RJ3)
+        wk_m = 3;
+      if (c->n_max_iter % wk_m)
+        c->n_max_iter += wk_m - (c->n_max_iter%wk_m);
     }
     else
       bft_error(__FILE__, __LINE__, 0,
