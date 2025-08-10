@@ -1117,7 +1117,7 @@ _relaxed_jacobi(cs_sles_it_t              *c,
 
   cs_real_t wk = 1.0;
 
-  cs_real_t w[4] = {1., 1., 1., 1.};
+  cs_real_t w[4] = {2./3., 2./3., 2./3., 2./3.};
 
   // Scheduled relaxation variants:
   // https://doi.org/10.1007/s12046-023-02407-6
@@ -1139,6 +1139,13 @@ _relaxed_jacobi(cs_sles_it_t              *c,
   cs_dispatch_context ctx;
 
   cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
+#if defined(HAVE_ACCEL)
+  bool on_device = true;
+  if (amode == CS_ALLOC_HOST) {
+    on_device = false;
+    ctx.set_use_gpu(false);
+  }
+#endif
 
 #if defined(__CUDACC__)
   bool local_stream = false;
@@ -1209,6 +1216,7 @@ _relaxed_jacobi(cs_sles_it_t              *c,
 
     /* Compute Vx <- (1-w).Vx + w.(A-diag).Rk */
 
+    ctx.wait();
     cs_matrix_vector_multiply_partial(a, CS_MATRIX_SPMV_E, vx_np, vx_n);
 
     ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
