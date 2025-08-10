@@ -1218,15 +1218,7 @@ _relaxed_jacobi(cs_sles_it_t              *c,
 
     /* Compute Vx <- (1-w).Vx + w.(A-diag).Rk */
 
-    if (amode == CS_ALLOC_HOST)
-      cs_matrix_vector_multiply_partial(a, CS_MATRIX_SPMV_E, vx_np, vx_n);
-
-#if defined(HAVE_ACCEL)
-    else {
-      ctx.wait();
-      cs_matrix_vector_multiply_partial_d(a, CS_MATRIX_SPMV_E, vx_np, vx_n);
-    }
-#endif
+    cs_matrix_vector_multiply_partial(ctx, a, CS_MATRIX_SPMV_E, vx_np, vx_n);
 
     ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       vx_n[ii] = o_m_wk*vx_np[ii] + wk*(rhs[ii]-vx_n[ii])*ad_inv[ii];

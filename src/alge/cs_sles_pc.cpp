@@ -66,10 +66,6 @@
 #include "alge/cs_sles_pc.h"
 #include "alge/cs_sles_pc_priv.h"
 
-#if defined(HAVE_CUDA)
-#include "alge/cs_sles_pc_cuda.h"
-#endif
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -483,17 +479,22 @@ _sles_pc_poly_apply_none(void                *context,
                          cs_real_t           *x_out)
 {
   if (x_in != nullptr) {
-    cs_sles_pc_poly_t *c      = static_cast<cs_sles_pc_poly_t *>(context);
-    const cs_lnum_t n_rows = c->n_rows;
 
-#if defined(HAVE_CUDA)
-    if (c->accelerated)
-      return cs_sles_pc_cuda_apply_none(context, x_in, x_out);
+    cs_sles_pc_poly_t *c = static_cast<cs_sles_pc_poly_t *>(context);
+
+    cs_dispatch_context  ctx;
+#if defined(HAVE_ACCEL)
+    ctx.set_use_gpu(c->accelerated);
 #endif
 
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+    const cs_lnum_t n_rows = c->n_rows;
+
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       x_out[ii] = x_in[ii];
+    });
+
+    ctx.wait();
+
   }
 
   return CS_SLES_PC_CONVERGED;
@@ -522,24 +523,26 @@ _sles_pc_poly_apply_jacobi(void                *context,
 {
   cs_sles_pc_poly_t *c = static_cast<cs_sles_pc_poly_t *>(context);
 
-#if defined(HAVE_CUDA)
-  if (c->accelerated)
-    return cs_sles_pc_cuda_apply_jacobi(context, x_in, x_out);
-#endif
-
   const cs_lnum_t n_rows = c->n_rows;
   const cs_real_t *restrict ad_inv = c->ad_inv;
 
+  cs_dispatch_context  ctx;
+#if defined(HAVE_ACCEL)
+  ctx.set_use_gpu(c->accelerated);
+#endif
+
   if (x_in != nullptr) {
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       x_out[ii] = x_in[ii] * ad_inv[ii];
+    });
   }
   else {
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       x_out[ii] *= ad_inv[ii];
+    });
   }
+
+  ctx.wait();
 
   return CS_SLES_PC_CONVERGED;
 }
@@ -607,21 +610,14 @@ _sles_pc_poly_apply_poly(void                *context,
 
     /* Compute Wk = (A-diag).Gk */
 
-#if defined(HAVE_ACCEL)
-    if (c->accelerated) {
-      ctx.wait();
-      cs_matrix_vector_multiply_partial_d(a, CS_MATRIX_SPMV_E, x_out, w);
-    }
-    else
-      cs_matrix_vector_multiply_partial(c->a, CS_MATRIX_SPMV_E, x_out, w);
-#else
-    cs_matrix_vector_multiply_partial(c->a, CS_MATRIX_SPMV_E, x_out, w);
-#endif
+    cs_matrix_vector_multiply_partial(ctx, c->a, CS_MATRIX_SPMV_E, x_out, w);
 
     ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       x_out[ii] = (r[ii] - w[ii]) * ad_inv[ii];
     });
   }
+
+  ctx.wait();
 
   return CS_SLES_PC_CONVERGED;
 }

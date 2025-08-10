@@ -153,7 +153,7 @@ END_C_DECLS
 #if defined(__cplusplus)
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Matrix.vector product y = A.x
  *
  * This function includes a halo update of x prior to multiplication by A.
@@ -171,6 +171,33 @@ cs_matrix_vector_multiply([[maybe_unused]] cs_dispatch_context  &ctx,
                           const            cs_matrix_t          *matrix,
                           cs_real_t                              x[],
                           cs_real_t                              y[]);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief  Partial matrix.vector product.
+ *
+ * This function includes a halo update of x prior to multiplication,
+ * except for the CS_MATRIX_SPMV_L operation type, which does not require it,
+ * as halo adjacencies are only present and useful in the upper-diagonal part..
+ *
+ * \param[in, out]  ctx      reference to dispatch context
+ * \param[in]       matrix   pointer to matrix structure
+ * \param[in]       op_type  SpMV operation type
+ * \param[in, out]  x        multiplying vector values
+ *                           (ghost values updated)
+ * \param[out]      y        resulting vector
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_vector_multiply_partial
+(
+  [[maybe_unused]] cs_dispatch_context  &ctx,
+  const cs_matrix_t                     *matrix,
+  cs_matrix_spmv_type_t                  op_type,
+  cs_real_t                              x[],
+  cs_real_t                              y[]
+);
 
 /*----------------------------------------------------------------------------*/
 

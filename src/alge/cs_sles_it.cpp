@@ -321,7 +321,7 @@ _dot_products_vr_vw_vq_rr(const cs_sles_it_t  *c,
 {
   double s[4];
 
-  /* Use two separate call as cs_blas.c does not yet hav matching call */
+  /* Use two separate call as cs_blas.c does not yet have matching call */
 
   cs_dot_xy_yz(c->setup_data->n_rows, w, v, q, s+1, s+2);
   cs_dot_xx_xy(c->setup_data->n_rows, r, v, s+3, s);
@@ -1733,7 +1733,8 @@ _jacobi(cs_sles_it_t              *c,
         size_t                     aux_size,
         void                      *aux_vectors)
 {
-  cs_sles_convergence_state_t cvg;
+  cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
+
   cs_real_t *_aux_vectors;
   cs_real_t *restrict rk;
 
@@ -1763,8 +1764,6 @@ _jacobi(cs_sles_it_t              *c,
   }
 
   const cs_real_t  *restrict ad = cs_matrix_get_diagonal(a);
-
-  cvg = CS_SLES_ITERATING;
 
   /* First iteration simplified if vx == 0
      ------------------------------------- */

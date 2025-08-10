@@ -4149,6 +4149,9 @@ cs_matrix_vector_multiply([[maybe_unused]] cs_dispatch_context  &ctx,
     cs_matrix_spmv_cuda_set_stream(ctx.cuda_stream());
 #endif
 
+    if (matrix->halo != nullptr)
+      ctx.wait();
+
     if (spmv_func != nullptr)
       spmv_func(nocst_matrix, false, true, x, y);
     else
@@ -4174,6 +4177,84 @@ cs_matrix_vector_multiply([[maybe_unused]] cs_dispatch_context  &ctx,
 
   if (spmv_func != nullptr)
     spmv_func(nocst_matrix, false, true, x, y);
+
+    else
+      bft_error(__FILE__, __LINE__, 0, _(_msg_missing_spmv),
+                __func__, cs_matrix_get_type_name(matrix),
+                cs_matrix_fill_type_name[matrix->fill_type]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Partial matrix.vector product.
+ *
+ * This function includes a halo update of x prior to multiplication,
+ * except for the CS_MATRIX_SPMV_L operation type, which does not require it,
+ * as halo adjacencies are only present and useful in the upper-diagonal part..
+ *
+ * \param[in, out]  ctx      reference to dispatch context
+ * \param[in]       matrix   pointer to matrix structure
+ * \param[in]       op_type  SpMV operation type
+ * \param[in, out]  x        multiplying vector values
+ *                           (ghost values updated)
+ * \param[out]      y        resulting vector
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_matrix_vector_multiply_partial
+(
+  [[maybe_unused]] cs_dispatch_context  &ctx,
+  const cs_matrix_t                     *matrix,
+  cs_matrix_spmv_type_t                  op_type,
+  cs_real_t                              x[],
+  cs_real_t                              y[]
+)
+{
+  assert(matrix != nullptr);
+  auto nocst_matrix = const_cast<cs_matrix_t *>(matrix);
+
+  cs_matrix_vector_product_t  *spmv_func;
+
+#if defined(HAVE_ACCEL)
+
+  if (ctx.use_gpu()) {
+
+    spmv_func = matrix->vector_multiply_d[matrix->fill_type][op_type];
+
+#if defined(HAVE_CUDA)
+    cudaStream_t prev_stream = cs_matrix_spmv_cuda_get_stream();
+    cs_matrix_spmv_cuda_set_stream(ctx.cuda_stream());
+#endif
+
+    if (matrix->halo != nullptr)
+      ctx.wait();
+
+    if (spmv_func != nullptr)
+      spmv_func(nocst_matrix, true, true, x, y);
+    else
+      bft_error(__FILE__, __LINE__, 0, _(_msg_missing_spmv_d),
+                __func__, cs_matrix_get_type_name(matrix),
+                cs_matrix_fill_type_name[matrix->fill_type]);
+
+#if defined(HAVE_CUDA)
+    cs_matrix_spmv_cuda_set_stream(prev_stream);
+#endif
+
+    return;
+  }
+
+  // Run on host
+  spmv_func = matrix->vector_multiply_h[matrix->fill_type][op_type];
+
+#else
+
+  spmv_func = matrix->vector_multiply[matrix->fill_type][op_type];
+
+#endif //defined(HAVE_ACCEL)
+
+  if (spmv_func != nullptr)
+    spmv_func(nocst_matrix, true, true, x, y);
 
     else
       bft_error(__FILE__, __LINE__, 0, _(_msg_missing_spmv),

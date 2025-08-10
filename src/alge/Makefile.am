@@ -126,8 +126,7 @@ csalge_include_HEADERS += \
 cs_benchmark_cuda.h \
 cs_blas_cuda.h \
 cs_matrix_spmv_cuda.h \
-cs_sles_it_cuda.h \
-cs_sles_pc_cuda.h
+cs_sles_it_cuda.h
 endif
 
 if HAVE_PETSC
@@ -204,8 +203,7 @@ cs_benchmark_cuda.cu \
 cs_blas_cuda.cu \
 cs_gradient_cuda.cu \
 cs_matrix_spmv_cuda.cu \
-cs_sles_it_cuda.cu \
-cs_sles_pc_cuda.cu
+cs_sles_it_cuda.cu
 endif
 
 noinst_LIBRARIES += libcsalge_extension.a
