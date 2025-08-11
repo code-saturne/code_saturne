@@ -974,8 +974,9 @@ _prefetch_h2d(const void   *dst,
 /*----------------------------------------------------------------------------
  * Syncronize a reduction sum globally.
  *
- * The associated stream will be synchronized first, then a global
+ * With MPI, The associated stream will be synchronized first, then a global
  * MPI reduction will be used if needed.
+ * With NCCL, the operation is simply scheduled on the given stream.
  *
  * On entry, vx is considered initialized.
  *
@@ -997,6 +998,8 @@ _sync_reduction_sum(const cs_sles_it_t  *c,
 {
   /* Use NCCL if available for an in-place GPU→GPU all-reduce (sum)
      -------------------------------------------------------------- */
+
+  assert(cs_mem_is_device_ptr(res));
 
 #if defined(HAVE_NCCL)
   if (c->nccl_comm != nullptr) {
@@ -1020,6 +1023,41 @@ _sync_reduction_sum(const cs_sles_it_t  *c,
   /* Fallback: host-side reduction via MPI
      (assumes 'res' is host-visible or CUDA-aware MPI is used).
      ---------------------------------------------------------- */
+
+  CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+  CS_CUDA_CHECK(cudaGetLastError());
+
+  if (c->comm != MPI_COMM_NULL)
+    MPI_Allreduce(MPI_IN_PLACE, res, tuple_size, MPI_DOUBLE, MPI_SUM, c->comm);
+
+#endif /* defined(HAVE_MPI) */
+}
+
+/*----------------------------------------------------------------------------
+ * Syncronize a host-allocated reduction sum globally.
+ *
+ * The associated stream will be synchronized first, then a global
+ * MPI reduction will be used if needed.
+ *
+ * On entry, vx is considered initialized.
+ *
+ * parameters:
+ *   c          <-- pointer to solver context info
+ *   stream     <-- associated stream
+ *   tuple_size <-- number of values in reduced tuple
+ *   res        <-> local sum in, globally sum out (unified or device)
+ *
+ * returns:
+ *   convergence state
+ *----------------------------------------------------------------------------*/
+
+static void
+_sync_reduction_sum_h(const cs_sles_it_t  *c,
+                      cudaStream_t         stream,
+                      cs_lnum_t            tuple_size,
+                      double               res[])
+{
+#if defined(HAVE_MPI)
 
   CS_CUDA_CHECK(cudaStreamSynchronize(stream));
   CS_CUDA_CHECK(cudaGetLastError());
@@ -2458,8 +2496,8 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
   double *__restrict__ alpha = _aux_arrays + CS_SIMD_SIZE(n_gkj);
 
   cs_real_t *gkj_inv;
-  //  CS_MALLOC_HD(gkj_inv, n_gkj, cs_real_t, CS_ALLOC_DEVICE);
-  CS_MALLOC_HD(gkj_inv, n_gkj, cs_real_t, CS_ALLOC_HOST_DEVICE_SHARED);
+  CS_MALLOC_HD(gkj_inv, n_gkj, cs_real_t, CS_ALLOC_DEVICE);
+  // CS_MALLOC_HD(gkj_inv, n_gkj, cs_real_t, CS_ALLOC_HOST_DEVICE_SHARED);
 
   const unsigned int blocksize = CS_BLOCKSIZE;
   const unsigned int blocksize_rsb = 512; /* cs_blas_cuda_reduce_single_block */
@@ -2508,7 +2546,7 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
       });
     }
 
-    _sync_reduction_sum(c, stream, 1, &residual);
+    _sync_reduction_sum_h(c, stream, 1, &residual);
     residual = sqrt(residual);
 
     if (n_restart == 0)
@@ -2573,7 +2611,6 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
         });
 
         _sync_reduction_sum(c, stream, 1, &alpha[n_c_iter]);
-
       }
       else
         alpha[n_c_iter] = 0.;
@@ -2585,7 +2622,8 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
         rk[ii] += - alpha[n_c_iter] * ck_n[ii];
         sum += rk[ii]*rk[ii];
       });
-      _sync_reduction_sum(c, stream, 1, &residual);
+
+      _sync_reduction_sum_h(c, stream, 1, &residual);
       residual = sqrt(residual);
 
       n_c_iter += 1;
