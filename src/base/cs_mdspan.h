@@ -470,12 +470,18 @@ public:
   CS_F_HOST_DEVICE
   void set_to_val
   (
-    T val /*!<[in] Value to set to entire data array. */
+    T               val,        /*!<[in] Value to set to entire data array. */
+    const cs_lnum_t n_vals = -1 /*!<[in] Number of values to copy.
+                                         If -1, default, we use array size */
   )
   {
+    assert(n_vals <= _size);
+
+    const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
+
     cs_dispatch_context ctx;
 
-    ctx.parallel_for(_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
+    ctx.parallel_for(loop_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
         _data[e_id] = val;
     });
 
@@ -608,12 +614,18 @@ public:
   CS_F_HOST_DEVICE
   void set_to_val
   (
-    cs_dispatch_context &ctx, /*!< Reference to dispatch context */
-    T                    val  /*!<[in] Value to set to entire data array. */
+    cs_dispatch_context &ctx,        /*!< Reference to dispatch context */
+    T                    val,        /*!<[in] Value to set to entire data array. */
+    const cs_lnum_t      n_vals = -1 /*!<[in] Number of values to copy.
+                                         If -1, default, we use array size */
   )
   {
+    assert(n_vals <= _size);
+
+    const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
+
     /* No wait here since context is passed as argument */
-    ctx.parallel_for(_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
+    ctx.parallel_for(loop_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
         _data[e_id] = val;
     });
   }

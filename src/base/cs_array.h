@@ -1316,7 +1316,7 @@ public:
   CS_F_HOST_DEVICE
   void set_to_val
   (
-    T               val         /*!<[in] Value to set to entire data array. */
+    T               val,         /*!<[in] Value to set to entire data array. */
     const cs_lnum_t n_vals = -1 /*!<[in] Number of values to copy.
                                           If -1, default, we use array size */
   )
@@ -1346,7 +1346,7 @@ public:
   void set_to_val
   (
     cs_dispatch_context &ctx,        /*!< Reference to dispatch context */
-    T                    val         /*!<[in] Value to set to entire data array. */
+    T                    val,        /*!<[in] Value to set to entire data array. */
     const cs_lnum_t      n_vals = -1 /*!<[in] Number of values to copy.
                                               If -1, default, we use array size */
   )
