@@ -4300,7 +4300,7 @@ cs_sles_it_create(cs_sles_it_type_t   solver_type,
   default:
     if (poly_degree < 0) {
        /* specific implementation for non-preconditioned PCG */
-      if (c->type == CS_SLES_PCG)
+      if (c->type == CS_SLES_PCG && c->on_device == false)
         c->_pc = nullptr;
       else
         c->_pc = cs_sles_pc_none_create();

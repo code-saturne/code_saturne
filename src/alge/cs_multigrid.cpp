@@ -4956,15 +4956,12 @@ cs_multigrid_set_solver_options(cs_multigrid_t     *mg,
       info->poly_degree[i+3] = info->poly_degree[i];
       switch (info->type[i+3]) {
       case CS_SLES_P_GAUSS_SEIDEL:
-        info->type[i+3] = CS_SLES_JACOBI;
+        info->type[i+3] = CS_SLES_RJ3;
         info->n_max_iter[i+3] *= 2;
         break;
       case CS_SLES_P_SYM_GAUSS_SEIDEL:
-        info->type[i+3] = CS_SLES_JACOBI;
-        if (i == 0 && info->n_max_iter[i+3] == 1)
-          info->n_max_iter[i+3] *= 3;
-        else
-          info->n_max_iter[i+3] *= 3;
+        info->type[i+3] = CS_SLES_RJ3;
+        info->n_max_iter[i+3] *= 2;
         break;
       case CS_SLES_TS_F_GAUSS_SEIDEL:
         info->type[i+3] = CS_SLES_JACOBI;
@@ -4973,9 +4970,6 @@ cs_multigrid_set_solver_options(cs_multigrid_t     *mg,
       case CS_SLES_TS_B_GAUSS_SEIDEL:
         info->type[i+3] = CS_SLES_JACOBI;
         info->n_max_iter[i+3] = 2;
-        break;
-      case CS_SLES_PCG:
-        info->type[i+3] = CS_SLES_FCG;
         break;
       case CS_SLES_BICGSTAB:
         [[fallthrough]];
