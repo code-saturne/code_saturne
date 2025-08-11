@@ -96,8 +96,6 @@ cs_user_solver(const cs_mesh_t             *mesh,
   cs_real_t   x0, xL, t0, tL;
   cs_real_t   r;
 
-  cs_real_t  *t = nullptr, *t_old = nullptr, *t_sol = nullptr;
-
   cs_restart_t    *restart, *checkpoint;
   cs_time_plot_t  *time_plot;
 
@@ -112,9 +110,9 @@ cs_user_solver(const cs_mesh_t             *mesh,
 
   /* Initialization */
 
-  CS_MALLOC(t, n, cs_real_t);
-  CS_MALLOC(t_old, n, cs_real_t);
-  CS_MALLOC(t_sol, n, cs_real_t);
+  cs_array<cs_real_t> t(n);
+  cs_array<cs_real_t> t_old(n);
+  cs_array<cs_real_t> t_sol(n);
 
   x0 =  1.e30;
   xL = -1.e30;
@@ -152,7 +150,7 @@ cs_user_solver(const cs_mesh_t             *mesh,
                           1,         /* location id */
                           1,         /* number of values per location */
                           CS_TYPE_cs_real_t, /* value type */
-                          t_old);    /* buffer */
+                          t_old.data());    /* buffer */
 
   cs_restart_destroy(&restart);
 
@@ -233,7 +231,7 @@ cs_user_solver(const cs_mesh_t             *mesh,
                            1,                 /* location id */
                            1,                 /* number of values per location */
                            CS_TYPE_cs_real_t, /* value type */
-                           t);                /* buffer */
+                           t.data());                /* buffer */
 
   cs_restart_destroy(&checkpoint);
 
@@ -255,7 +253,7 @@ cs_user_solver(const cs_mesh_t             *mesh,
                     false,                   /* interleave if true */
                     true,                    /* define on parents */
                     CS_POST_TYPE_cs_real_t,  /* type */
-                    t,                       /* value on cells */
+                    t.data(),                       /* value on cells */
                     nullptr,                    /* value on interior faces */
                     nullptr,                    /* value on boundary faces */
                     nullptr);                   /* time-independent output */
@@ -267,7 +265,7 @@ cs_user_solver(const cs_mesh_t             *mesh,
                     false,                   /* interleave if true */
                     true,                    /* define on parents */
                     CS_POST_TYPE_cs_real_t,  /* type */
-                    t_sol,                   /* value on cells */
+                    t_sol.data(),                   /* value on cells */
                     nullptr,                    /* value on interior faces */
                     nullptr,                    /* value on boundary faces */
                     nullptr);                   /* time-independent output */
@@ -277,10 +275,6 @@ cs_user_solver(const cs_mesh_t             *mesh,
   /*! [finalization] */
 
   /* Finalization */
-
-  CS_FREE(t);
-  CS_FREE(t_old);
-  CS_FREE(t_sol);
 
   cs_time_plot_finalize(&time_plot);
 
