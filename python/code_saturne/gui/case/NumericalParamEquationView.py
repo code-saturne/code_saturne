@@ -1532,7 +1532,7 @@ class StandardItemModelClipping(QStandardItemModel):
             title = self.tr("Information")
             msg = self.tr("The minimal value is greater than the maximal "\
                           "value. Therefore there will be no clipping for the "\
-                          "scalar named:\n\n%1").arg(name)
+                          "scalar named:\n\n" + name)
             QMessageBox.information(self.parent, title, msg)
             return OK
 
