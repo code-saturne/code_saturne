@@ -540,53 +540,6 @@ cs_sles_it_set_n_max_iter(cs_sles_it_t  *context,
                           int            n_max_iter);
 
 /*----------------------------------------------------------------------------
- * Query mean number of rows under which Conjugate Gradient algorithm
- * uses the single-reduction variant.
- *
- * The single-reduction variant requires only one parallel sum per
- * iteration (instead of 2), at the cost of additional vector operations,
- * so it tends to be more expensive when the number of matrix rows per
- * MPI rank is high, then becomes cheaper when the MPI latency cost becomes
- * more significant.
- *
- * This option is ignored for non-parallel runs, so 0 is returned.
- *
- * return:
- *   mean number of rows per active rank under which the
- *   single-reduction variant will be used
- *----------------------------------------------------------------------------*/
-
-cs_lnum_t
-cs_sles_it_get_pcg_single_reduction(void);
-
-/*----------------------------------------------------------------------------
- * Set mean number of rows under which Conjugate Gradient algorithm
- * should use the single-reduction variant.
- *
- * The single-reduction variant requires only one parallel sum per
- * iteration (instead of 2), at the cost of additional vector operations,
- * so it tends to be more expensive when the number of matrix rows per
- * MPI rank is high, then becomes cheaper when the MPI latency cost becomes
- * more significant.
- *
- * This option is ignored for non-parallel runs.
- *
- * parameters:
- *   threshold <-- mean number of rows per active rank under which the
- *                 single-reduction variant will be used
- *----------------------------------------------------------------------------*/
-
-void
-cs_sles_it_set_pcg_single_reduction(cs_lnum_t  threshold);
-
-/*----------------------------------------------------------------------------
- * Log the current global settings relative to parallelism.
- *----------------------------------------------------------------------------*/
-
-void
-cs_sles_it_log_parallel_options(void);
-
-/*----------------------------------------------------------------------------
  * Error handler for iterative sparse linear equation solver.
  *
  * In case of divergence or breakdown, this error handler outputs

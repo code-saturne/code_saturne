@@ -1142,9 +1142,7 @@ _relaxed_jacobi(cs_sles_it_t              *c,
 
   cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
 #if defined(HAVE_ACCEL)
-  bool on_device = true;
   if (amode == CS_ALLOC_HOST) {
-    on_device = false;
     ctx.set_use_gpu(false);
   }
 #endif
@@ -1233,6 +1231,13 @@ _relaxed_jacobi(cs_sles_it_t              *c,
   }
 
   ctx.wait();
+
+#if defined(__CUDACC__)
+  cs_blas_cuda_set_stream(0);
+  if (local_stream) {
+    cs_matrix_spmv_cuda_set_stream(0);
+  }
+#endif
 
   if (_aux_vectors != aux_vectors)
     CS_FREE(_aux_vectors);

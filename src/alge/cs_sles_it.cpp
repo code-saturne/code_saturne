@@ -46,9 +46,18 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_dispatch.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_profiling.h"
+
+#if defined(HAVE_CUDA) && defined(__CUDACC__)
+#include "base/cs_base_cuda.h"
+#include "alge/cs_blas_cuda.h"
+#include "alge/cs_matrix_spmv.h"
+#include "alge/cs_matrix_spmv_cuda.h"
+#endif
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -58,7 +67,6 @@
 #include "alge/cs_sles_it_priv.h"
 
 #if defined(HAVE_CUDA)
-#include "base/cs_base_cuda.h"
 #include "alge/cs_sles_it_cuda.h"
 #endif
 
@@ -123,10 +131,6 @@ BEGIN_C_DECLS
 
 static int _thread_debug = 0;
 
-/* Mean system rows threshold under which we use single-reduce version of PCG */
-
-static cs_lnum_t _pcg_sr_threshold = 512;
-
 /* Value of the threshold under which BiCGStab and BiCGStab2 break down */
 
 static double  _epzero = 1.e-30; /* smaller than epzero */
@@ -154,6 +158,8 @@ const char *cs_sles_it_type_name[]
      N_("Truncated forward Gauss-Seidel"),
      N_("Truncated backwards Gauss-Seidel"),
 };
+
+END_C_DECLS
 
 /*=============================================================================
  * Local Structure Definitions
@@ -294,6 +300,117 @@ _convergence_test(cs_sles_it_t              *c,
 }
 
 /*----------------------------------------------------------------------------
+ * Compute 2 dot products, summing result over all ranks.
+ *
+ * parameters:
+ *   c      <-- pointer to solver context info
+ *   ctx    <-- reference to dispatch context
+ *   x      <-- first vector
+ *   y      <-- second vector
+ *   xx     --> result of s1 = x.x
+ *   yy     --> result of s2 = x.y
+ *----------------------------------------------------------------------------*/
+
+void
+_dot_products_xx_xy
+(
+  const cs_sles_it_t                    *c,
+  [[ maybe_unused]] cs_dispatch_context  &ctx,
+  const cs_real_t                        x[],
+  const cs_real_t                        y[],
+  double                                *xx,
+  double                                *xy
+)
+{
+#if defined(HAVE_ACCEL)
+
+  if (ctx.use_gpu()) {
+
+#if defined(__CUDACC__)
+    cs_sles_it_dot_products_xx_xy(c, ctx.cuda_stream(),
+                                  x, y, xx, xy);
+    return;
+#endif
+
+  }
+
+#endif
+
+  double s[2];
+
+  cs_dot_xx_xy(c->setup_data->n_rows, x, y, s, s+1);
+
+#if defined(HAVE_MPI)
+
+  if (c->comm != MPI_COMM_NULL) {
+    MPI_Allreduce(MPI_IN_PLACE, s, 2, MPI_DOUBLE, MPI_SUM, c->comm);
+  }
+
+#endif /* defined(HAVE_MPI) */
+
+  *xx = s[0];
+  *xy = s[1];
+}
+
+/*----------------------------------------------------------------------------
+ * Compute 3 dot products, summing result over all ranks.
+ *
+ * parameters:
+ *   c      <-- pointer to solver context info
+ *   ctx    <-- reference to dispatch context
+ *   x      <-- first vector
+ *   y      <-- second vector
+ *   z      <-- third vector
+ *   xx     --> result of s1 = x.x
+ *   yy     --> result of s2 = x.y
+ *   zz     --> result of s3 = y.z
+ *----------------------------------------------------------------------------*/
+
+void
+_dot_products_xx_xy_yz
+(
+  const cs_sles_it_t                    *c,
+  [[ maybe_unused]] cs_dispatch_context  &ctx,
+  const cs_real_t                        x[],
+  const cs_real_t                        y[],
+  const cs_real_t                        z[],
+  double                                *xx,
+  double                                *xy,
+  double                                *yz
+)
+{
+#if defined(HAVE_ACCEL)
+
+  if (ctx.use_gpu()) {
+
+#if defined(__CUDACC__)
+    cs_sles_it_dot_products_xx_xy_yz(c, ctx.cuda_stream(),
+                                     x, y, z, xx, xy, yz);
+    return;
+#endif
+
+  }
+
+#endif
+
+  double s[3];
+
+  cs_dot_xx_xy_yz(c->setup_data->n_rows, x, y, z, s, s+1, s+2);
+
+#if defined(HAVE_MPI)
+
+  if (c->comm != MPI_COMM_NULL) {
+    MPI_Allreduce(MPI_IN_PLACE, s, 3, MPI_DOUBLE, MPI_SUM, c->comm);
+  }
+
+#endif /* defined(HAVE_MPI) */
+
+  *xx = s[0];
+  *xy = s[1];
+  *yz = s[2];
+}
+
+/*----------------------------------------------------------------------------
  * Compute 4 dot products, summing result over all ranks.
  *
  * parameters:
@@ -340,204 +457,6 @@ _dot_products_vr_vw_vq_rr(const cs_sles_it_t  *c,
   *s2 = s[1];
   *s3 = s[2];
   *s4 = s[3];
-}
-
-/*----------------------------------------------------------------------------
- * Solution of A.vx = Rhs using preconditioned conjugate gradient.
- *
- * Parallel-optimized version, groups dot products, at the cost of
- * computation of the preconditionning for n+1 iterations instead of n.
- *
- * On entry, vx is considered initialized.
- *
- * parameters:
- *   c               <-- pointer to solver context info
- *   a               <-- matrix
- *   diag_block_size <-- diagonal block size
- *   convergence     <-- convergence information structure
- *   rhs             <-- right hand side
- *   vx_ini          <-- initial system solution
- *                       (vx if nonzero, nullptr if zero)
- *   vx              <-> system solution
- *   aux_size        <-- number of elements in aux_vectors (in bytes)
- *   aux_vectors     --- optional working area (allocation otherwise)
- *
- * returns:
- *   convergence state
- *----------------------------------------------------------------------------*/
-
-static cs_sles_convergence_state_t
-_conjugate_gradient(cs_sles_it_t              *c,
-                    const cs_matrix_t         *a,
-                    cs_lnum_t                  diag_block_size,
-                    cs_sles_it_convergence_t  *convergence,
-                    const cs_real_t           *rhs,
-                    cs_real_t                 *restrict vx_ini,
-                    cs_real_t                 *restrict vx,
-                    size_t                     aux_size,
-                    void                      *aux_vectors)
-{
-  cs_sles_convergence_state_t cvg;
-  double  ro_0, ro_1, alpha, rk_gkm1, rk_gk, beta, residual;
-  cs_real_t  *_aux_vectors;
-  cs_real_t  *restrict rk, *restrict dk, *restrict gk;
-  cs_real_t *restrict zk;
-
-  unsigned n_iter = 0;
-
-  /* Allocate or map work arrays */
-  /*-----------------------------*/
-
-  assert(c->setup_data != nullptr);
-
-  const cs_lnum_t n_rows = c->setup_data->n_rows;
-
-  {
-    const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
-    const size_t n_wa = 4;
-    const size_t wa_size = CS_SIMD_SIZE(n_cols);
-
-    if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
-    else
-      _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
-
-    rk = _aux_vectors;
-    dk = _aux_vectors + wa_size;
-    gk = _aux_vectors + wa_size*2;
-    zk = _aux_vectors + wa_size*3;
-  }
-
-  /* Initialize iterative calculation */
-  /*----------------------------------*/
-
-  /* Residual and descent direction */
-
-  if (vx_ini == vx) {
-    cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
-
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-      rk[ii] -= rhs[ii];
-  }
-  else {
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-      rk[ii] = -rhs[ii];
-      vx[ii] = 0.;
-    }
-  }
-
-  /* Preconditioning */
-
-  c->setup_data->pc_apply(c->setup_data->pc_context,
-                          rk,
-                          gk);
-
-  /* Descent direction */
-  /*-------------------*/
-
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-    dk[ii] = gk[ii];
-
-  _dot_products_xx_xy(c, rk, gk, &residual, &rk_gkm1);
-  residual = sqrt(residual);
-
-  /* If no solving required, finish here */
-
-  c->setup_data->initial_residual = residual;
-  cvg = _convergence_test(c, n_iter, residual, convergence);
-
-  if (cvg == CS_SLES_ITERATING) {
-
-    n_iter = 1;
-
-    cs_matrix_vector_multiply(a, dk, zk);
-
-    /* Descent parameter */
-
-    _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
-
-    cs_real_t d_ro_1 = (cs::abs(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
-    alpha =  - ro_0 * d_ro_1;
-
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        vx[ii] += (alpha * dk[ii]);
-
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        rk[ii] += (alpha * zk[ii]);
-    }
-
-    /* Convergence test */
-
-    residual = sqrt(_dot_product_xx(c, rk));
-    cvg = _convergence_test(c, n_iter, residual, convergence);
-
-    /* Current Iteration */
-    /*-------------------*/
-
-  }
-
-  while (cvg == CS_SLES_ITERATING) {
-
-    /* Preconditioning */
-
-    c->setup_data->pc_apply(c->setup_data->pc_context, rk, gk);
-
-    /* Compute residual and prepare descent parameter */
-
-    _dot_products_xx_xy(c, rk, gk, &residual, &rk_gk);
-
-    residual = sqrt(residual);
-
-    /* Convergence test for end of previous iteration */
-
-    if (n_iter > 1)
-      cvg = _convergence_test(c, n_iter, residual, convergence);
-
-    if (cvg != CS_SLES_ITERATING)
-      break;
-
-    n_iter += 1;
-
-    /* Complete descent parameter computation and matrix.vector product */
-
-    beta = (cs::abs(rk_gkm1) > DBL_MIN) ? rk_gk / rk_gkm1 : 0.;
-    rk_gkm1 = rk_gk;
-
-#   pragma omp parallel for firstprivate(beta) if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-      dk[ii] = gk[ii] + (beta * dk[ii]);
-
-    cs_matrix_vector_multiply(a, dk, zk);
-
-    _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
-
-    cs_real_t d_ro_1 = (cs::abs(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
-    alpha =  - ro_0 * d_ro_1;
-
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        vx[ii] += (alpha * dk[ii]);
-
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        rk[ii] += (alpha * zk[ii]);
-    }
-
-  }
-
-  if (_aux_vectors != aux_vectors)
-    CS_FREE(_aux_vectors);
-
-  return cvg;
 }
 
 /*----------------------------------------------------------------------------
@@ -979,6 +898,30 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
   unsigned n_iter = 0;
 
+  cs_dispatch_context ctx;
+
+  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
+#if defined(HAVE_ACCEL)
+  if (amode == CS_ALLOC_HOST) {
+    ctx.set_use_gpu(false);
+  }
+#endif
+
+#if defined(__CUDACC__)
+  bool local_stream = false;
+  cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
+  if (amode > CS_ALLOC_HOST) {
+    if (stream == 0) {
+      local_stream = true;
+      stream = cs_cuda_get_stream(0);
+    }
+    cs_blas_cuda_set_stream(stream);
+    if (local_stream)
+      cs_matrix_spmv_cuda_set_stream(stream);
+    ctx.set_cuda_stream(stream);
+  }
+#endif
+
   /* Allocate or map work arrays */
   /*-----------------------------*/
 
@@ -992,7 +935,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, amode);
     else
       _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
@@ -1009,18 +952,17 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
   /* Residual and descent direction */
 
   if (vx_ini == vx) {
-    cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
+    cs_matrix_vector_multiply(ctx, a, vx, rk);  /* rk = A.x0 */
 
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       rk[ii] -= rhs[ii];
+    });
   }
   else {
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       vx[ii] = 0;
       rk[ii] = -rhs[ii];
-    }
+    });
   }
 
   /* Preconditionning */
@@ -1030,14 +972,14 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
   /* Descent direction */
   /*-------------------*/
 
-  cs_matrix_vector_multiply(a, dk, zk); /* zk = A.dk */
+  cs_matrix_vector_multiply(ctx, a, dk, zk); /* zk = A.dk */
 
   /* Descent parameter */
 
   double  ro_0 = 0, ro_1 = 0;
   double  rk_gkm1 = 0, residual = -1, rk_gk = 0, gk_sk = 0;
 
-  _dot_products_xx_xy_yz(c, rk, dk, zk, &residual, &ro_0, &ro_1);
+  _dot_products_xx_xy_yz(c, ctx, rk, dk, zk, &residual, &ro_0, &ro_1);
   residual = sqrt(residual);
 
   c->setup_data->initial_residual = residual;
@@ -1055,16 +997,10 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
     rk_gkm1 = ro_0;
 
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        vx[ii] += (alpha * dk[ii]);
-
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        rk[ii] += (alpha * zk[ii]);
-    }
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      vx[ii] += (alpha * dk[ii]);
+      rk[ii] += (alpha * zk[ii]);
+    });
 
     /* Convergence test */
 
@@ -1083,11 +1019,12 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
     c->setup_data->pc_apply(c->setup_data->pc_context, rk, gk);
 
-    cs_matrix_vector_multiply(a, gk, sk);  /* sk = A.gk */
+    cs_matrix_vector_multiply(ctx, a, gk, sk);  /* sk = A.gk */
 
     /* Compute residual and prepare descent parameter */
 
-    _dot_products_xx_xy_yz(c, rk, gk, sk, &residual, &rk_gk, &gk_sk);
+    _dot_products_xx_xy_yz(c, ctx, rk, gk, sk,
+                           &residual, &rk_gk, &gk_sk);
 
     residual = sqrt(residual);
 
@@ -1112,21 +1049,24 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
     cs_real_t d_ro_1 = (cs::abs(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
     cs_real_t alpha  =  - ro_0 * d_ro_1;
 
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-        dk[ii] = gk[ii] + (beta * dk[ii]);
-        vx[ii] += alpha * dk[ii];
-      }
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-        zk[ii] = sk[ii] + (beta * zk[ii]);
-        rk[ii] += alpha * zk[ii];
-      }
-    }
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      dk[ii] = gk[ii] + (beta * dk[ii]);
+      vx[ii] += alpha * dk[ii];
+
+      zk[ii] = sk[ii] + (beta * zk[ii]);
+      rk[ii] += alpha * zk[ii];
+    });
 
   }
+
+  ctx.wait();
+
+#if defined(__CUDACC__)
+  cs_blas_cuda_set_stream(0);
+  if (local_stream) {
+    cs_matrix_spmv_cuda_set_stream(0);
+  }
+#endif
 
   if (_aux_vectors != aux_vectors)
     CS_FREE(_aux_vectors);
@@ -1135,6 +1075,238 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 }
 
 /*----------------------------------------------------------------------------
+<<<<<<< HEAD
+=======
+ * Solution of A.vx = Rhs using preconditioned conjugate gradient
+ * with single reduction.
+ *
+ * For more information, see Lapack Working note 56, at
+ * http://www.netlib.org/lapack/lawnspdf/lawn56.pdf)
+ *
+ * On entry, vx is considered initialized.
+ *
+ * parameters:
+ *   c               <-- pointer to solver context info
+ *   a               <-- matrix
+ *   diag_block_size <-- block size of element ii, ii
+ *   convergence     <-- convergence information structure
+ *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
+ *   vx              <-> system solution
+ *   aux_size        <-- number of elements in aux_vectors (in bytes)
+ *   aux_vectors     --- optional working area (allocation otherwise)
+ *
+ * returns:
+ *   convergence state
+ *----------------------------------------------------------------------------*/
+
+static cs_sles_convergence_state_t
+_conjugate_gradient_sr_p0(cs_sles_it_t              *c,
+                          const cs_matrix_t         *a,
+                          cs_lnum_t                  diag_block_size,
+                          cs_sles_it_convergence_t  *convergence,
+                          const cs_real_t           *rhs,
+                          cs_real_t                 *restrict vx_ini,
+                          cs_real_t                 *restrict vx,
+                          size_t                     aux_size,
+                          void                      *aux_vectors)
+{
+  cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
+
+  cs_real_t *_aux_vectors = nullptr;
+  cs_real_t  *restrict rk, *restrict dk, *restrict gk, *restrict sk;
+  cs_real_t *restrict zk;
+
+  unsigned n_iter = 0;
+
+  cs_dispatch_context ctx;
+
+  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
+#if defined(HAVE_ACCEL)
+  if (amode == CS_ALLOC_HOST) {
+    ctx.set_use_gpu(false);
+  }
+#endif
+
+#if defined(__CUDACC__)
+  bool local_stream = false;
+  cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
+  if (amode > CS_ALLOC_HOST) {
+    if (stream == 0) {
+      local_stream = true;
+      stream = cs_cuda_get_stream(0);
+    }
+    cs_blas_cuda_set_stream(stream);
+    if (local_stream)
+      cs_matrix_spmv_cuda_set_stream(stream);
+    ctx.set_cuda_stream(stream);
+  }
+#endif
+
+  /* Allocate or map work arrays */
+  /*-----------------------------*/
+
+  assert(c->setup_data != nullptr);
+
+  const cs_lnum_t n_rows = c->setup_data->n_rows;
+
+  {
+    const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
+    const size_t n_wa = 5;
+    const size_t wa_size = CS_SIMD_SIZE(n_cols);
+
+    if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+      CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, amode);
+    else
+      _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
+
+    rk = _aux_vectors;
+    dk = _aux_vectors + wa_size;
+    gk = _aux_vectors + wa_size*2;
+    zk = _aux_vectors + wa_size*3;
+    sk = _aux_vectors + wa_size*4;
+  }
+
+  const cs_real_t  *restrict ad_inv
+    = cs_sles_pc_get_ad_inv(c->setup_data->pc_context);
+
+  /* Initialize iterative calculation */
+  /*----------------------------------*/
+
+  /* Residual and descent direction */
+
+  if (vx_ini == vx) {
+    cs_matrix_vector_multiply(ctx, a, vx, rk);  /* rk = A.x0 */
+
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      rk[ii] -= rhs[ii];
+      dk[ii] = rk[ii] * ad_inv[ii];  // preconditioning
+    });
+  }
+  else {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      vx[ii] = 0;
+      rk[ii] = -rhs[ii];
+      dk[ii] = rk[ii] * ad_inv[ii];  // preconditioning
+    });
+  }
+
+  /* Descent direction */
+  /*-------------------*/
+
+  cs_matrix_vector_multiply(ctx, a, dk, zk); /* zk = A.dk */
+
+  /* Descent parameter */
+
+  double  ro_0 = 0, ro_1 = 0;
+  double  rk_gkm1 = 0, residual = -1, rk_gk = 0, gk_sk = 0;
+
+  _dot_products_xx_xy_yz(c, ctx, rk, dk, zk, &residual, &ro_0, &ro_1);
+  residual = sqrt(residual);
+
+  c->setup_data->initial_residual = residual;
+
+  /* If no solving required, finish here */
+
+  cvg = _convergence_test(c, n_iter, residual, convergence);
+
+  if (cvg == CS_SLES_ITERATING) {
+
+    n_iter = 1;
+
+    cs_real_t d_ro_1 = (cs::abs(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
+    cs_real_t alpha =  - ro_0 * d_ro_1;
+
+    rk_gkm1 = ro_0;
+
+    ctx.parallel_for_reduce_sum(n_rows, residual, [=] CS_F_HOST_DEVICE
+                                (cs_lnum_t ii,
+                                 CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+      vx[ii] += (alpha * dk[ii]);
+      rk[ii] += (alpha * zk[ii]);
+      gk[ii] = rk[ii] * ad_inv[ii];  // preconditioning
+      sum += rk[ii]*rk[ii];
+    });
+
+    /* Convergence test */
+
+    ctx.wait();
+
+#if defined(HAVE_MPI)
+    if (c->comm != MPI_COMM_NULL)
+      MPI_Allreduce(MPI_IN_PLACE, &residual, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+#endif /* defined(HAVE_MPI) */
+
+    residual = sqrt(residual);
+
+    cvg = _convergence_test(c, n_iter, residual, convergence);
+
+  }
+
+  /* Current Iteration */
+  /*-------------------*/
+
+  while (cvg == CS_SLES_ITERATING) {
+
+    cs_matrix_vector_multiply(ctx, a, gk, sk);  /* sk = A.gk */
+
+    /* Compute residual and prepare descent parameter */
+
+    _dot_products_xx_xy_yz(c, ctx, rk, gk, sk, &residual, &rk_gk, &gk_sk);
+
+    residual = sqrt(residual);
+
+    /* Convergence test for end of previous iteration */
+
+    if (n_iter > 1)
+      cvg = _convergence_test(c, n_iter, residual, convergence);
+
+    if (cvg != CS_SLES_ITERATING)
+      break;
+
+    n_iter += 1;
+
+    /* Complete descent parameter computation and matrix.vector product */
+
+    cs_real_t beta = (cs::abs(rk_gkm1) > DBL_MIN) ? rk_gk / rk_gkm1 : 0.;
+    rk_gkm1 = rk_gk;
+
+    ro_1 = gk_sk - beta*beta*ro_1;
+    ro_0 = rk_gk;
+
+    cs_real_t d_ro_1 = (cs::abs(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
+    cs_real_t alpha  = - ro_0 * d_ro_1;
+
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      dk[ii] = gk[ii] + (beta * dk[ii]);
+      vx[ii] += alpha * dk[ii];
+
+      zk[ii] = sk[ii] + (beta * zk[ii]);
+      rk[ii] += alpha * zk[ii];
+
+      gk[ii] = rk[ii] * ad_inv[ii];  // preconditioning
+    });
+
+  }
+
+  ctx.wait();
+
+#if defined(__CUDACC__)
+  cs_blas_cuda_set_stream(0);
+  if (local_stream) {
+    cs_matrix_spmv_cuda_set_stream(0);
+  }
+#endif
+
+  if (_aux_vectors != aux_vectors)
+    CS_FREE(_aux_vectors);
+
+  return cvg;
+}
+
+/*----------------------------------------------------------------------------
+>>>>>>> 76d416ab1 (Linear solvers: remove multiple reduction PCG variantes, some refactoring.)
  * Solution of A.vx = Rhs using non-preconditioned conjugate gradient
  * with single reduction.
  *
@@ -1160,7 +1332,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
  *----------------------------------------------------------------------------*/
 
 static cs_sles_convergence_state_t
-_conjugate_gradient_npc_sr(cs_sles_it_t              *c,
+_conjugate_gradient_sr_npc(cs_sles_it_t              *c,
                            const cs_matrix_t         *a,
                            cs_lnum_t                  diag_block_size,
                            cs_sles_it_convergence_t  *convergence,
@@ -1171,12 +1343,35 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
                            void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  double  ro_0, ro_1, alpha, rk_rkm1, rk_rk, rk_sk, beta, residual;
   cs_real_t *_aux_vectors;
   cs_real_t  *restrict rk, *restrict dk, *restrict sk;
   cs_real_t *restrict zk;
 
   unsigned n_iter = 0;
+
+  cs_dispatch_context ctx;
+
+  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
+#if defined(HAVE_ACCEL)
+  if (amode == CS_ALLOC_HOST) {
+    ctx.set_use_gpu(false);
+  }
+#endif
+
+#if defined(__CUDACC__)
+  bool local_stream = false;
+  cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
+  if (amode > CS_ALLOC_HOST) {
+    if (stream == 0) {
+      local_stream = true;
+      stream = cs_cuda_get_stream(0);
+    }
+    cs_blas_cuda_set_stream(stream);
+    if (local_stream)
+      cs_matrix_spmv_cuda_set_stream(stream);
+    ctx.set_cuda_stream(stream);
+  }
+#endif
 
   /* Allocate or map work arrays */
   /*-----------------------------*/
@@ -1191,7 +1386,7 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, amode);
     else
       _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
@@ -1207,32 +1402,32 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
   /* Residual and descent direction */
 
   if (vx_ini == vx) {
-    cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
+    cs_matrix_vector_multiply(ctx, a, vx, rk);  /* rk = A.x0 */
 
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       rk[ii] = rk[ii] - rhs[ii];
+      dk[ii] = rk[ii];
+    });
   }
   else {
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       vx[ii] = 0;
       rk[ii] = - rhs[ii];
-    }
+      dk[ii] = rk[ii];
+    });
   }
-
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-    dk[ii] = rk[ii];
 
   /* Descent direction */
   /*-------------------*/
 
-  cs_matrix_vector_multiply(a, dk, zk); /* zk = A.dk */
+  cs_matrix_vector_multiply(ctx, a, dk, zk); /* zk = A.dk */
 
   /* Descent parameter */
 
-  _dot_products_xx_xy_yz(c, rk, dk, zk, &residual, &ro_0, &ro_1);
+  double  ro_0 = 0, ro_1 = 0;
+  double  rk_rkm1 = 0, residual = -1, rk_rk = 0, rk_sk = 0;
+
+  _dot_products_xx_xy_yz(c, ctx, rk, dk, zk, &residual, &ro_0, &ro_1);
   residual = sqrt(residual);
 
   c->setup_data->initial_residual = residual;
@@ -1246,24 +1441,28 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
     n_iter = 1;
 
     cs_real_t d_ro_1 = (cs::abs(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
-    alpha =  - ro_0 * d_ro_1;
+    cs_real_t alpha  = - ro_0 * d_ro_1;
 
     rk_rkm1 = ro_0;
 
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        vx[ii] += (alpha * dk[ii]);
-
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        rk[ii] += (alpha * zk[ii]);
-    }
+    ctx.parallel_for_reduce_sum(n_rows, residual, [=] CS_F_HOST_DEVICE
+                                (cs_lnum_t ii,
+                                 CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+      vx[ii] += (alpha * dk[ii]);
+      rk[ii] += (alpha * zk[ii]);
+      sum += rk[ii]*rk[ii];
+    });
 
     /* Convergence test */
 
-    residual = sqrt(_dot_product_xx(c, rk));
+    ctx.wait();
+
+#if defined(HAVE_MPI)
+    if (c->comm != MPI_COMM_NULL)
+      MPI_Allreduce(MPI_IN_PLACE, &residual, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+#endif /* defined(HAVE_MPI) */
+
+    residual = sqrt(residual);
 
     cvg = _convergence_test(c, n_iter, residual, convergence);
 
@@ -1274,11 +1473,11 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
 
   while (cvg == CS_SLES_ITERATING) {
 
-    cs_matrix_vector_multiply(a, rk, sk);  /* sk = A.zk */
+    cs_matrix_vector_multiply(ctx, a, rk, sk);  /* sk = A.zk */
 
     /* Compute residual and prepare descent parameter */
 
-    _dot_products_xx_xy(c, rk, sk, &residual, &rk_sk);
+    _dot_products_xx_xy(c, ctx, rk, sk, &residual, &rk_sk);
 
     rk_rk = residual;
 
@@ -1296,30 +1495,32 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
 
     /* Complete descent parameter computation and matrix.vector product */
 
-    beta = (cs::abs(rk_rkm1) > DBL_MIN) ? rk_rk / rk_rkm1 : 0.;
+    cs_real_t beta = (cs::abs(rk_rkm1) > DBL_MIN) ? rk_rk / rk_rkm1 : 0.;
     rk_rkm1 = rk_rk;
 
     ro_1 = rk_sk - beta*beta*ro_1;
     ro_0 = rk_rk;
 
     cs_real_t d_ro_1 = (cs::abs(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
-    alpha =  - ro_0 * d_ro_1;
+    cs_real_t alpha  = - ro_0 * d_ro_1;
 
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-        dk[ii] = rk[ii] + (beta * dk[ii]);
-        vx[ii] += alpha * dk[ii];
-      }
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-        zk[ii] = sk[ii] + (beta * zk[ii]);
-        rk[ii] += alpha * zk[ii];
-      }
-    }
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      dk[ii] = rk[ii] + (beta * dk[ii]);
+      vx[ii] += alpha * dk[ii];
+      zk[ii] = sk[ii] + (beta * zk[ii]);
+      rk[ii] += alpha * zk[ii];
+    });
 
   }
+
+  ctx.wait();
+
+#if defined(__CUDACC__)
+  cs_blas_cuda_set_stream(0);
+  if (local_stream) {
+    cs_matrix_spmv_cuda_set_stream(0);
+  }
+#endif
 
   if (_aux_vectors != aux_vectors)
     CS_FREE(_aux_vectors);
@@ -3996,6 +4197,8 @@ cs_user_sles_it_solver(cs_sles_it_t              *c,
   return cvg;
 }
 
+BEGIN_C_DECLS
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -4432,39 +4635,25 @@ cs_sles_it_setup(void               *context,
     break;
 
   case CS_SLES_PCG:
-    /* Check for single-reduction */
     {
-      bool single_reduce = false;
-#if defined(HAVE_MPI)
-      cs_gnum_t n_m_rows = cs_matrix_get_n_rows(a) * diag_block_size;
-      if (c->comm != MPI_COMM_NULL) {
-        int size;
-        cs_gnum_t _n_m_rows;
-        MPI_Allreduce(&n_m_rows, &_n_m_rows, 1, CS_MPI_GNUM, MPI_SUM, c->comm);
-        MPI_Comm_size(c->comm, &size);
-        n_m_rows = _n_m_rows / (cs_gnum_t)size;
-      }
-      if (c->comm != c->caller_comm)
-        MPI_Bcast(&n_m_rows, 1, CS_MPI_GNUM, 0, cs_glob_mpi_comm);
-      if (n_m_rows < (cs_gnum_t)_pcg_sr_threshold)
-        single_reduce = true;
-#endif
       if (c->pc != nullptr) {
-        c->solve = _conjugate_gradient;
-        if (single_reduce)
+        if (strcmp(cs_sles_pc_get_type(c->pc), "jacobi") == 0)
+          c->solve = _conjugate_gradient_sr_p0;
+        else if (strcmp(cs_sles_pc_get_type(c->pc), "none") == 0)
+          c->solve = _conjugate_gradient_sr_npc;
+        else {
           c->solve = _conjugate_gradient_sr;
-        else
-          c->solve = _conjugate_gradient;
+        }
+#if defined(HAVE_CUDA)
+        if (on_device) {
+          c->on_device = true;
+          c->solve = cs_sles_it_cuda_pcg;
+        }
+#endif
       }
       else
-        c->solve = _conjugate_gradient_npc_sr;
+        c->solve = _conjugate_gradient_sr_npc;
     }
-#if defined(HAVE_CUDA)
-    if (on_device) {
-      c->on_device = true;
-      c->solve = cs_sles_it_cuda_pcg;
-    }
-#endif
     break;
 
   case CS_SLES_FCG:
@@ -5234,79 +5423,6 @@ cs_sles_it_set_n_max_iter(cs_sles_it_t  *context,
     return;
 
   context->n_max_iter = n_max_iter;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Query mean number of rows under which Conjugate Gradient algorithm
- *        uses the single-reduction variant.
- *
- * The single-reduction variant requires only one parallel sum per
- * iteration (instead of 2), at the cost of additional vector operations,
- * so it tends to be more expensive when the number of matrix rows per
- * MPI rank is high, then becomes cheaper when the MPI latency cost becomes
- * more significant.
- *
- * This option is ignored for non-parallel runs, so 0 is returned.
- *
- * \returns  mean number of rows per active rank under which the
- *           single-reduction variant will be used
- */
-/*----------------------------------------------------------------------------*/
-
-cs_lnum_t
-cs_sles_it_get_pcg_single_reduction(void)
-{
-#if defined(HAVE_MPI)
-  return _pcg_sr_threshold;
-#else
-  return 0;
-#endif
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set mean number of rows under which Conjugate Gradient algorithm
- *        should use the single-reduction variant.
- *
- * The single-reduction variant requires only one parallel sum per
- * iteration (instead of 2), at the cost of additional vector operations,
- * so it tends to be more expensive when the number of matrix rows per
- * MPI rank is high, then becomes cheaper when the MPI latency cost becomes
- * more significant.
- *
- * This option is ignored for non-parallel runs.
- *
- * \param[in]  threshold  mean number of rows per active rank under which the
- *             single-reduction variant will be used
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sles_it_set_pcg_single_reduction(cs_lnum_t  threshold)
-{
-#if defined(HAVE_MPI)
-  _pcg_sr_threshold = threshold;
-#endif
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Log the current global settings relative to parallelism.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sles_it_log_parallel_options(void)
-{
-#if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1)
-    cs_log_printf(CS_LOG_SETUP,
-                  _("\n"
-                    "Iterative linear solvers parallel parameters:\n"
-                    "  PCG single-reduction threshold:     %ld\n"),
-                  (long)_pcg_sr_threshold);
-#endif
 }
 
 /*----------------------------------------------------------------------------*/

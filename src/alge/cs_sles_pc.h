@@ -508,6 +508,23 @@ cs_sles_pc_poly_1_create(void);
 cs_sles_pc_t *
 cs_sles_pc_poly_2_create(void);
 
+/*----------------------------------------------------------------------------
+ * Direct access to the diagonal inverse values for a jacobi or
+ * polynomial preconditioner.
+ *
+ * This may be useful for fusing specific kernels while staying in the general
+ * framework so as to correctly handle setp/free phases.
+ *
+ * parameters:
+ *   context       <-> pointer to preconditioner context
+ *
+ * returns:
+ *   pointer to diagonal inverse if present, null otherwise
+ *----------------------------------------------------------------------------*/
+
+const cs_real_t *
+cs_sles_pc_get_ad_inv(void  *context);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

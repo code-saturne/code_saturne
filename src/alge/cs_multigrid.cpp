@@ -4979,6 +4979,10 @@ cs_multigrid_set_solver_options(cs_multigrid_t     *mg,
         info->type[i+3] = CS_SLES_JACOBI;
         info->n_max_iter[i+3] = 2;
         break;
+      case CS_SLES_PCG:
+        info->type[i+3] = CS_SLES_FCG;
+        info->type[i+3] = CS_SLES_PCG;
+        break;
       case CS_SLES_BICGSTAB:
         [[fallthrough]];
       case CS_SLES_BICGSTAB2:

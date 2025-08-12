@@ -38,8 +38,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -56,14 +54,73 @@ BEGIN_C_DECLS
  * User function prototypes
  *============================================================================*/
 
+/*============================================================================
+ * Semi-private function prototypes
+ *============================================================================*/
+
+#if defined(__CUDACC__)
+
+/*----------------------------------------------------------------------------
+ * Compute 2 dot products, summing result over all ranks.
+ *
+ * parameters:
+ *   c      <-- pointer to solver context info
+ *   stream <-- CUDA stream
+ *   x      <-- first vector
+ *   y      <-- second vector
+ *   z      <-- third vector
+ *   xx     --> result of s1 = x.x
+ *   xy     --> result of s2 = x.y
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_dot_products_xx_xy
+(
+  const cs_sles_it_t  *c,
+  cudaStream_t         stream,
+  const cs_real_t     *x,
+  const cs_real_t     *y,
+  double              *xx,
+  double              *xy
+);
+
+/*----------------------------------------------------------------------------
+ * Compute 3 dot products, summing result over all ranks.
+ *
+ * parameters:
+ *   c      <-- pointer to solver context info
+ *   stream <-- CUDA stream
+ *   x      <-- first vector
+ *   y      <-- second vector
+ *   z      <-- third vector
+ *   xx     --> result of s1 = x.x
+ *   xy     --> result of s2 = x.y
+ *   yz     --> result of s3 = y.z
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_dot_products_xx_xy_yz
+(
+  const cs_sles_it_t  *c,
+  cudaStream_t         stream,
+  const cs_real_t     *x,
+  const cs_real_t     *y,
+  const cs_real_t     *z,
+  double              *xx,
+  double              *xy,
+  double              *yz
+);
+
+#endif // defined(__CUDACC__)
+
+BEGIN_C_DECLS
+
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
  * Solution of A.vx = Rhs using Jacobi.
- *
- * On entry, vx is considered initialized.
  *
  * parameters:
  *   c               <-- pointer to solver context info
@@ -95,8 +152,6 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
 
 /*----------------------------------------------------------------------------
  * Solution of A.vx = Rhs using block Jacobi.
- *
- * On entry, vx is considered initialized.
  *
  * parameters:
  *   c               <-- pointer to solver context info
@@ -134,8 +189,6 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
  * This variant, described in \cite Notay:2015, allows computing the
  * required inner products with a single global communication.
  *
- * On entry, vx is considered initialized.
- *
  * parameters:
  *   c               <-- pointer to solver context info
  *   a               <-- matrix
@@ -169,8 +222,6 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
  * This variant, described in \cite Notay:2015, allows computing the
  * required inner products with a single global communication.
  *
- * On entry, vx is considered initialized.
- *
  * parameters:
  *   c               <-- pointer to solver context info
  *   a               <-- matrix
@@ -200,8 +251,6 @@ cs_sles_it_cuda_pcg(cs_sles_it_t              *c,
 
 /*----------------------------------------------------------------------------
  * Solution of A.vx = Rhs using optimised preconditioned GCR (CUDA version).
- *
- * On entry, vx is considered initialized.
  *
  * parameters:
  *   c               <-- pointer to solver context info
