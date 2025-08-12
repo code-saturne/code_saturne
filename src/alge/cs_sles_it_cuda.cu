@@ -1480,7 +1480,13 @@ _conjugate_gradient_sr(cs_sles_it_t                 *c,
 
   /* Preconditioning */
 
-  c->setup_data->pc_apply(c->setup_data->pc_context, rk, dk);
+  if (c->setup_data->pc_apply != nullptr)
+    c->setup_data->pc_apply(c->setup_data->pc_context, rk, dk);
+  else {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      dk[ii] = rk[ii];
+    });
+  }
 
   /* Descent direction */
 
@@ -1530,7 +1536,13 @@ _conjugate_gradient_sr(cs_sles_it_t                 *c,
 
     /* Preconditionning */
 
-    c->setup_data->pc_apply(c->setup_data->pc_context, rk, gk);
+    if (c->setup_data->pc_apply != nullptr)
+      c->setup_data->pc_apply(c->setup_data->pc_context, rk, gk);
+    else {
+      ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+        dk[ii] = rk[ii];
+      });
+    }
 
     cs_matrix_vector_multiply_d(a, gk, sk);  /* sk = A.gk */
 
