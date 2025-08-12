@@ -691,10 +691,18 @@ _multigrid_performance_log(const cs_multigrid_t *mg)
 
     if (   mg->info.type[i] != CS_SLES_N_IT_TYPES
         && mg->info.type[i] < CS_SLES_N_SMOOTHER_TYPES) {
+      char pc_type[64] = "";
+      if (mg->info.poly_degree[i] == 0)
+        snprintf(pc_type, 63, _(" (Jacobi preconditioning)"));
+      else if (mg->info.poly_degree[i] > 0)
+        snprintf(pc_type, 63, _(" (polynomial preconditioning, degree %d)"),
+                 mg->info.poly_degree[i]);
+      pc_type[63] = '\0';
       cs_log_printf(CS_LOG_PERFORMANCE,
-                  _("    %s : %s\n"),
-                  _(stage_type_name[i]),
-                    _(cs_sles_it_type_name[mg->info.type[i]]));
+                    _("    %s : %s%s\n"),
+                    _(stage_type_name[i]),
+                    _(cs_sles_it_type_name[mg->info.type[i]]),
+                    pc_type);
     }
   }
 
