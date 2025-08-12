@@ -3890,6 +3890,11 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m)
                               m->vector_multiply[mft],
                               spmv_xy_hd);
 #if defined(HAVE_ACCEL)
+      const char hd = spmv_xy_hd[spmv_type];
+      if (hd == 'h' || hd == 'g') {
+        m->vector_multiply_h[mft][spmv_type]
+          = m->vector_multiply[mft][spmv_type];
+      }
       _matrix_spmv_set_func_d(m->type,
                               (cs_matrix_fill_type_t)mft,
                               (cs_matrix_spmv_type_t)spmv_type,
