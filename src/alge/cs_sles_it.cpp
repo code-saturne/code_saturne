@@ -437,17 +437,9 @@ _conjugate_gradient(cs_sles_it_t              *c,
   /* Descent direction */
   /*-------------------*/
 
-#if defined(HAVE_OPENMP)
-
 # pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < n_rows; ii++)
     dk[ii] = gk[ii];
-
-#else
-
-  memcpy(dk, gk, n_rows * sizeof(cs_real_t));
-
-#endif
 
   _dot_products_xx_xy(c, rk, gk, &residual, &rk_gkm1);
   residual = sqrt(residual);
@@ -518,7 +510,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
     beta = (cs::abs(rk_gkm1) > DBL_MIN) ? rk_gk / rk_gkm1 : 0.;
     rk_gkm1 = rk_gk;
 
-#   pragma omp parallel for firstprivate(alpha) if(n_rows > CS_THR_MIN)
+#   pragma omp parallel for firstprivate(beta) if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       dk[ii] = gk[ii] + (beta * dk[ii]);
 
@@ -979,9 +971,9 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
                        size_t                     aux_size,
                        void                      *aux_vectors)
 {
-  cs_sles_convergence_state_t cvg;
-  double  ro_0, ro_1, alpha, rk_gkm1, rk_gk, gk_sk, beta, residual;
-  cs_real_t *_aux_vectors;
+  cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
+
+  cs_real_t *_aux_vectors = nullptr;
   cs_real_t  *restrict rk, *restrict dk, *restrict gk, *restrict sk;
   cs_real_t *restrict zk;
 
@@ -1042,6 +1034,9 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
   /* Descent parameter */
 
+  double  ro_0 = 0, ro_1 = 0;
+  double  rk_gkm1 = 0, residual = -1, rk_gk = 0, gk_sk = 0;
+
   _dot_products_xx_xy_yz(c, rk, dk, zk, &residual, &ro_0, &ro_1);
   residual = sqrt(residual);
 
@@ -1056,7 +1051,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
     n_iter = 1;
 
     cs_real_t d_ro_1 = (cs::abs(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
-    alpha =  - ro_0 * d_ro_1;
+    cs_real_t alpha =  - ro_0 * d_ro_1;
 
     rk_gkm1 = ro_0;
 
@@ -1108,14 +1103,14 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
     /* Complete descent parameter computation and matrix.vector product */
 
-    beta = (cs::abs(rk_gkm1) > DBL_MIN) ? rk_gk / rk_gkm1 : 0.;
+    cs_real_t beta = (cs::abs(rk_gkm1) > DBL_MIN) ? rk_gk / rk_gkm1 : 0.;
     rk_gkm1 = rk_gk;
 
     ro_1 = gk_sk - beta*beta*ro_1;
     ro_0 = rk_gk;
 
     cs_real_t d_ro_1 = (cs::abs(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
-    alpha =  - ro_0 * d_ro_1;
+    cs_real_t alpha  =  - ro_0 * d_ro_1;
 
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
@@ -1129,189 +1124,6 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
         zk[ii] = sk[ii] + (beta * zk[ii]);
         rk[ii] += alpha * zk[ii];
       }
-    }
-
-  }
-
-  if (_aux_vectors != aux_vectors)
-    CS_FREE(_aux_vectors);
-
-  return cvg;
-}
-
-/*----------------------------------------------------------------------------
- * Solution of A.vx = Rhs using non-preconditioned conjugate gradient.
- *
- * On entry, vx is considered initialized.
- *
- * parameters:
- *   c               <-- pointer to solver context info
- *   a               <-- matrix
- *   diag_block_size <-- block size of element ii, ii
- *   convergence     <-- convergence information structure
- *   rhs             <-- right hand side
- *   vx_ini          <-- initial system solution
- *                       (vx if nonzero, nullptr if zero)
- *   vx              <-> system solution
- *   aux_size        <-- number of elements in aux_vectors (in bytes)
- *   aux_vectors     --- optional working area (allocation otherwise)
- *
- * returns:
- *   convergence state
- *----------------------------------------------------------------------------*/
-
-static cs_sles_convergence_state_t
-_conjugate_gradient_npc(cs_sles_it_t              *c,
-                        const cs_matrix_t         *a,
-                        cs_lnum_t                  diag_block_size,
-                        cs_sles_it_convergence_t  *convergence,
-                        const cs_real_t           *rhs,
-                        cs_real_t                 *restrict vx_ini,
-                        cs_real_t                 *restrict vx,
-                        size_t                     aux_size,
-                        void                      *aux_vectors)
-{
-  cs_sles_convergence_state_t cvg;
-  double  ro_0, ro_1, alpha, rk_rkm1, rk_rk, beta, residual;
-  cs_real_t *_aux_vectors;
-  cs_real_t  *restrict rk, *restrict dk, *restrict zk;
-
-  unsigned n_iter = 0;
-
-  /* Allocate or map work arrays */
-  /*-----------------------------*/
-
-  assert(c->setup_data != nullptr);
-
-  const cs_lnum_t n_rows = c->setup_data->n_rows;
-
-  {
-    const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
-    const size_t n_wa = 3;
-    const size_t wa_size = CS_SIMD_SIZE(n_cols);
-
-    if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
-    else
-      _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
-
-    rk = _aux_vectors;
-    dk = _aux_vectors + wa_size;
-    zk = _aux_vectors + wa_size*2;
-  }
-
-  /* Initialize iterative calculation */
-  /*----------------------------------*/
-
-  /* Residual and descent direction */
-
-  if (vx_ini == vx) {
-    cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
-
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-      rk[ii] -= rhs[ii];
-  }
-  else {
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-      vx[ii] = 0;
-      rk[ii] = -rhs[ii];
-    }
-  }
-
-  /* Descent direction */
-  /*-------------------*/
-
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-    dk[ii] = rk[ii];
-
-  rk_rkm1 = _dot_product_xx(c, rk);
-  residual = sqrt(rk_rkm1);
-
-  /* If no solving required, finish here */
-
-  c->setup_data->initial_residual = residual;
-  cvg = _convergence_test(c, n_iter, residual, convergence);
-
-  if (cvg == CS_SLES_ITERATING) {
-
-    n_iter = 1;
-
-    cs_matrix_vector_multiply(a, dk, zk);
-
-    /* Descent parameter */
-
-    _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
-
-    cs_real_t d_ro_1 = (cs::abs(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
-    alpha =  - ro_0 * d_ro_1;
-
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        vx[ii] += (alpha * dk[ii]);
-
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        rk[ii] += (alpha * zk[ii]);
-    }
-
-    /* Convergence test */
-
-    residual = sqrt(_dot_product(c, rk, rk));
-
-    cvg = _convergence_test(c, n_iter, residual, convergence);
-
-  }
-
-  /* Current Iteration */
-  /*-------------------*/
-
-  while (cvg == CS_SLES_ITERATING) {
-
-    /* Compute residual and prepare descent parameter */
-
-    _dot_products_xx_xy(c, rk, rk, &residual, &rk_rk);
-
-    residual = sqrt(residual);
-
-    /* Convergence test for end of previous iteration */
-
-    if (n_iter > 1)
-      cvg = _convergence_test(c, n_iter, residual, convergence);
-
-    if (cvg != CS_SLES_ITERATING)
-      break;
-
-    n_iter += 1;
-
-    /* Complete descent parameter computation and matrix.vector product */
-
-    beta = (cs::abs(rk_rkm1) > DBL_MIN) ? rk_rk / rk_rkm1 : 0.;
-    rk_rkm1 = rk_rk;
-
-#   pragma omp parallel for firstprivate(alpha) if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-      dk[ii] = rk[ii] + (beta * dk[ii]);
-
-    cs_matrix_vector_multiply(a, dk, zk);
-
-    _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
-
-    cs_real_t d_ro_1 = (cs::abs(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
-    alpha =  - ro_0 * d_ro_1;
-
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        vx[ii] += (alpha * dk[ii]);
-
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        rk[ii] += (alpha * zk[ii]);
     }
 
   }
@@ -1409,20 +1221,12 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
     }
   }
 
-  /* Descent direction */
-  /*-------------------*/
-
-#if defined(HAVE_OPENMP)
-
 # pragma omp parallel for if(n_rows > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < n_rows; ii++)
     dk[ii] = rk[ii];
 
-#else
-
-  memcpy(dk, rk, n_rows * sizeof(cs_real_t));
-
-#endif
+  /* Descent direction */
+  /*-------------------*/
 
   cs_matrix_vector_multiply(a, dk, zk); /* zk = A.dk */
 
@@ -1431,9 +1235,9 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
   _dot_products_xx_xy_yz(c, rk, dk, zk, &residual, &ro_0, &ro_1);
   residual = sqrt(residual);
 
-  /* If no solving required, finish here */
-
   c->setup_data->initial_residual = residual;
+
+  /* If no solving required, finish here */
 
   cvg = _convergence_test(c, n_iter, residual, convergence);
 
@@ -4645,19 +4449,15 @@ cs_sles_it_setup(void               *context,
       if (n_m_rows < (cs_gnum_t)_pcg_sr_threshold)
         single_reduce = true;
 #endif
-      if (!single_reduce) {
-        if (c->pc != nullptr)
-          c->solve = _conjugate_gradient;
-        else
-          c->solve = _conjugate_gradient_npc;
-        break;
-      }
-      else {
-        if (c->pc != nullptr)
+      if (c->pc != nullptr) {
+        c->solve = _conjugate_gradient;
+        if (single_reduce)
           c->solve = _conjugate_gradient_sr;
         else
-          c->solve = _conjugate_gradient_npc_sr;
+          c->solve = _conjugate_gradient;
       }
+      else
+        c->solve = _conjugate_gradient_npc_sr;
     }
 #if defined(HAVE_CUDA)
     if (on_device) {
