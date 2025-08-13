@@ -5021,7 +5021,15 @@ cs_multigrid_set_solver_options(cs_multigrid_t     *mg,
         info->n_max_iter[i+3] = 2;
         break;
       case CS_SLES_PCG:
-        info->type[i+3] = CS_SLES_FCG;
+        /* Note: in some local tests, with Jacobi or no
+           preconditioning on a coarse grid, the pure CUDA
+           cs_sles_it_cuda_fcg function seemed faster
+           than the generic cs_sles_it_pcg function, but
+           other tests on a V100 seem more favorable to the
+           simpler cs_sles_it_pcg (in which the Jacobi
+           preconditionoin involves kernel fusion),
+           so we do not force this anymore. */
+        // info->type[i+3] = CS_SLES_FCG;
         break;
       case CS_SLES_BICGSTAB:
         [[fallthrough]];
