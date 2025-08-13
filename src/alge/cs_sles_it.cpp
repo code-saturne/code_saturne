@@ -4647,7 +4647,6 @@ cs_sles_it_setup(void               *context,
 #if defined(HAVE_CUDA)
         if (on_device) {
           c->on_device = true;
-          c->solve = cs_sles_it_cuda_pcg;
         }
 #endif
       }
