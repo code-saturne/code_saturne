@@ -1075,8 +1075,6 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 }
 
 /*----------------------------------------------------------------------------
-<<<<<<< HEAD
-=======
  * Solution of A.vx = Rhs using preconditioned conjugate gradient
  * with single reduction.
  *
@@ -1306,7 +1304,6 @@ _conjugate_gradient_sr_p0(cs_sles_it_t              *c,
 }
 
 /*----------------------------------------------------------------------------
->>>>>>> 76d416ab1 (Linear solvers: remove multiple reduction PCG variantes, some refactoring.)
  * Solution of A.vx = Rhs using non-preconditioned conjugate gradient
  * with single reduction.
  *
