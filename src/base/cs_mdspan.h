@@ -74,6 +74,9 @@ class mdspan {
 
 public:
 
+  /* Make array class friend */
+  template<class _T_, int _N_, layout _L_> friend class array;
+
   /*--------------------------------------------------------------------------*/
   /*!
    * \brief Default constructor method leading to "empty container".
@@ -459,6 +462,51 @@ public:
       return _data + i*_offset[0];
     else
       return _data + i*_offset[N-1];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Get sub array based on two indexes.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  T*
+  sub_array
+  (
+    cs_lnum_t i, /*!<[in] index of subarray */
+    cs_lnum_t j  /*!<[in] index of subarray */
+  )
+  {
+    static_assert(N > 2,
+                  "sub_array(i,j) can only be called for N>2");
+    if (L == layout::right)
+      return _data + i*_offset[0] + j*_offset[1];
+    else
+      return _data + i*_offset[N-1] + j*_offset[N-2];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Get sub array based on three indexes.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  T*
+  sub_array
+  (
+    cs_lnum_t i, /*!<[in] index of subarray */
+    cs_lnum_t j, /*!<[in] index of subarray */
+    cs_lnum_t k  /*!<[in] index of subarray */
+  )
+  {
+    static_assert(N > 3,
+                  "sub_array(i,j,k) can only be called for N>3");
+    if (L == layout::right)
+      return _data + i*_offset[0] + j*_offset[1] + k*_offset[2];
+    else
+      return _data + i*_offset[N-1] + j*_offset[N-2] + k*_offset[N-3];
   }
 
   /*--------------------------------------------------------------------------*/

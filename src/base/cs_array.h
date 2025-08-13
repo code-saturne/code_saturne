@@ -1769,6 +1769,51 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
+   * \brief Get sub array based on two indexes.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  T*
+  sub_array
+  (
+    cs_lnum_t i, /*!<[in] index of subarray */
+    cs_lnum_t j  /*!<[in] index of subarray */
+  )
+  {
+    static_assert(N > 2,
+                  "sub_array(i,j) can only be called for N>2");
+    if (L == layout::right)
+      return _data + i*_offset[0] + j*_offset[1];
+    else
+      return _data + i*_offset[N-1] + j*_offset[N-2];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Get sub array based on three indexes.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  T*
+  sub_array
+  (
+    cs_lnum_t i, /*!<[in] index of subarray */
+    cs_lnum_t j, /*!<[in] index of subarray */
+    cs_lnum_t k  /*!<[in] index of subarray */
+  )
+  {
+    static_assert(N > 3,
+                  "sub_array(i,j,k) can only be called for N>3");
+    if (L == layout::right)
+      return _data + i*_offset[0] + j*_offset[1] + k*_offset[2];
+    else
+      return _data + i*_offset[N-1] + j*_offset[N-2] + k*_offset[N-3];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
    * \brief Get sub array based on index. (const)
    */
   /*--------------------------------------------------------------------------*/
@@ -1784,6 +1829,51 @@ public:
       return _data + i*_offset[0];
     else
       return _data + i*_offset[N-1];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Get sub array based on index.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  const T*
+  sub_array
+  (
+    cs_lnum_t i, /*!<[in] index of subarray */
+    cs_lnum_t j  /*!<[in] index of subarray */
+  ) const
+  {
+    static_assert(N > 2,
+                  "sub_array(i,j) can only be called for N>2");
+    if (L == layout::right)
+      return _data + i*_offset[0] + j*_offset[1];
+    else
+      return _data + i*_offset[N-1] + j*_offset[N-2];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Get sub array based on three indexes.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  const T*
+  sub_array
+  (
+    cs_lnum_t i, /*!<[in] index of subarray */
+    cs_lnum_t j, /*!<[in] index of subarray */
+    cs_lnum_t k  /*!<[in] index of subarray */
+  ) const
+  {
+    static_assert(N > 3,
+                  "sub_array(i,j,k) can only be called for N>3");
+    if (L == layout::right)
+      return _data + i*_offset[0] + j*_offset[1] + k*_offset[2];
+    else
+      return _data + i*_offset[N-1] + j*_offset[N-2] + k*_offset[N-3];
   }
 
   /*--------------------------------------------------------------------------*/
@@ -2141,6 +2231,36 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
+   * \brief Copy data from a span, we suppose that data size is same
+   *        as that of the array. An assert test the sizes in debug.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  copy_data
+  (
+    mdspan<T, N, L>& span,       /*!<[in] Reference to a span object */
+    const cs_lnum_t  n_vals = -1 /*!<[in] Number of values to copy.
+                                          If -1, default, we use array size */
+  )
+  {
+    assert(n_vals <= _size);
+    assert(span._size == _size);
+
+    const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
+
+    cs_dispatch_context ctx;
+
+    ctx.parallel_for(loop_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
+        _data[e_id] = span._data[e_id];
+    });
+
+    ctx.wait();
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
    * \brief Copy data from raw pointer, we suppose that data size is same
    *        as that of the array. A dispatch_context is provided, hence
    *        no implicit synchronization which should be done by the caller.
@@ -2190,6 +2310,34 @@ public:
 
     ctx.parallel_for(loop_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
         _data[e_id] = other._data[e_id];
+    });
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Copy data from a span, we suppose that data size is same
+   *        as that of the array. A dispatch_context is provided, hence
+   *        no implicit synchronization which should be done by the caller.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  copy_data
+  (
+    cs_dispatch_context &ctx,        /*!<[in] Reference to dispatch context  */
+    mdspan<T,N,L>       &span,       /*!<[in] Reference to a span object */
+    const cs_lnum_t      n_vals = -1 /*!<[in] Number of values to copy.
+                                         If -1, default, we use array size */
+  )
+  {
+    assert(n_vals <= _size);
+    assert(span._size == _size);
+
+    const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
+
+    ctx.parallel_for(loop_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
+        _data[e_id] = span._data[e_id];
     });
   }
 
