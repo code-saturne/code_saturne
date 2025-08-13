@@ -3406,6 +3406,13 @@ cs_gui_linear_solvers(void)
     cs_field_t  *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) {
 
+      bool symmetric = false;
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+      if (eqp != nullptr) {
+        if (eqp->iconv == 0)
+          symmetric = true;
+      }
+
       cs_tree_node_t *tn_v = _find_node_variable(f->name);
 
       int n_max_iter = n_max_iter_default;
@@ -3456,13 +3463,6 @@ cs_gui_linear_solvers(void)
           && multigrid == false) {
         if (   precond_choice != nullptr
             && !cs_gui_strcmp(precond_choice, "automatic")) {
-
-          bool symmetric = false;
-          cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-          if (eqp != nullptr) {
-            if (eqp->iconv == 0)
-              symmetric = true;
-          }
 
           if (symmetric)
             sles_it_type = CS_SLES_FCG;
@@ -3520,6 +3520,20 @@ cs_gui_linear_solvers(void)
 
         if (pc_multigrid) {
           cs_sles_pc_t *pc = cs_multigrid_pc_create(mg_type);
+          if (symmetric == false) {
+            cs_multigrid_t *mg = (cs_multigrid_t *)cs_sles_pc_get_context(pc);
+            cs_multigrid_set_solver_options
+              (mg,
+               CS_SLES_P_SYM_GAUSS_SEIDEL,
+               CS_SLES_P_SYM_GAUSS_SEIDEL,
+               CS_SLES_GCR,
+               100, /* n max cycles */
+               1,   /* n max iter for descent (default 2) */
+               1,   /* n max iter for ascent (default 10) */
+               100, /* n max iter coarse solver */
+               0, 0, 0,  /* precond degree */
+               -1, -1, 1); /* precision multiplier */
+          }
           cs_sles_it_transfer_pc(c, &pc);
         }
 
@@ -3529,22 +3543,18 @@ cs_gui_linear_solvers(void)
         cs_multigrid_t *mg = cs_multigrid_define(f->id, nullptr, mg_type);
 
         /* If we have convection, set appropriate options */
-        if (f_id >= 0) {
-          const cs_equation_param_t *eqp =
-            cs_field_get_equation_param_const(cs_field_by_id(f_id));
-
-          if (eqp->iconv > 0)
-            cs_multigrid_set_solver_options
-              (mg,
-               CS_SLES_P_SYM_GAUSS_SEIDEL,
-               CS_SLES_P_SYM_GAUSS_SEIDEL,
-               CS_SLES_P_SYM_GAUSS_SEIDEL,
-               100, /* n max cycles */
-               3,   /* n max iter for descent (default 2) */
-               2,   /* n max iter for ascent (default 10) */
-               100, /* n max iter coarse solver */
-               0, 0, 0,  /* precond degree */
-               -1, -1, 1); /* precision multiplier */
+        if (symmetric == false) {
+          cs_multigrid_set_solver_options
+            (mg,
+             CS_SLES_P_SYM_GAUSS_SEIDEL,
+             CS_SLES_P_SYM_GAUSS_SEIDEL,
+             CS_SLES_P_SYM_GAUSS_SEIDEL,
+             100, /* n max cycles */
+             3,   /* n max iter for descent (default 2) */
+             2,   /* n max iter for ascent (default 10) */
+             100, /* n max iter coarse solver */
+             0, 0, 0,  /* precond degree */
+             -1, -1, 1); /* precision multiplier */
         }
       }
     }
