@@ -935,8 +935,8 @@ _gcr_update_vx(cs_lnum_t                      n_rows,
   if (ii < n_rows) {
     double sii = 0.0;
     #pragma unroll(2)
-    for(cs_lnum_t kk = 0; kk < n_c_iter; kk++){
-      for(cs_lnum_t jj = 0; jj <= kk; jj++){
+    for (cs_lnum_t kk = 0; kk < n_c_iter; kk++){
+      for (cs_lnum_t jj = 0; jj <= kk; jj++){
         const cs_real_t *zk_j = zk + jj*wa_size;
         sii += alpha[kk] * zk_j[ii] * gkj_inv[(kk + 1) * kk / 2 + jj];
       }
@@ -1016,14 +1016,14 @@ _sync_reduction_sum(const cs_sles_it_t  *c,
   }
 #endif /* HAVE_NCCL */
 
+  CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+  CS_CUDA_CHECK(cudaGetLastError());
+
 #if defined(HAVE_MPI)
 
   /* Fallback: host-side reduction via MPI
      (assumes 'res' is host-visible or CUDA-aware MPI is used).
      ---------------------------------------------------------- */
-
-  CS_CUDA_CHECK(cudaStreamSynchronize(stream));
-  CS_CUDA_CHECK(cudaGetLastError());
 
   if (c->comm != MPI_COMM_NULL)
     MPI_Allreduce(MPI_IN_PLACE, res, tuple_size, MPI_DOUBLE, MPI_SUM, c->comm);
@@ -1053,10 +1053,10 @@ _sync_reduction_sum_h(const cs_sles_it_t  *c,
                       cs_lnum_t            tuple_size,
                       double               res[])
 {
-#if defined(HAVE_MPI)
-
   CS_CUDA_CHECK(cudaStreamSynchronize(stream));
   CS_CUDA_CHECK(cudaGetLastError());
+
+#if defined(HAVE_MPI)
 
   if (c->comm != MPI_COMM_NULL)
     MPI_Allreduce(MPI_IN_PLACE, res, tuple_size, MPI_DOUBLE, MPI_SUM, c->comm);
@@ -2372,6 +2372,7 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
       });
     }
     else {
+      assert(vx_ini == nullptr);
       ctx.parallel_for_reduce_sum(n_rows, residual, [=] CS_F_HOST_DEVICE
                                   (cs_lnum_t ii,
                                    CS_DISPATCH_REDUCER_TYPE(double) &sum) {
@@ -2380,6 +2381,8 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
         rk[ii] = -rhs[ii];
         sum += rk[ii]*rk[ii];
       });
+
+      _vx = vx;
     }
 
     _sync_reduction_sum_h(c, stream, 1, &residual);
@@ -2398,20 +2401,11 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
       cs_real_t *zk_n = zk + n_c_iter * wa_size;
       cs_real_t *ck_n = ck + n_c_iter * wa_size;
 
-      /* Preconditionning */
-
       c->setup_data->pc_apply(c->setup_data->pc_context, rk, zk_n);
 
       cs_matrix_vector_multiply_d(a, zk_n, ck_n);
 
       /* Compute the ck_n direction;
-
-         Remarks:
-
-         - Compared to the host-only code_saturne implementation, we change the
-           sign of computed Gamma (gkj) versions to allow for axpy. To avoid
-           extra host/device synchronizations, we apply the sign change to all
-           subsequent operations involving those values.
 
          - Compared to the PETSc implementation, we use one less array
            and axpy operation, but we cannot group dot products, leading to lower
@@ -2455,7 +2449,7 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
                                   (cs_lnum_t ii,
                                    CS_DISPATCH_REDUCER_TYPE(double) &sum) {
 
-        rk[ii] += - alpha[n_c_iter] * ck_n[ii];
+        rk[ii] -= alpha[n_c_iter] * ck_n[ii];
         sum += rk[ii]*rk[ii];
       });
 
@@ -2482,7 +2476,7 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
      * GPU (with slower code but avoiding memory transfer latency)
      * or on host CPU. */
 
-    if (n_c_iter == 1)
+    if (n_c_iter == 1 && !(fabs(alpha[0]) > 0))
       _gcr_gkj_inv_1<<<1, CS_CUDA_WARP_SIZE, 0, stream>>>
         (gkj, gkj_inv);
     else
