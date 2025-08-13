@@ -3087,11 +3087,12 @@ _gcr(cs_sles_it_t              *c,
       cs_parall_thread_range(n_rows, sizeof(cs_real_t), &s_id, &e_id);
 
       for (cs_lnum_t kk = 0; kk < (int)n_c_iter; kk++) {
-        for(cs_lnum_t jj = 0; jj <= kk; jj++) {
+        for (cs_lnum_t jj = 0; jj <= kk; jj++) {
           const cs_real_t *zk_j = zk + jj*wa_size;
-          for (cs_lnum_t ii = s_id; ii < e_id; ii++)
+          for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
             vx[ii] -=    alpha[kk] * zk_j[ii]
                       *  gkj_inv[(kk + 1) * kk / 2 + jj];
+          }
         }
       }
     }
