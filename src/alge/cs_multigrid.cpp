@@ -1574,7 +1574,7 @@ _multigrid_pc_create(cs_multigrid_type_t  mg_type)
        1,                          /* n_max_iter_descent, */
        1,                          /* n_max_iter_ascent */
        500,                        /* n_max_iter_coarse */
-       0, 0, -1,                   /* precond poly_degree */
+       0, 0, 0,                    /* precond poly_degree */
        -1, -1, 1);                 /* precision_multiplier */
     break;
 
@@ -4981,7 +4981,6 @@ cs_multigrid_set_solver_options(cs_multigrid_t     *mg,
         break;
       case CS_SLES_PCG:
         info->type[i+3] = CS_SLES_FCG;
-        info->type[i+3] = CS_SLES_PCG;
         break;
       case CS_SLES_BICGSTAB:
         [[fallthrough]];
