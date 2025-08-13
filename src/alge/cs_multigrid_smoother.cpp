@@ -124,8 +124,6 @@ static cs_lnum_t _pcg_sr_threshold = 512;
  * Parallel-optimized version, groups dot products, at the cost of
  * computation of the preconditionning for n+1 iterations instead of n.
  *
- * On entry, vx is considered initialized.
- *
  * parameters:
  *   c               <-- pointer to solver context info
  *   a               <-- matrix
@@ -473,8 +471,6 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 /*----------------------------------------------------------------------------
  * Solution of A.vx = Rhs using non-preconditioned conjugate gradient.
  *
- * On entry, vx is considered initialized.
- *
  * parameters:
  *   c               <-- pointer to solver context info
  *   a               <-- matrix
@@ -641,8 +637,6 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
  * For more information, see Lapack Working note 56, at
  * http://www.netlib.org/lapack/lawnspdf/lawn56.pdf)
  *
- * On entry, vx is considered initialized.
- *
  * parameters:
  *   c               <-- pointer to solver context info
  *   a               <-- matrix
@@ -804,8 +798,6 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
  * Solution of A.vx = Rhs using preconditioned 3-layer conjugate residual.
  *
  * Tuned version when used as smoother.
- *
- * On entry, vx is considered initialized.
  *
  * parameters:
  *   c               <-- pointer to solver context info
@@ -980,8 +972,6 @@ _conjugate_residual_3(cs_sles_it_t              *c,
 /*----------------------------------------------------------------------------
  * Solution of A.vx = Rhs using Jacobi.
  *
- * On entry, vx is considered initialized.
- *
  * parameters:
  *   c               <-- pointer to solver context info
  *   a               <-- linear equation matrix
@@ -1082,8 +1072,6 @@ _jacobi(cs_sles_it_t              *c,
 
 /*----------------------------------------------------------------------------
  * Solution of A.vx = Rhs using relaxed (weighed) Jacobi.
- *
- * On entry, vx is considered initialized.
  *
  * parameters:
  *   c               <-- pointer to solver context info
@@ -1250,8 +1238,6 @@ _relaxed_jacobi(cs_sles_it_t              *c,
 /*----------------------------------------------------------------------------
  * Solution of A.vx = Rhs using block Jacobi.
  *
- * On entry, vx is considered initialized.
- *
  * parameters:
  *   c               <-- pointer to solver context info
  *   a               <-- linear equation matrix
@@ -1368,8 +1354,6 @@ _block_3_jacobi(cs_sles_it_t              *c,
 
 /*----------------------------------------------------------------------------
  * Solution of A.vx = Rhs using block Jacobi.
- *
- * On entry, vx is considered initialized.
  *
  * parameters:
  *   c               <-- pointer to solver context info
@@ -1488,9 +1472,202 @@ _block_jacobi(cs_sles_it_t              *c,
 }
 
 /*----------------------------------------------------------------------------
- * Solution of A.vx = Rhs using Jacobi.
+ * Solution of A.vx = Rhs using relaxed block Jacobi.
  *
- * On entry, vx is considered initialized.
+ * parameters:
+ *   c               <-- pointer to solver context info
+ *   a               <-- linear equation matrix
+ *   diag_block_size <-- block size of diagonal elements
+ *   convergence     <-- convergence information structure
+ *   rhs             <-- right hand side
+ *   vx_ini          <-- initial system solution
+ *                       (vx if nonzero, nullptr if zero)
+ *   vx              --> system solution
+ *   aux_size        <-- number of elements in aux_vectors (in bytes)
+ *   aux_vectors     --- optional working area (allocation otherwise)
+ *
+ * returns:
+ *   convergence state
+ *----------------------------------------------------------------------------*/
+
+static cs_sles_convergence_state_t
+_block_relaxed_jacobi(cs_sles_it_t              *c,
+                      const cs_matrix_t         *a,
+                      cs_lnum_t                  diag_block_size,
+                      cs_sles_it_convergence_t  *convergence,
+                      const cs_real_t           *rhs,
+                      cs_real_t                 *restrict vx_ini,
+                      cs_real_t                 *restrict vx,
+                      size_t                     aux_size,
+                      void                      *aux_vectors)
+{
+  cs_real_t *_aux_vectors = nullptr;
+  cs_real_t *restrict vx_tmp = nullptr, *vxx = nullptr;
+
+  cs_real_t wk = 1.0;
+  int wk_m = 1;
+
+  cs_real_t w[3] = {2./3., 1.0, 1.0};
+
+  // Scheduled relaxation variants:
+  // https://dx.doi.org/10.1016/j.jcp.2016.12.010
+  // https://doi.org/10.1007/s12046-023-02407-6
+  // Need to check if they are appropriate/relevant here.
+
+  if (c->type == CS_SLES_RJ2) {
+    w[0] = 1.7319;
+    w[1] = 0.5695;
+    wk_m = 2;
+  }
+  if (c->type == CS_SLES_RJ3) {
+    w[0] = 2.2473;
+    w[1] = 0.8573;
+    w[2] = 0.5296;
+    wk_m = 3;
+  }
+
+  unsigned n_iter = 0;
+
+  cs_dispatch_context ctx;
+
+  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
+#if defined(HAVE_ACCEL)
+  if (amode == CS_ALLOC_HOST) {
+    ctx.set_use_gpu(false);
+  }
+#endif
+
+#if defined(__CUDACC__)
+  bool local_stream = false;
+  cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
+  if (amode > CS_ALLOC_HOST) {
+    if (stream == 0) {
+      local_stream = true;
+      stream = cs_cuda_get_stream(0);
+    }
+    cs_blas_cuda_set_stream(stream);
+    if (local_stream)
+      cs_matrix_spmv_cuda_set_stream(stream);
+    ctx.set_cuda_stream(stream);
+  }
+#endif
+
+  /* Allocate or map work arrays */
+  /*-----------------------------*/
+
+  assert(c->setup_data != nullptr);
+
+  const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t db_size_2 = db_size * db_size;
+
+  const cs_real_t  *restrict ad_inv = c->setup_data->ad_inv;
+
+  const cs_lnum_t n_rows = c->setup_data->n_rows;
+
+  {
+    const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * db_size;
+    const size_t n_wa = 2;
+    const size_t wa_size = CS_SIMD_SIZE(n_cols);
+
+    if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
+      CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, amode);
+    else
+      _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
+
+    vx_tmp = _aux_vectors;
+    vxx = _aux_vectors + wa_size;
+  }
+
+  int iter_ini = 0;
+
+  /* First iteration simplified if vx == 0
+     ------------------------------------- */
+
+  cs_real_t *restrict vx_n = vx;
+  cs_real_t *restrict vx_np = vx_tmp;
+
+  if (vx_ini != vx) {
+    assert(vx_ini == nullptr);
+    wk = w[0];
+
+    /* Compute vx <- diag^-1 . (vxx - rhs) */
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t r_ii) {
+      const cs_lnum_t ii = r_ii / db_size;
+      const cs_lnum_t jj = r_ii % db_size;
+
+      const cs_real_t *_ad_inv = ad_inv + db_size_2*ii + db_size*jj;
+      const cs_real_t *_rhs = rhs + db_size*ii;
+      cs_real_t _vx = 0;
+
+      for (cs_lnum_t kk = 0; kk < db_size; kk++) {
+        _vx += _rhs[kk] * _ad_inv[kk];
+      }
+
+      vx_n[r_ii] = wk * _vx;
+    });
+
+    iter_ini = 1;
+  }
+
+  /* Current iteration */
+  /*-------------------*/
+
+  for (n_iter = iter_ini; n_iter < convergence->n_iterations_max; n_iter++) {
+
+    wk = w[n_iter % wk_m];
+    cs_real_t o_m_wk = 1.0 - wk;
+
+    /* Swap vx_np and vx_n */
+    {cs_real_t *vx_t = vx_n; vx_n = vx_np; vx_np = vx_t;}
+
+    /* Compute Vx <- (1-w).Vx + w.(A-diag).Rk */
+
+    cs_matrix_vector_multiply_partial(ctx, a, CS_MATRIX_SPMV_E, vx_np, vxx);
+
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t r_ii) {
+      const cs_lnum_t ii = r_ii / db_size;
+      const cs_lnum_t jj = r_ii % db_size;
+
+      const cs_real_t *_ad_inv = ad_inv + db_size_2*ii + db_size*jj;
+      const cs_real_t *_rhs = rhs + db_size*ii;
+      const cs_real_t *_vxx = vxx + db_size*ii;
+      const cs_real_t *_vx_np = vx_n + db_size*ii;
+      cs_real_t _vx_n = 0;
+
+      for (cs_lnum_t kk = 0; kk < db_size; kk++) {
+        _vx_n = o_m_wk*_vx_np[kk] + wk*(_rhs[kk]-_vxx[kk])*_ad_inv[kk];
+      }
+
+      vx_n[r_ii] = _vx_n;
+    });
+
+  }
+
+  if (vx_n != vx) {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      vx[ii] = vx_n[ii];
+    });
+  }
+
+  ctx.wait();
+
+#if defined(__CUDACC__)
+  cs_blas_cuda_set_stream(0);
+  if (local_stream) {
+    cs_matrix_spmv_cuda_set_stream(0);
+  }
+#endif
+
+  if (_aux_vectors != aux_vectors)
+    CS_FREE(_aux_vectors);
+
+  convergence->n_iterations = n_iter;
+
+  return CS_SLES_MAX_ITERATION;
+}
+
+/*----------------------------------------------------------------------------
+ * Solution of A.vx = Rhs using Jacobi.
  *
  * parameters:
  *   c               <-- pointer to solver context info
@@ -1627,8 +1804,6 @@ _l1_jacobi(cs_sles_it_t              *c,
 /*----------------------------------------------------------------------------
  * Solution of A.vx = Rhs using Process-local Gauss-Seidel.
  *
- * On entry, vx is considered initialized.
- *
  * parameters:
  *   c               <-- pointer to solver context info
  *   a               <-- linear equation matrix
@@ -1752,8 +1927,6 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
 /*----------------------------------------------------------------------------
  * Solution of A.vx = Rhs using Process-local Gauss-Seidel.
  *
- * On entry, vx is considered initialized.
- *
  * parameters:
  *   c               <-- pointer to solver context info
  *   a               <-- linear equation matrix
@@ -1874,8 +2047,6 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
 
 /*----------------------------------------------------------------------------
  * Solution of A.vx = Rhs using Process-local symmetric Gauss-Seidel.
- *
- * On entry, vx is considered initialized.
  *
  * parameters:
  *   c               <-- pointer to solver context info
@@ -2329,8 +2500,6 @@ _ts_b_gauss_seidel_msr(cs_sles_it_t              *c,
 /*----------------------------------------------------------------------------
  * Solution of A.vx = Rhs using Process-local symmetric Gauss-Seidel.
  *
- * On entry, vx is considered initialized.
- *
  * parameters:
  *   c               <-- pointer to solver context info
  *   a               <-- linear equation matrix
@@ -2664,8 +2833,11 @@ cs_multigrid_smoother_setup(void               *context,
   case CS_SLES_RJ2:
     [[fallthrough]];
   case CS_SLES_RJ3:
-    if (diag_block_size == 1) {
-      c->solve = _relaxed_jacobi;
+    {
+      if (diag_block_size == 1)
+        c->solve = _relaxed_jacobi;
+      else
+        c->solve = _block_relaxed_jacobi;
       unsigned wk_m = 1;
       if (c->type == CS_SLES_RJ2)
         wk_m = 2;
@@ -2674,11 +2846,6 @@ cs_multigrid_smoother_setup(void               *context,
       if (c->n_max_iter % wk_m)
         c->n_max_iter += wk_m - (c->n_max_iter%wk_m);
     }
-    else
-      bft_error(__FILE__, __LINE__, 0,
-                _(" %s: Setup of linear equation on \"%s\"\n"
-                  "Relaxed jacobi not available for block diagonal size > 1."),
-                __func__, name);
     break;
 
   case CS_SLES_JACOBI:

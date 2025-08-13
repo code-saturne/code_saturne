@@ -60,7 +60,6 @@
 #include "base/cs_math.h"
 #include "alge/cs_matrix.h"
 #include "alge/cs_matrix_default.h"
-#include "alge/cs_matrix_spmv_cuda.h"
 #include "alge/cs_matrix_util.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
@@ -74,6 +73,11 @@
 #include "base/cs_timer.h"
 #include "base/cs_time_plot.h"
 #include "base/cs_time_step.h"
+
+#if defined(HAVE_CUDA) && defined(__CUDACC__)
+#include "alge/cs_blas_cuda.h"
+#include "alge/cs_matrix_spmv_cuda.h"
+#endif
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -2736,7 +2740,35 @@ _dot_xx(const cs_multigrid_t  *mg,
         cs_lnum_t              n,
         const cs_real_t       *x)
 {
-  double s = cs_dot_xx(n, x);
+  double s = -1;
+
+#if defined(__CUDACC__)
+
+  bool use_gpu = false;
+  {
+    const cs_multigrid_setup_data_t *mgd = mg->setup_data;
+    const cs_matrix_t *a = cs_grid_get_matrix(mgd->grid_hierarchy[0]);
+    if (cs_matrix_get_alloc_mode(a) > CS_ALLOC_HOST)
+      use_gpu = true;
+  }
+
+  if (use_gpu) {
+    cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
+    if (stream == 0) {
+      stream = cs_cuda_get_stream(0);
+    }
+    cs_blas_cuda_set_stream(stream);
+    s = cs_blas_cuda_dot(n, x, x);
+    cs_blas_cuda_set_stream(0);
+  }
+  else
+    s = cs_dot_xx(n, x);
+
+#else
+
+  s = cs_dot_xx(n, x);
+
+#endif
 
 #if defined(HAVE_MPI)
 
@@ -4964,12 +4996,21 @@ cs_multigrid_set_solver_options(cs_multigrid_t     *mg,
       info->poly_degree[i+3] = info->poly_degree[i];
       switch (info->type[i+3]) {
       case CS_SLES_P_GAUSS_SEIDEL:
-        info->type[i+3] = CS_SLES_RJ3;
+        if (i < 2 && info->is_pc)
+          info->type[i+3] = CS_SLES_RJ3;
+        else
+          info->type[i+3] = CS_SLES_JACOBI;
         info->n_max_iter[i+3] *= 2;
         break;
       case CS_SLES_P_SYM_GAUSS_SEIDEL:
-        info->type[i+3] = CS_SLES_RJ3;
-        info->n_max_iter[i+3] *= 2;
+        if (i < 2 && info->is_pc) {
+          info->type[i+3] = CS_SLES_RJ3;
+          info->n_max_iter[i+3] *= 2;
+        }
+        else {
+          info->type[i+3] = CS_SLES_JACOBI;
+          info->n_max_iter[i+3] *= 3;
+        }
         break;
       case CS_SLES_TS_F_GAUSS_SEIDEL:
         info->type[i+3] = CS_SLES_JACOBI;
