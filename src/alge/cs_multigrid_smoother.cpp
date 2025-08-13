@@ -1631,14 +1631,16 @@ _block_relaxed_jacobi(cs_sles_it_t              *c,
       const cs_real_t *_ad_inv = ad_inv + db_size_2*ii + db_size*jj;
       const cs_real_t *_rhs = rhs + db_size*ii;
       const cs_real_t *_vxx = vxx + db_size*ii;
-      const cs_real_t *_vx_np = vx_n + db_size*ii;
-      cs_real_t _vx_n = 0;
 
+      assert(db_size <= DB_SIZE_MAX);
+      cs_real_t aux[DB_SIZE_MAX];
+
+      cs_real_t _vx = 0;
       for (cs_lnum_t kk = 0; kk < db_size; kk++) {
-        _vx_n = o_m_wk*_vx_np[kk] + wk*(_rhs[kk]-_vxx[kk])*_ad_inv[kk];
+        _vx += _ad_inv[kk] * (_rhs[kk] - _vxx[kk]);
       }
 
-      vx_n[r_ii] = _vx_n;
+      vx_n[r_ii] = o_m_wk*vx_np[r_ii] + wk*_vx;
     });
 
   }
