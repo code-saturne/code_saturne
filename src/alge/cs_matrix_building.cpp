@@ -2096,7 +2096,7 @@ cs_matrix_compute_coeffs(cs_matrix_t                 *a,
     else {
 
       /* As arrays are transferred, we assume the array type is
-         neither "native", nor "dist", as the asscoaited formats
+         neither "native", nor "dist", as the associated formats
          do not currently have a "transfer coefficients" method.*/
 
       cs_assert(   m_type != CS_MATRIX_NATIVE
@@ -2133,7 +2133,7 @@ cs_matrix_compute_coeffs(cs_matrix_t                 *a,
     return;
   }
 
-  /* Common case: direct assigment of matrix coefficients
+  /* Common case: direct assignment of matrix coefficients
      ---------------------------------------------------- */
 
   cs_mesh_adjacencies_update_cell_i_faces();
