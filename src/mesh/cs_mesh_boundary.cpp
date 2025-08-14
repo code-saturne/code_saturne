@@ -1509,11 +1509,6 @@ _boundary_insert(cs_mesh_t           *mesh,
                  cs_lnum_t            n_faces,
                  cs_lnum_t            face_id[])
 {
-  cs_lnum_t ii;
-  cs_gnum_t _n_g_b_faces, _n_g_i_faces;
-  cs_lnum_t i_face_vtx_cleaned;
-  cs_lnum_t count[2];
-
   cs_lnum_t n_i_faces = mesh->n_i_faces;
   cs_lnum_t n_b_faces = mesh->n_b_faces;
   cs_lnum_t new_n_i_faces = n_i_faces - n_faces;
@@ -1574,8 +1569,9 @@ _boundary_insert(cs_mesh_t           *mesh,
     CS_FREE(renum);
   }
 
-  if (mesh->global_i_face_num != nullptr || cs_glob_n_ranks > 1) {
+  cs_lnum_t _n_g_i_faces = n_i_faces - n_faces;
 
+  if (mesh->global_i_face_num != nullptr || cs_glob_n_ranks > 1) {
     CS_MALLOC(face_id_c, (n_i_faces - n_faces), cs_lnum_t);
     _get_list_c(face_id_c,
                 n_i_faces,
@@ -1600,10 +1596,13 @@ _boundary_insert(cs_mesh_t           *mesh,
     CS_FREE(mesh->global_i_face_num);
     mesh->global_i_face_num
       = fvm_io_num_transfer_global_num(global_number_i_faces);
+    _n_g_i_faces = fvm_io_num_get_global_count(global_number_i_faces);
 
     global_number_i_faces = fvm_io_num_destroy(global_number_i_faces);
     global_number_b_faces = fvm_io_num_destroy(global_number_b_faces);
   }
+
+  cs_lnum_t count[2];
 
   _count_b_faces_to_add(mesh->n_cells,
                         mesh->i_face_cells,
@@ -1631,7 +1630,7 @@ _boundary_insert(cs_mesh_t           *mesh,
   mesh->n_b_faces = n_b_faces + count[0];
   mesh->b_face_vtx_connect_size =  b_face_vtx_connect_size + count[1];
 
-  _n_g_b_faces = mesh->n_b_faces;
+  cs_lnum_t _n_g_b_faces = mesh->n_g_b_faces;
 
 #if defined(HAVE_MPI)
 
@@ -1675,11 +1674,12 @@ _boundary_insert(cs_mesh_t           *mesh,
 
 #endif /* HAVE_MPI */
 
-  i_face_vtx_cleaned = _clean_i_faces(mesh->i_face_vtx_idx,
-                                      mesh->i_face_vtx_lst,
-                                      n_i_faces,
-                                      face_id,
-                                      n_faces);
+  cs_lnum_t i_face_vtx_cleaned
+    = _clean_i_faces(mesh->i_face_vtx_idx,
+                     mesh->i_face_vtx_lst,
+                     n_i_faces,
+                     face_id,
+                     n_faces);
 
   _clean_i_face_cells(mesh->i_face_cells,
                       mesh->n_i_faces,
@@ -1698,20 +1698,6 @@ _boundary_insert(cs_mesh_t           *mesh,
 
   mesh->n_i_faces = n_i_faces - n_faces;
   mesh->i_face_vtx_connect_size = i_face_vtx_connect_size - i_face_vtx_cleaned;
-
-  _n_g_i_faces = mesh->n_i_faces;
-
-#if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1) {
-    cs_gnum_t n_bf = 0;
-    for (ii = 0; ii < mesh->n_i_faces; ii++) {
-      if (mesh->i_face_cells[ii][1] > -1)
-        n_bf++;
-    }
-    MPI_Allreduce(&n_bf, &_n_g_i_faces, 1, CS_MPI_GNUM, MPI_SUM,
-                  cs_glob_mpi_comm);
-  }
-#endif
 
   CS_REALLOC(mesh->i_face_vtx_idx, mesh->n_i_faces + 1, cs_lnum_t);
   CS_REALLOC(mesh->i_face_vtx_lst, mesh->i_face_vtx_connect_size, cs_lnum_t);
