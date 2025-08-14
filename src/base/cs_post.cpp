@@ -3714,7 +3714,7 @@ _output_function_data(cs_post_mesh_t        *post_mesh,
 
   bool have_transient = _post_mesh_have_active_transient(post_mesh);
   bool may_have_time_independent = false;
-  for (int i = 1; i < post_mesh->n_writers; i++) {
+  for (int i = 0; i < post_mesh->n_writers; i++) {
     if (post_mesh->nt_last[i] <= 0)
       may_have_time_independent = true;
   }
@@ -4367,9 +4367,6 @@ cs_post_define_volume_mesh(int          mesh_id,
   post_mesh->add_groups = (add_groups) ? true : false;
   if (auto_variables)
     post_mesh->cat_id = CS_POST_MESH_VOLUME;
-
-  if (post_mesh->cat_id == CS_POST_MESH_VOLUME)
-    post_mesh->post_domain = true;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4430,9 +4427,6 @@ cs_post_define_volume_mesh_by_func(int                    mesh_id,
   post_mesh->add_groups = (add_groups) ? true : false;
   if (auto_variables)
     post_mesh->cat_id = CS_POST_MESH_VOLUME;
-
-  if (post_mesh->cat_id == CS_POST_MESH_VOLUME)
-    post_mesh->post_domain = true;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4493,9 +4487,6 @@ cs_post_define_surface_mesh(int          mesh_id,
     else
       post_mesh->cat_id = CS_POST_MESH_SURFACE;
   }
-
-  if (post_mesh->cat_id == CS_POST_MESH_BOUNDARY)
-    post_mesh->post_domain = true;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4570,9 +4561,6 @@ cs_post_define_surface_mesh_by_func(int                    mesh_id,
 
   if (auto_variables)
     post_mesh->cat_id = CS_POST_MESH_BOUNDARY;
-
-  if (post_mesh->cat_id == CS_POST_MESH_BOUNDARY)
-    post_mesh->post_domain = true;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4620,7 +4608,6 @@ cs_post_define_mesh_by_location(int          mesh_id,
     post_mesh->ent_flag[0] = 1;
     if (auto_variables) {
       post_mesh->cat_id = CS_POST_MESH_VOLUME;
-      post_mesh->post_domain = true;
     }
    break;
   case CS_MESH_LOCATION_INTERIOR_FACES:
@@ -4630,7 +4617,6 @@ cs_post_define_mesh_by_location(int          mesh_id,
     post_mesh->ent_flag[2] = 1;
     if (auto_variables) {
       post_mesh->cat_id = CS_POST_MESH_BOUNDARY;
-      post_mesh->post_domain = true;
     }
     break;
   default:
@@ -6328,8 +6314,8 @@ cs_post_write_var(int                    mesh_id,
 
       _check_non_transient(writer, &nt_cur, &t_cur);
 
-      if (nt_cur < 0 && writer->tc.last_nt > 0)
-        continue;
+      /* If data is non-transient, an upstream check
+         should ensure it is not written multiple times. */
 
       if (post_mesh->centers_only == false)
         fvm_writer_export_field(writer->writer,
@@ -6558,8 +6544,8 @@ cs_post_write_function(int                    mesh_id,
 
       _check_non_transient(writer, &nt_cur, &t_cur);
 
-      if (nt_cur < 0 && writer->tc.last_nt > 0)
-        continue;
+      /* If data is non-transient, an upstream check
+         should ensure it is not written multiple times. */
 
       fvm_writer_export_field(writer->writer,
                               post_mesh->exp_mesh,
@@ -6687,8 +6673,8 @@ cs_post_write_vertex_var(int                    mesh_id,
 
       _check_non_transient(writer, &nt_cur, &t_cur);
 
-      if (nt_cur < 0 && writer->tc.last_nt > 0)
-        continue;
+      /* If data is non-transient, an upstream check
+         should ensure it is not written multiple times. */
 
       fvm_writer_export_field(writer->writer,
                               post_mesh->exp_mesh,
@@ -6795,8 +6781,8 @@ cs_post_write_vertex_function(int                    mesh_id,
 
       _check_non_transient(writer, &nt_cur, &t_cur);
 
-      if (nt_cur < 0 && writer->tc.last_nt > 0)
-        continue;
+      /* If data is non-transient, an upstream check
+         should ensure it is not written multiple times. */
 
       fvm_writer_export_field(writer->writer,
                               post_mesh->exp_mesh,

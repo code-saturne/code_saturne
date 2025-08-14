@@ -773,12 +773,7 @@ cs_function_define_mpi_rank_id(cs_mesh_location_type_t  location_id)
   if (cs_glob_mesh->time_dep < CS_MESH_TRANSIENT_CONNECT)
     f->type |= CS_FUNCTION_TIME_INDEPENDENT;
 
-  // Before activating for cells and boundary faces, remove
-  // post_mesh->post_domain feature from cs_post.c.
-
-  if (   location_id != CS_MESH_LOCATION_CELLS
-      && location_id != CS_MESH_LOCATION_BOUNDARY_FACES)
-    f->post_vis = CS_POST_ON_LOCATION;
+  f->post_vis = CS_POST_ON_LOCATION;
 
   return f;
 }
@@ -1474,10 +1469,12 @@ cs_function_boundary_nusselt(int               location_id,
    * And finally multiplying by:
    * b_face_dist / (xvsl * tplus * tstar)
    *
-   * Where xvsl is the thermal diffusivity (uniform or not) of the adjancent cell.
+   * Where xvsl is the thermal diffusivity (uniform or not) of the
+   * adjancent cell.
    *
    * This would present the advantage of factoring more code, but in this case,
-   * a boundary-only version of the cs_flux_through_surface function could be useful
+   * a boundary-only version of the cs_flux_through_surface function could
+   * be useful
    * so as to allow computing gradients only at the boundary (at least when
    * least-squares are used).
    */
