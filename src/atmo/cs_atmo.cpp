@@ -4875,6 +4875,7 @@ cs_atmo_hydrostatic_profiles_compute(void)
 
       /* Boussinesq hypothesis: do not update adiabatic temperature profile */
       if (idilat > 0) {
+        //TODO call cs_rho_humidair() instead, to be coherent in humid atmosphere
         temp->val[cell_id] =   potemp->val[cell_id]
                              * pow((f->val[cell_id]/ps), rscp);
       }
