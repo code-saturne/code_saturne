@@ -1124,7 +1124,7 @@ _relaxed_jacobi(cs_sles_it_t              *c,
     wk_m = 3;
   }
 
-  unsigned n_iter = 0;
+  int n_iter = 0;
 
   cs_dispatch_context ctx;
 
@@ -1556,8 +1556,9 @@ _block_relaxed_jacobi(cs_sles_it_t              *c,
   /*-----------------------------*/
 
   assert(c->setup_data != nullptr);
+  assert(diag_block_size == cs_matrix_get_diag_block_size(a));
 
-  const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t db_size = diag_block_size;
   const cs_lnum_t db_size_2 = db_size * db_size;
 
   const cs_real_t  *restrict ad_inv = c->setup_data->ad_inv;
@@ -1633,7 +1634,6 @@ _block_relaxed_jacobi(cs_sles_it_t              *c,
       const cs_real_t *_vxx = vxx + db_size*ii;
 
       assert(db_size <= DB_SIZE_MAX);
-      cs_real_t aux[DB_SIZE_MAX];
 
       cs_real_t _vx = 0;
       for (cs_lnum_t kk = 0; kk < db_size; kk++) {
