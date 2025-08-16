@@ -74,7 +74,7 @@ if test "x$with_zlib" != "xno" ; then
 
   AC_MSG_CHECKING([for Zlib])
   AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <zlib.h>]],
-                 [[ gzFile *f; f = gzopen("filename", "r"); ]])],
+                 [[ gzFile f = gzopen("filename", "r"); ]])],
                  [ AC_DEFINE([HAVE_ZLIB], 1, [gzipped file support])
                    cs_have_zlib=yes
                  ],
