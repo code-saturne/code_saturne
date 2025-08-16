@@ -106,7 +106,7 @@ BEGIN_C_DECLS
   \var cs_field_bc_coeffs_t::bc
        Implicit coefficient for convection
 
-  \struct cs_field_t
+  \class cs_field_t
 
   \brief Field descriptor
 
@@ -1353,7 +1353,8 @@ cs_f_field_get_label(int           f_id,
  * Create bc_coeffs structure.
  *
  * \param[inout]  bc_coeffs   bc coefficients
- *----------------------------------------------------------------------------*/
+*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_field_bc_coeffs_init(cs_field_bc_coeffs_t  *bc_coeffs)
@@ -2679,7 +2680,7 @@ cs_field_key_id(const char  *name)
 
   if (id < 0)
     bft_error(__FILE__, __LINE__, 0,
-              _("Field \"%s\" is not defined."), name);
+              _("Field key \"%s\" is not defined."), name);
 
   return id;
 }
@@ -4578,6 +4579,320 @@ cs_field_try
   else
     return nullptr;
 }
+
+///@{
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a integer value for a given key to a field.
+ *
+ * If the key id is not valid, CS_FIELD_INVALID_KEY_ID is returned.
+ * If the field category is not compatible with the key (as defined
+ * by its type flag), CS_FIELD_INVALID_CATEGORY is returned.
+ * If the data type does not match, CS_FIELD_INVALID_TYPE is returned.
+ * If the key value has been locked, CS_FIELD_LOCKED is returned.
+ *
+ * \return  0 in case of success, > 1 in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_field_t::set_key_int
+(
+  int  key_id,  /*!<[in]  key id */
+  int  value    /*!<[in]  value */
+)
+{
+  return cs_field_set_key_int(this, key_id, value);
+}
+
+/*----------------------------------------------------------------------------*/
+
+int
+cs_field_t::set_key_int
+(
+  const char  *key,    /*!<[in]  key string */
+  int          value   /*!<[in]  value */
+)
+{
+  int key_id = cs_field_key_id(key);
+
+  return cs_field_set_key_int(this, key_id, value);
+}
+
+///@}
+///@{
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a integer value for a given key associated with a field.
+ *
+ * If the key id is not valid, or the value type or field category is not
+ * compatible, a fatal error is provoked.
+ *
+ * \return  value associated with the key id for this field
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_field_t::get_key_int
+(
+  int  key_id  /*!<[in]  key id */
+)
+{
+  return cs_field_get_key_int(this, key_id);
+}
+
+/*----------------------------------------------------------------------------*/
+
+int
+cs_field_t::get_key_int
+(
+  const char  *key    /*!<[in]  key string */
+)
+{
+  int key_id = cs_field_key_id(key);
+
+  return cs_field_get_key_int(this, key_id);
+}
+
+///@}
+///@{
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set integer bits matching a mask to 1 for a given key for a field.
+ *
+ * If the key id is not valid, CS_FIELD_INVALID_KEY_ID is returned.
+ * If the field category is not compatible with the key (as defined
+ * by its type flag), CS_FIELD_INVALID_CATEGORY is returned.
+ * If the data type does not match, CS_FIELD_INVALID_TYPE is returned.
+ * If the key value has been locked, CS_FIELD_LOCKED is returned.
+ *
+ * \return  0 in case of success, > 1 in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_field_t::set_key_int_bits
+(
+  int  key_id,  /*!<[in]  key id */
+  int  mask     /*!<[in]  mask */
+)
+{
+  return cs_field_set_key_int_bits(this, key_id, mask);
+}
+
+/*----------------------------------------------------------------------------*/
+
+int
+cs_field_t::set_key_int_bits
+(
+  const char  *key,    /*!<[in]  key string */
+  int          mask    /*!<[in]  mask */
+)
+{
+  int key_id = cs_field_key_id(key);
+
+  return cs_field_set_key_int_bits(this, key_id, mask);
+}
+
+///@}
+///@{
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set integer bits matching a mask to 0 for a given key for a field.
+ *
+ * If the key id is not valid, CS_FIELD_INVALID_KEY_ID is returned.
+ * If the field category is not compatible with the key (as defined
+ * by its type flag), CS_FIELD_INVALID_CATEGORY is returned.
+ * If the data type does not match, CS_FIELD_INVALID_TYPE is returned.
+ * If the key value has been locked, CS_FIELD_LOCKED is returned.
+ *
+ * \return  0 in case of success, > 1 in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_field_t::clear_key_int_bits
+(
+  int  key_id,  /*!<[in]  key id */
+  int  mask     /*!<[in]  mask */
+)
+{
+  return cs_field_clear_key_int_bits(this, key_id, mask);
+}
+
+/*----------------------------------------------------------------------------*/
+
+int
+cs_field_t::clear_key_int_bits
+(
+  const char  *key,    /*!<[in]  key string */
+  int          mask    /*!<[in]  mask */
+)
+{
+  int key_id = cs_field_key_id(key);
+
+  return cs_field_clear_key_int_bits(this, key_id, mask);
+}
+
+///@}
+///@{
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a floating point value for a given key to a field.
+ *
+ * If the key id is not valid, CS_FIELD_INVALID_KEY_ID is returned.
+ * If the field category is not compatible with the key (as defined
+ * by its type flag), CS_FIELD_INVALID_CATEGORY is returned.
+ * If the data type does not match, CS_FIELD_INVALID_TYPE is returned.
+ * If the key value has been locked, CS_FIELD_LOCKED is returned.
+ *
+ * \return  0 in case of success, > 1 in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_field_t::set_key_double
+(
+  int     key_id,  /*!<[in]  key id */
+  double  value    /*!<[in]  value */
+)
+{
+  return cs_field_set_key_double(this, key_id, value);
+}
+
+/*----------------------------------------------------------------------------*/
+
+int
+cs_field_t::set_key_double
+(
+  const char  *key,    /*!<[in]  key string */
+  double       value   /*!<[in]  value */
+)
+{
+  int key_id = cs_field_key_id(key);
+
+  return cs_field_set_key_double(this, key_id, value);
+}
+
+///@}
+///@{
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a floating point value for a given key associated with a field.
+ *
+ * If the key id is not valid, or the value type or field category is not
+ * compatible, a fatal error is provoked.
+ *
+ * \return  value associated with the key id for this field
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_field_t::get_key_double
+(
+  int  key_id  /*!<[in]  key id */
+)
+{
+  return cs_field_get_key_double(this, key_id);
+}
+
+/*----------------------------------------------------------------------------*/
+
+double
+cs_field_t::get_key_double
+(
+  const char  *key    /*!<[in]  key string */
+)
+{
+  int key_id = cs_field_key_id(key);
+
+  return cs_field_get_key_double(this, key_id);
+}
+
+///@}
+///@{
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign a character string for a given key to a field.
+ *
+ * If the key id is not valid, CS_FIELD_INVALID_KEY_ID is returned.
+ * If the field category is not compatible with the key (as defined
+ * by its type flag), CS_FIELD_INVALID_CATEGORY is returned.
+ * If the data type does not match, CS_FIELD_INVALID_TYPE is returned.
+ * If the key value has been locked, CS_FIELD_LOCKED is returned.
+ *
+ * \return  0 in case of success, > 1 in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_field_t::set_key_str
+(
+  int          key_id,  /*!<[in]  key id */
+  const char  *str      /*!<[in]  string associated with the key */
+)
+{
+  return cs_field_set_key_str(this, key_id, str);
+}
+
+/*----------------------------------------------------------------------------*/
+
+int
+cs_field_t::set_key_str
+(
+  const char  *key,   /*!<[in]  key string */
+  const char  *str    /*!<[in]  string associated with the key */
+)
+{
+  int key_id = cs_field_key_id(key);
+
+  return cs_field_set_key_str(this, key_id, str);
+}
+
+///@}
+///@{
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a character string for a given key associated with a field.
+ *
+ * If the key id is not valid, or the value type or field category is not
+ * compatible, a fatal error is provoked.
+ *
+ * \return  string associated with the key id for this field
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_field_t::get_key_str
+(
+  int  key_id  /*!<[in]  key id */
+)
+{
+  return cs_field_get_key_str(this, key_id);
+}
+
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_field_t::get_key_str
+(
+  const char  *key    /*!<[in]  key string */
+)
+{
+  int key_id = cs_field_key_id(key);
+
+  return cs_field_get_key_str(this, key_id);
+}
+
+///@}
 
 /*----------------------------------------------------------------------------*/
 

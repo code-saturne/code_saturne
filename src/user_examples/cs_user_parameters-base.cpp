@@ -1163,10 +1163,10 @@ cs_user_parameters(cs_domain_t *domain)
     const int kivisl = cs_field_key_id("diffusivity_id");
 
     /* For thermal scalar */
-    if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0)
-      cs_field_set_key_int(cs_thermal_model_field(), kivisl, -1);
-    else
-      cs_field_set_key_int(cs_field_by_name("temperature"), kivisl, -1);
+    cs_field_t *f_th = cs_thermal_model_field();
+    if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)
+      f_th = cs_field_by_name("temperature");
+    f_th->set_key_int(kivisl, -1);
 
     /* For user-defined scalars */
     const int n_fields = cs_field_n_fields();
@@ -1176,10 +1176,10 @@ cs_user_parameters(cs_domain_t *domain)
     for (int f_id = 0; f_id < n_fields; f_id++) {
       cs_field_t *f = cs_field_by_id(f_id);
       if (f->type & (CS_FIELD_VARIABLE | CS_FIELD_USER)) {
-        int s_num = cs_field_get_key_int(f, k_scal);
-        int iscavr = cs_field_get_key_int(f, kscavr);
+        int s_num = f->get_key_int(k_scal);
+        int iscavr = f->get_key_int(kscavr);
         if (s_num > 0 && iscavr <= 0)
-          cs_field_set_key_int(f, kivisl, 0);
+          f->set_key_int(kivisl, 0);
       }
     }
   }
@@ -1187,11 +1187,9 @@ cs_user_parameters(cs_domain_t *domain)
 
   /*! [param_density_id] */
   {
-    const int kromsl = cs_field_key_id("density_id");
-
     /* Example user-defined scalar */
     cs_field_t *f = cs_field_by_name("scalar1");
-    cs_field_set_key_int(f, kromsl, 0);
+    f->set_key_int("density_id", 0);
   }
   /*! [param_density_id] */
 
@@ -1212,7 +1210,7 @@ cs_user_parameters(cs_domain_t *domain)
   {
     const int kscacp = cs_field_key_id("is_temperature");
 
-    cs_field_set_key_int(cs_field_by_name("t_1"), kscacp, 0);
+    cs_field_by_name("t_1")->set_key_int(kscacp, 0);
   }
   /*! [param_kscacp] */
 
@@ -1227,7 +1225,7 @@ cs_user_parameters(cs_domain_t *domain)
 
     const int kvisl0 = cs_field_key_id("diffusivity_ref");
 
-    cs_field_set_key_double(CS_F_(t), kvisl0, 3.e-2);
+    CS_F_(t)->set_key_double(kvisl0, 3.e-2);
 
     /* If the molecular thermal conductivity is variable, its values
        must be provided in 'cs_user_physical_properties'. */
@@ -1385,7 +1383,7 @@ cs_user_parameters(cs_domain_t *domain)
     /* GGDH for thermal scalar */
     cs_field_t *f_t = cs_thermal_model_field();
     if (f_t != nullptr)
-      cs_field_set_key_int(f_t, kturt, turb_flux_model);
+      f_t->set_key_int(kturt, turb_flux_model);
 
     /* GGDH for all user-defined scalars */
     const int n_fields = cs_field_n_fields();
@@ -1395,10 +1393,10 @@ cs_user_parameters(cs_domain_t *domain)
     for (int f_id = 0; f_id < n_fields; f_id++) {
       cs_field_t *f = cs_field_by_id(f_id);
       if (f->type & (CS_FIELD_VARIABLE | CS_FIELD_USER)) {
-        int s_num = cs_field_get_key_int(f, k_scal);
-        int iscavr = cs_field_get_key_int(f, kscavr);
+        int s_num = f->get_key_int(k_scal);
+        int iscavr = f->get_key_int(kscavr);
         if (s_num > 0 && iscavr <= 0)
-          cs_field_set_key_int(f, kturt, turb_flux_model);
+          f->set_key_int(kturt, turb_flux_model);
       }
     }
   }
@@ -1471,7 +1469,7 @@ cs_user_parameters(cs_domain_t *domain)
      *   CS_NVD_VOF_STACS        */
 
     int key_lim_id = cs_field_key_id("limiter_choice");
-    cs_field_set_key_int(sca1, key_lim_id, CS_NVD_VOF_CICSAM);
+    sca1->set_key_int(key_lim_id, CS_NVD_VOF_CICSAM);
 
     /* Get the Key for the Sup and Inf for the convective scheme */
     int kccmin = cs_field_key_id("min_scalar");
@@ -1479,8 +1477,8 @@ cs_user_parameters(cs_domain_t *domain)
 
     /* Set the Value for the Sup and Inf of the studied scalar
      * for the Gamma beta limiter for the temperature */
-    cs_field_set_key_double(CS_F_(t), kccmin, 0.);
-    cs_field_set_key_double(CS_F_(t), kccmax, 1.);
+    CS_F_(t)->set_key_double(kccmin, 0.);
+    CS_F_(t)->set_key_double(kccmax, 1.);
 
   }
   /*! [param_var_limiter_choice] */
@@ -1502,12 +1500,8 @@ cs_user_parameters(cs_domain_t *domain)
 
   {
     /* We define the min and max bounds */
-    cs_field_set_key_double(CS_F_(t),
-                            cs_field_key_id("min_scalar_clipping"),
-                            0.);
-    cs_field_set_key_double(CS_F_(t),
-                            cs_field_key_id("max_scalar_clipping"),
-                            1.);
+    CS_F_(t)->set_key_double("min_scalar_clipping", 0.);
+    CS_F_(t)->set_key_double("max_scalar_clipping", 1.);
   }
 
   /*-----------------------------------------------------------------------*/
@@ -1537,7 +1531,7 @@ cs_user_parameters(cs_domain_t *domain)
 
     int key_coupled_with_vel_p = cs_field_key_id("coupled_with_vel_p");
 
-    cs_field_set_key_int(sca1, key_coupled_with_vel_p, 1);
+    sca1->set_key_int(key_coupled_with_vel_p, 1);
   }
   /*! [param_var_coupled_with_vel_p] */
 
@@ -1584,16 +1578,14 @@ cs_user_parameters(cs_domain_t *domain)
       drift |= CS_DRIFT_SCALAR_ZERO_BNDY_FLUX;
 
     /* Set the key word "drift_scalar_model" into the field structure */
-    cs_field_set_key_int(sca1, key_drift, drift);
+    sca1->set_key_int(key_drift, drift);
   }
   /*! [param_var_drift] */
 
   /* Example: to change the turbulent Schmidt number */
   /*-------------------------------------------------*/
   {
-    cs_field_set_key_double(CS_F_(t),
-                            cs_field_key_id("turbulent_schmidt"),
-                            0.7);
+    CS_F_(t)->set_key_double("turbulent_schmidt", 0.7);
   }
 
   /* Example: activate mesh robustness options */
@@ -1735,7 +1727,7 @@ cs_user_parameters(cs_domain_t *domain)
       cs_field_t  *f = cs_field_by_id(f_id);
 
       if (f->type & CS_FIELD_VARIABLE)
-        cs_field_set_key_int(f, cs_field_key_id("slope_test_upwind_id"), 0);
+        f->set_key_int("slope_test_upwind_id", 0);
 
     }
   }
@@ -1770,8 +1762,8 @@ cs_user_parameters(cs_domain_t *domain)
                                       CS_MESH_LOCATION_CELLS,
                                       1,
                                       false);
-      cs_field_set_key_int(f, cs_field_key_id("log"), 1);
-      cs_field_set_key_int(f, cs_field_key_id("post_vis"), 1);
+      f->set_key_int("log", 1);
+      f->set_key_int("post_vis", 1);
     }
   }
 
@@ -1958,15 +1950,13 @@ cs_user_finalize_setup(cs_domain_t     *domain)
      (here for specific heat, first checking if it is variable) */
   /*! [setup_label] */
   if (CS_F_(cp) != nullptr)
-    cs_field_set_key_str(CS_F_(cp), cs_field_key_id("label"), "Cp");
+    CS_F_(cp)->set_key_str("label", "Cp");
   /*! [setup_label] */
 
   /* Probes for variables and properties
    * (example for velocity) */
   /*! [setup_post] */
-  cs_field_set_key_int_bits(CS_F_(vel),
-                            cs_field_key_id("post_vis"),
-                            CS_POST_MONITOR);
+  CS_F_(vel)->set_key_int_bits("post_vis", CS_POST_MONITOR);
   /*! [setup_post] */
 
   /* Output and probes for Radiative Transfer
@@ -1976,15 +1966,13 @@ cs_user_finalize_setup(cs_domain_t     *domain)
   {
     cs_field_t *f = cs_field_by_name_try("rad_energy");
     if (f != nullptr)
-      cs_field_set_key_int_bits(f,
-                                cs_field_key_id("post_vis"),
-                                CS_POST_ON_LOCATION | CS_POST_MONITOR);
+      f->set_key_int_bits("post_vis",
+                          CS_POST_ON_LOCATION | CS_POST_MONITOR);
 
     f = cs_field_by_name_try("radiative_flux");
     if (f != nullptr)
-      cs_field_set_key_int_bits(f,
-                                cs_field_key_id("post_vis"),
-                                CS_POST_ON_LOCATION | CS_POST_MONITOR);
+      f->set_key_int_bits("post_vis",
+                          CS_POST_ON_LOCATION | CS_POST_MONITOR);
   }
   /*! [setup_post_lum] */
 
@@ -1993,8 +1981,8 @@ cs_user_finalize_setup(cs_domain_t     *domain)
 
   /*! [param_var_rij_clipping] */
 
-  cs_field_set_key_int(CS_F_(rij), cs_field_key_id("clipping_id"), 1);
-  cs_field_set_key_int(CS_F_(eps), cs_field_key_id("clipping_id"), 1);
+  CS_F_(rij)->set_key_int("clipping_id", 1);
+  CS_F_(eps)->set_key_int("clipping_id", 1);
 
   /*! [param_var_rij_clipping] */
 

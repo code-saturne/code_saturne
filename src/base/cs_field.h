@@ -190,6 +190,71 @@ typedef struct {
 
   bool                    is_owner;     /* Ownership flag for values */
 
+#if defined(__cplusplus)
+
+  /* Setter and getter methods for key-based values
+     ---------------------------------------------- */
+
+  int
+  set_key_int(int  key_id,
+              int  value);
+
+  int
+  set_key_int(const char  *key,
+              int          value);
+
+  int
+  get_key_int(int  key_id);
+
+  int
+  get_key_int(const char  *key);
+
+  int
+  set_key_int_bits(int  key_id,
+                   int  mask);
+
+  int
+  set_key_int_bits(const char  *key,
+                   int          mask);
+
+  int
+  clear_key_int_bits(int  key_id,
+                     int  mask);
+
+  int
+  clear_key_int_bits(const char  *key,
+                     int          mask);
+
+  int
+  set_key_double(int  key_id,
+                 double  value);
+
+  int
+  set_key_double(const char  *key,
+                 double       value);
+
+  double
+  get_key_double(int  key_id);
+
+  double
+  get_key_double(const char  *key);
+
+  int
+  set_key_str(int          key_id,
+              const char  *str);
+
+  int
+  set_key_str(const char  *key,
+              const char  *str);
+
+  const char *
+  get_key_str(int  key_id);
+
+  const char *
+  get_key_str(const char  *key);
+
+#endif
+
 } cs_field_t;
 
 /*----------------------------------------------------------------------------

@@ -290,7 +290,7 @@ ALIASES                =
 # members will be omitted, etc.
 # The default value is: NO.
 
-OPTIMIZE_OUTPUT_FOR_C  = YES
+OPTIMIZE_OUTPUT_FOR_C  = NO
 
 # Set the OPTIMIZE_OUTPUT_JAVA tag to YES if your project consists of Java or
 # Python sources only. Doxygen will then generate output that is more tailored
@@ -2306,7 +2306,8 @@ PREDEFINED             = HAVE_CONFIG_H=1 \
                          "CS_PROCF(x,y)=x" \
                          CS_ENUMF_(e)=e \
                          BEGIN_C_DECLS= \
-                         END_C_DECLS=
+                         END_C_DECLS= \
+                         __cplusplus
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The
