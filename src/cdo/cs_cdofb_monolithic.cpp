@@ -1174,6 +1174,16 @@ _implicit_euler_build(const cs_navsto_param_t *nsp,
   if (tp->model->itytur == 2 || tp->model->itytur == 6)
     kener = cs_field_by_name("k")->val;
 
+  cs_lnum_t *icodcl_vel = nullptr;
+  cs_real_t *rcodcl1_vel = nullptr;
+
+  /* Communicate with legacy structures to ensure coherency in
+   * computing BC for turbulence equations (eg. k, eps, omega)*/
+  if (tp->shared_from_legacy) {
+    icodcl_vel = sc->velocity->bc_coeffs->icodcl;
+    rcodcl1_vel = sc->velocity->bc_coeffs->rcodcl1;
+  }
+
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
     const int  t_id = cs_get_thread_id();
@@ -1252,7 +1262,7 @@ _implicit_euler_build(const cs_navsto_param_t *nsp,
         cs_cdofb_vecteq_init_turb_bc(cm, mom_eqp, mom_eqb,
                                      mu_l/rho,
                                      kener[c_id], vel_c_n + 3*c_id,
-                                     csys, cb);
+                                     csys, cb, icodcl_vel, rcodcl1_vel);
 
       /* 1- SETUP THE NAVSTO LOCAL BUILDER *
        * ================================= *
@@ -1433,7 +1443,7 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
     const cs_real_t  inv_dtcur = 1./dt_cur;
     const cs_real_t  t_eval = t_cur + mom_eqp->theta*dt_cur;
 
-    /* Each thread get back its related structures:
+     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
 
     cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(nsp,

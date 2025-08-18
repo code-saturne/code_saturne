@@ -626,7 +626,8 @@ _solve_most(int              n_var,
     cs_time_control_t *vp_tc
       = &(cs_get_glob_velocity_pressure_param()->time_control);
     const cs_time_step_t *ts = cs_glob_time_step;
-    bool _active_dyn = cs_time_control_is_active(vp_tc, ts);
+    bool _active_dyn = cs_time_control_is_active(vp_tc, ts) &&
+                       cs_param_cdo_has_fv_main();
     if (_active_dyn) {
 
       /* Solve momentum and mass equation
@@ -730,8 +731,8 @@ _solve_most(int              n_var,
 static void
 _transfer_mass_flux_cdo_to_fv()
 {
-  const cs_lnum_t n_i_faces = cs_glob_domain->mesh->n_i_faces;
-  const cs_lnum_t n_b_faces = cs_glob_domain->mesh->n_b_faces;
+  const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;
+  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
   const int  kimasf = cs_field_key_id("inner_mass_flux_id");
   const int  kbmasf = cs_field_key_id("boundary_mass_flux_id");
@@ -937,6 +938,7 @@ cs_solve_all()
   /* Solve CDO NSE module
     --------------------------------------------------------------- */
   if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_NS_WITH_FV) {
+    cs_field_build_bc_codes_all();
     /* FV and CDO activated */
     cs_cdo_solve_unsteady_state_domain();
   }
@@ -1192,7 +1194,7 @@ cs_solve_all()
   }
 
   bool must_return    = false;
-  bool need_new_solve = cs_param_cdo_has_fv_main();
+  bool need_new_solve = true;
 
   cs_time_control_t *vp_tc
     = &(cs_get_glob_velocity_pressure_param()->time_control);

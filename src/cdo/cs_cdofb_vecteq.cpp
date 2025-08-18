@@ -56,6 +56,7 @@
 #include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "mesh/cs_mesh_location.h"
+#include "base/cs_parameters.h"
 #include "base/cs_post.h"
 #include "cdo/cs_quadrature.h"
 #include "cdo/cs_reco.h"
@@ -416,7 +417,7 @@ cs_cdofb_vecteq_init_cell_system(const cs_cell_mesh_t         *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Initialize the turbulent wall BC related coefficients
+ * \brief   Initialize the modelled wall BC related coefficients
  *
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
@@ -426,6 +427,8 @@ cs_cdofb_vecteq_init_cell_system(const cs_cell_mesh_t         *cm,
  * \param[in]      uc          cell velocity
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
+ * \param[in, out] icodcl_vel  bc type indicator for legacy velocity, maybe null
+ * \param[in, out] rcodcl1_vel dirichlet coeffs for legacy velocity, maybe null
  */
 /*----------------------------------------------------------------------------*/
 
@@ -437,11 +440,24 @@ cs_cdofb_vecteq_init_turb_bc(const cs_cell_mesh_t         *cm,
                              const cs_real_t               k,
                              const cs_real_t              *uc,
                              cs_cell_sys_t                *csys,
-                             cs_cell_builder_t            *cb)
+                             cs_cell_builder_t            *cb,
+                             cs_lnum_t                    *icodcl_vel,
+                             cs_real_t                    *rcodcl1_vel)
 {
   if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
     const int  d = eqp->dim;
+    const cs_lnum_t n_b_faces = cs_shared_quant->n_b_faces;
+
+    cs_real_t *rcodcl1_ux = nullptr,
+              *rcodcl1_uy = nullptr,
+              *rcodcl1_uz = nullptr;
+
+    if (rcodcl1_vel != nullptr) {
+      rcodcl1_ux = rcodcl1_vel;
+      rcodcl1_uy = rcodcl1_vel + n_b_faces;
+      rcodcl1_uz = rcodcl1_vel + 2*n_b_faces;
+    }
 
     /* Identify which face is a boundary face */
 
@@ -464,6 +480,13 @@ cs_cdofb_vecteq_init_turb_bc(const cs_cell_mesh_t         *cm,
                                              cm->hfc[f],
                                              uc,
                                              csys->rob_values);
+
+          if(icodcl_vel != nullptr && rcodcl1_vel != nullptr) {
+            icodcl_vel[bf_id] = CS_SMOOTHWALL;
+            rcodcl1_ux[bf_id] = csys->rob_values[9*f + 0];
+            rcodcl1_uy[bf_id] = csys->rob_values[9*f + 1];
+            rcodcl1_uz[bf_id] = csys->rob_values[9*f + 2];
+          }
         }
       }
     }

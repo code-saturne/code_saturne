@@ -267,7 +267,7 @@ cs_cdofb_vecteq_init_cell_system(const cs_cell_mesh_t         *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Initialize the turbulent wall BC related coefficients
+ * \brief   Initialize the modelled wall BC related coefficients
  *
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
@@ -277,6 +277,8 @@ cs_cdofb_vecteq_init_cell_system(const cs_cell_mesh_t         *cm,
  * \param[in]      uc          cell velocity
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
+ * \param[in, out] icodcl_vel  bc type indicator for legacy velocity
+ * \param[in, out] rcodcl1_vel dirichlet bc coeffs for legacy velocity
  */
 /*----------------------------------------------------------------------------*/
 
@@ -288,7 +290,9 @@ cs_cdofb_vecteq_init_turb_bc(const cs_cell_mesh_t         *cm,
                              const cs_real_t               k,
                              const cs_real_t              *uc,
                              cs_cell_sys_t                *csys,
-                             cs_cell_builder_t            *cb);
+                             cs_cell_builder_t            *cb,
+                             cs_lnum_t                    *icodcl_vel,
+                             cs_real_t                    *rcodcl1_vel);
 
 /*----------------------------------------------------------------------------*/
 /*!
