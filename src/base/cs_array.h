@@ -1573,7 +1573,7 @@ public:
       /* check that size_to_keep is either >0 or == -1 (keep all) */
       if (size_to_keep != 0) {
         /* Temporary copy */
-        array<T,N,L> tmp(*this, false);
+        array<T,N,L> tmp(*this, true);
 
         /* Update instance size */
         set_size_(dims);
