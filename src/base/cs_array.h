@@ -1236,7 +1236,11 @@ public:
     else {
       _data = nullptr;
     }
-    set_size_(0);
+    _size = 0;
+    for (int i = 0; i < N; i++) {
+      _offset[i] = 0;
+      _extent[i] = 0;
+    }
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1251,10 +1255,7 @@ public:
   mdspan<T, N, L>
   view()
   {
-    if (N == 1)
-      return mdspan<T,N,L>(_size, _data);
-    else
-      return mdspan<T,N,L>(_extent, _data);
+    return mdspan<T,N,L>(_data, _extent);
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1307,7 +1308,7 @@ public:
                   "for this array.\n"),
                 __func__, s, _size);
 
-    return mdspan<T,_N_,_L_>(dims, _data);
+    return mdspan<T,_N_,_L_>(_data, dims);
   }
 
   /*--------------------------------------------------------------------------*/
@@ -2371,30 +2372,6 @@ private:
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Set size of array based on global size.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST_DEVICE
-  void
-  set_size_
-  (
-    const cs_lnum_t size /*!<[in] Global size to set for the array */
-  )
-  {
-    _size = size;
-    for (int i = 0; i < N; i++) {
-      _extent[i] = 0;
-      _offset[i] = 0;
-    }
-    if (N > 0) {
-      _extent[0] = _size;
-      _offset[0] = 1;
-    }
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
    * \brief Set size of array based on dimensions.
    */
   /*--------------------------------------------------------------------------*/
@@ -2403,13 +2380,14 @@ private:
   void
   set_size_
   (
-    const cs_lnum_t dims[] /*!<[in] Array of dimensions' sizes */
+    const cs_lnum_t(&dims)[N] /*!<[in] array of sizes along dimensions */
   )
   {
     _size = (N > 0) ? 1 : 0;
     for (int i = 0; i < N; i++) {
       _extent[i] = dims[i];
       _size *= dims[i];
+      _offset[i] = 1;
     }
 
     /* Compute offset values for getters */
@@ -2417,20 +2395,37 @@ private:
     if (L == layout::right) {
       /* Version for Layout right */
       for (int i = 0; i < N-1; i++) {
-        _offset[i] = 1;
         for (int j = i + 1; j < N; j++)
           _offset[i] *= dims[j];
       }
-      _offset[N-1] = 1;
     }
     else if (L == layout::left) {
       for (int i = N-1; i >= 1; i--) {
-        _offset[i] = 1;
         for (int j = i - 1; j >= 0; j--)
           _offset[i] *= dims[j];
       }
-      _offset[0] = 1;
     }
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Set size of N indices (variadic template)
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<typename... Args>
+  CS_F_HOST_DEVICE
+  void
+  set_size_
+  (
+    Args... dims /*!<[in] Array of dimensions' sizes */
+  )
+  {
+    check_operator_args_(dims...);
+
+    cs_lnum_t loc_dims[N] = {dims...};
+
+    set_size_(loc_dims);
   }
 
   /*--------------------------------------------------------------------------*/
