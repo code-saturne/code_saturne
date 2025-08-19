@@ -1259,20 +1259,23 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Get span view of array (default), same dimensions as array.
+   * \brief Get span sub-view of array, with lower dimensionality.
    *
-   * \return mdspan view with same number of dimensions as array.
+   * \return mdspan view with Nd = N - Nargs.
    */
   /*--------------------------------------------------------------------------*/
 
+  template<typename... Args>
   CS_F_HOST_DEVICE
-  mdspan<T, N, L>
-  get_span()
+  mdspan<T, N-sizeof...(Args), L>
+  sub_view
+  (
+    Args... indices /*!<[in] Input arguments (parameter pack) */
+  )
   {
-    if (N == 1)
-      return mdspan<T,N,L>(_size, _data);
-    else
-      return mdspan<T,N,L>(_extent, _data);
+    check_sub_function_args_(indices...);
+
+    return (this->view()).sub_view(indices...);
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1792,129 +1795,43 @@ public:
   /*--------------------------------------------------------------------------*/
   /*!
    * \brief Get sub array based on index.
+   *
+   * \return raw pointer of sub array
    */
   /*--------------------------------------------------------------------------*/
 
+  template<typename... Args>
   CS_F_HOST_DEVICE
   T*
   sub_array
   (
-    cs_lnum_t i /*!<[in] index of subarray */
+    Args... indices /*!<[in] Input arguments (parameter pack) */
   )
   {
-    if (L == layout::right)
-      return _data + i*_offset[0];
-    else
-      return _data + i*_offset[N-1];
+    check_sub_function_args_(indices...);
+
+    return _data + data_offset_(indices...);
   }
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Get sub array based on two indexes.
+   * \brief Const get sub array based on index.
+   *
+   * \return const raw pointer of sub array
    */
   /*--------------------------------------------------------------------------*/
 
+  template<typename... Args>
   CS_F_HOST_DEVICE
   T*
   sub_array
   (
-    cs_lnum_t i, /*!<[in] index of subarray */
-    cs_lnum_t j  /*!<[in] index of subarray */
-  )
-  {
-    static_assert(N > 2,
-                  "sub_array(i,j) can only be called for N>2");
-    if (L == layout::right)
-      return _data + i*_offset[0] + j*_offset[1];
-    else
-      return _data + i*_offset[N-1] + j*_offset[N-2];
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Get sub array based on three indexes.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST_DEVICE
-  T*
-  sub_array
-  (
-    cs_lnum_t i, /*!<[in] index of subarray */
-    cs_lnum_t j, /*!<[in] index of subarray */
-    cs_lnum_t k  /*!<[in] index of subarray */
-  )
-  {
-    static_assert(N > 3,
-                  "sub_array(i,j,k) can only be called for N>3");
-    if (L == layout::right)
-      return _data + i*_offset[0] + j*_offset[1] + k*_offset[2];
-    else
-      return _data + i*_offset[N-1] + j*_offset[N-2] + k*_offset[N-3];
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Get sub array based on index. (const)
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST_DEVICE
-  const T*
-  sub_array
-  (
-    cs_lnum_t i /*!<[in] index of subarray */
+    Args... indices /*!<[in] Input arguments (parameter pack) */
   ) const
   {
-    if (L == layout::right)
-      return _data + i*_offset[0];
-    else
-      return _data + i*_offset[N-1];
-  }
+    check_sub_function_args_(indices...);
 
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Get sub array based on index.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST_DEVICE
-  const T*
-  sub_array
-  (
-    cs_lnum_t i, /*!<[in] index of subarray */
-    cs_lnum_t j  /*!<[in] index of subarray */
-  ) const
-  {
-    static_assert(N > 2,
-                  "sub_array(i,j) can only be called for N>2");
-    if (L == layout::right)
-      return _data + i*_offset[0] + j*_offset[1];
-    else
-      return _data + i*_offset[N-1] + j*_offset[N-2];
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Get sub array based on three indexes.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST_DEVICE
-  const T*
-  sub_array
-  (
-    cs_lnum_t i, /*!<[in] index of subarray */
-    cs_lnum_t j, /*!<[in] index of subarray */
-    cs_lnum_t k  /*!<[in] index of subarray */
-  ) const
-  {
-    static_assert(N > 3,
-                  "sub_array(i,j,k) can only be called for N>3");
-    if (L == layout::right)
-      return _data + i*_offset[0] + j*_offset[1] + k*_offset[2];
-    else
-      return _data + i*_offset[N-1] + j*_offset[N-2] + k*_offset[N-3];
+    return _data + data_offset_(indices...);
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1987,13 +1904,16 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
+  template<typename Id1>
   CS_F_HOST_DEVICE
   inline
-  T& operator()
+  std::enable_if_t<cs::always_true<Id1>::value && N==1, T&>
+  operator()
   (
-    cs_lnum_t i /*!<[in] Index of value to get */
+    Id1 i /*!<[in] Index of value to get */
   )
   {
+    check_operator_args_(i);
     return _data[i];
   }
 
@@ -2005,13 +1925,16 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
+  template<typename Id1>
   CS_F_HOST_DEVICE
   inline
-  T& operator()
+  std::enable_if_t<cs::always_true<Id1>::value && N==1, T&>
+  operator()
   (
-    cs_lnum_t i /*!<[in] Index of value to get */
+    Id1 i /*!<[in] Index of value to get */
   ) const
   {
+    check_operator_args_(i);
     return _data[i];
   }
 
@@ -2023,16 +1946,17 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
+  template<typename Id1, typename Id2>
   CS_F_HOST_DEVICE
   inline
-  T& operator()
+  std::enable_if_t<cs::always_true<Id1, Id2>::value && N==2, T&>
+  operator()
   (
-    cs_lnum_t i, /*!<[in] Index along first dimension */
-    cs_lnum_t j  /*!<[in] Index along second dimension */
+    Id1 i, /*!<[in] Index along first dimension */
+    Id2 j  /*!<[in] Index along second dimension */
   )
   {
-    static_assert(N == 2,
-                  "Operator (i,j) can only be called for cs::array<T,2>");
+    check_operator_args_(i,j);
 
     if (L == layout::right)
       return _data[i*_offset[0] + j];
@@ -2050,16 +1974,17 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
+  template<typename Id1, typename Id2>
   CS_F_HOST_DEVICE
   inline
-  T& operator()
+  std::enable_if_t<cs::always_true<Id1, Id2>::value && N==2, T&>
+  operator()
   (
     cs_lnum_t i, /*!<[in] Index along first dimension */
     cs_lnum_t j  /*!<[in] Index along second dimension */
   ) const
   {
-    static_assert(N == 2,
-                  "Operator (i,j) can only be called for cs::array<T,2>");
+    check_operator_args_(i,j);
 
     if (L == layout::right)
       return _data[i*_offset[0] + j];
@@ -2071,58 +1996,46 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Overloaded () operator to access the (i,j,k)-th value tuple.
+   * \brief Overloaded () operator using N-values tuple..
    *
-   * \returns const reference to the (i,j,k)-th value
+   * \returns reference to the (i_1, ...,i_n)-th value
    */
   /*--------------------------------------------------------------------------*/
 
+  template<typename... Args>
   CS_F_HOST_DEVICE
   inline
-  T& operator()
+  std::enable_if_t<cs::always_true<Args...>::value && (N!=2) && (N!=1), T&>
+  operator()
   (
-    cs_lnum_t i, /*!<[in] Index along first dimension */
-    cs_lnum_t j, /*!<[in] Index along second dimension */
-    cs_lnum_t k  /*!<[in] Index along third dimension */
+    Args... indices /*!<[in] Input arguments (parameter pack) */
   )
   {
-    static_assert(N == 3,
-                  "Operator (i,j,k) can only be called for cs::array<T,3>");
+    check_operator_args_(indices...);
 
-    if (L == layout::right)
-      return _data[i*_offset[0] + j*_offset[1] + k];
-    else if (L == layout::left)
-      return _data[i + j*_offset[1] + k*_offset[2]];
-    else
-      return _data[i*_offset[0] + j*_offset[1] + k*_offset[2]];
+    return _data[data_offset_(indices...)];
   }
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Overloaded () operator to access the (i,j,k)-th value tuple.
+   * \brief Overloaded () operator using N-values tuple..
    *
-   * \returns const reference to the (i,j,k)-th value
+   * \returns const reference to the (i_1, ...,i_n)-th value
    */
   /*--------------------------------------------------------------------------*/
 
+  template<typename... Args>
   CS_F_HOST_DEVICE
   inline
-  T& operator()
+  std::enable_if_t<cs::always_true<Args...>::value && (N!=2) && (N!=1), T&>
+  operator()
   (
-    cs_lnum_t i, /*!<[in] Index along first dimension */
-    cs_lnum_t j, /*!<[in] Index along second dimension */
-    cs_lnum_t k  /*!<[in] Index along third dimension */
+    Args... indices /*!<[in] Input arguments (parameter pack) */
   ) const
   {
-    static_assert(N == 3,
-                  "Operator (i,j,k) can only be called for cs::array<T,3>");
+    check_operator_args_(indices...);
 
-    if (L == layout::right)
-      return _data[i*_offset[0] + j*_offset[1] + k];
-    else if (L == layout::left)
-      return _data[i + j*_offset[1] + k*_offset[2]];
-    else
-      return _data[i*_offset[0] + j*_offset[1] + k*_offset[2]];
+    return _data[data_offset_(indices...)];
   }
 
   /*--------------------------------------------------------------------------*/
@@ -2383,6 +2296,78 @@ public:
   }
 
 private:
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Helper function to static check operator input arguments.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<typename... Args>
+  CS_F_HOST_DEVICE
+  static inline
+  void
+  check_operator_args_
+  (
+    Args... /*!<[in] Input arguments (parameter pack) */
+  )
+  {
+    static_assert(sizeof...(Args) == N, "Wrong number of arguments");
+    static_assert(cs::are_integral<Args...>::value, "Non integral input arguments.");
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Helper function to static check sub-function input arguments.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<typename... Args>
+  CS_F_HOST_DEVICE
+  static inline
+  void
+  check_sub_function_args_
+  (
+    Args... /*!<[in] Input arguments (parameter pack) */
+  )
+  {
+    static_assert(sizeof...(Args) < N);
+    static_assert(cs::are_integral<Args...>::value);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Helper function to compute value offset.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<typename... Args>
+  CS_F_HOST_DEVICE
+  inline
+  cs_lnum_t
+  data_offset_
+  (
+    Args... indices /*!<[in] Input arguments (parameter pack) */
+  )
+  {
+    static_assert(sizeof...(Args) <= N && sizeof...(Args) > 0);
+
+    constexpr int n_idx = sizeof...(Args);
+
+    cs_lnum_t _indices[n_idx] = {indices...};
+
+    cs_lnum_t retval = 0;
+    if (L == layout::right) {
+      for (int i = 0; i < n_idx; i++)
+        retval +=_indices[i] * _offset[i];
+    }
+    else if (L == layout::left) {
+      for (int i = 0; i < n_idx; i++)
+        retval +=_indices[i] * _offset[N-1-i];
+    }
+
+    return retval;
+  }
 
   /*--------------------------------------------------------------------------*/
   /*!

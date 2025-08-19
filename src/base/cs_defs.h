@@ -791,6 +791,40 @@ clamp(const T x,
   return ((xmax) < (x_tmp) ?  (xmax) : (x_tmp));
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Utility template to check if a pack of parameters is made of integral types.
+ */
+/*----------------------------------------------------------------------------*/
+
+template <class... Args>
+struct are_integral {
+  enum : bool { value = true};
+};
+
+/*----------------------------------------------------------------------------*/
+
+template <typename T, class... Args>
+struct are_integral<T, Args...> {
+  enum {
+    value = (std::is_integral<T>::value || std::is_enum<T>::value)
+          && are_integral<Args...>::value
+  };
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Utility template which returns "true" for a given pack.
+ *        This is necessary of std::enable_if_t<> when the template pack
+ *        is not used for the if clause...
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename... Args>
+struct always_true : std::true_type {};
+
+/*----------------------------------------------------------------------------*/
+
 } // namespace cs
 
 /*----------------------------------------------------------------------------*/
@@ -885,6 +919,8 @@ cs_datatype_from_type<int64_t>()
 {
   return CS_INT64;
 }
+
+/*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
 
