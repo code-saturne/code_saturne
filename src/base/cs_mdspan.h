@@ -438,7 +438,7 @@ public:
         dims[i] = _extent[i];
     }
 
-    return mdspan<T,N-n_idx,L>(dims, _data + data_offset_(indices...));
+    return mdspan<T,N-n_idx,L>(_data + data_offset_(indices...), dims);
   }
 
   /*--------------------------------------------------------------------------*/
