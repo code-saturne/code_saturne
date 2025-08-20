@@ -2067,12 +2067,12 @@ class cathare_domain(domain):
         # Generate the .so creation command (hence reducing dependencies)
         config = configparser.ConfigParser()
         config.read(self.package.get_configfiles())
-        if not config.has_option('install', 'cathare'):
+        if not config.has_option('install', 'cathare2'):
             sys.stdout.write('Error: a cathare installation is not defined in the configuration file.')
             sys.stdout.flush()
             exit()
 
-        shell_cmd = 'export v25_3="%s"\n' % (config.get('install', 'cathare'))
+        shell_cmd = 'export v25_3="%s"\n' % (config.get('install', 'cathare2'))
         shell_cmd+= 'jdd_CATHARE="%s"\n' % (self.cathare_case_file)
         shell_cmd+= 'export LD_LIBRARY_PATH=${v25_3}/lib:$LD_LIBRARY_PATH\n'
         shell_cmd+= 'export LD_LIBRARY_PATH=${v25_3}/ICoCo/lib:$LD_LIBRARY_PATH\n'
