@@ -774,6 +774,10 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
     if (turb_flux_model_type == 3) {
 
+      cs_real_3_t  *coefa_tf = (cs_real_3_t  *)f_tf->bc_coeffs->a;
+      cs_real_33_t *coefb_tf = (cs_real_33_t *)f_tf->bc_coeffs->b;
+      cs_real_3_t  *cofaf_tf = (cs_real_3_t  *)f_tf->bc_coeffs->af;
+      cs_real_33_t *cofbf_tf = (cs_real_33_t *)f_tf->bc_coeffs->bf;
       cs_real_3_t  *cofar_tf = (cs_real_3_t  *)f_tf->bc_coeffs->ad;
       cs_real_33_t *cofbr_tf = (cs_real_33_t *)f_tf->bc_coeffs->bd;
 
@@ -831,7 +835,9 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
       /* Turbulent flux */
       cs_boundary_conditions_set_dirichlet_vector_aniso
-        (f_id, f_tf->bc_coeffs, pimpv, hintt, rinfiv);
+        (coefa_tf[f_id], cofaf_tf[f_id],
+         coefb_tf[f_id], cofbf_tf[f_id],
+         pimpv, hintt, rinfiv);
 
       /* Boundary conditions used in the temperature equation */
       for (int isou = 0; isou < 3; isou++) {

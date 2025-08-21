@@ -149,41 +149,40 @@ cs_boundary_conditions_set_coeffs_init(void);
 /*!
  * \brief Set Neumann BC for a scalar for a given face.
  *
- * \param[in]   f_id        face id
- * \param[out]  bc_coeffs   BC structure
+ * \param[out]  a           explicit BC coefficient for gradients
+ * \param[out]  af          explicit BC coefficient for diffusive flux
+ * \param[out]  b           implicit BC coefficient for gradients
+ * \param[out]  bf          implicit BC coefficient for diffusive flux
  * \param[in]   qimpv       flux value to impose
  * \param[in]   hint        internal exchange coefficient
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
-cs_boundary_conditions_set_neumann_vector(cs_lnum_t             f_id,
-                                          cs_field_bc_coeffs_t *bc_coeffs,
+CS_F_HOST_DEVICE inline static void
+cs_boundary_conditions_set_neumann_vector(cs_real_t             a[3],
+                                          cs_real_t             af[3],
+                                          cs_real_t             b[3][3],
+                                          cs_real_t             bf[3][3],
                                           const cs_real_t       qimpv[3],
                                           cs_real_t             hint)
 {
-  cs_real_3_t  *a = (cs_real_3_t *)bc_coeffs->a;
-  cs_real_33_t *b = (cs_real_33_t *)bc_coeffs->b;
-  cs_real_3_t  *af = (cs_real_3_t *)bc_coeffs->af;
-  cs_real_33_t *bf = (cs_real_33_t *)bc_coeffs->bf;
-
   /* Gradient BCs */
 
   for (size_t i = 0; i < 3; i++) {
-    a[f_id][i] = -qimpv[i] / fmax(hint, 1.e-300);
+    a[i] = -qimpv[i] / fmax(hint, 1.e-300);
   }
 
-  b[f_id][0][0] = 1., b[f_id][0][1] = 0., b[f_id][0][2] = 0.;
-  b[f_id][1][0] = 0., b[f_id][1][1] = 1., b[f_id][1][2] = 0.;
-  b[f_id][2][0] = 0., b[f_id][2][1] = 0., b[f_id][2][2] = 1.;
+  b[0][0] = 1., b[0][1] = 0., b[0][2] = 0.;
+  b[1][0] = 0., b[1][1] = 1., b[1][2] = 0.;
+  b[2][0] = 0., b[2][1] = 0., b[2][2] = 1.;
 
   /* Flux BCs */
 
   for (size_t i = 0; i < 3; i++) {
-    af[f_id][i] = qimpv[i];
+    af[i] = qimpv[i];
 
     for (size_t j = 0; j < 3; j++)
-      bf[f_id][i][j] = 0.;
+      bf[i][j] = 0.;
   }
 }
 
@@ -191,24 +190,23 @@ cs_boundary_conditions_set_neumann_vector(cs_lnum_t             f_id,
 /*!
  * \brief  Set neumann BC for an anisotropic vector for a given face.
  *
- * \param[in]   f_id        face id
- * \param[out]  bc_coeffs   BC structure
+ * \param[out]  a           explicit BC coefficient for gradients
+ * \param[out]  af          explicit BC coefficient for diffusive flux
+ * \param[out]  b           implicit BC coefficient for gradients
+ * \param[out]  bf          implicit BC coefficient for diffusive flux
  * \param[in]   qimpv       flux value to impose
  * \param[in]   hint        internal exchange coefficient
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
-cs_boundary_conditions_set_neumann_vector_aniso(cs_lnum_t             f_id,
-                                                cs_field_bc_coeffs_t *bc_coeffs,
+CS_F_HOST_DEVICE inline static void
+cs_boundary_conditions_set_neumann_vector_aniso(cs_real_t             a[3],
+                                                cs_real_t             af[3],
+                                                cs_real_t             b[3][3],
+                                                cs_real_t             bf[3][3],
                                                 const cs_real_t       qimpv[3],
                                                 const cs_real_t       hint[6])
 {
-  cs_real_3_t  *a = (cs_real_3_t *)bc_coeffs->a;
-  cs_real_33_t *b = (cs_real_33_t *)bc_coeffs->b;
-  cs_real_3_t  *af = (cs_real_3_t *)bc_coeffs->af;
-  cs_real_33_t *bf = (cs_real_33_t *)bc_coeffs->bf;
-
   cs_real_t m[6] = {0., 0., 0., 0., 0., 0.};
   m[0] = hint[1]*hint[2] - hint[4]*hint[4];
   m[1] = hint[0]*hint[2] - hint[5]*hint[5];
@@ -228,33 +226,35 @@ cs_boundary_conditions_set_neumann_vector_aniso(cs_lnum_t             f_id,
   invh[5] = m[5] * invdet;
 
   /* Gradient BCs */
-  cs_math_sym_33_3_product(invh, qimpv, a[f_id]);
+  cs_math_sym_33_3_product(invh, qimpv, a);
   for (cs_lnum_t isou = 0; isou < 3; isou++)
-    a[f_id][isou] = -a[f_id][isou];
+    a[isou] = -a[isou];
 
-  b[f_id][0][0] = 1.0, b[f_id][0][1] = 0.0, b[f_id][0][2] = 0.0;
-  b[f_id][1][0] = 0.0, b[f_id][1][1] = 1.0, b[f_id][1][2] = 0.0;
-  b[f_id][2][0] = 0.0, b[f_id][2][1] = 0.0, b[f_id][2][2] = 1.0;
+  b[0][0] = 1.0, b[0][1] = 0.0, b[0][2] = 0.0;
+  b[1][0] = 0.0, b[1][1] = 1.0, b[1][2] = 0.0;
+  b[2][0] = 0.0, b[2][1] = 0.0, b[2][2] = 1.0;
 
   for (cs_lnum_t isou = 0; isou < 3; isou++) {
     /* Flux BCs */
-    af[f_id][isou] = qimpv[isou];
+    af[isou] = qimpv[isou];
     for (cs_lnum_t jsou = 0; jsou < 3; jsou++)
-      bf[f_id][isou][jsou] = 0.0;
+      bf[isou][jsou] = 0.0;
   }
 }
 
 /*----------------------------------------------------------------------------*/
 /*! \brief  Set Neumann boundary conditions for a tensor for a given face.
  *
- * \param[in]   f_id        face id
- * \param[out]  bc_coeffs   BC structure
+ * \param[out]  a           explicit BC coefficient for gradients
+ * \param[out]  af          explicit BC coefficient for diffusive flux
+ * \param[out]  fb          implicit BC coefficient for gradients
+ * \param[out]  bf          implicit BC coefficient for diffusive flux
  * \param[in]   qimpts      flux value to impose
  * \param[in]   hint        internal exchange coefficient
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_boundary_conditions_set_neumann_tensor(cs_real_t        a[6],
                                           cs_real_t        af[6],
                                           cs_real_t        b[6][6],
@@ -284,8 +284,10 @@ cs_boundary_conditions_set_neumann_tensor(cs_real_t        a[6],
 /*!
  * \brief  Set Dirichlet BC for a vector for a given face.
  *
- * \param[in]   f_id        face id
- * \param[out]  bc_coeffs   BC structure
+ * \param[out]  a           explicit BC coefficient for gradients
+ * \param[out]  af          explicit BC coefficient for diffusive flux
+ * \param[out]  fb          implicit BC coefficient for gradients
+ * \param[out]  bf          implicit BC coefficient for diffusive flux
  * \param[in]   pimpv       Dirichlet value to impose
  * \param[in]   hint        internal exchange coefficient
  * \param[in]   hextv       external exchange coefficient
@@ -293,34 +295,31 @@ cs_boundary_conditions_set_neumann_tensor(cs_real_t        a[6],
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
-cs_boundary_conditions_set_dirichlet_vector(cs_lnum_t             f_id,
-                                            cs_field_bc_coeffs_t *bc_coeffs,
+CS_F_HOST_DEVICE inline static void
+cs_boundary_conditions_set_dirichlet_vector(cs_real_t             a[3],
+                                            cs_real_t             af[3],
+                                            cs_real_t             b[3][3],
+                                            cs_real_t             bf[3][3],
                                             const cs_real_t       pimpv[3],
                                             cs_real_t             hint,
                                             const cs_real_t       hextv[3])
 {
   CS_PROFILE_FUNC_RANGE();
 
-  cs_real_3_t  *a = (cs_real_3_t *)bc_coeffs->a;
-  cs_real_33_t *b = (cs_real_33_t *)bc_coeffs->b;
-  cs_real_3_t  *af = (cs_real_3_t *)bc_coeffs->af;
-  cs_real_33_t *bf = (cs_real_33_t *)bc_coeffs->bf;
-
   for (int isou = 0; isou < 3; isou++) {
     if (fabs(hextv[isou]) > 0.5*cs_math_infinite_r) {
 
       /* Gradient BCs */
-      a[f_id][isou] = pimpv[isou];
+      a[isou] = pimpv[isou];
       for (int jsou = 0; jsou < 3; jsou++)
-        b[f_id][isou][jsou] = 0.;
+        b[isou][jsou] = 0.;
 
       /* Flux BCs */
-      af[f_id][isou] = -hint*pimpv[isou];
+      af[isou] = -hint*pimpv[isou];
 
-      bf[f_id][0][0] = hint, bf[f_id][0][1] = 0.,   bf[f_id][0][2] = 0.;
-      bf[f_id][1][0] = 0.,   bf[f_id][1][1] = hint, bf[f_id][1][2] = 0.;
-      bf[f_id][2][0] = 0.,   bf[f_id][2][1] = 0.,   bf[f_id][2][2] = hint;
+      bf[0][0] = hint, bf[0][1] = 0.,   bf[0][2] = 0.;
+      bf[1][0] = 0.,   bf[1][1] = hint, bf[1][2] = 0.;
+      bf[2][0] = 0.,   bf[2][1] = 0.,   bf[2][2] = hint;
 
     }
     else {
@@ -329,18 +328,18 @@ cs_boundary_conditions_set_dirichlet_vector(cs_lnum_t             f_id,
       const cs_real_t heq = hextv[isou]*val;
 
       /* Gradient BCs */
-      a[f_id][isou] = hextv[isou]*pimpv[isou]/(hint + hextv[isou]);
+      a[isou] = hextv[isou]*pimpv[isou]/(hint + hextv[isou]);
 
-      b[f_id][0][0] = val, b[f_id][0][1] = 0.,  b[f_id][0][2] = 0.;
-      b[f_id][1][0] = 0.,  b[f_id][1][1] = val, b[f_id][1][2] = 0.;
-      b[f_id][2][0] = 0.,  b[f_id][2][1] = 0.,  b[f_id][2][2] = val;
+      b[0][0] = val, b[0][1] = 0.,  b[0][2] = 0.;
+      b[1][0] = 0.,  b[1][1] = val, b[1][2] = 0.;
+      b[2][0] = 0.,  b[2][1] = 0.,  b[2][2] = val;
 
       /* Flux BCs */
-      af[f_id][isou] = -heq*pimpv[isou];
+      af[isou] = -heq*pimpv[isou];
 
-      bf[f_id][0][0] = heq, bf[f_id][0][1] = 0.,  bf[f_id][0][2] = 0.;
-      bf[f_id][1][0] = 0.,  bf[f_id][1][1] = heq, bf[f_id][1][2] = 0.;
-      bf[f_id][2][0] = 0.,  bf[f_id][2][1] = 0.,  bf[f_id][2][2] = heq;
+      bf[0][0] = heq, bf[0][1] = 0.,  bf[0][2] = 0.;
+      bf[1][0] = 0.,  bf[1][1] = heq, bf[1][2] = 0.;
+      bf[2][0] = 0.,  bf[2][1] = 0.,  bf[2][2] = heq;
 
     }
   }
@@ -350,29 +349,35 @@ cs_boundary_conditions_set_dirichlet_vector(cs_lnum_t             f_id,
 /*
  * \brief Set convective oulet BC for a scalar for a given face.
  *
- * \param[in]   f_id          face id
- * \param[out]  bc_coeffs     boundary conditions structure
- * \param[in]   pimp          flux value to impose
- * \param[in]   cfl           local Courant number used to convect
- * \param[in]   hint          internal exchange coefficient
+ * \param[out]  a      explicit BC coefficient for gradients
+ * \param[out]  af     explicit BC coefficient for diffusive flux
+ * \param[out]  b      implicit BC coefficient for gradients
+ * \param[out]  bf     implicit BC coefficient for diffusive flux
+ * \param[in]   pimp   flux value to impose
+ * \param[in]   cfl    local Courant number used to convect
+ * \param[in]   hint   internal exchange coefficient
  */
 /*----------------------------------------------------------------------------*/
 
-void
+CS_F_HOST_DEVICE void
 cs_boundary_conditions_set_convective_outlet_scalar
-  (cs_lnum_t              f_id,
-   cs_field_bc_coeffs_t  *bc_coeffs,
-   cs_real_t              pimp,
-   cs_real_t              cfl,
-   cs_real_t              hint);
+  (cs_real_t  &a,
+   cs_real_t  &af,
+   cs_real_t  &b,
+   cs_real_t  &bf,
+   cs_real_t  pimp,
+   cs_real_t  cfl,
+   cs_real_t  hint);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Set Dirichlet BC for a vector for a given face with left anisotropic
  *        diffusion.
  *
- * \param[in]   f_id        face id
- * \param[out]  bc_coeffs   BC structure
+ * \param[out]  a           explicit BC coefficient for gradients
+ * \param[out]  af          explicit BC coefficient for diffusive flux
+ * \param[out]  b           implicit BC coefficient for gradients
+ * \param[out]  bf          implicit BC coefficient for diffusive flux
  * \param[in]   pimpv       Dirichlet value to impose
  * \param[in]   hintt       internal exchange coefficient
  * \param[in]   hextv       external exchange coefficient
@@ -380,26 +385,22 @@ cs_boundary_conditions_set_convective_outlet_scalar
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_boundary_conditions_set_dirichlet_vector_aniso
-(cs_lnum_t              f_id,
- cs_field_bc_coeffs_t  *bc_coeffs,
- const cs_real_t        pimpv[3],
- const cs_real_t        hintt[6],
- const cs_real_t        hextv[3])
+  (cs_real_t              a[3],
+   cs_real_t              af[3],
+   cs_real_t              b[3][3],
+   cs_real_t              bf[3][3],
+   const cs_real_t        pimpv[3],
+   const cs_real_t        hintt[6],
+   const cs_real_t        hextv[3])
 {
-
-  cs_real_3_t  *a = (cs_real_3_t *)bc_coeffs->a;
-  cs_real_33_t *b = (cs_real_33_t *)bc_coeffs->b;
-  cs_real_3_t  *af = (cs_real_3_t *)bc_coeffs->af;
-  cs_real_33_t *bf = (cs_real_33_t *)bc_coeffs->bf;
-
   /* Gradient BCs */
   for (int isou = 0; isou < 3; isou++) {
     if (fabs(hextv[isou]) > 0.5*cs_math_infinite_r) {
-      a[f_id][isou] = pimpv[isou];
+      a[isou] = pimpv[isou];
       for (int jsou = 0; jsou < 3; jsou++)
-        b[f_id][isou][jsou] = 0.;
+        b[isou][jsou] = 0.;
     }
     else {
       /* FIXME: at least log error message */
@@ -410,34 +411,36 @@ cs_boundary_conditions_set_dirichlet_vector_aniso
   }
 
   /* Flux BCs */
-  cs_math_sym_33_3_product(hintt, pimpv, af[f_id]);
+  cs_math_sym_33_3_product(hintt, pimpv, af);
   for (int isou = 0; isou < 3; isou++)
-    af[f_id][isou] = -af[f_id][isou];
+    af[isou] = -af[isou];
 
-  bf[f_id][0][0] = hintt[0];
-  bf[f_id][1][1] = hintt[1];
-  bf[f_id][2][2] = hintt[2];
-  bf[f_id][0][1] = hintt[3];
-  bf[f_id][1][0] = hintt[3];
-  bf[f_id][1][2] = hintt[4];
-  bf[f_id][2][1] = hintt[4];
-  bf[f_id][0][2] = hintt[5];
-  bf[f_id][2][0] = hintt[5];
+  bf[0][0] = hintt[0];
+  bf[1][1] = hintt[1];
+  bf[2][2] = hintt[2];
+  bf[0][1] = hintt[3];
+  bf[1][0] = hintt[3];
+  bf[1][2] = hintt[4];
+  bf[2][1] = hintt[4];
+  bf[0][2] = hintt[5];
+  bf[2][0] = hintt[5];
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Set Dirichlet BC for a tensor for a given face.
  *
- * \param[in]   f_id        face id
- * \param[out]  bc_coeffs   BC structure
+ * \param[out]  coefa       explicit BC coefficient for gradients
+ * \param[out]  cofaf       explicit BC coefficient for diffusive flux
+ * \param[out]  coefb       implicit BC coefficient for gradients
+ * \param[out]  cofbf       implicit BC coefficient for diffusive flux
  * \param[in]   pimpts      Dirichlet value to impose
  * \param[in]   hint        internal exchange coefficient
  * \param[in]   hextts      external exchange coefficient (10^30 by default)
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_boundary_conditions_set_dirichlet_tensor(cs_real_t        a[6],
                                             cs_real_t        af[6],
                                             cs_real_t        b[6][6],
@@ -493,8 +496,10 @@ cs_boundary_conditions_set_dirichlet_tensor(cs_real_t        a[6],
 /*!
  * \brief  Set generalized BC for a symmetric vector for a given face.
  *
- * \param[in]   f_id        face id
- * \param[out]  bc_coeffs   BC structure
+ * \param[out]  a           explicit BC coefficient for gradients
+ * \param[out]  af          explicit BC coefficient for diffusive flux
+ * \param[out]  b           implicit BC coefficient for gradients
+ * \param[out]  bf          implicit BC coefficient for diffusive flux
  * \param[in]   pimpv       Dirichlet value to impose on the normal component
  * \param[in]   qimpv       flux value to impose on the tangential components
  * \param[in]   hint        internal exchange coefficient
@@ -502,45 +507,42 @@ cs_boundary_conditions_set_dirichlet_tensor(cs_real_t        a[6],
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_boundary_conditions_set_generalized_sym_vector
-  (cs_lnum_t              f_id,
-   cs_field_bc_coeffs_t  *bc_coeffs,
+  (cs_real_t              a[3],
+   cs_real_t              af[3],
+   cs_real_t              b[3][3],
+   cs_real_t              bf[3][3],
    const cs_real_t        pimpv[3],
    const cs_real_t        qimpv[3],
    cs_real_t              hint,
    const cs_nreal_t       normal[3])
 {
-  cs_real_3_t  *a = (cs_real_3_t *)bc_coeffs->a;
-  cs_real_33_t *b = (cs_real_33_t *)bc_coeffs->b;
-  cs_real_3_t  *af = (cs_real_3_t *)bc_coeffs->af;
-  cs_real_33_t *bf = (cs_real_33_t *)bc_coeffs->bf;
-
   for (int isou = 0; isou < 3; isou++) {
 
     /* Gradient BCs */
-    a[f_id][isou] = - qimpv[isou]/cs::max(hint, 1.e-300);
+    a[isou] = - qimpv[isou]/cs::max(hint, 1.e-300);
     /* "[1 -n(x)n] Qimp / hint" is divided into two */
     for (int jsou = 0; jsou < 3; jsou++) {
 
-      a[f_id][isou] = a[f_id][isou] + normal[isou]*normal[jsou]
+      a[isou] = a[isou] + normal[isou]*normal[jsou]
         * (pimpv[jsou] + qimpv[jsou] / cs::max(hint, 1.e-300));
 
       if (jsou == isou)
-        b[f_id][isou][jsou] = 1.0 - normal[isou] * normal[jsou];
+        b[isou][jsou] = 1.0 - normal[isou] * normal[jsou];
       else
-        b[f_id][isou][jsou] = - normal[isou] * normal[jsou];
+        b[isou][jsou] = - normal[isou] * normal[jsou];
     }
 
     /* Flux BCs */
-    af[f_id][isou] = qimpv[isou];
+    af[isou] = qimpv[isou];
     /* "[1 -n(x)n] Qimp" is divided into two */
     for (int jsou = 0; jsou < 3; jsou++){
 
-      af[f_id][isou] = af[f_id][isou] - normal[isou]*normal[jsou]
+      af[isou] = af[isou] - normal[isou]*normal[jsou]
                   * (hint * pimpv[jsou] + qimpv[jsou]);
 
-      bf[f_id][isou][jsou] = hint * normal[isou] * normal[jsou];
+      bf[isou][jsou] = hint * normal[isou] * normal[jsou];
     }
   }
 }
@@ -550,8 +552,10 @@ cs_boundary_conditions_set_generalized_sym_vector
  * \brief  Set generalized BC for an anisotropic symmetric vector for a given
  *         face.
  *
- * \param[in]   f_id         face id
- * \param[out]  bc_coeffs    boundary conditions structure
+ * \param[out]  a            explicit BC coefficient for gradients
+ * \param[out]  af           explicit BC coefficient for diffusive flux
+ * \param[out]  b            implicit BC coefficient for gradients
+ * \param[out]  bf           implicit BC coefficient for diffusive flux
  * \param[in]   pimpv        Dirichlet value to impose on the normal component
  * \param[in]   qimpv        flux value to impose on the tangential components
  * \param[in]   hint         internal exchange coefficient
@@ -559,10 +563,12 @@ cs_boundary_conditions_set_generalized_sym_vector
  */
 /*----------------------------------------------------------------------------*/
 
-void
+CS_F_HOST_DEVICE void
 cs_boundary_conditions_set_generalized_sym_vector_aniso
-  (cs_lnum_t              f_id,
-   cs_field_bc_coeffs_t  *bc_coeffs,
+  (cs_real_t              a[3],
+   cs_real_t              af[3],
+   cs_real_t              b[3][3],
+   cs_real_t              bf[3][3],
    const cs_real_t        pimpv[3],
    const cs_real_t        qimpv[3],
    const cs_real_t        hint[6],
@@ -572,8 +578,10 @@ cs_boundary_conditions_set_generalized_sym_vector_aniso
 /*!
  * \brief  Set generalized Dirichlet BC for a vector for a given face.
  *
- * \param[in]   f_id         face id
- * \param[out]  bc_coeffs    boundary conditions structure
+ * \param[out]  a            explicit BC coefficient for gradients
+ * \param[out]  af           explicit BC coefficient for diffusive flux
+ * \param[out]  b            implicit BC coefficient for gradients
+ * \param[out]  bf           implicit BC coefficient for diffusive flux
  * \param[in]   pimpv        Dirichlet value to impose on the
  *                           tangential components
  * \param[in]   qimpv        flux value to impose on the normal component
@@ -582,45 +590,42 @@ cs_boundary_conditions_set_generalized_sym_vector_aniso
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_boundary_conditions_set_generalized_dirichlet_vector
-  (cs_lnum_t              f_id,
-   cs_field_bc_coeffs_t  *bc_coeffs,
+  (cs_real_t              a[3],
+   cs_real_t              af[3],
+   cs_real_t              b[3][3],
+   cs_real_t              bf[3][3],
    const cs_real_t        pimpv[3],
    const cs_real_t        qimpv[3],
    cs_real_t              hint,
    const cs_nreal_t       normal[3])
 {
-  cs_real_3_t  *a = (cs_real_3_t *)bc_coeffs->a;
-  cs_real_33_t *b = (cs_real_33_t *)bc_coeffs->b;
-  cs_real_3_t  *af = (cs_real_3_t *)bc_coeffs->af;
-  cs_real_33_t *bf = (cs_real_33_t *)bc_coeffs->bf;
-
   for (int isou = 0; isou < 3; isou++) {
 
     /* Gradient BC*/
     /* "[1 -n(x)n] Pimp" is divided into two */
-    a[f_id][isou] = pimpv[isou];
+    a[isou] = pimpv[isou];
     for (int jsou = 0; jsou < 3; jsou++) {
 
-      a[f_id][isou] = a[f_id][isou] - normal[isou]*normal[jsou]
+      a[isou] = a[isou] - normal[isou]*normal[jsou]
         * (pimpv[jsou] + qimpv[jsou] / cs::max(hint, 1.e-300));
 
-      b[f_id][isou][jsou] = normal[isou] * normal[jsou];
+      b[isou][jsou] = normal[isou] * normal[jsou];
     }
 
     /* Flux BC */
     /* "[1 -n(x)n] Pimp" is divided into two */
-    af[f_id][isou] = -hint*pimpv[isou];
+    af[isou] = -hint*pimpv[isou];
     for (int jsou = 0; jsou < 3; jsou++) {
 
-      af[f_id][isou] = af[f_id][isou] + normal[isou]*normal[jsou]
+      af[isou] = af[isou] + normal[isou]*normal[jsou]
         * (qimpv[jsou] + pimpv[jsou] * hint);
 
       if (jsou == isou)
-        bf[f_id][isou][jsou] = hint * (1.0 - normal[isou] * normal[jsou]);
+        bf[isou][jsou] = hint * (1.0 - normal[isou] * normal[jsou]);
       else
-        bf[f_id][isou][jsou] = - hint * normal[isou] * normal[jsou];
+        bf[isou][jsou] = - hint * normal[isou] * normal[jsou];
     }
   }
 }
@@ -630,8 +635,10 @@ cs_boundary_conditions_set_generalized_dirichlet_vector
  * \brief  Set generalized Dirichlet BC for an anisotropic vector for a given
  *         face.
  *
- * \param[in]   f_id         face id
- * \param[out]  bc_coeffs    boundary conditions structure
+ * \param[out]  a            explicit BC coefficient for gradients
+ * \param[out]  af           explicit BC coefficient for diffusive flux
+ * \param[out]  b            implicit BC coefficient for gradients
+ * \param[out]  bf           implicit BC coefficient for diffusive flux
  * \param[in]   pimpv        Dirichlet value to impose on the
  *                           tangential components
  * \param[in]   qimpv        flux value to impose on the normal component
@@ -640,10 +647,12 @@ cs_boundary_conditions_set_generalized_dirichlet_vector
  */
 /*----------------------------------------------------------------------------*/
 
-void
+CS_F_HOST_DEVICE void
 cs_boundary_conditions_set_generalized_dirichlet_vector_aniso
-  (cs_lnum_t              f_id,
-   cs_field_bc_coeffs_t  *bc_coeffs,
+  (cs_real_t              a[3],
+   cs_real_t              af[3],
+   cs_real_t              b[3][3],
+   cs_real_t              bf[3][3],
    const cs_real_t        pimpv[3],
    const cs_real_t        qimpv[3],
    const cs_real_t        hint[6],
@@ -653,45 +662,44 @@ cs_boundary_conditions_set_generalized_dirichlet_vector_aniso
 /*!
  * \brief  Set convective outlet BC for a vector for a given face.
  *
- * \param[in]   f_id        face id
- * \param[out]  bc_coeffs   BC structure
+ * \param[out]  a           explicit BC coefficient for gradients
+ * \param[out]  af          explicit BC coefficient for diffusive flux
+ * \param[out]  b           implicit BC coefficient for gradients
+ * \param[out]  bf          implicit BC coefficient for diffusive flux
  * \param[in]   pimpv       Dirichlet value to impose
  * \param[in]   cflv        local Courant number used to convect
  * \param[in]   hint        internal exchange coefficient
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_boundary_conditions_set_convective_outlet_vector
-  (cs_lnum_t              f_id,
-   cs_field_bc_coeffs_t  *bc_coeffs,
+  (cs_real_t              a[3],
+   cs_real_t              af[3],
+   cs_real_t              b[3][3],
+   cs_real_t              bf[3][3],
    const cs_real_t        pimpv[3],
    const cs_real_t        cflv[3],
    cs_real_t              hint)
 {
-  cs_real_3_t  *a = (cs_real_3_t *)bc_coeffs->a;
-  cs_real_33_t *b = (cs_real_33_t *)bc_coeffs->b;
-  cs_real_3_t  *af = (cs_real_3_t *)bc_coeffs->af;
-  cs_real_33_t *bf = (cs_real_33_t *)bc_coeffs->bf;
-
   for (int isou = 0; isou < 3; isou++) {
 
     /* Gradient BCs */
     for (int jsou = 0; jsou < 3; jsou ++) {
       if (jsou == isou)
-        b[f_id][isou][jsou] = cflv[isou] / (1.0 + cflv[isou]);
+        b[isou][jsou] = cflv[isou] / (1.0 + cflv[isou]);
       else
-        b[f_id][isou][jsou] = 0.0;
+        b[isou][jsou] = 0.0;
     }
-    a[f_id][isou] = pimpv[isou] * (1.0 - b[f_id][isou][isou]);
+    a[isou] = pimpv[isou] * (1.0 - b[isou][isou]);
 
     /* Flux BCs */
-    af[f_id][isou] = -hint * a[f_id][isou];
+    af[isou] = -hint * a[isou];
     for (int jsou = 0; jsou < 3; jsou++) {
       if (jsou == isou)
-        bf[f_id][isou][jsou] = hint * (1.0 - b[f_id][isou][jsou]);
+        bf[isou][jsou] = hint * (1.0 - b[isou][jsou]);
     else
-      bf[f_id][isou][jsou] = 0.0;
+      bf[isou][jsou] = 0.0;
     }
   }
 }
@@ -700,15 +708,17 @@ cs_boundary_conditions_set_convective_outlet_vector
 /*!
  * \brief Set convective outlet BC for a tensor for a given face.
  *
- * \param[in]   f_id        face id
- * \param[out]  bc_coeffs   BC structure
+ * \param[out]  a           explicit BC coefficient for gradients
+ * \param[out]  af          explicit BC coefficient for diffusive flux
+ * \param[out]  b           implicit BC coefficient for gradients
+ * \param[out]  bf          implicit BC coefficient for diffusive flux
  * \param[in]   pimpts      Dirichlet value to impose
  * \param[in]   cflts       local Courant number used to convect
  * \param[in]   hint        internal exchange coefficient
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_boundary_conditions_set_convective_outlet_tensor(cs_real_t        a[6],
                                                     cs_real_t        af[6],
                                                     cs_real_t        b[6][6],
@@ -743,188 +753,53 @@ cs_boundary_conditions_set_convective_outlet_tensor(cs_real_t        a[6],
 /*!
  * \brief  Set convective outlet BC for an anisotropic vector for a given face.
  *
- * \param[in]   f_id        face id
- * \param[out]  bc_coeffs   BC structure
+ * \param[out]  a           explicit BC coefficient for gradients
+ * \param[out]  af          explicit BC coefficient for diffusive flux
+ * \param[out]  b           implicit BC coefficient for gradients
+ * \param[out]  bf          implicit BC coefficient for diffusive flux
  * \param[in]   pimpv       Dirichlet value to impose
  * \param[in]   cflv        local Courant number used to convect
  * \param[in]   hintt       internal exchange coefficient
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_boundary_conditions_set_convective_outlet_vector_aniso
-(cs_lnum_t              f_id,
- cs_field_bc_coeffs_t  *bc_coeffs,
- const cs_real_t        pimpv[3],
- const cs_real_t        cflv[3],
- const cs_real_t        hintt[6])
+  (cs_real_t              a[3],
+   cs_real_t              af[3],
+   cs_real_t              b[3][3],
+   cs_real_t              bf[3][3],
+   const cs_real_t        pimpv[3],
+   const cs_real_t        cflv[3],
+   const cs_real_t        hintt[6])
 {
-
-  cs_real_3_t  *a = (cs_real_3_t *)bc_coeffs->a;
-  cs_real_33_t *b = (cs_real_33_t *)bc_coeffs->b;
-  cs_real_3_t  *af = (cs_real_3_t *)bc_coeffs->af;
-  cs_real_33_t *bf = (cs_real_33_t *)bc_coeffs->bf;
-
   for(int isou = 0; isou < 3; isou++) {
 
     /* Gradient BCs */
     for (int jsou = 0; jsou < 3; jsou++) {
       if (jsou == isou)
-        b[f_id][isou][jsou] = cflv[isou]/(1.0+cflv[isou]);
+        b[isou][jsou] = cflv[isou]/(1.0+cflv[isou]);
       else
-        b[f_id][isou][jsou] = 0.0;
+        b[isou][jsou] = 0.0;
     }
-    a[f_id][isou] = (1.0-b[f_id][isou][isou])*pimpv[isou];
+    a[isou] = (1.0-b[isou][isou])*pimpv[isou];
 
   }
 
   /* Flux BCs */
-  cs_math_sym_33_3_product(hintt, a[f_id], af[f_id]);
+  cs_math_sym_33_3_product(hintt, a, af);
   for (int isou = 0; isou < 3; isou++)
-    af[f_id][isou] = -af[f_id][isou];
+    af[isou] = -af[isou];
 
-  bf[f_id][0][0] = hintt[0]*(1.0 - b[f_id][0][0]);
-  bf[f_id][1][1] = hintt[1]*(1.0 - b[f_id][1][1]);
-  bf[f_id][2][2] = hintt[2]*(1.0 - b[f_id][2][2]);
-  bf[f_id][0][1] = hintt[3]*(1.0 - b[f_id][0][0]);
-  bf[f_id][1][0] = hintt[3]*(1.0 - b[f_id][0][0]);
-  bf[f_id][1][2] = hintt[4]*(1.0 - b[f_id][1][1]);
-  bf[f_id][2][1] = hintt[4]*(1.0 - b[f_id][1][1]);
-  bf[f_id][0][2] = hintt[5]*(1.0 - b[f_id][2][2]);
-  bf[f_id][2][0] = hintt[5]*(1.0 - b[f_id][2][2]);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set BC for an affine scalar function for a given face.
- *
- * \param[in]     f_id          face id
- * \param[out]    bc_coeffs     boundary condition structure
- * \param[in]     pinf          affine part
- * \param[in]     ratio         linear part
- * \param[in]     hint          internal exchange coefficient
- */
-/*----------------------------------------------------------------------------*/
-
-inline static void
-cs_boundary_conditions_set_affine_function_scalar
-  (cs_lnum_t             f_id,
-   cs_field_bc_coeffs_t *bc_coeffs,
-   cs_real_t             pinf,
-   cs_real_t             ratio,
-   cs_real_t             hint)
-{
-  cs_real_t *a = bc_coeffs->a;
-  cs_real_t *b = bc_coeffs->b;
-  cs_real_t *af = bc_coeffs->af;
-  cs_real_t *bf = bc_coeffs->bf;
-
-  /* Gradient BCs */
-  b[f_id] = ratio;
-  a[f_id] = pinf;
-
-  /* Flux BCs */
-  af[f_id] = -hint * a[f_id];
-  bf[f_id] =  hint * (1. - b[f_id]);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set Neumann BC for the convection operator, imposed flux for
- *         diffusion.
- *
- * \param[in]     f_id          face id
- * \param[out]    bc_coeffs     boundary condition structure
- * \param[in]     pinf          affine part
- * \param[in]     ratio         linear part
- * \param[in]     dimp          flux value to impose
- */
-/*----------------------------------------------------------------------------*/
-
-inline static void
-cs_boundary_conditions_set_affine_function_conv_neumann_diff_scalar
-  (cs_lnum_t             f_id,
-   cs_field_bc_coeffs_t *bc_coeffs,
-   cs_real_t             pinf,
-   cs_real_t             ratio,
-   cs_real_t             dimp)
-{
-  cs_real_t *a = bc_coeffs->a;
-  cs_real_t *b = bc_coeffs->b;
-  cs_real_t *af = bc_coeffs->af;
-  cs_real_t *bf = bc_coeffs->bf;
-
-  /* Gradient BCs */
-  b[f_id] = ratio;
-  a[f_id] = pinf;
-
-  /* Flux BCs */
-  af[f_id] = dimp;
-  bf[f_id] = 0.;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set total flux as a Robin condition.
- *
- * \param[in]   f_id          face id
- * \param[out]  bc_coeffs     boundary condition structure
- * \param[in]   hext          convective flux to be imposed
- * \param[in]   dimp          flux value to impose
- */
-/*----------------------------------------------------------------------------*/
-
-inline static void
-cs_boundary_conditions_set_total_flux(cs_lnum_t             f_id,
-                                      cs_field_bc_coeffs_t *bc_coeffs,
-                                      cs_real_t             hext,
-                                      cs_real_t             dimp)
-{
-  cs_real_t *a = bc_coeffs->a;
-  cs_real_t *b = bc_coeffs->b;
-  cs_real_t *af = bc_coeffs->af;
-  cs_real_t *bf = bc_coeffs->bf;
-
-  /* Gradients BCs */
-  a[f_id] = 0.;
-  b[f_id] = 1.;
-
-  /* Flux BCs */
-  af[f_id] = dimp;
-  bf[f_id] = hext;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Imposed value for the convection operator, imposed flux for
- *         diffusion, for a scalar.
- *
- * \param[in]   f_id          face id
- * \param[out]  bc_coeffs     boundary condition structure
- * \param[in]   pimp          Dirichlet value to impose
- * \param[in]   dimp          flux value to impose
- */
-/*----------------------------------------------------------------------------*/
-
-inline static void
-cs_boundary_conditions_set_dirichlet_conv_neumann_diff_scalar
-  (cs_lnum_t              f_id,
-   cs_field_bc_coeffs_t  *bc_coeffs,
-   cs_real_t              pimp,
-   cs_real_t              dimp)
-{
-  cs_real_t *a = bc_coeffs->a;
-  cs_real_t *b = bc_coeffs->b;
-  cs_real_t *af = bc_coeffs->af;
-  cs_real_t *bf = bc_coeffs->bf;
-
-  /* Gradients BC */
-  a[f_id] = pimp;
-  b[f_id] = 0.;
-
-  /* Flux BCs */
-  af[f_id] = dimp;
-  bf[f_id] = 0.;
+  bf[0][0] = hintt[0]*(1.0 - b[0][0]);
+  bf[1][1] = hintt[1]*(1.0 - b[1][1]);
+  bf[2][2] = hintt[2]*(1.0 - b[2][2]);
+  bf[0][1] = hintt[3]*(1.0 - b[0][0]);
+  bf[1][0] = hintt[3]*(1.0 - b[0][0]);
+  bf[1][2] = hintt[4]*(1.0 - b[1][1]);
+  bf[2][1] = hintt[4]*(1.0 - b[1][1]);
+  bf[0][2] = hintt[5]*(1.0 - b[2][2]);
+  bf[2][0] = hintt[5]*(1.0 - b[2][2]);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -932,36 +807,35 @@ cs_boundary_conditions_set_dirichlet_conv_neumann_diff_scalar
  * \brief  Imposed value for the convection operator, imposed flux for
  *         diffusion, for a vector.
  *
- * \param[in]     f_id        face id
- * \param[out]    bc_coeffs   BC structure
+ * \param[out]    a           explicit BC coefficient for gradients
+ * \param[out]    af          explicit BC coefficient for diffusive flux
+ * \param[out]    b           implicit BC coefficient for gradients
+ * \param[out]    bf          implicit BC coefficient for diffusive flux
  * \param[in]     pimpv       Dirichlet value to impose
  * \param[in]     qimpv       flux value to impose
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_boundary_conditions_set_dirichlet_conv_neumann_diff_vector
-  (cs_lnum_t              f_id,
-   cs_field_bc_coeffs_t  *bc_coeffs,
+  (cs_real_t              a[3],
+   cs_real_t              af[3],
+   cs_real_t              b[3][3],
+   cs_real_t              bf[3][3],
    const cs_real_t        pimpv[3],
    const cs_real_t        qimpv[3])
 {
-  cs_real_3_t  *a = (cs_real_3_t *)bc_coeffs->a;
-  cs_real_33_t *b = (cs_real_33_t *)bc_coeffs->b;
-  cs_real_3_t  *af = (cs_real_3_t *)bc_coeffs->af;
-  cs_real_33_t *bf = (cs_real_33_t *)bc_coeffs->bf;
-
   for (int isou = 0; isou < 3; isou++) {
 
     /* Gradient BCs */
-    a[f_id][isou] = pimpv[isou];
+    a[isou] = pimpv[isou];
     for (int jsou = 0; jsou < 3; jsou++)
-      b[f_id][isou][jsou] = 0.0;
+      b[isou][jsou] = 0.0;
 
     /* Flux BCs */
-    af[f_id][isou] = qimpv[isou];
+    af[isou] = qimpv[isou];
     for (int jsou = 0; jsou < 3; jsou++)
-      bf[f_id][isou][jsou] = 0.0;
+      bf[isou][jsou] = 0.0;
   }
 }
 
@@ -970,14 +844,16 @@ cs_boundary_conditions_set_dirichlet_conv_neumann_diff_vector
  * \brief  Imposed value for the convection operator, imposed flux for
  *         diffusion, for a tensor
  *
- * \param[in]     f_id        face id
- * \param[out]    bc_coeffs   BC structure
+ * \param[out]    coefa       explicit BC coefficient for gradients
+ * \param[out]    cofaf       explicit BC coefficient for diffusive flux
+ * \param[out]    coefb       implicit BC coefficient for gradients
+ * \param[out]    cofbf       implicit BC coefficient for diffusive flux
  * \param[in]     pimpts      Dirichlet value to impose
  * \param[in]     qimpts      flux value to impose
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_boundary_conditions_set_dirichlet_conv_neumann_diff_tensor
   (cs_real_t        a[6],
    cs_real_t        af[6],
@@ -1130,7 +1006,7 @@ cs_boundary_conditions_set_dirichlet_scalar(cs_real_t  &a,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+CS_F_HOST_DEVICE inline static void
 cs_boundary_conditions_set_neumann_conv_h_neumann_diff_scalar
   (cs_real_t  &a,
    cs_real_t  &af,
@@ -1150,6 +1026,135 @@ cs_boundary_conditions_set_neumann_conv_h_neumann_diff_scalar
 
   /* Flux BCs */
   af = 0.;
+  bf = 0.;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set BC for an affine scalar function for a given face.
+ *
+ * \param[out]  a      explicit BC coefficient for gradients
+ * \param[out]  af     explicit BC coefficient for diffusive flux
+ * \param[out]  b      implicit BC coefficient for gradients
+ * \param[out]  bf     implicit BC coefficient for diffusive flux
+ * \param[in]   pinf   affine part
+ * \param[in]   ratio  linear part
+ * \param[in]   hint   internal exchange coefficient
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE inline static void
+cs_boundary_conditions_set_affine_function_scalar
+  (cs_real_t  &a,
+   cs_real_t  &af,
+   cs_real_t  &b,
+   cs_real_t  &bf,
+   cs_real_t   pinf,
+   cs_real_t   ratio,
+   cs_real_t   hint)
+{
+  /* Gradient BCs */
+  b = ratio;
+  a = pinf;
+
+  /* Flux BCs */
+  af = -hint * a;
+  bf =  hint * (1. - b);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set Neumann BC for the convection operator, imposed flux for
+ *         diffusion.
+ *
+ * \param[out]  a      explicit BC coefficient for gradients
+ * \param[out]  af     explicit BC coefficient for diffusive flux
+ * \param[out]  b      implicit BC coefficient for gradients
+ * \param[out]  bf     implicit BC coefficient for diffusive flux
+ * \param[in]   pinf   affine part
+ * \param[in]   ratio  linear part
+ * \param[in]   dimp   flux value to impose
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE inline static void
+cs_boundary_conditions_set_affine_function_conv_neumann_diff_scalar
+  (cs_real_t  &a,
+   cs_real_t  &af,
+   cs_real_t  &b,
+   cs_real_t  &bf,
+   cs_real_t   pinf,
+   cs_real_t   ratio,
+   cs_real_t   dimp)
+{
+  /* Gradient BCs */
+  b = ratio;
+  a = pinf;
+
+  /* Flux BCs */
+  af = dimp;
+  bf = 0.;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set total flux as a Robin condition.
+ *
+ * \param[out]  a      explicit BC coefficient for gradients
+ * \param[out]  af     explicit BC coefficient for diffusive flux
+ * \param[out]  b      implicit BC coefficient for gradients
+ * \param[out]  bf     implicit BC coefficient for diffusive flux
+ * \param[in]   hext   convective flux to be imposed
+ * \param[in]   dimp   flux value to impose
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE inline static void
+cs_boundary_conditions_set_total_flux(cs_real_t  &a,
+                                      cs_real_t  &af,
+                                      cs_real_t  &b,
+                                      cs_real_t  &bf,
+                                      cs_real_t   hext,
+                                      cs_real_t   dimp)
+{
+  /* Gradients BCs */
+  a = 0.;
+  b = 1.;
+
+  /* Flux BCs */
+  af = dimp;
+  bf = hext;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Imposed value for the convection operator, imposed flux for
+ *         diffusion, for a scalar.
+ *
+ * \param[out]  a      explicit BC coefficient for gradients
+ * \param[out]  af     explicit BC coefficient for diffusive flux
+ * \param[out]  b      implicit BC coefficient for gradients
+ * \param[out]  bf     implicit BC coefficient for diffusive flux
+ * \param[in]   pimp   Dirichlet value to impose
+ * \param[in]   dimp   flux value to impose
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE inline static void
+cs_boundary_conditions_set_dirichlet_conv_neumann_diff_scalar
+  (cs_real_t  &a,
+   cs_real_t  &af,
+   cs_real_t  &b,
+   cs_real_t  &bf,
+   cs_real_t   pimp,
+   cs_real_t   dimp)
+{
+  /* Gradients BC */
+  a = pimp;
+  b = 0.;
+
+  /* Flux BCs */
+  af = dimp;
   bf = 0.;
 }
 

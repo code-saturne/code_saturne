@@ -1415,9 +1415,11 @@ cs_rad_transfer_bc_coeffs(int                   bc_type[],
                             * (2.0 / (2.0 - bpro_eps[face_id]) - 1.0);
         cs_real_t cfl = 1.0 / xit;
         cs_real_t pimp =   cs_math_pow4(twall)
-                         * w_gg[face_id + gg_id * n_b_faces];
-        cs_boundary_conditions_set_convective_outlet_scalar(face_id,
-                                                            bc_coeffs,
+          * w_gg[face_id + gg_id * n_b_faces];
+        cs_boundary_conditions_set_convective_outlet_scalar(coefap[face_id],
+                                                            cofafp[face_id],
+                                                            coefbp[face_id],
+                                                            cofbfp[face_id],
                                                             pimp,
                                                             cfl,
                                                             hint);

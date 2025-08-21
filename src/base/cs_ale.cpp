@@ -1026,6 +1026,10 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
    * from the new mass flux. */
 
   cs_field_bc_coeffs_t *bc_coeffs = CS_F_(mesh_u)->bc_coeffs;
+  cs_real_3_t  *coefa = (cs_real_3_t  *)bc_coeffs->a;
+  cs_real_33_t *coefb = (cs_real_33_t *)bc_coeffs->b;
+  cs_real_3_t  *cofaf = (cs_real_3_t  *)bc_coeffs->af;
+  cs_real_33_t *cofbf = (cs_real_33_t *)bc_coeffs->bf;
 
   int idftnp = eqp->idften;
 
@@ -1052,8 +1056,10 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
       for (int i = 0; i < 3; i++)
         pimpv[i] = grav[i]*b_mass_flux[face_id]/(b_rho[face_id]*prosrf);
 
-      cs_boundary_conditions_set_dirichlet_vector_aniso(face_id,
-                                                        bc_coeffs,
+      cs_boundary_conditions_set_dirichlet_vector_aniso(coefa[face_id],
+                                                        cofaf[face_id],
+                                                        coefb[face_id],
+                                                        cofbf[face_id],
                                                         pimpv,
                                                         hintt,
                                                         rinfiv);
