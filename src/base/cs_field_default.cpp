@@ -395,7 +395,7 @@ cs_field_build_bc_codes_all(void)
   _n_vars_bc = n_vars;
   _n_b_faces = n_b_faces;
 
-  CS_REALLOC(_icodcl, n_vars*n_b_faces, int);
+  CS_REALLOC_HD(_icodcl, n_vars*n_b_faces, int, cs_alloc_mode);
   CS_REALLOC(_rcodcl, 3*n_vars*n_b_faces, cs_real_t);
 
   for (int f_id = 0; f_id < n_fields; f_id++) {

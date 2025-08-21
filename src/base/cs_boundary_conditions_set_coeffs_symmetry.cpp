@@ -87,7 +87,6 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t  *f_sc)
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
-  const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
   const cs_real_t *b_dist = fvq->b_dist;
   const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
@@ -102,6 +101,9 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t  *f_sc)
 
   const cs_real_t *viscl = CS_F_(mu)->val;
   const int ifcvsl = cs_field_get_key_int(f_sc, kivisl);
+
+  cs_dispatch_context ctx;
+  const cs_real_t csrij = cs_turb_csrij;
 
   /* Get the turbulent flux model for the scalar */
 
@@ -147,13 +149,23 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t  *f_sc)
   cs_real_33_t *cofbr_tf = (cs_real_33_t *)f_tf->bc_coeffs->bd;
 
   cs_field_t *f_al = nullptr;
-  if (turb_flux_model == 11 || turb_flux_model == 21 || turb_flux_model == 31)
+  cs_real_t *coefa_al = nullptr;
+  cs_real_t *coefb_al = nullptr;
+  cs_real_t *cofaf_al = nullptr;
+  cs_real_t *cofbf_al = nullptr;
+
+  if (turb_flux_model == 11 || turb_flux_model == 21 || turb_flux_model == 31) {
     f_al = cs_field_by_composite_name(f_sc->name, "alpha");
+    coefa_al = f_al->bc_coeffs->a;
+    coefb_al = f_al->bc_coeffs->b;
+    cofaf_al = f_al->bc_coeffs->af;
+    cofbf_al = f_al->bc_coeffs->bf;
+  }
 
   const int *icodcl_vel = CS_F_(vel)->bc_coeffs->icodcl;
 
   /* Loop on boundary faces */
-  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+  ctx.parallel_for_b_faces(mesh, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
     /* Test on symmetry boundary condition: start */
     if (icodcl_vel[f_id] == 4) {
@@ -180,9 +192,9 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t  *f_sc)
 
         if (isou <= 3)
           hintt[isou] =   (0.5 * (visclc + rkl)
-                        + ctheta*visten[c_id][isou]/cs_turb_csrij) / distbf;
+                        + ctheta * visten[c_id][isou] / csrij) / distbf;
         else
-          hintt[isou] = ctheta * visten[c_id][isou] / cs_turb_csrij / distbf;
+          hintt[isou] = ctheta * visten[c_id][isou] / csrij / distbf;
 
       }
 
@@ -257,11 +269,6 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t  *f_sc)
       /* EB-GGDH/AFM/DFM alpha boundary conditions */
       if (turb_flux_model == 11 || turb_flux_model == 21 || turb_flux_model == 31) {
 
-        cs_real_t *coefa_al = f_al->bc_coeffs->a;
-        cs_real_t *coefb_al = f_al->bc_coeffs->b;
-        cs_real_t *cofaf_al = f_al->bc_coeffs->af;
-        cs_real_t *cofbf_al = f_al->bc_coeffs->bf;
-
         /* Dirichlet Boundary Condition
            ---------------------------- */
 
@@ -281,7 +288,10 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t  *f_sc)
 
     } /* Test on velocity symmetry condition: end */
 
-  } /* End loop on boundary faces */
+  }); /* End loop on boundary faces */
+
+  ctx.wait();
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -299,7 +309,6 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t  *f_v)
   const cs_turb_model_type_t model
     = (cs_turb_model_type_t)cs_glob_turb_model->model;
 
-  const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
   const cs_real_t *b_dist = fvq->b_dist;
   const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
@@ -307,6 +316,9 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t  *f_v)
   const int kivisl  = cs_field_key_id("diffusivity_id");
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
   const int ifcvsl  = cs_field_get_key_int(f_v, kivisl);
+
+  cs_dispatch_context ctx;
+  const cs_real_t csrij = cs_turb_csrij;
 
   cs_equation_param_t *eqp_v = cs_field_get_equation_param(f_v);
   cs_real_3_t  *coefa_v = (cs_real_3_t  *)f_v->bc_coeffs->a;
@@ -344,7 +356,7 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t  *f_v)
   const int *icodcl_v = f_v->bc_coeffs->icodcl;
 
   /* Loop on boundary faces */
-  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+  ctx.parallel_for_b_faces(mesh, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
     /* Test on symmetry boundary condition: start */
     if (icodcl_v[f_id] == 4) {
@@ -373,7 +385,7 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t  *f_v)
 
       /* Symmetric tensor diffusivity */
       else if (eqp_v->idften & CS_ANISOTROPIC_DIFFUSION) {
-        const cs_real_t temp = eqp_v->idifft * ctheta / cs_turb_csrij;
+        const cs_real_t temp = eqp_v->idifft * ctheta / csrij;
 
         hintt[0] = (temp * visten[c_id][0] + rkl) / distbf;
         hintt[1] = (temp * visten[c_id][1] + rkl) / distbf;
@@ -446,7 +458,10 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t  *f_v)
 
     } /* Test on velocity symmetry condition: end */
 
-  } /* End loop on boundary faces */
+  }); /* End loop on boundary faces */
+
+  ctx.wait();
+
 }
 
 /*============================================================================
@@ -492,6 +507,17 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
   const int idirsm = cs_glob_turb_rans_model->idirsm;
   const int n_fields = cs_field_n_fields();
 
+  cs_dispatch_context ctx;
+  const cs_real_t csrij = cs_turb_csrij;
+  const cs_ale_type_t csale = cs_glob_ale;
+  const cs_real_t cmu = cs_turb_cmu;
+  const int irijco = cs_glob_turb_rans_model->irijco;
+  const int iclsyr = cs_glob_turb_rans_model->iclsyr;
+
+  cs_field_t *rij = nullptr;
+  if (order == CS_TURB_SECOND_ORDER)
+    rij = CS_F_(rij);
+
   /* Initializations
      =============== */
 
@@ -516,11 +542,11 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
   cs_real_t *rcodcl1_vel = vel->bc_coeffs->rcodcl1;
 
   /* Loop over boundary faces */
-  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+  ctx.parallel_for_b_faces(mesh, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
     /* Test for symmetry on velocity */
     if (icodcl_vel[f_id] != 4)
-      continue;
+      return;
 
     /* To cancel the mass flux */
     isympa[f_id] = 0;
@@ -537,7 +563,7 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
        not important for symmetry). */
 
     cs_real_t rcodcn = 0.0;
-    if (cs_glob_ale == CS_ALE_LEGACY || cs_glob_ale == CS_ALE_CDO) {
+    if (csale == CS_ALE_LEGACY || csale == CS_ALE_CDO) {
       const cs_real_t rcodclxyz[3] = {rcodcl1_vel[n_b_faces*0 + f_id],
                                       rcodcl1_vel[n_b_faces*1 + f_id],
                                       rcodcl1_vel[n_b_faces*2 + f_id]};
@@ -658,7 +684,6 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
 
     if (order == CS_TURB_SECOND_ORDER) {
 
-      cs_field_t *rij = CS_F_(rij);
       cs_equation_param_t *eqp_rij = cs_field_get_equation_param(rij);
 
       cs_real_6_t  *coefa_rij = (cs_real_6_t  *)rij->bc_coeffs->a;
@@ -716,7 +741,7 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
 
       /* Scalar diffusivity */
       else
-        hint_rij = (visclc + visctc * cs_turb_csrij / cs_turb_cmu) / distbf;
+        hint_rij = (visclc + visctc * csrij / cmu) / distbf;
 
       /* Tensor Rij (Partially or totally implicited) */
 
@@ -732,7 +757,7 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
 
         /* Partial (or total if coupled) implicitation */
 
-        if (cs_glob_turb_rans_model->irijco == 1) {
+        if (irijco == 1) {
           coefa_rij[f_id][isou] = 0.0;
           cofaf_rij[f_id][isou] = 0.0;
           cofad_rij[f_id][isou] = 0.0;
@@ -749,7 +774,7 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
             cofbd_rij[f_id][isou][ii] = coefb_rij[f_id][isou][ii];
           }
         }
-        else if (cs_glob_turb_rans_model->iclsyr == 1) {
+        else if (iclsyr == 1) {
 
           for (int ii = 0; ii < 6; ii++) {
             if (ii != isou)
@@ -776,7 +801,7 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
 
       }
 
-      if (cs_glob_turb_rans_model->irijco != 1) {
+      if (irijco != 1) {
         for (int isou = 0; isou < 6; isou++) {
           coefa_rij[f_id][isou] = fcoefa[isou];
           cofaf_rij[f_id][isou] = fcofaf[isou];
@@ -795,7 +820,9 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
 
     } /* if (order == CS_TURB_SECOND_ORDER) */
 
-  } /* End loop on boundary faces */
+  }); /* End loop on boundary faces */
+
+  ctx.wait();
 
   /* Boundary conditions on transported vectors
      ========================================== */
@@ -846,10 +873,10 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
     else if (eqp_displ->idften & CS_ANISOTROPIC_DIFFUSION)
       cpro_visma_v = (const cs_real_6_t *)CS_F_(vism)->val;
 
-    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+    ctx.parallel_for_b_faces(mesh, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
       if (icodcl_displ[f_id] != 4)
-        continue;
+        return;
 
       const cs_lnum_t c_id = b_face_cells[f_id];
 
@@ -922,9 +949,12 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
       cfbale[f_id][1][2] = htnn[4];
       cfbale[f_id][2][1] = htnn[4];
 
-    } /* End loop on boundary faces */
+    }); /* End loop on boundary faces */
 
   } /* End for ALE */
+
+  ctx.wait();
+
 }
 
 /*---------------------------------------------------------------------------- */
