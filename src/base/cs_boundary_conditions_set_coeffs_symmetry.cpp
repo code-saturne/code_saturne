@@ -87,6 +87,7 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t  *f_sc)
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
   const cs_real_t *b_dist = fvq->b_dist;
   const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
@@ -165,7 +166,7 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t  *f_sc)
   const int *icodcl_vel = CS_F_(vel)->bc_coeffs->icodcl;
 
   /* Loop on boundary faces */
-  ctx.parallel_for_b_faces(mesh, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+  ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
     /* Test on symmetry boundary condition: start */
     if (icodcl_vel[f_id] == 4) {
@@ -309,6 +310,7 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t  *f_v)
   const cs_turb_model_type_t model
     = (cs_turb_model_type_t)cs_glob_turb_model->model;
 
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
   const cs_real_t *b_dist = fvq->b_dist;
   const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
@@ -358,7 +360,7 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t  *f_v)
   const int *icodcl_v = f_v->bc_coeffs->icodcl;
 
   /* Loop on boundary faces */
-  ctx.parallel_for_b_faces(mesh, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+  ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
     /* Test on symmetry boundary condition: start */
     if (icodcl_v[f_id] == 4) {
@@ -561,7 +563,7 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
   cs_real_t *rcodcl1_vel = vel->bc_coeffs->rcodcl1;
 
   /* Loop over boundary faces */
-  ctx.parallel_for_b_faces(mesh, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+  ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
     /* Test for symmetry on velocity */
     if (icodcl_vel[f_id] != 4)
@@ -884,7 +886,7 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
     else if (eqp_displ->idften & CS_ANISOTROPIC_DIFFUSION)
       cpro_visma_v = (const cs_real_6_t *)CS_F_(vism)->val;
 
-    ctx.parallel_for_b_faces(mesh, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
       if (icodcl_displ[f_id] != 4)
         return;
