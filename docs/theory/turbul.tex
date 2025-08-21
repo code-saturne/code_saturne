@@ -477,6 +477,93 @@ model assuming $\tilde{\nu } \simeq \nu_T$.
 
 See the \doxygenfile{turbsa_8f90.html}{programmers reference of the dedicated subroutine} for further details.
 
+\subsection{Equations for the variables $k$ and $\omega$ for the standard SST model}
+
+\begin{equation}
+\left\{
+\begin{array}{r c l}
+\displaystyle
+\rho \der{k }{t} + \grad k \cdot \left( \rho \vect{u} \right)
+- \divs \left[ \left( \mu +\frac{\mu _{t}}{\sigma _{k}} \right)\grad{k}\right]
+&=&\displaystyle
+\mathcal{P}_k -\rho C_{\mu}\omega k +\Gamma k^{in}+ST_{k}, \\
+\displaystyle
+\rho \der{ \omega}{t} + \grad \omega \cdot \left(\rho \vect{u} \right)
+-\divs \left[ \left( \mu +\frac{\mu _{t}}{\sigma _{\omega}} \right) \grad{\omega}\right]
+&=& \displaystyle
+\rho \Gamma_{k\omega} \frac{\mathcal{P}_{\omega}}{\mu_t} - \beta \rho \omega^2
++ 2\frac{\rho}{\omega} \frac{(1 - F_1)}{C_{w2}} \grad{k}\cdot\grad{\omega}+\Gamma \omega^{in}+ST_{\omega},
+\end{array}
+\right.
+\end{equation}
+
+Where $k$ is the kinetic turbulent energy, $\omega$ is the kinetic energy dissipation rate, $C_{\mu} = 0.09$ is a turbulence constant and, usually, $k$, $\varepsilon$ and $\omega$ are related:
+
+\begin{equation}
+\omega = \frac{1}{C_{\mu}}\frac{k}{\varepsilon}
+\end{equation}
+
+$\mathcal{P}_k$ and $\mathcal{P}_{\omega}$ are the turbulence and turbulence dissipation rate production terms.
+
+\begin{equation}
+\mathcal{P}_{\omega} = \mu_t \deviator{\tens{S}}:\deviator{\tens{S}} - \frac{2}{3}\rho k \divs(k)
+\end{equation}
+
+\begin{equation}
+\mathcal{P}_k = \left\{
+\begin{array}{l c r}
+\rho C_{\mu} C_{c1} \omega k & \text{if} & \mathcal{P}_{\omega} > \rho C_{\mu}  C_{c1}\omega k\\
+\mathcal{P}_{\omega} & \text{else} & \\
+\end{array}
+\right.
+\end{equation}
+
+Where $\mu_t$ is the turbulence viscosity:
+
+\begin{equation}
+\mu_t = \frac{\rho C_{a1} k}{\max(C_{a1} \omega, \sqrt{\deviator{\tens{S}}:\deviator{\tens{S}}}F_2)} 
+\end{equation}
+
+$\deviator{\tens{S}}$ is the deviatoric part of the strain tensor, $F_1$ and $F_2$ are defined below:
+
+\begin{equation}
+\left\{
+\begin{array}{r c l}
+F_1 & = & \tanh\left[\min\left(\max(\frac{\sqrt{k}}{C_{\mu}\omega d_w}, 500\frac{\mu}{\rho \omega d_w^2}), 4\frac{\rho k}{C_{w2} c_{s} d_w^2}\right)^4\right]\\
+F_2 & = & \tanh\left[\max\left(2\frac{\sqrt{k}}{C_{\mu \omega d_w}}, 500\frac{\mu}{\rho \omega d_w^2}\right)^2\right]\\
+\end{array}
+\right.
+\end{equation}
+
+Where $d_w$ is the shortest distance to the wall and $c_s$ depends on the shear stress term:
+
+\begin{equation}
+c_s = \frac{2\rho}{\omega C_{w1}} \grad{k} \cdot \grad{\omega}
+\end{equation}
+
+\begin{table}[!htp]
+\centering
+\begin{tabular}{p{1cm}|p{1cm}|p{1cm}|p{1cm}|p{1cm}|p{1cm}|p{2.5cm}|p{2.5cm}|p{1cm}|p{1cm}}
+$C_{k1}$ & $C_{k2}$ & $C_{w1}$ & $C_{w2}$ & $C_{c1}$ & $C_{a1}$ & $C_{g1}$ & $C_{g2}$ & $C_{b1}$ & $C_{b2}$ \\ \hline
+$1.168$ & $2$ & $2.$ & $1.168$ & $10$ & $0.31$ & $\frac{C_{b1}}{C_{\mu}}-\frac{\kappa^2}{C_{w1}\sqrt{C_{\mu}}}$ & $\frac{C_{b2}}{C_{\mu}}-\frac{\kappa^2}{C_{w2}\sqrt{C_{\mu}}}$ & $0.075$ & $0.0828$ 
+\end{tabular}%
+\caption{Standard $k-\omega$ SST model constants.
+\label{tab:k_omega_constants}}
+\end{table}
+
+Where $\kappa = 0.42$ is the classic Kolmogorov turbulence constant. Because the $k-\omega$ SST turbulence is a blending between different older turbulence model based on the same variables, the expressions for $\Gamma_{k\omega}$ and $\beta$ are as wieghted by the weight coefficient $F_1$:
+
+\begin{equation}
+\left\{
+\begin{array}{r c l}
+\Gamma_{k\omega} & = & F_1 C_{g1} + (1-F_1) C_{g2}\\
+\beta & = & F_1 C_{b1} + (1-F_1) C_{b2}\\
+\sigma_k & = & F_1 C_{k1} + (1-F_1) C_{k2}\\
+\sigma_\omega & = & F_1 C_{w1} + (1-F_1) C_{w2}
+\end{array}
+\right.
+\end{equation}
+
 %-------------------------------------------------------------------------------
 \section{Differential Reynolds Stress Models (\emph{DRSM})}
 In this section, the presented models solve a differential transport equation
