@@ -321,6 +321,8 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t  *f_v)
   const cs_real_t csrij = cs_turb_csrij;
 
   cs_equation_param_t *eqp_v = cs_field_get_equation_param(f_v);
+  const int v_idften = eqp_v->idften;
+  const int v_idifft = eqp_v->idifft;
   cs_real_3_t  *coefa_v = (cs_real_3_t  *)f_v->bc_coeffs->a;
   cs_real_33_t *coefb_v = (cs_real_33_t *)f_v->bc_coeffs->b;
   cs_real_3_t  *cofaf_v = (cs_real_3_t  *)f_v->bc_coeffs->af;
@@ -372,8 +374,8 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t  *f_v)
 
       cs_real_t hintt[6] = {0., 0., 0., 0., 0., 0.};
 
-      if (eqp_v->idften & CS_ISOTROPIC_DIFFUSION) { // a voir (zero)
-        hintt[0] =   (eqp_v->idifft * cs::max(visct[c_id], 0)
+      if (v_idften & CS_ISOTROPIC_DIFFUSION) { // a voir (zero)
+        hintt[0] =   (v_idifft * cs::max(visct[c_id], 0)
                    / turb_schmidt + rkl) / distbf;
 
         hintt[1] = hintt[0];
@@ -384,8 +386,8 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t  *f_v)
       }
 
       /* Symmetric tensor diffusivity */
-      else if (eqp_v->idften & CS_ANISOTROPIC_DIFFUSION) {
-        const cs_real_t temp = eqp_v->idifft * ctheta / csrij;
+      else if (v_idften & CS_ANISOTROPIC_DIFFUSION) {
+        const cs_real_t temp = v_idifft * ctheta / csrij;
 
         hintt[0] = (temp * visten[c_id][0] + rkl) / distbf;
         hintt[1] = (temp * visten[c_id][1] + rkl) / distbf;
@@ -515,8 +517,25 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
   const int iclsyr = cs_glob_turb_rans_model->iclsyr;
 
   cs_field_t *rij = nullptr;
-  if (order == CS_TURB_SECOND_ORDER)
+  int rij_idften = 0;
+  cs_real_6_t  *coefa_rij = nullptr;
+  cs_real_66_t *coefb_rij = nullptr;
+  cs_real_6_t  *cofaf_rij = nullptr;
+  cs_real_66_t *cofbf_rij = nullptr;
+  cs_real_6_t  *cofad_rij = nullptr;
+  cs_real_66_t *cofbd_rij = nullptr;
+
+  if (order == CS_TURB_SECOND_ORDER) {
     rij = CS_F_(rij);
+    cs_equation_param_t *eqp_rij = cs_field_get_equation_param(rij);
+    rij_idften = eqp_rij->idften;
+    coefa_rij = (cs_real_6_t  *)rij->bc_coeffs->a;
+    coefb_rij = (cs_real_66_t *)rij->bc_coeffs->b;
+    cofaf_rij = (cs_real_6_t  *)rij->bc_coeffs->af;
+    cofbf_rij = (cs_real_66_t *)rij->bc_coeffs->bf;
+    cofad_rij = (cs_real_6_t  *)rij->bc_coeffs->ad;
+    cofbd_rij = (cs_real_66_t *)rij->bc_coeffs->bd;
+  }
 
   /* Initializations
      =============== */
@@ -684,19 +703,10 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
 
     if (order == CS_TURB_SECOND_ORDER) {
 
-      cs_equation_param_t *eqp_rij = cs_field_get_equation_param(rij);
-
-      cs_real_6_t  *coefa_rij = (cs_real_6_t  *)rij->bc_coeffs->a;
-      cs_real_66_t *coefb_rij = (cs_real_66_t *)rij->bc_coeffs->b;
-      cs_real_6_t  *cofaf_rij = (cs_real_6_t  *)rij->bc_coeffs->af;
-      cs_real_66_t *cofbf_rij = (cs_real_66_t *)rij->bc_coeffs->bf;
-      cs_real_6_t  *cofad_rij = (cs_real_6_t  *)rij->bc_coeffs->ad;
-      cs_real_66_t *cofbd_rij = (cs_real_66_t *)rij->bc_coeffs->bd;
-
       cs_real_t hint_rij = 0.;
 
       /* Symmetric tensor diffusivity (Daly Harlow -- GGDH) */
-      if (eqp_rij->idften & CS_ANISOTROPIC_RIGHT_DIFFUSION) {
+      if (rij_idften & CS_ANISOTROPIC_RIGHT_DIFFUSION) {
 
         cs_real_t visci[3][3];
 
@@ -864,6 +874,7 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
 
     int *icodcl_displ = m_vel->bc_coeffs->icodcl;
     cs_equation_param_t *eqp_displ = cs_field_get_equation_param(m_vel);
+    const int displ_idften = eqp_displ->idften;
 
     const cs_real_t   *cpro_visma_s = nullptr;
     const cs_real_6_t *cpro_visma_v = nullptr;
@@ -891,7 +902,7 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
       /* Physical properties */
       cs_real_6_t hintv = {0., 0., 0., 0., 0., 0.};
 
-      if (eqp_displ->idften & CS_ISOTROPIC_DIFFUSION) {
+      if (displ_idften & CS_ISOTROPIC_DIFFUSION) {
 
         hintv[0] = cpro_visma_s[c_id]/distbf;
         hintv[1] = cpro_visma_s[c_id]/distbf;
@@ -901,7 +912,7 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
         hintv[5] = 0.0;
 
       }
-      else if (eqp_displ->idften & CS_ANISOTROPIC_LEFT_DIFFUSION) {
+      else if (displ_idften & CS_ANISOTROPIC_LEFT_DIFFUSION) {
         for (int ii = 0; ii < 6; ii++)
           hintv[ii] = cpro_visma_v[c_id][ii] / distbf;
       }
