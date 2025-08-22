@@ -504,7 +504,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             elif 'r2-r12' in turbModel:
                 exp = (
                 "RXX = 1e-5; RYY = 1e-5; RZZ = 1e-5; RXY = 0.; RXZ = 0.; RYZ = 0.;\n"
-                "R12XX = 1e-5; R12YY = 1e-5; R12ZZ = 1e-5; R12XY = 0; R12XZ = 0; R12YZ = 0"
+                "R12XX = 1e-5; R12YY = 1e-5; R12ZZ = 1e-5; R12XY = 0; R12XZ = 0; R12YZ = 0;"
                 )
             else:
                 msg = "Reference value initialization for turbulence model "\
