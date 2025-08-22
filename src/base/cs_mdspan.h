@@ -409,6 +409,24 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
+   * \brief Getter for data raw pointer with recast (casts T* to U*)
+   *
+   * @tparam U : data type used to cast T* into U*
+   *
+   * \return raw pointer (U*)
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<typename U>
+  CS_F_HOST_DEVICE
+  U*
+  data()
+  {
+    return reinterpret_cast<U*>(_data);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
    * \brief Getter for a subspan based on first dimension
    *
    * \return pointer
