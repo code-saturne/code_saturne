@@ -326,23 +326,13 @@ class TurbulenceModel(Variables, Model):
             req = [('k', 'turbulent kinetic energy'),
                    ('omg', 'turbulent kinetic energy dissipation rate')]
         elif 'rij-epsilon' in turbModel:
-            if 'ebrsm' not in turbModel:
-                req = [('RXX', 'XX Reynolds stress component'),
-                       ('RYY', 'YY Reynolds stress component'),
-                       ('RZZ', 'ZZ Reynolds stress component'),
-                       ('RXY', 'XY Reynolds stress component'),
-                       ('RXZ', 'XZ Reynolds stress component'),
-                       ('RYZ', 'YZ Reynolds stress component'),
-                       ('eps', 'turbulent kinetic energy dissipation')]
-            else:
-                req = [('RXX', 'XX Reynolds stress component'),
-                       ('RYY', 'YY Reynolds stress component'),
-                       ('RZZ', 'ZZ Reynolds stress component'),
-                       ('RXY', 'XY Reynolds stress component'),
-                       ('RXZ', 'XZ Reynolds stress component'),
-                       ('RYZ', 'YZ Reynolds stress component'),
-                       ('eps', 'turbulent kinetic energy dissipation'),
-                       ('alpha', 'Blending factor')]
+            req = [('RXX', 'XX Reynolds stress component'),
+                   ('RYY', 'YY Reynolds stress component'),
+                   ('RZZ', 'ZZ Reynolds stress component'),
+                   ('RXY', 'XY Reynolds stress component'),
+                   ('RXZ', 'XZ Reynolds stress component'),
+                   ('RYZ', 'YZ Reynolds stress component'),
+                   ('eps', 'turbulent kinetic energy dissipation')]
         elif 'q2' in turbModel:
             req = [('qp', 'particle agitation energy'),
                    ('qfp', 'fluid-particle velocity covariance')]
@@ -385,16 +375,10 @@ class TurbulenceModel(Variables, Model):
         elif 'k-omega' in turb_model:
             formula = """k = 1e-5;\nomg = 10;"""
         elif 'rij' in turb_model:
-            if 'ebrsm' not in turb_model:
-                formula = (
-                "RXX = 1e-5; RYY = 1e-5; RZZ = 1e-5; RXY = 0; RXZ = 0; RYZ = 0;\n"
-                "eps = 1e-3;"
-                )
-            else:
-                formula = (
-                "RXX = 1e-5; RYY = 1e-5; RZZ = 1e-5; RXY = 0; RXZ = 0; RYZ = 0;\n"
-                "eps = 1e-3;\nalpha = 1;"
-                )
+            formula = (
+            "RXX = 1e-5; RYY = 1e-5; RZZ = 1e-5; RXY = 0; RXZ = 0; RYZ = 0;\n"
+            "eps = 1e-3;"
+            )
         elif 'q2' in turb_model:
             formula = """qp = 1e-5;\nqfp = 2e-5;"""
         elif 'r2-q12' in turb_model:

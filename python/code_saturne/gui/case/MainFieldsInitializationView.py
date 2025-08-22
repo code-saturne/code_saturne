@@ -516,17 +516,10 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         elif 'k-omega' in turbModel:
             exa = """k = 1.0e-5;\nomg = 10.;"""
         elif 'rij' in turbModel:
-            if 'ebrsm' not in turbModel:
-                exa = (
-                "RXX = 1e-5; RYY = 1e-5; RZZ = 1e-5; RXY = 0.; RXZ = 0.; RYZ = 0.;\n"
-                "eps = 1e-3;"
-                )
-            else:
-                exa = (
-                "RXX = 1e-5; RYY = 1e-5; RZZ = 1e-5; RXY = 0.; RXZ = 0.; RYZ = 0.;\n"
-                "eps = 1e-3;\n"
-                "alpha = 1;"
-                )
+            exa = (
+            "RXX = 1e-5; RYY = 1e-5; RZZ = 1e-5; RXY = 0.; RXZ = 0.; RYZ = 0.;\n"
+            "eps = 1e-3;"
+            )
         elif 'q2' in turbModel:
             exa = """qp = 1e-4; qfp = 2e-4;"""
         elif 'r2-q12' in turbModel:
