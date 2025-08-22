@@ -700,3 +700,35 @@ cs_time_step_log_setup(void)
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
+
+/*=============================================================================
+ * C++ functions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if at least another iteration is needed.
+ *
+ * \return true if at least another itreation is needed, false otherwise.
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_time_step_t::needs_iteration
+() const
+{
+  bool more_iterations = true;
+
+  // If nt_max has been set
+  if (this->nt_max > 0 && this->nt_cur >= this->nt_max)
+    more_iterations = false;
+
+  // If t_max has been set
+  if (this->t_max > 0 && this->t_cur >= this->t_max)
+    more_iterations = false;
+
+  return more_iterations;
+}
+
+/*----------------------------------------------------------------------------*/
+

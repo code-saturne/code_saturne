@@ -84,6 +84,15 @@ typedef struct {
   double        dt_ref;       /* reference time step. */
   double        dt_next;      /* next (predicted) time step. */
 
+#if defined(__cplusplus)
+
+  /* Helper function to check if code needs to do at least one more iteration.
+     ------------------------------------------------------------------------ */
+
+  bool needs_iteration() const;
+
+#endif
+
 } cs_time_step_t;
 
 /* Time step options descriptor */

@@ -416,8 +416,6 @@ cs_domain_get_stage(const cs_domain_t    *domain)
 bool
 cs_domain_needs_iteration(cs_domain_t  *domain)
 {
-  bool  one_more_iter = true;
-
   cs_time_step_t  *ts = domain->time_step;
 
   cs_coupling_sync_apps(0,      /* flags */
@@ -425,13 +423,8 @@ cs_domain_needs_iteration(cs_domain_t  *domain)
                         &(ts->nt_max),
                         &(ts->dt_ref));
 
-  if (ts->nt_max > 0) /* nt_max has been set */
-    if (ts->nt_cur >= ts->nt_max)
-      one_more_iter = false;
-
-  if (ts->t_max > 0) /* t_max has been set */
-    if (ts->t_cur >= ts->t_max)
-      one_more_iter = false;
+  // First check if another iteration is required based on time step
+  bool one_more_iter = ts->needs_iteration();
 
   if (domain->only_steady)
     one_more_iter = false;
