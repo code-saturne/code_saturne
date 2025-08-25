@@ -3035,11 +3035,6 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       dist[1] = b_face_cog[f_id][1] - cell_cen[c_id][1];
       dist[2] = b_face_cog[f_id][2] - cell_cen[c_id][2];
 
-      cs_real_t *coefa_ep = f_eps->bc_coeffs->a;
-      cs_real_t *coefb_ep = f_eps->bc_coeffs->b;
-      cs_real_t *cofaf_ep = f_eps->bc_coeffs->af;
-      cs_real_t *cofbf_ep = f_eps->bc_coeffs->bf;
-
       cs_real_6_t  *coefa_rij = (cs_real_6_t  *)f_rij->bc_coeffs->a;
       cs_real_66_t *coefb_rij = (cs_real_66_t *)f_rij->bc_coeffs->b;
       cs_real_6_t  *cofaf_rij = (cs_real_6_t  *)f_rij->bc_coeffs->af;
@@ -3233,7 +3228,14 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       /* Epsilon
          NB: no reconstruction, possibility of partial implicitation */
 
+      /* Note: epsilon may be not a variable for TAUSGS model */
       if (eqp_eps != nullptr) {
+
+        cs_real_t *coefa_ep = f_eps->bc_coeffs->a;
+        cs_real_t *coefb_ep = f_eps->bc_coeffs->b;
+        cs_real_t *cofaf_ep = f_eps->bc_coeffs->af;
+        cs_real_t *cofbf_ep = f_eps->bc_coeffs->bf;
+
         /* Symmetric tensor diffusivity (Daly Harlow -- GGDH) */
         if (eqp_eps->idften & CS_ANISOTROPIC_DIFFUSION) {
 
