@@ -389,10 +389,90 @@ cs_turbulence_bc_set_hmg_neumann(cs_lnum_t   face_id);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+CS_F_HOST_DEVICE static void
 cs_turbulence_bc_rij_transform(int        is_sym,
                                cs_real_t  p_lg[3][3],
-                               cs_real_t  alpha[6][6]);
+                               cs_real_t  alpha[6][6])
+{
+  cs_real_t p_lg2[3][3];
+  for (int ii = 0; ii < 3; ii++)
+    for (int jj = 0; jj < 3; jj++)
+      p_lg2[ii][jj] = cs_math_pow2(p_lg[ii][jj]);
+
+  /* alpha(i,j)  for i in [1,3] and j in [1,3]: 9 terms */
+  for (int ii = 0; ii < 3; ii++) {
+    for (int jj = 0; jj < 3; jj++) {
+      alpha[jj][ii] =  p_lg2[0][ii] * p_lg2[0][jj]
+                     + p_lg2[1][ii] * p_lg2[1][jj]
+                     + p_lg2[2][ii] * p_lg2[2][jj]
+                     + 2. * is_sym * p_lg[0][ii] * p_lg[2][ii]
+                                   * p_lg[0][jj] * p_lg[2][jj];
+    }
+  }
+
+  /* alpha(i,j)  for i in [1,3] and j in [4,6]: 9 terms */
+
+  /* Correcponding line to j */
+  const int _jj_to_kk[3] = {0, 1, 0};
+  /* Corresponding column to j*/
+  const int _jj_to_pp[3] = {1, 2, 2};
+
+  for (int ii = 0; ii < 3; ii++) {
+    for (int jj = 0; jj < 3; jj++) {
+
+      int kk = _jj_to_kk[jj];
+      int pp = _jj_to_pp[jj];
+
+      alpha[jj + 3][ii] =
+        2. * (  p_lg2[0][ii] * p_lg[0][kk] * p_lg[0][pp]
+              + p_lg2[1][ii] * p_lg[1][kk] * p_lg[1][pp]
+              + p_lg2[2][ii] * p_lg[2][kk] * p_lg[2][pp]
+              + is_sym * p_lg[2][ii] * p_lg[0][ii]
+                       * (  p_lg[0][kk]*p_lg[2][pp]
+                          + p_lg[2][kk]*p_lg[0][pp]));
+    }
+  }
+
+  /* alpha(i,j)  for i in [4,6] and j in [1,3]: 9 terms */
+
+  for (int ii = 0; ii < 3; ii++) {
+    for (int jj = 0; jj < 3; jj++) {
+
+      int kk = _jj_to_kk[ii];
+      int pp = _jj_to_pp[ii];
+
+      /* Note: could be simplified because it is 0.5*alpha[jj+3][ii] */
+      alpha[jj][ii + 3] =
+          p_lg[0][kk] * p_lg[0][pp] * p_lg2[0][jj]
+        + p_lg[1][kk] * p_lg[1][pp] * p_lg2[1][jj]
+        + p_lg[2][kk] * p_lg[2][pp] * p_lg2[2][jj]
+        + is_sym * p_lg[2][jj] * p_lg[0][jj]
+                 * (  p_lg[0][kk]*p_lg[2][pp]
+                    + p_lg[2][kk]*p_lg[0][pp]);
+    }
+  }
+
+  /* alpha(i,j)  for i in [4,6] and j in [4,6]: 9 terms */
+  for (int ii = 0; ii < 3; ii++) {
+    for (int jj = 0; jj < 3; jj++) {
+
+      int kk = _jj_to_kk[ii];
+      int pp = _jj_to_pp[ii];
+
+      int jj1 = _jj_to_kk[jj];
+      int jj2 = _jj_to_pp[jj];
+
+      alpha[jj + 3][ii + 3] =
+        2. * (  p_lg[0][kk] * p_lg[0][pp] * p_lg[0][jj1] * p_lg[0][jj2]
+              + p_lg[1][kk] * p_lg[1][pp] * p_lg[1][jj1] * p_lg[1][jj2]
+              + p_lg[2][kk] * p_lg[2][pp] * p_lg[2][jj1] * p_lg[2][jj2])
+              + is_sym * (  p_lg[0][kk]*p_lg[2][pp]
+                          + p_lg[2][kk]*p_lg[0][pp])
+                       * (  p_lg[2][jj1]*p_lg[0][jj2]
+                          + p_lg[0][jj1]*p_lg[2][jj2]);
+    }
+  }
+}
 
 /*----------------------------------------------------------------------------*/
 

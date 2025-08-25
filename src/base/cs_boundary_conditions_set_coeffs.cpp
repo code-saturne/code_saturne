@@ -2007,8 +2007,9 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
         cs_equation_param_t *eqp_eps = cs_field_get_equation_param(eps);
         f_a_t_visc = nullptr, visten = nullptr;
+        const int eps_idften = eqp_eps->idften;
 
-        if (eqp_eps->idften & CS_ANISOTROPIC_DIFFUSION) {
+        if (eps_idften & CS_ANISOTROPIC_DIFFUSION) {
           f_a_t_visc = cs_field_by_name("anisotropic_turbulent_viscosity");
           visten = (cs_real_6_t *)f_a_t_visc->val;
         }
@@ -2032,7 +2033,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           dist[2] = b_face_cog[f_id][2] - cell_cen[c_id][2];
 
           /* Symmetric tensor diffusivity (Daly Harlow - GGDH) */
-          if (eqp_eps->idften & CS_ANISOTROPIC_DIFFUSION) {
+          if (eps_idften & CS_ANISOTROPIC_DIFFUSION) {
 
             visci[0][0] = visclc + visten[c_id][0]/sigmae;
             visci[1][1] = visclc + visten[c_id][1]/sigmae;

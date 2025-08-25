@@ -473,7 +473,7 @@ _solve_most(int              n_var,
     CS_MALLOC(hbord, n_b_faces, cs_real_t);
 
   if (th_f != nullptr)
-    CS_MALLOC(theipb, n_b_faces, cs_real_t);
+    CS_MALLOC_HD(theipb, n_b_faces, cs_real_t, cs_alloc_mode);
 
   if (   cs_glob_turb_model->type == CS_TURB_LES
       && cs_glob_turb_les_model->idries == 1)
