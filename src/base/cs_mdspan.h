@@ -213,6 +213,42 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
+   * \brief Overloaded [] operator to access the ith value (val[i]).
+   *
+   * \returns raw pointer to the i-th value
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  inline
+  T& operator[]
+  (
+    cs_lnum_t i /*!<[in] Index of value to get */
+  )
+  {
+    return _data[i];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Overloaded [] operator to access the ith value (val[i]).
+   *
+   * \returns raw pointer to the i-th value
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  inline
+  T& operator[]
+  (
+    cs_lnum_t i /*!<[in] Index of value to get */
+  ) const
+  {
+    return _data[i];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
    * \brief Overloaded () operator to access the ith value (val[i]).
    *
    * \returns raw pointer to the i-th value
@@ -456,7 +492,7 @@ public:
         dims[i] = _extent[i];
     }
 
-    return mdspan<T,N-n_idx,L>(_data + data_offset_(indices...), dims);
+    return mdspan<T,N-n_idx,L>(_data + contiguous_data_offset_(indices...), dims);
   }
 
   /*--------------------------------------------------------------------------*/
@@ -475,7 +511,7 @@ public:
   {
     check_sub_function_args_(indices...);
 
-    return _data + data_offset_(indices...);
+    return _data + contiguous_data_offset_(indices...);
   }
 
   /*--------------------------------------------------------------------------*/
@@ -741,6 +777,34 @@ private:
   inline
   cs_lnum_t
   data_offset_
+  (
+    Args... indices /*!<[in] Input arguments (parameter pack) */
+  )
+  {
+    static_assert(sizeof...(Args) <= N && sizeof...(Args) > 0);
+
+    constexpr int n_idx = sizeof...(Args);
+
+    cs_lnum_t _indices[n_idx] = {indices...};
+
+    cs_lnum_t retval = 0;
+    for (int i = 0; i < n_idx; i++)
+      retval +=_indices[i] * _offset[i];
+
+    return retval;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Helper function to compute value offset.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<typename... Args>
+  CS_F_HOST_DEVICE
+  inline
+  cs_lnum_t
+  contiguous_data_offset_
   (
     Args... indices /*!<[in] Input arguments (parameter pack) */
   )
