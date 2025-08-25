@@ -3564,8 +3564,8 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
           cs_lnum_t s_vtx_id = -1;
 
           /* Store the (two) vertices at the interface */
-          cs_real_t *_v_w_inteface[2][3];
-          cs_real_3_t *v_w_inteface = (cs_real_3_t *)_v_w_inteface;
+          cs_real_3_t *v_w_inteface;
+          CS_MALLOC(v_w_inteface, 2, cs_real_3_t);
           cs_array_real_fill_zero(3 * 2, (cs_real_t *)v_w_inteface);
 
           /* 3 consecutive vertices */
@@ -3765,8 +3765,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                                       + v_w_inteface[1][i])
                                       * cs_math_3_norm(vn);
 
-          if (v_w_inteface != (cs_real_3_t *)_v_w_inteface)
-            CS_FREE(v_w_inteface);
+          CS_FREE(v_w_inteface);
         }
 
         cs_lnum_t n_f_face_vertices = f_vtx_id;
@@ -3917,8 +3916,8 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
           cs_lnum_t s_vtx_count = -1;
 
           /* Store the (two) vertices at the interface */
-          cs_real_t *_v_w_inteface[2][3];
-          cs_real_3_t *v_w_inteface = (cs_real_3_t *)_v_w_inteface;
+          cs_real_3_t *v_w_inteface;
+          CS_MALLOC(v_w_inteface, 2, cs_real_3_t);
           cs_array_real_fill_zero(3 * 2, (cs_real_t *)v_w_inteface);
 
           /* 3 consecutive vertices */
@@ -4064,8 +4063,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                                       + v_w_inteface[1][i])
                                       * cs_math_3_norm(vn);
 
-          if (v_w_inteface != (cs_real_3_t *)_v_w_inteface)
-            CS_FREE(v_w_inteface);
+          CS_FREE(v_w_inteface);
         }
 
         cs_lnum_t n_f_face_vertices = f_vtx_count;
