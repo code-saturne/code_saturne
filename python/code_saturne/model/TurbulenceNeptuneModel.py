@@ -319,6 +319,8 @@ class TurbulenceModel(Variables, Model):
                ('y', "Y cell's gravity center"),
                ('z', "Z cell's gravity center")]
 
+        req = []
+
         if 'k-epsilon' in turbModel:
             req = [('k', 'turbulent kinetic energy'),
                    ('eps', 'turbulent kinetic energy dissipation')]
@@ -391,6 +393,8 @@ class TurbulenceModel(Variables, Model):
             "RXX = 1e-5; RYY = 1e-5; RZZ = 1e-5; RXY = 0.; RXZ = 0.; RYZ = 0.;\n"
             "R12XX = 1e-5; R12YY = 1e-5; R12ZZ = 1e-5; R12XY = 0; R12XZ = 0; R12YZ = 0;"
             )
+        elif 'mixing' in turb_model or 'none' in turb_model:
+            return ()
         else:
             msg = "Reference value initialization for turbulence model "\
                     + turb_model + " is not defined"

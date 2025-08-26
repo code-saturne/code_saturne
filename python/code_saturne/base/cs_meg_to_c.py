@@ -905,10 +905,14 @@ class meg_to_c_interpreter:
         expression   = func_params['exp']
         symbols      = func_params['sym']
         known_fields = func_params['knf']
-        if type(func_params['req'][0]) == tuple:
-            required = [r[0] for r in func_params['req']]
+
+        if (len(func_params['req']) > 0):
+            if type(func_params['req'][0]) == tuple:
+                required = [r[0] for r in func_params['req']]
+            else:
+                required = func_params['req']
         else:
-            required = func_params['req']
+            required = []
 
         zone, name = func_key.split('::')
         exp_lines_comp = func_params['lines']
@@ -2486,7 +2490,7 @@ class meg_to_c_interpreter:
                         # Turbulence get turbModel here before
                         turbModel = \
                                 TurbulenceModel(self.case).getTurbulenceModel(fId)
-                        if turbModel != 'none':
+                        if turbModel != 'none' and 'mixing' not in turbModel:
                             exp, req, sym = \
                                     TurbulenceModel(self.case).getFormulaComponents(z_id,
                                                                                     fId,

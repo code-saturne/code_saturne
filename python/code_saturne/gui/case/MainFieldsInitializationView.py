@@ -721,7 +721,7 @@ pressure = P0 + rho0 * g * (zmax - z);"""
         self.pushButtonTurbulence.hide()
         self.comboBoxTurbulence.hide()
         turbModel = TurbulenceModel(self.case).getTurbulenceModel(fieldId)
-        if turbModel != 'none':
+        if turbModel != 'none' and 'mixing' not in turbModel:
             self.labelTurbulence.setVisible(fieldId!='none')
             self.pushButtonTurbulence.setVisible(fieldId!='none')
             self.comboBoxTurbulence.setVisible(fieldId!='none')
