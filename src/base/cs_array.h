@@ -2188,10 +2188,10 @@ public:
                                          If -1, default, we use array size */
   )
   {
-    assert(n_vals <= _size);
-    assert(other._size == _size);
-
     const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
+
+    assert(loop_size <= _size);
+    assert(loop_size <= other._size);
 
     cs_dispatch_context ctx;
 
@@ -2218,10 +2218,10 @@ public:
                                           If -1, default, we use array size */
   )
   {
-    assert(n_vals <= _size);
-    assert(span._size == _size);
-
     const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
+
+    assert(loop_size <= _size);
+    assert(loop_size <= span._size);
 
     cs_dispatch_context ctx;
 
@@ -2276,10 +2276,10 @@ public:
                                               If -1, default, we use array size */
   )
   {
-    assert(n_vals <= _size);
-    assert(other.size() == _size);
-
     const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
+
+    assert(loop_size <= _size);
+    assert(loop_size <= other._size);
 
     ctx.parallel_for(loop_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
         _data[e_id] = other._data[e_id];
@@ -2304,10 +2304,10 @@ public:
                                          If -1, default, we use array size */
   )
   {
-    assert(n_vals <= _size);
-    assert(span._size == _size);
-
     const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
+
+    assert(loop_size <= _size);
+    assert(loop_size <= span._size);
 
     ctx.parallel_for(loop_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
         _data[e_id] = span._data[e_id];
