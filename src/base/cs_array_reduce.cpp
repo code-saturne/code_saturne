@@ -2746,7 +2746,7 @@ cs_array_reduce_simple_stats_l(cs_dispatch_context  ctx,
     else if (dim == 3)
       _cs_real_sstats_with_norm<3>(ctx, n_elts, v, vmin, vmax, vsum);
     else if (dim == 6)
-      _cs_real_sstats_with_norm<6>(ctx, n_elts, v, vmin, vmax, vsum);
+      _cs_real_sstats<6>(ctx, n_elts, v, vmin, vmax, vsum);
     else /* dim is only known at runtime, so can not be template parameter */
       _cs_real_sstats_nd(n_elts, dim, nullptr, v, vmin, vmax, vsum);
   }
@@ -2758,10 +2758,10 @@ cs_array_reduce_simple_stats_l(cs_dispatch_context  ctx,
       _cs_real_sstats_iv<1>(ctx, n_elts, v_elt_list, v, vmin, vmax, vsum);
     else if (dim == 3)
       _cs_real_sstats_with_norm_iv<3>(ctx, n_elts, v_elt_list,
-          v, vmin, vmax, vsum);
+                                      v, vmin, vmax, vsum);
     else if (dim == 6)
-      _cs_real_sstats_with_norm_iv<6>(ctx, n_elts, v_elt_list,
-          v, vmin, vmax, vsum);
+      _cs_real_sstats_iv<6>(ctx, n_elts, v_elt_list,
+                            v, vmin, vmax, vsum);
     else /* dim is only known at runtime, so can not be template parameter */
       _cs_real_sstats_nd(n_elts, dim, v_elt_list, v, vmin, vmax, vsum);
   }
@@ -3039,8 +3039,8 @@ cs_array_reduce_simple_stats_l_w(cs_dispatch_context  ctx,
       _cs_real_sstats_weighted_with_norm<3>(ctx, n_elts, v, w,
                                             vmin, vmax, vsum, wsum);
     else if (dim == 6)
-      _cs_real_sstats_weighted_with_norm<6>(ctx, n_elts, v, w,
-                                            vmin, vmax, vsum, wsum);
+      _cs_real_sstats_weighted<6>(ctx, n_elts, v, w,
+                                  vmin, vmax, vsum, wsum);
     else /* dim is only known at runtime, so can not be template parameter */
       _cs_real_sstats_nd_w(n_elts, dim, nullptr, nullptr, v, w,
                            vmin, vmax, vsum, wsum);
@@ -3051,16 +3051,16 @@ cs_array_reduce_simple_stats_l_w(cs_dispatch_context  ctx,
   else if (v_elt_list == nullptr) { /* w_elt_list != nullptr */
     if (dim == 1)
       _cs_real_sstats_weighted_iw<1>(ctx, n_elts, w_elt_list,
-          v, w, vmin, vmax, vsum, wsum);
+                                     v, w, vmin, vmax, vsum, wsum);
     else if (dim == 3)
       _cs_real_sstats_weighted_with_norm_iw<3>(ctx, n_elts, w_elt_list, v, w,
-          vmin, vmax, vsum, wsum);
+                                               vmin, vmax, vsum, wsum);
     else if (dim == 6)
-      _cs_real_sstats_weighted_with_norm_iw<6>(ctx, n_elts, w_elt_list, v, w,
-          vmin, vmax, vsum, wsum);
+      _cs_real_sstats_weighted_iw<6>(ctx, n_elts, w_elt_list, v, w,
+                                     vmin, vmax, vsum, wsum);
     else /* dim is only known at runtime, so can not be template parameter */
       _cs_real_sstats_nd_w(n_elts, dim, nullptr, w_elt_list, v, w,
-          vmin, vmax, vsum, wsum);
+                           vmin, vmax, vsum, wsum);
   }
 
   /* If weights are defined on parent list */
@@ -3068,16 +3068,16 @@ cs_array_reduce_simple_stats_l_w(cs_dispatch_context  ctx,
   else { /* v_elt_list != nullptr */
     if (dim == 1)
       _cs_real_sstats_weighted_iv<1>(ctx, n_elts, v_elt_list,
-          v, w, vmin, vmax, vsum, wsum);
+                                     v, w, vmin, vmax, vsum, wsum);
     else if (dim == 3)
       _cs_real_sstats_weighted_with_norm_iv<3>(ctx, n_elts, v_elt_list, v, w,
-          vmin, vmax, vsum, wsum);
+                                               vmin, vmax, vsum, wsum);
     else if (dim == 6)
-      _cs_real_sstats_weighted_with_norm_iv<6>(ctx, n_elts, v_elt_list, v, w,
-          vmin, vmax, vsum, wsum);
+      _cs_real_sstats_weighted_iv<6>(ctx, n_elts, v_elt_list, v, w,
+                                     vmin, vmax, vsum, wsum);
     else /* dim is only known at runtime, so can not be template parameter */
       _cs_real_sstats_nd_w(n_elts, dim, v_elt_list, nullptr, v, w,
-          vmin, vmax, vsum, wsum);
+                           vmin, vmax, vsum, wsum);
   }
 }
 
