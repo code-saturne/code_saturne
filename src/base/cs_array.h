@@ -959,6 +959,7 @@ public:
     static_assert(N == 1,
                   "Instantiation using only total size only possible for "
                   " cs::array<T,1> or cs::array<T>");
+    set_size_(size);
     allocate_(file_name, line_number);
   }
 
@@ -1104,6 +1105,7 @@ public:
     static_assert(N == 1,
                   "Instantiation using only total size only possible for "
                   "cs::array<T,1> or cs::array<T>");
+    set_size_(size);
   }
 
   /*--------------------------------------------------------------------------*/
