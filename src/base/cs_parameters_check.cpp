@@ -1097,23 +1097,23 @@ cs_parameters_check(void)
    * Verification for the second order time step and the particular physics
    *--------------------------------------------------------------------------*/
 
-  if (cs_glob_physical_model_flag[0]) {
+  if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] == 1) {
     for (int f_id = 0; f_id < n_fields; f_id++) {
       cs_field_t *f = cs_field_by_id(f_id);
       if (!(f->type & CS_FIELD_VARIABLE))
         continue;
-      bool stop_criteria = false;
+      bool warning = false;
       cs_equation_param_t *eqp = cs_field_get_equation_param(f);
       if (eqp == nullptr)
         continue;
       if (fabs(eqp->theta - 1.) > 1.e-3)
-        stop_criteria = true;
+        warning = true;
       if (   time_scheme->thetsn > 0.
           || time_scheme->isno2t > 0
           || time_scheme->thetvi > 0.
           || time_scheme->thetcp > 0.
           || rho_t_ext > 0 || mu_t_ext > 0 || cp_t_ext > 0)
-        stop_criteria = true;
+        warning = true;
 
       int scalar_id = (ks > -1) ? cs_field_get_key_int(f, ks) : -1;
       if (scalar_id > -1) {
@@ -1125,11 +1125,11 @@ cs_parameters_check(void)
         if (   scalar_time_order > 0
             || scalar_exp_extrap > 0.
             || scalar_diff_extrap > 0. )
-          stop_criteria = true;
+          warning = true;
       }
-      if (stop_criteria)
+      if (warning)
         cs_parameters_error
-          (CS_ABORT_DELAYED,
+          (CS_WARNING,
            _("Specific physics"),
            _("Options for field \"%s\"\n"
              "not validated with the time discretization scheme\n"
