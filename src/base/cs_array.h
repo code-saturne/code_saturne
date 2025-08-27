@@ -1099,13 +1099,46 @@ public:
     _offset{0},
     _size(size),
     _owner(false),
-    _mode(alloc_mode),
-    _data(data)
+    _data(data),
+    _mode(alloc_mode)
   {
     static_assert(N == 1,
                   "Instantiation using only total size only possible for "
                   "cs::array<T,1> or cs::array<T>");
     set_size_(size);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Constructor method for non owner version in multidimensional
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  array
+  (
+    T              *data,      /*!<[in] Pointer to data array */
+    const cs_lnum_t(&dims)[N], /*!<[in] Array of dimensions sizes */
+    cs_alloc_mode_t alloc_mode = cs_alloc_mode, /*!<[in] Memory allocation mode */
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+ __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
+#endif
+  )
+  :
+    _extent{0},
+    _offset{0},
+    _owner(false),
+    _data(data),
+    _mode(alloc_mode)
+  {
+    set_size_(dims);
+    allocate_(file_name, line_number);
   }
 
   /*--------------------------------------------------------------------------*/
