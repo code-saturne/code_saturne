@@ -424,10 +424,10 @@ cs_theta_scheme_update_var_stage3(void)
     cs_real_t bb = (1.-theta)/(2.-theta);
 
     ctx_i.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-      imasfl[f_id] = aa * imasfl[f_id] + bb * imasfl[f_id];
+      imasfl[f_id] = aa * imasfl[f_id] + bb * imasfl_pre[f_id];
     });
     ctx_b.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-      bmasfl[f_id] = aa * bmasfl[f_id] + bb * bmasfl[f_id];
+      bmasfl[f_id] = aa * bmasfl[f_id] + bb * bmasfl_pre[f_id];
     });
   }
   else if (cs_glob_time_scheme->istmpf == 0) {
