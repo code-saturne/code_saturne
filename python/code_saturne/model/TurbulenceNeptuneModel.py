@@ -373,9 +373,9 @@ class TurbulenceModel(Variables, Model):
         nc_gui_initialize_setup in the routine nc_gui.cxx.
         """
         if 'k-epsilon' in turb_model:
-            formula = """k = 1e-5;\neps = 1e-4;"""
+            formula = """k = 1e-5;\neps = 1e-3;"""
         elif 'k-omega' in turb_model:
-            formula = """k = 1e-5;\nomg = 10;"""
+            formula = """k = 1e-5;\nomg = 1;"""
         elif 'rij' in turb_model:
             formula = (
             "RXX = 1e-5; RYY = 1e-5; RZZ = 1e-5; RXY = 0; RXZ = 0; RYZ = 0;\n"
