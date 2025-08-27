@@ -3,6 +3,10 @@ Master (not on release branches yet)
 
 ### User changes:
 
+- Added a `cs_mesh_cut` mesh operator, allowing a cut of mesh cells
+  by planes (one per cell, with independent normals and origins for
+  each cell).
+
 - Enable use of anisotropic conductivity with the CDO based Heat transfer
   solver of code_saturne. The conductivity must still be defined through
   the `cs_user_parameters` function, but the model can be activated

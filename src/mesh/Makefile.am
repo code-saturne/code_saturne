@@ -82,7 +82,8 @@ cs_mesh_warping.h \
 cs_mesh_smoother.h \
 cs_partition.h \
 cs_stl.h \
-cs_symmetry_faces_filter.h
+cs_symmetry_faces_filter.h \
+cs_mesh_cut.h
 
 # Library source files
 
@@ -126,7 +127,8 @@ cs_mesh_smoother.cpp \
 cs_mesh_to_builder.cpp \
 cs_mesh_warping.cpp \
 cs_stl.cpp \
-cs_symmetry_faces_filter.cpp
+cs_symmetry_faces_filter.cpp \
+cs_mesh_cut.cpp
 
 # Partitioner (may require extra headers)
 

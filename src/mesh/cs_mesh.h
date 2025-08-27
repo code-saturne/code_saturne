@@ -578,6 +578,8 @@ cs_mesh_tag_boundary_cells(cs_mesh_t  *mesh,
 /*----------------------------------------------------------------------------
  * Print information on a mesh structure.
  *
+ * This includes printing element counts by cs_mesh_print_element_counts.
+ *
  * parameters:
  *   mesh  <--  pointer to mesh structure.
  *   name  <--  associated name.
@@ -586,6 +588,18 @@ cs_mesh_tag_boundary_cells(cs_mesh_t  *mesh,
 void
 cs_mesh_print_info(const cs_mesh_t  *mesh,
                    const char       *name);
+
+/*----------------------------------------------------------------------------
+ * Print element counts on a mesh structure.
+ *
+ * parameters:
+ *   mesh  <--  pointer to mesh structure.
+ *   name  <--  associated name.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_print_element_counts(const cs_mesh_t  *mesh,
+                             const char       *name);
 
 /*----------------------------------------------------------------------------
  * Compute global face connectivity size.

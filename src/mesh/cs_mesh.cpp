@@ -3549,6 +3549,8 @@ cs_mesh_tag_boundary_cells(cs_mesh_t  *mesh,
 /*----------------------------------------------------------------------------
  * Print information on a mesh structure.
  *
+ * This includes printing element counts by cs_mesh_print_element_counts.
+ *
  * parameters:
  *   mesh  <--  pointer to mesh structure.
  *   name  <--  associated name.
@@ -3606,6 +3608,23 @@ cs_mesh_print_info(const cs_mesh_t  *mesh,
 
   }
 
+  cs_mesh_print_element_counts(mesh, name);
+
+  _print_mesh_group_stats(mesh);
+}
+
+/*----------------------------------------------------------------------------
+ * Print element counts on a mesh structure.
+ *
+ * parameters:
+ *   mesh  <--  pointer to mesh structure.
+ *   name  <--  associated name.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_mesh_print_element_counts(const cs_mesh_t  *mesh,
+                             const char       *name)
+{
   bft_printf(_(" %s\n"
                "     Number of cells:          %llu\n"
                "     Number of interior faces: %llu\n"
@@ -3621,8 +3640,6 @@ cs_mesh_print_info(const cs_mesh_t  *mesh,
     bft_printf(_("\n"
                  "     Number of isolated faces: %llu\n"),
                (unsigned long long)(mesh->n_g_free_faces));
-
-  _print_mesh_group_stats(mesh);
 }
 
 /*----------------------------------------------------------------------------
