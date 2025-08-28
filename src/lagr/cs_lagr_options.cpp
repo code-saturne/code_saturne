@@ -380,7 +380,7 @@ cs_lagr_options_definition(int         is_restart,
 
   }
   else {
-
+//FIXME for CTWR and COAL...
     cs_glob_lagr_specific_physics->solve_temperature_seen = 0;
     cs_glob_lagr_specific_physics->solve_temperature = 0;
     cs_glob_lagr_specific_physics->solve_mass = 0;

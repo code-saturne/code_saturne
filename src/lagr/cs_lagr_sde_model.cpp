@@ -147,7 +147,7 @@ _pow3(cs_real_t  x)
  *   rho cp dT/dt = div( lambda grad(T) ) + phi
  *
  * parameters:
- *   npt         <--  particle id
+ *   p_id        <--  particle id
  *   dt_part     <--  time step associated to the particle
  *   nor         <--  current step id (for 2nd order scheme)
  *   layer_vol   <--  volume occuppied by one layer
@@ -159,7 +159,7 @@ _pow3(cs_real_t  x)
  *----------------------------------------------------------------------------*/
 
 static void
-_lagtmp(cs_lnum_t         npt,
+_lagtmp(cs_lnum_t         p_id,
         const cs_real_t   dt_part,
         int               nor,
         cs_real_t         layer_vol,
@@ -188,7 +188,7 @@ _lagtmp(cs_lnum_t         npt,
 
   /* Initialization */
 
-  unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
+  unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
 
   cs_real_t p_diam = cs_lagr_particle_get_real(particle, p_am,
                                                CS_LAGR_DIAMETER);
@@ -388,7 +388,7 @@ _lagtmp(cs_lnum_t         npt,
     cs_real_t *part_ts_temp = nullptr;
     if (p_set->p_am->source_term_displ != nullptr) {
       if (p_set->p_am->source_term_displ[CS_LAGR_TEMPERATURE] >= 0)
-        part_ts_temp = cs_lagr_particles_source_terms(p_set, npt,
+        part_ts_temp = cs_lagr_particles_source_terms(p_set, p_id,
                                                       CS_LAGR_TEMPERATURE);
     }
 
@@ -423,7 +423,7 @@ _lagtmp(cs_lnum_t         npt,
  * either if vaporizes, either it condenses).
  *
  * parameters:
- *   npt         <--  particle id
+ *   p_id         <--  particle id
  *   dt_part     <--  time step associated to the particle
  *   nor         <--  current step id (for 2nd order scheme)
  *   diftl0      <--  reference diffusivity for Enthalpy
@@ -437,7 +437,7 @@ _lagtmp(cs_lnum_t         npt,
  *----------------------------------------------------------------------------*/
 
 static void
-_lagsec(cs_lnum_t         npt,
+_lagsec(cs_lnum_t         p_id,
         const cs_real_t   dt_part,
         int               nor,
         cs_real_t         diftl0,
@@ -455,7 +455,7 @@ _lagsec(cs_lnum_t         npt,
   cs_lagr_particle_set_t        *p_set = cs_glob_lagr_particle_set;
   const cs_lagr_attribute_map_t *p_am  = p_set->p_am;
 
-  unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
+  unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
 
   cs_real_t prev_p_diam
     = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_DIAMETER);
@@ -466,7 +466,7 @@ _lagsec(cs_lnum_t         npt,
   cs_real_t *ptsvar = nullptr;
   if (p_set->p_am->source_term_displ != nullptr) {
     if (p_set->p_am->source_term_displ[CS_LAGR_TEMPERATURE] >= 0)
-      ptsvar = cs_lagr_particles_source_terms(p_set, npt, CS_LAGR_TEMPERATURE);
+      ptsvar = cs_lagr_particles_source_terms(p_set, p_id, CS_LAGR_TEMPERATURE);
   }
 
   const cs_coal_model_t *coal_model = cs_glob_coal_model;
@@ -638,7 +638,7 @@ _lagsec(cs_lnum_t         npt,
       tssauv[l_id] = ptsvar[l_id];
   }
 
-  _lagtmp(npt, dt_part, nor, layer_vol, tempct, radius, mlayer, phith, temp);
+  _lagtmp(p_id, dt_part, nor, layer_vol, tempct, radius, mlayer, phith, temp);
 
   /* Use array for second order correction */
   if (ptsvar != nullptr) {
@@ -716,7 +716,7 @@ _lagsec(cs_lnum_t         npt,
  *----------------------------------------------------------------------------*/
 
 static void
-_lagimp(const cs_lnum_t       npt,
+_lagimp(const cs_lnum_t       p_id,
         const cs_real_t       dt_part,
         int                   nor)
 {
@@ -731,8 +731,8 @@ _lagimp(const cs_lnum_t       npt,
    * yet a fixed particle's mass might still evolve */
 
   tcarac = 1.0;
-  pip    = cs_lagr_particles_get_real(p_set, npt, CS_LAGR_MASS);
-  cs_lagr_sde_attr(CS_LAGR_MASS, npt, nor, dt_part, tcarac, pip);
+  pip    = cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_MASS);
+  cs_lagr_sde_attr(CS_LAGR_MASS, p_id, nor, dt_part, tcarac, pip);
 }
 
 /*----------------------------------------------------------------------------
@@ -740,7 +740,7 @@ _lagimp(const cs_lnum_t       npt,
  *----------------------------------------------------------------------------*/
 
 static void
-_lagidp(const cs_lnum_t       npt,
+_lagidp(const cs_lnum_t       p_id,
         const cs_real_t       dt_part,
         int                   nor)
 {
@@ -755,8 +755,8 @@ _lagidp(const cs_lnum_t       npt,
    * yet a fixed particle's mass might still evolve */
 
   tcarac = 1.0;
-  pip    = cs_lagr_particles_get_real(p_set, npt, CS_LAGR_DIAMETER);
-  cs_lagr_sde_attr(CS_LAGR_DIAMETER, npt, nor, dt_part, tcarac, pip);
+  pip    = cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_DIAMETER);
+  cs_lagr_sde_attr(CS_LAGR_DIAMETER, p_id, nor, dt_part, tcarac, pip);
 }
 
 /*----------------------------------------------------------------------------
@@ -764,7 +764,7 @@ _lagidp(const cs_lnum_t       npt,
  *----------------------------------------------------------------------------*/
 
 static void
-_lagitp(const cs_lnum_t       npt,
+_lagitp(const cs_lnum_t       p_id,
         const cs_real_t       dt_part,
         int                   nor,
         const cs_real_2_t     tempct)
@@ -772,7 +772,7 @@ _lagitp(const cs_lnum_t       npt,
   /* Particles management */
   cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
   const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
-  unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
+  unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
 
   cs_real_t tcarac;
   cs_real_t pip;
@@ -788,7 +788,7 @@ _lagitp(const cs_lnum_t       npt,
 
   tcarac = tempct[0];
 
-  pip = cs_lagr_particles_get_real_n(p_set, npt, 2 - nor,
+  pip = cs_lagr_particles_get_real_n(p_set, p_id, 2 - nor,
                                          CS_LAGR_TEMPERATURE_SEEN);
 
   /* ======================================================================
@@ -838,7 +838,7 @@ _lagitp(const cs_lnum_t       npt,
 
   }
 
-  cs_lagr_sde_attr(CS_LAGR_TEMPERATURE, npt, nor, dt_part, tcarac, pip);
+  cs_lagr_sde_attr(CS_LAGR_TEMPERATURE, p_id, nor, dt_part, tcarac, pip);
 }
 
 /*----------------------------------------------------------------------------
@@ -846,18 +846,17 @@ _lagitp(const cs_lnum_t       npt,
  *----------------------------------------------------------------------------*/
 
 static void
-_lagitf(const cs_lnum_t       npt,
-        const cs_real_t       dt_part,
-        int                   nor,
-        cs_lagr_attribute_t  *iattr)
+_sde_i_temp_seen(const cs_lnum_t       p_id,
+                 const cs_real_t       dt_part,
+                 int                   nor)
 {
-  const cs_real_3_t *cell_cen = (cs_real_3_t*)cs_glob_mesh_quantities->cell_cen;
+  const cs_real_3_t *cell_cen = cs_glob_mesh_quantities->cell_cen;
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
 
   /* Particles management */
   cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
   const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
-  unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
+  unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
   /* use previous step for t_order == 1 or prediction step
    * and current one for correction step */
   cs_lnum_t cell_id = cs_lagr_particle_get_lnum_n(particle, p_set->p_am, 2-nor,
@@ -868,7 +867,7 @@ _lagitf(const cs_lnum_t       npt,
   int ltsvar = 0;
 
   if (p_set->p_am->source_term_displ != nullptr) {
-    if (p_set->p_am->source_term_displ[*iattr] >= 0)
+    if (p_set->p_am->source_term_displ[CS_LAGR_TEMPERATURE_SEEN] >= 0)
       ltsvar   = 1;
   }
 
@@ -920,7 +919,7 @@ _lagitf(const cs_lnum_t       npt,
     /* Pour le cas NORDRE= 2, on calcule en plus TSVAR pour NOR= 2  */
     if (ltsvar) {
       cs_real_t *part_ts_fluid_t
-        = cs_lagr_particles_source_terms(p_set, npt,
+        = cs_lagr_particles_source_terms(p_set, p_id,
                                          CS_LAGR_TEMPERATURE_SEEN);
       *part_ts_fluid_t = 0.5 * ter1 - loc_tempf
                              * (aux2 + (aux2 - 1.0) * daux1);
@@ -932,14 +931,14 @@ _lagitf(const cs_lnum_t       npt,
   /* FIXME check this: not called for fixed particle
    * yet a fixed particle's mass might still evolve */
 
-    if (cs_lagr_particles_get_lnum(p_set, npt, CS_LAGR_REBOUND_ID) != 0 ) {
+    if (cs_lagr_particles_get_lnum(p_set, p_id, CS_LAGR_REBOUND_ID) != 0 ) {
 
       cs_real_t ter1
         = 0.5 * cs_lagr_particle_get_real_n(particle, p_am, 1,
                                             CS_LAGR_TEMPERATURE_SEEN) * aux2;
       cs_real_t ter2   = loc_tempf * (1.0 + (aux2 - 1.0) * daux1);
       cs_real_t *part_ts_fluid_t
-        = cs_lagr_particles_source_terms(p_set, npt, CS_LAGR_TEMPERATURE_SEEN);
+        = cs_lagr_particles_source_terms(p_set, p_id, CS_LAGR_TEMPERATURE_SEEN);
 
       cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TEMPERATURE_SEEN,
                                 *part_ts_fluid_t + ter1 + ter2);
@@ -951,7 +950,7 @@ _lagitf(const cs_lnum_t       npt,
  * Integrate SDE's for coal and compute shrinking coal diameter
  *
  * parameters:
- *   npt      <--  particle id
+ *   p_id      <--  particle id
  *   dt_part <--  time step associated to the particle
  *   nor     <--  current step id (for 2nd order scheme)
  *   tempct  <-- thermal characteristic times
@@ -962,7 +961,7 @@ _lagitf(const cs_lnum_t       npt,
  *----------------------------------------------------------------------------*/
 
 static void
-_lagich(const cs_lnum_t       npt,
+_lagich(const cs_lnum_t       p_id,
         const cs_real_t       dt_part,
         int                   nor,
         const cs_real_2_t     tempct,
@@ -1037,7 +1036,7 @@ _lagich(const cs_lnum_t       npt,
   /* FIXME check this: not called for fixed particle
    * yet a fixed particle's mass might still evolve */
 
-  unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
+  unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
 
   /* use previous step for t_order == 1 or prediction step
    * and current one for correction step */
@@ -1093,7 +1092,7 @@ _lagich(const cs_lnum_t       npt,
 
   cs_real_t rom  = extra->cromf->val[cell_id];
   cs_real_t xnul = extra->viscl->val[cell_id] / rom;
-  cs_real_t rep  = aux1 * diam / xnul;
+  cs_real_t re_p  = aux1 * diam / xnul;
 
   /* Prandtl and Sherwood numbers */
   cs_real_t xrkl;
@@ -1106,7 +1105,7 @@ _lagich(const cs_lnum_t       npt,
     xrkl = extra->visls0 / rom;
 
   cs_real_t prt   = xnul / xrkl;
-  cs_real_t sherw = 2 + 0.55 * pow (rep, 0.5) * pow (prt, (d1s3));
+  cs_real_t sherw = 2 + 0.55 * sqrt(re_p) * cbrt(prt);
 
   /* Compute discretization radii */
   cs_real_t radius[nlayer];
@@ -1149,7 +1148,7 @@ _lagich(const cs_lnum_t       npt,
   /* Vapor flux for particle */
 
   cs_real_t fwat[nlayer];
-  _lagsec(npt, dt_part, nor, diftl0, layer_vol, mwat_max, sherw, radius, tempct,
+  _lagsec(p_id, dt_part, nor, diftl0, layer_vol, mwat_max, sherw, radius, tempct,
           mlayer, mwater, fwat);
 
   /* Compute velocity constants SPK1 of SPK2 of the mass transfer by
@@ -1444,7 +1443,7 @@ _lagich(const cs_lnum_t       npt,
     phith[l_id] = (-fcoke[l_id] * deltah) - fwat[l_id] * lv;
 
   cs_real_t temp[nlayer];
-  _lagtmp(npt, dt_part, nor,  layer_vol, tempct, radius, mlayer, phith, temp);
+  _lagtmp(p_id, dt_part, nor,  layer_vol, tempct, radius, mlayer, phith, temp);
 
   for (cs_lnum_t l_id = 0; l_id < nlayer; l_id++)
     part_temp[l_id]  = temp[l_id];
@@ -1614,14 +1613,14 @@ _lewis_factor(const int        evap_model,
  * model (see the cs_ctwr.c subroutine).
  *
  * parameters:
- *   npt         <--  particle id
+ *   p_id         <--  particle id
  *   dt_part     <--  time step associated to the particle
  *   nor         <--  current step id (for 2nd order scheme)
  *
  *----------------------------------------------------------------------------*/
 
 static void
-_sde_i_ct(const cs_lnum_t       npt,
+_sde_i_ct(const cs_lnum_t       p_id,
           const cs_real_t       dt_part,
           int                   nor)
 {
@@ -1646,14 +1645,14 @@ _sde_i_ct(const cs_lnum_t       npt,
 
   /* General fluid properties*/
   const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
-  cs_real_t p0                       = fluid_props->p0;
+  cs_real_t p0 = fluid_props->p0;
 
   /* Constant local numerical parameters*/
   cs_real_t molmassrat = air_prop->molmass_rat;
-  cs_real_t precis = 1e-15; /* clipping purposes */
-  // cs_real_t r = 461.5; /* J /kg K */
+  cs_real_t lv     = 2263000.0;
+  cs_real_t tebl   = 100.0 + _tkelvi;
 
-  unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
+  unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
   /* use previous step for t_order == 1 or prediction step
    * and current one for correction step */
   cs_lnum_t cell_id = cs_lagr_particle_get_lnum_n(particle, p_set->p_am, 2-nor,
@@ -1666,18 +1665,18 @@ _sde_i_ct(const cs_lnum_t       npt,
   const cs_real_t *vel_p
     = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
                                                CS_LAGR_VELOCITY);
-  const cs_real_t *vel_f
+  const cs_real_t *vel_s
     = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
                                                CS_LAGR_VELOCITY_SEEN);
   cs_real_t rho_h = extra->cromf->val[cell_id];
-  cs_real_t visc  = extra->viscl->val[cell_id];
+  cs_real_t mu_h  = extra->viscl->val[cell_id];
 
   /* local Reynolds number */
-  cs_real_t rey   = rho_h * cs_math_3_distance(vel_p, vel_f) * dia / visc;
+  cs_real_t re_p = rho_h * cs_math_3_distance(vel_p, vel_s) * dia / mu_h;
 
   /* Prandtl number */
   cs_real_t cp_h = cs_air_cp_humidair(x[cell_id], x_s[cell_id]);
-  cs_real_t pr   = cp_h * visc / lambda_h;
+  cs_real_t pr   = cp_h * mu_h / lambda_h;
 
   cs_real_t t_l_p
     = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_TEMPERATURE);
@@ -1686,147 +1685,159 @@ _sde_i_ct(const cs_lnum_t       npt,
   cs_real_t x_s_tl = cs_air_x_sat(t_l_p, p0);
   cs_real_t x_s_th = cs_air_x_sat(temp_h, p0);
   cs_real_t xlew   = _lewis_factor(evap_model, molmassrat,
-                                 x[cell_id], x_s_tl);
+                                   x[cell_id], x_s_tl);
 
   /* Nusselt number correlations */
-  /* Ranz-Marshall or Hughmark when rey <= 776.06 && pr <= 250. */
-  cs_real_t nusselt = 2.+0.6*sqrt(rey)*pow(pr,(1./3.));
-  /* Hughmark when rey > 776.06 && pr <= 250. */
-  if (rey > 776.06 && pr <= 250.) {
-    nusselt = 2. + 0.27*pow(rey, 0.62)*pow(pr,(1./3.));
+  /* Ranz-Marshall or Hughmark when re_p <= 776.06 && pr <= 250. */
+  cs_real_t nusselt = 2. + 0.6*sqrt(re_p) * cbrt(pr);
+  /* Hughmark when re_p > 776.06 && pr <= 250. */
+  if (re_p > 776.06 && pr <= 250.) {
+    nusselt = 2. + 0.27*pow(re_p, 0.62) * cbrt(pr);
   }
 
-  cs_real_t a_c = (nusselt * lambda_h) / dia;
-  cs_real_t beta_x = a_c / (xlew * cp_h);
-  cs_real_t beta_x_ai = beta_x * cs_math_pi*cs_math_pow2(dia);
-  cs_real_t mass_source = 0;
-  if (x[cell_id] <= x_s_th) {
-    mass_source = beta_x_ai * (x_s_tl - x[cell_id]);
-  }
-  else {
-    mass_source = beta_x_ai * (x_s_tl - x_s_th);
-  }
-
-  /* Integration of droplet mass
-     -------------------------- */
-
-  cs_real_t aux1 = 0.0;
-  aux1 +=  mass_source * dt_part;
-
-  if (nor == 1) {
-
-    cs_real_t mass_p = cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                                   CS_LAGR_MASS) - aux1;
-
-    /* Clipping */
-    if (mass_p < precis)
-      mass_p = 0.0;
-
-    cs_lagr_particle_set_real(particle, p_am, CS_LAGR_MASS, mass_p);
-
-  }
-  else if (nor == 2) {
-
-    cs_real_t mass_p = 0.5 * (  cs_lagr_particle_get_real_n(particle, p_am,
-                                                          0, CS_LAGR_MASS)
-                            + cs_lagr_particle_get_real_n(particle, p_am,
-                                                            1, CS_LAGR_MASS)
-                            - aux1);
-
-    /* Clipping */
-    if (mass_p < precis)
-      mass_p = 0.0;
-
-    cs_lagr_particle_set_real(particle, p_am, CS_LAGR_MASS, mass_p) ;
-
-  }
+  /* Integration of droplet diameter and mass
+     ---------------------------------------- */
 
   /* Droplet diameter */
 
   cs_real_t mass_p = cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                                 CS_LAGR_MASS) - aux1;
-  cs_real_t droplet_dia = pow(6*mass_p/(cs_math_pi*rho_l),1./3);
+                                                 CS_LAGR_MASS);
+
+  // TODO use rho_p instead
+  cs_real_t droplet_dia = cbrt(6.*mass_p/(cs_math_pi * rho_l));
   cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER, droplet_dia);
 
-  /* Integration of droplet enthalpy
+  /* Evaporation
      -------------------------- */
-  /* Energy loss due to evaporation */
-  aux1 = 0.0;
-  aux1 += mass_source * hv0 * dt_part; /* */
 
-  /* Energy loss due to heat conduction */
-  cs_real_t aux2 =   (lambda_h * nusselt / dia)
-                    * cs_math_pi * cs_math_pow2(dia) *dt_part;
-  //aux2 += a_c * surf_p * dtp;
+  /* Particle's mass */
+  cs_real_t mass = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_MASS);
 
+  /* Vapour diffusion coefficient in the carrier phase */
+  cs_real_t Dv = lambda_h / (rho_h * cp_h * xlew);
+
+  /* Prandtl number */
+  cs_real_t nu_h = mu_h / rho_h;
+  cs_real_t prt = nu_h / Dv;
+
+  /* Sherwood number */
+  cs_real_t sherw = 2. + 0.55 * sqrt(re_p) * cbrt(prt);
+
+  /* Parameters for Yv, equation (54) */
+  cs_real_t r_univ = cs_physical_constants_r; // J/(mol.K), 8.314
+
+  cs_real_t temp_p = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_TEMPERATURE);
+
+  /* Molar masses of vapour and dry air */
+  cs_real_t m_v = 0.0180154 * 1000;
+  cs_real_t m_f = 0.028960 * 1000;
+
+  /* Boiling Temperature with Clausius-Clapeyron
+     ------------------------------------------- */
+  cs_real_t pressure_ref = 101325.;
+  cs_real_t temp_ref = 373.15;
+  cs_real_t R_v = r_univ / m_v;
+
+  // TODO with atmo module take meteo pressure
+  tebl = 1. / ((1. / temp_ref)- (R_v / lv) * log(p0 / pressure_ref));
+
+  /* Mass fraction of vapor (y_v) */
+  cs_real_t y_v_far = x[cell_id] / (1.0 + x[cell_id]);
+
+  cs_real_t y_v_s = (m_v / (m_f + m_v)) * exp(((lv * m_v) / r_univ)
+                   * ((1.0 / tebl) - (1.0 / (temp_p + _tkelvi))));
+  cs_real_t y_v = y_v_s + (1.0 / 3.0) * (y_v_far - y_v_s);
+
+  /* Inverse of characteristic time */
+  cs_real_t d_time_evap = 2. * rho_h * Dv * sherw
+                        * log((1.0 - y_v_far) / (1.0 - y_v))
+                        / (rho_l * cs_math_pow2(dia));
+
+  /* First order time scheme resolution (nor=1) */
   if (nor == 1) {
 
-    /* Evaporation term */
-    cs_real_t temp_p = (cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                         CS_LAGR_TEMPERATURE) + _tkelvi) *
-                        cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                                    CS_LAGR_CP)          *
-                        cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                                    CS_LAGR_MASS) - aux1;
-    /* Heat conduction term */
-    /* temperature difference in C is the same as for K */
-    temp_p -= aux2 * ( cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                                   CS_LAGR_TEMPERATURE)  -
-                       cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                            CS_LAGR_TEMPERATURE_SEEN) );
+    cs_real_t aux = exp(- dt_part * d_time_evap);
+    dia = dia * aux;
+    cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER, dia);
+  }
 
-    /* FIXME: Shall we apply a sort of clipping to the enthalpy before
-       converting it into a temperature value ? */
-    temp_p /= ( cs_lagr_particle_get_real_n(particle, p_am,1,CS_LAGR_CP) *
-        cs_lagr_particle_get_real_n(particle, p_am,1,CS_LAGR_MASS) );
+  else if (nor == 2)  {
 
-    temp_p -= _tkelvi;
+    //TODO
+    /* Scheme resolution (nor=2)*/
+    cs_real_t aux1 = exp(- dt_part * d_time_evap);
+    cs_real_t ter1 = 0.5 * dia * aux1;
+
+    cs_real_t daux2 = 0.0;//FIXME
+    cs_real_t aux2 = exp(- daux2);
+    cs_real_t ter2 = 0.5 * dia * aux2;
+
+    dia = ter1 + ter2;
+
+    cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER, dia);
+  }
+
+  /* Mass evaporate */
+
+
+  cs_real_t new_mass = cs_math_pi * rho_l * cs_math_pow3(dia) / 6.;
+
+  cs_real_t aux = exp(- dt_part * d_time_evap);
+  cs_real_t aux_2 = exp(-2* dt_part * d_time_evap);
+  cs_real_t mass_evap = mass * ( 1 - aux) * (aux_2 + aux + 1.) / dt_part ;
+
+
+  /* Particle's temperature
+     -------------------------- */
+
+  cs_lagr_particle_set_real(particle, p_am, CS_LAGR_MASS, new_mass);
+
+  /* Temperature of the particle seen by the fluid */
+  cs_real_t cp = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_CP);
+
+  /* Characteristic time*/
+  cs_real_t time_temp_p = mass*cp/(cs_math_pi*nusselt*lambda_h*dia);
+
+  /* Radiative term */
+  cs_real_t Srad = 0.0; //Here, no radiative term
+
+  if (nor == 1) {
+    cs_real_t temp_s = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_TEMPERATURE_SEEN);
+
+    /* Scheme resolution (nor=1)*/
+    cs_real_t xi = temp_s - time_temp_p * mass_evap * lv / (mass * cp);
+    cs_real_t aux = exp(- dt_part / time_temp_p);
+
+    cs_real_t ter1 = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_TEMPERATURE) * aux;
+    cs_real_t ter2 = xi * (1. - aux);
+
+    temp_p = ter1 + ter2;
     cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TEMPERATURE, temp_p);
 
   }
   else if (nor == 2) {
+    cs_real_t temp_s = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_TEMPERATURE_SEEN);
 
-    /* Evaporation term */
-    cs_real_t temp_p
-      = 0.5 * (   (  (cs_lagr_particle_get_real_n(particle, p_am, 0,
-                                                  CS_LAGR_TEMPERATURE) + _tkelvi)
-                   * cs_lagr_particle_get_real_n(particle, p_am, 0,
-                                                 CS_LAGR_CP)
-                   * cs_lagr_particle_get_real_n(particle, p_am, 0,
-                                                 CS_LAGR_MASS))
-               +
-                  (  (cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                                  CS_LAGR_TEMPERATURE) + _tkelvi)
-                   * cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                                 CS_LAGR_CP)
-                   * cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                                 CS_LAGR_MASS))) - aux1;
+    /* Scheme resolution (nor=2)*/
+    cs_real_t xi = temp_s + time_temp_p * (Srad - mass_evap * lv)/ (mass * cp);
 
-    /* Heat conduction term */
-    /* temperature difference in C is the same as for K */
-    temp_p
-      += aux2 * (  0.5 * (  cs_lagr_particle_get_real_n(particle, p_am, 0,
-                                                        CS_LAGR_TEMPERATURE)
-                          + cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                                        CS_LAGR_TEMPERATURE))
-                 - 0.5 * (  cs_lagr_particle_get_real_n(particle, p_am, 0,
-                                                      CS_LAGR_TEMPERATURE_SEEN)
-                          + cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                                        CS_LAGR_TEMPERATURE_SEEN)));
+    cs_real_t daux1 = dt_part / time_temp_p;
+    cs_real_t aux1 = exp(- daux1);
+    cs_real_t ter1 = 0.5 * cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_TEMPERATURE) * aux1;
 
-    /* FIXME: Shall we apply a sort of clipping to the enthalpy before
-       converting it into a temperature value ? */
-    temp_p
-      /=  0.5 * (  (   cs_lagr_particle_get_real_n(particle, p_am, 0,
-                                                CS_LAGR_CP)
-                     * cs_lagr_particle_get_real_n(particle, p_am, 0,
-                                                CS_LAGR_MASS) )
-                 +  (  cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                                 CS_LAGR_CP)
-                     * cs_lagr_particle_get_real_n(particle, p_am, 1,
-                                                 CS_LAGR_MASS)));
-    temp_p -= _tkelvi;
-    cs_lagr_particle_set_real(particle, p_am, CS_LAGR_MASS, temp_p) ;
+    cs_real_t daux2 = 0.0; //FIXME
+    cs_real_t aux2 = exp(- daux2);
+    cs_real_t ter2 = 0.5 * cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_TEMPERATURE) * aux2;
+
+    cs_real_t ter3 = xi * (- aux1 + (1 - aux1)/(daux1));
+
+
+    cs_real_t xi_n1 = 0.0; //FIXME
+    cs_real_t ter4 = xi_n1 * (1. - (1. -aux2)/(daux2));
+
+    temp_p = ter1 + ter2 + ter3 + ter4;
+
+    cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TEMPERATURE, temp_p);
 
   }
 
@@ -1850,7 +1861,7 @@ _sde_i_ct(const cs_lnum_t       npt,
  * - variables related to coal grains (Temp, MCH, MCK)
  * - additional user parameters
  *
- * \param[in]  npt           particle id
+ * \param[in]  p_id         particle id
  * \param[in]  dt_part      time step associated to the particle
  * \param[in]  nor          current step id (for 2nd order scheme)
  * \param[in]  tempct       thermal characteristic time
@@ -1861,7 +1872,7 @@ _sde_i_ct(const cs_lnum_t       npt,
 /*------------------------------------------------------------------------- */
 
 void
-cs_lagr_sde_model(const cs_lnum_t    npt,
+cs_lagr_sde_model(const cs_lnum_t    p_id,
                   const cs_real_t    dt_part,
                   int                nor,
                   const cs_real_2_t  tempct,
@@ -1869,43 +1880,41 @@ cs_lagr_sde_model(const cs_lnum_t    npt,
                   cs_real_t         *cpgd2,
                   cs_real_t         *cpght)
 {
-  cs_lagr_attribute_t temp_seen = CS_LAGR_TEMPERATURE_SEEN;
-
   /* Integration of temperature seen by particles */
 
   if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
       || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR
       || (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
           && cs_glob_lagr_specific_physics->solve_temperature_seen == 1))
-    _lagitf(npt, dt_part, nor, &temp_seen);
+    _sde_i_temp_seen(p_id, dt_part, nor);
 
   /* Integration of particles temperature */
 
   if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
       && cs_glob_lagr_specific_physics->solve_temperature == 1)
-    _lagitp(npt, dt_part, nor, tempct);
+    _lagitp(p_id, dt_part, nor, tempct);
 
   /* Integration of particles diameter */
 
   if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
       && cs_glob_lagr_specific_physics->solve_diameter == 1)
-    _lagidp(npt, dt_part, nor);
+    _lagidp(p_id, dt_part, nor);
 
   /* Integration of particles mass */
 
   if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
       && cs_glob_lagr_specific_physics->solve_mass == 1)
-    _lagimp(npt, dt_part, nor);
+    _lagimp(p_id, dt_part, nor);
 
   /* Integration of coal equations: hp, mch, mck */
 
   if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL)
-    _lagich(npt , dt_part, nor, tempct, cpgd1, cpgd2, cpght);
+    _lagich(p_id , dt_part, nor, tempct, cpgd1, cpgd2, cpght);
 
   /* Integration of cooling tower model equations*/
 
   if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR)
-    _sde_i_ct(npt, dt_part, nor);
+    _sde_i_ct(p_id, dt_part, nor);
 }
 
 /*----------------------------------------------------------------------------*/
