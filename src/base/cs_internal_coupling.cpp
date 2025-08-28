@@ -1914,6 +1914,7 @@ cs_internal_coupling_update_bc_coeffs_strided
 
   const cs_lnum_t n_local = cpl->n_local;
   const cs_lnum_t n_distant = cpl->n_distant;
+  const cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_t *faces_distant = cpl->faces_distant;
   const cs_lnum_t *faces_local = cpl->faces_local;
 
