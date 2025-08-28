@@ -1878,7 +1878,7 @@ cs_internal_coupling_update_bc_coeffs_s
  * \brief  Update vector boundary condition coefficients for internal coupling.
  *
  * \param[in]     ctx              reference to dispatch context
- * \param[in]     bc_coeffs_v      boundary condition structure
+ * \param[in]     bc_coeffs        boundary condition structure
  * \param[in]     cpl              structure associated with internal coupling
  * \param[in]     halo_type        halo type
  * \param[in]     clip_coeff       clipping coefficient
@@ -1894,7 +1894,7 @@ void
 cs_internal_coupling_update_bc_coeffs_strided
 (
  cs_dispatch_context           &ctx,
- const cs_field_bc_coeffs_t    *bc_coeffs_v,
+ const cs_field_bc_coeffs_t    *bc_coeffs,
  const cs_internal_coupling_t  *cpl,
  cs_halo_type_t                 halo_type,
  double                         clip_coeff,
@@ -1909,8 +1909,8 @@ cs_internal_coupling_update_bc_coeffs_strided
   /* For internal coupling, exchange local variable
      with its associated distant value */
 
-  cs_real_t *hintp = bc_coeffs_v->hint;
-  cs_real_t *rcodcl2p = bc_coeffs_v->rcodcl2;
+  cs_real_t *hintp = bc_coeffs->hint;
+  cs_real_t *rcodcl2p = bc_coeffs->rcodcl2;
 
   const cs_lnum_t n_local = cpl->n_local;
   const cs_lnum_t n_distant = cpl->n_distant;
@@ -1928,8 +1928,8 @@ cs_internal_coupling_update_bc_coeffs_strided
   }
 
   const cs_lnum_t *restrict b_face_cells = mesh->b_face_cells;
-  cs_real_t *bc_coeff_a = bc_coeffs_v->a;
-  cs_real_33_t *bc_coeff_b = (cs_real_33_t *)bc_coeffs_v->b;
+  cs_real_t *bc_coeff_a = bc_coeffs->a;
+  cs_real_t *bc_coeff_b = bc_coeffs->b;
 
   /* For cases with a stronger gradient normal to the coupling than tangential
      to the coupling, assuming a homogeneous Neumann boundary condition at the
@@ -1957,7 +1957,7 @@ cs_internal_coupling_update_bc_coeffs_strided
                                                       halo_type,
                                                       clip_coeff,
                                                       df_limiter,
-                                                      bc_coeffs_v,
+                                                      bc_coeffs,
                                                       c_weight,
                                                       var,
                                                       var_distant,
@@ -1988,8 +1988,8 @@ cs_internal_coupling_update_bc_coeffs_strided
 
     /* For internal coupling, update BC coeffs */
 
-    cs_real_t *bc_coeff_af = bc_coeffs_v->af;
-    cs_real_t *bc_coeff_bf = bc_coeffs_v->bf;
+    cs_real_t *bc_coeff_af = bc_coeffs->af;
+    cs_real_t *bc_coeff_bf = bc_coeffs->bf;
 
     for (cs_lnum_t ii = 0; ii < n_local; ii++) {
       cs_lnum_t face_id = faces_local[ii];
@@ -2062,7 +2062,7 @@ cs_internal_coupling_update_bc_coeffs_strided
 template void
 cs_internal_coupling_update_bc_coeffs_strided
 (cs_dispatch_context           &ctx,
- const cs_field_bc_coeffs_t    *bc_coeffs_v,
+ const cs_field_bc_coeffs_t    *bc_coeffs,
  const cs_internal_coupling_t  *cpl,
  cs_halo_type_t                 halo_type,
  double                         clip_coeff,
@@ -2074,7 +2074,7 @@ cs_internal_coupling_update_bc_coeffs_strided
 template void
 cs_internal_coupling_update_bc_coeffs_strided
 (cs_dispatch_context           &ctx,
- const cs_field_bc_coeffs_t    *bc_coeffs_v,
+ const cs_field_bc_coeffs_t    *bc_coeffs,
  const cs_internal_coupling_t  *cpl,
  cs_halo_type_t                 halo_type,
  double                         clip_coeff,
