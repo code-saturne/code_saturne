@@ -1928,7 +1928,7 @@ cs_internal_coupling_update_bc_coeffs_strided
   }
 
   const cs_lnum_t *restrict b_face_cells = mesh->b_face_cells;
-  cs_real_3_t  *bc_coeff_a = (cs_real_3_t  *)bc_coeffs_v->a;
+  cs_real_t *bc_coeff_a = bc_coeffs_v->a;
   cs_real_33_t *bc_coeff_b = (cs_real_33_t *)bc_coeffs_v->b;
 
   /* For cases with a stronger gradient normal to the coupling than tangential
@@ -1967,10 +1967,10 @@ cs_internal_coupling_update_bc_coeffs_strided
       for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
         cs_lnum_t face_id = faces_distant[ii];
         cs_lnum_t cell_id = b_face_cells[face_id];
-        for (cs_lnum_t kk = 0; kk < stride; kk++) {
-          var_distant[ii][kk] = var[cell_id][kk];
+        for (cs_lnum_t k = 0; k < stride; k++) {
+          var_distant[ii][k] = var[cell_id][k];
           if (df_limiter != nullptr)
-            var_distant_lim[ii][kk] = var[cell_id][kk];
+            var_distant_lim[ii][k] = var[cell_id][k];
         }
       }
     }
@@ -1988,8 +1988,8 @@ cs_internal_coupling_update_bc_coeffs_strided
 
     /* For internal coupling, update BC coeffs */
 
-    cs_real_3_t  *bc_coeff_af = (cs_real_3_t  *)bc_coeffs_v->af;
-    cs_real_33_t *bc_coeff_bf = (cs_real_33_t *)bc_coeffs_v->bf;
+    cs_real_t *bc_coeff_af = bc_coeffs_v->af;
+    cs_real_t *bc_coeff_bf = bc_coeffs_v->bf;
 
     for (cs_lnum_t ii = 0; ii < n_local; ii++) {
       cs_lnum_t face_id = faces_local[ii];
@@ -2003,21 +2003,27 @@ cs_internal_coupling_update_bc_coeffs_strided
 
       cs_real_t heq = hext * m_b;
 
-      for (cs_lnum_t kk = 0; kk < stride; kk++) {
-        bc_coeff_a[face_id][kk] =   m_a * var_ext[ii][kk]
-                                  + m_b * var[cell_id][kk];
+
+      cs_real_t *_a = &(bc_coeff_a[stride * n_b_faces]);
+      cs_real_t *_af = &(bc_coeff_af[stride * n_b_faces]);
+      cs_real_t *_b = &(bc_coeff_b[stride * stride * n_b_faces]);
+      cs_real_t *_bf = &(bc_coeff_bf[stride * stride * n_b_faces]);
+      for (cs_lnum_t k = 0; k < stride; k++) {
+        _a[k] =   m_a * var_ext[ii][k]
+                 + m_b * var[cell_id][k];
 
         if (df_limiter != nullptr)
-          bc_coeff_af[face_id][kk] = - heq * var_ext_lim[ii][kk];
+          _af[k] = - heq * var_ext_lim[ii][k];
         else
-          bc_coeff_af[face_id][kk] = - heq * var_ext[ii][kk];
+          _af[k] = - heq * var_ext[ii][k];
 
-        for (cs_lnum_t ll = 0; ll < stride; ll++) {
-          bc_coeff_b[face_id][kk][ll] = 0.;
-          bc_coeff_bf[face_id][kk][ll] = 0.;
+        for (cs_lnum_t kl = k * stride; kl < (k+1)*stride; kl++) {
+          _b[kl] = 0.;
+          _bf[kl] = 0.;
         }
 
-        bc_coeff_bf[face_id][kk][kk] = heq;
+        /* diagonal */
+        _bf[k*stride+k] = heq;
       }
     }
   }
@@ -2027,8 +2033,9 @@ cs_internal_coupling_update_bc_coeffs_strided
 
   for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
     cs_lnum_t face_id = faces_distant[ii];
-    for (cs_lnum_t kk = 0; kk < stride; kk++)
-      var_distant[ii][kk] = bc_coeff_a[face_id][kk];
+    cs_real_t *_a = &(bc_coeff_a[stride * n_b_faces]);
+    for (cs_lnum_t k = 0; k < stride; k++)
+      var_distant[ii][k] = _a[k];
   }
 
   cs_internal_coupling_exchange_var(cpl,
@@ -2038,9 +2045,9 @@ cs_internal_coupling_update_bc_coeffs_strided
 
   for (cs_lnum_t ii = 0; ii < n_local; ii++) {
     cs_lnum_t face_id = faces_local[ii];
-    for (cs_lnum_t kk = 0; kk < stride; kk++) {
-      bc_coeff_a[face_id][kk] = 0.5*(  bc_coeff_a[face_id][kk]
-                                     + var_ext[ii][kk]);
+    cs_real_t *_a = &(bc_coeff_a[stride * n_b_faces]);
+    for (cs_lnum_t k = 0; k < stride; k++) {
+      _a[k] = 0.5*(_a[k] + var_ext[ii][k]);
     }
   }
 
