@@ -274,6 +274,17 @@ cs_mobile_structures_set_newmark_coefficients(cs_real_t  alpha,
                                               cs_real_t  gamma);
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief  Predict displacement of mobile structures with ALE.
+ *
+ * \param[in]  itrfin   indicator for last iteration of implicit coupling
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mobile_structures_restore_previous_values(int  itrfin);
+
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief  Predict displacement of mobile structures with ALE.
  *

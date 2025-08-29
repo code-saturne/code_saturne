@@ -94,6 +94,8 @@ BEGIN_C_DECLS
  * Local macro definitions
  *============================================================================*/
 
+#define _DEBUG_ 0
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -104,8 +106,6 @@ typedef cs_real_t  _cs_real_11_t[11];  /* Vector of 11 real values */
  * Static global variables
  *============================================================================*/
 
-//static cs_mobile_structures_t  *_mobile_structures = nullptr;
-//extern cs_mobile_structures_t  *_mobile_structures = nullptr;
 cs_mobile_structures_t  *_mobile_structures = nullptr;
 
 /* Arrays allowing return to initial state at end of ALE iteration.
@@ -1197,6 +1197,126 @@ cs_mobile_structures_set_newmark_coefficients(cs_real_t  alpha,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Restore previous values in case of implicit coupling
+ *
+ * \param[in]  itrfin   indicator for last iteration of implicit coupling
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mobile_structures_restore_previous_values(int  itrfin)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+
+  cs_mobile_structures_t *ms = _mobile_structures;
+  int n_int_structs = cs_mobile_structures_get_n_int_structures();
+
+  const cs_time_step_t *ts = cs_glob_time_step;
+
+  /* Restore previous values if required
+     ----------------------------------- */
+
+  /* If nterup  >  1, values at previous time step have been modified
+     after cs_solve_navier_stokes; We must then go back to a previous value. */
+
+  if (itrfin != -1) {
+
+    const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+    const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;
+
+    const int n_fields = cs_field_n_fields();
+
+    for (int field_id = 0; field_id < n_fields; field_id++) {
+      cs_field_t *f = cs_field_by_id(field_id);
+      if (f->type & CS_FIELD_VARIABLE &&
+          f->location_id == CS_MESH_LOCATION_CELLS &&
+          (f->type & CS_FIELD_CDO) == 0) {
+        cs_real_t *cvar_var = f->val;
+        cs_real_t *cvara_var = f->val_pre;
+        cs_lnum_t n_vals = (cs_lnum_t)f->dim*n_cells_ext;
+
+        if (   f == CS_F_(p)
+            && cs_glob_velocity_pressure_param->nterup > 1) {
+          cs_array_copy(n_vals, _pr_save, cvara_var);
+        }
+
+        cs_array_copy(n_vals, cvara_var, cvar_var);
+      }
+    }
+
+    /* Restore mass fluxes */
+
+    int kimasf = cs_field_key_id("inner_mass_flux_id");
+    int kbmasf = cs_field_key_id("boundary_mass_flux_id");
+
+    cs_field_t *f_i = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kimasf));
+    cs_field_t *f_b = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kbmasf));
+
+    cs_real_t *imasfl = f_i->val;
+    cs_real_t *bmasfl = f_b->val;
+    cs_real_t *imasfl_pre = f_i->val_pre;
+    cs_real_t *bmasfl_pre = f_b->val_pre;
+
+    cs_array_copy(n_i_faces, imasfl_pre, imasfl);
+    cs_array_copy(n_b_faces, bmasfl_pre, bmasfl);
+
+    /* Restore BC coefficients.
+
+       Using separate values for velocity and pressure could
+       also make this more readable and safer. */
+
+    cs_real_3_t *coefau = (cs_real_3_t *)CS_F_(vel)->bc_coeffs->a;
+    cs_real_33_t *coefbu = (cs_real_33_t *)CS_F_(vel)->bc_coeffs->b;
+
+    cs_real_t *coefap = CS_F_(p)->bc_coeffs->a;
+    cs_real_t *coefbp = CS_F_(p)->bc_coeffs->b;
+
+    _cs_real_11_t *cofale = _bc_coeffs_save;
+
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+
+      coefap[face_id]    = cofale[face_id][0];
+
+      coefau[face_id][0] = cofale[face_id][1];
+      coefau[face_id][1] = cofale[face_id][2];
+      coefau[face_id][2] = cofale[face_id][3];
+
+      coefbp[face_id]    = cofale[face_id][4];
+
+      coefbu[face_id][0][0] = cofale[face_id][5];
+      coefbu[face_id][1][1] = cofale[face_id][6];
+      coefbu[face_id][2][2] = cofale[face_id][7];
+      coefbu[face_id][1][0] = cofale[face_id][8];
+      coefbu[face_id][2][1] = cofale[face_id][9];
+      coefbu[face_id][2][0] = cofale[face_id][10];
+
+      /* coefficient B is supposed to be symmetric */
+      coefbu[face_id][0][1] = cofale[face_id][8];
+      coefbu[face_id][1][2] = cofale[face_id][9];
+      coefbu[face_id][0][2] = cofale[face_id][10];
+
+    }
+
+  }
+
+  else if (itrfin == -1) {
+    CS_FREE(_bc_coeffs_save);
+    CS_FREE(_pr_save);
+
+    if (   n_int_structs > 0
+        && cs_time_control_is_active(&(ms->plot_time_control), ts)) {
+      int t_top_id = cs_timer_stats_switch(_post_out_stat_id);
+
+      _output_time_plots(ms, ts);
+
+      cs_timer_stats_switch(t_top_id);
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Predict displacement of mobile structures with ALE.
  *
  * \param[in]   bc_coeffs_vel   velocity boundary condition structure
@@ -1369,9 +1489,6 @@ cs_mobile_structures_prediction(cs_field_bc_coeffs_t *bc_coeffs_vel,
 
     if (ineefl == 1) {
 
-      /*bft_error(__FILE__, __LINE__, 0,
-              _("not use this fonction for neptune"));*/
-
       /* Save BC coefficients.
 
          Using separate values for velocity and pressure could
@@ -1471,7 +1588,7 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
   if (n_ast_structs > 0)
     forast = cs_ast_coupling_get_fluid_forces_pointer();
 
-  const int                        *idfstr  = ms->idfstr;
+  const int *idfstr  = ms->idfstr;
   const cs_mobile_structure_type_t *idftype = ms->idftype;
 
   cs_lnum_t indast = 0;
@@ -1581,22 +1698,6 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
              ms->xstr[i], ms->xpstr[i], ms->xppstr[i],
              ms->xsta[i], ms->xpsta[i], ms->xppsta[i],
              ms->forstp[i], ms->forsta[i], ms->dtstr[i]);
-
-    bft_printf("ALE_newmark temps disp %f %g %g %g\n",
-               cs_glob_time_step->t_cur,
-               ms->xstr[0][0], ms->xstr[0][1], ms->xstr[0][2]);
-
-    bft_printf("ALE_newmark temps vel %f %g %g %g\n",
-               cs_glob_time_step->t_cur,
-               ms->xpstr[0][0], ms->xpstr[0][1], ms->xpstr[0][2]);
-
-    bft_printf("ALE_newmark temps acc %f %g %g %g\n",
-               cs_glob_time_step->t_cur,
-               ms->xppstr[0][0], ms->xppstr[0][1], ms->xppstr[0][2]);
-
-    bft_printf("ALE_newmark temps force %f %g %g %g\n",
-               cs_glob_time_step->t_cur,
-               ms->forsta[0][0], ms->forsta[0][1], ms->forsta[0][2]);
   }
 
   /* Convergence test
@@ -1683,108 +1784,29 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
     cs_ast_coupling_recv_displacement();
   }
 
-  /* Restore previous values if required
-     ----------------------------------- */
+#if _DEBUG_
+  if (*itrfin == -1) {
+    bft_printf("ALE_newmark temps disp %f %g %g %g\n",
+               cs_glob_time_step->t_cur,
+               ms->xstr[0][0], ms->xstr[0][1], ms->xstr[0][2]);
 
-  /* If nterup  >  1, values at previous time step have been modified
-     after cs_solve_navier_stokes; We must then go back to a previous value. */
+    bft_printf("ALE_newmark temps vel %f %g %g %g\n",
+               cs_glob_time_step->t_cur,
+               ms->xpstr[0][0], ms->xpstr[0][1], ms->xpstr[0][2]);
 
-  if (*itrfin != -1) {
+    bft_printf("ALE_newmark temps acc %f %g %g %g\n",
+               cs_glob_time_step->t_cur,
+               ms->xppstr[0][0], ms->xppstr[0][1], ms->xppstr[0][2]);
 
-    const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-    const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;
+    bft_printf("ALE_newmark temps force_pre %f %g %g %g\n",
+               cs_glob_time_step->t_cur,
+               ms->forsta[0][0], ms->forsta[0][1], ms->forsta[0][2]);
 
-    const int n_fields = cs_field_n_fields();
-
-    for (int field_id = 0; field_id < n_fields; field_id++) {
-      cs_field_t *f = cs_field_by_id(field_id);
-      if (f->type & CS_FIELD_VARIABLE &&
-          f->location_id == CS_MESH_LOCATION_CELLS &&
-          (f->type & CS_FIELD_CDO) == 0) {
-        cs_real_t *cvar_var = f->val;
-        cs_real_t *cvara_var = f->val_pre;
-        cs_lnum_t n_vals = (cs_lnum_t)f->dim*n_cells_ext;
-
-        if (   f == CS_F_(p)
-            && cs_glob_velocity_pressure_param->nterup > 1) {
-          cs_array_copy(n_vals, _pr_save, cvara_var);
-        }
-
-        cs_array_copy(n_vals, cvara_var, cvar_var);
-      }
-    }
-
-    /* Restore mass fluxes */
-
-    int kimasf = cs_field_key_id("inner_mass_flux_id");
-    int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-
-    cs_field_t *f_i = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kimasf));
-    cs_field_t *f_b = cs_field_by_id(cs_field_get_key_int(CS_F_(vel), kbmasf));
-
-    cs_real_t *imasfl = f_i->val;
-    cs_real_t *bmasfl = f_b->val;
-    cs_real_t *imasfl_pre = f_i->val_pre;
-    cs_real_t *bmasfl_pre = f_b->val_pre;
-
-    cs_array_copy(n_i_faces, imasfl_pre, imasfl);
-    cs_array_copy(n_b_faces, bmasfl_pre, bmasfl);
-
-    /* Restore BC coefficients.
-
-       Using separate values for velocity and pressure could
-       also make this more readable and safer. */
-
-    cs_real_3_t *coefau = (cs_real_3_t *)CS_F_(vel)->bc_coeffs->a;
-    cs_real_33_t *coefbu = (cs_real_33_t *)CS_F_(vel)->bc_coeffs->b;
-
-    cs_real_t *coefap = CS_F_(p)->bc_coeffs->a;
-    cs_real_t *coefbp = CS_F_(p)->bc_coeffs->b;
-
-    /*bft_error(__FILE__, __LINE__, 0,
-              _("not use this fonction for neptune"));*/
-
-    _cs_real_11_t *cofale = _bc_coeffs_save;
-
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-
-      coefap[face_id]    = cofale[face_id][0];
-
-      coefau[face_id][0] = cofale[face_id][1];
-      coefau[face_id][1] = cofale[face_id][2];
-      coefau[face_id][2] = cofale[face_id][3];
-
-      coefbp[face_id]    = cofale[face_id][4];
-
-      coefbu[face_id][0][0] = cofale[face_id][5];
-      coefbu[face_id][1][1] = cofale[face_id][6];
-      coefbu[face_id][2][2] = cofale[face_id][7];
-      coefbu[face_id][1][0] = cofale[face_id][8];
-      coefbu[face_id][2][1] = cofale[face_id][9];
-      coefbu[face_id][2][0] = cofale[face_id][10];
-
-      /* coefficient B is supposed to be symmetric */
-      coefbu[face_id][0][1] = cofale[face_id][8];
-      coefbu[face_id][1][2] = cofale[face_id][9];
-      coefbu[face_id][0][2] = cofale[face_id][10];
-
-    }
-
+    bft_printf("ALE_newmark temps force %f %g %g %g\n",
+               cs_glob_time_step->t_cur,
+               ms->forstr[0][0], ms->forstr[0][1], ms->forstr[0][2]);
   }
-
-  else if (*itrfin == -1) {
-    CS_FREE(_bc_coeffs_save);
-    CS_FREE(_pr_save);
-
-    if (n_int_structs > 0 &&
-        cs_time_control_is_active(&(ms->plot_time_control), ts)) {
-      int t_top_id = cs_timer_stats_switch(_post_out_stat_id);
-
-      _output_time_plots(ms, ts);
-
-      cs_timer_stats_switch(t_top_id);
-    }
-  }
+#endif
 }
 
 /*----------------------------------------------------------------------------*/

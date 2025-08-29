@@ -1296,6 +1296,9 @@ cs_solve_all()
       if (nb_int_structs + nb_ext_structs + nb_ast_structs > 0) {
         cs_mobile_structures_displacement(cs_glob_ale_data->ale_iteration,
                                           italim, &itrfin);
+
+        cs_mobile_structures_restore_previous_values(itrfin);
+
         if (itrfin != -1) {
           italim++;
           need_new_solve = true;

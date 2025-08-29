@@ -35,6 +35,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_array.h"
 #include "base/cs_base.h"
 #include "cdo/cs_domain.h"
 #include "base/cs_restart.h"
@@ -65,12 +66,24 @@ typedef enum {
 
 typedef struct {
 
-  int          *impale;           /*!< 1st component of low-level BC */
-  int          *bc_type;          /*!< ALE BC type code */
-  int           ale_iteration;    /*!< ALE iteration */
-  cs_real_t    *i_mass_flux_ale;  /*!< inner ALE mass flux */
-  cs_real_t    *b_mass_flux_ale;  /*!< boundary ALE mass flux */
+  int        *impale;                    /*!< 1st component of low-level BC */
+  int        *bc_type;                   /*!< ALE BC type code */
+  int         ale_iteration;             /*!< ALE iteration */
+  int         implicit_coupling_ite; /*!< ALE implicit coupling iteration */
+  cs_real_t  *i_mass_flux_ale;           /*!< inner ALE mass flux */
+  cs_real_t  *b_mass_flux_ale;           /*!< boundary ALE mass flux */
 
+  /* For neptune ALE implicit coupling */
+  cs_real_33_t  **gradu_pre;        /*!< previous velocity gradient */
+  cs_real_3_t    *gradp_pre;        /*!< previous pressure gradient */
+  cs_real_3_t   **gradvolf_pre;     /*!< previous volume fraction gradient */
+  cs_real_3_t   **gradhtot_pre;     /*!< previous total enthalpy gradient */
+  cs_real_63_t  **gradrij_pre;      /*!< previous rij gradient */
+  cs_real_t     **i_mass_flux_pre;  /*!< previous inner mass flux */
+  cs_real_t     **b_mass_flux_pre;  /*!< previous boundary mass flux */
+  cs_real_t     **alprof_pre;       /*!< previous internal fraction */
+  cs_real_t     **alprob_pre;       /*!< previous boundary fraction */
+  cs_real_t     **gamma_pre;        /*!< previous mass transfer */
 } cs_ale_data_t;
 
 /*=============================================================================

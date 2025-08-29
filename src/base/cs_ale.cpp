@@ -91,8 +91,19 @@ BEGIN_C_DECLS
 static cs_ale_data_t  _cs_glob_ale_data = {.impale = nullptr,
                                            .bc_type = nullptr,
                                            .ale_iteration = 0,
+                                           .implicit_coupling_ite = 0,
                                            .i_mass_flux_ale = nullptr,
-                                           .b_mass_flux_ale = nullptr};
+                                           .b_mass_flux_ale = nullptr,
+                                           .gradu_pre = nullptr,
+                                           .gradp_pre = nullptr,
+                                           .gradvolf_pre = nullptr,
+                                           .gradhtot_pre = nullptr,
+                                           .gradrij_pre = nullptr,
+                                           .i_mass_flux_pre = nullptr,
+                                           .b_mass_flux_pre = nullptr,
+                                           .alprof_pre = nullptr,
+                                           .alprob_pre = nullptr,
+                                           .gamma_pre = nullptr};
 
 cs_ale_type_t cs_glob_ale = CS_ALE_NONE;
 
