@@ -1402,6 +1402,70 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
+   * \brief Set subset of values of the data array to a constant value.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void set_to_val_on_subset
+  (
+    T               val,      /*!<[in] Value to set to entire data array. */
+    const cs_lnum_t n_elts,   /*!<[in] Number of values to set. */
+    const cs_lnum_t elt_ids[] /*!<[in] list of ids in the subset or null (size:n_elts) */
+  )
+  {
+    assert(n_elts <= _size && n_elts >= 0);
+
+    if (n_elts < 1)
+      return;
+
+    cs_dispatch_context ctx;
+
+    if (elt_ids == nullptr)
+      set_to_val(ctx, val, n_elts);
+    else {
+      ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
+          _data[elt_ids[e_id]] = val;
+      });
+    }
+
+    ctx.wait();
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Set a subset of values of the data array to a constant value while providing
+   *        a dispatch context. It is up to the call to synchronize the context
+   *        after this call.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void set_to_val_on_subset
+  (
+    cs_dispatch_context &ctx,      /*!< Reference to dispatch context */
+    T                    val,      /*!<[in] Value to set to entire data array. */
+    const cs_lnum_t      n_elts,   /*!<[in] Number of values to set. */
+    const cs_lnum_t      elt_ids[] /*!<[in] list of ids in the subset or null (size:n_elts) */
+  )
+  {
+    assert(n_elts <= _size && n_elts >= 0);
+
+    if (n_elts < 1)
+      return;
+
+    /* No wait here since context is passed as argument */
+    if (elt_ids == nullptr)
+      set_to_val(ctx, val, n_elts);
+    else {
+      ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
+          _data[elt_ids[e_id]] = val;
+      });
+    }
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
    * \brief Set all values of the data array to 0.
    */
   /*--------------------------------------------------------------------------*/
