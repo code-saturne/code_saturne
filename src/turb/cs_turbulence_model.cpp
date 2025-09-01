@@ -105,6 +105,8 @@ BEGIN_C_DECLS
         - CS_TURB_LES_SMAGO_CONST: LES (constant Smagorinsky model)
         - CS_TURB_LES_SMAGO_DYN: LES ("classical" dynamic Smagorisky model)
         - CS_TURB_LES_WALE: LES (WALE)
+        - CS_TURB_LES_KSGS: LES (k SGSs)
+        - CS_TURB_LES_TAUSGS: LES (tau SGS)
         - CS_TURB_V2F_PHI: v2f phi-model
         - CS_TURB_V2F_BL_V2K: v2f \f$ BL-v^2-k \f$
         - CS_TURB_K_OMEGA: \f$ k-\omega \f$ SST
@@ -1878,6 +1880,21 @@ cs_turb_constants_log_setup(void)
          cs_turb_xceta, cs_turb_xct);
 
   }
+
+  else if (turb_model->model == CS_TURB_LES_TAUSGS)
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("    crij1:       %14.5e (Slow term coefficient)\n"
+         "    crij2:       %14.5e (Fast term coefficient)\n"
+         "    crij3:       %14.5e (Gravity term coefficient)\n"
+         "    csrij:       %14.5e (Rij diffusion coeff.)\n"
+         "    crijp1:      %14.5e (Slow coeff. for wall echo)\n"
+         "    crijp2:      %14.5e (Fast coeff. for wall echo)\n"
+         "    cmu:         %14.5e (Cmu constant)\n"),
+         cs_turb_crij1, cs_turb_crij2,
+         cs_turb_crij3, cs_turb_csrij, cs_turb_crijp1,
+         cs_turb_crijp2, cs_turb_cmu);
+
 
   else if (turb_model->model == CS_TURB_V2F_PHI)
     cs_log_printf
