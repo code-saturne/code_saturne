@@ -576,8 +576,8 @@ typedef enum {
  * Macros for lambda specifiers
  *----------------------------------------------------------------------------*/
 
-#define CS_LAMBDA CS_F_HOST_DEVICE [=]
-#define CS_CLASS_LAMBDA CS_F_HOST_DEVICE [=, *this]
+#define CS_LAMBDA [=] CS_F_HOST_DEVICE
+#define CS_CLASS_LAMBDA [=, *this] CS_F_HOST_DEVICE
 
 /*----------------------------------------------------------------------------
  * Macros for Fortran interoperability
