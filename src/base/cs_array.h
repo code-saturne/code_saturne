@@ -932,7 +932,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   array
   (
     cs_lnum_t     size, /*!<[in] size of array */
@@ -969,7 +969,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   array
   (
     const cs_lnum_t(&dims)[N], /*!<[in] Array of dimensions sizes */
@@ -1001,7 +1001,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   array
   (
     cs_lnum_t     size1, /*!<[in] First size of array */
@@ -1039,7 +1039,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   array
   (
     cs_lnum_t     size1, /*!<[in] First size of array */
@@ -1138,7 +1138,6 @@ public:
     _mode(alloc_mode)
   {
     set_size_(dims);
-    allocate_(file_name, line_number);
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1155,7 +1154,7 @@ public:
   CS_F_HOST_DEVICE
   array
   (
-    array&      other, /*!<[in] Reference of data array to copy */
+    const array&      other, /*!<[in] Reference of data array to copy */
     bool        deep_copy=false, /*!<[in] Make a deep copy (owner) or not. */
 #if (defined(__GNUC__) || defined(__clang__)) && \
   __has_builtin(__builtin_LINE) && \
@@ -1168,18 +1167,32 @@ public:
 #endif
   )
   {
-
     set_size_(other._extent);
     _mode = other._mode;
 
     /* If shallow copy new instance is not owner. Otherwise same ownership
      * as original instance since we copy it.
      */
-    _owner = (deep_copy) ? other._owner : false;
+#if !defined(__CUDA_ARCH__) && \
+    !defined(SYCL_LANGUAGE_VERSION) && \
+    !defined(__HIP_DEVICE_COMPILE__)
+    _owner = deep_copy;
+#else
+    _owner = false;
+#endif
 
     if (_owner) {
+#if !defined(__CUDA_ARCH__) && \
+    !defined(SYCL_LANGUAGE_VERSION) && \
+    !defined(__HIP_DEVICE_COMPILE__)
+    // Only HOST can allocate and be owner. We avoid a compiler warning
+    // since a static test is done above.
       allocate_(file_name, line_number);
       copy_data(other._data);
+#else
+      CS_UNUSED(file_name);
+      CS_UNUSED(line_number);
+#endif
     }
     else {
       CS_UNUSED(file_name);
@@ -1266,7 +1279,12 @@ public:
   clear()
   {
     if (_owner) {
+// Avoid compiler warnings. If device, object cannot be owner...
+#if !defined(__CUDA_ARCH__) && \
+    !defined(SYCL_LANGUAGE_VERSION) && \
+    !defined(__HIP_DEVICE_COMPILE__)
       CS_FREE(_data);
+#endif
     }
     else {
       _data = nullptr;
@@ -1527,7 +1545,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   void reshape
   (
     cs_lnum_t    new_size,      /*!<[in] New size */
@@ -1564,7 +1582,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   void
   reshape_and_copy
   (
@@ -1609,7 +1627,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   void reshape
   (
     const cs_lnum_t(&dims)[N], /*!<[in] Array of dimensions sizes */
@@ -1645,7 +1663,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   void reshape_and_copy
   (
     const cs_lnum_t(&dims)[N],   /*!<[in] Array of dimensions sizes */
@@ -2249,7 +2267,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   void
   copy_data
   (
@@ -2278,7 +2296,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   void
   copy_data
   (
@@ -2308,7 +2326,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   void
   copy_data
   (
@@ -2339,7 +2357,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   void
   copy_data
   (
@@ -2365,7 +2383,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   void
   copy_data
   (
@@ -2393,7 +2411,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   void
   copy_data
   (
@@ -2579,7 +2597,7 @@ private:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   void
   allocate_
   (
@@ -2602,7 +2620,7 @@ private:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   void
   reallocate_
   (

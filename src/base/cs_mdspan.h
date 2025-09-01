@@ -136,7 +136,7 @@ public:
   CS_F_HOST_DEVICE
   mdspan
   (
-    mdspan& other
+    const mdspan& other
   )
   {
     set_size_(other._extent);
@@ -149,7 +149,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   mdspan
   (
     mdspan&& other /*!<[in] reference to other instance */
@@ -177,7 +177,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   friend void
   swap
   (
@@ -203,9 +203,23 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
-  mdspan& operator=(mdspan other)
+  CS_F_HOST
+  mdspan& operator=(const mdspan& other)
   {
+    for (int i = 0; i < N; i++) {
+      _extent[i] = other._extent[i];
+      _offset[i] = other._offset[i];
+    }
+    _size = other._size;
+    _data = other._data;
+
+    return *this;
+  }
+
+  CS_F_HOST
+  mdspan& operator=(mdspan&& other)
+  {
+
     swap(*this, other);
 
     return *this;
