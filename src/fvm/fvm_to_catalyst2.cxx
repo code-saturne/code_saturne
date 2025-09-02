@@ -133,15 +133,34 @@ MPI_Comm  _comm = MPI_COMM_NULL;
 // Type name mappings
 
 static const char  *fvm_to_conduit_type_name[]
-  = {N_("line"),
-     N_("tri"),
-     N_("quad"),
-     N_("polygon"),
-     N_("tet"),
-     N_("pyramid"),
-     N_("wedge"),
-     N_("hex"),
-     N_("polyhedral")};
+  = {"line",
+     "tri",
+     "quad",
+     "polygonal",
+     "tet",
+     "pyramid",
+     "wedge",
+     "hex",
+     "polyhedral"};
+
+
+/* The Conduit documentation only mentions the VTK ids as examples, and it
+   seems we could use FVM type ids here directly, as long as we are
+   consistent with the given type map.
+   But it seems that ParaView Catalys does not honor the type map,
+   and assumes shapes are VTK shapes, so we also need a mapping to
+   VTK type ids, at least until this is fixed. */
+
+static const int fvm_to_conduit_type_id[]
+  = {3,
+     5,
+     9,
+     7,
+     10,
+     14,
+     13,
+     12,
+     42};
 
 // version info strings
 
@@ -351,18 +370,19 @@ _add_dir_scripts(const char  *dir_path)
         break;
       }
     }
-    if (ext == nullptr)
-      continue;
+    if (ext != nullptr) {
 
-    /* Filter: Python files only */
-    if (l_ext == 3 && strncmp(ext, ".py", 3) == 0) {
-      char *tmp_name = nullptr;
-      CS_MALLOC(tmp_name,
-                strlen(dir_path) + 1 + strlen(file_name) + 1,
-                char);
-      sprintf(tmp_name, "%s/%s", dir_path, file_name);
-      _add_script(tmp_name);
-      CS_FREE(tmp_name);
+      /* Filter: Python files only */
+      if (l_ext == 3 && strncmp(ext, ".py", 3) == 0) {
+        char *tmp_name = nullptr;
+        CS_MALLOC(tmp_name,
+                  strlen(dir_path) + 1 + strlen(file_name) + 1,
+                  char);
+        sprintf(tmp_name, "%s/%s", dir_path, file_name);
+        _add_script(tmp_name);
+        CS_FREE(tmp_name);
+      }
+
     }
 
     CS_FREE(dir_files[i]);
@@ -684,7 +704,7 @@ _export_vertex_coords(const fvm_nodal_t   *mesh,
 }
 
 /*----------------------------------------------------------------------------
- * Write strided connectivity block to Conduit
+ * Map strided connectivity block to Conduit
  *
  * The connectivity on input may use 1 to n numbering, so it is shifted
  * by -1 here.
@@ -694,17 +714,25 @@ _export_vertex_coords(const fvm_nodal_t   *mesh,
  * if the FVM element numbering were switched to 0-based instead of 1-based.
  *
  * parameters:
- *   type     <-- FVM element type
- *   n_elts   <-- number of elements in block
- *   connect  <-- connectivity array
- *   topology <-- pointer to Conduit mesh elements shape topology
+ *   type        <-- FVM element type
+ *   n_elts      <-- number of elements in block
+ *   offset_base <-- values offsets base
+ *   connect     <-- section connectivity array
+ *   values      --> exported connectivity array
+ *   offsets     --> element offsets, or nullptr
+ *   elt_types   --> element connectivity offsets, or nullptr
+ *   elt_sizes   --> element sizes, or nullptr
  *----------------------------------------------------------------------------*/
 
 static void
-_map_connect_block(fvm_element_t        type,
-                   cs_lnum_t            n_elts,
-                   const cs_lnum_t      connect[],
-                   conduit_cpp::Node   &topology)
+_map_section_strided(fvm_element_t        type,
+                     cs_lnum_t            n_elts,
+                     cs_lnum_t            offsets_base,
+                     const cs_lnum_t      connect[],
+                     cs_lnum_t            values[],
+                     cs_lnum_t           *offsets,
+                     unsigned int        *elt_types,
+                     unsigned int        *elt_sizes)
 {
   int vertex_order[8];
 
@@ -712,126 +740,147 @@ _map_connect_block(fvm_element_t        type,
 
   int order_type = _get_vertex_order(type, vertex_order);
 
-  unsigned int *vtx_ids;
-
   if (order_type >= 0) {
-    unsigned int n_vtx_ids = n_elts*stride;
-
-    CS_MALLOC(vtx_ids, n_vtx_ids, unsigned int);
-
     if (order_type == 0) {
       cs_lnum_t n = n_elts * stride;
       for (cs_lnum_t i = 0; i < n; i++) {
-        vtx_ids[i] = connect[i] - 1;
+        values[i] = connect[i] - 1;
       }
     }
     else {
       for (cs_lnum_t i = 0; i < n_elts; i++) {
         for (cs_lnum_t j = 0; j < stride; j++)
-          vtx_ids[i*stride + j] = connect[i*stride + vertex_order[j]] - 1;
+          values[i*stride + j] = connect[i*stride + vertex_order[j]] - 1;
       }
     }
+  }
 
-    topology["shape"].set_string(fvm_to_conduit_type_name[type]);
-    topology["connectivity"].set(vtx_ids, n_vtx_ids);
-
-    CS_FREE(vtx_ids);
+  if (elt_types != nullptr) {
+    assert(elt_sizes != nullptr);
+    const unsigned int type_id = fvm_to_conduit_type_id[type];
+    const unsigned int elt_size = stride;
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      offsets[i] = offsets_base + stride*i;
+      elt_types[i] = type_id;
+      elt_sizes[i] = elt_size;
+    }
   }
 }
 
 /*----------------------------------------------------------------------------
- * Partially map and write polygons to Conduit
+ * Map polygons to Conduit
  *
  * parameters:
- *   export_section <-- pointer to Catalyst section helper structure
- *   topology       <-- pointer to Conduit mesh elements shape topology
+ *   section     <-- pointer to FVM nodal mesh section
+ *   offset_base <-- offsets base
+ *   values      --> exported connectivity array
+ *   offsets     --> element offsets, or nullptr
+ *   elt_types   --> element connectivity offsets, or nullptr
+ *   elt_sizes   --> element sizes, or nullptr
  *----------------------------------------------------------------------------*/
 
 static void
-_export_nodal_polygons(const fvm_nodal_section_t  *section,
-                       conduit_cpp::Node          &topology)
+_map_section_polygons(const fvm_nodal_section_t  *section,
+                      cs_lnum_t                   offsets_base,
+                      cs_lnum_t                   values[],
+                      cs_lnum_t                  *offsets,
+                      unsigned int               *elt_types,
+                      unsigned int               *elt_sizes)
 {
   const cs_lnum_t n_elts = (section->type == FVM_CELL_POLY) ?
     section->n_faces : section->n_elements;
-  const cs_lnum_t n_vtx_ids = section->vertex_index[n_elts];
-
-  unsigned int *sizes, *offsets, *vtx_ids;
-
-  CS_MALLOC(sizes, n_elts, unsigned int);
-  CS_MALLOC(offsets, n_elts, unsigned int);
-  CS_MALLOC(vtx_ids, n_vtx_ids, unsigned int);
 
   const cs_lnum_t *vertex_index = section->vertex_index;
   const cs_lnum_t *vertex_num = section->vertex_num;
 
-  /* Loop on all polygonal faces */
-  /*-----------------------------*/
+  const unsigned int type_id = fvm_to_conduit_type_id[FVM_FACE_POLY];
+
+  /* Loop on all polygonal faces
+     --------------------------- */
 
   for (cs_lnum_t i = 0; i < n_elts; i++) {
 
-    offsets[i] = vertex_index[i],
-    sizes[i] = vertex_index[i+1] - vertex_index[i];
+    offsets[i] = offsets_base + vertex_index[i];
+    elt_sizes[i] = vertex_index[i+1] - vertex_index[i];
+    if (elt_types != nullptr)
+      elt_types[i] = type_id;
 
     for (cs_lnum_t j = vertex_index[i]; j < vertex_index[i+1]; j++)
-      vtx_ids[j] = vertex_num[j] - 1;
+      values[j] = vertex_num[j] - 1;
 
   } /* End of loop on polygonal faces */
-
-  topology["shape"].set_string("polygonal");
-  topology["connectivity"].set(vtx_ids, n_vtx_ids);
-  topology["sizes"].set(sizes, n_elts);
-  topology["offsets"].set(sizes, n_elts);
-
-  CS_FREE(vtx_ids);
-  CS_FREE(offsets);
-  CS_FREE(sizes);
 }
 
 /*----------------------------------------------------------------------------
  * Partially map and write polyhedra to Conduit
  *
  * parameters:
- *   export_section <-- pointer to Catalyst section helper structure
- *   elements       <-- pointer to Conduit mesh elements shape topology
+ *   section     <-- pointer to FVM nodal mesh section
+ *   values      <-- values (face ids) base
+ *   offset_base <-- offsets base
+ *   values      --> exported connectivity array
+ *   offsets     --> element offsets, or nullptr
+ *   elt_types   --> element connectivity offsets, or nullptr
+ *   elt_sizes   --> element sizes, or nullptr
  *----------------------------------------------------------------------------*/
 
 static void
-_export_nodal_polyhedra(const fvm_nodal_section_t  *section,
-                        conduit_cpp::Node          &elements)
+_map_section_polyhedra(const fvm_nodal_section_t  *section,
+                       cs_lnum_t                   values_base,
+                       cs_lnum_t                   offsets_base,
+                       cs_lnum_t                   values[],
+                       cs_lnum_t                  *offsets,
+                       unsigned int               *elt_types,
+                       unsigned int               *elt_sizes)
 {
   const cs_lnum_t n_elts = section->n_elements;
-  const cs_lnum_t n_face_ids = section->face_index[n_elts];
-
-  unsigned int *sizes, *offsets, *face_ids;
-
-  CS_MALLOC(sizes, n_elts, unsigned int);
-  CS_MALLOC(offsets, n_elts, unsigned int);
-  CS_MALLOC(face_ids, n_face_ids, unsigned int);
 
   const cs_lnum_t *face_index = section->face_index;
   const cs_lnum_t *face_num = section->face_num;
 
-  /* Loop on all polygonal faces */
-  /*-----------------------------*/
+  const unsigned int type_id = fvm_to_conduit_type_id[section->type];
+
+  /* Loop on all polyhedral faces
+     ---------------------------- */
 
   for (cs_lnum_t i = 0; i < n_elts; i++) {
 
-    offsets[i] = face_index[i],
-    sizes[i] = face_index[i+1] - face_index[i];
+    offsets[i] = offsets_base + face_index[i],
+    elt_sizes[i] = face_index[i+1] - face_index[i];
+    if (elt_types != nullptr)
+      elt_types[i] = type_id;
 
     for (cs_lnum_t j = face_index[i]; j < face_index[i+1]; j++)
-      face_ids[j] = cs::abs(face_num[j]) - 1;
+      values[j] = cs::abs(face_num[j]) - 1 + values_base;
 
   } /* End of loop on polygonal faces */
+}
 
-  elements["shape"].set_string("polyhedral");
-  elements["connectivity"].set(face_ids, n_face_ids);
-  elements["sizes"].set(sizes, n_elts);
-  elements["offsets"].set(sizes, n_elts);
+/*----------------------------------------------------------------------------
+ * Increment element and connectivity size counts for a given mesh section.
+ *----------------------------------------------------------------------------*/
 
-  CS_FREE(face_ids);
-  CS_FREE(offsets);
-  CS_FREE(sizes);
+static void
+_section_counts_increment
+(
+  const fvm_nodal_section_t  *section,      // pointer to section
+  cs_lnum_t                  &n_elts,       // number of elements
+  cs_lnum_t                  &n_sub_elts,   // number polyhedra faces
+  cs_lnum_t                  &n_values,     // connectivity size
+  cs_lnum_t                  &n_sub_values  // polyhedral faces connect. size
+)
+{
+  n_elts += section->n_elements;
+  if (section->stride > 0)
+    n_values += (cs_lnum_t)(section->stride)*section->n_elements;
+  else if (section->type == FVM_FACE_POLY) {
+    n_values += section->vertex_index[section->n_elements];
+  }
+  else if (section->type == FVM_CELL_POLY) {
+    n_values += section->face_index[section->n_elements];
+    n_sub_elts += section->n_faces;
+    n_sub_values += section->vertex_index[section->n_faces];
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -843,8 +892,8 @@ _export_nodal_polyhedra(const fvm_nodal_section_t  *section,
  *----------------------------------------------------------------------------*/
 
 static void
-_map_conduit_mesh(fvm_to_catalyst_t  *w,
-                  const fvm_nodal_t  *mesh)
+_export_conduit_mesh(fvm_to_catalyst_t  *w,
+                     const fvm_nodal_t  *mesh)
 {
   std::string cpp_mesh_name(mesh->name);
 
@@ -858,15 +907,72 @@ _map_conduit_mesh(fvm_to_catalyst_t  *w,
 
   _export_vertex_coords(mesh, mesh_grid);
 
+  /* Count used element types and compute associated sizes
+     ----------------------------------------------------- */
+
+  bool type_is_present[FVM_N_ELEMENT_TYPES];
+  for (int i = 0; i < FVM_N_ELEMENT_TYPES; i++)
+    type_is_present[i] = false;
+
+  int n_active_sections = 0;
+  cs_lnum_t n_elts = 0, n_sub_elts = 0;
+  cs_lnum_t n_values = 0, n_sub_values = 0;
+  bool need_offsets = false;
+
+  for (int section_id = 0; section_id < mesh->n_sections; section_id++) {
+    const fvm_nodal_section_t  *section = mesh->sections[section_id];
+    if (section->entity_dim < elt_dim)
+      continue;
+
+    type_is_present[section->type] = true;
+    _section_counts_increment(section,
+                              n_elts, n_sub_elts,
+                              n_values, n_sub_values);
+
+    if (section->stride <= 0)
+      need_offsets = true;
+
+    n_active_sections++;
+  }
+
+  std::string tpath = "topologies/mesh";
+
+  mesh_grid[tpath + "/coordset"].set_string("coords");
+  mesh_grid[tpath + "/type"].set_string("unstructured");
+
+  auto topology = mesh_grid[tpath + "/elements"];
+
+  if (n_active_sections == 1) {
+    for (int i = 0; i < FVM_N_ELEMENT_TYPES; i++) {
+      if (type_is_present[i])
+        topology["shape"].set_string(fvm_to_conduit_type_name[i]);
+    }
+  }
+  else {
+    need_offsets = true;
+    topology["shape"].set_string("mixed");
+    auto shape_map = topology["/shape_map"];
+    for (int i = 0; i < FVM_N_ELEMENT_TYPES; i++) {
+      if (type_is_present[i])
+        shape_map[fvm_to_conduit_type_name[i]].set(fvm_to_conduit_type_id[i]);
+    }
+  }
+
+  cs_lnum_t *values = nullptr, *offsets = nullptr;
+  unsigned int *shapes = nullptr, *elt_sizes = nullptr;
+
+  CS_MALLOC(values, n_values, cs_lnum_t);
+  if (need_offsets) {
+    CS_MALLOC(offsets, n_elts, cs_lnum_t);
+    CS_MALLOC(shapes, n_elts, unsigned int);
+    CS_MALLOC(elt_sizes, n_elts, unsigned int);
+  }
+
   /* Element connectivity */
   /*----------------------*/
 
-  int n_active_sections = 0;
-
-  for (int section_id = 0; section_id < mesh->n_sections; section_id++) {
-   if (mesh->sections[section_id]->entity_dim == elt_dim)
-     n_active_sections++;
-  }
+  cs_lnum_t elt_shift = 0, sub_elt_shift = 0;
+  cs_lnum_t values_shift = 0, sub_values_shift = 0;
 
   for (int section_id = 0; section_id < mesh->n_sections; section_id++) {
 
@@ -875,31 +981,128 @@ _map_conduit_mesh(fvm_to_catalyst_t  *w,
     if (section->entity_dim < elt_dim)
       continue;
 
-    std::string tpath = (n_active_sections == 1) ?
-      "topologies/mesh" : "topologies/s" + std::to_string(section_id);
-
-    mesh_grid[tpath + "/coordset"].set_string("coords");
-    mesh_grid[tpath + "/type"].set_string("unstructured");
-
-    auto elements = mesh_grid[tpath + "/elements"];
+    cs_lnum_t *_values = values + values_shift;
+    cs_lnum_t *_offsets = (offsets != nullptr) ?
+      offsets + elt_shift : nullptr;
+    unsigned int *_shapes = (shapes != nullptr) ?
+      shapes + elt_shift : nullptr;
+    unsigned int *_elt_sizes = (elt_sizes != nullptr) ?
+      elt_sizes + elt_shift : nullptr;
 
     if (section->stride > 0)
-      _map_connect_block(section->type,
-                         section->n_elements,
-                         section->vertex_num,
-                         elements);
+      _map_section_strided(section->type,
+                           section->n_elements,
+                           values_shift,
+                           section->vertex_num,
+                           _values,
+                           _offsets,
+                           _shapes,
+                           _elt_sizes);
 
     else if (section->type == FVM_FACE_POLY)
-      _export_nodal_polygons(section, elements);
+      _map_section_polygons(section,
+                            values_shift,
+                            _values,
+                            _offsets,
+                            _shapes,
+                            _elt_sizes);
 
     else if (section->type == FVM_CELL_POLY) {
-      auto subelements = mesh_grid[tpath + "/subelements"];
-
-      _export_nodal_polyhedra(section, elements);
-      _export_nodal_polygons(section, subelements);
+      _map_section_polyhedra(section,
+                             sub_elt_shift,
+                             values_shift,
+                             _values,
+                             _offsets,
+                             _shapes,
+                             _elt_sizes);
+      /* Faces -> vertices connectivity output in separate loop
+         to reduce number simultaneous extra arrray copies/buffers. */
     }
 
+    _section_counts_increment(section,
+                              elt_shift, sub_elt_shift,
+                              values_shift, sub_values_shift);
+
+
   } /* End of loop on sections */
+
+  topology["connectivity"].set(values, n_values);
+
+  if (shapes != nullptr)
+    topology["shapes"].set(shapes, n_elts);
+  if (elt_sizes != nullptr)
+    topology["sizes"].set(elt_sizes, n_elts);
+  if (offsets != nullptr)
+    topology["offsets"].set(offsets, n_elts);
+
+  CS_FREE(values);
+  CS_FREE(offsets);
+  CS_FREE(shapes);
+  CS_FREE(elt_sizes);
+
+  /* Face connectivity for polyhedra
+     ------------------------------- */
+
+  if (n_sub_elts > 0) {
+
+    auto subelements = mesh_grid[tpath + "/subelements"];
+
+    cs_lnum_t *sub_values, *sub_offsets;
+    unsigned int *sub_shapes, *sub_elt_sizes;
+    CS_MALLOC(sub_values, n_sub_values, cs_lnum_t);
+    CS_MALLOC(sub_offsets, n_sub_elts, cs_lnum_t);
+    CS_MALLOC(sub_shapes, n_sub_elts, unsigned int);
+    CS_MALLOC(sub_elt_sizes, n_sub_elts, unsigned int);
+
+    elt_shift = 0; sub_elt_shift = 0;
+    values_shift = 0; sub_values_shift = 0;
+
+    for (int section_id = 0; section_id < mesh->n_sections; section_id++) {
+
+      const fvm_nodal_section_t  *section = mesh->sections[section_id];
+
+      if (section->entity_dim < elt_dim)
+        continue;
+
+      cs_lnum_t *_sub_values = sub_values + sub_values_shift;
+      cs_lnum_t *_sub_offsets = (sub_offsets != nullptr) ?
+        sub_offsets + sub_elt_shift : nullptr;
+      unsigned int *_sub_shapes = (sub_shapes != nullptr) ?
+        sub_shapes + sub_elt_shift : nullptr;
+      unsigned int *_sub_elt_sizes = (sub_elt_sizes != nullptr) ?
+        sub_elt_sizes + sub_elt_shift : nullptr;
+
+      if (section->type == FVM_CELL_POLY)
+        _map_section_polygons(section,
+                              sub_values_shift,
+                              _sub_values,
+                              _sub_offsets,
+                              _sub_shapes,
+                              _sub_elt_sizes);
+
+      _section_counts_increment(section,
+                                elt_shift, sub_elt_shift,
+                                values_shift, sub_values_shift);
+
+    } /* End of loop on sections */
+
+    subelements["shape"].set_string("mixed");
+    auto shape_map = subelements["/shape_map"];
+    {
+      int i = FVM_FACE_POLY;
+      shape_map[fvm_to_conduit_type_name[i]].set(fvm_to_conduit_type_id[i]);
+    }
+    subelements["connectivity"].set(sub_values, n_sub_values);
+    subelements["shapes"].set(sub_shapes, n_sub_elts);
+    subelements["sizes"].set(sub_elt_sizes, n_sub_elts);
+    subelements["offsets"].set(sub_offsets, n_sub_elts);
+
+    CS_FREE(sub_values);
+    CS_FREE(sub_offsets);
+    CS_FREE(sub_shapes);
+    CS_FREE(sub_elt_sizes);
+
+  }
 
   w->modified = true;
 
@@ -977,8 +1180,6 @@ _export_field_values_e(fvm_to_catalyst_t         *w,
                        cs_datatype_t              datatype,
                        const void          *const field_values[])
 {
-  std::string cpp_mesh_name(mesh->name);
-
   const int dest_dim = (dim == 6) ? 9 : dim;
 
   const int  elt_dim = fvm_nodal_get_max_entity_dim(mesh);
@@ -994,7 +1195,7 @@ _export_field_values_e(fvm_to_catalyst_t         *w,
 
   /* loop on sections which should be appended */
 
-  auto mesh_grid = w->channel["data/" + cpp_mesh_name];
+  auto mesh_grid = w->channel["data/" + mesh_name];
 
   int n_active_sections = 0;
 
@@ -1021,7 +1222,6 @@ _export_field_values_e(fvm_to_catalyst_t         *w,
                       field_values,
                       values + start_id);
 
-
     start_id += section->n_elements*dest_dim;
     if (n_parent_lists == 0)
       src_shift += section->n_elements;
@@ -1047,92 +1247,57 @@ _export_field_values_e(fvm_to_catalyst_t         *w,
     }
   }
 
-  start_id = 0;
-  src_shift = 0;
+  /* Now pass to Conduit */
 
-  for (int section_id = 0; section_id < mesh->n_sections; section_id++) {
+  if (dim == 1 || dim == 3) {
 
-    const fvm_nodal_section_t  *section = mesh->sections[section_id];
+    std::string sname = "fields/" + field_name;
 
-    if (section->entity_dim < elt_dim)
-      continue;
+    auto field = mesh_grid[sname];
 
-    float *svalues = values + start_id;
+    field["association"].set_string("element");
+    field["topology"].set_string("mesh");
+    field["volume_dependent"].set_string("false");  // true if extensive
 
-    assert(values != nullptr || section->n_elements == 0);
+    if (dim == 1)
+      field["values"].set(values, n_elts);
 
-    /* Now pass to Conduit
-     * Note we could use "set_external" in some cases, given enough upstream
-     * metadata to determine whether data is directly shared from field values
-     * (in which case fvm_convert_array can be bypassed) or based on a
-     * temporary copy */
+    else if (dim == 3) {
+      cs_lnum_t stride = sizeof(float)*dim;
+      field["values/x"].set(values, n_elts, 0, stride);
+      field["values/y"].set(values, n_elts, sizeof(float), stride);
+      field["values/z"].set(values, n_elts, 2*sizeof(float), stride);
+    }
 
-    std::string tname = (n_active_sections == 1) ?
-      "mesh" : "s" + std::to_string(section_id);
+  }
 
-    cs_lnum_t s_n_elts = section->n_elements;
+  else {
 
-    if (dim == 1 || dim == 3) {
+    char buffer[8];
 
-      std::string sname = "fields/" + field_name;
-      if (n_active_sections > 1)
-        sname += ":s" + std::to_string(section_id);
+    for (int comp_id = 0; comp_id < dim; comp_id++) {
+
+      _field_c_name(buffer, dim, comp_id);
+      std::string cpp_field_ext(buffer);
+
+      std::string sname = "fields/" + field_name + cpp_field_ext;
 
       auto field = mesh_grid[sname];
 
       field["association"].set_string("element");
-      field["topology"].set_string(tname);
+      field["topology"].set_string("mesh");
       field["volume_dependent"].set_string("false");  // true if extensive
 
-      if (dim == 1)
-        field["values"].set(svalues, s_n_elts);
-
-      else if (dim == 3) {
-        cs_lnum_t stride = sizeof(float)*dim;
-        field["values/x"].set(svalues, s_n_elts, 0, stride);
-        field["values/y"].set(svalues, s_n_elts, sizeof(float), stride);
-        field["values/z"].set(svalues, s_n_elts, 2*sizeof(float), stride);
-      }
-
-      field["display_name"].set_string(field_name); // used by Visit at least
+      cs_lnum_t stride = sizeof(float)*dim;
+      field["values"].set(values, n_elts, comp_id*sizeof(float), stride);
 
     }
-
-    else {
-
-      char buffer[8];
-
-      for (int comp_id = 0; comp_id < dim; comp_id++) {
-
-        _field_c_name(buffer, dim, comp_id);
-        std::string cpp_field_ext(buffer);
-
-        std::string sname = "fields/" + field_name + cpp_field_ext;
-        if (n_active_sections > 1)
-          sname += ":s" + std::to_string(section_id);
-
-        auto field = mesh_grid[sname];
-
-        field["association"].set_string("element");
-        field["topology"].set_string(tname);
-        field["volume_dependent"].set_string("false");  // true if extensive
-
-        cs_lnum_t stride = sizeof(float)*dim;
-        field["values"].set(svalues, s_n_elts, comp_id*sizeof(float), stride);
-        field["display_name"].set_string(field_name + cpp_field_ext);
-
-      }
-    }
-
-    start_id += section->n_elements*dest_dim;
-    if (n_parent_lists == 0)
-      src_shift += section->n_elements;
 
   }
 
   if (false) {
     printf("Export %s:%s to Conduit\n", mesh->name, field_name.c_str());
-    mesh_grid.print();  // dump local mesh to stdout (debug)
+    field.print();  // dump local field to stdout (debug)
   }
 
   CS_FREE(values);
@@ -1266,7 +1431,7 @@ fvm_to_catalyst2_init_writer(const char             *name,
     strcpy(w->name, name);
   }
   else {
-    const char _name[] = "Catalyst-2";
+    const char _name[] = "Catalyst2";
     CS_MALLOC(w->name, strlen(_name) + 1, char);
     strcpy(w->name, _name);
   }
@@ -1425,7 +1590,7 @@ fvm_to_catalyst2_export_nodal(void               *this_writer_p,
 {
   fvm_to_catalyst_t  *w = (fvm_to_catalyst_t *)this_writer_p;
 
-  _map_conduit_mesh(w, mesh);
+  _export_conduit_mesh(w, mesh);
 }
 
 /*----------------------------------------------------------------------------
