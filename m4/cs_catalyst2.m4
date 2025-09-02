@@ -43,7 +43,7 @@ AC_ARG_WITH(catalyst2,
 
 AC_ARG_WITH(catalyst2-include,
             [AS_HELP_STRING([--with-catalyst2-include=PATH],
-                            [specify directory for CATALYST2 include files])],
+                            [specify directory for Catalyst2 include files])],
             [if test "x$with_catalyst2" = "xcheck"; then
                with_catalyst2=yes
              fi
@@ -55,7 +55,7 @@ AC_ARG_WITH(catalyst2-include,
 
 AC_ARG_WITH(catalyst2-lib,
             [AS_HELP_STRING([--with-catalyst2-lib=PATH],
-                            [specify directory for CATALYST2 library])],
+                            [specify directory for Catalyst2 library])],
             [if test "x$with_catalyst2" = "xcheck"; then
                with_catalyst2=yes
              fi
@@ -108,7 +108,7 @@ if test "x$with_catalyst2" != "xno" ; then
   catalyst_initialize(node);]])
                     ],
                     [ cs_have_catalyst2=yes ],
-                    [ AC_MSG_WARN([no Catalyst-2 support]) ],
+                    [ AC_MSG_WARN([no Catalyst2 support]) ],
                   )
   AC_LANG_POP([C++])
 

@@ -1331,9 +1331,9 @@ if test x$cs_have_medcoupling = xyes ; then
   echo "   ParaMEDMEM support: "$cs_have_paramedmem""
   echo "   MEDCoupling as plugin: "$cs_have_plugin_medcoupling""
 fi
-echo " Catalyst-2 (co-processing) support: "$cs_have_catalyst2""
+echo " Catalyst2 (co-processing) support: "$cs_have_catalyst2""
 if (test x$cs_have_catalyst2 = xyes) ; then
-  echo "   Catalyst-2 as plugin: "$cs_have_plugin_catalyst2""
+  echo "   Catalyst2 as plugin: "$cs_have_plugin_catalyst2""
 fi
 echo " Catalyst (ParaView co-processing) support: "$cs_have_catalyst""
 if (test x$cs_have_catalyst = xyes) ; then
