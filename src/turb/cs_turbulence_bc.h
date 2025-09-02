@@ -389,15 +389,16 @@ cs_turbulence_bc_set_hmg_neumann(cs_lnum_t   face_id);
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE static void
+CS_F_HOST_DEVICE inline void
 cs_turbulence_bc_rij_transform(int        is_sym,
                                cs_real_t  p_lg[3][3],
                                cs_real_t  alpha[6][6])
 {
   cs_real_t p_lg2[3][3];
-  for (int ii = 0; ii < 3; ii++)
+  for (int ii = 0; ii < 3; ii++) {
     for (int jj = 0; jj < 3; jj++)
       p_lg2[ii][jj] = cs_math_pow2(p_lg[ii][jj]);
+  }
 
   /* alpha(i,j)  for i in [1,3] and j in [1,3]: 9 terms */
   for (int ii = 0; ii < 3; ii++) {
