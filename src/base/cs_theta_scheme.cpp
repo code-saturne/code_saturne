@@ -345,9 +345,9 @@ cs_theta_scheme_update_var(const cs_lnum_t  iappel)
       cs_real_t bb = (1.-theta)/(2.-theta);
 
       for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
-        imasfl[face_id] = aa * imasfl[face_id] + bb * imasfl[face_id];
+        imasfl[face_id] = aa * imasfl[face_id] + bb * imasfl_pre[face_id];
       for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-        bmasfl[face_id] = aa * bmasfl[face_id] + bb * bmasfl[face_id];
+        bmasfl[face_id] = aa * bmasfl[face_id] + bb * bmasfl_pre[face_id];
     }
     else if (cs_glob_time_scheme->istmpf == 0) {
       for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)

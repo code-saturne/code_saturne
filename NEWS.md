@@ -3,6 +3,8 @@ Release 9.0.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix mass flux interpolation for colocated 2nd order time scheme.
+
 - Turbomachinery: fix crash when retrying joining with perturbed angle.
 
 - Fix memory leak with some multigrid setup combinations
