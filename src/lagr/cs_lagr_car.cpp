@@ -194,8 +194,9 @@ cs_lagr_car(int                iprev,
   cs_real_t p_rom  = p_mass * d6spi / pow(p_diam, 3.0);
 
   cs_real_t rel_vel_norm = 0.;
-  cs_real_t romf           = extra_i[phase_id].cromf->val[cell_id];
-  cs_real_t xnul           = extra_i[phase_id].viscl->val[cell_id] / romf;
+  cs_real_t romf = extra_i[phase_id].cromf->val[cell_id];
+  cs_real_t mu_f = extra_i[phase_id].viscl->val[cell_id];
+  cs_real_t xnul = mu_f / romf;
   cs_real_t *part_vel_seen =
     cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id, CS_LAGR_VELOCITY_SEEN);
   cs_real_t *part_vel      =
@@ -251,28 +252,33 @@ cs_lagr_car(int                iprev,
     /* Local Nu computation */
     /* a priori in gas or pulverized coal combustion,
        diffusivity is always constant */
-    cs_real_t xrkl;
+    cs_real_t diff_f; /* Dynamic diffusivity */
+    cs_real_t lambda_f; /* fluid conductivity */
     if (diftl0 >= 0)
-      xrkl = diftl0 / romf;
-    else if (extra->cpro_viscls != nullptr)
-      xrkl = extra->cpro_viscls->val[cell_id] / (romf * xcp);
-    else
-      xrkl = extra->visls0 / (romf * xcp);
+      diff_f = diftl0;
+    else if (extra->cpro_viscls != nullptr) {
+      lambda_f = extra->cpro_viscls->val[cell_id];
+      diff_f = extra->cpro_viscls->val[cell_id] / (xcp);
+    }
+    else {
+      lambda_f = extra->visls0;
+      diff_f = extra->visls0 / (xcp);
+    }
 
-    cs_real_t prt  = xnul / xrkl;
+    cs_real_t prt  = mu_f / diff_f;
     cs_real_t fnus = 2.0 + 0.55 * pow (rep, 0.5) * pow (prt, (d1s3));
 
     cs_real_t p_cp = cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_CP);
 
     /* Thermal characteristic time Tc computation */
-    tempct[0] = d2 * p_rom * p_cp / (fnus * 6.0 * romf * xcp * xrkl);
+    tempct[0] = d2 * p_rom * p_cp / (fnus * 6.0 * lambda_f);
 
     /* User computation for Tc */
     cs_user_lagr_rt_t(p_id, rep, rel_vel_norm, romf, p_rom,
-                      xnul, xcp, xrkl, tempct, dt_part);
+                      xnul, xcp, diff_f/romf, tempct, dt_part);
 
     /* Implicit source term for return thermal coupling */
-    tempct[1] = fnus * cs_math_pi * p_diam * xrkl * romf;
+    tempct[1] = p_rom * p_cp * d2 /(6. * fnus *  lambda_f);
   }
 
   /* Compute TL

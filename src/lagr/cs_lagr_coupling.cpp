@@ -413,7 +413,7 @@ cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       *p_set,
                           - prev_p_mass * prev_p_tmp * prev_p_cp
                           ) / dtp * p_stat_w * dvol;
     t_st_t_i[c_id] += p_stat_w * p_mass * p_cp * dvol
-                      / tempct[1];
+                      / tempct[0];//FIXME rel_dt
 
     if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
         && cs_glob_lagr_specific_physics->solve_temperature == 1
