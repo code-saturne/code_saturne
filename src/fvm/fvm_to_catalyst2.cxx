@@ -120,11 +120,14 @@ typedef struct {
  * Static global variables
  *============================================================================*/
 
+static bool _debug_print = false;
+
 int _n_writers = 0;
 int _n_scripts = 0;
 
 conduit_node *_root_node = nullptr;      /* Catalyst root node */
 bool _catalyst_initialized = false;
+int _use_mpi = -1;
 
 #if defined(HAVE_MPI)
 MPI_Comm  _comm = MPI_COMM_NULL;
@@ -443,6 +446,8 @@ _init_version_info(void)
              "Conduit version: %s",
               CONDUIT_VERSION);
     _conduit_info_string_[1][95] = '\0';
+
+    _use_mpi = *use_mpi;
   }
 }
 
@@ -483,9 +488,9 @@ _init_catalyst(void)
         // conduit_node_print(conduit_cpp::c_node(&params));
         _init_version_info();
         bft_printf(_("\n"
-                     "Catalyst-2 initialized\n"
-                     "  catalyst %s\n"
-                     "  conduit  %s\n"),
+                     "Catalyst initialized\n"
+                     "  %s\n"
+                     "  %s\n\n"),
                    _catalyst_info_string_[0],
                    _conduit_info_string_[0]);
       }
@@ -493,6 +498,14 @@ _init_catalyst(void)
     else
       bft_error(__FILE__, __LINE__, 0,
                 _("catalyst_initialize error: %d"), (int)err);
+  }
+
+  // Activate debug printing if needed
+
+  const char *s = getenv("CS_CATALYST_DEBUG_PRINT");
+  if (s != nullptr) {
+    if (atoi(s) > 0)
+      _debug_print = true;
   }
 }
 
@@ -1106,7 +1119,7 @@ _export_conduit_mesh(fvm_to_catalyst_t  *w,
 
   w->modified = true;
 
-  if (false) {
+  if (_debug_print) {
     printf("Export %s (%dD) to Conduit\n", mesh->name, elt_dim);
     mesh_grid.print();  // dump local mesh to stdout (debug)
 
@@ -1187,6 +1200,9 @@ _export_field_values_e(fvm_to_catalyst_t         *w,
 
   float *values;
   CS_MALLOC(values, n_elts*dest_dim, float);
+
+  if (_debug_print)
+    printf("Export %s:%s to Conduit\n", mesh->name, field_name.c_str());
 
   /* Distribute partition to block values */
 
@@ -1269,6 +1285,9 @@ _export_field_values_e(fvm_to_catalyst_t         *w,
       field["values/z"].set(values, n_elts, 2*sizeof(float), stride);
     }
 
+    if (_debug_print)
+      field.print();  // dump local field to stdout (debug)
+
   }
 
   else {
@@ -1291,13 +1310,11 @@ _export_field_values_e(fvm_to_catalyst_t         *w,
       cs_lnum_t stride = sizeof(float)*dim;
       field["values"].set(values, n_elts, comp_id*sizeof(float), stride);
 
+      if (_debug_print)
+        field.print();  // dump local field to stdout (debug)
+
     }
 
-  }
-
-  if (false) {
-    printf("Export %s:%s to Conduit\n", mesh->name, field_name.c_str());
-    field.print();  // dump local field to stdout (debug)
   }
 
   CS_FREE(values);
@@ -1750,19 +1767,17 @@ fvm_to_catalyst2_flush(void  *this_writer_p)
   state["cycle"].set(w->time_step);
   state["time"].set(w->time_value);
 
-#if 0
-  conduit_cpp::Node info;
-  conduit_cpp::Blueprint::verify("execute", exec_params, info);
-  info.print();
-#endif
+  if (_debug_print) {
+    conduit_cpp::Node info;
+    conduit_cpp::Blueprint::verify("execute", exec_params, info);
+    info.print();
+  }
 
   catalyst_status err = catalyst_execute(params);
-#if 1
   if (err != catalyst_status_ok) {
     bft_error(__FILE__, __LINE__, 0,
               _("catalyst_execute error: %d"), (int)err);
   }
-#endif
 
   w->modified = false;
 }
