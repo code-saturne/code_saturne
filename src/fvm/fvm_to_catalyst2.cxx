@@ -165,6 +165,10 @@ static const int fvm_to_conduit_type_id[]
      12,
      42};
 
+// Component value keys
+
+const char *_comp_key_3[] = {"values/x", "values/y", "values/z"};
+
 // version info strings
 
 static char _catalyst_info_string_[2][96] = {"", ""};
@@ -1134,16 +1138,18 @@ _export_conduit_mesh(fvm_to_catalyst_t  *w,
  * Build component name for field
  *
  * parameters:
- *   buffer    <-- C buffer for component name
  *   dim       <-- field dimension
  *   comp_id   <-- component id
+ *
+ * Return component name string
  *----------------------------------------------------------------------------*/
 
-static void
-_field_c_name(char   buffer[8],
-              int    dim,
+static std::string
+_field_c_name(int    dim,
               int    comp_id)
 {
+  char   buffer[8];
+
   if (dim == 6) {
     const char *cname[] = {"_XX", "_YY", "_ZZ", "_XY", "_XZ", "_YZ"};
     (void)strncmp(buffer, cname[comp_id], 7);
@@ -1158,6 +1164,8 @@ _field_c_name(char   buffer[8],
     snprintf(buffer, 7, "_%d", comp_id);
 
   buffer[7] = '\0';
+
+  return std::string(buffer);
 }
 
 /*----------------------------------------------------------------------------
@@ -1170,6 +1178,7 @@ _field_c_name(char   buffer[8],
  *   mesh             <-- pointer to nodal mesh structure
  *   mesh_name        <-- mesh name
  *   field_name       <-- field name
+ *   elt_dim          <-- 0 for vertices, > 0 for edges, faces, cells
  *   dim              <-- field dimension
  *   interlace        <-- indicates if field in memory is interlaced
  *   n_parent_lists   <-- indicates if field values are to be obtained
@@ -1182,20 +1191,20 @@ _field_c_name(char   buffer[8],
  *----------------------------------------------------------------------------*/
 
 static void
-_export_field_values_e(fvm_to_catalyst_t         *w,
-                       const fvm_nodal_t         *mesh,
-                       const std::string          mesh_name,
-                       const std::string          field_name,
-                       int                        dim,
-                       cs_interlace_t             interlace,
-                       int                        n_parent_lists,
-                       const cs_lnum_t            parent_num_shift[],
-                       cs_datatype_t              datatype,
-                       const void          *const field_values[])
+_export_field_values(fvm_to_catalyst_t         *w,
+                     const fvm_nodal_t         *mesh,
+                     const std::string          mesh_name,
+                     const std::string          field_name,
+                     int                        elt_dim,
+                     int                        dim,
+                     cs_interlace_t             interlace,
+                     int                        n_parent_lists,
+                     const cs_lnum_t            parent_num_shift[],
+                     cs_datatype_t              datatype,
+                     const void          *const field_values[])
 {
-  const int dest_dim = (dim == 6) ? 9 : dim;
+  const cs_lnum_t dest_dim = dim;
 
-  const int  elt_dim = fvm_nodal_get_max_entity_dim(mesh);
   const cs_lnum_t n_elts = fvm_nodal_get_n_entities(mesh, elt_dim);
 
   float *values;
@@ -1204,64 +1213,46 @@ _export_field_values_e(fvm_to_catalyst_t         *w,
   if (_debug_print)
     printf("Export %s:%s to Conduit\n", mesh->name, field_name.c_str());
 
-  /* Distribute partition to block values */
-
-  cs_lnum_t start_id = 0;
-  cs_lnum_t src_shift = 0;
-
   /* loop on sections which should be appended */
 
   auto mesh_grid = w->channel["data/" + mesh_name];
 
-  int n_active_sections = 0;
+  if (elt_dim > 0) {
 
-  for (int section_id = 0; section_id < mesh->n_sections; section_id++) {
+    cs_lnum_t src_shift = 0, start_id = 0;
 
-    const fvm_nodal_section_t  *section = mesh->sections[section_id];
+    for (int section_id = 0; section_id < mesh->n_sections; section_id++) {
 
-    if (section->entity_dim < elt_dim)
-      continue;
+      const fvm_nodal_section_t  *section = mesh->sections[section_id];
 
-    assert(values != nullptr || section->n_elements == 0);
+      if (section->entity_dim < elt_dim)
+        continue;
 
-    fvm_convert_array(dim,
-                      0,
-                      dest_dim,
-                      src_shift,
-                      section->n_elements + src_shift,
-                      interlace,
-                      datatype,
-                      CS_FLOAT,
-                      n_parent_lists,
-                      parent_num_shift,
-                      section->parent_element_id,
-                      field_values,
-                      values + start_id);
+      assert(values != nullptr || section->n_elements == 0);
 
-    start_id += section->n_elements*dest_dim;
-    if (n_parent_lists == 0)
-      src_shift += section->n_elements;
+      fvm_convert_array(dim,
+                        0,
+                        dest_dim,
+                        src_shift,
+                        section->n_elements + src_shift,
+                        interlace,
+                        datatype,
+                        CS_FLOAT,
+                        n_parent_lists,
+                        parent_num_shift,
+                        section->parent_element_id,
+                        field_values,
+                        values + start_id);
 
-    n_active_sections++;
+      start_id += section->n_elements*dest_dim;
+      if (n_parent_lists == 0)
+        src_shift += section->n_elements;
 
-  }
-
-  /* Special case for symmetric tensors */
-
-  if (dim == 6) {
-
-    assert(values != nullptr || n_elts == 0);
-
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
-      values[9*i + 8] = values[9*i + 2];
-      values[9*i + 7] = values[9*i + 4];
-      values[9*i + 6] = values[9*i + 5];
-      values[9*i + 4] = values[9*i + 1];
-      values[9*i + 2] = values[9*i + 5];
-      values[9*i + 1] = values[9*i + 3];
-      values[9*i + 5] = values[9*i + 7];
     }
+
   }
+
+  const char *s_association = (elt_dim == 0) ? "vertex" : "element";
 
   /* Now pass to Conduit */
 
@@ -1271,7 +1262,7 @@ _export_field_values_e(fvm_to_catalyst_t         *w,
 
     auto field = mesh_grid[sname];
 
-    field["association"].set_string("element");
+    field["association"].set_string(s_association);
     field["topology"].set_string("mesh");
     field["volume_dependent"].set_string("false");  // true if extensive
 
@@ -1292,14 +1283,9 @@ _export_field_values_e(fvm_to_catalyst_t         *w,
 
   else {
 
-    char buffer[8];
-
     for (int comp_id = 0; comp_id < dim; comp_id++) {
 
-      _field_c_name(buffer, dim, comp_id);
-      std::string cpp_field_ext(buffer);
-
-      std::string sname = "fields/" + field_name + cpp_field_ext;
+      std::string sname = "fields/" + field_name + _field_c_name(dim, comp_id);
 
       auto field = mesh_grid[sname];
 
@@ -1309,6 +1295,25 @@ _export_field_values_e(fvm_to_catalyst_t         *w,
 
       cs_lnum_t stride = sizeof(float)*dim;
       field["values"].set(values, n_elts, comp_id*sizeof(float), stride);
+
+      if (_debug_print)
+        field.print();  // dump local field to stdout (debug)
+
+      /* Store symmetric tensors as non-symmetric, as ParaView/VTK
+         did not seem to handle non-symmetric ones last time we checked. */
+
+      if (dim == 6 && comp_id >= 3) {
+
+        int nsym_comp_ids[] = {0, 4, 8, 3, 6, 7};
+        sname = "fields/" + field_name
+                + _field_c_name(9, nsym_comp_ids[comp_id]);
+
+        field = mesh_grid[sname];
+        field["association"].set_string("element");
+        field["topology"].set_string("mesh");
+        field["volume_dependent"].set_string("false");  // true if extensive
+        field["values"].set(values, n_elts);
+      }
 
       if (_debug_print)
         field.print();  // dump local field to stdout (debug)
@@ -1700,35 +1705,35 @@ fvm_to_catalyst2_export_field(void                  *this_writer_p,
   /*-------------------*/
 
   if (location == FVM_WRITER_PER_NODE) {
-#if 0
-    _export_field_values_n(w,
-                           mesh,
-                           cpp_mesh_name,
-                           cpp_field_name,
-                           dimension,
-                           interlace,
-                           n_parent_lists,
-                           parent_num_shift,
-                           datatype,
-                           field_values,
-                           f);
-#endif
+    _export_field_values(w,
+                         mesh,
+                         cpp_mesh_name,
+                         cpp_field_name,
+                         0, // elt_dim
+                         dimension,
+                         interlace,
+                         n_parent_lists,
+                         parent_num_shift,
+                         datatype,
+                         field_values);
   }
 
   /* Per element variable */
   /*----------------------*/
 
-  else if (location == FVM_WRITER_PER_ELEMENT)
-    _export_field_values_e(w,
-                           mesh,
-                           cpp_mesh_name,
-                           cpp_field_name,
-                           dimension,
-                           interlace,
-                           n_parent_lists,
-                           parent_num_shift,
-                           datatype,
-                           field_values);
+  else if (location == FVM_WRITER_PER_ELEMENT) {
+    _export_field_values(w,
+                         mesh,
+                         cpp_mesh_name,
+                         cpp_field_name,
+                         fvm_nodal_get_max_entity_dim(mesh), // elt_dim
+                         dimension,
+                         interlace,
+                         n_parent_lists,
+                         parent_num_shift,
+                         datatype,
+                         field_values);
+  }
 
   /* Update field status */
   /*---------------------*/
