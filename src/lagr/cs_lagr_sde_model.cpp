@@ -1649,8 +1649,7 @@ _sde_i_ct(const cs_lnum_t       p_id,
 
   /* Constant local numerical parameters*/
   cs_real_t molmassrat = air_prop->molmass_rat;
-  cs_real_t lv     = 2263000.0;
-  cs_real_t tebl   = 100.0 + _tkelvi;
+  cs_real_t lv = 2263000.0; /* J/kg */
 
   unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
   /* use previous step for t_order == 1 or prediction step
@@ -1728,25 +1727,25 @@ _sde_i_ct(const cs_lnum_t       p_id,
 
   cs_real_t temp_p = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_TEMPERATURE);
 
-  /* Molar masses of vapour and dry air */
-  cs_real_t m_v = 0.0180154 * 1000;
-  cs_real_t m_f = 0.028960 * 1000;
+  /* Molar masses of vapour and dry air (kg/mol) */
+  cs_real_t m_v = 0.0180154;
+  cs_real_t m_f = 0.028960;
 
   /* Boiling Temperature with Clausius-Clapeyron
      ------------------------------------------- */
   cs_real_t pressure_ref = 101325.;
   cs_real_t temp_ref = 373.15;
-  cs_real_t R_v = r_univ / m_v;
+  cs_real_t r_v = r_univ / m_v;
 
   // TODO with atmo module take meteo pressure
-  tebl = 1. / ((1. / temp_ref)- (R_v / lv) * log(p0 / pressure_ref));
+  cs_real_t t_ebl_inv = 1. / temp_ref - r_v / lv * log(p0 / pressure_ref);
 
   /* Mass fraction of vapor (y_v) */
   cs_real_t y_v_far = x[cell_id] / (1.0 + x[cell_id]);
 
   cs_real_t y_v_s = (m_v / (m_f + m_v)) * exp(((lv * m_v) / r_univ)
-                   * ((1.0 / tebl) - (1.0 / (temp_p + _tkelvi))));
-  cs_real_t y_v = y_v_s + (1.0 / 3.0) * (y_v_far - y_v_s);
+                   * (t_ebl_inv - 1.0 / (temp_p + _tkelvi)));
+  cs_real_t y_v = y_v_s + 1.0 / 3.0 * (y_v_far - y_v_s);
 
   /* Inverse of characteristic time */
   cs_real_t d_time_evap = 2. * rho_h * Dv * sherw
