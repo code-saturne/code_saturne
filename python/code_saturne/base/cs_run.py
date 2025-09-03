@@ -664,6 +664,9 @@ def run(argv=[], pkg=None, run_args=None, submit_args=None):
     returns return code, run id, and results directory path when created.
     """
 
+    # Avoid writing __pycache__ for user-defined Python code
+    sys.dont_write_bytecode = True
+
     if not pkg:
         from code_saturne.base.cs_package import package
         pkg = package()

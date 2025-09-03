@@ -1428,6 +1428,9 @@ class case:
                                                  self.package.get_dir("prefix"))
             s.write('\n')
 
+        cs_exec_environment.write_export_env(s, 'PYTHONDONTWRITEBYTECODE', '1')
+        s.write('\n')
+
         # Add MPI directories to PATH if in nonstandard path
 
         cs_exec_environment.write_script_comment(s, \
