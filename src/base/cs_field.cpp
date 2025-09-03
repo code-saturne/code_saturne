@@ -1446,14 +1446,19 @@ cs_field_bc_coeffs_free_copy(const cs_field_bc_coeffs_t  *ref,
   if (copy->bc != ref->bc)
     CS_FREE(copy->bc);
 
+  /* When limiter = false, val_f_lim shares the same address as val_f.
+     We must check that val_f_lim != val_f before freeing,
+     to avoid freeing the same adress twice. */
+  if (copy->val_f_lim != ref->val_f_lim && copy->val_f_lim != copy->val_f)
+    CS_FREE(copy->val_f_lim);
   if (copy->val_f != ref->val_f)
     CS_FREE(copy->val_f);
-  if (copy->val_f_lim != ref->val_f_lim)
-    CS_FREE(copy->val_f_lim);
+
+  if (   copy->val_f_d_lim != ref->val_f_d_lim
+      && copy->val_f_d_lim != copy->val_f_d)
+    CS_FREE(copy->val_f_d_lim);
   if (copy->val_f_d != ref->val_f_d)
     CS_FREE(copy->val_f_d);
-  if (copy->val_f_d_lim != ref->val_f_d_lim)
-    CS_FREE(copy->val_f_d_lim);
 
   if (copy->val_f_pre != ref->val_f_pre)
     CS_FREE(copy->val_f_pre);
@@ -4895,4 +4900,3 @@ cs_field_t::get_key_str
 ///@}
 
 /*----------------------------------------------------------------------------*/
-
