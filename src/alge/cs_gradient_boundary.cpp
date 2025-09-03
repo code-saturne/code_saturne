@@ -217,16 +217,17 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
 {
   /* Initialization */
 
-  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
-
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
   const cs_lnum_t *restrict cell_cells_idx = ma->cell_cells_idx;
   const cs_lnum_t *restrict cell_cells_e_idx = ma->cell_cells_e_idx;
   const cs_lnum_t *restrict cell_b_faces_idx = ma->cell_b_faces_idx;
   const cs_lnum_t *restrict cell_cells = ma->cell_cells;
   const cs_lnum_t *restrict cell_cells_e = ma->cell_cells_e;
   const cs_lnum_t *restrict cell_b_faces = ma->cell_b_faces;
+  const cs_lnum_t *restrict cell_hb_faces_idx = ma->cell_hb_faces_idx;
+  const cs_lnum_t *restrict cell_hb_faces = ma->cell_hb_faces;
 
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
@@ -234,17 +235,14 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
   const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
   const auto *restrict diipb = fvq->diipb;
 
+  const cs_real_t *bc_coeff_a = bc_coeffs->a;
+  const cs_real_t *bc_coeff_b = bc_coeffs->b;
+
   /* Additional terms due to porosity */
-  cs_field_t *f_i_poro_duq = cs_field_by_name_try("b_poro_duq");
-  cs_real_t *b_poro_duq;
-  cs_lnum_t is_porous = 0;
-  if (f_i_poro_duq != nullptr) {
-    is_porous = 1;
+  cs_field_t *f_b_poro_duq = cs_field_by_name_try("b_poro_duq");
+  cs_real_t *b_poro_duq = nullptr;
+  if (f_b_poro_duq != nullptr) {
     b_poro_duq = cs_field_by_name("b_poro_duq")->val;
-  }
-  else {
-    cs_real_t _f_ext = 0.;
-    b_poro_duq = &_f_ext;
   }
 
   /* Loop on selected boundary faces */
@@ -359,11 +357,11 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
 
     /* Contribution from hidden boundary faces */
 
-    if (ma->cell_hb_faces_idx != nullptr)
+    if (cell_hb_faces_idx != nullptr)
       _add_hb_faces_cocg_lsq_cell(c_id,
-                                  ma->cell_hb_faces_idx,
-                                  ma->cell_hb_faces,
-                                  fvq->b_face_u_normal,
+                                  cell_hb_faces_idx,
+                                  cell_hb_faces,
+                                  b_face_u_normal,
                                   cocg);
 
     /* Contribution from boundary faces. */
@@ -375,8 +373,8 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
 
       cs_lnum_t c_f_id = cell_b_faces[i];
 
-      cs_real_t a = bc_coeffs->a[c_f_id];
-      cs_real_t b = bc_coeffs->b[c_f_id];
+      cs_real_t a = bc_coeff_a[c_f_id];
+      cs_real_t b = bc_coeff_b[c_f_id];
 
       /* Use unreconstructed value for limiter */
       cs_real_t var_f = a + b*var_i;
@@ -420,7 +418,10 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
         cs_real_t dot = cs_math_3_distance_dot_product(cell_cen[c_id],
                                                        b_face_cog[f_id],
                                                        f_ext[c_id]);
-        pfac += (b-1.) * (dot + b_poro_duq[is_porous*f_id]);
+        if (b_poro_duq != nullptr)
+          pfac += (b-1.) * (dot + b_poro_duq[f_id]);
+        else
+          pfac += (b-1.) * dot;
       }
 
       pfac *= ddif;
@@ -562,20 +563,19 @@ cs_gradient_boundary_iprime_lsq_s_ani
   const cs_real_t *bc_coeff_a = bc_coeffs->a;
   const cs_real_t *bc_coeff_b = bc_coeffs->b;
 
-  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
-
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
   const cs_lnum_t *restrict cell_cells_idx = ma->cell_cells_idx;
   const cs_lnum_t *restrict cell_b_faces_idx = ma->cell_b_faces_idx;
   const cs_lnum_t *restrict cell_cells = ma->cell_cells;
-
   const cs_lnum_t *restrict cell_i_faces = ma->cell_i_faces;
   const short int *restrict cell_i_faces_sgn = ma->cell_i_faces_sgn;
   const cs_lnum_t *restrict cell_b_faces = ma->cell_b_faces;
+  const cs_lnum_t *restrict cell_hb_faces_idx = ma->cell_hb_faces_idx;
+  const cs_lnum_t *restrict cell_hb_faces = ma->cell_hb_faces;
 
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
-
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_t *restrict b_dist = fvq->b_dist;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
@@ -703,11 +703,11 @@ cs_gradient_boundary_iprime_lsq_s_ani
 
     /* Contribution from hidden boundary faces */
 
-    if (ma->cell_hb_faces_idx != nullptr)
+    if (cell_hb_faces_idx != nullptr)
       _add_hb_faces_cocg_lsq_cell(c_id,
-                                  ma->cell_hb_faces_idx,
-                                  ma->cell_hb_faces,
-                                  fvq->b_face_u_normal,
+                                  cell_hb_faces_idx,
+                                  cell_hb_faces,
+                                  b_face_u_normal,
                                   cocg);
 
     /* Contribution from boundary faces. */

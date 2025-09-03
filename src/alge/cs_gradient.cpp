@@ -2089,9 +2089,8 @@ _add_hb_faces_cocg_lsq_cell(cs_lnum_t         c_id,
 #if (b_direction_lsq == CS_IPRIME_F_LSQ)
 /*----------------------------------------------------------------------------
  * Add compute 3x3 cocg for least squares algorithm contribution from hidden
- * faces (as pure homogeneous Neumann BC's) to a single cell when boundary
- * face value for gradient (val_f) is explicited. The chosen LSQ boundary
- * direction is I'F.
+ * faces to a single cell when boundary face value for gradient (val_f) is
+ * explicited. The chosen LSQ boundary direction is I'F.
  *
  * parameters:
  *   c_id               <-- cell id
@@ -2138,9 +2137,8 @@ _add_hb_faces_cocg_lsq_cell_iprime_f(cs_lnum_t         c_id,
 #elif (b_direction_lsq == CS_IF_LSQ)
 /*----------------------------------------------------------------------------
  * Add compute 3x3 cocg for least squares algorithm contribution from hidden
- * faces (as pure homogeneous Neumann BC's) to a single cell when boundary
- * face value for gradient (val_f) is explicited. The chosen LSQ boundary
- * direction is vector IF.
+ * faces to a single cell when boundary face value for gradient (val_f) is
+ * explicited. The chosen LSQ boundary direction is vector IF.
  *
  * parameters:
  *   c_id               <-- cell id
@@ -2185,7 +2183,7 @@ _add_hb_faces_cocg_lsq_cell_if(cs_lnum_t         c_id,
 
 /*----------------------------------------------------------------------------
  * Add compute 3x3 cocg for least squares algorithm contribution from hidden
- * faces (as pure homogeneous Neumann BC's)
+ * faces
  *
  * parameters:
  *   m    <-- mesh
