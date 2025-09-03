@@ -209,10 +209,11 @@ noinst_LIBRARIES += libfvm_catalyst2.a
 if HAVE_PLUGIN_CATALYST2
 
 LDADD_CATALYST2 = \
-$(CATALYST2_LDFLAGS) $(CATALYST2_LIBS)
+$(CATALYST2_LDFLAGS) $(CATALYST2_LIBS) \
+$(CATALYST2RUNPATH)
 
 fvm_catalyst2.${SHARED_LIB_EXT}: libfvm_catalyst2.a
-	@echo "Building fvm_catalyst plugin..."
+	@echo "Building fvm_catalyst2 plugin..."
 	rm -f $@ ; \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_link_library.py --echo --linker ${CXX} -o $@ --whole-archive-start libfvm_catalyst2.a --whole-archive-end ${LDFLAGS_SHARED} ${CXXFLAGS_SHARED} ${LDFLAGS} ${LDADD_CATALYST2} $(AM_LIBS)
 
