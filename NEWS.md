@@ -3,6 +3,8 @@ Release 9.0.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix reporting of boundary condition definition errors.
+
 - Fix mass flux interpolation for colocated 2nd order time scheme.
 
 - Turbomachinery: fix crash when retrying joining with perturbed angle.

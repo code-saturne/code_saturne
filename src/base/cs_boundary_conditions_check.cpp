@@ -92,17 +92,17 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 static void
-_synchronize_boundary_conditions_error(cs_gnum_t  nerloc,
-                                       int        nerrcd,
-                                       int        errcod[])
+_synchronize_boundary_conditions_error(cs_gnum_t  *nerloc,
+                                       int         nerrcd,
+                                       int         errcod[])
 {
   if (cs_glob_n_ranks > 1) {
     int irkerr = -1;
-    if (nerloc > 0)
+    if (*nerloc > 0)
       irkerr = cs_glob_rank_id;
 
-    cs_parall_counter(&nerloc, 1);
-    if (nerloc != 0) {
+    cs_parall_counter(nerloc, 1);
+    if (*nerloc != 0) {
       cs_parall_max(1, CS_INT_TYPE, &irkerr);
       cs_parall_bcast(irkerr, nerrcd, CS_INT_TYPE, errcod);
     }
@@ -684,7 +684,7 @@ cs_boundary_conditions_check(int  bc_type[],
 
   if (error != 0) {
 
-    _synchronize_boundary_conditions_error(n_init_error, 1, &icodcl_init);
+    _synchronize_boundary_conditions_error(&n_init_error, 1, &icodcl_init);
     if (n_init_error != 0) {
 
       cs_log_printf
@@ -698,7 +698,7 @@ cs_boundary_conditions_check(int  bc_type[],
 
     }
 
-    _synchronize_boundary_conditions_error(n_vel_error, 1, &icodcl_v);
+    _synchronize_boundary_conditions_error(&n_vel_error, 1, &icodcl_v);
 
     if (n_vel_error != 0) {
       char string[10];
@@ -714,7 +714,7 @@ cs_boundary_conditions_check(int  bc_type[],
            "@\n"), (unsigned long long)n_vel_error, string, icodcl_v);
     }
 
-    _synchronize_boundary_conditions_error(n_rough_error, 1, &icodcl_v);
+    _synchronize_boundary_conditions_error(&n_rough_error, 1, &icodcl_v);
 
     if (n_rough_error != 0) {
       char string[10];
@@ -730,7 +730,7 @@ cs_boundary_conditions_check(int  bc_type[],
            "@\n"), (unsigned long long)n_rough_error, string, icodcl_v);
     }
 
-    _synchronize_boundary_conditions_error(n_p_error, 1, &icodcl_pr);
+    _synchronize_boundary_conditions_error(&n_p_error, 1, &icodcl_pr);
 
     if (n_p_error != 0) {
 
@@ -744,7 +744,7 @@ cs_boundary_conditions_check(int  bc_type[],
            "@\n"), (unsigned long long)n_p_error, icodcl_pr);
     }
 
-    _synchronize_boundary_conditions_error(n_turb_error, 1, &icodcl_turb);
+    _synchronize_boundary_conditions_error(&n_turb_error, 1, &icodcl_turb);
 
     if (n_turb_error != 0) {
 
@@ -780,7 +780,7 @@ cs_boundary_conditions_check(int  bc_type[],
 
     /* Admissible conditions for additional transporter variables */
 
-    _synchronize_boundary_conditions_error(n_scal_error, 1, &icodcl_scal);
+    _synchronize_boundary_conditions_error(&n_scal_error, 1, &icodcl_scal);
 
     if (n_scal_error != 0) {
       char string[20];
@@ -800,7 +800,7 @@ cs_boundary_conditions_check(int  bc_type[],
            "@\n"), (unsigned long long)n_scal_error, string, icodcl_scal);
     }
 
-    _synchronize_boundary_conditions_error(n_scal_vf_error, 1, &icodcl_vf_sc);
+    _synchronize_boundary_conditions_error(&n_scal_vf_error, 1, &icodcl_vf_sc);
     if (n_scal_vf_error != 0) {
       cs_log_printf
         (CS_LOG_DEFAULT,
@@ -815,7 +815,7 @@ cs_boundary_conditions_check(int  bc_type[],
 
     /* Velocity-turbulence consistency */
 
-    _synchronize_boundary_conditions_error(n_turb_consis_error, 2, icodcl_consis_turb);
+    _synchronize_boundary_conditions_error(&n_turb_consis_error, 2, icodcl_consis_turb);
     if (n_turb_consis_error != 0) {
       const cs_field_t *f_turb = cs_field_by_id(id_turb_consis);
 
@@ -835,7 +835,7 @@ cs_boundary_conditions_check(int  bc_type[],
 
      /* Velocity-scalars consistency */
 
-    _synchronize_boundary_conditions_error(n_sc_consis_error, 2, icodcl_consis_sc);
+    _synchronize_boundary_conditions_error(&n_sc_consis_error, 2, icodcl_consis_sc);
     if (n_sc_consis_error != 0) {
       const cs_field_t *f_sc = cs_field_by_id(id_sc_consis);
 
