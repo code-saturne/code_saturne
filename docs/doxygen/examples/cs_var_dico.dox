@@ -455,9 +455,9 @@ rather than in a field over all mesh cells.
   <tt> CS_FI_(drift_vel,ip)->val </tt>    | Particles drift velocity
 
 
-  \subsection cs_var_dico_advanced_field Liste of reserved advanded field names.
+  \subsection cs_var_dico_advanced_field List of reserved advanded field names.
 
-  A list can be found in \ref field_names "liste of predefined fields".
+  A list can be found in \ref field_names "list of predefined fields".
 
 */
 

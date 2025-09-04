@@ -591,7 +591,7 @@ _polygon_delaunay_flip(int               n_vertices,
       edge_vertices[2*edge_id + 1] = i_1;
 
       /*
-        Liste of triangles sharing an edge:
+        List of triangles sharing an edge:
         - (-1,-1): edge does not exist
         - (x ,-1): boundary edge, triangle x
         - (x ,-1): internal edge, triangles x and y
