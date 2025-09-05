@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
+#include "base/cs_array.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -252,6 +253,26 @@ typedef struct {
 
   const char *
   get_key_str(const char  *key);
+
+  cs_span<cs_real_t>
+  get_vals_s
+  (
+    const int time_id = 0
+  );
+
+  cs_span_2d<cs_real_t>
+  get_vals_v
+  (
+    const int time_id = 0
+  );
+
+  cs_span_2d<cs_real_t>
+  get_vals_t
+  (
+    const int time_id = 0
+  );
+
+  cs_array<cs_real_t> **_vals;
 
 #endif
 

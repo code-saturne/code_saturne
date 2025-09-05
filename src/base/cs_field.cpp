@@ -476,6 +476,8 @@ _field_create(const char   *name,
   f->val = nullptr;
   f->val_pre = nullptr;
 
+  f->_vals = nullptr;
+
   f->grad = nullptr;
 
   f->bc_coeffs = nullptr;
@@ -1518,6 +1520,10 @@ cs_field_create(const char   *name,
   for (int i = 0; i < f->n_time_vals; i++)
     f->vals[i] = nullptr;
 
+  CS_MALLOC(f->_vals, f->n_time_vals, cs_array<cs_real_t> *);
+  for (int i = 0; i < f->n_time_vals; i++)
+    f->_vals[i] = new cs_array<cs_real_t>(); // empty container;
+
   return f;
 }
 
@@ -1636,6 +1642,10 @@ cs_field_find_or_create(const char   *name,
     for (int i = 0; i < f->n_time_vals; i++)
       f->vals[i] = nullptr;
 
+    CS_MALLOC(f->_vals, f->n_time_vals, cs_array<cs_real_t> *);
+    for (int i = 0; i < f->n_time_vals; i++)
+      f->_vals[i] = new cs_array<cs_real_t>(); // empty container;
+
   }
 
   return f;
@@ -1686,20 +1696,25 @@ cs_field_set_n_time_vals(cs_field_t  *f,
   for (int i = n_time_vals_ini; i < f->n_time_vals; i++)
     f->vals[i] = nullptr;
 
+  CS_REALLOC(f->_vals, f->n_time_vals, cs_array<cs_real_t> *);
+  for (int i = n_time_vals_ini; i < f->n_time_vals; i++)
+    f->_vals[i] = new cs_array<cs_real_t>(); // empty container;
+
   /* If allocation or mapping has already been done */
 
   if (f->val != nullptr) {
     if (n_time_vals_ini > _n_time_vals) {
       assert(n_time_vals_ini == 2 && _n_time_vals == 1);
       if (f->is_owner)
-        CS_FREE(f->val_pre);
-      else
-        f->val_pre = nullptr;
+        f->_vals[1]->clear(); // Free internal data
+
+      f->val_pre = nullptr;
     }
     else { /* if (n_time_vals_ini < _n_time_vals) */
       if (f->is_owner) {
         const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
-        f->val_pre = _add_val(n_elts[2], f->dim, f->val_pre);
+        f->_vals[1]->reshape(n_elts[2]*f->dim);
+        f->val_pre = f->_vals[1]->data();
       }
     }
   }
@@ -1725,12 +1740,14 @@ cs_field_allocate_values(cs_field_t  *f)
 
     /* Initialization */
 
-    for (ii = 0; ii < f->n_time_vals; ii++)
-      f->vals[ii] = _add_val(n_elts[2], f->dim, f->vals[ii]);
+    for (ii = 0; ii < f->n_time_vals; ii++) {
+      f->_vals[ii]->reshape(n_elts[2]*f->dim);
+      f->vals[ii] = f->_vals[ii]->data();
+    }
 
-    f->val = f->vals[0];
+    f->val = f->_vals[0]->data();
     if (f->n_time_vals > 1)
-      f->val_pre = f->vals[1];
+      f->val_pre = f->_vals[1]->data();
   }
 }
 
@@ -1754,8 +1771,12 @@ cs_field_map_values(cs_field_t   *f,
     return;
 
   if (f->is_owner) {
-    CS_FREE(f->val);
-    CS_FREE(f->val_pre);
+    for (int i = 0; i < f->n_time_vals; i++) {
+      f->_vals[i]->clear();
+      f->vals[i] = nullptr;
+    }
+    f->val = nullptr;
+    f->val_pre = nullptr;
     f->is_owner = false;
   }
 
@@ -2264,13 +2285,14 @@ cs_field_destroy_all(void)
   for (int i = 0; i < _n_fields; i++) {
     cs_field_t  *f = _fields[i];
     if (f->is_owner) {
-      if (f->vals != nullptr) {
+      if (f->_vals != nullptr) {
         int ii;
         for (ii = 0; ii < f->n_time_vals; ii++)
-          CS_FREE(f->vals[ii]);
+          delete f->_vals[ii];
       }
     }
     CS_FREE(f->vals);
+    CS_FREE(f->_vals);
 
     if (f->grad != nullptr)
       CS_FREE(f->grad);
@@ -4898,5 +4920,51 @@ cs_field_t::get_key_str
 }
 
 ///@}
+
+/*----------------------------------------------------------------------------*/
+
+cs_span<cs_real_t>
+cs_field_t::get_vals_s
+(
+  const int time_id
+)
+{
+  if (this->dim != 1)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not a scalar and has dimension %d\n"),
+              __func__, this->name, this->dim);
+
+  return this->_vals[time_id]->view();
+}
+
+cs_span_2d<cs_real_t>
+cs_field_t::get_vals_v
+(
+  const int time_id
+)
+{
+  if (this->dim != 3)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not a vector and has dimension %d\n"),
+              __func__, this->name, this->dim);
+
+  const cs_lnum_t n_elts = this->_vals[time_id]->size() / this->dim;
+  return this->_vals[time_id]->get_mdspan<2>({n_elts, this->dim});
+}
+
+cs_span_2d<cs_real_t>
+cs_field_t::get_vals_t
+(
+  const int time_id
+)
+{
+  if (this->dim != 6)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not a tensor and has dimension %d\n"),
+              __func__, this->name, this->dim);
+
+  const cs_lnum_t n_elts = this->_vals[time_id]->size() / this->dim;
+  return this->_vals[time_id]->get_mdspan<2>({n_elts, this->dim});
+}
 
 /*----------------------------------------------------------------------------*/
