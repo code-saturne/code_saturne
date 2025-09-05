@@ -921,9 +921,15 @@ public:
     _offset{0},
     _size(0),
     _owner(true),
-    _data(nullptr),
-    _mode(cs_alloc_mode)
+    _data(nullptr)
   {
+#if !defined(__CUDA_ARCH__) && \
+    !defined(SYCL_LANGUAGE_VERSION) && \
+    !defined(__HIP_DEVICE_COMPILE__)
+    _mode = cs_alloc_mode;
+#else
+    _mode = CS_ALLOC_HOST_DEVICE_SHARED; // use default and avoid compiler warnings
+#endif
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1355,13 +1361,46 @@ public:
     for (int i = 0; i < _N_; i++)
       s *= dims[i];
 
-    if (s != _size)
+    if (s != _size) {
+#if !defined(__CUDA_ARCH__) && \
+    !defined(SYCL_LANGUAGE_VERSION) && \
+    !defined(__HIP_DEVICE_COMPILE__)
       bft_error(__FILE__, __LINE__, 0,
-                _("%s: requested span has total size of %ld instead of %ld "
+                _("%s: requested span has total size of %d instead of %d "
                   "for this array.\n"),
                 __func__, s, _size);
+#else
+      return mdspan<T,_N_,_L_>();
+#endif
+    }
 
     return mdspan<T,_N_,_L_>(_data, dims);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Get span view of array with a given array of dimensions (extent).
+   *        If total size of span is different than that of the array an error
+   *        is raised.
+   *
+   * \return mdspan view with given dimensions.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<layout _L_ = L, typename... Args>
+  CS_F_HOST_DEVICE
+  mdspan<T, sizeof...(Args), _L_>
+  get_mdspan
+  (
+    Args... indices /*!<[in] Input arguments (parameter pack) */
+  )
+  {
+    check_non_empty_args_(indices...);
+
+    constexpr int n_vals = sizeof...(Args);
+    cs_lnum_t tmp_args[n_vals] = {indices...};
+
+    return get_mdspan<n_vals, _L_>(tmp_args);
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1488,7 +1527,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   void
   zero()
   {
@@ -1509,7 +1548,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   void
   zero
   (
@@ -1767,7 +1806,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   void
   reshape
   (
@@ -1798,7 +1837,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   void
   reshape_and_copy
   (
@@ -1830,7 +1869,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   void
   reshape
   (
@@ -2468,6 +2507,25 @@ private:
   )
   {
     static_assert(sizeof...(Args) < N, "Too many input arguments.");
+    static_assert(cs::are_integral<Args...>::value, "Non integral input arguments.");
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Helper function to static check sub-function input arguments.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<typename... Args>
+  CS_F_HOST_DEVICE
+  static inline
+  void
+  check_non_empty_args_
+  (
+    Args... /*!<[in] Input arguments (parameter pack) */
+  )
+  {
+    static_assert(sizeof...(Args) > 0, "At least one input argument is needed.");
     static_assert(cs::are_integral<Args...>::value, "Non integral input arguments.");
   }
 
