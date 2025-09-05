@@ -169,6 +169,13 @@ static const int fvm_to_conduit_type_id[]
 
 const char *_comp_key_3[] = {"values/x", "values/y", "values/z"};
 
+const char *_comp_key_6[] = {"values/xx", "values/yy", "values/zz",
+                             "values/xy", "values/yz", "values/xz"};
+
+const char *_comp_key_9[] = {"values/xx", "values/xy", "values/xz",
+                             "values/yx", "values/yy", "values/yz",
+                             "values/zx", "values/zy", "values/zz"};
+
 // version info strings
 
 static char _catalyst_info_string_[2][96] = {"", ""};
@@ -177,6 +184,43 @@ static char _conduit_info_string_[2][32] = {"", ""};
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Convert a Catalyst status code to a string.
+ *
+ * parameters:
+ *   catalyst_status <-- status
+ *
+ * returns:
+ *   pointer to corresponding status code string.
+ *----------------------------------------------------------------------------*/
+
+static const char *
+_catalyst_status_to_string(catalyst_status  status)
+{
+  switch(status) {
+  case catalyst_status_ok:
+    return "ok";
+  case catalyst_status_error_no_implementation:
+    return "error_no_implementation";
+  case catalyst_status_error_already_loaded:
+    return "error_already_loaded";
+  case catalyst_status_error_not_found:
+    return "error_not_found";
+  case catalyst_status_error_not_catalyst:
+    return "error_not_catalyst";
+  case catalyst_status_error_incomplete:
+    return "error_incomplete";
+  case catalyst_status_error_unsupported_version:
+    return "error_unsupported_version";
+  case catalyst_status_error_conduit_mismatch:
+    return "error_conduit_mismatch";
+  default:
+    break;
+  };
+
+  return "unknown";
+}
 
 /*----------------------------------------------------------------------------
  * Check if a script is a Catalyst script
@@ -462,47 +506,50 @@ _init_version_info(void)
 static void
 _init_catalyst(void)
 {
-  if (_catalyst_initialized == false && _n_scripts > 0) {
-    conduit_cpp::Node node = conduit_cpp::cpp_node(_root_node);
+  if (_catalyst_initialized)
+    return;
 
-    // node["catalyst_load/implementation"] = "paraview";
-    // node["catalyst_load/search_paths/paraview"] = PARAVIEW_IMPL_DIR;
+  conduit_cpp::Node node = conduit_cpp::cpp_node(_root_node);
 
-    // Add MPI communicator handle
+  // node["catalyst_load/implementation"] = "paraview";
+  // node["catalyst_load/search_paths/paraview"] = PARAVIEW_IMPL_DIR;
+
+  // Add MPI communicator handle
 
 #if defined(HAVE_MPI)
-    {
-      int mpi_flag = 0;
-      MPI_Initialized(&mpi_flag);
-      if (mpi_flag && _comm != MPI_COMM_NULL && _comm != MPI_COMM_WORLD) {
-        node["catalyst/mpi_comm"] = MPI_Comm_c2f(_comm);
-      }
+  {
+    int mpi_flag = 0;
+    MPI_Initialized(&mpi_flag);
+    if (mpi_flag && _comm != MPI_COMM_NULL && _comm != MPI_COMM_WORLD) {
+      node["catalyst/mpi_comm"] = MPI_Comm_c2f(_comm);
     }
+  }
 #endif
 
-    catalyst_status err = catalyst_initialize(conduit_cpp::c_node(&node));
-    if (err == catalyst_status_ok) {
-      _catalyst_initialized = true;
-      conduit_cpp::Node params;
-      err = catalyst_about(conduit_cpp::c_node(&params));
-      if (err != catalyst_status_ok)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("catalyst_about error: %d"), (int)err);
-      else {
-        // conduit_node_print(conduit_cpp::c_node(&params));
-        _init_version_info();
-        bft_printf(_("\n"
-                     "Catalyst initialized\n"
-                     "  %s\n"
-                     "  %s\n\n"),
-                   _catalyst_info_string_[0],
-                   _conduit_info_string_[0]);
-      }
-    }
-    else
+  catalyst_status err = catalyst_initialize(conduit_cpp::c_node(&node));
+  if (err == catalyst_status_ok) {
+    _catalyst_initialized = true;
+    conduit_cpp::Node params;
+    err = catalyst_about(conduit_cpp::c_node(&params));
+    if (err != catalyst_status_ok)
       bft_error(__FILE__, __LINE__, 0,
-                _("catalyst_initialize error: %d"), (int)err);
+                _("catalyst_about error: %d (%s)"),
+                (int)err, _catalyst_status_to_string(err));
+    else {
+      // conduit_node_print(conduit_cpp::c_node(&params));
+      _init_version_info();
+      bft_printf(_("\n"
+                   "Catalyst initialized\n"
+                   "  %s\n"
+                   "  %s\n\n"),
+                 _catalyst_info_string_[0],
+                 _conduit_info_string_[0]);
+    }
   }
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("catalyst_initialize error: %d (%s)"),
+              (int)err, _catalyst_status_to_string(err));
 
   // Activate debug printing if needed
 
@@ -529,7 +576,8 @@ _finalize_catalyst(void)
     catalyst_status err = catalyst_finalize(_root_node);
     if (err != catalyst_status_ok) {
       bft_error(__FILE__, __LINE__, 0,
-                _("Catalyst finalization error: %d"), (int)err);
+                _("Catalyst finalization error: %d (%s)"),
+                (int)err, _catalyst_status_to_string(err));
     }
 
     _catalyst_initialized = false;
@@ -636,14 +684,14 @@ _get_vertex_order(fvm_element_t  fvm_elt_type,
  *
  * parameters:
  *   mesh      <-- pointer to nodal mesh structure
- *   mesh_grid <-- pointer to Conduit mesh node
+ *   mesh_node <-- pointer to Conduit mesh node
  *----------------------------------------------------------------------------*/
 
 static void
 _export_vertex_coords(const fvm_nodal_t   *mesh,
-                      conduit_cpp::Node   &mesh_grid)
+                      conduit_cpp::Node   &mesh_node)
 {
-  mesh_grid["coordsets/coords/type"].set_string("explicit");
+  mesh_node["coordsets/coords/type"].set_string("explicit");
 
   const double  *vertex_coords = mesh->vertex_coords;
   const cs_lnum_t  n_vertices = mesh->n_vertices;
@@ -667,15 +715,15 @@ _export_vertex_coords(const fvm_nodal_t   *mesh,
       for (cs_lnum_t j = stride; j < 3; j++)
         coords[i*stride + j] = vertex_coords[parent_vertex_id[i]*stride + j];
     }
-    mesh_grid["coordsets/coords/values/x"].set(coords,
+    mesh_node["coordsets/coords/values/x"].set(coords,
                                                n_vertices,
                                                0, // offset
                                                stride * sizeof(double));
-    mesh_grid["coordsets/coords/values/y"].set(coords,
+    mesh_node["coordsets/coords/values/y"].set(coords,
                                                n_vertices,
                                                sizeof(double),
                                                stride * sizeof(double));
-    mesh_grid["coordsets/coords/values/z"].set(coords,
+    mesh_node["coordsets/coords/values/z"].set(coords,
                                                n_vertices,
                                                2*sizeof(double),
                                                stride * sizeof(double));
@@ -683,27 +731,27 @@ _export_vertex_coords(const fvm_nodal_t   *mesh,
     CS_FREE(coords);
   }
   else { // zero-copy
-    mesh_grid["coordsets/coords/values/x"].set_external
+    mesh_node["coordsets/coords/values/x"].set_external
       (vertex_coords,
        n_vertices,
        0, // offset
        stride * sizeof(double));
 
-    mesh_grid["coordsets/coords/values/y"].set_external
+    mesh_node["coordsets/coords/values/y"].set_external
       (vertex_coords,
        n_vertices,
        sizeof(double),
        stride * sizeof(double));
 
     if (stride > 2)
-      mesh_grid["coordsets/coords/values/z"].set_external
+      mesh_node["coordsets/coords/values/z"].set_external
         (vertex_coords,
          n_vertices,
          2 * sizeof(double),
          stride * sizeof(double));
     else {
       cs_coord_t coord_z[0];
-      mesh_grid["coordsets/coords/values/z"].set
+      mesh_node["coordsets/coords/values/z"].set
         (coord_z,
          n_vertices,
          0,  // offsets
@@ -716,7 +764,7 @@ _export_vertex_coords(const fvm_nodal_t   *mesh,
   // for vertices, as Conduit pairwise adjacency sets can be
   // build directly from cs_interface_t object arrays.
 
-  mesh_grid["state/domain"].set(mesh->num_dom - 1);
+  mesh_node["state/domain"].set(mesh->num_dom - 1);
 
 }
 
@@ -874,6 +922,54 @@ _map_section_polyhedra(const fvm_nodal_section_t  *section,
 }
 
 /*----------------------------------------------------------------------------
+ * Export global ids ton Conduit.
+ *
+ * Output fields are non interlaced. Input arrays may be interlaced or not.
+ *
+ * parameters:
+ *   mesh          <-- pointer to nodal mesh structure
+ *   c_mesh        <-- Conduit mesh node
+ *----------------------------------------------------------------------------*/
+
+static void
+_export_global_vtx_ids(const fvm_nodal_t     *mesh,
+                       conduit_cpp::Node      mesh_node)
+{
+  const cs_lnum_t n_vtx = fvm_nodal_get_n_entities(mesh, 0);
+
+  cs_gnum_t *global_ids = nullptr;
+
+  CS_MALLOC(global_ids, n_vtx, cs_gnum_t);
+
+  if (_debug_print)
+    printf("Export global vertex ids %s to Conduit\n", mesh->name);
+
+  const cs_gnum_t *g_vtx_num
+    = fvm_io_num_get_global_num(mesh->global_vertex_num);
+
+  for (cs_lnum_t i = 0; i < n_vtx; i++)
+    global_ids[i] = g_vtx_num[i] - 1;
+
+  /* Now pass to Conduit */
+
+  auto field = mesh_node["fields/GlobalNodeIds"];
+
+  field["association"].set_string("vertex");
+  field["topology"].set_string("mesh");
+  field["volume_dependent"].set_string("false");  // true if extensive
+  field["values"].set(global_ids, n_vtx);
+
+  // set the metadata as scalars as follows
+  auto field_metadata = mesh_node["state/metadata/vtk_fields/GlobalNodeIds"];
+  field_metadata["attribute_type"] = "GlobalIds";
+
+  if (_debug_print)
+    field.print();  // dump local field to stdout (debug)
+
+  CS_FREE(global_ids);
+}
+
+/*----------------------------------------------------------------------------
  * Increment element and connectivity size counts for a given mesh section.
  *----------------------------------------------------------------------------*/
 
@@ -917,12 +1013,15 @@ _export_conduit_mesh(fvm_to_catalyst_t  *w,
   const int  elt_dim = fvm_nodal_get_max_entity_dim(mesh);
 
   // Create (or access) associated mesh node
-  auto mesh_grid = w->channel["data/" + cpp_mesh_name];
+  auto mesh_node = w->channel["data/" + cpp_mesh_name];
 
-  mesh_grid["state/cycle"].set(w->time_step);
-  mesh_grid["state/time"].set(w->time_value);
+  mesh_node["state/cycle"].set(w->time_step);
+  mesh_node["state/time"].set(w->time_value);
 
-  _export_vertex_coords(mesh, mesh_grid);
+  _export_vertex_coords(mesh, mesh_node);
+
+  if (cs_glob_n_ranks > 1 && _use_mpi)
+    _export_global_vtx_ids(mesh, mesh_node);
 
   /* Count used element types and compute associated sizes
      ----------------------------------------------------- */
@@ -954,10 +1053,10 @@ _export_conduit_mesh(fvm_to_catalyst_t  *w,
 
   std::string tpath = "topologies/mesh";
 
-  mesh_grid[tpath + "/coordset"].set_string("coords");
-  mesh_grid[tpath + "/type"].set_string("unstructured");
+  mesh_node[tpath + "/coordset"].set_string("coords");
+  mesh_node[tpath + "/type"].set_string("unstructured");
 
-  auto topology = mesh_grid[tpath + "/elements"];
+  auto topology = mesh_node[tpath + "/elements"];
 
   if (n_active_sections == 1) {
     for (int i = 0; i < FVM_N_ELEMENT_TYPES; i++) {
@@ -1062,7 +1161,7 @@ _export_conduit_mesh(fvm_to_catalyst_t  *w,
 
   if (n_sub_elts > 0) {
 
-    auto subelements = mesh_grid[tpath + "/subelements"];
+    auto subelements = mesh_node[tpath + "/subelements"];
 
     cs_lnum_t *sub_values, *sub_offsets;
     unsigned int *sub_shapes, *sub_elt_sizes;
@@ -1125,11 +1224,11 @@ _export_conduit_mesh(fvm_to_catalyst_t  *w,
 
   if (_debug_print) {
     printf("Export %s (%dD) to Conduit\n", mesh->name, elt_dim);
-    mesh_grid.print();  // dump local mesh to stdout (debug)
+    mesh_node.print();  // dump local mesh to stdout (debug)
 
     conduit_cpp::Node info;
 
-    conduit_cpp::Blueprint::verify("mesh", mesh_grid, info);
+    conduit_cpp::Blueprint::verify("mesh", mesh_node, info);
     info.print();
   }
 }
@@ -1151,14 +1250,14 @@ _field_c_name(int    dim,
   char   buffer[8];
 
   if (dim == 6) {
-    const char *cname[] = {"_XX", "_YY", "_ZZ", "_XY", "_XZ", "_YZ"};
-    (void)strncmp(buffer, cname[comp_id], 7);
+    const char *cname[] = {"_XX", "_YY", "_ZZ", "_XY", "_YZ", "_XZ"};
+    (void)strncpy(buffer, cname[comp_id], 7);
   }
   else if (dim == 9) {
     const char *cname[] = {"_XX", "_XY", "_XZ",
                            "_YX", "_YY", "_YZ",
                            "_ZX", "_ZY", "_ZZ"};
-    (void)strncmp(buffer, cname[comp_id], 7);
+    (void)strncpy(buffer, cname[comp_id], 7);
   }
   else
     snprintf(buffer, 7, "_%d", comp_id);
@@ -1215,7 +1314,7 @@ _export_field_values(fvm_to_catalyst_t         *w,
 
   /* loop on sections which should be appended */
 
-  auto mesh_grid = w->channel["data/" + mesh_name];
+  auto mesh_node = w->channel["data/" + mesh_name];
 
   if (elt_dim > 0) {
 
@@ -1256,24 +1355,47 @@ _export_field_values(fvm_to_catalyst_t         *w,
 
   /* Now pass to Conduit */
 
-  if (dim == 1 || dim == 3) {
+  if (dim == 1 || dim == 3 || dim == 6 || dim == 9) {
 
-    std::string sname = "fields/" + field_name;
+    std::string sname = std::string("fields/") + field_name;
+    std::string md_name = std::string("state/metadata/vtk_") + sname;
 
-    auto field = mesh_grid[sname];
+    auto field = mesh_node[sname];
 
     field["association"].set_string(s_association);
     field["topology"].set_string("mesh");
     field["volume_dependent"].set_string("false");  // true if extensive
 
-    if (dim == 1)
+    if (dim == 1) {
       field["values"].set(values, n_elts);
 
-    else if (dim == 3) {
+      auto field_metadata = mesh_node[md_name];
+      field_metadata["attribute_type"] = "Scalars";
+    }
+
+    else {
       cs_lnum_t stride = sizeof(float)*dim;
-      field["values/x"].set(values, n_elts, 0, stride);
-      field["values/y"].set(values, n_elts, sizeof(float), stride);
-      field["values/z"].set(values, n_elts, 2*sizeof(float), stride);
+      if (dim == 3) {
+        for (int i = 0; i < dim; i++)
+          field[_comp_key_3[i]].set(values, n_elts, i*sizeof(float), stride);
+
+        auto field_metadata = mesh_node[md_name];
+        field_metadata["attribute_type"] = "Vectors";
+      }
+      else if (dim == 6) {
+        for (int i = 0; i < dim; i++)
+          field[_comp_key_6[i]].set(values, n_elts, i*sizeof(float), stride);
+
+        auto field_metadata = mesh_node[md_name];
+        field_metadata["attribute_type"] = "Tensors";
+      }
+      else if (dim == 9) {
+        for (int i = 0; i < dim; i++)
+          field[_comp_key_9[i]].set(values, n_elts, i*sizeof(float), stride);
+
+        auto field_metadata = mesh_node[md_name];
+        field_metadata["attribute_type"] = "Tensors";
+      }
     }
 
     if (_debug_print)
@@ -1286,8 +1408,9 @@ _export_field_values(fvm_to_catalyst_t         *w,
     for (int comp_id = 0; comp_id < dim; comp_id++) {
 
       std::string sname = "fields/" + field_name + _field_c_name(dim, comp_id);
+      std::string md_name = std::string("state/metadata/vtk_") + sname;
 
-      auto field = mesh_grid[sname];
+      auto field = mesh_node[sname];
 
       field["association"].set_string("element");
       field["topology"].set_string("mesh");
@@ -1296,30 +1419,13 @@ _export_field_values(fvm_to_catalyst_t         *w,
       cs_lnum_t stride = sizeof(float)*dim;
       field["values"].set(values, n_elts, comp_id*sizeof(float), stride);
 
-      if (_debug_print)
-        field.print();  // dump local field to stdout (debug)
-
-      /* Store symmetric tensors as non-symmetric, as ParaView/VTK
-         did not seem to handle non-symmetric ones last time we checked. */
-
-      if (dim == 6 && comp_id >= 3) {
-
-        int nsym_comp_ids[] = {0, 4, 8, 3, 6, 7};
-        sname = "fields/" + field_name
-                + _field_c_name(9, nsym_comp_ids[comp_id]);
-
-        field = mesh_grid[sname];
-        field["association"].set_string("element");
-        field["topology"].set_string("mesh");
-        field["volume_dependent"].set_string("false");  // true if extensive
-        field["values"].set(values, n_elts);
-      }
+      auto field_metadata = mesh_node[md_name];
+      field_metadata["attribute_type"] = "Scalars";
 
       if (_debug_print)
         field.print();  // dump local field to stdout (debug)
 
     }
-
   }
 
   CS_FREE(values);
@@ -1508,7 +1614,8 @@ fvm_to_catalyst2_init_writer(const char             *name,
   if (_n_scripts < 1)
     _add_dir_scripts(".");
 
-  _init_catalyst();
+  if (_n_scripts > 0)
+    _init_catalyst();
 
   // Initialize state for this writer
 
@@ -1662,9 +1769,9 @@ fvm_to_catalyst2_export_field(void                  *this_writer_p,
   /*----------------*/
 
   // Create (or access) associated mesh node
-  auto mesh_grid = w->channel["data/" + cpp_mesh_name];
+  auto mesh_node = w->channel["data/" + cpp_mesh_name];
 
-  if (mesh_grid.number_of_children() == 0)
+  if (mesh_node.number_of_children() == 0)
     fvm_to_catalyst2_export_nodal(w, mesh);
 
   char _name[128];
@@ -1740,8 +1847,8 @@ fvm_to_catalyst2_export_field(void                  *this_writer_p,
 
   fvm_to_catalyst2_set_mesh_time(w, time_step, time_value);
 
-  mesh_grid["state/cycle"].set(w->time_step);
-  mesh_grid["state/time"].set(w->time_value);
+  mesh_node["state/cycle"].set(w->time_step);
+  mesh_node["state/time"].set(w->time_value);
 
   w->modified = true;
 }
@@ -1773,6 +1880,7 @@ fvm_to_catalyst2_flush(void  *this_writer_p)
   state["time"].set(w->time_value);
 
   if (_debug_print) {
+    w->channel["data"].print();
     conduit_cpp::Node info;
     conduit_cpp::Blueprint::verify("execute", exec_params, info);
     info.print();
@@ -1781,7 +1889,8 @@ fvm_to_catalyst2_flush(void  *this_writer_p)
   catalyst_status err = catalyst_execute(params);
   if (err != catalyst_status_ok) {
     bft_error(__FILE__, __LINE__, 0,
-              _("catalyst_execute error: %d"), (int)err);
+              _("catalyst_execute error: %d (%s)"),
+              (int)err, _catalyst_status_to_string(err));
   }
 
   w->modified = false;

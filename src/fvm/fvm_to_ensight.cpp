@@ -142,8 +142,8 @@ static const char  *_ensight_type_name[FVM_N_ELEMENT_TYPES] = {"bar2",
                                                                "hexa8",
                                                                "nfaced"};
 
-/* for symetric tensors, code_saturne assumes xx, yy, zz, xy, yz, xy,
-   where EnSight assumes xx, yy, zz, xy, xy, yz, so permutation is required */
+/* for symetric tensors, code_saturne assumes xx, yy, zz, xy, yz, xz,
+   where EnSight assumes xx, yy, zz, xy, xz, yz, so permutation is required */
 
 static const int _ensight_c_order_6[6] = {0, 1, 2, 3, 5, 4};
 
