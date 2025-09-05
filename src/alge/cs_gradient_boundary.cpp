@@ -1063,14 +1063,12 @@ cs_gradient_boundary_iprime_lsq_strided
   const cs_lnum_t *restrict cell_hb_faces = ma->cell_hb_faces;
 
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
-
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_real_t *restrict b_dist = fvq->b_dist;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
-#if (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
-  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
-#elif (B_DIRECTION_LSQ == CS_IF_LSQ)
+#if (B_DIRECTION_LSQ == CS_IF_LSQ)
   const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
 #endif
 
