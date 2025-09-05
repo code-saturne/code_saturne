@@ -3844,7 +3844,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
                                                     cs_glob_time_step);
         if (!need_solve) {
           if (f->dim == 1) {
-            cs_boundary_conditions_update_bc_coeff_face_values
+            cs_boundary_conditions_update_bc_coeff_face_values<true,true>
               (ctx, f, eqp,
                false, nullptr, // hyd_p_flag, f_ext
                nullptr, // visel
@@ -4557,7 +4557,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
     }
   }
   else if (need_compute_bc_grad)
-    _compute_bc_grad(ctx, hyd_p_flag, bc_coeffs, val_f, val_ip_grad);
+    _compute_bc_grad(ctx, hyd_p_flag, bc_coeffs, val_ip_grad, val_f);
 
   else if (need_compute_bc_flux) {
     if (need_flux_reconstruction)
@@ -4600,6 +4600,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
  */
 /*----------------------------------------------------------------------------*/
 
+template <bool need_compute_bc_grad, bool need_compute_bc_flux>
 void
 cs_boundary_conditions_update_bc_coeff_face_values
   (cs_dispatch_context        &ctx,
@@ -4634,19 +4635,52 @@ cs_boundary_conditions_update_bc_coeff_face_values
   cs_real_t *val_f = f->bc_coeffs->val_f;
   cs_real_t *flux = f->bc_coeffs->val_f_d;
 
-  cs_boundary_conditions_update_bc_coeff_face_values<true, true>
-    (ctx,
-     f, f->bc_coeffs,
-     1,  // inc,
-     eqp,
-     hyd_p_flag,
-     f_ext,
-     nullptr, // visel
-     viscel,
-     weighb,
-     pvar,
-     val_f,
-     flux);
+  if (need_compute_bc_grad && need_compute_bc_flux)
+    cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+      (ctx,
+       f, f->bc_coeffs,
+       1,  // inc,
+       eqp,
+       hyd_p_flag,
+       f_ext,
+       nullptr, // visel
+       viscel,
+       weighb,
+       pvar,
+       val_f,
+       flux);
+  else if (need_compute_bc_grad && !need_compute_bc_flux)
+    cs_boundary_conditions_update_bc_coeff_face_values<true, false>
+      (ctx,
+       f, f->bc_coeffs,
+       1,  // inc,
+       eqp,
+       hyd_p_flag,
+       f_ext,
+       nullptr, // visel
+       viscel,
+       weighb,
+       pvar,
+       val_f,
+       flux);
+  else if (!need_compute_bc_grad && need_compute_bc_flux)
+    cs_boundary_conditions_update_bc_coeff_face_values<false, true>
+      (ctx,
+       f, f->bc_coeffs,
+       1,  // inc,
+       eqp,
+       hyd_p_flag,
+       f_ext,
+       nullptr, // visel
+       viscel,
+       weighb,
+       pvar,
+       val_f,
+       flux);
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _(" %s: All template parameters can not be false."),
+              __func__);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5017,6 +5051,39 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
   (cs_dispatch_context  &ctx,
    cs_field_t           *f,
    const cs_real_t       pvar[][6]);
+
+template void
+cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+  (cs_dispatch_context        &ctx,
+   cs_field_t                 *f,
+   const cs_equation_param_t  *eqp,
+   bool                        hyd_p_flag,
+   cs_real_t                   f_ext[][3],
+   cs_real_t                   viscel[][6],
+   const cs_real_t             weighb[],
+   const cs_real_t             pvar[]);
+
+template void
+cs_boundary_conditions_update_bc_coeff_face_values<true, false>
+  (cs_dispatch_context        &ctx,
+   cs_field_t                 *f,
+   const cs_equation_param_t  *eqp,
+   bool                        hyd_p_flag,
+   cs_real_t                   f_ext[][3],
+   cs_real_t                   viscel[][6],
+   const cs_real_t             weighb[],
+   const cs_real_t             pvar[]);
+
+template void
+cs_boundary_conditions_update_bc_coeff_face_values<false, true>
+  (cs_dispatch_context        &ctx,
+   cs_field_t                 *f,
+   const cs_equation_param_t  *eqp,
+   bool                        hyd_p_flag,
+   cs_real_t                   f_ext[][3],
+   cs_real_t                   viscel[][6],
+   const cs_real_t             weighb[],
+   const cs_real_t             pvar[]);
 
 template void
 cs_boundary_conditions_update_bc_coeff_face_values<true, true>

@@ -1000,8 +1000,26 @@ cs_solve_all()
                                                                  cell_cen[c_id],
                                                                  gxyz);
     });
-    ctx.wait();
 
+    /* Update boundary condition for pressure */
+    cs_field_t *f_frcxt = cs_field_by_name_try("volume_forces");
+    cs_real_3_t *frcxt = nullptr;
+    if (f_frcxt != nullptr)
+      frcxt = (cs_real_3_t *)cs_field_by_name_try("volume_forces")->val;
+
+    /* Update pressure gradient face value for cs_field_gradient_potential
+       called in cs_pressure_correction */
+    cs_boundary_conditions_update_bc_coeff_face_values<true,false>
+      (ctx,
+       CS_F_(p),
+       eqp_p,
+       cs_glob_velocity_pressure_param->iphydr,
+       frcxt,
+       nullptr, //cpro_vitenp
+       nullptr, //weighbtp
+       cvar_pr);
+
+    ctx.wait();
   }
 
   /* Halo synchronization (only variables require this) */
@@ -1021,7 +1039,7 @@ cs_solve_all()
     if (first_pass) {
       if (   cs_glob_velocity_pressure_param->iphydr == 1
           && cs_field_by_name_try("volume_forces") != nullptr) {
-        cs_real_t *frcxt = cs_field_by_name_try("volume_forces")->val;
+        cs_real_t *frcxt = cs_field_by_name("volume_forces")->val;
         cs_halo_sync_var_strided(m->halo, CS_HALO_STANDARD, frcxt, 3);
         cs_halo_perio_sync_var_vect(m->halo,  CS_HALO_STANDARD, frcxt, 3);
       }

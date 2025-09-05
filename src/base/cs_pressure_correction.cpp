@@ -514,7 +514,7 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
  *
  * \remark:
  * - an iterative process is used to solve the Poisson equation.
- * - if the arak coefficient is set to 1, the the Rhie & Chow filter is
+ * - if the arak coefficient is set to 1, the Rhie & Chow filter is
  *   activated.
  *
  * Please refer to the
@@ -662,6 +662,9 @@ _pressure_correction_fv(int                   iterns,
   cs_real_6_t *vitenp = nullptr;
   cs_real_t *taui = nullptr, *taub = nullptr;
 
+  cs_real_6_t *cpro_vitenp = nullptr;
+  cs_real_t *weighbtp = nullptr;
+
   cs_field_t  *f_hp = cs_field_by_name_try("hydrostatic_pressure");
   if (f_hp != nullptr) {
     cvar_hydro_pres = f_hp->vals[0];
@@ -775,7 +778,7 @@ _pressure_correction_fv(int                   iterns,
       crom = cpro_rho_tc;
 
       ctx_c.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        cpro_rho_tc[c_id] =  theta * cpro_rho_mass[c_id]
+        cpro_rho_tc[c_id] =   theta * cpro_rho_mass[c_id]
                             + one_m_theta * croma[c_id];
       });
 
@@ -1742,7 +1745,6 @@ _pressure_correction_fv(int                   iterns,
     /* Tensor diffusivity */
     else if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION || vp_param->rcfact == 1) {
 
-      cs_real_6_t *cpro_vitenp;
       CS_MALLOC_HD(cpro_vitenp, n_cells_ext, cs_real_6_t, cs_alloc_mode);
 
       if (vof_parameters->vof_model > 0) {
@@ -1762,7 +1764,6 @@ _pressure_correction_fv(int                   iterns,
       ctx.wait();
 
       cs_real_2_t *weighftp = nullptr;
-      cs_real_t *weighbtp = nullptr;
       CS_MALLOC_HD(weighftp, n_i_faces, cs_real_2_t, cs_alloc_mode);
       CS_MALLOC_HD(weighbtp, n_b_faces, cs_real_t, cs_alloc_mode);
 
@@ -1849,9 +1850,7 @@ _pressure_correction_fv(int                   iterns,
                                       weighftp,
                                       imasfl, bmasfl);
 
-      CS_FREE_HD(cpro_vitenp);
       CS_FREE_HD(weighftp);
-      CS_FREE_HD(weighbtp);
     }
 
     CS_FREE_HD(ipro_visc);
@@ -2954,20 +2953,36 @@ _pressure_correction_fv(int                   iterns,
   }
 
   /* Update boundary condition for pressure */
-  cs_boundary_conditions_update_bc_coeff_face_values
+  cs_real_6_t *viten_p = nullptr;
+  cs_real_t *weighb_p = nullptr;
+
+  if (vitenp != nullptr)
+    viten_p = vitenp;
+  if (cpro_vitenp != nullptr)
+    viten_p = cpro_vitenp;
+
+  if (weighb != nullptr)
+    weighb_p = weighb;
+  if (cpro_vitenp != nullptr)
+    weighb_p = weighbtp;
+
+  cs_boundary_conditions_update_bc_coeff_face_values<true,true>
     (ctx,
      CS_F_(p),
      eqp_p,
      vp_param->iphydr,
      frcxt,
-     nullptr, // viscel for tensor
-     nullptr, // weighb for tensor
+     viten_p,
+     weighb_p,
      cvar_pr);
 
   ctx.wait();
   ctx_c.wait();
 
   /*  Free memory */
+  CS_FREE_HD(cpro_vitenp);
+  CS_FREE_HD(weighbtp);
+
   CS_FREE_HD(taui);
   CS_FREE_HD(taub);
   CS_FREE_HD(wrk2);
@@ -3633,7 +3648,7 @@ cs_pressure_correction_cdo_destroy_all(void)
  *
  * \remark:
  * - an iterative process is used to solve the Poisson equation.
- * - if the arak coefficient is set to 1, the the Rhie & Chow filter is
+ * - if the arak coefficient is set to 1, the Rhie & Chow filter is
  *   activated.
  *
  * Please refer to the

@@ -2086,7 +2086,7 @@ _add_hb_faces_cocg_lsq_cell(cs_lnum_t         c_id,
   }
 }
 
-#if (b_direction_lsq == CS_IPRIME_F_LSQ)
+#if (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
 /*----------------------------------------------------------------------------
  * Add compute 3x3 cocg for least squares algorithm contribution from hidden
  * faces to a single cell when boundary face value for gradient (val_f) is
@@ -2134,7 +2134,7 @@ _add_hb_faces_cocg_lsq_cell_iprime_f(cs_lnum_t         c_id,
     cocg[5] += dddij[0]*dddij[2];
   }
 }
-#elif (b_direction_lsq == CS_IF_LSQ)
+#elif (B_DIRECTION_LSQ == CS_IF_LSQ)
 /*----------------------------------------------------------------------------
  * Add compute 3x3 cocg for least squares algorithm contribution from hidden
  * faces to a single cell when boundary face value for gradient (val_f) is
@@ -2203,7 +2203,7 @@ _add_hb_faces_cell_cocg_lsq(const cs_mesh_t              *m,
   const cs_lnum_t  *restrict cell_hb_faces_idx = ma->cell_hb_faces_idx;
   const cs_lnum_t  *restrict cell_hb_faces = ma->cell_hb_faces;
 
-#if (b_direction_lsq == CS_IPRIME_F_LSQ)
+#if (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
 
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
@@ -2218,7 +2218,7 @@ _add_hb_faces_cell_cocg_lsq(const cs_mesh_t              *m,
                                          b_dist,
                                          cocg[c_id]);
   });
-#elif (b_direction_lsq == CS_IF_LSQ)
+#elif (B_DIRECTION_LSQ == CS_IF_LSQ)
 
   const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
@@ -2263,9 +2263,9 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
 
   cs_cocg_6_t  *restrict cocgb = nullptr, *restrict cocg = nullptr;
 
-#if (b_direction_lsq == CS_IPRIME_F_LSQ)
+#if (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
-#elif (b_direction_lsq == CS_IF_LSQ)
+#elif (B_DIRECTION_LSQ == CS_IF_LSQ)
   const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
 #endif
 
@@ -2379,11 +2379,11 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
 
       cs_real_t dsij[3];
 
-#if (b_direction_lsq == CS_IPRIME_F_LSQ)
+#if (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
       for (cs_lnum_t ll = 0; ll < 3; ll++)
         dsij[ll] =   b_face_u_normal[f_id][ll]
-                  + unddij*diipb[f_id][ll];
-#elif (b_direction_lsq == CS_IF_LSQ)
+                   + unddij*diipb[f_id][ll];
+#elif (B_DIRECTION_LSQ == CS_IF_LSQ)
       for (cs_lnum_t ll = 0; ll < 3; ll++)
         dsij[ll] = b_face_cog[f_id][ll] - cell_cen[c_id][ll];
 
@@ -2544,9 +2544,9 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_real_t *restrict weight = fvq->weight;
 
-#if (b_direction_lsq == CS_IPRIME_F_LSQ)
+#if (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
-#elif (b_direction_lsq == CS_IF_LSQ)
+#elif (B_DIRECTION_LSQ == CS_IF_LSQ)
   const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
 #endif
 
@@ -2695,14 +2695,14 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
     cs_real_t ddif;
     cs_real_t dif[3];
 
-#if (b_direction_lsq == CS_IPRIME_F_LSQ)
+#if (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
     ddif = 1. / b_dist[f_id];
 
     for (cs_lnum_t ll = 0; ll < 3; ll++)
       dif[ll] =   b_face_u_normal[f_id][ll]
                 + ddif*diipb[f_id][ll];
 
-#elif (b_direction_lsq == CS_IF_LSQ)
+#elif (B_DIRECTION_LSQ == CS_IF_LSQ)
     for (cs_lnum_t ll = 0; ll < 3; ll++)
       dif[ll] = b_face_cog[f_id][ll] - cell_cen[c_id][ll];
 
@@ -3043,14 +3043,14 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
                                                            b_face_cog[f_id],
                                                            f_ext[c_id]);
 
-#if (b_direction_lsq == CS_IPRIME_F_LSQ)
+#if (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
     ddif = 1. / b_dist[f_id];
 
     for (cs_lnum_t ll = 0; ll < 3; ll++)
       dif[ll] =   b_face_u_normal[f_id][ll]
                 + ddif*diipb[f_id][ll];
 
-#elif (b_direction_lsq == CS_IF_LSQ) {
+#elif (B_DIRECTION_LSQ == CS_IF_LSQ)
     for (cs_lnum_t ll = 0; ll < 3; ll++)
       dif[ll] = b_face_cog[f_id][ll] - cell_cen[c_id][ll];
 
@@ -3414,14 +3414,14 @@ _lsq_scalar_gradient_hyd_p_gather
                                                              b_face_cog[ii],
                                                              f_ext[ii]);
 
-#if (b_direction_lsq == CS_IPRIME_F_LSQ)
+#if (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
       ddif = 1. / b_dist[f_id];
 
       for (cs_lnum_t ll = 0; ll < 3; ll++)
         dif[ll] =   b_face_u_normal[f_id][ll]
                   + ddif*diipb[f_id][ll];
 
-#elif (b_direction_lsq == CS_IF_LSQ)
+#elif (B_DIRECTION_LSQ == CS_IF_LSQ)
       for (cs_lnum_t ll = 0; ll < 3; ll++)
         dif[ll] = b_face_cog[f_id][ll] - cell_cen[ii][ll];
 
@@ -3517,9 +3517,9 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_real_t *restrict weight = fvq->weight;
 
-#if (b_direction_lsq == CS_IPRIME_F_LSQ)
+#if (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
-#elif (b_direction_lsq == CS_IF_LSQ)
+#elif (B_DIRECTION_LSQ == CS_IF_LSQ)
   const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
 #endif
 
@@ -3616,7 +3616,7 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
       cs_real_t ddif;
       cs_real_t dif[3];
 
-#if (b_direction_lsq == CS_IPRIME_F_LSQ)
+#if (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
       ddif = 1. / b_dist[f_id];
 
       for (cs_lnum_t ll = 0; ll < 3; ll++)
@@ -3632,7 +3632,7 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
       cocg[4] += dif[1]*dif[2];
       cocg[5] += dif[0]*dif[2];
 
-#elif (b_direction_lsq == CS_IF_LSQ)
+#elif (B_DIRECTION_LSQ == CS_IF_LSQ)
       for (cs_lnum_t ll = 0; ll < 3; ll++)
         dif[ll] = b_face_cog[f_id][ll] - cell_cen[ii][ll];
 
@@ -5932,10 +5932,14 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
 
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
   const cs_real_t *restrict weight = fvq->weight;
-  const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
-  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_t *restrict b_dist = fvq->b_dist;
   const cs_real_3_t *restrict diipb = fvq->diipb;
+
+#if (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
+#elif (B_DIRECTION_LSQ == CS_IF_LSQ)
+  const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
+#endif
 
   std::chrono::high_resolution_clock::time_point t_start, t_init, t_i_faces, \
     t_ext_n, t_b_faces, t_gradient, t_b_correction, t_halo, t_stop;
@@ -6227,35 +6231,33 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
       cs_lnum_t f_id = cell_b_faces[i];
       cs_real_t dif[3];
 
-      if constexpr (b_direction_lsq == CS_IF_LSQ) {
+#if (B_DIRECTION_LSQ == CS_IF_LSQ)
+      for (cs_lnum_t ll = 0; ll < 3; ll++)
+        dif[ll] = b_face_cog[f_id][ll] - cell_cen[c_id][ll];
+
+      cs_real_t ddif = 1. / cs_math_3_square_norm(dif);
+
+      for (cs_lnum_t kk = 0; kk < stride; kk++) {
+        cs_real_t pfac = (val_f[f_id][kk] - pvar[c_id][kk]) * ddif;
+
         for (cs_lnum_t ll = 0; ll < 3; ll++)
-          dif[ll] = b_face_cog[f_id][ll] - cell_cen[c_id][ll];
-
-        cs_real_t ddif = 1. / cs_math_3_square_norm(dif);
-
-        for (cs_lnum_t kk = 0; kk < stride; kk++) {
-          cs_real_t pfac = (val_f[f_id][kk] - pvar[c_id][kk]) * ddif;
-
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            rhs[c_id][kk][ll] += dif[ll] * pfac;
-        }
+          rhs[c_id][kk][ll] += dif[ll] * pfac;
       }
-      else if constexpr (b_direction_lsq == CS_IPRIME_F_LSQ) {
-        cs_real_t unddij = 1. / b_dist[f_id];
+#elif (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
+      cs_real_t unddij = 1. / b_dist[f_id];
 
-        for (cs_lnum_t ll = 0; ll < 3; ll++) {
-          dif[ll] =   b_face_u_normal[f_id][ll]
-                   + unddij * diipb[f_id][ll];
-        }
-
-        for (cs_lnum_t kk = 0; kk < stride; kk++) {
-          cs_real_t pfac = (val_f[f_id][kk] - pvar[c_id][kk]) * unddij;
-
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            rhs[c_id][kk][ll] += dif[ll] * pfac;
-        }
+      for (cs_lnum_t ll = 0; ll < 3; ll++) {
+        dif[ll] =   b_face_u_normal[f_id][ll]
+                  + unddij * diipb[f_id][ll];
       }
 
+      for (cs_lnum_t kk = 0; kk < stride; kk++) {
+        cs_real_t pfac = (val_f[f_id][kk] - pvar[c_id][kk]) * unddij;
+
+        for (cs_lnum_t ll = 0; ll < 3; ll++)
+          rhs[c_id][kk][ll] += dif[ll] * pfac;
+      }
+#endif
     } /* loop on faces */
 
   } /* loop on boundary cells */

@@ -113,35 +113,6 @@
  * Private function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Inverse a 3x3 symmetric matrix (with symmetric storage)
- *         in place, using Cramer's rule
- *
- * \param[in, out]  a   matrix to inverse
- */
-/*----------------------------------------------------------------------------*/
-
-__device__ static void
-_math_6_inv_cramer_sym_in_place_cuda(cs_cocg_t in[6])
-{
-  auto in00 = in[1]*in[2] - in[4]*in[4];
-  auto in01 = in[4]*in[5] - in[3]*in[2];
-  auto in02 = in[3]*in[4] - in[1]*in[5];
-  auto in11 = in[0]*in[2] - in[5]*in[5];
-  auto in12 = in[3]*in[5] - in[0]*in[4];
-  auto in22 = in[0]*in[1] - in[3]*in[3];
-
-  double det_inv = 1. / (in[0]*in00 + in[3]*in01 + in[5]*in02);
-
-  in[0] = in00 * det_inv;
-  in[1] = in11 * det_inv;
-  in[2] = in22 * det_inv;
-  in[3] = in01 * det_inv;
-  in[4] = in12 * det_inv;
-  in[5] = in02 * det_inv;
-}
-
 /*----------------------------------------------------------------------------
  * Recompute cocg at boundaries, using saved cocgb
  *----------------------------------------------------------------------------*/
@@ -306,14 +277,14 @@ _compute_rhsv_lsq_s_b_face(cs_lnum_t          n_b_cells,
     cs_real_t ddif;
     cs_real_t dif[3];
 
-#if (b_direction_lsq == CS_IPRIME_F_LSQ)
+#if (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
     ddif = 1. / b_dist[f_id];
 
     dif[0] = b_face_u_normal[f_id][0] + ddif * diipb[f_id][0];
     dif[1] = b_face_u_normal[f_id][1] + ddif * diipb[f_id][1];
     dif[2] = b_face_u_normal[f_id][2] + ddif * diipb[f_id][2];
 
-#elif (b_direction_lsq == CS_IF_LSQ)
+#elif (B_DIRECTION_LSQ == CS_IF_LSQ)
 
     dif[0] = b_face_cog[f_id][0] - cell_cen[c_id][0];
     dif[1] = b_face_cog[f_id][1] - cell_cen[c_id][1];
@@ -480,6 +451,8 @@ _compute_rhs_lsq_strided_b_face(cs_lnum_t             n_b_cells,
                                 const cs_lnum_t      *restrict b_cells,
                                 const cs_real_3_t    *restrict cell_cen,
                                 const cs_real_3_t    *restrict b_face_cog,
+                                const cs_real_3_t    *restrict b_face_u_normal,
+                                const cs_real_3_t    *restrict diipb,
                                 const cs_real_t      *restrict b_dist,
                                 const cs_real_t     (*restrict val_f)[stride],
                                 const cs_real_t     (*restrict pvar)[stride],
@@ -494,9 +467,6 @@ _compute_rhs_lsq_strided_b_face(cs_lnum_t             n_b_cells,
   }
 
   cs_lnum_t c_id = b_cells[c_idx];
-
-  for (cs_lnum_t ll = 0; ll < 6; ll++)
-    cocg[c_id][ll] = cocgb[c_idx][ll];
 
   cs_lnum_t s_id = cell_b_faces_idx[c_id];
   cs_lnum_t e_id = cell_b_faces_idx[c_id + 1];
@@ -516,32 +486,38 @@ _compute_rhs_lsq_strided_b_face(cs_lnum_t             n_b_cells,
     cs_lnum_t f_id = cell_b_faces[idx];
 
     cs_real_t dif[3];
-    for (cs_lnum_t ll = 0; ll < 3; ll++)
-      dif[ll] = b_face_cog[f_id][ll] - cell_cen[c_id][ll];
 
-    cs_real_t ddif = 1. / cs_math_3_square_norm_cuda(dif);
-
-    cocg[c_id][0] += dif[0]*dif[0]*ddif;
-    cocg[c_id][1] += dif[1]*dif[1]*ddif;
-    cocg[c_id][2] += dif[2]*dif[2]*ddif;
-    cocg[c_id][3] += dif[0]*dif[1]*ddif;
-    cocg[c_id][4] += dif[1]*dif[2]*ddif;
-    cocg[c_id][5] += dif[0]*dif[2]*ddif;
-
-    for (cs_lnum_t kk = 0; kk < stride; kk++) {
-
-      cs_real_t pfac = (val_f[f_id][kk] - pvar_c[kk]) * ddif;
-
+#if (B_DIRECTION_LSQ == CS_IF_LSQ)
       for (cs_lnum_t ll = 0; ll < 3; ll++)
-        _rhs[kk][ll] += dif[ll] * pfac;
-    }
+        dif[ll] = b_face_cog[f_id][ll] - cell_cen[c_id][ll];
 
+      cs_real_t ddif = 1. / cs_math_3_square_norm(dif);
+
+      for (cs_lnum_t kk = 0; kk < stride; kk++) {
+        cs_real_t pfac = (val_f[f_id][kk] - pvar[c_id][kk]) * ddif;
+
+        for (cs_lnum_t ll = 0; ll < 3; ll++)
+          rhs[c_id][kk][ll] += dif[ll] * pfac;
+      }
+#elif (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
+      cs_real_t unddij = 1. / b_dist[f_id];
+
+      for (cs_lnum_t ll = 0; ll < 3; ll++) {
+        dif[ll] =   b_face_u_normal[f_id][ll]
+                  + unddij * diipb[f_id][ll];
+      }
+
+      for (cs_lnum_t kk = 0; kk < stride; kk++) {
+        cs_real_t pfac = (val_f[f_id][kk] - pvar[c_id][kk]) * unddij;
+
+        for (cs_lnum_t ll = 0; ll < 3; ll++)
+          rhs[c_id][kk][ll] += dif[ll] * pfac;
+      }
+#endif
   } /* loop on boundary faces */
 
-  _math_6_inv_cramer_sym_in_place_cuda(cocg[c_id]);
-
-  for (cs_lnum_t i = 0; i < stride; i++){
-    for (cs_lnum_t j = 0; j < 3; j++){
+  for (cs_lnum_t i = 0; i < stride; i++) {
+    for (cs_lnum_t j = 0; j < 3; j++) {
       rhs[c_id][i][j] = _rhs[i][j];
     }
   }
@@ -1303,6 +1279,8 @@ cs_gradient_strided_lsq_cuda
     = cs_get_device_ptr_const_pf(fvq->b_dist);
   const cs_real_3_t *restrict b_face_cog
     = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->b_face_cog);
+  const cs_real_3_t *restrict b_face_u_normal
+    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->b_face_u_normal);
   const cs_rreal_3_t *restrict diipb
     = cs_get_device_ptr_const_pf(fvq->diipb);
 
@@ -1354,6 +1332,8 @@ cs_gradient_strided_lsq_cuda
        b_cells,
        cell_cen,
        b_face_cog,
+       b_face_u_normal,
+       diipb,
        b_dist,
        val_f_d,
        pvar_d,

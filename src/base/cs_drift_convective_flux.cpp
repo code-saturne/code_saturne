@@ -557,6 +557,8 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
                                   w1,
                                   flumas, flumab);
 
+      cs_clear_bc_coeffs_solve(bc_coeffs_solve);
+
       /* TODO add extradiagonal part */
 
     } /* End turbophoresis or thermophoresis */

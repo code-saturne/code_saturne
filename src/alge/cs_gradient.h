@@ -53,19 +53,10 @@ BEGIN_C_DECLS
  * Gradient reconstruction method
  *----------------------------------------------------------------------------*/
 
-typedef enum {
+#define CS_IPRIME_F_LSQ 0
+#define CS_IF_LSQ 1
 
-  CS_IPRIME_F_LSQ = 0,
-  CS_IF_LSQ = 1
-
-} cs_b_direction_gradient_lsq_t;
-
-#ifdef __cplusplus
-
-constexpr cs_b_direction_gradient_lsq_t b_direction_lsq = CS_IPRIME_F_LSQ;
-//constexpr cs_b_direction_gradient_lsq_t b_direction_lsq = CS_IF_LSQ;
-
-#endif /* cplusplus */
+#define B_DIRECTION_LSQ CS_IPRIME_F_LSQ //CS_IF_LSQ
 
 typedef enum {
 

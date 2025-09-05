@@ -228,10 +228,17 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
   const cs_lnum_t *restrict cell_b_faces = ma->cell_b_faces;
   const cs_lnum_t *restrict cell_hb_faces_idx = ma->cell_hb_faces_idx;
   const cs_lnum_t *restrict cell_hb_faces = ma->cell_hb_faces;
+  const cs_lnum_t *restrict cell_i_faces = ma->cell_i_faces;
+
+  if (cell_i_faces == nullptr && hyd_p_flag) {
+    cs_mesh_adjacencies_update_cell_i_faces();
+    cell_i_faces = ma->cell_i_faces;
+  }
 
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
   const cs_real_t *restrict b_dist = fvq->b_dist;
+  const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
   const auto *restrict diipb = fvq->diipb;
 
@@ -239,9 +246,13 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
   const cs_real_t *bc_coeff_b = bc_coeffs->b;
 
   /* Additional terms due to porosity */
-  cs_field_t *f_b_poro_duq = cs_field_by_name_try("b_poro_duq");
+  cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
+  cs_real_t *i_poro_duq_0 = nullptr;
+  cs_real_t *i_poro_duq_1 = nullptr;
   cs_real_t *b_poro_duq = nullptr;
-  if (f_b_poro_duq != nullptr) {
+  if (f_i_poro_duq_0 != nullptr) {
+    i_poro_duq_0 = f_i_poro_duq_0->val;
+    i_poro_duq_1 = cs_field_by_name("i_poro_duq_1")->val;
     b_poro_duq = cs_field_by_name("b_poro_duq")->val;
   }
 
@@ -314,7 +325,26 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
           var_min = cs::min(var_min, var_j);
           var_max = cs::max(var_max, var_j);
 
-          cs_real_t pfac = (var_j - var_i) * ddc;
+          cs_real_t pfac = var_j - var_i;
+
+          if (hyd_p_flag) {
+            cs_lnum_t f_id_ij = cell_i_faces[i];
+
+            cs_real_t dot_i = cs_math_3_distance_dot_product(i_face_cog[f_id_ij],
+                                                             cell_cen[c_id],
+                                                             f_ext[c_id]);
+            cs_real_t dot_j = cs_math_3_distance_dot_product(i_face_cog[f_id_ij],
+                                                             cell_cen[c_id1],
+                                                             f_ext[c_id1]);
+
+            if (b_poro_duq != nullptr)
+              pfac +=   (dot_i + i_poro_duq_0[f_id_ij])
+                      - (dot_j + i_poro_duq_1[f_id_ij]);
+            else
+              pfac += dot_i - dot_j;
+          }
+
+          pfac *= ddc;
           for (cs_lnum_t ll = 0; ll < 3; ll++)
             rhs[ll] += dc[ll] * pfac;
 
@@ -346,7 +376,27 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
           var_min = cs::min(var_min, var_j);
           var_max = cs::max(var_max, var_j);
 
-          cs_real_t pfac = (var_j - var_i) * ddc;
+          cs_real_t pfac = (var_j - var_i);
+
+          if (hyd_p_flag) {
+            cs_lnum_t f_id_ij = cell_i_faces[i];
+
+            cs_real_t dot_i = cs_math_3_distance_dot_product(i_face_cog[f_id_ij],
+                                                             cell_cen[c_id],
+                                                             f_ext[c_id]);
+            cs_real_t dot_j = cs_math_3_distance_dot_product(i_face_cog[f_id_ij],
+                                                             cell_cen[c_id1],
+                                                             f_ext[c_id1]);
+
+            if (b_poro_duq != nullptr)
+              pfac +=   (dot_i + i_poro_duq_0[f_id_ij])
+                      - (dot_j + i_poro_duq_1[f_id_ij]);
+            else
+              pfac += dot_i - dot_j;
+          }
+
+          pfac *= ddc;
+
           for (cs_lnum_t ll = 0; ll < 3; ll++)
             rhs[ll] += dc[ll] * pfac * _weight;
 
@@ -384,7 +434,7 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
       cs_real_t dif[3];
       cs_real_t ddif;
 
-#if (b_direction_lsq == CS_IPRIME_F_LSQ)
+#if (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
       ddif = 1. / b_dist[c_f_id];
       cs_real_t umcbdd = (1. - b) * ddif;
 
@@ -392,7 +442,7 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
         dif[ll] =   b_face_u_normal[c_f_id][ll]
                   + umcbdd * diipb[c_f_id][ll];
       }
-#elif (b_direction_lsq == CS_IF_LSQ)
+#elif (B_DIRECTION_LSQ == CS_IF_LSQ)
       cs_real_t vec_if[3] = {b_face_cog[c_f_id][0] - cell_cen[c_id][0],
                              b_face_cog[c_f_id][1] - cell_cen[c_id][1],
                              b_face_cog[c_f_id][2] - cell_cen[c_id][2]};
@@ -416,10 +466,10 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
       if (hyd_p_flag) {
         /* (b_face_cog - cell_cen).f_ext, or IF.F_i */
         cs_real_t dot = cs_math_3_distance_dot_product(cell_cen[c_id],
-                                                       b_face_cog[f_id],
+                                                       b_face_cog[c_f_id],
                                                        f_ext[c_id]);
         if (b_poro_duq != nullptr)
-          pfac += (b-1.) * (dot + b_poro_duq[f_id]);
+          pfac += (b-1.) * (dot + b_poro_duq[c_f_id]);
         else
           pfac += (b-1.) * dot;
       }
@@ -581,12 +631,24 @@ cs_gradient_boundary_iprime_lsq_s_ani
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_real_3_t *restrict i_face_cog = fvq->i_face_cog;
   const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
 
   if (cell_i_faces == nullptr) {
     cs_mesh_adjacencies_update_cell_i_faces();
     cell_i_faces = ma->cell_i_faces;
     cell_i_faces_sgn = ma->cell_i_faces_sgn;
+  }
+
+  /* Additional terms due to porosity */
+  cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
+  cs_real_t *i_poro_duq_0 = nullptr;
+  cs_real_t *i_poro_duq_1 = nullptr;
+  cs_real_t *b_poro_duq = nullptr;
+  if (f_i_poro_duq_0 != nullptr) {
+    i_poro_duq_0 = f_i_poro_duq_0->val;
+    i_poro_duq_1 = cs_field_by_name("i_poro_duq_1")->val;
+    b_poro_duq = cs_field_by_name("b_poro_duq")->val;
   }
 
   /* Loop on selected boundary faces */
@@ -641,7 +703,27 @@ cs_gradient_boundary_iprime_lsq_s_ani
         var_min = cs::min(var_min, var_j);
         var_max = cs::max(var_max, var_j);
 
-        cs_real_t pfac = (var_j - var_i) * ddc;
+        cs_real_t pfac = var_j - var_i;
+
+        if (hyd_p_flag) {
+          cs_lnum_t f_id_ij = cell_i_faces[i];
+
+          cs_real_t dot_i = cs_math_3_distance_dot_product(i_face_cog[f_id_ij],
+                                                           cell_cen[c_id],
+                                                           f_ext[c_id]);
+          cs_real_t dot_j = cs_math_3_distance_dot_product(i_face_cog[f_id_ij],
+                                                           cell_cen[c_id1],
+                                                           f_ext[c_id1]);
+
+          if (b_poro_duq != nullptr)
+            pfac +=   (dot_i + i_poro_duq_0[f_id_ij])
+                    - (dot_j + i_poro_duq_1[f_id_ij]);
+          else
+            pfac += dot_i - dot_j;
+        }
+
+        pfac *= ddc;
+
         for (cs_lnum_t ll = 0; ll < 3; ll++)
           rhs[ll] += dc[ll] * pfac;
 
@@ -693,10 +775,27 @@ cs_gradient_boundary_iprime_lsq_s_ani
         /* RHS contribution */
 
         /* (P_j - P_i)*/
-        cs_real_t p_diff = (var[c_id1] - var[c_id]);
+        cs_real_t pfac = (var[c_id1] - var[c_id]);
+
+        if (hyd_p_flag) {
+          cs_lnum_t f_id_ij = cell_i_faces[i];
+
+          cs_real_t dot_i = cs_math_3_distance_dot_product(i_face_cog[f_id_ij],
+                                                           cell_cen[c_id],
+                                                           f_ext[c_id]);
+          cs_real_t dot_j = cs_math_3_distance_dot_product(i_face_cog[f_id_ij],
+                                                           cell_cen[c_id1],
+                                                           f_ext[c_id1]);
+
+          if (b_poro_duq != nullptr)
+            pfac +=   (dot_i + i_poro_duq_0[f_id_ij])
+                    - (dot_j + i_poro_duq_1[f_id_ij]);
+          else
+            pfac += dot_i - dot_j;
+        }
 
         for (cs_lnum_t ii = 0; ii < 3; ii++)
-          rhs[ii] += p_diff * ki_d[ii] * i_dci;
+          rhs[ii] += pfac * ki_d[ii] * i_dci;
 
       }
     }
@@ -733,7 +832,7 @@ cs_gradient_boundary_iprime_lsq_s_ani
       cs_real_t dif[3];
       cs_real_t ddif;
 
-#if (b_direction_lsq == CS_IPRIME_F_LSQ)
+#if (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
       ddif = 1. / b_dist[c_f_id];
       cs_real_t umcbdd = (1. - b) * ddif;
 
@@ -741,7 +840,7 @@ cs_gradient_boundary_iprime_lsq_s_ani
         dif[ll] =   b_face_u_normal[c_f_id][ll]
                   + umcbdd * diipb[c_f_id][ll];
       }
-#elif (b_direction_lsq == CS_IF_LSQ)
+#elif (B_DIRECTION_LSQ == CS_IF_LSQ)
       cs_real_t vec_if[3] = {b_face_cog[c_f_id][0] - cell_cen[c_id][0],
                              b_face_cog[c_f_id][1] - cell_cen[c_id][1],
                              b_face_cog[c_f_id][2] - cell_cen[c_id][2]};
@@ -965,11 +1064,15 @@ cs_gradient_boundary_iprime_lsq_strided
 
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
 
-  const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_real_t *restrict b_dist = fvq->b_dist;
-  const cs_nreal_3_t *b_face_u_normal = fvq->b_face_u_normal;
   const cs_lnum_t *b_face_cells = m->b_face_cells;
+
+#if (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
+#elif (B_DIRECTION_LSQ == CS_IF_LSQ)
+  const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
+#endif
 
   assert(stride <= 9);  /* Local arrays with hard-coded dimensions follow. */
 
@@ -1156,7 +1259,7 @@ cs_gradient_boundary_iprime_lsq_strided
       cs_real_t dif[3];
       cs_real_t ddif;
 
-#if (b_direction_lsq == CS_IF_LSQ)
+#if (B_DIRECTION_LSQ == CS_IF_LSQ)
       for (cs_lnum_t ll = 0; ll < 3; ll++)
         dif[ll] = b_face_cog[c_f_id][ll] - cell_cen[c_id][ll];
 
@@ -1168,7 +1271,7 @@ cs_gradient_boundary_iprime_lsq_strided
       cocg[3] += dif[0]*dif[1]*ddif;
       cocg[4] += dif[1]*dif[2]*ddif;
       cocg[5] += dif[0]*dif[2]*ddif;
-#elif (b_direction_lsq == CS_IPRIME_F_LSQ)
+#elif (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
       ddif = 1. / b_dist[c_f_id];
 
       for (cs_lnum_t ll = 0; ll < 3; ll++) {
@@ -1309,19 +1412,18 @@ cs_gradient_boundary_iprime_lsq_strided
             ddif = dif_sv[i_rel][3];
           }
           else {
-            if constexpr (b_direction_lsq == CS_IF_LSQ) {
-              for (cs_lnum_t ii = 0; ii < 3; ii++)
-                dif[ii] = b_face_cog[c_f_id][ii] - cell_cen[c_id][ii];
+#if (B_DIRECTION_LSQ == CS_IF_LSQ)
+            for (cs_lnum_t ii = 0; ii < 3; ii++)
+              dif[ii] = b_face_cog[c_f_id][ii] - cell_cen[c_id][ii];
 
-              ddif = 1. / cs_math_3_square_norm(dif);
-            }
-            else if constexpr (b_direction_lsq == CS_IPRIME_F_LSQ) {
-              ddif = 1. / b_dist[c_f_id];
+            ddif = 1. / cs_math_3_square_norm(dif);
+#elif (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
+            ddif = 1. / b_dist[c_f_id];
 
-              for (cs_lnum_t ll = 0; ll < 3; ll++)
-                dif[ll] =   b_face_u_normal[c_f_id][ll]
-                          + ddif * diipb[c_f_id][ll];
-            }
+            for (cs_lnum_t ll = 0; ll < 3; ll++)
+              dif[ll] =   b_face_u_normal[c_f_id][ll]
+                        + ddif * diipb[c_f_id][ll];
+#endif
           }
 
           /* Note that the contribution to the right-hand side from

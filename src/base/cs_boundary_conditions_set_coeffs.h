@@ -1217,6 +1217,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
  */
 /*----------------------------------------------------------------------------*/
 
+template <bool need_compute_bc_grad, bool need_compute_bc_flux>
 void
 cs_boundary_conditions_update_bc_coeff_face_values
   (cs_dispatch_context        &ctx,
