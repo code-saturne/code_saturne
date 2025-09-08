@@ -272,7 +272,7 @@ typedef struct {
     const int time_id = 0
   );
 
-  cs_array<cs_real_t> **_vals;
+  cs_array_2d<cs_real_t> **_vals;
 
 #endif
 

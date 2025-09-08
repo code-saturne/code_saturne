@@ -1520,9 +1520,9 @@ cs_field_create(const char   *name,
   for (int i = 0; i < f->n_time_vals; i++)
     f->vals[i] = nullptr;
 
-  CS_MALLOC(f->_vals, f->n_time_vals, cs_array<cs_real_t> *);
+  CS_MALLOC(f->_vals, f->n_time_vals, cs_array_2d<cs_real_t> *);
   for (int i = 0; i < f->n_time_vals; i++)
-    f->_vals[i] = new cs_array<cs_real_t>(); // empty container;
+    f->_vals[i] = new cs_array_2d<cs_real_t>(); // empty container;
 
   return f;
 }
@@ -1642,9 +1642,9 @@ cs_field_find_or_create(const char   *name,
     for (int i = 0; i < f->n_time_vals; i++)
       f->vals[i] = nullptr;
 
-    CS_MALLOC(f->_vals, f->n_time_vals, cs_array<cs_real_t> *);
+    CS_MALLOC(f->_vals, f->n_time_vals, cs_array_2d<cs_real_t> *);
     for (int i = 0; i < f->n_time_vals; i++)
-      f->_vals[i] = new cs_array<cs_real_t>(); // empty container;
+      f->_vals[i] = new cs_array_2d<cs_real_t>(); // empty container;
 
   }
 
@@ -1696,9 +1696,9 @@ cs_field_set_n_time_vals(cs_field_t  *f,
   for (int i = n_time_vals_ini; i < f->n_time_vals; i++)
     f->vals[i] = nullptr;
 
-  CS_REALLOC(f->_vals, f->n_time_vals, cs_array<cs_real_t> *);
+  CS_REALLOC(f->_vals, f->n_time_vals, cs_array_2d<cs_real_t> *);
   for (int i = n_time_vals_ini; i < f->n_time_vals; i++)
-    f->_vals[i] = new cs_array<cs_real_t>(); // empty container;
+    f->_vals[i] = new cs_array_2d<cs_real_t>(); // empty container;
 
   /* If allocation or mapping has already been done */
 
@@ -1713,7 +1713,7 @@ cs_field_set_n_time_vals(cs_field_t  *f,
     else { /* if (n_time_vals_ini < _n_time_vals) */
       if (f->is_owner) {
         const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
-        f->_vals[1]->reshape(n_elts[2]*f->dim);
+        f->_vals[1]->reshape(n_elts[2], f->dim);
         f->val_pre = f->_vals[1]->data();
       }
     }
@@ -1741,7 +1741,7 @@ cs_field_allocate_values(cs_field_t  *f)
     /* Initialization */
 
     for (ii = 0; ii < f->n_time_vals; ii++) {
-      f->_vals[ii]->reshape(n_elts[2]*f->dim);
+      f->_vals[ii]->reshape(n_elts[2], f->dim);
       f->vals[ii] = f->_vals[ii]->data();
     }
 
@@ -4934,7 +4934,7 @@ cs_field_t::get_vals_s
               _("%s: Field \"%s\" is not a scalar and has dimension %d\n"),
               __func__, this->name, this->dim);
 
-  return this->_vals[time_id]->view();
+  return this->_vals[time_id]->get_mdspan({this->_vals[time_id]->size()});
 }
 
 cs_span_2d<cs_real_t>
