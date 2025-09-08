@@ -202,7 +202,7 @@ _beta_limiter_denom(cs_field_t                 *f,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  cs_gradient_type_by_imrgra(eqp->d_gradient_r,
+  cs_gradient_type_by_imrgra(eqp->imrgra,
                              &gradient_type,
                              &halo_type);
 
@@ -7458,7 +7458,7 @@ cs_face_diffusion_potential(const cs_field_t           *f,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  cs_gradient_type_by_imrgra(eqp->d_gradient_r,
+  cs_gradient_type_by_imrgra(eqp->imrgra,
                              &gradient_type,
                              &halo_type);
 
@@ -7712,7 +7712,7 @@ cs_face_anisotropic_diffusion_potential(const cs_field_t           *f,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  cs_gradient_type_by_imrgra(eqp->d_gradient_r,
+  cs_gradient_type_by_imrgra(eqp->imrgra,
                              &gradient_type,
                              &halo_type);
 
@@ -8040,7 +8040,7 @@ cs_diffusion_potential(const cs_field_t           *f,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  cs_gradient_type_by_imrgra(eqp->d_gradient_r,
+  cs_gradient_type_by_imrgra(eqp->imrgra,
                              &gradient_type,
                              &halo_type);
   if (f != nullptr) {
@@ -8320,7 +8320,7 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  cs_gradient_type_by_imrgra(eqp->d_gradient_r,
+  cs_gradient_type_by_imrgra(eqp->imrgra,
                              &gradient_type,
                              &halo_type);
 
