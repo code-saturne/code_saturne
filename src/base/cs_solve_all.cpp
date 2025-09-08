@@ -1001,6 +1001,16 @@ cs_solve_all()
                                                                  gxyz);
     });
 
+    cs_halo_type_t halo_type = CS_HALO_STANDARD;
+    cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+    cs_gradient_type_by_imrgra(eqp_p->imrgra,
+                               &gradient_type,
+                               &halo_type);
+
+    /* Handle parallelism and periodicity */
+    cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), cvar_pr);
+    cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), cpro_prtot);
+
     /* Update boundary condition for pressure */
     cs_field_t *f_frcxt = cs_field_by_name_try("volume_forces");
     cs_real_3_t *frcxt = nullptr;

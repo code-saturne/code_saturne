@@ -642,7 +642,7 @@ _pressure_correction_fv(int                   iterns,
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
-  cs_gradient_type_by_imrgra(eqp_p->d_gradient_r,
+  cs_gradient_type_by_imrgra(eqp_p->imrgra,
                              &gradient_type,
                              &halo_type);
 
@@ -2144,6 +2144,8 @@ _pressure_correction_fv(int                   iterns,
         || vp_param->staggered == 1)
       inc = 1;    /* not by increment */
 
+    cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), phi);
+
     /* Update phi BC */
     if (eqp_p->ircflu)
       cs_boundary_conditions_update_bc_coeff_face_values<true, true>
@@ -2513,6 +2515,8 @@ _pressure_correction_fv(int                   iterns,
           || vp_param->staggered == 1)
         inc = 1;    /* not by increment */
 
+      cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), phi);
+
       /* Update phi BC */
       if (eqp_p->ircflu)
         cs_boundary_conditions_update_bc_coeff_face_values<true, true>
@@ -2759,6 +2763,9 @@ _pressure_correction_fv(int                   iterns,
     eqp_loc.ircflu = 0; // no reconstruction
     eqp_loc.b_diff_flux_rc = 0;
 
+    /* Handle parallelism and periodicity */
+    cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), dphi);
+
     cs_boundary_conditions_update_bc_coeff_face_values
       <need_compute_bc_grad, need_compute_bc_flux>
       (ctx,
@@ -2965,6 +2972,8 @@ _pressure_correction_fv(int                   iterns,
     weighb_p = weighb;
   if (cpro_vitenp != nullptr)
     weighb_p = weighbtp;
+
+  cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), cvar_pr);
 
   cs_boundary_conditions_update_bc_coeff_face_values<true,true>
     (ctx,
