@@ -1709,11 +1709,14 @@ cs_field_set_n_time_vals(cs_field_t  *f,
         f->_vals[1]->clear(); // Free internal data
 
       f->val_pre = nullptr;
+      f->vals[1] = nullptr;
     }
     else { /* if (n_time_vals_ini < _n_time_vals) */
       if (f->is_owner) {
         const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
         f->_vals[1]->reshape(n_elts[2], f->dim);
+        f->_vals[1]->zero();
+        f->vals[1] = f->_vals[1]->data();
         f->val_pre = f->_vals[1]->data();
       }
     }
@@ -1742,6 +1745,7 @@ cs_field_allocate_values(cs_field_t  *f)
 
     for (ii = 0; ii < f->n_time_vals; ii++) {
       f->_vals[ii]->reshape(n_elts[2], f->dim);
+      f->_vals[ii]->zero();
       f->vals[ii] = f->_vals[ii]->data();
     }
 
