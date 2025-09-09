@@ -133,6 +133,29 @@ cs_meg_xdef_wrapper(cs_real_t         time,
                     bool              dense_output,
                     void             *input,
                     cs_real_t        *retval);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Wrapper function allowing to call MEG functions by xdef structres.
+ * This is done by using the cs_xdef_function type.
+ *
+ * \param[in] time          when ?
+ * \param[in] n_elts        number of elements to consider
+ * \param[in] elt_ids       list of elements ids (in coords and retval)
+ * \param[in] coords        where ?
+ * \param[in] dense_output  perform an indirection in retval or not
+ * \param[in] input         pointer to cs_meg_xdef_input_t
+ * \param[in] retval        resultint value(s). Must be allocated
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_meg_xdef_eval_func_wrapper(int              location_id,
+                              cs_lnum_t        n_elts,
+                              const cs_lnum_t *elt_ids,
+                              void            *input,
+                              void            *retval);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

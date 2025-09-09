@@ -334,5 +334,59 @@ cs_meg_xdef_wrapper(cs_real_t         time,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Wrapper function allowing to call MEG functions by xdef structres.
+ * This is done by using the cs_xdef_function type.
+ *
+ * \param[in] time          when ?
+ * \param[in] n_elts        number of elements to consider
+ * \param[in] elt_ids       list of elements ids (in coords and retval)
+ * \param[in] coords        where ?
+ * \param[in] dense_output  perform an indirection in retval or not
+ * \param[in] input         pointer to cs_meg_xdef_input_t
+ * \param[in] retval        resultint value(s). Must be allocated
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_meg_xdef_eval_func_wrapper(int              location_id,
+                              cs_lnum_t        n_elts,
+                              const cs_lnum_t *elt_ids,
+                              void            *input,
+                              void            *retval)
+{
+    const cs_mesh_location_type_t loc_type
+      = cs_mesh_location_get_type(location_id);
+
+    const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+    const cs_real_3_t *base_coords = nullptr;
+
+    if (loc_type == CS_MESH_LOCATION_CELLS)
+      base_coords = mq->cell_cen;
+    else if (loc_type == CS_MESH_LOCATION_INTERIOR_FACES)
+      base_coords = mq->i_face_cog;
+    else if (loc_type == CS_MESH_LOCATION_BOUNDARY_FACES)
+      base_coords = mq->b_face_cog;
+    else if (loc_type == CS_MESH_LOCATION_VERTICES)
+      base_coords = reinterpret_cast<const cs_real_3_t *>(cs_glob_mesh->vtx_coord);
+
+  const cs_meg_xdef_input_t *_input
+    = reinterpret_cast<const cs_meg_xdef_input_t *>(input);
+
+  if (_input->type == CS_MEG_CALCULATOR_FUNC) {
+    cs_meg_post_calculator(_input->name,
+                           n_elts,
+                           elt_ids,
+                           base_coords,
+                           static_cast<cs_real_t *>(retval));
+  }
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: cannot be called for MEG function of type %d\n"),
+              __func__, _input->type);
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

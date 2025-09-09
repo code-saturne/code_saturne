@@ -5077,12 +5077,14 @@ cs_gui_calculator_functions(void)
                                         nullptr);
 
       cs_function_t *f
-        = cs_function_define_by_analytic_func(name,
-                                              _loc,
-                                              dim,
-                                              true,
-                                              cs_meg_xdef_wrapper,
-                                              _input);
+        = cs_function_define_by_func(name,
+                                     _loc,
+                                     dim,
+                                     true,
+                                     CS_REAL_TYPE,
+                                     cs_meg_xdef_eval_func_wrapper,
+                                     _input);
+
       cs_function_set_label(f, name);
       f->log      = 1;
     }
