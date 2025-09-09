@@ -852,8 +852,6 @@ _set_key(cs_equation_param_t *eqp,
       eqp->time_scheme = CS_TIME_SCHEME_THETA;
     else if (strcmp(keyval, "bdf2") == 0) {
       eqp->time_scheme = CS_TIME_SCHEME_BDF2;
-      bft_error(__FILE__, __LINE__, 0, " Eq. %s\n"
-                " Soon available...", eqname);
     }
     else {
       const char *_val = keyval;
