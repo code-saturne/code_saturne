@@ -39,6 +39,12 @@
 #define CS_PROFILING CS_PROFILING_NONE
 #endif
 
+// Make sure NVTX profiling is used in host code only, not CUDA.
+#if defined(__CUDA_ARCH__)
+#undef CS_PROFILING
+#define CS_PROFILING CS_PROFILING_NONE
+#endif
+
 #define CS_COMBINE_DETAIL(x, y) x##y
 #define CS_COMBINE(x, y) CS_COMBINE_DETAIL(x, y)
 
@@ -69,7 +75,11 @@
 #include <nvtx3/nvtx3.hpp>
 
 /// Annotates a whole function.
+#ifndef __CUDA_ARCH__
 #define CS_PROFILE_FUNC_RANGE() NVTX3_FUNC_RANGE()
+#else
+#define CS_PROFILE_FUNC_RANGE()
+#endif
 
 /// Annotates a range delimited by the lifetime of a variable.
 #define CS_PROFILE_RANGE(range_name)                                           \
