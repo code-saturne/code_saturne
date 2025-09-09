@@ -221,18 +221,25 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
 
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
   const cs_lnum_t *restrict cell_cells_idx = ma->cell_cells_idx;
-  const cs_lnum_t *restrict cell_cells_e_idx = ma->cell_cells_e_idx;
   const cs_lnum_t *restrict cell_b_faces_idx = ma->cell_b_faces_idx;
   const cs_lnum_t *restrict cell_cells = ma->cell_cells;
-  const cs_lnum_t *restrict cell_cells_e = ma->cell_cells_e;
   const cs_lnum_t *restrict cell_b_faces = ma->cell_b_faces;
   const cs_lnum_t *restrict cell_hb_faces_idx = ma->cell_hb_faces_idx;
   const cs_lnum_t *restrict cell_hb_faces = ma->cell_hb_faces;
   const cs_lnum_t *restrict cell_i_faces = ma->cell_i_faces;
+  short int *c2f_sgn = ma->cell_i_faces_sgn;
 
   if (cell_i_faces == nullptr && hyd_p_flag == 1) {
     cs_mesh_adjacencies_update_cell_i_faces();
     cell_i_faces = ma->cell_i_faces;
+    c2f_sgn = ma->cell_i_faces_sgn;
+  }
+
+  const cs_lnum_t *cell_cells_e_idx = nullptr;
+  const cs_lnum_t *cell_cells_e = nullptr;
+  if (halo_type == CS_HALO_EXTENDED) {
+    cell_cells_e_idx = ma->cell_cells_e_idx;
+    cell_cells_e = ma->cell_cells_e;
   }
 
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
@@ -283,127 +290,187 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
 
     /* Contribution from adjacent cells */
 
-    int n_adj = (halo_type == CS_HALO_EXTENDED) ? 2 : 1;
+    cs_lnum_t s_id = cell_cells_idx[c_id];
+    cs_lnum_t e_id = cell_cells_idx[c_id+1];
 
-    for (int adj_id = 0; adj_id < n_adj; adj_id++) {
+    if (c_weight == nullptr) {
 
-      const cs_lnum_t *restrict cell_cells_p;
-      cs_lnum_t s_id, e_id;
+      for (cs_lnum_t i = s_id; i < e_id; i++) {
 
-      if (adj_id == 0){
-        s_id = cell_cells_idx[c_id];
-        e_id = cell_cells_idx[c_id+1];
-        cell_cells_p = (const cs_lnum_t *)(cell_cells);
-      }
-      else if (cell_cells_e_idx != nullptr){
-        s_id = cell_cells_e_idx[c_id];
-        e_id = cell_cells_e_idx[c_id+1];
-        cell_cells_p = (const cs_lnum_t *)(cell_cells_e);
-      }
-      else
-        break;
+        cs_real_t dc[3];
+        cs_lnum_t c_id1 = cell_cells[i];
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          dc[ii] = cell_cen[c_id1][ii] - cell_cen[c_id][ii];
 
-      if (c_weight == nullptr) {
+        cs_real_t ddc = 1. / cs_math_3_square_norm(dc);
 
-        for (cs_lnum_t i = s_id; i < e_id; i++) {
+        cocg[0] += dc[0]*dc[0]*ddc;
+        cocg[1] += dc[1]*dc[1]*ddc;
+        cocg[2] += dc[2]*dc[2]*ddc;
+        cocg[3] += dc[0]*dc[1]*ddc;
+        cocg[4] += dc[1]*dc[2]*ddc;
+        cocg[5] += dc[0]*dc[2]*ddc;
 
-          cs_real_t dc[3];
-          cs_lnum_t c_id1 = cell_cells_p[i];
-          for (cs_lnum_t ii = 0; ii < 3; ii++)
-            dc[ii] = cell_cen[c_id1][ii] - cell_cen[c_id][ii];
+        cs_real_t var_j = var[c_id1];
+        var_min = cs::min(var_min, var_j);
+        var_max = cs::max(var_max, var_j);
 
-          cs_real_t ddc = 1. / cs_math_3_square_norm(dc);
+        cs_real_t pfac = var_j - var_i;
 
-          cocg[0] += dc[0]*dc[0]*ddc;
-          cocg[1] += dc[1]*dc[1]*ddc;
-          cocg[2] += dc[2]*dc[2]*ddc;
-          cocg[3] += dc[0]*dc[1]*ddc;
-          cocg[4] += dc[1]*dc[2]*ddc;
-          cocg[5] += dc[0]*dc[2]*ddc;
+        if (hyd_p_flag == 1) {
+          cs_lnum_t f_id_ij = cell_i_faces[i];
 
-          cs_real_t var_j = var[c_id1];
-          var_min = cs::min(var_min, var_j);
-          var_max = cs::max(var_max, var_j);
+          cs_real_t dot_i = cs_math_3_distance_dot_product(i_face_cog[f_id_ij],
+                                                           cell_cen[c_id],
+                                                           f_ext[c_id]);
+          cs_real_t dot_j = cs_math_3_distance_dot_product(i_face_cog[f_id_ij],
+                                                           cell_cen[c_id1],
+                                                           f_ext[c_id1]);
 
-          cs_real_t pfac = var_j - var_i;
+          if (b_poro_duq != nullptr) {
+            cs_real_t poro[2] = {0, 0};
 
-          if (hyd_p_flag == 1) {
-            cs_lnum_t f_id_ij = cell_i_faces[i];
+            if (c2f_sgn[f_id_ij] > 0) {
+              poro[0] = i_poro_duq_0[f_id_ij];
+              poro[1] = i_poro_duq_1[f_id_ij];
+            }
+            else {
+              poro[0] = i_poro_duq_1[f_id_ij];
+              poro[1] = i_poro_duq_0[f_id_ij];
+            }
 
-            cs_real_t dot_i = cs_math_3_distance_dot_product(i_face_cog[f_id_ij],
-                                                             cell_cen[c_id],
-                                                             f_ext[c_id]);
-            cs_real_t dot_j = cs_math_3_distance_dot_product(i_face_cog[f_id_ij],
-                                                             cell_cen[c_id1],
-                                                             f_ext[c_id1]);
-
-            if (b_poro_duq != nullptr)
-              pfac +=   (dot_i + i_poro_duq_0[f_id_ij])
-                      - (dot_j + i_poro_duq_1[f_id_ij]);
-            else
-              pfac += dot_i - dot_j;
+            pfac += (dot_i + poro[0]) - (dot_j + poro[1]);
           }
+          else
+            pfac += dot_i - dot_j;
+        }
 
-          pfac *= ddc;
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            rhs[ll] += dc[ll] * pfac;
+        pfac *= ddc;
+        for (cs_lnum_t ll = 0; ll < 3; ll++)
+          rhs[ll] += dc[ll] * pfac;
+
+      }
+
+    }
+    else {
+
+      for (cs_lnum_t i = s_id; i < e_id; i++) {
+
+        cs_real_t dc[3];
+        cs_lnum_t c_id1 = cell_cells[i];
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          dc[ii] = cell_cen[c_id1][ii] - cell_cen[c_id][ii];
+
+        cs_real_t ddc = 1. / cs_math_3_square_norm(dc);
+
+        cocg[0] += dc[0]*dc[0]*ddc;
+        cocg[1] += dc[1]*dc[1]*ddc;
+        cocg[2] += dc[2]*dc[2]*ddc;
+        cocg[3] += dc[0]*dc[1]*ddc;
+        cocg[4] += dc[1]*dc[2]*ddc;
+        cocg[5] += dc[0]*dc[2]*ddc;
+
+        cs_real_t _weight =   2. * c_weight[c_id1]
+                            / (c_weight[c_id] + c_weight[c_id1]);
+
+        cs_real_t var_j = var[c_id1];
+        var_min = cs::min(var_min, var_j);
+        var_max = cs::max(var_max, var_j);
+
+        cs_real_t pfac = (var_j - var_i);
+
+        if (hyd_p_flag == 1) {
+          cs_lnum_t f_id_ij = cell_i_faces[i];
+
+          cs_real_t dot_i = cs_math_3_distance_dot_product(i_face_cog[f_id_ij],
+                                                           cell_cen[c_id],
+                                                           f_ext[c_id]);
+          cs_real_t dot_j = cs_math_3_distance_dot_product(i_face_cog[f_id_ij],
+                                                           cell_cen[c_id1],
+                                                           f_ext[c_id1]);
+
+          if (b_poro_duq != nullptr) {
+            cs_real_t poro[2] = {0, 0};
+
+            if (c2f_sgn[f_id_ij] > 0) {
+              poro[0] = i_poro_duq_0[f_id_ij];
+              poro[1] = i_poro_duq_1[f_id_ij];
+            }
+            else {
+              poro[0] = i_poro_duq_1[f_id_ij];
+              poro[1] = i_poro_duq_0[f_id_ij];
+            }
+
+            pfac += (dot_i + poro[0]) - (dot_j + poro[1]);
+          }
+          else
+            pfac += dot_i - dot_j;
+        }
+
+        pfac *= ddc;
+
+        for (cs_lnum_t ll = 0; ll < 3; ll++)
+          rhs[ll] += dc[ll] * pfac * _weight;
+
+      }
+    } /* End of contribution from interior cells */
+
+    /* Contribution from extended neighborhood;
+       We assume that the middle of the segment joining cell centers
+       may replace the center of gravity of a fictitious face. */
+
+    if (cell_cells_e_idx != nullptr) {
+
+      cs_lnum_t s_id_e = cell_cells_e_idx[c_id];
+      cs_lnum_t e_id_e = cell_cells_e_idx[c_id+1];
+
+      for (cs_lnum_t i = s_id_e; i < e_id_e; i++) {
+
+        cs_lnum_t c_id1 = cell_cells_e[i];
+
+        /* Note: replaced the expressions:
+         *  a) ptmid = 0.5 * (cell_cen[jj] - cell_cen[ii])
+         *  b)   (cell_cen[ii] - ptmid) * f_ext[ii]
+         *  c) - (cell_cen[jj] - ptmid) * f_ext[jj]
+         * with:
+         *  a) dc = cell_cen[jj] - cell_cen[ii]
+         *  b) - 0.5 * dc * f_ext[ii]
+         *  c) - 0.5 * dc * f_ext[jj]
+         */
+
+        cs_real_t dc[3];
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          dc[ii] = cell_cen[c_id1][ii] - cell_cen[c_id][ii];
+
+        cs_real_t ddc = 1. / cs_math_3_square_norm(dc);
+
+        cocg[0] += dc[0]*dc[0]*ddc;
+        cocg[1] += dc[1]*dc[1]*ddc;
+        cocg[2] += dc[2]*dc[2]*ddc;
+        cocg[3] += dc[0]*dc[1]*ddc;
+        cocg[4] += dc[1]*dc[2]*ddc;
+        cocg[5] += dc[0]*dc[2]*ddc;
+
+        cs_real_t var_j = var[c_id1];
+        var_min = cs::min(var_min, var_j);
+        var_max = cs::max(var_max, var_j);
+
+        cs_real_t pfac = var_j - var_i;
+
+        if (hyd_p_flag == 1) {
+          cs_real_t dot_i = cs_math_3_dot_product(dc, f_ext[c_id]);
+          cs_real_t dot_j = cs_math_3_dot_product(dc, f_ext[c_id1]);
+
+          pfac -= 0.5 * (dot_i + dot_j);
 
         }
 
+        pfac *= ddc;
+        for (cs_lnum_t ll = 0; ll < 3; ll++)
+          rhs[ll] += dc[ll] * pfac;
+
       }
-      else {
-
-        for (cs_lnum_t i = s_id; i < e_id; i++) {
-
-          cs_real_t dc[3];
-          cs_lnum_t c_id1 = cell_cells_p[i];
-          for (cs_lnum_t ii = 0; ii < 3; ii++)
-            dc[ii] = cell_cen[c_id1][ii] - cell_cen[c_id][ii];
-
-          cs_real_t ddc = 1. / cs_math_3_square_norm(dc);
-
-          cocg[0] += dc[0]*dc[0]*ddc;
-          cocg[1] += dc[1]*dc[1]*ddc;
-          cocg[2] += dc[2]*dc[2]*ddc;
-          cocg[3] += dc[0]*dc[1]*ddc;
-          cocg[4] += dc[1]*dc[2]*ddc;
-          cocg[5] += dc[0]*dc[2]*ddc;
-
-          cs_real_t _weight =   2. * c_weight[c_id1]
-                              / (c_weight[c_id] + c_weight[c_id1]);
-
-          cs_real_t var_j = var[c_id1];
-          var_min = cs::min(var_min, var_j);
-          var_max = cs::max(var_max, var_j);
-
-          cs_real_t pfac = (var_j - var_i);
-
-          if (hyd_p_flag == 1) {
-            cs_lnum_t f_id_ij = cell_i_faces[i];
-
-            cs_real_t dot_i = cs_math_3_distance_dot_product(i_face_cog[f_id_ij],
-                                                             cell_cen[c_id],
-                                                             f_ext[c_id]);
-            cs_real_t dot_j = cs_math_3_distance_dot_product(i_face_cog[f_id_ij],
-                                                             cell_cen[c_id1],
-                                                             f_ext[c_id1]);
-
-            if (b_poro_duq != nullptr)
-              pfac +=   (dot_i + i_poro_duq_0[f_id_ij])
-                      - (dot_j + i_poro_duq_1[f_id_ij]);
-            else
-              pfac += dot_i - dot_j;
-          }
-
-          pfac *= ddc;
-
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            rhs[ll] += dc[ll] * pfac * _weight;
-
-        }
-      }
-
-    } /* End of contribution from interior and extended cells */
+    } /* End of contribution from extended cells */
 
     /* Contribution from hidden boundary faces */
 
@@ -416,10 +483,10 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
 
     /* Contribution from boundary faces. */
 
-    cs_lnum_t s_id = cell_b_faces_idx[c_id];
-    cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
+    cs_lnum_t s_id_b = cell_b_faces_idx[c_id];
+    cs_lnum_t e_id_b = cell_b_faces_idx[c_id+1];
 
-    for (cs_lnum_t i = s_id; i < e_id; i++) {
+    for (cs_lnum_t i = s_id_b; i < e_id_b; i++) {
 
       cs_lnum_t c_f_id = cell_b_faces[i];
 
@@ -787,9 +854,20 @@ cs_gradient_boundary_iprime_lsq_s_ani
                                                            cell_cen[c_id1],
                                                            f_ext[c_id1]);
 
-          if (b_poro_duq != nullptr)
-            pfac +=   (dot_i + i_poro_duq_0[f_id_ij])
-                    - (dot_j + i_poro_duq_1[f_id_ij]);
+          if (b_poro_duq != nullptr) {
+            cs_real_t poro[2] = {0, 0};
+
+            if (cell_i_faces_sgn[f_id_ij] > 0) {
+              poro[0] = i_poro_duq_0[f_id_ij];
+              poro[1] = i_poro_duq_1[f_id_ij];
+            }
+            else {
+              poro[0] = i_poro_duq_1[f_id_ij];
+              poro[1] = i_poro_duq_0[f_id_ij];
+            }
+
+            pfac += (dot_i + poro[0]) - (dot_j + poro[1]);
+          }
           else
             pfac += dot_i - dot_j;
         }
