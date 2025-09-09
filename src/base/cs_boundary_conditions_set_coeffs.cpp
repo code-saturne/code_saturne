@@ -136,7 +136,8 @@ static void
 _compute_bc_flux_grad
   (
    cs_dispatch_context         &ctx,
-   const bool                   hyd_p_flag,
+   const int                    hyd_p_flag,
+   const cs_real_t              f_ext[][3],
    const cs_field_bc_coeffs_t  *bc_coeffs,
    const cs_real_t              val_ip_g[],
    const cs_real_t              val_ip_d[],
@@ -157,11 +158,6 @@ _compute_bc_flux_grad
   cs_real_t *cofaf = (cs_real_t *)bc_coeffs->af;
   cs_real_t *coefb = (cs_real_t *)bc_coeffs->b;
   cs_real_t *cofbf = (cs_real_t *)bc_coeffs->bf;
-
-  /* hydrostatic term */
-  cs_real_3_t *f_ext = nullptr;
-  if (hyd_p_flag)
-    f_ext = (cs_real_3_t *)cs_field_by_name("volume_forces")->val;
 
   /* Additional terms due to porosity */
   cs_field_t *f_b_poro_duq = cs_field_by_name_try("b_poro_duq");
@@ -186,7 +182,7 @@ _compute_bc_flux_grad
     else // use of val_ip_d = pvar
       flux[face_id] = cofaf[face_id] + cofbf[face_id] * val_ip_d[c_id];
 
-    if (hyd_p_flag) {
+    if (hyd_p_flag == 1) {
 
       cs_real_t vec_iprime[3] = {cell_cen[c_id][0] + diipb[face_id][0],
                                  cell_cen[c_id][1] + diipb[face_id][1],
@@ -196,8 +192,8 @@ _compute_bc_flux_grad
 
       val_f[face_id] += coefb[face_id]
         * cs_math_3_distance_dot_product(vec_iprime,
-                                          b_face_cog[face_id],
-                                          f_ext[c_id]);
+                                         b_face_cog[face_id],
+                                         f_ext[c_id]);
 
       if (f_b_poro_duq != nullptr)
         val_f[face_id] += coefb[face_id] * b_poro_duq[face_id];
@@ -212,7 +208,8 @@ static void
 _compute_bc_grad
   (
    cs_dispatch_context         &ctx,
-   const bool                   hyd_p_flag,
+   const int                    hyd_p_flag,
+   const cs_real_t              f_ext[][3],
    const cs_field_bc_coeffs_t  *bc_coeffs,
    const cs_real_t              val_ip_g[],
    cs_real_t                    val_f[])
@@ -230,11 +227,6 @@ _compute_bc_grad
   cs_real_t *coefa = (cs_real_t *)bc_coeffs->a;
   cs_real_t *coefb = (cs_real_t *)bc_coeffs->b;
 
-  /* hydrostatic term */
-  cs_real_3_t *f_ext = nullptr;
-  if (hyd_p_flag)
-    f_ext = (cs_real_3_t *)cs_field_by_name("volume_forces")->val;
-
   /* Additional terms due to porosity */
   cs_field_t *f_b_poro_duq = cs_field_by_name_try("b_poro_duq");
   cs_real_t *b_poro_duq = nullptr;
@@ -250,7 +242,7 @@ _compute_bc_grad
     // reconstruction for gradient (use of variable at I' position)
     val_f[face_id] = coefa[face_id] + coefb[face_id] * val_ip_g[face_id];
 
-    if (hyd_p_flag) {
+    if (hyd_p_flag == 1) {
 
       cs_real_t vec_iprime[3] = {cell_cen[c_id][0] + diipb[face_id][0],
                                  cell_cen[c_id][1] + diipb[face_id][1],
@@ -4266,7 +4258,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
    const cs_field_bc_coeffs_t *bc_coeffs,
    const int                   inc,
    const cs_equation_param_t  *eqp,
-   bool                        hyd_p_flag,
+   int                         hyd_p_flag,
    cs_real_t                   f_ext[][3],
    cs_real_t                   visel[],
    cs_real_t                   viscel[][6],
@@ -4536,20 +4528,26 @@ cs_boundary_conditions_update_bc_coeff_face_values
     if (need_flux_reconstruction) {
 
       if (can_use_reconstruction_from_grad)
-        _compute_bc_flux_grad<true>(ctx, hyd_p_flag,
+        _compute_bc_flux_grad<true>(ctx,
+                                    hyd_p_flag,
+                                    f_ext,
                                     bc_coeffs,
                                     val_ip_grad,
                                     val_ip_grad, // = val_ip_flux
                                     val_f, flux);
       else
-        _compute_bc_flux_grad<true>(ctx, hyd_p_flag,
+        _compute_bc_flux_grad<true>(ctx,
+                                    hyd_p_flag,
+                                    f_ext,
                                     bc_coeffs,
                                     val_ip_grad,
                                     val_ip_flux,
                                     val_f, flux);
     }
     else { // no reconstruction for flux
-      _compute_bc_flux_grad<false>(ctx, hyd_p_flag,
+      _compute_bc_flux_grad<false>(ctx,
+                                   hyd_p_flag,
+                                   f_ext,
                                    bc_coeffs,
                                    val_ip_grad,
                                    pvar,
@@ -4557,7 +4555,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
     }
   }
   else if (need_compute_bc_grad)
-    _compute_bc_grad(ctx, hyd_p_flag, bc_coeffs, val_ip_grad, val_f);
+    _compute_bc_grad(ctx, hyd_p_flag, f_ext, bc_coeffs, val_ip_grad, val_f);
 
   else if (need_compute_bc_flux) {
     if (need_flux_reconstruction)
@@ -4606,7 +4604,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
   (cs_dispatch_context        &ctx,
    cs_field_t                 *f,
    const cs_equation_param_t  *eqp,
-   bool                        hyd_p_flag,
+   int                         hyd_p_flag,
    cs_real_t                   f_ext[][3],
    cs_real_t                   viscel[][6],
    const cs_real_t             weighb[],
@@ -5057,7 +5055,7 @@ cs_boundary_conditions_update_bc_coeff_face_values<true, true>
   (cs_dispatch_context        &ctx,
    cs_field_t                 *f,
    const cs_equation_param_t  *eqp,
-   bool                        hyd_p_flag,
+   int                         hyd_p_flag,
    cs_real_t                   f_ext[][3],
    cs_real_t                   viscel[][6],
    const cs_real_t             weighb[],
@@ -5068,7 +5066,7 @@ cs_boundary_conditions_update_bc_coeff_face_values<true, false>
   (cs_dispatch_context        &ctx,
    cs_field_t                 *f,
    const cs_equation_param_t  *eqp,
-   bool                        hyd_p_flag,
+   int                         hyd_p_flag,
    cs_real_t                   f_ext[][3],
    cs_real_t                   viscel[][6],
    const cs_real_t             weighb[],
@@ -5079,7 +5077,7 @@ cs_boundary_conditions_update_bc_coeff_face_values<false, true>
   (cs_dispatch_context        &ctx,
    cs_field_t                 *f,
    const cs_equation_param_t  *eqp,
-   bool                        hyd_p_flag,
+   int                         hyd_p_flag,
    cs_real_t                   f_ext[][3],
    cs_real_t                   viscel[][6],
    const cs_real_t             weighb[],
@@ -5092,7 +5090,7 @@ cs_boundary_conditions_update_bc_coeff_face_values<true, true>
    const cs_field_bc_coeffs_t *bc_coeffs,
    const int                   inc,
    const cs_equation_param_t  *eqp,
-   bool                        hyd_p_flag,
+   int                         hyd_p_flag,
    cs_real_t                   f_ext[][3],
    cs_real_t                   visel[],
    cs_real_t                   viscel[][6],
@@ -5108,7 +5106,7 @@ cs_boundary_conditions_update_bc_coeff_face_values<false, true>
    const cs_field_bc_coeffs_t *bc_coeffs,
    const int                   inc,
    const cs_equation_param_t  *eqp,
-   bool                        hyd_p_flag,
+   int                         hyd_p_flag,
    cs_real_t                   f_ext[][3],
    cs_real_t                   visel[],
    cs_real_t                   viscel[][6],
@@ -5124,7 +5122,7 @@ cs_boundary_conditions_update_bc_coeff_face_values<true, false>
    const cs_field_bc_coeffs_t *bc_coeffs,
    const int                   inc,
    const cs_equation_param_t  *eqp,
-   bool                        hyd_p_flag,
+   int                         hyd_p_flag,
    cs_real_t                   f_ext[][3],
    cs_real_t                   visel[],
    cs_real_t                   viscel[][6],

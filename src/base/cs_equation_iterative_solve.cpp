@@ -1260,20 +1260,22 @@ _equation_iterative_solve_strided(int                   idtvar,
 
   CS_PROFILE_MARK_LINE();
 
-  cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
-    (bc_coeffs,
-     n_b_faces,
-     stride,
-     cs_alloc_mode,
-     (df_limiter_id > -1 || ircflb != 1));
+  if (f != nullptr) {
+    cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
+      (bc_coeffs,
+       n_b_faces,
+       stride,
+       cs_alloc_mode,
+       (df_limiter_id > -1 || ircflb != 1));
 
-  var_t *val_f_updated = (var_t *)bc_coeffs->val_f;
-  var_t *val_f_d_updated = (var_t *)bc_coeffs->val_f_d;
-  var_t *val_f_d_lim_updated = (var_t *)bc_coeffs->val_f_d_lim;
+    var_t *val_f_updated = (var_t *)bc_coeffs->val_f;
+    var_t *val_f_d_updated = (var_t *)bc_coeffs->val_f_d;
+    var_t *val_f_d_lim_updated = (var_t *)bc_coeffs->val_f_d_lim;
 
-  cs_boundary_conditions_update_bc_coeff_face_values_strided<stride>
-    (ctx, f, bc_coeffs, 1, eqp, pvar, val_ip,
-     val_f_updated, val_f_d_updated, val_f_d_lim_updated);
+    cs_boundary_conditions_update_bc_coeff_face_values_strided<stride>
+      (ctx, f, bc_coeffs, 1, eqp, pvar, val_ip,
+       val_f_updated, val_f_d_updated, val_f_d_lim_updated);
+  }
 
   /* Save diagonal in case we want to use it */
 
@@ -2332,23 +2334,25 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
    * Store face value for gradient and diffusion
    *==========================================================================*/
 
-  cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
-    (bc_coeffs,
-     n_b_faces,
-     1,
-     cs_alloc_mode,
-     false);
+  if (f != nullptr) {
+    cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
+      (bc_coeffs,
+       n_b_faces,
+       1,
+       cs_alloc_mode,
+       false);
 
-  cs_real_t *val_f_updated = bc_coeffs->val_f;
-  cs_real_t *flux_updated = bc_coeffs->val_f_d;
+    cs_real_t *val_f_updated = bc_coeffs->val_f;
+    cs_real_t *flux_updated = bc_coeffs->val_f_d;
 
-  cs_boundary_conditions_update_bc_coeff_face_values<true, true>
-    (ctx, f, bc_coeffs, 1,
-     eqp,
-     false, nullptr, // hyd_p_flag, f_ext
-     nullptr, viscel, weighb,
-     pvar,
-     val_f_updated, flux_updated);
+    cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+      (ctx, f, bc_coeffs, 1,
+       eqp,
+       false, nullptr, // hyd_p_flag, f_ext
+       nullptr, viscel, weighb,
+       pvar,
+       val_f_updated, flux_updated);
+  }
 
   /*==========================================================================
    * 4. Free solver setup

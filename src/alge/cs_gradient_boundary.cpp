@@ -206,7 +206,7 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
                                   const cs_lnum_t               *face_ids,
                                   cs_halo_type_t                 halo_type,
                                   double                         clip_coeff,
-                                  bool                           hyd_p_flag,
+                                  int                            hyd_p_flag,
                                   cs_real_t                      f_ext[][3],
                                   cs_real_t                     *df_limiter,
                                   const cs_field_bc_coeffs_t    *bc_coeffs,
@@ -230,7 +230,7 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
   const cs_lnum_t *restrict cell_hb_faces = ma->cell_hb_faces;
   const cs_lnum_t *restrict cell_i_faces = ma->cell_i_faces;
 
-  if (cell_i_faces == nullptr && hyd_p_flag) {
+  if (cell_i_faces == nullptr && hyd_p_flag == 1) {
     cs_mesh_adjacencies_update_cell_i_faces();
     cell_i_faces = ma->cell_i_faces;
   }
@@ -327,7 +327,7 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
 
           cs_real_t pfac = var_j - var_i;
 
-          if (hyd_p_flag) {
+          if (hyd_p_flag == 1) {
             cs_lnum_t f_id_ij = cell_i_faces[i];
 
             cs_real_t dot_i = cs_math_3_distance_dot_product(i_face_cog[f_id_ij],
@@ -378,7 +378,7 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
 
           cs_real_t pfac = (var_j - var_i);
 
-          if (hyd_p_flag) {
+          if (hyd_p_flag == 1) {
             cs_lnum_t f_id_ij = cell_i_faces[i];
 
             cs_real_t dot_i = cs_math_3_distance_dot_product(i_face_cog[f_id_ij],
@@ -463,7 +463,7 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
 
       cs_real_t pfac = (a + (b-1.)*var_i);
 
-      if (hyd_p_flag) {
+      if (hyd_p_flag == 1) {
         /* (b_face_cog - cell_cen).f_ext, or IF.F_i */
         cs_real_t dot = cs_math_3_distance_dot_product(cell_cen[c_id],
                                                        b_face_cog[c_f_id],
@@ -505,7 +505,7 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
                + a22 * rhs[2]) * det_inv;
 
     /* As dynamic gradP* is computed, we add fext = gradPh to obtain gradP */
-    if (hyd_p_flag) {
+    if (hyd_p_flag == 1) {
       grad[0] += f_ext[c_id][0];
       grad[1] += f_ext[c_id][1];
       grad[2] += f_ext[c_id][2];
@@ -595,7 +595,7 @@ cs_gradient_boundary_iprime_lsq_s_ani
    cs_lnum_t                    n_faces,
    const cs_lnum_t             *face_ids,
    double                       clip_coeff,
-   bool                         hyd_p_flag,
+   int                          hyd_p_flag,
    cs_real_t                    f_ext[][3],
    cs_real_t                   *df_limiter,
    const cs_field_bc_coeffs_t  *bc_coeffs,
@@ -705,7 +705,7 @@ cs_gradient_boundary_iprime_lsq_s_ani
 
         cs_real_t pfac = var_j - var_i;
 
-        if (hyd_p_flag) {
+        if (hyd_p_flag == 1) {
           cs_lnum_t f_id_ij = cell_i_faces[i];
 
           cs_real_t dot_i = cs_math_3_distance_dot_product(i_face_cog[f_id_ij],
@@ -777,7 +777,7 @@ cs_gradient_boundary_iprime_lsq_s_ani
         /* (P_j - P_i)*/
         cs_real_t pfac = (var[c_id1] - var[c_id]);
 
-        if (hyd_p_flag) {
+        if (hyd_p_flag == 1) {
           cs_lnum_t f_id_ij = cell_i_faces[i];
 
           cs_real_t dot_i = cs_math_3_distance_dot_product(i_face_cog[f_id_ij],
@@ -861,7 +861,7 @@ cs_gradient_boundary_iprime_lsq_s_ani
 
       cs_real_t pfac = (a + (b-1.)*var_i);
 
-      if (hyd_p_flag) {
+      if (hyd_p_flag == 1) {
         /* (b_face_cog - cell_cen).f_ext, or IF.F_i */
         cs_real_t dot = cs_math_3_distance_dot_product(cell_cen[c_id],
                                                        b_face_cog[c_f_id],
@@ -899,7 +899,7 @@ cs_gradient_boundary_iprime_lsq_s_ani
                + a12 * rhs[1]
                + a22 * rhs[2]) * det_inv;
 
-    if (hyd_p_flag) {
+    if (hyd_p_flag == 1) {
       /* As gradP* is computed, we add fext = gradPh to obtain gradP */
       grad[0] += f_ext[c_id][0];
       grad[1] += f_ext[c_id][1];
