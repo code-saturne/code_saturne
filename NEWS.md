@@ -3,6 +3,10 @@ Release 9.0.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix computation of calculator values defined in the GUI for probes.
+  The provided coordinates arrays were not correct, leading to wrong values of
+  x, y and z when used. This bug did not affect 2D or 3D postprocessing fields.
+
 - Fix reporting of boundary condition definition errors.
 
 - Fix mass flux interpolation for colocated 2nd order time scheme.
