@@ -717,12 +717,18 @@ elif test "x$cs_gxx" = "xoneAPI"; then
   cxxflags_default_omp="-fiopenmp"
   cxxflags_default_omp_ad="-fopenmp-targets=spir64"
 
+  case "$cs_cxx_vers_major" in
+    202[56789])
+      cxxflags_default="$cxxflags_default  -Wno-non-c-typedef-for-linkage"
+      ;;
+  esac
+
 # Otherwise, are we using clang ?
 #--------------------------------
 
 elif test "x$cs_gxx" = "xclang"; then
 
-  cs_cc_version=`echo $CXX --version | grep clang | cut -f 3 -d ' '`
+  cs_cxx_version=`$CXX --version | grep clang | cut -f 3 -d ' '`
 
   echo "compiler '$CXX' is clang"
 
@@ -737,6 +743,12 @@ elif test "x$cs_gxx" = "xclang"; then
   cxxflags_default_opt="-O2"
   cxxflags_default_hot="-O3"
   cxxflags_default_omp="-fopenmp=libomp"
+
+  case "$cs_cxx_version" in
+    19.* | 2*)
+      cxxflags_default="$cxxflags_default  -Wno-non-c-typedef-for-linkage"
+      ;;
+  esac
 
 # Otherwise, are we using pgc++/nvc++ or nvcc ?
 #----------------------------------------------
