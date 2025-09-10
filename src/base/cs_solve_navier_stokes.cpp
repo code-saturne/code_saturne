@@ -1644,7 +1644,13 @@ _update_fluid_vel(const cs_mesh_t             *m,
     });
     ctx.wait(); // needed for the following synchronization
 
-    cs_halo_sync_r(m->halo, on_device, frcxt);
+    cs_halo_type_t halo_type = CS_HALO_STANDARD;
+    cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+    cs_gradient_type_by_imrgra(eqp_p->imrgra,
+                               &gradient_type,
+                               &halo_type);
+
+    cs_halo_sync_r(m->halo, halo_type, on_device, frcxt);
   }
 }
 

@@ -198,6 +198,12 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
   if (iterns < 2)
     sinfo->n_it = 0;
 
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+  cs_gradient_type_by_imrgra(eqp_pr->imrgra,
+                             &gradient_type,
+                             &halo_type);
+
   cs_field_bc_coeffs_t *bc_coeffs_hp = f->bc_coeffs;
   cs_real_t *cofaf_hp = bc_coeffs_hp->af;
   cs_real_t *cofbf_hp = bc_coeffs_hp->bf;
@@ -278,7 +284,7 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
 
   ctx.wait();
 
-  cs_halo_sync_r(m->halo, ctx.use_gpu(), next_fext);
+  cs_halo_sync_r(m->halo, halo_type, ctx.use_gpu(), next_fext);
 
   /* Prepare matrix and boundary conditions
      -------------------------------------- */
@@ -372,6 +378,8 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
      *  rhs^{k+1} = - div(fext^n+1) - D(1, p_h^{k+1})
      *--------------------------------------------------- */
 
+    cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), cvar_hydro_pres);
+
     if (eqp_pr->ircflu)
       cs_boundary_conditions_update_bc_coeff_face_values<true, true>
         (ctx,
@@ -379,7 +387,7 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
          bc_coeffs_hp,
          1, // inc
          eqp_pr,
-         true, // hyd_p_flag
+         1, // vp_param->iphydr
          next_fext,
          viscce,
          nullptr, // viscel for tensor
@@ -394,7 +402,7 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
          bc_coeffs_hp,
          1, // inc
          eqp_pr,
-         true, // hyd_p_flag
+         1, // vp_param->iphydr
          next_fext,
          viscce,
          nullptr, // viscel for tensor

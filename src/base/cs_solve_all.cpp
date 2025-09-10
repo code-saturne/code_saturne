@@ -920,11 +920,19 @@ cs_solve_all()
   const cs_equation_param_t *eqp_p
     = cs_field_get_equation_param_const(CS_F_(p));
 
+  cs_halo_type_t halo_type_pr = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type_pr = CS_GRADIENT_GREEN_ITER;
+  cs_gradient_type_by_imrgra(eqp_p->imrgra,
+                             &gradient_type_pr,
+                             &halo_type_pr);
+
   const cs_equation_param_t *eqp_vel =
     cs_param_cdo_has_fv_main() ? cs_field_get_equation_param_const(CS_F_(vel))
                                : cs_equation_param_by_name("momentum");
 
   const cs_fluid_properties_t *fp = cs_glob_fluid_properties;
+
+  cs_dispatch_context ctx;
 
   /* Storage indicator of a scalar and its associated exchange coefficiento.
    * For the moment, we only store in the SYRTHES coupling case, or with the
@@ -1025,7 +1033,6 @@ cs_solve_all()
     const cs_real_t p0 = fp->p0, ro0 = fp->ro0;
     cs_real_t *cpro_prtot = cs_field_by_name("total_pressure")->val;
 
-    cs_dispatch_context ctx;
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cvar_pr[c_id] = pred0;
       cpro_prtot[c_id] = p0 + ro0*cs_math_3_distance_dot_product(xyzp0,
@@ -1033,15 +1040,9 @@ cs_solve_all()
                                                                  gxyz);
     });
 
-    cs_halo_type_t halo_type = CS_HALO_STANDARD;
-    cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
-    cs_gradient_type_by_imrgra(eqp_p->imrgra,
-                               &gradient_type,
-                               &halo_type);
-
     /* Handle parallelism and periodicity */
-    cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), cvar_pr);
-    cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), cpro_prtot);
+    cs_halo_sync(m->halo, halo_type_pr, ctx.use_gpu(), cvar_pr);
+    cs_halo_sync(m->halo, halo_type_pr, ctx.use_gpu(), cpro_prtot);
 
     /* Update boundary condition for pressure */
     cs_field_t *f_frcxt = cs_field_by_name_try("volume_forces");
@@ -1082,13 +1083,16 @@ cs_solve_all()
       if (   cs_glob_velocity_pressure_param->iphydr == 1
           && cs_field_by_name_try("volume_forces") != nullptr) {
         cs_real_t *frcxt = cs_field_by_name("volume_forces")->val;
-        cs_halo_sync_var_strided(m->halo, CS_HALO_STANDARD, frcxt, 3);
-        cs_halo_perio_sync_var_vect(m->halo,  CS_HALO_STANDARD, frcxt, 3);
+        cs_halo_sync_r(m->halo, halo_type_pr,
+                       ctx.use_gpu(),
+                       (cs_real_3_t *)frcxt);
       }
 
       if (   cs_glob_velocity_pressure_param->icalhy == 1
           || cs_glob_velocity_pressure_model->idilat == 3)
-        cs_halo_sync_var(m->halo, CS_HALO_EXTENDED, CS_F_(rho)->val);
+        cs_halo_sync(m->halo, CS_HALO_EXTENDED,
+                     ctx.use_gpu(),
+                     CS_F_(rho)->val);
       first_pass = false;
     }
 
