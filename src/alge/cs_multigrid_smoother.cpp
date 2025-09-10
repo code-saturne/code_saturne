@@ -1828,6 +1828,11 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
                             const cs_real_t           *rhs,
                             cs_real_t                 *restrict vx_ini,
                             cs_real_t                 *restrict vx)
+#if defined(__has_feature)
+#  if __has_feature(thread_sanitizer)
+  __attribute__((no_sanitize("thread")))
+#  endif
+#endif
 {
   unsigned n_iter = 0;
 
@@ -1953,6 +1958,11 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
                     const cs_real_t           *rhs,
                     cs_real_t                 *restrict vx_ini,
                     cs_real_t                 *restrict vx)
+#if defined(__has_feature)
+#  if __has_feature(thread_sanitizer)
+  __attribute__((no_sanitize("thread")))
+#  endif
+#endif
 {
   unsigned n_iter = 0;
 
@@ -2076,6 +2086,11 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
                         cs_real_t                 *restrict vx,
                         size_t                     aux_size,
                         void                      *aux_vectors)
+#if defined(__has_feature)
+#  if __has_feature(thread_sanitizer)
+  __attribute__((no_sanitize("thread")))
+#  endif
+#endif
 {
   CS_UNUSED(aux_size);
   CS_UNUSED(aux_vectors);
@@ -2281,6 +2296,11 @@ _ts_f_gauss_seidel_msr(cs_sles_it_t                *c,
                        cs_real_t                   *restrict vx,
                        size_t                       aux_size,
                        void                        *aux_vectors)
+#if defined(__has_feature)
+#  if __has_feature(thread_sanitizer)
+  __attribute__((no_sanitize("thread")))
+#  endif
+#endif
 {
   CS_UNUSED(aux_size);
   CS_UNUSED(aux_vectors);
@@ -2406,6 +2426,11 @@ _ts_b_gauss_seidel_msr(cs_sles_it_t              *c,
                        cs_real_t                 *restrict vx,
                        size_t                     aux_size,
                        void                      *aux_vectors)
+#if defined(__has_feature)
+#  if __has_feature(thread_sanitizer)
+  __attribute__((no_sanitize("thread")))
+#  endif
+#endif
 {
   CS_UNUSED(aux_size);
   CS_UNUSED(aux_vectors);

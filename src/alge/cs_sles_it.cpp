@@ -129,6 +129,33 @@ BEGIN_C_DECLS
  *  Global variables
  *============================================================================*/
 
+/*!
+  \remark
+
+  In hybrid Gauss-Seidel solvers, a race condition may occur when a thread
+  updates the solution on row i, while that row's value participates in
+  another row j's update on a different thread, with j > i for a forward
+  sweep (or j < i in a backward sweep). In this case, depending on the race's
+  outcome, the value used on the update of row j will be updated value at
+  the previous iteration (as in true Gauss-Seidel), or that of the previous
+  iteration (as in a Jacobi solver).
+
+  So in a multithreaded execution, the hybrid nature of the Gauss-Seidel
+  solvers implemented here may lead to a non-reproducible convergence
+  behavior, with small variations in the number of iterations required or
+  in the solution vector.
+
+  This is considered acceptable. Otherwise, to avoid partitioning-dependent
+  or threading-dependent solver behavior, one must avoid hybrid Gauss-Seidel
+  alltogether, or run in pure serial mode. Pure Gauss-Seidel is not
+  considered, as its parallelism would be complex and inefficient,
+  and much slower than simply using a Jacobi solver.
+
+  To avoid the impact of thread races (but not that of MPI partitioning),
+  the `CS_THREAD_DEBUG` environment variable may be set to 1. This
+  disables threading alltogether inside Gauss-Seidel solvers.
+*/
+
 static int _thread_debug = 0;
 
 /* Value of the threshold under which BiCGStab and BiCGStab2 break down */
@@ -3394,6 +3421,11 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
                             const cs_real_t           *rhs,
                             cs_real_t                 *restrict vx_ini,
                             cs_real_t                 *restrict vx)
+#if defined(__has_feature)
+#  if __has_feature(thread_sanitizer)
+  __attribute__((no_sanitize("thread")))
+#  endif
+#endif
 {
   cs_sles_convergence_state_t cvg;
   double  res2, residual;
@@ -3572,6 +3604,11 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
                     const cs_real_t           *rhs,
                     cs_real_t                 *restrict vx_ini,
                     cs_real_t                 *restrict vx)
+#if defined(__has_feature)
+#  if __has_feature(thread_sanitizer)
+  __attribute__((no_sanitize("thread")))
+#  endif
+#endif
 {
   cs_sles_convergence_state_t cvg;
   double  res2, residual;
@@ -3751,6 +3788,11 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
                         cs_real_t                 *restrict vx,
                         size_t                     aux_size,
                         void                      *aux_vectors)
+#if defined(__has_feature)
+#  if __has_feature(thread_sanitizer)
+  __attribute__((no_sanitize("thread")))
+#  endif
+#endif
 {
   CS_UNUSED(aux_size);
   CS_UNUSED(aux_vectors);
@@ -4002,6 +4044,11 @@ _p_gauss_seidel(cs_sles_it_t              *c,
                 cs_real_t                 *restrict vx,
                 size_t                     aux_size,
                 void                      *aux_vectors)
+#if defined(__has_feature)
+#  if __has_feature(thread_sanitizer)
+  __attribute__((no_sanitize("thread")))
+#  endif
+#endif
 {
   CS_UNUSED(aux_size);
   CS_UNUSED(aux_vectors);
