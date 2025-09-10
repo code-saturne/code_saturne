@@ -345,8 +345,6 @@ _solve_coupled_vel_p_variables_equation(const int        iterns,
 static void
 _update_pressure_temperature_idilat_2(cs_lnum_t  n_cells_ext)
 {
-  cs_dispatch_context ctx;
-
   assert(cs_glob_velocity_pressure_model->idilat == 2);
 
   cs_real_t *cvar_pr = CS_F_(p)->val;
@@ -365,9 +363,39 @@ _update_pressure_temperature_idilat_2(cs_lnum_t  n_cells_ext)
      * coherent with the equation of state */
 
     if (cs_glob_time_scheme->time_order == 2) {
+
+      cs_dispatch_context ctx;
+
       ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         cvar_pr[c_id] = 2.*cvar_pr[c_id] - cvara_pr[c_id];
       });
+
+      const cs_equation_param_t *eqp_p
+        = cs_field_get_equation_param_const(CS_F_(p));
+      cs_halo_type_t halo_type = CS_HALO_STANDARD;
+      cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+      cs_gradient_type_by_imrgra(eqp_p->imrgra,
+                                 &gradient_type,
+                                 &halo_type);
+
+      /* Handle parallelism and periodicity */
+      cs_halo_sync(cs_glob_mesh->halo, halo_type, ctx.use_gpu(), cvar_pr);
+
+      /* Update boundary condition for pressure */
+      cs_field_t *f_frcxt = cs_field_by_name_try("volume_forces");
+      cs_real_3_t *frcxt = nullptr;
+      if (f_frcxt != nullptr)
+        frcxt = (cs_real_3_t *)cs_field_by_name_try("volume_forces")->val;
+
+      cs_boundary_conditions_update_bc_coeff_face_values<true,false>
+        (ctx,
+         CS_F_(p),
+         eqp_p,
+         cs_glob_velocity_pressure_param->iphydr,
+         frcxt,
+         nullptr, //cpro_vitenp
+         nullptr, //weighbtp
+         cvar_pr);
 
       ctx.wait();
 

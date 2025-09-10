@@ -4692,8 +4692,30 @@ cs_solve_navier_stokes(const int        iterns,
     ndircp = eqp_p->ndircl;
   else
     ndircp = eqp_p->ndircl - 1;
-  if (ndircp <= 0)
+  if (ndircp <= 0) {
     cs_field_set_volume_average(CS_F_(p), fluid_props->pred0);
+
+    cs_halo_type_t halo_type = CS_HALO_STANDARD;
+    cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+    cs_gradient_type_by_imrgra(eqp_p->imrgra,
+                               &gradient_type,
+                               &halo_type);
+
+    /* Handle parallelism and periodicity */
+    cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), cvar_pr);
+
+    /* Update boundary condition for pressure */
+
+    cs_boundary_conditions_update_bc_coeff_face_values<true,false>
+      (ctx,
+       CS_F_(p),
+       eqp_p,
+       cs_glob_velocity_pressure_param->iphydr,
+       frcxt,
+       nullptr, //cpro_vitenp
+       nullptr, //weighbtp
+       cvar_pr);
+  }
 
   /* Compute the total pressure (defined as a post-processed property).
    * For the compressible module, the solved pressure is already the
