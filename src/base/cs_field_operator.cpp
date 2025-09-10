@@ -1374,22 +1374,28 @@ cs_field_set_volume_average(cs_field_t     *f,
   const cs_real_t tot_f_vol = mq->tot_vol;
 
   cs_real_t *restrict val = f->val;
-  cs_real_t p_va = 0.;
+  double p_va = 0.;
 
-# pragma omp parallel for  reduction(+:p_va)
-  for (cs_lnum_t c_id = 0 ; c_id < n_cells ; c_id++) {
-    p_va += cell_f_vol[c_id]*val[c_id];
-  }
+  cs_dispatch_context ctx;
 
+  ctx.parallel_for_reduce_sum
+    (n_cells, p_va, [=] CS_F_HOST_DEVICE
+     (cs_lnum_t c_id,
+      CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+    sum += cell_f_vol[c_id]*val[c_id];
+  });
+
+  ctx.wait();
   cs_parall_sum(1, CS_DOUBLE, &p_va);
   p_va = p_va / tot_f_vol;
 
   cs_real_t shift = va - p_va;
 
-# pragma omp parallel for  if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     val[c_id] += shift;
-  }
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/

@@ -307,9 +307,11 @@ _solve_coupled_vel_p_variables_equation(const int        iterns,
   const int key_buoyant_id = cs_field_key_id_try("coupled_with_vel_p");
 
   // Correction only made for the collocated time-scheme (Li Ma phd)
-  cs_field_t *rho_mass = cs_field_by_name_try("density_mass");
-  if (   rho_mass != nullptr
+  cs_field_t *f_rho_mass = cs_field_by_name_try("density_mass");
+  if (   f_rho_mass != nullptr
       && cs_glob_velocity_pressure_param->itpcol == 1) {
+
+    cs_real_t *rho_mass = f_rho_mass->val;
     const int n_fields = cs_field_n_fields();
 
     for (int f_id = 0; f_id < n_fields; f_id++) {
@@ -324,8 +326,10 @@ _solve_coupled_vel_p_variables_equation(const int        iterns,
       if (coupled_with_vel_p_fld != 1)
         continue;
 
+      cs_real_t *cvar = f->val;
+
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        f->val[c_id] = f->val[c_id]*rho_mass->val[c_id]/crom[c_id];
+        cvar[c_id] = cvar[c_id] * rho_mass[c_id] / crom[c_id];
       });
 
       ctx.wait();
