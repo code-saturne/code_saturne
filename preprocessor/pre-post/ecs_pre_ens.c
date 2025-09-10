@@ -2307,7 +2307,6 @@ ecs_loc_pre_ens__lit_geo_6(const char       *nom_fic_geo,
   while (fin_lecture == false)  {
 
     int32_t  num_part_lu;
-    int32_t  cpt_part_lu = 0;
 
     /* Numéro de part */
 
@@ -2364,8 +2363,6 @@ ecs_loc_pre_ens__lit_geo_6(const char       *nom_fic_geo,
     printf("\n");
 
     /* Autres parts ? */
-
-    cpt_part_lu++;
 
     if (num_part > 0 && num_part == num_part_lu)
       fin_lecture = true;

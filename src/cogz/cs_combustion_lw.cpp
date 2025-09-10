@@ -404,7 +404,7 @@ _pdflwc(cs_lnum_t         n_cells,
     if (fp2mp < epsi && yfp2mp < epsi) {
 
       cs_real_t sum1 = 0., sum2 = 0., sum3 = 0., sum4 = 0.;
-      cs_real_t sum5 = 0., sum6 = 0., sum15 = 0., sum16 = 0.;
+      cs_real_t sum5 = 0., sum6 = 0., sum16 = 0.;
 
       // For each Dirac peak:
       for (int dirac_id = 0; dirac_id < n_dirac; dirac_id++) {
@@ -476,7 +476,6 @@ _pdflwc(cs_lnum_t         n_cells,
         sum4 += yfuel*d[dirac_id];
         sum5 += yoxyd*d[dirac_id];
         sum6 += yprod*d[dirac_id];
-        sum15 += rhol[dirac_id]*d[dirac_id];
         sum16 += w[dirac_id];
 
         // Store properties
@@ -957,9 +956,6 @@ _pdfpp3(const cs_lnum_t   n_cells,
 
   // Counters
 
-  cs_gnum_t clif = 0, cliy = 0, clifp2 = 0, clyfp2 = 0, clicoy = 0;
-  cs_gnum_t cliy1 = 0, cliy2 = 0, cliy2p = 0;
-
   cs_real_t ymin[2], ymax[2], y2p[2];
 
   /* Loop on cells
@@ -981,7 +977,6 @@ _pdfpp3(const cs_lnum_t   n_cells,
     cs_real_t fmp = fm[c_id];
     if ((fmp <= f_min) || (fmp >= f_max)) {
       fmp = std::max(std::min(f_max, fmp), f_min);
-      clif += 1;
     }
 
     // Y
@@ -990,7 +985,6 @@ _pdfpp3(const cs_lnum_t   n_cells,
     cs_real_t climin = std::max(0., (fmp-fs[0])/(1.-fs[0]));
     if ((yfmp >= climax) || (yfmp < climin)) {
       yfmp = std::max(climin, std::min(yfmp, climax));
-      cliy += 1;
     }
 
     // FP2M
@@ -999,7 +993,6 @@ _pdfpp3(const cs_lnum_t   n_cells,
     climin = 0.;
     if ((fp2mp >= climax) || (fp2mp < climin)) {
       fp2mp = std::max(climin, std::min(fp2m[c_id], climax));
-      clifp2 += 1;
     }
 
     // YFP2M
@@ -1009,7 +1002,6 @@ _pdfpp3(const cs_lnum_t   n_cells,
     climin = 0.;
     if ((yfp2mp >= climax) || (yfp2mp < climin)) {
       yfp2mp = std::max(climin, std::min(yfp2mp, climax));
-      clyfp2 += 1;
     }
 
     // Clip for covariance
@@ -1019,11 +1011,9 @@ _pdfpp3(const cs_lnum_t   n_cells,
     climin = -sqrt(fp2mp*yfp2mp);
     if (coyfpp >= climax) {
       coyfpp = climax;
-      clicoy += 1;
     }
     else if (coyfpp <= climin) {
       coyfpp = climin;
-      clicoy += 1;
     }
 
     cs_real_t yfmpmx = (f_max - fmp)*f_min/(f_max - f_min);
@@ -1043,7 +1033,7 @@ _pdfpp3(const cs_lnum_t   n_cells,
         || (f_max -fmp < epsi)) {
 
       cs_real_t sum1 = 0., sum2 = 0., sum3 = 0., sum4 = 0.;
-      cs_real_t sum5 = 0., sum6 = 0., sum15 = 0., sum16 = 0.;
+      cs_real_t sum5 = 0., sum6 = 0., sum16 = 0.;
 
       // For each Dirac peak:
       for (int dirac_id = 0; dirac_id < n_dirac; dirac_id++) {
@@ -1120,7 +1110,6 @@ _pdfpp3(const cs_lnum_t   n_cells,
         sum4 += yfuel*d[dirac_id];
         sum5 += yoxyd*d[dirac_id];
         sum6 += yprod*d[dirac_id];
-        sum15 += rhol[dirac_id]*d[dirac_id];
         sum16 += w[dirac_id];
 
         // Store properties
@@ -1176,20 +1165,16 @@ _pdfpp3(const cs_lnum_t   n_cells,
 
       if (y1 >= ymax[0]) {
         y1 = ymax[0];
-        cliy1 += 1;
       }
       else if (y1 <= ymin[0]) {
         y1 = ymin[0];
-        cliy1 += 1;
       }
 
       if (y2 >= ymax[1]) {
         y2 = ymax[1];
-        cliy2 += 1;
       }
       else if (y2 <= ymin[1]) {
         y2 = ymin[1];
-        cliy2 += 1;
       }
 
       y2p[0]  =   ((cs_math_pow2(yfmp) + yfp2mp) - cstfa2*(cs_math_pow2(y2)))
@@ -1202,11 +1187,9 @@ _pdfpp3(const cs_lnum_t   n_cells,
       climin = 0.;
       if (y2p[0] >= climax) {
         y2p[0] = climax;
-        cliy2p += 1;
       }
       else if (y2p[0] <= climin) {
         y2p[0] = climin;
-        cliy2p += 1;
       }
 
       _lwcurl(cstfa1, y1, y2p[0], ymin[0], ymax[0],
@@ -1500,7 +1483,7 @@ _pdfpp4(const cs_lnum_t   n_cells,
       icpt1++;
 
       cs_real_t sum1 = 0., sum2 = 0., sum3 = 0., sum4 = 0.;
-      cs_real_t sum5 = 0., sum6 = 0., sum15 = 0., sum16 = 0.;
+      cs_real_t sum5 = 0., sum6 = 0., sum16 = 0.;
 
       // For each Dirac peak:
       for (int dirac_id = 0; dirac_id < n_dirac; dirac_id++) {
@@ -1573,7 +1556,6 @@ _pdfpp4(const cs_lnum_t   n_cells,
         sum4 += yfuel*d[dirac_id];
         sum5 += yoxyd*d[dirac_id];
         sum6 += yprod*d[dirac_id];
-        sum15 += rhol[dirac_id]*d[dirac_id];
         sum16 += w[dirac_id];
 
         // Store properties
