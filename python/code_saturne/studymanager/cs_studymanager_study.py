@@ -2026,7 +2026,7 @@ class Studies(object):
 
                             # find job id with regex and store it
                             msg = output.decode('utf-8').strip()
-                            match = re.search('\d{8}', msg)
+                            match = re.search('\d+', msg)
                             job_id = match.group()
                             tot_job_id_list.append(job_id)
                             self.reporting('    - %s ...' % msg)
@@ -2104,7 +2104,7 @@ class Studies(object):
 
                     # find job id with regex and store it
                     msg = output.decode('utf-8').strip()
-                    match = re.search('\d{8}', msg)
+                    match = re.search('\d+', msg)
                     job_id = match.group()
                     tot_job_id_list.append(job_id)
                     self.reporting('    - %s ...' % msg)

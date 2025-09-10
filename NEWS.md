@@ -31,6 +31,8 @@ Release 9.0.1 (unreleased)
 - Fix symmetry boundary conditions defined inside GUI. Not read before for CDO
   and for listing for FV.
 
+- Fix the number of digit read to determine job id in SMGR
+
 ### User changes:
 
 - Add the "FOR_RANGE" operator to MEG formulae editor. This commit
