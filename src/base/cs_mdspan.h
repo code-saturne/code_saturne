@@ -839,9 +839,9 @@ private:
     Args... /*!<[in] Input arguments (parameter pack) */
   )
   {
-    static_assert(sizeof...(Args) < N);
+    static_assert(sizeof...(Args) < N, "Too many input arguments.");
     static_assert(sizeof...(Args) != 0, "No input arguments provided...");
-    static_assert(cs::are_integral<Args...>::value);
+    static_assert(cs::are_integral<Args...>::value, "Non integral indices provided");
   }
 
   /*--------------------------------------------------------------------------*/
@@ -859,7 +859,8 @@ private:
     Args... indices /*!<[in] Input arguments (parameter pack) */
   )
   {
-    static_assert(sizeof...(Args) <= N && sizeof...(Args) > 0);
+    static_assert(sizeof...(Args) <= N && sizeof...(Args) > 0,
+                  "Number of indices is out of bounds");
 
     constexpr int n_idx = sizeof...(Args);
 
@@ -887,7 +888,8 @@ private:
     Args... indices /*!<[in] Input arguments (parameter pack) */
   )
   {
-    static_assert(sizeof...(Args) <= N && sizeof...(Args) > 0);
+    static_assert(sizeof...(Args) <= N && sizeof...(Args) > 0,
+                  "Number of indices is out of bounds");
 
     constexpr int n_idx = sizeof...(Args);
 

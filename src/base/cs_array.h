@@ -2467,8 +2467,8 @@ private:
     Args... /*!<[in] Input arguments (parameter pack) */
   )
   {
-    static_assert(sizeof...(Args) < N);
-    static_assert(cs::are_integral<Args...>::value);
+    static_assert(sizeof...(Args) < N, "Too many input arguments.");
+    static_assert(cs::are_integral<Args...>::value, "Non integral input arguments.");
   }
 
   /*--------------------------------------------------------------------------*/
@@ -2486,7 +2486,8 @@ private:
     Args... indices /*!<[in] Input arguments (parameter pack) */
   )
   {
-    static_assert(sizeof...(Args) <= N && sizeof...(Args) > 0);
+    static_assert(sizeof...(Args) <= N && sizeof...(Args) > 0,
+                  "Too many or too few input arguments.");
 
     constexpr int n_idx = sizeof...(Args);
 
@@ -2514,7 +2515,8 @@ private:
     Args... indices /*!<[in] Input arguments (parameter pack) */
   )
   {
-    static_assert(sizeof...(Args) <= N && sizeof...(Args) > 0);
+    static_assert(sizeof...(Args) <= N && sizeof...(Args) > 0,
+                  "Too many or too few input arguments.");
 
     constexpr int n_idx = sizeof...(Args);
 
