@@ -811,11 +811,15 @@ _update_global_num(cs_gnum_t *global_num[],
   cs_gnum_t scan_new = local_new;
   cs_gnum_t total_new = local_new;
 
+#if defined(HAVE_MPI)
+
   if (cs_glob_n_ranks > 1) {
     MPI_Scan(&local_new, &scan_new, 1, CS_MPI_GNUM, MPI_SUM, cs_glob_mpi_comm);
     MPI_Allreduce(&local_new, &total_new, 1, CS_MPI_GNUM, MPI_SUM,
         cs_glob_mpi_comm);
   }
+
+#endif // defined(HAVE_MPI)
 
   if (*global_num) {
     CS_REALLOC(*global_num, n_local, cs_gnum_t);
