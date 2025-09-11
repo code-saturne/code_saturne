@@ -360,6 +360,8 @@ cs_field_build_bc_codes_all(void)
   const cs_lnum_t n_b_faces
     = cs_mesh_location_get_n_elts(CS_MESH_LOCATION_BOUNDARY_FACES)[0];
 
+  cs_dispatch_context ctx;
+
   /* Determine number of solved variables */
 
   cs_lnum_t n_vars = 0;
@@ -433,18 +435,16 @@ cs_field_build_bc_codes_all(void)
          which do not do the appropriate checks for
          variable type. */
 
-      for (cs_lnum_t coo_id = 0; coo_id < f->dim; coo_id++) {
-        cs_lnum_t s_id = n_b_faces * coo_id;
-        cs_lnum_t e_id = n_b_faces * (coo_id+1);
+      cs_lnum_t n = n_b_faces * (cs_lnum_t)(f->dim);
 
-        for (cs_lnum_t i = s_id; i < e_id; i++) {
-          icodcl[i] = 0;
-          rcodcl1[i] = cs_math_infinite_r;
-          rcodcl2[i] = cs_math_infinite_r;
-          rcodcl3[i] = 0;
-        }
-      }
+      ctx.parallel_for(n, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        icodcl[face_id]   = 0;
+        rcodcl1[face_id]  = cs_math_infinite_r;
+        rcodcl2[face_id]  = cs_math_infinite_r;
+        rcodcl3[face_id]  = 0.;
+      });
 
+      ctx.wait();
     }
 
   }

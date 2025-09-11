@@ -1039,17 +1039,28 @@ _div_rij(const cs_mesh_t     *m,
       || vp_param->igprij != 1) {
 
     /* If extrapolation of source terms */
-    if (cs_glob_time_scheme->isno2t > 0)
-      cs_axpy(n_cells*3, -1, (cs_real_t *)cpro_divr, (cs_real_t *)c_st_vel);
+    if (cs_glob_time_scheme->isno2t > 0) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        for (cs_lnum_t i = 0; i < 3; i++)
+          c_st_vel[c_id][i] -= cpro_divr[c_id][i];
+      });
+    }
 
     /* No extrapolation of source terms */
     else {
       /* No inner iteration */
-      if (vp_param->nterup == 1)
-        cs_axpy(n_cells*3, -1, (cs_real_t *)cpro_divr, (cs_real_t *)trav);
-
-      else
-        cs_axpy(n_cells*3, -1, (cs_real_t *)cpro_divr, (cs_real_t *)trava);
+      if (vp_param->nterup == 1) {
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+          for (cs_lnum_t i = 0; i < 3; i++)
+            trav[c_id][i] -= cpro_divr[c_id][i];
+        });
+      }
+      else {
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+          for (cs_lnum_t i = 0; i < 3; i++)
+            trava[c_id][i] -= cpro_divr[c_id][i];
+        });
+      }
     }
   }
 
@@ -3679,6 +3690,7 @@ cs_solve_navier_stokes_update_total_pressure
     });
   }
 
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/

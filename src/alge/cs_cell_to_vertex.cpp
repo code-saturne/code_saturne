@@ -237,7 +237,9 @@ _cell_to_vertex_w_inv_distance(int  tr_ignore)
   _weights[CS_CELL_TO_VERTEX_SHEPARD][0] = w;
   _weights[CS_CELL_TO_VERTEX_SHEPARD][1] = wb;
 
-  cs_array_real_fill_zero(n_vertices, w_sum);
+  ctx.parallel_for(n_vertices, [=] CS_F_HOST_DEVICE (cs_lnum_t v_id) {
+    w_sum[v_id] = 0.;
+  });
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
@@ -372,7 +374,9 @@ _cell_to_vertex_f_lsq(int  tr_ignore)
   _set[CS_CELL_TO_VERTEX_LR] = true;
   _weights[CS_CELL_TO_VERTEX_LR][0] = w;
 
-  cs_array_real_fill_zero(w_size, w);
+  ctx.parallel_for(w_size, [=] CS_F_HOST_DEVICE (cs_lnum_t id) {
+    w[id] = 0.;
+  });
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     const cs_real_t *c_coo = cell_cen[c_id];
@@ -492,7 +496,9 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
 
   const cs_real_3_t *cell_cen = mq->cell_cen;
 
-  cs_array_real_fill_zero(n_v_values, v_var);
+  ctx.parallel_for(n_v_values, [=] CS_F_HOST_DEVICE (cs_lnum_t v_id) {
+    v_var[v_id] = 0.;
+  });
 
   switch(method) {
 
@@ -531,7 +537,11 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
       else {
         cs_real_t *v_w;
         CS_MALLOC(v_w, n_vertices, cs_real_t);
-        cs_array_real_fill_zero(n_vertices, v_w);
+
+        ctx.parallel_for(n_vertices, [=] CS_F_HOST_DEVICE (cs_lnum_t v_id) {
+          v_w[v_id] = 0.;
+        });
+
         ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           cs_lnum_t s_id = c2v_idx[c_id];
           cs_lnum_t e_id = c2v_idx[c_id+1];
@@ -582,7 +592,10 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
       cs_real_t *v_w = nullptr;
       if (c_weight != nullptr) {
         CS_MALLOC(v_w, n_vertices, cs_real_t);
-        cs_array_real_fill_zero(n_vertices, v_w);
+
+        ctx.parallel_for(n_vertices, [=] CS_F_HOST_DEVICE (cs_lnum_t v_id) {
+          v_w[v_id] = 0.;
+        });
       }
 
       if (c_weight == nullptr) {
@@ -719,7 +732,10 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
       cs_real_t  *rhs;
       cs_lnum_t  rhs_size = n_vertices*4*stride;
       CS_MALLOC_HD(rhs, rhs_size, cs_real_t, cs_alloc_mode);
-      cs_array_real_fill_zero(rhs_size, rhs);
+
+      ctx.parallel_for(rhs_size, [=] CS_F_HOST_DEVICE (cs_lnum_t v_id) {
+        rhs[v_id] = 0.;
+      });
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         const cs_real_t *c_coo = cell_cen[c_id];

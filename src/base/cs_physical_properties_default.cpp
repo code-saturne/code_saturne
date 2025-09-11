@@ -242,8 +242,14 @@ static void
 _compute_turbulence_mu(const cs_lnum_t  n_cells)
 {
   // Laminar
-  if (cs_glob_turb_model->model == CS_TURB_NONE)
-    cs_array_real_fill_zero(n_cells, CS_F_(mu_t)->val);
+  if (cs_glob_turb_model->model == CS_TURB_NONE) {
+    cs_dispatch_context ctx;
+    cs_real_t *mut = CS_F_(mu_t)->val;
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      mut[c_id] = 0.;
+    });
+    ctx.wait();
+  }
 
   // Mixing length model
   else if (cs_glob_turb_model->model == CS_TURB_MIXING_LENGTH)
@@ -344,7 +350,12 @@ _compute_anisotropic_turbulent_viscosity
                                        iebdfm);
   }
   else {
-    cs_array_real_fill_zero(6*n_cells, (cs_real_t *)visten);
+    cs_dispatch_context ctx;
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      for (cs_lnum_t i = 0; i < 6; i++)
+        visten[c_id][i] = 0.;
+    });
+    ctx.wait();
   }
 }
 

@@ -349,19 +349,23 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
     /* Initialization of the convection flux for the current particle class */
 
-    cs_array_real_fill_zero(n_i_faces, i_visc);
-    cs_array_real_fill_zero(n_i_faces, flumas);
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      i_visc[f_id] = 0.;
+      flumas[f_id] = 0.;
+    });
 
-    cs_array_real_fill_zero(n_b_faces, b_visc);
-    cs_array_real_fill_zero(n_b_faces, flumab);
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      b_visc[f_id] = 0.;
+      flumab[f_id] = 0.;
+    });
 
     /* Initialization of the gas "class" convective flux by the
        first particle "class":
        it is initialized by the mass flux of the bulk */
 
     if (icla == 1 && f_xc != nullptr) {
-      cs_array_real_copy(n_i_faces, i_mass_flux_mix, i_mass_flux_gas);
-      cs_array_real_copy(n_b_faces, b_mass_flux_mix, b_mass_flux_gas);
+      cs_array_copy(n_i_faces, i_mass_flux_mix, i_mass_flux_gas);
+      cs_array_copy(n_b_faces, b_mass_flux_mix, b_mass_flux_gas);
     }
     /* Initialize the additional convective flux with the gravity term
        --------------------------------------------------------------- */
@@ -405,7 +409,9 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
        ------------------------------------------------------------- */
 
     /* Initialized to 0 */
-    cs_array_real_fill_zero(n_cells, viscce);
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      viscce[c_id] = 0.;
+    });
 
     if ((iscdri & CS_DRIFT_SCALAR_TURBOPHORESIS) && model != CS_TURB_NONE) {
 
@@ -466,10 +472,10 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
         || (iscdri & CS_DRIFT_SCALAR_THERMOPHORESIS)) {
 
       /* Face diffusivity of rho to compute rho*(Grad K . n)_face */
-      cs_array_real_copy(n_cells, crom, w1);
+      cs_array_copy(n_cells, crom, w1);
 
       if (mesh->halo != nullptr)
-        cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, w1);
+        cs_halo_sync(mesh->halo, CS_HALO_STANDARD, ctx.use_gpu(), w1);
 
       cs_face_viscosity(mesh,
                         fvq,
@@ -577,8 +583,13 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
       });
 
       /* Reset i_visc and b_visc */
-      cs_array_real_fill_zero(n_i_faces, i_visc);
-      cs_array_real_fill_zero(n_b_faces, b_visc);
+      ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+        i_visc[f_id] = 0.;
+      });
+
+      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+        b_visc[f_id] = 0.;
+      });
 
       /* Get Boundary conditions of the velocity */
       cs_field_bc_coeffs_t *bc_coeffs_vel = f_vel->bc_coeffs;
@@ -736,8 +747,8 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
          ---------------------------------------------------------------- */
 
       /* Initialize continuous phase mass flux as mixture mass flux */
-      cs_array_real_copy(n_i_faces, i_mass_flux_mix, i_mass_flux);
-      cs_array_real_copy(n_b_faces, b_mass_flux_mix, b_mass_flux);
+      cs_array_copy(n_i_faces, i_mass_flux_mix, i_mass_flux);
+      cs_array_copy(n_b_faces, b_mass_flux_mix, b_mass_flux);
 
       for (int jcla = 1; jcla < class_id_max; jcla++) {
 

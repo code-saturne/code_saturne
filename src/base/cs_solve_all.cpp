@@ -186,9 +186,10 @@ _update_previous_values(int        itrale,
     if (itrale <= 1 || st_prv_id < 0 || coupled_with_vel_p_fld != 1)
       continue;
     const int st_id = cs_field_get_key_int(fld, kst);
-    cs_array_real_copy(n_cells_ext,
-                       cs_field_by_id(st_id)->val,
-                       cs_field_by_id(st_prv_id)->val);
+
+    cs_array_copy<cs_real_t>(n_cells_ext,
+                             cs_field_by_id(st_id)->val,
+                             cs_field_by_id(st_prv_id)->val);
 
   }
 }
