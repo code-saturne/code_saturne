@@ -229,6 +229,12 @@ in a split terminal, with source on top, commands on bottom.
 - Using the <span style="color:rgb(255,160,47)">`CTRL+l`</span> key
   allows refreshing the display.
 
+- Using the <span style="color:rgb(255,160,47)">`CTRL+x+a`</span> key
+  combination allows switching back to the single temrminal.
+  With recent gdb versions, it is no possible to copy or paste text from
+  a split terminal, but is it possible from a single terminal, so
+  switching back and forth may be useful.
+
 \image html dg/gdb_tui_screen.png "GDB with split screen" width=80%
 
 GDB may also be run under Emacs, which provides syntax highlighting of
@@ -351,10 +357,10 @@ For the most common errors, use
 <span style="color:rgb(48,119,16)">AddressSanitizer</span>,
 a fast memory error detector.
 
-- For the code\_saturne configure options, this means
-  <span style="color:rgb(48,119,16)">`CFLAGS=-fsanitize=address`</span>
-  <span style="color:rgb(48,119,16)">`CXXFLAGS=-fsanitize=address`</span>
-  <span style="color:rgb(48,119,16)">`FCFLAGS=-fsanitize=address`</span>
+- For the code\_saturne configure options, this means adding  
+  <span style="color:rgb(48,119,16)">`CFLAGS=-fsanitize=address \`</span>  
+  <span style="color:rgb(48,119,16)">`CXXFLAGS=-fsanitize=address \`</span>  
+  <span style="color:rgb(48,119,16)">`FCFLAGS=-fsanitize=address \`</span>  
   <span style="color:rgb(48,119,16)">`LDFLAGS=-fsanitize=address`</span>
 
 - This may sometimes require specifying
@@ -392,9 +398,9 @@ as division by zero, some memory errors, integer overflows, and more.
   and even in some cases specify
   <span style="color:rgb(48,119,16)">`LD_LIBRARY_FLAGS`</span>
 
-- For the code\_saturne configure options, this means
-  <span style="color:rgb(48,119,16)">`CFLAGS=-fsanitize=undefined`</span>
-  <span style="color:rgb(48,119,16)">`FCFLAGS=-fsanitize=undefined`</span>
+- For the code\_saturne configure options, this means adding  
+  <span style="color:rgb(48,119,16)">`CFLAGS=-fsanitize=undefined \`</span>  
+  <span style="color:rgb(48,119,16)">`FCFLAGS=-fsanitize=undefined \`</span>  
   <span style="color:rgb(48,119,16)">`LDFLAGS=-fsanitize=undefined`</span>
 
 - This may sometimes require specifying
@@ -705,28 +711,44 @@ Debugging OpenMP data races is much more tricky.
 - Most errors are due to missing <span style="color: rgb(0,91,187)">`private`</span>
   attributes in OpenMP pragmas.
 
-  * In C, using local variable declarations avoids most of these, as
+  * Using local variable declarations avoids most of these, as
     those variables are automatically thread-private.
 
-  * Valgrind's <span style="color: rgb(48,119,16)">DRD</span> (Data Race Detector) tool
-    is quite useful here.
+  * Using `parallel_for` constructs from `cs_dispatch` avoid even more
+    thread race issues, as most local variables captured in lambda
+    function will be read-only, so for example simply incrementing a counter
+    defined outside the loop (instead of using a proper reduction construct)
+    will lead to a compilation error.
 
-    - <span style="color: rgb(48,119,16)">`valgrind –tool=drd –check-stack-var=yes –read-var-info=yes`</span>
+  * Valgrind's <span style="color: rgb(48,119,16)">DRD</span> (Data Race Detector)
+    tool is not of much use here, as it generates too many false positives with
+    current OpenMP implementations (even when disabling the use of Linux futexes
+    with a dedicated GCC build).
 
-    - Check
-      [https://valgrind.org/docs/manual/drd-manual.html#drd-manual.openmp](https://valgrind.org/docs/manual/drd-manual.html#drd-manual.openmp>) for more information.
+  * <span style="color: rgb(48,119,16)">ThreadSanitizer</span>
+    seems to work best here. For proper OpenMP debugging, LLVM-based compilers
+    also require the `archer` library, which is bundled with the Intel oneAPI
+    compilers (versions 2024.0 and above), and clang versions 10 or above.
+    Note that on some systems with fine-grained packaging,
+    such as Debian, clang might be available without OpenMP support (which
+    requires `libomp` to be installed.
 
-  * GCC's or clang's <span style="color: rgb(48,119,16)">ThreadSanitizer</span>
-    is also very useful here.
+    Note we have successfully used ThreadSanitizer with the oneAPI compilers
+    (tested with oneAPI 2025.2). Builds with standard clang 19 and 20
+    seem to fail on startup, and those with gcc 12 report false positives
+    and then hang. So using the oneAPI compilers is recommended for
+    OpenMP debugging.
 
-- In both cases, to avoid false positives, GCC must be built with the
-  <span style="color: rgb(48,119,16)">`–disable-linux-futex`</span>
-  configure option, so this requires a special build of GCC.
+    - For the code\_saturne configure options, this means using  
+      <span style="color:rgb(48,119,16)">`CFLAGS=-fsanitize=thread \`</span>  
+      <span style="color:rgb(48,119,16)">`CXXFLAGS=-fsanitize=thread \`</span>  
+      <span style="color:rgb(48,119,16)">`LDFLAGS=-fsanitize=thread`</span>
 
-  * With more recent versions of GCC, this may not be sufficient to
-    avoid false positives...
-
-    - probably due to some optimizations in thread management.
+    - At runtime, one should also use set the following option to
+      avoid false positives.
+      ```
+      export TSAN_OPTIONS='ignore_noninstrumented_modules=1'
+      ```
 
 Miscellaneous tips
 ==================
