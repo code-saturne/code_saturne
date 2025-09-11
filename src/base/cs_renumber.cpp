@@ -1376,10 +1376,11 @@ _order_i_faces_by_cell_adjacency(const cs_mesh_t         *mesh,
                                  cs_renumber_ordering_t   base_ordering,
                                  cs_lnum_t               *order)
 {
-  cs_lnum_t  *faces_keys;
+  cs_lnum_t  *faces_keys = nullptr;
 
   const cs_lnum_t n_cells = mesh->n_cells;
   const cs_lnum_t n_i_faces = mesh->n_i_faces;
+  const int n_threads = cs_parall_n_threads(n_i_faces, CS_THR_MIN);
 
   const cs_lnum_2_t *restrict i_face_cells = mesh->i_face_cells;
 
@@ -1396,14 +1397,14 @@ _order_i_faces_by_cell_adjacency(const cs_mesh_t         *mesh,
 
       int  *halo_class;
 
-      CS_MALLOC(faces_keys, mesh->n_i_faces * 3, cs_lnum_t);
+      CS_MALLOC(faces_keys, n_i_faces * 3, cs_lnum_t);
       CS_MALLOC(halo_class, mesh->n_ghost_cells, int);
 
       _classify_halo_cells(mesh, halo_class);
 
       /* Build lexical ordering of faces */
 
-#     pragma omp parallel for reduction(+:n_no_adj_halo)
+#     pragma omp parallel for reduction(+:n_no_adj_halo) num_threads(n_threads)
       for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
         cs_lnum_t c_id_0 = i_face_cells[f_id][0];
         cs_lnum_t c_id_1 = i_face_cells[f_id][1];
@@ -1436,11 +1437,11 @@ _order_i_faces_by_cell_adjacency(const cs_mesh_t         *mesh,
     }
     else {
 
-      CS_MALLOC(faces_keys, mesh->n_i_faces*2, cs_lnum_t);
+      CS_MALLOC(faces_keys, n_i_faces*2, cs_lnum_t);
 
       /* Build lexical ordering of faces */
 
-#     pragma omp parallel for  if (n_i_faces > CS_THR_MIN)
+#     pragma omp parallel for  num_threads(n_threads)
       for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
         cs_lnum_t c_id_0 = i_face_cells[f_id][0];
         cs_lnum_t c_id_1 = i_face_cells[f_id][1];
@@ -1478,7 +1479,7 @@ _order_i_faces_by_cell_adjacency(const cs_mesh_t         *mesh,
 
   else { /* if (i_faces_base_ordering == CS_RENUMBER_ADJACENT_HIGH) */
 
-    CS_MALLOC(faces_keys, mesh->n_i_faces*2, cs_lnum_t);
+    CS_MALLOC(faces_keys, n_i_faces*2, cs_lnum_t);
 
     /* Build lexical ordering of faces */
 
@@ -1537,10 +1538,9 @@ _order_i_faces_by_cell_adjacency(const cs_mesh_t         *mesh,
 static cs_lnum_t
 _renumber_i_faces_by_cell_adjacency(cs_mesh_t  *mesh)
 {
-  cs_lnum_t  *new_to_old_i;
-
   const cs_lnum_t n_i_faces = mesh->n_i_faces;
 
+  cs_lnum_t  *new_to_old_i;
   CS_MALLOC(new_to_old_i, n_i_faces, cs_lnum_t);
 
   /* If cells adjacent to halo cells are last, adjacent interior faces
@@ -1585,11 +1585,10 @@ _renumber_i_faces_by_cell_adjacency(cs_mesh_t  *mesh)
 static void
 _renumber_b_faces_by_cell_adjacency(cs_mesh_t  *mesh)
 {
-  cs_lnum_t  *new_to_old_b;
-
   const cs_lnum_t n_b_faces_connect
       = cs::min(mesh->n_b_faces_all, mesh->n_b_faces);
 
+  cs_lnum_t  *new_to_old_b;
   CS_MALLOC(new_to_old_b, n_b_faces_connect, cs_lnum_t);
 
   cs_lnum_t *fc_num;
