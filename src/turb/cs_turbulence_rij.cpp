@@ -3973,9 +3973,9 @@ cs_turbulence_rij_clip(int        phase_id,
       /* Check if R is positive and ill-conditioned (since the former
        * will induce the latter after clipping...) */
 
-      const cs_real_t tke = cs_math_6_trace(cvar_rij[c_id]);
+      const cs_real_t trrij = cs_math_6_trace(cvar_rij[c_id]);
 
-      if (tke <= cs_math_epzero*trref) {
+      if (trrij <= cs_math_epzero*trref) {
         for (cs_lnum_t i = 0; i < 3; i++) {
           if (cpro_rij_clipped != nullptr) {
             cpro_rij_clipped[c_id][i]
@@ -3995,7 +3995,7 @@ cs_turbulence_rij_clip(int        phase_id,
       else {
         cs_real_t tensor[6];
         for (cs_lnum_t ij = 0; ij < 6; ij++)
-          tensor[ij] = cvar_rij[c_id][ij]/tke;
+          tensor[ij] = cvar_rij[c_id][ij]/trrij;
 
         cs_real_t eigen_vals[3];
         _sym_33_eigen(tensor, eigen_vals);
@@ -4022,7 +4022,7 @@ cs_turbulence_rij_clip(int        phase_id,
             cvar_rij[c_id][ij] = (1.0-eigen_offset)*cvar_rij[c_id][ij];
 
             if (ij < 3)
-              cvar_rij[c_id][ij] += tke*(eigen_offset+eigen_tol)/3.;
+              cvar_rij[c_id][ij] += trrij*(eigen_offset+eigen_tol)/3.;
 
             if (cpro_rij_clipped != nullptr)
               cpro_rij_clipped[c_id][ij] = eigen_offset*cvar_rij[c_id][ij];
