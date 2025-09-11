@@ -3202,12 +3202,14 @@ _lsq_scalar_gradient_hyd_p_gather
 
   cs_real_t *i_poro_duq_0 = nullptr;
   cs_real_t *i_poro_duq_1 = nullptr;
+  cs_real_t *b_poro_duq = nullptr;
 
   bool is_porous = false;
   if (f_i_poro_duq_0 != nullptr) {
     is_porous = true;
     i_poro_duq_0 = f_i_poro_duq_0->val;
     i_poro_duq_1 = cs_field_by_name("i_poro_duq_1")->val;
+    b_poro_duq = cs_field_by_name("b_poro_duq")->val;
   }
 
   cs_cocg_6_t  *restrict cocgb = nullptr;
@@ -3406,12 +3408,14 @@ _lsq_scalar_gradient_hyd_p_gather
     for (cs_lnum_t fidx = s_id; fidx < e_id; fidx++) {
       const cs_lnum_t f_id = c2b[fidx];
 
+      cs_real_t poro = (is_porous) ? b_poro_duq[f_id] : 0.;
+
       cs_real_t dif[3];
       cs_real_t ddif;
 
       /* (b_face_cog - cell_cen).f_ext, or IF.F_i */
       cs_real_t if_dot_fext = cs_math_3_distance_dot_product(cell_cen[ii],
-                                                             b_face_cog[ii],
+                                                             b_face_cog[f_id],
                                                              f_ext[ii]);
 
 #if (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
@@ -3428,7 +3432,7 @@ _lsq_scalar_gradient_hyd_p_gather
       ddif = 1. / cs_math_3_square_norm(dif);
 #endif
 
-      cs_real_t pfac = ddif * (val_f[f_id] - pvar[ii] - if_dot_fext);
+      cs_real_t pfac = ddif * (val_f[f_id] - pvar[ii] - if_dot_fext - poro);
 
       for (cs_lnum_t ll = 0; ll < 3; ll++)
         rhsv[ll] += dif[ll] * pfac;
