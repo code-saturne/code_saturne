@@ -944,9 +944,11 @@ cs_boundary_conditions_type(bool  init,
         if (isocpt[1] > 0 && (eqp_vel->verbosity >= 2 || isocpt[0] > 0))
           cs_log_printf
             (CS_LOG_DEFAULT,
-             _("Incoming flow detained for %llu out of %llu outlet faces\n"),
+             _("Incoming flow detained for %llu out of %llu outlet faces"
+               " (time step %d)\n"),
              (unsigned long long)isocpt[0],
-             (unsigned long long)isocpt[1]);
+             (unsigned long long)isocpt[1],
+             nt_cur);
       }
 
     }
