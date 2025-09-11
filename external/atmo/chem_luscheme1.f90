@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2024 EDF S.A.
+! Copyright (C) 1998-2025 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -177,7 +177,10 @@ end subroutine kinetic_1
 subroutine fexchem_1(ns,nr,y,rk,zcsourc,convers_factor,chem) &
   bind(C, name='cs_f_fexchem_1')
   use, intrinsic :: iso_c_binding
+
 implicit none
+
+procedure() :: rates_1
 
 ! Arguments
 integer(c_int), value :: ns, nr
@@ -264,6 +267,8 @@ subroutine jacdchemdc_1(ns,nr,y,convers_factor,  &
   bind(C, name='cs_f_jacdchemdc_1')
   use, intrinsic :: iso_c_binding
   implicit none
+
+  procedure() :: dratedc_1
 
 ! Arguments
 
