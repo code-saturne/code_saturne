@@ -217,6 +217,11 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
 {
   /* Initialization */
 
+  if (n_faces <= 0)
+    return;
+
+  assert(var_iprime != nullptr || var_iprime_flux != nullptr);
+
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
 
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
@@ -674,6 +679,9 @@ cs_gradient_boundary_iprime_lsq_s_ani
    cs_real_t                    var_iprime_flux[])
 {
   /* Initialization */
+
+  if (n_faces <= 0)
+    return;
 
   assert(var_iprime != nullptr || var_iprime_flux != nullptr);
 
