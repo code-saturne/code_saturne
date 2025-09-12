@@ -659,7 +659,7 @@ cs_lagr_coupling_finalize(void)
     cs_field_t *f_th_power_rain = cs_field_by_name_try("thermal_power_rain");
     if (f_th_power_rain != nullptr && t_st_t_e != nullptr) {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
-        f_th_power_rain->val[c_id] += t_st_t_e[c_id];
+        f_th_power_rain->val[c_id] = t_st_t_e[c_id];
     }
 
   }
