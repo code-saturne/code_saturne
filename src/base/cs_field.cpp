@@ -1717,9 +1717,9 @@ cs_field_set_n_time_vals(cs_field_t  *f,
         f->_vals[1]->reshape(n_elts[2], f->dim);
 
         /* Use host_context in this part to avoid access by GPU (too soon...) */
-        cs_host_context h_ctx;
-        f->_vals[1]->zero(static_cast<cs_dispatch_context&>(h_ctx));
-        h_ctx.wait();
+        cs_dispatch_context ctx;
+        f->_vals[1]->zero(ctx);
+        ctx.wait();
 
         f->vals[1] = f->_vals[1]->data();
         f->val_pre = f->_vals[1]->data();
@@ -1744,20 +1744,21 @@ cs_field_allocate_values(cs_field_t  *f)
   if (f->is_owner) {
 
     const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
-    int ii;
+
+    /* Use host_context in this part to avoid access by GPU (too soon...) */
+    cs_dispatch_context ctx;
+    ctx.set_use_gpu(false);
 
     /* Initialization */
 
-    for (ii = 0; ii < f->n_time_vals; ii++) {
+    for (int ii = 0; ii < f->n_time_vals; ii++) {
       f->_vals[ii]->reshape(n_elts[2], f->dim);
-
-      /* Use host_context in this part to avoid access by GPU (too soon...) */
-      cs_host_context h_ctx;
-      f->_vals[ii]->zero(static_cast<cs_dispatch_context&>(h_ctx));
-      h_ctx.wait();
+      f->_vals[ii]->zero(ctx);
 
       f->vals[ii] = f->_vals[ii]->data();
     }
+
+    ctx.wait();
 
     f->val = f->_vals[0]->data();
     if (f->n_time_vals > 1)
