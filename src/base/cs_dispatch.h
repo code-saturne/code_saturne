@@ -938,7 +938,9 @@ public:
       smem_size = l_block_size * sizeof(T);
     }
 
+#if defined(DEBUG) || !defined(NDEBUG)
     cudaError_t retcode = cudaSuccess;
+#endif
 
     cs_cuda_kernel_parallel_for_reduce<T, R>
       <<<l_grid_size, l_block_size, smem_size, stream_>>>
