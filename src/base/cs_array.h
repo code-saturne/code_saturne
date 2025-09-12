@@ -928,7 +928,8 @@ public:
     !defined(__HIP_DEVICE_COMPILE__)
     _mode = cs_alloc_mode;
 #else
-    _mode = CS_ALLOC_HOST_DEVICE_SHARED; // use default and avoid compiler warnings
+   // use default and avoid compiler warnings
+    _mode = CS_ALLOC_HOST_DEVICE_SHARED;
 #endif
   }
 
@@ -1491,9 +1492,9 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Set a subset of values of the data array to a constant value while providing
-   *        a dispatch context. It is up to the call to synchronize the context
-   *        after this call.
+   * \brief Set a subset of values of the data array to a constant value while
+   *        providing a dispatch context. It is up to the call to synchronize
+   *        the context after this call.
    */
   /*--------------------------------------------------------------------------*/
 
@@ -1503,7 +1504,8 @@ public:
     cs_dispatch_context &ctx,      /*!< Reference to dispatch context */
     T                    val,      /*!<[in] Value to set to entire data array. */
     const cs_lnum_t      n_elts,   /*!<[in] Number of values to set. */
-    const cs_lnum_t      elt_ids[] /*!<[in] list of ids in the subset or null (size:n_elts) */
+    const cs_lnum_t      elt_ids[] /*!<[in] list of ids in the subset or null
+                                       (size:n_elts) */
   )
   {
     assert(n_elts <= _size && n_elts >= 0);
