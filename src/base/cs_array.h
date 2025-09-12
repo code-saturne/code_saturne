@@ -1366,6 +1366,32 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
+   * \brief Get span view of array with a given array of dimensions (extent).
+   *        If total size of span is different than that of the array an error
+   *        is raised.
+   *
+   * \return mdspan view with given dimensions.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<layout _L_ = L, typename... Args>
+  CS_F_HOST_DEVICE
+  mdspan<T, sizeof...(Args), _L_>
+  get_mdspan
+  (
+    Args... indices /*!<[in] Input arguments (parameter pack) */
+  )
+  {
+    check_non_empty_args_(indices...);
+
+    constexpr int n_vals = sizeof...(Args);
+    cs_lnum_t tmp_args[n_vals] = {indices...};
+
+    return get_mdspan<n_vals, _L_>(tmp_args);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
    * \brief Set all values of the data array to a constant value.
    */
   /*--------------------------------------------------------------------------*/
@@ -2469,6 +2495,25 @@ private:
   {
     static_assert(sizeof...(Args) < N, "Too many input arguments.");
     static_assert(cs::are_integral<Args...>::value, "Non integral input arguments.");
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Helper function to static check sub-function input arguments.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<typename... Args>
+  CS_F_HOST_DEVICE
+  static inline
+  void
+  check_non_empty_args_
+  (
+    Args... /*!<[in] Input arguments (parameter pack) */
+  )
+  {
+    static_assert(sizeof...(Args) > 0);
+    static_assert(cs::are_integral<Args...>::value);
   }
 
   /*--------------------------------------------------------------------------*/
