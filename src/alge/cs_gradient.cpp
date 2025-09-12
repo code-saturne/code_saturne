@@ -4781,6 +4781,7 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
   }
 
   CS_FREE(i_f_var);
+  CS_FREE(b_f_var);
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
     cs_real_t dvol;
