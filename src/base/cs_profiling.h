@@ -57,6 +57,12 @@
  * Default: no profiling library
  *----------------------------------------------------------------------------*/
 
+// Start profiling, when activated y code.
+#define CS_PROFILE_START()
+
+// Stop profiling, when activated y code.
+#define CS_PROFILE_STOP()
+
 /// Annotates a whole function.
 #define CS_PROFILE_FUNC_RANGE()
 
@@ -72,7 +78,16 @@
 
 #elif CS_PROFILING == CS_PROFILING_NVTX
 
+#include <cuda_profiler_api.h>
+
 #include <nvtx3/nvtx3.hpp>
+// #include <nvToolsExt.h>
+
+// Start profiling, when activated y code.
+#define CS_PROFILE_START() {cudaProfilerStart();}
+
+// Stop profiling, when activated y code.
+#define CS_PROFILE_STOP() {cudaProfilerStop();}
 
 /// Annotates a whole function.
 #ifndef __CUDA_ARCH__

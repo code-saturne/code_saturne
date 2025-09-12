@@ -108,7 +108,7 @@
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
 #include "base/cs_numbering.h"
-#include "base/cs_prototypes.h"
+#include "base/cs_profiling.h"
 #include "base/cs_sort.h"
 #include "base/cs_timer.h"
 
@@ -4132,6 +4132,8 @@ cs_matrix_vector_multiply([[maybe_unused]] cs_dispatch_context  &ctx,
                           cs_real_t                              x[],
                           cs_real_t                              y[])
 {
+  CS_PROFILE_FUNC_RANGE();
+
   auto nocst_matrix = const_cast<cs_matrix_t *>(matrix);
 
   cs_matrix_vector_product_t  *spmv_func;
@@ -4211,6 +4213,8 @@ cs_matrix_vector_multiply_partial
   cs_real_t                              y[]
 )
 {
+  CS_PROFILE_FUNC_RANGE();
+
   assert(matrix != nullptr);
   auto nocst_matrix = const_cast<cs_matrix_t *>(matrix);
 
@@ -6348,6 +6352,8 @@ cs_matrix_vector_multiply(const cs_matrix_t   *matrix,
                           cs_real_t           *restrict x,
                           cs_real_t           *restrict y)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   assert(matrix != nullptr);
 
   if (matrix->vector_multiply[matrix->fill_type][0] != nullptr) {
@@ -6420,6 +6426,8 @@ cs_matrix_vector_multiply_d(const cs_matrix_t   *matrix,
                             cs_real_t           *restrict x,
                             cs_real_t           *restrict y)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   assert(matrix != nullptr);
 
   if (matrix->vector_multiply_d[matrix->fill_type][0] != nullptr) {
@@ -6460,6 +6468,8 @@ cs_matrix_vector_multiply_nosync(const cs_matrix_t  *matrix,
                                  cs_real_t          *restrict x,
                                  cs_real_t          *restrict y)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   assert(matrix != nullptr);
 
   if (matrix->vector_multiply[matrix->fill_type][0] != nullptr) {
@@ -6531,6 +6541,8 @@ cs_matrix_vector_multiply_partial(const cs_matrix_t      *matrix,
                                   cs_real_t              *restrict x,
                                   cs_real_t              *restrict y)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   assert(matrix != nullptr);
 
   if (matrix->vector_multiply[matrix->fill_type][op_type] != nullptr) {
@@ -6606,6 +6618,8 @@ cs_matrix_vector_multiply_partial_d(const cs_matrix_t      *matrix,
                                     cs_real_t              *restrict x,
                                     cs_real_t              *restrict y)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   assert(matrix != nullptr);
 
   if (matrix->vector_multiply_d[matrix->fill_type][op_type] != nullptr) {

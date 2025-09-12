@@ -1762,6 +1762,8 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
                              size_t                     aux_size,
                              void                      *aux_vectors)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_sles_convergence_state_t cvg= CS_SLES_ITERATING;
   unsigned n_iter = 0;
 

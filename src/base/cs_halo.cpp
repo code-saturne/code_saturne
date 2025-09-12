@@ -54,6 +54,7 @@
 #include "base/cs_interface.h"
 #include "base/cs_mem.h"
 #include "base/cs_order.h"
+#include "base/cs_profiling.h"
 #include "base/cs_rank_neighbors.h"
 
 #include "fvm/fvm_periodicity.h"
@@ -1734,6 +1735,8 @@ cs_halo_sync_pack(const cs_halo_t  *halo,
   if (halo == nullptr)
     return;
 
+  CS_PROFILE_FUNC_RANGE();
+
   void *_send_buffer = cs_halo_sync_pack_init_state(halo,
                                                     sync_mode,
                                                     data_type,
@@ -1857,6 +1860,8 @@ cs_halo_sync_pack_d(const cs_halo_t  *halo,
   if (halo == nullptr)
     return;
 
+  CS_PROFILE_FUNC_RANGE();
+
   cs_halo_state_t  *_hs = (hs != nullptr) ? hs : _halo_state;
 
 #if defined(HAVE_CUDA)
@@ -1943,6 +1948,8 @@ cs_halo_sync_start(const cs_halo_t  *halo,
 {
   if (halo == nullptr)
     return;
+
+  CS_PROFILE_FUNC_RANGE();
 
   cs_halo_state_t  *_hs = (hs != nullptr) ? hs : _halo_state;
 
@@ -2114,6 +2121,8 @@ cs_halo_sync_wait(const cs_halo_t  *halo,
 {
   if (halo == nullptr)
     return;
+
+  CS_PROFILE_FUNC_RANGE();
 
   cs_halo_state_t  *_hs = (hs != nullptr) ? hs : _halo_state;
 

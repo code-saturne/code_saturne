@@ -185,8 +185,17 @@ cs_time_stepping(void)
   cs_time_step_type_t       idtvar = cs_glob_time_step_options->idtvar;
   cs_turbomachinery_model_t iturbo = cs_turbomachinery_get_model();
 
+  int profile_time_step = -2;
+
   /* Initialization
      -------------- */
+
+  /* Activate profiling for a specific time step */
+
+  const char s[] = "CS_PROFILE_TIME_STEP";
+  if (getenv(s) != nullptr) {
+    profile_time_step = atoi(getenv(s));
+  }
 
   /* Define timer stats based on options */
 
@@ -607,6 +616,10 @@ cs_time_stepping(void)
 
   do {
 
+    if (profile_time_step == ts->nt_cur) {
+      CS_PROFILE_START();
+    }
+
     if (ts->t_max > 0 && ts->t_max > ts->t_cur) {
       ts->nt_max = ts->nt_cur + nearbyint((ts->t_max-ts->t_cur)/ts->dt_ref);
 
@@ -840,6 +853,10 @@ cs_time_stepping(void)
        ---------------- */
 
     cs_glob_ale_data->ale_iteration = cs_glob_ale_data->ale_iteration + 1;
+
+    if (profile_time_step == ts->nt_cur) {
+      CS_PROFILE_STOP();
+    }
 
   } while (ts->nt_cur < ts->nt_max);
 

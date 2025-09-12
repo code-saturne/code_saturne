@@ -304,8 +304,6 @@ cs_boundary_conditions_set_dirichlet_vector(cs_real_t             a[3],
                                             cs_real_t             hint,
                                             const cs_real_t       hextv[3])
 {
-  CS_PROFILE_FUNC_RANGE();
-
   for (int isou = 0; isou < 3; isou++) {
     if (fabs(hextv[isou]) > 0.5*cs_math_infinite_r) {
 
