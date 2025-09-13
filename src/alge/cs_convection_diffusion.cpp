@@ -277,8 +277,7 @@ _beta_limiter_denom(cs_field_t                 *f,
   /* pure SOLU scheme (upwind gradient reconstruction) */
   else if (ischcp == 2) {
 
-    cs_upwind_gradient(f->id,
-                       ctx,
+    cs_upwind_gradient(ctx,
                        inc,
                        halo_type,
                        f->bc_coeffs,
@@ -287,8 +286,7 @@ _beta_limiter_denom(cs_field_t                 *f,
                        pvar,
                        grdpa);
 
-    cs_upwind_gradient(f->id,
-                       ctx,
+    cs_upwind_gradient(ctx,
                        inc,
                        halo_type,
                        f->bc_coeffs,
@@ -1474,10 +1472,7 @@ _convection_diffusion_scalar_unsteady
         gradup[cell_id][2] = 0.;
       });
 
-      ctx.wait();
-
-      cs_upwind_gradient(f_id,
-                         ctx,
+      cs_upwind_gradient(ctx,
                          inc,
                          halo_type,
                          bc_coeffs,
@@ -2489,10 +2484,8 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
         gradup[cell_id][1] = 0.;
         gradup[cell_id][2] = 0.;
       });
-      ctx.wait();
 
-      cs_upwind_gradient(f_id,
-                         ctx,
+      cs_upwind_gradient(ctx,
                          inc,
                          halo_type,
                          bc_coeffs,
@@ -4202,6 +4195,8 @@ cs_convection_diffusion_scalar(int                         idtvar,
                                cs_real_2_t                 i_flux[],
                                cs_real_t                   b_flux[])
 {
+  CS_PROFILE_FUNC_RANGE();
+
   std::chrono::high_resolution_clock::time_point t_start;
   if (cs_glob_timer_kernels_flag > 0)
     t_start = std::chrono::high_resolution_clock::now();
@@ -4310,6 +4305,8 @@ cs_face_convection_scalar(int                         idtvar,
                           cs_real_t                   i_conv_flux[][2],
                           cs_real_t                   b_conv_flux[])
 {
+  CS_PROFILE_FUNC_RANGE();
+
   std::chrono::high_resolution_clock::time_point t_start;
   if (cs_glob_timer_kernels_flag > 0)
     t_start = std::chrono::high_resolution_clock::now();
@@ -4435,6 +4432,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                cs_real_3_t       *restrict b_pvar,
                                cs_real_3_t       *restrict rhs)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   std::chrono::high_resolution_clock::time_point t_start;
   if (cs_glob_timer_kernels_flag > 0)
     t_start = std::chrono::high_resolution_clock::now();
@@ -4815,6 +4814,8 @@ cs_convection_diffusion_tensor(int                          idtvar,
                                const cs_real_t              b_visc[],
                                cs_real_6_t        *restrict rhs)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   std::chrono::high_resolution_clock::time_point t_start;
   if (cs_glob_timer_kernels_flag > 0)
     t_start = std::chrono::high_resolution_clock::now();
@@ -5008,6 +5009,8 @@ cs_convection_diffusion_thermal(int                         idtvar,
                                 const cs_real_t             xcpp[],
                                 cs_real_t        *restrict  rhs)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_field_t *f = nullptr;
   if (f_id != -1)
     f = cs_field_by_id(f_id);
@@ -5097,6 +5100,8 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
                                 const cs_real_t             weighb[],
                                 cs_real_t        *restrict  rhs)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_real_t *cofafp = bc_coeffs->af;
   const cs_real_t *cofbfp = bc_coeffs->bf;
 
@@ -5650,7 +5655,8 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
 
 void
 cs_anisotropic_left_diffusion_vector
-  (int                         idtvar,
+ (
+   int                         idtvar,
    int                         f_id,
    const cs_equation_param_t   eqp,
    int                         inc,
@@ -5662,8 +5668,11 @@ cs_anisotropic_left_diffusion_vector
    const cs_real_33_t          i_visc[],
    const cs_real_t             b_visc[],
    const cs_real_t             i_secvis[],
-   cs_real_3_t       *restrict rhs)
+   cs_real_3_t       *restrict rhs
+)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const int idiffp = eqp.idiff;
   const int ircflp = eqp.ircflu;
   const int ircflb = (ircflp > 0) ? eqp.b_diff_flux_rc : 0;
@@ -5699,8 +5708,8 @@ cs_anisotropic_left_diffusion_vector
                              (const cs_real_3_t *)bc_coeffs_solve_v->val_f;
 
   const cs_real_3_t *val_f_d_lim = (bc_coeffs_solve_v == nullptr) ?
-                                   (const cs_real_3_t *)bc_coeffs_v->val_f_d_lim :
-                                   (const cs_real_3_t *)bc_coeffs_solve_v->val_f_d_lim;
+    (const cs_real_3_t *)bc_coeffs_v->val_f_d_lim :
+    (const cs_real_3_t *)bc_coeffs_solve_v->val_f_d_lim;
 
   /* Local variables */
 
@@ -6119,21 +6128,25 @@ cs_anisotropic_left_diffusion_vector
 
 void
 cs_anisotropic_right_diffusion_vector
-  (int                          idtvar,
-   int                          f_id,
-   const cs_equation_param_t    eqp,
-   int                          inc,
-   cs_real_3_t        *restrict pvar,
-   const cs_real_3_t  *restrict pvara,
-   const cs_field_bc_coeffs_t  *bc_coeffs_v,
-   const cs_bc_coeffs_solve_t  *bc_coeffs_solve_v,
-   const cs_real_t              i_visc[],
-   const cs_real_t              b_visc[],
-   cs_real_6_t        *restrict viscel,
-   const cs_real_2_t            weighf[],
-   const cs_real_t              weighb[],
-   cs_real_3_t        *restrict rhs)
+(
+  int                           idtvar,
+  int                           f_id,
+  const cs_equation_param_t     eqp,
+  int                           inc,
+  cs_real_3_t         *restrict pvar,
+  const cs_real_3_t   *restrict pvara,
+  const cs_field_bc_coeffs_t   *bc_coeffs_v,
+  const cs_bc_coeffs_solve_t   *bc_coeffs_solve_v,
+  const cs_real_t               i_visc[],
+  const cs_real_t               b_visc[],
+  cs_real_6_t         *restrict viscel,
+  const cs_real_2_t             weighf[],
+  const cs_real_t               weighb[],
+  cs_real_3_t         *restrict rhs
+)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const int ircflp = eqp.ircflu;
   const int ircflb = (ircflp > 0) ? eqp.b_diff_flux_rc : 0;
   const int icoupl = eqp.icoupl;
@@ -6826,6 +6839,8 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
                                 const cs_real_t              weighb[],
                                 cs_real_6_t        *restrict rhs)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_real_6_t *val_f = (bc_coeffs_solve_ts == nullptr) ?
                              (const cs_real_6_t *)bc_coeffs_ts->val_f :
                              (const cs_real_6_t *)bc_coeffs_solve_ts->val_f;
@@ -7632,24 +7647,29 @@ cs_face_diffusion_potential(const cs_field_t           *f,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_face_anisotropic_diffusion_potential(const cs_field_t           *f,
-                                        const cs_equation_param_t  *eqp,
-                                        const cs_mesh_t            *m,
-                                        cs_mesh_quantities_t       *fvq,
-                                        int                         init,
-                                        int                         inc,
-                                        int                         iphydp,
-                                        cs_real_3_t       *restrict frcxt,
-                                        cs_real_t         *restrict pvar,
-                                        const cs_field_bc_coeffs_t *bc_coeffs,
-                                        const cs_bc_coeffs_solve_t *bc_coeffs_solve,
-                                        const cs_real_t             i_visc[],
-                                        const cs_real_t             b_visc[],
-                                        cs_real_6_t       *restrict viscel,
-                                        const cs_real_2_t           weighf[],
-                                        cs_real_t         *restrict i_massflux,
-                                        cs_real_t         *restrict b_massflux)
+cs_face_anisotropic_diffusion_potential
+(
+  const cs_field_t           *f,
+  const cs_equation_param_t  *eqp,
+  const cs_mesh_t            *m,
+  cs_mesh_quantities_t       *fvq,
+  int                         init,
+  int                         inc,
+  int                         iphydp,
+  cs_real_3_t       *restrict frcxt,
+  cs_real_t         *restrict pvar,
+  const cs_field_bc_coeffs_t *bc_coeffs,
+  const cs_bc_coeffs_solve_t *bc_coeffs_solve,
+  const cs_real_t             i_visc[],
+  const cs_real_t             b_visc[],
+  cs_real_6_t       *restrict viscel,
+  const cs_real_2_t           weighf[],
+  cs_real_t         *restrict i_massflux,
+  cs_real_t         *restrict b_massflux
+)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_real_t *val_f_g = (bc_coeffs_solve == nullptr) ?
                               bc_coeffs->val_f :
                               bc_coeffs_solve->val_f;
@@ -8260,6 +8280,8 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
                                    const cs_real_2_t           weighf[],
                                    cs_real_t         *restrict diverg)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_real_t *val_f_g = (bc_coeffs_solve == nullptr) ?
                               bc_coeffs->val_f :
                               bc_coeffs_solve->val_f;
@@ -8843,7 +8865,6 @@ cs_slope_test_gradient_strided
  * \brief Compute the upwind gradient used in the pure SOLU schemes
  *        (observed in the litterature).
  *
- * \param[in]     f_id         field index
  * \param[in]     ctx          Reference to dispatch context
  * \param[in]     inc          Not an increment flag
  * \param[in]     halo_type    halo type
@@ -8856,8 +8877,7 @@ cs_slope_test_gradient_strided
 /*----------------------------------------------------------------------------*/
 
 void
-cs_upwind_gradient(const int                     f_id,
-                   cs_dispatch_context          &ctx,
+cs_upwind_gradient(cs_dispatch_context          &ctx,
                    const int                     inc,
                    const cs_halo_type_t          halo_type,
                    const cs_field_bc_coeffs_t   *bc_coeffs,
@@ -8866,7 +8886,7 @@ cs_upwind_gradient(const int                     f_id,
                    const cs_real_t     *restrict pvar,
                    cs_real_3_t         *restrict grdpa)
 {
-  CS_UNUSED(f_id);
+  CS_PROFILE_FUNC_RANGE();
 
   cs_real_t *coefap = bc_coeffs->a;
   cs_real_t *coefbp = bc_coeffs->b;

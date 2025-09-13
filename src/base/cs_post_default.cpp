@@ -55,7 +55,6 @@
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_connect.h"
 #include "mesh/cs_mesh_location.h"
-#include "base/cs_prototypes.h"
 #include "base/cs_time_step.h"
 #include "base/cs_timer_stats.h"
 

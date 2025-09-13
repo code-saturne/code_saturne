@@ -73,22 +73,16 @@ BEGIN_C_DECLS
 
 #pragma weak cs_meg_source_terms
 void
-cs_meg_source_terms(const char       *zone_name,
-                    const cs_lnum_t   n_elts,
-                    const cs_lnum_t  *elt_ids,
-                    const cs_real_t   xyz[][3],
-                    const char       *field_name,
-                    const char       *source_type,
-                    cs_real_t        *retvals)
+cs_meg_source_terms([[maybe_unused]] const char       *zone_name,
+                    [[maybe_unused]] const cs_lnum_t   n_elts,
+                    [[maybe_unused]] const cs_lnum_t  *elt_ids,
+                    [[maybe_unused]] const cs_real_t   xyz[][3],
+                    [[maybe_unused]] const char       *field_name,
+                    [[maybe_unused]] const char       *source_type,
+                    [[maybe_unused]] cs_real_t        *retvals)
 
 
 {
-  CS_NO_WARN_IF_UNUSED(zone_name);
-  CS_NO_WARN_IF_UNUSED(n_elts);
-  CS_NO_WARN_IF_UNUSED(elt_ids);
-  CS_NO_WARN_IF_UNUSED(xyz);
-  CS_NO_WARN_IF_UNUSED(field_name);
-  CS_NO_WARN_IF_UNUSED(source_type);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -65,7 +65,6 @@
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
 #include "base/cs_post.h"
-#include "base/cs_prototypes.h"
 #include "base/cs_time_step.h"
 #include "base/cs_turbomachinery.h"
 #include "base/cs_selector.h"
@@ -1024,9 +1023,9 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   if (eqp->blencv > 0 && eqp->isstpc == 0) {
     CS_MALLOC_HD(gradst, n_cells_ext, cs_real_3_t, cs_alloc_mode);
     ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        gradst[c_id][0] = 0.;
-        gradst[c_id][1] = 0.;
-        gradst[c_id][2] = 0.;
+      gradst[c_id][0] = 0.;
+      gradst[c_id][1] = 0.;
+      gradst[c_id][2] = 0.;
     });
     ctx.wait();
 
@@ -1047,15 +1046,13 @@ cs_balance_by_zone_compute(const char      *scalar_name,
       && (eqp->ischcv==2 || eqp->ischcv==4)) {
     CS_MALLOC_HD(gradup, n_cells_ext, cs_real_3_t, cs_alloc_mode);
     ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        gradup[c_id][0] = 0.;
-        gradup[c_id][1] = 0.;
-        gradup[c_id][2] = 0.;
+      gradup[c_id][0] = 0.;
+      gradup[c_id][1] = 0.;
+      gradup[c_id][2] = 0.;
     });
-    ctx.wait();
 
     if (eqp->iconv > 0)
-      cs_upwind_gradient(field_id,
-                         ctx,
+      cs_upwind_gradient(ctx,
                          inc,
                          halo_type,
                          f->bc_coeffs,
@@ -1464,6 +1461,8 @@ cs_balance_by_zone_compute(const char      *scalar_name,
     CS_FREE(pvar_distant);
 
   }
+
+  ctx.wait();
 
   /* Balance on boundary faces of the selected zone
      that are interior to the total mesh
@@ -2786,15 +2785,14 @@ cs_flux_through_surface(const char         *scalar_name,
   if (eqp->blencv > 0
       && (eqp->ischcv==2 || eqp->ischcv==4)) {
     CS_MALLOC(gradup, n_cells_ext, cs_real_3_t);
-    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+    ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       gradup[c_id][0] = 0.;
       gradup[c_id][1] = 0.;
       gradup[c_id][2] = 0.;
-    }
+    });
 
     if (eqp->iconv > 0)
-      cs_upwind_gradient(f->id,
-                         ctx,
+      cs_upwind_gradient(ctx,
                          1, /* inc */
                          CS_HALO_STANDARD,
                          f->bc_coeffs,

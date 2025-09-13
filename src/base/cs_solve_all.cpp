@@ -901,15 +901,12 @@ _solve_turbulence(cs_lnum_t   n_cells,
 /*!
  * \brief Resolution of incompressible Navier Stokes, scalar transport
  *        equations... for a time step.
- *
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_solve_all()
 {
-  CS_PROFILE_FUNC_RANGE();
-
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
@@ -1006,13 +1003,13 @@ cs_solve_all()
   /* At the beginning of computation we reset the pressure
      ----------------------------------------------------- */
 
-  /* We do this over an infinite period of time, because often the mass flux field
-   *   initial is not zero divergence (CL included) and obtaining
-   *   of a flow with zero divergence consistent with the steady constraint
-   *   may take a few steps.
+  /* We do this over an infinite period of time, because often the initial
+   * mass flux field is not zero divergence (BCs included), and obtaining
+   * a flow with zero divergence consistent with the steady constraint
+   * may require a few steps.
    * Note that the pressure is taken up in the Stokes stage.
    * We do not do this in the case of taking into account the pressure
-   *   hydrostatic, nor in the case of compressible */
+   * hydrostatic, nor in the case of compressible */
 
   if (   (cs_restart_present() == 0)
       && (cs_glob_time_step->nt_cur <= cs_glob_time_step->nt_ini)
@@ -1147,7 +1144,8 @@ cs_solve_all()
      computing a min or max value of a variable. */
 
   const int ncpdct = cs_volume_zone_n_type_zones(CS_VOLUME_ZONE_HEAD_LOSS);
-  const cs_lnum_t ncepdc = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_HEAD_LOSS);
+  const cs_lnum_t ncepdc
+    = cs_volume_zone_n_type_cells(CS_VOLUME_ZONE_HEAD_LOSS);
 
   cs_lnum_t *icepdc = nullptr;
   cs_real_6_t *ckupdc = nullptr;
@@ -1227,7 +1225,8 @@ cs_solve_all()
   int itrfin = 1;
   int ineefl = 0;
 
-  if (   cs_glob_ale != CS_ALE_NONE && cs_glob_ale_data->ale_iteration > n_init_f_ale
+  if (   cs_glob_ale != CS_ALE_NONE
+      && cs_glob_ale_data->ale_iteration > n_init_f_ale
       && cs_glob_mobile_structures_n_iter_max > 1) {
     /* Indicate if we need to return to the initial state at the end
        of an ALE iteration. */
@@ -1350,7 +1349,8 @@ cs_solve_all()
     }
 
     if (   cs_glob_atmo_option->radiative_model_1d == 1
-        && cs_glob_physical_model_flag[CS_ATMOSPHERIC] > CS_ATMO_CONSTANT_DENSITY)
+        && ( cs_glob_physical_model_flag[CS_ATMOSPHERIC]
+            > CS_ATMO_CONSTANT_DENSITY))
       cs_f_atr1vf();
 
     cs_rad_transfer_solve(cs_boundary_conditions_get_bc_type());

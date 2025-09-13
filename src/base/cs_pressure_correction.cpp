@@ -62,7 +62,6 @@
 #include "base/cs_porous_model.h"
 #include "base/cs_post.h"
 #include "base/cs_profiling.h"
-#include "base/cs_prototypes.h"
 #include "base/cs_reducers.h"
 #include "base/cs_sat_coupling.h"
 #include "base/cs_thermal_model.h"
@@ -3690,7 +3689,8 @@ cs_pressure_correction_cdo_destroy_all(void)
  *                                flow rate
  *                                \f$ \Gamma_{s,cond}^n \f$)
  * \param[in]       svcond        variable value associated to the condensation
- *                                source term (for ivar=ipr, svcond is the flow rate
+ *                                source term (for ivar=ipr, svcond is the
+ *                                flow rate
  *                                \f$ \Gamma_{v, cond}^n \f$)
  * \param[in]       frcxt         external forces making hydrostatic pressure
  * \param[in]       dfrcxt        variation of the external forces
@@ -3718,6 +3718,8 @@ cs_pressure_correction(int                   iterns,
                        cs_real_t             i_visc[],
                        cs_real_t             b_visc[])
 {
+  CS_PROFILE_FUNC_RANGE();
+
   /* Pointers to BC coefficients */
 
   const cs_velocity_pressure_model_t  *vp_model

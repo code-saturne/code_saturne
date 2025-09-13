@@ -34,7 +34,7 @@ endif
 
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src -I$(top_builddir)/src \
-$(CPPFLAGS_PLE) \
+$(CPPFLAGS) $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT) $(CFLAGS_SHARED)

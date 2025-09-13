@@ -2884,8 +2884,10 @@ cs_atmo_bcond(void)
 
   if (at_opt->soil_model > 0) {
     const cs_zone_t *z = cs_boundary_zone_by_id(at_opt->soil_zone_id);
-    const cs_real_t *bvar_tempp = cs_field_by_name("soil_pot_temperature")->val;
-    const cs_real_t *bvar_total_water = cs_field_by_name("soil_total_water")->val;
+    const cs_real_t *bvar_tempp
+      = cs_field_by_name("soil_pot_temperature")->val;
+    const cs_real_t *bvar_total_water
+      = cs_field_by_name("soil_total_water")->val;
 
     for (cs_lnum_t ii = 0; ii < z->n_elts; ii++) {
 
@@ -2933,8 +2935,9 @@ cs_atmo_bcond(void)
 
       if (_atmo_imbrication.imbrication_verbose)
         for (cs_lnum_t face_id = 0; face_id < n_b_faces_max; face_id++)
-          bft_printf("cs_atmo_bcond:: xbord, ybord, zbord, ubord = %10.14e %10.14e"
+          bft_printf("%s:: xbord, ybord, zbord, ubord = %10.14e %10.14e"
                      "%10.14e %10.14e\n",
+                     __func__,
                      b_face_cog[face_id][0], b_face_cog[face_id][1],
                      b_face_cog[face_id][2], rcodcl1[face_id]);
     }
@@ -2946,8 +2949,9 @@ cs_atmo_bcond(void)
 
       if (_atmo_imbrication.imbrication_verbose)
         for (cs_lnum_t face_id = 0; face_id < n_b_faces_max; face_id++)
-          bft_printf("cs_atmo_bcond:: xbord, ybord, zbord, vbord = %10.14e %10.14e"
+          bft_printf("%s:: xbord, ybord, zbord, vbord = %10.14e %10.14e"
                      "%10.14e %10.14e\n",
+                     __func__,
                      b_face_cog[face_id][0], b_face_cog[face_id][1],
                      b_face_cog[face_id][2], rcodcl1[face_id]);
     }
@@ -2959,8 +2963,9 @@ cs_atmo_bcond(void)
 
       if (_atmo_imbrication.imbrication_verbose)
         for (cs_lnum_t face_id = 0; face_id < n_b_faces_max; face_id++)
-          bft_printf("cs_atmo_bcond:: xbord, ybord, zbord, tkebord = %10.14e %10.14e"
+          bft_printf("%s:: xbord, ybord, zbord, tkebord = %10.14e %10.14e"
                      "%10.14e %10.14e\n",
+                     __func__,
                      b_face_cog[face_id][0], b_face_cog[face_id][1],
                      b_face_cog[face_id][2], rcodcl1[face_id]);
 
@@ -2973,22 +2978,25 @@ cs_atmo_bcond(void)
 
       if (_atmo_imbrication.imbrication_verbose)
         for (cs_lnum_t face_id = 0; face_id < n_b_faces_max; face_id++)
-          bft_printf("cs_atmo_bcond:: xbord, ybord, zbord, epsbord = %10.14e %10.14e"
+          bft_printf("%s:: xbord, ybord, zbord, epsbord = %10.14e %10.14e"
                      "%10.14e %10.14e\n",
+                     __func__,
                      b_face_cog[face_id][0], b_face_cog[face_id][1],
                      b_face_cog[face_id][2], rcodcl1[face_id]);
     }
 
     if (   _atmo_imbrication.cressman_theta
-        && cs_glob_physical_model_flag[CS_ATMOSPHERIC] > CS_ATMO_CONSTANT_DENSITY) {
+        && (  cs_glob_physical_model_flag[CS_ATMOSPHERIC]
+            > CS_ATMO_CONSTANT_DENSITY)) {
       cs_real_t *rcodcl1 = th_f->bc_coeffs->rcodcl1;
       cs_measures_set_t *ms = cs_measures_set_by_id(_atmo_imbrication.id_theta);
       cs_cressman_interpol(ms, rcodcl1, id_type);
 
       if (_atmo_imbrication.imbrication_verbose)
         for (cs_lnum_t face_id = 0; face_id < n_b_faces_max; face_id++)
-          bft_printf("cs_atmo_bcond:: xbord, ybord, zbord, thetabord = %10.14e %10.14e"
+          bft_printf("%s:: xbord, ybord, zbord, thetabord = %10.14e %10.14e"
                      "%10.14e %10.14e\n",
+                     __func__,
                      b_face_cog[face_id][0], b_face_cog[face_id][1],
                      b_face_cog[face_id][2], rcodcl1[face_id]);
     }
@@ -3001,8 +3009,9 @@ cs_atmo_bcond(void)
 
       if (_atmo_imbrication.imbrication_verbose)
         for (cs_lnum_t face_id = 0; face_id < n_b_faces_max; face_id++)
-          bft_printf("cs_atmo_bcond:: xbord, ybord, zbord, thetabord = %10.14e %10.14e"
+          bft_printf("%s:: xbord, ybord, zbord, thetabord = %10.14e %10.14e"
                      "%10.14e %10.14e\n",
+                     __func__,
                      b_face_cog[face_id][0], b_face_cog[face_id][1],
                      b_face_cog[face_id][2], rcodcl1[face_id]);
     }
@@ -3016,8 +3025,9 @@ cs_atmo_bcond(void)
 
       if (_atmo_imbrication.imbrication_verbose)
         for (cs_lnum_t face_id = 0; face_id < n_b_faces_max; face_id++)
-          bft_printf("cs_atmo_bcond:: xbord, ybord, zbord, thetabord = %10.14e %10.14e"
+          bft_printf("%s:: xbord, ybord, zbord, thetabord = %10.14e %10.14e"
                      "%10.14e %10.14e\n",
+                     __func__,
                      b_face_cog[face_id][0], b_face_cog[face_id][1],
                      b_face_cog[face_id][2], rcodcl1[face_id]);
     }
@@ -3035,7 +3045,8 @@ cs_atmo_bcond(void)
 
       /* For species present in the concentration profiles chemistry file,
          profiles are used here as boundary conditions if boundary
-         conditions have not been treated earlier (eg, in cs_user_boundary_conditions) */
+         conditions have not been treated earlier
+         (eg, in cs_user_boundary_conditions) */
       for (int ii = 0; ii < at_chem->n_species_profiles; ii++) {
         const int f_id = at_chem->species_to_scalar_id[ii];
         cs_field_t *f = cs_field_by_id(f_id);
@@ -3276,7 +3287,7 @@ cs_atmo_bcond(void)
           eps_in = cpro_met_eps[cell_id];
       }
 
-      cs_real_t theta_in;
+      cs_real_t theta_in = 0.;
       if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
         if (rcodcl1_theta[face_id] < 0.5 * cs_math_infinite_r)
           theta_in = rcodcl1_theta[face_id];
@@ -3538,12 +3549,14 @@ cs_soil_model(void)
     cs_field_t *soil_w2 = cs_field_by_name("soil_w2");
     cs_real_t *f_fos = cs_field_by_name("soil_solar_incident_flux")->val;
     cs_real_t *f_foir = cs_field_by_name("soil_infrared_incident_flux")->val;
-    cs_field_t *soil_temperature_deep = cs_field_by_name("soil_temperature_deep");
+    cs_field_t *soil_temperature_deep
+      = cs_field_by_name("soil_temperature_deep");
     cs_field_t *soil_r1 = cs_field_by_name("soil_r1");
     cs_field_t *soil_r2 = cs_field_by_name("soil_r2");
     cs_field_t *soil_water_capacity = cs_field_by_name("soil_water_capacity");
     cs_field_t *soil_water_ratio = cs_field_by_name("soil_water_ratio");
-    cs_field_t *soil_thermal_capacity = cs_field_by_name("soil_thermal_capacity");
+    cs_field_t *soil_thermal_capacity
+      = cs_field_by_name("soil_thermal_capacity");
     cs_field_t *soil_percentages = cs_field_by_name("atmo_soil_percentages");
     cs_field_t *boundary_vegetation = cs_field_by_name("boundary_vegetation");
     /* Fields related to all faces */
@@ -3951,7 +3964,7 @@ cs_atmo_init_meteo_profiles(void)
     cs_real_t dlmo = 0.;
     cs_real_t error = up_l - up;
 
-    /* Dichotomy */
+    /* Bisection */
     cs_real_t dl_min = -1.e6;
     cs_real_t dl_max =  1.e6;
     cs_real_t tol = 1e-6;

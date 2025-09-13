@@ -99,7 +99,6 @@ extern "C" {
 #include "base/cs_parall.h"
 #include "base/cs_post.h"
 #include "base/cs_sort.h"
-#include "base/cs_prototypes.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -1032,7 +1031,7 @@ _display_histograms_gnum(int               n_vals,
   if (val_max - val_min > 0) {
 
     if (val_max-val_min < n_steps)
-      n_steps = cs::max(1, floor(val_max-val_min));
+      n_steps = cs::max(1., floor(val_max-val_min));
 
     step = (double)(val_max - val_min) / n_steps;
 

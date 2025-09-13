@@ -67,7 +67,6 @@
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
-#include "base/cs_prototypes.h"
 #include "base/cs_timer.h"
 #include "base/cs_timer_stats.h"
 #include "base/cs_velocity_pressure.h"

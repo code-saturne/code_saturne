@@ -65,7 +65,6 @@
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parameters.h"
 #include "base/cs_porous_model.h"
-#include "base/cs_prototypes.h"
 #include "base/cs_timer.h"
 
 #include "base/cs_parall.h"

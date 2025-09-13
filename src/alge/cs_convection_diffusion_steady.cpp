@@ -503,8 +503,7 @@ cs_convection_diffusion_steady_scalar
         gradup[c_id][2] = 0.;
       });
 
-      cs_upwind_gradient(f_id,
-                         ctx,
+      cs_upwind_gradient(ctx,
                          inc,
                          halo_type,
                          bc_coeffs,
@@ -1348,8 +1347,7 @@ cs_face_convection_steady_scalar
         gradup[c_id][2] = 0.;
       });
 
-      cs_upwind_gradient(f_id,
-                         ctx,
+      cs_upwind_gradient(ctx,
                          inc,
                          halo_type,
                          bc_coeffs,

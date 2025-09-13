@@ -59,7 +59,6 @@
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
 #include "base/cs_numbering.h"
-#include "base/cs_prototypes.h"
 #include "base/cs_range_set.h"
 #include "base/cs_timer.h"
 

@@ -55,7 +55,6 @@
 #include "base/cs_parall.h"
 #include "pprt/cs_physical_model.h"
 #include "base/cs_physical_constants.h"
-#include "base/cs_prototypes.h"
 #include "base/cs_selector.h"
 #include "base/cs_turbomachinery.h"
 #include "turb/cs_turbulence_model.h"

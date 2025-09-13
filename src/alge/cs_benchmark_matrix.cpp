@@ -63,7 +63,9 @@
 #include "base/cs_mem.h"
 #include "base/cs_numbering.h"
 #include "base/cs_parall.h"
-#include "base/cs_prototypes.h"
+#include "base/cs_profiling.h"
+
+#include "mesh/cs_mesh.h"
 
 #if defined(HAVE_HYPRE)
 #include "alge/cs_matrix_hypre.h"
@@ -1665,6 +1667,8 @@ cs_benchmark_matrix(int                    n_time_runs,
                     const cs_halo_t       *halo,
                     const cs_numbering_t  *numbering)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   int  t_id, f_id, v_id, ed_flag;
 
   bool                   type_filter[CS_MATRIX_N_BUILTIN_TYPES] = {true,

@@ -156,7 +156,7 @@ BEGIN_C_DECLS
   disables threading alltogether inside Gauss-Seidel solvers.
 */
 
-static int _thread_debug = 0;
+[[maybe_unused]] static int _thread_debug = 0;
 
 /* Value of the threshold under which BiCGStab and BiCGStab2 break down */
 

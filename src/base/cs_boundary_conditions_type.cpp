@@ -50,7 +50,6 @@
 #include "base/cs_parameters.h"
 #include "base/cs_physical_constants.h"
 #include "pprt/cs_physical_model.h"
-#include "base/cs_prototypes.h"
 #include "base/cs_sat_coupling.h"
 #include "base/cs_time_step.h"
 #include "turb/cs_turbulence_model.h"

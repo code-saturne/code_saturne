@@ -74,7 +74,7 @@
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
 #include "base/cs_porous_model.h"
-#include "base/cs_prototypes.h"
+#include "base/cs_profiling.h"
 #include "base/cs_timer.h"
 #include "base/cs_timer_stats.h"
 
@@ -7716,6 +7716,8 @@ cs_gradient_scalar(const char                    *var_name,
                    const cs_internal_coupling_t  *cpl,
                    cs_real_t           (*restrict grad)[3])
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
@@ -8001,6 +8003,8 @@ cs_gradient_vector(const char                    *var_name,
                    const cs_internal_coupling_t  *cpl,
                    cs_real_t                      gradv[][3][3])
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
@@ -8283,6 +8287,8 @@ cs_gradient_tensor(const char                  *var_name,
                    cs_real_6_t        *restrict var,
                    cs_real_63_t       *restrict grad)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
@@ -8500,6 +8506,8 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
                                 const cs_real_t             c_weight[],
                                 cs_real_t                   grad[][3])
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_gradient_info_t *gradient_info = nullptr;
   cs_timer_t t0, t1;
 
@@ -8595,6 +8603,8 @@ cs_gradient_vector_synced_input(const char                 *var_name,
                                 const cs_real_t             c_weight[],
                                 cs_real_t                   grad[][3][3])
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_gradient_info_t *gradient_info = nullptr;
   cs_timer_t t0, t1;
 
@@ -8676,6 +8686,8 @@ cs_gradient_tensor_synced_input(const char                  *var_name,
                                 const cs_real_t              val_f[][6],
                                 cs_real_63_t                *grad)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_gradient_info_t *gradient_info = nullptr;
   cs_timer_t t0, t1;
 
@@ -9117,6 +9129,8 @@ cs_gradient_type_by_imrgra(int                  imrgra,
 void
 cs_gradient_porosity_balance(int inc)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
   cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;

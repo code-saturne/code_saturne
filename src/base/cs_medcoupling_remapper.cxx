@@ -52,7 +52,6 @@
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_connect.h"
 #include "base/cs_parall.h"
-#include "base/cs_prototypes.h"
 #include "base/cs_selector.h"
 #include "base/cs_timer.h"
 
@@ -618,7 +617,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 cs_medcoupling_remapper_t *
-cs_medcoupling_remapper_by_id(int  r_id)
+cs_medcoupling_remapper_by_id([[maybe_unused]] int  r_id)
 {
   cs_medcoupling_remapper_t *r = nullptr;
 
@@ -645,7 +644,7 @@ cs_medcoupling_remapper_by_id(int  r_id)
 /*----------------------------------------------------------------------------*/
 
 cs_medcoupling_remapper_t *
-cs_medcoupling_remapper_by_name_try(const char  *name)
+cs_medcoupling_remapper_by_name_try([[maybe_unused]] const char  *name)
 {
   cs_medcoupling_remapper_t *r = nullptr;
 
@@ -684,14 +683,17 @@ cs_medcoupling_remapper_by_name_try(const char  *name)
 /*----------------------------------------------------------------------------*/
 
 int
-cs_medcoupling_remapper_initialize(const char   *name,
-                                   int           elt_dim,
-                                   const char   *select_criteria,
-                                   const char   *medfile_path,
-                                   int           n_fields,
-                                   const char  **field_names,
-                                   int           iteration,
-                                   int           order)
+cs_medcoupling_remapper_initialize
+(
+  [[maybe_unused]] const char   *name,
+  [[maybe_unused]] int           elt_dim,
+  [[maybe_unused]] const char   *select_criteria,
+  [[maybe_unused]] const char   *medfile_path,
+  [[maybe_unused]] int           n_fields,
+  [[maybe_unused]] const char  **field_names,
+  [[maybe_unused]] int           iteration,
+  [[maybe_unused]] int           order
+)
 {
 #if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
   _add_remapper(name,
@@ -724,9 +726,12 @@ cs_medcoupling_remapper_initialize(const char   *name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_medcoupling_remapper_set_iteration(cs_medcoupling_remapper_t  *r,
-                                      int                         iteration,
-                                      int                         order)
+cs_medcoupling_remapper_set_iteration
+(
+  [[maybe_unused]] cs_medcoupling_remapper_t  *r,
+  [[maybe_unused]] int                         iteration,
+  [[maybe_unused]] int                         order
+)
 {
 #if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
   for (int i = 0; i < r->n_fields; i++) {
@@ -759,9 +764,12 @@ cs_medcoupling_remapper_set_iteration(cs_medcoupling_remapper_t  *r,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_medcoupling_remapper_set_options(cs_medcoupling_remapper_t  *r,
-                                    const char                  key[],
-                                    const char                  value[])
+cs_medcoupling_remapper_set_options
+(
+  [[maybe_unused]] cs_medcoupling_remapper_t  *r,
+  [[maybe_unused]] const char                  key[],
+  [[maybe_unused]] const char                  value[]
+)
 {
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   bft_error(__FILE__, __LINE__, 0,
@@ -861,9 +869,12 @@ cs_medcoupling_remapper_setup(cs_medcoupling_remapper_t  *r)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_medcoupling_remapper_copy_values(cs_medcoupling_remapper_t  *r,
-                                    int                         field_id,
-                                    double                      default_val)
+cs_medcoupling_remapper_copy_values
+(
+  [[maybe_unused]] cs_medcoupling_remapper_t  *r,
+  [[maybe_unused]] int                         field_id,
+  [[maybe_unused]] double                      default_val
+)
 {
   cs_real_t *new_vals = nullptr;
 
@@ -892,8 +903,11 @@ cs_medcoupling_remapper_copy_values(cs_medcoupling_remapper_t  *r,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_medcoupling_remapper_translate(cs_medcoupling_remapper_t  *r,
-                                  cs_real_t                   translation[3])
+cs_medcoupling_remapper_translate
+(
+  [[maybe_unused]] cs_medcoupling_remapper_t  *r,
+  [[maybe_unused]] cs_real_t                   translation[3]
+)
 {
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   bft_error(__FILE__, __LINE__, 0,
@@ -918,10 +932,13 @@ cs_medcoupling_remapper_translate(cs_medcoupling_remapper_t  *r,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_medcoupling_remapper_rotate(cs_medcoupling_remapper_t  *r,
-                               cs_real_t                   invariant[3],
-                               cs_real_t                   axis[3],
-                               cs_real_t                   angle)
+cs_medcoupling_remapper_rotate
+(
+  [[maybe_unused]] cs_medcoupling_remapper_t  *r,
+  [[maybe_unused]] cs_real_t                   invariant[3],
+  [[maybe_unused]] cs_real_t                   axis[3],
+  [[maybe_unused]] cs_real_t                   angle
+)
 {
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   bft_error(__FILE__, __LINE__, 0,
@@ -950,10 +967,13 @@ cs_medcoupling_remapper_rotate(cs_medcoupling_remapper_t  *r,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_medcoupling_remapper_find_time_index(cs_medcoupling_remapper_t *r,
-                                        cs_real_t                  t,
-                                        int                       *id1,
-                                        int                       *id2)
+cs_medcoupling_remapper_find_time_index
+(
+  [[maybe_unused]] cs_medcoupling_remapper_t *r,
+  [[maybe_unused]] cs_real_t                  t,
+  [[maybe_unused]] int                       *id1,
+  [[maybe_unused]] int                       *id2
+)
 {
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   bft_error(__FILE__, __LINE__, 0,
@@ -995,9 +1015,12 @@ cs_medcoupling_remapper_find_time_index(cs_medcoupling_remapper_t *r,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_medcoupling_remapper_get_time_from_index(cs_medcoupling_remapper_t *r,
-                                            int                        id,
-                                            cs_real_t                 *t)
+cs_medcoupling_remapper_get_time_from_index
+(
+  [[maybe_unused]] cs_medcoupling_remapper_t *r,
+  [[maybe_unused]] int                        id,
+  [[maybe_unused]] cs_real_t                 *t
+)
 {
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   bft_error(__FILE__, __LINE__, 0,
@@ -1024,10 +1047,13 @@ cs_medcoupling_remapper_get_time_from_index(cs_medcoupling_remapper_t *r,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_medcoupling_remapper_get_iter_order_from_index(cs_medcoupling_remapper_t *r,
-                                                  int                        id,
-                                                  int                       *it,
-                                                  int                       *order)
+cs_medcoupling_remapper_get_iter_order_from_index
+(
+  [[maybe_unused]] cs_medcoupling_remapper_t *r,
+  [[maybe_unused]] int                        id,
+  [[maybe_unused]] int                       *it,
+  [[maybe_unused]] int                       *order
+)
 {
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   bft_error(__FILE__, __LINE__, 0,
@@ -1063,8 +1089,11 @@ cs_medcoupling_remapper_destroy_all(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_medcoupling_remapper_update_time_value(cs_medcoupling_remapper_t *r,
-                                          int                        id)
+cs_medcoupling_remapper_update_time_value
+(
+  [[maybe_unused]] cs_medcoupling_remapper_t *r,
+  [[maybe_unused]] int                        id
+)
 {
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   bft_error(__FILE__, __LINE__, 0,

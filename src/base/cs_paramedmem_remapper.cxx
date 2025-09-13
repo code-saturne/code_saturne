@@ -52,7 +52,6 @@
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_connect.h"
 #include "base/cs_parall.h"
-#include "base/cs_prototypes.h"
 #include "base/cs_selector.h"
 #include "base/cs_timer.h"
 

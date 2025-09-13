@@ -1826,7 +1826,8 @@ cs_field_map_values(cs_field_t   *f,
  *                                are added
  * \param[in]       have_mom_bc   if true, div BC coefficients (ad and bd)
  *                                are added
- * \param[in]       have_conv_bc  if true, convection BC coefficients (ac and bc)
+ * \param[in]       have_conv_bc  if true, convection BC coefficients
+ *                                (ac and bc)
  *                                are added
  * \param[in]       have_exch_bc  if true, exchange boundary coefficients (hint
  *                                and hext) are added
@@ -1930,8 +1931,10 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
 
     else {
 
-      CS_REALLOC_HD(f->bc_coeffs->a, n_elts[0]*a_mult, cs_real_t, cs_alloc_mode);
-      CS_REALLOC_HD(f->bc_coeffs->b, n_elts[0]*b_mult, cs_real_t, cs_alloc_mode);
+      CS_REALLOC_HD(f->bc_coeffs->a, n_elts[0]*a_mult, cs_real_t,
+                    cs_alloc_mode);
+      CS_REALLOC_HD(f->bc_coeffs->b, n_elts[0]*b_mult, cs_real_t,
+                    cs_alloc_mode);
 
       if (have_flux_bc) {
         CS_REALLOC_HD(f->bc_coeffs->af, n_elts[0]*a_mult, cs_real_t,
@@ -2254,8 +2257,6 @@ cs_field_set_values(cs_field_t  *f,
 void
 cs_field_current_to_previous(cs_field_t  *f)
 {
-  CS_PROFILE_FUNC_RANGE();
-
   assert(f != nullptr);
 
   if (f->n_time_vals < 2)

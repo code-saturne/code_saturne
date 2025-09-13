@@ -59,7 +59,6 @@
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
 #include "base/cs_physical_constants.h"
-#include "base/cs_prototypes.h"
 #include "base/cs_reducers.h"
 #include "base/cs_rotation.h"
 #include "alge/cs_sles_default.h"

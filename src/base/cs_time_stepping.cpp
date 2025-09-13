@@ -192,9 +192,10 @@ cs_time_stepping(void)
 
   /* Activate profiling for a specific time step */
 
-  const char s[] = "CS_PROFILE_TIME_STEP";
-  if (getenv(s) != nullptr) {
-    profile_time_step = atoi(getenv(s));
+  {
+    const char *s = getenv("CS_PROFILE_TIME_STEP");
+    if (s != nullptr)
+      profile_time_step = atoi(s);
   }
 
   /* Define timer stats based on options */
@@ -616,10 +617,6 @@ cs_time_stepping(void)
 
   do {
 
-    if (profile_time_step == ts->nt_cur) {
-      CS_PROFILE_START();
-    }
-
     if (ts->t_max > 0 && ts->t_max > ts->t_cur) {
       ts->nt_max = ts->nt_cur + nearbyint((ts->t_max-ts->t_cur)/ts->dt_ref);
 
@@ -633,6 +630,10 @@ cs_time_stepping(void)
         cs_time_step_increment(ts->dt_ref);
       else  // time step computed in cs_time_step_compute
         cs_time_step_increment(ts->dt[0]);
+    }
+
+    if (profile_time_step == ts->nt_cur) {
+      CS_PROFILE_START();
     }
 
     /* Step forward in time

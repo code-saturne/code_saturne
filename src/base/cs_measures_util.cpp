@@ -62,9 +62,9 @@
 #include "mesh/cs_mesh_connect.h"
 #include "base/cs_parall.h"
 #include "base/cs_post.h"
-#include "base/cs_prototypes.h"
 
 #include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
 #include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------*/

@@ -760,23 +760,26 @@ cs_face_diffusion_potential(const cs_field_t           *f,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_face_anisotropic_diffusion_potential(const cs_field_t           *f,
-                                        const cs_equation_param_t  *eqp,
-                                        const cs_mesh_t            *m,
-                                        cs_mesh_quantities_t       *fvq,
-                                        int                         init,
-                                        int                         inc,
-                                        int                         iphydp,
-                                        cs_real_3_t                *frcxt,
-                                        cs_real_t                  *pvar,
-                                        const cs_field_bc_coeffs_t *bc_coeffs,
-                                        const cs_bc_coeffs_solve_t *bc_coeffs_solve,
-                                        const cs_real_t             i_visc[],
-                                        const cs_real_t             b_visc[],
-                                        cs_real_6_t                *viscel,
-                                        const cs_real_2_t           weighf[],
-                                        cs_real_t                  *i_massflux,
-                                        cs_real_t                  *b_massflux);
+cs_face_anisotropic_diffusion_potential
+(
+  const cs_field_t           *f,
+  const cs_equation_param_t  *eqp,
+  const cs_mesh_t            *m,
+  cs_mesh_quantities_t       *fvq,
+  int                         init,
+  int                         inc,
+  int                         iphydp,
+  cs_real_3_t                *frcxt,
+  cs_real_t                  *pvar,
+  const cs_field_bc_coeffs_t *bc_coeffs,
+  const cs_bc_coeffs_solve_t *bc_coeffs_solve,
+  const cs_real_t             i_visc[],
+  const cs_real_t             b_visc[],
+  cs_real_6_t                *viscel,
+  const cs_real_2_t           weighf[],
+  cs_real_t                  *i_massflux,
+  cs_real_t                  *b_massflux
+);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -951,7 +954,6 @@ cs_slope_test_gradient_strided
  * \brief Compute the upwind gradient used in the pure SOLU schemes
  *        (observed in the litterature).
  *
- * \param[in]     f_id         field index
  * \param[in]     ctx          Reference to dispatch context
  * \param[in]     inc          Not an increment flag
  * \param[in]     halo_type    halo type
@@ -964,8 +966,7 @@ cs_slope_test_gradient_strided
 /*----------------------------------------------------------------------------*/
 
 void
-cs_upwind_gradient(const int                     f_id,
-                   cs_dispatch_context          &ctx,
+cs_upwind_gradient(cs_dispatch_context          &ctx,
                    const int                     inc,
                    const cs_halo_type_t          halo_type,
                    const cs_field_bc_coeffs_t   *bc_coeffs,

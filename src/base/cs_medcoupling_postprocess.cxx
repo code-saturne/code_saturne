@@ -425,14 +425,15 @@ void _compute_scalar_integral_l
  */
 /*----------------------------------------------------------------------------*/
 
-static void _tag_slice_cells
+static void
+_tag_slice_cells
 (
-  int              location_id, /*!<[in] base associated mesh location id */
-  cs_lnum_t        n_elts,      /*!<[in] number of associated elements */
-  const cs_lnum_t *elt_ids,     /*!<[in] ids of associated elements, or null if
-                                         no filtering is required */
-  void            *input,       /*!<[in] pointer to slice structure */
-  void            *vals         /*!<[in, out] pointer to output values */
+  [[maybe_unused]] int  location_id, /*!<[in] base associated mesh location id */
+  cs_lnum_t             n_elts,      /*!<[in] number of associated elements */
+  const cs_lnum_t      *elt_ids,     /*!<[in] ids of associated elements,
+                                       or null if no filtering is required */
+  void                 *input,       /*!<[in] pointer to slice structure */
+  void                 *vals         /*!<[in, out] pointer to output values */
 )
 {
   assert(location_id == CS_MESH_LOCATION_CELLS);
@@ -462,14 +463,15 @@ static void _tag_slice_cells
  */
 /*----------------------------------------------------------------------------*/
 
-static void _get_slice_cells_surface
+static void
+_get_slice_cells_surface
 (
-  int              location_id, /*!<[in] base associated mesh location id */
-  cs_lnum_t        n_elts,      /*!<[in] number of associated elements */
-  const cs_lnum_t *elt_ids,     /*!<[in] ids of associated elements, or null if
-                                         no filtering is required */
-  void            *input,       /*!<[in] pointer to slice structure */
-  void            *vals         /*!<[in, out] pointer to output values */
+  [[maybe_unused]] int  location_id, /*!<[in] base associated mesh location id */
+  cs_lnum_t             n_elts,      /*!<[in] number of associated elements */
+  const cs_lnum_t      *elt_ids,     /*!<[in] ids of associated elements,
+                                       or null if no filtering is required */
+  void                 *input,       /*!<[in] pointer to slice structure */
+  void                 *vals         /*!<[in, out] pointer to output values */
 )
 {
   assert(location_id == CS_MESH_LOCATION_CELLS);

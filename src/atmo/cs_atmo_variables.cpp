@@ -437,7 +437,6 @@ cs_atmo_add_variable_fields(void)
                 "  Check the input data given through the User Interfac\n"
                 "  or cs_user_parameters.c\n");
 
-
     /* Load shared library
      * Initialise external aerosol code
      * Create variables */

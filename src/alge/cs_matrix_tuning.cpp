@@ -79,7 +79,7 @@
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
 #include "base/cs_numbering.h"
-#include "base/cs_prototypes.h"
+#include "base/cs_profiling.h"
 #include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -389,6 +389,8 @@ cs_matrix_variant_tuned(const cs_matrix_t  *m,
                         int                 verbosity,
                         int                 n_measure)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   int  n_variants = 0, n_r_variants = 1;
   cs_matrix_variant_t  *r_variant = nullptr;
   cs_matrix_variant_t  *m_variant = nullptr;
