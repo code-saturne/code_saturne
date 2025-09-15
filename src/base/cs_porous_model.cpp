@@ -119,45 +119,6 @@ cs_mesh_quantities_t  *cs_glob_mesh_quantities_f = nullptr;
  * Private function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------*
- * Realloc the boundary field values array on the immersed zone
- * and initialize it only in the immersed zone
- * parameters:
- *   n_elts     <-- number of associated elements
- *   n_ib_cells <-- number of immersed boundary cells
- *   dim        <-- associated dimension
- *   val_old    <-- pointer to previous array in case of reallocation
- *                  (usually nullptr)
- *
- * returns  pointer to new field values.
- *----------------------------------------------------------------------------*/
-
-static cs_real_t *
-_add_val(cs_lnum_t   n_elts,
-         cs_lnum_t   n_ib_cells,
-         int         dim,
-         cs_real_t  *val_old)
-{
-  cs_real_t  *val = val_old;
-
-  const cs_lnum_t _n_b_faces_tot = dim * n_elts;
-  CS_REALLOC_HD(val, _n_b_faces_tot, cs_real_t, cs_alloc_mode);
-
-  /* Initialize field. This should not be necessary, but when using
-     threads with Open MP, this should help ensure that the memory will
-     first be touched by the same core that will later operate on
-     this memory, usually leading to better core/memory affinity. */
-
-  const cs_lnum_t _n_ib_elts = dim * n_ib_cells;
-  const cs_lnum_t _n_b_faces_old = _n_b_faces_tot - _n_ib_elts;
-
-# pragma omp parallel for if (_n_ib_elts > CS_THR_MIN)
-  for (cs_lnum_t ii = _n_b_faces_old; ii < _n_b_faces_tot; ii++)
-    val[ii] = 0.;
-
-  return val;
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Free fluid mesh quantities
@@ -216,9 +177,9 @@ _field_ibm_reallocate(cs_lnum_t  n_ib_cells)
 
   for (int i = 0; i < n_fields; i++) {
     cs_field_t *f = cs_field_by_id(i);
+    assert(f != nullptr);
 
     if (f->is_owner) {
-      assert(f != nullptr);
 
       if (f->location_id != CS_MESH_LOCATION_BOUNDARY_FACES)
         continue;
@@ -227,14 +188,15 @@ _field_ibm_reallocate(cs_lnum_t  n_ib_cells)
 
         const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
 
+        f->reshape(n_elts[2]);
+
+        cs_dispatch_context ctx;
         /* Initialization */
+        for (int time_id = 0; time_id < f->n_time_vals; time_id++)
+          f->_vals[time_id]->zero(ctx);
 
-        for (int ii = 0; ii < f->n_time_vals; ii++)
-          f->vals[ii] = _add_val(n_elts[2], n_ib_cells, f->dim, f->vals[ii]);
+        ctx.wait();
 
-        f->val = f->vals[0];
-        if (f->n_time_vals > 1)
-          f->val_pre = f->vals[1];
       }
 
     }
