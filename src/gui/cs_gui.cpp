@@ -3708,7 +3708,7 @@ cs_gui_numerical_options(void)
   else if (cs_gui_strcmp(choice, "green_vtx"))
     _imrgra = 7;
 
-  if (_imrgra != 0) {
+  if (_imrgra > 0 && _imrgra < 7) {
     int _imrgra_add = 0;
     choice = cs_tree_node_get_tag(cs_tree_get_node(tn_n,
                                                    "extended_neighborhood"),
