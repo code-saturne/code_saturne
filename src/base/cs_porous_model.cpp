@@ -175,22 +175,69 @@ _field_ibm_reallocate(cs_lnum_t  n_ib_cells)
 {
   const int n_fields = cs_field_n_fields();
 
+  cs_dispatch_context ctx;
+
   for (int i = 0; i < n_fields; i++) {
     cs_field_t *f = cs_field_by_id(i);
     assert(f != nullptr);
 
     if (f->is_owner) {
 
-      if (f->location_id != CS_MESH_LOCATION_BOUNDARY_FACES)
-        continue;
+      if (f->location_id == CS_MESH_LOCATION_CELLS) {
 
-      if (f->is_owner) {
+        if (f->bc_coeffs != nullptr) {
+          const int location_b_id = CS_MESH_LOCATION_BOUNDARY_FACES;
+          const cs_lnum_t *n_b_elts = cs_mesh_location_get_n_elts(location_b_id);
+
+          const cs_lnum_t n_i_end = f->dim*n_b_elts[0];
+          const cs_lnum_t n_i_new = f->dim*n_ib_cells;
+          const cs_lnum_t n_i_start = n_i_end - n_i_new;
+
+          /* Realloc val_f for fields already computed (porosity) */
+
+          bool has_limiter = false;
+          if (f->bc_coeffs->val_f_lim != f->bc_coeffs->val_f) {
+            CS_REALLOC_HD(f->bc_coeffs->val_f_lim, n_i_end,
+                          cs_real_t, cs_alloc_mode);
+            CS_REALLOC_HD(f->bc_coeffs->val_f_d_lim, n_i_end,
+                          cs_real_t, cs_alloc_mode);
+
+            cs_real_t *val_f_lim = f->bc_coeffs->val_f_lim;
+            cs_real_t *val_f_d_lim = f->bc_coeffs->val_f_d_lim;
+            ctx.parallel_for(n_i_new, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
+              val_f_lim[n_i_start + e_id] = 0.;
+              val_f_d_lim[n_i_start + e_id] = 0.;
+            });
+            has_limiter = true;
+          }
+
+          if (f->bc_coeffs->val_f != nullptr) {
+            CS_REALLOC_HD(f->bc_coeffs->val_f, n_i_end, cs_real_t, cs_alloc_mode);
+            CS_REALLOC_HD(f->bc_coeffs->val_f_d, n_i_end, cs_real_t, cs_alloc_mode);
+
+            cs_real_t *val_f = f->bc_coeffs->val_f;
+            cs_real_t *val_f_d = f->bc_coeffs->val_f_d;
+            ctx.parallel_for(n_i_new, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
+              val_f[n_i_start + e_id] = 0.;
+              val_f_d[n_i_start + e_id] = 0.;
+            });
+
+            ctx.wait();
+
+            if (!(has_limiter)) {
+              f->bc_coeffs->val_f_lim = f->bc_coeffs->val_f;
+              f->bc_coeffs->val_f_d_lim = f->bc_coeffs->val_f_d;
+            }
+
+          }
+        }
+      } /* End cell location */
+
+      else if (f->location_id == CS_MESH_LOCATION_BOUNDARY_FACES) {
 
         const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
 
         f->reshape(n_elts[2]);
-
-        cs_dispatch_context ctx;
 
         /* Initialization */
         const cs_lnum_t n_i_end = f->dim*n_elts[2];
@@ -203,11 +250,10 @@ _field_ibm_reallocate(cs_lnum_t  n_ib_cells)
           ctx.parallel_for(n_i_new, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
             vals[n_i_start + e_id] = 0.;
           });
+
+          ctx.wait();
         }
-
-        ctx.wait();
       }
-
     }
     else {
       if (f->val == nullptr)
