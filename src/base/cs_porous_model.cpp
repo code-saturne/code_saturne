@@ -191,12 +191,21 @@ _field_ibm_reallocate(cs_lnum_t  n_ib_cells)
         f->reshape(n_elts[2]);
 
         cs_dispatch_context ctx;
+
         /* Initialization */
-        for (int time_id = 0; time_id < f->n_time_vals; time_id++)
-          f->_vals[time_id]->zero(ctx);
+        const cs_lnum_t n_i_end = f->dim*n_elts[2];
+        const cs_lnum_t n_i_new = f->dim*n_ib_cells;
+        const cs_lnum_t n_i_start = n_i_end - n_i_new;
+
+        for (int time_id = 0; time_id < f->n_time_vals; time_id++) {
+          cs_real_t *vals = f->vals[time_id];
+
+          ctx.parallel_for(n_i_new, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
+            vals[n_i_start + e_id] = 0.;
+          });
+        }
 
         ctx.wait();
-
       }
 
     }
