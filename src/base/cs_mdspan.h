@@ -549,7 +549,7 @@ public:
     cs_dispatch_context ctx;
 
     ctx.parallel_for(loop_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
-        _data[e_id] = val;
+      _data[e_id] = val;
     });
 
     ctx.wait();
@@ -578,7 +578,7 @@ public:
 
     /* No wait here since context is passed as argument */
     ctx.parallel_for(loop_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
-        _data[e_id] = val;
+      _data[e_id] = val;
     });
   }
 
@@ -607,7 +607,7 @@ public:
       set_to_val(ctx, val, n_elts);
     else {
       ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
-          _data[elt_ids[e_id]] = val;
+        _data[elt_ids[e_id]] = val;
       });
     }
 
@@ -641,7 +641,7 @@ public:
       set_to_val(ctx, val, n_elts);
     else {
       ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
-          _data[elt_ids[e_id]] = val;
+        _data[elt_ids[e_id]] = val;
       });
     }
   }
@@ -661,7 +661,7 @@ public:
     cs_dispatch_context ctx;
 
     ctx.parallel_for(_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
-        _data[e_id] = _zero;
+      _data[e_id] = _zero;
     });
 
     ctx.wait();
@@ -683,7 +683,7 @@ public:
     T _zero = static_cast<T>(0);
 
     ctx.parallel_for(_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
-        _data[e_id] = _zero;
+      _data[e_id] = _zero;
     });
   }
 
@@ -741,7 +741,7 @@ public:
     cs_dispatch_context ctx;
 
     ctx.parallel_for(loop_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
-        _data[e_id] = other._data[e_id];
+      _data[e_id] = other._data[e_id];
     });
 
     ctx.wait();
@@ -770,7 +770,7 @@ public:
     const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
 
     ctx.parallel_for(loop_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
-        _data[e_id] = data[e_id];
+      _data[e_id] = data[e_id];
     });
   }
 
@@ -798,7 +798,7 @@ public:
     const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
 
     ctx.parallel_for(loop_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
-        _data[e_id] = other._data[e_id];
+      _data[e_id] = other._data[e_id];
     });
   }
 
