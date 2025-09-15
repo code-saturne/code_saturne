@@ -155,10 +155,11 @@ _gather_full_strided_cu(cs_lnum_t         n,
                         T                 dest[])
 {
   cs_lnum_t i = blockIdx.x*blockDim.x + threadIdx.x;
-  if (i < n) {
-    cs_lnum_t j = ids[i];
-    for (cs_lnum_t k = 0; k < stride; k++)
-      dest[i*stride + k] = src[j*stride + k];
+  cs_lnum_t bi = i/stride;
+  if (bi < n) {
+    cs_lnum_t j = ids[bi];
+    cs_lnum_t k = i%stride;
+    dest[i] = src[j*stride + k];
   }
 }
 
@@ -230,7 +231,7 @@ cs_halo_cuda_pack_send_buffer(const cs_halo_t   *halo,
     }
     else {
       if (send_blocks == nullptr)
-        _gather_full_strided_cu<<<n_blocks, block_size, 0, stream>>>
+        _gather_full_strided_cu<<<n_blocks*stride, block_size, 0, stream>>>
           (n_send, stride, send_list, var, buffer);
       else
         _gather_block_strided_cu<<<n_blocks, block_size, 0, stream>>>
