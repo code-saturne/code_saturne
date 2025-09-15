@@ -4938,10 +4938,19 @@ cs_field_t::get_key_str
 
 /*----------------------------------------------------------------------------*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 1D span view of field values. If the field is not a scalar
+ *        a fatal error is provoked.
+ *
+ * \return  cs_span<cs_real_t> view of field values.
+ */
+/*----------------------------------------------------------------------------*/
+
 cs_span<cs_real_t>
 cs_field_t::get_vals_s
 (
-  const int time_id
+  const int time_id /*!<[in] time value id to get. 0 for val, 1 for val_pre */
 )
 {
   if (this->dim != 1)
@@ -4952,10 +4961,19 @@ cs_field_t::get_vals_s
   return this->_vals[time_id]->get_mdspan({this->_vals[time_id]->size()});
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 2D span view of field values. If the field is not a vector
+ *        a fatal error is provoked.
+ *
+ * \return  cs_span_2d<cs_real_t>(:,3) view of field values.
+ */
+/*----------------------------------------------------------------------------*/
+
 cs_span_2d<cs_real_t>
 cs_field_t::get_vals_v
 (
-  const int time_id
+  const int time_id /*!<[in] time value id to get. 0 for val, 1 for val_pre */
 )
 {
   if (this->dim != 3)
@@ -4967,10 +4985,19 @@ cs_field_t::get_vals_v
   return this->_vals[time_id]->get_mdspan<2>({n_elts, this->dim});
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 2D span view of field values. If the field is not a tensor
+ *        a fatal error is provoked.
+ *
+ * \return  cs_span_2d<cs_real_t>(:,6) view of field values.
+ */
+/*----------------------------------------------------------------------------*/
+
 cs_span_2d<cs_real_t>
 cs_field_t::get_vals_t
 (
-  const int time_id
+  const int time_id /*!<[in] time value id to get. 0 for val, 1 for val_pre */
 )
 {
   if (this->dim != 6)
@@ -4980,6 +5007,38 @@ cs_field_t::get_vals_t
 
   const cs_lnum_t n_elts = this->_vals[time_id]->size() / this->dim;
   return this->_vals[time_id]->get_mdspan<2>({n_elts, this->dim});
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Resize field values automatically (vals, val, val_pre).
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_t::reshape
+(
+  const cs_lnum_t new_size /*!<[in] New base size (number of elements) */
+)
+{
+  /* Sanity checks */
+  assert(new_size > -1);
+
+  /* If same size as before or not owner, nothing to do */
+  if (new_size == this->_vals[0]->extent(0) || !(this->is_owner))
+    return;
+
+  /* Reallocate all necessary values and update pointers */
+  for (int i = 0; i < this->n_time_vals; i++) {
+    this->_vals[i]->reshape(new_size, this->dim);
+
+    this->vals[i] = this->_vals[i]->data();
+  }
+
+  /* Update val and val_pre pointers */
+  this->val = this->_vals[0]->data();
+  if (this->n_time_vals > 1)
+    this->val_pre = this->_vals[1]->data();
 }
 
 /*----------------------------------------------------------------------------*/

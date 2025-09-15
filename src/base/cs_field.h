@@ -272,6 +272,12 @@ typedef struct {
     const int time_id = 0
   );
 
+  void
+  reshape
+  (
+    const cs_lnum_t new_size
+  );
+
   cs_array_2d<cs_real_t> **_vals;
 
 #endif

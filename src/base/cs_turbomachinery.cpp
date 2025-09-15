@@ -1765,9 +1765,9 @@ cs_turbomachinery_resize_cell_fields(void)
       /* Ghost cell sizes may change, but the number of main cells
          is unchanged, so a simple reallocation will do */
 
-      for (int kk = 0; kk < f->n_time_vals; kk++) {
+      f->reshape(_n_cells);
 
-        CS_REALLOC(f->vals[kk], _n_cells*f->dim, cs_real_t);
+      for (int kk = 0; kk < f->n_time_vals; kk++) {
 
         if (halo != nullptr) {
 
@@ -1782,10 +1782,6 @@ cs_turbomachinery_resize_cell_fields(void)
                                         f->dim);
         }
       }
-
-      f->val = f->vals[0];
-      if (f->n_time_vals > 1)
-        f->val_pre = f->vals[1];
 
       if (f->grad != nullptr) {
 
