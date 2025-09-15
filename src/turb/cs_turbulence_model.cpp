@@ -1635,23 +1635,35 @@ cs_turb_model_log_setup(void)
     }
 
   }
-  else if (turb_model->type == CS_TURB_LES) {
-    cs_log_printf(CS_LOG_SETUP,
-                  _("    csmago:      %14.5e (Smagorinsky constant)\n"
-                    "    cwale:       %14.5e (WALE model constant)\n"
-                    "    xlesfl:      %14.5e (Filter with in a cell is)\n"
-                    "    ales:        %14.5e (written as)\n"
-                    "    bles:        %14.5e (xlesfl*(ales*volume)**(bles))\n"
-                    "    idries:      %14d (=1 Van Driest damping)\n"
-                    "    cdries:      %14.5e (Van Driest constant)\n"
-                    "    xlesfd:      %14.5e (Ratio between the explicit)\n"
-                    "                                (filter and LES filter)\n"
-                    "                                (recommended value: 1.5)\n"
-                    "    smagmx:      %14.5e (Max Smagorinsky in the)\n"
-                    "                                (dynamic model case)\n"),
-                  cs_turb_csmago, cs_turb_cwale, cs_turb_xlesfl,
-                  cs_turb_ales, cs_turb_bles, cs_glob_turb_les_model->idries,
-                  cs_turb_cdries, cs_turb_xlesfd, cs_turb_csmago_max);
+  if (turb_model->type == CS_TURB_LES) {
+
+    if (   turb_model->model == CS_TURB_LES_SMAGO_CONST
+        || turb_model->model == CS_TURB_LES_SMAGO_DYN
+        || turb_model->model == CS_TURB_LES_KSGS)
+      cs_log_printf(CS_LOG_SETUP,
+                    _("    csmago:      %14.5e (Smagorinsky constant)\n"
+                      "    xlesfl:      %14.5e (Filter with in a cell is)\n"
+                      "    ales:        %14.5e (written as)\n"
+                      "    bles:        %14.5e (xlesfl*(ales*volume)**(bles))\n"
+                      "    idries:      %14d (=1 Van Driest damping)\n"
+                      "    cdries:      %14.5e (Van Driest constant)\n"),
+                    cs_turb_csmago, cs_turb_xlesfl,
+                    cs_turb_ales, cs_turb_bles, cs_glob_turb_les_model->idries,
+                    cs_turb_cdries);
+    if (turb_model->model == CS_TURB_LES_SMAGO_DYN)
+      cs_log_printf(CS_LOG_SETUP,
+                    _("    xlesfd:      %14.5e (Ratio between the explicit)\n"
+                      "                                (filter and LES filter)\n"
+                      "                                (recommended value: 1.5)\n"
+                      "    smagmx:      %14.5e (Max Smagorinsky in the)\n"
+                      "                                (dynamic model case)\n"),
+                   cs_turb_xlesfd, cs_turb_csmago_max);
+
+    if (turb_model->model == CS_TURB_LES_WALE)
+      cs_log_printf(CS_LOG_SETUP,
+                    _("    cwale:       %14.5e (WALE model constant)\n"),
+                    cs_turb_cwale);
+
 
   }
   else if (turb_model->model == CS_TURB_V2F_PHI) {
