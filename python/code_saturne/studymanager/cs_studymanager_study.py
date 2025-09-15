@@ -2331,6 +2331,10 @@ class Studies(object):
             except Exception:
                 pass
 
+            colors[case_state.COMPUTED] = "rgb(120,213,124)"
+            colors[case_state.FINALIZING] = "rgb(127,255,0)"
+            colors[case_state.FINALIZED] = "rgb(120,213,124)"
+
             n_leaks = None
             try:
                 n_leaks = int(info['memory_leaks'])
