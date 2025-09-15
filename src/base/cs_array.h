@@ -39,13 +39,14 @@
 
 #include "base/cs_defs.h"
 #include "base/cs_base_accel.h"
-#if defined (__NVCC__)
+#if defined (__CUDACC__)
 #include "base/cs_array_cuda.h"
 #include "base/cs_base_cuda.h"
 #endif
 
 #include "base/cs_dispatch.h"
 #include "base/cs_mdspan.h"
+#include "base/cs_parall.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -106,7 +107,7 @@ cs_arrays_set_value(const cs_lnum_t  n_elts,
   /* Expand the parameter pack */
   T* array_ptrs[] = {arrays ... };
 
-#if defined (__NVCC__)
+#if defined (__CUDACC__)
   bool is_available_on_device = cs_check_device_ptr(ref_val);
   for (T* array : array_ptrs)
     is_available_on_device =  is_available_on_device
@@ -116,6 +117,7 @@ cs_arrays_set_value(const cs_lnum_t  n_elts,
   if (is_available_on_device) {
     cudaStream_t stream_ = cs_cuda_get_stream(0);
     cs_arrays_set_value<T, stride>(stream_,
+                                   false,
                                    n_elts,
                                    ref_val,
                                    arrays...);
@@ -157,11 +159,10 @@ cs_arrays_set_value(const cs_lnum_t  n_elts,
                     const T          ref_val,
                     Arrays&&...      arrays)
 {
-
   /* Expand the parameter pack */
   T* array_ptrs[] = {arrays ... };
 
-#if defined (__NVCC__)
+#if defined (__CUDACC__)
   bool is_available_on_device = true;
   for (T* array : array_ptrs)
     is_available_on_device =  is_available_on_device
@@ -171,6 +172,7 @@ cs_arrays_set_value(const cs_lnum_t  n_elts,
   if (is_available_on_device) {
     cudaStream_t stream_ = cs_cuda_get_stream(0);
     cs_arrays_set_value<T, stride>(stream_,
+                                   false,
                                    n_elts,
                                    ref_val,
                                    arrays...);
@@ -189,6 +191,170 @@ cs_arrays_set_value(const cs_lnum_t  n_elts,
 # pragma omp parallel for  if (n_elts >= CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_elts; i++)
     set_value(i);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign values to all elements of multiple arrays. ref_val is input
+ *        as a pointer or an array.
+ *
+ * In the case of asynchronous task launches (such as on GPUs), this
+ * function returns immediately after scheduling the assignement.
+ * To guarantee the operation is finished, use ctx.wait().
+ *
+ * Template parmeters.
+ *                 T       type name
+ *                 stride  1 for scalars, 3 for vectors, 6 for symetric tensors
+ *                 Arrays  varadiac parameters pack
+ *
+ * \param[in, out]  ctx  reference to dispatch context
+ * \param[in]       n_elts  total number of elements to set
+ * \param[in]       ref_val value to assign
+ * \param[out]      arrays  arrays to set
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T, size_t stride, typename... Arrays>
+void
+cs_arrays_set_value(cs_dispatch_context  &ctx,
+                    const cs_lnum_t       n_elts,
+                    const T              *ref_val,
+                    Arrays&&...           arrays)
+{
+  /* Expand the parameter pack */
+  T* array_ptrs[] = {arrays ... };
+
+#if defined (__CUDACC__)
+  if (ctx.use_gpu()) {
+    cudaStream_t stream_ = ctx.cuda_stream();
+    cs_arrays_set_value<T, stride>(stream_,
+                                   true,
+                                   n_elts,
+                                   ref_val,
+                                   arrays...);
+    return;
+  }
+#endif
+
+  auto set_value = [=](cs_lnum_t i_elt) {
+    for (T* array : array_ptrs)
+      memcpy(array + i_elt*stride, ref_val, stride*sizeof(T));
+  };
+
+  /* Loop through each index and assign values */
+# pragma omp parallel for  if (n_elts >= CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_elts; i++)
+    set_value(i);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign values to all elements of multiple arrays. ref_val is input
+ *        as a scalar.
+ *
+ * In the case of asynchronous task launches (such as on GPUs), this
+ * function returns immediately after scheduling the assignement.
+ * To guarantee the operation is finished, use ctx.wait().
+ *
+ * Template parmeters.
+ *                 T       type name
+ *                 stride  1 for scalars, 3 for vectors, 6 for symetric tensors
+ *                 Arrays  varadiac parameters pack
+ *
+ * \param[in, out]  ctx  reference to dispatch context
+ * \param[in]       n_elts  total number of elements to set
+ * \param[in]       ref_val value to assign
+ * \param[out]      arrays  arrays to set
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T, size_t stride, typename... Arrays>
+void
+cs_arrays_set_value(cs_dispatch_context  &ctx,
+                    const cs_lnum_t       n_elts,
+                    const T               ref_val,
+                    Arrays&&...           arrays)
+{
+  /* Expand the parameter pack */
+  T* array_ptrs[] = {arrays ... };
+
+#if defined (__CUDACC__)
+  if (ctx.use_gpu()) {
+    cudaStream_t stream_ = ctx.cuda_stream();
+    cs_arrays_set_value<T, stride>(stream_,
+                                   true,
+                                   n_elts,
+                                   ref_val,
+                                   arrays...);
+    return;
+  }
+#endif
+
+  auto set_value = [=](cs_lnum_t i_elt) {
+    for (T* array : array_ptrs)
+      for (size_t k = 0; k < stride; k++) {
+        array[i_elt*stride + k] = ref_val;
+      }
+  };
+
+  /* Loop through each index and assign values */
+# pragma omp parallel for  if (n_elts >= CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_elts; i++)
+    set_value(i);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Assign zero value to all elements of multiple arrays.
+ *
+ * In the case of asynchronous task launches (such as on GPUs), this
+ * function returns immediately after scheduling the assignement.
+ * To guarantee the operation is finished, use ctx.wait().
+ *
+ * Template parmeters.
+ *                 T       type name
+ *                 stride  1 for scalars, 3 for vectors, 6 for symetric tensors
+ *                 Arrays  varadiac parameters pack
+ *
+ * \param[in, out]  ctx  reference to dispatch context
+ * \param[in]       n_elts  total number of elements to set
+ * \param[out]      arrays  arrays to set
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T, size_t stride, typename... Arrays>
+void
+cs_arrays_set_zero(cs_dispatch_context  &ctx,
+                   const cs_lnum_t       n_elts,
+                   Arrays&&...           arrays)
+{
+  /* Expand the parameter pack */
+  T* array_ptrs[] = {arrays ... };
+
+#if defined (__CUDACC__)
+  if (ctx.use_gpu()) {
+    cudaStream_t stream_ = ctx.cuda_stream();
+    cs_arrays_set_zero<T, stride>(stream_,
+                                  true,
+                                  n_elts,
+                                  arrays...);
+    return;
+  }
+#endif
+
+  T c = static_cast<T>(0);
+
+  cs_lnum_t n_vals = n_elts*stride;
+  int n_threads = cs_parall_n_threads(n_vals, CS_THR_MIN);
+
+# pragma omp parallel num_threads(n_threads)
+  {
+    for (T* array : array_ptrs) {
+#     pragma omp for nowait
+      for (cs_lnum_t i = 0; i < n_elts; i++)
+        array[i] = c;
+    }
+  };
 }
 
 /*----------------------------------------------------------------------------*/
@@ -305,7 +471,7 @@ cs_array_copy(const cs_lnum_t  size,
               const T*         src,
               T*               dest)
 {
-#if defined (__NVCC__)
+#if defined (__CUDACC__)
   bool is_available_on_device =  cs_check_device_ptr(src)
                               && cs_check_device_ptr(dest);
 
@@ -1413,9 +1579,9 @@ public:
   CS_F_HOST_DEVICE
   void set_to_val
   (
-    T               val,         /*!<[in] Value to set to entire data array. */
+    T               val,        /*!<[in] Value to set to entire data array. */
     const cs_lnum_t n_vals = -1 /*!<[in] Number of values to copy.
-                                          If -1, default, we use array size */
+                                         If -1, default, we use array size */
   )
   {
     assert(n_vals <= _size);
@@ -1425,7 +1591,7 @@ public:
     cs_dispatch_context ctx;
 
     ctx.parallel_for(loop_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
-        _data[e_id] = val;
+      _data[e_id] = val;
     });
 
     ctx.wait();
@@ -1454,7 +1620,7 @@ public:
 
     /* No wait here since context is passed as argument */
     ctx.parallel_for(loop_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
-        _data[e_id] = val;
+      _data[e_id] = val;
     });
   }
 
@@ -1483,7 +1649,7 @@ public:
       set_to_val(ctx, val, n_elts);
     else {
       ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
-          _data[elt_ids[e_id]] = val;
+        _data[elt_ids[e_id]] = val;
       });
     }
 
@@ -1518,7 +1684,7 @@ public:
       set_to_val(ctx, val, n_elts);
     else {
       ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
-          _data[elt_ids[e_id]] = val;
+        _data[elt_ids[e_id]] = val;
       });
     }
   }
@@ -1538,7 +1704,7 @@ public:
     cs_dispatch_context ctx;
 
     ctx.parallel_for(_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
-        _data[e_id] = _zero;
+      _data[e_id] = _zero;
     });
 
     ctx.wait();
@@ -1560,7 +1726,7 @@ public:
     T _zero = static_cast<T>(0);
 
     ctx.parallel_for(_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
-        _data[e_id] = _zero;
+      _data[e_id] = _zero;
     });
   }
 
@@ -2324,7 +2490,7 @@ public:
     cs_dispatch_context ctx;
 
     ctx.parallel_for(loop_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
-        _data[e_id] = data[e_id];
+      _data[e_id] = data[e_id];
     });
 
     ctx.wait();
@@ -2354,7 +2520,7 @@ public:
     cs_dispatch_context ctx;
 
     ctx.parallel_for(loop_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
-        _data[e_id] = other._data[e_id];
+      _data[e_id] = other._data[e_id];
     });
 
     ctx.wait();
@@ -2384,7 +2550,7 @@ public:
     cs_dispatch_context ctx;
 
     ctx.parallel_for(loop_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
-        _data[e_id] = span._data[e_id];
+      _data[e_id] = span._data[e_id];
     });
 
     ctx.wait();
@@ -2412,7 +2578,7 @@ public:
     const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
 
     ctx.parallel_for(loop_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
-        _data[e_id] = data[e_id];
+      _data[e_id] = data[e_id];
     });
   }
 
@@ -2440,7 +2606,7 @@ public:
     assert(loop_size <= other._size);
 
     ctx.parallel_for(loop_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
-        _data[e_id] = other._data[e_id];
+      _data[e_id] = other._data[e_id];
     });
   }
 
@@ -2468,7 +2634,7 @@ public:
     assert(loop_size <= span._size);
 
     ctx.parallel_for(loop_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
-        _data[e_id] = span._data[e_id];
+      _data[e_id] = span._data[e_id];
     });
   }
 

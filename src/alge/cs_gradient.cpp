@@ -3815,10 +3815,10 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
   /* Initialize gradient */
   /*---------------------*/
 
-  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-    for (cs_lnum_t j = 0; j < 3; j++)
-      grad[cell_id][j] = 0.0;
-  });
+  {
+    cs_real_t *p_grad = reinterpret_cast<cs_real_t *>(grad);
+    cs_arrays_set_zero<cs_real_t, 3>(ctx, n_cells, p_grad);
+  }
   ctx.wait();
 
   if (cs_glob_timer_kernels_flag > 0)
