@@ -41,7 +41,7 @@ import vtk
 import libSalomePy
 import salome
 import SMESH
-import CFDSTUDYGUI_DataModel
+import cfdstudy.CFDSTUDYGUI_DataModel
 
 try:
     from vtkmodules.vtkRenderingCorePython import *
