@@ -2323,8 +2323,8 @@ public:
   std::enable_if_t<cs::always_true<Id1, Id2>::value && N==2, T&>
   operator()
   (
-    cs_lnum_t i, /*!<[in] Index along first dimension */
-    cs_lnum_t j  /*!<[in] Index along second dimension */
+    Id1 i, /*!<[in] Index along first dimension */
+    Id2 j  /*!<[in] Index along second dimension */
   ) const
   {
     check_operator_args_(i,j);
