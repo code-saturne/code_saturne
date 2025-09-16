@@ -461,8 +461,17 @@ static int  _omp_target_device_id = -1;
 
 #if defined(HAVE_ACCEL)
 
+/*! Default allocation mode for data which might run on device */
 cs_alloc_mode_t  cs_alloc_mode = CS_ALLOC_HOST;
+
+/*! Preferred allocation mode for data which is read more than written,
+  such as mesh or matrix structures and quantities */
 cs_alloc_mode_t  cs_alloc_mode_read_mostly = CS_ALLOC_HOST;
+
+/*! Default allocation mode for data which is expected to be used on device
+ only, if present. For debugging, using unified memory can be practical;
+ For performance, using a device-only allocation can avoid some overheads. */
+cs_alloc_mode_t  cs_alloc_mode_device = CS_ALLOC_HOST;
 
 #endif
 

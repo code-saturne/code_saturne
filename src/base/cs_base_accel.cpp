@@ -177,6 +177,7 @@ cs_sycl_select_default_device(void)
       device_id = 0;
       cs_alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
       cs_alloc_mode_read_mostly = CS_ALLOC_HOST_DEVICE_SHARED;
+      cs_alloc_mode_device = CS_ALLOC_DEVICE;
     }
   }
   catch (sycl::exception const& ex) {
@@ -242,6 +243,7 @@ cs_omp_target_select_default_device(void)
   if (device_id >= 0) {
     cs_alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
     cs_alloc_mode_read_mostly = CS_ALLOC_HOST_DEVICE_SHARED;
+    cs_alloc_mode_device = CS_ALLOC_HOST_DEVICE;
   }
 
   /* Also detect whether MPI is device-aware,

@@ -180,11 +180,13 @@ _ptr = (_type *) cs_mem_memalign(_align, _ni, sizeof(_type), \
 
 extern cs_alloc_mode_t  cs_alloc_mode;
 extern cs_alloc_mode_t  cs_alloc_mode_read_mostly;
+extern cs_alloc_mode_t  cs_alloc_mode_device;
 
 #else
 
 #define cs_alloc_mode CS_ALLOC_HOST
 #define cs_alloc_mode_read_mostly CS_ALLOC_HOST
+#define cs_alloc_mode_device CS_ALLOC_HOST
 
 #endif
 

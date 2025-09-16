@@ -8106,7 +8106,9 @@ cs_diffusion_potential(const cs_field_t           *f,
   else {
 
     /* Allocate a work array for the gradient calculation */
-    CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+    const cs_alloc_mode_t amode = (on_device) ?
+      cs_alloc_mode_device : cs_alloc_mode;
+    CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, amode);
 
     /* Compute gradient */
     if (eqp->iwgrec > 0) {
@@ -8136,7 +8138,7 @@ cs_diffusion_potential(const cs_field_t           *f,
     cs_real_t *_pvar = pvar;
 
     if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION) {
-      CS_MALLOC(_pvar, n_cells_ext, cs_real_t);
+      CS_MALLOC_HD(_pvar, n_cells_ext, cs_real_t, cs_alloc_mode);
       cs_array_real_copy(n_cells_ext, pvar, _pvar);
 
       cs_bad_cells_regularisation_scalar(_pvar);
