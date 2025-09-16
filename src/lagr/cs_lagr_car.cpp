@@ -546,10 +546,7 @@ cs_lagr_car(int                iprev,
     }
 
     /* Add buoyancy effects based on Boussinesq approximation */
-    if (    (    cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
-              || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR
-              || (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-                  && cs_glob_lagr_specific_physics->solve_temperature_seen == 1))
+    if (cs_glob_lagr_specific_physics->solve_temperature_seen == 1
          && cs_field_by_name_try("thermal_expansion") != nullptr
          && cs_glob_velocity_pressure_model->idilat == 0) {
 

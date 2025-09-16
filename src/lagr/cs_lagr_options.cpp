@@ -229,18 +229,6 @@ cs_lagr_options_definition(int         is_restart,
 
   lagr_model->physical_model = CS_LAGR_PHYS_OFF;
 
-  cs_glob_lagr_specific_physics->solve_diameter = 0;
-
-  cs_glob_lagr_specific_physics->solve_temperature_seen = 0;
-
-  cs_glob_lagr_specific_physics->solve_temperature = 0;
-
-  cs_glob_lagr_specific_physics->solve_mass = 0;
-
-  cs_glob_lagr_specific_physics->tpart = -999.0;
-
-  cs_glob_lagr_specific_physics->cppart = -999.0;
-
   lagr_model->fouling = 0;
 
   /* Initializations for physical models */

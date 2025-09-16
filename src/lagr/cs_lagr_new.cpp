@@ -709,11 +709,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
   /* Initialize pointers (used to simplify future tests) */
 
-  if (   (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-          && (    cs_glob_lagr_specific_physics->solve_temperature_seen == 1
-               || cs_glob_lagr_specific_physics->solve_temperature == 1))
-      || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
-      || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
+  if (cs_glob_lagr_specific_physics->solve_temperature_seen == 1
+      || cs_glob_lagr_specific_physics->solve_temperature == 1) {
 
     if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
       cval_t = cs_field_by_name("real_temperature")->val; /* Humid air temp */
@@ -741,9 +738,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
   /* Prepare enthalpy to temperature conversion if needed */
 
-  if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-      && (    cs_glob_lagr_specific_physics->solve_temperature_seen == 1
-           || cs_glob_lagr_specific_physics->solve_temperature == 1)
+  if ((cs_glob_lagr_specific_physics->solve_temperature_seen == 1
+        || cs_glob_lagr_specific_physics->solve_temperature == 1)
       && cval_t == nullptr
       && cval_h != nullptr) {
 
@@ -1291,8 +1287,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
                                    zis->density * pis6 * d3
                                    * pow(1.0-mporos, 3));
 
-      if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-          && cs_glob_lagr_specific_physics->solve_temperature_seen == 1
+      if (cs_glob_lagr_specific_physics->solve_temperature_seen == 1
           && cval_t != nullptr) {
 
         /* Set Seen temperature */

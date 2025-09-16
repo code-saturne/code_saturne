@@ -374,8 +374,7 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
   }
 
   /* temperature */
-  if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-      && (   cs_glob_lagr_specific_physics->solve_temperature == 1
+  if ((   cs_glob_lagr_specific_physics->solve_temperature == 1
           || cs_glob_lagr_specific_physics->solve_temperature_seen == 1
           || cs_glob_lagr_specific_physics->solve_diameter == 1
           || cs_glob_lagr_specific_physics->solve_mass == 1)) {
@@ -460,9 +459,8 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
   }
 
   /* temperature and Cp */
-  if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-      && (    cs_glob_lagr_specific_physics->solve_temperature == 1
-           || cs_glob_lagr_specific_physics->solve_temperature_seen)) {
+  if (cs_glob_lagr_specific_physics->solve_temperature == 1
+      || cs_glob_lagr_specific_physics->solve_temperature_seen == 1) {
     cs_real_t tkelvn = -cs_physical_constants_celsius_to_kelvin;
     if (zis->cp < 0.0 && cs_glob_lagr_specific_physics->solve_temperature == 1)
       bft_error(__FILE__, __LINE__, 0,

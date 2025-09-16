@@ -281,9 +281,8 @@ _log_setup_injection(cs_log_t  log)
                         _("    fouling index: %g\n"),
                         zis->fouling_index);
 
-        if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-            && (    cs_glob_lagr_specific_physics->solve_temperature_seen == 1
-                 || cs_glob_lagr_specific_physics->solve_temperature == 1)) {
+        if (cs_glob_lagr_specific_physics->solve_temperature_seen == 1
+            || cs_glob_lagr_specific_physics->solve_temperature == 1) {
           if (zis->temperature_profile == 0)
             cs_log_printf(log,
                           _("    temperature from fluid\n"));

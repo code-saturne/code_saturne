@@ -1881,25 +1881,22 @@ cs_lagr_sde_model(const cs_lnum_t    p_id,
 {
   /* Integration of temperature seen by particles */
 
-  if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
-      || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR
-      || (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
-          && cs_glob_lagr_specific_physics->solve_temperature_seen == 1))
+  if (cs_glob_lagr_specific_physics->solve_temperature_seen == 1)
     _sde_i_temp_seen(p_id, dt_part, nor);
 
-  /* Integration of particles temperature */
+  /* Integration of particles temperature (CTWR and COAL done after) */
 
   if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
       && cs_glob_lagr_specific_physics->solve_temperature == 1)
     _lagitp(p_id, dt_part, nor, tempct);
 
-  /* Integration of particles diameter */
+  /* Integration of particles diameter (CTWR and COAL done after) */
 
   if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
       && cs_glob_lagr_specific_physics->solve_diameter == 1)
     _lagidp(p_id, dt_part, nor);
 
-  /* Integration of particles mass */
+  /* Integration of particles mass (CTWR and COAL done after) */
 
   if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
       && cs_glob_lagr_specific_physics->solve_mass == 1)
