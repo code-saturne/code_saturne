@@ -1,3 +1,11 @@
+Release 9.0.2 (unreleased)
+--------------------------
+
+### Bug fixes:
+
+- GUI: remove visualization of probes in salome context because the feature is
+  currently not functional
+    
 Release 9.0.1 (2025-10-17)
 --------------------------
 

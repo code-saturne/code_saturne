@@ -1358,6 +1358,9 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         # Tabs to remove (at the end, to avoid shifting indexes)
         tabs_to_remove = []
 
+        # Probes visualization in salome context is suspended
+        self.salome_probes_visu = self.case['salome'] and False
+
         # Combo models
 
         self.modelOutput         = ComboModel(self.comboBoxOutput,3,1)
@@ -1640,7 +1643,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         # Monitoring points initialisation
 
-        if self.case['salome'] and not self.case['probes']:
+        if self.salome_probes_visu and not self.case['probes']:
             try:
                 from SalomeActors import ProbeActors
                 self.case['probes'] = ProbeActors()
@@ -1657,7 +1660,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.groupBoxProbesDisplay.setChecked(False)
         self.groupBoxProbesDisplay.setEnabled(False)
 
-        if self.case['salome'] and self.case['probes']:
+        if self.salome_probes_visu and self.case['probes']:
             self.case['probes'].removeActors()
             self.case['probes'].setTableView(self.tableViewPoints)
             self.groupBoxProbesDisplay.setChecked(self.case['probes'].getVisibility())
@@ -1668,6 +1671,11 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.tableViewPoints.entered[QModelIndex].connect(self.slotSelectedActors)
             self.groupBoxProbesDisplay.clicked[bool].connect(self.slotProbesDisplay)
             self.lineEditProbesRadius.textChanged.connect(self.slotProbesRadius)
+        else:
+            # Display monitoring points on SALOME VTK Viewer is hidden because
+            # the feature is currently not functional
+            self.groupBoxProbesDisplay.hide()
+            self.lineEditProbesRadius.hide()
 
         self.toolButtonDuplicate.setEnabled(False)
         if self.mdl.getNumberOfMonitoringPoints() > 0:
@@ -1678,7 +1686,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             name = self.mdl.getMonitoringPointName(num)
             X, Y, Z = self.mdl.getMonitoringPointCoordinates(num)
             self.__insertMonitoringPoint(num, name, X, Y, Z)
-            if self.case['salome']:
+            if self.salome_probes_visu:
                 self.__salomeHandlerAddMonitoringPoint(name, X, Y, Z)
 
         if self.mdl.getMonitoringPointsSnap() == 'snap_to_center':
@@ -2781,7 +2789,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         self.toolButtonDuplicate.setEnabled(True)
 
-        if self.case['salome']:
+        if self.salome_probes_visu:
             self.__salomeHandlerAddMonitoringPoint(num, 0., 0., 0.)
 
 
@@ -2811,7 +2819,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             X, Y, Z = self.mdl.getMonitoringPointCoordinates(num)
             self.__insertMonitoringPoint(num, name, X, Y, Z)
 
-        if self.case['salome']:
+        if self.salome_probes_visu:
             self.__salomeHandlerDeleteMonitoringPoint(l2)
 
         if self.mdl.getNumberOfMonitoringPoints() == 0:
@@ -2841,7 +2849,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.mdl.addMonitoringPoint(x=X, y=Y, z=Z)
             self.__insertMonitoringPoint(new_num, new_name, X, Y, Z)
 
-            if self.case['salome']:
+            if self.salome_probes_visu:
                 self.__salomeHandlerAddMonitoringPoint(probe_number + idx, X, Y, Z)
 
             idx = idx + 1
@@ -2873,7 +2881,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             name = self.mdl.getMonitoringPointName(num)
             self.__insertMonitoringPoint(num, name, X, Y, Z)
 
-            if self.case['salome']:
+            if self.salome_probes_visu:
                 self.__salomeHandlerAddMonitoringPoint(probe_number + idx, X, Y, Z)
 
             idx = idx + 1
