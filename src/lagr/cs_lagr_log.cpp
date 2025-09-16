@@ -666,13 +666,21 @@ cs_lagr_log_iteration(void)
     cs_log_printf(CS_LOG_DEFAULT,
                   _("%% of lost particles (restart(s) included): %13.4E\n"),
                   pc->n_g_cumulative_failed * 100. / pc->n_g_cumulative_total);
-      cs_log_separator(CS_LOG_DEFAULT);
+
+  cs_log_separator(CS_LOG_DEFAULT);
 
   /* Flow rate for each zone   */
-  cs_log_printf(CS_LOG_DEFAULT,
-                _("   Zone  Class  Mass flow rate(kg/s)      Name (type)\n"));
 
   cs_lagr_zone_data_t *bdy_cond = cs_lagr_get_boundary_conditions();
+
+  if (bdy_cond->particle_heat_flow == nullptr)
+    cs_log_printf(CS_LOG_DEFAULT,
+                  _("   Zone  Class  Mass flow rate(kg/s)      Name (type)\n"));
+
+  else
+    cs_log_printf(CS_LOG_DEFAULT,
+                  _("   Zone  Class  Mass flow rate(kg/s)  Heat rate (W/s)  Name (type)\n"));
+
 
   /* TODO log for volume conditions and internal zone */
 #if 0
@@ -682,70 +690,95 @@ cs_lagr_log_iteration(void)
 
   int n_stats = cs_glob_lagr_model->n_stat_classes + 1;
 
-  cs_real_t *flow_rate;
   int flow_rate_size = bdy_cond->n_zones*n_stats;
-  CS_MALLOC(flow_rate, flow_rate_size, cs_real_t);
 
-  for (int i = 0; i < flow_rate_size; i++)
-    flow_rate[i] = bdy_cond->particle_flow_rate[i];
+  cs_parall_sum(flow_rate_size, CS_REAL_TYPE, bdy_cond->particle_mass_flow);
 
-  cs_parall_sum(flow_rate_size, CS_REAL_TYPE, flow_rate);
+  if (bdy_cond->particle_heat_flow != nullptr)
+    cs_parall_sum(flow_rate_size, CS_REAL_TYPE, bdy_cond->particle_heat_flow);
 
   for (int z_id = 0; z_id < bdy_cond->n_zones; z_id++) {
 
-    if (cs::abs(flow_rate[z_id*n_stats]) > 0.) {
+    if (cs::abs(bdy_cond->particle_mass_flow[z_id*n_stats]) > 0.) {
 
       const cs_zone_t  *z = cs_boundary_zone_by_id(z_id);
-      const char *chcond;
+      const char *p_bcond;
 
       if (bdy_cond->zone_type[z_id] == CS_LAGR_INLET)
-        chcond = _("inlet");
+        p_bcond = _("inlet");
 
       else if (bdy_cond->zone_type[z_id] == CS_LAGR_REBOUND)
-        chcond = _("rebound");
+        p_bcond = _("rebound");
 
       else if (bdy_cond->zone_type[z_id] == CS_LAGR_OUTLET)
-        chcond = _("outlet");
+        p_bcond = _("outlet");
 
       else if (bdy_cond->zone_type[z_id] == CS_LAGR_DEPO1)
-        chcond = _("deposition and elimination");
+        p_bcond = _("deposition and elimination");
 
       else if (bdy_cond->zone_type[z_id] == CS_LAGR_DEPO2)
-        chcond = _("deposition");
+        p_bcond = _("deposition");
 
       else if (bdy_cond->zone_type[z_id] == CS_LAGR_FOULING)
-        chcond = _("fouling");
+        p_bcond = _("fouling");
 
       else if (bdy_cond->zone_type[z_id] == CS_LAGR_DEPO_DLVO)
-        chcond = _("DLVO conditions");
+        p_bcond = _("DLVO conditions");
 
       else if (bdy_cond->zone_type[z_id] == CS_LAGR_SYM)
-        chcond = _("symmetry");
+        p_bcond = _("symmetry");
 
       else
-        chcond = _("user");
+        p_bcond = _("user");
 
-      cs_log_printf(CS_LOG_DEFAULT,
-                    "   %3d         %12.5e               %s (%s)\n",
-                    z_id,
-                    flow_rate[z_id*n_stats]/cs_glob_lagr_time_step->dtp,
-                    z->name, chcond);
+      if (bdy_cond->particle_heat_flow == nullptr) {
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "   %3d         %12.5e               %s (%s)\n",
+                      z_id,
+                      bdy_cond->particle_mass_flow[z_id*n_stats]
+                      / cs_glob_lagr_time_step->dtp,
+                      z->name, p_bcond);
 
-      for (int j = 1; j < n_stats; j++) {
-        if (cs::abs(flow_rate[z_id*n_stats + j]) > 0)
-          cs_log_printf(CS_LOG_DEFAULT,
-                        "         %3d   %12.5e\n",
-                        j,
-                        flow_rate[z_id*n_stats + j]/cs_glob_lagr_time_step->dtp);
+        for (int j = 1; j < n_stats; j++) {
+          if (cs::abs(bdy_cond->particle_mass_flow[z_id*n_stats + j]) > 0)
+            cs_log_printf(CS_LOG_DEFAULT,
+                          "         %3d   %12.5e\n",
+                          j,
+                          bdy_cond->particle_mass_flow[z_id*n_stats + j]
+                          / cs_glob_lagr_time_step->dtp);
+
+        }
       }
+      else {
 
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "   %3d         %12.5e           %12.5e     %s (%s)\n",
+                      z_id,
+                      bdy_cond->particle_mass_flow[z_id*n_stats]
+                      / cs_glob_lagr_time_step->dtp,
+                      bdy_cond->particle_heat_flow[z_id*n_stats]
+                      / cs_glob_lagr_time_step->dtp,
+                      z->name, p_bcond);
+
+        for (int j = 1; j < n_stats; j++) {
+          if (cs::abs(bdy_cond->particle_mass_flow[z_id*n_stats + j]) > 0)
+            cs_log_printf(CS_LOG_DEFAULT,
+                          "         %3d   %12.5e   %12.5e\n",
+                          j,
+                          bdy_cond->particle_mass_flow[z_id*n_stats + j]
+                          / cs_glob_lagr_time_step->dtp,
+                          bdy_cond->particle_heat_flow[z_id*n_stats + j]
+                          / cs_glob_lagr_time_step->dtp
+                          );
+
+        }
+
+      }
     }
 
   }
 
   cs_log_separator(CS_LOG_DEFAULT);
-
-  CS_FREE(flow_rate);
 
   /* Boundary statistics  */
 
@@ -794,7 +827,7 @@ cs_lagr_log_iteration(void)
       /* If there is no particles, no statistics */
       if (nbrfac > 0)
         cs_log_printf(CS_LOG_DEFAULT,
-                      "lp  %20s  %12.5E  %12.5E\n",
+                      "lp  %20s  %12.5e  %12.5e\n",
                       cs_glob_lagr_boundary_interactions->nombrd[s_id],
                       gmin,
                       gmax);

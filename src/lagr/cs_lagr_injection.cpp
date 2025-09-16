@@ -905,7 +905,12 @@ cs_lagr_injection(int        time_id,
     cs_lagr_zone_data_t *zd = zda[i_loc];
     int fr_size = zd->n_zones * n_stats;
     for (int i = 0; i < fr_size; i++)
-      zd->particle_flow_rate[i] = 0;
+      zd->particle_mass_flow[i] = 0;
+
+    if (zd->particle_heat_flow != nullptr)
+      for (int i = 0; i < fr_size; i++)
+        zd->particle_heat_flow[i] = 0;
+
   }
 
   /* Injection due to precipitation/Dissolution
@@ -1349,17 +1354,32 @@ cs_lagr_injection(int        time_id,
             p_id++) {
           cs_real_t s_weight = cs_lagr_particles_get_real(p_set, p_id,
                                                           CS_LAGR_STAT_WEIGHT);
-          cs_real_t flow_rate = (  s_weight
+          cs_real_t mass_flow = (  s_weight
                                  * cs_lagr_particles_get_real(p_set, p_id,
                                                               CS_LAGR_MASS));
 
-          zd->particle_flow_rate[z_id*n_stats] += flow_rate;
+          zd->particle_mass_flow[z_id*n_stats] += mass_flow;
 
           if (n_stats > 1) {
             int class_id = cs_lagr_particles_get_lnum(p_set, p_id,
                                                       CS_LAGR_STAT_CLASS);
             if (class_id > 0 && class_id < n_stats)
-              zd->particle_flow_rate[z_id*n_stats + class_id] += flow_rate;
+              zd->particle_mass_flow[z_id*n_stats + class_id] += mass_flow;
+          }
+
+          if (zd->particle_heat_flow != nullptr) {
+
+            cs_real_t heat_flow = mass_flow
+               * cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_TEMPERATURE)
+               * cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_CP);
+            zd->particle_heat_flow[z_id*n_stats] += heat_flow;
+
+            if (n_stats > 1) {
+              int class_id = cs_lagr_particles_get_lnum(p_set, p_id,
+                  CS_LAGR_STAT_CLASS);
+              if (class_id > 0 && class_id < n_stats)
+                zd->particle_heat_flow[z_id*n_stats + class_id] += heat_flow;
+            }
           }
 
           z_weight += s_weight;

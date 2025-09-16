@@ -724,7 +724,8 @@ _update_zone_data_struct(cs_lagr_zone_data_t  **zone_data,
     zd->n_injection_sets = nullptr;
     zd->injection_set = nullptr;
     zd->elt_type = nullptr;
-    zd->particle_flow_rate = nullptr;
+    zd->particle_mass_flow = nullptr;
+    zd->particle_heat_flow = nullptr;
     *zone_data = zd;
   }
 
@@ -733,14 +734,19 @@ _update_zone_data_struct(cs_lagr_zone_data_t  **zone_data,
     CS_REALLOC(zd->zone_type, n_zones, int);
     CS_REALLOC(zd->n_injection_sets, n_zones, int);
     CS_REALLOC(zd->injection_set, n_zones, cs_lagr_injection_set_t *);
-    CS_REALLOC(zd->particle_flow_rate, n_zones*n_stats, cs_real_t);
+    CS_REALLOC(zd->particle_mass_flow, n_zones*n_stats, cs_real_t);
+    if (cs_glob_lagr_specific_physics->solve_temperature)
+      CS_REALLOC(zd->particle_heat_flow, n_zones*n_stats, cs_real_t);
     for (int i = zd->n_zones; i < n_zones; i++) {
       zd->zone_type[i] = -1;
       zd->n_injection_sets[i] = 0;
       zd->injection_set[i] = nullptr;
     }
-    for (int i = zd->n_zones*n_stats; i < n_zones*n_stats; i++)
-      zd->particle_flow_rate[i] = 0;
+    for (int i = zd->n_zones*n_stats; i < n_zones*n_stats; i++) {
+      zd->particle_mass_flow[i] = 0;
+      if (cs_glob_lagr_specific_physics->solve_temperature)
+        zd->particle_heat_flow[i] = 0;
+    }
 
     zd->n_zones = n_zones;
   }
@@ -1604,7 +1610,8 @@ cs_lagr_finalize_zone_conditions(void)
       CS_FREE(zd->n_injection_sets);
 
       CS_FREE(zd->elt_type);
-      CS_FREE(zd->particle_flow_rate);
+      CS_FREE(zd->particle_mass_flow);
+      CS_FREE(zd->particle_heat_flow);
 
       CS_FREE(zda[i]);
 

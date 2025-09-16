@@ -380,12 +380,24 @@ cs_lagr_options_definition(int         is_restart,
 
   }
   else {
-//FIXME for CTWR and COAL...
-    cs_glob_lagr_specific_physics->solve_temperature_seen = 0;
-    cs_glob_lagr_specific_physics->solve_temperature = 0;
-    cs_glob_lagr_specific_physics->solve_mass = 0;
-    cs_glob_lagr_specific_physics->solve_diameter = 0;
-
+    if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
+      cs_glob_lagr_specific_physics->solve_temperature_seen = 1;
+      cs_glob_lagr_specific_physics->solve_temperature = 1;
+      cs_glob_lagr_specific_physics->solve_mass = 1;
+      cs_glob_lagr_specific_physics->solve_diameter = 1;
+    }
+    else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
+      cs_glob_lagr_specific_physics->solve_temperature_seen = 1;
+      cs_glob_lagr_specific_physics->solve_temperature = 1;
+      cs_glob_lagr_specific_physics->solve_mass = 1;
+      cs_glob_lagr_specific_physics->solve_diameter = 1;
+    }
+    else {
+      cs_glob_lagr_specific_physics->solve_temperature_seen = 0;
+      cs_glob_lagr_specific_physics->solve_temperature = 0;
+      cs_glob_lagr_specific_physics->solve_mass = 0;
+      cs_glob_lagr_specific_physics->solve_diameter = 0;
+    }
   }
 
   if (lagr_time_scheme->isuila == 1 &&

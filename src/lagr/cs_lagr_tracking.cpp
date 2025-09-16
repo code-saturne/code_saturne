@@ -2111,14 +2111,29 @@ _boundary_treatment(cs_lagr_particle_set_t    *p_set,
     cs_real_t fr =   particle_stat_weight
                    * cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_MASS);
 
-    bdy_conditions->particle_flow_rate[b_z_id*n_stats] -= fr;
+    bdy_conditions->particle_mass_flow[b_z_id*n_stats] -= fr;
 
     if (n_stats > 1) {
       int class_id
         = cs_lagr_particles_get_lnum(p_set, p_id, CS_LAGR_STAT_CLASS);
       if (class_id > 0 && class_id < n_stats)
-        bdy_conditions->particle_flow_rate[  b_z_id*n_stats
+        bdy_conditions->particle_mass_flow[  b_z_id*n_stats
                                            + class_id] -= fr;
+    }
+
+    if (bdy_conditions->particle_heat_flow != nullptr) {
+      cs_real_t hf =   particle_stat_weight
+        * cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_MASS)
+        * cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_TEMPERATURE)
+        * cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_CP);
+      bdy_conditions->particle_heat_flow[b_z_id*n_stats] -= hf;
+
+      if (n_stats > 1) {
+        int class_id
+          = cs_lagr_particles_get_lnum(p_set, p_id, CS_LAGR_STAT_CLASS);
+        if (class_id > 0 && class_id < n_stats)
+          bdy_conditions->particle_heat_flow[b_z_id*n_stats + class_id] -= hf;
+      }
     }
   }
 

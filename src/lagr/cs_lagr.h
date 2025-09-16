@@ -767,7 +767,11 @@ typedef struct {
   char                       *elt_type;            /*! zone type per
                                                        element, or NULL */
 
-  cs_real_t                  *particle_flow_rate;  /*!< particle flow rate
+  cs_real_t                  *particle_mass_flow;  /*!< particle mass flow
+                                                        per zone per
+                                                        statistical class */
+
+  cs_real_t                  *particle_heat_flow;  /*!< particle heat flow
                                                         per zone per
                                                         statistical class */
 
