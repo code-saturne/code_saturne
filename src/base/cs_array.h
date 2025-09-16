@@ -351,7 +351,7 @@ cs_arrays_set_zero(cs_dispatch_context  &ctx,
   {
     for (T* array : array_ptrs) {
 #     pragma omp for nowait
-      for (cs_lnum_t i = 0; i < n_elts; i++)
+      for (cs_lnum_t i = 0; i < n_vals; i++)
         array[i] = c;
     }
   };
