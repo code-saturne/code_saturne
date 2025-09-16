@@ -1222,8 +1222,8 @@ _convection_diffusion_scalar_unsteady
                               bc_coeffs_solve->val_f;
 
   const cs_real_t *flux_d = (bc_coeffs_solve == nullptr) ?
-                             bc_coeffs->val_f_d :
-                             bc_coeffs_solve->val_f_d;
+                             bc_coeffs->flux :
+                             bc_coeffs_solve->flux;
 
   const int iconvp = eqp.iconv;
   const int idiffp = eqp.idiff;
@@ -3117,9 +3117,9 @@ _convection_diffusion_unsteady_strided
                        (const var_t *)bc_coeffs->val_f :
                        (const var_t *)bc_coeffs_solve->val_f;
 
-  const var_t *val_f_d_lim = (bc_coeffs_solve == nullptr) ?
-                             (const var_t *)bc_coeffs->val_f_d_lim :
-                             (const var_t *)bc_coeffs_solve->val_f_d_lim;
+  const var_t *flux_lim = (bc_coeffs_solve == nullptr) ?
+                          (const var_t *)bc_coeffs->flux_lim :
+                          (const var_t *)bc_coeffs_solve->flux_lim;
 
   const int iconvp = eqp.iconv;
   const int idiffp = eqp.idiff;
@@ -3806,7 +3806,7 @@ _convection_diffusion_unsteady_strided
       for (cs_lnum_t isou = 0; isou < stride; isou++) {
         fluxi[isou] = 0;
         b_val_g[isou] = val_f[face_id][isou];
-        b_val_d[isou] = val_f_d_lim[face_id][isou];
+        b_val_d[isou] = flux_lim[face_id][isou];
       }
       cs_real_t _pi[stride];
 
@@ -3877,7 +3877,7 @@ _convection_diffusion_unsteady_strided
       for (cs_lnum_t isou = 0; isou < stride; isou++) {
         fluxi[isou] = 0;
         b_val_g[isou] = val_f[face_id][isou];
-        b_val_d[isou] = val_f_d_lim[face_id][isou];
+        b_val_d[isou] = flux_lim[face_id][isou];
       }
 
       cs_real_t pip[stride], _pi[stride];
@@ -5707,9 +5707,9 @@ cs_anisotropic_left_diffusion_vector
                              (const cs_real_3_t *)bc_coeffs_v->val_f :
                              (const cs_real_3_t *)bc_coeffs_solve_v->val_f;
 
-  const cs_real_3_t *val_f_d_lim = (bc_coeffs_solve_v == nullptr) ?
-    (const cs_real_3_t *)bc_coeffs_v->val_f_d_lim :
-    (const cs_real_3_t *)bc_coeffs_solve_v->val_f_d_lim;
+  const cs_real_3_t *flux_lim = (bc_coeffs_solve_v == nullptr) ?
+                                (const cs_real_3_t *)bc_coeffs_v->flux_lim :
+                                (const cs_real_3_t *)bc_coeffs_solve_v->flux_lim;
 
   /* Local variables */
 
@@ -5990,7 +5990,7 @@ cs_anisotropic_left_diffusion_vector
       cs_real_t fluxi[3];
       /* X-Y-Z components, p = u, v, w */
       for (cs_lnum_t i = 0; i < 3; i++) {
-        cs_real_t flux = thetap * b_visc[face_id] * val_f_d_lim[face_id][i];
+        cs_real_t flux = thetap * b_visc[face_id] * flux_lim[face_id][i];
         fluxi[i] = -flux;
       }
 
@@ -7418,8 +7418,8 @@ cs_face_diffusion_potential(const cs_field_t           *f,
                               bc_coeffs_solve->val_f;
 
   const cs_real_t *flux_d = (bc_coeffs_solve == nullptr) ?
-                             bc_coeffs->val_f_d :
-                             bc_coeffs_solve->val_f_d;
+                             bc_coeffs->flux :
+                             bc_coeffs_solve->flux;
 
   const cs_halo_t  *halo = m->halo;
 
@@ -7675,8 +7675,8 @@ cs_face_anisotropic_diffusion_potential
                               bc_coeffs_solve->val_f;
 
   const cs_real_t *flux_d = (bc_coeffs_solve == nullptr) ?
-                             bc_coeffs->val_f_d :
-                             bc_coeffs_solve->val_f_d;
+                             bc_coeffs->flux :
+                             bc_coeffs_solve->flux;
 
   const cs_halo_t  *halo = m->halo;
 
@@ -8012,8 +8012,8 @@ cs_diffusion_potential(const cs_field_t           *f,
                               bc_coeffs_solve->val_f;
 
   const cs_real_t *flux_d = (bc_coeffs_solve == nullptr) ?
-                             bc_coeffs->val_f_d :
-                             bc_coeffs_solve->val_f_d;
+                             bc_coeffs->flux :
+                             bc_coeffs_solve->flux;
 
   const cs_halo_t  *halo = m->halo;
 
@@ -8287,8 +8287,8 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
                               bc_coeffs_solve->val_f;
 
   const cs_real_t *flux_d = (bc_coeffs_solve == nullptr) ?
-                             bc_coeffs->val_f_d :
-                             bc_coeffs_solve->val_f_d;
+                             bc_coeffs->flux :
+                             bc_coeffs_solve->flux;
 
   const cs_halo_t  *halo = m->halo;
 

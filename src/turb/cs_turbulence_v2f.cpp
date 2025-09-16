@@ -331,7 +331,7 @@ _solve_eq_fbr_al(const int         istprv,
                           false);
 
   cs_real_t *val_f_phi = bc_coeffs_solve_phi.val_f;
-  cs_real_t *flux_phi = bc_coeffs_solve_phi.val_f_d;
+  cs_real_t *flux_phi = bc_coeffs_solve_phi.flux;
 
   cs_real_t  *w2, *visel, *w5, *viscf, *viscb;
 

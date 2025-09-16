@@ -217,7 +217,7 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
                           false);
 
   cs_real_t *val_f_hp = bc_coeffs_solve_hp.val_f;
-  cs_real_t *flux_hp = bc_coeffs_solve_hp.val_f_d;
+  cs_real_t *flux_hp = bc_coeffs_solve_hp.flux;
 
   /* Check for variation of the hydrostatic pressure at outlet
    *
@@ -627,7 +627,7 @@ _pressure_correction_fv(int                   iterns,
                           false);
 
   cs_real_t *val_f_dp = bc_coeffs_solve_dp.val_f;
-  cs_real_t *flux_dp = bc_coeffs_solve_dp.val_f_d;
+  cs_real_t *flux_dp = bc_coeffs_solve_dp.flux;
 
   cs_field_t *f_p = CS_F_(p);
   const cs_field_t *f_vel = CS_F_(vel);
@@ -747,7 +747,7 @@ _pressure_correction_fv(int                   iterns,
                           false);
 
   cs_real_t *val_f_p = bc_coeffs_solve_p.val_f;
-  cs_real_t *flux_p = bc_coeffs_solve_p.val_f_d;
+  cs_real_t *flux_p = bc_coeffs_solve_p.flux;
 
   /* Physical quantities */
 

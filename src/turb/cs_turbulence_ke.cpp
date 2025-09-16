@@ -349,7 +349,7 @@ cs_turbulence_ke(int              phase_id,
                           false);
 
   cs_real_t *val_f_k = bc_coeffs_solve_k.val_f;
-  cs_real_t *flux_k = bc_coeffs_solve_k.val_f_d;
+  cs_real_t *flux_k = bc_coeffs_solve_k.flux;
 
   cs_bc_coeffs_solve_t bc_coeffs_solve_ep;
   cs_init_bc_coeffs_solve(bc_coeffs_solve_ep,
@@ -359,7 +359,7 @@ cs_turbulence_ke(int              phase_id,
                           false);
 
   cs_real_t *val_f_ep = bc_coeffs_solve_ep.val_f;
-  cs_real_t *flux_ep = bc_coeffs_solve_ep.val_f_d;
+  cs_real_t *flux_ep = bc_coeffs_solve_ep.flux;
 
   const cs_real_t *dt = CS_F_(dt)->val;
 

@@ -1379,8 +1379,8 @@ cs_field_bc_coeffs_init(cs_field_bc_coeffs_t  *bc_coeffs)
 
   bc_coeffs->val_f = nullptr;
   bc_coeffs->val_f_lim = nullptr;
-  bc_coeffs->val_f_d = nullptr;
-  bc_coeffs->val_f_d_lim = nullptr;
+  bc_coeffs->flux = nullptr;
+  bc_coeffs->flux_lim = nullptr;
 
   bc_coeffs->val_f_pre = nullptr;
 
@@ -1411,9 +1411,9 @@ cs_field_bc_coeffs_shallow_copy(const cs_field_bc_coeffs_t  *ref,
   copy->_hext = nullptr;
 
   copy->val_f = nullptr;
-  copy->val_f_d = nullptr;
+  copy->flux = nullptr;
   copy->val_f_lim = nullptr;
-  copy->val_f_d_lim = nullptr;
+  copy->flux_lim = nullptr;
   copy->val_f_pre = nullptr;
 }
 
@@ -1456,11 +1456,11 @@ cs_field_bc_coeffs_free_copy(const cs_field_bc_coeffs_t  *ref,
   if (copy->val_f != ref->val_f)
     CS_FREE(copy->val_f);
 
-  if (   copy->val_f_d_lim != ref->val_f_d_lim
-      && copy->val_f_d_lim != copy->val_f_d)
-    CS_FREE(copy->val_f_d_lim);
-  if (copy->val_f_d != ref->val_f_d)
-    CS_FREE(copy->val_f_d);
+  if (   copy->flux_lim != ref->flux_lim
+      && copy->flux_lim != copy->flux)
+    CS_FREE(copy->flux_lim);
+  if (copy->flux != ref->flux)
+    CS_FREE(copy->flux);
 
   if (copy->val_f_pre != ref->val_f_pre)
     CS_FREE(copy->val_f_pre);
@@ -1877,8 +1877,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
 
       f->bc_coeffs->val_f = nullptr;
       f->bc_coeffs->val_f_lim = nullptr;
-      f->bc_coeffs->val_f_d = nullptr;
-      f->bc_coeffs->val_f_d_lim = nullptr;
+      f->bc_coeffs->flux = nullptr;
+      f->bc_coeffs->flux_lim = nullptr;
 
       f->bc_coeffs->val_f_pre = nullptr;
 
@@ -2327,10 +2327,10 @@ cs_field_destroy_all(void)
 
       if (f->bc_coeffs->val_f_lim != f->bc_coeffs->val_f) {
         CS_FREE_HD(f->bc_coeffs->val_f_lim);
-        CS_FREE_HD(f->bc_coeffs->val_f_d_lim);
+        CS_FREE_HD(f->bc_coeffs->flux_lim);
       }
       CS_FREE_HD(f->bc_coeffs->val_f);
-      CS_FREE_HD(f->bc_coeffs->val_f_d);
+      CS_FREE_HD(f->bc_coeffs->flux);
       CS_FREE_HD(f->bc_coeffs->val_f_pre);
 
       CS_FREE(f->bc_coeffs);

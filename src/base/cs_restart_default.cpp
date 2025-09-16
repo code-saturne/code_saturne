@@ -114,7 +114,7 @@ const char *_coeff_name[] = {"bc_coeffs::a", "bc_coeffs::b",
                              "bc_coeffs::af", "bc_coeffs::bf",
                              "bc_coeffs::ad", "bc_coeffs::bd",
                              "bc_coeffs::ac", "bc_coeffs::bc",
-                             "bc_coeffs::val_f::0", "bc_coeffs::val_f_d::0",
+                             "bc_coeffs::val_f::0", "bc_coeffs::flux::0",
                              "bc_coeffs::val_f::1"};
 
 const char _ntb_prefix[] = "notebook::";
@@ -2737,7 +2737,7 @@ cs_restart_read_bc_coeffs(cs_restart_t  *r)
                         f->bc_coeffs->ac,
                         f->bc_coeffs->bc,
                         f->bc_coeffs->val_f,
-                        f->bc_coeffs->val_f_d,
+                        f->bc_coeffs->flux,
                         f->bc_coeffs->val_f_pre};
 
       /* Classical coef a/b/c... */
@@ -2795,9 +2795,9 @@ cs_restart_read_bc_coeffs(cs_restart_t  *r)
               p[c_id] = f->bc_coeffs->val_f;
             }
             else if (c_id == 9) {
-              CS_MALLOC_HD(f->bc_coeffs->val_f_d, n_vals, cs_real_t,
+              CS_MALLOC_HD(f->bc_coeffs->flux, n_vals, cs_real_t,
                            cs_alloc_mode);
-              p[c_id] = f->bc_coeffs->val_f_d;
+              p[c_id] = f->bc_coeffs->flux;
             }
             else {
               assert(c_id == 10);
@@ -2877,7 +2877,7 @@ cs_restart_write_bc_coeffs(cs_restart_t  *r)
                         f->bc_coeffs->ac,
                         f->bc_coeffs->bc,
                         f->bc_coeffs->val_f,
-                        f->bc_coeffs->val_f_d,
+                        f->bc_coeffs->flux,
                         val_f_pre};
 
       int c_id_start = 0, c_id_end = 11;

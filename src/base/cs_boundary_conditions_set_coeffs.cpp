@@ -4617,7 +4617,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
      when some arrays are not defined (and want to avoid cases where
      the array is defined but not up to date). */
 
-  if (f->bc_coeffs->val_f_d == nullptr && m->n_b_faces > 0) {
+  if (f->bc_coeffs->flux == nullptr && m->n_b_faces > 0) {
     const int df_limiter_id
       = cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
     const int ircflb = (eqp->ircflu > 0) ? eqp->b_diff_flux_rc : 0;
@@ -4631,7 +4631,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
   }
 
   cs_real_t *val_f = f->bc_coeffs->val_f;
-  cs_real_t *flux = f->bc_coeffs->val_f_d;
+  cs_real_t *flux = f->bc_coeffs->flux;
 
   if (need_compute_bc_grad && need_compute_bc_flux)
     cs_boundary_conditions_update_bc_coeff_face_values<true, true>
@@ -4710,8 +4710,8 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
    const cs_real_t             pvar[][stride],
    cs_real_t                   val_ip[][stride],
    cs_real_t                   val_f[][stride],
-   cs_real_t                   val_f_d[][stride],
-   cs_real_t                   val_f_d_lim[][stride])
+   cs_real_t                   flux[][stride],
+   cs_real_t                   flux_lim[][stride])
 {
   CS_PROFILE_FUNC_RANGE();
 
@@ -4873,11 +4873,11 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
       // reconstruction for gradient (use of variable at I' position)
       for (cs_lnum_t i = 0; i < stride; i++) {
         val_f[face_id][i] = coefa[face_id][i];
-        val_f_d[face_id][i] = cofaf[face_id][i];
+        flux[face_id][i] = cofaf[face_id][i];
 
         for (cs_lnum_t j = 0; j < stride; j++) {
           val_f[face_id][i] += coefb[face_id][j][i]*val_ip[face_id][j];
-          val_f_d[face_id][i] += cofbf[face_id][j][i]*pvar[c_id][j];
+          flux[face_id][i] += cofbf[face_id][j][i]*pvar[c_id][j];
         }
       }
 
@@ -4885,10 +4885,10 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
                      use of variable at I position) */
 
       for (cs_lnum_t i = 0; i < stride; i++) {
-        val_f_d_lim[face_id][i] = cofaf[face_id][i];
+        flux_lim[face_id][i] = cofaf[face_id][i];
 
         for (cs_lnum_t j = 0; j < stride; j++) {
-          val_f_d_lim[face_id][i] += cofbf[face_id][j][i]*pvar[c_id][j];
+          flux_lim[face_id][i] += cofbf[face_id][j][i]*pvar[c_id][j];
         }
       }
     });
@@ -4902,11 +4902,11 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
       // reconstruction for gradient (use of variable at I' position)
       for (cs_lnum_t i = 0; i < stride; i++) {
         val_f[face_id][i] = coefa[face_id][i];
-        val_f_d[face_id][i] = cofaf[face_id][i];
+        flux[face_id][i] = cofaf[face_id][i];
 
         for (cs_lnum_t j = 0; j < stride; j++) {
           val_f[face_id][i] += coefb[face_id][j][i]*val_ip[face_id][j];
-          val_f_d[face_id][i] += cofbf[face_id][j][i]*val_ip[face_id][j];
+          flux[face_id][i] += cofbf[face_id][j][i]*val_ip[face_id][j];
         }
       }
 
@@ -4914,16 +4914,16 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
                      use of variable at I position)
          In this case:
          bc_coeffs_solve->val_f_lim = bc_coeffs_solve->val_f;
-         bc_coeffs_solve->val_f_d_lim =  bc_coeffs_solve->val_f_d; */
+         bc_coeffs_solve->flux_lim =  bc_coeffs_solve->flux; */
 
       if (df_limiter != nullptr) { // otherwise addresses are shared
 
         for (cs_lnum_t i = 0; i < stride; i++) {
           // limiter (variable at I' position)
-          val_f_d_lim[face_id][i] = cofaf[face_id][i];
+          flux_lim[face_id][i] = cofaf[face_id][i];
 
           for (cs_lnum_t j = 0; j < stride; j++) {
-            val_f_d_lim[face_id][i] += cofbf[face_id][j][i]*val_ip_lim[face_id][j];
+            flux_lim[face_id][i] += cofbf[face_id][j][i]*val_ip_lim[face_id][j];
           }
         }
       }
@@ -4976,7 +4976,7 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
      when some arrays are not defined (and want to avoid cases where
      the array is defined but not up to date). */
      CS_PROFILE_MARK_LINE();
-  if (f->bc_coeffs->val_f_d == nullptr && m->n_b_faces > 0) {
+  if (f->bc_coeffs->flux == nullptr && m->n_b_faces > 0) {
     const int df_limiter_id
       = cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
     const int ircflb = (eqp->ircflu > 0) ? eqp->b_diff_flux_rc : 0;
@@ -4990,8 +4990,8 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
   }
 
   var_t *val_f = reinterpret_cast<var_t *>(f->bc_coeffs->val_f);
-  var_t *val_f_d = reinterpret_cast<var_t *>(f->bc_coeffs->val_f_d);
-  var_t *val_f_d_lim = reinterpret_cast<var_t *>(f->bc_coeffs->val_f_d_lim);
+  var_t *flux = reinterpret_cast<var_t *>(f->bc_coeffs->flux);
+  var_t *flux_lim = reinterpret_cast<var_t *>(f->bc_coeffs->flux_lim);
 
   CS_PROFILE_MARK_LINE();
 
@@ -5003,7 +5003,7 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
      pvar,
      val_ip,
      val_f,
-     val_f_d, val_f_d_lim);
+     flux, flux_lim);
 
   CS_PROFILE_MARK_LINE();
 
@@ -5022,8 +5022,8 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
    const cs_real_t             pvar[][3],
    cs_real_t                   val_ip[][3],
    cs_real_t                   val_f[][3],
-   cs_real_t                   val_f_d[][3],
-   cs_real_t                   val_f_d_lim[][3]);
+   cs_real_t                   flux[][3],
+   cs_real_t                   flux_lim[][3]);
 
 template void
 cs_boundary_conditions_update_bc_coeff_face_values_strided
@@ -5035,8 +5035,8 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
    const cs_real_t             pvar[][6],
    cs_real_t                   val_ip[][6],
    cs_real_t                   val_f[][6],
-   cs_real_t                   val_f_d[][6],
-   cs_real_t                   val_f_d_lim[][6]);
+   cs_real_t                   flux[][6],
+   cs_real_t                   flux_lim[][6]);
 
 template void
 cs_boundary_conditions_update_bc_coeff_face_values_strided
@@ -5151,7 +5151,7 @@ cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
    cs_alloc_mode_t        amode,
    bool                   limiter)
 {
-  if (bc_coeffs->val_f_d != nullptr || n_b_faces == 0)
+  if (bc_coeffs->flux != nullptr || n_b_faces == 0)
     return;
 
   // bc_coeffs->val_f may have been allocated separately
@@ -5159,15 +5159,15 @@ cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
   if (bc_coeffs->val_f == nullptr)
     CS_MALLOC_HD(bc_coeffs->val_f, dim*n_b_faces, cs_real_t, amode);
 
-  CS_MALLOC_HD(bc_coeffs->val_f_d, dim*n_b_faces, cs_real_t, amode);
+  CS_MALLOC_HD(bc_coeffs->flux, dim*n_b_faces, cs_real_t, amode);
 
   if (limiter == false) {
     bc_coeffs->val_f_lim = bc_coeffs->val_f;
-    bc_coeffs->val_f_d_lim = bc_coeffs->val_f_d;
+    bc_coeffs->flux_lim = bc_coeffs->flux;
   }
   else {
     CS_MALLOC_HD(bc_coeffs->val_f_lim, dim*n_b_faces, cs_real_t, amode);
-    CS_MALLOC_HD(bc_coeffs->val_f_d_lim, dim*n_b_faces, cs_real_t, amode);
+    CS_MALLOC_HD(bc_coeffs->flux_lim, dim*n_b_faces, cs_real_t, amode);
   }
 }
 
@@ -5192,18 +5192,18 @@ cs_init_bc_coeffs_solve(cs_bc_coeffs_solve_t  &c,
 {
   c.val_ip = nullptr;
   c.val_f = nullptr;
-  c.val_f_d = nullptr;
-  c.val_f_d_lim = nullptr;
+  c.flux = nullptr;
+  c.flux_lim = nullptr;
 
   CS_MALLOC_HD(c.val_ip, stride*n_b_faces, cs_real_t, amode);
   CS_MALLOC_HD(c.val_f, stride*n_b_faces, cs_real_t, amode);
-  CS_MALLOC_HD(c.val_f_d, stride*n_b_faces, cs_real_t, amode);
+  CS_MALLOC_HD(c.flux, stride*n_b_faces, cs_real_t, amode);
 
   if (limiter == false) {
-    c.val_f_d_lim = c.val_f_d;
+    c.flux_lim = c.flux;
   }
   else {
-    CS_MALLOC_HD(c.val_f_d_lim, stride*n_b_faces, cs_real_t, amode);
+    CS_MALLOC_HD(c.flux_lim, stride*n_b_faces, cs_real_t, amode);
   }
 }
 
@@ -5218,16 +5218,16 @@ cs_init_bc_coeffs_solve(cs_bc_coeffs_solve_t  &c,
 void
 cs_clear_bc_coeffs_solve(cs_bc_coeffs_solve_t  &c)
 {
-  if (c.val_f_d_lim != c.val_f_d) {
-    CS_FREE_HD(c.val_f_d_lim);
+  if (c.flux_lim != c.flux) {
+    CS_FREE_HD(c.flux_lim);
   }
   else {
-    c.val_f_d_lim = nullptr;
+    c.flux_lim = nullptr;
   }
 
   CS_FREE_HD(c.val_ip);
   CS_FREE_HD(c.val_f);
-  CS_FREE_HD(c.val_f_d);
+  CS_FREE_HD(c.flux);
 }
 
 /*----------------------------------------------------------------------------*/

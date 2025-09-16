@@ -368,7 +368,7 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
                           false);
 
   cs_real_t *val_f_pot = bc_coeffs_solve_pot.val_f;
-  cs_real_t *flux_pot = bc_coeffs_solve_pot.val_f_d;
+  cs_real_t *flux_pot = bc_coeffs_solve_pot.flux;
 
   while (isweep <= eqp->nswrsm && residual > tcrite) {
 

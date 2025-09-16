@@ -1257,8 +1257,8 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
    const cs_real_t             pvar[][stride],
    cs_real_t                   val_ip[][stride],
    cs_real_t                   val_f[][stride],
-   cs_real_t                   val_f_d[][stride],
-   cs_real_t                   val_f_d_lim[][stride]);
+   cs_real_t                   flux[][stride],
+   cs_real_t                   flux_lim[][stride]);
 
 /*----------------------------------------------------------------------------*/
 /*

@@ -423,8 +423,8 @@ _equation_iterative_solve_strided(int                   idtvar,
 
   var_t *val_ip = (var_t *)bc_coeffs_solve.val_ip;
   var_t *val_f = (var_t *)bc_coeffs_solve.val_f;
-  var_t *val_f_d =  (var_t *)bc_coeffs_solve.val_f_d;
-  var_t *val_f_d_lim =  (var_t *)bc_coeffs_solve.val_f_d_lim;
+  var_t *flux =  (var_t *)bc_coeffs_solve.flux;
+  var_t *flux_lim =  (var_t *)bc_coeffs_solve.flux_lim;
 
   /* Application of the theta-scheme */
 
@@ -445,7 +445,7 @@ _equation_iterative_solve_strided(int                   idtvar,
 
     cs_boundary_conditions_update_bc_coeff_face_values_strided<stride>
       (ctx, f, bc_coeffs, inc, eqp, pvara,
-       val_ip, val_f, val_f_d, val_f_d_lim);
+       val_ip, val_f, flux, flux_lim);
     CS_PROFILE_MARK_LINE();
 
     if (stride == 3)
@@ -542,7 +542,7 @@ _equation_iterative_solve_strided(int                   idtvar,
 
   cs_boundary_conditions_update_bc_coeff_face_values_strided<stride>
     (ctx, f, bc_coeffs, inc, eqp, pvar,
-     val_ip, val_f, val_f_d, val_f_d_lim);
+     val_ip, val_f, flux, flux_lim);
 
   CS_PROFILE_MARK_LINE();
 
@@ -859,7 +859,7 @@ _equation_iterative_solve_strided(int                   idtvar,
       /* update with dpvar */
       cs_boundary_conditions_update_bc_coeff_face_values_strided<stride>
         (ctx, nullptr, bc_coeffs, inc, eqp, dpvar,
-         val_ip, val_f, val_f_d, val_f_d_lim);
+         val_ip, val_f, flux, flux_lim);
       CS_PROFILE_MARK_LINE();
 
       if (stride == 3)
@@ -1075,7 +1075,7 @@ _equation_iterative_solve_strided(int                   idtvar,
     /* Update face value for gradient and convection-diffusion */
     cs_boundary_conditions_update_bc_coeff_face_values_strided<stride>
       (ctx, f, bc_coeffs, inc, eqp, pvar,
-       val_ip, val_f, val_f_d, val_f_d_lim);
+       val_ip, val_f, flux, flux_lim);
 
     CS_PROFILE_MARK_LINE();
 
@@ -1211,7 +1211,7 @@ _equation_iterative_solve_strided(int                   idtvar,
       cs_boundary_conditions_update_bc_coeff_face_values_strided<stride>
         (ctx, f, bc_coeffs,
          1, // inc
-         eqp, pvar, val_ip, val_f, val_f_d, val_f_d_lim);
+         eqp, pvar, val_ip, val_f, flux, flux_lim);
     }
     inc = 1;
     CS_PROFILE_MARK_LINE();
@@ -1268,12 +1268,12 @@ _equation_iterative_solve_strided(int                   idtvar,
        (df_limiter_id > -1 || ircflb != 1));
 
     var_t *val_f_updated = (var_t *)bc_coeffs->val_f;
-    var_t *val_f_d_updated = (var_t *)bc_coeffs->val_f_d;
-    var_t *val_f_d_lim_updated = (var_t *)bc_coeffs->val_f_d_lim;
+    var_t *flux_updated = (var_t *)bc_coeffs->flux;
+    var_t *flux_lim_updated = (var_t *)bc_coeffs->flux_lim;
 
     cs_boundary_conditions_update_bc_coeff_face_values_strided<stride>
       (ctx, f, bc_coeffs, 1, eqp, pvar, val_ip,
-       val_f_updated, val_f_d_updated, val_f_d_lim_updated);
+       val_f_updated, flux_updated, flux_lim_updated);
   }
 
   /* Save diagonal in case we want to use it */
@@ -1591,7 +1591,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                           false);
 
   cs_real_t *val_f = bc_coeffs_solve.val_f;
-  cs_real_t *flux = bc_coeffs_solve.val_f_d;
+  cs_real_t *flux = bc_coeffs_solve.flux;
 
   /* Prepare the computation of fluxes at faces if needed */
 
@@ -2342,7 +2342,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
        false);
 
     cs_real_t *val_f_updated = bc_coeffs->val_f;
-    cs_real_t *flux_updated = bc_coeffs->val_f_d;
+    cs_real_t *flux_updated = bc_coeffs->flux;
 
     cs_boundary_conditions_update_bc_coeff_face_values<true, true>
       (ctx, f, bc_coeffs, 1,

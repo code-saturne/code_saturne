@@ -108,8 +108,8 @@ typedef struct {
 
   cs_real_t          *val_f;       /* face value for gradient */
 
-  cs_real_t          *val_f_d;     /* face value for diffusion */
-  cs_real_t          *val_f_d_lim; /* face value for diffusion
+  cs_real_t          *flux;     /* face value for diffusion */
+  cs_real_t          *flux_lim; /* face value for diffusion
                                       (limited) */
 
 } cs_bc_coeffs_solve_t;
@@ -143,8 +143,8 @@ typedef struct {
   cs_real_t          *val_f_lim;   /* face value for gradient
                                       (limited) */
 
-  cs_real_t          *val_f_d;     /* face value for diffusion */
-  cs_real_t          *val_f_d_lim; /* face value for diffusion
+  cs_real_t          *flux;     /* face value for diffusion */
+  cs_real_t          *flux_lim; /* face value for diffusion
                                       (limited) */
 
   cs_real_t          *val_f_pre;   /* previous face value for gradient */

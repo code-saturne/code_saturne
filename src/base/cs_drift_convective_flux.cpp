@@ -514,7 +514,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
                               false);
 
       cs_real_t *val_f = bc_coeffs_solve.val_f;
-      cs_real_t *flux = bc_coeffs_solve.val_f_d;
+      cs_real_t *flux = bc_coeffs_solve.flux;
 
       if (eqp_loc.ircflu)
         cs_boundary_conditions_update_bc_coeff_face_values<true, true>

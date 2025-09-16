@@ -2301,7 +2301,7 @@ cs_convection_diffusion_steady_strided
       for (cs_lnum_t isou =  0; isou < stride; isou++) {
         fluxi[isou] = 0;
       }
-      var_t pir, pipr, val_f, val_f_d;
+      var_t pir, pipr, val_f, flux_d;
       var_t _pi, _pia;
       for (int i = 0; i < stride; i++) {
         _pi[i]  = _pvar[ii][i];
@@ -2333,11 +2333,11 @@ cs_convection_diffusion_steady_strided
          steady case (relaxation value in iprime) */
       for (cs_lnum_t i = 0; i < stride; i++) {
         val_f[i] = inc * coefa[face_id][i];
-        val_f_d[i] = inc * cofaf[face_id][i];
+        flux_d[i] = inc * cofaf[face_id][i];
 
         for (cs_lnum_t j = 0; j < stride; j++) {
           val_f[i] += coefb[face_id][j][i] * pipr[j];
-          val_f_d[i] += cofbf[face_id][j][i] * pipr[j];
+          flux_d[i] += cofbf[face_id][j][i] * pipr[j];
         }
       }
 
@@ -2354,7 +2354,7 @@ cs_convection_diffusion_steady_strided
       cs_b_diff_flux_strided<stride>(idiffp,
                                      1., /* thetap */
                                      b_visc[face_id],
-                                     val_f_d,
+                                     flux_d,
                                      fluxi);
 
       for (cs_lnum_t isou = 0; isou < stride; isou++) {
@@ -2383,7 +2383,7 @@ cs_convection_diffusion_steady_strided
 
       cs_lnum_t ii = b_face_cells[face_id];
 
-      var_t fluxi, pir, pipr, val_f, val_f_d;
+      var_t fluxi, pir, pipr, val_f, flux;
 
       for (cs_lnum_t isou =  0; isou < stride; isou++) {
         fluxi[isou] = 0;
@@ -2420,11 +2420,11 @@ cs_convection_diffusion_steady_strided
          steady case (relaxation value in iprime) */
       for (cs_lnum_t i = 0; i < stride; i++) {
         val_f[i] = inc * coefa[face_id][i];
-        val_f_d[i] = inc * cofaf[face_id][i];
+        flux[i] = inc * cofaf[face_id][i];
 
         for (cs_lnum_t j = 0; j < stride; j++) {
           val_f[i] += coefb[face_id][j][i] * pipr[j];
-          val_f_d[i] += cofbf[face_id][j][i] * pipr[j];
+          flux[i] += cofbf[face_id][j][i] * pipr[j];
         }
       }
 
@@ -2446,7 +2446,7 @@ cs_convection_diffusion_steady_strided
       cs_b_diff_flux_strided<stride>(idiffp,
                                      1., /* thetap */
                                      b_visc[face_id],
-                                     val_f_d,
+                                     flux,
                                      fluxi);
 
       for (cs_lnum_t isou = 0; isou < stride; isou++) {

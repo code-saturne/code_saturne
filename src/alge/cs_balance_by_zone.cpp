@@ -1328,7 +1328,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
      analyze the information, but this is not mandatory. */
 
   cs_real_t *val_f_g = f->bc_coeffs->val_f;
-  cs_real_t *flux_d = f->bc_coeffs->val_f_d;
+  cs_real_t *flux_d = f->bc_coeffs->flux;
 
   for (cs_lnum_t f_id = 0; f_id < n_bb_faces_sel; f_id++) {
 
@@ -2736,12 +2736,12 @@ cs_flux_through_surface(const char         *scalar_name,
                            grad);
 
   cs_real_t *val_f_g = f->bc_coeffs->val_f;
-  cs_real_t *flux_d = f->bc_coeffs->val_f_d;
+  cs_real_t *flux_d = f->bc_coeffs->flux;
   cs_real_t *val_f_g_nr = nullptr;
   cs_real_t *flux_d_nr = nullptr;
 
   // for the fisrt iteration before the time loop
-  if (f->bc_coeffs->val_f == nullptr || f->bc_coeffs->val_f_d == nullptr) {
+  if (f->bc_coeffs->val_f == nullptr || f->bc_coeffs->flux == nullptr) {
     cs_equation_param_t eqp_loc = *eqp;
     eqp_loc.b_diff_flux_rc = 0; // no reconstruction
 

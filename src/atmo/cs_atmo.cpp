@@ -516,7 +516,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
                           false);
 
   cs_real_t *val_f = bc_coeffs_solve.val_f;
-  cs_real_t *flux = bc_coeffs_solve.val_f_d;
+  cs_real_t *flux = bc_coeffs_solve.flux;
 
   /*==========================================================================
    * 0.  Initialization

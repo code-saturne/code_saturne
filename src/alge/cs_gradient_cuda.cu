@@ -1024,14 +1024,14 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
   CS_CUDA_CHECK(cudaMalloc(&rhsv, n_cells_ext * sizeof(cs_real_3_t)));
 #endif
 
-  void *_pvar_d = nullptr, *_val_f_d = nullptr;
-  const cs_real_t *pvar_d = nullptr, *val_f_d = nullptr;
+  void *_pvar_d = nullptr, *_flux = nullptr;
+  const cs_real_t *pvar_d = nullptr, *flux = nullptr;
 
   cs_sync_or_copy_h2d(pvar, n_cells_ext, device_id, stream1,
                       &pvar_d, &_pvar_d);
 
   cs_sync_or_copy_h2d(val_f, n_b_faces, device_id, stream1,
-                      &val_f_d, &_val_f_d);
+                      &flux, &_flux);
 
   unsigned int blocksize = 256;
   unsigned int gridsize_b
@@ -1091,7 +1091,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
        b_face_u_normal,
        b_dist,
        diipb,
-       val_f_d,
+       flux,
        pvar_d,
        rhsv);
 
@@ -1145,8 +1145,8 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
 
   if (_pvar_d != nullptr)
     CS_CUDA_CHECK(cudaFree(_pvar_d));
-  if (_val_f_d != nullptr)
-    CS_CUDA_CHECK(cudaFree(_val_f_d));
+  if (_flux != nullptr)
+    CS_CUDA_CHECK(cudaFree(_flux));
 
 #if CUDA_VERSION >= 11200
   CS_CUDA_CHECK(cudaFreeAsync(rhsv, stream));
@@ -1232,16 +1232,16 @@ cs_gradient_strided_lsq_cuda
     grad_d = (grad_t *)cs_get_device_ptr((void *)grad);
   }
 
-  void *_pvar_d = nullptr, *_val_f_d = nullptr;
+  void *_pvar_d = nullptr, *_flux = nullptr;
   void *_c_weight_d = nullptr;
-  decltype(pvar) pvar_d = nullptr, val_f_d = nullptr;
+  decltype(pvar) pvar_d = nullptr, flux = nullptr;
   const cs_real_t *c_weight_d = nullptr;
 
   cs_sync_or_copy_h2d(pvar, n_cells_ext, device_id, stream,
                       &pvar_d, &_pvar_d);
 
   cs_sync_or_copy_h2d(val_f, n_b_faces, device_id, stream,
-                      &val_f_d, &_val_f_d);
+                      &flux, &_flux);
 
   cs_sync_or_copy_h2d(c_weight, n_cells_ext, device_id, stream,
                       &c_weight_d, &_c_weight_d);
@@ -1335,7 +1335,7 @@ cs_gradient_strided_lsq_cuda
        b_face_u_normal,
        diipb,
        b_dist,
-       val_f_d,
+       flux,
        pvar_d,
        cocgb,
        cocg,
@@ -1453,8 +1453,8 @@ cs_gradient_strided_lsq_cuda
 
   if (_pvar_d != nullptr)
     CS_CUDA_CHECK(cudaFree(_pvar_d));
-  if (_val_f_d != nullptr)
-    CS_CUDA_CHECK(cudaFree(_val_f_d));
+  if (_flux != nullptr)
+    CS_CUDA_CHECK(cudaFree(_flux));
   if (_c_weight_d != nullptr)
     CS_CUDA_CHECK(cudaFree(_c_weight_d));
 
@@ -1540,16 +1540,16 @@ cs_gradient_strided_gg_r_cuda
     grad_d = (grad_t *)cs_get_device_ptr((void *)grad);
   }
 
-  void *_pvar_d = nullptr, *_val_f_d = nullptr;
+  void *_pvar_d = nullptr, *_flux = nullptr;
   void *_c_weight_d = nullptr;
-  decltype(pvar) pvar_d = nullptr, val_f_d = nullptr;
+  decltype(pvar) pvar_d = nullptr, flux = nullptr;
   const cs_real_t *c_weight_d = nullptr;
 
   cs_sync_or_copy_h2d(pvar, n_cells_ext, device_id, stream,
                       &pvar_d, &_pvar_d);
 
   cs_sync_or_copy_h2d(val_f, n_b_faces, device_id, stream,
-                      &val_f_d, &_val_f_d);
+                      &flux, &_flux);
 
   cs_sync_or_copy_h2d(c_weight, n_cells_ext, device_id, stream,
                       &c_weight_d, &_c_weight_d);
@@ -1656,7 +1656,7 @@ cs_gradient_strided_gg_r_cuda
        b_face_surf,
        b_face_u_normal,
        b_face_cells,
-       val_f_d,
+       flux,
        pvar_d,
        r_grad_d,
        grad_d);
@@ -1744,8 +1744,8 @@ cs_gradient_strided_gg_r_cuda
 
   if (_pvar_d != nullptr)
     CS_CUDA_CHECK(cudaFree(_pvar_d));
-  if (_val_f_d != nullptr)
-    CS_CUDA_CHECK(cudaFree(_val_f_d));
+  if (_flux != nullptr)
+    CS_CUDA_CHECK(cudaFree(_flux));
   if (_c_weight_d != nullptr)
     CS_CUDA_CHECK(cudaFree(_c_weight_d));
 

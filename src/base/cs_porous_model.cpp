@@ -199,34 +199,34 @@ _field_ibm_reallocate(cs_lnum_t  n_ib_cells)
           if (f->bc_coeffs->val_f_lim != f->bc_coeffs->val_f) {
             CS_REALLOC_HD(f->bc_coeffs->val_f_lim, n_i_end,
                           cs_real_t, cs_alloc_mode);
-            CS_REALLOC_HD(f->bc_coeffs->val_f_d_lim, n_i_end,
+            CS_REALLOC_HD(f->bc_coeffs->flux_lim, n_i_end,
                           cs_real_t, cs_alloc_mode);
 
             cs_real_t *val_f_lim = f->bc_coeffs->val_f_lim;
-            cs_real_t *val_f_d_lim = f->bc_coeffs->val_f_d_lim;
+            cs_real_t *flux_lim = f->bc_coeffs->flux_lim;
             ctx.parallel_for(n_i_new, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
               val_f_lim[n_i_start + e_id] = 0.;
-              val_f_d_lim[n_i_start + e_id] = 0.;
+              flux_lim[n_i_start + e_id] = 0.;
             });
             has_limiter = true;
           }
 
           if (f->bc_coeffs->val_f != nullptr) {
             CS_REALLOC_HD(f->bc_coeffs->val_f, n_i_end, cs_real_t, cs_alloc_mode);
-            CS_REALLOC_HD(f->bc_coeffs->val_f_d, n_i_end, cs_real_t, cs_alloc_mode);
+            CS_REALLOC_HD(f->bc_coeffs->flux, n_i_end, cs_real_t, cs_alloc_mode);
 
             cs_real_t *val_f = f->bc_coeffs->val_f;
-            cs_real_t *val_f_d = f->bc_coeffs->val_f_d;
+            cs_real_t *flux = f->bc_coeffs->flux;
             ctx.parallel_for(n_i_new, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
               val_f[n_i_start + e_id] = 0.;
-              val_f_d[n_i_start + e_id] = 0.;
+              flux[n_i_start + e_id] = 0.;
             });
 
             ctx.wait();
 
             if (!(has_limiter)) {
               f->bc_coeffs->val_f_lim = f->bc_coeffs->val_f;
-              f->bc_coeffs->val_f_d_lim = f->bc_coeffs->val_f_d;
+              f->bc_coeffs->flux_lim = f->bc_coeffs->flux;
             }
 
           }
