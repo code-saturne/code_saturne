@@ -718,7 +718,7 @@ elif test "x$cs_gxx" = "xoneAPI"; then
   cxxflags_default_omp_ad="-fopenmp-targets=spir64"
 
   case "$cs_cxx_vers_major" in
-    202[56789])
+    202[23456789])
       cxxflags_default="$cxxflags_default  -Wno-non-c-typedef-for-linkage"
       ;;
   esac
