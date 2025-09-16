@@ -920,6 +920,8 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
                               viscap,
                               i_mass_flux, b_mass_flux);
 
+  cs_clear_bc_coeffs_solve(bc_coeffs_solve);
+
   /* Diagonal part of the matrix
      --------------------------- */
 
