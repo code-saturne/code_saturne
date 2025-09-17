@@ -1087,6 +1087,7 @@ _export_conduit_mesh(fvm_to_catalyst_t  *w,
   /* Element connectivity */
   /*----------------------*/
 
+  bool have_polyhedra = false;
   cs_lnum_t elt_shift = 0, sub_elt_shift = 0;
   cs_lnum_t values_shift = 0, sub_values_shift = 0;
 
@@ -1133,6 +1134,7 @@ _export_conduit_mesh(fvm_to_catalyst_t  *w,
                              _elt_sizes);
       /* Faces -> vertices connectivity output in separate loop
          to reduce number simultaneous extra arrray copies/buffers. */
+      have_polyhedra = true;
     }
 
     _section_counts_increment(section,
@@ -1159,7 +1161,7 @@ _export_conduit_mesh(fvm_to_catalyst_t  *w,
   /* Face connectivity for polyhedra
      ------------------------------- */
 
-  if (n_sub_elts > 0) {
+  if (have_polyhedra) {
 
     auto subelements = mesh_node[tpath + "/subelements"];
 
