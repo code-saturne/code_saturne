@@ -278,8 +278,10 @@ _distribute_particles(cs_gnum_t         n_g_particles,
     elt_particle_idx[i] = 0;
   elt_particle_idx[n_elts] = 0;
 
+  cs_real_t inv_l_weight = (l_weight > DBL_MIN) ? 1./l_weight : 0.;
+
   for (cs_lnum_t i = 0; i < n_elts; i++)
-    elt_cm_weight[i] /= l_weight;
+    elt_cm_weight[i] *= inv_l_weight;
 
   /* Compute distribution */
 

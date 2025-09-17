@@ -492,14 +492,14 @@ cs_ctwr_define(const char           zone_criteria[],
 
     fprintf(f, "# Balance for the exchange zone %02d\n", ct->num);
     fprintf(f, "# ================================\n");
-    fprintf(f, "# Time  Flux air/liq");
-    fprintf(f, "\tTemp liq in");
-    fprintf(f, "\tTemp liq out");
-    fprintf(f, "\tTemp air in");
-    fprintf(f, "\tTemp air out");
-    fprintf(f, "\tFlow liq in\tFlow liq out");
-    fprintf(f, "\tFlow air in\tFlow air out");
-    fprintf(f, "\tPressure in\tPressure out\n");
+    fprintf(f, "# Time, Flux air/liq");
+    fprintf(f, ", Temp liq in");
+    fprintf(f, ", Temp liq out");
+    fprintf(f, ", Temp air in");
+    fprintf(f, ", Temp air out");
+    fprintf(f, ", Flow liq in, Flow liq out");
+    fprintf(f, ", Flow air in, Flow air out");
+    fprintf(f, ", Pressure in, Pressure out\n");
     fclose(f);
   }
 }
@@ -1011,8 +1011,8 @@ cs_ctwr_log_balance(void)
         aux = cs::abs(  (ct->h_h_out - ct->h_h_in)
                       / (ct->h_l_in - ct->h_l_out));
       fprintf(f,
-          "%10f\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t"
-          "%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\n",
+          "%10f, %12.5e, %12.5e, %12.5e, %12.5e, %12.5e, "
+          "%12.5e, %12.5e, %12.5e, %12.5e, %12.5e, %12.5e\n",
           cs_glob_time_step->t_cur,
           aux,
           ct->t_l_in,
