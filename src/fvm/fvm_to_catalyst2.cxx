@@ -959,10 +959,6 @@ _export_global_vtx_ids(const fvm_nodal_t     *mesh,
   field["volume_dependent"].set_string("false");  // true if extensive
   field["values"].set(global_ids, n_vtx);
 
-  // set the metadata as scalars as follows
-  auto field_metadata = mesh_node["state/metadata/vtk_fields/GlobalNodeIds"];
-  field_metadata["attribute_type"] = "GlobalIds";
-
   if (_debug_print)
     field.print();  // dump local field to stdout (debug)
 
@@ -1360,7 +1356,6 @@ _export_field_values(fvm_to_catalyst_t         *w,
   if (dim == 1 || dim == 3 || dim == 6 || dim == 9) {
 
     std::string sname = std::string("fields/") + field_name;
-    std::string md_name = std::string("state/metadata/vtk_") + sname;
 
     auto field = mesh_node[sname];
 
@@ -1370,9 +1365,6 @@ _export_field_values(fvm_to_catalyst_t         *w,
 
     if (dim == 1) {
       field["values"].set(values, n_elts);
-
-      auto field_metadata = mesh_node[md_name];
-      field_metadata["attribute_type"] = "Scalars";
     }
 
     else {
@@ -1380,23 +1372,14 @@ _export_field_values(fvm_to_catalyst_t         *w,
       if (dim == 3) {
         for (int i = 0; i < dim; i++)
           field[_comp_key_3[i]].set(values, n_elts, i*sizeof(float), stride);
-
-        auto field_metadata = mesh_node[md_name];
-        field_metadata["attribute_type"] = "Vectors";
       }
       else if (dim == 6) {
         for (int i = 0; i < dim; i++)
           field[_comp_key_6[i]].set(values, n_elts, i*sizeof(float), stride);
-
-        auto field_metadata = mesh_node[md_name];
-        field_metadata["attribute_type"] = "Tensors";
       }
       else if (dim == 9) {
         for (int i = 0; i < dim; i++)
           field[_comp_key_9[i]].set(values, n_elts, i*sizeof(float), stride);
-
-        auto field_metadata = mesh_node[md_name];
-        field_metadata["attribute_type"] = "Tensors";
       }
     }
 
@@ -1410,7 +1393,6 @@ _export_field_values(fvm_to_catalyst_t         *w,
     for (int comp_id = 0; comp_id < dim; comp_id++) {
 
       std::string sname = "fields/" + field_name + _field_c_name(dim, comp_id);
-      std::string md_name = std::string("state/metadata/vtk_") + sname;
 
       auto field = mesh_node[sname];
 
@@ -1420,9 +1402,6 @@ _export_field_values(fvm_to_catalyst_t         *w,
 
       cs_lnum_t stride = sizeof(float)*dim;
       field["values"].set(values, n_elts, comp_id*sizeof(float), stride);
-
-      auto field_metadata = mesh_node[md_name];
-      field_metadata["attribute_type"] = "Scalars";
 
       if (_debug_print)
         field.print();  // dump local field to stdout (debug)
