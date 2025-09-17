@@ -933,7 +933,7 @@ _map_section_polyhedra(const fvm_nodal_section_t  *section,
 
 static void
 _export_global_vtx_ids(const fvm_nodal_t     *mesh,
-                       conduit_cpp::Node      mesh_node)
+                       conduit_cpp::Node     &mesh_node)
 {
   const cs_lnum_t n_vtx = fvm_nodal_get_n_entities(mesh, 0);
 
