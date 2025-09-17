@@ -467,25 +467,26 @@ _find_or_add_system(const char          *name,
  * Compute L2 norm.
  *
  * parameters:
+ *   ctx    <-- Reference to dispatch context
  *   n_elts <-- Local number of elements
  *   x      <-- array of 3-vectors
  *----------------------------------------------------------------------------*/
 
 static double
-_l2_norm_1(cs_lnum_t            n_elts,
-           cs_real_t  *restrict x)
+_l2_norm_1(cs_dispatch_context  &ctx,
+           cs_lnum_t             n_elts,
+           cs_real_t            *restrict x)
 {
-  double s = cs_dot(n_elts, x, x);
+  double s = 0;
 
-#if defined(HAVE_MPI)
+  ctx.parallel_for_reduce_sum(n_elts, s, [=] CS_F_HOST_DEVICE
+                              (cs_lnum_t ii,
+                               CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+    sum += x[ii]*x[ii];
+  });
+  ctx.wait();
 
-  if (cs_glob_n_ranks > 1) {
-    double _s;
-    MPI_Allreduce(&s, &_s, 1, MPI_DOUBLE, MPI_SUM, cs_glob_mpi_comm);
-    s = _s;
-  }
-
-#endif /* defined(HAVE_MPI) */
+  cs_parall_sum(1, CS_DOUBLE, &s);
 
   return (sqrt(s));
 }
@@ -817,8 +818,11 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
 
   else if (clip_mode == CS_GRADIENT_LIMIT_FACE) {
 
+    const cs_alloc_mode_t amode = (ctx.use_gpu()) ?
+      cs_alloc_mode_device : cs_alloc_mode;
+
     cs_real_t *factor;
-    CS_MALLOC_HD(factor, n_cells_ext, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(factor, n_cells_ext, cs_real_t, amode);
     cs_array_real_set_scalar(n_cells_ext, DBL_MAX, factor);
 
     ctx.parallel_for(n_blocks, [=] CS_F_HOST_DEVICE (cs_lnum_t b_id) {
@@ -1012,7 +1016,7 @@ _compute_f_weight_tensor(const cs_mesh_t                 *m,
 
   /* Contribution from interior faces */
 
-  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+  ctx.parallel_for(m->n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
     cs_lnum_t c_id1 = i_face_cells[f_id][0];
     cs_lnum_t c_id2 = i_face_cells[f_id][1];
@@ -1116,8 +1120,6 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
   }
 
   cs_dispatch_context ctx;
-  ctx.set_use_gpu(false);
-  cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
 
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
@@ -1146,7 +1148,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
   /* Initialize gradient */
   /*---------------------*/
 
-  h_ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
     for (cs_lnum_t j = 0; j < 3; j++)
       grad[cell_id][j] = 0.0;
   });
@@ -1160,7 +1162,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 
     /* Contribution from interior faces */
 
-    h_ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
       cs_lnum_t ii = i_face_cells[f_id][0];
       cs_lnum_t jj = i_face_cells[f_id][1];
@@ -1223,7 +1225,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 
     /* Contribution from boundary faces */
 
-    h_ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
       cs_lnum_t ii = b_face_cells[f_id];
 
@@ -1263,7 +1265,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 
     /* Contribution from interior faces */
 
-    h_ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
       cs_lnum_t ii = i_face_cells[f_id][0];
       cs_lnum_t jj = i_face_cells[f_id][1];
@@ -1305,7 +1307,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 
     /* Contribution from boundary faces */
 
-    h_ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
       cs_lnum_t ii = b_face_cells[f_id];
 
@@ -1330,7 +1332,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
 
   }
 
-  h_ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  cell_id) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  cell_id) {
     cs_real_t dvol;
     /* Is the cell disabled (for solid or porous)? Not the case if coupled */
     if (has_dc * c_disable_flag[has_dc * cell_id] == 0)
@@ -1391,18 +1393,19 @@ _renormalize_scalar_gradient(const cs_mesh_t                *m,
   const cs_real_3_t *restrict b_face_cog = mq_g->b_face_cog;
 
   cs_dispatch_context ctx;
-  ctx.set_use_gpu(false);
-  cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
 
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
+  const cs_alloc_mode_t amode = (ctx.use_gpu()) ?
+    cs_alloc_mode_device : cs_alloc_mode;
+
   /* Correction matrix */
   cs_real_33_t *cor_mat;
-  CS_MALLOC_HD(cor_mat, n_cells_ext, cs_real_33_t, cs_alloc_mode);
+  CS_MALLOC_HD(cor_mat, n_cells_ext, cs_real_33_t, amode);
 
   /* Initialization */
-  h_ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
     for (cs_lnum_t i = 0; i < 3; i++) {
       for (cs_lnum_t j = 0; j < 3; j++) {
         cor_mat[cell_id][i][j] = 0.;
@@ -1412,7 +1415,7 @@ _renormalize_scalar_gradient(const cs_mesh_t                *m,
 
   /* Contribution from interior faces */
 
-  h_ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
     cs_lnum_t ii = i_face_cells[f_id][0];
     cs_lnum_t jj = i_face_cells[f_id][1];
@@ -1440,7 +1443,7 @@ _renormalize_scalar_gradient(const cs_mesh_t                *m,
 
   /* Contribution from boundary faces */
 
-  h_ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
     cs_lnum_t ii = b_face_cells[face_id];
 
@@ -1483,7 +1486,7 @@ _renormalize_scalar_gradient(const cs_mesh_t                *m,
 
   _sync_strided_gradient_halo(m->halo, CS_HALO_EXTENDED, false, cor_mat);
 
-  h_ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  cell_id) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  cell_id) {
     cs_real_t dvol;
     /* Is the cell disabled (for solid or porous)? Not the case if coupled */
     if (has_dc * c_disable_flag[has_dc * cell_id] == 0)
@@ -1549,14 +1552,12 @@ _compute_cell_cocg_it(const cs_mesh_t               *m,
   }
 
   cs_dispatch_context ctx;
-  ctx.set_use_gpu(false);
-  cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
 
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
 
   /* compute the dimensionless matrix COCG for each cell*/
 
-  h_ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
     cocg[cell_id][0][0]= 1.0;
     cocg[cell_id][0][1]= 0.0;
     cocg[cell_id][0][2]= 0.0;
@@ -1570,7 +1571,7 @@ _compute_cell_cocg_it(const cs_mesh_t               *m,
 
   /* Interior face treatment */
 
-  h_ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
     cs_lnum_t cell_id1 = i_face_cells[f_id][0];
     cs_lnum_t cell_id2 = i_face_cells[f_id][1];
 
@@ -1605,7 +1606,7 @@ _compute_cell_cocg_it(const cs_mesh_t               *m,
 
   /* 3x3 Matrix inversion */
 
-  h_ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
     cs_math_33_inv_cramer_in_place(cocg[cell_id]);
   });
 
@@ -1706,13 +1707,6 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
     c_weight_s = nullptr;
   }
 
-  cs_dispatch_context ctx;
-  ctx.set_use_gpu(false);
-  cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
-
-  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
-  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
-
   /*Additional terms due to porosity */
   cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
 
@@ -1737,11 +1731,16 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
   /* Reconstruct gradients for non-orthogonal meshes */
   /*-------------------------------------------------*/
 
+  cs_dispatch_context ctx;
+
+  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
+
   /* Semi-implicit resolution on the whole mesh  */
 
   /* Compute normalization residual */
 
-  cs_real_t  rnorm = _l2_norm_1(3*n_cells, (cs_real_t *)grad);
+  cs_real_t  rnorm = _l2_norm_1(ctx, 3*n_cells, (cs_real_t *)grad);
 
   if (rnorm <= cs_math_epzero) {
     if (gradient_info != nullptr)
@@ -1749,7 +1748,10 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
     return;
   }
 
-  CS_MALLOC(rhs, n_cells, cs_real_3_t);
+  const cs_alloc_mode_t amode = (ctx.use_gpu()) ?
+    cs_alloc_mode_device : cs_alloc_mode;
+
+  CS_MALLOC_HD(rhs, n_cells, cs_real_3_t, amode);
 
   /* Vector OijFij is computed in CLDijP */
 
@@ -1765,7 +1767,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
       /* Compute right hand side */
 
-      h_ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         rhs[c_id][0] = -(grad[c_id][0] - f_ext[c_id][0]) * cell_vol[c_id];
         rhs[c_id][1] = -(grad[c_id][1] - f_ext[c_id][1]) * cell_vol[c_id];
         rhs[c_id][2] = -(grad[c_id][2] - f_ext[c_id][2]) * cell_vol[c_id];
@@ -1773,7 +1775,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
       /* Contribution from interior faces */
 
-      h_ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+      ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
         cs_lnum_t c_id1 = i_face_cells[f_id][0];
         cs_lnum_t c_id2 = i_face_cells[f_id][1];
@@ -1847,7 +1849,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
       /* Contribution from boundary faces */
 
-      h_ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+      ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
         cs_lnum_t c_id = b_face_cells[f_id];
 
@@ -1892,7 +1894,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
       /* Compute right hand side */
 
-      h_ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         rhs[c_id][0] = -grad[c_id][0] * cell_vol[c_id];
         rhs[c_id][1] = -grad[c_id][1] * cell_vol[c_id];
         rhs[c_id][2] = -grad[c_id][2] * cell_vol[c_id];
@@ -1900,7 +1902,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
       /* Contribution from interior faces */
 
-      h_ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+      ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
         cs_lnum_t c_id1 = i_face_cells[f_id][0];
         cs_lnum_t c_id2 = i_face_cells[f_id][1];
@@ -1950,7 +1952,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
 
       /* Contribution from boundary faces */
 
-      h_ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+      ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
         cs_lnum_t c_id = b_face_cells[f_id];
 
@@ -1983,9 +1985,9 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
     /* Increment gradient */
     /*--------------------*/
 
-    h_ctx.parallel_for_reduce_sum(n_cells, l2_residual, [=] CS_F_HOST_DEVICE
-                                  (cs_lnum_t c_id,
-                                   CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+    ctx.parallel_for_reduce_sum(n_cells, l2_residual, [=] CS_F_HOST_DEVICE
+                                (cs_lnum_t c_id,
+                                 CS_DISPATCH_REDUCER_TYPE(double) &sum) {
       cs_real_t dvol;
       /* Is the cell disabled (for solid or porous)? Not the case if coupled */
       if (has_dc * c_disable_flag[has_dc * c_id] == 0)
@@ -5223,8 +5225,6 @@ _initialize_strided_gradient(const cs_mesh_t              *m,
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
 
   cs_dispatch_context ctx;
-  ctx.set_use_gpu(false);
-  cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
 
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
@@ -5234,7 +5234,7 @@ _initialize_strided_gradient(const cs_mesh_t              *m,
 
   /* Initialization */
 
-  h_ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t i = 0; i < stride; i++) {
       for (cs_lnum_t j = 0; j < 3; j++)
         grad[c_id][i][j] = 0.0;
@@ -5243,7 +5243,7 @@ _initialize_strided_gradient(const cs_mesh_t              *m,
 
   /* Interior faces contribution */
 
-  h_ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
     cs_lnum_t ii = i_face_cells[f_id][0];
     cs_lnum_t jj = i_face_cells[f_id][1];
@@ -5288,7 +5288,7 @@ _initialize_strided_gradient(const cs_mesh_t              *m,
 
   /* Boundary face treatment */
 
-  h_ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
     cs_lnum_t c_id = b_face_cells[f_id];
 
@@ -5316,7 +5316,7 @@ _initialize_strided_gradient(const cs_mesh_t              *m,
 
   }); /* loop on faces */
 
-  h_ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
     cs_real_t dvol;
     /* Is the cell disabled (for solid or porous)? Not the case if coupled */
     if (has_dc * c_disable_flag[has_dc * c_id] == 0)
@@ -5680,8 +5680,8 @@ _iterative_strided_gradient(const cs_mesh_t               *m,
   const cs_real_3_t *restrict dofij = fvq->dofij;
 
   cs_dispatch_context ctx;
-  ctx.set_use_gpu(false);
-  cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
+  const cs_alloc_mode_t amode = (ctx.use_gpu()) ?
+    cs_alloc_mode_device : cs_alloc_mode;
 
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
@@ -5692,14 +5692,14 @@ _iterative_strided_gradient(const cs_mesh_t               *m,
   if (cocg == nullptr)
     cocg = _compute_cell_cocg_it(m, fvq, gq);
 
-  CS_MALLOC(rhs, n_cells, grad_t);
+  CS_MALLOC_HD(rhs, n_cells, grad_t, amode);
 
   /* Gradient reconstruction to handle non-orthogonal meshes */
   /*---------------------------------------------------------*/
 
   /* L2 norm */
 
-  cs_real_t l2_norm = _l2_norm_1(n_cells*stride*3, (cs_real_t *)grad);
+  cs_real_t l2_norm = _l2_norm_1(ctx, n_cells*stride*3, (cs_real_t *)grad);
   cs_real_t l2_residual = l2_norm;
 
   if (l2_norm > cs_math_epzero) {
@@ -5713,7 +5713,7 @@ _iterative_strided_gradient(const cs_mesh_t               *m,
 
       /* Computation of the Right Hand Side*/
 
-      h_ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         for (cs_lnum_t i = 0; i < stride; i++) {
           for (cs_lnum_t j = 0; j < 3; j++)
             rhs[c_id][i][j] = -grad[c_id][i][j] * cell_vol[c_id];
@@ -5722,7 +5722,7 @@ _iterative_strided_gradient(const cs_mesh_t               *m,
 
       /* Interior face treatment */
 
-      h_ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+      ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
         cs_lnum_t c_id1 = i_face_cells[f_id][0];
         cs_lnum_t c_id2 = i_face_cells[f_id][1];
@@ -5781,7 +5781,7 @@ _iterative_strided_gradient(const cs_mesh_t               *m,
 
       /* Boundary face treatment */
 
-      h_ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
+      ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
         cs_lnum_t c_id = b_face_cells[f_id];
 
@@ -5824,9 +5824,9 @@ _iterative_strided_gradient(const cs_mesh_t               *m,
 
       /* Increment of the gradient */
 
-      h_ctx.parallel_for_reduce_sum(n_cells, l2_residual, [=] CS_F_HOST_DEVICE
-                                    (cs_lnum_t c_id,
-                                     CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+      ctx.parallel_for_reduce_sum(n_cells, l2_residual, [=] CS_F_HOST_DEVICE
+                                  (cs_lnum_t c_id,
+                                   CS_DISPATCH_REDUCER_TYPE(double) &sum) {
         cs_real_t dvol;
         /* Is the cell disabled (for solid or porous)? Not the case if coupled */
         if (has_dc * c_disable_flag[has_dc * c_id] == 0)
@@ -6722,11 +6722,8 @@ _gradient_scalar(const char                    *var_name,
     {
       cs_real_3_t  *restrict r_grad;
       if (gradient_type == CS_GRADIENT_GREEN_LSQ) {
-        cs_alloc_mode_t amode = CS_ALLOC_HOST;
-#if defined(HAVE_ACCEL)
-        if (ctx.use_gpu())
-          amode = CS_ALLOC_DEVICE;
-#endif
+        const cs_alloc_mode_t amode = (ctx.use_gpu()) ?
+          cs_alloc_mode_device : cs_alloc_mode;
         CS_MALLOC_HD(r_grad, n_cells_ext, cs_real_3_t, amode);
       }
       else
@@ -9153,12 +9150,6 @@ cs_gradient_porosity_balance(int inc)
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_cells = m->n_cells;
 
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_threads = m->b_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
-  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
-
   /*Additional terms due to porosity */
   cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
 
@@ -9171,122 +9162,127 @@ cs_gradient_porosity_balance(int inc)
   cs_real_3_t *c_poro_div_duq
     = (cs_real_3_t *)cs_field_by_name("poro_div_duq")->val;
 
-# pragma omp parallel for
-  for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+  const cs_real_3_t *vel_val_pre = (cs_real_3_t *)(CS_F_(vel)->val_pre);
+
+  cs_dispatch_context ctx;
+
+  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
+
+  ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t i = 0; i < 3; i++)
       c_poro_div_duq[c_id][i] = 0.;
-  }
+  });
 
   if (inc == 1) {
 
     /* Inner faces corrections */
-    for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
-#     pragma omp parallel for
-      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
-        for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-             f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-             f_id++) {
+      cs_lnum_t ii = i_face_cells[f_id][0];
+      cs_lnum_t jj = i_face_cells[f_id][1];
 
-          cs_lnum_t ii = i_face_cells[f_id][0];
-          cs_lnum_t jj = i_face_cells[f_id][1];
+      const cs_nreal_t *normal = i_face_u_normal[f_id];
 
-          const cs_nreal_t *normal = i_face_u_normal[f_id];
+      const cs_real_t *vel_i = vel_val_pre[ii];
+      const cs_real_t *vel_j = vel_val_pre[jj];
 
-          cs_real_t *vel_i = &(CS_F_(vel)->val_pre[3*ii]);
-          cs_real_t *vel_j = &(CS_F_(vel)->val_pre[3*jj]);
+      cs_real_t veli_dot_n =    (1. - i_f_face_factor[f_id][0])
+                              * cs_math_3_dot_product(vel_i, normal);
+      cs_real_t velj_dot_n =    (1. - i_f_face_factor[f_id][1])
+                              * cs_math_3_dot_product(vel_j, normal);
 
-          cs_real_t veli_dot_n =    (1. - i_f_face_factor[f_id][0])
-                                  * cs_math_3_dot_product(vel_i, normal);
-          cs_real_t velj_dot_n =    (1. - i_f_face_factor[f_id][1])
-                                  * cs_math_3_dot_product(vel_j, normal);
+      cs_real_t d_f_surf = 0.;
+      /* Is the cell disabled (for solid or porous)?
+         Not the case if coupled */
+      if (   has_dc * c_disable_flag[has_dc * ii] == 0
+          && has_dc * c_disable_flag[has_dc * jj] == 0)
+        d_f_surf = 1.;
 
-          cs_real_t d_f_surf = 0.;
-          /* Is the cell disabled (for solid or porous)?
-             Not the case if coupled */
-          if (   has_dc * c_disable_flag[has_dc * ii] == 0
-              && has_dc * c_disable_flag[has_dc * jj] == 0)
-            d_f_surf = 1.;
+      i_poro_duq_0[f_id] = veli_dot_n * i_massflux[f_id] * d_f_surf;
+      i_poro_duq_1[f_id] = velj_dot_n * i_massflux[f_id] * d_f_surf;
 
-          i_poro_duq_0[f_id] = veli_dot_n * i_massflux[f_id] * d_f_surf;
-          i_poro_duq_1[f_id] = velj_dot_n * i_massflux[f_id] * d_f_surf;
-
-          for (cs_lnum_t i = 0; i < 3; i++) {
-            c_poro_div_duq[ii][i] +=   i_poro_duq_0[f_id]
-                                     * i_face_u_normal[f_id][i];
-            c_poro_div_duq[jj][i] -=   i_poro_duq_1[f_id]
-                                     * i_face_u_normal[f_id][i];
-          }
-        }
+      cs_real_t fctb_ii[3], fctb_jj[3];
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        fctb_ii[i] =  i_poro_duq_0[f_id] * i_face_u_normal[f_id][i];
+        fctb_jj[i] = -i_poro_duq_1[f_id] * i_face_u_normal[f_id][i];
       }
 
-    }
+      if (ii < n_cells)
+        cs_dispatch_sum<3>(c_poro_div_duq[ii], fctb_ii, i_sum_type);
+      if (jj < n_cells)
+        cs_dispatch_sum<3>(c_poro_div_duq[jj], fctb_jj, i_sum_type);
+
+    });
 
     /* Boundary faces corrections */
 
-#   pragma omp parallel for
-    for (int t_id = 0; t_id < n_b_threads; t_id++) {
+    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
 
-      for (cs_lnum_t f_id = b_group_index[t_id*2];
-           f_id < b_group_index[t_id*2 + 1];
-           f_id++) {
+      /* Skip the IBM faces */
+      if (f_id >= n_b_faces_all)
+        return;  // skip this face, continue loop to next one.
 
-        /* Skip the IBM faces */
-        if (f_id >= n_b_faces_all)
-          continue;
+      cs_lnum_t ii = b_face_cells[f_id];
 
-        cs_lnum_t ii = b_face_cells[f_id];
+      const cs_nreal_t *normal = b_face_u_normal[f_id];
 
-        const cs_nreal_t *normal = b_face_u_normal[f_id];
+      const cs_real_t *vel_i = vel_val_pre[ii];
 
-        cs_real_t *vel_i = &(CS_F_(vel)->val_pre[3*ii]);
-
-        cs_real_t veli_dot_n =   (1. - b_f_face_factor[f_id])
+      cs_real_t veli_dot_n =   (1. - b_f_face_factor[f_id])
                                * cs_math_3_dot_product(vel_i, normal);
 
-        cs_real_t d_f_surf = 0.;
-        /* Is the cell disabled (for solid or porous)?
-           Not the case if coupled */
-        if (has_dc * c_disable_flag[has_dc * ii] == 0)
-          d_f_surf = 1.;
+      cs_real_t d_f_surf = 0.;
+      /* Is the cell disabled (for solid or porous)?
+         Not the case if coupled */
+      if (has_dc * c_disable_flag[has_dc * ii] == 0)
+        d_f_surf = 1.;
 
-        b_poro_duq[f_id] = veli_dot_n * b_massflux[f_id] * d_f_surf;
+      b_poro_duq[f_id] = veli_dot_n * b_massflux[f_id] * d_f_surf;
 
-        for (cs_lnum_t i = 0; i < 3; i++)
-          c_poro_div_duq[ii][i] +=   b_poro_duq[f_id]
-                                   * b_face_u_normal[f_id][i];
-      }
+      cs_real_t fctb[3];
+      for (cs_lnum_t i = 0; i < 3; i++)
+        fctb[i] = b_poro_duq[f_id] * b_face_u_normal[f_id][i];
 
-      /* Finalization of cell terms */
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        /* Is the cell disabled (for solid or porous)?
-           Not the case if coupled */
-        cs_real_t dvol = 0.;
-        if (has_dc * c_disable_flag[has_dc * c_id] == 0)
-          dvol = 1. / cell_vol[c_id];
+      cs_dispatch_sum<3>(c_poro_div_duq[ii], fctb, b_sum_type);
 
-        for (cs_lnum_t i = 0; i < 3; i++)
-          c_poro_div_duq[c_id][i] *= dvol;
-      }
-    }
+    });
 
-    /* Handle parallelism and periodicity */
-    if (halo != nullptr)
-      cs_halo_sync_var_strided(halo,
-                               CS_HALO_STANDARD,
-                               (cs_real_t *)c_poro_div_duq,
-                               3);
+    /* Finalization of cell terms */
+
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      /* Is the cell disabled (for solid or porous)?
+         Not the case if coupled */
+      cs_real_t dvol = 0.;
+      if (has_dc * c_disable_flag[has_dc * c_id] == 0)
+        dvol = 1. / cell_vol[c_id];
+
+      for (cs_lnum_t i = 0; i < 3; i++)
+        c_poro_div_duq[c_id][i] *= dvol;
+    });
+
+    ctx.wait();
+
+    /* Handle parallelism and periodicity
+
+     TODO check how rotation should applied in case of rotational periodicity;
+     here, it is applied as for a vector.
+    */
+    cs_halo_sync_r(halo, CS_HALO_STANDARD, ctx.use_gpu(), c_poro_div_duq);
 
   }
+
   else {
-#   pragma omp parallel for
-    for (cs_lnum_t f_id = 0; f_id < m->n_i_faces; f_id++) {
+
+    ctx.parallel_for(m->n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
       i_poro_duq_0[f_id] = 0.;
       i_poro_duq_1[f_id] = 0.;
-    }
+    });
+    ctx.wait();
 
   }
+
 }
 
 /*----------------------------------------------------------------------------*/
