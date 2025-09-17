@@ -786,8 +786,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
     CS_REALLOC(ct->outlet_faces_ids, ct->n_outlet_faces, cs_lnum_t);
     CS_REALLOC(ct->outlet_cells_ids, ct->n_outlet_cells, cs_lnum_t);
 
-    cs_parall_sum(1, CS_REAL_TYPE, &(ct->surface_in));
-    cs_parall_sum(1, CS_REAL_TYPE, &(ct->surface_out));
+    cs_parall_sum_scalars(ct->surface_in, ct->surface_out);
   }
 
   CS_FREE(packing_cell);

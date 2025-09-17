@@ -937,14 +937,9 @@ cs_ctwr_log_balance(void)
 
       //ct->xair_s  += debit*xa[icel];
     }
-    double stmp[7] = {ct->t_l_in, ct->h_l_in, ct->q_l_in,
-      ct->t_h_out, ct->h_h_out, ct->q_h_out, ct->p_out};
 
-    cs_parall_sum(7, CS_DOUBLE, stmp);
-
-    ct->t_l_in = stmp[0]; ct->h_l_in = stmp[1]; ct->q_l_in = stmp[2];
-    ct->t_h_out = stmp[3]; ct->h_h_out = stmp[4]; ct->q_h_out = stmp[5];
-    ct->p_out = stmp[6];
+    cs_parall_sum_scalars(ct->t_l_in, ct->h_l_in, ct->q_l_in,
+                          ct->t_h_out, ct->h_h_out, ct->q_h_out, ct->p_out);
 
     ct->t_l_in /= ct->q_l_in;
     ct->h_l_in /= ct->q_l_in;
@@ -994,15 +989,8 @@ cs_ctwr_log_balance(void)
       ct->q_h_in  += sign * mass_flow[face_id];
     }
 
-    cs_parall_sum(1, CS_REAL_TYPE, &(ct->t_l_out));
-    cs_parall_sum(1, CS_REAL_TYPE, &(ct->q_l_out));
-    cs_parall_sum(1, CS_REAL_TYPE, &(ct->h_l_out));
-
-    cs_parall_sum(1, CS_REAL_TYPE, &(ct->t_h_in));
-    cs_parall_sum(1, CS_REAL_TYPE, &(ct->h_h_in));
-    cs_parall_sum(1, CS_REAL_TYPE, &(ct->q_h_in));
-
-    cs_parall_sum(1, CS_REAL_TYPE, &(ct->p_in));
+    cs_parall_sum_scalars(ct->t_l_out, ct->q_l_out, ct->h_l_out, ct->t_h_in,
+                          ct->h_h_in, ct->q_h_in, ct->p_in);
 
     ct->t_l_out /= ct->q_l_out;
     ct->h_l_out /= ct->q_l_out;
@@ -1017,27 +1005,27 @@ cs_ctwr_log_balance(void)
 
     /* Writings */
     if (cs_glob_rank_id <= 0) {
-      if (cs::abs(ct->h_l_in - ct->h_l_out) > 1.e-6) {
-        FILE *f = fopen(ct->file_name, "a");
-        cs_real_t aux = cs::abs(  (ct->h_h_out - ct->h_h_in)
-                                / (ct->h_l_in - ct->h_l_out));
-        fprintf(f,
-            "%10f\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t"
-            "%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\n",
-            cs_glob_time_step->t_cur,
-            aux,
-            ct->t_l_in,
-            ct->t_l_out,
-            ct->t_h_in,
-            ct->t_h_out,
-            ct->q_l_in,
-            ct->q_l_out,
-            ct->q_h_in,
-            ct->q_h_out,
-            ct->p_in,
-            ct->p_out);
-        fclose(f);
-      }
+      FILE *f = fopen(ct->file_name, "a");
+      cs_real_t aux = 0.;
+      if (cs::abs(ct->h_l_in - ct->h_l_out) > 1.e-6)
+        aux = cs::abs(  (ct->h_h_out - ct->h_h_in)
+                      / (ct->h_l_in - ct->h_l_out));
+      fprintf(f,
+          "%10f\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t"
+          "%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\t%12.5e\n",
+          cs_glob_time_step->t_cur,
+          aux,
+          ct->t_l_in,
+          ct->t_l_out,
+          ct->t_h_in,
+          ct->t_h_out,
+          ct->q_l_in,
+          ct->q_l_out,
+          ct->q_h_in,
+          ct->q_h_out,
+          ct->p_in,
+          ct->p_out);
+      fclose(f);
     }
   }
 }
