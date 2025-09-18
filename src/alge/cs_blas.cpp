@@ -985,7 +985,7 @@ _cs_dot_xx_xy_kahan(cs_lnum_t                    n,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return 2 dot products of 3 vectors: x.x, and y.z
+ * \brief Return 2 dot products of 3 vectors: x.y, and y.z
  *        using Kahan summation.
  *
  * The products could be computed separately, but computing them
@@ -1036,7 +1036,7 @@ _cs_dot_xy_yz_kahan(cs_lnum_t                    n,
     }
 
     dot_xy = s[0];
-    dot_xy = s[1];
+    dot_yz = s[1];
   }
 
   *xy = dot_xy;
