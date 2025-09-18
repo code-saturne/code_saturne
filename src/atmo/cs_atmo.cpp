@@ -4170,10 +4170,13 @@ cs_atmo_init_meteo_profiles(void)
 
   /* BL height according to Marht 1982 formula */
   /* value of C=0.2, 0.185, 0.06, 0.14, 0.07, 0.04 */
-  cs_real_t zi_coef = 0.2;
-  cs_real_t corio_f = 4. * cs_math_pi / 86164.
+
+  if (aopt->meteo_zi < 0){
+    cs_real_t zi_coef = 0.2;
+    cs_real_t corio_f = 4. * cs_math_pi / 86164.
                          * sin(aopt->latitude * cs_math_pi / 180.);
-  aopt->meteo_zi = zi_coef * ustar0 / fabs(corio_f);
+    aopt->meteo_zi = zi_coef * ustar0 / fabs(corio_f);
+  }
 
   /* Force the computation of z_ground */
   aopt->compute_z_ground = true;
