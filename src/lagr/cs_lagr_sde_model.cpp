@@ -1725,7 +1725,8 @@ _sde_i_ct(const cs_lnum_t       p_id,
   /* Parameters for Yv, equation (54) */
   cs_real_t r_univ = cs_physical_constants_r; // J/(mol.K), 8.314
 
-  cs_real_t temp_p = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_TEMPERATURE);
+  cs_real_t temp_p = cs_lagr_particle_get_real_n(particle, p_am, 1,
+                                                 CS_LAGR_TEMPERATURE);
 
   /* Molar masses of vapour and dry air (kg/mol) */
   cs_real_t m_v = 0.0180154;
@@ -1778,13 +1779,11 @@ _sde_i_ct(const cs_lnum_t       p_id,
 
   /* Mass evaporate */
 
-
   cs_real_t new_mass = cs_math_pi * rho_l * cs_math_pow3(dia) / 6.;
 
   cs_real_t aux = exp(- dt_part * d_time_evap);
   cs_real_t aux_2 = exp(-2* dt_part * d_time_evap);
-  cs_real_t mass_evap = mass * ( 1 - aux) * (aux_2 + aux + 1.) / dt_part ;
-
+  cs_real_t mass_evap = mass * ( 1 - aux) * (aux_2 + aux + 1.) / dt_part;
 
   /* Particle's temperature
      -------------------------- */
@@ -1801,13 +1800,15 @@ _sde_i_ct(const cs_lnum_t       p_id,
   cs_real_t Srad = 0.0; //Here, no radiative term
 
   if (nor == 1) {
-    cs_real_t temp_s = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_TEMPERATURE_SEEN);
+    cs_real_t temp_s = cs_lagr_particle_get_real_n(particle, p_am, 1,
+                                                   CS_LAGR_TEMPERATURE_SEEN);
 
     /* Scheme resolution (nor=1)*/
     cs_real_t xi = temp_s - time_temp_p * mass_evap * lv / (mass * cp);
     cs_real_t aux = exp(- dt_part / time_temp_p);
 
-    cs_real_t ter1 = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_TEMPERATURE) * aux;
+    cs_real_t ter1 = cs_lagr_particle_get_real_n(particle, p_am, 1,
+                                                 CS_LAGR_TEMPERATURE) * aux;
     cs_real_t ter2 = xi * (1. - aux);
 
     temp_p = ter1 + ter2;
@@ -1815,18 +1816,21 @@ _sde_i_ct(const cs_lnum_t       p_id,
 
   }
   else if (nor == 2) {
-    cs_real_t temp_s = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_TEMPERATURE_SEEN);
+    cs_real_t temp_s = cs_lagr_particle_get_real_n(particle, p_am, 0,
+                                                   CS_LAGR_TEMPERATURE_SEEN);
 
     /* Scheme resolution (nor=2)*/
     cs_real_t xi = temp_s + time_temp_p * (Srad - mass_evap * lv)/ (mass * cp);
 
     cs_real_t daux1 = dt_part / time_temp_p;
     cs_real_t aux1 = exp(- daux1);
-    cs_real_t ter1 = 0.5 * cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_TEMPERATURE) * aux1;
+    cs_real_t ter1 = 0.5 * cs_lagr_particle_get_real_n(particle, p_am, 1,
+                                                       CS_LAGR_TEMPERATURE) * aux1;
 
     cs_real_t daux2 = 0.0; //FIXME
     cs_real_t aux2 = exp(- daux2);
-    cs_real_t ter2 = 0.5 * cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_TEMPERATURE) * aux2;
+    cs_real_t ter2 = 0.5 * cs_lagr_particle_get_real_n(particle, p_am, 1,
+                                                       CS_LAGR_TEMPERATURE) * aux2;
 
     cs_real_t ter3 = xi * (- aux1 + (1 - aux1)/(daux1));
 
