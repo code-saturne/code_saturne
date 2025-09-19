@@ -1250,6 +1250,66 @@ _cs_gres_kahan(cs_lnum_t         n,
   return dot;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the global residual of 1 extensive vector:
+ *        1/sum(vol) . sum(X.vol)
+ *        using Kahan summation.
+ *
+ * In parallel mode, the local results are summed on the default
+ * global communicator.
+ *
+ * \param[in]  n    size of arrays x
+ * \param[in]  vol  array of floating-point values
+ * \param[in]  x    array of floating-point values
+ *
+ * \return  global residual
+ */
+/*----------------------------------------------------------------------------*/
+
+static double
+_cs_gmean_kahan(cs_lnum_t         n,
+                const cs_real_t  *vol,
+                const cs_real_t  *x)
+{
+  double dot = 0.;
+  double vtot = 0.;
+
+# pragma omp parallel reduction(+:dot, vtot) if (n > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    cs_parall_thread_range(n, sizeof(cs_real_t), &s_id, &e_id);
+
+    const cs_lnum_t _n = e_id - s_id;
+    const cs_real_t *_vol = vol + s_id;
+    const cs_real_t *_x = x + s_id;
+
+    double s[2] = {0, 0};
+    double c[2] = {0, 0};
+
+    for (cs_lnum_t i = 0; i < _n; i++) {
+      double t[2];
+      double u[2] = {(_x[i]*_vol[i]) - c[0],
+                     _vol[i]         - c[1]};
+      for (int j = 0; j < 2; j++) {
+        t[j] = s[j] + u[j];
+        c[j] = (t[j] - s[j]) - u[j];
+        s[j] = t[j];
+      }
+    }
+
+    dot  = s[0];
+    vtot = s[1];
+  }
+
+  double atot[2] = {dot, vtot};
+  cs_parall_sum(2, CS_DOUBLE, atot);
+
+  dot = atot[0] / atot[1];
+
+  return dot;
+}
+
 /*============================================================================
  * Static global function pointers
  *============================================================================*/
@@ -1321,6 +1381,7 @@ cs_blas_set_reduce_algorithm(cs_blas_reduce_t  mode)
         _cs_glob_dot_xx_xy_yz = _cs_dot_xx_xy_yz_superblock;
         _cs_glob_dot_xx_yy_xy_xz_yz = _cs_dot_xx_yy_xy_xz_yz_superblock;
         _cs_glob_gres = _cs_gres_superblock;
+        _cs_glob_gmean = _cs_gmean_superblock;
       }
       break;
     case CS_BLAS_REDUCE_KAHAN:
@@ -1332,6 +1393,7 @@ cs_blas_set_reduce_algorithm(cs_blas_reduce_t  mode)
         _cs_glob_dot_xx_xy_yz = _cs_dot_xx_xy_yz_kahan;
         _cs_glob_dot_xx_yy_xy_xz_yz = _cs_dot_xx_yy_xy_xz_yz_kahan;
         _cs_glob_gres = _cs_gres_kahan;
+        _cs_glob_gmean = _cs_gmean_kahan;
       }
       break;
   }
