@@ -4617,17 +4617,13 @@ cs_boundary_conditions_update_bc_coeff_face_values
      when some arrays are not defined (and want to avoid cases where
      the array is defined but not up to date). */
 
-  if (f->bc_coeffs->flux == nullptr && m->n_b_faces > 0) {
-    const int df_limiter_id
-      = cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
-    const int ircflb = (eqp->ircflu > 0) ? eqp->b_diff_flux_rc : 0;
-
+  if (m->n_b_faces > 0) {
     cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
       (f->bc_coeffs,
        m->n_b_faces,
        f->dim,
        cs_alloc_mode,
-       (df_limiter_id > -1 || ircflb != 1));
+       false);
   }
 
   cs_real_t *val_f = f->bc_coeffs->val_f;
@@ -4976,7 +4972,7 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
      when some arrays are not defined (and want to avoid cases where
      the array is defined but not up to date). */
      CS_PROFILE_MARK_LINE();
-  if (f->bc_coeffs->flux == nullptr && m->n_b_faces > 0) {
+  if (m->n_b_faces > 0) {
     const int df_limiter_id
       = cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
     const int ircflb = (eqp->ircflu > 0) ? eqp->b_diff_flux_rc : 0;
@@ -5151,7 +5147,7 @@ cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
    cs_alloc_mode_t        amode,
    bool                   limiter)
 {
-  if (bc_coeffs->flux != nullptr || n_b_faces == 0)
+  if (n_b_faces == 0)
     return;
 
   // bc_coeffs->val_f may have been allocated separately
@@ -5159,7 +5155,8 @@ cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
   if (bc_coeffs->val_f == nullptr)
     CS_MALLOC_HD(bc_coeffs->val_f, dim*n_b_faces, cs_real_t, amode);
 
-  CS_MALLOC_HD(bc_coeffs->flux, dim*n_b_faces, cs_real_t, amode);
+  if (bc_coeffs->flux == nullptr)
+    CS_MALLOC_HD(bc_coeffs->flux, dim*n_b_faces, cs_real_t, amode);
 
   if (limiter == false) {
     bc_coeffs->val_f_lim = bc_coeffs->val_f;
