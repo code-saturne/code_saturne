@@ -42,7 +42,7 @@ from code_saturne.model.Common import *
 from code_saturne.model.XMLvariables import Model, Variables
 
 #-------------------------------------------------------------------------------
-# Body Force model class
+# Notebook model class
 #-------------------------------------------------------------------------------
 
 class NotebookModel(Model):
@@ -316,7 +316,7 @@ class NotebookModel(Model):
         self._setVariableAttr(idx, 'editable', editable)
 
         # editable parameter are printed in log file by default
-        if editable:
+        if editable == "Yes":
             self._setVariableAttr(idx, 'log', editable)
 
 
@@ -346,16 +346,7 @@ class NotebookModel(Model):
         Return Yes or No to indicate if the parameter value will be printed
         in the default log file.
         """
-        node = self.node_note.xmlInitChildNode("var", id = idx)
-        log = node['log']
-        if not log:
-            # editable parameter are printed in log file by default
-            editable = node['editable']
-            if editable:
-                log = editable
-            else:
-                log = self.defaultNotebookValues()['log']
-            self.setVariableLog(idx, log)
+        log = self._getVariableAttr(idx, 'log')
 
         return log
 
