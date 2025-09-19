@@ -1824,15 +1824,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     cs_real_t *w2;
     CS_MALLOC_HD(w2, n_cols, cs_real_t, cs_alloc_mode);
 
-    double p_mean;
-    ctx.parallel_for_reduce_sum(n_cells, p_mean, [=] CS_F_HOST_DEVICE
-                                (cs_lnum_t c_id,
-                                 CS_DISPATCH_REDUCER_TYPE(double) &sum) {
-      sum += pvar[c_id] * cell_vol[c_id];
-    });
-    ctx.wait();
-    cs_parall_sum(1, CS_DOUBLE, &p_mean);
-    p_mean /= mq->tot_vol;
+    double p_mean = cs_gmean(n_cells, cell_vol, pvar);
 
     if (iwarnp >= 2)
       bft_printf("Spatial average of X^n = %f\n", p_mean);
