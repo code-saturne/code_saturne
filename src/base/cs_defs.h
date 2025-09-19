@@ -291,6 +291,15 @@ typedef unsigned long long uint64_t;
   #define __has_builtin(x) 0
 #endif
 
+/* Legacy Intel compiler (retired) reports having
+ *  __builtin_FILE() and __builtin_LINE() but generates code calling
+ *  nonexisting functions with those names, leading to link errors. */
+#if defined(__INTEL_COMPILER)
+#  if __INTEL_COMPILER <= 2000
+#    define __has_builtin(x) 0
+#  endif
+#endif
+
 /*============================================================================
  * General types and macros used throughout code_saturne
  *============================================================================*/
