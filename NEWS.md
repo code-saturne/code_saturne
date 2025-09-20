@@ -44,6 +44,9 @@ Release 9.0.1 (unreleased)
 
 - Fix LU factorization of "cs_sdm_t" matrix.
 
+### Architectural changes:
+
+- Minor installation documentation updates.
 
 Release 9.0.0 (2025-06-27)
 --------------------------
