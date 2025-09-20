@@ -997,7 +997,7 @@ those 2 modules.
     using a binary ParaView distribution is possible, provided the
     associated MPI library is compatible.
 
-The following exemples refer to Catalyst1, as use of Catalyst2 in
+The following examples refer to Catalyst1, as use of Catalyst2 in
 code_saturne is still missing some features.
 
 By default, ParaView is built with a GUI, but it may also be be
@@ -1314,7 +1314,7 @@ Compiling with SYCL
 Compiling for SYCL requires adding the `--enable-sycl` option.
 
 The `SYCLFLAGS` variable also allows specifying additional options.
-For exemple, when using the Codeplay plugin to use an NVIDIA GPU with
+For example, when using the Codeplay plugin to use an NVIDIA GPU with
 a oneAPI build, we can define:
 
 ```
