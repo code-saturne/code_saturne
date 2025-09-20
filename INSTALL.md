@@ -1,7 +1,7 @@
 <!--
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2024 EDF S.A.
+  Copyright (C) 1998-2025 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -336,7 +336,7 @@ if the code's source tree is in /home/user/code_saturne/src/code_saturne:
 /home/user/code_saturne/src/code_saturne/configure \
 --prefix=/home/user/code_saturne/<version>/arch/prod \
 --with-med=/home/user/opt/med-5.0 \
-CC=/home/user/opt/mpich-3.3/bin/mpicc FC=gfortran
+CC=/home/user/opt/mpich-4.0/bin/mpicc FC=gfortran
 ```
 
 Most available prerequisites are auto-detected, so to install the
@@ -419,8 +419,9 @@ Compilers and interpreters
 
 For a minimal build of code_saturne on a Linux or Posix system, the requirements are:
 * A C compiler, conforming at least to the C11 standard.
+* A C++ compiler, conforming at least to the C++14 standard.
 * A Fortran compiler, conforming at least to the Fortran 2008 standard.
-* A Python interpreter, with Python version 3.4 or above.
+* A Python interpreter, with Python version 3.4 or above, and the setuptools module.
 
 For parallel runs, an MPI library is also necessary (MPI-2 or MPI-3 conforming).
 To build and use the GUI, PyQt 4 or 5 (which in turn requires Qt 4 or 5 and SIP)
@@ -428,12 +429,9 @@ are required. Other libraries may be used for additional mesh format options,
 as well as to improve performance. A list of those libraries
 and their role is given in a dedicated [section](@ref cs_install_list_ext_lib)).
 
-For some external libraries, such as MED, MEDCoupling, and ParaView Catalyst,
-a C++11 compliant C++ compiler is also required.
-
 In practice, the code is known to build and function properly at least with the
-GNU compilers 4.4 and above (up to 9.x at this date), Intel compilers 11 and
-above (up to 2022 at this date), and Clang (tested with 3.7 or above).
+GNU compilers 8.3.0 and above (up to 15.x at this date), Intel compilers 19 and
+above (up to 2025.1 at this date), and Clang (tested with 11.0 or above).
 
 Note also that while code_saturne makes heavy use of Python, this is for scripts and
 for the GUI only; The solver only uses compiled code, so we could for example use
@@ -629,7 +627,7 @@ The list of third-party software usable with code_saturne is provided here:
   and the *Remapper* and *ParaMEDMEM* librairies for serial and parallel
   intepolation and projection methods.
 
-* [ParaView Catalyst](https://www.paraview.org/in-situ) or full ParaView
+* [ParaView Catalyst](https://www.paraview.org/insitu) or full ParaView
   may be used for co-visualization or in-situ visualization.
   This requires ParaView 5.4 or above, though 5.9 or above is recommended.
   Note that ParaView must be built with MPI support for Catalyst to
@@ -638,7 +636,7 @@ The list of third-party software usable with code_saturne is provided here:
 * [Melissa](https://melissa-sa.github.io) may be used for in-situ
   statistical analysis and post-processing of ensemble runs.
 
-* `EOS` 1.11 or above may be used for thermodynamic properties of fluids.
+* `EOS` 2.1 or above may be used for thermodynamic properties of fluids.
    it is not currently free, so usually available only to users at EDF,
    CEA, or organisms participating in projects with those entities.
 
@@ -926,13 +924,13 @@ installation paths.
 To download MEDCoupling, the following commands can be used.
 
 ```
-git clone -b V9_10_0 https://git.salome-platform.org/gitpub/tools/configuration
-git clone -b V9_10_0 https://git.salome-platform.org/gitpub/tools/medcoupling
+git clone -b V9_14_0 https://github.com/SalomePlatform/configuration.git
+git clone -b V9_14_0 https://github.com/SalomePlatform/medcoupling.git
 ```
 
-The `-b V9_10_0` option used here indicates we want to use version 9.10.0.
+The `-b V9_14_0` option used here indicates we want to use version 9.14.0.
 It can be omitted for the development version, or another tag (such as the
-newer V9_11_0) may be used instead.
+newer V9_15_0) may be used instead.
 
 Once these libraries are downloaded, a separate build directory should be created,
 as usual:
@@ -979,7 +977,30 @@ make && make install && make clean
 
 ### Paraview Catalyst
 
-By default, this library is built with a GUI, but it may also be be
+We will use the terms Catalyst1 to refer to the legacy ParaView Catalyst module,
+Catalyst2 to the current module, ans simply Catalyst for elements common to
+those 2 modules.
+
+- With Catalyst1, the ParaView legacy Catalyst module is linked directly to
+  a code_saturne sub-library. This requires using a recent version of CMake
+  and a ParaView build including both MPI support and development headers.
+- With Catalyst2, a standalone library, named Catalyst
+  (https://gitlab.kitware.com/paraview/catalyst), must be installed
+  first. This is the library that code_saturne will link to.
+  A ParaView build linking to that same library must then be used.
+  That build should have MPI support.
+  This approach has several advantages:
+  * It is possible to switch from the ParaView implementation to another,
+    or to a stub implementation which allows dumping replay data for
+    offline debugging.
+  * The ParaView build does not need to include development headers, so
+    using a binary ParaView distribution is possible, provided the
+    associated MPI library is compatible.
+
+The following exemples refer to Catalyst1, as use of Catalyst2 in
+code_saturne is still missing some features.
+
+By default, ParaView is built with a GUI, but it may also be be
 built using OSMesa or EGL for offscreen rendering. The build documentation
 on the ParaView website and Wiki details this. On a workstation,
 a regular build of ParaViw with MPI support may be sufficient.
@@ -1006,8 +1027,8 @@ cmake \
 ${PARAVIEW_SRC_PATH}
 ```
 
-More info may also be found on the
-[ParaView Wiki](https://kitware.github.io/paraview-docs/latest/cxx/Offscreen.html).
+More info may also be found in the
+[ParaView documnetation](https://www.paraview.org/paraview-docs/latest/cxx/Offscreen.html).
 
 Note that when ParaView uses libraries which are in non-standard locations,
 it may be necessary to specify those locations in the CMake prefix path
@@ -1017,7 +1038,7 @@ the `CMAKE_PREFIX_PATH`, so if multiple directories need to be included,
 an enquoted and semicolon-separated path may be used, for example:
 
 ```
---with-catalyst="/home/user/opt/paraview-5.11;/home/user/opt/ospray2"
+--with-catalyst="/home/user/opt/paraview-5.13;/home/user/opt/ospray2"
 ```
 
 Also, if the detection of Catalyst fails due to incorrect detection
@@ -1049,6 +1070,8 @@ Both code_saturne and code_aster must use the same MPI library, and must use
 the same major version of the PLE library from
 code_saturne (only the python package is used).
 
+This is still work in progress, and not yet usable.
+
 Specific build types
 ====================
 
@@ -1075,7 +1098,7 @@ cd dbg
 --prefix=/home/user/code_saturne/<version>/arch/dbg \
 --with-med}=/home/user/opt/med-5.0 \
 --enable-debug \
-CC=/home/user/opt/mpich-3.3/bin/mpicc FC=gfortran
+CC=/home/user/opt/mpich-4.0/bin/mpicc FC=gfortran
 ```
 
 Shared or static builds
@@ -1348,7 +1371,7 @@ ${SRC_PATH}/configure \
 --with-cgns=${CS_OPT}/cgns-4.4/arch/cronos \
 --with-scotch=${CS_OPT}/scotch-7.0/arch/cronos_ompi \
 --with-metis=${CS_OPT}/parmetis-4.0/arch/cronos_ompi \
---with-eos/${CS_OPT}/eos-1.11.0/arch/cronos_ompi \
+--with-eos/${CS_OPT}/eos-2.1.0/arch/cronos_ompi \
 CC=mpiicx CXX=mpiicpx FC=ifx
 ```
 
