@@ -149,8 +149,8 @@ Using the code from `cs_dispatch.h`, the following loop:
 
 ```{.cpp}
 #pragma omp parallel for
-for (size_t idx = 0; idx < n; idx++) {
-  if (is_disabled[idx])
+for (size_t i = 0; i < n; i++) {
+  if (is_disabled[i])
     continue;
 
   y[i] += a * x[i];
@@ -161,8 +161,8 @@ can be replaced by:
 
 ```{.cpp}
 cs_dispatch_context ctx;
-ctx.parallel_for(n, [=] (cs_lnum_t idx) {
-  if (is_disabled[idx])
+ctx.parallel_for(n, [=] (cs_lnum_t i) {
+  if (is_disabled[i])
     return;
 
   y[i] += a * x[i];
@@ -192,8 +192,8 @@ parallel_for(size_t         n,
   auto_generated func(is_disabled, a, x, y);
 
   #pragma omp parallel for
-  for (size_t idx = 0; idx < n; idx++) {
-    func(idx);
+  for (size_t i = 0; i < n; i++) {
+    func(i);
   }
 }
 ```
@@ -220,9 +220,9 @@ public:
     a_(a), is_disabled_(is_disabled), x_(x), y_(y) {}
 
   // Operator
-  void operator() (size_t  idx)
+  void operator() (size_t  i)
   {
-    if (is_disabled[idx])
+    if (is_disabled[i])
       return;
 
     y[i] += a * x[i];
@@ -233,7 +233,7 @@ public:
 
 A functor is simply a class implementing the `()` operator.
 
-In the `ctx.parallel_for(n, [=] (cs_lnum_t idx) {...});`
+In the `ctx.parallel_for(n, [=] (cs_lnum_t i) {...});`
 syntax above, the `[]` syntax is a capture clause indicating the following code defines a lambda function. Such functions can access variables outside their enclosing scope, as specified in the capture clause. `[&]` means all variables are captured by reference, while `[=]` means all variables are captured by copy. The capture clause can be more complex, specifying different capture clauses for specific variables, but for the purposes of the code\_saturne parallel dispatch mechanism, we always use the `[=]` (capture all variables by copy) syntax, as it is the only one adapted to running functions (kernels) on devices using a different memory space.
 
 Using this lambda capture mechanism, a functor similar to the one described above is generated automatically based on the enclosed code.
@@ -245,8 +245,8 @@ For example, to run on a CUDA-enabled device, the equivalent to the function abo
 
 ```{.cpp}
 cs_dispatch_context ctx;
-ctx.parallel_for(n, [=] __host__ __device__ (cs_lnum_t idx) {
-  if (is_disabled[idx])
+ctx.parallel_for(n, [=] __host__ __device__ (cs_lnum_t i) {
+  if (is_disabled[i])
     return;
 
   y[i] = a * x[i];
@@ -259,8 +259,8 @@ So the loop is finally written as :
 
 ```{.cpp}
 cs_dispatch_context ctx;
-ctx.parallel_for(n, [=] CS_F_HOST_DEVICE (cs_lnum_t idx) {
-  if (is_disabled[idx])
+ctx.parallel_for(n, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+  if (is_disabled[i])
     return;
 
   y[i] = a * x[i];
@@ -404,3 +404,37 @@ Using the same `cs_cuda_kernel_parallel_for` kernel template as for the simple e
 For the dispatch mechanism to actually be usable with many different loops, it must be based on templates. For clarity, in the examples above, template parameters were expanded to actual types, so as to focus on the dispatch and loop mechanisms.
 
 The `cs_dispatch` class also uses a CRTP (curiously recurring template pattern) to optionally allow forcing the compilation of a given section of code only on the CPU (using `cs_host_context`) or GPU (using `cs_device_context`). This can be useful when a multiple variants of a given algorithm are required for performance reasons, and generating only the variant which is expected to perform best on a given architecture is desired.
+
+### Named lambdas
+
+A lambda function can be declared independently of a dispatch context,
+and called later in the enclosing function. This may be useful if the matching code block is to be called multiple times, or for code organization and readabilty functions.
+
+So the following example:
+
+```{.cpp}
+cs_dispatch_context ctx;
+ctx.parallel_for(n, [=] (cs_lnum_t i) {
+  if (is_disabled[i])
+    return;
+
+  y[i] += a * x[i];
+});
+```
+
+Can also be written using a named lambda, declared as follows:
+
+```{.cpp}
+auto my_lambda = [=] (cs_lnum_t i) {
+  if (is_disabled[i])
+    return;
+
+  y[i] += a * x[i];
+};
+```
+
+Then passed as an argument to the dispatch mechanism: 
+
+```{.cpp}
+ctx.parallel_for(n, my_lambda);
+```
