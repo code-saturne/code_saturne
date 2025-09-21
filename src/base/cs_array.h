@@ -342,10 +342,13 @@ cs_arrays_set_zero(cs_dispatch_context  &ctx,
   }
 #endif
 
-  T c = static_cast<T>(0);
+  constexpr T c = static_cast<T>(0);
 
   cs_lnum_t n_vals = n_elts*stride;
-  int n_threads = cs_parall_n_threads(n_vals, CS_THR_MIN);
+
+  int n_threads = ctx.n_cpu_threads();
+  if (n_threads < 0)
+    n_threads = cs_parall_n_threads(n_vals, CS_THR_MIN);
 
 # pragma omp parallel num_threads(n_threads)
   {
