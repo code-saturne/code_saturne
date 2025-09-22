@@ -266,6 +266,13 @@ cs_gwf_uspf_free(cs_gwf_uspf_t **p_mc)
 
   cs_gwf_uspf_t *mc = *p_mc;
 
+  const cs_param_space_scheme_t richards_scheme =
+    cs_equation_get_space_scheme(mc->richards);
+
+  if (richards_scheme == CS_SPACE_SCHEME_CDOVB ||
+      richards_scheme == CS_SPACE_SCHEME_CDOVCB)
+    CS_FREE(mc->head_in_law);
+
   cs_gwf_darcy_flux_free(&(mc->darcy));
 
   BFT_FREE(mc);
@@ -516,7 +523,7 @@ cs_gwf_uspf_finalize_setup(const cs_cdo_connect_t    *connect,
   switch (richards_scheme) {
     case CS_SPACE_SCHEME_CDOVB:
     case CS_SPACE_SCHEME_CDOVCB:
-      BFT_MALLOC(mc->head_in_law, n_cells, cs_real_t);
+      CS_MALLOC(mc->head_in_law, n_cells, cs_real_t);
 #if defined(DEBUG) && !defined(NDEBUG)
       cs_array_real_fill_zero(n_cells, mc->head_in_law);
 #endif
