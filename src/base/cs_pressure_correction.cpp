@@ -197,28 +197,6 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
   if (iterns < 2)
     sinfo->n_it = 0;
 
-  cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
-  cs_gradient_type_by_imrgra(eqp_pr->imrgra,
-                             &gradient_type,
-                             &halo_type);
-
-  cs_field_bc_coeffs_t *bc_coeffs_hp = f->bc_coeffs;
-  cs_real_t *cofaf_hp = bc_coeffs_hp->af;
-  cs_real_t *cofbf_hp = bc_coeffs_hp->bf;
-  cs_real_t *coefa_hp = bc_coeffs_hp->a;
-  cs_real_t *coefb_hp = bc_coeffs_hp->b;
-
-  cs_bc_coeffs_solve_t bc_coeffs_solve_hp;
-  cs_init_bc_coeffs_solve(bc_coeffs_solve_hp,
-                          n_b_faces,
-                          1, // stride
-                          cs_alloc_mode,
-                          false);
-
-  cs_real_t *val_f_hp = bc_coeffs_solve_hp.val_f;
-  cs_real_t *flux_hp = bc_coeffs_solve_hp.flux;
-
   /* Check for variation of the hydrostatic pressure at outlet
    *
    * We check if the source term has changed. We exit directly
@@ -263,6 +241,28 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
                " (_hydrostatic_pressure_compute)\n");
 
   *indhyd = 1;
+
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+  cs_gradient_type_by_imrgra(eqp_pr->imrgra,
+                             &gradient_type,
+                             &halo_type);
+
+  cs_field_bc_coeffs_t *bc_coeffs_hp = f->bc_coeffs;
+  cs_real_t *cofaf_hp = bc_coeffs_hp->af;
+  cs_real_t *cofbf_hp = bc_coeffs_hp->bf;
+  cs_real_t *coefa_hp = bc_coeffs_hp->a;
+  cs_real_t *coefb_hp = bc_coeffs_hp->b;
+
+  cs_bc_coeffs_solve_t bc_coeffs_solve_hp;
+  cs_init_bc_coeffs_solve(bc_coeffs_solve_hp,
+                          n_b_faces,
+                          1, // stride
+                          cs_alloc_mode,
+                          false);
+
+  cs_real_t *val_f_hp = bc_coeffs_solve_hp.val_f;
+  cs_real_t *flux_hp = bc_coeffs_solve_hp.flux;
 
   cs_real_3_t *next_fext;
   CS_MALLOC_HD(next_fext, n_cells_ext, cs_real_3_t, cs_alloc_mode);
