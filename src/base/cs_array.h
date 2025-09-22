@@ -1702,12 +1702,10 @@ public:
   void
   zero()
   {
-    T _zero = static_cast<T>(0);
-
     cs_dispatch_context ctx;
 
     ctx.parallel_for(_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
-      _data[e_id] = _zero;
+      _data[e_id] = static_cast<T>(0);
     });
 
     ctx.wait();
@@ -1726,10 +1724,8 @@ public:
     cs_dispatch_context &ctx /*!< Reference to dispatch context */
   )
   {
-    T _zero = static_cast<T>(0);
-
     ctx.parallel_for(_size, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
-      _data[e_id] = _zero;
+      _data[e_id] = static_cast<T>(0);
     });
   }
 
