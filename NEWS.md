@@ -3,6 +3,8 @@ Release 9.0.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix memory leak in cs_thermal_model.cpp
+
 - Fix memory leak in internal coupling and Rij turbulence model
 
 - Fix segmentation error introduced by previous memory leak fix due to a typo

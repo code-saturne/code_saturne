@@ -1396,6 +1396,8 @@ cs_thermal_model_pdivu(cs_real_t  smbrs[])
     ctx.wait(); // needed for the cs_solve_equation CPU function
 
   } /* End test on thermal_variable */
+
+  CS_FREE(pdivu);
 }
 
 /*----------------------------------------------------------------------------*/
