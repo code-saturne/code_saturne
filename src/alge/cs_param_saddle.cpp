@@ -401,6 +401,16 @@ _free_context(cs_param_saddle_t  *saddlep)
     }
     break;
 
+  case CS_PARAM_SADDLE_SOLVER_SIMPLE:
+    {
+      cs_param_saddle_context_simple_t *ctxp =
+        static_cast<cs_param_saddle_context_simple_t *>(saddlep->context);
+
+      cs_param_sles_free(&(ctxp->init_sles_param));
+      cs_param_sles_free(&(ctxp->xtra_sles_param));
+    }
+    break;
+
   default:
     /* Nothing else to free */
     break;
