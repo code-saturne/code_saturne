@@ -204,32 +204,24 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
    * The precisiton for tests if more or less arbitrary. */
 
   if (cs_glob_atmo_option->open_bcs_treatment == 0) {
-
-    int *ical_g;
-    CS_MALLOC_HD(ical_g, 1, int, cs_alloc_mode); // allocation on GPU
-    *ical_g = 0.;
-
     const cs_real_t precab = 1.e2*cs_math_epzero;
     const cs_real_t precre = sqrt(cs_math_epzero);
 
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    cs_gnum_t ical_g = 0;
+    ctx.parallel_for_reduce_sum(n_cells, ical_g, [=] CS_F_HOST_DEVICE
+                                (cs_lnum_t c_id,
+                                 CS_DISPATCH_REDUCER_TYPE(cs_gnum_t) &count) {
       cs_real_t rnrmf = cs_math_3_square_norm(frcxt[c_id]);
       cs_real_t rnrmdf = cs_math_3_square_norm(dfrcxt[c_id]);
 
       if ((rnrmdf >= precre*rnrmf) && (rnrmdf >= precab)) {
-        *ical_g = 1;
+        count += 1;
       }
     });
-
     ctx.wait();
-    if (ctx.use_gpu())
-      cs_sync_d2h_if_needed(ical_g);
 
-    int ical = *ical_g;
-    CS_FREE_HD(ical_g);
-
-    cs_parall_sum(1, CS_INT_TYPE, &ical);
-    if (ical == 0) {
+    cs_parall_counter(&ical_g, 1);
+    if (ical_g == 0) {
       *indhyd = 0;
       return;
     }
