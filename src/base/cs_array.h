@@ -131,7 +131,9 @@ cs_arrays_set_value(const cs_lnum_t  n_elts,
   };
 
   /* Loop through each index and assign values */
+# ifdef _OPENMP
 # pragma omp parallel for  if (n_elts >= CS_THR_MIN)
+# endif
   for (cs_lnum_t i = 0; i < n_elts; i++)
     set_value(i);
 }
@@ -188,7 +190,9 @@ cs_arrays_set_value(const cs_lnum_t  n_elts,
   };
 
   /* Loop through each index and assign values */
+# ifdef _OPENMP
 # pragma omp parallel for  if (n_elts >= CS_THR_MIN)
+# endif
   for (cs_lnum_t i = 0; i < n_elts; i++)
     set_value(i);
 }
@@ -242,7 +246,9 @@ cs_arrays_set_value(cs_dispatch_context  &ctx,
   };
 
   /* Loop through each index and assign values */
+# ifdef _OPENMP
 # pragma omp parallel for  if (n_elts >= CS_THR_MIN)
+# endif
   for (cs_lnum_t i = 0; i < n_elts; i++)
     set_value(i);
 }
@@ -298,7 +304,9 @@ cs_arrays_set_value(cs_dispatch_context  &ctx,
   };
 
   /* Loop through each index and assign values */
+# ifdef _OPENMP
 # pragma omp parallel for  if (n_elts >= CS_THR_MIN)
+# endif
   for (cs_lnum_t i = 0; i < n_elts; i++)
     set_value(i);
 }
@@ -350,10 +358,14 @@ cs_arrays_set_zero(cs_dispatch_context  &ctx,
   if (n_threads < 0)
     n_threads = cs_parall_n_threads(n_vals, CS_THR_MIN);
 
+# ifdef _OPENMP
 # pragma omp parallel num_threads(n_threads)
+# endif
   {
     for (T* array : array_ptrs) {
+#     ifdef _OPENMP
 #     pragma omp for nowait
+#     endif
       for (cs_lnum_t i = 0; i < n_vals; i++)
         array[i] = c;
     }
@@ -400,7 +412,9 @@ cs_arrays_set_value_on_subset(const cs_lnum_t  n_elts,
     };
 
     /* Loop through each index on the subset and assign values */
+#   ifdef _OPENMP
 #   pragma omp parallel for  if (n_elts >= CS_THR_MIN)
+#   endif
     for (cs_lnum_t i = 0; i < n_elts; i++)
       set_value(elt_ids[i]);
   }
@@ -449,7 +463,9 @@ cs_arrays_set_value_on_subset(const cs_lnum_t  n_elts,
     };
 
    /* Loop through each index on the subset and assign values */
+#   ifdef _OPENMP
 #   pragma omp parallel for  if (n_elts >= CS_THR_MIN)
+#   endif
     for (cs_lnum_t i = 0; i < n_elts; i++)
       set_value(elt_ids[i]);
   }
@@ -485,7 +501,9 @@ cs_array_copy(const cs_lnum_t  size,
   }
 #endif
 
+# ifdef _OPENMP
 # pragma omp parallel for if (size > CS_THR_MIN)
+# endif
   for (cs_lnum_t ii = 0; ii < size; ii++)
     dest[ii] = src[ii];
 }
@@ -512,7 +530,9 @@ cs_array_difference(const cs_lnum_t size, const T *x, const T *y, T *diff)
 {
   cs_array_copy(size, x, diff);
 
-#pragma omp parallel for if (size > CS_THR_MIN)
+# ifdef _OPENMP
+# pragma omp parallel for if (size > CS_THR_MIN)
+# endif
   for (cs_lnum_t ii = 0; ii < size; ii++)
     diff[ii] -= y[ii];
 }
