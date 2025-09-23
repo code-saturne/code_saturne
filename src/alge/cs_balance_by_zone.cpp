@@ -986,7 +986,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
 
   /* Reconstructed value */
   cs_real_3_t *grad;
-  CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
+  CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
   halo_type = CS_HALO_STANDARD;
   cs_field_gradient_scalar(f,
@@ -1596,7 +1596,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
 
   /* Free memory */
 
-  CS_FREE(grad);
+  CS_FREE_HD(grad);
   CS_FREE(gradup);
   CS_FREE(gradst);
   CS_FREE(f_reconstructed);
