@@ -372,7 +372,7 @@ cs_mem_cuda_copy_d2h_async(void        *dst,
 /*!
  * \brief Copy data from host to device.
  *
- * This is simply a wrapper over cudaMemcpy.
+ * This is simply a wrapper over cudaMemPrefetchAsync.
  *
  * A safety check is added.
  *
@@ -390,15 +390,22 @@ cs_mem_cuda_prefetch_h2d(const void  *dst,
  if (_cs_glob_cuda_device_id < 0)
    cudaGetDevice(&_cs_glob_cuda_device_id);
 
-  CS_CUDA_CHECK(cudaMemPrefetchAsync(dst, size, _cs_glob_cuda_device_id, \
+#if CUDART_VERSION >= 13'00'0
+  CS_CUDA_CHECK(cudaMemPrefetchAsync(dst, size,
+                                     {.type = cudaMemLocationTypeDevice,
+                                      .id = _cs_glob_cuda_device_id}, 0,
                                      _cs_glob_stream_pf));
+#else
+  CS_CUDA_CHECK(cudaMemPrefetchAsync(dst, size, _cs_glob_cuda_device_id,
+                                     _cs_glob_stream_pf));
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Copy data from device to host.
  *
- * This is simply a wrapper over cudaMemcpy.
+ * This is simply a wrapper over cudaMemPrefetchAsync.
  *
  * A safety check is added.
  *
@@ -413,8 +420,17 @@ void
 cs_mem_cuda_prefetch_d2h(const void  *dst,
                          size_t       size)
 {
-  CS_CUDA_CHECK(cudaMemPrefetchAsync(dst, size, cudaCpuDeviceId, \
+#if CUDART_VERSION >= 13'00'0
+  // TODO: try to check for host NUMA node id in calling code
+  // when threads are pinned, and pass correct id instead of 0.
+  CS_CUDA_CHECK(cudaMemPrefetchAsync(dst, size,
+                                     {.type = cudaMemLocationTypeHostNuma,
+                                      .id = 0}, 0,
                                      _cs_glob_stream_pf));
+#else
+  CS_CUDA_CHECK(cudaMemPrefetchAsync(dst, size, cudaCpuDeviceId,
+                                     _cs_glob_stream_pf));
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -455,10 +471,18 @@ cs_mem_cuda_set_advise_read_mostly(const void  *ptr,
  if (_cs_glob_cuda_device_id < 0)
    cudaGetDevice(&_cs_glob_cuda_device_id);
 
+#if CUDART_VERSION >= 13'00'0
   CS_CUDA_CHECK(cudaMemAdvise(ptr,
                               size,
                               cudaMemAdviseSetReadMostly,
-                              _cs_glob_cuda_device_id))
+                              {.type = cudaMemLocationTypeDevice,
+                               .id = _cs_glob_cuda_device_id}));
+#else
+  CS_CUDA_CHECK(cudaMemAdvise(ptr,
+                              size,
+                              cudaMemAdviseSetReadMostly,
+                              _cs_glob_cuda_device_id));
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -477,10 +501,18 @@ cs_mem_cuda_unset_advise_read_mostly(const void  *ptr,
  if (_cs_glob_cuda_device_id < 0)
    cudaGetDevice(&_cs_glob_cuda_device_id);
 
+#if CUDART_VERSION >= 13'00'0
   CS_CUDA_CHECK(cudaMemAdvise(ptr,
                               size,
                               cudaMemAdviseUnsetReadMostly,
-                              _cs_glob_cuda_device_id))
+                              {.type = cudaMemLocationTypeDevice,
+                               .id = _cs_glob_cuda_device_id}));
+#else
+  CS_CUDA_CHECK(cudaMemAdvise(ptr,
+                              size,
+                              cudaMemAdviseUnsetReadMostly,
+                              _cs_glob_cuda_device_id));
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
