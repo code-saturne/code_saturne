@@ -1862,9 +1862,6 @@ fvm_to_catalyst2_flush(void  *this_writer_p)
 
   if (_debug_print) {
     w->channel["data"].print();
-    conduit_cpp::Node info;
-    conduit_cpp::Blueprint::verify("execute", exec_params, info);
-    info.print();
   }
 
   catalyst_status err = catalyst_execute(params);
