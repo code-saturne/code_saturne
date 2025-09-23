@@ -106,6 +106,7 @@
 
 #include "atmo/cs_atmo.h"
 #include "atmo/cs_atmo_chemistry.h"
+#include "atmo/cs_atmo_imbrication.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -284,28 +285,6 @@ static cs_atmo_constants_t _atmo_constants = {
   .ps = 1.e5
 };
 
-/* atmo imbrication options structure */
-static cs_atmo_imbrication_t _atmo_imbrication = {
-  .imbrication_flag = false,
-  .imbrication_verbose = false,
-  .cressman_u = false,
-  .cressman_v = false,
-  .cressman_qw = false,
-  .cressman_nc = false,
-  .cressman_tke = false,
-  .cressman_eps = false,
-  .cressman_theta = false,
-  .vertical_influence_radius = 100.0,
-  .horizontal_influence_radius = 8500.0,
-  .id_u     = -1,
-  .id_v     = -1,
-  .id_qw    = -1,
-  .id_nc    = -1,
-  .id_tke   = -1,
-  .id_eps   = -1,
-  .id_theta = -1
-};
-
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -313,8 +292,6 @@ static cs_atmo_imbrication_t _atmo_imbrication = {
 cs_atmo_option_t *cs_glob_atmo_option = &_atmo_option;
 
 cs_atmo_constants_t *cs_glob_atmo_constants = &_atmo_constants;
-
-cs_atmo_imbrication_t *cs_glob_atmo_imbrication = &_atmo_imbrication;
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -428,26 +405,6 @@ void
 cs_f_atmo_get_soil_zone(cs_lnum_t         *n_elts,
                         int               *n_soil_cat,
                         const cs_lnum_t  **elt_ids);
-
-void
-cs_f_atmo_get_pointers_imbrication(bool      **imbrication_flag,
-                                   bool      **imbrication_verbose,
-                                   bool      **cressman_u,
-                                   bool      **cressman_v,
-                                   bool      **cressman_qw,
-                                   bool      **cressman_nc,
-                                   bool      **cressman_tke,
-                                   bool      **cressman_eps,
-                                   bool      **cressman_theta,
-                                   cs_real_t **vertical_influence_radius,
-                                   cs_real_t **horizontal_influence_radius,
-                                   int       **id_u,
-                                   int       **id_v,
-                                   int       **id_qw,
-                                   int       **id_nc,
-                                   int       **id_tke,
-                                   int       **id_eps,
-                                   int       **id_theta);
 
 /*============================================================================
  * Private function definitions
@@ -2367,51 +2324,6 @@ cs_f_atmo_rad_1d_arrays_get_pointers(cs_real_t **qwvert,
   *fnvert = _atmo_option.rad_1d_fn;
   *aevert = _atmo_option.rad_1d_aerosols;
 }
-
-void
-cs_f_atmo_get_pointers_imbrication(bool      **imbrication_flag,
-                                   bool      **imbrication_verbose,
-                                   bool      **cressman_u,
-                                   bool      **cressman_v,
-                                   bool      **cressman_qw,
-                                   bool      **cressman_nc,
-                                   bool      **cressman_tke,
-                                   bool      **cressman_eps,
-                                   bool      **cressman_theta,
-                                   cs_real_t **vertical_influence_radius,
-                                   cs_real_t **horizontal_influence_radius,
-                                   int       **id_u,
-                                   int       **id_v,
-                                   int       **id_qw,
-                                   int       **id_nc,
-                                   int       **id_tke,
-                                   int       **id_eps,
-                                   int       **id_theta)
-{
-  *imbrication_flag = &(_atmo_imbrication.imbrication_flag);
-  *imbrication_verbose = &(_atmo_imbrication.imbrication_verbose);
-
-  *cressman_u = &(_atmo_imbrication.cressman_u);
-  *cressman_v = &(_atmo_imbrication.cressman_v);
-  *cressman_qw = &(_atmo_imbrication.cressman_qw);
-  *cressman_nc = &(_atmo_imbrication.cressman_nc);
-  *cressman_tke = &(_atmo_imbrication.cressman_tke);
-  *cressman_eps = &(_atmo_imbrication.cressman_eps);
-  *cressman_theta = &(_atmo_imbrication.cressman_theta);
-
-  *vertical_influence_radius = &(_atmo_imbrication.vertical_influence_radius);
-  *horizontal_influence_radius
-    = &(_atmo_imbrication.horizontal_influence_radius);
-
-  *id_u     = &(_atmo_imbrication.id_u);
-  *id_v     = &(_atmo_imbrication.id_v);
-  *id_qw    = &(_atmo_imbrication.id_qw);
-  *id_nc    = &(_atmo_imbrication.id_nc);
-  *id_tke   = &(_atmo_imbrication.id_tke);
-  *id_eps   = &(_atmo_imbrication.id_eps);
-  *id_theta = &(_atmo_imbrication.id_theta);
-}
-
 void
 cs_atmo_soil_init_arrays(int        *n_soil_cat,
                          cs_real_t  **csol,
@@ -2856,6 +2768,7 @@ cs_atmo_bcond(void)
 {
   cs_atmo_option_t *at_opt = cs_glob_atmo_option;
   cs_atmo_chemistry_t *at_chem = cs_glob_atmo_chemistry;
+  cs_atmo_imbrication_t *at_imbr = cs_glob_atmo_imbrication;
 
   bool rain = at_opt->rain;
 
@@ -2920,20 +2833,19 @@ cs_atmo_bcond(void)
   /* Imbrication
      ----------- */
 
-  if (_atmo_imbrication.imbrication_flag) {
+  if (at_imbr->imbrication_flag) {
 
     const int id_type = 2; // interpolation on boundary faces
     const cs_lnum_t n_b_faces_max
       = (cs_lnum_t)cs::max(100.0, (cs_real_t)n_b_faces);
 
     cs_summon_cressman(cs_glob_time_step->t_cur);
-
-    if (_atmo_imbrication.cressman_u) {
+    if (at_imbr->cressman_u) {
       cs_real_t *rcodcl1 = CS_F_(vel)->bc_coeffs->rcodcl1;
-      cs_measures_set_t *ms = cs_measures_set_by_id(_atmo_imbrication.id_u);
+      cs_measures_set_t *ms = cs_measures_set_by_id(at_imbr->id_u);
       cs_cressman_interpol(ms, rcodcl1, id_type);
 
-      if (_atmo_imbrication.imbrication_verbose)
+      if (at_imbr->imbrication_verbose)
         for (cs_lnum_t face_id = 0; face_id < n_b_faces_max; face_id++)
           bft_printf("%s:: xbord, ybord, zbord, ubord = %10.14e %10.14e"
                      "%10.14e %10.14e\n",
@@ -2942,12 +2854,12 @@ cs_atmo_bcond(void)
                      b_face_cog[face_id][2], rcodcl1[face_id]);
     }
 
-    if (_atmo_imbrication.cressman_v) {
+    if (at_imbr->cressman_v) {
       cs_real_t *rcodcl1 = CS_F_(vel)->bc_coeffs->rcodcl1 + n_b_faces;
-      cs_measures_set_t *ms = cs_measures_set_by_id(_atmo_imbrication.id_v);
+      cs_measures_set_t *ms = cs_measures_set_by_id(at_imbr->id_v);
       cs_cressman_interpol(ms, rcodcl1, id_type);
 
-      if (_atmo_imbrication.imbrication_verbose)
+      if (at_imbr->imbrication_verbose)
         for (cs_lnum_t face_id = 0; face_id < n_b_faces_max; face_id++)
           bft_printf("%s:: xbord, ybord, zbord, vbord = %10.14e %10.14e"
                      "%10.14e %10.14e\n",
@@ -2956,12 +2868,12 @@ cs_atmo_bcond(void)
                      b_face_cog[face_id][2], rcodcl1[face_id]);
     }
 
-    if (_atmo_imbrication.cressman_tke) {
+    if (at_imbr->cressman_tke) {
       cs_real_t *rcodcl1 = CS_F_(k)->bc_coeffs->rcodcl1;
-      cs_measures_set_t *ms = cs_measures_set_by_id(_atmo_imbrication.id_tke);
+      cs_measures_set_t *ms = cs_measures_set_by_id(at_imbr->id_tke);
       cs_cressman_interpol(ms, rcodcl1, id_type);
 
-      if (_atmo_imbrication.imbrication_verbose)
+      if (at_imbr->imbrication_verbose)
         for (cs_lnum_t face_id = 0; face_id < n_b_faces_max; face_id++)
           bft_printf("%s:: xbord, ybord, zbord, tkebord = %10.14e %10.14e"
                      "%10.14e %10.14e\n",
@@ -2971,12 +2883,12 @@ cs_atmo_bcond(void)
 
     }
 
-    if (_atmo_imbrication.cressman_eps) {
+    if (at_imbr->cressman_eps) {
       cs_real_t *rcodcl1 = CS_F_(eps)->bc_coeffs->rcodcl1;
-      cs_measures_set_t *ms = cs_measures_set_by_id(_atmo_imbrication.id_eps);
+      cs_measures_set_t *ms = cs_measures_set_by_id(at_imbr->id_eps);
       cs_cressman_interpol(ms, rcodcl1, id_type);
 
-      if (_atmo_imbrication.imbrication_verbose)
+      if (at_imbr->imbrication_verbose)
         for (cs_lnum_t face_id = 0; face_id < n_b_faces_max; face_id++)
           bft_printf("%s:: xbord, ybord, zbord, epsbord = %10.14e %10.14e"
                      "%10.14e %10.14e\n",
@@ -2985,14 +2897,14 @@ cs_atmo_bcond(void)
                      b_face_cog[face_id][2], rcodcl1[face_id]);
     }
 
-    if (   _atmo_imbrication.cressman_theta
-        && (  cs_glob_physical_model_flag[CS_ATMOSPHERIC]
-            > CS_ATMO_CONSTANT_DENSITY)) {
+    if (   at_imbr->cressman_theta
+        && (   cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_DRY
+            || cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)) {
       cs_real_t *rcodcl1 = th_f->bc_coeffs->rcodcl1;
-      cs_measures_set_t *ms = cs_measures_set_by_id(_atmo_imbrication.id_theta);
+      cs_measures_set_t *ms = cs_measures_set_by_id(at_imbr->id_theta);
       cs_cressman_interpol(ms, rcodcl1, id_type);
 
-      if (_atmo_imbrication.imbrication_verbose)
+      if (at_imbr->imbrication_verbose)
         for (cs_lnum_t face_id = 0; face_id < n_b_faces_max; face_id++)
           bft_printf("%s:: xbord, ybord, zbord, thetabord = %10.14e %10.14e"
                      "%10.14e %10.14e\n",
@@ -3001,13 +2913,13 @@ cs_atmo_bcond(void)
                      b_face_cog[face_id][2], rcodcl1[face_id]);
     }
 
-    if (   _atmo_imbrication.cressman_qw
+    if (   at_imbr->cressman_qw
         && cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
       cs_real_t *rcodcl1 = ym_w->bc_coeffs->rcodcl1;
-      cs_measures_set_t *ms = cs_measures_set_by_id(_atmo_imbrication.id_qw);
+      cs_measures_set_t *ms = cs_measures_set_by_id(at_imbr->id_qw);
       cs_cressman_interpol(ms, rcodcl1, id_type);
 
-      if (_atmo_imbrication.imbrication_verbose)
+      if (at_imbr->imbrication_verbose)
         for (cs_lnum_t face_id = 0; face_id < n_b_faces_max; face_id++)
           bft_printf("%s:: xbord, ybord, zbord, thetabord = %10.14e %10.14e"
                      "%10.14e %10.14e\n",
@@ -3016,14 +2928,14 @@ cs_atmo_bcond(void)
                      b_face_cog[face_id][2], rcodcl1[face_id]);
     }
 
-    if (   _atmo_imbrication.cressman_nc
+    if (   at_imbr->cressman_nc
         && cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
       cs_field_t *f = cs_field_by_name("number_of_droplets");
       cs_real_t *rcodcl1 = f->bc_coeffs->rcodcl1;
-      cs_measures_set_t *ms = cs_measures_set_by_id(_atmo_imbrication.id_nc);
+      cs_measures_set_t *ms = cs_measures_set_by_id(at_imbr->id_nc);
       cs_cressman_interpol(ms, rcodcl1, id_type);
 
-      if (_atmo_imbrication.imbrication_verbose)
+      if (at_imbr->imbrication_verbose)
         for (cs_lnum_t face_id = 0; face_id < n_b_faces_max; face_id++)
           bft_printf("%s:: xbord, ybord, zbord, thetabord = %10.14e %10.14e"
                      "%10.14e %10.14e\n",

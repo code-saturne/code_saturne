@@ -89,8 +89,7 @@ cs_add_model_field_indexes(int  f_id);
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_summon_cressman(cs_real_t the_time);
+
 
 /*============================================================================
  *  User function prototypes

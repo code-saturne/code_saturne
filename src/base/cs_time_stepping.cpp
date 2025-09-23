@@ -52,6 +52,8 @@
 #include "atmo/cs_at_data_assim.h"
 #include "atmo/cs_atmo.h"
 #include "atmo/cs_atmo_chemistry.h"
+#include "atmo/cs_atmo_imbrication.h"
+#include "atmo/cs_at_data_assim.h"
 #include "atmo/cs_atmo_sol.h"
 #include "base/cs_1d_wall_thermal.h"
 #include "base/cs_1d_wall_thermal_check.h"
@@ -914,7 +916,7 @@ cs_time_stepping(void)
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0) {
 
     if (cs_glob_atmo_imbrication->imbrication_flag)
-      cs_f_finalize_imbrication();
+      cs_finalize_imbrication();
 
     cs_at_data_assim_finalize();
 

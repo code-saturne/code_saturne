@@ -493,41 +493,6 @@ typedef struct {
 
 } cs_atmo_constants_t;
 
-/*----------------------------------------------------------------------------
- * Atmospheric imbrication option
- *----------------------------------------------------------------------------*/
-
-typedef struct {
-
-  /*! activation flag */
-  bool imbrication_flag;
-  bool imbrication_verbose;
-
-  /*! Flags for activating the cressman interpolation for the boundary
-      conditions */
-  bool cressman_u;
-  bool cressman_v;
-  bool cressman_qw;
-  bool cressman_nc;
-  bool cressman_tke;
-  bool cressman_eps;
-  bool cressman_theta;
-
-  /*! numerical parameters for the cressman interpolation formulas */
-  cs_real_t vertical_influence_radius;
-  cs_real_t horizontal_influence_radius;
-
-  /*! additional variables */
-  int id_u;
-  int id_v;
-  int id_qw;
-  int id_nc;
-  int id_tke;
-  int id_eps;
-  int id_theta;
-
-} cs_atmo_imbrication_t;
-
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -537,9 +502,6 @@ extern cs_atmo_option_t *cs_glob_atmo_option;
 
 /* Pointer to atmo constants structure */
 extern cs_atmo_constants_t *cs_glob_atmo_constants;
-
-/* Pointer to atmo imbrication structure */
-extern cs_atmo_imbrication_t *cs_glob_atmo_imbrication;
 
 /*============================================================================
  * Public function definitions

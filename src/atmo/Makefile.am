@@ -57,6 +57,7 @@ cs_atmo.h \
 cs_atmo_chemistry.h \
 cs_atmo_aerosol_ssh.h \
 cs_atmo_headers.h \
+cs_atmo_imbrication.h \
 cs_atmo_profile_std.h \
 cs_atmo_source_terms.h \
 cs_atmo_variables.h \
@@ -79,6 +80,7 @@ cs_at_data_assim.cpp \
 cs_atmo.cpp \
 cs_atmo_chemistry.cpp \
 cs_atmo_aerosol_ssh.cpp \
+cs_atmo_imbrication.cpp \
 cs_atmo_profile_std.cpp \
 cs_atmo_source_terms.cpp \
 cs_atmo_variables.cpp \
