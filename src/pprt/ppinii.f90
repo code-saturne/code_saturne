@@ -40,7 +40,6 @@ use cstnum
 use cstphy
 use ppincl
 use atincl
-use atimbr
 use atchem
 use field
 use sshaerosol
@@ -66,9 +65,6 @@ call pp_models_init
 ! iatra1 -->  flag for the use of the 1d atmo radiative model
 
 iatra1 = 0
-
-call atmo_init_imbrication()
-
 ! key id for optimal interpolation
 
 call field_get_key_id("opt_interp_id", kopint)

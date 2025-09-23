@@ -60,7 +60,6 @@ base/pointe.f90 \
 base/cs_c_bindings.f90 \
 atmo/atincl.f90 \
 atmo/atchem.f90 \
-atmo/atimbr.f90 \
 atmo/sshaerosol.f90 \
 pprt/ppincl.f90
 
