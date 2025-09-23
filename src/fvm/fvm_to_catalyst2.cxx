@@ -937,9 +937,9 @@ _export_global_vtx_ids(const fvm_nodal_t     *mesh,
 {
   const cs_lnum_t n_vtx = fvm_nodal_get_n_entities(mesh, 0);
 
-  cs_gnum_t *global_ids = nullptr;
+  int64_t *global_ids = nullptr;
 
-  CS_MALLOC(global_ids, n_vtx, cs_gnum_t);
+  CS_MALLOC(global_ids, n_vtx, int64_t);
 
   if (_debug_print)
     printf("Export global vertex ids %s to Conduit\n", mesh->name);
