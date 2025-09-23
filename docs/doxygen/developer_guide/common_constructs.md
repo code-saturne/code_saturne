@@ -438,3 +438,5 @@ Then passed as an argument to the dispatch mechanism:
 ```{.cpp}
 ctx.parallel_for(n, my_lambda);
 ```
+
+Note that a named lambda may also use the `auto` keyword instead of explicit types for its parameter arguments. This is referred to as a _generic_ lambda. Starting with C++ 20, template arguments may also be used instead of `auto`.
