@@ -585,6 +585,28 @@ clamp(const float x,
   return fminf(xmax, fmaxf(xmin, x));
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the square of a real value.
+ *
+ * \param[in]  x  value
+ *
+ * \return the square of the given value
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE inline float
+pow2(float  x)
+{
+  return x*x;
+}
+
+CS_F_HOST_DEVICE inline double
+pow2(double  x)
+{
+  return x*x;
+}
+
 } // namespace cs
 
 #endif // defined(__cplusplus)
