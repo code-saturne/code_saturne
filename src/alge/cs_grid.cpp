@@ -868,7 +868,7 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
 
   /* Copy local values in case of periodicity */
 
-  if (halo->n_transforms > 0) {
+  if (halo->n_c_domains > 0 && halo->n_transforms > 0) {
 
     if (local_rank_id > -1) {
 
