@@ -1825,8 +1825,24 @@ class mpi_environment:
         # Caution: if srun is used, it is probably not in the same
         # path as MPI executables.
 
-        if self.mpiexec != None and self.mpiexec != 'srun':
-            absname = self.__get_mpiexec_absname__(p)
+        use_ompi_mpiexec = True
+        use_pmix_enabled_srun = False
+        absname = None
+
+        if self.mpiexec != None:
+            launcher_base = os.path.basename(self.mpiexec)
+            if launcher_base == "srun":
+                use_ompi_mpiexec = False
+                info = get_command_output(self.mpiexec + " --mpi=list")
+                if info.find("pmix") > -1:
+                    use_pmix_enabled_srun = True
+            elif launcher_base == "ccc_mprun":
+                use_ompi_mpiexec = False
+                use_pmix_enabled_srun = True
+
+        if self.mpiexec != None:
+            if use_ompi_mpiexec:
+                absname = self.__get_mpiexec_absname__(p)
 
         else:
             launcher_names = ['mpiexec.openmpi', 'mpirun.openmpi',
@@ -1865,7 +1881,7 @@ class mpi_environment:
             self.mpiexec_n = ' -n '
 
         # srun or ccc_mprun do not accept the "--npernode argument!
-        if launcher_base not in ("srun", "ccc_mprun"):
+        if use_ompi_mpiexec:
             if resource_info != None and not self.mpiexec_n_per_node:
                 ppn = resource_info.n_procs_per_node()
                 if ppn:
@@ -1883,18 +1899,41 @@ class mpi_environment:
 
         if resource_info != None:
             known_manager = False
-            rc_mca_by_type = {'SLURM':' slurm ',
-                              'LSF':' lsf ',
-                              'PBS':' tm ',
-                              'SGE':' gridengine '}
-            if resource_info.manager in rc_mca_by_type:
-                info = get_command_output(info_name)
-                if info.find(rc_mca_by_type[resource_info.manager]) > -1:
+            if resource_info.manager == 'SLURM':
+                # For Open MPI 5 or newer
+                if use_ompi_mpiexec or use_pmix_enabled_srun:
                     known_manager = True
+                # In case and older version is used,
+                # check if it is properly configured.
+                info = get_command_output(info_name)
+                idx = info.find('Ident string:')
+                ompi_major = ''
+                if idx > -1:
+                    ompi_major = info[idx + 14]
+                    if ompi_major in ('3', '4'):
+                        if use_ompi_mpiexec:
+                            if info.find('slurm') < 0:
+                                known_manager = False
+                        elif use_pmix_enabled_srun:
+                            if info.find('pmix') < 0:
+                                known_manager = False
             elif resource_info.manager == 'OAR':
                 self.mpiexec += ' -machinefile $OAR_FILE_NODES'
                 self.mpiexec += ' -mca pls_rsh_agent "oarsh"'
                 known_manager = True
+            else:
+                rc_mca_by_type = {'LSF':' lsf ',
+                                  'PBS':' tm ',
+                                  'SGE':' gridengine '}
+                if resource_info.manager in rc_mca_by_type:
+                    info = get_command_output(info_name)
+                    idx = info.find('Ident string:')
+                    ompi_major = ''
+                    if idx > -1:
+                        ompi_major = info[idx + 14]
+                    if info.find(rc_mca_by_type[resource_info.manager]) > -1:
+                        known_manager = True
+
             if known_manager == False:
                 hostsfile = resource_info.get_hosts_file(wdir)
                 if hostsfile != None:
