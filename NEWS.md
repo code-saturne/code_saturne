@@ -3,6 +3,8 @@ Release 9.0.2 (unreleased)
 
 ### Bug fixes:
 
+- Scripts: avoid creating spurious hostsname file with OpenMPI 5 and SLURM.
+
 - Gas combustion: fix setup check "false positive" error when soot model
   is not used.
 
