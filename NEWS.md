@@ -3,6 +3,9 @@ Release 9.0.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix possible memory read issue in multigrid on single rank with periodicity
+  when coarse halo becomes empty.
+
 - Fix memory leak when using gradient limiters for vectors and tensors.
 
 - Fix computation of calculator values defined in the GUI for probes.
