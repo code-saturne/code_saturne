@@ -2721,7 +2721,8 @@ cs_io_set_cs_gnum(cs_io_sec_header_t  *header,
   if (   header->type_read != CS_INT32
       && header->type_read != CS_INT64
       && header->type_read != CS_UINT32
-      && header->type_read != CS_UINT64)
+      && header->type_read != CS_UINT64
+      && header->n_vals != 0)
     bft_error(__FILE__, __LINE__, 0,
               _("Error reading file: \"%s\".\n"
                 "Type expected for section: "
