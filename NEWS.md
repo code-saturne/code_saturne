@@ -3,6 +3,8 @@ Release 9.0.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix automatic modification in notebook GUI page
+
 - Fix possible memory read issue in multigrid on single rank with periodicity
   when coarse halo becomes empty.
 

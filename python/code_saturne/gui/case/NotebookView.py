@@ -84,9 +84,14 @@ class item_class(object):
         self.log    = log
         self.descr  = description
 
+
     def __repr__(self):
-        return "variable : %s // value : %s // used with openturns : %s"\
-               % (self.name, self.value, self.oturns)
+        return ("index : %s // variable : %s // value : %s // " \
+                "used with openturns : %s // editable : %s // " \
+                "read at restart : %s // log : %s //" \
+                % (str(self.index), str(self.name), str(self.value), \
+                   str(self.oturns), str(self.edit), str(self.read), \
+                   str(self.log)))
 
 #-------------------------------------------------------------------------------
 # Treeitem class
@@ -151,6 +156,22 @@ class TreeItem(object):
         if self.parentItem:
             return self.parentItem.childItems.index(self)
         return 0
+
+
+    def __repr__(self):
+        msg = "TreeItem: item : %s\n" % repr(self.item)
+
+        if self.parentItem:
+            msg += "parentItem : %s\n" % str(self.parentItem.header)
+        else:
+            msg += "parentItem : ALL\n"
+
+        msg += "childItems : "
+        for child in self.childItems:
+            msg += child.header + " "
+        msg += "\n"
+
+        return msg 
 
 
 #-------------------------------------------------------------------------------
@@ -224,7 +245,6 @@ class VariableStandardItemModel(QAbstractItemModel):
         if (index.row(), index.column()) in self.disabledItem:
             return Qt.ItemIsEnabled
 
-        itm = index.internalPointer()
         if index.column() == 3:
             if "Yes" in self.mdl.getVariableOt(index.row()):
                 return Qt.NoItemFlags
@@ -331,14 +351,26 @@ class VariableStandardItemModel(QAbstractItemModel):
             value = from_qvariant(value, to_text_string)
             item.item.oturns = value
             self.mdl.setVariableOt(item.item.index, item.item.oturns)
+            # Input OT variables not editable and not written in log file
+            if value == "Yes: Input":
+                item.item.edit = "No"
+                self.mdl.setVariableEditable(item.item.index, item.item.edit)
+                item.item.log = "No"
+                self.mdl.setVariableLog(item.item.index, item.item.log)
+            # Output OT variables are editable and written in log file
+            elif value == "Yes: Output":
+                item.item.edit = "Yes"
+                self.mdl.setVariableEditable(item.item.index, item.item.edit)
+                # value already set to Yes in model
+                item.item.log = "Yes"
 
         elif index.column() == 3:
             editable = from_qvariant(value, to_text_string)
             item.item.edit = editable
             self.mdl.setVariableEditable(item.item.index, item.item.edit)
-            # Editable variable are automatically printed in default log file
-            item.item.log = editable
-            self.mdl.setVariableLog(item.item.index, item.item.edit)
+            if editable == "Yes":
+                # value already set to Yes in model
+                item.item.log = "Yes"
 
         elif index.column() == 4:
             restart = from_qvariant(value, to_text_string)
@@ -365,7 +397,7 @@ class VariableStandardItemModel(QAbstractItemModel):
 
 class NotebookView(QWidget, Ui_NotebookForm):
     """
-    Class to open the Body Forces (gravity) Page.
+    Class to open the Notebook Page.
     """
 
     def __init__(self, parent, case):
@@ -440,19 +472,6 @@ class NotebookView(QWidget, Ui_NotebookForm):
 
 
     def dataChanged(self):
-        row = self.treeViewNotebook.currentIndex().row()
-        col = self.treeViewNotebook.currentIndex().column()
-        next_item = self.treeViewNotebook.model().index(row, col+1)
-        # Check for updates
-        ot_status = self.mdl.getVariableOt(row)
-        edit_status = self.mdl.getVariableEditable(row)
-        if ot_status == "Yes: Input" and edit_status == "Yes":
-            self.mdl.setVariableEditable(row, "No")
-            self.modelVar.setData(next_item, "No")
-        elif ot_status == "Yes: Output" and edit_status == "No":
-            self.mdl.setVariableEditable(row, "Yes")
-            self.modelVar.setData(next_item, "Yes")
-
         self.update()
 
 
@@ -461,7 +480,7 @@ class NotebookView(QWidget, Ui_NotebookForm):
         """
         Add one variable
         """
-        name = self.mdl.addVariable()
+        self.mdl.addVariable()
         self.modelVar = VariableStandardItemModel(self.parent, self.case, self.mdl)
         self.treeViewNotebook.setModel(self.modelVar)
         self.treeViewNotebook.expandAll()
