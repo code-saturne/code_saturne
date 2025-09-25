@@ -1001,9 +1001,6 @@ cs_atmo_source_term_for_inlet(cs_real_3_t        exp_st[])
     const cs_real_t mom_met_norm = cs_math_3_norm(mom_met[l_id]);
     const cs_real_t mom_met_norm_a = cs_math_3_norm(mom_met_a[l_id]);
 
-    at_opt->dpdt_met[l_id] += 0.5*(2.0*(mom_norm - mom_met_norm)
-                                   - (mom_norm_a - mom_met_norm_a));
-
     // target meteo directions (current and previous)
     cs_real_3_t dir_met = {0.0, 0.0, 0.0};
     cs_real_3_t dir_met_a = {0.0, 0.0, 0.0};
@@ -1015,12 +1012,41 @@ cs_atmo_source_term_for_inlet(cs_real_3_t        exp_st[])
       for (int ii = 0; ii < 3; ii++)
         dir_met_a[ii] = mom_met_a[l_id][ii] / mom_met_norm_a;
 
+    /* CS directions (current and previous) */
+    cs_real_3_t dir = {0.0, 0.0, 0.0};
+    cs_real_3_t dir_a = {0.0, 0.0, 0.0};
+    if (mom_norm > cs_math_epzero*uref*phys_pro->ro0)
+      for (int ii = 0; ii < 3; ii++)
+        dir[ii] = mom[l_id][ii] / mom_norm;
+    if (mom_norm_a > cs_math_epzero*uref*phys_pro->ro0)
+      for (int ii = 0; ii < 3; ii++)
+        dir_a[ii] = mom_a[l_id][ii] / mom_norm_a;
+
+    cs_real_t dot_dir_dir_met_a = cs_math_3_dot_product(dir_met_a, dir);
+    cs_real_t dot_mom_a_dir = cs_math_3_dot_product(mom_a[l_id], dir);
+
+    /* Formula given by the steady state time integration:
+        Dt Dp^n = ( Dt Dp^n-1 - (Qu^n - Qu^n-1)) . Qu^n/ ||Qu^n||^2  Qumet^n
+     */
+    at_opt->dpdt_met[l_id] = mom_met_norm/mom_norm*(
+          at_opt->dpdt_met[l_id] * dot_dir_dir_met_a
+        + (mom_norm - dot_mom_a_dir));
+
+    //OLD FORMULA.
+#if 0
+    at_opt->dpdt_met[l_id] += 0.5*(2.0*(mom_norm - mom_met_norm)
+        - (mom_norm_a - mom_met_norm_a));
+#endif
+
+    // should be negative
+    at_opt->dpdt_met[l_id] = cs::min(at_opt->dpdt_met[l_id], 0.);
+
     /* Delta of pressure in the target direction
      * Steady state DP and Rotating term due to transient meteo */
     dpdtx[l_id] = at_opt->dpdt_met[l_id] * dir_met[0]
-                - mom_met_norm*(dir_met[0] - dir_met_a[0]);    //FIXME use directly umet?
+                - (mom_met[l_id][0] - mom_met_a[l_id][0]);
     dpdty[l_id] = at_opt->dpdt_met[l_id] * dir_met[1]
-                - mom_met_norm*(dir_met[1] - dir_met_a[1]);
+                - (mom_met[l_id][1] - mom_met_a[l_id][1]);
 
   }
 
@@ -1053,7 +1079,7 @@ cs_atmo_source_term_for_inlet(cs_real_3_t        exp_st[])
     cpro_momst[c_id][2] = 0.0; //FIXME not ok
 
     for (int ii = 0; ii < 3; ii++)
-      exp_st[c_id][ii] += cpro_momst[c_id][ii] * cell_vol[c_id];
+      exp_st[c_id][ii] = cpro_momst[c_id][ii] * cell_vol[c_id];
 
   }
 

@@ -2216,6 +2216,7 @@ _velocity_prediction(const cs_mesh_t             *m,
     eqp_u->ibdtso = -eqp_u->ibdtso;
 
   /* Nudging towards optimal interpolation for velocity */
+  cs_real_3_t *meteo_st = nullptr;
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > CS_ATMO_OFF) {
     const int kopint = cs_field_key_id_try("opt_interp_id");
     const int f_oi_id = cs_field_get_key_int(CS_F_(vel), kopint);
@@ -2224,8 +2225,12 @@ _velocity_prediction(const cs_mesh_t             *m,
                                    (cs_real_t *)tsexp,
                                    (cs_real_t *)tsimp);
 
-    if (cs_glob_atmo_option->open_bcs_treatment > 0)
-      cs_atmo_source_term_for_inlet(tsexp);
+    /* Note that this term is not added to tsexp because it should not be
+     * taken into account by iphydr=1 */
+    if (cs_glob_atmo_option->open_bcs_treatment > 0) {
+      CS_MALLOC_HD(meteo_st, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+      cs_atmo_source_term_for_inlet(meteo_st);
+    }
   }
 
   /* Coupling between two code_saturne instances */
@@ -2893,6 +2898,20 @@ _velocity_prediction(const cs_mesh_t             *m,
   }
 
   CS_FREE_HD(loctsexp);
+
+  /* Meteo large scale source terms explicitly added */
+
+  if (   cs_glob_physical_model_flag[CS_ATMOSPHERIC] > CS_ATMO_OFF
+      && cs_glob_atmo_option->open_bcs_treatment > 0) {
+    if (cs_glob_time_scheme->isno2t > 0) {
+      if (iterns == 1)
+        cs_axpy(n_cells*3, 1, (cs_real_t *)meteo_st, (cs_real_t *)c_st_vel);
+    }
+    else
+      cs_axpy(n_cells*3, 1, (cs_real_t *)meteo_st, (cs_real_t *)trav);
+  }
+
+  CS_FREE_HD(meteo_st);
 
   /* Surface tension is added */
 
