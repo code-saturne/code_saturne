@@ -35,7 +35,6 @@ subroutine atr1vf () &
 
 use paramx
 use numvar
-use entsor
 use optcal
 use cstphy
 use cstnum, only:pi

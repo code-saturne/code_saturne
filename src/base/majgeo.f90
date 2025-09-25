@@ -58,7 +58,6 @@ subroutine majgeo &
 
 use dimens
 use paramx
-use entsor
 use parall
 use cstphy
 use mesh

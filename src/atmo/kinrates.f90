@@ -35,7 +35,6 @@ subroutine kinrates ()  &
 
 use paramx
 use numvar
-use entsor
 use optcal
 use cstphy
 use cstnum

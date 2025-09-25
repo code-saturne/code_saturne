@@ -69,7 +69,6 @@ cs_assert.h \
 cs_ast_coupling.h \
 cs_base.h \
 cs_base_accel.h \
-cs_base_fortran.h \
 cs_block_dist.h \
 cs_block_to_part.h \
 cs_boundary.h \
@@ -288,7 +287,6 @@ cs_ale.cpp \
 cs_array.cpp \
 cs_array_reduce.cpp \
 cs_ast_coupling.cpp \
-cs_base_fortran.c \
 cs_boundary.cpp \
 cs_boundary_conditions_check.cpp \
 cs_boundary_conditions_coupling.cpp\

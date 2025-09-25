@@ -39,7 +39,6 @@ use dimens
 use numvar
 use optcal
 use cstphy
-use entsor
 use ppincl
 use field
 use cs_c_bindings

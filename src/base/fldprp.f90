@@ -44,7 +44,6 @@ use paramx
 use numvar
 use optcal
 use cstnum
-use entsor
 use atincl
 use ppincl
 use field

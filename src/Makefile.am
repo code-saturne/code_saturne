@@ -52,7 +52,6 @@ base/field.f90 \
 base/cstphy.f90 \
 base/cstnum.f90 \
 base/dimens.f90 \
-base/entsor.f90 \
 base/numvar.f90 \
 base/optcal.f90 \
 base/parall.f90 \
@@ -66,7 +65,7 @@ pprt/ppincl.f90
 # Module dependencies (handled manually, as Automake does
 # not yet handle Fortran module dependencies)
 
-base/cs_c_bindings.$(OBJEXT): base/paramx.$(OBJEXT) base/entsor.$(OBJEXT) \
+base/cs_c_bindings.$(OBJEXT): base/paramx.$(OBJEXT) \
  base/mesh.$(OBJEXT)  base/field.$(OBJEXT)
 
 base/numvar.$(OBJEXT): base/paramx.$(OBJEXT)
@@ -78,11 +77,9 @@ atmo/atincl.$(OBJEXT): pprt/ppincl.$(OBJEXT) \
  atmo/atchem.$(OBJEXT) atmo/sshaerosol.$(OBJEXT)
 
 atmo/atchem.$(OBJEXT): base/mesh.$(OBJEXT) \
- base/entsor.$(OBJEXT) base/numvar.$(OBJEXT) \
- base/cs_c_bindings.$(OBJEXT)
+ base/numvar.$(OBJEXT) base/cs_c_bindings.$(OBJEXT)
 
-atmo/atimbr.$(OBJEXT): base/cstphy.$(OBJEXT) base/entsor.$(OBJEXT) \
- atmo/atincl.$(OBJEXT)
+atmo/atimbr.$(OBJEXT): base/cstphy.$(OBJEXT) atmo/atincl.$(OBJEXT)
 
 atmo/sshaerosol.$(OBJEXT): base/cs_c_bindings.$(OBJEXT) \
  atmo/atchem.$(OBJEXT) base/mesh.$(OBJEXT)

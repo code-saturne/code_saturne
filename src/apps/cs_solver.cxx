@@ -49,8 +49,6 @@
 #include "atmo/cs_atmo.h"
 #include "alge/cs_balance.h"
 #include "base/cs_base.h"
-#include "base/cs_base_fortran.h"
-#include "alge/cs_benchmark.h"
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_boundary_zone.h"
 #include "base/cs_calcium.h"
@@ -67,6 +65,7 @@
 #include "base/cs_file.h"
 #include "base/cs_fp_exception.h"
 #include "base/cs_function.h"
+#include "alge/cs_benchmark.h"
 #include "alge/cs_gradient.h"
 #include "gui/cs_gui.h"
 #include "gui/cs_gui_boundary_conditions.h"
@@ -754,7 +753,7 @@ main(int    argc,
   /* Open 'run_solver.log' (log) files */
 
   cs_base_trace_set(opts.trace);
-  cs_base_fortran_bft_printf_set("run_solver", opts.logrp);
+  cs_base_bft_printf_set("run_solver", opts.logrp);
 
   /* Log-file header and command line arguments recap */
 

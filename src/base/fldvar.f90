@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2024 EDF S.A.
+! Copyright (C) 1998-2025 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -44,7 +44,6 @@ use numvar
 use optcal
 use cstphy
 use cstnum
-use entsor
 use parall
 use ppincl
 use mesh
@@ -94,7 +93,13 @@ end interface
 nscaus = cs_parameters_n_added_variables()
 
 if (nscaus.gt.nscamx) then
-  write(nfecra,6011) nscaus, nscamx, nscamx, nscaus
+  ! Since this error should be rare and Fortran code is deprecated,
+  ! We do not try to ensure that the message here is ordered
+  ! relative to C (as this would add a wrapper), so we prefer to send
+  ! it to the error output (unit 0) in this case.
+  if (irangp .lt. 1) then
+    write(0, 6011) nscaus, nscamx, nscamx, nscaus
+  endif
   call csexit (1)
 endif
 
@@ -105,29 +110,29 @@ return
 !===============================================================================
 
  6011 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING   : STOP AT THE INITIAL DATA VERIFICATION       ',/,&
-'@    =========                                               ',/,&
-'@     NUMBER OF SCALARS TOO LARGE                            ',/,&
-'@                                                            ',/,&
-'@  The number of users scalars                               ',/,&
-'@  requested                          is   NSCAUS = ',I10     ,/,&
-'@  The total number of scalars                               ',/,&
-'@    allowed    in   paramx           is   NSCAMX = ',I10     ,/,&
-'@                                                            ',/,&
-'@  The maximmum value allowed of   NSCAUS                    ',/,&
-'@                          is in   NSCAMX        = ',I10      ,/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Verify   NSCAUS.                                          ',/,&
-'@                                                            ',/,&
-'@  NSCAMX must be at least     ',I10                          ,/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ERROR: STOP AT THE INITIAL DATA VERIFICATION',            /,&
+'@    =====',                                                   /,&
+'@     NUMBER OF SCALARS TOO LARGE',                            /,&
+'@',                                                            /,&
+'@  The number of users scalars',                               /,&
+'@  requested                          is   NSCAUS = ', i10,    /,&
+'@  The total number of scalars',                               /,&
+'@    allowed    in   paramx           is   NSCAMX = ', i10,    /,&
+'@',                                                            /,&
+'@  The maximmum value allowed of   NSCAUS',                    /,&
+'@                          is in   NSCAMX        = ', i10,     /,&
+'@',                                                            /,&
+'@  The calculation will not be run.',                          /,&
+'@',                                                            /,&
+'@  Verify   NSCAUS.',                                          /,&
+'@',                                                            /,&
+'@  NSCAMX must be at least     ', i10,                         /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
 
 !===============================================================================
 ! 5. FIN
@@ -161,7 +166,6 @@ subroutine add_user_scalar_fields() &
 
 use paramx
 use dimens
-use entsor
 use numvar
 use field
 
@@ -273,7 +277,6 @@ subroutine add_model_field_indexes &
 
 use paramx
 use dimens
-use entsor
 use numvar
 use field
 use cs_c_bindings, only: csexit
@@ -347,8 +350,8 @@ subroutine fldvar_check_nvar
 
 use paramx
 use dimens
-use entsor
 use numvar
+use parall
 use cs_c_bindings, only: csexit
 
 !===============================================================================
@@ -360,7 +363,13 @@ implicit none
 ! Local variables
 
 if (nvar .gt. nvarmx) then
-  write(nfecra,1000) nvar, nvarmx
+  ! Since this error should be rare and Fortran code is deprecated,
+  ! We do not try to ensure that the message here is ordered
+  ! relative to C (as this would add a wrapper), so we prefer to send
+  ! it to the error output (unit 0) in this case.
+  if (irangp .lt. 1) then
+    write(0, 1000) nvar, nvarmx
+  endif
   call csexit (1)
 endif
 
@@ -371,26 +380,26 @@ return
 !---
 
  1000 format(                                                     &
-'@                                                            ',/,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ERROR:      STOP AT THE INITIAL DATA SETUP              ',/,&
-'@    ======                                                  ',/,&
-'@     NUMBER OF VARIABLES TOO LARGE                          ',/,&
-'@                                                            ',/,&
-'@  The type of calculation defined                           ',/,&
-'@    corresponds to a number of variables NVAR  >= ', i10     ,/,&
-'@  The maximum number of variables allowed                   ',/,&
-'@                      in   paramx   is  NVARMX  = ', i10     ,/,&
-'@                                                            ',/,&
-'@  The calculation cannot be executed                        ',/,&
-'@                                                            ',/,&
-'@  Verify   parameters.                                      ',/,&
-'@                                                            ',/,&
-'@  If NVARMX is increased, the code must be reinstalled.     ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ERROR:      STOP AT THE INITIAL DATA SETUP',              /,&
+'@    ======',                                                  /,&
+'@     NUMBER OF VARIABLES TOO LARGE',                          /,&
+'@',                                                            /,&
+'@  The type of calculation defined',                           /,&
+'@    corresponds to a number of variables NVAR  >= ', i10,     /,&
+'@  The maximum number of variables allowed',                   /,&
+'@                      in   paramx   is  NVARMX  = ', i10,     /,&
+'@',                                                            /,&
+'@  The calculation cannot be executed',                        /,&
+'@',                                                            /,&
+'@  Verify   parameters.',                                      /,&
+'@',                                                            /,&
+'@  If NVARMX is increased, the code must be reinstalled.',     /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
 
 end subroutine fldvar_check_nvar
 
@@ -413,8 +422,8 @@ subroutine fldvar_check_nscapp
 
 use paramx
 use dimens
-use entsor
 use numvar
+use parall
 use cs_c_bindings, only: csexit
 
 !===============================================================================
@@ -426,7 +435,13 @@ implicit none
 ! Local variables
 
 if ((nscaus+nscapp).gt.nscamx) then
-  write(nfecra,1000) nscaus,nscamx,nscamx-nscaus
+  ! Since this error should be rare and Fortran code is deprecated,
+  ! We do not try to ensure that the message here is ordered
+  ! relative to C (as this would add a wrapper), so we prefer to send
+  ! it to the error output (unit 0) in this case.
+  if (irangp .lt. 1) then
+    write(0, 1000) nscaus,nscamx,nscamx-nscaus
+  endif
   call csexit (1)
 endif
 
@@ -485,7 +500,6 @@ function cs_add_variable_field_indexes(f_id) result(ivar) &
 
 use paramx
 use dimens
-use entsor
 use numvar
 use field
 use cs_c_bindings, only: csexit

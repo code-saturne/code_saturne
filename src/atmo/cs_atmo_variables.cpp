@@ -48,7 +48,6 @@
 #include "atmo/cs_at_data_assim.h"
 #include "atmo/cs_atmo_profile_std.h"
 #include "atmo/cs_air_props.h"
-#include "base/cs_base_fortran.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_field_operator.h"
@@ -1206,7 +1205,6 @@ cs_atmo_init_variables_2(void)
   cs_f_init_meteo();
 
   if (cs_glob_atmo_imbrication->imbrication_flag) {
-    cs_base_fortran_bft_printf_to_f();
     cs_activate_imbrication();
   }
 

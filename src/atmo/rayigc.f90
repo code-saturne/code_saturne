@@ -52,7 +52,6 @@ use paramx
 use numvar
 use optcal
 use cstphy
-use entsor
 use parall
 use ppincl
 use atincl
