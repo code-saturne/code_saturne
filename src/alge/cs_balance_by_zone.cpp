@@ -808,7 +808,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   /* Get physical fields */
   const cs_real_t *dt = CS_F_(dt)->val;
   const cs_real_t *rho = CS_F_(rho)->val;
-  const cs_field_t *f = cs_field_by_name_try(scalar_name);
+  cs_field_t *f = cs_field_by_name_try(scalar_name);
   const int field_id = cs_field_id_by_name(scalar_name);
 
   /* If the requested scalar field is not computed, return */
@@ -978,6 +978,18 @@ cs_balance_by_zone_compute(const char      *scalar_name,
       cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
     if (df_limiter_id > -1)
       df_limiter = cs_field_by_id(df_limiter_id)->val;
+
+    /* Update bc_coeffs val_f and flux if nullptr.
+       (It may occur when scalars are not computed,
+       for example when nt_max = 0) */
+
+    if (f->bc_coeffs->val_f == nullptr || f->bc_coeffs->flux == nullptr)
+      cs_boundary_conditions_update_bc_coeff_face_values<true,true>
+        (ctx, f, eqp,
+         false, nullptr, // hyd_p_flag, f_ext
+         nullptr, // visel
+         nullptr, // weighb
+         f->val);
   }
 
   /* Allocate temporary array */
