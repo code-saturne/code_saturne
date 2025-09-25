@@ -222,7 +222,7 @@ _sync_strided_gradient_halo(const cs_mesh_t         *m,
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     bc_coeffs_solve   sweep loop boundary conditions structure
+ * \param[in]     val_f_g       boundary face value for gradient
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -245,7 +245,7 @@ cs_convection_diffusion_steady_scalar
   const cs_real_t   *restrict pvara,
   const int                   icvfli[],
   const cs_field_bc_coeffs_t *bc_coeffs,
-  const cs_bc_coeffs_solve_t *bc_coeffs_solve,
+  const cs_real_t             val_f_g[],
   const cs_real_t             i_massflux[],
   const cs_real_t             b_massflux[],
   const cs_real_t             i_visc[],
@@ -258,10 +258,6 @@ cs_convection_diffusion_steady_scalar
   const cs_real_t *coefbp = bc_coeffs->b;
   const cs_real_t *cofafp = bc_coeffs->af;
   const cs_real_t *cofbfp = bc_coeffs->bf;
-
-  const cs_real_t *val_f_g = (bc_coeffs_solve == nullptr) ?
-                              bc_coeffs->val_f :
-                              bc_coeffs_solve->val_f;
 
   const int iconvp = eqp.iconv;
   const int idiffp = eqp.idiff;
@@ -1093,7 +1089,7 @@ cs_convection_diffusion_steady_scalar
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     bc_coeffs_solve   sweep loop boundary conditions structure
+ * \param[in]     val_f_g       boundary face value for gradient
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in,out] i_conv_flux   scalar convection flux at interior faces
@@ -1112,7 +1108,7 @@ cs_face_convection_steady_scalar
   const cs_real_t   *restrict pvara,
   const int                   icvfli[],
   const cs_field_bc_coeffs_t *bc_coeffs,
-  const cs_bc_coeffs_solve_t *bc_coeffs_solve,
+  const cs_real_t             val_f_g[],
   const cs_real_t             i_massflux[],
   const cs_real_t             b_massflux[],
   cs_real_t                   i_conv_flux[][2],
@@ -1121,10 +1117,6 @@ cs_face_convection_steady_scalar
 {
   cs_real_t *coefap = bc_coeffs->a;
   cs_real_t *coefbp = bc_coeffs->b;
-
-  const cs_real_t *val_f_g = (bc_coeffs_solve == nullptr) ?
-                              bc_coeffs->val_f :
-                              bc_coeffs_solve->val_f;
 
   const int iconvp = eqp.iconv;
   const int nswrgp = eqp.nswrgr;
@@ -1775,7 +1767,7 @@ cs_face_convection_steady_scalar
  *                                - 0 upwind scheme
  *                                - 1 imposed flux
  * \param[in]      bc_coeffs     boundary conditions structure for the variable
- * \param[in]      bc_coeffs_solve   sweep loop boundary conditions structure
+ * \param[in]      val_f_g       boundary face value for gradient
  * \param[in]      i_massflux    mass flux at interior faces
  * \param[in]      b_massflux    mass flux at boundary faces
  * \param[in]      i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -1801,7 +1793,7 @@ cs_convection_diffusion_steady_strided
   const cs_real_t             (*pvara)[stride],
   const int                     icvfli[],
   const cs_field_bc_coeffs_t   *bc_coeffs,
-  const cs_bc_coeffs_solve_t   *bc_coeffs_solve,
+  const cs_real_t               val_f_g[][stride],
   const cs_real_t               i_massflux[],
   const cs_real_t               b_massflux[],
   const cs_real_t               i_visc[],
@@ -1818,10 +1810,6 @@ cs_convection_diffusion_steady_strided
   const b_t   *coefb = (const b_t *)bc_coeffs->b;
   const var_t *cofaf = (const var_t *)bc_coeffs->af;
   const b_t   *cofbf = (const b_t *)bc_coeffs->bf;
-
-  const var_t *val_f_g = (bc_coeffs_solve == nullptr) ?
-    (const var_t *)bc_coeffs->val_f :
-    (const var_t *)bc_coeffs_solve->val_f;
 
   const int iconvp = eqp.iconv;
   const int idiffp = eqp.idiff;
@@ -2475,7 +2463,7 @@ cs_convection_diffusion_steady_strided
   const cs_real_t             (*pvara)[3],
   const int                     icvfli[],
   const cs_field_bc_coeffs_t   *bc_coeffs,
-  const cs_bc_coeffs_solve_t   *bc_coeffs_solve,
+  const cs_real_t               val_f_g[][3],
   const cs_real_t               i_massflux[],
   const cs_real_t               b_massflux[],
   const cs_real_t               i_visc[],
@@ -2496,7 +2484,7 @@ cs_convection_diffusion_steady_strided
   const cs_real_t             (*pvara)[6],
   const int                     icvfli[],
   const cs_field_bc_coeffs_t   *bc_coeffs,
-  const cs_bc_coeffs_solve_t   *bc_coeffs_solve,
+  const cs_real_t               val_f_g[][6],
   const cs_real_t               i_massflux[],
   const cs_real_t               b_massflux[],
   const cs_real_t               i_visc[],

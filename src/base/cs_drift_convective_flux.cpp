@@ -558,7 +558,8 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
                                   nullptr, /* frcxt */
                                   viscce,
                                   &bc_coeffs_loc,
-                                  &bc_coeffs_solve,
+                                  val_f,
+                                  flux,
                                   i_visc, b_visc,
                                   w1,
                                   flumas, flumab);
@@ -620,7 +621,8 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
                         &eqp_loc,
                         vel, vel,
                         bc_coeffs_vel,
-                        nullptr, // bc_coeffs_solve
+                        (cs_real_3_t *)bc_coeffs_vel->val_f,
+                        (cs_real_3_t *)bc_coeffs_vel->flux,
                         i_mass_flux_mix, b_mass_flux_mix,
                         i_visc, b_visc,
                         nullptr, nullptr, /* secvif, secvib */

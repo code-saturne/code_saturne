@@ -331,7 +331,8 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
                       vela,
                       (const cs_real_3_t *)vela,
                       bc_coeffs_vel,
-                      nullptr, // bc_coeffs_solve
+                      (cs_real_3_t *)bc_coeffs_vel->val_f,
+                      (cs_real_3_t *)bc_coeffs_vel->flux,
                       i_mass_flux,
                       b_mass_flux,
                       i_visc,
@@ -809,7 +810,8 @@ cs_cf_convective_mass_flux(int  iterns)
                               nullptr, /* frcxt */
                               cvar_pr,
                               &bc_coeffs_loc,
-                              nullptr, // bc_coeffs_loc
+                              bc_coeffs_loc.val_f,
+                              bc_coeffs_loc.flux,
                               i_visc, b_visc,
                               dt,
                               i_mass_flux_e, b_mass_flux_e);

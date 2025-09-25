@@ -157,7 +157,8 @@ cs_beta_limiter_building(int              f_id,
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     bc_coeffs_solve   sweep loop boundary conditions structure
+ * \param[in]     val_f         boundary face value for gradient
+ * \param[in]     flux          boundary flux
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -181,7 +182,8 @@ cs_convection_diffusion_scalar(int                         idtvar,
                                const cs_real_t            *pvara,
                                const int                   icvfli[],
                                const cs_field_bc_coeffs_t *bc_coeffs,
-                               const cs_bc_coeffs_solve_t *bc_coeffs_solve,
+                               const cs_real_t             val_f[],
+                               const cs_real_t             flux[],
                                const cs_real_t             i_massflux[],
                                const cs_real_t             b_massflux[],
                                const cs_real_t             i_visc[],
@@ -215,6 +217,7 @@ cs_convection_diffusion_scalar(int                         idtvar,
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in]     bc_coeffs     boundary condition structure for the variable
+ * \param[in]     val_f         boundary face value for gradient
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in,out] i_conv_flux   scalar convection flux at interior faces
@@ -233,7 +236,7 @@ cs_face_convection_scalar(int                         idtvar,
                           const cs_real_t            *pvara,
                           const int                   icvfli[],
                           const cs_field_bc_coeffs_t *bc_coeffs,
-                          const cs_bc_coeffs_solve_t *bc_coeffs_solve,
+                          const cs_real_t             val_f[],
                           const cs_real_t             i_massflux[],
                           const cs_real_t             b_massflux[],
                           cs_real_2_t                 i_conv_flux[],
@@ -282,7 +285,8 @@ cs_face_convection_scalar(int                         idtvar,
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in]     bc_coeffs_v   boundary conditions structure for the variable
- * \param[in]     bc_coeffs_solve_v   sweep loop boundary conditions structure
+ * \param[in]     val_f         boundary face value for gradient
+ * \param[in]     flux          boundary flux
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -309,7 +313,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                const cs_real_3_t          *pvara,
                                const int                   icvfli[],
                                const cs_field_bc_coeffs_t *bc_coeffs_v,
-                               const cs_bc_coeffs_solve_t *bc_coeffs_solve_v,
+                               const cs_real_t             val_f[][3],
+                               const cs_real_t             flux[][3],
                                const cs_real_t             i_massflux[],
                                const cs_real_t             b_massflux[],
                                const cs_real_t             i_visc[],
@@ -350,7 +355,8 @@ cs_convection_diffusion_vector(int                         idtvar,
  * \param[in]     pvar          solved velocity (current time step)
  * \param[in]     pvara         solved velocity (previous time step)
  * \param[in]     bc_coeffs_ts  boundary condition structure for the variable
- * \param[in]     bc_coeffs_solve_ts   sweep loop boundary conditions structure
+ * \param[in]     val_f_g       boundary face value for gradient
+ * \param[in]     flux_d        boundary flux
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -371,7 +377,8 @@ cs_convection_diffusion_tensor(int                          idtvar,
                                cs_real_6_t                 *pvar,
                                const cs_real_6_t           *pvara,
                                const cs_field_bc_coeffs_t  *bc_coeffs_ts,
-                               const cs_bc_coeffs_solve_t  *bc_coeffs_solve_ts,
+                               const cs_real_t              val_f[][6],
+                               const cs_real_t              flux[][6],
                                const cs_real_t              i_massflux[],
                                const cs_real_t              b_massflux[],
                                const cs_real_t              i_visc[],
@@ -404,7 +411,8 @@ cs_convection_diffusion_tensor(int                          idtvar,
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     bc_coeffs_solve   sweep loop boundary conditions structure
+ * \param[in]     val_f         boundary face value for gradient
+ * \param[in]     flux          boundary flux
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -425,7 +433,8 @@ cs_convection_diffusion_thermal(int                         idtvar,
                                 cs_real_t                 * pvar,
                                 const cs_real_t           * pvara,
                                 const cs_field_bc_coeffs_t *bc_coeffs,
-                                const cs_bc_coeffs_solve_t *bc_coeffs_solve,
+                                const cs_real_t             val_f[],
+                                const cs_real_t             flux[],
                                 const cs_real_t             i_massflux[],
                                 const cs_real_t             b_massflux[],
                                 const cs_real_t             i_visc[],
@@ -459,7 +468,8 @@ cs_convection_diffusion_thermal(int                         idtvar,
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     bc_coeffs_solve   sweep loop boundary conditions structure
+ * \param[in]     val_f_g       boundary face value for gradient
+ * \param[in]     flux_d        boundary flux
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -481,7 +491,8 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
                                 cs_real_t                  *pvar,
                                 const cs_real_t            *pvara,
                                 const cs_field_bc_coeffs_t *bc_coeffs,
-                                const cs_bc_coeffs_solve_t *bc_coeffs_solve,
+                                const cs_real_t             val_f_g[],
+                                const cs_real_t             flux_d[],
                                 const cs_real_t             i_visc[],
                                 const cs_real_t             b_visc[],
                                 cs_real_6_t                *viscel,
@@ -525,7 +536,8 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     bc_coeffs_v   boundary conditions structure for the variable
- * \param[in]     bc_coeffs_solve_v   sweep loop boundary conditions structure
+ * \param[in]     val_f_g       boundary face value for gradient
+ * \param[in]     flux_d        boundary flux
  * \param[in]     i_visc        \f$ \tens{\mu}_\fij \dfrac{S_\fij}{\ipf\jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \dfrac{S_\fib}{\ipf \centf} \f$
@@ -544,7 +556,8 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
                                      cs_real_3_t                *pvar,
                                      const cs_real_3_t          *pvara,
                                      const cs_field_bc_coeffs_t *bc_coeffs_v,
-                                     const cs_bc_coeffs_solve_t *bc_coeffs_solve_v,
+                                     const cs_real_t             val_f[][3],
+                                     const cs_real_t             flux[][3],
                                      const cs_real_33_t          i_visc[],
                                      const cs_real_t             b_visc[],
                                      const cs_real_t             i_secvis[],
@@ -577,7 +590,8 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     bc_coeffs_v   boundary condition structure for the variable
- * \param[in]     bc_coeffs_solve_v   sweep loop boundary conditions structure
+ * \param[in]     val_f         boundary face value for gradient
+ * \param[in]     flux_d        boundary flux
  * \param[in]     i_visc        \f$ \tens{\mu}_\fij \dfrac{S_\fij}{\ipf\jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \dfrac{S_\fib}{\ipf \centf} \f$
@@ -599,7 +613,8 @@ cs_anisotropic_right_diffusion_vector(int                          idtvar,
                                       cs_real_3_t                 *pvar,
                                       const cs_real_3_t           *pvara,
                                       const cs_field_bc_coeffs_t  *bc_coeffs_v,
-                                      const cs_bc_coeffs_solve_t  *bc_coeffs_solve_v,
+                                      const cs_real_t              val_f[][3],
+                                      const cs_real_t              flux_d[][3],
                                       const cs_real_t              i_visc[],
                                       const cs_real_t              b_visc[],
                                       cs_real_6_t                 *viscel,
@@ -633,6 +648,8 @@ cs_anisotropic_right_diffusion_vector(int                          idtvar,
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     bc_coeffs_ts  boundary condition structure for the variable
+ * \param[in]     val_f         boundary face value for gradient
+ * \param[in]     flux          boundary flux
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -654,7 +671,8 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
                                 cs_real_6_t                 *pvar,
                                 const cs_real_6_t           *pvara,
                                 const cs_field_bc_coeffs_t  *bc_coeffs_ts,
-                                const cs_bc_coeffs_solve_t  *bc_coeffs_solve_ts,
+                                const cs_real_t              val_f[][6],
+                                const cs_real_t              flux[][6],
                                 const cs_real_t              i_visc[],
                                 const cs_real_t              b_visc[],
                                 cs_real_6_t                 *viscel,
@@ -691,6 +709,8 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     bc_coeffs     boundary condition structure for the variable
+ * \param[in]     val_f_g       boundary face value for gradient
+ * \param[in]     flux_d        boundary flux
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -712,7 +732,8 @@ cs_face_diffusion_potential(const cs_field_t           *f,
                             cs_real_3_t                *frcxt,
                             cs_real_t                  *pvar,
                             const cs_field_bc_coeffs_t *bc_coeffs,
-                            const cs_bc_coeffs_solve_t *bc_coeffs_solve,
+                            const cs_real_t             val_f_g[],
+                            const cs_real_t             flux_d[],
                             const cs_real_t             i_visc[],
                             const cs_real_t             b_visc[],
                             cs_real_t                  *visel,
@@ -747,6 +768,8 @@ cs_face_diffusion_potential(const cs_field_t           *f,
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (pressure)
  * \param[in]     bc_coeffs     boundary condition structure for the variable
+ * \param[in]     val_f_g       boundary face value for gradient
+ * \param[in]     flux_d        boundary flux
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -772,7 +795,8 @@ cs_face_anisotropic_diffusion_potential
   cs_real_3_t                *frcxt,
   cs_real_t                  *pvar,
   const cs_field_bc_coeffs_t *bc_coeffs,
-  const cs_bc_coeffs_solve_t *bc_coeffs_solve,
+  const cs_real_t             val_f_g[],
+  const cs_real_t             flux_d[],
   const cs_real_t             i_visc[],
   const cs_real_t             b_visc[],
   cs_real_6_t                *viscel,
@@ -804,6 +828,8 @@ cs_face_anisotropic_diffusion_potential
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     bc_coeffs     boundary condition structure for the variable
+ * \param[in]     val_f_g       boundary face value for gradient
+ * \param[in]     flux_d        boundary flux
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -824,7 +850,8 @@ cs_diffusion_potential(const cs_field_t           *f,
                        cs_real_3_t                *frcxt,
                        cs_real_t                  *pvar,
                        const cs_field_bc_coeffs_t *bc_coeffs,
-                       const cs_bc_coeffs_solve_t *bc_coeffs_solve,
+                       const cs_real_t             val_f_g[],
+                       const cs_real_t             flux_d[],
                        const cs_real_t             i_visc[],
                        const cs_real_t             b_visc[],
                        cs_real_t                   visel[],
@@ -859,6 +886,8 @@ cs_diffusion_potential(const cs_field_t           *f,
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (pressure)
  * \param[in]     bc_coeffs     boundary condition structure for the variable
+ * \param[in]     val_f_g       boundary face value for gradient
+ * \param[in]     flux_d        boundary flux
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -881,7 +910,8 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
                                    cs_real_3_t       *restrict frcxt,
                                    cs_real_t         *restrict pvar,
                                    const cs_field_bc_coeffs_t *bc_coeffs,
-                                   const cs_bc_coeffs_solve_t *bc_coeffs_solve,
+                                   const cs_real_t             val_f_g[],
+                                   const cs_real_t             flux_d[],
                                    const cs_real_t             i_visc[],
                                    const cs_real_t             b_visc[],
                                    cs_real_6_t       *restrict viscel,

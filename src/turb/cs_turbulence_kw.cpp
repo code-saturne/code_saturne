@@ -693,7 +693,8 @@ cs_turbulence_kw(int phase_id)
                       cvar_vel,
                       cvar_vela,
                       f_vel->bc_coeffs,
-                      nullptr, // bc_coeffs_solve
+                      (const cs_real_3_t *)f_vel->bc_coeffs->val_f,
+                      (const cs_real_3_t *)f_vel->bc_coeffs->flux_lim,
                       i_massflux,
                       b_massflux,
                       viscf,
@@ -1437,7 +1438,8 @@ cs_turbulence_kw(int phase_id)
                       cvara_k,
                       cvara_k,
                       f_k->bc_coeffs,
-                      nullptr, // bc_coeffs_solve
+                      f_k->bc_coeffs->val_f_pre,
+                      f_k->bc_coeffs->flux,
                       i_massflux,
                       b_massflux,
                       viscf,
@@ -1498,7 +1500,8 @@ cs_turbulence_kw(int phase_id)
                       cvara_omg ,
                       cvara_omg ,
                       f_omg->bc_coeffs,
-                      nullptr, // bc_coeffs_solve
+                      f_omg->bc_coeffs->val_f_pre,
+                      f_omg->bc_coeffs->flux,
                       i_massflux,
                       b_massflux,
                       viscf,

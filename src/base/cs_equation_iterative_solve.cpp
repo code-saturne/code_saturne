@@ -458,7 +458,8 @@ _equation_iterative_solve_strided(int                   idtvar,
                         nullptr, /* pvar == pvara */
                         (const cs_real_3_t *)pvara,
                         bc_coeffs,
-                        &bc_coeffs_solve,
+                        (const cs_real_3_t *)val_f,
+                        (const cs_real_3_t *)flux_lim,
                         i_massflux,
                         b_massflux,
                         i_visc,
@@ -482,7 +483,8 @@ _equation_iterative_solve_strided(int                   idtvar,
                         nullptr, /* pvar == pvara */
                         (const cs_real_6_t *)pvara,
                         bc_coeffs,
-                        &bc_coeffs_solve,
+                        (const cs_real_6_t *)val_f,
+                        (const cs_real_6_t *)flux_lim,
                         i_massflux,
                         b_massflux,
                         i_visc,
@@ -569,7 +571,8 @@ _equation_iterative_solve_strided(int                   idtvar,
                       (cs_real_3_t *)pvar,
                       (const cs_real_3_t *)pvara,
                       bc_coeffs,
-                      &bc_coeffs_solve,
+                      (const cs_real_3_t *)val_f,
+                      (const cs_real_3_t *)flux_lim,
                       i_massflux,
                       b_massflux,
                       i_visc,
@@ -593,7 +596,8 @@ _equation_iterative_solve_strided(int                   idtvar,
                       (cs_real_6_t *)pvar,
                       (const cs_real_6_t *)pvara,
                       bc_coeffs,
-                      &bc_coeffs_solve,
+                      (const cs_real_6_t *)val_f,
+                      (const cs_real_6_t *)flux_lim,
                       i_massflux,
                       b_massflux,
                       i_visc,
@@ -872,7 +876,8 @@ _equation_iterative_solve_strided(int                   idtvar,
                           (cs_real_3_t *)dpvar,
                           nullptr, /* dpvar */
                           bc_coeffs,
-                          &bc_coeffs_solve,
+                          (const cs_real_3_t *)val_f,
+                          (const cs_real_3_t *)flux_lim,
                           i_massflux,
                           b_massflux,
                           i_visc,
@@ -896,7 +901,8 @@ _equation_iterative_solve_strided(int                   idtvar,
                           (cs_real_6_t *)dpvar,
                           nullptr, /* dpvar */
                           bc_coeffs,
-                          &bc_coeffs_solve,
+                          (const cs_real_6_t *)val_f,
+                          (const cs_real_6_t *)flux_lim,
                           i_massflux,
                           b_massflux,
                           i_visc,
@@ -1089,7 +1095,8 @@ _equation_iterative_solve_strided(int                   idtvar,
                         (cs_real_3_t *)pvar,
                         (const cs_real_3_t *)pvara,
                         bc_coeffs,
-                        &bc_coeffs_solve,
+                        (const cs_real_3_t *)val_f,
+                        (const cs_real_3_t *)flux_lim,
                         i_massflux,
                         b_massflux,
                         i_visc,
@@ -1113,7 +1120,8 @@ _equation_iterative_solve_strided(int                   idtvar,
                         (cs_real_6_t *)pvar,
                         (const cs_real_6_t *)pvara,
                         bc_coeffs,
-                        &bc_coeffs_solve,
+                        (const cs_real_6_t *)val_f,
+                        (const cs_real_6_t *)flux_lim,
                         i_massflux,
                         b_massflux,
                         i_visc,
@@ -1227,7 +1235,8 @@ _equation_iterative_solve_strided(int                   idtvar,
                       (cs_real_3_t *)pvar,
                       (const cs_real_3_t *)pvara,
                       bc_coeffs,
-                      &bc_coeffs_solve,
+                      (const cs_real_3_t *)val_f,
+                      (const cs_real_3_t *)flux_lim,
                       i_massflux,
                       b_massflux,
                       i_visc,
@@ -1259,22 +1268,20 @@ _equation_iterative_solve_strided(int                   idtvar,
 
   CS_PROFILE_MARK_LINE();
 
-  if (f != nullptr) {
-    cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
-      (bc_coeffs,
-       n_b_faces,
-       stride,
-       cs_alloc_mode,
-       (df_limiter_id > -1 || ircflb != 1));
+  cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
+    (bc_coeffs,
+     n_b_faces,
+     stride,
+     cs_alloc_mode,
+     (df_limiter_id > -1 || ircflb != 1));
 
-    var_t *val_f_updated = (var_t *)bc_coeffs->val_f;
-    var_t *flux_updated = (var_t *)bc_coeffs->flux;
-    var_t *flux_lim_updated = (var_t *)bc_coeffs->flux_lim;
+  var_t *val_f_updated = (var_t *)bc_coeffs->val_f;
+  var_t *flux_updated = (var_t *)bc_coeffs->flux;
+  var_t *flux_lim_updated = (var_t *)bc_coeffs->flux_lim;
 
-    cs_boundary_conditions_update_bc_coeff_face_values_strided<stride>
-      (ctx, f, bc_coeffs, 1, eqp, pvar, val_ip,
-       val_f_updated, flux_updated, flux_lim_updated);
-  }
+  cs_boundary_conditions_update_bc_coeff_face_values_strided<stride>
+    (ctx, f, bc_coeffs, 1, eqp, pvar, val_ip,
+     val_f_updated, flux_updated, flux_lim_updated);
 
   /* Save diagonal in case we want to use it */
 
@@ -1662,7 +1669,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       (ctx,
        f, bc_coeffs, inc,
        eqp,
-       false, nullptr, // hyd_p_flag, f_ext
+       0, nullptr, // hyd_p_flag, f_ext
        nullptr, viscel, weighb,
        pvara,
        val_f, flux);
@@ -1680,7 +1687,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                       nullptr, /* pvar == pvara */
                       pvara,
                       bc_coeffs,
-                      &bc_coeffs_solve,
+                      val_f,
+                      flux,
                       i_massflux,
                       b_massflux,
                       i_visc,
@@ -1755,7 +1763,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                     pvar,
                     pvara,
                     bc_coeffs,
-                    &bc_coeffs_solve,
+                    val_f,
+                    flux,
                     i_massflux,
                     b_massflux,
                     i_visc,
@@ -1970,7 +1979,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                         dpvar,
                         nullptr, /* dpvara == dpvar */
                         bc_coeffs,
-                        &bc_coeffs_solve,
+                        val_f,
+                        flux,
                         i_massflux,
                         b_massflux,
                         i_visc,
@@ -2129,7 +2139,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                       pvar,
                       pvara,
                       bc_coeffs,
-                      &bc_coeffs_solve,
+                      val_f,
+                      flux,
                       i_massflux,
                       b_massflux,
                       i_visc,
@@ -2231,7 +2242,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                               pvara,
                               icvfli,
                               bc_coeffs,
-                              &bc_coeffs_solve,
+                              val_f,
                               i_massflux,
                               b_massflux,
                               i_flux_0,
@@ -2297,7 +2308,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                       pvar,
                       pvara,
                       bc_coeffs,
-                      &bc_coeffs_solve,
+                      val_f,
+                      flux,
                       i_massflux,
                       b_massflux,
                       i_visc,
@@ -2325,25 +2337,23 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
    * Store face value for gradient and diffusion
    *==========================================================================*/
 
-  if (f != nullptr) {
-    cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
-      (bc_coeffs,
-       n_b_faces,
-       1,
-       cs_alloc_mode,
-       false);
+  cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
+    (bc_coeffs,
+     n_b_faces,
+     1,
+     cs_alloc_mode,
+     false);
 
-    cs_real_t *val_f_updated = bc_coeffs->val_f;
-    cs_real_t *flux_updated = bc_coeffs->flux;
+  cs_real_t *val_f_updated = bc_coeffs->val_f;
+  cs_real_t *flux_updated = bc_coeffs->flux;
 
-    cs_boundary_conditions_update_bc_coeff_face_values<true, true>
-      (ctx, f, bc_coeffs, 1,
-       eqp,
-       false, nullptr, // hyd_p_flag, f_ext
-       nullptr, viscel, weighb,
-       pvar,
-       val_f_updated, flux_updated);
-  }
+  cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+    (ctx, f, bc_coeffs, 1,
+     eqp,
+     false, nullptr, // hyd_p_flag, f_ext
+     nullptr, viscel, weighb,
+     pvar,
+     val_f_updated, flux_updated);
 
   /*==========================================================================
    * 4. Free solver setup

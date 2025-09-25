@@ -915,7 +915,8 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
                               nullptr, /* f_ext */
                               w_dist,
                               f_wall_dist->bc_coeffs,
-                              &bc_coeffs_solve,
+                              val_f,
+                              flux,
                               i_visc, b_visc,
                               viscap,
                               i_mass_flux, b_mass_flux);

@@ -53,6 +53,7 @@
 #include "bft/bft_printf.h"
 
 #include "alge/cs_blas.h"
+#include "base/cs_boundary_conditions_set_coeffs.h"
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
 #include "base/cs_log.h"
@@ -169,7 +170,8 @@ cs_balance_initialize(void)
  * \param[in]     pvara         solved variable (previous time step)
  *                              may be nullptr if pvar != nullptr
  * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     bc_coeffs_solve  boundary conditions structure when solving
+ * \param[in]     val_f         boundary face value for gradient
+ * \param[in]     flux          boundary flux
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -202,7 +204,6 @@ cs_balance_scalar(int                         idtvar,
                   cs_real_t                   pvar[],
                   const cs_real_t             pvara[],
                   const cs_field_bc_coeffs_t *bc_coeffs,
-                  const cs_bc_coeffs_solve_t *bc_coeffs_solve,
                   const cs_real_t             i_massflux[],
                   const cs_real_t             b_massflux[],
                   const cs_real_t             i_visc[],
@@ -215,21 +216,69 @@ cs_balance_scalar(int                         idtvar,
                   const int                   icvfli[],
                   cs_real_t                   smbrp[])
 {
-  cs_balance_scalar(idtvar,
-                    f_id,
-                    imucpp, imasac,
-                    inc,
-                    eqp,
-                    pvar, pvara,
-                    bc_coeffs, bc_coeffs_solve,
-                    i_massflux, b_massflux,
-                    i_visc, b_visc,
-                    viscel,
-                    xcpp,
-                    weighf, weighb,
-                    icvflb, icvfli,
-                    smbrp,
-                    nullptr, nullptr);
+  if (bc_coeffs->val_f != nullptr && bc_coeffs->flux != nullptr)
+    cs_balance_scalar(idtvar,
+                      f_id,
+                      imucpp, imasac,
+                      inc,
+                      eqp,
+                      pvar, pvara,
+                      bc_coeffs,
+                      bc_coeffs->val_f,
+                      bc_coeffs->flux,
+                      i_massflux, b_massflux,
+                      i_visc, b_visc,
+                      viscel,
+                      xcpp,
+                      weighf, weighb,
+                      icvflb, icvfli,
+                      smbrp,
+                      nullptr, nullptr);
+  else {
+    cs_mesh_t *mesh = cs_glob_mesh;
+    cs_lnum_t n_b_faces = mesh->n_b_faces;
+
+    cs_bc_coeffs_solve_t bc_coeffs_solve;
+    cs_init_bc_coeffs_solve(bc_coeffs_solve,
+                            n_b_faces,
+                            1,
+                            cs_alloc_mode,
+                            false);
+
+    cs_real_t *val_f = bc_coeffs_solve.val_f;
+    cs_real_t *flux = bc_coeffs_solve.flux;
+
+    cs_field_t *f = (f_id > -1) ? cs_field_by_id(f_id) : nullptr;
+
+    cs_dispatch_context ctx;
+
+    cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+      (ctx,
+       f, bc_coeffs, inc,
+       eqp,
+       0, nullptr, // hyd_p_flag, f_ext
+       nullptr, viscel, weighb,
+       pvar,
+       val_f, flux);
+
+    cs_balance_scalar(idtvar,
+                      f_id,
+                      imucpp, imasac,
+                      inc,
+                      eqp,
+                      pvar, pvara,
+                      bc_coeffs,
+                      val_f,
+                      flux,
+                      i_massflux, b_massflux,
+                      i_visc, b_visc,
+                      viscel,
+                      xcpp,
+                      weighf, weighb,
+                      icvflb, icvfli,
+                      smbrp,
+                      nullptr, nullptr);
+  }
 }
 
 END_C_DECLS
@@ -280,7 +329,119 @@ END_C_DECLS
  * \param[in]     pvara         solved variable (previous time step)
  *                              may be nullptr if pvar != nullptr
  * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     bc_coeffs_solve  boundary conditions structure when solving
+ * \param[in]     val_f         boundary face value for gradient
+ * \param[in]     flux          boundary flux
+ * \param[in]     i_massflux    mass flux at interior faces
+ * \param[in]     b_massflux    mass flux at boundary faces
+ * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                               at interior faces for the r.h.s.
+ * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+ *                               at boundary faces for the r.h.s.
+ * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
+ * \param[in]     xcpp          array of specific heat (Cp)
+ * \param[in]     weighf        internal face weight between cells i j in case
+ *                               of tensor diffusion
+ * \param[in]     weighb        boundary face weight for cells i in case
+ *                               of tensor diffusion
+ * \param[in]     icvflb        global indicator of boundary convection flux
+ *                               - 0 upwind scheme at all boundary faces
+ *                               - 1 imposed flux at some boundary faces
+ * \param[in]     icvfli        boundary face indicator array of convection flux
+ *                               - 0 upwind scheme
+ *                               - 1 imposed flux
+ * \param[in,out] smbrp         right hand side \f$ \vect{Rhs} \f$
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_balance_scalar(int                         idtvar,
+                  int                         f_id,
+                  int                         imucpp,
+                  int                         imasac,
+                  int                         inc,
+                  cs_equation_param_t        *eqp,
+                  cs_real_t                   pvar[],
+                  const cs_real_t             pvara[],
+                  const cs_field_bc_coeffs_t *bc_coeffs,
+                  const cs_real_t             val_f[],
+                  const cs_real_t             flux[],
+                  const cs_real_t             i_massflux[],
+                  const cs_real_t             b_massflux[],
+                  const cs_real_t             i_visc[],
+                  const cs_real_t             b_visc[],
+                  cs_real_6_t                 viscel[],
+                  const cs_real_t             xcpp[],
+                  const cs_real_2_t           weighf[],
+                  const cs_real_t             weighb[],
+                  int                         icvflb,
+                  const int                   icvfli[],
+                  cs_real_t                   smbrp[])
+{
+  cs_balance_scalar(idtvar,
+                    f_id,
+                    imucpp, imasac,
+                    inc,
+                    eqp,
+                    pvar, pvara,
+                    bc_coeffs, val_f, flux,
+                    i_massflux, b_massflux,
+                    i_visc, b_visc,
+                    viscel,
+                    xcpp,
+                    weighf, weighb,
+                    icvflb, icvfli,
+                    smbrp,
+                    nullptr, nullptr);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Wrapper to the function which adds the explicit part of the
+ * convection/diffusion terms of a transport equation of
+ * a scalar field \f$ \varia \f$.
+ *
+ * More precisely, the right hand side \f$ Rhs \f$ is updated as
+ * follows:
+ * \f[
+ * Rhs = Rhs - \sum_{\fij \in \Facei{\celli}}      \left(
+ *        \dot{m}_\ij \left( \varia_\fij - \varia_\celli \right)
+ *      - \mu_\fij \gradv_\fij \varia \cdot \vect{S}_\ij  \right)
+ * \f]
+ *
+ * Warning:
+ * - \f$ Rhs \f$ has already been initialized
+ *   before calling cs_balance_scalar!
+ * - mind the minus sign
+ *
+ * Options for the convective scheme:
+ * - blencp = 0: upwind scheme for the advection
+ * - blencp = 1: no upwind scheme except in the slope test
+ * - ischcp = 0: SOLU
+ * - ischcp = 1: centered
+ * - ischcp = 2: SOLU with upwind gradient reconstruction
+ * - ischcp = 3: blending SOLU centered
+ * - ischcp = 4: NVD-TVD
+ * - imucpp = 0: do not multiply the convective part by \f$ C_p \f$
+ * - imucpp = 1: multiply the convective part by \f$ C_p \f$
+ *
+ * \param[in]     idtvar        indicator of the temporal scheme
+ * \param[in]     f_id          field id (or -1)
+ * \param[in]     imucpp        indicator
+ *                               - 0 do not multiply the convectiv term by Cp
+ *                               - 1 do multiply the convectiv term by Cp
+ * \param[in]     imasac        take mass accumulation into account?
+ * \param[in]     inc           indicator
+ *                               - 0 when solving an increment
+ *                               - 1 otherwise
+ * \param[in]     eqp           pointer to a cs_equation_param_t structure which
+ *                              contains variable calculation options
+ * \param[in]     pvar          solved variable (current time step)
+ *                              may be nullptr if pvara != nullptr
+ * \param[in]     pvara         solved variable (previous time step)
+ *                              may be nullptr if pvar != nullptr
+ * \param[in]     bc_coeffs     boundary condition structure for the variable
+ * \param[in]     val_f         boundary face value for gradient
+ * \param[in]     flux          boundary flux
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -315,7 +476,8 @@ cs_balance_scalar(int                         idtvar,
                   cs_real_t                   pvar[],
                   const cs_real_t             pvara[],
                   const cs_field_bc_coeffs_t *bc_coeffs,
-                  const cs_bc_coeffs_solve_t *bc_coeffs_solve,
+                  const cs_real_t             val_f[],
+                  const cs_real_t             flux[],
                   const cs_real_t             i_massflux[],
                   const cs_real_t             b_massflux[],
                   const cs_real_t             i_visc[],
@@ -362,7 +524,8 @@ cs_balance_scalar(int                         idtvar,
                                      pvara,
                                      icvfli,
                                      bc_coeffs,
-                                     bc_coeffs_solve,
+                                     val_f,
+                                     flux,
                                      i_massflux,
                                      b_massflux,
                                      i_visc,
@@ -381,7 +544,8 @@ cs_balance_scalar(int                         idtvar,
                                       pvar,
                                       pvara,
                                       bc_coeffs,
-                                      bc_coeffs_solve,
+                                      val_f,
+                                      flux,
                                       i_massflux,
                                       b_massflux,
                                       i_visc,
@@ -405,7 +569,8 @@ cs_balance_scalar(int                         idtvar,
                                      pvara,
                                      icvfli,
                                      bc_coeffs,
-                                     bc_coeffs_solve,
+                                     val_f,
+                                     flux,
                                      i_massflux,
                                      b_massflux,
                                      i_visc,
@@ -424,7 +589,8 @@ cs_balance_scalar(int                         idtvar,
                                       pvar,
                                       pvara,
                                       bc_coeffs,
-                                      bc_coeffs_solve,
+                                      val_f,
+                                      flux,
                                       i_massflux,
                                       b_massflux,
                                       i_visc,
@@ -442,7 +608,8 @@ cs_balance_scalar(int                         idtvar,
                                       pvar,
                                       pvara,
                                       bc_coeffs,
-                                      bc_coeffs_solve,
+                                      val_f,
+                                      flux,
                                       i_visc,
                                       b_visc,
                                       viscel,
@@ -509,7 +676,8 @@ BEGIN_C_DECLS
  * \param[in]     pvar          solved velocity (current time step)
  * \param[in]     pvara         solved velocity (previous time step)
  * \param[in]     bc_coeffs_v   boundary condition structure for the variable
- * \param[in]     bc_coeffs_solve_v  boundary conditions structure when solving
+ * \param[in]     val_f         boundary face value for gradient
+ * \param[in]     flux          boundary flux
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -543,7 +711,8 @@ cs_balance_vector(int                         idtvar,
                   cs_real_3_t                 pvar[],
                   const cs_real_3_t           pvara[],
                   const cs_field_bc_coeffs_t *bc_coeffs_v,
-                  const cs_bc_coeffs_solve_t *bc_coeffs_solve_v,
+                  const cs_real_t             val_f[][3],
+                  const cs_real_t             flux[][3],
                   const cs_real_t             i_massflux[],
                   const cs_real_t             b_massflux[],
                   const cs_real_t             i_visc[],
@@ -593,7 +762,8 @@ cs_balance_vector(int                         idtvar,
                                    pvara,
                                    icvfli,
                                    bc_coeffs_v,
-                                   bc_coeffs_solve_v,
+                                   val_f,
+                                   flux,
                                    i_massflux,
                                    b_massflux,
                                    i_visc,
@@ -621,7 +791,8 @@ cs_balance_vector(int                         idtvar,
                                      pvara,
                                      icvfli,
                                      bc_coeffs_v,
-                                     bc_coeffs_solve_v,
+                                     val_f,
+                                     flux,
                                      i_massflux,
                                      b_massflux,
                                      i_visc,
@@ -647,7 +818,8 @@ cs_balance_vector(int                         idtvar,
                                             pvar,
                                             pvara,
                                             bc_coeffs_v,
-                                            bc_coeffs_solve_v,
+                                            val_f,
+                                            flux,
                                             i_visc,
                                             b_visc,
                                             viscel,
@@ -666,7 +838,8 @@ cs_balance_vector(int                         idtvar,
                                            pvar,
                                            pvara,
                                            bc_coeffs_v,
-                                           bc_coeffs_solve_v,
+                                           val_f,
+                                           flux,
                                            (const cs_real_33_t *)i_visc,
                                            b_visc,
                                            secvif,
@@ -716,7 +889,8 @@ cs_balance_vector(int                         idtvar,
  * \param[in]     pvar          solved velocity (current time step)
  * \param[in]     pvara         solved velocity (previous time step)
  * \param[in]     bc_coeffs_ts  boundary condition structure for the variable
- * \param[in]     bc_coeffs_solve_ts   sweep loop boundary conditions structure
+ * \param[in]     val_f         boundary face value for gradient
+ * \param[in]     flux          boundary flux
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -747,7 +921,8 @@ cs_balance_tensor(int                         idtvar,
                   cs_real_6_t                 pvar[],
                   const cs_real_6_t           pvara[],
                   const cs_field_bc_coeffs_t *bc_coeffs_ts,
-                  const cs_bc_coeffs_solve_t *bc_coeffs_solve_ts,
+                  const cs_real_t             val_f[][6],
+                  const cs_real_t             flux[][6],
                   const cs_real_t             i_massflux[],
                   const cs_real_t             b_massflux[],
                   const cs_real_t             i_visc[],
@@ -793,7 +968,8 @@ cs_balance_tensor(int                         idtvar,
                                    pvar,
                                    pvara,
                                    bc_coeffs_ts,
-                                   bc_coeffs_solve_ts,
+                                   val_f,
+                                   flux,
                                    i_massflux,
                                    b_massflux,
                                    i_visc,
@@ -815,7 +991,8 @@ cs_balance_tensor(int                         idtvar,
                                      pvar,
                                      pvara,
                                      bc_coeffs_ts,
-                                     bc_coeffs_solve_ts,
+                                     val_f,
+                                     flux,
                                      i_massflux,
                                      b_massflux,
                                      i_visc,
@@ -831,7 +1008,8 @@ cs_balance_tensor(int                         idtvar,
                                       pvar,
                                       pvara,
                                       bc_coeffs_ts,
-                                      bc_coeffs_solve_ts,
+                                      val_f,
+                                      flux,
                                       i_visc,
                                       b_visc,
                                       viscel,

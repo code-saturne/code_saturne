@@ -445,6 +445,30 @@ _les_balance_laplacian(cs_real_t   *wa,
   _eqp.iconv = 0; /* only diffusion */
   _eqp.theta = 1.;
 
+  /* Compute boundary face value */
+
+  cs_bc_coeffs_solve_t bc_coeffs_solve;
+  cs_init_bc_coeffs_solve(bc_coeffs_solve,
+                          n_b_faces,
+                          1,
+                          cs_alloc_mode,
+                          false);
+
+  cs_real_t *val_f = bc_coeffs_solve.val_f;
+  cs_real_t *flux = bc_coeffs_solve.flux;
+
+  cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+    (ctx,
+     nullptr, // field
+     &bc_coeffs_loc,
+     1, // inc
+     &_eqp,
+     0, nullptr, // hyd_p_flag, f_ext
+     nullptr,
+     nullptr, nullptr, // tensor viscel and weighb
+     wa,
+     val_f, flux);
+
   cs_convection_diffusion_scalar(0,              /* idtvar */
                                  -1,             /* f_id */
                                  _eqp,
@@ -455,13 +479,16 @@ _les_balance_laplacian(cs_real_t   *wa,
                                  nullptr,           /* pvara (not used) */
                                  0,              /* icvfli (not used) */
                                  &bc_coeffs_loc, /* coefa & b not used */
-                                 nullptr,        /* bc_coeffs_solve */
+                                 val_f,
+                                 flux,
                                  i_visc,         /* mass flux (not used) */
                                  b_visc,         /* mass flux (not used) */
                                  i_visc,
                                  b_visc,
                                  res,
                                  nullptr, nullptr);
+
+  cs_clear_bc_coeffs_solve(bc_coeffs_solve);
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     res[c_id] /= cell_vol[c_id];
