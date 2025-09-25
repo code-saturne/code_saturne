@@ -167,40 +167,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function for data assimilation (atmospheric module)
-
-    subroutine cs_at_data_assim_initialize()                        &
-      bind(C, name='cs_at_data_assim_initialize')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_at_data_assim_initialize
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function for data assimilation (atmospheric module)
-
-    function cs_at_opt_interp_is_p1_proj_needed() result (ineeded)   &
-      bind(C, name='cs_at_opt_interp_is_p1_proj_needed')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int) :: ineeded
-    end function cs_at_opt_interp_is_p1_proj_needed
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function for data assimilation (atmospheric module).
-
-    subroutine cs_at_data_assim_source_term(f_id, exp_st, imp_st)   &
-      bind(C, name='cs_at_data_assim_source_term')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: f_id
-      real(kind=c_double), dimension(*), intent(inout) :: exp_st
-      real(kind=c_double), dimension(*), intent(inout) :: imp_st
-    end subroutine cs_at_data_assim_source_term
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function computing standard atmospheric profile
 
     subroutine atmstd(z_ref, p_ref, t_ref, z, p, t, r) &
