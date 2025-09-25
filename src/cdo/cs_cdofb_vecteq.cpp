@@ -408,6 +408,11 @@ cs_cdofb_vecteq_init_cell_system(const cs_cell_mesh_t         *cm,
 #endif
 
   } /* Border cell */
+  else { /* No boundary face for this cell */
+
+    for (short int f = 0; f < cm->n_fc; f++)
+      csys->bf_ids[f] = -1;
+  }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 2
   if (cs_dbg_cw_test(eqp, cm, csys))

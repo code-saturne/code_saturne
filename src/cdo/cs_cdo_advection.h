@@ -382,11 +382,11 @@ cs_cdofb_advection(const cs_equation_param_t *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_advection_upwnoc(int                        dim,
-                          const cs_cell_mesh_t      *cm,
-                          const cs_cell_sys_t       *csys,
-                          cs_cell_builder_t         *cb,
-                          cs_sdm_t                  *adv);
+cs_cdofb_advection_upwnoc(int                   dim,
+                          const cs_cell_mesh_t *cm,
+                          const cs_cell_sys_t  *csys,
+                          cs_cell_builder_t    *cb,
+                          cs_sdm_t             *adv);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -533,7 +533,7 @@ cs_cdofb_advection_cencsv_v8(int                   dim,
  * \brief  Compute the convection operator attached to a cell with a CDO
  *         face-based scheme
  *         - non-conservative formulation beta.grad
- *         - centered scheme
+ *         - L0 scheme
  *         Rely on the work performed during R. Milani's PhD
  *
  *         A scalar-valued version is built. Only the enforcement of the
@@ -550,18 +550,18 @@ cs_cdofb_advection_cencsv_v8(int                   dim,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_advection_cennoc_dde(int                   dim,
-                              const cs_cell_mesh_t *cm,
-                              const cs_cell_sys_t  *csys,
-                              cs_cell_builder_t    *cb,
-                              cs_sdm_t             *adv);
+cs_cdofb_advection_L0noc(int                   dim,
+                         const cs_cell_mesh_t *cm,
+                         const cs_cell_sys_t  *csys,
+                         cs_cell_builder_t    *cb,
+                         cs_sdm_t             *adv);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the convection operator attached to a cell with a CDO
  *         face-based scheme
  *         - conservative formulation div(beta )
- *         - centered scheme
+ *         - L0 scheme
  *         Rely on the work performed during R. Milani's PhD
  *
  *         A scalar-valued version is built. Only the enforcement of the
@@ -578,11 +578,11 @@ cs_cdofb_advection_cennoc_dde(int                   dim,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_advection_cencsv_dde(int                   dim,
-                              const cs_cell_mesh_t *cm,
-                              const cs_cell_sys_t  *csys,
-                              cs_cell_builder_t    *cb,
-                              cs_sdm_t             *adv);
+cs_cdofb_advection_L0csv(int                   dim,
+                         const cs_cell_mesh_t *cm,
+                         const cs_cell_sys_t  *csys,
+                         cs_cell_builder_t    *cb,
+                         cs_sdm_t             *adv);
 
 /*----------------------------------------------------------------------------*/
 /*!
