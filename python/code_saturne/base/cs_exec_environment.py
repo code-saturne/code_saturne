@@ -5,7 +5,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2024 EDF S.A.
+# Copyright (C) 1998-2025 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1541,19 +1541,18 @@ class mpi_environment:
         # We may have a specific syntax for tasks per node if
         # a launcher from a resource manager is used:
 
-        if resource_info and self.mpiexec:
-            if os.path.basename(self.mpiexec)[:4] == 'srun':
-                if resource_info.n_procs_ri != None \
-                  and resource_info.n_procs_ri != resource_info.n_procs:
-                    self.mpiexec_n = ' --ntasks='
-                elif not self.mpiexec_n_per_node:
-                    self.mpiexec_n_per_node = ' --ntasks-per-node='
+        init_method = None
 
-        # Initialize based on known MPI types, or default.
+        # If using srun, the launcher commands are those of srun, not
+        # directly those of the MPI library.
 
-        init_method = self.__init_other__
+        if self.mpiexec:
+            if os.path.basename(self.mpiexec) in ("srun", "ccc_mprun"):
+                init_method = self.__init_srun__
 
-        if len(self.type) > 0:
+        # Otherwise initialize based on known MPI types, or default.
+
+        if init_method is None and len(self.type) > 0:
             mpi_env_by_type = {'MPICH':self.__init_mpich__,
                                'Intel_MPI':self.__init_mpich__,
                                'MSMPI':self.__init_msmpi__,
@@ -1561,6 +1560,9 @@ class mpi_environment:
                                'Platform_MPI':self.__init_platform_mpi__}
             if self.type in mpi_env_by_type:
                 init_method = mpi_env_by_type[self.type]
+
+        if init_method is None:
+            init_method = self.__init_other__
 
         p = os.getenv('PATH').split(':')
         if len(self.bindir) > 0:
@@ -1817,28 +1819,12 @@ class mpi_environment:
 
     def __init_openmpi__(self, p, resource_info=None, wdir = None):
         """
-        Initialize for OpenMPI environment.
+        Initialize for OpenMPI launcher.
         """
 
         # Determine base executable paths
 
-        # Caution: if srun is used, it is probably not in the same
-        # path as MPI executables.
-
-        use_ompi_mpiexec = True
-        use_pmix_enabled_srun = False
         absname = None
-
-        if self.mpiexec != None:
-            launcher_base = os.path.basename(self.mpiexec)
-            if launcher_base == "srun":
-                use_ompi_mpiexec = False
-                info = get_command_output(self.mpiexec + " --mpi=list")
-                if info.find("pmix") > -1:
-                    use_pmix_enabled_srun = True
-            elif launcher_base == "ccc_mprun":
-                use_ompi_mpiexec = False
-                use_pmix_enabled_srun = True
 
         if self.mpiexec != None:
             if use_ompi_mpiexec:
@@ -1880,12 +1866,10 @@ class mpi_environment:
         if not self.mpiexec_n:
             self.mpiexec_n = ' -n '
 
-        # srun or ccc_mprun do not accept the "--npernode argument!
-        if use_ompi_mpiexec:
-            if resource_info != None and not self.mpiexec_n_per_node:
-                ppn = resource_info.n_procs_per_node()
-                if ppn:
-                    self.mpiexec_n_per_node = ' --npernode ' + str(ppn)
+        if resource_info != None and not self.mpiexec_n_per_node:
+            ppn = resource_info.n_procs_per_node()
+            if ppn:
+                self.mpiexec_n_per_node = ' --npernode ' + str(ppn)
 
         if not self.mpmd:
             if launcher_base[:7] == 'mpiexec':
@@ -1893,17 +1877,14 @@ class mpi_environment:
             elif launcher_base[:6] == 'mpirun':
                 self.mpmd = MPI_MPMD_script
 
-        # Other options to add
-
-        # Detect if resource manager is known by this Open MPI build
+        # Detect if resource manager is known by this Open MPI build.
 
         if resource_info != None:
             known_manager = False
             if resource_info.manager == 'SLURM':
-                # For Open MPI 5 or newer
-                if use_ompi_mpiexec or use_pmix_enabled_srun:
-                    known_manager = True
-                # In case and older version is used,
+                # SLURM support is available by default in Open MPI 5 or newer.
+                known_manager = True
+                # In case Open MPI 4.0 or older,
                 # check if it is properly configured.
                 info = get_command_output(info_name)
                 idx = info.find('Ident string:')
@@ -1913,9 +1894,6 @@ class mpi_environment:
                     if ompi_major in ('3', '4'):
                         if use_ompi_mpiexec:
                             if info.find('slurm') < 0:
-                                known_manager = False
-                        elif use_pmix_enabled_srun:
-                            if info.find('pmix') < 0:
                                 known_manager = False
             elif resource_info.manager == 'OAR':
                 self.mpiexec += ' -machinefile $OAR_FILE_NODES'
@@ -1927,10 +1905,6 @@ class mpi_environment:
                                   'SGE':' gridengine '}
                 if resource_info.manager in rc_mca_by_type:
                     info = get_command_output(info_name)
-                    idx = info.find('Ident string:')
-                    ompi_major = ''
-                    if idx > -1:
-                        ompi_major = info[idx + 14]
                     if info.find(rc_mca_by_type[resource_info.manager]) > -1:
                         known_manager = True
 
@@ -2011,6 +1985,29 @@ class mpi_environment:
         # Resource manager info
 
         # Info commands
+
+    #---------------------------------------------------------------------------
+
+    def __init_srun__(self, p, resource_info=None, wdir = None):
+        """
+        Initialize for SLURM srun launcher.
+
+        SLURM and the MPI library used must be configured correctly.
+        For example, with Open MPI, SLURM should be compiled with PMIX support,
+        so `srun --mpi=list` should return a list including `pmix`,
+        and Open MPI should also include PMIX support.
+        Otherwise, `srun` can be used to generate a hostfile, but should
+        not be used to run the code directly.
+        """
+
+        if os.path.basename(self.mpiexec)[:4] == 'srun':
+            if resource_info.n_procs_ri != None \
+               and resource_info.n_procs_ri != resource_info.n_procs:
+                self.mpiexec_n = ' --ntasks='
+            elif not self.mpiexec_n_per_node:
+                self.mpiexec_n_per_node = ' --ntasks-per-node='
+
+        self.info_cmds = ['ompi_info -a']
 
     #---------------------------------------------------------------------------
 
