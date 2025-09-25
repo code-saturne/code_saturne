@@ -2365,7 +2365,7 @@ _matrix_pruned_msr_arrays(cs_grid_t *          g,
   if (d_val == nullptr)
     d_val = g->_da;
   if (x_val == nullptr)
-    d_val = g->_xa;
+    x_val = g->_xa;
 
   if (row_index == nullptr && col_id == nullptr) {
     cs_matrix_structure_release_msr_arrays(g->matrix_struct,
@@ -2374,9 +2374,16 @@ _matrix_pruned_msr_arrays(cs_grid_t *          g,
   }
 
   g->da = nullptr;
-  g->_da = nullptr;
   g->xa = nullptr;
-  g->_xa = nullptr;
+  if (d_val != g->_da)
+    CS_FREE(g->_da);
+  else
+    g->_da = nullptr;
+  g->_da = nullptr;
+  if (x_val != g->_xa)
+    CS_FREE(g->_xa);
+  else
+    g->_xa = nullptr;
 
   cs_lnum_t *c_row_index;
   CS_MALLOC_HD(c_row_index, n_rows+1, cs_lnum_t, alloc_mode);
