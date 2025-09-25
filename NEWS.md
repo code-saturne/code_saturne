@@ -3,6 +3,8 @@ Release 9.0.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix SIGFPE when combining Rij-SSG and internal coupling
+
 - Fix memory leak in solver
 
 - Fix automatic modification in notebook GUI page
