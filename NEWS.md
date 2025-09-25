@@ -3,6 +3,8 @@ Release 9.0.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix memory leak in solver
+
 - Fix automatic modification in notebook GUI page
 
 - Fix possible memory read issue in multigrid on single rank with periodicity
