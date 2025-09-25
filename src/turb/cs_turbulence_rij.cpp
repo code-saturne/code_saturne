@@ -902,6 +902,21 @@ _gravity_st_epsilon(int              phase_id,
   if (f_cp != nullptr)
     cpro_cp = f_cp->val;
 
+  /* Internal coupling */
+  cs_lnum_t solid_stride = 1;
+  int *c_is_solid_zone_flag = cs_solid_zone_flag(cs_glob_mesh);
+  const int c_is_solid_ref[1] = {0};
+  if (c_is_solid_zone_flag == nullptr) {
+    if (cs_alloc_mode > CS_ALLOC_HOST) {
+      CS_MALLOC_HD(c_is_solid_zone_flag, 1, int, cs_alloc_mode);
+      c_is_solid_zone_flag[0] = 0;
+    }
+    solid_stride = 0;
+  }
+  const int *c_is_solid = c_is_solid_zone_flag;
+  if (c_is_solid == nullptr)
+    c_is_solid = c_is_solid_ref;
+
   const cs_real_6_t *cvara_rij = (const cs_real_6_t *)f_rij->val_pre;
   const cs_real_t *cvara_ep = f_eps->val_pre;
   const cs_real_t *crom = f_rho->val;
@@ -952,6 +967,10 @@ _gravity_st_epsilon(int              phase_id,
     alpha_theta = f_alpha_theta->val;
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+
+    const cs_lnum_t ind = solid_stride*c_id;
+    if (c_is_solid[ind])
+      return;  /* return from lambda function == continue in loop */
 
     cs_real_t xcp = cp0;
     if (cpro_cp != nullptr)
@@ -2456,6 +2475,21 @@ _solve_epsilon(int              phase_id,
                cs_field_get_label(f_eps));
   }
 
+  /* Internal coupling */
+  cs_lnum_t solid_stride = 1;
+  int *c_is_solid_zone_flag = cs_solid_zone_flag(cs_glob_mesh);
+  const int c_is_solid_ref[1] = {0};
+  if (c_is_solid_zone_flag == nullptr) {
+    if (cs_alloc_mode > CS_ALLOC_HOST) {
+      CS_MALLOC_HD(c_is_solid_zone_flag, 1, int, cs_alloc_mode);
+      c_is_solid_zone_flag[0] = 0;
+    }
+    solid_stride = 0;
+  }
+  const int *c_is_solid = c_is_solid_zone_flag;
+  if (c_is_solid == nullptr)
+    c_is_solid = c_is_solid_ref;
+
   int kstprv = cs_field_key_id("source_term_prev_id");
   int st_prv_id = cs_field_get_key_int(f_eps, kstprv);
   cs_real_t *c_st_prv = nullptr, *cromo = nullptr;
@@ -2535,6 +2569,11 @@ _solve_epsilon(int              phase_id,
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       /* Source terms with epsilon */
+
+      const cs_lnum_t ind = solid_stride*c_id;
+      if (c_is_solid[ind])
+        return;  /* return from lambda function == continue in loop */
+
       const cs_real_t st_eps
         = -0.5 * cell_f_vol[c_id] * cs_math_6_trace(lagr_st_rij[c_id]);
 
@@ -2664,6 +2703,11 @@ _solve_epsilon(int              phase_id,
   else {
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+
+      const cs_lnum_t ind = solid_stride*c_id;
+      if (c_is_solid[ind])
+        return;  /* return from lambda function == continue in loop */
+
       /* Half-traces */
       const cs_real_t trprod = cprod[c_id];
       const cs_real_t tke = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
@@ -2828,6 +2872,7 @@ _solve_epsilon(int              phase_id,
 
   /* Free memory */
 
+  CS_FREE_HD(c_is_solid_zone_flag);
   CS_FREE_HD(dpvar);
   CS_FREE_HD(w1);
   CS_FREE_HD(cprod);
