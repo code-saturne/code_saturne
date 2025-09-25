@@ -646,6 +646,8 @@ _solve_most(int              n_var,
       CS_FREE(theipb);
       CS_FREE(visvdr);
       CS_FREE_HD(isostd);
+      if (cs_glob_velocity_pressure_param->nterup > 1)
+        CS_FREE_HD(trava);
       cs_field_free_bc_codes_all();
       *must_return = _must_return;
       return;
