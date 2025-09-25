@@ -1827,8 +1827,7 @@ class mpi_environment:
         absname = None
 
         if self.mpiexec != None:
-            if use_ompi_mpiexec:
-                absname = self.__get_mpiexec_absname__(p)
+            absname = self.__get_mpiexec_absname__(p)
 
         else:
             launcher_names = ['mpiexec.openmpi', 'mpirun.openmpi',
@@ -1892,9 +1891,8 @@ class mpi_environment:
                 if idx > -1:
                     ompi_major = info[idx + 14]
                     if ompi_major in ('3', '4'):
-                        if use_ompi_mpiexec:
-                            if info.find('slurm') < 0:
-                                known_manager = False
+                        if info.find('slurm') < 0:
+                            known_manager = False
             elif resource_info.manager == 'OAR':
                 self.mpiexec += ' -machinefile $OAR_FILE_NODES'
                 self.mpiexec += ' -mca pls_rsh_agent "oarsh"'
