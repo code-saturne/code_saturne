@@ -281,7 +281,6 @@ void
 cs_f_atmo_chem_get_pointers(int                    **model,
                             int                    **isepchemistry,
                             int                    **n_species,
-                            int                    **n_reactions,
                             bool                   **chemistry_with_photolysis,
                             cs_atmo_aerosol_type_t **aerosol_model,
                             bool                   **frozen_gas_chem,
@@ -291,7 +290,7 @@ cs_f_atmo_chem_get_pointers(int                    **model,
                             int                    **n_size);
 
 void
-cs_f_atmo_chem_initialize_reacnum(cs_real_t **reacnum);
+cs_f_atmo_chem_initialize_reacnum(void);
 
 void
 cs_f_atmo_chem_initialize_species_to_fid(int *species_fid);
@@ -325,7 +324,6 @@ void
 cs_f_atmo_chem_get_pointers(int                    **model,
                             int                    **isepchemistry,
                             int                    **n_species,
-                            int                    **n_reactions,
                             bool                   **chemistry_with_photolysis,
                             cs_atmo_aerosol_type_t **aerosol_model,
                             bool                   **frozen_gas_chem,
@@ -337,7 +335,6 @@ cs_f_atmo_chem_get_pointers(int                    **model,
   *model = &(_atmo_chem.model);
   *isepchemistry = &(_atmo_chem.chemistry_sep_mode);
   *n_species = &(_atmo_chem.n_species);
-  *n_reactions = &(_atmo_chem.n_reactions);
   *chemistry_with_photolysis = &(_atmo_chem.chemistry_with_photolysis);
   *aerosol_model = &(_atmo_chem.aerosol_model);
   *frozen_gas_chem = &(_atmo_chem.frozen_gas_chem);
@@ -413,17 +410,6 @@ cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
   *species_to_scalar_id = (_atmo_chem.species_to_scalar_id);
   *molar_mass = (_atmo_chem.molar_mass);
   *chempoint = (_atmo_chem.chempoint);
-}
-
-void
-cs_f_atmo_chem_initialize_reacnum(cs_real_t **reacnum)
-{
-  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-
-  if (_atmo_chem.reacnum == nullptr)
-    BFT_MALLOC(_atmo_chem.reacnum, _atmo_chem.n_reactions*n_cells, cs_real_t);
-
-  *reacnum = _atmo_chem.reacnum;
 }
 
 void
@@ -656,7 +642,6 @@ _strtolower(char        *dest,
     _dest++;
   }
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -2084,6 +2069,23 @@ int
 cs_atmo_chemistry_need_initialization(void)
 {
   return _init_atmo_chemistry;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize chemistry cell kinetic rates arrays.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_chemistry_initialize_reacnum(void)
+{
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+
+  if (_atmo_chem.reacnum == nullptr)
+    CS_MALLOC(_atmo_chem.reacnum,
+              (cs_lnum_t)(_atmo_chem.n_reactions)*n_cells,
+              cs_real_t);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -131,9 +131,6 @@ BEGIN_C_DECLS
 /* Bindings to Fortran routines */
 
 void
-cs_f_init_chemistry_reacnum(void);
-
-void
 cs_f_finalize_meteo(void);
 
 void
@@ -310,9 +307,8 @@ cs_time_stepping(void)
   cs_boundary_conditions_create();
 
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0) {
-    if (cs_glob_atmo_chemistry->model > 0) {
-      cs_f_init_chemistry_reacnum();
-    }
+    if (cs_glob_atmo_chemistry->model > 0)
+      cs_atmo_chemistry_initialize_reacnum();
   }
 
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)

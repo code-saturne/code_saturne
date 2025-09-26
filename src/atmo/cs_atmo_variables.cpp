@@ -428,8 +428,8 @@ cs_atmo_add_variable_fields(void)
     // Verification
     if (at_chem->model != 4)
       bft_error(__FILE__, __LINE__, 0,
-                "    WARNING:   STOP WHILE READING INPUT DATA\n"
-                "    =========\n"
+                "    Error: stop while reading input data.\n"
+                "    ======\n"
                 "  When aerosol chemistry model is used\n"
                 "   a full gaseous scheme (CB05) is automatically used\n"
                 " The user cannot specify any other scheme (ichemistry)\n"
@@ -441,7 +441,6 @@ cs_atmo_add_variable_fields(void)
      * Initialise external aerosol code
      * Create variables */
     cs_atmo_aerosol_initialize();
-
   }
 
   // Set clippings for gas aerosol species

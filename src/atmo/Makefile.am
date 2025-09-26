@@ -58,6 +58,7 @@ cs_atmo_chemistry.h \
 cs_atmo_aerosol_ssh.h \
 cs_atmo_headers.h \
 cs_atmo_imbrication.h \
+cs_atmo_kinetic_rates.h \
 cs_atmo_profile_std.h \
 cs_atmo_source_terms.h \
 cs_atmo_variables.h \
@@ -80,6 +81,7 @@ cs_atmo.cpp \
 cs_atmo_chemistry.cpp \
 cs_atmo_aerosol_ssh.cpp \
 cs_atmo_imbrication.cpp \
+cs_atmo_kinetic_rates.cpp \
 cs_atmo_profile_std.cpp \
 cs_atmo_source_terms.cpp \
 cs_atmo_variables.cpp \
@@ -89,7 +91,6 @@ cs_atmo_solmoy.cpp \
 cs_atmo_sol.cpp \
 cs_atprke.cpp \
 cs_intprf.cpp \
-kinrates.f90 \
 rayigc.f90 \
 rayir.f90 \
 rayive.f90 \

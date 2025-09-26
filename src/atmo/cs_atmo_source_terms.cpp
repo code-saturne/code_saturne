@@ -1085,7 +1085,6 @@ cs_atmo_source_term_for_inlet(cs_real_3_t        exp_st[])
 
   CS_FREE(dpdtx);
   CS_FREE(dpdty);
-
 }
 
 /*----------------------------------------------------------------------------*/

@@ -116,13 +116,28 @@ typedef struct {
 
 extern const char  *cs_numbering_type_name[];
 
-/*============================================================================
- * Public function prototypes for Fortran API
- *============================================================================*/
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Round size of array to ensure SIMD alignment.
+ *
+ * \param[in]  n_elts     number of associated elements
+ * \param[in]  type_size  associated element size
+ *
+ * \return  array size >= n_elts which is a multiple of SIMD alignment
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline size_t
+cs_numbering_simd_size(cs_lnum_t  n_elts,
+                       size_t     type_size)
+{
+  size_t n_double_eq = (type_size >= 8) ? n_elts : n_elts * 8/type_size;
+  return (((n_double_eq-1)/CS_NUMBERING_SIMD_SIZE+1)*CS_NUMBERING_SIMD_SIZE);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

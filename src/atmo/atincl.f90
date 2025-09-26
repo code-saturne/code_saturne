@@ -102,8 +102,6 @@ double precision, dimension(:,:), pointer :: phmet
 ! 1.2 Pointers for the positions of the variables
 !------------------------------------------------
 !   Variables specific to the atmospheric physics:
-!> total water content (for humid atmosphere)
-integer, save :: iymw
 !> intdrp---> total number of droplets (for humid atmosphere)
 integer, save :: intdrp = -1
 
@@ -113,9 +111,6 @@ integer, save :: intdrp = -1
 
 !> temperature (in Celsius)
 integer, save :: itempc
-
-!> liquid water content
-integer, save :: iliqwt
 
 !----------------------------------------------------------------------------
 
@@ -495,13 +490,13 @@ integer(c_int), pointer, save :: rad_atmo_model
 
     end subroutine cs_f_atmo_arrays_get_pointers
 
-    subroutine cs_f_atmo_chem_get_pointers(ichemistry, isepchemistry, nespg, nrg,                    &
-                                           chem_with_photo, iaerosol, frozen_gas_chem,               &
+    subroutine cs_f_atmo_chem_get_pointers(ichemistry, isepchemistry, nespg,            &
+                                           chem_with_photo, iaerosol, frozen_gas_chem,  &
                                            init_gas_with_lib, init_aero_with_lib, n_aero, n_sizebin) &
       bind(C, name='cs_f_atmo_chem_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: ichemistry, isepchemistry, nespg, nrg
+      type(c_ptr), intent(out) :: ichemistry, isepchemistry, nespg
       type(c_ptr), intent(out) :: chem_with_photo, iaerosol, frozen_gas_chem
       type(c_ptr), intent(out) :: init_gas_with_lib, init_aero_with_lib
       type(c_ptr), intent(out) :: n_aero, n_sizebin
@@ -705,13 +700,13 @@ contains
 
     ! Local variables
     type(c_ptr) :: c_model, c_isepchemistry
-    type(c_ptr) :: c_nespg, c_nrg, c_chem_with_photo
+    type(c_ptr) :: c_nespg, c_chem_with_photo
     type(c_ptr) :: c_modelaero, c_frozen_gas_chem
     type(c_ptr) :: c_init_gas_with_lib
     type(c_ptr) :: c_init_aero_with_lib, c_nlayer, c_nsize
 
     call cs_f_atmo_chem_get_pointers(c_model, c_isepchemistry,                     &
-                                     c_nespg, c_nrg, c_chem_with_photo,            &
+                                     c_nespg, c_chem_with_photo,                   &
                                      c_modelaero, c_frozen_gas_chem,               &
                                      c_init_gas_with_lib,                          &
                                      c_init_aero_with_lib, c_nlayer, c_nsize)
@@ -719,7 +714,6 @@ contains
     call c_f_pointer(c_model, ichemistry)
     call c_f_pointer(c_isepchemistry, isepchemistry)
     call c_f_pointer(c_nespg, nespg)
-    call c_f_pointer(c_nrg, nrg)
     call c_f_pointer(c_chem_with_photo, photolysis)
     call c_f_pointer(c_modelaero, iaerosol)
     call c_f_pointer(c_frozen_gas_chem, nogaseouschemistry)

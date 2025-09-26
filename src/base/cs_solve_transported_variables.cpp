@@ -52,9 +52,6 @@
 #include "base/cs_boundary_conditions_set_coeffs.h"
 #include "cfbl/cs_cf_energy.h"
 #include "cfbl/cs_cf_model.h"
-#include "comb/cs_coal.h"
-#include "cogz/cs_combustion_slfm.h"
-#include "elec/cs_elec_model.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "cfbl/cs_hgn_source_terms_step.h"
@@ -66,6 +63,11 @@
 #include "base/cs_time_step.h"
 
 #include "pprt/cs_physical_model.h"
+
+#include "atmo/cs_atmo_kinetic_rates.h"
+#include "comb/cs_coal.h"
+#include "cogz/cs_combustion_slfm.h"
+#include "elec/cs_elec_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -97,11 +99,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * External function prototypes
  *============================================================================*/
-
-/* Bindings to Fortran routines */
-
-void
-cs_f_kinetics_rates_compute(void);
 
 /*============================================================================
  * Type definitions
@@ -168,7 +165,7 @@ cs_solve_transported_variables(int iterns)
       && atmo_chem->aerosol_model == CS_ATMO_AEROSOL_OFF
       && nespg > 0 && iterns == -1) {
     /* Computation of kinetics rates */
-    cs_f_kinetics_rates_compute();
+    cs_atmo_kinetic_rates_compute();
   }
 
   /* Handle model or specific physics scalars

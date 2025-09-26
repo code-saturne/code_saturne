@@ -59,8 +59,6 @@ module atchem
   logical(kind=c_bool), pointer, save :: photolysis
   !> Number of chemical species
   integer(c_int), pointer, save :: nespg
-  !> Number of chemical reactions
-  integer(c_int), pointer, save :: nrg
 
   !> scalar id for chemical species
   integer(c_int), dimension(:), pointer, save ::  isca_chem
@@ -70,8 +68,6 @@ module atchem
   integer(c_int), dimension(:), pointer ::  chempoint
   !> conversion factors for reaction rates Jacobian matrix
   double precision, dimension(:), pointer ::  conv_factor_jac
-  !> kinetics constants
-  double precision, dimension(:), pointer ::  reacnum
 
   !> maximal time step for chemistry resolution
   double precision dtchemmax
@@ -137,19 +133,6 @@ module atchem
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine cs_f_atmo_chem_finalize
-
-    !---------------------------------------------------------------------------
-
-
-    !> \brief Return pointer to reacnum
-
-    subroutine  cs_f_atmo_chem_initialize_reacnum (reacnum)&
-      bind(C, name='cs_f_atmo_chem_initialize_reacnum')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: reacnum
-
-    end subroutine cs_f_atmo_chem_initialize_reacnum
 
     !---------------------------------------------------------------------------
 
@@ -367,28 +350,6 @@ contains
     allocate(idespgi(nespgi))
 
   end subroutine init_chemistry
-
-  !=============================================================================
-
-  !> \brief Allocate memory relative to mesh size
-
-  subroutine init_chemistry_reacnum() &
-    bind(C, name='cs_f_init_chemistry_reacnum')
-
-    use mesh, only: ncel
-    use, intrinsic :: iso_c_binding
-    use cs_c_bindings
-
-    implicit none
-
-    type(c_ptr) :: c_reacnum
-
-    ! Dynamical allocations
-    call cs_f_atmo_chem_initialize_reacnum(c_reacnum)
-
-    call c_f_pointer(c_reacnum, reacnum, [ncel*nrg])
-
-  end subroutine init_chemistry_reacnum
 
   !=============================================================================
 

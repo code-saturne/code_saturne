@@ -68,9 +68,6 @@ call field_get_id_try('density', icrom)
 ! ---> Atmospheric modules:
 if (ippmod(iatmos).ge.0) then
   call field_get_id_try("real_temperature", itempc)
-  if (ippmod(iatmos).eq.2) then
-    call field_get_id("liquid_water", iliqwt)
-  end if
 endif
 
 !====

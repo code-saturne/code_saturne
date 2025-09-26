@@ -70,9 +70,6 @@ if (ippmod(iatmos).ge.0) then
 
   ! Update scalar ids in Fortran; not needed in c version
   if (ippmod(iatmos).eq.2) then
-    call field_get_id('ym_water', f_id)
-    call field_get_key_int_by_name(f_id, "scalar_id", iymw)
-
     call field_get_id('number_of_droplets', f_id)
     call field_get_key_int_by_name(f_id, "scalar_id", intdrp)
   end if

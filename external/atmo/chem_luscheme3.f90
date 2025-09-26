@@ -45,17 +45,17 @@
 !> \param[out]    rk(nr)            kinetic rates
 !______________________________________________________________________________
 
-subroutine kinetic_3(nr,rk,temp,xlw,press,azi,att,                  &
-     option_photolysis)
+subroutine kinetic_3(nr, rk, temp, xlw, press, azi, att, option_photolysis) &
+  bind(C, name='cs_ext_polyphemus_kinetic_3')
+  use, intrinsic :: iso_c_binding
 
 implicit none
 
 ! Arguments
 
-integer nr
-double precision rk(nr),temp,xlw,press
-double precision azi, att
-integer option_photolysis
+integer(c_int), value :: nr, option_photolysis
+real(kind=c_double), value :: temp, xlw, press, azi, att
+real(kind=c_double), intent(inout) :: rk(nr)
 
 ! Local variables
 
