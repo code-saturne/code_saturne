@@ -546,10 +546,13 @@ public:
 
     const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
 
+    // Explicit pointer, avoid passing internal member of class to the functor
+    T* data_ptr = _data;
+
     cs_dispatch_context ctx;
 
-    ctx.parallel_for(loop_size, CS_CLASS_LAMBDA (cs_lnum_t e_id) {
-      _data[e_id] = val;
+    ctx.parallel_for(loop_size, CS_LAMBDA (cs_lnum_t e_id) {
+      data_ptr[e_id] = val;
     });
 
     ctx.wait();
@@ -576,9 +579,12 @@ public:
 
     const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
 
+    // Explicit pointer, avoid passing internal member of class to the functor
+    T* data_ptr = _data;
+
     /* No wait here since context is passed as argument */
-    ctx.parallel_for(loop_size, CS_CLASS_LAMBDA (cs_lnum_t e_id) {
-      _data[e_id] = val;
+    ctx.parallel_for(loop_size, CS_LAMBDA (cs_lnum_t e_id) {
+      data_ptr[e_id] = val;
     });
   }
 
@@ -606,8 +612,11 @@ public:
     if (elt_ids == nullptr)
       set_to_val(ctx, val, n_elts);
     else {
-      ctx.parallel_for(n_elts, CS_CLASS_LAMBDA (cs_lnum_t e_id) {
-        _data[elt_ids[e_id]] = val;
+      // Explicit pointer, avoid passing internal member of class to the functor
+      T* data_ptr = _data;
+
+      ctx.parallel_for(n_elts, CS_LAMBDA (cs_lnum_t e_id) {
+        data_ptr[elt_ids[e_id]] = val;
       });
     }
 
@@ -640,8 +649,10 @@ public:
     if (elt_ids == nullptr)
       set_to_val(ctx, val, n_elts);
     else {
-      ctx.parallel_for(n_elts, CS_CLASS_LAMBDA (cs_lnum_t e_id) {
-        _data[elt_ids[e_id]] = val;
+      // Explicit pointer, avoid passing internal member of class to the functor
+      T* data_ptr = _data;
+      ctx.parallel_for(n_elts, CS_LAMBDA (cs_lnum_t e_id) {
+        data_ptr[elt_ids[e_id]] = val;
       });
     }
   }
@@ -658,8 +669,11 @@ public:
   {
     cs_dispatch_context ctx;
 
-    ctx.parallel_for(_size, CS_CLASS_LAMBDA (cs_lnum_t e_id) {
-      _data[e_id] = static_cast<T>(0);
+    // Explicit pointer, avoid passing internal member of class to the functor
+    T* data_ptr = _data;
+
+    ctx.parallel_for(_size, CS_LAMBDA (cs_lnum_t e_id) {
+      data_ptr[e_id] = static_cast<T>(0);
     });
 
     ctx.wait();
@@ -678,8 +692,11 @@ public:
     cs_dispatch_context &ctx /*!< Reference to dispatch context */
   )
   {
-    ctx.parallel_for(_size, CS_CLASS_LAMBDA (cs_lnum_t e_id) {
-      _data[e_id] = static_cast<T>(0);
+    // Explicit pointer, avoid passing internal member of class to the functor
+    T* data_ptr = _data;
+
+    ctx.parallel_for(_size, CS_LAMBDA (cs_lnum_t e_id) {
+      data_ptr[e_id] = static_cast<T>(0);
     });
   }
 
@@ -703,10 +720,13 @@ public:
 
     const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
 
+    // Explicit pointer, avoid passing internal member of class to the functor
+    T* data_ptr = _data;
+
     cs_dispatch_context ctx;
 
-    ctx.parallel_for(loop_size, CS_CLASS_LAMBDA (cs_lnum_t e_id) {
-        _data[e_id] = data[e_id];
+    ctx.parallel_for(loop_size, CS_LAMBDA (cs_lnum_t e_id) {
+        data_ptr[e_id] = data[e_id];
     });
 
     ctx.wait();
@@ -734,10 +754,14 @@ public:
 
     const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
 
+    // Explicit pointer, avoid passing internal member of class to the functor
+    T* data_ptr = _data;
+    T* o_data_ptr = other._data;
+
     cs_dispatch_context ctx;
 
-    ctx.parallel_for(loop_size, CS_CLASS_LAMBDA (cs_lnum_t e_id) {
-      _data[e_id] = other._data[e_id];
+    ctx.parallel_for(loop_size, CS_LAMBDA (cs_lnum_t e_id) {
+      data_ptr[e_id] = o_data_ptr[e_id];
     });
 
     ctx.wait();
@@ -765,8 +789,11 @@ public:
 
     const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
 
-    ctx.parallel_for(loop_size, CS_CLASS_LAMBDA (cs_lnum_t e_id) {
-      _data[e_id] = data[e_id];
+    // Explicit pointer, avoid passing internal member of class to the functor
+    T* data_ptr = _data;
+
+    ctx.parallel_for(loop_size, CS_LAMBDA (cs_lnum_t e_id) {
+      data_ptr[e_id] = data[e_id];
     });
   }
 
@@ -793,8 +820,12 @@ public:
 
     const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
 
-    ctx.parallel_for(loop_size, CS_CLASS_LAMBDA (cs_lnum_t e_id) {
-      _data[e_id] = other._data[e_id];
+    // Explicit pointer, avoid passing internal member of class to the functor
+    T* data_ptr = _data;
+    T* o_data_ptr = other._data;
+
+    ctx.parallel_for(loop_size, CS_LAMBDA (cs_lnum_t e_id) {
+      data_ptr[e_id] = o_data_ptr[e_id];
     });
   }
 
