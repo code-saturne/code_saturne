@@ -42,6 +42,8 @@ Master (not on release branches yet)
     was too limited for future uses of the Burke-Schuman model for
     fire modeling (gas combustion), so `idilat` 2 should be used now.
 
+- Advection schemes with CDO-Fb scheme are completly rewritten.
+
 ### Architectural changes:
 
 - Add cs::array, cs::span and cs::mdspan data classes to handle data storage,
@@ -100,8 +102,7 @@ Release 9.0.0 (2025-06-27)
     and tensor gradients.
 
 - Advection scheme with CDO-Fb scheme: Replace the former centered scheme
-  by a new one close to the CDO-Vb centered scheme. The former scheme is
-  renamed as centered_dde and is marked as deprecated. Also, former centered
+  by a new one close to the CDO-Vb centered scheme. Also, former centered
   and upwind schemes are post-fixed by _v8 for comparison. Moreover, a mixed
   mixed centered/hybrid scheme is introduced with a fixed ratio or a variable
   ratio using Sharfetter-Gummel weigth function which is Peclet-robust.
