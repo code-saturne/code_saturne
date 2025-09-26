@@ -817,7 +817,7 @@ end subroutine kinetic_2
 !______________________________________________________________________________
 
 subroutine fexchem_2(ns,nr,y,rk,zcsourc,convers_factor,chem)&
-  bind(C, name='cs_f_fexchem_2')
+  bind(C, name='cs_ext_polyphemus_fexchem_2')
   use, intrinsic :: iso_c_binding
 
 implicit none
@@ -989,7 +989,7 @@ end subroutine fexchem_2
 
 subroutine jacdchemdc_2(ns,nr,y,convers_factor,   &
                     convers_factor_jac,rk,jacc)   &
-  bind(C, name='cs_f_jacdchemdc_2')
+  bind(C, name='cs_ext_polyphemus_jacdchemdc_2')
   use, intrinsic :: iso_c_binding
 
 implicit none
@@ -1359,7 +1359,7 @@ end subroutine dratedc_2
 !______________________________________________________________________________
 
 subroutine lu_decompose_2 (ns,m)   &
-  bind(C, name='cs_f_lu_decompose_2')
+  bind(C, name='cs_ext_polyphemus_lu_decompose_2')
   use, intrinsic :: iso_c_binding
 
 implicit none
@@ -1367,7 +1367,7 @@ implicit none
 ! Arguments
 
 integer(c_int), value :: ns
-double precision m(ns,ns)
+real(c_double) m(ns,ns)
 
 ! Local variables
 
@@ -1600,7 +1600,7 @@ end subroutine lu_decompose_2
 !______________________________________________________________________________
 
 subroutine lu_solve_2 (ns, m, x) &
-  bind(C, name='cs_f_lu_solve_2')
+  bind(C, name='cs_ext_polyphemus_lu_solve_2')
   use, intrinsic :: iso_c_binding
 
 implicit none
@@ -1608,8 +1608,8 @@ implicit none
 ! Arguments
 
 integer(c_int), value :: ns
-double precision m(ns,ns)
-double precision x(ns)
+real(c_double) m(ns,ns)
+real(c_double) x(ns)
 
 ! Local variables
 

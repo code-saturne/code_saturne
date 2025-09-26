@@ -21,7 +21,7 @@
 !-------------------------------------------------------------------------------
 
 !===============================================================================
-!> \file usatch.f90
+!> \file cs_polyphemus_spack.f90
 !>
 !> \brief Routines for user defined atmospheric chemical scheme
 !>
@@ -32,115 +32,6 @@
 !>             https://sshaerosol.wordpress.com/
 !>             https://github.com/sshaerosol/ssh-aerosol/
 !------------------------------------------------------------------------------
-
-!===============================================================================
-!
-!> \brief kinetic_4
-!>
-!> \brief Computation of kinetic rates for atmospheric chemistry
-!
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]     nr                total number of chemical reactions
-!> \param[in]     option_photolysis flag to activate or not photolysis reactions
-!> \param[in]     azi               solar zenith angle
-!> \param[in]     att               atmospheric attenuation variable
-!> \param[in]     temp              temperature
-!> \param[in]     press             pressure
-!> \param[in]     xlw               water massic fraction
-!> \param[out]    rk(nr)            kinetic rates
-!______________________________________________________________________________
-
-subroutine kinetic_4(nr,rk,temp,xlw,press,azi,att,                  &
-     option_photolysis)
-
-implicit none
-
-procedure() :: ssh_kinetic
-
-! Arguments
-
-integer nr
-double precision rk(nr),temp,xlw,press
-double precision azi, att
-integer option_photolysis
-
-! Dummy local variables required by SPACK
-
-integer, parameter :: ns = 1
-integer, parameter :: nbin = 1
-integer, parameter :: iheter = 0
-integer icld
-double precision lwctmp
-double precision granulo(nbin)
-double precision WetDiam(nbin)
-double precision dsf_aero(nbin)
-integer ispeclost(4)
-double precision Wmol(ns)
-double precision LWCmin
-
-call ssh_kinetic(ns,nbin,nr,iheter,icld,rk,temp,xlw, &
-                 press,azi,att,lwctmp,granulo,WetDiam,dsf_aero,ispeclost, &
-                 Wmol,LWCmin,option_photolysis)
-
-return
-
-!--------
-! Formats
-!--------
-
-end subroutine kinetic_4
-
-!===============================================================================
-!> \brief fexchem_4
-!>
-!> \brief Computes the chemical production terms
-!------------------------------------------------------------------------------
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]     nr                total number of chemical reactions
-!> \param[in]     ns                total number of chemical species
-!> \param[in]     y                 concentrations vector
-!> \param[in]     rk                kinetic rates
-!> \param[in]     zcsourc           source term
-!> \param[in]     convers_factor    conversion factors
-!> \param[out]    chem              chemical production terms for every species
-!______________________________________________________________________________
-
-subroutine fexchem_4(ns,nr,y,rk,zcsourc,convers_factor,chem) &
-  bind(C, name='cs_f_fexchem_4')
-  use, intrinsic :: iso_c_binding
-
-implicit none
-
-procedure() :: ssh_fexchem
-
-! Arguments
-integer(c_int), value :: ns, nr
-real(kind=c_double), dimension(*), intent(inout) :: y, rk
-real(kind=c_double), dimension(*), intent(inout) :: chem
-real(kind=c_double), dimension(*), intent(inout) :: zcsourc, convers_factor
-
-! Activate volumic source terms
-
-integer, parameter :: nemis = 1
-
-call ssh_fexchem(ns,nr,nemis,y,rk,zcsourc,convers_factor,chem)
-
-return
-
-!--------
-! Formats
-!--------
-
-end subroutine fexchem_4
 
 !===============================================================================
 !> \brief ssh_jacdchemdc
@@ -164,24 +55,19 @@ end subroutine fexchem_4
 !> \param[out]    jacc               Jacobian matrix
 !______________________________________________________________________________
 
-subroutine ssh_jacdchemdc(ns,nr,y,convers_factor,       &
-                          convers_factor_jac,rk,jacc)   &
-  bind(C, name='cs_f_ssh_jacdchemdc')
-  use, intrinsic :: iso_c_binding
+subroutine ssh_jacdchemdc(ns,nr,y,convers_factor,                     &
+                          convers_factor_jac,rk,jacc)
 
 implicit none
 
 ! Arguments
 
-integer(c_int), value :: nr,ns
-real(kind=c_double), dimension(*), intent(inout) :: rk, y, convers_factor
-real(kind=c_double), dimension(ns,ns), intent(inout) :: convers_factor_jac, jacc
+integer nr,ns
+double precision rk(nr),y(ns),jacc(ns,ns)
+double precision convers_factor(ns)
+double precision convers_factor_jac(ns,ns)
 
 return
-
-!--------
-! FORMATS
-!--------
 
 end subroutine ssh_jacdchemdc
 
@@ -202,21 +88,14 @@ end subroutine ssh_jacdchemdc
 !>                                   On exit, an LU factorization of m
 !______________________________________________________________________________
 
-subroutine ssh_lu_decompose (ns,m)  &
-  bind(C, name='cs_f_ssh_lu_decompose')
-  use, intrinsic :: iso_c_binding
-
+subroutine ssh_lu_decompose (ns,m)
 
 implicit none
 
 ! Arguments
 
-integer(c_int), value :: ns
+integer ns
 double precision m(ns,ns)
-
-!--------
-! FORMATS
-!--------
 
 return
 end subroutine ssh_lu_decompose
@@ -240,21 +119,15 @@ end subroutine ssh_lu_decompose
 !                                  on exit, the solution of the equation
 !______________________________________________________________________________
 
-subroutine ssh_lu_solve (ns, m, x)  &
-  bind(C, name='cs_f_ssh_lu_solve')
-  use, intrinsic :: iso_c_binding
+subroutine ssh_lu_solve (ns, m, x)
 
 implicit none
 
 ! Arguments
 
-integer(c_int), value :: ns
+integer ns
 double precision m(ns,ns)
 double precision x(ns)
-
-!--------
-! FORMATS
-!--------
 
 return
 end subroutine ssh_lu_solve
@@ -265,8 +138,7 @@ end subroutine ssh_lu_solve
 !> \brief Rountine provided by SPACK. Return number of species / reactions
 !------------------------------------------------------------------------------
 
-subroutine ssh_dimensions(Ns, Nr, Nr_photolysis) &
-  bind(C, name='cs_f_ssh_dimensions')
+subroutine ssh_dimensions(Ns, Nr, Nr_photolysis)
 
 use, intrinsic :: iso_c_binding
 
@@ -363,3 +235,185 @@ double precision Wmol(Ns),LWCmin
 double precision temp,Press
 
 end subroutine hetrxn
+
+!===============================================================================
+!> C bindings to SPACK SSH functions
+!===============================================================================
+
+!===============================================================================
+!
+!> \brief kinetic_4
+!>
+!> \brief Computation of kinetic rates for atmospheric chemistry
+!
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nr                total number of chemical reactions
+!> \param[in]     option_photolysis flag to activate or not photolysis reactions
+!> \param[in]     azi               solar zenith angle
+!> \param[in]     att               atmospheric attenuation variable
+!> \param[in]     temp              temperature
+!> \param[in]     press             pressure
+!> \param[in]     xlw               water massic fraction
+!> \param[out]    rk(nr)            kinetic rates
+!______________________________________________________________________________
+
+subroutine kinetic_4(nr,rk,temp,xlw,press,azi,att,                  &
+     option_photolysis)
+
+implicit none
+
+procedure() :: ssh_kinetic
+
+! Arguments
+
+integer nr
+double precision rk(nr),temp,xlw,press
+double precision azi, att
+integer option_photolysis
+
+! Dummy local variables required by SPACK
+
+integer, parameter :: ns = 1
+integer, parameter :: nbin = 1
+integer, parameter :: iheter = 0
+integer icld
+double precision lwctmp
+double precision granulo(nbin)
+double precision WetDiam(nbin)
+double precision dsf_aero(nbin)
+integer ispeclost(4)
+double precision Wmol(ns)
+double precision LWCmin
+
+call ssh_kinetic(ns,nbin,nr,iheter,icld,rk,temp,xlw, &
+                 press,azi,att,lwctmp,granulo,WetDiam,dsf_aero,ispeclost, &
+                 Wmol,LWCmin,option_photolysis)
+
+return
+
+end subroutine kinetic_4
+
+!===============================================================================
+!> \brief fexchem_4
+!>
+!> \brief Computes the chemical production terms
+!------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nr                total number of chemical reactions
+!> \param[in]     ns                total number of chemical species
+!> \param[in]     y                 concentrations vector
+!> \param[in]     rk                kinetic rates
+!> \param[in]     zcsourc           source term
+!> \param[in]     convers_factor    conversion factors
+!> \param[out]    chem              chemical production terms for every species
+!______________________________________________________________________________
+
+subroutine fexchem_4(ns,nr,y,rk,zcsourc,convers_factor,chem) &
+  bind(C, name='cs_ext_polyphemus_fexchem_4')
+  use, intrinsic :: iso_c_binding
+
+implicit none
+
+procedure() :: ssh_fexchem
+
+! Arguments
+integer(c_int), value :: ns, nr
+real(kind=c_double), dimension(*), intent(inout) :: y, rk
+real(kind=c_double), dimension(*), intent(inout) :: chem
+real(kind=c_double), dimension(*), intent(inout) :: zcsourc, convers_factor
+
+! Activate volumic source terms
+
+integer, parameter :: nemis = 1
+
+call ssh_fexchem(ns,nr,nemis,y,rk,zcsourc,convers_factor,chem)
+return
+
+end subroutine fexchem_4
+
+!===============================================================================
+
+subroutine cs_ext_polyphemus_ssh_jacdchemdc(ns,nr,y,convers_factor,       &
+                                            convers_factor_jac,rk,jacc)   &
+  bind(C, name='cs_ext_polyphemus_ssh_jacdchemdc')
+  use, intrinsic :: iso_c_binding
+
+implicit none
+
+! Arguments
+
+integer(c_int), value :: nr,ns
+real(kind=c_double), dimension(*), intent(inout) :: rk, y, convers_factor
+real(kind=c_double), dimension(ns,ns), intent(inout) :: convers_factor_jac, jacc
+
+call ssh_jacdchemdc(ns,nr,y,convers_factor,       &
+                    convers_factor_jac,rk,jacc)
+return
+
+end subroutine cs_ext_polyphemus_ssh_jacdchemdc
+
+!===============================================================================
+
+subroutine cs_ext_polyphemus_ssh_lu_decompose (ns,m)  &
+  bind(C, name='cs_ext_polyphemus_ssh_lu_decompose')
+  use, intrinsic :: iso_c_binding
+
+implicit none
+
+! Arguments
+
+integer(c_int), value :: ns
+real(c_double) :: m(ns,ns)
+
+call ssh_lu_decompose (ns,m)
+return
+
+end subroutine cs_ext_polyphemus_ssh_lu_decompose
+
+!===============================================================================
+
+subroutine cs_ext_polyphemus_ssh_lu_solve (ns, m, x)  &
+  bind(C, name='cs_ext_polyphemus_ssh_lu_solve')
+  use, intrinsic :: iso_c_binding
+
+implicit none
+
+! Arguments
+
+integer(c_int), value :: ns
+real(c_double) :: m(ns,ns)
+real(c_double) :: x(ns)
+
+call ssh_lu_solve (ns, m, x)
+return
+
+end subroutine cs_ext_polyphemus_ssh_lu_solve
+
+!===============================================================================
+
+subroutine cs_ext_polyphemus_ssh_dimensions(Ns, Nr, Nr_photolysis) &
+  bind(C, name='cs_ext_polyphemus_ssh_dimensions')
+
+use, intrinsic :: iso_c_binding
+
+implicit none
+
+! Arguments
+
+integer(c_int) Ns, Nr, Nr_photolysis
+
+call ssh_dimensions(Ns, Nr, Nr_photolysis)
+return
+
+end subroutine cs_ext_polyphemus_ssh_dimensions
+
+!===============================================================================
