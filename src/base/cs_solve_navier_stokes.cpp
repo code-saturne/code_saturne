@@ -3612,6 +3612,8 @@ _hydrostatic_pressure_prediction(cs_real_t        grdphd[][3],
   CS_FREE_HD(bc_coeffs_dp.af);
   CS_FREE_HD(bc_coeffs_dp.b);
   CS_FREE_HD(bc_coeffs_dp.bf);
+  CS_FREE_HD(bc_coeffs_dp.val_f);
+  CS_FREE_HD(bc_coeffs_dp.flux);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
