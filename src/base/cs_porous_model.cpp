@@ -237,7 +237,7 @@ _field_ibm_reallocate(cs_lnum_t  n_ib_cells)
 
         const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
 
-        f->reshape(n_elts[2]);
+        f->update_size();
 
         /* Initialization */
         const cs_lnum_t n_i_end = f->dim*n_elts[2];

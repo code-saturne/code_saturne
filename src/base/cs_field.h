@@ -273,10 +273,7 @@ typedef struct {
   );
 
   void
-  reshape
-  (
-    const cs_lnum_t new_size
-  );
+  update_size(void);
 
   cs_array_2d<cs_real_t> **_vals;
 

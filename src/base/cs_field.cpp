@@ -5012,18 +5012,17 @@ cs_field_t::get_vals_t
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Resize field values automatically (vals, val, val_pre).
+ * \brief Resize field values automatically (vals, val, val_pre) based
+ * on the corresponding mesh_location.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_field_t::reshape
-(
-  const cs_lnum_t new_size /*!<[in] New base size (number of elements) */
-)
+cs_field_t::update_size()
 {
   /* Sanity checks */
-  assert(new_size > -1);
+  const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(this->location_id);
+  cs_lnum_t new_size = n_elts[2];
 
   /* If same size as before or not owner, nothing to do */
   if (new_size == this->_vals[0]->extent(0) || !(this->is_owner))

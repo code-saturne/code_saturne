@@ -1765,7 +1765,7 @@ cs_turbomachinery_resize_cell_fields(void)
       /* Ghost cell sizes may change, but the number of main cells
          is unchanged, so a simple reallocation will do */
 
-      f->reshape(_n_cells);
+      f->update_size();
 
       for (int kk = 0; kk < f->n_time_vals; kk++) {
 
