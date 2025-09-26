@@ -745,7 +745,7 @@ elif test "x$cs_gxx" = "xclang"; then
   cxxflags_default_omp="-fopenmp=libomp"
 
   case "$cs_cxx_version" in
-    19.* | 2*)
+    14* | 15* | 16* | 17* | 18* | 19.* | 2*)
       cxxflags_default="$cxxflags_default  -Wno-non-c-typedef-for-linkage"
       ;;
   esac
