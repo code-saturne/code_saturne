@@ -283,14 +283,9 @@ static double _c = 0; /* compensation term for Kahan sum */
  *============================================================================*/
 
 void
-cs_f_time_step_get_pointers(int     **nt_prev,
-                            int     **nt_cur,
-                            int     **nt_max,
-                            int     **nt_ini,
+cs_f_time_step_get_pointers(int     **nt_cur,
                             double  **dtref,
-                            double  **t_prev,
-                            double  **t_cur,
-                            double  **t_max);
+                            double  **t_cur);
 
 void
 cs_f_time_step_options_get_pointers(int  **idtvar);
@@ -310,34 +305,19 @@ cs_f_time_step_options_get_pointers(int  **idtvar);
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   nt_prev --> pointer to cs_glob_time_step->nt_prev
  *   nt_cur  --> pointer to cs_glob_time_step->nt_cur
- *   nt_max  --> pointer to cs_glob_time_step->nt_max
- *   nt_ini  --> pointer to cs_glob_time_step->nt_ini
  *   dt_ref  --> pointer to cs_glob_time_step->dt_ref
- *   t_prev  --> pointer to cs_glob_time_step->t_prev
  *   t_cur   --> pointer to cs_glob_time_step->t_cur
- *   t_max   --> pointer to cs_glob_time_step->t_ax
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_time_step_get_pointers(int      **nt_prev,
-                            int      **nt_cur,
-                            int      **nt_max,
-                            int      **nt_ini,
+cs_f_time_step_get_pointers(int      **nt_cur,
                             double   **dtref,
-                            double   **t_prev,
-                            double   **t_cur,
-                            double   **t_max)
+                            double   **t_cur)
 {
-  *nt_prev = &(_time_step.nt_prev);
   *nt_cur = &(_time_step.nt_cur);
-  *nt_max = &(_time_step.nt_max);
-  *nt_ini = &(_time_step.nt_ini);
   *dtref  = &(_time_step.dt_ref);
-  *t_prev = &(_time_step.t_prev);
   *t_cur = &(_time_step.t_cur);
-  *t_max = &(_time_step.t_max);
 }
 
 /*----------------------------------------------------------------------------

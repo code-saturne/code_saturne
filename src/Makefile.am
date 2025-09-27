@@ -46,13 +46,10 @@ pkginclude_HEADERS = \
 cs_headers.h
 
 libcsmodules_a_SOURCES = \
-base/paramx.f90 \
 base/mesh.f90 \
 base/field.f90 \
 base/cstphy.f90 \
 base/cstnum.f90 \
-base/dimens.f90 \
-base/numvar.f90 \
 base/optcal.f90 \
 base/parall.f90 \
 base/pointe.f90 \
@@ -63,17 +60,12 @@ pprt/ppincl.f90
 # Module dependencies (handled manually, as Automake does
 # not yet handle Fortran module dependencies)
 
-base/cs_c_bindings.$(OBJEXT): base/paramx.$(OBJEXT) \
- base/mesh.$(OBJEXT)  base/field.$(OBJEXT)
-
-base/numvar.$(OBJEXT): base/paramx.$(OBJEXT)
+base/cs_c_bindings.$(OBJEXT): base/mesh.$(OBJEXT)  base/field.$(OBJEXT)
 
 base/optcal.$(OBJEXT): base/cs_c_bindings.$(OBJEXT)
 
 atmo/atincl.$(OBJEXT): pprt/ppincl.$(OBJEXT) \
  base/mesh.$(OBJEXT) base/cs_c_bindings.$(OBJEXT)
-
-atmo/atimbr.$(OBJEXT): base/cstphy.$(OBJEXT) atmo/atincl.$(OBJEXT)
 
 # Additional local targets
 

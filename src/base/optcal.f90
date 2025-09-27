@@ -57,41 +57,12 @@ module optcal
   !> \addtogroup time_step_options
   !> \{
 
-  !> Absolute time step number for previous calculation.
-  !>
-  !> In the case of a restart calculation, \ref ntpabs
-  !> is read from the restart file. Otherwise, it is
-  !> initialised to 0 \ref ntpabs is initialised
-  !> automatically by the code, its value is not to be
-  !> modified by the user.
-  integer(c_int), pointer, save :: ntpabs
-
   !> Current absolute time step number.
   !> In case of restart, this is equal to ntpabs + number of new iterations.
   integer(c_int), pointer, save :: ntcabs
 
-  !> Maximum absolute time step number.
-  !>
-  !> For the restart calculations, \ref ntmabs takes into
-  !> account the number of time steps of the previous calculations.
-  !> For instance, after a first calculation of 3 time steps, a
-  !> restart file of 2 time steps is realised by setting
-  !> \ref ntmabs = 3+2 = 5
-  integer(c_int), pointer, save :: ntmabs
-
-  !> Number of time steps for initalization (for all steps between
-  !> 0 and \ref ntinit, pressure is re-set to 0 before prediction
-  !> correction).
-  integer(c_int), pointer, save :: ntinit
-
   !> Absolute time value for previous calculation.
   !>
-  !> In the case of a restart calculation, \ref ttpabs is read from
-  !> the restart file. Otherwise it is initialised to 0.\n
-  !> \ref ttpabs is initialised automatically by the code,
-  !> its value is not to be modified by the user.
-  real(c_double), pointer, save :: ttpabs
-
   !> Current absolute time.
   !>
   !> For the restart calculations, \ref ttcabs takes
@@ -103,9 +74,6 @@ module optcal
   !> \ref ttcabs} is initialised and updated automatically by the code,
   !> its value is not to be modified by the user.
   real(c_double), pointer, save :: ttcabs
-
-  !> Maximum absolute time.
-  real(c_double), pointer, save :: ttmabs
 
   !> option for a variable time step
   !>    - -1: steady algorithm
@@ -146,19 +114,18 @@ module optcal
     ! Interface to C function retrieving pointers to members of the
     ! global time step structure
 
-    subroutine cs_f_time_step_get_pointers(nt_prev, nt_cur, nt_max, nt_ini,  &
-                                           dt_ref, t_prev, t_cur, t_max)     &
+    subroutine cs_f_time_step_get_pointers(nt_cur, dt_ref, t_cur)   &
       bind(C, name='cs_f_time_step_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: nt_prev, nt_cur, nt_max, nt_ini
-      type(c_ptr), intent(out) :: dt_ref, t_prev, t_cur, t_max
+      type(c_ptr), intent(out) :: nt_cur
+      type(c_ptr), intent(out) :: dt_ref, t_cur
     end subroutine cs_f_time_step_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
     ! global time step options structure
 
-    subroutine cs_f_time_step_options_get_pointers(idtvar)         &
+    subroutine cs_f_time_step_options_get_pointers(idtvar)   &
       bind(C, name='cs_f_time_step_options_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -202,21 +169,14 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_ntpabs, c_ntcabs, c_ntmabs, c_ntinit
-    type(c_ptr) :: c_dtref, c_ttpabs, c_ttcabs, c_ttmabs
+    type(c_ptr) :: c_ntcabs
+    type(c_ptr) :: c_dtref, c_ttcabs
 
-    call cs_f_time_step_get_pointers(c_ntpabs, c_ntcabs, c_ntmabs, c_ntinit, &
-                                     c_dtref, c_ttpabs, c_ttcabs, c_ttmabs)
+    call cs_f_time_step_get_pointers(c_ntcabs, c_dtref, c_ttcabs)
 
-    call c_f_pointer(c_ntpabs, ntpabs)
     call c_f_pointer(c_ntcabs, ntcabs)
-    call c_f_pointer(c_ntmabs, ntmabs)
-    call c_f_pointer(c_ntinit, ntinit)
-
     call c_f_pointer(c_dtref,  dtref)
-    call c_f_pointer(c_ttpabs, ttpabs)
     call c_f_pointer(c_ttcabs, ttcabs)
-    call c_f_pointer(c_ttmabs, ttmabs)
 
   end subroutine time_step_init
 

@@ -62,6 +62,7 @@
 #include "mesh/cs_mesh_location.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
+#include "base/cs_parameters.h"
 #include "base/cs_parameters_check.h"
 #include "base/cs_physical_constants.h"
 #include "base/cs_prototypes.h"
@@ -1450,7 +1451,7 @@ cs_atmo_init_chemistry(void)
                                           CS_MESH_LOCATION_CELLS,
                                           1);
       cs_field_t *f = cs_field_by_id(f_id);
-      cs_add_model_field_indexes(f->id);
+      cs_add_model_field_indexes(f);
       _atmo_chem.species_to_field_id[ii] = f->id;
     }
 
@@ -1518,7 +1519,7 @@ cs_atmo_init_chemistry(void)
                                           CS_MESH_LOCATION_CELLS,
                                           1);
       cs_field_t *f = cs_field_by_id(f_id);
-      cs_add_model_field_indexes(f->id);
+      cs_add_model_field_indexes(f);
       _atmo_chem.species_to_field_id[ii] = f->id;
     }
 
@@ -1623,7 +1624,7 @@ cs_atmo_init_chemistry(void)
                                           CS_MESH_LOCATION_CELLS,
                                           1);
       cs_field_t *f = cs_field_by_id(f_id);
-      cs_add_model_field_indexes(f->id);
+      cs_add_model_field_indexes(f);
       _atmo_chem.species_to_field_id[ii] = f->id;
     }
 
@@ -1788,7 +1789,8 @@ cs_atmo_declare_chem_from_spack(void)
     _atmo_chem.species_to_field_id[i]
       = cs_variable_field_create(name, line, CS_MESH_LOCATION_CELLS, 1);
 
-    cs_add_model_field_indexes(_atmo_chem.species_to_field_id[i]);
+    cs_field_t *f = cs_field_by_id(_atmo_chem.species_to_field_id[i]);
+    cs_add_model_field_indexes(f);
   }
 }
 

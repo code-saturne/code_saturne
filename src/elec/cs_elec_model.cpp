@@ -1780,7 +1780,7 @@ cs_elec_add_variable_fields(void)
     f = cs_field_by_id(f_id);
     cs_field_set_key_double(f, kscmin, -cs_math_big_r);
     cs_field_set_key_int(f, kivisl, 0);
-    cs_add_model_field_indexes(f->id);
+    cs_add_model_field_indexes(f);
 
     /* set thermal model */
     cs_thermal_model_t *thermal = cs_get_glob_thermal_model();
@@ -1794,7 +1794,7 @@ cs_elec_add_variable_fields(void)
     cs_field_set_key_double(f, kscmin, -cs_math_big_r);
     cs_field_set_key_double(f, kscmax,  cs_math_big_r);
     cs_field_set_key_int(f, kivisl, 0);
-    cs_add_model_field_indexes(f->id);
+    cs_add_model_field_indexes(f);
   }
 
   if (ieljou == 2 || ieljou == 4) {
@@ -1804,7 +1804,7 @@ cs_elec_add_variable_fields(void)
     cs_field_set_key_double(f, kscmin, -cs_math_big_r);
     cs_field_set_key_double(f, kscmax,  cs_math_big_r);
     cs_field_set_key_int(f, kivisl, 0);
-    cs_add_model_field_indexes(f->id);
+    cs_add_model_field_indexes(f);
   }
 
   if (ielarc > 1) {
@@ -1814,7 +1814,7 @@ cs_elec_add_variable_fields(void)
     //cs_field_set_key_double(f, kscmin, -cs_math_big_r);
     //cs_field_set_key_double(f, kscmax,  cs_math_big_r);
     cs_field_set_key_int(f, kivisl, -1);
-    cs_add_model_field_indexes(f->id);
+    cs_add_model_field_indexes(f);
   }
 
   if (e_props->n_gas > 1) {
@@ -1838,7 +1838,7 @@ cs_elec_add_variable_fields(void)
       cs_field_set_key_double(f, kscmin, 0.);
       cs_field_set_key_double(f, kscmax, 1.);
       cs_field_set_key_int(f, kivisl, 0);
-      cs_add_model_field_indexes(f->id);
+      cs_add_model_field_indexes(f);
       CS_FREE(name);
       CS_FREE(label);
       CS_FREE(suf);

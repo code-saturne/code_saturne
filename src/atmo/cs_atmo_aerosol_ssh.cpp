@@ -64,6 +64,7 @@
 #include "mesh/cs_mesh_location.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
+#include "base/cs_parameters.h"
 #include "base/cs_physical_constants.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_post.h"
@@ -509,7 +510,8 @@ cs_atmo_aerosol_ssh_initialize(void)
       = cs_variable_field_create(name, name, CS_MESH_LOCATION_CELLS, 1);
 
     /* Update associated scalar field ids */
-    cs_add_model_field_indexes(at_chem->species_to_field_id[i]);
+    cs_field_t *f = cs_field_by_id(at_chem->species_to_field_id[i]);
+    cs_add_model_field_indexes(f);
 
   }
 

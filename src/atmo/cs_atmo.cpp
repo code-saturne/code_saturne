@@ -307,8 +307,6 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        cs_real_t              **ssec,
                        cs_real_t              **longitude,
                        cs_real_t              **latitude,
-                       cs_real_t              **x_l93,
-                       cs_real_t              **y_l93,
                        bool                   **compute_z_ground,
                        int                    **open_bcs_treatment,
                        int                    **theo_interp,
@@ -323,13 +321,11 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **nbmetm,
                        int                    **radiative_model_1d,
                        int                    **nbmaxt,
-                       cs_real_t              **meteo_zi,
                        int                    **soil_model,
                        int                    **nvert,
                        int                    **kvert,
                        int                    **kmx,
                        int                    **ihpm,
-                       int                    **iqv0,
                        int                    **nfatr1,
                        cs_real_t              **sigc,
                        int                    **idrayi,
@@ -338,8 +334,7 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        cs_real_t              **aod_h2o_tot);
 
 void
-cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
-                              cs_real_t **z_temp_met,
+cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
                               cs_real_t **xyp_met,
                               cs_real_t **u_met,
                               cs_real_t **v_met,
@@ -353,9 +348,6 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
                               cs_real_t **rmet,
                               cs_real_t **qvmet,
                               cs_real_t **ncmet,
-                              cs_real_t **dpdt_met,
-                              cs_real_t **mom_met,
-                              cs_real_t **mom,
                               cs_real_t **xyvert,
                               cs_real_t **zvert,
                               cs_real_t **acinfe,
@@ -1946,8 +1938,6 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        cs_real_t              **ssec,
                        cs_real_t              **longitude,
                        cs_real_t              **latitude,
-                       cs_real_t              **x_l93,
-                       cs_real_t              **y_l93,
                        bool                   **compute_z_ground,
                        int                    **open_bcs_treatment,
                        int                    **theo_interp,
@@ -1962,13 +1952,11 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **nbmetm,
                        int                    **radiative_model_1d,
                        int                    **nbmaxt,
-                       cs_real_t              **meteo_zi,
                        int                    **soil_model,
                        int                    **nvert,
                        int                    **kvert,
                        int                    **kmx,
                        int                    **ihpm,
-                       int                    **iqv0,
                        int                    **nfatr1,
                        cs_real_t              **sigc,
                        int                    **idrayi,
@@ -1984,8 +1972,6 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
   *ssec      = &(_atmo_option.ssec);
   *longitude = &(_atmo_option.longitude);
   *latitude  = &(_atmo_option.latitude);
-  *x_l93 = &(_atmo_option.x_l93);
-  *y_l93 = &(_atmo_option.y_l93);
   *compute_z_ground = &(_atmo_option.compute_z_ground);
   *open_bcs_treatment = &(_atmo_option.open_bcs_treatment);
   *theo_interp = &(_atmo_option.theo_interp);
@@ -1999,14 +1985,12 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
   *nbmett     = &(_atmo_option.met_1d_nlevels_t);
   *nbmetm     = &(_atmo_option.met_1d_ntimes);
   *nbmaxt     = &(_atmo_option.met_1d_nlevels_max_t);
-  *meteo_zi   = &(_atmo_option.meteo_zi);
   *soil_model = &(_atmo_option.soil_model);
   *radiative_model_1d = &(_atmo_option.radiative_model_1d);
   *nvert = &(_atmo_option.rad_1d_nvert);
   *kvert = &(_atmo_option.rad_1d_nlevels);
   *kmx = &(_atmo_option.rad_1d_nlevels_max);
   *ihpm = &(_atmo_option.hydrostatic_pressure_model);
-  *iqv0 = &(_atmo_option.qv_profile);
   *nfatr1 = &(_atmo_option.rad_1d_frequency);
   *sigc  = &(_atmo_option.sigc);
   *idrayi = &(_atmo_option.infrared_1D_profile);
@@ -2046,12 +2030,10 @@ cs_f_atmo_get_soil_zone(cs_lnum_t         *n_elts,
       *n_soil_cat = 0;
       break;
   }
-
 }
 
 void
-cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
-                              cs_real_t **z_temp_met,
+cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
                               cs_real_t **xyp_met,
                               cs_real_t **u_met,
                               cs_real_t **v_met,
@@ -2065,9 +2047,6 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
                               cs_real_t **rmet,
                               cs_real_t **qvmet,
                               cs_real_t **ncmet,
-                              cs_real_t **dpdt_met,
-                              cs_real_t **mom_met,
-                              cs_real_t **mom,
                               cs_real_t **xyvert,
                               cs_real_t **zvert,
                               cs_real_t **acinfe,
@@ -2144,11 +2123,7 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_dyn_met,
   *rmet      = _atmo_option.rho_met;
   *qvmet     = _atmo_option.qw_met;
   *ncmet     = _atmo_option.ndrop_met;
-  *dpdt_met  = _atmo_option.dpdt_met;
-  *mom_met   = (cs_real_t *)_atmo_option.mom_met;
-  *mom       = (cs_real_t *)_atmo_option.mom_cs;
 
-  *z_dyn_met  = _atmo_option.z_dyn_met;
   *z_temp_met = _atmo_option.z_temp_met;
   *time_met   = _atmo_option.time_met;
 

@@ -33,8 +33,6 @@ subroutine atr1vf () &
 ! Module files
 !===============================================================================
 
-use paramx
-use numvar
 use optcal
 use cstphy
 use cstnum, only:pi
@@ -187,8 +185,8 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     fneray(k) = 0.d0
   enddo
 
-  call field_get_val_s(icrom, crom)
-  call field_get_val_s(itempc, cpro_tempc)
+  call field_get_val_s_by_name("density", crom)
+  call field_get_val_s_by_name("real_temperature", cpro_tempc)
 
   if (ippmod(iatmos).eq.2) then
     call field_get_val_s_by_name("liquid_water", cpro_pcliq)

@@ -140,7 +140,7 @@ cs_ctwr_add_variable_fields(void)
                                             CS_MESH_LOCATION_CELLS,
                                             1);
         f = cs_field_by_id(f_id);
-        cs_add_model_field_indexes(f->id);
+        cs_add_model_field_indexes(f);
       }
       /* Clipping : 0 < ym < 1 */
       cs_field_set_key_double(f, kscmin, 0.e0);
@@ -194,7 +194,7 @@ cs_ctwr_add_variable_fields(void)
                                             1);
 
         f = cs_field_by_id(f_id);
-        cs_add_model_field_indexes(f->id);
+        cs_add_model_field_indexes(f);
       }
 
       /* Variable cp (0 = variable, -1 = constant) since it changed with humidity
@@ -273,7 +273,7 @@ cs_ctwr_add_variable_fields(void)
     /* Set constant diffusivity for injected liquid mass fraction */
     int ifcvsl = -1;
     cs_field_set_key_int(f, kivisl, ifcvsl);
-    cs_add_model_field_indexes(f->id);
+    cs_add_model_field_indexes(f);
 
     /* Equation parameters */
     cs_equation_param_t *eqp = cs_field_get_equation_param(f);
@@ -307,7 +307,7 @@ cs_ctwr_add_variable_fields(void)
 
     ifcvsl = 0;
     cs_field_set_key_int(f, kivisl, ifcvsl);
-    cs_add_model_field_indexes(f->id);
+    cs_add_model_field_indexes(f);
 
     /* Equation parameters */
     eqp = cs_field_get_equation_param(f);
@@ -328,7 +328,7 @@ cs_ctwr_add_variable_fields(void)
                                       CS_MESH_LOCATION_CELLS, 3);
       f = cs_field_by_id(f_id);
       cs_field_set_key_int(f, keyccl, class_id);
-      cs_add_model_field_indexes(f_id);
+      cs_add_model_field_indexes(f);
 
       /* Scalar with drift, but do not create an additional mass flux */
       if (ct_opt->mixture_model)
@@ -393,7 +393,7 @@ cs_ctwr_add_variable_fields(void)
     /* Set constant diffusivity for injected liquid mass fraction */
     int ifcvsl = -1;
     cs_field_set_key_int(f, kivisl, ifcvsl);
-    cs_add_model_field_indexes(f->id);
+    cs_add_model_field_indexes(f);
 
     /* Equation parameters */
     cs_equation_param_t *eqp = cs_field_get_equation_param(f);
@@ -435,7 +435,7 @@ cs_ctwr_add_variable_fields(void)
 
     ifcvsl = 0;
     cs_field_set_key_int(f, kivisl, ifcvsl);
-    cs_add_model_field_indexes(f->id);
+    cs_add_model_field_indexes(f);
 
     /* Equation parameters */
     eqp = cs_field_get_equation_param(f);

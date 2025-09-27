@@ -48,8 +48,6 @@ subroutine rayigc (zbas,zz,pz,zzp,pzp,xa,xda,q,u,tco2,ro)
 ! Module files
 !===============================================================================
 
-use paramx
-use numvar
 use optcal
 use cstphy
 use parall

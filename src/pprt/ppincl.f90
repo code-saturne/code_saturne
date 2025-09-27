@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2024 EDF S.A.
+! Copyright (C) 1998-2025 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -110,7 +110,8 @@ contains
   !> \brief Initialize Fortran physical models properties API.
   !> This maps Fortran pointers to global C variables.
 
-  subroutine pp_models_init
+  subroutine pp_models_init() &
+     bind(C, name='cs_f_pp_models_init')
 
     use, intrinsic :: iso_c_binding
     implicit none
@@ -120,7 +121,6 @@ contains
     type(c_ptr) :: p_ippmod
 
     call cs_f_physical_model_get_pointers(p_ippmod)
-
     call c_f_pointer(p_ippmod, ippmod, [nmodmx])
 
   end subroutine pp_models_init

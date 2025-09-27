@@ -33,7 +33,6 @@ subroutine iniini () &
 !===============================================================================
 
 use atincl
-use paramx
 use cstnum
 use cstphy
 use optcal

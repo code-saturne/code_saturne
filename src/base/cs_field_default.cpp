@@ -87,8 +87,6 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
-/* Dimensions and pointers (mappable to legacy Fortran array,
-   which is why this is not simply allocated locally for each field) */
 
 static cs_lnum_t    _n_vars_bc = 0;
 static cs_lnum_t    _n_b_faces = 0;

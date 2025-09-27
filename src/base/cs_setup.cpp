@@ -124,25 +124,13 @@ BEGIN_C_DECLS
 /* Bindings to Fortran routines */
 
 void
-cs_f_usipes(int *nmodpp);
-
-void
 cs_f_indsui(void);
-
-void
-cs_f_fldvar(void);
-
-void
-cs_f_add_user_scalar_fields(void);
-
-void
-cs_f_fldprp(void);
 
 void
 cs_f_iniini(void);
 
 void
-cs_f_ppinii(void);
+cs_f_pp_models_init(void);
 
 /*============================================================================
  * Private function definitions
@@ -181,7 +169,7 @@ _init_setup(void)
   }
 
   cs_f_iniini();
-  cs_f_ppinii();
+  cs_f_pp_models_init();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -348,7 +336,7 @@ _add_variable_field
                                               CS_MESH_LOCATION_CELLS,
                                               dim));
 
-  cs_add_variable_field_indexes(f->id);
+  cs_add_variable_field_indexes(f);
 
   return f;
 }
@@ -370,7 +358,7 @@ _add_variable_cdo_field(const char *f_name, const char *f_label, int dim)
                                                 dim,
                                                 has_previous));
 
-  cs_add_variable_field_indexes(f->id);
+  cs_add_variable_field_indexes(f);
 
   return f;
 }
@@ -395,7 +383,7 @@ _add_model_scalar_field
                                               CS_MESH_LOCATION_CELLS,
                                               dim));
 
-  cs_add_model_field_indexes(f->id);
+  cs_add_model_field_indexes(f);
 
   return f;
 }
@@ -678,10 +666,6 @@ _create_variable_fields(void)
     cs_field_lock_key(f, keycdt);
   }
 
-  /* Fortran mappings and checks */
-
-  cs_f_fldvar();
-
   /* Variable fields for specific physical models */
 
   {
@@ -745,7 +729,7 @@ _create_variable_fields(void)
                                             CS_MESH_LOCATION_CELLS,
                                             1);
         f = cs_field_by_id(f_id);
-        cs_add_model_field_indexes(f->id);
+        cs_add_model_field_indexes(f);
       }
 
       if (fp_id != CS_FIELD_N_POINTERS)
@@ -760,7 +744,7 @@ _create_variable_fields(void)
   /* Add user scalars last, so that if a field name is already used by the
      model, the error report will blame the user field, not the model field. */
 
-  cs_f_add_user_scalar_fields();
+  cs_parameters_create_added_variables();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -968,10 +952,6 @@ _create_property_fields(void)
 
   cs_field_pointer_map_base();
   cs_field_pointer_map_boundary();
-
-  /* Map some Fortran field ids */
-
-  cs_f_fldprp();
 }
 
 /*----------------------------------------------------------------------------*/

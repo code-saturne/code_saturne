@@ -47,51 +47,6 @@
 BEGIN_C_DECLS
 
 /*============================================================================
- * Macro definitions
- *============================================================================*/
-
-/*=============================================================================
- * Fortran function/subroutine prototypes
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Add field indexes associated with a new non-user solved variable,
- * with default options
- *
- * parameters:
- *   f_id <--   field id
- *
- * returns:
- *   variable number for defined field
- *----------------------------------------------------------------------------*/
-
-int
-cs_add_variable_field_indexes(int  f_id);
-
-/*----------------------------------------------------------------------------
- * Add field indexes associated with a new non-user solved variable,
- * with default options
- *
- * parameters:
- *   f_id <--   field id
- *
- * returns:
- *   scalar number for defined field
- *----------------------------------------------------------------------------*/
-
-int
-cs_add_model_field_indexes(int  f_id);
-
-/*----------------------------------------------------------------------------*/
-/*! \brief  Prepare for the cressman interpolation of the variables
- *
- * \param[in]   the_time          current time
- */
-/*----------------------------------------------------------------------------*/
-
-
-
-/*============================================================================
  *  User function prototypes
  *============================================================================*/
 

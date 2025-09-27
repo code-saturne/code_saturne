@@ -46,6 +46,7 @@
 #include "base/cs_field_pointer.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
+#include "base/cs_parameters.h"
 #include "base/cs_parameters_check.h"
 #include "base/cs_physical_constants.h"
 #include "pprt/cs_physical_model.h"
@@ -221,7 +222,7 @@ cs_cf_add_variable_fields(void)
                                                 "TotEner",
                                                 CS_MESH_LOCATION_CELLS,
                                                 1));
-    cs_add_model_field_indexes(f->id);
+    cs_add_model_field_indexes(f);
 
     cs_field_pointer_map(CS_ENUMF_(e_tot), f);
 
@@ -238,7 +239,7 @@ cs_cf_add_variable_fields(void)
                                                 "TempK",
                                                 CS_MESH_LOCATION_CELLS,
                                                 1));
-    cs_add_model_field_indexes(f->id);
+    cs_add_model_field_indexes(f);
 
     /* Map to both temperature and secondary t_kelvin pointers */
     cs_field_pointer_map(CS_ENUMF_(t), f);
@@ -277,7 +278,7 @@ cs_cf_add_variable_fields(void)
                                                   f_labels[idx],
                                                   CS_MESH_LOCATION_CELLS,
                                                   1));
-      cs_add_model_field_indexes(f->id);
+      cs_add_model_field_indexes(f);
 
       cs_field_pointer_map(f_pointers[idx], f);
 

@@ -351,6 +351,11 @@ typedef struct {
  * Static global variables
  *============================================================================*/
 
+/* Variable counts */
+
+static int _n_vars = 0;
+static int _n_scalars = 0;
+
 /* Default equation param */
 
 static cs_equation_param_t _equation_param_default
@@ -1100,8 +1105,13 @@ cs_parameters_create_added_variables(void)
       cs_field_t *f = cs_field_by_id(fld_id);
       f->type |= CS_FIELD_USER;
 
+      cs_add_variable_field_indexes(f);
+
+      _n_scalars += 1;
+      f->set_key_int("scalar_id", _n_scalars);
+
       int k_var = cs_field_key_id("first_moment_id");
-      cs_field_set_key_int(f, k_var, f_ref->id);
+      f->set_key_int(k_var, f_ref->id);
       cs_field_lock_key(f, k_var);
       CS_FREE((_user_variable_defs + i)->ref_name);
 
@@ -1323,6 +1333,43 @@ cs_parameters_create_added_properties(void)
 
   CS_FREE(_user_property_defs);
   _n_user_properties = 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add field indexes associated with a new non-user solved scalar
+ *        variable, with default options.
+ *
+ * \param[in, out]  f  field
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_add_model_field_indexes(cs_field_t  *f)
+{
+  cs_add_variable_field_indexes(f);
+
+  _n_scalars += 1;
+
+  f->set_key_int("scalar_id", _n_scalars);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add field indexes associated with a new non-user solved variable,
+ *        with default options.
+ *
+ * \param[in, out]  f  field
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_add_variable_field_indexes(cs_field_t  *f)
+{
+  int ivar = _n_vars + 1;
+  _n_vars += f->dim;
+
+  f->set_key_int("variable_id", ivar);
 }
 
 /*----------------------------------------------------------------------------*/

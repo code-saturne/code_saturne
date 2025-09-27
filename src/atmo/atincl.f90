@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2024 EDF S.A.
+! Copyright (C) 1998-2025 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -47,16 +47,6 @@ implicit none
 !> time (in sec) of the meteo profile
 double precision, dimension(:), pointer :: tmmet
 
-!> altitudes of the dynamic profiles (read in the input meteo file)
-double precision, dimension(:), pointer :: zdmet
-
-!> Pressure drop integrated over a time step (used for automatic open boundaries)
-double precision, dimension(:), pointer :: dpdt_met
-
-!> Momentum for each level (used for automatic open boundaries)
-double precision, dimension(:,:), pointer :: mom_met
-double precision, dimension(:,:), pointer :: mom
-
 !> altitudes of the temperature profile (read in the input meteo file)
 double precision, dimension(:), pointer :: ztmet
 
@@ -98,13 +88,6 @@ double precision, dimension(:,:), pointer :: tpmet
 
 !> hydrostatic pressure from Laplace integration
 double precision, dimension(:,:), pointer :: phmet
-
-! 1.3 Pointers for the positions of the properties for the specific phys.
-!------------------------------------------------------------------------
-!   Properties specific to the atmospheric physics:
-
-!> temperature (in Celsius)
-integer, save :: itempc
 
 !----------------------------------------------------------------------------
 
@@ -169,12 +152,6 @@ real(c_double), pointer, save:: xlon
 !> latitude of the domain origin
 real(c_double), pointer, save:: xlat
 
-!> x coordinate of the domain origin in Lambert-93
-real(c_double), pointer, save:: xl93
-
-!> y coordinate of the domain origin in Lambert-93
-real(c_double), pointer, save:: yl93
-
 ! 2.3 Data specific to the meteo profile above the domain
 !--------------------------------------------------------
 !> Number of vertical levels (cf. 1-D radiative scheme)
@@ -200,9 +177,6 @@ integer(c_int), pointer, save:: kvert
 !> (automatically computed)
 integer(c_int), pointer, save:: kmx
 
-!> Height of the boundary layer
-real(c_double), pointer, save :: meteo_zi
-
 ! 2.5 Data specific to the 1-D atmospheric radiative module:
 !-------------------------------------------------------------------------------
 !> flag for the use of the 1-D atmo radiative model
@@ -212,11 +186,6 @@ integer(c_int), pointer, save :: iatra1
 
 !> 1D radiative model pass frequency
 integer(c_int), pointer, save :: nfatr1
-
-!> flag for the standard atmo humidity profile
-!> - 0: q = 0 (default)
-!> - 1: q = decreasing exponential
-integer(c_int), pointer, save :: iqv0
 
 !> pointer for 1D infrared profile
 integer(c_int), pointer, save :: idrayi
@@ -307,39 +276,14 @@ logical(c_bool), pointer, save :: compute_z_ground
 ! 4.0 Microphysics parameterization options
 !  -------------------------------------------------------------------------------
 
-!> Option for subgrid models
-!>  - modsub = 0 : the simplest parameterization (for numerical verifications)
-!>  - modsub = 1 : Bechtold et al. 1995 (Luc Musson-Genon)
-!>  - modsub = 2 : Bouzereau et al. 2004
-!>  - modsub = 3 : Cuijpers and Duynkerke 1993, Deardorff 1976, Sommeria and
-!>                Deardorff 1977
-integer(c_int), pointer, save:: modsub
-
 !> Option for liquid water content distribution models
 !>  - moddis = 1 : all or nothing
 !>  - moddis = 2 : Gaussian distribution
 integer(c_int), pointer, save:: moddis
 
-!> Option for nucleation
-!>  - modnuc = 0 : without nucleation
-!>  - modnuc = 1 : Pruppacher and Klett 1997
-!>  - modnuc = 2 : Cohard et al. 1998,1999
-!>  - modnuc = 3 : Abdul-Razzak et al. 1998,2000
-!>  logaritmic standard deviation of the log-normal law of the droplet spectrum
-integer(c_int), pointer, save:: modnuc
-
-!> sedimentation flag
-integer(c_int), pointer, save:: modsedi
-
-!> deposition flag
-integer(c_int), pointer, save:: moddep
-
 !> logaritmic standard deviation of the log-normal law of the droplet spectrum
 !> adimensional:  sigc=0.53 other referenced values are 0.28, 0.15
 real(c_double), pointer, save :: sigc
-
-!> key id for optimal interpolation
-integer, save :: kopint
 
 !> Aerosol optical properties
 
@@ -351,25 +295,25 @@ real(c_double), pointer, save :: aod_h2o_tot
 
 !> Asymmetry factor for O3 (non-dimensional)
 !> climatic value gaero_o3=0.66
-double precision, save:: gaero_o3
+double precision, save:: gaero_o3 = 0.66d0
 !> Asymmetry factor for H2O (non-dimensional)
 !> climatic value gaero_h2o=0.64
-double precision, save:: gaero_h2o
+double precision, save:: gaero_h2o = 064d0
 
 !> Single scattering albedo for O3 (non-dimensional)
 !> climatic value piaero_o3=0.84, other referenced values are 0.963
-double precision, save:: piaero_o3
+double precision, save:: piaero_o3 = 0.84d0
 !> Single scattering albedo for H2O (non-dimensional)
 !> climatic value piaero_h2o=0.84, other referenced values are 0.964
-double precision, save:: piaero_h2o
+double precision, save:: piaero_h2o = 0.84d0
 
 !> Fraction of Black carbon (non-dimensional): black_carbon_frac=1.d-8 for no BC
-double precision, save:: black_carbon_frac
+double precision, save:: black_carbon_frac = 0.d0
 
 !> Maximal height for aerosol distribution on the vertical
 !> important should be <= zqq(kmray-1);
 !> in meters : referenced value: zaero=6000
-double precision, save:: zaero
+double precision, save:: zaero = 6000d0
 
 !> Cp of dry air
 real(c_double), pointer, save :: cp_a
@@ -398,15 +342,13 @@ integer(c_int), pointer, save :: rad_atmo_model
     subroutine cs_f_atmo_get_pointers(ps,                               &
         syear, squant, shour, smin, ssec,                               &
         longitude, latitude,                                            &
-        x_l93, y_l93,                                                   &
         compute_z_ground, iatmst, theo_interp,                          &
         sedimentation_model, deposition_model, nucleation_model,        &
         subgrid_model, distribution_model,                              &
         imeteo, nbmetd, nbmett, nbmetm, iatra1, nbmaxt,                 &
-        meteo_zi, iatsoil,                                              &
-        nvertv, kvert, kmx, ihpm, iqv0,                                 &
-        nfatr1, sigc, idrayi, idrayst, aod_o3_tot,                      &
-        aod_h2o_tot)          &
+        iatsoil,                                                        &
+        nvertv, kvert, kmx, ihpm,                                       &
+        nfatr1, sigc, idrayi, idrayst, aod_o3_tot, aod_h2o_tot)         &
       bind(C, name='cs_f_atmo_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -417,10 +359,9 @@ integer(c_int), pointer, save :: rad_atmo_model
       type(c_ptr), intent(out) :: subgrid_model, distribution_model
       type(c_ptr), intent(out) :: syear, squant, shour, smin, ssec
       type(c_ptr), intent(out) :: longitude, latitude
-      type(c_ptr), intent(out) :: x_l93, y_l93, idrayi, idrayst
+      type(c_ptr), intent(out) :: idrayi, idrayst
       type(c_ptr), intent(out) :: imeteo
       type(c_ptr), intent(out) :: nbmetd, nbmett, nbmetm, iatra1, nbmaxt
-      type(c_ptr), intent(out) :: meteo_zi, iqv0
       type(c_ptr), intent(out) :: iatsoil
       type(c_ptr), intent(out) :: nvertv, kvert, kmx, ihpm, nfatr1
       type(c_ptr), intent(out) :: aod_o3_tot, aod_h2o_tot
@@ -430,13 +371,10 @@ integer(c_int), pointer, save :: rad_atmo_model
 
     !> \brief Return pointers to atmo arrays
 
-    subroutine cs_f_atmo_arrays_get_pointers(p_zdmet, p_ztmet, p_xyp_met,      &
+    subroutine cs_f_atmo_arrays_get_pointers(p_ztmet, p_xyp_met,               &
          p_umet, p_vmet,                                                       &
          p_wmet  , p_tmmet, p_phmet, p_tpmet, p_ekmet, p_epmet,                &
          p_ttmet , p_rmet , p_qvmet, p_ncmet,                                  &
-         p_dpdt_met,                                                           &
-         p_mom_met ,                                                           &
-         p_mom_cs  ,                                                           &
          p_xyvert, p_zvert, p_acinfe,                                          &
          p_dacinfe, p_aco2, p_aco2s,                                           &
          p_daco2, p_daco2s,                                                    &
@@ -461,11 +399,10 @@ integer(c_int), pointer, save :: rad_atmo_model
 
       integer(c_int), dimension(2) :: dim_nd_nt, dim_ntx_nt, dim_nd_3, dim_nt_3
       integer(c_int), dimension(2) ::  dim_xyvert, dim_kmx2, dim_kmx_nvert
-      type(c_ptr), intent(out) :: p_zdmet, p_ztmet, p_xyp_met
+      type(c_ptr), intent(out) :: p_ztmet, p_xyp_met
       type(c_ptr), intent(out) :: p_umet, p_vmet, p_tmmet, p_wmet
       type(c_ptr), intent(out) :: p_phmet, p_tpmet, p_ekmet, p_epmet
       type(c_ptr), intent(out) :: p_ttmet, p_rmet, p_qvmet, p_ncmet
-      type(c_ptr), intent(out) :: p_dpdt_met, p_mom_met, p_mom_cs
       type(c_ptr), intent(out) :: p_xyvert, p_zvert, p_acinfe
       type(c_ptr), intent(out) :: p_dacinfe, p_aco2, p_aco2s
       type(c_ptr), intent(out) :: p_daco2, p_daco2s
@@ -590,10 +527,10 @@ contains
     type(c_ptr) :: c_distribution_model
     type(c_ptr) :: c_syear, c_squant, c_shour, c_smin, c_ssec
     type(c_ptr) :: c_longitude, c_latitude
-    type(c_ptr) :: c_xl93, c_yl93, c_sigc
-    type(c_ptr) :: c_imeteo, c_iqv0, c_idrayi, c_idrayst
+    type(c_ptr) :: c_sigc
+    type(c_ptr) :: c_imeteo, c_idrayi, c_idrayst
     type(c_ptr) :: c_nbmetd, c_nbmett, c_nbmetm, c_iatra1, c_nbmaxt
-    type(c_ptr) :: c_meteo_zi, c_nfatr1
+    type(c_ptr) :: c_nfatr1
     type(c_ptr) :: c_iatsoil
     type(c_ptr) :: c_nvert, c_kvert, c_kmx, c_theo_interp, c_ihpm
     type(c_ptr) :: c_aod_o3_tot, c_aod_h2o_tot
@@ -603,15 +540,14 @@ contains
     call cs_f_atmo_get_pointers(c_ps,               &
       c_syear, c_squant, c_shour, c_smin, c_ssec,   &
       c_longitude, c_latitude,                      &
-      c_xl93, c_yl93,                               &
       c_compute_z_ground, c_iatmst, c_theo_interp,  &
       c_sedimentation_model, c_deposition_model,    &
       c_nucleation_model, c_subgrid_model,          &
       c_distribution_model, c_imeteo,               &
       c_nbmetd, c_nbmett, c_nbmetm, c_iatra1,       &
-      c_nbmaxt, c_meteo_zi, c_iatsoil,              &
+      c_nbmaxt, c_iatsoil,                          &
       c_nvert, c_kvert, c_kmx,                      &
-      c_ihpm, c_iqv0, c_nfatr1,                     &
+      c_ihpm, c_nfatr1,                             &
       c_sigc, c_idrayi, c_idrayst,                  &
       c_aod_o3_tot, c_aod_h2o_tot)
 
@@ -624,17 +560,11 @@ contains
 
     call c_f_pointer(c_longitude, xlon)
     call c_f_pointer(c_latitude, xlat)
-    call c_f_pointer(c_xl93, xl93)
-    call c_f_pointer(c_yl93, yl93)
 
     call c_f_pointer(c_compute_z_ground, compute_z_ground)
     call c_f_pointer(c_iatmst, iatmst)
     call c_f_pointer(c_theo_interp, theo_interp)
 
-    call c_f_pointer(c_sedimentation_model, modsedi)
-    call c_f_pointer(c_deposition_model, moddep)
-    call c_f_pointer(c_nucleation_model, modnuc)
-    call c_f_pointer(c_subgrid_model, modsub)
     call c_f_pointer(c_distribution_model, moddis)
 
     call c_f_pointer(c_imeteo, imeteo)
@@ -644,14 +574,12 @@ contains
     call c_f_pointer(c_iatra1, iatra1)
     call c_f_pointer(c_nfatr1, nfatr1)
     call c_f_pointer(c_nbmaxt, nbmaxt)
-    call c_f_pointer(c_meteo_zi, meteo_zi)
     call c_f_pointer(c_iatsoil, iatsoil)
 
     call c_f_pointer(c_nvert, nvert)
     call c_f_pointer(c_kvert, kvert)
     call c_f_pointer(c_kmx, kmx)
     call c_f_pointer(c_ihpm, ihpm)
-    call c_f_pointer(c_iqv0, iqv0)
     call c_f_pointer(c_sigc, sigc)
     call c_f_pointer(c_idrayi, idrayi)
     call c_f_pointer(c_idrayst, idrayst)
@@ -683,12 +611,11 @@ subroutine allocate_map_atmo () &
   implicit none
 
 ! Local variables
-type(c_ptr) :: c_z_dyn_met, c_z_temp_met, c_xyp_met
+type(c_ptr) :: c_z_temp_met, c_xyp_met
 type(c_ptr) :: c_u_met, c_v_met, c_time_met
 type(c_ptr) :: c_w_met
 type(c_ptr) :: c_hyd_p_met, c_pot_t_met, c_ek_met, c_ep_met
 type(c_ptr) :: c_temp_met, c_rho_met, c_qw_met, c_ndrop_met
-type(c_ptr) :: c_dpdt_met, c_mom_met, c_mom_cs
 type(c_ptr) :: c_xyvert, c_zvert, c_acinfe
 type(c_ptr) :: c_dacinfe, c_aco2, c_aco2s
 type(c_ptr) :: c_daco2, c_daco2s
@@ -713,7 +640,7 @@ if (imeteo.eq.1) then
   call cs_atmo_read_meteo_profile(0)
 endif
 
-call cs_f_atmo_arrays_get_pointers(c_z_dyn_met, c_z_temp_met,     &
+call cs_f_atmo_arrays_get_pointers(c_z_temp_met,                  &
                                    c_xyp_met,                     &
                                    c_u_met, c_v_met, c_w_met,     &
                                    c_time_met,                    &
@@ -723,9 +650,6 @@ call cs_f_atmo_arrays_get_pointers(c_z_dyn_met, c_z_temp_met,     &
                                    c_rho_met,                     &
                                    c_qw_met,                      &
                                    c_ndrop_met,                   &
-                                   c_dpdt_met,                    &
-                                   c_mom_met ,                    &
-                                   c_mom_cs  ,                    &
                                    c_xyvert, c_zvert, c_acinfe,   &
                                    c_dacinfe, c_aco2, c_aco2s,    &
                                    c_daco2, c_daco2s,             &
@@ -745,7 +669,6 @@ call cs_f_atmo_arrays_get_pointers(c_z_dyn_met, c_z_temp_met,     &
                                    dim_nd_3, dim_nt_3,            &
                                    dim_xyvert, dim_kmx2, dim_kmx_nvert)
 
-call c_f_pointer(c_z_dyn_met, zdmet, [nbmetd])
 call c_f_pointer(c_z_temp_met, ztmet, [nbmaxt])
 call c_f_pointer(c_xyp_met, xyp_met, [dim_nt_3])
 call c_f_pointer(c_u_met, umet, [dim_nd_nt])
@@ -760,9 +683,6 @@ call c_f_pointer(c_temp_met, ttmet, [dim_ntx_nt])
 call c_f_pointer(c_rho_met, rmet, [dim_ntx_nt])
 call c_f_pointer(c_qw_met, qvmet, [dim_ntx_nt])
 call c_f_pointer(c_ndrop_met, ncmet, [dim_ntx_nt])
-call c_f_pointer(c_dpdt_met, dpdt_met, [nbmetd])
-call c_f_pointer(c_mom_met, mom_met, [dim_nd_3])
-call c_f_pointer(c_mom_cs, mom, [dim_nd_3])
 
 call c_f_pointer(c_xyvert , xyvert , [dim_xyvert])
 call c_f_pointer(c_zvert  , zvert  , [kmx])
@@ -806,7 +726,7 @@ use cs_c_bindings
 
 implicit none
 
-procedure() :: mestcr, gridcr, mestde
+procedure() :: mestcr, gridcr
 
 if (imeteo.gt.0) then
 
@@ -831,14 +751,13 @@ use cs_c_bindings
 
 implicit none
 
-procedure() :: mestcr, grides, mestde
+procedure() :: grides, mestde
 
 if (imeteo.gt.0) then
   if (iatra1.eq.1) then
 
-    call mestde ()
-
-    call grides ()
+    call mestde()
+    call grides()
 
   endif
 

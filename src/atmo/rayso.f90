@@ -158,8 +158,6 @@ subroutine rayso  &
 ! Module files
 !===============================================================================
 
-use paramx
-use numvar
 use optcal
 use cstphy
 use parall

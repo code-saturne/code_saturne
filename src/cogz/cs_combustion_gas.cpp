@@ -53,6 +53,7 @@
 #include "base/cs_physical_constants.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_parameters.h"
 #include "base/cs_physical_properties.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_restart_default.h"
@@ -219,7 +220,7 @@ _add_model_variable(const char  *name,
   int f_id = cs_variable_field_create(name, label, CS_MESH_LOCATION_CELLS, 1);
   cs_field_t *f = cs_field_by_id(f_id);
 
-  cs_add_model_field_indexes(f->id);
+  cs_add_model_field_indexes(f);
 
   return f;
 }
@@ -948,7 +949,7 @@ cs_combustion_gas_add_variable_fields(void)
                                         CS_MESH_LOCATION_CELLS, 1);
     cs_field_t *f = cs_field_by_id(f_id);
     cs_field_pointer_map(CS_ENUMF_(h), f);
-    cs_add_model_field_indexes(f->id);
+    cs_add_model_field_indexes(f);
 
     cs_field_set_key_double(f, kscmin, -cs_math_big_r);
     cs_field_set_key_double(f, kscmax, cs_math_big_r);

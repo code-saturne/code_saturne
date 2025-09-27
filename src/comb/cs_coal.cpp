@@ -124,16 +124,6 @@ const double cs_coal_epsilon = 1.e-8;
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-/* Additional prototypes for Fortran mappings */
-
-int
-cs_add_model_field_indexes(int  f_id);
-
-/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -185,7 +175,7 @@ _add_coal_variable(const char  *base_name,
   int f_id = cs_variable_field_create(name, label, CS_MESH_LOCATION_CELLS, 1);
   cs_field_t *f = cs_field_by_id(f_id);
 
-  cs_add_model_field_indexes(f->id);
+  cs_add_model_field_indexes(f);
 
   // Set the index of the scalar class in the field structure
   // TODO: we could probably leave the id at the default value
@@ -585,7 +575,7 @@ cs_coal_add_variable_fields(void)
                                         CS_MESH_LOCATION_CELLS, 1);
     cs_field_t *f = cs_field_by_id(f_id);
     cs_field_pointer_map(CS_ENUMF_(h), f);
-    cs_add_model_field_indexes(f->id);
+    cs_add_model_field_indexes(f);
 
     cs_field_set_key_double(f, kscmin, -cs_math_big_r);
     cs_field_set_key_double(f, kscmax, cs_math_big_r);
@@ -845,7 +835,7 @@ cs_coal_add_variable_fields(void)
     int f_id = cs_variable_field_create("age", "Age",
                                         CS_MESH_LOCATION_CELLS, 1);
     cs_field_t *f = cs_field_by_id(f_id);
-    cs_add_model_field_indexes(f->id);
+    cs_add_model_field_indexes(f);
 
     cs_field_set_key_double(f, kscmin, 0);
     cs_field_set_key_double(f, kscmax, cs_math_big_r);

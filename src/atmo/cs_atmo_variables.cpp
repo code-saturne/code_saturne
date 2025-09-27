@@ -312,7 +312,7 @@ cs_atmo_add_variable_fields(void)
     cs_field_set_key_double(f, kscmax, 1.e0);
 
     /* Add the rain mass fraction to the index of fields */
-    cs_add_model_field_indexes(f->id);
+    cs_add_model_field_indexes(f);
 
     /* Equation parameters */
     cs_equation_param_t *eqp = cs_field_get_equation_param(f);
@@ -335,7 +335,7 @@ cs_atmo_add_variable_fields(void)
     cs_field_set_key_double(f, kscmax, 1.e10);
 
     /* Add the rain mass fraction to the index of fields */
-    cs_add_model_field_indexes(f->id);
+    cs_add_model_field_indexes(f);
 
     /* Set beta limiter to maintain y_p in the limits */
     eqp->isstpc = 2;
@@ -359,7 +359,7 @@ cs_atmo_add_variable_fields(void)
                                         CS_MESH_LOCATION_CELLS,
                                         1);
     cs_field_t *f = cs_field_by_id(f_id);
-    cs_add_model_field_indexes(f->id);
+    cs_add_model_field_indexes(f);
     cs_field_set_key_double(f, kscmin, 0.0);
   }
 
@@ -374,7 +374,7 @@ cs_atmo_add_variable_fields(void)
                                         CS_MESH_LOCATION_CELLS,
                                         1);
     cs_field_t *f = cs_field_by_id(f_id);
-    cs_add_model_field_indexes(f->id);
+    cs_add_model_field_indexes(f);
     cs_field_set_key_double(f, kscmin, 200.0);
 
     // total water content
@@ -383,7 +383,7 @@ cs_atmo_add_variable_fields(void)
                                     CS_MESH_LOCATION_CELLS,
                                     1);
     f = cs_field_by_id(f_id);
-    cs_add_model_field_indexes(f->id);
+    cs_add_model_field_indexes(f);
     cs_field_set_key_double(f, kscmin, 0.0);
 
     // total number droplets
@@ -392,7 +392,7 @@ cs_atmo_add_variable_fields(void)
                                     CS_MESH_LOCATION_CELLS,
                                     1);
     f = cs_field_by_id(f_id);
-    cs_add_model_field_indexes(f->id);
+    cs_add_model_field_indexes(f);
     cs_field_set_key_double(f, kscmin, 0.0);
 
   }

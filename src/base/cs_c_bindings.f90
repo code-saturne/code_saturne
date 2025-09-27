@@ -35,6 +35,16 @@ module cs_c_bindings
 
   !=============================================================================
 
+  ! if \ref itypfb=iparoi: smooth solid wall face, impermeable and with friction.
+  integer   iparoi
+
+  ! if \ref itypfb=iparug: rough solid wall face, impermeable and with friction.
+  integer   iparug
+
+  parameter(iparoi=5, iparug=6)
+
+  !=============================================================================
+
   interface
 
     !---------------------------------------------------------------------------
@@ -119,17 +129,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief Get the gas concentrations from aerosol code
-
-    subroutine cs_atmo_aerosol_get_gas(array)   &
-      bind(C, name='cs_atmo_aerosol_get_gas')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), dimension(*), intent(out) :: array
-    end subroutine cs_atmo_aerosol_get_gas
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function for atmo
 
     subroutine raysze(xlat, xlong, jour, heurtu, imer, albe, za, muzero, &
@@ -153,16 +152,6 @@ module cs_c_bindings
       real(kind=c_double), intent(in), value :: z_ref, p_ref, t_ref, z
       real(kind=c_double), intent(out) :: p, t, r
     end subroutine atmstd
-
-    !---------------------------------------------------------------------------
-    ! Interface to C function to compute the number of aerosols
-
-    subroutine cs_atmo_aerosol_ssh_set_t_p_h(t, p, h) &
-       bind(C, name='cs_atmo_aerosol_ssh_set_t_p_h')
-       use, intrinsic :: iso_c_binding
-       implicit none
-       real(kind=c_double), intent(inout) :: t, p, h
-    end subroutine cs_atmo_aerosol_ssh_set_t_p_h
 
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
