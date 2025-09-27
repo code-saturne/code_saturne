@@ -1162,9 +1162,9 @@ cs_solve_equation_scalar(cs_field_t        *f,
     if (   atmo_chem->model > 0
         && atmo_chem->chemistry_sep_mode  == 2
         && (ts->nt_cur >= ts->nt_ini)) {
-      const int *isca_chem = atmo_chem->species_to_scalar_id;
+      const int *f_id_chem = atmo_chem->species_to_field_id;
       const int nespg = atmo_chem->n_species;
-      if ((isca_chem[0] <= iscal) && (iscal <= isca_chem[nespg-1]))
+      if ((f_id_chem[0] <= f->id) && (f->id <= f_id_chem[nespg-1]))
         cs_atmo_chem_exp_source_terms(iscal, rhs);
     }
 

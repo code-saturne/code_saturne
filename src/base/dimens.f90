@@ -38,7 +38,7 @@ implicit none
   !> \addtogroup dimens
   !> \{
 
-  !> number of solved variables (must be lower than \ref paramx::nvarmx "nvarmx")
+  !> number of solved variables
   integer, save :: nvar = 0
 
   !> number of solved user scalars
@@ -50,8 +50,7 @@ implicit none
   !> (passive or not, user-defined or not)
   !> These scalars can be divided into two distinct groups: \ref nscaus
   !> user-defined scalars and \ref nscapp scalars related to a
-  !> "specific physics". \ref nscal=nscaus+nscapp, and \ref nscal
-  !> must be inferior or equal to \ref paramx::nscamx "nscamx".
+  !> "specific physics".
   integer, save :: nscal = 0
 
   !> \}

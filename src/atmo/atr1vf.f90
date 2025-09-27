@@ -194,7 +194,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     call field_get_val_s_by_name("liquid_water", cpro_pcliq)
 
     call field_get_val_prev_s_by_name("ym_water", cvara_totwt)
-    call field_get_val_prev_s(ivarfl(isca(intdrp)), cvara_ntdrp)
+    call field_get_val_prev_s_by_name("number_of_droplets", cvara_ntdrp)
     call field_get_val_s_by_name("nebulosity_diag", nebdia)
   endif
 

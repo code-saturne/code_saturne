@@ -133,9 +133,6 @@ void
 cs_f_fldvar(void);
 
 void
-cs_f_ppvarp(void);
-
-void
 cs_f_add_user_scalar_fields(void);
 
 void
@@ -703,8 +700,6 @@ _create_variable_fields(void)
 
     if (pm_flag[CS_ATMOSPHERIC] >= 0)
       cs_atmo_add_variable_fields();
-
-    cs_f_ppvarp();
 
     if (pm_flag[CS_JOULE_EFFECT] >= 1 || pm_flag[CS_ELECTRIC_ARCS] >= 1)
       cs_elec_add_variable_fields();

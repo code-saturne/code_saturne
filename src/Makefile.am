@@ -58,8 +58,6 @@ base/parall.f90 \
 base/pointe.f90 \
 base/cs_c_bindings.f90 \
 atmo/atincl.f90 \
-atmo/atchem.f90 \
-atmo/sshaerosol.f90 \
 pprt/ppincl.f90
 
 # Module dependencies (handled manually, as Automake does
@@ -73,16 +71,9 @@ base/numvar.$(OBJEXT): base/paramx.$(OBJEXT)
 base/optcal.$(OBJEXT): base/cs_c_bindings.$(OBJEXT)
 
 atmo/atincl.$(OBJEXT): pprt/ppincl.$(OBJEXT) \
- base/mesh.$(OBJEXT) base/cs_c_bindings.$(OBJEXT) \
- atmo/atchem.$(OBJEXT) atmo/sshaerosol.$(OBJEXT)
-
-atmo/atchem.$(OBJEXT): base/mesh.$(OBJEXT) \
- base/numvar.$(OBJEXT) base/cs_c_bindings.$(OBJEXT)
+ base/mesh.$(OBJEXT) base/cs_c_bindings.$(OBJEXT)
 
 atmo/atimbr.$(OBJEXT): base/cstphy.$(OBJEXT) atmo/atincl.$(OBJEXT)
-
-atmo/sshaerosol.$(OBJEXT): base/cs_c_bindings.$(OBJEXT) \
- atmo/atchem.$(OBJEXT) base/mesh.$(OBJEXT)
 
 # Additional local targets
 

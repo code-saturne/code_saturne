@@ -135,8 +135,10 @@ static inline size_t
 cs_numbering_simd_size(cs_lnum_t  n_elts,
                        size_t     type_size)
 {
-  size_t n_double_eq = (type_size >= 8) ? n_elts : n_elts * 8/type_size;
-  return (((n_double_eq-1)/CS_NUMBERING_SIMD_SIZE+1)*CS_NUMBERING_SIMD_SIZE);
+  size_t simd_bytes = CS_NUMBERING_SIMD_SIZE * 8;
+  size_t elt_bytes = n_elts * type_size;
+  size_t n_ceil = (((elt_bytes-1)/simd_bytes+1)*simd_bytes);
+  return n_ceil / type_size;
 }
 
 /*----------------------------------------------------------------------------*/

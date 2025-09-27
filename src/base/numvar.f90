@@ -50,10 +50,6 @@ module numvar
   !> \addtogroup main_variables
   !> \{
 
-  !> \anchor isca
-  !> isca(i) is the index of the scalar i
-  integer, save :: isca(nscamx)
-
   !> \anchor nscaus
   !> number of user scalars solutions of an advection equation
   integer, save :: nscaus = 0
@@ -77,20 +73,6 @@ module numvar
 
   !> cell density field ids of the variables
   integer, save :: icrom = -1
-
-  !> \}
-
-  !----------------------------------------------------------------------------
-  ! Mapping to field structures
-  !----------------------------------------------------------------------------
-
-  !> \defgroup field_map Mapping to field structures
-
-  !> \addtogroup field_map
-  !> \{
-
-  !> Field id for variable i
-  integer, save :: ivarfl(nvarmx)
 
   !> \}
 

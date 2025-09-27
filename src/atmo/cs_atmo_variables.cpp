@@ -102,9 +102,6 @@ void
 cs_f_allocate_map_atmo(void);
 
 void
-cs_f_init_chemistry(void);
-
-void
 cs_f_init_meteo(void);
 
 void
@@ -1182,8 +1179,10 @@ cs_atmo_init_variables_1(void)
 
     cs_f_allocate_map_atmo();
 
-    if (cs_glob_atmo_chemistry->model > 0)
-      cs_f_init_chemistry();
+    if (cs_glob_atmo_chemistry->model > 0) {
+      cs_atmo_read_chemistry_profile(0);
+      cs_atmo_chemistry_initialize_conc_profiles();
+    }
 
   }
 }

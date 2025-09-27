@@ -59,8 +59,7 @@ noinst_LIBRARIES = libcspprt.a
 libcspprt_a_SOURCES = \
 cs_combustion_model.cpp \
 cs_physical_model.cpp \
-ppinii.f90 \
-ppvarp.f90
+ppinii.f90
 
 # Rules for CUDA (not known by Automake)
 

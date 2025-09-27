@@ -2962,7 +2962,7 @@ cs_atmo_bcond(void)
          conditions have not been treated earlier
          (eg, in cs_user_boundary_conditions) */
       for (int ii = 0; ii < at_chem->n_species_profiles; ii++) {
-        const int f_id = at_chem->species_to_scalar_id[ii];
+        const int f_id = at_chem->species_to_field_id[ii];
         cs_field_t *f = cs_field_by_id(f_id);
         if (f->bc_coeffs->rcodcl1[face_id] <= cs_math_infinite_r*0.5)
           continue;
@@ -2980,7 +2980,7 @@ cs_atmo_bcond(void)
        * unless they have already been treated earlier
        (eg, in cs_user_boundary_conditions) */
       for (int ii = 0; ii < at_chem->n_species; ii++) {
-        const int f_id = at_chem->species_to_scalar_id[ii];
+        const int f_id = at_chem->species_to_field_id[ii];
         cs_field_t *f = cs_field_by_id(f_id);
         if (f->bc_coeffs->rcodcl1[face_id] > cs_math_infinite_r*0.5)
           f->bc_coeffs->rcodcl1[face_id] = 0.0;
@@ -3003,7 +3003,7 @@ cs_atmo_bcond(void)
         continue;
 
       for (int ii = 0; ii < nlayer_aer*n_aer+n_aer; ii++) {
-        const int f_id = at_chem->species_to_scalar_id[ii];
+        const int f_id = at_chem->species_to_field_id[ii];
         cs_field_t *f = cs_field_by_id(f_id);
         if (f->bc_coeffs->rcodcl1[face_id] > cs_math_infinite_r*0.5)
           f->bc_coeffs->rcodcl1[face_id] = at_chem->dlconc0[ii];
@@ -3012,7 +3012,7 @@ cs_atmo_bcond(void)
       /* For other species zero dirichlet conditions are imposed,
          unless they have already been treated earlier */
       for (int ii = 0; ii < nlayer_aer*n_aer+n_aer; ii++) {
-        const int f_id = at_chem->species_to_scalar_id[ii];
+        const int f_id = at_chem->species_to_field_id[ii];
         cs_field_t *f = cs_field_by_id(f_id);
         if (f->bc_coeffs->rcodcl1[face_id] > cs_math_infinite_r*0.5)
           f->bc_coeffs->rcodcl1[face_id] = 0.0;
@@ -3023,7 +3023,7 @@ cs_atmo_bcond(void)
          which can be treated in usatcl of with the file chemistry)
          zero Dirichlet conditions are imposed */
       for (int ii = 0; ii < nespg; ii++) {
-        const int f_id = at_chem->species_to_scalar_id[ii];
+        const int f_id = at_chem->species_to_field_id[ii];
         cs_field_t *f = cs_field_by_id(f_id);
         if (f->bc_coeffs->rcodcl1[face_id] > cs_math_infinite_r*0.5)
           f->bc_coeffs->rcodcl1[face_id] = 0.0;

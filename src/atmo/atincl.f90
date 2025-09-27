@@ -99,12 +99,6 @@ double precision, dimension(:,:), pointer :: tpmet
 !> hydrostatic pressure from Laplace integration
 double precision, dimension(:,:), pointer :: phmet
 
-! 1.2 Pointers for the positions of the variables
-!------------------------------------------------
-!   Variables specific to the atmospheric physics:
-!> intdrp---> total number of droplets (for humid atmosphere)
-integer, save :: intdrp = -1
-
 ! 1.3 Pointers for the positions of the properties for the specific phys.
 !------------------------------------------------------------------------
 !   Properties specific to the atmospheric physics:
@@ -490,18 +484,6 @@ integer(c_int), pointer, save :: rad_atmo_model
 
     end subroutine cs_f_atmo_arrays_get_pointers
 
-    subroutine cs_f_atmo_chem_get_pointers(ichemistry, isepchemistry, nespg,            &
-                                           chem_with_photo, iaerosol, frozen_gas_chem,  &
-                                           init_gas_with_lib, init_aero_with_lib, n_aero, n_sizebin) &
-      bind(C, name='cs_f_atmo_chem_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: ichemistry, isepchemistry, nespg
-      type(c_ptr), intent(out) :: chem_with_photo, iaerosol, frozen_gas_chem
-      type(c_ptr), intent(out) :: init_gas_with_lib, init_aero_with_lib
-      type(c_ptr), intent(out) :: n_aero, n_sizebin
-    end subroutine cs_f_atmo_chem_get_pointers
-
     !---------------------------------------------------------------------------
 
     !> \brief Compute meteo profiles if no meteo file is given
@@ -690,40 +672,6 @@ contains
 
   end subroutine atmo_init
 
-  subroutine atmo_init_chem
-    use atchem
-    use sshaerosol
-    use, intrinsic :: iso_c_binding
-    use cs_c_bindings
-
-    implicit none
-
-    ! Local variables
-    type(c_ptr) :: c_model, c_isepchemistry
-    type(c_ptr) :: c_nespg, c_chem_with_photo
-    type(c_ptr) :: c_modelaero, c_frozen_gas_chem
-    type(c_ptr) :: c_init_gas_with_lib
-    type(c_ptr) :: c_init_aero_with_lib, c_nlayer, c_nsize
-
-    call cs_f_atmo_chem_get_pointers(c_model, c_isepchemistry,                     &
-                                     c_nespg, c_chem_with_photo,                   &
-                                     c_modelaero, c_frozen_gas_chem,               &
-                                     c_init_gas_with_lib,                          &
-                                     c_init_aero_with_lib, c_nlayer, c_nsize)
-
-    call c_f_pointer(c_model, ichemistry)
-    call c_f_pointer(c_isepchemistry, isepchemistry)
-    call c_f_pointer(c_nespg, nespg)
-    call c_f_pointer(c_chem_with_photo, photolysis)
-    call c_f_pointer(c_modelaero, iaerosol)
-    call c_f_pointer(c_frozen_gas_chem, nogaseouschemistry)
-    call c_f_pointer(c_init_gas_with_lib, init_gas_with_lib)
-    call c_f_pointer(c_init_aero_with_lib, init_aero_with_lib)
-    call c_f_pointer(c_nlayer, nlayer_aer)
-    call c_f_pointer(c_nsize, n_aer)
-
-  end subroutine atmo_init_chem
-
 !===============================================================================
 
 !> \brief Allocate and map to C meteo data
@@ -731,7 +679,6 @@ subroutine allocate_map_atmo () &
   bind(C, name='cs_f_allocate_map_atmo')
 
   use cs_c_bindings
-  use atchem
 
   implicit none
 

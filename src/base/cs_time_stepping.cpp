@@ -136,9 +136,6 @@ cs_f_finalize_meteo(void);
 void
 cs_f_finalize_imbrication(void);
 
-void
-cs_f_finalize_chemistry(void);
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -917,7 +914,7 @@ cs_time_stepping(void)
     cs_at_data_assim_finalize();
 
     if (cs_glob_atmo_chemistry->model > 0)
-      cs_f_finalize_chemistry();
+      cs_atmo_chemistry_finalize();
 
   }
 

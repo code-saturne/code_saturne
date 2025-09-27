@@ -95,7 +95,6 @@ typedef struct {
   /*! Number of aerosols */
   int n_size;
   char *spack_file_name;
-  int *species_to_scalar_id; // used only in Fortran
   int *species_to_field_id;
   int *species_profiles_to_field_id;
   /*! Molar mass of the chemical species (g/mol) */
@@ -154,11 +153,11 @@ typedef struct {
 extern cs_atmo_chemistry_t *cs_glob_atmo_chemistry;
 
 /*============================================================================
- * Public function definitions
+ * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief This function initializes the external aerosol code
  */
 /*----------------------------------------------------------------------------*/
@@ -167,7 +166,7 @@ void
 cs_atmo_aerosol_initialize(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief This function finalizes the external aerosol code.
  */
 /*----------------------------------------------------------------------------*/
@@ -176,7 +175,7 @@ void
 cs_atmo_aerosol_finalize(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief This function fills the given array with gas concentrations from
  *        the external aerosol code.
  *
@@ -188,7 +187,7 @@ void
 cs_atmo_aerosol_get_gas(cs_real_t  *array);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief This function computes a time step of gaseous chemistry and aerosols
  *        dynamic using the external aerosol code.
  */
@@ -198,7 +197,7 @@ void
 cs_atmo_aerosol_time_advance(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Compute aerosol cloud droplets nucleation when using the atmospheric
  * humid model using a microphysical model.
  *
@@ -221,7 +220,7 @@ cs_atmo_aerosol_nuclea(cs_real_t         *nc,
                        const cs_real_t   *refrad);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Deactivate chemistry initialization procedure
  */
 /*----------------------------------------------------------------------------*/
@@ -230,7 +229,7 @@ void
 cs_atmo_chemistry_initialization_deactivate(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief initialize gaseous and particulate concentrations and aerosol number
  */
 /*----------------------------------------------------------------------------*/
@@ -240,6 +239,15 @@ cs_atmo_chem_initialize_dlconc0(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief initialize (allocate)  chemistry concentrations profiles
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_chemistry_initialize_conc_profiles(void);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Initialize chemistry cell kinetic rates arrays.
  */
 /*----------------------------------------------------------------------------*/
@@ -249,6 +257,15 @@ cs_atmo_chemistry_initialize_reacnum(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Finalize atmospheric chemistry structures.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_chemistry_finalize(void);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Print the atmospheric chemistry options to setup.log.
  */
 /*----------------------------------------------------------------------------*/
@@ -257,7 +274,7 @@ void
 cs_atmo_chemistry_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Print the atmospheric aerosols options to setup.log.
  */
 /*----------------------------------------------------------------------------*/
@@ -266,7 +283,7 @@ void
 cs_atmo_aerosol_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Check if the chemistry module needs initialization
  *
  * \return int value : 1 if needed, 0 if not
@@ -277,7 +294,7 @@ int
 cs_atmo_chemistry_need_initialization(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief This function sets the file name to initialize the aerosol library.
  *
  * \param[in] file_name  name of the file.
@@ -288,7 +305,7 @@ void
 cs_atmo_chemistry_set_aerosol_file_name(const char *file_name);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief This function set the file name of the SPACK file.
  *
  * \param[in] file_name  name of the file.
@@ -296,13 +313,12 @@ cs_atmo_chemistry_set_aerosol_file_name(const char *file_name);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmo_chemistry_set_spack_file_name(const char *file_name);
+cs_atmo_chemistry_set_spack_file_name(const char  *file_name);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief This function declare additional transported variables for
  *        atmospheric module  for the chemistry defined from SPACK.
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -310,7 +326,7 @@ void
 cs_atmo_declare_chem_from_spack(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Initialize chemistry array.
  */
 /*----------------------------------------------------------------------------*/
@@ -319,7 +335,7 @@ void
 cs_atmo_init_chemistry(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Reads initial aerosol concentration and number
  */
 /*----------------------------------------------------------------------------*/
@@ -328,7 +344,7 @@ void
 cs_atmo_read_aerosol(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Reads the chemistry profile data for the atmospheric chemistry
  *
  * \param[in] mode    if false reading of dimensions only else reading of data
@@ -336,7 +352,7 @@ cs_atmo_read_aerosol(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmo_read_chemistry_profile(int mode);
+cs_atmo_read_chemistry_profile(int  mode);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -347,10 +363,10 @@ cs_atmo_read_chemistry_profile(int mode);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmo_set_aero_conc_file_name(const char *file_name);
+cs_atmo_set_aero_conc_file_name(const char  *file_name);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief This function set the file name of the chemistry concentration file.
  *
  * \param[in] file_name  name of the file.
@@ -358,26 +374,25 @@ cs_atmo_set_aero_conc_file_name(const char *file_name);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmo_set_chem_conc_file_name(const char *file_name);
+cs_atmo_set_chem_conc_file_name(const char  *file_name);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Computes the explicit chemical source term for atmospheric
  *         chemistry in case of a semi-coupled resolution
  *
- * \param[in]     iscal         scalar number
+ * \param[in]     f_id          field id
  * \param[out]    st_exp        explicit part of the source term
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmo_chem_exp_source_terms(int          iscal,
+cs_atmo_chem_exp_source_terms(int          f_id,
                               cs_real_t    st_exp[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Calls the rosenbrock resolution for atmospheric chemistry
- *
  */
 /*----------------------------------------------------------------------------*/
 

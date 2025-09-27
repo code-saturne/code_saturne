@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2024 EDF S.A.
+! Copyright (C) 1998-2025 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -130,18 +130,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief Return pointers to atmo chemistry arrays
-
-    subroutine cs_f_atmo_chem_arrays_get_pointers(isca_chem, dmmk,  &
-                                                  chempoint)        &
-      bind(C, name='cs_f_atmo_chem_arrays_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: isca_chem, dmmk, chempoint
-    end subroutine cs_f_atmo_chem_arrays_get_pointers
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function for atmo
 
     subroutine raysze(xlat, xlong, jour, heurtu, imer, albe, za, muzero, &
@@ -153,17 +141,6 @@ module cs_c_bindings
       integer(kind=c_int), value :: imer
       real(kind=c_double), intent(inout) :: albe, za, muzero, omega, fo
     end subroutine raysze
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Initialize C chemistry structure from Fortran
-
-    subroutine cs_f_atmo_chem_initialize_species_to_fid(species_fid) &
-      bind(C, name='cs_f_atmo_chem_initialize_species_to_fid')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), dimension(*), intent(in) :: species_fid
-    end subroutine cs_f_atmo_chem_initialize_species_to_fid
 
     !---------------------------------------------------------------------------
 
@@ -186,96 +163,6 @@ module cs_c_bindings
        implicit none
        real(kind=c_double), intent(inout) :: t, p, h
     end subroutine cs_atmo_aerosol_ssh_set_t_p_h
-
-    !---------------------------------------------------------------------------
-
-    subroutine fexchem_1(ns, nr, y, rk, zcsourc, convers_factor, chem) &
-      bind(C, name='cs_f_fexchem_1')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: ns, nr
-      real(kind=c_double), dimension(*), intent(inout) :: y, rk
-      real(kind=c_double), dimension(*), intent(inout) :: chem
-      real(kind=c_double), dimension(*), intent(inout) :: zcsourc, convers_factor
-    end subroutine fexchem_1
-
-    subroutine fexchem_2(ns, nr, y, rk, zcsourc, convers_factor, chem) &
-      bind(C, name='cs_f_fexchem_2')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: ns, nr
-      real(kind=c_double), dimension(*), intent(inout) :: y, rk
-      real(kind=c_double), dimension(*), intent(inout) :: chem
-      real(kind=c_double), dimension(*), intent(inout) :: zcsourc, convers_factor
-    end subroutine fexchem_2
-
-    subroutine fexchem_3(ns, nr, y, rk, zcsourc, convers_factor, chem) &
-      bind(C, name='cs_f_fexchem_3')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: ns, nr
-      real(kind=c_double), dimension(*), intent(inout) :: y, rk
-      real(kind=c_double), dimension(*), intent(inout) :: chem
-      real(kind=c_double), dimension(*), intent(inout) :: zcsourc, convers_factor
-    end subroutine fexchem_3
-
-    subroutine fexchem_4(ns, nr, y, rk, zcsourc, convers_factor, chem) &
-      bind(C, name='cs_f_fexchem_4')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: ns, nr
-      real(kind=c_double), dimension(*), intent(inout) :: y, rk
-      real(kind=c_double), dimension(*), intent(inout) :: chem
-      real(kind=c_double), dimension(*), intent(inout) :: zcsourc, convers_factor
-    end subroutine fexchem_4
-
-    subroutine jacdchemdc_1(ns,nr,y,convers_factor,  &
-                            convers_factor_jac,rk,jacc)  &
-      bind(C, name='cs_f_jacdchemdc_1')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: nr,ns
-      real(kind=c_double), dimension(ns), intent(inout) :: rk, y, convers_factor
-      real(kind=c_double), dimension(ns,ns), intent(inout) :: convers_factor_jac, jacc
-    end subroutine jacdchemdc_1
-
-    subroutine jacdchemdc_2(ns,nr,y,convers_factor,  &
-                            convers_factor_jac,rk,jacc)  &
-      bind(C, name='cs_f_jacdchemdc_2')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: nr,ns
-      real(kind=c_double), dimension(*), intent(inout) :: rk, y, convers_factor
-      real(kind=c_double), dimension(ns,ns), intent(inout) :: convers_factor_jac, jacc
-    end subroutine jacdchemdc_2
-
-    subroutine jacdchemdc_3(ns,nr,y,convers_factor,  &
-                            convers_factor_jac,rk,jacc)  &
-      bind(C, name='cs_f_jacdchemdc_3')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: nr,ns
-      real(kind=c_double), dimension(*), intent(inout) :: rk, y, convers_factor
-      real(kind=c_double), dimension(ns,ns), intent(inout) :: convers_factor_jac, jacc
-    end subroutine jacdchemdc_3
-
-    subroutine ssh_jacdchemdc(ns,nr,y,convers_factor,       &
-                              convers_factor_jac,rk,jacc)   &
-      bind(C, name='cs_f_ssh_jacdchemdc')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: nr,ns
-      real(kind=c_double), dimension(*), intent(inout) :: rk, y, convers_factor
-      real(kind=c_double), dimension(ns,ns), intent(inout) :: convers_factor_jac, jacc
-    end subroutine ssh_jacdchemdc
-
-    subroutine cs_solvlin (nespg,kindlu, dla, dlalu, dlx, dlb) &
-      bind(C, name='cs_solvlin')
-      use, intrinsic :: iso_c_binding
-      integer(c_int), value :: nespg,kindlu
-      real(kind=c_double), dimension(*), intent(inout) :: dlx, dlb
-      real(kind=c_double), dimension(nespg, nespg), intent(inout) :: dla, dlalu
-    end subroutine cs_solvlin
 
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 

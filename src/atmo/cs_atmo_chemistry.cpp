@@ -104,7 +104,6 @@ static cs_atmo_chemistry_t _atmo_chem = {
   .n_layer = 0,
   .n_size = 0,
   .spack_file_name = nullptr,
-  .species_to_scalar_id = nullptr,
   .species_to_field_id = nullptr,
   .species_profiles_to_field_id = nullptr,
   .molar_mass = nullptr,
@@ -258,172 +257,11 @@ cs_ext_polyphemus_ssh_lu_solve(int       n_species_g,
                                double    dlx[]);
 
 /*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
+ * Private function definitions
  *============================================================================*/
 
-void
-cs_f_atmo_get_chem_conc_file_name(int           name_max,
-                                  const char  **name,
-                                  int          *name_len);
-
-void
-cs_f_atmo_get_aero_conc_file_name(int           name_max,
-                                  const char  **name,
-                                  int          *name_len);
-
-void
-cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
-                                   cs_real_t **molar_mass,
-                                   int       **chempoint);
-
-void
-cs_f_atmo_chem_get_pointers(int                    **model,
-                            int                    **isepchemistry,
-                            int                    **n_species,
-                            bool                   **chemistry_with_photolysis,
-                            cs_atmo_aerosol_type_t **aerosol_model,
-                            bool                   **frozen_gas_chem,
-                            bool                   **init_gas_with_lib,
-                            bool                   **init_aero_with_lib,
-                            int                    **n_layer,
-                            int                    **n_size);
-
-void
-cs_f_atmo_chem_initialize_reacnum(void);
-
-void
-cs_f_atmo_chem_initialize_species_to_fid(int *species_fid);
-
-void
-cs_f_atmo_chem_initialize_species_profiles_to_fid(int *species_profiles_fid);
-
-void
-cs_f_atmo_chem_finalize(void);
-
-void
-cs_f_atmo_get_chem_conc_profiles(int **nbchim,
-                                 int **nbchmz,
-                                 int **nespgi);
-void
-cs_f_atmo_get_arrays_chem_conc_profiles(cs_real_t **espnum,
-                                        cs_real_t **zproc,
-                                        cs_real_t **tchem,
-                                        cs_real_t **xchem,
-                                        cs_real_t **ychem,
-                                        cs_real_t **conv_factor_jac);
-
-void
-cs_f_read_aerosol(void);
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-void
-cs_f_atmo_chem_get_pointers(int                    **model,
-                            int                    **isepchemistry,
-                            int                    **n_species,
-                            bool                   **chemistry_with_photolysis,
-                            cs_atmo_aerosol_type_t **aerosol_model,
-                            bool                   **frozen_gas_chem,
-                            bool                   **init_gas_with_lib,
-                            bool                   **init_aero_with_lib,
-                            int                    **n_layer,
-                            int                    **n_size)
-{
-  *model = &(_atmo_chem.model);
-  *isepchemistry = &(_atmo_chem.chemistry_sep_mode);
-  *n_species = &(_atmo_chem.n_species);
-  *chemistry_with_photolysis = &(_atmo_chem.chemistry_with_photolysis);
-  *aerosol_model = &(_atmo_chem.aerosol_model);
-  *frozen_gas_chem = &(_atmo_chem.frozen_gas_chem);
-  *init_gas_with_lib = &(_atmo_chem.init_gas_with_lib);
-  *init_aero_with_lib = &(_atmo_chem.init_aero_with_lib);
-  *n_layer = &(_atmo_chem.n_layer);
-  *n_size = &(_atmo_chem.n_size);
-}
-
-/*----------------------------------------------------------------------------
- * Return the name of the chemistry concentration file
- *
- * This function is intended for use by Fortran wrappers.
- *
- * parameters:
- *   name_max <-- maximum name length
- *   name     --> pointer to associated length
- *   name_len --> length of associated length
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_atmo_get_chem_conc_file_name(int           name_max,
-                                  const char  **name,
-                                  int          *name_len)
-{
-  *name = _atmo_chem.chem_conc_file_name;
-  *name_len = strlen(*name);
-
-  if (*name_len > name_max) {
-    bft_error
-      (__FILE__, __LINE__, 0,
-       _("Error retrieving chemistry concentration file  (\"%s\"):\n"
-         "Fortran caller name length (%d) is too small for name \"%s\"\n"
-         "(of length %d)."),
-       _atmo_chem.chem_conc_file_name, name_max, *name, *name_len);
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Return the name of the aerosol concentration file
- *
- * This function is intended for use by Fortran wrappers.
- *
- * parameters:
- *   name_max <-- maximum name length
- *   name     --> pointer to associated length
- *   name_len --> length of associated length
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_atmo_get_aero_conc_file_name(int           name_max,
-                                  const char  **name,
-                                  int          *name_len)
-{
-  *name = _atmo_chem.aero_conc_file_name;
-  *name_len = strlen(*name);
-
-  if (*name_len > name_max) {
-    bft_error
-      (__FILE__, __LINE__, 0,
-       _("Error retrieving chemistry concentration file  (\"%s\"):\n"
-         "Fortran caller name length (%d) is too small for name \"%s\"\n"
-         "(of length %d)."),
-       _atmo_chem.aero_conc_file_name, name_max, *name, *name_len);
-  }
-}
-
-void
-cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
-                                   cs_real_t **molar_mass,
-                                   int       **chempoint)
-{
-  *species_to_scalar_id = (_atmo_chem.species_to_scalar_id);
-  *molar_mass = (_atmo_chem.molar_mass);
-  *chempoint = (_atmo_chem.chempoint);
-}
-
-void
-cs_f_atmo_chem_initialize_species_to_fid(int *species_fid)
-{
-  assert(species_fid != nullptr);
-  assert(_atmo_chem.species_to_field_id != nullptr);
-
-  for (int i = 0; i < _atmo_chem.n_species; i++)
-    _atmo_chem.species_to_field_id[i] = species_fid[i];
-}
-
-void
-cs_f_atmo_chem_initialize_species_profiles_to_fid(int *species_profiles_fid)
+static void
+_chem_initialize_species_profiles_to_fid(int *species_profiles_fid)
 {
   if (_atmo_chem.species_profiles_to_field_id == nullptr)
     BFT_MALLOC(_atmo_chem.species_profiles_to_field_id,
@@ -432,83 +270,6 @@ cs_f_atmo_chem_initialize_species_profiles_to_fid(int *species_profiles_fid)
   for (int i = 0; i < _atmo_chem.n_species_profiles; i++)
     _atmo_chem.species_profiles_to_field_id[i] = species_profiles_fid[i];
 }
-
-void
-cs_f_atmo_get_chem_conc_profiles(int **nbchim,
-                                 int **nbchmz,
-                                 int **nespgi)
-{
-  *nbchmz = &(_atmo_chem.n_z_profiles);
-  *nbchim = &(_atmo_chem.nt_step_profiles);
-  *nespgi = &(_atmo_chem.n_species_profiles);
-}
-
-void
-cs_f_atmo_get_arrays_chem_conc_profiles(cs_real_t **espnum,
-                                        cs_real_t **zproc,
-                                        cs_real_t **tchem,
-                                        cs_real_t **xchem,
-                                        cs_real_t **ychem,
-                                        cs_real_t **conv_factor_jac)
-{
-  const int nespg   = _atmo_chem.n_species;
-  const int _nbchmz = _atmo_chem.n_z_profiles;
-  const int _nbchim = _atmo_chem.nt_step_profiles;
-  const int size    = _atmo_chem.n_species*_nbchmz*_nbchim;
-
-  if (_atmo_chem.conc_profiles == nullptr)
-    BFT_MALLOC(_atmo_chem.conc_profiles, size, cs_real_t);
-
-  if (_atmo_chem.z_conc_profiles == nullptr)
-    BFT_MALLOC(_atmo_chem.z_conc_profiles, _nbchmz, cs_real_t);
-
-  if (_atmo_chem.t_conc_profiles == nullptr)
-    BFT_MALLOC(_atmo_chem.t_conc_profiles, _nbchim, cs_real_t);
-
-  if (_atmo_chem.x_conc_profiles == nullptr)
-    BFT_MALLOC(_atmo_chem.x_conc_profiles, _nbchim, cs_real_t);
-
-  if (_atmo_chem.y_conc_profiles == nullptr)
-    BFT_MALLOC(_atmo_chem.y_conc_profiles, _nbchim, cs_real_t);
-
-  if (_atmo_chem.conv_factor_jac == nullptr)
-    BFT_MALLOC(_atmo_chem.conv_factor_jac, nespg*nespg, cs_real_t);
-
-  *espnum = _atmo_chem.conc_profiles;
-  *zproc  = _atmo_chem.z_conc_profiles;
-  *tchem  = _atmo_chem.t_conc_profiles;
-  *xchem  = _atmo_chem.x_conc_profiles;
-  *ychem  = _atmo_chem.y_conc_profiles;
-  *conv_factor_jac = _atmo_chem.conv_factor_jac;
-}
-
-void
-cs_f_atmo_chem_finalize(void)
-{
-  if (_atmo_chem.aerosol_model != CS_ATMO_AEROSOL_OFF)
-    cs_atmo_aerosol_finalize();
-
-  BFT_FREE(_atmo_chem.reacnum);
-  BFT_FREE(_atmo_chem.species_to_scalar_id);
-  BFT_FREE(_atmo_chem.species_to_field_id);
-  BFT_FREE(_atmo_chem.molar_mass);
-  BFT_FREE(_atmo_chem.chempoint);
-  BFT_FREE(_atmo_chem.conv_factor_jac);
-  BFT_FREE(_atmo_chem.spack_file_name);
-  BFT_FREE(_atmo_chem.aero_file_name);
-  BFT_FREE(_atmo_chem.chem_conc_file_name);
-  BFT_FREE(_atmo_chem.conc_profiles);
-  BFT_FREE(_atmo_chem.z_conc_profiles);
-  BFT_FREE(_atmo_chem.t_conc_profiles);
-  BFT_FREE(_atmo_chem.x_conc_profiles);
-  BFT_FREE(_atmo_chem.y_conc_profiles);
-  BFT_FREE(_atmo_chem.dlconc0);
-  BFT_FREE(_atmo_chem.species_profiles_to_field_id);
-}
-
-/*============================================================================
- * Private function definitions
- *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -819,8 +580,9 @@ _rosenbrock_solver(cs_real_t dlconc[],
 
    _decompose_lu(n_species_g, 0, dlmat, dlmatlu, dlk1, dlb1);
 
-   /* Computes K2 system: DLmat * K2 = DLb2
-      -------------------------------------- */
+   /* Compute K2 system: DLmat * K2 = DLb2
+      ------------------------------------- */
+
    cs_real_t dlconcbis[n_species_g];
    for (int ji = 0; ji < n_species_g; ji++) {
      dlconcbis[ji] = dlconc[ji] + dlstep * dlk1[ji];
@@ -863,6 +625,7 @@ _rosenbrock_solver(cs_real_t dlconc[],
 
    /* Outputs - Compute DLconc - Advance the time
       ------------------------------------------- */
+
    for (int ji = 0; ji < n_species_g; ji++) {
      dlconc[ji] +=   1.5 * dlstep * dlk1[ji]
                    + 0.5 * dlstep * dlk2[ji];
@@ -1326,7 +1089,7 @@ cs_atmo_read_aerosol(void)
   bft_printf("printing aerosol numbers\n");
   for (int jb = 0; jb < n_aer; jb++) {
     const int f_id
-      = at_chem->species_to_scalar_id[at_chem->n_species + size + jb];
+      = at_chem->species_to_field_id[at_chem->n_species + size + jb];
     const cs_field_t *f = cs_field_by_id(f_id);
     bft_printf("%s : %10.2le\n ",
                cs_field_get_label(f),
@@ -1339,7 +1102,7 @@ cs_atmo_read_aerosol(void)
     bft_printf("Size bin id %d\n", jb);
     for (int jsp = 0; jsp < nlayer_aer; jsp++) {
       const int f_id
-        = at_chem->species_to_scalar_id[at_chem->n_species + jsp*n_aer];
+        = at_chem->species_to_field_id[at_chem->n_species + jsp*n_aer];
       const cs_field_t *f = cs_field_by_id(f_id);
       bft_printf("%s : %10.2le\n ",
                  cs_field_get_label(f),
@@ -1480,7 +1243,7 @@ cs_atmo_read_chemistry_profile(int mode)
                 }
               }
             }
-            cs_f_atmo_chem_initialize_species_profiles_to_fid
+            _chem_initialize_species_profiles_to_fid
               (species_profiles_to_fid);
           }
 
@@ -1590,7 +1353,7 @@ cs_atmo_read_chemistry_profile(int mode)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmo_set_chem_conc_file_name(const char *file_name)
+cs_atmo_set_chem_conc_file_name(const char  *file_name)
 {
   if (file_name == nullptr) {
     return;
@@ -1619,7 +1382,7 @@ cs_atmo_set_chem_conc_file_name(const char *file_name)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmo_set_aero_conc_file_name(const char *file_name)
+cs_atmo_set_aero_conc_file_name(const char  *file_name)
 {
   if (file_name == nullptr) {
     return;
@@ -1676,15 +1439,11 @@ cs_atmo_init_chemistry(void)
     if (_atmo_chem.species_to_field_id == nullptr)
       BFT_MALLOC(_atmo_chem.species_to_field_id, _atmo_chem.n_species, int);
 
-    if (_atmo_chem.species_to_scalar_id == nullptr)
-      BFT_MALLOC(_atmo_chem.species_to_scalar_id, _atmo_chem.n_species, int);
-
     const char *label[] = {"NO", "NO2", "O3", "O3P"};
 
     const char *name[]
       = {"species_no", "species_no2", "species_o3", "species_o3p"};
 
-    const int kscal = cs_field_key_id_try("scalar_id");
     for (int ii = 0; ii < _atmo_chem.n_species; ii++) {
       int f_id = cs_variable_field_create(name[ii],
                                           label[ii],
@@ -1693,7 +1452,6 @@ cs_atmo_init_chemistry(void)
       cs_field_t *f = cs_field_by_id(f_id);
       cs_add_model_field_indexes(f->id);
       _atmo_chem.species_to_field_id[ii] = f->id;
-      _atmo_chem.species_to_scalar_id[ii] = cs_field_get_key_int(f, kscal);
     }
 
   }
@@ -1753,10 +1511,7 @@ cs_atmo_init_chemistry(void)
 
     if (_atmo_chem.species_to_field_id == nullptr)
       BFT_MALLOC(_atmo_chem.species_to_field_id, _atmo_chem.n_species, int);
-    if (_atmo_chem.species_to_scalar_id == nullptr)
-      BFT_MALLOC(_atmo_chem.species_to_scalar_id, _atmo_chem.n_species, int);
 
-    const int kscal = cs_field_key_id_try("scalar_id");
     for (int ii = 0; ii < _atmo_chem.n_species; ii++) {
       int f_id = cs_variable_field_create(name[ii],
                                           label[ii],
@@ -1765,7 +1520,6 @@ cs_atmo_init_chemistry(void)
       cs_field_t *f = cs_field_by_id(f_id);
       cs_add_model_field_indexes(f->id);
       _atmo_chem.species_to_field_id[ii] = f->id;
-      _atmo_chem.species_to_scalar_id[ii] = cs_field_get_key_int(f, kscal);
     }
 
   }
@@ -1862,10 +1616,7 @@ cs_atmo_init_chemistry(void)
 
     if (_atmo_chem.species_to_field_id == nullptr)
       BFT_MALLOC(_atmo_chem.species_to_field_id, _atmo_chem.n_species, int);
-    if (_atmo_chem.species_to_scalar_id == nullptr)
-      BFT_MALLOC(_atmo_chem.species_to_scalar_id, _atmo_chem.n_species, int);
 
-    const int kscal = cs_field_key_id_try("scalar_id");
     for (int ii = 0; ii < _atmo_chem.n_species; ii++) {
       int f_id = cs_variable_field_create(name[ii],
                                           label[ii],
@@ -1874,7 +1625,6 @@ cs_atmo_init_chemistry(void)
       cs_field_t *f = cs_field_by_id(f_id);
       cs_add_model_field_indexes(f->id);
       _atmo_chem.species_to_field_id[ii] = f->id;
-      _atmo_chem.species_to_scalar_id[ii] = cs_field_get_key_int(f, kscal);
     }
 
   }
@@ -1908,7 +1658,7 @@ cs_atmo_init_chemistry(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmo_chemistry_set_spack_file_name(const char *file_name)
+cs_atmo_chemistry_set_spack_file_name(const char  *file_name)
 {
   if (file_name == nullptr) {
     _atmo_chem.model = 0;
@@ -1933,7 +1683,7 @@ cs_atmo_chemistry_set_spack_file_name(const char *file_name)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmo_chemistry_set_aerosol_file_name(const char *file_name)
+cs_atmo_chemistry_set_aerosol_file_name(const char  *file_name)
 {
   if (file_name == nullptr) {
     _atmo_chem.aerosol_model = CS_ATMO_AEROSOL_OFF;
@@ -2008,7 +1758,6 @@ cs_atmo_declare_chem_from_spack(void)
 
   /* Now allocate arrays */
   BFT_MALLOC(_atmo_chem.species_to_field_id, _atmo_chem.n_species, int);
-  BFT_MALLOC(_atmo_chem.species_to_scalar_id, _atmo_chem.n_species, int);
   BFT_MALLOC(_atmo_chem.molar_mass, _atmo_chem.n_species, cs_real_t);
   BFT_MALLOC(_atmo_chem.chempoint, _atmo_chem.n_species, int);
 
@@ -2039,9 +1788,7 @@ cs_atmo_declare_chem_from_spack(void)
     _atmo_chem.species_to_field_id[i]
       = cs_variable_field_create(name, line, CS_MESH_LOCATION_CELLS, 1);
 
-    /* Scalar field, store in isca_chem/species_to_scalar_id (FORTRAN/C) array */
-    _atmo_chem.species_to_scalar_id[i]
-      = cs_add_model_field_indexes(_atmo_chem.species_to_field_id[i]);
+    cs_add_model_field_indexes(_atmo_chem.species_to_field_id[i]);
   }
 }
 
@@ -2086,6 +1833,35 @@ cs_atmo_chemistry_initialize_reacnum(void)
     CS_MALLOC(_atmo_chem.reacnum,
               (cs_lnum_t)(_atmo_chem.n_reactions)*n_cells,
               cs_real_t);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize atmospheric chemistry structures.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_chemistry_finalize(void)
+{
+  if (_atmo_chem.aerosol_model != CS_ATMO_AEROSOL_OFF)
+    cs_atmo_aerosol_finalize();
+
+  BFT_FREE(_atmo_chem.reacnum);
+  BFT_FREE(_atmo_chem.species_to_field_id);
+  BFT_FREE(_atmo_chem.molar_mass);
+  BFT_FREE(_atmo_chem.chempoint);
+  BFT_FREE(_atmo_chem.conv_factor_jac);
+  BFT_FREE(_atmo_chem.spack_file_name);
+  BFT_FREE(_atmo_chem.aero_file_name);
+  BFT_FREE(_atmo_chem.chem_conc_file_name);
+  BFT_FREE(_atmo_chem.conc_profiles);
+  BFT_FREE(_atmo_chem.z_conc_profiles);
+  BFT_FREE(_atmo_chem.t_conc_profiles);
+  BFT_FREE(_atmo_chem.x_conc_profiles);
+  BFT_FREE(_atmo_chem.y_conc_profiles);
+  BFT_FREE(_atmo_chem.dlconc0);
+  BFT_FREE(_atmo_chem.species_profiles_to_field_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2220,16 +1996,49 @@ cs_atmo_chem_initialize_dlconc0(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief initialize (allocate)  chemistry concentrations profiles
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_chemistry_initialize_conc_profiles(void)
+{
+  const int nespg   = _atmo_chem.n_species;
+  const int _nbchmz = _atmo_chem.n_z_profiles;
+  const int _nbchim = _atmo_chem.nt_step_profiles;
+  const int size    = _atmo_chem.n_species*_nbchmz*_nbchim;
+
+  if (_atmo_chem.conc_profiles == nullptr)
+    BFT_MALLOC(_atmo_chem.conc_profiles, size, cs_real_t);
+
+  if (_atmo_chem.z_conc_profiles == nullptr)
+    BFT_MALLOC(_atmo_chem.z_conc_profiles, _nbchmz, cs_real_t);
+
+  if (_atmo_chem.t_conc_profiles == nullptr)
+    BFT_MALLOC(_atmo_chem.t_conc_profiles, _nbchim, cs_real_t);
+
+  if (_atmo_chem.x_conc_profiles == nullptr)
+    BFT_MALLOC(_atmo_chem.x_conc_profiles, _nbchim, cs_real_t);
+
+  if (_atmo_chem.y_conc_profiles == nullptr)
+    BFT_MALLOC(_atmo_chem.y_conc_profiles, _nbchim, cs_real_t);
+
+  if (_atmo_chem.conv_factor_jac == nullptr)
+    BFT_MALLOC(_atmo_chem.conv_factor_jac, nespg*nespg, cs_real_t);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Computes the explicit chemical source term for atmospheric
  *         chemistry in case of a semi-coupled resolution
  *
- * \param[in]     iscal         scalar number
+ * \param[in]     f_id          field id
  * \param[out]    st_exp        explicit part of the source term
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmo_chem_exp_source_terms(int          iscal,
+cs_atmo_chem_exp_source_terms(int          f_id,
                               cs_real_t    st_exp[])
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
@@ -2268,7 +2077,7 @@ cs_atmo_chem_exp_source_terms(int          iscal,
   }
 
   const int idx_chema
-    = atmo_chem->chempoint[iscal-atmo_chem->species_to_scalar_id[0]] - 1;
+    = atmo_chem->chempoint[f_id - atmo_chem->species_to_field_id[0]];
 
   for (int c_id = 0; c_id < n_cells; c_id++) {
 
@@ -2423,7 +2232,7 @@ cs_atmo_compute_gaseous_chemistry(void)
       }
     }
 
-    // Rosenbrock resoluion
+    // Rosenbrock resolution
 
     // The maximum time step used for chemistry resolution is dtchemmax
     if (dtc < dtchemmax) {
@@ -2463,7 +2272,6 @@ cs_atmo_compute_gaseous_chemistry(void)
     cs_field_t *f = cs_field_by_id(atmo_chem->species_to_field_id[spe_id]);
     cs_scalar_clipping(f);
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

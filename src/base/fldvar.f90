@@ -62,8 +62,6 @@ implicit none
 ! Interfaces
 !===============================================================================
 
-procedure() :: fldvar_check_nvar
-
 interface
 
   function cs_parameters_n_added_variables() result(n) &
@@ -91,17 +89,6 @@ end interface
 ! Number of user variables
 
 nscaus = cs_parameters_n_added_variables()
-
-if (nscaus.gt.nscamx) then
-  ! Since this error should be rare and Fortran code is deprecated,
-  ! We do not try to ensure that the message here is ordered
-  ! relative to C (as this would add a wrapper), so we prefer to send
-  ! it to the error output (unit 0) in this case.
-  if (irangp .lt. 1) then
-    write(0, 6011) nscaus, nscamx, nscamx, nscaus
-  endif
-  call csexit (1)
-endif
 
 return
 
@@ -173,8 +160,6 @@ use field
 
 implicit none
 
-procedure() :: fldvar_check_nvar
-
 ! Arguments
 
 ! Local variables
@@ -229,20 +214,8 @@ do id = nfld1, nfld2 - 1
   nvar = nvar + dim
   nscal = nscal + 1
 
-  ! Check we have enough slots
-  call fldvar_check_nvar
-
-  isca(iscal) = ivar
-  ivarfl(ivar) = id
-
   call field_set_key_int(id, keyvar, ivar)
   call field_set_key_int(id, keysca, iscal)
-
-  if (dim .gt. 1) then
-    do ii = 2, dim
-      ivarfl(ivar + ii - 1) = id
-    enddo
-  endif
 
 enddo
 
@@ -285,8 +258,6 @@ use cs_c_bindings, only: csexit
 
 implicit none
 
-procedure() :: fldvar_check_nvar, fldvar_check_nscapp
-
 ! Arguments
 
 integer, intent(in)  :: f_id
@@ -314,169 +285,12 @@ nscal = nscal + 1
 iscal = nscaus + nscapp + 1
 nscapp = nscapp + 1
 
-! Check we have enough slots
-call fldvar_check_nvar
-call fldvar_check_nscapp
-
-isca(iscal) = ivar
-
-do ii = 1, dim
-  ivarfl(ivar + ii - 1) = f_id
-enddo
-
 call field_set_key_int(f_id, keyvar, ivar)
 call field_set_key_int(f_id, keysca, iscal)
 
 return
 
 end subroutine add_model_field_indexes
-
-!===============================================================================
-
-!> \brief Check nvarmx is sufficient for the required number of variables.
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!_______________________________________________________________________________
-
-subroutine fldvar_check_nvar
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use dimens
-use numvar
-use parall
-use cs_c_bindings, only: csexit
-
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-! Local variables
-
-if (nvar .gt. nvarmx) then
-  ! Since this error should be rare and Fortran code is deprecated,
-  ! We do not try to ensure that the message here is ordered
-  ! relative to C (as this would add a wrapper), so we prefer to send
-  ! it to the error output (unit 0) in this case.
-  if (irangp .lt. 1) then
-    write(0, 1000) nvar, nvarmx
-  endif
-  call csexit (1)
-endif
-
-return
-
-!---
-! Formats
-!---
-
- 1000 format(                                                     &
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /,&
-'@ @@ ERROR:      STOP AT THE INITIAL DATA SETUP',              /,&
-'@    ======',                                                  /,&
-'@     NUMBER OF VARIABLES TOO LARGE',                          /,&
-'@',                                                            /,&
-'@  The type of calculation defined',                           /,&
-'@    corresponds to a number of variables NVAR  >= ', i10,     /,&
-'@  The maximum number of variables allowed',                   /,&
-'@                      in   paramx   is  NVARMX  = ', i10,     /,&
-'@',                                                            /,&
-'@  The calculation cannot be executed',                        /,&
-'@',                                                            /,&
-'@  Verify   parameters.',                                      /,&
-'@',                                                            /,&
-'@  If NVARMX is increased, the code must be reinstalled.',     /,&
-'@',                                                            /,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',                                                            /)
-
-end subroutine fldvar_check_nvar
-
-!===============================================================================
-
-!> \brief Check nscamx is sufficient for the required number of model scalars.
-!
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!_______________________________________________________________________________
-
-subroutine fldvar_check_nscapp
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use dimens
-use numvar
-use parall
-use cs_c_bindings, only: csexit
-
-!===============================================================================
-
-implicit none
-
-! Arguments
-
-! Local variables
-
-if ((nscaus+nscapp).gt.nscamx) then
-  ! Since this error should be rare and Fortran code is deprecated,
-  ! We do not try to ensure that the message here is ordered
-  ! relative to C (as this would add a wrapper), so we prefer to send
-  ! it to the error output (unit 0) in this case.
-  if (irangp .lt. 1) then
-    write(0, 1000) nscaus,nscamx,nscamx-nscaus
-  endif
-  call csexit (1)
-endif
-
-return
-
-!---
-! Formats
-!---
-
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ERROR:      STOP AT THE INITIAL DATA SETUP              ',/,&
-'@    ======                                                  ',/,&
-'@     NUMBER OF SCALARS TOO LARGE                            ',/,&
-'@                                                            ',/,&
-'@  The number of users scalars                               ',/,&
-'@     requested                       is   NSCAUS = ', i10    ,/,&
-'@  The total number of scalars                               ',/,&
-'@    allowed    in   paramx.f90       is   NSCAMX = ', i10    ,/,&
-'@                                                            ',/,&
-'@  The maximum value possible for NSCAPP                     ',/,&
-'@    with the chosen model is       NSCAMX-NSCAUS = ', i10    ,/,&
-'@                                                            ',/,&
-'@  The calculation will not be run.                          ',/,&
-'@                                                            ',/,&
-'@  Verify   NSCAUS.                                          ',/,&
-'@                                                            ',/,&
-'@  If NSCAMX is increased, the code must be reinstalled.     ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
-end subroutine fldvar_check_nscapp
 
 !===============================================================================
 ! C bindings (reverse)
@@ -510,8 +324,6 @@ use, intrinsic :: iso_c_binding
 
 implicit none
 
-procedure() :: fldvar_check_nvar
-
 ! Arguments
 
 integer(c_int), value :: f_id
@@ -530,13 +342,6 @@ call field_get_dim(f_id0, dim)
 
 ivar = nvar + 1
 nvar = nvar + dim
-
-! Check we have enough slots
-call fldvar_check_nvar
-
-do ii = 1, dim
-  ivarfl(ivar + ii - 1) = f_id
-enddo
 
 call field_get_key_id("variable_id", keyvar)
 call field_set_key_int(f_id, keyvar, ivar)

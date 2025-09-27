@@ -457,7 +457,6 @@ cs_atmo_aerosol_ssh_initialize(void)
 
   /* Reallocate arrays */
   BFT_REALLOC(at_chem->species_to_field_id, nsp + nsz * (nlr + 1), int);
-  BFT_REALLOC(at_chem->species_to_scalar_id, nsp + nsz * (nlr + 1), int);
 
   /* For all aerosols */
   for (int i = nsp; i < nsp + nsz * (nlr + 1);  i++ ) {
@@ -509,9 +508,8 @@ cs_atmo_aerosol_ssh_initialize(void)
     at_chem->species_to_field_id[i]
       = cs_variable_field_create(name, name, CS_MESH_LOCATION_CELLS, 1);
 
-    /* Scalar field, store in isca_chem/species_to_scalar_id (FORTRAN/C) array */
-    at_chem->species_to_scalar_id[i]
-      = cs_add_model_field_indexes(at_chem->species_to_field_id[i]);
+    /* Update associated scalar field ids */
+    cs_add_model_field_indexes(at_chem->species_to_field_id[i]);
 
   }
 

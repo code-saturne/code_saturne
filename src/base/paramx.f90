@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2024 EDF S.A.
+! Copyright (C) 1998-2025 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -41,13 +41,6 @@ module paramx
   !> \f$ (k, \varepsilon, R_{ij}, \omega, \varphi, \overline{f}, \alpha, \nu_t\f$)
   !> , that is to say
   !> the temperature and other scalars (passive or not, user-defined or not)
-  integer   nscamx
-
-  !> maximal number of variables = nscamx + 12 (u,v,w,P,Rij,e,alp)
-  integer   nvarmx
-
-  parameter(nscamx=500)
-  parameter(nvarmx=nscamx+12)
 
   !> \anchor iparoi
   !> if \ref itypfb=iparoi: smooth solid wall face, impermeable and with friction.

@@ -40,9 +40,7 @@ use cstnum
 use cstphy
 use ppincl
 use atincl
-use atchem
 use field
-use sshaerosol
 
 !===============================================================================
 
@@ -68,10 +66,6 @@ iatra1 = 0
 ! key id for optimal interpolation
 
 call field_get_key_id("opt_interp_id", kopint)
-
-! --> Initialisation for the gaseous chemistry model:
-
-dtchemmax = 10.d0
 
 ! --> Initialisation for the aerosol chemistry model:
 
