@@ -2079,7 +2079,7 @@ cs_atmo_chem_exp_source_terms(int          f_id,
   }
 
   const int idx_chema
-    = atmo_chem->chempoint[f_id - atmo_chem->species_to_field_id[0]];
+    = atmo_chem->chempoint[f_id - atmo_chem->species_to_field_id[0]] - 1;
 
   for (int c_id = 0; c_id < n_cells; c_id++) {
 

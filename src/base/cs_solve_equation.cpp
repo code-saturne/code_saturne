@@ -1025,7 +1025,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
   const int keyvar = cs_field_key_id("variable_id");
 
   const int ivar = cs_field_get_key_int(f, keyvar);
-  const int iscal = cs_field_get_key_int(f, keysca);
 
   cs_dispatch_context ctx;
 
@@ -1165,7 +1164,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
       const int *f_id_chem = atmo_chem->species_to_field_id;
       const int nespg = atmo_chem->n_species;
       if ((f_id_chem[0] <= f->id) && (f->id <= f_id_chem[nespg-1]))
-        cs_atmo_chem_exp_source_terms(iscal, rhs);
+        cs_atmo_chem_exp_source_terms(f->id, rhs);
     }
 
   }
@@ -1175,6 +1174,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
    * FIXME: test on scalar id since original commit in 2017 is a really dumb
    * idea.  */
   if (cs_glob_lagr_model->precipitation == 1) {
+    const int iscal = cs_field_get_key_int(f, keysca);
     if (iscal == 1)
       cs_lagr_precipitation_mass_st(ts->dt_ref, crom, cvar_var, rhs);
     cs_assert(iscal == 1);  /* Force error in other cases to fix this */
