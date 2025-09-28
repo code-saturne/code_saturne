@@ -613,7 +613,7 @@ cs_measures_set_map_values(cs_measures_set_t       *ms,
   else {
     if (ms->interleaved) {
       cs_lnum_t jj;
-#   pragma omp parallel for private(jj)
+#     pragma omp parallel for private(jj)
       for (ii = 0; ii < nb_measures; ii++) {
         for (jj = 0; jj < dim; jj++)
           ms->measures[ii*dim + jj] = measures[ii*dim + jj];
@@ -621,14 +621,14 @@ cs_measures_set_map_values(cs_measures_set_t       *ms,
     }
     else {
       cs_lnum_t jj;
-#   pragma omp parallel for private(jj)
+#     pragma omp parallel for private(jj)
       for (ii = 0; ii < nb_measures; ii++) {
         for (jj = 0; jj < dim; jj++)
           ms->measures[ii*dim + jj] = measures[jj*nb_measures + ii];
       }
     }
   }
-#   pragma omp parallel for
+# pragma omp parallel for
   for (ii = 0; ii < nb_measures; ii++) {
     ms->is_interpol[ii] = is_interpol[ii];
     ms->is_cressman[ii] = is_cressman[ii];
@@ -691,7 +691,7 @@ cs_measures_set_add_values(cs_measures_set_t       *ms,
   else {
     if (ms->interleaved) {
       cs_lnum_t jj;
-#   pragma omp parallel for private(jj)
+#     pragma omp parallel for private(jj)
       for (ii = 0; ii < nb_measures; ii++) {
         for (jj = 0; jj < dim; jj++)
           ms->measures[(ii + ms->nb_measures)*dim + jj] = measures[ii*dim + jj];
@@ -699,14 +699,14 @@ cs_measures_set_add_values(cs_measures_set_t       *ms,
     }
     else {
       cs_lnum_t jj;
-#   pragma omp parallel for private(jj)
+#     pragma omp parallel for private(jj)
       for (ii = 0; ii < nb_measures; ii++) {
         for (jj = 0; jj < dim; jj++)
           ms->measures[ii*dim + jj] = measures[ii*nb_measures + jj];
       }
     }
   }
-#   pragma omp parallel for
+# pragma omp parallel for
   for (ii = 0; ii < nb_measures; ii++) {
     ms->is_interpol[ii + ms->nb_measures] = is_interpol[ii];
     ms->is_cressman[ii + ms->nb_measures] = is_cressman[ii];
@@ -973,7 +973,6 @@ void CS_PROCF(mesmap, MESMAP)
  const cs_real_t   *infrad
 )
 {
-
   cs_measures_set_t *ms = cs_measures_set_by_id(*imeset);
 
   cs_measures_set_map_values(ms,
@@ -983,7 +982,6 @@ void CS_PROCF(mesmap, MESMAP)
                              coords,
                              meset,
                              infrad);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1050,7 +1048,6 @@ void CS_PROCF(mesadd, MESADD)
                              coords,
                              meset,
                              infrad);
-
 }
 
 /*----------------------------------------------------------------------------
