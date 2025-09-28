@@ -471,10 +471,12 @@ typedef struct {
   cs_real_t *soil_cat_r2;
  /*! adimensional : sigc=0.53 other referenced values are 0.28, 0.15 */
   cs_real_t sigc;
-  /*! 1D infrared profile */
+  /*! 1D infrared profile id */
   int infrared_1D_profile;
-  /*! 1D solar profile */
+  /*! 1D solar profile id */
   int solar_1D_profile;
+  /*! id of grid formed by 1D profiles */
+  int profiles_grid_id;
 
   cs_real_t aod_o3_tot;
 
@@ -603,7 +605,6 @@ cs_atmo_hydrostatic_profiles_compute(void);
 
 void
 cs_atmo_read_meteo_profile(int mode);
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -810,7 +811,6 @@ cs_soil_model(void);
 
 /*----------------------------------------------------------------------------*/
 
-
 void
 cs_f_atmo_get_soil_zone(cs_lnum_t         *n_elts,
                         int               *n_soil_cat,
@@ -830,7 +830,6 @@ cs_atmo_soil_init_arrays(int        *n_soil_cat,
                          cs_real_t  **c2w,
                          cs_real_t  **r1,
                          cs_real_t  **r2);
-
 
 /*----------------------------------------------------------------------------*/
 

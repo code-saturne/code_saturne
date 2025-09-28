@@ -40,11 +40,12 @@
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
+
 /*----------------------------------------------------------------------------
  * Definition of the measures set structure
  *----------------------------------------------------------------------------*/
 
-typedef struct _cs_measures_set_t {
+typedef struct {
 
   const char         *name;                /* Name */
   int                 id;                  /* Measures set id */
@@ -69,7 +70,7 @@ typedef struct _cs_measures_set_t {
 
 } cs_measures_set_t;
 
-typedef struct _cs_interpol_grid_t {
+typedef struct {
 
   const char         *name;                /* Name */
   int                 id;                  /* Grid id */
@@ -299,7 +300,6 @@ cs_measures_set_by_name(const char  *name);
 cs_interpol_grid_t  *
 cs_interpol_grid_by_name(const char  *name);
 
-
 /*----------------------------------------------------------------------------
  * Destroy all defined measures sets.
  *----------------------------------------------------------------------------*/
@@ -314,166 +314,7 @@ cs_measures_sets_destroy(void);
 void
 cs_interpol_grids_destroy(void);
 
-
-/*============================================================================
- * Public function definitions for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Define a measures set.
- *
- * Fortran interface; use mestcr;
- *
- * subroutine mestcr (name, lname, idim, ilved, imeset)
- * *****************
- *
- * character*       name        : <-- : Measure set name
- * integer          idim        : <-- : Measures set dimension
- * integer          ilved       : <-- : 0: not intereaved; 1: interleaved
- * integer          imesset     : --> : id of defined measures set
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(mestcr, MESTCR)
-(
- const char   *name,
- const int    *idim,
- const int    *ilved,
- int          *imeset);
-
-/*----------------------------------------------------------------------------
- * Define a grid.
- *
- * Fortran interface
- *
- * subroutine gridcr (name, igrid)
- * *****************
- *
- * character*       name        : <-- : Measure set name
- * integer          igrid       : --> : id of defined grid
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(gridcr, GRIDCR)
-(
- const char     *name,
- int            *igrid);
-
-/*----------------------------------------------------------------------------
- * (re)Allocate and map values to a measure set.
- *
- * Fortran interface
- *
- * subroutine mesmap (imeset, inbmes, meset, coords, cressm, interp)
- * *****************
- *
- * integer          imeset      : <-- : Measures set id
- * integer          inbmes      : <-- : Number of measures
- * cs_real_t*       meset       : <-- : Pointer to measures values array
- * cs_real_t*       coords      : <-- : Pointer to measures coordonates array
- * integer*         cressm      : <-- : Pointer to Cressman interpolation flag
- * integer*         interp      : <-- : Pointer to interpolation flag
- * integer*         infrad      : <-- : Influence radius for interpolation
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(mesmap, MESMAP)
-(
- const int         *imeset,
- const int         *inbmes,
- const cs_real_t   *meset,
- const cs_real_t   *coords,
- const int         *cressm,
- const int         *interp,
- const cs_real_t   *infrad
-);
-
-/*----------------------------------------------------------------------------
- * Map a grid grid.
- *
- * Fortran interface
- *
- * subroutine gridmap (name, lname, igrid)
- * *****************
- *
- * integer          igrid       : <-- : Measures set id
- * integer          inpts       : <-- : Number of measures
- * cs_real_t*       coords      : <-- : Pointer to measures coordonates array
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(grimap, GRIMAP)
-(
- const int         *igrid,
- const int         *inpts,
- const cs_real_t   *coords
-);
-
-/*----------------------------------------------------------------------------
- * Add values to a measure set.
- *
- * Fortran interface
- *
- * subroutine mesadd (imeset, inbmes, meset, coords, cressm, interp)
- * *****************
- *
- * integer          imeset      : <-- : Measures set id
- * integer          inbmes      : <-- : Number of measures to add
- * cs_real_t*       meset       : <-- : Pointer to measures values array
- * cs_real_t*       coords      : <-- : Pointer to measures coordonates array
- * integer*         cressm      : <-- : Pointer to Cressman interpolation flag
- * integer*         interp      : <-- : Pointer to interpolation flag
- * integer*         infrad      : <-- : Influence radius for interpolation
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(mesadd, MESADD)
-(
- const int         *imeset,
- const int         *inbmes,
- const cs_real_t   *meset,
- const cs_real_t   *coords,
- const int         *cressm,
- const int         *interp,
- const cs_real_t   *infrad
-);
-
-/*----------------------------------------------------------------------------
- * Interpolate calculed field on a grid.
- *
- * Fortran interface
- *
- * subroutine gripol (igrid, inval, pldval)
- * *****************
- *
- * integer          igrid       : <-- : Measures set id
- * cs_real_t*       inval       : <-- : Values to interpolate
- * cs_real_t*       pldval      : --> : Interpolated values on the grid
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(gripol, GRIPOL)
-(
- const int         *igrid,
- const cs_real_t   *inval,
- cs_real_t         *pldval
-);
-
-/*----------------------------------------------------------------------------
- * Destroy measures sets.
- *
- * Fortran interface
- *
- * subroutine mestde (void)
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(mestde, MESTDE)(void);
-
-/*----------------------------------------------------------------------------
- * Destroy grids.
- *
- * Fortran interface
- *
- * subroutine grides (void)
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(grides, GRIDES)(void);
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

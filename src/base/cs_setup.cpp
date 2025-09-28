@@ -153,10 +153,6 @@ _init_setup(void)
        "                   =======================\n\n\n"
        "===============================================================\n\n\n"));
 
-  /* File for some specific physical models */
-
-  cs_atmo_set_meteo_file_name("meteo");
-
   /* Handle some reference and physical values */
 
   cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
@@ -167,6 +163,12 @@ _init_setup(void)
   if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY) {
     cs_set_glob_turb_model(); /* set global pointer to turbulence model */
   }
+
+  /* Initializations for some specific physical models.
+     At this stage, physical model flags may not be set yet, so only default
+     initializations and C/Fortran global model pointer mapping is done here. */
+
+  cs_atmo_set_meteo_file_name("meteo");
 
   cs_f_iniini();
   cs_f_pp_models_init();

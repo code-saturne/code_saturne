@@ -101,12 +101,6 @@ BEGIN_C_DECLS
 void
 cs_f_allocate_map_atmo(void);
 
-void
-cs_f_init_meteo(void);
-
-void
-cs_f_activate_imbrication(void);
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Internal function -
@@ -273,6 +267,31 @@ _gaussian(const cs_mesh_t             *m,
 
   CS_FREE_HD(dqsd);
   CS_FREE_HD(dtlsd);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Prepare interpolation for 1D radiative model
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_init_meteo_data_interpolation(void)
+{
+  if (cs_glob_atmo_option->meteo_profile > 0) {
+    if (cs_glob_atmo_option->radiative_model_1d == 1) {
+      cs_measures_set_t *ms;
+
+      ms = cs_measures_set_create("rayi", 0, 1, false);
+      cs_glob_atmo_option->infrared_1D_profile = ms->id;
+
+      ms = cs_measures_set_create("rayst", 0, 1, false);
+      cs_glob_atmo_option->solar_1D_profile = ms->id;
+
+      cs_interpol_grid_t *ig  = cs_interpol_grid_create("int_grid");
+      cs_glob_atmo_option->profiles_grid_id = ig->id;
+    }
+  }
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1177,6 +1196,9 @@ cs_atmo_init_variables_1(void)
 
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] != CS_ATMO_OFF) {
 
+    if (cs_glob_atmo_option->meteo_profile == 1)
+      cs_atmo_read_meteo_profile(0);
+
     cs_f_allocate_map_atmo();
 
     if (cs_glob_atmo_chemistry->model > 0) {
@@ -1200,7 +1222,7 @@ cs_atmo_init_variables_2(void)
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_OFF)
     return;
 
-  cs_f_init_meteo();
+  _init_meteo_data_interpolation();
 
   if (cs_glob_atmo_imbrication->imbrication_flag) {
     cs_activate_imbrication();

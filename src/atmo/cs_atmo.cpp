@@ -107,6 +107,7 @@
 #include "atmo/cs_atmo.h"
 #include "atmo/cs_atmo_chemistry.h"
 #include "atmo/cs_atmo_imbrication.h"
+#include "atmo/cs_at_data_assim.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -270,6 +271,7 @@ static cs_atmo_option_t  _atmo_option = {
   .sigc = 0.53,
   .infrared_1D_profile = -1,
   .solar_1D_profile    = -1,
+  .profiles_grid_id    = -1,
   .aod_o3_tot = 0.2,
   .aod_h2o_tot = 0.1
 };
@@ -330,6 +332,7 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        cs_real_t              **sigc,
                        int                    **idrayi,
                        int                    **idrayst,
+                       int                    **igrid,
                        cs_real_t              **aod_o3_tot,
                        cs_real_t              **aod_h2o_tot);
 
@@ -772,32 +775,34 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
 static void
 _convert_from_l93_to_wgs84(void)
 {
+  cs_atmo_option_t *at_opt = &_atmo_option;
+
   //computation from https://georezo.net/forum/viewtopic.php?id=94465
   cs_real_t c = 11754255.426096; // projection constant
   cs_real_t e = 0.0818191910428158; // ellipsoid excentricity
   cs_real_t n = 0.725607765053267; // projection exponent
   cs_real_t xs = 700000; // projection's pole x-coordinate
   cs_real_t ys = 12655612.049876;  // projection's pole y-coordinate
-  cs_real_t a = (log(c/(sqrt(  cs_math_pow2(cs_glob_atmo_option->x_l93-xs)
-                             + cs_math_pow2(cs_glob_atmo_option->y_l93-ys))))/n);
+  cs_real_t a = (log(c/(sqrt(  cs_math_pow2(at_opt->x_l93-xs)
+                             + cs_math_pow2(at_opt->y_l93-ys))))/n);
 
   double t1 = a + e*atanh(e*(tanh(a+e*atanh(e*sin(1)))));
   double t2 = e*tanh(a+e*atanh(e*(tanh(t1))));
   double t3 = a+e*atanh(e*tanh(a+e*atanh(e*tanh(a+e*atanh(t2)))));
 
-  cs_glob_atmo_option->longitude = ((atan(-(cs_glob_atmo_option->x_l93-xs)
-                                          /(cs_glob_atmo_option->y_l93-ys)))/n
-                                    + 3.*cs_math_pi/180.)/cs_math_pi*180.;
-  cs_glob_atmo_option->latitude
-    = asin(tanh((log(c/sqrt(  cs_math_pow2(cs_glob_atmo_option->x_l93-xs)
-                            + cs_math_pow2(cs_glob_atmo_option->y_l93-ys)))/n)
+  at_opt->longitude = ((atan(-(at_opt->x_l93-xs)
+                             /(at_opt->y_l93-ys)))/n
+                       + 3.*cs_math_pi/180.)/cs_math_pi*180.;
+  at_opt->latitude
+    = asin(tanh((log(c/sqrt(  cs_math_pow2(at_opt->x_l93-xs)
+                            + cs_math_pow2(at_opt->y_l93-ys)))/n)
                 +e*atanh(e*tanh(t3))))/cs_math_pi*180.;
 
   cs_real_t lambda_0 = 3.; // longitude of the reference meridian in degrees
 
   // domain_orientation is the angle between the geographic north and the positive y-axis
   // in the direct (right-handed) frame of code_saturne.
-  cs_glob_atmo_option->domain_orientation = n * (cs_glob_atmo_option->longitude - lambda_0);
+  at_opt->domain_orientation = n * (at_opt->longitude - lambda_0);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -809,6 +814,8 @@ _convert_from_l93_to_wgs84(void)
 static void
 _convert_from_wgs84_to_l93(void)
 {
+  cs_atmo_option_t *at_opt = &_atmo_option;
+
   //computation from https://georezo.net/forum/viewtopic.php?id=94465
   cs_real_t  c = 11754255.426096; // projection constant
   cs_real_t  e = 0.0818191910428158; // ellipsoid excentricity
@@ -817,22 +824,22 @@ _convert_from_wgs84_to_l93(void)
   cs_real_t  ys = 12655612.049876;  // projection's pole y-coordinate
 
   //latitude in rad
-  cs_real_t lat_rad = cs_glob_atmo_option->latitude*cs_math_pi / 180;
+  cs_real_t lat_rad = at_opt->latitude*cs_math_pi / 180;
   // isometric latitude
   cs_real_t lat_iso = atanh(sin(lat_rad)) - e*atanh(e*sin(lat_rad));
 
-  cs_glob_atmo_option->x_l93= ((c*exp(-n*(lat_iso)))
-                               *sin(n*(cs_glob_atmo_option->longitude-3)
+  at_opt->x_l93= ((c*exp(-n*(lat_iso)))
+                               *sin(n*(at_opt->longitude-3)
                                     *cs_math_pi/180)+xs);
-  cs_glob_atmo_option->y_l93= (ys-(c*exp(-n*(lat_iso)))
-                               *cos(n*(cs_glob_atmo_option->longitude-3)
+  at_opt->y_l93= (ys-(c*exp(-n*(lat_iso)))
+                               *cos(n*(at_opt->longitude-3)
                                     *cs_math_pi/180));
 
   cs_real_t lambda_0 = 3.; // longitude of the reference meridian in degrees
 
   // domain_orientation is the angle between the geographic north and the positive y-axis
   // in the direct (right-handed) frame of code_saturne.
-  cs_glob_atmo_option->domain_orientation = n* (cs_glob_atmo_option->longitude - lambda_0);
+  at_opt->domain_orientation = n* (at_opt->longitude - lambda_0);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1586,7 +1593,7 @@ _log_meteo_profile(int                    itp,
   bft_printf("time_met[%d]\n%lf\n",itp, at_opt->time_met[itp]);
   bft_printf("z_dyn_met  u_met  v_met  ek_met ep_met\n");
   for (int ii = 0; ii < nbmetd; ii++)
-    bft_printf("%10.5lf  %10.5lf  %10.5lf  %10.5lf %10.5lf\n",
+    bft_printf("%8.2lf  %8.2lf  %8.2lf  %10.3lf %10.3lf\n",
                at_opt->z_dyn_met[ii],
                at_opt->u_met [ii + itp*nbmetd],
                at_opt->v_met [ii + itp*nbmetd],
@@ -1605,8 +1612,8 @@ _log_meteo_profile(int                    itp,
     for (int ii = 0; ii < nbmaxt; ii++) {
       const cs_real_t qsat = cs_air_yw_sat(at_opt->temp_met [ii + itp*nbmaxt],
                                            at_opt->hyd_p_met[ii + itp*nbmaxt]);
-      bft_printf("%10.5lf  %10.5lf  %10.5lf  %10.5lf %10.5lf %10.5lf"
-                 "  %10.5lf %10.5lf\n",
+      bft_printf("%8.2lf  %8.2lf  %8.2lf  %8.4lf %10.3lf %10.3lf"
+                 "  %10.3lf %12.5lf\n",
                  at_opt->z_temp_met[ii],
                  at_opt->temp_met[ii + itp*nbmaxt],
                  at_opt->pot_t_met[ii + itp*nbmaxt],
@@ -1619,9 +1626,9 @@ _log_meteo_profile(int                    itp,
   }
   else {
     bft_printf("z_temp_met  temp_met  pot_t_met rho_met hyd_p_met"
-               "  qw_met  qsat  ndrop_met\n");
+               "  qw_met\n");
     for (int ii = 0; ii < nbmaxt; ii++) {
-      bft_printf("%10.5lf  %10.5lf  %10.5lf  %10.5lf %10.5lf %10.5lf\n",
+      bft_printf("%8.2lf  %8.2lf  %8.2lf  %8.4lf %10.3lf %10.3lf\n",
                  at_opt->z_temp_met[ii],
                  at_opt->temp_met[ii + itp*nbmaxt],
                  at_opt->pot_t_met[ii + itp*nbmaxt],
@@ -1961,6 +1968,7 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        cs_real_t              **sigc,
                        int                    **idrayi,
                        int                    **idrayst,
+                       int                    **igrid,
                        cs_real_t              **aod_o3_tot,
                        cs_real_t              **aod_h2o_tot)
 {
@@ -1995,6 +2003,7 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
   *sigc  = &(_atmo_option.sigc);
   *idrayi = &(_atmo_option.infrared_1D_profile);
   *idrayst = &(_atmo_option.solar_1D_profile);
+  *igrid = &(_atmo_option.profiles_grid_id);
   *aod_o3_tot  = &(_atmo_option.aod_o3_tot);
   *aod_h2o_tot  = &(_atmo_option.aod_h2o_tot);
 }
@@ -2007,16 +2016,18 @@ cs_f_atmo_get_soil_zone(cs_lnum_t         *n_elts,
   *n_elts = 0;
   *elt_ids = nullptr;
 
+  cs_atmo_option_t *at_opt = &_atmo_option;
+
   /* Not defined */
-  if (cs_glob_atmo_option->soil_zone_id < 0) {
+  if (at_opt->soil_zone_id < 0) {
     *n_soil_cat = 0;
     return;
   }
 
-  const cs_zone_t *z = cs_boundary_zone_by_id(cs_glob_atmo_option->soil_zone_id);
+  const cs_zone_t *z = cs_boundary_zone_by_id(at_opt->soil_zone_id);
   *elt_ids = z->elt_ids;
   *n_elts = z->n_elts;
-  switch (cs_glob_atmo_option->soil_cat) {
+  switch (at_opt->soil_cat) {
     case CS_ATMO_SOIL_5_CAT:
       *n_soil_cat = 5;
       break;
@@ -2338,7 +2349,6 @@ cs_atmo_soil_init_arrays(int        *n_soil_cat,
   *emissi = _atmo_option.soil_cat_emissi;
   *c1w    = _atmo_option.soil_cat_w1;
   *c2w    = _atmo_option.soil_cat_w2;
-
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -2424,6 +2434,7 @@ cs_atmo_fields_init0(void)
 
       const int f_id = at_chem->species_profiles_to_field_id[kk];
       cs_real_t *cvar_despgi = cs_field_by_id(f_id)->val;
+
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
         cvar_despgi[c_id]= cs_intprf(at_chem->n_z_profiles,
                                      at_chem->nt_step_profiles,
@@ -2601,76 +2612,72 @@ cs_atmo_fields_init0(void)
 
       cs_real_t k_in, eps_in;
       cs_real_6_t rij_loc;
-      if (cs_glob_atmo_option->meteo_profile == 1) {
+      if (at_opt->meteo_profile == 1) {
         cs_real_t z_in = cell_cen[cell_id][2];
 
         /* Velocity */
         for (cs_lnum_t i = 0; i < 2; i++) {
           cs_real_t *vel_met;
           if (i == 0)
-            vel_met = cs_glob_atmo_option->u_met;
+            vel_met = at_opt->u_met;
           if (i == 1)
-            vel_met = cs_glob_atmo_option->v_met;
+            vel_met = at_opt->v_met;
           cvar_vel[cell_id][i]
-            = cs_intprf(cs_glob_atmo_option->met_1d_nlevels_d,
-                        cs_glob_atmo_option->met_1d_ntimes,
-                        cs_glob_atmo_option->z_dyn_met,
-                        cs_glob_atmo_option->time_met,
+            = cs_intprf(at_opt->met_1d_nlevels_d,
+                        at_opt->met_1d_ntimes,
+                        at_opt->z_dyn_met,
+                        at_opt->time_met,
                         vel_met,
                         z_in,
                         cs_glob_time_step->t_cur);
         }
 
         /* Turbulence TKE and dissipation */
-        k_in = cs_intprf(
-              cs_glob_atmo_option->met_1d_nlevels_d,
-              cs_glob_atmo_option->met_1d_ntimes,
-              cs_glob_atmo_option->z_dyn_met,
-              cs_glob_atmo_option->time_met,
-              cs_glob_atmo_option->ek_met,
-              z_in,
-              cs_glob_time_step->t_cur);
+        k_in = cs_intprf(at_opt->met_1d_nlevels_d,
+                         at_opt->met_1d_ntimes,
+                         at_opt->z_dyn_met,
+                         at_opt->time_met,
+                         at_opt->ek_met,
+                         z_in,
+                         cs_glob_time_step->t_cur);
 
-        eps_in = cs_intprf(
-            cs_glob_atmo_option->met_1d_nlevels_d,
-            cs_glob_atmo_option->met_1d_ntimes,
-            cs_glob_atmo_option->z_dyn_met,
-            cs_glob_atmo_option->time_met,
-            cs_glob_atmo_option->ep_met,
-            z_in,
-            cs_glob_time_step->t_cur);
+        eps_in = cs_intprf(at_opt->met_1d_nlevels_d,
+                           at_opt->met_1d_ntimes,
+                           at_opt->z_dyn_met,
+                           at_opt->time_met,
+                           at_opt->ep_met,
+                           z_in,
+                           cs_glob_time_step->t_cur);
 
         /* Theta */
         if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
-          f_th->val[cell_id] = cs_intprf(
-              cs_glob_atmo_option->met_1d_nlevels_t,
-              cs_glob_atmo_option->met_1d_ntimes,
-              cs_glob_atmo_option->z_temp_met,
-              cs_glob_atmo_option->time_met,
-              cs_glob_atmo_option->pot_t_met,
-              z_in,
-              cs_glob_time_step->t_cur);
+          f_th->val[cell_id] = cs_intprf(at_opt->met_1d_nlevels_t,
+                                         at_opt->met_1d_ntimes,
+                                         at_opt->z_temp_met,
+                                         at_opt->time_met,
+                                         at_opt->pot_t_met,
+                                         z_in,
+                                         cs_glob_time_step->t_cur);
 
         }
 
         /*  Humid Atmosphere */
         if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
-          cvar_totwt[cell_id] = cs_intprf(
-              cs_glob_atmo_option->met_1d_nlevels_t,
-              cs_glob_atmo_option->met_1d_ntimes,
-              cs_glob_atmo_option->z_temp_met,
-              cs_glob_atmo_option->time_met,
-              cs_glob_atmo_option->qw_met,
-              z_in,
-              cs_glob_time_step->t_cur);
+          cvar_totwt[cell_id] = cs_intprf(at_opt->met_1d_nlevels_t,
+                                          at_opt->met_1d_ntimes,
+                                          at_opt->z_temp_met,
+                                          at_opt->time_met,
+                                          at_opt->qw_met,
+                                          z_in,
+                                          cs_glob_time_step->t_cur);
 
-          cvar_ntdrp[cell_id] = cs_intprf(cs_glob_atmo_option->met_1d_nlevels_t,
-              cs_glob_atmo_option->met_1d_ntimes,
-              cs_glob_atmo_option->z_temp_met,
-              cs_glob_atmo_option->time_met,
-              cs_glob_atmo_option->ndrop_met,
-              z_in,
-              cs_glob_time_step->t_cur);
+          cvar_ntdrp[cell_id] = cs_intprf(at_opt->met_1d_nlevels_t,
+                                          at_opt->met_1d_ntimes,
+                                          at_opt->z_temp_met,
+                                          at_opt->time_met,
+                                          at_opt->ndrop_met,
+                                          z_in,
+                                          cs_glob_time_step->t_cur);
 
         }
 
@@ -3107,7 +3114,7 @@ cs_atmo_bcond(void)
      * already modified
      * It will be used for inlet or backflows */
 
-    if (cs_glob_atmo_option->meteo_profile >= 1) {
+    if (at_opt->meteo_profile >= 1) {
       cs_real_t z_in = b_face_cog[face_id][2];
 
       cs_real_t vel_in[3] = {0., 0., 0.};
@@ -3115,22 +3122,21 @@ cs_atmo_bcond(void)
       for (cs_lnum_t i = 0; i < 3; i++) {
         if (rcodcl1_vel[i*n_b_faces + face_id] < 0.5 * cs_math_infinite_r)
           vel_in[i] = rcodcl1_vel[i*n_b_faces + face_id];
-        else if (cs_glob_atmo_option->meteo_profile == 1) {
+        else if (at_opt->meteo_profile == 1) {
           cs_real_t *vel_met;
           if (i == 0)
-            vel_met = cs_glob_atmo_option->u_met;
+            vel_met = at_opt->u_met;
           if (i == 1)
-            vel_met = cs_glob_atmo_option->v_met;
+            vel_met = at_opt->v_met;
 
           if (i != 2)
-            vel_in[i] = cs_intprf(
-                cs_glob_atmo_option->met_1d_nlevels_d,
-                cs_glob_atmo_option->met_1d_ntimes,
-                cs_glob_atmo_option->z_dyn_met,
-                cs_glob_atmo_option->time_met,
-                vel_met,
-                z_in,
-                cs_glob_time_step->t_cur);
+            vel_in[i] = cs_intprf(at_opt->met_1d_nlevels_d,
+                                  at_opt->met_1d_ntimes,
+                                  at_opt->z_dyn_met,
+                                  at_opt->time_met,
+                                  vel_met,
+                                  z_in,
+                                  cs_glob_time_step->t_cur);
         }
         else
           vel_in[i] = cpro_met_vel[cell_id][i];
@@ -3142,15 +3148,14 @@ cs_atmo_bcond(void)
           k_in = rcodcl1_k[face_id];
       }
       if (k_in > 0.5 * cs_math_infinite_r) {
-        if (cs_glob_atmo_option->meteo_profile == 1)
-          k_in = cs_intprf(
-              cs_glob_atmo_option->met_1d_nlevels_d,
-              cs_glob_atmo_option->met_1d_ntimes,
-              cs_glob_atmo_option->z_dyn_met,
-              cs_glob_atmo_option->time_met,
-              cs_glob_atmo_option->ek_met,
-              z_in,
-              cs_glob_time_step->t_cur);
+        if (at_opt->meteo_profile == 1)
+          k_in = cs_intprf(at_opt->met_1d_nlevels_d,
+                           at_opt->met_1d_ntimes,
+                           at_opt->z_dyn_met,
+                           at_opt->time_met,
+                           at_opt->ek_met,
+                           z_in,
+                           cs_glob_time_step->t_cur);
 
         else
           k_in = cpro_met_k[cell_id];
@@ -3162,15 +3167,14 @@ cs_atmo_bcond(void)
           eps_in = rcodcl1_eps[face_id];
       }
       if (eps_in > 0.5 * cs_math_infinite_r) {
-        if (cs_glob_atmo_option->meteo_profile == 1)
-          eps_in = cs_intprf(
-              cs_glob_atmo_option->met_1d_nlevels_d,
-              cs_glob_atmo_option->met_1d_ntimes,
-              cs_glob_atmo_option->z_dyn_met,
-              cs_glob_atmo_option->time_met,
-              cs_glob_atmo_option->ep_met,
-              z_in,
-              cs_glob_time_step->t_cur);
+        if (at_opt->meteo_profile == 1)
+          eps_in = cs_intprf(at_opt->met_1d_nlevels_d,
+                             at_opt->met_1d_ntimes,
+                             at_opt->z_dyn_met,
+                             at_opt->time_met,
+                             at_opt->ep_met,
+                             z_in,
+                             cs_glob_time_step->t_cur);
 
         else
           eps_in = cpro_met_eps[cell_id];
@@ -3180,16 +3184,14 @@ cs_atmo_bcond(void)
       if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
         if (rcodcl1_theta[face_id] < 0.5 * cs_math_infinite_r)
           theta_in = rcodcl1_theta[face_id];
-        else if (cs_glob_atmo_option->meteo_profile == 1)
-          theta_in = cs_intprf(
-              cs_glob_atmo_option->met_1d_nlevels_t,
-              cs_glob_atmo_option->met_1d_ntimes,
-              cs_glob_atmo_option->z_temp_met,
-              cs_glob_atmo_option->time_met,
-              cs_glob_atmo_option->pot_t_met,
-              z_in,
-              cs_glob_time_step->t_cur);
-
+        else if (at_opt->meteo_profile == 1)
+          theta_in = cs_intprf(at_opt->met_1d_nlevels_t,
+                               at_opt->met_1d_ntimes,
+                               at_opt->z_temp_met,
+                               at_opt->time_met,
+                               at_opt->pot_t_met,
+                               z_in,
+                               cs_glob_time_step->t_cur);
 
         else
           theta_in = cpro_met_potemp[cell_id];
@@ -3250,15 +3252,14 @@ cs_atmo_bcond(void)
           if (rcodcl1_qw != nullptr) {
             if (rcodcl1_qw[face_id] > 0.5 * cs_math_infinite_r) {
               cs_real_t qw_in;
-              if (cs_glob_atmo_option->meteo_profile == 1)
-                qw_in = cs_intprf(
-                    cs_glob_atmo_option->met_1d_nlevels_t,
-                    cs_glob_atmo_option->met_1d_ntimes,
-                    cs_glob_atmo_option->z_temp_met,
-                    cs_glob_atmo_option->time_met,
-                    cs_glob_atmo_option->qw_met,
-                    z_in,
-                    cs_glob_time_step->t_cur);
+              if (at_opt->meteo_profile == 1)
+                qw_in = cs_intprf(at_opt->met_1d_nlevels_t,
+                                  at_opt->met_1d_ntimes,
+                                  at_opt->z_temp_met,
+                                  at_opt->time_met,
+                                  at_opt->qw_met,
+                                  z_in,
+                                  cs_glob_time_step->t_cur);
 
               else
                 qw_in = cpro_met_qv[cell_id];
@@ -3269,15 +3270,14 @@ cs_atmo_bcond(void)
           if (rcodcl1_nc != nullptr) {
             if (rcodcl1_nc[face_id] > 0.5 * cs_math_infinite_r) {
               cs_real_t nc_in;
-              if (cs_glob_atmo_option->meteo_profile == 1)
-                nc_in = cs_intprf(cs_glob_atmo_option->met_1d_nlevels_t,
-                    cs_glob_atmo_option->met_1d_ntimes,
-                    cs_glob_atmo_option->z_temp_met,
-                    cs_glob_atmo_option->time_met,
-                    cs_glob_atmo_option->ndrop_met,
-                    z_in,
-                    cs_glob_time_step->t_cur);
-
+              if (at_opt->meteo_profile == 1)
+                nc_in = cs_intprf(at_opt->met_1d_nlevels_t,
+                                  at_opt->met_1d_ntimes,
+                                  at_opt->z_temp_met,
+                                  at_opt->time_met,
+                                  at_opt->ndrop_met,
+                                  z_in,
+                                  cs_glob_time_step->t_cur);
 
               else
                 nc_in = cpro_met_nc[cell_id];
@@ -3291,7 +3291,7 @@ cs_atmo_bcond(void)
 
       /* Large scale forcing with momentum source terms
        * ---------------------------------------------- */
-      if (cs_glob_atmo_option->open_bcs_treatment > 0) {
+      if (at_opt->open_bcs_treatment > 0) {
 
         if (iautom[face_id] >= 1) {
 
@@ -3339,7 +3339,7 @@ cs_atmo_bcond(void)
         cs_real_t pp;
         cs_real_t dum1;
         cs_real_t dum2;
-        if (cs_glob_atmo_option->meteo_profile == 0)
+        if (at_opt->meteo_profile == 0)
           cs_atmo_profile_std(0., /* z_ref */
                               phys_pro->p0,
                               phys_pro->t0,
@@ -3347,15 +3347,14 @@ cs_atmo_bcond(void)
                               &pp, &dum1, &dum2);
 
         /* Pressure profile from meteo file: */
-        else if (cs_glob_atmo_option->meteo_profile == 1)
-          pp = cs_intprf(
-              cs_glob_atmo_option->met_1d_nlevels_t,
-              cs_glob_atmo_option->met_1d_ntimes,
-              cs_glob_atmo_option->z_temp_met,
-              cs_glob_atmo_option->time_met,
-              cs_glob_atmo_option->hyd_p_met,
-              z_in,
-              cs_glob_time_step->t_cur);
+        else if (at_opt->meteo_profile == 1)
+          pp = cs_intprf(at_opt->met_1d_nlevels_t,
+                         at_opt->met_1d_ntimes,
+                         at_opt->z_temp_met,
+                         at_opt->time_met,
+                         at_opt->hyd_p_met,
+                         z_in,
+                         cs_glob_time_step->t_cur);
 
         else
           pp = cpro_met_p[cell_id]
@@ -3369,7 +3368,7 @@ cs_atmo_bcond(void)
 
   /* Inlet BCs for thermal turbulent fluxes
    * -------------------------------------- */
-  if (cs_glob_atmo_option->meteo_profile == 2) {
+  if (at_opt->meteo_profile == 2) {
 
     cs_field_t *f_tf
       = cs_field_by_composite_name_try("temperature", "turbulent_flux");
@@ -3405,9 +3404,11 @@ cs_atmo_bcond(void)
 void
 cs_soil_model(void)
 {
-  int z_id = cs_glob_atmo_option->soil_zone_id;
+  cs_atmo_option_t *at_opt = &_atmo_option;
+
+  int z_id = at_opt->soil_zone_id;
   if (z_id > -1) {
-    int micro_scale_option = cs_glob_atmo_option->soil_meb_model;
+    int micro_scale_option = at_opt->soil_meb_model;
 
     cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
 
@@ -3456,8 +3457,8 @@ cs_soil_model(void)
     cs_field_t *atm_temp = CS_F_(t);
     cs_field_t *meteo_pressure = cs_field_by_name_try("meteo_pressure");
     /* Radiative tables */
-    cs_real_t *sold = (cs_real_t *)  cs_glob_atmo_option->rad_1d_sold;
-    cs_real_t *ird = (cs_real_t *) cs_glob_atmo_option->rad_1d_ird;
+    cs_real_t *sold = (cs_real_t *)  at_opt->rad_1d_sold;
+    cs_real_t *ird = (cs_real_t *) at_opt->rad_1d_ird;
     /* Pointer to the spectral flux density field */
     cs_field_t *f_qinspe = nullptr;
     if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE)
@@ -3525,7 +3526,7 @@ cs_soil_model(void)
 
       /* Infrared and Solar radiative fluxes
        * Warning: should be adapted for many verticales */
-      if (cs_glob_atmo_option->radiative_model_1d == 1
+      if (at_opt->radiative_model_1d == 1
          && rt_params->atmo_model == CS_RAD_ATMO_3D_NONE) {
         foir = ird[0];
         fos = sold[0];
@@ -3564,22 +3565,22 @@ cs_soil_model(void)
       f_fos[soil_id] = fos;
       f_foir[soil_id] = foir;
 
-      if (cs_glob_atmo_option->meteo_profile == 0) {
+      if (at_opt->meteo_profile == 0) {
         cs_atmo_profile_std(0., /* z_ref */
                             phys_pro->p0,
                             phys_pro->t0,
                             cell_cen[cell_id][2], &pphy, &dum, &dum);
       }
-      else if (cs_glob_atmo_option->meteo_profile == 1) {
-        int nbmett = cs_glob_atmo_option->met_1d_nlevels_t;
-        int nbmetm = cs_glob_atmo_option->met_1d_ntimes;
+      else if (at_opt->meteo_profile == 1) {
+        int nbmett = at_opt->met_1d_nlevels_t;
+        int nbmetm = at_opt->met_1d_ntimes;
         pphy = cs_intprf(nbmett,
-            nbmetm,
-            cs_glob_atmo_option->z_temp_met,
-            cs_glob_atmo_option->time_met,
-            cs_glob_atmo_option->hyd_p_met,
-            cell_cen[cell_id][2],
-            cs_glob_time_step->t_cur);
+                         nbmetm,
+                         at_opt->z_temp_met,
+                         at_opt->time_met,
+                         at_opt->hyd_p_met,
+                         cell_cen[cell_id][2],
+                         cs_glob_time_step->t_cur);
       }
       else {
         pphy = meteo_pressure->val[cell_id];
@@ -3768,7 +3769,7 @@ cs_soil_model(void)
   }
   else {
     bft_error(__FILE__, __LINE__, 0,
-              _("cs_glob_atmo_option->soil_zone_id is missing."));
+              _("at_opt->soil_zone_id is missing."));
   }
 }
 
@@ -4904,7 +4905,7 @@ cs_atmo_set_meteo_file_name(const char *file_name)
              strlen(file_name) + 1,
              char);
 
-  sprintf(_atmo_option.meteo_file_name, "%s", file_name);
+  strcpy(_atmo_option.meteo_file_name, file_name);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4942,6 +4943,8 @@ cs_atmo_compute_solar_angles(cs_real_t latitude,
                              cs_real_t *omega,
                              cs_real_t *fo)
 {
+  cs_atmo_option_t *at_opt = &_atmo_option;
+
   /* 1 - initialisations */
   *fo = 1370.;
 
@@ -4991,7 +4994,7 @@ cs_atmo_compute_solar_angles(cs_real_t latitude,
     if (local_time > 12.)
       *omega = 2. * cs_math_pi - acos(co);
   }
-  *omega -= cs_glob_atmo_option->domain_orientation * cs_math_pi / 180.;
+  *omega -= at_opt->domain_orientation * cs_math_pi / 180.;
 
   /* 5 - compute albedo at sea which depends on the zenithal angle */
 
@@ -5040,6 +5043,8 @@ cs_atmo_log_setup(void)
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_OFF)
     return;
 
+  cs_atmo_option_t *at_opt = &_atmo_option;
+
   cs_log_printf(CS_LOG_SETUP,
                 _("\n"
                   "Atmospheric module options\n"
@@ -5065,15 +5070,15 @@ cs_atmo_log_setup(void)
       break;
   }
 
-  if (cs_glob_atmo_option->compute_z_ground > 0)
+  if (at_opt->compute_z_ground > 0)
     cs_log_printf(CS_LOG_SETUP,
         _("  Compute ground elevation\n\n"));
 
-  if (cs_glob_atmo_option->open_bcs_treatment > 0)
+  if (at_opt->open_bcs_treatment > 0)
     cs_log_printf(CS_LOG_SETUP,
         _("  Impose open BCs with momentum source terms\n"));
 
-  if (cs_glob_atmo_option->open_bcs_treatment == 2)
+  if (at_opt->open_bcs_treatment == 2)
     cs_log_printf(CS_LOG_SETUP,
         _("  and impose profiles at ingoing faces\n\n"));
 
@@ -5087,11 +5092,11 @@ cs_atmo_log_setup(void)
        "    Hour:      %4d\n"
        "    Min:       %4d\n"
        "    Sec:       %4f\n\n"),
-     cs_glob_atmo_option->syear,
-     cs_glob_atmo_option->squant,
-     cs_glob_atmo_option->shour,
-     cs_glob_atmo_option->smin,
-     cs_glob_atmo_option->ssec);
+     at_opt->syear,
+     at_opt->squant,
+     at_opt->shour,
+     at_opt->smin,
+     at_opt->ssec);
 
   /* Centre of the domain latitude */
   cs_log_printf
@@ -5101,19 +5106,19 @@ cs_atmo_log_setup(void)
        "    longitude: %6f\n"
        "    x center (in Lambert-93) : %6f\n"
        "    y center (in Lambert-93) : %6f\n\n"),
-     cs_glob_atmo_option->latitude,
-     cs_glob_atmo_option->longitude,
-     cs_glob_atmo_option->x_l93,
-     cs_glob_atmo_option->y_l93);
+     at_opt->latitude,
+     at_opt->longitude,
+     at_opt->x_l93,
+     at_opt->y_l93);
 
-  if (cs_glob_atmo_option->meteo_profile == 1) {
+  if (at_opt->meteo_profile == 1) {
     cs_log_printf
       (CS_LOG_SETUP,
        _("  Large scale Meteo file: %s\n\n"),
-       cs_glob_atmo_option->meteo_file_name);
+       at_opt->meteo_file_name);
   }
 
-  if (cs_glob_atmo_option->meteo_profile == 2) {
+  if (at_opt->meteo_profile == 2) {
     cs_log_printf
       (CS_LOG_SETUP,
        _("  Large scale Meteo profile info:\n"
@@ -5131,22 +5136,21 @@ cs_atmo_log_setup(void)
          "    phih_s:    %s\n"
          "    phim_u:    %s\n"
          "    phih_u:    %s\n\n"),
-       cs_glob_atmo_option->meteo_z0,
-       cs_glob_atmo_option->meteo_dlmo,
-       cs_glob_atmo_option->meteo_ustar0,
-       cs_glob_atmo_option->meteo_uref,
-       cs_glob_atmo_option->meteo_zref,
-       cs_glob_atmo_option->meteo_angle,
-       cs_glob_atmo_option->meteo_psea,
-       cs_glob_atmo_option->meteo_t0,
-       cs_glob_atmo_option->meteo_tstar,
-       cs_glob_atmo_option->meteo_zi,
-       _univ_fn_name[cs_glob_atmo_option->meteo_phim_s],
-       _univ_fn_name[cs_glob_atmo_option->meteo_phih_s],
-       _univ_fn_name[cs_glob_atmo_option->meteo_phim_u],
-       _univ_fn_name[cs_glob_atmo_option->meteo_phih_u]);
+       at_opt->meteo_z0,
+       at_opt->meteo_dlmo,
+       at_opt->meteo_ustar0,
+       at_opt->meteo_uref,
+       at_opt->meteo_zref,
+       at_opt->meteo_angle,
+       at_opt->meteo_psea,
+       at_opt->meteo_t0,
+       at_opt->meteo_tstar,
+       at_opt->meteo_zi,
+       _univ_fn_name[at_opt->meteo_phim_s],
+       _univ_fn_name[at_opt->meteo_phih_s],
+       _univ_fn_name[at_opt->meteo_phim_u],
+       _univ_fn_name[at_opt->meteo_phih_u]);
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5174,7 +5178,6 @@ cs_atmo_read_meteo_profile(int mode)
   // flag to take into account the humidity
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
     ih2o = 1;
-
 
   if (mode == 1)
     bft_printf("Reading meteo profiles data\n");
@@ -5522,6 +5525,24 @@ cs_atmo_read_meteo_profile(int mode)
 void
 cs_atmo_finalize(void)
 {
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] < 0)
+    return;
+
+  if (_atmo_option.meteo_profile > 0) {
+    if (_atmo_option.radiative_model_1d == 1) {
+      cs_measures_sets_destroy();
+      cs_interpol_grids_destroy();
+    }
+  }
+
+  if (cs_glob_atmo_imbrication->imbrication_flag)
+    cs_finalize_imbrication();
+
+  cs_at_data_assim_finalize();
+
+  if (cs_glob_atmo_chemistry->model > 0)
+    cs_atmo_chemistry_finalize();
+
   CS_FREE(_atmo_option.meteo_file_name);
   CS_FREE(_atmo_option.z_dyn_met);
   CS_FREE(_atmo_option.z_temp_met);

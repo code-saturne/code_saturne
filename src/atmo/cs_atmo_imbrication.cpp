@@ -812,7 +812,7 @@ _find_next_line(FILE        *fp,
  *   profile_two.txt
  *
  *  Beware that blank lines or lines starting with blanks
- *  + comment_char areNOT ignored.
+ *  + comment_char are NOT ignored.
  *
  * \param[in]   filename      the name of file with list of file names
  *----------------------------------------------------------------------------*/

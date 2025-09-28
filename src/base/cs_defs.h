@@ -588,21 +588,6 @@ typedef enum {
 #define CS_LAMBDA [=] CS_F_HOST_DEVICE
 #define CS_CLASS_LAMBDA [=, *this] CS_F_HOST_DEVICE
 
-/*----------------------------------------------------------------------------
- * Macros for Fortran interoperability
- *----------------------------------------------------------------------------*/
-
-/*
- * Macro for handling of different symbol names (underscored or not,
- * lowercase or uppercase) between C and Fortran, for link resolution.
- */
-
-#if !defined (__hpux)
-#define CS_PROCF(x, y) x##_
-#else
-#define CS_PROCF(x, y) x
-#endif
-
 /*=============================================================================
  * Global variables
  *============================================================================*/

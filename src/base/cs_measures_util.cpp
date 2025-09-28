@@ -77,6 +77,46 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
+/*
+ * Macro for handling of different symbol names (underscored or not,
+ * lowercase or uppercase) between C and Fortran, for link resolution.
+ */
+
+#if !defined (__hpux)
+#define CS_PROCF(x, y) x##_
+#else
+#define CS_PROCF(x, y) x
+#endif
+
+/*============================================================================
+ * Prototypes of local functions used only for Fortran API
+ *============================================================================*/
+
+void CS_PROCF(mesmap, MESMAP)
+(
+ const int         *imeset,
+ const int         *inbmes,
+ const cs_real_t   *meset,
+ const cs_real_t   *coords,
+ const int         *cressm,
+ const int         *interp,
+ const cs_real_t   *infrad
+);
+
+void CS_PROCF(grimap, GRIMAP)
+(
+ const int         *igrid,
+ const int         *inpts,
+ const cs_real_t   *coords
+);
+
+void CS_PROCF(gripol, GRIPOL)
+(
+ const int         *igrid,
+ const cs_real_t   *inval,
+ cs_real_t         *pldval
+);
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -887,65 +927,6 @@ cs_interpol_grids_destroy(void)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Define a measures set.
- *
- * Fortran interface; use mestcr;
- *
- * subroutine mestcr (name, idim, ilved, imeset)
- * *****************
- *
- * character*       name        : <-- : Measure set name
- * integer          idim        : <-- : Measures set dimension
- * integer          ilved       : <-- : 0: not intereaved; 1: interleaved
- * integer          imesset     : --> : id of defined measures set
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(mestcr, MESTCR)
-(
- const char   *name,
- const int    *idim,
- const int    *ilved,
- int          *imeset
-)
-{
-  int type_flag = 0;
-  bool interleaved = (*ilved == 0) ? false : true;
-  cs_measures_set_t *ms = nullptr;
-
-  ms = cs_measures_set_create(name,
-                              type_flag,
-                              *idim,
-                              interleaved);
-
-  *imeset = ms->id;
-}
-
-/*----------------------------------------------------------------------------
- * Define a grid.
- *
- * Fortran interface
- *
- * subroutine gridcr (name, igrid)
- * *****************
- *
- * character*       name        : <-- : Measure set name
- * integer          igrid       : --> : id of defined grid
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(gridcr, GRIDCR)
-(
- const char     *name,
- int            *igrid
-)
-{
-  cs_interpol_grid_t *ig = nullptr;
-
-  ig = cs_interpol_grid_create(name);
-
-  *igrid = ig->id;
-}
-
-/*----------------------------------------------------------------------------
  * (re)Allocate and map values to a measure set.
  *
  * Fortran interface
@@ -1012,45 +993,6 @@ void CS_PROCF(grimap, GRIMAP)
 }
 
 /*----------------------------------------------------------------------------
- * Add values to a measure set.
- *
- * Fortran interface
- *
- * subroutine mesadd (imeset, inbmes, meset, coords, cressm, interp)
- * *****************
- *
- * integer          imeset      : <-- : Measures set id
- * integer          inbmes      : <-- : Number of measures to add
- * cs_real_t*       meset       : <-- : Pointer to measures values array
- * cs_real_t*       coords      : <-- : Pointer to measures coordonates array
- * integer*         cressm      : <-- : Pointer to Cressman interpolation flag
- * integer*         interp      : <-- : Pointer to interpolation flag
- * integer*         infrad      : <-- : Influence radius for interpolation
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(mesadd, MESADD)
-(
- const int         *imeset,
- const int         *inbmes,
- const cs_real_t   *meset,
- const cs_real_t   *coords,
- const int         *cressm,
- const int         *interp,
- const cs_real_t   *infrad
-)
-{
-  cs_measures_set_t *ms = cs_measures_set_by_id(*imeset);
-
-  cs_measures_set_add_values(ms,
-                             *inbmes,
-                             cressm,
-                             interp,
-                             coords,
-                             meset,
-                             infrad);
-}
-
-/*----------------------------------------------------------------------------
  * Interpolate computed field on a grid.
  *
  * Fortran interface
@@ -1075,34 +1017,6 @@ void CS_PROCF(gripol, GRIPOL)
   cs_interpol_field_on_grid(ig,
                             inval,
                             pldval);
-}
-
-/*----------------------------------------------------------------------------
- * Destroy measures sets.
- *
- * Fortran interface
- *
- * subroutine mestde (void)
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(mestde, MESTDE)(void)
-{
-  cs_measures_sets_destroy();
-}
-
-/*----------------------------------------------------------------------------
- * Destroy grids.
- *
- * Fortran interface
- *
- * subroutine grides (void)
- * *****************
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(grides, GRIDES)(void)
-{
-  cs_interpol_grids_destroy();
 }
 
 /*----------------------------------------------------------------------------*/

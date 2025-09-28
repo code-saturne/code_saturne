@@ -194,7 +194,7 @@ integer(c_int), pointer, save :: idrayi
 integer(c_int), pointer, save :: idrayst
 
 !> grid formed by 1D profiles
-integer, save:: igrid
+integer(c_int), pointer, save :: igrid
 
 ! 2.6 Arrays specific to the 1D atmospheric radiative module
 !-------------------------------------------------------------------------------
@@ -348,7 +348,8 @@ integer(c_int), pointer, save :: rad_atmo_model
         imeteo, nbmetd, nbmett, nbmetm, iatra1, nbmaxt,                 &
         iatsoil,                                                        &
         nvertv, kvert, kmx, ihpm,                                       &
-        nfatr1, sigc, idrayi, idrayst, aod_o3_tot, aod_h2o_tot)         &
+        nfatr1, sigc, idrayi, idrayst, igrid,                           &
+        aod_o3_tot, aod_h2o_tot)                                        &
       bind(C, name='cs_f_atmo_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -359,7 +360,7 @@ integer(c_int), pointer, save :: rad_atmo_model
       type(c_ptr), intent(out) :: subgrid_model, distribution_model
       type(c_ptr), intent(out) :: syear, squant, shour, smin, ssec
       type(c_ptr), intent(out) :: longitude, latitude
-      type(c_ptr), intent(out) :: idrayi, idrayst
+      type(c_ptr), intent(out) :: idrayi, idrayst, igrid
       type(c_ptr), intent(out) :: imeteo
       type(c_ptr), intent(out) :: nbmetd, nbmett, nbmetm, iatra1, nbmaxt
       type(c_ptr), intent(out) :: iatsoil
@@ -423,32 +424,6 @@ integer(c_int), pointer, save :: rad_atmo_model
 
     !---------------------------------------------------------------------------
 
-    !> \brief Compute meteo profiles if no meteo file is given
-
-    subroutine cs_atmo_compute_meteo_profiles() &
-        bind(C, name='cs_atmo_compute_meteo_profiles')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_atmo_compute_meteo_profiles
-
-    !---------------------------------------------------------------------------
-
-    !> \brief Calculation of the air water mass fraction at saturation
-    !>        for a given temperature.
-
-    !> \param[in]  t_c  temperature (in Celsius)
-    !> \param[in]  p    pressure
-
-    function cs_air_yw_sat(t_c, p) result(x_s) &
-        bind(C, name='cs_air_yw_sat')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(c_double), value :: t_c, p
-      real(c_double) :: x_s
-    end function cs_air_yw_sat
-
-    !---------------------------------------------------------------------------
-
     subroutine cs_f_atmo_get_soil_zone(n_faces, n_soil_cat, face_ids)  &
         bind(C, name='cs_f_atmo_get_soil_zone')
       use, intrinsic :: iso_c_binding
@@ -475,15 +450,6 @@ integer(c_int), pointer, save :: rad_atmo_model
       implicit none
       type(c_ptr), intent(out) :: p_rad_atmo_model
     end subroutine cs_rad_transfer_get_pointers
-
-    !---------------------------------------------------------------------------
-
-    subroutine cs_atmo_read_meteo_profile(mode) &
-      bind(C, name='cs_atmo_read_meteo_profile')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int), value :: mode
-    end subroutine cs_atmo_read_meteo_profile
 
   end interface
 
@@ -528,7 +494,7 @@ contains
     type(c_ptr) :: c_syear, c_squant, c_shour, c_smin, c_ssec
     type(c_ptr) :: c_longitude, c_latitude
     type(c_ptr) :: c_sigc
-    type(c_ptr) :: c_imeteo, c_idrayi, c_idrayst
+    type(c_ptr) :: c_imeteo, c_idrayi, c_idrayst, c_igrid
     type(c_ptr) :: c_nbmetd, c_nbmett, c_nbmetm, c_iatra1, c_nbmaxt
     type(c_ptr) :: c_nfatr1
     type(c_ptr) :: c_iatsoil
@@ -548,7 +514,7 @@ contains
       c_nbmaxt, c_iatsoil,                          &
       c_nvert, c_kvert, c_kmx,                      &
       c_ihpm, c_nfatr1,                             &
-      c_sigc, c_idrayi, c_idrayst,                  &
+      c_sigc, c_idrayi, c_idrayst, c_igrid,         &
       c_aod_o3_tot, c_aod_h2o_tot)
 
     call c_f_pointer(c_ps, ps)
@@ -583,6 +549,7 @@ contains
     call c_f_pointer(c_sigc, sigc)
     call c_f_pointer(c_idrayi, idrayi)
     call c_f_pointer(c_idrayst, idrayst)
+    call c_f_pointer(c_igrid, igrid)
 
     call c_f_pointer(c_aod_o3_tot,  aod_o3_tot)
     call c_f_pointer(c_aod_h2o_tot, aod_h2o_tot)
@@ -635,10 +602,6 @@ type(c_ptr) :: c_soil_density
 integer(c_int), dimension(2) :: dim_ntx_nt, dim_nd_nt
 integer(c_int), dimension(2) :: dim_nd_3, dim_nt_3
 integer(c_int), dimension(2) :: dim_xyvert, dim_kmx2, dim_kmx_nvert
-
-if (imeteo.eq.1) then
-  call cs_atmo_read_meteo_profile(0)
-endif
 
 call cs_f_atmo_arrays_get_pointers(c_z_temp_met,                  &
                                    c_xyp_met,                     &
@@ -716,53 +679,6 @@ call c_f_pointer(c_soil_pressure , soil_pressure, [nvert])
 call c_f_pointer(c_soil_density  , soil_density , [nvert])
 end subroutine allocate_map_atmo
 
-!==============================================================================
-
-!> \brief Initialisation of meteo data
-subroutine init_meteo() &
-  bind(C, name= "cs_f_init_meteo")
-
-use cs_c_bindings
-
-implicit none
-
-procedure() :: mestcr, gridcr
-
-if (imeteo.gt.0) then
-
-  ! Prepare interpolation for 1D radiative model
-  if (iatra1.eq.1) then
-    call mestcr("rayi"//c_null_char, 1, 0, idrayi)
-    call mestcr("rayst"//c_null_char, 1, 0, idrayst)
-    call gridcr("int_grid"//c_null_char, igrid)
-  endif
-
-endif
-
-end subroutine init_meteo
-
 !===============================================================================
-
-!> \brief Final step for deallocation
-subroutine finalize_meteo() &
-  bind(C, name='cs_f_finalize_meteo')
-
-use cs_c_bindings
-
-implicit none
-
-procedure() :: grides, mestde
-
-if (imeteo.gt.0) then
-  if (iatra1.eq.1) then
-
-    call mestde()
-    call grides()
-
-  endif
-
-endif
-
-end subroutine finalize_meteo
 
 end module atincl

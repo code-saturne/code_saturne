@@ -131,9 +131,6 @@ BEGIN_C_DECLS
 /* Bindings to Fortran routines */
 
 void
-cs_f_finalize_meteo(void);
-
-void
 cs_f_finalize_imbrication(void);
 
 /*=============================================================================
@@ -903,20 +900,6 @@ cs_time_stepping(void)
 
   cs_turbulence_bc_free_pointers();
   cs_boundary_conditions_free();
-
-  cs_f_finalize_meteo();
-
-  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0) {
-
-    if (cs_glob_atmo_imbrication->imbrication_flag)
-      cs_finalize_imbrication();
-
-    cs_at_data_assim_finalize();
-
-    if (cs_glob_atmo_chemistry->model > 0)
-      cs_atmo_chemistry_finalize();
-
-  }
 
   if (cs_glob_physical_model_flag[CS_GAS_MIX] >= 0)
     cs_gas_mix_finalize();
