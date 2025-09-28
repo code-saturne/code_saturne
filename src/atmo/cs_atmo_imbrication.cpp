@@ -48,18 +48,19 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
-
-#include "atmo/cs_air_props.h"
-#include "atmo/cs_intprf.h"
+#include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "base/cs_measures_util.h"
 #include "base/cs_physical_constants.h"
 #include "bft/bft_printf.h"
+
 #include "pprt/cs_physical_model.h"
+#include "atmo/cs_air_props.h"
+#include "atmo/cs_intprf.h"
 
 /*----------------------------------------------------------------------------
- *  Header for the current file
+ * Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "atmo/cs_atmo.h"
@@ -79,9 +80,9 @@ BEGIN_C_DECLS
  * Local Type Definitions
  *============================================================================*/
 
-/* --------------------------------------------------------------
+/*----------------------------------------------------------------------------
  * Parameter for "meteo" files
- * -------------------------------------------------------------- */
+ *----------------------------------------------------------------------------*/
 
 #define line_len 132
 #define skip_chars "/#!"
@@ -94,11 +95,12 @@ static int number_of_files = 0;
 static int sections_per_file = -1;
 // Profile dimension variable
 static int thermal_profile_dim = -1;
-static int dynamical_profile_dim = -1;
+static int dynamic_profile_dim = -1;
 
-/* --------------------------------------------------------------
- * read data from "meteo" files
- * -------------------------------------------------------------- */
+/*----------------------------------------------------------------------------
+ * Read data from "meteo" files
+ *----------------------------------------------------------------------------*/
+
 // Time variables
 static int *years = nullptr;
 static int *hours = nullptr;
@@ -114,7 +116,7 @@ static cs_real_t *ground_pressure = nullptr;
 static cs_real_t *zt = nullptr;
 static cs_real_t *qw = nullptr;
 static cs_real_t *Nc = nullptr;
-static cs_real_t *tempC = nullptr;
+static cs_real_t *temp_c = nullptr;
 // Vertical grid for wind variables
 static cs_real_t *zd = nullptr;
 static cs_real_t *tke = nullptr;
@@ -122,17 +124,19 @@ static cs_real_t *eps = nullptr;
 static cs_real_t *vel_u = nullptr;
 static cs_real_t *vel_v = nullptr;
 
-/* --------------------------------------------------------------
- * derived data
- * -------------------------------------------------------------- */
+/*----------------------------------------------------------------------------
+ * Derived data
+ *----------------------------------------------------------------------------*/
+
 static cs_real_t *times = nullptr;
 static cs_real_t *theta = nullptr;
 static cs_real_t *density = nullptr;
 static cs_real_t *pressure = nullptr;
 
-/* --------------------------------------------------------------
- * time interpolated profiles
- * -------------------------------------------------------------- */
+/*----------------------------------------------------------------------------
+ * Time interpolated profiles
+ *----------------------------------------------------------------------------*/
+
 static cs_real_t *ti_vel_u = nullptr;
 static cs_real_t *ti_vel_v = nullptr;
 static cs_real_t *ti_zt = nullptr;
@@ -141,14 +145,15 @@ static cs_real_t *ti_Nc = nullptr;
 static cs_real_t *ti_zd = nullptr;
 static cs_real_t *ti_tke = nullptr;
 static cs_real_t *ti_eps = nullptr;
-static cs_real_t *ti_tempC = nullptr;
+static cs_real_t *ti_temp_c = nullptr;
 static cs_real_t *ti_theta = nullptr;
 static cs_real_t *ti_density = nullptr;
 static cs_real_t *ti_pressure = nullptr;
 
-/* --------------------------------------------------------------
- * additional variables
- * -------------------------------------------------------------- */
+/*----------------------------------------------------------------------------
+ * Additional variables
+ *----------------------------------------------------------------------------*/
+
 static cs_real_t *coordinates_th = nullptr;
 static cs_real_t *coordinates_dyn = nullptr;
 static cs_real_t *influence_param_th = nullptr;
@@ -192,7 +197,10 @@ _allocate_all(void)
   const int size = sections_per_file*number_of_files;
   const int thermal_size
     = thermal_profile_dim*sections_per_file*number_of_files;
-  const int dyn_size = dynamical_profile_dim*sections_per_file*number_of_files;
+  const int dyn_size = dynamic_profile_dim*sections_per_file*number_of_files;
+
+  cs_atmo_model_t atmo_model_flag
+    = static_cast<cs_atmo_model_t>(cs_glob_physical_model_flag[CS_ATMOSPHERIC]);
 
   CS_MALLOC(hours, size, int);
   CS_MALLOC(years, size, int);
@@ -206,19 +214,20 @@ _allocate_all(void)
   CS_MALLOC(zt, thermal_size, cs_real_t);
   CS_MALLOC(ground_pressure, size, cs_real_t);
 
-  /*  --------------------------------------------------------------
-   * tempC and qw are always allocated for dry and humid atmosphere
-   * -------------------------------------------------------------- */
-  if (   cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_DRY
-      || cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID  ) {
+  /* ---------------------------------------------------------------
+   * temp_c and qw are always allocated for dry and humid atmosphere
+   * --------------------------------------------------------------- */
+
+  if (atmo_model_flag != CS_ATMO_OFF) {
     CS_MALLOC(qw, thermal_size, cs_real_t);
-    CS_MALLOC(tempC, thermal_size, cs_real_t);
+    CS_MALLOC(temp_c, thermal_size, cs_real_t);
   }
 
   /* --------------------------------------------------------------
    * Nc only used in humid atmosphere
    * -------------------------------------------------------------- */
-  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
+
+  if (atmo_model_flag == CS_ATMO_HUMID)
     CS_MALLOC(Nc, thermal_size, cs_real_t);
 
   CS_MALLOC(vel_u, dyn_size, cs_real_t);
@@ -226,10 +235,9 @@ _allocate_all(void)
   CS_MALLOC(zd, dyn_size, cs_real_t);
   CS_MALLOC(tke, dyn_size, cs_real_t);
   CS_MALLOC(eps, dyn_size, cs_real_t);
-
 }
 
-/* -----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------
  * \brief Search for the position of a value in an array,
  *        assuming that the array is sorted in a strictly increasing order
  *
@@ -246,7 +254,7 @@ _allocate_all(void)
  *                          lower than the value
  * \param[out]   upper      the index of the first membre of the array
  *                          greater than the value
- *------------------------------------------------------------------------------- */
+ *----------------------------------------------------------------------------*/
 
 static void
 _get_index(const cs_real_t the_array[],
@@ -280,7 +288,7 @@ _get_index(const cs_real_t the_array[],
   upper = dmin;
 }
 
-/* -----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------
  * \brief Interpolates a "profile" at a given time.
  *        Given a series of profiles varying in time
  *        you get the profile interpolated from them at the given time.
@@ -289,7 +297,7 @@ _get_index(const cs_real_t the_array[],
  * \param[in]    the_times               times array
  * \param[in]    the_profiles            input profiles
  * \param[out]   interpolated_profile    output profile
- *------------------------------------------------------------------------------- */
+ *----------------------------------------------------------------------------*/
 
 static void
 _time_interpolation(const int n_profile,
@@ -316,20 +324,19 @@ _time_interpolation(const int n_profile,
       interpolated_profile[i] = the_profiles[i + lower * n_profile];
   }
   else {
-    bft_printf("time_interpolation:: the times array is not increasing\n");
+    bft_printf("Time_interpolation: the times array is not increasing\n");
     for (int i = 0; i < sections_per_file; i++)
-      bft_printf("time_interpolation:: the_times[%d]=%f\n", i, the_times[i]);
+      bft_printf("Time_interpolation: the_times[%d]=%f\n", i, the_times[i]);
     bft_error(__FILE__, __LINE__, 0,
-              _("time_interpolation stops the calculations\n"));
+              _("Time_interpolation stops the calculations."));
   }
-
 }
 
-/* ---------------------------------------------------------------------------
+/*----------------------------------------------------------------------------
  * \brief Time interpolation of all profiles
  *
  * \param[in]   the_time    current time
- * --------------------------------------------------------------------------- */
+ *----------------------------------------------------------------------------*/
 
 static void
 _interpolate_all_profiles(cs_real_t the_time)
@@ -387,34 +394,34 @@ _interpolate_all_profiles(cs_real_t the_time)
     }
   }
 
-  /* tempC */
-  static int ti_tempC_size = 0;
-  if (tempC != nullptr) {
+  /* temp_c */
+  static int ti_temp_c_size = 0;
+  if (temp_c != nullptr) {
     int lb = 0;
     int ub = thermal_profile_dim - 1;
     int dim1 = ub - lb + 1;
     int required_size = dim1 * number_of_files;
 
-    if (ti_tempC_size != required_size && ti_tempC != nullptr) {
-      CS_FREE(ti_tempC);
-      ti_tempC = nullptr;
-      ti_tempC_size = 0;
+    if (ti_temp_c_size != required_size && ti_temp_c != nullptr) {
+      CS_FREE(ti_temp_c);
+      ti_temp_c = nullptr;
+      ti_temp_c_size = 0;
     }
 
-    if (ti_tempC == nullptr) {
-      CS_MALLOC(ti_tempC, required_size, cs_real_t);
-      ti_tempC_size = required_size;
+    if (ti_temp_c == nullptr) {
+      CS_MALLOC(ti_temp_c, required_size, cs_real_t);
+      ti_temp_c_size = required_size;
     }
 
     cs_real_t *_times = times;
     for (int i = 0; i < number_of_files; i++) {
-      cs_real_t *_ti_tempC = ti_tempC + i * dim1;
-      cs_real_t *_tempC = tempC + i * thermal_profile_dim * sections_per_file;
+      cs_real_t *_ti_temp_c = ti_temp_c + i * dim1;
+      cs_real_t *_temp_c = temp_c + i * thermal_profile_dim * sections_per_file;
       _time_interpolation(dim1,
                           the_time,
                           _times,
-                          _tempC,
-                          _ti_tempC);
+                          _temp_c,
+                          _ti_temp_c);
     }
   }
 
@@ -431,7 +438,6 @@ _interpolate_all_profiles(cs_real_t the_time)
       ti_qw = nullptr;
       ti_qw_size = 0;
     }
-
 
     if (ti_qw == nullptr) {
       CS_MALLOC(ti_qw, required_size, cs_real_t);
@@ -485,7 +491,7 @@ _interpolate_all_profiles(cs_real_t the_time)
   static int ti_zd_size = 0;
   if (zd != nullptr) {
     int lb = 0;
-    int ub = dynamical_profile_dim - 1;
+    int ub = dynamic_profile_dim - 1;
     int dim1 = ub - lb + 1;
     int required_size = dim1 * number_of_files;
 
@@ -503,7 +509,7 @@ _interpolate_all_profiles(cs_real_t the_time)
     cs_real_t *_times = times;
     for (int i = 0; i < number_of_files; i++) {
       cs_real_t *_ti_zd = ti_zd + i * dim1;
-      cs_real_t *_zd = zd + i * dynamical_profile_dim * sections_per_file;
+      cs_real_t *_zd = zd + i * dynamic_profile_dim * sections_per_file;
       _time_interpolation(dim1,
                           the_time,
                           _times,
@@ -516,7 +522,7 @@ _interpolate_all_profiles(cs_real_t the_time)
   static int ti_vel_u_size = 0;
   if (vel_u != nullptr) {
     int lb = 0;
-    int ub = dynamical_profile_dim - 1;
+    int ub = dynamic_profile_dim - 1;
     int dim1 = ub - lb + 1;
     int required_size = dim1 * number_of_files;
 
@@ -534,7 +540,7 @@ _interpolate_all_profiles(cs_real_t the_time)
     cs_real_t *_times = times;
     for (int i = 0; i < number_of_files; i++) {
       cs_real_t *_ti_u = ti_vel_u + i * dim1;
-      cs_real_t *_u = vel_u + i * dynamical_profile_dim * sections_per_file;
+      cs_real_t *_u = vel_u + i * dynamic_profile_dim * sections_per_file;
       _time_interpolation(dim1,
                           the_time,
                           _times,
@@ -547,7 +553,7 @@ _interpolate_all_profiles(cs_real_t the_time)
   static int ti_vel_v_size = 0;
   if (vel_v != nullptr) {
     int lb = 0;
-    int ub = dynamical_profile_dim - 1;
+    int ub = dynamic_profile_dim - 1;
     int dim1 = ub - lb + 1;
     int required_size = dim1 * number_of_files;
 
@@ -565,7 +571,7 @@ _interpolate_all_profiles(cs_real_t the_time)
     cs_real_t *_times = times;
     for (int i = 0; i < number_of_files; i++) {
       cs_real_t *_ti_v = ti_vel_v + i * dim1;
-      cs_real_t *_v = vel_v + i * dynamical_profile_dim * sections_per_file;
+      cs_real_t *_v = vel_v + i * dynamic_profile_dim * sections_per_file;
       _time_interpolation(dim1,
                           the_time,
                           _times,
@@ -578,7 +584,7 @@ _interpolate_all_profiles(cs_real_t the_time)
   static int ti_tke_size = 0;
   if (tke != nullptr) {
     int lb = 0;
-    int ub = dynamical_profile_dim - 1;
+    int ub = dynamic_profile_dim - 1;
     int dim1 = ub - lb + 1;
     int required_size = dim1 * number_of_files;
 
@@ -595,7 +601,7 @@ _interpolate_all_profiles(cs_real_t the_time)
     cs_real_t *_times = times;
     for (int i = 0; i < number_of_files; i++) {
       cs_real_t *_ti_tke = ti_tke + i * dim1;
-      cs_real_t *_tke = tke + i * dynamical_profile_dim * sections_per_file;
+      cs_real_t *_tke = tke + i * dynamic_profile_dim * sections_per_file;
       _time_interpolation(dim1, the_time, _times, _tke, _ti_tke);
     }
   }
@@ -604,7 +610,7 @@ _interpolate_all_profiles(cs_real_t the_time)
   static int ti_eps_size = 0;
   if (eps != nullptr) {
     int lb = 0;
-    int ub = dynamical_profile_dim - 1;
+    int ub = dynamic_profile_dim - 1;
     int dim1 = ub - lb + 1;
     int required_size = dim1 * number_of_files;
 
@@ -621,7 +627,7 @@ _interpolate_all_profiles(cs_real_t the_time)
     cs_real_t *_times = times;
     for (int i = 0; i < number_of_files; i++) {
       cs_real_t *_ti_eps = ti_eps + i * dim1;
-      cs_real_t *_eps = eps + i * dynamical_profile_dim * sections_per_file;
+      cs_real_t *_eps = eps + i * dynamic_profile_dim * sections_per_file;
       _time_interpolation(dim1, the_time, _times, _eps, _ti_eps);
     }
   }
@@ -703,10 +709,9 @@ _interpolate_all_profiles(cs_real_t the_time)
       _time_interpolation(dim1, the_time, _times, _density, _ti_density);
     }
   }
-
 }
 
-/* ----------------------------------------------------------------
+/*----------------------------------------------------------------------------
  * \brief  Converts a (year,ordinal) date to julian calendar date
  *         for calculating time shifts
  *
@@ -714,7 +719,7 @@ _interpolate_all_profiles(cs_real_t the_time)
  * \param[in]   ordinal     number of the day in the year
  *              e.g 1st january has ordinal 1
  *                               31 december 365 or 366
- * ---------------------------------------------------------------- */
+ *----------------------------------------------------------------------------*/
 
 static int
 _yo2j(const cs_real_t year,
@@ -722,18 +727,18 @@ _yo2j(const cs_real_t year,
 {
   int result = ordinal + ( (1461 * (year + 4800)) / 4
                        -    30 - (3 * ((year + 4900) / 100)) / 4
-                       +     1 - 32075  ) - 1;
+                       +     1 - 32075 ) - 1;
 
   return result;
 }
 
-/* -----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------
  * \brief  Identification of the first and last non white character
  *      of a string
  * \param[in]   string      the input string
  * \param[out]  b           number of the first non white character
  * \param[out]  e           number of the last non white character
- * ------------------------------------------------------------------------------- */
+ *----------------------------------------------------------------------------*/
 
 static void
 _bounds(const char *str,
@@ -750,9 +755,9 @@ _bounds(const char *str,
     end--;
 }
 
-/* -----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------
  * \brief Check if a line starts with a skip character
- * ------------------------------------------------------------------------------- */
+ *----------------------------------------------------------------------------*/
 
 static int
 _is_skipped(const char* line) {
@@ -761,12 +766,12 @@ _is_skipped(const char* line) {
   return (strchr(skip_chars, line[start]) != nullptr);
 }
 
-/* ------------------------------------------------------------------------------
+/*----------------------------------------------------------------------------
  * \brief  Find next validated line
  * \param[in]   fp              File
  * \param[in]   current_line    current line
  * \param[out]  source_file     the characters of the line
- * ------------------------------------------------------------------------------- */
+ *----------------------------------------------------------------------------*/
 
 static int
 _find_next_line(FILE        *fp,
@@ -791,12 +796,12 @@ _find_next_line(FILE        *fp,
   else
     bft_error(__FILE__, __LINE__, 0,
               _("Unexpected read error on file %s\n"
-                "Read error"), source_file);
+                "Read error."), source_file);
 
   return -1;
 }
 
-/* --------------------------------------------------------------------
+/*----------------------------------------------------------------------------
  * \brief Reads a file having in each significative line a file name
  *  it returns then as 'the_list' the list of lines read
  *  a line is significative if it's first char is not / or # or !
@@ -810,7 +815,7 @@ _find_next_line(FILE        *fp,
  *  + comment_char areNOT ignored.
  *
  * \param[in]   filename      the name of file with list of file names
- * --------------------------------------------------------------------- */
+ *----------------------------------------------------------------------------*/
 
 static void
 _read_files_list(const char *filename)
@@ -841,7 +846,7 @@ _read_files_list(const char *filename)
   fclose(f);
 }
 
-/* --------------------------------------------------------------------
+/*----------------------------------------------------------------------------
  * Reads a meteo_file for code_saturne Atmospheric Physics option
  *
  * They contain an arbitrary number (>=1) of sections having the following
@@ -853,7 +858,7 @@ _read_files_list(const char *filename)
  * ground pressure
  * nt (thermal profile dimension)
  * nt lines of
- * zt, tempC, qw(kg/kg), Ndrops(1/cm3)
+ * zt, temp_c, qw(kg/kg), Ndrops(1/cm3)
  * nd (thermal profile dimension)
  * nd lines of
  * zd, u, v, k, eps
@@ -865,26 +870,28 @@ _read_files_list(const char *filename)
  * NOT ignored.
  *
  * \param[in]   meteo_file      "meteo" file name
- * --------------------------------------------------------------------- */
+ *----------------------------------------------------------------------------*/
 
 static void
 _read_meteo_file(const char  *meteo_file)
 {
-  FILE *unilog = nullptr;
   char current_line[1024];
   int count_lines = 0;
   int first = 0, last = 0;
-  int nt = -1, nd = -1, ns = -1;  // ns inutilisé dans ton extrait
+  int nt = -1, nd = -1, ns = -1;  // ns unused in this extract
+
+  cs_atmo_model_t atmo_model_flag
+    = static_cast<cs_atmo_model_t>(cs_glob_physical_model_flag[CS_ATMOSPHERIC]);
+
+  /* Count calls */
   static int file_count = 0;
+  file_count++;
 
-  /* executables
-   * -------------- */
-  file_count ++;
+  FILE *unilog = fopen(meteo_file, "r");
 
-  unilog = fopen(meteo_file, "r");
-
-  /* first loop on file for counting purposes
+  /* First loop on file for counting purposes
    * ---------------------------------------- */
+
   while (true) {
     const int status = _find_next_line(unilog, current_line, meteo_file);
     if (status == 1)
@@ -895,18 +902,18 @@ _read_meteo_file(const char  *meteo_file)
       int l_iostat = sscanf(current_line, "%d", &nt);
       if (l_iostat != 1)
         bft_error(__FILE__, __LINE__, 0,
-                  _("unexpected read error (2) on line: %s\n"
-                    "found in file : %s\n"
+                  _("Unexpected read error (2) on line: %s\n"
+                    "found in file: %s\n"
                     "check and correct your data files\n"
-                    "all calculations will be stopped\n"),
+                    "all calculations will be stopped."),
                   current_line, meteo_file);
       if (thermal_profile_dim < 0)
         thermal_profile_dim = nt;
       if (thermal_profile_dim != nt)
         bft_error(__FILE__, __LINE__, 0,
-                  _("all files should provide the same nt for thermal profiles\n"
+                  _("All files should provide the same nt for thermal profiles\n"
                     "nt read on file >%s< is %d\n"
-                    "global nt read on first file is %d\n"),
+                    "Global nt read on first file is %d."),
                   meteo_file, nt, thermal_profile_dim);
     }
 
@@ -914,20 +921,20 @@ _read_meteo_file(const char  *meteo_file)
       if (count_lines == 4 + nt + 1) {
         if (sscanf(current_line, "%d", &nd) != 1)
           bft_error(__FILE__, __LINE__, 0,
-                    _("while reading nd (dynamical profiles dim)\n"
+                    _("while reading nd (dynamic profiles dim)\n"
                       "unexpected read error (3) on line: %s\n"
-                      "found in file : %s\n"),
+                      "found in file: %s"),
                     current_line, meteo_file);
-        if (dynamical_profile_dim < 0)
-          dynamical_profile_dim = nd;
-        if (dynamical_profile_dim != nd) {
-          bft_printf("all files should provide the same nd for dynamic profiles\n");
+        if (dynamic_profile_dim < 0)
+          dynamic_profile_dim = nd;
+        if (dynamic_profile_dim != nd) {
+          bft_printf("All files should provide the same nd for dynamic profiles.\n");
           _bounds(meteo_file, first, last);
           bft_error(__FILE__, __LINE__, 0,
                     _("nd read on file >%.*s< is %d\n"
-                      "global nd read on first file is %d\n"),
+                      "global nd read on first file is %d."),
                     last - first + 1, meteo_file + first,
-                    nd, dynamical_profile_dim);
+                    nd, dynamic_profile_dim);
         }
       }
     }
@@ -938,16 +945,16 @@ _read_meteo_file(const char  *meteo_file)
     _bounds(meteo_file, first, last);
 
     bft_error(__FILE__, __LINE__, 0,
-                    _("read_meteo_file encountered an error on file >%.*s<\n"
-                      "all the sections date,pos,pressure+profiles should"
-                      "have the same length\n"
-                      "this length should be multiple of 5+nt(thermal dim)+nd"
-                      "(dynamical dim): %d\n"
-                      "but one found %d lines of data\n"
-                      "probable error cause : the actual and expected length of"
-                      " the profiles differ\n"
-                      "all thermal profiles should have %d lines\n"
-                      "all dynamical profiles should have %d lines\n"),
+              _("Read_meteo_file encountered an error on file >%.*s<\n"
+                "all the sections date, pos, pressure+profiles should"
+                "have the same length.\n"
+                "Yhis length should be multiple of 5+nt(thermal dim)+nd"
+                "(dynamic dim): %d\n"
+                "but one found %d lines of data\n"
+                "Probable error cause: the actual and expected length of"
+                " the profiles differ\n"
+                "All thermal profiles should have %d lines.\n"
+                "All dynamic profiles should have %d lines."),
               last - first + 1, meteo_file + first,
               5 + nt + nd, count_lines, nt, nd);
   }
@@ -959,39 +966,40 @@ _read_meteo_file(const char  *meteo_file)
     if (ns != sections_per_file) {
       _bounds(meteo_file, first, last);
       bft_error(__FILE__, __LINE__, 0,
-                _("read_meteo_file encountered an error on file >%.*s<\n"
+                _("Read_meteo_file encountered an error on file >%.*s<\n"
                   "all the files should contain the same number of sections"
-                  " date,pos,pressure+profiles\n"
-                  "number of sections of current file is %d\n"
-                  "number of sections given by first file is %d\n"),
+                  " date, pos, pressure+profiles.\n"
+                  "Number of sections of current file is %d.\n"
+                  "Number of sections given by first file is %d."),
                 last - first + 1, meteo_file + first, ns, sections_per_file);
     }
   }
 
-  /* here the end of file is reached and nt,nd are consistent with global values
-   * as well as the number of sections in the file
+  /* Here the end of file is reached and nt, nd are consistent with
+   * global values as well as the number of sections in the file.
    * --------------------------------------------------------------
    * allocation of arrays for reading data (only the first time)
    * -------------------------------------------------------------- */
+
   if (file_count == 1)
     _allocate_all();
 
   fclose(unilog);
 
-  /*  -------------------------------------------------------------------
+  /* -------------------------------------------------------------------
    * second loop on file : one can safely read data to load the profiles
    * ------------------------------------------------------------------- */
   _bounds(meteo_file, first, last);
   if (_atmo_imbrication.imbrication_verbose)
-    bft_printf("reopening the file '%.*s'\n",
-              last - first + 1, meteo_file + first);
+    bft_printf("Reopening the file '%.*s'\n",
+               last - first + 1, meteo_file + first);
 
   unilog = fopen(meteo_file, "r");
   if (!unilog) {
     _bounds(meteo_file, first, last);
     bft_error(__FILE__, __LINE__, 0,
-                _("read_meteo_file could not open file '%.*s'\n"),
-                last - first + 1, meteo_file + first);
+              _("%s: could not open file '%.*s'\n"), __func__,
+              last - first + 1, meteo_file + first);
   }
 
   char line_buf[1024];
@@ -1003,8 +1011,8 @@ _read_meteo_file(const char  *meteo_file)
   /* loop on file */
   while (true) {
     if (_atmo_imbrication.imbrication_verbose)
-      bft_printf("section count = %d\n"
-                 "file count = %d\n", section_count, file_count);
+      bft_printf("Section count = %d\n"
+                 "File count = %d\n", section_count, file_count);
     const int status = _find_next_line(unilog, line_buf, meteo_file);
     if (status == 1) break;
     count_lines++;
@@ -1012,7 +1020,8 @@ _read_meteo_file(const char  *meteo_file)
     const int idx = section_count-1+(file_count-1)*sections_per_file;
     if (mod == 1) {
       if (_atmo_imbrication.imbrication_verbose)
-        bft_printf("reading years,ord,hour,minute,seconds in: %s\n", line_buf);
+        bft_printf("Reading years, ord, hours, minutes, seconds in: %s\n",
+                   line_buf);
       int sc = sscanf(line_buf, "%d, %d, %d, %d, %lf",
                       &years[idx],
                       &ordinals[idx],
@@ -1021,24 +1030,24 @@ _read_meteo_file(const char  *meteo_file)
                       &seconds[idx]);
       if (sc != 5)
         bft_error(__FILE__, __LINE__, 0,
-                _("while reading years,ord,hour,minute,seconds\n"
+                _("While reading years, ord, hours, minutes, seconds\n"
                   "unexpected read error (4) on line: %s\n"
-                  "found in file : %s\n"),
+                  "found in file: %s"),
                   line_buf, meteo_file);
     }
 
     else if (mod == 2) {
      _bounds(line_buf, first, last);
      if (_atmo_imbrication.imbrication_verbose)
-       bft_printf("reading xpos ypos in: %s\n", line_buf);
+       bft_printf("Reading xpos ypos in: %s\n", line_buf);
      int sc = sscanf(line_buf, "%lf %lf",
                      &xpos[idx],
                      &ypos[idx]);
      if (sc != 2)
        bft_error(__FILE__, __LINE__, 0,
-                 _("while reading hour,minute,seconds\n"
+                 _("While reading hours, minutes, seconds\n"
                    "unexpected read error (5) on line: %.*s\n"
-                   "found in file : %s\n"),
+                   "found in file: %s"),
                  last, line_buf, meteo_file);
     }
 
@@ -1049,9 +1058,9 @@ _read_meteo_file(const char  *meteo_file)
       const int sc = sscanf(line_buf, "%lf", &ground_pressure[idx]);
       if (sc != 1)
         bft_error(__FILE__, __LINE__, 0,
-                  _("while reading ground pressure\n"
+                  _("While reading ground pressure\n"
                     "unexpected read error (6) on line: %.*s\n"
-                    "found in file : %s\n"), last, line_buf, meteo_file);
+                    "found in file: %s"), last, line_buf, meteo_file);
     }
 
     for (int i = 1; i <= nt; ++i) {
@@ -1060,34 +1069,33 @@ _read_meteo_file(const char  *meteo_file)
       const int id = i-1 + (section_count-1)*thermal_profile_dim
                    + (file_count-1)*thermal_profile_dim*sections_per_file;
       _bounds(line_buf, first, last);
-      if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
+      if (atmo_model_flag == CS_ATMO_HUMID) {
         if (_atmo_imbrication.imbrication_verbose)
-          bft_printf("reading zt,tempC,qw Nc in: %.*s\n", last, line_buf);
+          bft_printf("Reading zt, tempC, qw Nc in: %.*s\n", last, line_buf);
         int sc = sscanf(line_buf, "%lf %lf %lf %lf",
                         &zt[id],
-                        &tempC[id],
+                        &temp_c[id],
                         &qw[id],
                         &Nc[id]);
         if (sc != 4)
           bft_error(__FILE__, __LINE__, 0,
-                    _("while reading ground pressure\n"
+                    _("While reading ground pressure\n"
                       "unexpected read error (7) on line: %.*s\n"
-                      "found in file : %s\n"), last, line_buf, meteo_file);
+                      "found in file: %s"), last, line_buf, meteo_file);
       }
-      else if (   cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_DRY
-               || cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_CONSTANT_DENSITY) {
+      else if (atmo_model_flag < CS_ATMO_HUMID) {
         if (_atmo_imbrication.imbrication_verbose)
           bft_printf("reading zt,tempC,qw in: %s\n", line_buf);
         int sc = sscanf(line_buf, "%lf %lf %lf",
                         &zt[id],
-                        &tempC[id],
+                        &temp_c[id],
                         &qw[id]);
 
         if (sc != 3)
           bft_error(__FILE__, __LINE__, 0,
-                    _("while reading zt, tempC, qw\n"
+                    _("While reading zt, tempC, qw\n"
                       "unexpected read error (8) on line: %.*s\n"
-                      "found in file : %s\n"), last, line_buf, meteo_file);
+                      "found in file: %s"), last, line_buf, meteo_file);
       }
 
     }
@@ -1096,11 +1104,11 @@ _read_meteo_file(const char  *meteo_file)
       const int target = (5 + nt + i) % section_length;
       if (mod != target)
         continue;
-      const int id = i-1 + (section_count-1)*dynamical_profile_dim
-                   + (file_count-1)*dynamical_profile_dim*sections_per_file;
+      const int id = i-1 + (section_count-1)*dynamic_profile_dim
+                   + (file_count-1)*dynamic_profile_dim*sections_per_file;
       _bounds(line_buf, first, last);
       if (_atmo_imbrication.imbrication_verbose)
-        bft_printf("reading u,v,tke,eps in: %s\n", line_buf);
+        bft_printf("Reading u,v,tke,eps in: %s\n", line_buf);
       int sc = sscanf(line_buf, "%lf %lf %lf %lf %lf",
                       &zd[id],
                       &vel_u[id],
@@ -1109,9 +1117,9 @@ _read_meteo_file(const char  *meteo_file)
                       &eps[id]);
       if (sc != 5)
         bft_error(__FILE__, __LINE__, 0,
-                  _("while reading u, v, tke, eps\n"
+                  _("While reading u, v, tke, eps\n"
                     "unexpected read error (9) on line: %.*s\n"
-                    "found in file : %s\n"), last, line_buf, meteo_file);
+                    "found in file: %s"), last, line_buf, meteo_file);
     }
 
     if (mod == 0)
@@ -1122,13 +1130,12 @@ _read_meteo_file(const char  *meteo_file)
   fclose(unilog);
 
   if (_atmo_imbrication.imbrication_verbose)
-    bft_printf("read_loop is finished\n");
-
+    bft_printf("Read_loop is finished.\n");
 }
 
-/* -----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------
  * \brief Checks the time variables to ensure the chronology
- * ------------------------------------------------------------------------------- */
+ *----------------------------------------------------------------------------*/
 
 static void
 _check_chronologies(void)
@@ -1161,7 +1168,7 @@ _check_chronologies(void)
                     "faulty date: %d %d %d %d %lf\n"
                     "should be equal to date: %d %d %d %d %lf\n"
                     "defined in file: %s\n"
-                    "section: %d\n"), imbrication_files[i], years[idx],
+                    "section: %d"), imbrication_files[i], years[idx],
                   ordinals[idx], hours[idx], minutes[idx],
                   seconds[idx], years[j], ordinals[j],
                   hours[j], minutes[j], seconds[j],
@@ -1221,7 +1228,7 @@ _check_chronologies(void)
                     "faulty date: %d %d %d %d %lf\n"
                     "defined in section %d\n"
                     "should be posterior to date: %d %d %d %d %lf\n"
-                    "defined in section %d\n"), imbrication_files[i], years[idx],
+                    "defined in section %d"), imbrication_files[i], years[idx],
                   ordinals[idx], hours[idx], minutes[idx],
                   seconds[idx], j+1, years[ii], ordinals[ii],
                   hours[ii], minutes[ii], seconds[ii], 1);
@@ -1236,9 +1243,9 @@ _check_chronologies(void)
     }
 }
 
-/* -----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------
  * \brief Check that the profiles position is the same over time
- * ------------------------------------------------------------------------------- */
+ *----------------------------------------------------------------------------*/
 
 static void
 _check_positions(void)
@@ -1252,7 +1259,7 @@ _check_positions(void)
                     "are not consistent (vary in time)\n"
                     "faulty section is : %d\n"
                     " xpos(1)=%lf\n"
-                    " xpos(%d)=%lf\n"), imbrication_files[i],
+                    " xpos(%d)=%lf"), imbrication_files[i],
                   j+1, xpos[i*sections_per_file],
                   j+1, xpos[idx]);
 
@@ -1262,7 +1269,7 @@ _check_positions(void)
                     "are not consistent (vary in time)\n"
                     "faulty section is : %d\n"
                     " ypos(1)=%lf\n"
-                    " ypos(%d)=%lf\n"), imbrication_files[i],
+                    " ypos(%d)=%lf"), imbrication_files[i],
                   j+1, ypos[i*sections_per_file],  j+1, ypos[idx]);
     }
   }
@@ -1270,19 +1277,21 @@ _check_positions(void)
   for (int i = 0; i < number_of_files; i++)
     for (int k = 0; k < number_of_files; k++)
       if (k != i)
-        if (   fabs(xpos[i * sections_per_file] - xpos[k * sections_per_file]) <= cs_math_epzero
-            && fabs(ypos[i * sections_per_file] - ypos[k * sections_per_file]) <= cs_math_epzero )
+        if (   (     fabs(xpos[i * sections_per_file] - xpos[k * sections_per_file])
+                <= cs_math_epzero)
+            && (   fabs(ypos[i * sections_per_file] - ypos[k * sections_per_file])
+                <= cs_math_epzero))
           bft_error(__FILE__, __LINE__, 0,
-                    _("the positions given of some profiles are not consistent\n"
+                    _("The positions given of some profiles are not consistent\n"
                       "The positions of the profiles in file %s\n"
                       "and the positions of the profiles in file %s\n"
-                      "are equal.\n"), imbrication_files[i], imbrication_files[k]);
+                      "are equal."), imbrication_files[i], imbrication_files[k]);
 }
 
-/* -----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------
  * \brief Check that the profiles vertical grids heights
  *        are strictly increasing
- * ------------------------------------------------------------------------------- */
+ *----------------------------------------------------------------------------*/
 
 static void
 _check_altitudes(void)
@@ -1305,7 +1314,7 @@ _check_altitudes(void)
                     _("the thermal profile in section %d\n"
                       "of the file '%s'\n"
                       "is not strictly increasing\n"
-                      "erroneous level %d with zt = %lf\n"),
+                      "erroneous level %d with zt = %lf"),
                       j+1, imbrication_files[i], k+1, zt[idx_k]);
 
         }
@@ -1315,39 +1324,37 @@ _check_altitudes(void)
 
   for (int i = 0; i < number_of_files; i++) {
     for (int j = 0; j < sections_per_file; j++) {
-      for (int k = 1; k < dynamical_profile_dim; k++) {
-        int idx_km1 = (k-1) + j * dynamical_profile_dim
-          + i * dynamical_profile_dim * sections_per_file;
-        int idx_k   =  k    + j * dynamical_profile_dim
-          + i * dynamical_profile_dim * sections_per_file;
+      for (int k = 1; k < dynamic_profile_dim; k++) {
+        int idx_km1 = (k-1) + j * dynamic_profile_dim
+          + i * dynamic_profile_dim * sections_per_file;
+        int idx_k   =  k    + j * dynamic_profile_dim
+          + i * dynamic_profile_dim * sections_per_file;
 
         if (zd[idx_km1] >= zd[idx_k]) {
-          for (int kk = 0; kk < dynamical_profile_dim; kk++) {
-            int idx_kk = kk + j * dynamical_profile_dim
-              + i * dynamical_profile_dim * sections_per_file;
+          for (int kk = 0; kk < dynamic_profile_dim; kk++) {
+            int idx_kk = kk + j * dynamic_profile_dim
+              + i * dynamic_profile_dim * sections_per_file;
             bft_printf("k=%d zd=%lf\n", kk+1, zd[idx_kk]);
           }
           bft_error(__FILE__, __LINE__, 0,
-                    _("the dynamical profile in section %d\n"
+                    _("the dynamic profile in section %d\n"
                       "of the file '%s'\n"
                       "is not strictly increasing\n"
-                      "erroneous level %d with zd = %lf\n"),
+                      "erroneous level %d with zd = %lf"),
                     j+1, imbrication_files[i], k+1, zd[idx_k]);
         }
       }
     }
   }
-
 }
 
-/* -----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------
  * \brief Compute the hydrostastic pressure by Laplace integration
- * ------------------------------------------------------------------------------- */
+ *----------------------------------------------------------------------------*/
 
 static void
 _hydrostatic_pressure(void)
 {
-
   cs_atmo_option_t *at_opt = cs_glob_atmo_option;
 
   static int ih2o = 0;
@@ -1356,7 +1363,10 @@ _hydrostatic_pressure(void)
   const cs_real_t rair   = cs_glob_fluid_properties->r_pg_cnst;
   const cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
 
-  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
+  cs_atmo_model_t atmo_model_flag
+    = static_cast<cs_atmo_model_t>(cs_glob_physical_model_flag[CS_ATMOSPHERIC]);
+
+  if (atmo_model_flag == CS_ATMO_HUMID)
     ih2o = 1;
 
   const int size_pr
@@ -1374,7 +1384,8 @@ _hydrostatic_pressure(void)
           bft_printf("hydrostatic_pressure::section: %d\n"
                      "hydrostatic_pressure::thermal_profile_dim=%d\n",
                      j+1, thermal_profile_dim);
-        const int id = j * thermal_profile_dim + i * thermal_profile_dim * sections_per_file;
+        const int id =   j * thermal_profile_dim
+                       + i * thermal_profile_dim * sections_per_file;
         pressure[id] = ground_pressure[j + i * sections_per_file];
 
         for (int k = 1; k < thermal_profile_dim; k++) {
@@ -1385,14 +1396,14 @@ _hydrostatic_pressure(void)
                               + i * thermal_profile_dim * sections_per_file;
           const int idx_km1 = k-1 + j * thermal_profile_dim
                               + i * thermal_profile_dim * sections_per_file;
-          const cs_real_t tmoy = 0.5 * (tempC[idx_km1] + tempC[idx_k]) + tkelvi;
+          const cs_real_t tmoy = 0.5 * (temp_c[idx_km1] + temp_c[idx_k]) + tkelvi;
 
           cs_real_t  q0, q1;
-          if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
+          if (atmo_model_flag == CS_ATMO_HUMID) {
             q0 = fmin(qw[idx_km1],
-                        cs_air_yw_sat(tempC[idx_km1], pressure[idx_km1]));
+                        cs_air_yw_sat(temp_c[idx_km1], pressure[idx_km1]));
             q1 = fmin(qw[idx_k],
-                      cs_air_yw_sat(tempC[idx_k], pressure[idx_km1]));
+                      cs_air_yw_sat(temp_c[idx_k], pressure[idx_km1]));
           }
           else {
             q0 = qw[idx_km1];
@@ -1425,14 +1436,14 @@ _hydrostatic_pressure(void)
           int idx_km1 = (k-1) + j * thermal_profile_dim
                       + i * thermal_profile_dim * sections_per_file;
 
-          cs_real_t tmoy = 0.5 * (tempC[idx_km1] + tempC[idx_k]) + tkelvi;
+          cs_real_t tmoy = 0.5 * (temp_c[idx_km1] + temp_c[idx_k]) + tkelvi;
 
           cs_real_t q0, q1;
-          if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
+          if (atmo_model_flag == CS_ATMO_HUMID) {
             q0 = fmin(qw[idx_km1],
-                      cs_air_yw_sat(tempC[idx_km1], pressure[idx_k]));
+                      cs_air_yw_sat(temp_c[idx_km1], pressure[idx_k]));
             q1 = fmin(qw[idx_k],
-                      cs_air_yw_sat(tempC[idx_k], pressure[idx_k]));
+                      cs_air_yw_sat(temp_c[idx_k], pressure[idx_k]));
           }
           else {
             q0 = qw[idx_km1];
@@ -1469,16 +1480,16 @@ _hydrostatic_pressure(void)
           int idx = k + j * thermal_profile_dim
             + i * thermal_profile_dim * sections_per_file;
           bft_printf("hydrostatic_pressure::z,t,p: %lf %lf %lf\n",
-                     zt[idx], tempC[idx], pressure[idx]);
+                     zt[idx], temp_c[idx], pressure[idx]);
         }
     }
   }
 
 }
 
-/* -----------------------------------------------------------------------------
- * \brief Computes the potential_temperature_and_density profiles
- * ----------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------
+ * \brief Compute the potential_temperature_and_density profiles
+ *----------------------------------------------------------------------------*/
 
 static void
 _potential_temperature_and_density(void)
@@ -1491,7 +1502,10 @@ _potential_temperature_and_density(void)
   const cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
   const cs_real_t cpvcpa = cs_glob_air_props->cp_v / cs_glob_air_props->cp_a;
 
-  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
+  cs_atmo_model_t atmo_model_flag
+    = static_cast<cs_atmo_model_t>(cs_glob_physical_model_flag[CS_ATMOSPHERIC]);
+
+  if (atmo_model_flag == CS_ATMO_HUMID)
     ih2o = 1;
 
   const int size
@@ -1510,18 +1524,18 @@ _potential_temperature_and_density(void)
 
         const cs_real_t rhum = rair * (1.0 + (rvsra - 1.0) * qw[idx] * ih2o);
 
-        if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_CONSTANT_DENSITY) {
+        if (atmo_model_flag == CS_ATMO_CONSTANT_DENSITY) {
           int idx_ref = j * thermal_profile_dim
                       + i * thermal_profile_dim * sections_per_file;
-          density[idx] = pressure[idx_ref] / (tempC[idx] + tkelvi) / rhum;
+          density[idx] = pressure[idx_ref] / (temp_c[idx] + tkelvi) / rhum;
         }
         else
-          density[idx] = pressure[idx] / (tempC[idx] + tkelvi) / rhum;
+          density[idx] = pressure[idx] / (temp_c[idx] + tkelvi) / rhum;
 
         const cs_real_t rscp
           = (rair / cp0) * (1.0 + (rvsra - cpvcpa) * qw[idx] * ih2o);
 
-        theta[idx] = (tempC[idx] + tkelvi) * pow(ps / pressure[idx], rscp);
+        theta[idx] = (temp_c[idx] + tkelvi) * pow(ps / pressure[idx], rscp);
       }
     }
   }
@@ -1549,7 +1563,7 @@ _potential_temperature_and_density(void)
           bft_printf("z,t,p,potential_temperature,density:::"
                      " %lf %lf %lf %lf %lf\n",
                      zt[idx],
-                     tempC[idx],
+                     temp_c[idx],
                      pressure[idx],
                      theta[idx], density[idx]);
         }
@@ -1559,15 +1573,15 @@ _potential_temperature_and_density(void)
 
 }
 
-/* -----------------------------------------------------------------------------
- * \brief Computes radius of influence
- * ----------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------
+ * \brief Compute radius of influence
+ *----------------------------------------------------------------------------*/
 
 static void
 _red_tape(void)
 {
   const int size_th = 3*thermal_profile_dim*number_of_files;
-  const int size_dyn = 3*dynamical_profile_dim*number_of_files;
+  const int size_dyn = 3*dynamic_profile_dim*number_of_files;
   const cs_real_t horizontal_influence_radius
     = _atmo_imbrication.horizontal_influence_radius;
   const cs_real_t vertical_influence_radius
@@ -1590,10 +1604,10 @@ _red_tape(void)
   CS_MALLOC(influence_param_dyn, size_dyn, cs_real_t);
 
   for (int i = 0; i < number_of_files; i++)
-    for (int j = 0; j < dynamical_profile_dim; j++) {
-      const int idx_1 = 0 + j * 3 + i * 3 * dynamical_profile_dim;
-      const int idx_2 = 1 + j * 3 + i * 3 * dynamical_profile_dim;
-      const int idx_3 = 2 + j * 3 + i * 3 * dynamical_profile_dim;
+    for (int j = 0; j < dynamic_profile_dim; j++) {
+      const int idx_1 = 0 + j * 3 + i * 3 * dynamic_profile_dim;
+      const int idx_2 = 1 + j * 3 + i * 3 * dynamic_profile_dim;
+      const int idx_3 = 2 + j * 3 + i * 3 * dynamic_profile_dim;
       influence_param_dyn[idx_1] = 1.0/horizontal_influence_radius;
       influence_param_dyn[idx_2] = 1.0/horizontal_influence_radius;
       influence_param_dyn[idx_3] = 1.0/vertical_influence_radius;
@@ -1601,9 +1615,9 @@ _red_tape(void)
 
 }
 
-/* -----------------------------------------------------------------------------
- * \brief fill thermal and dynamical array coordinates
- * ----------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------
+ * \brief Fill thermal and dynamic array coordinates
+ *----------------------------------------------------------------------------*/
 
 static void
 _fill_coordinates(const char       *name,
@@ -1621,11 +1635,11 @@ _fill_coordinates(const char       *name,
 
   if (profile_dim < 1 || number_of_files < 1)
     bft_error(__FILE__, __LINE__, 0,
-              _("in cs_atmo_imbrication.cpp::_fill_coordinates\n"
+              _("In %s:"
                 "dimensions of time interpolated %s are not consistent\n"
                 "expected dimensions are: (1:%d,1:%d)\n"
-                "all calculations will be stopped\n"),
-              name, profile_dim, number_of_files);
+                "all calculations will be stopped."),
+              __func__, name, profile_dim, number_of_files);
 
   for (int i = 0; i < number_of_files; i++) {
     for (int j = 0; j < profile_dim; j++) {
@@ -1653,10 +1667,9 @@ _fill_coordinates(const char       *name,
   }
 }
 
-
-/* -----------------------------------------------------------------------------
- * \brief fill in a measures set structure with an array of measures
- * ----------------------------------------------------------------------------- */
+/*----------------------------------------------------------------------------
+ * \brief Fill in a measures set structure with an array of measures
+ *----------------------------------------------------------------------------*/
 
 static void
 _measures_set_map_values(const char       *name,
@@ -1697,20 +1710,22 @@ _measures_set_map_values(const char       *name,
  * Public function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------*/
-
-/*!----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------
  * \brief Prepare data for imbrication by reading meteo files
  *
  * Warning : the list of files is supposed to be "imbrication_files_list.txt"
- * --------------------------------------------------------------------------- */
+ *----------------------------------------------------------------------------*/
 
 void
 cs_activate_imbrication(void)
 {
-  bft_printf("*******************************\n");
-  bft_printf("Atmospheric Imbrication:       \n");
-  bft_printf("*******************************\n");
+  cs_atmo_model_t atmo_model_flag
+    = static_cast<cs_atmo_model_t>(cs_glob_physical_model_flag[CS_ATMOSPHERIC]);
+
+  cs_log_separator(CS_LOG_DEFAULT);
+  cs_log_printf(CS_LOG_DEFAULT,
+                _("Atmospheric Imbrication:\n"));
+  cs_log_separator(CS_LOG_DEFAULT);
 
   imbrication_files_list = "imbrication_files_list.txt";
   _read_files_list(imbrication_files_list);
@@ -1742,131 +1757,108 @@ cs_activate_imbrication(void)
         for (int kk = 0; kk < thermal_profile_dim; kk++) {
           const int id
             = kk + jj*thermal_profile_dim + ii*thermal_profile_dim*sections_per_file;
-          if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
+          if (atmo_model_flag == CS_ATMO_HUMID)
             bft_printf("z, temp, qw, nc = %lf %lf %lf %lf\n", zt[id],
-                       tempC[id],qw[id],Nc[id]);
-          else if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_DRY)
+                       temp_c[id],qw[id],Nc[id]);
+          else if (atmo_model_flag == CS_ATMO_DRY)
             bft_printf("z, temp, qw = %lf %lf %lf\n", zt[id],
-                       tempC[id],qw[id]);
+                       temp_c[id],qw[id]);
           else
-            bft_printf("z, temp = %lf %lf\n", zt[id], tempC[id]);
+            bft_printf("z, temp = %lf %lf\n", zt[id], temp_c[id]);
         } // loop_on_thermal_profile
-        bft_printf("     dynamical profiles dim: %d\n", dynamical_profile_dim);
-        for (int kk = 0; kk < dynamical_profile_dim; kk++) {
+        bft_printf("     dynamic profiles dim: %d\n", dynamic_profile_dim);
+        for (int kk = 0; kk < dynamic_profile_dim; kk++) {
           const int id
-            = kk + jj*dynamical_profile_dim + ii*dynamical_profile_dim*sections_per_file;
+            = kk + jj*dynamic_profile_dim + ii*dynamic_profile_dim*sections_per_file;
          bft_printf("z, u, v, k, eps = %lf %lf %lf %lf %lf\n", zd[id], vel_u[id],
                     vel_v[id], tke[id], eps[id]);
-        } // loop_on_dynamical_profile
+        } // loop_on_dynamic_profile
       } // loop_on_sections
     } // loop on file
   } // imbrication_verbose
 
-  /* ------------------------------------------------
-   * some checking on chronologies must be done
-   * ------------------------------------------------ */
+  /* Some checking on chronologies must be done
+   * ------------------------------------------ */
   _check_chronologies();
 
-  /* ------------------------------------------------
-   * some checking on positions of the profiles
-   * ------------------------------------------------ */
+  /* Some checking on positions of the profiles
+   * ------------------------------------------ */
   _check_positions();
   _check_altitudes();
 
-  /*  ------------------------------------------------
-   * reading terminated: some calculations are done
+  /* Reading terminated: some calculations are done
    * ------------------------------------------------
    * calculating pressure by hydrostatic (Laplace) integration
    * ------------------------------------------------ */
   _hydrostatic_pressure();
 
-   /* ------------------------------------------------
-    * calculating potential temperature and density
-    * ------------------------------------------------ */
+   /* Calculating potential temperature and density
+    * --------------------------------------------- */
   _potential_temperature_and_density();
 }
 
-/*!----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------
  * \brief Prepare for the cressman interpolation of the variables
  *
  * \param[in]  the_time        current time
- * --------------------------------------------------------------------------- */
+ *----------------------------------------------------------------------------*/
 
 void
 cs_summon_cressman(cs_real_t the_time)
 {
+  cs_atmo_model_t atmo_model_flag
+    = static_cast<cs_atmo_model_t>(cs_glob_physical_model_flag[CS_ATMOSPHERIC]);
+
   static bool first_call = true;
 
   cs_measures_set_t *ms = nullptr;
 
   if (first_call) {
     if (_atmo_imbrication.cressman_u) {
-      ms = cs_measures_set_create("u",
-                                  0,
-                                  1,
-                                  false);
+      ms = cs_measures_set_create("u", 0, 1, false);
       _atmo_imbrication.id_u = ms->id;
     }
     if (_atmo_imbrication.cressman_v) {
-      ms = cs_measures_set_create("v",
-                                  0,
-                                  1,
-                                  false);
+      ms = cs_measures_set_create("v", 0, 1, false);
       _atmo_imbrication.id_v = ms->id;
     }
     if (_atmo_imbrication.cressman_tke) {
-      ms = cs_measures_set_create("tke",
-                                  0,
-                                  1,
-                                  false);
+      ms = cs_measures_set_create("tke", 0, 1, false);
       _atmo_imbrication.id_tke = ms->id;
     }
     if (_atmo_imbrication.cressman_eps) {
-      ms = cs_measures_set_create("eps",
-                                  0,
-                                  1,
-                                  false);
+      ms = cs_measures_set_create("eps", 0, 1, false);
       _atmo_imbrication.id_eps = ms->id;
     }
     if (_atmo_imbrication.cressman_theta
-        && (   cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_DRY
-            || cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) ) {
-      ms = cs_measures_set_create("theta",
-                                  0,
-                                  1,
-                                  false);
+        && atmo_model_flag >= CS_ATMO_DRY) {
+      ms = cs_measures_set_create("theta", 0, 1, false);
       _atmo_imbrication.id_theta = ms->id;
     }
     if (   _atmo_imbrication.cressman_qw
-        && cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID ) {
-      ms = cs_measures_set_create("qw",
-                                  0,
-                                  1,
-                                  false);
+        && atmo_model_flag >= CS_ATMO_HUMID) {
+      ms = cs_measures_set_create("qw", 0, 1, false);
       _atmo_imbrication.id_qw = ms->id;
     }
     if (   _atmo_imbrication.cressman_nc
-        && cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID ) {
-      ms = cs_measures_set_create("nc",
-                                  0,
-                                  1,
-                                  false);
+        && atmo_model_flag >= CS_ATMO_HUMID) {
+      ms = cs_measures_set_create("nc", 0, 1, false);
       _atmo_imbrication.id_nc = ms->id;
     }
 
     _red_tape();
     first_call = false;
 
-  } // fisrt call
+  } // first call
 
   _interpolate_all_profiles(the_time);
 
   if (_atmo_imbrication.cressman_u) {
-    const int nbmes = dynamical_profile_dim * number_of_files;
+    const int nbmes = dynamic_profile_dim * number_of_files;
 
     _measures_set_map_values("u",
                              nbmes,
-                             dynamical_profile_dim,
+                             dynamic_profile_dim,
                              _atmo_imbrication.id_u,
                              ti_zd,
                              ti_vel_u,
@@ -1875,10 +1867,10 @@ cs_summon_cressman(cs_real_t the_time)
   }
 
   if (_atmo_imbrication.cressman_v) {
-    const int nbmes = dynamical_profile_dim * number_of_files;
+    const int nbmes = dynamic_profile_dim * number_of_files;
     _measures_set_map_values("v",
                              nbmes,
-                             dynamical_profile_dim,
+                             dynamic_profile_dim,
                              _atmo_imbrication.id_v,
                              ti_zd,
                              ti_vel_v,
@@ -1887,10 +1879,10 @@ cs_summon_cressman(cs_real_t the_time)
   }
 
   if (_atmo_imbrication.cressman_tke) {
-    const int nbmes = dynamical_profile_dim * number_of_files;
+    const int nbmes = dynamic_profile_dim * number_of_files;
     _measures_set_map_values("tke",
                              nbmes,
-                             dynamical_profile_dim,
+                             dynamic_profile_dim,
                              _atmo_imbrication.id_tke,
                              ti_zd,
                              ti_tke,
@@ -1900,10 +1892,10 @@ cs_summon_cressman(cs_real_t the_time)
   }
 
   if (_atmo_imbrication.cressman_eps) {
-    const int nbmes = dynamical_profile_dim * number_of_files;
+    const int nbmes = dynamic_profile_dim * number_of_files;
     _measures_set_map_values("eps",
                              nbmes,
-                             dynamical_profile_dim,
+                             dynamic_profile_dim,
                              _atmo_imbrication.id_eps,
                              ti_zd,
                              ti_eps,
@@ -1912,8 +1904,8 @@ cs_summon_cressman(cs_real_t the_time)
   }
 
   if (   _atmo_imbrication.cressman_theta
-      && (   cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_DRY
-          || cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID  )  ) {
+      && (   atmo_model_flag == CS_ATMO_DRY
+          || atmo_model_flag == CS_ATMO_HUMID)) {
     const int nbmes = thermal_profile_dim * number_of_files;
     _measures_set_map_values("theta",
                              nbmes,
@@ -1926,7 +1918,7 @@ cs_summon_cressman(cs_real_t the_time)
   }
 
   if (   _atmo_imbrication.cressman_qw
-      && cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
+      && atmo_model_flag == CS_ATMO_HUMID) {
     const int nbmes = thermal_profile_dim * number_of_files;
     _measures_set_map_values("qw",
                              nbmes,
@@ -1940,7 +1932,7 @@ cs_summon_cressman(cs_real_t the_time)
   }
 
   if (   _atmo_imbrication.cressman_nc
-      && cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
+      && atmo_model_flag == CS_ATMO_HUMID) {
     const int nbmes = thermal_profile_dim * number_of_files;
     _measures_set_map_values("nc",
                              nbmes,
@@ -1951,16 +1943,17 @@ cs_summon_cressman(cs_real_t the_time)
                              influence_param_th,
                              coordinates_th);
   }
-
 }
 
-/*!----------------------------------------------------------------
+/*----------------------------------------------------------------------------
  * \brief  Final step for free arrays imbrication
- *---------------------------------------------------------------- */
+ *----------------------------------------------------------------------------*/
 
 void
 cs_finalize_imbrication(void)
 {
+  cs_measures_sets_destroy();
+
   CS_FREE(xpos);
   CS_FREE(ypos);
   CS_FREE(years);
@@ -1978,13 +1971,13 @@ cs_finalize_imbrication(void)
   CS_FREE(eps);
   CS_FREE(vel_u);
   CS_FREE(vel_v);
-  CS_FREE(tempC);
+  CS_FREE(temp_c);
   CS_FREE(times);
   CS_FREE(pressure);
   CS_FREE(theta);
   CS_FREE(density);
   CS_FREE(ti_zt);
-  CS_FREE(ti_tempC);
+  CS_FREE(ti_temp_c);
   CS_FREE(ti_qw);
   CS_FREE(ti_Nc);
   CS_FREE(ti_zd);
