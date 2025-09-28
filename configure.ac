@@ -224,6 +224,8 @@ if test "x$auto_flags" = "xyes" ; then
   LIBS="$libs_default $user_LIBS"
   LDRPATH="$ldflags_rpath"
 
+  echo "bbb $CXXFLAGS"
+
   if test "x$debug" = xyes; then
     # Debug flags
     CFLAGS_DBG="$cflags_default_dbg"
@@ -390,6 +392,8 @@ else
 fi
 AC_SUBST(cs_special_user_link)
 
+  echo "ccc $CXXFLAGS"
+
 #------------------------------------------------------------------------------
 # Checks for typedefs, structures, and compiler characteristics.
 #------------------------------------------------------------------------------
@@ -535,7 +539,7 @@ fi
 if test "x$cs_have_openmp" = "xyes" ; then
 
   saved_CFLAGS="$CFLAGS"
-  saved_CXXFLAGS="$CFLAGS"
+  saved_CXXFLAGS="$CXXFLAGS"
   saved_FCFLAGS="$FCFLAGS"
   saved_LDFLAGS="$LDFLAGS"
 

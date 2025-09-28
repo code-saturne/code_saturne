@@ -744,8 +744,9 @@ elif test "x$cs_gxx" = "xclang"; then
   cxxflags_default_hot="-O3"
   cxxflags_default_omp="-fopenmp=libomp"
 
-  case "$cs_cxx_version" in
-    14* | 15* | 16* | 17* | 18* | 19.* | 2*)
+  cs_clangpp_version_number=`echo $cs_ac_cxx_version | sed -e "s/^.*version //"`
+  case "$cs_clangpp_version_number" in
+    14* | 15* | 16* | 17* | 18* | 19* | 2*)
       cxxflags_default="$cxxflags_default  -Wno-non-c-typedef-for-linkage"
       ;;
   esac
@@ -883,7 +884,6 @@ if test -f $outfile ; then
   cs_ac_cxx_version_full=`sed -e '11,$d' $outfile`
   rm -f $outfile
 fi
-
 
 ######################
 #                    #
