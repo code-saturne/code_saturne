@@ -42,7 +42,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -54,6 +53,7 @@
 #include "gui/cs_gui_boundary_conditions.h"
 #include "gui/cs_gui_specific_physics.h"
 #include "gui/cs_gui.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "base/cs_post.h"
 #include "base/cs_parameters.h"

@@ -42,7 +42,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -72,6 +71,7 @@
 #include "mesh/cs_geom.h"
 #include "base/cs_internal_coupling.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "meg/cs_meg_prototypes.h"
 #include "meg/cs_meg_xdef_wrapper.h"
 #include "mesh/cs_mesh.h"

@@ -50,7 +50,6 @@
 
 #include "bft/bft_printf.h"
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "atmo/cs_atmo.h"
 #include "base/cs_base.h"
@@ -60,6 +59,7 @@
 #include "base/cs_log.h"
 #include "base/cs_interface.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
 #include "mesh/cs_mesh_quantities.h"

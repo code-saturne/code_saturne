@@ -49,7 +49,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "base/cs_base_accel.h"
 #include "base/cs_base_cuda.h"
@@ -60,6 +59,7 @@
 #include "base/cs_halo_perio.h"
 #include "base/cs_log.h"
 #include "base/cs_math_cuda.cuh"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
 #include "mesh/cs_mesh_quantities.h"

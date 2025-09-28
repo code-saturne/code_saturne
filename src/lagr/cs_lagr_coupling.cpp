@@ -48,17 +48,17 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_error.h"
+
 #include "base/cs_array.h"
 #include "base/cs_base.h"
 #include "base/cs_math.h"
-#include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_quantities.h"
-
-#include "bft/bft_mem.h"
-#include "bft/bft_error.h"
-
+#include "base/cs_mem.h"
 #include "base/cs_physical_constants.h"
 #include "base/cs_time_step.h"
+
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
 #include "turb/cs_turbulence_model.h"
 
 #include "lagr/cs_lagr.h"

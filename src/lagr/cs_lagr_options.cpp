@@ -41,12 +41,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
 #include "base/cs_field.h"
 #include "base/cs_file.h"
+#include "base/cs_mem.h"
 #include "gui/cs_gui_particles.h"
 #include "gui/cs_gui_util.h"
 #include "mesh/cs_mesh_location.h"

@@ -33,15 +33,14 @@
 #include <unistd.h>
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_mem_usage.h"
 #include "bft/bft_printf.h"
 
+#include "base/cs_mem.h"
 #include "base/cs_system_info.h"
-
-#include "alge/cs_blas.h"
 #include "base/cs_timer.h"
 
+#include "alge/cs_blas.h"
 #include "alge/cs_matrix.h"
 #include "alge/cs_matrix_priv.h"
 #include "alge/cs_matrix_assembler.h"
@@ -160,7 +159,7 @@ _base_data_4(int        rank_id,
     _vtx_range[1] = 20;
   }
 
-  BFT_MALLOC(_g_vtx_id, _n_vtx, cs_gnum_t);
+  CS_MALLOC(_g_vtx_id, _n_vtx, cs_gnum_t);
 
   if (rank_id == 0) {
     _g_vtx_id[0] = 0;
@@ -268,7 +267,7 @@ _base_data_4_ref(cs_lnum_t  cell_vtx[][4])
   _vtx_range[0] = 0;
   _vtx_range[1] = 20;
 
-  BFT_MALLOC(_g_vtx_id, _n_vtx, cs_gnum_t);
+  CS_MALLOC(_g_vtx_id, _n_vtx, cs_gnum_t);
 
   for (int i = 0; i < _n_vtx; i++)
     _g_vtx_id[i] = i;
@@ -365,7 +364,7 @@ _base_data_3(int        rank_id,
     _vtx_range[1] = 16;
   }
 
-  BFT_MALLOC(_g_vtx_id, _n_vtx, cs_gnum_t);
+  CS_MALLOC(_g_vtx_id, _n_vtx, cs_gnum_t);
 
   if (rank_id == 0) {
     _g_vtx_id[0] = 0;
@@ -449,7 +448,7 @@ _base_data_3_ref(cs_lnum_t  cell_vtx[][4])
   _vtx_range[0] = 0;
   _vtx_range[1] = 16;
 
-  BFT_MALLOC(_g_vtx_id, _n_vtx, cs_gnum_t);
+  CS_MALLOC(_g_vtx_id, _n_vtx, cs_gnum_t);
 
   for (int i = 0; i < _n_vtx; i++)
     _g_vtx_id[i] = i;
@@ -525,7 +524,7 @@ _base_data_2(int        rank_id,
     _vtx_range[1] = 12;
   }
 
-  BFT_MALLOC(_g_vtx_id, _n_vtx, cs_gnum_t);
+  CS_MALLOC(_g_vtx_id, _n_vtx, cs_gnum_t);
 
   if (rank_id == 0) {
     _g_vtx_id[0] = 0;
@@ -587,7 +586,7 @@ _base_data_2_ref(cs_lnum_t  cell_vtx[][4])
   _vtx_range[0] = 0;
   _vtx_range[1] = 12;
 
-  BFT_MALLOC(_g_vtx_id, _n_vtx, cs_gnum_t);
+  CS_MALLOC(_g_vtx_id, _n_vtx, cs_gnum_t);
 
   for (int i = 0; i < _n_vtx; i++)
     _g_vtx_id[i] = i;
@@ -640,7 +639,7 @@ _base_data_1(cs_lnum_t  cell_vtx[][4])
   _vtx_range[0] = 0;
   _vtx_range[1] = 8;
 
-  BFT_MALLOC(_g_vtx_id, _n_vtx, cs_gnum_t);
+  CS_MALLOC(_g_vtx_id, _n_vtx, cs_gnum_t);
 
   _g_vtx_id[0] = 0;
   _g_vtx_id[1] = 1;
@@ -697,7 +696,7 @@ _base_data(int rank_id,
   if (_full_connect) _n_edges += n_cells*2;
   if (_symmetric) _n_edges *= 2;
 
-  BFT_MALLOC(_edges, _n_edges, cs_lnum_2_t);
+  CS_MALLOC(_edges, _n_edges, cs_lnum_2_t);
 
   cs_lnum_t j = 0;
   cs_lnum_t j_step = (_symmetric) ? 2 : 1;
@@ -726,8 +725,8 @@ _base_data(int rank_id,
 static void
 _free_base_data(void)
 {
-  BFT_FREE(_g_vtx_id);
-  BFT_FREE(_edges);
+  CS_FREE(_g_vtx_id);
+  CS_FREE(_edges);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -776,7 +775,7 @@ main(int argc, char *argv[])
   _base_data(cs_glob_rank_id, cs_glob_n_ranks);
 
   cs_gnum_t *g_vtx_num;
-  BFT_MALLOC(g_vtx_num, _n_vtx, cs_gnum_t);
+  CS_MALLOC(g_vtx_num, _n_vtx, cs_gnum_t);
   for (cs_lnum_t i = 0; i < _n_vtx; i++)
     g_vtx_num[i] = _g_vtx_id[i] + 1;
   cs_interface_set_t *vtx_ifs
@@ -789,7 +788,7 @@ main(int argc, char *argv[])
                               nullptr,
                               nullptr);
 
-  BFT_FREE(g_vtx_num);
+  CS_FREE(g_vtx_num);
 
   cs_range_set_t *rs
     = cs_range_set_create_from_shared(vtx_ifs,
@@ -935,9 +934,9 @@ main(int argc, char *argv[])
     cs_lnum_t n_cols = cs_matrix_get_n_columns(m_0);
 
     cs_real_t *x, *y_0, *y_1;
-    BFT_MALLOC(x, n_cols, cs_real_t);
-    BFT_MALLOC(y_0, n_cols, cs_real_t);
-    BFT_MALLOC(y_1, n_cols, cs_real_t);
+    CS_MALLOC(x, n_cols, cs_real_t);
+    CS_MALLOC(y_0, n_cols, cs_real_t);
+    CS_MALLOC(y_1, n_cols, cs_real_t);
     for (cs_lnum_t i = 0; i < _n_vtx; i++)
       x[i] = (_g_vtx_id[i]+1)*0.5;
 
@@ -975,9 +974,9 @@ main(int argc, char *argv[])
     for (cs_lnum_t i = 0; i < _n_vtx; i++)
       bft_printf("%d (%d): %f %f\n", i, (int)_g_vtx_id[i], y_0[i], y_1[i]);
 
-    BFT_FREE(x);
-    BFT_FREE(y_0);
-    BFT_FREE(y_1);
+    CS_FREE(x);
+    CS_FREE(y_0);
+    CS_FREE(y_1);
 
     cs_matrix_release_coefficients(m_0);
     cs_matrix_release_coefficients(m_1);
@@ -996,9 +995,9 @@ main(int argc, char *argv[])
   /* Test partition ids on vertices */
 
   cs_real_t *v0, *v1, *v2;
-  BFT_MALLOC(v0, _n_vtx, cs_real_t);
-  BFT_MALLOC(v1, _n_vtx, cs_real_t);
-  BFT_MALLOC(v2, _n_vtx, cs_real_t);
+  CS_MALLOC(v0, _n_vtx, cs_real_t);
+  CS_MALLOC(v1, _n_vtx, cs_real_t);
+  CS_MALLOC(v2, _n_vtx, cs_real_t);
 
   for (cs_lnum_t i = 0; i < _n_vtx; i++)
     v0[i] = rs->g_id[i]+1;
@@ -1053,9 +1052,9 @@ main(int argc, char *argv[])
     printf("scatter r%d: %d %f %f\n", cs_glob_rank_id,
            (int)(rs->g_id[i]), v0[i], v1[i]);
 
-  BFT_FREE(v2);
-  BFT_FREE(v1);
-  BFT_FREE(v0);
+  CS_FREE(v2);
+  CS_FREE(v1);
+  CS_FREE(v0);
 
   cs_range_set_destroy(&rs);
 

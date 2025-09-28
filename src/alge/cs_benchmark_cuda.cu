@@ -49,7 +49,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
@@ -59,6 +58,7 @@
 // #include "base/cs_cuda_contrib.h"
 
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "alge/cs_matrix.h"
 #include "alge/cs_matrix_priv.h"
 #include "base/cs_numbering.h"

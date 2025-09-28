@@ -41,11 +41,11 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_param_types.h"
 #include "base/cs_post.h"
@@ -201,7 +201,7 @@ cs_gwf_uspf_create(void)
 {
   cs_gwf_uspf_t *mc = nullptr;
 
-  BFT_MALLOC(mc, 1, cs_gwf_uspf_t);
+  CS_MALLOC(mc, 1, cs_gwf_uspf_t);
 
   mc->permeability_field = nullptr;
   mc->moisture_field     = nullptr;
@@ -275,7 +275,7 @@ cs_gwf_uspf_free(cs_gwf_uspf_t **p_mc)
 
   cs_gwf_darcy_flux_free(&(mc->darcy));
 
-  BFT_FREE(mc);
+  CS_FREE(mc);
   *p_mc = nullptr;
 }
 

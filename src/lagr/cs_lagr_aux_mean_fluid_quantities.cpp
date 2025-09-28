@@ -48,7 +48,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "base/cs_array.h"
 #include "alge/cs_balance.h"
 #include "alge/cs_face_viscosity.h"
@@ -57,6 +56,7 @@
 #include "base/cs_field_operator.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "lagr/cs_lagr.h"
 #include "lagr/cs_lagr_tracking.h"
 #include "lagr/cs_lagr_stat.h"

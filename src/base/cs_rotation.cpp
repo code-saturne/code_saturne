@@ -37,10 +37,9 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
-
 #include "base/cs_base.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "base/cs_time_step.h"
 #include "base/cs_timer.h"
 

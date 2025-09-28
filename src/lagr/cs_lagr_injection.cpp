@@ -46,10 +46,10 @@
 
 #include "bft/bft_printf.h"
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "base/cs_base.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_boundary_zone.h"
 #include "base/cs_volume_zone.h"

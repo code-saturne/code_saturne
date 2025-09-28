@@ -51,9 +51,9 @@ namespace cg = cooperative_groups;
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "base/cs_base.h"
+#include "base/cs_mem.h"
 #include "base/cs_base_accel.h"
 #include "base/cs_base_cuda.h"
 

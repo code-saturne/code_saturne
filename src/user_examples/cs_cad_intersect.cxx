@@ -47,7 +47,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 #include "base/cs_base.h"
 #include "mesh/cs_mesh.h"

@@ -33,13 +33,13 @@
 #include <unistd.h>
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_mem_usage.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_system_info.h"
 
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "base/cs_timer.h"
 
 #include "base/cs_base_accel.h"

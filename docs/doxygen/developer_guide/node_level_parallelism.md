@@ -64,7 +64,7 @@ in the future, it seems safer for the present to provide control to the develope
 over which type of memory is used. So in code_saturne, when allocating memory
 which might be needed on and accelerator, the \ref CS_MALLOC_HD function should
 be used, specifying the allocation type with a \ref cs_alloc_mode_t argument.
-In a manner similar to the older \ref BFT_MALLOC macro, this provides
+In a manner similar to the baser \ref CS_MALLOC macro, this provides
 some instrumentation, and is construed as a portability layer between several
 programming models.
 

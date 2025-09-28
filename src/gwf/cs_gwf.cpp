@@ -44,11 +44,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
-
 #include "base/cs_array.h"
 #include "base/cs_field.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_param_types.h"
 #include "base/cs_post.h"
@@ -180,7 +179,7 @@ _gwf_create(void)
 {
   cs_gwf_t *gw = nullptr;
 
-  BFT_MALLOC(gw, 1, cs_gwf_t);
+  CS_MALLOC(gw, 1, cs_gwf_t);
 
   /* Default initialization */
 
@@ -341,7 +340,7 @@ cs_gwf_destroy_all(void)
 
   cs_gwf_tracer_free_all();
 
-  BFT_FREE(gw);
+  CS_FREE(gw);
 
   /* Fields, equations, advection fields and properties are freed elsewhere */
 
@@ -1058,7 +1057,7 @@ cs_gwf_add_decay_chain(int                       n_tracers,
   max_len += strlen("DecayChain%02d_") + 1;
 
   char *eqname = nullptr;
-  BFT_MALLOC(eqname, max_len, char);
+  CS_MALLOC(eqname, max_len, char);
 
   for (int i = 0; i < n_tracers; i++) {
 
@@ -1096,7 +1095,7 @@ cs_gwf_add_decay_chain(int                       n_tracers,
 
   }
 
-  BFT_FREE(eqname);
+  CS_FREE(eqname);
 
   return tdc;
 }
@@ -1676,7 +1675,7 @@ cs_gwf_extra_post(void                   *input,
                                  divergence,
                                  time_step);
 
-        BFT_FREE(divergence);
+        CS_FREE(divergence);
 
       }
 

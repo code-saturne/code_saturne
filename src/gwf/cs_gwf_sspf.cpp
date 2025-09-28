@@ -41,12 +41,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
 #include "base/cs_field.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_param_types.h"
 #include "base/cs_post.h"
 #include "gwf/cs_gwf_priv.h"
@@ -206,7 +206,7 @@ cs_gwf_sspf_create(void)
 {
   cs_gwf_sspf_t *mc = nullptr;
 
-  BFT_MALLOC(mc, 1, cs_gwf_sspf_t);
+  CS_MALLOC(mc, 1, cs_gwf_sspf_t);
 
   mc->pressure_head = nullptr;
 
@@ -263,7 +263,7 @@ cs_gwf_sspf_free(cs_gwf_sspf_t **p_mc)
 
   cs_gwf_darcy_flux_free(&(mc->darcy));
 
-  BFT_FREE(mc);
+  CS_FREE(mc);
   *p_mc = nullptr;
 }
 
@@ -714,7 +714,7 @@ cs_gwf_sspf_extra_post(int                   mesh_id,
     int        post_dim     = (dim == 1) ? 1 : 9;
 
     if (dim > 1) {
-      BFT_MALLOC(permeability, post_dim * n_cells, cs_real_t);
+      CS_MALLOC(permeability, post_dim * n_cells, cs_real_t);
 
       for (cs_lnum_t i = 0; i < n_cells; i++) {
         cs_real_t tensor[3][3];
@@ -732,7 +732,7 @@ cs_gwf_sspf_extra_post(int                   mesh_id,
       }
     }
     else {
-      BFT_MALLOC(permeability, n_cells, cs_real_t);
+      CS_MALLOC(permeability, n_cells, cs_real_t);
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
         permeability[c_id] = cs_property_get_cell_value(cell_ids[c_id],
                                                         time_step->t_cur,
@@ -751,13 +751,13 @@ cs_gwf_sspf_extra_post(int                   mesh_id,
                       nullptr,
                       time_step);
 
-    BFT_FREE(permeability);
+    CS_FREE(permeability);
 
   } /* Postprocessing of the permeability */
 
   if (post_flag & CS_GWF_POST_LIQUID_SATURATION) {
     cs_real_t *liquid_saturation = nullptr;
-    BFT_MALLOC(liquid_saturation, n_cells, cs_real_t);
+    CS_MALLOC(liquid_saturation, n_cells, cs_real_t);
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       liquid_saturation[c_id] =
@@ -777,7 +777,7 @@ cs_gwf_sspf_extra_post(int                   mesh_id,
                       nullptr,
                       time_step);
 
-    BFT_FREE(liquid_saturation);
+    CS_FREE(liquid_saturation);
 
   } /* Postprocessing of the liquid saturation */
 }

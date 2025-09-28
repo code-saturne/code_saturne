@@ -41,7 +41,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_assert.h"
@@ -49,6 +48,7 @@
 #include "base/cs_file.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_physical_constants.h"
 #include "base/cs_prototypes.h"
@@ -59,6 +59,7 @@
 #include "cogz/cs_combustion_bsh.h"
 #include "cogz/cs_combustion_ht_convert.h"
 #include "rayt/cs_rad_transfer.h"
+
 /*----------------------------------------------------------------------------
  * Header for the current file
  *----------------------------------------------------------------------------*/

@@ -41,13 +41,13 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
 #include "base/cs_field.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_param_types.h"
 #include "base/cs_post.h"
@@ -813,7 +813,7 @@ _update_iso_soil_tpf(const cs_real_t            t_eval,
 static void
 _build_cell2soil(cs_lnum_t    n_cells)
 {
-  BFT_MALLOC(_cell2soil_ids, n_cells, short int);
+  CS_MALLOC(_cell2soil_ids, n_cells, short int);
 
   if (_n_soils == 1)
     memset(_cell2soil_ids, 0, sizeof(short int)*n_cells);
@@ -949,7 +949,7 @@ cs_gwf_soil_create(const cs_zone_t                 *zone,
 {
   cs_gwf_soil_t *soil = nullptr;
 
-  BFT_MALLOC(soil, 1, cs_gwf_soil_t);
+  CS_MALLOC(soil, 1, cs_gwf_soil_t);
 
   soil->id = _n_soils;
 
@@ -1012,7 +1012,7 @@ cs_gwf_soil_create(const cs_zone_t                 *zone,
     {
       cs_gwf_soil_vgm_spf_param_t *soilp = nullptr;
 
-      BFT_MALLOC(soilp, 1, cs_gwf_soil_vgm_spf_param_t);
+      CS_MALLOC(soilp, 1, cs_gwf_soil_vgm_spf_param_t);
 
       soilp->residual_moisture = 0.;
 
@@ -1043,7 +1043,7 @@ cs_gwf_soil_create(const cs_zone_t                 *zone,
     {
       cs_gwf_soil_vgm_tpf_param_t *soilp = nullptr;
 
-      BFT_MALLOC(soilp, 1, cs_gwf_soil_vgm_tpf_param_t);
+      CS_MALLOC(soilp, 1, cs_gwf_soil_vgm_tpf_param_t);
       soil->model_param = soilp;
 
       /* Default values */
@@ -1069,7 +1069,7 @@ cs_gwf_soil_create(const cs_zone_t                 *zone,
   /* Store the new soils in the soil array */
 
   _n_soils++;
-  BFT_REALLOC(_soils, _n_soils, cs_gwf_soil_t *);
+  CS_REALLOC(_soils, _n_soils, cs_gwf_soil_t *);
   _soils[soil->id] = soil;
 
   return soil;
@@ -1176,7 +1176,7 @@ cs_gwf_soil_free_all(void)
           cs_gwf_soil_vgm_spf_param_t *soilp
             = static_cast<cs_gwf_soil_vgm_spf_param_t *>(soil->model_param);
 
-          BFT_FREE(soilp);
+          CS_FREE(soilp);
           soilp = nullptr;
         }
         break;
@@ -1186,7 +1186,7 @@ cs_gwf_soil_free_all(void)
           cs_gwf_soil_vgm_tpf_param_t *soilp
             = static_cast<cs_gwf_soil_vgm_tpf_param_t *>(soil->model_param);
 
-          BFT_FREE(soilp);
+          CS_FREE(soilp);
           soilp = nullptr;
         }
         break;
@@ -1203,14 +1203,14 @@ cs_gwf_soil_free_all(void)
     /* The hydraulic context is shared and thus is freed during the free of the
        cs_gwf_t structure */
 
-    BFT_FREE(soil);
+    CS_FREE(soil);
 
   } /* Loop on soils */
 
-  BFT_FREE(_soils);
-  BFT_FREE(_cell2soil_ids);
-  BFT_FREE(_dual_porous_volume);
-  BFT_FREE(_soil_state_array);
+  CS_FREE(_soils);
+  CS_FREE(_cell2soil_ids);
+  CS_FREE(_dual_porous_volume);
+  CS_FREE(_soil_state_array);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1241,7 +1241,7 @@ cs_gwf_soil_finalize_setup(cs_gwf_model_type_t gwf_model,
   if ((post_flag & CS_GWF_POST_SOIL_STATE)
       || (gwf_model != CS_GWF_MODEL_SATURATED_SINGLE_PHASE)) {
 
-    BFT_MALLOC(_soil_state_array, n_cells, int);
+    CS_MALLOC(_soil_state_array, n_cells, int);
 
     /* Default initialization */
 
@@ -1588,9 +1588,9 @@ cs_gwf_soil_build_dual_porous_volume(const cs_cdo_quantities_t    *cdoq,
   const cs_lnum_t  n_vertices = cdoq->n_vertices;
 
   if (_dual_porous_volume == nullptr)
-    BFT_MALLOC(_dual_porous_volume, n_vertices, double);
+    CS_MALLOC(_dual_porous_volume, n_vertices, double);
   else
-    BFT_REALLOC(_dual_porous_volume, n_vertices, double);
+    CS_REALLOC(_dual_porous_volume, n_vertices, double);
 
   cs_array_real_fill_zero(n_vertices, _dual_porous_volume);
 

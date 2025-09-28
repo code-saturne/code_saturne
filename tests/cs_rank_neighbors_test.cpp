@@ -34,10 +34,10 @@
 #include <string.h>
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
+#include "base/cs_mem.h"
 #include "base/cs_rank_neighbors.h"
 #include "base/cs_timer.h"
 
@@ -106,7 +106,7 @@ _build_rank_neighbors(int  rank,
 {
   size_t n_elts = 10000;
   int *elt_rank;
-  BFT_MALLOC(elt_rank, n_elts, int);
+  CS_MALLOC(elt_rank, n_elts, int);
 
   int delta = sqrt(size);
   if (delta < 2)
@@ -124,7 +124,7 @@ _build_rank_neighbors(int  rank,
       assert(elt_rank[i] < n->size);
     }
     cs_lnum_t *elt_rank_count;
-    BFT_MALLOC(elt_rank_count, n->size, cs_lnum_t);
+    CS_MALLOC(elt_rank_count, n->size, cs_lnum_t);
     cs_rank_neighbors_count(n,
                             n_elts,
                             elt_rank,
@@ -136,10 +136,10 @@ _build_rank_neighbors(int  rank,
       bft_printf("\n");
     }
 
-    BFT_FREE(elt_rank_count);
+    CS_FREE(elt_rank_count);
   }
 
-  BFT_FREE(elt_rank);
+  CS_FREE(elt_rank);
 
   return n;
 }
@@ -209,7 +209,7 @@ _sanity_test(void)
   cs_rank_neighbors_t  *nr = nullptr;
   cs_lnum_t            *send_count, *recv_count;
 
-  BFT_MALLOC(send_count, n->size, cs_lnum_t);
+  CS_MALLOC(send_count, n->size, cs_lnum_t);
 
   for (int i = 0; i < n->size; i++)
     send_count[i] = 5 + i%4;
@@ -247,13 +247,13 @@ _sanity_test(void)
       assert(recv_count[i] == recv_count1[i]);
     }
 
-    BFT_FREE(recv_count1);
+    CS_FREE(recv_count1);
     cs_rank_neighbors_destroy(&nr1);
 
   }
 
-  BFT_FREE(send_count);
-  BFT_FREE(recv_count);
+  CS_FREE(send_count);
+  CS_FREE(recv_count);
   cs_rank_neighbors_destroy(&nr);
   cs_rank_neighbors_destroy(&n);
 }
@@ -303,7 +303,7 @@ _performance_test(void)
 
       cs_rank_neighbors_t *n = _build_rank_neighbors(rank, size, 1, false);
 
-      BFT_MALLOC(send_count, n->size, cs_lnum_t);
+      CS_MALLOC(send_count, n->size, cs_lnum_t);
 
       for (int i = 0; i < n->size; i++)
         send_count[i] = 5 + i%4;
@@ -321,8 +321,8 @@ _performance_test(void)
         wt_max[t] = wt[t];
       wt_sum[t] += wt[t];
 
-      BFT_FREE(send_count);
-      BFT_FREE(recv_count);
+      CS_FREE(send_count);
+      CS_FREE(recv_count);
 
       cs_rank_neighbors_destroy(&n);
       cs_rank_neighbors_destroy(&nr);

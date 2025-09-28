@@ -40,7 +40,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_ale.h"
@@ -83,6 +82,7 @@
 #include "base/cs_log.h"
 #include "base/cs_log_iteration.h"
 #include "base/cs_log_setup.h"
+#include "base/cs_mem.h"
 #include "alge/cs_matrix_default.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
@@ -355,7 +355,7 @@ _run(void)
 #endif
 
   if (opts.app_name != nullptr)
-    BFT_FREE(opts.app_name);
+    CS_FREE(opts.app_name);
 
   /* Initialize couplings and communication if necessary */
 

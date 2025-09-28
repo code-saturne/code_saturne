@@ -33,7 +33,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -100,7 +100,7 @@ cs_gwf_toolbox_bateman(double                              time_eval,
   if (tdc->n_tracers < 6)
     lambda = lambda6;
   else {
-    BFT_MALLOC(_lambda, tdc->n_tracers, double);
+    CS_MALLOC(_lambda, tdc->n_tracers, double);
     lambda = _lambda;
   }
 
@@ -138,7 +138,7 @@ cs_gwf_toolbox_bateman(double                              time_eval,
   } /* Loop on tracers */
 
   if (lambda != lambda6)
-    BFT_FREE(_lambda);
+    CS_FREE(_lambda);
 }
 
 /*----------------------------------------------------------------------------*/

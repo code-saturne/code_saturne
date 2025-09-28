@@ -52,7 +52,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -61,6 +60,7 @@
 #include "base/cs_file.h"
 #include "base/cs_log.h"
 #include "base/cs_halo.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "alge/cs_matrix.h"
 #include "alge/cs_matrix_default.h"

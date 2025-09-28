@@ -31,10 +31,10 @@
 #include <string.h>
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 
 /*---------------------------------------------------------------------------*/
 
@@ -63,7 +63,7 @@ _polygon_plane_intersection(cs_lnum_t    *nb_vertex,
   cs_real_t _new_vtx[10][3];
   cs_real_3_t *new_vtx = (cs_real_3_t *)_new_vtx;
   if (nb_vtx_max >= 10)
-    BFT_MALLOC(new_vtx, nb_vtx_max + 1, cs_real_3_t);
+    CS_MALLOC(new_vtx, nb_vtx_max + 1, cs_real_3_t);
   int j = 0;
 
   cs_real_t tolerance_factor = 0.01; /* tunable in "real" code */
@@ -143,7 +143,7 @@ _polygon_plane_intersection(cs_lnum_t    *nb_vertex,
   }
 
   if (new_vtx != _new_vtx)
-    BFT_FREE(new_vtx);
+    CS_FREE(new_vtx);
 
   *nb_vertex = j;
 }
@@ -158,7 +158,7 @@ main (int argc, char *argv[])
 
   int nb_vertex = 4;
   cs_real_3_t *vertex_coord;
-  BFT_MALLOC(vertex_coord, 10, cs_real_3_t);
+  CS_MALLOC(vertex_coord, 10, cs_real_3_t);
 
   for (int p_id = 0; p_id < 3; p_id++) {
     vertex_coord[0][0] = 9;

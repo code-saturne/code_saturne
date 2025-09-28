@@ -47,7 +47,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "alge/cs_blas.h"
@@ -63,6 +62,7 @@
 #include "alge/cs_gradient.h"
 #include "base/cs_ext_neighborhood.h"
 #include "mesh/cs_mesh_quantities.h"
+#include "base/cs_mem.h"
 #include "base/cs_parameters.h"
 #include "base/cs_porous_model.h"
 #include "base/cs_timer.h"

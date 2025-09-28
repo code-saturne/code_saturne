@@ -40,11 +40,10 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
-
 #include "atmo/cs_air_props.h"
 #include "base/cs_base.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "base/cs_physical_constants.h"
 
 /*----------------------------------------------------------------------------

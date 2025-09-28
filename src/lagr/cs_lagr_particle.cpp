@@ -46,12 +46,12 @@
 
 #include "bft/bft_printf.h"
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "fvm/fvm_periodicity.h"
 
 #include "base/cs_base.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "base/cs_order.h"
 #include "base/cs_parall.h"
 #include "base/cs_random.h"

@@ -48,7 +48,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -60,6 +59,7 @@
 #include "base/cs_field_pointer.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -457,7 +457,7 @@ cs_atmo_aerosol_ssh_initialize(void)
   const int nsz = at_chem->n_size;
 
   /* Reallocate arrays */
-  BFT_REALLOC(at_chem->species_to_field_id, nsp + nsz * (nlr + 1), int);
+  CS_REALLOC(at_chem->species_to_field_id, nsp + nsz * (nlr + 1), int);
 
   /* For all aerosols */
   for (int i = nsp; i < nsp + nsz * (nlr + 1);  i++ ) {

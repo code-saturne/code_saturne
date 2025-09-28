@@ -14,6 +14,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
+#include "base/cs_mem.h"
 #include "base/cs_physical_constants.h"
 #include "atmo/cs_atmo.h"
 #include "base/cs_field.h"
@@ -21,12 +22,9 @@
 #include "atmo/cs_air_props.h"
 #include "base/cs_math.h"
 #include "alge/cs_divergence.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 #include "base/cs_parall.h"
-
-/*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

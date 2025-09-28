@@ -43,13 +43,13 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 #include "base/cs_base.h"
 #include "base/cs_file.h"
 #include "base/cs_dispatch.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_physical_constants.h"
 #include "pprt/cs_physical_model.h"
@@ -164,7 +164,7 @@ cs_combustion_enthalpy_and_cp_from_janaf(int           ncoel,
   const char sub_path[] = "/data/thch/JANAF";
 
   char *pathdatadir;
-  BFT_MALLOC(pathdatadir, strlen(datadir) + strlen(sub_path) + 1, char);
+  CS_MALLOC(pathdatadir, strlen(datadir) + strlen(sub_path) + 1, char);
   sprintf(pathdatadir, "%s%s", datadir, sub_path);
 
 #if defined(HAVE_MPI)
@@ -184,7 +184,7 @@ cs_combustion_enthalpy_and_cp_from_janaf(int           ncoel,
 
 #endif
 
-  BFT_FREE(pathdatadir);
+  CS_FREE(pathdatadir);
   int line = 0;
 
   /* Initialization */

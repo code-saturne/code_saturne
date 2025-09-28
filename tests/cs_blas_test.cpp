@@ -48,7 +48,6 @@
 #endif
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_mem_usage.h"
 #include "bft/bft_printf.h"
 
@@ -56,6 +55,7 @@
 
 #include "alge/cs_blas.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_timer.h"
 
@@ -533,9 +533,9 @@ _dot_product_1(double   t_measure,
       /* Realloc and initialize arrays for each test, as
          first touch may affect memory locality on some systems */
 
-      BFT_MALLOC(x, n, double);
+      CS_MALLOC(x, n, double);
       if (type_id == 0)
-        BFT_MALLOC(y, n, double);
+        CS_MALLOC(y, n, double);
       else
         y = x;
 
@@ -591,8 +591,8 @@ _dot_product_1(double   t_measure,
       _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
       if (type_id == 0)
-        BFT_FREE(y);
-      BFT_FREE(x);
+        CS_FREE(y);
+      CS_FREE(x);
 
   }
 
@@ -608,9 +608,9 @@ _dot_product_1(double   t_measure,
       /* Realloc and initialize arrays for each test, as
          first touch may affect memory locality on some systems */
 
-      BFT_MALLOC(x, n, double);
+      CS_MALLOC(x, n, double);
       if (type_id == 0)
-        BFT_MALLOC(y, n, double);
+        CS_MALLOC(y, n, double);
       else
         y = x;
 
@@ -670,8 +670,8 @@ _dot_product_1(double   t_measure,
       }
 
       if (type_id == 0)
-        BFT_FREE(y);
-      BFT_FREE(x);
+        CS_FREE(y);
+      CS_FREE(x);
     }
 
   }
@@ -719,8 +719,8 @@ _dot_product_2(double  t_measure)
     /* Realloc and initialize arrays for each test, as
        first touch may affect memory locality on some systems */
 
-    BFT_MALLOC(x, n, double);
-    BFT_MALLOC(y, n, double);
+    CS_MALLOC(x, n, double);
+    CS_MALLOC(y, n, double);
 
 #   pragma omp parallel for
     for (ii = 0; ii < n; ii++) {
@@ -760,8 +760,8 @@ _dot_product_2(double  t_measure)
 
     _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
-    BFT_FREE(x);
-    BFT_FREE(y);
+    CS_FREE(x);
+    CS_FREE(y);
   }
 
 #endif /* external BLAS */
@@ -776,8 +776,8 @@ _dot_product_2(double  t_measure)
     /* Realloc and initialize arrays for each test, as
        first touch may affect memory locality on some systems */
 
-    BFT_MALLOC(x, n, double);
-    BFT_MALLOC(y, n, double);
+    CS_MALLOC(x, n, double);
+    CS_MALLOC(y, n, double);
 
 #   pragma omp parallel for
     for (ii = 0; ii < n; ii++) {
@@ -821,8 +821,8 @@ _dot_product_2(double  t_measure)
 
     }
 
-    BFT_FREE(x);
-    BFT_FREE(y);
+    CS_FREE(x);
+    CS_FREE(y);
   }
 
   return test_sum;
@@ -865,8 +865,8 @@ _dot_product_m(double   t_measure,
     /* Realloc and initialize arrays for each test, as
        first touch may affect memory locality on some systems */
 
-    BFT_MALLOC(x, n, double);
-    BFT_MALLOC(y, n, float);
+    CS_MALLOC(x, n, double);
+    CS_MALLOC(y, n, float);
 
 #   pragma omp parallel for
     for (ii = 0; ii < n; ii++) {
@@ -917,8 +917,8 @@ _dot_product_m(double   t_measure,
 
     _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
-    BFT_FREE(y);
-    BFT_FREE(x);
+    CS_FREE(y);
+    CS_FREE(x);
 
   }
 
@@ -965,8 +965,8 @@ _axpy_test(double  t_measure)
     /* Realloc and initialize arrays for each test, as
        first touch may affect memory locality on some systems */
 
-    BFT_MALLOC(x, n, double);
-    BFT_MALLOC(y, n, double);
+    CS_MALLOC(x, n, double);
+    CS_MALLOC(y, n, double);
 
 #   pragma omp parallel for
     for (ii = 0; ii < n; ii++) {
@@ -1005,8 +1005,8 @@ _axpy_test(double  t_measure)
 
     _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
-    BFT_FREE(x);
-    BFT_FREE(y);
+    CS_FREE(x);
+    CS_FREE(y);
   }
 
 #endif /* external BLAS */
@@ -1019,8 +1019,8 @@ _axpy_test(double  t_measure)
     /* Realloc and initialize arrays for each test, as
        first touch may affect memory locality on some systems */
 
-    BFT_MALLOC(x, n, double);
-    BFT_MALLOC(y, n, double);
+    CS_MALLOC(x, n, double);
+    CS_MALLOC(y, n, double);
 
 #   pragma omp parallel for
     for (ii = 0; ii < n; ii++) {
@@ -1059,8 +1059,8 @@ _axpy_test(double  t_measure)
 
     _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
-    BFT_FREE(x);
-    BFT_FREE(y);
+    CS_FREE(x);
+    CS_FREE(y);
   }
 
   /* Variant with alpha = -1 */
@@ -1073,8 +1073,8 @@ _axpy_test(double  t_measure)
     /* Realloc and initialize arrays for each test, as
        first touch may affect memory locality on some systems */
 
-    BFT_MALLOC(x, n, double);
-    BFT_MALLOC(y, n, double);
+    CS_MALLOC(x, n, double);
+    CS_MALLOC(y, n, double);
 
 #   pragma omp parallel for
     for (ii = 0; ii < n; ii++) {
@@ -1121,8 +1121,8 @@ _axpy_test(double  t_measure)
 
     _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
-    BFT_FREE(x);
-    BFT_FREE(y);
+    CS_FREE(x);
+    CS_FREE(y);
   }
 
   return test_sum;
@@ -1161,9 +1161,9 @@ _division_test(double  t_measure)
     /* Realloc and initialize arrays for each test, as
        first touch may affect memory locality on some systems */
 
-    BFT_MALLOC(x, n, double);
-    BFT_MALLOC(y, n, double);
-    BFT_MALLOC(z, n, double);
+    CS_MALLOC(x, n, double);
+    CS_MALLOC(y, n, double);
+    CS_MALLOC(z, n, double);
 
 #   pragma omp parallel for
     for (ii = 0; ii < n; ii++) {
@@ -1200,9 +1200,9 @@ _division_test(double  t_measure)
 
     _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
-    BFT_FREE(z);
-    BFT_FREE(y);
-    BFT_FREE(x);
+    CS_FREE(z);
+    CS_FREE(y);
+    CS_FREE(x);
 
   }
 
@@ -1217,8 +1217,8 @@ _division_test(double  t_measure)
     /* Realloc and initialize arrays for each test, as
        first touch may affect memory locality on some systems */
 
-    BFT_MALLOC(x, n, double);
-    BFT_MALLOC(y, n, double);
+    CS_MALLOC(x, n, double);
+    CS_MALLOC(y, n, double);
 
 #   pragma omp parallel for
     for (ii = 0; ii < n; ii++)
@@ -1253,8 +1253,8 @@ _division_test(double  t_measure)
 
     _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
-    BFT_FREE(y);
-    BFT_FREE(x);
+    CS_FREE(y);
+    CS_FREE(x);
 
   }
 
@@ -1269,7 +1269,7 @@ _division_test(double  t_measure)
     /* Realloc and initialize arrays for each test, as
        first touch may affect memory locality on some systems */
 
-    BFT_MALLOC(x, n, double);
+    CS_MALLOC(x, n, double);
 
 #   pragma omp parallel for
     for (ii = 0; ii < n; ii++)
@@ -1304,7 +1304,7 @@ _division_test(double  t_measure)
 
     _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
-    BFT_FREE(x);
+    CS_FREE(x);
 
   }
 
@@ -1341,8 +1341,8 @@ _sqrt_test(double  t_measure)
     /* Realloc and initialize arrays for each test, as
        first touch may affect memory locality on some systems */
 
-    BFT_MALLOC(x, n, double);
-    BFT_MALLOC(y, n, double);
+    CS_MALLOC(x, n, double);
+    CS_MALLOC(y, n, double);
 
 #   pragma omp parallel for
     for (ii = 0; ii < n; ii++)
@@ -1379,8 +1379,8 @@ _sqrt_test(double  t_measure)
 
     _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
-    BFT_FREE(y);
-    BFT_FREE(x);
+    CS_FREE(y);
+    CS_FREE(x);
   }
 
   /* In place square root of a vector */
@@ -1393,7 +1393,7 @@ _sqrt_test(double  t_measure)
     /* Realloc and initialize arrays for each test, as
        first touch may affect memory locality on some systems */
 
-    BFT_MALLOC(x, n, double);
+    CS_MALLOC(x, n, double);
 
 #   pragma omp parallel for
     for (ii = 0; ii < n; ii++)
@@ -1428,7 +1428,7 @@ _sqrt_test(double  t_measure)
 
     _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
-    BFT_FREE(x);
+    CS_FREE(x);
 
   }
 
@@ -1474,9 +1474,9 @@ _ad_x_test(double  t_measure)
     /* Realloc and initialize arrays for each test, as
        first touch may affect memory locality on some systems */
 
-    BFT_MALLOC(da, n, cs_real_t);
-    BFT_MALLOC(x, n, cs_real_t);
-    BFT_MALLOC(y, n, cs_real_t);
+    CS_MALLOC(da, n, cs_real_t);
+    CS_MALLOC(x, n, cs_real_t);
+    CS_MALLOC(y, n, cs_real_t);
 
 #   pragma omp parallel for
     for (ii = 0; ii < n; ii++) {
@@ -1521,9 +1521,9 @@ _ad_x_test(double  t_measure)
 
     _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
-    BFT_FREE(y);
-    BFT_FREE(x);
-    BFT_FREE(da);
+    CS_FREE(y);
+    CS_FREE(x);
+    CS_FREE(da);
 
   }
 
@@ -1541,9 +1541,9 @@ _ad_x_test(double  t_measure)
     /* Realloc and initialize arrays for each test, as
        first touch may affect memory locality on some systems */
 
-    BFT_MALLOC(da, n, cs_real_t);
-    BFT_MALLOC(x, n, cs_real_t);
-    BFT_MALLOC(y, n, cs_real_t);
+    CS_MALLOC(da, n, cs_real_t);
+    CS_MALLOC(x, n, cs_real_t);
+    CS_MALLOC(y, n, cs_real_t);
 
 #   pragma omp parallel for
     for (ii = 0; ii < n; ii++) {
@@ -1591,9 +1591,9 @@ _ad_x_test(double  t_measure)
 
     _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
-    BFT_FREE(y);
-    BFT_FREE(x);
-    BFT_FREE(da);
+    CS_FREE(y);
+    CS_FREE(x);
+    CS_FREE(da);
 
   }
 
@@ -1607,9 +1607,9 @@ _ad_x_test(double  t_measure)
     /* Realloc and initialize arrays for each test, as
        first touch may affect memory locality on some systems */
 
-    BFT_MALLOC(da, n, cs_real_t);
-    BFT_MALLOC(x, n, cs_real_t);
-    BFT_MALLOC(y, n, cs_real_t);
+    CS_MALLOC(da, n, cs_real_t);
+    CS_MALLOC(x, n, cs_real_t);
+    CS_MALLOC(y, n, cs_real_t);
 
 #   pragma omp parallel for
     for (ii = 0; ii < n; ii++) {
@@ -1648,9 +1648,9 @@ _ad_x_test(double  t_measure)
 
     _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
-    BFT_FREE(y);
-    BFT_FREE(x);
-    BFT_FREE(da);
+    CS_FREE(y);
+    CS_FREE(x);
+    CS_FREE(da);
 
   }
 
@@ -1816,9 +1816,9 @@ _block_ad_x_test(double  t_measure)
     /* Realloc and initialize arrays for each test, as
        first touch may affect memory locality on some systems */
 
-    BFT_MALLOC(da, n*15, cs_real_t);
-    BFT_MALLOC(x, n*3, cs_real_t);
-    BFT_MALLOC(y, n*3, cs_real_t);
+    CS_MALLOC(da, n*15, cs_real_t);
+    CS_MALLOC(x, n*3, cs_real_t);
+    CS_MALLOC(y, n*3, cs_real_t);
 
     n_ops = n * (3+2) * 3;
 
@@ -1862,9 +1862,9 @@ _block_ad_x_test(double  t_measure)
 
     _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
-    BFT_FREE(y);
-    BFT_FREE(x);
-    BFT_FREE(da);
+    CS_FREE(y);
+    CS_FREE(x);
+    CS_FREE(da);
 
   }
 
@@ -1878,9 +1878,9 @@ _block_ad_x_test(double  t_measure)
     /* Realloc and initialize arrays for each test, as
        first touch may affect memory locality on some systems */
 
-    BFT_MALLOC(da, n*15, cs_real_t);
-    BFT_MALLOC(x, n*3, cs_real_t);
-    BFT_MALLOC(y, n*3, cs_real_t);
+    CS_MALLOC(da, n*15, cs_real_t);
+    CS_MALLOC(x, n*3, cs_real_t);
+    CS_MALLOC(y, n*3, cs_real_t);
 
     n_ops = n * (3+2) * 3;
 
@@ -1924,9 +1924,9 @@ _block_ad_x_test(double  t_measure)
 
     _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
-    BFT_FREE(y);
-    BFT_FREE(x);
-    BFT_FREE(da);
+    CS_FREE(y);
+    CS_FREE(x);
+    CS_FREE(da);
 
   }
 
@@ -1940,9 +1940,9 @@ _block_ad_x_test(double  t_measure)
     /* Realloc and initialize arrays for each test, as
        first touch may affect memory locality on some systems */
 
-    BFT_MALLOC(da, n*15, cs_real_t);
-    BFT_MALLOC(x, n*3, cs_real_t);
-    BFT_MALLOC(y, n*3, cs_real_t);
+    CS_MALLOC(da, n*15, cs_real_t);
+    CS_MALLOC(x, n*3, cs_real_t);
+    CS_MALLOC(y, n*3, cs_real_t);
 
     n_ops = n * (3+2) * 3;
 
@@ -1986,9 +1986,9 @@ _block_ad_x_test(double  t_measure)
 
     _print_stats(n_runs, n_ops, 0, wt1 - wt0);
 
-    BFT_FREE(y);
-    BFT_FREE(x);
-    BFT_FREE(da);
+    CS_FREE(y);
+    CS_FREE(x);
+    CS_FREE(da);
 
   }
 
@@ -2030,8 +2030,8 @@ _copy_test(double  t_measure)
     /* Realloc and initialize arrays for each test, as
        first touch may affect memory locality on some systems */
 
-    BFT_MALLOC(x, n, double);
-    BFT_MALLOC(y, n, double);
+    CS_MALLOC(x, n, double);
+    CS_MALLOC(y, n, double);
 
 #   pragma omp parallel for
     for (ii = 0; ii < n; ii++)
@@ -2067,8 +2067,8 @@ _copy_test(double  t_measure)
 
     _print_mem_stats(n_runs, n, wt1 - wt0);
 
-    BFT_FREE(y);
-    BFT_FREE(x);
+    CS_FREE(y);
+    CS_FREE(x);
 
   }
 
@@ -2081,8 +2081,8 @@ _copy_test(double  t_measure)
     /* Realloc and initialize arrays for each test, as
        first touch may affect memory locality on some systems */
 
-    BFT_MALLOC(x, n, double);
-    BFT_MALLOC(y, n, double);
+    CS_MALLOC(x, n, double);
+    CS_MALLOC(y, n, double);
 
 #   pragma omp parallel for
     for (ii = 0; ii < n; ii++)
@@ -2120,8 +2120,8 @@ _copy_test(double  t_measure)
 
     _print_mem_stats(n_runs, n, wt1 - wt0);
 
-    BFT_FREE(y);
-    BFT_FREE(x);
+    CS_FREE(y);
+    CS_FREE(x);
 
   }
 
@@ -2430,9 +2430,9 @@ _solve_33_test(double  t_measure)
     /* Realloc and initialize arrays for each test, as
        first touch may affect memory locality on some systems */
 
-    BFT_MALLOC(x, n, cs_real_3_t);
-    BFT_MALLOC(b, n, cs_real_3_t);
-    BFT_MALLOC(a, n, cs_real_33_t);
+    CS_MALLOC(x, n, cs_real_3_t);
+    CS_MALLOC(b, n, cs_real_3_t);
+    CS_MALLOC(a, n, cs_real_33_t);
 
 #   pragma omp parallel for
     for (ii = 0; ii < n; ii++) {
@@ -2477,9 +2477,9 @@ _solve_33_test(double  t_measure)
 
     _print_time_stats(n_runs, n, wt1 - wt0);
 
-    BFT_FREE(b);
-    BFT_FREE(x);
-    BFT_FREE(a);
+    CS_FREE(b);
+    CS_FREE(x);
+    CS_FREE(a);
 
   }
 
@@ -2492,9 +2492,9 @@ _solve_33_test(double  t_measure)
     /* Realloc and initialize arrays for each test, as
        first touch may affect memory locality on some systems */
 
-    BFT_MALLOC(x, n, cs_real_3_t);
-    BFT_MALLOC(b, n, cs_real_3_t);
-    BFT_MALLOC(a, n, cs_real_33_t);
+    CS_MALLOC(x, n, cs_real_3_t);
+    CS_MALLOC(b, n, cs_real_3_t);
+    CS_MALLOC(a, n, cs_real_33_t);
 
 #   pragma omp parallel for
     for (ii = 0; ii < n; ii++) {
@@ -2539,9 +2539,9 @@ _solve_33_test(double  t_measure)
 
     _print_time_stats(n_runs, n, wt1 - wt0);
 
-    BFT_FREE(b);
-    BFT_FREE(x);
-    BFT_FREE(a);
+    CS_FREE(b);
+    CS_FREE(x);
+    CS_FREE(a);
 
   }
 
@@ -2554,9 +2554,9 @@ _solve_33_test(double  t_measure)
     /* Realloc and initialize arrays for each test, as
        first touch may affect memory locality on some systems */
 
-    BFT_MALLOC(x, n, cs_real_3_t);
-    BFT_MALLOC(b, n, cs_real_3_t);
-    BFT_MALLOC(a, n, cs_real_33_t);
+    CS_MALLOC(x, n, cs_real_3_t);
+    CS_MALLOC(b, n, cs_real_3_t);
+    CS_MALLOC(a, n, cs_real_33_t);
 
 #   pragma omp parallel for
     for (ii = 0; ii < n; ii++) {
@@ -2601,9 +2601,9 @@ _solve_33_test(double  t_measure)
 
     _print_time_stats(n_runs, n, wt1 - wt0);
 
-    BFT_FREE(b);
-    BFT_FREE(x);
-    BFT_FREE(a);
+    CS_FREE(b);
+    CS_FREE(x);
+    CS_FREE(a);
 
   }
 
@@ -2616,9 +2616,9 @@ _solve_33_test(double  t_measure)
     /* Realloc and initialize arrays for each test, as
        first touch may affect memory locality on some systems */
 
-    BFT_MALLOC(x, n, cs_real_3_t);
-    BFT_MALLOC(b, n, cs_real_3_t);
-    BFT_MALLOC(a, n, cs_real_33_t);
+    CS_MALLOC(x, n, cs_real_3_t);
+    CS_MALLOC(b, n, cs_real_3_t);
+    CS_MALLOC(a, n, cs_real_33_t);
 
 #   pragma omp parallel for
     for (ii = 0; ii < n; ii++) {
@@ -2702,9 +2702,9 @@ _solve_33_test(double  t_measure)
 
     _print_time_stats(n_runs, n, wt1 - wt0);
 
-    BFT_FREE(b);
-    BFT_FREE(x);
-    BFT_FREE(a);
+    CS_FREE(b);
+    CS_FREE(x);
+    CS_FREE(a);
 
   }
 
@@ -2717,9 +2717,9 @@ _solve_33_test(double  t_measure)
     /* Realloc and initialize arrays for each test, as
        first touch may affect memory locality on some systems */
 
-    BFT_MALLOC(x, n, cs_real_3_t);
-    BFT_MALLOC(b, n, cs_real_3_t);
-    BFT_MALLOC(a, n, cs_real_33_t);
+    CS_MALLOC(x, n, cs_real_3_t);
+    CS_MALLOC(b, n, cs_real_3_t);
+    CS_MALLOC(a, n, cs_real_33_t);
 
 #   pragma omp parallel for
     for (ii = 0; ii < n; ii++) {
@@ -2803,9 +2803,9 @@ _solve_33_test(double  t_measure)
 
     _print_time_stats(n_runs, n, wt1 - wt0);
 
-    BFT_FREE(b);
-    BFT_FREE(x);
-    BFT_FREE(a);
+    CS_FREE(b);
+    CS_FREE(x);
+    CS_FREE(a);
 
   }
 
@@ -2867,8 +2867,8 @@ main (int argc, char *argv[])
 
     /* Initialize arrays */
 
-    BFT_MALLOC(x, n, double);
-    BFT_MALLOC(y, n, double);
+    CS_MALLOC(x, n, double);
+    CS_MALLOC(y, n, double);
 
 #   pragma omp parallel for
     for (ii = 0; ii < n; ii++) {
@@ -2903,8 +2903,8 @@ main (int argc, char *argv[])
 
     bft_printf("\n");
 
-    BFT_FREE(y);
-    BFT_FREE(x);
+    CS_FREE(y);
+    CS_FREE(x);
   }
 
   /* Performance tests */

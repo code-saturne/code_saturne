@@ -42,7 +42,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -54,6 +53,7 @@
 #include "cfbl/cs_cf_model.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
+#include "base/cs_mem.h"
 #include "cfbl/cs_hgn_source_terms_step.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"

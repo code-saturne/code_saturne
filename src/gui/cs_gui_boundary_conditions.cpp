@@ -42,7 +42,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -72,6 +71,7 @@
 #include "base/cs_field_default.h"
 #include "base/cs_field_operator.h"
 #include "base/cs_field_pointer.h"
+#include "base/cs_mem.h"
 #include "pprt/cs_physical_model.h"
 #include "base/cs_thermal_model.h"
 #include "cdo/cs_thermal_system.h"

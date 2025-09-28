@@ -41,7 +41,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -51,6 +50,7 @@
 #include "alge/cs_cell_to_vertex.h"
 #include "base/cs_field_operator.h"
 #include "base/cs_field_pointer.h"
+#include "base/cs_mem.h"
 #include "base/cs_medcoupling_intersector.h"
 #include "meg/cs_meg_prototypes.h"
 #include "mesh/cs_mesh_adjacencies.h"

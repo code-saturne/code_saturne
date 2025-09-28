@@ -40,11 +40,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
-
 #include "cdo/cs_advection_field.h"
 #include "base/cs_array.h"
 #include "cdo/cs_evaluate.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_physical_constants.h"
 #include "cdo/cs_reco.h"
@@ -208,7 +207,7 @@ cs_gwf_darcy_flux_create(cs_flag_t loc_flag)
 {
   cs_gwf_darcy_flux_t *darcy = nullptr;
 
-  BFT_MALLOC(darcy, 1, cs_gwf_darcy_flux_t);
+  CS_MALLOC(darcy, 1, cs_gwf_darcy_flux_t);
 
   darcy->flux_location     = loc_flag;
   darcy->adv_field         = nullptr;
@@ -242,10 +241,10 @@ cs_gwf_darcy_flux_free(cs_gwf_darcy_flux_t **p_darcy)
      arrays. In this case, the lifecycle is not managed by the definition and
      thus one has to free the arrays now. */
 
-  BFT_FREE(darcy->boundary_flux_val);
-  BFT_FREE(darcy->flux_val);
+  CS_FREE(darcy->boundary_flux_val);
+  CS_FREE(darcy->flux_val);
 
-  BFT_FREE(darcy);
+  CS_FREE(darcy);
   *p_darcy = nullptr;
 }
 
@@ -323,7 +322,7 @@ cs_gwf_darcy_flux_define(const cs_cdo_connect_t    *connect,
     cs_flag_t array_location = CS_FLAG_SCALAR | cs_flag_dual_closure_byf;
     size_t    array_size     = bf2v->idx[cdoq->n_b_faces];
 
-    BFT_MALLOC(darcy->boundary_flux_val, array_size, cs_real_t);
+    CS_MALLOC(darcy->boundary_flux_val, array_size, cs_real_t);
     cs_array_real_fill_zero(array_size, darcy->boundary_flux_val);
 
     cs_xdef_t *bdy_def
@@ -344,7 +343,7 @@ cs_gwf_darcy_flux_define(const cs_cdo_connect_t    *connect,
 
       array_location = CS_FLAG_SCALAR | darcy->flux_location;
       array_size     = c2e->idx[cdoq->n_cells];
-      BFT_MALLOC(darcy->flux_val, array_size, cs_real_t);
+      CS_MALLOC(darcy->flux_val, array_size, cs_real_t);
       cs_array_real_fill_zero(array_size, darcy->flux_val);
 
       /* Do not transfer the ownership (automatically on the full domain) */
@@ -436,7 +435,7 @@ cs_gwf_darcy_flux_balance(const cs_cdo_connect_t    *connect,
   /* Define the balance by zone */
 
   bool *is_counted = nullptr;
-  BFT_MALLOC(is_counted, n_b_faces, bool);
+  CS_MALLOC(is_counted, n_b_faces, bool);
 # pragma omp parallel for if (n_b_faces > CS_THR_MIN)
   for (int i = 0; i < n_b_faces; i++)
     is_counted[i] = false;
@@ -444,7 +443,7 @@ cs_gwf_darcy_flux_balance(const cs_cdo_connect_t    *connect,
   /* n_bc_defs + 1 to take into account the default boundary condition */
 
   cs_real_t *balances = nullptr;
-  BFT_MALLOC(balances, eqp->n_bc_defs + 1, cs_real_t);
+  CS_MALLOC(balances, eqp->n_bc_defs + 1, cs_real_t);
 
   for (int ibc = 0; ibc < eqp->n_bc_defs; ibc++) {
 
@@ -532,8 +531,8 @@ cs_gwf_darcy_flux_balance(const cs_cdo_connect_t    *connect,
 
   /* Free memory */
 
-  BFT_FREE(is_counted);
-  BFT_FREE(balances);
+  CS_FREE(is_counted);
+  CS_FREE(balances);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -36,7 +36,7 @@
 #include "mesh/cs_mesh.h"
 #include "atmo/cs_air_props.h"
 #include "base/cs_math.h"
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 #include "atmo/cs_atmo_solcat.h"

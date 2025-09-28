@@ -46,8 +46,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
-
 #include "alge/cs_gradient.h"
 #include "atmo/cs_atmo.h"
 #include "atmo/cs_atmo_profile_std.h"
@@ -58,6 +56,7 @@
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_measures_util.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_physical_constants.h"
 #include "base/cs_thermal_model.h"
@@ -336,7 +335,7 @@ _compute_gradient(const cs_mesh_t                *m,
 
   // compute sedimentation velocity
   cs_real_t *sed_vel = nullptr;
-  BFT_MALLOC(sed_vel, n_cells, cs_real_t);
+  CS_MALLOC(sed_vel, n_cells, cs_real_t);
 
   //taup g, with taup = cuning * d^2 * rhop / (18 * mu) ...
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
@@ -347,7 +346,7 @@ _compute_gradient(const cs_mesh_t                *m,
   if (at_opt->deposition_model > 0) {
 
     cs_real_t *pres = nullptr;
-    BFT_MALLOC(pres, n_cells, cs_real_t);
+    CS_MALLOC(pres, n_cells, cs_real_t);
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       if (at_opt->meteo_profile == 0) {
@@ -392,14 +391,14 @@ _compute_gradient(const cs_mesh_t                *m,
       sed_vel[c_id] += depo_vel;
     }
 
-    BFT_FREE(pres);
+    CS_FREE(pres);
   } // end deposition_model > 0
 
   cs_real_t *local_field = nullptr;
 
   /* Computation of the gradient of rho*qliq*V(r3)*exp(5*sc^2)
    * it corresponds to div(qliq* exp() rho vel_d) */
-  BFT_MALLOC(local_field, n_cells_ext, cs_real_t);
+  CS_MALLOC(local_field, n_cells_ext, cs_real_t);
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     local_field[c_id] = cpro_rho[c_id]                 // mass density of the air kg/m3
@@ -417,11 +416,11 @@ _compute_gradient(const cs_mesh_t                *m,
                       * sed_vel[c_id]                // deposition velocity m/s
                       * exp(-pow(at_opt->sigc, 2.0)); // coefficient coming from log-norm
                                                      // law of the droplet spectrum
-  BFT_FREE(sed_vel);
+  CS_FREE(sed_vel);
 
   _gradient_homogeneous_neumann_sca(local_field, grad2);
 
-  BFT_FREE(local_field);
+  CS_FREE(local_field);
 
 }
 
@@ -655,8 +654,8 @@ cs_atmo_scalar_source_term(int              f_id,
     // Source terms in the equation of the liquid potential temperature
     if (fld == th_f) {
       cs_real_t *ray3Di = nullptr, *ray3Dst = nullptr;
-      BFT_MALLOC(ray3Di, n_cells, cs_real_t);
-      BFT_MALLOC(ray3Dst, n_cells, cs_real_t);
+      CS_MALLOC(ray3Di, n_cells, cs_real_t);
+      CS_MALLOC(ray3Dst, n_cells, cs_real_t);
       /* Call the 1D radiative model
        * Compute the divergence of the IR and solar radiative fluxes: */
       cs_f_atr1vf();
@@ -692,8 +691,8 @@ cs_atmo_scalar_source_term(int              f_id,
         st_exp[c_id] += cp_rho*(ray3Dst[c_id]-ray3Di[c_id])*pot_temp;
       }
 
-      BFT_FREE(ray3Di);
-      BFT_FREE(ray3Dst);
+      CS_FREE(ray3Di);
+      CS_FREE(ray3Dst);
     }
 
   }
@@ -724,8 +723,8 @@ cs_atmo_scalar_source_term(int              f_id,
                                        r3);
       r3_is_defined = true;
 
-      BFT_MALLOC(grad1, n_cells_ext, cs_real_3_t);
-      BFT_MALLOC(grad2, n_cells_ext, cs_real_3_t);
+      CS_MALLOC(grad1, n_cells_ext, cs_real_3_t);
+      CS_MALLOC(grad2, n_cells_ext, cs_real_3_t);
 
       if (qliqmax > 1e-8)
         _compute_gradient(m,
@@ -791,8 +790,8 @@ cs_atmo_scalar_source_term(int              f_id,
 
     if (treated_scalars%3 == 0) {
       r3_is_defined = false;
-      BFT_FREE(grad1);
-      BFT_FREE(grad2);
+      CS_FREE(grad1);
+      CS_FREE(grad2);
     }
   }
 

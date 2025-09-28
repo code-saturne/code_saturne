@@ -50,17 +50,17 @@
 
 #include "bft/bft_printf.h"
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "base/cs_log.h"
-
 #include "base/cs_field.h"
-#include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_location.h"
+#include "base/cs_mem.h"
 #include "base/cs_parameters_check.h"
-#include "pprt/cs_physical_model.h"
 #include "base/cs_restart.h"
 #include "base/cs_restart_default.h"
+
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_location.h"
+#include "pprt/cs_physical_model.h"
 #include "turb/cs_turbulence_model.h"
 
 #include "lagr/cs_lagr.h"

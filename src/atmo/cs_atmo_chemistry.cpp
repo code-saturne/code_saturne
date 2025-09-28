@@ -44,7 +44,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -57,6 +56,7 @@
 #include "base/cs_field_pointer.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "base/cs_scalar_clipping.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
@@ -265,8 +265,8 @@ static void
 _chem_initialize_species_profiles_to_fid(int *species_profiles_fid)
 {
   if (_atmo_chem.species_profiles_to_field_id == nullptr)
-    BFT_MALLOC(_atmo_chem.species_profiles_to_field_id,
-               _atmo_chem.n_species_profiles, int);
+    CS_MALLOC(_atmo_chem.species_profiles_to_field_id,
+              _atmo_chem.n_species_profiles, int);
 
   for (int i = 0; i < _atmo_chem.n_species_profiles; i++)
     _atmo_chem.species_profiles_to_field_id[i] = species_profiles_fid[i];
@@ -670,7 +670,7 @@ cs_atmo_aerosol_finalize(void)
   if (cs_glob_atmo_chemistry->aerosol_model == CS_ATMO_AEROSOL_SSH)
     cs_atmo_aerosol_ssh_finalize();
 
-  BFT_FREE(cs_glob_atmo_chemistry->aero_conc_file_name);
+  CS_FREE(cs_glob_atmo_chemistry->aero_conc_file_name);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1361,17 +1361,17 @@ cs_atmo_set_chem_conc_file_name(const char  *file_name)
   }
 
   if (_atmo_chem.chem_conc_file_name == nullptr) {
-    BFT_MALLOC(_atmo_chem.chem_conc_file_name,
+    CS_MALLOC(_atmo_chem.chem_conc_file_name,
+              strlen(file_name) + 1,
+              char);
+  }
+  else {
+    CS_REALLOC(_atmo_chem.chem_conc_file_name,
                strlen(file_name) + 1,
                char);
   }
-  else {
-    BFT_REALLOC(_atmo_chem.chem_conc_file_name,
-                strlen(file_name) + 1,
-                char);
-  }
 
-  sprintf(_atmo_chem.chem_conc_file_name, "%s", file_name);
+  strcpy(_atmo_chem.chem_conc_file_name, file_name);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1393,17 +1393,17 @@ cs_atmo_set_aero_conc_file_name(const char  *file_name)
   }
 
   if (_atmo_chem.aero_conc_file_name == nullptr) {
-    BFT_MALLOC(_atmo_chem.aero_conc_file_name,
+    CS_MALLOC(_atmo_chem.aero_conc_file_name,
+              strlen(file_name) + 1,
+              char);
+  }
+  else {
+    CS_REALLOC(_atmo_chem.aero_conc_file_name,
                strlen(file_name) + 1,
                char);
   }
-  else {
-    BFT_REALLOC(_atmo_chem.aero_conc_file_name,
-                strlen(file_name) + 1,
-                char);
-  }
 
-  sprintf(_atmo_chem.aero_conc_file_name, "%s", file_name);
+  strcpy(_atmo_chem.aero_conc_file_name, file_name);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1423,10 +1423,10 @@ cs_atmo_init_chemistry(void)
     _atmo_chem.n_reactions = 5;
 
     if (_atmo_chem.chempoint == nullptr)
-      BFT_MALLOC(_atmo_chem.chempoint, _atmo_chem.n_species, int);
+      CS_MALLOC(_atmo_chem.chempoint, _atmo_chem.n_species, int);
 
     if (_atmo_chem.molar_mass == nullptr)
-      BFT_MALLOC(_atmo_chem.molar_mass, _atmo_chem.n_species, cs_real_t);
+      CS_MALLOC(_atmo_chem.molar_mass, _atmo_chem.n_species, cs_real_t);
 
     _atmo_chem.chempoint[0] = 4;
     _atmo_chem.chempoint[1] = 3;
@@ -1438,7 +1438,7 @@ cs_atmo_init_chemistry(void)
     _atmo_chem.molar_mass[3] = 16.0;
 
     if (_atmo_chem.species_to_field_id == nullptr)
-      BFT_MALLOC(_atmo_chem.species_to_field_id, _atmo_chem.n_species, int);
+      CS_MALLOC(_atmo_chem.species_to_field_id, _atmo_chem.n_species, int);
 
     const char *label[] = {"NO", "NO2", "O3", "O3P"};
 
@@ -1462,9 +1462,9 @@ cs_atmo_init_chemistry(void)
     _atmo_chem.n_reactions = 34;
 
     if (_atmo_chem.chempoint == nullptr)
-      BFT_MALLOC(_atmo_chem.chempoint, _atmo_chem.n_species, int);
+      CS_MALLOC(_atmo_chem.chempoint, _atmo_chem.n_species, int);
     if (_atmo_chem.molar_mass == nullptr)
-      BFT_MALLOC(_atmo_chem.molar_mass, _atmo_chem.n_species, cs_real_t);
+      CS_MALLOC(_atmo_chem.molar_mass, _atmo_chem.n_species, cs_real_t);
 
     _atmo_chem.chempoint[0]  = 20, _atmo_chem.chempoint[1]  = 19;
     _atmo_chem.chempoint[2]  = 16, _atmo_chem.chempoint[3]  = 17;
@@ -1511,7 +1511,7 @@ cs_atmo_init_chemistry(void)
          "species_pan", "species_xo2",  "species_so2", "species_h2so4"};
 
     if (_atmo_chem.species_to_field_id == nullptr)
-      BFT_MALLOC(_atmo_chem.species_to_field_id, _atmo_chem.n_species, int);
+      CS_MALLOC(_atmo_chem.species_to_field_id, _atmo_chem.n_species, int);
 
     for (int ii = 0; ii < _atmo_chem.n_species; ii++) {
       int f_id = cs_variable_field_create(name[ii],
@@ -1529,9 +1529,9 @@ cs_atmo_init_chemistry(void)
     _atmo_chem.n_reactions = 155;
 
     if (_atmo_chem.chempoint == nullptr)
-      BFT_MALLOC(_atmo_chem.chempoint, _atmo_chem.n_species, int);
+      CS_MALLOC(_atmo_chem.chempoint, _atmo_chem.n_species, int);
     if (_atmo_chem.molar_mass == nullptr)
-      BFT_MALLOC(_atmo_chem.molar_mass, _atmo_chem.n_species, cs_real_t);
+      CS_MALLOC(_atmo_chem.molar_mass, _atmo_chem.n_species, cs_real_t);
 
     _atmo_chem.chempoint[0]  = 48, _atmo_chem.chempoint[1]  = 52;
     _atmo_chem.chempoint[2]  = 47, _atmo_chem.chempoint[3]  = 43;
@@ -1616,7 +1616,7 @@ cs_atmo_init_chemistry(void)
          "species_mgly", "species_so2",  "species_h2so4", "species_hco3"};
 
     if (_atmo_chem.species_to_field_id == nullptr)
-      BFT_MALLOC(_atmo_chem.species_to_field_id, _atmo_chem.n_species, int);
+      CS_MALLOC(_atmo_chem.species_to_field_id, _atmo_chem.n_species, int);
 
     for (int ii = 0; ii < _atmo_chem.n_species; ii++) {
       int f_id = cs_variable_field_create(name[ii],
@@ -1668,11 +1668,11 @@ cs_atmo_chemistry_set_spack_file_name(const char  *file_name)
 
   _atmo_chem.model = 4;
 
-  BFT_MALLOC(_atmo_chem.spack_file_name,
-             strlen(file_name) + 1,
-             char);
+  CS_MALLOC(_atmo_chem.spack_file_name,
+            strlen(file_name) + 1,
+            char);
 
-  sprintf(_atmo_chem.spack_file_name, "%s", file_name);
+  strcpy(_atmo_chem.spack_file_name, file_name);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1693,11 +1693,11 @@ cs_atmo_chemistry_set_aerosol_file_name(const char  *file_name)
 
   _atmo_chem.aerosol_model = CS_ATMO_AEROSOL_SSH;
 
-  BFT_MALLOC(_atmo_chem.aero_file_name,
-             strlen(file_name) + 1,
-             char);
+  CS_MALLOC(_atmo_chem.aero_file_name,
+            strlen(file_name) + 1,
+            char);
 
-  sprintf(_atmo_chem.aero_file_name, "%s", file_name);
+  strcpy(_atmo_chem.aero_file_name, file_name);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1758,9 +1758,9 @@ cs_atmo_declare_chem_from_spack(void)
   }
 
   /* Now allocate arrays */
-  BFT_MALLOC(_atmo_chem.species_to_field_id, _atmo_chem.n_species, int);
-  BFT_MALLOC(_atmo_chem.molar_mass, _atmo_chem.n_species, cs_real_t);
-  BFT_MALLOC(_atmo_chem.chempoint, _atmo_chem.n_species, int);
+  CS_MALLOC(_atmo_chem.species_to_field_id, _atmo_chem.n_species, int);
+  CS_MALLOC(_atmo_chem.molar_mass, _atmo_chem.n_species, cs_real_t);
+  CS_MALLOC(_atmo_chem.chempoint, _atmo_chem.n_species, int);
 
   /* Read SPACK: second loop Create variables and read molar mass */
   for (int i = 0; i < _atmo_chem.n_species; i++ ) {
@@ -1849,21 +1849,21 @@ cs_atmo_chemistry_finalize(void)
   if (_atmo_chem.aerosol_model != CS_ATMO_AEROSOL_OFF)
     cs_atmo_aerosol_finalize();
 
-  BFT_FREE(_atmo_chem.reacnum);
-  BFT_FREE(_atmo_chem.species_to_field_id);
-  BFT_FREE(_atmo_chem.molar_mass);
-  BFT_FREE(_atmo_chem.chempoint);
-  BFT_FREE(_atmo_chem.conv_factor_jac);
-  BFT_FREE(_atmo_chem.spack_file_name);
-  BFT_FREE(_atmo_chem.aero_file_name);
-  BFT_FREE(_atmo_chem.chem_conc_file_name);
-  BFT_FREE(_atmo_chem.conc_profiles);
-  BFT_FREE(_atmo_chem.z_conc_profiles);
-  BFT_FREE(_atmo_chem.t_conc_profiles);
-  BFT_FREE(_atmo_chem.x_conc_profiles);
-  BFT_FREE(_atmo_chem.y_conc_profiles);
-  BFT_FREE(_atmo_chem.dlconc0);
-  BFT_FREE(_atmo_chem.species_profiles_to_field_id);
+  CS_FREE(_atmo_chem.reacnum);
+  CS_FREE(_atmo_chem.species_to_field_id);
+  CS_FREE(_atmo_chem.molar_mass);
+  CS_FREE(_atmo_chem.chempoint);
+  CS_FREE(_atmo_chem.conv_factor_jac);
+  CS_FREE(_atmo_chem.spack_file_name);
+  CS_FREE(_atmo_chem.aero_file_name);
+  CS_FREE(_atmo_chem.chem_conc_file_name);
+  CS_FREE(_atmo_chem.conc_profiles);
+  CS_FREE(_atmo_chem.z_conc_profiles);
+  CS_FREE(_atmo_chem.t_conc_profiles);
+  CS_FREE(_atmo_chem.x_conc_profiles);
+  CS_FREE(_atmo_chem.y_conc_profiles);
+  CS_FREE(_atmo_chem.dlconc0);
+  CS_FREE(_atmo_chem.species_profiles_to_field_id);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1993,7 +1993,7 @@ cs_atmo_chem_initialize_dlconc0(void)
   const int nlayer_aer = _atmo_chem.n_layer;
   const int size = n_aer*(1+nlayer_aer);
 
-  BFT_MALLOC(_atmo_chem.dlconc0, size, cs_real_t);
+  CS_MALLOC(_atmo_chem.dlconc0, size, cs_real_t);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2011,22 +2011,22 @@ cs_atmo_chemistry_initialize_conc_profiles(void)
   const int size    = _atmo_chem.n_species*_nbchmz*_nbchim;
 
   if (_atmo_chem.conc_profiles == nullptr)
-    BFT_MALLOC(_atmo_chem.conc_profiles, size, cs_real_t);
+    CS_MALLOC(_atmo_chem.conc_profiles, size, cs_real_t);
 
   if (_atmo_chem.z_conc_profiles == nullptr)
-    BFT_MALLOC(_atmo_chem.z_conc_profiles, _nbchmz, cs_real_t);
+    CS_MALLOC(_atmo_chem.z_conc_profiles, _nbchmz, cs_real_t);
 
   if (_atmo_chem.t_conc_profiles == nullptr)
-    BFT_MALLOC(_atmo_chem.t_conc_profiles, _nbchim, cs_real_t);
+    CS_MALLOC(_atmo_chem.t_conc_profiles, _nbchim, cs_real_t);
 
   if (_atmo_chem.x_conc_profiles == nullptr)
-    BFT_MALLOC(_atmo_chem.x_conc_profiles, _nbchim, cs_real_t);
+    CS_MALLOC(_atmo_chem.x_conc_profiles, _nbchim, cs_real_t);
 
   if (_atmo_chem.y_conc_profiles == nullptr)
-    BFT_MALLOC(_atmo_chem.y_conc_profiles, _nbchim, cs_real_t);
+    CS_MALLOC(_atmo_chem.y_conc_profiles, _nbchim, cs_real_t);
 
   if (_atmo_chem.conv_factor_jac == nullptr)
-    BFT_MALLOC(_atmo_chem.conv_factor_jac, nespg*nespg, cs_real_t);
+    CS_MALLOC(_atmo_chem.conv_factor_jac, nespg*nespg, cs_real_t);
 }
 
 /*----------------------------------------------------------------------------*/

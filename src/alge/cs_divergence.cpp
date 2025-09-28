@@ -45,11 +45,11 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_dispatch.h"
 #include "alge/cs_gradient_boundary.h"
+#include "base/cs_mem.h"
 #include "base/cs_porous_model.h"
 #include "base/cs_timer.h"
 

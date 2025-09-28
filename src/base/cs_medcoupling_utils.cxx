@@ -42,16 +42,16 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
-#include "cs_medcoupling_mesh.hxx"
+#include "base/cs_mem.h"
+#include "base/cs_medcoupling_mesh.hxx"
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_medcoupling_utils.h"
-
 
 /*----------------------------------------------------------------------------*/
 
@@ -70,9 +70,7 @@ BEGIN_C_DECLS
 void
 cs_medcoupling_free_meshes(void)
 {
-
   cs_medcoupling_mesh_destroy_all();
-
 }
 
 /*----------------------------------------------------------------------------*/

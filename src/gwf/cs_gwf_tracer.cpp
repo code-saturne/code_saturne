@@ -41,7 +41,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "alge/cs_sles_it.h"
@@ -49,6 +48,7 @@
 #include "base/cs_field.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_post.h"
 #include "cdo/cs_hodge.h"
@@ -656,7 +656,7 @@ _update_precipitation_vb(cs_gwf_tracer_t           *tracer,
   cs_real_t *m_pcp  = tc->precip_mass;
   cs_real_t *m_l_vc = nullptr;
 
-  BFT_MALLOC(m_l_vc, c2v->idx[n_cells], cs_real_t);
+  CS_MALLOC(m_l_vc, c2v->idx[n_cells], cs_real_t);
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     const cs_real_t theta_c = theta[c_id];
@@ -778,7 +778,7 @@ _update_precipitation_vb(cs_gwf_tracer_t           *tracer,
 
   /* Free temporary buffer */
 
-  BFT_FREE(m_l_vc);
+  CS_FREE(m_l_vc);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -821,7 +821,7 @@ _add_precipitation(const cs_cdo_connect_t    *connect,
       bft_error(__FILE__, __LINE__, 0, "%s: Invalid space scheme.", __func__);
   }
 
-  BFT_MALLOC(tc->precip_mass, a_size, cs_real_t);
+  CS_MALLOC(tc->precip_mass, a_size, cs_real_t);
   cs_array_real_fill_zero(a_size, tc->precip_mass);
 
   if (space_scheme == CS_SPACE_SCHEME_CDOVCB ||
@@ -1253,30 +1253,30 @@ _free_default_tracer_context(cs_gwf_tracer_t *tracer)
   if (tc == nullptr)
     return;
 
-  BFT_FREE(tc->rho_bulk);
-  BFT_FREE(tc->kd0);
-  BFT_FREE(tc->rho_kd);
-  BFT_FREE(tc->alpha_l);
-  BFT_FREE(tc->alpha_t);
-  BFT_FREE(tc->wmd);
+  CS_FREE(tc->rho_bulk);
+  CS_FREE(tc->kd0);
+  CS_FREE(tc->rho_kd);
+  CS_FREE(tc->alpha_l);
+  CS_FREE(tc->alpha_t);
+  CS_FREE(tc->wmd);
 
   /* Sorption phenomena */
 
   if (tracer->model & CS_GWF_TRACER_SORPTION_EK_3_PARAMETERS ||
       tracer->model & CS_GWF_TRACER_SORPTION_EK_5_PARAMETERS) {
-    BFT_FREE(tc->k0_plus);
-    BFT_FREE(tc->k0_minus);
-    BFT_FREE(tc->conc_site2);
+    CS_FREE(tc->k0_plus);
+    CS_FREE(tc->k0_minus);
+    CS_FREE(tc->conc_site2);
   }
 
   /* Precipitation phenomena */
 
   if (tracer->model & CS_GWF_TRACER_PRECIPITATION) {
-    BFT_FREE(tc->conc_l_star);
-    BFT_FREE(tc->precip_mass);
+    CS_FREE(tc->conc_l_star);
+    CS_FREE(tc->precip_mass);
   }
 
-  BFT_FREE(tc);
+  CS_FREE(tc);
   tracer->context = nullptr;
 
   /* All fields are freed thanks to another mechanism */
@@ -1302,7 +1302,7 @@ _create_default_tracer_context(cs_gwf_tracer_t *tracer, double lambda)
 
   cs_gwf_tracer_default_context_t *context = nullptr;
 
-  BFT_MALLOC(context, 1, cs_gwf_tracer_default_context_t);
+  CS_MALLOC(context, 1, cs_gwf_tracer_default_context_t);
 
   context->decay_coef = lambda;
 
@@ -1310,12 +1310,12 @@ _create_default_tracer_context(cs_gwf_tracer_t *tracer, double lambda)
 
   const int n_soils = cs_gwf_get_n_soils();
 
-  BFT_MALLOC(context->rho_bulk, n_soils, double);
-  BFT_MALLOC(context->kd0, n_soils, double);
-  BFT_MALLOC(context->rho_kd, n_soils, double);
-  BFT_MALLOC(context->alpha_l, n_soils, double);
-  BFT_MALLOC(context->alpha_t, n_soils, double);
-  BFT_MALLOC(context->wmd, n_soils, double);
+  CS_MALLOC(context->rho_bulk, n_soils, double);
+  CS_MALLOC(context->kd0, n_soils, double);
+  CS_MALLOC(context->rho_kd, n_soils, double);
+  CS_MALLOC(context->alpha_l, n_soils, double);
+  CS_MALLOC(context->alpha_t, n_soils, double);
+  CS_MALLOC(context->wmd, n_soils, double);
 
   context->darcy_velocity_field = nullptr;
 
@@ -1326,8 +1326,8 @@ _create_default_tracer_context(cs_gwf_tracer_t *tracer, double lambda)
   context->conc_site2 = nullptr;
 
   if (tracer->model & CS_GWF_TRACER_SORPTION_EK_3_PARAMETERS) {
-    BFT_MALLOC(context->k0_minus, n_soils, double);
-    BFT_MALLOC(context->k0_plus, n_soils, double);
+    CS_MALLOC(context->k0_minus, n_soils, double);
+    CS_MALLOC(context->k0_plus, n_soils, double);
   }
 
   /* Precipitation members */
@@ -1337,7 +1337,7 @@ _create_default_tracer_context(cs_gwf_tracer_t *tracer, double lambda)
   context->precip_field = nullptr;
 
   if (tracer->model & CS_GWF_TRACER_PRECIPITATION)
-    BFT_MALLOC(context->conc_l_star, n_soils, double);
+    CS_MALLOC(context->conc_l_star, n_soils, double);
 
   /* Set additional function pointers */
 
@@ -1402,7 +1402,7 @@ _create_tracer(cs_gwf_tracer_model_t tr_model,
 {
   cs_gwf_tracer_t *tracer = nullptr;
 
-  BFT_MALLOC(tracer, 1, cs_gwf_tracer_t);
+  CS_MALLOC(tracer, 1, cs_gwf_tracer_t);
 
   tracer->equation = cs_equation_add(eq_name,
                                      var_name,
@@ -1421,12 +1421,12 @@ _create_tracer(cs_gwf_tracer_model_t tr_model,
 
   char *pty_name = nullptr;
   int   len      = strlen(eq_name) + strlen("_time") + 1;
-  BFT_MALLOC(pty_name, len, char);
+  CS_MALLOC(pty_name, len, char);
   sprintf(pty_name, "%s_time", eq_name);
 
   cs_property_t *time_pty = cs_property_add(pty_name, CS_PROPERTY_ISO);
 
-  BFT_FREE(pty_name);
+  CS_FREE(pty_name);
 
   cs_equation_param_t *tr_eqp = cs_equation_get_param(tracer->equation);
 
@@ -1965,15 +1965,15 @@ _free_all_decay_chains(void)
     if (tdc == nullptr)
       continue;
 
-    BFT_FREE(tdc->name);
-    BFT_FREE(tdc->tracers);
-    BFT_FREE(tdc->st_defs);
+    CS_FREE(tdc->name);
+    CS_FREE(tdc->tracers);
+    CS_FREE(tdc->st_defs);
 
-    BFT_FREE(tdc);
+    CS_FREE(tdc);
     _decay_chains[i] = nullptr;
   }
 
-  BFT_FREE(_decay_chains);
+  CS_FREE(_decay_chains);
   _n_decay_chains = 0;
   _decay_chains   = nullptr;
 }
@@ -2086,7 +2086,7 @@ cs_gwf_tracer_add(cs_gwf_tracer_model_t           tr_model,
   /* Update the array storing all tracers */
 
   _n_tracers += 1;
-  BFT_REALLOC(_tracers, _n_tracers, cs_gwf_tracer_t *);
+  CS_REALLOC(_tracers, _n_tracers, cs_gwf_tracer_t *);
   _tracers[tr_id] = tracer;
 
   return tracer;
@@ -2116,7 +2116,7 @@ cs_gwf_tracer_free_all(void)
   cs_gwf_tracer_t *tracer = _tracers[0];
 
   if (tracer->hydraulic_model == CS_GWF_MODEL_SATURATED_SINGLE_PHASE)
-    BFT_FREE(cs_shared_liquid_saturation);
+    CS_FREE(cs_shared_liquid_saturation);
   cs_shared_liquid_saturation = nullptr; /* unset the pointer in all cases */
 
   for (int i = 0; i < _n_tracers; i++) {
@@ -2129,13 +2129,13 @@ cs_gwf_tracer_free_all(void)
 
     /* Tracer equation is freed with all equations at the same time */
 
-    BFT_FREE(tracer);
+    CS_FREE(tracer);
     _tracers[i] = nullptr;
 
   } /* Loop on tracers */
 
   _n_tracers = 0;
-  BFT_FREE(_tracers);
+  CS_FREE(_tracers);
   _tracers = nullptr;
 }
 
@@ -2365,7 +2365,7 @@ cs_gwf_tracer_finalize_setup(const cs_cdo_connect_t    *connect,
                   __func__,
                   mc_pty_name);
 
-      BFT_MALLOC(cs_shared_liquid_saturation, quant->n_cells, cs_real_t);
+      CS_MALLOC(cs_shared_liquid_saturation, quant->n_cells, cs_real_t);
 
       /* For a saturated model there is no time evolution of the liquid
          saturation so that one can evaluate the moisture content (i.e. the
@@ -2697,7 +2697,7 @@ cs_gwf_tracer_default_init_setup(cs_gwf_tracer_t *tracer)
     int len = strlen(eq_name) + strlen("_diffusivity") + 1;
     if (len > max_len) {
       max_len = len;
-      BFT_REALLOC(name, len, char);
+      CS_REALLOC(name, len, char);
     }
     sprintf(name, "%s_diffusivity", eq_name);
 
@@ -2733,7 +2733,7 @@ cs_gwf_tracer_default_init_setup(cs_gwf_tracer_t *tracer)
     int len = strlen(eq_name) + strlen("_reaction") + 1;
     if (len > max_len) {
       max_len = len;
-      BFT_REALLOC(name, len, char);
+      CS_REALLOC(name, len, char);
     }
     sprintf(name, "%s_reaction", eq_name);
 
@@ -2748,7 +2748,7 @@ cs_gwf_tracer_default_init_setup(cs_gwf_tracer_t *tracer)
     int  len          = strlen(eq_name) + strlen("_precip") + 1;
     if (len > max_len) {
       max_len = len;
-      BFT_REALLOC(name, len, char);
+      CS_REALLOC(name, len, char);
     }
     sprintf(name, "%s_precip", eq_name);
 
@@ -2797,7 +2797,7 @@ cs_gwf_tracer_default_init_setup(cs_gwf_tracer_t *tracer)
                                            true); /* full length */
   }
 
-  BFT_FREE(name);
+  CS_FREE(name);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2916,7 +2916,7 @@ cs_gwf_tracer_sat_finalize_setup(const cs_cdo_connect_t    *connect,
     const cs_adjacency_t *c2v = connect->c2v;
 
     double *st_values = nullptr;
-    BFT_MALLOC(st_values, c2v->idx[quant->n_cells], double);
+    CS_MALLOC(st_values, c2v->idx[quant->n_cells], double);
     cs_array_real_fill_zero(c2v->idx[quant->n_cells], st_values);
 
     cs_gwf_tracer_decay_chain_t *tdc =
@@ -3037,7 +3037,7 @@ cs_gwf_tracer_unsat_finalize_setup(const cs_cdo_connect_t    *connect,
     const cs_adjacency_t *c2v = connect->c2v;
 
     double *st_values = nullptr;
-    BFT_MALLOC(st_values, c2v->idx[quant->n_cells], double);
+    CS_MALLOC(st_values, c2v->idx[quant->n_cells], double);
     cs_array_real_fill_zero(c2v->idx[quant->n_cells], st_values);
 
     cs_gwf_tracer_decay_chain_t *tdc =
@@ -3193,19 +3193,19 @@ cs_gwf_tracer_create_decay_chain(int                  n_tracers,
 
   cs_gwf_tracer_decay_chain_t *tdc = nullptr;
 
-  BFT_MALLOC(tdc, 1, cs_gwf_tracer_decay_chain_t);
+  CS_MALLOC(tdc, 1, cs_gwf_tracer_decay_chain_t);
 
   tdc->n_tracers = n_tracers;
   tdc->unit      = unit;
 
   size_t len = strlen(chain_name);
-  BFT_MALLOC(tdc->name, len + 1, char);
+  CS_MALLOC(tdc->name, len + 1, char);
   strncpy(tdc->name, chain_name, len + 1); /* Last character is '\0' */
 
   tdc->id = tdc_id;
 
-  BFT_MALLOC(tdc->tracers, n_tracers, cs_gwf_tracer_t *);
-  BFT_MALLOC(tdc->st_defs, n_tracers, cs_xdef_t *);
+  CS_MALLOC(tdc->tracers, n_tracers, cs_gwf_tracer_t *);
+  CS_MALLOC(tdc->st_defs, n_tracers, cs_xdef_t *);
 
   for (int i = 0; i < n_tracers; i++) {
     tdc->tracers[i] = nullptr;
@@ -3215,7 +3215,7 @@ cs_gwf_tracer_create_decay_chain(int                  n_tracers,
   /* Update the array storing all decay chains */
 
   _n_decay_chains += 1;
-  BFT_REALLOC(_decay_chains, _n_decay_chains, cs_gwf_tracer_decay_chain_t *);
+  CS_REALLOC(_decay_chains, _n_decay_chains, cs_gwf_tracer_decay_chain_t *);
   _decay_chains[tdc_id] = tdc;
 
   return tdc;

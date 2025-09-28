@@ -42,11 +42,11 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
+#include "base/cs_mem.h"
 #include "gui/cs_gui_util.h"
 #include "gui/cs_gui_boundary_conditions.h"
 #include "mesh/cs_join.h"

@@ -49,9 +49,9 @@
 
 #include "bft/bft_printf.h"
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 
 #include "base/cs_base.h"
+#include "base/cs_mem.h"
 #include "comb/cs_coal.h"
 #include "comb/cs_coal_ht_convert.h"
 #include "base/cs_math.h"

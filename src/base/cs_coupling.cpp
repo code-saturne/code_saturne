@@ -47,9 +47,9 @@
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
+#include "base/cs_mem.h"
 #include "base/cs_time_step.h"
 #include "fvm/fvm_nodal_extract.h"
 #include "fvm/fvm_point_location.h"

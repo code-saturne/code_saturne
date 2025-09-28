@@ -33,11 +33,11 @@
 #include <string.h>
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
 #include "base/cs_block_dist.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_all_to_all.h"
 
@@ -167,7 +167,7 @@ main (int argc, char *argv[])
 
       n_elts = 3 + rank%3;
 
-      BFT_MALLOC(dest_rank, n_elts, int);
+      CS_MALLOC(dest_rank, n_elts, int);
 
       for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
         int _rank = rank + ii%5 - 2;
@@ -176,12 +176,12 @@ main (int argc, char *argv[])
         dest_rank[ii] = _rank;
       }
 
-      BFT_MALLOC(src_index, n_elts + 1, cs_lnum_t);
+      CS_MALLOC(src_index, n_elts + 1, cs_lnum_t);
       src_index[0] = 0;
       for (cs_lnum_t ii = 0; ii < n_elts; ii++)
         src_index[ii+1] = src_index[ii] + 2 + ii%2;
 
-      BFT_MALLOC(src_val, src_index[n_elts], cs_gnum_t);
+      CS_MALLOC(src_val, src_index[n_elts], cs_gnum_t);
       for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
         bft_printf("%d -> rank %d :", ii, dest_rank[ii]);
         src_val[src_index[ii]] = ii;
@@ -215,7 +215,7 @@ main (int argc, char *argv[])
                                                                    0,
                                                                    n_g_elts);
 
-      BFT_MALLOC(part_gnum, n_elts, cs_gnum_t);
+      CS_MALLOC(part_gnum, n_elts, cs_gnum_t);
 
       for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
         part_gnum[ii] = ii+1 + rank*(n_elts-2);
@@ -227,12 +227,12 @@ main (int argc, char *argv[])
                                           bi,
                                           cs_glob_mpi_comm);
 
-      BFT_MALLOC(src_index, n_elts + 1, cs_lnum_t);
+      CS_MALLOC(src_index, n_elts + 1, cs_lnum_t);
       src_index[0] = 0;
       for (cs_lnum_t ii = 0; ii < n_elts; ii++)
         src_index[ii+1] = src_index[ii] + 2 + part_gnum[ii]%2;
 
-      BFT_MALLOC(src_val, src_index[n_elts], cs_gnum_t);
+      CS_MALLOC(src_val, src_index[n_elts], cs_gnum_t);
       for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
         bft_printf("%d -> gnum %d :", ii, (int)part_gnum[ii]);
         for (cs_lnum_t jj = src_index[ii];
@@ -275,7 +275,7 @@ main (int argc, char *argv[])
     bft_printf("\nPrepare reverse\n\n");
 
     cs_gnum_t *reverse_val = nullptr;
-    BFT_MALLOC(reverse_val, dest_index[n_elts_dest] + n_elts_dest, cs_gnum_t);
+    CS_MALLOC(reverse_val, dest_index[n_elts_dest] + n_elts_dest, cs_gnum_t);
 
     /* insert one value per element for return */
     cs_lnum_t s_id = 0;
@@ -297,7 +297,7 @@ main (int argc, char *argv[])
       bft_printf("\n");
     }
 
-    BFT_FREE(dest_val);
+    CS_FREE(dest_val);
 
     cs_all_to_all_copy_index(d,
                              true, /* reverse */
@@ -312,8 +312,8 @@ main (int argc, char *argv[])
 
     cs_all_to_all_destroy(&d);
 
-    BFT_FREE(part_gnum);
-    BFT_FREE(reverse_val);
+    CS_FREE(part_gnum);
+    CS_FREE(reverse_val);
 
     bft_printf("\n");
 
@@ -326,13 +326,13 @@ main (int argc, char *argv[])
       bft_printf("\n");
     }
 
-    BFT_FREE(dest_index);
-    BFT_FREE(ret_val);
+    CS_FREE(dest_index);
+    CS_FREE(ret_val);
 
-    BFT_FREE(dest_rank);
+    CS_FREE(dest_rank);
 
-    BFT_FREE(src_index);
-    BFT_FREE(src_val);
+    CS_FREE(src_index);
+    CS_FREE(src_val);
 
   }
 

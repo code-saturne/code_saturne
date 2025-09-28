@@ -28,8 +28,8 @@
 #include <string.h>
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
+#include "base/cs_mem.h"
 
 #include "cdo/cs_basis_func.h"
 #include "cdo/cs_cdo_advection.h"
@@ -809,7 +809,7 @@ _define_cm_tetra_ref(double            a,
   /* Compute dual face quantities */
 
   cs_real_t  *df = nullptr;
-  BFT_MALLOC(df, 3*cm->n_ec, cs_real_t);
+  CS_MALLOC(df, 3*cm->n_ec, cs_real_t);
   memset(df, 0, 3*cm->n_ec*sizeof(cs_real_t));
 
   for (short int f = 0; f < cm->n_fc; f++) {
@@ -827,7 +827,7 @@ _define_cm_tetra_ref(double            a,
   for (int e = 0; e < cm->n_ec; e++)
     cs_nvec3(df + 3*e, &(cm->dface[e]));
 
-  BFT_FREE(df);
+  CS_FREE(df);
 
   for (short int f = 0; f < cm->n_fc; f++) {
     cm->pvol_f[f] =  _dp3(cm->face[f].unitv, cm->dedge[f].unitv);
@@ -1679,7 +1679,7 @@ _test_hho_schemes(FILE                *out,
   const double  tcur = 0.;
 
   cs_property_data_t  *diff_pty = nullptr;
-  BFT_MALLOC(diff_pty, 1, cs_property_data_t);
+  CS_MALLOC(diff_pty, 1, cs_property_data_t);
   cs_property_data_init(true, true, nullptr, diff_pty);
 
   switch (scheme_order) {
@@ -1859,7 +1859,7 @@ _test_hho_schemes(FILE                *out,
               __func__);
   }
 
-  BFT_FREE(diff_pty);
+  CS_FREE(diff_pty);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2033,7 +2033,7 @@ _test_divergence(FILE                     *out,
   const cs_real_t ov = 1. / cm->vol_c;
 
   cs_real_t *red;
-  BFT_MALLOC(red, totdof, cs_real_t);
+  CS_MALLOC(red, totdof, cs_real_t);
 
   cs_real_t *const  div = cb->aux->val;
   _compute_divergence(cm, div);
@@ -2143,7 +2143,7 @@ _test_divergence(FILE                     *out,
             fabs(ov*cs_sdm_dot(totdof, red, div) - ex_div) );
   }
 
-  BFT_FREE(red);
+  CS_FREE(red);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2259,7 +2259,7 @@ main(int    argc,
 
   /* connectivity */
 
-  BFT_MALLOC(connect, 1, cs_cdo_connect_t);
+  CS_MALLOC(connect, 1, cs_cdo_connect_t);
   connect->n_cells = 1;
   connect->n_max_vbyc = 8;
   connect->n_max_ebyc = 12;
@@ -2272,7 +2272,7 @@ main(int    argc,
 
   /* Time step */
 
-  BFT_MALLOC(time_step, 1, cs_time_step_t);
+  CS_MALLOC(time_step, 1, cs_time_step_t);
   time_step->t_cur = 0.; /* Useful when analytic function are called */
 
   cs_source_term_init_sharing(quant, connect);
@@ -2330,8 +2330,8 @@ main(int    argc,
   cs_cell_mesh_free(&cm);
   cs_face_mesh_free(&fm);
 
-  BFT_FREE(connect);
-  BFT_FREE(time_step);
+  CS_FREE(connect);
+  CS_FREE(time_step);
 
   fclose(hexa);
   fclose(tetra);

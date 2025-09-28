@@ -63,7 +63,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
@@ -72,6 +71,7 @@
 #include "base/cs_field_pointer.h"
 
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "base/cs_prototypes.h"
 
 #include "base/cs_parameters.h"

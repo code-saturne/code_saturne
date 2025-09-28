@@ -37,8 +37,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
-
+#include "bft/bft_error.h"
 #include "base/cs_base.h"
 #include "base/cs_log.h"
 

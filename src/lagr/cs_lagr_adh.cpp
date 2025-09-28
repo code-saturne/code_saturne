@@ -48,11 +48,11 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_error.h"
+
 #include "base/cs_base.h"
 #include "base/cs_math.h"
-
-#include "bft/bft_mem.h"
-#include "bft/bft_error.h"
+#include "base/cs_mem.h"
 
 #include "base/cs_physical_constants.h"
 #include "base/cs_random.h"

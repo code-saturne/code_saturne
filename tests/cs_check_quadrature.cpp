@@ -28,8 +28,8 @@
 #include <string.h>
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
+#include "base/cs_mem.h"
 
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_local.h"
@@ -997,7 +997,7 @@ _define_cm_tetra_ref(double            a,
   /* Compute dual face quantities */
 
   cs_real_t  *df = nullptr;
-  BFT_MALLOC(df, 3*cm->n_ec, cs_real_t);
+  CS_MALLOC(df, 3*cm->n_ec, cs_real_t);
   memset(df, 0, 3*cm->n_ec*sizeof(cs_real_t));
 
   for (short int f = 0; f < cm->n_fc; f++) {
@@ -1015,7 +1015,7 @@ _define_cm_tetra_ref(double            a,
   for (int e = 0; e < cm->n_ec; e++)
     cs_nvec3(df + 3*e, &(cm->dface[e]));
 
-  BFT_FREE(df);
+  CS_FREE(df);
 
   /* Compute dual cell volume */
 
@@ -1207,10 +1207,10 @@ _test_cdofb_source(FILE                     *out,
     cs_cdofb_vecteq_get(&csys, &cb);
 
   cs_real_t  *st0 = nullptr, *st1 = nullptr, *st2 = nullptr, *st3 = nullptr;
-  BFT_MALLOC(st0, totdof, cs_real_t);
-  BFT_MALLOC(st1, totdof, cs_real_t);
-  BFT_MALLOC(st2, totdof, cs_real_t);
-  BFT_MALLOC(st3, totdof, cs_real_t);
+  CS_MALLOC(st0, totdof, cs_real_t);
+  CS_MALLOC(st1, totdof, cs_real_t);
+  CS_MALLOC(st2, totdof, cs_real_t);
+  CS_MALLOC(st3, totdof, cs_real_t);
 
   cs_real_t *const  c_st0 = st0 + dim*cm->n_fc;
   cs_real_t *const  c_st1 = st1 + dim*cm->n_fc;
@@ -1382,10 +1382,10 @@ _test_cdofb_source(FILE                     *out,
           tc0.nsec*1e-9, tc1.nsec*1e-9, tc2.nsec*1e-9,
           tc3.nsec*1e-9);
 
-  BFT_FREE(st0);
-  BFT_FREE(st1);
-  BFT_FREE(st2);
-  BFT_FREE(st3);
+  CS_FREE(st0);
+  CS_FREE(st1);
+  CS_FREE(st2);
+  CS_FREE(st3);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1602,9 +1602,9 @@ _test_quadratures_misc(FILE                     *out,
   void * f_input = nullptr;
   cs_real_t  *st0, *st1, *st2;
 
-  BFT_MALLOC(st0, totdof, cs_real_t);
-  BFT_MALLOC(st1, totdof, cs_real_t);
-  BFT_MALLOC(st2, totdof, cs_real_t);
+  CS_MALLOC(st0, totdof, cs_real_t);
+  CS_MALLOC(st1, totdof, cs_real_t);
+  CS_MALLOC(st2, totdof, cs_real_t);
 
   cs_real_t *const c_st0 = st0 + dim*nf,
             *const c_st1 = st1 + dim*nf,
@@ -1674,9 +1674,9 @@ _test_quadratures_misc(FILE                     *out,
   fprintf(out, " %10.6e %10.6e %10.6e\n",
           tc0.nsec*1e-9, tc1.nsec*1e-9, tc2.nsec*1e-9);
 
-  BFT_FREE(st0);
-  BFT_FREE(st1);
-  BFT_FREE(st2);
+  CS_FREE(st0);
+  CS_FREE(st1);
+  CS_FREE(st2);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1713,9 +1713,9 @@ _test_quadratures_xdef(FILE                     *out,
                                     .free_input = nullptr };
 
   cs_real_t  *st0, *st1, *st2;
-  BFT_MALLOC(st0, totdof, cs_real_t);
-  BFT_MALLOC(st1, totdof, cs_real_t);
-  BFT_MALLOC(st2, totdof, cs_real_t);
+  CS_MALLOC(st0, totdof, cs_real_t);
+  CS_MALLOC(st1, totdof, cs_real_t);
+  CS_MALLOC(st2, totdof, cs_real_t);
   cs_real_t *const c_st0 = st0 + dim*nf,
             *const c_st1 = st1 + dim*nf,
             *const c_st2 = st2 + dim*nf;
@@ -1794,9 +1794,9 @@ _test_quadratures_xdef(FILE                     *out,
   fprintf(out, " %10.6e %10.6e %10.6e\n",
           tc0.nsec*1e-9, tc1.nsec*1e-9, tc2.nsec*1e-9);
 
-  BFT_FREE(st0);
-  BFT_FREE(st1);
-  BFT_FREE(st2);
+  CS_FREE(st0);
+  CS_FREE(st1);
+  CS_FREE(st2);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1822,9 +1822,9 @@ _test_cdofb_quadatures_avg(FILE                   *out,
   const short int  totdof = dim*(nf + 1);
 
   cs_real_t  *st0, *st1, *st2;
-  BFT_MALLOC(st0, totdof, cs_real_t);
-  BFT_MALLOC(st1, totdof, cs_real_t);
-  BFT_MALLOC(st2, totdof, cs_real_t);
+  CS_MALLOC(st0, totdof, cs_real_t);
+  CS_MALLOC(st1, totdof, cs_real_t);
+  CS_MALLOC(st2, totdof, cs_real_t);
 
   cs_analytic_func_t  *_func =  _get_func_to_eval(dim, ftype);
   if (_func == nullptr)
@@ -1865,9 +1865,9 @@ _test_cdofb_quadatures_avg(FILE                   *out,
   _dump_quad_res(out, "RED AVG", cm, dim, ftype,
                  st0, st1, st2);
 
-  BFT_FREE(st0);
-  BFT_FREE(st1);
-  BFT_FREE(st2);
+  CS_FREE(st0);
+  CS_FREE(st1);
+  CS_FREE(st2);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2026,7 +2026,7 @@ main(int    argc,
 
   /* connectivity */
 
-  BFT_MALLOC(connect, 1, cs_cdo_connect_t);
+  CS_MALLOC(connect, 1, cs_cdo_connect_t);
   connect->n_max_vbyc = 8;
   connect->n_max_ebyc = 12;
   connect->n_max_fbyc = 6;
@@ -2038,7 +2038,7 @@ main(int    argc,
 
   /* Time step */
 
-  BFT_MALLOC(time_step, 1, cs_time_step_t);
+  CS_MALLOC(time_step, 1, cs_time_step_t);
   time_step->t_cur = 0.; /* Useful when analytic function are called */
 
   cs_source_term_init_sharing(quant, connect);
@@ -2081,13 +2081,13 @@ main(int    argc,
 
   cs_cell_mesh_free(&cm);
 
-  BFT_FREE(connect);
-  BFT_FREE(time_step);
+  CS_FREE(connect);
+  CS_FREE(time_step);
 
   fclose(quadrature);
 
   printf(" --> Quadrature Tests (Done)\n");
-  exit (EXIT_SUCCESS);
+  exit(EXIT_SUCCESS);
 }
 
 /*----------------------------------------------------------------------------*/

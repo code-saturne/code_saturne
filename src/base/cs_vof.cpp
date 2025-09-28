@@ -34,8 +34,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
-
 #include "base/cs_array.h"
 #include "base/cs_base.h"
 #include "alge/cs_blas.h"
@@ -54,6 +52,7 @@
 #include "base/cs_log.h"
 #include "base/cs_log_iteration.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
 #include "mesh/cs_mesh_quantities.h"

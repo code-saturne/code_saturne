@@ -44,10 +44,10 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
+#include "base/cs_mem.h"
 #include "base/cs_medcoupling_intersector.h"
 #include "base/cs_medcoupling_postprocess.h"
 #include "base/cs_medcoupling_remapper.h"

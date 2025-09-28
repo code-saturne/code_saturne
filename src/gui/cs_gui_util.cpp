@@ -43,11 +43,11 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
+#include "base/cs_mem.h"
 #include "base/cs_parameters.h"
 #include "base/cs_tree.h"
 #include "gui/cs_tree_xml.h"

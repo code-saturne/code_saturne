@@ -33,11 +33,11 @@
 #include <string.h>
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
 #include "base/cs_interface.h"
+#include "base/cs_mem.h"
 #include "fvm/fvm_periodicity.h"
 
 /*---------------------------------------------------------------------------*/
@@ -94,7 +94,7 @@ _periodic_is_test(int                       ordered_gnum,
 
   if (comm_size > 1) {
 
-    BFT_MALLOC(global_number, n_elements, cs_gnum_t);
+    CS_MALLOC(global_number, n_elements, cs_gnum_t);
 
     for (ii = 0; ii < n_elements; ii++)
       global_number[ii] = (n_elements * 3 / 4) * comm_rank + ii + 1;
@@ -110,8 +110,8 @@ _periodic_is_test(int                       ordered_gnum,
 
   }
 
-  BFT_MALLOC(n_periodic_couples, n_periodic_lists, cs_lnum_t);
-  BFT_MALLOC(periodic_couples, n_periodic_lists, cs_gnum_t *);
+  CS_MALLOC(n_periodic_couples, n_periodic_lists, cs_lnum_t);
+  CS_MALLOC(periodic_couples, n_periodic_lists, cs_gnum_t *);
 
   for (ii = 0; ii < n_periodic_lists; ii++) {
 
@@ -121,7 +121,7 @@ _periodic_is_test(int                       ordered_gnum,
     if (comm_rank == 0 || comm_rank == 1) {
 
       n_periodic_couples[ii] = n_side*n_side;
-      BFT_MALLOC(periodic_couples[ii], n_periodic_couples[ii]*2, cs_gnum_t);
+      CS_MALLOC(periodic_couples[ii], n_periodic_couples[ii]*2, cs_gnum_t);
 
       couple_id = 0;
 
@@ -157,7 +157,7 @@ _periodic_is_test(int                       ordered_gnum,
       }
 
       n_periodic_couples[ii] = couple_id;
-      BFT_REALLOC(periodic_couples[ii], n_periodic_couples[ii]*2, cs_gnum_t);
+      CS_REALLOC(periodic_couples[ii], n_periodic_couples[ii]*2, cs_gnum_t);
 
     }
 
@@ -182,12 +182,12 @@ _periodic_is_test(int                       ordered_gnum,
                                   (const cs_gnum_t **const)periodic_couples);
 
   for (ii = 0; ii < n_periodic_lists; ii++)
-    BFT_FREE(periodic_couples[ii]);
-  BFT_FREE(periodic_couples);
-  BFT_FREE(n_periodic_couples);
+    CS_FREE(periodic_couples[ii]);
+  CS_FREE(periodic_couples);
+  CS_FREE(n_periodic_couples);
 
   if (comm_size > 1)
-    BFT_FREE(global_number);
+    CS_FREE(global_number);
 
   /* Now that interface set is created, dump info and run tests */
 
@@ -199,7 +199,7 @@ _periodic_is_test(int                       ordered_gnum,
 
   bft_printf("Interface set sum test:\n\n");
 
-  BFT_MALLOC(var, n_elements*2, cs_real_t);
+  CS_MALLOC(var, n_elements*2, cs_real_t);
 
   for (ii = 0; ii < n_elements; ii++) {
     var[ii] = 1.0;
@@ -213,7 +213,7 @@ _periodic_is_test(int                       ordered_gnum,
                        var);
   for (ii = 0; ii < n_elements; ii++)
     bft_printf("%2d: %12.3f %12.3f\n", (int)ii, var[ii], var[ii + n_elements]);
-  BFT_FREE(var);
+  CS_FREE(var);
 
   /* Test duplications */
 
@@ -354,7 +354,7 @@ main (int argc, char *argv[])
 
     if (size > 1) {
 
-      BFT_MALLOC(global_number, n_elements, cs_gnum_t);
+      CS_MALLOC(global_number, n_elements, cs_gnum_t);
 
       for (ii = 0; ii < n_elements; ii++)
         global_number[ii] = (n_elements * 3 / 4) * rank + ii + 1;
@@ -374,7 +374,7 @@ main (int argc, char *argv[])
                                       nullptr,
                                       nullptr);
 
-      BFT_FREE(global_number);
+      CS_FREE(global_number);
 
       bft_printf("Interface on rank %d:\n\n", rank);
 

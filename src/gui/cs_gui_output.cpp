@@ -42,7 +42,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
@@ -55,6 +54,7 @@
 #include "base/cs_log.h"
 #include "base/cs_log_iteration.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh_location.h"
 #include "meg/cs_meg_prototypes.h"
 #include "base/cs_selector.h"

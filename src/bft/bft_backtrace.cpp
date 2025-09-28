@@ -138,7 +138,7 @@ bft_backtrace_create(void)
     int  tr_size = backtrace(tr_array, 200);
     char  **tr_strings = backtrace_symbols(tr_array, tr_size);
 
-    /* Create arrays; we use malloc() here instead of BFT_MALLOC, as a
+    /* Create arrays; we use malloc() here instead of CS_MALLOC, as a
      backtrace is useful mainly in case of severe errors, so we avoid
      higher level constructs as much as possible at this stage. */
 

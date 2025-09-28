@@ -41,7 +41,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
 
 #include "atmo/cs_at_opt_interp.h"
@@ -49,6 +48,7 @@
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_measures_util.h"
+#include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
@@ -159,7 +159,7 @@ cs_at_data_assim_initialize(void)
     size_t fn_size = strlen(f->name);
     char *name_buf;
     size_t suf_size = 3;
-    BFT_MALLOC(name_buf, fn_size + suf_size + 1, char);
+    CS_MALLOC(name_buf, fn_size + suf_size + 1, char);
     snprintf(name_buf, fn_size + suf_size + 1, "%s_ms", f->name);
 
     int type_flag = 0;
@@ -181,7 +181,7 @@ cs_at_data_assim_initialize(void)
     snprintf(name_buf, fn_size + suf_size + 1, "%s_oi", f->name);
 
     cs_at_opt_interp_t *oi = cs_at_opt_interp_create(name_buf);
-    BFT_FREE(name_buf);
+    CS_FREE(name_buf);
     cs_field_set_key_int(f, key_oi, oi->id);
 
     oi->ig_id = ig->id;
@@ -198,7 +198,7 @@ cs_at_data_assim_initialize(void)
     /* create analysis field for current variable */
 
     suf_size = 9;
-    BFT_MALLOC(name_buf, fn_size + suf_size + 1, char);
+    CS_MALLOC(name_buf, fn_size + suf_size + 1, char);
     snprintf(name_buf, fn_size + suf_size + 1, "%s_analysis", f->name);
 
     cs_field_t *oia_f = cs_field_create(name_buf,
@@ -206,7 +206,7 @@ cs_at_data_assim_initialize(void)
                                         CS_MESH_LOCATION_CELLS,
                                         f->dim,
                                         false);
-    BFT_FREE(name_buf);
+    CS_FREE(name_buf);
     cs_field_set_key_int(f, key_oia, oia_f->id);
 
     cs_field_set_key_int(oia_f, key_vis, CS_POST_ON_LOCATION);
@@ -547,7 +547,7 @@ cs_at_data_assim_source_term(int        f_id,
 
     int **ao_idx = nullptr; /* active obs. index */
     bool *inverse = nullptr;
-    BFT_MALLOC(inverse, ms->dim, bool);
+    CS_MALLOC(inverse, ms->dim, bool);
     int *n_active_obs = cs_at_opt_interp_get_active_obs(ms,
                                                         oi,
                                                         f_oia,
@@ -565,10 +565,10 @@ cs_at_data_assim_source_term(int        f_id,
                                           kk);
         nudging = true;
       }
-      BFT_FREE(ao_idx[kk]);
+      CS_FREE(ao_idx[kk]);
     }
-    BFT_FREE(inverse);
-    BFT_FREE(ao_idx);
+    CS_FREE(inverse);
+    CS_FREE(ao_idx);
   }
 
   if (nudging) {

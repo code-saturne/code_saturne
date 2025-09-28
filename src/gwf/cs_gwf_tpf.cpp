@@ -43,11 +43,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_mem.h"
-
 #include "base/cs_array.h"
 #include "base/cs_field.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_param_types.h"
 #include "base/cs_physical_constants.h"
@@ -189,7 +188,7 @@ _add_pty_array(cs_lnum_t      array_size,
                cs_property_t *pty)
 {
   cs_real_t *array = nullptr;
-  BFT_MALLOC(array, array_size, cs_real_t);
+  CS_MALLOC(array, array_size, cs_real_t);
   cs_array_real_fill_zero(array_size, array);
 
   cs_xdef_t *def = cs_property_def_by_array(pty,
@@ -1718,8 +1717,8 @@ _compute_plpc_picard(const cs_mesh_t           *mesh,
   cs_real_t *pl_kp1 = pl->val, *pc_kp1 = pc->val; /* at ^{n+1,k+1} */
   cs_real_t *pl_k   = nullptr, *pc_k   = nullptr; /* at ^{n+1,k} */
 
-  BFT_MALLOC(pl_k, cdoq->n_vertices, cs_real_t);
-  BFT_MALLOC(pc_k, cdoq->n_vertices, cs_real_t);
+  CS_MALLOC(pl_k, cdoq->n_vertices, cs_real_t);
+  CS_MALLOC(pc_k, cdoq->n_vertices, cs_real_t);
 
   do {
 
@@ -1783,8 +1782,8 @@ _compute_plpc_picard(const cs_mesh_t           *mesh,
 
   /* Free temporary arrays and structures */
 
-  BFT_FREE(pl_k);
-  BFT_FREE(pc_k);
+  CS_FREE(pl_k);
+  CS_FREE(pc_k);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1828,8 +1827,8 @@ _compute_plpc_incr_mpicard(const cs_mesh_t           *mesh,
   cs_real_t *pl_kp1 = pl->val, *pc_kp1 = pc->val; /* at ^{n+1,k+1} */
   cs_real_t *pl_k   = nullptr, *pc_k   = nullptr; /* at ^{n+1,k} */
 
-  BFT_MALLOC(pl_k, cdoq->n_vertices, cs_real_t);
-  BFT_MALLOC(pc_k, cdoq->n_vertices, cs_real_t);
+  CS_MALLOC(pl_k, cdoq->n_vertices, cs_real_t);
+  CS_MALLOC(pc_k, cdoq->n_vertices, cs_real_t);
 
   do {
 
@@ -1879,8 +1878,8 @@ _compute_plpc_incr_mpicard(const cs_mesh_t           *mesh,
 
   /* Free temporary arrays and structures */
 
-  BFT_FREE(pl_k);
-  BFT_FREE(pc_k);
+  CS_FREE(pl_k);
+  CS_FREE(pc_k);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2120,7 +2119,7 @@ _finalize_setup_plpc_incr(const cs_cdo_connect_t    *connect,
   const cs_adjacency_t *c2v = connect->c2v;
   const cs_lnum_t c2v_size = c2v->idx[n_cells];
 
-  BFT_MALLOC(tpf->lsat_pre_array, c2v_size, cs_real_t);
+  CS_MALLOC(tpf->lsat_pre_array, c2v_size, cs_real_t);
   cs_array_real_fill_zero(c2v_size, tpf->lsat_pre_array);
 
   cs_xdef_t *d = nullptr;
@@ -2163,7 +2162,7 @@ _finalize_setup_plpc_incr(const cs_cdo_connect_t    *connect,
   cs_equation_param_t *w_eqp = cs_equation_get_param(tpf->w_eq);
   cs_equation_param_t *h_eqp = cs_equation_get_param(tpf->h_eq);
 
-  BFT_MALLOC(tpf->srct_w_array, c2v_size, cs_real_t);
+  CS_MALLOC(tpf->srct_w_array, c2v_size, cs_real_t);
   cs_array_real_fill_zero(c2v_size, tpf->srct_w_array);
   d = cs_equation_add_source_term_by_array(w_eqp,
                                            nullptr,    /* all cells */
@@ -2173,7 +2172,7 @@ _finalize_setup_plpc_incr(const cs_cdo_connect_t    *connect,
                                            true);   /* full length */
   cs_xdef_array_set_adjacency(d, c2v);
 
-  BFT_MALLOC(tpf->srct_h_array, c2v_size, cs_real_t);
+  CS_MALLOC(tpf->srct_h_array, c2v_size, cs_real_t);
   cs_array_real_fill_zero(c2v_size, tpf->srct_h_array);
   d = cs_equation_add_source_term_by_array(h_eqp,
                                            nullptr,    /* all cells */
@@ -2334,7 +2333,7 @@ cs_gwf_tpf_create(cs_gwf_model_type_t  model)
 
   cs_gwf_tpf_t *tpf = nullptr;
 
-  BFT_MALLOC(tpf, 1, cs_gwf_tpf_t);
+  CS_MALLOC(tpf, 1, cs_gwf_tpf_t);
 
   /* Set to nullptr since one has to know if a coupled or segregated solver is
      used or what couple of variables is considered */
@@ -2481,15 +2480,15 @@ cs_gwf_tpf_free(cs_gwf_tpf_t **p_tpf)
   cs_gwf_darcy_flux_free(&(tpf->l_darcy));
   cs_gwf_darcy_flux_free(&(tpf->g_darcy));
 
-  BFT_FREE(tpf->srct_w_array);
-  BFT_FREE(tpf->srct_h_array);
-  BFT_FREE(tpf->lsat_pre_array);
+  CS_FREE(tpf->srct_w_array);
+  CS_FREE(tpf->srct_h_array);
+  CS_FREE(tpf->lsat_pre_array);
 
   /* Free the structure handling the convergence of the non-linear algorithm */
 
   cs_iter_algo_free(&(tpf->nl_algo));
 
-  BFT_FREE(tpf);
+  CS_FREE(tpf);
   *p_tpf = nullptr;
 }
 
@@ -2905,7 +2904,7 @@ cs_gwf_tpf_init_setup(cs_flag_t     post_flag,
 
     int  n_outputs = 2 * CS_GWF_TPF_N_OUTPUT_VARS * n_soils;
     char  **labels;
-    BFT_MALLOC(labels, n_outputs, char *);
+    CS_MALLOC(labels, n_outputs, char *);
 
     for (int i = 0; i < n_soils; i++) {
 
@@ -2920,12 +2919,12 @@ cs_gwf_tpf_init_setup(cs_flag_t     post_flag,
         int  len = strlen(z->name) + strlen(vname) + 4;
 
         char *min_name = nullptr;
-        BFT_MALLOC(min_name, len + 1, char);
+        CS_MALLOC(min_name, len + 1, char);
         sprintf(min_name, "%s-%sMin", z->name, vname);
         labels[min_shift + j] = min_name;
 
         char *max_name = nullptr;
-        BFT_MALLOC(max_name, len + 1, char);
+        CS_MALLOC(max_name, len + 1, char);
         sprintf(max_name, "%s-%sMax", z->name, vname);
         labels[max_shift + j] = max_name;
 
@@ -2945,8 +2944,8 @@ cs_gwf_tpf_init_setup(cs_flag_t     post_flag,
                                                    (const char **)labels);
 
     for (int i = 0; i < n_outputs; i++)
-      BFT_FREE(labels[i]);
-    BFT_FREE(labels);
+      CS_FREE(labels[i]);
+    CS_FREE(labels);
 
   } /* Min/Max output */
 }
@@ -3336,7 +3335,7 @@ cs_gwf_tpf_extra_op(const cs_cdo_connect_t       *connect,
 
     cs_real_t *output_values = nullptr;
 
-    BFT_MALLOC(output_values, n_outputs, cs_real_t);
+    CS_MALLOC(output_values, n_outputs, cs_real_t);
 
     cs_real_t  *min_outputs = output_values;
     cs_real_t  *max_outputs = output_values + n_min_outputs;
@@ -3410,7 +3409,7 @@ cs_gwf_tpf_extra_op(const cs_cdo_connect_t       *connect,
                               n_outputs,
                               output_values);
 
-    BFT_FREE(output_values);
+    CS_FREE(output_values);
 
   } /* Min./Max. output */
 }
@@ -3453,7 +3452,7 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
     if (tpf->approx_type == CS_GWF_TPF_APPROX_VERTEX_SUBCELL) {
 
       cs_real_t *lcap_cell = nullptr;
-      BFT_MALLOC(lcap_cell, n_cells, cs_real_t);
+      CS_MALLOC(lcap_cell, n_cells, cs_real_t);
 
       cs_reco_scalar_vbyc2c(n_cells, cell_ids,
                             connect->c2v, cdoq,
@@ -3473,7 +3472,7 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
                         nullptr,
                         time_step);
 
-      BFT_FREE(lcap_cell);
+      CS_FREE(lcap_cell);
 
     }
     else { /* The array storing the soil capacity is alrady defined at cells */
@@ -3502,7 +3501,7 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
     int  dim = cs_property_get_dim(abs_perm);
     int  post_dim = (dim == 1) ? 1 : 9;
 
-    BFT_MALLOC(permeability, post_dim*n_cells, cs_real_t);
+    CS_MALLOC(permeability, post_dim*n_cells, cs_real_t);
 
     if (dim > 1) {
 
@@ -3652,7 +3651,7 @@ cs_gwf_tpf_extra_post(int                         mesh_id,
                       nullptr,
                       time_step);
 
-    BFT_FREE(permeability);
+    CS_FREE(permeability);
 
   } /* Post-processing of the permeability field */
 

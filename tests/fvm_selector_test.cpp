@@ -29,8 +29,8 @@
 #include <stdlib.h>
 
 #include "bft/bft_error.h"
-#include "bft/bft_mem.h"
 #include "bft/bft_printf.h"
+#include "base/cs_mem.h"
 
 #include "fvm/fvm_group.h"
 #include "fvm/fvm_selector.h"

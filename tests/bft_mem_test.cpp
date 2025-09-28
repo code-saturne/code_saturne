@@ -30,7 +30,7 @@
 
 #include "bft/bft_error.h"
 #include "bft/bft_mem_usage.h"
-#include "bft/bft_mem.h"
+#include "base/cs_mem.h"
 
 static void
 bft_mem_error_handler_test(const char     *const file_name,
