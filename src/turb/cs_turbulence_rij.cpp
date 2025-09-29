@@ -1017,6 +1017,7 @@ _gravity_st_epsilon(int              phase_id,
   });
 
   ctx.wait();
+  CS_FREE(c_is_solid_zone_flag);
 }
 
 /*----------------------------------------------------------------------------*/
