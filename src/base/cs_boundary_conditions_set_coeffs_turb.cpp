@@ -457,15 +457,18 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       continue;
 
     cs_real_t hflui = 0.0;
+    cs_real_t prdtl = cpp * visclc / rkl;
 
+    /* User exchange coefficient */
+    if (icodcl_sc[f_id] == 15) {
+      hflui = rcodcl2_sc[f_id];
+      yptp[f_id] = hflui / prdtl * distbf / rkl / turb_schmidt;
+    }
     /* Wall function and Dirichlet or Neumann on the scalar */
-    if (   model != CS_TURB_NONE
+    else if (   model != CS_TURB_NONE
         && (   icodcl_sc[f_id] == 5
             || icodcl_sc[f_id] == 6
-            || icodcl_sc[f_id] == 15
             || icodcl_sc[f_id] == 3)) {
-
-      cs_real_t prdtl = cpp * visclc / rkl;
 
       /* Note: to make things clearer yplus is always
          "y uk /nu" even for rough modelling. And the roughness correction is
@@ -495,12 +498,6 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
          laminar profile */
       hflui *= rkl / distbf;
 
-      /* User exchange coefficient */
-      if (icodcl_sc[f_id] == 15) {
-        hflui = rcodcl2_sc[f_id];
-        yptp[f_id] = hflui / prdtl * distbf / rkl / turb_schmidt;
-      }
-
     }
     else {
       /* y+/T+ */
@@ -526,7 +523,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
   /* Loop on boundary faces */
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
-    if (icodcl_vel[f_id] != 5 && icodcl_vel[f_id] != 6)
+    if (icodcl_vel[f_id] != 5 && icodcl_vel[f_id] != 6 && icodcl_sc[f_id] != 15)
       continue;
 
     const cs_real_t yplus = byplus[f_id];
@@ -559,10 +556,9 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
     const cs_real_t pimp = rcodcl1_sc[f_id];
     const cs_real_t hext = rcodcl2_sc[f_id];
-    cs_real_t heq = 0.0, cofimp = 0.0, hflui = 0.0, tplus = 0.0;
+    cs_real_t heq = 0.0, cofimp = 0.0, hflui = hbnd[f_id], tplus = 0.0;
 
     if (icodcl_vel[f_id] == 5) {
-      hflui = hbnd[f_id];
 
       /* T+ = (T_I - T_w) / Tet */
       if (fabs(yptp[f_id]) > 1e-24)  // TODO improve this test
@@ -610,7 +606,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
     /* Compute heq for smooth and rough wall */
     if (   cs::abs(hext) > 0.5*cs_math_infinite_r
-        || (icodcl_sc[f_id] == 15 && icodcl_vel[f_id] == 5)) {
+        || icodcl_sc[f_id] == 15) {
       heq = hflui;
       if (eqp_sc->icoupl > 0 && icodcl_vel[f_id] == 5) {
         /* ensure correct saving of flux in case of rad coupling */
@@ -626,8 +622,8 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
     bool is_wall_scalar_std = (  icodcl_vel[f_id] == 5
                                && (   icodcl_sc[f_id] == 5
-                                   || icodcl_sc[f_id] == 6
-                                   || icodcl_sc[f_id] == 15));
+                                   || icodcl_sc[f_id] == 6)
+                               || icodcl_sc[f_id] == 15);
 
     bool is_wall_scalar_rough_legacy = (    (icodcl_vel[f_id] == 6
                                         &&  icodcl_sc[f_id] == 6));
@@ -881,7 +877,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       if (  (   icodcl_vel[f_id] == 5
              && (   icodcl_sc[f_id] == 5
                  || icodcl_sc[f_id] == 6
-                 || icodcl_sc[f_id] == 15))
+                 )|| icodcl_sc[f_id] == 15)
          || (icodcl_vel[f_id] == 6 && icodcl_sc[f_id] == 6)) {
 
         phit = cofaf_sc[f_id] + cofbf_sc[f_id] * var_ip[f_id];
