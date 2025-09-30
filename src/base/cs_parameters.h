@@ -435,18 +435,6 @@ cs_add_model_field_indexes(cs_field_t  *f);
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Add field indexes associated with a new non-user solved variable,
- *        with default options.
- *
- * \param[in, out]  f  field
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_add_variable_field_indexes(cs_field_t  *f);
-
-/*----------------------------------------------------------------------------*/
-/*
  * \brief Define a boundary values field for a variable field.
  *
  * \param[in, out]  f  pointer to field structure

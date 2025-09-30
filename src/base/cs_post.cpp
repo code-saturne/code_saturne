@@ -4897,6 +4897,128 @@ cs_post_define_existing_mesh(int           mesh_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Create a post-processing mesh associated with an exportable
+ * mesh representation that will be built later.
+ *
+ * \param[in]  mesh_id         id of mesh to define
+ *                             (< 0 reserved, > 0 for user)
+ * \param[in]  cat_id          category id of the output mesh for the
+ *                             current call
+ * \param[in]  auto_variables  if true, automatic output of main variables
+ * \param[in]  n_writers       number of associated writers
+ * \param[in]  writer_ids      ids of associated writers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_define_future_mesh(int           mesh_id,
+                           int           cat_id,
+                           bool          auto_variables,
+                           int           n_writers,
+                           const int     writer_ids[])
+{
+  /* local variables */
+
+  cs_post_mesh_t  *post_mesh = nullptr;
+
+  /* Initialization of base structure */
+
+  post_mesh = _predefine_mesh(mesh_id, true, 0, n_writers, writer_ids);
+
+  /* Assign mesh to structure */
+
+  post_mesh->_exp_mesh = fvm_nodal_create("empty_mesh", 3);
+  post_mesh->exp_mesh = post_mesh->_exp_mesh;
+
+  /* Compute number of cells and/or faces */
+
+  if (cat_id == CS_POST_MESH_VOLUME)
+    post_mesh->ent_flag[0] = 1;
+
+  else if (cat_id == CS_POST_MESH_BOUNDARY)
+    post_mesh->ent_flag[2] = 1;
+
+  if (auto_variables)
+    post_mesh->cat_id = cat_id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update a post-processing mesh created with
+ * cs_post_define_future_mesh with an existing exportable mesh representation.
+ *
+ * If the exportable mesh is not intended to be used elsewhere, one can choose
+ * to transfer its property to the post-processing mesh, which will then
+ * manage its lifecycle based on its own requirements.
+ *
+ * If the exportable mesh must still be shared, one must be careful to
+ * maintain consistency between this mesh and the post-processing output.
+ *
+ * The mesh in exportable dimension may be of a lower dimension than
+ * its parent mesh, if it has been projected. In this case, a
+ * dim_shift value of 1 indicates that parent cells are mapped to
+ * exportable faces, and faces to edges, while a dim_shift value of 2
+ * would indicate that parent cells are mapped to edges.
+ * This is important when variables values are exported.
+ *
+ * \param[in]  mesh_id         id of mesh to define
+ *                             (< 0 reserved, > 0 for user)
+ * \param[in]  exp_mesh        mesh in exportable representation
+ *                             (i.e. fvm_nodal_t)
+ * \param[in]  dim_shift       nonzero if exp_mesh has been projected
+ * \param[in]  transfer        if true, ownership of exp_mesh is transferred
+ *                             to the post-processing mesh
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_assign_existing_mesh(int           mesh_id,
+                             fvm_nodal_t  *exp_mesh,
+                             int           dim_shift,
+                             bool          transfer)
+{
+  /* Initialization of base structure */
+
+  int _mesh_id = _cs_post_mesh_id(mesh_id);
+  cs_post_mesh_t *post_mesh = _cs_post_meshes + _mesh_id;
+
+  /* Assign mesh to structure */
+
+  if (post_mesh->_exp_mesh != nullptr)
+    post_mesh->_exp_mesh = fvm_nodal_destroy(post_mesh->_exp_mesh);
+
+  post_mesh->exp_mesh = exp_mesh;
+
+  if (transfer == true)
+    post_mesh->_exp_mesh = exp_mesh;
+
+  /* Compute number of cells and/or faces */
+
+  int dim_ext_ent = fvm_nodal_get_max_entity_dim(exp_mesh);
+  int dim_ent = dim_ext_ent + dim_shift;
+  cs_lnum_t n_elts = fvm_nodal_get_n_entities(exp_mesh, dim_ext_ent);
+
+  if (dim_ent == 2 && n_elts > 0) {
+
+    cs_lnum_t  *num_ent_parent = nullptr;
+    CS_MALLOC(num_ent_parent, n_elts, cs_lnum_t);
+
+    fvm_nodal_get_parent_num(exp_mesh, dim_ext_ent, num_ent_parent);
+
+    cs_lnum_t b_f_num_shift = cs_glob_mesh->n_b_faces_all;
+    for (cs_lnum_t ind_fac = 0; ind_fac < n_elts; ind_fac++) {
+      if (num_ent_parent[ind_fac] > b_f_num_shift)
+        post_mesh->n_i_faces += 1;
+      else
+        post_mesh->n_b_faces += 1;
+    }
+
+    CS_FREE(num_ent_parent);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Create a mesh based upon the extraction of edges from an existing mesh.
  *
  * The newly created edges have no link to their parent elements, so

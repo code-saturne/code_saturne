@@ -88,6 +88,8 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 
+static int _n_vars = 0;
+
 static cs_lnum_t    _n_vars_bc = 0;
 static cs_lnum_t    _n_b_faces = 0;
 static int         *_icodcl = nullptr;
@@ -224,6 +226,11 @@ cs_variable_field_create(const char  *name,
                                   location_id,
                                   dim,
                                   true);  /* has_previous */
+
+  int ivar = _n_vars + 1;
+  _n_vars += f->dim;
+
+  f->set_key_int("variable_id", ivar);
 
   const int post_flag = CS_POST_ON_LOCATION | CS_POST_MONITOR;
   cs_field_set_key_int(f, cs_field_key_id("log"), 1);

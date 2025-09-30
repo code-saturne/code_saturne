@@ -337,9 +337,6 @@ _add_variable_field
                                               f_label,
                                               CS_MESH_LOCATION_CELLS,
                                               dim));
-
-  cs_add_variable_field_indexes(f);
-
   return f;
 }
 
@@ -359,9 +356,6 @@ _add_variable_cdo_field(const char *f_name, const char *f_label, int dim)
                                                 CS_MESH_LOCATION_CELLS,
                                                 dim,
                                                 has_previous));
-
-  cs_add_variable_field_indexes(f);
-
   return f;
 }
 

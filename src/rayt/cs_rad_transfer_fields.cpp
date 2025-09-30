@@ -132,7 +132,6 @@ cs_rad_transfer_add_variable_fields(void)
                                         1);
 
     cs_field_t *f = cs_field_by_id(f_id);
-    cs_add_variable_field_indexes(f);
 
     cs_field_pointer_map_indexed(CS_ENUMF_(radiance), gg_id, f);
 

@@ -585,6 +585,63 @@ cs_post_define_existing_mesh(int           mesh_id,
                              const int     writer_ids[]);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create a post-processing mesh associated with an exportable
+ * mesh representation that will be built later.
+ *
+ * \param[in]  mesh_id         id of mesh to define
+ *                             (< 0 reserved, > 0 for user)
+ * \param[in]  cat_id          category id of the output mesh for the
+ *                             current call
+ * \param[in]  auto_variables  if true, automatic output of main variables
+ * \param[in]  n_writers       number of associated writers
+ * \param[in]  writer_ids      ids of associated writers
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_define_future_mesh(int           mesh_id,
+                           int           cat_id,
+                           bool          auto_variables,
+                           int           n_writers,
+                           const int     writer_ids[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update a post-processing mesh created with
+ * cs_post_define_future_mesh with an existing exportable mesh representation.
+ *
+ * If the exportable mesh is not intended to be used elsewhere, one can choose
+ * to transfer its property to the post-processing mesh, which will then
+ * manage its lifecycle based on its own requirements.
+ *
+ * If the exportable mesh must still be shared, one must be careful to
+ * maintain consistency between this mesh and the post-processing output.
+ *
+ * The mesh in exportable dimension may be of a lower dimension than
+ * its parent mesh, if it has been projected. In this case, a
+ * dim_shift value of 1 indicates that parent cells are mapped to
+ * exportable faces, and faces to edges, while a dim_shift value of 2
+ * would indicate that parent cells are mapped to edges.
+ * This is important when variables values are exported.
+ *
+ * \param[in]  mesh_id         id of mesh to define
+ *                             (< 0 reserved, > 0 for user)
+ * \param[in]  exp_mesh        mesh in exportable representation
+ *                             (i.e. fvm_nodal_t)
+ * \param[in]  dim_shift       nonzero if exp_mesh has been projected
+ * \param[in]  transfer        if true, ownership of exp_mesh is transferred
+ *                             to the post-processing mesh
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_assign_existing_mesh(int           mesh_id,
+                             fvm_nodal_t  *exp_mesh,
+                             int           dim_shift,
+                             bool          transfer);
+
+/*----------------------------------------------------------------------------*/
 /*
  * \brief Create a mesh based upon the extraction of edges from an existing mesh.
  *

@@ -353,7 +353,6 @@ typedef struct {
 
 /* Variable counts */
 
-static int _n_vars = 0;
 static int _n_scalars = 0;
 
 /* Default equation param */
@@ -1105,8 +1104,6 @@ cs_parameters_create_added_variables(void)
       cs_field_t *f = cs_field_by_id(fld_id);
       f->type |= CS_FIELD_USER;
 
-      cs_add_variable_field_indexes(f);
-
       _n_scalars += 1;
       f->set_key_int("scalar_id", _n_scalars);
 
@@ -1347,29 +1344,9 @@ cs_parameters_create_added_properties(void)
 void
 cs_add_model_field_indexes(cs_field_t  *f)
 {
-  cs_add_variable_field_indexes(f);
-
   _n_scalars += 1;
 
   f->set_key_int("scalar_id", _n_scalars);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Add field indexes associated with a new non-user solved variable,
- *        with default options.
- *
- * \param[in, out]  f  field
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_add_variable_field_indexes(cs_field_t  *f)
-{
-  int ivar = _n_vars + 1;
-  _n_vars += f->dim;
-
-  f->set_key_int("variable_id", ivar);
 }
 
 /*----------------------------------------------------------------------------*/
