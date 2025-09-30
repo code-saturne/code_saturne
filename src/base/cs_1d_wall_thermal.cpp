@@ -1194,12 +1194,10 @@ cs_1d_wall_thermal_log(void)
     Tp_ext_max = cs::max(Tp_ext_max, Tp_ext);
   }
 
-  if (cs_glob_rank_id >= 0) {
-    cs_parall_min(1, CS_DOUBLE, &Tp_f_min);
-    cs_parall_max(1, CS_DOUBLE, &Tp_f_max);
-    cs_parall_min(1, CS_DOUBLE, &Tp_ext_min);
-    cs_parall_max(1, CS_DOUBLE, &Tp_ext_max);
-  }
+  cs_parall_min(1, CS_REAL_TYPE, &Tp_f_min);
+  cs_parall_max(1, CS_REAL_TYPE, &Tp_f_max);
+  cs_parall_min(1, CS_REAL_TYPE, &Tp_ext_min);
+  cs_parall_max(1, CS_REAL_TYPE, &Tp_ext_max);
 
   bft_printf("   ================================\n");
   bft_printf("    1-D wall thermal resolution\n");
