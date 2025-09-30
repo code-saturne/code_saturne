@@ -5172,6 +5172,8 @@ cs_atmo_read_meteo_profile(int mode)
   int itp = -1;
   char line[256];
   const char *name = at_opt->meteo_file_name;
+  if (name == nullptr)  // default name
+    name = "meteo";
 
   FILE *file = fopen(name, "r");
 

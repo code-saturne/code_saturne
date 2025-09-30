@@ -168,8 +168,6 @@ _init_setup(void)
      At this stage, physical model flags may not be set yet, so only default
      initializations and C/Fortran global model pointer mapping is done here. */
 
-  cs_atmo_set_meteo_file_name("meteo");
-
   cs_f_iniini();
   cs_f_pp_models_init();
 }
