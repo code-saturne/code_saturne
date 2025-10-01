@@ -4501,23 +4501,16 @@ cs_atmo_z_ground_compute(void)
   /* Matrix
    * ====== */
 
-  cs_real_t *rovsdt = nullptr, *dpvar = nullptr;
+  cs_real_t *rovsdt = nullptr, *dpvar = nullptr, *rhs = nullptr;
   CS_MALLOC_HD(rovsdt, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(dpvar, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(rhs, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
 
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++) {
+    rhs[cell_id] = 0.;
     rovsdt[cell_id] = 0.;
     dpvar[cell_id] = 0.;
   }
-
-  /* Right hand side
-   * =============== */
-
-  cs_real_t *rhs = nullptr;
-  CS_MALLOC_HD(rhs, m->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
-
-  for (cs_lnum_t cell_id = 0; cell_id < m->n_cells_with_ghosts; cell_id++)
-    rhs[cell_id] = 0.;
 
   if (cs_glob_porosity_from_scan_opt->use_staircase) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -4573,6 +4566,9 @@ cs_atmo_z_ground_compute(void)
   else {
     bft_printf("No ground BC or no gravity:"
                " no computation of ground elevation.\n");
+    CS_FREE_HD(rovsdt);
+    CS_FREE_HD(rhs);
+    CS_FREE_HD(dpvar);
     return;
   }
 
@@ -4631,10 +4627,8 @@ cs_atmo_z_ground_compute(void)
 
   /* Free memory */
   CS_FREE_HD(rovsdt);
-
   CS_FREE_HD(rhs);
   CS_FREE_HD(dpvar);
-
 }
 
 /*----------------------------------------------------------------------------*/
