@@ -7417,8 +7417,7 @@ cs_face_diffusion_potential(const cs_field_t           *f,
     });
   }
 
-  /* Mass flow through boundary faces
-     (with reconstructed flux if eqp->b_diff_flux_rc > 0 && eqp->ircflu > 0) */
+  /* Mass flow through boundary faces */
 
   ctx_b.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
     b_massflux[face_id] += b_visc[face_id] * flux_d[face_id];
