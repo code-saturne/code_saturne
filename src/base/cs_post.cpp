@@ -282,6 +282,7 @@ typedef struct {
                                             probes respectively */
   void                   *sel_input[5];  /* Advanced selection input for
                                             matching selection functions */
+  bool                    ext_def;       /* External definition */
   int                     ent_flag[5];   /* Presence of cells (ent_flag[0],
                                             interior faces (ent_flag[1]),
                                             boundary faces (ent_flag[2]),
@@ -324,7 +325,6 @@ typedef struct {
   const fvm_nodal_t      *exp_mesh;      /* Associated exportable mesh */
   fvm_nodal_t            *_exp_mesh;     /* Associated exportable mesh,
                                             if owner */
-
   fvm_writer_time_dep_t   mod_flag_min;  /* Minimum mesh time dependency */
   fvm_writer_time_dep_t   mod_flag_max;  /* Maximum mesh time dependency */
 
@@ -1189,6 +1189,7 @@ _predefine_mesh(int        mesh_id,
     post_mesh->ent_flag[j] = 0;
   }
 
+  post_mesh->ext_def = false;
   post_mesh->n_i_faces = 0;
   post_mesh->n_b_faces = 0;
 
@@ -1364,13 +1365,15 @@ _define_export_mesh(cs_post_mesh_t  *post_mesh,
     }
     else {
 
-      if (   n_b_faces >= cs_glob_mesh->n_b_faces_all
-          && n_i_faces == 0)
+      n_b_faces = cs::min(cs_glob_mesh->n_b_faces,
+                          cs_glob_mesh->n_b_faces_all);
+
+      if (n_i_faces == 0)
         exp_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
                                                   post_mesh->name,
                                                   post_mesh->add_groups,
                                                   0,
-                                                  cs_glob_mesh->n_b_faces,
+                                                  n_b_faces,
                                                   nullptr,
                                                   nullptr);
       else
@@ -1949,7 +1952,7 @@ _redefine_mesh(cs_post_mesh_t        *post_mesh,
   /* Remove previous base structure (return if we do not own the mesh) */
 
   if (post_mesh->exp_mesh != nullptr) {
-    if (post_mesh->_exp_mesh == nullptr)
+    if (post_mesh->_exp_mesh == nullptr || post_mesh->ext_def == true)
       return;
     else
       post_mesh->_exp_mesh = fvm_nodal_destroy(post_mesh->_exp_mesh);
@@ -4828,6 +4831,8 @@ cs_post_define_existing_mesh(int           mesh_id,
   if (transfer == true)
     post_mesh->_exp_mesh = exp_mesh;
 
+  post_mesh->ext_def = true;
+
   /* Compute number of cells and/or faces */
 
   dim_ext_ent = fvm_nodal_get_max_entity_dim(exp_mesh);
@@ -4927,8 +4932,9 @@ cs_post_define_future_mesh(int           mesh_id,
 
   /* Assign mesh to structure */
 
-  post_mesh->_exp_mesh = fvm_nodal_create("empty_mesh", 3);
-  post_mesh->exp_mesh = post_mesh->_exp_mesh;
+  post_mesh->_exp_mesh = nullptr;
+  post_mesh->exp_mesh = nullptr;
+  post_mesh->ext_def = true;
 
   /* Compute number of cells and/or faces */
 
@@ -6306,7 +6312,7 @@ cs_post_write_var(int                    mesh_id,
 
       n_parent_lists = 2;
       parent_num_shift[0] = 0;
-      parent_num_shift[1] = cs_glob_mesh->n_b_faces_all;
+      parent_num_shift[1] = cs_glob_mesh->n_b_faces;
 
       if (post_mesh->ent_flag[CS_POST_LOCATION_B_FACE] == 1) {
         if (interlace == false) {
@@ -8203,7 +8209,7 @@ cs_post_time_step_end(void)
 
   for (int i = 0; i < _cs_post_n_meshes; i++) {
     cs_post_mesh_t  *post_mesh = _cs_post_meshes + i;
-    if (post_mesh->_exp_mesh != nullptr) {
+    if (post_mesh->_exp_mesh != nullptr && post_mesh->ext_def == false) {
       if (   post_mesh->ent_flag[3]
           || post_mesh->mod_flag_min == FVM_WRITER_TRANSIENT_CONNECT) {
         post_mesh->exp_mesh = nullptr;

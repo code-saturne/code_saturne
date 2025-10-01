@@ -56,9 +56,6 @@
 #include "base/cs_porous_model.h"
 #include "base/cs_post.h"
 
-#include "fvm/fvm_nodal_from_desc.h"
-#include "fvm/fvm_nodal_order.h"
-
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -2634,213 +2631,6 @@ _compute_unit_normals(const cs_mesh_t       *m,
   }
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Post-processes the immersed boundary (ib) planes for display
- *         on paraview.
- *
- * \param[in]       n_ib_cells      ib cell number
- * \param[in]       n_glob_vtx      total vertex number
- * \param[in]       ibcell_cells    connectivity ib_cell->cells
- * \param[in]       vtx_ids         vertex ids on both sides of a IB vertex
- *                                  (v0<v1)
- * \param[in]       w_vtx_idx       ib vertex indexes
- * \param[in]       face_vertex_idx vertex indexes of the ib faces
- * \param[in]       w_vtx           ib vertex coordinates
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_post_plane_ib(const cs_lnum_t      n_ib_cells,
-               const cs_lnum_t      n_glob_vtx,
-               const cs_lnum_t      ibcell_cells[],
-               const cs_lnum_t      vtx_ids[][2],
-               const cs_lnum_t      w_vtx_idx[],
-               const cs_lnum_t      face_vertex_idx[],
-               const cs_real_t      w_vtx[][3])
-{
-  cs_lnum_t *face_vertex_ids;
-  CS_MALLOC(face_vertex_ids, n_glob_vtx, cs_lnum_t);
-  for (cs_lnum_t i = 0; i < n_glob_vtx; i++)
-    face_vertex_ids[i] = i;
-
-  /* Reordering the vertices to obtain a closed contour
-     -------------------------------------------------- */
-
-  cs_lnum_t n_w_vtx = 0;
-  cs_coord_3_t *edge;
-  CS_MALLOC(edge, n_glob_vtx, cs_coord_3_t);
-
-  for (cs_lnum_t c_id_ib = 0; c_id_ib < n_ib_cells; c_id_ib++) {
-
-    const cs_lnum_t c_id = ibcell_cells[c_id_ib];
-    const int n_vtx = w_vtx_idx[c_id+1]-w_vtx_idx[c_id];
-
-    /* Edge reference is the first 2 ib vtx by default, then connect other
-       ib edges by finding the corresponding vtx ids associated to the
-       second ib vertex */
-
-    cs_lnum_t k = 0;
-    const cs_lnum_t s_id = w_vtx_idx[c_id];
-    const cs_lnum_t e_id = w_vtx_idx[c_id+1];
-
-    const int n_edge = 0.5*n_vtx;
-    cs_real_23_t edge_l[n_edge];
-    cs_lnum_t vtx_ids_l[n_edge][2][2];
-
-    for (cs_lnum_t j = s_id; j < e_id; j=j+2) {
-
-      /* Store edges and associated vtx_ids of the ib cell */
-      for (cs_lnum_t i = 0; i < 3; i++) {
-        edge_l[k][0][i] = w_vtx[j][i];
-        edge_l[k][1][i] = w_vtx[j+1][i];
-      }
-      vtx_ids_l[k][0][0] = vtx_ids[j][0];
-      vtx_ids_l[k][0][1] = vtx_ids[j][1];
-
-      vtx_ids_l[k][1][0] = vtx_ids[j+1][0];
-      vtx_ids_l[k][1][1] = vtx_ids[j+1][1];
-      k++;
-    }
-
-    /* The reference edge is the first k=0 */
-    for (cs_lnum_t i = 0; i < 3; i++) {
-      edge[n_w_vtx][i]   = edge_l[0][0][i];
-      edge[n_w_vtx+1][i] = edge_l[0][1][i];
-    }
-
-    n_w_vtx += 2;
-
-    /* Reference edge id = 0 */
-    int edge_id = 0;
-    int n_iter = 0;
-    int cpt = n_edge - 1;
-
-    /* Fist edge is x0->x1. The vtx to connect is x1. */
-    cs_lnum_t vtx_to_connect[2] = {vtx_ids_l[0][1][0], vtx_ids_l[0][1][1]};
-
-    do {
-
-      for (int j = 0; j < n_edge; j++) {
-
-        if (j != edge_id) {
-
-          int new_vtx_id = -1;
-
-          /* x0 of edge j is connected to the vertex */
-          if (   vtx_ids_l[j][0][0] == vtx_to_connect[0]
-              && vtx_ids_l[j][0][1] == vtx_to_connect[1]) {
-
-            new_vtx_id = 1;
-          }
-          /* x1 of edge j is connected to the vertex */
-          else if (   vtx_ids_l[j][1][0] == vtx_to_connect[0]
-                   && vtx_ids_l[j][1][1] == vtx_to_connect[1]) {
-
-            new_vtx_id = 0;
-          }
-          else {
-            continue;
-          }
-
-          vtx_to_connect[0] = vtx_ids_l[j][new_vtx_id][0];
-          vtx_to_connect[1] = vtx_ids_l[j][new_vtx_id][1];
-
-          for (cs_lnum_t i = 0; i < 3; i++)
-            edge[n_w_vtx][i] = edge_l[j][new_vtx_id][i];
-
-          n_w_vtx++;
-          edge_id = j;
-          cpt -= 1;
-          break;
-        }
-      }
-
-      n_iter++;
-      if (n_iter > 100)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Problem connecting vertices in cell_id = %d"), c_id);
-
-    } while (cpt != 1);
-
-  } /* End loop on ib cells */
-
-  /* Create IBM mesh and give IBM faces and vertices */
-
-  fvm_nodal_t *ib_mesh = fvm_nodal_create("ib_mesh", 3);
-  const cs_lnum_t face_list_shift[2] = {0, n_ib_cells};
-
-  const cs_lnum_t *face_vtx_idx[1] = {face_vertex_idx};
-  const cs_lnum_t *face_vtx_ids[1] = {face_vertex_ids};
-
-  fvm_nodal_from_desc_add_faces(ib_mesh,
-                                -1,
-                                n_ib_cells,
-                                nullptr,
-                                1,
-                                face_list_shift,
-                                face_vtx_idx,
-                                face_vtx_ids,
-                                nullptr,
-                                nullptr);
-
-  fvm_nodal_set_shared_vertices(ib_mesh,
-                                (const cs_coord_t *)edge);
-
-  /* Parallel numbering */
-
-  fvm_io_num_t *face_io_num = nullptr;
-  fvm_io_num_t *vtx_io_num = nullptr;
-
-  if (cs_glob_n_ranks > 1) {
-
-    /* Order faces by increasing global number */
-
-    face_io_num = fvm_io_num_create_from_scan(n_ib_cells);
-    const cs_gnum_t *face_gnum = fvm_io_num_get_global_num(face_io_num);
-    fvm_nodal_order_faces(ib_mesh, face_gnum);
-    fvm_nodal_init_io_num(ib_mesh, face_gnum, 2);
-
-    /* Order vertices by increasing global number */
-
-    vtx_io_num = fvm_io_num_create_from_scan(n_glob_vtx);
-    const cs_gnum_t *vertex_gnum = fvm_io_num_get_global_num(vtx_io_num);
-    fvm_nodal_order_vertices(ib_mesh, vertex_gnum);
-    fvm_nodal_init_io_num(ib_mesh, vertex_gnum, 0);
-
-  }
-
-  /* Print ib_mesh info in listing */
-
-  //fvm_nodal_dump(ib_mesh);
-
-  /* Create default writer */
-
-  fvm_writer_t *writer = nullptr;
-  writer = fvm_writer_init("ib_mesh",
-                           "postprocessing",
-                           cs_post_get_default_format(),
-                           cs_post_get_default_format_options(),
-                           FVM_WRITER_FIXED_MESH);
-
-  /* Write current mesh */
-
-  fvm_writer_export_nodal(writer, ib_mesh);
-
-  /* Free memory */
-
-  fvm_writer_finalize(writer);
-  ib_mesh = fvm_nodal_destroy(ib_mesh);
-
-  if (cs_glob_n_ranks > 1) {
-    fvm_io_num_destroy(vtx_io_num);
-    fvm_io_num_destroy(face_io_num);
-  }
-
-  CS_FREE(face_vertex_ids);
-  CS_FREE(edge);
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 BEGIN_C_DECLS
@@ -4680,13 +4470,13 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
     }
   }
 
-  _post_plane_ib(n_ib_cells,
-                 n_glob_vtx,
-                 ibcell_cells,
-                 vtx_ids,
-                 w_vtx_idx,
-                 face_vertex_idx,
-                 w_vtx);
+  cs_porous_model_post_immmersed_plane(n_ib_cells,
+                                       n_glob_vtx,
+                                       ibcell_cells,
+                                       vtx_ids,
+                                       w_vtx_idx,
+                                       face_vertex_idx,
+                                       w_vtx);
 
   if (!cs_glob_porosity_from_scan_opt->use_staircase) {
     cs_porous_model_convert_cell_to_boundary(n_ib_cells_true, ibcell_cells_true);

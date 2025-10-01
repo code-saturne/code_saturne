@@ -122,7 +122,8 @@ _add_faces_to_nodal(const cs_mesh_t  *mesh,
 
   /* Count the number of faces to convert */
 
-  cs_lnum_t n_max_faces = mesh->n_i_faces + mesh->n_b_faces;
+  cs_lnum_t n_max_faces =   mesh->n_i_faces
+                          + cs::max(mesh->n_b_faces, mesh->n_b_faces_all);
   CS_MALLOC(extr_face_list, n_max_faces, cs_lnum_t);
 
   /* Initialize list as marker */
@@ -207,13 +208,12 @@ _order_nodal_faces(const cs_mesh_t  *mesh,
 {
   cs_lnum_t   face_id, i;
 
-  cs_lnum_t   n_max_faces = 0;
-
   cs_gnum_t  *num_glob_fac = nullptr;
 
   /* Count the number of faces to convert */
 
-  n_max_faces = mesh->n_i_faces + mesh->n_b_faces;
+  cs_lnum_t n_max_faces =   mesh->n_i_faces
+                          + cs::max(mesh->n_b_faces, mesh->n_b_faces_all);
 
   /* In case of parallelism or face renumbering, sort faces by
      increasing global number */

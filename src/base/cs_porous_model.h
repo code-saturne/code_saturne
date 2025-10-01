@@ -35,6 +35,8 @@
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 
+#include "fvm/fvm_nodal.h"
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -47,9 +49,17 @@ BEGIN_C_DECLS
  * Type definition
  *============================================================================*/
 
+typedef struct {
+  fvm_nodal_t *ib_mesh;
+  int mesh_id;
+  bool activate_post;
+} cs_porous_model_extra_faces;
+
 /*============================================================================
  * Global variables
  *============================================================================*/
+
+extern cs_porous_model_extra_faces *cs_glob_porous_model_extra_faces;
 
 /* Choice of the porous model */
 extern int cs_glob_porous_model;
@@ -159,6 +169,40 @@ cs_porous_model_convert_cell_to_boundary(const cs_lnum_t   n_ib_cells,
                                          const cs_lnum_t   ibcell_cells[]);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize porous model arrays
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_porous_model_enable_post(void);
+
+/*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Post-processes the immersed boundary (ib) planes for display
+ *         on paraview.
+ *
+ * \param[in]       n_ib_cells      ib cell number
+ * \param[in]       n_glob_vtx      total vertex number
+ * \param[in]       ibcell_cells    connectivity ib_cell->cells
+ * \param[in]       vtx_ids         vertex ids on both sides of a IB vertex
+ *                                  (v0<v1)
+ * \param[in]       w_vtx_idx       ib vertex indexes
+ * \param[in]       face_vertex_idx vertex indexes of the ib faces
+ * \param[in]       w_vtx           ib vertex coordinates
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_porous_model_post_immmersed_plane(const cs_lnum_t      n_ib_cells,
+                                     const cs_lnum_t      n_glob_vtx,
+                                     const cs_lnum_t      ibcell_cells[],
+                                     const cs_lnum_t      vtx_ids[][2],
+                                     const cs_lnum_t      w_vtx_idx[],
+                                     const cs_lnum_t      face_vertex_idx[],
+                                     const cs_real_t      w_vtx[][3]);
 
 END_C_DECLS
 

@@ -99,6 +99,7 @@
 #include "base/cs_paramedmem_coupling.h"
 #include "base/cs_parameters.h"
 #include "base/cs_physical_properties.h"
+#include "base/cs_porous_model.h"
 #include "base/cs_post.h"
 #include "base/cs_post_default.h"
 #include "base/cs_preprocess.h"
@@ -373,6 +374,7 @@ _run(void)
 
   cs_gui_postprocess_meshes();
   cs_user_postprocess_meshes();
+  cs_porous_model_enable_post();
   cs_user_postprocess_probes();
 
   /* Print info on fields and associated keys and other setup options */
