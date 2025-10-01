@@ -1083,6 +1083,8 @@ cs_parameters_create_added_variables(void)
                   "this name is already reserved for field with id %d."),
                 name, cmp_id);
 
+    cs_field_t *f = nullptr;
+
     /* Case where we define a variance */
 
     if ((_user_variable_defs + i)->is_variance) {
@@ -1101,11 +1103,7 @@ cs_parameters_create_added_variables(void)
                                             CS_MESH_LOCATION_CELLS,
                                             f_ref->dim);
 
-      cs_field_t *f = cs_field_by_id(fld_id);
-      f->type |= CS_FIELD_USER;
-
-      _n_scalars += 1;
-      f->set_key_int("scalar_id", _n_scalars);
+      f = cs_field_by_id(fld_id);
 
       int k_var = cs_field_key_id("first_moment_id");
       f->set_key_int(k_var, f_ref->id);
@@ -1123,10 +1121,13 @@ cs_parameters_create_added_variables(void)
                                             CS_MESH_LOCATION_CELLS,
                                             (_user_variable_defs + i)->dim);
 
-      cs_field_t *f = cs_field_by_id(fld_id);
-      f->type |= CS_FIELD_USER;
+      f = cs_field_by_id(fld_id);
 
     }
+
+    _n_scalars += 1;
+    f->set_key_int("scalar_id", _n_scalars);
+    f->type |= CS_FIELD_USER;
 
     CS_FREE((_user_variable_defs + i)->name);
 
