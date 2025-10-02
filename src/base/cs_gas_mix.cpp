@@ -54,6 +54,7 @@
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh_quantities.h"
+#include "base/cs_parameters.h"
 #include "base/cs_parall.h"
 #include "base/cs_physical_constants.h"
 #include "pprt/cs_physical_model.h"
@@ -95,11 +96,6 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
-/* Additional prototypes for Fortran bindings */
-
-int
-cs_add_model_field_indexes(int  f_id);
 
 /*=============================================================================
  * Macro definitions
@@ -404,7 +400,7 @@ _add_species_field(const char  *name,
   int f_id = cs_variable_field_create(name, label, CS_MESH_LOCATION_CELLS, 1);
   cs_field_t *f = cs_field_by_id(f_id);
 
-  cs_add_model_field_indexes(f->id);
+  cs_add_model_field_indexes(f);
   cs_gas_mix_add_species(f->id);
 
   cs_field_set_key_int(f, kivisl, 0);
@@ -693,7 +689,7 @@ cs_gas_mix_add_variable_fields(void)
 
     f = cs_field_by_id(f_id);
     cs_field_pointer_map(CS_ENUMF_(h), f);
-    cs_add_model_field_indexes(f->id);
+    cs_add_model_field_indexes(f);
   }
 
   f = cs_thermal_model_field();
