@@ -371,22 +371,13 @@ cs_field_build_bc_codes_all(void)
 
   cs_lnum_t n_vars = 0;
 
-  const int kv = cs_field_key_id("variable_id");
   const int n_fields = cs_field_n_fields();
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
-
     const cs_field_t  *f = cs_field_by_id(f_id);
 
-    int var_id_p1 = (f->type & CS_FIELD_VARIABLE) ?
-      cs_field_get_key_int(f, kv) : 0;
-
-    if (var_id_p1 > 0)
-      var_id_p1 += f->dim - 1;
-
-    if (var_id_p1 > n_vars)
-      n_vars = var_id_p1;
-
+    if (f->type & CS_FIELD_VARIABLE && f->bc_coeffs != nullptr)
+      n_vars += f->dim;
   }
 
   /* Allocate or remap only if needed */
@@ -405,40 +396,28 @@ cs_field_build_bc_codes_all(void)
   CS_REALLOC_HD(_icodcl, n_vars*n_b_faces, int, cs_alloc_mode);
   CS_REALLOC_HD(_rcodcl, 3*n_vars*n_b_faces, cs_real_t, cs_alloc_mode);
 
-  for (int f_id = 0; f_id < n_fields; f_id++) {
+  cs_lnum_t var_shift = 0;
 
+  for (int f_id = 0; f_id < n_fields; f_id++) {
     const cs_field_t  *f = cs_field_by_id(f_id);
 
-    int var_id = (f->type & CS_FIELD_VARIABLE) ?
-      cs_field_get_key_int(f, kv) -1 : -1;
+    if (f->type & CS_FIELD_VARIABLE && f->bc_coeffs != nullptr) {
 
-    if (var_id > -1) {
+      int * icodcl  = _icodcl + n_b_faces*var_shift;
+      cs_real_t *rcodcl1 = _rcodcl + n_b_faces*var_shift;
+      cs_real_t *rcodcl2 = _rcodcl + n_b_faces*(n_vars+var_shift);
+      cs_real_t *rcodcl3 = _rcodcl + n_b_faces*(2*n_vars+var_shift);
 
-      int * icodcl  = _icodcl + n_b_faces*var_id;
-      cs_real_t *rcodcl1 = _rcodcl + n_b_faces*var_id;
-      cs_real_t *rcodcl2 = _rcodcl + n_b_faces*(n_vars+var_id);
-      cs_real_t *rcodcl3 = _rcodcl + n_b_faces*(2*n_vars+var_id);
+      f->bc_coeffs->icodcl  = icodcl;
+      f->bc_coeffs->rcodcl1 = rcodcl1;
+      f->bc_coeffs->rcodcl2 = rcodcl2;
+      f->bc_coeffs->rcodcl3 = rcodcl3;
 
-      if (f->bc_coeffs != nullptr) {
+      /* For multi-dimensional arrays, access using
 
-        f->bc_coeffs->icodcl  = icodcl;
-        f->bc_coeffs->rcodcl1 = rcodcl1;
-        f->bc_coeffs->rcodcl2 = rcodcl2;
-        f->bc_coeffs->rcodcl3 = rcodcl3;
+         f->bcs->icodcl[coo_id*n_b_faces + face_id]
 
-        /* For multi-dimensional arrays, access using
-
-           f->bcs->icodcl[coo_id*n_b_faces + face_id]
-
-           and equivalent for icodcl, rcodc1, rcodcl2, rcodcl3. */
-
-      }
-
-      /* Initialize icodcl and rcodcl values to defaults
-         (even if they are not mapped to C, to avoid
-         issues in some Fortran initialization loops
-         which do not do the appropriate checks for
-         variable type. */
+         and equivalent for icodcl, rcodc1, rcodcl2, rcodcl3. */
 
       cs_lnum_t n = n_b_faces * (cs_lnum_t)(f->dim);
 
@@ -449,10 +428,11 @@ cs_field_build_bc_codes_all(void)
         rcodcl3[face_id]  = 0.;
       });
 
-      ctx.wait();
+      var_shift += f->dim;
     }
-
   }
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -471,11 +451,7 @@ cs_field_free_bc_codes_all(void)
   for (int f_id = 0; f_id < n_fields; f_id++) {
 
     const cs_field_t  *f = cs_field_by_id(f_id);
-
-    int var_id = (f->type & CS_FIELD_VARIABLE) ?
-      cs_field_get_key_int(f, kv) : -1;
-
-    if (var_id > -1 && f->bc_coeffs != nullptr) {
+    if (f->type & CS_FIELD_VARIABLE && f->bc_coeffs != nullptr) {
       f->bc_coeffs->icodcl = nullptr;
       f->bc_coeffs->rcodcl1 = nullptr;
       if (f->bc_coeffs->_hext != nullptr) {
