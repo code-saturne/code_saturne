@@ -45,6 +45,8 @@
 
 #include "base/cs_array.h"
 #include "base/cs_array_reduce.h"
+#include "base/cs_halo.h"
+#include "base/cs_halo_perio.h"
 #include "base/cs_log.h"
 #include "base/cs_order.h"
 #include "base/cs_parall.h"
@@ -1593,33 +1595,56 @@ cs_cdo_quantities_build(const cs_mesh_t            *m,
   cdoq->n_cells   = n_cells;
   cdoq->n_g_cells = m->n_g_cells;
 
+  _Bool need_synchro = true;
+
   /* Compute the cell centers (and more in the case of subdivisions) */
 
   switch (cs_cdo_cell_center_algo) {
     case CS_CDO_QUANTITIES_SATURNE_CENTER:
       cdoq->cell_vol     = mq->cell_vol;
       cdoq->cell_centers = mq->cell_cen; /* shared */
+      need_synchro = false;
       break;
 
     case CS_CDO_QUANTITIES_BARYC_CENTER:
       cdoq->cell_vol = mq->cell_vol;
-      CS_MALLOC(cdoq->cell_centers, n_cells, cs_real_3_t);
+      CS_MALLOC(cdoq->cell_centers, m->n_cells_with_ghosts, cs_real_3_t);
       _mirtich_algorithm(m, mq, topo, cdoq);
       break;
 
     case CS_CDO_QUANTITIES_MEANV_CENTER:
       cdoq->cell_vol = mq->cell_vol;
-      CS_MALLOC(cdoq->cell_centers, n_cells, cs_real_3_t);
+      CS_MALLOC(cdoq->cell_centers, m->n_cells_with_ghosts, cs_real_3_t);
       _vtx_algorithm(topo, cdoq);
       break;
 
     case CS_CDO_QUANTITIES_SUBDIV_CENTER:
-      CS_MALLOC(cdoq->cell_vol, n_cells, cs_real_t);
-      CS_MALLOC(cdoq->cell_centers, n_cells, cs_real_3_t);
+      CS_MALLOC(cdoq->cell_vol, m->n_cells_with_ghosts, cs_real_t);
+      CS_MALLOC(cdoq->cell_centers, m->n_cells_with_ghosts, cs_real_3_t);
       _subdiv_algorithm(m, mq, topo, cdoq);
       break;
 
   } /* Cell center algorithm */
+
+  if (need_synchro) {
+
+    if (m->halo != nullptr) {
+
+      // Coordinates of cell centers
+      cs_halo_sync_var_strided(m->halo, CS_HALO_EXTENDED,
+                               (cs_real_t *)cdoq->cell_centers, 3);
+      if (m->n_init_perio > 0)
+        cs_halo_perio_sync_coords(m->halo, CS_HALO_EXTENDED,
+                                  (cs_real_t *)cdoq->cell_centers);
+
+      // Cell volume if necessary
+      if (cs_cdo_cell_center_algo == CS_CDO_QUANTITIES_SUBDIV_CENTER)
+        cs_halo_sync_var(m->halo, CS_HALO_EXTENDED,
+                         (cs_real_t *)cdoq->cell_vol);
+
+    }
+
+  }
 
   /* 2) Define quantities available for CDO schemes */
   /*    =========================================== */
