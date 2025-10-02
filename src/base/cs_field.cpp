@@ -49,6 +49,7 @@
 #include "base/cs_array.h"
 #include "base/cs_log.h"
 #include "base/cs_map.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_parall.h"
@@ -86,6 +87,7 @@ BEGIN_C_DECLS
        1st part of low-level BC values definition
   \var cs_field_bc_coeffs_t::rcodcl2
        2nd part of low-level BC values definition
+       (a.k.a. hext, exterior exchange coefficient)
   \var cs_field_bc_coeffs_t::rcodcl3
        3rd part of low-level BC values definition
 
@@ -1385,7 +1387,6 @@ cs_field_bc_coeffs_init(cs_field_bc_coeffs_t  *bc_coeffs)
   bc_coeffs->val_f_pre = nullptr;
 
   bc_coeffs->hint = nullptr;
-  bc_coeffs->_hext = nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1402,13 +1403,6 @@ cs_field_bc_coeffs_shallow_copy(const cs_field_bc_coeffs_t  *ref,
                                 cs_field_bc_coeffs_t        *copy)
 {
   memcpy(copy, ref, sizeof(cs_field_bc_coeffs_t));
-
-  copy->icodcl  = nullptr;
-  copy->rcodcl1 = nullptr;
-  //copy->rcodcl2 = nullptr;
-  copy->rcodcl3 = nullptr;
-
-  copy->_hext = nullptr;
 
   copy->val_f = nullptr;
   copy->flux = nullptr;
@@ -1430,6 +1424,16 @@ void
 cs_field_bc_coeffs_free_copy(const cs_field_bc_coeffs_t  *ref,
                              cs_field_bc_coeffs_t        *copy)
 {
+  if (copy->icodcl != ref->icodcl)
+    CS_FREE(copy->icodcl);
+
+  if (copy->rcodcl1 != ref->rcodcl1)
+    CS_FREE(copy->rcodcl1);
+  if (copy->rcodcl2 != ref->rcodcl2)
+    CS_FREE(copy->rcodcl2);
+  if (copy->rcodcl3 != ref->rcodcl3)
+    CS_FREE(copy->rcodcl3);
+
   if (copy->a != ref->a)
     CS_FREE(copy->a);
   if (copy->b != ref->b)
@@ -1467,9 +1471,6 @@ cs_field_bc_coeffs_free_copy(const cs_field_bc_coeffs_t  *ref,
 
   if (copy->hint != ref->hint)
     CS_FREE(copy->hint);
-
-  if (copy->rcodcl2 != ref->rcodcl2)
-    CS_FREE(copy->rcodcl2);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1843,8 +1844,11 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
 {
   /* Add boundary condition coefficients if required */
 
+  cs_lnum_t i_mult = f->dim;
   cs_lnum_t a_mult = f->dim;
   cs_lnum_t b_mult = f->dim;
+
+  cs_alloc_mode_t amode = cs_alloc_mode;
 
   cs_base_check_bool(&have_flux_bc);
   cs_base_check_bool(&have_mom_bc);
@@ -1855,8 +1859,10 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
     int coupled_key_id = cs_field_key_id_try("coupled");
     if (coupled_key_id > -1)
       coupled = cs_field_get_key_int(f, coupled_key_id);
-    if (coupled)
+    if (coupled) {
+      i_mult = 1;
       b_mult *= f->dim;
+    }
   }
 
   if (f->location_id == CS_MESH_LOCATION_CELLS) {
@@ -1882,8 +1888,13 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
 
       f->bc_coeffs->val_f_pre = nullptr;
 
-      CS_MALLOC_HD(f->bc_coeffs->a, n_elts[0]*a_mult, cs_real_t, cs_alloc_mode);
-      CS_MALLOC_HD(f->bc_coeffs->b, n_elts[0]*b_mult, cs_real_t, cs_alloc_mode);
+      CS_MALLOC_HD(f->bc_coeffs->icodcl, n_elts[0]*i_mult, int, amode);
+      CS_MALLOC_HD(f->bc_coeffs->rcodcl1, n_elts[0]*a_mult, cs_real_t, amode);
+      CS_MALLOC_HD(f->bc_coeffs->rcodcl2, n_elts[0]*a_mult, cs_real_t, amode);
+      CS_MALLOC_HD(f->bc_coeffs->rcodcl3, n_elts[0]*a_mult, cs_real_t, amode);
+
+      CS_MALLOC_HD(f->bc_coeffs->a, n_elts[0]*a_mult, cs_real_t, amode);
+      CS_MALLOC_HD(f->bc_coeffs->b, n_elts[0]*b_mult, cs_real_t, amode);
 
       if (have_flux_bc) {
         CS_MALLOC_HD(f->bc_coeffs->af, n_elts[0]*a_mult, cs_real_t,
@@ -1920,27 +1931,26 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
 
       if (have_exch_bc) {
         CS_MALLOC(f->bc_coeffs->hint, n_elts[0], cs_real_t);
-        CS_MALLOC(f->bc_coeffs->_hext, n_elts[0], cs_real_t);
       }
       else {
         f->bc_coeffs->hint = nullptr;
-        f->bc_coeffs->_hext = nullptr;
       }
 
     }
 
     else {
 
-      CS_REALLOC_HD(f->bc_coeffs->a, n_elts[0]*a_mult, cs_real_t,
-                    cs_alloc_mode);
-      CS_REALLOC_HD(f->bc_coeffs->b, n_elts[0]*b_mult, cs_real_t,
-                    cs_alloc_mode);
+      CS_REALLOC_HD(f->bc_coeffs->icodcl, n_elts[0]*i_mult, int, amode);
+      CS_REALLOC_HD(f->bc_coeffs->rcodcl1, n_elts[0]*a_mult, cs_real_t, amode);
+      CS_REALLOC_HD(f->bc_coeffs->rcodcl2, n_elts[0]*a_mult, cs_real_t, amode);
+      CS_REALLOC_HD(f->bc_coeffs->rcodcl3, n_elts[0]*a_mult, cs_real_t, amode);
+
+      CS_REALLOC_HD(f->bc_coeffs->a, n_elts[0]*a_mult, cs_real_t, amode);
+      CS_REALLOC_HD(f->bc_coeffs->b, n_elts[0]*b_mult, cs_real_t, amode);
 
       if (have_flux_bc) {
-        CS_REALLOC_HD(f->bc_coeffs->af, n_elts[0]*a_mult, cs_real_t,
-                      cs_alloc_mode);
-        CS_REALLOC_HD(f->bc_coeffs->bf, n_elts[0]*b_mult, cs_real_t,
-                      cs_alloc_mode);
+        CS_REALLOC_HD(f->bc_coeffs->af, n_elts[0]*a_mult, cs_real_t, amode);
+        CS_REALLOC_HD(f->bc_coeffs->bf, n_elts[0]*b_mult, cs_real_t, amode);
       }
       else {
         CS_FREE_HD(f->bc_coeffs->af);
@@ -1948,10 +1958,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_mom_bc) {
-        CS_REALLOC_HD(f->bc_coeffs->ad, n_elts[0]*a_mult, cs_real_t,
-                      cs_alloc_mode);
-        CS_REALLOC_HD(f->bc_coeffs->bd, n_elts[0]*b_mult, cs_real_t,
-                      cs_alloc_mode);
+        CS_REALLOC_HD(f->bc_coeffs->ad, n_elts[0]*a_mult, cs_real_t, amode);
+        CS_REALLOC_HD(f->bc_coeffs->bd, n_elts[0]*b_mult, cs_real_t, amode);
       }
       else {
         CS_FREE_HD(f->bc_coeffs->ad);
@@ -1959,10 +1967,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_conv_bc) {
-        CS_REALLOC_HD(f->bc_coeffs->ac, n_elts[0]*a_mult, cs_real_t,
-                      cs_alloc_mode);
-        CS_REALLOC_HD(f->bc_coeffs->bc, n_elts[0]*b_mult, cs_real_t,
-                      cs_alloc_mode);
+        CS_REALLOC_HD(f->bc_coeffs->ac, n_elts[0]*a_mult, cs_real_t, amode);
+        CS_REALLOC_HD(f->bc_coeffs->bc, n_elts[0]*b_mult, cs_real_t, amode);
       }
       else {
         CS_FREE_HD(f->bc_coeffs->ac);
@@ -1970,12 +1976,10 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_exch_bc) {
-        CS_MALLOC(f->bc_coeffs->hint, n_elts[0], cs_real_t);
-        CS_MALLOC(f->bc_coeffs->_hext, n_elts[0], cs_real_t);
+        CS_MALLOC_HD(f->bc_coeffs->hint, n_elts[0], cs_real_t, amode);
       }
       else {
         CS_FREE(f->bc_coeffs->hint);
-        CS_FREE(f->bc_coeffs->_hext);
       }
 
     }
@@ -2015,13 +2019,14 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
 
   cs_lnum_t dim = f->dim;
 
-  int ifac;
   int coupled = 0;
+
+  cs_dispatch_context ctx;
 
   if (f->type & CS_FIELD_VARIABLE) {
     int coupled_key_id = cs_field_key_id_try("coupled");
     if (coupled_key_id > -1)
-      coupled = cs_field_get_key_int(f, coupled_key_id);
+      coupled = f->get_key_int(coupled_key_id);
   }
 
   if (f->location_id == CS_MESH_LOCATION_CELLS) {
@@ -2029,161 +2034,101 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
     const int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
     const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(location_id);
 
-    if (coupled == 0 && dim == 1) {
+    int       *icodcl = f->bc_coeffs->icodcl;
+    cs_real_t *rcodcl1 = f->bc_coeffs->rcodcl1;
+    cs_real_t *rcodcl2 = f->bc_coeffs->rcodcl2;
+    cs_real_t *rcodcl3 = f->bc_coeffs->rcodcl3;
+    cs_real_t *a = f->bc_coeffs->a;
+    cs_real_t *b = f->bc_coeffs->b;
 
-      for (ifac = 0; ifac < n_elts[0]; ifac++) {
-        f->bc_coeffs->a[ifac] = 0.;
-        f->bc_coeffs->b[ifac] = 1.;
-      }
+    cs_lnum_t n_d = n_elts[0]*dim;
 
-      if (f->bc_coeffs->af != nullptr)
-        for (ifac = 0; ifac < n_elts[0]; ifac++) {
-          f->bc_coeffs->af[ifac] = 0.;
-          f->bc_coeffs->bf[ifac] = 0.;
-        }
+    ctx.parallel_for(n_elts[0], [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+      icodcl[i] = 0.;
+    });
 
-      if (f->bc_coeffs->ad != nullptr) {
-        for (ifac = 0; ifac < n_elts[0]; ifac++) {
-          f->bc_coeffs->ad[ifac] = 0.;
-          f->bc_coeffs->bd[ifac] = 1.;
-        }
-      }
-
-      if (f->bc_coeffs->ac != nullptr) {
-        for (ifac = 0; ifac < n_elts[0]; ifac++) {
-          f->bc_coeffs->ac[ifac] = 0.;
-          f->bc_coeffs->bc[ifac] = 0.;
-        }
-      }
-
+    if (dim == 1 || coupled == 0) {
+      ctx.parallel_for(n_d, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+        rcodcl1[i] = cs_math_infinite_r;
+        rcodcl2[i] = cs_math_infinite_r;
+        rcodcl3[i] = 0.;
+        a[i] = 0.;
+        b[i] = 1.;
+      });
+    }
+    else { // if (coupled)
+      ctx.parallel_for(n_d, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+        rcodcl1[i] = cs_math_infinite_r;
+        rcodcl2[i] = cs_math_infinite_r;
+        rcodcl3[i] = 0.;
+        a[i] = 0.;
+        for (cs_lnum_t j = 0; j < dim; j++)
+          b[i*dim + j] = (i == j) ? 1. : 0.;
+      });
     }
 
-    /* Coupled vectorial BCs */
-    else if (coupled && dim == 3) {
+    if (f->bc_coeffs->af != nullptr) {
+      cs_real_t *af = f->bc_coeffs->af;
+      cs_real_t *bf = f->bc_coeffs->bf;
 
-      for (ifac = 0; ifac < n_elts[0]; ifac++) {
-        f->bc_coeffs->a[ifac*dim] = 0.;
-        f->bc_coeffs->a[ifac*dim + 1] = 0.;
-        f->bc_coeffs->a[ifac*dim + 2] = 0.;
-        f->bc_coeffs->b[ifac*dim*dim] = 1.;
-        f->bc_coeffs->b[ifac*dim*dim + 1] = 0.;
-        f->bc_coeffs->b[ifac*dim*dim + 2] = 0.;
-        f->bc_coeffs->b[ifac*dim*dim + 3] = 0.;
-        f->bc_coeffs->b[ifac*dim*dim + 4] = 1.;
-        f->bc_coeffs->b[ifac*dim*dim + 5] = 0.;
-        f->bc_coeffs->b[ifac*dim*dim + 6] = 0.;
-        f->bc_coeffs->b[ifac*dim*dim + 7] = 0.;
-        f->bc_coeffs->b[ifac*dim*dim + 8] = 1.;
+      if (coupled == 0 || dim == 1) {
+        ctx.parallel_for(n_d, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+          af[i] = 0.;
+          bf[i] = 0.;
+        });
       }
-
-      if (f->bc_coeffs->af != nullptr)
-        for (ifac = 0; ifac < n_elts[0]; ifac++) {
-          f->bc_coeffs->af[ifac*dim] = 0.;
-          f->bc_coeffs->af[ifac*dim + 1] = 0.;
-          f->bc_coeffs->af[ifac*dim + 2] = 0.;
-          f->bc_coeffs->bf[ifac*dim*dim] = 0.;
-          f->bc_coeffs->bf[ifac*dim*dim + 1] = 0.;
-          f->bc_coeffs->bf[ifac*dim*dim + 2] = 0.;
-          f->bc_coeffs->bf[ifac*dim*dim + 3] = 0.;
-          f->bc_coeffs->bf[ifac*dim*dim + 4] = 0.;
-          f->bc_coeffs->bf[ifac*dim*dim + 5] = 0.;
-          f->bc_coeffs->bf[ifac*dim*dim + 6] = 0.;
-          f->bc_coeffs->bf[ifac*dim*dim + 7] = 0.;
-          f->bc_coeffs->bf[ifac*dim*dim + 8] = 0.;
-        }
-
-      if (f->bc_coeffs->ad != nullptr)
-        for (ifac = 0; ifac < n_elts[0]; ifac++) {
-          f->bc_coeffs->ad[ifac*dim] = 0.;
-          f->bc_coeffs->ad[ifac*dim + 1] = 0.;
-          f->bc_coeffs->ad[ifac*dim + 2] = 0.;
-          f->bc_coeffs->bd[ifac*dim*dim] = 1.;
-          f->bc_coeffs->bd[ifac*dim*dim + 1] = 0.;
-          f->bc_coeffs->bd[ifac*dim*dim + 2] = 0.;
-          f->bc_coeffs->bd[ifac*dim*dim + 3] = 0.;
-          f->bc_coeffs->bd[ifac*dim*dim + 4] = 1.;
-          f->bc_coeffs->bd[ifac*dim*dim + 5] = 0.;
-          f->bc_coeffs->bd[ifac*dim*dim + 6] = 0.;
-          f->bc_coeffs->bd[ifac*dim*dim + 7] = 0.;
-          f->bc_coeffs->bd[ifac*dim*dim + 8] = 1.;
-        }
-
-      if (f->bc_coeffs->ac != nullptr)
-        for (ifac = 0; ifac < n_elts[0]; ifac++) {
-          f->bc_coeffs->ac[ifac*dim] = 0.;
-          f->bc_coeffs->ac[ifac*dim + 1] = 0.;
-          f->bc_coeffs->ac[ifac*dim + 2] = 0.;
-          f->bc_coeffs->bc[ifac*dim*dim] = 0.;
-          f->bc_coeffs->bc[ifac*dim*dim + 1] = 0.;
-          f->bc_coeffs->bc[ifac*dim*dim + 2] = 0.;
-          f->bc_coeffs->bc[ifac*dim*dim + 3] = 0.;
-          f->bc_coeffs->bc[ifac*dim*dim + 4] = 0.;
-          f->bc_coeffs->bc[ifac*dim*dim + 5] = 0.;
-          f->bc_coeffs->bc[ifac*dim*dim + 6] = 0.;
-          f->bc_coeffs->bc[ifac*dim*dim + 7] = 0.;
-          f->bc_coeffs->bc[ifac*dim*dim + 8] = 0.;
-        }
-
+      else {
+        ctx.parallel_for(n_d, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+          af[i] = 0.;
+          for (cs_lnum_t j = 0; j < dim; j++)
+            bf[i*dim + j] = 0.;
+        });
+      }
     }
-    else {
-      for (ifac = 0; ifac < n_elts[0]; ifac++) {
-        for (int isou = 0; isou < dim ; isou++) {
-          for (int jsou = 0; jsou < dim; jsou ++) {
-            f->bc_coeffs->b[ifac*dim*dim + isou*dim +jsou] = 0.;
-            if (isou == jsou) {
-              f->bc_coeffs->b[ifac*dim*dim + isou*dim +jsou] = 1.;
-            }
-          }
-        }
-      }
 
-      if (f->bc_coeffs->af != nullptr) {
-        for (ifac = 0; ifac < n_elts[0]; ifac++) {
-          for (int isou = 0; isou < dim ; isou++) {
-            f->bc_coeffs->af[ifac*dim + isou] = 0.;
-            for (int jsou = 0; jsou < dim; jsou ++) {
-              f->bc_coeffs->bf[ifac*dim*dim + isou*dim +jsou] = 0.;
-            }
-          }
-        }
-      }
+    if (f->bc_coeffs->ad != nullptr) {
+      cs_real_t *ad = f->bc_coeffs->ad;
+      cs_real_t *bd = f->bc_coeffs->bd;
 
-      if (f->bc_coeffs->ad != nullptr) {
-        for (ifac = 0; ifac < n_elts[0]; ifac++) {
-          for (int isou = 0; isou < dim ; isou++) {
-            f->bc_coeffs->ad[ifac*dim + isou] = 0.;
-            for (int jsou = 0; jsou < dim; jsou ++) {
-              f->bc_coeffs->bd[ifac*dim*dim + isou*dim +jsou] = 0.;
-              if (isou == jsou) {
-                f->bc_coeffs->bd[ifac*dim*dim + isou*dim +jsou] = 1.;
-              }
-            }
-          }
-        }
+      if (coupled == 0 || dim == 1) {
+        ctx.parallel_for(n_d, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+          ad[i] = 0.;
+          bd[i] = 0.;
+        });
       }
+      else {
+        ctx.parallel_for(n_d, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+          ad[i] = 0.;
+          for (cs_lnum_t j = 0; j < dim; j++)
+            bd[i*dim + j] = (i == j) ? 1. : 0.;
+        });
+      }
+    }
 
-      if (f->bc_coeffs->ac != nullptr) {
-        for (ifac = 0; ifac < n_elts[0]; ifac++) {
-          for (int isou = 0; isou < dim ; isou++) {
-            f->bc_coeffs->ac[ifac*dim + isou] = 0.;
-            for (int jsou = 0; jsou < dim; jsou ++) {
-              f->bc_coeffs->bc[ifac*dim*dim + isou*dim +jsou] = 0.;
-            }
-          }
-        }
+    if (f->bc_coeffs->ac != nullptr) {
+      cs_real_t *ac = f->bc_coeffs->ac;
+      cs_real_t *bc = f->bc_coeffs->bc;
+
+      if (coupled == 0 || dim == 1) {
+        ctx.parallel_for(n_d, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+          ac[i] = 0.;
+          bc[i] = 0.;
+        });
+      }
+      else {
+        ctx.parallel_for(n_d, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+          ac[i] = 0.;
+          for (cs_lnum_t j = 0; j < dim; j++)
+            bc[i*dim + j] = 0.;
+        });
       }
     }
 
     if (f->bc_coeffs->hint != nullptr) {
-      for (ifac = 0; ifac < n_elts[0]; ifac++) {
-        f->bc_coeffs->hint[ifac] = 0.;
-      }
-    }
-
-    if (f->bc_coeffs->_hext != nullptr) {
-      for (ifac = 0; ifac < n_elts[0]; ifac++) {
-        f->bc_coeffs->_hext[ifac] = 0.;
-      }
+      cs_real_t *hint = f->bc_coeffs->hint;
+      ctx.parallel_for(n_elts[0], [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+        hint[i] = 0.;
+      });
     }
 
   }
@@ -2236,11 +2181,10 @@ cs_field_set_values(cs_field_t  *f,
     return;
 
   const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
-  const cs_lnum_t _n_vals = n_elts[2]*f->dim;
 
-# pragma omp parallel for if (_n_vals > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < _n_vals; ii++)
-    f->val[ii] = c;
+  cs_dispatch_context ctx;
+  cs_arrays_set_value<cs_real_t, 1>(ctx, n_elts[2]*f->dim, c, f->val);
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2302,8 +2246,7 @@ cs_field_destroy_all(void)
     cs_field_t  *f = _fields[i];
     if (f->is_owner) {
       if (f->_vals != nullptr) {
-        int ii;
-        for (ii = 0; ii < f->n_time_vals; ii++)
+        for (int ii = 0; ii < f->n_time_vals; ii++)
           delete f->_vals[ii];
       }
     }
@@ -2314,6 +2257,10 @@ cs_field_destroy_all(void)
       CS_FREE(f->grad);
 
     if (f->bc_coeffs != nullptr) {
+      CS_FREE_HD(f->bc_coeffs->icodcl);
+      CS_FREE_HD(f->bc_coeffs->rcodcl1);
+      CS_FREE_HD(f->bc_coeffs->rcodcl2);
+      CS_FREE_HD(f->bc_coeffs->rcodcl3);
       CS_FREE_HD(f->bc_coeffs->a);
       CS_FREE_HD(f->bc_coeffs->b);
       CS_FREE_HD(f->bc_coeffs->af);
@@ -2323,7 +2270,6 @@ cs_field_destroy_all(void)
       CS_FREE_HD(f->bc_coeffs->ac);
       CS_FREE_HD(f->bc_coeffs->bc);
       CS_FREE(f->bc_coeffs->hint);
-      CS_FREE(f->bc_coeffs->_hext);
 
       if (f->bc_coeffs->val_f_lim != f->bc_coeffs->val_f) {
         CS_FREE_HD(f->bc_coeffs->val_f_lim);

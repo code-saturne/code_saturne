@@ -823,7 +823,7 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
 
     cs_real_t *factor;
     CS_MALLOC_HD(factor, n_cells_ext, cs_real_t, amode);
-    cs_array_real_set_scalar(n_cells_ext, DBL_MAX, factor);
+    cs_arrays_set_value<cs_real_t, 1>(ctx, n_cells_ext, DBL_MAX, factor);
 
     ctx.parallel_for(n_blocks, [=] CS_F_HOST_DEVICE (cs_lnum_t b_id) {
 

@@ -152,7 +152,8 @@ cs_boundary_conditions_type(bool  init,
 
   int *icodcl_p = nullptr, *icodcl_vel = nullptr;
   cs_real_t *rcodcl1_p = nullptr, *rcodcl2_p = nullptr, *rcodcl3_p = nullptr;
-  cs_real_t *rcodcl1_vel = nullptr, *rcodcl2_vel = nullptr, *rcodcl3_vel = nullptr;
+  cs_real_t *rcodcl1_vel = nullptr, *rcodcl2_vel = nullptr;
+  cs_real_t *rcodcl3_vel = nullptr;
 
   /* Type ids and names (general case) */
 
@@ -1597,17 +1598,6 @@ cs_boundary_conditions_type(bool  init,
       continue;
     if (f->type & CS_FIELD_CDO && !(f == CS_F_(vel) || f == CS_F_(p)))
       continue;
-
-    /* Also ensure values of icodcl are the same for all dimensions */
-
-    if (f->dim > 1) {
-      int *icodcl = f->bc_coeffs->icodcl;
-
-      for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-        for (cs_lnum_t k = 1; k < f->dim; k++)
-          icodcl[k*n_b_faces+f_id] = icodcl[f_id];
-      }
-    }
 
     /* Wall values for scalars without diffusion */
 

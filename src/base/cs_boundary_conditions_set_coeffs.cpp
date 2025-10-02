@@ -786,9 +786,6 @@ cs_boundary_conditions_set_coeffs(int         nvar,
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)
     cs_cf_boundary_conditions_reset();
 
-  if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >= 1)
-    cs_field_build_bc_codes_all();
-
   /* Base definitions from the GUI
      ----------------------------- */
 
@@ -1034,17 +1031,13 @@ cs_boundary_conditions_set_coeffs(int         nvar,
       _specific_physical_model_bc_types(false, bc_type);
     }
 
-    if (cs_glob_ale != CS_ALE_NONE) {
-      /* Set to 0 non specified rcodcl for mesh velocity arrays */
-      cs_field_build_bc_codes_all();
-
+    if (cs_glob_ale != CS_ALE_NONE)
       cs_boundary_condition_ale_type(mesh,
                                      fvq,
                                      false,
                                      dt,
                                      bc_type,
                                      CS_F_(vel)->bc_coeffs->rcodcl1);
-    }
 
     if (rt_params_type != CS_RAD_TRANSFER_NONE)
       _boundary_condition_rt_type(mesh,
@@ -3892,8 +3885,6 @@ cs_boundary_conditions_set_coeffs_init(void)
 
   cs_dispatch_context ctx;
 
-  cs_field_build_bc_codes_all();
-
   cs_boundary_conditions_reset();
 
   /* User calls
@@ -3959,17 +3950,13 @@ cs_boundary_conditions_set_coeffs_init(void)
   /* Treatment of types of bcs given by bc_type
      ----------------------------------------- */
 
-  if (cs_glob_ale > CS_ALE_NONE) {
-    /* Set to 0 non specified rcodcl for mesh velocity arrays */
-    cs_field_build_bc_codes_all();
-
+  if (cs_glob_ale > CS_ALE_NONE)
     cs_boundary_condition_ale_type(mesh,
                                    cs_glob_mesh_quantities,
                                    true,
                                    dt,
                                    bc_type,
                                    CS_F_(vel)->bc_coeffs->rcodcl1);
-  }
 
   if (cs_glob_rad_transfer_params->type != CS_RAD_TRANSFER_NONE)
     _boundary_condition_rt_type(mesh,
@@ -4015,8 +4002,6 @@ cs_boundary_conditions_set_coeffs_init(void)
     cs_boundary_conditions_check(bc_type,
                                  ale_bc_type);
   }
-
-  cs_field_free_bc_codes_all();
 }
 
 /*----------------------------------------------------------------------------*/

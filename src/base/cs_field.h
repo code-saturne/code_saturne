@@ -123,7 +123,8 @@ typedef struct {
 
   int               *icodcl;       /* low-level BC type code */
   cs_real_t         *rcodcl1;      /* 1st component of low-level BC */
-  cs_real_t         *rcodcl2;      /* 2nd component of low-level BC */
+  cs_real_t         *rcodcl2;      /* 2nd component of low-level BC
+                                    (a.k.a. hext Exterior exchange coefficient */
   cs_real_t         *rcodcl3;      /* 3rd component of low-level BC */
 
   cs_real_t         *a;            /* Explicit coefficient */
@@ -136,8 +137,6 @@ typedef struct {
   cs_real_t         *bc;           /* Implicit coefficient for convection */
 
   cs_real_t         *hint;         /* coefficient for internal coupling */
-  cs_real_t         *_hext;        /* coefficient for internal coupling
-                                      (maps to rcodcl2 when present) */
 
   cs_real_t          *val_f;       /* face value for gradient */
   cs_real_t          *val_f_lim;   /* face value for gradient
@@ -1115,7 +1114,6 @@ cs_field_set_key_str(cs_field_t  *f,
 const char *
 cs_field_get_key_str(const cs_field_t  *f,
                      int                key_id);
-
 
 /*----------------------------------------------------------------------------
  * Assign a simple structure for a given key to a field.

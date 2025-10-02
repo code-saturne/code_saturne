@@ -499,9 +499,6 @@ _solve_most(int              n_var,
         || cs_glob_rad_transfer_params->type > 0)
       *itrfup = 0;
 
-  if (*italim == 1)
-    cs_field_build_bc_codes_all();
-
   if (isvhb > -1)
     CS_MALLOC(hbord, n_b_faces, cs_real_t);
 
@@ -648,7 +645,6 @@ _solve_most(int              n_var,
       CS_FREE_HD(isostd);
       if (cs_glob_velocity_pressure_param->nterup > 1)
         CS_FREE_HD(trava);
-      cs_field_free_bc_codes_all();
       *must_return = _must_return;
       return;
     }
@@ -976,9 +972,9 @@ cs_solve_all()
   }
 
   /* Solve CDO NSE module
-    --------------------------------------------------------------- */
+    --------------------- */
+
   if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_NS_WITH_FV) {
-    cs_field_build_bc_codes_all();
     /* FV and CDO activated */
     cs_cdo_solve_unsteady_state_domain();
   }
@@ -987,7 +983,7 @@ cs_solve_all()
 
   if (eqp_vel->verbosity > 0 && cs_param_cdo_has_fv_main()) {
     bft_printf
-      (_(" ------------------------------------------------------------\n\n"
+      (_("  ---------------\n\n"
          "  INITIALIZATIONS\n"
          "  ===============\n\n"));
   }
@@ -1377,7 +1373,6 @@ cs_solve_all()
       cs_dilatable_scalar_diff_st(-1);
   }
 
-  cs_field_free_bc_codes_all();
   CS_FREE(ckupdc);
 
   /* Handle mass flux, viscosity, density, and specific heat for theta-scheme

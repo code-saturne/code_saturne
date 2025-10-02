@@ -125,7 +125,6 @@ cs_boundary_conditions_coupling_t_in(void)
 
   }
 
-  cs_field_build_bc_codes_all();
   cs_field_t *th_f = cs_thermal_model_field();
 
   for (cs_lnum_t ii = 0; ii < nfpt1d; ii++) {

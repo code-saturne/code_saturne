@@ -87,13 +87,7 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
-
 static int _n_vars = 0;
-
-static cs_lnum_t    _n_vars_bc = 0;
-static cs_lnum_t    _n_b_faces = 0;
-static int         *_icodcl = nullptr;
-static cs_real_t   *_rcodcl = nullptr;
 
 /*============================================================================
  * Global variables
@@ -350,126 +344,6 @@ cs_field_get_variance(const cs_field_t  *f)
   }
 
   return nullptr;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Allocate and map boundary condition coefficients for all
- *        variable fields.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_field_build_bc_codes_all(void)
-{
-  const cs_lnum_t n_b_faces
-    = cs_mesh_location_get_n_elts(CS_MESH_LOCATION_BOUNDARY_FACES)[0];
-
-  cs_dispatch_context ctx;
-
-  /* Determine number of solved variables */
-
-  cs_lnum_t n_vars = 0;
-
-  const int n_fields = cs_field_n_fields();
-
-  for (int f_id = 0; f_id < n_fields; f_id++) {
-    const cs_field_t  *f = cs_field_by_id(f_id);
-
-    if (f->type & CS_FIELD_VARIABLE && f->bc_coeffs != nullptr)
-      n_vars += f->dim;
-  }
-
-  /* Allocate or remap only if needed */
-
-  if (n_vars == _n_vars_bc && n_b_faces == _n_b_faces) {
-    if (   (_icodcl != nullptr && n_b_faces > 0)
-        || (_icodcl == nullptr && n_b_faces == 0))
-      return;
-  }
-
-  /* Update and map otherwise */
-
-  _n_vars_bc = n_vars;
-  _n_b_faces = n_b_faces;
-
-  CS_REALLOC_HD(_icodcl, n_vars*n_b_faces, int, cs_alloc_mode);
-  CS_REALLOC_HD(_rcodcl, 3*n_vars*n_b_faces, cs_real_t, cs_alloc_mode);
-
-  cs_lnum_t var_shift = 0;
-
-  for (int f_id = 0; f_id < n_fields; f_id++) {
-    const cs_field_t  *f = cs_field_by_id(f_id);
-
-    if (f->type & CS_FIELD_VARIABLE && f->bc_coeffs != nullptr) {
-
-      int * icodcl  = _icodcl + n_b_faces*var_shift;
-      cs_real_t *rcodcl1 = _rcodcl + n_b_faces*var_shift;
-      cs_real_t *rcodcl2 = _rcodcl + n_b_faces*(n_vars+var_shift);
-      cs_real_t *rcodcl3 = _rcodcl + n_b_faces*(2*n_vars+var_shift);
-
-      f->bc_coeffs->icodcl  = icodcl;
-      f->bc_coeffs->rcodcl1 = rcodcl1;
-      f->bc_coeffs->rcodcl2 = rcodcl2;
-      f->bc_coeffs->rcodcl3 = rcodcl3;
-
-      /* For multi-dimensional arrays, access using
-
-         f->bcs->icodcl[coo_id*n_b_faces + face_id]
-
-         and equivalent for icodcl, rcodc1, rcodcl2, rcodcl3. */
-
-      cs_lnum_t n = n_b_faces * (cs_lnum_t)(f->dim);
-
-      ctx.parallel_for(n, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-        icodcl[face_id]   = 0;
-        rcodcl1[face_id]  = cs_math_infinite_r;
-        rcodcl2[face_id]  = cs_math_infinite_r;
-        rcodcl3[face_id]  = 0.;
-      });
-
-      var_shift += f->dim;
-    }
-  }
-
-  ctx.wait();
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Deallocate and unmap boundary condition coefficients for all
- *        variable fields.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_field_free_bc_codes_all(void)
-{
-  const int n_fields = cs_field_n_fields();
-
-  for (int f_id = 0; f_id < n_fields; f_id++) {
-
-    const cs_field_t  *f = cs_field_by_id(f_id);
-    if (f->type & CS_FIELD_VARIABLE && f->bc_coeffs != nullptr) {
-      f->bc_coeffs->icodcl = nullptr;
-      f->bc_coeffs->rcodcl1 = nullptr;
-      if (f->bc_coeffs->_hext != nullptr) {
-        const cs_real_t *rcodcl2 = f->bc_coeffs->rcodcl2;
-        cs_real_t *_hext = f->bc_coeffs->_hext;
-        for (cs_lnum_t i = 0; i < _n_b_faces; i++)
-          _hext[i] = rcodcl2[i];
-      }
-      f->bc_coeffs->rcodcl2 = f->bc_coeffs->_hext;
-      f->bc_coeffs->rcodcl3 = nullptr;
-    }
-
-  }
-
-  CS_FREE(_icodcl);
-  CS_FREE(_rcodcl);
-
-  _n_vars_bc = 0;
-  _n_b_faces = 0;
 }
 
 /*----------------------------------------------------------------------------*/

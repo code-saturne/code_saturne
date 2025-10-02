@@ -385,15 +385,19 @@ _compute_hmg_dirichlet_bc(const cs_mesh_t            *mesh,
 
   bc_code *= icodcl_m;
 
-  for (cs_lnum_t coo_id = 0; coo_id < def->dim; coo_id++) {
+# pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
+    const cs_lnum_t  elt_id = (face_ids == nullptr) ? i : face_ids[i];
+    icodcl[elt_id]  = bc_code;
+    rcodcl1[elt_id] = 0;
+  }
 
-    int        *_icodcl  = icodcl + coo_id*n_b_faces;
+  for (cs_lnum_t coo_id = 1; coo_id < def->dim; coo_id++) {
     cs_real_t  *_rcodcl1 = rcodcl1 + coo_id*n_b_faces;
 
 #   pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
       const cs_lnum_t  elt_id = (face_ids == nullptr) ? i : face_ids[i];
-      _icodcl[elt_id]  = bc_code;
       _rcodcl1[elt_id] = 0;
     }
   }
@@ -478,18 +482,21 @@ _compute_dirichlet_bc(const cs_mesh_t            *mesh,
     {
       const cs_real_t  *constant_val = (cs_real_t *)def->context;
 
-      for (cs_lnum_t coo_id = 0; coo_id < def_dim; coo_id++) {
+#     pragma omp parallel for if (n_elts > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        const cs_lnum_t  elt_id = elt_ids[i];
+        icodcl[elt_id]  = bc_code;
+        rcodcl1[elt_id] = constant_val[0];
+      }
 
-        int        *_icodcl  = icodcl + coo_id*n_b_faces;
+      for (cs_lnum_t coo_id = 1; coo_id < def_dim; coo_id++) {
         cs_real_t  *_rcodcl1 = rcodcl1 + coo_id*n_b_faces;
 
 #       pragma omp parallel for if (n_elts > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < n_elts; i++) {
           const cs_lnum_t  elt_id = elt_ids[i];
-          _icodcl[elt_id]  = bc_code;
           _rcodcl1[elt_id] = constant_val[coo_id];
         }
-
       }
     }
     break;
@@ -504,18 +511,21 @@ _compute_dirichlet_bc(const cs_mesh_t            *mesh,
 
       const cs_lnum_t _dim = def->dim;
 
-      for (cs_lnum_t coo_id = 0; coo_id < _dim; coo_id++) {
+#     pragma omp parallel for if (n_elts > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        const cs_lnum_t  elt_id = elt_ids[i];
+        icodcl[elt_id]  = bc_code;
+        rcodcl1[elt_id] = eval_buf[_dim*i];
+      }
 
-        int        *_icodcl  = icodcl + coo_id*n_b_faces;
+      for (cs_lnum_t coo_id = 1; coo_id < _dim; coo_id++) {
         cs_real_t  *_rcodcl1 = rcodcl1 + coo_id*n_b_faces;
 
 #       pragma omp parallel for if (n_elts > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < n_elts; i++) {
           const cs_lnum_t  elt_id = elt_ids[i];
-          _icodcl[elt_id]  = bc_code;
           _rcodcl1[elt_id] = eval_buf[_dim*i + coo_id];
         }
-
       }
     }
     break;
@@ -545,15 +555,19 @@ _compute_hmg_neumann_bc(const cs_mesh_t  *mesh,
   const cs_lnum_t *elt_ids = bz->elt_ids;
   const cs_lnum_t  n_elts = bz->n_elts;
 
-  for (cs_lnum_t coo_id = 0; coo_id < def->dim; coo_id++) {
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < n_elts; i++) {
+      const cs_lnum_t  elt_id = elt_ids[i];
+      icodcl[elt_id] = 3;
+      rcodcl3[elt_id] = 0;
+    }
 
-    int        *_icodcl  = icodcl + coo_id*n_b_faces;
+  for (cs_lnum_t coo_id = 1; coo_id < def->dim; coo_id++) {
     cs_real_t  *_rcodcl3 = rcodcl3 + coo_id*n_b_faces;
 
 #   pragma omp parallel for if (n_elts > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       const cs_lnum_t  elt_id = elt_ids[i];
-      _icodcl[elt_id] = 3;
       _rcodcl3[elt_id] = 0;
     }
   }
@@ -600,20 +614,26 @@ _compute_neumann_bc(const cs_mesh_t            *mesh,
       const int dim = def->dim;
       const cs_real_t *constant_vals = (cs_real_t *)def->context;
 
-      for (cs_lnum_t coo_id = 0; coo_id < dim; coo_id++) {
+      {
+        const cs_real_t value = constant_vals[0];
 
+#       pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
+        for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
+          const cs_lnum_t  elt_id = elt_ids[i];
+          icodcl[elt_id]  = bc_code;
+          rcodcl3[elt_id] = value;
+        }
+      }
+
+      for (cs_lnum_t coo_id = 1; coo_id < dim; coo_id++) {
         const cs_real_t value = constant_vals[coo_id];
-
-        int        *_icodcl = icodcl + coo_id*n_b_faces;
         cs_real_t  *_rcodcl3 = rcodcl3 + coo_id*n_b_faces;
 
 #       pragma omp parallel for if (bz->n_elts > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < bz->n_elts; i++) {
           const cs_lnum_t  elt_id = elt_ids[i];
-          _icodcl[elt_id]  = bc_code;
           _rcodcl3[elt_id] = value;
         }
-
       }
     }
     break;
@@ -628,15 +648,19 @@ _compute_neumann_bc(const cs_mesh_t            *mesh,
 
       const cs_lnum_t _dim = def->dim;
 
-      for (cs_lnum_t coo_id = 0; coo_id < _dim; coo_id++) {
+#     pragma omp parallel for if (n_elts > CS_THR_MIN)
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        const cs_lnum_t  elt_id = elt_ids[i];
+        icodcl[elt_id]  = bc_code;
+        rcodcl3[elt_id] = eval_buf[_dim*i];
+      }
 
-        int        *_icodcl = icodcl + coo_id*n_b_faces;
+      for (cs_lnum_t coo_id = 1; coo_id < _dim; coo_id++) {
         cs_real_t  *_rcodcl3 = rcodcl3 + coo_id*n_b_faces;
 
 #       pragma omp parallel for if (n_elts > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < n_elts; i++) {
           const cs_lnum_t  elt_id = elt_ids[i];
-          _icodcl[elt_id]  = bc_code;
           _rcodcl3[elt_id] = eval_buf[_dim*i + coo_id];
         }
 
@@ -716,9 +740,19 @@ _compute_robin_bc(const cs_mesh_t            *mesh,
     {
       const cs_real_t  *constant_val = (cs_real_t *)def->context;
 
-      for (cs_lnum_t coo_id = 0; coo_id < eqp->dim; coo_id++) {
+      {
+        const cs_real_t alpha = constant_val[0];
+        const cs_real_t u0 = constant_val[1];
 
-        int        *_icodcl  = icodcl + coo_id*n_b_faces;
+#       pragma omp parallel for if (n_elts > CS_THR_MIN)
+        for (cs_lnum_t i = 0; i < n_elts; i++) {
+          const cs_lnum_t  elt_id = elt_ids[i];
+          icodcl[elt_id]  = bc_code;
+          rcodcl1[elt_id] = u0;
+          rcodcl2[elt_id] = -alpha;
+        }
+      }
+      for (cs_lnum_t coo_id = 1; coo_id < eqp->dim; coo_id++) {
         cs_real_t  *_rcodcl1 = rcodcl1 + coo_id*n_b_faces;
         cs_real_t  *_rcodcl2 = rcodcl2 + coo_id*n_b_faces;
 
@@ -728,11 +762,9 @@ _compute_robin_bc(const cs_mesh_t            *mesh,
 #       pragma omp parallel for if (n_elts > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < n_elts; i++) {
           const cs_lnum_t  elt_id = elt_ids[i];
-          _icodcl[elt_id]  = bc_code;
           _rcodcl1[elt_id] = u0;
           _rcodcl2[elt_id] = -alpha;
         }
-
       }
     }
     break;
@@ -745,20 +777,25 @@ _compute_robin_bc(const cs_mesh_t            *mesh,
                            true,  /* dense */
                            eval_buf);
 
-      for (cs_lnum_t coo_id = 0; coo_id < eqp->dim; coo_id++) {
-
-        int        *_icodcl  = icodcl + coo_id*n_b_faces;
+      {
+#       pragma omp parallel for if (n_elts > CS_THR_MIN)
+        for (cs_lnum_t i = 0; i < n_elts; i++) {
+          const cs_lnum_t  elt_id = elt_ids[i];
+          icodcl[elt_id]  = bc_code;
+          rcodcl1[elt_id] = eval_buf[stride*i + 1];
+          rcodcl2[elt_id] = -eval_buf[stride*i];
+        }
+      }
+      for (cs_lnum_t coo_id = 1; coo_id < eqp->dim; coo_id++) {
         cs_real_t  *_rcodcl1 = rcodcl1 + coo_id*n_b_faces;
         cs_real_t  *_rcodcl2 = rcodcl2 + coo_id*n_b_faces;
 
 #       pragma omp parallel for if (n_elts > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < n_elts; i++) {
           const cs_lnum_t  elt_id = elt_ids[i];
-          _icodcl[elt_id]  = bc_code;
           _rcodcl1[elt_id] = eval_buf[stride*i + 1 + coo_id];
           _rcodcl2[elt_id] = -eval_buf[stride*i];
         }
-
       }
     }
     break;
@@ -2380,28 +2417,45 @@ cs_boundary_conditions_reset(void)
 
   const int n_fields = cs_field_n_fields();
 
+  cs_dispatch_context ctx;
+
   for (int f_id = 0; f_id < n_fields; f_id++) {
 
-    const cs_field_t  *f = cs_field_by_id(f_id);
+    cs_field_t  *f = cs_field_by_id(f_id);
 
     if (f->type & CS_FIELD_VARIABLE && f->bc_coeffs != nullptr) {
+
+      /* Initialize all icodcl and rcodcl values to defaults. */
 
       int *icodcl  = f->bc_coeffs->icodcl;
       cs_real_t *rcodcl1 = f->bc_coeffs->rcodcl1;
       cs_real_t *rcodcl2 = f->bc_coeffs->rcodcl2;
       cs_real_t *rcodcl3 = f->bc_coeffs->rcodcl3;
 
-      /* Initialize all icodcl and rcodcl values to defaults, to
-         to avoid issues in some Fortran initialization loops
-         which do not do the appropriate checks for variable type. */
+      cs_lnum_t dim = f->dim;
+      int coupled = 0;
+      int coupled_key_id = cs_field_key_id_try("coupled");
+      cs_lnum_t n_d = n_b_faces*dim;
 
-      cs_lnum_t n = n_b_faces * (cs_lnum_t)(f->dim);
+      if (coupled_key_id > -1)
+        coupled = f->get_key_int(coupled_key_id);
 
-      for (cs_lnum_t i = 0; i < n; i++) {
-        icodcl[i] = 0;
-        rcodcl1[i] = cs_math_infinite_r;
-        rcodcl2[i] = cs_math_infinite_r;
-        rcodcl3[i] = 0;
+      if (dim == 1) {
+        ctx.parallel_for(n_d, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+          icodcl[face_id]  = 0;
+          rcodcl1[face_id] = cs_math_infinite_r;
+          rcodcl2[face_id] = cs_math_infinite_r;
+          rcodcl3[face_id] = 0.;
+        });
+      }
+      else {
+        ctx.parallel_for(n_d, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+          if (face_id % dim == 0)
+            icodcl[face_id / dim] = 0.;
+          rcodcl1[face_id] = cs_math_infinite_r;
+          rcodcl2[face_id] = cs_math_infinite_r;
+          rcodcl3[face_id] = 0.;
+        });
       }
 
     }
@@ -2411,9 +2465,12 @@ cs_boundary_conditions_reset(void)
   if (cs_glob_ale > CS_ALE_NONE) {
     int *ale_bc_type = cs_glob_ale_data->bc_type;
 
-    for (cs_lnum_t i = 0; i < n_b_faces; i++)
-      ale_bc_type[i] = 0;
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+      ale_bc_type[face_id] = 0;
+    });
   }
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/

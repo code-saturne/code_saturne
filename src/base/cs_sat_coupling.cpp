@@ -2807,7 +2807,6 @@ cs_sat_coupling_bnd_initialize
         = ple_locator_get_exterior_list(locator);
 
       if (n_b_faces_loc > 0) {
-        cs_field_build_bc_codes_all();
 
         for (int field_id = 0; field_id < cs_field_n_fields(); field_id++) {
           cs_field_t *f = cs_field_by_id(field_id);
@@ -2953,9 +2952,6 @@ cs_sat_coupling_exchange_at_bnd_faces
       if (n_g_b_faces_loc > 0) {
         cs_real_t *local_pond_fbr = cpl->local_pond_fbr;
         cs_real_t *dofcpl = cpl->local_of;
-
-        /* Ensure boundary conditions arrays are allocated */
-        cs_field_build_bc_codes_all();
 
         for (int field_id = 0; field_id < cs_field_n_fields(); field_id++) {
           cs_field_t *f = cs_field_by_id(field_id);
