@@ -3989,34 +3989,15 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
   if (cs_glob_rank_id > -1) {
 
-    int n_minmax = (f_th != nullptr) ? 7 : 4;
-
-    cs_real_t umin[7]
-      = {uiptmn, uetmin, ukmin, yplumn, tetmin, tplumn, dlmomin};
-    cs_parall_min(n_minmax, CS_DOUBLE, umin);
-
-    uiptmn = umin[0];
-    uetmin = umin[1];
-    ukmin  = umin[2];
-    yplumn = umin[3];
-
-    cs_real_t umax[7]
-      = {uiptmx, uetmax, ukmax, yplumx, tetmax, tplumx, dlmomax};
-    cs_parall_max(n_minmax, CS_DOUBLE, umax);
-
-    uiptmx = umax[0];
-    uetmax = umax[1];
-    ukmax  = umax[2];
-    yplumx = umax[3];
-
     if (f_th != nullptr) {
-      tetmin  = umin[4];
-      tplumn  = umin[5];
-      dlmomin = umin[6];
-
-      tetmax  = umax[4];
-      tplumx  = umax[5];
-      dlmomax = umax[6];
+      cs_parall_min_scalars(uiptmn, uetmin, ukmin, yplumn,
+                            tetmin, tplumn, dlmomin);
+      cs_parall_max_scalars(uiptmx, uetmax, ukmax, yplumx,
+                            tetmax, tplumx, dlmomax);
+    }
+    else {
+      cs_parall_min_scalars(uiptmn, uetmin, ukmin, yplumn);
+      cs_parall_max_scalars(uiptmx, uetmax, ukmax, yplumx);
     }
   }
 
