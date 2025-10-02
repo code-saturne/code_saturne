@@ -365,22 +365,18 @@ _compute_anisotropic_turbulent_viscosity
  *
  * \param[in]  first_pass  first time passing
  * \param[in]  n_cells     number of cells
- * \param[in]  n_b_faces   number of boundary faces
  * \param[in]  n_scal      number of scalar field
  * \param[in]  scalar_idx  id of scalar field
  * \param[in]  mq          mesh quantities
- * \param[in]  brom        boundary density
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _clip_rho_mu_cp(bool                         first_pass,
                 cs_lnum_t                    n_cells,
-                cs_lnum_t                    n_b_faces,
                 int                          n_scal,
                 int                          scalar_idx[],
-                const cs_mesh_quantities_t  *mq,
-                const cs_real_t              brom[])
+                const cs_mesh_quantities_t  *mq)
 {
   int iscacp = 0;
   constexpr int n_fields = 5; // number of fields for log
@@ -403,8 +399,8 @@ _clip_rho_mu_cp(bool                         first_pass,
   cs_dispatch_context ctx;
 
   // Set turbulent viscosity to 0 in disabled cells
-  cs_real_t *visct = CS_F_(mu_t)->val;
   if (mq->has_disable_flag) {
+    cs_real_t *visct = CS_F_(mu_t)->val;
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       if (c_disable_flag[c_id])
         visct[c_id] = 0.;
@@ -1097,8 +1093,7 @@ cs_physical_properties_update(int   iterns)
 
   // Physical value checks
   if (rho_b_f != nullptr)
-    _clip_rho_mu_cp(first_pass, n_cells, n_b_faces, n_scal, scalar_idx, mq,
-                    rho_b_f->val);
+    _clip_rho_mu_cp(first_pass, n_cells, n_scal, scalar_idx, mq);
 
   // Calculation of scalar limits and printing
   _check_log_scalar_diff(first_pass, n_scal, scalar_idx, n_cells);

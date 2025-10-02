@@ -620,9 +620,9 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
     /* Dirichlet Boundary condition with a wall function correction
        with or without an additional exchange coefficient hext */
 
-    bool is_wall_scalar_std = (  icodcl_vel[f_id] == 5
-                               && (   icodcl_sc[f_id] == 5
-                                   || icodcl_sc[f_id] == 6)
+    bool is_wall_scalar_std = ((  icodcl_vel[f_id] == 5
+                                && (   icodcl_sc[f_id] == 5
+                                    || icodcl_sc[f_id] == 6))
                                || icodcl_sc[f_id] == 15);
 
     bool is_wall_scalar_rough_legacy = (    (icodcl_vel[f_id] == 6
@@ -874,10 +874,9 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       cs_real_t phit = 0.0;
 
       /* Wall function */
-      if (  (   icodcl_vel[f_id] == 5
-             && (   icodcl_sc[f_id] == 5
-                 || icodcl_sc[f_id] == 6
-                 )|| icodcl_sc[f_id] == 15)
+      if (  (   (   icodcl_vel[f_id] == 5
+                 && (icodcl_sc[f_id] == 5 || icodcl_sc[f_id] == 6))
+             || icodcl_sc[f_id] == 15)
          || (icodcl_vel[f_id] == 6 && icodcl_sc[f_id] == 6)) {
 
         phit = cofaf_sc[f_id] + cofbf_sc[f_id] * var_ip[f_id];

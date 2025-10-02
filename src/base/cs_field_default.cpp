@@ -445,7 +445,6 @@ cs_field_build_bc_codes_all(void)
 void
 cs_field_free_bc_codes_all(void)
 {
-  const int kv = cs_field_key_id("variable_id");
   const int n_fields = cs_field_n_fields();
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
