@@ -251,7 +251,14 @@ _sfb_init_cell_system(const cs_cell_mesh_t         *cm,
 #if defined(DEBUG) && !defined(NDEBUG) /* Sanity check */
     cs_dbg_check_hmg_dirichlet_cw(__func__, csys);
 #endif
-  } /* Border cell */
+
+  }
+  else { /* No boundary face for this cell */
+
+    for (short int f = 0; f < cm->n_fc; f++)
+      csys->bf_ids[f] = -1;
+
+  }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 2
   if (cs_dbg_cw_test(eqp, cm, csys)) cs_cell_mesh_dump(cm);

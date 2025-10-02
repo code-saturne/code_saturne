@@ -142,8 +142,8 @@ cs_cdofb_set_advection_function(const cs_equation_param_t   *eqp,
       eqc->advection_scheme = cs_cdofb_advection_cencsv_v8;
       break;
 
-    case CS_PARAM_ADVECTION_SCHEME_CENTERED_DDE:
-      eqc->advection_scheme = cs_cdofb_advection_cencsv_dde;
+    case CS_PARAM_ADVECTION_SCHEME_L0:
+      eqc->advection_scheme = cs_cdofb_advection_L0csv;
       break;
 
     case CS_PARAM_ADVECTION_SCHEME_CENTERED:
@@ -182,8 +182,8 @@ cs_cdofb_set_advection_function(const cs_equation_param_t   *eqp,
       eqc->advection_scheme = cs_cdofb_advection_cennoc_v8;
       break;
 
-    case CS_PARAM_ADVECTION_SCHEME_CENTERED_DDE:
-      eqc->advection_scheme = cs_cdofb_advection_cennoc_dde;
+    case CS_PARAM_ADVECTION_SCHEME_L0:
+      eqc->advection_scheme = cs_cdofb_advection_L0noc;
       break;
 
     case CS_PARAM_ADVECTION_SCHEME_CENTERED:
@@ -221,14 +221,14 @@ cs_cdofb_set_advection_function(const cs_equation_param_t   *eqp,
   else {
     eqc->advection_main = cs_cdofb_advection_no_diffusion;
 
-    if (eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CENTERED &&
+    if (eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_L0 &&
         cs_equation_param_has_implicit_advection(eqp))
       /* Remark 5 about static condensation of paper (DiPietro, Droniou,
        * Ern, 2015) */
       bft_error(__FILE__,
                 __LINE__,
                 0,
-                " %s: Centered advection scheme is not a valid option for"
+                " %s: L0 advection scheme is not a valid option for"
                 " face-based discretization and without diffusion.",
                 __func__);
   }
