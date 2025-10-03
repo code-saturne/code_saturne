@@ -1328,8 +1328,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
 
     /* Initialize the initial pressure to the reference pressure */
 
-    cs_navsto_add_pressure_ic_by_value(
-      nsp, nullptr, &(nsp->reference_pressure));
+    cs_navsto_add_pressure_ic_by_value(nsp, nullptr, nsp->reference_pressure);
   }
 
   /* Add default post-processing related to the Navier-Stokes system */

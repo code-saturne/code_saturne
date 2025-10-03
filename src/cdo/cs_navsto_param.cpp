@@ -965,16 +965,16 @@ cs_navsto_param_set_quadrature_to_all(cs_navsto_param_t    *nsp,
  * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
  * \param[in]      z_name    name of the associated zone (if null or "" if
  *                           all cells are considered)
- * \param[in]      val       pointer to the value
+ * \param[in]      val       vector values to set
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_navsto_add_velocity_ic_by_value(cs_navsto_param_t    *nsp,
-                                   const char           *z_name,
-                                   cs_real_t            *val)
+cs_navsto_add_velocity_ic_by_value(cs_navsto_param_t *nsp,
+                                   const char        *z_name,
+                                   const cs_real_3_t  val)
 {
   if (nsp == nullptr)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
@@ -982,9 +982,11 @@ cs_navsto_add_velocity_ic_by_value(cs_navsto_param_t    *nsp,
   cs_xdef_t           *d   = nullptr;
   cs_equation_param_t *eqp = _get_momentum_param(nsp);
 
+  cs_real_3_t val_cpy = { val[0], val[1], val[2] };
+
   if (eqp != nullptr) { /* An equation related to the velocity is defined */
 
-    d = cs_equation_add_ic_by_value(eqp, z_name, val);
+    d = cs_equation_add_ic_by_value(eqp, z_name, val_cpy);
   }
   else { /* No momentum equation available with the choice of velocity-pressure
             coupling */
@@ -1006,7 +1008,7 @@ cs_navsto_add_velocity_ic_by_value(cs_navsto_param_t    *nsp,
                               z_id,
                               CS_FLAG_STATE_UNIFORM,
                               meta_flag,
-                              val);
+                              val_cpy);
   }
 
   int new_id = nsp->n_velocity_ic_defs;
@@ -1100,9 +1102,9 @@ cs_navsto_add_velocity_ic_by_analytic(cs_navsto_param_t  *nsp,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_navsto_add_pressure_ic_by_value(cs_navsto_param_t    *nsp,
-                                   const char           *z_name,
-                                   cs_real_t            *val)
+cs_navsto_add_pressure_ic_by_value(cs_navsto_param_t *nsp,
+                                   const char        *z_name,
+                                   cs_real_t          val)
 {
   if (nsp == nullptr)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
@@ -1117,12 +1119,12 @@ cs_navsto_add_pressure_ic_by_value(cs_navsto_param_t    *nsp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
-                                        1,  /* dim */
-                                        z_id,
-                                        CS_FLAG_STATE_UNIFORM,
-                                        meta_flag,
-                                        val);
+  cs_xdef_t *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
+                                       1, /* dim */
+                                       z_id,
+                                       CS_FLAG_STATE_UNIFORM,
+                                       meta_flag,
+                                       &val);
 
   int  new_id = nsp->n_pressure_ic_defs;
   nsp->n_pressure_ic_defs += 1;
@@ -1435,9 +1437,9 @@ cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t *nsp,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_navsto_set_velocity_wall_by_value(cs_navsto_param_t    *nsp,
-                                     const char           *z_name,
-                                     cs_real_t            *values)
+cs_navsto_set_velocity_wall_by_value(cs_navsto_param_t *nsp,
+                                     const char        *z_name,
+                                     const cs_real_3_t  values)
 {
   if (nsp == nullptr)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
@@ -1466,12 +1468,13 @@ cs_navsto_set_velocity_wall_by_value(cs_navsto_param_t    *nsp,
   cs_flag_t bc_type = (nsp->turbulence->model->model == CS_TURB_NONE) ?
                        CS_CDO_BC_DIRICHLET : CS_CDO_BC_WALL_PRESCRIBED;
 
-  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
-                                          3,    /* dim */
-                                          z_id,
-                                          CS_FLAG_STATE_UNIFORM, /* state */
-                                          bc_type,
-                                          (void *)values);
+  cs_real_3_t val_cpy = { values[0], values[1], values[2] };
+  cs_xdef_t  *d       = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
+                                         3, /* dim */
+                                         z_id,
+                                         CS_FLAG_STATE_UNIFORM, /* state */
+                                         bc_type,
+                                         (void *)val_cpy);
 
   int  new_id = nsp->n_velocity_bc_defs;
 
@@ -1501,9 +1504,9 @@ cs_navsto_set_velocity_wall_by_value(cs_navsto_param_t    *nsp,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_navsto_set_velocity_inlet_by_value(cs_navsto_param_t    *nsp,
-                                      const char           *z_name,
-                                      cs_real_t            *values)
+cs_navsto_set_velocity_inlet_by_value(cs_navsto_param_t *nsp,
+                                      const char        *z_name,
+                                      const cs_real_3_t  values)
 {
   if (nsp == nullptr)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
@@ -1527,13 +1530,14 @@ cs_navsto_set_velocity_inlet_by_value(cs_navsto_param_t    *nsp,
        " Please check your settings.", __func__, z_name);
 
   /* Add a new cs_xdef_t structure */
+  cs_real_3_t val_cpy = { values[0], values[1], values[2] };
 
-  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
-                                          3,    /* dim */
-                                          z_id,
-                                          CS_FLAG_STATE_UNIFORM, /* state */
-                                          CS_CDO_BC_DIRICHLET,
-                                          (void *)values);
+  cs_xdef_t *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
+                                         3, /* dim */
+                                         z_id,
+                                         CS_FLAG_STATE_UNIFORM, /* state */
+                                         CS_CDO_BC_DIRICHLET,
+                                         (void *)val_cpy);
 
   int  new_id = nsp->n_velocity_bc_defs;
 
@@ -1821,7 +1825,9 @@ cs_navsto_add_source_term_by_value(cs_navsto_param_t *nsp,
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
 
   cs_equation_param_t *eqp = _get_momentum_param(nsp);
-  return cs_equation_add_source_term_by_vecval(eqp, z_name, val);
+
+  cs_real_3_t val_cpy = { val[0], val[1], val[2] };
+  return cs_equation_add_source_term_by_val(eqp, z_name, (cs_real_t *)val_cpy);
 }
 
 /*----------------------------------------------------------------------------*/

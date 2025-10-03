@@ -817,16 +817,16 @@ cs_navsto_set_reference_pressure(cs_navsto_param_t    *nsp,
  * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
  * \param[in]      z_name    name of the associated zone (if null or "" if
  *                           all cells are considered)
- * \param[in]      val       pointer to the value
+ * \param[in]      val       vector value to set
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_navsto_add_velocity_ic_by_value(cs_navsto_param_t    *nsp,
-                                   const char           *z_name,
-                                   cs_real_t            *val);
+cs_navsto_add_velocity_ic_by_value(cs_navsto_param_t *nsp,
+                                   const char        *z_name,
+                                   const cs_real_3_t  val);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -868,9 +868,9 @@ cs_navsto_add_velocity_ic_by_analytic(cs_navsto_param_t      *nsp,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_navsto_add_pressure_ic_by_value(cs_navsto_param_t    *nsp,
-                                   const char           *z_name,
-                                   cs_real_t            *val);
+cs_navsto_add_pressure_ic_by_value(cs_navsto_param_t *nsp,
+                                   const char        *z_name,
+                                   cs_real_t          val);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -967,9 +967,9 @@ cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t *nsp,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_navsto_set_velocity_wall_by_value(cs_navsto_param_t    *nsp,
-                                     const char           *z_name,
-                                     cs_real_t            *values);
+cs_navsto_set_velocity_wall_by_value(cs_navsto_param_t *nsp,
+                                     const char        *z_name,
+                                     const cs_real_3_t  values);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -986,9 +986,9 @@ cs_navsto_set_velocity_wall_by_value(cs_navsto_param_t    *nsp,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_navsto_set_velocity_inlet_by_value(cs_navsto_param_t    *nsp,
-                                      const char           *z_name,
-                                      cs_real_t            *values);
+cs_navsto_set_velocity_inlet_by_value(cs_navsto_param_t *nsp,
+                                      const char        *z_name,
+                                      const cs_real_3_t  values);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -482,11 +482,11 @@ cs_walldistance_setup(void)
   /* Add source term */
 
   const char *st_zone_name = cs_mesh_location_get_name(CS_MESH_LOCATION_CELLS);
-  const cs_real_t unity    = 1.0;
+  cs_real_t   unity        = 1.0;
 
   cs_equation_add_source_term_by_val(eqp,
                                      st_zone_name, /* zone name */
-                                     unity);       /* value to set */
+                                     &unity);      /* value to set */
 
   /* Add the variable field */
 

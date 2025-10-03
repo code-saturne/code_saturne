@@ -3310,7 +3310,7 @@ cs_equation_add_reaction(cs_equation_param_t *eqp,
 cs_xdef_t *
 cs_equation_add_source_term_by_val(cs_equation_param_t *eqp,
                                    const char          *z_name,
-                                   cs_real_t            val)
+                                   cs_real_t           *val)
 {
   if (eqp == nullptr)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
@@ -3328,70 +3328,12 @@ cs_equation_add_source_term_by_val(cs_equation_param_t *eqp,
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
 
-  assert(eqp->dim == 1);
   cs_xdef_t *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
                                        eqp->dim,
                                        z_id,
                                        state_flag,
                                        meta_flag,
-                                       &val);
-
-  int new_id = eqp->n_source_terms;
-  eqp->n_source_terms += 1;
-  CS_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_xdef_t *);
-  eqp->source_terms[new_id] = d;
-
-  return d;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Add a new source term by initializing a cs_xdef_t structure.
- *        Case of a definition by a constant value
- *
- * \param[in, out] eqp     pointer to a cs_equation_param_t structure
- * \param[in]      z_name  name of the associated zone (if nullptr or "" all
- *                         cells are considered)
- * \param[in]      val     value to set
- *
- * \return a pointer to the new \ref cs_xdef_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_xdef_t *
-cs_equation_add_source_term_by_vecval(cs_equation_param_t *eqp,
-                                      const char          *z_name,
-                                      const cs_real_3_t    val)
-{
-  if (eqp == nullptr)
-    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
-
-  /* Add a new cs_xdef_t structure */
-
-  int z_id = cs_volume_zone_id_by_name(z_name);
-
-  /* Define a flag according to the kind of space discretization */
-
-  cs_flag_t state_flag = 0, meta_flag = 0;
-  cs_source_term_set_default_flag(eqp->space_scheme, &state_flag, &meta_flag);
-  state_flag |= CS_FLAG_STATE_UNIFORM;
-
-  if (z_id == 0)
-    meta_flag |= CS_FLAG_FULL_LOC;
-
-  /* Copy to have a const pointer */
-  cs_real_3_t val_copy;
-  val_copy[0] = val[0];
-  val_copy[1] = val[1];
-  val_copy[2] = val[2];
-
-  assert(eqp->dim == 3);
-  cs_xdef_t *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
-                                       eqp->dim,
-                                       z_id,
-                                       state_flag,
-                                       meta_flag,
-                                       val_copy);
+                                       val);
 
   int new_id = eqp->n_source_terms;
   eqp->n_source_terms += 1;
