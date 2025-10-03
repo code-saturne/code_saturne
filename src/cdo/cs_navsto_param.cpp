@@ -1806,7 +1806,7 @@ cs_navsto_add_source_term_by_analytic(cs_navsto_param_t    *nsp,
  * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
  * \param[in]      z_name    name of the associated zone (if null or "" all
  *                           cells are considered)
- * \param[in]      val       value to set
+ * \param[in]      val       vector value to set
  *
  * \return a pointer to the new \ref cs_xdef_t structure
  */
@@ -1815,14 +1815,13 @@ cs_navsto_add_source_term_by_analytic(cs_navsto_param_t    *nsp,
 cs_xdef_t *
 cs_navsto_add_source_term_by_value(cs_navsto_param_t *nsp,
                                    const char        *z_name,
-                                   cs_real_t          val)
+                                   const cs_real_3_t  val)
 {
   if (nsp == nullptr)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
 
   cs_equation_param_t *eqp = _get_momentum_param(nsp);
-
-  return cs_equation_add_source_term_by_val(eqp, z_name, val);
+  return cs_equation_add_source_term_by_vecval(eqp, z_name, val);
 }
 
 /*----------------------------------------------------------------------------*/

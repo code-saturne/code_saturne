@@ -2290,6 +2290,25 @@ cs_equation_add_source_term_by_val(cs_equation_param_t *eqp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Add a new source term by initializing a cs_xdef_t structure.
+ *        Case of a definition by a constant value
+ *
+ * \param[in, out] eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      z_name  name of the associated zone (if null or
+ *                         "" all cells are considered)
+ * \param[in]      val     vector value to set
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_source_term_by_vecval(cs_equation_param_t *eqp,
+                                      const char          *z_name,
+                                      const cs_real_3_t    val);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Add a new source term by initializing a cs_xdef_t structure.
  *        Case of a definition by an analytical function
  *
  * \param[in, out] eqp     pointer to a cs_equation_param_t structure
