@@ -1931,7 +1931,7 @@ _define_mesh(cs_post_mesh_t        *post_mesh,
 
   /* Standard (non-particle) meshes */
 
-  else
+  else if (post_mesh->ext_def == false)
     _define_regular_mesh(post_mesh);
 }
 

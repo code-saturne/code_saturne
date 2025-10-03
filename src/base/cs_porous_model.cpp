@@ -912,7 +912,7 @@ cs_porous_model_convert_cell_to_boundary(const cs_lnum_t   n_ib_cells,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_porous_model_enable_post(void) {
+cs_porous_model_postprocess_meshes(void) {
   if (cs_glob_porous_model_extra_faces->activate_post == false)
     return;
 

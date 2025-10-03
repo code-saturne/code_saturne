@@ -374,7 +374,7 @@ _run(void)
 
   cs_gui_postprocess_meshes();
   cs_user_postprocess_meshes();
-  cs_porous_model_enable_post();
+  cs_porous_model_postprocess_meshes();
   cs_user_postprocess_probes();
 
   /* Print info on fields and associated keys and other setup options */

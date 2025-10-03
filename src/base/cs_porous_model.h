@@ -175,9 +175,7 @@ cs_porous_model_convert_cell_to_boundary(const cs_lnum_t   n_ib_cells,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_porous_model_enable_post(void);
-
-/*----------------------------------------------------------------------------*/
+cs_porous_model_postprocess_meshes(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -203,6 +201,8 @@ cs_porous_model_post_immmersed_plane(const cs_lnum_t      n_ib_cells,
                                      const cs_lnum_t      w_vtx_idx[],
                                      const cs_lnum_t      face_vertex_idx[],
                                      const cs_real_t      w_vtx[][3]);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
