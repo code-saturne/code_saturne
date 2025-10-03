@@ -108,7 +108,7 @@ cs_lagr_get_particle_list(cs_lnum_t         n_cells,
  *   component_id  <-- if -1 : extract the whole attribute
  *                     if >0 : id of the component to extract
  *   n_particles   <-- number of particles in filter
- *   particle_list <-- particle_list (1 to n numbering), or NULL
+ *   particle_list <-- particle_list (0 to n-1 numbering), or NULL
  *   values        --> particle values for given attribute
  *
  * returns:
@@ -143,7 +143,7 @@ cs_lagr_get_particle_values(const cs_lagr_particle_set_t  *particles,
  *   component_id   <-- if -1 : extract the whole attribute
  *                      if >0 : id of the component to extract
  *   n_particles    <-- number of particles in filter
- *   particle_list  <-- particle_list (1 to n numbering), or NULL
+ *   particle_list  <-- particle_list (0 to n-1 numbering), or NULL
  *   segment_values --> particle segment values
  *
  * returns:

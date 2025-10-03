@@ -287,7 +287,6 @@ cs_join_post_mesh(const char            *mesh_name,
   double  *dfield = nullptr;
   cs_gnum_t  *vertex_gnum = nullptr;
   cs_real_t  *vertex_coord = nullptr;
-  cs_lnum_t  *parent_vtx_num = nullptr;
   fvm_nodal_t  *post_mesh = nullptr;
   fvm_writer_t  *writer = _cs_join_post_param.writer;
 
@@ -367,21 +366,22 @@ cs_join_post_mesh(const char            *mesh_name,
 
   n_vertices = fvm_nodal_get_n_entities(post_mesh, 0);
 
-  CS_MALLOC(parent_vtx_num, n_vertices, cs_lnum_t);
+  cs_lnum_t  *parent_vtx_id = nullptr;
+  CS_MALLOC(parent_vtx_id, n_vertices, cs_lnum_t);
   CS_MALLOC(dfield, n_vertices, double);
 
-  fvm_nodal_get_parent_num(post_mesh, 0, parent_vtx_num);
+  fvm_nodal_get_parent_id(post_mesh, 0, parent_vtx_id);
 
   for (i = 0; i < n_vertices; i++) {
 
-    cs_join_vertex_t  data = join_mesh->vertices[parent_vtx_num[i]-1];
+    cs_join_vertex_t  data = join_mesh->vertices[parent_vtx_id[i]];
 
     dfield[i] = data.tolerance;
   }
 
   _post_vtx_dfield(post_mesh, _("VtxTolerance"), 1, dfield);
 
-  CS_FREE(parent_vtx_num);
+  CS_FREE(parent_vtx_id);
   CS_FREE(dfield);
 
   post_mesh = fvm_nodal_destroy(post_mesh);

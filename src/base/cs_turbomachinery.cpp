@@ -248,18 +248,18 @@ _turbomachinery_coupling_tag(void            *context,
 
     const int ent_dim = 3;
     int *elt_tag;
-    cs_lnum_t *parent_num;
+    cs_lnum_t *parent_id;
 
     CS_MALLOC(elt_tag, n_elts, int);
-    CS_MALLOC(parent_num, n_elts, cs_lnum_t);
+    CS_MALLOC(parent_id, n_elts, cs_lnum_t);
 
-    fvm_nodal_get_parent_num(mesh, ent_dim, parent_num);
+    fvm_nodal_get_parent_id(mesh, ent_dim, parent_id);
     for (cs_lnum_t i = 0; i < n_elts; i++) {
-      cs_lnum_t c_id = parent_num[i] - 1;
+      cs_lnum_t c_id = parent_id[i];
       elt_tag[i] = tbm->cell_rotor_num[c_id];
     }
 
-    CS_FREE(parent_num);
+    CS_FREE(parent_id);
 
     fvm_nodal_set_tag(mesh, elt_tag, ent_dim);
 

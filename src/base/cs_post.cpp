@@ -4815,7 +4815,6 @@ cs_post_define_existing_mesh(int           mesh_id,
   bool        maj_ent_flag = false;
   cs_lnum_t   n_elts = 0;
 
-  cs_lnum_t       *num_ent_parent = nullptr;
   cs_post_mesh_t  *post_mesh = nullptr;
 
   /* Initialization of base structure */
@@ -4840,19 +4839,20 @@ cs_post_define_existing_mesh(int           mesh_id,
 
   else if (dim_ent == 2 && n_elts > 0) {
 
-    CS_MALLOC(num_ent_parent, n_elts, cs_lnum_t);
+    cs_lnum_t  *parent_ent_id;
+    CS_MALLOC(parent_ent_id, n_elts, cs_lnum_t);
 
-    fvm_nodal_get_parent_num(exp_mesh, dim_ext_ent, num_ent_parent);
+    fvm_nodal_get_parent_id(exp_mesh, dim_ext_ent, parent_ent_id);
 
     b_f_num_shift = cs_glob_mesh->n_b_faces_all;
     for (ind_fac = 0; ind_fac < n_elts; ind_fac++) {
-      if (num_ent_parent[ind_fac] > b_f_num_shift)
+      if (parent_ent_id[ind_fac] >= b_f_num_shift)
         post_mesh->n_i_faces += 1;
       else
         post_mesh->n_b_faces += 1;
     }
 
-    CS_FREE(num_ent_parent);
+    CS_FREE(parent_ent_id);
 
     if (post_mesh->n_i_faces > 0)
       loc_flag[1] = 0;
@@ -5000,20 +5000,20 @@ cs_post_assign_existing_mesh(int           mesh_id,
 
   if (dim_ent == 2 && n_elts > 0) {
 
-    cs_lnum_t  *num_ent_parent = nullptr;
-    CS_MALLOC(num_ent_parent, n_elts, cs_lnum_t);
+    cs_lnum_t  *parent_ent_id = nullptr;
+    CS_MALLOC(parent_ent_id, n_elts, cs_lnum_t);
 
-    fvm_nodal_get_parent_num(exp_mesh, dim_ext_ent, num_ent_parent);
+    fvm_nodal_get_parent_id(exp_mesh, dim_ext_ent, parent_ent_id);
 
     cs_lnum_t b_f_num_shift = cs_glob_mesh->n_b_faces_all;
     for (cs_lnum_t ind_fac = 0; ind_fac < n_elts; ind_fac++) {
-      if (num_ent_parent[ind_fac] > b_f_num_shift)
+      if (parent_ent_id[ind_fac] >= b_f_num_shift)
         post_mesh->n_i_faces += 1;
       else
         post_mesh->n_b_faces += 1;
     }
 
-    CS_FREE(num_ent_parent);
+    CS_FREE(parent_ent_id);
   }
 }
 
@@ -5338,11 +5338,7 @@ cs_post_mesh_get_cell_ids(int         mesh_id,
   const cs_post_mesh_t  *mesh = _cs_post_meshes + _cs_post_mesh_id(mesh_id);
 
   if (mesh->exp_mesh != nullptr) {
-    cs_lnum_t i;
-    cs_lnum_t n_cells = fvm_nodal_get_n_entities(mesh->exp_mesh, 3);
-    fvm_nodal_get_parent_num(mesh->exp_mesh, 3, cell_ids);
-    for (i = 0; i < n_cells; i++)
-      cell_ids[i] -= 1;
+    fvm_nodal_get_parent_id(mesh->exp_mesh, 3, cell_ids);
   }
   else
     bft_error(__FILE__, __LINE__, 0,
@@ -5397,22 +5393,21 @@ cs_post_mesh_get_i_face_ids(int        mesh_id,
   const cs_post_mesh_t  *mesh = _cs_post_meshes + _cs_post_mesh_id(mesh_id);
 
   if (mesh->exp_mesh != nullptr) {
-    cs_lnum_t i;
     cs_lnum_t n_faces = fvm_nodal_get_n_entities(mesh->exp_mesh, 2);
-    const cs_lnum_t num_shift = cs_glob_mesh->n_b_faces_all + 1;
+    const cs_lnum_t id_shift = cs_glob_mesh->n_b_faces;
     if (mesh->n_b_faces == 0) {
-      fvm_nodal_get_parent_num(mesh->exp_mesh, 3, i_face_ids);
-      for (i = 0; i < n_faces; i++)
-        i_face_ids[i] -= num_shift;
+      fvm_nodal_get_parent_id(mesh->exp_mesh, 3, i_face_ids);
+      for (cs_lnum_t i = 0; i < n_faces; i++)
+        i_face_ids[i] -= id_shift;
     }
     else {
       cs_lnum_t n_i_faces = 0;
       cs_lnum_t *tmp_ids = nullptr;
       CS_MALLOC(tmp_ids, n_faces, cs_lnum_t);
-      fvm_nodal_get_parent_num(mesh->exp_mesh, 3, tmp_ids);
-      for (i = 0; i < n_faces; i++) {
+      fvm_nodal_get_parent_id(mesh->exp_mesh, 3, tmp_ids);
+      for (cs_lnum_t i = 0; i < n_faces; i++) {
         if (tmp_ids[i] > cs_glob_mesh->n_b_faces_all)
-          i_face_ids[n_i_faces++] = tmp_ids[i] - num_shift;
+          i_face_ids[n_i_faces++] = tmp_ids[i] - id_shift;
       }
       CS_FREE(tmp_ids);
     }
@@ -5470,21 +5465,18 @@ cs_post_mesh_get_b_face_ids(int        mesh_id,
   const cs_post_mesh_t  *mesh = _cs_post_meshes + _cs_post_mesh_id(mesh_id);
 
   if (mesh->exp_mesh != nullptr) {
-    cs_lnum_t i;
     cs_lnum_t n_faces = fvm_nodal_get_n_entities(mesh->exp_mesh, 2);
     if (mesh->n_i_faces == 0) {
-      fvm_nodal_get_parent_num(mesh->exp_mesh, 3, b_face_ids);
-      for (i = 0; i < n_faces; i++)
-        b_face_ids[i] -= 1;
+      fvm_nodal_get_parent_id(mesh->exp_mesh, 3, b_face_ids);
     }
     else {
       cs_lnum_t n_b_faces = 0;
       cs_lnum_t *tmp_ids = nullptr;
       CS_MALLOC(tmp_ids, n_faces, cs_lnum_t);
-      fvm_nodal_get_parent_num(mesh->exp_mesh, 3, tmp_ids);
-      for (i = 0; i < n_faces; i++) {
+      fvm_nodal_get_parent_id(mesh->exp_mesh, 3, tmp_ids);
+      for (cs_lnum_t i = 0; i < n_faces; i++) {
         if (tmp_ids[i] > cs_glob_mesh->n_b_faces_all)
-          b_face_ids[n_b_faces++] = tmp_ids[i] - 1;
+          b_face_ids[n_b_faces++] = tmp_ids[i];
       }
       CS_FREE(tmp_ids);
     }
@@ -5542,11 +5534,7 @@ cs_post_mesh_get_vertex_ids(int         mesh_id,
   const cs_post_mesh_t  *mesh = _cs_post_meshes + _cs_post_mesh_id(mesh_id);
 
   if (mesh->exp_mesh != nullptr) {
-    cs_lnum_t i;
-    cs_lnum_t n_vertices = fvm_nodal_get_n_entities(mesh->exp_mesh, 0);
-    fvm_nodal_get_parent_num(mesh->exp_mesh, 0, vertex_ids);
-    for (i = 0; i < n_vertices; i++)
-      vertex_ids[i] -= 1;
+    fvm_nodal_get_parent_id(mesh->exp_mesh, 0, vertex_ids);
   }
   else
     bft_error(__FILE__, __LINE__, 0,
@@ -7024,7 +7012,7 @@ cs_post_write_particle_values(int                    mesh_id,
   if (n_pts != n_particles) {
     int parent_dim = (post_mesh->ent_flag[3] == 2) ? 1 : 0;
     CS_MALLOC(particle_list, n_particles, cs_lnum_t);
-    fvm_nodal_get_parent_num(post_mesh->exp_mesh, parent_dim, particle_list);
+    fvm_nodal_get_parent_id(post_mesh->exp_mesh, parent_dim, particle_list);
   }
 
   /* Particle values */
@@ -7990,10 +7978,7 @@ cs_post_time_step_output(const cs_time_step_t  *ts)
 
       /* Get corresponding element ids */
 
-      fvm_nodal_get_parent_num(exp_mesh, dim_ent, parent_ids);
-
-      for (cs_lnum_t k = 0; k < n_elts; k++)
-        parent_ids[k] -= 1;
+      fvm_nodal_get_parent_id(exp_mesh, dim_ent, parent_ids);
 
       /* We can output variables for this time step */
       /*--------------------------------------------*/
@@ -8003,7 +7988,7 @@ cs_post_time_step_output(const cs_time_step_t  *ts)
       cs_lnum_t  *i_face_ids = nullptr, *b_face_ids = nullptr;
 
       /* Here list sizes are adjusted, and we point to the array filled
-         by fvm_nodal_get_parent_num() if possible. */
+         by fvm_nodal_get_parent_id() if possible. */
 
       if (dim_ent == 3) {
         n_cells = n_elts;

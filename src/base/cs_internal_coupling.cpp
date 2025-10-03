@@ -181,13 +181,13 @@ _create_locator(cs_internal_coupling_t  *cpl)
   CS_MALLOC(faces_in_nm, nfac_in_nm, cs_lnum_t);
   CS_MALLOC(tag_nm, nfac_in_nm, int);
   /* Get id of faces to tag in parent */
-  fvm_nodal_get_parent_num(nm, 2, faces_in_nm);
+  fvm_nodal_get_parent_id(nm, 2, faces_in_nm);
   /* Tag faces */
   for (cs_lnum_t ii = 0; ii < nfac_in_nm; ii++) {
     /* Default tag is 0 */
     tag_nm[ii] = 0;
     for (cs_lnum_t jj = 0; jj < n_local; jj++) {
-      if (faces_in_nm[ii] == cpl->faces_local[jj] + 1) {
+      if (faces_in_nm[ii] == cpl->faces_local[jj]) {
         tag_nm[ii] = c_tag[jj];
         break;
       }

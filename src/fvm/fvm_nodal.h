@@ -457,34 +457,11 @@ fvm_nodal_get_n_elements(const fvm_nodal_t  *this_nodal,
                          fvm_element_t       element_type);
 
 /*----------------------------------------------------------------------------
- * Return local parent numbering array for all entities of a given
- * dimension in a nodal mesh.
- *
- * The number of entities of the given dimension may be obtained
- * through fvm_nodal_get_n_entities(), the parent_num[] array is populated
- * with the parent entity numbers of those entities, in order (i.e. in
- * local section order, section by section).
- *
- * This function is similar to fvm_nodal_get_parent_num(), but returns
- * numbers (1 to n) instead of ids (0 to n-1).
- *
- * parameters:
- *   this_nodal <-- pointer to nodal mesh structure
- *   entity_dim <-- dimension of entities we are interested in (0 to 3)
- *   parent_num --> entity parent numbering (array must be pre-allocated)
- *----------------------------------------------------------------------------*/
-
-void
-fvm_nodal_get_parent_num(const fvm_nodal_t  *this_nodal,
-                         int                 entity_dim,
-                         cs_lnum_t           parent_num[]);
-
-/*----------------------------------------------------------------------------
  * Return local parent id array for all entities of a given
  * dimension in a nodal mesh.
  *
  * The number of entities of the given dimension may be obtained
- * through fvm_nodal_get_n_entities(), the parent_num[] array is populated
+ * through fvm_nodal_get_n_entities(), the parent_id[] array is populated
  * with the parent entity numbers of those entities, in order (i.e. in
  * local section order, section by section).
  *

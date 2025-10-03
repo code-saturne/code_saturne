@@ -2076,82 +2076,18 @@ fvm_nodal_get_n_elements(const fvm_nodal_t  *this_nodal,
 }
 
 /*----------------------------------------------------------------------------
- * Return local parent numbering array for all entities of a given
- * dimension in a nodal mesh.
- *
- * The number of entities of the given dimension may be obtained
- * through fvm_nodal_get_n_entities(), the parent_num[] array is populated
- * with the parent entity numbers of those entities, in order (i.e. in
- * local section order, section by section).
- *
- * This function is similar to fvm_nodal_get_parent_num(), but returns
- * numbers (1 to n) instead of ids (0 to n-1).
- *
- * parameters:
- *   this_nodal <-- pointer to nodal mesh structure
- *   entity_dim <-- dimension of entities we are interested in (0 to 3)
- *   parent_num --> entity parent numbering (array must be pre-allocated)
- *----------------------------------------------------------------------------*/
-
-void
-fvm_nodal_get_parent_num(const fvm_nodal_t  *this_nodal,
-                         int                 entity_dim,
-                         cs_lnum_t           parent_num[])
-{
-  cs_lnum_t entity_count = 0;
-
-  assert(this_nodal != nullptr);
-
-  /* Entity dimension 0: vertices */
-
-  if (entity_dim == 0) {
-    if (this_nodal->parent_vertex_id != nullptr) {
-      for (cs_lnum_t i = 0; i < this_nodal->n_vertices; i++)
-        parent_num[entity_count++] = this_nodal->parent_vertex_id[i] + 1;
-    }
-    else {
-      for (cs_lnum_t i = 0; i < this_nodal->n_vertices; i++)
-        parent_num[entity_count++] = i + 1;
-    }
-  }
-
-  /* Entity dimension > 0: edges, faces, or cells */
-
-  else {
-
-    for (int section_id = 0; section_id < this_nodal->n_sections; section_id++) {
-
-      const fvm_nodal_section_t  *section = this_nodal->sections[section_id];
-
-      if (section->entity_dim == entity_dim) {
-        if (section->parent_element_id != nullptr) {
-          for (cs_lnum_t i = 0; i < section->n_elements; i++)
-            parent_num[entity_count++] = section->parent_element_id[i] + 1;
-        }
-        else {
-          for (cs_lnum_t i = 0; i < section->n_elements; i++)
-            parent_num[entity_count++] = i + 1;
-        }
-      }
-
-    } /* end loop on sections */
-
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Return local parent id array for all entities of a given
  * dimension in a nodal mesh.
  *
  * The number of entities of the given dimension may be obtained
- * through fvm_nodal_get_n_entities(), the parent_num[] array is populated
+ * through fvm_nodal_get_n_entities(), the parent_id[] array is populated
  * with the parent entity numbers of those entities, in order (i.e. in
  * local section order, section by section).
  *
  * parameters:
  *   this_nodal <-- pointer to nodal mesh structure
  *   entity_dim <-- dimension of entities we are interested in (0 to 3)
- *   parent_id --> entity parent id (array must be pre-allocated)
+ *   parent_id  --> entity parent id (array must be pre-allocated)
  *----------------------------------------------------------------------------*/
 
 void

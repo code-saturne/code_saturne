@@ -125,7 +125,7 @@ cs_lagr_get_n_particles(void)
  * \param[in]   cell_list        optional list of containing cells filter
  * \param[in]   density          if < 1, fraction of particles to select
  * \param[out]  n_particles      number of selected particles, or nullptr
- * \param[out]  particle_list    particle_list (1 to n numbering), or nullptr
+ * \param[out]  particle_list    particle_list (0 to n-1 numbering), or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -222,7 +222,7 @@ cs_lagr_get_particle_list(cs_lnum_t         n_cells,
     }
 
     if (particle_list != nullptr)
-      particle_list[p_count] = i+1;
+      particle_list[p_count] = i;
 
     p_count += 1;
 
@@ -248,7 +248,7 @@ cs_lagr_get_particle_list(cs_lnum_t         n_cells,
  * \param[in]   component_id          if -1 : extract the whole attribute
  *                                    if >0 : id of the component to extract
  * \param[in]   n_particles           number of particles in filter
- * \param[in]   particle_list         particle_list (1 to n numbering), or nullptr
+ * \param[in]   particle_list         particle_list (0 to n-1 numbering), or nullptr
  * \param[out]  values                particle values for given attribute
  *
  * \return 0 in case of success, 1 if attribute is not present
@@ -318,7 +318,7 @@ cs_lagr_get_particle_values(const cs_lagr_particle_set_t  *particles,
   /* Case where we have a filter list */
   else {
     for (i = 0; i < n_particles; i++) {
-      cs_lnum_t p_id = particle_list[i] - 1;
+      cs_lnum_t p_id = particle_list[i];
       unsigned char *dest = _values + i*_length;
       const unsigned char
         *src = (const unsigned char *)(particles->p_buffer + p_id*extents)
@@ -350,7 +350,7 @@ cs_lagr_get_particle_values(const cs_lagr_particle_set_t  *particles,
  * \param[in]   component_id     if -1 : extract the whole attribute
  *                               if >0 : id of the component to extract
  * \param[in]   n_particles      number of particles in filter
- * \param[in]   particle_list    particle_list (1 to n numbering), or nullptr
+ * \param[in]   particle_list    particle_list (0 to n-1 numbering), or nullptr
  * \param[out]  segment_values   particle segment values
  *
  * \return 0 in case of success, 1 if attribute is not present
@@ -457,7 +457,7 @@ cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
     if (particles->p_am->count[1][attr] > 0) {
 
       for (i = 0; i < n_particles; i++) {
-        cs_lnum_t p_id = particle_list[i] - 1;
+        cs_lnum_t p_id = particle_list[i];
         unsigned char *dest = _values + i*_length*2;
         const unsigned char
           *src = (const unsigned char *)(p_buffer + p_id*extents)
@@ -478,7 +478,7 @@ cs_lagr_get_trajectory_values(const cs_lagr_particle_set_t  *particles,
     else { /* With no previous value available; copy current value */
 
       for (i = 0; i < n_particles; i++) {
-        cs_lnum_t p_id = particle_list[i] - 1;
+        cs_lnum_t p_id = particle_list[i];
         unsigned char *dest = _values + i*_length*2;
         const unsigned char
           *src = (const unsigned char *)(p_buffer + p_id*extents)
