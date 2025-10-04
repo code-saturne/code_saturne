@@ -1,5 +1,5 @@
-#ifndef __CS_TURBULENCE_RIJ_TRANSPORT_H__
-#define __CS_TURBULENCE_RIJ_TRANSPORT_H__
+#ifndef __CS_TURBULENCE_RIT_H__
+#define __CS_TURBULENCE_RIT_H__
 
 /*============================================================================
  * Turbulence transport equation.
@@ -48,18 +48,18 @@ BEGIN_C_DECLS
  * \param[in]   field_id  transported field id
  * \param[in]   xcpp      Cp
  * \param[out]  vistet    diffusivity tensor
- * \param[out]  smbrs     right hand side to update
+ * \param[out]  rhs       right hand side to update
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_rij_transport_div_tf(const int        field_id,
-                                   const cs_real_t  xcpp[],
-                                   cs_real_t        vistet[][6],
-                                   cs_real_t        smbrs[]);
+cs_turbulence_rit_div(const int        field_id,
+                      const cs_real_t  xcpp[],
+                      cs_real_t        vistet[][6],
+                      cs_real_t        rhs[]);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_TURBULENCE_RIJ_TRANSPORT_H__ */
+#endif /* __CS_TURBULENCE_RIT_H__ */

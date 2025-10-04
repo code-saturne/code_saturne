@@ -1094,15 +1094,15 @@ _solve_rit(const cs_field_t     *f,
  * \param[in]   field_id  transported field id
  * \param[in]   xcpp      Cp
  * \param[out]  vistet    diffusivity tensor
- * \param[out]  smbrs     right hand side to update
+ * \param[out]  rhs       right hand side to update
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_rij_transport_div_tf(const int        field_id,
-                                   const cs_real_t  xcpp[],
-                                   cs_real_t        vistet[][6],
-                                   cs_real_t        smbrs[])
+cs_turbulence_rit_div(const int        field_id,
+                      const cs_real_t  xcpp[],
+                      cs_real_t        vistet[][6],
+                      cs_real_t        rhs[])
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -1318,7 +1318,7 @@ cs_turbulence_rij_transport_div_tf(const int        field_id,
     cs_divergence(m, 1, thflxf, thflxb, divut);
 
     ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      smbrs[c_id] -= divut[c_id];
+      rhs[c_id] -= divut[c_id];
     });
 
     /* For post-processing intensive quantities */

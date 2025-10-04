@@ -543,7 +543,7 @@ _diffusion_terms_scalar(const cs_field_t           *f,
       cs_field_t *f_alpha = cs_field_by_composite_name(f->name, "alpha");
       cs_turbulence_rij_solve_alpha(f_alpha->id, -1, cs_turb_xclt);
     }
-    cs_turbulence_rij_transport_div_tf(f->id, xcpp, vistet, rhs);
+    cs_turbulence_rit_div(f->id, xcpp, vistet, rhs);
   }
 
   /* Scalar diffusivity */
