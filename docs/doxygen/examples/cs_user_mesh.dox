@@ -213,7 +213,7 @@
 
   or a user defined flag array
 
-  \snippet cs_user_mesh-modify.cpp mesh_modify_remove_cells
+  \snippet cs_user_mesh-modify.cpp mesh_modify_remove_cells_2
 
   \subsection  cs_user_mesh_h_cs_user_mesh_save Mesh saving
 

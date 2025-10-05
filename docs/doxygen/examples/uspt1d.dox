@@ -30,32 +30,55 @@
   The \ref cs_user_1d_wall_thermal subroutine is used to set the 1D-wall thermal
   module parameters.
 
+  This function is called 3 times:
+  - A first call (`iappel == 1`) to count faces in the selected zones.
+  - A second call (`iappel == 2`) to initialize associated arrays.
+  - Subsequent calls (`iappel == 3`) at each time step to define
+    and update additional arrays.
+
   \section uspt1d_h_loc_var Local variables declaration
+
+  The values in this example should be defined for each call.
 
   \snippet cs_user_1d_wall_thermal.cpp loc_var_dec
 
-  \section uspt1d_h_allocate Allocation
-
-  \snippet cs_user_1d_wall_thermal.cpp allocate
-
-  \section uspt1d_h_restart Rereading of the restart file
+  The restart behavior of this module can be modified
+  by adapting the following snippet:
 
   \snippet cs_user_1d_wall_thermal.cpp restart
 
-  \section uspt1d_h_iappel_12 iappel = 1 or 2
+  \section uspt1d_h_iappel_12 Associatation with boundary zones.
+
+  For the first and second initialization passes (`iappel` = 1 or 2), the associated
+  faces must be determined.
+
+  At the first pass, the faces must simply be counted. At the second pass, the list
+  of associated faces is actually set.
+
+  The following code illustrates how this can be handled.
 
   \snippet cs_user_1d_wall_thermal.cpp iappel_12
 
-  \section uspt1d_h_iappel_2 iappel = 2
+  \section uspt1d_h_iappel_2 Thermal model setup.
+
+  At the second initialization pass  (`iappel` 2), the number of discretization
+  points along each 1d segment, their distribution (based on a geometric
+  progression ratio), the wall thickness, and initial temperature must also
+  be defined:
+
+  For the second initialization pass  (`iappel` 2), The list of associated
+  faces is actualley set. Also, the number of discretization points along each
+  1d segment, their distribution (based on a geometric progression ratio), the wall
+  thickness, and initial temperature must also be defined.
 
   \snippet cs_user_1d_wall_thermal.cpp iappel_2
 
-  \section uspt1d_h_iappel_3 iappel = 3
+  \section uspt1d_h_iappel_3 Computation
+
+  In the solution steps, the solid thermal properties and boundary conditions
+  can be updated at each time step, where the function is called with
+  parameter `iappel` = 3.
 
   \snippet cs_user_1d_wall_thermal.cpp iappel_3
-
-  \section uspt1d_h_deallocate Deallocation
-
-  \snippet cs_user_1d_wall_thermal.cpp deallocate
 
 */

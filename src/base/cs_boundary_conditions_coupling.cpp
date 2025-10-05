@@ -104,8 +104,8 @@ cs_boundary_conditions_coupling_t_in(void)
   const cs_real_t *tppt1d = cs_glob_1d_wall_thermal->tppt1d;
 
   /* Update boundary temperature field for radiative transfer
-     or wall condensation.
- */
+     or wall condensation. */
+
   if (   (nfpt1d > 0)
       && (   cs_glob_rad_transfer_params->type > 0
           || cs_glob_wall_condensation->icondb > -1)) {

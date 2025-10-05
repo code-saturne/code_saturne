@@ -67,7 +67,6 @@ void
 cs_user_1d_wall_thermal([[maybe_unused]] int iappel)
 {
   /*! [loc_var_dec] */
-  int ifbt1d = 0;
   cs_1d_wall_thermal_t *wall_thermal = cs_get_glob_1d_wall_thermal();
   /*! [loc_var_dec] */
 
@@ -78,9 +77,7 @@ cs_user_1d_wall_thermal([[maybe_unused]] int iappel)
   /*! [iappel_12] */
   if (iappel == 1 || iappel == 2) {
 
-    int izone = 0;
-
-    /*--------------------------------------------------------------------------*
+    /*-------------------------------------------------------------------------*
      * Faces determining with the 1-D thermal module:
      *----------------------------------------------
      *
@@ -109,23 +106,22 @@ cs_user_1d_wall_thermal([[maybe_unused]] int iappel)
     cs_selector_get_b_face_list("2 or 3 or 5 or 6 or 7 or 8 or 9 or 10",
                                 &nlelt, lstelt);
 
-    izone++;
-
-    /* Fill the ifpt1d array, and compute nfpt1d */
-
-    for (cs_lnum_t ilelt = 0 ; ilelt < nlelt ; ilelt++) {
-      cs_lnum_t ifac = lstelt[ilelt];
-      wall_thermal->izft1d[ifac] = izone;
-      if (iappel == 2) wall_thermal->ifpt1d[ifbt1d] = ifac+1;
-      ifbt1d++;
+    if (iappel == 1) {
+      wall_thermal->nfpt1d = nlelt;
+    }
+    else if (iappel == 2) {
+      /* Fill the ifpt1d array */
+      cs_lnum_t ifbt1d = 0;
+      for (cs_lnum_t ilelt = 0 ; ilelt < nlelt ; ilelt++) {
+        cs_lnum_t ifac = lstelt[ilelt];
+        wall_thermal->ifpt1d[ifbt1d] = ifac+1;
+        ifbt1d++;
+      }
     }
 
     CS_FREE(lstelt);
   }
 
-  if (iappel == 1) {
-    wall_thermal->nfpt1d = ifbt1d;
-  }
   /*! [iappel_12] */
 
   /*! [iappel_2] */
@@ -135,14 +131,14 @@ cs_user_1d_wall_thermal([[maybe_unused]] int iappel)
    *
    * (Only one pass during the beginning of the computation)
 
-   * locals_models[ii].nppt1d: number of discretized points associated
+   * local_models[ii].nppt1d: number of discretized points associated
    *   to the (ii)th face with the 1-D thermal module.
-   * locals_models[ii].eppt1d: wall thickness associated to the (ii)th face
+   * local_models[ii].eppt1d: wall thickness associated to the (ii)th face
    *   with the 1-D thermal module.
-   * locals_models[ii].rgpt1d: geometric progression ratio of the
+   * local_models[ii].rgpt1d: geometric progression ratio of the
    *   meshing refinement associated to the (ii)th face with the
    *   1-D thermal module. (with : rgpt1d > 1 => small meshes on the fluid side)
-   * locals_models[ii].tppt1d: wall temperature initialization associated to the
+   * local_models[ii].tppt1d: wall temperature initialization associated to the
    *   (ii)th face with the 1-D thermal module.
 
    * Remarks:
