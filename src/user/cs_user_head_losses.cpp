@@ -47,21 +47,13 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \file cs_user_head_losses.cpp
- *
- * \brief User head loss definitions.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Define head losses for a given volume zone.
+/*
+ * Define head losses for a given volume zone.
  *
  * Head loss tensor coefficients for each cell are organized as follows:
  * ck11, ck22, ck33, ck12, ck23, ck13.

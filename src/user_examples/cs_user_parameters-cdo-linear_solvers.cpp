@@ -61,11 +61,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*
- * \file cs_user_parameters-cdo-linear_solvers.cpp
- *
- * \brief Linear solvers examples.
- *
- * See \ref parameters for examples.
+ * Linear solvers examples.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -75,7 +71,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define or modify general numerical and physical user parameters.
+ * Define or modify general numerical and physical user parameters.
  *
  * At the calling point of this function, most model-related most variables
  * and other fields have been defined, so specific settings related to those
@@ -521,8 +517,8 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Define linear solver options.
+/*
+ * Define linear solver options.
  *
  * This function is called at the setup stage, once user and most model-based
  * fields are defined.

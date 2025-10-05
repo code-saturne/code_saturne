@@ -48,35 +48,13 @@ BEGIN_C_DECLS
  * Additional Doxygen documentation
  *============================================================================*/
 
-/*! \file cs_user_radiative_transfer.cpp
- *
- * \brief User function for input of radiative transfer parameters:
- *        absorption coefficient and net radiation flux.
- *
- *  See \ref cs_user_radiative_transfer for examples.
- */
-
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief User function for input of radiative transfer module options.
- *
- * \deprecated Use cs_user_model instead.
- */
-/*----------------------------------------------------------------------------*/
-
-#pragma weak cs_user_radiative_transfer_parameters
-void
-cs_user_radiative_transfer_parameters(void)
-{
-}
-
-/*-----------------------------------------------------------------------------*/
-/*!
- * \brief Absorption coefficient for radiative module
+/*
+ * Absorption coefficient for radiative module
  *
  * It is necessary to define the value of the fluid's absorption coefficient Ck.
  *
@@ -104,8 +82,8 @@ cs_user_rad_transfer_absorption
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the net radiation flux.
+/*
+ * Compute the net radiation flux.
  *
  * The density of net radiation flux must be calculated
  * consistently with the boundary conditions of the intensity.

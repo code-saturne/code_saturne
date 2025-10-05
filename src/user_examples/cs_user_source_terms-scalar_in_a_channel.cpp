@@ -49,26 +49,14 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \file cs_user_source_terms-scalar_in_a_channel.cpp
- *
- * \brief User source terms for a scalar in a channel example.
- *
- * See the reference \ref cs_user_source_terms.c for documentation.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Additional user-defined source terms for variable equations
- *        (momentum, scalars, turbulence...).
- *
- *  This function is called at each time step, for each relevant field.
+/*
+ * Additional user-defined source terms for variable equations
+ * (momentum, scalars, turbulence...).
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
  * \param[in]       f_id     field id of the variable

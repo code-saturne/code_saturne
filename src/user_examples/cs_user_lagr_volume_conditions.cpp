@@ -101,7 +101,7 @@ _injection_profile([[maybe_unused]] int          zone_id,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define particle volume conditions.
+ * Define particle volume conditions.
  *
  * This is used for the definition of volume injections,
  * based on predefined volume zones (\ref cs_zone_t).

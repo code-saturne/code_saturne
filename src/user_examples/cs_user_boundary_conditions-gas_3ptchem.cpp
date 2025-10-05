@@ -49,21 +49,13 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_boundary_conditions-gas_3ptchem.cpp
- *
- * \brief User functions for boundary condition definitions.
- */
-/*----------------------------------------------------------------------------*/
-
 /*=============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Set boundary conditions to be applied.
+ * Setup boundary conditions to be applied.
  *
  * This function is called just before \ref cs_user_finalize_setup, and
  * boundary conditions can be defined in either of those functions,
@@ -94,7 +86,7 @@ cs_user_boundary_conditions_setup([[maybe_unused]] cs_domain_t  *domain)
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief User definition of boundary conditions
+ * User definition of boundary conditions.
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
  * \param[in, out]  bc_type  boundary face types

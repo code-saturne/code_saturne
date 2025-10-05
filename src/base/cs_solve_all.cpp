@@ -202,7 +202,7 @@ _update_previous_values(int        itrale,
  * \param[in]  m        pointer to mesh structure
  * \param[in]  ncepdc   number of cellules with head lossses
  * \param[in]  icepdc   ids of cells on which to apply head losses
- * \param[in]  ckupdc   head loss coefficients at matchin cells
+ * \param[in]  ckupdc   head loss coefficients at matching cells
  */
 /*----------------------------------------------------------------------------*/
 

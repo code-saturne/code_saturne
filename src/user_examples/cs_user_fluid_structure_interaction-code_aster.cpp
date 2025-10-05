@@ -47,23 +47,14 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \file cs_user_fluid_structure_interaction-code_aster.cpp
- *
- * \brief User-defined functions dedicated to Fluid-Structure interaction
- *        modeling. Examples for code_aster.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Define structure numbers for faces associated with internal
- *        or external (code_aster) structures.
+/*
+ * Define structure numbers for faces associated with internal
+ * or external (code_aster) structures.
  *
  * Structure numbers associated to a given face have the following values:
  * - -i where coupled to  i-th (1-to n) external (code_aster) structure.

@@ -44,21 +44,13 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \file cs_user_physical_properties.cpp
- *
- * \brief User definition of physical properties.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Function called at each time step to define physical properties.
+/*
+ * Function called at each time step to define physical properties.
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
  */
@@ -74,8 +66,8 @@ cs_user_physical_properties
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief User definition of enthalpy to temperature conversion.
+/*
+ * User definition of enthalpy to temperature conversion.
  *
  * This allows overwriting the solver defaults if necessary.
  *
@@ -107,8 +99,8 @@ cs_user_physical_properties_h_to_t
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief User definition of temperature to enthalpy conversion.
+/*
+ * User definition of temperature to enthalpy conversion.
  *
  * This allows overwriting the solver defaults if necessary.
  *
@@ -140,8 +132,8 @@ cs_user_physical_properties_t_to_h
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief User modification of the turbulence viscosity.
+/*
+ * User modification of the turbulence viscosity.
  *
  * Turbulent viscosity \f$ \mu_T \f$ (kg/(m s)) can be modified.
  * You can access the field by its name.
@@ -160,8 +152,8 @@ cs_user_physical_properties_turb_viscosity
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief User function to define a custom law for the thermodynamic pressure.
+/*
+ * User function to define a custom law for the thermodynamic pressure.
  *
  * Allows to define a custom law for the constant uniform thermodynamic
  * pressure (whenn \ref cs_velocity_pressure_model_t::idilat = 3 or

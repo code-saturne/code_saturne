@@ -47,23 +47,14 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \file cs_user_fluid_structure_interaction.cpp
- *
- * \brief User-defined functions dedicated to Fluid-Structure interaction
- *        modeling.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Definition of internal mobile structures and corresponding initial
- *        conditions (initial displacement and velocity ).
+/*
+ * Definition of internal mobile structures and corresponding initial
+ * conditions (initial displacement and velocity ).
  *
  * \param[in]       is_restart         indicate if computation is restarted
  * \param[in]       n_structs          number of mobile structures
@@ -80,8 +71,6 @@ BEGIN_C_DECLS
  * \param[in, out]  vstr0              initial velocity per structure
  * \param[in, out]  xstreq             displacement of initial mesh relative to
  *                                     structures position at equilibrium
- *
- * \param[in, out]  plot_time_control  time control associated to plotting
  */
 /*----------------------------------------------------------------------------*/
 
@@ -104,8 +93,8 @@ cs_user_fsi_structure_define
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Time-based settings for internal mobile structures.
+/*
+ * Time-based settings for internal mobile structures.
  *
  * \param[in]       n_structs  number of mobile structures
  * \param[in]       ts         time step structure
@@ -139,9 +128,9 @@ cs_user_fsi_structure_values
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Define structure numbers for faces associated with internal
- *        or external (code_aster) structures.
+/*
+ * Define structure numbers for faces associated with internal
+ * or external (code_aster) structures.
  *
  * Structure numbers associated to a given face have the following values:
  * - -i where coupled to  i-th (1-to n) external (code_aster) structure.
@@ -158,20 +147,20 @@ cs_user_fsi_structure_values
 void
 cs_user_fsi_structure_num
 (
-  [[maybe_unused]] cs_domain_t                *domain,
-  [[maybe_unused]] int                         structure_num[],
-  [[maybe_unused]] cs_mobile_structure_type_t  structure_typ[]
+  [[maybe_unused]] cs_domain_t                 *domain,
+  [[maybe_unused]] int                          structure_num[],
+  [[maybe_unused]] cs_mobile_structure_type_t   structure_typ[]
 )
 {
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute displacement fluid boundary for the external structures
- *        (code_aster excluded).
+/*
+ * Compute displacement fluid boundary for the external structures
+ * (code_aster excluded).
  *
- * \param[in]  domain         pointer to a cs_domain_t structure
- * \param[in]  b_stress       pointer to boundary stress array
+ * \param[in]       domain    pointer to a cs_domain_t structure
+ * \param[in]       b_stress  pointer to boundary stress array
  * \param[in, out]  disaple   pointer to mesh_displacement array
  */
 /*----------------------------------------------------------------------------*/
@@ -188,18 +177,18 @@ cs_user_fsi_external_displacement
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute convergence state of the external structures
- *        (code_aster excluded).
+/*
+ * Compute convergence state of the external structures
+ * (code_aster excluded).
  *
  * Compute converge status and residual of the external coupling
  * Convergence status: 0 - external coupling has not converged
  *                     1 - external coupling has converged
  *
- * \param[in]  domain         pointer to a cs_domain_t structure
- * \param[in]  epsilon        convergence criterion
- * \param[out] cvg_status     convergence status
- * \param[out] residual       value of the residual
+ * \param[in]   domain        pointer to a cs_domain_t structure
+ * \param[in]   epsilon       convergence criterion
+ * \param[out]  cvg_status    convergence status
+ * \param[out]  residual      value of the residual
  */
 /*----------------------------------------------------------------------------*/
 

@@ -43,23 +43,13 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_time_table.cpp
- *
- * \brief User definitions of time tables
- *
- * See \ref cs_porosity for examples.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define time tables using C API.
+ * Define time tables using C API.
  * This function is called at the begin of the simulation only.
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure

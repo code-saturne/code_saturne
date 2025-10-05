@@ -1395,10 +1395,6 @@ cs_internal_coupling_setup(void)
   if (_n_internal_couplings < 1)
     return;
 
-  /* Call deprecated functions first */
-  cs_user_internal_coupling_add_volumes(cs_glob_mesh);
-  cs_user_internal_coupling_from_disjoint_meshes(cs_glob_mesh);
-
   /* Now do setup proper */
 
   int field_id;
@@ -1678,45 +1674,6 @@ cs_ic_field_dist_data_by_face_id(const int         field_id,
   }
 
   CS_FREE(local);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define volumes as internal coupling zones.
- *
- * These zones will be separated from the rest of the domain using automatically
- * defined thin walls.
- *
- * \deprecated
- * move contents to\ref cs_user_internal_coupling instead.
- *
- * \param[in, out] mesh  pointer to a cs_mesh_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_internal_coupling_add_volumes(cs_mesh_t  *mesh)
-{
-  CS_UNUSED(mesh);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define volumes from separated meshes as internal coupling zones.
- *
- * These zones must be disjoint and the face selection criteria must be specified.
- *
- * \deprecated
- * move contents to\ref cs_user_internal_coupling instead.
- *
- * \param[in, out]  mesh  pointer to a cs_mesh_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_internal_coupling_from_disjoint_meshes(cs_mesh_t  *mesh)
-{
-  CS_UNUSED(mesh);
 }
 
 /*----------------------------------------------------------------------------*/

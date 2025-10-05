@@ -50,16 +50,6 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_mesh-input-save.cpp
- *
- * \brief Mesh input definition and mesh saving examples.
- *
- * See \ref cs_user_mesh for examples.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
@@ -100,7 +90,7 @@ _combine_tr_matrixes(const double  a[3][4],
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Force preprocessing behavior in case of restart.
+ * Force preprocessing behavior in case of restart.
  *
  * By default, in case of restart, if a "restart/mesh_input.csm" file
  * is present, it will be read and proprocessing will be skipped.
@@ -121,7 +111,7 @@ cs_user_mesh_restart_mode(void)
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define mesh files to read and optional associated transformations.
+ * Define mesh files to read and optional associated transformations.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -173,7 +163,7 @@ cs_user_mesh_input(void)
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Enable or disable mesh saving.
+ * Enable or disable mesh saving.
  *
  * By default, mesh is saved when modified.
  *

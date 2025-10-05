@@ -56,10 +56,8 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*
- * \file cs_user_parameters-cdo-solidification.cpp
- *
- * \brief User functions for setting a calculation using the solidification
- *        module with CDO schemes
+ * User functions for setting a calculation using the solidification
+ * module with CDO schemes
  */
 /*----------------------------------------------------------------------------*/
 
@@ -69,7 +67,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Select physical model options, including user fields.
+ * Select physical model options, including user fields.
  *
  * This function is called at the earliest stages of the data setup,
  * so field ids are not available yet.
@@ -301,7 +299,7 @@ cs_user_model(void)
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define or modify general numerical and physical user parameters.
+ * Define or modify general numerical and physical user parameters.
  *
  * At the calling point of this function, most model-related most variables
  * and other fields have been defined, so specific settings related to those
@@ -365,7 +363,7 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define or modify output user parameters.
+ * Define or modify output user parameters.
  *
  * For CDO schemes, this function concludes the setup of properties,
  * equations, source terms...

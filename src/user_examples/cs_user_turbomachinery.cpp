@@ -50,23 +50,13 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_turbomachinery.cpp
- *
- * \brief Definition of turbomachinery related options.
- *
- * See \ref turbomachinery for examples.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define rotor/stator model.
+ * Define rotor/stator model.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -89,7 +79,7 @@ cs_user_turbomachinery(void)
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define rotor axes, associated cells, and rotor/stator faces.
+ * Define rotor axes, associated cells, and rotor/stator faces.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -149,7 +139,7 @@ cs_user_turbomachinery_rotor(void)
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define rotation velocity of rotor.
+ * Define rotation velocity of rotor.
  */
 /*----------------------------------------------------------------------------*/
 

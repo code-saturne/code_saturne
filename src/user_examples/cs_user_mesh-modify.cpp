@@ -49,23 +49,13 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_mesh-modify.cpp
- *
- * \brief Mesh modification example.
- *
- * See \ref cs_user_mesh for examples.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Modify geometry and mesh.
+ * Modify geometry and mesh.
  *
  * \param[in,out] mesh  pointer to a cs_mesh_t structure
 */
@@ -479,8 +469,8 @@ cs_user_mesh_modify([[maybe_unused]] cs_mesh_t  *mesh)
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Apply partial modifications to the mesh after the preprocessing
- *        stage, but before initial postprocessing mesh building.
+ * Apply partial modifications to the mesh after the preprocessing
+ * stage, but before initial postprocessing mesh building.
  *
  * \param[in,out] mesh  pointer to a cs_mesh_t structure
  * \param[in,out] mesh_quantities pointer to a cs_mesh_quantities_t structure

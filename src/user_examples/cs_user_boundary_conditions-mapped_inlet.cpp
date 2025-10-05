@@ -63,40 +63,10 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief User definition of boundary conditions
+ * User definition of boundary conditions.
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
  * \param[in, out]  bc_type  boundary face types
- *
- * The icodcl and rcodcl arrays are pre-initialized based on default
- * and GUI-defined definitions, and may be modified here.
- *
- * For a given variable field f, and a given face "face_id", these arrays
- * may be used as follows:
- *
- * - Boundary condition type code given at:
- *   f->bc_coeffs->icodcl[face_id]
- *
- * - Dirichlet value defined at:
- *   f->bc_coeffs->rcodcl1[face_id]
- *
- * - Interior exchange coefficient (infinite if no exchange) at:
- *   f->bc_coeffs->rcodcl2[face_id]
- *
- * - Flux density defined at:
- *   f->bc_coeffs->rcodcl3[face_id]
- *
- * For vector or tensor fields, these arrays are not interleaved,
- * so for a given face "face_id" and field component "comp_id", access
- * is as follows (where n_b_faces is domain->mesh->n_b_faces):
- *
- *   f->bc_coeffs->rcodcl1[n_b_faces*comp_id + face_id]\n
- *   f->bc_coeffs->rcodcl2[n_b_faces*comp_id + face_id]\n
- *   f->bc_coeffs->rcodcl3[n_b_faces*comp_id + face_id]\n\n
- *
- * Only the icodcl code values from the first component are used in the case
- * of vector or tensor fields, so the icodcl values can be defined as for
- * a scalar.
  */
 /*----------------------------------------------------------------------------*/
 

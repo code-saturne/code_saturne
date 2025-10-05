@@ -53,22 +53,13 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_initialization-pulverized_coal.cpp
- *
- * \brief Initialization prior to solving time steps.
- *        Pulverized coal example.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Initialize variables.
+ * Initialize variables.
  *
  * This function is called at beginning of the computation
  * (restart or not) before the time step loop.

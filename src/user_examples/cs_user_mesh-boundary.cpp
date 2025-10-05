@@ -61,9 +61,9 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Insert boundaries into a mesh.
+ * Insert boundaries into a mesh.
  *
- * \param[in,out] mesh pointer to cs_mesh_t structure
+ * \param[in,out] mesh  pointer to a cs_mesh_t structure
  */
 /*----------------------------------------------------------------------------*/
 

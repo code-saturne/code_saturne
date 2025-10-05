@@ -56,11 +56,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*
- * \file cs_user_parameters-coupling.cpp
- *
- * \brief Code coupling parameters examples.
- *
- * See \ref parameters for examples.
+ * Code coupling parameters examples.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -70,7 +66,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define or modify general numerical and physical user parameters.
+ * Define or modify general numerical and physical user parameters.
  *
  * At the calling point of this function, most model-related most variables
  * and other fields have been defined, so specific settings related to those

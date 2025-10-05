@@ -68,7 +68,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief User modification of newly injected particles.
+ * User modification of newly injected particles.
  *
  * This function is called after the initialization of the new particles in
  * order to modify them according to new particle profiles (injection

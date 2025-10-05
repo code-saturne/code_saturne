@@ -55,40 +55,13 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_mesh-joining.cpp
- *
- * \brief Mesh joining example.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define mesh joinings.
- *
- * This is done by calling the cs_join_add() function for each joining
- * operation to add.
- *
- * The arguments to \ref cs_join_add are:
- * \param [in] sel_criteria boundary face selection criteria string
- * \param [in] fraction value of the fraction parameter;
- *                    the initial tolerance radius associated to each vertex
- *                    is equal to the lenght of the shortest incident edge,
- *                    multiplied by this fraction.
- * \param [in] plane value of the plane parameter;
- *                    when subdividing faces, 2 faces are considered
- *                    coplanar and may be joined if angle between their
- *                    normals (in degrees) does not exceed this parameter.
- * \param [in] verbosity level of verbosity required
- *
- * The function returns a number (1 to n) associated with the
- * new joining. This number may optionnally be used to assign advanced
- * parameters to the joining.
+ * Define mesh joinings.
  */
 /*----------------------------------------------------------------------------*/
 

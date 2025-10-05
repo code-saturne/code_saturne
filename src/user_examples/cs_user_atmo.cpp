@@ -47,22 +47,14 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \file cs_user_atmo.cpp
- *
- * \brief User-defined functions specific to amospheric flow models.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Fill in vertical profiles of atmospheric properties prior to solving
- *        1D radiative transfers.
+/*
+ * Fill in vertical profiles of atmospheric properties prior to solving
+ * 1D radiative transfers.
  *
  * \param[in, out] preray        pressure vertical profile
  * \param[in, out] temray        real temperature vertical profile

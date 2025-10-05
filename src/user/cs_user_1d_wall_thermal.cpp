@@ -43,11 +43,13 @@
 
 BEGIN_C_DECLS
 
+/*============================================================================
+ * User function definitions
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------*/
-/*!
- * \file cs_user_1d_wall_thermal.cpp
- *
- * \brief Data Entry of the 1D wall thermal module.
+/*
+ * Data Entry of the 1D wall thermal module.
  *
  * \param[in]   iappel   Call number:
  *                       - 1: first call during the initialization (called once)
@@ -58,10 +60,6 @@ BEGIN_C_DECLS
  *                       Filling iclt1d, xlmbt1, rcpt1d and dtpt1d arrays.
  */
 /*----------------------------------------------------------------------------*/
-
-/*============================================================================
- * User function definitions
- *============================================================================*/
 
 #pragma weak cs_user_1d_wall_thermal
 void

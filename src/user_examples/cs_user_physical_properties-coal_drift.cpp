@@ -44,21 +44,13 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_physical_properties-coal_drift.cpp
- *
- * \brief User definition of physical properties.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Function called at each time step to define physical properties.
+ * Function called at each time step to define physical properties.
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
  */

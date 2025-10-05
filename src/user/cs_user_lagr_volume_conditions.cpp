@@ -50,8 +50,8 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Define particle volume conditions.
+/*
+ * Define particle volume conditions.
  *
  * This is used for the definition of volume injections,
  * based on predefined volume zones (\ref cs_zone_t).
@@ -65,9 +65,9 @@ cs_user_lagr_volume_conditions(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Handling of a particle interaction with a interior face of type
- *        \ref CS_LAGR_BC_USER.
+/*
+ * Handling of a particle interaction with a interior face of type
+ * CS_LAGR_BC_USER.
  *
  * \param[in, out]  particles       pointer to particle set
  * \param[in]       p_id            particle id

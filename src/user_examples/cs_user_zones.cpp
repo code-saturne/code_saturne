@@ -138,10 +138,8 @@ _g3_boundary_cells([[maybe_unused]] void   *input,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Define volume and surface zones.
- *
- * See \ref sec_selection_criteria for details on selection criteria.
+/*
+ * Define volume and surface zones.
  */
 /*----------------------------------------------------------------------------*/
 

@@ -1,8 +1,5 @@
 /*============================================================================
- * Code couplings definition with SYRTHES and code_saturne.
- *
- * 1) Define conjuguate heat transfer couplings with the SYRTHES code
- * 2) Define couplings with other instances of code_saturne
+ * Code couplings definition with SYRTHES, code_saturne., and CATHARE.
  *============================================================================*/
 
 /* VERS */
@@ -49,23 +46,13 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_coupling-syrthes.cpp
- *
- * \brief Code couplings definition with SYRTHES and code_saturne.
- *
- * See \ref user_coupling for examples.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define couplings with SYRTHES code.
+ * Define couplings with SYRTHES code.
  *
  * This is done by calling the \ref cs_syr_coupling_define function for each
  * coupling to add.
@@ -165,7 +152,7 @@ cs_user_syrthes_coupling(void)
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Compute a volume exchange coefficient for SYRTHES couplings.
+ * Compute a volume exchange coefficient for SYRTHES couplings.
  *
  * \param[in]   coupling_id   Syrthes coupling id
  * \param[in]   syrthes_name  name of associated Syrthes instance

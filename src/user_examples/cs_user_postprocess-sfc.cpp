@@ -367,14 +367,15 @@ _sfc_cell_select([[maybe_unused]] void   *input,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Define post-processing meshes.
+/*
+ * Define post-processing meshes.
  *
  * The main post-processing meshes may be configured, and additional
  * post-processing meshes may be defined as a subset of the main mesh's
  * cells or faces (both interior and boundary).
  */
 /*----------------------------------------------------------------------------*/
+
 void
 cs_user_postprocess_meshes(void)
 {

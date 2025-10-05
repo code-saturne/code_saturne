@@ -52,8 +52,8 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief User function for output of values on a post-processing mesh.
+/*
+ * User function for output of values on a post-processing mesh.
  *
  * \param[in]       mesh_name    name of the output mesh for the current call
  * \param[in]       mesh_id      id of the output mesh for the current call

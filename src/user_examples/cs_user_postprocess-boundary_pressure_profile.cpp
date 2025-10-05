@@ -53,7 +53,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define post-processing writers.
+ * Define post-processing writers.
  *
  * The default output format and frequency may be configured, and additional
  * post-processing writers allowing outputs in different formats or with
@@ -80,8 +80,8 @@ cs_user_postprocess_writers(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Define monitoring probes and profiles.
+/*
+ * Define monitoring probes and profiles.
  *
  * Profiles are defined as sets of probes.
  */
@@ -114,7 +114,7 @@ cs_user_postprocess_probes(void)
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief User function for output of values on a post-processing mesh.
+ * User function for output of values on a post-processing mesh.
  *
  * \param[in]       mesh_name    name of the output mesh for the current call
  * \param[in]       mesh_id      id of the output mesh for the current call

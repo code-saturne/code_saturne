@@ -125,7 +125,7 @@ _initial_temperature([[maybe_unused]] cs_real_t   time,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Select physical model options, including user fields.
+ * Select physical model options, including user fields.
  *
  * This function is called at the earliest stages of the data setup,
  * so field ids are not available yet.
@@ -151,7 +151,7 @@ cs_user_model(void)
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define or modify general numerical and physical user parameters.
+ * Define or modify general numerical and physical user parameters.
  *
  * At the calling point of this function, most model-related most variables
  * and other fields have been defined, so specific settings related to those
@@ -196,7 +196,7 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define or modify output user parameters.
+ * Define or modify output user parameters.
  *
  * For CDO schemes, this function concludes the setup of properties,
  * equations, source terms...

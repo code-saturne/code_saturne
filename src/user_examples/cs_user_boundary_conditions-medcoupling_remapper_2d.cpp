@@ -55,7 +55,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief User definition of boundary conditions
+ * User definition of boundary conditions.
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
  * \param[in, out]  bc_type  boundary face types

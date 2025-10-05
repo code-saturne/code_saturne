@@ -52,6 +52,79 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \file cs_user_lagr_boundary_conditions.cpp
+ */
+/*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define particle boundary conditions.
+ *
+ * This is used for the definition of inlet and other boundaries,
+ * based on predefined boundary zones (\ref cs_zone_t).
+ *
+ * \param[in] bc_type    type of the boundary faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_lagr_boundary_conditions(const int  itypfb[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Handling of a particle interaction with a boundary of type
+ *        \ref CS_LAGR_BC_USER.
+ *
+ * \param[in, out]  particles       pointer to particle set
+ * \param[in]       p_id            particle id
+ * \param[in]       face_id         boundary face id
+ * \param[in]       face_norm       unit face (or face subdivision) normal
+ * \param[in]       c_intersect     coordinates of intersection with the face
+ * \param[in]       t_intersect     relative distance (in [0, 1]) of the
+ *                                  intersection point with the face relative
+ *                                  to the initial trajectory segment
+ * \param[in]       b_zone_id       boundary zone id of the matching face
+ * \param[in, out]  event_flag      event flag in case events are available
+ * \param[in, out]  tracking_state  particle tracking state
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_user_boundary_interaction(cs_lagr_particle_set_t    *particles,
+                                  cs_lnum_t                  p_id,
+                                  cs_lnum_t                  face_id,
+                                  const cs_real_t            face_norm[3],
+                                  const cs_real_t            c_intersect[3],
+                                  cs_real_t                  t_intersect,
+                                  int                        b_zone_id,
+                                  int                       *event_flag,
+                                  cs_lagr_tracking_state_t  *tracking_state);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \file cs_user_lagr_model.cpp
+ */
+/*----------------------------------------------------------------------------*/
+
+/*---------------------------------------------------------------------------*/
+/*
+ * \brief User function of the Lagrangian particle-tracking module
+ *
+ *  User input of physical, numerical and post-processing options.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_lagr_model(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \file cs_user_lagr_particle.cpp
+ */
+/*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief User definition of an external force field acting on the particles.
  *
  * It must be prescribed in every cell and be homogeneous to gravity (m/s^2)
@@ -87,6 +160,41 @@ cs_user_lagr_ef(cs_real_t            dt_p,
                 const cs_real_33_t   gradvf,
                 cs_real_t            rho_p,
                 cs_real_3_t          fextla);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief User function (non-mandatory intervention)
+ *
+ * User-defined modifications on the variables at the end of the
+ * Lagrangian time step and calculation of user-defined
+ * additional statistics on the particles.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_lagr_extra_operations(const cs_real_t  dt[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Impose the motion of a particle flagged CS_LAGR_PART_IMPOSED_MOTION.
+ *
+ * User-defined modifications on the particle position and its
+ * velocity.
+ *
+ * \param[in]   particles       pointer to particle set
+ * \param[in]   p_id            particle id
+ * \param[in]   coords          old particle coordinates
+ * \param[in]   dt              time step (per particle)
+ * \param[out]  disp            particle dispacement
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_lagr_imposed_motion(const cs_lagr_particle_set_t *particles,
+                            cs_lnum_t                     p_id,
+                            const cs_real_t               coords[3],
+                            const cs_real_t               dt,
+                            cs_real_t                     disp[3]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -150,17 +258,6 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
                 const cs_lnum_t                 particle_range[2],
                 const cs_lnum_t                 particle_face_id[],
                 const cs_real_t                 visc_length[]);
-
-/*---------------------------------------------------------------------------*/
-/*
- * \brief User function of the Lagrangian particle-tracking module
- *
- *  User input of physical, numerical and post-processing options.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_lagr_model(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -231,41 +328,6 @@ cs_user_lagr_rt_t(cs_lnum_t        id_p,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Impose the motion of a particle flagged CS_LAGR_PART_IMPOSED_MOTION.
- *
- * User-defined modifications on the particle position and its
- * velocity.
- *
- * \param[in]   particles       pointer to particle set
- * \param[in]   p_id            particle id
- * \param[in]   coords          old particle coordinates
- * \param[in]   dt              time step (per particle)
- * \param[out]  disp            particle dispacement
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_lagr_imposed_motion(const cs_lagr_particle_set_t *particles,
-                            cs_lnum_t                     p_id,
-                            const cs_real_t               coords[3],
-                            const cs_real_t               dt,
-                            cs_real_t                     disp[3]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief User function (non-mandatory intervention)
- *
- * User-defined modifications on the variables at the end of the
- * Lagrangian time step and calculation of user-defined
- * additional statistics on the particles.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_lagr_extra_operations(const cs_real_t  dt[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief User integration of the SDE for the user-defined variables.
  *
  * The variables are constant by default. The SDE must be of the form:
@@ -311,47 +373,9 @@ cs_user_lagr_sde(const cs_real_t         dt,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define particle boundary conditions.
- *
- * This is used for the definition of inlet and other boundaries,
- * based on predefined boundary zones (\ref cs_zone_t).
- *
- * \param[in] bc_type    type of the boundary faces
+ * \file cs_user_lagr_volume_conditions.cpp
  */
 /*----------------------------------------------------------------------------*/
-
-void
-cs_user_lagr_boundary_conditions(const int  itypfb[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Handling of a particle interaction with a boundary of type
- *        \ref CS_LAGR_BC_USER.
- *
- * \param[in, out]  particles       pointer to particle set
- * \param[in]       p_id            particle id
- * \param[in]       face_id         boundary face id
- * \param[in]       face_norm       unit face (or face subdivision) normal
- * \param[in]       c_intersect     coordinates of intersection with the face
- * \param[in]       t_intersect     relative distance (in [0, 1]) of the
- *                                  intersection point with the face relative
- *                                  to the initial trajectory segment
- * \param[in]       b_zone_id       boundary zone id of the matching face
- * \param[in, out]  event_flag      event flag in case events are available
- * \param[in, out]  tracking_state  particle tracking state
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_lagr_user_boundary_interaction(cs_lagr_particle_set_t    *particles,
-                                  cs_lnum_t                  p_id,
-                                  cs_lnum_t                  face_id,
-                                  const cs_real_t            face_norm[3],
-                                  const cs_real_t            c_intersect[3],
-                                  cs_real_t                  t_intersect,
-                                  int                        b_zone_id,
-                                  int                       *event_flag,
-                                  cs_lagr_tracking_state_t  *tracking_state);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -42,29 +42,18 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \file cs_user_electric_scaling.cpp
- *
- * \brief Define scaling parameter for electric model.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Rescale all electro-magnetic physical fields
- *        (electric potential, current density and Joule effect).
+/*
+ * Rescale all electro-magnetic physical fields
+ * (electric potential, current density and Joule effect).
  *
  * \param[in] mesh pointer to a cs_mesh_t structure
  * \param[in,out] mesh_quantities pointer to a cs_mesh_quantities_t structure
  * \param[in] dt pointer to a \ref cs_real_t
- *
- * These options allow defining the time step synchronization policy,
- * as well as a time step multiplier.
  */
 /*----------------------------------------------------------------------------*/
 

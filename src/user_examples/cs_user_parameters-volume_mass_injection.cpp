@@ -148,7 +148,7 @@ _define_injection([[maybe_unused]] cs_real_t         time,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define or modify output user parameters.
+ * Define or modify output user parameters.
  *
  * For CDO schemes, this function concludes the setup of properties,
  * equations, source terms...

@@ -58,23 +58,13 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_les_inflow-base.cpp
- *
- * \brief Generation of synthetic turbulence at LES inlets initialization.
- *
- * See \ref les_inflow for examples.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define parameters of synthetic turbulence at LES inflow.
+ * Define parameters of synthetic turbulence at LES inflow.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -137,7 +127,7 @@ cs_user_les_inflow_define(void)
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Update of the characteristics of a given synthetic turbulence inlet.
+ * Update of the characteristics of a given synthetic turbulence inlet.
  *
  * \param[in]   zone       pointer to associated boundary zone
  * \param[out]  vel_r      reference mean velocity
@@ -168,13 +158,13 @@ cs_user_les_inflow_update
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Definition of mean velocity, Reynolds stresses and dissipation rate
- *        for each boundary face of the given synthetic turbulence inlet.
+ * Definition of mean velocity, Reynolds stresses and dissipation rate
+ * for each boundary face of the given synthetic turbulence inlet.
  *
- * Rij components are ordered as usual: XX, YY, ZZ, XY, YZ, XZ
+ * Accurate definition of mean velocity, Reynolds stresses and dissipation
+ * rate for each boundary face of the given synthetic turbulence inlet
  *
- * Arrays are pre-initialized before this function is called
- * (see \ref cs_user_les_inflow_define).
+ * Arrays are pre-initialized before this function is called.
  *
  * \param[in]       zone    pointer to associated boundary zone
  * \param[in, out]  vel_l   velocity a zone faces

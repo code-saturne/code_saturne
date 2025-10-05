@@ -56,9 +56,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*
- * \file cs_user_parameters-time_moments.cpp
- *
- * \brief Time moments example
+ * Time moments example
  */
 /*----------------------------------------------------------------------------*/
 
@@ -208,7 +206,7 @@ _velocity_moment_data(const void  *input,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define time moments.
+ * Define time moments.
  *
  * This function is called at the setup stage, once user and most model-based
  * fields are defined, and before fine control of field output options

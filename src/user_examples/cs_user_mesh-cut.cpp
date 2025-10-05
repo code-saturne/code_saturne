@@ -127,7 +127,7 @@ _read_plane_data(const cs_mesh_t *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Modify geometry and mesh.
+ * Modify geometry and mesh.
  *
  * \param[in,out] mesh  pointer to a cs_mesh_t structure
  */

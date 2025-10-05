@@ -49,29 +49,18 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_porosity-from_cad.cpp
- *
- * \brief User definitions of porous media.
- *
- * See \ref cs_porosity for examples.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Compute the porosity (volume factor \f$ \epsilon \f$
- *        when the porosity model is activated
- *        (\ref cs_glob_porous_model > 0).
+ * Compute the porosity (volume factor \f$ \epsilon \f$
+ * when the porosity model is activated.
  *
  * This function is called at the beginning of the simulation only.
  *
- * \param[in, out]   domain    pointer to a cs_domain_t structure
+ * \param[in, out]  domain  pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 

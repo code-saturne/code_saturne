@@ -49,16 +49,6 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \file cs_user_boundary_conditions.cpp
- *
- * \brief User functions for input of calculation parameters.
- *
- * See \ref parameters for examples.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -312,8 +302,9 @@ _w_flux_side(cs_lnum_t         n_elts,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set boundary conditions to be applied.
+/*
+/*
+ * Setup boundary conditions to be applied.
  *
  * This function is called just before \ref cs_user_finalize_setup, and
  * boundary conditions can be defined in either of those functions,

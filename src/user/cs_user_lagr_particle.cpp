@@ -59,8 +59,8 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief User definition of an external force field acting on the particles.
+/*
+ * User definition of an external force field acting on the particles.
  *
  * It must be prescribed in every cell and be homogeneous to gravity (m/s^2)
  * By default gravity and drag force are the only forces acting on the particles
@@ -100,8 +100,8 @@ cs_user_lagr_ef([[maybe_unused]] cs_real_t            dt_p,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief User function (non-mandatory intervention)
+/*
+ * User function (non-mandatory intervention)
  *
  * User-defined modifications on the variables at the end of the
  * Lagrangian time step and calculation of user-defined
@@ -118,8 +118,8 @@ cs_user_lagr_extra_operations([[maybe_unused]] const cs_real_t  dt[])
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Impose the motion of a particle flagged CS_LAGR_PART_IMPOSED_MOTION.
+/*
+ * Impose the motion of a particle flagged CS_LAGR_PART_IMPOSED_MOTION.
  *
  * User-defined modifications on the particle position and its
  * velocity.
@@ -146,8 +146,8 @@ cs_user_lagr_imposed_motion
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief User modification of newly injected particle location.
+/*
+ * User modification of newly injected particle location.
  *
  * This function aims at modifying injection coordinates, particle properties
  * and cell_id depending on the position are updated based on the modified
@@ -182,8 +182,8 @@ cs_user_lagr_in_force_coords
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief User modification of newly injected particles.
+/*
+ * User modification of newly injected particles.
  *
  * This function is called after the initialization of the new particles in
  * order to modify them according to new particle profiles (injection
@@ -221,8 +221,8 @@ cs_user_lagr_in
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Modification of the calculation of the particle relaxation time
+/*
+ *  Modification of the calculation of the particle relaxation time
  *  with respect to the chosen formulation for the drag coefficient
  *
  * This function is called in a loop on the particles, so be careful
@@ -282,10 +282,10 @@ cs_user_lagr_rt
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Modification of the computation of the thermal relaxation time
- *        of the particles with respect to the chosen formulation of
- *        the Nusselt number.
+/*
+ * Modification of the computation of the thermal relaxation time
+ * of the particles with respect to the chosen formulation of
+ * the Nusselt number.
  *
  * This function is called in a loop on the particles, so be careful
  * to avoid too costly operations.
@@ -323,8 +323,8 @@ cs_user_lagr_rt_t
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief User integration of the SDE for the user-defined variables.
+/*
+ * User integration of the SDE for the user-defined variables.
  *
  * The variables are constant by default. The SDE must be of the form:
  *

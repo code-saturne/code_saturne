@@ -1,8 +1,5 @@
 /*============================================================================
- * Code couplings definition with SYRTHES and code_saturne.
- *
- * 1) Define conjuguate heat transfer couplings with the SYRTHES code
- * 2) Define couplings with other instances of code_saturne
+ * Code couplings definition with SYRTHES, code_saturne., and CATHARE.
  *============================================================================*/
 
 /* VERS */
@@ -49,23 +46,13 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_coupling-saturne.cpp
- *
- * \brief Code couplings definition with SYRTHES and code_saturne.
- *
- * See \ref user_coupling for examples.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define couplings with other instances of code_saturne.
+ * Define couplings with other instances of code_saturne.
  *
  * This is done by calling the \ref cs_sat_coupling_define function for each
  * coupling to add.

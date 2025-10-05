@@ -136,7 +136,7 @@ _incident_kinetic_energy([[maybe_unused]] const void  *input,
 
 /*---------------------------------------------------------------------------*/
 /*
- * \brief User function of the Lagrangian particle-tracking module
+ * User function of the Lagrangian particle-tracking module
  *
  *  User input of physical, numerical and post-processing options.
  */

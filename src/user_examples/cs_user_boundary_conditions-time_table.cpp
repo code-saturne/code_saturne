@@ -105,7 +105,7 @@ _time_table_t_inlet(cs_lnum_t               n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Set boundary conditions to be applied.
+ * Setup boundary conditions to be applied.
  *
  * This function is called just before \ref cs_user_finalize_setup, and
  * boundary conditions can be defined in either of those functions,

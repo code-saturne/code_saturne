@@ -55,25 +55,13 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_mesh-quality.cpp
- *
- * \brief Mesh quality example
- *
- * See \ref cs_user_mesh for examples.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Set options for cutting of warped faces
- *
- * \param[in,out] mesh pointer to cs_mesh_t structure
+ * Set options for cutting of warped faces
  */
 /*----------------------------------------------------------------------------*/
 
@@ -93,7 +81,7 @@ cs_user_mesh_warping(void)
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Mesh smoothing.
+ * Mesh smoothing.
  *
  * \param[in,out] mesh pointer to cs_mesh_t structure
  */
@@ -127,11 +115,11 @@ cs_user_mesh_smoothe([[maybe_unused]] cs_mesh_t  *mesh)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Tag bad cells within the mesh based on user-defined geometric criteria.
+/*
+ * Tag bad cells within the mesh based on user-defined geometric criteria.
  *
- * \param[in,out] mesh pointer to cs_mesh_t structure
- * \param[in,out] mesh_quantities pointer to cs_mesh_quantities_t structure
+ * \param[in,out]  mesh             pointer to cs_mesh_t structure
+ * \param[in,out]  mesh_quantities  pointer to cs_mesh_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 

@@ -51,23 +51,20 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_extra_operations-scalar_balance.cpp
- *
- * \brief This function is called at the end of each time step, and has a very
- * general purpose (i.e. anything that does not have another dedicated
- * user function).
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Example for scalar balance.
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*
+ * User operations called at the end of each time step.
+ *
+ * This function has a very general purpose, although it is recommended to
+ * handle mainly postprocessing or data-extraction type operations.
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)

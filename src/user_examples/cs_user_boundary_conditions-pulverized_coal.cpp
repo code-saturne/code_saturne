@@ -49,21 +49,13 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_boundary_conditions-pumverized_coal.cpp
- *
- * \brief User functions for boundary condition definitions.
- */
-/*----------------------------------------------------------------------------*/
-
 /*=============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Set boundary conditions to be applied.
+ * Setup boundary conditions to be applied.
  *
  * This function is called just before \ref cs_user_finalize_setup, and
  * boundary conditions can be defined in either of those functions,

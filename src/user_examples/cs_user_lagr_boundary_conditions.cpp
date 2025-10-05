@@ -136,8 +136,8 @@ _injection_profile([[maybe_unused]] int          zone_id,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Define particle boundary conditions.
+/*
+ * Define particle boundary conditions.
  *
  * This is used for the definition of inlet and other boundaries,
  * based on predefined boundary zones (\ref cs_zone_t).
@@ -294,12 +294,9 @@ cs_user_lagr_boundary_conditions([[maybe_unused]] const int  bc_type[])
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Handling of a particle interaction with a boundary of type
- *        \ref CS_LAGR_BC_USER.
- *
- * In this example, the particle is simply deposited and marked for
- * elimination.
+/*
+ * Handling of a particle interaction with a boundary of type
+ * \ref CS_LAGR_BC_USER.
  *
  * \param[in, out]  particles       pointer to particle set
  * \param[in]       p_id            particle id

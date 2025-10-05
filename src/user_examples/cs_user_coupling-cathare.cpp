@@ -1,5 +1,5 @@
 /*============================================================================
- * Code couplings definition with CATHARE and code_saturne.
+ * Code couplings definition with SYRTHES, code_saturne., and CATHARE.
  *============================================================================*/
 
 /* VERS */
@@ -46,23 +46,13 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_coupling-cathare.cpp
- *
- * \brief Code couplings definition with SYRTHES and code_saturne.
- *
- * See \ref user_coupling for examples.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define couplings with CATHARE code.
+ * Define couplings with CATHARE code.
  *
  * This is done by calling the \ref cs_sys_coupling_add function for each
  * coupling to add.

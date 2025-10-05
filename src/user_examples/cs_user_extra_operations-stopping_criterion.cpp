@@ -51,32 +51,23 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_extra_operations-stopping_criterion.cpp
- *
- * \brief This function is called at the end of each time step, and has a very
- * general purpose (i.e. anything that does not have another dedicated
- * user function).
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Example of extra operations allowing to properly stop a computation
- * when the L2 time residuals (displayed in the run_solver.log file) of all
- * solved variables have decreased below a value of 1e-3.
+ * User operations called at the end of each time step.
+ *
+ * This function has a very general purpose, although it is recommended to
+ * handle mainly postprocessing or data-extraction type operations.
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_extra_operations([[maybe_unused]] cs_domain_t   *domain)
+cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 {
   /*! [extra_stopping_criterion] */
 

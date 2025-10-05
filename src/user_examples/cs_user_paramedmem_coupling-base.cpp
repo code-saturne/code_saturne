@@ -54,24 +54,13 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_paramedmem_coupling-base.cpp
- *
- * \brief User functions for input of ParaMEDMEM coupling parameters
- *
- * \brief User functions for input of calculation parameters.
- *
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define ParaMEDMEM coupling(s)
+ * Define ParaMEDMEM coupling(s)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -109,7 +98,7 @@ cs_user_paramedmem_define_couplings(void)
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define coupled meshes
+ * Define coupled meshes
  */
 /*----------------------------------------------------------------------------*/
 
@@ -151,7 +140,7 @@ cs_user_paramedmem_define_meshes(void)
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define fields to couple with ParaMEDMEM
+ * Define fields to couple with ParaMEDMEM
  */
 /*----------------------------------------------------------------------------*/
 

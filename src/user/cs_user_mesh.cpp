@@ -55,23 +55,13 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \file cs_user_mesh.cpp
- *
- * \brief Definition and modification of the calculation mesh.
- *
- * See \ref cs_user_mesh for examples.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Force preprocessing behavior in case of restart.
+/*
+ * Force preprocessing behavior in case of restart.
  *
  * By default, in case of restart, if a "restart/mesh_input.csm" file
  * is present, it will be read and proprocessing will be skipped.
@@ -89,8 +79,8 @@ cs_user_mesh_restart_mode(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Define mesh files to read and optional associated transformations.
+/*
+ * Define mesh files to read and optional associated transformations.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -101,8 +91,8 @@ cs_user_mesh_input(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Define a cartesian mesh.
+/*
+ * Define a cartesian mesh.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -113,8 +103,8 @@ cs_user_mesh_cartesian_define(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Define mesh joinings.
+/*
+ * Define mesh joinings.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -125,8 +115,8 @@ cs_user_join(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Define periodic faces.
+/*
+ * Define periodic faces.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -137,8 +127,8 @@ cs_user_periodicity(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set options for cutting of warped faces.
+/*
+ * Set options for cutting of warped faces.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -149,8 +139,8 @@ cs_user_mesh_warping(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Insert boundaries into a mesh.
+/*
+ * Insert boundaries into a mesh.
  *
  * \param[in,out] mesh  pointer to a cs_mesh_t structure
  */
@@ -163,8 +153,8 @@ cs_user_mesh_boundary([[maybe_unused]] cs_mesh_t  *mesh)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Modify geometry and mesh.
+/*
+ * Modify geometry and mesh.
  *
  * \param[in,out] mesh  pointer to a cs_mesh_t structure
  */
@@ -177,8 +167,8 @@ cs_user_mesh_modify([[maybe_unused]] cs_mesh_t  *mesh)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Mesh smoothing.
+/*
+ * Mesh smoothing.
  *
  * \param[in,out] mesh  pointer to a cs_mesh_t structure
  */
@@ -191,8 +181,8 @@ cs_user_mesh_smoothe([[maybe_unused]] cs_mesh_t  *mesh)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Enable or disable mesh saving.
+/*
+ * Enable or disable mesh saving.
  *
  * By default, mesh is saved when modified.
  *
@@ -207,11 +197,11 @@ cs_user_mesh_save([[maybe_unused]] cs_mesh_t  *mesh)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Tag bad cells within the mesh based on user-defined geometric criteria.
+/*
+ * Tag bad cells within the mesh based on user-defined geometric criteria.
  *
- * \param[in,out] mesh  pointer to a cs_mesh_t structure
- * \param[in,out] mesh_quantities pointer to a cs_mesh_quantities_t structure
+ * \param[in,out]  mesh             pointer to a cs_mesh_t structure
+ * \param[in,out]  mesh_quantities  pointer to a cs_mesh_quantities_t structure
 */
 /*----------------------------------------------------------------------------*/
 
@@ -226,9 +216,9 @@ cs_user_mesh_bad_cells_tag
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Apply partial modifications to the mesh after the preprocessing
- *        stage, but before initial postprocessing mesh building.
+/*
+ * Apply partial modifications to the mesh after the preprocessing
+ * stage, but before initial postprocessing mesh building.
  *
  * \param[in,out] mesh  pointer to a cs_mesh_t structure
  * \param[in,out] mesh_quantities pointer to a cs_mesh_quantities_t structure

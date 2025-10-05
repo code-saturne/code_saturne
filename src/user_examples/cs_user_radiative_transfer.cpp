@@ -62,7 +62,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Absorption coefficient for radiative module
+ * Absorption coefficient for radiative module
  *
  * It is necessary to define the value of the fluid's absorption coefficient Ck.
  *
@@ -162,7 +162,7 @@ cs_user_rad_transfer_absorption
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Compute the net radiation flux.
+ * Compute the net radiation flux.
  *
  * The density of net radiation flux must be calculated
  * consistently with the boundary conditions of the intensity.

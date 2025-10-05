@@ -51,10 +51,8 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Define volume and surface zones.
- *
- * See \ref sec_selection_criteria for details on selection criteria.
+/*
+ * Define volume and surface zones.
  */
 /*----------------------------------------------------------------------------*/
 

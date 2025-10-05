@@ -1,6 +1,5 @@
 /*============================================================================
- * Base examples for additional right-hand side source terms for
- * variable equations (momentum, scalars, turbulence...).
+ * Additional user-defined source terms for variable equations.
  *============================================================================*/
 
 /* VERS */
@@ -50,25 +49,14 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_source_terms-base.cpp
- *
- * \brief Base examples for additional right-hand side source terms for
- *   variable equations (momentum, scalars, turbulence...).
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Additional user-defined source terms for variable equations
- *        (momentum, scalars, turbulence...).
- *
- *  This function is called at each time step, for each relevant field.
+/*
+ * Additional user-defined source terms for variable equations
+ * (momentum, scalars, turbulence...).
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
  * \param[in]       f_id     field id of the variable

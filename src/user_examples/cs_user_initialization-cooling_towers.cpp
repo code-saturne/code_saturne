@@ -47,21 +47,13 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_initialization-cooling_towers.cpp
- *
- * \brief Initialization prior to solving time steps.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Initialize variables.
+ * Initialize variables.
  *
  * This function is called at beginning of the computation
  * (restart or not) before the time step loop.

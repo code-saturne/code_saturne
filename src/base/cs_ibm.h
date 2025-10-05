@@ -316,22 +316,17 @@ cs_ibm_finalize(void);
  * Define immersed boundaries in time and space (solid(s) interior part).
  *----------------------------------------------------------------------------*/
 
-void cs_immersed_boundaries(const cs_mesh_t *mesh,
-                            const cs_mesh_quantities_t *mesh_quantities);
+void
+cs_immersed_boundaries(const cs_mesh_t             *mesh,
+                       const cs_mesh_quantities_t  *mesh_quantities);
 
 /*----------------------------------------------------------------------------
  * Define space immersed boundaries on a set of zones defined by the user in the
  * GUI
  *----------------------------------------------------------------------------*/
 
-void cs_volumic_zone_porosity(const cs_mesh_quantities_t *mesh_quantities);
-
-/*----------------------------------------------------------------------------*
- * User function. Locally Modify porosity (erosion, fouling effects, ...)
- *----------------------------------------------------------------------------*/
-
-void cs_user_ibm_modify(const cs_mesh_t *mesh,
-                        const cs_mesh_quantities_t *mesh_quantities);
+void
+cs_volumic_zone_porosity(const cs_mesh_quantities_t  *mesh_quantities);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -540,6 +535,26 @@ cs_ibm_object_compute_intersect_vol(cs_ibm_object_t            *obj,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Define space immersed boundaries on a set of zones defined by the user
+ *         in the GUI.
+ *
+ * \param[in]  mesh_quantities  pointer to associated mesh quantities structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ibm_volumic_zone(const cs_mesh_quantities_t *mesh_quantities);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \file cs_user_ibm.cpp
+ *
+ * \brief User function. Define immersed boundaries in time and space.
+ */
+/*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief User function in which the user defines the objects to model.
  */
 /*----------------------------------------------------------------------------*/
@@ -559,10 +574,10 @@ cs_user_ibm_parameters(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief User function where to apply predefined transformations to med/stl
- *         based objects.
+ * \brief User function where to apply predefined transformations to MED/STL
+ *        based objects.
  *
- * \param[in]  t            time value for the current time step
+ * \param[in]  t  time value for the current time step
  */
 /*----------------------------------------------------------------------------*/
 
@@ -588,15 +603,30 @@ cs_user_ibm_solid_por(const cs_lnum_t    c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define space immersed boundaries on a set of zones defined by the user
- *         in the GUI.
+ * \file cs_user_ibm_modify.cpp
  *
- * \param[in]  mesh_quantities  pointer to associated mesh quantities structure
+ * \brief User function. Locally modify a given porosity to take into
+ *         account erosion effect (for instance).
+ */
+/*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief User function. Locally modify a given porosity to take into
+ *        account erosion effect (for instance).
+ *
+ *  This function is called for each time step.
+ *  Porosity will be modified if
+ *  cs_ibm->porosity_user_source_term_modification = true
+ *
+ * \param[in]   mesh               pointer to associated mesh structure
+ * \param[in]   mesh_quantities    pointer to associated mesh quantities
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ibm_volumic_zone(const cs_mesh_quantities_t *mesh_quantities);
+cs_user_ibm_modify(const cs_mesh_t             *mesh,
+                   const cs_mesh_quantities_t  *mesh_quantities);
 
 /*----------------------------------------------------------------------------*/
 

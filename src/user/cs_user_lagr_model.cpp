@@ -48,7 +48,7 @@ BEGIN_C_DECLS
 
 /*---------------------------------------------------------------------------*/
 /*
- * \brief User function of the Lagrangian particle-tracking module
+ * User function of the Lagrangian particle-tracking module
  *
  *  User input of physical, numerical and post-processing options.
  */

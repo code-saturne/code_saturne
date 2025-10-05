@@ -51,18 +51,6 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_extra_operations-turbomachinery.cpp
- *
- * \brief This function is called at the end of each time step, and has a very
- * general purpose (i.e. anything that does not have another dedicated
- * user function).
- *
- * This example is a part of the \ref turbomachinery example.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
@@ -126,8 +114,11 @@ _findpt_r(cs_domain_t          *domain,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Example of extra operations for turbomachinery studies.
+/*
+ * User operations called at the end of each time step.
+ *
+ * This function has a very general purpose, although it is recommended to
+ * handle mainly postprocessing or data-extraction type operations.
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
  */

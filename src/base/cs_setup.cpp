@@ -2647,7 +2647,6 @@ _init_user(void)
 
   /* Activate radiative transfer model */
   cs_gui_radiative_transfer_parameters();
-  cs_user_radiative_transfer_parameters();
 
   /* Flow and other model selection through user C routines */
   cs_user_model();

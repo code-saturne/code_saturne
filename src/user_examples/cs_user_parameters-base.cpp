@@ -54,23 +54,13 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_parameters-base.cpp
- *
- * \brief User functions for input of calculation parameters.
- *
- * See \ref parameters for examples.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Select physical model options, including user fields.
+ * Select physical model options, including user fields.
  *
  * This function is called at the earliest stages of the data setup,
  * so field ids are not available yet.
@@ -190,7 +180,7 @@ cs_user_model(void)
 
   /*! [atmo_options] */
 
-  /*! [atmo_mircophysiscs] */
+  /*! [atmo_microphysics] */
   /*  Microphysics parameterization options */
 
   /* Option for nucleation for humid atmosphere
@@ -223,7 +213,7 @@ cs_user_model(void)
 
   /* Deposition flag */
   at_opt->deposition_model = 1;
-  /*! [atmo_mircophysiscs] */
+  /*! [atmo_microphysics] */
 
   /*! [atmo_profiles] */
   /* Read the meteo file (1) or impose directly the input values to compute it
@@ -910,7 +900,7 @@ cs_user_model(void)
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define or modify general numerical and physical user parameters.
+ * Define or modify general numerical and physical user parameters.
  *
  * At the calling point of this function, most model-related most variables
  * and other fields have been defined, so specific settings related to those

@@ -50,16 +50,6 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_mesh-groups_from_free_faces.cpp
- *
- * \brief Mesh modification example.
- *
- * See \ref cs_user_mesh for examples.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -249,10 +239,7 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Modify geometry and mesh.
- *
- * In this example, group information from free faces is projected to
- * the neighboring boundary faces that are missing such information. *
+ * Modify geometry and mesh.
  *
  * \param[in,out] mesh  pointer to a cs_mesh_t structure
  */

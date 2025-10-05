@@ -49,21 +49,13 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \file cs_user_boundary_conditions.cpp
- *
- * \brief User functions for boundary condition definitions.
- */
-/*----------------------------------------------------------------------------*/
-
 /*=============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set boundary conditions to be applied.
+/*
+ * Setup boundary conditions to be applied.
  *
  * This function is called just before \ref cs_user_finalize_setup, and
  * boundary conditions can be defined in either of those functions,
@@ -81,41 +73,11 @@ cs_user_boundary_conditions_setup([[maybe_unused]] cs_domain_t  *domain)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief User definition of boundary conditions
+/*
+ * User definition of boundary conditions.
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
  * \param[in, out]  bc_type  boundary face types
- *
- * The icodcl and rcodcl arrays are pre-initialized based on default
- * and GUI-defined definitions, and may be modified here.
- *
- * For a given variable field f, and a given face "face_id", these arrays
- * may be used as follows:
- *
- * - Boundary condition type code given at:
- *   f->bc_coeffs->icodcl[face_id]
- *
- * - Dirichlet value defined at:
- *   f->bc_coeffs->rcodcl1[face_id]
- *
- * - Interior exchange coefficient (infinite if no exchange) at:
- *   f->bc_coeffs->rcodcl2[face_id]
- *
- * - Flux density defined at:
- *   f->bc_coeffs->rcodcl3[face_id]
- *
- * For vector or tensor fields, these arrays are not interleaved,
- * so for a given face "face_id" and field component "comp_id", access
- * is as follows (where n_b_faces is domain->mesh->n_b_faces):
- *
- *   f->bc_coeffs->rcodcl1[n_b_faces*comp_id + face_id]\n
- *   f->bc_coeffs->rcodcl2[n_b_faces*comp_id + face_id]\n
- *   f->bc_coeffs->rcodcl3[n_b_faces*comp_id + face_id]\n\n
- *
- * Only the icodcl code values from the first component are used in the case
- * of vector or tensor fields, so the icodcl values can be defined as for
- * a scalar.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -127,10 +89,8 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief User definition of boundary conditions for ALE
- *
- * See \ref sec_ug_bc_ale_legacy for additional details.
+/*
+ * User definition of boundary conditions for ALE.
  *
  * \param[in, out]  domain       pointer to a cs_domain_t structure
  * \param[in, out]  bc_type      boundary face types
@@ -138,36 +98,6 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
  *                               (see \ref cs_boundary_ale_subtype_bits_t)
  * \param[in]       impale       indicator for prescribed node displacement
  *                               (0 or 1)
- *
- * The icodcl and rcodcl arrays are pre-initialized based on default
- * and GUI-defined definitions, and may be modified here.
- *
- * For a given variable field f, and a given face "face_id", these arrays
- * may be used as follows:
- *
- * - Boundary condition type code given at:
- *   f->bc_coeffs->icodcl[face_id]
- *
- * - Dirichlet value defined at:
- *   f->bc_coeffs->rcodcl1[face_id]
- *
- * - Interior exchange coefficient (infinite if no exchange) at:
- *   f->bc_coeffs->rcodcl2[face_id]
- *
- * - Flux density defined at:
- *   f->bc_coeffs->rcodcl3[face_id]
- *
- * For vector or tensor fields, these arrays are not interleaved,
- * so for a given face "face_id" and field component "comp_id", access
- * is as follows (where n_b_faces is domain->mesh->n_b_faces):
- *
- *   f->bc_coeffs->rcodcl1[n_b_faces*comp_id + face_id]\n
- *   f->bc_coeffs->rcodcl2[n_b_faces*comp_id + face_id]\n
- *   f->bc_coeffs->rcodcl3[n_b_faces*comp_id + face_id]\n\n
- *
- * Only the icodcl code values from the first component are used in the case
- * of vector or tensor fields, so the icodcl values can be defined as for
- * a scalar.
  */
 /*----------------------------------------------------------------------------*/
 

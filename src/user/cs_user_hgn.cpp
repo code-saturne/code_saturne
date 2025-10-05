@@ -45,24 +45,14 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \file cs_user_hgn.cpp
- *
- * \brief Define user properties for two-phase homogeneous compressible model.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Computation of the relaxation time-scale.
- *
- * This function computes the value of the relaxation time-scale (for the
- * return to equilibrium).
+/*
+ * Compute the relaxation time-scale to equilibrium in the
+ * frame of the homogeneous two-phase model..
  *
  * \param[in]  mesh       pointer to mesh
  * \param[in]  alpha_eq   equilibrium volume fraction

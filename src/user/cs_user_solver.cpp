@@ -46,23 +46,13 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \file cs_user_solver.cpp
- *
- * \brief User solver setting and implementation
- *
- * See \ref user_solver for examples.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Set user solver
+/*
+ * Set user solver
  *
  * \return  1 if user solver is called, 0 otherwise
  */
@@ -76,12 +66,11 @@ cs_user_solver_set(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Main call to user solver
+/*
+ * Main call to user solver
  *
  * \param[in] mesh pointer to a cs_mesh_t structure
  * \param[in,out] mesh_quantities pointer to a cs_mesh_quantities_t structure
- *
  */
 /*----------------------------------------------------------------------------*/
 

@@ -58,23 +58,13 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \file cs_user_les_inflow.cpp
- *
- * \brief Generation of synthetic turbulence at LES inlets initialization.
- *
- * See \ref les_inflow for examples.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Define parameters of synthetic turbulence at LES inflow.
+/*
+ * Define parameters of synthetic turbulence at LES inflow.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -85,8 +75,8 @@ cs_user_les_inflow_define(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Update of the characteristics of a given synthetic turbulence inlet.
+/*
+ * Update of the characteristics of a given synthetic turbulence inlet.
  *
  * \param[in]   zone       pointer to associated boundary zone
  * \param[out]  vel_r      reference mean velocity
@@ -107,28 +97,14 @@ cs_user_les_inflow_update
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Definition of mean velocity, Reynolds stresses and dissipation rate
- *        for each boundary face of the given synthetic turbulence inlet.
+/*
+ * Definition of mean velocity, Reynolds stresses and dissipation rate
+ * for each boundary face of the given synthetic turbulence inlet.
  *
  * Accurate definition of mean velocity, Reynolds stresses and dissipation
  * rate for each boundary face of the given synthetic turbulence inlet
  *
- * Rij components are ordered as usual: XX, YY, ZZ, XY, YZ, XZ
- *
- * Arrays are pre-initialized before this function is called
- * (see \ref cs_user_les_inflow_define).
- *
- * vel_l[face_id][coo_id] = vel_r[coo_id]
- *
- * rij_l[face_id][0] = 2./3. * k_l
- * rij_l[face_id][1] = 2./3. * k_l
- * rij_l[face_id][2] = 2./3. * k_l
- * rij_l[face_id][3] = 0
- * rij_l[face_id][4] = 0
- * rij_l[face_id][5] = 0
- *
- * eps_l[face_id] = eps_r
+ * Arrays are pre-initialized before this function is called.
  *
  * \param[in]       zone    pointer to associated boundary zone
  * \param[in, out]  vel_l   velocity a zone faces

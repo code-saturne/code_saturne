@@ -81,11 +81,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*
- * \file cs_user_parameters-linear_solvers.cpp
- *
- * \brief Linear solvers examples.
- *
- * See \ref parameters for examples.
+ * Linear solvers examples.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -331,7 +327,7 @@ _hypre_p_setup_hook([[maybe_unused]] int    verbosity,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define linear solver options.
+ * Define linear solver options.
  *
  * This function is called at the setup stage, once user and most model-based
  * fields are defined.

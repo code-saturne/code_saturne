@@ -126,8 +126,8 @@ _cut_cell_dambreak_func([[maybe_unused]] cs_lnum_t  c_id,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief User function in which the user defines the objects to model.
+/*
+ * User function in which the user defines the objects to model.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -190,9 +190,8 @@ cs_user_ibm_define_objects(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief User function to set global parameters for the immersed boundaries
- *         module.
+/*
+ * User function to set global parameters for the immersed boundaries module.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -259,11 +258,11 @@ cs_user_ibm_parameters(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief User function where to apply predefined transformations to med/stl
- *         based objects.
+/*
+ * User function where to apply predefined transformations to MED/STL
+ * based objects.
  *
- * \param[in]  t            time value for the current time step
+ * \param[in]  t  time value for the current time step
  */
 /*----------------------------------------------------------------------------*/
 
@@ -273,8 +272,8 @@ cs_user_ibm_object_transformations([[maybe_unused]] const cs_real_t time)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief User function which allows the definition of a 'porous' object.
+/*
+ * User function which allows the definition of a 'porous' object.
  *
  * \param[in]  c_id         local cell number
  * \param[in]  xyz          x, y, z coordinates of the current position

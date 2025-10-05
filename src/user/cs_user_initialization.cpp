@@ -53,21 +53,13 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \file cs_user_initialization.cpp
- *
- * \brief Initialization prior to solving time steps.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Define initial conditions for variables.
+/*
+ * Define initial conditions for variables.
  *
  * This function is not yet called by code_saturne, use
  * `cs_user_initialization` for the time being
@@ -86,8 +78,8 @@ cs_user_initial_conditions([[maybe_unused]] cs_domain_t  *domain)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Initialize variables.
+/*
+ * Initialize variables.
  *
  * This function is called at beginning of the computation
  * (restart or not) before the time step loop.

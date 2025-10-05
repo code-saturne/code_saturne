@@ -271,6 +271,16 @@ cs_les_inflow_set_restart(bool  allow_read,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \file cs_user_les_inflow.cpp
+ *
+ * \brief Generation of synthetic turbulence at LES inlets initialization.
+ *
+ * See \ref les_inflow for examples.
+ */
+/*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Define parameters of synthetic turbulence at LES inflow.
  */
 /*----------------------------------------------------------------------------*/
@@ -295,10 +305,36 @@ cs_user_les_inflow_update(const cs_zone_t  *zone,
                           cs_real_t        *k_r,
                           cs_real_t        *eps_r);
 
-/*----------------------------------------------------------------------------
- * Definition of mean velocity, Reynolds stresses and dissipation rate
- * for each boundary face of the given synthetic turbulence inlet.
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Definition of mean velocity, Reynolds stresses and dissipation rate
+ *        for each boundary face of the given synthetic turbulence inlet.
+ *
+ * Accurate definition of mean velocity, Reynolds stresses and dissipation
+ * rate for each boundary face of the given synthetic turbulence inlet
+ *
+ * Rij components are ordered as usual: XX, YY, ZZ, XY, YZ, XZ
+ *
+ * Arrays are pre-initialized before this function is called
+ * (see \ref cs_user_les_inflow_define).
+ *
+ * vel_l[face_id][coo_id] = vel_r[coo_id]
+ *
+ * rij_l[face_id][0] = 2./3. * k_l
+ * rij_l[face_id][1] = 2./3. * k_l
+ * rij_l[face_id][2] = 2./3. * k_l
+ * rij_l[face_id][3] = 0
+ * rij_l[face_id][4] = 0
+ * rij_l[face_id][5] = 0
+ *
+ * eps_l[face_id] = eps_r
+ *
+ * \param[in]       zone    pointer to associated boundary zone
+ * \param[in, out]  vel_l   velocity a zone faces
+ * \param[in, out]  rij_l   reynods stresses at zone faces
+ * \param[in, out]  eps_l   reference turbulent dissipation
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_user_les_inflow_advanced(const cs_zone_t  *zone,

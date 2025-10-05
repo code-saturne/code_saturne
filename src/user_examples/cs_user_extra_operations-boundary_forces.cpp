@@ -51,29 +51,16 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_extra_operations-boundary_forces.cpp
- *
- * \brief This function is called at the end of each time step, and has a very
- * general purpose (i.e. anything that does not have another dedicated
- * user function).
- *
- * This is an example of cs_user_extra_operations which computes the total
- * force on a boundary zone.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief This function is called at the end of each time step.
+ * User operations called at the end of each time step.
  *
- * It has a very general purpose, although it is recommended to handle
- * mainly postprocessing or data-extraction type operations.
+ * This function has a very general purpose, although it is recommended to
+ * handle mainly postprocessing or data-extraction type operations.
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
  */

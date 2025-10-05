@@ -49,48 +49,17 @@
 BEGIN_C_DECLS
 
 /*=============================================================================
- * Additional Doxygen documentation
- *============================================================================*/
-
-/*! \file cs_user_radiative_transfer_bcs.cpp */
-
-/*=============================================================================
  * Public function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief User definition of radiative transfer boundary conditions.
+/*
+ * User definition of radiative transfer boundary conditions.
  *
- * See \ref cs_user_radiative_transfer for examples.
- *
- * \warning the temperature unit here is the Kelvin
- *
- * For each boundary face face_id, a specific output (logging and
- * postprocessing) class id may be assigned. This allows realizing balance
- * sheets by treating them separately for each zone. By default, the
- * output class id is set to the general (input) zone id associated to a face.
- *
- * To access output class ids (both for reading and modifying), use the
- * \ref cs_boundary_zone_face_class_id function.
- * The zone id values are arbitrarily chosen by the user, but must be
- * positive integers; very high numbers may also lead to higher memory
- * consumption.
- *
- * \section cs_user_radiative_transfer_bcs_wall  Wall characteristics
+ * The temperature unit here is the Kelvin
  *
  * The following face characteristics must be set:
  *  - isothp(face_id) boundary face type
- *    * CS_BOUNDARY_RAD_WALL_GRAY:
- *      Gray wall with temperature based on fluid BCs
- *    * CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T:
- *      Gray wall with fixed outside temperature
- *    * CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T:
- *      Reflecting wall with fixed outside temperature
- *    * CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX:
- *      Gray wall with fixed conduction flux
- *    * CS_BOUNDARY_RAD_WALL_REFL_COND_FLUX:
- *      Reflecting wall with fixed conduction flux
  *
  * Depending on the value of isothp, other values may also need to be set:
  *  - rcodcl = conduction flux

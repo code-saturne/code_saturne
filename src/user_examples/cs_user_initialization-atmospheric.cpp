@@ -53,21 +53,13 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_initialization-atmospheric.cpp
- *
- * \brief Initialization example for atmospheric model.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Initialize variables.
+ * Initialize variables.
  *
  * This function is called at beginning of the computation
  * (restart or not) before the time step loop.

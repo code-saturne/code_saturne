@@ -52,18 +52,6 @@
 BEGIN_C_DECLS
 
 /*=============================================================================
- * Additional doxygen documentation
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_extra_operations-verif_cdo_diffusion.cpp
- *
- * \brief Additional user-defined post-processing and analysis functions.
- */
-/*----------------------------------------------------------------------------*/
-
-/*=============================================================================
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
@@ -252,10 +240,12 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief  Additional operations on results produced by CDO schemes.
- *         Define advanced post-processing and/or analysis for instance.
+ * User operations called at the end of the calculation.
  *
- * \param[in]  domain   pointer to a cs_domain_t structure
+ * This function has a very general purpose, although it is recommended to
+ * handle mainly postprocessing or data-extraction type operations.
+ *
+ * \param[in, out]  domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 

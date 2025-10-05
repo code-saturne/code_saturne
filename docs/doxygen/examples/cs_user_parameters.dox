@@ -810,7 +810,7 @@
   \snippet cs_user_parameters-base.cpp atmo_options
 
   One can set the microphysics parameterization opitons as follows:
-  \snippet cs_user_parameters-base.cpp atmo_mircophysiscs
+  \snippet cs_user_parameters-base.cpp atmo_microphysics
 
   One can set information relative to meteo profiles:
   \snippet cs_user_parameters-base.cpp atmo_profiles

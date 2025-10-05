@@ -55,32 +55,19 @@
 
 BEGIN_C_DECLS
 
-/*----------------------------------------------------------------------------*/
-/*
- * \file cs_user_mesh-cartesian.cpp
- *
- * \brief Mesh input definition and mesh saving examples.
- *
- * See \ref cs_user_mesh for examples.
- */
-/*----------------------------------------------------------------------------*/
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Define a cartesian mesh to use during computation. If a cartesian block
- * is created with a non-null name, then all groups will be prefixed with the
- * given name. For example, "X0" face group will be called "<name>_X0" instead.
+ * \brief Define a cartesian mesh.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_user_mesh_cartesian_define(void)
 {
-
   /*! [mesh_cartesian_1] */
   {
     /* Define a mesh with constant step size in all directions.
