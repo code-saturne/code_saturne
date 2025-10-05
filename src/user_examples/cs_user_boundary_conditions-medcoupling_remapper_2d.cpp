@@ -26,35 +26,35 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*=============================================================================
- * Public function definitions
+ * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief User definition of boundary conditions
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
@@ -63,12 +63,9 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_boundary_conditions(cs_domain_t  *domain,
-                            int           bc_type[])
+cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
+                            [[maybe_unused]] int           bc_type[])
 {
-  CS_NO_WARN_IF_UNUSED(domain);
-  CS_NO_WARN_IF_UNUSED(bc_type);
-
   /*! [loc_var_def] */
 
   /* Variables needed for boundary condition sub-selection */

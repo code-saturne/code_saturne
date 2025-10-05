@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <limits.h>
@@ -45,8 +45,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -175,51 +173,37 @@ _inlet2(cs_lagr_particle_set_t  *p_set,
  * Note that taup, tlag, piil and bx are associated to the particle and
  * their value for all phases is provided
  *
- * \param[in]     dt_p     time step (for the cell)
- * \param[in]     tlag     relaxation time for the flow
- * \param[in]     piil     term in the integration of the sde
- * \param[in]     taup     particle relaxation time
- * \param[in]     tlag     relaxation time for the flow
- * \param[in]     piil     term in the integration of the sde
- * \param[in]     bx       characteristics of the turbulence
- * \param[in]     tsfext   infos for the return coupling
- * \param[in]     vagaus   Gaussian random variables
- * \param[in,out] rho_p    particle density
- * \param[out]    fextla   user external force field (m/s^2)$
+ * \param[in]      dt_p     time step (for the cell)
+ * \param[in]      p_id     particle id
+ * \param[in]      taup     particle relaxation time
+ * \param[in]      tlag     relaxation time for the flow
+ * \param[in]      piil     term in the integration of the sde
+ * \param[in]      bx       characteristics of the turbulence
+ * \param[in]      tsfext   infos for the return coupling
+ * \param[in]      vagaus   Gaussian random variables
+ * \param[in,out]  rho_p     particle density
+ * \param[out]     fextla   user external force field (m/s^2)$
  */
 /*----------------------------------------------------------------------------*/
 
 /*! [lagr_ef] */
 void
-cs_user_lagr_ef(cs_real_t            dt_p,
-                const cs_lnum_t      p_id,
-                const cs_real_t     *taup,
-                const cs_real_3_t   *tlag,
-                const cs_real_3_t   *piil,
-                const cs_real_33_t  *bx,
-                const cs_real_t      tsfext,
-                const cs_real_3_t   *vagaus,
-                const cs_real_3_t    gradpr,
-                const cs_real_33_t   gradvf,
-                cs_real_t            rho_p,
-                cs_real_3_t          fextla)
+cs_user_lagr_ef([[maybe_unused]] cs_real_t            dt_p,
+                [[maybe_unused]] const cs_lnum_t      p_id,
+                [[maybe_unused]] const cs_real_t     *taup,
+                [[maybe_unused]] const cs_real_3_t   *tlag,
+                [[maybe_unused]] const cs_real_3_t   *piil,
+                [[maybe_unused]] const cs_real_33_t  *bx,
+                [[maybe_unused]] const cs_real_t      tsfext,
+                [[maybe_unused]] const cs_real_3_t   *vagaus,
+                [[maybe_unused]] const cs_real_3_t    gradpr,
+                [[maybe_unused]] const cs_real_33_t   gradvf,
+                [[maybe_unused]] cs_real_t            rho_p,
+                [[maybe_unused]] cs_real_3_t          fextla)
 {
-  CS_UNUSED(dt_p);
-  CS_UNUSED(p_id);
-  CS_UNUSED(taup);
-  CS_UNUSED(tlag);
-  CS_UNUSED(piil);
-  CS_UNUSED(bx);
-  CS_UNUSED(tsfext);
-  CS_UNUSED(vagaus);
-  CS_UNUSED(gradpr);
-  CS_UNUSED(gradvf);
-  CS_UNUSED(rho_p);
-
   fextla[0] = 0;
   fextla[1] = 0;
   fextla[2] = 0;
-
 }
 /*! [lagr_ef] */
 
@@ -236,7 +220,7 @@ cs_user_lagr_ef(cs_real_t            dt_p,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_lagr_extra_operations(const cs_real_t  dt[])
+cs_user_lagr_extra_operations([[maybe_unused]] const cs_real_t  dt[])
 {
   /*! [lagr_init] */
 
@@ -313,11 +297,14 @@ cs_user_lagr_extra_operations(const cs_real_t  dt[])
 /*! [lagr_imposed_motion] */
 #pragma weak cs_user_lagr_imposed_motion
 void
-cs_user_lagr_imposed_motion(const cs_lagr_particle_set_t *particles,
-                            cs_lnum_t                     p_id,
-                            const cs_real_t               coords[3],
-                            const cs_real_t               dt,
-                            cs_real_t                     disp[3])
+cs_user_lagr_imposed_motion
+(
+  [[maybe_unused]] const cs_lagr_particle_set_t *particles,
+  [[maybe_unused]] cs_lnum_t                     p_id,
+  [[maybe_unused]] const cs_real_t               coords[3],
+  [[maybe_unused]] const cs_real_t               dt,
+  [[maybe_unused]] cs_real_t                     disp[3]
+)
 {
   /* Angular velocity */
   cs_real_t omega = 1.0;
@@ -355,7 +342,7 @@ cs_user_lagr_imposed_motion(const cs_lagr_particle_set_t *particles,
  * but may be modified by this function.
  *
  * \param[in,out]  particles         particle set
- * \param[in]      zis               injection data for this set
+ * \param[in]      zis               zone injection set data
  * \param[in]      particle_range    start and past-the-end ids of new particles
  *                                   for this zone and class
  * \param[in]      particle_face_id  face ids of new particles if zone is
@@ -368,16 +355,15 @@ cs_user_lagr_imposed_motion(const cs_lagr_particle_set_t *particles,
 /*! [lagr_inj_pos] */
 #pragma weak cs_user_lagr_in_force_coords
 void
-cs_user_lagr_in_force_coords(cs_lagr_particle_set_t         *particles,
-                             const cs_lagr_injection_set_t  *zis,
-                             const cs_lnum_t                 particle_range[2],
-                             const cs_lnum_t                 particle_face_id[],
-                             const cs_real_t                 visc_length[])
+cs_user_lagr_in_force_coords
+(
+  [[maybe_unused]] cs_lagr_particle_set_t         *particles,
+  [[maybe_unused]] const cs_lagr_injection_set_t  *zis,
+  [[maybe_unused]] const cs_lnum_t                 particle_range[2],
+  [[maybe_unused]] const cs_lnum_t                 particle_face_id[],
+  [[maybe_unused]] const cs_real_t                 visc_length[]
+)
 {
-  CS_UNUSED(zis);
-  CS_UNUSED(particle_face_id);
-  CS_UNUSED(visc_length);
-
   cs_real_t dest[3]  = {0., 0., 0.};
   for (cs_lnum_t p_id = particle_range[0]; p_id < particle_range[1]; p_id++) {
     cs_real_t *part_coord
@@ -397,7 +383,7 @@ cs_user_lagr_in_force_coords(cs_lagr_particle_set_t         *particles,
  * order to modify them according to new particle profiles (injection
  * profiles, statistical weights, correction of the diameter if the
  * standard-deviation option is activated); the modification of particles
- * position must be made in cs_user_lagr_in_force_coords to
+ * position should preferentially be made in cs_user_lagr_in_force_coords to
  * get an initialization of particle properties coherent with the local fields.
  *
  * This function is called for each injection zone and set. Particles
@@ -409,7 +395,7 @@ cs_user_lagr_in_force_coords(cs_lagr_particle_set_t         *particles,
  * \param[in]      particle_range    start and past-the-end ids of new particles
  *                                   for this zone and class
  * \param[in]      particle_face_id  face ids of new particles if zone is
- *                                   a boundary, null otherwise
+ *                                   a boundary,  null otherwise
  * \param[in]      visc_length       viscous layer thickness
  *                                   (size: number of mesh boundary faces)
  */
@@ -417,11 +403,14 @@ cs_user_lagr_in_force_coords(cs_lagr_particle_set_t         *particles,
 
 /*! [lagr_inj] */
 void
-cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
-                const cs_lagr_injection_set_t  *zis,
-                const cs_lnum_t                 particle_range[2],
-                const cs_lnum_t                 particle_face_id[],
-                const cs_real_t                 visc_length[])
+cs_user_lagr_in
+(
+  [[maybe_unused]] cs_lagr_particle_set_t         *particles,
+  [[maybe_unused]] const cs_lagr_injection_set_t  *zis,
+  [[maybe_unused]] const cs_lnum_t                 particle_range[2],
+  [[maybe_unused]] const cs_lnum_t                 particle_face_id[],
+  [[maybe_unused]] const cs_real_t                 visc_length[]
+)
 {
   /* Simple changes to selected attributes
      ------------------------------------- */
@@ -494,59 +483,57 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
  * This function is called in a loop on the particles, so be careful
  * to avoid too costly operations.
  *
+ *      \f$\tau_c = \frac{m_p{C_p}_p}{PId_p^2h_e}\f$
  *
- *      \tau_c = \frac{m_p{C_p}_p}{PId_p^2h_e}
+ *      \f$\tau_c\f$  : Thermal relaxation time (value to be computed)
  *
- *      \tau_c  : Thermal relaxation time (value to be computed)
+ *      \f$m_p\f$     : Particle mass
  *
- *      m_p    : Particle mass
+ *      \f${C_p}_p\f$ : Particle specific heat
  *
- *      {C_p}_p   : Particle specific heat
+ *      \f$d_p\f$     : Particle diameter
  *
- *      d_p    : Particle diameter
- *
- *      h_e    : Coefficient of thermal exchange
+ *      \f$h_e\f$     : Coefficient of thermal exchange
  *
  *  The coefficient of thermal exchange is calculated from a Nusselt number,
  *  itself evaluated by a correlation (Ranz-Marshall by default)
  *
- *      \nu =  \frac{h_ed_p}{\lambda} = 2 + 0.55{\Re_e}_p^{0.5}P_{rt}^{0.33}
+ *      \f$\nu = \frac{h_ed_p}{\lambda} = 2 + 0.55{\Re_e}_p^{0.5}P_{rt}^{0.33}\f$
  *
- *      \lambda : Thermal conductivity of the carrier field
+ *      \f$\lambda\f$ : Thermal conductivity of the carrier field
  *
- *      {\Re_e}_p     : Particle Reynolds number
+ *      \f${\Re_e}_p\f$     : Particle Reynolds number
  *
- *      P_{rt}    : Prandtl number
+ *     \f$ P_{rt}\f$    : Prandtl number
  *
  * \param[in]   phase_id   carrier phase_id
- * \param[in]   p_id   particle id
- * \param[in]   re_p   particle Reynolds number
- * \param[in]   uvwr   relative velocity of the particle
- *                     (flow-seen velocity - part. velocity)
- * \param[in]   rho_f  fluid density at  particle position
- * \param[in]   rho_p  particle density
- * \param[in]   nu_f   kinematic viscosity of the fluid at particle position
- * \param[in]   cp_f   specific heat of the fluid at particle position
- * \param[in]   k_f    diffusion coefficient of the fluid at particle position
- * \param[out]  taup   thermal relaxation time
- * \param[in]   dt     time step associated to the particle
+ * \param[in]   p_id       particle id
+ * \param[in]   re_p       particle Reynolds number
+ * \param[in]   uvwr       relative velocity of the particle
+ *                         (flow-seen velocity - part. velocity)
+ * \param[in]   rho_f      fluid density at  particle position
+ * \param[in]   rho_p      particle density
+ * \param[in]   nu_f       kinematic viscosity of the fluid at particle position
+ * \param[out]  taup       thermal relaxation time
+ * \param[in]   dt         time step associated to the particle
  */
 /*----------------------------------------------------------------------------*/
 
 /*! [lagr_particle_relax_time] */
 void
-cs_user_lagr_rt(int              phase_id,
-                cs_lnum_t        p_id,
-                cs_real_t        re_p,
-                cs_real_t        uvwr,
-                cs_real_t        rho_f,
-                cs_real_t        rho_p,
-                cs_real_t        nu_f,
-                cs_real_t        *taup,
-                const cs_real_t  dt)
+cs_user_lagr_rt
+(
+  [[maybe_unused]] int              phase_id,
+  [[maybe_unused]] cs_lnum_t        p_id,
+  [[maybe_unused]] cs_real_t        re_p,
+  [[maybe_unused]] cs_real_t        uvwr,
+  [[maybe_unused]] cs_real_t        rho_f,
+  [[maybe_unused]] cs_real_t        rho_p,
+  [[maybe_unused]] cs_real_t        nu_f,
+  [[maybe_unused]] cs_real_t       *taup,
+  [[maybe_unused]] const cs_real_t  dt
+)
 {
-  CS_UNUSED(dt);
-  CS_UNUSED(phase_id);
   /* Particles management */
   cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
 
@@ -627,19 +614,20 @@ cs_user_lagr_rt(int              phase_id,
 
 /*! [lagr_thermal_relax_time] */
 void
-cs_user_lagr_rt_t(cs_lnum_t        p_id,
-                  cs_real_t        re_p,
-                  cs_real_t        uvwr,
-                  cs_real_t        rho_f,
-                  cs_real_t        rho_p,
-                  cs_real_t        nu_f,
-                  cs_real_t        cp_f,
-                  cs_real_t        k_f,
-                  cs_real_2_t      tempct,
-                  const cs_real_t  dt)
+cs_user_lagr_rt_t
+(
+  [[maybe_unused]] cs_lnum_t        p_id,
+  [[maybe_unused]] cs_real_t        re_p,
+  [[maybe_unused]] cs_real_t        uvwr,
+  [[maybe_unused]] cs_real_t        rho_f,
+  [[maybe_unused]] cs_real_t        rho_p,
+  [[maybe_unused]] cs_real_t        nu_f,
+  [[maybe_unused]] cs_real_t        cp_f,
+  [[maybe_unused]] cs_real_t        k_f,
+  [[maybe_unused]] cs_real_2_t      tempct,
+  [[maybe_unused]] const cs_real_t  dt
+)
 {
-  CS_UNUSED(dt);
-  CS_UNUSED(uvwr);
   /* 1. Initializations: Particles management */
   cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
 
@@ -698,18 +686,19 @@ cs_user_lagr_rt_t(cs_lnum_t        p_id,
 
 /*! [lagr_SDE] */
 void
-cs_user_lagr_sde(const cs_real_t         dt,
-                 const cs_lnum_t         p_id,
-                 const cs_real_t        *taup,
-                 const cs_real_3_t      *tlag,
-                 const cs_real_2_t       tempct,
-                 const int               nor)
+cs_user_lagr_sde
+(
+  [[maybe_unused]] const cs_real_t         dt,
+  [[maybe_unused]] const cs_lnum_t         p_id,
+  [[maybe_unused]] const cs_real_t        *taup,
+  [[maybe_unused]] const cs_real_3_t      *tlag,
+  [[maybe_unused]] const cs_real_2_t       tempct,
+  [[maybe_unused]] const int               nor
+)
 {
   /* Note: taup and tlag are associated to the particle and its value
    * for all phase is provided */
-  CS_UNUSED(tempct);
-  CS_UNUSED(tlag);
-  CS_UNUSED(taup);
+
   /* Initializations
      --------------- */
 

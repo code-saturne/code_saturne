@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -50,14 +50,12 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_parameters-base.cpp
  *
  * \brief User functions for input of calculation parameters.
@@ -71,7 +69,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Select physical model options, including user fields.
  *
  * This function is called at the earliest stages of the data setup,
@@ -911,7 +909,7 @@ cs_user_model(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define or modify general numerical and physical user parameters.
  *
  * At the calling point of this function, most model-related most variables
@@ -927,7 +925,7 @@ cs_user_model(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_parameters(cs_domain_t *domain)
+cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
 {
   /*! [ref_time_step] */
 
@@ -1879,7 +1877,7 @@ cs_user_parameters(cs_domain_t *domain)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define internal coupling options.
  *
  * Options are usually defined using cs_internal_coupling_add_entity.
@@ -1930,17 +1928,18 @@ cs_user_internal_coupling(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- *  \brief Define or modify log user parameters.
+ * \brief Define or modify output user parameters.
+ *
+ * For CDO schemes, this function concludes the setup of properties,
+ * equations, source terms...
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_finalize_setup(cs_domain_t     *domain)
+cs_user_finalize_setup([[maybe_unused]] cs_domain_t   *domain)
 {
-  CS_NO_WARN_IF_UNUSED(domain);
-
   /* Interval of log output */
   /*! [setup_log] */
   cs_log_iteration_set_interval(1);

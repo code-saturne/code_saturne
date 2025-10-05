@@ -30,10 +30,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -47,15 +47,17 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_extra_operations-nusselt_calculation.cpp
+ *
+ * \brief This function is called at the end of each time step, and has a very
+ * general purpose (i.e. anything that does not have another dedicated
+ * user function).
  */
 /*----------------------------------------------------------------------------*/
 
@@ -64,7 +66,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief This function is called at the end of each time step.
  *
  * It has a very general purpose, although it is recommended to handle
@@ -75,7 +77,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_extra_operations(cs_domain_t     *domain)
+cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 {
   /* Calculation of the Nusselt number */
 

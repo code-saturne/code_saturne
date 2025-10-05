@@ -27,10 +27,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -39,9 +39,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
-#include "base/cs_ibm.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -63,7 +60,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief User function. Locally modify a given porosity to take into
- *          account erosion effect (for instance)
+ *        account erosion effect (for instance)
  *
  *  This function is called for each time step.
  *  Porosity will be modified if
@@ -71,16 +68,17 @@ BEGIN_C_DECLS
  *
  * \param[in]   mesh               pointer to associated mesh structure
  * \param[in]   mesh_quantities    pointer to associated mesh quantities
- *
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 #pragma weak cs_user_ibm_modify
 void
-cs_user_ibm_modify(const cs_mesh_t *mesh,
-                   const cs_mesh_quantities_t *mesh_quantities)
+cs_user_ibm_modify
+(
+  [[maybe_unused]] const cs_mesh_t *mesh,
+  [[maybe_unused]] const cs_mesh_quantities_t *mesh_quantities
+)
 {
-  CS_UNUSED(mesh);
-  CS_UNUSED(mesh_quantities);
 }
 
 /*----------------------------------------------------------------------------*/

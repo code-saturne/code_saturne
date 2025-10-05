@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <limits.h>
@@ -45,8 +45,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -86,31 +84,19 @@ BEGIN_C_DECLS
 
 #pragma weak cs_user_lagr_ef
 void
-cs_user_lagr_ef(cs_real_t            dt_p,
-                const cs_lnum_t      p_id,
-                const cs_real_t     *taup,
-                const cs_real_3_t   *tlag,
-                const cs_real_3_t   *piil,
-                const cs_real_33_t  *bx,
-                const cs_real_t      tsfext,
-                const cs_real_3_t   *vagaus,
-                const cs_real_3_t    gradpr,
-                const cs_real_33_t   gradvf,
-                cs_real_t            rho_p,
-                cs_real_3_t          fextla)
+cs_user_lagr_ef([[maybe_unused]] cs_real_t            dt_p,
+                [[maybe_unused]] const cs_lnum_t      p_id,
+                [[maybe_unused]] const cs_real_t     *taup,
+                [[maybe_unused]] const cs_real_3_t   *tlag,
+                [[maybe_unused]] const cs_real_3_t   *piil,
+                [[maybe_unused]] const cs_real_33_t  *bx,
+                [[maybe_unused]] const cs_real_t      tsfext,
+                [[maybe_unused]] const cs_real_3_t   *vagaus,
+                [[maybe_unused]] const cs_real_3_t    gradpr,
+                [[maybe_unused]] const cs_real_33_t   gradvf,
+                [[maybe_unused]] cs_real_t            rho_p,
+                [[maybe_unused]] cs_real_3_t          fextla)
 {
-  CS_UNUSED(dt_p);
-  CS_UNUSED(p_id);
-  CS_UNUSED(taup);
-  CS_UNUSED(tlag);
-  CS_UNUSED(piil);
-  CS_UNUSED(bx);
-  CS_UNUSED(tsfext);
-  CS_UNUSED(vagaus);
-  CS_UNUSED(rho_p);
-  CS_UNUSED(gradpr);
-  CS_UNUSED(gradvf);
-  CS_UNUSED(fextla);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -127,9 +113,8 @@ cs_user_lagr_ef(cs_real_t            dt_p,
 
 #pragma weak cs_user_lagr_extra_operations
 void
-cs_user_lagr_extra_operations(const cs_real_t  dt[])
+cs_user_lagr_extra_operations([[maybe_unused]] const cs_real_t  dt[])
 {
-  CS_UNUSED(dt);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -149,17 +134,15 @@ cs_user_lagr_extra_operations(const cs_real_t  dt[])
 
 #pragma weak cs_user_lagr_imposed_motion
 void
-cs_user_lagr_imposed_motion(const cs_lagr_particle_set_t *particles,
-                            cs_lnum_t                     p_id,
-                            const cs_real_t               coords[3],
-                            const cs_real_t               dt,
-                            cs_real_t                     disp[3])
+cs_user_lagr_imposed_motion
+(
+  [[maybe_unused]] const cs_lagr_particle_set_t *particles,
+  [[maybe_unused]] cs_lnum_t                     p_id,
+  [[maybe_unused]] const cs_real_t               coords[3],
+  [[maybe_unused]] const cs_real_t               dt,
+  [[maybe_unused]] cs_real_t                     disp[3]
+)
 {
-  CS_UNUSED(particles);
-  CS_UNUSED(p_id);
-  CS_UNUSED(coords);
-  CS_UNUSED(dt);
-  CS_UNUSED(disp);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -187,17 +170,15 @@ cs_user_lagr_imposed_motion(const cs_lagr_particle_set_t *particles,
 
 #pragma weak cs_user_lagr_in_force_coords
 void
-cs_user_lagr_in_force_coords(cs_lagr_particle_set_t         *particles,
-                             const cs_lagr_injection_set_t  *zis,
-                             const cs_lnum_t                 particle_range[2],
-                             const cs_lnum_t                 particle_face_id[],
-                             const cs_real_t                 visc_length[])
+cs_user_lagr_in_force_coords
+(
+  [[maybe_unused]] cs_lagr_particle_set_t         *particles,
+  [[maybe_unused]] const cs_lagr_injection_set_t  *zis,
+  [[maybe_unused]] const cs_lnum_t                 particle_range[2],
+  [[maybe_unused]] const cs_lnum_t                 particle_face_id[],
+  [[maybe_unused]] const cs_real_t                 visc_length[]
+)
 {
-  CS_UNUSED(particles);
-  CS_UNUSED(zis);
-  CS_UNUSED(particle_range);
-  CS_UNUSED(particle_face_id);
-  CS_UNUSED(visc_length);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -228,17 +209,15 @@ cs_user_lagr_in_force_coords(cs_lagr_particle_set_t         *particles,
 
 #pragma weak cs_user_lagr_in
 void
-cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
-                const cs_lagr_injection_set_t  *zis,
-                const cs_lnum_t                 particle_range[2],
-                const cs_lnum_t                 particle_face_id[],
-                const cs_real_t                 visc_length[])
+cs_user_lagr_in
+(
+  [[maybe_unused]] cs_lagr_particle_set_t         *particles,
+  [[maybe_unused]] const cs_lagr_injection_set_t  *zis,
+  [[maybe_unused]] const cs_lnum_t                 particle_range[2],
+  [[maybe_unused]] const cs_lnum_t                 particle_face_id[],
+  [[maybe_unused]] const cs_real_t                 visc_length[]
+)
 {
-  CS_UNUSED(particles);
-  CS_UNUSED(zis);
-  CS_UNUSED(particle_range);
-  CS_UNUSED(particle_face_id);
-  CS_UNUSED(visc_length);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -273,7 +252,7 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
  *     \f$ P_{rt}\f$    : Prandtl number
  *
  * \param[in]   phase_id   carrier phase_id
- * \param[in]   id_p       particle id
+ * \param[in]   p_id       particle id
  * \param[in]   re_p       particle Reynolds number
  * \param[in]   uvwr       relative velocity of the particle
  *                         (flow-seen velocity - part. velocity)
@@ -287,25 +266,19 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
 
 #pragma weak cs_user_lagr_rt
 void
-cs_user_lagr_rt(int              phase_id,
-                cs_lnum_t        id_p,
-                cs_real_t        re_p,
-                cs_real_t        uvwr,
-                cs_real_t        rho_f,
-                cs_real_t        rho_p,
-                cs_real_t        nu_f,
-                cs_real_t       *taup,
-                const cs_real_t  dt)
+cs_user_lagr_rt
+(
+  [[maybe_unused]] int              phase_id,
+  [[maybe_unused]] cs_lnum_t        p_id,
+  [[maybe_unused]] cs_real_t        re_p,
+  [[maybe_unused]] cs_real_t        uvwr,
+  [[maybe_unused]] cs_real_t        rho_f,
+  [[maybe_unused]] cs_real_t        rho_p,
+  [[maybe_unused]] cs_real_t        nu_f,
+  [[maybe_unused]] cs_real_t       *taup,
+  [[maybe_unused]] const cs_real_t  dt
+)
 {
-  CS_UNUSED(phase_id);
-  CS_UNUSED(id_p);
-  CS_UNUSED(re_p);
-  CS_UNUSED(uvwr);
-  CS_UNUSED(rho_p);
-  CS_UNUSED(rho_f);
-  CS_UNUSED(nu_f);
-  CS_UNUSED(taup);
-  CS_UNUSED(dt);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -317,7 +290,7 @@ cs_user_lagr_rt(int              phase_id,
  * This function is called in a loop on the particles, so be careful
  * to avoid too costly operations.
  *
- * \param[in]   id_p   particle id
+ * \param[in]   p_id   particle id
  * \param[in]   re_p   particle Reynolds number
  * \param[in]   uvwr   relative velocity of the particle
  *                     (flow-seen velocity - part. velocity)
@@ -333,27 +306,20 @@ cs_user_lagr_rt(int              phase_id,
 
 #pragma weak cs_user_lagr_rt_t
 void
-cs_user_lagr_rt_t(cs_lnum_t        id_p,
-                  cs_real_t        re_p,
-                  cs_real_t        uvwr,
-                  cs_real_t        rho_f,
-                  cs_real_t        rho_p,
-                  cs_real_t        nu_f,
-                  cs_real_t        cp_f,
-                  cs_real_t        k_f,
-                  cs_real_2_t      tempct,
-                  const cs_real_t  dt)
+cs_user_lagr_rt_t
+(
+  [[maybe_unused]] cs_lnum_t        p_id,
+  [[maybe_unused]] cs_real_t        re_p,
+  [[maybe_unused]] cs_real_t        uvwr,
+  [[maybe_unused]] cs_real_t        rho_f,
+  [[maybe_unused]] cs_real_t        rho_p,
+  [[maybe_unused]] cs_real_t        nu_f,
+  [[maybe_unused]] cs_real_t        cp_f,
+  [[maybe_unused]] cs_real_t        k_f,
+  [[maybe_unused]] cs_real_2_t      tempct,
+  [[maybe_unused]] const cs_real_t  dt
+)
 {
-  CS_UNUSED(id_p);
-  CS_UNUSED(re_p);
-  CS_UNUSED(uvwr);
-  CS_UNUSED(rho_p);
-  CS_UNUSED(rho_f);
-  CS_UNUSED(nu_f);
-  CS_UNUSED(cp_f);
-  CS_UNUSED(k_f);
-  CS_UNUSED(tempct);
-  CS_UNUSED(dt);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -395,19 +361,16 @@ cs_user_lagr_rt_t(cs_lnum_t        id_p,
 
 #pragma weak cs_user_lagr_sde
 void
-cs_user_lagr_sde(const cs_real_t         dt,
-                 const cs_lnum_t         p_id,
-                 const cs_real_t        *taup,
-                 const cs_real_3_t      *tlag,
-                 const cs_real_2_t       tempct,
-                 const int               nor)
+cs_user_lagr_sde
+(
+  [[maybe_unused]] const cs_real_t         dt,
+  [[maybe_unused]] const cs_lnum_t         p_id,
+  [[maybe_unused]] const cs_real_t        *taup,
+  [[maybe_unused]] const cs_real_3_t      *tlag,
+  [[maybe_unused]] const cs_real_2_t       tempct,
+  [[maybe_unused]] const int               nor
+)
 {
-  CS_UNUSED(dt);
-  CS_UNUSED(p_id);
-  CS_UNUSED(taup);
-  CS_UNUSED(tlag);
-  CS_UNUSED(tempct);
-  CS_UNUSED(nor);
 }
 
 /*----------------------------------------------------------------------------*/

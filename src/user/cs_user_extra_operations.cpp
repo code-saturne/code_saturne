@@ -30,10 +30,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -47,8 +47,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -59,7 +57,7 @@ BEGIN_C_DECLS
  *
  * \brief This function is called at the end of each time step, and has a very
  * general purpose (i.e. anything that does not have another dedicated
- * user function)
+ * user function).
  */
 /*----------------------------------------------------------------------------*/
 
@@ -83,9 +81,8 @@ BEGIN_C_DECLS
 
 #pragma weak cs_user_extra_operations_initialize
 void
-cs_user_extra_operations_initialize(cs_domain_t     *domain)
+cs_user_extra_operations_initialize([[maybe_unused]] cs_domain_t   *domain)
 {
-  CS_UNUSED(domain);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -101,9 +98,8 @@ cs_user_extra_operations_initialize(cs_domain_t     *domain)
 
 #pragma weak cs_user_extra_operations
 void
-cs_user_extra_operations(cs_domain_t     *domain)
+cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 {
-  CS_UNUSED(domain);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -119,9 +115,8 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
 #pragma weak cs_user_extra_operations_finalize
 void
-cs_user_extra_operations_finalize(cs_domain_t     *domain)
+cs_user_extra_operations_finalize([[maybe_unused]] cs_domain_t  *domain)
 {
-  CS_UNUSED(domain);
 }
 
 /*----------------------------------------------------------------------------*/

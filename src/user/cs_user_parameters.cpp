@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -49,8 +49,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -83,7 +81,6 @@ BEGIN_C_DECLS
 void
 cs_user_model(void)
 {
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -104,9 +101,8 @@ cs_user_model(void)
 
 #pragma weak cs_user_parameters
 void
-cs_user_parameters(cs_domain_t   *domain)
+cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
 {
-  CS_NO_WARN_IF_UNUSED(domain);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -129,7 +125,6 @@ cs_user_parameters(cs_domain_t   *domain)
 void
 cs_user_linear_solvers(void)
 {
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -146,7 +141,6 @@ cs_user_linear_solvers(void)
 void
 cs_user_time_moments(void)
 {
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -161,7 +155,6 @@ cs_user_time_moments(void)
 void
 cs_user_internal_coupling(void)
 {
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -177,9 +170,8 @@ cs_user_internal_coupling(void)
 
 #pragma weak cs_user_finalize_setup
 void
-cs_user_finalize_setup(cs_domain_t   *domain)
+cs_user_finalize_setup([[maybe_unused]] cs_domain_t   *domain)
 {
-  CS_UNUSED(domain);
 }
 
 /*----------------------------------------------------------------------------*/

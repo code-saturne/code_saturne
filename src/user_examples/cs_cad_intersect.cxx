@@ -24,7 +24,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
  * Standard C and C++ library headers
@@ -41,17 +41,6 @@
 #include <iterator>
 #include <map>
 #include <vector>
-
-/*----------------------------------------------------------------------------
- *  Local headers
- *----------------------------------------------------------------------------*/
-
-#include "bft/bft_error.h"
-#include "bft/bft_printf.h"
-#include "base/cs_base.h"
-#include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_connect.h"
-#include "fvm/fvm_triangulate.h"
 
 /*----------------------------------------------------------------------------
  * Open CASCADE headers
@@ -86,7 +75,7 @@
 #include <STEPControl_Reader.hxx>
 
 /*----------------------------------------------------------------------------
- *  Header for the current file
+ *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "user_examples/cs_cad_intersect.h"

@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -37,11 +37,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
+
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -73,10 +75,8 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_boundary_conditions_setup(cs_domain_t  *domain)
+cs_user_boundary_conditions_setup([[maybe_unused]] cs_domain_t  *domain)
 {
-  CS_UNUSED(domain);
-
   /* Air inlet with pulverized coal, e.g. secondary or tertiary air. */
 
   /*! [example_1] */

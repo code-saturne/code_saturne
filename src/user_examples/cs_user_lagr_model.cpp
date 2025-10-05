@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <stdio.h>
@@ -37,8 +37,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -63,16 +61,14 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 static void
-_boundary_impact_weight(const void                 *input,
-                        const cs_lagr_event_set_t  *events,
-                        cs_lnum_t                   id_range[2],
-                        cs_real_t                   vals[])
+_boundary_impact_weight([[maybe_unused]] const void  *input,
+                        const cs_lagr_event_set_t    *events,
+                        cs_lnum_t                     id_range[2],
+                        cs_real_t                     vals[])
 {
-  CS_UNUSED(input);
-
-  cs_lnum_t i, ev_id;
-
-  for (i = 0, ev_id = id_range[0]; ev_id < id_range[1]; i++, ev_id++) {
+  for (cs_lnum_t i = 0, ev_id = id_range[0];
+       ev_id < id_range[1];
+       i++, ev_id++) {
 
     int flag = cs_lagr_events_get_lnum(events, ev_id, CS_LAGR_E_FLAG);
 
@@ -104,13 +100,11 @@ _boundary_impact_weight(const void                 *input,
  *----------------------------------------------------------------------------*/
 
 static void
-_incident_kinetic_energy(const void                 *input,
-                         const cs_lagr_event_set_t  *events,
-                         cs_lnum_t                   id_range[2],
-                         cs_real_t                   vals[])
+_incident_kinetic_energy([[maybe_unused]] const void  *input,
+                         const cs_lagr_event_set_t    *events,
+                         cs_lnum_t                     id_range[2],
+                         cs_real_t                     vals[])
 {
-  CS_UNUSED(input);
-
   cs_lnum_t i, ev_id;
 
   for (i = 0, ev_id = id_range[0]; ev_id < id_range[1]; i++, ev_id++) {

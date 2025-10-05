@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -40,16 +40,8 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * PLE library headers
- *----------------------------------------------------------------------------*/
-
-#include <ple_coupling.h>
-
-/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -83,13 +75,13 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_atmo_1d_rad_prf(cs_real_t   preray[],
-                        cs_real_t   temray[],
-                        cs_real_t   romray[],
-                        cs_real_t   qvray[],
-                        cs_real_t   qlray[],
-                        cs_real_t   ncray[],
-                        cs_real_t   aeroso[])
+cs_user_atmo_1d_rad_prf([[maybe_unused]] cs_real_t   preray[],
+                        [[maybe_unused]] cs_real_t   temray[],
+                        [[maybe_unused]] cs_real_t   romray[],
+                        [[maybe_unused]] cs_real_t   qvray[],
+                        [[maybe_unused]] cs_real_t   qlray[],
+                        [[maybe_unused]] cs_real_t   ncray[],
+                        [[maybe_unused]] cs_real_t   aeroso[])
 {
   /*! [humid_aerosols_atmo] */
 

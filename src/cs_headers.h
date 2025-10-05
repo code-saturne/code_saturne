@@ -35,6 +35,15 @@
 #pragma warning disable 2259
 #endif
 
+#if defined(HAVE_CONFIG_H)
+#  include "base/cs_config.h"
+#endif
+
+/* Also include base/cs_defs.h first, as it may include
+   some compatibilty macros */
+
+#include "base/cs_defs.h"
+
 /* Include headers by groups */
 
 #include "bft/cs_bft_headers.h"

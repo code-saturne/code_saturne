@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -44,8 +44,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -84,17 +82,14 @@ BEGIN_C_DECLS
 
 /*! [inlet_vel_analytic_func] */
 static void
-_vel_profile(cs_real_t           time,
-             cs_lnum_t           n_elts,
-             const cs_lnum_t    *elt_ids,
-             const cs_real_t    *coords,
-             bool                dense_output,
-             void               *input,
-             cs_real_t          *val)
+_vel_profile([[maybe_unused]] cs_real_t  time,
+             cs_lnum_t                   n_elts,
+             const cs_lnum_t            *elt_ids,
+             const cs_real_t            *coords,
+             bool                        dense_output,
+             [[maybe_unused]] void      *input,
+             cs_real_t                  *val)
 {
-  CS_UNUSED(time);
-  CS_UNUSED(input);
-
   const cs_real_3_t *elt_coords = (const cs_real_3_t *)coords;
 
   cs_real_3_t  *v = (cs_real_3_t *)val;
@@ -135,16 +130,14 @@ _vel_profile(cs_real_t           time,
 
 /*! [inlet_scalar_analytic_func] */
 static void
-_scalar_inlet_profile(cs_real_t           time,
-                      cs_lnum_t           n_elts,
-                      const cs_lnum_t    *elt_ids,
-                      const cs_real_t    *coords,
-                      bool                dense_output,
-                      void               *input,
-                      cs_real_t          *val)
+_scalar_inlet_profile([[maybe_unused]] cs_real_t   time,
+                      cs_lnum_t                    n_elts,
+                      const cs_lnum_t             *elt_ids,
+                      const cs_real_t             *coords,
+                      bool                         dense_output,
+                      void                        *input,
+                      cs_real_t                   *val)
 {
-  CS_UNUSED(time);
-
   const cs_real_3_t *elt_coords = (const cs_real_3_t *)coords;
 
   /* field pointer passed as input upon assignment */
@@ -200,14 +193,12 @@ _scalar_inlet_profile(cs_real_t           time,
 
 /*! [wall_exchange_dof_func] */
 static void
-_scalar_exchange_profile(cs_lnum_t         n_elts,
-                         const cs_lnum_t  *elt_ids,
-                         bool              dense_output,
-                         void             *input,
-                         cs_real_t        *retval)
+_scalar_exchange_profile(cs_lnum_t               n_elts,
+                         const cs_lnum_t        *elt_ids,
+                         bool                    dense_output,
+                         [[maybe_unused]] void  *input,
+                         cs_real_t              *retval)
 {
-  CS_UNUSED(input);
-
   const cs_lnum_t dim = 1;
   const cs_lnum_t stride = 1 + dim + dim*dim;
 
@@ -251,14 +242,12 @@ _scalar_exchange_profile(cs_lnum_t         n_elts,
 
 /*! [wall_top_flux_dof_func] */
 static void
-_w_flux_top(cs_lnum_t         n_elts,
-            const cs_lnum_t  *elt_ids,
-            bool              dense_output,
-            void             *input,
-            cs_real_t        *retval)
+_w_flux_top(cs_lnum_t               n_elts,
+            const cs_lnum_t        *elt_ids,
+            bool                    dense_output,
+            [[maybe_unused]] void  *input,
+            cs_real_t              *retval)
 {
-  CS_NO_WARN_IF_UNUSED(input);
-
   const cs_zone_t *z = cs_boundary_zone_by_name("wall_top");
 
   /* Get the fluid measure (i.e. surface) of the zone */
@@ -336,10 +325,8 @@ _w_flux_side(cs_lnum_t         n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_boundary_conditions_setup(cs_domain_t  *domain)
+cs_user_boundary_conditions_setup([[maybe_unused]] cs_domain_t  *domain)
 {
-  CS_UNUSED(domain);
-
   /* Example: define constant inlet velocity with vector (1,0,0) */
   {
     /*! [inlet_vel_value] */

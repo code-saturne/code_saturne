@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -47,17 +47,15 @@
 #include <ple_coupling.h>
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_parameters-cdo-gwf_user_soil.cpp
  *
  * \brief User functions for input of calculation parameters.
@@ -110,18 +108,13 @@ typedef struct {
 
 /*! [param_cdo_gwf_set_user_update_soil] */
 static void
-tracy_update(const cs_real_t              t_eval,
-             const cs_mesh_t             *mesh,
-             const cs_cdo_connect_t      *connect,
-             const cs_cdo_quantities_t   *quant,
-             const cs_zone_t             *zone,
-             cs_gwf_soil_t               *soil)
+tracy_update([[maybe_unused]] const cs_real_t              t_eval,
+             [[maybe_unused]] const cs_mesh_t             *mesh,
+             [[maybe_unused]] const cs_cdo_connect_t      *connect,
+             [[maybe_unused]] const cs_cdo_quantities_t   *quant,
+             const cs_zone_t                              *zone,
+             cs_gwf_soil_t                                *soil)
 {
-  CS_UNUSED(mesh);
-  CS_UNUSED(connect);
-  CS_UNUSED(quant);
-  CS_UNUSED(t_eval);
-
   /* Retrieve the soil parameters */
 
   const cs_soil_tracy_param_t  *sp = (cs_soil_tracy_param_t *)soil->model_param;
@@ -261,16 +254,14 @@ get_bc(cs_real_t           time,
 
 /*! [param_cdo_set_ic_by_analytic] */
 static void
-get_ic(cs_real_t           time,
-       cs_lnum_t           n_pts,
-       const cs_lnum_t    *pt_ids,
-       const cs_real_t    *xyz,
-       bool                dense_output,
-       void               *input,
-       cs_real_t          *retval)
+get_ic([[maybe_unused]] cs_real_t   time,
+       cs_lnum_t                    n_pts,
+       const cs_lnum_t             *pt_ids,
+       const cs_real_t             *xyz,
+       bool                         dense_output,
+       void                        *input,
+       cs_real_t                   *retval)
 {
-  CS_UNUSED(time);
-
   cs_soil_tracy_param_t *tp = (cs_soil_tracy_param_t *)input;
   assert(input != nullptr);
 
@@ -293,7 +284,7 @@ get_ic(cs_real_t           time,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Select physical model options, including user fields.
  *
  * This function is called at the earliest stages of the data setup,
@@ -372,7 +363,7 @@ cs_user_model(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define or modify general numerical and physical user parameters.
  *
  * At the calling point of this function, most model-related most variables
@@ -388,7 +379,7 @@ cs_user_model(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_parameters(cs_domain_t     *domain)
+cs_user_parameters([[maybe_unused]] cs_domain_t  *domain)
 {
   /* =========================
      Generic output management
@@ -449,7 +440,7 @@ cs_user_parameters(cs_domain_t     *domain)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define or modify output user parameters.
  *
  * For CDO schemes, this function concludes the setup of properties,
@@ -460,10 +451,8 @@ cs_user_parameters(cs_domain_t     *domain)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_finalize_setup(cs_domain_t   *domain)
+cs_user_finalize_setup([[maybe_unused]] cs_domain_t   *domain)
 {
-  CS_UNUSED(domain);
-
   /*! [param_cdo_gwf_get_user_soil] */
   /* Final settings for the Richards equation */
 

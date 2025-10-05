@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include "stdlib.h"
@@ -38,8 +38,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -54,7 +52,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define post-processing writers.
  *
  * The default output format and frequency may be configured, and additional
@@ -115,7 +113,7 @@ cs_user_postprocess_probes(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief User function for output of values on a post-processing mesh.
  *
  * \param[in]       mesh_name    name of the output mesh for the current call
@@ -141,19 +139,22 @@ cs_user_postprocess_probes(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_postprocess_values(const char            *mesh_name,
-                           int                    mesh_id,
-                           int                    cat_id,
-                           cs_probe_set_t        *probes,
-                           cs_lnum_t              n_cells,
-                           cs_lnum_t              n_i_faces,
-                           cs_lnum_t              n_b_faces,
-                           cs_lnum_t              n_vertices,
-                           const cs_lnum_t        cell_list[],
-                           const cs_lnum_t        i_face_list[],
-                           const cs_lnum_t        b_face_list[],
-                           const cs_lnum_t        vertex_list[],
-                           const cs_time_step_t  *ts)
+cs_user_postprocess_values
+(
+  [[maybe_unused]] const char            *mesh_name,
+  [[maybe_unused]] int                    mesh_id,
+  [[maybe_unused]] int                    cat_id,
+  [[maybe_unused]] cs_probe_set_t        *probes,
+  [[maybe_unused]] cs_lnum_t              n_cells,
+  [[maybe_unused]] cs_lnum_t              n_i_faces,
+  [[maybe_unused]] cs_lnum_t              n_b_faces,
+  [[maybe_unused]] cs_lnum_t              n_vertices,
+  [[maybe_unused]] const cs_lnum_t        cell_list[],
+  [[maybe_unused]] const cs_lnum_t        i_face_list[],
+  [[maybe_unused]] const cs_lnum_t        b_face_list[],
+  [[maybe_unused]] const cs_lnum_t        vertex_list[],
+  [[maybe_unused]] const cs_time_step_t  *ts
+)
 {
   /* function possibly called for each postprocessing mesh, hence also for
      each probes set */

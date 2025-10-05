@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <stdio.h>
@@ -40,8 +40,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -64,7 +62,6 @@ BEGIN_C_DECLS
 void
 cs_user_lagr_volume_conditions(void)
 {
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -86,21 +83,17 @@ cs_user_lagr_volume_conditions(void)
 
 #pragma weak cs_lagr_user_internal_interaction
 void
-cs_lagr_user_internal_interaction(cs_lagr_particle_set_t    *particles,
-                                  cs_lnum_t                  p_id,
-                                  cs_lnum_t                  face_id,
-                                  const cs_nreal_t           face_u_norm[3],
-                                  const cs_real_t            c_intersect[3],
-                                  cs_real_t                  t_intersect,
-                                  cs_lagr_tracking_state_t  *tracking_state)
+cs_lagr_user_internal_interaction
+(
+  [[maybe_unused]] cs_lagr_particle_set_t    *particles,
+  [[maybe_unused]] cs_lnum_t                  p_id,
+  [[maybe_unused]] cs_lnum_t                  face_id,
+  [[maybe_unused]] const cs_nreal_t           face_u_norm[3],
+  [[maybe_unused]] const cs_real_t            c_intersect[3],
+  [[maybe_unused]] cs_real_t                  t_intersect,
+  [[maybe_unused]] cs_lagr_tracking_state_t  *tracking_state
+)
 {
-  CS_UNUSED(particles);
-  CS_UNUSED(p_id);
-  CS_UNUSED(face_id);
-  CS_UNUSED(face_u_norm);
-  CS_UNUSED(c_intersect);
-  CS_UNUSED(t_intersect);
-  CS_UNUSED(tracking_state);
 }
 
 /*----------------------------------------------------------------------------*/

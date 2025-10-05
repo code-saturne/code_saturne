@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -50,19 +50,15 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_parameters-rotation.cpp
  *
  * \brief Rotation parameters example.
- *
- * See \ref parameters for other examples.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -71,7 +67,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define or modify general numerical and physical user parameters.
  *
  * At the calling point of this function, most model-related most variables
@@ -87,10 +83,8 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_parameters(cs_domain_t *domain)
+cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
 {
-  CS_UNUSED(domain);
-
   /* Rotation of the reference frame (omega in rad/s)
    *
    * If the rotation is not nul, then

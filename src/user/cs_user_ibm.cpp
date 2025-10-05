@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -38,8 +38,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -67,7 +65,6 @@ BEGIN_C_DECLS
 void
 cs_user_ibm_define_objects(void)
 {
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -81,7 +78,6 @@ cs_user_ibm_define_objects(void)
 void
 cs_user_ibm_parameters(void)
 {
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -90,15 +86,13 @@ cs_user_ibm_parameters(void)
  *         based objects.
  *
  * \param[in]  t            time value for the current time step
- *
  */
 /*----------------------------------------------------------------------------*/
 
 #pragma weak cs_user_ibm_object_transformations
 void
-cs_user_ibm_object_transformations(const cs_real_t time)
+cs_user_ibm_object_transformations([[maybe_unused]] const cs_real_t time)
 {
-  CS_UNUSED(time);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -109,21 +103,16 @@ cs_user_ibm_object_transformations(const cs_real_t time)
  * \param[in]  xyz          x, y, z coordinates of the current position
  * \param[in]  t            time value for the current time step
  * \param[in]  num_object   num of fsi object (if fsi activated)
- *
  */
 /*----------------------------------------------------------------------------*/
 
 #pragma weak cs_user_ibm_solid_por
 void
-cs_user_ibm_solid_por(const cs_lnum_t    c_id,
-                      const cs_real_3_t  xyz,
-                      const cs_real_t    t,
-                      const int          num_object)
+cs_user_ibm_solid_por([[maybe_unused]] cs_lnum_t        c_id,
+                      [[maybe_unused]] const cs_real_t  xyz[3],
+                      [[maybe_unused]] cs_real_t        t,
+                      [[maybe_unused]] int              num_object)
 {
-  CS_UNUSED(c_id);
-  CS_UNUSED(xyz);
-  CS_UNUSED(t);
-  CS_UNUSED(num_object);
 }
 
 /*----------------------------------------------------------------------------*/

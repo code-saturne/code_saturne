@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -37,11 +37,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
+
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -60,7 +62,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief User definition of boundary conditions
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
@@ -88,9 +90,9 @@ BEGIN_C_DECLS
  * so for a given face "face_id" and field component "comp_id", access
  * is as follows (where n_b_faces is domain->mesh->n_b_faces):
  *
- *   f->bc_coeffs->rcodcl1[n_b_faces*comp_id + face_id]
- *   f->bc_coeffs->rcodcl2[n_b_faces*comp_id + face_id]
- *   f->bc_coeffs->rcodcl3[n_b_faces*comp_id + face_id]
+ *   f->bc_coeffs->rcodcl1[n_b_faces*comp_id + face_id]\n
+ *   f->bc_coeffs->rcodcl2[n_b_faces*comp_id + face_id]\n
+ *   f->bc_coeffs->rcodcl3[n_b_faces*comp_id + face_id]\n\n
  *
  * Only the icodcl code values from the first component are used in the case
  * of vector or tensor fields, so the icodcl values can be defined as for
@@ -99,12 +101,11 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_boundary_conditions(cs_domain_t  *domain,
-                            int           bc_type[])
+cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
+                            [[maybe_unused]] int           bc_type[])
 {
   /*! [init] */
   const cs_lnum_t n_b_faces = domain->mesh->n_b_faces;
-  const cs_lnum_t *b_face_cells = domain->mesh->b_face_cells;
 
   const int n_fields = cs_field_n_fields();
 

@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -37,18 +37,20 @@
 #include <stdio.h>
 #include <string.h>
 
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
+
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_boundary_conditions-gas_3ptchem.cpp
  *
  * \brief User functions for boundary condition definitions.
@@ -60,7 +62,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set boundary conditions to be applied.
  *
  * This function is called just before \ref cs_user_finalize_setup, and
@@ -73,10 +75,8 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_boundary_conditions_setup(cs_domain_t  *domain)
+cs_user_boundary_conditions_setup([[maybe_unused]] cs_domain_t  *domain)
 {
-  CS_UNUSED(domain);
-
   /*! [setup_inlet] */
   const cs_zone_t *z = cs_boundary_zone_by_name("inlet");
 
@@ -93,7 +93,7 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief User definition of boundary conditions
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
@@ -132,8 +132,8 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_boundary_conditions(cs_domain_t  *domain,
-                            int           bc_type[])
+cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
+                            [[maybe_unused]] int           bc_type[])
 {
   /*! [loc_var_dec] */
 

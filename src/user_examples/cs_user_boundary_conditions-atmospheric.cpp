@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -37,18 +37,20 @@
 #include <stdio.h>
 #include <string.h>
 
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
+
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_boundary_conditions-atmospheric.cpp
  *
  * \brief Atmospheric example of cs_user_boundary_conditions function.
@@ -60,7 +62,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief User definition of boundary conditions
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
@@ -99,8 +101,8 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_boundary_conditions(cs_domain_t  *domain,
-                            int           bc_type[])
+cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
+                            [[maybe_unused]] int           bc_type[])
 {
   /* For boundary faces of zone "open_11",
    * assign an inlet boundary condition with automatic choice between
@@ -242,7 +244,6 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
     }
   }
   /*! [atmo_soil_temperature] */
-
 }
 
 /*----------------------------------------------------------------------------*/

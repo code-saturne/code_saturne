@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include "stdlib.h"
@@ -38,8 +38,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -63,12 +61,10 @@ BEGIN_C_DECLS
 
 /*! [post_select_func_1] */
 static void
-_i_faces_select_example(void         *input,
-                        cs_lnum_t    *n_faces,
-                        cs_lnum_t   **face_ids)
+_i_faces_select_example([[maybe_unused]] void   *input,
+                        cs_lnum_t               *n_faces,
+                        cs_lnum_t              **face_ids)
 {
-  CS_UNUSED(input);
-
   cs_lnum_t i, face_id;
   int n_families = 0;
   int *family_list = nullptr;
@@ -149,12 +145,10 @@ _i_faces_select_example(void         *input,
 
 /*! [post_select_func_2] */
 static void
-_b_faces_select_example(void         *input,
-                        cs_lnum_t    *n_faces,
-                        cs_lnum_t   **face_ids)
+_b_faces_select_example([[maybe_unused]] void   *input,
+                        cs_lnum_t               *n_faces,
+                        cs_lnum_t              **face_ids)
 {
-  CS_UNUSED(input);
-
   cs_lnum_t n_b_faces = 0;
   cs_lnum_t *b_face_ids = nullptr;
 
@@ -194,12 +188,10 @@ _b_faces_select_example(void         *input,
 
 /*! [post_select_func_3] */
 static void
-_he_fraction_05_select(void        *input,
-                       cs_lnum_t   *n_cells,
-                       cs_lnum_t  **cell_ids)
+_he_fraction_05_select([[maybe_unused]] void    *input,
+                       cs_lnum_t               *n_cells,
+                       cs_lnum_t              **cell_ids)
 {
-  CS_UNUSED(input);
-
   cs_lnum_t _n_cells = 0;
   cs_lnum_t *_cell_ids = nullptr;
 
@@ -657,24 +649,23 @@ cs_user_postprocess_probes(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_postprocess_values(const char            *mesh_name,
-                           int                    mesh_id,
-                           int                    cat_id,
-                           cs_probe_set_t        *probes,
-                           cs_lnum_t              n_cells,
-                           cs_lnum_t              n_i_faces,
-                           cs_lnum_t              n_b_faces,
-                           cs_lnum_t              n_vertices,
-                           const cs_lnum_t        cell_list[],
-                           const cs_lnum_t        i_face_list[],
-                           const cs_lnum_t        b_face_list[],
-                           const cs_lnum_t        vertex_list[],
-                           const cs_time_step_t  *ts)
+cs_user_postprocess_values
+(
+  [[maybe_unused]] const char            *mesh_name,
+  [[maybe_unused]] int                    mesh_id,
+  [[maybe_unused]] int                    cat_id,
+  [[maybe_unused]] cs_probe_set_t        *probes,
+  [[maybe_unused]] cs_lnum_t              n_cells,
+  [[maybe_unused]] cs_lnum_t              n_i_faces,
+  [[maybe_unused]] cs_lnum_t              n_b_faces,
+  [[maybe_unused]] cs_lnum_t              n_vertices,
+  [[maybe_unused]] const cs_lnum_t        cell_list[],
+  [[maybe_unused]] const cs_lnum_t        i_face_list[],
+  [[maybe_unused]] const cs_lnum_t        b_face_list[],
+  [[maybe_unused]] const cs_lnum_t        vertex_list[],
+  [[maybe_unused]] const cs_time_step_t  *ts
+)
 {
-  CS_NO_WARN_IF_UNUSED(probes);
-  CS_NO_WARN_IF_UNUSED(n_vertices);
-  CS_NO_WARN_IF_UNUSED(vertex_list);
-
   /* Output of k = 1/2 (R11+R22+R33) for the Rij-epsilon model
      ------------------------------------------------------ */
 
@@ -868,13 +859,13 @@ cs_user_postprocess_values(const char            *mesh_name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_postprocess_activate(int     nt_max_abs,
-                             int     nt_cur_abs,
-                             double  t_cur_abs)
+cs_user_postprocess_activate
+(
+  [[maybe_unused]] int     nt_max_abs,
+  [[maybe_unused]] int     nt_cur_abs,
+  [[maybe_unused]] double  t_cur_abs
+)
 {
-  CS_NO_WARN_IF_UNUSED(nt_cur_abs);
-  CS_NO_WARN_IF_UNUSED(t_cur_abs);
-
   /* Use the cs_post_activate_writer() function to force the
    * "active" or "inactive" flag for a specific writer or for all
    * writers for the current time step.

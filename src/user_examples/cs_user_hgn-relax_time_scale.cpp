@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <stdio.h>
@@ -40,8 +40,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -77,13 +75,13 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_hgn_thermo_relax_time(const cs_mesh_t *mesh,
-                              const cs_real_t *alpha_eq,
-                              const cs_real_t *y_eq,
-                              const cs_real_t *z_eq,
-                              const cs_real_t *ei,
-                              const cs_real_t *v,
-                              cs_real_t       *relax_tau)
+cs_user_hgn_thermo_relax_time([[maybe_unused]] const cs_mesh_t  *mesh,
+                              [[maybe_unused]] const cs_real_t  *alpha_eq,
+                              [[maybe_unused]] const cs_real_t  *y_eq,
+                              [[maybe_unused]] const cs_real_t  *z_eq,
+                              [[maybe_unused]] const cs_real_t  *ei,
+                              [[maybe_unused]] const cs_real_t  *v,
+                              [[maybe_unused]] cs_real_t        *relax_tau)
 {
   //-----------------
   // pour run 1

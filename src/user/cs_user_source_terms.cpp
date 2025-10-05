@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -44,8 +44,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -152,15 +150,14 @@ BEGIN_C_DECLS
 
 #pragma weak cs_user_source_terms
 void
-cs_user_source_terms(cs_domain_t  *domain,
-                     int           f_id,
-                     cs_real_t    *st_exp,
-                     cs_real_t    *st_imp)
+cs_user_source_terms
+(
+  [[maybe_unused]] cs_domain_t  *domain,
+  [[maybe_unused]] int           f_id,
+  [[maybe_unused]] cs_real_t    *st_exp,
+  [[maybe_unused]] cs_real_t    *st_imp
+)
 {
-  CS_UNUSED(domain);
-  CS_UNUSED(f_id);
-  CS_UNUSED(st_exp);
-  CS_UNUSED(st_imp);
 }
 
 /*----------------------------------------------------------------------------*/

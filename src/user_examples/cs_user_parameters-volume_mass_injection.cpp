@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -49,8 +49,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -76,18 +74,16 @@ BEGIN_C_DECLS
 
 /*! [inlet_cal_analytic_func] */
 static void
-_define_injection(cs_real_t           time,
-                  cs_lnum_t           n_elts,
-                  const cs_lnum_t    *elt_ids,
-                  const cs_real_t    *xyz,
-                  bool                dense_output,
-                  void               *input,
-                  cs_real_t          *res)
+_define_injection([[maybe_unused]] cs_real_t         time,
+                  cs_lnum_t                          n_elts,
+                  const cs_lnum_t                   *elt_ids,
+                  [[maybe_unused]] const cs_real_t  *xyz,
+                  bool                               dense_output,
+                  void                              *input,
+                  cs_real_t                         *res)
 {
-  CS_UNUSED(time);
-  CS_UNUSED(xyz);
-
-  cs_field_t *f = (cs_field_t *)input; /* Current field for which this injection is called */
+  /* Current field for which this injection is called */
+  cs_field_t *f = (cs_field_t *)input;
 
   const cs_zone_t *z = cs_volume_zone_by_name("mass_injection");
 
@@ -151,7 +147,7 @@ _define_injection(cs_real_t           time,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define or modify output user parameters.
  *
  * For CDO schemes, this function concludes the setup of properties,
@@ -162,10 +158,8 @@ _define_injection(cs_real_t           time,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_finalize_setup(cs_domain_t   *domain)
+cs_user_finalize_setup([[maybe_unused]] cs_domain_t   *domain)
 {
-  CS_UNUSED(domain);
-
   /* Example 1: simulation of an inlet condition by mass source terms */
 
   /*! [inlet_cal] */

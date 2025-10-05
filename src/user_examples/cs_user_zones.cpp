@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -41,8 +41,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -75,15 +73,12 @@ BEGIN_C_DECLS
 
 /*! [select_func_vol2] */
 static void
-_g3_boundary_cells(void              *input,
-                   const cs_mesh_t   *m,
-                   int                location_id,
-                   cs_lnum_t         *n_elts,
-                   cs_lnum_t        **elt_ids)
+_g3_boundary_cells([[maybe_unused]] void   *input,
+                   const cs_mesh_t         *m,
+                   [[maybe_unused]] int     location_id,
+                   cs_lnum_t               *n_elts,
+                   cs_lnum_t              **elt_ids)
 {
-  CS_UNUSED(input);
-  CS_UNUSED(location_id);
-
   /* Allocate selection list */
 
   cs_lnum_t n_b_faces = 0;

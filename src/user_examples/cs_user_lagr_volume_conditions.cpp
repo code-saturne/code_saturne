@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <stdio.h>
@@ -40,8 +40,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -69,22 +67,13 @@ BEGIN_C_DECLS
 
 /*! [lagr_vol_define_injection_fun] */
 static void
-_injection_profile(int               zone_id,
-                   int               location_id,
-                   const void       *input,
-                   cs_lnum_t         n_elts,
-                   const cs_lnum_t   elt_ids[],
-                   cs_real_t         profile[])
+_injection_profile([[maybe_unused]] int          zone_id,
+                   [[maybe_unused]] int          location_id,
+                   [[maybe_unused]] const void  *input,
+                   cs_lnum_t                     n_elts,
+                   const cs_lnum_t               elt_ids[],
+                   cs_real_t                     profile[])
 {
-  CS_NO_WARN_IF_UNUSED(zone_id);
-  CS_NO_WARN_IF_UNUSED(location_id);
-  CS_NO_WARN_IF_UNUSED(input);
-
-  const cs_real_3_t  *b_face_coords
-    = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
-
-  const int itmx = 8;
-
   /* Loop on elements
      ---------------- */
 
@@ -111,7 +100,7 @@ _injection_profile(int               zone_id,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define particle volume conditions.
  *
  * This is used for the definition of volume injections,
@@ -168,7 +157,6 @@ cs_user_lagr_volume_conditions(void)
 
   }
   /*! [lagr_vol_define_injection_1] */
-
 
   /* Example for a uniform injection at computation initialization */
 

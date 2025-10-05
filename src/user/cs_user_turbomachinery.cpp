@@ -29,10 +29,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -46,8 +46,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -59,7 +57,7 @@ BEGIN_C_DECLS
  * \brief Definition of turbomachinery related options.
  *
  * See \ref turbomachinery for examples.
-*/
+ */
 /*----------------------------------------------------------------------------*/
 
 /*============================================================================
@@ -69,40 +67,37 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define rotor/stator model.
-*/
+ */
 /*----------------------------------------------------------------------------*/
 
 #pragma weak cs_user_turbomachinery
 void
 cs_user_turbomachinery(void)
 {
-
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define rotor axes, associated cells, and rotor/stator faces.
-*/
+ */
 /*----------------------------------------------------------------------------*/
 
 #pragma weak cs_user_turbomachinery_rotor
 void
 cs_user_turbomachinery_rotor(void)
 {
-
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define rotation velocity of rotor.
-*/
+ */
 /*----------------------------------------------------------------------------*/
 
 #pragma weak cs_user_turbomachinery_set_rotation_velocity
 void
 cs_user_turbomachinery_set_rotation_velocity(void)
 {
-
 }
 
 /*----------------------------------------------------------------------------*/

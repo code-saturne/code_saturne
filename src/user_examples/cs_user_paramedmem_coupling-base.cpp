@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -50,14 +50,12 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_paramedmem_coupling-base.cpp
  *
  * \brief User functions for input of ParaMEDMEM coupling parameters
@@ -72,7 +70,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define ParaMEDMEM coupling(s)
  */
 /*----------------------------------------------------------------------------*/
@@ -110,7 +108,7 @@ cs_user_paramedmem_define_couplings(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define coupled meshes
  */
 /*----------------------------------------------------------------------------*/
@@ -152,7 +150,7 @@ cs_user_paramedmem_define_meshes(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define fields to couple with ParaMEDMEM
  */
 /*----------------------------------------------------------------------------*/
@@ -160,7 +158,6 @@ cs_user_paramedmem_define_meshes(void)
 void
 cs_user_paramedmem_define_fields(void)
 {
-
   /* Define coupled arrays using ParaMEDMEM */
   /*! [paramedmem_coupling_define_field1] */
   {
@@ -230,7 +227,8 @@ cs_user_paramedmem_define_fields(void)
                                                     CS_MEDCPL_NO_TIME);
   }
   /*! [paramedmem_coupling_define_field1] */
-
 }
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

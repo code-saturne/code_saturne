@@ -22,27 +22,28 @@
   You should have received a copy of the GNU General Public License along with
   this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
- */
+*/
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <math.h>
+#include <stdio.h>
+#include <string.h>
+
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -72,11 +73,11 @@ BEGIN_C_DECLS
 
 /*![time_table_dof_func] */
 static void
-_time_table_t_inlet(cs_lnum_t         n_elts,
-                    const cs_lnum_t  *elt_ids,
-                    bool              dense_output,
-                    void             *input,
-                    cs_real_t        *retval)
+_time_table_t_inlet(cs_lnum_t               n_elts,
+                    const cs_lnum_t        *elt_ids,
+                    bool                    dense_output,
+                    [[maybe_unused]] void  *input,
+                    cs_real_t              *retval)
 {
   /* Get current time */
   const cs_real_t time = cs_glob_time_step->t_cur;
@@ -99,11 +100,11 @@ _time_table_t_inlet(cs_lnum_t         n_elts,
 /*![time_table_dof_func] */
 
 /*=============================================================================
- * Public function definitions
+ * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set boundary conditions to be applied.
  *
  * This function is called just before \ref cs_user_finalize_setup, and
@@ -116,7 +117,7 @@ _time_table_t_inlet(cs_lnum_t         n_elts,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_boundary_conditions_setup(cs_domain_t  *domain)
+cs_user_boundary_conditions_setup([[maybe_unused]] cs_domain_t  *domain)
 {
   /*! [time_table_dof_inlet] */
   cs_equation_param_t  *eqp = cs_equation_param_by_name("scalar_1");

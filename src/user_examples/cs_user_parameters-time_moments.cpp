@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -50,20 +50,15 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_parameters-time_moments.cpp
  *
  * \brief Time moments example
- *
- * See \ref parameters for examples.
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -86,11 +81,9 @@ BEGIN_C_DECLS
 
 /*! [tmom_simple_sum_data] */
 static void
-_simple_data_sum(const void  *input,
-                 cs_real_t   *vals)
+_simple_data_sum([[maybe_unused]] const void  *input,
+                 cs_real_t                    *vals)
 {
-  CS_NO_WARN_IF_UNUSED(input);
-
   const int location_id = CS_MESH_LOCATION_CELLS;
   const cs_lnum_t n_elts = cs_mesh_location_get_n_elts(location_id)[0];
 
@@ -115,11 +108,9 @@ _simple_data_sum(const void  *input,
 
 /*! [tmom_b_thermal_flux_data] */
 static void
-_boundary_thermal_flux(const void  *input,
-                       cs_real_t   *vals)
+_boundary_thermal_flux([[maybe_unused]] const void  *input,
+                       cs_real_t                    *vals)
 {
-  CS_NO_WARN_IF_UNUSED(input);
-
   const int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
   const cs_lnum_t n_elts = cs_mesh_location_get_n_elts(location_id)[0];
 
@@ -211,8 +202,12 @@ _velocity_moment_data(const void  *input,
 }
 /*! [tmom_velocity_rotation_data] */
 
+/*============================================================================
+ * User function definitions
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define time moments.
  *
  * This function is called at the setup stage, once user and most model-based

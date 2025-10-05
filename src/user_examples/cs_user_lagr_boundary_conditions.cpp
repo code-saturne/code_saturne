@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <stdio.h>
@@ -40,8 +40,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -69,12 +67,12 @@ BEGIN_C_DECLS
 
 /*! [lagr_bc_profile_func_2] */
 static void
-_injection_profile(int               zone_id,
-                   int               location_id,
-                   const void       *input,
-                   cs_lnum_t         n_elts,
-                   const cs_lnum_t   elt_ids[],
-                   cs_real_t         profile[])
+_injection_profile([[maybe_unused]] int          zone_id,
+                   [[maybe_unused]] int          location_id,
+                   [[maybe_unused]] const void  *input,
+                   cs_lnum_t                     n_elts,
+                   const cs_lnum_t               elt_ids[],
+                   cs_real_t                     profile[])
 {
   const cs_real_3_t  *b_face_coords
     = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
@@ -149,7 +147,7 @@ _injection_profile(int               zone_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_lagr_boundary_conditions(const int  bc_type[])
+cs_user_lagr_boundary_conditions([[maybe_unused]] const int  bc_type[])
 {
   /*! [lagr_bc_variables] */
   cs_lagr_zone_data_t *lagr_bcs = cs_lagr_get_boundary_conditions();
@@ -318,15 +316,18 @@ cs_user_lagr_boundary_conditions(const int  bc_type[])
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_user_boundary_interaction(cs_lagr_particle_set_t    *particles,
-                                  cs_lnum_t                  p_id,
-                                  cs_lnum_t                  face_id,
-                                  const cs_real_t            face_norm[3],
-                                  const cs_real_t            c_intersect[3],
-                                  cs_real_t                  t_intersect,
-                                  int                        b_zone_id,
-                                  int                       *event_flag,
-                                  cs_lagr_tracking_state_t  *tracking_state)
+cs_lagr_user_boundary_interaction
+(
+  [[maybe_unused]] cs_lagr_particle_set_t    *particles,
+  [[maybe_unused]] cs_lnum_t                  p_id,
+  [[maybe_unused]] cs_lnum_t                  face_id,
+  [[maybe_unused]] const cs_real_t            face_norm[3],
+  [[maybe_unused]] const cs_real_t            c_intersect[3],
+  [[maybe_unused]] cs_real_t                  t_intersect,
+  [[maybe_unused]] int                        b_zone_id,
+  [[maybe_unused]] int                       *event_flag,
+  [[maybe_unused]] cs_lagr_tracking_state_t  *tracking_state
+)
 {
   /* Update deposition-related counter */
 
@@ -355,7 +356,6 @@ cs_lagr_user_boundary_interaction(cs_lagr_particle_set_t    *particles,
   *tracking_state = CS_LAGR_PART_OUT;
 
   /*! [update] */
-
 }
 
 /*----------------------------------------------------------------------------*/

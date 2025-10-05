@@ -26,16 +26,15 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
 #include <math.h>
 #include <string.h>
-#include <stdio.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -47,17 +46,21 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * Local headers
+ * PLE library headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
+#include <ple_coupling.h>
+
+/*----------------------------------------------------------------------------
+ * Local headers
+ *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_parameters-cdo-linear_solvers.cpp
  *
  * \brief Linear solvers examples.
@@ -71,7 +74,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define or modify general numerical and physical user parameters.
  *
  * At the calling point of this function, most model-related most variables
@@ -87,10 +90,8 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_parameters(cs_domain_t    *domain)
+cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
 {
-  CS_NO_WARN_IF_UNUSED(domain);
-
   /*! [cdo_sles_solver_family] */
   {
     cs_equation_param_t  *eqp = cs_equation_param_by_name("MyEqName");
@@ -570,13 +571,10 @@ cs_user_linear_solvers(void)
 
 /*! [mumps_user_hook] */
 void
-cs_user_sles_mumps_hook(const cs_param_sles_t   *slesp,
-                        void                    *context,
-                        void                    *pmumps)
+cs_user_sles_mumps_hook([[maybe_unused]] const cs_param_sles_t   *slesp,
+                        [[maybe_unused]] void                    *context,
+                        void                                     *pmumps)
 {
-  CS_UNUSED(slesp);
-  CS_UNUSED(context);
-
   // Case of a factorization in double-precision
 
   DMUMPS_STRUC_C  *mumps = static_cast<DMUMPS_STRUC_C *>(pmumps);

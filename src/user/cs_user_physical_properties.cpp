@@ -26,25 +26,19 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
 #include <math.h>
 #include <string.h>
 
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
-
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -72,9 +66,11 @@ BEGIN_C_DECLS
 
 #pragma weak cs_user_physical_properties
 void
-cs_user_physical_properties(cs_domain_t   *domain)
+cs_user_physical_properties
+(
+  [[maybe_unused]] cs_domain_t   *domain
+)
 {
-  CS_NO_WARN_IF_UNUSED(domain);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -99,14 +95,15 @@ cs_user_physical_properties(cs_domain_t   *domain)
 
 #pragma weak cs_user_physical_properties_h_to_t
 void
-cs_user_physical_properties_h_to_t(cs_domain_t      *domain,
-                                   const cs_zone_t  *z,
-                                   bool              z_local,
-                                   const cs_real_t   h[],
-                                   cs_real_t         t[])
+cs_user_physical_properties_h_to_t
+(
+  [[maybe_unused]] cs_domain_t      *domain,
+  [[maybe_unused]] const cs_zone_t  *z,
+  [[maybe_unused]] bool              z_local,
+  [[maybe_unused]] const cs_real_t   h[],
+  [[maybe_unused]] cs_real_t         t[]
+)
 {
-  CS_NO_WARN_IF_UNUSED(domain);
-  CS_NO_WARN_IF_UNUSED(z);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -131,14 +128,15 @@ cs_user_physical_properties_h_to_t(cs_domain_t      *domain,
 
 #pragma weak cs_user_physical_properties_t_to_h
 void
-cs_user_physical_properties_t_to_h(cs_domain_t      *domain,
-                                   const cs_zone_t  *z,
-                                   bool              z_local,
-                                   const cs_real_t   t[],
-                                   cs_real_t         h[])
+cs_user_physical_properties_t_to_h
+(
+  [[maybe_unused]] cs_domain_t      *domain,
+  [[maybe_unused]] const cs_zone_t  *z,
+  [[maybe_unused]] bool              z_local,
+  [[maybe_unused]] const cs_real_t   t[],
+  [[maybe_unused]] cs_real_t         h[]
+)
 {
-  CS_NO_WARN_IF_UNUSED(domain);
-  CS_NO_WARN_IF_UNUSED(z);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -154,9 +152,11 @@ cs_user_physical_properties_t_to_h(cs_domain_t      *domain,
 
 #pragma weak cs_user_physical_properties_turb_viscosity
 void
-cs_user_physical_properties_turb_viscosity(cs_domain_t      *domain)
+cs_user_physical_properties_turb_viscosity
+(
+  [[maybe_unused]] cs_domain_t  *domain
+)
 {
-  CS_NO_WARN_IF_UNUSED(domain);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -177,9 +177,11 @@ cs_user_physical_properties_turb_viscosity(cs_domain_t      *domain)
 
 #pragma weak cs_user_physical_properties_td_pressure
 void
-cs_user_physical_properties_td_pressure(cs_real_t  *td_p)
+cs_user_physical_properties_td_pressure
+(
+  [[maybe_unused]] cs_real_t  *td_p
+)
 {
-  CS_NO_WARN_IF_UNUSED(td_p);
 }
 
 /*----------------------------------------------------------------------------*/

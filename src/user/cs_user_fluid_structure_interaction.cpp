@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -42,8 +42,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -89,27 +87,20 @@ BEGIN_C_DECLS
 
 #pragma weak cs_user_fsi_structure_define
 void
-cs_user_fsi_structure_define(int                 is_restart,
-                             int                 n_structs,
-                             int                *plot,
-                             cs_time_control_t  *plot_time_control,
-                             cs_real_t          *aexxst,
-                             cs_real_t          *bexxst,
-                             cs_real_t          *cfopre,
-                             cs_real_t           xstr0[][3],
-                             cs_real_t           vstr0[][3],
-                             cs_real_t           xstreq[][3])
+cs_user_fsi_structure_define
+(
+  [[maybe_unused]] int                 is_restart,
+  [[maybe_unused]] int                 n_structs,
+  [[maybe_unused]] int                *plot,
+  [[maybe_unused]] cs_time_control_t  *plot_time_control,
+  [[maybe_unused]] cs_real_t          *aexxst,
+  [[maybe_unused]] cs_real_t          *bexxst,
+  [[maybe_unused]] cs_real_t          *cfopre,
+  [[maybe_unused]] cs_real_t           xstr0[][3],
+  [[maybe_unused]] cs_real_t           vstr0[][3],
+  [[maybe_unused]] cs_real_t           xstreq[][3]
+)
 {
-  CS_NO_WARN_IF_UNUSED(is_restart);
-  CS_NO_WARN_IF_UNUSED(n_structs);
-  CS_NO_WARN_IF_UNUSED(plot);
-  CS_NO_WARN_IF_UNUSED(plot_time_control);
-  CS_NO_WARN_IF_UNUSED(aexxst);
-  CS_NO_WARN_IF_UNUSED(bexxst);
-  CS_NO_WARN_IF_UNUSED(cfopre);
-  CS_NO_WARN_IF_UNUSED(xstr0);
-  CS_NO_WARN_IF_UNUSED(vstr0);
-  CS_NO_WARN_IF_UNUSED(xstreq);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -131,27 +122,20 @@ cs_user_fsi_structure_define(int                 is_restart,
 
 #pragma weak cs_user_fsi_structure_values
 void
-cs_user_fsi_structure_values(int                    n_structs,
-                             const cs_time_step_t  *ts,
-                             const cs_real_t        xstreq[][3],
-                             const cs_real_t        xstr[][3],
-                             const cs_real_t        vstr[][3],
-                             cs_real_t              xmstru[][3][3],
-                             cs_real_t              xcstru[][3][3],
-                             cs_real_t              xkstru[][3][3],
-                             cs_real_t              forstr[][3],
-                             cs_real_t              dtstr[])
+cs_user_fsi_structure_values
+(
+  [[maybe_unused]] int                    n_structs,
+  [[maybe_unused]] const cs_time_step_t  *ts,
+  [[maybe_unused]] const cs_real_t        xstreq[][3],
+  [[maybe_unused]] const cs_real_t        xstr[][3],
+  [[maybe_unused]] const cs_real_t        vstr[][3],
+  [[maybe_unused]] cs_real_t              xmstru[][3][3],
+  [[maybe_unused]] cs_real_t              xcstru[][3][3],
+  [[maybe_unused]] cs_real_t              xkstru[][3][3],
+  [[maybe_unused]] cs_real_t              forstr[][3],
+  [[maybe_unused]] cs_real_t              dtstr[]
+)
 {
-  CS_NO_WARN_IF_UNUSED(n_structs);
-  CS_NO_WARN_IF_UNUSED(ts);
-  CS_NO_WARN_IF_UNUSED(xstreq);
-  CS_NO_WARN_IF_UNUSED(xstr);
-  CS_NO_WARN_IF_UNUSED(vstr);
-  CS_NO_WARN_IF_UNUSED(xmstru);
-  CS_NO_WARN_IF_UNUSED(xcstru);
-  CS_NO_WARN_IF_UNUSED(xkstru);
-  CS_NO_WARN_IF_UNUSED(forstr);
-  CS_NO_WARN_IF_UNUSED(dtstr);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -172,13 +156,13 @@ cs_user_fsi_structure_values(int                    n_structs,
 
 #pragma weak cs_user_fsi_structure_num
 void
-cs_user_fsi_structure_num(cs_domain_t               *domain,
-                          int                        structure_num[],
-                          cs_mobile_structure_type_t structure_typ[])
+cs_user_fsi_structure_num
+(
+  [[maybe_unused]] cs_domain_t                *domain,
+  [[maybe_unused]] int                         structure_num[],
+  [[maybe_unused]] cs_mobile_structure_type_t  structure_typ[]
+)
 {
-  CS_UNUSED(domain);
-  CS_UNUSED(structure_num);
-  CS_UNUSED(structure_typ);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -194,14 +178,14 @@ cs_user_fsi_structure_num(cs_domain_t               *domain,
 
 #pragma weak cs_user_fsi_external_displacement
 void
-cs_user_fsi_external_displacement(const cs_domain_t *domain,
-                                  const cs_real_3_t *b_stress,
-                                  cs_real_3_t       *disaple)
+cs_user_fsi_external_displacement
+(
+  [[maybe_unused]] const cs_domain_t  *domain,
+  [[maybe_unused]] const cs_real_3_t  *b_stress,
+  [[maybe_unused]] cs_real_3_t        *disaple
+)
 {
-  CS_UNUSED(domain);
-  CS_UNUSED(b_stress);
-  CS_UNUSED(disaple);
-};
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -221,15 +205,14 @@ cs_user_fsi_external_displacement(const cs_domain_t *domain,
 
 #pragma weak cs_user_fsi_external_cvg
 void
-cs_user_fsi_external_cvg(const cs_domain_t *domain,
-                         const cs_real_t    epsilon,
-                         int               *cvg_status,
-                         cs_real_t         *residual)
+cs_user_fsi_external_cvg
+(
+  [[maybe_unused]] const cs_domain_t  *domain,
+  [[maybe_unused]] const cs_real_t     epsilon,
+  [[maybe_unused]] int                *cvg_status,
+  [[maybe_unused]] cs_real_t          *residual
+)
 {
-  CS_UNUSED(domain);
-  CS_UNUSED(epsilon);
-  CS_UNUSED(cvg_status);
-  CS_UNUSED(residual);
 }
 
 /*----------------------------------------------------------------------------*/

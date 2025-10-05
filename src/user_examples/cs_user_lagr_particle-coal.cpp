@@ -1,6 +1,8 @@
 /*============================================================================
- * Methods for lagrangian module
+ * Functions dealing with particle tracking
  *============================================================================*/
+
+/* VERS */
 
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
@@ -24,14 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-/*============================================================================
- * Functions dealing with particle tracking
- *============================================================================*/
-
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <limits.h>
@@ -47,8 +45,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -71,13 +67,15 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief User modification of newly injected particles.
  *
  * This function is called after the initialization of the new particles in
  * order to modify them according to new particle profiles (injection
- * profiles, position of the injection point, statistical weights,
- * correction of the diameter if the standard-deviation option is activated).
+ * profiles, statistical weights, correction of the diameter if the
+ * standard-deviation option is activated); the modification of particles
+ * position should preferentially be made in cs_user_lagr_in_force_coords to
+ * get an initialization of particle properties coherent with the local fields.
  *
  * This function is called for each injection zone and set. Particles
  * with ids between \c pset->n_particles and \c n_elts are initialized
@@ -88,18 +86,21 @@ BEGIN_C_DECLS
  * \param[in]      particle_range    start and past-the-end ids of new particles
  *                                   for this zone and class
  * \param[in]      particle_face_id  face ids of new particles if zone is
- *                                   a boundary, null otherwise
+ *                                   a boundary,  null otherwise
  * \param[in]      visc_length       viscous layer thickness
  *                                   (size: number of mesh boundary faces)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_lagr_in(cs_lagr_particle_set_t             *particles,
-                const cs_lagr_injection_set_t      *zis,
-                const cs_lnum_t                     particle_range[2],
-                [[maybe_unused]] const cs_lnum_t    particle_face_id[],
-                [[maybe_unused]] const cs_real_t    visc_length[])
+cs_user_lagr_in
+(
+  [[maybe_unused]] cs_lagr_particle_set_t         *particles,
+  [[maybe_unused]] const cs_lagr_injection_set_t  *zis,
+  [[maybe_unused]] const cs_lnum_t                 particle_range[2],
+  [[maybe_unused]] const cs_lnum_t                 particle_face_id[],
+  [[maybe_unused]] const cs_real_t                 visc_length[]
+)
 {
 
   /*! [lagr_inj_example_coal] */

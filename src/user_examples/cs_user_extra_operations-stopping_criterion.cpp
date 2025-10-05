@@ -30,15 +30,14 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
 #include <math.h>
-#include <stdio.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -48,20 +47,17 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_extra_operations-stopping_criterion.cpp
  *
  * \brief This function is called at the end of each time step, and has a very
  * general purpose (i.e. anything that does not have another dedicated
  * user function).
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -70,7 +66,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Example of extra operations allowing to properly stop a computation
  * when the L2 time residuals (displayed in the run_solver.log file) of all
  * solved variables have decreased below a value of 1e-3.
@@ -80,10 +76,8 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_extra_operations(cs_domain_t     *domain)
+cs_user_extra_operations([[maybe_unused]] cs_domain_t   *domain)
 {
-  CS_NO_WARN_IF_UNUSED(domain);
-
   /*! [extra_stopping_criterion] */
 
   /* get total number of fields */

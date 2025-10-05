@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -37,23 +37,23 @@
 #include <stdio.h>
 #include <string.h>
 
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
+
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_boundary_conditions.c
  *
  * \brief User functions for input of calculation parameters.
- *
- * See \ref parameters for examples.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -68,7 +68,9 @@ BEGIN_C_DECLS
  * \param[in, out]  domain       pointer to a cs_domain_t structure
  * \param[in, out]  bc_type      boundary face types
  * \param[in, out]  ale_bc_type  boundary face types for mesh velocity
- * \param[in]       impale       indicator for fixed node displacement
+ *                               (see \ref cs_boundary_ale_subtype_bits_t)
+ * \param[in]       impale       indicator for prescribed node displacement
+ *                               (0 or 1)
  *
  * The icodcl and rcodcl arrays are pre-initialized based on default
  * and GUI-defined definitions, and may be modified here.
@@ -92,9 +94,9 @@ BEGIN_C_DECLS
  * so for a given face "face_id" and field component "comp_id", access
  * is as follows (where n_b_faces is domain->mesh->n_b_faces):
  *
- *   f->bc_coeffs->rcodcl1[n_b_faces*comp_id + face_id]
- *   f->bc_coeffs->rcodcl2[n_b_faces*comp_id + face_id]
- *   f->bc_coeffs->rcodcl3[n_b_faces*comp_id + face_id]
+ *   f->bc_coeffs->rcodcl1[n_b_faces*comp_id + face_id]\n
+ *   f->bc_coeffs->rcodcl2[n_b_faces*comp_id + face_id]\n
+ *   f->bc_coeffs->rcodcl3[n_b_faces*comp_id + face_id]\n\n
  *
  * Only the icodcl code values from the first component are used in the case
  * of vector or tensor fields, so the icodcl values can be defined as for
@@ -103,10 +105,10 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_boundary_conditions_ale(cs_domain_t  *domain,
-                                int           bc_type[],
-                                int           ale_bc_type[],
-                                int           impale[])
+cs_user_boundary_conditions_ale([[maybe_unused]] cs_domain_t  *domain,
+                                [[maybe_unused]] int           bc_type[],
+                                [[maybe_unused]] int           ale_bc_type[],
+                                [[maybe_unused]] int           impale[])
 {
   /* Initialization
    * -------------- */

@@ -27,24 +27,18 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
 #include <math.h>
 
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
-
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -146,7 +140,7 @@ BEGIN_C_DECLS
  *                        for ivar=ipr.
  *
  * \remarks
- *  - For each face where a condensation source terms is imposed ielscd
+ *  - For each face where a condensation source term is imposed ielscd
  *    in [1;nfbpcd]), ifbpcd(ielscd) is the global index number of the
  *    corresponding face (ifbpcd(ieltcd) in [1;ncel]).
  *  - if itypcd(ieltcd,ivar)=0, spcond(ielpcd,ivar) is not used.
@@ -164,9 +158,8 @@ BEGIN_C_DECLS
 
 #pragma weak cs_user_wall_condensation
 void
-cs_user_wall_condensation(int  iappel)
+cs_user_wall_condensation([[maybe_unused]] int  iappel)
 {
-  CS_UNUSED(iappel);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -41,8 +41,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -89,11 +87,12 @@ cs_user_solver_set(void)
 
 #pragma weak cs_user_solver
 void
-cs_user_solver(const cs_mesh_t             *mesh,
-               const cs_mesh_quantities_t  *mesh_quantities)
+cs_user_solver
+(
+  [[maybe_unused]] const cs_mesh_t             *mesh,
+  [[maybe_unused]] const cs_mesh_quantities_t  *mesh_quantities
+)
 {
-  CS_UNUSED(mesh);
-  CS_UNUSED(mesh_quantities);
 }
 
 /*----------------------------------------------------------------------------*/

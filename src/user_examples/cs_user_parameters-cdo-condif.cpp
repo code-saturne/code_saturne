@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -41,17 +41,21 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * Local headers
+ * PLE library headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
+#include <ple_coupling.h>
+
+/*----------------------------------------------------------------------------
+ * Local headers
+ *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_parameters-cdo-condif.cpp
  *
  * \brief User functions for input of calculation parameters.
@@ -84,17 +88,14 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 static void
-_define_adv_field(cs_real_t        time,
-                  cs_lnum_t        n_pts,
-                  const cs_lnum_t *pt_ids,
-                  const cs_real_t *xyz,
-                  bool             dense_output,
-                  void            *input,
-                  cs_real_t       *res)
+_define_adv_field([[maybe_unused]] cs_real_t   time,
+                  cs_lnum_t                    n_pts,
+                  const cs_lnum_t             *pt_ids,
+                  const cs_real_t             *xyz,
+                  bool                         dense_output,
+                  [[maybe_unused]] void       *input,
+                  cs_real_t                   *res)
 {
-  CS_NO_WARN_IF_UNUSED(time);
-  CS_NO_WARN_IF_UNUSED(input);
-
   for (cs_lnum_t p = 0; p < n_pts; p++) {
     const cs_lnum_t  id   = (pt_ids == nullptr) ? p : pt_ids[p];
     const cs_lnum_t  ii   = dense_output ? p : id;
@@ -127,17 +128,14 @@ _define_adv_field(cs_real_t        time,
 /*----------------------------------------------------------------------------*/
 
 static void
-_define_bcs(cs_real_t        time,
-            cs_lnum_t        n_pts,
-            const cs_lnum_t *pt_ids,
-            const cs_real_t *xyz,
-            bool             dense_output,
-            void            *input,
-            cs_real_t       *res)
+_define_bcs([[maybe_unused]] cs_real_t   time,
+            cs_lnum_t                    n_pts,
+            const cs_lnum_t             *pt_ids,
+            const cs_real_t             *xyz,
+            bool                         dense_output,
+            [[maybe_unused]] void       *input,
+            cs_real_t                   *res)
 {
-  CS_NO_WARN_IF_UNUSED(time);
-  CS_NO_WARN_IF_UNUSED(input);
-
   const double pi = cs_math_pi;
   for (cs_lnum_t p = 0; p < n_pts; p++) {
     const cs_lnum_t  id   = (pt_ids == nullptr) ? p : pt_ids[p];
@@ -169,16 +167,14 @@ _define_bcs(cs_real_t        time,
 
 /*! [param_cdo_condif_analytic_st] */
 static void
-_my_source_term(cs_real_t        time,
-                cs_lnum_t        n_pts,
-                const cs_lnum_t *pt_ids,
-                const cs_real_t *xyz,
-                bool             dense_output,
-                void            *input,
-                cs_real_t       *values)
+_my_source_term([[maybe_unused]] cs_real_t   time,
+                cs_lnum_t                    n_pts,
+                const cs_lnum_t             *pt_ids,
+                const cs_real_t             *xyz,
+                bool                         dense_output,
+                void                        *input,
+                cs_real_t                   *values)
 {
-  CS_NO_WARN_IF_UNUSED(time);
-
   const double *pcoefs = (double *)input;
   const double  mu     = pcoefs[0];
   const double  pi     = pcoefs[1];
@@ -233,7 +229,7 @@ _free_input(void *input)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Select physical model options, including user fields.
  *
  * This function is called at the earliest stages of the data setup,
@@ -362,9 +358,10 @@ cs_user_model(void)
       CS_ADVECTION_FIELD_DEFINE_AT_VERTICES |   /* = add a field at vertices */
       CS_ADVECTION_FIELD_DEFINE_AT_BOUNDARY_FACES; /* = add boundary fluxes */
 
+    [[maybe_unused]]
     cs_adv_field_t *adv = cs_advection_field_add("adv_field", adv_status);
 
-    CS_NO_WARN_IF_UNUSED(adv); /* adv can be used to set options */
+    /* adv can be used to set options */
   }
   /*! [param_cdo_add_adv_field] */
 
@@ -409,7 +406,7 @@ cs_user_model(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define or modify general numerical and physical user parameters.
  *
  * At the calling point of this function, most model-related most variables
@@ -421,7 +418,7 @@ cs_user_model(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_parameters(cs_domain_t *domain)
+cs_user_parameters([[maybe_unused]] cs_domain_t  *domain)
 {
   /*! [param_cdo_domain_output] */
   {
@@ -642,20 +639,19 @@ cs_user_parameters(cs_domain_t *domain)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief  Specify the elements such as properties, advection fields,
- *         user-defined equations and modules which have been previously
- *         added.
+/*
+ * \brief Define or modify output user parameters.
+ *
+ * For CDO schemes, this function concludes the setup of properties,
+ * equations, source terms...
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_finalize_setup(cs_domain_t *domain)
+cs_user_finalize_setup([[maybe_unused]] cs_domain_t   *domain)
 {
-  CS_NO_WARN_IF_UNUSED(domain);
-
   /* =======================
      User-defined properties
      ======================= */

@@ -2,7 +2,12 @@
  * Definition of the calculation mesh.
  *
  * Mesh-related user functions (called in this order):
- *   Manage the exchange of data between code_saturne and the pre-processor
+ *   1) Manage the exchange of data between code_saturne and the pre-processor
+ *   2) Define (conforming or non-conforming) mesh joinings.
+ *   3) Define (conforming or non-conforming) periodicity.
+ *   4) Define thin walls.
+ *   5) Modify the geometry and mesh.
+ *   6) Smoothe the mesh.
  *============================================================================*/
 
 /* VERS */
@@ -29,10 +34,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -46,14 +51,12 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_mesh-cartesian.cpp
  *
  * \brief Mesh input definition and mesh saving examples.
@@ -67,7 +70,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define a cartesian mesh to use during computation. If a cartesian block
  * is created with a non-null name, then all groups will be prefixed with the
  * given name. For example, "X0" face group will be called "<name>_X0" instead.
@@ -169,7 +172,6 @@ cs_user_mesh_cartesian_define(void)
                                       "cartesian_vertex_coordinates.csv");
   }
   /*! [mesh_cartesian_3] */
-
 }
 
 /*----------------------------------------------------------------------------*/

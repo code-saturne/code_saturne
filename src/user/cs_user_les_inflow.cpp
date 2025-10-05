@@ -30,10 +30,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -45,10 +45,14 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * Local headers
+ * PLE library headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
+#include <ple_coupling.h>
+
+/*----------------------------------------------------------------------------
+ * Local headers
+ *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
 
@@ -78,7 +82,6 @@ BEGIN_C_DECLS
 void
 cs_user_les_inflow_define(void)
 {
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -94,12 +97,13 @@ cs_user_les_inflow_define(void)
 
 #pragma weak cs_user_les_inflow_update
 void
-cs_user_les_inflow_update(const cs_zone_t  *zone,
-                          cs_real_t         vel_r[3],
-                          cs_real_t        *k_r,
-                          cs_real_t        *eps_r)
+cs_user_les_inflow_update
+(
+  [[maybe_unused]] const cs_zone_t  *zone,
+  [[maybe_unused]] cs_real_t         vel_r[3],
+  [[maybe_unused]] cs_real_t        *k_r,
+  [[maybe_unused]] cs_real_t        *eps_r)
 {
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -135,12 +139,13 @@ cs_user_les_inflow_update(const cs_zone_t  *zone,
 
 #pragma weak cs_user_les_inflow_advanced
 void
-cs_user_les_inflow_advanced(const cs_zone_t  *zone,
-                            cs_real_3_t       vel_l[],
-                            cs_real_6_t       rij_l[],
-                            cs_real_t         eps_l[])
+cs_user_les_inflow_advanced
+(
+  [[maybe_unused]] const cs_zone_t  *zone,
+  [[maybe_unused]] cs_real_3_t       vel_l[],
+  [[maybe_unused]] cs_real_6_t       rij_l[],
+  [[maybe_unused]] cs_real_t         eps_l[])
 {
-
 }
 
 /*----------------------------------------------------------------------------*/

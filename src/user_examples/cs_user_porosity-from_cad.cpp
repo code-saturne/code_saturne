@@ -1,5 +1,5 @@
 /*============================================================================
- * User definitions of porous media.
+ * User definition of porous media.
  *============================================================================*/
 
 /* VERS */
@@ -26,19 +26,14 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
 #include <math.h>
-#include <string.h>
-
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -55,7 +50,7 @@
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_porosity-from_cad.cpp
  *
  * \brief User definitions of porous media.
@@ -69,9 +64,9 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Compute the porosity (volume factor \f$ \epsilon \f$
- *        when the porosity model is activated.
+ *        when the porosity model is activated
  *        (\ref cs_glob_porous_model > 0).
  *
  * This function is called at the beginning of the simulation only.
@@ -81,10 +76,8 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_porosity(cs_domain_t   *domain)
+cs_user_porosity([[maybe_unused]] cs_domain_t   *domain)
 {
-  CS_UNUSED(domain);
-
 /*!< [user_poro_cad_zone] */
   const cs_zone_t  *z_poro = cs_volume_zone_by_name("Zone_1");
 /*!< [user_poro_cad_zone] */

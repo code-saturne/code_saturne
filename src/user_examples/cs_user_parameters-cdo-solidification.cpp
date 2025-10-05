@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -50,33 +50,25 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_parameters-cdo-solidification.cpp
  *
  * \brief User functions for setting a calculation using the solidification
  *        module with CDO schemes
- *
- * See \ref parameters for examples.
  */
 /*----------------------------------------------------------------------------*/
-
-/*============================================================================
- * Private function prototypes
- *============================================================================*/
 
 /*============================================================================
  * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Select physical model options, including user fields.
  *
  * This function is called at the earliest stages of the data setup,
@@ -308,20 +300,24 @@ cs_user_model(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define or modify general numerical and physical user parameters.
  *
- * At the calling point of this function, most model-related variables
+ * At the calling point of this function, most model-related most variables
  * and other fields have been defined, so specific settings related to those
  * fields may be set here.
+ *
+ * At this stage, the mesh is not built or read yet, so associated data
+ * such as field values are not accessible yet, though pending mesh
+ * operations and some fields may have been defined.
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_parameters(cs_domain_t    *domain)
+cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
 {
-  CS_NO_WARN_IF_UNUSED(domain);
-
   /*! [param_cdo_solidification_set_strategy] */
   {
     cs_solidification_set_strategy(CS_SOLIDIFICATION_STRATEGY_PATH);
@@ -368,19 +364,19 @@ cs_user_parameters(cs_domain_t    *domain)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief  Specify the elements such as properties, advection fields,
- *         user-defined equations and modules which have been previously added.
+/*
+ * \brief Define or modify output user parameters.
+ *
+ * For CDO schemes, this function concludes the setup of properties,
+ * equations, source terms...
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
-*/
+ */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_finalize_setup(cs_domain_t   *domain)
+cs_user_finalize_setup([[maybe_unused]] cs_domain_t   *domain)
 {
-  CS_NO_WARN_IF_UNUSED(domain);
-
   /*! [param_cdo_solidification_properties] */
   {
     /* All the following properties are isotropic and set on all the mesh cells
@@ -451,8 +447,8 @@ cs_user_finalize_setup(cs_domain_t   *domain)
 
   }
   /*! [param_cdo_solidification_solute_eq] */
-
 }
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

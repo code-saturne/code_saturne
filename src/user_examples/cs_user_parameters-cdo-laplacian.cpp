@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -41,17 +41,21 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * Local headers
+ * PLE library headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
+#include <ple_coupling.h>
+
+/*----------------------------------------------------------------------------
+ * Local headers
+ *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_parameters-cdo-laplacian.cpp
  *
  * \brief User functions for input of calculation parameters.
@@ -69,7 +73,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Select physical model options, including user fields.
  *
  * This function is called at the earliest stages of the data setup,
@@ -97,21 +101,19 @@ cs_user_model(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define or modify output user parameters.
  *
  * For CDO schemes, this function concludes the setup of properties,
  * equations, source terms...
  *
- * \param[in, out] domain    pointer to a cs_domain_t structure
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_finalize_setup(cs_domain_t   *domain)
+cs_user_finalize_setup([[maybe_unused]] cs_domain_t   *domain)
 {
-  CS_NO_WARN_IF_UNUSED(domain);
-
   /*! [param_cdo_laplacian_finalize] */
   {
     cs_equation_param_t  *eqp = cs_equation_param_by_name("Laplacian");

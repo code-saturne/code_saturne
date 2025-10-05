@@ -28,10 +28,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -45,14 +45,12 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_mesh-modify.cpp
  *
  * \brief Mesh modification example.
@@ -66,7 +64,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Modify geometry and mesh.
  *
  * \param[in,out] mesh  pointer to a cs_mesh_t structure
@@ -74,7 +72,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_mesh_modify(cs_mesh_t  *mesh)
+cs_user_mesh_modify([[maybe_unused]] cs_mesh_t  *mesh)
 {
   /* Example: modify vertex coordinates */
   /*------------------------------------*/
@@ -477,11 +475,10 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
     mesh->modified |= CS_MESH_MODIFIED_BALANCE;
   }
   /*! [mesh_modify_remove_cells_2] */
-
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Apply partial modifications to the mesh after the preprocessing
  *        stage, but before initial postprocessing mesh building.
  *
@@ -491,8 +488,11 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_mesh_modify_partial(cs_mesh_t             *mesh,
-                            cs_mesh_quantities_t  *mesh_quantities)
+cs_user_mesh_modify_partial
+(
+  [[maybe_unused]] cs_mesh_t             *mesh,
+  [[maybe_unused]] cs_mesh_quantities_t  *mesh_quantities
+)
 {
   {
     /*! [mesh_modify_ignore_symmetry_faces] */

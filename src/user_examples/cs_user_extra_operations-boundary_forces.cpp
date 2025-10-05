@@ -30,15 +30,14 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
 #include <math.h>
-#include <stdio.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -48,21 +47,19 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_extra_operations-boundary_forces.cpp
  *
  * \brief This function is called at the end of each time step, and has a very
  * general purpose (i.e. anything that does not have another dedicated
  * user function).
  *
- * This is an example of cs_user_extra_operations.c which computes the total
+ * This is an example of cs_user_extra_operations which computes the total
  * force on a boundary zone.
  */
 /*----------------------------------------------------------------------------*/
@@ -72,7 +69,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief This function is called at the end of each time step.
  *
  * It has a very general purpose, although it is recommended to handle
@@ -83,7 +80,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_extra_operations(cs_domain_t     *domain)
+cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 {
   /*! [boundary_forces_ex1] */
   {

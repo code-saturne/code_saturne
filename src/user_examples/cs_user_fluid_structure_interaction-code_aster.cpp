@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -42,8 +42,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -67,24 +65,25 @@ BEGIN_C_DECLS
  * \brief Define structure numbers for faces associated with internal
  *        or external (code_aster) structures.
  *
- * Structure ids associated to a given face have the following values:
+ * Structure numbers associated to a given face have the following values:
  * - -i where coupled to  i-th (1-to n) external (code_aster) structure.
  * - 0 where not coupled with an internal or external structure.
  * - i  where coupled to  i-th (1-to n) internal (mass-spring) structure.
  *
  * \param[in, out]  domain         pointer to a cs_domain_t structure
- * \param[in, out]  structure_id   structure id associated to each face
+ * \param[in, out]  structure_num  structure id associated to each face
  * \param[in, out]  structure_typ  structure type associated to each face
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_fsi_structure_num(cs_domain_t               *domain,
-                          int                        structure_num[],
-                          cs_mobile_structure_type_t structure_typ[])
+cs_user_fsi_structure_num
+(
+  [[maybe_unused]] cs_domain_t                *domain,
+  [[maybe_unused]] int                         structure_num[],
+  [[maybe_unused]] cs_mobile_structure_type_t  structure_typ[]
+)
 {
-  CS_UNUSED(domain);
-
   /*! [fsi_ext_struct_example] */
   int n_structs = 2;
   const char *name[] = {"wall_1", "wall_2"};

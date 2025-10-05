@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -43,8 +43,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -65,14 +63,12 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief User definition of radiative transfer boundary conditions.
  *
  * See \ref cs_user_radiative_transfer for examples.
  *
  * \warning the temperature unit here is the Kelvin
- *
- * \section cs_user_radiative_transfer_bcs_zones  Zone definitions
  *
  * For each boundary face face_id, a specific output (logging and
  * postprocessing) class id may be assigned. This allows realizing balance
@@ -109,7 +105,7 @@ BEGIN_C_DECLS
  *
  * \param[in, out]  domain        pointer to a cs_domain_t structure
  * \param[in]       bc_type       boundary face types
- * \param[in, out]  isothp        boundary face type for radiative transfer
+ * \param[in]       isothp        boundary face type for radiative transfer
  * \param[out]      tmin          min allowed value of the wall temperature
  * \param[out]      tmax          max allowed value of the wall temperature
  * \param[in]       tx            relaxation coefficient (0 < tx < 1)
@@ -126,21 +122,23 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_radiative_transfer_bcs(cs_domain_t      *domain,
-                               const int         bc_type[],
-                               int               isothp[],
-                               cs_real_t        *tmin,
-                               cs_real_t        *tmax,
-                               cs_real_t        *tx,
-                               const cs_real_t   dt[],
-                               const cs_real_t   thwall[],
-                               const cs_real_t   qincid[],
-                               cs_real_t         hfcnvp[],
-                               cs_real_t         flcnvp[],
-                               cs_real_t         xlamp[],
-                               cs_real_t         epap[],
-                               cs_real_t         epsp[],
-                               cs_real_t         textp[])
+cs_user_radiative_transfer_bcs
+(
+  [[maybe_unused]] cs_domain_t      *domain,
+  [[maybe_unused]] const int         bc_type[],
+  [[maybe_unused]] int               isothp[],
+  [[maybe_unused]] cs_real_t        *tmin,
+  [[maybe_unused]] cs_real_t        *tmax,
+  [[maybe_unused]] cs_real_t        *tx,
+  [[maybe_unused]] const cs_real_t   dt[],
+  [[maybe_unused]] const cs_real_t   thwall[],
+  [[maybe_unused]] const cs_real_t   qincid[],
+  [[maybe_unused]] cs_real_t         hfcnvp[],
+  [[maybe_unused]] cs_real_t         flcnvp[],
+  [[maybe_unused]] cs_real_t         xlamp[],
+  [[maybe_unused]] cs_real_t         epap[],
+  [[maybe_unused]] cs_real_t         epsp[],
+  [[maybe_unused]] cs_real_t         textp[])
 {
   /*< [loc_var]*/
   cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;

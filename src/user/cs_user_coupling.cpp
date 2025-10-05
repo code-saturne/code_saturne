@@ -29,10 +29,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
@@ -44,8 +44,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -78,7 +76,6 @@ BEGIN_C_DECLS
 void
 cs_user_saturne_coupling(void)
 {
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -94,7 +91,6 @@ cs_user_saturne_coupling(void)
 void
 cs_user_syrthes_coupling(void)
 {
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -111,25 +107,22 @@ cs_user_syrthes_coupling(void)
 
 #pragma weak cs_user_syrthes_coupling_volume_h
 void
-cs_user_syrthes_coupling_volume_h(int               coupling_id,
-                                  const char       *syrthes_name,
-                                  cs_lnum_t         n_elts,
-                                  const cs_lnum_t   elt_ids[],
-                                  cs_real_t         h_vol[])
+cs_user_syrthes_coupling_volume_h
+(
+  [[maybe_unused]] int               coupling_id,
+  [[maybe_unused]] const char       *syrthes_name,
+  [[maybe_unused]] cs_lnum_t         n_elts,
+  [[maybe_unused]] const cs_lnum_t   elt_ids[],
+  [[maybe_unused]] cs_real_t         h_vol[]
+)
 {
-  CS_UNUSED(coupling_id);
-  CS_UNUSED(syrthes_name);
-  CS_UNUSED(n_elts);
-  CS_UNUSED(elt_ids);
-  CS_UNUSED(h_vol);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define couplings with SYRTHES code.
+ * \brief Define couplings with CATHARE code.
  *
- * This is done by calling the \ref cs_syr_coupling_define function for each
- * coupling to add.
+ * This is done by calling the \ref cs_sys_coupling_add function for each
  */
 /*----------------------------------------------------------------------------*/
 
@@ -137,7 +130,6 @@ cs_user_syrthes_coupling_volume_h(int               coupling_id,
 void
 cs_user_cathare_coupling(void)
 {
-
 }
 
 /*----------------------------------------------------------------------------*/

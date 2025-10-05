@@ -29,10 +29,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -46,14 +46,12 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_mesh-cartesian.cpp
  *
  * \brief Mesh input definition and mesh saving examples.
@@ -67,17 +65,19 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Define a cartesian mesh to use during computation. If a cartesian block
- * is created with a non-null name, then all groups will be prefixed with the
- * given name. For example, "X0" face group will be called "<name>_X0" instead.
- * In this example we create a three block mesh
+/*
+ * \brief Define a cartesian mesh.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_user_mesh_cartesian_define(void)
 {
+  /*
+   * If a cartesian block
+   * is created with a non-null name, then all groups will be prefixed with the
+   * given name. For example, "X0" face group will be called "<name>_X0" instead.
+   * In this example we create a three block mesh. */
 
   /*! [mesh_multiblock_cartesian_1] */
   {
@@ -134,27 +134,8 @@ cs_user_mesh_cartesian_define(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define mesh joinings.
- *
- * This is done by calling the cs_join_add() function for each joining
- * operation to add.
- *
- * The arguments to \ref cs_join_add are:
- * \param [in] sel_criteria boundary face selection criteria string
- * \param [in] fraction value of the fraction parameter;
- *                    the initial tolerance radius associated to each vertex
- *                    is equal to the lenght of the shortest incident edge,
- *                    multiplied by this fraction.
- * \param [in] plane value of the plane parameter;
- *                    when subdividing faces, 2 faces are considered
- *                    coplanar and may be joined if angle between their
- *                    normals (in degrees) does not exceed this parameter.
- * \param [in] verbosity level of verbosity required
- *
- * The function returns a number (1 to n) associated with the
- * new joining. This number may optionnally be used to assign advanced
- * parameters to the joining.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -167,8 +148,6 @@ cs_user_join(void)
    * cs_user_mesh_cartesian.
    */
 
-  int    join_num;
-
   /* Add a joining operation */
   /* ----------------------- */
 
@@ -176,11 +155,12 @@ cs_user_join(void)
   int    visualization = 1; /* debug level if >= 3 */
   float  fraction = 0.10, plane = 25.;
 
-  join_num = cs_join_add("room1_X1 or duct_X0 or duct_X1 or room2_X0",
-                         fraction,
-                         plane,
-                         verbosity,
-                         visualization);
+  [[maybe_unused]]
+  int join_num = cs_join_add("room1_X1 or duct_X0 or duct_X1 or room2_X0",
+                             fraction,
+                             plane,
+                             verbosity,
+                             visualization);
   /*! [mesh_multiblock_cartesian_join] */
 }
 

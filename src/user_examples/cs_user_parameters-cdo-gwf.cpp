@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -50,20 +50,16 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_parameters-cdo-gwf.cpp
  *
  * \brief User functions for setting a calculation using the groundwater flow
  *        module with CDO schemes
- *
- * See \ref parameters for examples.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -96,16 +92,14 @@ static const double k1 = 1e5, k2 = 1;
 
 /*! [param_cdo_gwf_get_tracer_ic] */
 static inline void
-get_tracer_ic(cs_real_t          time,
-              cs_lnum_t          n_elts,
-              const cs_lnum_t   *pt_ids,
-              const cs_real_t   *xyz,
-              bool               dense_output,
-              void              *input,
-              cs_real_t         *retval)
+get_tracer_ic(cs_real_t                time,
+              cs_lnum_t                n_elts,
+              const cs_lnum_t         *pt_ids,
+              const cs_real_t         *xyz,
+              bool                     dense_output,
+              [[maybe_unused]] void   *input,
+              cs_real_t               *retval)
 {
-  CS_UNUSED(input);
-
   /* Physical parameters */
 
   const double  magnitude = 2*k1/(k1 + k2);
@@ -134,7 +128,7 @@ get_tracer_ic(cs_real_t          time,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Select physical model options, including user fields.
  *
  * This function is called at the earliest stages of the data setup,
@@ -456,15 +450,14 @@ cs_user_model(void)
      * equation given at the creation of the tracer
      */
 
+    [[maybe_unused]]
     cs_gwf_tracer_t  *tr = cs_gwf_tracer_by_name("Tracer_01");
-
-    CS_NO_WARN_IF_UNUSED(tr);
   }
   /*! [param_cdo_gwf_get_tracer] */
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define or modify general numerical and physical user parameters.
  *
  * At the calling point of this function, most model-related most variables
@@ -480,10 +473,8 @@ cs_user_model(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_parameters(cs_domain_t *domain)
+cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
 {
-  CS_NO_WARN_IF_UNUSED(domain);
-
   /*! [param_cdo_gwf_get_equation_param_from_decay_chain] */
   {
     /* If the decay chain structure has been added and one wants to access
@@ -513,19 +504,18 @@ cs_user_parameters(cs_domain_t *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Specify the elements such as properties, advection fields,
- *           user-defined equations and modules which have been previously
- *           added.
+ * \brief Define or modify output user parameters.
+ *
+ * For CDO schemes, this function concludes the setup of properties,
+ * equations, source terms...
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
-*/
+ */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_finalize_setup(cs_domain_t   *domain)
+cs_user_finalize_setup([[maybe_unused]] cs_domain_t   *domain)
 {
-  CS_UNUSED(domain);
-
   /* 1. Set the Richards equation */
   /* ---------------------------- */
 

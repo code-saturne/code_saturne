@@ -26,24 +26,18 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
 #include <math.h>
 
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
-
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -69,7 +63,7 @@ BEGIN_C_DECLS
  *        when the porosity model is activated
  *        (\ref cs_glob_porous_model > 0).
  *
- * This function is called at the begin of the simulation only.
+ * This function is called at the beginning of the simulation only.
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
@@ -77,9 +71,8 @@ BEGIN_C_DECLS
 
 #pragma weak cs_user_porosity
 void
-cs_user_porosity(cs_domain_t   *domain)
+cs_user_porosity([[maybe_unused]] cs_domain_t   *domain)
 {
-  CS_UNUSED(domain);
 }
 
 /*----------------------------------------------------------------------------*/

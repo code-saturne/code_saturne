@@ -1,5 +1,5 @@
 /*============================================================================
- * This function is called each time step to define physical properties
+ * Additional user-defined source terms for variable equations.
  *============================================================================*/
 
 /* VERS */
@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -44,8 +44,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -67,8 +65,11 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Function called at each time step to define source terms.
+/*
+ * \brief Additional user-defined source terms for variable equations
+ *        (momentum, scalars, turbulence...).
+ *
+ *  This function is called at each time step, for each relevant field.
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
  * \param[in]       f_id     field id of the variable
@@ -78,10 +79,13 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_source_terms(cs_domain_t  *domain,
-                     int           f_id,
-                     cs_real_t    *st_exp,
-                     cs_real_t    *st_imp)
+cs_user_source_terms
+(
+  [[maybe_unused]] cs_domain_t  *domain,
+  [[maybe_unused]] int           f_id,
+  [[maybe_unused]] cs_real_t    *st_exp,
+  [[maybe_unused]] cs_real_t    *st_imp
+)
 {
   /*! [st_meta] */
   /* field structure */

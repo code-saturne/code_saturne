@@ -29,10 +29,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
@@ -45,14 +45,12 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_coupling-syrthes.cpp
  *
  * \brief Code couplings definition with SYRTHES and code_saturne.
@@ -66,7 +64,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define couplings with SYRTHES code.
  *
  * This is done by calling the \ref cs_syr_coupling_define function for each
@@ -166,7 +164,7 @@ cs_user_syrthes_coupling(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Compute a volume exchange coefficient for SYRTHES couplings.
  *
  * \param[in]   coupling_id   Syrthes coupling id
@@ -178,15 +176,15 @@ cs_user_syrthes_coupling(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_syrthes_coupling_volume_h(int               coupling_id,
-                                  const char       *syrthes_name,
-                                  cs_lnum_t         n_elts,
-                                  const cs_lnum_t   elt_ids[],
-                                  cs_real_t         h_vol[])
+cs_user_syrthes_coupling_volume_h
+(
+  [[maybe_unused]] int               coupling_id,
+  [[maybe_unused]] const char       *syrthes_name,
+  [[maybe_unused]] cs_lnum_t         n_elts,
+  [[maybe_unused]] const cs_lnum_t   elt_ids[],
+  [[maybe_unused]] cs_real_t         h_vol[]
+)
 {
-  CS_NO_WARN_IF_UNUSED(coupling_id);
-  CS_NO_WARN_IF_UNUSED(syrthes_name);
-
   /* Example 1 of the computation of a constant volumic exchange coefficient
      ----------------------------------------------------------------------- */
 

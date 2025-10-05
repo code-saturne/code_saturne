@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -42,8 +42,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -66,7 +64,7 @@ BEGIN_C_DECLS
  * \brief Define head losses for a given volume zone.
  *
  * Head loss tensor coefficients for each cell are organized as follows:
- * ck11, ck22, ck33, ck12, ck13, ck23.
+ * ck11, ck22, ck33, ck12, ck23, ck13.
  *
  * Coefficients are set to zero (then computed based on definitions provided
  * through the GUI if this is the case) before calling this function, so
@@ -83,11 +81,9 @@ BEGIN_C_DECLS
 
 #pragma weak cs_user_head_losses
 void
-cs_user_head_losses(const  cs_zone_t  *zone,
-                    cs_real_t          cku[][6])
+cs_user_head_losses([[maybe_unused]] const  cs_zone_t  *zone,
+                    [[maybe_unused]] cs_real_t          cku[][6])
 {
-  CS_UNUSED(zone);
-  CS_UNUSED(cku);
 }
 
 /*----------------------------------------------------------------------------*/

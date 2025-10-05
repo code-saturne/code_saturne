@@ -30,11 +30,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
-#include "base/cs_math.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -45,19 +44,7 @@
 #endif
 
 /*----------------------------------------------------------------------------
- *  Local headers
- *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
-
-/*----------------------------------------------------------------------------
- *  Header for the current file
- *----------------------------------------------------------------------------*/
-
-#include "base/cs_prototypes.h"
-
-/*----------------------------------------------------------------------------
- *  User Header
+ * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "user_examples/cs_user_profile.h"
@@ -67,12 +54,12 @@
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_extra_operations-mean_profiles.cpp
  *
  * \brief This function is called at the end of each time step, and has a very
  * general purpose (i.e. anything that does not have another dedicated
- * user function)
+ * user function).
  */
 /*----------------------------------------------------------------------------*/
 
@@ -81,7 +68,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Initialize variables.
  *
  * This function is called at beginning of the computation
@@ -95,10 +82,8 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_extra_operations_initialize(cs_domain_t *domain)
+cs_user_extra_operations_initialize([[maybe_unused]] cs_domain_t   *domain)
 {
-  CS_UNUSED(domain);
-
   /*![Initialize]*/
 
   /* Initialize a  mean temperature profile over z */
@@ -137,7 +122,7 @@ cs_user_extra_operations_initialize(cs_domain_t *domain)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief This function is called at the end of each time step.
  *
  * It has a very general purpose, although it is recommended to handle
@@ -148,10 +133,8 @@ cs_user_extra_operations_initialize(cs_domain_t *domain)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_extra_operations(cs_domain_t *domain)
+cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 {
-  CS_UNUSED(domain);
-
   /* Mean profile calculation and results output */
    /*![generate]*/
   user_profile_t *profile = user_profile_get_by_name("T_vertical_profile");
@@ -163,21 +146,19 @@ cs_user_extra_operations(cs_domain_t *domain)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief This function is called at the end of the calculation.
  *
  * It has a very general purpose, although it is recommended to handle
  * mainly postprocessing or data-extraction type operations.
-
+ *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_extra_operations_finalize(cs_domain_t *domain)
+cs_user_extra_operations_finalize([[maybe_unused]] cs_domain_t  *domain)
 {
-  CS_UNUSED(domain);
-
   /*![finalize]*/
   /* Mean profile calculation and output at last time step */
 

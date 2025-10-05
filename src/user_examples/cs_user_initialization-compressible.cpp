@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -49,14 +49,12 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_initialization-compressible.cpp
  *
  * \brief Initialization prior to solving time steps.
@@ -82,7 +80,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_initialization(cs_domain_t     *domain)
+cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
 {
   /*! [init_compressible] */
   /* If this is restarted computation, do not reinitialize values */

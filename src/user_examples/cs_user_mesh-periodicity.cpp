@@ -34,10 +34,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -51,14 +51,12 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_mesh-periodicity.cpp
  *
  * \brief Mesh periodicity example
@@ -72,30 +70,8 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
- /*! \brief Define periodic faces.
- *
- * This is done by calling one of the cs_join_perio_add_*() functions for
- * each periodicity to add.
- *
- * The first arguments to cs_join_perio_add_() are the same as for
- * mesh joining:
- *   sel_criteria <-- boundary face selection criteria string
- *   fraction     <-- value of the fraction parameter;
- *                    the initial tolerance radius associated to each vertex
- *                    is equal to the lenght of the shortest incident edge,
- *                    multiplied by this fraction.
- *   plane        <-- value of the plane parameter;
- *                    when subdividing faces, 2 faces are considered
- *                    coplanar and may be joined if angle between their
- *                    normals (in degrees) does not exceed this parameter.
- *   verbosity    <-- level of verbosity required
- *
- * The last arguments depend on the type of periodicity to define,
- * and are described below.
- *
- * The function returns a number (1 to n) associated with the
- * new joining. This number may optionnally be used to assign advanced
- * parameters to the joining.
+/*
+ * \brief Define periodic faces.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -113,17 +89,15 @@ cs_user_periodicity(void)
 
     const double translation[3] = {1.0, 0.0, 0.0}; /* Translation vector */
 
+    [[maybe_unused]]
     int join_num = cs_join_perio_add_translation("98 or 99",
                                                  fraction,
                                                  plane,
                                                  verbosity,
                                                  visualization,
                                                  translation);
-
-    CS_NO_WARN_IF_UNUSED(join_num);
   }
   /*! [mesh_periodicity_1] */
-
 
   /* Example 2: define a periodicity of rotation */
   /* ------------------------------------------- */
@@ -143,6 +117,7 @@ cs_user_periodicity(void)
     fraction = 0.2;
     verbosity = 2;
 
+    [[maybe_unused]]
     int join_num = cs_join_perio_add_rotation("3",
                                               fraction,
                                               plane,
@@ -151,18 +126,14 @@ cs_user_periodicity(void)
                                               theta,
                                               axis,
                                               invariant);
-
-    CS_NO_WARN_IF_UNUSED(join_num);
   }
   /*! [mesh_periodicity_2] */
-
 
   /* Example 3: define a general periodicity */
   /* --------------------------------------- */
 
   /*! [mesh_periodicity_3] */
   {
-
     /* We define a general transformation using a homogeneous matrix:
      *
      * We define the first 3 rows of a 4x4 matrix:
@@ -183,14 +154,13 @@ cs_user_periodicity(void)
                            {0., 1., 0., 0.},
                            {0., 0., 1., 0.}};
 
+    [[maybe_unused]]
     int join_num = cs_join_perio_add_mixed("all[]",
                                            fraction,
                                            plane,
                                            verbosity,
                                            visualization,
                                            matrix);
-
-    CS_NO_WARN_IF_UNUSED(join_num);
   }
   /*! [mesh_periodicity_3] */
 
@@ -288,7 +258,6 @@ cs_user_periodicity(void)
 
   }
   /*! [mesh_periodicity_4] */
-
 }
 
 /*----------------------------------------------------------------------------*/

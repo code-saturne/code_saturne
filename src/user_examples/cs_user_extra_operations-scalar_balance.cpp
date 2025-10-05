@@ -1,7 +1,9 @@
 /*============================================================================
- * This function is called at the end of each time step, and has a very
- *  general purpose
- *  (i.e. anything that does not have another dedicated user function)
+ * General-purpose user-defined functions called before time stepping, at
+ * the end of each time step, and after time-stepping.
+ *
+ * These can be used for operations which do not fit naturally in any other
+ * dedicated user function.
  *============================================================================*/
 
 /* VERS */
@@ -28,15 +30,14 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
 #include <math.h>
-#include <stdio.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -46,21 +47,17 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_extra_operations-scalar_balance.cpp
  *
  * \brief This function is called at the end of each time step, and has a very
  * general purpose (i.e. anything that does not have another dedicated
  * user function).
- *
- * \param[in, out]  domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -73,7 +70,7 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 void
-cs_user_extra_operations(cs_domain_t     *domain)
+cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 {
   /*! [local_variables] */
 

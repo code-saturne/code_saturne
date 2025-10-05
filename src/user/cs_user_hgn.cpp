@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <stdio.h>
@@ -41,8 +41,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -52,7 +50,6 @@ BEGIN_C_DECLS
  * \file cs_user_hgn.cpp
  *
  * \brief Define user properties for two-phase homogeneous compressible model.
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -79,21 +76,14 @@ BEGIN_C_DECLS
 
 #pragma weak cs_user_hgn_thermo_relax_time
 void
-cs_user_hgn_thermo_relax_time(const cs_mesh_t *mesh,
-                              const cs_real_t *alpha_eq,
-                              const cs_real_t *y_eq,
-                              const cs_real_t *z_eq,
-                              const cs_real_t *ei,
-                              const cs_real_t *v,
-                              cs_real_t       *relax_tau)
+cs_user_hgn_thermo_relax_time([[maybe_unused]] const cs_mesh_t  *mesh,
+                              [[maybe_unused]] const cs_real_t  *alpha_eq,
+                              [[maybe_unused]] const cs_real_t  *y_eq,
+                              [[maybe_unused]] const cs_real_t  *z_eq,
+                              [[maybe_unused]] const cs_real_t  *ei,
+                              [[maybe_unused]] const cs_real_t  *v,
+                              [[maybe_unused]] cs_real_t        *relax_tau)
 {
-  CS_UNUSED(mesh);
-  CS_UNUSED(alpha_eq);
-  CS_UNUSED(y_eq);
-  CS_UNUSED(z_eq);
-  CS_UNUSED(ei);
-  CS_UNUSED(v);
-  CS_UNUSED(relax_tau);
 }
 
 /*----------------------------------------------------------------------------*/

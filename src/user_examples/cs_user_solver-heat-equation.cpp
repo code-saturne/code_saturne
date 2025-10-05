@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -42,19 +42,15 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_solver-heat-equation.cpp
  *
  * \brief Set user solver for heat equation.
- *
- * See \ref user_solver for examples.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -63,8 +59,10 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set user solver
+ *
+ * \return  1 if user solver is called, 0 otherwise
  */
 /*----------------------------------------------------------------------------*/
 
@@ -77,17 +75,21 @@ cs_user_solver_set(void)
 /*! [set_solver] */
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Main call to user solver
  *
- * \param[in]     mesh             pointer to a cs_mesh_t structure
- * \param[in,out] mesh_quantities  pointer to a cs_mesh_quantities_t structure
+ * \param[in] mesh pointer to a cs_mesh_t structure
+ * \param[in,out] mesh_quantities pointer to a cs_mesh_quantities_t structure
+ *
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_solver(const cs_mesh_t             *mesh,
-               const cs_mesh_quantities_t  *mesh_quantities)
+cs_user_solver
+(
+  [[maybe_unused]] const cs_mesh_t             *mesh,
+  [[maybe_unused]] const cs_mesh_quantities_t  *mesh_quantities
+)
 {
   /*! [local_variables] */
 
@@ -273,14 +275,10 @@ cs_user_solver(const cs_mesh_t             *mesh,
   /*! [post_processing] */
 
   /*! [finalization] */
-
   /* Finalization */
 
   cs_time_plot_finalize(&time_plot);
-
   /*! [finalization] */
-
-  return;
 }
 
 /*----------------------------------------------------------------------------*/

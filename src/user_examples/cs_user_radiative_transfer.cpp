@@ -26,25 +26,19 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
 #include <string.h>
 #include <math.h>
 
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
-
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -62,16 +56,12 @@ BEGIN_C_DECLS
  *  See \ref cs_user_radiative_transfer for examples.
  */
 
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Absorption coefficient for radiative module
  *
  * It is necessary to define the value of the fluid's absorption coefficient Ck.
@@ -90,8 +80,11 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_rad_transfer_absorption(const int  bc_type[],
-                                cs_real_t  ck[])
+cs_user_rad_transfer_absorption
+(
+  [[maybe_unused]] const int  bc_type[],
+  [[maybe_unused]] cs_real_t  ck[]
+)
 {
   /* Note: ck argument could be removed, access using field ids */
   {
@@ -168,7 +161,7 @@ cs_user_rad_transfer_absorption(const int  bc_type[],
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Compute the net radiation flux.
  *
  * The density of net radiation flux must be calculated
@@ -189,14 +182,17 @@ cs_user_rad_transfer_absorption(const int  bc_type[],
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_rad_transfer_net_flux(const int        bc_type[],
-                              const cs_real_t  twall[],
-                              const cs_real_t  qincid[],
-                              const cs_real_t  xlam[],
-                              const cs_real_t  epa[],
-                              const cs_real_t  eps[],
-                              const cs_real_t  ck[],
-                              cs_real_t        net_flux[])
+cs_user_rad_transfer_net_flux
+(
+  [[maybe_unused]] const int        bc_type[],
+  [[maybe_unused]] const cs_real_t  twall[],
+  [[maybe_unused]] const cs_real_t  qincid[],
+  [[maybe_unused]] const cs_real_t  xlam[],
+  [[maybe_unused]] const cs_real_t  epa[],
+  [[maybe_unused]] const cs_real_t  eps[],
+  [[maybe_unused]] const cs_real_t  ck[],
+  [[maybe_unused]] cs_real_t        net_flux[]
+)
 {
   /*< [loc_var_dec_2]*/
   const cs_real_t stephn = cs_physical_constants_stephan;

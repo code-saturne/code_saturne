@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -49,19 +49,15 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_initialization-electric-arcs.cpp
  *
  * \brief Electric arcs fields initialization example.
- *
- * See \ref cs_user_initialization for examples.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -70,7 +66,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Initialize variables.
  *
  * This function is called at beginning of the computation
@@ -84,7 +80,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_initialization(cs_domain_t     *domain)
+cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
 {
   /*! [loc_var_dec] */
   const cs_lnum_t n_cells = domain->mesh-> n_cells;

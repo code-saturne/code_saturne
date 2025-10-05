@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -37,11 +37,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
+
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -74,9 +76,8 @@ BEGIN_C_DECLS
 
 #pragma weak cs_user_boundary_conditions_setup
 void
-cs_user_boundary_conditions_setup(cs_domain_t  *domain)
+cs_user_boundary_conditions_setup([[maybe_unused]] cs_domain_t  *domain)
 {
-  CS_UNUSED(domain);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -120,11 +121,9 @@ cs_user_boundary_conditions_setup(cs_domain_t  *domain)
 
 #pragma weak cs_user_boundary_conditions
 void
-cs_user_boundary_conditions(cs_domain_t  *domain,
-                            int           bc_type[])
+cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
+                            [[maybe_unused]] int           bc_type[])
 {
-  CS_UNUSED(domain);
-  CS_UNUSED(bc_type);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -174,15 +173,11 @@ cs_user_boundary_conditions(cs_domain_t  *domain,
 
 #pragma weak cs_user_boundary_conditions_ale
 void
-cs_user_boundary_conditions_ale(cs_domain_t  *domain,
-                                int           bc_type[],
-                                int           ale_bc_type[],
-                                int           impale[])
+cs_user_boundary_conditions_ale([[maybe_unused]] cs_domain_t  *domain,
+                                [[maybe_unused]] int           bc_type[],
+                                [[maybe_unused]] int           ale_bc_type[],
+                                [[maybe_unused]] int           impale[])
 {
-  CS_UNUSED(domain);
-  CS_UNUSED(bc_type);
-  CS_UNUSED(ale_bc_type);
-  CS_UNUSED(impale);
 }
 
 /*----------------------------------------------------------------------------*/

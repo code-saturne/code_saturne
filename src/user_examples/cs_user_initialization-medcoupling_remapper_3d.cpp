@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -49,14 +49,12 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_initialization-medcoupling_remapper_3d.cpp
  *
  * \brief Initialization prior to solving time steps.
@@ -68,7 +66,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Initialize variables.
  *
  * This function is called at beginning of the computation
@@ -82,10 +80,8 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_initialization(cs_domain_t     *domain)
+cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
 {
-  CS_UNUSED(domain);
-
   /*! [remapper_init] */
   /* Apply only on computation start, not on restarts */
   if (domain->time_step->nt_prev > 0)

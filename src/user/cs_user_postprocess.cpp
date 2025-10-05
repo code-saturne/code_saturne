@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include "stdlib.h"
@@ -38,8 +38,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -68,7 +66,6 @@ BEGIN_C_DECLS
 void
 cs_user_postprocess_writers(void)
 {
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -85,7 +82,6 @@ cs_user_postprocess_writers(void)
 void
 cs_user_postprocess_meshes(void)
 {
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -100,7 +96,6 @@ cs_user_postprocess_meshes(void)
 void
 cs_user_postprocess_probes(void)
 {
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -131,33 +126,23 @@ cs_user_postprocess_probes(void)
 
 #pragma weak cs_user_postprocess_values
 void
-cs_user_postprocess_values(const char            *mesh_name,
-                           int                    mesh_id,
-                           int                    cat_id,
-                           cs_probe_set_t        *probes,
-                           cs_lnum_t              n_cells,
-                           cs_lnum_t              n_i_faces,
-                           cs_lnum_t              n_b_faces,
-                           cs_lnum_t              n_vertices,
-                           const cs_lnum_t        cell_list[],
-                           const cs_lnum_t        i_face_list[],
-                           const cs_lnum_t        b_face_list[],
-                           const cs_lnum_t        vertex_list[],
-                           const cs_time_step_t  *ts)
+cs_user_postprocess_values
+(
+  [[maybe_unused]] const char            *mesh_name,
+  [[maybe_unused]] int                    mesh_id,
+  [[maybe_unused]] int                    cat_id,
+  [[maybe_unused]] cs_probe_set_t        *probes,
+  [[maybe_unused]] cs_lnum_t              n_cells,
+  [[maybe_unused]] cs_lnum_t              n_i_faces,
+  [[maybe_unused]] cs_lnum_t              n_b_faces,
+  [[maybe_unused]] cs_lnum_t              n_vertices,
+  [[maybe_unused]] const cs_lnum_t        cell_list[],
+  [[maybe_unused]] const cs_lnum_t        i_face_list[],
+  [[maybe_unused]] const cs_lnum_t        b_face_list[],
+  [[maybe_unused]] const cs_lnum_t        vertex_list[],
+  [[maybe_unused]] const cs_time_step_t  *ts
+)
 {
-  CS_UNUSED(mesh_name);
-  CS_UNUSED(mesh_id);
-  CS_UNUSED(cat_id);
-  CS_UNUSED(probes);
-  CS_UNUSED(n_cells);
-  CS_UNUSED(n_i_faces);
-  CS_UNUSED(n_b_faces);
-  CS_UNUSED(n_vertices);
-  CS_UNUSED(cell_list);
-  CS_UNUSED(i_face_list);
-  CS_UNUSED(b_face_list);
-  CS_UNUSED(vertex_list);
-  CS_UNUSED(ts);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -174,13 +159,13 @@ cs_user_postprocess_values(const char            *mesh_name,
 
 #pragma weak cs_user_postprocess_activate
 void
-cs_user_postprocess_activate(int     nt_max_abs,
-                             int     nt_cur_abs,
-                             double  t_cur_abs)
+cs_user_postprocess_activate
+(
+  [[maybe_unused]] int     nt_max_abs,
+  [[maybe_unused]] int     nt_cur_abs,
+  [[maybe_unused]] double  t_cur_abs
+)
 {
-  CS_UNUSED(nt_max_abs);
-  CS_UNUSED(nt_cur_abs);
-  CS_UNUSED(t_cur_abs);
 }
 
 /*----------------------------------------------------------------------------*/

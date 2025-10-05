@@ -26,15 +26,14 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
 #include <math.h>
-#include <string.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -43,8 +42,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -83,8 +80,8 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_head_losses(const  cs_zone_t  *zone,
-                    cs_real_t          cku[][6])
+cs_user_head_losses([[maybe_unused]] const  cs_zone_t  *zone,
+                    [[maybe_unused]] cs_real_t          cku[][6])
 {
   /*! [map_field_arrays] */
   const cs_real_3_t *cvara_vel = (const cs_real_3_t *)(CS_F_(vel)->val_pre);

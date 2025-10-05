@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
@@ -42,14 +42,12 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_coupling-cathare.cpp
  *
  * \brief Code couplings definition with SYRTHES and code_saturne.
@@ -63,7 +61,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define couplings with CATHARE code.
  *
  * This is done by calling the \ref cs_sys_coupling_add function for each
@@ -74,7 +72,6 @@ BEGIN_C_DECLS
 void
 cs_user_cathare_coupling(void)
 {
-
   /*! [coupling_cathare_1] */
   {
     /* Add a coupling with cathare using only one phase */

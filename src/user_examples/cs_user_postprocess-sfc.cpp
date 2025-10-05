@@ -26,17 +26,18 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
+
+#include "stdlib.h"
+#include "string.h"
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -331,12 +332,10 @@ _cs_post_write_sfc_parall(fvm_writer_t  *writer)
  *----------------------------------------------------------------------------*/
 
 static void
-_sfc_cell_select(void        *input,
-                 cs_lnum_t   *n_cells,
-                 cs_lnum_t  **cell_ids)
+_sfc_cell_select([[maybe_unused]] void   *input,
+                 cs_lnum_t               *n_cells,
+                 cs_lnum_t              **cell_ids)
 {
-  CS_UNUSED(input);
-
   *n_cells = 0;
   *cell_ids = nullptr;
 
@@ -367,19 +366,19 @@ _sfc_cell_select(void        *input,
  * User function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Define post-processing meshes.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define post-processing meshes.
  *
  * The main post-processing meshes may be configured, and additional
  * post-processing meshes may be defined as a subset of the main mesh's
  * cells or faces (both interior and boundary).
- *----------------------------------------------------------------------------*/
-
+ */
+/*----------------------------------------------------------------------------*/
 void
 cs_user_postprocess_meshes(void)
 {
   {
-
     /*! [sfc_def] */
 
     const int n_writers = 1;

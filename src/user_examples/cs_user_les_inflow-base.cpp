@@ -1,3 +1,12 @@
+/*============================================================================
+! User synthetic turbulence inlet definition.
+!
+! 1) Global characteristics of synthetic turbulence inlets
+! 2) Caracteristics of one specific inlet
+! 3) Accurate specification of target statistics at inlet
+ *============================================================================*/
+
+/* VERS */
 
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
@@ -21,10 +30,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -45,14 +54,12 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_les_inflow-base.cpp
  *
  * \brief Generation of synthetic turbulence at LES inlets initialization.
@@ -62,11 +69,11 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 /*============================================================================
- * Local (user defined) function definitions
+ * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define parameters of synthetic turbulence at LES inflow.
  */
 /*----------------------------------------------------------------------------*/
@@ -129,7 +136,7 @@ cs_user_les_inflow_define(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Update of the characteristics of a given synthetic turbulence inlet.
  *
  * \param[in]   zone       pointer to associated boundary zone
@@ -140,10 +147,12 @@ cs_user_les_inflow_define(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_les_inflow_update(const cs_zone_t  *zone,
-                          cs_real_t         vel_r[3],
-                          cs_real_t        *k_r,
-                          cs_real_t        *eps_r)
+cs_user_les_inflow_update
+(
+  [[maybe_unused]] const cs_zone_t  *zone,
+  [[maybe_unused]] cs_real_t         vel_r[3],
+  [[maybe_unused]] cs_real_t        *k_r,
+  [[maybe_unused]] cs_real_t        *eps_r)
 {
   /*! [update_1] */
   if (strcmp(zone->name, "INLET_1") == 0) {
@@ -158,7 +167,7 @@ cs_user_les_inflow_update(const cs_zone_t  *zone,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Definition of mean velocity, Reynolds stresses and dissipation rate
  *        for each boundary face of the given synthetic turbulence inlet.
  *
@@ -169,16 +178,18 @@ cs_user_les_inflow_update(const cs_zone_t  *zone,
  *
  * \param[in]       zone    pointer to associated boundary zone
  * \param[in, out]  vel_l   velocity a zone faces
- * \param[in, out]  rij_l   Reynolds stresses at zone faces
+ * \param[in, out]  rij_l   reynods stresses at zone faces
  * \param[in, out]  eps_l   reference turbulent dissipation
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_les_inflow_advanced(const cs_zone_t  *zone,
-                            cs_real_3_t       vel_l[],
-                            cs_real_6_t       rij_l[],
-                            cs_real_t         eps_l[])
+cs_user_les_inflow_advanced
+(
+  [[maybe_unused]] const cs_zone_t  *zone,
+  [[maybe_unused]] cs_real_3_t       vel_l[],
+  [[maybe_unused]] cs_real_6_t       rij_l[],
+  [[maybe_unused]] cs_real_t         eps_l[])
 {
   /*  Example 1:
    *   - mean velocity, Reynolds stresses an dissipation are deduced

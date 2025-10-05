@@ -26,25 +26,19 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
 #include <string.h>
 #include <math.h>
 
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
-
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -78,7 +72,6 @@ BEGIN_C_DECLS
 void
 cs_user_radiative_transfer_parameters(void)
 {
-
 }
 
 /*-----------------------------------------------------------------------------*/
@@ -102,11 +95,12 @@ cs_user_radiative_transfer_parameters(void)
 
 #pragma weak cs_user_rad_transfer_absorption
 void
-cs_user_rad_transfer_absorption(const int  bc_type[],
-                                cs_real_t  ck[])
+cs_user_rad_transfer_absorption
+(
+  [[maybe_unused]] const int  bc_type[],
+  [[maybe_unused]] cs_real_t  ck[]
+)
 {
-  CS_UNUSED(bc_type);
-  CS_UNUSED(ck);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -132,23 +126,18 @@ cs_user_rad_transfer_absorption(const int  bc_type[],
 
 #pragma weak cs_user_rad_transfer_net_flux
 void
-cs_user_rad_transfer_net_flux(const int        bc_type[],
-                              const cs_real_t  twall[],
-                              const cs_real_t  qincid[],
-                              const cs_real_t  xlam[],
-                              const cs_real_t  epa[],
-                              const cs_real_t  eps[],
-                              const cs_real_t  ck[],
-                              cs_real_t        net_flux[])
+cs_user_rad_transfer_net_flux
+(
+  [[maybe_unused]] const int        bc_type[],
+  [[maybe_unused]] const cs_real_t  twall[],
+  [[maybe_unused]] const cs_real_t  qincid[],
+  [[maybe_unused]] const cs_real_t  xlam[],
+  [[maybe_unused]] const cs_real_t  epa[],
+  [[maybe_unused]] const cs_real_t  eps[],
+  [[maybe_unused]] const cs_real_t  ck[],
+  [[maybe_unused]] cs_real_t        net_flux[]
+)
 {
-  CS_UNUSED(bc_type);
-  CS_UNUSED(twall);
-  CS_UNUSED(qincid);
-  CS_UNUSED(xlam);
-  CS_UNUSED(epa);
-  CS_UNUSED(eps);
-  CS_UNUSED(ck);
-  CS_UNUSED(net_flux);
 }
 
 /*----------------------------------------------------------------------------*/

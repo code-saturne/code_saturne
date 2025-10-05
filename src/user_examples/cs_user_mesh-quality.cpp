@@ -34,10 +34,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -51,14 +51,12 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_mesh-quality.cpp
  *
  * \brief Mesh quality example
@@ -72,7 +70,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set options for cutting of warped faces
  *
  * \param[in,out] mesh pointer to cs_mesh_t structure
@@ -94,7 +92,7 @@ cs_user_mesh_warping(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Mesh smoothing.
  *
  * \param[in,out] mesh pointer to cs_mesh_t structure
@@ -102,7 +100,7 @@ cs_user_mesh_warping(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_mesh_smoothe(cs_mesh_t  *mesh)
+cs_user_mesh_smoothe([[maybe_unused]] cs_mesh_t  *mesh)
 {
   /*! [mesh_smoothing] */
 
@@ -138,8 +136,11 @@ cs_user_mesh_smoothe(cs_mesh_t  *mesh)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_mesh_bad_cells_tag(cs_mesh_t             *mesh,
-                           cs_mesh_quantities_t  *mesh_quantities)
+cs_user_mesh_bad_cells_tag
+(
+  [[maybe_unused]] cs_mesh_t             *mesh,
+  [[maybe_unused]] cs_mesh_quantities_t  *mesh_quantities
+)
 {
   /* Example: tag cells having a volume below 0.01 m^3 */
   /*          and post-process the tagged cells        */

@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <math.h>
@@ -37,8 +37,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -49,7 +47,6 @@ BEGIN_C_DECLS
  * \file cs_user_electric_scaling.cpp
  *
  * \brief Define scaling parameter for electric model.
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -72,9 +69,12 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_scaling_elec(const cs_mesh_t             *mesh,
-                     const cs_mesh_quantities_t  *mesh_quantities,
-                           cs_real_t             *dt)
+cs_user_scaling_elec
+(
+  [[maybe_unused]] const cs_mesh_t             *mesh,
+  [[maybe_unused]] const cs_mesh_quantities_t  *mesh_quantities,
+  [[maybe_unused]] cs_real_t                   *dt
+)
 {
   /*! [electric_scaling] */
 

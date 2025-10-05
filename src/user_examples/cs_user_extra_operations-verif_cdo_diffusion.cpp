@@ -1,6 +1,12 @@
 /*============================================================================
- * Additional post-processing functions defined by user related to CDO schemes
+ * General-purpose user-defined functions called before time stepping, at
+ * the end of each time step, and after time-stepping.
+ *
+ * These can be used for operations which do not fit naturally in any other
+ * dedicated user function.
  *============================================================================*/
+
+/* VERS */
 
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
@@ -24,15 +30,14 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
 #include <math.h>
-#include <stdio.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -41,8 +46,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -53,11 +56,11 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_extra_operations-verif_cdo_diffusion.cpp
  *
- * \brief Additional user-defined post-processing and analysis functions
-*/
+ * \brief Additional user-defined post-processing and analysis functions.
+ */
 /*----------------------------------------------------------------------------*/
 
 /*=============================================================================
@@ -89,17 +92,14 @@ static FILE  *resume = nullptr;
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_get_sol(cs_real_t          time,
-         cs_lnum_t          n_pts,
-         const cs_lnum_t    pt_ids[],
-         const cs_real_t   *xyz,
-         bool               dense_output,
-         void              *input,
-         cs_real_t         *retval)
+_get_sol([[maybe_unused]] cs_real_t   time,
+         cs_lnum_t                    n_pts,
+         const cs_lnum_t              pt_ids[],
+         const cs_real_t             *xyz,
+         bool                         dense_output,
+         [[maybe_unused]] void       *input,
+         cs_real_t                   *retval)
 {
-  CS_UNUSED(time);
-  CS_UNUSED(input);
-
   const double  pi = cs_math_pi;
   constexpr cs_real_t c_1ov3 = 1./3.;
 
@@ -243,16 +243,15 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
     CS_FREE(postlabel);
     CS_FREE(ddip);
     CS_FREE(rpex);
-
   }
 }
 
 /*============================================================================
- * Public function prototypes
+ * User function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Additional operations on results produced by CDO schemes.
  *         Define advanced post-processing and/or analysis for instance.
  *
@@ -261,9 +260,8 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_extra_operations(cs_domain_t          *domain)
+cs_user_extra_operations_finalize([[maybe_unused]] cs_domain_t  *domain)
 {
-
   /*! [extra_verif_cdo_diff] */
 
   const cs_cdo_connect_t  *connect = domain->connect;

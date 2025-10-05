@@ -29,10 +29,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -46,14 +46,12 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_mesh-groups_from_free_faces.cpp
  *
  * \brief Mesh modification example.
@@ -250,7 +248,7 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Modify geometry and mesh.
  *
  * In this example, group information from free faces is projected to
@@ -261,7 +259,7 @@ _mesh_groups_from_free_faces(cs_mesh_t  *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_mesh_modify(cs_mesh_t  *mesh)
+cs_user_mesh_modify([[maybe_unused]] cs_mesh_t  *mesh)
 {
   /* Try to transfer group information from free faces to boundary faces
      with no such information */

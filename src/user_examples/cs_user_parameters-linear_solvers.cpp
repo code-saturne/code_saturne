@@ -26,16 +26,15 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
 #include <math.h>
 #include <string.h>
-#include <stdio.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -72,8 +71,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 #if defined(HAVE_PETSC)
 #include "alge/cs_sles_petsc.h"
 #endif
@@ -83,13 +80,12 @@
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_parameters-linear_solvers.cpp
  *
  * \brief Linear solvers examples.
  *
  * See \ref parameters for examples.
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -118,10 +114,9 @@ BEGIN_C_DECLS
 
 /*! [sles_petsc_hook_1] */
 static void
-_petsc_p_setup_hook(void  *context,
-                    void  *ksp_p)
+_petsc_p_setup_hook([[maybe_unused]] void  *context,
+                    void                   *ksp_p)
 {
-  CS_UNUSED(context);
   KSP ksp = (KSP)ksp_p;
   PC pc;
 
@@ -139,10 +134,9 @@ _petsc_p_setup_hook(void  *context,
 
 /*! [sles_petsc_hook_gamg] */
 static void
-_petsc_p_setup_hook_gamg(void  *context,
-                         void  *ksp_p)
+_petsc_p_setup_hook_gamg([[maybe_unused]] void  *context,
+                         void                   *ksp_p)
 {
-  CS_UNUSED(context);
   KSP ksp = (KSP)ksp_p;
   PC pc;
 
@@ -159,10 +153,9 @@ _petsc_p_setup_hook_gamg(void  *context,
 
 /*! [sles_petsc_hook_bamg] */
 static void
-_petsc_p_setup_hook_bamg(void  *context,
-                         void  *ksp_p)
+_petsc_p_setup_hook_bamg([[maybe_unused]] void  *context,
+                         void                   *ksp_p)
 {
-  CS_UNUSED(context);
   KSP ksp = (KSP)ksp_p;
   PC pc;
 
@@ -192,11 +185,9 @@ _petsc_p_setup_hook_bamg(void  *context,
 
 /*! [sles_petsc_hook_view] */
 static void
-_petsc_p_setup_hook_view(void  *context,
-                         void  *ksp_p)
+_petsc_p_setup_hook_view([[maybe_unused]] void  *context,
+                         void                   *ksp_p)
 {
-  CS_UNUSED(context);
-
   KSP ksp = (KSP)ksp_p;
 
   const char *p = getenv("CS_USER_PETSC_MAT_VIEW");
@@ -261,11 +252,9 @@ _petsc_p_setup_hook_view(void  *context,
  *----------------------------------------------------------------------------*/
 
 void
-cs_user_sles_petsc_hook(void  *context,
-                        void  *ksp_p)
+cs_user_sles_petsc_hook(void                   *context,
+                        [[maybe_unused]] void  *ksp_p)
 {
-  CS_UNUSED(ksp_p);
-
   /*! [sles_petsc_cdo_hook] */
   cs_param_sles_t  *slesp = (cs_param_sles_t *)context;
 
@@ -317,13 +306,10 @@ cs_user_sles_petsc_hook(void  *context,
 
 /*! [sles_hypre_hook_1] */
 static void
-_hypre_p_setup_hook(int    verbosity,
-                    void  *context,
-                    void  *solver_p)
+_hypre_p_setup_hook([[maybe_unused]] int    verbosity,
+                    [[maybe_unused]] void  *context,
+                    void                   *solver_p)
 {
-  CS_NO_WARN_IF_UNUSED(verbosity);
-  CS_NO_WARN_IF_UNUSED(context);
-
   HYPRE_Solver  solver = (HYPRE_Solver)solver_p;
   HYPRE_Solver  precond = nullptr;
 
@@ -344,7 +330,7 @@ _hypre_p_setup_hook(int    verbosity,
 #endif /* defined(HAVE_HYPRE) */
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define linear solver options.
  *
  * This function is called at the setup stage, once user and most model-based

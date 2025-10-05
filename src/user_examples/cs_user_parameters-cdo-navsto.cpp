@@ -26,33 +26,39 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
 #include <math.h>
 #include <string.h>
 
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
+
 /*----------------------------------------------------------------------------
- *  Local headers
+ * PLE library headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
+#include <ple_coupling.h>
+
+/*----------------------------------------------------------------------------
+ * Local headers
+ *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_parameters-cdo-bavsto.cpp
  *
  * \brief User functions for input of calculation parameters.
- *
- * See \subpage parameters for examples.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -107,17 +113,14 @@ __vel(const cs_real_3_t pxyz,
 /*----------------------------------------------------------------------------*/
 
 static void
-_vel_def(cs_real_t           time,
-         cs_lnum_t           n_pts,
-         const cs_lnum_t    *pt_ids,
-         const cs_real_t    *xyz,
-         bool                dense_output,
-         void               *input,
-         cs_real_t          *res)
+_vel_def([[maybe_unused]] cs_real_t    time,
+         cs_lnum_t                     n_pts,
+         const cs_lnum_t              *pt_ids,
+         const cs_real_t              *xyz,
+         bool                          dense_output,
+         [[maybe_unused]] void        *input,
+         cs_real_t                    *res)
 {
-  CS_UNUSED(input);
-  CS_UNUSED(time);
-
   if (pt_ids != nullptr && !dense_output) {
 
 #   pragma omp parallel for if(n_pts > CS_THR_MIN)
@@ -189,17 +192,14 @@ __st(const cs_real_3_t pxyz,
 /*----------------------------------------------------------------------------*/
 
 static void
-_src_def(cs_real_t           time,
-         cs_lnum_t           n_pts,
-         const cs_lnum_t    *pt_ids,
-         const cs_real_t    *xyz,
-         bool                dense_output,
-         void               *input,
-         cs_real_t          *res)
+_src_def([[maybe_unused]] cs_real_t   time,
+         cs_lnum_t                    n_pts,
+         const cs_lnum_t             *pt_ids,
+         const cs_real_t             *xyz,
+         bool                         dense_output,
+         [[maybe_unused]]  void      *input,
+         cs_real_t                   *res)
 {
-  CS_UNUSED(input);
-  CS_UNUSED(time);
-
   if (pt_ids != nullptr && !dense_output) {
 
 #   pragma omp parallel for if(n_pts > CS_THR_MIN)
@@ -233,7 +233,7 @@ _src_def(cs_real_t           time,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Select physical model options, including user fields.
  *
  * This function is called at the earliest stages of the data setup,
@@ -304,7 +304,7 @@ cs_user_model(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define or modify general numerical and physical user parameters.
  *
  * At the calling point of this function, most model-related most variables
@@ -314,10 +314,8 @@ cs_user_model(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_parameters(cs_domain_t *domain)
+cs_user_parameters([[maybe_unused]] cs_domain_t  *domain)
 {
-  CS_NO_WARN_IF_UNUSED(domain);
-
   /*! [param_cdo_navsto_sles_alu] */
   {
     /* Parameters related to the momentum equation */
@@ -508,20 +506,19 @@ cs_user_parameters(cs_domain_t *domain)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief  - Specify the elements such as properties, advection fields,
- *           user-defined equations and modules which have been previously
- *           added.
+/*
+ * \brief Define or modify output user parameters.
+ *
+ * For CDO schemes, this function concludes the setup of properties,
+ * equations, source terms...
  *
  * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_finalize_setup(cs_domain_t   *domain)
+cs_user_finalize_setup([[maybe_unused]] cs_domain_t   *domain)
 {
-  CS_NO_WARN_IF_UNUSED(domain);
-
   /*! [param_cdo_navsto_bc1] */
   {
     cs_navsto_param_t  *nsp = cs_navsto_system_get_param();

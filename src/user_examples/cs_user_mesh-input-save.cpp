@@ -29,10 +29,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -46,14 +46,12 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_mesh-input-save.cpp
  *
  * \brief Mesh input definition and mesh saving examples.
@@ -96,19 +94,20 @@ _combine_tr_matrixes(const double  a[3][4],
   c[2][3] = a[2][0]*b[0][3] + a[2][1]*b[1][3] + a[2][2]*b[2][3] + a[2][3];
 }
 
+/*============================================================================
+ * User function definitions
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Force preprocessing behavior in case of restart.
  *
  * By default, in case of restart, if a "restart/mesh_input.csm" file
  * is present, it will be read and proprocessing will be skipped.
  *
- * This behavior may be changed in the GUI:
- * - In the "Mesh" section, unchecking
- *   "Use unmodified checkpoint mesh in case of restart" sets the mode
- *   to CS_PREPROCESSOR_DATA_RESTART_AND_MODIFY.
- * - In "Time Settings - Start/Restart", selecting "different mesh" sets the
- *   mode to CS_PREPROCESSOR_DATA_RESTART_NONE.
+ * This behavior may be changed in the GUI (in the "Mesh" section, unchecking
+ * "Use unmodified checkpoint mesh in case of restart"), or by calling
+ * \ref cs_preprocessor_data_set_restart_mode in this function.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -121,7 +120,7 @@ cs_user_mesh_restart_mode(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define mesh files to read and optional associated transformations.
  */
 /*----------------------------------------------------------------------------*/
@@ -173,17 +172,17 @@ cs_user_mesh_input(void)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Enable or disable mesh saving.
  *
  * By default, mesh is saved when modified.
  *
  * \param[in,out] mesh  pointer to a cs_mesh_t structure
-*/
+ */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_mesh_save(cs_mesh_t  *mesh)
+cs_user_mesh_save([[maybe_unused]] cs_mesh_t  *mesh)
 {
   /*! [mesh_save] */
   {
@@ -194,7 +193,6 @@ cs_user_mesh_save(cs_mesh_t  *mesh)
 
   }
   /*! [mesh_save] */
-
 }
 
 /*----------------------------------------------------------------------------*/

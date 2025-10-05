@@ -34,10 +34,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -50,8 +50,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -88,7 +86,6 @@ BEGIN_C_DECLS
 void
 cs_user_mesh_restart_mode(void)
 {
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -101,7 +98,18 @@ cs_user_mesh_restart_mode(void)
 void
 cs_user_mesh_input(void)
 {
+}
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define a cartesian mesh.
+ */
+/*----------------------------------------------------------------------------*/
+
+#pragma weak cs_user_mesh_cartesian_define
+void
+cs_user_mesh_cartesian_define(void)
+{
 }
 
 /*----------------------------------------------------------------------------*/
@@ -114,7 +122,6 @@ cs_user_mesh_input(void)
 void
 cs_user_join(void)
 {
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -127,7 +134,6 @@ cs_user_join(void)
 void
 cs_user_periodicity(void)
 {
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -140,7 +146,6 @@ cs_user_periodicity(void)
 void
 cs_user_mesh_warping(void)
 {
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -153,9 +158,8 @@ cs_user_mesh_warping(void)
 
 #pragma weak cs_user_mesh_boundary
 void
-cs_user_mesh_boundary(cs_mesh_t  *mesh)
+cs_user_mesh_boundary([[maybe_unused]] cs_mesh_t  *mesh)
 {
-  CS_UNUSED(mesh);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -163,14 +167,13 @@ cs_user_mesh_boundary(cs_mesh_t  *mesh)
  * \brief Modify geometry and mesh.
  *
  * \param[in,out] mesh  pointer to a cs_mesh_t structure
-*/
+ */
 /*----------------------------------------------------------------------------*/
 
 #pragma weak cs_user_mesh_modify
 void
-cs_user_mesh_modify(cs_mesh_t  *mesh)
+cs_user_mesh_modify([[maybe_unused]] cs_mesh_t  *mesh)
 {
-  CS_UNUSED(mesh);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -178,14 +181,13 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
  * \brief Mesh smoothing.
  *
  * \param[in,out] mesh  pointer to a cs_mesh_t structure
-*/
+ */
 /*----------------------------------------------------------------------------*/
 
 #pragma weak cs_user_mesh_smoothe
 void
-cs_user_mesh_smoothe(cs_mesh_t  *mesh)
+cs_user_mesh_smoothe([[maybe_unused]] cs_mesh_t  *mesh)
 {
-  CS_UNUSED(mesh);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -195,14 +197,13 @@ cs_user_mesh_smoothe(cs_mesh_t  *mesh)
  * By default, mesh is saved when modified.
  *
  * \param[in,out] mesh  pointer to a cs_mesh_t structure
-*/
+ */
 /*----------------------------------------------------------------------------*/
 
 #pragma weak cs_user_mesh_save
 void
-cs_user_mesh_save(cs_mesh_t  *mesh)
+cs_user_mesh_save([[maybe_unused]] cs_mesh_t  *mesh)
 {
-  CS_UNUSED(mesh);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -216,11 +217,12 @@ cs_user_mesh_save(cs_mesh_t  *mesh)
 
 #pragma weak cs_user_mesh_bad_cells_tag
 void
-cs_user_mesh_bad_cells_tag(cs_mesh_t             *mesh,
-                           cs_mesh_quantities_t  *mesh_quantities)
+cs_user_mesh_bad_cells_tag
+(
+  [[maybe_unused]] cs_mesh_t             *mesh,
+  [[maybe_unused]] cs_mesh_quantities_t  *mesh_quantities
+)
 {
-  CS_UNUSED(mesh);
-  CS_UNUSED(mesh_quantities);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -235,24 +237,12 @@ cs_user_mesh_bad_cells_tag(cs_mesh_t             *mesh,
 
 #pragma weak cs_user_mesh_modify_partial
 void
-cs_user_mesh_modify_partial(cs_mesh_t             *mesh,
-                            cs_mesh_quantities_t  *mesh_quantities)
+cs_user_mesh_modify_partial
+(
+  [[maybe_unused]] cs_mesh_t             *mesh,
+  [[maybe_unused]] cs_mesh_quantities_t  *mesh_quantities
+)
 {
-  CS_UNUSED(mesh);
-  CS_UNUSED(mesh_quantities);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define a cartesian mesh.
-*/
-/*----------------------------------------------------------------------------*/
-
-#pragma weak cs_user_mesh_cartesian_define
-void
-cs_user_mesh_cartesian_define(void)
-{
-
 }
 
 /*----------------------------------------------------------------------------*/

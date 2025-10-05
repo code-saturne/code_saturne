@@ -26,10 +26,10 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
@@ -48,8 +48,6 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -83,9 +81,8 @@ BEGIN_C_DECLS
 
 #pragma weak cs_user_initial_conditions
 void
-cs_user_initial_conditions(cs_domain_t *domain)
+cs_user_initial_conditions([[maybe_unused]] cs_domain_t  *domain)
 {
-  CS_UNUSED(domain);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -104,9 +101,8 @@ cs_user_initial_conditions(cs_domain_t *domain)
 
 #pragma weak cs_user_initialization
 void
-cs_user_initialization(cs_domain_t     *domain)
+cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
 {
-  CS_UNUSED(domain);
 }
 
 /*----------------------------------------------------------------------------*/

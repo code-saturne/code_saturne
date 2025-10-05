@@ -26,32 +26,26 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "base/cs_defs.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
 #include <math.h>
 #include <string.h>
 
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
-
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_user_physical_properties-scalar-drift.cpp
  *
  * \brief User definition of physical properties for scalars with a drift.
@@ -63,7 +57,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Function called at each time step to define physical properties.
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
@@ -71,7 +65,10 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_physical_properties(cs_domain_t *domain)
+cs_user_physical_properties
+(
+  [[maybe_unused]] cs_domain_t   *domain
+)
 {
   /* Common variables and initializations
    * ------------------------------------ */
