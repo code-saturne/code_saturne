@@ -450,8 +450,6 @@ cs_cdofb_vecteq_init_turb_bc(const cs_cell_mesh_t         *cm,
                              cs_real_t                    *rcodcl1_vel)
 {
   if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
-
-    const int  d = eqp->dim;
     const cs_lnum_t n_b_faces = cs_shared_quant->n_b_faces;
 
     cs_real_t *rcodcl1_ux = nullptr,
