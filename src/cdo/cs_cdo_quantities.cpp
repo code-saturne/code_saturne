@@ -1595,7 +1595,7 @@ cs_cdo_quantities_build(const cs_mesh_t            *m,
   cdoq->n_cells   = n_cells;
   cdoq->n_g_cells = m->n_g_cells;
 
-  _Bool need_synchro = true;
+  bool need_synchro = true;
 
   /* Compute the cell centers (and more in the case of subdivisions) */
 
