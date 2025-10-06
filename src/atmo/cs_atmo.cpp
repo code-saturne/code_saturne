@@ -4939,10 +4939,10 @@ cs_atmo_compute_solar_angles(cs_real_t latitude,
 {
   cs_atmo_option_t *at_opt = &_atmo_option;
 
-  /* 1 - initialisations */
+  /* 1 - initializations */
   *fo = 1370.;
 
-  /* conversions sexagesimal-decimal */
+  /* Conversions sexagesimal-decimal */
 
   cs_real_t flat = latitude  *cs_math_pi/180.;
   cs_real_t flong = longitude * 4. / 60.;

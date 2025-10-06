@@ -789,9 +789,9 @@ cs_base_cuda_select_default_device(void)
 
   /* Finally, determine whether we may use graphs for some kernel launches. */
 
-  const char s[] = "CS_CUDA_ALLOW_GRAPH";
-  if (getenv(s) != nullptr) {
-    int i = atoi(getenv(s));
+  const char *s = getenv("CS_CUDA_ALLOW_GRAPH");
+  if (s != nullptr) {
+    int i = atoi(s);
     cs_glob_cuda_allow_graph = (i <= 0) ? false : true;
   }
 

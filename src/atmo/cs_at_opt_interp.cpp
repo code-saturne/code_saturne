@@ -1003,7 +1003,7 @@ cs_at_opt_interp_read_file(char const           filename[50],
       if (oi->steady <= 0)
         CS_MALLOC(oi->times, _tot_n_readable_measures, cs_real_t);
 
-      /* initialising index list */
+      /* initializing index list */
       for (int ii = 0; ii < ms->dim*(n_obs + 1); ii++)
         oi->measures_idx[ii] = 0;
 

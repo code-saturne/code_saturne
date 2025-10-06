@@ -278,16 +278,11 @@ _chem_initialize_species_profiles_to_fid(int *species_profiles_fid)
  */
 /*----------------------------------------------------------------------------*/
 
-static cs_real_t
-_beta(const cs_real_t x,
-      const cs_real_t y)
-
+static inline cs_real_t
+_beta(cs_real_t x,
+      cs_real_t y)
 {
-  cs_real_t beta;
-
-  beta = tgamma(x)*tgamma(y)/tgamma(x+y);
-
-  return beta;
+  return tgamma(x)*tgamma(y)/tgamma(x+y);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1137,7 +1132,7 @@ cs_atmo_read_chemistry_profile(int mode)
 
   if (mode == 1) {
 
-    bft_printf("reading of concentration profiles data\n");
+    bft_printf("Reading concentration profiles data.\n");
 
     for (int itp = 0; itp < _atmo_chem.nt_step_profiles; itp++) {
 
@@ -1263,7 +1258,8 @@ cs_atmo_read_chemistry_profile(int mode)
             _atmo_chem.z_conc_profiles[ii] = zconctemp[0];
 
             for (int kk = 1; kk < _atmo_chem.n_species_profiles+1; kk++)
-              _atmo_chem.conc_profiles[ii+(itp)*nbchmz+(kk-1)*size] = zconctemp[kk];
+              _atmo_chem.conc_profiles[ii+(itp)*nbchmz+(kk-1)*size]
+                = zconctemp[kk];
           }
         } // fin test nespgi
 
@@ -1274,7 +1270,7 @@ cs_atmo_read_chemistry_profile(int mode)
 
       if (itp == 0) {
         bft_printf("===================================================\n");
-        bft_printf("printing concentration profiles\n");
+        bft_printf("Concentration profiles\n");
       }
 
       bft_printf("year, quant-day, hour, minute, second\n");
@@ -1307,7 +1303,7 @@ cs_atmo_read_chemistry_profile(int mode)
   else {
 
     _atmo_chem.nt_step_profiles = 1;
-    bft_printf("reading of dimensions for concentration profiles\n");
+    bft_printf("Reading dimensions for concentration profiles.\n");
 
     if (_atmo_chem.init_gas_with_lib) {
 
@@ -2225,8 +2221,9 @@ cs_atmo_compute_gaseous_chemistry(void)
                                     conv_factor, dchema);
 
       /* Explicit contribution from dynamics as a source term:
-       * (X*-Xn)/dt(dynamics) - C(Xn). See usatch.f90
-       * The first n_species_g user scalars are supposed to be chemical species */
+         (X*-Xn)/dt(dynamics) - C(Xn). See cs_polyphemus_spack.f90.
+         The first n_species_g user scalars are expected to be
+         chemical species */
       for (int spe_id = 0; spe_id < n_species_g; spe_id++) {
         const int idx = atmo_chem->chempoint[spe_id] - 1;
         source[idx] = (cvar_espg[spe_id][c_id] - cvara_espg[spe_id][c_id])/dtc
