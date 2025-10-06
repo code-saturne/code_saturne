@@ -163,7 +163,7 @@ cs_les_synthetic_eddy_restart_write(void);
 /*!
  * \brief Generation of synthetic turbulence via the Synthetic Eddy Method (SEM).
  *
- * \param[in]   n_points            local number of points where
+ * \param[in]   n_elts              local number of points where
  *                                  turbulence is generated
  * \param[in]   elt_ids             local id of inlet elements
  * \param[in]   point_coordinates   point coordinates
@@ -180,7 +180,7 @@ cs_les_synthetic_eddy_restart_write(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_les_synthetic_eddy_method(cs_lnum_t           n_points,
+cs_les_synthetic_eddy_method(cs_lnum_t           n_elts,
                              const cs_lnum_t     elt_ids[],
                              const cs_real_3_t   point_coordinates[],
                              const cs_real_t    *point_weight,
