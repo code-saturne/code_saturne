@@ -126,7 +126,6 @@ cs_lagr_precipitation_mass_st(cs_real_t        dtref,
   cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
   cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
-  const cs_lagr_attribute_map_t *p_am = p_set->p_am;
 
   assert(cs_glob_lagr_model->precipitation == 1);
 
@@ -170,18 +169,16 @@ cs_lagr_precipitation_mass_st(cs_real_t        dtref,
 
       for (cs_lnum_t iel = 0; iel < mesh->n_cells; iel++) {
 
-        for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
-
-          unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
+        for (cs_lnum_t p_id = 0; p_id < p_set->n_particles; p_id++) {
 
           cs_real_t part_mass
             =   preci->rho * pis6
-              * pow(cs_lagr_particle_get_real(particle, p_am,
-                                              CS_LAGR_DIAMETER),3.0);
+              * pow(cs_lagr_particles_get_real(p_set, p_id,
+                                               CS_LAGR_DIAMETER),3.0);
 
-          if (   cs_lagr_particle_get_lnum(particle, p_am,
-                                           CS_LAGR_CELL_ID) == iel
-              &&   cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS)
+          if (   cs_lagr_particles_get_lnum(p_set, p_id,
+                                            CS_LAGR_CELL_ID) == iel
+              &&   cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_MASS)
                  - part_mass < 1e-12)
 
             /* number of magnetite particles in the cell iel */
@@ -216,26 +213,25 @@ cs_lagr_precipitation_mass_st(cs_real_t        dtref,
 
         if (p_set->n_particles > 0) {
 
-          for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
+          for (cs_lnum_t p_id = 0; p_id < p_set->n_particles; p_id++) {
 
-            unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
 
             for (cs_lnum_t iclas = 0; iclas < preci->nbrclas; iclas++) {
 
-              cs_real_t p_diam = cs_lagr_particle_get_real(particle, p_am,
-                                                           CS_LAGR_DIAMETER);
-              cs_real_t p_mass = cs_lagr_particle_get_real(particle, p_am,
-                                                           CS_LAGR_MASS);
-              cs_lnum_t cell_id = cs_lagr_particle_get_lnum(particle, p_am,
-                                                            CS_LAGR_CELL_ID);
+              cs_real_t p_diam = cs_lagr_particles_get_real(p_set, p_id,
+                                                            CS_LAGR_DIAMETER);
+              cs_real_t p_mass = cs_lagr_particles_get_real(p_set, p_id,
+                                                            CS_LAGR_MASS);
+              cs_lnum_t cell_id = cs_lagr_particles_get_lnum(p_set, p_id,
+                                                             CS_LAGR_CELL_ID);
               cs_real_t mass = preci->rho * pis6 * pow(p_diam,3.0);
               if (   cell_id == iel
                   && p_diam - ref_diameter < 1e-12
                   && p_mass - mass < 1e-12) {
 
                 cs_real_t p_weight
-                            = cs_lagr_particle_get_real(particle, p_am,
-                                                        CS_LAGR_STAT_WEIGHT);
+                            = cs_lagr_particles_get_real(p_set, p_id,
+                                                         CS_LAGR_STAT_WEIGHT);
 
                 if (   ((solub[iel] - cvar_scal[iel]) * fvq->cell_vol[iel])
                     >= (mp_diss[iel * preci->nbrclas + iclas] + p_weight * mass))
@@ -284,7 +280,6 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
   cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
   cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
-  const cs_lagr_attribute_map_t *p_am = p_set->p_am;
 
   /* Initialization
      ============== */
@@ -354,25 +349,23 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
 
       mp[iel] = 0.0;
 
-      for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
-
-        unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
+      for (cs_lnum_t p_id = 0; p_id < p_set->n_particles; p_id++) {
 
         for (cs_lnum_t iclas = 0; iclas < preci->nbrclas; iclas++) {
 
-          if (   cs_lagr_particle_get_lnum(particle, p_am,
-                                           CS_LAGR_CELL_ID) == iel
-              && (  cs_lagr_particle_get_real(particle, p_am, CS_LAGR_DIAMETER)
+          if (   cs_lagr_particles_get_lnum(p_set, p_id,
+                                            CS_LAGR_CELL_ID) == iel
+              && (  cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_DIAMETER)
                   - ref_diameter < 1e-12)
               && (mp[iclas] < mp_diss[iel * preci->nbrclas + iclas])) {
 
             /* Removing of particles due to dissolution */
 
-            cs_lagr_particles_set_flag(p_set, npt, CS_LAGR_PART_TO_DELETE);
-            cs_real_t d3 = pow (cs_lagr_particle_get_real(particle, p_am,
-                                                          CS_LAGR_DIAMETER), 3);
-            mp[iclas] += cs_lagr_particle_get_real(particle, p_am,
-                                                   CS_LAGR_STAT_WEIGHT)
+            cs_lagr_particles_set_flag(p_set, p_id, CS_LAGR_PART_TO_DELETE);
+            cs_real_t d3 = pow (cs_lagr_particles_get_real(p_set, p_id,
+                                                           CS_LAGR_DIAMETER), 3);
+            mp[iclas] += cs_lagr_particles_get_real(p_set, p_id,
+                                                    CS_LAGR_STAT_WEIGHT)
               * (pis6 * d3 * preci->rho);
             nbdiss[iclas] += 1;
 
@@ -395,69 +388,67 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
 
   if (nbprec_tot >= 1) {
 
-    for (cs_lnum_t ip = npt; ip < npt + nbprec_tot; ip++) {
+    for (cs_lnum_t p_id = npt; p_id < npt + nbprec_tot; p_id++) {
 
       /* TODO: place particle at random location in the cell iel
          (not always at the cog) */
-
-      unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
 
       /* Random value associated with each particle */
 
       cs_real_t part_random = -1;
       cs_random_uniform(1, &part_random);
-      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_RANDOM_VALUE,
-                                part_random);
+      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_RANDOM_VALUE,
+                                 part_random);
 
       cs_real_t *part_coord =
-        cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
-                                                 CS_LAGR_COORDS);
+        cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
+                                                  CS_LAGR_COORDS);
 
       for (cs_lnum_t i = 0; i <  3; i++)
-        part_coord[i] = fvq->cell_cen[cell[ip - npt]][i];
+        part_coord[i] = fvq->cell_cen[cell[p_id - npt]][i];
 
-      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_CELL_ID, cell[ip - npt]);
+      cs_lagr_particles_set_lnum(p_set, p_id, CS_LAGR_CELL_ID, cell[p_id - npt]);
 
-      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_REBOUND_ID, -1);
+      cs_lagr_particles_set_lnum(p_set, p_id, CS_LAGR_REBOUND_ID, -1);
 
       cs_real_t *part_vel_seen =
-        cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
-                                                 CS_LAGR_VELOCITY_SEEN);
+        cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
+                                                  CS_LAGR_VELOCITY_SEEN);
       for (cs_lnum_t i = 0; i < 3; i++)
-        part_vel_seen[i] = vela[cell[ip - npt] * 3 + i];
+        part_vel_seen[i] = vela[cell[p_id - npt] * 3 + i];
 
       cs_real_t *part_vel =
-        cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
-                                                 CS_LAGR_VELOCITY);
+        cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
+                                                  CS_LAGR_VELOCITY);
       for (cs_lnum_t i = 0; i < 3; i++)
-        part_vel[i] = vela[cell[ip - npt] * 3 + i];
+        part_vel[i] = vela[cell[p_id - npt] * 3 + i];
 
-      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_DIAMETER,
+      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_DIAMETER,
                                 preci->diameter);
 
       cs_real_t mass =   pow(preci->diameter, 3.0) * preci->rho * pis6;
-      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_MASS, mass);
+      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_MASS, mass);
 
-      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_STAT_WEIGHT, 1.0);
+      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_STAT_WEIGHT, 1.0);
 
       /* Residence time (may be negative to ensure continuous injection) */
 
       cs_real_t res_time = - part_random *cs_glob_lagr_time_step->dtp;
-      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_RESIDENCE_TIME,
+      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_RESIDENCE_TIME,
                                 res_time);
 
       if (cs_glob_lagr_model->deposition == 1) {
         cs_real_t random;
         cs_random_uniform(1, &random);
-        cs_lagr_particle_set_real(particle, p_am,
-                                  CS_LAGR_INTERF, 5.0 + 15.0 * random);
-        cs_lagr_particle_set_real(particle, p_am,
-                                  CS_LAGR_YPLUS, 1000.0);
-        cs_lagr_particle_set_lnum(particle, p_am,
-                                  CS_LAGR_MARKO_VALUE, -1);
-        cs_lagr_particle_set_lnum(particle, p_am,
-                                  CS_LAGR_NEIGHBOR_FACE_ID, -1);
-        cs_lagr_particles_unset_flag(p_set, ip,
+        cs_lagr_particles_set_real(p_set, p_id,
+                                   CS_LAGR_INTERF, 5.0 + 15.0 * random);
+        cs_lagr_particles_set_real(p_set, p_id,
+                                   CS_LAGR_YPLUS, 1000.0);
+        cs_lagr_particles_set_lnum(p_set, p_id,
+                                   CS_LAGR_MARKO_VALUE, -1);
+        cs_lagr_particles_set_lnum(p_set, p_id,
+                                   CS_LAGR_NEIGHBOR_FACE_ID, -1);
+        cs_lagr_particles_unset_flag(p_set, p_id,
                                      CS_LAGR_PART_DEPOSITION_FLAGS);
 
       }
@@ -468,10 +459,9 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
 
   *val = 0.;
 
-  for (cs_lnum_t ip = npt; ip < npt + nbprec_tot; ip++) {
+  for (cs_lnum_t p_id = npt; p_id < npt + nbprec_tot; p_id++) {
 
-    unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
-    *val += cs_lagr_particle_get_real(particle, p_am, CS_LAGR_STAT_WEIGHT);
+    *val += cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_STAT_WEIGHT);
 
   }
 

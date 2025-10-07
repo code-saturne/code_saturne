@@ -505,26 +505,23 @@ _vol_fraction(const void                 *input,
 
   if (class_id == 0) {
 
-    for (cs_lnum_t part = 0; part < p_set->n_particles; part++) {
+    for (cs_lnum_t p_id = 0; p_id < p_set->n_particles; p_id++) {
 
-      unsigned char *particle
-        = p_set->p_buffer + p_set->p_am->extents * part;
-
-      cs_real_t diam = cs_lagr_particle_get_real(particle, p_set->p_am,
-                                                 CS_LAGR_DIAMETER);
+      cs_real_t diam = cs_lagr_particles_get_real(p_set, p_id,
+                                                  CS_LAGR_DIAMETER);
 
       /* Increment statistic in the ending cell when a single subiter is made
        * and the starting cell when a cell-wie-integration is considered */
       cs_lnum_t cell_id;
       if (cs_glob_lagr_time_scheme->cell_wise_integ == 0)
-        cell_id = cs_lagr_particle_get_lnum(particle, p_set->p_am,
-                                            CS_LAGR_CELL_ID);
+        cell_id = cs_lagr_particles_get_lnum(p_set, p_id,
+                                             CS_LAGR_CELL_ID);
       else
-        cell_id = cs_lagr_particle_get_lnum_n(particle, p_set->p_am, 1,
-                                              CS_LAGR_CELL_ID);
+        cell_id = cs_lagr_particles_get_lnum_n(p_set, p_id, 1,
+                                               CS_LAGR_CELL_ID);
 
-      cs_real_t p_weight = cs_lagr_particle_get_real(particle, p_set->p_am,
-                                                     CS_LAGR_STAT_WEIGHT);
+      cs_real_t p_weight = cs_lagr_particles_get_real(p_set, p_id,
+                                                      CS_LAGR_STAT_WEIGHT);
 
       cs_real_t vol = cs_glob_mesh_quantities->cell_vol[cell_id];
 
@@ -536,31 +533,28 @@ _vol_fraction(const void                 *input,
 
     assert(p_set->p_am->displ[0][CS_LAGR_STAT_CLASS] > 0);
 
-    for (cs_lnum_t part = 0; part < p_set->n_particles; part++) {
+    for (cs_lnum_t p_id = 0; p_id < p_set->n_particles; p_id++) {
 
-      unsigned char *particle
-        = p_set->p_buffer + p_set->p_am->extents * part;
-
-      int p_class = cs_lagr_particle_get_lnum(particle,
-                                              p_set->p_am,
-                                              CS_LAGR_STAT_CLASS);
+      int p_class = cs_lagr_particles_get_lnum(p_set,
+                                               p_id,
+                                               CS_LAGR_STAT_CLASS);
 
       if (p_class == class_id) {
-        cs_real_t diam = cs_lagr_particle_get_real(particle, p_set->p_am,
-                                                   CS_LAGR_DIAMETER);
+        cs_real_t diam = cs_lagr_particles_get_real(p_set, p_id,
+                                                    CS_LAGR_DIAMETER);
 
         /* Increment statistic in the ending cell when a single subiter is made
          * and the starting cell when a cell-wie-integration is considered */
         cs_lnum_t cell_id;
         if (cs_glob_lagr_time_scheme->cell_wise_integ == 0)
-          cell_id = cs_lagr_particle_get_lnum(particle, p_set->p_am,
-                                              CS_LAGR_CELL_ID);
+          cell_id = cs_lagr_particles_get_lnum(p_set, p_id,
+                                               CS_LAGR_CELL_ID);
         else
-          cell_id = cs_lagr_particle_get_lnum_n(particle, p_set->p_am, 1,
-                                                CS_LAGR_CELL_ID);
+          cell_id = cs_lagr_particles_get_lnum_n(p_set, p_id, 1,
+                                                 CS_LAGR_CELL_ID);
 
-        cs_real_t p_weight = cs_lagr_particle_get_real(particle, p_set->p_am,
-                                                       CS_LAGR_STAT_WEIGHT);
+        cs_real_t p_weight = cs_lagr_particles_get_real(p_set, p_id,
+                                                        CS_LAGR_STAT_WEIGHT);
 
         cs_real_t vol = cs_glob_mesh_quantities->cell_vol[cell_id];
 
@@ -2901,15 +2895,15 @@ cs_lagr_stat_update_all_incr(cs_lagr_particle_set_t *p_set,
    * and the starting cell when a cell-wie-integration is considered */
   cs_lnum_t cell_id;
   if (cs_glob_lagr_time_scheme->cell_wise_integ == 0)
-    cell_id = cs_lagr_particle_get_lnum(particle, p_set->p_am, CS_LAGR_CELL_ID);
+    cell_id = cs_lagr_particles_get_lnum(p_set, p_id, CS_LAGR_CELL_ID);
   else
-    cell_id = cs_lagr_particle_get_lnum_n(particle, p_set->p_am, 1,
-                                          CS_LAGR_CELL_ID);
+    cell_id = cs_lagr_particles_get_lnum_n(p_set, p_id, 1,
+                                           CS_LAGR_CELL_ID);
   int p_class = 0;
   if (p_set->p_am->displ[0][CS_LAGR_STAT_CLASS] > 0)
-    p_class = cs_lagr_particle_get_lnum(particle,
-                                        p_set->p_am,
-                                        CS_LAGR_STAT_CLASS);
+    p_class = cs_lagr_particles_get_lnum(p_set,
+                                         p_id,
+                                         CS_LAGR_STAT_CLASS);
 
   /* Outer loop in weight accumulators, to avoid recomputing weights
      too many times */
@@ -2944,9 +2938,9 @@ cs_lagr_stat_update_all_incr(cs_lagr_particle_set_t *p_set,
     cs_real_t p_weight;
 
     if (mwa->p_data_func == nullptr)
-      p_weight = cs_lagr_particle_get_real(particle,
-                                           p_set->p_am,
-                                           CS_LAGR_STAT_WEIGHT);
+      p_weight = cs_lagr_particles_get_real(p_set,
+                                            p_id,
+                                            CS_LAGR_STAT_WEIGHT);
     else
       mwa->p_data_func(mwa->data_input,
                        particle,
@@ -3019,9 +3013,9 @@ cs_lagr_stat_update_all_incr(cs_lagr_particle_set_t *p_set,
                 mt->p_data_func(mt->data_input, particle, p_set->p_am, pval);
               }
               else
-                pval = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle,
-                                                                p_set->p_am,
-                                                                attr_id);
+                pval = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set,
+                                                                 p_id,
+                                                                 attr_id);
 
               /* update weight sum with new particle weight */
               new_wa_sum = prev_wa_sum + p_weight;

@@ -198,14 +198,14 @@ cs_lagr_dlvo_finalize()
  *----------------------------------------------------------------------------*/
 
 void
-cs_lagr_barrier(const void                     *particle,
-                const cs_lagr_attribute_map_t  *attr_map,
+cs_lagr_barrier(const cs_lagr_particle_set_t   *p_set,
+                cs_lnum_t                       p_id,
                 cs_lnum_t                       iel,
                 cs_real_t                      *energy_barrier)
 {
   cs_lnum_t i;
-  cs_real_t rpart = cs_lagr_particle_get_real(particle, attr_map,
-                                              CS_LAGR_DIAMETER) * 0.5;
+  cs_real_t rpart = cs_lagr_particles_get_real(p_set, p_id,
+                                               CS_LAGR_DIAMETER) * 0.5;
 
   *energy_barrier = 0.;
 

@@ -126,7 +126,7 @@ cloginit (const cs_real_t   *water_permit,
 {
 #define PG_CST 8.314  /* Ideal gas constant */
 
-  cs_lnum_t iel;
+  cs_lnum_t c_id;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
@@ -155,19 +155,19 @@ cloginit (const cs_real_t   *water_permit,
 
   /* Store the temperature */
 
-  for (iel = 0; iel < mesh->n_cells; iel++)
-    cs_lagr_clogging_param.temperature[iel] = temperature[iel];
+  for (c_id = 0; c_id < mesh->n_cells; c_id++)
+    cs_lagr_clogging_param.temperature[c_id] = temperature[c_id];
 
   /* Computation and storage of the Debye length                */
 
-  for (iel = 0; iel < mesh->n_cells; iel++)
+  for (c_id = 0; c_id < mesh->n_cells; c_id++)
 
-    cs_lagr_clogging_param.debye_length[iel]
+    cs_lagr_clogging_param.debye_length[c_id]
       = pow(2e3 * pow(_faraday_cst,2)
             * cs_lagr_clogging_param.ionic_strength
             /  (  cs_lagr_clogging_param.water_permit
                 * _free_space_permit * PG_CST
-                * cs_lagr_clogging_param.temperature[iel]), -0.5);
+                * cs_lagr_clogging_param.temperature[c_id]), -0.5);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf(" epseau = %g\n", cs_lagr_clogging_param.water_permit);
@@ -205,9 +205,9 @@ cs_lagr_clogging_finalize(void)
  * - Re-compute the energy barrier if this number is greater than zero
  *
  * parameters:
- *   particle         <-- pointer to particle data
- *   attr_map         <-- pointer to attribute map
- *   iel              <-- id of cell where the particle is
+ *   p_set            <-- pointer to particle set
+ *   p_id             <-- particle id
+ *   c_id             <-- id of cell where the particle is
  *   energy_barrier   <-> energy barrier
  *   surface_coverage <-> surface coverage
  *   limit            <-> jamming limit
@@ -218,9 +218,9 @@ cs_lagr_clogging_finalize(void)
  *----------------------------------------------------------------------------*/
 
 int
-cs_lagr_clogging_barrier(const void                     *particle,
-                         const cs_lagr_attribute_map_t  *attr_map,
-                         cs_lnum_t                       iel,
+cs_lagr_clogging_barrier(const cs_lagr_particle_set_t   *p_set,
+                         cs_lnum_t                       p_id,
+                         cs_lnum_t                       c_id,
                          cs_real_t                      *energy_barrier,
                          cs_real_t                      *surface_coverage,
                          cs_real_t                      *limit,
@@ -242,7 +242,7 @@ cs_lagr_clogging_barrier(const void                     *particle,
   /* Assuming monodispersed calculation */
 
   double p_diameter
-    = cs_lagr_particle_get_real(particle, attr_map, CS_LAGR_DIAMETER);
+    = cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_DIAMETER);
   cs_real_t depositing_radius = p_diameter * 0.5;
 
   deposited_radius = depositing_radius;
@@ -289,7 +289,7 @@ cs_lagr_clogging_barrier(const void                     *particle,
 
     for (i = 0; i < 101; i++) {
 
-      cs_real_t  step = cs_lagr_clogging_param.debye_length[iel]/30.0;
+      cs_real_t  step = cs_lagr_clogging_param.debye_length[c_id]/30.0;
 
       cs_real_t distp = _d_cut_off + i*step;
 
@@ -305,8 +305,8 @@ cs_lagr_clogging_barrier(const void                     *particle,
                                    cs_lagr_clogging_param.valen,
                                    cs_lagr_clogging_param.phi_p,
                                    cs_lagr_clogging_param.phi_s,
-                                   cs_lagr_clogging_param.temperature[iel],
-                                   cs_lagr_clogging_param.debye_length[iel],
+                                   cs_lagr_clogging_param.temperature[c_id],
+                                   cs_lagr_clogging_param.debye_length[c_id],
                                    cs_lagr_clogging_param.water_permit);
 
       cs_real_t var = var1 + var2;
@@ -328,7 +328,7 @@ cs_lagr_clogging_barrier(const void                     *particle,
     /* Computation of the energy barrier */
     for (i = 0; i < 101; i++) {
 
-      cs_real_t  step = cs_lagr_clogging_param.debye_length[iel]/30.0;
+      cs_real_t  step = cs_lagr_clogging_param.debye_length[c_id]/30.0;
 
       cs_real_t distcc =   _d_cut_off + i*step
                          + depositing_radius + deposited_radius;
@@ -347,8 +347,8 @@ cs_lagr_clogging_barrier(const void                     *particle,
                                     cs_lagr_clogging_param.valen,
                                     cs_lagr_clogging_param.phi_p,
                                     cs_lagr_clogging_param.phi_p,
-                                    cs_lagr_clogging_param.temperature[iel],
-                                    cs_lagr_clogging_param.debye_length[iel],
+                                    cs_lagr_clogging_param.temperature[c_id],
+                                    cs_lagr_clogging_param.debye_length[c_id],
                                     cs_lagr_clogging_param.water_permit);
 
       cs_real_t var = contact_count[0] * (var1 + var2);

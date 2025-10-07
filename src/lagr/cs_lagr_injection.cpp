@@ -652,22 +652,22 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
 
       unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
 
-      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_P_FLAG, 0);
+      cs_lagr_particles_set_lnum(p_set, p_id, CS_LAGR_P_FLAG, 0);
 
-      cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_REBOUND_ID, -1);
-      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TR_TRUNCATE, 0);
+      cs_lagr_particles_set_lnum(p_set, p_id, CS_LAGR_REBOUND_ID, -1);
+      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_TR_TRUNCATE, 0);
 
       /* Random value associated with each particle */
 
       cs_real_t part_random = -1;
       cs_random_uniform(1, &part_random);
-      cs_lagr_particle_set_real(particle, p_am, CS_LAGR_RANDOM_VALUE,
+      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_RANDOM_VALUE,
                                 part_random);
 
       /* Particle velocity components */
 
-      auto *part_vel = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
-                                                                CS_LAGR_VELOCITY);
+      auto *part_vel = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
+                                                                 CS_LAGR_VELOCITY);
 
       /* prescribed components */
       if (zis->velocity_profile == CS_LAGR_IN_IMPOSED_COMPONENTS) {
@@ -690,12 +690,12 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
       /* Residence time (may be negative to ensure continuous injection) */
       if (zis->injection_frequency == 1) {
         cs_real_t res_time = - part_random *cs_glob_lagr_time_step->dtp;
-        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_RESIDENCE_TIME,
-                                  res_time);
+        cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_RESIDENCE_TIME,
+                                   res_time);
       }
       else
-        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_RESIDENCE_TIME,
-                                  0.0);
+        cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_RESIDENCE_TIME,
+                                   0.0);
 
     }
   }

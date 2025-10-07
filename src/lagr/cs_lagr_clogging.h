@@ -104,9 +104,9 @@ cs_lagr_clogging_finalize(void);
  * - Re-compute the energy barrier if this number is greater than zero
  *
  * parameters:
- *   particle         <-- pointer to particle data
- *   attr_map         <-- pointer to attribute map
- *   iel              <-- id of cell where the particle is
+ *   p_set            <-- pointer to particle set
+ *   p_id             <-- particle id
+ *   c_id             <-- id of cell where the particle is
  *   face_area        <-- area of face
  *   energy_barrier   <-> energy barrier
  *   surface_coverage <-> surface coverage
@@ -116,11 +116,10 @@ cs_lagr_clogging_finalize(void);
  * returns:
  *   number of deposited particles in contact with the depositing particle
  *----------------------------------------------------------------------------*/
-
 int
-cs_lagr_clogging_barrier(const void                     *particle,
-                         const cs_lagr_attribute_map_t  *attr_map,
-                         cs_lnum_t                       iel,
+cs_lagr_clogging_barrier(const cs_lagr_particle_set_t   *p_set,
+                         cs_lnum_t                       p_id,
+                         cs_lnum_t                       c_id,
                          cs_real_t                      *energy_barrier,
                          cs_real_t                      *surface_coverage,
                          cs_real_t                      *limit,

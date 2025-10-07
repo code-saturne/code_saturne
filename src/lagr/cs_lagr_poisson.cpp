@@ -396,7 +396,6 @@ cs_lagr_poisson(const int  itypfb[])
   /* Initialization */
 
   cs_lagr_particle_set_t *p_set = cs_lagr_get_particle_set();
-  const cs_lagr_attribute_map_t *p_am = p_set->p_am;
 
   /* Means of global class */
 
@@ -481,15 +480,14 @@ cs_lagr_poisson(const int  itypfb[])
 
   /* Correct instant velocities */
 
-  for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
+  for (cs_lnum_t p_id = 0; p_id < p_set->n_particles; p_id++) {
 
-    unsigned char *part = p_set->p_buffer + p_am->extents * npt;
-    cs_lnum_t      c_id  = cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_CELL_ID);
+    cs_lnum_t c_id = cs_lagr_particles_get_lnum(p_set, p_id, CS_LAGR_CELL_ID);
 
     if (c_id >= 0) {
 
       cs_real_t *part_vel =
-        cs_lagr_particle_attr_get_ptr<cs_real_t>(part, p_am, CS_LAGR_VELOCITY);
+        cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id, CS_LAGR_VELOCITY);
 
       for (cs_lnum_t id = 0; id < 3; id++)
         part_vel[id] += -grad[c_id][id];

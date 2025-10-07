@@ -89,8 +89,8 @@ cs_lagr_dlvo_finalize(void);
  *----------------------------------------------------------------------------*/
 
 void
-cs_lagr_barrier(const void                     *particle,
-                const cs_lagr_attribute_map_t  *attr_map,
+cs_lagr_barrier(const cs_lagr_particle_set_t   *p_set,
+                cs_lnum_t                       p_id,
                 cs_lnum_t                       iel,
                 cs_real_t                      *energy_barrier);
 

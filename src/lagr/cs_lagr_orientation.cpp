@@ -623,8 +623,8 @@ cs_lagr_orientation_dyn_spheroids(cs_lnum_t                p_id,
      tau_eta :    Kolmogorov timescale
   */
 
-  cs_lnum_t cell_id =  cs_lagr_particle_get_lnum_n(particle, p_set->p_am, iprev,
-                                                   CS_LAGR_CELL_ID);
+  cs_lnum_t cell_id =  cs_lagr_particles_get_lnum_n(p_set, p_id, iprev,
+                                                    CS_LAGR_CELL_ID);
 
   cs_real_t romf = extra->cromf->val[cell_id];
 
@@ -763,12 +763,12 @@ cs_lagr_orientation_dyn_jeffery(cs_lnum_t        p_id,
      tau_eta :    Kolmogorov timescale
   */
 
-  cs_lnum_t cell_id =  cs_lagr_particle_get_lnum_n(particle, p_set->p_am, iprev,
-                                                   CS_LAGR_CELL_ID);
+  cs_lnum_t cell_id =  cs_lagr_particles_get_lnum_n(p_set, p_id, iprev,
+                                                    CS_LAGR_CELL_ID);
 
   /* Euler parameters */
-  auto *euler = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
-                                                         CS_LAGR_EULER);
+  auto *euler = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
+                                                          CS_LAGR_EULER);
 
   cs_real_33_t trans_m = {
     {2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5),   /* (0,0) */
@@ -790,12 +790,12 @@ cs_lagr_orientation_dyn_jeffery(cs_lnum_t        p_id,
   cs_math_33_transform_a_to_r(gradvf[cell_id], trans_m, grad_vf_r);
 
   /* Ellipsoid radii */
-  auto *radii = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
-                                                         CS_LAGR_RADII);
+  auto *radii = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
+                                                          CS_LAGR_RADII);
 
   /* Corresponding shape parameters */
-  auto *s_p = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
-                                                       CS_LAGR_SHAPE_PARAM);
+  auto *s_p = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
+                                                        CS_LAGR_SHAPE_PARAM);
 
   /* Tau_p */
   cs_real_t taup = dt_part; //FIXME: need of small time steps !! (e-8 in dns)
@@ -824,8 +824,8 @@ cs_lagr_orientation_dyn_jeffery(cs_lnum_t        p_id,
      ======================================================================== */
 
     auto *ang_vel =
-      cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, p_am,
-                                               CS_LAGR_ANGULAR_VEL);
+      cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
+                                                CS_LAGR_ANGULAR_VEL);
 
   /* Integration of the Euler parameters:
    * Equation (26) of P. H. Mortensen (2008)*/

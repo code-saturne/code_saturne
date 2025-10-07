@@ -957,8 +957,6 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
   for (cs_lnum_t p_id = particle_range[0]; p_id < particle_range[1]; p_id++) {
 
-    unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
-
     cs_lnum_t c_id = cs_lagr_particles_get_lnum(p_set, p_id, CS_LAGR_CELL_ID);
     cs_lnum_t l_id = p_id - particle_range[0];
 

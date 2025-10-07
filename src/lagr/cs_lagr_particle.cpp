@@ -540,21 +540,19 @@ _destroy_particle_set(cs_lagr_particle_set_t **set)
  * Dump a particle structure
  *
  * parameter
- *   particles   <-- cs_lagr_particle_set_t structure to dump
- *   particle_id <-- id of particle to dump
+ *   p_set   <-- cs_lagr_particle_set_t structure to dump
+ *   p_id <-- id of particle to dump
  *----------------------------------------------------------------------------*/
 
 static void
-_dump_particle(const cs_lagr_particle_set_t  *particles,
-               cs_lnum_t                      particle_id)
+_dump_particle(const cs_lagr_particle_set_t  *p_set,
+               cs_lnum_t                      p_id)
 {
-  const unsigned char *p =   particles->p_buffer
-                           + particles->p_am->extents*particle_id;
-  const cs_lagr_attribute_map_t *am = particles->p_am;
+  const cs_lagr_attribute_map_t *am = p_set->p_am;
 
-  bft_printf("  particle: %lu\n", (unsigned long)particle_id);
+  bft_printf("  particle: %lu\n", (unsigned long)p_id);
 
-  for (int time_id = 0; time_id < particles->p_am->n_time_vals; time_id++) {
+  for (int time_id = 0; time_id < p_set->p_am->n_time_vals; time_id++) {
 
     if (time_id == 0)
       bft_printf("    values at time n:\n");
@@ -571,10 +569,10 @@ _dump_particle(const cs_lagr_particle_set_t  *particles,
         case CS_LNUM_TYPE:
           {
             const cs_lnum_t *v
-              = cs_lagr_particle_attr_n_get_const_ptr<cs_lnum_t>(p,
-                                                                 particles->p_am,
-                                                                 time_id,
-                                                                 attr);
+              = cs_lagr_particles_attr_n_get_const_ptr<cs_lnum_t>(p_set,
+                                                                  p_id,
+                                                                  time_id,
+                                                                  attr);
             bft_printf("      %24s: %10ld\n", attr_name, (long)v[0]);
             for (int i = 1; i < am->count[time_id][attr]; i++)
               bft_printf("      %24s: %10ld\n", " ", (long)v[i]);
@@ -583,10 +581,10 @@ _dump_particle(const cs_lagr_particle_set_t  *particles,
         case CS_GNUM_TYPE:
           {
             const cs_gnum_t *v
-              = cs_lagr_particle_attr_n_get_const_ptr<cs_gnum_t>(p,
-                                                                 particles->p_am,
-                                                                 time_id,
-                                                                 attr);
+              = cs_lagr_particles_attr_n_get_const_ptr<cs_gnum_t>(p_set,
+                                                                  p_id,
+                                                                  time_id,
+                                                                  attr);
             bft_printf("      %24s: %10lu\n", attr_name, (unsigned long)v[0]);
             for (int i = 1; i < am->count[time_id][attr]; i++)
               bft_printf("      %24s: %10lu\n", " ", (unsigned long)v[i]);
@@ -595,10 +593,10 @@ _dump_particle(const cs_lagr_particle_set_t  *particles,
         case CS_REAL_TYPE:
           {
             const cs_real_t *v
-              = cs_lagr_particle_attr_n_get_const_ptr<cs_real_t>(p,
-                                                                 particles->p_am,
-                                                                 time_id,
-                                                                 attr);
+              = cs_lagr_particles_attr_n_get_const_ptr<cs_real_t>(p_set,
+                                                                  p_id,
+                                                                  time_id,
+                                                                  attr);
             bft_printf("      %24s: %10.3g\n", attr_name, v[0]);
             for (int i = 1; i < am->count[time_id][attr]; i++)
               bft_printf("      %24s: %10.3g\n", " ", v[i]);

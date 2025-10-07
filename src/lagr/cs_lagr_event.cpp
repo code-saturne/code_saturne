@@ -331,7 +331,7 @@ _create_event_set(cs_lnum_t                             n_events_max,
  *
  * parameter
  *   particles   <-- cs_lagr_event_set_t structure to dump
- *   particle_id <-- id of particle to dump
+ *   p_id <-- id of particle to dump
  *----------------------------------------------------------------------------*/
 
 static void
@@ -726,16 +726,16 @@ cs_lagr_event_set_dump(const cs_lagr_event_set_t  *events)
  * Resize event set buffers if needed.
  *
  * \param[in, out]  events       pointer to event set
- * \param[in, out]  particles    pointer to particle set
+ * \param[in, out]  p_set        pointer to particle set
  * \param[in]       event_id     event id
- * \param[in]       particle_id  particle id
+ * \param[in]       p_id         particle id
  *----------------------------------------------------------------------------*/
 
 void
 cs_lagr_event_init_from_particle(cs_lagr_event_set_t     *events,
-                                 cs_lagr_particle_set_t  *particles,
+                                 cs_lagr_particle_set_t  *p_set,
                                  cs_lnum_t                event_id,
-                                 cs_lnum_t                particle_id)
+                                 cs_lnum_t                p_id)
 {
   memset(events->e_buffer + events->e_am->extents*event_id,
          0,
@@ -744,21 +744,21 @@ cs_lagr_event_init_from_particle(cs_lagr_event_set_t     *events,
   for (cs_lnum_t i = 0; i < _n_mapped_part_attr; i++) {
     auto attr = static_cast<cs_lagr_attribute_t>(_mapped_part_attr[i]);
 
-    const auto *p_attr = cs_lagr_particles_attr_get_const_ptr<unsigned char>(particles,
-                                                                             particle_id,
+    const auto *p_attr = cs_lagr_particles_attr_get_const_ptr<unsigned char>(p_set,
+                                                                             p_id,
                                                                              attr);
 
     auto *e_attr = cs_lagr_events_attr_get_ptr<unsigned char>(events,
                                                               event_id,
                                                               attr);
 
-    size_t size = particles->p_am->size[attr];
+    size_t size = p_set->p_am->size[attr];
 
     for (size_t j = 0; j < size; j++)
       e_attr[j] = p_attr[j];
   }
 
-  cs_lnum_t cell_id = cs_lagr_particles_get_lnum(particles, particle_id,
+  cs_lnum_t cell_id = cs_lagr_particles_get_lnum(p_set, p_id,
                                                  CS_LAGR_CELL_ID);
   cs_lagr_events_set_lnum(events,
                           event_id,

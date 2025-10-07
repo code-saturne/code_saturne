@@ -756,35 +756,35 @@ _destroy_track_builder(cs_lagr_track_builder_t  *builder)
  *
  * parameters:
  *   failsafe_mode            <-- indicate if failsafe mode is used
- *   particle                 <-- pointer to particle data
- *   attr_map                 <-- pointer to attribute map
+ *   p_set                    <-- pointer to particle data
+ *   p_id                     <-- particle id
  *   error_type               <-- error code
  *   msg                      <-- error message
  *----------------------------------------------------------------------------*/
 
 static void
 _manage_error(cs_lnum_t                       failsafe_mode,
-              void                           *particle,
-              const cs_lagr_attribute_map_t  *attr_map,
+              cs_lagr_particle_set_t         *p_set,
+              cs_lnum_t                       p_id,
               cs_lagr_tracking_error_t        error_type)
 {
   cs_real_t *prev_part_coord
-    = cs_lagr_particle_attr_n_get_ptr<cs_real_t>(particle, attr_map, 1,
-                                                 CS_LAGR_COORDS);
+    = cs_lagr_particles_attr_n_get_ptr<cs_real_t>(p_set, p_id, 1,
+                                                  CS_LAGR_COORDS);
   cs_real_t *part_coord
-    = cs_lagr_particle_attr_get_ptr<cs_real_t>(particle, attr_map,
-                                               CS_LAGR_COORDS);
+    = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
+                                                CS_LAGR_COORDS);
 
   const cs_real_t  *prev_location
-    = ((const cs_lagr_tracking_info_t *)particle)->start_coords;
+    = _tracking_info(p_set, p_id)->start_coords;
 
   cs_real_t d0 = cs_math_3_distance(part_coord, prev_part_coord);
   cs_real_t d1 = cs_math_3_distance(part_coord, prev_location);
 
-  cs_lagr_particle_set_real(particle, attr_map, CS_LAGR_TR_TRUNCATE, d1/d0);
+  cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_TR_TRUNCATE, d1/d0);
 
   if (error_type == CS_LAGR_TRACKING_ERR_LOST_PIC)
-    cs_lagr_particle_set_real(particle, attr_map, CS_LAGR_TR_TRUNCATE, 2.0);
+    cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_TR_TRUNCATE, 2.0);
 
   if (failsafe_mode == 1) {
     switch (error_type) {
@@ -1411,8 +1411,8 @@ _boundary_treatment(cs_lagr_particle_set_t    *p_set,
       deposit_diameter_sum = &bound_stat[bdy_interactions->ihsum * n_b_faces
                                          + face_id];
 
-      contact_number = cs_lagr_clogging_barrier(particle,
-                                                p_am,         //FIXME : variante p_set, p_id
+      contact_number = cs_lagr_clogging_barrier(p_set,
+                                                p_id,
                                                 face_id,
                                                 &energt,
                                                 surface_coverage,
@@ -1420,8 +1420,8 @@ _boundary_treatment(cs_lagr_particle_set_t    *p_set,
                                                 &min_porosity);
 
       if (contact_number == 0 && cs_glob_lagr_model->roughness > 0) {
-        cs_lagr_roughness_barrier(particle,
-                                  p_am,
+        cs_lagr_roughness_barrier(p_set,
+                                  p_id,
                                   face_id,
                                   &energt);
       }
@@ -1429,14 +1429,14 @@ _boundary_treatment(cs_lagr_particle_set_t    *p_set,
     else {
 
       if (cs_glob_lagr_model->roughness > 0)
-        cs_lagr_roughness_barrier(particle,
-                                  p_am,
+        cs_lagr_roughness_barrier(p_set,
+                                  p_id,
                                   face_id,
                                   &energt);
 
       else if (cs_glob_lagr_model->roughness == 0) {
-        cs_lagr_barrier(particle,
-                        p_am,
+        cs_lagr_barrier(p_set,
+                        p_id,
                         face_id,
                         &energt);
       }
@@ -2306,8 +2306,8 @@ _local_propagation(cs_lagr_particle_set_t         *p_set,
     if (n_loops_local > max_propagation_loops) {
 
       _manage_error(failsafe_mode,
-                    particle,
-                    p_am,    // FIXME: TODO variante p_set, p_id
+                    p_set,
+                    p_id,
                     CS_LAGR_TRACKING_ERR_MAX_LOOPS);
 
       particle_state = CS_LAGR_PART_TREATED;
@@ -2600,8 +2600,8 @@ _local_propagation(cs_lagr_particle_set_t         *p_set,
         restart = true;
       else {
         _manage_error(failsafe_mode,
-                      particle,
-                      p_am,
+                      p_set,
+                      p_id,
                       CS_LAGR_TRACKING_ERR_LOST_PIC);
         particle_state = CS_LAGR_PART_TREATED;
         if (cell_wise_integ)
@@ -4024,8 +4024,8 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
           cs_lnum_t cell_id = cs_lagr_particles_get_lnum(p_set, p_id,
                                                          CS_LAGR_CELL_ID);
           _manage_error(failsafe_mode,
-                       particle,
-                       p_am,
+                       p_set,
+                       p_id,
                        CS_LAGR_TRACKING_ERR_MAX_LOOPS);
 
           p_info->state = CS_LAGR_PART_TREATED;
