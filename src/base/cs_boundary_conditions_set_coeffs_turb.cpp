@@ -38,6 +38,7 @@
 #include <string.h>
 #include <assert.h>
 #include <math.h>
+#include <float.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -457,7 +458,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       continue;
 
     cs_real_t hflui = 0.0;
-    cs_real_t prdtl = cpp * visclc / rkl;
+    cs_real_t prdtl = (rkl > DBL_MIN) ? cpp * visclc / rkl : cpp * visclc;
 
     /* User exchange coefficient */
     if (icodcl_sc[f_id] == 15) {
@@ -1052,7 +1053,7 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
       cpp = (icp >= 0) ? cpro_cp[c_id] - rair : cp0 - rair;
 
     const cs_real_t rkl = (ifcvsl < 0) ? visls_0 : viscls[c_id];
-    cs_real_t prdtl = cpp * visclc / rkl;
+    cs_real_t prdtl = (rkl > DBL_MIN) ? cpp * visclc / rkl : cpp * visclc;
 
     /* Scalar diffusivity */
     if (eqp_v->idften & CS_ISOTROPIC_DIFFUSION)
