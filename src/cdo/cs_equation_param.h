@@ -392,14 +392,14 @@ typedef struct {
    * Proportion of second-order convective scheme (0 corresponds to an upwind
    * first-order scheme); in case of LES calculation, a second-order scheme is
    * recommended and activated by default (\ref blencv = 1).\n
-   * Relevant where \ref iconv = 1.
+   * Relevant when \ref iconv = 1.
    *
    * \var blend_st
    * Proportion of second-order convective scheme (0 corresponds to an upwind
    * first-order scheme) after the slope test is activated; in case of LES
    * calculation, a second-order scheme is recommended and activated by
    * default (\ref blend_st = 1).\n
-   * Relevant where\ref iconv = 1.
+   * Relevant when\ref iconv = 1.
    *
    * \var epsilo
    * Relative precision for the solution of the linear system.  The default is

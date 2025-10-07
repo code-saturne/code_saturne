@@ -312,14 +312,15 @@ _mono_apply_bc_partly(const cs_cdofb_monolithic_t   *sc,
 
       else if (bf_type[i] & CS_BOUNDARY_SYMMETRY) {
 
-        /* Always weakly enforce the symmetry constraint on the
+        /* Always weakly enforce the symmetry constrain on the
            velocity-block */
 
         sc->apply_symmetry(f, mom_eqp, cm, diff_pty, cb, csys);
 
       }
 
-      /* default: nothing to do (case of a "natural" outlet) */
+      /* default: nothing to do (case of a "natural" outlet)
+         => \sigma\cdot n = 0 */
 
     } /* Loop on boundary faces */
 
@@ -335,7 +336,8 @@ _mono_apply_bc_partly(const cs_cdofb_monolithic_t   *sc,
 /*!
  * \brief Apply the boundary conditions to the local system when this should
  *        be done after the static condensation. Apply the internal enforcement
- *        Case of CDO-Fb schemes with a monolithic velocity-pressure coupling
+ *        Case of CDO-Fb schemes with a monolithic velocity-pressure coupling.
+ *        Boundary conditions are enforced using an algebraic manipulation.
  *
  * \param[in]      eqp       pointer to a cs_equation_param_t structure
  * \param[in]      eqb       pointer to a cs_equation_builder_t structure
@@ -349,14 +351,14 @@ _mono_apply_bc_partly(const cs_cdofb_monolithic_t   *sc,
 /*----------------------------------------------------------------------------*/
 
 static void
-_mono_apply_remaining_bc(const cs_equation_param_t     *eqp,
-                         const cs_equation_builder_t   *eqb,
-                         const cs_cell_mesh_t          *cm,
-                         const cs_property_data_t      *diff_pty,
-                         cs_cdofb_monolithic_t         *sc,
-                         cs_cell_sys_t                 *csys,
-                         cs_cell_builder_t             *cb,
-                         cs_cdofb_navsto_builder_t     *nsb)
+_mono_apply_remaining_bc(const cs_equation_param_t   *eqp,
+                         const cs_equation_builder_t *eqb,
+                         const cs_cell_mesh_t        *cm,
+                         const cs_property_data_t    *diff_pty,
+                         cs_cdofb_monolithic_t       *sc,
+                         cs_cell_sys_t               *csys,
+                         cs_cell_builder_t           *cb,
+                         cs_cdofb_navsto_builder_t   *nsb)
 {
   if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
@@ -409,8 +411,7 @@ _mono_apply_remaining_bc(const cs_equation_param_t     *eqp,
 
         /* Strong enforcement of u.n (--> dp/dn = 0) on the divergence */
 
-        for (int k = 0; k < 3; k++)
-          div_op[3 * f + k] = 0;
+        for (int k = 0; k < 3; k++) div_op[3 * f + k] = 0;
 
         /* Enforcement of the velocity for the velocity-block
          * Dirichlet on the three components of the velocity field */
@@ -925,14 +926,14 @@ _steady_build(const cs_navsto_param_t *nsp,
                                                             mom_eqb),
                          connect, quant, cm);
 
-      /* For the steady problem, the global system writes:
+      /* For the steady problem, the local system writes:
        *
-       *     |        |         |
-       *     |   A    |    Bt   |  B is the divergence (Bt the gradient)
-       *     |        |         |  A is csys->mat in what follows
+       *     |        |         |  B_c is the -|c|divergence
+       *     |  A_c   |   Bt_c  |  Bt the adjoint op. (its gradient)
+       *     |        |         |  A_c is csys->mat in what follows
        *     |--------|---------|  The viscous part arising from the CDO-Fb
        *     |        |         |  schemes for vector-valued variables and
-       *     |   B    |    0    |  additional terms as the linearized
+       *     |  B_c   |    0    |  additional terms as the linearized
        *     |        |         |  convective term
        *
        * Set the local (i.e. cellwise) structures for the current cell
@@ -950,10 +951,10 @@ _steady_build(const cs_navsto_param_t *nsp,
 
       /* 1- SETUP THE NAVSTO LOCAL BUILDER
        * =================================
-       * - Set the type of boundary
+       * - Set the type of boundary to apply
        * - Set the pressure boundary conditions (if required)
        * - Define the divergence operator used in the linear system (div_op is
-       *   equal to minus the divergence)
+       *   equal to -|c|cell_divergence)
        */
 
       cs_cdofb_navsto_define_builder(cb->t_bc_eval, nsp, cm, csys,
@@ -980,6 +981,10 @@ _steady_build(const cs_navsto_param_t *nsp,
 
       if (sc->add_gravity_term != nullptr)
         sc->add_gravity_term(nsp, cm, &nsb, csys);
+
+      /* TODO: Add mass source term */
+
+
 
       /* 3b- OTHER RHS CONTRIBUTIONS
        * ===========================
@@ -1154,15 +1159,17 @@ _implicit_euler_build(const cs_navsto_param_t *nsp,
                                                             mom_eqb),
                          connect, quant, cm);
 
-      /* The global system problem writes:
+      /* For the steady problem, the local system writes:
        *
-       *     |        |         |
-       *     |   A    |    Bt   |  B is the divergence (Bt the gradient)
-       *     |        |         |  A is csys->mat in what follows
+       *     |        |         |  B_c is the -|c|divergence
+       *     |  A_c   |   Bt_c  |  Bt the adjoint op. (its gradient)
+       *     |        |         |  A_c is csys->mat in what follows
        *     |--------|---------|  The viscous part arising from the CDO-Fb
        *     |        |         |  schemes for vector-valued variables and
-       *     |   B    |    0    |  additional terms as the linearized
-       *     |        |         |  convective term + an unsteady term
+       *     |  B_c   |    0    |  additional terms as the linearized
+       *     |        |         |  convective term
+       *
+       * Set the local (i.e. cellwise) structures for the current cell
        */
 
       /* Set the local (i.e. cellwise) structures for the current cell */
@@ -1411,15 +1418,17 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
                                                             mom_eqb),
                          connect, quant, cm);
 
-      /* Starts from the steady Stokes problem where
+      /* The local system writes:
        *
-       *     |        |         |
-       *     |   A    |    Bt   |  B is the divergence (Bt the gradient)
-       *     |        |         |  A is csys->mat in what follows
+       *     |        |         |  B_c is the -|c|divergence
+       *     |  A_c   |   Bt_c  |  Bt the adjoint op. (its gradient)
+       *     |        |         |  A_c is csys->mat in what follows
        *     |--------|---------|  The viscous part arising from the CDO-Fb
-       *     |        |         |  schemes for vector-valued variables
-       *     |   B    |    0    |
-       *     |        |         |
+       *     |        |         |  schemes for vector-valued variables and
+       *     |  B_c   |    0    |  additional terms as the linearized
+       *     |        |         |  convective term
+       *
+       * Set the local (i.e. cellwise) structures for the current cell
        */
 
       /* Set the local (i.e. cellwise) structures for the current cell */
@@ -1649,10 +1658,10 @@ _bdf2_scheme_build(const cs_navsto_param_t  *nsp,
                                                                     connect);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cdo_assembly_t  *asb = cs_cdo_assembly_get(t_id);
-    cs_hodge_t *diff_hodge         = (mom_eqc->diffusion_hodge == nullptr)
-                                       ? nullptr
-                                       : mom_eqc->diffusion_hodge[t_id];
-    cs_hodge_t                *mass_hodge
+    cs_hodge_t *diff_hodge
+      = (mom_eqc->diffusion_hodge == nullptr)
+      ? nullptr : mom_eqc->diffusion_hodge[t_id];
+    cs_hodge_t *mass_hodge
       = (mom_eqc->mass_hodge == nullptr) ? nullptr : mom_eqc->mass_hodge[t_id];
 
     cs_cell_sys_t     *csys = nullptr;
@@ -1686,18 +1695,18 @@ _bdf2_scheme_build(const cs_navsto_param_t  *nsp,
                                                             mom_eqb),
                          connect, quant, cm);
 
-      /* Starts from the steady Stokes problem where
+      /* The local system writes:
        *
-       *     |        |         |
-       *     |   A    |    Bt   |  B is the divergence (Bt the gradient)
-       *     |        |         |  A is csys->mat in what follows
+       *     |        |         |  B_c is the -|c|divergence
+       *     |  A_c   |   Bt_c  |  Bt the adjoint op. (its gradient)
+       *     |        |         |  A_c is csys->mat in what follows
        *     |--------|---------|  The viscous part arising from the CDO-Fb
-       *     |        |         |  schemes for vector-valued variables
-       *     |   B    |    0    |
-       *     |        |         |
+       *     |        |         |  schemes for vector-valued variables and
+       *     |  B_c   |    0    |  additional terms as the linearized
+       *     |        |         |  convective term
+       *
+       * Set the local (i.e. cellwise) structures for the current cell
        */
-
-      /* Set the local (i.e. cellwise) structures for the current cell */
 
       cs_cdofb_vecteq_init_cell_system(cm,
                                        mom_eqp,

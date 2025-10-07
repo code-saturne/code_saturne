@@ -769,7 +769,6 @@ cs_cdofb_vecteq_assembly(const cs_cell_sys_t   *csys,
      Source term is only hold by the cell DoF in face-based schemes */
 
   if (eqc->source_terms != nullptr) {
-
     const cs_real_t *_st     = csys->source + csys->n_dofs;
     cs_real_t       *cell_st = eqc->source_terms + 3 * csys->c_id;
     for (int k = 0; k < 3; k++)
@@ -2064,9 +2063,9 @@ cs_cdofb_vecteq_init_values(cs_real_t                     t_eval,
     CS_MALLOC(def2f_idx, eqp->n_ic_defs + 1, cs_lnum_t);
 
     cs_cdo_sync_vol_def_at_faces(eqp->n_ic_defs,
-                                      eqp->ic_defs,
-                                      def2f_idx,
-                                      def2f_ids);
+                                 eqp->ic_defs,
+                                 def2f_idx,
+                                 def2f_ids);
 
     for (int def_id = 0; def_id < eqp->n_ic_defs; def_id++) {
 

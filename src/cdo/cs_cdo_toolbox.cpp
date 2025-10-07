@@ -638,10 +638,10 @@ cs_cdo_sync_vol_def_at_edges(int                      n_defs,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_sync_vol_def_at_faces(int                        n_defs,
-                             cs_xdef_t                **defs,
-                             cs_lnum_t                  def2f_idx[],
-                             cs_lnum_t                  def2f_ids[])
+cs_cdo_sync_vol_def_at_faces(int         n_defs,
+                             cs_xdef_t **defs,
+                             cs_lnum_t   def2f_idx[],
+                             cs_lnum_t   def2f_ids[])
 {
   if (n_defs == 0)
     return;
@@ -684,17 +684,14 @@ cs_cdo_sync_vol_def_at_faces(int                        n_defs,
 
   } /* Loop on definitions */
 
-  if (connect->face_ifs != nullptr) {
-
+  if (connect->face_ifs != nullptr)
     /* Last definition is used in case of conflict */
-
     cs_interface_set_max(connect->face_ifs,
                          n_faces,
                          1,           /* stride */
                          false,       /* interlace (not useful here) */
                          CS_INT_TYPE, /* int */
                          f2def_ids);
-  }
 
   /* 0. Initialization */
 

@@ -474,42 +474,42 @@ _interface_set_zero_local_periodicity(const cs_interface_set_t  *ifs,
     switch(datatype) {
 
     case CS_FLOAT:
-    {
-      float *v = static_cast<float *>(val);
-      if (stride > 1) {
-        for (cs_lnum_t j = s_id; j < e_id; j++) {
-          cs_lnum_t k = elt_ids[j];
-          for (cs_lnum_t l = 0; l < stride; l++)
-            v[k*stride + l] = 0;
+      {
+        float *v = static_cast<float *>(val);
+        if (stride > 1) {
+          for (cs_lnum_t j = s_id; j < e_id; j++) {
+            cs_lnum_t k = elt_ids[j];
+            for (cs_lnum_t l = 0; l < stride; l++)
+              v[k*stride + l] = 0;
+          }
+        }
+        else {
+          for (cs_lnum_t j = s_id; j < e_id; j++) {
+            cs_lnum_t k = elt_ids[j];
+            v[k] = 0;
+          }
         }
       }
-      else {
-        for (cs_lnum_t j = s_id; j < e_id; j++) {
-          cs_lnum_t k = elt_ids[j];
-          v[k] = 0;
-        }
-      }
-    }
-    break;
+      break;
 
-  case CS_DOUBLE:
-    {
-    double *v = static_cast<double *>(val);
-    if (stride > 1) {
-      for (cs_lnum_t j = s_id; j < e_id; j++) {
-        cs_lnum_t k = elt_ids[j];
-        for (cs_lnum_t l = 0; l < stride; l++)
-          v[k * stride + l] = 0;
-      }
-    }
-      else {
-        for (cs_lnum_t j = s_id; j < e_id; j++) {
-          cs_lnum_t k = elt_ids[j];
-          v[k] = 0;
+    case CS_DOUBLE:
+      {
+        double *v = static_cast<double *>(val);
+        if (stride > 1) {
+          for (cs_lnum_t j = s_id; j < e_id; j++) {
+            cs_lnum_t k = elt_ids[j];
+            for (cs_lnum_t l = 0; l < stride; l++)
+              v[k * stride + l] = 0;
+          }
+        }
+        else {
+          for (cs_lnum_t j = s_id; j < e_id; j++) {
+            cs_lnum_t k = elt_ids[j];
+            v[k] = 0;
+          }
         }
       }
-    }
-    break;
+      break;
 
     default:
       {

@@ -3598,7 +3598,7 @@ cs_sles_mumps_solve(void                *context,
 
     dmumps->job = MUMPS_JOB_SOLVE;
     dmumps_c(dmumps);
-    infog1 = dmumps->INFOG(1);     /* feedback */
+    infog1 = dmumps->INFOG(1);      /* feedback */
     *residual = dmumps->RINFOG(11); /* scaled residual */
 
     /* 3. Post-resolution operations */
@@ -3608,7 +3608,7 @@ cs_sles_mumps_solve(void                *context,
 
     else {
 
-      /* Scatter operation (solution is stored in the RHS array.
+      /* Scatter operation (solution is stored in the RHS array).
        * Elements in glob_rhs belonging to a distant rank are sent back to
        * this rank
        */

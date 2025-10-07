@@ -338,10 +338,10 @@ _assign_assembly_func(const cs_cdo_system_block_info_t   bi)
 /*----------------------------------------------------------------------------*/
 
 static void
-_assign_ifs_rset(bool                               forced,
-                 cs_cdo_system_block_t             *b,
-                 cs_interface_set_t                *scal_ifs,
-                 cs_range_set_t                    *scal_rset)
+_assign_ifs_rset(bool                    forced,
+                 cs_cdo_system_block_t  *b,
+                 cs_interface_set_t     *scal_ifs,
+                 cs_range_set_t         *scal_rset)
 {
   assert(b != nullptr);
   assert(scal_ifs != nullptr || cs_glob_n_ranks < 2);

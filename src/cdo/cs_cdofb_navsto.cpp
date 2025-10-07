@@ -997,7 +997,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
   const cs_boundary_t  *boundaries = nsp->boundaries;
   const cs_real_t  *bmass_flux = mass_flux + quant->n_i_faces;
 
-  /* 1. Compute for each boundary the integrated mass flux to perform mass
+  /* 1. Compute for each boundary the integrated mass flux to perform a mass
    *    balance
    */
 

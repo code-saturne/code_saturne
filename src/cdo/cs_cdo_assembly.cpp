@@ -2334,8 +2334,8 @@ cs_cdo_assembly_eblock33_matrix_seqs(const cs_sdm_t               *m,
   /* Expand the values for a bundle of rows */
 
   cs_real_t  *xyz_row[3] = {row->expval,
-                          row->expval + m->n_rows,
-                          row->expval + 2*m->n_rows };
+                            row->expval + m->n_rows,
+                            row->expval + 2*m->n_rows };
 
   assert(m->n_rows == m->n_rows);
   row->n_cols = m->n_rows;
@@ -2479,9 +2479,9 @@ cs_cdo_assembly_eblock33_matrix_mpis(const cs_sdm_t                *m,
 
   /* Expand the values for a bundle of rows */
 
-  cs_real_t  *xyz_row[3] = {row->expval,
-                          row->expval + m->n_rows,
-                          row->expval + 2*m->n_rows };
+  cs_real_t *xyz_row[3] = {row->expval,
+                           row->expval + m->n_rows,
+                           row->expval + 2*m->n_rows };
 
   row->n_cols = m->n_rows;
 

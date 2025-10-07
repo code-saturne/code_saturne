@@ -927,10 +927,10 @@ _assign_edge_ifs_rs(const cs_mesh_t     *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Check faces' periodicity. A cell can't contains more that one
+ * \brief Check faces' periodicity. A cell can't contain more that one
  *        periodic face.
  *
- * \param[in]  mesh                   pointer to a cs_mesh_t structure
+ * \param[in] mesh  pointer to a cs_mesh_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -953,8 +953,8 @@ _check_perio(const cs_mesh_t *mesh)
     }
   }
 
-  for (cs_lnum_t c_id = 0; c_id < mesh->n_cells_with_ghosts; c_id++) {
-    if (cells_count_perio[c_id] > 1) {
+  for (cs_lnum_t c_id = 0; c_id < mesh->n_cells_with_ghosts; c_id++)
+    if (cells_count_perio[c_id] > 1)
       bft_error(__FILE__,
                 __LINE__,
                 0,
@@ -962,8 +962,6 @@ _check_perio(const cs_mesh_t *mesh)
                 __func__,
                 (long)c_id,
                 (long)cells_count_perio[c_id]);
-    }
-  }
 
   CS_FREE(perio_num);
   CS_FREE(cells_count_perio);

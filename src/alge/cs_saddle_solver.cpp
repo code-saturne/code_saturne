@@ -4922,7 +4922,7 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
 
   if (rset->ifs != nullptr)
     cs_interface_set_sum(rset->ifs,
-                       /* n_elts, stride, interlaced */
+                         /* n_elts, stride, interlaced */
                          n1_dofs, 1, false, CS_REAL_TYPE,
                          rhs1);
 
@@ -5003,13 +5003,11 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
                            dx2, ctx->m21_adj, ctx->m21_val,
                            m12x2);
 
-  if (rset->ifs != nullptr) {
-
+  if (rset->ifs != nullptr)
     cs_interface_set_sum(rset->ifs,
                          /* n_elts, stride, interlaced */
                          n1_dofs, 1, false, CS_REAL_TYPE,
                          m12x2);
-  }
 
   cs_real_t *m11_inv = ctx->m11_inv_diag;
 
@@ -5137,13 +5135,11 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
                              dx2, ctx->m21_adj, ctx->m21_val,
                              m12x2);
 
-    if (rset->ifs != nullptr) {
-
+    if (rset->ifs != nullptr)
       cs_interface_set_sum(rset->ifs,
                            /* n_elts, stride, interlaced */
                            n1_dofs, 1, false, CS_REAL_TYPE,
                            m12x2);
-    }
 
 #   pragma omp parallel for if (n1_dofs > CS_THR_MIN)
     for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++) {

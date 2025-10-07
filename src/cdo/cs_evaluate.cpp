@@ -162,12 +162,12 @@ _thread_range(cs_lnum_t    n,
 /*!
  * \brief  Parallel synchronization of the local reduction operations
  *
- * \param[in]      dim     local array dimension (max: 3)
- * \param[in, out] min     resulting min array (size: dim, or 4 if dim = 3)
- * \param[in, out] max     resulting max array (size: dim, or 4 if dim = 3)
- * \param[in, out] wsum    (weighted) sum array (size: dim, or 4 if dim = 3)
- * \param[in, out] asum    (weighted) sum of absolute values (same size as wsum)
- * \param[in, out] ssum    (weighted) sum of squared values (same size as wsum)
+ * \param[in]      dim   local array dimension (max: 3)
+ * \param[in, out] min   resulting min array (size: dim, or 4 if dim = 3)
+ * \param[in, out] max   resulting max array (size: dim, or 4 if dim = 3)
+ * \param[in, out] wsum  (weighted) sum array (size: dim, or 4 if dim = 3)
+ * \param[in, out] asum  (weighted) sum of absolute values (same size as wsum)
+ * \param[in, out] ssum  (weighted) sum of squared values (same size as wsum)
  */
 /*----------------------------------------------------------------------------*/
 
