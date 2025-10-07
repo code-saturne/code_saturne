@@ -375,19 +375,19 @@ int
 cs_cuda_get_stream_id(cudaStream_t  stream);
 
 /*----------------------------------------------------------------------------*/
-/*
+/*!
  * \brief Return pointers to reduction buffers needed for 2-stage reductions.
  *
  * These buffers are used internally by CUDA 2-stage operations, and are
  * allocated and resized updon demand.
  *
  * \param[in]   stream_id   stream id in pool
- * \param[in]   n_elts      size of arrays
- * \param[in]   n_elts      size of arrays
+ * \param[in]   n_elts      number of elements
  * \param[in]   elt_size    size of element or structure simultaneously reduced
  * \param[in]   grid_size   associated grid size
  * \param[out]  r_grid      first stage reduce buffer
  * \param[out]  r_reduce    second stage (final result) reduce buffer
+ * \param[out]  r_host      final result reduce buffer on host
  */
 /*----------------------------------------------------------------------------*/
 
@@ -397,7 +397,8 @@ cs_cuda_get_2_stage_reduce_buffers(int            stream_id,
                                    size_t         elt_size,
                                    unsigned int   grid_size,
                                    void*         &r_grid,
-                                   void*         &r_reduce);
+                                   void*         &r_reduce,
+                                   void*         &r_host);
 
 #endif /* defined(__NVCC__) */
 

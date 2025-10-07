@@ -558,10 +558,10 @@ cs_blas_cublas_dot(cs_lnum_t        n,
     _handle = _init_cublas();
 
   if (sizeof(cs_real_t) == 8)
-    cublasDdot(_handle, n, (double *)x, 1, (double *)y, 1, &dot);
+    cublasDdot(_handle, n, (const double *)x, 1, (const double *)y, 1, &dot);
   else if (sizeof(cs_real_t) == 4) {
     float fdot;
-    cublasSdot(_handle, n, (float *)x, 1, (float *)y, 1, &fdot);
+    cublasSdot(_handle, n, (const float *)x, 1, (const float *)y, 1, &fdot);
     dot = fdot;
   }
 

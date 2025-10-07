@@ -838,10 +838,10 @@ public:
     if (stream_id < 0)
       stream_id = 0;
 
-    T *r_grid_, *r_reduce_;
+    T *r_grid_, *r_reduce_, *r_host_;
     cs_cuda_get_2_stage_reduce_buffers
       (stream_id, n, sizeof(sum), l_grid_size,
-       (void *&)r_grid_, (void *&)r_reduce_);
+       (void *&)r_grid_, (void *&)r_reduce_, (void *&)r_host_);
 
     int smem_size = block_size_ * sizeof(T);
     cs_cuda_kernel_parallel_for_reduce_sum
@@ -883,6 +883,9 @@ public:
       cs_assert(0);
     }
 
+    CS_CUDA_CHECK(cudaMemcpyAsync(r_host_, r_reduce_, sizeof(sum),
+                                  cudaMemcpyDeviceToHost, stream_));
+
 #if defined(DEBUG) || !defined(NDEBUG)
     retcode = cudaGetLastError();
     if (retcode != cudaSuccess)
@@ -895,7 +898,7 @@ public:
 
     CS_CUDA_CHECK(cudaStreamSynchronize(stream_));
     CS_CUDA_CHECK(cudaGetLastError());
-    sum = r_reduce_[0];
+    sum = r_host_[0];
 
     return true;
   }
@@ -926,10 +929,10 @@ public:
     if (stream_id < 0)
       stream_id = 0;
 
-    T *r_grid_, *r_reduce_;
+    T *r_grid_, *r_reduce_, *r_host_;
     cs_cuda_get_2_stage_reduce_buffers
       (stream_id, n, sizeof(result), l_grid_size,
-       (void *&)r_grid_, (void *&)r_reduce_);
+       (void *&)r_grid_, (void *&)r_reduce_, (void *&)r_host_);
 
     int l_block_size = block_size_;
     int smem_size = l_block_size * sizeof(T);
@@ -999,9 +1002,12 @@ public:
                 l_grid_size, l_block_size, (int)smem_size);
 #endif
 
+    CS_CUDA_CHECK(cudaMemcpyAsync(r_host_, r_reduce_, sizeof(result),
+                                  cudaMemcpyDeviceToHost, stream_));
+
     CS_CUDA_CHECK(cudaStreamSynchronize(stream_));
     CS_CUDA_CHECK(cudaGetLastError());
-    result = r_reduce_[0];
+    result = r_host_[0];
 
     return true;
   }

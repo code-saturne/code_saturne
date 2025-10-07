@@ -1039,6 +1039,73 @@ _sync_reduction_sum(const cs_sles_it_t  *c,
 }
 
 /*----------------------------------------------------------------------------
+ * Syncronize a reduction sum globally.
+ *
+ * With MPI, The associated stream will be synchronized first, then a global
+ * MPI reduction will be used if needed.
+ * With NCCL, the operation is simply scheduled on the given stream.
+ *
+ * parameters:
+ *   c          <-- pointer to solver context info
+ *   stream     <-- associated stream
+ *   tuple_size <-- number of values in reduced tuple
+ *   res_d      <-> local sum in, global sum out (device)
+ *   res_h      --> global sum out (host)
+ *
+ * returns:
+ *   convergence state
+ *----------------------------------------------------------------------------*/
+
+static void
+_sync_reduction_sum(const cs_sles_it_t  *c,
+                    cudaStream_t         stream,
+                    cs_lnum_t            tuple_size,
+                    double               res_d[],
+                    double               res_h[])
+{
+  /* Use NCCL if available for an in-place GPU→GPU all-reduce (sum)
+     -------------------------------------------------------------- */
+
+  assert(cs_mem_is_device_ptr(res_d));
+
+#if defined(HAVE_NCCL)
+  if (c->nccl_comm != nullptr) {
+    ncclAllReduce((const void *)res_d,  // send buffer (device)
+                  (void *)res_d,        // recv buffer (same)
+                  tuple_size,           // number of elements
+                  ncclDouble,           // data type
+                  ncclSum,              // reduction operation
+                  c->nccl_comm,
+                  stream);
+
+    CS_CUDA_CHECK(cudaMemcpyAsync(res_h, res_d, sizeof(double)*tuple_size,
+                                  cudaMemcpyDeviceToHost, stream));
+
+    /* Wait until the collective has finished before returning */
+    CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+    CS_CUDA_CHECK(cudaGetLastError());
+    return;
+  }
+#endif /* HAVE_NCCL */
+
+  CS_CUDA_CHECK(cudaMemcpyAsync(res_h, res_d, sizeof(double)*tuple_size,
+                                cudaMemcpyDeviceToHost, stream));
+
+  CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+  CS_CUDA_CHECK(cudaGetLastError());
+
+#if defined(HAVE_MPI)
+
+  /* Without NCCL: host-side reduction via MPI */
+
+  if (c->comm != MPI_COMM_NULL)
+    MPI_Allreduce(MPI_IN_PLACE, res_h, tuple_size, MPI_DOUBLE, MPI_SUM,
+                  c->comm);
+
+#endif /* defined(HAVE_MPI) */
+}
+
+/*----------------------------------------------------------------------------
  * Syncronize a host-allocated reduction sum globally.
  *
  * The associated stream will be synchronized first, then a global
@@ -1288,19 +1355,21 @@ _dot_products_vr_vw_vq_rr(const cs_sles_it_t  *c,
   unsigned int grid_size = cs_cuda_grid_size(n, block_size);
 
   if (_use_cublas == false) {
-    double *sum_block, *_s;
-    cs_blas_cuda_get_2_stage_reduce_buffers(n, 4, grid_size, sum_block, _s);
+    double *sum_block, *s_d, *s_h;
+    cs_cuda_get_2_stage_reduce_buffers
+      (cs_cuda_get_stream_id(stream), n, 4*sizeof(double), grid_size,
+       (void *&)sum_block, (void *&)s_d, (void *&)s_h);
 
     _dot_products_vr_vw_vq_rr_stage_1_of_2
       <block_size><<<grid_size, block_size, 0, stream>>>
       (n, v, w, q, r, sum_block);
     cs_blas_cuda_reduce_single_block<block_size, 4><<<1, block_size, 0, stream>>>
-      (grid_size, sum_block, _s);
+      (grid_size, sum_block, s_d);
 
-    _sync_reduction_sum(c, stream, 4, _s);
+    _sync_reduction_sum(c, stream, 4, s_d, s_h);
 
-    for (int i = 0; i < 4; i++)
-      s[i] = _s[i];
+    for (int i = 0; i < 4; i++)   // s_h is pinned memory, s is not
+      s[i] = s_h[i];
   }
 
 #if defined(HAVE_CUBLAS)
@@ -1370,19 +1439,21 @@ cs_sles_it_dot_products_xx_xy
   unsigned int grid_size = cs_cuda_grid_size(n, block_size);
 
   if (_use_cublas == false) {
-    double *sum_block, *_s;
-    cs_blas_cuda_get_2_stage_reduce_buffers(n, 2, grid_size, sum_block, _s);
+    double *sum_block, *s_d, *s_h;
+    cs_cuda_get_2_stage_reduce_buffers
+      (cs_cuda_get_stream_id(stream), n, 2*sizeof(double), grid_size,
+       (void *&)sum_block, (void *&)s_d, (void *&)s_h);
 
     _dot_products_xx_xy_stage_1_of_2
       <block_size><<<grid_size, block_size, 0, stream>>>
       (n, x, y, sum_block);
     cs_blas_cuda_reduce_single_block<block_size, 2><<<1, block_size, 0, stream>>>
-      (grid_size, sum_block, _s);
+      (grid_size, sum_block, s_d);
 
-    _sync_reduction_sum(c, stream, 2, _s);
+    _sync_reduction_sum(c, stream, 2, s_d, s_h);
 
-    for (int i = 0; i < 2; i++)
-      s[i] = _s[i];
+    for (int i = 0; i < 2; i++)  // s_h is pinned memory, s is not
+      s[i] = s_h[i];
   }
 
 #if defined(HAVE_CUBLAS)
@@ -1448,19 +1519,21 @@ cs_sles_it_dot_products_xx_xy_yz
   unsigned int grid_size = cs_cuda_grid_size(n, block_size);
 
   if (_use_cublas == false) {
-    double *sum_block, *_s;
-    cs_blas_cuda_get_2_stage_reduce_buffers(n, 3, grid_size, sum_block, _s);
+    double *sum_block, *s_d, *s_h;
+    cs_cuda_get_2_stage_reduce_buffers
+      (cs_cuda_get_stream_id(stream), n, 3*sizeof(double), grid_size,
+       (void *&)sum_block, (void *&)s_d, (void *&)s_h);
 
     _dot_products_xx_xy_yz_stage_1_of_2
       <block_size><<<grid_size, block_size, 0, stream>>>
       (n, x, y, z, sum_block);
     cs_blas_cuda_reduce_single_block<block_size, 3><<<1, block_size, 0, stream>>>
-      (grid_size, sum_block, _s);
+      (grid_size, sum_block, s_d);
 
-    _sync_reduction_sum(c, stream, 3, _s);
+    _sync_reduction_sum(c, stream, 3, s_d, s_h);
 
-    for (int i = 0; i < 3; i++)
-      s[i] = _s[i];
+    for (int i = 0; i < 3; i++)  // s_h is pinned memory, s is not
+      s[i] = s_h[i];
   }
 
 #if defined(HAVE_CUBLAS)
@@ -1599,8 +1672,10 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
   const unsigned int blocksize = 256;
   unsigned int gridsize = cs_cuda_grid_size(n_rows, blocksize);
 
-  double *sum_block, *res;
-  cs_blas_cuda_get_2_stage_reduce_buffers(n_rows, 1, gridsize, sum_block, res);
+  double *sum_block, *res_d, *res_h;
+  cs_cuda_get_2_stage_reduce_buffers
+    (cs_cuda_get_stream_id(stream), n_rows, sizeof(double), gridsize,
+     (void *&)sum_block, (void *&)res_d, (void *&)res_h);
 
   if (local_stream)
     cs_matrix_spmv_cuda_set_stream(stream);
@@ -1620,9 +1695,9 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
         <blocksize><<<gridsize, blocksize, 0, stream>>>
           (n_rows, ad_inv, rhs, vx, rk, sum_block);
       cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
-        (gridsize, sum_block, res);
-      _sync_reduction_sum(c, stream, 1, res);
-      residual = sqrt(*res); /* Actually, residual of previous iteration */
+        (gridsize, sum_block, res_d);
+      _sync_reduction_sum(c, stream, 1, res_d, res_h);
+      residual = sqrt(*res_h); /* Actually, residual of previous iteration */
     }
     else {
       _jacobi_compute_vx_ini0<blocksize><<<gridsize, blocksize, 0, stream>>>
@@ -1658,7 +1733,7 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
       _jacobi_compute_vx_and_residual<blocksize><<<gridsize, blocksize, 0, stream>>>
         (n_rows, ad_inv, ad, rhs, vx, rk, sum_block);
       cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
-        (gridsize, sum_block, res);
+        (gridsize, sum_block, res_d);
     }
     else {
       _jacobi_compute_vx<blocksize><<<gridsize, blocksize, 0, stream>>>
@@ -1698,7 +1773,7 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
         _jacobi_compute_vx_and_residual<blocksize><<<gridsize, blocksize, 0, stream>>>
           (n_rows, ad_inv, ad, rhs, vx, rk, sum_block);
         cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
-          (gridsize, sum_block, res);
+          (gridsize, sum_block, res_d);
       }
       else
         _jacobi_compute_vx<blocksize><<<gridsize, blocksize, 0, stream>>>
@@ -1706,8 +1781,8 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
     }
 
     if (update_residual) {
-      _sync_reduction_sum(c, stream, 1, res);
-      residual = sqrt(*res); /* Actually, residual of previous iteration */
+      _sync_reduction_sum(c, stream, 1, res_d, res_h);
+      residual = sqrt(*res_h); /* Actually, residual of previous iteration */
     }
     else {
       CS_CUDA_CHECK(cudaStreamSynchronize(stream));
@@ -1844,8 +1919,10 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
 
   unsigned int gridsize = cs_cuda_grid_size(n_rows, blocksize);
 
-  double *sum_block, *res;
-  cs_blas_cuda_get_2_stage_reduce_buffers(n_rows, 1, gridsize, sum_block, res);
+  double *sum_block, *res_d, *res_h;
+  cs_cuda_get_2_stage_reduce_buffers
+    (cs_cuda_get_stream_id(stream), n_rows, sizeof(double), gridsize,
+     (void *&)sum_block, (void *&)res_d, (void *&)res_h);
 
   if (local_stream)
     cs_matrix_spmv_cuda_set_stream(stream);
@@ -1883,9 +1960,9 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
 
     if (update_residual) {
       cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
-        (gridsize, sum_block, res);
-      _sync_reduction_sum(c, stream, 1, res);
-      residual = sqrt(*res); /* Actually, residual of previous iteration */
+        (gridsize, sum_block, res_d);
+      _sync_reduction_sum(c, stream, 1, res_d, res_h);
+      residual = sqrt(*res_h); /* Actually, residual of previous iteration */
     }
     else {
       CS_CUDA_CHECK(cudaStreamSynchronize(stream));
@@ -1938,7 +2015,7 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
 
     if (update_residual) {
       cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
-        (gridsize, sum_block, res);
+        (gridsize, sum_block, res_d);
     }
 
     cudaStreamEndCapture(stream, &graph);
@@ -1991,13 +2068,13 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
 
       if (update_residual) {
         cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
-          (gridsize, sum_block, res);
+          (gridsize, sum_block, res_d);
       }
     }
 
     if (update_residual) {
-      _sync_reduction_sum(c, stream, 1, res);
-      residual = sqrt(*res); /* Actually, residual of previous iteration */
+      _sync_reduction_sum(c, stream, 1, res_d, res_h);
+      residual = sqrt(*res_h); /* Actually, residual of previous iteration */
     }
     else {
       CS_CUDA_CHECK(cudaStreamSynchronize(stream));
