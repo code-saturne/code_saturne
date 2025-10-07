@@ -774,7 +774,7 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
       + aux3 * taup_r[0][id] * (2. * tlag_r[0][id] - taup_r[0][id]) * (aux5 - aux5b)
       - 0.5 * cs_math_pow3(tlag_r[0][id]) / (tlag_r[0][id] - 2. * taup_r[0][id])
         * (aux9 - aux5b)
-      - cs_math_pow2(cs_math_pow2(taup_r[0][id]) * aux4) * (1. - aux1*aux2)
+      - cs_math_pow3(taup_r[0][id]) * cs_math_pow2(aux4) * (1. - aux1*aux2)
       );
 
     /* particle velocity term */
