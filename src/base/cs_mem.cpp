@@ -734,12 +734,25 @@ _cs_mem_block_new(void          *p_new,
 static cs_mem_block_t
 _get_block_info(const void  *p_get)
 {
+#if defined(HAVE_OPENMP)
+  int in_parallel = omp_in_parallel();
+  if (in_parallel)
+    omp_set_lock(&_cs_mem_lock);
+#endif
+
   auto it = _cs_alloc_map.find(p_get);
 
   if (it == _cs_alloc_map.end())
     _cs_mem_block_info_error(p_get);
 
-  return it->second;
+  cs_mem_block_t mb = it->second;
+
+#if defined(HAVE_OPENMP)
+  if (in_parallel)
+    omp_unset_lock(&_cs_mem_lock);
+#endif
+
+  return mb;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -761,6 +774,12 @@ _get_block_info_try(const void  *p_get)
 {
   cs_mem_block_t mbi;
 
+#if defined(HAVE_OPENMP)
+  int in_parallel = omp_in_parallel();
+  if (in_parallel)
+    omp_set_lock(&_cs_mem_lock);
+#endif
+
   auto it = _cs_alloc_map.find(p_get);
   if (it != _cs_alloc_map.end())
     mbi = it->second;
@@ -774,6 +793,11 @@ _get_block_info_try(const void  *p_get)
     mbi.mode = CS_ALLOC_HOST;
 #endif
   }
+
+#if defined(HAVE_OPENMP)
+  if (in_parallel)
+    omp_unset_lock(&_cs_mem_lock);
+#endif
 
   return mbi;
 }
