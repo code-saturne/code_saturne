@@ -45,7 +45,31 @@ Master (not on release branches yet)
     was too limited for future uses of the Burke-Schuman model for
     fire modeling (gas combustion), so `idilat` 2 should be used now.
 
-- Advection schemes with CDO-Fb scheme are completly rewritten.
+- Advection schemes with CDO-Fb scheme are completely rewritten.
+
+- In the Lagrangian approach, add a cell wise integration for the particle
+  (see Balvet, Minier, Henry, Roustan, Ferrand 2023, "A time-step-robust
+  algorithm to compute particle trajectories in 3-D unstructured meshes for
+  Lagrangian stochastic methods").
+  This option is now by default.
+
+### Physical modelling
+
+- Allow the usage of Cooling tower module with Lagrangian particle tracking
+  for the rain zone. Particles position, velocity and velocity
+  seen from the fluid, heat and mass (diameters) are solved for instantaneous
+  quantities, benefiting from the power of PDF methods.
+
+- In the Lagrangian stochastic approach for dispersed flows,
+  the Lagrangian-time anisotropy computation is now based on <Ur> = <Up-Us>
+  (see Minier, Ferrand, Henry 2015).
+  Also, Coriolis effects are now taken into account if needed.
+
+- Add models to take fluid particle temperature into account.
+  See Balvet, Roustan, Ferrand 2025: "Derivation of model-consistent universal
+  functions for second-order turbulence models and their implications on
+  Lagrangian stochastic methods for thermally stratified atmospheric
+  surface boundary layer flows" for more information.
 
 ### Architectural changes:
 
