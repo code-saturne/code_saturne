@@ -6708,6 +6708,19 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
   *n_variants = 0;
   *m_variant = nullptr;
 
+#if defined(HAVE_CUDA)
+  int cuda_use_cusparse = -1;
+#if defined(HAVE_CUSPARSE)
+  if (cs_get_device_id() > -1) {
+    const char *s = getenv("CS_CUDA_USE_CUSPARSE");
+    if (s != nullptr)
+      cuda_use_cusparse = atoi(s);
+  }
+#endif
+#endif
+
+#if defined(HAVE_CUSPARSE)
+
   if (m->type == CS_MATRIX_NATIVE) {
 
     _variant_add(_("native, baseline"),
@@ -6805,27 +6818,35 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
 
 #if defined(HAVE_CUDA)
 
-    if (cs_get_device_id() > -1)
-      _variant_add(_("CSR, CUDA"),
-                   m->type,
-                   m->fill_type,
-                   m->numbering,
-                   "cuda",
-                   n_variants,
-                   &n_variants_max,
-                   m_variant);
-
     if (cs_get_device_id() > -1) {
-      auto ms = static_cast<const cs_matrix_struct_csr_t *>(m->structure);
-      if (ms->col_id != nullptr)
-        _variant_add(_("CSR, with cuSPARSE"),
+
+      if (cuda_use_cusparse < 1)
+        _variant_add(_("CSR, CUDA"),
                      m->type,
                      m->fill_type,
                      m->numbering,
-                     "cusparse",
+                     "cuda",
                      n_variants,
                      &n_variants_max,
                      m_variant);
+
+#if defined(HAVE_CUSPARSE)
+
+      if (cuda_use_cusparse != 0) {
+        auto ms = static_cast<const cs_matrix_struct_csr_t *>(m->structure);
+        if (ms->col_id != nullptr)
+          _variant_add(_("CSR, with cuSPARSE"),
+                       m->type,
+                       m->fill_type,
+                       m->numbering,
+                       "cusparse",
+                       n_variants,
+                       &n_variants_max,
+                       m_variant);
+      }
+
+#endif /* defined(HAVE_CUSPARSE) */
+
     }
 
 #endif /* defined(HAVE_CUDA) */
@@ -6864,37 +6885,43 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
 
 #if defined(HAVE_CUDA)
 
-    if (cs_get_device_id() > -1)
-      _variant_add(_("MSR, CUDA"),
-                   m->type,
-                   m->fill_type,
-                   m->numbering,
-                   "cuda",
-                   n_variants,
-                   &n_variants_max,
-                   m_variant);
+    if (cs_get_device_id() > -1) {
+
+      if (cuda_use_cusparse < 1)
+        _variant_add(_("MSR, CUDA"),
+                     m->type,
+                     m->fill_type,
+                     m->numbering,
+                     "cuda",
+                     n_variants,
+                     &n_variants_max,
+                     m_variant);
 
 #endif /* defined(HAVE_CUDA) */
 
 #if defined(HAVE_CUSPARSE)
 
-    if (cs_get_device_id() > -1) {
-      cs_matrix_struct_dist_t *ms
-        = static_cast<cs_matrix_struct_dist_t *>
-            (const_cast<void *>(m->structure));
-      if (ms->e.col_id != nullptr) {
-        _variant_add(_("MSR, with cuSPARSE"),
-                     m->type,
-                     m->fill_type,
-                     m->numbering,
-                     "cusparse",
-                     n_variants,
-                     &n_variants_max,
-                     m_variant);
+      if (cuda_use_cusparse != 0) {
+        cs_matrix_struct_dist_t *ms
+          = static_cast<cs_matrix_struct_dist_t *>
+          (const_cast<void *>(m->structure));
+        if (ms->e.col_id != nullptr) {
+          _variant_add(_("MSR, with cuSPARSE"),
+                       m->type,
+                       m->fill_type,
+                       m->numbering,
+                       "cusparse",
+                       n_variants,
+                       &n_variants_max,
+                       m_variant);
+        }
       }
-    }
 
 #endif /* defined(HAVE_CUSPARSE) */
+
+    }
+
+#endif /* defined(HAVE_CUDA) */
 
 #if defined(HAVE_OPENMP)
 
