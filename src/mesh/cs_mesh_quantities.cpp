@@ -4423,7 +4423,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
   }
 
   /* Connectivity ib_cell to cells */
-  cs_lnum_t *ibcell_cells; // TODO: use only b_face_cells
+  cs_lnum_t *ibcell_cells; // disable_cells included
   CS_MALLOC(ibcell_cells, n_ib_cells, cs_lnum_t);
 
   cs_lnum_t *face_vertex_idx;
@@ -4431,10 +4431,8 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
   face_vertex_idx[0] = 0;
 
   /* Immersed boundary cells number */
-  cs_lnum_t n_ib_cells0 = 0; // (included small porosity)
-  cs_lnum_t n_ib_cells_true = 0; // (skip the small porosity/disable_cell)
-  cs_lnum_t *ibcell_cells_true; // TODO: use only b_face_cells
-  CS_MALLOC(ibcell_cells_true, n_ib_cells, cs_lnum_t);
+  cs_lnum_t n_ib_cells_verif = 0;
+
   cs_lnum_t n_glob_vtx = 0;
 
   /* face_vertex_idx and ibcell_cells computation */
@@ -4457,20 +4455,37 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                   c_id, n_vtx);
       }
 
-      ibcell_cells[n_ib_cells0] = c_id;
-      n_ib_cells0 += 1;
+      ibcell_cells[n_ib_cells_verif] = c_id;
+      n_ib_cells_verif += 1;
       n_glob_vtx += 0.5*n_vtx;
-      face_vertex_idx[n_ib_cells0] = 0.5*w_vtx_idx[c_id+1];
+      face_vertex_idx[n_ib_cells_verif] = 0.5*w_vtx_idx[c_id+1];
+    }
+  }
 
-      /* Skip the disable cells with small porosity */
-      if (c_disable_flag[c_id] == 0) {
-        ibcell_cells_true[n_ib_cells_true] = c_id;
-        n_ib_cells_true += 1;
-      }
+  assert(n_ib_cells_verif == n_ib_cells);
+
+  /* Filter the disable cells */
+
+  // True conenctivity skipping the disable cells
+  cs_lnum_t *ibcell_cells_filt;
+  CS_MALLOC(ibcell_cells_filt, n_ib_cells, cs_lnum_t);
+
+  cs_lnum_t n_ib_cells_filt = 0;
+  cs_lnum_t *ib_cells_filt;
+  CS_MALLOC(ib_cells_filt, n_ib_cells, cs_lnum_t);
+
+  for (cs_lnum_t i = 0; i < n_ib_cells; i++) {
+    const cs_lnum_t c_id = ibcell_cells[i];
+    if (c_disable_flag[c_id] == 0) {
+      ibcell_cells_filt[n_ib_cells_filt] = c_id;
+      ib_cells_filt[n_ib_cells_filt] = i;
+      n_ib_cells_filt++;
     }
   }
 
   cs_porous_model_post_immmersed_plane(n_ib_cells,
+                                       n_ib_cells_filt,
+                                       ib_cells_filt,
                                        n_glob_vtx,
                                        ibcell_cells,
                                        vtx_ids,
@@ -4479,13 +4494,15 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                                        w_vtx);
 
   if (!cs_glob_porosity_from_scan_opt->use_staircase) {
-    cs_porous_model_convert_cell_to_boundary(n_ib_cells_true, ibcell_cells_true);
+    cs_porous_model_convert_cell_to_boundary(n_ib_cells_filt, ibcell_cells_filt);
   }
 
   /* Free memory */
   CS_FREE(face_vertex_idx);
   CS_FREE(ibcell_cells);
-  CS_FREE(ibcell_cells_true);
+  CS_FREE(ibcell_cells_filt);
+  CS_FREE(ib_cells_filt);
+
   CS_FREE(_i_f_surf);
 
   CS_FREE(i_f_face_cell_normal);

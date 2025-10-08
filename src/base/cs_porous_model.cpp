@@ -936,19 +936,24 @@ cs_porous_model_postprocess_meshes(void) {
  * \brief  Post-processes the immersed boundary (ib) planes for display
  *         on paraview.
  *
- * \param[in]       n_ib_cells      ib cell number
- * \param[in]       n_glob_vtx      total vertex number
- * \param[in]       ibcell_cells    connectivity ib_cell->cells
- * \param[in]       vtx_ids         vertex ids on both sides of a IB vertex
- *                                  (v0<v1)
- * \param[in]       w_vtx_idx       ib vertex indexes
- * \param[in]       face_vertex_idx vertex indexes of the ib faces
- * \param[in]       w_vtx           ib vertex coordinates
+ * \param[in]       n_ib_cells         ib cell number
+ * \param[in]       n_ib_cells_filt    ib cell number after filtering
+ * \param[in]       ib_cells_filt      indices of the filtered cells
+ * \param[in]       n_glob_vtx         total vertex number
+ * \param[in]       ibcell_cells       connectivity ib_cell->cells
+ * \param[in]       ibcell_cells_filt  connectivity ib_cell->cells after filtering
+ * \param[in]       vtx_ids            vertex ids on both sides of a IB vertex
+ *                                     (v0<v1)
+ * \param[in]       w_vtx_idx          ib vertex indexes
+ * \param[in]       face_vertex_idx    vertex indexes of the ib faces
+ * \param[in]       w_vtx              ib vertex coordinates
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_porous_model_post_immmersed_plane(const cs_lnum_t      n_ib_cells,
+                                     const cs_lnum_t      n_ib_cells_filt,
+                                     const cs_lnum_t      ib_cells_filt[],
                                      const cs_lnum_t      n_glob_vtx,
                                      const cs_lnum_t      ibcell_cells[],
                                      const cs_lnum_t      vtx_ids[][2],
@@ -1068,6 +1073,7 @@ cs_porous_model_post_immmersed_plane(const cs_lnum_t      n_ib_cells,
   /* Create IBM mesh and give IBM faces and vertices */
 
   fvm_nodal_t *ib_mesh = cs_glob_porous_model_extra_faces->ib_mesh;
+
   const cs_lnum_t face_list_shift[2] = {0, n_ib_cells};
 
   const cs_lnum_t *face_vtx_idx[1] = {face_vertex_idx};
@@ -1075,8 +1081,8 @@ cs_porous_model_post_immmersed_plane(const cs_lnum_t      n_ib_cells,
 
   fvm_nodal_from_desc_add_faces(ib_mesh,
                                 1,
-                                n_ib_cells,
-                                nullptr,
+                                n_ib_cells_filt,
+                                ib_cells_filt,
                                 1,
                                 face_list_shift,
                                 face_vtx_idx,
@@ -1116,8 +1122,8 @@ cs_porous_model_post_immmersed_plane(const cs_lnum_t      n_ib_cells,
   cs_lnum_t *new_parent_id;
   CS_MALLOC(new_parent_id, n_ib_cells, cs_lnum_t);
   cs_lnum_t shift = cs_glob_mesh->n_b_faces;  // Same as n_faces_all here.
-  for (cs_lnum_t i = 0; i < n_ib_cells; i++)
-    new_parent_id[i] = i + shift;
+  for (cs_lnum_t i = 0; i < n_ib_cells_filt; i++)
+    new_parent_id[ib_cells_filt[i]] = i + shift;
 
   fvm_nodal_change_parent_id(ib_mesh, new_parent_id, 2);
 

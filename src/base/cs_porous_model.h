@@ -182,19 +182,24 @@ cs_porous_model_postprocess_meshes(void);
  * \brief  Post-processes the immersed boundary (ib) planes for display
  *         on paraview.
  *
- * \param[in]       n_ib_cells      ib cell number
- * \param[in]       n_glob_vtx      total vertex number
- * \param[in]       ibcell_cells    connectivity ib_cell->cells
- * \param[in]       vtx_ids         vertex ids on both sides of a IB vertex
- *                                  (v0<v1)
- * \param[in]       w_vtx_idx       ib vertex indexes
- * \param[in]       face_vertex_idx vertex indexes of the ib faces
- * \param[in]       w_vtx           ib vertex coordinates
+ * \param[in]       n_ib_cells         ib cell number
+ * \param[in]       n_ib_cells_filt    ib cell number after filtering
+ * \param[in]       ib_cells_filt      indices of the filtered cells
+ * \param[in]       n_glob_vtx         total vertex number
+ * \param[in]       ibcell_cells       connectivity ib_cell->cells
+ * \param[in]       ibcell_cells_filt  connectivity ib_cell->cells after filtering
+ * \param[in]       vtx_ids            vertex ids on both sides of a IB vertex
+ *                                     (v0<v1)
+ * \param[in]       w_vtx_idx          ib vertex indexes
+ * \param[in]       face_vertex_idx    vertex indexes of the ib faces
+ * \param[in]       w_vtx              ib vertex coordinates
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_porous_model_post_immmersed_plane(const cs_lnum_t      n_ib_cells,
+                                     const cs_lnum_t      n_ib_cells_filt,
+                                     const cs_lnum_t      ib_cells_filt[],
                                      const cs_lnum_t      n_glob_vtx,
                                      const cs_lnum_t      ibcell_cells[],
                                      const cs_lnum_t      vtx_ids[][2],
