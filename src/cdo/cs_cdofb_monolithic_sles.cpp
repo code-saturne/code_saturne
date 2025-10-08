@@ -1332,40 +1332,6 @@ cs_cdofb_monolithic_sles_block_krylov(const cs_navsto_param_t  *nsp,
 
   }
 
-  /* Augmentation of rhs */
-
-  if (gamma > 0.) {
-
-    const cs_lnum_t n1_dofs = solver->n1_scatter_dofs;
-    const cs_lnum_t n2_dofs = solver->n2_scatter_dofs;
-    const cs_real_t *cell_vol = cs_shared_quant->cell_vol;
-
-    cs_real_t *rhs1 = sh->rhs_array[0];
-    cs_real_t *rhs2 = sh->rhs_array[1];
-
-    cs_real_t *btilda_f = nullptr, *btilda_c = nullptr;
-
-    CS_MALLOC(btilda_f, ctx->b11_max_size, cs_real_t);
-    CS_MALLOC(btilda_c, solver->n2_scatter_dofs, cs_real_t);
-
-#   pragma omp parallel for if (n2_dofs > CS_THR_MIN)
-    for (cs_lnum_t i2 = 0; i2 < solver->n2_scatter_dofs; i2++)
-      btilda_c[i2] = gamma/cell_vol[i2]*rhs2[i2];
-
-    cs_saddle_system_b12_matvec(sh, btilda_c, btilda_f,
-                                true); /* reset btilda_f */
-
-  /* Build augmented b1 = b1 + gamma*m12.W^-1.b_c */
-
-#   pragma omp parallel for if (n1_dofs > CS_THR_MIN)
-    for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++)
-      rhs1[i1] += btilda_f[i1];
-
-    /* Free arrays */
-    CS_FREE(btilda_c);
-    CS_FREE(btilda_f);
-  }
-
   /* 2. Solve the saddle-point problem */
   /* --------------------------------- */
 

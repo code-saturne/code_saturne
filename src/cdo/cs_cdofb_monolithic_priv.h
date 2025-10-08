@@ -324,9 +324,14 @@ struct _cdofb_monolithic_t {
    * Set of pointers to enable the resolution of saddle-point system
    * with various algorithms. This structure allows us to unify the prototype
    * of "solve" functions
+   *
+   * \var gamma
+   * Scaling coefficient in case of augmentation of the system
    */
 
   cs_saddle_solver_t                *saddle_solver;
+
+  double                             gamma;
 
   /*!
    * \var nl_algo

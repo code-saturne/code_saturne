@@ -1741,33 +1741,9 @@ _gkb_transform_system(cs_saddle_solver_t             *solver,
   cs_real_t  *rhs1 = sh->rhs_array[0];
   cs_real_t  *rhs2 = sh->rhs_array[1];
 
-  /* Compute rhs_tilda = rhs1 + gamma.M12.M22^-1.rhs2 */
+  cs_array_real_copy(n1_dofs, rhs1, ctx->rhs_tilda);
 
-  if (gamma > 0) {
-
-    /* Store temporary inside q = gamma * rhs2 * inv_m22 */
-
-#   pragma omp parallel for if (n2_dofs > CS_THR_MIN)
-    for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++)
-      ctx->q[i2] = rhs2[i2]*ctx->inv_m22[i2];
-
-    /* Build m12q = M12.rhs_tilda */
-
-    cs_array_real_fill_zero(n1_dofs, ctx->m12q);
-    ctx->m12_vector_multiply(n2_dofs, ctx->q, ctx->m21_adj, ctx->m21_val,
-                             ctx->m12q);
-
-    /* RHS reduction is delayed */
-
-#   pragma omp parallel for if (n1_dofs > CS_THR_MIN)
-    for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++)
-      ctx->rhs_tilda[i1] = rhs1[i1] + gamma*ctx->m12q[i1];
-
-  }
-  else
-    cs_array_real_copy(n1_dofs, rhs1, ctx->rhs_tilda);
-
-  /* Compute w = M11^-1.(rhs1 + gamma.M12.M22^-1.rhs2) */
+  /* Compute w = M11^-1.(rhs1) */
 
   cs_real_t  normalization = ctx->square_norm_b11(ctx->rhs_tilda);
   normalization = (fabs(normalization) > FLT_MIN) ? sqrt(normalization) : 1.0;
@@ -1838,8 +1814,7 @@ _gkb_init_solution(cs_saddle_solver_t             *solver,
 
   ctx->beta = _gkb_block22_weighted_norm(n2_dofs, ctx->inv_m22, ctx->rhs_tilda);
 
-  /* Store M11^-1.(rhs1 + gamma.M12.M22^-1.rhs2) in rhs_tilda which is not
-   * useful anymore */
+  /* Store v in rhs_tilda which is not useful anymore */
 
   if (fabs(ctx->beta) < FLT_MIN) {
 
@@ -3461,55 +3436,24 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
   /* Initialization
    * ==============
    *
-   * Transformation of the initial right-hand side
-   * --------------------------------------------- */
+   * Transformation of the initial right-hand side should have been done when
+   * augmenting the system
+   */
 
-  cs_real_t  *btilda_c = ctx->m21x1;
+  /* Compute the RHS for the Uzawa system: rhs = b1 - b12.x2 */
 
-# pragma omp parallel for if (n2_dofs > CS_THR_MIN)
-  for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++)
-    btilda_c[i2] = ctx->inv_m22[i2]*b2[i2];
-
-  cs_saddle_system_b12_matvec(sh, btilda_c, ctx->b1_tilda,
+  cs_saddle_system_b12_matvec(sh, x2, ctx->b1_tilda,
                               true); /* reset b1_tilda */
 
-  if (rset->ifs != nullptr) {
-
-    cs_interface_set_sum(rset->ifs,
-                         /* n_elts, stride, interlaced */
-                         n1_dofs, 1, false, CS_REAL_TYPE,
-                         ctx->b1_tilda);
-
-    cs_interface_set_sum(rset->ifs,
-                         /* n_elts, stride, interlaced */
-                         n1_dofs, 1, false, CS_REAL_TYPE,
-                         b1);
-
-  }
-
-  /* Build b1_tilda = b1 + gamma*m12.W^-1.b_c */
-
 # pragma omp parallel for if (n1_dofs > CS_THR_MIN)
-  for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++) {
-    ctx->b1_tilda[i1] *= gamma;
-    ctx->b1_tilda[i1] += b1[i1];
-  }
-
-  /* Compute the RHS for the Uzawa system: rhs = b1_tilda - b12.x2 */
-
-  cs_saddle_system_b12_matvec(sh, x2, ctx->rhs, true);
+  for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++)
+    ctx->rhs[i1] = b1[i1] - ctx->b1_tilda[i1];
 
   if (rset->ifs != nullptr)
     cs_interface_set_sum(rset->ifs,
                          /* n_elts, stride, interlaced */
                          n1_dofs, 1, false, CS_REAL_TYPE,
                          ctx->rhs);
-
-# pragma omp parallel for if (n1_dofs > CS_THR_MIN)
-  for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++) {
-    ctx->rhs[i1] *= -1;
-    ctx->rhs[i1] += ctx->b1_tilda[i1];
-  }
 
   /* Solve AL.u_f = rhs
    * Modify the tolerance in order to be more accurate on this step since
