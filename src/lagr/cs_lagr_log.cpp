@@ -689,13 +689,6 @@ cs_lagr_log_iteration(void)
 
   int n_stats = cs_glob_lagr_model->n_stat_classes + 1;
 
-  int flow_rate_size = bdy_cond->n_zones*n_stats;
-
-  cs_parall_sum(flow_rate_size, CS_REAL_TYPE, bdy_cond->particle_mass_flow);
-
-  if (bdy_cond->particle_heat_flow != nullptr)
-    cs_parall_sum(flow_rate_size, CS_REAL_TYPE, bdy_cond->particle_heat_flow);
-
   for (int z_id = 0; z_id < bdy_cond->n_zones; z_id++) {
 
     if (cs::abs(bdy_cond->particle_mass_flow[z_id*n_stats]) > 0.) {
