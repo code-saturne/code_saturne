@@ -3,6 +3,9 @@ Master (not on release branches yet)
 
 ### User changes:
 
+- Particle diameter in Lagrangian module now follow a log-normal distribution
+  when a variance is given.
+
 - Added a `cs_mesh_cut` mesh operator, allowing a cut of mesh cells
   by planes (one per cell, with independent normals and origins for
   each cell).

@@ -1044,27 +1044,16 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
     if (zis->diameter_variance > 0.0) {
 
-      /* Randomize diameter, ensuring we obtain a
-         positive diameter in the 99,7% range */
+      double    random;
+      cs_random_normal(1, &random);
+      cs_real_t v = zis->diameter_variance;
+      cs_real_t m = zis->diameter;
+      cs_real_t m2 = m * m;
+      //The diameter follows a log-normal law
+      cs_real_t diam = m2 / (sqrt(m2 + v))
+        * exp(sqrt(log(1. + v/m2)) * random);
 
-      cs_real_t d3   = 3.0 * sqrt(zis->diameter_variance);
-
-      int i_r = 0; /* avoid infinite loop in case of very improbable
-                      random series... */
-
-      for (i_r = 0; i_r < 20; i_r++) {
-        double    random;
-        cs_random_normal(1, &random);
-
-        cs_real_t diam =   zis->diameter
-                         + random * sqrt(zis->diameter_variance);
-
-        if (diam > 0 && (   diam >= zis->diameter - d3
-                         && diam <= zis->diameter + d3)) {
-          cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_DIAMETER, diam);
-          break;
-        }
-      }
+      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_DIAMETER, diam);
 
     }
 
