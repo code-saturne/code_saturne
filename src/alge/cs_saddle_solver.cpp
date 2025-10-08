@@ -1729,7 +1729,6 @@ _gkb_transform_system(cs_saddle_solver_t             *solver,
   const cs_param_saddle_t  *saddlep = solver->param;
   const cs_param_saddle_context_gkb_t *ctxp =
     static_cast<cs_param_saddle_context_gkb_t *>(saddlep->context);
-  const double  gamma = ctxp->augmentation_scaling;
 
   const cs_lnum_t  n1_dofs = solver->n1_scatter_dofs;
   const cs_lnum_t  n2_dofs = solver->n2_scatter_dofs;

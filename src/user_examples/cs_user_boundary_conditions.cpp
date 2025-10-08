@@ -303,7 +303,6 @@ _w_flux_side(cs_lnum_t         n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*
-/*
  * Setup boundary conditions to be applied.
  *
  * This function is called just before \ref cs_user_finalize_setup, and
