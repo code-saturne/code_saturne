@@ -267,6 +267,11 @@ typedef struct _cs_multigrid_setup_data_t {
 
   cs_real_t     *pc_aux;                 /* preconditioner auxiliary array */
 
+  /* Buffers to avoid reallocations on device */
+
+  size_t         aux_size_d;
+  void          *aux_buf_d;
+
 } cs_multigrid_setup_data_t;
 
 /* Grid hierarchy */
@@ -924,6 +929,9 @@ _multigrid_setup_data_create(void)
   mgd->pc_name = nullptr;
   mgd->pc_aux = nullptr;
   mgd->pc_verbosity = 0;
+
+  mgd->aux_size_d = 0;
+  mgd->aux_buf_d = nullptr;
 
   return mgd;
 }
@@ -4515,6 +4523,55 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
   return cvg;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief allocate or map to already allocated device buffer for solving.
+ *
+ * \param[in, out]  mgd         pointer to multigrid setup hierarchy
+ * \param[in, out]  aux_size_d  size of buffer for device solve
+ * \param[in, out]  aux_buf_d   buffer for device solve
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_map_or_alloc_device_solve_buffer(cs_multigrid_setup_data_t   *mgd,
+                                  size_t                      &aux_size_d,
+                                  void                       *&aux_buf_d)
+{
+  if (aux_size_d > mgd->aux_size_d) {
+    CS_FREE_HD(mgd->aux_buf_d);
+    CS_MALLOC_HD(aux_buf_d,
+                 aux_size_d,
+                 unsigned char,
+                 CS_ALLOC_HOST_DEVICE_SHARED);
+    mgd->aux_size_d = aux_size_d;
+    mgd->aux_buf_d = aux_buf_d;
+  }
+  else {
+    aux_size_d = mgd->aux_size_d;
+    aux_buf_d = mgd->aux_buf_d;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief unmap or free allocated device buffer for solving.
+ *
+ * \param[in, out]  mgd         pointer to multigrid setup hierarchy
+ * \param[in, out]  aux_buf_d   buffer for device solve
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_unmap_or_free_device_solve_buffer(cs_multigrid_setup_data_t   *mgd,
+                                   void                       *&aux_buf_d)
+{
+  if (aux_buf_d != mgd->aux_buf_d)
+    CS_FREE_HD(aux_buf_d);
+  else
+    aux_buf_d = nullptr;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -5358,7 +5415,7 @@ cs_multigrid_solve(void                *context,
   size_t  _aux_size_d = 0;
   size_t  _aux_size_h = 0;
 
-  const cs_multigrid_setup_data_t *mgd = mg->setup_data;
+  cs_multigrid_setup_data_t *mgd = mg->setup_data;
   for (int level = 0; level < (int)(mgd->n_levels); level++) {
     const cs_grid_t *g = mgd->grid_hierarchy[level];
     const cs_matrix_t *m = cs_grid_get_matrix(g);
@@ -5385,9 +5442,7 @@ cs_multigrid_solve(void                *context,
   cs_alloc_mode_t amode_aux = cs_check_device_ptr(aux_vectors);
   if (amode_aux > CS_ALLOC_HOST) {
     if (_aux_size_d > aux_size) {
-      CS_MALLOC_HD(_aux_buf, _aux_size_d,
-                   unsigned char,
-                   CS_ALLOC_HOST_DEVICE_SHARED);
+      _map_or_alloc_device_solve_buffer(mgd, _aux_size_d, _aux_buf);
       _aux_size = _aux_size_d;
     }
     else
@@ -5395,9 +5450,7 @@ cs_multigrid_solve(void                *context,
     CS_MALLOC(_aux_buf_h, _aux_size_h, unsigned char);
   }
   else if (_aux_size_d > 0) {
-    CS_MALLOC_HD(_aux_buf, _aux_size_d,
-                 unsigned char,
-                 CS_ALLOC_HOST_DEVICE_SHARED);
+    _map_or_alloc_device_solve_buffer(mgd, _aux_size_d, _aux_buf);
     _aux_size = _aux_size_d;
     if (_aux_size_h > aux_size)
       CS_MALLOC(_aux_buf_h, _aux_size_h, unsigned char);
@@ -5491,13 +5544,13 @@ cs_multigrid_solve(void                *context,
 
   if (_aux_buf_h == _aux_buf) {
     if (_aux_buf != aux_vectors) {
-      CS_FREE(_aux_buf);
+      _unmap_or_free_device_solve_buffer(mgd, _aux_buf);
       _aux_buf_h = _aux_buf;
     }
   }
   else {
     if (_aux_buf != aux_vectors)
-      CS_FREE_HD(_aux_buf);
+      _unmap_or_free_device_solve_buffer(mgd, _aux_buf);
     if (_aux_buf_h != aux_vectors)
       CS_FREE(_aux_buf_h);
   }
@@ -5568,6 +5621,9 @@ cs_multigrid_free(void  *context)
   if (mg->setup_data != nullptr) {
 
     cs_multigrid_setup_data_t *mgd = mg->setup_data;
+
+    mgd->aux_size_d = 0;
+    CS_FREE(mgd->aux_buf_d);
 
     /* Free coarse solution data */
 
