@@ -867,11 +867,11 @@ _set_cusparse_map(cs_matrix_t   *matrix)
     const cs_matrix_coeff_t *mc
       = (const cs_matrix_coeff_t *)matrix->coeffs;
     nnz = ms->row_index[matrix->n_rows];
-    row_index = cs_get_device_ptr_const_pf
+    row_index = cs_get_device_ptr_const
                   (const_cast<cs_lnum_t *>(ms->row_index));
-    col_id = cs_get_device_ptr_const_pf
+    col_id = cs_get_device_ptr_const
                (const_cast<cs_lnum_t *>(ms->col_id));
-    e_val = cs_get_device_ptr_const_pf
+    e_val = cs_get_device_ptr_const
               (const_cast<cs_real_t *>(mc->val));
   }
   else {
@@ -880,11 +880,11 @@ _set_cusparse_map(cs_matrix_t   *matrix)
     const cs_matrix_coeff_t *mc
       = (const cs_matrix_coeff_t *)matrix->coeffs;
     nnz = ms->e.row_index[matrix->n_rows];
-    row_index = cs_get_device_ptr_const_pf
+    row_index = cs_get_device_ptr_const
                   (const_cast<cs_lnum_t *>(ms->e.row_index));
-    col_id = cs_get_device_ptr_const_pf
+    col_id = cs_get_device_ptr_const
                (const_cast<cs_lnum_t *>(ms->e.col_id));
-    e_val = cs_get_device_ptr_const_pf
+    e_val = cs_get_device_ptr_const
               (const_cast<cs_real_t *>(mc->e_val));
   }
 
@@ -1214,10 +1214,10 @@ cs_matrix_spmv_cuda_native(const cs_matrix_t  *matrix,
     = (const cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_real_t *__restrict__ da
-    = (const cs_real_t *)cs_get_device_ptr_const_pf
+    = (const cs_real_t *)cs_get_device_ptr_const
                            (const_cast<cs_real_t *>(mc->d_val));
   const cs_real_t *__restrict__ xa
-    = (const cs_real_t *)cs_get_device_ptr_const_pf
+    = (const cs_real_t *)cs_get_device_ptr_const
                            (const_cast<cs_real_t *>(mc->e_val));
 
   /* Ghost cell communication */
@@ -1252,7 +1252,7 @@ cs_matrix_spmv_cuda_native(const cs_matrix_t  *matrix,
     gridsize = cs_cuda_grid_size(ms->n_edges, blocksize);
 
     const cs_lnum_2_t *restrict edges
-      = (const cs_lnum_2_t *)cs_get_device_ptr_const_pf
+      = (const cs_lnum_2_t *)cs_get_device_ptr_const
                                (const_cast<cs_lnum_2_t *>(ms->edges));
 
 #if 1
@@ -1318,13 +1318,13 @@ cs_matrix_spmv_cuda_csr(cs_matrix_t  *matrix,
     = (const cs_matrix_coeff_t  *)matrix->coeffs;
 
   const cs_lnum_t *__restrict__ row_index
-    = (const cs_lnum_t *)cs_get_device_ptr_const_pf
+    = (const cs_lnum_t *)cs_get_device_ptr_const
                            (const_cast<cs_lnum_t *>(ms->row_index));
   const cs_lnum_t *__restrict__ col_id
-    = (const cs_lnum_t *)cs_get_device_ptr_const_pf
+    = (const cs_lnum_t *)cs_get_device_ptr_const
                            (const_cast<cs_lnum_t *>(ms->col_id));
   const cs_real_t *__restrict__ val
-    = (const cs_real_t *)cs_get_device_ptr_const_pf
+    = (const cs_real_t *)cs_get_device_ptr_const
                            (const_cast<cs_real_t *>(mc->val));
 
   /* Ghost cell communication */
@@ -1430,13 +1430,13 @@ cs_matrix_spmv_cuda_csr_cusparse(cs_matrix_t  *matrix,
     const cs_matrix_coeff_t *mc
       = (const cs_matrix_coeff_t *)matrix->coeffs;
     const cs_lnum_t *__restrict__ d_row_index
-      = (const cs_lnum_t *)cs_get_device_ptr_const_pf
+      = (const cs_lnum_t *)cs_get_device_ptr_const
                              (const_cast<cs_lnum_t *>(ms->row_index));
     const cs_lnum_t *__restrict__ d_col_id
-      = (const cs_lnum_t *)cs_get_device_ptr_const_pf
+      = (const cs_lnum_t *)cs_get_device_ptr_const
                              (const_cast<cs_lnum_t *>(ms->col_id));
     const cs_real_t *__restrict__ d_val
-      = (const cs_real_t *)cs_get_device_ptr_const_pf
+      = (const cs_real_t *)cs_get_device_ptr_const
                              (const_cast<cs_real_t *>(mc->val));
 
     unsigned int blocksize = 256;
@@ -1482,17 +1482,17 @@ cs_matrix_spmv_cuda_msr(cs_matrix_t  *matrix,
     = (const cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_lnum_t *__restrict__ row_index
-    = (const cs_lnum_t *)cs_get_device_ptr_const_pf
+    = (const cs_lnum_t *)cs_get_device_ptr_const
                            (const_cast<cs_lnum_t *>(ms->e.row_index));
   const cs_lnum_t *__restrict__ col_id
-    = (const cs_lnum_t *)cs_get_device_ptr_const_pf
+    = (const cs_lnum_t *)cs_get_device_ptr_const
                           (const_cast<cs_lnum_t *>(ms->e.col_id));
 
   const cs_real_t *__restrict__ d_val
-    = (const cs_real_t *)cs_get_device_ptr_const_pf
+    = (const cs_real_t *)cs_get_device_ptr_const
                            (const_cast<cs_real_t *>(mc->d_val));
   const cs_real_t *__restrict__ x_val
-    = (const cs_real_t *)cs_get_device_ptr_const_pf
+    = (const cs_real_t *)cs_get_device_ptr_const
                            (const_cast<cs_real_t *>(mc->e_val));
 
   /* Ghost cell communication */
@@ -1570,7 +1570,7 @@ cs_matrix_spmv_cuda_msr_cusparse(cs_matrix_t  *matrix,
     const cs_matrix_coeff_t *mc
       = (const cs_matrix_coeff_t *)matrix->coeffs;
     const cs_real_t *__restrict__ d_val
-      = (const cs_real_t *)cs_get_device_ptr_const_pf
+      = (const cs_real_t *)cs_get_device_ptr_const
                              (const_cast<cs_real_t *>(mc->d_val));
 
     unsigned int blocksize = 256;
@@ -1646,17 +1646,17 @@ cs_matrix_spmv_cuda_msr_b(cs_matrix_t  *matrix,
     = (const cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_lnum_t *__restrict__ row_index
-    = (const cs_lnum_t *)cs_get_device_ptr_const_pf
+    = (const cs_lnum_t *)cs_get_device_ptr_const
                            (const_cast<cs_lnum_t *>(ms->e.row_index));
   const cs_lnum_t *__restrict__ col_id
-    = (const cs_lnum_t *)cs_get_device_ptr_const_pf
+    = (const cs_lnum_t *)cs_get_device_ptr_const
                            (const_cast<cs_lnum_t *>(ms->e.col_id));
 
   const cs_real_t *__restrict__ d_val
-    = (const cs_real_t *)cs_get_device_ptr_const_pf
+    = (const cs_real_t *)cs_get_device_ptr_const
                            (const_cast<cs_real_t *>(mc->d_val));
   const cs_real_t *__restrict__ x_val
-    = (const cs_real_t *)cs_get_device_ptr_const_pf
+    = (const cs_real_t *)cs_get_device_ptr_const
                            (const_cast<cs_real_t *>(mc->e_val));
 
   /* Ghost cell communication */
@@ -1766,7 +1766,7 @@ cs_matrix_spmv_cuda_msr_b_cusparse(cs_matrix_t  *matrix,
     const cs_matrix_coeff_t *mc
       = (const cs_matrix_coeff_t *)matrix->coeffs;
     const cs_real_t *__restrict__ d_val
-      = (const cs_real_t *)cs_get_device_ptr_const_pf
+      = (const cs_real_t *)cs_get_device_ptr_const
                              (const_cast<cs_real_t *>(mc->d_val));
 
     unsigned int blocksize = 128;
@@ -1873,7 +1873,7 @@ cs_matrix_spmv_cuda_msr_bb_cusparse(cs_matrix_t  *matrix,
     const cs_matrix_coeff_t *mc
       = (const cs_matrix_coeff_t *)matrix->coeffs;
     const cs_real_t *__restrict__ d_val
-      = (const cs_real_t *)cs_get_device_ptr_const_pf
+      = (const cs_real_t *)cs_get_device_ptr_const
                              (const_cast<cs_real_t *>(mc->d_val));
 
     unsigned int blocksize = 128;
