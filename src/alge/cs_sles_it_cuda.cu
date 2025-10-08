@@ -1657,11 +1657,7 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
     if (   aux_vectors == NULL
         || cs_mem_is_device_ptr(aux_vectors) == false
         || aux_size/sizeof(cs_real_t) < (wa_size * n_wa)) {
-#if defined(MPIX_CUDA_AWARE_SUPPORT) && MPIX_CUDA_AWARE_SUPPORT
-      cudaMalloc(&_aux_vectors, wa_size * n_wa *sizeof(cs_real_t));
-#else
-      cudaMallocManaged(&_aux_vectors, wa_size * n_wa *sizeof(cs_real_t));
-#endif
+      CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, CS_ALLOC_DEVICE);
     }
     else
       _aux_vectors = (cs_real_t *)aux_vectors;
@@ -1804,7 +1800,7 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
 #endif // HAVE_GRAPH_CAPTURE > 0
 
   if (_aux_vectors != (cs_real_t *)aux_vectors)
-    cudaFree(_aux_vectors);
+    CS_FREE_HD(_aux_vectors);
 
   if (local_stream) {
     cs_matrix_spmv_cuda_set_stream(0);
@@ -1902,11 +1898,7 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
     if (   aux_vectors == NULL
         || cs_mem_is_device_ptr(aux_vectors) == false
         || aux_size/sizeof(cs_real_t) < (wa_size * n_wa)) {
-#if defined(MPIX_CUDA_AWARE_SUPPORT) && MPIX_CUDA_AWARE_SUPPORT
-      cudaMalloc(&_aux_vectors, wa_size * n_wa *sizeof(cs_real_t));
-#else
-      cudaMallocManaged(&_aux_vectors, wa_size * n_wa *sizeof(cs_real_t));
-#endif
+      CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, CS_ALLOC_DEVICE);
     }
     else
       _aux_vectors = (cs_real_t *)aux_vectors;
@@ -2096,7 +2088,7 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
 #endif // HAVE_GRAPH_CAPTURE > 0
 
   if (_aux_vectors != (cs_real_t *)aux_vectors)
-    cudaFree(_aux_vectors);
+    CS_FREE_HD(_aux_vectors);
 
   if (local_stream) {
     cs_matrix_spmv_cuda_set_stream(0);
