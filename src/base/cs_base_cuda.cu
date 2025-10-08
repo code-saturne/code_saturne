@@ -155,6 +155,7 @@ finalize_streams_(void)
 
   CS_FREE(_r_elt_size);
   CS_FREE(_r_grid_size);
+  CS_FREE(_r_host);
   CS_FREE(_r_reduce);
   CS_FREE(_r_grid);
 
