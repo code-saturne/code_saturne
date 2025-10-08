@@ -6719,8 +6719,6 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
 #endif
 #endif
 
-#if defined(HAVE_CUSPARSE)
-
   if (m->type == CS_MATRIX_NATIVE) {
 
     _variant_add(_("native, baseline"),
@@ -6896,8 +6894,6 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
                      n_variants,
                      &n_variants_max,
                      m_variant);
-
-#endif /* defined(HAVE_CUDA) */
 
 #if defined(HAVE_CUSPARSE)
 
