@@ -600,7 +600,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
         /* Neumann on the scalar, with wall function (for post-processing) */
       }
-      else
+      else if (icodcl_sc[f_id] != 15)
         hflui = hint[f_id];
 
     } /* End hflui computation */
