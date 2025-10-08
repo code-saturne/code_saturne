@@ -369,7 +369,7 @@ _sles_pc_poly_setup(void               *context,
 #if defined(HAVE_ACCEL)
   c->accelerated = accel;
   cs_alloc_mode_t amode = (c->accelerated) ?
-    CS_ALLOC_HOST_DEVICE_SHARED : CS_ALLOC_HOST;
+    cs_alloc_mode_device : CS_ALLOC_HOST;
 #else
   CS_UNUSED(accel);
   cs_alloc_mode_t amode = CS_ALLOC_HOST;

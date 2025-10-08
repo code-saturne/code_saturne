@@ -1027,7 +1027,10 @@ cs_sles_solve_ccc_fv(cs_sles_t           *sc,
     cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
 
     cs_dispatch_context ctx;
-    ctx.set_use_gpu(amode >= CS_ALLOC_HOST_DEVICE_SHARED);
+    if (amode >= CS_ALLOC_HOST_DEVICE_SHARED) {
+      amode = cs_alloc_mode_device;
+      ctx.set_use_gpu(true);
+    }
 
     cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
     assert(n_rows == m->n_cells);

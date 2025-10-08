@@ -293,7 +293,7 @@ _equation_iterative_solve_strided(int                   idtvar,
   ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
 #endif
 
-  cs_alloc_mode_t amode = ctx.alloc_mode(true);
+  cs_alloc_mode_t amode = ctx.alloc_mode(false);
 
   /* Allocate temporary arrays */
   var_t *smbini, *dpvar;
@@ -1492,6 +1492,8 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
 #endif
 
+  cs_alloc_mode_t amode = ctx.alloc_mode(false);
+
   int inc, niterf;
   int lvar, imasac;
   cs_real_t residu, rnorm, ressol;
@@ -1541,10 +1543,10 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   cs_real_t *dpvarm1 = nullptr, *rhs0 = nullptr;
 
   if (iswdyp >= 1) {
-    CS_MALLOC_HD(adxk, n_cells_ext, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(adxkm1, n_cells_ext, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(dpvarm1, n_cells_ext, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(rhs0, n_cells_ext, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(adxk, n_cells_ext, cs_real_t, amode);
+    CS_MALLOC_HD(adxkm1, n_cells_ext, cs_real_t, amode);
+    CS_MALLOC_HD(dpvarm1, n_cells_ext, cs_real_t, amode);
+    CS_MALLOC_HD(rhs0, n_cells_ext, cs_real_t, amode);
   }
 
   /* Symmetric matrix, except if advection */
@@ -1594,7 +1596,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   cs_init_bc_coeffs_solve(bc_coeffs_solve,
                           n_b_faces,
                           1,
-                          cs_alloc_mode,
+                          amode,
                           false);
 
   cs_real_t *val_f = bc_coeffs_solve.val_f;
@@ -1623,17 +1625,17 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       i_flux = cs_field_by_id(i_flux_id)->val;
       b_flux = cs_field_by_id(b_flux_id)->val;
 
-      CS_MALLOC_HD(i_flux_0, n_i_faces, cs_real_2_t, cs_alloc_mode);
-      CS_MALLOC_HD(i_flux_k, n_i_faces, cs_real_2_t, cs_alloc_mode);
-      CS_MALLOC_HD(i_flux_km1, n_i_faces, cs_real_2_t, cs_alloc_mode);
+      CS_MALLOC_HD(i_flux_0, n_i_faces, cs_real_2_t, amode);
+      CS_MALLOC_HD(i_flux_k, n_i_faces, cs_real_2_t, amode);
+      CS_MALLOC_HD(i_flux_km1, n_i_faces, cs_real_2_t, amode);
       ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
         i_flux_0[face_id][0] = 0.;
         i_flux_0[face_id][1] = 0.;
         i_flux_k[face_id][0] = 0.;
         i_flux_k[face_id][1] = 0.;
       });
-      CS_MALLOC_HD(b_flux_k, n_b_faces, cs_real_t, cs_alloc_mode);
-      CS_MALLOC_HD(b_flux_km1, n_b_faces, cs_real_t, cs_alloc_mode);
+      CS_MALLOC_HD(b_flux_k, n_b_faces, cs_real_t, amode);
+      CS_MALLOC_HD(b_flux_km1, n_b_faces, cs_real_t, amode);
       ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
         b_flux_k[face_id] = 0.;
       });
@@ -1709,7 +1711,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   /* Before looping, the RHS without reconstruction is stored in smbini */
 
-  CS_MALLOC_HD(smbini, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(smbini, n_cells_ext, cs_real_t, amode);
 
   cs_lnum_t has_dc = mq->has_disable_flag;
 
@@ -1828,10 +1830,10 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     // in case of internal coupling.
     cs_lnum_t n_cols = cs_matrix_get_n_columns(a);
 
-    CS_MALLOC_HD(w1, n_cols, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(w1, n_cols, cs_real_t, amode);
 
     cs_real_t *w2;
-    CS_MALLOC_HD(w2, n_cols, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(w2, n_cols, cs_real_t, amode);
 
     double p_mean = cs_gmean(n_cells, cell_vol, pvar);
 

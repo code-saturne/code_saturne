@@ -753,7 +753,7 @@ public:
   cs_alloc_mode_t
   alloc_mode(void) {
     cs_alloc_mode_t amode
-      = (device_ >= 0 && use_gpu_) ? CS_ALLOC_DEVICE : CS_ALLOC_HOST;
+      = (device_ >= 0 && use_gpu_) ? cs_alloc_mode_device : CS_ALLOC_HOST;
     return (amode);
   }
 
@@ -764,7 +764,7 @@ public:
       if (readable_on_cpu)
         amode = CS_ALLOC_HOST_DEVICE_SHARED;
       else
-        amode = CS_ALLOC_DEVICE;
+        amode = cs_alloc_mode_device;
     }
     return (amode);
   }
