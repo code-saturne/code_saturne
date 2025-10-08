@@ -1047,7 +1047,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       /* Randomize diameter, ensuring we obtain a
          positive diameter in the 99,7% range */
 
-      cs_real_t d3   = 3.0 * zis->diameter_variance;
+      cs_real_t d3   = 3.0 * sqrt(zis->diameter_variance);
 
       int i_r = 0; /* avoid infinite loop in case of very improbable
                       random series... */
@@ -1057,7 +1057,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
         cs_random_normal(1, &random);
 
         cs_real_t diam =   zis->diameter
-                         + random * zis->diameter_variance;
+                         + random * sqrt(zis->diameter_variance);
 
         if (diam > 0 && (   diam >= zis->diameter - d3
                          && diam <= zis->diameter + d3)) {

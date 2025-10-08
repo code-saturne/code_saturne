@@ -138,8 +138,8 @@ cs_user_lagr_volume_conditions(void)
 
     zis->stat_weight = 1.0;
 
-    zis->diameter = 5e-6;
-    zis->diameter_variance = 1e-6;
+    zis->diameter = 5e-6; /* in meters */
+    zis->diameter_variance = 1e-6 * 1e-6; /* in meters squared */
 
     zis->density = 2475.;
 
@@ -194,7 +194,7 @@ cs_user_lagr_volume_conditions(void)
       zis->flow_rate   = 0;
 
       zis->diameter = diam[set_id];
-      zis->diameter_variance = diam_dev[set_id];
+      zis->diameter_variance = diam_dev[set_id] * diam_dev[set_id];
 
       zis->density = density[set_id];
       zis->fouling_index = 100.0;

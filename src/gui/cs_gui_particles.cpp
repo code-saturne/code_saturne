@@ -698,11 +698,13 @@ cs_gui_particles_bcs(void)
 
         v_r = cs_tree_node_get_child_values_real
                 (tn_i, "diameter_standard_deviation");
-        if (v_r != nullptr) zis->diameter_variance = v_r[0];
+        /* convertion standard deviation -> variance */
+        if (v_r != nullptr)
+          zis->diameter_variance = v_r[0] * v_r[0];
 
 #if _XML_DEBUG_
         bft_printf("----diameter = %f \n", zis->diameter);
-        bft_printf("----standard deviation = %f \n", zis->diameter_variance);
+        bft_printf("----diameter variance = %f \n", zis->diameter_variance);
 #endif
 
         /* density */
