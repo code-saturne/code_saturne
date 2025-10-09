@@ -564,14 +564,14 @@ cs_time_stepping(void)
     */
 
     if (idtvar != CS_TIME_STEP_ADAPTIVE) {
-      cs_real_t *dt = CS_F_(dt)->val;
+      cs_span<cs_real_t> dt = CS_F_(dt)->get_vals_s();
 
       cs_coupling_sync_apps(0,      /* flags */
                             ts->nt_cur,
                             &(ts->nt_max),
                             &(ts->dt_ref));
 
-      cs_arrays_set_value<cs_real_t, 1>(n_cells_ext, ts->dt_ref, dt);
+      dt.set_to_val(ts->dt_ref);
     }
 
     if (ts->nt_max == ts->nt_cur && ts->nt_max > ts->nt_prev)

@@ -164,17 +164,16 @@ cs_combustion_lw_physical_prop(void);
 /*----------------------------------------------------------------------------*/
 
 static void
-_cavitation_correct_visc_turb(const cs_lnum_t  n_cells,
-                              const cs_real_t  rho1,
-                              const cs_real_t  rho2,
-                              const cs_real_t  crom[])
+_cavitation_correct_visc_turb(cs_dispatch_context &ctx,
+                              const cs_lnum_t      n_cells,
+                              const cs_real_t      rho1,
+                              const cs_real_t      rho2,
+                              const cs_real_t      crom[])
 {
   cs_real_t *visct = CS_F_(mu_t)->val;
   const cs_real_t *cvar_voidf = CS_F_(void_f)->val;
 
   const cs_real_t mcav = cs_get_glob_cavitation_parameters()->mcav;
-
-  cs_dispatch_context ctx;
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     const cs_real_t drho = (rho1 - rho2);
@@ -200,20 +199,27 @@ _cavitation_correct_visc_turb(const cs_lnum_t  n_cells,
 /*----------------------------------------------------------------------------*/
 
 static void
-_field_is_constant(const char       *name,
-                   const cs_lnum_t  n_elts,
-                   const cs_real_t  val[],
-                   const cs_real_t  val_ref)
+_field_is_constant(cs_dispatch_context &ctx,
+                   const char          *name,
+                   const cs_lnum_t      n_elts,
+                   const cs_field_t    *f,
+                   const cs_real_t      val_ref)
 {
-  bool is_constant = true;
+  struct cs_int_n<1> rd_sum;
+  struct cs_reduce_sum_ni<1> reducer;
 
-  cs_lnum_t ii = 0;
-  for (ii = 0; ii < n_elts; ii++) {
-    if (fabs(val[ii] - val_ref) <= cs_math_epzero)
-      continue;
-    is_constant = false;
-    break;
-  }
+  const cs_real_t *vals = f->val;
+
+  ctx.parallel_for_reduce(n_elts, rd_sum, reducer, CS_LAMBDA
+                          (cs_lnum_t i, cs_int_n<1> &res)
+  {
+    res.i[0] = 0;
+    if (cs::abs(vals[i] - val_ref) > cs_math_epzero)
+      res.i[0] = 1;
+  });
+  ctx.wait();
+
+  bool is_constant = (rd_sum.i[0] == 0);
 
   if (!is_constant)
     bft_error(__FILE__, __LINE__, 0,
@@ -223,11 +229,11 @@ _field_is_constant(const char       *name,
                 "%s has been declared constant\n"
                 "but the field value has been modified\n"
                 "and is not equal to the ref value anymore.\n"
-                "ref=%e, value=%e.\n"
+                "ref=%e is not the one found for %d values.\n"
                 "The calculation will not be run.\n"
                 "Check the interface, cs_user_parameters\n"
                 "and cs_user_physical_properties."),
-              name, name, val_ref, val[ii]);
+              name, name, val_ref, rd_sum.i[0]);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -239,11 +245,11 @@ _field_is_constant(const char       *name,
 /*----------------------------------------------------------------------------*/
 
 static void
-_compute_turbulence_mu(const cs_lnum_t  n_cells)
+_compute_turbulence_mu(cs_dispatch_context &ctx,
+                       const cs_lnum_t      n_cells)
 {
   // Laminar
   if (cs_glob_turb_model->model == CS_TURB_NONE) {
-    cs_dispatch_context ctx;
     cs_real_t *mut = CS_F_(mu_t)->val;
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       mut[c_id] = 0.;
@@ -307,7 +313,9 @@ _compute_turbulence_mu(const cs_lnum_t  n_cells)
 
 static void
 _compute_anisotropic_turbulent_viscosity
-(cs_lnum_t                   n_cells,
+(
+ cs_dispatch_context        &ctx,
+ cs_lnum_t                   n_cells,
  int                         n_scal,
  const int                   scalar_idx[],
  const cs_mesh_quantities_t  *mq)
@@ -350,7 +358,6 @@ _compute_anisotropic_turbulent_viscosity
                                        iebdfm);
   }
   else {
-    cs_dispatch_context ctx;
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (cs_lnum_t i = 0; i < 6; i++)
         visten[c_id][i] = 0.;
@@ -372,7 +379,8 @@ _compute_anisotropic_turbulent_viscosity
 /*----------------------------------------------------------------------------*/
 
 static void
-_clip_rho_mu_cp(bool                         first_pass,
+_clip_rho_mu_cp(cs_dispatch_context         &ctx,
+                bool                         first_pass,
                 cs_lnum_t                    n_cells,
                 int                          n_scal,
                 int                          scalar_idx[],
@@ -395,8 +403,6 @@ _clip_rho_mu_cp(bool                         first_pass,
   const cs_lnum_t *c_disable_flag = nullptr;
   if (mq->has_disable_flag)
     c_disable_flag = mq->c_disable_flag;
-
-  cs_dispatch_context ctx;
 
   // Set turbulent viscosity to 0 in disabled cells
   if (mq->has_disable_flag) {
@@ -498,10 +504,11 @@ _clip_rho_mu_cp(bool                         first_pass,
 /*----------------------------------------------------------------------------*/
 
 static void
-_check_log_scalar_diff(const bool        first_pass,
-                       const int         n_scal,
-                       const int         scalar_idx[],
-                       const cs_lnum_t   n_cells)
+_check_log_scalar_diff(cs_dispatch_context &ctx,
+                       const bool           first_pass,
+                       const int            n_scal,
+                       const int            scalar_idx[],
+                       const cs_lnum_t      n_cells)
 {
   if (n_scal < 1)
     return;
@@ -521,8 +528,6 @@ _check_log_scalar_diff(const bool        first_pass,
 
   struct cs_double_n<2> rd[block_size];
   struct cs_reduce_min_max_nr<1> reducer[block_size];
-
-  cs_dispatch_context ctx;
 
   /* Loop on blocks of fields to regroup possible MPI operations */
   for (int b_id = 0; b_id < n_blocks; b_id++) {
@@ -755,7 +760,10 @@ _check_log_mesh_diff(bool       first_pass,
 /*----------------------------------------------------------------------------*/
 
 static void
-_init_boundary_temperature(void)
+_init_boundary_temperature
+(
+  cs_dispatch_context &ctx
+)
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -767,8 +775,6 @@ _init_boundary_temperature(void)
 
   cs_field_t *fld = cs_field_by_name_try("temperature");
   cs_real_t *field_s_b = cs_field_by_name_try("boundary_temperature")->val;
-
-  cs_dispatch_context ctx;
 
   if (fld != nullptr) {
 
@@ -962,6 +968,13 @@ cs_physical_properties_update(int   iterns)
 
   cs_field_t *rho_b_f = CS_F_(rho_b);
 
+  cs_dispatch_context ctx;
+
+  // Get View
+  cs_span<cs_real_t> rho_b_view;
+  if (rho_b_f != nullptr && n_b_faces > 0)
+    rho_b_view = rho_b_f->get_vals_s();
+
   int mbrom = 0;
   static bool first_pass = true;
 
@@ -978,8 +991,17 @@ cs_physical_properties_update(int   iterns)
      ---------------------- */
   cs_gui_physical_variable();
 
-  if (mbrom == 0 && n_b_faces > 0 && rho_b_f != nullptr)
-    rho_b_f->val[0] = -cs_math_big_r;
+  if (mbrom == 0 && rho_b_view.size() > 0) {
+    if (rho_b_f->get_vals_alloc_mode(0) == CS_ALLOC_DEVICE) {
+      cs_real_t dummy = -cs_math_big_r;
+#if defined(HAVE_ACCEL)
+      cs_copy_h2d(rho_b_view.data(), &dummy, sizeof(cs_real_t));
+#endif
+    }
+    else {
+      rho_b_view[0] = -cs_math_big_r;
+    }
+  }
 
   if (cs_glob_thermal_model->thermal_variable == CS_THERMAL_MODEL_ENTHALPY)
     cs_ht_convert_h_to_t_cells_solid();
@@ -987,7 +1009,20 @@ cs_physical_properties_update(int   iterns)
   cs_user_physical_properties(cs_glob_domain);
 
   if (mbrom == 0 && n_b_faces > 0 && rho_b_f != nullptr) {
-    if (rho_b_f->val[0] > -cs_math_big_r)
+    /* Since we do the update */
+    cs_real_t _rho_b_f0 = 0.;
+    if (rho_b_f->get_vals_alloc_mode(0) == CS_ALLOC_DEVICE) {
+#if defined(HAVE_ACCEL)
+      cs_copy_d2h(&_rho_b_f0,
+                  rho_b_f->val,
+                  sizeof(cs_real_t));
+#endif
+    }
+    else {
+      _rho_b_f0 = rho_b_view[0];
+    }
+
+    if (_rho_b_f0 > -cs_math_big_r)
       mbrom = 1;
   }
 
@@ -998,10 +1033,9 @@ cs_physical_properties_update(int   iterns)
   // Boundary density based on adjacent cell value if not explicitly set.
   if (mbrom == 0 && rho_b_f != nullptr) {
     assert(CS_F_(rho) != nullptr);
-    const cs_real_t  *crom = CS_F_(rho)->val;
-    cs_real_t  *brom = rho_b_f->val;
+    const cs_span<cs_real_t> crom = CS_F_(rho)->get_vals_s();
+    cs_span<cs_real_t> brom = rho_b_f->get_vals_s();
 
-    cs_dispatch_context ctx;
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       brom[face_id] = crom[b_face_cells[face_id]];
     });
@@ -1020,28 +1054,31 @@ cs_physical_properties_update(int   iterns)
   if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_prev + 1) {
     if (cs_glob_fluid_properties->irovar == 0) {
       const cs_real_t ro0 = cs_glob_fluid_properties->ro0;
-      _field_is_constant("the density",
+      _field_is_constant(ctx,
+                         "the density",
                           n_cells,
-                          CS_F_(rho)->val,
+                          CS_F_(rho),
                           ro0);
 
-      _field_is_constant("the density at the boundary",
+      _field_is_constant(ctx,
+                         "the density at the boundary",
                           n_b_faces,
-                          CS_F_(rho_b)->val,
+                          CS_F_(rho_b),
                           ro0);
     }
     if (cs_glob_fluid_properties->ivivar == 0) {
       const cs_real_t viscl0 = cs_glob_fluid_properties->viscl0;
-      _field_is_constant("The molecular viscosity",
+      _field_is_constant(ctx,
+                         "The molecular viscosity",
                          n_cells,
-                         CS_F_(mu)->val,
+                         CS_F_(mu),
                          viscl0);
     }
   }
 
   /* Compute the eddy viscosity
      -------------------------- */
-  _compute_turbulence_mu(n_cells);
+  _compute_turbulence_mu(ctx, n_cells);
 
   /* storage id of scalar fields */
   const int keysca = cs_field_key_id("scalar_id");
@@ -1062,7 +1099,7 @@ cs_physical_properties_update(int   iterns)
 
   /* Anisotropic turbulent viscosity (symmetric)
      ------------------------------------------- */
-  _compute_anisotropic_turbulent_viscosity(n_cells, n_scal, scalar_idx, mq);
+  _compute_anisotropic_turbulent_viscosity(ctx, n_cells, n_scal, scalar_idx, mq);
 
   /* Eddy viscosity correction for cavitating flows
      ---------------------------------------------- */
@@ -1075,7 +1112,8 @@ cs_physical_properties_update(int   iterns)
         || (cs_glob_turb_model->itytur == 5)
         || (cs_glob_turb_model->model  ==  CS_TURB_K_OMEGA)
         || (cs_glob_turb_model->model  ==  CS_TURB_SPALART_ALLMARAS) ) {
-    _cavitation_correct_visc_turb(n_cells,
+    _cavitation_correct_visc_turb(ctx,
+                                  n_cells,
                                   cs_glob_vof_parameters->rho1,
                                   cs_glob_vof_parameters->rho2,
                                   CS_F_(rho)->val);
@@ -1093,10 +1131,10 @@ cs_physical_properties_update(int   iterns)
 
   // Physical value checks
   if (rho_b_f != nullptr)
-    _clip_rho_mu_cp(first_pass, n_cells, n_scal, scalar_idx, mq);
+    _clip_rho_mu_cp(ctx, first_pass, n_cells, n_scal, scalar_idx, mq);
 
   // Calculation of scalar limits and printing
-  _check_log_scalar_diff(first_pass, n_scal, scalar_idx, n_cells);
+  _check_log_scalar_diff(ctx, first_pass, n_scal, scalar_idx, n_cells);
 
   CS_FREE(scalar_idx);
 
@@ -1106,7 +1144,7 @@ cs_physical_properties_update(int   iterns)
   /* Initialize boundary temperature if present and not initialized yet
      ------------------------------------------------------------------ */
 
-  _init_boundary_temperature();
+  _init_boundary_temperature(ctx);
 
   first_pass = false;
 }

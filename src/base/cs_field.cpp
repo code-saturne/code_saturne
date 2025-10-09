@@ -1748,7 +1748,6 @@ cs_field_allocate_values(cs_field_t  *f)
 
     /* Use host_context in this part to avoid access by GPU (too soon...) */
     cs_dispatch_context ctx;
-    ctx.set_use_gpu(false);
 
     /* Initialization */
 
@@ -4898,7 +4897,7 @@ cs_span<cs_real_t>
 cs_field_t::get_vals_s
 (
   const int time_id /*!<[in] time value id to get. 0 for val, 1 for val_pre */
-)
+) const
 {
   if (this->dim != 1)
     bft_error(__FILE__, __LINE__, 0,
@@ -4921,7 +4920,7 @@ cs_span_2d<cs_real_t>
 cs_field_t::get_vals_v
 (
   const int time_id /*!<[in] time value id to get. 0 for val, 1 for val_pre */
-)
+) const
 {
   if (this->dim != 3)
     bft_error(__FILE__, __LINE__, 0,
@@ -4945,7 +4944,7 @@ cs_span_2d<cs_real_t>
 cs_field_t::get_vals_t
 (
   const int time_id /*!<[in] time value id to get. 0 for val, 1 for val_pre */
-)
+) const
 {
   if (this->dim != 6)
     bft_error(__FILE__, __LINE__, 0,
@@ -4954,6 +4953,23 @@ cs_field_t::get_vals_t
 
   const cs_lnum_t n_elts = this->_vals[time_id]->size() / this->dim;
   return this->_vals[time_id]->get_mdspan<2>({n_elts, this->dim});
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the allocation mode of the values array.
+ *
+ * \return cs_alloc_mode_t corresponding to the used allocation mode.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_alloc_mode_t
+cs_field_t::get_vals_alloc_mode
+(
+  const int time_id /*!<[in] time value id to get. 0 for val, 1 for val_pre */
+) const
+{
+  return this->_vals[time_id]->mode();
 }
 
 /*----------------------------------------------------------------------------*/

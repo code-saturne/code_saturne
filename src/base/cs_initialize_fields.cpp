@@ -153,18 +153,16 @@ cs_initialize_fields_stage_0(void)
   const int kivisl = cs_field_key_id("diffusivity_id");
   const int kvisl0 = cs_field_key_id("diffusivity_ref");
 
+  cs_dispatch_context ctx;
+
   /* Initialize temperature to reference temperature if present */
   if (CS_F_(t) != nullptr) {
-    cs_array_real_set_scalar(m->n_cells_with_ghosts,
-                             fluid_props->t0,
-                             CS_F_(t)->val);
+    CS_F_(t)->get_vals_s().set_to_val(ctx, fluid_props->t0);
   }
 
   /* Initialize boundary temperature to "marker" if present */
   if (CS_F_(t_b) != nullptr) {
-    cs_array_real_set_scalar(m->n_b_faces,
-                             -cs_math_big_r,
-                             CS_F_(t_b)->val);
+    CS_F_(t_b)->get_vals_s().set_to_val(ctx, -cs_math_big_r);
   }
 
   /* Time step
@@ -173,39 +171,26 @@ cs_initialize_fields_stage_0(void)
   /* dt might be used on the halo cells during the ALE initialization
      otherwise dt is synchronized in the pressure correction step. */
 
-  cs_array_real_set_scalar(m->n_cells_with_ghosts,
-                           cs_glob_time_step->dt_ref,
-                           CS_F_(dt)->val);
+  CS_F_(dt)->get_vals_s().set_to_val(ctx, cs_glob_time_step->dt_ref);
 
   /* Initialize physical properties
      ------------------------------ */
 
   /* Density */
-
-  cs_array_real_set_scalar(m->n_cells_with_ghosts,
-                           fluid_props->ro0,
-                           CS_F_(rho)->val);
-  cs_array_real_set_scalar(m->n_b_faces,
-                           fluid_props->ro0,
-                           CS_F_(rho_b)->val);
+  CS_F_(rho)->get_vals_s().set_to_val(ctx, fluid_props->ro0);
+  CS_F_(rho_b)->get_vals_s().set_to_val(ctx, fluid_props->ro0);
 
   /* Boussinesq (set to impossible value at this stage) */
   if (cs_glob_velocity_pressure_model->idilat == 0) {
-    cs_array_real_set_scalar(m->n_cells_with_ghosts,
-                             -1.,
-                             cs_field_by_name("thermal_expansion")->val);
+    cs_field_by_name("thermal_expansion")->get_vals_s().set_to_val(ctx, -1.);
   }
 
   /* Molecular viscosity */
-  cs_array_real_set_scalar(m->n_cells_with_ghosts,
-                           fluid_props->viscl0,
-                           CS_F_(mu)->val);
+  CS_F_(mu)->get_vals_s().set_to_val(ctx, fluid_props->viscl0);
 
   /* Specific heat */
   if (fluid_props->icp >= 0) {
-    cs_array_real_set_scalar(m->n_cells_with_ghosts,
-                             fluid_props->cp0,
-                             CS_F_(cp)->val);
+    CS_F_(cp)->get_vals_s().set_to_val(ctx, fluid_props->cp0);
   }
 
   /* The total pressure will be initialized to P0 + rho.g.r in inivar
@@ -213,17 +198,15 @@ cs_initialize_fields_stage_0(void)
      so mark to "uninit" value here */
 
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
-    cs_array_real_set_scalar(m->n_cells_with_ghosts,
-                             - cs_math_infinite_r,
-                             cs_field_by_name("total_pressure")->val);
+    cs_field_t *f = cs_field_by_name("total_pressure");
+    f->get_vals_s().set_to_val(ctx, -cs_math_infinite_r);
   }
 
   /* Initialization of mix_mol_mas with default values (air)
      (used in cs_cf_thermo_default_init) */
   if (cs_glob_physical_model_flag[CS_GAS_MIX] >= 0) {
-    cs_array_real_set_scalar(m->n_cells_with_ghosts,
-                             fluid_props->xmasmr,
-                             cs_field_by_name("mix_mol_mas")->val);
+    cs_field_t *f = cs_field_by_name("mix_mol_mas");
+    f->get_vals_s().set_to_val(ctx, fluid_props->xmasmr);
   }
 
   /* Default initialisations for the compressible model */
@@ -231,9 +214,8 @@ cs_initialize_fields_stage_0(void)
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0) {
     /* In compressible, for now, the temperature is not solved but is a field of
        type variable anyway. The reference value has to be taken into account. */
-    cs_array_real_set_scalar(m->n_cells_with_ghosts,
-                             fluid_props->t0,
-                             CS_F_(t)->val);
+    CS_F_(t)->get_vals_s().set_to_val(ctx, fluid_props->t0);
+    ctx.wait();
 
     /* Default isochoric specific heat (cv0), total energy and density */
     cs_cf_thermo_default_init();
@@ -260,12 +242,12 @@ cs_initialize_fields_stage_0(void)
     if (ifcvsl >= 0) {
       cs_field_t *f_vsl = cs_field_by_id(ifcvsl);
       for (int i = 0; i < f_vsl->n_time_vals; i++) {
-        cs_array_real_set_scalar(m->n_cells_with_ghosts,
-                                 visls_0,
-                                 f_vsl->vals[i]);
+        f_vsl->get_vals_s().set_to_val(ctx, visls_0);
       }
     }
   }
+
+  ctx.wait();
 
   /* Mesh viscosity for ALE */
 
@@ -274,29 +256,31 @@ cs_initialize_fields_stage_0(void)
       = cs_field_get_equation_param_const(CS_F_(mesh_u));
     const int idftnp = eqp->idften;
 
+    cs_field_t *f_mesh_visc = cs_field_by_name("mesh_viscosity");
     if (idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION) {
       cs_real_t ref_val[6] = {1., 1., 1., 0., 0., 0.};
-      cs_array_real_set_value(m->n_cells_with_ghosts,
-                              6,
-                              ref_val,
-                              cs_field_by_name("mesh_viscosity")->val);
+      auto mesh_visc_view = f_mesh_visc->get_vals_t();
+      ctx.parallel_for(m->n_cells_with_ghosts, CS_LAMBDA (cs_lnum_t c_id) {
+        for (int i = 0; i < 6; i++) {
+          mesh_visc_view(c_id, i) = ref_val[i];
+        }
+      });
     }
     else if (idftnp & CS_ISOTROPIC_DIFFUSION) {
-      cs_array_real_set_scalar(m->n_cells_with_ghosts,
-                               1,
-                               cs_field_by_name("mesh_viscosity")->val);
+      f_mesh_visc->get_vals_s().set_to_val(ctx, 1);
     }
 
+    ctx.wait();
     cs_gui_mesh_viscosity();
   }
 
   /* Porosity */
 
   if (cs_glob_porous_model > 0) {
-    cs_real_t *porosity = cs_field_by_name("porosity")->val;
+    cs_field_t *porosity = cs_field_by_name("porosity");
 
     if (cs_glob_porosity_from_scan_opt->compute_porosity_from_scan)
-      cs_array_real_set_scalar(m->n_cells_with_ghosts, 0., porosity);
+      porosity->get_vals_s().set_to_val(ctx, 0.);
 
     else if (cs_glob_porosity_ibm_opt->porosity_mode > 0) {
       cs_field_t *f_ifp = cs_field_by_name_try("i_face_porosity");
@@ -308,24 +292,24 @@ cs_initialize_fields_stage_0(void)
     }
 
     else
-      cs_array_real_set_scalar(m->n_cells_with_ghosts, 1., porosity);
+      porosity->get_vals_s().set_to_val(ctx, 1.);
 
     /* Tensorial porosity */
     if (cs_glob_porous_model == 2) {
+      auto tens_por_view =
+        cs_field_by_name("tensorial_porosity")->get_vals_t();
       cs_real_t ref_val[6] = {1., 1., 1., 0., 0., 0.};
-      cs_array_real_set_value(m->n_cells_with_ghosts,
-                              6,
-                              ref_val,
-                              cs_field_by_name("tensorial_porosity")->val);
+      ctx.parallel_for(m->n_cells_with_ghosts, CS_LAMBDA (cs_lnum_t c_id) {
+        for (int i = 0; i < 6; i++)
+          tens_por_view(c_id, i) = ref_val[i];
+      });
     }
   }
 
   /* Reference value for P*
      ---------------------- */
 
-  cs_array_real_set_scalar(m->n_cells_with_ghosts,
-                           cs_glob_fluid_properties->pred0,
-                           CS_F_(p)->val);
+  CS_F_(p)->get_vals_s().set_to_val(ctx, cs_glob_fluid_properties->pred0);
 
   /* VoF
      --- */
@@ -343,8 +327,10 @@ cs_initialize_fields_stage_0(void)
     cs_field_t *f_vf = cs_field_by_name("void_fraction");
     cs_real_t clvfmn = cs_field_get_key_double(f_vf, kscmin);
 
-    cs_array_real_set_scalar(m->n_cells_with_ghosts, clvfmn, f_vf->val);
+    f_vf->get_vals_s().set_to_val(ctx, clvfmn);
   }
+
+  ctx.wait();
 
   /* Turbulence
      ---------- */
@@ -414,9 +400,9 @@ cs_initialize_fields_stage_0(void)
     const int dl_id = cs_field_get_key_int(f, kdflim);
     if (dl_id > -1) {
       cs_field_t *f_dl = cs_field_by_id(dl_id);
-      cs_array_real_set_scalar(m->n_cells_with_ghosts, 1.0, f_dl->val);
+      f_dl->get_vals_s().set_to_val(ctx, 1.0);
     }
-
+    ctx.wait();
   }
 
   /* Previous value initializations

@@ -56,6 +56,7 @@
 #include "mesh/cs_mesh.h"
 #include "base/cs_parall.h"
 #include "mesh/cs_mesh_location.h"
+#include "base/cs_reducers.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -135,10 +136,12 @@ cs_turbulence_init_by_ref_quantities(void)
   const cs_real_t uref = cs_glob_turb_ref_values->uref;
   const cs_real_t almax = cs_glob_turb_ref_values->almax;
 
+  cs_dispatch_context ctx;
+
   if (turb_model->itytur == 2 || turb_model->itytur == 5) {
 
-    cs_real_t *cvar_k = CS_F_(k)->val;
-    cs_real_t *cvar_ep = CS_F_(eps)->val;
+    cs_span<cs_real_t> cvar_k = CS_F_(k)->get_vals_s();
+    cs_span<cs_real_t> cvar_ep = CS_F_(eps)->get_vals_s();
 
     cs_real_t k_ini = -cs_math_big_r, ep_ini = -cs_math_big_r;
 
@@ -147,23 +150,29 @@ cs_turbulence_init_by_ref_quantities(void)
       ep_ini = pow(k_ini, 1.5) * cs_turb_cmu / almax;
     }
 
-    cs_array_real_set_scalar(n_cells_ext, k_ini, cvar_k);
-    cs_array_real_set_scalar(n_cells_ext, ep_ini, cvar_ep);
+    ctx.parallel_for(n_cells_ext, CS_LAMBDA (cs_lnum_t e_id) {
+      cvar_k[e_id] = k_ini;
+      cvar_ep[e_id] = ep_ini;
+    });
 
     if (uref >= 0.)
       cs_turbulence_ke_clip(-1, n_cells, 1);
 
     if (turb_model->model == CS_TURB_V2F_PHI) {
-      cs_real_t *cvar_phi = CS_F_(phi)->val;
-      cs_real_t *cvar_fb = CS_F_(f_bar)->val;
-      cs_array_real_set_scalar(n_cells_ext, 2./3., cvar_phi);
-      cs_array_real_set_scalar(n_cells_ext, 0., cvar_fb);
+      cs_span<cs_real_t> cvar_phi = CS_F_(phi)->get_vals_s();
+      cs_span<cs_real_t> cvar_fb = CS_F_(f_bar)->get_vals_s();
+      ctx.parallel_for(n_cells_ext, CS_LAMBDA (cs_lnum_t e_id) {
+        cvar_phi[e_id] = 2./3.;
+        cvar_fb[e_id]  = 0.;
+      });
     }
     else if (turb_model->model == CS_TURB_V2F_BL_V2K) {
-      cs_real_t *cvar_phi = CS_F_(phi)->val;
-      cs_real_t *cvar_al = CS_F_(alp_bl)->val;
-      cs_array_real_set_scalar(n_cells_ext, 2./3., cvar_phi);
-      cs_array_real_set_scalar(n_cells_ext, 1., cvar_al);
+      cs_span<cs_real_t> cvar_phi = CS_F_(phi)->get_vals_s();
+      cs_span<cs_real_t> cvar_al = CS_F_(alp_bl)->get_vals_s();
+      ctx.parallel_for(n_cells_ext, CS_LAMBDA (cs_lnum_t e_id) {
+        cvar_phi[e_id] = 2./3.;
+        cvar_al[e_id]  = 1.;
+      });
     }
 
   }
@@ -171,9 +180,8 @@ cs_turbulence_init_by_ref_quantities(void)
     cs_turbulence_rij_init_by_ref_quantities(uref, almax);
 
   else if (turb_model->model == CS_TURB_K_OMEGA) {
-
-    cs_real_t *cvar_k = CS_F_(k)->val;
-    cs_real_t *cvar_omg = CS_F_(omg)->val;
+    cs_span<cs_real_t> cvar_k = CS_F_(k)->get_vals_s();
+    cs_span<cs_real_t> cvar_omg = CS_F_(omg)->get_vals_s();
 
     cs_real_t k_ini = -cs_math_big_r, omg_ini = -cs_math_big_r;
 
@@ -184,14 +192,16 @@ cs_turbulence_init_by_ref_quantities(void)
       omg_ini = pow(k_ini, 0.5) / almax;
     }
 
-    cs_array_real_set_scalar(n_cells_ext, k_ini, cvar_k);
-    cs_array_real_set_scalar(n_cells_ext, omg_ini, cvar_omg);
+    ctx.parallel_for(n_cells_ext, CS_LAMBDA (cs_lnum_t e_id) {
+      cvar_k[e_id] = k_ini;
+      cvar_omg[e_id] = omg_ini;
+    });
 
   }
 
   else if (turb_model->model == CS_TURB_SPALART_ALLMARAS) {
 
-    cs_real_t *cvar_nusa = CS_F_(nusa)->val;
+    cs_span<cs_real_t> cvar_nusa = CS_F_(nusa)->get_vals_s();
 
     cs_real_t nusa_ini = -cs_math_big_r;
 
@@ -201,7 +211,7 @@ cs_turbulence_init_by_ref_quantities(void)
       nusa_ini = sqrt(1.5) * (0.02*uref) * almax;
     }
 
-    cs_array_real_set_scalar(n_cells_ext, nusa_ini, cvar_nusa);
+    cvar_nusa.set_to_val(ctx, nusa_ini);
 
   }
 }
@@ -230,22 +240,29 @@ cs_turbulence_init_clip_and_verify(void)
   if (turb_model == nullptr)
     return n_errors;
 
+  cs_dispatch_context ctx;
+
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
   if (turb_model->itytur == 2 || turb_model->itytur == 5) {
 
-    cs_real_t *cvar_k = CS_F_(k)->val;
-    cs_real_t *cvar_ep = CS_F_(eps)->val;
+    cs_span<cs_real_t> cvar_k = CS_F_(k)->get_vals_s();
+    cs_span<cs_real_t> cvar_ep = CS_F_(eps)->get_vals_s();
 
-    cs_real_t f_min[2] = {HUGE_VAL, HUGE_VAL};
+    struct cs_data_double_n<2> rd_ke;
+    struct cs_reduce_min_nr<2> reducer_ke;
 
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      f_min[0] = cs_math_fmin(f_min[0], cvar_k[c_id]);
-      f_min[1] = cs_math_fmin(f_min[1], cvar_ep[c_id]);
-    }
-    cs_parall_min(2, CS_REAL_TYPE, f_min);
+    ctx.parallel_for_reduce(n_cells, rd_ke, reducer_ke, CS_LAMBDA
+                            (cs_lnum_t c_id, cs_data_double_n<2> &res)
+    {
+      res.r[0] = cvar_k[c_id];
+      res.r[1] = cvar_ep[c_id];
+    });
+    ctx.wait();
 
-    cs_real_t xekmin = f_min[0], xepmin = f_min[1];
+    cs_parall_min(2, CS_REAL_TYPE, &rd_ke.r[0]);
+
+    cs_real_t xekmin = rd_ke.r[0], xepmin = rd_ke.r[1];
 
     if (xekmin >= 0. && xepmin >= 0.)
       cs_turbulence_ke_clip(-1, n_cells, 1);
@@ -265,31 +282,43 @@ cs_turbulence_init_clip_and_verify(void)
 
     if (turb_model->itytur == 5) {
 
-      cs_real_t *cvar_phi = CS_F_(phi)->val;
+      struct cs_data_double_n<4> rd;
+      struct cs_reduce_minmax_n<2> reducer;
+
+      cs_span<cs_real_t> cvar_phi = CS_F_(phi)->get_vals_s();
 
       int n_minmax = 1;
-      cs_real_t v_min[2] = {HUGE_VAL, HUGE_VAL};
-      cs_real_t v_max[2] = {-HUGE_VAL, -HUGE_VAL};
-
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        v_min[0] = cs::min(v_min[0], cvar_phi[c_id]);
-        v_max[0] = cs::max(v_max[0], cvar_phi[c_id]);
-      }
       if (turb_model->model == CS_TURB_V2F_BL_V2K) {
-        cs_real_t *cvar_al = CS_F_(alp_bl)->val;
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-          v_min[1] = cs::min(v_min[1], cvar_al[c_id]);
-          v_max[1] = cs::max(v_max[1], cvar_al[c_id]);
-        }
         n_minmax = 2;
+
+        cs_span<cs_real_t> cvar_al = CS_F_(alp_bl)->get_vals_s();
+
+        ctx.parallel_for_reduce(n_cells, rd, reducer, CS_LAMBDA
+                                (cs_lnum_t c_id, cs_data_double_n<4> &res)
+        {
+          res.r[0] = cvar_phi[c_id];
+          res.r[1] = cvar_al[c_id];
+          res.r[2] = res.r[0];
+          res.r[3] = res.r[1];
+        });
+      }
+      else {
+        ctx.parallel_for_reduce(n_cells, rd, reducer, CS_LAMBDA
+                                (cs_lnum_t c_id, cs_data_double_n<4> &res)
+        {
+          res.r[0] = cvar_phi[c_id];
+          res.r[2] = res.r[0];
+        });
       }
 
-      cs_parall_min(n_minmax, CS_REAL_TYPE, v_min);
-      cs_parall_max(n_minmax, CS_REAL_TYPE, v_max);
+      ctx.wait();
+
+      cs_parall_min(n_minmax, CS_REAL_TYPE, &rd.r[0]);
+      cs_parall_max(n_minmax, CS_REAL_TYPE, &rd.r[2]);
 
       /* For consistency with cs_turbulence_v2f.c:_clip_v2f,
          we clip only to 0 and not to 2 */
-      if (v_min[0] < 0.) {
+      if (rd.r[0] < 0.) {
         n_errors += 1;
         cs_log_warning
           (_("Error in variables initialization\n"
@@ -299,13 +328,13 @@ cs_turbulence_init_clip_and_verify(void)
              "    Maximum value  = %g\n\n"
              "  Check user-defined initialization, restart data,\n"
              "  and value of reference velocity (uref)\n"),
-           v_min[0], v_max[0]);
+           rd.r[0], rd.r[2]);
       }
 
       /* For v2-f, BL-v2/k, also check that alpha is between 0 and 1. */
 
       if (turb_model->model == CS_TURB_V2F_BL_V2K) {
-        if (v_min[1] < 0. || v_max[1] > 1.) {
+        if (rd.r[1] < 0. || rd.r[3] > 1.) {
           n_errors += 1;
           cs_log_warning
             (_("Error in variables initialization\n"
@@ -315,7 +344,7 @@ cs_turbulence_init_clip_and_verify(void)
                "    Maximum value  = %g\n\n"
                "  Check user-defined initialization, restart data,\n"
                "  and value of reference velocity (uref)\n"),
-             v_min[1], v_max[1]);
+             rd.r[1], rd.r[3]);
         }
       }
 
@@ -325,34 +354,42 @@ cs_turbulence_init_clip_and_verify(void)
 
   else if (turb_model->order == CS_TURB_SECOND_ORDER) {
 
-    cs_real_t v_min[5] = {HUGE_VAL, HUGE_VAL, HUGE_VAL, HUGE_VAL, HUGE_VAL};
-    cs_real_t al_max[1] = {-HUGE_VAL};
+    cs_span_2d<cs_real_t> cvar_rij = CS_F_(rij)->get_vals_t();
+    cs_span<cs_real_t> cvar_ep = CS_F_(eps)->get_vals_s();
 
-    cs_real_6_t *cvar_rij = (cs_real_6_t *)(CS_F_(rij)->val);
-    cs_real_t *cvar_ep = CS_F_(eps)->val;
+    struct cs_data_double_n<4> rd_rij;
+    struct cs_reduce_min_nr<4> reducer_rij;
 
-    int n_minmax = 4;
+    struct cs_data_double_n<2> rd_alpha;
+    struct cs_reduce_minmax_n<1> reducer_alpha;
 
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      v_min[0] = cs::min(v_min[0], cvar_rij[c_id][0]);
-      v_min[1] = cs::min(v_min[1], cvar_rij[c_id][1]);
-      v_min[2] = cs::min(v_min[2], cvar_rij[c_id][2]);
-      v_min[3] = cs::min(v_min[3], cvar_ep[c_id]);
-    }
+    /* First compute min over Rij-epsilon */
+    ctx.parallel_for_reduce(n_cells, rd_rij, reducer_rij, CS_LAMBDA
+                            (cs_lnum_t c_id, cs_data_double_n<4> &res)
+    {
+      res.r[0] = cvar_rij(c_id, 0);
+      res.r[1] = cvar_rij(c_id, 1);
+      res.r[2] = cvar_rij(c_id, 2);
+      res.r[3] = cvar_ep[c_id];
+    });
 
+    /* If EBRSM, compute min/max of alpha */
     if (turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
-      cs_real_t *cvar_al = CS_F_(alp_bl)->val;
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        v_min[4] = cs::min(v_min[4], cvar_al[c_id]);
-        al_max[0] = cs::max(al_max[0], cvar_al[c_id]);
-      }
-      n_minmax = 5;
+      cs_span<cs_real_t> cvar_al = CS_F_(alp_bl)->get_vals_s();
+      ctx.parallel_for_reduce(n_cells, rd_alpha, reducer_alpha, CS_LAMBDA
+                              (cs_lnum_t c_id, cs_data_double_n<2> &res)
+      {
+        res.r[0] = cvar_al[c_id];
+        res.r[1] = cvar_al[c_id];
+      });
     }
 
-    cs_parall_min(n_minmax, CS_REAL_TYPE, v_min);
+    ctx.wait();
 
-    if (   v_min[0] >= 0 && v_min[1] >= 0
-        && v_min[2] >= 0 && v_min[3] >= 0) {
+    cs_parall_min(4, CS_REAL_TYPE, &rd_rij.r[0]);
+
+    if (   rd_rij.r[0] >= 0 && rd_rij.r[1] >= 0
+        && rd_rij.r[2] >= 0 && rd_rij.r[3] >= 0) {
       if (cs_glob_turb_rans_model->irijco == 0)
         cs_turbulence_rij_clip(-1, n_cells);
     }
@@ -368,13 +405,17 @@ cs_turbulence_init_clip_and_verify(void)
            "    Maximum value of epsilon = %g\n\n"
            "  Check user-defined initialization, restart data,\n"
            "  and value of reference velocity (uref)\n"),
-         v_min[0], v_min[1], v_min[2], v_min[3]);
+         rd_rij.r[0], rd_rij.r[1], rd_rij.r[2], rd_rij.r[3]);
     }
 
     if (turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
-      cs_parall_max(1, CS_REAL_TYPE, al_max);
+      cs_real_t al_minmax[2] = {-rd_alpha.r[0], rd_alpha.r[1]};
+      cs_parall_max(2, CS_REAL_TYPE, al_minmax);
 
-      if (v_min[4] < 0. || al_max[0] > 1.) {
+      cs_real_t al_min = -al_minmax[0];
+      cs_real_t al_max = al_minmax[1];
+
+      if (al_min < 0. || al_max > 1.) {
         n_errors += 1;
         cs_log_warning
           (_("Error in variables initialization\n"
@@ -384,26 +425,31 @@ cs_turbulence_init_clip_and_verify(void)
              "    Maximum value  = %g\n\n"
              "  Check user-defined initialization, restart data,\n"
              "  and value of reference velocity (uref)\n"),
-           v_min[4], al_max[0]);
+           al_min, al_max);
       }
     }
 
   }
   else if (turb_model->model == CS_TURB_K_OMEGA) {
 
-    cs_real_t *cvar_k = CS_F_(k)->val;
-    cs_real_t *cvar_omg = CS_F_(omg)->val;
+    cs_span<cs_real_t> cvar_k = CS_F_(k)->get_vals_s();
+    cs_span<cs_real_t> cvar_omg = CS_F_(omg)->get_vals_s();
 
-    cs_real_t f_min[2] = {HUGE_VAL, HUGE_VAL};
+    struct cs_data_double_n<2> rd_komg;
+    struct cs_reduce_min_nr<2> reducer_komg;
 
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      f_min[0] = cs::min(f_min[0], cvar_k[c_id]);
-      f_min[1] = cs::min(f_min[1], cvar_omg[c_id]);
-    }
-    cs_parall_min(2, CS_REAL_TYPE, f_min);
+    ctx.parallel_for_reduce(n_cells, rd_komg, reducer_komg, CS_LAMBDA
+                            (cs_lnum_t c_id, cs_data_double_n<2> &res)
+    {
+      res.r[0] = cvar_k[c_id];
+      res.r[1] = cvar_omg[c_id];
+    });
+
+    ctx.wait();
+    cs_parall_min(2, CS_REAL_TYPE, &rd_komg.r[0]);
 
     /* For k-omega, clip only to 0 */
-    if (f_min[0] < 0. || f_min[1] <= 0.) {
+    if (rd_komg.r[0] < 0. || rd_komg.r[1] <= 0.) {
       n_errors += 1;
       cs_log_warning(_("Error in variables initialization\n"
                        "----\n\n"
@@ -412,24 +458,28 @@ cs_turbulence_init_clip_and_verify(void)
                        "    Minimum value of omega  = %g\n\n"
                        "  Check user-defined initialization, restart data,\n"
                        "  and value of reference velocity (uref)\n"),
-                     f_min[0], f_min[1]);
+                     rd_komg.r[0], rd_komg.r[1]);
     }
 
   }
   else if (turb_model->model == CS_TURB_SPALART_ALLMARAS) {
 
-    cs_real_t *cvar_nusa = CS_F_(nusa)->val;
+    cs_span<cs_real_t> cvar_nusa = CS_F_(nusa)->get_vals_s();
 
-    cs_real_t nu_min = HUGE_VAL;
+    struct cs_data_double_n<1> rd_sa;
+    struct cs_reduce_min_nr<1> reducer_sa;
 
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      nu_min = cs::min(nu_min, cvar_nusa[c_id]);
-    }
-    cs_parall_min(1, CS_REAL_TYPE, &nu_min);
+    ctx.parallel_for_reduce(n_cells, rd_sa, reducer_sa, CS_LAMBDA
+                            (cs_lnum_t c_id, cs_data_double_n<1> &res)
+    {
+      res.r[0] = cvar_nusa[c_id];
+    });
+    ctx.wait();
+    cs_parall_min(1, CS_REAL_TYPE, &rd_sa.r[0]);
 
     /* For Spalart-Allmaras, clip only to 0 */
 
-    if (nu_min < 0) {
+    if (rd_sa.r[0] < 0) {
       n_errors += 1;
       cs_log_warning(_("Error in variables initialization\n"
                        "----\n\n"
@@ -437,7 +487,7 @@ cs_turbulence_init_clip_and_verify(void)
                        "    Minimum value of nu = %g\n"
                        "  Check user-defined initialization, restart data,\n"
                        "  and value of reference velocity (uref)\n"),
-                     nu_min);
+                     rd_sa.r[0]);
     }
 
   }

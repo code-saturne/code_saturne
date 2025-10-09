@@ -51,6 +51,7 @@
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_parall.h"
 #include "base/cs_profiling.h"
+#include "base/cs_reducers.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -122,32 +123,37 @@ _update_check_bounds(cs_log_check_bounds_t *cb)
 
   cs_real_t vmax = {-HUGE_VAL};
 
+  cs_dispatch_context ctx;
+  struct cs_reduce_max1r reducer;
   if (f->dim == 3) {
-    const cs_real_3_t *val = (const cs_real_3_t *)(f->val);
-    for (cs_lnum_t i = 0; i < _n_elts; i++) {
-      cs_real_t v = cs_math_3_square_norm(val[i]);
-      if (v > vmax)
-        vmax = v;
-    }
-    if (vmax > 0)
-      vmax = sqrt(vmax);
+    const cs_real_t *val = f->val;
+
+    ctx.parallel_for_reduce(_n_elts, vmax, reducer, CS_LAMBDA
+                            (cs_lnum_t i, cs_real_t &res)
+    {
+      res = cs_math_3_square_norm(val + 3*i);
+    });
   }
   else if (f->dim == 6) {
-    const cs_real_6_t *val = (const cs_real_6_t *)(f->val);
-    for (cs_lnum_t i = 0; i < _n_elts; i++) {
-      cs_real_t v = val[i][0] + val[i][1] + val[i][2];
-      if (v > vmax)
-        vmax = v;
-    }
+    cs_span_2d<cs_real_t> f_view = f->get_vals_t();
+
+    ctx.parallel_for_reduce(_n_elts, vmax, reducer, CS_LAMBDA
+                            (cs_lnum_t i, cs_real_t &res)
+    {
+      res = f_view(i,0) + f_view(i,1) + f_view(i,2);
+    });
   }
   else {
     const cs_real_t *val = f->val;
     const cs_lnum_t n = _n_elts*((cs_lnum_t)(f->dim));
-    for (cs_lnum_t i = 0; i < n; i++) {
-      if (val[i] > vmax)
-        vmax = val[i];
-    }
+    ctx.parallel_for_reduce(n, vmax, reducer, CS_LAMBDA
+                            (cs_lnum_t i, cs_real_t &res)
+    {
+      res = val[i];
+    });
   }
+
+  ctx.wait();
 
   cs_parall_max(1, CS_REAL_TYPE, &vmax);
 

@@ -257,19 +257,25 @@ typedef struct {
   get_vals_s
   (
     const int time_id = 0
-  );
+  ) const;
 
   cs_span_2d<cs_real_t>
   get_vals_v
   (
     const int time_id = 0
-  );
+  ) const;
 
   cs_span_2d<cs_real_t>
   get_vals_t
   (
     const int time_id = 0
-  );
+  ) const;
+
+  cs_alloc_mode_t
+  get_vals_alloc_mode
+  (
+    const int time_id = 0
+  ) const;
 
   void
   update_size(void);
