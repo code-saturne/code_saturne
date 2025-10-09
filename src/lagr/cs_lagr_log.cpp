@@ -248,9 +248,9 @@ _log_setup_injection(cs_log_t  log)
                         zis->velocity[0], zis->velocity[1], zis->velocity[2]);
 
         cs_log_printf(log,
-                      _("    diameter: %g; (variance: %g)\n"
+                      _("    diameter: %g; (standard deviation: %g)\n"
                         "    density: %g\n"),
-                      zis->diameter, zis->diameter_variance, zis->density);
+                      zis->diameter, sqrt(zis->diameter_variance), zis->density);
 
 
         if (cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_STOC_MODEL) {

@@ -59,6 +59,7 @@
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
+#include "base/cs_parameters_check.h"
 #include "pprt/cs_physical_model.h"
 #include "base/cs_physical_constants.h"
 #include "base/cs_prototypes.h"
@@ -430,17 +431,19 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
          z_type_name, z_id, set_id,
          (double)zis->density,
          (double)zis->diameter,
-         (double)zis->diameter_variance);
+         (double)sqrt(zis->diameter_variance));
   }
 
-  if (zis->diameter < 3.0 * zis->diameter_variance)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Lagrangian %s zone %d, set %d:\n"
-                "  diameter (%g) is smaller than 3 times\n"
-                "  its standard deviation (%g)."),
-              z_type_name, z_id, set_id,
-              (double)zis->diameter,
-              (double)zis->diameter_variance);
+  if (zis->diameter < 3.0 * sqrt(zis->diameter_variance))
+    cs_parameters_error
+      (CS_WARNING,
+       _("Lagrangian module"),
+       _("Lagrangian %s zone %d, set %d:\n"
+         "  diameter (%g) is smaller than 3 times\n"
+         "  its standard deviation (%g)."),
+       z_type_name, z_id, set_id,
+       (double)zis->diameter,
+       (double)sqrt(zis->diameter_variance));
 
   /* Ellipsoidal particle properties: radii */
   const int shape = cs_glob_lagr_model->shape;
