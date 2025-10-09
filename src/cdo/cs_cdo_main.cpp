@@ -211,7 +211,7 @@ _compute_steady_user_equations(cs_domain_t   *domain)
 
             /* Solve the algebraic system */
 
-            cs_equation_solve_deprecated(eq);
+            cs_equation_solve_deprecated(domain->mesh, eq);
 
           }
 
@@ -269,7 +269,7 @@ _compute_unsteady_user_equations(cs_domain_t   *domain,
 
               /* Solve domain */
 
-              cs_equation_solve_deprecated(eq);
+              cs_equation_solve_deprecated(domain->mesh, eq);
 
             }
 

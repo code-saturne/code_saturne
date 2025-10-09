@@ -60,6 +60,11 @@ BEGIN_C_DECLS
 
 typedef struct {
 
+  /* Periodicity (copy from cs_mesh_t. Stored here to avoid to point to the
+     mesh structure in many functions) */
+
+  int                    n_init_perio;
+
   /* Vertex-related members */
   /* ---------------------- */
 

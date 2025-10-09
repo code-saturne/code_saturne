@@ -172,14 +172,16 @@ typedef void
  *        array and the right hand side of the linear system to solve.
  *        Handle parallelism thanks to cs_range_set_t structure.
  *
- * \param[in, out] eq_cast    pointer to generic builder structure
- * \param[in, out] p_x        pointer of pointer to the solution array
+ * \param[in]      mesh     pointer to a mesh structure
+ * \param[in, out] eq_cast  pointer to generic builder structure
+ * \param[in, out] p_x      pointer of pointer to the solution array
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_prepare_solve_t)(void              *eq_to_cast,
-                              cs_real_t         *p_x[]);
+(cs_equation_prepare_solve_t)(const cs_mesh_t *mesh,
+                              void            *eq_to_cast,
+                              cs_real_t       *p_x[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

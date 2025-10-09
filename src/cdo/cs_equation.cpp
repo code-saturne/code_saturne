@@ -203,14 +203,16 @@ _post_balance_at_vertices(const cs_equation_t  *eq,
  *        Handle parallelism thanks to cs_range_set_t structure.
  *        Deprecated function (Only for HHO schemes).
  *
+ * \param[in]      mesh        pointer to a mesh structure
  * \param[in, out] eq_to_cast  pointer to generic builder structure
  * \param[in, out] p_x         pointer of pointer to the solution array
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_prepare_fb_solving(void      *eq_to_cast,
-                    cs_real_t *p_x[])
+_prepare_fb_solving(const cs_mesh_t *mesh,
+                    void            *eq_to_cast,
+                    cs_real_t       *p_x[])
 {
   cs_equation_t         *eq  = (cs_equation_t *)eq_to_cast;
   cs_equation_param_t   *eqp = eq->param;
@@ -234,7 +236,10 @@ _prepare_fb_solving(void      *eq_to_cast,
    * Their size is equal to n_sles_gather_elts <= n_dofs
    */
 
-  if (cs_glob_n_ranks > 1) { /* Parallel mode */
+  if (cs_glob_n_ranks > 1 || mesh->n_init_perio > 0) {
+
+    assert(rset != nullptr);
+    assert(rset->ifs != nullptr);
 
     cs_cdo_system_helper_t *sh = eqb->system_helper;
 
@@ -258,6 +263,7 @@ _prepare_fb_solving(void      *eq_to_cast,
   else { /* Serial mode *** without periodicity *** */
 
     cs_array_real_copy(n_dofs, f_values, x);
+
   }
 
   /* Return pointers */
@@ -2953,12 +2959,14 @@ cs_equation_build_system(const cs_mesh_t *mesh,
  * \brief Solve the linear system for this equation (deprecated). Only for HHO
  *        schemes
  *
- * \param[in, out] eq  pointer to a cs_equation_t structure
+ * \param[in]      mesh  pointer to a mesh structure
+ * \param[in, out] eq    pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_solve_deprecated(cs_equation_t *eq)
+cs_equation_solve_deprecated(const cs_mesh_t *mesh,
+                             cs_equation_t   *eq)
 {
   if (eq == nullptr)
     return;
@@ -2982,7 +2990,7 @@ cs_equation_solve_deprecated(cs_equation_t *eq)
 
   /* Handle parallelism (the the x array and for the rhs) */
 
-  eq->prepare_solving(eq, &x);
+  eq->prepare_solving(mesh, eq, &x);
 
   assert(fld != nullptr);
   cs_solving_info_t s_info;
@@ -3016,7 +3024,7 @@ cs_equation_solve_deprecated(cs_equation_t *eq)
 
   cs_field_set_key_struct(fld, cs_field_key_id("solving_info"), &s_info);
 
-  if (cs_glob_n_ranks > 1) { /* Parallel mode */
+  if (cs_glob_n_ranks > 1 || mesh->n_init_perio > 0) {
 
     const cs_range_set_t *rset = cs_equation_get_range_set(eq);
 

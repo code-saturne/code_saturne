@@ -1082,6 +1082,8 @@ cs_cdo_connect_build(cs_mesh_t *mesh,
 
   CS_MALLOC(connect, 1, cs_cdo_connect_t);
 
+  connect->n_init_perio = mesh->n_init_perio;
+
   /* Map the boundary face --> vertices connectivity */
 
   connect->bf2v = cs_adjacency_create_from_i_arrays(

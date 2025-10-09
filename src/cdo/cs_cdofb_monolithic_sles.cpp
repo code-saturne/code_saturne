@@ -654,7 +654,7 @@ _uzawa_cg_init_context(const cs_navsto_param_t              *nsp,
      account extra-space for synchronization */
 
   cs_lnum_t  size = solver->n2_scatter_dofs;
-  if (cs_glob_n_ranks > 1)
+  if (cs_glob_n_ranks > 1 || connect->n_init_perio > 0)
     size = cs::max(size, connect->n_cells_with_ghosts);
   CS_MALLOC(ctx->gk, size, cs_real_t);
 
