@@ -4598,7 +4598,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
   const cs_mesh_t *m = cs_glob_mesh;
 
   /* Ensure BC coefficient arrays are allocated
-     we use a delayed allocation te defauld to Neumann more easily
+     we use a delayed allocation the default to Neumann more easily
      when some arrays are not defined (and want to avoid cases where
      the array is defined but not up to date). */
 
