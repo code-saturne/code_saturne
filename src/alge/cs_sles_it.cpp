@@ -4922,6 +4922,16 @@ cs_sles_it_setup(void               *context,
     break;
   }
 
+#if defined(HAVE_ACCEL)
+  if (on_device && c->on_device == false) {
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("Setup of linear equation on \"%s\"\n"
+         "with solver type %s, which is not supported on device."),
+       name, cs_sles_it_type_name[c->type]);
+  }
+#endif
+
   /* Setup preconditioner and/or auxiliary data */
 
   cs_sles_it_setup_priv(c, name, a, verbosity, diag_block_size,
