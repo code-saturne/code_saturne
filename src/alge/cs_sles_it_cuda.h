@@ -61,6 +61,70 @@
 #if defined(__CUDACC__)
 
 /*----------------------------------------------------------------------------
+ * Compute dot product, summing result over all ranks.
+ *
+ * parameters:
+ *   c      <-- pointer to solver context info
+ *   stream <-- CUDA stream
+ *   x      <-- first vector
+ *   y      <-- vector
+ *
+ * return:
+ *   result of s = x.x
+ *----------------------------------------------------------------------------*/
+
+double
+cs_sles_it_dot_product
+(
+  const cs_sles_it_t  *c,
+  cudaStream_t         stream,
+  const cs_real_t     *x,
+  const cs_real_t     *y
+);
+
+/*----------------------------------------------------------------------------
+ * Compute dot product, summing result over all ranks.
+ *
+ * parameters:
+ *   c      <-- pointer to solver context info
+ *   stream <-- CUDA stream
+ *   x      <-- first vector
+ *   y      <-- second vector
+ *
+ * return:
+ *   result of s = x.y
+ *----------------------------------------------------------------------------*/
+
+double
+cs_sles_it_dot_product_xx
+(
+  const cs_sles_it_t  *c,
+  cudaStream_t         stream,
+  const cs_real_t     *x,
+  const cs_real_t     *y
+);
+
+/*----------------------------------------------------------------------------
+ * Compute dot product, summing result over all ranks.
+ *
+ * parameters:
+ *   c      <-- pointer to solver context info
+ *   stream <-- CUDA stream
+ *   x      <-- vector
+ *
+ * return:
+ *   result of s = x.x
+ *----------------------------------------------------------------------------*/
+
+double
+cs_sles_it_dot_product_xx
+(
+  const cs_sles_it_t  *c,
+  cudaStream_t         stream,
+  const cs_real_t     *x
+);
+
+/*----------------------------------------------------------------------------
  * Compute 2 dot products, summing result over all ranks.
  *
  * parameters:

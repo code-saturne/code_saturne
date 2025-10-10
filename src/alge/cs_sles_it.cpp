@@ -327,6 +327,102 @@ _convergence_test(cs_sles_it_t              *c,
 }
 
 /*----------------------------------------------------------------------------
+ * Compute 1 dot product, summing result over all ranks.
+ *
+ * parameters:
+ *   c      <-- pointer to solver context info
+ *   ctx    <-- reference to dispatch context
+ *   x      <-- first vector
+ *   y      <-- second vector
+ *
+ * return:
+ *   xy     --> result of s = x.y
+ *----------------------------------------------------------------------------*/
+
+double
+_dot_product
+(
+  const cs_sles_it_t                    *c,
+  [[ maybe_unused]] cs_dispatch_context  &ctx,
+  const cs_real_t                        x[],
+  const cs_real_t                        y[]
+)
+{
+#if defined(HAVE_ACCEL)
+
+  if (ctx.use_gpu()) {
+
+#if defined(__CUDACC__)
+    return  cs_sles_it_dot_product(c, ctx.cuda_stream(), x, y);
+#endif
+
+  }
+
+#endif
+
+  double s[1];
+
+  s[0] = cs_dot_xx(c->setup_data->n_rows, x);
+
+#if defined(HAVE_MPI)
+
+  if (c->comm != MPI_COMM_NULL) {
+    MPI_Allreduce(MPI_IN_PLACE, s, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+  }
+
+#endif /* defined(HAVE_MPI) */
+
+  return s[0];
+}
+
+/*----------------------------------------------------------------------------
+ * Compute 1 dot product, summing result over all ranks.
+ *
+ * parameters:
+ *   c      <-- pointer to solver context info
+ *   ctx    <-- reference to dispatch context
+ *   x      <-- first vector
+ *
+ * return:
+ *   xx     --> result of s = x.x
+ *----------------------------------------------------------------------------*/
+
+double
+_dot_product_xx
+(
+  const cs_sles_it_t                    *c,
+  [[ maybe_unused]] cs_dispatch_context  &ctx,
+  const cs_real_t                        x[]
+)
+{
+#if defined(HAVE_ACCEL)
+
+  if (ctx.use_gpu()) {
+
+#if defined(__CUDACC__)
+    return  cs_sles_it_dot_product_xx(c, ctx.cuda_stream(), x);
+#endif
+
+  }
+
+#endif
+
+  double s[1];
+
+  s[0] = cs_dot_xx(c->setup_data->n_rows, x);
+
+#if defined(HAVE_MPI)
+
+  if (c->comm != MPI_COMM_NULL) {
+    MPI_Allreduce(MPI_IN_PLACE, s, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+  }
+
+#endif /* defined(HAVE_MPI) */
+
+  return s[0];
+}
+
+/*----------------------------------------------------------------------------
  * Compute 2 dot products, summing result over all ranks.
  *
  * parameters:
@@ -962,7 +1058,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, amode);
+      CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, ctx.alloc_mode());
     else
       _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
@@ -1182,7 +1278,7 @@ _conjugate_gradient_sr_p0(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, amode);
+      CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, ctx.alloc_mode());
     else
       _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
@@ -2367,6 +2463,30 @@ _bi_cgstab(cs_sles_it_t              *c,
 
   unsigned n_iter = 0;
 
+  cs_dispatch_context ctx;
+
+  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
+#if defined(HAVE_ACCEL)
+  if (amode == CS_ALLOC_HOST) {
+    ctx.set_use_gpu(false);
+  }
+#endif
+
+#if defined(__CUDACC__)
+  bool local_stream = false;
+  cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
+  if (amode > CS_ALLOC_HOST) {
+    if (stream == 0) {
+      local_stream = true;
+      stream = cs_cuda_get_stream(0);
+    }
+    cs_blas_cuda_set_stream(stream);
+    if (local_stream)
+      cs_matrix_spmv_cuda_set_stream(stream);
+    ctx.set_cuda_stream(stream);
+  }
+#endif
+
   /* Allocate or map work arrays */
   /*-----------------------------*/
 
@@ -2380,7 +2500,7 @@ _bi_cgstab(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, ctx.alloc_mode());
     else
       _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
@@ -2392,31 +2512,28 @@ _bi_cgstab(cs_sles_it_t              *c,
     vk = _aux_vectors + wa_size*5;
   }
 
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+  ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
     pk[ii] = 0.0;
     uk[ii] = 0.0;
-  }
+  });
 
   /* Initialize iterative calculation */
   /*----------------------------------*/
 
   if (vx == vx_ini) {
-    cs_matrix_vector_multiply(a, vx, res0);
+    cs_matrix_vector_multiply(ctx, a, vx, res0);
 
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       res0[ii] = -res0[ii] + rhs[ii];
       rk[ii] = res0[ii];
-    }
+    });
   }
   else {
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       vx[ii] = 0;
       res0[ii] = rhs[ii];
       rk[ii] = rhs[ii];
-    }
+    });
   }
 
   alpha = 1.0;
@@ -2435,12 +2552,12 @@ _bi_cgstab(cs_sles_it_t              *c,
        and previous iteration's residual to reduce total latency */
 
     if (n_iter == 0) {
-      beta = _dot_product_xx(c, rk); /* rk == res0 here */
+      beta = _dot_product_xx(c, ctx, rk); /* rk == res0 here */
       residual = sqrt(beta);
       c->setup_data->initial_residual = residual;
     }
     else {
-      _dot_products_xx_xy(c, rk, res0, &residual, &beta);
+      _dot_products_xx_xy(c, ctx, rk, res0, &residual, &beta);
       residual = sqrt(residual);
     }
 
@@ -2464,9 +2581,9 @@ _bi_cgstab(cs_sles_it_t              *c,
 
     /* Compute pk */
 
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       pk[ii] = rk[ii] + omega*(pk[ii] - alpha*uk[ii]);
+    });
 
     /* Compute zk = c.pk */
 
@@ -2474,26 +2591,20 @@ _bi_cgstab(cs_sles_it_t              *c,
 
     /* Compute uk = A.zk */
 
-    cs_matrix_vector_multiply(a, zk, uk);
+    cs_matrix_vector_multiply(ctx, a, zk, uk);
 
     /* Compute uk.res0 and gamma */
 
-    ukres0 = _dot_product(c, uk, res0);
+    ukres0 = _dot_product(c, ctx, uk, res0);
 
     gamma = beta / ukres0;
 
     /* First update of vx and rk */
 
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        vx[ii] += (gamma * zk[ii]);
-
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        rk[ii] -= (gamma * uk[ii]);
-    }
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      vx[ii] += (gamma * zk[ii]);
+      rk[ii] -= (gamma * uk[ii]);
+    });
 
     /* Compute zk = C.rk (zk is overwritten, vk is a working array */
 
@@ -2501,9 +2612,9 @@ _bi_cgstab(cs_sles_it_t              *c,
 
     /* Compute vk = A.zk and alpha */
 
-    cs_matrix_vector_multiply(a, zk, vk);
+    cs_matrix_vector_multiply(ctx, a, zk, vk);
 
-    _dot_products_xx_xy(c, vk, rk, &ro_1, &ro_0);
+    _dot_products_xx_xy(c, ctx, vk, rk, &ro_1, &ro_0);
 
     if (_breakdown(c, convergence, "rho1", ro_1, _epzero,
                    residual, n_iter, &cvg))
@@ -2514,20 +2625,23 @@ _bi_cgstab(cs_sles_it_t              *c,
 
     /* Final update of vx and rk */
 
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        vx[ii] += (alpha * zk[ii]);
-
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        rk[ii] -= (alpha * vk[ii]);
-    }
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      vx[ii] += (alpha * zk[ii]);
+      rk[ii] -= (alpha * vk[ii]);
+    });
 
     /* Convergence test at beginning of next iteration so
        as to group dot products for better parallel performance */
   }
+
+  ctx.wait();
+
+#if defined(__CUDACC__)
+  cs_blas_cuda_set_stream(0);
+  if (local_stream) {
+    cs_matrix_spmv_cuda_set_stream(0);
+  }
+#endif
 
   if (_aux_vectors != aux_vectors)
     CS_FREE(_aux_vectors);
@@ -2583,6 +2697,30 @@ _bicgstab2(cs_sles_it_t              *c,
 
   unsigned n_iter = 0;
 
+  cs_dispatch_context ctx;
+
+  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
+#if defined(HAVE_ACCEL)
+  if (amode == CS_ALLOC_HOST) {
+    ctx.set_use_gpu(false);
+  }
+#endif
+
+#if defined(__CUDACC__)
+  bool local_stream = false;
+  cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
+  if (amode > CS_ALLOC_HOST) {
+    if (stream == 0) {
+      local_stream = true;
+      stream = cs_cuda_get_stream(0);
+    }
+    cs_blas_cuda_set_stream(stream);
+    if (local_stream)
+      cs_matrix_spmv_cuda_set_stream(stream);
+    ctx.set_cuda_stream(stream);
+  }
+#endif
+
   /* Allocate or map work arrays */
   /*-----------------------------*/
 
@@ -2596,7 +2734,7 @@ _bicgstab2(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, ctx.alloc_mode());
     else
       _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
@@ -2613,32 +2751,29 @@ _bicgstab2(cs_sles_it_t              *c,
 
   /* Initialize work arrays */
 
-# pragma omp parallel for if(n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+  ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
     uk[ii] = 0.0;
-  }
+  });
 
   /* Initialize iterative calculation */
   /*----------------------------------*/
 
   if (vx == vx_ini) {
-    cs_matrix_vector_multiply(a, vx, res0);
+    cs_matrix_vector_multiply(ctx, a, vx, res0);
 
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       res0[ii] = -res0[ii] + rhs[ii];
       rk[ii] = res0[ii];
       qk[ii] = rk[ii];
-    }
+    });
   }
   else {
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       vx[ii] = 0;
       res0[ii] = rhs[ii];
       rk[ii] = rhs[ii];
       qk[ii] = rhs[ii];
-    }
+    });
   }
 
   ro_0    = 1.0;
@@ -2686,13 +2821,13 @@ _bicgstab2(cs_sles_it_t              *c,
     beta = alpha*ro_1/ro_0;
     ro_0 = ro_1;
 
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       uk[ii] = rk[ii] - beta* uk[ii];
+    });
 
     /* Compute vk =  A*uk */
 
-    cs_matrix_vector_multiply(a, uk, vk);
+    cs_matrix_vector_multiply(ctx, a, uk, vk);
 
     /* Preconditionning */
 
@@ -2710,15 +2845,14 @@ _bicgstab2(cs_sles_it_t              *c,
 
     /* Update rk */
 
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       rk[ii] -= alpha*vk[ii];
       vx[ii] += alpha*uk[ii];
-    }
+    });
 
     /* p = A*r */
 
-    cs_matrix_vector_multiply(a, rk, sk);
+    cs_matrix_vector_multiply(ctx, a, rk, sk);
 
     c->setup_data->pc_apply(c->setup_data->pc_context, sk, zk);
 
@@ -2726,34 +2860,28 @@ _bicgstab2(cs_sles_it_t              *c,
     beta = alpha*ro_1/ro_0;
     ro_0 = ro_1;
 
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        vk[ii] = sk[ii] - beta*vk[ii];
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        uk[ii] = rk[ii] - beta*uk[ii];
-    }
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      vk[ii] = sk[ii] - beta*vk[ii];
+      uk[ii] = rk[ii] - beta*uk[ii];
+    });
 
     /* wk = A*vk */
 
-    cs_matrix_vector_multiply(a, vk, wk);
+    cs_matrix_vector_multiply(ctx, a, vk, wk);
 
     c->setup_data->pc_apply(c->setup_data->pc_context, wk, zk);
 
     gamma = _dot_product(c, qk, wk);
     alpha = (ro_0+mprec)/(gamma+mprec);
 
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       rk[ii] -= alpha*vk[ii];
       sk[ii] -= alpha*wk[ii];
-    }
+    });
 
     /* tk = A*sk */
 
-    cs_matrix_vector_multiply(a, sk, tk);
+    cs_matrix_vector_multiply(ctx, a, sk, tk);
 
     c->setup_data->pc_apply(c->setup_data->pc_context, tk, zk);
 
@@ -2766,23 +2894,24 @@ _bicgstab2(cs_sles_it_t              *c,
     omega_1 = (omega_1 - nu*omega_2)/mu;
 
     /* sol <- sol + omega_1*r + omega_2*s + alpha*u */
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       vx[ii] += omega_1*rk[ii] + omega_2*sk[ii] + alpha*uk[ii];
-
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
       /* r <- r - omega_1*s - omega_2*t */
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        rk[ii] += - omega_1*sk[ii] - omega_2*tk[ii];
+      rk[ii] += - omega_1*sk[ii] - omega_2*tk[ii];
       /* u <- u - omega_1*v - omega_2*w */
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        uk[ii] += - omega_1*vk[ii] - omega_2*wk[ii];
-    }
+      uk[ii] += - omega_1*vk[ii] - omega_2*wk[ii];
+    });
 
   }
+
+  ctx.wait();
+
+#if defined(__CUDACC__)
+  cs_blas_cuda_set_stream(0);
+  if (local_stream) {
+    cs_matrix_spmv_cuda_set_stream(0);
+  }
+#endif
 
   if (_aux_vectors != aux_vectors)
     CS_FREE(_aux_vectors);
@@ -4742,10 +4871,18 @@ cs_sles_it_setup(void               *context,
 
   case CS_SLES_BICGSTAB:
     c->solve = _bi_cgstab;
+#if defined(HAVE_ACCEL)
+    if (on_device)
+      c->on_device = true;
+#endif
     break;
 
   case CS_SLES_BICGSTAB2:
     c->solve = _bicgstab2;
+#if defined(HAVE_ACCEL)
+    if (on_device)
+      c->on_device = true;
+#endif
     break;
 
   case CS_SLES_GCR:

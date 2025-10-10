@@ -1183,7 +1183,83 @@ _dot_product(const cs_sles_it_t  *c,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute dot products x.y, x.y, summing result over all
+ * \brief Compute dot product x.x, summing result over all
+ *        threads of a block.
+ *
+ * blockSize must be a power of 2.
+ *
+ * \param[in]   n      array size
+ * \param[in]   x      x vector
+ * \param[out]  b_res  result of s = x.x
+ */
+/*----------------------------------------------------------------------------*/
+
+template <size_t blockSize, typename T>
+__global__ static void
+_dot_product_xx_stage_1_of_2(cs_lnum_t    n,
+                             const T     *x,
+                             double      *b_res)
+{
+  __shared__ double stmp[blockSize*3];
+
+  cs_lnum_t tid = threadIdx.x;
+  size_t grid_size = blockDim.x*gridDim.x;
+
+  stmp[tid] = 0.;
+
+  for (cs_lnum_t i = blockIdx.x*(blockDim.x) + tid;
+       i < n;
+       i += grid_size) {
+    stmp[tid] += static_cast<double>(x[i] * x[i]);
+  }
+
+  // Output: b_res for this block
+
+  cs_blas_cuda_block_reduce_sum<blockSize, 1>(stmp, tid, b_res);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute dot product x.y, summing result over all
+ *        threads of a block.
+ *
+ * blockSize must be a power of 2.
+ *
+ * \param[in]   n      array size
+ * \param[in]   x      x vector
+ * \param[in]   y      y vector
+ * \param[out]  b_res  result of s = x.x
+ */
+/*----------------------------------------------------------------------------*/
+
+template <size_t blockSize, typename T>
+__global__ static void
+_dot_product_xy_stage_1_of_2(cs_lnum_t    n,
+                             const T     *x,
+                             const T     *y,
+                             double      *b_res)
+{
+  __shared__ double stmp[blockSize*3];
+
+  cs_lnum_t tid = threadIdx.x;
+  size_t grid_size = blockDim.x*gridDim.x;
+
+  stmp[tid] = 0.;
+
+  for (cs_lnum_t i = blockIdx.x*(blockDim.x) + tid;
+       i < n;
+       i += grid_size) {
+    stmp[tid] += static_cast<double>(x[i] * y[i]);
+  }
+
+  // Output: b_res for this block
+
+  cs_blas_cuda_block_reduce_sum<blockSize, 1>(stmp, tid, b_res);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute dot products x.x, x.y, summing result over all
  *        threads of a block.
  *
  * blockSize must be a power of 2.
@@ -1402,6 +1478,150 @@ _dot_products_vr_vw_vq_rr(const cs_sles_it_t  *c,
 /*============================================================================
  * Semi-private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Compute dot product, summing result over all ranks.
+ *
+ * parameters:
+ *   c      <-- pointer to solver context info
+ *   stream <-- CUDA stream
+ *   x      <-- first vector
+ *   y      <-- vector
+ *
+ * return:
+ *   result of s = x.x
+ *----------------------------------------------------------------------------*/
+
+double
+cs_sles_it_dot_product
+(
+  const cs_sles_it_t  *c,
+  cudaStream_t         stream,
+  const cs_real_t     *x,
+  const cs_real_t     *y
+)
+{
+  double s[1];
+
+  /* Alternatives (need to set option for this) */
+
+  CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+  CS_CUDA_CHECK(cudaGetLastError());
+
+  cs_lnum_t n = c->setup_data->n_rows;
+
+  const unsigned int block_size = 256;
+  unsigned int grid_size = cs_cuda_grid_size(n, block_size);
+
+  if (_use_cublas == false) {
+    double *sum_block, *s_d, *s_h;
+    cs_cuda_get_2_stage_reduce_buffers
+      (cs_cuda_get_stream_id(stream), n, sizeof(double), grid_size,
+       (void *&)sum_block, (void *&)s_d, (void *&)s_h);
+
+    _dot_product_xy_stage_1_of_2
+      <block_size><<<grid_size, block_size, 0, stream>>>
+      (n, x, y, sum_block);
+    cs_blas_cuda_reduce_single_block<block_size, 1><<<1, block_size, 0, stream>>>
+      (grid_size, sum_block, s_d);
+
+    _sync_reduction_sum(c, stream, 1, s_d, s_h);
+
+    // s_h is pinned memory, s is not
+    s[0] = s_h[0];
+  }
+
+#if defined(HAVE_CUBLAS)
+
+  if (_use_cublas) {
+
+    s[0] = cs_blas_cublas_dot(c->setup_data->n_rows, x, x);
+
+#if defined(HAVE_MPI)
+
+    if (c->comm != MPI_COMM_NULL) {
+      MPI_Allreduce(MPI_IN_PLACE, s, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+    }
+
+#endif /* defined(HAVE_MPI) */
+
+  }
+
+#endif /* defined(HAVE_CUBLAS) */
+
+  return s[0];
+}
+
+/*----------------------------------------------------------------------------
+ * Compute dot product, summing result over all ranks.
+ *
+ * parameters:
+ *   c      <-- pointer to solver context info
+ *   stream <-- CUDA stream
+ *   x      <-- vector
+ *
+ * return:
+ *   result of s = x.x
+ *----------------------------------------------------------------------------*/
+
+double
+cs_sles_it_dot_product_xx
+(
+  const cs_sles_it_t  *c,
+  cudaStream_t         stream,
+  const cs_real_t     *x
+)
+{
+  double s[1];
+
+  /* Alternatives (need to set option for this) */
+
+  CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+  CS_CUDA_CHECK(cudaGetLastError());
+
+  cs_lnum_t n = c->setup_data->n_rows;
+
+  const unsigned int block_size = 256;
+  unsigned int grid_size = cs_cuda_grid_size(n, block_size);
+
+  if (_use_cublas == false) {
+    double *sum_block, *s_d, *s_h;
+    cs_cuda_get_2_stage_reduce_buffers
+      (cs_cuda_get_stream_id(stream), n, sizeof(double), grid_size,
+       (void *&)sum_block, (void *&)s_d, (void *&)s_h);
+
+    _dot_product_xx_stage_1_of_2
+      <block_size><<<grid_size, block_size, 0, stream>>>
+      (n, x, sum_block);
+    cs_blas_cuda_reduce_single_block<block_size, 1><<<1, block_size, 0, stream>>>
+      (grid_size, sum_block, s_d);
+
+    _sync_reduction_sum(c, stream, 1, s_d, s_h);
+
+    // s_h is pinned memory, s is not
+    s[0] = s_h[0];
+  }
+
+#if defined(HAVE_CUBLAS)
+
+  if (_use_cublas) {
+
+    s[0] = cs_blas_cublas_dot(c->setup_data->n_rows, x, x);
+
+#if defined(HAVE_MPI)
+
+    if (c->comm != MPI_COMM_NULL) {
+      MPI_Allreduce(MPI_IN_PLACE, s, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+    }
+
+#endif /* defined(HAVE_MPI) */
+
+  }
+
+#endif /* defined(HAVE_CUBLAS) */
+
+  return s[0];
+}
 
 /*----------------------------------------------------------------------------
  * Compute 2 dot products, summing result over all ranks.
