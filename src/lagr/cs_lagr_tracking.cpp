@@ -4246,7 +4246,7 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
     int n_stats = cs_glob_lagr_model->n_stat_classes + 1;
     int flow_rate_size = bdy_cond->n_zones*n_stats;
     cs_parall_sum(flow_rate_size, CS_REAL_TYPE, bdy_cond->particle_mass_flow);
-    if (bdy_cond->particle_heat_flow == nullptr)
+    if (bdy_cond->particle_heat_flow != nullptr)
       cs_parall_sum(flow_rate_size, CS_REAL_TYPE, bdy_cond->particle_heat_flow);
   }
 
