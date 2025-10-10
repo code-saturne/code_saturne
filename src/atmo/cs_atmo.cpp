@@ -604,8 +604,8 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
        f->bc_coeffs,
        1, //inc
        eqp_p,
-       false,   // hyd_p_flag
-       nullptr, // f_ext
+       1,         // hyd_p_flag
+       next_fext, // f_ext
        c_visc,
        nullptr, // vitenp
        nullptr, // weighb
@@ -619,8 +619,8 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
        f->bc_coeffs,
        1, // inc
        eqp_p,
-       false,   // hyd_p_flag
-       nullptr, // f_ext
+       1,         // hyd_p_flag
+       next_fext, // f_ext
        c_visc,
        nullptr, // vitenp
        nullptr, // weighb
@@ -690,8 +690,8 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
          f->bc_coeffs,
          1, //inc
          eqp_p,
-         false,   // hyd_p_flag
-         nullptr, // f_ext
+         1,         // hyd_p_flag
+         next_fext, // f_ext
          c_visc,
          nullptr, // vitenp
          nullptr, // weighb
@@ -705,8 +705,8 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
          f->bc_coeffs,
          1, // inc
          eqp_p,
-         false,   // hyd_p_flag
-         nullptr, // f_ext
+         1,         // hyd_p_flag
+         next_fext, // f_ext
          c_visc,
          nullptr, // vitenp
          nullptr, // weighb
