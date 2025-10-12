@@ -145,6 +145,76 @@ _add_resuspension_event(cs_lagr_event_set_t     *events,
   events->n_events += 1;
 }
 
+/*============================================================================
+ * Private function definitions
+ *============================================================================*/
+
+/* f(x) = x * (1 - exp(-1/x)) */
+static inline double
+_x_expm1(double x) {
+  // use expm1 for stability
+  return -x * expm1(-1.0 / x);
+}
+
+/* f'(x) = 1 - exp(-1/x) + exp(-1/x)/x
+         = - expm1(-1/x) + exp(-1/x)/x
+*/
+static inline double
+_x_expm1_p(double x) {
+    double invx = 1.0 / x;
+    double e = exp(-invx);
+    return -expm1(-invx) - e * invx;
+}
+
+// secant slope (f(b)-f(a)) / (b-a), numerically stable
+double _secant_ter2p(double a, double b) {
+  const double eps = 1e-12;
+  double h = b - a;
+  if (cs::abs(h) < eps * 0.5 * (a + b)) {
+    // if b ≈ a: use average of derivatives for stability
+    return 0.5 * ((1./(a*a)) * exp(-1./a) + (1./(b*b)) * exp(-1./b));
+  } else {
+    // standard difference quotient
+    return (exp(-1./b) - exp(-1./a)) / h;
+  }
+}
+
+double _secant_ter2x(double a, double b) {
+  const double eps = 1e-12;
+  double h = b - a;
+  if (cs::abs(h) < eps * 0.5 * (a + b)) {
+    // if b ≈ a: use average of derivatives for stability
+    return 0.5 * (1 - (1 + 1./a)*exp(-1/a) + 1 - (1 + 1./b)*exp(-1./b));
+  } else {
+    // standard difference quotient
+    return (_x_expm1(b) - _x_expm1(a)) / h;
+  }
+}
+
+double _secant_ter7x(double a, double b) {
+  const double eps = 1e-12;
+  double h = b - a;
+  if (cs::abs(h) < eps * 0.5 * (a + b)) {
+    // if b ≈ a: use average of derivatives for stability
+    return 0.5 * (_x_expm1_p(a) + _x_expm1_p(b));
+  } else {
+    // standard difference quotient
+    return (_x_expm1(b) - _x_expm1(a)) / h;
+  }
+}
+
+double _secant_ter7p(double a, double b) {
+  const double eps = 1e-12;
+  double h = b - a;
+  if (cs::abs(h) < eps * 0.5 * (a + b)) {
+    // if b ≈ a: use average of derivatives for stability
+    return 0.5 * (exp(-1./a)/(a*a) + exp(-1./b)/(b*b));
+  } else {
+    // standard difference quotient
+    return (exp(-1./b) - exp(-1./a)) / h;
+  }
+}
+
 /*----------------------------------------------------------------------------*/
 /*! \brief Integration of SDEs by 1st order time scheme for one particle
  *
@@ -304,7 +374,7 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
                                               CS_LAGR_COORDS);
 
   int imposed_motion = cs_lagr_particles_get_flag(p_set, p_id,
-                                                   CS_LAGR_PART_IMPOSED_MOTION);
+                                                  CS_LAGR_PART_IMPOSED_MOTION);
   if (imposed_motion) {
     cs_real_t disp[3] = {0., 0., 0.};
 
@@ -624,6 +694,8 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
       /* Compute deterministic coefficients/terms
       ---------------------------------------- */
 
+      cs_real_t taup_ddt = taup_r[phase_id][id] / dt_part;
+      cs_real_t tlag_ddt = tlag_r[phase_id][id] / dt_part;
       aux1 = exp(-dt_part / taup_r[phase_id][id]);
       aux2 = exp(-dt_part / tlag_r[phase_id][id]);
       aux3 = tlag_r[phase_id][id]
@@ -641,7 +713,7 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
       aux8 = cs_math_pow2(bx[phase_id][id][nor-1])
         * cs_math_pow2(aux3m);
       /* --> trajectory terms */
-      bb = (aux5 - aa) * aux3m;
+      bb = tlag_r[phase_id][id] * _secant_ter2x(taup_ddt, tlag_ddt);
       cc = dt_part - aa - bb;
       ff = lambda[phase_id] / taup_r[phase_id][id] * taup_rm[id];
 
@@ -653,7 +725,7 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
       ter3f[phase_id] = p11[phase_id] * vagaus[phase_id][id];
 
       /* Terms for particle velocity */
-      dd = aux3m * (aux2 - aux1m);
+      dd = tlag_ddt * _secant_ter2p(taup_ddt, tlag_ddt);
 
       ter3p[phase_id] = tci * ff * (ee - dd);
 
@@ -762,17 +834,20 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
 
     /* Additional terms when gradient of Tl is not negligible
      * */
+    cs_real_t taup_ddt = taup_r[0][id] / dt_part;
+    cs_real_t tlag_ddt = tlag_r[0][id] / dt_part;
     /* particle positions term */
     cs_real_t aux5b = taup_r[0][id] * (1.0 - aux1);
     ter7x = beta[id] * (
         aux4 * cs_math_pow2(taup_r[0][id]) * dt_part
       + cs_math_pow2(tlag_r[0][id]) * dt_part * aux2
       - cs_math_pow3(tlag_r[0][id])*(1. - aux2)
-      + 0.5 * tlag_r[0][id] * aux7 * (dt_part - taup_r[0][id] * (1. - aux2))
+      + 0.5 * tlag_r[0][id] * (tlag_r[0][id] - 2. * taup_r[0][id])
+            * (dt_part - taup_r[0][id] * (1. - aux2))
       + aux3 * taup_r[0][id] * (2. * tlag_r[0][id] - taup_r[0][id]) * (aux5 - aux5b)
-      - 0.5 * cs_math_pow3(tlag_r[0][id]) / (tlag_r[0][id] - 2. * taup_r[0][id])
-        * (aux9 - aux5b)
-      - cs_math_pow3(taup_r[0][id]) * cs_math_pow2(aux4) * (1. - aux1*aux2)
+      - 0.25 * cs_math_pow3(tlag_r[0][id])
+             * _secant_ter7x(taup_ddt, 0.5*tlag_ddt)
+      - cs_math_pow2(aux4) * cs_math_pow3(taup_r[0][id]) * (1. - aux1*aux2)
       );
 
     /* particle velocity term */
@@ -781,9 +856,10 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
       - tlag_r[0][id] * dt_part * aux2
       + 0.5 * tlag_r[0][id] * (tlag_r[0][id] - 2. * taup_r[0][id]) * (1. - aux1)
       + taup_r[0][id] * aux3 * (2. * tlag_r[0][id] - taup_r[0][id]) * (aux2 - aux1)
-      - 0.5 * cs_math_pow3(tlag_r[0][id]) / (tlag_r[0][id] - 2. * taup_r[0][id])
-        * (aux2 * aux2 - aux1)
-        );
+      - 0.25 * cs_math_pow3(tlag_r[0][id]) / dt_part
+             * _secant_ter7p(taup_ddt, 0.5*tlag_ddt)
+      );
+
     /* velocity seen by the particle */
     ter7f = beta[id] * (
         tlag_r[0][id] * aux7 * (1. - (1. + dt_part / tlag_r[0][id]) * aux2)
@@ -1576,7 +1652,7 @@ _lagesd(cs_real_t                       dt_part,
 
       /* --> Terms for the trajectory   */
       cs_real_t aa    = taup * (1.0 - aux1);
-      cs_real_t bb    = (aux5 - aa) * aux3;
+      cs_real_t bb    = tlp * _secant_ter2x(taup/dt_part, tlp/dt_part);
       cs_real_t cc    = dt_part - aa - bb;
       cs_real_t ter1x = aa * vpart[id];
       cs_real_t ter2x = bb * vvue[id];
@@ -1588,7 +1664,7 @@ _lagesd(cs_real_t                       dt_part,
       cs_real_t ter2f = tci * (1.0 - aux2);
 
       /* --> Terms for the particles velocity     */
-      cs_real_t dd    = aux3 * (aux2 - aux1);
+      cs_real_t dd    = (tlp/dt_part)*_secant_ter2p(taup/dt_part, tlp/dt_part);
       cs_real_t ee    = 1.0 - aux1;
       cs_real_t ter1p = vpart[id] * aux1;
       cs_real_t ter2p = vvue[id] * dd;
@@ -2775,7 +2851,8 @@ cs_sde_vels_pos_time_integ_depot(cs_lnum_t                       p_id,
 
         /* --> trajectory terms */
         cs_real_t aa = taup * (1.0 - aux1);
-        cs_real_t bb = (aux5 - aa) * aux3;
+        cs_real_t bb = tlag[id]
+                     * _secant_ter2x(taup/dt_part, tlag[id]/dt_part);
         cs_real_t cc = dt_part - aa - bb;
 
         ter1x = aa * old_part_vel[id];
@@ -2788,7 +2865,8 @@ cs_sde_vels_pos_time_integ_depot(cs_lnum_t                       p_id,
         ter2f = tci * (1.0 - aux2);
 
         /* --> termes pour la vitesse des particules     */
-        cs_real_t dd = aux3 * (aux2 - aux1);
+        cs_real_t dd = (tlag[id]/dt_part)
+                     * _secant_ter2p(taup/dt_part, tlag[id]/dt_part);
         cs_real_t ee = 1.0 - aux1;
 
         ter1p = old_part_vel[id] * aux1;
