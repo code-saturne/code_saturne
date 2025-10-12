@@ -470,6 +470,36 @@ cs_math_matrix_gauss_inverse(const T  a[n][n],
  }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Inverse 3x3 symmetric matrix in place,
+ *         using Gauss-Jordan elimination.
+ *
+ * \param[in]   a  input matrix
+ * \param[out]  b  output matrix (may be identical to a)
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+CS_F_HOST_DEVICE void
+cs_math_6_gauss_inverse_in_place(T  a[6])
+{
+  T t[3][3] = {{a[0], a[3], a[5]},
+               {a[3], a[1], a[4]},
+               {a[5], a[4], a[2]}};
+  T s[3][3];
+
+  cs_math_matrix_gauss_inverse(t, s);
+
+  a[0] = s[0][0];
+  a[1] = s[1][1];
+  a[2] = s[2][2];
+
+  a[3] = s[0][1];
+  a[4] = s[1][2];
+  a[5] = s[0][2];
+}
+
 namespace cs {
 
 /*----------------------------------------------------------------------------*/
