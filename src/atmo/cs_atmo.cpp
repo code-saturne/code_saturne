@@ -1513,10 +1513,10 @@ static void
 /*!
  * \brief Compute the pot. temperature profile and the density profile
  *
- * \param[in]  itp            index on numbers of time steps of meteo profil
+ * \param[in]  itp            index on numbers of time steps of meteo profile
  * \param[in]  ih2o           flag to take into account the humidity
- * \param[in]  fp             pointer sturture to fluid properties
- * \param[in]  at_opt         pointer sturture to atmopheric option
+ * \param[in]  fp             pointer structure to fluid properties
+ * \param[in]  at_opt         pointer structure to atmospheric option
  *
  */
 /*----------------------------------------------------------------------------*/
@@ -1556,9 +1556,6 @@ _compute_pot_temperature_density_profile(int                    itp,
     at_opt->pot_t_met[kk + itp*nbmaxt] = (at_opt->temp_met[kk + itp*nbmaxt]+tkelvi)
                                          *pow((ps/at_opt->hyd_p_met[kk + itp*nbmaxt]), _rscp);
 
-    printf(" comp pot temp_dens    %10.12lf        %10.17lf\n",
-           at_opt->pot_t_met[kk + itp*nbmaxt],
-           at_opt->rho_met[kk + itp*nbmaxt]);
   }
 }
 
@@ -1566,9 +1563,9 @@ _compute_pot_temperature_density_profile(int                    itp,
 /*!
  * \brief  Print informations read in meteo profil file
  *
- * \param[in]  itp            index on numbers of time steps of meteo profil
+ * \param[in]  itp            index on numbers of time steps of meteo profile
  * \param[in]  date           array contains date (year hour ...)
- * \param[in]  at_opt         pointer sturture to atmopheric option
+ * \param[in]  at_opt         pointer structure to atmospheric option
  *
  */
 /*----------------------------------------------------------------------------*/
@@ -1593,7 +1590,7 @@ _log_meteo_profile(int                    itp,
   bft_printf("time_met[%d]\n%lf\n",itp, at_opt->time_met[itp]);
   bft_printf("z_dyn_met  u_met  v_met  ek_met ep_met\n");
   for (int ii = 0; ii < nbmetd; ii++)
-    bft_printf("%8.2lf  %8.2lf  %8.2lf  %10.3lf %10.3lf\n",
+    bft_printf("%10.5lf  %10.5lf  %10.5lf  %10.5lf %10.5lf\n",
                at_opt->z_dyn_met[ii],
                at_opt->u_met [ii + itp*nbmetd],
                at_opt->v_met [ii + itp*nbmetd],
@@ -1612,8 +1609,8 @@ _log_meteo_profile(int                    itp,
     for (int ii = 0; ii < nbmaxt; ii++) {
       const cs_real_t qsat = cs_air_yw_sat(at_opt->temp_met [ii + itp*nbmaxt],
                                            at_opt->hyd_p_met[ii + itp*nbmaxt]);
-      bft_printf("%8.2lf  %8.2lf  %8.2lf  %8.4lf %10.3lf %10.3lf"
-                 "  %10.3lf %12.5lf\n",
+      bft_printf("%10.5lf  %10.5lf  %10.5lf  %10.5lf %10.5lf %10.5lf"
+                 "  %10.5lf %10.5lf\n",
                  at_opt->z_temp_met[ii],
                  at_opt->temp_met[ii + itp*nbmaxt],
                  at_opt->pot_t_met[ii + itp*nbmaxt],
