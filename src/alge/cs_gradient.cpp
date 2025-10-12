@@ -709,6 +709,8 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
 
   cs_dispatch_context ctx;
   bool use_gpu = ctx.use_gpu();
+  const cs_alloc_mode_t amode = (ctx.use_gpu()) ?
+    cs_alloc_mode_device : cs_alloc_mode;
 
   /* The gradient and the variable must be already synchronized */
 
@@ -716,7 +718,7 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
   cs_real_t *_clip_factor = nullptr;
 
   if (clip_factor == nullptr) {
-    CS_MALLOC_HD(_clip_factor, n_cells_ext, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(_clip_factor, n_cells_ext, cs_real_t, amode);
     clip_factor = _clip_factor;
   }
 
@@ -817,9 +819,6 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
   /*-------------------------------------------------------*/
 
   else if (clip_mode == CS_GRADIENT_LIMIT_FACE) {
-
-    const cs_alloc_mode_t amode = (ctx.use_gpu()) ?
-      cs_alloc_mode_device : cs_alloc_mode;
 
     cs_real_t *factor;
     CS_MALLOC_HD(factor, n_cells_ext, cs_real_t, amode);
@@ -1544,16 +1543,16 @@ _compute_cell_cocg_it(const cs_mesh_t               *m,
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
   const cs_real_3_t *restrict dofij = fvq->dofij;
 
+  cs_dispatch_context ctx;
+
+  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+
   cs_real_33_t *restrict cocg = gq->cocg_it;
 
   if (cocg == nullptr) {
     CS_MALLOC_HD(cocg, n_cells, cs_real_33_t, cs_alloc_mode);
     gq->cocg_it = cocg;
   }
-
-  cs_dispatch_context ctx;
-
-  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
 
   /* compute the dimensionless matrix COCG for each cell*/
 
@@ -2290,6 +2289,8 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
 
     CS_MALLOC_HD(cocg, n_cells, cs_cocg_6_t, cs_alloc_mode);
     CS_MALLOC_HD(cocgb, m->n_b_cells, cs_cocg_6_t, cs_alloc_mode);
+    cs_mem_advise_set_read_mostly(cocg);
+    cs_mem_advise_set_read_mostly(cocgb);
 
     if (extended) {
       gq->cocg_lsq_ext = cocg;
@@ -2812,6 +2813,9 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
     ctx_b.set_cuda_stream(cs_cuda_get_stream(1));
 #endif
 
+  const cs_alloc_mode_t amode = (ctx.use_gpu()) ?
+    cs_alloc_mode_device : cs_alloc_mode;
+
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
@@ -2848,7 +2852,7 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
   /*-------------------------*/
 
   cs_real_4_t  *restrict rhsv;
-  CS_MALLOC_HD(rhsv, n_cells_ext, cs_real_4_t, cs_alloc_mode);
+  CS_MALLOC_HD(rhsv, n_cells_ext, cs_real_4_t, amode);
 
   ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     rhsv[c_id][0] = 0.0;
@@ -4589,6 +4593,9 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
   }
 
   cs_dispatch_context ctx;
+  bool use_gpu = ctx.use_gpu();
+  const cs_alloc_mode_t amode = (use_gpu) ?
+    cs_alloc_mode_device : cs_alloc_mode;
 
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
@@ -4605,7 +4612,7 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
      --------------------------- */
 
   cs_real_t *v_var;
-  CS_MALLOC_HD(v_var, m->n_vertices, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(v_var, m->n_vertices, cs_real_t, amode);
 
   cs_cell_to_vertex<1>(CS_CELL_TO_VERTEX_LR,
                        0, /* verbosity */
@@ -4801,7 +4808,7 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
 
   /* Synchronize halos */
 
-  cs_halo_sync_r(m->halo, CS_HALO_EXTENDED, ctx.use_gpu(), grad);
+  cs_halo_sync_r(m->halo, CS_HALO_EXTENDED, use_gpu, grad);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4867,6 +4874,8 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
 
   cs_dispatch_context ctx;
   bool use_gpu = ctx.use_gpu();
+  const cs_alloc_mode_t amode = (use_gpu) ?
+    cs_alloc_mode_device : cs_alloc_mode;
 
   /* The gradient and the variable must be already synchronized */
 
@@ -4874,7 +4883,7 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
   cs_real_t *_clip_factor = nullptr;
 
   if (clip_factor == nullptr) {
-    CS_MALLOC_HD(_clip_factor, n_cells_ext, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(_clip_factor, n_cells_ext, cs_real_t, amode);
     clip_factor = _clip_factor;
   }
 
@@ -4885,7 +4894,7 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
   const cs_lnum_t *c2c_e_idx = ma->cell_cells_e_idx;
   const cs_lnum_t *c2c_e = ma->cell_cells_e;
 
-  const size_t n_blocks = (ctx.use_gpu()) ?
+  const size_t n_blocks = (use_gpu) ?
     n_cells : cs_parall_block_count(n_cells, _loop_block_size);
 
   /* First clipping Algorithm: based on the cell gradient */
@@ -4993,7 +5002,7 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
   else if (clip_mode == CS_GRADIENT_LIMIT_FACE) {
 
     cs_real_t *factor;
-    CS_MALLOC_HD(factor, n_cells_ext, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(factor, n_cells_ext, cs_real_t, amode);
     cs_array_real_set_scalar(n_cells_ext, DBL_MAX, factor);
 
     ctx.parallel_for(n_blocks, [=] CS_F_HOST_DEVICE (cs_lnum_t b_id) {
@@ -5987,7 +5996,7 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
      (note this could be done locally in the gather variants */
 
   grad_t *rhs;
-  CS_MALLOC_HD(rhs, n_cells_ext, grad_t, cs_alloc_mode);
+  CS_MALLOC_HD(rhs, n_cells_ext, grad_t, cs_alloc_mode_device);
 
   if (cs_glob_timer_kernels_flag > 0)
     t_init = std::chrono::high_resolution_clock::now();
@@ -6437,6 +6446,9 @@ _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
 
   cs_dispatch_context ctx;
+  bool use_gpu = ctx.use_gpu();
+  const cs_alloc_mode_t amode = (use_gpu) ?
+    cs_alloc_mode_device : cs_alloc_mode;
 
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
@@ -6455,7 +6467,7 @@ _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
      --------------------------- */
 
   var_t *v_var;
-  CS_MALLOC_HD(v_var, m->n_vertices, var_t, cs_alloc_mode);
+  CS_MALLOC_HD(v_var, m->n_vertices, var_t, amode);
 
   cs_cell_to_vertex<stride>(CS_CELL_TO_VERTEX_LR,
                             0, /* verbosity */
@@ -6469,8 +6481,8 @@ _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
      -------------------------------- */
 
   var_t *i_f_var, *b_f_var;
-  CS_MALLOC_HD(i_f_var, m->n_i_faces, var_t, cs_alloc_mode);
-  CS_MALLOC_HD(b_f_var, m->n_b_faces, var_t, cs_alloc_mode);
+  CS_MALLOC_HD(i_f_var, m->n_i_faces, var_t, amode);
+  CS_MALLOC_HD(b_f_var, m->n_b_faces, var_t, amode);
 
   for (int f_t = 0; f_t < 2; f_t++) {
 
@@ -6588,13 +6600,13 @@ _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute cell gradient of scalar field or component of vector or
- *         tensor field.
+ * \brief  Compute cell gradient of scalar field.
  *
  * This variant of the \ref cs_gradient_scalar function assumes ghost cell
  * values for input arrays (var and optionally c_weight)
  * have already been synchronized.
  *
+ * \param[in]     ctx              reference to dispatch context
  * \param[in]     var_name         variable name
  * \param[in]     gradient_info    performance logging structure, or nullptr
  * \param[in]     gradient_type    gradient type
@@ -6619,7 +6631,8 @@ _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
 /*----------------------------------------------------------------------------*/
 
 static void
-_gradient_scalar(const char                    *var_name,
+_gradient_scalar(cs_dispatch_context           &ctx,
+                 const char                    *var_name,
                  cs_gradient_info_t            *gradient_info,
                  cs_gradient_type_t             gradient_type,
                  cs_halo_type_t                 halo_type,
@@ -6650,13 +6663,15 @@ _gradient_scalar(const char                    *var_name,
 
   /* Use Neumann BC's as default if not provided */
 
-  cs_dispatch_context ctx;
+  bool use_gpu = ctx.use_gpu();
+  const cs_alloc_mode_t amode = (use_gpu) ?
+    cs_alloc_mode_device : cs_alloc_mode;
 
   /* Allocate work arrays */
 
   cs_real_t *tensor_f_weight = nullptr;
   if (c_weight != nullptr && w_stride == 6) {
-    CS_MALLOC_HD(tensor_f_weight, mesh->n_i_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(tensor_f_weight, mesh->n_i_faces, cs_real_t, amode);
     _compute_f_weight_tensor(mesh,
                              fvq,
                              ctx,
@@ -6721,11 +6736,8 @@ _gradient_scalar(const char                    *var_name,
   case CS_GRADIENT_GREEN_LSQ:
     {
       cs_real_3_t  *restrict r_grad;
-      if (gradient_type == CS_GRADIENT_GREEN_LSQ) {
-        const cs_alloc_mode_t amode = (ctx.use_gpu()) ?
-          cs_alloc_mode_device : cs_alloc_mode;
+      if (gradient_type == CS_GRADIENT_GREEN_LSQ)
         CS_MALLOC_HD(r_grad, n_cells_ext, cs_real_3_t, amode);
-      }
       else
         r_grad = grad;
 
@@ -7724,6 +7736,11 @@ cs_gradient_scalar(const char                    *var_name,
 
   bool update_stats = true;
 
+  cs_dispatch_context ctx;
+  bool use_gpu = ctx.use_gpu();
+  const cs_alloc_mode_t amode = (use_gpu) ?
+    cs_alloc_mode_device : cs_alloc_mode;
+
   t0 = cs_timer_time();
 
   if (update_stats == true)
@@ -7768,12 +7785,10 @@ cs_gradient_scalar(const char                    *var_name,
 
     if (bc_coeffs != nullptr) {
 
-      cs_dispatch_context ctx;
-
       cs_real_t *bc_coeff_a = bc_coeffs->a;
       cs_field_bc_coeffs_t bc_coeffs_loc_cpl;
       cs_field_bc_coeffs_shallow_copy(bc_coeffs, &bc_coeffs_loc_cpl);
-      CS_MALLOC_HD(bc_coeffs_loc_cpl.a, n_b_faces, cs_real_t, cs_alloc_mode);
+      CS_MALLOC_HD(bc_coeffs_loc_cpl.a, n_b_faces, cs_real_t, amode);
 
       bc_coeff_loc_cpl_a = bc_coeffs_loc_cpl.a;
 
@@ -7817,13 +7832,11 @@ cs_gradient_scalar(const char                    *var_name,
     cs_field_bc_coeffs_t bc_coeffs_loc;
     cs_field_bc_coeffs_init(&bc_coeffs_loc);
 
-    CS_MALLOC_HD(bc_coeffs_loc.a, n_b_faces, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(bc_coeffs_loc.b, n_b_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(bc_coeffs_loc.a, n_b_faces, cs_real_t, amode);
+    CS_MALLOC_HD(bc_coeffs_loc.b, n_b_faces, cs_real_t, amode);
 
     bc_coeff_loc_a = bc_coeffs_loc.a;
     bc_coeff_loc_b = bc_coeffs_loc.b;
-
-    cs_dispatch_context ctx;
 
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
       bc_coeff_loc_a[i] = 0.;
@@ -7867,8 +7880,6 @@ cs_gradient_scalar(const char                    *var_name,
     }
     else { // work array (momemtum, ...)
 
-      cs_dispatch_context ctx;
-
       if (bc_coeffs->b == nullptr) {
         ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
           bc_coeffs->b[i] = 1.;
@@ -7888,8 +7899,8 @@ cs_gradient_scalar(const char                    *var_name,
       if (gradient_type != CS_GRADIENT_GREEN_ITER) {
         // else standard coefa&b are used
 
-        CS_MALLOC_HD(val_ip, n_b_faces, cs_real_t, cs_alloc_mode);
-        CS_MALLOC_HD(val_f_wrk, n_b_faces, cs_real_t, cs_alloc_mode);
+        CS_MALLOC_HD(val_ip, n_b_faces, cs_real_t, amode);
+        CS_MALLOC_HD(val_f_wrk, n_b_faces, cs_real_t, amode);
 
         cs_gradient_boundary_iprime_lsq_s(ctx,
                                           mesh,
@@ -7922,7 +7933,8 @@ cs_gradient_scalar(const char                    *var_name,
     }
   }
 
-  _gradient_scalar(var_name,
+  _gradient_scalar(ctx,
+                   var_name,
                    gradient_info,
                    gradient_type,
                    halo_type,
@@ -8011,6 +8023,11 @@ cs_gradient_vector(const char                    *var_name,
 
   bool update_stats = true;
 
+  cs_dispatch_context ctx;
+  bool use_gpu = ctx.use_gpu();
+  const cs_alloc_mode_t amode = (use_gpu) ?
+    cs_alloc_mode_device : cs_alloc_mode;
+
   t0 = cs_timer_time();
 
   if (update_stats == true) {
@@ -8051,12 +8068,10 @@ cs_gradient_vector(const char                    *var_name,
 
     if (bc_coeffs_v != nullptr) {
 
-      cs_dispatch_context ctx;
-
       cs_real_3_t *bc_coeff_a = (cs_real_3_t *)bc_coeffs_v->a;
       cs_field_bc_coeffs_t bc_coeffs_loc_cpl;
       cs_field_bc_coeffs_shallow_copy(bc_coeffs_v, &bc_coeffs_loc_cpl);
-      CS_MALLOC_HD(bc_coeffs_loc_cpl.a, 3*n_b_faces, cs_real_t, cs_alloc_mode);
+      CS_MALLOC_HD(bc_coeffs_loc_cpl.a, 3*n_b_faces, cs_real_t, amode);
 
       bc_coeff_loc_cpl_a = (cs_real_3_t *)bc_coeffs_loc_cpl.a;
 
@@ -8097,13 +8112,11 @@ cs_gradient_vector(const char                    *var_name,
     cs_field_bc_coeffs_t bc_coeffs_v_loc;
     cs_field_bc_coeffs_init(&bc_coeffs_v_loc);
 
-    CS_MALLOC_HD(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t, amode);
+    CS_MALLOC_HD(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t, amode);
 
     bc_coeff_loc_a = (cs_real_3_t  *)bc_coeffs_v_loc.a;
     bc_coeff_loc_b = (cs_real_33_t *)bc_coeffs_v_loc.b;
-
-    cs_dispatch_context ctx;
 
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
       for (cs_lnum_t j = 0; j < 3; j++) {
@@ -8163,10 +8176,8 @@ cs_gradient_vector(const char                    *var_name,
       if (gradient_type != CS_GRADIENT_GREEN_ITER) {
         // else standard coefa&b are used
 
-        CS_MALLOC_HD(val_ip, n_b_faces, cs_real_3_t, cs_alloc_mode);
-        CS_MALLOC_HD(val_f_wrk, n_b_faces, cs_real_3_t, cs_alloc_mode);
-
-        cs_dispatch_context ctx;
+        CS_MALLOC_HD(val_ip, n_b_faces, cs_real_3_t, amode);
+        CS_MALLOC_HD(val_f_wrk, n_b_faces, cs_real_3_t, amode);
 
         cs_gradient_boundary_iprime_lsq_strided<3>(ctx,
                                                    mesh,
@@ -8295,6 +8306,11 @@ cs_gradient_tensor(const char                  *var_name,
 
   bool update_stats = true;
 
+  cs_dispatch_context ctx;
+  bool use_gpu = ctx.use_gpu();
+  const cs_alloc_mode_t amode = (use_gpu) ?
+    cs_alloc_mode_device : cs_alloc_mode;
+
   t0 = cs_timer_time();
 
   if (update_stats == true) {
@@ -8318,13 +8334,11 @@ cs_gradient_tensor(const char                  *var_name,
 
   if (bc_coeffs_ts == nullptr) {
 
-    cs_dispatch_context ctx;
-
     cs_field_bc_coeffs_t bc_coeffs_ts_loc;
     cs_field_bc_coeffs_init(&bc_coeffs_ts_loc);
 
-    CS_MALLOC(bc_coeffs_ts_loc.a, 6*n_b_faces, cs_real_t);
-    CS_MALLOC(bc_coeffs_ts_loc.b, 36*n_b_faces, cs_real_t);
+    CS_MALLOC_HD(bc_coeffs_ts_loc.a, 6*n_b_faces, cs_real_t, amode);
+    CS_MALLOC_HD(bc_coeffs_ts_loc.b, 36*n_b_faces, cs_real_t, amode);
 
     bc_coeff_loc_a = (cs_real_6_t  *)bc_coeffs_ts_loc.a;
     bc_coeff_loc_b = (cs_real_66_t *)bc_coeffs_ts_loc.b;
@@ -8345,7 +8359,7 @@ cs_gradient_tensor(const char                  *var_name,
     if (gradient_type != CS_GRADIENT_GREEN_ITER) {
       // else only above standard coefa&b are used
 
-      CS_MALLOC_HD(val_f_hmg, n_b_faces, cs_real_6_t, cs_alloc_mode);
+      CS_MALLOC_HD(val_f_hmg, n_b_faces, cs_real_6_t, amode);
 
       /* Compute var_iprime (val_f = var_iprime for hmg Neumann) */
       cs_gradient_boundary_iprime_lsq_strided<6>(ctx,
@@ -8377,13 +8391,11 @@ cs_gradient_tensor(const char                  *var_name,
       if (gradient_type != CS_GRADIENT_GREEN_ITER) {
         // else standard coefa&b are used
 
-        CS_MALLOC_HD(val_ip, n_b_faces, cs_real_6_t, cs_alloc_mode);
-        CS_MALLOC_HD(val_f_wrk, n_b_faces, cs_real_6_t, cs_alloc_mode);
+        CS_MALLOC_HD(val_ip, n_b_faces, cs_real_6_t, amode);
+        CS_MALLOC_HD(val_f_wrk, n_b_faces, cs_real_6_t, amode);
 
         cs_real_6_t  *coefav = (cs_real_6_t  *)bc_coeffs_ts->a;
         cs_real_66_t *coefbv = (cs_real_66_t *)bc_coeffs_ts->b;
-
-        cs_dispatch_context ctx;
 
         /* Compute var_iprime */
         cs_gradient_boundary_iprime_lsq_strided<6>(ctx,
@@ -8510,13 +8522,14 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
 
   bool update_stats = true;
 
+  cs_dispatch_context ctx;
+
   if (hyd_p_flag == 2)
     hyd_p_flag = 0;
 
   if (hyd_p_flag == 1) {
-    bool on_device = cs_mem_is_device_ptr(f_ext);
     const cs_halo_t *halo = cs_glob_mesh->halo;
-    cs_halo_sync_r(halo, halo_type, on_device, f_ext);
+    cs_halo_sync_r(halo, halo_type, ctx.use_gpu(), f_ext);
   }
 
   t0 = cs_timer_time();
@@ -8524,7 +8537,8 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
   if (update_stats == true)
     gradient_info = _find_or_add_system(var_name, gradient_type);
 
-  _gradient_scalar(var_name,
+  _gradient_scalar(ctx,
+                   var_name,
                    gradient_info,
                    gradient_type,
                    halo_type,
