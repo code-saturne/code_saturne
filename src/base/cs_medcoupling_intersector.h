@@ -286,6 +286,17 @@ cs_medcoupling_intersector_dump_mesh(cs_medcoupling_intersector_t  *mi,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief print mesh information to log file.
+ *
+ * \param[in] mi pointer to the cs_medcoupling_intersector_t struct
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_medcoupling_intersector_print_mesh_info(cs_medcoupling_intersector_t *mi);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return writer id used for medcoupling meshes, 0 means unused.
  */
 /*----------------------------------------------------------------------------*/
