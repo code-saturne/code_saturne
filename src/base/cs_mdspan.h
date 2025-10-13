@@ -1018,6 +1018,9 @@ using cs_span_2d = cs::mdspan<T, 2, L>;
 template<class T, cs::layout L = cs::layout::right>
 using cs_span_3d = cs::mdspan<T, 3, L>;
 
+template<class T, cs::layout L = cs::layout::right>
+using cs_span_4d = cs::mdspan<T, 4, L>;
+
 template<class T, int N>
 using cs_mdspan_r = cs::mdspan<T, N, cs::layout::right>;
 
