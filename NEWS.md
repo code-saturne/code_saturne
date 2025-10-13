@@ -50,6 +50,9 @@ Release 9.0.1 (unreleased)
 
 ### User changes:
 
+- Make medcoupling intersector mesh information dump optional to reduce
+  log file volume
+
 - Add the "FOR_RANGE" operator to MEG formulae editor. This commit
   was mistakenly left out from v9.0.0.
 

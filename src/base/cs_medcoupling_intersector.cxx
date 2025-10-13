@@ -276,8 +276,6 @@ _allocate_intersector_external_mesh(cs_medcoupling_intersector_t *mi,
   fvm_nodal_init_io_num(ext_mesh, faces_gnum , 2);
   fvm_nodal_init_io_num(ext_mesh, vertex_gnum, 0);
 
-  fvm_nodal_dump(ext_mesh);
-
   mi->ext_mesh = ext_mesh;
 
   if (cs_glob_rank_id < 1) {
@@ -1406,6 +1404,29 @@ cs_medcoupling_intersector_dump_mesh(cs_medcoupling_intersector_t  *mi,
 #else
   _dump_medcoupling_mesh(mi->source_mesh, prefix, mi->name);
 #endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief print mesh information to log file.
+ *
+ * \param[in] mi pointer to the cs_medcoupling_intersector_t struct
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_medcoupling_intersector_print_mesh_info(cs_medcoupling_intersector_t *mi)
+{
+
+#if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
+  CS_NO_WARN_IF_UNUSED(mi);
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: This function cannot be called without "
+              "MEDCoupling support.\n"));
+#else
+  fvm_nodal_dump(mi->ext_mesh);
+#endif
+
 }
 
 /*----------------------------------------------------------------------------*/
