@@ -95,13 +95,13 @@ struct _cs_inlet_t {
   void                  *inflow;
 
   int                    initialize;         /* Indicator of initialization */
+  int                    volume_mode;        /* Indicator of volume_mode */
   int                    verbosity;          /* Indicator of verbosity level*/
 
   /* Geometric informations */
 
   const cs_zone_t       *zone;               /* Pointer to associated
                                                 volume or boundary zone */
-
   /* Mean flow information */
 
   cs_real_t              vel_m[3];           /* Mean velocity */
@@ -370,13 +370,13 @@ _batten_method(cs_lnum_t            n_elts,
  *
  * parameters:
  *   n_points          --> Local number of points where turbulence is generated
- *   face_ids          --> Local id of inlet boundary faces
+ *   elt_ids          --> Local id of inlet boundary faces
  *   fluctuations      <-> Velocity fluctuations
  *----------------------------------------------------------------------------*/
 
 static void
 _rescale_flowrate(cs_lnum_t         n_points,
-                  const cs_lnum_t   face_ids[],
+                  const cs_lnum_t   elt_ids[],
                   cs_real_3_t       fluctuations[])
 {
   /* Compute the mass flow rate of the fluctuating field */
@@ -402,7 +402,7 @@ _rescale_flowrate(cs_lnum_t         n_points,
     (n_points, rd_sum_2d, reducer_sum_2d,
      [=] CS_F_HOST_DEVICE (cs_lnum_t point_id, cs_double_n<2> &res) {
 
-    cs_lnum_t face_id = face_ids[point_id];
+    cs_lnum_t face_id = elt_ids[point_id];
     cs_lnum_t cell_id = b_face_cells[face_id];
 
     const cs_real_t *fluct = fluctuations[point_id];
@@ -427,7 +427,7 @@ _rescale_flowrate(cs_lnum_t         n_points,
     /* Decompose the fluctuation in a local coordinate system */
     /* (not valid for warped boundary faces) */
 
-    cs_lnum_t face_id = face_ids[point_id];
+    cs_lnum_t face_id = elt_ids[point_id];
     cs_lnum_t cell_id = b_face_cells[face_id];
 
     cs_lnum_t idx = b_face_vtx_idx[face_id];
@@ -668,6 +668,8 @@ cs_les_inflow_add_inlet(cs_les_inflow_type_t   type,
 
   inlet->zone = zone;
 
+  inlet->volume_mode = 0;
+
   /* Turbulence level */
 
   if (vel_r != nullptr) {
@@ -741,8 +743,8 @@ cs_les_inflow_add_inlet(cs_les_inflow_type_t   type,
 
       cs_inflow_sem_t *inflow;
       CS_MALLOC(inflow, 1, cs_inflow_sem_t);
-      inflow->volume_mode = (volume_mode == true) ? 1 : 0;
       inflow->n_structures = n_entities;
+      inlet->volume_mode = (volume_mode == true) ? 1 : 0;
 
       CS_MALLOC(inflow->position, inflow->n_structures, cs_real_3_t);
       CS_MALLOC(inflow->energy,   inflow->n_structures, cs_real_3_t);
@@ -884,9 +886,7 @@ cs_les_inflow_compute(void)
                        "-------------------------------\n\n"
                        "SEM INFO, inlet \"%d\" \n\n"), inlet_id);
 
-        cs_inflow_sem_t *inflowsem = (cs_inflow_sem_t *)inlet->inflow;
-
-        if (inflowsem->volume_mode == 1) {
+        if (inlet->volume_mode == 1) {
 
           const cs_real_t dissiprate = eps_r[0];
           cs_lnum_t n_points = cs_glob_mesh->n_cells;
@@ -918,6 +918,7 @@ cs_les_inflow_compute(void)
                                        cell_cen,
                                        point_weight,
                                        inlet->initialize,
+                                       inlet->volume_mode,
                                        inlet->verbosity,
                                        (cs_inflow_sem_t *)inlet->inflow,
                                        time_step->dt[0],
@@ -932,6 +933,7 @@ cs_les_inflow_compute(void)
                                        b_face_cog,
                                        b_face_surf,
                                        inlet->initialize,
+                                       inlet->volume_mode,
                                        inlet->verbosity,
                                        (cs_inflow_sem_t *)inlet->inflow,
                                        time_step->dt[0],
@@ -955,61 +957,53 @@ cs_les_inflow_compute(void)
     /* Rescaling of the synthetic fluctuations by the statistics */
     /*-----------------------------------------------------------*/
 
-    if (inlet->type == CS_INFLOW_SEM){
-      cs_inflow_sem_t *inflowsem = (cs_inflow_sem_t *) inlet->inflow;
-      if (inflowsem->volume_mode ==1) {  /* Rescale over the whole domain */
-        cs_les_rescale_fluctuations(cs_glob_mesh->n_cells,
-                                    rij_l,
-                                    fluctuations);
-      }
-      else {
-        cs_les_rescale_fluctuations(n_elts,
-                                    rij_l,
-                                    fluctuations);
-      }
-    }
-
-    else if (   inlet->type == CS_INFLOW_RANDOM
-             || inlet->type == CS_INFLOW_BATTEN) {
+    if (   inlet->type == CS_INFLOW_SEM
+        || inlet->type == CS_INFLOW_RANDOM
+        || inlet->type == CS_INFLOW_BATTEN)
       cs_les_rescale_fluctuations(n_elts, rij_l, fluctuations);
-    }
 
     CS_FREE(rij_l);
 
     /* Rescaling of the mass flow rate */
     /*---------------------------------*/
 
-    if (inlet->type == CS_INFLOW_RANDOM || inlet->type == CS_INFLOW_BATTEN){
-      _rescale_flowrate(n_elts,
-                        elt_ids,
-                        fluctuations);
+    if (inlet->volume_mode == 0) {
+      if (   inlet->type == CS_INFLOW_RANDOM || inlet->type == CS_INFLOW_BATTEN
+          || inlet->type == CS_INFLOW_SEM)
+        _rescale_flowrate(n_elts,
+                          elt_ids,
+                          fluctuations);
+
+      /* Boundary conditions */
+      /*---------------------*/
+
+      cs_real_t *rcodcl1_u = CS_F_(vel)->bc_coeffs->rcodcl1;
+      cs_real_t *rcodcl1_v = rcodcl1_u + n_b_faces;
+      cs_real_t *rcodcl1_w = rcodcl1_v + n_b_faces;
+
+      ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+        cs_lnum_t face_id = elt_ids[i];
+
+        rcodcl1_u[face_id] = vel_m_l[i][0] + fluctuations[i][0];
+        rcodcl1_v[face_id] = vel_m_l[i][1] + fluctuations[i][1];
+        rcodcl1_w[face_id] = vel_m_l[i][2] + fluctuations[i][2];
+      });
+
+      ctx.wait();
     }
-    else if (inlet->type == CS_INFLOW_SEM){
-      cs_inflow_sem_t *inflowsem = (cs_inflow_sem_t *)inlet->inflow;
-      if (inflowsem->volume_mode == 1) {
-          _rescale_flowrate(n_elts,
-                            elt_ids,
-                            fluctuations);
-      }
-      inflowsem->volume_mode=-1;
+    /* Volume mode */
+    else {
+      cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
+      ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+        cs_lnum_t c_id = elt_ids[i];
+
+        vel[c_id][0] = vel_m_l[i][0] + fluctuations[i][0];
+        vel[c_id][1] = vel_m_l[i][1] + fluctuations[i][1];
+        vel[c_id][2] = vel_m_l[i][2] + fluctuations[i][2];
+      });
+
+      ctx.wait();
     }
-
-    /* Boundary conditions */
-    /*---------------------*/
-
-    cs_real_t *rcodcl1_u = CS_F_(vel)->bc_coeffs->rcodcl1;
-    cs_real_t *rcodcl1_v = rcodcl1_u + n_b_faces;
-    cs_real_t *rcodcl1_w = rcodcl1_v + n_b_faces;
-
-    ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
-      cs_lnum_t face_id = elt_ids[i];
-
-      rcodcl1_u[face_id] = vel_m_l[i][0] + fluctuations[i][0];
-      rcodcl1_v[face_id] = vel_m_l[i][1] + fluctuations[i][1];
-      rcodcl1_w[face_id] = vel_m_l[i][2] + fluctuations[i][2];
-    });
-
-    ctx.wait();
 
     CS_FREE(vel_m_l);
     CS_FREE(fluctuations);
@@ -1578,6 +1572,7 @@ cs_les_synthetic_eddy_restart_write(void)
  * \param[in]   point_coordinates   point coordinates
  * \param[in]   point_weight        point weights (surface, volume or nullptr)
  * \param[in]   initialize          initialization indicator
+ * \param[in]   volume_mode         volume_mode indicator
  * \param[in]   verbosity           verbosity level
  * \param[in]   inflow              pointer to structure for Batten method
  * \param[in]   t_cur               current time
@@ -1594,6 +1589,7 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_elts,
                              const cs_real_3_t   point_coordinates[],
                              const cs_real_t    *point_weight,
                              int                 initialize,
+                             int                 volume_mode,
                              int                 verbosity,
                              cs_inflow_sem_t    *inflow,
                              cs_real_t           t_cur,
@@ -1626,7 +1622,7 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_elts,
   struct cs_int_n<3> rd_sum_3i;
   struct cs_reduce_sum_ni<3> reducer_sum_3i;
 
-  if (inflow->volume_mode == 1) { //Generate turbulence over the whole domain
+  if (volume_mode == 1) { //Generate turbulence over the whole domain
 
     ctx.parallel_for_reduce
       (n_elts, rd_sum_3i, reducer_sum_3i,

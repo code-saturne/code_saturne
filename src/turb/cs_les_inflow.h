@@ -75,8 +75,6 @@ typedef struct _cs_inlet_t   cs_inlet_t;
 typedef struct {
 
   int           n_structures;  /*!< Number of coherent structures */
-  int           volume_mode;   /*!< Indicator to use classic inlet SEM (0)
-                                    or volumic SEM over the domain */
   cs_real_3_t  *position;      /*!< Position of the structures */
   cs_real_3_t  *energy;        /*!w Anisotropic energy of the structures */
 
@@ -169,6 +167,7 @@ cs_les_synthetic_eddy_restart_write(void);
  * \param[in]   point_coordinates   point coordinates
  * \param[in]   point_weight        point weights (surface, volume or NULL)
  * \param[in]   initialize          initialization indicator
+ * \param[in]   volume_mode         volume_mode indicator
  * \param[in]   verbosity           verbosity level
  * \param[in]   inflow              pointer to structure for Batten method
  * \param[in]   t_cur               current time
@@ -185,6 +184,7 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_elts,
                              const cs_real_3_t   point_coordinates[],
                              const cs_real_t    *point_weight,
                              int                 initialize,
+                             int                 volume_mode,
                              int                 verbosity,
                              cs_inflow_sem_t    *inflow,
                              cs_real_t           t_cur,

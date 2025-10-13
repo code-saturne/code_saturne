@@ -1633,7 +1633,7 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
         cs_inflow_sem_t *sem_in;
         CS_MALLOC(sem_in, 1, cs_inflow_sem_t);
         sem_in->n_structures = n_structures;
-        sem_in->volume_mode = 1;
+        int volume_mode = 1;
         CS_MALLOC(sem_in->position, sem_in->n_structures, cs_real_3_t);
         CS_MALLOC(sem_in->energy, sem_in->n_structures, cs_real_3_t);
 
@@ -1662,7 +1662,7 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
                                      nullptr,
                                      point_coordinates,
                                      point_weight,
-                                     initialize, verbosity,
+                                     initialize, volume_mode, verbosity,
                                      sem_in,
                                      t_cur,
                                      vel_l,
