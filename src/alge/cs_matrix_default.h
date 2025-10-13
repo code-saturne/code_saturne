@@ -298,7 +298,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Return matrix associated wiht a matrix assembler.
+ * \brief Return matrix associated with a matrix assembler.
  *
  * Coefficients are not assigned at this stage.
  *
