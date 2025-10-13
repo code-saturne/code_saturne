@@ -3,6 +3,8 @@ Release 9.0.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix memory leak in internal coupling and Rij turbulence model
+
 - Fix segmentation error introduced by previous memory leak fix due to a typo
 
 - Fix SIGFPE when combining Rij-SSG and internal coupling
