@@ -362,7 +362,7 @@ _dot_product
 
   double s[1];
 
-  s[0] = cs_dot_xx(c->setup_data->n_rows, x);
+  s[0] = cs_dot(c->setup_data->n_rows, x, y);
 
 #if defined(HAVE_MPI)
 
