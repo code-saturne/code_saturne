@@ -4505,7 +4505,7 @@ cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
   else {
     if (bc_coeffs->val_f_lim == nullptr)
       CS_MALLOC_HD(bc_coeffs->val_f_lim, dim*n_b_faces, cs_real_t, amode);
-    if (bc_coeffs->val_f_d == nullptr)
+    if (bc_coeffs->val_f_d_lim == nullptr)
       CS_MALLOC_HD(bc_coeffs->val_f_d_lim, dim*n_b_faces, cs_real_t, amode);
   }
 }

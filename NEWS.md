@@ -3,6 +3,8 @@ Release 9.0.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix segmentation error introduced by previous memory leak fix due to a typo
+
 - Fix SIGFPE when combining Rij-SSG and internal coupling
 
 - Fix memory leak in solver
