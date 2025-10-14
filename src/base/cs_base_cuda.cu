@@ -125,7 +125,7 @@ static cudaStream_t _cs_glob_stream_pf = 0;
 
 bool cs_glob_cuda_allow_graph = false;
 
-// Shared memory size ber block (based on know GPUs, queried later).
+// Shared memory size per block (based on know GPUs, queried later).
 int cs_glob_cuda_shared_mem_per_block = 48*1024;
 
 /*============================================================================
@@ -184,7 +184,7 @@ _finalize_nccl(void)
       cs_log_printf
         (CS_LOG_DEFAULT,
          _("\n"
-           "  Failed finilizing NCCL: %s;\n"),
+           "  Failed finalizing NCCL: %s;\n"),
          err_str);
     }
   }
