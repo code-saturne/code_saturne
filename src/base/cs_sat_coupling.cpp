@@ -1338,7 +1338,7 @@ _sat_coupling_send_bnd_data
       trav5[e_id] = _rij[4] + cs_math_3_dot_product(xyzjjp, _grad_rij[4]);
       trav6[e_id] = _rij[5] + cs_math_3_dot_product(xyzjjp, _grad_rij[5]);
 
-      trav7[e_id] = _eps + cs_math_3_dot_product(xyzjjp, grad[3 * c_id]);
+      trav7[e_id] = _eps + cs_math_3_dot_product(xyzjjp, grad[c_id]);
     }
 
     /* Free array */
