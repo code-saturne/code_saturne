@@ -592,7 +592,7 @@ _bdy_mass_flux_update(const void                 *input,
 
   if (cs_glob_time_step->is_local) {
 
-    const cs_lnum_t *b_face_cells = (const cs_lnum_t *)cs_glob_mesh->b_face_cells;
+    const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
 
     if (class_id == 0) {
 
