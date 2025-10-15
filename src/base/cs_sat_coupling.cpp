@@ -1533,14 +1533,22 @@ _sat_coupling_send_bnd_data
     }
   }
 
-  /* Scalars
-     ------- */
+  /* Scalars and other variables
+     --------------------------- */
+
+  // FIXME: we need a more robust and general mechanism,
+  // so as not to miss fields that are neither dynamic variables
+  // or scalars, and to avoid hypothesis over the order in which
+  // dynamic variables appear, as the current logic will break
+  // easily when adding new turbulent models.
 
   const int keysca = cs_field_key_id("scalar_id");
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     int is_scalar = cs_field_get_key_int(f, keysca);
-    if (is_scalar > -1) {
+    if (   (is_scalar > -1)
+        || (strcmp(f->name, "alpha") == 0)
+        || (strcmp(f->name, "wall_distance") == 0)) {
       cs_real_t *_scalar = rvdis[ipos];
       cs_field_gradient_scalar(f, iprev, inc, grad);
       _sat_coupling_interpolate_scalar_simple(f->val, grad, n_b_faces_dist,
