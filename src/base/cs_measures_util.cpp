@@ -133,6 +133,8 @@ static int  _n_grids_max = 0;
 static cs_interpol_grid_t  *_grids = nullptr;
 static cs_map_name_to_id_t  *_grids_map = nullptr;
 
+static bool _warnings = true;
+
 /*============================================================================
  * Local Type Definitions
  *============================================================================*/
@@ -294,6 +296,8 @@ cs_interpol_field_on_grid(cs_interpol_grid_t *ig,
 
   const cs_real_3_t *g_coords = (cs_real_3_t *)(ig->coords);
 
+  bool continue_warnings = true;
+
   /* Loop over cells */
 # pragma omp parallel for
   for (cs_lnum_t g_id = 0; g_id < nb_points; g_id++) {
@@ -303,14 +307,8 @@ cs_interpol_field_on_grid(cs_interpol_grid_t *ig,
     /* get z_min and z_max of the level,
      * Note, first and last levels are truncated */
     cs_real_t z_min, z_max;
-    if (g_id == 0)
-      z_min = g_coords[g_id][2];
-    else
-      z_min = 0.5 * (g_coords[g_id-1][2] + g_coords[g_id][2]);
-    if (g_id == (nb_points-1))
-      z_max = g_coords[g_id][2];
-    else
-      z_max = 0.5 * (g_coords[g_id][2] + g_coords[g_id+1][2]);
+    z_min = g_coords[g_id][2];
+    z_max = g_coords[g_id+1][2];
 
     /* Loop over cells */
     for (cs_lnum_t c_id = 0; c_id < n_elts; c_id++) {
@@ -326,13 +324,13 @@ cs_interpol_field_on_grid(cs_interpol_grid_t *ig,
 
     if (total_vol > 0.)
       interpolated_values[g_id] /= total_vol;
-#if 0
-    else {
-      bft_printf("Warning: The grid level z[%d]=%f in [%f, %f] has no corresponding cells.\n",
+    else if (_warnings) {
+      continue_warnings = false;
+      bft_printf("Warning: The grid level zq[%d]=%f in [%f, %f] has no corresponding cells.\n",
           g_id, g_coords[g_id][2], z_min, z_max);
     }
-#endif
   }
+  _warnings = _warnings && continue_warnings;
 }
 
 /*----------------------------------------------------------------------------
@@ -496,16 +494,15 @@ cs_interpol_grid_init(cs_interpol_grid_t    *ig,
                       const cs_lnum_t        nb_points,
                       const cs_real_t       *coords)
 {
-  cs_lnum_t ii;
   CS_MALLOC(ig->cell_connect, nb_points, cs_lnum_t);
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1)
     CS_MALLOC(ig->rank_connect, nb_points, int);
 #endif
-  CS_MALLOC(ig->coords, 3*nb_points, cs_real_t);
+  CS_MALLOC(ig->coords, 3*(nb_points+1), cs_real_t);
 
 #   pragma omp parallel for
-  for (ii = 0; ii < 3*nb_points; ii++) {
+  for (cs_lnum_t ii = 0; ii < 3*(nb_points+1); ii++) {
     ig->coords[ii] = coords[ii];
   }
 
@@ -641,7 +638,7 @@ cs_measures_set_map_values(cs_measures_set_t       *ms,
   if (nb_measures != ms->nb_measures) {
     CS_REALLOC(ms->measures, nb_measures*dim, cs_real_t);
     CS_REALLOC(ms->inf_radius, nb_measures*3, cs_real_t);
-    CS_REALLOC(ms->coords, nb_measures*3, cs_real_t);
+    CS_REALLOC(ms->coords, (nb_measures+1)*3, cs_real_t);
     CS_REALLOC(ms->is_cressman, nb_measures, int);
     CS_REALLOC(ms->is_interpol, nb_measures, int);
     ms->nb_measures = nb_measures;

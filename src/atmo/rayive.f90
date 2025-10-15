@@ -30,7 +30,7 @@
 !______________________________________________________________________________!
 !> \param[out]      tauv      transmission function for water vapor and dimers
 !> \param[out]      dtauv     d(tauv)/dz
-!> \param[in]       qqqq      optical dpeth for water vapor (z,z')
+!> \param[in]       qqqq      optical depth for water vapor (z,z')
 !> \param[in]       xqx       effective concentration absorption by water vapor
 !> \param[in]       qqqqc     idem qqqq for dimers
 !> \param[in]       xqc       idem xqx for dimers

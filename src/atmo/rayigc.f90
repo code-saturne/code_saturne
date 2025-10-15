@@ -2,7 +2,7 @@
 
 ! This file is part of code_saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2024 EDF S.A.
+! Copyright (C) 1998-2025 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -28,21 +28,19 @@
 !______________________________________________________________________________.
 !  mode           name          role
 !______________________________________________________________________________!
-!> \param[in]     zbas          ground level altitude
 !> \param[in]     zz            height above ground level
-!> \param[in]     pz            pressure normalized by ground level pressure
 !> \param[in]     zzp           intermediate altitude for ozone
-!> \param[in]     pzp           corresponding pressure for zzp level
 !> \param[out]    xa            CO2 + O3 absorption
 !> \param[out]    xda           differential absorption for CO2 + O3
+!> \param[in]     u             water vapor optical depth (zz, zzp)
 !> \param[in]     q             effective concentration for absorption by water
 !>                              vapor
-!> \param[in]     u             water vapor optical depth (zz, zzp)
-!> \param[in]     tco2          temperature for high level
+!> \param[in]     uco2          CO2 optical depth (zz, zzp)
+!> \param[in]     qco2          effective concentration for absorption by CO2
 !> \param[in]     ro            air density
 !_______________________________________________________________________________
 
-subroutine rayigc (zbas,zz,pz,zzp,pzp,xa,xda,q,u,tco2,ro)
+subroutine rayigc(zz, zzp, xa,xda,u,q,uco2,qco2,ro)
 
 !===============================================================================
 ! Module files
@@ -61,29 +59,23 @@ implicit none
 
 ! External variables
 
-double precision zbas
-double precision zz,pz,zzp,pzp,xa,xda,q,u,tco2,ro
+double precision zz,zzp,xa,xda,q,u, qco2,uco2,ro
 
 ! Local variables
 
 double precision x1,x2,x3,x4,x1c,x2c,x3c,x4c,y1,y2
-double precision tauv,dtauv,xx,exn,exnp1,conco2
-double precision uco2,duco2,ao,dao
 double precision uo3,duo3,xo1,xo2,xo3,xo4
 double precision yo1,yo2,ao3,dao3
-
-data x1,x2,x3,x4/1.33,-0.4572,0.26,0.286/
-data x1c,x2c,x3c,x4c/-0.00982,0.0676,0.421,0.01022/
-data y1,y2/0.0581,0.0546/
-data xo1,xo2,xo3,xo4/0.209,7.e-5,0.436,-0.00321/
-data yo1,yo2/0.0749,0.0212/
+double precision tauv,dtauv,duco2,ao,dao
+data x1,x2,x3,x4/1.33d0,-0.4572d0,0.26d0,0.286d0/
+data x1c,x2c,x3c,x4c/-0.00982d0,0.0676d0,0.421d0,0.01022d0/
+data y1,y2/0.0581d0,0.0546d0/
+data xo1,xo2,xo3,xo4/0.209d0,7.d-5,0.436d0,-0.00321d0/
+data yo1,yo2/0.0749d0,0.0212d0/
 
 !===============================================================================
 
-! Concentration of CO2
-conco2 = 3.5d-2
-
-! 1. Computation of th2o within the range 15mu of CO2
+! 1. Computation of th2o within the range 15mu of CO2 with u in kg/m2
 
 if(u.le.20.d0) then
   tauv = x1 + x2*(u + x4)**x3
@@ -93,17 +85,8 @@ else
   dtauv = -0.2754d0/log(10.d0)*ro*q/u
 endif
 
-! 2. Computation of the optical depth for CO2
-
-xx = 1.d0 - 0.0065d0*(zz - zbas)/288.15d0
-exn = 0.75d0
-exnp1 = exn+1.d0
-uco2 = -conco2*288.15d0/0.0065d0/(5.31d0*exnp1)*(pz**exnp1                &
-     - pzp**exnp1)*(tkelvi/tco2)**(exn/2.d0)
-
-if(uco2.lt.0.d0) uco2 = -uco2
-duco2 = conco2*pz**exnp1/xx
-duco2 = duco2*(tkelvi/tco2)**(exn/2.d0)
+! 2. Computation of the optical depth for CO2 in cm
+duco2=ro*qco2
 if(uco2.le.1.d0) then
   ao = x1c + x2c*(uco2 + x4c)**x3c
   dao = duco2*x2c*x3c*(uco2 + x4c)**(x3c - 1.d0)
@@ -112,13 +95,13 @@ else
   dao = y2/log(10.d0)*duco2/uco2
 endif
 
-! 3. Computation of the optical depth for O3
+! 3. Computation of the optical depth for O3 with uo3 in cm
 
 uo3 = abs(rayuoz(zz) - rayuoz(zzp))
 duo3 = raydoz(zz)
 if(uo3.le.0.01d0) then
   ao3 = xo1*(uo3 + xo2)**xo3 + xo4
-  dao3 = duo3*xo1*(uo3 + xo2)**(xo3 - 1.d0)
+  dao3 = duo3*xo1*xo3*(uo3 + xo2)**(xo3 - 1.d0)
 else
   ao3 = yo1 + yo2*log10(uo3)
   dao3 = yo2*duo3/log(10.d0)/uo3

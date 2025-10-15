@@ -204,7 +204,7 @@ double precision, dimension(:,:), pointer :: xyvert
 
 !> vertical grid for 1D radiative scheme initialize in
 !>       cs_user_atmospheric_model.f90
-double precision, dimension(:), pointer :: zvert
+double precision, dimension(:), pointer  :: zray
 
 !> absorption for CO2 + 03
 double precision, dimension(:), pointer :: acinfe
@@ -254,7 +254,6 @@ double precision, dimension(:), pointer :: soil_density
 double precision, save :: tausup
 
 !> internal variable for 1D radiative model
-double precision, dimension(:), pointer  :: zray
 double precision, dimension(:,:), pointer  :: rayi, rayst
 
 !> Upward and downward radiative fluxes (infrared, solar) along each vertical
@@ -293,12 +292,21 @@ real(c_double), pointer, save :: aod_o3_tot
 !> adimensional :  aod_h2o_tot=0.10 other referenced values are  0.06, 0.08
 real(c_double), pointer, save :: aod_h2o_tot
 
+!> total aerosol optical depth in the IR domain for thermal radiation
+!> deduced from aeronet data
+double precision, save:: aod_ir = 0.1d0
+
+!> CO2 concentration in cm NTP with correction to the ratio of
+!> molar masses for Mco2 and Mair
+!> default is 350ppm
+double precision, save:: conco2 = 3.5d-2*44.d0/29.d0
+
 !> Asymmetry factor for O3 (non-dimensional)
 !> climatic value gaero_o3=0.66
 double precision, save:: gaero_o3 = 0.66d0
 !> Asymmetry factor for H2O (non-dimensional)
 !> climatic value gaero_h2o=0.64
-double precision, save:: gaero_h2o = 064d0
+double precision, save:: gaero_h2o = 0.64d0
 
 !> Single scattering albedo for O3 (non-dimensional)
 !> climatic value piaero_o3=0.84, other referenced values are 0.963
@@ -376,13 +384,13 @@ integer(c_int), pointer, save :: rad_atmo_model
          p_umet, p_vmet,                                                       &
          p_wmet  , p_tmmet, p_phmet, p_tpmet, p_ekmet, p_epmet,                &
          p_ttmet , p_rmet , p_qvmet, p_ncmet,                                  &
-         p_xyvert, p_zvert, p_acinfe,                                          &
+         p_xyvert, p_zray , p_acinfe,                                          &
          p_dacinfe, p_aco2, p_aco2s,                                           &
          p_daco2, p_daco2s,                                                    &
          p_acsup, p_acsups,                                                    &
          p_dacsup, p_dacsups,                                                  &
          p_tauzq, p_tauz, p_zq,                                                &
-         p_zray, p_rayi, p_rayst,                                              &
+         p_rayi, p_rayst,                                                      &
          p_iru, p_ird, p_solu, p_sold,                                         &
          p_soil_albedo,                                                        &
          p_soil_emissi,                                                        &
@@ -404,13 +412,13 @@ integer(c_int), pointer, save :: rad_atmo_model
       type(c_ptr), intent(out) :: p_umet, p_vmet, p_tmmet, p_wmet
       type(c_ptr), intent(out) :: p_phmet, p_tpmet, p_ekmet, p_epmet
       type(c_ptr), intent(out) :: p_ttmet, p_rmet, p_qvmet, p_ncmet
-      type(c_ptr), intent(out) :: p_xyvert, p_zvert, p_acinfe
+      type(c_ptr), intent(out) :: p_xyvert, p_zray , p_acinfe
       type(c_ptr), intent(out) :: p_dacinfe, p_aco2, p_aco2s
       type(c_ptr), intent(out) :: p_daco2, p_daco2s
       type(c_ptr), intent(out) :: p_acsup, p_acsups
       type(c_ptr), intent(out) :: p_dacsup, p_dacsups
       type(c_ptr), intent(out) :: p_tauzq, p_tauz, p_zq
-      type(c_ptr), intent(out) :: p_zray, p_rayi, p_rayst
+      type(c_ptr), intent(out) :: p_rayi, p_rayst
       type(c_ptr), intent(out) :: p_iru, p_ird, p_solu, p_sold
       type(c_ptr), intent(out) :: p_soil_albedo
       type(c_ptr), intent(out) :: p_soil_emissi
@@ -583,13 +591,13 @@ type(c_ptr) :: c_u_met, c_v_met, c_time_met
 type(c_ptr) :: c_w_met
 type(c_ptr) :: c_hyd_p_met, c_pot_t_met, c_ek_met, c_ep_met
 type(c_ptr) :: c_temp_met, c_rho_met, c_qw_met, c_ndrop_met
-type(c_ptr) :: c_xyvert, c_zvert, c_acinfe
+type(c_ptr) :: c_xyvert, c_zray , c_acinfe
 type(c_ptr) :: c_dacinfe, c_aco2, c_aco2s
 type(c_ptr) :: c_daco2, c_daco2s
 type(c_ptr) :: c_acsup, c_acsups
 type(c_ptr) :: c_dacsup, c_dacsups
 type(c_ptr) :: c_tauzq, c_tauz, c_zq
-type(c_ptr) :: c_zray, c_rayi, c_rayst
+type(c_ptr) :: c_rayi, c_rayst
 type(c_ptr) :: c_iru, c_ird, c_solu, c_sold
 type(c_ptr) :: c_soil_albedo
 type(c_ptr) :: c_soil_emissi
@@ -613,13 +621,13 @@ call cs_f_atmo_arrays_get_pointers(c_z_temp_met,                  &
                                    c_rho_met,                     &
                                    c_qw_met,                      &
                                    c_ndrop_met,                   &
-                                   c_xyvert, c_zvert, c_acinfe,   &
+                                   c_xyvert, c_zray , c_acinfe,   &
                                    c_dacinfe, c_aco2, c_aco2s,    &
                                    c_daco2, c_daco2s,             &
                                    c_acsup, c_acsups,             &
                                    c_dacsup, c_dacsups,           &
                                    c_tauzq, c_tauz, c_zq,         &
-                                   c_zray, c_rayi, c_rayst,       &
+                                   c_rayi, c_rayst,               &
                                    c_iru, c_ird, c_solu, c_sold,  &
                                    c_soil_albedo,                 &
                                    c_soil_emissi,                 &
@@ -648,7 +656,7 @@ call c_f_pointer(c_qw_met, qvmet, [dim_ntx_nt])
 call c_f_pointer(c_ndrop_met, ncmet, [dim_ntx_nt])
 
 call c_f_pointer(c_xyvert , xyvert , [dim_xyvert])
-call c_f_pointer(c_zvert  , zvert  , [kmx])
+call c_f_pointer(c_zray   , zray   , [kmx])
 call c_f_pointer(c_acinfe , acinfe , [kmx])
 call c_f_pointer(c_dacinfe, dacinfe, [kmx])
 call c_f_pointer(c_aco2   , aco2   , [dim_kmx2])
@@ -663,7 +671,6 @@ call c_f_pointer(c_tauzq  , tauzq  , [kmx+1])
 call c_f_pointer(c_tauz   , tauz   , [kmx+1])
 call c_f_pointer(c_zq     , zq     , [kmx+1])
 call c_f_pointer(c_rayi   , rayi   , [dim_kmx_nvert])
-call c_f_pointer(c_zray   , zray   , [kmx])
 call c_f_pointer(c_rayst  , rayst  , [dim_kmx_nvert])
 call c_f_pointer(c_iru    , iru    , [dim_kmx_nvert])
 call c_f_pointer(c_ird    , ird    , [dim_kmx_nvert])

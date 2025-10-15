@@ -208,10 +208,9 @@ typedef struct {
   cs_real_t *rad_1d_tauzq;
   /*! internal variable for 1D radiative model */
   cs_real_t *rad_1d_tauz;
-  /*! internal variable for 1D radiative model */
+  /*! vertical grid for 1D radiative scheme
+   * (stagerred grid associated to faces) */
   cs_real_t *rad_1d_zq;
-  /*! internal variable for 1D radiative model */
-  cs_real_t *rad_1d_zray;
   /*! flux divergence of IR radiation */
   cs_real_t *rad_1d_ir_div;
   /*! flux divergence of solar radiation */

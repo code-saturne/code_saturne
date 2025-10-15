@@ -159,7 +159,6 @@ static cs_atmo_option_t  _atmo_option = {
   .rad_1d_tauzq = nullptr,
   .rad_1d_tauz = nullptr,
   .rad_1d_zq = nullptr,
-  .rad_1d_zray = nullptr,
   .rad_1d_ir_div = nullptr,
   .rad_1d_sol_div = nullptr,
   .rad_1d_iru = nullptr,
@@ -352,7 +351,7 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
                               cs_real_t **qvmet,
                               cs_real_t **ncmet,
                               cs_real_t **xyvert,
-                              cs_real_t **zvert,
+                              cs_real_t **zray,
                               cs_real_t **acinfe,
                               cs_real_t **dacinfe,
                               cs_real_t **aco2,
@@ -366,7 +365,6 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
                               cs_real_t **tauzq,
                               cs_real_t **tauz,
                               cs_real_t **zq,
-                              cs_real_t **zray,
                               cs_real_t **rayi,
                               cs_real_t **rayst,
                               cs_real_t **iru,
@@ -2056,7 +2054,7 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
                               cs_real_t **qvmet,
                               cs_real_t **ncmet,
                               cs_real_t **xyvert,
-                              cs_real_t **zvert,
+                              cs_real_t **zray,
                               cs_real_t **acinfe,
                               cs_real_t **dacinfe,
                               cs_real_t **aco2,
@@ -2070,7 +2068,6 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
                               cs_real_t **tauzq,
                               cs_real_t **tauz,
                               cs_real_t **zq,
-                              cs_real_t **zray,
                               cs_real_t **rayi,
                               cs_real_t **rayst,
                               cs_real_t **iru,
@@ -2172,8 +2169,6 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
     CS_MALLOC(_atmo_option.rad_1d_tauz, n_level+1, cs_real_t);
   if (         _atmo_option.rad_1d_zq == nullptr)
     CS_MALLOC(_atmo_option.rad_1d_zq, n_level+1, cs_real_t);
-  if (         _atmo_option.rad_1d_zray == nullptr)
-    CS_MALLOC(_atmo_option.rad_1d_zray, n_level, cs_real_t);
   if (         _atmo_option.rad_1d_ir_div == nullptr)
     CS_MALLOC(_atmo_option.rad_1d_ir_div, n_level * n_vert, cs_real_t);
   if (         _atmo_option.rad_1d_sol_div == nullptr)
@@ -2244,7 +2239,7 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
   }
 
   *xyvert = _atmo_option.rad_1d_xy;
-  *zvert  = _atmo_option.rad_1d_z;
+  *zray   = _atmo_option.rad_1d_z;
   *acinfe = _atmo_option.rad_1d_acinfe;
   *dacinfe = _atmo_option.rad_1d_dacinfe;
   *aco2   = _atmo_option.rad_1d_aco2  ;
@@ -2258,7 +2253,6 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
   *tauzq  = _atmo_option.rad_1d_tauzq ;
   *tauz   = _atmo_option.rad_1d_tauz  ;
   *zq     = _atmo_option.rad_1d_zq    ;
-  *zray   = _atmo_option.rad_1d_zray  ;
   *rayi   = _atmo_option.rad_1d_ir_div  ;
   *rayst  = _atmo_option.rad_1d_sol_div ;
   *iru    = _atmo_option.rad_1d_iru   ;
@@ -5571,7 +5565,6 @@ cs_atmo_finalize(void)
   CS_FREE(_atmo_option.rad_1d_tauzq);
   CS_FREE(_atmo_option.rad_1d_tauz);
   CS_FREE(_atmo_option.rad_1d_zq);
-  CS_FREE(_atmo_option.rad_1d_zray);
   CS_FREE(_atmo_option.rad_1d_ir_div);
   CS_FREE(_atmo_option.rad_1d_sol_div);
   CS_FREE(_atmo_option.rad_1d_iru);
@@ -5602,6 +5595,7 @@ cs_atmo_finalize(void)
   CS_FREE(_atmo_option.soil_cat_w2);
   CS_FREE(_atmo_option.soil_cat_thermal_inertia);
   CS_FREE(_atmo_option.soil_cat_thermal_roughness);
+
 }
 
 /*----------------------------------------------------------------------------*/

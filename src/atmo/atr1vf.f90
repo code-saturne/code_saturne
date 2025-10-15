@@ -54,7 +54,7 @@ procedure() :: grimap, gripol, rayir, rayso, mesmap
 integer k, ii, jj
 integer k1
 integer ifac, isol
-integer ico2,imer1
+integer imer1
 integer ideb, icompt
 integer ktamp
 integer nfmodsol, nbrsol
@@ -157,7 +157,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
   call c_f_pointer(c_fnvert, fnvert, [dim_kmx_nvert])
   call c_f_pointer(c_aevert, aevert, [dim_kmx_nvert])
 
-  allocate(coords(3,kmx,nvert))
+  allocate(coords(3,kmx+1,nvert))
   allocate(cressm(kmx*nvert), interp(kmx*nvert))
   allocate(infrad(3*kmx*nvert))
 
@@ -167,15 +167,8 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
 
   if (idtvar.eq.0 .or. idtvar.eq.1) heuray = heuray + ttcabs/3600.d0
 
-  if (ntcabs.le.2.or.isuite.eq.1) then
-    ico2 = 1
-  else
-    ico2 = 0
-  endif
-
   ! --- Initialization:
   do k = 2, kvert
-    zray(k) = 0.d0
     preray(k) = 0.d0
     temray(k) = 0.d0
     qvray(k) = 0.d0
@@ -200,20 +193,31 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
   ! 2.  Computing long-wave and short-wave radiative fluxes
   !=============================================================================
 
+  ! Index of the bottom level
+  k1 = 1
+
   do ii = 1, nvert ! (ixj) index
 
     xvert = xyvert(ii,1)
     yvert = xyvert(ii,2)
 
-    do jj = 1, kmx ! k index
-      coords(1,jj,ii) = xvert
-      coords(2,jj,ii) = yvert
-      coords(3,jj,ii) = zvert(jj)
+    ! Addition of one level for solar radiation
+    ! TODO merge with 44km
+    zq(kmx+1) = 16000.d0
+
+    ! coords are levels (faces in 3D) whereas zray is slice (cells in 3D)
+    do k = 1, kmx+1
+      coords(1,k,ii) = xvert
+      coords(2,k,ii) = yvert
+      coords(3,k,ii) = zq(k)
+      if (k.le.kmx) then
+        zray(k) = 0.5d0 * (zq(k) + zq(k+1))
+      endif
     enddo
   enddo
 
   if (ntcabs.eq.1) then
-    call grimap(igrid, nvert*kmx, coords)
+    call grimap(igrid, nvert*kmx, coords) ! face grid
   endif
 
   ! Grid interpolation is refurbished to get a P0 interpolation
@@ -223,6 +227,8 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
   ! and then consider that a cell (or a face) belongs to a ijk if one node is
   ! in it (i.e. there is a non-zero intersection between the two).
   ! Then we can renormalise by the ratio "Volume(ijk)/SUM(cell_f_vol)"
+
+  ! Interpolation from 3D to 1D in the fluid domain
   call gripol(igrid, cpro_tempc, ttvert)
   call gripol(igrid, crom, romvert)
 
@@ -326,43 +332,35 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     ! 2.1 Profiles used for the computation of the radiative fluxes
     !--------------------------------------------------------------
 
+    ! Loop over the variable defined until the top of the full domain
+    do k = 1, kmx
+
+      aeroso(k) = aevert(k, ii)
+      if (ippmod(iatmos).eq.2.and.moddis.eq.2) then
+        qlray(k)  = qlvert(k, ii)
+        ncray(k)  = ncvert(k, ii)
+        fneray(k) = fnvert(k, ii)
+      else
+        ! default values
+        ncray(k) = 0.d0
+        qlray(k) = 0.d0
+        fneray(k) = 0.d0
+      endif
+
+    enddo
+
     ! Soil variables
-    zray(1)   = zvert(1)
-    temray(1) = soil_ttsoil(ii)
-    qvray(1)  = soil_totwat(ii)
-    romray(1) = soil_density (ii)
-    preray(1) = soil_pressure(ii)
-    qlray(1)  = 0.d0
-    ncray(1)  = 0.d0
-    fneray(1) = 0.d0
-    aeroso(1) = aevert(1, ii)
+    !temray(1) = soil_ttsoil(ii)
+    !qvray(1)  = soil_totwat(ii)
+    !romray(1) = soil_density (ii)
+    !preray(1) = soil_pressure(ii)
 
-    ! Interpolation of temperature, humidity, density on the vertical
-    ! The ref pressure profile is the one computed from the meteo profile
-    if (ippmod(iatmos).eq.2.and.moddis.eq.2) then
-      qlray(1) = qlvert(1, ii)
-      ncray(1)  = ncvert(1, ii)
-      fneray(1) = fnvert(1, ii)
-    endif
-
-    do k = 2, kvert
-      zray(k) = zvert(k)
+    do k = 1, kvert
 
       temray(k) = ttvert(k + (ii-1)*kmx)
+
       qvray(k)  = qvvert(k, ii)
       romray(k) = romvert(k + (ii-1)*kmx)
-
-      ! default values
-      ncray(k) = 0.d0
-      qlray(k) = 0.d0
-      fneray(k) = 0.d0
-      aeroso(k) = aevert(k, ii)
-
-      if (ippmod(iatmos).eq.2.and.moddis.eq.2) then
-        ncray(k)  = ncvert(k, ii)
-        qlray(k)  = qlvert(k, ii)
-        fneray(k) = fnvert(k, ii)
-      endif
 
       if (imeteo.eq.0) then
         call atmstd(0.d0, &
@@ -383,13 +381,8 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     enddo
 
     ! --- Filling the additional levels
+    !TODO do it before
     do k = kvert+1, kmx
-      zray(k) = zvert(k)
-      qlray(k) = 0.d0
-      qvray(k) = 0.d0
-      fneray(k) = 0.d0
-      ncray(k) = 0.d0
-      aeroso(k) = aevert(k, ii)
 
       ! Initialize with standard atmosphere
       ! above the domain
@@ -406,7 +399,7 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
 
     ktamp = 0
     if (imeteo.eq.1) then
-      ktamp = 6
+      ktamp = min(6, kvert)
       do k = kvert - ktamp+1, kmx
         call intprf(nbmaxt, nbmetm, ztmet, tmmet,                              &
                     ttmet, zray(k), ttcabs, temray(k))
@@ -431,7 +424,8 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     ! --- Clipping the humidity
 
     do k = 1, kmx
-      qvray(k) = max(5.d-4,qvray(k))
+      qvray(k) = max(0.d0,qvray(k))
+      qlray(k) = max(0.d0,qlray(k))
     enddo
 
     ! --- Computing pressure and density according to temperature
@@ -448,15 +442,13 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
     ! 2.2 Computing the radiative fluxes for the vertical
     !-----------------------------------------------------
 
-    k1 = 1
-
     ! --- Long-wave: InfraRed
-    call rayir(ii, k1, kmx, ico2, emis,                           &
+    call rayir(ii, k1, kmx, emis,                                 &
                tauzq, tauz, tausup, zq,                           &
-               acinfe, dacinfe, aco2, daco2, aco2s, daco2s,       &
-               acsup, dacsup, acsups, dacsups,                    &
                zray, temray, qvray,                               &
                qlray, fneray, romray, preray, aeroso,             &
+               soil_ttsoil(ii), soil_totwat(ii),                  &
+               soil_density (ii), soil_pressure(ii),              &
                foir, rayi(:,ii), ncray)
 
     ! --- Short-wave: Sun
@@ -471,9 +463,9 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
   do ii = 1, kmx*nvert
     cressm(ii) = 1
     interp(ii) = 1
-    infrad(3*(ii-1) + 1) = 1.d0/8500.d0 ! horizontal(x) cressman radius
-    infrad(3*(ii-1) + 2) = 1.d0/8500.d0 ! horizontal(y) cressman radius
-    infrad(3*(ii-1) + 3) = 4.d0/1.d0    ! vertical(z) cressman radius
+    infrad(3*(ii-1) + 1) = 1.d0/8500.d0 ! horizontal(x) Cressman radius
+    infrad(3*(ii-1) + 2) = 1.d0/8500.d0 ! horizontal(y) Cressman radius
+    infrad(3*(ii-1) + 3) = 4.d0/1.d0    ! vertical(z) Cressman radius
   enddo
 
   ! Map Infra Red 1D (rayi) on the structure idrayi

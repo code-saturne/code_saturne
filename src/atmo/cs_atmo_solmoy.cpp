@@ -288,7 +288,7 @@ cs_solmoy(void)
                " ** Soil/atmosphere interface                 **\n"
                " ** Array of constants                        **\n"
                " ** ========================================= **\n");
-    bft_printf(" *            * minimum* mean*    maximum*\n");
+    bft_printf(" *            * minimum*    mean* maximum*\n");
     for (cs_lnum_t n = 0; n < 10; n++) {
       if (n == 4) {
         bft_printf(" *%-12s*%8.4f*%8.4f*%8.4f*\n",

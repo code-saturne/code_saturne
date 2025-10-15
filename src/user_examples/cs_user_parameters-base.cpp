@@ -26,7 +26,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
+#include "base/cs_defs.h"
 
 /*----------------------------------------------------------------------------
  * Standard library headers
@@ -49,6 +49,8 @@
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
+
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -393,7 +395,7 @@ cs_user_model(void)
    * The mesh levels can be specified in cs_user_parameters function.
    * */
   at_opt->rad_1d_nvert = 1;
-  at_opt->rad_1d_nlevels = 50;
+  at_opt->rad_1d_nlevels = 49;//n_faces -1
   at_opt->rad_1d_nlevels_max = at_opt->rad_1d_nlevels;
 
   /* Complete 1-D mesh to ztop in case of radiative transfer */
@@ -2000,67 +2002,73 @@ cs_user_finalize_setup([[maybe_unused]] cs_domain_t   *domain)
     at_opt->soil_cat_thermal_roughness[3] = 0.0012;
   }
 
-  at_opt->rad_1d_z[0 ] = 0.;
-  at_opt->rad_1d_z[1 ] = 5.;
-  at_opt->rad_1d_z[2 ] = 20.5;
-  at_opt->rad_1d_z[3 ] = 42.0;
-  at_opt->rad_1d_z[4 ] = 65.0;
-  at_opt->rad_1d_z[5 ] = 89.5;
-  at_opt->rad_1d_z[6 ] = 115.0;
-  at_opt->rad_1d_z[7 ] = 142.0;
-  at_opt->rad_1d_z[8 ] = 170.5;
-  at_opt->rad_1d_z[9 ] = 199.5;
-  at_opt->rad_1d_z[10] = 230.0;
-  at_opt->rad_1d_z[11] = 262.0;
-  at_opt->rad_1d_z[12] = 294.5;
-  at_opt->rad_1d_z[13] = 328.5;
-  at_opt->rad_1d_z[14] = 363.5;
-  at_opt->rad_1d_z[15] = 399.0;
-  at_opt->rad_1d_z[16] = 435.5;
-  at_opt->rad_1d_z[17] = 473.5;
-  at_opt->rad_1d_z[18] = 512.0;
-  at_opt->rad_1d_z[19] = 551.0;
-  at_opt->rad_1d_z[20] = 591.5;
-  at_opt->rad_1d_z[21] = 632.5;
-  at_opt->rad_1d_z[22] = 674.0;
-  at_opt->rad_1d_z[23] = 716.0;
-  at_opt->rad_1d_z[24] = 759.0;
-  at_opt->rad_1d_z[25] = 802.5;
-  at_opt->rad_1d_z[26] = 846.5;
-  at_opt->rad_1d_z[27] = 891.5;
-  at_opt->rad_1d_z[28] = 936.5;
-  at_opt->rad_1d_z[29] = 982.0;
-  at_opt->rad_1d_z[30] = 1028.0;
-  at_opt->rad_1d_z[31] = 1074.5;
-  at_opt->rad_1d_z[32] = 1122.0;
-  at_opt->rad_1d_z[33] = 1169.5;
-  at_opt->rad_1d_z[34] = 1217.0;
-  at_opt->rad_1d_z[35] = 1265.5;
-  at_opt->rad_1d_z[36] = 1314.5;
-  at_opt->rad_1d_z[37] = 1363.5;
-  at_opt->rad_1d_z[38] = 1413.0;
-  at_opt->rad_1d_z[39] = 1462.5;
-  at_opt->rad_1d_z[40] = 1512.5;
-  at_opt->rad_1d_z[41] = 1563.0;
-  at_opt->rad_1d_z[42] = 1613.5;
-  at_opt->rad_1d_z[43] = 1664.5;
-  at_opt->rad_1d_z[44] = 1715.5;
-  at_opt->rad_1d_z[45] = 1767.0;
-  at_opt->rad_1d_z[46] = 1818.5;
-  at_opt->rad_1d_z[47] = 1870.0;
-  at_opt->rad_1d_z[48] = 1922.5;
-  at_opt->rad_1d_z[49] = 1975.0;
+  /* Example: define 1-D radiative transfer mesh for
+   * the atmospheric module */
+  /*-----------------------------------------------------------------*/
 
-  /* Complete 1-D mesh to ztop in case of radiative transfer */
-  if (at_opt->rad_1d_nvert > 0) {
-    int i = at_opt->rad_1d_nlevels;
-    cs_real_t zvmax = 1975.;/* top of the domain */
-    cs_real_t ztop = 11000.;/* top of the troposphere */
-    for (cs_real_t zzmax = (((int) zvmax)/1000)*1000.;
-         zzmax <= (ztop -1000);
-         i++) {
-      zzmax += 1000.;
-      at_opt->rad_1d_z[i] = zzmax;
+  if (at_opt->radiative_model_1d > 0) {
+    at_opt->rad_1d_zq[0 ] = 0.;
+    at_opt->rad_1d_zq[1 ] = 10.;
+    at_opt->rad_1d_zq[2 ] = 31.;
+    at_opt->rad_1d_zq[3 ] = 53.;
+    at_opt->rad_1d_zq[4 ] = 77.;
+    at_opt->rad_1d_zq[5 ] = 102.;
+    at_opt->rad_1d_zq[6 ] = 128.;
+    at_opt->rad_1d_zq[7 ] = 156.;
+    at_opt->rad_1d_zq[8 ] = 185.;
+    at_opt->rad_1d_zq[9 ] = 214.;
+    at_opt->rad_1d_zq[10] = 246.;
+    at_opt->rad_1d_zq[11] = 278.;
+    at_opt->rad_1d_zq[12] = 311.;
+    at_opt->rad_1d_zq[13] = 346.;
+    at_opt->rad_1d_zq[14] = 381.;
+    at_opt->rad_1d_zq[15] = 417.;
+    at_opt->rad_1d_zq[16] = 454.;
+    at_opt->rad_1d_zq[17] = 493.;
+    at_opt->rad_1d_zq[18] = 531.;
+    at_opt->rad_1d_zq[19] = 571.;
+    at_opt->rad_1d_zq[20] = 612.;
+    at_opt->rad_1d_zq[21] = 653.;
+    at_opt->rad_1d_zq[22] = 695.;
+    at_opt->rad_1d_zq[23] = 737.;
+    at_opt->rad_1d_zq[24] = 781.;
+    at_opt->rad_1d_zq[25] = 824.;
+    at_opt->rad_1d_zq[26] = 869.;
+    at_opt->rad_1d_zq[27] = 914.;
+    at_opt->rad_1d_zq[28] = 959.;
+    at_opt->rad_1d_zq[29] = 1005.;
+    at_opt->rad_1d_zq[30] = 1051.;
+    at_opt->rad_1d_zq[31] = 1098.;
+    at_opt->rad_1d_zq[32] = 1146.;
+    at_opt->rad_1d_zq[33] = 1193.;
+    at_opt->rad_1d_zq[34] = 1241.;
+    at_opt->rad_1d_zq[35] = 1290.;
+    at_opt->rad_1d_zq[36] = 1339.;
+    at_opt->rad_1d_zq[37] = 1388.;
+    at_opt->rad_1d_zq[38] = 1438.;
+    at_opt->rad_1d_zq[39] = 1487.;
+    at_opt->rad_1d_zq[40] = 1538.;
+    at_opt->rad_1d_zq[41] = 1588.;
+    at_opt->rad_1d_zq[42] = 1639.;
+    at_opt->rad_1d_zq[43] = 1690.;
+    at_opt->rad_1d_zq[44] = 1741.;
+    at_opt->rad_1d_zq[45] = 1793.;
+    at_opt->rad_1d_zq[46] = 1844.;
+    at_opt->rad_1d_zq[47] = 1896.;
+    at_opt->rad_1d_zq[48] = 1949.;
+    at_opt->rad_1d_zq[49] = 2001.;
+    /* Complete 1-D mesh to ztop in case of radiative transfer */
+    if (at_opt->rad_1d_nvert > 0) {
+      int i = at_opt->rad_1d_nlevels;
+      cs_real_t zvmax = 2001.;/* top of the domain */
+      cs_real_t ztop = 11000.;/* top of the troposphere */
+      for (cs_real_t zzmax = (((int) zvmax)/1000)*1000.;
+           zzmax <= (ztop -1000);
+           i++) {
+        zzmax += 1000.;
+        at_opt->rad_1d_zq[i] = zzmax;
+        bft_printf("Atmo, rad 1D zq[%d]=%f\n", i+1, at_opt->rad_1d_zq[i]);
+      }
     }
   }
 

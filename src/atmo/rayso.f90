@@ -38,11 +38,13 @@
 !> \param[out]  tra         Transmission
 !> \param[in]   epsc        clipping threshold
 !> \param[in]   dqqv        Optical depth for Water vapor
+!> \param[in]   mui         mui (Gauss quadrature)
+!> \param[in]   muzero_cor  mu0 corrected
 !_______________________________________________________________________________
 
 subroutine reftra  &
     (pioc, piaero, gasym, gaero, tauc, taua, &
-    ref, tra, epsc,dqqv, mui)
+    ref, tra, epsc,dqqv, mui, muzero_cor)
 
   !===========================================================================
 
@@ -53,12 +55,14 @@ subroutine reftra  &
   double precision, intent(in) :: pioc, piaero,  gasym, gaero
   double precision, intent(in) :: tauc, taua,  dqqv, epsc
   double precision, intent(inout) :: ref, tra
+  double precision, intent(in) :: mui, muzero_cor
 
   ! Local
   double precision ::gas, fas, kt, gama1, gama2, tln
   double precision :: drt, extlnp, extlnm
-  double precision :: pic, tau, mui
-
+  double precision :: pic, tau
+  double precision :: gama3,gama4,a1,a2,ktmu,expmuo,exnmuo,rnum,tnum
+  logical          :: glob = .true. ! solve global and direct
   !===========================================================================
 
   tau = tauc +taua + dqqv
@@ -68,47 +72,119 @@ subroutine reftra  &
     tra = 1.d0
   else
 
-    ! Pure diffusion atmosphere (pioc=1)
-    if (pioc.ge.(1.d0-epsc)) then !TODO check .and. (taua .le. epsc))
-      gama1=(1.d0-gasym)/(2.d0*mui)
-      ref = gama1*tau/(1.d0+gama1*tau)
-      tra = 1.d0/(1.d0+gama1*tau)
+    ! We solve Global and Direct
+    if (glob) then
+      ! Pure diffusion atmosphere (pioc=1)
+      if (pioc.ge.(1.d0-epsc)) then !TODO check .and. (taua .le. epsc))
+        gama1=(1.d0-gasym)/(2.d0*mui)
+        ref = gama1*tau/(1.d0+gama1*tau)
+        tra = 1.d0/(1.d0+gama1*tau)
 
-    else
-      pic =(pioc*tauc+piaero*taua)/tau
-      ! Pure absorbing atmosphere (pioc=0)
-      if (pic .lt. epsc) then
-        gama1=1.d0/mui
-        ref = 0.d0
-        tra = dexp(-gama1*tau)
       else
-
-        gas=(pioc*tauc*gasym+piaero*taua*gaero)&
-          /(pic*tau)
-        ! Only forward diffusion
-        if(gas.ge.(1.d0-epsc)) then
-          gama1=(1.d0-pic)/mui
-          ref=0.d0
-          tra=dexp(-gama1*tau)
+        pic =(pioc*tauc+piaero*taua)/tau
+        ! Pure absorbing atmosphere (pioc=0)
+        if (pic .lt. epsc) then
+          gama1=1.d0/mui
+          ref = 0.d0
+          tra = dexp(-gama1*tau)
         else
-          fas=gas*gas
-          tau=(1.d0-pic*fas)*tau
-          pic=pic*(1.d0-fas)/(1.d0-pic*fas)
-          gas=(gas-fas)/(1.d0-fas)
-          gama1=(1.d0-pic*(1.d0+gas)/2.d0)/mui
-          gama2=pic*(1.d0-gas)/(2.d0*mui)
-          kt=dsqrt(gama1*gama1-gama2*gama2)
-          tln=kt*tau
-          extlnp=dexp(tln)
-          extlnm=dexp(-tln)
-          drt=(kt+gama1)*extlnp+(kt-gama1)*extlnm
-          ref=gama2*(extlnp-extlnm)/drt
-          tra=2.d0*kt/drt
+
+          gas=(pioc*tauc*gasym+piaero*taua*gaero) / (pic*tau)
+          ! Only forward diffusion
+          if(gas.ge.(1.d0-epsc)) then
+            gama1=(1.d0-pic)/mui
+            ref=0.d0
+            tra=dexp(-gama1*tau)
+          else
+            ! Joseph correction
+            fas=gas*gas
+            tau=(1.d0-pic*fas)*tau
+            pic=pic*(1.d0-fas)/(1.d0-pic*fas)
+            gas=(gas-fas)/(1.d0-fas)
+            gama1=(1.d0-pic*(1.d0+gas)/2.d0)/mui
+            gama2=pic*(1.d0-gas)/(2.d0*mui)
+            kt=dsqrt(gama1*gama1-gama2*gama2)
+            tln=kt*tau
+            extlnp=dexp(tln)
+            extlnm=dexp(-tln)
+            drt=(kt+gama1)*extlnp+(kt-gama1)*extlnm
+            ref=gama2*(extlnp-extlnm)/drt
+            tra=2.d0*kt/drt
+          endif
+        endif
+
+      endif
+
+    ! We solve Diffuse and Direct
+    else
+
+      ! Pure diffusion atmosphere (pioc=1)
+      if (pioc.ge.(1.d0-epsc)) then
+        gama1=0.5d0 * (1.d0-gasym)/mui
+        gama3= 0.5d0 * (1.d0-gasym)
+        exnmuo=dexp(-tau/muzero_cor)
+        ref=(gama1*tau+(gama3-gama1*muzero_cor)*(1.d0-exnmuo))/(1.d0+gama1*tau)
+        tra = 1.d0-ref
+
+      else
+        pic =(pioc*tauc+piaero*taua)/tau
+        ! Pure absorbing atmosphere (pioc=0)
+        if (pic .lt. epsc) then
+          ref = 0.d0
+          tra = dexp(-tau/muzero_cor)
+        else
+
+          gas=(pioc*tauc*gasym+piaero*taua*gaero) / (pic*tau)
+          ! Only forward diffusion
+          if(gas.ge.(1.d0-epsc)) then
+            gama1=(1.d0-pic)/mui
+            gama2=0.d0
+            gama3=0.5d0 * (1.d0-gas)
+            gama4=0.5d0 * (1.d0+gas)
+            expmuo=dexp(tau/muzero_cor*(1.d0-gama1*muzero_cor))
+            exnmuo=dexp(-tau/muzero_cor*(1.d0+gama1*muzero_cor))
+
+            ref=gama3*pic*(1.d0-exnmuo)/(1.d0+gama1*muzero_cor)
+
+            tra= dexp(-tau/muzero_cor)*(1.d0-pic*gama4*expmuo &
+              /(1.d0-gama1*muzero_cor))
+          else
+            ! Joseph correction
+            fas=gas*gas
+            tau=(1.d0-pic*fas)*tau
+            pic=pic*(1.d0-fas)/(1.d0-pic*fas)
+            gas=(gas-fas)/(1.d0-fas)
+
+            gama1=(1.d0-pic*(1.d0+gas)/2.d0)/mui
+            gama2=pic*(1.d0-gas)/(2.d0*mui)
+            gama3=0.5d0*(1.d0 - 3.d0* gas*muzero_cor * mui)
+            gama4=0.5d0*(1.d0 + 3.d0* gas*muzero_cor * mui)
+            a1=gama1*gama4+gama2*gama3
+            a2=gama1*gama3+gama2*gama4
+
+            kt=dsqrt(gama1*gama1-gama2*gama2)
+            ktmu=kt*muzero_cor
+            tln=kt*tau
+            extlnp=dexp(tln)
+            extlnm=dexp(-tln)
+            expmuo=dexp(tau/muzero_cor)
+            exnmuo=dexp(-tau/muzero_cor)
+            drt=(1.d0-ktmu*ktmu)*((kt+gama1)*extlnp+(kt-gama1)*extlnm)
+
+            rnum=(1.d0-ktmu)*(a2+kt*gama3)*extlnp &
+               - (1.d0+ktmu)*(a2-kt*gama3)*extlnm &
+               - 2.d0*kt*(gama3-a2*muzero_cor) * exnmuo
+            ref=pic*rnum/drt
+
+            tnum=(1.d0+ktmu)*(a1+kt*gama4)*extlnp &
+                -(1.d0-ktmu)*(a1-kt*gama4)*extlnm &
+                -2.d0*kt*(gama4+a1*muzero_cor)*expmuo
+            tra=exnmuo*(1.d0-pic*tnum/drt)
+          endif
         endif
       endif
 
     endif
-
   endif
 
 end subroutine reftra
@@ -133,11 +209,11 @@ end subroutine reftra
 !> \param[in]   heuray      Universal time (Hour)
 !> \param[in]   imer1       sea index
 !> \param[in]   albe        albedo
-!> \param[in]   qqv         optical depth for water vapor (0,z)
+!> \param[in]   qqv         optical depth for water vapor (0,zqq)
 !> \param[in]   qqqv        idem for intermediate levels
 !> \param[in]   qqvinf      idem qqv but for altitude above 11000m
-!> \param[in]   zqq         vertical levels
-!> \param[in]   zray        altitude (physical mesh)
+!> \param[in]   zqq         vertical levels (interfaces)
+!> \param[in]   zray        vertical levels (volumes)
 !> \param[in]   qvray       specific humidity for water vapor
 !> \param[in]   qlray       specific humidity for liquid water
 !> \param[in]   fneray      cloud fraction
@@ -190,14 +266,16 @@ double precision ncray(kmx)
 
 ! Local variables
 
-integer i,k,n,l,k1p1,iaer,iaero_top,iaero_topr
-integer itop,ibase,itopp1,itopp2,ibasem1
+integer i,k,n,l,iaer,iaero_top,iaero_topr
+integer itop,ibase
 integer          ifac, iz1, iz2, f_id, c_id, iel
-double precision za, muzero, muzero_cor,fo,m,mbar,rabar,rabar2,rbar
+integer          k0
+double precision za, muzero, muzero_cor,fo,m,mbar,mbarh2o,rabar,rabar2,rbar
 double precision rabarc,rbarc, refx, trax, refx0, trax0
 double precision qqvtot,y,ystar
 double precision yp1,ystarp1
-double precision zqm1,zq,xm1,x,xstar,xstarm1
+double precision zqm1,zq,x,xstar
+double precision zqp1,xp1,xstarp1
 double precision rrbar,rrbar2s
 double precision tauctot,wh2ol,rm,req,deltaz
 double precision pioc,zbas,dud1
@@ -206,11 +284,11 @@ double precision kn(8),pkn(8),dqqv
 double precision cphum,qureel
 double precision taua(kmx+1),tauatot
 double precision rabara,rbara
-double precision tauca(kmx+1,8)
 double precision gama1,gama2,kt,gas,fas
 double precision omega, var, zent
 double precision cpvcpa
 double precision dzx, dy
+! For postprocessing
 logical          is_active
 
 integer, dimension(:), pointer :: itypfb
@@ -218,24 +296,25 @@ type(c_ptr) :: c_itypfb
 
 double precision, allocatable:: fabsh2o(:),fabso3(:),tauc(:)
 double precision, allocatable:: tau(:,:),pic(:,:),ref(:,:)
-double precision, allocatable:: reft(:,:),trat(:,:),refts(:,:)
-double precision, allocatable:: refs(:,:),tras(:,:),trats(:,:)
-double precision, allocatable:: refb(:,:),trab(:,:),upw(:,:)
-double precision, allocatable:: refbs(:,:),fabso3c(:,:),tra(:,:)
-double precision, allocatable:: dow(:,:),atln(:,:),absn(:,:)
+double precision, allocatable:: reft(:,:),trat(:,:)
+double precision, allocatable:: refb(:,:),upwf(:,:)
+double precision, allocatable:: fabso3c(:,:),tra(:,:)
+double precision, allocatable:: dow(:,:)
+double precision, allocatable:: dowf(:,:),atln(:,:),absn(:,:)
 double precision, allocatable :: ckup_sir_f(:), ckdown_sir_r(:), ckdown_sir_f(:)
 double precision, allocatable :: ckup_suv_f(:), ckdown_suv_r(:), ckdown_suv_f(:)
 double precision, allocatable :: w0_suv(:), w0_sir(:), g_apc_suv(:), g_apc_sir(:)
 double precision, allocatable:: fnebmax(:),fneba(:)
 
-double precision, allocatable, dimension(:,:) :: dowd, trad, trard, ddfso3c
+double precision, allocatable, dimension(:,:) :: dowd, trad, trard
 double precision, allocatable, dimension(:) :: dffsh2o, dffso3
 double precision, allocatable, dimension(:) :: ddfsh2o, ddfso3
-double precision, allocatable, dimension(:) :: drfs, dffs, ddfs, dddsh2o, dddso3
+double precision, allocatable, dimension(:) :: dddfsh2o, dddfso3
+double precision, allocatable, dimension(:) :: drfs, ddfs
 
 double precision, allocatable, dimension(:) ::  dfsh2o, ufsh2o
 double precision, allocatable, dimension(:) ::  dfso3, ufso3
-double precision, allocatable, dimension(:,:) ::  dfso3c, ufso3c
+double precision, allocatable, dimension(:,:) ::  ufso3c
 double precision, allocatable, dimension(:) ::  dfs, ufs
 double precision, dimension(:,:), pointer :: bpro_rad_inc
 double precision, dimension(:,:), pointer :: cpro_ck_up
@@ -257,12 +336,12 @@ double precision beta2(12), beta3(12),beta4(12),copioc20(12)
 double precision nu0, dm0, dm, coeff_E_o3(12), coeff_E_h2o(12)
 double precision pioco3C, pioch2oC
 double precision tauao3(kmx+1) , tauah2o(kmx+1)
-double precision corp, rov
+double precision corp
 double precision mui,tauapc,ckapcd,ckapcf,picapc,gapc
 double precision ck_aero_h2of,ck_aero_h2od,ck_aero_o3f,ck_aero_o3d
 ! data for pkn and kn distribution
-data kn/4.d-5,0.002,0.035,0.377,1.95,9.40,44.6,190./
-data pkn/0.6470,0.0698,0.1443,0.0584,0.0335,0.0225,0.0158,0.0087/
+data kn/4.d-5,0.002d0,0.035d0,0.377d0,1.95d0,9.40d0,44.6d0,190.d0/
+data pkn/0.647d0,0.0698d0,0.1443d0,0.0584d0,0.0335d0,0.0225d0,0.0158d0,0.0087d0/
 
 ! Data from Chuang 2002 for calculation of cloud SSA  taking into account black carbon
 data beta1/0.2382803,0.2400113,0.2471480,0.2489583,0.2542476,0.2588392,0.2659081,0.2700860,0.2783093,0.2814346,0.2822860,0.1797007/
@@ -284,16 +363,19 @@ data umg/390.0d0,0.075d0,0.28d0,1.6d0,209500.d0/
 !========================================================================
 
 allocate(fabsh2o(kmx+1),fabso3(kmx+1),tauc(kmx+1))
-allocate(tau(kmx+1,8),pic(kmx+1,8),ref(kmx+1,8))
-allocate(reft(kmx+1,8),trat(kmx+1,8),refts(kmx+1,8))
-allocate(refs(kmx+1,8),tras(kmx+1,8),trats(kmx+1,8))
-allocate(refb(kmx+1,8),trab(kmx+1,8),upw(kmx+1,8))
-allocate(refbs(kmx+1,8),fabso3c(kmx+1,2),tra(kmx+1,8))
-allocate(dow(kmx+1,8),atln(kmx+1,8),absn(kmx+1,8))
+! Note ref(0) = albedo
+allocate(tau(kmx+1,8),pic(kmx+1,8),ref(0:kmx+1,8))
+allocate(reft(kmx+1,8),trat(kmx+1,8))
+! Note refb(0) = albedo
+allocate(refb(0:kmx+1,8),upwf(kmx+1,8))
+! Note tra(0) for the ground
+allocate(fabso3c(kmx+1,2),tra(0:kmx+1,8))
+allocate(dow(kmx+1,8))
+allocate(dowf(kmx+1,8),atln(kmx+1,8),absn(kmx+1,8))
 allocate(fnebmax(kmx+1),fneba(kmx+1))
 
-allocate(dfso3c(kmx+1,2), ufso3c(kmx+1,2), ddfso3c(kmx+1,2))
-allocate(dowd(kmx+1,8), trad(kmx+1,8), trard(kmx+1,8))
+allocate(ufso3c(kmx+1,2))
+allocate(dowd(kmx+1,8), trad(kmx+1,8), trard(0:kmx+1,8))
 
 allocate(dfsh2o(kmx+1), ufsh2o(kmx+1))
 allocate(dfso3(kmx+1), ufso3(kmx+1))
@@ -304,7 +386,8 @@ allocate(w0_sir(kmx), w0_suv(kmx), g_apc_sir(kmx), g_apc_suv(kmx))
 
 allocate(dffsh2o(kmx+1), dffso3(kmx+1))
 allocate(ddfsh2o(kmx+1), ddfso3(kmx+1))
-allocate(drfs(kmx+1), dffs(kmx+1), ddfs(kmx+1), dddsh2o(kmx+1), dddso3(kmx+1))
+allocate(dddfsh2o(kmx+1), dddfso3(kmx+1))
+allocate(drfs(kmx+1), ddfs(kmx+1))
 
 ! 1 - local initializations
 ! ===========================
@@ -339,15 +422,15 @@ do k = 1, kmx+1
   gch2o(k)=0.d0
   pic_o3(k)=0.d0
   pic_h2o(k)=0.d0
-  dddsh2o(k) = 0.d0
-  dddso3(k) = 0.d0
+  dfs(k) = 0.d0
   ddfs(k) = 0.d0
-  dffs(k) = 0.d0
   drfs(k) = 0.d0
   dffsh2o(k) =0.d0
   dffso3(k) = 0.d0
   ddfsh2o(k) = 0.d0
   ddfso3(k) = 0.d0
+  dddfsh2o(k) = 0.d0
+  dddfso3(k) = 0.d0
   dfsh2o(k) = 0.d0
   ufsh2o(k) = 0.d0
   dfso3(k) = 0.d0
@@ -356,35 +439,32 @@ do k = 1, kmx+1
   if(iaer.ge.1) then
     fneba(k) = 1.d0
   endif
-  do l = 1, 2
-    fabso3c(k,l) = 0.d0
+  do n = 1, 2
+    fabso3c(k,n) = 0.d0
   enddo
-  do l = 1, 8
-    tau(k,l) = 0.d0
-    tauca(k,l)=0.d0
-    pic(k,l) = 0.d0
-    atln(k,l) = 0.d0
-    absn(k,l) = 0.d0
-    ref(k,l) = 0.d0
-    reft(k,l) = 0.d0
-    refts(k,l) = 0.d0
-    refs(k,l) = 0.d0
-    refb(k,l) = 0.d0
-    refbs(k,l) = 0.d0
-    trat(k,l) = 0.d0
-    tras(k,l) = 0.d0
-    trab(k,l) = 0.d0
-    trats(k,l) = 0.d0
-    tra(k,l) = 0.d0
-    upw(k,l) = 0.d0
-    dow(k,l) = 0.d0
+  do n = 1, 8
+    tau(k,n) = 0.d0
+    pic(k,n) = 0.d0
+    atln(k,n) = 0.d0
+    absn(k,n) = 0.d0
+    ! Note for slice l->l+1
+    ! reflexion stored at level l
+    ! transmission stored at level l
+    ref(k,n) = 0.d0
+    reft(k,n) = 0.d0
+    refb(k,n) = 0.d0
+    trat(k,n) = 1.d0
+    tra(k,n) = 1.d0
+    upwf(k,n) = 0.d0
+    dow(k,n) = 0.d0
+    dowf(k,n) = 0.d0
   enddo
 enddo
 
 do k = 1, kmx+1
-  do l = 1, 8
-    trad(k,l) = 0.d0
-    dowd(k,l) = 0.d0
+  do n = 1, 8
+    trad(k,n) = 1.d0
+    dowd(k,n) = 1.d0
   enddo
 enddo
 refx=0.d0
@@ -404,7 +484,7 @@ tln=0.d0
 iaero_top=0
 ! remaining aerosol quantities above this level
 iaero_topr=0
-k1p1 = k1+1
+k0 = k1-1
 
 !initialisation Chuang calculations for  black carbon in droplets
 dm0=20.d0 !micrometres
@@ -443,26 +523,28 @@ if (muzero.gt.epzero) then
   m = 1.d0/muzero_cor
 
   ! m coefficient for O3 (5/3 or 1.9 for LH74)
-  ! TODO test 5/3 but not coherent with LH74...
 
   ! as we suppressed m and mbar in dzx and dzy we can eventually keep 1.9 for O3 to tested
   mbar = 1.9d0
+  ! For H2O mbar is 5/3
+  mbarh2o = 5.d0 / 3.d0
   ! for LH74 quadrature method in two-stream
   mui=1.d0/dsqrt(3.d0)
 
   !  3 -  albedos for O3 and Rayleigh diffusion
 
+  ! Note LH74 equation (18)
   rabar = 0.219d0/(1.d0 + 0.816d0*muzero)
   rabar2 = 0.144d0
+  ! Note LH74: eq (15)
   rbar = rabar + (1.d0 - rabar)*(1.d0 - rabar2)*albe/(1.d0 - rabar2*albe)
   rrbar = 0.28d0/(1.d0 + 6.43d0*muzero)
   rrbar2s = 0.0685d0
 
   !  4 - addition of one level for solar radiation
 
-  zqq(kmray+1) = 16000.d0
-  qqvtot = qqvinf + qqqv(kmray)
-  qqv(kmray+1) = qqvtot - qqvinf/4.d0
+  qqvtot = qqvinf + qqv(kmray)
+  qqv(kmray+1) = qqvtot - qqvinf
 
   ! Transmission for minor gases
   Tmg = 1.d0
@@ -481,27 +563,27 @@ if (muzero.gt.epzero) then
   !  5.1 cloud level determination (top for the top of the higher cloud,
   !  base for the bottom of the lower cloud)
 
-  itop = 0
-
-  do i = kmray, k1p1, -1
+  itop = -1
+  do i = kmray, k1, -1
     if(qlray(i).gt.epsc) then
-      if (itop.eq.0) then
-        itop = i
+      !FIXME to be coherent with 3D
+      ! à supprimer si l'on veut garder la nébulosité fractionnaire(devrait avoir peu deffet sur le cas parisfog)
+      ! FIX fneray(i) = 1.d0
+      if (itop.eq.-1) then
+        itop = i+1
       endif
       ibase = i
     endif
   enddo
 
-  ! if itop = 0, there is no cloud but, nevertheless, it is possible to execute
+  ! if itop = -1, there is no cloud but, nevertheless, it is possible to execute
   ! the adding method for the water vapor (SIR band) only
 
-  if (itop.eq.0) then
+  if (itop.eq.-1) then
     itop = k1
     ibase = k1
   endif
-  itopp1 = itop +1
-  itopp2 = itop +2
-  ibasem1 = ibase -1
+
 
   ! 5.2 calculation for optical parameters of clouds and aerosols
   ! (single scattering albedo, optical depth, radius, asymmetry factor)
@@ -509,8 +591,8 @@ if (muzero.gt.epzero) then
   fnebmax(kmray+1) = 0.d0
   tauctot = 0.d0
   tauatot = 0.d0
-  do i = kmray, k1p1, -1
-    if((i.gt.ibasem1).and.(i.lt.itopp1)) then
+  do i = kmray, k1, -1
+    if((i.ge.ibase).and.(i.lt.itop)) then
       ! liquid water density in g/m3 in the layers
       wh2ol = 1.d3*(romray(i)*qlray(i))
       ! mean droplet radius in µm
@@ -541,9 +623,9 @@ if (muzero.gt.epzero) then
       if (req .gt. 20.d0) req=20.d0
       if (req .lt. 1.d0) req=1.d0
 
-      deltaz = zqq(i+1) - zqq(i)
       ! Cloud optical thickness
-      if (i.eq.k1p1) deltaz = zqq(i+1) - zray(k1)
+      deltaz = zqq(i+1) - zqq(i)
+
       ! req has to be in µm
       tauc(i) = 1.5d0 * wh2ol * deltaz / req
       tauctot = tauctot + tauc(i)
@@ -554,23 +636,23 @@ if (muzero.gt.epzero) then
 
     ! Calculation of aerosol optical depth AOD
     fneba(i) = 0.d0
-    if((iaer.eq.1).and.(zqq(i).le.zaero)) then
-      iaero_top=max(i,iaero_top)
+    if((iaer.eq.1).and.(zray(i).le.zaero)) then
+      iaero_top=max(i+1,iaero_top)
       fneba(i) = 1.d0
       deltaz = zqq(i+1) - zqq(i)
-      if(i.eq.k1p1) deltaz=zqq(i+1) - zray(k1)
-      ! Distribution of AOD on the vertical
+
+      ! Distribution of AOD on the vertical homogeneous between 0 and zaero
       ! Note, we used a formula based on concentration before v6.2
-      tauao3(i) = aod_o3_tot*deltaz/zqq(iaero_top+1)
-      tauah2o(i) = aod_h2o_tot*deltaz/zqq(iaero_top+1)
+      tauao3(i) = aod_o3_tot*deltaz/zqq(iaero_top)
+      tauah2o(i) = aod_h2o_tot*deltaz/zqq(iaero_top)
     endif
     ! Estimation of the law of the cloud fraction
 
     ! Calculation of SSA and Asymmetry factor for clouds using- Nielsen 2014
     ! Note only the first two bands are taken, the third only is
     ! approximately 0
-    ! Useful for gas assymmetry, for albedo, either Chuang if BC, or Nielsen
-    pioco3_1 = 1.d0 - 33.d-9*req
+    ! Usefull for gas assymmetry, for albedo, either Chuang if BC, or Nielsen
+    pioco3_1 = 1.d0 - 33.d-9*req !FIXME MF : ce n'est pas une bonne idée en terme de precision numérique...
     pioco3_2 = 1.d0 - 1.d-7*req
 
     pioch2o_1 = 0.99999d0 -149.d-7*req
@@ -607,7 +689,7 @@ if (muzero.gt.epzero) then
       pic_h2o(i)=pioch2o
     endif
 
-    ! Gas assymmmetry: Nielsen
+    ! Gas asymmetry: Nielsen
     gasymo3 =( 0.868d0 + 14.d-5*req  &
       - 61.d-4*dexp(-0.25*req))*pioco3_1*0.24d0 &
       + ( 0.868d0 + 25.d-5*req  &
@@ -623,8 +705,6 @@ if (muzero.gt.epzero) then
 
   enddo
 
-  fnebmax(k1) = fnebmax(k1p1)
-
   tauc(kmray+1) = 0.d0
 
   ! 5.3 O3 absorption in presence of clouds
@@ -638,15 +718,16 @@ if (muzero.gt.epzero) then
   !Calculation for cloudy layers
   call reftra  &
     (pioc, 0.d0, gasym, 0.d0, tauctot, 0.d0, &
-    refx, trax, epsc, 0.d0, mui)
+    refx, trax, epsc, 0.d0, mui, muzero_cor)
 
   rabarc=refx
   tabarc=trax
+  ! Note: LH74 equation (15)
   rbarc = rabarc+tabarc*tabarc*albe/(1.d0 - rabarc*albe)
   !Calculation for aerosol layers
   call reftra  &
     (0.d0, piaero_o3, 0.d0, gaero_o3, 0.d0, aod_o3_tot, &
-    refx, trax, epsc,0.d0, mui)
+    refx, trax, epsc,0.d0, mui, muzero_cor)
   rabara=refx
   tabara=trax
 
@@ -656,204 +737,209 @@ if (muzero.gt.epzero) then
 
   if((iaer.eq.1).and.(iaero_top.gt.itop)) then
     itop=iaero_top
-    itopp1=itop+1
     rbar=rbara
     rrbar2s=rabara
   endif
 
   ! Calculation above the top of the cloud or the aerosol layer
 
-  do i = itop, kmray   !calculation have to start at the first level
-    ! ( itop=1  in the case without aerosols and clouds)
-    zqm1 = zqq(i)
+  do l = itop, kmray   !calculation have to start at the first level
+    ! ( itop=1  in the case without aerosols nor clouds)
+    zq = zqq(l)
+    zqp1 = zqq(l+1)
 
-    zq = zqq(i+1)
-    ! For the ground, we have to get fabso3c(1,1)=0. and ddfso3c(1,1)= incomming
-    ! flux. It is the cas with zq=zqq(k1)(=zray(k1))
-    if (i.eq.k1) zq = zray(k1)
-    xm1 = m*rayuoz(zqm1)
+    ! The ozone amount traversed by the direct solar beam in reaching the
+    ! l^th layer
+    xp1 = m*rayuoz(zqp1)
     x = m*rayuoz(zq)
 
     ! Calculation of heat and radiation fluxes during cloudy sky
-    zbas = zray(itop)
-    xstarm1 = m*rayuoz(zbas) + mbar*(rayuoz(zbas) - rayuoz(zqm1))
-    xstar = m*rayuoz(zbas) + mbar*(rayuoz(zbas) - rayuoz(zq))
+    zbas = zqq(itop)
+    ! Path traversed by the diffuse radiation illuminating the l^th layer
+    ! from below
+    xstarp1 = m*rayuoz(zbas) + mbar*(rayuoz(zbas) - rayuoz(zqp1))
+    xstar   = m*rayuoz(zbas) + mbar*(rayuoz(zbas) - rayuoz(zq))
 
     ! Heat
-    fabso3c(i,1) = muzero*fo*(raysoz(xm1) - raysoz(x))  &
-      + rbarc*(raysoz(xstar) - raysoz(xstarm1))
+    ! Note upwf(l) - dow(l) -(upwf(l+1) - dow(l+1)
+    dud1=1.d0 / (1.d0-rrbar2s*albe)
+    fabso3c(l,1) = muzero*fo*(raysoz(x) - raysoz(xp1)*dud1  &
+                            + rbarc*(raysoz(xstarp1) - raysoz(xstar)))
 
     ! Direct downward radiation
-    ddfso3c(i,1) = muzero*fo*(0.647d0-rrbar-raysoz(x))
-    ! Downward radiation
-    dfso3c(i,1) = muzero*fo*(0.647d0-rrbar-raysoz(x))
+    ddfso3(l) = muzero*fo*(0.647d0-rrbar-raysoz(x))
+    ! Diffuse Downward radiation (factor is for Rayleight)
+    dddfso3(l) = ddfso3(l) * (dud1 - 1.d0)
+    ! Global Downward radiation
+    dfso3(l) = ddfso3(l) * dud1
     ! Upward (diffuse) radiation
-    ufso3c(i,1) = muzero*fo*(0.647d0-rrbar-raysoz(xstar))*rabarc
+    ! Note: rbarc correspond to reflexion of cloud + ground
+    ! Note 1, correspond to cloudy sky
+    ufso3c(l,1) = muzero*fo*(0.647d0-rrbar-raysoz(xstar))*rbarc
 
-    ! Calculation ofheat and radiation fluxes during  Clear sky
-    zbas = zray(k1)
-    xstarm1 = m*rayuoz(zbas) + mbar*(rayuoz(zbas) - rayuoz(zqm1))
+    ! Calculation of heat and radiation fluxes during  Clear sky
+    zbas = zqq(k1)
+    xstarp1 = m*rayuoz(zbas) + mbar*(rayuoz(zbas) - rayuoz(zqp1))
     xstar = m*rayuoz(zbas) + mbar*(rayuoz(zbas) - rayuoz(zq))
-    !heat
-    fabso3c(i,2) = muzero*fo*(raysoz(xm1) - raysoz(x)) &
-      +rbar*(raysoz(xstar) - raysoz(xstarm1))
+    ! heat LH74 (14), ,2) correspond to clear sky
+    fabso3c(l,2) = muzero*fo*((raysoz(x) - raysoz(xp1))*dud1 &
+                             + albe*dud1*(raysoz(xstarp1) - raysoz(xstar)))
+    ! Upward (diffuse) radiation
+    ufso3c(l,2) = muzero*fo*(0.647d0-rrbar-raysoz(xstar))*albe*dud1
 
-    dfso3c(i,2) = muzero*fo*(0.647d0-rrbar-raysoz(x)) &
-      /(1.d0-rrbar2s*albe)
-
-    ddfso3c(i,2) = muzero*fo*(0.647-rrbar-raysoz(x))
-    ddfso3c(i,2) = min(ddfso3c(i,2),dfso3c(i,2))
-    ufso3c(i,2) = muzero*fo*(0.647d0-rrbar-raysoz(xstar))*albe         &
-      / (1.d0-rrbar2s*albe)
     ! Summation depending on cloud fraction
-    fabso3(i) = fnebmax(k1p1)*fabso3c(i,1) + (1.d0-fnebmax(k1p1))*fabso3c(i,2)
+    fabso3(l) = fnebmax(k1)*fabso3c(l,1) + (1.d0-fnebmax(k1))*fabso3c(l,2)
 
-    dfso3(i) = fnebmax(k1p1)*dfso3c(i,1)+ (1.d0-fnebmax(k1p1))*dfso3c(i,2)
-    ddfso3(i) = fnebmax(k1p1)*ddfso3c(i,1)+ (1.d0-fnebmax(k1p1))*ddfso3c(i,2)
-    ufso3(i) = fnebmax(k1p1)*ufso3c(i,1)+ (1.d0-fnebmax(k1p1))*ufso3c(i,2)
+    ufso3(l) = fnebmax(k1)*ufso3c(l,1)+ (1.d0-fnebmax(k1))*ufso3c(l,2)
     ! Calculation of absorption coefficient ckup and ckdown
     ! useful for 3D simulation
     dzx = drayuoz(zq)
 
-    ckdown_suv_r(i)=dzxaoz(x,dzx)/(0.647d0-rrbar-raysoz(x))
-    ckdown_suv_f(i)= dzxaoz(x,dzx)/(0.647d0-rrbar-raysoz(x))
-    ckup_suv_f(i)=dzxaoz(xstar,dzx)/(0.647d0-rrbar-raysoz(xstar))
+    ckdown_suv_r(l)=dzxaoz(x,dzx)/(0.647d0-rrbar-raysoz(x))
+    ckdown_suv_f(l)=dzxaoz(x,dzx)/(0.647d0-rrbar-raysoz(x))
+    ckup_suv_f(l)=dzxaoz(xstar,dzx)/(0.647d0-rrbar-raysoz(xstar))
 
   enddo
 
   ! Calculation under the top of the cloud or the aerosol layer, the adding
   ! Method with multiple diffusion is used
   n = 1 !no O3 overlapping
-  do l=k1p1,itopp1
+
+  ! Top boundary conditions
+  tra(kmray+1,n)= 1.d0
+  ! value from 44km to 11km
+  trard(kmray+1,n)= 1.d0
+  trad(kmray+1,n)= 1.d0
+  ref(kmray+1,n)= 0.d0
+  trat(kmray+1,n)=1.d0
+  reft(kmray+1,n)=ref(kmray+1,n)
+
+  ! Bottom boundary conditions
+  tra(k0,n) = 0.d0
+  trard(k0,n) = 0.d0
+  ref(k0,n) = albe
+
+  do l = k1, kmray
     tau(l,n)=tauc(l) + tauao3(l)
-    tauca(l,n)= tauao3(l)
     gasym=gco3(l)
     pioc=pic_o3(l)
     ! In the cloud layers
-    if (tauc(l).gt.epsc) then
-      call reftra  &
-        (pioc, piaero_o3, gasym, gaero_o3, tauc(l), tauao3(l), &
-        refx, trax, epsc, 0.d0, mui)
+    call reftra  &
+      (pioc, piaero_o3, gasym, gaero_o3, tauc(l), tauao3(l), &
+      refx, trax, epsc, 0.d0, mui, muzero_cor)
 
-      ref(l,n)=fneray(l)*refx
-      tra(l,n)=fneray(l)*trax
+    ref(l,n)=fneray(l)*refx
+    tra(l,n)=fneray(l)*trax
 
-    endif
     ! In the aerosol layers
     call reftra  &
       ( 0.d0, piaero_o3, 0.d0, gaero_o3, 0.d0, tauao3(l), &
-      refx, trax, epsc, 0.d0, mui)
+      refx, trax, epsc, 0.d0, mui, muzero_cor)
 
-    ref(l,n)=ref(l,n)+(1.d0-fneray(l))*refx
-    tra(l,n)=tra(l,n) + (1.d0 -fneray(l))*trax
+    ref(l,n)=ref(l,n) + (1.d0 - fneray(l))*refx
+    tra(l,n)=tra(l,n) + (1.d0 - fneray(l))*trax
 
-    refs(l,n)=ref(l,n)
-    tras(l,n)=tra(l,n)
-
-    trard(l,n)=fneray(l)* dexp(-m*(tauc(l)+tauao3(l))) &
-      + (1.d0 - fneray(l))*dexp(-m*tauao3(l))
+    trard(l,n) = (fneray(l)* dexp(-m*tauc(l)) + (1.d0 - fneray(l)))  &
+                * dexp(-m*tauao3(l))
 
   end do
-  ! Top boundary conditions
-  tau(itop+1,n)= 0.d0
-  tra(itop+1,n)= 1.d0
-  trard(itop+1,n)= 1.d0
-  trad(itop+1,n)= trard(itop+1,n)
-  ref(itop+1,n)=0.d0
-  tras(itop+1,n)=tra(itop+1,n)
-  refs(itop+1,n)=ref(itop+1,n)
-  trat(itop+1,n)=tra(itop+1,n)
-  reft(itop+1,n)=ref(itop+1,n)
-  refts(itop+1,n)=refs(itop+1,n)
-  trats(itop+1,n)=tras(itop+1,n)
-  ! Bottom boundary conditions
-  tra(k1,n) = 0.d0
-  trard(k1,n) = 0.d0
-  ref(k1,n) = albe
-  tras(k1,n) = 0.d0
-  refs(k1,n) =0.0
-
   ! Downward addition of layers
-  do l=itop,k1,-1
+  do l = kmray, k1, -1
+    ! Equations 33 of LH74
+    drtt1=1.d0/(1.d0-reft(l+1,n)*ref(l,n))
+    ! Note:
+    ! R(top->l) = R(top->l+1)
+    !           + T(top->l+1) R(l) T*(top->l+1) / (1 - R*(top->l+1)- R(l))
     ! Equations 34 of LH74
-    drtt1=1.d0-refts(l+1,n)*ref(l,n)
-    reft(l,n)=reft(l+1,n)+trat(l+1,n)*ref(l,n) &
-      *trats(l+1,n)/drtt1
+    ! Note R*(top->l) = R(top->l)
+    !      T*(top->l+1) = T(top->l+1)
+    reft(l,n)=reft(l+1,n) + trat(l+1,n)*ref(l,n)*trat(l+1,n) * drtt1
 
-    trat(l,n)=trat(l+1,n)*tra(l,n)/drtt1
+    trat(l,n)=trat(l+1,n)*tra(l,n) * drtt1
 
     ! Trad transmission for direct radiation
     trad(l,n) = trad(l+1,n)*trard(l,n)
-    if(l.gt.k1) then
-      refts(l,n)=refs(l,n)+tras(l,n)*refts(l+1,n)*tra(l,n)/drtt1
-      trats(l,n)=trats(l+1,n)*tras(l,n)/drtt1
-    end if
   end do
 
   ! Upward addition of layers
-  refb(k1,n)=ref(k1,n)
-  refbs(k1,n)=refs(k1,n)
-  do l=k1p1,itop
-    dtrb1=1.d0-refb(l-1,n)*refs(l,n)
-    refb(l,n)=ref(l,n)+tra(l,n)*refb(l-1,n)*tras(l,n)/dtrb1
-  end do
+  refb(k0,n)=ref(k0,n)
 
-  ! Calculation of upward and downward fluxes and absorption
-  do l=itopp1,k1p1,-1
-    dud1=1.d0-refts(l,n)*refb(l-1,n)
-    if(dud1.gt.1.d-30) then
+  do l = k1, kmray+1
+    dtrb1=1.d0-ref(l,n)*refb(l-1,n)
+    refb(l,n)=ref(l,n)+tra(l,n)*refb(l-1,n)*tra(l,n)/dtrb1
 
-      upw(l,n)=trat(l,n)*refb(l-1,n)/dud1
-      dow(l,n)=trat(l,n)/dud1
-    else
-      upw(l,n)= trat(l,n)*refb(l-1,n)
-      dow(l,n)= trat(l,n)
-    endif
+    ! Calculation of upward and downward fluxes and absorption
+    dud1=1.d0-reft(l,n)*refb(l-1,n)
+    ! Direct
     dowd(l,n)= trad(l,n)
-    atln(l,n)=((1.d0-reft(k1,n))+upw(l,n)-dow(l,n))
+    ! Diffuse
+    dowf(l,n)=trat(l,n)/dud1-trad(l,n)
+    ! Global == dowf(l,n) + dowd(l,n)
+    dow(l,n) = trat(l,n)/dud1
+    upwf(l,n)=refb(l-1,n)*dow(l,n)
+    ! Absorption from top to level l
+    atln(l,n)=1.d0-reft(k1,n)+upwf(l,n)-dow(l,n)
   enddo
-  do l = itop, k1p1, -1
-    absn(l,n) = atln(l,n) - atln(l+1,n)
-    ! Fux divergence
-    !flux coming from the top
-    fabso3(l)=fo*muzero*(0.647d0- raysoz(m*rayuoz(zray(itop))))*absn(l,n)
-  enddo
+
   ! If there is a cloud
   if (itop .gt. k1) then
-    do i = k1, itop - 1
+    do l = k1, itop - 1
       ! addition of ozone absorption for heating in the layers when adding method is used
-      zqm1 = zqq(i)
-      zq = zqq(i+1)
-      if(i.eq.k1) zq = zqm1
-      xm1 = m*rayuoz(zqm1)
-      x = m*rayuoz(zq)
-      zbas = zray(k1)
-      xstarm1 = m*rayuoz(zbas) + mbar*(rayuoz(zbas) - rayuoz(zqm1))
-      xstar = m*rayuoz(zbas) + mbar*(rayuoz(zbas) - rayuoz(zq))
+      zq = zqq(l)
+      zqp1 = zqq(l+1)
+      zbas = zqq(itop)
+      ! Note LH74 compute absn as:
+      ! absn(l,n) = atln(l,n) - atln(l+1,n)
+      ! but can be simplified as
+      ! upwf(l,n)-dow(l,n) - upwf(l+1,n) + dow(l+1,n)
+      absn(l,n) = dow(l,n) * (refb(l-1,n) - 1.d0) &
+                - dow(l+1,n) * (refb(l,n) - 1.d0)
+
+      x    = m*rayuoz(zbas) + mbar*(rayuoz(zq) - rayuoz(zbas))
+      xp1  = m*rayuoz(zbas) + mbar*(rayuoz(zqp1) - rayuoz(zbas))
+      xstar= m*rayuoz(zbas) + mbar*(rayuoz(zqq(k1)) - rayuoz(zbas)) &
+                            + mbar*(rayuoz(zqq(k1)) - rayuoz(zq))
+      xstarp1= m*rayuoz(zbas) + mbar*(rayuoz(zqq(k1)) - rayuoz(zbas)) &
+                              + mbar*(rayuoz(zqq(k1)) - rayuoz(zqp1))
+
       !taking into account ozone absorption in the layers with clouds or aerosols
-      fabso3(i) =fabso3(i)+ muzero*fo*(raysoz(xm1) - raysoz(x) + rbar                  &
-        *(raysoz(xstar) - raysoz(xstarm1)))
+      fabso3(l) = muzero*fo*(raysoz(x) - raysoz(xp1) +                        &
+                            (0.647d0- raysoz(m*rayuoz(zbas)))*absn(l,n)  &
+                            +    rbar *(raysoz(xstarp1) - raysoz(xstar)))
       ! fluxes calculation taking into account ozone absorption
-      dfso3(i)=muzero*fo*(0.647d0-rrbar-raysoz(x))*dow(i+1,n)
-      ddfso3(i)=muzero*fo*(0.647d0-rrbar-raysoz(x))*dowd(i+1,n)
-      ufso3(i)=muzero*fo*(0.647d0-rrbar-raysoz(xstar))*upw(i+1,n)
+      ! Direct
+      ddfso3(l)=muzero*fo*(0.647d0-rrbar-raysoz(x))*dowd(l,n)
+      ! Diffuse:
+      ! 2 contributions: one which transforms direct into diffuse (dowf)
+      ! the other which is the diffuse coming from the top.
+      dddfso3(l)=muzero*fo*(0.647d0-rrbar-raysoz(x)) * ( &
+        dowf(l,n) &
+       +dow(l,n)*albe*rrbar2s/(1.d0-rrbar2s*albe))
+      ! Global: note this verifies:
+      ! dfso3(l)= ddfso3(l)+dddfso3(l)
+      dfso3(l)=muzero*fo*(0.647d0-rrbar-raysoz(x))*dow(l,n)/(1.d0-rrbar2s*albe)
+
+      ufso3(l)=muzero*fo*(0.647d0-rrbar-raysoz(xstar))*upwf(l,n)
 
       dzx = drayuoz(zq)
       ! calculation of absorption coefficient ckup and ckdown useful for 3D simulation
-      ckdown_suv_r(i)= dzxaoz(x,dzx)/(0.647d0-rrbar-raysoz(x))
-      ckdown_suv_f(i)= dzxaoz(x,dzx)/(0.647d0-rrbar-raysoz(x))
-      ckup_suv_f(i)=dzxaoz(xstar,dzx)/(0.647d0-rrbar-raysoz(xstar))
+      ckdown_suv_r(l)= dzxaoz(x,dzx)/(0.647d0-rrbar-raysoz(x))
+      ! the optical depths for gases have to be changed in order to take
+      ! into account the transformation of direct radiation in diffuse
+      ! radiation under the top of the cloud
+      ckdown_suv_f(l)= dzxaoz(x,dzx)/(0.647d0-rrbar-raysoz(x))
+      ckup_suv_f(l)=dzxaoz(xstar,dzx)/(0.647d0-rrbar-raysoz(xstar))
 
     enddo
 
     ! Calculation of upward flux above cloud or aerosol layers taking into account
     ! the upward flux transmitted by cloud or aerosol layers
     ! if there is no cloud and no aerosol (itop=k1) this term have not to be add
-    do i = itop, kmray
-      zq = zqq(i+1)
-      zbas = zray(k1)
+    do l = itop, kmray+1
+      zq = zqq(l)
+      zbas = zqq(k1)
       xstar = m*rayuoz(zbas) + mbar*(rayuoz(zbas) - rayuoz(zq))
-      ufso3(i)=muzero*fo*(0.647d0-rrbar-raysoz(xstar))*upw(itop+1,n)
+      ufso3(l)=muzero*fo*(0.647d0-rrbar-raysoz(xstar))*upwf(itop,n)
     enddo
   endif
 
@@ -864,57 +950,74 @@ if (muzero.gt.epzero) then
   ! calculation of reflexivity and transmissivity for each vertical layer
 
   do n = 1, 8
-    do l = k1p1, kmray
+
+    ! Layer 44km -> 11km
+    dqqv = kn(n)*(qqvtot - qqv(kmray))/10.d0
+
+    ! Tod and ground BCs
+    tau(kmray+1,n) = dqqv
+    tra(kmray+1,n) = dexp(-m*tau(kmray+1,n))
+
+    ! For direct radiation
+    trard(kmray+1,n) = dexp(-m*tau(kmray+1,n))
+    trad(kmray+1,n) = trard(kmray+1,n)
+
+    ref(kmray+1,n) = 0.d0
+    tra(k0,n) = 0.d0
+    ref(k0,n) = albe
+
+    trat(kmray+1,n) = tra(kmray+1,n)
+    reft(kmray+1,n) = ref(kmray+1,n)
+
+    ! For direct radiation
+    trad(kmray+1,n) = trard(kmray+1,n)
+
+    do l = k1, kmray
       gasym=gch2o(l)
       pioc=pic_h2o(l)
-      dqqv = kn(n)*(qqv(l+1) - qqv(l))/10.d0
-      if (l.eq.k1p1) dqqv = kn(n)*qqv(l+1)/10.d0
+      ! Note /10 is for conversion purpose.
+      dqqv = kn(n)*(qqv(l+1) - qqv(l))/10.d0 !Note qqv(1) = 0
 
       ! In the cloud  layers
       tau(l,n) = tauc(l) + dqqv + tauah2o(l)
 
-      if(qlray(l).ge.epsc) then
+      if (qlray(l).ge.epsc) then
         call reftra &
           (pioc, piaero_h2o, gasym, gaero_h2o, tauc(l) , tauah2o(l), &
-          refx, trax, epsc, dqqv, mui)
+          refx, trax, epsc, dqqv, mui, muzero_cor)
 
         ref(l,n)=fneray(l)*refx
-        tra(l,n)=fneray(l)*trax + (1.d0 - fneray(l))*dexp(-5.d0*dqqv/3.d0)
+        tra(l,n)=fneray(l)*trax + (1.d0 - fneray(l))*dexp(-mbarh2o * dqqv)
 
         if (iaer.eq.1) then
           call reftra &
             (0.d0, piaero_h2o, 0.d0, gaero_h2o, 0.d0 , tauah2o(l), &
-            refx0, trax0, epsc, dqqv, mui)
+            refx0, trax0, epsc, dqqv, mui, muzero_cor)
 
           ref(l,n) = fneray(l)*refx + (1.d0 - fneray(l))*refx0
           tra(l,n) = fneray(l)*trax + (1.d0 - fneray(l))*trax0
         endif
 
-        refs(l,n) = ref(l,n)
-        tras(l,n) = tra(l,n)
-
         ! trard transmissivity for direct radiation
-        trard(l,n) = fneray(l)*dexp(-m*(dqqv+tauc(l)+tauah2o(l))) &
-          +(1.d0-fneray(l))*dexp(-m*(dqqv+tauah2o(l)))
+        trard(l,n) = (fneray(l)*dexp(-m*tauc(l))+(1.d0-fneray(l))) &
+                     *dexp(-m*(dqqv+tauah2o(l)))
 
       else
 
         ! in the clear sky layers
         ref(l,n) = 0.d0
-        tra(l,n) = dexp(-5.d0*tau(l,n)/3.d0)
-        refs(l,n) = ref(l,n)
-        tras(l,n) = tra(l,n)
+        tra(l,n) = dexp(-mbarh2o * tau(l,n))
 
         trard(l,n)=dexp(-m*(dqqv+tauah2o(l)))
 
-        if(l.ge.itopp1) tra(l,n) = dexp(-m*tau(l,n))
+        if(l.ge.itop) tra(l,n) = dexp(-m*tau(l,n))
         if (iaer.eq.1) then
           call reftra  &
             (0.d0, piaero_h2o, 0.d0, gaero_h2o, 0.d0, tauah2o(l), &
-            refx, trax, epsc,dqqv, mui)
+            refx, trax, epsc,dqqv, mui, muzero_cor)
 
           ref(l,n)=fneba(l)*refx
-          tra(l,n)=fneba(l)*trax+(1.d0-fneba(l))*dexp(-5.d0*dqqv/3.d0)
+          tra(l,n)=fneba(l)*trax+(1.d0-fneba(l))*dexp(-mbarh2o * dqqv)
 
         endif
 
@@ -922,78 +1025,66 @@ if (muzero.gt.epzero) then
 
     enddo
 
-    tau(kmray+1,n) = 0.d0
-    tra(kmray+1,n) = 1.d0
-
-    ! For direct radiation
-    trard(kmray+1,n) = 1.d0
-    trad(kmray+1,n) = trard(kmray+1,n)
-
-    ref(kmray+1,n) = 0.d0
-    tras(kmray+1,n) = tra(kmray+1,n)
-    refs(kmray+1,n) = ref(kmray+1,n)
-    tra(k1,n) = 0.d0
-    ref(k1,n) = albe
-    tras(k1,n) = 0.d0
-    refs(k1,n) = 0.d0
-
-    trat(kmray+1,n) = tra(kmray+1,n)
-    reft(kmray+1,n) = ref(kmray+1,n)
-    refts(kmray+1,n) = refs(kmray+1,n)
-    trats(kmray+1,n) = tras(kmray+1,n)
-    fneray(k1) = 0.d0
-
-    ! For direct radiation
-    trad(kmray+1,n) = trard(kmray+1,n)
     ! downward addition of layers
     do l = kmray, k1, -1
-      drtt1 = 1.d0 - refts(l+1,n)*ref(l,n)
+      drtt1 = 1.d0 / (1.d0 - reft(l+1,n)*ref(l,n))
+      ! Note R(l->top) = R*(l->top)
+      ! R*(l->top) = R(l) + T*(l)*T(l) * R*(l+1>top)/(1 - R*(l+1->top).R(l))
       reft(l,n) = reft(l+1,n) &
-        + trat(l+1,n)*ref(l,n)*trats(l+1,n)/drtt1
-      trat(l,n) = trat(l+1,n)*tra(l,n)/drtt1
+        + trat(l+1,n)*ref(l,n)*trat(l+1,n)*drtt1
+      ! T(l->top) = T(l+1->top).T(l) /(1 - R*(l+1->top).R(l))
+      ! Note also it is equal to
+      ! T*(l->top) = T*(l+1->top)*T(l) /(1 - R*(l+1->top).R(l))
+      trat(l,n) = trat(l+1,n)*tra(l,n)*drtt1
 
       ! trad for direct radiation
       trad(l,n)=trad(l+1,n)*trard(l,n)
 
-      if(l.gt.k1) then
-        refts(l,n) = refs(l,n) &
-          + tras(l,n)*refts(l+1,n)*tra(l,n)/drtt1
-        trats(l,n) = trats(l+1,n)*tras(l,n)/drtt1
-      endif
     enddo
 
     ! upward layer addition
-    refb(k1,n) = ref(k1,n)
-    refbs(k1,n) = refs(k1,n)
+    refb(k0,n) = ref(k0,n)
 
-    do l = k1p1, kmray
-      dtrb1 = 1.d0 - refb(l-1,n)*refs(l,n)
-      refb(l,n) = ref(l,n) + tra(l,n)*refb(l-1,n)*tras(l,n)/dtrb1
+    ! Note LH74 equation (33)
+    ! T*(l) = T(l)
+    do l = k1, kmray
+      dtrb1 = 1.d0/(1.d0 - refb(l-1,n)*ref(l,n))
+      refb(l,n) = ref(l,n) + tra(l,n)*refb(l-1,n)*tra(l,n)*dtrb1
     enddo
 
     ! calculation of downward and upward fluxes
-    do l = kmray+1, k1p1, -1
-      dud1 = 1.d0 - refts(l,n)*refb(l-1,n)
-      upw(l,n) = trat(l,n)*refb(l-1,n)/dud1
-      dow(l,n) = trat(l,n)/dud1
-
+    do l = kmray+1, k1, -1
       ! downward fluxes for direct radiation
       dowd(l,n) = trad(l,n)
 
-      !calculation of absorption
-      atln(l,n) =  pkn(n)*((1.d0 - reft(k1,n)) + upw(l,n) &
-        - dow(l,n))
+      dud1 = 1.d0 - reft(l,n)*refb(l-1,n)
+      ! Diffuse
+      dowf(l,n) = trat(l,n)/dud1-trad(l,n)
+
+      ! Global
+      dow(l,n) = trat(l,n)/dud1
+      ! Diffuse up = global up
+      upwf(l,n) = refb(l-1,n)*dow(l,n)
+
+      ! calculation of absorption from 16km to level l
+      ! Note can be factorized
+      atln(l,n) =  pkn(n)*(1.d0 - reft(k1,n) + upwf(l,n) - dow(l,n))
     enddo
 
     ! absorption in individual layers
-    do l = kmray, k1p1, -1
-      absn(l,n) = atln(l,n) - atln(l+1,n)
+    do l = kmray, k1, -1
+      ! Note LH74 compute absn as:
+      ! absn(l,n) = atln(l,n) - atln(l+1,n)
+      ! but can be simplified as
+      ! upwf(l,n)-dow(l,n) - upwf(l+1,n) + dow(l+1,n)
+      absn(l,n) = pkn(n) * ( dow(l,n) * (refb(l-1,n) - 1.d0)                   &
+                           - dow(l+1,n) * (refb(l,n) - 1.d0))
     enddo
   enddo
 
   ! summation over frequencies and estimation of absorption integrated
   !  on the whole spectrum
-  do l = kmray, k1p1, -1
+  do l = kmray, k1, -1
     fabsh2o(l) = 0.d0
     do n = 1, 8
       fabsh2o(l) = fabsh2o(l)+absn(l,n)
@@ -1004,67 +1095,75 @@ if (muzero.gt.epzero) then
   ! In the case with no clouds and aerosol in order to have exactly
   ! the same expressions in 1D and 3D for the heating rate
   if (itop.eq.k1) then
-    do i = k1p1, kmray
-      y = m*(qqvtot - qqv(i))
-      if(i.eq.k1p1) y = m*qqvtot
-      yp1 = m*(qqvtot - qqv(i+1))
-      ystar = m*qqvtot + 5.d0/3.d0*qqv(i)
-      if(i.eq.k1p1) ystar = m*qqvtot
-      ystarp1 = m*qqvtot + 5.d0/3.d0*qqv(i+1)
-      fabsh2o(i) = muzero*fo*(raysve(y) - raysve(yp1) + albe*(raysve(ystarp1) &
+    do l = k1, kmray
+      y = m*(qqvtot - qqv(l)) ! Note qqv(1) = 0
+      yp1 = m*(qqvtot - qqv(l+1))
+      ystar = m*qqvtot + mbarh2o * qqv(l)
+      ystarp1 = m*qqvtot + mbarh2o * qqv(l+1)
+      fabsh2o(l) = muzero*fo*(raysve(y) - raysve(yp1) + albe*(raysve(ystarp1) &
                                                              -raysve(ystar)))
     enddo
   endif
   ! 5.5 heating in the layers
-  rayst(k1) = 0.d0
-  rayst_h2o(k1) = 0.d0
-  rayst_o3(k1) = 0.d0
-  do i = k1p1, kmray
+  do i = k1, kmray
     deltaz = zqq(i+1) - zqq(i)
-    if(i.eq.k1p1) deltaz = zqq(i+1) - zray(k1)
+
     cphum = cp0*(1.d0 + (cpvcpa - 1.d0)*qvray(i))
     rayst(i) = (fabsh2o(i) + fabso3(i))/deltaz/romray(i)/cphum
 
-    rayst_h2o(i) = (fabsh2o(i))/deltaz/romray(i)/cphum
-    rayst_o3(i) = ( fabso3(i))/deltaz/romray(i)/cphum
+    rayst_h2o(i) = fabsh2o(i)/deltaz/romray(i)/cphum
+    rayst_o3(i) =  fabso3(i) /deltaz/romray(i)/cphum
   enddo
 
   ! 5.6 calculation of solar fluxes
   !  for global radiation, fd for direct radiation for the water vapor band
+  ! H20: SIR band
 
   do i = k1, kmray
     dfsh2o(i) = 0.d0
     ufsh2o(i) = 0.d0
     ddfsh2o(i) = 0.d0
+    dddfsh2o(i) = 0.d0
 
     do n = 2,8
-      dfsh2o(i) = dfsh2o(i) + pkn(n)*dow(i+1,n)
-      ufsh2o(i) = ufsh2o(i) + pkn(n)*upw(i+1,n)
-      ddfsh2o(i) = ddfsh2o(i) + pkn(n)*dowd(i+1,n)
+      ufsh2o(i) = ufsh2o(i) + pkn(n)*upwf(i,n)
+      ddfsh2o(i) = ddfsh2o(i) + pkn(n)*dowd(i,n)
+      dddfsh2o(i) = dddfsh2o(i) + pkn(n)*dowf(i,n)
     enddo
 
-    dfsh2o(i) = fo*muzero*dfsh2o(i)
     ufsh2o(i) = fo*muzero*ufsh2o(i)
     ddfsh2o(i) = fo*muzero*ddfsh2o(i)
+    dddfsh2o(i) = fo*muzero*dddfsh2o(i)
+    ! Global
+    dfsh2o(i)=ddfsh2o(i)+dddfsh2o(i)
 
-    y = m*(qqvtot - qqv(i))
-    if (i.eq.k1) y = m*qqvtot
-    ystar = m*qqvtot + 5.d0/3.d0*qqv(i)
-    if(i.eq.k1) ystar = m*qqvtot
+    ! the optical depth for gases have to be changed to take into account
+    ! the transformation of direct radiation in diffuse radiation under
+    ! the top of the cloud
+    ystar = m*(qqvtot-qqv(itop)) + mbarh2o * (qqv(itop)+qqv(i))
+    if (i.ge.itop)then
+      y = m*(qqvtot - qqv(i))
+    else
+      y = m*(qqvtot - qqv(itop)) + mbarh2o * (qqv(itop) - qqv(i))
+    endif
+
 
     ! to test in the case with no clouds and aerosol in order to have exactly
     ! the same expressions in 1D and 3D for the fluxes
     if (itop.eq.k1) then
+      ! Diffuse
+      dddfsh2o(i) = 0.d0
+      ! Global
       dfsh2o(i) = fo*muzero*(0.353d0-raysve(y))
       ufsh2o(i) = fo*muzero*(0.353d0-raysve(ystar))*albe
+      ! Direct
       ddfsh2o(i) = fo*muzero*(0.353d0-raysve(y))
     endif
 
     ! (p_i/p_k) * (p_k/p0) = p_i/p0
     !We keep 1013.15 for standard atmosphere ref:LH74
     corp = preray(i) / 101315.d0
-    rov = romray(i)*(qvray(i)*corp*sqrt(tkelvi/(temray(i) + tkelvi)))
-    dy = rov
+    dy = romray(i)*(qvray(i)*corp*sqrt(tkelvi/(temray(i) + tkelvi)))
     ! Calculation of absorption coefficient ckup and ckdown useful
     ! for 3D calculations
     ! Note: gas contribution
@@ -1082,16 +1181,14 @@ if (muzero.gt.epzero) then
     ! direct radiation and diffuse mod (sum of vapor water band and O3 band)
     ! Direct
     drfs(k) = ddfsh2o(k)+ddfso3(k)
-    ! diffuse radiation (estmated by difference between global and direct)
-    dddsh2o(k) = dfsh2o(k)-ddfsh2o(k)
-    dddso3(k) = dfso3(k)-ddfso3(k)
-    ddfs(k) = dddsh2o(k)+dddso3(k)
+    ! Diffuse
+    ddfs(k) = dddfsh2o(k)+dddfso3(k)
 
     solu(k,ivertc) = ufs(k)
     sold(k,ivertc) = dfs(k)
   enddo
 
-  ! Note: Mutiplication by transmission function for minor gases
+  ! Note: Multiplication by transmission function for minor gases
   ! Tmg is now taking into account by fo=fo*Tmg
 
   ! solar heating of the ground surface by the downward global flux
@@ -1104,11 +1201,10 @@ if (muzero.gt.epzero) then
   ! upward is only diffuse
 
   ! SIR band
-  do k = k1p1, kmray
+  do k = k1, kmray
     tauapc=tauah2o(k)+tauc(k)
     deltaz = zqq(k+1) - zqq(k)
-    if(k.eq.k1p1) deltaz=zqq(k+1) - zray(k1)
-    if(tauapc.lt.epsc)then
+    if (tauapc.lt.epsc)then
       ckapcd=0.d0
       ckapcf=0.d0
       ck_aero_h2of=0.d0
@@ -1122,7 +1218,7 @@ if (muzero.gt.epzero) then
       ! Note apc means aerosols+clouds
       gapc=(pic_h2o(k)*tauc(k)*gch2o(k)+piaero_h2o*tauah2o(k)*gaero_h2o)/(tauapc*picapc)
 
-      ! Save values without Jospeh correction for 3D
+      ! Save values without Joseph correction for 3D
       g_apc_sir(k) = gapc
       w0_sir(k) = picapc
       ! absorption and forward diffusion
@@ -1143,10 +1239,9 @@ if (muzero.gt.epzero) then
   enddo
 
   ! SUV band
-  do k = k1p1, kmray
+  do k = k1, kmray
     tauapc=tauao3(k)+tauc(k)
     deltaz = zqq(k+1) - zqq(k)
-    if(k.eq.k1p1) deltaz=zqq(k+1) - zray(k1)
     if(tauapc.lt.epsc)then
       ckapcd=0.d0
       ckapcf=0.d0
@@ -1375,7 +1470,7 @@ if (f_id.ge.0.and.is_active) then
 
         call intprz &
           (kmray, zqq,                                               &
-          dddsh2o, zent, iz1, iz2, var )
+          dddfsh2o, zent, iz1, iz2, var )
 
         bpro_rad_inc(c_id, ifac) = var
       endif
@@ -1435,7 +1530,7 @@ if (f_id.ge.0.and.is_active) then
 
         call intprz &
           (kmray, zqq,                                               &
-          dddso3, zent, iz1, iz2, var )
+          dddfso3, zent, iz1, iz2, var )
 
         bpro_rad_inc(c_id, ifac) = var
       endif
@@ -1491,7 +1586,7 @@ if (f_id.ge.0.and.is_active) then
 
         call intprz &
           (kmray, zqq,                                               &
-          dddso3, zent, iz1, iz2, var )
+          dddfso3, zent, iz1, iz2, var )
 
         bpro_rad_inc(c_id, ifac) = bpro_rad_inc(c_id, ifac) + var
       endif
@@ -1539,20 +1634,21 @@ endif
 
 deallocate(fabsh2o,fabso3,tauc)
 deallocate(tau,pic,ref)
-deallocate(reft,refts)
-deallocate(refs,tras,trats)
-deallocate(refb,trab,upw)
-deallocate(refbs,fabso3c,tra)
-deallocate(dow,atln,absn)
+deallocate(reft)
+deallocate(refb,upwf)
+deallocate(fabso3c,tra)
+deallocate(dow)
+deallocate(dowf,atln,absn)
 deallocate(fnebmax,fneba)
 
-deallocate(dfso3c, ufso3c, ddfso3c)
+deallocate(ufso3c)
 deallocate(dowd, trad, trard)
 
 deallocate(dfsh2o, ufsh2o, dfso3, ufso3, dfs, ufs)
 deallocate(dffsh2o, dffso3)
 deallocate(ddfsh2o, ddfso3)
-deallocate(drfs, dffs, ddfs, dddsh2o, dddso3)
+deallocate(dddfsh2o, dddfso3)
+deallocate(drfs, ddfs)
 deallocate(ckup_sir_f, ckdown_sir_r, ckdown_sir_f)
 deallocate(ckup_suv_f, ckdown_suv_r, ckdown_suv_f)
 deallocate(g_apc_suv, g_apc_sir, w0_suv, w0_sir)

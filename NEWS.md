@@ -55,6 +55,8 @@ Master (not on release branches yet)
 
 ### Physical modelling
 
+- Refurbish 1D atmospheric radiative model.
+
 - Allow the usage of Cooling tower module with Lagrangian particle tracking
   for the rain zone. Particles position, velocity and velocity
   seen from the fluid, heat and mass (diameters) are solved for instantaneous

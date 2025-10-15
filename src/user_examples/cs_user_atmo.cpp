@@ -80,8 +80,7 @@ cs_user_atmo_1d_rad_prf([[maybe_unused]] cs_real_t   preray[],
   cs_atmo_option_t *at_opt = cs_glob_atmo_option;
   const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
 
-  cs_real_t *zvert = at_opt->rad_1d_z;
-  cs_real_t *zray  = at_opt->rad_1d_zray;
+  cs_real_t *zray = at_opt->rad_1d_z;
 
   const int kvert = at_opt->rad_1d_nlevels;
   const int kmx   = at_opt->rad_1d_nlevels_max;
@@ -94,7 +93,6 @@ cs_user_atmo_1d_rad_prf([[maybe_unused]] cs_real_t   preray[],
   aeroso[0] = 10.0;
 
   for (int k = 1; k < kvert; k++) {
-    zray[k] = zvert[k];
 
     const cs_real_t rhum = rair * (1.0 + (rvsra-1.0)*qvray[k]);
     const cs_real_t tmean = 0.50 * (temray[k-1] + temray[k]) + tkelvi;
@@ -116,7 +114,6 @@ cs_user_atmo_1d_rad_prf([[maybe_unused]] cs_real_t   preray[],
      initialized with standard atmosphere profiles) */
 
   for (int k = kvert; k < kmx; k++) {
-    zray[k] = zvert[k];
 
     /* read meteo data for temperature, water wapor and liquid content in
        upper layers for example to fill temray, qvray, qlray */
