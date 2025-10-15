@@ -315,24 +315,9 @@ cs_turbulence_ke(int              phase_id,
   cs_real_t viscl0 = phys_pro->viscl0; /* reference pressure */
   cs_real_t ro0 = phys_pro->ro0; /* reference density */
   const cs_real_t uref = cs_glob_turb_ref_values->uref;
-  /*const cs_real_t grav[3] = {cs_glob_physical_constants->gravity[0],
+  const cs_real_t grav[3] = {cs_glob_physical_constants->gravity[0],
                              cs_glob_physical_constants->gravity[1],
-                             cs_glob_physical_constants->gravity[2]};*/
-
-  const cs_real_t *grav = cs_glob_physical_constants->gravity;
-#if defined(HAVE_ACCEL)
-  cs_real_t *_grav = nullptr;
-  if (cs_get_device_id() > -1) {
-    CS_MALLOC_HD(_grav, 3, cs_real_t, cs_alloc_mode);
-    for (int i = 0; i < 3; i++) {
-      _grav[i] = cs_glob_physical_constants->gravity[i];
-    }
-
-    cs_mem_advise_set_read_mostly(_grav);
-
-    grav = _grav;
-  }
-#endif
+                             cs_glob_physical_constants->gravity[2]};
 
   cs_dispatch_context ctx;
 
@@ -2218,10 +2203,6 @@ cs_turbulence_ke(int              phase_id,
 
   CS_FREE(tinstk);
   CS_FREE(tinste);
-
-#if defined(HAVE_ACCEL)
-  CS_FREE_HD(_grav);
-#endif
 
   CS_FREE_HD(e_term);
   if (model == CS_TURB_K_EPSILON){
