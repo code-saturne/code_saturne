@@ -2095,7 +2095,7 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
   }
 
   const cs_real_t  *__restrict__ ad
-    =  cs_get_device_ptr_const(cs_matrix_get_diagonal(a));
+    = cs_get_device_ptr_const(cs_matrix_get_diagonal(a));
   const cs_real_t *__restrict__ ad_inv
     = cs_get_device_ptr_const(c->setup_data->ad_inv);
 
@@ -2108,8 +2108,9 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
 
   assert(c->setup_data != NULL);
 
-  cs_real_t *_aux_vectors = NULL;
+  cs_real_t *_aux_vectors = nullptr;
   cs_real_t *__restrict__ rk = nullptr, *__restrict__ vxx = nullptr;
+  cs_real_t *__restrict__ vx_k = vx;
 
   if (n_cols > 0) {
     const size_t n_wa = 2;
@@ -2153,22 +2154,22 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
 
     if (diag_block_size == 3) {
       _block_3_jacobi_compute_vx0<<<gridsize, blocksize, 0, stream>>>
-        (n_rows, ad_inv, rhs, rk, vx);
+        (n_rows, ad_inv, rhs, rk, vx_k);
       _block_3_jacobi_compute_residual
         <blocksize><<<gridsize, blocksize, 0, stream>>>
-        (n_rows, ad, vx, rk, sum_block);
+        (n_rows, ad, vx_k, rk, sum_block);
       CS_CUDA_CHECK(cudaStreamSynchronize(stream));
     }
     else {
       _block_jacobi_compute_vx0<<<gridsize, blocksize, 0, stream>>>
-        (n_rows, diag_block_size, ad_inv, rhs, rk, vx);
+        (n_rows, diag_block_size, ad_inv, rhs, rk, vx_k);
       _block_jacobi_compute_residual
         <blocksize><<<gridsize, blocksize, 0, stream>>>
-        (n_rows, diag_block_size, ad, vx, rk, sum_block);
+        (n_rows, diag_block_size, ad, vx_k, rk, sum_block);
     }
 
-    cudaMemcpyAsync(rk, vx, n_rows*sizeof(cs_real_t),
-                    cudaMemcpyDeviceToDevice, stream);
+    /* Swap vx and rk */
+    {cs_real_t *v_t = vx_k; vx_k = rk; rk = v_t;}
 
     if (update_residual) {
       cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
@@ -2189,54 +2190,12 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
   }
 
   else {
-    cudaMemcpyAsync(rk, vx, n_rows*sizeof(cs_real_t),
-                    cudaMemcpyDeviceToDevice, stream);
+    /* Swap vx and rk */
+    {cs_real_t *v_t = vx_k; vx_k = rk; rk = v_t;}
+
     CS_CUDA_CHECK(cudaStreamSynchronize(stream));
     CS_CUDA_CHECK(cudaGetLastError());
   }
-
-#if HAVE_GRAPH_CAPTURE > 0
-
-  cudaGraph_t graph;
-  cudaGraphExec_t graph_exec = NULL;
-
-  /* Capture graph for a portion of kernels used here. */
-
-  if (cs_glob_cuda_allow_graph) {
-    cudaGraphNode_t graph_node;
-    cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
-
-    /* Compute Vx <- Vx - (A-diag).Rk and residual. */
-
-    if (diag_block_size == 3) {
-      _block_3_jacobi_compute_vx<<<gridsize, blocksize, 0, stream>>>
-        (n_rows, ad_inv, rhs, vxx, vx);
-      _block_3_jacobi_compute_residual
-        <blocksize><<<gridsize, blocksize, 0, stream>>>
-        (n_rows, ad, vx, rk, sum_block);
-    }
-    else {
-      _block_jacobi_compute_vx<<<gridsize, blocksize, 0, stream>>>
-        (n_rows, diag_block_size, ad_inv, rhs, vxx, vx);
-      _block_jacobi_compute_residual
-        <blocksize><<<gridsize, blocksize, 0, stream>>>
-        (n_rows, diag_block_size, ad, vx, rk, sum_block);
-    }
-    cudaMemcpyAsync(rk, vx, n_rows*sizeof(cs_real_t),
-                    cudaMemcpyDeviceToDevice, stream);
-
-    if (update_residual) {
-      cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
-        (gridsize, sum_block, res_d);
-    }
-
-    cudaStreamEndCapture(stream, &graph);
-    cudaError_t status = cudaGraphInstantiate(&graph_exec, graph, &graph_node,
-                                              nullptr, 0);
-    assert(status == cudaSuccess);
-  }
-
-#endif // HAVE_GRAPH_CAPTURE > 0
 
   /* Current iteration
      ----------------- */
@@ -2252,39 +2211,24 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
 
     /* Compute Vx <- Vx - (A-diag).Rk and residual. */
 
-#if HAVE_GRAPH_CAPTURE > 0
-    if (cs_glob_cuda_allow_graph)
-      cudaGraphLaunch(graph_exec, stream);
-
-    else
-#endif // HAVE_GRAPH_CAPTURE > 0
-    {
-      if (diag_block_size == 3) {
-        _block_3_jacobi_compute_vx<<<gridsize, blocksize, 0, stream>>>
-          (n_rows, ad_inv, rhs, vxx, vx);
-        CS_CUDA_CHECK(cudaStreamSynchronize(stream));
-        _block_3_jacobi_compute_residual
-          <blocksize><<<gridsize, blocksize, 0, stream>>>
-          (n_rows, ad, vx, rk, sum_block);
-        CS_CUDA_CHECK(cudaStreamSynchronize(stream));
-      }
-      else {
-        _block_jacobi_compute_vx<<<gridsize, blocksize, 0, stream>>>
-          (n_rows, diag_block_size, ad_inv, rhs, vxx, vx);
-        _block_jacobi_compute_residual
-          <blocksize><<<gridsize, blocksize, 0, stream>>>
-          (n_rows, diag_block_size, ad, vx, rk, sum_block);
-      }
-      cudaMemcpyAsync(rk, vx, n_rows*sizeof(cs_real_t),
-                      cudaMemcpyDeviceToDevice, stream);
-
-      if (update_residual) {
-        cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
-          (gridsize, sum_block, res_d);
-      }
+    if (diag_block_size == 3) {
+      _block_3_jacobi_compute_vx<<<gridsize, blocksize, 0, stream>>>
+        (n_rows, ad_inv, rhs, vxx, vx_k);
+      _block_3_jacobi_compute_residual
+        <blocksize><<<gridsize, blocksize, 0, stream>>>
+        (n_rows, ad, vx_k, rk, sum_block);
+    }
+    else {
+      _block_jacobi_compute_vx<<<gridsize, blocksize, 0, stream>>>
+        (n_rows, diag_block_size, ad_inv, rhs, vxx, vx_k);
+      _block_jacobi_compute_residual
+        <blocksize><<<gridsize, blocksize, 0, stream>>>
+        (n_rows, diag_block_size, ad, vx_k, rk, sum_block);
     }
 
     if (update_residual) {
+      cs_blas_cuda_reduce_single_block<blocksize, 1><<<1, blocksize, 0, stream>>>
+        (gridsize, sum_block, res_d);
       _sync_reduction_sum(c, stream, 1, res_d, res_h);
       residual = sqrt(*res_h); /* Actually, residual of previous iteration */
     }
@@ -2298,14 +2242,16 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
       c->setup_data->initial_residual = residual;
     cvg = cs_sles_it_convergence_test(c, n_iter, residual, convergence);
 
+    /* Swap vx and rk */
+    {cs_real_t *v_t = vx_k; vx_k = rk; rk = v_t;}
+
   }
 
-#if HAVE_GRAPH_CAPTURE > 0
-  if (cs_glob_cuda_allow_graph) {
-    cudaGraphDestroy(graph);
-    cudaGraphExecDestroy(graph_exec);
+  if (vx_k != vx) {
+    cudaMemcpyAsync(vx, vx_k, n_rows*sizeof(cs_real_t),
+                    cudaMemcpyDeviceToDevice, stream);
+    CS_CUDA_CHECK(cudaStreamSynchronize(stream));
   }
-#endif // HAVE_GRAPH_CAPTURE > 0
 
   if (_aux_vectors != (cs_real_t *)aux_vectors)
     CS_FREE_HD(_aux_vectors);
