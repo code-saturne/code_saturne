@@ -187,9 +187,9 @@ struct cs_reduce_min3float_max3float {
 
   CS_F_HOST_DEVICE void
   combine(volatile T &a, volatile const T &b) const {
-    a.r1[0] = cs::min(a.r1[0], b.r2[0]);
-    a.r1[1] = cs::min(a.r1[1], b.r2[1]);
-    a.r1[2] = cs::min(a.r1[2], b.r2[2]);
+    a.r1[0] = cs::min(a.r1[0], b.r1[0]);
+    a.r1[1] = cs::min(a.r1[1], b.r1[1]);
+    a.r1[2] = cs::min(a.r1[2], b.r1[2]);
 
     a.r2[0] = cs::max(a.r2[0], b.r2[0]);
     a.r2[1] = cs::max(a.r2[1], b.r2[1]);
