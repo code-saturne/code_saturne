@@ -2737,6 +2737,8 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
+  const cs_lnum_t  n_cells = quant->n_cells;
+
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_real_t  t_eval = ts->t_cur + ts->dt[0];
 
@@ -2758,6 +2760,14 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   cs_real_t  *u_c_pre = sc->velocity->val_pre;    /* prev. velocity in cells */
   cs_real_t  *p_c = sc->pressure->val;            /* cur.  pressure in cells */
 
+  cs_real_t *u_f_new = nullptr, *p_c_new = nullptr;
+
+  CS_MALLOC(u_f_new, 3*n_faces, cs_real_t);
+  CS_MALLOC(p_c_new, n_cells, cs_real_t);
+
+  cs_array_real_copy(3*n_faces, u_f, u_f_new);
+  cs_array_real_copy(n_cells, p_c, p_c_new);
+
   sc->build(nsp, u_f, u_c, u_f_pre, u_c_pre, sc);
 
   /* End of the system building */
@@ -2769,10 +2779,6 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
    *                   INITIAL BUILD: END
    *--------------------------------------------------------------------------*/
 
-  /* Current to previous for main variable fields */
-
-  _mono_fields_to_previous(sc, cc);
-
   /* Solve the linear system */
 
   cs_timer_t  t_solve_start = cs_timer_time();
@@ -2781,7 +2787,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
   /* Solve the new system: Update the value of u_f and p_c */
 
-  int  last_inner_iter = sc->solve(nsp, sc->saddle_solver, u_f, p_c);
+  int  last_inner_iter = sc->solve(nsp, sc->saddle_solver, u_f_new, p_c_new);
 
   cs_iter_algo_update_inner_iters(nl_algo, last_inner_iter);
 
@@ -2790,11 +2796,11 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
   /* Make sure that the DoFs are correctly enforced after the resolution */
 
-  _mono_enforce_solid_face_velocity(u_f);
+  _mono_enforce_solid_face_velocity(u_f_new);
 
   /* Compute the new mass flux used as the advection field */
 
-  cs_cdofb_navsto_mass_flux(nsp, quant, u_f, sc->mass_flux_array);
+  cs_cdofb_navsto_mass_flux(nsp, quant, u_f_new, sc->mass_flux_array);
 
   /* Set the normalization of the non-linear algo to the value of the first
      mass flux norm */
@@ -2839,10 +2845,10 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
     sc->build(nsp,
               /* A current to previous op. has been done */
+              u_f,
+              u_c,
               u_f_pre,
               u_c_pre,
-              nullptr,
-              nullptr, /* no n-1 state is given */
               sc);
 
     /* End of the system building */
@@ -2854,7 +2860,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
     t_solve_start = cs_timer_time();
 
-    last_inner_iter = sc->solve(nsp, sc->saddle_solver, u_f, p_c);
+    last_inner_iter = sc->solve(nsp, sc->saddle_solver, u_f_new, p_c_new);
 
     cs_iter_algo_update_inner_iters(nl_algo, last_inner_iter);
 
@@ -2863,7 +2869,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
     /* Make sure that the DoFs are correctly enforced after the resolution */
 
-    _mono_enforce_solid_face_velocity(u_f);
+    _mono_enforce_solid_face_velocity(u_f_new);
 
     /* mass_flux_array_k <-- mass_flux_array_kp1; update mass_flux_array_kp1 */
 
@@ -2871,7 +2877,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
       CS_MALLOC(mass_flux_array_k, n_faces, cs_real_t);
     cs_array_real_copy(n_faces, mass_flux_array_kp1, mass_flux_array_k);
 
-    cs_cdofb_navsto_mass_flux(nsp, quant, u_f, mass_flux_array_kp1);
+    cs_cdofb_navsto_mass_flux(nsp, quant, u_f_new, mass_flux_array_kp1);
 
     /* Check the convergence status and update the nl_algo structure related
      * to the convergence monitoring */
@@ -2903,6 +2909,13 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
     cs_iter_algo_release_anderson_arrays(
       (cs_iter_algo_aac_t *)nl_algo->context);
 
+  /* Current to previous for main variable fields */
+
+  _mono_fields_to_previous(sc, cc);
+
+  cs_array_real_copy(3*n_faces, u_f_new, u_f);
+  cs_array_real_copy(n_cells, p_c_new, p_c);
+
   /* Now compute/update the velocity and pressure fields */
 
   _mono_update_related_cell_fields(nsp, sc, mom_eqc);
@@ -2914,6 +2927,9 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   cs_equation_builder_reset(mom_eqb);
   if (mass_flux_array_k != nullptr)
     CS_FREE(mass_flux_array_k);
+
+  CS_FREE(u_f_new);
+  CS_FREE(p_c_new);
 
   cs_timer_t  t_end = cs_timer_time();
   cs_timer_counter_add_diff(&(sc->timer), &t_start, &t_end);
