@@ -193,6 +193,7 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
 #if defined(HAVE_CUDA)
   ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
 #endif
+  cs_alloc_mode_t amode = ctx.alloc_mode();
 
   if (iterns < 2)
     sinfo->n_it = 0;
@@ -257,11 +258,11 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
   cs_real_t *flux_hp = bc_coeffs_solve_hp.flux;
 
   cs_real_3_t *next_fext;
-  CS_MALLOC_HD(next_fext, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(next_fext, n_cells_ext, cs_real_3_t, amode);
 
   cs_real_t *rovsdt = nullptr, *viscce = nullptr;
-  CS_MALLOC_HD(rovsdt, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(viscce, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(rovsdt, n_cells_ext, cs_real_t, amode);
+  CS_MALLOC_HD(viscce, n_cells_ext, cs_real_t, amode);
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     const int c_act = 1 - (has_dc * c_disable_flag[has_dc * c_id]);
@@ -340,7 +341,7 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
                     viscce);
 
   cs_real_t *div_fext = nullptr;
-  CS_MALLOC_HD(div_fext, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(div_fext, n_cells_ext, cs_real_t, amode);
 
   cs_divergence(m, 1, iflux, bflux, div_fext);
 
@@ -600,6 +601,7 @@ _pressure_correction_fv(int                   iterns,
 #if defined(HAVE_CUDA)
   ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
 #endif
+  cs_alloc_mode_t amode = ctx.alloc_mode();
 
   const bool on_device = ctx.use_gpu();
 
@@ -674,27 +676,27 @@ _pressure_correction_fv(int                   iterns,
   /* Allocate temporary arrays */
 
   cs_real_t *rhs, *res;
-  CS_MALLOC_HD(res, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(rhs, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(res, n_cells_ext, cs_real_t, amode);
+  CS_MALLOC_HD(rhs, n_cells_ext, cs_real_t, amode);
 
   cs_real_t *phia, *iflux, *bflux, *dphi;
-  CS_MALLOC_HD(phia, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(iflux, m->n_i_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(bflux, m->n_b_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(dphi, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(phia, n_cells_ext, cs_real_t, amode);
+  CS_MALLOC_HD(iflux, m->n_i_faces, cs_real_t, amode);
+  CS_MALLOC_HD(bflux, m->n_b_faces, cs_real_t, amode);
+  CS_MALLOC_HD(dphi, n_cells_ext, cs_real_t, amode);
 
   cs_real_3_t *wrk;
-  CS_MALLOC_HD(wrk, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(wrk, n_cells_ext, cs_real_3_t, amode);
   cs_real_3_t *wrk2;
-  CS_MALLOC_HD(wrk2, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(wrk2, n_cells_ext, cs_real_3_t, amode);
 
   cs_real_t *adxk = nullptr, *adxkm1 = nullptr;
   cs_real_t *dphim1 = nullptr, *rhs0 = nullptr;
   if (eqp_p->iswdyn > 0) {
-    CS_MALLOC_HD(adxk, n_cells_ext, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(adxkm1, n_cells_ext, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(dphim1, n_cells_ext, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(rhs0, n_cells_ext, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(adxk, n_cells_ext, cs_real_t, amode);
+    CS_MALLOC_HD(adxkm1, n_cells_ext, cs_real_t, amode);
+    CS_MALLOC_HD(dphim1, n_cells_ext, cs_real_t, amode);
+    CS_MALLOC_HD(rhs0, n_cells_ext, cs_real_t, amode);
   }
 
   /* Associate pointers to pressure diffusion coefficients */
@@ -720,7 +722,7 @@ _pressure_correction_fv(int                   iterns,
   if (f_divu != nullptr)
     cpro_divu = f_divu->val;
   else {
-    CS_MALLOC_HD(_cpro_divu, n_cells_ext, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(_cpro_divu, n_cells_ext, cs_real_t, amode);
     cpro_divu = _cpro_divu;
   }
 
@@ -770,8 +772,8 @@ _pressure_correction_fv(int                   iterns,
 
     /* Staggered in time velocity and pressure */
     if (eqp_u->theta < 1 && iterns > 1 && vp_param->itpcol == 0) {
-      CS_MALLOC_HD(cpro_rho_tc, n_cells_ext, cs_real_t, cs_alloc_mode);
-      CS_MALLOC_HD(bpro_rho_tc, m->n_b_faces, cs_real_t, cs_alloc_mode);
+      CS_MALLOC_HD(cpro_rho_tc, n_cells_ext, cs_real_t, amode);
+      CS_MALLOC_HD(bpro_rho_tc, m->n_b_faces, cs_real_t, amode);
 
       const cs_real_t theta =  eqp_u->theta;
       const cs_real_t one_m_theta = 1.0 - theta;
@@ -850,7 +852,7 @@ _pressure_correction_fv(int                   iterns,
   if (vof_parameters->vof_model > 0) {
 
     if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION) {
-      CS_MALLOC_HD(xdtsro, n_cells_ext, cs_real_t, cs_alloc_mode);
+      CS_MALLOC_HD(xdtsro, n_cells_ext, cs_real_t, amode);
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         xdtsro[c_id] = dt[c_id]/crom[c_id];
@@ -860,7 +862,7 @@ _pressure_correction_fv(int                   iterns,
       cs_halo_sync(m->halo, on_device, xdtsro);
     }
     else if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION) {
-      CS_MALLOC_HD(tpusro, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+      CS_MALLOC_HD(tpusro, n_cells_ext, cs_real_6_t, amode);
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         const cs_real_t drom = 1. / crom[c_id];
@@ -887,8 +889,8 @@ _pressure_correction_fv(int                   iterns,
     const cs_real_t *hli = cs_field_by_name("inner_face_head_loss")->val;
     const cs_real_t *hlb = cs_field_by_name("boundary_face_head_loss")->val;
 
-    CS_MALLOC_HD(taui, n_i_faces, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(taub, n_b_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(taui, n_i_faces, cs_real_t, amode);
+    CS_MALLOC_HD(taub, n_b_faces, cs_real_t, amode);
 
     ctx_c.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
       cs_lnum_t c_id_0 = i_face_cells[f_id][0];
@@ -1134,7 +1136,7 @@ _pressure_correction_fv(int                   iterns,
   /* Implicit term */
 
   cs_real_t *rovsdt;
-  CS_MALLOC_HD(rovsdt, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(rovsdt, n_cells_ext, cs_real_t, amode);
 
   ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     rovsdt[c_id] = 0.;
@@ -1172,8 +1174,8 @@ _pressure_correction_fv(int                   iterns,
       cvar_th = CS_F_(t)->val;
 
       /* Allocation */
-      CS_MALLOC_HD(dc2, n_cells_ext, cs_real_t, cs_alloc_mode);
-      CS_MALLOC_HD(xcpp, n_cells_ext, cs_real_t, cs_alloc_mode);
+      CS_MALLOC_HD(dc2, n_cells_ext, cs_real_t, amode);
+      CS_MALLOC_HD(xcpp, n_cells_ext, cs_real_t, amode);
 
       /* Theta scheme related term */
       _coef = 1. + 2. * (1. - eqp_u->theta);
@@ -1254,7 +1256,7 @@ _pressure_correction_fv(int                   iterns,
     if (fluid_props->icv >= 0)
       cpro_cv = cs_field_by_id(fluid_props->icv)->val;
 
-    CS_MALLOC_HD(c2, n_cells_ext, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(c2, n_cells_ext, cs_real_t, amode);
 
     cs_cf_thermo_c_square(cpro_cp, cpro_cv, cvar_pr, crom,
                           cvar_fracv, cvar_fracm, cvar_frace, c2, n_cells);
@@ -1302,8 +1304,8 @@ _pressure_correction_fv(int                   iterns,
     else if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION) {
 
       /* Allocate temporary arrays */
-      CS_MALLOC_HD(weighf, n_i_faces, cs_real_2_t, cs_alloc_mode);
-      CS_MALLOC_HD(weighb, n_b_faces, cs_real_t, cs_alloc_mode);
+      CS_MALLOC_HD(weighf, n_i_faces, cs_real_2_t, amode);
+      CS_MALLOC_HD(weighb, n_b_faces, cs_real_t, amode);
 
       cs_face_anisotropic_viscosity_scalar(m,
                                            fvq,
@@ -1382,7 +1384,7 @@ _pressure_correction_fv(int                   iterns,
   /* Predicted mass flux and first Rhie and Chow component */
 
   cs_real_3_t  *gradp;
-  CS_MALLOC_HD(gradp, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(gradp, n_cells_ext, cs_real_3_t, amode);
 
   cs_gradient_porosity_balance(1);
 
@@ -1646,14 +1648,14 @@ _pressure_correction_fv(int                   iterns,
 
     cs_real_t *ipro_visc = nullptr, *bpro_visc = nullptr;
 
-    CS_MALLOC_HD(ipro_visc, n_i_faces, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(bpro_visc, n_b_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(ipro_visc, n_i_faces, cs_real_t, amode);
+    CS_MALLOC_HD(bpro_visc, n_b_faces, cs_real_t, amode);
 
     /* Scalar diffusivity */
     if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION && vp_param->rcfact == 0) {
 
       cs_real_t *cpro_visc;
-      CS_MALLOC_HD(cpro_visc, n_cells_ext, cs_real_t, cs_alloc_mode);
+      CS_MALLOC_HD(cpro_visc, n_cells_ext, cs_real_t, amode);
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         cpro_visc[c_id] = arak * c_visc[c_id];
@@ -1746,7 +1748,7 @@ _pressure_correction_fv(int                   iterns,
     /* Tensor diffusivity */
     else if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION || vp_param->rcfact == 1) {
 
-      CS_MALLOC_HD(cpro_vitenp, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+      CS_MALLOC_HD(cpro_vitenp, n_cells_ext, cs_real_6_t, amode);
 
       if (vof_parameters->vof_model > 0) {
         ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -1765,8 +1767,8 @@ _pressure_correction_fv(int                   iterns,
       ctx.wait();
 
       cs_real_2_t *weighftp = nullptr;
-      CS_MALLOC_HD(weighftp, n_i_faces, cs_real_2_t, cs_alloc_mode);
-      CS_MALLOC_HD(weighbtp, n_b_faces, cs_real_t, cs_alloc_mode);
+      CS_MALLOC_HD(weighftp, n_i_faces, cs_real_2_t, amode);
+      CS_MALLOC_HD(weighbtp, n_b_faces, cs_real_t, amode);
 
       /* A harmonic mean is used regardless of the imvisf option. */
 
@@ -1960,7 +1962,7 @@ _pressure_correction_fv(int                   iterns,
 
     cs_real_t *_svcond = svcond + (ipr-1)*ncmast;
     cs_real_t *surfbm = nullptr;
-    CS_MALLOC_HD(surfbm, ncmast, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(surfbm, ncmast, cs_real_t, amode);
 
     cs_wall_condensation_volume_exchange_surf_at_cells(surfbm);
 
@@ -1984,7 +1986,7 @@ _pressure_correction_fv(int                   iterns,
         cs_real_t *bmasfla
           = cs_field_by_id(cs_field_get_key_int(f_p, kbmasf))->val_pre;
         cs_real_t *divu_prev;
-        CS_MALLOC_HD(divu_prev, n_cells_ext, cs_real_t, cs_alloc_mode);
+        CS_MALLOC_HD(divu_prev, n_cells_ext, cs_real_t, amode);
 
         cs_divergence(m, 1, imasfla, bmasfla, divu_prev);
 
@@ -2859,7 +2861,7 @@ _pressure_correction_fv(int                   iterns,
   // Pressure at the last sub-iteration
 
   cs_real_t *pk1;
-  CS_MALLOC_HD(pk1, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(pk1, n_cells_ext, cs_real_t, amode);
 
   if (idtvar < 0) {
     const cs_real_t relaxv = eqp_p->relaxv;

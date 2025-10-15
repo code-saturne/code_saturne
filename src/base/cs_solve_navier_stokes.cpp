@@ -3753,8 +3753,7 @@ cs_solve_navier_stokes(const int        iterns,
   cs_lnum_t n_i_faces = m->n_i_faces;
   cs_lnum_t n_b_faces = m->n_b_faces;
 
-  const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)m->b_face_cells;
+  const cs_lnum_t *restrict b_face_cells = (const cs_lnum_t *)m->b_face_cells;
 
   const cs_time_step_t *ts = cs_glob_time_step;
   const cs_wall_condensation_t *w_condensation = cs_glob_wall_condensation;
@@ -3779,6 +3778,7 @@ cs_solve_navier_stokes(const int        iterns,
 #endif
 
   const bool on_device = ctx.use_gpu();
+  const cs_alloc_mode_t amode = ctx.alloc_mode();
 
   const cs_real_t *gxyz_h = cs_glob_physical_constants->gravity;
 
@@ -3804,7 +3804,7 @@ cs_solve_navier_stokes(const int        iterns,
 
     const cs_real_t *cell_f_vol = mq->cell_vol;
 
-    CS_MALLOC_HD(uvwk, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+    CS_MALLOC_HD(uvwk, n_cells_ext, cs_real_3_t, amode);
 
     cs_array_copy<cs_real_t>(3*n_cells,
                              (const cs_real_t *)vel,
@@ -3881,8 +3881,8 @@ cs_solve_navier_stokes(const int        iterns,
     if (theta < 1.0 && vp_param->itpcol == 0) {
       croma = CS_F_(rho)->val_pre;
       broma = CS_F_(rho_b)->val_pre;
-      CS_MALLOC_HD(bpro_rho_tc, n_b_faces, cs_real_t, cs_alloc_mode);
-      CS_MALLOC_HD(cpro_rho_tc, n_cells_ext, cs_real_t, cs_alloc_mode);
+      CS_MALLOC_HD(bpro_rho_tc, n_b_faces, cs_real_t, amode);
+      CS_MALLOC_HD(cpro_rho_tc, n_cells_ext, cs_real_t, amode);
 
       ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         cpro_rho_tc[c_id] =   theta * cpro_rho_mass[c_id]
@@ -3901,7 +3901,7 @@ cs_solve_navier_stokes(const int        iterns,
       brom = bpro_rho_tc;
     }
     else {
-      CS_MALLOC_HD(cpro_rho_k1, n_cells_ext, cs_real_t, cs_alloc_mode);
+      CS_MALLOC_HD(cpro_rho_k1, n_cells_ext, cs_real_t, amode);
       cs_array_copy<cs_real_t>(n_cells_ext, cpro_rho_mass, cpro_rho_k1);
 
       ctx.wait();
@@ -3927,12 +3927,12 @@ cs_solve_navier_stokes(const int        iterns,
       && vp_param->ipredfl != 0)
     _cs_mass_flux_prediction(m, mq, dt);
 
-  /* Hydrostatic pressure prediction in case of Low Mach compressible algorithm
-     ---------------------------------------------------------------------------*/
+  /* Hydrostatic pressure prediction for Low Mach compressible algorithm
+     ------------------------------------------------------------------- */
 
   cs_real_3_t *grdphd = nullptr;
   if (vp_param->iphydr == 2) {
-    CS_MALLOC_HD(grdphd, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+    CS_MALLOC_HD(grdphd, n_cells_ext, cs_real_3_t, amode);
     _hydrostatic_pressure_prediction(grdphd, gxyz_h, iterns);
   }
 
@@ -3978,16 +3978,16 @@ cs_solve_navier_stokes(const int        iterns,
   cs_real_3_t *frcxt = nullptr;
 
   if (vp_model->ivisse == 1) {
-    CS_MALLOC_HD(secvif, n_i_faces, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(secvib, n_b_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(secvif, n_i_faces, cs_real_t, amode);
+    CS_MALLOC_HD(secvib, n_b_faces, cs_real_t, amode);
   }
 
   if (eqp_u->idften & CS_ISOTROPIC_DIFFUSION) {
-    CS_MALLOC_HD(viscf, n_i_faces, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(viscb, n_b_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(viscf, n_i_faces, cs_real_t, amode);
+    CS_MALLOC_HD(viscb, n_b_faces, cs_real_t, amode);
     if (irijnu_1) {
-      CS_MALLOC_HD(wvisfi, n_i_faces, cs_real_t, cs_alloc_mode);
-      CS_MALLOC_HD(wvisbi, n_b_faces, cs_real_t, cs_alloc_mode);
+      CS_MALLOC_HD(wvisfi, n_i_faces, cs_real_t, amode);
+      CS_MALLOC_HD(wvisbi, n_b_faces, cs_real_t, amode);
       viscfi = wvisfi;
       viscbi = wvisbi;
     }
@@ -3997,11 +3997,11 @@ cs_solve_navier_stokes(const int        iterns,
     }
   }
   else if (eqp_u->idften & CS_ANISOTROPIC_LEFT_DIFFUSION) {
-    CS_MALLOC_HD(viscb, n_b_faces, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(viscf, 9*n_i_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(viscb, n_b_faces, cs_real_t, amode);
+    CS_MALLOC_HD(viscf, 9*n_i_faces, cs_real_t, amode);
     if (irijnu_1) {
-      CS_MALLOC_HD(wvisbi, n_b_faces, cs_real_t, cs_alloc_mode);
-      CS_MALLOC_HD(wvisfi, 9*n_i_faces, cs_real_t, cs_alloc_mode);
+      CS_MALLOC_HD(wvisbi, n_b_faces, cs_real_t, amode);
+      CS_MALLOC_HD(wvisfi, 9*n_i_faces, cs_real_t, amode);
       viscfi = wvisfi;
       viscbi = wvisbi;
     }
@@ -4014,9 +4014,9 @@ cs_solve_navier_stokes(const int        iterns,
   cs_real_3_t *trav = nullptr, *dfrcxt = nullptr;
   cs_real_6_t *da_uu = nullptr;
 
-  CS_MALLOC_HD(trav, n_cells_ext, cs_real_3_t, cs_alloc_mode);
-  CS_MALLOC_HD(da_uu, n_cells_ext, cs_real_6_t, cs_alloc_mode);
-  CS_MALLOC_HD(dfrcxt, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(trav, n_cells_ext, cs_real_3_t, amode);
+  CS_MALLOC_HD(da_uu, n_cells_ext, cs_real_6_t, amode);
+  CS_MALLOC_HD(dfrcxt, n_cells_ext, cs_real_3_t, amode);
 
   if (vp_param->iphydr == 1)
     frcxt = (cs_real_3_t *)cs_field_by_name("volume_forces")->val;
@@ -4195,15 +4195,15 @@ cs_solve_navier_stokes(const int        iterns,
 
       CS_FREE_HD(viscf);
       if (eqp_u->idften & CS_ISOTROPIC_DIFFUSION)
-        CS_MALLOC_HD(viscf, n_i_faces, cs_real_t, cs_alloc_mode);
+        CS_MALLOC_HD(viscf, n_i_faces, cs_real_t, amode);
       else if (eqp_u->idften & CS_ANISOTROPIC_LEFT_DIFFUSION)
-        CS_MALLOC_HD(viscf, 9*n_i_faces, cs_real_t, cs_alloc_mode);
+        CS_MALLOC_HD(viscf, 9*n_i_faces, cs_real_t, amode);
 
       if (wvisfi != nullptr) {
         CS_FREE_HD(viscfi);
         if (eqp_u->idften == 1) {
           if (irijnu_1) {
-            CS_MALLOC_HD(wvisfi, n_i_faces, cs_real_t, cs_alloc_mode);
+            CS_MALLOC_HD(wvisfi, n_i_faces, cs_real_t, amode);
             viscfi = wvisfi;
           }
           else
@@ -4211,7 +4211,7 @@ cs_solve_navier_stokes(const int        iterns,
         }
         else if (eqp_u->idften == 6) {
           if (irijnu_1) {
-            CS_MALLOC_HD(wvisfi, 9*n_i_faces, cs_real_t, cs_alloc_mode);
+            CS_MALLOC_HD(wvisfi, 9*n_i_faces, cs_real_t, amode);
             viscfi = wvisfi;
           }
           else
@@ -4221,7 +4221,7 @@ cs_solve_navier_stokes(const int        iterns,
 
       if (secvif != nullptr) {
         CS_FREE_HD(secvif);
-        CS_MALLOC_HD(secvif, n_i_faces, cs_real_t, cs_alloc_mode);
+        CS_MALLOC_HD(secvif, n_i_faces, cs_real_t, amode);
       }
 
       /* Resize and reinitialize main internal faces properties array */
@@ -4245,13 +4245,13 @@ cs_solve_navier_stokes(const int        iterns,
         dt = cs_field_by_name("dt")->val;
 
         /* Resize other arrays related to the velocity-pressure resolution */
-        CS_REALLOC_HD(da_uu, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+        CS_REALLOC_HD(da_uu, n_cells_ext, cs_real_6_t, amode);
         cs_halo_sync_r(m->halo, on_device, da_uu);
 
-        CS_REALLOC_HD(trav, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+        CS_REALLOC_HD(trav, n_cells_ext, cs_real_3_t, amode);
         cs_halo_sync_r(m->halo, on_device, trav);
 
-        CS_REALLOC_HD(dfrcxt, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+        CS_REALLOC_HD(dfrcxt, n_cells_ext, cs_real_3_t, amode);
         cs_halo_sync_r(m->halo, CS_HALO_EXTENDED, on_device, dfrcxt);
 
         /* Resize other arrays, depending on user options */
@@ -4259,7 +4259,7 @@ cs_solve_navier_stokes(const int        iterns,
         if (vp_param->iphydr == 1)
           frcxt = (cs_real_3_t *)cs_field_by_name("volume_forces")->val;
         else if (vp_param->iphydr == 2) {
-          CS_REALLOC_HD(grdphd, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+          CS_REALLOC_HD(grdphd, n_cells_ext, cs_real_3_t, amode);
           cs_halo_sync_r(m->halo, on_device, grdphd);
         }
 
@@ -4278,7 +4278,7 @@ cs_solve_navier_stokes(const int        iterns,
           /* Time interpolated density */
           if (theta < 1.0 && vp_param->itpcol == 0) {
             croma = CS_F_(rho)->val_pre;
-            CS_REALLOC_HD(cpro_rho_tc, n_cells_ext, cs_real_t, cs_alloc_mode);
+            CS_REALLOC_HD(cpro_rho_tc, n_cells_ext, cs_real_t, amode);
 
             ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
               cpro_rho_tc[c_id] =   theta * cpro_rho_mass[c_id]
@@ -4291,7 +4291,7 @@ cs_solve_navier_stokes(const int        iterns,
           else {
             crom = cpro_rho_mass;
             /* rho at time n+1,k-1 */
-            CS_REALLOC_HD(cpro_rho_k1, n_cells_ext, cs_real_t, cs_alloc_mode);
+            CS_REALLOC_HD(cpro_rho_k1, n_cells_ext, cs_real_t, amode);
 
             cs_array_copy<cs_real_t>(n_cells_ext, cpro_rho_mass, cpro_rho_k1);
 
@@ -4318,9 +4318,9 @@ cs_solve_navier_stokes(const int        iterns,
           dttens = (cs_real_6_t *)f_dttens->val;
 
         if (vp_param->nterup > 1) {
-          CS_REALLOC_HD(velk, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+          CS_REALLOC_HD(velk, n_cells_ext, cs_real_3_t, amode);
           cs_halo_sync_r(m->halo, on_device, velk);
-          CS_REALLOC_HD(trava, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+          CS_REALLOC_HD(trava, n_cells_ext, cs_real_3_t, amode);
           cs_halo_sync_r(m->halo, on_device, trava);
         }
         else {
@@ -4446,7 +4446,7 @@ cs_solve_navier_stokes(const int        iterns,
 
       if (cpro_rho_tc != nullptr) {
         CS_FREE_HD(cpro_rho_tc);
-        CS_MALLOC_HD(cpro_rho_tc, n_cells_ext, cs_real_t, cs_alloc_mode);
+        CS_MALLOC_HD(cpro_rho_tc, n_cells_ext, cs_real_t, amode);
       }
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         cpro_rho_tc[c_id] =          theta * cpro_rho_mass[c_id]
@@ -4582,8 +4582,8 @@ cs_solve_navier_stokes(const int        iterns,
     const cs_real_t *cell_f_vol = mq->cell_vol;
 
     cs_real_t *esflum = nullptr, *esflub = nullptr;
-    CS_MALLOC_HD(esflum, n_i_faces, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(esflub, n_b_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(esflum, n_i_faces, cs_real_t, amode);
+    CS_MALLOC_HD(esflub, n_b_faces, cs_real_t, amode);
 
     cs_halo_sync_r(m->halo, on_device, vel);
 

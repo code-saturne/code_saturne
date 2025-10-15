@@ -39,6 +39,7 @@
 #include "base/cs_array.h"
 #include "atmo/cs_atmo.h"
 #include "base/cs_boundary_conditions.h"
+#include "base/cs_dispatch.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_field_operator.h"
@@ -200,18 +201,14 @@ cs_boundary_conditions_type(bool  init,
   }
 
   /* Allocate temporary arrays */
-  cs_real_t *pripb = nullptr;
-  CS_MALLOC(pripb, n_b_faces, cs_real_t);
-
   cs_lnum_t *bc_type_idx, *bc_type_faces;
   CS_MALLOC(bc_type_idx, CS_MAX_BC_TYPE+1, cs_lnum_t);
   CS_MALLOC(bc_type_faces, n_b_faces, cs_lnum_t);
 
   /* Initialize variables to avoid compiler warnings */
-  cs_array_real_fill_zero(n_b_faces, pripb);
   cs_real_t pref = 0.;
 
-  const cs_real_t *cvara_pr = (const cs_real_t *)CS_F_(p)->val_pre;
+  const cs_real_t *cvara_pr = CS_F_(p)->val_pre;
   const cs_equation_param_t *eqp_vel
     = cs_field_get_equation_param_const(CS_F_(vel));
   const cs_nreal_3_t *nu = fvq->b_face_u_normal;
@@ -506,6 +503,10 @@ cs_boundary_conditions_type(bool  init,
      (if we need it, that is if there are outlet boudary faces)
      ========================================================== */
 
+  cs_real_t *pripb = nullptr;
+  CS_MALLOC_HD(pripb, n_b_faces, cs_real_t, cs_alloc_mode);
+  cs_array_real_fill_zero(n_b_faces, pripb);
+
   /* ifrslb = closest free standard outlet face to xyzp0 (icodcl not modified)
      (or closest free inlet)
      itbslb = max of ifrslb on all ranks,
@@ -714,7 +715,7 @@ cs_boundary_conditions_type(bool  init,
 
     /* Allocate a work array for the gradient calculation */
     cs_real_3_t *grad = nullptr;
-    CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+    CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode_device);
 
     cs_gradient_porosity_balance(1);
 
@@ -728,7 +729,48 @@ cs_boundary_conditions_type(bool  init,
     /* Put in pripb the value at F of the
        total pressure, computed from P* shifted from the ro0*g.(X-Xref) */
 
-    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+    /* Meteo Velocity direction */
+    cs_real_3_t *cpro_met_vel = nullptr;
+    if (meteo_profile == 2)
+      cpro_met_vel = (cs_real_3_t *)cs_field_by_name("meteo_velocity")->val;
+
+    /* Separate loop for interpolating meto profiles, as this is
+       not GPU-enabled at this stage. */
+    cs_real_2_t *vel_dir_profile = nullptr;
+    if (meteo_profile == 1) {
+      CS_MALLOC_HD(vel_dir_profile, n_b_faces, cs_real_2_t, cs_alloc_mode);
+
+      const int met_1d_nlevels_t = cs_glob_atmo_option->met_1d_nlevels_t;
+      const int met_1d_ntimes = cs_glob_atmo_option->met_1d_ntimes;
+
+      for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+        const cs_lnum_t c_id = b_face_cells[f_id];
+
+        //TODO altitude relative ??
+        vel_dir_profile[f_id][0] = cs_intprf(met_1d_nlevels_t,
+                                             met_1d_ntimes,
+                                             cs_glob_atmo_option->z_temp_met,
+                                             cs_glob_atmo_option->time_met,
+                                             cs_glob_atmo_option->u_met,
+                                             cell_cen[c_id][2],
+                                             cs_glob_time_step->t_cur);
+
+        vel_dir_profile[f_id][1] = cs_intprf(met_1d_nlevels_t,
+                                             met_1d_ntimes,
+                                             cs_glob_atmo_option->z_temp_met,
+                                             cs_glob_atmo_option->time_met,
+                                             cs_glob_atmo_option->v_met,
+                                             cell_cen[c_id][2],
+                                             cs_glob_time_step->t_cur);
+
+      }
+
+      cs_sync_h2d(vel_dir_profile);
+    }
+
+    cs_dispatch_context ctx;
+
+    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
       const cs_lnum_t c_id = b_face_cells[f_id];
 
@@ -739,40 +781,13 @@ cs_boundary_conditions_type(bool  init,
       proj_dir[2] = b_face_cog[f_id][2] - cell_cen[c_id][2];
 
       if (meteo_profile > 0)  {
-
         cs_real_t vel_dir[3] = {0, 0, 0};
         if (meteo_profile == 1) {
-          const int met_1d_nlevels_t = cs_glob_atmo_option->met_1d_nlevels_t;
-          const int met_1d_ntimes = cs_glob_atmo_option->met_1d_ntimes;
-
-          //TODO altitude relative ??
-          const cs_real_t xuent = cs_intprf(met_1d_nlevels_t,
-                                            met_1d_ntimes,
-                                            cs_glob_atmo_option->z_temp_met,
-                                            cs_glob_atmo_option->time_met,
-                                            cs_glob_atmo_option->u_met,
-                                            cell_cen[c_id][2],
-                                            cs_glob_time_step->t_cur);
-
-          const cs_real_t xvent = cs_intprf(met_1d_nlevels_t,
-                                            met_1d_ntimes,
-                                            cs_glob_atmo_option->z_temp_met,
-                                            cs_glob_atmo_option->time_met,
-                                            cs_glob_atmo_option->v_met,
-                                            cell_cen[c_id][2],
-                                            cs_glob_time_step->t_cur);
-
-          const cs_real_t xwent = 0.; /* 2D Profile */
-
-          /* Meteo Velocity direction */
-          vel_dir[0] = xuent;
-          vel_dir[1] = xvent;
-          vel_dir[2] = xwent;
+          vel_dir[0] = vel_dir_profile[f_id][0];
+          vel_dir[1] = vel_dir_profile[f_id][1];
+          vel_dir[2] = 0.; /* 2D Profile */
         }
         else if (meteo_profile == 2) {
-          /* Meteo Velocity direction */
-          cs_real_3_t *cpro_met_vel
-            = (cs_real_3_t *)cs_field_by_name("meteo_velocity")->val;
           vel_dir[0] = cpro_met_vel[c_id][0];
           vel_dir[1] = cpro_met_vel[c_id][1];
           vel_dir[2] = cpro_met_vel[c_id][2];
@@ -782,9 +797,9 @@ cs_boundary_conditions_type(bool  init,
         cs_math_3_normalize(vel_dir, vel_dir);
 
         /* (IF.n) n */
-        const cs_real_t vs = cs_math_3_distance_dot_product(cell_cen[c_id],
-                                                            b_face_cog[f_id],
-                                                            vel_dir);
+        cs_real_t vs = cs_math_3_distance_dot_product(cell_cen[c_id],
+                                                      b_face_cog[f_id],
+                                                      vel_dir);
 
         proj_dir[0] = vs*vel_dir[0];
         proj_dir[1] = vs*vel_dir[1];
@@ -793,8 +808,10 @@ cs_boundary_conditions_type(bool  init,
 
       pripb[f_id] = cvara_pr[c_id] + cs_math_3_dot_product(proj_dir,
                                                            grad[c_id]);
-    }
+    });
+    ctx.wait();
 
+    CS_FREE(vel_dir_profile);
     CS_FREE(grad);
 
     if (cs_glob_rank_id == _irangd)
@@ -897,8 +914,12 @@ cs_boundary_conditions_type(bool  init,
       cs_lnum_t n_out_faces = e_id-s_id;
 
       int b_massflux_id = cs_field_get_key_int(CS_F_(vel), kbmasf);
+      const cs_real_t *b_massflux_val = (b_massflux_id > -1) ?
+        cs_field_by_id(b_massflux_id)->val : nullptr;
+      const cs_real_t *b_face_surf = fvq->b_face_surf;
 
       cs_field_t *f_inout = cs_field_by_name_try("algo:b_velocity_inout");
+      cs_real_t *f_inout_val = (f_inout != nullptr) ? f_inout->val : nullptr;
 
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
         const cs_lnum_t f_id = bc_type_faces[ii];
@@ -906,8 +927,8 @@ cs_boundary_conditions_type(bool  init,
 
         if (icodcl_vel[f_id] == 0) {
 
-          const cs_real_t b_massflux = (b_massflux_id > -1) ?
-            cs_field_by_id(b_massflux_id)->val[f_id]:
+          const cs_real_t b_massflux = (b_massflux_val != nullptr) ?
+            b_massflux_val[f_id] :
             cs_math_3_dot_product(vel[c_id], nu[f_id]);
 
           /* outlet: in case of incoming mass flux,
@@ -917,15 +938,15 @@ cs_boundary_conditions_type(bool  init,
             /* Dirichlet boundary condition */
             icodcl_vel[f_id] = 1;
             n_inout_faces++;
-            if (f_inout != nullptr)
-              f_inout->val[f_id] = b_massflux/fvq->b_face_surf[f_id];
+            if (f_inout_val != nullptr)
+              f_inout_val[f_id] = b_massflux / b_face_surf[f_id];
           }
           else {
             /* Neumann boundary conditions */
             icodcl_vel[f_id] = 3;
 
-            if (f_inout != nullptr)
-              f_inout->val[f_id] = 0.;
+            if (f_inout_val != nullptr)
+              f_inout_val[f_id] = 0.;
           }
 
           for (cs_lnum_t k = 0; k < 3; k++) {
@@ -1231,7 +1252,7 @@ cs_boundary_conditions_type(bool  init,
         for (cs_lnum_t jj = s_id; jj < e_id; jj++) {
           const cs_lnum_t f_id = bc_type_faces[jj];
           if (icodcl_tf[f_id] == 0) {
-            icodcl_tf[f_id] = wall_bc_code ;
+            icodcl_tf[f_id] = wall_bc_code;
             for (cs_lnum_t k = 0; k < f_tf->dim; k++)
               rcodcl1_tf[k*n_b_faces+f_id] = 0.;
           }
