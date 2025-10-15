@@ -2218,6 +2218,7 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
     else {
       for (ifac = 0; ifac < n_elts[0]; ifac++) {
         for (int isou = 0; isou < dim ; isou++) {
+          f->bc_coeffs->a[ifac*dim + isou] = 0.;
           for (int jsou = 0; jsou < dim; jsou ++) {
             f->bc_coeffs->b[ifac*dim*dim + isou*dim +jsou] = 0.;
             if (isou == jsou) {

@@ -3,6 +3,8 @@ Release 9.0.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix fix crash in code_saturne/code_saturne coupling BC exchange.
+
 - Fix memory leak in cs_atmo.cpp
 
 - Fix memory leak in cs_thermal_model.cpp
