@@ -171,7 +171,6 @@ cs_time_stepping(void)
 
   cs_mesh_t *m = cs_glob_mesh;
 
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   cs_time_step_t *ts = cs_get_glob_time_step();
   const cs_turb_model_t *turb_model = cs_get_glob_turb_model();
 
@@ -364,19 +363,11 @@ cs_time_stepping(void)
   if (cs_glob_porous_model >= 1) {
     /* Compute porosity from scan */
     if (cs_glob_porosity_from_scan_opt->compute_porosity_from_scan) {
+      cs_compute_porosity_from_scan();
 
-      if (!(cs_glob_porosity_from_scan_opt->use_restart)) {
-        cs_log_printf(CS_LOG_DEFAULT,
-                      _(" Compute porosity field from scan\n"
-                        " WARNING: user porosity will be ignored"
-                        " (GUI, cs_user_porosity.c)"));
-
-        cs_compute_porosity_from_scan();
-      }
       /* Save pre-process for restart */
       cs_porous_model_restart_write();
       cs_porous_model_fluid_surfaces_preprocessing();
-
     }
     /* Note using porosity from scan: give the hand to the user */
     else if (cs_glob_porosity_ibm_opt->porosity_mode > 0) {

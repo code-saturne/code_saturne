@@ -1220,6 +1220,19 @@ cs_ibm_add_sources_by_file_name(const char *file_name)
 void
 cs_compute_porosity_from_scan(void)
 {
+  if (cs_glob_porosity_from_scan_opt->use_restart) {
+    CS_FREE(_porosity_from_scan_opt.output_name);
+    CS_FREE(_porosity_from_scan_opt.file_names);
+    CS_FREE(_porosity_from_scan_opt.sources);
+    CS_FREE(_porosity_from_scan_opt.source_c_ids);
+    return;
+  }
+
+  cs_log_printf(CS_LOG_DEFAULT,
+                _(" Compute porosity field from scan\n"
+                  " WARNING: user porosity will be ignored"
+                  " (GUI, cs_user_porosity.c)"));
+
   /* Initialization */
 
   const cs_domain_t *domain = cs_glob_domain;
