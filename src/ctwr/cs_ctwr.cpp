@@ -809,7 +809,7 @@ cs_ctwr_log_setup(void)
        cs_glob_air_props->hv0,
        cs_glob_air_props->rho_l,
        cs_glob_air_props->lambda_h,
-       cs_glob_air_props->lambda_l,
+       cs_glob_air_props->lambda_l
        );
 
   for (int i = 0; i < _n_ct_zones; i++) {
