@@ -719,56 +719,6 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return matching device pointer for a given constant pointer,
- *        prefetching if applicable.
- *
- * If separate pointers are used on the host and device, the host pointer
- * should be used with this function. In this case, it is assumed that
- * the host and device values have already been synchronized, unless
- * memory is not allocated on device yet at the call site, in which case
- * it will be allocated automatically by this function.
- *
- * \param [in]  ptr  pointer
- *
- * \returns pointer to device memory.
- */
-/*----------------------------------------------------------------------------*/
-
-#if defined(HAVE_ACCEL)
-
-const void *
-cs_get_device_ptr_const_pf(const void  *ptr);
-
-#else
-
-inline static const void *
-cs_get_device_ptr_const_pf(const void  *ptr)
-{
-  return ptr;
-}
-
-#endif
-
-END_C_DECLS
-
-#if defined(__cplusplus) && defined(HAVE_ACCEL)
-
-template <class T>
-inline const T *
-cs_get_device_ptr_const_pf(const T *ptr)
-{
-  const void *ptr_v
-    = cs_get_device_ptr_const_pf(reinterpret_cast<const void *>(ptr));
-
-  return (const T *)ptr_v;
-}
-
-#endif // __cplusplus && HAVE_ACCEL
-
-BEGIN_C_DECLS
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Check if a pointer is associated with a device.
  *
  * If separate pointers are used on the host and device,
