@@ -370,6 +370,12 @@ cs_porous_model_init_disable_flag(void)
 
   if (cs_glob_porous_model > 0) {
     cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+    if (cs_glob_porosity_from_scan_opt->compute_porosity_from_scan)
+      CS_MALLOC(cs_glob_porosity_from_scan_opt->mom_mat,
+                n_cells_ext,
+                cs_real_33_t);
+
     if (mq->c_disable_flag == nullptr || m->n_cells != n_cells_prev) {
       /* Currently should handle turbomachinery (ghost cells only can change),
          not mesh refinement */

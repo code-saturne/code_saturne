@@ -438,9 +438,6 @@ _prepare_porosity_from_scan(const cs_mesh_t             *m,
     (cs_real_t *)cs_field_by_name("solid_roughness")->val;
 
   /* Covariance matrix for solid plane computation */
-  CS_MALLOC(cs_glob_porosity_from_scan_opt->mom_mat,
-            m->n_cells_with_ghosts,
-            cs_real_33_t);
   cs_real_33_t *mom_mat = cs_glob_porosity_from_scan_opt->mom_mat;
   memset(mom_mat, 0., m->n_cells_with_ghosts * sizeof(cs_real_33_t));
 
@@ -1072,7 +1069,7 @@ cs_porosity_from_scan_set_file_name(const char  *file_name)
   }
 
   bft_printf("Add file %s to the list %s\n",
-                  file_name, _porosity_from_scan_opt.file_names);
+             file_name, _porosity_from_scan_opt.file_names);
 
 }
 
@@ -1220,11 +1217,18 @@ cs_ibm_add_sources_by_file_name(const char *file_name)
 void
 cs_compute_porosity_from_scan(void)
 {
+  /* Initialization */
+
+  const cs_domain_t *domain = cs_glob_domain;
+  const cs_mesh_t *m = domain->mesh;
+  const cs_mesh_quantities_t *mq = domain->mesh_quantities;
+
   if (cs_glob_porosity_from_scan_opt->use_restart) {
     CS_FREE(_porosity_from_scan_opt.output_name);
     CS_FREE(_porosity_from_scan_opt.file_names);
     CS_FREE(_porosity_from_scan_opt.sources);
     CS_FREE(_porosity_from_scan_opt.source_c_ids);
+
     return;
   }
 
@@ -1232,12 +1236,6 @@ cs_compute_porosity_from_scan(void)
                 _(" Compute porosity field from scan\n"
                   " WARNING: user porosity will be ignored"
                   " (GUI, cs_user_porosity.c)"));
-
-  /* Initialization */
-
-  const cs_domain_t *domain = cs_glob_domain;
-  const cs_mesh_t *m = domain->mesh;
-  const cs_mesh_quantities_t *mq = domain->mesh_quantities;
 
   cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
 
@@ -1805,6 +1803,13 @@ cs_porous_model_restart_write(void) {
                            CS_TYPE_int,
                            mq->c_disable_flag);
 
+  cs_restart_write_section(porous_restart,
+                           "mom_mat::vals::0",
+                           CS_MESH_LOCATION_CELLS,
+                           9,
+                           CS_TYPE_cs_real_t,
+                           (cs_real_t *)_porosity_from_scan_opt.mom_mat);
+
   cs_restart_destroy(&porous_restart);
 
   cs_log_printf(CS_LOG_DEFAULT,_(" Finished writting porous arrays.\n"));
@@ -1859,6 +1864,18 @@ cs_porous_model_restart_read(void) {
   if (ierr != CS_RESTART_SUCCESS) {
     errcount += 1;
     snprintf(error_name, 127, "%s", "c_disable_flag");
+  }
+
+  ierr = cs_restart_read_section(porous_restart,
+                                 "mom_mat::vals::0",
+                                 CS_MESH_LOCATION_CELLS,
+                                 9,
+                                 CS_TYPE_cs_real_t,
+                                 (cs_real_t *)_porosity_from_scan_opt.mom_mat);
+
+  if (ierr != CS_RESTART_SUCCESS) {
+    errcount += 1;
+    snprintf(error_name, 127, "%s", "mom_mat");
   }
 
   /* Check if all all porous arrays are read successfully */
