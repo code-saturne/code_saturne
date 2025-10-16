@@ -123,21 +123,19 @@ _compute_gradient_lsq_s(cs_lnum_t     n_cells,
                         T            *cocg,
                         cs_real_3_t  *rhsv)
 {
-  size_t c_id = blockIdx.x * blockDim.x + threadIdx.x;
+  size_t t_id = blockIdx.x * blockDim.x + threadIdx.x;
+  size_t c_id = t_id / 3;
+  size_t j = t_id % 3;
+
   if (c_id < n_cells) {
 
-    auto _cocg = cocg[c_id];
+    constexpr int cocg_j_map[3][3] = {{0, 3, 5}, {3, 1, 4}, {5, 4, 2}};
+    auto cocg_temp = cocg[c_id];
     auto _rhsv = rhsv[c_id];
 
-    grad[c_id][0] =   _cocg[0] *_rhsv[0]
-                    + _cocg[3] *_rhsv[1]
-                    + _cocg[5] *_rhsv[2];
-    grad[c_id][1] =   _cocg[3] *_rhsv[0]
-                    + _cocg[1] *_rhsv[1]
-                    + _cocg[4] *_rhsv[2];
-    grad[c_id][2] =   _cocg[5] *_rhsv[0]
-                    + _cocg[4] *_rhsv[1]
-                    + _cocg[2] *_rhsv[2];
+    grad[c_id][j] =   _rhsv[0] * cocg_temp[cocg_j_map[j][0]]
+                    + _rhsv[1] * cocg_temp[cocg_j_map[j][1]]
+                    + _rhsv[2] * cocg_temp[cocg_j_map[j][2]];
 
   }
 }
@@ -480,28 +478,12 @@ _compute_gradient_lsq_strided(cs_lnum_t          n_cells,
   if (c_id >= n_cells)
     return;
 
+  constexpr int cocg_j_map[3][3] = {{0, 3, 5}, {3, 1, 4}, {5, 4, 2}};
   auto cocg_temp = cocg[c_id];
-  cs_real_t cocg_l[3];
 
-  cocg_l[0] = cocg_temp[5];
-  cocg_l[1] = cocg_temp[4];
-  cocg_l[2] = cocg_temp[2];
-
-  if (j == 0) {
-    cocg_l[0] = cocg_temp[0];
-    cocg_l[1] = cocg_temp[3];
-    cocg_l[2] = cocg_temp[5];
-  }
-
-  if (j == 1) {
-    cocg_l[0] = cocg_temp[3];
-    cocg_l[1] = cocg_temp[1];
-    cocg_l[2] = cocg_temp[4];
-  }
-
-  grad[c_id][i][j] =   rhs[c_id][i][0] * cocg_l[0]
-                     + rhs[c_id][i][1] * cocg_l[1]
-                     + rhs[c_id][i][2] * cocg_l[2];
+  grad[c_id][i][j] =   rhs[c_id][i][0] * cocg_temp[cocg_j_map[j][0]]
+                     + rhs[c_id][i][1] * cocg_temp[cocg_j_map[j][1]]
+                     + rhs[c_id][i][2] * cocg_temp[cocg_j_map[j][2]];
 }
 
 /*----------------------------------------------------------------------------
@@ -968,10 +950,6 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
                       &flux, &_flux);
 
   unsigned int blocksize = 256;
-  unsigned int gridsize_b
-    = (unsigned int)ceil((double)m->n_b_cells / blocksize);
-  unsigned int gridsize_bf
-    = (unsigned int)ceil((double)m->n_b_faces / blocksize);
   unsigned int gridsize = (unsigned int)ceil((double)m->n_cells / blocksize);
   unsigned int gridsize_ext
     = (unsigned int)ceil((double)n_cells_ext / blocksize);
@@ -1006,18 +984,17 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
   const cs_real_t *restrict weight
     = cs_get_device_ptr_const_pf(fvq->weight);
 
-  // cudaStreamSynchronize(0);
-
   _init_rhsv<<<gridsize_ext, blocksize, 0, stream>>>
     (n_cells_ext, rhsv, pvar_d);
 
   /* Reconstruct gradients using least squares for non-orthogonal meshes */
   /*---------------------------------------------------------------------*/
 
-  /* Recompute cocg and at rhsv from interior cells */
+  /* Recompute rhsv at boundary cells */
 
-  if (m->n_b_cells > 0)
-    _compute_rhsv_lsq_s_b_face<<<gridsize_bf, blocksize, 0, stream>>>
+  if (m->n_b_cells > 0) {
+    unsigned int gridsize_b = cs_cuda_grid_size(m->n_b_faces, blocksize);
+    _compute_rhsv_lsq_s_b_face<<<gridsize_b, blocksize, 0, stream>>>
       (m->n_b_cells,
        b_cells,
        cell_b_faces_idx,
@@ -1028,6 +1005,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
        flux,
        pvar_d,
        rhsv);
+  }
 
   _compute_rhsv_lsq_s_i_face<<<gridsize, blocksize, 0, stream>>>
     (n_cells, cell_cells_idx, cell_cells, cell_cen, c_weight, pvar_d, rhsv);
@@ -1058,6 +1036,7 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
     grad_d = (cs_real_3_t *)cs_get_device_ptr((void *)grad);
   }
 
+  gridsize = cs_cuda_grid_size(n_cells*3, blocksize);
   _compute_gradient_lsq_s<<<gridsize, blocksize, 0, stream>>>
     (n_cells, grad_d, cocg, rhsv);
 
