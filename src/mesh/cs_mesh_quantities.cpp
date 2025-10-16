@@ -2826,47 +2826,48 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *m,
 
   /* If this is not an update, allocate members of the structure */
 
-  if (mq->cell_cen == nullptr) {
+  if (mq->cell_cen == nullptr)
     CS_MALLOC_HD(mq->cell_cen, n_cells_with_ghosts, cs_real_3_t, amode);
-    cs_mem_advise_set_read_mostly(mq->cell_cen);
-  }
+  else
+    cs_mem_advise_unset_read_mostly(mq->cell_cen);
 
   if (mq->cell_vol == nullptr) {
     CS_MALLOC_HD(mq->_cell_vol, n_cells_with_ghosts, cs_real_t, amode);
-    cs_mem_advise_set_read_mostly(mq->_cell_vol);
     /* By default cell_vol point to owner _cell_vol */
     mq->cell_vol = mq->_cell_vol;
   }
+  else
+    cs_mem_advise_unset_read_mostly(mq->_cell_vol);
 
-  if (mq->i_face_normal == nullptr) {
+  if (mq->i_face_normal == nullptr)
     CS_MALLOC_HD(mq->i_face_normal, n_i_faces*3, cs_real_t, amode);
-    cs_mem_advise_set_read_mostly(mq->i_face_normal);
-  }
+  else
+    cs_mem_advise_unset_read_mostly(mq->i_face_normal);
 
-  if (mq->b_face_normal == nullptr) {
+  if (mq->b_face_normal == nullptr)
     CS_MALLOC_HD(mq->b_face_normal, n_b_faces*3, cs_real_t, amode);
-    cs_mem_advise_set_read_mostly(mq->b_face_normal);
-  }
+  else
+    cs_mem_advise_unset_read_mostly(mq->b_face_normal);
 
-  if (mq->i_face_cog == nullptr) {
+  if (mq->i_face_cog == nullptr)
     CS_MALLOC_HD(mq->i_face_cog, n_i_faces, cs_real_3_t, amode);
-    cs_mem_advise_set_read_mostly(mq->i_face_cog);
-  }
+  else
+    cs_mem_advise_unset_read_mostly(mq->i_face_cog);
 
-  if (mq->b_face_cog == nullptr) {
+  if (mq->b_face_cog == nullptr)
     CS_MALLOC_HD(mq->b_face_cog, n_b_faces, cs_real_3_t, amode);
-    cs_mem_advise_set_read_mostly(mq->b_face_cog);
-  }
+  else
+    cs_mem_advise_unset_read_mostly(mq->b_face_cog);
 
-  if (mq->i_face_surf == nullptr) {
+  if (mq->i_face_surf == nullptr)
     CS_MALLOC_HD(mq->i_face_surf, n_i_faces, cs_real_t, amode);
-    cs_mem_advise_set_read_mostly(mq->i_face_surf);
-  }
+  else
+    cs_mem_advise_unset_read_mostly(mq->i_face_surf);
 
-  if (mq->b_face_surf == nullptr) {
+  if (mq->b_face_surf == nullptr)
     CS_MALLOC_HD(mq->b_face_surf, n_b_faces, cs_real_t, amode);
-    cs_mem_advise_set_read_mostly(mq->b_face_surf);
-  }
+  else
+    cs_mem_advise_unset_read_mostly(mq->b_face_surf);
 
   /* Compute face centers of gravity, normals, and surfaces */
 
@@ -3035,6 +3036,20 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *m,
 
   }
 
+  if (amode > CS_ALLOC_HOST) {
+    void * arrays[]
+      = {mq->cell_cen, mq->_cell_vol,
+         mq->i_face_normal, mq->b_face_normal,
+         mq->i_face_cog, mq->b_face_cog,
+         mq->i_face_surf, mq->b_face_surf};
+
+    size_t n_arrays = sizeof(arrays)/sizeof(void*);
+    for (size_t i = 0; i < n_arrays; i++) {
+      cs_mem_advise_set_read_mostly(arrays[i]);
+      cs_sync_h2d(arrays[i]);
+    }
+  }
+
   cs_mesh_quantities_vol_reductions(m, mq);
 }
 
@@ -3192,8 +3207,8 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
   cs_real_t *_i_f_surf;
   CS_MALLOC(_i_f_surf, m->n_i_faces, cs_real_t);
 
-  /* ib cell number */
-  cs_lnum_t n_ib_cells;
+  /* ib cells count */
+  cs_lnum_t n_ib_cells = 0;
 
   /* Loop on agglomeration to smooth the IBM planes */
   for (int nit = 0; nit < (n_agglomeration + 1); nit ++) {
@@ -3240,7 +3255,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
 
     cs_lnum_t w_vtx_s_id = 0;
 
-    /* ib cell number */
+    /* ib cells count */
     n_ib_cells = 0;
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -4553,55 +4568,57 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
       CS_MALLOC_HD(mq->c_disable_flag, 1, int, amode);
       mq->c_disable_flag[0] = 0;
     }
-    cs_mem_advise_set_read_mostly(mq->c_disable_flag);
   }
+  else
+    cs_mem_advise_unset_read_mostly(mq->c_disable_flag);
 
-  if (mq->i_dist == nullptr) {
+  if (mq->i_dist == nullptr)
     CS_MALLOC_HD(mq->i_dist, n_i_faces, cs_real_t, amode);
-    cs_mem_advise_set_read_mostly(mq->i_dist);
-  }
+  else
+    cs_mem_advise_unset_read_mostly(mq->i_dist);
 
-  if (mq->b_dist == nullptr) {
+  if (mq->b_dist == nullptr)
     CS_MALLOC_HD(mq->b_dist, n_b_faces, cs_real_t, amode);
-    cs_mem_advise_set_read_mostly(mq->b_dist);
-  }
+  else
+    cs_mem_advise_unset_read_mostly(mq->b_dist);
 
-  if (mq->weight == nullptr) {
+  if (mq->weight == nullptr)
     CS_MALLOC_HD(mq->weight, n_i_faces, cs_real_t, amode);
-    cs_mem_advise_set_read_mostly(mq->weight);
-  }
+  else
+    cs_mem_advise_unset_read_mostly(mq->weight);
 
-  if (mq->dijpf == nullptr) {
+  if (mq->dijpf == nullptr)
     CS_MALLOC_HD(mq->dijpf, n_i_faces, cs_real_3_t, amode);
-    cs_mem_advise_set_read_mostly(mq->dijpf);
-  }
+  else
+    cs_mem_advise_unset_read_mostly(mq->dijpf);
 
-  if (mq->diipb == nullptr) {
+  if (mq->diipb == nullptr)
     CS_MALLOC_HD(mq->diipb, n_b_faces, cs_rreal_3_t, amode);
-    cs_mem_advise_set_read_mostly(mq->diipb);
-  }
+  else
+    cs_mem_advise_unset_read_mostly(mq->diipb);
 
-  if (mq->dofij == nullptr) {
+  if (mq->dofij == nullptr)
     CS_MALLOC_HD(mq->dofij, n_i_faces, cs_real_3_t, amode);
-    cs_mem_advise_set_read_mostly(mq->dofij);
-  }
+  else
+    cs_mem_advise_unset_read_mostly(mq->dofij);
 
-  if (mq->diipf == nullptr) {
+  if (mq->diipf == nullptr)
     CS_MALLOC_HD(mq->diipf, n_i_faces, cs_rreal_3_t, amode);
-    cs_mem_advise_set_read_mostly(mq->diipf);
-  }
+  else
+    cs_mem_advise_unset_read_mostly(mq->diipf);
 
-  if (mq->djjpf == nullptr) {
+  if (mq->djjpf == nullptr)
     CS_MALLOC_HD(mq->djjpf, n_i_faces, cs_rreal_3_t, amode);
-    cs_mem_advise_set_read_mostly(mq->djjpf);
-  }
+  else
+    cs_mem_advise_unset_read_mostly(mq->djjpf);
 
   if (mq->b_sym_flag == nullptr) {
     CS_MALLOC_HD(mq->b_sym_flag, n_b_faces, int, amode);
     for (cs_lnum_t i = 0; i < n_b_faces; i++)
       mq->b_sym_flag[i] = 1;
-    cs_mem_advise_set_read_mostly(mq->b_sym_flag);
   }
+  else
+    cs_mem_advise_unset_read_mostly(mq->b_sym_flag);
 
   /* Compute some distances relative to faces and associated weighting */
 
@@ -4658,6 +4675,20 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
   /* Build the geometrical matrix linear gradient correction */
   if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION)
     _compute_corr_grad_lin(m, mq);
+
+  if (amode > CS_ALLOC_HOST) {
+    void * arrays[]
+      = {mq->c_disable_flag,
+         mq->i_dist, mq->b_dist, mq->weight,
+         mq->dijpf, mq->diipb, mq->dofij,
+         mq->diipf, mq->djjpf, mq->b_sym_flag};
+
+    size_t n_arrays = sizeof(arrays)/sizeof(void*);
+    for (size_t i = 0; i < n_arrays; i++) {
+      cs_mem_advise_set_read_mostly(arrays[i]);
+      cs_sync_h2d(arrays[i]);
+    }
+  }
 
   /* Print some information on the control volumes, and check min volume */
 
