@@ -49,6 +49,7 @@
 #include "mesh/cs_mesh.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
+#include "base/cs_profiling.h"
 #include "base/cs_physical_constants.h"
 #include "pprt/cs_physical_model.h"
 #include "base/cs_sat_coupling.h"
@@ -125,6 +126,8 @@ cs_boundary_conditions_type(bool  init,
                             int   bc_type[],
                             int   isostd[])
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_lnum_t n_b_faces = mesh->n_b_faces;

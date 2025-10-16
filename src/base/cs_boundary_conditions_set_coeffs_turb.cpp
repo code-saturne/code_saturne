@@ -61,6 +61,7 @@
 #include "mesh/cs_mesh.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
+#include "base/cs_profiling.h"
 #include "base/cs_physical_constants.h"
 #include "pprt/cs_physical_model.h"
 #include "rayt/cs_rad_transfer.h"
@@ -142,6 +143,8 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
                                                cs_real_t   *tplumx,
                                                cs_real_t   *tplumn)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
@@ -945,6 +948,8 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
                                                cs_real_t    bdplus[],
                                                cs_real_t    buk[])
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
@@ -1608,6 +1613,8 @@ _atmo_cls(const cs_lnum_t  f_id,
           const cs_real_t  totwt,
           const cs_real_t  liqwt)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_lnum_t nt_cur = cs_glob_time_step->nt_cur;
 
@@ -1792,6 +1799,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
                                        cs_real_t  hbord[],
                                        cs_real_t  theipb[])
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;

@@ -338,6 +338,8 @@ static void
 _specific_physical_model_bc_types(bool   init,
                                   int   *itypfb)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const int *pm_flag = cs_glob_physical_model_flag;
 
   if (pm_flag[CS_ATMOSPHERIC] >= 0)
@@ -3593,6 +3595,8 @@ cs_boundary_conditions_set_coeffs(int         nvar,
       }
 
       ctx.wait();
+      CS_PROFILE_MARK_LINE();
+
     } /* End of loop on scalars */
   } /* End other scalars */
 

@@ -54,14 +54,15 @@
 #include "base/cs_ext_neighborhood.h"
 #include "base/cs_field.h"
 #include "base/cs_halo.h"
-#include "alge/cs_gradient.h"
-#include "alge/cs_gradient_priv.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
+#include "base/cs_parall.h"
+#include "base/cs_profiling.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
 #include "mesh/cs_mesh_quantities.h"
-#include "base/cs_parall.h"
+#include "alge/cs_gradient.h"
+#include "alge/cs_gradient_priv.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -215,6 +216,8 @@ cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
                                   cs_real_t           *restrict  var_iprime,
                                   cs_real_t                      var_iprime_flux[])
 {
+  CS_PROFILE_FUNC_RANGE();
+
   /* Initialization */
 
   if (n_faces <= 0)
@@ -678,6 +681,8 @@ cs_gradient_boundary_iprime_lsq_s_ani
    cs_real_t         *restrict  var_iprime,
    cs_real_t                    var_iprime_flux[])
 {
+  CS_PROFILE_FUNC_RANGE();
+
   /* Initialization */
 
   if (n_faces <= 0)
@@ -1118,6 +1123,8 @@ cs_gradient_boundary_iprime_lsq_strided
    cs_real_t                   var_iprime[][stride],
    cs_real_t                   var_iprime_lim[][stride])
 {
+  CS_PROFILE_FUNC_RANGE();
+
   std::chrono::high_resolution_clock::time_point t_start, t_stop;
 
   if (cs_glob_timer_kernels_flag > 0)
@@ -1157,8 +1164,6 @@ cs_gradient_boundary_iprime_lsq_strided
 #if (B_DIRECTION_LSQ == CS_IF_LSQ)
   const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
 #endif
-
-  assert(stride <= 9);  /* Local arrays with hard-coded dimensions follow. */
 
   /* Loop on selected boundary faces */
 
@@ -1360,7 +1365,7 @@ cs_gradient_boundary_iprime_lsq_strided
 
       for (cs_lnum_t ll = 0; ll < 3; ll++) {
         dif[ll] =   b_face_u_normal[c_f_id][ll]
-          + ddif * diipb[c_f_id][ll];
+                  + ddif * diipb[c_f_id][ll];
       }
 
       cocg[0] += dif[0]*dif[0];
