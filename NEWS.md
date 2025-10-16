@@ -3,6 +3,8 @@ Release 9.0.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix potential segmentation fault when combining probes and cs_function_t
+
 - Fix fix crash in code_saturne/code_saturne coupling BC exchange.
 
 - Fix memory leak in cs_atmo.cpp

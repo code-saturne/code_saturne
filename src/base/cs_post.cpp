@@ -7230,13 +7230,18 @@ cs_post_write_probe_function(int                              mesh_id,
                        true,
                        f->func_input,
                        (cs_real_t *)_vals);
-    else
-      cs_function_evaluate(f,
-                           ts,
-                           parent_location_id,
-                           n_points,
-                           elt_ids,
-                           _vals);
+    else {
+      /* Sanity check to avoid calling the eval function with no probes
+       * or null array....
+       */
+      if (n_points > 0 && _vals != nullptr)
+        cs_function_evaluate(f,
+                             ts,
+                             parent_location_id,
+                             n_points,
+                             elt_ids,
+                             _vals);
+    }
 
     var_ptr[0] = _vals;
 
