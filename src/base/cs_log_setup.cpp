@@ -213,6 +213,9 @@ _log_global_model_options(void)
 
   cs_atmo_aerosol_log_setup();
 
+  /* Cooling towers */
+  cs_ctwr_log_setup();
+
   /* VoF and cavitation */
 
   cs_vof_log_setup();
@@ -334,7 +337,6 @@ cs_log_setup(void)
 
   cs_fan_log_setup();
 
-  cs_ctwr_log_setup();
 
   cs_log_printf_flush(CS_LOG_SETUP);
 }

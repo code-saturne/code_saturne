@@ -789,6 +789,29 @@ cs_ctwr_log_setup(void)
                 cs_glob_air_props->droplet_diam,
                 model_type_name[ct_opt->evap_model]);
 
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("\n"
+       "  Air properties:\n"
+       "    humidity0:   %14.5e (Reference humidity)\n"
+       "    cp_a:        %14.5e (Cp of dry air)\n"
+       "    cp_v:        %14.5e (Cp of vapor)\n"
+       "    cp_l:        %14.5e (Cp of liquid water)\n"
+       "    hv0:         %14.5e (Latent heat of evaporation)\n"
+       "    rho_l:       %14.5e (water liquid density)\n"
+       "    lambda_h:    %14.5e (Conductivity of air)\n"
+       "    lambda_l:    %14.5e (Conductivity of liquid water)\n"
+       ),
+       cs_glob_air_props->humidity0,
+       cs_glob_air_props->cp_a,
+       cs_glob_air_props->cp_v,
+       cs_glob_air_props->cp_l,
+       cs_glob_air_props->hv0,
+       cs_glob_air_props->rho_l,
+       cs_glob_air_props->lambda_h,
+       cs_glob_air_props->lambda_l,
+       );
+
   for (int i = 0; i < _n_ct_zones; i++) {
     cs_ctwr_zone_t *ct = _ct_zone[i];
 
