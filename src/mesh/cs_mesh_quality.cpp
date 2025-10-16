@@ -685,6 +685,9 @@ cs_mesh_quality_compute_warping(const cs_mesh_t      *mesh,
 
   cs_dispatch_context ctx;
 
+  if (cs_check_device_ptr(mesh->i_face_vtx_idx) == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
+
   /* Compute warping for internal faces */
   /*------------------------------------*/
 
@@ -737,6 +740,9 @@ cs_mesh_quality_compute_b_face_warping(const cs_mesh_t     *mesh,
 
   cs_dispatch_context ctx;
 
+  if (cs_check_device_ptr(mesh->i_face_vtx_idx) == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
+
   ctx.parallel_for(mesh->n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
 
     /* Evaluate warping for each edge */
@@ -787,6 +793,9 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
   const cs_time_step_t *ts = cs_glob_time_step;
 
   cs_dispatch_context ctx;
+
+  if (cs_check_device_ptr(mesh->i_face_vtx_idx) == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
 
   /* Check input data */
 

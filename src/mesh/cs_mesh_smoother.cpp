@@ -82,30 +82,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Compute the distance between two vertices.
- *
- * parameters:
- *   a <-- coordinates of the first vertex.
- *   b <-- coordinates of the second vertex.
- *
- * returns:
- *   distance between a and b.
- *---------------------------------------------------------------------------*/
-
-inline static double
-_compute_distance(const double  a[3],
-                  const double  b[3])
-{
-  double  distance;
-
-  distance = sqrt(  (b[0] - a[0])*(b[0] - a[0])
-                  + (b[1] - a[1])*(b[1] - a[1])
-                  + (b[2] - a[2])*(b[2] - a[2]));
-
-  return distance;
-}
-
-/*----------------------------------------------------------------------------
  * Compute the minimum and the maximum of a vector (locally).
  *
  * parameters:
@@ -368,28 +344,28 @@ _get_local_tolerance(const cs_real_t   vtx_coords[],
                      const cs_lnum_t   face_vtx_lst[],
                      double            fraction)
 {
-  cs_lnum_t  j, k, start, end, face_id, vtx_id1, vtx_id2;
-  cs_real_t  length, tolerance;
-  cs_real_t  a[3], b[3];
+  for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++) {
 
-  for (face_id = 0; face_id < n_faces; face_id++) {
+    cs_lnum_t start = face_vtx_idx[face_id];
+    cs_lnum_t end = face_vtx_idx[face_id + 1];
 
-    start = face_vtx_idx[face_id];
-    end = face_vtx_idx[face_id + 1];
+    cs_lnum_t vtx_id1, vtx_id2;
+    cs_real_t a[3], b[3];
+    cs_real_t length, tolerance;
 
     /* Loop on the vertices of the face */
 
-    for (j = start; j < end - 1; j++) {
+    for (cs_lnum_t j = start; j < end - 1; j++) {
 
       vtx_id1 = face_vtx_lst[j];
       vtx_id2 = face_vtx_lst[j+1];
 
-      for (k = 0; k < 3; k++) {
+      for (cs_lnum_t k = 0; k < 3; k++) {
         a[k] = vtx_coords[3*vtx_id1 + k];
         b[k] = vtx_coords[3*vtx_id2 + k];
       }
 
-      length = _compute_distance(a, b);
+      length = cs_math_3_distance(a, b);
       tolerance = length * fraction;
       vtx_tolerance[vtx_id1] = cs::min(vtx_tolerance[vtx_id1], tolerance);
       vtx_tolerance[vtx_id2] = cs::min(vtx_tolerance[vtx_id2], tolerance);
@@ -401,12 +377,12 @@ _get_local_tolerance(const cs_real_t   vtx_coords[],
     vtx_id1 = face_vtx_lst[end-1];
     vtx_id2 = face_vtx_lst[start];
 
-    for (k = 0; k < 3; k++) {
+    for (cs_lnum_t k = 0; k < 3; k++) {
       a[k] = vtx_coords[3*vtx_id1 + k];
       b[k] = vtx_coords[3*vtx_id2 + k];
     }
 
-    length = _compute_distance(a, b);
+    length = cs_math_3_distance(a, b);
     tolerance = length * fraction;
     vtx_tolerance[vtx_id1] = cs::min(vtx_tolerance[vtx_id1], tolerance);
     vtx_tolerance[vtx_id2] = cs::min(vtx_tolerance[vtx_id2], tolerance);
@@ -730,7 +706,7 @@ _compute_vtx_normals(cs_mesh_t       *mesh,
     }
   }
 
-  /* summing upon processors (or periodic vertices) if necessary */
+  /* Summ on processors (or periodic vertices) if necessary */
 
   if (mesh->vtx_interfaces != nullptr)
     cs_interface_set_sum(mesh->vtx_interfaces,
