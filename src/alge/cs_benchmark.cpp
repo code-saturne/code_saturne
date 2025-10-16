@@ -501,9 +501,9 @@ _sub_matrix_vector_test(int                  n_time_runs,
     y[jj] = 0.0;
 
   const cs_lnum_2_t *restrict d_face_cell
-    = cs_get_device_ptr_const_pf(face_cell);
+    = cs_get_device_ptr_const(face_cell);
   const cs_real_t *restrict d_xa
-    = cs_get_device_ptr_const_pf(xa);
+    = cs_get_device_ptr_const(xa);
   const cs_real_t *restrict d_x
     = cs_get_device_ptr_const(x);
   cs_real_t *restrict d_y

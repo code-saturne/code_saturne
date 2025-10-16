@@ -955,34 +955,34 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
     = (unsigned int)ceil((double)n_cells_ext / blocksize);
 
   const cs_lnum_t *restrict b_face_cells
-    = (const cs_lnum_t *)cs_get_device_ptr_const_pf(m->b_face_cells);
+    = (const cs_lnum_t *)cs_get_device_ptr_const(m->b_face_cells);
   const cs_lnum_t *restrict cell_cells_idx
-    = (const cs_lnum_t *)cs_get_device_ptr_const_pf(ma->cell_cells_idx);
+    = (const cs_lnum_t *)cs_get_device_ptr_const(ma->cell_cells_idx);
   const cs_lnum_t *restrict cell_cells
-    = (const cs_lnum_t *)cs_get_device_ptr_const_pf(ma->cell_cells);
+    = (const cs_lnum_t *)cs_get_device_ptr_const(ma->cell_cells);
   const cs_lnum_t *restrict cell_cells_e_idx
-    = (const cs_lnum_t *)cs_get_device_ptr_const_pf(ma->cell_cells_e_idx);
+    = (const cs_lnum_t *)cs_get_device_ptr_const(ma->cell_cells_e_idx);
   const cs_lnum_t *restrict cell_cells_e
-    = (const cs_lnum_t *)cs_get_device_ptr_const_pf(ma->cell_cells_e);
+    = (const cs_lnum_t *)cs_get_device_ptr_const(ma->cell_cells_e);
 
   const cs_lnum_t *restrict b_cells
-    = (const cs_lnum_t *)cs_get_device_ptr_const_pf(m->b_cells);
+    = (const cs_lnum_t *)cs_get_device_ptr_const(m->b_cells);
   const cs_lnum_t *restrict cell_b_faces_idx
-    = (const cs_lnum_t *)cs_get_device_ptr_const_pf(ma->cell_b_faces_idx);
+    = (const cs_lnum_t *)cs_get_device_ptr_const(ma->cell_b_faces_idx);
   const cs_lnum_t *restrict cell_b_faces
-    = (const cs_lnum_t *)cs_get_device_ptr_const_pf(ma->cell_b_faces);
+    = (const cs_lnum_t *)cs_get_device_ptr_const(ma->cell_b_faces);
 
   const cs_real_3_t *restrict cell_cen
-    = (const cs_real_3_t *)cs_get_device_ptr_const_pf(fvq->cell_cen);
+    = (const cs_real_3_t *)cs_get_device_ptr_const(fvq->cell_cen);
   const cs_nreal_3_t *restrict b_face_u_normal
-    = (const cs_nreal_3_t *)cs_get_device_ptr_const_pf(fvq->b_face_u_normal);
+    = (const cs_nreal_3_t *)cs_get_device_ptr_const(fvq->b_face_u_normal);
   const cs_real_t *restrict b_face_surf
-    = cs_get_device_ptr_const_pf(fvq->b_face_surf);
+    = cs_get_device_ptr_const(fvq->b_face_surf);
   const cs_real_t *restrict b_dist
-    = cs_get_device_ptr_const_pf(fvq->b_dist);
-  const cs_rreal_3_t *restrict diipb = cs_get_device_ptr_const_pf(fvq->diipb);
+    = cs_get_device_ptr_const(fvq->b_dist);
+  const cs_rreal_3_t *restrict diipb = cs_get_device_ptr_const(fvq->diipb);
   const cs_real_t *restrict weight
-    = cs_get_device_ptr_const_pf(fvq->weight);
+    = cs_get_device_ptr_const(fvq->weight);
 
   _init_rhsv<<<gridsize_ext, blocksize, 0, stream>>>
     (n_cells_ext, rhsv, pvar_d);
@@ -1158,42 +1158,42 @@ cs_gradient_strided_lsq_cuda
                       &c_weight_d, &_c_weight_d);
 
   const cs_lnum_t *restrict b_face_cells
-    = cs_get_device_ptr_const_pf(m->b_face_cells);
+    = cs_get_device_ptr_const(m->b_face_cells);
   const cs_lnum_t *restrict b_cells
-    = cs_get_device_ptr_const_pf(m->b_cells);
+    = cs_get_device_ptr_const(m->b_cells);
   const cs_lnum_t *restrict cell_cells_idx
-    = cs_get_device_ptr_const_pf(madj->cell_cells_idx);
+    = cs_get_device_ptr_const(madj->cell_cells_idx);
   const cs_lnum_t *restrict cell_cells
-    = cs_get_device_ptr_const_pf(madj->cell_cells);
+    = cs_get_device_ptr_const(madj->cell_cells);
 
   const cs_lnum_t *restrict cell_cells_e_idx = nullptr;
   const cs_lnum_t *restrict cell_cells_e = nullptr;
   if (halo_type == CS_HALO_EXTENDED) {
-    cell_cells_e_idx = cs_get_device_ptr_const_pf(madj->cell_cells_e_idx);
-    cell_cells_e = cs_get_device_ptr_const_pf(madj->cell_cells_e);
+    cell_cells_e_idx = cs_get_device_ptr_const(madj->cell_cells_e_idx);
+    cell_cells_e = cs_get_device_ptr_const(madj->cell_cells_e);
   }
 
   const cs_lnum_t *restrict cell_b_faces_idx
-    = cs_get_device_ptr_const_pf(madj->cell_b_faces_idx);
+    = cs_get_device_ptr_const(madj->cell_b_faces_idx);
   const cs_lnum_t *restrict cell_b_faces
-    = cs_get_device_ptr_const_pf(madj->cell_b_faces);
+    = cs_get_device_ptr_const(madj->cell_b_faces);
   const cs_lnum_t *restrict cell_i_faces
-    = cs_get_device_ptr_const_pf(madj->cell_i_faces);
+    = cs_get_device_ptr_const(madj->cell_i_faces);
   const short int *restrict cell_i_faces_sgn
-    = cs_get_device_ptr_const_pf(madj->cell_i_faces_sgn);
+    = cs_get_device_ptr_const(madj->cell_i_faces_sgn);
 
   const cs_real_3_t *restrict cell_cen
-    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->cell_cen);
+    = cs_get_device_ptr_const((cs_real_3_t *)fvq->cell_cen);
   const cs_real_t *restrict weight
-    = cs_get_device_ptr_const_pf(fvq->weight);
+    = cs_get_device_ptr_const(fvq->weight);
   const cs_real_t *restrict b_dist
-    = cs_get_device_ptr_const_pf(fvq->b_dist);
+    = cs_get_device_ptr_const(fvq->b_dist);
   const cs_real_3_t *restrict b_face_cog
-    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->b_face_cog);
+    = cs_get_device_ptr_const((cs_real_3_t *)fvq->b_face_cog);
   const cs_real_3_t *restrict b_face_u_normal
-    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->b_face_u_normal);
+    = cs_get_device_ptr_const((cs_real_3_t *)fvq->b_face_u_normal);
   const cs_rreal_3_t *restrict diipb
-    = cs_get_device_ptr_const_pf(fvq->diipb);
+    = cs_get_device_ptr_const(fvq->diipb);
 
   if (cs_glob_timer_kernels_flag > 0)
     CS_CUDA_CHECK(cudaEventRecord(e_h2d, stream));
@@ -1473,38 +1473,38 @@ cs_gradient_strided_gg_r_cuda
   const short int *restrict cell_i_faces_sgn = nullptr;
 
   if (e2n_sum_type == CS_E2N_SUM_SCATTER_ATOMIC) {
-    i_face_cells = cs_get_device_ptr_const_pf(m->i_face_cells);
+    i_face_cells = cs_get_device_ptr_const(m->i_face_cells);
   }
   else if (e2n_sum_type == CS_E2N_SUM_GATHER) {
-    cell_cells_idx = cs_get_device_ptr_const_pf(madj->cell_cells_idx);
-    cell_cells = cs_get_device_ptr_const_pf(madj->cell_cells);
-    cell_i_faces = cs_get_device_ptr_const_pf(madj->cell_i_faces);
-    cell_i_faces_sgn = cs_get_device_ptr_const_pf(madj->cell_i_faces_sgn);
+    cell_cells_idx = cs_get_device_ptr_const(madj->cell_cells_idx);
+    cell_cells = cs_get_device_ptr_const(madj->cell_cells);
+    cell_i_faces = cs_get_device_ptr_const(madj->cell_i_faces);
+    cell_i_faces_sgn = cs_get_device_ptr_const(madj->cell_i_faces_sgn);
   }
-  b_face_cells = cs_get_device_ptr_const_pf(m->b_face_cells);
+  b_face_cells = cs_get_device_ptr_const(m->b_face_cells);
 
   const cs_real_t *restrict weight
-    = cs_get_device_ptr_const_pf(fvq->weight);
+    = cs_get_device_ptr_const(fvq->weight);
   const cs_real_t *restrict cell_vol
-    = cs_get_device_ptr_const_pf(fvq->cell_vol);
+    = cs_get_device_ptr_const(fvq->cell_vol);
   const cs_real_3_t *restrict cell_cen
-    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->cell_cen);
+    = cs_get_device_ptr_const((cs_real_3_t *)fvq->cell_cen);
   const cs_real_t *restrict i_face_surf
-    = cs_get_device_ptr_const_pf((cs_real_t *)fvq->i_face_surf);
+    = cs_get_device_ptr_const((cs_real_t *)fvq->i_face_surf);
   const cs_nreal_3_t *restrict i_face_u_normal
-    = cs_get_device_ptr_const_pf((cs_nreal_3_t *)fvq->i_face_u_normal);
+    = cs_get_device_ptr_const((cs_nreal_3_t *)fvq->i_face_u_normal);
   const cs_real_t *restrict b_face_surf
-    = cs_get_device_ptr_const_pf((cs_real_t *)fvq->b_face_surf);
+    = cs_get_device_ptr_const((cs_real_t *)fvq->b_face_surf);
   const cs_nreal_3_t *restrict b_face_u_normal
-    = cs_get_device_ptr_const_pf((cs_nreal_3_t *)fvq->b_face_u_normal);
+    = cs_get_device_ptr_const((cs_nreal_3_t *)fvq->b_face_u_normal);
   const cs_real_3_t *restrict dofij
-    = cs_get_device_ptr_const_pf((cs_real_3_t *)fvq->dofij);
+    = cs_get_device_ptr_const((cs_real_3_t *)fvq->dofij);
   const cs_real_33_t *restrict corr_grad_lin
-    = cs_get_device_ptr_const_pf((cs_real_33_t *)fvq->corr_grad_lin);
+    = cs_get_device_ptr_const((cs_real_33_t *)fvq->corr_grad_lin);
   const int *restrict c_disable_flag = nullptr;
 
   if (fvq->has_disable_flag)
-    c_disable_flag = cs_get_device_ptr_const_pf(fvq->c_disable_flag);
+    c_disable_flag = cs_get_device_ptr_const(fvq->c_disable_flag);
 
   if (cs_glob_timer_kernels_flag > 0)
     CS_CUDA_CHECK(cudaEventRecord(e_h2d, stream));
