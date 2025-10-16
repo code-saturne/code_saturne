@@ -1189,17 +1189,15 @@ cs_sync_d2h_if_needed_start(void  *ptr)
 #if defined(HAVE_ACCEL)
 
 void
-cs_prefetch_h2d(void    *ptr,
-                size_t   size);
+cs_prefetch_h2d(const void  *ptr,
+                size_t       size);
 
 #else
 
 static inline void
-cs_prefetch_h2d(void    *ptr,
-                size_t   size)
+cs_prefetch_h2d([[maybe_unused]] const void  *ptr,
+                [[maybe_unused]] size_t       size)
 {
-  CS_UNUSED(ptr);
-  CS_UNUSED(size);
 }
 
 #endif
