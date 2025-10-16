@@ -27,6 +27,7 @@ from code_saturne.model.XMLvariables import Variables, Model
 from code_saturne.model.XMLengine import *
 from code_saturne.model.MainFieldsModel import *       # TODO change
 from code_saturne.model.NotebookModel import NotebookModel
+from code_saturne.model.LocalizationModel import LocalizationModel
 import copy
 
 #-------------------------------------------------------------------------------
@@ -113,7 +114,7 @@ class TurbulenceModel(Variables, Model):
         #
         # XML file parameters
         self.mainFieldsModel  = MainFieldsModel(case)
-        self.case = case
+        self.case             = case
         self.XMLClosure       = self.case.xmlGetNode('closure_modeling')
         self.XMLturbulence    = self.XMLClosure.xmlInitNode('turbulence')
         self.XMLNodeVariable  = self.XMLturbulence.xmlInitNode('variables')
@@ -225,6 +226,15 @@ class TurbulenceModel(Variables, Model):
                                self.setTwoWayCouplingModel(fld.f_id, TurbulenceModelsDescription.continuousCouplingModels[0])
                            else:
                                self.setTwoWayCouplingModel(fld.f_id, TurbulenceModelsDescription.continuousCouplingModels[0])
+
+           # Update initialisation values to default init formula if the turbulence model is changed
+           # If more zones are present, all initialization are set to Default
+           if model != "none":
+               for zone in LocalizationModel('VolumicZone', self.case).getZones():
+                   zoneId = zone.getCodeNumber()
+                   turbFormula = self.getDefaultTurbFormula(zoneId, fieldId, model)
+                   self.setFormula(zoneId, fieldId, model, turbFormula)
+
 
     @Variables.noUndo
     def getInitialTurbulenceChoice(self, zone, fieldId):
