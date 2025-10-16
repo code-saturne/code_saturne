@@ -781,7 +781,11 @@ _manage_error(cs_lnum_t                       failsafe_mode,
   cs_real_t d0 = cs_math_3_distance(part_coord, prev_part_coord);
   cs_real_t d1 = cs_math_3_distance(part_coord, prev_location);
 
-  cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_TR_TRUNCATE, d1/d0);
+  cs_real_t d1d0 = 2..
+  if (d0 > DBL_MIN)
+    d1d0 = d1 / d0;
+
+  cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_TR_TRUNCATE, d1d0);
 
   if (error_type == CS_LAGR_TRACKING_ERR_LOST_PIC)
     cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_TR_TRUNCATE, 2.0);
