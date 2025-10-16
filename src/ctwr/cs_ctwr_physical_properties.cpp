@@ -537,6 +537,8 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
   int nclip_yr_min = 0;
   int nclip_yr_max = 0;
 
+  cs_real_t pphy = p0;
+
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
 
     /* Clippings of water mass fraction */
@@ -586,7 +588,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
     //
 
     /* Compute cell reference pressure */
-    cs_real_t pphy = cs_ctwr_compute_reference_pressure(cell_id, p0, meteo_pressure);
+    pphy = cs_ctwr_compute_reference_pressure(cell_id, p0, meteo_pressure);
     /* Compute humid air density -> stored in reference density rho first */
     if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
       cs_rho_humidair(ym_w[cell_id],
@@ -639,7 +641,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
     // This is NOT generally true : on MISTRAL, we reach Y(drops) > 0.5
 
     /* Saturated humidity */
-    x_s[cell_id] = cs_air_x_sat(t_h[cell_id], p0);
+    x_s[cell_id] = cs_air_x_sat(t_h[cell_id], pphy);
 
     /*Relative humidity */
     x_rel[cell_id] = x[cell_id] / x_s[cell_id];
@@ -651,9 +653,9 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
     cp_h[cell_id] = cs_air_cp_humidair(x[cell_id], x_s[cell_id]);
 
     h_h[cell_id] = cs_air_h_humidair(cp_h[cell_id],
-                                      x[cell_id],
-                                      x_s[cell_id],
-                                      t_h[cell_id]);
+                                     x[cell_id],
+                                     x_s[cell_id],
+                                     t_h[cell_id]);
 
     // Update the humid air enthalpy diffusivity lambda_h if solve for T_h?
     // Need to update since a_0 is variable as a function of T and humidity

@@ -148,7 +148,7 @@ cs_ctwr_bcond(void)
 
       /* For water mass fraction */
       if (ym_w->bc_coeffs->rcodcl1[face_id] > 0.5 * cs_math_infinite_r)
-        ym_w->bc_coeffs->rcodcl1[face_id] = xhum / (1 + xhum);
+        ym_w->bc_coeffs->rcodcl1[face_id] = xhum / (1. + xhum);
 
       /* For injected liquid in the packing*/
       if (y_l_p->bc_coeffs->rcodcl1[face_id] > 0.5 * cs_math_infinite_r)
