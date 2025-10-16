@@ -89,7 +89,6 @@
    const cs_real_t                val_f[][stride],                 \
    const cs_real_t                pvar[][stride],                  \
    const cs_real_t               *c_weight,                        \
-   const cs_cocg_6_t             *cocgb,                           \
    cs_cocg_6_t                   *restrict cocg,                   \
    cs_real_t                      gradv[][stride][3])
 
@@ -112,68 +111,6 @@
 /*============================================================================
  * Private function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Recompute cocg at boundaries, using saved cocgb
- *----------------------------------------------------------------------------*/
-
-template <typename T>
-__global__ static void
-_compute_cocg_from_cocgb(cs_lnum_t         n_b_cells,
-                         const cs_lnum_t  *b_cells,
-                         T                *cocg,
-                         T                *cocgb)
-{
-  size_t ii = blockIdx.x*blockDim.x + threadIdx.x;
-
-  if (ii < n_b_cells) {
-    cs_lnum_t c_id = b_cells[ii];
-    auto a = cocg[c_id];
-    auto b = cocgb[ii];
-    a[0] = b[0];
-    a[1] = b[1];
-    a[2] = b[2];
-    a[3] = b[3];
-    a[4] = b[4];
-    a[5] = b[5];
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Recompute the inverse of cocg
- *----------------------------------------------------------------------------*/
-
-template <typename T>
-__global__ static void
-_compute_cocg_inv(cs_lnum_t         n_cells,
-                  const cs_lnum_t  *cell_ids,
-                  T                *cocg)
-{
-  cs_lnum_t c_idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-  if (c_idx >= n_cells)
-    return;
-
-  cs_lnum_t c_id = (cell_ids != nullptr) ? cell_ids[c_idx] : c_idx;
-
-  auto a = cocg[c_id];
-
-  auto a00 = a[1]*a[2] - a[4]*a[4];
-  auto a01 = a[4]*a[5] - a[3]*a[2];
-  auto a02 = a[3]*a[4] - a[1]*a[5];
-  auto a11 = a[0]*a[2] - a[5]*a[5];
-  auto a12 = a[3]*a[5] - a[0]*a[4];
-  auto a22 = a[0]*a[1] - a[3]*a[3];
-
-  double det_inv = 1. / (a[0]*a00 + a[3]*a01 + a[5]*a02);
-
-  a[0] = a00 * det_inv;
-  a[1] = a11 * det_inv;
-  a[2] = a22 * det_inv;
-  a[3] = a01 * det_inv;
-  a[4] = a12 * det_inv;
-  a[5] = a02 * det_inv;
-}
 
 /*----------------------------------------------------------------------------
  * Compute the gradient using the least-squares method.
@@ -456,7 +393,6 @@ _compute_rhs_lsq_strided_b_face(cs_lnum_t             n_b_cells,
                                 const cs_real_t      *restrict b_dist,
                                 const cs_real_t     (*restrict val_f)[stride],
                                 const cs_real_t     (*restrict pvar)[stride],
-                                const cs_cocg_6_t    *restrict cocgb,
                                 cs_cocg_6_t          *restrict cocg,
                                 cs_real_t           (*restrict rhs)[stride][3])
 {
@@ -988,7 +924,6 @@ _gg_gradient_rescale(cs_lnum_t                       n_cells,
  *   c_weight       <-- weighted gradient coefficient variable,
  *                      or NULL
  *   cocg           <-> associated cell covariance array (on device)
- *   cocgb          <-> saved boundary cell covariance array (on device)
  *   grad           <-> gradient of pvar (halo prepared for periodicity
  *                      of rotation)
  *----------------------------------------------------------------------------*/
@@ -1001,7 +936,6 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
                             const cs_real_t              *pvar,
                             const cs_real_t     *restrict c_weight,
                             cs_cocg_6_t         *restrict cocg,
-                            cs_cocg_6_t         *restrict cocgb,
                             cs_real_3_t         *restrict grad)
 {
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
@@ -1171,7 +1105,6 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
  *   val_f          <-- face value for gradient
  *   pvar           <-- variable
  *   c_weight       <-- weighted gradient coefficient variable, or NULL
- *   cocgb          <-- saved boundary cell covariance array (on device)
  *   cocg           <-> cocg covariance matrix for given cell
  *   grad           --> gradient of pvar (du_i/dx_j : grad[][i][j])
  *----------------------------------------------------------------------------*/
@@ -1187,7 +1120,6 @@ cs_gradient_strided_lsq_cuda
  const cs_real_t                val_f[][stride],
  const cs_real_t                pvar[][stride],
  const cs_real_t               *c_weight,
- const cs_cocg_6_t             *cocgb,
  cs_cocg_6_t                   *cocg,
  cs_real_t                      grad[][stride][3]
 )
@@ -1337,7 +1269,6 @@ cs_gradient_strided_lsq_cuda
        b_dist,
        flux,
        pvar_d,
-       cocgb,
        cocg,
        rhs_d);
   }

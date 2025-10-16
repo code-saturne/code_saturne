@@ -157,7 +157,6 @@ cs_sync_strided_gradient_halo_d(const cs_mesh_t         *m,
  *   pvar           <-- variable
  *   c_weight       <-- weighted gradient coefficient variable,
  *                      or NULL
- *   cocgb          <-- saved boundary cell covariance array (on device)
  *   cocg           <-> associated cell covariance array (on device)
  *   grad           <-> gradient of pvar (halo prepared for periodicity
  *                      of rotation)
@@ -170,7 +169,6 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
                             const cs_real_t               val_f[],
                             const cs_real_t               pvar[],
                             const cs_real_t     *restrict c_weight,
-                            cs_cocg_6_t         *restrict cocgb,
                             cs_cocg_6_t         *restrict cocg,
                             cs_real_3_t         *restrict grad);
 
@@ -190,7 +188,6 @@ cs_gradient_scalar_lsq_cuda(const cs_mesh_t              *m,
  *   val_f          <-- face value for gradient
  *   pvar           <-- variable
  *   c_weight       <-- weighted gradient coefficient variable, or NULL
- *   cocgb          <-- saved boundary cell covariance array (on device)
  *   cocg           <-> cocg covariance matrix for given cell
  *   grad           --> gradient of pvar (du_i/dx_j : grad[][i][j])
  *----------------------------------------------------------------------------*/
@@ -206,7 +203,6 @@ cs_gradient_strided_lsq_cuda
  const cs_real_t                val_f[][stride],
  const cs_real_t                pvar[][stride],
  const cs_real_t               *c_weight,
- const cs_cocg_6_t             *cocgb,
  cs_cocg_6_t                   *cocg,
  cs_real_t                      grad[][stride][3]
 );

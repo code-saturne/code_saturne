@@ -2251,6 +2251,8 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
                        const cs_mesh_quantities_t    *fvq,
                        cs_gradient_quantities_t      *gq)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const int n_cells = m->n_cells;
 
   const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
@@ -2289,8 +2291,6 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
 
     CS_MALLOC_HD(cocg, n_cells, cs_cocg_6_t, cs_alloc_mode);
     CS_MALLOC_HD(cocgb, m->n_b_cells, cs_cocg_6_t, cs_alloc_mode);
-    cs_mem_advise_set_read_mostly(cocg);
-    cs_mem_advise_set_read_mostly(cocgb);
 
     if (extended) {
       gq->cocg_lsq_ext = cocg;
@@ -2301,6 +2301,10 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
       gq->cocgb_s_lsq = cocgb;
     }
 
+  }
+  else {
+    cs_mem_advise_unset_read_mostly(cocg);
+    cs_mem_advise_unset_read_mostly(cocgb);
   }
 
   /* Add contributions from neighbor cells (standard and extended)
@@ -2413,6 +2417,9 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
   });
 
   ctx.wait();
+
+  cs_mem_advise_set_read_mostly(cocg);
+  cs_mem_advise_set_read_mostly(cocgb);
 }
 
 /*----------------------------------------------------------------------------
@@ -2424,17 +2431,16 @@ _compute_cell_cocg_lsq(const cs_mesh_t               *m,
  *   accel      <--  use accelerator device (if true, cocg and cocgb
  *                   pointers returned are device pointers)
  *   fvq        <--  mesh quantities
- *   cocg       -->  coupling coefficients (covariance matrices)
- *   cocgb      -->  partial boundary coupling coeffients, or nullptr
+ *
+ * return:
+ *   pointer to cocg coupling coefficients (covariance matrices)
  *----------------------------------------------------------------------------*/
 
-static void
+static cs_cocg_6_t *
 _get_cell_cocg_lsq(const cs_mesh_t               *m,
                    cs_halo_type_t                 halo_type,
                    bool                           accel,
-                   const cs_mesh_quantities_t    *fvq,
-                   cs_cocg_6_t                   *restrict *cocg,
-                   cs_cocg_6_t                   *restrict *cocgb)
+                   const cs_mesh_quantities_t    *fvq)
 {
   cs_gradient_quantities_t  *gq = _gradient_quantities_get(0);
 
@@ -2483,29 +2489,19 @@ _get_cell_cocg_lsq(const cs_mesh_t               *m,
   /* Set pointers */
 
   if (extended)
-    *cocg = gq->cocg_lsq_ext;
+    _cocg = gq->cocg_lsq_ext;
   else
-    *cocg = gq->cocg_lsq;
-
-  if (cocgb != nullptr) {
-    if (extended)
-      *cocgb = gq->cocgb_s_lsq_ext;
-    else
-      *cocgb = gq->cocgb_s_lsq;
-  }
+    _cocg = gq->cocg_lsq;
 
   /* If used on accelerator, copy/prefetch values and switch to
      device pointers */
 
   if (accel) {
-    cs_sync_h2d(*cocg);
-    *cocg = (cs_cocg_6_t *)cs_get_device_ptr(*cocg);
-
-    if (cocgb != nullptr) {
-      cs_sync_h2d(*cocgb);
-      *cocgb = (cs_cocg_6_t *)cs_get_device_ptr(*cocgb);
-    }
+    cs_sync_h2d(_cocg);
+    _cocg = (cs_cocg_6_t *)cs_get_device_ptr(_cocg);
   }
+
+  return _cocg;
 }
 
 /*----------------------------------------------------------------------------
@@ -2534,6 +2530,8 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
                      const cs_real_t       *restrict c_weight,
                      cs_real_3_t           *restrict grad)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
@@ -2553,9 +2551,6 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
   const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
 #endif
 
-  cs_cocg_6_t  *restrict cocgb = nullptr;
-  cs_cocg_6_t  *restrict cocg = nullptr;
-
   /* Weighting requires face weights, so cannot be applied consistently
      with an extended neighborhhood. */
   if (c_weight != nullptr)
@@ -2565,7 +2560,8 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
   bool on_device = ctx.use_gpu();
 
   //_gradient_quantities_destroy();
-  _get_cell_cocg_lsq(m, halo_type, on_device, fvq, &cocg, &cocgb);
+  cs_cocg_6_t  *restrict cocg
+    = _get_cell_cocg_lsq(m, halo_type, on_device, fvq);
 
 #if defined(HAVE_CUDA)
 
@@ -2577,7 +2573,6 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
                                 pvar,
                                 c_weight,
                                 cocg,
-                                cocgb,
                                 grad);
 
     return;
@@ -2777,6 +2772,8 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
                            const cs_real_t       *restrict c_weight_s,
                            cs_real_3_t           *restrict grad)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
@@ -2819,9 +2816,6 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
-  cs_cocg_6_t  *restrict cocgb = nullptr;
-  cs_cocg_6_t  *restrict cocg = nullptr;
-
   /* Additional terms due to porosity */
   cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
 
@@ -2838,12 +2832,8 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
   }
 
   //_gradient_quantities_destroy();
-  _get_cell_cocg_lsq(m,
-                     halo_type,
-                     ctx.use_gpu(),
-                     fvq,
-                     &cocg,
-                     &cocgb);
+  cs_cocg_6_t  *restrict cocg
+    = _get_cell_cocg_lsq(m, halo_type, ctx.use_gpu(), fvq);
 
   /* Reconstruct gradients using least squares for non-orthogonal meshes */
   /*---------------------------------------------------------------------*/
@@ -3180,6 +3170,8 @@ _lsq_scalar_gradient_hyd_p_gather
   cs_real_3_t           *restrict grad
 )
 {
+  CS_PROFILE_FUNC_RANGE();
+
   std::chrono::high_resolution_clock::time_point t_start, t_cocg, t_cells, \
     t_stop;
 
@@ -3218,16 +3210,9 @@ _lsq_scalar_gradient_hyd_p_gather
     b_poro_duq = cs_field_by_name("b_poro_duq")->val;
   }
 
-  cs_cocg_6_t  *restrict cocgb = nullptr;
-  cs_cocg_6_t  *restrict cocg = nullptr;
-
   //_gradient_quantities_destroy();
-  _get_cell_cocg_lsq(m,
-                     halo_type,
-                     ctx.use_gpu(),
-                     fvq,
-                     &cocg,
-                     &cocgb);
+  cs_cocg_6_t  *restrict cocg
+    = _get_cell_cocg_lsq(m, halo_type, ctx.use_gpu(), fvq);
 
   if (cs_glob_timer_kernels_flag > 0)
     t_cocg = std::chrono::high_resolution_clock::now();
@@ -3478,7 +3463,7 @@ _lsq_scalar_gradient_hyd_p_gather
 
     elapsed = std::chrono::duration_cast
                 <std::chrono::microseconds>(t_cocg - t_start);
-    printf(", cocgb = %ld", elapsed.count());
+    printf(", cocg = %ld", elapsed.count());
 
     elapsed = std::chrono::duration_cast
                 <std::chrono::microseconds>(t_cells - t_cocg);
@@ -3520,6 +3505,8 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
                          const cs_real_t              (*restrict c_weight)[6],
                          cs_real_t                    (*restrict grad)[3])
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_lnum_t n_cells = m->n_cells;
 
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
@@ -3728,6 +3715,8 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
                              cs_real_3_t            *restrict r_grad,
                              cs_real_3_t            *restrict grad)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
 
   const cs_lnum_t n_cells = m->n_cells;
@@ -4143,6 +4132,8 @@ _reconstruct_scalar_gradient_gather
   cs_real_3_t            *restrict grad
 )
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
 
   const cs_lnum_t n_cells = m->n_cells;
@@ -4547,6 +4538,8 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
                               const cs_real_t                 val_f[],
                               cs_real_3_t           *restrict grad)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
 
   const cs_lnum_t n_cells = m->n_cells;
@@ -4862,6 +4855,8 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
                            const cs_real_t    (*restrict pvar)[stride],
                            cs_real_t          (*restrict grad)[stride][3])
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_real_t  clipp_coef_sq = climgp*climgp;
 
   const cs_lnum_t n_cells = m->n_cells;
@@ -5207,6 +5202,8 @@ _initialize_strided_gradient(const cs_mesh_t              *m,
                              const cs_real_t     *restrict c_weight,
                              cs_real_t          (*restrict grad)[stride][3])
 {
+  CS_PROFILE_FUNC_RANGE();
+
   using a_t = cs_real_t[stride];
   using b_t = cs_real_t[stride][stride];
 
@@ -5379,6 +5376,8 @@ _reconstruct_strided_gradient
   cs_real_t                           (*restrict grad)[stride][3]
 )
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
 
   const cs_lnum_t n_cells = m->n_cells;
@@ -5656,6 +5655,8 @@ _iterative_strided_gradient(const cs_mesh_t               *m,
                             const cs_real_t               *c_weight,
                             cs_real_t          (*restrict grad)[stride][3])
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
 
   using grad_t = cs_real_t[stride][3];
@@ -5932,6 +5933,8 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
                       const cs_real_t *restrict c_weight,
                       cs_real_t (*restrict grad)[stride][3])
 {
+  CS_PROFILE_FUNC_RANGE();
+
   using grad_t = cs_real_t[stride][3];
   const cs_lnum_t n_cells     = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -5967,11 +5970,9 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
   bool accel = false;
 #endif
 
-  cs_cocg_6_t *restrict cocgb = nullptr;
-  cs_cocg_6_t *restrict cocg = nullptr;
-
   //_gradient_quantities_destroy();
-  _get_cell_cocg_lsq(m, halo_type, accel, fvq, &cocg, &cocgb);
+  cs_cocg_6_t *restrict cocg
+    = _get_cell_cocg_lsq(m, halo_type, accel, fvq);
 
 #if defined(HAVE_CUDA)
 
@@ -5983,7 +5984,6 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
                                  val_f,
                                  pvar,
                                  c_weight,
-                                 cocgb,
                                  cocg,
                                  grad);
 
@@ -6425,6 +6425,8 @@ _fv_vtx_based_strided_gradient(const cs_mesh_t               *m,
                                const cs_real_t                c_weight[],
                                cs_real_t (*restrict grad)[stride][3])
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
 
   using var_t = cs_real_t[stride];
@@ -6651,6 +6653,8 @@ _gradient_scalar(cs_dispatch_context           &ctx,
                  const cs_real_t                c_weight[],
                  cs_real_t           (*restrict grad)[3])
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_mesh_t  *mesh = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
@@ -6896,6 +6900,8 @@ _gradient_vector(const char                     *var_name,
                  const cs_real_t       *restrict c_weight,
                  cs_real_33_t          *restrict grad)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_adjacencies_t *madj = cs_glob_mesh_adjacencies;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
@@ -7052,6 +7058,8 @@ _gradient_tensor(const char                 *var_name,
                  const cs_real_6_t          *restrict val_f,
                  cs_real_63_t               *restrict grad)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_adjacencies_t *madj = cs_glob_mesh_adjacencies;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
