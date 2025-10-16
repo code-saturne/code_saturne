@@ -1089,15 +1089,15 @@ cs_range_set_scatter(const cs_range_set_t  *rs,
 
       const cs_lnum_t lb = rs->n_elts[2];
 
-      for (cs_lnum_t i = n_elts-1; i >= lb; i--) {
+      unsigned char *tmp_src
+        = (unsigned char *)cs_halo_get_default_buffer(d_size*n_elts);
+      memcpy(tmp_src, src, d_size*n_elts);
+      for (cs_lnum_t i = lb; i < (cs_lnum_t)n_elts; i++) {
         if (g_id[i] >= l_range[0] && g_id[i] < l_range[1]) {
           cs_lnum_t j = g_id[i] - l_range[0];
-          if (i >= j) { /* additional check in case of same-rank periodicity */
-            memcpy(dest + i*d_size, src + j*d_size, d_size);
-          }
+          memcpy(dest + i*d_size, tmp_src + j*d_size, d_size);
         }
       }
-
     }
 
   }
