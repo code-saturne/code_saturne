@@ -51,6 +51,7 @@
 #include "alge/cs_gradient_boundary.h"
 #include "base/cs_mem.h"
 #include "base/cs_porous_model.h"
+#include "base/cs_profiling.h"
 #include "base/cs_timer.h"
 
 /*----------------------------------------------------------------------------
@@ -172,6 +173,8 @@ cs_mass_flux(const cs_mesh_t             *m,
              cs_real_t          *restrict i_massflux,
              cs_real_t          *restrict b_massflux)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_real_3_t *coefav = (cs_real_3_t *)bc_coeffs_v->a;
   cs_real_33_t *coefbv = (cs_real_33_t *)bc_coeffs_v->b;
 
@@ -700,6 +703,8 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
                     cs_real_3_t        *restrict i_massflux,
                     cs_real_3_t        *restrict b_massflux)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   cs_real_6_t  *coefav = (cs_real_6_t  *)bc_coeffs_ts->a;
   cs_real_66_t *coefbv = (cs_real_66_t *)bc_coeffs_ts->b;
 
@@ -1200,6 +1205,8 @@ cs_divergence(const cs_mesh_t          *m,
               const cs_real_t           b_massflux[],
               cs_real_t       *restrict diverg)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
@@ -1275,6 +1282,8 @@ cs_tensor_divergence(const cs_mesh_t            *m,
                      const cs_real_3_t           b_massflux[],
                      cs_real_3_t       *restrict diverg)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
@@ -1378,6 +1387,8 @@ cs_ext_force_flux(const cs_mesh_t          *m,
                   const cs_real_t           visely[],
                   const cs_real_t           viselz[])
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
   const cs_real_t *restrict i_dist = fvq->i_dist;
@@ -1595,6 +1606,8 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
                               cs_real_t       *restrict i_massflux,
                               cs_real_t       *restrict b_massflux)
 {
+  CS_PROFILE_FUNC_RANGE();
+
   const cs_halo_t  *halo = m->halo;
 
   const cs_lnum_t n_cells = m->n_cells;
