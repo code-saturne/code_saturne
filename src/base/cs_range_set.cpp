@@ -1099,6 +1099,10 @@ cs_range_set_scatter(const cs_range_set_t  *rs,
       }
       else {
         unsigned char *tmp_src;
+        // FIXME: we should avoid allocating a buffer on each call,
+        // and keep a buffer across calls. Perhaps sharing the required
+        // allocation with halos could be done, to avoid multiple buffers
+        // which do not need to be used simultaneously.
         CS_MALLOC(tmp_src, d_size*n_elts, unsigned char);
         memcpy(tmp_src, src, d_size*n_elts);
         for (cs_lnum_t i = lb; i < (cs_lnum_t)n_elts; i++) {
