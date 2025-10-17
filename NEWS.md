@@ -86,6 +86,8 @@ Release 9.0.1 (unreleased)
 
 - Minor installation documentation updates.
 
+- Fix for "make check" target on some systems.
+
 Release 9.0.0 (2025-06-27)
 --------------------------
 
