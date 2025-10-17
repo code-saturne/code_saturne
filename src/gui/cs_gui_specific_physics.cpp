@@ -919,6 +919,14 @@ cs_gui_physical_model_select(void)
       if (cs_gui_physical_properties_ht_lambda_is_anisotropic())
         model |= CS_THERMAL_MODEL_ANISOTROPIC_CONDUCTIVITY;
       cs_thermal_system_activate(model, 0, 0);
+
+      // Modify the default settings when the computation is dedicated to
+      // conjugate heat transfer (solid part)
+      cs_equation_param_t *eqp = cs_equation_param_by_name(CS_THERMAL_EQNAME);
+
+      cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "dga");
+      cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "ocs");
+      cs_equation_param_set(eqp, CS_EQKEY_SOLVER, "cg");
     }
   }
 
