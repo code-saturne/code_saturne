@@ -133,6 +133,8 @@ _update_check_bounds(cs_log_check_bounds_t *cb)
     {
       res = cs_math_3_square_norm(val + 3*i);
     });
+    if (vmax > 0)
+      vmax = sqrt(vmax);
   }
   else if (f->dim == 6) {
     cs_span_2d<cs_real_t> f_view = f->get_vals_t();
