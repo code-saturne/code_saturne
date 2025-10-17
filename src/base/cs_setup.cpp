@@ -2714,6 +2714,10 @@ _init_user(void)
         cs_runaway_check_define_field_max(f_id->id, 1.e4);
     }
   }
+  else {
+    /* Ensure mapping of base fields is done in cs_gui functions for HTSolver */
+    cs_field_pointer_map_base();
+  }
 
   /* Initialization of global parameters */
   cs_gui_output_boundary();
