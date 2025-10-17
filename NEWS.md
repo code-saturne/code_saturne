@@ -3,6 +3,9 @@ Release 9.0.1 (unreleased)
 
 ### Bug fixes:
 
+- CDO: Fix a sensitivity to the renumbering when synchronizing the scatter view,
+  which is used for face and vertex-based schemes.
+
 - Fix potential crash in HTSolver when defining several volume zones in the GUI.
   The CS_F_(t) pointer was not initialized correctly beforehand.
 
