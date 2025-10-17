@@ -104,9 +104,11 @@ _space_scheme_key[CS_SPACE_N_SCHEMES][CS_BASE_STRING_LEN] =
     "cdo_vcb",
     "cdo_eb",
     "cdo_fb",
+    "cdo_cb",
     "hho_p0",
     "hho_p1",
-    "hho_p2"
+    "hho_p2",
+    "mac_fb"
   };
 
 static const char

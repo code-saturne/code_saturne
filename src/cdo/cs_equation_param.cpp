@@ -206,8 +206,8 @@ _set_key(cs_equation_param_t *eqp,
       eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_SG;
     else if (strcmp(keyval, "centered") == 0)
       eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CENTERED;
-    else if (strcmp(keyval, "centered_dde") == 0) {
-      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CENTERED_DDE;
+    else if (strcmp(keyval, "L0") == 0 || strcmp(keyval, "l0") == 0) {
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_L0;
     }
     else if (strcmp(keyval, "centered_v8") == 0) {
       eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CENTERED_V8;

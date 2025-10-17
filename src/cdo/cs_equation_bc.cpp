@@ -94,6 +94,7 @@ _init_cell_sys_bc(const cs_cdo_bc_face_t     *face_bc,
                   const cs_cell_mesh_t       *cm,
                   cs_cell_sys_t              *csys)
 {
+  csys->n_bc_faces = 0;
   for (short int f = 0; f < cm->n_fc; f++) {
 
     const cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
