@@ -449,8 +449,8 @@ cs_equation_system_log_setup(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Print a synthesis of the monitoring information in the performance
- *         file
+ * \brief Print a synthesis of the monitoring information in the performance
+ *        file
  */
 /*----------------------------------------------------------------------------*/
 

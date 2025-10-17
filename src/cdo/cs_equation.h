@@ -527,11 +527,15 @@ cs_equation_needs_steady_state_solve(void);
 /*!
  * \brief Print a synthesis of the monitoring information in the performance
  *        file
+ *
+ * \param[in] time_steps  pointer to a structure managing the time stepping
+ * \param[in] cdoq        pointer to a structure managing CDO quantities
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_log_monitoring(void);
+cs_equation_log_monitoring(const cs_time_step_t      *ts,
+                           const cs_cdo_quantities_t *cdoq);
 
 /*----------------------------------------------------------------------------*/
 /*!

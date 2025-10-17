@@ -377,17 +377,21 @@ cs_equation_builder_apply_default_flags(cs_equation_builder_t  *eqb);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Print a message in the performance output file related to the
- *          monitoring of equation
+ * \brief Print a message in the performance output file related to the
+ *        monitoring of equation
  *
- * \param[in]  eqp    pointer to a set of equation parameters
- * \param[in]  eqb    pointer to an equation builder  structure
+ * \param[in] n_time_steps  number of time steps computed
+ * \param[in] n_dofs        number of DoFs
+ * \param[in] eqp           pointer to a set of equation parameters
+ * \param[in] eqb           pointer to an equation builder  structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_builder_log_performance(const cs_equation_param_t     *eqp,
-                                    const cs_equation_builder_t   *eqb);
+cs_equation_builder_log_performance(int                          n_time_steps,
+                                    cs_gnum_t                    n_g_dofs,
+                                    const cs_equation_param_t   *eqp,
+                                    const cs_equation_builder_t *eqb);
 
 /*----------------------------------------------------------------------------*/
 /*!

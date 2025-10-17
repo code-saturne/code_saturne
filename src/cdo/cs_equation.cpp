@@ -1747,11 +1747,15 @@ cs_equation_needs_steady_state_solve(void)
 /*!
  * \brief Print a synthesis of the monitoring information in the performance
  *        file
+ *
+ * \param[in] time_steps  pointer to a structure managing the time stepping
+ * \param[in] cdoq        pointer to a structure managing CDO quantities
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_log_monitoring(void)
+cs_equation_log_monitoring(const cs_time_step_t      *ts,
+                           const cs_cdo_quantities_t *cdoq)
 {
   /* Check if there is something to output */
 
@@ -1768,30 +1772,41 @@ cs_equation_log_monitoring(void)
       continue;
     else
       output = true;
+
   }
 
   if (!output)
     return;
 
   cs_log_printf(CS_LOG_PERFORMANCE,
-                "\n%-36s %9s %9s %9s\n",
-                " ",
-                "Build",
-                "Solve",
-                "Extra");
+                "\n%-36s %9s %9s %9s\n", " ", "Build", "Solve", "Extra");
 
   for (int i = 0; i < _n_equations; i++) {
 
     cs_equation_t *eq = _equations[i];
+    const cs_equation_param_t *eqp = eq->param;
+
+    if (eqp->flag & CS_EQUATION_INSIDE_SYSTEM)
+      continue;
+
+    cs_gnum_t n_g_dofs = eqp->dim * cs_equation_get_global_n_dofs(eq, cdoq);
+
+    int n_time_steps = 1; // steady
+    if (eqp->flag & CS_EQUATION_UNSTEADY)
+      n_time_steps = ts->nt_cur - ts->nt_prev;
 
     /* Display high-level timer counter related to the current equation before
        deleting the structure */
 
-    cs_equation_builder_log_performance(eq->param, eq->builder);
+    cs_equation_builder_log_performance(n_time_steps,
+                                        n_g_dofs,
+                                        eq->param,
+                                        eq->builder);
 
   } /* Loop on equations */
 
   cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+
   cs_log_separator(CS_LOG_PERFORMANCE);
 }
 

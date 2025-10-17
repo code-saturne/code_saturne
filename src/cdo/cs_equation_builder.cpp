@@ -404,17 +404,21 @@ cs_equation_builder_apply_default_flags(cs_equation_builder_t  *eqb)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Print a message in the performance output file related to the
- *          monitoring of equation
+ * \brief Print a message in the performance output file related to the
+ *        monitoring of equation
  *
- * \param[in]  eqp    pointer to a set of equation parameters
- * \param[in]  eqb    pointer to an equation builder  structure
+ * \param[in] n_time_steps  number of time steps computed
+ * \param[in] n_dofs        number of DoFs
+ * \param[in] eqp           pointer to a set of equation parameters
+ * \param[in] eqb           pointer to an equation builder  structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_builder_log_performance(const cs_equation_param_t     *eqp,
-                                    const cs_equation_builder_t   *eqb)
+cs_equation_builder_log_performance(int                          n_time_steps,
+                                    cs_gnum_t                    n_g_dofs,
+                                    const cs_equation_param_t   *eqp,
+                                    const cs_equation_builder_t *eqb)
 {
   if (eqb == nullptr)
     return;
@@ -427,20 +431,31 @@ cs_equation_builder_log_performance(const cs_equation_param_t     *eqp,
     = { double(eqb->tcb.nsec), double(eqb->tcs.nsec), double(eqb->tce.nsec) };
   for (int i = 0; i < 3; i++) t[i] *= 1e-9;
 
-  if (eqp->name == nullptr)
-    cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f %9.3f %9.3f seconds\n",
-                  "<CDO/Equation> Runtime", t[0], t[1], t[2]);
+  const double coef = 1.0e6 / (n_time_steps * n_g_dofs);
+  double perf[2] = {t[0] * coef, t[1] * coef};
 
+  if (eqp->name == nullptr) {
+
+    cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f %9.3f %9.3f seconds\n",
+                  "<CDO/Equation> Runtime   ", t[0], t[1], t[2]);
+    cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f %9.3f   s/iter/Mdofs\n",
+                  "<CDO/Equation> Throughput", perf[0], perf[1]);
+
+  }
   else {
 
     char *msg = nullptr;
-    int len = 1 + strlen("<CDO/> Runtime") + strlen(eqp->name);
+    int len = 1 + strlen("<CDO/> Throughput") + strlen(eqp->name);
 
     CS_MALLOC(msg, len, char);
-    sprintf(msg, "<CDO/%s> Runtime", eqp->name);
+    sprintf(msg, "<CDO/%s> Runtime   ", eqp->name);
     cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f %9.3f %9.3f seconds\n",
                   msg, t[0], t[1], t[2]);
+    sprintf(msg, "<CDO/%s> Throughput", eqp->name);
+    cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %9.3f %9.3f   s/iter/Mdofs\n",
+                  msg, perf[0], perf[1]);
     CS_FREE(msg);
+
   }
 }
 

@@ -684,7 +684,8 @@ _performance_log_monitoring(const cs_domain_t   *domain)
 
   cs_equation_system_log_monitoring();
 
-  cs_equation_log_monitoring();
+  cs_equation_log_monitoring(domain->time_step,
+                             domain->cdo_quantities);
 
   cs_saddle_solver_log_monitoring();
 }
