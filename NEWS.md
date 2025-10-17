@@ -3,6 +3,12 @@ Release 9.0.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix checkpoint output frequency for HTSolver when defined by GUI and stop
+  criterion is physical time based. Commit 02a5de4a86 should have fixed that,
+  but an additional function call was left which reset the value output frequency
+  value to iteration based, leading to frequent outputs (every 10 iterations),
+  in the final steps of a computation.
+
 - Fix potential segmentation fault when combining probes and cs_function_t
 
 - Fix fix crash in code_saturne/code_saturne coupling BC exchange.
