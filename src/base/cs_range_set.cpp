@@ -1089,29 +1089,14 @@ cs_range_set_scatter(const cs_range_set_t  *rs,
 
       const cs_lnum_t lb = rs->n_elts[2];
 
-      if (cs_interface_set_periodicity(rs->ifs) == nullptr) {
-        for (cs_lnum_t i = n_elts-1; i >= lb; i--) {
-          if (g_id[i] >= l_range[0] && g_id[i] < l_range[1]) {
-            cs_lnum_t j = g_id[i] - l_range[0];
-            memcpy(dest + i*d_size, src + j*d_size, d_size);
-          }
+      unsigned char *tmp_src
+        = (unsigned char *)cs_halo_get_default_buffer(d_size*n_elts);
+      memcpy(tmp_src, src, d_size*n_elts);
+      for (cs_lnum_t i = lb; i < (cs_lnum_t)n_elts; i++) {
+        if (g_id[i] >= l_range[0] && g_id[i] < l_range[1]) {
+          cs_lnum_t j = g_id[i] - l_range[0];
+          memcpy(dest + i*d_size, tmp_src + j*d_size, d_size);
         }
-      }
-      else {
-        unsigned char *tmp_src;
-        // FIXME: we should avoid allocating a buffer on each call,
-        // and keep a buffer across calls. Perhaps sharing the required
-        // allocation with halos could be done, to avoid multiple buffers
-        // which do not need to be used simultaneously.
-        CS_MALLOC(tmp_src, d_size*n_elts, unsigned char);
-        memcpy(tmp_src, src, d_size*n_elts);
-        for (cs_lnum_t i = lb; i < (cs_lnum_t)n_elts; i++) {
-          if (g_id[i] >= l_range[0] && g_id[i] < l_range[1]) {
-            cs_lnum_t j = g_id[i] - l_range[0];
-            memcpy(dest + i*d_size, tmp_src + j*d_size, d_size);
-          }
-        }
-        CS_FREE(tmp_src);
       }
     }
 
