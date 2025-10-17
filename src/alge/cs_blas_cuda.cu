@@ -56,6 +56,7 @@ namespace cg = cooperative_groups;
 #include "base/cs_mem.h"
 #include "base/cs_base_accel.h"
 #include "base/cs_base_cuda.h"
+#include "base/cs_dispatch.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -198,32 +199,6 @@ _dot_xx_stage_1_of_2(cs_lnum_t    n,
   // Output: b_res for this block
 
   cs_blas_cuda_block_reduce_sum<blockSize, 1>(stmp, tid, b_res);
-}
-
-/*----------------------------------------------------------------------------
- * Compute y <- alpha.x + y (device kernel)
- *
- * parameters:
- *   n     <-- number of elements
- *   alpha <-- constant value
- *   x     <-- vector of elements
- *   y     <-> vector of elements
- *----------------------------------------------------------------------------*/
-
-__global__ static void
-_axpy(cs_lnum_t         n,
-      const cs_real_t  *alpha,
-      const cs_real_t  *restrict x,
-      cs_real_t        *restrict y)
-{
-  cs_real_t _alpha = *alpha;
-  cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
-
-  size_t grid_size = blockDim.x*gridDim.x;
-  while (ii < n){
-    y[ii] += _alpha * x[ii];
-    ii += grid_size;
-  }
 }
 
 /*----------------------------------------------------------------------------
@@ -579,67 +554,6 @@ cs_blas_cublas_dot(cs_lnum_t        n,
 }
 
 #endif // defined(HAVE_CUBLAS)
-
-/*----------------------------------------------------------------------------
- * Compute y <- alpha.x + y
- *
- * This function may be set to use either cuBLAS or a local kernel.
- *
- * parameters:
- *   n      <-- number of elements
- *   alpha  <-- constant value (on device)
- *   x      <-- vector of elements (on device)
- *   y      <-> vector of elements (on device)
- *----------------------------------------------------------------------------*/
-
-void
-cs_blas_cuda_axpy(cs_lnum_t         n,
-                  const cs_real_t  *alpha,
-                  const cs_real_t  *restrict x,
-                  cs_real_t        *restrict y)
-{
-#if defined(HAVE_CUBLAS)
-
-  if (_prefer_cublas && _handle != nullptr) {
-    _handle = _init_cublas();
-
-    cublasStatus_t status = CUBLAS_STATUS_SUCCESS;
-
-    if (sizeof(cs_real_t) == 8)
-      status = cublasDaxpy(_handle, n,
-                           (const double *)alpha,
-                           (const double *)x, 1,
-                           (double *)y, 1);
-    else if (sizeof(cs_real_t) == 4)
-      status = cublasSaxpy(_handle, n,
-                           (const float *)alpha,
-                           (const float *)x, 1,
-                           (float *)y, 1);
-
-    if (status != CUBLAS_STATUS_SUCCESS) {
-#if CUBLAS_VERSION >= 11600
-      bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
-                __func__, cublasGetStatusString(status));
-#else
-      bft_error(__FILE__, __LINE__, 0, _("%s: cuBLAS error %d."),
-                __func__, (int)status);
-#endif
-    }
-
-    return;
-  }
-
-#endif /* defined(HAVE_CUBLAS) */
-
-  /* If not using cuBLAS for this operation */
-
-  const unsigned int blocksize = 256;  // try 640 also
-
-  unsigned int gridsize = cs_cuda_grid_size(n, blocksize);
-  // gridsize = min(gridsize, 640;
-
-  _axpy<<<gridsize, blocksize, 0, _stream>>>(n, alpha, x, y);
-}
 
 /*----------------------------------------------------------------------------
  * Compute x <- alpha.x

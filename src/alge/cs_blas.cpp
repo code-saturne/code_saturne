@@ -1310,6 +1310,35 @@ _cs_gmean_kahan(cs_lnum_t         n,
   return dot;
 }
 
+#if defined(HAVE_CUDA)
+
+/*----------------------------------------------------------------------------
+ * Compute y <- alpha.x + y (device kernel)
+ *
+ * parameters:
+ *   n     <-- number of elements
+ *   alpha <-- constant value
+ *   x     <-- vector of elements
+ *   y     <-> vector of elements
+ *----------------------------------------------------------------------------*/
+
+__global__ static void
+_axpy(cs_lnum_t         n,
+      cs_real_t         alpha,
+      const cs_real_t  *restrict x,
+      cs_real_t        *restrict y)
+{
+  cs_lnum_t ii = blockIdx.x*blockDim.x + threadIdx.x;
+
+  size_t grid_size = blockDim.x*gridDim.x;
+  while (ii < n){
+    y[ii] += alpha * x[ii];
+    ii += grid_size;
+  }
+}
+
+#endif // defined(HAVE_CUDA)
+
 /*============================================================================
  * Static global function pointers
  *============================================================================*/
@@ -1328,8 +1357,66 @@ static cs_dot_t *_cs_glob_gmean = _cs_gmean_superblock;
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
+END_C_DECLS
+
 /*============================================================================
- * Public function definitions
+ * Public C++ function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Constant times a vector plus a vector: y <-- ax + y
+ *
+ * \param[in]     ctx  reference to dispatch context
+ * \param[in]       n  size of arrays x and y
+ * \param[in]       a  multiplier for x
+ * \param[in]       x  array of floating-point values
+ * \param[in, out]  y  array of floating-point values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_axpy(cs_dispatch_context  &ctx,
+        cs_lnum_t             n,
+        cs_real_t             a,
+        const cs_real_t      *x,
+        cs_real_t            *restrict y)
+{
+  if (n < 1)
+    return;
+
+#if defined(HAVE_ACCEL)
+  if (ctx.use_gpu()) {
+
+#if defined(HAVE_CUDA)
+    const unsigned int blocksize = 256;  // try 640 also
+    unsigned int gridsize = cs_cuda_grid_size(n, blocksize);
+
+    _axpy<<<gridsize, blocksize, 0, ctx.cuda_stream()>>>(n, a, x, y);
+#else
+    cs_device_context &d_ctx = static_cast<cs_device_context&>(ctx);
+    d_ctx.parallel_for(n, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+      y[i] += (a * x[i]);
+    });
+#endif
+
+    return;
+  }
+#endif // defined(HAVE_ACCEL)
+
+  int n_threads = cs_parall_n_threads(n, CS_THR_MIN);
+# pragma omp parallel for  num_threads(n_threads)
+  for (cs_lnum_t i = 0; i < n; i++) {
+   y[i] += (a * x[i]);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+
+BEGIN_C_DECLS
+
+/*============================================================================
+ * Public C function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/

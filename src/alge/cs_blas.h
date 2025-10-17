@@ -38,6 +38,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_base.h"
+#include "base/cs_dispatch.h"
 #include "base/cs_log.h"
 
 /*----------------------------------------------------------------------------*/
@@ -61,9 +62,38 @@ typedef enum {
 
 } cs_blas_reduce_t;
 
+/*----------------------------------------------------------------------------*/
+
 /*============================================================================
  *  Public function prototypes
  *============================================================================*/
+
+END_C_DECLS
+
+#ifdef __cplusplus
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Constant times a vector plus a vector: y <-- ax + y
+ *
+ * \param[in]     ctx  reference to dispatch context
+ * \param[in]       n  size of arrays x and y
+ * \param[in]       a  multiplier for x
+ * \param[in]       x  array of floating-point values
+ * \param[in, out]  y  array of floating-point values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_axpy(cs_dispatch_context  &ctx,
+        cs_lnum_t             n,
+        cs_real_t             a,
+        const cs_real_t      *x,
+        cs_real_t            *restrict y);
+
+#endif // __cplusplus
+
+BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*

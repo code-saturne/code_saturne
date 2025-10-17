@@ -2869,8 +2869,6 @@ _velocity_prediction(const cs_mesh_t             *m,
     }
   }
 
-  ctx.wait();
-
   /* Use user source terms
      --------------------- */
 
@@ -2885,7 +2883,6 @@ _velocity_prediction(const cs_mesh_t             *m,
           trav_p[c_id][i] += tsimp[c_id][i][j] * vela[c_id][j];
       }
     });
-    ctx.wait();
   }
 
   /* Explicit user source terms are added */
@@ -2894,12 +2891,13 @@ _velocity_prediction(const cs_mesh_t             *m,
       || cs_glob_velocity_pressure_param->igpust != 1) {
     if (cs_glob_time_scheme->isno2t > 0) {
       if (iterns == 1)
-        cs_axpy(n_cells*3, 1, (cs_real_t *)tsexp, (cs_real_t *)c_st_vel);
+        cs_axpy(ctx, n_cells*3, 1, (cs_real_t *)tsexp, (cs_real_t *)c_st_vel);
     }
     else
-      cs_axpy(n_cells*3, 1, (cs_real_t *)tsexp, (cs_real_t *)trav);
+      cs_axpy(ctx, n_cells*3, 1, (cs_real_t *)tsexp, (cs_real_t *)trav);
   }
 
+  ctx.wait();
   CS_FREE_HD(loctsexp);
 
   /* Meteo large scale source terms explicitly added */
@@ -2908,10 +2906,12 @@ _velocity_prediction(const cs_mesh_t             *m,
       && cs_glob_atmo_option->open_bcs_treatment > 0) {
     if (cs_glob_time_scheme->isno2t > 0) {
       if (iterns == 1)
-        cs_axpy(n_cells*3, 1, (cs_real_t *)meteo_st, (cs_real_t *)c_st_vel);
+        cs_axpy(ctx, n_cells*3, 1, (cs_real_t *)meteo_st, (cs_real_t *)c_st_vel);
     }
     else
-      cs_axpy(n_cells*3, 1, (cs_real_t *)meteo_st, (cs_real_t *)trav);
+      cs_axpy(ctx, n_cells*3, 1, (cs_real_t *)meteo_st, (cs_real_t *)trav);
+
+    ctx.wait();
   }
 
   CS_FREE_HD(meteo_st);
@@ -2923,17 +2923,17 @@ _velocity_prediction(const cs_mesh_t             *m,
     /* If source terms are time-extrapolated, they are stored in fields */
     if (cs_glob_time_scheme->isno2t > 0) {
       if (iterns == 1)
-        cs_axpy(n_cells*3, 1, (cs_real_t *)stf, (cs_real_t *)c_st_vel);
+        cs_axpy(ctx, n_cells*3, 1, (cs_real_t *)stf, (cs_real_t *)c_st_vel);
     }
     else
-      cs_axpy(n_cells*3, 1, (cs_real_t *)stf, (cs_real_t *)trav);
+      cs_axpy(ctx, n_cells*3, 1, (cs_real_t *)stf, (cs_real_t *)trav);
   }
 
   /* Implicit terms */
 
   if (iappel == 1) {
     if (cs_glob_time_scheme->isno2t > 0)
-      cs_axpy(n_cells*3*3, -eqp_u->theta,
+      cs_axpy(ctx, n_cells*3*3, -eqp_u->theta,
               (cs_real_t *)tsimp, (cs_real_t *)fimp);
 
     else {
@@ -2951,6 +2951,7 @@ _velocity_prediction(const cs_mesh_t             *m,
     }
   }
 
+  ctx.wait();
   CS_FREE_HD(loctsimp);
 
   /* Mass source terms

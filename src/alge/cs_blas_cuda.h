@@ -453,24 +453,6 @@ cs_blas_cublas_dot(cs_lnum_t        n,
 #endif  /* defined(HAVE_CUBLAS) */
 
 /*----------------------------------------------------------------------------
- * Compute y <- alpha.x + y
- *
- * This function may be set to use either cuBLAS or a local kernel.
- *
- * parameters:
- *   n      <-- number of elements
- *   alpha  <-- constant value (on device)
- *   x      <-- vector of elements (on device)
- *   y      <-> vector of elements (on device)
- *----------------------------------------------------------------------------*/
-
-void
-cs_blas_cuda_axpy(cs_lnum_t         n,
-                  const cs_real_t  *alpha,
-                  const cs_real_t  *x,
-                  cs_real_t        *y);
-
-/*----------------------------------------------------------------------------
  * Compute x <- alpha.x
  *
  * This function may be set to use either cuBLAS or a local kernel.

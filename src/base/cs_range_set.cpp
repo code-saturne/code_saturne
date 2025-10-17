@@ -1089,19 +1089,26 @@ cs_range_set_scatter(const cs_range_set_t  *rs,
 
       const cs_lnum_t lb = rs->n_elts[2];
 
-      unsigned char *tmp_src = nullptr;
-      CS_MALLOC(tmp_src, d_size*n_elts, unsigned char);
-      memcpy(tmp_src, src, d_size*n_elts);
-
-      for (cs_lnum_t i = lb; i < (cs_lnum_t)n_elts; i++) {
-        if (g_id[i] >= l_range[0] && g_id[i] < l_range[1]) {
-          cs_lnum_t j = g_id[i] - l_range[0];
-            memcpy(dest + i*d_size, tmp_src + j*d_size, d_size);
+      if (cs_interface_set_periodicity(rs->ifs) == nullptr) {
+        for (cs_lnum_t i = n_elts-1; i >= lb; i--) {
+          if (g_id[i] >= l_range[0] && g_id[i] < l_range[1]) {
+            cs_lnum_t j = g_id[i] - l_range[0];
+            memcpy(dest + i*d_size, src + j*d_size, d_size);
+          }
         }
       }
-
-      CS_FREE(tmp_src);
-
+      else {
+        unsigned char *tmp_src;
+        CS_MALLOC(tmp_src, d_size*n_elts, unsigned char);
+        memcpy(tmp_src, src, d_size*n_elts);
+        for (cs_lnum_t i = lb; i < (cs_lnum_t)n_elts; i++) {
+          if (g_id[i] >= l_range[0] && g_id[i] < l_range[1]) {
+            cs_lnum_t j = g_id[i] - l_range[0];
+            memcpy(dest + i*d_size, tmp_src + j*d_size, d_size);
+          }
+        }
+        CS_FREE(tmp_src);
+      }
     }
 
   }
