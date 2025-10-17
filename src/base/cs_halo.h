@@ -740,7 +740,7 @@ cs_halo_set_buffer_alloc_mode(cs_alloc_mode_t  mode);
  * \brief Return pointer to working send buffer used by default halo state.
  *
  * This allows sharing the allocation with other operations which might be
- * used frequantly, such as range set scatters (which play a similar role to
+ * used frequently, such as range set scatters (which play a similar role to
  * halos for data which can be on process boundaries, such as vertex or
  * face-based data).
  *
