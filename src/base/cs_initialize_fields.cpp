@@ -242,7 +242,7 @@ cs_initialize_fields_stage_0(void)
     if (ifcvsl >= 0) {
       cs_field_t *f_vsl = cs_field_by_id(ifcvsl);
       for (int i = 0; i < f_vsl->n_time_vals; i++) {
-        f_vsl->get_vals_s().set_to_val(ctx, visls_0);
+        f_vsl->get_vals_s(i).set_to_val(ctx, visls_0);
       }
     }
   }
