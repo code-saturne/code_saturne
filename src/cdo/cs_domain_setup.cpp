@@ -495,10 +495,6 @@ cs_domain_setup_init_cdo_structures(cs_domain_t *domain)
   }
   cs_restart_checkpoint_set_interval(nt_interval, t_interval, wt_interval);
 
-  cs_restart_checkpoint_set_interval(domain->restart_nt,
-                                     t_interval,
-                                     wt_interval);
-
   /* Build additional connectivity structures
      Update mesh structure with range set structures */
 
