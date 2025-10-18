@@ -2325,7 +2325,7 @@ _block_jacobi(cs_sles_it_t              *c,
 
 #   pragma omp parallel for reduction(+:res2) if(n_blocks > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_blocks; ii++) {
-      for (cs_lnum_t kk = 0; kk < 3; kk++)
+      for (cs_lnum_t kk = 0; kk < db_size; kk++)
         rk[ii*db_size + kk] = vx[ii*db_size + kk];
       _mat_c_m_b(ad_inv + db_size_2*ii,
                  db_size,
