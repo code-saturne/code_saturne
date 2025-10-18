@@ -200,21 +200,24 @@ END_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gradient_boundary_iprime_lsq_s(cs_dispatch_context           &ctx,
-                                  const cs_mesh_t               *m,
-                                  const cs_mesh_quantities_t    *fvq,
-                                  cs_lnum_t                      n_faces,
-                                  const cs_lnum_t               *face_ids,
-                                  cs_halo_type_t                 halo_type,
-                                  double                         clip_coeff,
-                                  int                            hyd_p_flag,
-                                  cs_real_t                      f_ext[][3],
-                                  cs_real_t                     *df_limiter,
-                                  const cs_field_bc_coeffs_t    *bc_coeffs,
-                                  const cs_real_t                c_weight[],
-                                  const cs_real_t                var[],
-                                  cs_real_t           *restrict  var_iprime,
-                                  cs_real_t                      var_iprime_flux[])
+cs_gradient_boundary_iprime_lsq_s
+(
+  cs_dispatch_context           &ctx,
+  const cs_mesh_t               *m,
+  const cs_mesh_quantities_t    *fvq,
+  cs_lnum_t                      n_faces,
+  const cs_lnum_t               *face_ids,
+  cs_halo_type_t                 halo_type,
+  double                         clip_coeff,
+  int                            hyd_p_flag,
+  cs_real_t                      f_ext[][3],
+  cs_real_t                     *df_limiter,
+  const cs_field_bc_coeffs_t    *bc_coeffs,
+  const cs_real_t                c_weight[],
+  const cs_real_t                var[],
+  cs_real_t           *restrict  var_iprime,
+  cs_real_t                      var_iprime_flux[]
+)
 {
   CS_PROFILE_FUNC_RANGE();
 
