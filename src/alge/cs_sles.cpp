@@ -640,7 +640,10 @@ _residual(cs_lnum_t            n_vals,
 
 #endif
 
-  cs_matrix_vector_multiply(a, vx, res);
+  cs_dispatch_context ctx;
+  ctx.set_use_gpu(cs_mem_is_device_ptr(res) && cs_mem_is_device_ptr(rhs));
+
+  cs_matrix_vector_multiply(ctx, a, vx, res);
 
 #if defined(HAVE_ACCEL)
 
@@ -650,8 +653,6 @@ _residual(cs_lnum_t            n_vals,
     cs_disassociate_device_ptr(res);
 
 #endif
-  cs_dispatch_context ctx;
-  ctx.set_use_gpu(cs_mem_is_device_ptr(res) && cs_mem_is_device_ptr(rhs));
 
   ctx.parallel_for(n_vals, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
     res[ii] = fabs(res[ii] - rhs[ii]);
