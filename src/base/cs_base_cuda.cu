@@ -774,6 +774,12 @@ cs_base_cuda_select_default_device(void)
   cs_alloc_mode_read_mostly = CS_ALLOC_HOST_DEVICE_SHARED;
   cs_alloc_mode_device = CS_ALLOC_DEVICE;
 
+  const char *s = getenv("CS_CUDA_ALLOC_DEVICE_UVM");
+  if (s != nullptr) {
+    int i = atoi(s);
+    cs_alloc_mode_device = CS_ALLOC_HOST_DEVICE_SHARED;
+  }
+
   /* Also query some device properties */
 
   struct cudaDeviceProp prop;
@@ -798,7 +804,7 @@ cs_base_cuda_select_default_device(void)
 
   /* Finally, determine whether we may use graphs for some kernel launches. */
 
-  const char *s = getenv("CS_CUDA_ALLOW_GRAPH");
+  s = getenv("CS_CUDA_ALLOW_GRAPH");
   if (s != nullptr) {
     int i = atoi(s);
     cs_glob_cuda_allow_graph = (i <= 0) ? false : true;
