@@ -591,6 +591,11 @@ _system_info(bool  log)
           cs_log_printf(logs[log_id],
                         "  %s%d\n", _("MPI_COMM_WORLD size: "),
                         n_world_ranks);
+#if defined(HAVE_ACCEL)
+        cs_log_printf(logs[log_id],
+                      "  %s%d\n",
+                      _("MPI device support:  "), cs_mpi_device_support);
+#endif
       }
     }
 

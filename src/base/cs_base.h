@@ -59,9 +59,9 @@
  * be better optimized on memory-aligned data (if 0 here, no alignment
  * is leveraged). This alignment is not exploited yet in code_saturne. */
 
-#define CS_MEM_ALIGN 0
+#define CS_MEM_ALIGN  0
 
-#define CS_BASE_STRING_LEN                             80
+#define CS_BASE_STRING_LEN  80
 
 /*----------------------------------------------------------------------------*/
 
@@ -83,6 +83,16 @@ typedef void (cs_base_sigint_handler_t) (int signum);
 /*=============================================================================
  * Global variable definitions
  *============================================================================*/
+
+#if defined(HAVE_ACCEL)
+
+extern int cs_mpi_device_support;
+
+#else
+
+#define cs_mpi_device_support 0
+
+#endif
 
 /*=============================================================================
  * Public function prototypes

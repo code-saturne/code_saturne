@@ -64,16 +64,6 @@ BEGIN_C_DECLS
  * Global variable definitions
  *============================================================================*/
 
-#if defined(HAVE_ACCEL)
-
-extern int cs_mpi_device_support;
-
-#else
-
-#define cs_mpi_device_support 0;
-
-#endif
-
 /*! Default queue for SYCL */
 
 #if defined(SYCL_LANGUAGE_VERSION) && !defined(CS_GLOB_SYCL_QUEUE_IS_DEFINED)

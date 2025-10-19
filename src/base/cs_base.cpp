@@ -58,6 +58,10 @@
 #include <setjmp.h>
 #endif
 
+#if defined(OMPI_MAJOR_VERSION)
+  #include <mpi-ext.h>
+#endif
+
 /*----------------------------------------------------------------------------
  * PLE library headers
  *----------------------------------------------------------------------------*/
@@ -203,6 +207,26 @@ static int        _n_step_comms = 0;
 static int       *_step_ranks = nullptr;
 static MPI_Comm  *_step_comm = nullptr;
 #endif
+
+/*! Is MPI device-aware ? */
+/*------------------------*/
+
+#if defined(HAVE_ACCEL)
+
+#if defined(MPIX_CUDA_AWARE_SUPPORT) && MPIX_CUDA_AWARE_SUPPORT
+int cs_mpi_device_support = 1;
+
+#elif defined(OMPI_HAVE_MPI_EXT_CUDA) && OMPI_HAVE_MPI_EXT_CUDA
+/* We need better detection here, as OMPI_HAVE_MPI_EXT_CUDA = 1
+   does not seem to guarantee device support is present or active
+   (based on test on workstation). So do not activate yet.*/
+int cs_mpi_device_support = 0;
+
+#else
+int cs_mpi_device_support = 0;
+#endif
+
+#endif /* defined(HAVE_ACCEL) */
 
 /*============================================================================
  * Private function definitions
@@ -1376,6 +1400,32 @@ cs_base_mpi_init(int    *argc,
   }
 
 #endif
+
+  /* Also detect whether MPI is device-aware,
+     when this can be set dynamically. */
+
+#if defined(HAVE_ACCEL)
+
+#if defined(I_MPI_VERSION)
+  {
+    const char *p = getenv("I_MPI_OFFLOAD");
+    if (p != nullptr) {
+      if (atoi(p) > 0)
+        cs_mpi_device_support = 1;
+    }
+  }
+#endif
+
+  /* Device support may also be forced if not detected correctly,
+     or deactivated */
+  {
+    const char *p = getenv("CS_MPI_DEVICE_SUPPORT");
+    if (p != nullptr) {
+      cs_mpi_device_support = atoi(p);
+    }
+  }
+
+#endif /* defined(HAVE_ACCEL) */
 
   /* Initialize execution context */
   cs_execution_context_glob_init();

@@ -77,26 +77,6 @@
  *  Global variables
  *============================================================================*/
 
-/*! Is MPI device-aware ? */
-/*------------------------*/
-
-#if defined(OMPI_MAJOR_VERSION)
-  #include <mpi-ext.h>
-#endif
-
-#if defined(MPIX_CUDA_AWARE_SUPPORT) && MPIX_CUDA_AWARE_SUPPORT
-int cs_mpi_device_support = 1;
-
-#elif defined(OMPI_HAVE_MPI_EXT_CUDA) && OMPI_HAVE_MPI_EXT_CUDA
-/* We need better detection here, as OMPI_HAVE_MPI_EXT_CUDA = 1
-   does not seem to guarantee device support is present or active
-   (based on test on workstation). So do not activate yet.*/
-int cs_mpi_device_support = 0;
-
-#else
-int cs_mpi_device_support = 0;
-#endif
-
 /*! Default queue for SYCL */
 
 #if defined(SYCL_LANGUAGE_VERSION)
@@ -245,21 +225,6 @@ cs_omp_target_select_default_device(void)
     cs_alloc_mode_read_mostly = CS_ALLOC_HOST_DEVICE_SHARED;
     cs_alloc_mode_device = CS_ALLOC_HOST_DEVICE;
   }
-
-  /* Also detect whether MPI is device-aware,
-     when this can be set dynamically. */
-
-#if defined(I_MPI_VERSION)
-
-  {
-    const char *p = getenv("I_MPI_OFFLOAD");
-    if (p != nullptr) {
-      if (atoi(p) > 0)
-        cs_mpi_device_support = 1;
-    }
-  }
-
-#endif
 
   /* Return default device id */
 
