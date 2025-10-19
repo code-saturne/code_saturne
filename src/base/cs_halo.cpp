@@ -2161,9 +2161,16 @@ cs_halo_sync_wait(const cs_halo_t  *halo,
 
     if (device_support == 0) {
 
+      /* When using a standard halo and an extended halo is present,
+         since standard halo regions for each rank are not contiguous,
+         copying the number of elements matching the standard halo
+         is not sufficient. To copy just the required data volume,
+         we could use one copy per halo adjacent rank, but this could
+         increase latency a bit, so we simply use the maximum size.
+         Using non GPU-aware MPI is not optimal for performance anyways. */
+
       size_t n_loc_elts = halo->n_local_elts;
-      size_t n_elts = (   _hs->sync_mode
-                       == CS_HALO_EXTENDED) ? halo->n_elts[1] : halo->n_elts[0];
+      size_t n_elts = halo->n_elts[1];
       size_t elt_size = cs_datatype_size[_hs->data_type] * _hs->stride;
       size_t n_bytes = n_elts*elt_size;
 
