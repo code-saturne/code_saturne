@@ -653,8 +653,6 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
 
     for (cs_lnum_t p_id = p_s_id; p_id < p_e_id; p_id++) {
 
-      unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
-
       cs_lagr_particles_set_lnum(p_set, p_id, CS_LAGR_P_FLAG, 0);
 
       cs_lagr_particles_set_lnum(p_set, p_id, CS_LAGR_REBOUND_ID, -1);

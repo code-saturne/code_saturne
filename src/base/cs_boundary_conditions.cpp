@@ -2433,12 +2433,7 @@ cs_boundary_conditions_reset(void)
       cs_real_t *rcodcl3 = f->bc_coeffs->rcodcl3;
 
       cs_lnum_t dim = f->dim;
-      int coupled = 0;
-      int coupled_key_id = cs_field_key_id_try("coupled");
       cs_lnum_t n_d = n_b_faces*dim;
-
-      if (coupled_key_id > -1)
-        coupled = f->get_key_int(coupled_key_id);
 
       if (dim == 1) {
         ctx.parallel_for(n_d, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {

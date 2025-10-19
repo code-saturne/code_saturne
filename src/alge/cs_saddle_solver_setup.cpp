@@ -780,7 +780,7 @@ _petsc_fmgres_setup(cs_saddle_solver_t  *solver,
                          (void *)solver); /* context structure for PETSc */
 #else
     bft_error(__FILE__, __LINE__, 0,
-              "%s: PETSc is required for solving \"%s\"\n",
+              "%s: PETSc is required for solving \"%s\"\n"
               " Please modify your settings/build code_saturne with PETSc.",
               __func__, saddlep->name);
 #endif  /* HAVE PETSC */

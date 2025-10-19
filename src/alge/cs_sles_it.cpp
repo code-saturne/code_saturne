@@ -339,7 +339,7 @@ _convergence_test(cs_sles_it_t              *c,
  *   xy     --> result of s = x.y
  *----------------------------------------------------------------------------*/
 
-double
+static double
 _dot_product
 (
   const cs_sles_it_t                    *c,
@@ -387,7 +387,7 @@ _dot_product
  *   xx     --> result of s = x.x
  *----------------------------------------------------------------------------*/
 
-double
+static double
 _dot_product_xx
 (
   const cs_sles_it_t                    *c,
@@ -434,7 +434,7 @@ _dot_product_xx
  *   yy     --> result of s2 = x.y
  *----------------------------------------------------------------------------*/
 
-void
+static void
 _dot_products_xx_xy
 (
   const cs_sles_it_t                    *c,
@@ -489,7 +489,7 @@ _dot_products_xx_xy
  *   zz     --> result of s3 = y.z
  *----------------------------------------------------------------------------*/
 
-void
+static void
 _dot_products_xx_xy_yz
 (
   const cs_sles_it_t                    *c,
@@ -1023,8 +1023,8 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
   cs_dispatch_context ctx;
 
-  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
 #if defined(HAVE_ACCEL)
+  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
   if (amode == CS_ALLOC_HOST) {
     ctx.set_use_gpu(false);
   }
@@ -1243,8 +1243,8 @@ _conjugate_gradient_sr_p0(cs_sles_it_t              *c,
 
   cs_dispatch_context ctx;
 
-  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
 #if defined(HAVE_ACCEL)
+  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
   if (amode == CS_ALLOC_HOST) {
     ctx.set_use_gpu(false);
   }
@@ -2465,8 +2465,8 @@ _bi_cgstab(cs_sles_it_t              *c,
 
   cs_dispatch_context ctx;
 
-  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
 #if defined(HAVE_ACCEL)
+  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
   if (amode == CS_ALLOC_HOST) {
     ctx.set_use_gpu(false);
   }
@@ -2699,8 +2699,8 @@ _bicgstab2(cs_sles_it_t              *c,
 
   cs_dispatch_context ctx;
 
-  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
 #if defined(HAVE_ACCEL)
+  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
   if (amode == CS_ALLOC_HOST) {
     ctx.set_use_gpu(false);
   }

@@ -993,8 +993,8 @@ cs_physical_properties_update(int   iterns)
 
   if (mbrom == 0 && rho_b_view.size() > 0) {
     if (rho_b_f->get_vals_alloc_mode(0) == CS_ALLOC_DEVICE) {
-      cs_real_t dummy = -cs_math_big_r;
 #if defined(HAVE_ACCEL)
+      cs_real_t dummy = -cs_math_big_r;
       cs_copy_h2d(rho_b_view.data(), &dummy, sizeof(cs_real_t));
 #endif
     }

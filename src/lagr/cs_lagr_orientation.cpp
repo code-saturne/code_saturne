@@ -608,8 +608,6 @@ cs_lagr_orientation_dyn_spheroids(cs_lnum_t                p_id,
 
   /* Loop on particles */
 
-  unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
-
   /* Generation of random numbers */
   /* 9 gaussian increments numered as 3x3 tensor */
   /* W11 W12 W13 W21 W22 W23 W31 W32 W33 */
@@ -752,8 +750,6 @@ cs_lagr_orientation_dyn_jeffery(cs_lnum_t        p_id,
      =================================================== */
 
   /* Loop on particles */
-
-  unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
 
   /* Get local flow properties
      cell_id :    id of the cell

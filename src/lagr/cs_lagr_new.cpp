@@ -681,7 +681,6 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
   }
 
   cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
-  const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
 
   const cs_mesh_adjacencies_t  *ma = cs_glob_mesh_adjacencies;
 

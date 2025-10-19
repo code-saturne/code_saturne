@@ -445,7 +445,7 @@ _create_grid(void)
  *   pointer to grid's root in current hierarchy
  *----------------------------------------------------------------------------*/
 
-const cs_grid_t *
+static const cs_grid_t *
 _root_grid(cs_grid_t  *g)
 {
   const cs_grid_t  *r = g;

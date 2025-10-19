@@ -124,7 +124,7 @@ const cs_real_t x_kg[5] = {0.0001, 0.25, 0.5, 0.75, 1.0};
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+static void
 _line_to_array(FILE       *radfile,
                cs_real_t   values[],
                int        *nvalues)
@@ -168,7 +168,7 @@ _line_to_array(FILE       *radfile,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+static void
 _gridposnbsg1(cs_real_t  trad,
               cs_real_t  t,
               cs_real_t  xco2,
@@ -402,7 +402,7 @@ _gridposnbsg1(cs_real_t  trad,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static cs_real_t
+static cs_real_t
 _seval(int       n,
        cs_real_t u,
        cs_real_t x[],
@@ -465,7 +465,7 @@ _seval(int       n,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+static void
 _splmi(int        n,
        cs_real_t  x[],
        cs_real_t  y[],
@@ -579,7 +579,7 @@ _splmi(int        n,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+inline void
 _simple_interpg(int        nxy,
                 cs_real_t  xx[],
                 cs_real_t  yy[],
@@ -634,7 +634,7 @@ _simple_interpg(int        nxy,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+static void
 _interpolation4d(cs_real_t trad,
                  cs_real_t t,
                  cs_real_t xco2,

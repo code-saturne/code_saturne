@@ -160,14 +160,18 @@ _x_expm1(double x) {
          = - expm1(-1/x) + exp(-1/x)/x
 */
 static inline double
-_x_expm1_p(double x) {
-    double invx = 1.0 / x;
-    double e = exp(-invx);
-    return -expm1(-invx) - e * invx;
+_x_expm1_p(double x)
+{
+  double invx = 1.0 / x;
+  double e = exp(-invx);
+  return -expm1(-invx) - e * invx;
 }
 
 // secant slope (f(b)-f(a)) / (b-a), numerically stable
-double _secant_ter2p(double a, double b) {
+static double
+_secant_ter2p(double a,
+              double b)
+{
   const double eps = 1e-12;
   double h = b - a;
   if (cs::abs(h) < eps * 0.5 * (a + b)) {
@@ -179,7 +183,9 @@ double _secant_ter2p(double a, double b) {
   }
 }
 
-double _secant_ter2x(double a, double b) {
+static double
+_secant_ter2x(double a,
+              double b) {
   const double eps = 1e-12;
   double h = b - a;
   if (cs::abs(h) < eps * 0.5 * (a + b)) {
@@ -191,7 +197,9 @@ double _secant_ter2x(double a, double b) {
   }
 }
 
-double _secant_ter7x(double a, double b) {
+static double
+_secant_ter7x(double a,
+              double b) {
   const double eps = 1e-12;
   double h = b - a;
   if (cs::abs(h) < eps * 0.5 * (a + b)) {
@@ -203,7 +211,9 @@ double _secant_ter7x(double a, double b) {
   }
 }
 
-double _secant_ter7p(double a, double b) {
+static double
+_secant_ter7p(double a,
+              double b) {
   const double eps = 1e-12;
   double h = b - a;
   if (cs::abs(h) < eps * 0.5 * (a + b)) {
