@@ -552,10 +552,15 @@ Environment variables specific to the code_saturne solver {#sec_env_var_cs_solve
 
 Variable                | Role
 ------------------------|------------------------------------------------------------
+`CS_CUDA_USE_CUSPARSE`  | For CUDA GPU builds, allows forcing or disabling use of cuSPARSE (if build supports it) instead of using automatic selection based on automatic tuning runs.
 `CS_DISABLE_NCCL`       | For builds with GPU support with the NVIDIA Collective Communications Library, disable use of NCCL, reverting to MPI.
 `CS_FP_TRAP`            | When the code is compiled in debug mode, this variable allows selecting which types of exceptions are trapped. For all exception types (the default), use `CS_FP_TRAP=DIVBYZERO,INVALID,OVERFLOW`. Otherwise, if the variable contains some (or none) of these terms, only the corresponding exception types will be trapped.
 `CS_LOG_TO_STDOUT`      | Direct messages usually in `run_solver.log` directly standard output.
+`CS_MG_GATHER`          | Force use of gather-based algorithms where possible in multigrid solver (performance tuning).
+`CS_THREAD_DEBUG`       | If non-zero, deactivate multi-threading in hybrid Gauss-Seidel solvers (which can exhibit non strictly -reproducable behavior when threading is enabled).
+`CS_MAXTIME`            | Maximum time a computation should run in "hh:mm:ss" format (for example, 100:10:10).
 `CS_MEM_LOG`            | Allows defining a file name in which memory management based on the [CS_MALLOC](@ref CS_MALLOC), and [CS_MALLOC_HD](@ref CS_MALLOC_HD) function and macro series is logged (useful to check for some memory leaks). If this value is set to `performance.log`, only statistics (including leak counts) will be output in that standard file.
+`CS_PETSC_SYSTEM_VIEWER` | With PETSc, define a name for exporting a linear system using PETSc Viewer mechanism.
 `CS_RENUMBER`           | Deactivating mesh renumbering in the Solver is possible by setting `CS_RENUMBER=off`.
 `CS_SCOTCH_DGRAPH_SAVE` | Defines a base file name to which PT-Scotch graphs are saved before partitioning (to allow generating useful crash reports).
 
@@ -565,3 +570,5 @@ Variable                | Role
 ------------------------|------------------------------------------------------------
 `CS_ALL_TO_ALL_TRACE`   | Define tracing level for all-to-many operations (integer value).
 `CS_TIME_KERNELS`       | Activate low-level timing of various computation kernels (0 or 1), with logging directly to standard output.
+`CS_PROFILE_TIME_STEP`  | When profiling with a supported profiling library (currently, CUDA's NVTX), allows selecting a time step
+                        | at which profiling will be activated.
