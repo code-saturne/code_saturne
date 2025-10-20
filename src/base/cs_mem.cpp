@@ -414,7 +414,9 @@ _cs_mem_error_handler_default(const char  *file_name,
  *-----------------------------------------------------------------------------*/
 
 static int  _cs_mem_global_init_mode = 0;
+#if defined(HAVE_ACCEL)
 static int  _n_async_copies_in_progress = 0;
+#endif
 
 static FILE *_cs_mem_global_file = nullptr;
 
@@ -2378,6 +2380,14 @@ cs_mem_realloc_hd(void            *ptr,
   return ret_ptr;
 }
 
+#endif /* defined(HAVE_ACCEL) */
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
+
+#if defined(HAVE_ACCEL)
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return matching device pointer for a given pointer.
@@ -2530,8 +2540,6 @@ cs_check_device_ptr(const void  *ptr)
  */
 /*----------------------------------------------------------------------------*/
 
-#if defined(HAVE_ACCEL)
-
 bool
 cs_mem_is_device_ptr(const void  *ptr)
 {
@@ -2556,8 +2564,6 @@ cs_mem_is_device_ptr(const void  *ptr)
 #endif
 
 }
-
-#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -3349,5 +3355,3 @@ cs_mem_device_pool_clear(void)
 #endif // defined(HAVE_ACCEL)
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

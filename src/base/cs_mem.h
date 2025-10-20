@@ -561,6 +561,12 @@ cs_mem_stats(uint64_t  *alloc_cur,
              uint64_t  *n_frees,
              uint64_t  *n_current);
 
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS
+
+#if defined(__cplusplus)
+
 #if defined(HAVE_ACCEL)
 
 /*----------------------------------------------------------------------------*/
@@ -650,9 +656,7 @@ cs_get_device_ptr(void  *ptr)
 
 #endif
 
-END_C_DECLS
-
-#if defined(__cplusplus) && defined(HAVE_ACCEL)
+#if defined(HAVE_ACCEL)
 
 template <class T>
 inline T *
@@ -664,9 +668,7 @@ cs_get_device_ptr(T *ptr)
   return (T *)ptr_v;
 }
 
-#endif // __cplusplus && HAVE_ACCEL
-
-BEGIN_C_DECLS
+#endif // HAVE_ACCEL
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -699,9 +701,7 @@ cs_get_device_ptr_const(const void  *ptr)
 
 #endif
 
-END_C_DECLS
-
-#if defined(__cplusplus) && defined(HAVE_ACCEL)
+#if defined(HAVE_ACCEL)
 
 template <class T>
 inline const T *
@@ -713,9 +713,7 @@ cs_get_device_ptr_const(const T *ptr)
   return (const T *)ptr_v;
 }
 
-#endif // __cplusplus && HAVE_ACCEL
-
-BEGIN_C_DECLS
+#endif // HAVE_ACCEL
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -860,9 +858,7 @@ cs_set_alloc_mode(void             **host_ptr,
  */
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#if defined(__cplusplus) && defined(HAVE_ACCEL)
+#if defined(HAVE_ACCEL)
 
 template<typename T>
 static inline void
@@ -878,9 +874,7 @@ cs_set_alloc_mode_r(T*                &host_ptr,
 
 #define cs_set_alloc_mode_r(_host_ptr, mode);
 
-#endif // __cplusplus && HAVE_ACCEL
-
-BEGIN_C_DECLS
+#endif // HAVE_ACCEL
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -970,7 +964,6 @@ cs_sync_h2d(const void  *ptr)
  * \param [in, out]  ptr  host pointer to values to copy or prefetch
  */
 /*----------------------------------------------------------------------------*/
-
 
 #if defined(HAVE_ACCEL)
 
@@ -1257,6 +1250,6 @@ cs_mem_device_pool_clear(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
+#endif /* defined(__cplusplus) */
 
 #endif /* CS_MEM_H */
