@@ -1691,6 +1691,7 @@ cs_compute_porosity_from_scan(void)
 
       }
     }
+
     /* Matrix
      *=======*/
 
@@ -1778,8 +1779,8 @@ cs_compute_porosity_from_scan(void)
 /*--------------------------------------------------------------------*/
 
 void
-cs_porous_model_restart_write(void) {
-
+cs_porous_model_restart_write(void)
+{
   if (   cs_glob_porous_model != 3
       || !(cs_glob_porosity_from_scan_opt->compute_porosity_from_scan))
     return;
@@ -1820,9 +1821,10 @@ cs_porous_model_restart_write(void) {
  * \brief Read the restart file of the ibm module
  */
 /*--------------------------------------------------------------------*/
-void
-cs_porous_model_restart_read(void) {
 
+void
+cs_porous_model_restart_read(void)
+{
   if (   cs_glob_porous_model != 3
       || !(cs_glob_porosity_from_scan_opt->compute_porosity_from_scan))
     return;
@@ -1919,8 +1921,8 @@ cs_porous_model_restart_read(void) {
 
   cs_restart_destroy(&porous_restart);
 
-  cs_log_printf(CS_LOG_DEFAULT,_(" Finished reading immersed "
-                                 "boundary arrays.\n\n"));
+  cs_log_printf(CS_LOG_DEFAULT ,_(" Finished reading immersed "
+                                  "boundary arrays.\n\n"));
 }
 
 /*----------------------------------------------------------------------------*/
