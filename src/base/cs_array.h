@@ -1316,6 +1316,10 @@ public:
                   "Instantiation using only total size only possible for "
                   "cs::array<T,1> or cs::array<T>");
     set_size_(size);
+
+    // Avoid compiler warnings
+    CS_UNUSED(file_name);
+    CS_UNUSED(line_number);
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1348,6 +1352,10 @@ public:
     _mode(alloc_mode)
   {
     set_size_(dims);
+
+    // Avoid compiler warnings
+    CS_UNUSED(file_name);
+    CS_UNUSED(line_number);
   }
 
   /*--------------------------------------------------------------------------*/
