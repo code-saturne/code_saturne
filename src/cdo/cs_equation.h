@@ -263,6 +263,20 @@ cs_equation_get_field_id(const cs_equation_t *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return the name related to the variable field structure associated to
+ *        the given cs_equation_t structure
+ *
+ * \param[in] eq  pointer to a cs_equation_t structure
+ *
+ * \return a string with the the field name (nullptr if not defined)
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_equation_get_field_name(const cs_equation_t *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return the range set structure associated to a cs_equation_t
  *        structure. One assumes that there is only one block (it could be a
  *        split block) otherwise this means that one handles systems of
