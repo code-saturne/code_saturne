@@ -912,8 +912,12 @@ cs_gui_physical_model_select(void)
       // Activate CDO Heat Transfer Solver
       cs_param_cdo_mode_set(CS_PARAM_CDO_MODE_ONLY);
       cs_flag_t model = 0;
+
+      if (cs_glob_domain->time_options->idtvar == CS_TIME_STEP_LOCAL)
+        model |= CS_THERMAL_MODEL_STEADY;
+
       if (cs_gui_physical_properties_ht_lambda_is_anisotropic())
-        model = CS_THERMAL_MODEL_ANISOTROPIC_CONDUCTIVITY;
+        model |= CS_THERMAL_MODEL_ANISOTROPIC_CONDUCTIVITY;
       cs_thermal_system_activate(model, 0, 0);
     }
   }

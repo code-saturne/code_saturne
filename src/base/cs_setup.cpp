@@ -2619,6 +2619,9 @@ _init_user(void)
   /* Check for restart and read matching time steps and notebook values */
   cs_parameters_read_restart_info();
 
+  /* read time step parameter */
+  cs_gui_dt();
+
   /* Flow model selection through GUI */
   cs_gui_physical_model_select();
 
@@ -2635,7 +2638,6 @@ _init_user(void)
   cs_gui_turb_model();
 
   cs_gui_cp_params();
-  cs_gui_dt();
   cs_gui_hydrostatic_pressure();
 
   /* Gravity and Coriolis
