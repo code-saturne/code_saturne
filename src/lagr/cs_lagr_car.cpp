@@ -256,9 +256,7 @@ cs_lagr_car(int                iprev,
     cs_real_t lambda_f; /* fluid conductivity */
     if (diftl0 >= 0) {
       diff_f = diftl0;
-      // FIXME: lambda_f needs to be initialized
-      // lambda_f = ;
-      assert(false);
+      lambda_f = diff_f * xcp;
     }
     else if (extra->cpro_viscls != nullptr) {
       lambda_f = extra->cpro_viscls->val[cell_id];
