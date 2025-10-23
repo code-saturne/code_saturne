@@ -69,9 +69,6 @@
 
 #include "base/cs_base.h"
 
-#if defined(HAVE_ACCEL)
-#include "base/cs_base_accel.h"
-#endif
 #if defined(HAVE_CUDA)
 #include "base/cs_base_cuda.h"
 #endif
