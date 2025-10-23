@@ -117,6 +117,23 @@ typedef enum {
 
 } cs_atmo_soil_meb_model_t;
 
+
+/*----------------------------------------------------------------------------
+ * Atmospheric soil micro-scale options
+ *----------------------------------------------------------------------------*/
+
+typedef enum {
+
+  CS_ATMO_PROJ_WGS84 = 0,
+  /* Lambert93 projection type */
+  CS_ATMO_PROJ_LAMBERT_93 = 1,
+  /* Universal transverse mercator, zone  needs to be indicated*/
+  CS_ATMO_PROJ_UTM = 2,
+  /* Tangantial */
+  CS_ATMO_PROJ_TAN = 3,
+
+} cs_atmo_projection_t;
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -148,10 +165,19 @@ typedef struct {
   /*! altitude of the domain origin */
   cs_real_t altitude;
   /*! x coordinate of the domain origin in Lambert-93 */
-  cs_real_t x_l93;
+  cs_real_t x_l93; // conserved for retrocompatibility 
   /*! y coordinate of the domain origin in Lambert-93 */
-  cs_real_t y_l93;
+  cs_real_t y_l93; // 
   /*! numbers of altitudes for the dynamics */
+
+  /*! XY  coordinates of the domain origin in current projection system */
+  cs_real_t x_origin; // similar to l93 but more general
+  cs_real_t y_origin; // 
+
+  /*! Projection system used in computation */
+  cs_atmo_projection_t projection_type;
+  int utm_zone; // If using utm, a zone needs to be specified
+
   union {
     int met_1d_nlevels_d;
     int nbmetd; /* deprecated */
@@ -832,6 +858,24 @@ cs_atmo_soil_init_arrays(int        *n_soil_cat,
 
 /*----------------------------------------------------------------------------*/
 
+
+  void
+cs_atmo_projection(
+    cs_atmo_projection_t origin_projection,
+    cs_atmo_projection_t target_projection,
+    cs_real_t            x_origin,
+    cs_real_t            y_origin,
+    cs_real_t*           x_target,
+    cs_real_t*           y_target,
+    int                  utm_fixed_zone);
+
+
+
 END_C_DECLS
+
+
+
+
+
 
 #endif /* __CS_ATMO_H__ */
