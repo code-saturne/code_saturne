@@ -3,6 +3,8 @@ Release 9.0.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix default build name on cluster in OpenTurns dialog view
+
 - GUI: remove visualization of probes in salome context because the feature is
   currently not functional
     
