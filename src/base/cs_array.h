@@ -1338,11 +1338,10 @@ public:
   :
     _extent{0},
     _offset{0},
-    _size(size),
     _owner(false)
   {
     check_operator_args_(indices...);
-    set_size_(size);
+    set_size_(indices...);
     _data = data;
   }
 
