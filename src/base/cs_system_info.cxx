@@ -67,6 +67,8 @@
 #include "bft/bft_printf.h"
 #include "base/cs_log.h"
 
+#include "base/cs_base.h"
+
 #if defined(HAVE_ACCEL)
 #include "base/cs_base_accel.h"
 #endif
