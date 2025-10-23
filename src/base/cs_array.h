@@ -1284,15 +1284,17 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Constructor method for non owner version
+   * \brief Constructor method for 4D array based on sizes
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   array
   (
-    cs_lnum_t  size,  /*!<[in] Size of array */
-    T         *data,  /*!<[in] Pointer to data array */
+    cs_lnum_t     size1, /*!<[in] First size of array */
+    cs_lnum_t     size2, /*!<[in] Second size of array */
+    cs_lnum_t     size3, /*!<[in] Third size of array */
+    cs_lnum_t     size4, /*!<[in] Third size of array */
     cs_alloc_mode_t alloc_mode = cs_alloc_mode, /*!<[in] Memory allocation mode */
 #if (defined(__GNUC__) || defined(__clang__)) && \
   __has_builtin(__builtin_LINE) && \
@@ -1307,19 +1309,41 @@ public:
   :
     _extent{0},
     _offset{0},
-    _size(size),
-    _owner(false),
-    _data(data),
+    _owner(true),
+    _data(nullptr),
     _mode(alloc_mode)
   {
-    static_assert(N == 1,
-                  "Instantiation using only total size only possible for "
-                  "cs::array<T,1> or cs::array<T>");
-    set_size_(size);
+    /* Only usable for array */
+    static_assert(N == 4,
+                  "Instantiation using (size1, size2, size3, size4) only possible "
+                  " for cs::array<T,4>");
+    cs_lnum_t tmp_size[N] = {size1, size2, size3, size4};
+    set_size_(tmp_size);
+    allocate_(file_name, line_number);
+  }
 
-    // Avoid compiler warnings
-    CS_UNUSED(file_name);
-    CS_UNUSED(line_number);
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Constructor method for non owner version
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<typename... Args>
+  CS_F_HOST_DEVICE
+  array
+  (
+    T       *data,   /*!<[in] Pointer to data array */
+    Args...  indices /*!<[in] Size of array */
+  )
+  :
+    _extent{0},
+    _offset{0},
+    _size(size),
+    _owner(false)
+  {
+    check_operator_args_(indices...);
+    set_size_(size);
+    _data = data;
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1332,30 +1356,23 @@ public:
   array
   (
     T              *data,      /*!<[in] Pointer to data array */
-    const cs_lnum_t(&dims)[N], /*!<[in] Array of dimensions sizes */
-    cs_alloc_mode_t alloc_mode = cs_alloc_mode, /*!<[in] Memory allocation mode */
-#if (defined(__GNUC__) || defined(__clang__)) && \
-  __has_builtin(__builtin_LINE) && \
- __has_builtin(__builtin_FILE)
-    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
-    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
-#else
-    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
-    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
-#endif
+    const cs_lnum_t(&dims)[N] /*!<[in] Array of dimensions sizes */
   )
   :
     _extent{0},
     _offset{0},
-    _owner(false),
-    _data(data),
-    _mode(alloc_mode)
+    _owner(false)
   {
+#if !defined(__CUDA_ARCH__) && \
+    !defined(SYCL_LANGUAGE_VERSION) && \
+    !defined(__HIP_DEVICE_COMPILE__)
+    _mode = cs_alloc_mode;
+#else
+   // use default and avoid compiler warnings
+    _mode = CS_ALLOC_HOST_DEVICE_SHARED;
+#endif
     set_size_(dims);
-
-    // Avoid compiler warnings
-    CS_UNUSED(file_name);
-    CS_UNUSED(line_number);
+    _data = data;
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1839,6 +1856,9 @@ public:
       set_size_(new_size);
       reallocate_(file_name, line_number);
     }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("%s: array cannot be reshaped if non owner, use mdspan instead.\n"));
 
   }
 
@@ -1885,6 +1905,9 @@ public:
       set_size_(new_size);
       reallocate_(file_name, line_number);
     }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("%s: array cannot be reshaped if non owner, use mdspan instead.\n"));
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1921,6 +1944,9 @@ public:
       set_size_(dims);
       reallocate_(file_name, line_number);
     }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("%s: array cannot be reshaped if non owner, use mdspan instead.\n"));
   }
 
   /*--------------------------------------------------------------------------*/
@@ -2025,6 +2051,9 @@ public:
         reshape(dims, file_name, line_number);
       }
     }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("%s: array cannot be reshaped if non owner, use mdspan instead.\n"));
   }
 
   /*--------------------------------------------------------------------------*/
