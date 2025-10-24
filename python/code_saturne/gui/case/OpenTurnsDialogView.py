@@ -221,6 +221,12 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
             self.groupBoxDistantLaunch.hide()
 
         self.setAvailableBuildsList(host_name)
+        # reset default build name
+        if host_name != 'localhost':
+            dist_builds_list = self.distant_host_builds[host_name] 
+            self.mdl.setBuildName(str(dist_builds_list[0]))
+        else:
+            self.mdl.setBuildName('default')
 
         self.mdl.arch_path = self.hosts_binpath[host_name]
 
@@ -412,9 +418,6 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
                                                    1)
             for db in dist_builds_list:
                 self.modelOtDistantBuilds.addItem(self.tr(db), db)
-
-
-
 
 
     def create_cs_exec_function(self):
