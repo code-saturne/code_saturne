@@ -27,7 +27,6 @@ from code_saturne.model.XMLvariables import Variables, Model
 from code_saturne.model.XMLengine import *
 from code_saturne.model.MainFieldsModel import *       # TODO change
 from code_saturne.model.NotebookModel import NotebookModel
-from code_saturne.model.LocalizationModel import LocalizationModel
 import copy
 
 #-------------------------------------------------------------------------------
@@ -230,6 +229,7 @@ class TurbulenceModel(Variables, Model):
            # Update initialisation values to default init formula if the turbulence model is changed
            # If more zones are present, all initialization are set to Default
            if model != "none":
+               from code_saturne.model.LocalizationModel import LocalizationModel
                for zone in LocalizationModel('VolumicZone', self.case).getZones():
                    zoneId = zone.getCodeNumber()
                    turbFormula = self.getDefaultTurbFormula(zoneId, fieldId, model)
