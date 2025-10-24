@@ -255,7 +255,7 @@ _gaussian(const cs_mesh_t             *m,
        yw_liq = deltaq / (1.0 + qsl*pow(clatev, 2)/(rvap*cp0*pow(tliq, 2)));
      }
 
-     //Celcius temperature of the air parcel
+     // Celcius temperature of the air parcel
      cpro_tempc[c_id] = tliq + (clatev/cp0)*yw_liq - tkelvi;
      // liquid water content
      cpro_liqwt[c_id] = yw_liq;

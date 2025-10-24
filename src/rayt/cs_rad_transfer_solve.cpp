@@ -2118,7 +2118,7 @@ _rad_transfer_solve(int bc_type[])
       rad_estm[cell_id] = absom[cell_id] + emim[cell_id];
 
     /* In order to determine the source terms of the particle enthalpy
-       tranport equation, we have to copy the quantities above
+       transport equation, we have to copy the quantities above
        into the corresponding tables. */
 
     /* Coal solid phase or fuel droplets */

@@ -328,7 +328,7 @@ pspoqq(k1) = pspo(k1)
 ! TODO should be qqv(kmray+1)
 xqqvinf = qqqv(kmray) + qqvinf
 xqqcinf = qqqc(kmray) + qqcinf
-! Global integral from 0 to 4km
+! Global integral from 0 to 44km
 xqqco2inf = qqco2(kmray+1)
 
 ! 3. optical depth calculation for liquid water in cloudy cases
