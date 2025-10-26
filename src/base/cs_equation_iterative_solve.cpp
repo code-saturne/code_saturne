@@ -1174,7 +1174,7 @@ _equation_iterative_solve_strided(int                   idtvar,
 
   if (iwarnp >= 1) {
     if (residu <= epsrsp*rnorm)
-      bft_printf("%s : CV_DIF_TS, IT : %d, Res : %12.5e, Norm : %12.5e\n",
+      bft_printf("%s : CV_DIF_TS, converged at it: %d, Res: %12.5e, Norm: %12.5e\n",
                  var_name, isweep-1, residu, rnorm);
     /* Writing: non-convergence */
     else if (isweep > nswmod)
@@ -2197,7 +2197,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   if (iwarnp >= 1) {
     if (residu <= epsrsp*rnorm)
-      bft_printf("%s: CV_DIF_TS, IT : %d, Res : %12.5e, Norm : %12.5e\n",
+      bft_printf("%s: CV_DIF_TS, converged at it: %d, Res: %12.5e, Norm: %12.5e\n",
                  var_name, isweep-1, residu, rnorm);
     /* Writing: non-convergence */
     else if (isweep > nswmod)
