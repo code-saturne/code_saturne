@@ -524,28 +524,6 @@ _cs_rad_transfer_sol(int                        gg_id,
       || rt_params->atmo_model != CS_RAD_ATMO_3D_NONE)
     f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
 
-  /* For the case of the RCFSK scheme specify the equation parameters */
-  if (rt_params->imrcfsk == 1) {
-
-    eqp->verbosity  = rt_params->verbosity - 1;
-    eqp->iconv      = 1; /* Pure convection */
-    eqp->istat      = -1;
-    eqp->ndircl     = 1; /* There are Dirichlet BCs */
-    eqp->idiff      = 0; /* no face diffusion */
-    eqp->idifft     = -1;
-    eqp->isstpc     = 0;
-    eqp->nswrsm     = 1; /* One sweep is sufficient because of the upwind scheme */
-    eqp->imrgra     = cs_glob_space_disc->imrgra;
-    eqp->blencv     = 0;         /* Pure upwind...*/
-    eqp->epsrsm     = 1e-08;     /* TODO: try with default (1e-07) */
-
-    if (rt_params->dispersion) {
-      eqp->idiff  = 1; /* Added face diffusion */
-      eqp->nswrgr  = 20;
-      eqp->nswrsm  = 2;
-    }
-  }
-
   if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_prev + 1)
     _order_by_direction();
 
