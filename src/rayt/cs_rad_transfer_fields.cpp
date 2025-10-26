@@ -173,7 +173,7 @@ cs_rad_transfer_add_variable_fields(void)
               eqp->nswrsm =  1; /* One sweep is sufficient because of the upwind scheme */
               eqp->imrgra =  cs_glob_space_disc->imrgra;
               eqp->blencv =  0; /* Pure upwind...*/
-              eqp->epsrsm =  1e-08;  /* TODO: try with default (1e-07) */
+              eqp->epsrsm =  1e-05; /* should not be smaller than epsilo... */
 
               if (rt_params->dispersion) {
                 eqp->idiff  =  1; /* Added face diffusion */
@@ -215,7 +215,7 @@ cs_rad_transfer_add_variable_fields(void)
       eqp->nswrsm =  1; /* One sweep is sufficient because of the upwind scheme */
       eqp->imrgra =  cs_glob_space_disc->imrgra;
       eqp->blencv =  0; /* Pure upwind...*/
-      eqp->epsrsm =  1e-08;  /* TODO: try with default (1e-07) */
+      eqp->epsrsm =  1e-05; /* should not be smaller than epsilo... */
 
       if (rt_params->dispersion) {
         eqp->idiff  =  1; /* Added face diffusion */
