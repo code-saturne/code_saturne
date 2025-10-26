@@ -81,7 +81,7 @@ cs_rad_transfer_bcs(int bc_type[]);
  *
  *   1/ Gray wall: isotropic radiation field.
  *
- *   \f$ coefap =  \epsilon.\sigma.twall^4 / \pi + (1-\epsilon).qincid / \pi \f$
+ *   \f$ A = \epsilon.\sigma.twall^4 / \pi + (1-\epsilon).qincid / \pi \f$
  *
  *   which is the sum of the wall emission and reflecting flux
  *   (eps=1: black wall; eps=0: reflecting wall).
@@ -89,10 +89,8 @@ cs_rad_transfer_bcs(int bc_type[]);
  *   2/ Free boundary: condition to mimic infinite domain
  *
  * \param[in]  bc_type         boundary face types
- * \param[in]  vect_s          direction vector or NULL
- * \param[in]  ckmel           Absoprtion coefficcient of the mixture
- *                               gas-particules of coal
- * \param[in]  bpro_eps        Boundary emissivity, or NULL for solar radiation
+ * \param[in]  vect_s          direction vector or nullptr
+ * \param[in]  bpro_eps        Boundary emissivity, or nullptr for solar radiation
  * \param[in]  w_gg            Weights of the i-th gray gas at boundaries
  * \param[in]  gg_id           number of the i-th grey gas
  * \param[out] bc_coeffs       boundary conditions structure for
@@ -101,13 +99,51 @@ cs_rad_transfer_bcs(int bc_type[]);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_bc_coeffs(int                    bc_type[],
-                          cs_real_t              vect_s[3],
-                          cs_real_t              ckmel[],
-                          cs_real_t              bpro_eps[],
-                          cs_real_t              w_gg[],
-                          int                    gg_id,
-                          cs_field_bc_coeffs_t  *bc_coeffs);
+cs_rad_transfer_bc_coeffs_dom(int                    bc_type[],
+                              cs_real_t              vect_s[3],
+                              cs_real_t              bpro_eps[],
+                              cs_real_t              w_gg[],
+                              int                    gg_id,
+                              cs_field_bc_coeffs_t  *bc_coeffs);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Boundary conditions for P1 model
+ *
+ *  The coefap array stores the intensity for each boundary face,
+ *  depending of the nature of the boundary (Dirichlet condition).
+ *  The intensity of radiation is defined as the rate of emitted
+ *  energy from unit surface area through a unit solid angle.
+ *
+ *   1/ Gray wall: isotropic radiation field.
+ *
+ *   \f$ A =  \epsilon.\sigma.twall^4 / \pi + (1-\epsilon).qincid / \pi \f$
+ *
+ *   which is the sum of the wall emission and reflecting flux
+ *   (eps=1: black wall; eps=0: reflecting wall).
+ *
+ *   2/ Free boundary: condition to mimic infinite domain
+ *
+ * \param[in]  bc_type         boundary face types
+ * \param[in]  ckmix           Absorption coefficient of the mixture
+ *                               gas-particles of coal
+ * \param[in]  bpro_eps        Boundary emissivity,
+ *                             or nullptr for solar radiation
+ * \param[in]  w_gg            Weights of the i-th gray gas at boundaries
+ * \param[in]  gg_id           number of the i-th grey gas
+ * \param[out] bc_coeffs       boundary conditions structure for
+ *                             intensity or P-1 model
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_rad_transfer_bc_coeffs_p1(int                    bc_type[],
+                             cs_real_t              ckmix[],
+                             cs_real_t              bpro_eps[],
+                             cs_real_t              w_gg[],
+                             int                    gg_id,
+                             cs_field_bc_coeffs_t  *bc_coeffs);
+
 
 /*----------------------------------------------------------------------------*/
 

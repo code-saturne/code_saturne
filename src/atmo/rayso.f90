@@ -274,7 +274,7 @@ double precision za, muzero, muzero_cor,fo,m,mbar,mbarh2o,rabar,rabar2,rbar
 double precision rabarc,rbarc, refx, trax, refx0, trax0
 double precision qqvtot,y,ystar
 double precision yp1,ystarp1
-double precision zqm1,zq,x,xstar
+double precision zq,x,xstar
 double precision zqp1,xp1,xstarp1
 double precision rrbar,rrbar2s
 double precision tauctot,wh2ol,rm,req,deltaz

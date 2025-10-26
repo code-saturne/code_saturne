@@ -116,43 +116,112 @@ cs_rad_transfer_add_variable_fields(void)
   cs_parameters_error_barrier();
 
   /* radiance (per band) */
-  for (int gg_id = 0; gg_id < rt_params->nwsgg; gg_id ++) {
-    char f_name[80];
-    char f_label[80];
-    char suffix[16];
+  char f_name[80];
+  char f_label[80];
+  char suffix[16];
 
-    snprintf(suffix,  15, "_%02d", gg_id);
-    suffix[15] = '\0';
+  if (rt_params->save_radiance_dir) {
+    for (int gg_id = 0; gg_id < rt_params->nwsgg; gg_id ++) {
+      bool one_dir = false;
+      bool finished = false;
+      int kdir = 0;
+      /* For direct solar radiation */
+      if ((gg_id == rt_params->atmo_dr_id)
+          || (gg_id == rt_params->atmo_dr_o3_id)) {
+        one_dir = true;
+      }
 
-    snprintf(f_name, 63, "radiance%s", suffix); f_name[63] = '\0';
-    snprintf(f_label, 63, "Radiance%s", suffix); f_label[63]  = '\0';
-    int f_id = cs_variable_field_create(f_name,
-                                        f_label,
-                                        CS_MESH_LOCATION_CELLS,
-                                        1);
+      for (int kk = -1; kk <= 1 && !finished; kk+=2) {
+        for (int ii = -1; ii <= 1 && !finished; ii+=2) {
+          for (int jj = -1; jj <= 1 && !finished; jj+=2) {
 
-    cs_field_t *f = cs_field_by_id(f_id);
+            for (int dir_id = 0;
+                dir_id < rt_params->ndirs && !finished;
+                dir_id++, kdir++) {
 
-    cs_field_pointer_map_indexed(CS_ENUMF_(radiance), gg_id, f);
+              int n_dirs = 8 * rt_params->ndirs;
+              if (one_dir) {
+                finished = true;
+                n_dirs = 1;
+              }
+              int rad_id = n_dirs * gg_id + kdir;
 
-    /* Equation parameters */
-    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-    eqp->verbosity =  rt_params->verbosity - 1;
-    eqp->iconv = 1; /* pure convection */
-    eqp->idiff  = 0; /* no diffusion */
-    eqp->istat = 0; /* no unsteady term */
-    eqp->idircl= 0; /* No reinforcement of diagonal */
-    eqp->idifft = 0;
-    eqp->isstpc =  0;
-    eqp->nswrsm =  1; /* One sweep is sufficient because of the upwind scheme */
-    eqp->imrgra =  cs_glob_space_disc->imrgra;
-    eqp->blencv =  0; /* Pure upwind...*/
-    eqp->epsrsm =  1e-08;  /* TODO: try with default (1e-07) */
 
-    if (rt_params->dispersion) {
-      eqp->idiff  =  1; /* Added face diffusion */
-      eqp->nswrgr = 20;
-      eqp->nswrsm =  2;
+              snprintf(suffix,  15, "_%02d_%02d", gg_id, kdir);
+              suffix[15] = '\0';
+
+              snprintf(f_name, 63, "radiance%s", suffix); f_name[63] = '\0';
+              snprintf(f_label, 63, "Radiance%s", suffix); f_label[63]  = '\0';
+              int f_id = cs_variable_field_create(f_name,
+                                                  f_label,
+                                                  CS_MESH_LOCATION_CELLS,
+                                                  1);
+
+              cs_field_t *f = cs_field_by_id(f_id);
+
+              cs_field_pointer_map_indexed(CS_ENUMF_(radiance), rad_id, f);
+
+              /* Equation parameters */
+              cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+              eqp->verbosity =  rt_params->verbosity - 1;
+              eqp->iconv = 1; /* pure convection */
+              eqp->idiff  = 0; /* no diffusion */
+              eqp->istat = 0; /* no unsteady term */
+              eqp->idircl= 0; /* No reinforcement of diagonal */
+              eqp->idifft = 0;
+              eqp->isstpc =  0;
+              eqp->nswrsm =  1; /* One sweep is sufficient because of the upwind scheme */
+              eqp->imrgra =  cs_glob_space_disc->imrgra;
+              eqp->blencv =  0; /* Pure upwind...*/
+              eqp->epsrsm =  1e-08;  /* TODO: try with default (1e-07) */
+
+              if (rt_params->dispersion) {
+                eqp->idiff  =  1; /* Added face diffusion */
+                eqp->nswrgr = 20;
+                eqp->nswrsm =  2;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  else {
+    /* radiance (per band) */
+    for (int gg_id = 0; gg_id < rt_params->nwsgg; gg_id ++) {
+      snprintf(suffix,  15, "_%02d", gg_id);
+      suffix[15] = '\0';
+
+      snprintf(f_name, 63, "radiance%s", suffix); f_name[63] = '\0';
+      snprintf(f_label, 63, "Radiance%s", suffix); f_label[63]  = '\0';
+      int f_id = cs_variable_field_create(f_name,
+                                          f_label,
+                                          CS_MESH_LOCATION_CELLS,
+                                          1);
+
+      cs_field_t *f = cs_field_by_id(f_id);
+
+      cs_field_pointer_map_indexed(CS_ENUMF_(radiance), gg_id, f);
+
+      /* Equation parameters */
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+      eqp->verbosity =  rt_params->verbosity - 1;
+      eqp->iconv = 1; /* pure convection */
+      eqp->idiff  = 0; /* no diffusion */
+      eqp->istat = 0; /* no unsteady term */
+      eqp->idircl= 0; /* No reinforcement of diagonal */
+      eqp->idifft = 0;
+      eqp->isstpc =  0;
+      eqp->nswrsm =  1; /* One sweep is sufficient because of the upwind scheme */
+      eqp->imrgra =  cs_glob_space_disc->imrgra;
+      eqp->blencv =  0; /* Pure upwind...*/
+      eqp->epsrsm =  1e-08;  /* TODO: try with default (1e-07) */
+
+      if (rt_params->dispersion) {
+        eqp->idiff  =  1; /* Added face diffusion */
+        eqp->nswrgr = 20;
+        eqp->nswrsm =  2;
+      }
     }
   }
 

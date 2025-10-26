@@ -538,28 +538,81 @@ _boundary_condition_rt_type(const cs_mesh_t             *m,
   /* Initialization
    * -------------- */
 
-  /* TODO: make a rt_bc_type as ale_bc_type */
+  /* TODO: make a rt_bc_type as ale_bc_type  (it is isothp/isothm) */
 
-  for (int gg_id = 0; gg_id < nwsgg; gg_id++) {
+  if (rt_params->save_radiance_dir) {
+    for (int gg_id = 0; gg_id < nwsgg; gg_id++) {
 
-    // cs_real_t *radiance = CS_FI_(radiance, gg_id)->val;
-    cs_field_t *f_rad = CS_FI_(radiance, gg_id);
+      bool one_dir = false;
+      bool finished = false;
+      int kdir = 0;
+      /* For direct solar radiation */
+      if (   (gg_id == rt_params->atmo_dr_id)
+          || (gg_id == rt_params->atmo_dr_o3_id)) {
+        one_dir = true;
+      }
 
-    // int *icodcl_rad = nullptr;
-    cs_real_t *rcodcl1_rad = nullptr;
+      for (int kk = -1; kk <= 1 && !finished; kk+=2) {
+        for (int ii = -1; ii <= 1 && !finished; ii+=2) {
+          for (int jj = -1; jj <= 1 && !finished; jj+=2) {
 
-    if (f_rad->bc_coeffs != nullptr) {
-      // icodcl_rad = f_rad->bc_coeffs->icodcl;
-      rcodcl1_rad = f_rad->bc_coeffs->rcodcl1;
+            for (int dir_id = 0;
+                 dir_id < rt_params->ndirs && !finished;
+                 dir_id++, kdir++) {
+
+              int n_dirs = 8 * rt_params->ndirs;
+              if (one_dir) {
+                finished = true;
+                n_dirs = 1;
+              }
+              int rad_id = n_dirs * gg_id + kdir;
+
+
+              cs_field_t *f_rad = CS_FI_(radiance, rad_id);
+
+              // int *icodcl_rad = nullptr;
+              cs_real_t *rcodcl1_rad = nullptr;
+
+              if (f_rad->bc_coeffs != nullptr) {
+                // icodcl_rad = f_rad->bc_coeffs->icodcl;
+                rcodcl1_rad = f_rad->bc_coeffs->rcodcl1;
+              }
+
+              ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+                if (rcodcl1_rad[face_id] > cs_math_infinite_r*0.5)
+                  rcodcl1_rad[face_id] = 0.;
+              });
+
+              ctx.wait();
+
+            }
+          }
+        }
+      }
+
     }
+  }
+  else {
+    for (int gg_id = 0; gg_id < nwsgg; gg_id++) {
 
-    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-      if (rcodcl1_rad[face_id] > cs_math_infinite_r*0.5)
-        rcodcl1_rad[face_id] = 0.;
-    });
+      cs_field_t *f_rad = CS_FI_(radiance, gg_id);
 
-    ctx.wait();
+      // int *icodcl_rad = nullptr;
+      cs_real_t *rcodcl1_rad = nullptr;
 
+      if (f_rad->bc_coeffs != nullptr) {
+        // icodcl_rad = f_rad->bc_coeffs->icodcl;
+        rcodcl1_rad = f_rad->bc_coeffs->rcodcl1;
+      }
+
+      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        if (rcodcl1_rad[face_id] > cs_math_infinite_r*0.5)
+          rcodcl1_rad[face_id] = 0.;
+      });
+
+      ctx.wait();
+
+    }
   }
 
 }

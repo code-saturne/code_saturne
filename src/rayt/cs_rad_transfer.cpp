@@ -184,6 +184,11 @@ BEGIN_C_DECLS
         Also, in order to have proper initialization of the variables,
         the radiation module should always be called at
         the first time step of a calculation (restart or not).
+  \var  cs_rad_transfer_params_t::save_radiance_dir
+        False by default (true for atmo), if activated, the radiance field
+        is savec by direction and therefore it is solved by increment
+        (solving is simplified).
+
 */
 
 /*----------------------------------------------------------------------------*/
@@ -255,6 +260,7 @@ cs_rad_transfer_params_t _rt_params = {
   .atmo_ir_id = -1,
   .dispersion = false,
   .dispersion_coeff = 1.,
+  .save_radiance_dir = false,
   .time_control = {
     .type = CS_TIME_CONTROL_TIME_STEP,
     .at_start = true,

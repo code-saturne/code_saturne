@@ -233,6 +233,7 @@ _order_by_direction(void)
   const cs_lnum_t n_cells = m->n_cells;
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
 
+  /* Global direction id */
   int kdir = 0;
 
   cs_real_t *s;
@@ -241,19 +242,15 @@ _order_by_direction(void)
   for (int kk = -1; kk < 2; kk+=2) {
     for (int ii = -1; ii < 2; ii+=2) {
       for (int jj = -1; jj < 2; jj+=2) {
-        for (int dir_id = 0;
-             dir_id < cs_glob_rad_transfer_params->ndirs;
-             dir_id++) {
+        for (int dir_id = 0; dir_id < cs_glob_rad_transfer_params->ndirs;
+             dir_id++, kdir++) {
 
           cs_real_t v[3] = {ii*cs_glob_rad_transfer_params->vect_s[dir_id][0],
                             jj*cs_glob_rad_transfer_params->vect_s[dir_id][1],
                             kk*cs_glob_rad_transfer_params->vect_s[dir_id][2]};
 
-          /* Global direction id */
-          kdir++;
-
           char name[32];
-          sprintf(name, "radiation_%03d", kdir);
+          snprintf(name, 79, "%s%03d", "radiation_", kdir+1);
 
           cs_sles_t *sles = cs_sles_find(-1, name);
 
@@ -334,13 +331,13 @@ _order_by_direction(void)
  * \param[in]     tempk          temperature in Kelvin
  * \param[in]     ckg            gas mix absorption coefficient
  * \param[in]     bc_type        boundary face types
- * \param[inout]  bc_coeffs_rad  boundary condition work array for the radiance
- * \param[inout]  flurds         pseudo mass flux work array (interior faces)
- * \param[inout]  flurdb         pseudo mass flux work array (boundary faces)
- * \param[inout]  viscf          visc*surface/dist work array at interior faces
- * \param[inout]  viscb          visc*surface/dist work array at boundary faces
- * \param[inout]  rhs            work array for RHS
- * \param[inout]  rovsdt         work array for unsteady term
+ * \param[in,out] bc_coeffs_rad  boundary condition work array for the radiance
+ * \param[in,out] flurds         pseudo mass flux work array (interior faces)
+ * \param[in,out] flurdb         pseudo mass flux work array (boundary faces)
+ * \param[in,out] viscf          visc*surface/dist work array at interior faces
+ * \param[in,out] viscb          visc*surface/dist work array at boundary faces
+ * \param[in,out] rhs            work array for RHS
+ * \param[in,out] rovsdt         work array for unsteady term
  * \param[out]    q              explicit flux density vector
  * \param[out]    int_rad_domega integral of I dOmega
  * \param[out]    int_abso       work array for absorption
@@ -384,26 +381,38 @@ _cs_rad_transfer_sol(int                        gg_id,
   const cs_real_t c_stefan = cs_physical_constants_stephan;
   const cs_real_t onedpi  = 1.0 / cs_math_pi;
 
-  cs_real_t *coefap = bc_coeffs_rad->a;
-  cs_real_t *cofafp = bc_coeffs_rad->af;
-
   /* Shorter notation */
   cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
+
+  /* Field id if directions are not stored */
+  int f_id = -1;
+
+  cs_real_t *coefap = nullptr;
+  cs_real_t *cofafp = nullptr;
+  cs_real_t *radiance = nullptr;
+  cs_real_t *radiance_prev = nullptr;
+  cs_equation_param_t *eqp = nullptr;
+  if (!(rt_params->save_radiance_dir)) {
+    f_id = CS_FI_(radiance, gg_id)->id;
+    coefap = bc_coeffs_rad->a;
+    cofafp = bc_coeffs_rad->af;
+    radiance = CS_FI_(radiance, gg_id)->val;
+    radiance_prev = CS_FI_(radiance, gg_id)->val_pre;
+    eqp = cs_field_get_equation_param(CS_FI_(radiance, gg_id));
+  }
 
   int verbosity = rt_params->verbosity;
   if (cs_log_default_is_active() == false)
     verbosity -= 2;
 
   /* Total incident radiative flux  */
-  cs_field_t *f_qincid = cs_field_by_name("rad_incident_flux");
+  cs_field_t *f_qinci = CS_F_(qinci);
 
   cs_field_t *f_snplus = cs_field_by_name("rad_net_flux");
 
   /* Allocate work arrays */
 
   cs_real_t *rhs0, *dpvar;
-  cs_real_t *radiance = CS_FI_(radiance, gg_id)->val;
-  cs_real_t *radiance_prev = CS_FI_(radiance, gg_id)->val_pre;
   cs_real_t *ck_u_d = nullptr;
   CS_MALLOC(rhs0,  n_cells_ext, cs_real_t);
   CS_MALLOC(dpvar, n_cells_ext, cs_real_t);
@@ -445,6 +454,7 @@ _cs_rad_transfer_sol(int                        gg_id,
   }
 
   cs_real_t vect_s[3];
+  cs_real_t vect_s0[3];
   cs_real_t domegat = 0;
   bool one_dir = false;
   cs_real_t muzero_cor = 0.;
@@ -478,16 +488,20 @@ _cs_rad_transfer_sol(int                        gg_id,
                                  &omega,
                                  &fo);
 
+    /* Zenithal angle:
+     * muzero is almost cos(za),
+     * but take earth curvature into account */
+    cs_real_t sinza = sqrt(1. - muzero_cor * muzero_cor);
+    vect_s0[0] = - sinza * sin(omega);
+    vect_s0[1] = - sinza * cos(omega);
+    vect_s0[2] = - muzero_cor; /*  cos(za) */
+
     /* For direct solar radiation */
     if (   (gg_id == rt_params->atmo_dr_id)
         || (gg_id == rt_params->atmo_dr_o3_id)) {
-      /* Zenithal angle:
-       * muzero is almost cos(za),
-       * but take earth curvature into account */
-      cs_real_t sinza = sqrt(1. - muzero_cor * muzero_cor);
-      vect_s[0] = - sinza * sin(omega);
-      vect_s[1] = - sinza * cos(omega);
-      vect_s[2] = - muzero_cor; /*  cos(za) */
+      vect_s[0] = vect_s0[0];
+      vect_s[1] = vect_s0[1];
+      vect_s[2] = vect_s0[2];
 
       if (verbosity > 0)
         bft_printf("     Solar direction [%f, %f, %f]\n",
@@ -509,9 +523,6 @@ _cs_rad_transfer_sol(int                        gg_id,
       || rt_params->imrcfsk == 1
       || rt_params->atmo_model != CS_RAD_ATMO_3D_NONE)
     f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
-
-  cs_equation_param_t *eqp =
-    cs_field_get_equation_param(CS_FI_(radiance, gg_id));
 
   /* For the case of the RCFSK scheme specify the equation parameters */
   if (rt_params->imrcfsk == 1) {
@@ -543,40 +554,45 @@ _cs_rad_transfer_sol(int                        gg_id,
    *                            /2PI
    */
 
-  cs_real_t aa;
-  if (!one_dir) {
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-      f_snplus->val[face_id] = 0.0;
+  /* if direction are not stored, there is a renormalisation done
+   * TODO why not done direclty in bcs?
+   * */
+  if (!(rt_params->save_radiance_dir)) {
+    cs_real_t aa;
+    if (!one_dir) {
+      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
+        f_snplus->val[face_id] = 0.0;
 
-    for (int kk = -1; kk <= 1; kk+=2) {
-      for (int ii = -1; ii <= 1; ii+=2) {
-        for (int jj = -1; jj <= 1; jj+=2) {
+      for (int kk = -1; kk <= 1; kk+=2) {
+        for (int ii = -1; ii <= 1; ii+=2) {
+          for (int jj = -1; jj <= 1; jj+=2) {
 
-          for (int dir_id = 0; dir_id < rt_params->ndirs; dir_id++) {
-            vect_s[0] = ii * rt_params->vect_s[dir_id][0];
-            vect_s[1] = jj * rt_params->vect_s[dir_id][1];
-            vect_s[2] = kk * rt_params->vect_s[dir_id][2];
-            domegat = rt_params->angsol[dir_id];
-            for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-              aa = cs_math_3_dot_product(vect_s, b_face_u_normal[face_id]);
-              f_snplus->val[face_id] += 0.5 * (-aa + cs::abs(aa)) * domegat;
+            for (int dir_id = 0; dir_id < rt_params->ndirs; dir_id++) {
+              vect_s[0] = ii * rt_params->vect_s[dir_id][0];
+              vect_s[1] = jj * rt_params->vect_s[dir_id][1];
+              vect_s[2] = kk * rt_params->vect_s[dir_id][2];
+              domegat = rt_params->angsol[dir_id];
+              for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+                aa = cs_math_3_dot_product(vect_s, b_face_u_normal[face_id]);
+                f_snplus->val[face_id] += 0.5 * (-aa + cs::abs(aa)) * domegat;
+              }
             }
-          }
 
+          }
         }
       }
-    }
 
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-      coefap[face_id] *= cs_math_pi / f_snplus->val[face_id];
-      cofafp[face_id] *= cs_math_pi / f_snplus->val[face_id];
+      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+        coefap[face_id] *= cs_math_pi / f_snplus->val[face_id];
+        cofafp[face_id] *= cs_math_pi / f_snplus->val[face_id];//FIXME useless.
+      }
     }
   }
 
   /* initialization for integration in following loops */
 
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-    f_qincid->val[face_id] = 0.0;
+    f_qinci->val[face_id] = 0.0;
     f_snplus->val[face_id] = 0.0;
   }
 
@@ -613,13 +629,15 @@ _cs_rad_transfer_sol(int                        gg_id,
 
         for (int dir_id = 0;
              dir_id < rt_params->ndirs && !finished;
-             dir_id++) {
+             dir_id++, kdir++) {
 
           char sles_name[80];
 
+          int n_dirs = 8 * rt_params->ndirs;
           if (one_dir) {
             snprintf(sles_name, 79, "%s", "direct_radiation");
             finished = true;
+            n_dirs = 1;
           }
           /* Many directions */
           else {
@@ -628,9 +646,20 @@ _cs_rad_transfer_sol(int                        gg_id,
             vect_s[2] = kk * rt_params->vect_s[dir_id][2];
             domegat = rt_params->angsol[dir_id];
 
-            /* Gloal direction id */
-            kdir++;
-            snprintf(sles_name, 79, "%s%03d", "radiation_", kdir);
+            /* Global direction id */
+            snprintf(sles_name, 79, "%s%03d", "radiation_", kdir+1);
+          }
+          int rad_id = n_dirs * gg_id + kdir;
+
+          /* Get field by direction and by band if needed */
+          if (rt_params->save_radiance_dir) {
+            radiance = CS_FI_(radiance, rad_id)->val;
+            radiance_prev = CS_FI_(radiance, rad_id)->val_pre;
+
+            /* get BC coeffs Allocate specific arrays for the radiative
+             * transfer module */
+            bc_coeffs_rad = CS_FI_(radiance, rad_id)->bc_coeffs;
+            eqp = cs_field_get_equation_param(CS_FI_(radiance, rad_id));
           }
 
           /* Update boundary condition coefficients
@@ -642,13 +671,12 @@ _cs_rad_transfer_sol(int                        gg_id,
             bpro_eps = cs_field_by_name("emissivity")->val;
 
           if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE)
-            cs_rad_transfer_bc_coeffs(bc_type,
-                                      vect_s,
-                                      nullptr, /* only useful for P1 */
-                                      bpro_eps,
-                                      w_gg,
-                                      gg_id,
-                                      bc_coeffs_rad);
+            cs_rad_transfer_bc_coeffs_dom(bc_type,
+                                          vect_s,
+                                          bpro_eps,
+                                          w_gg,
+                                          gg_id,
+                                          bc_coeffs_rad);
 
           /* Spatial discretization */
 
@@ -661,11 +689,20 @@ _cs_rad_transfer_sol(int                        gg_id,
 
             const cs_real_t *grav = cs_glob_physical_constants->gravity;
 
+            cs_real_t mu = cs_math_3_dot_product(grav, vect_s)
+                         / cs_math_3_norm(grav);
             for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-              if (cs_math_3_dot_product(grav, vect_s) < 0.0)
+              cs_real_t ck_op;
+              /* ck contains dtau/dz */
+              if (mu < 0.0) {
                 ck_u_d[cell_id] = ck_u[gg_id + cell_id * stride];
-              else
+                ck_op = ck_d[gg_id + cell_id * stride];
+              }
+              /* Down */
+              else {
                 ck_u_d[cell_id] = ck_d[gg_id + cell_id * stride];
+                ck_op = ck_u[gg_id + cell_id * stride];
+              }
 
               rovsdt[cell_id] =  ck_u_d[cell_id] * cell_vol[cell_id];
 
@@ -683,19 +720,40 @@ _cs_rad_transfer_sol(int                        gg_id,
               if (   gg_id == rt_params->atmo_df_id
                   || gg_id == rt_params->atmo_df_o3_id) {
 
+                cs_real_t factor = 0;
                 /* w0 (1 +- g) S0 */
                 cs_real_t _w0 = w0[gg_id + cell_id * stride];
 
                 /* g assymmetry factor */
                 cs_real_t _gapc= g_apc[gg_id + cell_id * stride];
 
-                /* rhs already contains S0* cell_vol */
-                /* Up */
-                if (cs_math_3_dot_product(grav, vect_s) < 0.0)
-                  rhs[cell_id] *= _w0 * 0.5 * (1. - _gapc);
+                if (mu < 0)
+                  factor = 0.5 * (1. - _gapc);
                 /* Down */
                 else
-                  rhs[cell_id] *= _w0 * 0.5 * (1. + _gapc);
+                  factor = 0.5 * (1. + _gapc);
+
+                /* Direct to diffuse */
+                /* Note: rhs already contains S0 * cell_vol */
+                rhs[cell_id] *= _w0 * factor;
+
+                /* Implicit contribution of P(cos(THETA)=1) Diffus -> Diffus */
+                factor = 0.5 * (1. + _gapc);
+                rovsdt[cell_id] *= (1. - _w0 * factor);
+
+                /* Delta function for the moment: take the opposite direction */
+                /* Opposite direction */
+                int kdir2 = kdir -     jj * rt_params->ndirs
+                                 - 2 * ii * rt_params->ndirs
+                                 - 4 * kk * rt_params->ndirs;
+                int rad_id2 = n_dirs * gg_id + kdir2;
+
+                cs_real_t *radiance_op = CS_FI_(radiance, rad_id2)->val;
+                factor = 0.5 * (1. - _gapc);
+                rhs[cell_id] +=  ck_op * _w0 * factor
+                  * radiance_op[cell_id] * cell_vol[cell_id];
+
+
               }
             }
           }
@@ -722,9 +780,19 @@ _cs_rad_transfer_sol(int                        gg_id,
             viscb[face_id] = 0.0;
           }
 
-          for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
-            radiance[cell_id] = 0.0;
-            radiance_prev[cell_id] = 0.0;
+          /* Because we deal with an increment */
+          if (rt_params->save_radiance_dir) {
+            f_id = CS_FI_(radiance, rad_id)->id;
+            for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+              rhs[c_id] -= rovsdt[c_id] * radiance_prev[c_id];
+            }
+          }
+          else {
+            /* If direction are not stored, start by 0 */
+            for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+              radiance[cell_id] = 0.0;
+              radiance_prev[cell_id] = 0.0;
+            }
           }
 
           for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++) {
@@ -745,7 +813,6 @@ _cs_rad_transfer_sol(int                        gg_id,
           /* In case of a theta-scheme, set theta = 1;
              no relaxation in steady case either */
 
-          int f_id = CS_FI_(radiance, gg_id)->id;
           cs_sles_push(f_id, sles_name);
 
           cs_equation_iterative_solve_scalar(0,   /* idtvar */
@@ -785,7 +852,7 @@ _cs_rad_transfer_sol(int                        gg_id,
           if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE) {
 
             for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-              aa = radiance[cell_id] * domegat;
+              cs_real_t aa = radiance[cell_id] * domegat;
               int_rad_domega[cell_id]  += aa;
               /* Absorption */
               int_abso[cell_id] += ck_u_d[cell_id] * aa;
@@ -811,7 +878,7 @@ _cs_rad_transfer_sol(int                        gg_id,
           else {
 
             for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-              aa = radiance[cell_id] * domegat;
+              cs_real_t aa = radiance[cell_id] * domegat;
               int_rad_domega[cell_id]  += aa;
               q[cell_id][0] += aa * vect_s[0];
               q[cell_id][1] += aa * vect_s[1];
@@ -825,11 +892,16 @@ _cs_rad_transfer_sol(int                        gg_id,
           cs_field_t *f_albedo = cs_field_by_name_try("boundary_albedo");
           for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
             cs_lnum_t cell_id = cs_glob_mesh->b_face_cells[face_id];
-            aa = cs_math_3_dot_product(vect_s, b_face_u_normal[face_id]);
+            cs_real_t aa = cs_math_3_dot_product(vect_s, b_face_u_normal[face_id]);
             aa = 0.5 * (aa + cs::abs(aa)) * domegat;
             f_snplus->val[face_id] += aa;
-            f_qincid->val[face_id] += aa * radiance[cell_id];
-            /* Diffusion: downward reflect on upward */
+            f_qinci->val[face_id] += aa * radiance[cell_id];
+            /* Diffusion: downward reflect on upward
+             * so upward incident flux is initialized by albedo times
+             * time downward incident flux.
+             * TODO mind the sign? shall we put a minus?
+             * Note: it assumes that downward dirs are done before upwards ones
+             * */
             if (   gg_id == rt_params->atmo_df_o3_id
                 || gg_id == rt_params->atmo_df_id)
               f_qinspe->val[gg_id + face_id * stride] +=
@@ -849,6 +921,10 @@ _cs_rad_transfer_sol(int                        gg_id,
               f_down->val[gg_id + cell_id * stride]
                 += radiance[cell_id] * domegat * vect_s[2];
           }
+
+          /* Update field */
+          if (rt_params->save_radiance_dir)
+            cs_field_current_to_previous(CS_FI_(radiance, rad_id));
         }
       }
     }
@@ -858,22 +934,23 @@ _cs_rad_transfer_sol(int                        gg_id,
   if (f_qinspe != nullptr) {
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-      f_qinspe->val[gg_id + face_id * stride] = f_qincid->val[face_id];
+      f_qinspe->val[gg_id + face_id * stride] = f_qinci->val[face_id];
 
-    /* For atmospheric radiation, albedo times the incident
-     * direct solar radiation is given to the diffuse solar */
+    /* For atmospheric radiation, direct solar produces an incident upward
+     * flux for diffuse solar that is equal to albedo times the incident
+     * direct solar radiation */
     cs_field_t *f_albedo = cs_field_by_name_try("boundary_albedo");
     if (gg_id == rt_params->atmo_dr_id
         && rt_params->atmo_model & CS_RAD_ATMO_3D_DIFFUSE_SOLAR) {
       for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
         f_qinspe->val[rt_params->atmo_df_id + face_id * stride] +=
-          f_albedo->val[face_id] * f_qincid->val[face_id];
+          f_albedo->val[face_id] * f_qinci->val[face_id];
     }
     if (gg_id == rt_params->atmo_dr_o3_id
         && rt_params->atmo_model & CS_RAD_ATMO_3D_DIFFUSE_SOLAR_O3BAND) {
       for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
         f_qinspe->val[rt_params->atmo_df_o3_id + face_id * stride] +=
-          f_albedo->val[face_id] * f_qincid->val[face_id];
+          f_albedo->val[face_id] * f_qinci->val[face_id];
     }
 
   }
@@ -950,12 +1027,10 @@ _cs_rad_transfer_sol(int                        gg_id,
  * The density of net radiation flux must be calculated
  * consistently with the boundary conditions of the intensity.
  * The density of net flux is the balance between the radiative
- * emiting part of a boundary face (and not the reflecting one)
+ * emitting part of a boundary face (and not the reflecting one)
  * and the radiative absorbing part.
  *
  * \param[in]   bc_type   boundary face types
- * \param[in]   coefap    boundary condition work array for the radiance
- *                        (explicit part)
  * \param[in]   twall     inside current wall temperature (K)
  * \param[in]   qincid    radiative incident flux  (W/m2)
  * \param[in]   eps       emissivity (>0)
@@ -964,7 +1039,7 @@ _cs_rad_transfer_sol(int                        gg_id,
 /*----------------------------------------------------------------------------*/
 
 static void
-_compute_net_flux(const int        itypfb[],
+_compute_net_flux(const int        bc_type[],
                   const cs_real_t  twall[],
                   const cs_real_t  qincid[],
                   const cs_real_t  eps[],
@@ -979,7 +1054,9 @@ _compute_net_flux(const int        itypfb[],
    * (explicit part of the last band to be coherent with before)
    * FIXME this should be updated for multiband and
    * also for other inlet conditions */
-  cs_real_t *coefap = CS_FI_(radiance, nwsgg-1)->bc_coeffs->a;
+  cs_real_t *coefap = nullptr;
+  if (!(rt_params->save_radiance_dir))
+    coefap = CS_FI_(radiance, nwsgg-1)->bc_coeffs->a;
 
   /* If the boundary conditions given above have been modified
    *   it is necessary to change the way in which density is calculated from
@@ -994,20 +1071,20 @@ _compute_net_flux(const int        itypfb[],
   for (cs_lnum_t ifac = 0; ifac < cs_glob_mesh->n_b_faces; ifac++) {
 
     /* Wall faces */
-    if (   itypfb[ifac] == CS_SMOOTHWALL
-        || itypfb[ifac] == CS_ROUGHWALL)
+    if (   bc_type[ifac] == CS_SMOOTHWALL
+        || bc_type[ifac] == CS_ROUGHWALL)
       net_flux[ifac] = eps[ifac] * (  qincid[ifac]
                                     - c_stefan * cs_math_pow4(twall[ifac]));
 
     /* Symmetry   */
-    else if (itypfb[ifac] == CS_SYMMETRY)
+    else if (bc_type[ifac] == CS_SYMMETRY || coefap == nullptr)
       net_flux[ifac] = 0.0;
 
     /* Inlet/Outlet    */
-    else if (   itypfb[ifac] == CS_INLET
-             || itypfb[ifac] == CS_CONVECTIVE_INLET
-             || itypfb[ifac] == CS_OUTLET
-             || itypfb[ifac] == CS_FREE_INLET) {
+    else if (   bc_type[ifac] == CS_INLET
+             || bc_type[ifac] == CS_CONVECTIVE_INLET
+             || bc_type[ifac] == CS_OUTLET
+             || bc_type[ifac] == CS_FREE_INLET) {
       if (cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_DOM)
         net_flux[ifac] = qincid[ifac] - cs_math_pi * coefap[ifac];
       else if (cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_P1)
@@ -1524,7 +1601,7 @@ _rad_transfer_solve(int bc_type[])
       dcp[cell_id] = dcp0;
   }
 
-  /* Check for transparent case => no need to compute absoption or emission */
+  /* Check for transparent case => no need to compute absorption or emission */
   int idiver = rt_params->idiver;
 
   /* Solving the ETR.
@@ -1533,8 +1610,11 @@ _rad_transfer_solve(int bc_type[])
 
   for (int gg_id = 0; gg_id < nwsgg; gg_id++) {
 
-    /* get BC coeffs Allocate specific arrays for the radiative transfer module */
-    cs_field_bc_coeffs_t *bc_coeffs_rad = CS_FI_(radiance, gg_id)->bc_coeffs;
+    /* get BC coeffs Allocate specific arrays for the radiative transfer
+     * module. Here share bc_coeffs for all directions */
+    cs_field_bc_coeffs_t *bc_coeffs_rad = nullptr;
+    if (!(rt_params->save_radiance_dir))
+      bc_coeffs_rad = CS_FI_(radiance, gg_id)->bc_coeffs;
 
     /* Use absorption field if existing */
     char f_name[64];
@@ -1605,10 +1685,15 @@ _rad_transfer_solve(int bc_type[])
         cs_log_printf
           (CS_LOG_DEFAULT,
            _("      Warning: Atmospheric radiative transfer with transparent "
-             "medium %s for band %d\n"
-             "        Switch off flux renormalization (idiver=-1)!\n"),
+             "medium %s for band %d.\n"),
            _("for downward and upward directions."), _(gg_id));
-        idiver = -1;
+      }
+      if (idiver > 0) {
+        cs_log_printf
+          (CS_LOG_DEFAULT,
+           _("      Warning: Atmospheric radiative transfer with flux "
+             "renormalization (idiver=%d), put it to 0!\n"), _(idiver));
+        idiver = 0;
       }
 
     }
@@ -1698,12 +1783,11 @@ _rad_transfer_solve(int bc_type[])
 
       /* Update Boundary condition coefficients */
 
-      cs_rad_transfer_bc_coeffs(bc_type,
-                                nullptr, /* No specific direction */
-                                ckmix,
-                                cs_field_by_name("emissivity")->val,
-                                w_gg,   gg_id,
-                                bc_coeffs_rad);
+      cs_rad_transfer_bc_coeffs_p1(bc_type,
+                                   ckmix,
+                                   cs_field_by_name("emissivity")->val,
+                                   w_gg,   gg_id,
+                                   bc_coeffs_rad);
       /* Solving */
       cs_rad_transfer_pun(gg_id,
                           bc_type,
@@ -1849,12 +1933,12 @@ _rad_transfer_solve(int bc_type[])
       /* Update boundary condition coefficients:
        * default ones, identical for each directions, may be overwritten
        * afterwards */
-      cs_rad_transfer_bc_coeffs(bc_type,
-                                nullptr, /*no specific direction */
-                                ckmix,
-                                cs_field_by_name("emissivity")->val,
-                                w_gg  , gg_id,
-                                bc_coeffs_rad);
+      if (!(rt_params->save_radiance_dir))
+        cs_rad_transfer_bc_coeffs_dom(bc_type,
+                                      nullptr, /*no specific direction */
+                                      cs_field_by_name("emissivity")->val,
+                                      w_gg  , gg_id,
+                                      bc_coeffs_rad);
 
       /* Solving */
       _cs_rad_transfer_sol(gg_id,
@@ -2000,7 +2084,7 @@ _rad_transfer_solve(int bc_type[])
   CS_FREE(dcp);
   CS_FREE(int_rad_domega);
 
-  /* The total radiative flux is copied in bqinci
+  /* The total radiative flux is copied in qinci
    * a) for post-processing reasons and
    * b) in order to calculate bfnet */
   if (rt_params->imoadf >= 1 || rt_params->imfsck >= 1) {
@@ -2110,7 +2194,7 @@ _rad_transfer_solve(int bc_type[])
        aa);
   }
 
-  /* Semi-analitical radiative source terms */
+  /* Semi-analytical radiative source terms */
   if (idiver >= 0) {
 
     /* Emission + Absorption of gas and particles --> explicit ST */
@@ -2363,11 +2447,6 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
   CS_MALLOC(flurds, n_i_faces, cs_real_t);
   CS_MALLOC(flurdb, n_b_faces, cs_real_t);
 
-  /* Allocate work arrays */
-  /* Absorption coefficient of the bulk phase */
-  cs_real_t *ckmix;
-  CS_MALLOC(ckmix, n_cells_ext, cs_real_t);
-
   /* Map field arrays */
   cs_field_t *f_tempb = CS_F_(t_b);
   cs_field_t *f_qinci = CS_F_(qinci);
@@ -2492,9 +2571,6 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
     /* Total emitted intensity   */
     cpro_lumin[cell_id] = 0.0;
 
-    /* Radiation coefficient of the bulk phase:
-     * for the gas phase and the solid/droplet phase (all classes) */
-    ckmix[cell_id] = 0.0;
   }
 
   /* In case of grey gas radiation properties (kgi != f(lambda))
@@ -2602,13 +2678,12 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
     /* Update boundary condition coefficients:
      * default ones, identical for each directions, may be overwritten
      * afterwards */
-    cs_rad_transfer_bc_coeffs(bc_type,
-                              nullptr, /*no specific direction */
-                              ckmix,
-                              cs_field_by_name("emissivity")->val,
-                              w_gg,
-                              gg_id,
-                              bc_coeffs_rad);
+    cs_rad_transfer_bc_coeffs_dom(bc_type,
+                                  nullptr, /*no specific direction */
+                                  cs_field_by_name("emissivity")->val,
+                                  w_gg,
+                                  gg_id,
+                                  bc_coeffs_rad);
 
     /* Solving */
     _cs_rad_transfer_sol(gg_id,
@@ -2814,7 +2889,6 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
   CS_FREE(flurdb);
   CS_FREE(int_emi);
   CS_FREE(int_rad_ist);
-  CS_FREE(ckmix);
   CS_FREE(twall);
   CS_FREE(kgi);
   CS_FREE(agi);

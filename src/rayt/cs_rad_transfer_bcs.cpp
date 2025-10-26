@@ -265,8 +265,8 @@ cs_rad_transfer_bcs(int bc_type[])
   CS_MALLOC(twall, n_b_faces, cs_real_t);
 
   /* Map field arrays */
-  cs_field_t *f_b_temp = cs_field_by_name_try("boundary_temperature");
-  cs_field_t *f_bqinci = cs_field_by_name_try("rad_incident_flux");
+  cs_field_t *f_tempb = CS_F_(t_b);
+  cs_field_t *f_qinci = CS_F_(qinci);
   cs_field_t *f_bxlam  = cs_field_by_name_try("wall_thermal_conductivity");
   cs_field_t *f_bepa   = cs_field_by_name_try("wall_thickness");
   cs_field_t *f_beps   = cs_field_by_name_try("emissivity");
@@ -275,7 +275,7 @@ cs_rad_transfer_bcs(int bc_type[])
   ipacli++;
 
   /* Indicator: if not restart and first time step */
-  int ideb = 0;
+  bool is_start = false;
 
   /* --> Min and Max values of the temperature (in Kelvin)   */
 
@@ -304,7 +304,7 @@ cs_rad_transfer_bcs(int bc_type[])
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
     if (   bc_type[face_id] == CS_SMOOTHWALL
         || bc_type[face_id] == CS_ROUGHWALL)
-      twall[face_id] = f_b_temp->val[face_id] + xmtk;
+      twall[face_id] = f_tempb->val[face_id] + xmtk;
     else
       twall[face_id] = 0.0;
   }
@@ -337,7 +337,7 @@ cs_rad_transfer_bcs(int bc_type[])
     hg_rcodcl3 = f_hgas->bc_coeffs->rcodcl3;
   }
 
-  /* Pointers to specific fields    */
+  /* Pointers to specific fields */
   cs_field_t *f_bfconv = cs_field_by_name_try("rad_convective_flux");
   cs_field_t *f_bhconv = cs_field_by_name_try("rad_exchange_coefficient");
 
@@ -351,10 +351,12 @@ cs_rad_transfer_bcs(int bc_type[])
       && cs_glob_rad_transfer_params->restart == false) {
 
     /* If not a restart and first time step. */
-    ideb = 1;
+    is_start = true;
 
     cs_real_t *rad_st_impl = CS_FI_(rad_ist, 0)->val;
     cs_real_t *rad_st_expl = CS_FI_(rad_est, 0)->val;
+
+    bft_printf("Warning, reset radiative source terms to 0.\n");
 
     cs_array_real_fill_zero(cs_glob_mesh->n_cells_with_ghosts, rad_st_impl);
     cs_array_real_fill_zero(cs_glob_mesh->n_cells_with_ghosts, rad_st_expl);
@@ -381,7 +383,7 @@ cs_rad_transfer_bcs(int bc_type[])
                                    &tx,
                                    dt,
                                    twall,
-                                   f_bqinci->val,
+                                   f_qinci->val,
                                    f_bhconv->val,
                                    f_bfconv->val,
                                    f_bxlam->val,
@@ -396,16 +398,17 @@ cs_rad_transfer_bcs(int bc_type[])
                     "    Initialization of the incident flux at walls\n"
                     "    with the wall temperature.\n"));
 
-    /* twall in Kelvin and qincid in W/m2  */
+    /* twall in Kelvin and qincid in W/m2
+     * Note: the incident flux is hard coded so that the net_flux
+     * at wall is zero */
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       if (   bc_type[face_id] == CS_SMOOTHWALL
           || bc_type[face_id] == CS_ROUGHWALL) {
-        f_bqinci->val[face_id] = stephn * cs_math_pow4(twall[face_id]);
+        f_qinci->val[face_id] = stephn * cs_math_pow4(twall[face_id]);
       }
       else {
-        twall[face_id]         = 0.0;
-        f_bqinci->val[face_id] = 0.0;
+        f_qinci->val[face_id] = 0.0;
       }
     }
   }
@@ -427,7 +430,7 @@ cs_rad_transfer_bcs(int bc_type[])
                                  &tx,
                                  dt,
                                  twall,
-                                 f_bqinci->val,
+                                 f_qinci->val,
                                  f_bhconv->val,
                                  f_bfconv->val,
                                  f_bxlam->val,
@@ -952,7 +955,7 @@ cs_rad_transfer_bcs(int bc_type[])
      the first pass with no restart, as cs_rad_transfer_bcs is called first.
    */
 
-  if (ideb == 1) {
+  if (is_start) {
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       if (isothm[face_id] !=  -1)
         f_bfconv->val[face_id] *=   tempk[cs_glob_mesh->b_face_cells[face_id]]
@@ -963,7 +966,7 @@ cs_rad_transfer_bcs(int bc_type[])
   /* The cases where twall must be computed first, are at first pass without
      restart, cases with prescribed temperature twall */
 
-  if (ideb == 1) {
+  if (is_start) {
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       if (   isothm[face_id] == CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T
           || isothm[face_id] == CS_BOUNDARY_RAD_WALL_REFL_EXTERIOR_T
@@ -975,12 +978,12 @@ cs_rad_transfer_bcs(int bc_type[])
     }
   }
 
-  if (ideb == 0)
+  if (!is_start)
     cs_rad_transfer_compute_wall_t(isothm,
                                    tmin,
                                    tmax,
                                    tx,
-                                   f_bqinci->val,
+                                   f_qinci->val,
                                    text,
                                    f_bxlam->val,
                                    f_bepa->val,
@@ -1120,7 +1123,7 @@ cs_rad_transfer_bcs(int bc_type[])
     if (   bc_type[face_id] == CS_SMOOTHWALL
         || bc_type[face_id] == CS_ROUGHWALL) {
       //FIXME check if this is useful; or simply updating rcodcl instead ?
-      f_b_temp->val[face_id] = twall[face_id] - xmtk;
+      f_tempb->val[face_id] = twall[face_id] - xmtk;
     }
 
     else {
@@ -1143,7 +1146,7 @@ cs_rad_transfer_bcs(int bc_type[])
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Boundary conditions for DO and P-1 models
+ * \brief Boundary conditions for DOM
  *
  *  The coefap array stores the intensity for each boundary face,
  *  depending of the nature of the boundary (Dirichlet condition).
@@ -1152,7 +1155,7 @@ cs_rad_transfer_bcs(int bc_type[])
  *
  *   1/ Gray wall: isotropic radiation field.
  *
- *   \f$ coefap =  \epsilon.\sigma.twall^4 / \pi + (1-\epsilon).qincid / \pi \f$
+ *   \f$ A =  \epsilon.\sigma.twall^4 / \pi + (1-\epsilon).qincid / \pi \f$
  *
  *   which is the sum of the wall emission and reflecting flux
  *   (eps=1: black wall; eps=0: reflecting wall).
@@ -1161,8 +1164,6 @@ cs_rad_transfer_bcs(int bc_type[])
  *
  * \param[in]  bc_type         boundary face types
  * \param[in]  vect_s          direction vector or nullptr
- * \param[in]  ckmel           Absoprtion coefficcient of the mixture
- *                             gas-particules of coal or nullptr
  * \param[in]  bpro_eps        Boundary emissivity, or nullptr for solar radiation
  * \param[in]  w_gg            Weights of the i-th gray gas at boundaries
  * \param[in]  gg_id           number of the i-th grey gas
@@ -1172,13 +1173,12 @@ cs_rad_transfer_bcs(int bc_type[])
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_bc_coeffs(int                   bc_type[],
-                          cs_real_t             vect_s[3],
-                          cs_real_t             ckmel[],
-                          cs_real_t             bpro_eps[],
-                          cs_real_t             w_gg[],
-                          int                   gg_id,
-                          cs_field_bc_coeffs_t *bc_coeffs)
+cs_rad_transfer_bc_coeffs_dom(int                   bc_type[],
+                              cs_real_t             vect_s[3],
+                              cs_real_t             bpro_eps[],
+                              cs_real_t             w_gg[],
+                              int                   gg_id,
+                              cs_field_bc_coeffs_t *bc_coeffs)
 {
   cs_real_t *coefap = bc_coeffs->a;
   cs_real_t *coefbp = bc_coeffs->b;
@@ -1225,7 +1225,8 @@ cs_rad_transfer_bc_coeffs(int                   bc_type[],
 
   cs_real_t qpatmp;
 
-  if (cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_DOM) {
+  assert(cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_DOM);
+  {
 
     const cs_real_t *grav = cs_glob_physical_constants->gravity;
     const cs_real_t g_norm = cs_math_3_norm(grav);
@@ -1365,17 +1366,95 @@ cs_rad_transfer_bc_coeffs(int                   bc_type[],
 
   }
 
+  cs_boundary_conditions_error(bc_type, nullptr);
+
+  /* --> Check radiance boundary conditions arrays
+   *     In the case of the P-1 approximation, the value of coefap can be
+   *     large (of the order of twall**4), hence the value of coefmn */
+
+  cs_real_t xlimit = -cs_math_big_r * 0.1;
+
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    if (coefap[face_id] <= xlimit)
+      bc_type[face_id] = -cs::abs(bc_type[face_id]);
+  }
+
+  cs_boundary_conditions_error(bc_type, "Radiance BC values");
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Boundary conditions for P1 model
+ *
+ *  The coefap array stores the intensity for each boundary face,
+ *  depending of the nature of the boundary (Dirichlet condition).
+ *  The intensity of radiation is defined as the rate of emitted
+ *  energy from unit surface area through a unit solid angle.
+ *
+ *   1/ Gray wall: isotropic radiation field.
+ *
+ *   \f$ coefap =  \epsilon.\sigma.twall^4 / \pi + (1-\epsilon).qincid / \pi \f$
+ *
+ *   which is the sum of the wall emission and reflecting flux
+ *   (eps=1: black wall; eps=0: reflecting wall).
+ *
+ *   2/ Free boundary: condition to mimic infinite domain
+ *
+ * \param[in]  bc_type         boundary face types
+ * \param[in]  ckmix           Absorption coefficient of the mixture
+ *                             gas-particles of coal
+ * \param[in]  bpro_eps        Boundary emissivity
+ * \param[in]  w_gg            Weights of the i-th gray gas at boundaries
+ * \param[in]  gg_id           number of the i-th grey gas
+ * \param[out] bc_coeffs       boundary conditions structure for
+ *                             intensity or P-1 model
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_rad_transfer_bc_coeffs_p1(int                   bc_type[],
+                             cs_real_t             ckmix[],
+                             cs_real_t             bpro_eps[],
+                             cs_real_t             w_gg[],
+                             int                   gg_id,
+                             cs_field_bc_coeffs_t *bc_coeffs)
+{
+  cs_real_t *coefap = bc_coeffs->a;
+  cs_real_t *coefbp = bc_coeffs->b;
+  cs_real_t *cofafp = bc_coeffs->af;
+  cs_real_t *cofbfp = bc_coeffs->bf;
+
+  cs_real_t stephn = cs_physical_constants_stephan;
+  cs_real_t onedpi  = 1.0 / cs_math_pi;
+
+  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+  cs_nreal_3_t *b_face_u_normal = cs_glob_mesh_quantities->b_face_u_normal;
+
+  /* Initialization */
+
+  /* Wall temperature */
+  cs_field_t *f_tempb = CS_F_(t_b);
+  cs_real_t xmtk = 0;
+  if (cs_glob_thermal_model->temperature_scale == CS_TEMPERATURE_SCALE_CELSIUS)
+    xmtk = cs_physical_constants_celsius_to_kelvin;
+
+  /* -> Initialization to a non-admissible value for testing after raycll   */
+
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
+    coefap[face_id] = -cs_math_big_r;
+
   /* Boundary conditions for P-1 model:
    * coefap and coefbp must be filled */
 
-  else if (cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_P1) {
+  assert(cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_P1);
+  {
 
     const cs_real_t *b_dist =  cs_glob_mesh_quantities->b_dist;
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       cs_lnum_t iel = cs_glob_mesh->b_face_cells[face_id];
 
-      cs_real_t hint = 1.0 / (ckmel[iel] * b_dist[face_id]);
+      cs_real_t hint = 1.0 / (ckmix[iel] * b_dist[face_id]);
 
       /* Symmetry or reflecting wall (EPS = 0) : zero flux */
       if (   bc_type[face_id] == CS_SYMMETRY
@@ -1411,7 +1490,7 @@ cs_rad_transfer_bc_coeffs(int                   bc_type[],
                || bc_type[face_id] == CS_ROUGHWALL) {
         cs_real_t twall = f_tempb->val[face_id] + xmtk;
         cs_real_t distbf  = cs_glob_mesh_quantities->b_dist[face_id];
-        cs_real_t xit = 1.5 * distbf * ckmel[iel]
+        cs_real_t xit = 1.5 * distbf * ckmix[iel]
                             * (2.0 / (2.0 - bpro_eps[face_id]) - 1.0);
         cs_real_t cfl = 1.0 / xit;
         cs_real_t pimp =   cs_math_pow4(twall)
@@ -1425,8 +1504,8 @@ cs_rad_transfer_bc_coeffs(int                   bc_type[],
                                                             hint);
       }
 
-      /* 2.4 - Stop if there are forgotten faces
-       *       ---------------------------------  */
+      /* Stop if there are forgotten faces
+       * ---------------------------------  */
       else
         bc_type[face_id] = -cs::abs(bc_type[face_id]);
     }

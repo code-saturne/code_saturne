@@ -205,6 +205,14 @@ typedef struct {
                                        value of 1 already improves precision in
                                        both cases. */
 
+  bool          save_radiance_dir;   /* Option to save radiance for all
+                                        directions. This increase the storage
+                                        but save some times because calculations
+                                        are not initialized to 0.
+                                        This is mandatory for atmospheric
+                                        because diffusion process induce
+                                        redistribution from one direction to
+                                        another*/
   cs_time_control_t  time_control;   /* Time control for radiation updates */
 
 

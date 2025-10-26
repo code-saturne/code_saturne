@@ -133,11 +133,11 @@ cs_rad_transfer_options(void)
    *         in _rad_transfer_solve. */
 
   if (   rt_params->atmo_model == CS_RAD_ATMO_3D_NONE
-      && (rt_params->idiver == 0 || rt_params->idiver == 1)) {
+      && (rt_params->idiver == 1 || rt_params->idiver == 2)) {
     cs_parameters_error(CS_WARNING,
                         _("in Radiative module"),
-                        "Using the semi-analytic (idiver = 0)\n"
-                        "or conservative (idiver = 1) explicit source term\n"
+                        "Using the semi-analytic (idiver = 1)\n"
+                        "or conservative (idiver = 2) explicit source term\n"
                         "computation mode is not recommended.\n");
   }
 
@@ -158,8 +158,13 @@ cs_rad_transfer_options(void)
    * and Solar IR (SIR) absobed by H2O
    * if activated */
   {
-    if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE)
+    if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE) {
       rt_params->nwsgg = 0;
+      /* No pseudo correction for radiance balance */
+      rt_params->idiver = 0;
+      /* Save radiance fields for all directions */
+      rt_params->save_radiance_dir = true;
+    }
 
     /* Fields for atmospheric Direct Solar (DR) model
      * (SIR only if SUV is not activated) */
@@ -341,6 +346,12 @@ cs_rad_transfer_log_setup(void)
         (CS_LOG_SETUP,
          _("    ndirec:       %d\n"),
          cs_glob_rad_transfer_params->ndirec);
+
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("    save_radiance_dir:       %b\n"),
+       cs_glob_rad_transfer_params->save_radiance_dir);
+
   }
 
   const char *imgrey_value_str[]

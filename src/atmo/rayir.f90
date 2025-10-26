@@ -103,20 +103,20 @@ double precision foir, rayi(kmx)
 integer k, kk, ineb, inua, iaer, i, iaero_top
 integer          ifac, iz1, iz2, f_id, c_id, iel
 double precision sig
-double precision qqcinf, cetyp, dzs8
+double precision qqcinf, cetyp
 double precision xqqvinf, xqqcinf, xqqlinf, fo, t4zt
 double precision tauv, dtauv, taul, ctray, a1
 double precision qqqqv, qqqqc, qqqql, a2, tvinfe
 double precision dtvinfe, tvsup, dtvsup, dul
 double precision t41, tlinfe, tlsup
-double precision fn, fns, fni, u, tco2, zz, zzk
-double precision pzp0, zqq0, corp
+double precision fn, fns, fni
+double precision zqq0, corp
 double precision beta, wh2ol
 double precision zbas
 double precision alpha_k
 double precision rm, req
 double precision a3, tvsups, dtvsups
-double precision foirs, foirs1, foirs2
+double precision foirs
 double precision tlsups, fnss
 double precision var, zent, cpvcpa
 double precision cort,xqqco2inf,abco2,dabco2,qqqqco2

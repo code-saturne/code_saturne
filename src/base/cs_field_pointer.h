@@ -157,7 +157,7 @@ typedef enum {
   CS_ENUMF_(rad_emi),      /*!< Radiative emission */
   CS_ENUMF_(rad_cak),      /*!< Radiative absorption coefficient */
 
-  CS_ENUMF_(qinci),        /*!< Radiative incident radiative flux density */
+  CS_ENUMF_(qinci),        /*!< Incident radiative flux density at boundary */
   CS_ENUMF_(qinsp),        /*!< Spectral radiative incident flux */
   CS_ENUMF_(xlam),         /*!< Wall thermal conductivity */
   CS_ENUMF_(epa),          /*!< Wall thickness */

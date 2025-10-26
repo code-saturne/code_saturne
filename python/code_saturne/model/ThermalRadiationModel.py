@@ -118,7 +118,7 @@ class ThermalRadiationModel(Variables, Model):
         default['type_coef']         = 'constant'
         default['value_coef']        = 0.0
         default['frequency']         = 1
-        default['idiver']            = 2
+        default['idiver']            = 0
         default['tempP']             = 1
         default['intensity']         = 0
         return default
