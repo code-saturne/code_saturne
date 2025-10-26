@@ -2295,7 +2295,7 @@ cs_base_bft_printf_set(const char  *log_name,
       bft_printf_flush_proxy_set(_cs_base_bft_printf_flush);
       ple_printf_function_set(vprintf);
 
-      if (cs_glob_rank_id > 0 || _cs_trace == false) {
+      if (cs_glob_rank_id > 0) {
 
         FILE *fp = freopen(_bft_printf_file_name, "w", stdout);
 
