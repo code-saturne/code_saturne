@@ -223,7 +223,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.setAvailableBuildsList(host_name)
         # reset default build name
         if host_name != 'localhost':
-            dist_builds_list = self.distant_host_builds[host_name] 
+            dist_builds_list = self.distant_host_builds[host_name]
             self.mdl.setBuildName(str(dist_builds_list[0]))
         else:
             self.mdl.setBuildName('default')
