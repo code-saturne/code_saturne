@@ -1513,10 +1513,10 @@ public:
   clear()
   {
     if (_owner) {
-// Avoid compiler warnings. If device, object cannot be owner...
-#if !defined(__CUDA_ARCH__) && \
-    !defined(SYCL_LANGUAGE_VERSION) && \
-    !defined(__HIP_DEVICE_COMPILE__)
+      // Avoid compiler warnings. If device, object cannot be owner...
+#if   !defined(__CUDA_ARCH__) && \
+      !defined(SYCL_LANGUAGE_VERSION) &&  \
+      !defined(__HIP_DEVICE_COMPILE__)
       CS_FREE(_data);
 #endif
     }
@@ -1857,7 +1857,8 @@ public:
     }
     else
       bft_error(__FILE__, __LINE__, 0,
-                _("%s: array cannot be reshaped if non owner, use mdspan instead.\n"));
+                _("%s: array cannot be reshaped if non owner, "
+                  "use mdspan instead.\n"), __func__);
 
   }
 
@@ -1896,7 +1897,8 @@ public:
 
     if (!(size_to_keep <= new_size && size_to_keep <= _size))
       bft_error(__FILE__, __LINE__, 0,
-                "%s: Data cannot be saved when new size is smaller than size to keep.\n",
+                "%s: Data cannot be saved when new size is smaller "
+                "than size to keep.\n",
                 __func__);
 
     if (_owner) {
@@ -1906,7 +1908,8 @@ public:
     }
     else
       bft_error(__FILE__, __LINE__, 0,
-                _("%s: array cannot be reshaped if non owner, use mdspan instead.\n"));
+                _("%s: array cannot be reshaped if non owner, "
+                  "use mdspan instead.\n"), __func__);
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1945,7 +1948,8 @@ public:
     }
     else
       bft_error(__FILE__, __LINE__, 0,
-                _("%s: array cannot be reshaped if non owner, use mdspan instead.\n"));
+                _("%s: array cannot be reshaped if non owner, "
+                  "use mdspan instead.\n"), __func__);
   }
 
   /*--------------------------------------------------------------------------*/
@@ -2052,7 +2056,8 @@ public:
     }
     else
       bft_error(__FILE__, __LINE__, 0,
-                _("%s: array cannot be reshaped if non owner, use mdspan instead.\n"));
+                _("%s: array cannot be reshaped if non owner, "
+                  "use mdspan instead.\n"), __func__);
   }
 
   /*--------------------------------------------------------------------------*/
