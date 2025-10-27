@@ -487,6 +487,10 @@ cs_les_inflow_initialize(void)
   cs_user_les_inflow_define();
 
   cs_log_separator(CS_LOG_DEFAULT);
+
+  /* Initialization for volumes */
+
+  cs_les_volume_initialize();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -776,6 +780,204 @@ cs_les_inflow_add_inlet(cs_les_inflow_type_t   type,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief General synthetic turbulence volume generation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_les_volume_initialize(void)
+{
+  if (cs_glob_inflow_n_inlets == 0)
+    return;
+
+  constexpr cs_real_t two_third = 2./3.;
+
+  const cs_mesh_t *mesh = cs_glob_mesh;
+  const cs_lnum_t  n_cells = mesh->n_cells;
+  const cs_real_3_t *cell_cen = cs_glob_mesh_quantities->cell_cen;
+
+  cs_dispatch_context ctx;
+
+  for (int inlet_id = 0; inlet_id < cs_glob_inflow_n_inlets; inlet_id++) {
+
+    cs_inlet_t *inlet = cs_glob_inflow_inlet_array[inlet_id];
+
+    /* Only volume zones are considered */
+    if (inlet->volume_mode != 1)
+      continue;
+
+    cs_user_les_inflow_update(inlet->zone,
+                              inlet->vel_m,
+                              &(inlet->k_r),
+                              &(inlet->eps_r));
+
+    cs_real_3_t *fluctuations = nullptr;
+
+    cs_real_t wt_start, wt_stop, cpu_start, cpu_stop;
+
+    wt_start  = cs_timer_wtime();
+    cpu_start = cs_timer_cpu_time();
+
+    //TODO make it possible to use a zone...
+    cs_lnum_t n_elts = inlet->zone->n_elts;
+    const cs_lnum_t *elt_ids = inlet->zone->elt_ids;
+
+    /* Mean velocity profile, one-point statistics and dissipation rate */
+    /*------------------------------------------------------------------*/
+
+    cs_real_3_t *vel_m_l;
+    cs_real_6_t *rij_l;
+    cs_real_t   *eps_r;
+    CS_MALLOC_HD(vel_m_l, n_elts, cs_real_3_t, cs_alloc_mode);
+    CS_MALLOC_HD(rij_l, n_elts, cs_real_6_t, cs_alloc_mode);
+    CS_MALLOC_HD(eps_r, n_elts, cs_real_t, cs_alloc_mode);
+
+    cs_real_t *vel_m = inlet->vel_m;
+    const cs_real_t two_third_k_r = two_third*inlet->k_r;
+    const cs_real_t inlet_eps_r = inlet->eps_r;
+
+    /* Initialization by the turbulence scales given by the user */
+
+    ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+
+      for (cs_lnum_t coo_id = 0; coo_id < 3; coo_id++) {
+        vel_m_l[i][coo_id] = vel_m[coo_id];
+        rij_l[i][coo_id] = two_third_k_r;
+      }
+
+      for (cs_lnum_t coo_id = 3; coo_id < 6; coo_id++)
+        rij_l[i][coo_id] = 0.;
+
+      eps_r[i] = inlet_eps_r;
+
+    });
+
+    /* Modification by the user */
+
+    cs_user_les_inflow_advanced(inlet->zone,
+                                vel_m_l,
+                                rij_l,
+                                eps_r);
+
+    /* Generation of the synthetic turbulence
+       --------------------------------------*/
+
+    CS_MALLOC_HD(fluctuations, n_elts, cs_real_3_t, cs_alloc_mode);
+    cs_arrays_set_value<cs_real_t, 1>(3*n_elts, 0., (cs_real_t *)fluctuations);
+
+    const cs_time_step_t *time_step = cs_glob_time_step;
+
+    switch(inlet->type) {
+
+    case CS_INFLOW_LAMINAR:
+      break;
+    case CS_INFLOW_RANDOM:
+      _random_method(n_elts, fluctuations);
+      break;
+    case CS_INFLOW_BATTEN:
+      _batten_method(n_elts,
+                     elt_ids,
+                     cell_cen,
+                     inlet->initialize,
+                     (cs_inflow_batten_t *) inlet->inflow,
+                     time_step->t_cur,
+                     rij_l,
+                     eps_r,
+                     fluctuations);
+      break;
+    case CS_INFLOW_SEM:
+      {
+        if (inlet->verbosity > 0)
+          bft_printf(_("\n------------------------------"
+                       "-------------------------------\n\n"
+                       "SEM INFO, inlet \"%d\" \n\n"), inlet_id);
+
+        const cs_real_t dissiprate = eps_r[0];
+        cs_lnum_t n_points = cs_glob_mesh->n_cells;
+        cs_real_t *point_weight = nullptr;
+
+        CS_REALLOC_HD(rij_l, n_cells, cs_real_6_t, cs_alloc_mode);
+        CS_REALLOC_HD(vel_m_l, n_cells, cs_real_3_t, cs_alloc_mode);
+        CS_REALLOC_HD(eps_r, n_points, cs_real_t, cs_alloc_mode);
+        CS_REALLOC_HD(fluctuations, n_points, cs_real_3_t, cs_alloc_mode);
+
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+
+          eps_r[cell_id] = dissiprate;
+
+          for (cs_lnum_t j = 0; j < 3; j++) {
+            rij_l[cell_id][j] = two_third_k_r;
+            vel_m_l[cell_id][j] = 0.;
+            fluctuations[cell_id][j] = 0.;
+          }
+
+          for (cs_lnum_t j = 3; j < 6; j++)
+            rij_l[cell_id][j] = 0.;
+        });
+
+        ctx.wait();
+
+        cs_les_synthetic_eddy_method(n_elts,
+                                     elt_ids,
+                                     cell_cen,
+                                     point_weight,
+                                     inlet->initialize,
+                                     inlet->volume_mode,
+                                     inlet->verbosity,
+                                     (cs_inflow_sem_t *)inlet->inflow,
+                                     time_step->dt[0],
+                                     vel_m_l,
+                                     rij_l,
+                                     eps_r,
+                                     fluctuations);
+
+        if (inlet->verbosity > 0)
+          bft_printf("------------------------------"
+                     "-------------------------------\n");
+      }
+      break;
+    }
+
+    inlet->initialize = 0;
+
+    CS_FREE(eps_r);
+
+    /* Rescaling of the synthetic fluctuations by the statistics */
+    /*-----------------------------------------------------------*/
+
+    if (   inlet->type == CS_INFLOW_SEM
+        || inlet->type == CS_INFLOW_RANDOM
+        || inlet->type == CS_INFLOW_BATTEN)
+      cs_les_rescale_fluctuations(n_elts, rij_l, fluctuations);
+
+    CS_FREE(rij_l);
+
+    /* Volume mode */
+    cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
+    ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+      cs_lnum_t c_id = elt_ids[i];
+
+      vel[c_id][0] = vel_m_l[i][0] + fluctuations[i][0];
+      vel[c_id][1] = vel_m_l[i][1] + fluctuations[i][1];
+      vel[c_id][2] = vel_m_l[i][2] + fluctuations[i][2];
+    });
+
+    ctx.wait();
+
+    CS_FREE(vel_m_l);
+    CS_FREE(fluctuations);
+
+    wt_stop  = cs_timer_wtime();
+    cpu_stop = cs_timer_cpu_time();
+
+    inlet->wt_tot  += (wt_stop - wt_start);
+    inlet->cpu_tot += (cpu_stop - cpu_start);
+  }
+}
+
+
+//*----------------------------------------------------------------------------*/
+/*!
  * \brief General synthetic turbulence generation
  */
 /*----------------------------------------------------------------------------*/
@@ -789,9 +991,7 @@ cs_les_inflow_compute(void)
   constexpr cs_real_t two_third = 2./3.;
 
   const cs_mesh_t *mesh = cs_glob_mesh;
-  const cs_lnum_t  n_cells = mesh->n_cells;
   const cs_lnum_t  n_b_faces = mesh->n_b_faces;
-  const cs_real_3_t *cell_cen = cs_glob_mesh_quantities->cell_cen;
   const cs_real_3_t *b_face_cog = cs_glob_mesh_quantities->b_face_cog;
   const cs_real_t *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
 
@@ -800,6 +1000,10 @@ cs_les_inflow_compute(void)
   for (int inlet_id = 0; inlet_id < cs_glob_inflow_n_inlets; inlet_id++) {
 
     cs_inlet_t *inlet = cs_glob_inflow_inlet_array[inlet_id];
+
+    /* Only for boundaries */
+    if (inlet->volume_mode != 0)
+      continue;
 
     cs_user_les_inflow_update(inlet->zone,
                               inlet->vel_m,
@@ -886,62 +1090,20 @@ cs_les_inflow_compute(void)
                        "-------------------------------\n\n"
                        "SEM INFO, inlet \"%d\" \n\n"), inlet_id);
 
-        if (inlet->volume_mode == 1) {
 
-          const cs_real_t dissiprate = eps_r[0];
-          cs_lnum_t n_points = cs_glob_mesh->n_cells;
-          cs_real_t *point_weight = nullptr;
-
-          CS_REALLOC_HD(rij_l, n_cells, cs_real_6_t, cs_alloc_mode);
-          CS_REALLOC_HD(vel_m_l, n_cells, cs_real_3_t, cs_alloc_mode);
-          CS_REALLOC_HD(eps_r, n_points, cs_real_t, cs_alloc_mode);
-          CS_REALLOC_HD(fluctuations, n_points, cs_real_3_t, cs_alloc_mode);
-
-          ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-
-            eps_r[cell_id] = dissiprate;
-
-            for (cs_lnum_t j = 0; j < 3; j++) {
-              rij_l[cell_id][j] = two_third_k_r;
-              vel_m_l[cell_id][j] = 0.;
-              fluctuations[cell_id][j] = 0.;
-            }
-
-            for (cs_lnum_t j = 3; j < 6; j++)
-              rij_l[cell_id][j] = 0.;
-          });
-
-          ctx.wait();
-
-          cs_les_synthetic_eddy_method(n_elts,
-                                       elt_ids,
-                                       cell_cen,
-                                       point_weight,
-                                       inlet->initialize,
-                                       inlet->volume_mode,
-                                       inlet->verbosity,
-                                       (cs_inflow_sem_t *)inlet->inflow,
-                                       time_step->dt[0],
-                                       vel_m_l,
-                                       rij_l,
-                                       eps_r,
-                                       fluctuations);
-        }
-        else {
-          cs_les_synthetic_eddy_method(n_elts,
-                                       elt_ids,
-                                       b_face_cog,
-                                       b_face_surf,
-                                       inlet->initialize,
-                                       inlet->volume_mode,
-                                       inlet->verbosity,
-                                       (cs_inflow_sem_t *)inlet->inflow,
-                                       time_step->dt[0],
-                                       vel_m_l,
-                                       rij_l,
-                                       eps_r,
-                                       fluctuations);
-        }
+        cs_les_synthetic_eddy_method(n_elts,
+                                     elt_ids,
+                                     b_face_cog,
+                                     b_face_surf,
+                                     inlet->initialize,
+                                     inlet->volume_mode,
+                                     inlet->verbosity,
+                                     (cs_inflow_sem_t *)inlet->inflow,
+                                     time_step->dt[0],
+                                     vel_m_l,
+                                     rij_l,
+                                     eps_r,
+                                     fluctuations);
 
         if (inlet->verbosity > 0)
           bft_printf("------------------------------"
@@ -967,43 +1129,28 @@ cs_les_inflow_compute(void)
     /* Rescaling of the mass flow rate */
     /*---------------------------------*/
 
-    if (inlet->volume_mode == 0) {
-      if (   inlet->type == CS_INFLOW_RANDOM || inlet->type == CS_INFLOW_BATTEN
-          || inlet->type == CS_INFLOW_SEM)
-        _rescale_flowrate(n_elts,
-                          elt_ids,
-                          fluctuations);
+    if (   inlet->type == CS_INFLOW_RANDOM || inlet->type == CS_INFLOW_BATTEN
+        || inlet->type == CS_INFLOW_SEM)
+      _rescale_flowrate(n_elts,
+                        elt_ids,
+                        fluctuations);
 
-      /* Boundary conditions */
-      /*---------------------*/
+    /* Boundary conditions */
+    /*---------------------*/
 
-      cs_real_t *rcodcl1_u = CS_F_(vel)->bc_coeffs->rcodcl1;
-      cs_real_t *rcodcl1_v = rcodcl1_u + n_b_faces;
-      cs_real_t *rcodcl1_w = rcodcl1_v + n_b_faces;
+    cs_real_t *rcodcl1_u = CS_F_(vel)->bc_coeffs->rcodcl1;
+    cs_real_t *rcodcl1_v = rcodcl1_u + n_b_faces;
+    cs_real_t *rcodcl1_w = rcodcl1_v + n_b_faces;
 
-      ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
-        cs_lnum_t face_id = elt_ids[i];
+    ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+      cs_lnum_t face_id = elt_ids[i];
 
-        rcodcl1_u[face_id] = vel_m_l[i][0] + fluctuations[i][0];
-        rcodcl1_v[face_id] = vel_m_l[i][1] + fluctuations[i][1];
-        rcodcl1_w[face_id] = vel_m_l[i][2] + fluctuations[i][2];
-      });
+      rcodcl1_u[face_id] = vel_m_l[i][0] + fluctuations[i][0];
+      rcodcl1_v[face_id] = vel_m_l[i][1] + fluctuations[i][1];
+      rcodcl1_w[face_id] = vel_m_l[i][2] + fluctuations[i][2];
+    });
 
-      ctx.wait();
-    }
-    /* Volume mode */
-    else {
-      cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
-      ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
-        cs_lnum_t c_id = elt_ids[i];
-
-        vel[c_id][0] = vel_m_l[i][0] + fluctuations[i][0];
-        vel[c_id][1] = vel_m_l[i][1] + fluctuations[i][1];
-        vel[c_id][2] = vel_m_l[i][2] + fluctuations[i][2];
-      });
-
-      ctx.wait();
-    }
+    ctx.wait();
 
     CS_FREE(vel_m_l);
     CS_FREE(fluctuations);
@@ -1765,7 +1912,7 @@ cs_les_synthetic_eddy_method(cs_lnum_t           n_elts,
       res.r2[coo_id] =  point_coordinates[elt_ids[elt_id]][coo_id]
                       + length_scale[elt_id][coo_id];
     }
-  });
+    });
 
   ctx.wait();
 
