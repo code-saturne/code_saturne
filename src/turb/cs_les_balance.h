@@ -133,6 +133,10 @@ typedef struct {
 
   int                      type;
 
+  int                      nt_start;
+
+  cs_real_t                t_start;
+
   int                      frequency_n;
 
 } cs_les_balance_t;
