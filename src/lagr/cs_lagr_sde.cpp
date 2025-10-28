@@ -2544,7 +2544,7 @@ _lagesd(cs_real_t                       dt_part,
               else if (itreated == 0) {
                 /* Duplication of the particle */
                 *n_new_particles = *n_new_particles + 1;
-                cs_lnum_t new_p_id = *n_new_particles;
+                cs_lnum_t new_p_id = p_set->n_particles + *n_new_particles;
                 cs_lagr_particle_set_resize(p_set->n_particles + *n_new_particles);
                 cs_lagr_part_copy(p_set->n_particles + *n_new_particles, p_id);
 
