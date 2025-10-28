@@ -84,6 +84,7 @@
 #include "base/cs_restart_main_and_aux.h"
 #include "base/cs_restart_map.h"
 #include "base/cs_runaway_check.h"
+#include "base/cs_runge_kutta_integrator.h"
 #include "base/cs_sat_coupling.h"
 #include "base/cs_solve_all.h"
 #include "base/cs_time_moment.h"
@@ -495,6 +496,10 @@ cs_time_stepping(void)
 
   }
 
+
+  /* Runge-Kutta integrator structures initialization */
+  cs_runge_kutta_integrators_initialize();
+
   /* Solve CDO module(s) or user-defined equations using CDO schemes
      --------------------------------------------------------------- */
 
@@ -905,6 +910,8 @@ cs_time_stepping(void)
 
   if (cs_glob_les_balance->i_les_balance > 0)
     cs_les_balance_finalize();
+
+  cs_runge_kutta_integrators_destroy();
 
   cs_log_printf
     (CS_LOG_DEFAULT,
