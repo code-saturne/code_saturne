@@ -679,9 +679,9 @@ _diffusion_terms_scalar(const cs_field_t           *f,
 
   CS_FREE_HD(vistet);
 
-  *weighb = (cs_real_t *)_weighb;
-  *weighf = (cs_real_2_t *)_weighf;
-  *viscce = (cs_real_6_t *)_viscce;
+  *weighb = _weighb;
+  *weighf = _weighf;
+  *viscce = _viscce;
 }
 
 /*----------------------------------------------------------------------------
@@ -838,9 +838,9 @@ _diffusion_terms_vector(const cs_field_t            *f,
                                          viscb);
   }
 
-  *weighb = (cs_real_t *)_weighb;
-  *weighf = (cs_real_2_t *)_weighf;
-  *viscce = (cs_real_6_t *)_viscce;
+  *weighb = _weighb;
+  *weighf = _weighf;
+  *viscce = _viscce;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1743,11 +1743,11 @@ cs_solve_equation_scalar(cs_field_t        *f,
                                      nullptr);
 
   CS_FREE_HD(dpvar);
-  if (weighb != nullptr) {
-    CS_FREE_HD(weighb);
-    CS_FREE_HD(weighf);
-    CS_FREE_HD(viscce);
-  }
+
+  /* May be allocated in _diffusion_terms_scalar */
+  CS_FREE_HD(weighb);
+  CS_FREE_HD(weighf);
+  CS_FREE_HD(viscce);
 
   /* When solving internal energy, compute the temperature */
 
@@ -2326,11 +2326,10 @@ cs_solve_equation_vector(cs_field_t       *f,
                                      cvar_var,
                                      nullptr);
 
-  if (weighb != nullptr) {
-    CS_FREE(weighb);
-    CS_FREE(weighf);
-    CS_FREE(viscce);
-  }
+  /* May be allocated in _diffusion_terms_scalar */
+  CS_FREE(weighb);
+  CS_FREE(weighf);
+  CS_FREE(viscce);
 
   CS_FREE(fimp);
 
