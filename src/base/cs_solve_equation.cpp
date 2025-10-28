@@ -506,9 +506,9 @@ _diffusion_terms_scalar(const cs_field_t           *f,
                         cs_real_t                   viscf[],
                         cs_real_t                   viscb[],
                         cs_real_t                   rhs[],
-                        cs_real_t                 **weighb,
-                        cs_real_2_t               **weighf,
-                        cs_real_6_t               **viscce)
+                        cs_real_t                 *&weighb,
+                        cs_real_2_t               *&weighf,
+                        cs_real_6_t               *&viscce)
 {
   const cs_turb_model_t *turb_model = cs_glob_turb_model;
 
@@ -527,10 +527,6 @@ _diffusion_terms_scalar(const cs_field_t           *f,
 
   cs_real_6_t *vistet;
   CS_MALLOC_HD(vistet, n_cells_ext, cs_real_6_t, cs_alloc_mode);
-
-  cs_real_t *_weighb = nullptr;
-  cs_real_2_t *_weighf = nullptr;
-  cs_real_6_t *_viscce = nullptr;
 
   cs_dispatch_context ctx;
 
@@ -609,9 +605,9 @@ _diffusion_terms_scalar(const cs_field_t           *f,
 
   /* Symmetric tensor diffusivity (GGDH) */
   else if (eqp->idften & CS_ANISOTROPIC_DIFFUSION) {
-    CS_MALLOC_HD(_weighb, n_b_faces, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(_weighf, n_i_faces, cs_real_2_t, cs_alloc_mode);
-    CS_MALLOC_HD(_viscce, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+    CS_MALLOC_HD(weighb, n_b_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(weighf, n_i_faces, cs_real_2_t, cs_alloc_mode);
+    CS_MALLOC_HD(viscce, n_cells_ext, cs_real_6_t, cs_alloc_mode);
     const cs_real_6_t *visten = nullptr;
     const int kctheta = cs_field_key_id("turbulent_flux_ctheta");
     const cs_real_t ctheta = cs_field_get_key_double(f, kctheta);
@@ -630,9 +626,9 @@ _diffusion_terms_scalar(const cs_field_t           *f,
     if (eqp->idifft == 0) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         for (cs_lnum_t ii = 0; ii < 3; ii++)
-          _viscce[c_id][ii] = visls_0;
+          viscce[c_id][ii] = visls_0;
         for (cs_lnum_t ii = 3; ii < 6; ii++)
-          _viscce[c_id][ii] = 0.;
+          viscce[c_id][ii] = 0.;
       });
     }
     else {
@@ -643,18 +639,18 @@ _diffusion_terms_scalar(const cs_field_t           *f,
           ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
             const cs_real_t tmp = xcpp[c_id];
             for (cs_lnum_t ii = 0; ii < 3; ii++)
-              _viscce[c_id][ii] = tmp*vistet[c_id][ii] + visls_0;
+              viscce[c_id][ii] = tmp*vistet[c_id][ii] + visls_0;
             for (cs_lnum_t ii = 3; ii < 6; ii++)
-              _viscce[c_id][ii] = tmp*vistet[c_id][ii];
+              viscce[c_id][ii] = tmp*vistet[c_id][ii];
           });
         }
         else {
           ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
             const cs_real_t tmp = xcpp[c_id];
             for (cs_lnum_t ii = 0; ii < 3; ii++)
-              _viscce[c_id][ii] = tmp*vistet[c_id][ii] + cpro_viscls[c_id];
+              viscce[c_id][ii] = tmp*vistet[c_id][ii] + cpro_viscls[c_id];
             for (cs_lnum_t ii = 3; ii < 6; ii++)
-              _viscce[c_id][ii] = tmp*vistet[c_id][ii];
+              viscce[c_id][ii] = tmp*vistet[c_id][ii];
           });
         }
       }
@@ -664,18 +660,18 @@ _diffusion_terms_scalar(const cs_field_t           *f,
           ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
             const cs_real_t temp = xcpp[c_id]*ctheta/csrij;
             for (cs_lnum_t ii = 0; ii < 3; ii++)
-              _viscce[c_id][ii] = temp*visten[c_id][ii] + visls_0;
+              viscce[c_id][ii] = temp*visten[c_id][ii] + visls_0;
             for (cs_lnum_t ii = 3; ii < 6; ii++)
-              _viscce[c_id][ii] = temp*visten[c_id][ii];
+              viscce[c_id][ii] = temp*visten[c_id][ii];
           });
         }
         else {
           ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
             const cs_real_t tmp = xcpp[c_id]*ctheta/csrij;
             for (cs_lnum_t ii = 0; ii < 3; ii++)
-              _viscce[c_id][ii] = tmp*visten[c_id][ii] + cpro_viscls[c_id];
+              viscce[c_id][ii] = tmp*visten[c_id][ii] + cpro_viscls[c_id];
             for (cs_lnum_t ii = 3; ii < 6; ii++)
-              _viscce[c_id][ii] = tmp*visten[c_id][ii];
+              viscce[c_id][ii] = tmp*visten[c_id][ii];
           });
         }
       }
@@ -686,26 +682,22 @@ _diffusion_terms_scalar(const cs_field_t           *f,
     /* Weighting for gradient */
     if (cpro_wgrec_v != nullptr) {
       cs_array_copy<cs_real_t>(n_cells*6,
-                               (const cs_real_t *)_viscce,
+                               (const cs_real_t *)viscce,
                                (cs_real_t *)cpro_wgrec_v);
       cs_halo_sync_r(m->halo, ctx.use_gpu(), cpro_wgrec_v);
     }
 
     cs_face_anisotropic_viscosity_scalar(m,
                                          fvq,
-                                         _viscce,
+                                         viscce,
                                          eqp->verbosity,
-                                         _weighf,
-                                         _weighb,
+                                         weighf,
+                                         weighb,
                                          viscf,
                                          viscb);
   }
 
   CS_FREE(vistet);
-
-  *weighb = _weighb;
-  *weighf = _weighf;
-  *viscce = _viscce;
 }
 
 /*----------------------------------------------------------------------------
@@ -720,9 +712,9 @@ _diffusion_terms_vector(const cs_field_t            *f,
                         const cs_equation_param_t   *eqp,
                         cs_real_t                    viscf[],
                         cs_real_t                    viscb[],
-                        cs_real_t                  **weighb,
-                        cs_real_2_t                **weighf,
-                        cs_real_6_t                **viscce)
+                        cs_real_t                  *&weighb,
+                        cs_real_2_t                *&weighf,
+                        cs_real_6_t                *&viscce)
 {
   const cs_turb_model_t *turb_model = cs_glob_turb_model;
 
@@ -733,10 +725,6 @@ _diffusion_terms_vector(const cs_field_t            *f,
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-
-  cs_real_t *_weighb = nullptr;
-  cs_real_2_t *_weighf = nullptr;
-  cs_real_6_t *_viscce = nullptr;
 
   cs_dispatch_context ctx;
 
@@ -809,9 +797,9 @@ _diffusion_terms_vector(const cs_field_t            *f,
   /* Symmetric tensor diffusivity (GGDH) */
   else if (eqp->idften & CS_ANISOTROPIC_DIFFUSION) {
 
-    CS_MALLOC_HD(_weighb, n_b_faces, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(_weighf, n_i_faces, cs_real_2_t, cs_alloc_mode);
-    CS_MALLOC_HD(_viscce, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+    CS_MALLOC_HD(weighb, n_b_faces, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(weighf, n_i_faces, cs_real_2_t, cs_alloc_mode);
+    CS_MALLOC_HD(viscce, n_cells_ext, cs_real_6_t, cs_alloc_mode);
 
     const cs_real_6_t *visten = nullptr;
     const int kctheta = cs_field_key_id("turbulent_flux_ctheta");
@@ -834,9 +822,9 @@ _diffusion_terms_vector(const cs_field_t            *f,
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         for (cs_lnum_t ii = 0; ii < 3; ii++)
-          _viscce[c_id][ii] = tmp*visten[c_id][ii] + visls_0;
+          viscce[c_id][ii] = tmp*visten[c_id][ii] + visls_0;
         for (cs_lnum_t ii = 3; ii < 6; ii++)
-          _viscce[c_id][ii] = tmp*visten[c_id][ii];
+          viscce[c_id][ii] = tmp*visten[c_id][ii];
       });
     }
     else {
@@ -844,9 +832,9 @@ _diffusion_terms_vector(const cs_field_t            *f,
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         for (cs_lnum_t ii = 0; ii < 3; ii++)
-          _viscce[c_id][ii] = tmp*visten[c_id][ii] + cpro_viscls[c_id];
+          viscce[c_id][ii] = tmp*visten[c_id][ii] + cpro_viscls[c_id];
         for (cs_lnum_t ii = 3; ii < 6; ii++)
-          _viscce[c_id][ii] = tmp*visten[c_id][ii];
+          viscce[c_id][ii] = tmp*visten[c_id][ii];
       });
     }
 
@@ -855,24 +843,20 @@ _diffusion_terms_vector(const cs_field_t            *f,
     /* Weighting for gradient */
     if (cpro_wgrec_v != nullptr) {
       cs_array_copy<cs_real_t>(6*n_cells,
-                               (cs_real_t *)_viscce,
+                               (cs_real_t *)viscce,
                                (cs_real_t *)cpro_wgrec_v);
       cs_halo_sync_r(m->halo, ctx.use_gpu(), cpro_wgrec_v);
     }
 
     cs_face_anisotropic_viscosity_scalar(m,
                                          fvq,
-                                         _viscce,
+                                         viscce,
                                          eqp->verbosity,
-                                         _weighf,
-                                         _weighb,
+                                         weighf,
+                                         weighb,
                                          viscf,
                                          viscb);
   }
-
-  *weighb = _weighb;
-  *weighf = _weighf;
-  *viscce = _viscce;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1692,9 +1676,9 @@ cs_solve_equation_scalar(cs_field_t        *f,
                             viscf,
                             viscb,
                             rhs,
-                            &weighb,
-                            &weighf,
-                            &viscce);
+                            weighb,
+                            weighf,
+                            viscce);
   }
   else {
     ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
@@ -2351,9 +2335,9 @@ cs_solve_equation_vector(cs_field_t       *f,
                             eqp,
                             viscf,
                             viscb,
-                            &weighb,
-                            &weighf,
-                            &viscce);
+                            weighb,
+                            weighf,
+                            viscce);
   }
   else {
     ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
