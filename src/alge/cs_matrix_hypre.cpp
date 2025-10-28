@@ -239,7 +239,7 @@ _mat_vec_p_parcsr(cs_matrix_t  *matrix,
     for (HYPRE_BigInt ii = 0; ii < n_rows; ii++) {
       y[ii] = _t[ii];
     }
-    CS_FREE_HD(_t);
+    CS_FREE(_t);
   }
 }
 
@@ -1057,8 +1057,8 @@ _assembler_values_end(void  *matrix_p)
 
   if (coeffs->matrix_state == 0) {
 
-    CS_FREE_HD(coeffs->row_buf);
-    CS_FREE_HD(coeffs->col_buf);
+    CS_FREE(coeffs->row_buf);
+    CS_FREE(coeffs->col_buf);
 
 #if defined(HAVE_MPI)
     MPI_Comm comm = cs_glob_mpi_comm;
@@ -1807,9 +1807,9 @@ _release_coeffs_ij(cs_matrix_t  *matrix)
       HYPRE_IJVectorDestroy(coeffs->hx);
       HYPRE_IJVectorDestroy(coeffs->hy);
 
-      CS_FREE_HD(coeffs->row_buf); /* precaution; usually done earlier */
-      CS_FREE_HD(coeffs->col_buf); /* precaution; usually done earlier */
-      CS_FREE_HD(coeffs->val_buf); /* only done here */
+      CS_FREE(coeffs->row_buf); /* precaution; usually done earlier */
+      CS_FREE(coeffs->col_buf); /* precaution; usually done earlier */
+      CS_FREE(coeffs->val_buf); /* only done here */
 
       coeffs->matrix_state = 0;
     }

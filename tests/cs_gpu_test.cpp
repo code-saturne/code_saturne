@@ -197,9 +197,9 @@ main (int argc, char *argv[])
     CS_MALLOC_HD(a2, 100, cs_real_t, CS_ALLOC_HOST);
   }
 
-  CS_FREE_HD(a0);
-  CS_FREE_HD(a1);
-  CS_FREE_HD(a2);
+  CS_FREE(a0);
+  CS_FREE(a1);
+  CS_FREE(a2);
 
   /* OpenMP tests */
 

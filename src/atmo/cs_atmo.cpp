@@ -756,10 +756,10 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
 
   cs_sles_free_native(f_id, "");
 
-  CS_FREE_HD(divergfext);
-  CS_FREE_HD(next_fext);
-  CS_FREE_HD(rovsdt);
-  CS_FREE_HD(c_visc);
+  CS_FREE(divergfext);
+  CS_FREE(next_fext);
+  CS_FREE(rovsdt);
+  CS_FREE(c_visc);
 
   cs_clear_bc_coeffs_solve(bc_coeffs_solve);
 }
@@ -4557,9 +4557,9 @@ cs_atmo_z_ground_compute(void)
   else {
     bft_printf("No ground BC or no gravity:"
                " no computation of ground elevation.\n");
-    CS_FREE_HD(rovsdt);
-    CS_FREE_HD(rhs);
-    CS_FREE_HD(dpvar);
+    CS_FREE(rovsdt);
+    CS_FREE(rhs);
+    CS_FREE(dpvar);
     return;
   }
 
@@ -4617,9 +4617,9 @@ cs_atmo_z_ground_compute(void)
   }
 
   /* Free memory */
-  CS_FREE_HD(rovsdt);
-  CS_FREE_HD(rhs);
-  CS_FREE_HD(dpvar);
+  CS_FREE(rovsdt);
+  CS_FREE(rhs);
+  CS_FREE(dpvar);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4859,16 +4859,16 @@ cs_atmo_hydrostatic_profiles_compute(void)
   }
 
   /* Free memory */
-  CS_FREE_HD(dpvar);
-  CS_FREE_HD(rhs);
-  CS_FREE_HD(i_viscm);
-  CS_FREE_HD(b_viscm);
-  CS_FREE_HD(xam);
-  CS_FREE_HD(dam);
-  CS_FREE_HD(f_ext);
-  CS_FREE_HD(dfext);
-  CS_FREE_HD(b_massflux);
-  CS_FREE_HD(i_massflux);
+  CS_FREE(dpvar);
+  CS_FREE(rhs);
+  CS_FREE(i_viscm);
+  CS_FREE(b_viscm);
+  CS_FREE(xam);
+  CS_FREE(dam);
+  CS_FREE(f_ext);
+  CS_FREE(dfext);
+  CS_FREE(b_massflux);
+  CS_FREE(i_massflux);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -414,7 +414,7 @@ cs_sles_it_setup_priv(cs_sles_it_t       *c,
 
     if (s != nullptr) {
       sd->ad_inv = s->setup_data->ad_inv;
-      CS_FREE_HD(sd->_ad_inv);
+      CS_FREE(sd->_ad_inv);
     }
     else {
 

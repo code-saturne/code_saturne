@@ -948,7 +948,7 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
       }
     }
 
-    CS_FREE_HD(grad);
+    CS_FREE(grad);
 
   }
 }
@@ -1111,7 +1111,7 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
       }
     }
 
-    CS_FREE_HD(grad);
+    CS_FREE(grad);
 
   }
 }
@@ -1256,7 +1256,7 @@ cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
       }
     }
 
-    CS_FREE_HD(grad);
+    CS_FREE(grad);
 
   }
 }

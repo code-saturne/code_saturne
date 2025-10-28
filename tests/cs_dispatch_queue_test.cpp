@@ -239,8 +239,8 @@ _cs_dispatch_queue_test(void)
   std::cout << "device_id " << cs_base_cuda_get_device() << std::endl;
 #endif
 
-  CS_FREE_HD(a0);
-  CS_FREE_HD(a1);
+  CS_FREE(a0);
+  CS_FREE(a1);
 }
 
 inline void
@@ -289,8 +289,8 @@ _cs_sycl_like_example()
     task_d.wait();
   }
 
-  CS_FREE_HD(a);
-  CS_FREE_HD(b);
+  CS_FREE(a);
+  CS_FREE(b);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -457,15 +457,15 @@ _compressible_pressure_mass_flux(int iterns, // cfmsfp en fortran
                b_mass_flux);
 
   /* Free memory */
-  CS_FREE_HD(w1);
-  CS_FREE_HD(tsexp);
-  CS_FREE_HD(tsimp);
-  CS_FREE_HD(i_visc);
-  CS_FREE_HD(b_visc);
-  CS_FREE_HD(secvif);
-  CS_FREE_HD(secvib);
-  CS_FREE_HD(viscce);
-  CS_FREE_HD(vel0);
+  CS_FREE(w1);
+  CS_FREE(tsexp);
+  CS_FREE(tsimp);
+  CS_FREE(i_visc);
+  CS_FREE(b_visc);
+  CS_FREE(secvif);
+  CS_FREE(secvib);
+  CS_FREE(viscce);
+  CS_FREE(vel0);
 
   coefbv = nullptr;
   cs_field_bc_coeffs_free_copy(bc_coeffs_vel, &bc_coeffs_v_loc);
@@ -852,22 +852,22 @@ cs_cf_convective_mass_flux(int  iterns)
 
   }
 
-  CS_FREE_HD(i_visc);
-  CS_FREE_HD(b_visc);
-  CS_FREE_HD(smbrs);
-  CS_FREE_HD(dpvar);
-  CS_FREE_HD(wflmas);
-  CS_FREE_HD(wflmab);
+  CS_FREE(i_visc);
+  CS_FREE(b_visc);
+  CS_FREE(smbrs);
+  CS_FREE(dpvar);
+  CS_FREE(wflmas);
+  CS_FREE(wflmab);
 
-  CS_FREE_HD(c2);
-  CS_FREE_HD(rovsdt);
-  CS_FREE_HD(ivolfl);
-  CS_FREE_HD(bvolfl);
-  CS_FREE_HD(w1);
-  CS_FREE_HD(w7);
-  CS_FREE_HD(w8);
-  CS_FREE_HD(w9);
-  CS_FREE_HD(w10);
+  CS_FREE(c2);
+  CS_FREE(rovsdt);
+  CS_FREE(ivolfl);
+  CS_FREE(bvolfl);
+  CS_FREE(w1);
+  CS_FREE(w7);
+  CS_FREE(w8);
+  CS_FREE(w9);
+  CS_FREE(w10);
 
   wbfa = nullptr;
   wbfb = nullptr;
@@ -1007,14 +1007,14 @@ cs_cf_cfl_compute(cs_real_t wcf[]) // before : cfdttv
   }
 
   /* Free memory */
-  CS_FREE_HD(i_visc);
-  CS_FREE_HD(b_visc);
-  CS_FREE_HD(w1);
-  CS_FREE_HD(c2);
-  CS_FREE_HD(coefbt);
-  CS_FREE_HD(cofbft);
-  CS_FREE_HD(i_mass_flux);
-  CS_FREE_HD(b_mass_flux);
+  CS_FREE(i_visc);
+  CS_FREE(b_visc);
+  CS_FREE(w1);
+  CS_FREE(c2);
+  CS_FREE(coefbt);
+  CS_FREE(cofbft);
+  CS_FREE(i_mass_flux);
+  CS_FREE(b_mass_flux);
 }
 
 /*---------------------------------------------------------------------------- */

@@ -634,11 +634,11 @@ cs_mass_flux(const cs_mesh_t             *m,
   ctx.wait();
   ctx_c.wait();
 
-  CS_FREE_HD(grdqdm);
-  CS_FREE_HD(qdm);
-  CS_FREE_HD(f_momentum);
-  CS_FREE_HD(_i_f_face_factor);
-  CS_FREE_HD(_b_f_face_factor);
+  CS_FREE(grdqdm);
+  CS_FREE(qdm);
+  CS_FREE(f_momentum);
+  CS_FREE(_i_f_face_factor);
+  CS_FREE(_b_f_face_factor);
 
   coefaq = nullptr;
   cs_field_bc_coeffs_free_copy(bc_coeffs_v, &bc_coeffs_v_loc);
@@ -1067,7 +1067,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
 
     ctx.wait();
 
-    CS_FREE_HD(val_ip_g);
+    CS_FREE(val_ip_g);
 
     /* Computation of c_mass_var gradient
        (tensor gradient, the periodicity has already been treated) */
@@ -1086,7 +1086,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
                                     val_f,
                                     c_grad_mvar);
 
-    CS_FREE_HD(val_f);
+    CS_FREE(val_f);
 
     /* Mass flow through interior faces */
 
@@ -1172,9 +1172,9 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
   ctx.wait();
   ctx_c.wait();
 
-  CS_FREE_HD(c_grad_mvar);
-  CS_FREE_HD(c_mass_var);
-  CS_FREE_HD(b_mass_var);
+  CS_FREE(c_grad_mvar);
+  CS_FREE(c_mass_var);
+  CS_FREE(b_mass_var);
 
   coefaq = nullptr;
   cs_field_bc_coeffs_free_copy(bc_coeffs_ts, &bc_coeffs_ts_loc);
@@ -1557,7 +1557,7 @@ cs_ext_force_flux(const cs_mesh_t          *m,
   ctx.wait();
   ctx_c.wait();
 
-  CS_FREE_HD(_f_ext);
+  CS_FREE(_f_ext);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1855,7 +1855,7 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
   ctx.wait();
   ctx_c.wait();
 
-  CS_FREE_HD(w2);
+  CS_FREE(w2);
 }
 
 /*----------------------------------------------------------------------------*/

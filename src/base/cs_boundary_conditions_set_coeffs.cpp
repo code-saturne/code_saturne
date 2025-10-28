@@ -4613,13 +4613,13 @@ cs_boundary_conditions_update_bc_coeff_face_values
   ctx.wait();
 
   if (bc_coeffs_loc != nullptr) {
-    CS_FREE_HD(bc_coeffs_loc->a);
+    CS_FREE(bc_coeffs_loc->a);
     if (cpl != nullptr)
-      CS_FREE_HD(bc_coeffs_loc->af);
+      CS_FREE(bc_coeffs_loc->af);
     CS_FREE(bc_coeffs_loc);
   }
-  CS_FREE_HD(val_ip_flux);
-  CS_FREE_HD(val_ip_grad);
+  CS_FREE(val_ip_flux);
+  CS_FREE(val_ip_grad);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4972,13 +4972,13 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
   CS_PROFILE_MARK_LINE();
 
   if (bc_coeffs_loc != nullptr) {
-    CS_FREE_HD(bc_coeffs_loc->a);
+    CS_FREE(bc_coeffs_loc->a);
      if (cpl != nullptr)
-       CS_FREE_HD(bc_coeffs_loc->af);
+       CS_FREE(bc_coeffs_loc->af);
     CS_FREE(bc_coeffs_loc);
   }
 
-  CS_FREE_HD(val_ip_lim);
+  CS_FREE(val_ip_lim);
   CS_PROFILE_MARK_LINE();
 }
 
@@ -5045,7 +5045,7 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
 
   CS_PROFILE_MARK_LINE();
 
-  CS_FREE_HD(val_ip);
+  CS_FREE(val_ip);
 }
 
 // Force instanciation
@@ -5260,15 +5260,15 @@ void
 cs_clear_bc_coeffs_solve(cs_bc_coeffs_solve_t  &c)
 {
   if (c.flux_lim != c.flux) {
-    CS_FREE_HD(c.flux_lim);
+    CS_FREE(c.flux_lim);
   }
   else {
     c.flux_lim = nullptr;
   }
 
-  CS_FREE_HD(c.val_ip);
-  CS_FREE_HD(c.val_f);
-  CS_FREE_HD(c.flux);
+  CS_FREE(c.val_ip);
+  CS_FREE(c.val_f);
+  CS_FREE(c.flux);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -1025,7 +1025,7 @@ _destroy_coeff(cs_matrix_t  *m)
     CS_FREE(mc->_e_val);
     CS_FREE(mc->_d_val);
     CS_FREE(mc->_val);
-    CS_FREE_HD(mc->d_idx);
+    CS_FREE(mc->d_idx);
 
     CS_FREE(m->coeffs);
   }
@@ -1588,7 +1588,7 @@ _csr_assembler_values_init(void        *matrix_p,
 
   /* Initialize diagonal values */
 
-  CS_FREE_HD(mc->_val);
+  CS_FREE(mc->_val);
   CS_MALLOC_HD(mc->_val, e_size_2*ms->row_index[ms->n_rows], cs_real_t, amode);
   mc->val = mc->_val;
 
@@ -2351,11 +2351,11 @@ _msr_assembler_values_init(void              *matrix_p,
 
   /* Allocate values and initialize to zero. */
 
-  CS_FREE_HD(mc->d_idx);
+  CS_FREE(mc->d_idx);
   CS_FREE(mc->_d_val);
   CS_FREE(mc->_e_val);
 
-  CS_FREE_HD(mc->_h_val);
+  CS_FREE(mc->_h_val);
   mc->h_val = nullptr;
 
   CS_MALLOC_HD(mc->_d_val, d_size_2*n_rows, cs_real_t, amode);
@@ -2578,10 +2578,10 @@ _dist_assembler_values_init(void        *matrix_p,
 
   /* Allocate values and initialize to zero. */
 
-  CS_FREE_HD(mc->d_idx);
+  CS_FREE(mc->d_idx);
   CS_FREE(mc->_d_val);
   CS_FREE(mc->_e_val);
-  CS_FREE_HD(mc->_h_val);
+  CS_FREE(mc->_h_val);
 
   CS_MALLOC_HD(mc->_d_val, d_size_2*n_rows, cs_real_t, amode);
   mc->d_val = mc->_d_val;
@@ -2971,7 +2971,7 @@ _create_struct_dist(cs_alloc_mode_t     alloc_mode,
   if (ms->h._row_index[n_rows] > 0)
     CS_MALLOC_HD(ms->h._col_id, ms->h._row_index[n_rows], cs_lnum_t, alloc_mode);
   else {
-    CS_FREE_HD(ms->h._row_index);
+    CS_FREE(ms->h._row_index);
     ms->h.n_rows = 0;
     ms->h.n_cols_ext = 0;
   }
@@ -3482,12 +3482,12 @@ _destroy_struct_dist(void  **ms)
   if (ms != nullptr && *ms !=nullptr) {
     auto _ms = static_cast<cs_matrix_struct_dist_t *>(*ms);
 
-    CS_FREE_HD(_ms->e._row_index);
-    CS_FREE_HD(_ms->e._col_id);
-    CS_FREE_HD(_ms->h._row_index);
-    CS_FREE_HD(_ms->h._col_id);
+    CS_FREE(_ms->e._row_index);
+    CS_FREE(_ms->e._col_id);
+    CS_FREE(_ms->h._row_index);
+    CS_FREE(_ms->h._col_id);
 
-    CS_FREE_HD(_ms->h_row_id);
+    CS_FREE(_ms->h_row_id);
 
     CS_FREE(_ms);
 
@@ -3658,7 +3658,7 @@ _map_or_copy_d_coeffs_dist(cs_matrix_t      *matrix,
   if (da != nullptr) {
 
     if (copy) {
-      CS_FREE_HD(mc->_d_val);
+      CS_FREE(mc->_d_val);
       CS_MALLOC_HD(mc->_d_val, db_size_2*n_rows, cs_real_t, matrix->alloc_mode);
 #     pragma omp parallel for  if(n_rows*db_size > CS_THR_MIN)
       for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
@@ -3713,8 +3713,8 @@ _set_coeffs_dist(cs_matrix_t         *matrix,
 
   mc->eb_size = matrix->eb_size;
 
-  CS_FREE_HD(mc->_e_val);
-  CS_FREE_HD(mc->_h_val);
+  CS_FREE(mc->_e_val);
+  CS_FREE(mc->_h_val);
   CS_MALLOC_HD(mc->_e_val, eb_size_2*ms->e.row_index[ms->e.n_rows], cs_real_t,
                matrix->alloc_mode);
   if (ms->h.n_rows > 0)

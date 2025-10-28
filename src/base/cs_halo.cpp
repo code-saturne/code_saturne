@@ -1314,8 +1314,8 @@ cs_halo_destroy(cs_halo_t  **halo)
 
   CS_FREE(_halo->c_domain_rank);
 
-  CS_FREE_HD(_halo->send_list);
-  CS_FREE_HD(_halo->send_index);
+  CS_FREE(_halo->send_list);
+  CS_FREE(_halo->send_index);
   CS_FREE(_halo->index);
 
   CS_FREE(_halo->send_perio_lst);
@@ -1407,8 +1407,8 @@ cs_halo_state_destroy(cs_halo_state_t  **halo_state)
 #endif
 #endif
 
-    CS_FREE_HD(hs->send_buffer);
-    CS_FREE_HD(hs->recv_buffer);
+    CS_FREE(hs->send_buffer);
+    CS_FREE(hs->recv_buffer);
 
 #if defined(HAVE_MPI)
     CS_FREE(hs->request);
@@ -1659,7 +1659,7 @@ cs_halo_sync_pack_init_state(const cs_halo_t  *halo,
 #endif
 #endif
 
-      CS_FREE_HD(_hs->send_buffer);
+      CS_FREE(_hs->send_buffer);
       CS_MALLOC_HD(_hs->send_buffer,
                    _hs->send_buffer_size,
                    char,
@@ -2009,7 +2009,7 @@ cs_halo_sync_start(const cs_halo_t  *halo,
       if (_hs->var_location != CS_ALLOC_HOST_DEVICE_SHARED) {
         if (_hs->recv_buffer_size < recv_size) {
           _hs->recv_buffer_size = recv_size;
-          CS_FREE_HD(_hs->recv_buffer);
+          CS_FREE(_hs->recv_buffer);
           CS_MALLOC_HD(_hs->recv_buffer, _hs->recv_buffer_size, unsigned char,
                        CS_ALLOC_HOST_DEVICE_PINNED);
         }

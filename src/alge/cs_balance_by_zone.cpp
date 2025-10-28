@@ -1608,7 +1608,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
 
   /* Free memory */
 
-  CS_FREE_HD(grad);
+  CS_FREE(grad);
   CS_FREE(gradup);
   CS_FREE(gradst);
   CS_FREE(f_reconstructed);
@@ -3182,9 +3182,9 @@ cs_flux_through_surface(const char         *scalar_name,
 
   if (!itemperature || icp == -1)
     CS_FREE(cpro_cp);
-  CS_FREE_HD(c_visc);
-  CS_FREE_HD(i_visc);
-  CS_FREE_HD(b_visc);
+  CS_FREE(c_visc);
+  CS_FREE(i_visc);
+  CS_FREE(b_visc);
 
   CS_FREE(val_f_g_nr);
   CS_FREE(flux_d_nr);

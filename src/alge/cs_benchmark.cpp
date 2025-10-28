@@ -621,7 +621,7 @@ _sub_matrix_vector_test(int                  n_time_runs,
             <std::chrono::microseconds>(wt1 - wt0);
   wt_r0 = wt_r0_m.count() * 1.e-6 / n_time_runs;
 
-  CS_FREE_HD(ya);
+  CS_FREE(ya);
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 "\n"
@@ -746,7 +746,7 @@ _sub_matrix_vector_check(cs_lnum_t            n_cells,
                 "  (diff to ref (host):   %12.5f)\n",
                 mdiff);
 
-  CS_FREE_HD(yc);
+  CS_FREE(yc);
 }
 
 /*----------------------------------------------------------------------------
@@ -1280,11 +1280,11 @@ cs_benchmark(int  mpi_trace_mode)
   /* Free working arrays */
   /*---------------------*/
 
-  CS_FREE_HD(x);
-  CS_FREE_HD(y);
+  CS_FREE(x);
+  CS_FREE(y);
 
-  CS_FREE_HD(da);
-  CS_FREE_HD(xa);
+  CS_FREE(da);
+  CS_FREE(xa);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -386,7 +386,7 @@ _sles_pc_poly_setup(void               *context,
   const cs_lnum_t n_rows = c->n_rows;
 
   if (c->n_rows > n_rows_prev) {
-    CS_FREE_HD(c->_ad_inv);
+    CS_FREE(c->_ad_inv);
     CS_MALLOC_HD(c->_ad_inv, n_rows, cs_real_t, amode);
   }
   c->ad_inv = c->_ad_inv;
@@ -582,7 +582,7 @@ _sles_pc_poly_apply_poly(void                *context,
   if (c->n_aux < n_aux) {
     c->n_aux = n_aux;
     cs_alloc_mode_t amode = cs_check_device_ptr(c->ad_inv);
-    CS_FREE_HD(c->aux);
+    CS_FREE(c->aux);
     CS_MALLOC_HD(c->aux, c->n_aux, cs_real_t, amode);
   }
 
@@ -641,8 +641,8 @@ _sles_pc_poly_free(void  *context)
   c->a = nullptr;
 
   c->ad_inv = nullptr;
-  CS_FREE_HD(c->_ad_inv);
-  CS_FREE_HD(c->aux);
+  CS_FREE(c->_ad_inv);
+  CS_FREE(c->aux);
 }
 
 /*----------------------------------------------------------------------------

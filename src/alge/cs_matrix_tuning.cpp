@@ -235,8 +235,8 @@ _matrix_tune_test(const cs_matrix_t     *m,
 
   } /* end of loop on variants */
 
-  CS_FREE_HD(x);
-  CS_FREE_HD(y);
+  CS_FREE(x);
+  CS_FREE(y);
 }
 
 /*----------------------------------------------------------------------------*/

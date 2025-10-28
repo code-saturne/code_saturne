@@ -483,7 +483,7 @@ _smoothe(const cs_mesh_t              *m,
 
   ctx.wait();
 
-  CS_FREE_HD(grad);
+  CS_FREE(grad);
 
   /* FIXME: the following synchronization should not
      be needed, unless perhaps when using a native matrix format */
@@ -524,9 +524,9 @@ _smoothe(const cs_mesh_t              *m,
 
   cs_halo_sync_var(m->halo, CS_HALO_STANDARD, pvar);
 
-  CS_FREE_HD(xam);
-  CS_FREE_HD(dam);
-  CS_FREE_HD(smbdp);
+  CS_FREE(xam);
+  CS_FREE(dam);
+  CS_FREE(smbdp);
 }
 
 END_C_DECLS // Temporary used here for the templated function
@@ -1130,8 +1130,8 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
   }
 
   if (icorio == 1 || iturbo > CS_TURBOMACHINERY_NONE) {
-    CS_FREE_HD(i_massflux_abs);
-    CS_FREE_HD(b_massflux_abs);
+    CS_FREE(i_massflux_abs);
+    CS_FREE(b_massflux_abs);
   }
 
   /* Unsteady term and mass budget */
@@ -1168,7 +1168,7 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
                   _("   ** VOF model, mass balance: %12.4e\n\n"),
                   glob_m_budget);
 
-    CS_FREE_HD(divro);
+    CS_FREE(divro);
   }
 
 }
@@ -1394,14 +1394,14 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
 
   ctx.wait();
 
-  CS_FREE_HD(surfxyz_norm);
-  CS_FREE_HD(surfxyz_unnormed);
-  CS_FREE_HD(gradnxyz);
-  CS_FREE_HD(pvar);
-  CS_FREE_HD(coefa);
-  CS_FREE_HD(coefb);
-  CS_FREE_HD(coefa_vec);
-  CS_FREE_HD(coefb_vec);
+  CS_FREE(surfxyz_norm);
+  CS_FREE(surfxyz_unnormed);
+  CS_FREE(gradnxyz);
+  CS_FREE(pvar);
+  CS_FREE(coefa);
+  CS_FREE(coefb);
+  CS_FREE(coefa_vec);
+  CS_FREE(coefb_vec);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1527,7 +1527,7 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
 
   ctx.wait();
 
-  CS_FREE_HD(voidf_grad);
+  CS_FREE(voidf_grad);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1676,8 +1676,8 @@ cs_vof_drift_term(int                        imrgra,
                  ipro_idriftf,
                  cpro_bdriftf);
 
-    CS_FREE_HD(coefav);
-    CS_FREE_HD(coefbv);
+    CS_FREE(coefav);
+    CS_FREE(coefbv);
   }
 
   /*======================================================================
@@ -1959,7 +1959,7 @@ cs_vof_solve_void_fraction(int  iterns)
                 b_mass_flux_volf,
                 divu);
 
-  CS_FREE_HD(_divu);
+  CS_FREE(_divu);
 
   /* Construct the system to solve
      ----------------------------- */
@@ -2150,11 +2150,11 @@ cs_vof_solve_void_fraction(int  iterns)
 
   /* Free memory */
 
-  CS_FREE_HD(rovsdt);
-  CS_FREE_HD(i_visc);
-  CS_FREE_HD(b_visc);
-  CS_FREE_HD(smbrs);
-  CS_FREE_HD(dpvar);
+  CS_FREE(rovsdt);
+  CS_FREE(i_visc);
+  CS_FREE(b_visc);
+  CS_FREE(smbrs);
+  CS_FREE(dpvar);
 }
 
 /*----------------------------------------------------------------------------

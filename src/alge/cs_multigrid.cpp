@@ -4539,7 +4539,7 @@ _map_or_alloc_device_solve_buffer(cs_multigrid_setup_data_t   *mgd,
                                   void                       *&aux_buf_d)
 {
   if (aux_size_d > mgd->aux_size_d) {
-    CS_FREE_HD(mgd->aux_buf_d);
+    CS_FREE(mgd->aux_buf_d);
     CS_MALLOC_HD(aux_buf_d,
                  aux_size_d,
                  unsigned char,
@@ -4567,7 +4567,7 @@ _unmap_or_free_device_solve_buffer(cs_multigrid_setup_data_t   *mgd,
                                    void                       *&aux_buf_d)
 {
   if (aux_buf_d != mgd->aux_buf_d)
-    CS_FREE_HD(aux_buf_d);
+    CS_FREE(aux_buf_d);
   else
     aux_buf_d = nullptr;
 }
@@ -5628,7 +5628,7 @@ cs_multigrid_free(void  *context)
     /* Free coarse solution data */
 
     CS_FREE(mgd->rhs_vx);
-    CS_FREE_HD(mgd->rhs_vx_buf);
+    CS_FREE(mgd->rhs_vx_buf);
 
     /* Destroy solver hierarchy */
 

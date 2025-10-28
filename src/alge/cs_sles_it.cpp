@@ -5128,12 +5128,12 @@ cs_sles_it_solve(void                *context,
     if (c->on_device) {
       if (amode_vx == CS_ALLOC_HOST) {
         cs_copy_d2h(vx, _vx, v_size*sizeof(cs_real_t));
-        CS_FREE_HD(_vx);
+        CS_FREE(_vx);
       }
       else if (amode_vx < CS_ALLOC_HOST_DEVICE_SHARED)
         cs_sync_d2h(vx);
 
-      CS_FREE_HD(_rhs_w);
+      CS_FREE(_rhs_w);
     }
 
 #endif
@@ -5234,7 +5234,7 @@ cs_sles_it_free(void  *context)
     cs_sles_pc_free(c->_pc);
 
   if (c->setup_data != nullptr) {
-    CS_FREE_HD(c->setup_data->_ad_inv);
+    CS_FREE(c->setup_data->_ad_inv);
     CS_FREE(c->setup_data);
   }
 

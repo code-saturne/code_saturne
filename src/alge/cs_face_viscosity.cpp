@@ -291,7 +291,7 @@ cs_face_viscosity_secondary(cs_real_t  secvif[],
   /* TODO stresses at the wall? */
 
   /* Free memory */
-  CS_FREE_HD(secvis);
+  CS_FREE(secvis);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -687,7 +687,7 @@ cs_face_anisotropic_viscosity_vector(const cs_mesh_t             *m,
   ctx.wait();
   ctx_c.wait();
 
-  CS_FREE_HD(w2);
+  CS_FREE(w2);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1000,11 +1000,11 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
                "   Number of boundary clippings: %lu\n",
                (unsigned long)count_clip[0], (unsigned long)count_clip[1]);
 
-    CS_FREE_HD(i_clip);
-    CS_FREE_HD(b_clip);
+    CS_FREE(i_clip);
+    CS_FREE(b_clip);
   }
 
-  CS_FREE_HD(w2);
+  CS_FREE(w2);
 }
 
 /*----------------------------------------------------------------------------*/

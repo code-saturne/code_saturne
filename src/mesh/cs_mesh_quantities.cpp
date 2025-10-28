@@ -2764,44 +2764,44 @@ cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mq)
 void
 cs_mesh_quantities_free_all(cs_mesh_quantities_t  *mq)
 {
-  CS_FREE_HD(mq->cell_cen);
+  CS_FREE(mq->cell_cen);
   mq->cell_s_cen = nullptr;
-  CS_FREE_HD(mq->_cell_vol);
+  CS_FREE(mq->_cell_vol);
   mq->cell_vol = nullptr;
 
   CS_FREE(mq->i_face_normal);
   CS_FREE(mq->b_face_normal);
   mq->c_w_face_normal = nullptr;
 
-  CS_FREE_HD(mq->i_face_cog);
-  CS_FREE_HD(mq->b_face_cog);
+  CS_FREE(mq->i_face_cog);
+  CS_FREE(mq->b_face_cog);
   mq->c_w_face_cog = nullptr;
-  CS_FREE_HD(mq->i_face_surf);
-  CS_FREE_HD(mq->b_face_surf);
+  CS_FREE(mq->i_face_surf);
+  CS_FREE(mq->b_face_surf);
   mq->c_w_face_surf = nullptr;
 
-  CS_FREE_HD(mq->i_face_u_normal);
-  CS_FREE_HD(mq->b_face_u_normal);
+  CS_FREE(mq->i_face_u_normal);
+  CS_FREE(mq->b_face_u_normal);
 
   mq->i_f_face_factor = nullptr;
   mq->b_f_face_factor = nullptr;
 
-  CS_FREE_HD(mq->i_dist);
-  CS_FREE_HD(mq->b_dist);
+  CS_FREE(mq->i_dist);
+  CS_FREE(mq->b_dist);
   mq->c_w_dist_inv = nullptr;
 
-  CS_FREE_HD(mq->weight);
+  CS_FREE(mq->weight);
 
-  CS_FREE_HD(mq->dijpf);
-  CS_FREE_HD(mq->diipb);
-  CS_FREE_HD(mq->dofij);
-  CS_FREE_HD(mq->diipf);
-  CS_FREE_HD(mq->djjpf);
+  CS_FREE(mq->dijpf);
+  CS_FREE(mq->diipb);
+  CS_FREE(mq->dofij);
+  CS_FREE(mq->diipf);
+  CS_FREE(mq->djjpf);
 
   CS_FREE(mq->corr_grad_lin_det);
-  CS_FREE_HD(mq->corr_grad_lin);
-  CS_FREE_HD(mq->b_sym_flag);
-  CS_FREE_HD(mq->c_disable_flag);
+  CS_FREE(mq->corr_grad_lin);
+  CS_FREE(mq->b_sym_flag);
+  CS_FREE(mq->c_disable_flag);
   CS_FREE(mq->bad_cell_flag);
 }
 

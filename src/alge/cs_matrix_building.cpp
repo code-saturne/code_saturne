@@ -1556,8 +1556,8 @@ _matrix_strided(const cs_mesh_t            *m,
 
   ctx.wait();
 
-  CS_FREE_HD(_i_f_face_factor);
-  CS_FREE_HD(_b_f_face_factor);
+  CS_FREE(_i_f_face_factor);
+  CS_FREE(_b_f_face_factor);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1908,8 +1908,8 @@ _matrix_anisotropic_diffusion_strided
 
   ctx.wait();
 
-  CS_FREE_HD(_i_f_face_factor);
-  CS_FREE_HD(_b_f_face_factor);
+  CS_FREE(_i_f_face_factor);
+  CS_FREE(_b_f_face_factor);
 }
 
 #endif /* cplusplus */

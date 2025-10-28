@@ -146,7 +146,7 @@ _vort_trace(cs_real_t   vort[],
 
   }
 
-  CS_FREE_HD(grad_vel);
+  CS_FREE(grad_vel);
 
   cs_real_3_t *grad_nu;
   CS_MALLOC_HD(grad_nu, n_cells_ext, cs_real_3_t, cs_alloc_mode);
@@ -160,7 +160,7 @@ _vort_trace(cs_real_t   vort[],
     tr_gr_nu[i] = cs_math_3_square_norm(grad_nu[i]);
   }
 
-  CS_FREE_HD(grad_nu);
+  CS_FREE(grad_nu);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -621,7 +621,7 @@ cs_turbulence_sa(void)
                       viscf,
                       viscb);
 
-    CS_FREE_HD(w_1);
+    CS_FREE(w_1);
   }
   else {
     for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++)
@@ -678,11 +678,11 @@ cs_turbulence_sa(void)
   /* Clip values */
   _clip(n_cells);
 
-  CS_FREE_HD(rhs_sa);
-  CS_FREE_HD(imp_sa);
-  CS_FREE_HD(dpvar);
-  CS_FREE_HD(viscf);
-  CS_FREE_HD(viscb);
+  CS_FREE(rhs_sa);
+  CS_FREE(imp_sa);
+  CS_FREE(dpvar);
+  CS_FREE(viscf);
+  CS_FREE(viscb);
 }
 
 /*----------------------------------------------------------------------------*/

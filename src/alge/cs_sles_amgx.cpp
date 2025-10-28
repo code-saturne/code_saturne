@@ -490,9 +490,9 @@ _setup_matrix_dist(cs_sles_amgx_t     *c,
   if (amode_row_index < CS_ALLOC_HOST_DEVICE_PINNED)
     AMGX_unpin_memory(const_cast<int *>(row_index));
 
-  CS_FREE_HD(partition_offsets);
-  CS_FREE_HD(col_gid);
-  CS_FREE_HD(_row_index);
+  CS_FREE(partition_offsets);
+  CS_FREE(col_gid);
+  CS_FREE(_row_index);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1135,7 +1135,7 @@ cs_sles_amgx_setup(void               *context,
 
     cs_matrix_vector_multiply(a, x, z);
 
-    CS_FREE_HD(x);
+    CS_FREE(x);
     AMGX_vector_destroy(hx);
 
     double dmax = 0.0;
@@ -1145,10 +1145,10 @@ cs_sles_amgx_setup(void               *context,
         dmax = d;
     }
 
-    CS_FREE_HD(y);
+    CS_FREE(y);
     AMGX_vector_destroy(hy);
 
-    CS_FREE_HD(z);
+    CS_FREE(z);
 
 #if defined(HAVE_MPI)
     if (cs_glob_n_ranks > 1) {

@@ -632,7 +632,7 @@ cs_turbulence_kw(int phase_id)
 
     ctx.wait();
 
-    CS_FREE_HD(_gradv);
+    CS_FREE(_gradv);
   }
   else if (hybrid_turb == CS_HYBRID_SAS) {
 
@@ -719,7 +719,7 @@ cs_turbulence_kw(int phase_id)
 
     ctx.wait();
 
-    CS_FREE_HD(vel_laplacian);
+    CS_FREE(vel_laplacian);
 
   }
   else if (hybrid_turb == CS_HYBRID_HTLES) {
@@ -738,8 +738,8 @@ cs_turbulence_kw(int phase_id)
   ctx.wait();
 
   /* Free memory */
-  CS_FREE_HD(gradk);
-  CS_FREE_HD(grado);
+  CS_FREE(gradk);
+  CS_FREE(grado);
 
   /* Compute the weight f1 (stored in xf1)
      ===================================== */
@@ -970,7 +970,7 @@ cs_turbulence_kw(int phase_id)
     ctx.wait();
 
     /* Free memory */
-    CS_FREE_HD(grad);
+    CS_FREE(grad);
   }
   else {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -1211,7 +1211,7 @@ cs_turbulence_kw(int phase_id)
   ctx.wait();
 
   /* Free memory */
-  CS_FREE_HD(gdkgdw);
+  CS_FREE(gdkgdw);
 
   /* Account for Lagrangian 2-way coupling source terms
      -------------------------------------------------- */
@@ -1592,9 +1592,9 @@ cs_turbulence_kw(int phase_id)
     ctx.wait();
 
     /* Free memory */
-    CS_FREE_HD(w5);
-    CS_FREE_HD(w6);
-    CS_FREE_HD(w7);
+    CS_FREE(w5);
+    CS_FREE(w6);
+    CS_FREE(w7);
   }
 
   /* Solve for turbulent kinetic energy (k)
@@ -1808,27 +1808,27 @@ cs_turbulence_kw(int phase_id)
 
   /* Cleanup */
 
-  CS_FREE_HD(viscf);
-  CS_FREE_HD(viscb);
-  CS_FREE_HD(smbrk);
-  CS_FREE_HD(smbrw);
-  CS_FREE_HD(tinstk);
-  CS_FREE_HD(tinstw);
-  CS_FREE_HD(dpvar);
-  CS_FREE_HD(w1);
-  CS_FREE_HD(rotfct);
-  CS_FREE_HD(xf1);
+  CS_FREE(viscf);
+  CS_FREE(viscb);
+  CS_FREE(smbrk);
+  CS_FREE(smbrw);
+  CS_FREE(tinstk);
+  CS_FREE(tinstw);
+  CS_FREE(dpvar);
+  CS_FREE(w1);
+  CS_FREE(rotfct);
+  CS_FREE(xf1);
 
-  CS_FREE_HD(grad_dot_g);
-  CS_FREE_HD(usimpk);
-  CS_FREE_HD(usimpw);
+  CS_FREE(grad_dot_g);
+  CS_FREE(usimpk);
+  CS_FREE(usimpw);
 
-  CS_FREE_HD(prodk);
-  CS_FREE_HD(prodw);
+  CS_FREE(prodk);
+  CS_FREE(prodw);
 
-  CS_FREE_HD(s2pw2);
-  CS_FREE_HD(maxgdsv);
-  CS_FREE_HD(d2uidxi2);
+  CS_FREE(s2pw2);
+  CS_FREE(maxgdsv);
+  CS_FREE(d2uidxi2);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2014,7 +2014,7 @@ cs_turbulence_kw_mu_t(int phase_id)
 
   ctx.wait();
 
-  CS_FREE_HD(_gradv);
+  CS_FREE(_gradv);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -701,7 +701,7 @@ _diffusion_terms_scalar(const cs_field_t           *f,
                                          viscb);
   }
 
-  CS_FREE_HD(vistet);
+  CS_FREE(vistet);
 
   *weighb = _weighb;
   *weighf = _weighf;
@@ -1336,8 +1336,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
     cs_thermal_model_dissipation(vistot, gradv, rhs);
 
-    CS_FREE_HD(vistot);
-    CS_FREE_HD(gradv);
+    CS_FREE(vistot);
+    CS_FREE(gradv);
   }
   if (is_thermal_model_field) {
 
@@ -1809,12 +1809,12 @@ cs_solve_equation_scalar(cs_field_t        *f,
                                      xcpp,
                                      nullptr);
 
-  CS_FREE_HD(dpvar);
+  CS_FREE(dpvar);
 
   /* May be allocated in _diffusion_terms_scalar */
-  CS_FREE_HD(weighb);
-  CS_FREE_HD(weighf);
-  CS_FREE_HD(viscce);
+  CS_FREE(weighb);
+  CS_FREE(weighf);
+  CS_FREE(viscce);
 
   /* When solving internal energy, compute the temperature */
 
@@ -2059,10 +2059,10 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
   CS_FREE(dtr);
 
-  CS_FREE_HD(fimp);
-  CS_FREE_HD(rhs);
-  CS_FREE_HD(wcvark_var);
-  CS_FREE_HD(xcpp);
+  CS_FREE(fimp);
+  CS_FREE(rhs);
+  CS_FREE(wcvark_var);
+  CS_FREE(xcpp);
 }
 
 /*----------------------------------------------------------------------------*/

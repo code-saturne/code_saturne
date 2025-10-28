@@ -354,8 +354,8 @@ cs_les_filter_scalar(const cs_real_t  val[],
 
   ctx.wait();
 
-  CS_FREE_HD(v_weight);
-  CS_FREE_HD(v_val);
+  CS_FREE(v_weight);
+  CS_FREE(v_val);
 
   /* Synchronize variable */
   cs_halo_sync(mesh->halo, CS_HALO_STANDARD, ctx.use_gpu(), f_val);
@@ -459,8 +459,8 @@ cs_les_filter_strided(const cs_real_t  val[][stride],
 
   ctx.wait();
 
-  CS_FREE_HD(v_weight);
-  CS_FREE_HD(v_val);
+  CS_FREE(v_weight);
+  CS_FREE(v_val);
 
   /* Synchronize variable */
   cs_halo_sync_r(mesh->halo, CS_HALO_STANDARD, ctx.use_gpu(), f_val);

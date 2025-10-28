@@ -789,8 +789,8 @@ _equation_iterative_solve_strided(int                   idtvar,
   cs_parall_sum(1, CS_DOUBLE, &rnorm2);
   cs_real_t rnorm = sqrt(rnorm2);
 
-  CS_FREE_HD(w1);
-  CS_FREE_HD(w2);
+  CS_FREE(w1);
+  CS_FREE(w2);
 
   sinfo.rhs_norm = rnorm;
 
@@ -1307,13 +1307,13 @@ _equation_iterative_solve_strided(int                   idtvar,
   CS_PROFILE_MARK_LINE();
 
   /* Free memory */
-  CS_FREE_HD(smbini);
-  CS_FREE_HD(dpvar);
+  CS_FREE(smbini);
+  CS_FREE(dpvar);
   if (iswdyp >= 1) {
-    CS_FREE_HD(adxk);
-    CS_FREE_HD(adxkm1);
-    CS_FREE_HD(dpvarm1);
-    CS_FREE_HD(rhs0);
+    CS_FREE(adxk);
+    CS_FREE(adxkm1);
+    CS_FREE(dpvarm1);
+    CS_FREE(rhs0);
   }
 
   cs_clear_bc_coeffs_solve(bc_coeffs_solve);
@@ -1848,7 +1848,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
     ctx.wait();
 
-    CS_FREE_HD(w2);
+    CS_FREE(w2);
 
     if (iwarnp >= 2) {
       struct cs_double_n<2> rd2;
@@ -1883,7 +1883,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   sinfo.rhs_norm = rnorm;
 
   /* Free memory */
-  CS_FREE_HD(w1);
+  CS_FREE(w1);
 
   /* Warning: for weight matrix, one and only one sweep is done. */
   int nswmod = cs::max(eqp->nswrsm, 1);
@@ -2263,11 +2263,11 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
     ctx.wait();
 
-    CS_FREE_HD(i_flux_0);
-    CS_FREE_HD(i_flux_k);
-    CS_FREE_HD(i_flux_km1);
-    CS_FREE_HD(b_flux_k);
-    CS_FREE_HD(b_flux_km1);
+    CS_FREE(i_flux_0);
+    CS_FREE(i_flux_k);
+    CS_FREE(i_flux_km1);
+    CS_FREE(b_flux_k);
+    CS_FREE(b_flux_km1);
   }
 
   /*==========================================================================
@@ -2367,13 +2367,13 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   ctx.wait();
 
   /*  Free memory */
-  CS_FREE_HD(smbini);
+  CS_FREE(smbini);
 
   if (iswdyp >= 1) {
-    CS_FREE_HD(adxk);
-    CS_FREE_HD(adxkm1);
-    CS_FREE_HD(dpvarm1);
-    CS_FREE_HD(rhs0);
+    CS_FREE(adxk);
+    CS_FREE(adxkm1);
+    CS_FREE(dpvarm1);
+    CS_FREE(rhs0);
   }
   cs_clear_bc_coeffs_solve(bc_coeffs_solve);
 }

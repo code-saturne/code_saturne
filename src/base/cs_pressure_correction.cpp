@@ -488,10 +488,10 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
   cs_sles_free(sc);
   cs_sles_default_release_matrix(&a);
 
-  CS_FREE_HD(viscce);
-  CS_FREE_HD(rovsdt);
-  CS_FREE_HD(div_fext);
-  CS_FREE_HD(next_fext);
+  CS_FREE(viscce);
+  CS_FREE(rovsdt);
+  CS_FREE(div_fext);
+  CS_FREE(next_fext);
   cs_clear_bc_coeffs_solve(bc_coeffs_solve_hp);
 }
 
@@ -1749,7 +1749,7 @@ _pressure_correction_fv(int                   iterns,
                           ipro_visc, bpro_visc,
                           cpro_visc, cpro_visc, cpro_visc);
 
-      CS_FREE_HD(cpro_visc);
+      CS_FREE(cpro_visc);
 
     }
 
@@ -1862,11 +1862,11 @@ _pressure_correction_fv(int                   iterns,
                                       weighftp,
                                       imasfl, bmasfl);
 
-      CS_FREE_HD(weighftp);
+      CS_FREE(weighftp);
     }
 
-    CS_FREE_HD(ipro_visc);
-    CS_FREE_HD(bpro_visc);
+    CS_FREE(ipro_visc);
+    CS_FREE(bpro_visc);
   }
 
   /*
@@ -1981,7 +1981,7 @@ _pressure_correction_fv(int                   iterns,
 
     ctx.wait();
 
-    CS_FREE_HD(surfbm);
+    CS_FREE(surfbm);
   }
 
   /* Source term associated to the mass aggregation */
@@ -2008,7 +2008,7 @@ _pressure_correction_fv(int                   iterns,
 
         ctx.wait();
 
-        CS_FREE_HD(divu_prev);
+        CS_FREE(divu_prev);
       }
       else {
         ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -2100,8 +2100,8 @@ _pressure_correction_fv(int                   iterns,
     cs_divergence(m, 1, iflux, bflux, res);
   }
 
-  CS_FREE_HD(iflux);
-  CS_FREE_HD(bflux);
+  CS_FREE(iflux);
+  CS_FREE(bflux);
 
   /* It is: div(dt/rho*rho grad P) + div(rho u*) - Gamma
      NB: if iphydr=1, div(rho u*) contains div(dt d fext).  */
@@ -2854,14 +2854,14 @@ _pressure_correction_fv(int                   iterns,
   cs_sles_free(sc);
   cs_sles_default_release_matrix(&a);
 
-  CS_FREE_HD(c2);
+  CS_FREE(c2);
 
   /* Weakly compressible algorithm: semi analytic scheme
      2nd step solving a convection diffusion equation
      =================================================== */
 
-  CS_FREE_HD(velflx);
-  CS_FREE_HD(velflb);
+  CS_FREE(velflx);
+  CS_FREE(velflb);
 
   /* Update the pressure field
      ========================= */
@@ -2909,7 +2909,7 @@ _pressure_correction_fv(int                   iterns,
     ctx.wait();
   }
 
-  CS_FREE_HD(dc2);
+  CS_FREE(dc2);
 
   /* Compute the isobaric heat capacity if needed */
   cs_field_t  *f_cv = cs_field_by_name_try("isobaric_heat_capacity");
@@ -2933,7 +2933,7 @@ _pressure_correction_fv(int                   iterns,
                               tempk);
   }
 
-  CS_FREE_HD(pk1);
+  CS_FREE(pk1);
 
   /* Save some information */
   if (idilat == 2 && ieos != CS_EOS_NONE) {
@@ -3011,31 +3011,31 @@ _pressure_correction_fv(int                   iterns,
   ctx_c.wait();
 
   /*  Free memory */
-  CS_FREE_HD(cpro_vitenp);
-  CS_FREE_HD(weighbtp);
+  CS_FREE(cpro_vitenp);
+  CS_FREE(weighbtp);
 
-  CS_FREE_HD(taui);
-  CS_FREE_HD(taub);
-  CS_FREE_HD(wrk2);
-  CS_FREE_HD(wrk);
-  CS_FREE_HD(res);
-  CS_FREE_HD(phia);
-  CS_FREE_HD(_cpro_divu);
-  CS_FREE_HD(gradp);
-  CS_FREE_HD(rovsdt);
-  CS_FREE_HD(weighf);
-  CS_FREE_HD(weighb);
-  CS_FREE_HD(adxk);
-  CS_FREE_HD(adxkm1);
-  CS_FREE_HD(dphim1);
-  CS_FREE_HD(rhs0);
-  CS_FREE_HD(xdtsro);
-  CS_FREE_HD(tpusro);
-  CS_FREE_HD(rhs);
-  CS_FREE_HD(dphi);
+  CS_FREE(taui);
+  CS_FREE(taub);
+  CS_FREE(wrk2);
+  CS_FREE(wrk);
+  CS_FREE(res);
+  CS_FREE(phia);
+  CS_FREE(_cpro_divu);
+  CS_FREE(gradp);
+  CS_FREE(rovsdt);
+  CS_FREE(weighf);
+  CS_FREE(weighb);
+  CS_FREE(adxk);
+  CS_FREE(adxkm1);
+  CS_FREE(dphim1);
+  CS_FREE(rhs0);
+  CS_FREE(xdtsro);
+  CS_FREE(tpusro);
+  CS_FREE(rhs);
+  CS_FREE(dphi);
 
-  CS_FREE_HD(cpro_rho_tc);
-  CS_FREE_HD(bpro_rho_tc);
+  CS_FREE(cpro_rho_tc);
+  CS_FREE(bpro_rho_tc);
 
   cs_clear_bc_coeffs_solve(bc_coeffs_solve_dp);
   cs_clear_bc_coeffs_solve(bc_coeffs_solve_p);

@@ -1045,7 +1045,7 @@ cs_turbulence_ke(int              phase_id,
   }
 
   ctx.wait();
-  CS_FREE_HD(w10);
+  CS_FREE(w10);
 
   /* Compute the buoyancy term
    ======================================================== */
@@ -1168,8 +1168,8 @@ cs_turbulence_ke(int              phase_id,
     ctx.wait();
 
     /* Free memory */
-    CS_FREE_HD(grad);
-    CS_FREE_HD(grad_dot_g);
+    CS_FREE(grad);
+    CS_FREE(grad_dot_g);
   }
   else {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -1217,7 +1217,7 @@ cs_turbulence_ke(int              phase_id,
     ctx.wait();
 
     /* Free memory */
-    CS_FREE_HD(w12);
+    CS_FREE(w12);
 
   }
 
@@ -1310,8 +1310,8 @@ cs_turbulence_ke(int              phase_id,
                        nullptr, /* internal coupling */
                        grad_s);
 
-    CS_FREE_HD(bc_coeffs_sqs_loc.a);
-    CS_FREE_HD(bc_coeffs_sqs_loc.b);
+    CS_FREE(bc_coeffs_sqs_loc.a);
+    CS_FREE(bc_coeffs_sqs_loc.b);
 
   }
 
@@ -2181,39 +2181,39 @@ cs_turbulence_ke(int              phase_id,
                         1);
 
   /* Free memory */
-  CS_FREE_HD(_gradv);
-  CS_FREE_HD(viscf);
-  CS_FREE_HD(viscb);
-  CS_FREE_HD(usimpk);
-  CS_FREE_HD(smbrk);
-  CS_FREE_HD(smbre);
-  CS_FREE_HD(prodk);
-  CS_FREE_HD(gk);
-  CS_FREE_HD(divu);
-  CS_FREE_HD(strain_sq);
-  CS_FREE_HD(w1);
-  CS_FREE_HD(w3);
-  CS_FREE_HD(w4);
-  CS_FREE_HD(usexpk);
-  CS_FREE_HD(usexpe);
-  CS_FREE_HD(usimpe);
-  CS_FREE_HD(dpvar);
-  CS_FREE_HD(ce2rc);
-  CS_FREE_HD(ce1rc);
+  CS_FREE(_gradv);
+  CS_FREE(viscf);
+  CS_FREE(viscb);
+  CS_FREE(usimpk);
+  CS_FREE(smbrk);
+  CS_FREE(smbre);
+  CS_FREE(prodk);
+  CS_FREE(gk);
+  CS_FREE(divu);
+  CS_FREE(strain_sq);
+  CS_FREE(w1);
+  CS_FREE(w3);
+  CS_FREE(w4);
+  CS_FREE(usexpk);
+  CS_FREE(usexpe);
+  CS_FREE(usimpe);
+  CS_FREE(dpvar);
+  CS_FREE(ce2rc);
+  CS_FREE(ce1rc);
 
   CS_FREE(tinstk);
   CS_FREE(tinste);
 
-  CS_FREE_HD(e_term);
+  CS_FREE(e_term);
   if (model == CS_TURB_K_EPSILON){
-    CS_FREE_HD(prdtke);
-    CS_FREE_HD(prdeps);
+    CS_FREE(prdtke);
+    CS_FREE(prdeps);
   }
   if (model == CS_TURB_K_EPSILON_LS) {
-    CS_FREE_HD(sqrt_k);
-    CS_FREE_HD(strain);
-    CS_FREE_HD(grad_sqk);
-    CS_FREE_HD(grad_s);
+    CS_FREE(sqrt_k);
+    CS_FREE(strain);
+    CS_FREE(grad_sqk);
+    CS_FREE(grad_s);
   }
 
   cs_clear_bc_coeffs_solve(bc_coeffs_solve_ep);
@@ -2663,7 +2663,7 @@ cs_turbulence_ke_q_mu_t(int phase_id)
 
   ctx.wait();
 
-  CS_FREE_HD(_gradv);
+  CS_FREE(_gradv);
 }
 
 /*----------------------------------------------------------------------------*/

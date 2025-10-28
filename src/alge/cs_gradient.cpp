@@ -6823,7 +6823,7 @@ _gradient_scalar(cs_dispatch_context           &ctx,
                                          r_grad,
                                          grad);
 
-        CS_FREE_HD(r_grad);
+        CS_FREE(r_grad);
       }
     }
     break;
@@ -6985,7 +6985,7 @@ _gradient_vector(const char                     *var_name,
                                          r_grad,
                                          grad);
 
-        CS_FREE_HD(r_grad);
+        CS_FREE(r_grad);
       }
     }
     break;
@@ -7141,7 +7141,7 @@ _gradient_tensor(const char                 *var_name,
                                          r_grad,
                                          grad);
 
-        CS_FREE_HD(r_grad);
+        CS_FREE(r_grad);
       }
     }
     break;
@@ -7961,12 +7961,12 @@ cs_gradient_scalar(const char                    *var_name,
                    c_weight,
                    grad);
 
-  CS_FREE_HD(val_ip);
-  CS_FREE_HD(val_f_hmg);
-  CS_FREE_HD(val_f_wrk);
-  CS_FREE_HD(bc_coeff_loc_a);
-  CS_FREE_HD(bc_coeff_loc_b);
-  CS_FREE_HD(bc_coeff_loc_cpl_a);
+  CS_FREE(val_ip);
+  CS_FREE(val_f_hmg);
+  CS_FREE(val_f_wrk);
+  CS_FREE(bc_coeff_loc_a);
+  CS_FREE(bc_coeff_loc_b);
+  CS_FREE(bc_coeff_loc_cpl_a);
 
   t1 = cs_timer_time();
 
@@ -8248,12 +8248,12 @@ cs_gradient_vector(const char                    *var_name,
                    (const cs_real_t *)c_weight,
                    gradv);
 
-  CS_FREE_HD(val_ip);
-  CS_FREE_HD(val_f_hmg);
-  CS_FREE_HD(val_f_wrk);
-  CS_FREE_HD(bc_coeff_loc_a);
-  CS_FREE_HD(bc_coeff_loc_b);
-  CS_FREE_HD(bc_coeff_loc_cpl_a);
+  CS_FREE(val_ip);
+  CS_FREE(val_f_hmg);
+  CS_FREE(val_f_wrk);
+  CS_FREE(bc_coeff_loc_a);
+  CS_FREE(bc_coeff_loc_b);
+  CS_FREE(bc_coeff_loc_cpl_a);
 
   t1 = cs_timer_time();
 
@@ -8454,11 +8454,11 @@ cs_gradient_tensor(const char                  *var_name,
                    (const cs_real_6_t *)val_f,
                    grad);
 
-  CS_FREE_HD(val_ip);
-  CS_FREE_HD(val_f_hmg);
-  CS_FREE_HD(val_f_wrk);
-  CS_FREE_HD(bc_coeff_loc_a);
-  CS_FREE_HD(bc_coeff_loc_b);
+  CS_FREE(val_ip);
+  CS_FREE(val_f_hmg);
+  CS_FREE(val_f_wrk);
+  CS_FREE(bc_coeff_loc_a);
+  CS_FREE(bc_coeff_loc_b);
 
   t1 = cs_timer_time();
 

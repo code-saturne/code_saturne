@@ -265,8 +265,8 @@ _gaussian(const cs_mesh_t             *m,
 
   } // end loop on cells
 
-  CS_FREE_HD(dqsd);
-  CS_FREE_HD(dtlsd);
+  CS_FREE(dqsd);
+  CS_FREE(dtlsd);
 }
 
 /*----------------------------------------------------------------------------*/

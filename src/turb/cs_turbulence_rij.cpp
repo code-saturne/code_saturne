@@ -444,7 +444,7 @@ _compute_up_rhop(int                 phase_id,
           });
           ctx.wait();
 
-          CS_FREE_HD(gradt);
+          CS_FREE(gradt);
         }
 
         else { // beta = 0
@@ -521,8 +521,8 @@ _compute_up_rhop(int                 phase_id,
 
       ctx.wait();
 
-      CS_FREE_HD(gradro);
-      CS_FREE_HD(coefb);
+      CS_FREE(gradro);
+      CS_FREE(coefb);
     }
   }
 }
@@ -676,7 +676,7 @@ _rij_echo(int              phase_id,
 
   ctx.wait();
 
-  CS_FREE_HD(grad);
+  CS_FREE(grad);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -843,12 +843,12 @@ _gravity_st_rij(const cs_field_t  *f_rij,
 
     ctx.wait();
 
-    CS_FREE_HD(c_is_solid_zone_flag);
+    CS_FREE(c_is_solid_zone_flag);
   } /* End of test on coupled components */
 
   ctx.wait();
 
-  CS_FREE_HD(_buoyancy);
+  CS_FREE(_buoyancy);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2320,8 +2320,8 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   }); /* end loop on cells */
   ctx.wait();
 
-  CS_FREE_HD(grad_al);
-  CS_FREE_HD(w2);
+  CS_FREE(grad_al);
+  CS_FREE(w2);
 
   /* Buoyancy source term
    * -------------------- */
@@ -2329,7 +2329,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   if (cs_glob_turb_rans_model->has_buoyant_term == 1)
     _gravity_st_rij(f_rij, up_rhop, grav, st_prv_id, c_st_prv, fimp, rhs);
 
-  CS_FREE_HD(c_is_solid_zone_flag);
+  CS_FREE(c_is_solid_zone_flag);
 
   /* Diffusion term (Daly Harlow: generalized gradient hypothesis method)
    * -------------------------------------------------------------------- */
@@ -2380,7 +2380,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
                       viscb);
   }
 
-  CS_FREE_HD(w1);
+  CS_FREE(w1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2873,13 +2873,13 @@ _solve_epsilon(int              phase_id,
 
   /* Free memory */
 
-  CS_FREE_HD(c_is_solid_zone_flag);
-  CS_FREE_HD(dpvar);
-  CS_FREE_HD(w1);
-  CS_FREE_HD(cprod);
-  CS_FREE_HD(viscce);
-  CS_FREE_HD(weighb);
-  CS_FREE_HD(weighf);
+  CS_FREE(c_is_solid_zone_flag);
+  CS_FREE(dpvar);
+  CS_FREE(w1);
+  CS_FREE(cprod);
+  CS_FREE(viscce);
+  CS_FREE(weighb);
+  CS_FREE(weighf);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -3205,7 +3205,7 @@ cs_turbulence_rij(int phase_id)
 
     ctx.wait();
 
-    CS_FREE_HD(grad);
+    CS_FREE(grad);
 
     cs_field_current_to_previous(f_vel);
     cs_field_current_to_previous(f_rij);
@@ -3467,9 +3467,9 @@ cs_turbulence_rij(int phase_id)
                                      rhs,
                                      cvar_rij);
 
-  CS_FREE_HD(viscce);
-  CS_FREE_HD(fimp);
-  CS_FREE_HD(rhs);
+  CS_FREE(viscce);
+  CS_FREE(fimp);
+  CS_FREE(rhs);
 
   /* Solve Epsilon
    * ------------- */
@@ -3490,8 +3490,8 @@ cs_turbulence_rij(int phase_id)
                    _rhs,
                    _fimp);
 
-    CS_FREE_HD(_fimp);
-    CS_FREE_HD(_rhs);
+    CS_FREE(_fimp);
+    CS_FREE(_rhs);
   }
   else {
     const cs_real_t ales = cs_turb_ales;
@@ -3524,18 +3524,18 @@ cs_turbulence_rij(int phase_id)
 
   /* Free memory */
 
-  CS_FREE_HD(_gradv);
+  CS_FREE(_gradv);
   produc = nullptr;
-  CS_FREE_HD(_produc);
+  CS_FREE(_produc);
 
-  CS_FREE_HD(up_rhop);
+  CS_FREE(up_rhop);
 
-  CS_FREE_HD(viscf);
-  CS_FREE_HD(viscb);
-  CS_FREE_HD(weighb);
-  CS_FREE_HD(weighf);
+  CS_FREE(viscf);
+  CS_FREE(viscb);
+  CS_FREE(weighb);
+  CS_FREE(weighf);
 #if defined(HAVE_ACCEL)
-  CS_FREE_HD(_grav);
+  CS_FREE(_grav);
 #endif
 
   if (cs_glob_timer_kernels_flag > 0) {
@@ -3719,7 +3719,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
                     viscf,
                     viscb);
 
-  CS_FREE_HD(w1);
+  CS_FREE(w1);
 
   cs_solid_zone_set_zero_on_cells(1, rhs);
 
@@ -3769,8 +3769,8 @@ cs_turbulence_rij_solve_alpha(int        f_id,
                                      nullptr,
                                      nullptr);
 
-  CS_FREE_HD(dpvar);
-  CS_FREE_HD(rhs);
+  CS_FREE(dpvar);
+  CS_FREE(rhs);
 
   cs_solid_zone_set_scalar_on_cells(1., cvar_al);
 
@@ -3809,10 +3809,10 @@ cs_turbulence_rij_solve_alpha(int        f_id,
 
   ctx.wait();
 
-  CS_FREE_HD(alpha_min);
-  CS_FREE_HD(fimp);
-  CS_FREE_HD(viscf);
-  CS_FREE_HD(viscb);
+  CS_FREE(alpha_min);
+  CS_FREE(fimp);
+  CS_FREE(viscf);
+  CS_FREE(viscb);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4246,7 +4246,7 @@ cs_turbulence_rij_mu_t(int  phase_id)
     });
 
     ctx.wait();
-    CS_FREE_HD(grad_al);
+    CS_FREE(grad_al);
 
   }
 

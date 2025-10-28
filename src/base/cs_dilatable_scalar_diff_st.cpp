@@ -304,11 +304,11 @@ cs_dilatable_scalar_diff_st(int iterns)
   } /* end loop on fields */
 
   /* Free memory */
-  CS_FREE_HD(i_visc);
-  CS_FREE_HD(b_visc);
-  CS_FREE_HD(xcpp);
+  CS_FREE(i_visc);
+  CS_FREE(b_visc);
+  CS_FREE(xcpp);
 
-  CS_FREE_HD(vistot);
+  CS_FREE(vistot);
 }
 
 /*---------------------------------------------------------------------------- */

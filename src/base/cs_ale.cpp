@@ -1146,10 +1146,10 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
                                      nullptr); /* eswork */
 
   /* Free memory */
-  CS_FREE_HD(smbr);
-  CS_FREE_HD(fimp);
-  CS_FREE_HD(i_visc);
-  CS_FREE_HD(b_visc);
+  CS_FREE(smbr);
+  CS_FREE(fimp);
+  CS_FREE(i_visc);
+  CS_FREE(b_visc);
 
   /* 3. Update nodes displacement */
 
@@ -1187,8 +1187,8 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
   }
 
   /* Free memory */
-  CS_FREE_HD(dproj);
-  CS_FREE_HD(gradm);
+  CS_FREE(dproj);
+  CS_FREE(gradm);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1526,8 +1526,8 @@ cs_mesh_velocity_mass_flux(const cs_mesh_t             *m,
 
     ctx.wait();
 
-    CS_FREE_HD(intflx);
-    CS_FREE_HD(bouflx);
+    CS_FREE(intflx);
+    CS_FREE(bouflx);
   }
 
   /* Here we need of the opposite of the mesh velocity. */

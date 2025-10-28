@@ -1390,8 +1390,8 @@ _empty_halo(cs_halo_t  *h)
   h->n_elts[0] = 0;
   h->n_elts[1] = 0;
 
-  CS_FREE_HD(h->send_list);
-  CS_FREE_HD(h->send_index);
+  CS_FREE(h->send_list);
+  CS_FREE(h->send_index);
   CS_FREE(h->send_perio_lst);
   CS_FREE(h->index);
   CS_FREE(h->perio_lst);
@@ -8012,7 +8012,7 @@ cs_grid_destroy(cs_grid_t **grid)
 
     CS_FREE(g->_face_cell);
 
-    CS_FREE_HD(g->coarse_row);
+    CS_FREE(g->coarse_row);
 
     if (g->_halo != nullptr)
       cs_halo_destroy(&(g->_halo));
@@ -8656,7 +8656,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
     /* Project coarsening */
 
     _project_coarse_row_to_parent(cc);
-    CS_FREE_HD(cc->coarse_row);
+    CS_FREE(cc->coarse_row);
     cc->coarse_row = c->coarse_row;
     c->coarse_row = nullptr;
 

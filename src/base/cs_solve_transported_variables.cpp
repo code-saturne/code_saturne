@@ -551,8 +551,8 @@ cs_solve_transported_variables(int iterns)
    cs_atmo_aerosol_time_advance();
 
   /* Free memory */
-  CS_FREE_HD(i_visc);
-  CS_FREE_HD(b_visc);
+  CS_FREE(i_visc);
+  CS_FREE(b_visc);
 
 }
 

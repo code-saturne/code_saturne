@@ -2271,7 +2271,7 @@ cs_convection_diffusion_steady_strided
                var_name, (unsigned long long)n_upwind,
                (unsigned long long)m->n_g_i_c_faces);
 
-    CS_FREE_HD(i_upwind);
+    CS_FREE(i_upwind);
   }
 
   /* ======================================================================
@@ -2446,7 +2446,7 @@ cs_convection_diffusion_steady_strided
   }
 
   /* Free memory */
-  CS_FREE_HD(grdpa);
+  CS_FREE(grdpa);
 }
 
 // Force instanciation

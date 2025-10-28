@@ -1952,8 +1952,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
         CS_REALLOC_HD(f->bc_coeffs->bf, n_elts[0]*b_mult, cs_real_t, amode);
       }
       else {
-        CS_FREE_HD(f->bc_coeffs->af);
-        CS_FREE_HD(f->bc_coeffs->bf);
+        CS_FREE(f->bc_coeffs->af);
+        CS_FREE(f->bc_coeffs->bf);
       }
 
       if (have_mom_bc) {
@@ -1961,8 +1961,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
         CS_REALLOC_HD(f->bc_coeffs->bd, n_elts[0]*b_mult, cs_real_t, amode);
       }
       else {
-        CS_FREE_HD(f->bc_coeffs->ad);
-        CS_FREE_HD(f->bc_coeffs->bd);
+        CS_FREE(f->bc_coeffs->ad);
+        CS_FREE(f->bc_coeffs->bd);
       }
 
       if (have_conv_bc) {
@@ -1970,8 +1970,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
         CS_REALLOC_HD(f->bc_coeffs->bc, n_elts[0]*b_mult, cs_real_t, amode);
       }
       else {
-        CS_FREE_HD(f->bc_coeffs->ac);
-        CS_FREE_HD(f->bc_coeffs->bc);
+        CS_FREE(f->bc_coeffs->ac);
+        CS_FREE(f->bc_coeffs->bc);
       }
 
       if (have_exch_bc) {
@@ -2256,27 +2256,27 @@ cs_field_destroy_all(void)
       CS_FREE(f->grad);
 
     if (f->bc_coeffs != nullptr) {
-      CS_FREE_HD(f->bc_coeffs->icodcl);
-      CS_FREE_HD(f->bc_coeffs->rcodcl1);
-      CS_FREE_HD(f->bc_coeffs->rcodcl2);
-      CS_FREE_HD(f->bc_coeffs->rcodcl3);
-      CS_FREE_HD(f->bc_coeffs->a);
-      CS_FREE_HD(f->bc_coeffs->b);
-      CS_FREE_HD(f->bc_coeffs->af);
-      CS_FREE_HD(f->bc_coeffs->bf);
+      CS_FREE(f->bc_coeffs->icodcl);
+      CS_FREE(f->bc_coeffs->rcodcl1);
+      CS_FREE(f->bc_coeffs->rcodcl2);
+      CS_FREE(f->bc_coeffs->rcodcl3);
+      CS_FREE(f->bc_coeffs->a);
+      CS_FREE(f->bc_coeffs->b);
+      CS_FREE(f->bc_coeffs->af);
+      CS_FREE(f->bc_coeffs->bf);
       CS_FREE(f->bc_coeffs->ad);
       CS_FREE(f->bc_coeffs->bd);
-      CS_FREE_HD(f->bc_coeffs->ac);
-      CS_FREE_HD(f->bc_coeffs->bc);
+      CS_FREE(f->bc_coeffs->ac);
+      CS_FREE(f->bc_coeffs->bc);
       CS_FREE(f->bc_coeffs->hint);
 
       if (f->bc_coeffs->val_f_lim != f->bc_coeffs->val_f) {
-        CS_FREE_HD(f->bc_coeffs->val_f_lim);
-        CS_FREE_HD(f->bc_coeffs->flux_lim);
+        CS_FREE(f->bc_coeffs->val_f_lim);
+        CS_FREE(f->bc_coeffs->flux_lim);
       }
-      CS_FREE_HD(f->bc_coeffs->val_f);
-      CS_FREE_HD(f->bc_coeffs->flux);
-      CS_FREE_HD(f->bc_coeffs->val_f_pre);
+      CS_FREE(f->bc_coeffs->val_f);
+      CS_FREE(f->bc_coeffs->flux);
+      CS_FREE(f->bc_coeffs->val_f_pre);
 
       CS_FREE(f->bc_coeffs);
     }

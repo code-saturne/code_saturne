@@ -1765,11 +1765,11 @@ cs_compute_porosity_from_scan(void)
   CS_FREE(_porosity_from_scan_opt.sources);
   CS_FREE(_porosity_from_scan_opt.source_c_ids);
 
-  CS_FREE_HD(grdporo);
-  CS_FREE_HD(rovsdt);
-  CS_FREE_HD(pvar);
-  CS_FREE_HD(dpvar);
-  CS_FREE_HD(rhs);
+  CS_FREE(grdporo);
+  CS_FREE(rovsdt);
+  CS_FREE(pvar);
+  CS_FREE(dpvar);
+  CS_FREE(rhs);
 }
 
 /*--------------------------------------------------------------------*/

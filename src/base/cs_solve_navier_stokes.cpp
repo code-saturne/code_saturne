@@ -622,20 +622,20 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
   cs_sles_free(sc);
   cs_sles_default_release_matrix(&a);
 
-  CS_FREE_HD(divu);
-  CS_FREE_HD(rhs);
+  CS_FREE(divu);
+  CS_FREE(rhs);
 
-  CS_FREE_HD(pot);
-  CS_FREE_HD(pota);
-  CS_FREE_HD(dpot);
+  CS_FREE(pot);
+  CS_FREE(pota);
+  CS_FREE(dpot);
 
-  CS_FREE_HD(clapot);
-  CS_FREE_HD(clbpot);
-  CS_FREE_HD(cfapot);
-  CS_FREE_HD(cfbpot);
+  CS_FREE(clapot);
+  CS_FREE(clbpot);
+  CS_FREE(cfapot);
+  CS_FREE(cfbpot);
 
-  CS_FREE_HD(i_visc);
-  CS_FREE_HD(b_visc);
+  CS_FREE(i_visc);
+  CS_FREE(b_visc);
 
   cs_clear_bc_coeffs_solve(bc_coeffs_solve_pot);
 }
@@ -871,7 +871,7 @@ _face_diff_vel(const cs_mesh_t             *m,
       }
     }
 
-    CS_FREE_HD(w1);
+    CS_FREE(w1);
   }
 
   /* If no diffusion, viscosity is set to 0. */
@@ -1014,9 +1014,9 @@ _div_rij(const cs_mesh_t     *m,
                         rij,
                         &bc_coeffs_loc,
                         tflmas, tflmab);
-    CS_FREE_HD(rij);
-    CS_FREE_HD(bc_coeffs_loc.a);
-    CS_FREE_HD(bc_coeffs_loc.b);
+    CS_FREE(rij);
+    CS_FREE(bc_coeffs_loc.a);
+    CS_FREE(bc_coeffs_loc.b);
 
   }
 
@@ -1033,8 +1033,8 @@ _div_rij(const cs_mesh_t     *m,
 
   cs_tensor_divergence(m, 1, tflmas, tflmab, cpro_divr);
 
-  CS_FREE_HD(tflmas);
-  CS_FREE_HD(tflmab);
+  CS_FREE(tflmas);
+  CS_FREE(tflmab);
 
   /* (if iphydr=1 then this term is already taken into account) */
 
@@ -1511,7 +1511,7 @@ _update_fluid_vel(const cs_mesh_t             *m,
     ctx.wait();
 
     if (gradp != nullptr)
-      CS_FREE_HD(gradp);
+      CS_FREE(gradp);
 
   }
 
@@ -2326,7 +2326,7 @@ _velocity_prediction(const cs_mesh_t             *m,
 
       cs_halo_sync(m->halo, on_device, cpro_wgrec_s);
     }
-    CS_FREE_HD(cpro_rho_tc);
+    CS_FREE(cpro_rho_tc);
   }
 
   cs_gradient_porosity_balance(1);
@@ -2535,8 +2535,8 @@ _velocity_prediction(const cs_mesh_t             *m,
   }
 
   ctx.wait();
-  CS_FREE_HD(cproa_rho_tc);
-  CS_FREE_HD(grad);
+  CS_FREE(cproa_rho_tc);
+  CS_FREE(grad);
 
   /* 2/3 rho * grad(k) for Eddy viscosity models with k defined
    * Note: we do not take the gradient of (rho k), as this would make
@@ -2600,7 +2600,7 @@ _velocity_prediction(const cs_mesh_t             *m,
     }
     ctx.wait();
 
-    CS_FREE_HD(grad_k);
+    CS_FREE(grad_k);
   }
 
   /* Transpose of velocity gradient in the diffusion term
@@ -2796,7 +2796,7 @@ _velocity_prediction(const cs_mesh_t             *m,
 
   _face_diff_vel(m, mq, eqp_u, viscf, viscb, viscfi, viscbi, viscce);
 
-  CS_FREE_HD(viscce);
+  CS_FREE(viscce);
 
   /* Add Rusanov
      ----------- */
@@ -2846,8 +2846,8 @@ _velocity_prediction(const cs_mesh_t             *m,
                 cpro_divr, stf,
                 ckupdc, dfrcxt);
 
-  CS_FREE_HD(divt);
-  CS_FREE_HD(icepdc);
+  CS_FREE(divt);
+  CS_FREE(icepdc);
 
   /* Solving of the 3x3xNcel coupled system
    ======================================== */
@@ -2898,7 +2898,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   }
 
   ctx.wait();
-  CS_FREE_HD(loctsexp);
+  CS_FREE(loctsexp);
 
   /* Meteo large scale source terms explicitly added */
 
@@ -2914,7 +2914,7 @@ _velocity_prediction(const cs_mesh_t             *m,
     ctx.wait();
   }
 
-  CS_FREE_HD(meteo_st);
+  CS_FREE(meteo_st);
 
   /* Surface tension is added */
 
@@ -2952,7 +2952,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   }
 
   ctx.wait();
-  CS_FREE_HD(loctsimp);
+  CS_FREE(loctsimp);
 
   /* Mass source terms
      ----------------- */
@@ -3267,7 +3267,7 @@ _velocity_prediction(const cs_mesh_t             *m,
 
       ctx.wait();
 
-      CS_FREE_HD(vect);
+      CS_FREE(vect);
     }
 
     /* The estimator on the predicted velocity is summed over the components */
@@ -3280,7 +3280,7 @@ _velocity_prediction(const cs_mesh_t             *m,
 
     }
 
-    CS_FREE_HD(fimpcp);
+    CS_FREE(fimpcp);
   }
 
   /* End of the construction of the total estimator:
@@ -3344,9 +3344,9 @@ _velocity_prediction(const cs_mesh_t             *m,
 
   ctx.wait();
 
-  CS_FREE_HD(fimp);
-  CS_FREE_HD(smbr);
-  CS_FREE_HD(eswork);
+  CS_FREE(fimp);
+  CS_FREE(smbr);
+  CS_FREE(eswork);
 
   /* Finalaze estimators + logging */
 
@@ -3573,7 +3573,7 @@ _hydrostatic_pressure_prediction(cs_real_t        grdphd[][3],
                                      nullptr,   /* xcpp */
                                      nullptr);  /* eswork */
 
-  CS_FREE_HD(dpvar);
+  CS_FREE(dpvar);
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
@@ -3602,19 +3602,19 @@ _hydrostatic_pressure_prediction(cs_real_t        grdphd[][3],
 
   /* Free memory */
 
-  CS_FREE_HD(viscf);
-  CS_FREE_HD(viscb);
+  CS_FREE(viscf);
+  CS_FREE(viscb);
 
-  CS_FREE_HD(xinvro);
-  CS_FREE_HD(rovsdt);
-  CS_FREE_HD(rhs);
+  CS_FREE(xinvro);
+  CS_FREE(rovsdt);
+  CS_FREE(rhs);
 
-  CS_FREE_HD(bc_coeffs_dp.a);
-  CS_FREE_HD(bc_coeffs_dp.af);
-  CS_FREE_HD(bc_coeffs_dp.b);
-  CS_FREE_HD(bc_coeffs_dp.bf);
-  CS_FREE_HD(bc_coeffs_dp.val_f);
-  CS_FREE_HD(bc_coeffs_dp.flux);
+  CS_FREE(bc_coeffs_dp.a);
+  CS_FREE(bc_coeffs_dp.af);
+  CS_FREE(bc_coeffs_dp.b);
+  CS_FREE(bc_coeffs_dp.bf);
+  CS_FREE(bc_coeffs_dp.val_f);
+  CS_FREE(bc_coeffs_dp.flux);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -4134,28 +4134,28 @@ cs_solve_navier_stokes(const int        iterns,
      * boundary mass flux of the mixture may be updated */
     cs_drift_boundary_mass_flux(m, bmasfl);
 
-    CS_FREE_HD(trav);
-    CS_FREE_HD(da_uu);
-    CS_FREE_HD(dfrcxt);
+    CS_FREE(trav);
+    CS_FREE(da_uu);
+    CS_FREE(dfrcxt);
 
-    CS_FREE_HD(viscb);
-    CS_FREE_HD(viscf);
+    CS_FREE(viscb);
+    CS_FREE(viscf);
 
-    CS_FREE_HD(secvib);
-    CS_FREE_HD(secvif);
+    CS_FREE(secvib);
+    CS_FREE(secvif);
 
-    CS_FREE_HD(grdphd);
+    CS_FREE(grdphd);
 
-    CS_FREE_HD(cpro_rho_tc);
-    CS_FREE_HD(bpro_rho_tc);
+    CS_FREE(cpro_rho_tc);
+    CS_FREE(bpro_rho_tc);
 
-    CS_FREE_HD(wvisfi);
-    CS_FREE_HD(wvisbi);
+    CS_FREE(wvisfi);
+    CS_FREE(wvisbi);
 
-    CS_FREE_HD(uvwk);
+    CS_FREE(uvwk);
 
-    CS_FREE_HD(viscb);
-    CS_FREE_HD(viscf);
+    CS_FREE(viscb);
+    CS_FREE(viscf);
 
     return;
   }
@@ -4194,14 +4194,14 @@ cs_solve_navier_stokes(const int        iterns,
 
       /* Resize temporary internal faces arrays */
 
-      CS_FREE_HD(viscf);
+      CS_FREE(viscf);
       if (eqp_u->idften & CS_ISOTROPIC_DIFFUSION)
         CS_MALLOC_HD(viscf, n_i_faces, cs_real_t, amode);
       else if (eqp_u->idften & CS_ANISOTROPIC_LEFT_DIFFUSION)
         CS_MALLOC_HD(viscf, 9*n_i_faces, cs_real_t, amode);
 
       if (wvisfi != nullptr) {
-        CS_FREE_HD(viscfi);
+        CS_FREE(viscfi);
         if (eqp_u->idften == 1) {
           if (irijnu_1) {
             CS_MALLOC_HD(wvisfi, n_i_faces, cs_real_t, amode);
@@ -4221,7 +4221,7 @@ cs_solve_navier_stokes(const int        iterns,
       }
 
       if (secvif != nullptr) {
-        CS_FREE_HD(secvif);
+        CS_FREE(secvif);
         CS_MALLOC_HD(secvif, n_i_faces, cs_real_t, amode);
       }
 
@@ -4446,7 +4446,7 @@ cs_solve_navier_stokes(const int        iterns,
       croma = CS_F_(rho)->val_pre;
 
       if (cpro_rho_tc != nullptr) {
-        CS_FREE_HD(cpro_rho_tc);
+        CS_FREE(cpro_rho_tc);
         CS_MALLOC_HD(cpro_rho_tc, n_cells_ext, cs_real_t, amode);
       }
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -4679,8 +4679,8 @@ cs_solve_navier_stokes(const int        iterns,
       }
     }
 
-    CS_FREE_HD(esflum);
-    CS_FREE_HD(esflub);
+    CS_FREE(esflum);
+    CS_FREE(esflub);
 
   }
 
@@ -4788,27 +4788,27 @@ cs_solve_navier_stokes(const int        iterns,
                  rs_ell[0] + rs_ell[1]);
   }
 
-  CS_FREE_HD(trav);
-  CS_FREE_HD(da_uu);
-  CS_FREE_HD(dfrcxt);
+  CS_FREE(trav);
+  CS_FREE(da_uu);
+  CS_FREE(dfrcxt);
 
-  CS_FREE_HD(secvib);
-  CS_FREE_HD(secvif);
+  CS_FREE(secvib);
+  CS_FREE(secvif);
 
-  CS_FREE_HD(grdphd);
+  CS_FREE(grdphd);
 
-  CS_FREE_HD(bpro_rho_tc);
-  CS_FREE_HD(cpro_rho_tc);
+  CS_FREE(bpro_rho_tc);
+  CS_FREE(cpro_rho_tc);
 
-  CS_FREE_HD(wvisbi);
-  CS_FREE_HD(wvisfi);
+  CS_FREE(wvisbi);
+  CS_FREE(wvisfi);
 
-  CS_FREE_HD(uvwk);
+  CS_FREE(uvwk);
 
-  CS_FREE_HD(viscb);
-  CS_FREE_HD(viscf);
+  CS_FREE(viscb);
+  CS_FREE(viscf);
 
-  CS_FREE_HD(cpro_rho_k1);
+  CS_FREE(cpro_rho_k1);
 }
 
 /*----------------------------------------------------------------------------*/

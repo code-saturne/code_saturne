@@ -1161,8 +1161,8 @@ cs_thermal_model_newton_t(int               method,
   ctx.wait(); // needed for the cs_solve_equation CPU function
 
 #if defined(HAVE_ACCEL)
-  CS_FREE_HD(_gxyz);
-  CS_FREE_HD(_xyzp0);
+  CS_FREE(_gxyz);
+  CS_FREE(_xyzp0);
 #endif
 
 }

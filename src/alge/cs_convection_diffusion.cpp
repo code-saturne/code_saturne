@@ -455,11 +455,11 @@ _beta_limiter_denom(cs_field_t                 *f,
   ctx.wait();
 
   //Free Gradient arrays
-  CS_FREE_HD(local_min);
-  CS_FREE_HD(local_max);
-  CS_FREE_HD(courant);
-  CS_FREE_HD(grdpa);
-  CS_FREE_HD(grdpaa);
+  CS_FREE(local_min);
+  CS_FREE(local_max);
+  CS_FREE(courant);
+  CS_FREE(grdpa);
+  CS_FREE(grdpaa);
 }
 
 /*----------------------------------------------------------------------------
@@ -2020,7 +2020,7 @@ _convection_diffusion_scalar_unsteady
                var_name, (unsigned long long)n_upwind,
                (unsigned long long)m->n_g_i_c_faces);
 
-    CS_FREE_HD(i_upwind);
+    CS_FREE(i_upwind);
   }
 
   /* ======================================================================
@@ -2179,12 +2179,12 @@ _convection_diffusion_scalar_unsteady
   ctx.wait();
 
   /* Free memory */
-  CS_FREE_HD(grad);
-  CS_FREE_HD(gradup);
-  CS_FREE_HD(gradst);
-  CS_FREE_HD(local_max);
-  CS_FREE_HD(local_min);
-  CS_FREE_HD(courant);
+  CS_FREE(grad);
+  CS_FREE(gradup);
+  CS_FREE(gradst);
+  CS_FREE(local_max);
+  CS_FREE(local_min);
+  CS_FREE(courant);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2927,7 +2927,7 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
                var_name, (unsigned long long)n_upwind,
                (unsigned long long)m->n_g_i_c_faces);
 
-    CS_FREE_HD(i_upwind);
+    CS_FREE(i_upwind);
   }
 
   /* ======================================================================
@@ -3008,12 +3008,12 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
   ctx.wait();
 
   /* Free memory */
-  CS_FREE_HD(grad);
-  CS_FREE_HD(gradup);
-  CS_FREE_HD(gradst);
-  CS_FREE_HD(local_max);
-  CS_FREE_HD(local_min);
-  CS_FREE_HD(courant);
+  CS_FREE(grad);
+  CS_FREE(gradup);
+  CS_FREE(gradst);
+  CS_FREE(local_max);
+  CS_FREE(local_min);
+  CS_FREE(courant);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3773,7 +3773,7 @@ _convection_diffusion_unsteady_strided
                var_name, (unsigned long long)n_upwind,
                (unsigned long long)m->n_g_i_c_faces);
 
-    CS_FREE_HD(i_upwind);
+    CS_FREE(i_upwind);
   }
 
   /* ======================================================================
@@ -3935,7 +3935,7 @@ _convection_diffusion_unsteady_strided
   ctx.wait();
 
   /* Free memory */
-  CS_FREE_HD(grdpa);
+  CS_FREE(grdpa);
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
@@ -4104,10 +4104,10 @@ cs_beta_limiter_building(int                   f_id,
   if (halo != nullptr)
     cs_halo_sync(halo, CS_HALO_STANDARD, ctx.use_gpu(), cv_limiter);
 
-  CS_FREE_HD(denom_inf);
-  CS_FREE_HD(denom_sup);
-  CS_FREE_HD(num_inf);
-  CS_FREE_HD(num_sup);
+  CS_FREE(denom_inf);
+  CS_FREE(denom_sup);
+  CS_FREE(num_inf);
+  CS_FREE(num_sup);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4722,8 +4722,8 @@ cs_convection_diffusion_vector(int                         idtvar,
   ctx.wait();
 
   /* Free memory */
-  CS_FREE_HD(bndcel);
-  CS_FREE_HD(grad);
+  CS_FREE(bndcel);
+  CS_FREE(grad);
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
@@ -4917,7 +4917,7 @@ cs_convection_diffusion_tensor(int                          idtvar,
   }
 
   /* Free memory */
-  CS_FREE_HD(grad);
+  CS_FREE(grad);
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
@@ -7427,7 +7427,7 @@ cs_face_diffusion_potential(const cs_field_t           *f,
   ctx_b.wait();
 
   /* Free memory */
-  CS_FREE_HD(grad);
+  CS_FREE(grad);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -8032,7 +8032,7 @@ cs_diffusion_potential(const cs_field_t           *f,
   ctx.wait();
 
   /* Free memory */
-  CS_FREE_HD(grad);
+  CS_FREE(grad);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -367,8 +367,8 @@ cs_local_time_step_compute(int  itrale)
       ctx.wait();
 
       /* Free memory */
-      CS_FREE_HD(grad);
-      CS_FREE_HD(coefbr);
+      CS_FREE(grad);
+      CS_FREE(coefbr);
 
     }
 
@@ -816,7 +816,7 @@ cs_local_time_step_compute(int  itrale)
                                  1,
                                  dtsdt0);
 
-      CS_FREE_HD(dtsdt0);
+      CS_FREE(dtsdt0);
 
     }
 
@@ -931,17 +931,17 @@ cs_local_time_step_compute(int  itrale)
   ctx.wait();
 
   /* Free memory */
-  CS_FREE_HD(i_visc);
-  CS_FREE_HD(b_visc);
-  CS_FREE_HD(w1);
+  CS_FREE(i_visc);
+  CS_FREE(b_visc);
+  CS_FREE(w1);
 
-  CS_FREE_HD(dam);
-  CS_FREE_HD(wcf);
-  CS_FREE_HD(w2);
-  CS_FREE_HD(w3);
+  CS_FREE(dam);
+  CS_FREE(wcf);
+  CS_FREE(w2);
+  CS_FREE(w3);
 
-  CS_FREE_HD(bc_coeffs_loc.b);
-  CS_FREE_HD(bc_coeffs_loc.bf);
+  CS_FREE(bc_coeffs_loc.b);
+  CS_FREE(bc_coeffs_loc.bf);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1280,13 +1280,13 @@ cs_courant_fourier_compute(void)
   }
 
   /* Free memory */
-  CS_FREE_HD(w1);
-  CS_FREE_HD(i_visc);
-  CS_FREE_HD(b_visc);
+  CS_FREE(w1);
+  CS_FREE(i_visc);
+  CS_FREE(b_visc);
 
-  CS_FREE_HD(dam);
-  CS_FREE_HD(bc_coeffs_loc.b);
-  CS_FREE_HD(bc_coeffs_loc.bf);
+  CS_FREE(dam);
+  CS_FREE(bc_coeffs_loc.b);
+  CS_FREE(bc_coeffs_loc.bf);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -2760,7 +2760,7 @@ _clean_halo(cs_mesh_t  *mesh)
      halo->c_domain_rank by new ones */
 
   CS_FREE(halo->c_domain_rank);
-  CS_FREE_HD(halo->send_index);
+  CS_FREE(halo->send_index);
 
   if (n_transforms > 0)
     CS_FREE(halo->send_perio_lst);

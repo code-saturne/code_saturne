@@ -275,8 +275,8 @@ _gradfi_dot_gradk(const  cs_lnum_t   n_cells,
   }
 
   /* Free memory */
-  CS_FREE_HD(grad_phi);
-  CS_FREE_HD(grad_k);
+  CS_FREE(grad_phi);
+  CS_FREE(grad_k);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -665,12 +665,12 @@ _solve_eq_fbr_al(const int         istprv,
                                      nullptr);
 
   /* Free memory */
-  CS_FREE_HD(visel);
+  CS_FREE(visel);
 
-  CS_FREE_HD(w2);
-  CS_FREE_HD(w5);
-  CS_FREE_HD(viscf);
-  CS_FREE_HD(viscb);
+  CS_FREE(w2);
+  CS_FREE(w5);
+  CS_FREE(viscf);
+  CS_FREE(viscb);
 
   cs_clear_bc_coeffs_solve(bc_coeffs_solve_phi);
 }
@@ -1086,9 +1086,9 @@ _solve_eq_phi(const int           istprv,
                                      nullptr,
                                      nullptr);
 
-  CS_FREE_HD(w2);
-  CS_FREE_HD(viscf);
-  CS_FREE_HD(viscb);
+  CS_FREE(w2);
+  CS_FREE(viscf);
+  CS_FREE(viscb);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1216,8 +1216,8 @@ cs_turbulence_v2f(const cs_real_t   prdv2f[])
                 rovsdt,
                 c_st_phi_p);
 
-  CS_FREE_HD(grad_pk);
-  CS_FREE_HD(rhs);
+  CS_FREE(grad_pk);
+  CS_FREE(rhs);
   CS_FREE(rovsdt);
 
   /* Clipping */
@@ -1343,7 +1343,7 @@ cs_turbulence_v2f_bl_v2k_mu_t(void)
   }
 
   /* Free memory */
-  CS_FREE_HD(_gradv);
+  CS_FREE(_gradv);
 
   /* Calculation of viscosity
    * ========================= */

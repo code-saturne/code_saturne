@@ -642,9 +642,9 @@ _solve_most(int              n_var,
       CS_FREE(hbord);
       CS_FREE(theipb);
       CS_FREE(visvdr);
-      CS_FREE_HD(isostd);
+      CS_FREE(isostd);
       if (cs_glob_velocity_pressure_param->nterup > 1)
-        CS_FREE_HD(trava);
+        CS_FREE(trava);
       *must_return = _must_return;
       return;
     }
@@ -748,9 +748,9 @@ _solve_most(int              n_var,
   CS_FREE(hbord);
   CS_FREE(theipb);
   CS_FREE(visvdr);
-  CS_FREE_HD(isostd);
+  CS_FREE(isostd);
   if (cs_glob_velocity_pressure_param->nterup > 1)
-    CS_FREE_HD(trava);
+    CS_FREE(trava);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -819,7 +819,7 @@ _solve_turbulence(cs_lnum_t   n_cells,
     if (cs_glob_turb_model->itytur == 5)
       cs_turbulence_v2f(prdv2f);
 
-    CS_FREE_HD(prdv2f);
+    CS_FREE(prdv2f);
 
     cs_real_t *cvar_k = CS_F_(k)->val;
     cs_real_t *cvar_ep = CS_F_(eps)->val;
@@ -1280,7 +1280,7 @@ cs_solve_all()
 
     if (must_return) {
       CS_FREE(htot_cond);
-      CS_FREE_HD(ckupdc);
+      CS_FREE(ckupdc);
       return;
     }
 

@@ -285,7 +285,7 @@ cs_wall_distance(int iterns)
     }
 
     ctx.wait();
-    CS_FREE_HD(info);
+    CS_FREE(info);
     return;
   }
 
@@ -602,16 +602,16 @@ cs_wall_distance(int iterns)
      _dismin, _dismax);
 
   /* Free memory */
-  CS_FREE_HD(grad);
-  CS_FREE_HD(i_visc);
-  CS_FREE_HD(b_visc);
-  CS_FREE_HD(dpvar);
-  CS_FREE_HD(smbrp);
-  CS_FREE_HD(i_mass_flux);
-  CS_FREE_HD(b_mass_flux);
-  CS_FREE_HD(rovsdt);
-  CS_FREE_HD(w1);
-  CS_FREE_HD(info);
+  CS_FREE(grad);
+  CS_FREE(i_visc);
+  CS_FREE(b_visc);
+  CS_FREE(dpvar);
+  CS_FREE(smbrp);
+  CS_FREE(i_mass_flux);
+  CS_FREE(b_mass_flux);
+  CS_FREE(rovsdt);
+  CS_FREE(w1);
+  CS_FREE(info);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1121,13 +1121,13 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
   }
 
   /* Free memory */
-  CS_FREE_HD(dvarp);
-  CS_FREE_HD(smbdp);
-  CS_FREE_HD(dpvar);
-  CS_FREE_HD(i_visc);
-  CS_FREE_HD(b_visc);
-  CS_FREE_HD(rovsdp);
-  CS_FREE_HD(viscap);
+  CS_FREE(dvarp);
+  CS_FREE(smbdp);
+  CS_FREE(dpvar);
+  CS_FREE(i_visc);
+  CS_FREE(b_visc);
+  CS_FREE(rovsdp);
+  CS_FREE(viscap);
 }
 
 /*----------------------------------------------------------------------------*/
