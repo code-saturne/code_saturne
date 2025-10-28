@@ -190,7 +190,7 @@
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in, out] fimp          \f$ \tens{f_s}^{imp} \f$
- * \param[in, out] smbrp         Right hand side \f$ \vect{Rhs}^k \f$
+ * \param[in, out] rhs           Right hand side \f$ \vect{Rhs}^k \f$
  * \param[in, out] pvar          current variable
  * \param[out]     eswork        prediction-stage error estimator
  *                               (if iescap >= 0)
@@ -222,7 +222,7 @@ _equation_iterative_solve_strided(int                   idtvar,
                                   int                   icvflb,
                                   const int             icvfli[],
                                   cs_real_t             fimp[][stride][stride],
-                                  cs_real_t             smbrp[][stride],
+                                  cs_real_t             rhs[][stride],
                                   cs_real_t             pvar[][stride],
                                   cs_real_t             eswork[][stride])
 {
@@ -296,8 +296,8 @@ _equation_iterative_solve_strided(int                   idtvar,
   cs_alloc_mode_t amode = ctx.alloc_mode(false);
 
   /* Allocate temporary arrays */
-  var_t *smbini, *dpvar;
-  CS_MALLOC_HD(smbini, n_cells_ext, var_t, amode);
+  var_t *rhsini, *dpvar;
+  CS_MALLOC_HD(rhsini, n_cells_ext, var_t, amode);
   CS_MALLOC_HD(dpvar, n_cells_ext, var_t, amode);
 
   var_t *adxk = nullptr, *adxkm1 = nullptr, *dpvarm1 = nullptr, *rhs0 = nullptr;
@@ -473,7 +473,7 @@ _equation_iterative_solve_strided(int                   idtvar,
                         icvfli,
                         (cs_real_3_t *)i_pvar,
                         (cs_real_3_t *)b_pvar,
-                        (cs_real_3_t *)smbrp);
+                        (cs_real_3_t *)rhs);
     else if (stride == 6)
       cs_balance_tensor(idtvar,
                         f_id,
@@ -494,7 +494,7 @@ _equation_iterative_solve_strided(int                   idtvar,
                         weighb,
                         icvflb,
                         icvfli,
-                        (cs_real_6_t *)smbrp);
+                        (cs_real_6_t *)rhs);
 
     CS_PROFILE_MARK_LINE();
 
@@ -508,14 +508,14 @@ _equation_iterative_solve_strided(int                   idtvar,
     eqp->theta = thetap;
   }
 
-  /* Before looping, the RHS without reconstruction is stored in smbini */
+  /* Before looping, the RHS without reconstruction is stored in rhsini */
   CS_PROFILE_MARK_LINE();
 
   cs_lnum_t has_dc = mq->has_disable_flag;
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
     for (cs_lnum_t i = 0; i < stride; i++) {
-      smbini[c_id][i] = smbrp[c_id][i];
-      smbrp[c_id][i] = 0.;
+      rhsini[c_id][i] = rhs[c_id][i];
+      rhs[c_id][i] = 0.;
     }
   });
 
@@ -586,7 +586,7 @@ _equation_iterative_solve_strided(int                   idtvar,
                       icvfli,
                       nullptr,
                       nullptr,
-                      (cs_real_3_t *)smbrp);
+                      (cs_real_3_t *)rhs);
   else if (stride == 6)
     cs_balance_tensor(idtvar,
                       f_id,
@@ -607,7 +607,7 @@ _equation_iterative_solve_strided(int                   idtvar,
                       weighb,
                       icvflb,
                       icvfli,
-                      (cs_real_6_t *)smbrp);
+                      (cs_real_6_t *)rhs);
 
   if (CS_F_(vel) != nullptr && CS_F_(vel)->id == f_id) {
     cs_field_t *f_ex = cs_field_by_name_try("velocity_explicit_balance");
@@ -616,7 +616,7 @@ _equation_iterative_solve_strided(int                   idtvar,
       cs_real_3_t *cpro_cv_df_v = (cs_real_3_t *)f_ex->val;
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         for (cs_lnum_t i = 0; i < stride; i++)
-          cpro_cv_df_v[c_id][i] = smbrp[c_id][i];
+          cpro_cv_df_v[c_id][i] = rhs[c_id][i];
       });
     }
   }
@@ -630,14 +630,14 @@ _equation_iterative_solve_strided(int                   idtvar,
                                  CS_DISPATCH_REDUCER_TYPE(double) &sum) {
       cs_real_t c_sum = 0;
       for (cs_lnum_t i = 0; i < stride; i++) {
-        rhs0[c_id][i] = smbrp[c_id][i];
+        rhs0[c_id][i] = rhs[c_id][i];
 
         cs_real_t diff = 0.;
         for (cs_lnum_t j = 0; j < stride; j++)
           diff += fimp[c_id][i][j]*(pvar[c_id][j] - pvara[c_id][j]);
 
-        smbrp[c_id][i] += smbini[c_id][i] - diff;
-        c_sum += cs_math_pow2(smbrp[c_id][i]);
+        rhs[c_id][i] += rhsini[c_id][i] - diff;
+        c_sum += cs_math_pow2(rhs[c_id][i]);
 
         adxkm1[c_id][i] = 0.;
         adxk[c_id][i] = 0.;
@@ -660,8 +660,8 @@ _equation_iterative_solve_strided(int                   idtvar,
         for (cs_lnum_t j = 0; j < stride; j++)
           diff += fimp[c_id][i][j]*(pvar[c_id][j] - pvara[c_id][j]);
 
-        smbrp[c_id][i] += smbini[c_id][i] - diff;
-        c_sum += cs_math_pow2(smbrp[c_id][i]);
+        rhs[c_id][i] += rhsini[c_id][i] - diff;
+        c_sum += cs_math_pow2(rhs[c_id][i]);
       }
       sum += c_sum;
     });
@@ -742,7 +742,7 @@ _equation_iterative_solve_strided(int                   idtvar,
       sum.r[1] = 0.;
       for (cs_lnum_t i = 0; i < stride; i++) {
         sum.r[0] += w1[c_id][i] * w1[c_id][i];
-        sum.r[1] += smbrp[c_id][i] * smbrp[c_id][i];
+        sum.r[1] += rhs[c_id][i] * rhs[c_id][i];
       }
     });
     ctx.wait();
@@ -765,7 +765,7 @@ _equation_iterative_solve_strided(int                   idtvar,
       /* Ignore contributions from penalized cells */
       if (c_disable_flag[c_id] == 0) {
         for (cs_lnum_t i = 0; i < stride; i++) {
-          c_sum += cs_math_pow2(w1[c_id][i] + smbrp[c_id][i]);
+          c_sum += cs_math_pow2(w1[c_id][i] + rhs[c_id][i]);
         }
       }
       sum += c_sum;
@@ -777,7 +777,7 @@ _equation_iterative_solve_strided(int                   idtvar,
                                  CS_DISPATCH_REDUCER_TYPE(double) &sum) {
       cs_real_t c_sum = 0;
       for (cs_lnum_t i = 0; i < stride; i++) {
-        c_sum += cs_math_pow2(w1[c_id][i] + smbrp[c_id][i]);
+        c_sum += cs_math_pow2(w1[c_id][i] + rhs[c_id][i]);
       }
       sum += c_sum;
     });
@@ -839,7 +839,7 @@ _equation_iterative_solve_strided(int                   idtvar,
                          rnorm,
                          &niterf,
                          &ressol,
-                         (cs_real_t *)smbrp,
+                         (cs_real_t *)rhs,
                          (cs_real_t *)dpvar);
 
     /* Dynamic relaxation of the system */
@@ -929,7 +929,7 @@ _equation_iterative_solve_strided(int                   idtvar,
         sum.r[1] = 0.;
         for (cs_lnum_t i = 0; i < stride; i++) {
           sum.r[0] += adxk[c_id][i] * adxk[c_id][i];
-          sum.r[1] += smbrp[c_id][i] * adxk[c_id][i];
+          sum.r[1] += rhs[c_id][i] * adxk[c_id][i];
         }
       });
 
@@ -949,7 +949,7 @@ _equation_iterative_solve_strided(int                   idtvar,
           sum.r[0] = 0.;
           sum.r[1] = 0.;
           for (cs_lnum_t i = 0; i < stride; i++) {
-            sum.r[0] += smbrp[c_id][i] * adxkm1[c_id][i];
+            sum.r[0] += rhs[c_id][i] * adxkm1[c_id][i];
             sum.r[1] += adxk[c_id][i] * adxkm1[c_id][i];
           }
         });
@@ -1008,7 +1008,7 @@ _equation_iterative_solve_strided(int                   idtvar,
         for (cs_lnum_t i = 0; i < stride; i++)
           pvar[c_id][i] += dpvar[c_id][i];
 
-          /* smbini does not contain unsteady terms and mass source terms
+          /* rhsini does not contain unsteady terms and mass source terms
            * of the RHS updated at each sweep */
 
         for (cs_lnum_t i = 0; i < stride; i++) {
@@ -1016,7 +1016,7 @@ _equation_iterative_solve_strided(int                   idtvar,
           for (cs_lnum_t j = 0; j < stride; j++)
             diff += fimp[c_id][i][j]*(pvar[c_id][j] - pvara[c_id][j]);
 
-          smbrp[c_id][i] = smbini[c_id][i] - diff;
+          rhs[c_id][i] = rhsini[c_id][i] - diff;
         }
 
       });
@@ -1026,7 +1026,7 @@ _equation_iterative_solve_strided(int                   idtvar,
         for (cs_lnum_t i = 0; i < stride; i++)
           pvar[c_id][i] += alph*dpvar[c_id][i];
 
-          /* smbini does not contain unsteady terms and mass source terms
+          /* rhsini does not contain unsteady terms and mass source terms
            * of the RHS updated at each sweep */
 
         for (cs_lnum_t i = 0; i < stride; i++) {
@@ -1034,7 +1034,7 @@ _equation_iterative_solve_strided(int                   idtvar,
           for (cs_lnum_t j = 0; j < stride; i++)
             diff += fimp[c_id][i][j]*(pvar[c_id][j] - pvara[c_id][j]);
 
-          smbrp[c_id][i] = smbini[c_id][i] - diff;
+          rhs[c_id][i] = rhsini[c_id][i] - diff;
         }
       });
     }
@@ -1050,7 +1050,7 @@ _equation_iterative_solve_strided(int                   idtvar,
           for (cs_lnum_t j = 0; j < stride; j++)
             diff += fimp[c_id][i][j]*(pvar[c_id][j] - pvara[c_id][j]);
 
-          smbrp[c_id][i] = smbini[c_id][i] - diff;
+          rhs[c_id][i] = rhsini[c_id][i] - diff;
         }
       });
     }
@@ -1110,7 +1110,7 @@ _equation_iterative_solve_strided(int                   idtvar,
                         icvfli,
                         (cs_real_3_t *)i_pvar,
                         (cs_real_3_t *)b_pvar,
-                        (cs_real_3_t *)smbrp);
+                        (cs_real_3_t *)rhs);
     else if (stride == 6)
       cs_balance_tensor(idtvar,
                         f_id,
@@ -1131,7 +1131,7 @@ _equation_iterative_solve_strided(int                   idtvar,
                         weighb,
                         icvflb,
                         icvfli,
-                        (cs_real_6_t *)smbrp);
+                        (cs_real_6_t *)rhs);
 
     CS_PROFILE_MARK_LINE();
 
@@ -1141,7 +1141,7 @@ _equation_iterative_solve_strided(int                   idtvar,
                                  CS_DISPATCH_REDUCER_TYPE(double) &sum) {
       cs_real_t c_sum = 0;
       for (cs_lnum_t i = 0; i < stride; i++) {
-        c_sum += cs_math_pow2(smbrp[c_id][i]);
+        c_sum += cs_math_pow2(rhs[c_id][i]);
       }
       sum += c_sum;
     });
@@ -1198,7 +1198,7 @@ _equation_iterative_solve_strided(int                   idtvar,
   if (iescap > 0 && stride == 3) {
     /* Computation of the estimator of the current component */
 
-    /* smbini does not contain unsteady terms and mass source terms
+    /* rhsini does not contain unsteady terms and mass source terms
        of the RHS updated at each sweep */
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -1207,7 +1207,7 @@ _equation_iterative_solve_strided(int                   idtvar,
         for (cs_lnum_t j = 0; j < stride; j++)
           diff += fimp[c_id][i][j]*(pvar[c_id][j] - pvara[c_id][j]);
 
-        smbrp[c_id][i] = smbini[c_id][i] - diff;
+        rhs[c_id][i] = rhsini[c_id][i] - diff;
       }
     });
 
@@ -1250,13 +1250,13 @@ _equation_iterative_solve_strided(int                   idtvar,
                       icvfli,
                       nullptr,
                       nullptr,
-                      (cs_real_3_t *)smbrp);
+                      (cs_real_3_t *)rhs);
 
     /* Contribution of the current component to the L2 norm stored in eswork */
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (cs_lnum_t i = 0; i < stride; i++)
-        eswork[c_id][i] = cs_math_pow2(smbrp[c_id][i] / cell_vol[c_id]);
+        eswork[c_id][i] = cs_math_pow2(rhs[c_id][i] / cell_vol[c_id]);
     });
     ctx.wait();
 
@@ -1307,7 +1307,7 @@ _equation_iterative_solve_strided(int                   idtvar,
   CS_PROFILE_MARK_LINE();
 
   /* Free memory */
-  CS_FREE(smbini);
+  CS_FREE(rhsini);
   CS_FREE(dpvar);
   if (iswdyp >= 1) {
     CS_FREE(adxk);
@@ -1420,7 +1420,7 @@ BEGIN_C_DECLS
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in]     rovsdt        \f$ f_s^{imp} \f$
- * \param[in]     smbrp         Right hand side \f$ Rhs^k \f$
+ * \param[in]     rhs           Right hand side \f$ Rhs^k \f$
  * \param[in,out] pvar          current variable
  * \param[out]    dpvar         last variable increment
  * \param[in]     xcpp          array of specific heat (Cp)
@@ -1453,7 +1453,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                    int                   icvflb,
                                    const int             icvfli[],
                                    const cs_real_t       rovsdt[],
-                                   cs_real_t             smbrp[],
+                                   cs_real_t             rhs[],
                                    cs_real_t             pvar[],
                                    cs_real_t             dpvar[],
                                    const cs_real_t       xcpp[],
@@ -1505,7 +1505,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   int coupling_id = -1;
   cs_field_t *f = nullptr;
-  cs_real_t *smbini = nullptr;
+  cs_real_t *rhsini = nullptr;
   cs_real_t *w1 = nullptr;
 
   bool conv_diff_mg = false;
@@ -1679,7 +1679,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     /* Compute - Con-Diff((1-theta) Y^n )
      * where Y^n is pvara
      * Note: this part does not need any update, and will be stored in
-     * smbini */
+     * rhsini */
     cs_balance_scalar(idtvar,
                       f_id,
                       imucpp,
@@ -1701,7 +1701,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                       weighb,
                       icvflb,
                       icvfli,
-                      smbrp,
+                      rhs,
                       i_flux_0,
                       b_flux);
 
@@ -1709,15 +1709,15 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   }
 
-  /* Before looping, the RHS without reconstruction is stored in smbini */
+  /* Before looping, the RHS without reconstruction is stored in rhsini */
 
-  CS_MALLOC_HD(smbini, n_cells_ext, cs_real_t, amode);
+  CS_MALLOC_HD(rhsini, n_cells_ext, cs_real_t, amode);
 
   cs_lnum_t has_dc = mq->has_disable_flag;
 
   ctx_c.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-    smbini[cell_id] = smbrp[cell_id];
-    smbrp[cell_id] = 0.;
+    rhsini[cell_id] = rhs[cell_id];
+    rhs[cell_id] = 0.;
   });
 
   ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
@@ -1742,7 +1742,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   imasac = 1;
 
   ctx_c.wait(); /* We now need pvar, computed by ctx_c */
-  ctx.wait();   /* We now need smbrp, computed by ctx */
+  ctx.wait();   /* We now need rhs, computed by ctx */
 
   cs_boundary_conditions_update_bc_coeff_face_values<true, true>
     (ctx,
@@ -1777,7 +1777,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                     weighb,
                     icvflb,
                     icvfli,
-                    smbrp,
+                    rhs,
                     i_flux_k,
                     b_flux_k);
 
@@ -1785,10 +1785,10 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     ctx.parallel_for_reduce_sum(n_cells, residu, [=] CS_F_HOST_DEVICE
                                 (cs_lnum_t cell_id,
                                  CS_DISPATCH_REDUCER_TYPE(double) &sum) {
-      rhs0[cell_id] = smbrp[cell_id];
-      smbrp[cell_id]  += smbini[cell_id]
-                       - rovsdt[cell_id]*(pvar[cell_id] - pvara[cell_id]);
-      sum += cs_math_pow2(smbrp[cell_id]);
+      rhs0[cell_id] = rhs[cell_id];
+      rhs[cell_id] +=   rhsini[cell_id]
+                      - rovsdt[cell_id]*(pvar[cell_id] - pvara[cell_id]);
+      sum += cs_math_pow2(rhs[cell_id]);
       adxkm1[cell_id] = 0.;
       adxk[cell_id] = 0.;
       dpvar[cell_id] = 0.;
@@ -1801,9 +1801,9 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     ctx.parallel_for_reduce_sum(n_cells, residu, [=] CS_F_HOST_DEVICE
                                 (cs_lnum_t cell_id,
                                  CS_DISPATCH_REDUCER_TYPE(double) &sum) {
-      smbrp[cell_id]  += smbini[cell_id]
-                       - rovsdt[cell_id]*(pvar[cell_id] - pvara[cell_id]);
-      sum += cs_math_pow2(smbrp[cell_id]);
+      rhs[cell_id] +=   rhsini[cell_id]
+                      - rovsdt[cell_id]*(pvar[cell_id] - pvara[cell_id]);
+      sum += cs_math_pow2(rhs[cell_id]);
     });
   }
 
@@ -1857,7 +1857,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       ctx.parallel_for_reduce(n_cells, rd2, reducer2, [=] CS_F_HOST_DEVICE
                               (cs_lnum_t c_id, cs_double_n<2> &sum) {
         sum.r[0] = cs_math_pow2(w1[c_id]);
-        sum.r[1] = cs_math_pow2(smbrp[c_id]);
+        sum.r[1] = cs_math_pow2(rhs[c_id]);
       });
       ctx.wait();
       cs_parall_sum(2, CS_DOUBLE, rd2.r);
@@ -1871,7 +1871,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                  CS_DISPATCH_REDUCER_TYPE(double) &sum) {
       /* Ignore contributions from penalized cells */
       if (has_dc * c_disable_flag[has_dc * cell_id] == 0)
-        sum += cs_math_pow2(w1[cell_id] + smbrp[cell_id]);
+        sum += cs_math_pow2(w1[cell_id] + rhs[cell_id]);
     });
 
     ctx.wait();
@@ -1944,7 +1944,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                          rnorm,
                          &niterf,
                          &ressol,
-                         smbrp,
+                         rhs,
                          dpvar);
 
     /* Dynamic relaxation of the system */
@@ -2005,7 +2005,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       ctx.parallel_for_reduce(n_cells, rd2, reducer2, [=] CS_F_HOST_DEVICE
                               (cs_lnum_t c_id, cs_double_n<2> &sum) {
         sum.r[0] = adxk[c_id] * adxk[c_id];
-        sum.r[1] = smbrp[c_id] * adxk[c_id];
+        sum.r[1] = rhs[c_id] * adxk[c_id];
       });
       ctx.wait();
       cs_parall_sum(2, CS_DOUBLE, rd2.r);
@@ -2018,7 +2018,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
         ctx.parallel_for_reduce(n_cells, rd2, reducer2, [=] CS_F_HOST_DEVICE
                                 (cs_lnum_t c_id, cs_double_n<2> &sum) {
-          sum.r[0] = smbrp[c_id] * adxkm1[c_id];
+          sum.r[0] = rhs[c_id] * adxkm1[c_id];
           sum.r[1] = adxk[c_id] * adxkm1[c_id];
         });
 
@@ -2080,9 +2080,9 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     if (iswdyp <= 0) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
         pvar[cell_id] += dpvar[cell_id];
-        /* smbini does not contain unsteady terms and mass source terms
+        /* rhsini does not contain unsteady terms and mass source terms
            of the RHS updated at each sweep */
-        smbrp[cell_id] = smbini[cell_id]
+        rhs[cell_id] =   rhsini[cell_id]
                        - rovsdt[cell_id]*(pvar[cell_id] - pvara[cell_id]);
       });
     }
@@ -2090,18 +2090,18 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       if (alph < 0.) break;
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
         pvar[cell_id] += alph*dpvar[cell_id];
-        /* smbini does not contain unsteady terms and mass source terms
+        /* rhsini does not contain unsteady terms and mass source terms
            of the RHS updated at each sweep */
-        smbrp[cell_id] = smbini[cell_id]
+        rhs[cell_id] =   rhsini[cell_id]
                        - rovsdt[cell_id]*(pvar[cell_id] - pvara[cell_id]);
       });
     }
     else if (iswdyp >= 2) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
         pvar[cell_id] += alph*dpvar[cell_id] + beta*dpvarm1[cell_id];
-        /* smbini does not contain unsteady terms and mass source terms
+        /* rhsini does not contain unsteady terms and mass source terms
            of the RHS updated at each sweep */
-        smbrp[cell_id] = smbini[cell_id]
+        rhs[cell_id] =   rhsini[cell_id]
                        - rovsdt[cell_id]*(pvar[cell_id] - pvara[cell_id]);
       });
     }
@@ -2153,7 +2153,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                       weighb,
                       icvflb,
                       icvfli,
-                      smbrp,
+                      rhs,
                       i_flux_k,
                       b_flux_k);
 
@@ -2161,7 +2161,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     ctx.parallel_for_reduce_sum(n_cells, residu, [=] CS_F_HOST_DEVICE
                                 (cs_lnum_t c_id,
                                  CS_DISPATCH_REDUCER_TYPE(double) &sum) {
-      sum += cs_math_pow2(smbrp[c_id]);
+      sum += cs_math_pow2(rhs[c_id]);
     });
     ctx.wait();
     cs_parall_sum(1, CS_DOUBLE, &residu);
@@ -2278,11 +2278,11 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   if (iescap > 0) {
     /*  Computation of the estimator of the current component */
 
-    /* smbini does not contain unsteady terms and mass source terms
+    /* rhsini does not contain unsteady terms and mass source terms
        of the RHS updated at each sweep */
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-      smbrp[cell_id] = smbini[cell_id]
+      rhs[cell_id] =   rhsini[cell_id]
                      - rovsdt[cell_id]*(pvar[cell_id] - pvara[cell_id]);
     });
 
@@ -2322,14 +2322,14 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                       weighb,
                       icvflb,
                       icvfli,
-                      smbrp,
+                      rhs,
                       nullptr,
                       nullptr);
 
     /* Contribution of the current component to the L2 norm stored in eswork */
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-      eswork[cell_id] = cs_math_pow2(smbrp[cell_id] / cell_vol[cell_id]);
+      eswork[cell_id] = cs_math_pow2(rhs[cell_id] / cell_vol[cell_id]);
     });
     ctx.wait();
 
@@ -2367,7 +2367,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   ctx.wait();
 
   /*  Free memory */
-  CS_FREE(smbini);
+  CS_FREE(rhsini);
 
   if (iswdyp >= 1) {
     CS_FREE(adxk);
@@ -2467,7 +2467,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in, out] fimp          \f$ \tens{f_s}^{imp} \f$
- * \param[in, out] smbrp         Right hand side \f$ \vect{Rhs}^k \f$
+ * \param[in, out] rhs           Right hand side \f$ \vect{Rhs}^k \f$
  * \param[in, out] pvar          current variable
  * \param[out]     eswork        prediction-stage error estimator
  *                               (if iescap >= 0)
@@ -2499,7 +2499,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                    int                   icvflb,
                                    const int             icvfli[],
                                    cs_real_t             fimp[][3][3],
-                                   cs_real_t             smbrp[][3],
+                                   cs_real_t             rhs[][3],
                                    cs_real_t             pvar[][3],
                                    cs_real_t             eswork[][3])
 {
@@ -2527,7 +2527,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                        icvflb,
                                        icvfli,
                                        fimp,
-                                       smbrp,
+                                       rhs,
                                        pvar,
                                        eswork);
 }
@@ -2613,7 +2613,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in,out] fimp          \f$ \tens{f_s}^{imp} \f$
- * \param[in,out] smbrp         Right hand side \f$ \vect{Rhs}^k \f$
+ * \param[in,out] rhs           Right hand side \f$ \vect{Rhs}^k \f$
  * \param[in,out] pvar          current variable
  */
 /*----------------------------------------------------------------------------*/
@@ -2638,7 +2638,7 @@ cs_equation_iterative_solve_tensor(int                         idtvar,
                                    int                         icvflb,
                                    const int                   icvfli[],
                                    cs_real_t                   fimp[][6][6],
-                                   cs_real_t                   smbrp[][6],
+                                   cs_real_t                   rhs[][6],
                                    cs_real_t                   pvar[][6])
 {
   _equation_iterative_solve_strided<6>(idtvar,
@@ -2665,7 +2665,7 @@ cs_equation_iterative_solve_tensor(int                         idtvar,
                                        icvflb,
                                        icvfli,
                                        fimp,
-                                       smbrp,
+                                       rhs,
                                        pvar,
                                        nullptr); // eswork
 }

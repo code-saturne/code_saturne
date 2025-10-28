@@ -178,16 +178,12 @@ The algorithm for this subroutine is as follows:\\
 - determination of the properties of the $\tens{EM}_{n}$ matrix (symmetric
 if there is no convection, asymmetric otherwise)\\
 - automatic selection of the solution method for its inversion if the user has not already
-specified one for the variable being treated. The Jacobi method is used by default for every convected scalar variable $a$. The  methods available are the conjugate gradient method, Jacobi's and the
-bi-conjugate gradient stabilised method ($BICGStab$) for asymmetric matrices.  Diagonal pre-conditioning can be implemented and is used by default for all of these solvers except for Jacobi.\\
-- consideration of the periodicity (translation or rotation of a scalar, vector or tensor),\\
-- construction of the $\tens{EM}_{n}$ matrix corresponding to the linear operator $\mathcal{EM}_{n}$ through a call to the subroutine
-\fort{matrix}\footnote{ Remember that in \fort{matrix}, regardless of the user's choice, a first-order in space upwind scheme is always used to treat the convection and there is no reconstruction for
+specified one for the variable being treated. By default, a hybrid Gauss-Seidel or Jacobi method is used by default for every convected scalar variable $a$, as these methods are usually the fastest when diagonal dominance is high (which is the case when the time step is small).\\
+- construction of the $\tens{EM}_{n}$ matrix corresponding to the linear operator $\mathcal{EM}_{n}$ through a call to the
+\fort{cs\_matrix\_compute\_coeffs} function\footnote{Remember that in \fort{cs\_matrix\_compute\_coeffs}, regardless of the user's choice, a first-order in space upwind scheme is always used to treat the convection and there is no reconstruction for
 the diffusive flux. The user's choice of numerical scheme for the convection is only applied for the integration
 of the convection terms of $\mathcal{E}_{n}$, on the right-hand side of
-(\ref{Base_Codits_Eq_Codits}), which computed in the subroutine \fort{cs\_balance}.}. The implicit terms corresponding to the diagonal part of the matrix and hence to the zeroth-order linear differential contributions in $a^{n+1}$,({\it i.e.} $f_s^{imp}$), are stored in the array \var{ROVSDT} (realized before the subroutine calls \fort{cs\_equation\_iterative\_solve}).\\
-- creation of the grid hierarchy if the multigrid algorithm is used
-($ \var{IMGRP}\,>0 $).\\
+(\ref{Base_Codits_Eq_Codits}), which are computed in the \fort{cs\_balance} functions.}. The implicit terms corresponding to the diagonal part of the matrix and hence to the zeroth-order linear differential contributions in $a^{n+1}$,({\it i.e.} $f_s^{imp}$), are stored in the array \var{ROVSDT} (realized before the subroutine calls \fort{cs\_equation\_iterative\_solve}).\\
 - call to \fort{cs\_balance} to take the explicit convection-diffusion into account should
  $\theta \ne 0$.\\
 - loop over the number of iterations from 1 to $\var{NSWRSM}$ (which is called $\var{NSWRSP}$ in \fort{cs\_equation\_iterative\_solve}).
@@ -207,40 +203,40 @@ convection/diffusion computation (with reconstruction) performed by \fort{cs\_ba
 The loop in $k$ is then the following:
 \begin{itemize}
 \item Computation of the right-hand side of the equation, without the contribution of
-the explicit convection-diffusion terms $\var{SMBINI}$; as for the whole right-hand side corresponding
-to $\mathcal{E}_{n}(a^{n+1,\,k-1})$, it is stored in the array $\var{SMBRP}$,
-initialised by $\var{SMBINI}$ and completed with the reconstructed
+the explicit convection-diffusion terms $\var{RHSINI}$; as for the whole right-hand side corresponding
+to $\mathcal{E}_{n}(a^{n+1,\,k-1})$, it is stored in the array $\var{RHS}$,
+initialised by $\var{RHSINI}$ and completed with the reconstructed
 convection-diffusion terms by a call to the subroutine \fort{cs\_balance}.\\
-At iteration $k$, $\var{SMBINI}$ noted  $\var{SMBINI}^{\,k}$ is equal to:\\
+At iteration $k$, $\var{RHSINI}$ noted  $\var{RHSINI}^{\,k}$ is equal to:\\
 \begin{equation}\notag
-\var{SMBINI}^{\,k}\  = f_s^{\,exp}-(1-\theta)\,\left[\,\dive((\rho \underline{u})\,a^n) - \dive(\mu_{\,tot}\,\grad a^n)\,\right]-\,f_s^{\,imp}(\,a^{n+1,\,k-1} - a^n\,) \\
+\var{RHSINI}^{\,k}\  = f_s^{\,exp}-(1-\theta)\,\left[\,\dive((\rho \underline{u})\,a^n) - \dive(\mu_{\,tot}\,\grad a^n)\,\right]-\,f_s^{\,imp}(\,a^{n+1,\,k-1} - a^n\,) \\
 \end{equation}
 \\
 $\bullet$ Before starting the loop over $k$, a first call to the subroutine \fort{cs\_balance} with $\var{THETAP}=1-\theta$ serves to take the explicit part (from the time advancement scheme) of the convection-diffusion terms into account.
 \begin{equation}\notag
 \displaystyle
-\var{SMBRP}^{\,0} = f_s^{\,exp} -(1-\theta)\,[\,\dive((\rho \underline{u})\,a^n) - \dive(\mu_{\,tot}\,\grad a^n)\,]\\
+\var{RHS}^{\,0} = f_s^{\,exp} -(1-\theta)\,[\,\dive((\rho \underline{u})\,a^n) - \dive(\mu_{\,tot}\,\grad a^n)\,]\\
 \end{equation}
-Similarly, before looping on $k$, the right-hand side $\var{SMBRP}^{\,0}$ is stored in the array $\var{SMBINI}^{\,0}$ and serves to initialize the computation.
+Similarly, before looping on $k$, the right-hand side $\var{RHS}^{\,0}$ is stored in the array $\var{RHSINI}^{\,0}$ and serves to initialize the computation.
 \begin{equation}\notag
-\var{SMBINI}^{\,0} =\var{SMBRP}^{\,0}
+\var{RHSINI}^{\,0} =\var{RHS}^{\,0}
 \end{equation}
 \\
 $\bullet$ for $k = 1$,
 \begin{equation}\notag
 \begin{array}{ll}
-\var{SMBINI}^{\,1}\ &=f_s^{\,exp}-(1-\theta)\,\left[\,\dive((\rho \underline{u})\,a^n) - \dive(\mu_{\,tot}\,\grad a^n)\,\right]-\,f_s^{\,imp}\,(\,a^{n+1,\,0} - a^n\,)\\
+\var{RHSINI}^{\,1}\ &=f_s^{\,exp}-(1-\theta)\,\left[\,\dive((\rho \underline{u})\,a^n) - \dive(\mu_{\,tot}\,\grad a^n)\,\right]-\,f_s^{\,imp}\,(\,a^{n+1,\,0} - a^n\,)\\
 &=f_s^{\,exp}- (1-\theta)\,\left[\,\dive((\rho \underline{u})\,a^{n+1,\,0}) - \dive(\mu_{\,tot}\,\grad a^{n+1,\,0})\,\right]-f_s^{\,imp}\,\delta a^{n+1,\,0} \\
 \end{array}
 \end{equation}
 This calculation is thus represented by a corresponding sequence of operations on the arrays:
 \begin{equation}\notag
-\var{SMBINI}^{\,1}\ =\ \var{SMBINI}^{\,0} - \var{ROVSDT}\,*(\,\var{PVAR}-\,\var{PVARA})
+\var{RHSINI}^{\,1}\ =\ \var{RHSINI}^{\,0} - \var{ROVSDT}\,*(\,\var{PVAR}-\,\var{PVARA})
 \end{equation}
-and $\var{SMBRP}^{\,1}$ is completed by a second call to the subroutine \fort{cs\_balance} with $\var{THETAP}=\theta$, so that the implicit part of the convection-diffusion computation is added to the right-hand side.
+and $\var{RHS}^{\,1}$ is completed by a second call to the subroutine \fort{cs\_balance} with $\var{THETAP}=\theta$, so that the implicit part of the convection-diffusion computation is added to the right-hand side.
 \begin{equation}\notag
 \begin{array}{ll}
-\var{SMBRP}^{\,1} & = \var{SMBINI}^{\,1} -\theta\,\left[\,\dive((\rho \underline{u})\,a^{n+1,\,0}) - \dive(\mu_{\,tot}\,\grad a^{n+1,\,0})\,\right]\\
+\var{RHS}^{\,1} & = \var{RHSINI}^{\,1} -\theta\,\left[\,\dive((\rho \underline{u})\,a^{n+1,\,0}) - \dive(\mu_{\,tot}\,\grad a^{n+1,\,0})\,\right]\\
 & = f_s^{\,exp}\ - (1-\theta)\,\left[\,\dive((\rho \underline{u})\,a^{n}) - \dive(\mu_{\,tot}\,\grad a^{n})\,\right]- f_s^{\,imp}\,(a^{n+1,\,0} -a^{n}) \\
 & -\theta\,\left[\,\dive((\rho \underline{u})\,a^{n+1,\,0}) - \dive(\mu_{\,tot}\,\grad a^{n+1,\,0})\,\right]\\
 \end{array}
@@ -249,18 +245,18 @@ $\bullet$ for $k = 2$,\\
 In a similar fashion, we obtain:
 \begin{equation}\notag
 \begin{array}{ll}
-\var{SMBINI}^{\,2}\ &=f_s^{\,exp}-(1-\theta)\,\left[\,\dive((\rho \underline{u})\,a^n) - \dive(\mu_{\,tot}\,\grad a^n)\,\right]-\,f_s^{\,imp}\,(\,a^{n+1,\,1} - a^n\,)\\
+\var{RHSINI}^{\,2}\ &=f_s^{\,exp}-(1-\theta)\,\left[\,\dive((\rho \underline{u})\,a^n) - \dive(\mu_{\,tot}\,\grad a^n)\,\right]-\,f_s^{\,imp}\,(\,a^{n+1,\,1} - a^n\,)\\
 \end{array}
 \end{equation}
 
 Hence, the equivalent array formula:
 \begin{equation}\notag
-\var{SMBINI}^{\,2}\ =\ \var{SMBINI}^{\,1} - \var{ROVSDT}\,*\,\var{DPVAR}^{\,1}
+\var{RHSINI}^{\,2}\ =\ \var{RHSINI}^{\,1} - \var{ROVSDT}\,*\,\var{DPVAR}^{\,1}
 \end{equation}
 the call to the subroutine \fort{cs\_balance} being systematically made thereafter with $\var{THETAP}=\theta$, we likewise obtain:
 \begin{equation}\notag
 \begin{array}{ll}
-\var{SMBRP}^{\,2}\ &=\ \var{SMBINI}^{\,2}-\theta\left[\dive\left((\rho \underline{u})\,a^{n+1,\,1}\right)- \dive\left(\mu_{\,tot}\,\grad \,a^{n+1,\,1}\right)\right]\\
+\var{RHS}^{\,2}\ &=\ \var{RHSINI}^{\,2}-\theta\left[\dive\left((\rho \underline{u})\,a^{n+1,\,1}\right)- \dive\left(\mu_{\,tot}\,\grad \,a^{n+1,\,1}\right)\right]\\
 \end{array}
 \end{equation}
 where
@@ -268,13 +264,13 @@ where
 a^{n+1,\,1}=\var{PVAR}^{\,1}=\var{PVAR}^{\,0}+\var{DPVAR}^{\,1}=a^{n+1,\,0}+\delta a^{n+1,\,1}
 \end{equation}
 $\bullet$ for iteration $k+1$,\\
-The array $\var{SMBINI}^{\,k+1}$ initialises the entire right side
-$\var{SMBRP}^{\,k+1}$ to which will be added the convective and diffusive contributions
+The array $\var{RHSINI}^{\,k+1}$ initialises the entire right side
+$\var{RHS}^{\,k+1}$ to which will be added the convective and diffusive contributions
 {\it via} the subroutine \fort{cs\_balance}.\\
 The array formula is given by:
 \begin{equation}\notag
 \begin{array}{ll}
-\var{SMBINI}^{\,k+1}\ &= \var{SMBINI}^{\,k} - \var{ROVSDT}\,*\,\var{DPVAR}^{\,k}\\
+\var{RHSINI}^{\,k+1}\ &= \var{RHSINI}^{\,k} - \var{ROVSDT}\,*\,\var{DPVAR}^{\,k}\\
 \end{array}
 \end{equation}
 Then follows the computation and the addition of the reconstructed convection-diffusion terms of
@@ -283,10 +279,10 @@ that the convection is taken into account at this step by the user-specified num
 (first-order accurate in space upwind scheme, centred scheme with second-order spatial discretisation, second-order
 linear upwind "SOLU" scheme or a weighted average (blending) of one of the second-order schemes (either centred or SOLU) and the first-order upwind scheme, with potential use of a slope test).\\
 This contribution (convection-diffusion) is then added in to the right side of the
-equation  $\var{SMBRP}^{\,k+1}$ (initialised by $\var{SMBINI}^{\,k+1}$).
+equation  $\var{RHS}^{\,k+1}$ (initialised by $\var{RHSINI}^{\,k+1}$).
 \begin{equation}\notag
 \begin{array}{ll}
-\var{SMBRP}^{\,k+1}\ &= \var{SMBINI}^{\,k+1} - \theta\,\left[\,\dive\left((\rho \underline{u})\,a^{n+1,\,k}\right)- \dive\left(\mu_{\,tot}\,\grad a^{n+1,\,k}\right)\right]\\
+\var{RHS}^{\,k+1}\ &= \var{RHSINI}^{\,k+1} - \theta\,\left[\,\dive\left((\rho \underline{u})\,a^{n+1,\,k}\right)- \dive\left(\mu_{\,tot}\,\grad a^{n+1,\,k}\right)\right]\\
 & = f_s^{\,exp}-(1-\theta)\,\left[\,\dive((\rho \underline{u})\,a^n) - \dive(\mu_{\,tot}\,\grad a^n)\,\right]- f_s^{\,imp}\,(a^{n+1,\,k} -a^{n}) \\
 &-\theta\,\left[\,\dive((\rho \underline{u})\,a^{n+1,k}) - \dive(\mu_{\,tot}\,\grad a^{n+1,k})\,\right]\\
 \end{array}
@@ -305,21 +301,21 @@ Represented in array form by:
 
 \item Treatment of parallelism and of the periodicity.
 \item Test of convergence:\\
-The test involves the quantity  $||\var{SMBRP}^{\,k+1}|| < \varepsilon
-||\tens{EM}_{n}(a^{n}) + \var{SMBRP}^{\,1}|| $, where $||\,.\,||$ denotes the
+The test involves the quantity  $||\var{RHS}^{\,k+1}|| < \varepsilon
+||\tens{EM}_{n}(a^{n}) + \var{RHS}^{\,1}|| $, where $||\,.\,||$ denotes the
 Euclidean norm. The solution sought is  $a^{\,n+1} = a^{n+1,\,k+1}$. If the test is satisfied, then convergence has been reached and we exit the iteration loop. \\
 If not, we continue to iterate until the upper limit of iterations imposed by $\var{NSWRSM}$ in \fort{usini1} is reached.\\
 The condition for convergence is also written, in continuous form, as:
 \begin{equation}\notag
 \begin{array}{ll}
-||\var{SMBRP}^{\,k+1}||& < \varepsilon ||f_s^{\,exp}\ - \dive((\rho \underline{u})\,a^{n}) + \dive(\mu_{\,tot}\,\grad a^{n}) \\
+||\var{RHS}^{\,k+1}||& < \varepsilon ||f_s^{\,exp}\ - \dive((\rho \underline{u})\,a^{n}) + \dive(\mu_{\,tot}\,\grad a^{n}) \\
 & +[\dive((\rho \underline{u})\,a^{n})]^{\textit{amont}} + [\dive(\mu_{\,tot}\,\grad a^{n})]^{\textit{N Rec}}||\\
 \end{array}
 \end{equation}
 As a consequence, on orthogonal mesh with an upwind convection scheme and in the absence of source terms, the sequence converges in theory in a single iteration because, by construction:
 \begin{equation}\notag
 \begin{array}{ll}
-||\var{SMBRP}^{\,2}||=\,0\,& < \varepsilon ||f_s^{\,exp}||
+||\var{RHS}^{\,2}||=\,0\,& < \varepsilon ||f_s^{\,exp}||
 \end{array}
 \end{equation}
 \end{itemize}

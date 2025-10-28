@@ -121,7 +121,7 @@ cs_balance_initialize(void);
  * \param[in]     icvfli        boundary face indicator array of convection flux
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
- * \param[in,out] smbrp         right hand side \f$ \vect{Rhs} \f$
+ * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/
 
@@ -145,7 +145,7 @@ cs_balance_scalar(int                         idtvar,
                   const cs_real_t             weighb[],
                   int                         icvflb,
                   const int                   icvfli[],
-                  cs_real_t                   smbrp[]);
+                  cs_real_t                   rhs[]);
 
 END_C_DECLS
 
@@ -217,7 +217,7 @@ END_C_DECLS
  * \param[in]     icvfli        boundary face indicator array of convection flux
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
- * \param[in,out] smbrp         right hand side \f$ \vect{Rhs} \f$
+ * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/
 
@@ -243,7 +243,7 @@ cs_balance_scalar(int                         idtvar,
                   const cs_real_t             weighb[],
                   int                         icvflb,
                   const int                   icvfli[],
-                  cs_real_t                   smbrp[]);
+                  cs_real_t                   rhs[]);
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -311,7 +311,7 @@ cs_balance_scalar(int                         idtvar,
  * \param[in]     icvfli        boundary face indicator array of convection flux
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
- * \param[in,out] smbrp         right hand side \f$ \vect{Rhs} \f$
+ * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  * \param[in,out] i_flux        interior flux (or nullptr)
  * \param[in,out] b_flux        boundary flux (or nullptr)
  */
@@ -339,7 +339,7 @@ cs_balance_scalar(int                         idtvar,
                   const cs_real_t             weighb[],
                   int                         icvflb,
                   const int                   icvfli[],
-                  cs_real_t                   smbrp[],
+                  cs_real_t                   rhs[],
                   cs_real_2_t                 i_flux[],
                   cs_real_t                   b_flux[]);
 
@@ -503,7 +503,7 @@ cs_balance_vector(int                         idtvar,
  * \param[in]     icvfli        boundary face indicator array of convection flux
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
- * \param[in,out] smbrp         right hand side \f$ \vect{Rhs} \f$
+ * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/
 
@@ -527,7 +527,7 @@ cs_balance_tensor(int                         idtvar,
                   const cs_real_t             weighb[],
                   int                         icvflb,
                   const int                   icvfli[],
-                  cs_real_6_t                 smbrp[]);
+                  cs_real_6_t                 rhs[]);
 
 /*----------------------------------------------------------------------------*/
 

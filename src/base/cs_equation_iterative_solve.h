@@ -133,7 +133,7 @@ BEGIN_C_DECLS
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in]     rovsdt        \f$ f_s^{imp} \f$
- * \param[in,out] smbrp         Right hand side \f$ Rhs^k \f$
+ * \param[in,out] rhs           Right hand side \f$ Rhs^k \f$
  * \param[in,out] pvar          current variable
  * \param[out]    dpvar         last variable increment
  * \param[in]     xcpp          array of specific heat (Cp)
@@ -166,7 +166,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                                    int                   icvflb,
                                    const int             icvfli[],
                                    const cs_real_t       rovsdt[],
-                                   cs_real_t             smbrp[],
+                                   cs_real_t             rhs[],
                                    cs_real_t             pvar[],
                                    cs_real_t             dpvar[],
                                    const cs_real_t       xcpp[],
@@ -261,7 +261,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in, out] fimp          \f$ \tens{f_s}^{imp} \f$
- * \param[in,out]  smbrp         Right hand side \f$ \vect{Rhs}^k \f$
+ * \param[in,out]  rhs           Right hand side \f$ \vect{Rhs}^k \f$
  * \param[in, out] pvar          current variable
  * \param[out]     eswork        prediction-stage error estimator
  *                               (if iescap >= 0)
@@ -293,7 +293,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                    int                   icvflb,
                                    const int             icvfli[],
                                    cs_real_t             fimp[][3][3],
-                                   cs_real_t             smbrp[][3],
+                                   cs_real_t             rhs[][3],
                                    cs_real_t             pvar[][3],
                                    cs_real_t             eswork[][3]);
 
@@ -378,7 +378,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in,out] fimp          \f$ \tens{f_s}^{imp} \f$
- * \param[in,out] smbrp         Right hand side \f$ \vect{Rhs}^k \f$
+ * \param[in,out] rhs           Right hand side \f$ \vect{Rhs}^k \f$
  * \param[in,out] pvar          current variable
  */
 /*----------------------------------------------------------------------------*/
@@ -403,7 +403,7 @@ cs_equation_iterative_solve_tensor(int                         idtvar,
                                    int                         icvflb,
                                    const int                   icvfli[],
                                    cs_real_t                   fimp[][6][6],
-                                   cs_real_t                   smbrp[][6],
+                                   cs_real_t                   rhs[][6],
                                    cs_real_t                   pvar[][6]);
 
 END_C_DECLS

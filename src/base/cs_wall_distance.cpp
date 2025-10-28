@@ -292,9 +292,9 @@ cs_wall_distance(int iterns)
   /* Prepare system to solve
      ----------------------- */
 
-  cs_real_t *smbrp, *rovsdt;
+  cs_real_t *rhs, *rovsdt;
   CS_MALLOC_HD(rovsdt, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(smbrp, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(rhs, n_cells_ext, cs_real_t, cs_alloc_mode);
 
   /* Allocate temporary arrays for the species resolution */
   cs_real_t *dpvar, *i_visc, *b_visc, *i_mass_flux, *b_mass_flux;
@@ -322,9 +322,9 @@ cs_wall_distance(int iterns)
     w1[c_id] = 1.0; /* Diffusion at faces */
     dpvar[c_id] = 0.;
 
-     /* RHS */
+    /* RHS */
     rovsdt[c_id] = 0.0;
-    smbrp[c_id] = cell_f_vol[c_id];
+    rhs[c_id] = cell_f_vol[c_id];
   });
 
   ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -380,7 +380,7 @@ cs_wall_distance(int iterns)
                                      icvflb,
                                      nullptr, /* icvfli */
                                      rovsdt,
-                                     smbrp,
+                                     rhs,
                                      wall_dist, dpvar,
                                      nullptr, /* xcpp */
                                      nullptr); /* eswork */
@@ -448,7 +448,7 @@ cs_wall_distance(int iterns)
 
           /* RHS */
           rovsdt[c_id] = 0.0;
-          smbrp[c_id] = cell_f_vol[c_id];
+          rhs[c_id] = cell_f_vol[c_id];
         });
 
         ctx.wait();
@@ -472,7 +472,7 @@ cs_wall_distance(int iterns)
                                            icvflb,
                                            nullptr, /* icvfli */
                                            rovsdt,
-                                           smbrp,
+                                           rhs,
                                            wall_dist, dpvar,
                                            nullptr, /* xcpp */
                                            nullptr); /* eswork */
@@ -606,7 +606,7 @@ cs_wall_distance(int iterns)
   CS_FREE(i_visc);
   CS_FREE(b_visc);
   CS_FREE(dpvar);
-  CS_FREE(smbrp);
+  CS_FREE(rhs);
   CS_FREE(i_mass_flux);
   CS_FREE(b_mass_flux);
   CS_FREE(rovsdt);

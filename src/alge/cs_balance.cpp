@@ -190,7 +190,7 @@ cs_balance_initialize(void)
  * \param[in]     icvfli        boundary face indicator array of convection flux
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
- * \param[in,out] smbrp         right hand side \f$ \vect{Rhs} \f$
+ * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/
 
@@ -214,7 +214,7 @@ cs_balance_scalar(int                         idtvar,
                   const cs_real_t             weighb[],
                   int                         icvflb,
                   const int                   icvfli[],
-                  cs_real_t                   smbrp[])
+                  cs_real_t                   rhs[])
 {
   if (bc_coeffs->val_f != nullptr && bc_coeffs->flux != nullptr)
     cs_balance_scalar(idtvar,
@@ -232,7 +232,7 @@ cs_balance_scalar(int                         idtvar,
                       xcpp,
                       weighf, weighb,
                       icvflb, icvfli,
-                      smbrp,
+                      rhs,
                       nullptr, nullptr);
   else {
     cs_mesh_t *mesh = cs_glob_mesh;
@@ -276,7 +276,7 @@ cs_balance_scalar(int                         idtvar,
                       xcpp,
                       weighf, weighb,
                       icvflb, icvfli,
-                      smbrp,
+                      rhs,
                       nullptr, nullptr);
   }
 }
@@ -349,7 +349,7 @@ END_C_DECLS
  * \param[in]     icvfli        boundary face indicator array of convection flux
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
- * \param[in,out] smbrp         right hand side \f$ \vect{Rhs} \f$
+ * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/
 
@@ -375,7 +375,7 @@ cs_balance_scalar(int                         idtvar,
                   const cs_real_t             weighb[],
                   int                         icvflb,
                   const int                   icvfli[],
-                  cs_real_t                   smbrp[])
+                  cs_real_t                   rhs[])
 {
   cs_balance_scalar(idtvar,
                     f_id,
@@ -390,7 +390,7 @@ cs_balance_scalar(int                         idtvar,
                     xcpp,
                     weighf, weighb,
                     icvflb, icvfli,
-                    smbrp,
+                    rhs,
                     nullptr, nullptr);
 }
 
@@ -460,7 +460,7 @@ cs_balance_scalar(int                         idtvar,
  * \param[in]     icvfli        boundary face indicator array of convection flux
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
- * \param[in,out] smbrp         right hand side \f$ \vect{Rhs} \f$
+ * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  * \param[in,out] i_flux        interior flux (or nullptr)
  * \param[in,out] b_flux        boundary flux (or nullptr)
  */
@@ -488,7 +488,7 @@ cs_balance_scalar(int                         idtvar,
                   const cs_real_t             weighb[],
                   int                         icvflb,
                   const int                   icvfli[],
-                  cs_real_t                   smbrp[],
+                  cs_real_t                   rhs[],
                   cs_real_2_t                 i_flux[],
                   cs_real_t                   b_flux[])
 {
@@ -530,7 +530,7 @@ cs_balance_scalar(int                         idtvar,
                                      b_massflux,
                                      i_visc,
                                      b_visc,
-                                     smbrp,
+                                     rhs,
                                      i_flux,
                                      b_flux);
     }
@@ -551,7 +551,7 @@ cs_balance_scalar(int                         idtvar,
                                       i_visc,
                                       b_visc,
                                       xcpp,
-                                      smbrp);
+                                      rhs);
     }
   }
   /* Symmetric tensor diffusivity */
@@ -575,7 +575,7 @@ cs_balance_scalar(int                         idtvar,
                                      b_massflux,
                                      i_visc,
                                      b_visc,
-                                     smbrp,
+                                     rhs,
                                      i_flux,
                                      b_flux);
     }
@@ -596,7 +596,7 @@ cs_balance_scalar(int                         idtvar,
                                       i_visc,
                                       b_visc,
                                       xcpp,
-                                      smbrp);
+                                      rhs);
     }
 
     /* Diffusive part */
@@ -615,7 +615,7 @@ cs_balance_scalar(int                         idtvar,
                                       viscel,
                                       weighf,
                                       weighb,
-                                      smbrp);
+                                      rhs);
     }
   }
 
@@ -908,7 +908,7 @@ cs_balance_vector(int                         idtvar,
  * \param[in]     icvfli        boundary face indicator array of convection flux
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
- * \param[in,out] smbrp         right hand side \f$ \vect{Rhs} \f$
+ * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/
 
@@ -932,7 +932,7 @@ cs_balance_tensor(int                         idtvar,
                   const cs_real_t             weighb[],
                   int                         icvflb,
                   const int                   icvfli[],
-                  cs_real_6_t                 smbrp[])
+                  cs_real_6_t                 rhs[])
 {
   CS_UNUSED(icvfli);
 
@@ -974,7 +974,7 @@ cs_balance_tensor(int                         idtvar,
                                    b_massflux,
                                    i_visc,
                                    b_visc,
-                                   smbrp);
+                                   rhs);
   }
   /* Symmetric tensor diffusivity */
   else if (idftnp & CS_ANISOTROPIC_RIGHT_DIFFUSION) {
@@ -997,7 +997,7 @@ cs_balance_tensor(int                         idtvar,
                                      b_massflux,
                                      i_visc,
                                      b_visc,
-                                     smbrp);
+                                     rhs);
     }
     /* Diffusive part (with a 6x6 symmetric diffusivity) */
     if (idiffp == 1) {
@@ -1015,7 +1015,7 @@ cs_balance_tensor(int                         idtvar,
                                       viscel,
                                       weighf,
                                       weighb,
-                                      smbrp);
+                                      rhs);
     }
   }
 

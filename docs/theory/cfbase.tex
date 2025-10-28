@@ -941,7 +941,7 @@ Le sous-programme \fort{cfcdts} est similaire à \fort{cs\_equation\_iterative\_
 à \fort{cfbsc2} et non pas à \fort{cs\_balance}.
 Il diffère de \fort{cs\_equation\_iterative\_solve} par quelques autres détails qui ne sont pas
 gênants dans l'immédiat~:
-initialisation de PVARA et de SMBINI,
+initialisation de PVARA et de RHSINI,
 %nombre d'itérations pour le second membre (NSWRSM-1 au lieu de NSWRSM),
 %mode de détermination du solveur (IRESLP),
 %test de convergence sur RNORM (comparé à 0.D0 au lieu de EPZERO),
@@ -968,11 +968,11 @@ les fusionner pour éviter qu'ils ne divergent)~:
         \begin{itemize}
         \item \fort{cfcdts} et \fort{cs\_equation\_iterative\_solve},
 %(actuellement pour PVARA et
-%                SMBINI, mais à plus long terme pour éviter que les
+%                RHSINI, mais à plus long terme pour éviter que les
 %                deux sous-programmes ne divergent),
 % propose en patch 1.2.1
 %        \item \fort{cfcdts} et \fort{cs\_equation\_iterative\_solve}
-%                (au moins pour PVARA, SMBINI, NSWRSM,
+%                (au moins pour PVARA, RHSINI, NSWRSM,
 %                IRESLP, RNORM),
         \item \fort{cfbsc2} et \fort{cs\_balance},
         \item \fort{cfbsc3} et \fort{cs\_balance}.
