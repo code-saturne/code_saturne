@@ -817,7 +817,7 @@ _update_boundary_face_type(void)
 
   {
     int *bc_flag;
-    CS_MALLOC_HD(bc_flag, mesh->n_b_faces, int);
+    CS_MALLOC_HD(bc_flag, mesh->n_b_faces, int, cs_alloc_mode);
 
     for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++)
       bc_flag[i] = bcs->elt_type[i];
@@ -984,7 +984,7 @@ cs_lagr_init_arrays(void)
   assert(bound_stat == nullptr);
 
   if (n_boundary_stats > 0)
-    CS_MALLOC_HD(bound_stat, n_b_faces * n_boundary_stats, cs_real_t);
+    CS_MALLOC_HD(bound_stat, n_b_faces * n_boundary_stats, cs_real_t, cs_alloc_mode);
 }
 
 /*----------------------------------------------------------------------------
@@ -1533,7 +1533,7 @@ cs_lagr_get_internal_conditions(void)
   if (cs_glob_lagr_internal_conditions->i_face_zone_id == nullptr) {
     CS_MALLOC_HD(cs_glob_lagr_internal_conditions->i_face_zone_id,
                cs_glob_mesh->n_i_faces,
-               int);
+               int, cs_alloc_mode);
 
     for (cs_lnum_t i = 0; i < cs_glob_mesh->n_i_faces; i++)
       cs_glob_lagr_internal_conditions->i_face_zone_id[i] = -1;
@@ -1754,13 +1754,13 @@ cs_lagr_solve_time_step(const int         itypfb[],
   if (   lagr_model->clogging == 1
       || lagr_model->roughness == 1
       || lagr_model->dlvo == 1)
-    CS_MALLOC_HD(tempp, mesh->n_cells, cs_real_t);
+    CS_MALLOC_HD(tempp, mesh->n_cells, cs_real_t, cs_alloc_mode);
 
   ipass ++;
 
   static cs_real_t *vislen = nullptr;
   if ((lagr_model->deposition == 1) && (ipass == 1)) {
-    CS_MALLOC_HD(vislen, n_b_faces, cs_real_t);
+    CS_MALLOC_HD(vislen, n_b_faces, cs_real_t, cs_alloc_mode);
     for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
       vislen[ifac] = -cs_math_big_r;
   }
@@ -2127,41 +2127,41 @@ cs_lagr_solve_time_step(const int         itypfb[],
       /* First pass allocate and compute it */
       if (extra_i[phase_id].grad_pr == nullptr) {
         const cs_lnum_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
-        CS_MALLOC_HD(extra_i[phase_id].grad_pr, ncelet, cs_real_3_t);
+        CS_MALLOC_HD(extra_i[phase_id].grad_pr, ncelet, cs_real_3_t, cs_alloc_mode);
 
         // TODO : check if the pressure and velocity allocs can be removed
         if (  (    cs_glob_lagr_time_scheme->interpol_field != 0
                || cs_glob_lagr_time_scheme->extended_t_scheme != 0)
             && cs_glob_lagr_model->idistu == 1)
-          CS_MALLOC_HD(extra_i[phase_id].grad_lagr_time, ncelet, cs_real_3_t);
+          CS_MALLOC_HD(extra_i[phase_id].grad_lagr_time, ncelet, cs_real_3_t, cs_alloc_mode);
 
         if (   cs_glob_lagr_model->modcpl > 0
             || cs_glob_lagr_model->shape > 0
             || cs_glob_lagr_time_scheme->interpol_field != 0)
-          CS_MALLOC_HD(extra_i[phase_id].grad_vel, ncelet, cs_real_33_t);
+          CS_MALLOC_HD(extra_i[phase_id].grad_vel, ncelet, cs_real_33_t, cs_alloc_mode);
 
         if (   cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_OFF
             && extra->temperature != nullptr
             && cs_glob_lagr_time_scheme->interpol_field > 0
             && phase_id == 0)
-          CS_MALLOC_HD(extra_i[phase_id].grad_tempf, ncelet, cs_real_3_t);
+          CS_MALLOC_HD(extra_i[phase_id].grad_tempf, ncelet, cs_real_3_t, cs_alloc_mode);
 
         /* Allocate the gradients of second order statistics */
         for (int i = 0; i < 9; i++)
-          CS_MALLOC_HD(extra_i[phase_id].grad_cov_skp[i], ncelet, cs_real_3_t);
+          CS_MALLOC_HD(extra_i[phase_id].grad_cov_skp[i], ncelet, cs_real_3_t, cs_alloc_mode);
         for (int i = 0; i < 6; i++)
-          CS_MALLOC_HD(extra_i[phase_id].grad_cov_sk[i], ncelet, cs_real_3_t);
+          CS_MALLOC_HD(extra_i[phase_id].grad_cov_sk[i], ncelet, cs_real_3_t, cs_alloc_mode);
 
         if (   cs_glob_lagr_time_scheme->extended_t_scheme !=0
             && cs_glob_lagr_model->idistu == 1) {
-            CS_MALLOC_HD(extra_i[phase_id].grad_lagr_time, ncelet, cs_real_3_t);
+            CS_MALLOC_HD(extra_i[phase_id].grad_lagr_time, ncelet, cs_real_3_t, cs_alloc_mode);
             if (cs_glob_lagr_model->modcpl == 1)
-              CS_MALLOC_HD(extra_i[phase_id].grad_lagr_time_r_et, ncelet, cs_real_3_t);
+              CS_MALLOC_HD(extra_i[phase_id].grad_lagr_time_r_et, ncelet, cs_real_3_t, cs_alloc_mode);
         }
 
         if (cs_glob_lagr_model->modcpl > 0) {
-          CS_MALLOC_HD(extra_i[phase_id].anisotropic_lagr_time, ncelet, cs_real_3_t);
-          CS_MALLOC_HD(extra_i[phase_id].anisotropic_bx, ncelet, cs_real_3_t);
+          CS_MALLOC_HD(extra_i[phase_id].anisotropic_lagr_time, ncelet, cs_real_3_t, cs_alloc_mode);
+          CS_MALLOC_HD(extra_i[phase_id].anisotropic_bx, ncelet, cs_real_3_t, cs_alloc_mode);
         }
         cs_lagr_aux_mean_fluid_quantities(0,
                                           phase_id,
@@ -2257,8 +2257,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
       n_occupied_cells
         = _get_n_occupied_cells(p_set, 0, p_set->n_particles);
 
-      CS_MALLOC_HD(occupied_cell_ids, n_occupied_cells, cs_lnum_t);
-      CS_MALLOC_HD(particle_list, n_occupied_cells+1, cs_lnum_t);
+      CS_MALLOC_HD(occupied_cell_ids, n_occupied_cells, cs_lnum_t, cs_alloc_mode);
+      CS_MALLOC_HD(particle_list, n_occupied_cells+1, cs_lnum_t, cs_alloc_mode);
 
       _occupied_cells(p_set, 0, p_set->n_particles,
                       n_occupied_cells,
@@ -2275,7 +2275,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
       /* Initialize lists (ids of cells and particles) */
       cs_lnum_t *cell_particle_idx;
 
-      CS_MALLOC_HD(cell_particle_idx, n_occupied_cells+1, cs_lnum_t);
+      CS_MALLOC_HD(cell_particle_idx, n_occupied_cells+1, cs_lnum_t, cs_alloc_mode);
       cell_particle_idx[0] = 0;
 
       cs_lnum_t enter_parts = p_set->n_particles;

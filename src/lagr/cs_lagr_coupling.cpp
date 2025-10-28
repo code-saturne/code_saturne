@@ -132,8 +132,8 @@ cs_lagr_coupling_initialize(void)
                            && lag_st->npts > 0);
 
   /* Init particle volume and mass in cell */
-  CS_MALLOC_HD(volp, n_cells_ext, cs_real_t);
-  CS_MALLOC_HD(volm, n_cells_ext, cs_real_t);
+  CS_MALLOC_HD(volp, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(volm, n_cells_ext, cs_real_t, cs_alloc_mode);
   cs_array_real_fill_zero(n_cells_ext, volp);
   cs_array_real_fill_zero(n_cells_ext, volm);
 
@@ -141,8 +141,8 @@ cs_lagr_coupling_initialize(void)
     /* Momentum source terms
        ===================== */
     if (is_time_averaged) {
-      CS_MALLOC_HD(t_st_vel, n_cells_ext, cs_real_3_t);
-      CS_MALLOC_HD(t_st_imp_vel, n_cells_ext, cs_real_t);
+      CS_MALLOC_HD(t_st_vel, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+      CS_MALLOC_HD(t_st_imp_vel, n_cells_ext, cs_real_t, cs_alloc_mode);
     }
     else {
       if (f_st_vel != nullptr)
@@ -164,14 +164,14 @@ cs_lagr_coupling_initialize(void)
          (difficult to write something for v2, which loses its meaning as
          "Rij component") */
       if (is_time_averaged)
-        CS_MALLOC_HD(t_st_k, n_cells_ext, cs_real_t);
+        CS_MALLOC_HD(t_st_k, n_cells_ext, cs_real_t, cs_alloc_mode);
       else if (f_st_k != nullptr)
         t_st_k = f_st_k->val;
       cs_array_real_fill_zero(n_cells_ext, t_st_k);
     }
     else if (extra->itytur == 3) {
       if (is_time_averaged)
-        CS_MALLOC_HD(t_st_rij, n_cells_ext, cs_real_6_t);
+        CS_MALLOC_HD(t_st_rij, n_cells_ext, cs_real_6_t, cs_alloc_mode);
       else if (f_st_rij != nullptr)
         t_st_rij = (cs_real_6_t*)(f_st_rij->val);
       cs_array_real_fill_zero(n_cells_ext * 6, (cs_real_t *)t_st_rij);
@@ -186,7 +186,7 @@ cs_lagr_coupling_initialize(void)
           || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR )) {
     if (t_st_p == nullptr) {
       if (is_time_averaged)
-        CS_MALLOC_HD(t_st_p, n_cells_ext, cs_real_t);
+        CS_MALLOC_HD(t_st_p, n_cells_ext, cs_real_t, cs_alloc_mode);
       else if (f_st_p != nullptr)
         t_st_p = f_st_p->val;
     }
@@ -208,8 +208,8 @@ cs_lagr_coupling_initialize(void)
         || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
 
       if (is_time_averaged) {
-        CS_MALLOC_HD(t_st_t_e, n_cells_ext, cs_real_t);
-        CS_MALLOC_HD(t_st_t_i, n_cells_ext, cs_real_t);
+        CS_MALLOC_HD(t_st_t_e, n_cells_ext, cs_real_t, cs_alloc_mode);
+        CS_MALLOC_HD(t_st_t_i, n_cells_ext, cs_real_t, cs_alloc_mode);
       }
       else {
         t_st_t_e = f_st_t_e->val;

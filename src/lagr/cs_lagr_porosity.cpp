@@ -123,7 +123,7 @@ cs_lagr_porosity(void)
   const cs_lnum_t n_i_faces = mesh->n_i_faces;
 
   cs_real_t *covered_surface = nullptr;
-  CS_MALLOC_HD(covered_surface, mesh->n_cells_with_ghosts, cs_real_t);
+  CS_MALLOC_HD(covered_surface, mesh->n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
 
   /* Initialization */
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)

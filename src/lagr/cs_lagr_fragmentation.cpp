@@ -450,11 +450,11 @@ cs_lagr_fragmentation(cs_real_t  dt,
 
   /* Create local array (containing the particle index) */
   cs_lnum_t *corr;
-  CS_MALLOC_HD(corr, lnum_particles, cs_lnum_t);
+  CS_MALLOC_HD(corr, lnum_particles, cs_lnum_t, cs_alloc_mode);
 
   /* Create local list (containing the class and the global index) */
   cs_lnum_2_t * interf;
-  CS_MALLOC_HD(interf, lnum_particles, cs_lnum_2_t);
+  CS_MALLOC_HD(interf, lnum_particles, cs_lnum_2_t, cs_alloc_mode);
 
   /* Browse the list of particles already existing */
   for (cs_lnum_t idx = main_start; idx < main_end; ++idx) {
@@ -541,7 +541,7 @@ cs_lagr_fragmentation(cs_real_t  dt,
 
   /* Local array to save new fragments (class, index) */
   cs_lnum_2_t *interf_frag;
-  CS_MALLOC_HD(interf_frag, newpart, cs_lnum_2_t);
+  CS_MALLOC_HD(interf_frag, newpart, cs_lnum_2_t, cs_alloc_mode);
 
   for (cs_lnum_t i=0; i<newpart; ++i) {
     cs_lnum_t curr_class
@@ -562,7 +562,7 @@ cs_lagr_fragmentation(cs_real_t  dt,
 
   /* Sort all particles in a cell by class */
   cs_lnum_2_t *interf_tot;
-  CS_MALLOC_HD(interf_tot, tot_size, cs_lnum_2_t);
+  CS_MALLOC_HD(interf_tot, tot_size, cs_lnum_2_t, cs_alloc_mode);
 
   cs_lagr_agglo_merge_arrays(interf, interf_frag,
                              lnum_particles, newpart, interf_tot);
@@ -575,7 +575,7 @@ cs_lagr_fragmentation(cs_real_t  dt,
   /* Split the local particle set by class to facilitate merging */
   cs_lnum_t* cls_gaps;
 
-  CS_MALLOC_HD(cls_gaps, tot_size+1, cs_lnum_t);
+  CS_MALLOC_HD(cls_gaps, tot_size+1, cs_lnum_t, cs_alloc_mode);
 
   _gaps_classes(interf_tot, tot_size,
                 nb_cls, cls_gaps);
