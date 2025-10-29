@@ -5162,6 +5162,10 @@ cs_atmo_read_meteo_profile(int mode)
 
   FILE *file = fopen(name, "r");
 
+  if (file == nullptr)
+    bft_error(__FILE__, __LINE__, 0,
+        _("Could not find meteo file of name %s. Check your DATA.\n"), name);
+
   // flag to take into account the humidity
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
     ih2o = 1;
