@@ -102,6 +102,7 @@ BEGIN_C_DECLS
         - CS_TURB_RIJ_EPSILON_LRR: \f$ R_{ij}-\epsilon \f$ (LRR)
         - CS_TURB_RIJ_EPSILON_SSG: \f$ R_{ij}-\epsilon \f$ (SSG)
         - CS_TURB_RIJ_EPSILON_EBRSM: \f$ R_{ij}-\epsilon \f$ (EBRSM)
+        - CS_TURB_RIJ_EPSILON_BFH: \f$ R_{ij}-\epsilon \f$ (BFH)
         - CS_TURB_LES_SMAGO_CONST: LES (constant Smagorinsky model)
         - CS_TURB_LES_SMAGO_DYN: LES ("classical" dynamic Smagorisky model)
         - CS_TURB_LES_WALE: LES (WALE)
@@ -1083,6 +1084,9 @@ _turbulence_model_enum_name(cs_turb_model_type_t  id)
   case CS_TURB_RIJ_EPSILON_EBRSM:
     s = "CS_TURB_RIJ_EPSILON_EBRSM";
     break;
+  case CS_TURB_RIJ_EPSILON_BFH:
+    s = "CS_TURB_RIJ_EPSILON_BFH";
+    break;
   case CS_TURB_LES_SMAGO_CONST:
     s = "CS_TURB_LES_SMAGO_CONST";
     break;
@@ -1154,6 +1158,7 @@ cs_turbulence_init_models(void)
   }
   else if (   _turb_model.model == CS_TURB_RIJ_EPSILON_LRR
            || _turb_model.model == CS_TURB_RIJ_EPSILON_SSG
+           || _turb_model.model == CS_TURB_RIJ_EPSILON_BFH
            || _turb_model.model == CS_TURB_RIJ_EPSILON_EBRSM) {
     _turb_model.type = CS_TURB_RANS;
     _turb_model.order = CS_TURB_SECOND_ORDER;
@@ -1264,7 +1269,8 @@ cs_turb_compute_constants(int phase_id)
     cs_field_set_key_double(f_phi, k_turb_schmidt, 1.);
 
   if (   cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_LRR
-      || cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_SSG)
+      || cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_SSG
+      || cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_BFH)
     cs_field_set_key_double(f_eps, k_turb_schmidt, 1.22);
   else if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
     cs_field_set_key_double(f_eps, k_turb_schmidt, 1.15);
@@ -1321,6 +1327,7 @@ cs_turb_compute_constants(int phase_id)
     cs_turb_crij_c0 = (cs_turb_crij1-1.0)*2.0/3.0;
 
   if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_SSG
+      || cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_BFH
       || cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM
       || cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K)
     cs_turb_ce2 = 1.83;
@@ -1431,6 +1438,9 @@ cs_turbulence_model_name(cs_turb_model_type_t  id)
     break;
   case CS_TURB_RIJ_EPSILON_EBRSM:
     s = _("Rij-epsilon (EBRSM))");
+    break;
+  case CS_TURB_RIJ_EPSILON_BFH:
+    s = _("Rij-epsilon (BFH)");
     break;
   case CS_TURB_LES_SMAGO_CONST:
     s = _("LES (constant Smagorinsky model)");
@@ -1844,6 +1854,23 @@ cs_turb_constants_log_setup(void)
          cs_turb_crij1, cs_turb_crij2,
          cs_turb_crij3, cs_turb_csrij, cs_turb_crijp1,
          cs_turb_crijp2, cs_turb_ce1, cs_turb_ce2,cs_turb_ce3, cs_turb_cmu);
+
+  else if (turb_model->model == CS_TURB_RIJ_EPSILON_BFH)
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("    cssgs1:      %14.5e (Cs1 coeff.)\n"
+         "    cssgs2:      %14.5e (Cs2 coeff.)\n"
+         "    cssgr1:      %14.5e (Cr1 coeff.)\n"
+         "    csrij:       %14.5e (Rij Cs diffusion coeff.)\n"
+         "    crij3:       %14.5e (Gravity term coeff.)\n"
+         "    ce1:         %14.5e (Cepsilon 1: production coef.)\n"
+         "    ce2:         %14.5e (Cepsilon 2: dissipat.  coef.)\n"
+         "    ce3:         %14.5e (Cepsilon 3: dissipat.  coef.)\n"
+         "    cmu:         %14.5e (Cmu constant)\n"),
+         cs_turb_cssgs1, cs_turb_cssgs2, cs_turb_cssgr1,
+         cs_turb_csrij, cs_turb_crij3,
+         cs_turb_ce1, cs_turb_ce2, cs_turb_ce3,
+         cs_turb_cmu);
 
   else if (turb_model->model == CS_TURB_RIJ_EPSILON_SSG)
     cs_log_printf
