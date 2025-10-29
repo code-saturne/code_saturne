@@ -42,10 +42,16 @@ AC_ARG_WITH(mumps,
 
 if test "x$with_mumps" != "xno" ; then
 
+  mumps_topdir=""
   if test -f ${with_mumps}/Makefile.inc ; then
-    MUMPS_CPPFLAGS=$(make -s -f "$cs_abs_srcdir/build-aux/mumps.makefile" topdir="${with_mumps}" getincludedirs)
-    MUMPS_LDFLAGS=$(make -s -f "$cs_abs_srcdir/build-aux/mumps.makefile" topdir="${with_mumps}" getlibdirs)
-    MUMPS_LIBS=$(make -s -f "$cs_abs_srcdir/build-aux/mumps.makefile" topdir="${with_mumps}" getlinklibs)
+    mumps_topdir="${with_mumps}"
+  elif test -f ${with_mumps}/share/Makefile.inc ; then
+    mumps_topdir="${with_mumps}/share"
+  fi
+  if test -n "${mumps_topdir}" ; then
+    MUMPS_CPPFLAGS=$(make -s -f "$cs_abs_srcdir/build-aux/mumps.makefile" topdir="${mumps_topdir}" getincludedirs)
+    MUMPS_LDFLAGS=$(make -s -f "$cs_abs_srcdir/build-aux/mumps.makefile" topdir="${mumps_topdir}" getlibdirs)
+    MUMPS_LIBS=$(make -s -f "$cs_abs_srcdir/build-aux/mumps.makefile" topdir="${mumps_topdir}" getlinklibs)
   fi
 
   MUMPS="${with_mumps}"
