@@ -12,6 +12,11 @@ Release 9.0.2 (unreleased)
 
 - Add C16H34 and C2H6O in JANAF.
 
+### Architectural changes:
+
+- Fix for detection of MUMPS v5.7 and above. With those versions, the
+  `Makefile.inc` file is located in a `share` subdirectory.
+
 Release 9.0.1 (2025-10-17)
 --------------------------
 
