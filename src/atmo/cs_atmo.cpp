@@ -550,6 +550,11 @@ cs_f_ssh_dimensions(int  *spack_n_species,
                     int  *n_photolysis);
 
 void
+cs_ext_polyphemus_ssh_dimensions(int  *spack_n_species,
+                                 int  *n_reactions,
+                                 int  *n_photolysis);
+
+void
 cs_f_atmo_soil_init_arrays(int       *n_soil_cat,
                            cs_real_t **csol,
                            cs_real_t **rugdyn,
@@ -5337,9 +5342,19 @@ cs_atmo_init_chemistry(void)
     cs_atmo_declare_chem_from_spack();
 
     int  spack_n_species, n_photolysis;
+
+    /* New binding (not compatible with previous versions). Allowed
+       in v9.0 as this was used in the v9.0 validation, removed in
+       v9.1 so as to return to previous Fortran function, which does
+       not use iso c bindings. */
     cs_f_ssh_dimensions(&spack_n_species,
                         &_atmo_chem.n_reactions,
                         &n_photolysis);
+
+    /* Second (classical, pre and post-v9.0) binding */
+    cs_ext_polyphemus_ssh_dimensions(&spack_n_species,
+                                     &_atmo_chem.n_reactions,
+                                     &n_photolysis);
 
     if (spack_n_species != _atmo_chem.n_species)
       bft_error(__FILE__, __LINE__, 0,
