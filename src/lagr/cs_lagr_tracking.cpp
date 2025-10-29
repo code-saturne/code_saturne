@@ -2288,7 +2288,7 @@ _local_propagation(cs_lagr_particle_set_t         *p_set,
     max_propagation_loops = cs::max(mesh->n_cells, max_propagation_loops);
 
   /* local loops on the cell within a given proc
-   * if either the deterministic virtual partiner or the stochastic particle
+   * if either the deterministic virtual partner or the stochastic particle
    * is blocked on face_treatment the particle is blocked *
    * current tracking step associated to the particle
    *  0 : ghost trajectory associated to deterministic virtual partner
@@ -3684,19 +3684,19 @@ _finalize_displacement(cs_lagr_particle_set_t  *p_set)
 
   /* Copy unordered particle data to buffer */
 
-  for (cs_lnum_t i = 0; i < n_particles; i++) {
+  for (cs_lnum_t p_id = 0; p_id < n_particles; p_id++) {
 
-    cs_lnum_t cur_part_state = _get_tracking_info(p_set, i)->state;
+    cs_lnum_t cur_part_state = _get_tracking_info(p_set, p_id)->state;
 
     CS_NO_WARN_IF_UNUSED(cur_part_state);
     assert(   cur_part_state < CS_LAGR_PART_OUT
            && cur_part_state != CS_LAGR_PART_TO_SYNC);
 
-    cs_lnum_t cell_id = cs_lagr_particles_get_lnum(p_set, i,
+    cs_lnum_t cell_id = cs_lagr_particles_get_lnum(p_set, p_id,
                                                    CS_LAGR_CELL_ID);
 
-    memcpy(swap_buffer + p_am->extents*i,
-           p_set->p_buffer + p_am->extents*i,
+    memcpy(swap_buffer + p_am->extents*p_id,
+           p_set->p_buffer + p_am->extents*p_id,
            p_am->extents);
 
     cell_idx[cell_id+1] += 1;
@@ -3715,10 +3715,10 @@ _finalize_displacement(cs_lagr_particle_set_t  *p_set)
   const cs_lnum_t p_extents = p_set->p_am->extents;
   const cs_lnum_t cell_num_displ = p_set->p_am->displ[0][CS_LAGR_CELL_ID];
 
-  for (cs_lnum_t i = 0; i < n_particles; i++) {
+  for (cs_lnum_t p_id = 0; p_id < n_particles; p_id++) {
 
     cs_lnum_t cell_id
-      = *((const cs_lnum_t *)(swap_buffer + p_extents*i + cell_num_displ));
+      = *((const cs_lnum_t *)(swap_buffer + p_extents*p_id + cell_num_displ));
 
     assert(cell_id > -1);
 
@@ -3727,7 +3727,7 @@ _finalize_displacement(cs_lagr_particle_set_t  *p_set)
     cell_idx[cell_id] += 1;
 
     memcpy(p_set->p_buffer + p_am->extents*particle_id,
-           swap_buffer + p_am->extents*i,
+           swap_buffer + p_am->extents*p_id,
            p_am->extents);
 
   }
