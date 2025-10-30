@@ -3,6 +3,8 @@ Release 9.0.2 (unreleased)
 
 ### Bug fixes:
 
+- Lagrangian module: fix bug in two-way coupling with mass-source terms.
+
 - Fix "off by one" slection of boundary face used for free outlet
   reference pressure.
 
