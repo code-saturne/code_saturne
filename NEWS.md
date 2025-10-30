@@ -85,13 +85,13 @@ Release 9.0.1 (2025-10-17)
 - Fix memory leak with some multigrid setup combinations
   (including GUi-defined "multigrid as a solver" option).
 
-- Fix periocidity with CDO-Fb scheme. It is now forbidden to have more than one
+- Fix periodicity with CDO-Fb scheme. It is now forbidden to have more than one
   periodic face per cell.
 
 - Fix the time used to solve CDO equations after FV-NSE since there is a
   constant offset between them.
 
-- Fix treatments of BC conditions with CDO-FB. If imposed pression is used on a
+- Fix treatments of BC conditions with CDO-FB. If imposed pressure is used on a
   face, it can be missed by other boundary faces of the same cells.
 
 - Reintroduce `CS_BC_HMG_NEUMANN` since it is really different from
@@ -102,7 +102,7 @@ Release 9.0.1 (2025-10-17)
 
 - Fix the number of digit read to determine job id in SMGR
 
-- Advection schemes with CDO-Fb scheme are completly rewritten.
+- Advection schemes with CDO-Fb scheme are completely rewritten.
 
 ### User changes:
 
