@@ -883,7 +883,7 @@ _pressure_correction_fv(int                   iterns,
 
     if (f_hp != nullptr && indhyd == 1) {
 
-      cs_lnum_t f_id_0 = isostd[n_b_faces] - 1;
+      cs_lnum_t f_id_0 = isostd[n_b_faces];
       if (f_id_0 > -1) {
         cs_lnum_t c_id_0 = b_face_cells[f_id_0];
         cs_real_t d[3] = {b_face_cog[f_id_0][0] - cell_cen[c_id_0][0],

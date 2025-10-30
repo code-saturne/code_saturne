@@ -3,6 +3,9 @@ Release 9.0.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix "off by one" slection of boundary face used for free outlet
+  reference pressure.
+
 - Atmospheric Chemistry: fix run with use of SPACK-generated sources.
   In v9.0.0, a spurious change required binding the `ssh_dimensions`
   function to the `cs_f_ssh_dimensions` C name. This is not needed
