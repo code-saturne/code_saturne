@@ -2033,10 +2033,10 @@ _pressure_correction_fv(int                   iterns,
   if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
       && cs_glob_lagr_source_terms->ltsmas == 1) {
 
-    cs_real_t *lag_st_m = cs_field_by_name("lagr_st_pressure")->val;
+    cs_real_t *t_st_p = cs_field_by_name("lagr_st_pressure")->val;
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      cpro_divu[c_id] -= lag_st_m[c_id];
+      cpro_divu[c_id] -= t_st_p[c_id] * cell_vol[c_id];
     });
   }
 
