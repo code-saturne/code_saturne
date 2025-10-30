@@ -952,11 +952,11 @@ vector in the boundary face.
 Then remark that the value at the boundary face $\fib$ is linked
 to the pressure value in $\centip$ by the relationship:
 \begin{equation*}
-P_\fib = P_{\centip} +  \grad_\celli P \cdot \vect{\centip\centf}.
+  P_\fib = P_{\centip} +  \grad_\celli P \cdot (\centf -\centip).
 \end{equation*}
 If moreover we assume that the pressure gradient in the normal direction
 is uniform, and that all the $\centip$ related to the outlet faces are on
-a single plane parallel to the outlet, then the value of $ \grad_\celli P \cdot \vect{\centip\centf} $
+a single plane parallel to the outlet, then the value of $ \grad_\celli P \cdot (\centf- \centip) $
 is constant for all the faces and denoted $R$.
 
 Furthermore, the pressure is defined up to a constant, so the code
