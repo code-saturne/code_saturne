@@ -5137,11 +5137,17 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
   /* Allocate work arrays */
   CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
-  /* Choose gradient type */
+  /* Choose gradient type
+     (here, we do not use the "fast, "reconstruction-only"
+     gradient defined by eqp.d_gradient_r and defaulting
+     to least-squares, as this seems to degrade convergence
+     on the FVCA test cases, and a Gauss-based gradient
+     seems necessary in this anisotropic case).*/
+
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  cs_gradient_type_by_imrgra(eqp.d_gradient_r,
+  cs_gradient_type_by_imrgra(eqp.imrgra,
                              &gradient_type,
                              &halo_type);
 
