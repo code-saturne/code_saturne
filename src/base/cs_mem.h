@@ -910,7 +910,11 @@ cs_mem_advise_unset_read_mostly(void  *ptr);
 
 #else
 
-#define cs_mem_advise_unset_read_mostly(ptr);
+static inline void
+cs_mem_advise_unset_read_mostly(void  *ptr)
+{
+  CS_UNUSED(ptr);
+}
 
 #endif
 
