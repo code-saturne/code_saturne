@@ -741,15 +741,9 @@ cs_gradient_boundary_iprime_lsq_s_ani
     cs_lnum_t f_id = (face_ids != nullptr) ? face_ids[f_idx] : f_idx;
     cs_lnum_t c_id = b_face_cells[f_id];
 
-    /* No reconstruction needed if I and I' are coincident' */
-
-    if (  cs_math_3_square_norm(diipb[f_id])
-        < cs_math_pow2(b_dist[f_id]) * _eps_r_2) {
-      var_iprime[f_idx] = var[c_id];
-      if (var_iprime_flux != nullptr)
-        var_iprime_flux[f_idx] = var[c_id];
-      return;
-    }
+    /* Reconstruction is needed even if geometric I and I' are coincident,
+       because in the anisotropic case, a local diippf is recomputed
+       based on values of the cell diffusivity. */
 
     /* Reconstruct gradients using least squares for non-orthogonal meshes */
 
