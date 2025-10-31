@@ -3,6 +3,9 @@ Release 9.0.2 (unreleased)
 
 ### Bug fixes:
 
+- Gas combustion: fix setup check "false positive" error when soot model
+  is not used.
+
 - Fix partitioning-dependent memory leak with tensor diffusivity (GGDH).
 
 - Lagrangian module: fix bug in two-way coupling with mass-source terms.
