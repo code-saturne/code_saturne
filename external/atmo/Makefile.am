@@ -39,6 +39,7 @@ AM_LDFLAGS =
 noinst_LIBRARIES = libextatmo.a
 libextatmo_a_SOURCES = \
 cs_polyphemus_spack.f90 \
+cs_polyphemus_spack_compat.f90 \
 chem_luscheme1.f90 \
 chem_luscheme2.f90 \
 chem_luscheme3.f90
