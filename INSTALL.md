@@ -997,8 +997,9 @@ those 2 modules.
     using a binary ParaView distribution is possible, provided the
     associated MPI library is compatible.
 
-The following examples refer to Catalyst1, as use of Catalyst2 in
-code_saturne is still missing some features.
+The following examples refer to Catalyst1. To use Catalyst2, at least
+ParaView version 6.0.1-863-ga458993448 (2025-10-31) should be used
+otherwise some features (such as ghost cells generation) may be missing.
 
 By default, ParaView is built with a GUI, but it may also be be
 built using OSMesa or EGL for offscreen rendering. The build documentation
@@ -1049,6 +1050,13 @@ On at least one system (with RHEL 8.3 and the gcc 8.3.1 compiler),
 a crash at finalization of Catalyst has been observed. If this is the case,
 setting the `CS_PV_CP_DELETE_CRASH_WORKAROUND` environment variable to 1
 should avoid calling the offending code.
+
+When using Catalyst2, the `CATALYST_IMPLEMENTATION_NAME` environment
+variable must be set to `paraview` for actual output.
+The `CATALYST_IMPLEMENTATION_PATHS` environment variable must also
+be used to specifiy the ParaView installation's `lib/catalyst`
+directory. Note that by changing this path, it is possible to use
+multiple ParaView versions with a single code_saturne build.
 
 ### Coupling with SYRTHES
 

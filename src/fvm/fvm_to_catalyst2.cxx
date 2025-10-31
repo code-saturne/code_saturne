@@ -959,6 +959,10 @@ _export_global_vtx_ids(const fvm_nodal_t     *mesh,
   field["volume_dependent"].set_string("false");  // true if extensive
   field["values"].set(global_ids, n_vtx);
 
+  // Set associated VTK metadata
+  auto field_metadata = mesh_node["state/metadata/vtk_fields/GlobalNodeIds"];
+  field_metadata["attribute_type"] = "GlobalIds";
+
   if (_debug_print)
     field.print();  // dump local field to stdout (debug)
 
