@@ -420,7 +420,7 @@ cs_user_lagr_in
     /* velocity */
 
     auto part_vel
-      = cs_lagr_particles_attr_get_ptr<cs_real_t>(particles, p_id, CS_LAGR_VELOCITY);
+      = cs_lagr_particles_attr_n_get_ptr<cs_real_t>(particles, p_id, 1, CS_LAGR_VELOCITY);
     part_vel[0] = 1.0;
     part_vel[1] = 0.0;
     part_vel[2] = 0.0;
