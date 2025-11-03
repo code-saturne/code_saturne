@@ -2339,6 +2339,7 @@ _additional_fields_stage_2(void)
                             1,
                             false);
     cs_field_set_key_int(f, keyvis, CS_POST_ON_LOCATION);
+    cs_field_set_key_int(f, cs_field_key_id("restart_file"), CS_RESTART_IBM);
 
     f = _add_property_field("solid_roughness",
                             "solid roughness",

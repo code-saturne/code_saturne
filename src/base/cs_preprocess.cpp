@@ -46,31 +46,34 @@
 
 #include "base/cs_boundary_zone.h"
 #include "base/cs_ext_neighborhood.h"
-#include "gui/cs_gui.h"
-#include "gui/cs_gui_mesh.h"
 #include "base/cs_internal_coupling.h"
-#include "mesh/cs_join.h"
 #include "base/cs_log.h"
 #include "base/cs_map.h"
 #include "base/cs_mem.h"
+#include "base/cs_parall.h"
+#include "mesh/cs_partition.h"
+#include "base/cs_porosity_from_scan.h"
+#include "base/cs_porous_model.h"
+#include "base/cs_post.h"
+#include "base/cs_prototypes.h"
+#include "base/cs_preprocessor_data.h"
+#include "base/cs_renumber.h"
+#include "base/cs_timer_stats.h"
+#include "base/cs_velocity_pressure.h"
+#include "base/cs_volume_zone.h"
+
+#include "gui/cs_gui.h"
+#include "gui/cs_gui_mesh.h"
+
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_cartesian.h"
 #include "mesh/cs_mesh_from_builder.h"
 #include "mesh/cs_mesh_location.h"
 #include "mesh/cs_mesh_quantities.h"
-#include "base/cs_renumber.h"
 #include "mesh/cs_mesh_save.h"
 #include "mesh/cs_mesh_to_builder.h"
 #include "mesh/cs_mesh_warping.h"
-#include "base/cs_parall.h"
-#include "mesh/cs_partition.h"
-#include "base/cs_porous_model.h"
-#include "base/cs_post.h"
-#include "base/cs_prototypes.h"
-#include "base/cs_preprocessor_data.h"
-#include "base/cs_timer_stats.h"
-#include "base/cs_velocity_pressure.h"
-#include "base/cs_volume_zone.h"
+#include "mesh/cs_join.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -290,6 +293,8 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
     cs_gui_mesh_extrude(m);
     cs_user_mesh_modify(m);
+
+    cs_porous_model_restart_read_stage_1();
 
     /* Discard isolated faces if present */
 

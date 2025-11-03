@@ -43,6 +43,7 @@
 #include "base/cs_halo.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
+#include "base/cs_restart.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -116,6 +117,8 @@ typedef struct {
   float *classification_values;
   bool  *class_used;
   int   n_classifications;
+  cs_restart_t *restart;
+  bool remove_cells_on_restart;
 } cs_porosity_from_scan_opt_t;
 
 /*============================================================================
@@ -217,7 +220,16 @@ cs_compute_porosity_from_scan(void);
 /*--------------------------------------------------------------------*/
 
 void
-cs_porous_model_restart_write(void);
+cs_porous_model_restart_write_stage_1(void);
+
+/*--------------------------------------------------------------------*/
+/*
+ * \brief Write the restart file of the ibm module
+ */
+/*--------------------------------------------------------------------*/
+
+void
+cs_porous_model_restart_write_stage_2(void);
 
 /*--------------------------------------------------------------------*/
 /*
@@ -226,7 +238,16 @@ cs_porous_model_restart_write(void);
 /*--------------------------------------------------------------------*/
 
 void
-cs_porous_model_restart_read(void);
+cs_porous_model_restart_read_stage_1(void);
+
+/*--------------------------------------------------------------------*/
+/*
+ * \brief Read the restart file of the ibm module
+ */
+/*--------------------------------------------------------------------*/
+
+void
+cs_porous_model_restart_read_stage_2(void);
 
 /*----------------------------------------------------------------------------*/
 

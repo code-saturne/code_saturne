@@ -366,7 +366,7 @@ cs_time_stepping(void)
       cs_compute_porosity_from_scan();
 
       /* Save pre-process for restart */
-      cs_porous_model_restart_write();
+      cs_porous_model_restart_write_stage_1();
       cs_porous_model_fluid_surfaces_preprocessing();
     }
     /* Note using porosity from scan: give the hand to the user */
@@ -390,6 +390,7 @@ cs_time_stepping(void)
       /* Compute solid quantities and update fluid volume and porosity */
       if (!(cs_glob_porosity_from_scan_opt->use_staircase)) {
         cs_porous_model_mesh_quantities_update();
+        cs_porous_model_restart_write_stage_2();
       }
     }
 
@@ -943,7 +944,7 @@ cs_time_stepping_read_checkpoint(void)
 
   cs_les_synthetic_eddy_restart_read();
 
-  cs_porous_model_restart_read();
+  cs_porous_model_restart_read_stage_2();
 
   /* TODO
      cs_restart_map_free may not be called yet, because

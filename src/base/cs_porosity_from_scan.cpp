@@ -59,30 +59,31 @@
 #include "base/cs_boundary_conditions_set_coeffs.h"
 #include "base/cs_boundary_zone.h"
 #include "base/cs_coupling.h"
-#include "cdo/cs_domain.h"
+#include "base/cs_equation_iterative_solve.h"
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_operator.h"
 #include "base/cs_file_csv_parser.h"
-#include "mesh/cs_geom.h"
 #include "base/cs_halo.h"
 #include "base/cs_io.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
-#include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_connect.h"
-#include "mesh/cs_mesh_location.h"
-#include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
 #include "base/cs_porous_model.h"
-#include "base/cs_equation_iterative_solve.h"
 #include "base/cs_physical_constants.h"
 #include "base/cs_post.h"
 #include "base/cs_timer.h"
 
-#include "base/cs_volume_zone.h"
+#include "cdo/cs_domain.h"
+
+#include "mesh/cs_geom.h"
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_connect.h"
+#include "mesh/cs_mesh_location.h"
+#include "mesh/cs_mesh_quantities.h"
+#include "mesh/cs_mesh_remove.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -132,7 +133,9 @@ static cs_porosity_from_scan_opt_t _porosity_from_scan_opt = {
   .has_classification = false,
   .classification_values = nullptr,
   .class_used = nullptr,
-  .n_classifications = 0
+  .n_classifications = 0,
+  .restart = nullptr,
+  .remove_cells_on_restart = false
 };
 
 /*============================================================================
@@ -1779,7 +1782,7 @@ cs_compute_porosity_from_scan(void)
 /*--------------------------------------------------------------------*/
 
 void
-cs_porous_model_restart_write(void)
+cs_porous_model_restart_write_stage_1(void)
 {
   if (   cs_glob_porous_model != 3
       || !(cs_glob_porosity_from_scan_opt->compute_porosity_from_scan))
@@ -1791,14 +1794,15 @@ cs_porous_model_restart_write(void)
                 _("   ** Writing the porous restart file\n"
                   "-------------------------------------\n"));
 
-  cs_restart_t *porous_restart
+  cs_glob_porosity_from_scan_opt->restart
     = cs_restart_create("ibm.csc", nullptr, CS_RESTART_MODE_WRITE);
+  cs_restart_t *porous_restart = cs_glob_porosity_from_scan_opt->restart;
 
   cs_restart_write_fields(porous_restart, CS_RESTART_IBM);
 
   /* Store some useful mesh quantities arrays (not a field) */
   cs_restart_write_section(porous_restart,
-                           "c_disable_flag::vals::0",
+                           "c_disable_flag_stage_1::vals::0",
                            CS_MESH_LOCATION_CELLS,
                            1,
                            CS_TYPE_int,
@@ -1811,9 +1815,41 @@ cs_porous_model_restart_write(void)
                            CS_TYPE_cs_real_t,
                            (cs_real_t *)_porosity_from_scan_opt.mom_mat);
 
+  cs_log_printf(CS_LOG_DEFAULT,_(" Finished writting porous arrays stage 1.\n"));
+}
+
+/*--------------------------------------------------------------------*/
+/*!
+ * \brief Write the restart file of the ibm module for final disable_flag
+ */
+/*--------------------------------------------------------------------*/
+
+void
+cs_porous_model_restart_write_stage_2(void)
+{
+  if (   cs_glob_porous_model != 3
+      || !(cs_glob_porosity_from_scan_opt->compute_porosity_from_scan))
+    return;
+
+  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+  cs_log_printf(CS_LOG_DEFAULT,
+                _("   ** Writing the porous restart file\n"
+                  "-------------------------------------\n"));
+
+  cs_restart_t *porous_restart = cs_glob_porosity_from_scan_opt->restart;
+
+  /* Store some useful mesh quantities arrays (not a field) */
+  cs_restart_write_section(porous_restart,
+                           "c_disable_flag_stage_2::vals::0",
+                           CS_MESH_LOCATION_CELLS,
+                           1,
+                           CS_TYPE_int,
+                           mq->c_disable_flag);
+
   cs_restart_destroy(&porous_restart);
 
-  cs_log_printf(CS_LOG_DEFAULT,_(" Finished writting porous arrays.\n"));
+  cs_log_printf(CS_LOG_DEFAULT,_(" Finished writting porous arrays stage 2.\n"));
 }
 
 /*--------------------------------------------------------------------*/
@@ -1823,7 +1859,84 @@ cs_porous_model_restart_write(void)
 /*--------------------------------------------------------------------*/
 
 void
-cs_porous_model_restart_read(void)
+cs_porous_model_restart_read_stage_1(void)
+{
+  if (!(   cs_restart_present()
+        && cs_glob_porosity_from_scan_opt->compute_porosity_from_scan
+        && cs_glob_porosity_from_scan_opt->remove_cells_on_restart))
+    return;
+
+  if (!cs_file_isreg("restart/ibm.csc")) {
+    cs_base_warn(__FILE__, __LINE__);
+    cs_log_printf(CS_LOG_DEFAULT,
+                  _("\n"
+                    "Immersed boundary restart file not present.\n"));
+    return;
+  }
+
+  cs_mesh_t *m = cs_glob_mesh;
+  char error_name[128];
+  int errcount = 0;
+
+  cs_restart_t *porous_restart
+    = cs_restart_create("ibm.csc", nullptr, CS_RESTART_MODE_READ);
+
+  char *flag;
+  CS_MALLOC(flag, cs_glob_mesh->n_cells, char);
+  int *flag_int;
+  CS_MALLOC(flag_int, cs_glob_mesh->n_cells, int);
+
+  /* Reading the disable flags */
+  int ierr = cs_restart_read_section(porous_restart,
+                                     "c_disable_flag_stage_2::vals::0",
+                                     CS_MESH_LOCATION_CELLS,
+                                     1,
+                                     CS_TYPE_int,
+                                     flag_int);
+
+  for (cs_lnum_t i = 0; i < m->n_cells; i++) {
+    flag[i] = 0;
+    if (flag_int[i] == 1)
+      flag[i] = 1;
+  }
+
+  /* Mark for re-partitioning */
+
+  cs_lnum_t n_cells_before = m->n_cells;
+
+  cs_mesh_remove_cells(m,
+                       flag,
+                       "[disable_flag]");
+
+  cs_lnum_t n_cells_after = m->n_cells;
+
+  CS_FREE(flag);
+  CS_FREE(flag_int);
+
+  m->modified |= CS_MESH_MODIFIED_BALANCE;
+
+  if (ierr != CS_RESTART_SUCCESS) {
+    errcount += 1;
+    snprintf(error_name, 127, "%s", "c_disable_flag");
+  }
+  else {
+    cs_log_printf(CS_LOG_DEFAULT,
+        _(" stage_2 c_disable_flag for immersed boundary"
+          " is read successfully. %d cells are remove.\n"),
+        n_cells_before - n_cells_after);
+  }
+
+  cs_restart_destroy(&porous_restart);
+}
+
+/*--------------------------------------------------------------------*/
+/*!
+ * \brief Read the restart file of the ibm module
+ */
+/*--------------------------------------------------------------------*/
+
+void
+cs_porous_model_restart_read_stage_2(void)
 {
   if (   cs_glob_porous_model != 3
       || !(cs_glob_porosity_from_scan_opt->compute_porosity_from_scan))
@@ -1857,7 +1970,7 @@ cs_porous_model_restart_read(void)
   /* Read some useful mesh quantities arrays (not a field) */
 
   int ierr = cs_restart_read_section(porous_restart,
-                                     "c_disable_flag::vals::0",
+                                     "c_disable_flag_stage_1::vals::0",
                                      CS_MESH_LOCATION_CELLS,
                                      1,
                                      CS_TYPE_int,

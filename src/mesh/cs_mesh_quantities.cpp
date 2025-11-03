@@ -3213,8 +3213,8 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
   /* Loop on agglomeration to smooth the IBM planes */
   for (int nit = 0; nit < (n_agglomeration + 1); nit ++) {
 
-    /* Synchronization */
-    if (m->halo != nullptr) {
+    /* Synchronization: needed only for agglomeration */
+    if (m->halo != nullptr && n_agglomeration > 0) {
       cs_halo_sync_var_strided(m->halo, CS_HALO_STANDARD,
                                (cs_real_t *)cen_points_local, 3);
 
@@ -3347,6 +3347,7 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
          * The c_w_face_normal has a zero norm because it is not at the
          * immersed interface.
          */
+
         if (   cs_math_3_norm(c_w_face_normal[c_id]) < DBL_MIN
             && cell_f_vol[c_id] < DBL_MIN)
           n_s_face_vertices = n_face_vertices;
@@ -4062,7 +4063,6 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
   CS_FREE(v_w_ref);
   CS_FREE(flag_id);
   CS_REALLOC(w_vtx, w_vtx_idx[m->n_cells], cs_real_3_t);
-  CS_FREE(mom_mat);
   CS_FREE(n_points_cell_origin);
   CS_FREE(cen_points_local);
 
@@ -4528,6 +4528,8 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
   CS_FREE(w_vtx);
 
   CS_FREE(i_f_face_cog_dual);
+  CS_FREE(mom_mat);
+
 }
 
 /*----------------------------------------------------------------------------*/
