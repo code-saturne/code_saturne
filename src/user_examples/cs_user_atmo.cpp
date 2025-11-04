@@ -77,13 +77,13 @@ cs_user_atmo_1d_rad_prf([[maybe_unused]] cs_real_t   preray[],
 {
   /*! [humid_aerosols_atmo] */
 
-  cs_atmo_option_t *at_opt = cs_glob_atmo_option;
+  cs_atmo_1d_rad_t *at_1d_rad = cs_glob_atmo_1d_rad;
   const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
 
-  cs_real_t *zray = at_opt->rad_1d_z;
+  cs_real_t *zray = at_1d_rad->z;
 
-  const int kvert = at_opt->rad_1d_nlevels;
-  const int kmx   = at_opt->rad_1d_nlevels_max;
+  const int kmx   = at_1d_rad->nlevels_max;
+  const int kvert = at_1d_rad->nlevels;
 
   const cs_real_t rvsra = phys_pro->rvsra;
   const cs_real_t rair = phys_pro->r_pg_cnst;

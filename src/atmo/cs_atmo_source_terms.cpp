@@ -47,6 +47,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "alge/cs_gradient.h"
+#include "atmo/cs_atmo_1d_rad.h"
 #include "atmo/cs_atmo.h"
 #include "atmo/cs_atmo_profile_std.h"
 #include "atmo/cs_intprf.h"
@@ -645,7 +646,7 @@ cs_atmo_scalar_source_term(int              f_id,
    *    (if the 3D module is not activated)
    *-------------------------------------------------------------------*/
 
-  if (   at_opt->radiative_model_1d > 0
+  if (   cs_glob_atmo_1d_rad->radiative_model_1d > 0
       && cs_glob_rad_transfer_params->type == 0
       && cs_glob_physical_model_flag[CS_ATMOSPHERIC] > 0) {
 

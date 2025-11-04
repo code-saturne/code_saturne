@@ -384,28 +384,30 @@ cs_user_model(void)
   at_opt->soil_zone_id = cs_boundary_zone_by_name("Sol")->id;
   /*! [atmo_soil_set] */
 
-  /* 1-D radiative transfer
+/* 1-D radiative transfer
    * ---------------------*/
 
   /*! [atmo_1d_rad] */
+  cs_atmo_1d_rad_t *at_1d_rad = cs_glob_atmo_1d_rad;
+
   /* Activate 1-D radiative transfer model */
-  at_opt->radiative_model_1d = 1;
+  at_1d_rad->radiative_model_1d = 1;
 
   /* Specify the number of verticals and the number of levels.
    * The mesh levels can be specified in cs_user_parameters function.
    * */
-  at_opt->rad_1d_nvert = 1;
-  at_opt->rad_1d_nlevels = 49;//n_faces -1
-  at_opt->rad_1d_nlevels_max = at_opt->rad_1d_nlevels;
+  at_1d_rad->nvert = 1;
+  at_1d_rad->nlevels = 49;//n_faces -1
+  at_1d_rad->nlevels_max = at_1d_rad->nlevels;
 
   /* Complete 1-D mesh to ztop in case of radiative transfer */
-  if (at_opt->rad_1d_nvert > 0) {
+  if (at_1d_rad->nvert > 0) {
     cs_real_t zvmax = 1975.;/* top of the domain */
     cs_real_t ztop = 11000.;/* top of the troposphere */
     for (cs_real_t zzmax = (((int) zvmax)/1000)*1000.;
         zzmax <= (ztop -1000);
         zzmax += 1000.) {
-      (at_opt->rad_1d_nlevels_max)++;
+      (at_1d_rad->nlevels_max)++;
     }
 
   }
@@ -1982,18 +1984,19 @@ cs_user_finalize_setup([[maybe_unused]] cs_domain_t   *domain)
    * the atmospheric module */
   /*-----------------------------------------------------------------*/
   cs_atmo_option_t *at_opt = cs_glob_atmo_option;
+  cs_atmo_1d_rad_t *at_1d_rad = cs_glob_atmo_1d_rad;
 
   /* Initializing the soil table of each vertical grid */
 
   if (at_opt->soil_model != 0) {
-    for (int i = 0; i < at_opt->rad_1d_nvert; i++) {
-      at_opt->rad_1d_albedo0[i] = 0.25;
-      at_opt->rad_1d_emissi0[i] = 0.965;
-      at_opt->rad_1d_temp0  [i] = 14.77;
-      /* NB automatic computation of at_opt->rad_1d_theta0 [i] */
-      at_opt->rad_1d_qw0    [i] = 0.0043;
-      at_opt->rad_1d_p0     [i] = 102300.;
-      at_opt->rad_1d_rho0   [i] = 1.23;
+    for (int i = 0; i < at_1d_rad->nvert; i++) {
+      at_1d_rad->albedo0[i] = 0.25;
+      at_1d_rad->emissi0[i] = 0.965;
+      at_1d_rad->temp0  [i] = 14.77;
+      /* NB automatic computation of at_1d_rad->theta0 [i] */
+      at_1d_rad->qw0    [i] = 0.0043;
+      at_1d_rad->p0     [i] = 102300.;
+      at_1d_rad->rho0   [i] = 1.23;
     }
 
     /* Modify the soil parameters if activated */
@@ -2006,77 +2009,77 @@ cs_user_finalize_setup([[maybe_unused]] cs_domain_t   *domain)
    * the atmospheric module */
   /*-----------------------------------------------------------------*/
 
-  if (at_opt->radiative_model_1d > 0) {
-    at_opt->rad_1d_zq[0 ] = 0.;
-    at_opt->rad_1d_zq[1 ] = 10.;
-    at_opt->rad_1d_zq[2 ] = 31.;
-    at_opt->rad_1d_zq[3 ] = 53.;
-    at_opt->rad_1d_zq[4 ] = 77.;
-    at_opt->rad_1d_zq[5 ] = 102.;
-    at_opt->rad_1d_zq[6 ] = 128.;
-    at_opt->rad_1d_zq[7 ] = 156.;
-    at_opt->rad_1d_zq[8 ] = 185.;
-    at_opt->rad_1d_zq[9 ] = 214.;
-    at_opt->rad_1d_zq[10] = 246.;
-    at_opt->rad_1d_zq[11] = 278.;
-    at_opt->rad_1d_zq[12] = 311.;
-    at_opt->rad_1d_zq[13] = 346.;
-    at_opt->rad_1d_zq[14] = 381.;
-    at_opt->rad_1d_zq[15] = 417.;
-    at_opt->rad_1d_zq[16] = 454.;
-    at_opt->rad_1d_zq[17] = 493.;
-    at_opt->rad_1d_zq[18] = 531.;
-    at_opt->rad_1d_zq[19] = 571.;
-    at_opt->rad_1d_zq[20] = 612.;
-    at_opt->rad_1d_zq[21] = 653.;
-    at_opt->rad_1d_zq[22] = 695.;
-    at_opt->rad_1d_zq[23] = 737.;
-    at_opt->rad_1d_zq[24] = 781.;
-    at_opt->rad_1d_zq[25] = 824.;
-    at_opt->rad_1d_zq[26] = 869.;
-    at_opt->rad_1d_zq[27] = 914.;
-    at_opt->rad_1d_zq[28] = 959.;
-    at_opt->rad_1d_zq[29] = 1005.;
-    at_opt->rad_1d_zq[30] = 1051.;
-    at_opt->rad_1d_zq[31] = 1098.;
-    at_opt->rad_1d_zq[32] = 1146.;
-    at_opt->rad_1d_zq[33] = 1193.;
-    at_opt->rad_1d_zq[34] = 1241.;
-    at_opt->rad_1d_zq[35] = 1290.;
-    at_opt->rad_1d_zq[36] = 1339.;
-    at_opt->rad_1d_zq[37] = 1388.;
-    at_opt->rad_1d_zq[38] = 1438.;
-    at_opt->rad_1d_zq[39] = 1487.;
-    at_opt->rad_1d_zq[40] = 1538.;
-    at_opt->rad_1d_zq[41] = 1588.;
-    at_opt->rad_1d_zq[42] = 1639.;
-    at_opt->rad_1d_zq[43] = 1690.;
-    at_opt->rad_1d_zq[44] = 1741.;
-    at_opt->rad_1d_zq[45] = 1793.;
-    at_opt->rad_1d_zq[46] = 1844.;
-    at_opt->rad_1d_zq[47] = 1896.;
-    at_opt->rad_1d_zq[48] = 1949.;
-    at_opt->rad_1d_zq[49] = 2001.;
+  if (at_1d_rad->radiative_model_1d > 0) {
+    at_1d_rad->zq[0 ] = 0.;
+    at_1d_rad->zq[1 ] = 10.;
+    at_1d_rad->zq[2 ] = 31.;
+    at_1d_rad->zq[3 ] = 53.;
+    at_1d_rad->zq[4 ] = 77.;
+    at_1d_rad->zq[5 ] = 102.;
+    at_1d_rad->zq[6 ] = 128.;
+    at_1d_rad->zq[7 ] = 156.;
+    at_1d_rad->zq[8 ] = 185.;
+    at_1d_rad->zq[9 ] = 214.;
+    at_1d_rad->zq[10] = 246.;
+    at_1d_rad->zq[11] = 278.;
+    at_1d_rad->zq[12] = 311.;
+    at_1d_rad->zq[13] = 346.;
+    at_1d_rad->zq[14] = 381.;
+    at_1d_rad->zq[15] = 417.;
+    at_1d_rad->zq[16] = 454.;
+    at_1d_rad->zq[17] = 493.;
+    at_1d_rad->zq[18] = 531.;
+    at_1d_rad->zq[19] = 571.;
+    at_1d_rad->zq[20] = 612.;
+    at_1d_rad->zq[21] = 653.;
+    at_1d_rad->zq[22] = 695.;
+    at_1d_rad->zq[23] = 737.;
+    at_1d_rad->zq[24] = 781.;
+    at_1d_rad->zq[25] = 824.;
+    at_1d_rad->zq[26] = 869.;
+    at_1d_rad->zq[27] = 914.;
+    at_1d_rad->zq[28] = 959.;
+    at_1d_rad->zq[29] = 1005.;
+    at_1d_rad->zq[30] = 1051.;
+    at_1d_rad->zq[31] = 1098.;
+    at_1d_rad->zq[32] = 1146.;
+    at_1d_rad->zq[33] = 1193.;
+    at_1d_rad->zq[34] = 1241.;
+    at_1d_rad->zq[35] = 1290.;
+    at_1d_rad->zq[36] = 1339.;
+    at_1d_rad->zq[37] = 1388.;
+    at_1d_rad->zq[38] = 1438.;
+    at_1d_rad->zq[39] = 1487.;
+    at_1d_rad->zq[40] = 1538.;
+    at_1d_rad->zq[41] = 1588.;
+    at_1d_rad->zq[42] = 1639.;
+    at_1d_rad->zq[43] = 1690.;
+    at_1d_rad->zq[44] = 1741.;
+    at_1d_rad->zq[45] = 1793.;
+    at_1d_rad->zq[46] = 1844.;
+    at_1d_rad->zq[47] = 1896.;
+    at_1d_rad->zq[48] = 1949.;
+    at_1d_rad->zq[49] = 2001.;
     /* Complete 1-D mesh to ztop in case of radiative transfer */
-    if (at_opt->rad_1d_nvert > 0) {
-      int i = at_opt->rad_1d_nlevels;
+    if (at_1d_rad->nvert > 0) {
+      int i = at_1d_rad->nlevels;
       cs_real_t zvmax = 2001.;/* top of the domain */
       cs_real_t ztop = 11000.;/* top of the troposphere */
       for (cs_real_t zzmax = (((int) zvmax)/1000)*1000.;
            zzmax <= (ztop -1000);
            i++) {
         zzmax += 1000.;
-        at_opt->rad_1d_zq[i] = zzmax;
-        bft_printf("Atmo, rad 1D zq[%d]=%f\n", i+1, at_opt->rad_1d_zq[i]);
+        at_1d_rad->zq[i] = zzmax;
+        bft_printf("Atmo, rad 1D zq[%d]=%f\n", i+1, at_1d_rad->zq[i]);
       }
     }
   }
 
   /* Initialize position of each vertical */
-  for (int i = 0; i < at_opt->rad_1d_nvert; i++) {
-    at_opt->rad_1d_xy[0 * at_opt->rad_1d_nvert + i] = 50.; /* X coord */
-    at_opt->rad_1d_xy[1 * at_opt->rad_1d_nvert + i] = 50.; /* Y coord */
-    at_opt->rad_1d_xy[2 * at_opt->rad_1d_nvert + i] = 1.; /* kmin in case of
+  for (int i = 0; i < at_1d_rad->nvert; i++) {
+    at_1d_rad->xy[0 * at_1d_rad->nvert + i] = 50.; /* X coord */
+    at_1d_rad->xy[1 * at_1d_rad->nvert + i] = 50.; /* Y coord */
+    at_1d_rad->xy[2 * at_1d_rad->nvert + i] = 1.; /* kmin in case of
                                                              non-flat terrain */
   }
   /*! [atmo_ad_rad_def] */

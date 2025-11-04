@@ -58,7 +58,7 @@ subroutine reftra  &
   double precision, intent(in) :: mui, muzero_cor
 
   ! Local
-  double precision ::gas, fas, kt, gama1, gama2, tln
+  double precision :: gas, fas, kt, gama1, gama2, tln
   double precision :: drt, extlnp, extlnm
   double precision :: pic, tau
   double precision :: gama3,gama4,a1,a2,ktmu,expmuo,exnmuo,rnum,tnum

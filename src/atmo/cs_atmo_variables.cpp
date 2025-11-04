@@ -42,6 +42,7 @@
 
 #include "bft/bft_error.h"
 
+#include "atmo/cs_atmo_1d_rad.h"
 #include "atmo/cs_atmo.h"
 #include "atmo/cs_atmo_chemistry.h"
 #include "atmo/cs_atmo_imbrication.h"
@@ -279,7 +280,7 @@ static void
 _init_meteo_data_interpolation(void)
 {
   if (cs_glob_atmo_option->meteo_profile > 0) {
-    if (cs_glob_atmo_option->radiative_model_1d == 1) {
+    if (cs_glob_atmo_1d_rad->radiative_model_1d == 1) {
       cs_measures_set_t *ms;
 
       ms = cs_measures_set_create("rayi", 0, 1, false);
@@ -503,6 +504,8 @@ void
 cs_atmo_add_property_fields(void)
 {
   cs_atmo_option_t *at_opt = cs_glob_atmo_option;
+  cs_atmo_1d_rad_t *at_1d_rad = cs_glob_atmo_1d_rad;
+
   bool rain = at_opt->rain;
 
   if (rain == true) {
@@ -620,7 +623,7 @@ cs_atmo_add_property_fields(void)
     }
 
     // Radiative cooling
-    if (at_opt->sedimentation_model == 1 || at_opt->radiative_model_1d > 0) {
+    if (at_opt->sedimentation_model == 1 || at_1d_rad->radiative_model_1d > 0) {
       cs_physical_property_define_from_field("radiative_cooling",
                                              field_type,
                                              CS_MESH_LOCATION_CELLS,
@@ -1135,6 +1138,7 @@ cs_atmo_init_variables_1(void)
 {
   const int n_fields = cs_field_n_fields();
   cs_atmo_option_t *at_opt = cs_glob_atmo_option;
+  cs_atmo_1d_rad_t *at_1d_rad = cs_glob_atmo_1d_rad;
   cs_fluid_properties_t *phys_pp = cs_get_glob_fluid_properties();
 
   /* VERIFICATIONS
@@ -1142,7 +1146,7 @@ cs_atmo_init_variables_1(void)
 
   if (   cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_DRY
       || cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_CONSTANT_DENSITY  )
-    if (at_opt->radiative_model_1d == 1 || at_opt->soil_model >= 1)
+    if (at_1d_rad->radiative_model_1d == 1 || at_opt->soil_model >= 1)
       bft_error(__FILE__, __LINE__, 0,
               "@                                                            \n"
               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"

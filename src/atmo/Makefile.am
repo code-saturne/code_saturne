@@ -53,6 +53,7 @@ csatmo_include_HEADERS = \
 cs_air_props.h \
 cs_at_opt_interp.h \
 cs_at_data_assim.h \
+cs_atmo_1d_rad.h   \
 cs_atmo.h \
 cs_atmo_chemistry.h \
 cs_atmo_aerosol_ssh.h \
@@ -77,6 +78,7 @@ atr1vf.f90 \
 cs_air_props.cpp \
 cs_at_opt_interp.cpp \
 cs_at_data_assim.cpp \
+cs_atmo_1d_rad.cpp \
 cs_atmo.cpp \
 cs_atmo_chemistry.cpp \
 cs_atmo_aerosol_ssh.cpp \

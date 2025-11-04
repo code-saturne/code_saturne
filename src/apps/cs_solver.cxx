@@ -45,6 +45,7 @@
 #include "base/cs_ale.h"
 #include "base/cs_all_to_all.h"
 #include "base/cs_ast_coupling.h"
+#include "atmo/cs_atmo_1d_rad.h"
 #include "atmo/cs_atmo.h"
 #include "alge/cs_balance.h"
 #include "base/cs_base.h"
@@ -593,6 +594,8 @@ _run(void)
   /* Finalizations related to some models */
 
   cs_atmo_finalize();
+  cs_atmo_1d_rad_finalize();
+
   cs_ctwr_all_destroy();
   cs_fan_destroy_all();
 

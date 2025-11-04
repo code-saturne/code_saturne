@@ -40,6 +40,7 @@
 
 #include "bft/bft_printf.h"
 
+#include "atmo/cs_atmo_1d_rad.h"
 #include "atmo/cs_atmo.h"
 #include "base/cs_1d_wall_thermal.h"
 #include "base/cs_ale.h"
@@ -1349,7 +1350,7 @@ cs_solve_all()
            "  ==================================\n\n"));
     }
 
-    if (   cs_glob_atmo_option->radiative_model_1d == 1
+    if (   cs_glob_atmo_1d_rad->radiative_model_1d == 1
         && ( cs_glob_physical_model_flag[CS_ATMOSPHERIC]
             > CS_ATMO_CONSTANT_DENSITY))
       cs_f_atr1vf();

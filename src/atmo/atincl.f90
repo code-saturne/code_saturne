@@ -343,6 +343,13 @@ integer(c_int), pointer, save :: rad_atmo_model
 
   interface
 
+    subroutine cs_f_atmo_get_radiative_model_1d(iatra1, nvertv, kvert, kmx, nfatr1)  &
+         bind(C, name='cs_f_atmo_get_radiative_model_1d')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: iatra1, nvertv, kvert, kmx, nfatr1
+    end subroutine cs_f_atmo_get_radiative_model_1d
+
     !---------------------------------------------------------------------------
 
     !> \brief Return pointers to atmo includes
@@ -353,10 +360,9 @@ integer(c_int), pointer, save :: rad_atmo_model
         compute_z_ground, iatmst, theo_interp,                          &
         sedimentation_model, deposition_model, nucleation_model,        &
         subgrid_model, distribution_model,                              &
-        imeteo, nbmetd, nbmett, nbmetm, iatra1, nbmaxt,                 &
-        iatsoil,                                                        &
-        nvertv, kvert, kmx, ihpm,                                       &
-        nfatr1, sigc, idrayi, idrayst, igrid,                           &
+        imeteo, nbmetd, nbmett, nbmetm,  nbmaxt,                        &
+        iatsoil, ihpm,                                                  &
+        sigc, idrayi, idrayst, igrid,                                   &
         aod_o3_tot, aod_h2o_tot)                                        &
       bind(C, name='cs_f_atmo_get_pointers')
       use, intrinsic :: iso_c_binding
@@ -370,48 +376,29 @@ integer(c_int), pointer, save :: rad_atmo_model
       type(c_ptr), intent(out) :: longitude, latitude
       type(c_ptr), intent(out) :: idrayi, idrayst, igrid
       type(c_ptr), intent(out) :: imeteo
-      type(c_ptr), intent(out) :: nbmetd, nbmett, nbmetm, iatra1, nbmaxt
-      type(c_ptr), intent(out) :: iatsoil
-      type(c_ptr), intent(out) :: nvertv, kvert, kmx, ihpm, nfatr1
+      type(c_ptr), intent(out) :: nbmetd, nbmett, nbmetm, nbmaxt
+      type(c_ptr), intent(out) :: iatsoil, ihpm
       type(c_ptr), intent(out) :: aod_o3_tot, aod_h2o_tot
     end subroutine cs_f_atmo_get_pointers
 
     !---------------------------------------------------------------------------
 
-    !> \brief Return pointers to atmo arrays
-
-    subroutine cs_f_atmo_arrays_get_pointers(p_ztmet, p_xyp_met,               &
-         p_umet, p_vmet,                                                       &
-         p_wmet  , p_tmmet, p_phmet, p_tpmet, p_ekmet, p_epmet,                &
-         p_ttmet , p_rmet , p_qvmet, p_ncmet,                                  &
-         p_xyvert, p_zray , p_acinfe,                                          &
-         p_dacinfe, p_aco2, p_aco2s,                                           &
-         p_daco2, p_daco2s,                                                    &
-         p_acsup, p_acsups,                                                    &
-         p_dacsup, p_dacsups,                                                  &
-         p_tauzq, p_tauz, p_zq,                                                &
-         p_rayi, p_rayst,                                                      &
-         p_iru, p_ird, p_solu, p_sold,                                         &
-         p_soil_albedo,                                                        &
-         p_soil_emissi,                                                        &
-         p_soil_ttsoil,                                                        &
-         p_soil_tpsoil,                                                        &
-         p_soil_totwat,                                                        &
-         p_soil_pressure,                                                      &
-         p_soil_density,                                                       &
-         dim_nd_nt, dim_ntx_nt,                                                &
-         dim_nd_3, dim_nt_3,                                                   &
-         dim_xyvert, dim_kmx2, dim_kmx_nvert )                                 &
-         bind(C, name='cs_f_atmo_arrays_get_pointers')
+    subroutine cs_f_atmo_arrays_get_radiative_model_1d(p_xyvert, p_zray , p_acinfe,   &
+         p_dacinfe, p_aco2, p_aco2s,                                                  &
+         p_daco2, p_daco2s,                                                           &
+         p_acsup, p_acsups,                                                           &
+         p_dacsup, p_dacsups,                                                         &
+         p_tauzq, p_tauz, p_zq,                                                       &
+         p_rayi, p_rayst,                                                             &
+         p_iru, p_ird, p_solu, p_sold,                                                &
+         p_soil_albedo,  p_soil_emissi, p_soil_ttsoil,                                &
+         p_soil_tpsoil, p_soil_totwat, p_soil_pressure, p_soil_density,               &
+         dim_xyvert, dim_kmx2, dim_kmx_nvert )                                        &
+         bind(C, name='cs_f_atmo_arrays_get_radiative_model_1d')
       use, intrinsic :: iso_c_binding
       implicit none
 
-      integer(c_int), dimension(2) :: dim_nd_nt, dim_ntx_nt, dim_nd_3, dim_nt_3
-      integer(c_int), dimension(2) ::  dim_xyvert, dim_kmx2, dim_kmx_nvert
-      type(c_ptr), intent(out) :: p_ztmet, p_xyp_met
-      type(c_ptr), intent(out) :: p_umet, p_vmet, p_tmmet, p_wmet
-      type(c_ptr), intent(out) :: p_phmet, p_tpmet, p_ekmet, p_epmet
-      type(c_ptr), intent(out) :: p_ttmet, p_rmet, p_qvmet, p_ncmet
+      integer(c_int), dimension(2) :: dim_xyvert, dim_kmx2, dim_kmx_nvert
       type(c_ptr), intent(out) :: p_xyvert, p_zray , p_acinfe
       type(c_ptr), intent(out) :: p_dacinfe, p_aco2, p_aco2s
       type(c_ptr), intent(out) :: p_daco2, p_daco2s
@@ -420,14 +407,29 @@ integer(c_int), pointer, save :: rad_atmo_model
       type(c_ptr), intent(out) :: p_tauzq, p_tauz, p_zq
       type(c_ptr), intent(out) :: p_rayi, p_rayst
       type(c_ptr), intent(out) :: p_iru, p_ird, p_solu, p_sold
-      type(c_ptr), intent(out) :: p_soil_albedo
-      type(c_ptr), intent(out) :: p_soil_emissi
-      type(c_ptr), intent(out) :: p_soil_ttsoil
-      type(c_ptr), intent(out) :: p_soil_tpsoil
-      type(c_ptr), intent(out) :: p_soil_totwat
-      type(c_ptr), intent(out) :: p_soil_pressure
-      type(c_ptr), intent(out) :: p_soil_density
+      type(c_ptr), intent(out) :: p_soil_albedo, p_soil_emissi
+      type(c_ptr), intent(out) :: p_soil_ttsoil, p_soil_tpsoil
+      type(c_ptr), intent(out) :: p_soil_totwat, p_soil_pressure, p_soil_density
 
+    end subroutine cs_f_atmo_arrays_get_radiative_model_1d
+
+    !> \brief Return pointers to atmo arrays
+
+    subroutine cs_f_atmo_arrays_get_pointers(p_ztmet, p_xyp_met,               &
+         p_umet, p_vmet,                                                       &
+         p_wmet  , p_tmmet, p_phmet, p_tpmet, p_ekmet, p_epmet,                &
+         p_ttmet , p_rmet , p_qvmet, p_ncmet,                                  &
+         dim_nd_nt, dim_ntx_nt,                                                &
+         dim_nd_3, dim_nt_3)                                                   &
+         bind(C, name='cs_f_atmo_arrays_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+
+      integer(c_int), dimension(2) :: dim_nd_nt, dim_ntx_nt, dim_nd_3, dim_nt_3
+      type(c_ptr), intent(out) :: p_ztmet, p_xyp_met
+      type(c_ptr), intent(out) :: p_umet, p_vmet, p_tmmet, p_wmet
+      type(c_ptr), intent(out) :: p_phmet, p_tpmet, p_ekmet, p_epmet
+      type(c_ptr), intent(out) :: p_ttmet, p_rmet, p_qvmet, p_ncmet
     end subroutine cs_f_atmo_arrays_get_pointers
 
     !---------------------------------------------------------------------------
@@ -518,12 +520,12 @@ contains
       c_sedimentation_model, c_deposition_model,    &
       c_nucleation_model, c_subgrid_model,          &
       c_distribution_model, c_imeteo,               &
-      c_nbmetd, c_nbmett, c_nbmetm, c_iatra1,       &
-      c_nbmaxt, c_iatsoil,                          &
-      c_nvert, c_kvert, c_kmx,                      &
-      c_ihpm, c_nfatr1,                             &
+      c_nbmetd, c_nbmett, c_nbmetm,                 &
+      c_nbmaxt, c_iatsoil, c_ihpm,                  &
       c_sigc, c_idrayi, c_idrayst, c_igrid,         &
       c_aod_o3_tot, c_aod_h2o_tot)
+
+    call cs_f_atmo_get_radiative_model_1d(c_iatra1, c_nvert, c_kvert, c_kmx, c_nfatr1)
 
     call c_f_pointer(c_ps, ps)
     call c_f_pointer(c_syear, syear)
@@ -621,23 +623,21 @@ call cs_f_atmo_arrays_get_pointers(c_z_temp_met,                  &
                                    c_rho_met,                     &
                                    c_qw_met,                      &
                                    c_ndrop_met,                   &
-                                   c_xyvert, c_zray , c_acinfe,   &
-                                   c_dacinfe, c_aco2, c_aco2s,    &
-                                   c_daco2, c_daco2s,             &
-                                   c_acsup, c_acsups,             &
-                                   c_dacsup, c_dacsups,           &
-                                   c_tauzq, c_tauz, c_zq,         &
-                                   c_rayi, c_rayst,               &
-                                   c_iru, c_ird, c_solu, c_sold,  &
-                                   c_soil_albedo,                 &
-                                   c_soil_emissi,                 &
-                                   c_soil_ttsoil,                 &
-                                   c_soil_tpsoil,                 &
-                                   c_soil_totwat,                 &
-                                   c_soil_pressure,               &
-                                   c_soil_density,                &
                                    dim_nd_nt, dim_ntx_nt,         &
-                                   dim_nd_3, dim_nt_3,            &
+                                   dim_nd_3, dim_nt_3)
+
+call cs_f_atmo_arrays_get_radiative_model_1d(c_xyvert, c_zray , c_acinfe,   &
+                                   c_dacinfe, c_aco2, c_aco2s,       &
+                                   c_daco2, c_daco2s,                &
+                                   c_acsup, c_acsups,                &
+                                   c_dacsup, c_dacsups,              &
+                                   c_tauzq, c_tauz, c_zq,            &
+                                   c_rayi, c_rayst,                  &
+                                   c_iru, c_ird, c_solu, c_sold,     &
+                                   c_soil_albedo,                    &
+                                   c_soil_emissi, c_soil_ttsoil,     &
+                                   c_soil_tpsoil, c_soil_totwat,     &
+                                   c_soil_pressure, c_soil_density,  &
                                    dim_xyvert, dim_kmx2, dim_kmx_nvert)
 
 call c_f_pointer(c_z_temp_met, ztmet, [nbmaxt])

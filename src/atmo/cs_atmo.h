@@ -165,14 +165,14 @@ typedef struct {
   /*! altitude of the domain origin */
   cs_real_t altitude;
   /*! x coordinate of the domain origin in Lambert-93 */
-  cs_real_t x_l93; // conserved for retrocompatibility 
+  cs_real_t x_l93; // conserved for retrocompatibility
   /*! y coordinate of the domain origin in Lambert-93 */
-  cs_real_t y_l93; // 
+  cs_real_t y_l93; //
   /*! numbers of altitudes for the dynamics */
 
   /*! XY  coordinates of the domain origin in current projection system */
   cs_real_t x_origin; // similar to l93 but more general
-  cs_real_t y_origin; // 
+  cs_real_t y_origin; //
 
   /*! Projection system used in computation */
   cs_atmo_projection_t projection_type;
@@ -198,83 +198,6 @@ typedef struct {
     int met_1d_nlevels_max_t;
     int nbmaxt;
   };
-  /*! 1-D radiative model (0 off, 1 on) */
-  int radiative_model_1d;
-  /*! 1-D radiative model: number of vertical arrays */
-  int rad_1d_nvert;
-  /*! 1-D radiative model: number of levels (up to the top of the domain) */
-  int rad_1d_nlevels;
-  /*! 1-D radiative model: number of levels (up to 11000 m)
-    (automatically computed) */
-  int rad_1d_nlevels_max;
-  /*! 1D radiative model pass frequency (1 valu bu default)*/
-  int rad_1d_frequency;
-
-  /*! horizontal coordinates of the vertical grid */
-  cs_real_t *rad_1d_xy;
-
-  /*! vertical grid for 1D radiative scheme */
-  cs_real_t *rad_1d_z;
-  /*! absorption for CO2 + 03 */
-  cs_real_t *rad_1d_acinfe;
-  /*! differential absorption for CO2 + 03 */
-  cs_real_t *rad_1d_dacinfe;
-  /*! absorption for CO2 only */
-  cs_real_t *rad_1d_aco2;
-  cs_real_t *rad_1d_aco2s;
-  /*! differential absorption for CO2 only */
-  cs_real_t *rad_1d_daco2;
-  cs_real_t *rad_1d_daco2s;
-  /*! as acinfe, downwing flux */
-  cs_real_t *rad_1d_acsup;
-  cs_real_t *rad_1d_acsups;
-  cs_real_t *rad_1d_dacsup;
-  cs_real_t *rad_1d_dacsups;
-  /*! internal variable for 1D radiative model */
-  cs_real_t *rad_1d_tauzq;
-  /*! internal variable for 1D radiative model */
-  cs_real_t *rad_1d_tauz;
-  /*! vertical grid for 1D radiative scheme
-   * (staggered grid associated to faces) */
-  cs_real_t *rad_1d_zq;
-  /*! flux divergence of IR radiation */
-  cs_real_t *rad_1d_ir_div;
-  /*! flux divergence of solar radiation */
-  cs_real_t *rad_1d_sol_div;
-  /*! Upward and downward radiative fluxes (infrared, solar)
-    along each vertical */
-  cs_real_t *rad_1d_iru;
-  cs_real_t *rad_1d_ird;
-  cs_real_t *rad_1d_solu;
-  cs_real_t *rad_1d_sold;
-
-  /*! 1D profiles of total water mass fraction along each vertical */
-  cs_real_t *rad_1d_qw;
-  /*! 1D profiles of liquid water mass fraction along each vertical */
-  cs_real_t *rad_1d_ql;
-  /*! 1D profiles of vapor water mass fraction along each vertical */
-  cs_real_t *rad_1d_qv;
-  /*! 1D profiles of number of droplets along each vertical */
-  cs_real_t *rad_1d_nc;
-  /*! 1D profiles of nebulosity along each vertical */
-  cs_real_t *rad_1d_fn;
-  /*! 1D profiles of aerosols along each vertical */
-  cs_real_t *rad_1d_aerosols;
-
-  /*! Value of ground albedo for each vertical */
-  cs_real_t *rad_1d_albedo0;
-  /*! Value of ground emissivity for each vertical */
-  cs_real_t *rad_1d_emissi0;
-  /*! Value of ground temperature for each vertical */
-  cs_real_t *rad_1d_temp0;
-  /*! Value of ground potential temperature for each vertical */
-  cs_real_t *rad_1d_theta0;
-  /*! Value of ground total water mass fraction for each vertical */
-  cs_real_t *rad_1d_qw0;
-  /*! Value of ground pressure for each vertical */
-  cs_real_t *rad_1d_p0;
-  /*! Value of ground density for each vertical */
-  cs_real_t *rad_1d_rho0;
 
   /*! Domain orientation (angle in degree between y direction and north),
    * 0 by default */

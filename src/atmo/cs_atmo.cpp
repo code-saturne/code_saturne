@@ -107,6 +107,7 @@
 #include "atmo/cs_atmo.h"
 #include "atmo/cs_atmo_chemistry.h"
 #include "atmo/cs_atmo_imbrication.h"
+#include "atmo/cs_atmo_1d_rad.h"
 #include "atmo/cs_at_data_assim.h"
 
 /*----------------------------------------------------------------------------*/
@@ -143,45 +144,6 @@ static cs_atmo_option_t  _atmo_option = {
   {.met_1d_nlevels_t = 0},
   {.met_1d_ntimes = 0},
   {.met_1d_nlevels_max_t = 0},
-  .radiative_model_1d = 0,
-  .rad_1d_nvert = 1,
-  .rad_1d_nlevels = 20,
-  .rad_1d_nlevels_max = 0,
-  .rad_1d_frequency = 1,
-  .rad_1d_xy = nullptr,
-  .rad_1d_z = nullptr,
-  .rad_1d_acinfe = nullptr,
-  .rad_1d_dacinfe = nullptr,
-  .rad_1d_aco2 = nullptr,
-  .rad_1d_aco2s = nullptr,
-  .rad_1d_daco2 = nullptr,
-  .rad_1d_daco2s = nullptr,
-  .rad_1d_acsup = nullptr,
-  .rad_1d_acsups = nullptr,
-  .rad_1d_dacsup = nullptr,
-  .rad_1d_dacsups = nullptr,
-  .rad_1d_tauzq = nullptr,
-  .rad_1d_tauz = nullptr,
-  .rad_1d_zq = nullptr,
-  .rad_1d_ir_div = nullptr,
-  .rad_1d_sol_div = nullptr,
-  .rad_1d_iru = nullptr,
-  .rad_1d_ird = nullptr,
-  .rad_1d_solu = nullptr,
-  .rad_1d_sold = nullptr,
-  .rad_1d_qw = nullptr,
-  .rad_1d_ql = nullptr,
-  .rad_1d_qv = nullptr,
-  .rad_1d_nc = nullptr,
-  .rad_1d_fn = nullptr,
-  .rad_1d_aerosols = nullptr,
-  .rad_1d_albedo0 = nullptr,
-  .rad_1d_emissi0 = nullptr,
-  .rad_1d_temp0   = nullptr,
-  .rad_1d_theta0  = nullptr,
-  .rad_1d_qw0     = nullptr,
-  .rad_1d_p0      = nullptr,
-  .rad_1d_rho0    = nullptr,
   .domain_orientation = 0.,
   .compute_z_ground = false,
   .open_bcs_treatment = 0,
@@ -324,14 +286,9 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **nbmetd,
                        int                    **nbmett,
                        int                    **nbmetm,
-                       int                    **radiative_model_1d,
                        int                    **nbmaxt,
                        int                    **soil_model,
-                       int                    **nvert,
-                       int                    **kvert,
-                       int                    **kmx,
                        int                    **ihpm,
-                       int                    **nfatr1,
                        cs_real_t              **sigc,
                        int                    **idrayi,
                        int                    **idrayst,
@@ -354,49 +311,10 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
                               cs_real_t **rmet,
                               cs_real_t **qvmet,
                               cs_real_t **ncmet,
-                              cs_real_t **xyvert,
-                              cs_real_t **zray,
-                              cs_real_t **acinfe,
-                              cs_real_t **dacinfe,
-                              cs_real_t **aco2,
-                              cs_real_t **aco2s,
-                              cs_real_t **daco2,
-                              cs_real_t **daco2s,
-                              cs_real_t **acsup,
-                              cs_real_t **acsups,
-                              cs_real_t **dacsup,
-                              cs_real_t **dacsups,
-                              cs_real_t **tauzq,
-                              cs_real_t **tauz,
-                              cs_real_t **zq,
-                              cs_real_t **rayi,
-                              cs_real_t **rayst,
-                              cs_real_t **iru,
-                              cs_real_t **ird,
-                              cs_real_t **solu,
-                              cs_real_t **sold,
-                              cs_real_t **soil_albedo,
-                              cs_real_t **soil_emissi,
-                              cs_real_t **soil_ttsoil,
-                              cs_real_t **soil_tpsoil,
-                              cs_real_t **soil_totwat,
-                              cs_real_t **soil_pressure,
-                              cs_real_t **soil_density,
                               int         dim_nd_nt[2],
                               int         dim_ntx_nt[2],
                               int         dim_nd_3[2],
-                              int         dim_nt_3[2],
-                              int         dim_xyvert[2],
-                              int         dim_kmx2[2],
-                              int         dim_kmx_nvert[2]);
-
-void
-cs_f_atmo_rad_1d_arrays_get_pointers(cs_real_t **qwvert,
-                                     cs_real_t **qlvert,
-                                     cs_real_t **qvvert,
-                                     cs_real_t **ncvert,
-                                     cs_real_t **fnvert,
-                                     cs_real_t **aevert);
+                              int         dim_nt_3[2]);
 
 void
 cs_f_atmo_get_soil_zone(cs_lnum_t         *n_elts,
@@ -1956,14 +1874,9 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **nbmetd,
                        int                    **nbmett,
                        int                    **nbmetm,
-                       int                    **radiative_model_1d,
                        int                    **nbmaxt,
                        int                    **soil_model,
-                       int                    **nvert,
-                       int                    **kvert,
-                       int                    **kmx,
                        int                    **ihpm,
-                       int                    **nfatr1,
                        cs_real_t              **sigc,
                        int                    **idrayi,
                        int                    **idrayst,
@@ -1993,12 +1906,7 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
   *nbmetm     = &(_atmo_option.met_1d_ntimes);
   *nbmaxt     = &(_atmo_option.met_1d_nlevels_max_t);
   *soil_model = &(_atmo_option.soil_model);
-  *radiative_model_1d = &(_atmo_option.radiative_model_1d);
-  *nvert = &(_atmo_option.rad_1d_nvert);
-  *kvert = &(_atmo_option.rad_1d_nlevels);
-  *kmx = &(_atmo_option.rad_1d_nlevels_max);
   *ihpm = &(_atmo_option.hydrostatic_pressure_model);
-  *nfatr1 = &(_atmo_option.rad_1d_frequency);
   *sigc  = &(_atmo_option.sigc);
   *idrayi = &(_atmo_option.infrared_1D_profile);
   *idrayst = &(_atmo_option.solar_1D_profile);
@@ -2057,41 +1965,10 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
                               cs_real_t **rmet,
                               cs_real_t **qvmet,
                               cs_real_t **ncmet,
-                              cs_real_t **xyvert,
-                              cs_real_t **zray,
-                              cs_real_t **acinfe,
-                              cs_real_t **dacinfe,
-                              cs_real_t **aco2,
-                              cs_real_t **aco2s,
-                              cs_real_t **daco2,
-                              cs_real_t **daco2s,
-                              cs_real_t **acsup,
-                              cs_real_t **acsups,
-                              cs_real_t **dacsup,
-                              cs_real_t **dacsups,
-                              cs_real_t **tauzq,
-                              cs_real_t **tauz,
-                              cs_real_t **zq,
-                              cs_real_t **rayi,
-                              cs_real_t **rayst,
-                              cs_real_t **iru,
-                              cs_real_t **ird,
-                              cs_real_t **solu,
-                              cs_real_t **sold,
-                              cs_real_t **soil_albedo,
-                              cs_real_t **soil_emissi,
-                              cs_real_t **soil_ttsoil,
-                              cs_real_t **soil_tpsoil,
-                              cs_real_t **soil_totwat,
-                              cs_real_t **soil_pressure,
-                              cs_real_t **soil_density,
                               int         dim_nd_nt[2],
                               int         dim_ntx_nt[2],
                               int         dim_nd_3[2],
-                              int         dim_nt_3[2],
-                              int         dim_xyvert[2],
-                              int         dim_kmx2[2],
-                              int         dim_kmx_nvert[2])
+                              int         dim_nt_3[2])
 {
   int n_level = 0, n_level_t = 0;
   int n_times = 0;
@@ -2136,143 +2013,6 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
   *z_temp_met = _atmo_option.z_temp_met;
   *time_met   = _atmo_option.time_met;
 
-  n_level = 0;
-  int n_vert = 0;
-  if (_atmo_option.radiative_model_1d != 0) {
-    n_level = cs::max(1, _atmo_option.rad_1d_nlevels_max);
-    n_vert = cs::max(1, _atmo_option.rad_1d_nvert);
-  }
-
-  if (         _atmo_option.rad_1d_xy == nullptr)
-    CS_MALLOC(_atmo_option.rad_1d_xy , 3*n_vert, cs_real_t);
-  if (         _atmo_option.rad_1d_z == nullptr)
-    CS_MALLOC(_atmo_option.rad_1d_z , n_level, cs_real_t);
-  if (         _atmo_option.rad_1d_acinfe == nullptr)
-    CS_MALLOC(_atmo_option.rad_1d_acinfe , n_level, cs_real_t);
-  if (         _atmo_option.rad_1d_dacinfe == nullptr)
-    CS_MALLOC(_atmo_option.rad_1d_dacinfe , n_level, cs_real_t);
-  if (         _atmo_option.rad_1d_aco2 == nullptr)
-    CS_MALLOC(_atmo_option.rad_1d_aco2, n_level*n_level, cs_real_t);
-  if (         _atmo_option.rad_1d_aco2s == nullptr)
-    CS_MALLOC(_atmo_option.rad_1d_aco2s, n_level*n_level, cs_real_t);
-  if (         _atmo_option.rad_1d_daco2 == nullptr)
-    CS_MALLOC(_atmo_option.rad_1d_daco2, n_level*n_level, cs_real_t);
-  if (         _atmo_option.rad_1d_daco2s == nullptr)
-    CS_MALLOC(_atmo_option.rad_1d_daco2s, n_level*n_level, cs_real_t);
-  if (         _atmo_option.rad_1d_acsup == nullptr)
-    CS_MALLOC(_atmo_option.rad_1d_acsup, n_level, cs_real_t);
-  if (         _atmo_option.rad_1d_acsups == nullptr)
-    CS_MALLOC(_atmo_option.rad_1d_acsups, n_level, cs_real_t);
-  if (         _atmo_option.rad_1d_dacsup == nullptr)
-    CS_MALLOC(_atmo_option.rad_1d_dacsup, n_level, cs_real_t);
-  if (         _atmo_option.rad_1d_dacsups == nullptr)
-    CS_MALLOC(_atmo_option.rad_1d_dacsups, n_level, cs_real_t);
-  if (         _atmo_option.rad_1d_tauzq == nullptr)
-    CS_MALLOC(_atmo_option.rad_1d_tauzq, n_level+1, cs_real_t);
-  if (         _atmo_option.rad_1d_tauz == nullptr)
-    CS_MALLOC(_atmo_option.rad_1d_tauz, n_level+1, cs_real_t);
-  if (         _atmo_option.rad_1d_zq == nullptr)
-    CS_MALLOC(_atmo_option.rad_1d_zq, n_level+1, cs_real_t);
-  if (         _atmo_option.rad_1d_ir_div == nullptr)
-    CS_MALLOC(_atmo_option.rad_1d_ir_div, n_level * n_vert, cs_real_t);
-  if (         _atmo_option.rad_1d_sol_div == nullptr)
-    CS_MALLOC(_atmo_option.rad_1d_sol_div, n_level * n_vert, cs_real_t);
-  if (         _atmo_option.rad_1d_iru == nullptr)
-    CS_MALLOC(_atmo_option.rad_1d_iru, n_level * n_vert, cs_real_t);
-  if (         _atmo_option.rad_1d_ird == nullptr) {
-    CS_MALLOC(_atmo_option.rad_1d_ird, n_level * n_vert, cs_real_t);
-    cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_ird);
-  }
-  if (         _atmo_option.rad_1d_solu == nullptr)
-    CS_MALLOC(_atmo_option.rad_1d_solu, n_level * n_vert, cs_real_t);
-  if (         _atmo_option.rad_1d_sold == nullptr) {
-    CS_MALLOC(_atmo_option.rad_1d_sold, n_level * n_vert, cs_real_t);
-    cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_sold);
-  }
-  if (         _atmo_option.rad_1d_qw == nullptr) {
-    CS_MALLOC(_atmo_option.rad_1d_qw, n_level * n_vert, cs_real_t);
-    cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_qw);
-  }
-  if (         _atmo_option.rad_1d_ql == nullptr) {
-    CS_MALLOC(_atmo_option.rad_1d_ql, n_level * n_vert, cs_real_t);
-    cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_ql);
-  }
-  if (         _atmo_option.rad_1d_qv == nullptr) {
-    CS_MALLOC(_atmo_option.rad_1d_qv, n_level * n_vert, cs_real_t);
-    cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_qv);
-  }
-  if (         _atmo_option.rad_1d_nc == nullptr) {
-    CS_MALLOC(_atmo_option.rad_1d_nc, n_level * n_vert, cs_real_t);
-    cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_nc);
-  }
-  if (         _atmo_option.rad_1d_fn == nullptr) {
-    CS_MALLOC(_atmo_option.rad_1d_fn, n_level * n_vert, cs_real_t);
-    cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_fn);
-  }
-  if (         _atmo_option.rad_1d_aerosols == nullptr) {
-    CS_MALLOC(_atmo_option.rad_1d_aerosols, n_level * n_vert, cs_real_t);
-    cs_array_real_fill_zero(n_level * n_vert, _atmo_option.rad_1d_aerosols);
-  }
-  if (         _atmo_option.rad_1d_albedo0 == nullptr) {
-    CS_MALLOC(_atmo_option.rad_1d_albedo0, n_vert, cs_real_t);
-    cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_albedo0);
-  }
-  if (         _atmo_option.rad_1d_emissi0== nullptr) {
-    CS_MALLOC(_atmo_option.rad_1d_emissi0, n_vert, cs_real_t);
-    cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_emissi0);
-  }
-  if (         _atmo_option.rad_1d_temp0 == nullptr) {
-    CS_MALLOC(_atmo_option.rad_1d_temp0, n_vert, cs_real_t);
-    cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_temp0);
-  }
-  if (         _atmo_option.rad_1d_theta0 == nullptr) {
-    CS_MALLOC(_atmo_option.rad_1d_theta0, n_vert, cs_real_t);
-    cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_theta0);
-  }
-  if (         _atmo_option.rad_1d_qw0 == nullptr) {
-    CS_MALLOC(_atmo_option.rad_1d_qw0, n_vert, cs_real_t);
-    cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_qw0);
-  }
-  if (         _atmo_option.rad_1d_p0  == nullptr) {
-    CS_MALLOC(_atmo_option.rad_1d_p0, n_vert, cs_real_t);
-    cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_p0);
-  }
-  if (         _atmo_option.rad_1d_rho0 == nullptr) {
-    CS_MALLOC(_atmo_option.rad_1d_rho0, n_vert, cs_real_t);
-    cs_array_real_fill_zero(n_vert, _atmo_option.rad_1d_rho0);
-  }
-
-  *xyvert = _atmo_option.rad_1d_xy;
-  *zray   = _atmo_option.rad_1d_z;
-  *acinfe = _atmo_option.rad_1d_acinfe;
-  *dacinfe = _atmo_option.rad_1d_dacinfe;
-  *aco2   = _atmo_option.rad_1d_aco2  ;
-  *aco2s  = _atmo_option.rad_1d_aco2s ;
-  *daco2  = _atmo_option.rad_1d_daco2 ;
-  *daco2s = _atmo_option.rad_1d_daco2s;
-  *acsup  = _atmo_option.rad_1d_acsup ;
-  *acsups = _atmo_option.rad_1d_acsups;
-  *dacsup = _atmo_option.rad_1d_dacsup;
-  *dacsups = _atmo_option.rad_1d_dacsups;
-  *tauzq  = _atmo_option.rad_1d_tauzq ;
-  *tauz   = _atmo_option.rad_1d_tauz  ;
-  *zq     = _atmo_option.rad_1d_zq    ;
-  *rayi   = _atmo_option.rad_1d_ir_div  ;
-  *rayst  = _atmo_option.rad_1d_sol_div ;
-  *iru    = _atmo_option.rad_1d_iru   ;
-  *ird    = _atmo_option.rad_1d_ird   ;
-  *solu   = _atmo_option.rad_1d_solu  ;
-  *sold   = _atmo_option.rad_1d_sold  ;
-
-  /* ground level arrays, of size n_vert */
-  *soil_albedo   = _atmo_option.rad_1d_albedo0;
-  *soil_emissi   = _atmo_option.rad_1d_emissi0;
-  *soil_ttsoil   = _atmo_option.rad_1d_temp0;
-  *soil_tpsoil   = _atmo_option.rad_1d_theta0;
-  *soil_totwat   = _atmo_option.rad_1d_qw0;
-  *soil_pressure = _atmo_option.rad_1d_p0;
-  *soil_density  = _atmo_option.rad_1d_rho0;
-
   /* number of layers for dynamics times number of time steps */
   dim_nd_nt[0]     = _atmo_option.met_1d_nlevels_d;
   dim_nd_nt[1]     = _atmo_option.met_1d_ntimes;
@@ -2283,30 +2023,8 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
   dim_nd_3[1]    = 3;
   dim_nt_3[0]    = 3;
   dim_nt_3[1]    = _atmo_option.met_1d_ntimes;
-  dim_xyvert[0]    = _atmo_option.rad_1d_nvert;
-  dim_xyvert[1]    = 3;
-  dim_kmx2[0]    = _atmo_option.rad_1d_nlevels_max;
-  dim_kmx2[1]    = _atmo_option.rad_1d_nlevels_max;
-  dim_kmx_nvert[0] = _atmo_option.rad_1d_nlevels_max;
-  dim_kmx_nvert[1] = _atmo_option.rad_1d_nvert;
-
 }
 
-void
-cs_f_atmo_rad_1d_arrays_get_pointers(cs_real_t **qwvert,
-                                     cs_real_t **qlvert,
-                                     cs_real_t **qvvert,
-                                     cs_real_t **ncvert,
-                                     cs_real_t **fnvert,
-                                     cs_real_t **aevert)
-{
-  *qwvert = _atmo_option.rad_1d_qw;
-  *qlvert = _atmo_option.rad_1d_ql;
-  *qvvert = _atmo_option.rad_1d_qv;
-  *ncvert = _atmo_option.rad_1d_nc;
-  *fnvert = _atmo_option.rad_1d_fn;
-  *aevert = _atmo_option.rad_1d_aerosols;
-}
 void
 cs_atmo_soil_init_arrays(int        *n_soil_cat,
                          cs_real_t  **csol,
@@ -2319,6 +2037,7 @@ cs_atmo_soil_init_arrays(int        *n_soil_cat,
                          cs_real_t  **c2w,
                          cs_real_t  **r1,
                          cs_real_t  **r2)
+
  /* The dimension is n_soil_cat + 1 because the element at index 0
     is kept unused. */
 {
@@ -2367,6 +2086,7 @@ cs_atmo_fields_init0(void)
 
   int has_restart = cs_restart_present();
   cs_atmo_option_t *at_opt = cs_glob_atmo_option;
+  cs_atmo_1d_rad_t *at_1d_rad = cs_glob_atmo_1d_rad;
   cs_atmo_chemistry_t *at_chem = cs_glob_atmo_chemistry;
 
   const char input_param_desc[] = N_("Atmospheric module input data");
@@ -2488,7 +2208,7 @@ cs_atmo_fields_init0(void)
    * radiative transfer or chemistry models
    *-------------------------------------------------------------------------*/
 
-  if (   (at_opt->radiative_model_1d == 1 || at_chem->model > 0)
+  if (   (   at_1d_rad->radiative_model_1d == 1 || at_chem->model > 0)
       && (   at_opt->syear == -1 || at_opt->squant == -1
           || at_opt->shour == -1 || at_opt->smin  == -1 || at_opt->ssec <= -1.0)  )
     cs_parameters_error
@@ -3399,6 +3119,7 @@ void
 cs_soil_model(void)
 {
   cs_atmo_option_t *at_opt = &_atmo_option;
+  cs_atmo_1d_rad_t *at_1d_rad = cs_glob_atmo_1d_rad;
 
   int z_id = at_opt->soil_zone_id;
   if (z_id > -1) {
@@ -3451,8 +3172,8 @@ cs_soil_model(void)
     cs_field_t *atm_temp = CS_F_(t);
     cs_field_t *meteo_pressure = cs_field_by_name_try("meteo_pressure");
     /* Radiative tables */
-    cs_real_t *sold = (cs_real_t *)  at_opt->rad_1d_sold;
-    cs_real_t *ird = (cs_real_t *) at_opt->rad_1d_ird;
+    cs_real_t *sold = (cs_real_t *)at_1d_rad->sold;
+    cs_real_t *ird = (cs_real_t *) at_1d_rad->ird;
     /* Pointer to the spectral flux density field */
     cs_field_t *f_qinspe = nullptr;
     if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE)
@@ -3520,7 +3241,7 @@ cs_soil_model(void)
 
       /* Infrared and Solar radiative fluxes
        * Warning: should be adapted for many verticales */
-      if (at_opt->radiative_model_1d == 1
+      if (at_1d_rad->radiative_model_1d == 1
          && rt_params->atmo_model == CS_RAD_ATMO_3D_NONE) {
         foir = ird[0];
         fos = sold[0];
@@ -5230,6 +4951,7 @@ void
 cs_atmo_read_meteo_profile(int mode)
 {
   cs_atmo_option_t *at_opt = &_atmo_option;
+  cs_atmo_1d_rad_t *at_1d_rad = cs_glob_atmo_1d_rad;
   cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
 
   int ih2o = 0;
@@ -5404,7 +5126,7 @@ cs_atmo_read_meteo_profile(int mode)
 
       /* Computes met_1d_nlevels_max_t */
       at_opt->met_1d_nlevels_max_t = at_opt->met_1d_nlevels_t;
-      if (at_opt->radiative_model_1d == 1) {
+      if (at_1d_rad->radiative_model_1d == 1) {
         const cs_real_t ztop = 11000.0;
         while(zzmax <= (ztop-1000.0)) {
           zzmax += 1000.0;
@@ -5466,7 +5188,7 @@ cs_atmo_read_meteo_profile(int mode)
 
       /* If 1D radiative model, complete the
          temperatureand humidity profiles up to 11000m */
-      if (at_opt->radiative_model_1d == 1) {
+      if (at_1d_rad->radiative_model_1d == 1) {
         int ii = at_opt->met_1d_nlevels_t - 1;
         cs_real_t tlkelv, dum;
         const cs_real_t ztop  = 11000.00;
@@ -5599,7 +5321,7 @@ cs_atmo_finalize(void)
     return;
 
   if (_atmo_option.meteo_profile > 0) {
-    if (_atmo_option.radiative_model_1d == 1) {
+    if (cs_glob_atmo_1d_rad->radiative_model_1d == 1) {
       cs_measures_sets_destroy();
       cs_interpol_grids_destroy();
     }
@@ -5632,41 +5354,6 @@ cs_atmo_finalize(void)
   CS_FREE(_atmo_option.dpdt_met);
   CS_FREE(_atmo_option.mom_met);
   CS_FREE(_atmo_option.mom_cs);
-
-  CS_FREE(_atmo_option.rad_1d_xy);
-  CS_FREE(_atmo_option.rad_1d_z);
-  CS_FREE(_atmo_option.rad_1d_acinfe);
-  CS_FREE(_atmo_option.rad_1d_dacinfe);
-  CS_FREE(_atmo_option.rad_1d_aco2);
-  CS_FREE(_atmo_option.rad_1d_aco2s);
-  CS_FREE(_atmo_option.rad_1d_daco2);
-  CS_FREE(_atmo_option.rad_1d_daco2s);
-  CS_FREE(_atmo_option.rad_1d_acsup);
-  CS_FREE(_atmo_option.rad_1d_acsups);
-  CS_FREE(_atmo_option.rad_1d_dacsup);
-  CS_FREE(_atmo_option.rad_1d_dacsups);
-  CS_FREE(_atmo_option.rad_1d_tauzq);
-  CS_FREE(_atmo_option.rad_1d_tauz);
-  CS_FREE(_atmo_option.rad_1d_zq);
-  CS_FREE(_atmo_option.rad_1d_ir_div);
-  CS_FREE(_atmo_option.rad_1d_sol_div);
-  CS_FREE(_atmo_option.rad_1d_iru);
-  CS_FREE(_atmo_option.rad_1d_ird);
-  CS_FREE(_atmo_option.rad_1d_solu);
-  CS_FREE(_atmo_option.rad_1d_sold);
-  CS_FREE(_atmo_option.rad_1d_albedo0);
-  CS_FREE(_atmo_option.rad_1d_emissi0);
-  CS_FREE(_atmo_option.rad_1d_temp0);
-  CS_FREE(_atmo_option.rad_1d_theta0);
-  CS_FREE(_atmo_option.rad_1d_qw0);
-  CS_FREE(_atmo_option.rad_1d_p0);
-  CS_FREE(_atmo_option.rad_1d_rho0);
-  CS_FREE(_atmo_option.rad_1d_aerosols);
-  CS_FREE(_atmo_option.rad_1d_fn);
-  CS_FREE(_atmo_option.rad_1d_nc);
-  CS_FREE(_atmo_option.rad_1d_qv);
-  CS_FREE(_atmo_option.rad_1d_ql);
-  CS_FREE(_atmo_option.rad_1d_qw);
 
   CS_FREE(_atmo_option.soil_cat_r1);
   CS_FREE(_atmo_option.soil_cat_r2);

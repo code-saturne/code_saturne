@@ -43,6 +43,7 @@
 #include "bft/bft_printf.h"
 #include "bft/bft_error.h"
 
+#include "atmo/cs_atmo_1d_rad.h"
 #include "atmo/cs_atmo.h"
 #include "atmo/cs_atmo_chemistry.h"
 #include "base/cs_1d_wall_thermal.h"
@@ -1235,7 +1236,7 @@ cs_parameters_check(void)
   /*-------------------------------------------------------------------------
    * Check radiative module latitude / longitude
    *-------------------------------------------------------------------------*/
-  if (   at_opt->radiative_model_1d == 1
+  if (   cs_glob_atmo_1d_rad->radiative_model_1d == 1
       && (   at_opt->latitude >= cs_math_infinite_r*0.5
           || at_opt->longitude >= cs_math_infinite_r*0.5) )
     cs_parameters_error
