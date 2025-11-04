@@ -630,6 +630,92 @@ cs_boundary_conditions_set_generalized_dirichlet_vector
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set generalized Dirichlet BC for a symmetric tensor for a given face.
+ *
+ * That is Dirichlet on shear, Neumann on "normal components"
+ *
+ * \param[out]  a            explicit BC coefficient for gradients
+ * \param[out]  af           explicit BC coefficient for diffusive flux
+ * \param[out]  b            implicit BC coefficient for gradients
+ * \param[out]  bf           implicit BC coefficient for diffusive flux
+ * \param[in]   pimpv        Dirichlet value to impose on the
+ *                           tangential components
+ * \param[in]   qimpv        flux value to impose on the normal component
+ * \param[in]   hint         internal exchange coefficient
+ * \param[in]   normal       unit normal
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE inline static void
+cs_boundary_conditions_set_generalized_dirichlet_sym_tensor
+  (cs_real_t              a[6],
+   cs_real_t              af[6],
+   cs_real_t              b[6][6],
+   cs_real_t              bf[6][6],
+   const cs_real_t        pimpv[6],
+   const cs_real_t        qimpv[6],
+   cs_real_t              hint,
+   const cs_nreal_t       normal[3])
+{
+  const int iv2t[6] = {0, 1, 2, 0, 1, 0};
+  const int jv2t[6] = {0, 1, 2, 1, 2, 2};
+  const cs_real_t delta[3][3] = {{1., 0., 0.}, {0., 1., 0.}, {0., 0., 1.}};
+
+  cs_real_t d[6][6];
+  cs_real_t n[6][6];
+
+  for (int ij = 0; ij < 6; ij++) {
+
+    int i = iv2t[ij];
+    int j = jv2t[ij];
+    /* Gradient BC*/
+    /* "[1 -n(x)n] Pimp" is divided into two */
+    //a[ij] = pimpv[ij];
+    a[ij] = 0;
+    for (int kl = 0; kl < 6; kl++) {
+
+      int k = iv2t[kl];
+      int l = jv2t[kl];
+
+      d[ij][kl] = (delta[i][k] - normal[i]*normal[k]) * normal[l]*normal[j]
+                 + normal[i]*normal[k] * (delta[j][l] - normal[l]*normal[j]);
+
+      n[ij][kl] = normal[i]*normal[k]*normal[l]*normal[j]
+        +   (delta[i][k] - normal[i]*normal[k])
+          * (delta[j][l] - normal[j]*normal[l]);
+
+      a[ij] += d[ij][kl]*pimpv[kl]
+              - n[ij][kl]*qimpv[kl]/(cs::max(hint, 1.e-300));
+
+      b[ij][kl] = n[ij][kl];
+    }
+
+    /* Flux BC */
+    /* "[1 -n(x)n] Pimp" is divided into two */
+    //af[ij] = -hint*pimpv[ij];
+    af[ij] = 0;
+    for (int kl = 0; kl < 6; kl++) {
+
+      int k = iv2t[kl];
+      int l = jv2t[kl];
+
+      d[ij][kl] = (delta[i][k] - normal[i]*normal[k]) * normal[l]*normal[j]
+                 + normal[i]*normal[k] * (delta[j][l] - normal[l]*normal[j]);
+
+      n[ij][kl] = normal[i]*normal[k]*normal[l]*normal[j]
+        +   (delta[i][k] - normal[i]*normal[k])
+          * (delta[j][l] - normal[l]*normal[j]);
+
+      af[ij] += n[ij][kl]*qimpv[kl]
+               - hint*d[ij][kl]*pimpv[kl];
+
+      bf[ij][kl] = hint*d[ij][kl];
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set generalized Dirichlet BC for an anisotropic vector for a given
  *         face.
  *

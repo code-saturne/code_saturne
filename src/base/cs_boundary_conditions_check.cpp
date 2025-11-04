@@ -150,7 +150,9 @@ cs_boundary_conditions_check(int  bc_type[],
 
   const int type_id_vel[10] = {1, 2, 3, 4, 5, 6, 9, 11, 13, 14};
   const int type_id_p[7]    = {1, 2, 3, 11, 12, 13, 15};
-  const int type_id_turb[7] = {1, 2, 3, 5, 6, 13, 4};
+  const int type_id_turb[] = {1, 2, 3, 5, 6, 13,
+                              4, 11}; /* the last two codes are for tensor
+                                         (Rij) only */
   const int type_id_sc[11]  = {1, 2, 3, 4, 5, 6, 11, 12, 13, 14, 15};
 
   /* Initializations
@@ -349,7 +351,7 @@ cs_boundary_conditions_check(int  bc_type[],
     int *icodcl = f_turb->bc_coeffs->icodcl;
 
     cs_gnum_t n_field_errors = 0;
-    int n_allowed_codes = (f_turb == CS_F_(rij)) ? 7 : 6;
+    int n_allowed_codes = (f_turb == CS_F_(rij)) ? 8 : 6;
 
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 

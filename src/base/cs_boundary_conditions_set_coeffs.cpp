@@ -2207,6 +2207,32 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           }
         }
 
+        /* Neumann on the normal component, Dirichlet on tangential components
+           ------------------------------------------------------------------- */
+
+        else if (icodcl_ts[f_id] == 11) {
+
+          /* Dirichlet to impose on the tangential components */
+          for (cs_lnum_t ij = 0; ij < 6; ij++)
+            pimpts[ij] = rcodcl1_ts[n_b_faces*ij + f_id];
+
+          /* Flux to impose on the normal component */
+          for (cs_lnum_t ij = 0; ij < 6; ij++)
+            qimpts[ij] = rcodcl3_ts[n_b_faces*ij + f_id];
+
+          cs_boundary_conditions_set_generalized_dirichlet_sym_tensor
+            (coefa_ts[f_id], cofaf_ts[f_id],
+             coefb_ts[f_id], cofbf_ts[f_id],
+             pimpts, qimpts, hint, b_face_u_normal[f_id]);
+
+          /* Boundary conditions for the momentum equation */
+          for (cs_lnum_t ij = 0; ij < 6; ij++) {
+            cofad_ts[f_id][ij]     = coefa_ts[f_id][ij];
+            cofbd_ts[f_id][ij][ij] = coefb_ts[f_id][ij][ij];
+          }
+
+        }
+
       });
 
       /* epsilon */
