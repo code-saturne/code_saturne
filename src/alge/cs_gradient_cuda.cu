@@ -425,13 +425,13 @@ _compute_rhs_lsq_strided_b_face(cs_lnum_t             n_b_cells,
       for (cs_lnum_t ll = 0; ll < 3; ll++)
         dif[ll] = b_face_cog[f_id][ll] - cell_cen[c_id][ll];
 
-      cs_real_t ddif = 1. / cs_math_3_square_norm(dif);
+      cs_real_t ddif = 1. / cs_math_3_square_norm_cuda(dif);
 
       for (cs_lnum_t kk = 0; kk < stride; kk++) {
-        cs_real_t pfac = (val_f[f_id][kk] - pvar[c_id][kk]) * ddif;
+        cs_real_t pfac = (val_f[f_id][kk] - pvar_c[kk]) * ddif;
 
         for (cs_lnum_t ll = 0; ll < 3; ll++)
-          rhs[c_id][kk][ll] += dif[ll] * pfac;
+          _rhs[kk][ll] += dif[ll] * pfac;
       }
 #elif (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
       cs_real_t unddij = 1. / b_dist[f_id];
@@ -442,10 +442,10 @@ _compute_rhs_lsq_strided_b_face(cs_lnum_t             n_b_cells,
       }
 
       for (cs_lnum_t kk = 0; kk < stride; kk++) {
-        cs_real_t pfac = (val_f[f_id][kk] - pvar[c_id][kk]) * unddij;
+        cs_real_t pfac = (val_f[f_id][kk] - pvar_c[kk]) * unddij;
 
         for (cs_lnum_t ll = 0; ll < 3; ll++)
-          rhs[c_id][kk][ll] += dif[ll] * pfac;
+          _rhs[kk][ll] += dif[ll] * pfac;
       }
 #endif
   } /* loop on boundary faces */
