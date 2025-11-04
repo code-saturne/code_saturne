@@ -227,18 +227,18 @@ cs_boundary_conditions_set_neumann_vector_aniso(cs_real_t             a[3],
 
   /* Gradient BCs */
   cs_math_sym_33_3_product(invh, qimpv, a);
-  for (cs_lnum_t isou = 0; isou < 3; isou++)
-    a[isou] = -a[isou];
+  for (cs_lnum_t i = 0; i < 3; i++)
+    a[i] = -a[i];
 
   b[0][0] = 1.0, b[0][1] = 0.0, b[0][2] = 0.0;
   b[1][0] = 0.0, b[1][1] = 1.0, b[1][2] = 0.0;
   b[2][0] = 0.0, b[2][1] = 0.0, b[2][2] = 1.0;
 
-  for (cs_lnum_t isou = 0; isou < 3; isou++) {
+  for (cs_lnum_t i = 0; i < 3; i++) {
     /* Flux BCs */
-    af[isou] = qimpv[isou];
+    af[i] = qimpv[i];
     for (cs_lnum_t jsou = 0; jsou < 3; jsou++)
-      bf[isou][jsou] = 0.0;
+      bf[i][jsou] = 0.0;
   }
 }
 
@@ -262,21 +262,21 @@ cs_boundary_conditions_set_neumann_tensor(cs_real_t        a[6],
                                           const cs_real_t  qimpts[6],
                                           cs_real_t        hint)
 {
-  for (int isou = 0; isou < 6; isou++) {
+  for (int i = 0; i < 6; i++) {
 
     /* Gradient BC */
-    a[isou] = -qimpts[isou]/cs::max(hint, 1.e-300);
+    a[i] = -qimpts[i]/cs::max(hint, 1.e-300);
     for (int jsou = 0; jsou < 6; jsou++) {
-      if (jsou == isou)
-        b[isou][jsou] = 1.0;
+      if (jsou == i)
+        b[i][jsou] = 1.0;
       else
-        b[isou][jsou] = 0.0;
+        b[i][jsou] = 0.0;
     }
 
     /* Flux BCs */
-    af[isou] = qimpts[isou];
+    af[i] = qimpts[i];
     for (int jsou = 0; jsou < 6; jsou++)
-      bf[isou][jsou] = 0.0;
+      bf[i][jsou] = 0.0;
   }
 }
 
@@ -304,16 +304,16 @@ cs_boundary_conditions_set_dirichlet_vector(cs_real_t             a[3],
                                             cs_real_t             hint,
                                             const cs_real_t       hextv[3])
 {
-  for (int isou = 0; isou < 3; isou++) {
-    if (fabs(hextv[isou]) > 0.5*cs_math_infinite_r) {
+  for (int i = 0; i < 3; i++) {
+    if (fabs(hextv[i]) > 0.5*cs_math_infinite_r) {
 
       /* Gradient BCs */
-      a[isou] = pimpv[isou];
+      a[i] = pimpv[i];
       for (int jsou = 0; jsou < 3; jsou++)
-        b[isou][jsou] = 0.;
+        b[i][jsou] = 0.;
 
       /* Flux BCs */
-      af[isou] = -hint*pimpv[isou];
+      af[i] = -hint*pimpv[i];
 
       bf[0][0] = hint, bf[0][1] = 0.,   bf[0][2] = 0.;
       bf[1][0] = 0.,   bf[1][1] = hint, bf[1][2] = 0.;
@@ -322,18 +322,18 @@ cs_boundary_conditions_set_dirichlet_vector(cs_real_t             a[3],
     }
     else {
 
-      const cs_real_t val = hint/(hint + hextv[isou]);
-      const cs_real_t heq = hextv[isou]*val;
+      const cs_real_t val = hint/(hint + hextv[i]);
+      const cs_real_t heq = hextv[i]*val;
 
       /* Gradient BCs */
-      a[isou] = hextv[isou]*pimpv[isou]/(hint + hextv[isou]);
+      a[i] = hextv[i]*pimpv[i]/(hint + hextv[i]);
 
       b[0][0] = val, b[0][1] = 0.,  b[0][2] = 0.;
       b[1][0] = 0.,  b[1][1] = val, b[1][2] = 0.;
       b[2][0] = 0.,  b[2][1] = 0.,  b[2][2] = val;
 
       /* Flux BCs */
-      af[isou] = -heq*pimpv[isou];
+      af[i] = -heq*pimpv[i];
 
       bf[0][0] = heq, bf[0][1] = 0.,  bf[0][2] = 0.;
       bf[1][0] = 0.,  bf[1][1] = heq, bf[1][2] = 0.;
@@ -394,24 +394,24 @@ cs_boundary_conditions_set_dirichlet_vector_aniso
    const cs_real_t        hextv[3])
 {
   /* Gradient BCs */
-  for (int isou = 0; isou < 3; isou++) {
-    if (fabs(hextv[isou]) > 0.5*cs_math_infinite_r) {
-      a[isou] = pimpv[isou];
+  for (int i = 0; i < 3; i++) {
+    if (fabs(hextv[i]) > 0.5*cs_math_infinite_r) {
+      a[i] = pimpv[i];
       for (int jsou = 0; jsou < 3; jsou++)
-        b[isou][jsou] = 0.;
+        b[i][jsou] = 0.;
     }
     else {
       /* FIXME: at least log error message */
       bft_error(__FILE__, __LINE__, 0,
                 _(" %s: hextv not set for component %d."),
-                __func__, isou);
+                __func__, i);
     }
   }
 
   /* Flux BCs */
   cs_math_sym_33_3_product(hintt, pimpv, af);
-  for (int isou = 0; isou < 3; isou++)
-    af[isou] = -af[isou];
+  for (int i = 0; i < 3; i++)
+    af[i] = -af[i];
 
   bf[0][0] = hintt[0];
   bf[1][1] = hintt[1];
@@ -447,44 +447,44 @@ cs_boundary_conditions_set_dirichlet_tensor(cs_real_t        a[6],
                                             cs_real_t        hint,
                                             const cs_real_t  hextts[6])
 {
-  for (int isou = 0; isou < 6; isou++) {
+  for (int i = 0; i < 6; i++) {
 
-    if (fabs(hextts[isou]) > 0.5*cs_math_infinite_r) {
+    if (fabs(hextts[i]) > 0.5*cs_math_infinite_r) {
       /* Gradient BCs */
-      a[isou] = pimpts[isou];
+      a[i] = pimpts[i];
       for (int jsou = 0; jsou < 6; jsou++)
-        b[isou][jsou] = 0.;
+        b[i][jsou] = 0.;
 
       /* Flux BCs */
-      af[isou] = -hint * pimpts[isou];
+      af[i] = -hint * pimpts[i];
       for (int jsou = 0; jsou < 6; jsou++) {
-        if (jsou == isou)
-          bf[isou][jsou] = hint;
+        if (jsou == i)
+          bf[i][jsou] = hint;
         else
-          bf[isou][jsou] = 0.;
+          bf[i][jsou] = 0.;
       }
     }
 
     else {
 
-      const cs_real_t heq = hint * hextts[isou] / (hint + hextts[isou]);
+      const cs_real_t heq = hint * hextts[i] / (hint + hextts[i]);
 
       /* Gradient BCs */
-      a[isou] = hextts[isou] * pimpts[isou] / (hint + hextts[isou]);
+      a[i] = hextts[i] * pimpts[i] / (hint + hextts[i]);
       for (int jsou = 0; jsou < 6; jsou++) {
-        if (jsou == isou)
-          b[isou][jsou] = hint / (hint + hextts[isou]);
+        if (jsou == i)
+          b[i][jsou] = hint / (hint + hextts[i]);
         else
-          b[isou][jsou] = 0.;
+          b[i][jsou] = 0.;
       }
 
       /* Flux BCs */
-      af[isou] = -heq * pimpts[isou];
+      af[i] = -heq * pimpts[i];
       for (int jsou = 0; jsou < 6; jsou++) {
-        if (jsou == isou)
-          bf[isou][jsou] = heq;
+        if (jsou == i)
+          bf[i][jsou] = heq;
         else
-          bf[isou][jsou] = 0.;
+          bf[i][jsou] = 0.;
       }
     }
   }
@@ -516,31 +516,31 @@ cs_boundary_conditions_set_generalized_sym_vector
    cs_real_t              hint,
    const cs_nreal_t       normal[3])
 {
-  for (int isou = 0; isou < 3; isou++) {
+  for (int i = 0; i < 3; i++) {
 
     /* Gradient BCs */
-    a[isou] = - qimpv[isou]/cs::max(hint, 1.e-300);
+    a[i] = - qimpv[i]/cs::max(hint, 1.e-300);
     /* "[1 -n(x)n] Qimp / hint" is divided into two */
-    for (int jsou = 0; jsou < 3; jsou++) {
+    for (int j = 0; j < 3; j++) {
 
-      a[isou] = a[isou] + normal[isou]*normal[jsou]
-        * (pimpv[jsou] + qimpv[jsou] / cs::max(hint, 1.e-300));
+      a[i] = a[i] + normal[i]*normal[j]
+        * (pimpv[j] + qimpv[j] / cs::max(hint, 1.e-300));
 
-      if (jsou == isou)
-        b[isou][jsou] = 1.0 - normal[isou] * normal[jsou];
+      if (j == i)
+        b[i][j] = 1.0 - normal[i] * normal[j];
       else
-        b[isou][jsou] = - normal[isou] * normal[jsou];
+        b[i][j] = - normal[i] * normal[j];
     }
 
     /* Flux BCs */
-    af[isou] = qimpv[isou];
+    af[i] = qimpv[i];
     /* "[1 -n(x)n] Qimp" is divided into two */
-    for (int jsou = 0; jsou < 3; jsou++){
+    for (int j = 0; j < 3; j++){
 
-      af[isou] = af[isou] - normal[isou]*normal[jsou]
-                  * (hint * pimpv[jsou] + qimpv[jsou]);
+      af[i] = af[i] - normal[i]*normal[j]
+                  * (hint * pimpv[j] + qimpv[j]);
 
-      bf[isou][jsou] = hint * normal[isou] * normal[jsou];
+      bf[i][j] = hint * normal[i] * normal[j];
     }
   }
 }
@@ -599,31 +599,31 @@ cs_boundary_conditions_set_generalized_dirichlet_vector
    cs_real_t              hint,
    const cs_nreal_t       normal[3])
 {
-  for (int isou = 0; isou < 3; isou++) {
+  for (int i = 0; i < 3; i++) {
 
     /* Gradient BC*/
     /* "[1 -n(x)n] Pimp" is divided into two */
-    a[isou] = pimpv[isou];
-    for (int jsou = 0; jsou < 3; jsou++) {
+    a[i] = pimpv[i];
+    for (int j = 0; j < 3; j++) {
 
-      a[isou] = a[isou] - normal[isou]*normal[jsou]
-        * (pimpv[jsou] + qimpv[jsou] / cs::max(hint, 1.e-300));
+      a[i] = a[i] - normal[i]*normal[j]
+        * (pimpv[j] + qimpv[j] / cs::max(hint, 1.e-300));
 
-      b[isou][jsou] = normal[isou] * normal[jsou];
+      b[i][j] = normal[i] * normal[j];
     }
 
     /* Flux BC */
     /* "[1 -n(x)n] Pimp" is divided into two */
-    af[isou] = -hint*pimpv[isou];
-    for (int jsou = 0; jsou < 3; jsou++) {
+    af[i] = -hint*pimpv[i];
+    for (int j = 0; j < 3; j++) {
 
-      af[isou] = af[isou] + normal[isou]*normal[jsou]
-        * (qimpv[jsou] + pimpv[jsou] * hint);
+      af[i] = af[i] + normal[i]*normal[j]
+        * (qimpv[j] + pimpv[j] * hint);
 
-      if (jsou == isou)
-        bf[isou][jsou] = hint * (1.0 - normal[isou] * normal[jsou]);
+      if (j == i)
+        bf[i][j] = hint * (1.0 - normal[i] * normal[j]);
       else
-        bf[isou][jsou] = - hint * normal[isou] * normal[jsou];
+        bf[i][j] = - hint * normal[i] * normal[j];
     }
   }
 }
@@ -766,24 +766,24 @@ cs_boundary_conditions_set_convective_outlet_vector
    const cs_real_t        cflv[3],
    cs_real_t              hint)
 {
-  for (int isou = 0; isou < 3; isou++) {
+  for (int i = 0; i < 3; i++) {
 
     /* Gradient BCs */
-    for (int jsou = 0; jsou < 3; jsou ++) {
-      if (jsou == isou)
-        b[isou][jsou] = cflv[isou] / (1.0 + cflv[isou]);
+    for (int j = 0; j < 3; j ++) {
+      if (j == i)
+        b[i][j] = cflv[i] / (1.0 + cflv[i]);
       else
-        b[isou][jsou] = 0.0;
+        b[i][j] = 0.0;
     }
-    a[isou] = pimpv[isou] * (1.0 - b[isou][isou]);
+    a[i] = pimpv[i] * (1.0 - b[i][i]);
 
     /* Flux BCs */
-    af[isou] = -hint * a[isou];
-    for (int jsou = 0; jsou < 3; jsou++) {
-      if (jsou == isou)
-        bf[isou][jsou] = hint * (1.0 - b[isou][jsou]);
+    af[i] = -hint * a[i];
+    for (int j = 0; j < 3; j++) {
+      if (j == i)
+        bf[i][j] = hint * (1.0 - b[i][j]);
     else
-      bf[isou][jsou] = 0.0;
+      bf[i][j] = 0.0;
     }
   }
 }
@@ -811,24 +811,24 @@ cs_boundary_conditions_set_convective_outlet_tensor(cs_real_t        a[6],
                                                     const cs_real_t  cflts[6],
                                                     cs_real_t        hint)
 {
-  for (int isou = 0; isou < 6; isou++) {
+  for (int ij = 0; ij < 6; ij++) {
 
     /* Gradient BCs */
-    for (int jsou = 0; jsou < 6; jsou++) {
-      if (jsou == isou)
-        b[isou][jsou] = cflts[isou] / (1.0 + cflts[isou]);
+    for (int kl = 0; kl < 6; kl++) {
+      if (kl == ij)
+        b[ij][kl] = cflts[ij] / (1.0 + cflts[ij]);
       else
-        b[isou][jsou] = 0.0;
+        b[ij][kl] = 0.0;
     }
-    a[isou] = (1.0 - b[isou][isou]) * pimpts[isou];
+    a[ij] = (1.0 - b[ij][ij]) * pimpts[ij];
 
     /* Flux BCs */
-    af[isou] = -hint*a[isou];
-    for (int jsou = 0; jsou < 6; jsou++) {
-      if (jsou == isou)
-        bf[isou][jsou] = hint * (1.0 - b[isou][jsou]);
+    af[ij] = -hint*a[ij];
+    for (int kl = 0; kl < 6; kl++) {
+      if (kl == ij)
+        bf[ij][kl] = hint * (1.0 - b[ij][kl]);
       else
-        bf[isou][jsou] = 0.0;
+        bf[ij][kl] = 0.0;
     }
   }
 }
@@ -857,23 +857,23 @@ cs_boundary_conditions_set_convective_outlet_vector_aniso
    const cs_real_t        cflv[3],
    const cs_real_t        hintt[6])
 {
-  for(int isou = 0; isou < 3; isou++) {
+  for(int i = 0; i < 3; i++) {
 
     /* Gradient BCs */
-    for (int jsou = 0; jsou < 3; jsou++) {
-      if (jsou == isou)
-        b[isou][jsou] = cflv[isou]/(1.0+cflv[isou]);
+    for (int j = 0; j < 3; j++) {
+      if (j == i)
+        b[i][j] = cflv[i]/(1.0+cflv[i]);
       else
-        b[isou][jsou] = 0.0;
+        b[i][j] = 0.0;
     }
-    a[isou] = (1.0-b[isou][isou])*pimpv[isou];
+    a[i] = (1.0-b[i][i])*pimpv[i];
 
   }
 
   /* Flux BCs */
   cs_math_sym_33_3_product(hintt, a, af);
-  for (int isou = 0; isou < 3; isou++)
-    af[isou] = -af[isou];
+  for (int i = 0; i < 3; i++)
+    af[i] = -af[i];
 
   bf[0][0] = hintt[0]*(1.0 - b[0][0]);
   bf[1][1] = hintt[1]*(1.0 - b[1][1]);
@@ -909,17 +909,17 @@ cs_boundary_conditions_set_dirichlet_conv_neumann_diff_vector
    const cs_real_t        pimpv[3],
    const cs_real_t        qimpv[3])
 {
-  for (int isou = 0; isou < 3; isou++) {
+  for (int i = 0; i < 3; i++) {
 
     /* Gradient BCs */
-    a[isou] = pimpv[isou];
-    for (int jsou = 0; jsou < 3; jsou++)
-      b[isou][jsou] = 0.0;
+    a[i] = pimpv[i];
+    for (int j = 0; j < 3; j++)
+      b[i][j] = 0.0;
 
     /* Flux BCs */
-    af[isou] = qimpv[isou];
-    for (int jsou = 0; jsou < 3; jsou++)
-      bf[isou][jsou] = 0.0;
+    af[i] = qimpv[i];
+    for (int j = 0; j < 3; j++)
+      bf[i][j] = 0.0;
   }
 }
 
@@ -946,19 +946,19 @@ cs_boundary_conditions_set_dirichlet_conv_neumann_diff_tensor
    const cs_real_t  pimpts[6],
    const cs_real_t  qimpts[6])
 {
-  for (int isou = 0; isou < 6; isou++) {
+  for (int ij = 0; ij < 6; ij++) {
 
-    /* BS test on hextv ? if (abs(hextv[isou]) > cs_math_infinite_r * 0.5) */
+    /* BS test on hextv ? if (abs(hextv[ij]) > cs_math_infinite_r * 0.5) */
 
     /* Gradient BCs */
-    a[isou] = pimpts[isou];
-    for (int jsou = 0; jsou < 6; jsou++)
-      b[isou][jsou] = 0.0;
+    a[ij] = pimpts[ij];
+    for (int kl = 0; kl < 6; kl++)
+      b[ij][kl] = 0.0;
 
     /* Flux BCs */
-    af[isou] = qimpts[isou];
-    for (int jsou = 0; jsou < 6; jsou++)
-      bf[isou][jsou] = 0.0;
+    af[ij] = qimpts[ij];
+    for (int kl = 0; kl < 6; kl++)
+      bf[ij][kl] = 0.0;
   }
 }
 
