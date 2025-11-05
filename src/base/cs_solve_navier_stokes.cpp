@@ -93,6 +93,7 @@
 #include "base/cs_prototypes.h"
 #include "base/cs_reducers.h"
 #include "base/cs_rotation.h"
+#include "base/cs_runge_kutta_integrator.h"
 #include "base/cs_sat_coupling.h"
 #include "alge/cs_sles_default.h"
 #include "base/cs_thermal_model.h"
@@ -3144,6 +3145,34 @@ _velocity_prediction(const cs_mesh_t             *m,
 
     int *icvfli = cs_cf_boundary_conditions_get_icvfli();
 
+    cs_runge_kutta_integrator_t *rk_u =
+      cs_runge_kutta_integrator_by_id(eqp_u->rk_def.rk_id);
+
+    if (cs_runge_kutta_is_active(rk_u)) {
+      cs_runge_kutta_stage_set_initial_rhs<3>(ctx, rk_u,(cs_real_t*)smbr);
+      cs_runge_kutta_stage_complete_rhs<3>(ctx,
+                                           rk_u,
+                                           cs_glob_time_step_options->idtvar,
+                                           CS_F_(vel)->id,
+                                           vp_model->ivisse,
+                                           &eqp_loc,
+                                           bc_coeffs_v,
+                                           imasfl,
+                                           bmasfl,
+                                           viscf,
+                                           viscb,
+                                           secvif,
+                                           secvib,
+                                           nullptr,
+                                           nullptr,
+                                           nullptr,
+                                           icvflb,
+                                           icvfli,
+                                           vel);
+      cs_runge_kutta_staging<3>(ctx, rk_u, (cs_real_t*) vel);
+      return;
+    }
+
     cs_equation_iterative_solve_vector(cs_glob_time_step_options->idtvar,
                                        iterns,
                                        CS_F_(vel)->id,
@@ -3920,6 +3949,15 @@ cs_solve_navier_stokes(const int        iterns,
     brom = brom_eos;
   }
 
+  cs_runge_kutta_integrator_t *rk_u =
+    cs_runge_kutta_integrator_by_id(eqp_u->rk_def.rk_id);
+
+  cs_runge_kutta_init_state<3>(ctx,
+                               rk_u,
+                               crom,
+                               mq->cell_vol,
+                               (cs_real_t *)vela);
+
   /* Prediction of the mass flux in case of Low Mach compressible algorithm
      ---------------------------------------------------------------------- */
 
@@ -4027,766 +4065,768 @@ cs_solve_navier_stokes(const int        iterns,
   cs_real_3_t *coefau = (cs_real_3_t *)CS_F_(vel)->bc_coeffs->a;
   cs_real_3_t *cofafu = (cs_real_3_t *)CS_F_(vel)->bc_coeffs->af;
 
-  if (vp_param->staggered == 0) {
-    _velocity_prediction(m,
-                         mq,
-                         1,
-                         iterns,
-                         dt,
-                         vel,
-                         vela,
-                         velk,
-                         da_uu,
-                         bc_coeffs_vel,
-                         ckupdc,
-                         frcxt,
-                         grdphd,
-                         gxyz_h,
-                         fluid_props->xyzp0,
-                         trava,
-                         dfrcxt,
-                         dttens,
-                         trav,
-                         viscf,
-                         viscb,
-                         viscfi,
-                         viscbi,
-                         secvif,
-                         secvib);
-  }
-  else {
-    /* Account for external forces partially balanced by the pressure gradient
-       (only for the first call; the second one is for error estimators) */
-    if (vp_param->iphydr == 1) {
-      const cs_real_t ro0 = fluid_props->ro0;
-      const cs_real_t gxyz[3] = {gxyz_h[0], gxyz_h[1], gxyz_h[2]};
-      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        //const int is_active = cs_mesh_quantities_cell_is_active(mq, c_id);
-        const int ind = has_disable_flag * c_id;
-        const int is_active = (1 - (has_disable_flag * c_disable_flag[ind]));
-        const cs_real_t drom =  (crom[c_id] - ro0) * is_active;
-        for (cs_lnum_t i = 0; i < 3; i++)
-          dfrcxt[c_id][i] = drom * gxyz[i] - frcxt[c_id][i]*is_active;
-      });
-
-      ctx.wait(); // needed for the following synchronization
-
-      cs_halo_sync_r(m->halo, CS_HALO_EXTENDED, on_device, dfrcxt);
+  do { // Commun part in theta scheme and Runge-Kutta scheme
+    if (vp_param->staggered == 0) {
+      _velocity_prediction(m,
+                           mq,
+                           1,
+                           iterns,
+                           dt,
+                           vel,
+                           vela,
+                           velk,
+                           da_uu,
+                           bc_coeffs_vel,
+                           ckupdc,
+                           frcxt,
+                           grdphd,
+                           gxyz_h,
+                           fluid_props->xyzp0,
+                           trava,
+                           dfrcxt,
+                           dttens,
+                           trav,
+                           viscf,
+                           viscb,
+                           viscfi,
+                           viscbi,
+                           secvif,
+                           secvib);
     }
-  }
+    else {
+      /* Account for external forces partially balanced by the pressure gradient
+         (only for the first call; the second one is for error estimators) */
+      if (vp_param->iphydr == 1) {
+        const cs_real_t ro0 = fluid_props->ro0;
+        const cs_real_t gxyz[3] = {gxyz_h[0], gxyz_h[1], gxyz_h[2]};
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+          //const int is_active = cs_mesh_quantities_cell_is_active(mq, c_id);
+          const int ind = has_disable_flag * c_id;
+          const int is_active = (1 - (has_disable_flag * c_disable_flag[ind]));
+          const cs_real_t drom =  (crom[c_id] - ro0) * is_active;
+          for (cs_lnum_t i = 0; i < 3; i++)
+            dfrcxt[c_id][i] = drom * gxyz[i] - frcxt[c_id][i]*is_active;
+        });
 
-  /* Bad cells regularisation */
-  cs_bad_cells_regularisation_vector(vel, 1);
+        ctx.wait(); // needed for the following synchronization
 
-  /* Exit if no pressure-continuity:
-   * update mass fluxes and return */
+        cs_halo_sync_r(m->halo, CS_HALO_EXTENDED, on_device, dfrcxt);
+      }
+    }
 
-  const int kimasf = cs_field_key_id("inner_mass_flux_id");
-  const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-  const int iflmas = cs_field_get_key_int(CS_F_(vel), kimasf);
-  const int iflmab = cs_field_get_key_int(CS_F_(vel), kbmasf);
+    /* Bad cells regularisation */
+    cs_bad_cells_regularisation_vector(vel, 1);
 
-  cs_real_t *imasfl = cs_field_by_id(iflmas)->val;
-  cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
+    /* Exit if no pressure-continuity:
+     * update mass fluxes and return */
 
-  if (vp_param->iprco < 1) {
-    int iflmb0 = 1;
-    if (cs_glob_ale > CS_ALE_NONE)
-      iflmb0 = 0;
+    const int kimasf = cs_field_key_id("inner_mass_flux_id");
+    const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
+    const int iflmas = cs_field_get_key_int(CS_F_(vel), kimasf);
+    const int iflmab = cs_field_get_key_int(CS_F_(vel), kbmasf);
 
-    cs_mass_flux(m,
-                 mq,
-                 CS_F_(vel)->id,
-                 1,  /* itypfl */
-                 iflmb0,
-                 1,  /* init */
-                 1,  /* inc */
-                 eqp_u->imrgra,
-                 eqp_u->nswrgr,
-                 static_cast<cs_gradient_limit_t>(eqp_u->imligr),
-                 eqp_u->verbosity,
-                 eqp_u->epsrgr,
-                 eqp_u->climgr,
-                 crom, brom,
-                 vel,
-                 bc_coeffs_vel,
-                 imasfl, bmasfl);
+    cs_real_t *imasfl = cs_field_by_id(iflmas)->val;
+    cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
+
+    if (vp_param->iprco < 1) {
+      int iflmb0 = 1;
+      if (cs_glob_ale > CS_ALE_NONE)
+        iflmb0 = 0;
+
+      cs_mass_flux(m,
+                   mq,
+                   CS_F_(vel)->id,
+                   1,  /* itypfl */
+                   iflmb0,
+                   1,  /* init */
+                   1,  /* inc */
+                   eqp_u->imrgra,
+                   eqp_u->nswrgr,
+                   static_cast<cs_gradient_limit_t>(eqp_u->imligr),
+                   eqp_u->verbosity,
+                   eqp_u->epsrgr,
+                   eqp_u->climgr,
+                   crom, brom,
+                   vel,
+                   bc_coeffs_vel,
+                   imasfl, bmasfl);
+
+      /* In the ALE framework, we add the mesh velocity */
+
+      if (cs_glob_ale > CS_ALE_NONE)
+        cs_mesh_velocity_mass_flux(m, mq,
+                                   dt,
+                                   crom, brom,
+                                   imasfl, bmasfl);
+
+      /* Ajout de la vitesse du solide dans le flux convectif,
+       * si le maillage est mobile (solide rigide)
+       * En turbomachine, on connait exactement la vitesse de maillage a ajouter */
+
+      if (cs_turbomachinery_get_model() > CS_TURBOMACHINERY_NONE)
+        _turbomachinery_mass_flux(m,
+                                  mq,
+                                  crom, brom,
+                                  imasfl, bmasfl);
+
+      /* In case of scalars with drift for particle classes
+       * boundary mass flux of the mixture may be updated */
+      cs_drift_boundary_mass_flux(m, bmasfl);
+
+      CS_FREE(trav);
+      CS_FREE(da_uu);
+      CS_FREE(dfrcxt);
+
+      CS_FREE(viscb);
+      CS_FREE(viscf);
+
+      CS_FREE(secvib);
+      CS_FREE(secvif);
+
+      CS_FREE(grdphd);
+
+      CS_FREE(cpro_rho_tc);
+      CS_FREE(bpro_rho_tc);
+
+      CS_FREE(wvisfi);
+      CS_FREE(wvisbi);
+
+      CS_FREE(uvwk);
+
+      CS_FREE(viscb);
+      CS_FREE(viscf);
+
+      return;
+    }
+
+    /* Update mesh for unsteady turbomachinery computations */
+
+    cs_real_t rs_ell[2] = {0, 0};
+
+    if (   iterns == 1
+        && cs_turbomachinery_get_model() == CS_TURBOMACHINERY_TRANSIENT) {
+
+      cs_turbomachinery_update_mesh(rs_ell);
+
+      const cs_real_t t1 = cs_timer_wtime();
+
+      m = cs_glob_mesh;
+      mq = cs_glob_mesh_quantities;
+      ts = cs_glob_time_step;
+
+      n_cells = m->n_cells;
+      n_cells_ext = m->n_cells_with_ghosts;
+      n_i_faces = m->n_i_faces;
+      n_b_faces = m->n_b_faces;
+
+      b_face_cells = (const cs_lnum_t *)m->b_face_cells;
+
+      if (cs_turbomachinery_get_n_couplings() < 1) {
+
+        for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+          /* Cancel the mass flux for symmetry BC */
+          if (cs_glob_bc_type[face_id] == CS_SYMMETRY)
+            mq->b_sym_flag[face_id] = 0;
+          else
+            mq->b_sym_flag[face_id] = 1;
+        }
+
+        /* Resize temporary internal faces arrays */
+
+        CS_FREE(viscf);
+        if (eqp_u->idften & CS_ISOTROPIC_DIFFUSION)
+          CS_MALLOC_HD(viscf, n_i_faces, cs_real_t, amode);
+        else if (eqp_u->idften & CS_ANISOTROPIC_LEFT_DIFFUSION)
+          CS_MALLOC_HD(viscf, 9*n_i_faces, cs_real_t, amode);
+
+        if (wvisfi != nullptr) {
+          CS_FREE(viscfi);
+          if (eqp_u->idften == 1) {
+            if (irijnu_1) {
+              CS_MALLOC_HD(wvisfi, n_i_faces, cs_real_t, amode);
+              viscfi = wvisfi;
+            }
+            else
+              viscfi = viscf;
+          }
+          else if (eqp_u->idften == 6) {
+            if (irijnu_1) {
+              CS_MALLOC_HD(wvisfi, 9*n_i_faces, cs_real_t, amode);
+              viscfi = wvisfi;
+            }
+            else
+              viscfi = viscf;
+          }
+        }
+
+        if (secvif != nullptr) {
+          CS_FREE(secvif);
+          CS_MALLOC_HD(secvif, n_i_faces, cs_real_t, amode);
+        }
+
+        /* Resize and reinitialize main internal faces properties array */
+        cs_turbomachinery_reinit_i_face_fields();
+
+        /* Update local pointers on "internal faces" fields */
+        imasfl = cs_field_by_id(iflmas)->val;
+
+        if (cs_glob_mesh->halo != nullptr) {
+
+          cs_turbomachinery_resize_cell_fields();
+
+          /* Update field mappings
+             ("owner" fields handled by cs_turbomachinery_update);
+             Remark: most of what is done in this call is redundant with the
+             original initialization, and this call could probably be removed. */
+
+          /* BC's do not need to be remapped as boundary faces are
+             not expected to change */
+
+          dt = cs_field_by_name("dt")->val;
+
+          /* Resize other arrays related to the velocity-pressure resolution */
+          CS_REALLOC_HD(da_uu, n_cells_ext, cs_real_6_t, amode);
+          cs_halo_sync_r(m->halo, on_device, da_uu);
+
+          CS_REALLOC_HD(trav, n_cells_ext, cs_real_3_t, amode);
+          cs_halo_sync_r(m->halo, on_device, trav);
+
+          CS_REALLOC_HD(dfrcxt, n_cells_ext, cs_real_3_t, amode);
+          cs_halo_sync_r(m->halo, CS_HALO_EXTENDED, on_device, dfrcxt);
+
+          /* Resize other arrays, depending on user options */
+
+          if (vp_param->iphydr == 1)
+            frcxt = (cs_real_3_t *)cs_field_by_name("volume_forces")->val;
+          else if (vp_param->iphydr == 2) {
+            CS_REALLOC_HD(grdphd, n_cells_ext, cs_real_3_t, amode);
+            cs_halo_sync_r(m->halo, on_device, grdphd);
+          }
+
+          /* Update local pointers on "cells" fields */
+
+          crom = CS_F_(rho)->val;
+          crom_eos = CS_F_(rho)->val;
+
+          if (   fluid_props->irovar == 1
+              && (   vp_model->idilat > 1
+                  || vof_param->vof_model > 0
+                  || cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 3)) {
+
+            cpro_rho_mass = cs_field_by_name("density_mass")->val;
+
+            /* Time interpolated density */
+            if (theta < 1.0 && vp_param->itpcol == 0) {
+              croma = CS_F_(rho)->val_pre;
+              CS_REALLOC_HD(cpro_rho_tc, n_cells_ext, cs_real_t, amode);
+
+              ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+                cpro_rho_tc[c_id] =   theta * cpro_rho_mass[c_id]
+                                    + (1.0 - theta) * croma[c_id];
+              });
+
+              crom = cpro_rho_tc;
+              cromk1 = cpro_rho_tc;
+            }
+            else {
+              crom = cpro_rho_mass;
+              /* rho at time n+1,k-1 */
+              CS_REALLOC_HD(cpro_rho_k1, n_cells_ext, cs_real_t, amode);
+
+              cs_array_copy<cs_real_t>(n_cells_ext, cpro_rho_mass, cpro_rho_k1);
+
+              ctx.wait();
+
+              cromk1 = cpro_rho_k1;
+            }
+
+          }
+          else {
+            crom = crom_eos;
+            cromk1 = crom_eos; /* rho at time n+1,k-1 */
+          }
+
+          viscl = CS_F_(mu)->val;
+          visct = CS_F_(mu_t)->val;
+
+          vel = (cs_real_3_t *)CS_F_(vel)->val;
+          vela = (cs_real_3_t *)CS_F_(vel)->val_pre;
+
+          cvar_pr = CS_F_(p)->val;
+
+          if (f_dttens != nullptr)
+            dttens = (cs_real_6_t *)f_dttens->val;
+
+          if (vp_param->nterup > 1) {
+            CS_REALLOC_HD(velk, n_cells_ext, cs_real_3_t, amode);
+            cs_halo_sync_r(m->halo, on_device, velk);
+            CS_REALLOC_HD(trava, n_cells_ext, cs_real_3_t, amode);
+            cs_halo_sync_r(m->halo, on_device, trava);
+          }
+          else {
+            velk = vela;
+          }
+
+        } /* halo != nullptr */
+
+      } /* cs_turbomachinery_get_n_couplings() < 1 */
+
+      /* Update the Dirichlet wall boundary conditions for velocity (based on the
+       * solid body rotation on the new mesh).
+       * Note that the velocity BC update is made only if the user has
+       * not specified any specific Dirichlet condition for velocity. */
+
+      cs_real_t *coftur = nullptr,  *hfltur = nullptr;
+      cs_turbomachinery_get_wall_bc_coeffs(&coftur, &hfltur);
+      const int *irotce = cs_turbomachinery_get_cell_rotor_num();
+
+      const cs_nreal_3_t *restrict b_face_u_normal = mq->b_face_u_normal;
+      const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
+
+      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+
+        const cs_lnum_t c_id = b_face_cells[face_id];
+
+        if (coftur[face_id] >= cs_math_infinite_r*0.5)
+          continue;
+
+        /* Physical Propreties */
+        const cs_real_t visclc = viscl[c_id];
+        const cs_real_t visctc = visct[c_id];
+
+        /* Geometrical quantities */
+        const cs_real_t distbf = mq->b_dist[face_id];
+
+        /* Unit normal */
+        const cs_nreal_t *ufn = b_face_u_normal[face_id];
+
+        cs_real_t hint;
+        if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER)
+          hint = visclc / distbf;
+        else
+          hint = (visclc+visctc) / distbf;
+
+        cs_real_t vr[3];
+        cs_rotation_velocity(cs_glob_rotation + irotce[c_id],
+                             b_face_cog[face_id],
+                             vr);
+
+        /* Gradient boundary conditions (Dirichlet) */
+        const cs_real_t vrn = cs_math_3_dot_product(vr, ufn);
+
+        for (cs_lnum_t i = 0; i < 3; i++)
+          coefau[face_id][i] =   (1. - coftur[face_id]) * (vr[i] - vrn*ufn[i])
+                                + vrn*ufn[i];
+
+        /* Flux boundary conditions (Dirichlet) */
+        for (cs_lnum_t i = 0; i < 3; i++)
+          cofafu[face_id][i] = -hfltur[face_id] * (vr[i] - vrn*ufn[i])
+                                -hint*vrn*ufn[i];
+      }
+
+      const cs_real_t t2 = cs_timer_wtime();
+
+      rs_ell[1] = t2 - t1;
+
+    } /* (iterns == 1) &&
+         (cs_turbomachinery_get_model() == CS_TURBOMACHINERY_TRANSIENT) */
+
+    /* Pressure correction step
+       ------------------------ */
+
+    if (eqp_u->verbosity > 0)
+      bft_printf("** SOLVING CONTINUITY PRESSURE\n");
+
+    cs_real_t *coefa_dp = cs_field_by_name("pressure_increment")->bc_coeffs->a;
+
+    /* Pointers to BC coefficients */
+    coefau = (cs_real_3_t *)CS_F_(vel)->bc_coeffs->a;
+
+    /* Pressure correction step */
+    if (   cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0
+        || cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 3) {
+      cs_pressure_correction(iterns,
+                             w_condensation->nfbpcd,
+                             w_condensation->ncmast,
+                             w_condensation->ifbpcd,
+                             w_condensation->ltmast,
+                             isostd,
+                             vel,
+                             da_uu,
+                             CS_F_(vel)->bc_coeffs,
+                             cs_field_by_name("pressure_increment")->bc_coeffs,
+                             w_condensation->spcond,
+                             w_condensation->svcond,
+                             frcxt,
+                             dfrcxt,
+                             viscf,
+                             viscb);
+    }
+
+    /* Bad cells regularisation */
+    cs_bad_cells_regularisation_scalar(cvar_pr);
+
+    /* Update local pointers on "cells" fields */
+    crom = CS_F_(rho)->val;
+    crom_eos = CS_F_(rho)->val;
+
+    /* Update density which may be computed in the pressure step */
+
+    if (   fluid_props->irovar == 1
+        && (   vp_model->idilat > 1
+            || vof_param->vof_model > 0
+            || cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 3)) {
+
+      cpro_rho_mass = cs_field_by_name("density_mass")->val;
+
+      /* Time interpolated density */
+      if (theta < 1.0 && vp_param->itpcol == 0) {
+
+        croma = CS_F_(rho)->val_pre;
+
+        if (cpro_rho_tc != nullptr) {
+          CS_FREE(cpro_rho_tc);
+          CS_MALLOC_HD(cpro_rho_tc, n_cells_ext, cs_real_t, amode);
+        }
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+          cpro_rho_tc[c_id] =          theta * cpro_rho_mass[c_id]
+                              + (1.0 - theta) * croma[c_id];
+        });
+
+        ctx.wait(); // needed for the following synchronization
+
+        cs_halo_sync(m->halo, CS_HALO_STANDARD, on_device, cpro_rho_tc);
+
+        crom = cpro_rho_tc;
+        cromk1 = cpro_rho_tc; /* rho at time n+1/2,k-1 */
+      }
+
+      else
+        crom = cpro_rho_mass;
+
+    }
+
+    /* Mesh velocity solving (ALE) */
+
+    if (cs_glob_ale > CS_ALE_NONE) {
+      if (itrale > cs_glob_ale_n_ini_f)
+        cs_ale_solve_mesh_velocity(iterns, brom, imasfl, bmasfl);
+    }
+
+    /* Update of the fluid velocity field
+       ---------------------------------- */
+
+    if (   cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0
+        || cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 3)
+      _update_fluid_vel(m,
+                        mq,
+                        eqp_p,
+                        vof_param,
+                        dt,
+                        crom,
+                        cromk1,
+                        imasfl,
+                        bmasfl,
+                        coefa_dp,
+                        vel,
+                        dfrcxt,
+                        frcxt,
+                        dttens,
+                        isostd);
+
+    /* Bad cells regularisation */
+    cs_bad_cells_regularisation_vector(vel, 1);
+
+    /* Update velocity boundary face value */
+    cs_boundary_conditions_update_bc_coeff_face_values_strided
+      (ctx, CS_F_(vel), vel);
+
+    /* Mass flux initialization for VOF algorithm */
+    if (vof_param->vof_model > 0) {
+      ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        imasfl[face_id] = 0.;
+      });
+      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+        bmasfl[face_id] = 0.;
+      });
+      ctx.wait();
+    }
 
     /* In the ALE framework, we add the mesh velocity */
-
     if (cs_glob_ale > CS_ALE_NONE)
       cs_mesh_velocity_mass_flux(m, mq,
                                  dt,
                                  crom, brom,
                                  imasfl, bmasfl);
 
-    /* Ajout de la vitesse du solide dans le flux convectif,
-     * si le maillage est mobile (solide rigide)
-     * En turbomachine, on connait exactement la vitesse de maillage a ajouter */
+    /* FIXME for me we should do that before cs_velocity_prediction */
+    /* Add solid's velocity in convective flux if the mesh is mobile (rigid solid).
+     * For turbomachinery, the mesh velocity to add is known exactly */
 
-    if (cs_turbomachinery_get_model() > CS_TURBOMACHINERY_NONE)
-      _turbomachinery_mass_flux(m,
-                                mq,
+    if (cs_turbomachinery_get_model() > CS_TURBOMACHINERY_NONE) {
+      const cs_real_t t3 = cs_timer_wtime();
+      _turbomachinery_mass_flux(m, mq,
                                 crom, brom,
                                 imasfl, bmasfl);
+      rs_ell[1] += cs_timer_wtime() - t3;
+    }
 
     /* In case of scalars with drift for particle classes
      * boundary mass flux of the mixture may be updated */
     cs_drift_boundary_mass_flux(m, bmasfl);
 
-    CS_FREE(trav);
-    CS_FREE(da_uu);
-    CS_FREE(dfrcxt);
+    /* VoF: void fraction solving and update the mixture density/viscosity and
+     *      mass flux (cs_pressure_correction solved the convective flux of
+     *      void fraction, divU)
+     * ------------------------------------------------------------------------ */
 
-    CS_FREE(viscb);
-    CS_FREE(viscf);
+    if (vof_param->vof_model > 0) {
 
-    CS_FREE(secvib);
-    CS_FREE(secvif);
+      /* Void fraction solving */
+      cs_vof_solve_void_fraction(iterns);
 
-    CS_FREE(grdphd);
+      /* Halo synchronization */
+      cs_real_t *cvar_voidf = cs_field_by_name("void_fraction")->val;
+      cs_halo_sync(m->halo, on_device, cvar_voidf);
 
-    CS_FREE(cpro_rho_tc);
-    CS_FREE(bpro_rho_tc);
+      /* Update mixture density/viscosity and mass flux */
+      cs_vof_update_phys_prop(m);
 
-    CS_FREE(wvisfi);
-    CS_FREE(wvisbi);
-
-    CS_FREE(uvwk);
-
-    CS_FREE(viscb);
-    CS_FREE(viscf);
-
-    return;
-  }
-
-  /* Update mesh for unsteady turbomachinery computations */
-
-  cs_real_t rs_ell[2] = {0, 0};
-
-  if (   iterns == 1
-      && cs_turbomachinery_get_model() == CS_TURBOMACHINERY_TRANSIENT) {
-
-    cs_turbomachinery_update_mesh(rs_ell);
-
-    const cs_real_t t1 = cs_timer_wtime();
-
-    m = cs_glob_mesh;
-    mq = cs_glob_mesh_quantities;
-    ts = cs_glob_time_step;
-
-    n_cells = m->n_cells;
-    n_cells_ext = m->n_cells_with_ghosts;
-    n_i_faces = m->n_i_faces;
-    n_b_faces = m->n_b_faces;
-
-    b_face_cells = (const cs_lnum_t *)m->b_face_cells;
-
-    if (cs_turbomachinery_get_n_couplings() < 1) {
-
-      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-        /* Cancel the mass flux for symmetry BC */
-        if (cs_glob_bc_type[face_id] == CS_SYMMETRY)
-          mq->b_sym_flag[face_id] = 0;
-        else
-          mq->b_sym_flag[face_id] = 1;
-      }
-
-      /* Resize temporary internal faces arrays */
-
-      CS_FREE(viscf);
-      if (eqp_u->idften & CS_ISOTROPIC_DIFFUSION)
-        CS_MALLOC_HD(viscf, n_i_faces, cs_real_t, amode);
-      else if (eqp_u->idften & CS_ANISOTROPIC_LEFT_DIFFUSION)
-        CS_MALLOC_HD(viscf, 9*n_i_faces, cs_real_t, amode);
-
-      if (wvisfi != nullptr) {
-        CS_FREE(viscfi);
-        if (eqp_u->idften == 1) {
-          if (irijnu_1) {
-            CS_MALLOC_HD(wvisfi, n_i_faces, cs_real_t, amode);
-            viscfi = wvisfi;
-          }
-          else
-            viscfi = viscf;
-        }
-        else if (eqp_u->idften == 6) {
-          if (irijnu_1) {
-            CS_MALLOC_HD(wvisfi, 9*n_i_faces, cs_real_t, amode);
-            viscfi = wvisfi;
-          }
-          else
-            viscfi = viscf;
-        }
-      }
-
-      if (secvif != nullptr) {
-        CS_FREE(secvif);
-        CS_MALLOC_HD(secvif, n_i_faces, cs_real_t, amode);
-      }
-
-      /* Resize and reinitialize main internal faces properties array */
-      cs_turbomachinery_reinit_i_face_fields();
-
-      /* Update local pointers on "internal faces" fields */
-      imasfl = cs_field_by_id(iflmas)->val;
-
-      if (cs_glob_mesh->halo != nullptr) {
-
-        cs_turbomachinery_resize_cell_fields();
-
-        /* Update field mappings
-           ("owner" fields handled by cs_turbomachinery_update);
-           Remark: most of what is done in this call is redundant with the
-           original initialization, and this call could probably be removed. */
-
-        /* BC's do not need to be remapped as boundary faces are
-           not expected to change */
-
-        dt = cs_field_by_name("dt")->val;
-
-        /* Resize other arrays related to the velocity-pressure resolution */
-        CS_REALLOC_HD(da_uu, n_cells_ext, cs_real_6_t, amode);
-        cs_halo_sync_r(m->halo, on_device, da_uu);
-
-        CS_REALLOC_HD(trav, n_cells_ext, cs_real_3_t, amode);
-        cs_halo_sync_r(m->halo, on_device, trav);
-
-        CS_REALLOC_HD(dfrcxt, n_cells_ext, cs_real_3_t, amode);
-        cs_halo_sync_r(m->halo, CS_HALO_EXTENDED, on_device, dfrcxt);
-
-        /* Resize other arrays, depending on user options */
-
-        if (vp_param->iphydr == 1)
-          frcxt = (cs_real_3_t *)cs_field_by_name("volume_forces")->val;
-        else if (vp_param->iphydr == 2) {
-          CS_REALLOC_HD(grdphd, n_cells_ext, cs_real_3_t, amode);
-          cs_halo_sync_r(m->halo, on_device, grdphd);
-        }
-
-        /* Update local pointers on "cells" fields */
-
-        crom = CS_F_(rho)->val;
-        crom_eos = CS_F_(rho)->val;
-
-        if (   fluid_props->irovar == 1
-            && (   vp_model->idilat > 1
-                || vof_param->vof_model > 0
-                || cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 3)) {
-
-          cpro_rho_mass = cs_field_by_name("density_mass")->val;
-
-          /* Time interpolated density */
-          if (theta < 1.0 && vp_param->itpcol == 0) {
-            croma = CS_F_(rho)->val_pre;
-            CS_REALLOC_HD(cpro_rho_tc, n_cells_ext, cs_real_t, amode);
-
-            ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-              cpro_rho_tc[c_id] =   theta * cpro_rho_mass[c_id]
-                                  + (1.0 - theta) * croma[c_id];
-            });
-
-            crom = cpro_rho_tc;
-            cromk1 = cpro_rho_tc;
-          }
-          else {
-            crom = cpro_rho_mass;
-            /* rho at time n+1,k-1 */
-            CS_REALLOC_HD(cpro_rho_k1, n_cells_ext, cs_real_t, amode);
-
-            cs_array_copy<cs_real_t>(n_cells_ext, cpro_rho_mass, cpro_rho_k1);
-
-            ctx.wait();
-
-            cromk1 = cpro_rho_k1;
-          }
-
-        }
-        else {
-          crom = crom_eos;
-          cromk1 = crom_eos; /* rho at time n+1,k-1 */
-        }
-
-        viscl = CS_F_(mu)->val;
-        visct = CS_F_(mu_t)->val;
-
-        vel = (cs_real_3_t *)CS_F_(vel)->val;
-        vela = (cs_real_3_t *)CS_F_(vel)->val_pre;
-
-        cvar_pr = CS_F_(p)->val;
-
-        if (f_dttens != nullptr)
-          dttens = (cs_real_6_t *)f_dttens->val;
-
-        if (vp_param->nterup > 1) {
-          CS_REALLOC_HD(velk, n_cells_ext, cs_real_3_t, amode);
-          cs_halo_sync_r(m->halo, on_device, velk);
-          CS_REALLOC_HD(trava, n_cells_ext, cs_real_3_t, amode);
-          cs_halo_sync_r(m->halo, on_device, trava);
-        }
-        else {
-          velk = vela;
-        }
-
-      } /* halo != nullptr */
-
-    } /* cs_turbomachinery_get_n_couplings() < 1 */
-
-    /* Update the Dirichlet wall boundary conditions for velocity (based on the
-     * solid body rotation on the new mesh).
-     * Note that the velocity BC update is made only if the user has
-     * not specified any specific Dirichlet condition for velocity. */
-
-    cs_real_t *coftur = nullptr,  *hfltur = nullptr;
-    cs_turbomachinery_get_wall_bc_coeffs(&coftur, &hfltur);
-    const int *irotce = cs_turbomachinery_get_cell_rotor_num();
-
-    const cs_nreal_3_t *restrict b_face_u_normal = mq->b_face_u_normal;
-    const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
-
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-
-      const cs_lnum_t c_id = b_face_cells[face_id];
-
-      if (coftur[face_id] >= cs_math_infinite_r*0.5)
-        continue;
-
-      /* Physical Propreties */
-      const cs_real_t visclc = viscl[c_id];
-      const cs_real_t visctc = visct[c_id];
-
-      /* Geometrical quantities */
-      const cs_real_t distbf = mq->b_dist[face_id];
-
-      /* Unit normal */
-      const cs_nreal_t *ufn = b_face_u_normal[face_id];
-
-      cs_real_t hint;
-      if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER)
-        hint = visclc / distbf;
-      else
-        hint = (visclc+visctc) / distbf;
-
-      cs_real_t vr[3];
-      cs_rotation_velocity(cs_glob_rotation + irotce[c_id],
-                           b_face_cog[face_id],
-                           vr);
-
-      /* Gradient boundary conditions (Dirichlet) */
-      const cs_real_t vrn = cs_math_3_dot_product(vr, ufn);
-
-      for (cs_lnum_t i = 0; i < 3; i++)
-        coefau[face_id][i] =   (1. - coftur[face_id]) * (vr[i] - vrn*ufn[i])
-                              + vrn*ufn[i];
-
-      /* Flux boundary conditions (Dirichlet) */
-      for (cs_lnum_t i = 0; i < 3; i++)
-        cofafu[face_id][i] = -hfltur[face_id] * (vr[i] - vrn*ufn[i])
-                              -hint*vrn*ufn[i];
+      /* Logging */
+      if (iterns == vp_param->nterup && cs_log_default_is_active())
+        cs_vof_log_mass_budget(m, mq);
     }
 
-    const cs_real_t t2 = cs_timer_wtime();
+    /* Update density (which is coherent with the mass) */
 
-    rs_ell[1] = t2 - t1;
+    if (   fluid_props->irovar == 1
+        && (   vp_model->idilat > 1
+            || vof_param->vof_model > 0
+            || cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 3)) {
 
-  } /* (iterns == 1) &&
-       (cs_turbomachinery_get_model() == CS_TURBOMACHINERY_TRANSIENT) */
-
-  /* Pressure correction step
-     ------------------------ */
-
-  if (eqp_u->verbosity > 0)
-    bft_printf("** SOLVING CONTINUITY PRESSURE\n");
-
-  cs_real_t *coefa_dp = cs_field_by_name("pressure_increment")->bc_coeffs->a;
-
-  /* Pointers to BC coefficients */
-  coefau = (cs_real_3_t *)CS_F_(vel)->bc_coeffs->a;
-
-  /* Pressure correction step */
-  if (   cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0
-      || cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 3) {
-    cs_pressure_correction(iterns,
-                           w_condensation->nfbpcd,
-                           w_condensation->ncmast,
-                           w_condensation->ifbpcd,
-                           w_condensation->ltmast,
-                           isostd,
-                           vel,
-                           da_uu,
-                           CS_F_(vel)->bc_coeffs,
-                           cs_field_by_name("pressure_increment")->bc_coeffs,
-                           w_condensation->spcond,
-                           w_condensation->svcond,
-                           frcxt,
-                           dfrcxt,
-                           viscf,
-                           viscb);
-  }
-
-  /* Bad cells regularisation */
-  cs_bad_cells_regularisation_scalar(cvar_pr);
-
-  /* Update local pointers on "cells" fields */
-  crom = CS_F_(rho)->val;
-  crom_eos = CS_F_(rho)->val;
-
-  /* Update density which may be computed in the pressure step */
-
-  if (   fluid_props->irovar == 1
-      && (   vp_model->idilat > 1
-          || vof_param->vof_model > 0
-          || cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 3)) {
-
-    cpro_rho_mass = cs_field_by_name("density_mass")->val;
-
-    /* Time interpolated density */
-    if (theta < 1.0 && vp_param->itpcol == 0) {
-
-      croma = CS_F_(rho)->val_pre;
-
-      if (cpro_rho_tc != nullptr) {
-        CS_FREE(cpro_rho_tc);
-        CS_MALLOC_HD(cpro_rho_tc, n_cells_ext, cs_real_t, amode);
-      }
-      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        cpro_rho_tc[c_id] =          theta * cpro_rho_mass[c_id]
-                            + (1.0 - theta) * croma[c_id];
+      ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        cpro_rho_mass[c_id] = crom_eos[c_id];
+        crom[c_id] = crom_eos[c_id];
       });
-
-      ctx.wait(); // needed for the following synchronization
-
-      cs_halo_sync(m->halo, CS_HALO_STANDARD, on_device, cpro_rho_tc);
-
-      crom = cpro_rho_tc;
-      cromk1 = cpro_rho_tc; /* rho at time n+1/2,k-1 */
+      cs_array_copy<cs_real_t>(n_b_faces, brom_eos, bpro_rho_mass);
     }
 
-    else
-      crom = cpro_rho_mass;
+    /* Compute error estimators for correction step and the global algorithm
+       --------------------------------------------------------------------- */
 
-  }
+    cs_field_t *iescor = cs_field_by_name_try("est_error_cor_2");
+    cs_field_t *iestot = cs_field_by_name_try("est_error_tot_2");
 
-  /* Mesh velocity solving (ALE) */
+    if (iescor != nullptr || iestot != nullptr) {
 
-  if (cs_glob_ale > CS_ALE_NONE) {
-    if (itrale > cs_glob_ale_n_ini_f)
-      cs_ale_solve_mesh_velocity(iterns, brom, imasfl, bmasfl);
-  }
+      const cs_real_t *cell_f_vol = mq->cell_vol;
 
-  /* Update of the fluid velocity field
-     ---------------------------------- */
+      cs_real_t *esflum = nullptr, *esflub = nullptr;
+      CS_MALLOC_HD(esflum, n_i_faces, cs_real_t, amode);
+      CS_MALLOC_HD(esflub, n_b_faces, cs_real_t, amode);
 
-  if (   cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0
-      || cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 3)
-    _update_fluid_vel(m,
-                      mq,
-                      eqp_p,
-                      vof_param,
-                      dt,
-                      crom,
-                      cromk1,
-                      imasfl,
-                      bmasfl,
-                      coefa_dp,
-                      vel,
-                      dfrcxt,
-                      frcxt,
-                      dttens,
-                      isostd);
+      cs_halo_sync_r(m->halo, on_device, vel);
 
-  /* Bad cells regularisation */
-  cs_bad_cells_regularisation_vector(vel, 1);
+      if (iestot != nullptr)
+        cs_halo_sync(m->halo, on_device, cvar_pr);
 
-  /* Update velocity boundary face value */
-  cs_boundary_conditions_update_bc_coeff_face_values_strided
-    (ctx, CS_F_(vel), vel);
+      int iflmb0 = 1;
+      if (cs_glob_ale > CS_ALE_NONE)
+        iflmb0 = 0;
 
-  /* Mass flux initialization for VOF algorithm */
-  if (vof_param->vof_model > 0) {
-    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-      imasfl[face_id] = 0.;
-    });
-    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-      bmasfl[face_id] = 0.;
-    });
-    ctx.wait();
-  }
+      /* Mass flux based on updated velocity */
 
-  /* In the ALE framework, we add the mesh velocity */
-  if (cs_glob_ale > CS_ALE_NONE)
-    cs_mesh_velocity_mass_flux(m, mq,
-                               dt,
-                               crom, brom,
-                               imasfl, bmasfl);
+      cs_mass_flux(m,
+                   mq,
+                   CS_F_(vel)->id,
+                   1,  /* itypfl */
+                   iflmb0,
+                   1,  /* init */
+                   1,  /* inc */
+                   eqp_u->imrgra,
+                   eqp_u->nswrgr,
+                   static_cast<cs_gradient_limit_t>(eqp_u->imligr),
+                   eqp_u->verbosity,
+                   eqp_u->epsrgr,
+                   eqp_u->climgr,
+                   crom, brom,
+                   vel,
+                   bc_coeffs_vel,
+                   esflum , esflub);
 
-  /* FIXME for me we should do that before cs_velocity_prediction */
-  /* Add solid's velocity in convective flux if the mesh is mobile (rigid solid).
-   * For turbomachinery, the mesh velocity to add is known exactly */
+      /* Correction estimator: div(rom * U(n + 1)) - gamma */
 
-  if (cs_turbomachinery_get_model() > CS_TURBOMACHINERY_NONE) {
-    const cs_real_t t3 = cs_timer_wtime();
-    _turbomachinery_mass_flux(m, mq,
-                              crom, brom,
-                              imasfl, bmasfl);
-    rs_ell[1] += cs_timer_wtime() - t3;
-  }
+      if (iescor != nullptr) {
+        cs_real_t *c_estim = iescor->val;
+        cs_divergence(m, 1, esflum, esflub, c_estim);
 
-  /* In case of scalars with drift for particle classes
-   * boundary mass flux of the mixture may be updated */
-  cs_drift_boundary_mass_flux(m, bmasfl);
+        cs_lnum_t n_elts = 0;
+        const cs_lnum_t *elt_ids = nullptr;
+        cs_real_t *mst_val = nullptr;
+        cs_volume_mass_injection_get_arrays(CS_F_(p), &n_elts, &elt_ids, nullptr,
+                                            &mst_val, nullptr);
 
-  /* VoF: void fraction solving and update the mixture density/viscosity and
-   *      mass flux (cs_pressure_correction solved the convective flux of
-   *      void fraction, divU)
-   * ------------------------------------------------------------------------ */
+        if (n_elts > 0) {
 
-  if (vof_param->vof_model > 0) {
+          ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t c_idx) {
+            cs_lnum_t c_id = elt_ids[c_idx];
+            c_estim[c_id] -= cell_f_vol[c_id] * mst_val[c_idx];
+          });
+        }
 
-    /* Void fraction solving */
-    cs_vof_solve_void_fraction(iterns);
-
-    /* Halo synchronization */
-    cs_real_t *cvar_voidf = cs_field_by_name("void_fraction")->val;
-    cs_halo_sync(m->halo, on_device, cvar_voidf);
-
-    /* Update mixture density/viscosity and mass flux */
-    cs_vof_update_phys_prop(m);
-
-    /* Logging */
-    if (iterns == vp_param->nterup && cs_log_default_is_active())
-      cs_vof_log_mass_budget(m, mq);
-  }
-
-  /* Update density (which is coherent with the mass) */
-
-  if (   fluid_props->irovar == 1
-      && (   vp_model->idilat > 1
-          || vof_param->vof_model > 0
-          || cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 3)) {
-
-    ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      cpro_rho_mass[c_id] = crom_eos[c_id];
-      crom[c_id] = crom_eos[c_id];
-    });
-    cs_array_copy<cs_real_t>(n_b_faces, brom_eos, bpro_rho_mass);
-  }
-
-  /* Compute error estimators for correction step and the global algorithm
-     --------------------------------------------------------------------- */
-
-  cs_field_t *iescor = cs_field_by_name_try("est_error_cor_2");
-  cs_field_t *iestot = cs_field_by_name_try("est_error_tot_2");
-
-  if (iescor != nullptr || iestot != nullptr) {
-
-    const cs_real_t *cell_f_vol = mq->cell_vol;
-
-    cs_real_t *esflum = nullptr, *esflub = nullptr;
-    CS_MALLOC_HD(esflum, n_i_faces, cs_real_t, amode);
-    CS_MALLOC_HD(esflub, n_b_faces, cs_real_t, amode);
-
-    cs_halo_sync_r(m->halo, on_device, vel);
-
-    if (iestot != nullptr)
-      cs_halo_sync(m->halo, on_device, cvar_pr);
-
-    int iflmb0 = 1;
-    if (cs_glob_ale > CS_ALE_NONE)
-      iflmb0 = 0;
-
-    /* Mass flux based on updated velocity */
-
-    cs_mass_flux(m,
-                 mq,
-                 CS_F_(vel)->id,
-                 1,  /* itypfl */
-                 iflmb0,
-                 1,  /* init */
-                 1,  /* inc */
-                 eqp_u->imrgra,
-                 eqp_u->nswrgr,
-                 static_cast<cs_gradient_limit_t>(eqp_u->imligr),
-                 eqp_u->verbosity,
-                 eqp_u->epsrgr,
-                 eqp_u->climgr,
-                 crom, brom,
-                 vel,
-                 bc_coeffs_vel,
-                 esflum , esflub);
-
-    /* Correction estimator: div(rom * U(n + 1)) - gamma */
-
-    if (iescor != nullptr) {
-      cs_real_t *c_estim = iescor->val;
-      cs_divergence(m, 1, esflum, esflub, c_estim);
-
-      cs_lnum_t n_elts = 0;
-      const cs_lnum_t *elt_ids = nullptr;
-      cs_real_t *mst_val = nullptr;
-      cs_volume_mass_injection_get_arrays(CS_F_(p), &n_elts, &elt_ids, nullptr,
-                                          &mst_val, nullptr);
-
-      if (n_elts > 0) {
-
-        ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t c_idx) {
-          cs_lnum_t c_id = elt_ids[c_idx];
-          c_estim[c_id] -= cell_f_vol[c_id] * mst_val[c_idx];
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+          c_estim[c_id] = cs::abs(c_estim[c_id]) / cell_f_vol[c_id];
         });
       }
 
-      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        c_estim[c_id] = cs::abs(c_estim[c_id]) / cell_f_vol[c_id];
-      });
-    }
+      /* Total estimator */
 
-    /* Total estimator */
+      if (iestot != nullptr) {
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+          const cs_real_t rovolsdt = crom[c_id] * cell_f_vol[c_id] / dt[c_id];
+          for (cs_lnum_t i = 0; i < 3; i++)
+            trav[c_id][i] = rovolsdt * (vela[c_id][i] - vel[c_id][i]);
+        });
+        ctx.wait();
 
-    if (iestot != nullptr) {
-      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        const cs_real_t rovolsdt = crom[c_id] * cell_f_vol[c_id] / dt[c_id];
-        for (cs_lnum_t i = 0; i < 3; i++)
-          trav[c_id][i] = rovolsdt * (vela[c_id][i] - vel[c_id][i]);
-      });
-      ctx.wait();
-
-      if (vp_param->staggered == 0) {
-        _velocity_prediction(m,
-                             mq,
-                             2,
-                             iterns,
-                             dt,
-                             vel,
-                             vel,
-                             velk,
-                             da_uu,
-                             bc_coeffs_vel,
-                             ckupdc,
-                             frcxt,
-                             grdphd,
-                             gxyz_h,
-                             fluid_props->xyzp0,
-                             trava,
-                             dfrcxt,
-                             dttens,
-                             trav,
-                             viscf,
-                             viscb,
-                             viscfi,
-                             viscbi,
-                             secvif,
-                             secvib);
+        if (vp_param->staggered == 0) {
+          _velocity_prediction(m,
+                               mq,
+                               2,
+                               iterns,
+                               dt,
+                               vel,
+                               vel,
+                               velk,
+                               da_uu,
+                               bc_coeffs_vel,
+                               ckupdc,
+                               frcxt,
+                               grdphd,
+                               gxyz_h,
+                               fluid_props->xyzp0,
+                               trava,
+                               dfrcxt,
+                               dttens,
+                               trav,
+                               viscf,
+                               viscb,
+                               viscfi,
+                               viscbi,
+                               secvif,
+                               secvib);
+        }
       }
+
+      CS_FREE(esflum);
+      CS_FREE(esflub);
+
     }
 
-    CS_FREE(esflum);
-    CS_FREE(esflub);
+    /* Velocity/pressure inner iterations
+       ---------------------------------- */
 
-  }
+    if (vp_param->nterup > 1) {
 
-  /* Velocity/pressure inner iterations
-     ---------------------------------- */
+      /* Convergence test on U/P inner iterations, icvrge is 1 if converged */
+      *icvrge = 1;
 
-  if (vp_param->nterup > 1) {
+      const cs_real_t *cell_f_vol = mq->cell_vol;
 
-    /* Convergence test on U/P inner iterations, icvrge is 1 if converged */
-    *icvrge = 1;
+      double xnrtmp = 0.0;
+      ctx.parallel_for_reduce_sum
+        (n_cells, xnrtmp,
+         [=] CS_F_HOST_DEVICE (cs_lnum_t c_id,
+                               CS_DISPATCH_REDUCER_TYPE(double) &xnr) {
+           cs_real_t xduvw[3] = {vel[c_id][0] - velk[c_id][0],
+                                 vel[c_id][1] - velk[c_id][1],
+                                 vel[c_id][2] - velk[c_id][2]};
+           xnr += cs_math_3_dot_product(xduvw, xduvw) * cell_f_vol[c_id];
+         });
+      cs_parall_sum(1, CS_REAL_TYPE, &xnrtmp);
+      vp_param->xnrmu = xnrtmp;
 
-    const cs_real_t *cell_f_vol = mq->cell_vol;
+      cs_real_t xnr_mu[] = {vp_param->xnrmu};
+      for (int cpl_id = 0; cpl_id < nbrcpl; cpl_id++) {
+        cs_real_t xnrdis[1];
+        cs_sat_coupling_array_exchange(cpl_id,
+                                       1, /* nbrdis */
+                                       1, /* nbrloc */
+                                       xnr_mu,
+                                       xnrdis);
+        xnr_mu[0] += xnrdis[0];
+      }
+      vp_param->xnrmu = sqrt(xnr_mu[0]);
 
-    double xnrtmp = 0.0;
-    ctx.parallel_for_reduce_sum
-      (n_cells, xnrtmp,
-       [=] CS_F_HOST_DEVICE (cs_lnum_t c_id,
-                             CS_DISPATCH_REDUCER_TYPE(double) &xnr) {
-         cs_real_t xduvw[3] = {vel[c_id][0] - velk[c_id][0],
-                               vel[c_id][1] - velk[c_id][1],
-                               vel[c_id][2] - velk[c_id][2]};
-         xnr += cs_math_3_dot_product(xduvw, xduvw) * cell_f_vol[c_id];
-       });
-    cs_parall_sum(1, CS_REAL_TYPE, &xnrtmp);
-    vp_param->xnrmu = xnrtmp;
+      /* Fixed-point convergence indicator */
+      if (vp_param->xnrmu >= vp_param->epsup * vp_param->xnrmu0)
+        *icvrge = 0;
 
-    cs_real_t xnr_mu[] = {vp_param->xnrmu};
-    for (int cpl_id = 0; cpl_id < nbrcpl; cpl_id++) {
-      cs_real_t xnrdis[1];
-      cs_sat_coupling_array_exchange(cpl_id,
-                                     1, /* nbrdis */
-                                     1, /* nbrloc */
-                                     xnr_mu,
-                                     xnrdis);
-      xnr_mu[0] += xnrdis[0];
     }
-    vp_param->xnrmu = sqrt(xnr_mu[0]);
 
-    /* Fixed-point convergence indicator */
-    if (vp_param->xnrmu >= vp_param->epsup * vp_param->xnrmu0)
-      *icvrge = 0;
+    /* Shift pressure field to set its spatial mean value to zero
+     * if there is no boundary faces with a Dirichlet condition on the pressure.
+     * Number of faces with Dirichlet condition for the pressure is:
+     * - ndircl if idiricl = 1
+     * - ndircl-1 if idircl = 0 */
 
-  }
+    int ndircp = 0;
+    if (eqp_p->ndircl == 1)
+      ndircp = eqp_p->ndircl;
+    else
+      ndircp = eqp_p->ndircl - 1;
+    if (ndircp <= 0) {
+      cs_field_set_volume_average(CS_F_(p), fluid_props->pred0);
 
-  /* Shift pressure field to set its spatial mean value to zero
-   * if there is no boundary faces with a Dirichlet condition on the pressure.
-   * Number of faces with Dirichlet condition for the pressure is:
-   * - ndircl if idiricl = 1
-   * - ndircl-1 if idircl = 0 */
+      cs_halo_type_t halo_type = CS_HALO_STANDARD;
+      cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+      cs_gradient_type_by_imrgra(eqp_p->imrgra,
+                                 &gradient_type,
+                                 &halo_type);
 
-  int ndircp = 0;
-  if (eqp_p->ndircl == 1)
-    ndircp = eqp_p->ndircl;
-  else
-    ndircp = eqp_p->ndircl - 1;
-  if (ndircp <= 0) {
-    cs_field_set_volume_average(CS_F_(p), fluid_props->pred0);
+      /* Handle parallelism and periodicity */
+      cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), cvar_pr);
 
-    cs_halo_type_t halo_type = CS_HALO_STANDARD;
-    cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
-    cs_gradient_type_by_imrgra(eqp_p->imrgra,
-                               &gradient_type,
-                               &halo_type);
+      /* Update boundary condition for pressure */
 
-    /* Handle parallelism and periodicity */
-    cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), cvar_pr);
+      cs_boundary_conditions_update_bc_coeff_face_values<true,false>
+        (ctx,
+         CS_F_(p),
+         eqp_p,
+         cs_glob_velocity_pressure_param->iphydr,
+         frcxt,
+         nullptr, //cpro_vitenp
+         nullptr, //weighbtp
+         cvar_pr);
+    }
 
-    /* Update boundary condition for pressure */
+    /* Compute the total pressure (defined as a post-processed property).
+     * For the compressible module, the solved pressure is already the
+     * total pressure.
+     * Remark: for Eddy Viscosity Models,
+     *         TKE might be included in the solved pressure. */
 
-    cs_boundary_conditions_update_bc_coeff_face_values<true,false>
-      (ctx,
-       CS_F_(p),
-       eqp_p,
-       cs_glob_velocity_pressure_param->iphydr,
-       frcxt,
-       nullptr, //cpro_vitenp
-       nullptr, //weighbtp
-       cvar_pr);
-  }
+    if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0)
+      cs_solve_navier_stokes_update_total_pressure(m, mq, fluid_props, gxyz_h);
 
-  /* Compute the total pressure (defined as a post-processed property).
-   * For the compressible module, the solved pressure is already the
-   * total pressure.
-   * Remark: for Eddy Viscosity Models,
-   *         TKE might be included in the solved pressure. */
+    if (eqp_u->verbosity > 0)
+      _log_norm(m, mq,
+                iterns,
+                *icvrge,
+                crom, brom,
+                imasfl, bmasfl,
+                cvar_pr,
+                vel);
 
-  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0)
-    cs_solve_navier_stokes_update_total_pressure(m, mq, fluid_props, gxyz_h);
-
-  if (eqp_u->verbosity > 0)
-    _log_norm(m, mq,
-              iterns,
-              *icvrge,
-              crom, brom,
-              imasfl, bmasfl,
-              cvar_pr,
-              vel);
-
-  if (cs_turbomachinery_get_model() == CS_TURBOMACHINERY_TRANSIENT) {
-    if (iterns == vp_param->nterup && cs_log_default_is_active())
-      bft_printf("** INFORMATION ON UNSTEADY ROTOR/STATOR TREATMENT\n"
-                 "   ----------------------------------------------\n"
-                 " Time dedicated to mesh update (s): %10.4lf         \n"
-                 " Global time                   (s): %10.4lf\n\n", rs_ell[0],
-                 rs_ell[0] + rs_ell[1]);
-  }
+    if (cs_turbomachinery_get_model() == CS_TURBOMACHINERY_TRANSIENT) {
+      if (iterns == vp_param->nterup && cs_log_default_is_active())
+        bft_printf("** INFORMATION ON UNSTEADY ROTOR/STATOR TREATMENT\n"
+                   "   ----------------------------------------------\n"
+                   " Time dedicated to mesh update (s): %10.4lf         \n"
+                   " Global time                   (s): %10.4lf\n\n", rs_ell[0],
+                   rs_ell[0] + rs_ell[1]);
+    }
+  } while (cs_runge_kutta_is_staging(rk_u));
 
   CS_FREE(trav);
   CS_FREE(da_uu);
