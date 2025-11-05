@@ -2221,7 +2221,7 @@ cs_parameters_check(void)
   /* Turbulence */
 
   /* Model */
-  const int iturb_vals[18] = {CS_TURB_NONE,   /* laminar */
+  const int iturb_vals[19] = {CS_TURB_NONE,   /* laminar */
                               CS_TURB_MIXING_LENGTH,
                               CS_TURB_K_EPSILON,
                               CS_TURB_K_EPSILON_LIN_PROD,
@@ -2230,6 +2230,7 @@ cs_parameters_check(void)
                               CS_TURB_RIJ_EPSILON_LRR,
                               CS_TURB_RIJ_EPSILON_SSG,
                               CS_TURB_RIJ_EPSILON_EBRSM,
+                              CS_TURB_RIJ_EPSILON_BFH,
                               CS_TURB_LES_SMAGO_CONST,
                               CS_TURB_LES_SMAGO_DYN,
                               CS_TURB_LES_WALE,
@@ -2244,7 +2245,7 @@ cs_parameters_check(void)
                                _("while reading input data"),
                                "cs_glob_turb_model->model",
                                turb_model->model,
-                               18,
+                               19,
                                iturb_vals,
                                nullptr);
 
