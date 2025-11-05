@@ -1858,16 +1858,15 @@ cs_turb_constants_log_setup(void)
   else if (turb_model->model == CS_TURB_RIJ_EPSILON_BFH)
     cs_log_printf
       (CS_LOG_SETUP,
-       _("    cssgs1:      %14.5e (Cs1 coeff.)\n"
-         "    cssgs2:      %14.5e (Cs2 coeff.)\n"
-         "    cssgr1:      %14.5e (Cr1 coeff.)\n"
+       _("    crij1:       %14.5e (Slow term coefficient)\n"
+         "    crij2:       %14.5e (Fast term coefficient)\n"
          "    csrij:       %14.5e (Rij Cs diffusion coeff.)\n"
          "    crij3:       %14.5e (Gravity term coeff.)\n"
          "    ce1:         %14.5e (Cepsilon 1: production coef.)\n"
          "    ce2:         %14.5e (Cepsilon 2: dissipat.  coef.)\n"
          "    ce3:         %14.5e (Cepsilon 3: dissipat.  coef.)\n"
          "    cmu:         %14.5e (Cmu constant)\n"),
-         cs_turb_cssgs1, cs_turb_cssgs2, cs_turb_cssgr1,
+         cs_turb_crij1, cs_turb_crij2,
          cs_turb_csrij, cs_turb_crij3,
          cs_turb_ce1, cs_turb_ce2, cs_turb_ce3,
          cs_turb_cmu);

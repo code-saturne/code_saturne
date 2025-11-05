@@ -1465,6 +1465,7 @@ _update_physical_quantities_rough_wall(const cs_real_t  visclc,
       || model == CS_TURB_MIXING_LENGTH
       || model == CS_TURB_RIJ_EPSILON_LRR
       || model == CS_TURB_RIJ_EPSILON_SSG
+      || model == CS_TURB_RIJ_EPSILON_BFH
       || model == CS_TURB_SPALART_ALLMARAS) {
 
     if (visctc > cs_math_epzero) {
@@ -2058,7 +2059,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     alpha_rnn = 1.0 / sqrt(cs_turb_crij_c0 + 2.0);
   }
   else {
-    /* FIXME should be dereve from the algebraic model */
+    /* FIXME should be derive from the algebraic model */
     /* Alpha constant for a realisable BC for R12 with the SSG model */
     alpha_rnn = 0.47;
   }
@@ -3114,7 +3115,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         /* LRR and the Standard SGG or EB-RSM + wall functions */
         if (      ((iuntur == 1)
                && (   model == CS_TURB_RIJ_EPSILON_LRR
-                   || model == CS_TURB_RIJ_EPSILON_SSG))
+                   || model == CS_TURB_RIJ_EPSILON_SSG
+                   || model == CS_TURB_RIJ_EPSILON_BFH))
             || (   model == CS_TURB_RIJ_EPSILON_EBRSM
                 && cs_glob_wall_functions->iwallf != CS_WALL_F_DISABLED
                 && yplus > cs_math_epzero)
@@ -3284,7 +3286,9 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
           hint = (visclc + visctc / sigmae) / distbf;
         }
 
-        if (model == CS_TURB_RIJ_EPSILON_LRR || model == CS_TURB_RIJ_EPSILON_SSG
+        if (   model == CS_TURB_RIJ_EPSILON_LRR
+            || model == CS_TURB_RIJ_EPSILON_SSG
+            || model == CS_TURB_RIJ_EPSILON_BFH
             || (order == CS_TURB_SECOND_ORDER && icodcl_vel[f_id] == 6)) {
 
           /* Si yplus=0, on met coefa a 0 directement pour eviter une division
