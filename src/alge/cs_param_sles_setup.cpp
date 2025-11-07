@@ -215,11 +215,7 @@ _petsc_cmd(bool         use_prefix,
   else
     sprintf(cmd_line, "-%s", keyword);
 
-#if PETSC_VERSION_GE(3,7,0)
   PetscOptionsSetValue(nullptr, cmd_line, keyval);
-#else
-  PetscOptionsSetValue(cmd_line, keyval);
-#endif
 }
 
 /*----------------------------------------------------------------------------*/

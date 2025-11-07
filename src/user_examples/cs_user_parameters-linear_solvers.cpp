@@ -590,13 +590,8 @@ cs_user_linear_solvers(void)
     PetscInitializeNoArguments();
 
     /* See the PETSc documentation for the options database */
-#if PETSC_VERSION_GE(3,7,0)
     PetscOptionsSetValue(nullptr, "-ksp_type", "cg");
     PetscOptionsSetValue(nullptr, "-pc_type", "jacobi");
-#else
-    PetscOptionsSetValue("-ksp_type", "cg");
-    PetscOptionsSetValue("-pc_type", "jacobi");
-#endif
   }
   /*! [sles_petsc_1] */
 
@@ -627,7 +622,6 @@ cs_user_linear_solvers(void)
     PetscInitializeNoArguments();
 
     /* See the PETSc documentation for the options database */
-#if PETSC_VERSION_GE(3,7,0)
     PetscOptionsSetValue(nullptr, "-ksp_type", "cg");
     PetscOptionsSetValue(nullptr, "-pc_type", "gamg");
     PetscOptionsSetValue(nullptr, "-pc_gamg_agg_nsmooths", "1");
@@ -637,17 +631,6 @@ cs_user_linear_solvers(void)
     PetscOptionsSetValue(nullptr, "-pc_gamg_threshold", "0.02");
     PetscOptionsSetValue(nullptr, "-pc_gamg_reuse_interpolation", "TRUE");
     PetscOptionsSetValue(nullptr, "-pc_gamg_square_graph", "4");
-#else
-    PetscOptionsSetValue("-ksp_type", "cg");
-    PetscOptionsSetValue("-pc_type", "gamg");
-    PetscOptionsSetValue("-pc_gamg_agg_nsmooths", "1");
-    PetscOptionsSetValue("-mg_levels_ksp_type", "richardson");
-    PetscOptionsSetValue("-mg_levels_pc_type", "sor");
-    PetscOptionsSetValue("-mg_levels_ksp_max_it", "1");
-    PetscOptionsSetValue("-pc_gamg_threshold", "0.02");
-    PetscOptionsSetValue("-pc_gamg_reuse_interpolation", "TRUE");
-    PetscOptionsSetValue("-pc_gamg_square_graph", "4");
-#endif
   }
   /*! [sles_petsc_gamg_1] */
 
@@ -679,7 +662,6 @@ cs_user_linear_solvers(void)
     PetscInitializeNoArguments();
 
     /* See the PETSc documentation for the options database */
-#if PETSC_VERSION_GE(3,7,0)
     PetscOptionsSetValue(nullptr, "-ksp_type", "cg");
     PetscOptionsSetValue(nullptr, "-pc_type", "hypre");
     PetscOptionsSetValue(nullptr, "-pc_hypre_type","boomeramg");
@@ -688,18 +670,7 @@ cs_user_linear_solvers(void)
     PetscOptionsSetValue(nullptr, "-pc_hypre_boomeramg_agg_nl","2");
     PetscOptionsSetValue(nullptr, "-pc_hypre_boomeramg_P_max","4");
     PetscOptionsSetValue(nullptr, "-pc_hypre_boomeramg_strong_threshold", "0.5");
-    PetscOptionsSetValue(nullptr, "-pc_hypre_boomeramg_no_CF","");
-#else
-    PetscOptionsSetValue("-ksp_type", "cg");
-    PetscOptionsSetValue("-pc_type", "hypre");
-    PetscOptionsSetValue("-pc_hypre_type", "boomeramg");
-    PetscOptionsSetValue("-pc_hypre_boomeramg_coarsen_type", "HMIS");
-    PetscOptionsSetValue("-pc_hypre_boomeramg_interp_type", "ext+i-cc");
-    PetscOptionsSetValue("-pc_hypre_boomeramg_agg_nl", "2");
-    PetscOptionsSetValue("-pc_hypre_boomeramg_P_max", "4");
-    PetscOptionsSetValue("-pc_hypre_boomeramg_strong_threshold", "0.5");
-    PetscOptionsSetValue("-pc_hypre_boomeramg_no_CF", "");
-#endif
+    PetscOptionsSetValue(nullptr, "-pc_hypre_boomeramg_no_CF", "");
   }
   /*! [sles_petsc_bamg_1] */
 

@@ -920,11 +920,7 @@ cs_sles_petsc_create(const char                 *matrix_type,
     PetscLogStageRegister("Linear system setup", _log_stage);
     PetscLogStageRegister("Linear system solve", _log_stage + 1);
     PetscViewerASCIIOpen(PETSC_COMM_WORLD, "petsc.log", &_viewer);
-#if PETSC_VERSION_GE(3,7,0)
     PetscLogDefaultBegin();
-#else
-    PetscLogBegin();
-#endif
   }
 
   _n_petsc_systems += 1;
