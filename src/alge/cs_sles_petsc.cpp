@@ -1721,7 +1721,12 @@ cs_sles_petsc_free(void  *context)
     PetscLogStagePush(_log_stage[0]);
 
     KSPGetNormType(sd->ksp, &(c->norm_type));
+#if PETSC_VERSION_GE(3, 24, 0)
+    KSPConvergedDefaultDestroy(&(sd->cctx));
+#else
     KSPConvergedDefaultDestroy(sd->cctx);
+
+#endif
     KSPDestroy(&(sd->ksp));
 
     if (sd->share_a == false)
