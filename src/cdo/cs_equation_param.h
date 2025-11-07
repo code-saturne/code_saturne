@@ -39,6 +39,7 @@
 #include "cdo/cs_param_cdo.h"
 #include "cdo/cs_property.h"
 #include "cdo/cs_xdef.h"
+#include "base/cs_runge_kutta_integrator_priv.h"
 #include "base/cs_time_control.h"
 
 /*----------------------------------------------------------------------------*/
@@ -473,6 +474,9 @@ typedef struct {
    * effect on the calculation, and help follow the maximum principal, with less
    * degradation of the global precision than deactivating the reconstruction
    * on the volume mesh.
+   * \var rk_def
+   * Containing info of RK integrator id in the global Runge-Kutta
+   * structure list, and RK scheme.
   */
 
   int iconv;
@@ -508,6 +512,8 @@ typedef struct {
   int  d_gradient_r;
   int  b_gradient_r;
   int  b_diff_flux_rc;
+
+  cs_runge_kutta_def_t rk_def;
 
   /*!
    * @}

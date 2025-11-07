@@ -162,6 +162,8 @@ cs_restart_main_and_aux.h \
 cs_restart_map.h \
 cs_rotation.h \
 cs_runaway_check.h \
+cs_runge_kutta_integrator_priv.h \
+cs_runge_kutta_integrator.h \
 cs_sat_coupling.h \
 cs_scalar_clipping.h \
 cs_search.h \
@@ -265,6 +267,7 @@ cs_mem.cpp \
 cs_order.cpp \
 cs_part_to_block.cpp \
 cs_rank_neighbors.cpp \
+cs_runge_kutta_integrator.cpp \
 cs_system_info.cxx \
 cs_timer.cpp \
 cs_tree.cpp
