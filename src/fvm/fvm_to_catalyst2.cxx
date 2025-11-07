@@ -487,10 +487,10 @@ _init_version_info(void)
               CATALYST_VERSION, CATALYST_ABI_VERSION);
     _catalyst_info_string_[1][95] = '\0';
 
-    snprintf(_conduit_info_string_[0], 95,
+    snprintf(_conduit_info_string_[0], 31,
              "Conduit version: %s", conduit_version);
     _conduit_info_string_[0][95] = '\0';
-    snprintf(_conduit_info_string_[1], 95,
+    snprintf(_conduit_info_string_[1], 31,
              "Conduit version: %s",
               CONDUIT_VERSION);
     _conduit_info_string_[1][95] = '\0';
