@@ -49,8 +49,10 @@ Release 9.0.2 (unreleased)
 
 ### Architectural changes:
 
+- Fix for compilation with PETSc >= 3.24.0.
+
 - Enable auto-restart functionnality for coupled runs
-  (code_saturne/neptune_cfd only)
+  (code_saturne/neptune_cfd only).
 
 - Fix for detection of MUMPS v5.7 and above. With those versions, the
   `Makefile.inc` file is located in a `share` subdirectory.
