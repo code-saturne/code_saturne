@@ -3176,7 +3176,7 @@ _convection_diffusion_unsteady_strided
 
   /* Initialization */
 
-  cs_alloc_mode_t amode = ctx.alloc_mode(true);
+  cs_alloc_mode_t amode = ctx.alloc_mode();
 
   /* Handle cases where only the previous values (already synchronized)
      or current values are provided */
@@ -4448,7 +4448,7 @@ cs_convection_diffusion_vector(int                         idtvar,
   if (idtvar < 0)
     ctx.set_use_gpu(false);  /* steady case not ported to GPU */
 
-  cs_alloc_mode_t amode = ctx.alloc_mode(true);
+  cs_alloc_mode_t amode = ctx.alloc_mode();
 
   /* Halo (and gradient) type */
 
@@ -4825,7 +4825,7 @@ cs_convection_diffusion_tensor(int                          idtvar,
   if (idtvar < 0)
     ctx.set_use_gpu(false);  /* steady case not ported to GPU */
 
-  cs_alloc_mode_t amode = ctx.alloc_mode(true);
+  cs_alloc_mode_t amode = ctx.alloc_mode();
 
   /* Halo (and gradient) type */
 
