@@ -267,6 +267,7 @@ cs_mem.cpp \
 cs_order.cpp \
 cs_part_to_block.cpp \
 cs_rank_neighbors.cpp \
+cs_runge_kutta_integrator.cpp \
 cs_system_info.cxx \
 cs_timer.cpp \
 cs_tree.cpp

@@ -40,6 +40,8 @@ Master (not on release branches yet)
 
 ### Numerics:
 
+- Add Runge-Kutta schemes for time integration of some variables.
+
 - Remove `idilat` 4 and 5 weakly compressible algorithm options.
   * The validity domain of these options using a semi-analytic scheme
     was too limited for future uses of the Burke-Schuman model for

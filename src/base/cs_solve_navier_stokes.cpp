@@ -3145,32 +3145,35 @@ _velocity_prediction(const cs_mesh_t             *m,
 
     int *icvfli = cs_cf_boundary_conditions_get_icvfli();
 
-    cs_runge_kutta_integrator_t *rk_u =
-      cs_runge_kutta_integrator_by_id(eqp_u->rk_def.rk_id);
+    cs_runge_kutta_integrator_t *rk_u = nullptr;
 
-    if (cs_runge_kutta_is_active(rk_u)) {
-      cs_runge_kutta_stage_set_initial_rhs<3>(ctx, rk_u,(cs_real_t*)smbr);
-      cs_runge_kutta_stage_complete_rhs<3>(ctx,
-                                           rk_u,
-                                           cs_glob_time_step_options->idtvar,
-                                           CS_F_(vel)->id,
-                                           vp_model->ivisse,
-                                           &eqp_loc,
-                                           bc_coeffs_v,
-                                           imasfl,
-                                           bmasfl,
-                                           viscf,
-                                           viscb,
-                                           secvif,
-                                           secvib,
-                                           nullptr,
-                                           nullptr,
-                                           nullptr,
-                                           icvflb,
-                                           icvfli,
-                                           vel);
-      cs_runge_kutta_staging<3>(ctx, rk_u, (cs_real_t*) vel);
-      return;
+    if (eqp_u->rk_def.rk_id > -1) {
+      rk_u = cs_runge_kutta_integrator_by_id(eqp_u->rk_def.rk_id);
+
+      if (cs_runge_kutta_is_active(rk_u)) {
+        cs_runge_kutta_stage_set_initial_rhs<3>(ctx, rk_u,(cs_real_t*)smbr);
+        cs_runge_kutta_stage_complete_rhs<3>(ctx,
+                                             rk_u,
+                                             cs_glob_time_step_options->idtvar,
+                                             CS_F_(vel)->id,
+                                             vp_model->ivisse,
+                                             &eqp_loc,
+                                             bc_coeffs_v,
+                                             imasfl,
+                                             bmasfl,
+                                             viscf,
+                                             viscb,
+                                             secvif,
+                                             secvib,
+                                             nullptr,
+                                             nullptr,
+                                             nullptr,
+                                             icvflb,
+                                             icvfli,
+                                             vel);
+        cs_runge_kutta_staging<3>(ctx, rk_u, (cs_real_t*) vel);
+        return;
+      }
     }
 
     cs_equation_iterative_solve_vector(cs_glob_time_step_options->idtvar,
@@ -3949,14 +3952,16 @@ cs_solve_navier_stokes(const int        iterns,
     brom = brom_eos;
   }
 
-  cs_runge_kutta_integrator_t *rk_u =
+  cs_runge_kutta_integrator_t *rk_u = nullptr;
+  if (eqp_u->rk_def.rk_id > -1) {
     cs_runge_kutta_integrator_by_id(eqp_u->rk_def.rk_id);
 
-  cs_runge_kutta_init_state<3>(ctx,
-                               rk_u,
-                               crom,
-                               mq->cell_vol,
-                               (cs_real_t *)vela);
+    cs_runge_kutta_init_state<3>(ctx,
+                                 rk_u,
+                                 crom,
+                                 mq->cell_vol,
+                                 (cs_real_t *)vela);
+  }
 
   /* Prediction of the mass flux in case of Low Mach compressible algorithm
      ---------------------------------------------------------------------- */
@@ -4065,7 +4070,10 @@ cs_solve_navier_stokes(const int        iterns,
   cs_real_3_t *coefau = (cs_real_3_t *)CS_F_(vel)->bc_coeffs->a;
   cs_real_3_t *cofafu = (cs_real_3_t *)CS_F_(vel)->bc_coeffs->af;
 
-  do { // Commun part in theta scheme and Runge-Kutta scheme
+  /* Common part in theta scheme and Runge-Kutta scheme */
+  bool do_step = true;
+
+  while (do_step) {
     if (vp_param->staggered == 0) {
       _velocity_prediction(m,
                            mq,
@@ -4159,9 +4167,9 @@ cs_solve_navier_stokes(const int        iterns,
                                    crom, brom,
                                    imasfl, bmasfl);
 
-      /* Ajout de la vitesse du solide dans le flux convectif,
-       * si le maillage est mobile (solide rigide)
-       * En turbomachine, on connait exactement la vitesse de maillage a ajouter */
+      /* Add solid velocity in convective flux if the mesh is mobile
+         (i.e. rigid solid).
+         * For turbomachinery, the mesh velocity is known in an exact manner. */
 
       if (cs_turbomachinery_get_model() > CS_TURBOMACHINERY_NONE)
         _turbomachinery_mass_flux(m,
@@ -4320,7 +4328,8 @@ cs_solve_navier_stokes(const int        iterns,
               croma = CS_F_(rho)->val_pre;
               CS_REALLOC_HD(cpro_rho_tc, n_cells_ext, cs_real_t, amode);
 
-              ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+              ctx.parallel_for(n_cells_ext,
+                               [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
                 cpro_rho_tc[c_id] =   theta * cpro_rho_mass[c_id]
                                     + (1.0 - theta) * croma[c_id];
               });
@@ -4371,8 +4380,8 @@ cs_solve_navier_stokes(const int        iterns,
 
       } /* cs_turbomachinery_get_n_couplings() < 1 */
 
-      /* Update the Dirichlet wall boundary conditions for velocity (based on the
-       * solid body rotation on the new mesh).
+      /* Update the Dirichlet wall boundary conditions for velocity
+       * (based on the solid body rotation on the new mesh).
        * Note that the velocity BC update is made only if the user has
        * not specified any specific Dirichlet condition for velocity. */
 
@@ -4560,7 +4569,8 @@ cs_solve_navier_stokes(const int        iterns,
                                  imasfl, bmasfl);
 
     /* FIXME for me we should do that before cs_velocity_prediction */
-    /* Add solid's velocity in convective flux if the mesh is mobile (rigid solid).
+    /* Add solid's velocity in convective flux if the mesh is mobile
+       (i.e. rigid solid).
      * For turbomachinery, the mesh velocity to add is known exactly */
 
     if (cs_turbomachinery_get_model() > CS_TURBOMACHINERY_NONE) {
@@ -4578,7 +4588,7 @@ cs_solve_navier_stokes(const int        iterns,
     /* VoF: void fraction solving and update the mixture density/viscosity and
      *      mass flux (cs_pressure_correction solved the convective flux of
      *      void fraction, divU)
-     * ------------------------------------------------------------------------ */
+     * ---------------------------------------------------------------------- */
 
     if (vof_param->vof_model > 0) {
 
@@ -4822,11 +4832,16 @@ cs_solve_navier_stokes(const int        iterns,
       if (iterns == vp_param->nterup && cs_log_default_is_active())
         bft_printf("** INFORMATION ON UNSTEADY ROTOR/STATOR TREATMENT\n"
                    "   ----------------------------------------------\n"
-                   " Time dedicated to mesh update (s): %10.4lf         \n"
-                   " Global time                   (s): %10.4lf\n\n", rs_ell[0],
-                   rs_ell[0] + rs_ell[1]);
+                   " Time dedicated to mesh update (s): %10.4lf\n"
+                   " Global time                   (s): %10.4lf\n\n",
+                   rs_ell[0], rs_ell[0] + rs_ell[1]);
     }
-  } while (cs_runge_kutta_is_staging(rk_u));
+
+    if (rk_u != nullptr)
+      do_step = cs_runge_kutta_is_staging(rk_u);
+    else
+      do_step = false;  // done
+  }
 
   CS_FREE(trav);
   CS_FREE(da_uu);
