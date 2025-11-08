@@ -15,8 +15,7 @@ Presentation
 ============
 
 code_saturne is portable on all Linux flavors and UNIX platforms tested so far.
-It runs in parallel with MPI on distributed memory machines (Intel, Cray X series,
-IBM Power, ...).
+It runs in parallel with MPI on distributed memory machines (Intel, AMD, ARM, ...).
 Developed since 1997 at EDF R&D, it is based on a co-located Finite Volume
 approach that accepts meshes with any type of cell (tetrahedral, hexahedral,
 prismatic, pyramidal, polyhedral...) and any type of grid structure
@@ -25,18 +24,16 @@ prismatic, pyramidal, polyhedral...) and any type of grid structure
 Meshes may be imported using the CGNS, MED, GMSH, I-Deas, GAMBIT, or Simail
 formats, and Post-processing output is available in EnSight, CGNS
 and MED formats. In-situ postprocessing is available using the
-[ParaView Catalyst](https://www.paraview.org/in-situ) and
+[ParaView Catalyst](https://kitware.github.io/paraview-catalyst) and
 [Melissa](https://melissa-sa.github.io) libraries.
 
-code_saturne can be coupled in parallel to EDF's thermal software
-[SYRTHES](https://www.edf.fr/en/the-edf-group/world-s-largest-power-company/activities/research-and-development/scientific-communities/simulation-softwares?logiciel=10818)
-(conjugate heat transfer). It can also produce output usable by EDF's structural
-analysis software [code_aster](https://code-aster.org) or coupled directly for
-fluid-structure interaction, in particular in the
-[SALOME platform](https://www.salome-platform.org/). SYRTHES and
-code_aster are developed by EDF and distributed under a GNU GPL licence.
+code_saturne can be coupled to other tools using its built-in PLE
+(Parallel Location and Exchange) library or the MEDCoupling
+from the [SALOME platform](https://www.salome-platform.org/).
 The atmospheric model can include chemistry modeling based on the
 [SSH-aerosol](https://sshaerosol.wordpress.com/) library.
+Built-in support for the [FMI standard](https://fmi-standard.org/) allows easy
+construction of associated FMUs.
 
 Copying
 =======

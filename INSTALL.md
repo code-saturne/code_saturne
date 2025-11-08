@@ -627,7 +627,7 @@ The list of third-party software usable with code_saturne is provided here:
   and the *Remapper* and *ParaMEDMEM* librairies for serial and parallel
   intepolation and projection methods.
 
-* [ParaView Catalyst](https://www.paraview.org/insitu) or full ParaView
+* [ParaView Catalyst](https://kitware.github.io/paraview-catalyst) or full ParaView
   may be used for co-visualization or in-situ visualization.
   This requires ParaView 5.4 or above, though 5.9 or above is recommended.
   Note that ParaView must be built with MPI support for Catalyst to
@@ -959,7 +959,7 @@ make && make install && make clean
 ```
 
 As an alternative, if reading and writing of MED files is not needed, and only the
-coupling and intersection features are desired, a lighweight install may be obtained
+coupling and intersection features are desired, a lightweight install may be obtained
 with:
 
 ```
@@ -977,59 +977,69 @@ make && make install && make clean
 
 ### Paraview Catalyst
 
-We will use the terms Catalyst1 to refer to the legacy ParaView Catalyst module,
-Catalyst2 to the current module, ans simply Catalyst for elements common to
-those 2 modules.
+This section refers to the current ParaView Catalyst module, sometimes
+also referred to as Catalyst2.
 
-- With Catalyst1, the ParaView legacy Catalyst module is linked directly to
-  a code_saturne sub-library. This requires using a recent version of CMake
-  and a ParaView build including both MPI support and development headers.
-- With Catalyst2, a standalone library, named Catalyst
-  (https://gitlab.kitware.com/paraview/catalyst), must be installed
-  first. This is the library that code_saturne will link to.
-  A ParaView build linking to that same library must then be used.
-  That build should have MPI support.
-  This approach has several advantages:
-  * It is possible to switch from the ParaView implementation to another,
-    or to a stub implementation which allows dumping replay data for
-    offline debugging.
-  * The ParaView build does not need to include development headers, so
-    using a binary ParaView distribution is possible, provided the
-    associated MPI library is compatible.
+To use Catalyst2, at least ParaView version 6.0 dde89645f6 (2025-11-04)
+is recommended. Otherwise although any ParaView version from 5.13 onward should
+allow Catalyst2 support, some features (such as ghost cells generation) may not
+work correctly. With older ParaView versions, reverting to legacy Catalyst
+(Catalyst1) is recommended.
 
-The following examples refer to Catalyst1. To use Catalyst2, at least
-ParaView version 6.0.1-863-ga458993448 (2025-10-31) should be used
-otherwise some features (such as ghost cells generation) may be missing.
+**Principle**: a standalone library, named Catalyst
+(https://gitlab.kitware.com/paraview/catalyst), must be installed first.
+This is the library that code_saturne will link to. In turn, this library will
+call an actual implementation in a ParaView build.
 
-By default, ParaView is built with a GUI, but it may also be be
-built using OSMesa or EGL for offscreen rendering. The build documentation
-on the ParaView website and Wiki details this. On a workstation,
-a regular build of ParaViw with MPI support may be sufficient.
-
-For a compute cluster or server in which code_saturne will run
-outside a graphical (X11) environment, the recommended solution is to build
-or use a standard ParaView build for interactive visualization, and to use
-its Catalyst/Define Exports option to generate Python co-processing scripts.
-A second build, using OSMesa (or EGL), may be used for in-situ visualization.
-This is the Version code_saturne will be linked to. A recommended cmake
-command for this build contains:
+To build code_saturne with Catalyst support, only that library is
+required. To build Catalyst in a separate (initially empty) build directory,
+the following commands should suffice:
 
 ```
-cmake \
--DCMAKE_INSTALL_PREFIX=${INSTALL_PATH}_osmesa \
--DPARAVIEW_USE_QT=OFF \
--DPARAVIEW_USE_MPI=ON \
--DPARAVIEW_USE_PYTHON=ON \
--DPARAVIEW_INSTALL_DEVELOPMENT_FILES=ON \
--DOSMESA_INCLUDE_DIR=${MESA_INSTALL_PREFIX}/include \
--DOSMESA_LIBRARY=${MESA_INSTALL_PREFIX}/lib/libOSMesa.so \
--DVTK_OPENGL_HAS_OSMESA=ON \
--DVTK_USE_X=OFF \
-${PARAVIEW_SRC_PATH}
+cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_PATH} \
+-CATALYST_USE_MPI=ON \
+${CATALYST_SRC_PATH}
+make && make install && make clean
 ```
 
-More info may also be found in the
-[ParaView documnetation](https://www.paraview.org/paraview-docs/latest/cxx/Offscreen.html).
+To actually use this libary, a ParaView build with Catalyst support will
+also be needed. As this approach is based on dynamic library loading,
+similar to a plugin,  it is possible to switch from the ParaView implementation
+to another, or to a stub implementation which allows dumping replay data for
+offline debugging, as long as those implementations are build with a
+compatible MPI library.
+
+When building code_saturne with MPICH or an MPICH-based MPI library (such as
+Intel oneAPI MPI or Cray MPICH), it should be possible to simply use the
+[KitWare ParaView binaries](https://www.paraview.org/download/).
+When using an Open MPI-based MPI (or no MPI), using a binary from
+the [SALOME platform](https://www.salome-platform.org/) may be an option.
+Packaged binaries on your Linux distribution might or might not include
+Catalyst support, so you may check for the presence of a `lib/catalyst`
+directory in these packages.
+
+Otherwise, the ParaView documentation provides detailed instructions
+for building ParaView, and a few recommendations are provided in the
+**ParaView** section below.
+
+When using Catalyst2, the `CATALYST_IMPLEMENTATION_NAME` environment
+variable must be set to `paraview` for actual output.
+The `CATALYST_IMPLEMENTATION_PATHS` environment variable must also
+be used to specifiy the ParaView installation's `lib/catalyst`
+directory. Note that by changing this path, it is possible to use
+multiple ParaView versions with a single code_saturne build.
+
+These environment variables are defined automatically by code_saturne if
+not otherwise present, but can be overridden by the user.
+For this, the `catalyst_implementation_paths` value should be defined
+at the post-install stage (in the `code_saturne.cfg` file).
+
+### Paraview Catalyst (legacy)
+
+With Catalyst1, the ParaView legacy Catalyst module is linked directly to
+a code_saturne sub-library. This requires using a recent version of CMake
+and a ParaView build including both MPI support and development headers
+(see the **ParaView** section below).
 
 Note that when ParaView uses libraries which are in non-standard locations,
 it may be necessary to specify those locations in the CMake prefix path
@@ -1051,12 +1061,73 @@ a crash at finalization of Catalyst has been observed. If this is the case,
 setting the `CS_PV_CP_DELETE_CRASH_WORKAROUND` environment variable to 1
 should avoid calling the offending code.
 
-When using Catalyst2, the `CATALYST_IMPLEMENTATION_NAME` environment
-variable must be set to `paraview` for actual output.
-The `CATALYST_IMPLEMENTATION_PATHS` environment variable must also
-be used to specifiy the ParaView installation's `lib/catalyst`
-directory. Note that by changing this path, it is possible to use
-multiple ParaView versions with a single code_saturne build.
+### Paraview
+
+Building ParaView can be complex, so it is recommend to first check the
+ParaView build documentation for details if available binaries are not
+usable fo Catalyst support.
+
+A CMake command for a ParaView build with Catalyst2 support should contain at least
+the following options:
+
+```
+cmake \
+-DCMAKE_INSTALL_PREFIX=${INSTALL_PATH} \
+-DPARAVIEW_USE_MPI=ON \
+-DPARAVIEW_USE_PYTHON=ON \
+${PARAVIEW_SRC_PATH}
+```
+
+For Catalyst2 support, the following options must also be inserted:
+
+```
+-DPARAVIEW_ENABLE_CATALYST=ON \
+-Dcatalyst_DIR=${CATALYST_INSTALL_PATH}/lib/cmake/catalyst-2.0 \
+```
+
+For legacy Catalyst (i.e. Catalyst1), insert:
+
+```
+-DPARAVIEW_INSTALL_DEVELOPMENT_FILES=ON \
+```
+
+Note that using a build supporting both Catalyst2 and Catalyst1 is
+possible, by using both options.
+
+By default, ParaView is built with a GUI, but it may also be be
+built using EGL for offscreen (or deprecated OSMesa) rendering.
+On a workstation, a regular build of ParaViw with MPI support may be sufficient.
+
+For a compute cluster or server in which code_saturne will run
+outside a graphical (X11 or Wayland) environment, the recommended solution is
+to build or use a standard ParaView build for interactive visualization, and to
+use its Catalyst/Define Exports option to generate Python co-processing scripts
+(either locally or on a client workstation).
+
+A separate offscreen build, may for in-situ visualization.
+This is the Version which should have Catalys support and will be unspecifiedby code_saturne.
+
+If this should be an offscreen build (such as on a cluster), the
+following CMake options are required when configuring the ParaView build:
+
+```
+-DPARAVIEW_USE_QT=OFF \
+-DVTK_USE_X=OFF \
+```
+
+More info on offscreen rendering options may also be found in the
+[ParaView documnetation](https://www.paraview.org/paraview-docs/latest/cxx/Offscreen.html
+
+Since ParaView can include many dependencies, using
+[ParaView-Superbuild](https://gitlab.kitware.com/paraview/paraview-superbuild)
+may allow a simpler installation, as this also build prerequisites.
+In this case, the Catalyst library can be build automatically using the
+`-DENABLE_catalyst=ON` option, or a separate build may be used
+
+```
+-DUSE_SYSTEM_catalyst=ON \
+-Dcatalyst_DIR=${CATALYST_INSTALL_PATH}/lib/cmake/catalyst-2.0 \
+```
 
 ### Coupling with SYRTHES
 
