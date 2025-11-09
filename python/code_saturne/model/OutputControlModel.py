@@ -578,6 +578,29 @@ class OutputControlModel(Model):
         n['choice'] = choice
 
 
+    @Variables.noUndo
+    def getCatalystImplementation(self):
+        """
+        Return the selected Catalyst implementation type.
+        """
+        implementation = None
+        node_c = self.node_out.xmlGetNode('catalyst')
+        if node_c:
+            implementation = node_c.xmlGetString('implementation')
+        if implementation is None:
+            implementation = "paraview"
+        return implementation
+
+
+    @Variables.undoLocal
+    def setCatalystImplementation(self, implementation):
+        """
+        Set the selected Catalyst implementation type.
+        """
+        node_c = self.node_out.xmlInitNode('catalyst')
+        node_c.xmlSetData('implementation', implementation, default='paraview')
+
+
     def defaultMeshValues(self):
         """Return the default values"""
         default = {}

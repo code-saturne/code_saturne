@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2024 EDF S.A.
+# Copyright (C) 1998-2025 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -217,7 +217,8 @@ class FormatWriterDelegate(QItemDelegate):
                 editor.setItemData(1, QColor(Qt.red), Qt.TextColorRole);
             if self.cfg_libs['cgns'].have == False:
                 editor.setItemData(2, QColor(Qt.red), Qt.TextColorRole);
-            if self.cfg_libs['catalyst'].have == False:
+            if self.cfg_libs['catalyst'].have == False \
+               and self.cfg_libs['catalyst2'].have == False:
                 editor.setItemData(3, QColor(Qt.red), Qt.TextColorRole);
             if self.cfg_libs['melissa'].have == False:
                 editor.setItemData(5, QColor(Qt.red), Qt.TextColorRole);
@@ -881,6 +882,7 @@ class StandardItemModelWriter(QStandardItemModel):
                 self.defaultItem.append(row)
             log.debug("populateModel-> dataSolver = %s" % dico)
 
+
     def data(self, index, role):
         if not index.isValid():
             return None
@@ -996,7 +998,6 @@ class StandardItemModelWriter(QStandardItemModel):
         """
         self.dataWriter = []
         self.setRowCount(0)
-
 
 
 #-------------------------------------------------------------------------------
@@ -1350,6 +1351,9 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         no_catalyst = False
         if cfg_libs['catalyst'].have == False:
             no_catalyst = True
+        no_catalyst2 = False
+        if cfg_libs['catalyst2'].have == False:
+            no_catalyst2 = True
 
         if self.case['run_type'] == 'standard':
             # lagrangian model
@@ -1369,8 +1373,10 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelTimeDependency = ComboModel(self.comboBoxTimeDependency,3,1)
         self.modelFormatE        = ComboModel(self.comboBoxFormatE,2,1)
         self.modelFormatH        = ComboModel(self.comboBoxFormatH,2,1)
+        self.modelStructureC     = ComboModel(self.comboBoxStructureC,2,1)
         self.modelPolygon        = ComboModel(self.comboBoxPolygon,3,1)
         self.modelPolyhedra      = ComboModel(self.comboBoxPolyhedra,3,1)
+        self.modelImplementC     = ComboModel(self.comboBoxImplementC,2,1)
         self.modelTimePlot       = ComboModel(self.comboBoxTimePlot,3,1)
         self.modelProbeFmt       = ComboModel(self.comboBoxProbeFmt,2,1)
 
@@ -1398,6 +1404,13 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelFormatH.addItem(self.tr("text"), 'text')
         self.modelFormatH.addItem(self.tr("TeX (TikZ)"), 'tex')
         self.modelFormatH.addItem(self.tr("PNG"), 'png', warn=no_catalyst)
+
+        self.modelImplementC.addItem(self.tr("ParaView"), 'paraview', warn=no_catalyst2)
+        self.modelImplementC.addItem(self.tr("Stub"), 'stub', warn=no_catalyst2)
+        self.modelImplementC.addItem(self.tr("Catalyst1 (legacy)"), 'legacy', warn=no_catalyst)
+
+        self.modelStructureC.addItem(self.tr("Multi-block (legacy)"), 'multiblock=1')
+        self.modelStructureC.addItem(self.tr("Partitioned Dataset"), 'multiblock=0')
 
         self.modelPolygon.addItem(self.tr("display"), 'display')
         self.modelPolygon.addItem(self.tr("discard"), 'discard_polygons')
@@ -1558,8 +1571,10 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.comboBoxFrequency.activated[str].connect(self.slotWriterFrequencyChoice)
         self.comboBoxFormatE.activated[str].connect(self.slotWriterOptions)
         self.comboBoxFormatH.activated[str].connect(self.slotWriterOptions)
+        self.comboBoxStructureC.activated[str].connect(self.slotWriterOptions)
         self.comboBoxPolygon.activated[str].connect(self.slotWriterOptions)
         self.comboBoxPolyhedra.activated[str].connect(self.slotWriterOptions)
+        self.comboBoxImplementC.activated[str].connect(self.slotCatalystImplementation)
         self.comboBoxTimePlot.activated[str].connect(self.slotMonitoringPoint)
         self.comboBoxProbeFmt.activated[str].connect(self.slotOutputProbeFmt)
 
@@ -1628,7 +1643,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.tabWidget.setTabEnabled(3, False)
             tabs_to_remove.append(3)
 
-        # Initialisation of the monitoring points files
+        # Initialization of the monitoring points files
 
         m = self.mdl.getMonitoringPointType()
         if m == 'Frequency_h_x' :
@@ -1641,7 +1656,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         t = self.modelTimePlot.dicoM2V[m]
         self.slotMonitoringPoint(t)
 
-        # Monitoring points initialisation
+        # Monitoring points initialization
 
         if self.salome_probes_visu and not self.case['probes']:
             try:
@@ -1704,6 +1719,9 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.groupBoxFrequency.hide()
         self.groupBoxTimeDependency.hide()
         self.groupBoxOptions.hide()
+        self.groupBoxGlobalCatalystOptions.hide()
+        impl_type = self.mdl.getCatalystImplementation()
+        self.modelImplementC.setItem(str_model=impl_type)
 
         # Mesh initialisation
 
@@ -2216,7 +2234,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
     @pyqtSlot()
     def slotWriterParallelIO(self):
         """
-        Writer separate meshes option
+        Parallel IO option
         """
         row, writer_id, options = self.__WriterOptionsPrelude()
 
@@ -2245,18 +2263,18 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         if not writer_id:  # should not occur
             return
 
+        format = self.modelWriter.getItem(row)['format']
         writer_id = self.modelWriter.getItem(row)['id']
         line = []
 
         # remove previous settings matching this slot
-        for m in (self.modelFormatE, self.modelFormatH,
+        for m in (self.modelFormatE, self.modelFormatH, self.modelStructureC,
                   self.modelPolygon, self.modelPolyhedra):
             for s in m.items:
                 if s in options:
                     options.remove(s)
 
         # now append options
-        format = self.modelWriter.getItem(row)['format']
         if format == 'ensight':
             opt_format = self.modelFormatE.dicoV2M[str(self.comboBoxFormatE.currentText())]
             if opt_format != 'binary':
@@ -2272,6 +2290,10 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             options.append(opt_polygon)
         if opt_polyhed != 'display':
             options.append(opt_polyhed)
+
+        opt_structure = self.modelStructureC.dicoV2M[str(self.comboBoxStructureC.currentText())]
+        if opt_structure != 'multiblock=1':
+            options.append(opt_structure)
 
         l = ', '.join(options)
         log.debug("slotOutputOptions-> %s" % l)
@@ -2297,6 +2319,9 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.modelFormatE.setItem(str_model=opt)
             elif format == 'histogram' and opt in ['text', 'tex', 'png']:
                 self.modelFormatH.setItem(str_model=opt)
+            elif format == 'catalyst':
+                if opt in ['multiblock=1', 'multiblock=0']:
+                    self.modelStructureC.setItem(str_model=opt)
             elif opt == 'discard_polygons' or opt == 'divide_polygons':
                 self.modelPolygon.setItem(str_model=opt)
             elif opt == 'discard_polyhedra' or opt == 'divide_polyhedra':
@@ -2365,6 +2390,15 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         else:
             self.checkBoxSeparateMeshes.show()
 
+        if format == "catalyst":
+            self.groupBoxGlobalCatalystOptions.show()
+            self.modelStructureC.show()
+            self.labelStructureC.show()
+        else:
+            self.groupBoxGlobalCatalystOptions.hide()
+            self.modelStructureC.hide()
+            self.labelStructureC.hide()
+
         if format == "med":
             self.modelTimeDependency.disableItem(str_model="transient_coordinates")
             self.modelTimeDependency.disableItem(str_model="transient_connectivity")
@@ -2385,6 +2419,16 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         Add a new 'item' into the Hlist.
         """
         self.modelLagrangianMesh.newData(name, mesh_id, mesh_type, density, selection)
+
+
+    @pyqtSlot(str)
+    def slotCatalystImplementation(self, text):
+        """
+        Select Catalyst implementation type
+        """
+        impl_type = self.modelImplementC.dicoV2M[str(text)]
+        log.debug("slotslotCatalystImplementation-> implementation = %s" % impl_type)
+        self.mdl.setCatalystImplementation(impl_type)
 
 
     @pyqtSlot()

@@ -77,6 +77,7 @@
 #include "base/cs_mem.h"
 #include "base/cs_file.h"
 #include "base/cs_parall.h"
+#include "base/cs_tree.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -104,6 +105,8 @@ typedef struct {
   fvm_writer_time_dep_t      time_dependency; /* Mesh time dependency */
 
   bool                       ensight_names;  /* Use EnSight naming scheme */
+  bool                       multiblock;     /* Use multiblock (legacy)
+                                                VTK structure */
 
   conduit_cpp::Node          channel;        /* Conduit channel node */
 
@@ -111,14 +114,16 @@ typedef struct {
   int                        time_step ;     /* Mesh time steps */
   double                     time_value;     /* Mesh time value */
 
-  bool                       modified;        /* Has output been added since
-                                                 last coprocessing ? */
+  bool                       modified;       /* Has output been added since
+                                                last coprocessing ? */
 
 } fvm_to_catalyst_t;
 
 /*============================================================================
  * Static global variables
  *============================================================================*/
+
+extern cs_tree_node_t *cs_glob_tree;
 
 static bool _debug_print = false;
 
@@ -130,6 +135,7 @@ bool _catalyst_initialized = false;
 int _use_mpi = -1;
 
 #if defined(HAVE_MPI)
+bool      _private_comm = false;
 MPI_Comm  _comm = MPI_COMM_NULL;
 #endif
 
@@ -150,7 +156,7 @@ static const char  *fvm_to_conduit_type_name[]
 /* The Conduit documentation only mentions the VTK ids as examples, and it
    seems we could use FVM type ids here directly, as long as we are
    consistent with the given type map.
-   But it seems that ParaView Catalys does not honor the type map,
+   But it seems that ParaView Catalyst does not honor the type map,
    and assumes shapes are VTK shapes, so we also need a mapping to
    VTK type ids, at least until this is fixed. */
 
@@ -511,7 +517,26 @@ _init_catalyst(void)
 
   conduit_cpp::Node node = conduit_cpp::cpp_node(_root_node);
 
-  // node["catalyst_load/implementation"] = "paraview";
+  /* Determine implementation name:
+     1) We give priority to the standard Catalyst environment variable
+        "CATALYST_IMPLEMENTATION_NAME" if it is set.
+     2) Otherwise, we check the case settings.
+     3) Finally, use "paraview" by default.
+  */
+
+  if (getenv("CATALYST_IMPLEMENTATION_NAME") == nullptr) {
+    const char *implementation = nullptr;
+    const char path_c[] = "analysis_control/output/catalyst";
+    cs_tree_node_t *tn_c = cs_tree_get_node(cs_glob_tree, path_c);
+    if (tn_c != nullptr) {
+      implementation
+        = cs_tree_node_get_child_value_str(tn_c, "implementation");
+    }
+    if (implementation == nullptr)
+      implementation = "paraview";
+    node["catalyst_load/implementation"] = implementation;
+  }
+
   // node["catalyst_load/search_paths/paraview"] = PARAVIEW_IMPL_DIR;
 
   // Add MPI communicator handle
@@ -520,7 +545,7 @@ _init_catalyst(void)
   {
     int mpi_flag = 0;
     MPI_Initialized(&mpi_flag);
-    if (mpi_flag && _comm != MPI_COMM_NULL && _comm != MPI_COMM_WORLD) {
+    if (mpi_flag && _comm != MPI_COMM_NULL) {
       node["catalyst/mpi_comm"] = MPI_Comm_c2f(_comm);
     }
   }
@@ -564,7 +589,6 @@ _init_catalyst(void)
  * Finalize catalyst.
  *
  * parameters:
- *   private_comm <-- if true, use dedicated communicator
  *   comm         <-- associated MPI communicator.
  *----------------------------------------------------------------------------*/
 
@@ -585,6 +609,14 @@ _finalize_catalyst(void)
     conduit_node_destroy(_root_node);
     _root_node = nullptr;
   }
+
+#if defined(HAVE_MPI)
+  if (_comm != MPI_COMM_NULL && _private_comm) {
+    MPI_Comm_free(&_comm);
+    _private_comm = false;
+  }
+  _comm = MPI_COMM_NULL;
+#endif // defined(HAVE_MPI)
 }
 
 /*----------------------------------------------------------------------------
@@ -1493,9 +1525,11 @@ fvm_to_catalyst2_version_string(int string_index,
  * Initialize FVM to Catalyst-2 object writer.
  *
  * Options are:
- *   private_comm        use private MPI communicator (default: false)
+ *   multiblock[=0,1]    use multiblock structure (legacy, default) or
+ *                       partitioned dataset
  *   names=<fmt>         use same naming rules as <fmt> format
  *                       (default: ensight)
+ *   private_comm        use private MPI communicator (default: false)
  *
  * parameters:
  *   name           <-- base output case name.
@@ -1536,6 +1570,9 @@ fvm_to_catalyst2_init_writer(const char             *name,
   w->time_value = 0.0;
 
   w->ensight_names = true;
+  w->multiblock = true;
+
+  bool private_comm = false;
 
   // Writer name
 
@@ -1568,6 +1605,16 @@ fvm_to_catalyst2_init_writer(const char             *name,
         else
           w->ensight_names = false;
       }
+      else if ((l_opt == 10) && (strncmp(options + i1, "multiblock", l_opt) == 0))
+        w->multiblock = true;
+      else if ((l_opt == 12) && (strncmp(options + i1, "multiblock=", l_opt) == 0)) {
+        if (options[i1+11] == '1')
+          w->multiblock = true;
+        else
+          w->multiblock = false;
+      }
+      if ((l_opt == 12) && (strncmp(options + i1, "private_comm", l_opt) == 0))
+        private_comm = true;
 
       for (i1 = i2 + 1; i1 < l_tot && options[i1] == ' '; i1++);
 
@@ -1582,11 +1629,17 @@ fvm_to_catalyst2_init_writer(const char             *name,
   // Check we always use the same communicator
 
   if (comm != _comm) {
-    if (comm != MPI_COMM_NULL && _comm != MPI_COMM_NULL)
-      bft_error(__FILE__, __LINE__, 0,
-                _("All Catalyst writers must use the same MPI communicator"));
-    else
-      _comm = comm;
+    if (comm != MPI_COMM_NULL && _comm == MPI_COMM_NULL && private_comm) {
+      MPI_Comm_dup(comm, &(_comm));
+      _private_comm = true;
+    }
+    else {
+      if (comm != MPI_COMM_NULL && _comm != MPI_COMM_NULL)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("All Catalyst writers must use the same MPI communicator"));
+      else
+        _comm = comm;
+    }
   }
 
 #endif
@@ -1609,7 +1662,8 @@ fvm_to_catalyst2_init_writer(const char             *name,
   auto state = exec_params["catalyst/state"];
   state["cycle"].set(0);
   state["time"].set(0);
-  state["multiblock"].set(1);
+  if (w->multiblock)
+    state["multiblock"].set(1);
 
   // Add channel for this writer
 

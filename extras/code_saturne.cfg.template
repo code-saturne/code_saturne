@@ -52,6 +52,10 @@
 ### (e.g. <aster_home>/aster-17.x.yy/arch/<arch>).
 # aster =
 
+### Set the location to the Catalyst implementation paths
+### (e.g. CATALYST_IMPLEMENTATION_PATHS environment variable).
+# catalyst_implementation_paths =
+
 ### Optional path to sourcable shell environment initialization file
 ### (similar to .profile or .bashrc, specific to code_saturne).
 # rcfile =

@@ -55,6 +55,7 @@
 #include "base/cs_fp_exception.h"
 #include "base/cs_mem.h"
 #include "base/cs_timer.h"
+#include "base/cs_tree.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -108,6 +109,8 @@ BEGIN_C_DECLS
 /*============================================================================
  * Static and constant variables
  *============================================================================*/
+
+extern cs_tree_node_t *cs_glob_tree;
 
 /* Number and status of defined formats */
 
@@ -937,6 +940,13 @@ fvm_writer_get_format_id(const char  *format_name)
 #   if defined(HAVE_CATALYST2)
     strcpy(closest_name, "Catalyst2");
     const char *s = getenv("CATALYST_IMPLEMENTATION_NAME");
+    if (s == nullptr) {
+      const char *implementation = nullptr;
+      const char path_c[] = "analysis_control/output/catalyst";
+      cs_tree_node_t *tn_c = cs_tree_get_node(cs_glob_tree, path_c);
+      if (tn_c != nullptr)
+        s = cs_tree_node_get_child_value_str(tn_c, "implementation");
+    }
     if (s != nullptr) {
       if (strcmp(s, "legacy") == 0)
         strcpy(closest_name, "Catalyst");

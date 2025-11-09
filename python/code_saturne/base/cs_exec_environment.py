@@ -471,6 +471,39 @@ def write_prepend_path(fd, var, user_path):
 
 #-------------------------------------------------------------------------------
 
+def write_catalyst2_vars(pkg, fd):
+    """
+    Write Catalyst2 environment variables.
+    """
+
+    if pkg.config.libs['catalyst2'].have == False:
+        return
+
+    catalyst_path = None
+    if os.getenv('CATALYST_IMPLEMENTATION_PATHS') is None:
+        config = configparser.ConfigParser()
+        config.read(pkg.get_configfiles())
+        if config.has_option('install', 'catalyst_implementation_paths'):
+            catalyst_path = config.get('install', 'catalyst_implementation_paths')
+
+    fd.write(
+"""# Catalyst environment
+#---------------------
+""")
+    if catalyst_path:
+        fd.write("""if [ "$CATALYST_IMPLEMENTATION_PATHS" = "" ]; then
+  """)
+        write_export_env(fd, 'CATALYST_IMPLEMENTATION_PATHS', catalyst_path)
+        fd.write("fi\n")
+
+    # Using PARAVIEW_LOG_FILE currently leads to using 1 file per MPI rank,
+    # so we do not export this variable for now.
+    #write_export_env(fd, 'PARAVIEW_LOG_FILE', 'catalyst.log')
+    write_export_env(fd, 'VTK_SILENCE_GET_VOID_POINTER_WARNINGS', '1')
+    fd.write("\n")
+
+#-------------------------------------------------------------------------------
+
 def write_mps_start(fd):
     """
     Write MPS start code in run script.

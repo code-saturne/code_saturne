@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>787</width>
-    <height>613</height>
+    <height>720</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -331,129 +331,6 @@
          </item>
         </layout>
        </item>
-       <item row="1" column="0">
-        <widget class="QGroupBox" name="groupBoxFrequency">
-         <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the writing frequency for the selected writer between:&lt;br/&gt;- No periodic output,&lt;br/&gt;- Output every 'n' time steps,&lt;br/&gt;- Output every 'x' seconds,&lt;br/&gt;- Output using a formula, in which case, the formula editor has to be filled. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;An output can be written at the end of the calculation by checking the corresponding box.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-         <property name="title">
-          <string>Frequency</string>
-         </property>
-         <layout class="QGridLayout">
-          <property name="leftMargin">
-           <number>9</number>
-          </property>
-          <property name="topMargin">
-           <number>9</number>
-          </property>
-          <property name="rightMargin">
-           <number>9</number>
-          </property>
-          <property name="bottomMargin">
-           <number>9</number>
-          </property>
-          <property name="spacing">
-           <number>6</number>
-          </property>
-          <item row="0" column="0">
-           <spacer>
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="0" column="1">
-           <widget class="QComboBox" name="comboBoxFrequency">
-            <property name="minimumSize">
-             <size>
-              <width>325</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="toolTip">
-             <string/>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="2">
-           <widget class="QLineEdit" name="lineEditFrequency">
-            <property name="minimumSize">
-             <size>
-              <width>100</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="5">
-           <spacer>
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="0" column="3">
-           <widget class="QLineEdit" name="lineEditFrequencyTime">
-            <property name="minimumSize">
-             <size>
-              <width>100</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="4">
-           <widget class="QPushButton" name="pushButtonFrequency">
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="text">
-             <string/>
-            </property>
-            <property name="icon">
-             <iconset resource="resources_pages.qrc">
-              <normaloff>:/new/prefix1/data/icons/22x22/preferences-system.png</normaloff>:/new/prefix1/data/icons/22x22/preferences-system.png</iconset>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QCheckBox" name="checkBoxOutputStart">
-            <property name="text">
-             <string>Output at start of calculation</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="2">
-           <widget class="QCheckBox" name="checkBoxOutputEnd">
-            <property name="toolTip">
-             <string/>
-            </property>
-            <property name="text">
-             <string>Output at end of calculation</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
        <item row="2" column="0">
         <widget class="QGroupBox" name="groupBoxTimeDependency">
          <property name="toolTip">
@@ -585,23 +462,13 @@
               <property name="spacing">
                <number>6</number>
               </property>
-              <item row="0" column="0" colspan="2">
-               <widget class="QCheckBox" name="checkBoxSeparateMeshes">
-                <property name="toolTip">
-                 <string>If checked, separate outputs (i.e. files) will be used for each mesh associated with this writer.</string>
-                </property>
-                <property name="text">
-                 <string>Separate sub-writer for each mesh</string>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="0">
-               <widget class="QLabel" name="labelFormatE">
+              <item row="6" column="0">
+               <widget class="QLabel" name="labelPolyhedra">
                 <property name="toolTip">
                  <string/>
                 </property>
                 <property name="text">
-                 <string>File type</string>
+                 <string>Polyhedra</string>
                 </property>
                </widget>
               </item>
@@ -618,17 +485,16 @@
                 </property>
                </widget>
               </item>
-              <item row="3" column="1">
-               <widget class="QComboBox" name="comboBoxFormatH">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select an output variant for the selected writer.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <item row="5" column="1">
+               <widget class="QComboBox" name="comboBoxPolygon">
+                <property name="minimumSize">
+                 <size>
+                  <width>120</width>
+                  <height>0</height>
+                 </size>
                 </property>
-               </widget>
-              </item>
-              <item row="3" column="0">
-               <widget class="QLabel" name="labelFormatH">
-                <property name="text">
-                 <string>Output type</string>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose how to display polygonal mesh elements:&lt;br/&gt;- Display,&lt;br/&gt;- Discard (polygons are not displayed),&lt;br/&gt;- Subdivide (polygons are subdivided into triangles).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                </widget>
               </item>
@@ -642,30 +508,7 @@
                 </property>
                </widget>
               </item>
-              <item row="4" column="1">
-               <widget class="QComboBox" name="comboBoxPolygon">
-                <property name="minimumSize">
-                 <size>
-                  <width>120</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose how to display polygonal mesh elements:&lt;br/&gt;- Display,&lt;br/&gt;- Discard (polygons are not displayed),&lt;br/&gt;- Subdivide (polygons are subdivided into triangles).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-               </widget>
-              </item>
-              <item row="4" column="0">
-               <widget class="QLabel" name="labelPolygon">
-                <property name="toolTip">
-                 <string/>
-                </property>
-                <property name="text">
-                 <string>Polygons</string>
-                </property>
-               </widget>
-              </item>
-              <item row="5" column="1">
+              <item row="6" column="1">
                <widget class="QComboBox" name="comboBoxPolyhedra">
                 <property name="minimumSize">
                  <size>
@@ -678,13 +521,61 @@
                 </property>
                </widget>
               </item>
+              <item row="0" column="0" colspan="2">
+               <widget class="QCheckBox" name="checkBoxSeparateMeshes">
+                <property name="toolTip">
+                 <string>If checked, separate outputs (i.e. files) will be used for each mesh associated with this writer.</string>
+                </property>
+                <property name="text">
+                 <string>Separate sub-writer for each mesh</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QComboBox" name="comboBoxFormatH">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select an output variant for the selected writer.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="labelStructureC">
+                <property name="text">
+                 <string>Structure</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="labelFormatH">
+                <property name="text">
+                 <string>Output type</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QComboBox" name="comboBoxStructureC">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select output structure for the selected Catalyst channel. This should match the structure produced by the reader used to prepare the Catalyst pipeline.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Multi-block dataset&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;- Partitioned Dataset Collection&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Ignored for legacy Catalyst (i.e. Catalyst1).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
               <item row="5" column="0">
-               <widget class="QLabel" name="labelPolyhedra">
+               <widget class="QLabel" name="labelPolygon">
                 <property name="toolTip">
                  <string/>
                 </property>
                 <property name="text">
-                 <string>Polyhedra</string>
+                 <string>Polygons</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="labelFormatE">
+                <property name="toolTip">
+                 <string/>
+                </property>
+                <property name="text">
+                 <string>File type</string>
                 </property>
                </widget>
               </item>
@@ -704,6 +595,165 @@
              </spacer>
             </item>
            </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QGroupBox" name="groupBoxFrequency">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the writing frequency for the selected writer between:&lt;br/&gt;- No periodic output,&lt;br/&gt;- Output every 'n' time steps,&lt;br/&gt;- Output every 'x' seconds,&lt;br/&gt;- Output using a formula, in which case, the formula editor has to be filled. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;An output can be written at the end of the calculation by checking the corresponding box.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="title">
+          <string>Frequency</string>
+         </property>
+         <layout class="QGridLayout">
+          <property name="leftMargin">
+           <number>9</number>
+          </property>
+          <property name="topMargin">
+           <number>9</number>
+          </property>
+          <property name="rightMargin">
+           <number>9</number>
+          </property>
+          <property name="bottomMargin">
+           <number>9</number>
+          </property>
+          <property name="spacing">
+           <number>6</number>
+          </property>
+          <item row="0" column="0">
+           <spacer>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="0" column="1">
+           <widget class="QComboBox" name="comboBoxFrequency">
+            <property name="minimumSize">
+             <size>
+              <width>325</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QLineEdit" name="lineEditFrequency">
+            <property name="minimumSize">
+             <size>
+              <width>100</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="5">
+           <spacer>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="0" column="3">
+           <widget class="QLineEdit" name="lineEditFrequencyTime">
+            <property name="minimumSize">
+             <size>
+              <width>100</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="4">
+           <widget class="QPushButton" name="pushButtonFrequency">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="resources_pages.qrc">
+              <normaloff>:/new/prefix1/data/icons/22x22/preferences-system.png</normaloff>:/new/prefix1/data/icons/22x22/preferences-system.png</iconset>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QCheckBox" name="checkBoxOutputStart">
+            <property name="text">
+             <string>Output at start of calculation</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QCheckBox" name="checkBoxOutputEnd">
+            <property name="toolTip">
+             <string/>
+            </property>
+            <property name="text">
+             <string>Output at end of calculation</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QGroupBox" name="groupBoxGlobalCatalystOptions">
+         <property name="title">
+          <string>Global Catalyst options</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_9">
+          <item row="0" column="3">
+           <spacer name="horizontalSpacer_5">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="labelImplementC">
+            <property name="text">
+             <string>Implementation type</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1" rowspan="2" colspan="2">
+           <widget class="QComboBox" name="comboBoxImplementC">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Catalyst implementation type.&lt;/p&gt;&lt;p&gt;- ParaView implementation is used by default.&lt;/p&gt;&lt;p&gt;- Stub implementation can be used for debugging. If the CATALYST_DATA_DUMP_DIRECTORY environment variable is defined, a data dump into the matching directory will be output, allowing debugging with &lt;span style=&quot; font-weight:600;&quot;&gt;catalyst_replay&lt;/span&gt;.&lt;/p&gt;&lt;p&gt;- The legacy Catalyst implementation can be chosen here if the compute build supports both Catalyst1 and Catalyst2. If the build only supports Catalyst1, that implementation will be used and this option will be ignored.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>

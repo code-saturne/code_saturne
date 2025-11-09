@@ -1555,6 +1555,10 @@ class case:
                                                  str(n_threads))
             s.write('\n')
 
+        # Handle additional library options if needed
+
+        cs_exec_environment.write_catalyst2_vars(self.package_compute, s)
+
         # Handle rcfile if used
 
         rcfile = cs_exec_environment.get_rcfile(self.package_compute)
@@ -1578,7 +1582,7 @@ class case:
         # If user asked for it, place CS_MEM_LOG variable
         if self.mem_log:
             s.write('# Memory log\n')
-            s.write('export CS_MEM_LOG=cs_mem.log')
+            write_export_env(s, 'CS_MEM_LOG', 'cs_mem.log')
             s.write('\n\n')
 
         # Add user-defined prologue if defined
