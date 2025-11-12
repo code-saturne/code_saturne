@@ -3954,7 +3954,7 @@ cs_solve_navier_stokes(const int        iterns,
 
   cs_runge_kutta_integrator_t *rk_u = nullptr;
   if (eqp_u->rk_def.rk_id > -1) {
-    cs_runge_kutta_integrator_by_id(eqp_u->rk_def.rk_id);
+    rk_u = cs_runge_kutta_integrator_by_id(eqp_u->rk_def.rk_id);
 
     cs_runge_kutta_init_state<3>(ctx,
                                  rk_u,

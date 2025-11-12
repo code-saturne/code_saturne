@@ -63,6 +63,7 @@
 #include "base/cs_post.h"
 #include "base/cs_profiling.h"
 #include "base/cs_reducers.h"
+#include "base/cs_runge_kutta_integrator.h"
 #include "base/cs_sat_coupling.h"
 #include "base/cs_thermal_model.h"
 #include "base/cs_time_step.h"
@@ -700,7 +701,14 @@ _pressure_correction_fv(int                   iterns,
   }
 
   /* Associate pointers to pressure diffusion coefficients */
+
   c_visc = dt;
+  if (eqp_u->rk_def.rk_id > -1) {
+    cs_runge_kutta_integrator_t *rk_u =
+      cs_runge_kutta_integrator_by_id(eqp_u->rk_def.rk_id);
+    c_visc = cs_runge_kutta_get_projection_time_scale_by_stage(ctx, rk_u);
+  }
+
   if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION)
     vitenp = (cs_real_6_t *)(cs_field_by_name("dttens")->val);
 
