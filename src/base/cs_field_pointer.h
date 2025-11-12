@@ -226,6 +226,11 @@ typedef enum {
   CS_ENUMF_(flux_b),         /*!< Wall heat flux by phase */
   CS_ENUMF_(tf_b),           /*!< Phase temperature at the wall */
   CS_ENUMF_(exch_b),         /*!< Phase heat exchange coefficient */
+  CS_ENUMF_(gamma_lwfm),     /*!< Activation ponderation for liquid wall film model */
+  CS_ENUMF_(delta_lwfm),     /*!< Liquid film thickness for liquid wall film model */
+  CS_ENUMF_(taui_lwfm),      /*!< Interfacial shear stress for liquid wall film model */
+  CS_ENUMF_(ti_lwfm),        /*!< Interfacial temperature for liquid wall film model */
+  CS_ENUMF_(vsucplus_lwfm),  /*!< Adimensionned succion velocity for liquid wall film model */
 
   /* Added variables (scalars) */
   CS_ENUMF_(add_var),        /*!< User added variables */
