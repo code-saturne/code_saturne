@@ -60,6 +60,7 @@
 #include "cdo/cs_property.h"
 #include "base/cs_prototypes.h"
 #include "cdo/cs_quadrature.h"
+#include "base/cs_resource.h"
 #include "base/cs_restart.h"
 #include "base/cs_time_step.h"
 
@@ -423,7 +424,12 @@ cs_domain_needs_iteration(cs_domain_t  *domain)
                         &(ts->nt_max),
                         &(ts->dt_ref));
 
-  // First check if another iteration is required based on time step
+  /* Test for lack of remaining time */
+
+  cs_resource_get_max_timestep(ts->nt_cur, &ts->nt_max);
+
+  /* First check if another iteration is required based on time step */
+
   bool one_more_iter = ts->needs_iteration();
 
   if (domain->only_steady)
