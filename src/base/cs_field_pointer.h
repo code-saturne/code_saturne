@@ -231,6 +231,9 @@ typedef enum {
   CS_ENUMF_(taui_lwfm),      /*!< Interfacial shear stress for liquid wall film model */
   CS_ENUMF_(ti_lwfm),        /*!< Interfacial temperature for liquid wall film model */
   CS_ENUMF_(vsucplus_lwfm),  /*!< Adimensionned succion velocity for liquid wall film model */
+  CS_ENUMF_(rij_wia),        /*!< Reynolds stress tensor \f$ R_{ij} \f$ for Wake-Induced Agitation */
+  CS_ENUMF_(rij_pwf),        /*!< Reynolds stress tensor \f$ R_{ij} \f$ for Potential flow and averaged Wake Fluctuations */
+  CS_ENUMF_(eps_wia),        /*!< Dissipation for Wake-Induced Agitation */
 
   /* Added variables (scalars) */
   CS_ENUMF_(add_var),        /*!< User added variables */
