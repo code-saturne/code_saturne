@@ -85,10 +85,7 @@ done
 rm -fr tmpdir_$i
 AC_LANG_POP(Fortran)
 
-FCMODEXT=$cs_fc_modext
 FCMODINCLUDE=$cs_fc_modflag
-
-AC_SUBST(FCMODEXT)
 AC_SUBST(FCMODINCLUDE)
 
 ])dnl
