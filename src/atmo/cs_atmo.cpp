@@ -3803,15 +3803,13 @@ cs_atmo_init_meteo_profiles(void)
     if (aopt->projection_type == CS_ATMO_PROJ_LAMBERT_93)
       _convert_from_wgs84_to_l93();
 
-    cs_atmo_projection(
-      CS_ATMO_PROJ_WGS84,
-      aopt->projection_type,
-      aopt->latitude,
-      aopt->longitude,
-      &aopt->x_origin,
-      &aopt->y_origin,
-      aopt->utm_zone
-    );
+    cs_atmo_projection(CS_ATMO_PROJ_WGS84,
+                       aopt->projection_type,
+                       aopt->latitude,
+                       aopt->longitude,
+                       &aopt->x_origin,
+                       &aopt->y_origin,
+                       aopt->utm_zone);
   }
   /* else if latitude/longitude are given */
   else if (!origin_coord_defined && wgs_coord_defined){
@@ -3821,15 +3819,13 @@ cs_atmo_init_meteo_profiles(void)
     if (aopt->projection_type == CS_ATMO_PROJ_LAMBERT_93)
       _convert_from_wgs84_to_l93();
 
-    cs_atmo_projection(
-      CS_ATMO_PROJ_WGS84,
-      aopt->projection_type,
-      aopt->latitude,
-      aopt->longitude,
-      &aopt->x_origin,
-      &aopt->y_origin,
-      aopt->utm_zone
-    );
+    cs_atmo_projection(CS_ATMO_PROJ_WGS84,
+                       aopt->projection_type,
+                       aopt->latitude,
+                       aopt->longitude,
+                       &aopt->x_origin,
+                       &aopt->y_origin,
+                       aopt->utm_zone);
   }
   /* All other cases */
   else{
@@ -3839,15 +3835,13 @@ cs_atmo_init_meteo_profiles(void)
     if (aopt->projection_type == CS_ATMO_PROJ_LAMBERT_93)
       _convert_from_l93_to_wgs84();
 
-      cs_atmo_projection(
-        aopt->projection_type,
-        CS_ATMO_PROJ_WGS84,
-        aopt->x_origin,
-        aopt->y_origin,
-        &aopt->longitude,
-        &aopt->latitude,
-        aopt->utm_zone
-      );
+    cs_atmo_projection(aopt->projection_type,
+                       CS_ATMO_PROJ_WGS84,
+                       aopt->x_origin,
+                       aopt->y_origin,
+                       &aopt->longitude,
+                       &aopt->latitude,
+                       aopt->utm_zone);
   }
 
   /* BL height according to Marht 1982 formula */
@@ -5365,7 +5359,6 @@ cs_atmo_finalize(void)
   CS_FREE(_atmo_option.soil_cat_w2);
   CS_FREE(_atmo_option.soil_cat_thermal_inertia);
   CS_FREE(_atmo_option.soil_cat_thermal_roughness);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5388,55 +5381,53 @@ cs_atmo_finalize(void)
  */
 /*----------------------------------------------------------------------------*/
 
-  static void
-_wgs84_to_l93(
-    cs_real_t lon_deg,
-    cs_real_t lat_deg,
-    cs_real_t *x,
-    cs_real_t *y)
+static void
+_wgs84_to_l93(cs_real_t   lon_deg,
+              cs_real_t   lat_deg,
+              cs_real_t  *x,
+              cs_real_t  *y)
 {
+  const cs_real_t rad_to_deg = cs_math_pi / 180.0;
 
-    const cs_real_t rad_to_deg = cs_math_pi / 180.0;
+  // Convert degrees to radians
+  cs_real_t lon = lon_deg * rad_to_deg;
+  cs_real_t lat = lat_deg * rad_to_deg;
 
-    // Convert degrees to radians
-    cs_real_t lon = lon_deg * rad_to_deg;
-    cs_real_t lat = lat_deg * rad_to_deg;
+  // Ellipsoid parameters (GRS80)
+  cs_real_t e = 0.08181919132;
+  cs_real_t a = 6378137.0;
 
-    // Ellipsoid parameters (GRS80)
-    cs_real_t e = 0.08181919132;
-    cs_real_t a = 6378137.0;
+  // Projection parameters
+  cs_real_t lon0 = 3.0  * rad_to_deg;
+  cs_real_t lat0 = 46.5 * rad_to_deg;
+  cs_real_t lat1 = 44.0 * rad_to_deg;
+  cs_real_t lat2 = 49.0 * rad_to_deg;
+  cs_real_t x0 = 700000.0;
+  cs_real_t y0 = 6600000.0;
 
-    // Projection parameters
-    cs_real_t lon0 = 3.0  * rad_to_deg;
-    cs_real_t lat0 = 46.5 * rad_to_deg;
-    cs_real_t lat1 = 44.0 * rad_to_deg;
-    cs_real_t lat2 = 49.0 * rad_to_deg;
-    cs_real_t x0 = 700000.0;
-    cs_real_t y0 = 6600000.0;
+  // Helper functions
+  auto t = [e](cs_real_t phi) {
+    return   tan(cs_math_pi/4.0 - phi/2.0)
+           / pow((1.0 - e*sin(phi)) / (1.0 + e*sin(phi)), e/2.0);
+  };
 
-    // Helper functions
-    auto t = [e](cs_real_t phi) {
-        return tan(cs_math_pi/4.0 - phi/2.0)
-             / pow((1.0 - e*sin(phi)) / (1.0 + e*sin(phi)), e/2.0);
-    };
+  auto m = [e](cs_real_t phi) {
+    return cos(phi) / sqrt(1 - pow(e*sin(phi), 2));
+  };
 
-    auto m = [e](cs_real_t phi) {
-        return cos(phi) / sqrt(1 - pow(e*sin(phi), 2));
-    };
+  // Compute constants
+  cs_real_t m1 = m(lat1);
+  cs_real_t m2 = m(lat2);
+  cs_real_t t1 = t(lat1);
+  cs_real_t t2 = t(lat2);
+  cs_real_t n  = log(m1/m2) / log(t1/t2);
+  cs_real_t f  = m1 / (n * pow(t1, n));
+  cs_real_t rho = a * f * pow(t(lat), n);
+  cs_real_t rho0 = a * f * pow(t(lat0), n);
 
-    // Compute constants
-    cs_real_t m1 = m(lat1);
-    cs_real_t m2 = m(lat2);
-    cs_real_t t1 = t(lat1);
-    cs_real_t t2 = t(lat2);
-    cs_real_t n  = log(m1/m2) / log(t1/t2);
-    cs_real_t f  = m1 / (n * pow(t1, n));
-    cs_real_t rho = a * f * pow(t(lat), n);
-    cs_real_t rho0 = a * f * pow(t(lat0), n);
-
-    // Final coordinates
-    *x = x0 + rho * sin(n * (lon - lon0));
-    *y = y0 + rho0 - rho * cos(n * (lon - lon0));
+  // Final coordinates
+  *x = x0 + rho * sin(n * (lon - lon0));
+  *y = y0 + rho0 - rho * cos(n * (lon - lon0));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5452,150 +5443,145 @@ _wgs84_to_l93(
  * \param[in]  y       Northing in meters (Lambert-93).
  * \param[out] lon_deg Longitude in degrees (East positive).
  * \param[out] lat_deg Latitude in degrees.
- *
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_l93_to_wgs84(
-    cs_real_t x,
-    cs_real_t y,
-    cs_real_t *lon_deg,
-    cs_real_t *lat_deg)
+_l93_to_wgs84(cs_real_t   x,
+              cs_real_t   y,
+              cs_real_t  *lon_deg,
+              cs_real_t  *lat_deg)
 {
-    // --- Lambert-93 parameters (official IGN / RGF93 constants) ---
-    const cs_real_t deg_to_rad = cs_math_pi / 180.0;
-    const cs_real_t a = 6378137.0;               // GRS80 semi-major axis [m]
-    const cs_real_t f = 1.0 / 298.257222101;     // GRS80 flattening
-    const cs_real_t e = std::sqrt(2 * f - f * f); // eccentricity
-    const cs_real_t n = 0.7256077650532670;
-    const cs_real_t c = 11754255.426096;         // constant of projection
-    const cs_real_t xs = 700000.0;               // false Easting [m]
-    const cs_real_t ys = 12655612.049876;        // false Northing [m]
-    const cs_real_t lambda0 = 3.0 * deg_to_rad;  // central meridian [rad] (3°E)
+  // --- Lambert-93 parameters (official IGN / RGF93 constants) ---
+  const cs_real_t deg_to_rad = cs_math_pi / 180.0;
+  //  const cs_real_t a = 6378137.0;           // GRS80 semi-major axis [m]
+  const cs_real_t f = 1.0 / 298.257222101;     // GRS80 flattening
+  const cs_real_t e = std::sqrt(2 * f - f * f); // eccentricity
+  const cs_real_t n = 0.7256077650532670;
+  const cs_real_t c = 11754255.426096;         // constant of projection
+  const cs_real_t xs = 700000.0;               // false Easting [m]
+  const cs_real_t ys = 12655612.049876;        // false Northing [m]
+  const cs_real_t lambda0 = 3.0 * deg_to_rad;  // central meridian [rad] (3°E)
 
-    // --- Compute intermediate values ---
-    cs_real_t dx = x - xs;
-    cs_real_t dy = y - ys;
-    cs_real_t r = std::hypot(dx, dy);
+  // --- Compute intermediate values ---
+  cs_real_t dx = x - xs;
+  cs_real_t dy = y - ys;
+  cs_real_t r = std::hypot(dx, dy);
 
-    // handle singular case (at projection origin)
-    if (r == 0.0) {
-        *lon_deg = lambda0 / deg_to_rad;
-        *lat_deg = (cs_math_pi / 2.0) / deg_to_rad;
-        return;
-    }
+  // handle singular case (at projection origin)
+  if (fabs(r) < 1e-35) {
+    *lon_deg = lambda0 / deg_to_rad;
+    *lat_deg = (cs_math_pi / 2.0) / deg_to_rad;
+    return;
+  }
 
-    // use atan2 for correct quadrant: gamma = atan2(x - xs, ys - y)
-    cs_real_t gamma = std::atan2(dx, ys - y);
+  // use atan2 for correct quadrant: gamma = atan2(x - xs, ys - y)
+  cs_real_t gamma = std::atan2(dx, ys - y);
 
-    // inverse: t = (r / c)^(1/n)
-    cs_real_t t = std::pow(r / c, 1.0 / n);
+  // inverse: t = (r / c)^(1/n)
+  cs_real_t t = std::pow(r / c, 1.0 / n);
 
-    // --- Iteratively compute latitude (phi) ---
-    cs_real_t phi = cs_math_pi / 2.0 - 2.0 * std::atan(t);
-    for (int i = 0; i < 20; ++i) {
-        cs_real_t e_sinphi = e * std::sin(phi);
-        cs_real_t phi_new =
-            cs_math_pi / 2.0 - 2.0 *
-            std::atan(t * std::pow((1.0 - e_sinphi) / (1.0 + e_sinphi), e / 2.0));
+  // --- Iteratively compute latitude (phi) ---
+  cs_real_t phi = cs_math_pi / 2.0 - 2.0 * std::atan(t);
+  for (int i = 0; i < 20; ++i) {
+    cs_real_t e_sinphi = e * std::sin(phi);
+    cs_real_t phi_new
+      =   cs_math_pi / 2.0
+        - 2.0 * std::atan(t * std::pow((1.0 - e_sinphi) / (1.0 + e_sinphi),
+                                       e / 2.0));
 
-        if (std::abs(phi - phi_new) < 1e-13) break;
-        phi = phi_new;
-    }
+    if (std::abs(phi - phi_new) < 1e-13) break;
+    phi = phi_new;
+  }
 
-    cs_real_t lambda = lambda0 + gamma / n;
+  cs_real_t lambda = lambda0 + gamma / n;
 
-    // Convert radians -> degrees
-    *lon_deg = lambda / deg_to_rad;
-    *lat_deg = phi / deg_to_rad;
+  // Convert radians -> degrees
+  *lon_deg = lambda / deg_to_rad;
+  *lat_deg = phi / deg_to_rad;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * @brief Convert geographic coordinates (WGS84) to UTM coordinates.
+ * \brief Convert geographic coordinates (WGS84) to UTM coordinates.
  *
- * @param[in]  lon_deg        Longitude in degrees (East positive)
- * @param[in]  lat_deg        Latitude in degrees
- * @param[out] x              Easting (m)
- * @param[out] y              Northing (m)
- * @param[in]  fixed_utm_zone Optional fixed UTM zone (1–60). If <= 0, auto-detect.
- *
+ * \param[in]  lon_deg        Longitude in degrees (East positive)
+ * \param[in]  lat_deg        Latitude in degrees
+ * \param[out] x              Easting (m)
+ * \param[out] y              Northing (m)
+ * \param[in]  fixed_utm_zone Optional fixed UTM zone (1–60).
+ *             If <= 0, auto-detect.
  */
 /*----------------------------------------------------------------------------*/
 
-static cs_real_t a = 6378137.0;             // Semi-major axis
-static cs_real_t f = 1.0 / 298.257223563;   // Flattening
-static cs_real_t k0 = 0.9996;               // Scale factor
-static cs_real_t e2 = f * (2.0 - f);        // Square of eccentricity
-static cs_real_t e_prime2 = e2 / (1.0 - e2); // Secondary eccentricity squared
+static void
+_wgs84_to_utm(cs_real_t  lon_deg,
+              cs_real_t  lat_deg,
+              cs_real_t  *x,
+              cs_real_t  *y,
+              int         fixed_utm_zone)
+{
+  cs_real_t a = 6378137.0;             // Semi-major axis
+  cs_real_t f = 1.0 / 298.257223563;   // Flattening
+  cs_real_t k0 = 0.9996;               // Scale factor
+  cs_real_t e2 = f * (2.0 - f);        // Square of eccentricity
+  cs_real_t e_prime2 = e2 / (1.0 - e2); // Secondary eccentricity squared
 
-// helper function for the calculation of the meridian arc
-  static cs_real_t
-_meridian_arc(cs_real_t phi) {
-return a * ((1 - e2 / 4 - 3 * pow(e2, 2) / 64 - 5 * pow(e2, 3) / 256) * phi
+  const cs_real_t deg_to_rad = cs_math_pi / 180.0;
+
+  // Check validity of inputs
+  if (lat_deg < -80.0 || lat_deg > 84.0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Latitude outside UTM bounds ([-80, +84]"));
+
+  // Compute UTM zone automatically if not fixed
+  int zone;
+  if (fixed_utm_zone >= 1 && fixed_utm_zone <= 60)
+    zone = fixed_utm_zone;
+  else
+    zone = static_cast<int>(std::floor((lon_deg + 180.0) / 6.0)) + 1;
+
+  // helper function for the calculation of the meridian arc
+  auto _meridian_arc = [=](cs_real_t  phi)
+  {
+    return a * ((1 - e2 / 4 - 3 * pow(e2, 2) / 64 - 5 * pow(e2, 3) / 256) * phi
     - (3 * e2 / 8 + 3 * pow(e2, 2) / 32 + 45 * pow(e2, 3) / 1024) * sin(2 * phi)
     + (15 * pow(e2, 2) / 256 + 45 * pow(e2, 3) / 1024) * sin(4 * phi)
     - (35 * pow(e2, 3) / 3072) * sin(6 * phi));
-}
+  };
 
-static void
-_wgs84_to_utm(
-    cs_real_t lon_deg,
-    cs_real_t lat_deg,
-    cs_real_t *x,
-    cs_real_t *y,
-    int fixed_utm_zone)
-{
+  // Longitude of central meridian for this zone
+  cs_real_t lon0_deg = -183.0 + 6.0 * zone;
+  cs_real_t lon0_rad = lon0_deg * deg_to_rad;
 
-    const cs_real_t deg_to_rad = cs_math_pi / 180.0;
+  // Convert to radians
+  cs_real_t lat_rad = lat_deg * deg_to_rad;
+  cs_real_t lon_rad = lon_deg * deg_to_rad;
 
-    // Check validity of inputs
-    if (lat_deg < -80.0 || lat_deg > 84.0) {
-        bft_printf("Erreur : latitude hors limites UTM ([-80, +84])\n");
-        return;
-    }
+  // Precompute trigs
+  cs_real_t sin_lat = sin(lat_rad);
+  cs_real_t cos_lat = cos(lat_rad);
+  cs_real_t tan_lat = tan(lat_rad);
 
-    // Compute UTM zone automatically if not fixed
-    int zone;
-    if (fixed_utm_zone >= 1 && fixed_utm_zone <= 60)
-        zone = fixed_utm_zone;
-    else
-        zone = static_cast<int>(std::floor((lon_deg + 180.0) / 6.0)) + 1;
+  cs_real_t n = a / sqrt(1.0 - e2 * sin_lat * sin_lat);  // Radius of curvature
+  cs_real_t t = tan_lat * tan_lat;
+  cs_real_t c = e_prime2 * cos_lat * cos_lat;
+  a = (lon_rad - lon0_rad) * cos_lat;
+  cs_real_t m = _meridian_arc(lat_rad);
 
-    // Longitude of central meridian for this zone
-    cs_real_t lon0_deg = -183.0 + 6.0 * zone;
-    cs_real_t lon0_rad = lon0_deg * deg_to_rad;
+  // Easting (x)
+  *x =   k0 * n * (a + (1 - t + c) * pow(a, 3) / 6.0
+       + (5 - 18 * t + t * t + 72 * c - 58 * e_prime2) * pow(a, 5) / 120.0)
+       + 500000.0;
 
-    // Convert to radians
-    cs_real_t lat_rad = lat_deg * deg_to_rad;
-    cs_real_t lon_rad = lon_deg * deg_to_rad;
+  // northing (y)
+  *y =   k0 * (m + n * tan_lat * (pow(a, 2) / 2.0
+       + (5 - t + 9 * c + 4 * c * c) * pow(a, 4) / 24.0
+       + (61 - 58 * t + t * t + 600 * c - 330 * e_prime2) * pow(a, 6) / 720.0));
 
-    // Precompute trigs
-    cs_real_t sin_lat = sin(lat_rad);
-    cs_real_t cos_lat = cos(lat_rad);
-    cs_real_t tan_lat = tan(lat_rad);
-
-    cs_real_t n = a / sqrt(1.0 - e2 * sin_lat * sin_lat);  // Radius of curvature
-    cs_real_t t = tan_lat * tan_lat;
-    cs_real_t c = e_prime2 * cos_lat * cos_lat;
-    cs_real_t a = (lon_rad - lon0_rad) * cos_lat;
-    cs_real_t m = _meridian_arc(lat_rad);
-
-    // Easting (x)
-    *x = k0 * n * (a + (1 - t + c) * pow(a, 3) / 6.0
-        + (5 - 18 * t + t * t + 72 * c - 58 * e_prime2) * pow(a, 5) / 120.0)
-        + 500000.0;
-
-    // northing (y)
-    *y = k0 * (m + n * tan_lat * (pow(a, 2) / 2.0
-        + (5 - t + 9 * c + 4 * c * c) * pow(a, 4) / 24.0
-        + (61 - 58 * t + t * t + 600 * c - 330 * e_prime2) * pow(a, 6) / 720.0));
-
-    // False northing for southern hemisphere
-    if (lat_deg < 0)
-        *y += 10000000.0;
-
+  // False northing for southern hemisphere
+  if (lat_deg < 0)
+    *y += 10000000.0;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5611,77 +5597,79 @@ _wgs84_to_utm(
  * \param[in]  N       Northing in meters (UTM).
  * \param[out] lon_deg Longitude in degrees (East positive).
  * \param[out] lat_deg Latitude in degrees.
- *
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_utm_to_wgs84(
-    cs_real_t easting,
-    cs_real_t northing,
-    cs_real_t *lon_deg,
-    cs_real_t *lat_deg,
-    int zone)
+_utm_to_wgs84(cs_real_t  easting,
+              cs_real_t  northing,
+              cs_real_t  *lon_deg,
+              cs_real_t  *lat_deg,
+              int         zone)
 {
-    const cs_real_t rad_to_deg = 180 / cs_math_pi;
+  const cs_real_t rad_to_deg = 180 / cs_math_pi;
 
-    // --- Ellipsoid parameters for WGS84 ---
-    const cs_real_t a = 6378137.0;              // semi-major axis [m]
-    const cs_real_t f = 1.0 / 298.257223563;    // flattening
-    const cs_real_t e2 = 2 * f - f * f;         // eccentricity squared
-    const cs_real_t e = std::sqrt(e2);
+  // --- Ellipsoid parameters for WGS84 ---
+  const cs_real_t a = 6378137.0;              // semi-major axis [m]
+  const cs_real_t f = 1.0 / 298.257223563;    // flattening
+  const cs_real_t e2 = 2 * f - f * f;         // eccentricity squared
+  // const cs_real_t e = std::sqrt(e2);
 
-    // --- UTM projection parameters ---
-    const cs_real_t k0 = 0.9996;                // scale factor
-    const cs_real_t e0 = 500000.0;              // false easting [m]
-    const cs_real_t n0 = 0.0;                           // false northing [m] (for northern hemisphere)
-    const cs_real_t lambda0 = (-183.0 + 6.0 * zone) /rad_to_deg; // central meridian [rad] (3°E)
+  // --- UTM projection parameters ---
+  const cs_real_t k0 = 0.9996;   // scale factor
+  const cs_real_t e0 = 500000.0; // false easting [m]
+  const cs_real_t n0 = 0.0;      // false northing [m] (for northern hemisphere)
+  // central meridian [rad] (3°E)
+  const cs_real_t lambda0 = (-183.0 + 6.0 * zone) /rad_to_deg;
 
-    // --- Remove false origins ---
-    cs_real_t x = easting  - e0;
-    cs_real_t y = northing - n0;
+  // --- Remove false origins ---
+  cs_real_t x = easting  - e0;
+  cs_real_t y = northing - n0;
 
-    // --- Compute footprint latitude ---
-    cs_real_t m = y / k0;
-    cs_real_t mu = m / (a * (1 - e2 / 4.0 - 3 * e2 * e2 / 64.0 - 5 * e2 * e2 * e2 / 256.0));
+  // --- Compute footprint latitude ---
+  cs_real_t m = y / k0;
+  cs_real_t mu = m / (a * (  1 - e2 / 4.0 - 3 * e2 * e2 / 64.0
+                           - 5 * e2 * e2 * e2 / 256.0));
 
-    // Series expansion for footprint latitude
-    cs_real_t e1 = (1 - std::sqrt(1 - e2)) / (1 + std::sqrt(1 - e2));
+  // Series expansion for footprint latitude
+  cs_real_t e1 = (1 - std::sqrt(1 - e2)) / (1 + std::sqrt(1 - e2));
 
-    cs_real_t j1 = (3.0 / 2.0) * e1 - (27.0 / 32.0) * std::pow(e1, 3);
-    cs_real_t j2 = (21.0 / 16.0) * e1 * e1 - (55.0 / 32.0) * std::pow(e1, 4);
-    cs_real_t j3 = (151.0 / 96.0) * std::pow(e1, 3);
-    cs_real_t j4 = (1097.0 / 512.0) * std::pow(e1, 4);
+  cs_real_t j1 = (3.0 / 2.0) * e1 - (27.0 / 32.0) * std::pow(e1, 3);
+  cs_real_t j2 = (21.0 / 16.0) * e1 * e1 - (55.0 / 32.0) * std::pow(e1, 4);
+  cs_real_t j3 = (151.0 / 96.0) * std::pow(e1, 3);
+  cs_real_t j4 = (1097.0 / 512.0) * std::pow(e1, 4);
 
-    cs_real_t fp = mu
-              + j1 * std::sin(2 * mu)
-              + j2 * std::sin(4 * mu)
-              + j3 * std::sin(6 * mu)
-              + j4 * std::sin(8 * mu);
+  cs_real_t fp = mu + j1 * std::sin(2 * mu)
+                    + j2 * std::sin(4 * mu)
+                    + j3 * std::sin(6 * mu)
+                    + j4 * std::sin(8 * mu);
 
-    // --- Compute latitude and longitude ---
-    cs_real_t sinfp = std::sin(fp);
-    cs_real_t cosfp = std::cos(fp);
-    cs_real_t tanfp = std::tan(fp);
+  // --- Compute latitude and longitude ---
+  cs_real_t sinfp = std::sin(fp);
+  cs_real_t cosfp = std::cos(fp);
+  cs_real_t tanfp = std::tan(fp);
 
-    cs_real_t c1 = e2 / (1 - e2) * cosfp * cosfp;
-    cs_real_t t1 = tanfp * tanfp;
-    cs_real_t n1 = a / std::sqrt(1 - e2 * sinfp * sinfp);
-    cs_real_t r1 = a * (1 - e2) / std::pow(1 - e2 * sinfp * sinfp, 1.5);
-    cs_real_t d = x / (n1 * k0);
+  cs_real_t c1 = e2 / (1 - e2) * cosfp * cosfp;
+  cs_real_t t1 = tanfp * tanfp;
+  cs_real_t n1 = a / std::sqrt(1 - e2 * sinfp * sinfp);
+  cs_real_t r1 = a * (1 - e2) / std::pow(1 - e2 * sinfp * sinfp, 1.5);
+  cs_real_t d = x / (n1 * k0);
 
-    cs_real_t lat = fp - (n1 * tanfp / r1) *
-        (d * d / 2
-         - (5 + 3 * t1 + 10 * c1 - 4 * c1 * c1 - 9 * e2 / (1 - e2)) * std::pow(d, 4) / 24
-         + (61 + 90 * t1 + 298 * c1 + 45 * t1 * t1 - 252 * e2 / (1 - e2) - 3 * c1 * c1) * std::pow(d, 6) / 720);
+  cs_real_t lat = fp - (n1 * tanfp / r1) *
+    (d * d / 2
+     - (5 + 3 * t1 + 10 * c1 - 4 * c1 * c1 - 9 * e2 / (1 - e2)) * std::pow(d, 4) / 24
+     +   (  61 + 90 * t1 + 298 * c1 + 45 * t1 * t1
+          - 252 * e2 / (1 - e2) - 3 * c1 * c1)
+       * std::pow(d, 6) / 720);
 
-    cs_real_t lon = lambda0 + (d
-         - (1 + 2 * t1 + c1) * std::pow(d, 3) / 6
-         + (5 - 2 * c1 + 28 * t1 - 3 * c1 * c1 + 8 * e2 / (1 - e2) + 24 * t1 * t1) * std::pow(d, 5) / 120) / cosfp;
+  cs_real_t lon = lambda0
+    + (d - (1 + 2 * t1 + c1) * std::pow(d, 3) / 6
+       + (5 - 2 * c1 + 28 * t1 - 3 * c1 * c1
+          + 8 * e2 / (1 - e2) + 24 * t1 * t1) * std::pow(d, 5) / 120) / cosfp;
 
-    // --- Convert to degrees ---
-    *lat_deg = lat * rad_to_deg;
-    *lon_deg = lon * rad_to_deg;
+  // --- Convert to degrees ---
+  *lat_deg = lat * rad_to_deg;
+  *lon_deg = lon * rad_to_deg;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5700,16 +5688,14 @@ _utm_to_wgs84(
  * \note This uses a simplistic spherical approximation and is intended for
  *       small-area local projections. For accurate large-scale conversions
  *       prefer UTM or Lambert-93.
- *
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_wgs84_to_tangential(
-    cs_real_t lon,
-    cs_real_t lat,
-    cs_real_t *x,
-    cs_real_t *y)
+_wgs84_to_tangential(cs_real_t  lon,
+                     cs_real_t  lat,
+                     cs_real_t  *x,
+                     cs_real_t  *y)
 {
   cs_real_t deg_to_rad = cs_math_pi / 180.0;
   cs_real_t earth_radius = 6370000.; // in m
@@ -5734,18 +5720,15 @@ _wgs84_to_tangential(
  * \param[in]  y   Local tangential Y (meters).
  * \param[out] lon Longitude in degrees (WGS84) (currently set to 0).
  * \param[out] lat Latitude in degrees (WGS84) (currently set to 0).
- *
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_tangential_to_wgs84(
-    cs_real_t x,
-    cs_real_t y,
-    cs_real_t *lon,
-    cs_real_t *lat)
+_tangential_to_wgs84(cs_real_t  x,
+                     cs_real_t  y,
+                     cs_real_t  *lon,
+                     cs_real_t  *lat)
 {
-
   cs_real_t xlon0 = cs_glob_atmo_option->longitude;
   cs_real_t xlat0 = cs_glob_atmo_option->latitude;
 
@@ -5781,105 +5764,103 @@ _tangential_to_wgs84(
  */
 /*----------------------------------------------------------------------------*/
 
-  void
-cs_atmo_projection(
-    cs_atmo_projection_t origin_projection,
-    cs_atmo_projection_t target_projection,
-    cs_real_t            x_origin,
-    cs_real_t            y_origin,
-    cs_real_t*           x_target,
-    cs_real_t*           y_target,
-    int                  utm_fixed_zone)
+void
+cs_atmo_projection(cs_atmo_projection_t origin_projection,
+                   cs_atmo_projection_t target_projection,
+                   cs_real_t            x_origin,
+                   cs_real_t            y_origin,
+                   cs_real_t*           x_target,
+                   cs_real_t*           y_target,
+                   int                  utm_fixed_zone)
 {
+  if (origin_projection == target_projection){
+    *x_target = x_origin;
+    *y_target = y_origin;
+    return;
+  }
 
-    if (origin_projection == target_projection){
-        *x_target = x_origin;
-        *y_target = y_origin;
-        return;
+  cs_real_t lon_dummy = 0;
+  cs_real_t lat_dummy = 0;
+
+  switch (origin_projection){
+  case (CS_ATMO_PROJ_WGS84):
+    switch (target_projection){
+    case (CS_ATMO_PROJ_LAMBERT_93):
+      _wgs84_to_l93(x_origin, y_origin, x_target, y_target);
+      break;
+    case (CS_ATMO_PROJ_UTM):
+      _wgs84_to_utm(x_origin, y_origin, x_target, y_target, utm_fixed_zone);
+      break;
+    case (CS_ATMO_PROJ_TAN):
+      _wgs84_to_tangential(x_origin, y_origin, x_target, y_target);
+      break;
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                _("Unknown target projection type."));
     }
+    break;
 
-    cs_real_t lon_dummy = 0;
-    cs_real_t lat_dummy = 0;
-
-    switch (origin_projection){
-        case (CS_ATMO_PROJ_WGS84):
-            switch (target_projection){
-                case (CS_ATMO_PROJ_LAMBERT_93):
-                    _wgs84_to_l93(x_origin, y_origin, x_target, y_target);
-                    break;
-                case (CS_ATMO_PROJ_UTM):
-                    _wgs84_to_utm(x_origin, y_origin, x_target, y_target, utm_fixed_zone);
-                    break;
-                case (CS_ATMO_PROJ_TAN):
-                    _wgs84_to_tangential(x_origin, y_origin, x_target, y_target);
-                    break;
-                default:
-                    bft_printf("Unknown target projection type\n");
-                    exit(1);
-            }
-            break;
-
-        case (CS_ATMO_PROJ_LAMBERT_93):
-            _l93_to_wgs84(x_origin, y_origin,  &lon_dummy,  &lat_dummy);
-            switch (target_projection){
-                case (CS_ATMO_PROJ_WGS84):
-                    *x_target = lon_dummy;
-                    *y_target = lat_dummy;
-                    break;
-                case (CS_ATMO_PROJ_UTM):
-                    _wgs84_to_utm(lon_dummy, lat_dummy, x_target, y_target, utm_fixed_zone);
-                    break;
-                case (CS_ATMO_PROJ_TAN):
-                    _wgs84_to_tangential(lon_dummy, lat_dummy, x_target, y_target);
-                    break;
-                default:
-                    bft_printf("Unknown target projection type\n");
-                    exit(1);
-            }
-            break;
-
-        case (CS_ATMO_PROJ_UTM):
-            _utm_to_wgs84(x_origin, y_origin,  &lon_dummy,  &lat_dummy, utm_fixed_zone);
-            switch (target_projection){
-                case (CS_ATMO_PROJ_WGS84):
-                    *x_target = lon_dummy;
-                    *y_target = lat_dummy;
-                    break;
-                case (CS_ATMO_PROJ_LAMBERT_93):
-                    _wgs84_to_l93(lon_dummy, lat_dummy, x_target, y_target);
-                    break;
-                case (CS_ATMO_PROJ_TAN):
-                    _wgs84_to_tangential(lon_dummy, lat_dummy, x_target, y_target);
-                    break;
-                default:
-                    bft_printf("Unknown target projection type\n");
-                    exit(1);
-            }
-            break;
-
-        case (CS_ATMO_PROJ_TAN):
-            _tangential_to_wgs84(x_origin, y_origin, &lon_dummy, &lat_dummy);
-            switch (target_projection){
-                case (CS_ATMO_PROJ_WGS84):
-                    *x_target = lon_dummy;
-                    *y_target = lat_dummy;
-                    break;
-                case (CS_ATMO_PROJ_LAMBERT_93):
-                    _wgs84_to_l93(lon_dummy, lat_dummy, x_target, y_target);
-                    break;
-                case (CS_ATMO_PROJ_UTM):
-                    _wgs84_to_utm(lon_dummy, lat_dummy, x_target, y_target, utm_fixed_zone);
-                    break;
-                default:
-                    bft_printf("Unknown target projection type\n");
-                    exit(1);
-            }
-            break;
-
-        default:
-          bft_printf("Unknown target projection type\n");
-          exit(1);
+  case (CS_ATMO_PROJ_LAMBERT_93):
+    _l93_to_wgs84(x_origin, y_origin,  &lon_dummy,  &lat_dummy);
+    switch (target_projection){
+    case (CS_ATMO_PROJ_WGS84):
+      *x_target = lon_dummy;
+      *y_target = lat_dummy;
+      break;
+    case (CS_ATMO_PROJ_UTM):
+      _wgs84_to_utm(lon_dummy, lat_dummy, x_target, y_target, utm_fixed_zone);
+      break;
+    case (CS_ATMO_PROJ_TAN):
+      _wgs84_to_tangential(lon_dummy, lat_dummy, x_target, y_target);
+      break;
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                _("Unknown target projection type."));
     }
+    break;
+
+  case (CS_ATMO_PROJ_UTM):
+    _utm_to_wgs84(x_origin, y_origin,  &lon_dummy,  &lat_dummy, utm_fixed_zone);
+    switch (target_projection){
+    case (CS_ATMO_PROJ_WGS84):
+      *x_target = lon_dummy;
+      *y_target = lat_dummy;
+      break;
+    case (CS_ATMO_PROJ_LAMBERT_93):
+      _wgs84_to_l93(lon_dummy, lat_dummy, x_target, y_target);
+      break;
+    case (CS_ATMO_PROJ_TAN):
+      _wgs84_to_tangential(lon_dummy, lat_dummy, x_target, y_target);
+      break;
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                _("Unknown target projection type."));
+    }
+    break;
+
+  case (CS_ATMO_PROJ_TAN):
+    _tangential_to_wgs84(x_origin, y_origin, &lon_dummy, &lat_dummy);
+    switch (target_projection){
+    case (CS_ATMO_PROJ_WGS84):
+      *x_target = lon_dummy;
+      *y_target = lat_dummy;
+      break;
+    case (CS_ATMO_PROJ_LAMBERT_93):
+      _wgs84_to_l93(lon_dummy, lat_dummy, x_target, y_target);
+      break;
+    case (CS_ATMO_PROJ_UTM):
+      _wgs84_to_utm(lon_dummy, lat_dummy, x_target, y_target, utm_fixed_zone);
+      break;
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                _("Unknown target projection type."));
+    }
+    break;
+
+  default:
+    bft_printf("Unknown target projection type\n");
+    exit(1);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
