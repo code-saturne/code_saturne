@@ -1118,8 +1118,8 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   cs_real_t ccorio = 0;
   if (icorio == 1)
     ccorio = 2; /* Relative velocity formulation */
-  else if (tm_model == CS_TURBOMACHINERY_TRANSIENT)
-    ccorio = 1;
+  else if (tm_model == CS_TURBOMACHINERY_FROZEN)
+    ccorio = 1; /* Mixed relative/absolute velocity formulation */
 
   const cs_real_t d1s2 = 0.5;
   const cs_real_t d1s3 = 1./3;
