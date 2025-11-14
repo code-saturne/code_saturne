@@ -503,7 +503,7 @@ _b_3_3_spmv_diag(cs_lnum_t        n_rows,
 
 template <const int n>
 __global__ static void
-_b_spmv_diag(cs_lnum_t        n_rows,
+_b_spmv_diag(cs_lnum_t         n_rows,
              const cs_real_t  *__restrict__ d_val,
              const cs_real_t  *__restrict__ x,
              cs_real_t        *__restrict__ y)
@@ -1769,19 +1769,19 @@ cs_matrix_spmv_cuda_msr_b_cusparse(cs_matrix_t  *matrix,
       = (const cs_real_t *)cs_get_device_ptr_const
                              (const_cast<cs_real_t *>(mc->d_val));
 
+    cs_lnum_t n_r_rows = ms->n_rows*matrix->db_size;
     unsigned int blocksize = 128;
-    unsigned int gridsize = cs_cuda_grid_size(ms->n_rows*matrix->db_size,
-                                              blocksize);
+    unsigned int gridsize = cs_cuda_grid_size(n_r_rows, blocksize);
 
     if (matrix->db_size == 3)
       _b_3_3_spmv_diag<<<gridsize, blocksize, 0, _stream>>>
-        (ms->n_rows, d_val, (const cs_real_t *)d_x, (cs_real_t *)d_y);
+        (n_r_rows, d_val, (const cs_real_t *)d_x, (cs_real_t *)d_y);
     else if (matrix->db_size == 6)
       _b_spmv_diag<6><<<gridsize, blocksize, 0, _stream>>>
-        (ms->n_rows, d_val, (const cs_real_t *)d_x, (cs_real_t *)d_y);
+        (n_r_rows, d_val, (const cs_real_t *)d_x, (cs_real_t *)d_y);
     else if (matrix->db_size == 9)
       _b_spmv_diag<9><<<gridsize, blocksize, 0, _stream>>>
-        (ms->n_rows, d_val, (const cs_real_t *)d_x, (cs_real_t *)d_y);
+        (n_r_rows, d_val, (const cs_real_t *)d_x, (cs_real_t *)d_y);
     else
       bft_error(__FILE__, __LINE__, 0, _("%s: block size %d not implemented."),
                 __func__, (int)matrix->db_size);
@@ -1876,19 +1876,19 @@ cs_matrix_spmv_cuda_msr_bb_cusparse(cs_matrix_t  *matrix,
       = (const cs_real_t *)cs_get_device_ptr_const
                              (const_cast<cs_real_t *>(mc->d_val));
 
+    cs_lnum_t n_r_rows = ms->n_rows*matrix->db_size;
     unsigned int blocksize = 128;
-    unsigned int gridsize = cs_cuda_grid_size(ms->n_rows*matrix->db_size,
-                                              blocksize);
+    unsigned int gridsize = cs_cuda_grid_size(n_r_rows, blocksize);
 
     if (matrix->db_size == 3)
       _b_3_3_spmv_diag<<<gridsize, blocksize, 0, _stream>>>
-        (ms->n_rows, d_val, (const cs_real_t *)d_x, (cs_real_t *)d_y);
+        (n_r_rows, d_val, (const cs_real_t *)d_x, (cs_real_t *)d_y);
     else if (matrix->db_size == 6)
       _b_spmv_diag<6><<<gridsize, blocksize, 0, _stream>>>
-        (ms->n_rows, d_val, (const cs_real_t *)d_x, (cs_real_t *)d_y);
+        (n_r_rows, d_val, (const cs_real_t *)d_x, (cs_real_t *)d_y);
     else if (matrix->db_size == 9)
       _b_spmv_diag<9><<<gridsize, blocksize, 0, _stream>>>
-        (ms->n_rows, d_val, (const cs_real_t *)d_x, (cs_real_t *)d_y);
+        (n_r_rows, d_val, (const cs_real_t *)d_x, (cs_real_t *)d_y);
     else
       bft_error(__FILE__, __LINE__, 0, _("%s: block size %d not implemented."),
                 __func__, (int)matrix->db_size);
