@@ -1095,6 +1095,14 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   if (st_prv_id > -1)
     c_st_prv = (cs_real_6_t *)cs_field_by_id(st_prv_id)->val;
 
+  cs_real_6_t *cpro_press_correl = nullptr;
+  {
+    cs_field_t *f_psc = cs_field_by_name_try
+                          ("algo:rij_pressure_strain_correlation");
+    if (f_psc != nullptr)
+      cpro_press_correl = (cs_real_6_t *)f_psc->val;
+  }
+
   /* Time extrapolation ? */
   cs_real_t *cromo = nullptr;
   int key_t_ext_id = cs_field_key_id("time_extrapolated");
@@ -1250,6 +1258,15 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
       cs_real_t phiij1 = -cvara_ep[c_id]*crij1*xaniso[j][i];
       cs_real_t phiij2 = d2s3*crij2*trprod*vdeltij[ij];
       cs_real_t epsij = -d2s3*crijeps*cvara_ep[c_id]*vdeltij[ij];
+
+      /* save the pressure correlation  term for Rij
+       * ----------------------------------------------
+       * Phi,ij = Phi1,ij+Phi2,ij
+       * Phi,ij = -C1 k/eps (Rij-2/3k dij) - C2 (Pij-2/3P dij)
+       */
+
+      if (cpro_press_correl != nullptr)
+        cpro_press_correl[c_id][ij] = phiij1 + phiij2;
 
       if (st_prv_id > -1) {
         c_st_prv[c_id][ij] +=   cromo[c_id] * cell_f_vol[c_id]
@@ -1880,7 +1897,15 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   if (st_prv_id > -1)
     c_st_prv = (cs_real_6_t *)cs_field_by_id(st_prv_id)->val;
 
-  /* Time extrapolation ? */
+  cs_real_6_t *cpro_press_correl = nullptr;
+  {
+    cs_field_t *f_psc = cs_field_by_name_try
+                          ("algo:rij_pressure_strain_correlation");
+    if (f_psc != nullptr)
+      cpro_press_correl = (cs_real_6_t *)f_psc->val;
+  }
+
+ /* Time extrapolation ? */
   cs_real_t *cromo = nullptr;
   int key_t_ext_id = cs_field_key_id("time_extrapolated");
   int iroext = cs_field_get_key_int(f_rho, key_t_ext_id);
@@ -2234,6 +2259,15 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
                                  + cssgr5*tke * aikrjk;
         const cs_real_t epsij = -d2s3*crijeps * cvara_ep[c_id] * vdeltij[ij];
 
+        /* save the pressure correlation  term for Rij
+         * ----------------------------------------------
+         * Phi,ij = Phi1,ij+Phi2,ij
+         * Phi1 is the socalled slow term, Phi2, the rapid term
+         */
+
+        if (cpro_press_correl != nullptr)
+          cpro_press_correl[c_id][ij] = phiij1 + phiij2;
+
         w1[c_id] =   cromo[c_id] * cell_f_vol[c_id]
                    * (pij + phiij1 + phiij2 + epsij);
 
@@ -2281,6 +2315,16 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
          *  \f[ P_{ij} + (1-\alpha^3)\Phi_{ij}^w + \alpha^3\Phi_{ij}^h
          * - (1-\alpha^3)\e_{ij}^w   - \alpha^3\e_{ij}^h  ]\f$ --> W1 */
         const cs_real_t  alpha3 = cs_math_pow3(cvar_al[c_id]);
+
+        /* save the pressure correlation  term for Rij
+         * ----------------------------------------------
+         * Phi,ij = Phi1,ij+Phi2,ij
+         * Phi1 is the socalled slow term, Phi2, the rapid term
+         */
+
+        if (cpro_press_correl != nullptr)
+          cpro_press_correl[c_id][ij] =
+            (1-alpha3) * phiijw + alpha3 * (phiij1+phiij2);
 
         w1[c_id] =    crom[c_id] * cell_f_vol[c_id]
                    * (  xprod[j][i]
@@ -2472,6 +2516,15 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
   else
     cromo = f_rho->val;
 
+  cs_real_6_t *cpro_press_correl = nullptr;
+  {
+    cs_field_t *f_psc = cs_field_by_name_try
+                          ("algo:rij_pressure_strain_correlation");
+    if (f_psc != nullptr)
+      cpro_press_correl = (cs_real_6_t *)f_psc->val;
+  }
+
+  cs_field_t *f_beta2 = cs_field_by_name_try("algo:rij_beta2");
   /* coefficient of the "coriolis-type" term */
   const int icorio = cs_glob_physical_constants->icorio;
   cs_turbomachinery_model_t iturbo = cs_turbomachinery_get_model();
@@ -2537,7 +2590,7 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
     cs_real_t impl_drsm[6][6];
 
     cs_real_t xrij[3][3], xprod[3][3];
-    cs_real_t xaniso[3][3], xstrai[3][3], xrotac[3][3];
+    cs_real_t xstrai[3][3], xrotac[3][3];
 
     const cs_real_t tke  = 0.5 * cs_math_6_trace(cvara_var[c_id]);
 
@@ -2553,14 +2606,6 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
     for (cs_lnum_t i = 0; i < 3; i++) {
       for (cs_lnum_t j = 0; j < 3; j++) {
         xprod[i][j] = produc[c_id][t2v[i][j]];
-      }
-    }
-
-    /* Aij */
-    for (cs_lnum_t i = 0; i < 3; i++) {
-      for (cs_lnum_t j = 0; j < 3; j++) {
-        xaniso[i][j] =   xrij[i][j] / tke
-                       - d2s3 * tdeltij[i][j];
       }
     }
 
@@ -2626,16 +2671,8 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
     /* beta2 = 9/10 * Lambda_min/tr(R) = 3/5  * Lambda_min / k */
     cs_real_t beta2 = crij2 * lambda_min;
 
-    /* aii = aijaij */
-    cs_real_t aii = 0, aklskl = 0;
-
-    for (cs_lnum_t j = 0; j < 3; j++) {
-      for (cs_lnum_t i = 0; i < 3; i++) {
-        aii += cs_math_pow2(xaniso[j][i]);       /* aij.aij */
-        aklskl += xaniso[j][i] * xstrai[j][i];   /* aij.sij */
-      }
-    }
-
+    if (f_beta2 != nullptr)
+      f_beta2->val[c_id] = beta2;
     if (coupled_components != 0) {
 
       /* Make -Ne implicit
@@ -2699,20 +2736,14 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
       cs_lnum_t i = iv2t[ij];
       cs_lnum_t j = jv2t[ij];
 
-      cs_real_t aiksjk = 0, aikrjk = 0, aikakj = 0, riksjk = 0;
+      cs_real_t riksjk = 0;
 
       for (cs_lnum_t k = 0; k < 3; k++) {
-        // riksjk = rik.sjk+rjk.sik
+        // riksjk = Rik.Sjk+Rjk.Sik
+        // Note: should be reviewed using produc and its corresponding term
+        // with (gradu)^t
         riksjk +=   xrij[i][k] * xstrai[j][k]
                   + xrij[j][k] * xstrai[i][k];
-        // aiksjk = aik.sjk+ajk.sik
-        aiksjk +=   xaniso[i][k] * xstrai[j][k]
-                  + xaniso[j][k] * xstrai[i][k];
-        // aikrjk = aik.omega_jk + ajk.omega_ik
-        aikrjk +=   xaniso[i][k] * xrotac[j][k]
-                  + xaniso[j][k] * xrotac[i][k];
-        // aikakj = aik*akj
-        aikakj += xaniso[i][k] * xaniso[j][k];
       }
 
       /* if we extrapolate the source terms (rarely), we put everything
@@ -2730,12 +2761,16 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
 
       /* explicit terms */
       const cs_real_t pij = xprod[j][i];
-      const cs_real_t phiij1 = -cvara_ep[c_id]*crij1*xaniso[i][j];
-      const cs_real_t phiij2 =   2.*beta2*(riksjk + 2.*trprod/tke*xrij[i][j]);
+      const cs_real_t phiij1 = -cvara_ep[c_id]*crij1
+        * (xrij[i][j] / tke - d2s3 * tdeltij[i][j]);
+      const cs_real_t phiij2 = 2.*beta2*(riksjk + trprod/tke*xrij[i][j]);
       const cs_real_t epsij = -d2s3*crijeps * cvara_ep[c_id] * vdeltij[ij];
 
       w1[c_id] =   cromo[c_id] * cell_f_vol[c_id]
                    * (pij + phiij1 + phiij2 + epsij);
+
+      if (cpro_press_correl != nullptr)
+        cpro_press_correl[c_id][ij] = phiij1 + phiij2;
 
       if (st_prv_id > -1) {
         c_st_prv[c_id][ij] += w1[c_id];
@@ -3507,14 +3542,6 @@ cs_turbulence_rij(int phase_id)
 
   cs_real_3_t *up_rhop = nullptr;
 
-  cs_real_6_t *cpro_press_correl = nullptr;
-  {
-    cs_field_t *f_psc = cs_field_by_name_try
-                          ("algo:rij_pressure_strain_correlation");
-    if (f_psc != nullptr)
-      cpro_press_correl = (cs_real_6_t *)f_psc->val;
-  }
-
   cs_real_6_t *produc = nullptr, *_produc = nullptr;
   {
     cs_field_t *f_rij_p = cs_field_by_name_try
@@ -3672,31 +3699,6 @@ cs_turbulence_rij(int phase_id)
 
   });
   ctx.wait();
-
-  /* Compute the pressure correlation  term for Rij
-   * ----------------------------------------------
-   * Phi,ij = Phi1,ij+Phi2,ij
-   * Phi,ij = -C1 k/eps (Rij-2/3k dij) - C2 (Pij-2/3P dij)
-   * Phi,ij is stored as (Phi11, Phi22, Phi33, Phi12, Phi23, Phi13)
-
-   * TODO FIXME: coherency with the model */
-
-  if (cpro_press_correl != nullptr)  {
-    const cs_real_t d2s3 = 2./3;
-
-    const cs_real_t crij1 = cs_turb_crij1;
-    const cs_real_t crij2 = cs_turb_crij2;
-
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      const cs_real_t k = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
-      const cs_real_t p = 0.5 * cs_math_6_trace(produc[c_id]);
-      for (cs_lnum_t ij = 0; ij < 6; ij++)
-        cpro_press_correl[c_id][ij]
-          = - crij1 * cvar_ep[c_id] / k
-                    * (cvara_rij[c_id][ij] - d2s3*k* vdeltij[ij])
-            - crij2 * (produc[c_id][ij] - d2s3 * p * vdeltij[ij]);
-    });
-  }
 
   /* Compute the density gradient for buoyant terms
    * ---------------------------------------------- */
