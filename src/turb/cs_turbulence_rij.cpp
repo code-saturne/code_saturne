@@ -1023,7 +1023,7 @@ _gravity_st_epsilon(int              phase_id,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Prepare the resolution of the coupled Reynolds stress components
- *        \f$ R_{ij} - \varepsilon \f$ RANS (LRR) turbulence model.
+ *        for the \f$ R_{ij} - \varepsilon \f$ RANS (LRR) turbulence model.
  *
  * \param[in]   f_rij     pointer to Rij field
  * \param[in]   phase_id  turbulent phase id (-1 for single phase flow)
@@ -1079,7 +1079,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   const cs_real_t *crom = f_rho->val;
   const cs_real_t *viscl = f_mu->val;
   const cs_real_t *cvara_ep = f_eps->val_pre;
-  const cs_real_6_t*cvara_var = (const cs_real_6_t *)f_rij->val_pre;
+  const cs_real_6_t *cvara_var = (const cs_real_6_t *)f_rij->val_pre;
 
   const cs_equation_param_t *eqp
     = cs_field_get_equation_param_const(f_rij);
@@ -1088,6 +1088,8 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
     bft_printf(" Solving the variable %s\n",
                cs_field_get_label(f_rij));
   }
+
+  const int coupled_components = cs_glob_turb_rans_model->irijco;
 
   cs_real_6_t *c_st_prv = nullptr;
   int kstprv = cs_field_key_id("source_term_prev_id");
@@ -1149,7 +1151,8 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
       if (c_is_solid[c_id])
         return;  /* return from lambda function == continue in loop */
     }
-    cs_real_t impl_lin_cst = 0, impl_id_cst = 0;
+
+    cs_real_t impl_drsm[6][6];
 
     cs_real_t trprod = 0.5 * cs_math_6_trace(produc[c_id]);
     cs_real_t tke = 0.5 * cs_math_6_trace(cvara_var[c_id]);
@@ -1194,49 +1197,50 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
                                xstrai[2][1],
                                xstrai[2][0]};
 
-    /* Compute inverse matrix of R^n
-       (scaling by tr(R) for numerical stability) */
-    cs_real_t matrn[6];
-    for (cs_lnum_t ij = 0; ij < 6; ij++)
-      matrn[ij] = cvara_var[c_id][ij] / tke;
+    if (coupled_components != 0) {
+      /* Compute inverse matrix of R^n
+         (scaling by tr(R) for numerical stability) */
+      cs_real_t matrn[6];
+      for (cs_lnum_t ij = 0; ij < 6; ij++)
+        matrn[ij] = cvara_var[c_id][ij] / tke;
 
-    cs_real_t oo_matrn[6];
-    cs_math_sym_33_inv_cramer(matrn, oo_matrn);
-    for (cs_lnum_t ij = 0; ij < 6; ij++)
-      oo_matrn[ij] /= tke;
+      cs_real_t oo_matrn[6];
+      cs_math_sym_33_inv_cramer(matrn, oo_matrn);
+      for (cs_lnum_t ij = 0; ij < 6; ij++)
+        oo_matrn[ij] /= tke;
 
-    /* Compute the maximal eigenvalue (in terms of norm!) of S */
-    cs_real_t eigen_vals[3];
-    _sym_33_eigen(sym_strain, eigen_vals);
-    cs_real_t eigen_max = cs::abs(eigen_vals[0]);
-    for (cs_lnum_t i = 1; i < 3; i++)
-      eigen_max = cs::max(cs::abs(eigen_max),
-                          cs::abs(eigen_vals[i]));
+      /* Compute the maximal eigenvalue (in terms of norm!) of S */
+      cs_real_t eigen_vals[3];
+      _sym_33_eigen(sym_strain, eigen_vals);
+      cs_real_t eigen_max = cs::abs(eigen_vals[0]);
+      for (cs_lnum_t i = 1; i < 3; i++)
+        eigen_max = cs::max(cs::abs(eigen_max),
+                            cs::abs(eigen_vals[i]));
 
-    /* Constant for the dissipation */
-    cs_real_t ceps_impl = d1s3 * cvara_ep[c_id];
+      /* Constant for the dissipation */
+      cs_real_t ceps_impl = d1s3 * cvara_ep[c_id];
 
-    /* Identity constant */
-    impl_id_cst = -d1s3 * crij2 * cs::min(trprod, 0);
+      /* Identity constant */
+      cs_real_t impl_id_cst = -d1s3 * crij2 * cs::min(trprod, 0);
 
-    /* Linear constant */
-    impl_lin_cst = eigen_max * (1.0 - crij2); /* Production + Phi2 */
+      /* Linear constant */
+      cs_real_t impl_lin_cst = eigen_max * (1.0 - crij2); /* Production + Phi2 */
 
     cs_real_t implmat2add[3][3];
-    for (cs_lnum_t i = 0; i < 3; i++) {
-      for (cs_lnum_t j = 0; j < 3; j++) {
-        cs_lnum_t ij = t2v[i][j];
-        implmat2add[i][j] =   (1.0 - crij2) * xrotac[i][j]
-                              + impl_lin_cst * vdeltij[ij]
-                              + impl_id_cst * d1s2 * oo_matrn[ij]
-                              + ceps_impl * oo_matrn[ij];
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          cs_lnum_t ij = t2v[i][j];
+          implmat2add[i][j] =   (1.0 - crij2) * xrotac[i][j]
+                                + impl_lin_cst * vdeltij[ij]
+                                + impl_id_cst * d1s2 * oo_matrn[ij]
+                                + ceps_impl * oo_matrn[ij];
+        }
       }
-    }
 
-    /* Compute the 6x6 matrix A which verifies
-     * A.R = M.R + R.M^t */
-    cs_real_t impl_drsm[6][6];
-    cs_math_reduce_sym_prod_33_to_66(implmat2add, impl_drsm);
+      /* Compute the 6x6 matrix A which verifies
+       * A.R = M.R + R.M^t */
+      cs_math_reduce_sym_prod_33_to_66(implmat2add, impl_drsm);
+    }
 
     /* Rotating frame of reference => "absolute" vorticity */
     if (icorio == 1) {
@@ -1280,9 +1284,10 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
         fimp[c_id][ij][ij] +=   crom[c_id] * cell_f_vol[c_id] / tke
                               * (crij1 * cvara_ep[c_id]);
 
-        for (cs_lnum_t kl = 0; kl < 6; kl++)
-          fimp[c_id][ij][kl] +=   crom[c_id] * cell_f_vol[c_id]
-                                * impl_drsm[ij][kl];
+        if (coupled_components != 0)
+          for (cs_lnum_t kl = 0; kl < 6; kl++)
+            fimp[c_id][ij][kl] +=   crom[c_id] * cell_f_vol[c_id]
+                                  * impl_drsm[ij][kl];
       }
     }
 
@@ -1296,17 +1301,16 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   cs_real_6_t *w2;
   CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
 
-  if ((icorio == 1) || (tm_model == 1)) {
-
+  if (icorio == 1 || tm_model == CS_TURBOMACHINERY_FROZEN) {
     const int *irotce = cs_turbomachinery_get_cell_rotor_num();
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
       int rot_id = icorio;
-      if (tm_model == 1) {
+      if (tm_model == CS_TURBOMACHINERY_FROZEN) {
         rot_id = irotce[c_id];
         if (rot_id < 1)
-          return; // return from lambda function == continue in loop
+          return;  /* return from lambda function == continue in loop */
       }
 
       cs_real_t matrot[3][3];
@@ -1328,8 +1332,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
       /* Coriolis contribution in the Phi1 term: (1-C2/2)Gij */
       if (icorio == 1) {
         for (cs_lnum_t ij = 0; ij < 6; ij++)
-          w2[c_id][ij] =   crom[c_id] * cell_f_vol[c_id]
-                         * (1.-0.5*crij2) * w2[c_id][ij];
+          w2[c_id][ij] *= crom[c_id] * cell_f_vol[c_id] * (1.-0.5*crij2);
       }
 
       /* If source terms are extrapolated */
@@ -1337,7 +1340,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
         for (cs_lnum_t ij = 0; ij < 6; ij++)
           c_st_prv[c_id][ij] += w2[c_id][ij];
       }
-      /* Otherwise, directly in rhs */
+      /* Otherwise, directly in RHS */
       else {
         for (cs_lnum_t ij = 0; ij < 6; ij++)
           rhs[c_id][ij] += w2[c_id][ij];
@@ -1430,384 +1433,6 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
 
     CS_FREE(w1);
 
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!/
- * \brief Prepare the resolution of the segregated Reynolds stress components
- *        in the  \f$ R_{ij} - \varepsilon \f$ RANS (LRR) turbulence model.
- *
- * \param[in]   f_rij     pointer to Rij field
- * \param[in]   phase_id  turbulent phase id (-1 for single phase flow)
- * \param[in]   produc    work array for production
- * \param[in]   up_rhop   work array for \f$ \vect{u}'\rho' \f$
- * \param[in]   grav      gravity
- * \param[out]  viscf     visc*surface/dist at internal faces
- * \param[out]  viscb     visc*surface/dist at edge faces
- * \param[out]  viscce    Daly Harlow diffusion term
- * \param[out]  rhs       right hand side
- * \param[out]  fimp      Implicit term (containing unsteady term)
- * \param[out]  weighf    working array
- * \param[out]  weighb    working array
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_pre_solve_lrr_sg(const cs_field_t  *f_rij,
-                  int                phase_id,
-                  const cs_real_t    produc[][6],
-                  const cs_real_t    up_rhop[][3],
-                  const cs_real_t    grav[],
-                  cs_real_t          viscf[],
-                  cs_real_t          viscb[],
-                  cs_real_t          viscce[][6],
-                  cs_real_t          rhs[][6],
-                  cs_real_t          fimp[][6][6],
-                  cs_real_t          weighf[][2],
-                  cs_real_t          weighb[])
-{
-  const cs_mesh_t *m = cs_glob_mesh;
-  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
-
-  const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-
-  cs_dispatch_context ctx;
-
-  const cs_real_t *cell_f_vol = fvq->cell_vol;
-
-  cs_field_t *f_eps = CS_F_(eps);
-  cs_field_t *f_rho = CS_F_(rho);
-  cs_field_t *f_mu = CS_F_(mu);
-
-  if (phase_id >= 0) {
-    f_eps = CS_FI_(eps, phase_id);
-    f_rho = CS_FI_(rho, phase_id);
-    f_mu = CS_FI_(mu, phase_id);
-  }
-
-  const cs_real_t *crom = f_rho->val;
-  const cs_real_t *viscl = f_mu->val;
-  const cs_real_t *cvara_ep = f_eps->val_pre;
-  const cs_real_6_t *cvara_var = (const cs_real_6_t *)f_rij->val_pre;
-
-  const cs_equation_param_t *eqp
-    = cs_field_get_equation_param_const(f_rij);
-
-  if (eqp->verbosity >= 1) {
-    bft_printf(" Solving the variable %s\n",
-               cs_field_get_label(f_rij));
-  }
-
-  cs_real_6_t *c_st_prv = nullptr;
-  int kstprv = cs_field_key_id("source_term_prev_id");
-  int st_prv_id = cs_field_get_key_int(f_rij, kstprv);
-  if (st_prv_id > -1)
-    c_st_prv = (cs_real_6_t *)cs_field_by_id(st_prv_id)->val;
-
-  /* Time extrapolation? */
-  cs_real_t  *cromo = nullptr;
-  int key_t_ext_id = cs_field_key_id("time_extrapolated");
-  int iroext = cs_field_get_key_int(f_rho, key_t_ext_id);
-  if ((iroext > 0) && (st_prv_id > -1))
-    cromo = f_rho->val_pre;
-  else
-    cromo = f_rho->val;
-
-  const cs_real_t thetv = eqp->theta;
-
-  /* Coefficient of the "Coriolis-type" term */
-  const int icorio = cs_glob_physical_constants->icorio;
-  const cs_turbomachinery_model_t tm_model = cs_turbomachinery_get_model();
-  cs_real_t ccorio = 0;
-  if (icorio) {
-    if (icorio == 1)
-      ccorio = 2; /* Relative velocity formulation */
-    else {
-      if (tm_model == CS_TURBOMACHINERY_FROZEN)
-        ccorio = 1; /* Mixed relative/absolute velocity formulation */
-    }
-  }
-
-  const cs_real_t d1s3 = 1./3;
-  const cs_real_t d2s3 = 2./3;
-
-  const cs_real_t crij1 = cs_turb_crij1;
-  const cs_real_t crij2 = cs_turb_crij2;
-  const cs_real_t crijeps = cs_turb_crij_eps;
-  const cs_real_t csrij  = cs_turb_csrij;
-
-  const int iv2t[6] = _IV2T;
-  const int jv2t[6] = _JV2T;
-  const int t2v[3][3] = _T2V;
-  const cs_real_t vdeltij[6] = {1, 1, 1, 0, 0, 0};
-
-  cs_lnum_t solid_stride = 1;
-  int *c_is_solid_zone_flag = cs_solid_zone_flag(cs_glob_mesh);
-  const int c_is_solid_ref[1] = {0};
-  const int *c_is_solid = c_is_solid_zone_flag;
-  if (c_is_solid == nullptr) {
-    c_is_solid = c_is_solid_ref;
-    solid_stride = 0;
-  }
-
-  /* Production, Pressure-Strain correlation, dissipation
-   * ---------------------------------------------------- */
-
-  /* Source term:
-
-   *  (1-crij2) Pij (for all components of Rij)
-
-   *  deltaij*(2/3.crij2.p+2/3.crij1.epsilon)
-   *                (diagonal terms for R11, R22 et R33)
-
-   *  -deltaij*2/3*epsilon
-
-   * If we extrapolate the source terms
-   * We modify the implicit part:
-   * In phi1, we will only take rho crij1 epsilon/k and not
-   *                            rho crij1 epsilon/k (1-2/3 deltaij)
-   * It allows to keep  k^n instead of (R11^(n+1)+R22^n+R33^n)
-   * if we extrapolate the source terms. */
-
-  if (st_prv_id > -1) {
-
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-
-      if (c_is_solid[solid_stride*c_id])
-        return;  /* return from lambda function == continue in loop */
-
-      /* Half-traces of Prod and R */
-      const cs_real_t trprod = 0.5 * cs_math_6_trace(produc[c_id]);
-      const cs_real_t tke = 0.5 * cs_math_6_trace(cvara_var[c_id]);
-
-      for (cs_lnum_t ij = 0; ij < 6; ij++) {
-        /* Calculation of Prod+Phi1+Phi2-Eps
-         *  = rhoPij - C1rho eps/k(Rij-2/3k dij)
-         *           - C2rho(Pij-1/3Pkk dij) -2/3rho eps dij
-         * In c_st_prv:
-         *  = rhoPij-C1rho eps/k(-2/3k dij)-C2rho(Pij-1/3Pkk dij)-2/3rho eps dij
-         *  = rho(2/3dij[C2 Pkk/2+(C1-1)eps)]+(1-C2)Pij */
-        c_st_prv[c_id][ij] +=  cromo[c_id] * cell_f_vol[c_id]
-                              * (  vdeltij[ij]*d2s3
-                                 * (   crij2 * trprod
-                                    + (crij1-crijeps) * cvara_ep[c_id])
-                                 + (1.-crij2)*produc[c_id][ij]);
-
-        /*  In rhs = -C1rho eps/k(Rij) = rho {-C1eps/kRij} */
-        rhs[c_id][ij] +=   crom[c_id]*cell_f_vol[c_id]
-                         * (-crij1 * cvara_ep[c_id] / tke
-                                   * cvara_var[c_id][ij]);
-
-        /* Calculation of the implicit part coming from Phil = C1rho eps/k(1) */
-        fimp[c_id][ij][ij] +=   crom[c_id] * cell_f_vol[c_id]
-                                * crij1 * cvara_ep[c_id] / tke * thetv;
-      }
-
-      /* If we want to implicit a part of -C1rho eps/k(-2/3k dij)
-       * FIXME: check if we want to use this or if it should be removed;
-       *        previously "isoluc = 2", never called.
-       */
-
-      if (false) {
-        for (cs_lnum_t i = 0; i < 3; i++) {
-          cs_real_t t1 = d1s3 * crij1 * cvara_ep[c_id] / tke;
-
-          /*  We substract cromo = -C1rho eps/k(-1/3Rij dij) */
-          c_st_prv[c_id][i] -=    cromo[c_id] * cell_f_vol[c_id]
-                                 * t1 * cvara_var[c_id][i];
-
-          /* We add to rhs = -C1rho eps/k(-1/3Rij) */
-          rhs[c_id][i] +=   crom[c_id] * cell_f_vol[c_id]
-                           * t1 * cvara_var[c_id][i];
-
-          /* We add to fimp = C1rho eps/k(-1/3) */
-          fimp[c_id][i][i] += crom[c_id] * cell_f_vol[c_id] * t1;
-        }
-      }
-
-    });
-    ctx.wait();
-
-  }
-
-  /* If we do not extrapolate the source terms */
-  else {
-
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-
-      if (c_is_solid[solid_stride*c_id])
-        return;  /* return from lambda function == continue in loop */
-
-      /* Half-traces of Prod and R */
-      const cs_real_t trprod = 0.5 * cs_math_6_trace(produc[c_id]);
-      const cs_real_t tke = 0.5 * cs_math_6_trace(cvara_var[c_id]);
-
-      for (cs_lnum_t ij = 0; ij < 6; ij++) {
-        /* Calculation of Prod+Phi1+Phi2-Eps
-         *  = rhoPij - C1rho eps/k(Rij-2/3k dij)
-         *           - C2rho(Pij-1/3Pkk dij) -2/3rho eps dij
-         *  = rho{2/3dij[C2 Pkk/2+(C1-1)eps)]+(1-C2)Pij */
-        rhs[c_id][ij] +=  crom[c_id] * cell_f_vol[c_id]
-                        * (  vdeltij[ij] * d2s3
-                           * (   crij2 * trprod
-                              + (crij1-crijeps) * cvara_ep[c_id])
-                           + (1-crij2) * produc[c_id][ij]
-                           - crij1 * cvara_ep[c_id]/tke * cvara_var[c_id][ij]);
-
-        /* Calculation of the implicit part coming from Phi1
-         *  = C1rho eps/k(1-1/3 dij) */
-        fimp[c_id][ij][ij] +=   crom[c_id] * cell_f_vol[c_id]
-                                * (1-d1s3 *vdeltij[ij]) * crij1
-                                * cvara_ep[c_id]/tke;
-      }
-
-    });
-    ctx.wait();
-
-  }
-
-  CS_FREE(c_is_solid_zone_flag);
-
-  /* Coriolis terms in the Phi1 and production
-   * -----------------------------------------*/
-
-  cs_real_6_t *w2;
-  CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
-
-  if (icorio == 1 || tm_model == CS_TURBOMACHINERY_FROZEN) {
-    const cs_rotation_t *rotation = cs_glob_rotation;
-    const int *irotce = cs_turbomachinery_get_cell_rotor_num();
-
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-
-      cs_real_t matrot[3][3];
-
-      int rot_id = icorio;
-      if (tm_model == CS_TURBOMACHINERY_FROZEN) {
-        rot_id = irotce[c_id];
-        if (rot_id < 1)
-          return;  /* return from lambda function == continue in loop */
-      }
-
-      const cs_rotation_t *r = rotation + rot_id;
-      cs_rotation_coriolis_t(r, 1., matrot);
-
-      /* Compute Gij: (i,j) component of the Coriolis production */
-      for (cs_lnum_t ij = 0; ij < 6; ij++) {
-        cs_lnum_t i = iv2t[ij];
-        cs_lnum_t j = jv2t[ij];
-
-        w2[c_id][ij] = 0.;
-        for (cs_lnum_t kk = 0; kk < 3; kk++)
-          w2[c_id][ij] -=   ccorio
-                           * (  matrot[kk][i]*cvara_var[c_id][t2v[kk][j]]
-                              + matrot[kk][j]*cvara_var[c_id][t2v[kk][i]]);
-      }
-
-      /* Coriolis contribution in the Phi1 term: (1-C2/2)Gij */
-      if (icorio == 1) {
-        for (cs_lnum_t ij = 0; ij < 6; ij++)
-          w2[c_id][ij] *= crom[c_id] * cell_f_vol[c_id ]* (1.-0.5*crij2);
-      }
-
-      /* If source terms are extrapolated */
-      if (st_prv_id > -1) {
-        for (cs_lnum_t ij = 0; ij < 6; ij++)
-          c_st_prv[c_id][ij] += w2[c_id][ij];
-      }
-      /* Otherwise, directly in RHS */
-      else {
-        for (cs_lnum_t ij = 0; ij < 6; ij++)
-          rhs[c_id][ij] += w2[c_id][ij];
-      }
-
-    }); /* End of loop on cells */
-    ctx.wait();
-
-  }
-
-  /* Wall echo terms
-   * --------------- */
-
-  if (cs_glob_turb_rans_model->irijec == 1) { // todo
-
-    cs_real_6_t *p_rhs = rhs;
-
-    /* If we extrapolate the source terms: c_st_prv */
-    if (st_prv_id > -1)
-      p_rhs = c_st_prv;
-
-    _rij_echo(phase_id, produc, p_rhs);
-
-  }
-
-  CS_FREE(w2);
-
-  /* Buoyancy source term
-   * -------------------- */
-
-  if (cs_glob_turb_rans_model->has_buoyant_term == 1)
-    _gravity_st_rij(f_rij, up_rhop, grav, st_prv_id, c_st_prv, fimp, rhs);
-
-  /* Diffusion term (Daly Harlow: generalized gradient hypothesis method)
-   * -------------------------------------------------------------------- */
-
-  /* Symmetric tensor diffusivity (GGDH) */
-  if (eqp->idften & CS_ANISOTROPIC_RIGHT_DIFFUSION) {
-
-    const cs_field_t *f_a_t_visc
-      = cs_field_by_name("anisotropic_turbulent_viscosity");
-    const cs_real_6_t *visten = (const cs_real_6_t *)f_a_t_visc->val;
-
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      for (cs_lnum_t i = 0; i < 3; i++)
-        viscce[c_id][i] = visten[c_id][i] + viscl[c_id];
-      for (cs_lnum_t i = 3; i < 6; i++)
-        viscce[c_id][i] = visten[c_id][i];
-    });
-    ctx.wait();
-
-    cs_face_anisotropic_viscosity_scalar(m,
-                                         fvq,
-                                         viscce,
-                                         eqp->verbosity,
-                                         weighf,
-                                         weighb,
-                                         viscf,
-                                         viscb);
-
-  }
-
-  /* Scalar diffusivity */
-  else {
-
-    cs_real_t *w1;
-    CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
-
-    if (eqp->idifft == 1) {
-      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        const cs_real_t tke = .5 * cs_math_6_trace(cvara_var[c_id]);
-
-        const cs_real_t rctse =   crom[c_id] * csrij
-                                * cs_math_pow2(tke) / cvara_ep[c_id];
-
-        w1[c_id] = viscl[c_id] + rctse;
-      });
-      ctx.wait();
-    }
-    else
-      cs_array_real_copy(n_cells, viscl, w1);
-
-    cs_face_viscosity(m,
-                      fvq,
-                      eqp->imvisf,
-                      w1,
-                      viscf,
-                      viscb);
-
-    CS_FREE(w1);
   }
 }
 
@@ -1916,11 +1541,11 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
 
   /* Coefficient of the "Coriolis-type" term */
   const int icorio = cs_glob_physical_constants->icorio;
-  cs_turbomachinery_model_t iturbo = cs_turbomachinery_get_model();
+  cs_turbomachinery_model_t tm_model = cs_turbomachinery_get_model();
   cs_real_t ccorio = 0;
   if (icorio == 1)
     ccorio = 2; // Relative velocity formulation
-  else if (iturbo == CS_TURBOMACHINERY_FROZEN)
+  else if (tm_model == CS_TURBOMACHINERY_FROZEN)
     ccorio = 1;
 
   const cs_real_t d1s2 = 0.5;
@@ -2064,7 +1689,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
     xrotac[2][2] = 0;
 
     int rot_id = icorio;
-    if (iturbo == CS_TURBOMACHINERY_FROZEN)
+    if (tm_model == CS_TURBOMACHINERY_FROZEN)
       rot_id = irotce[c_id];
 
     /* Rotating frame of reference => "absolute" vorticity */
@@ -2527,11 +2152,11 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
   cs_field_t *f_beta2 = cs_field_by_name_try("algo:rij_beta2");
   /* coefficient of the "coriolis-type" term */
   const int icorio = cs_glob_physical_constants->icorio;
-  cs_turbomachinery_model_t iturbo = cs_turbomachinery_get_model();
+  cs_turbomachinery_model_t tm_model = cs_turbomachinery_get_model();
   cs_real_t ccorio = 0;
   if (icorio == 1)
     ccorio = 2; // relative velocity formulation
-  else if (iturbo == CS_TURBOMACHINERY_FROZEN)
+  else if (tm_model == CS_TURBOMACHINERY_FROZEN)
     ccorio = 1;
 
   const cs_real_t d1s2 = 0.5;
@@ -2631,9 +2256,8 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
     xrotac[2][1] = -xrotac[1][2];
     xrotac[2][2] = 0;
 
-
     int rot_id = icorio;
-    if (iturbo == CS_TURBOMACHINERY_FROZEN)
+    if (tm_model == CS_TURBOMACHINERY_FROZEN)
       rot_id = irotce[c_id];
 
     /* rotating frame of reference => "absolute" vorticity */
@@ -3793,19 +3417,11 @@ cs_turbulence_rij(int phase_id)
 
   if (turb_model->model == CS_TURB_RIJ_EPSILON_LRR
       || turb_model->model == CS_TURB_LES_TAUSGS) {
-    if (turb_rans_model->irijco == 1)
-      _pre_solve_lrr(f_rij, phase_id, gradv,
-                     produc, up_rhop, grav,
-                     viscf, viscb, viscce,
-                     rhs, fimp,
-                     weighf, weighb);
-    else
-      _pre_solve_lrr_sg(f_rij, phase_id,
-                        produc, up_rhop, grav,
-                        viscf, viscb, viscce,
-                        rhs, fimp,
-                        weighf, weighb);
-
+    _pre_solve_lrr(f_rij, phase_id, gradv,
+                   produc, up_rhop, grav,
+                   viscf, viscb, viscce,
+                   rhs, fimp,
+                   weighf, weighb);
   }
   else if (turb_model->model == CS_TURB_RIJ_EPSILON_BFH)
     _pre_solve_bfh(f_rij, phase_id, gradv,

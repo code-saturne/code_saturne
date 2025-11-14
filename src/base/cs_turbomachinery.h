@@ -55,9 +55,9 @@ BEGIN_C_DECLS
 
 typedef enum {
 
-  CS_TURBOMACHINERY_NONE,          /* No turbomachinery modeling */
-  CS_TURBOMACHINERY_FROZEN,        /* Frozen rotor model */
-  CS_TURBOMACHINERY_TRANSIENT      /* full transient simulation */
+  CS_TURBOMACHINERY_NONE = 0,          /* No turbomachinery modeling */
+  CS_TURBOMACHINERY_FROZEN = 1,        /* Frozen rotor model */
+  CS_TURBOMACHINERY_TRANSIENT = 2      /* full transient simulation */
 
 } cs_turbomachinery_model_t;
 
