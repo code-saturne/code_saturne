@@ -1,7 +1,7 @@
 General Information
 ===================
 
-This directory contains the [code_caturne](https://code-saturne.org) CFD tool,
+This directory contains the [code_saturne](https://code-saturne.org) CFD tool,
 EDF's general purpose Computational Fluid Dynamics (CFD) software.
 
 The basic capabilities of code_saturne enable the handling of either
