@@ -905,12 +905,12 @@ _face_diff_vel(const cs_mesh_t             *m,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Divergence of tensor Rij
- *        Non linear part of Rij for non-liear Eddy Viscosity Models
+ *        Non linear part of Rij for non-linear Eddy Viscosity Models
  *
  * \param[in]        m         pointer to associated mesh structure
  * \param[in]        crom      density at cells
  * \param[in]        brom      density at boundary faces
- * \param[in, out]   cpro_divr reynolds stress divergence
+ * \param[in, out]   cpro_divr Reynolds stress divergence
  * \param[in, out]   c_st_vel  source term of velocity
  * \param[in, out]   b_stress  boundary stress
  * \param[in, out]   trava     work array for velocity-pressure coupling

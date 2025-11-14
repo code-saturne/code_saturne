@@ -3679,7 +3679,7 @@ cs_turbulence_rij(int phase_id)
    * Phi,ij = -C1 k/eps (Rij-2/3k dij) - C2 (Pij-2/3P dij)
    * Phi,ij is stored as (Phi11, Phi22, Phi33, Phi12, Phi23, Phi13)
 
-   * TODO : coherency with the model */
+   * TODO FIXME: coherency with the model */
 
   if (cpro_press_correl != nullptr)  {
     const cs_real_t d2s3 = 2./3;
