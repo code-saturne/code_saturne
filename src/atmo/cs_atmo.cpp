@@ -923,14 +923,14 @@ _mo_phih_s(cs_real_t              z,
 
   switch(cs_glob_atmo_option->meteo_phih_s) {
 
-    case CS_ATMO_UNIV_FN_CHENG:
-      {
-        cs_real_t a = 5.3;
-        cs_real_t b = 1.1;
+  case CS_ATMO_UNIV_FN_CHENG:
+    {
+      cs_real_t a = 5.3;
+      cs_real_t b = 1.1;
 
-        return prt+a*(x+(pow(x,b))*(pow((1.+pow(x,b)), ((1.-b)/b))))
-          / (x + pow((1.+pow(x,b)),1./b));
-      }
+      return   prt+a*(x+(pow(x,b))*(pow((1.+pow(x,b)), ((1.-b)/b))))
+             / (x + pow((1.+pow(x,b)),1./b));
+    }
 
   case CS_ATMO_UNIV_FN_HOGSTROM:
     {
@@ -1234,16 +1234,17 @@ _mo_psim_u(cs_real_t              z,
 {
   switch (cs_glob_atmo_option->meteo_phim_u) {
 
-    case CS_ATMO_UNIV_FN_HOGSTROM:
-      {
-        cs_real_t b = 19.3;
-        cs_real_t e = 0.25;
-        cs_real_t x = pow((1. - b*z*dlmo), e);
-        cs_real_t x0 = pow((1. - b*z0*dlmo), e);
+  case CS_ATMO_UNIV_FN_HOGSTROM:
+    {
+      cs_real_t b = 19.3;
+      cs_real_t e = 0.25;
+      cs_real_t x = pow((1. - b*z*dlmo), e);
+      cs_real_t x0 = pow((1. - b*z0*dlmo), e);
 
-        return log(z/z0) - 2.*log((1. + x)/(1. + x0))
-          - log((1. + pow(x,2.))/(1. + pow(x0,2.))) + 2.*atan(x) - 2.*atan(x0);
-      }
+      return log(z/z0) - 2.*log((1. + x)/(1. + x0))
+            - log((1. + pow(x,2.))/(1. + pow(x0,2.)))
+            + 2.*atan(x) - 2.*atan(x0);
+    }
 
   case CS_ATMO_UNIV_FN_BUSINGER:
     {
@@ -1473,8 +1474,9 @@ _compute_pot_temperature_density_profile(int                    itp,
                   /(at_opt->temp_met[kk + itp*nbmaxt] + tkelvi)/rhum;
     const cs_real_t _rscp
       = rscp*(1.0 + cst1*at_opt->qw_met[kk + itp*nbmaxt]*ih2o);
-    at_opt->pot_t_met[kk + itp*nbmaxt] = (at_opt->temp_met[kk + itp*nbmaxt]+tkelvi)
-                                         *pow((ps/at_opt->hyd_p_met[kk + itp*nbmaxt]), _rscp);
+    at_opt->pot_t_met[kk + itp*nbmaxt]
+      =   (at_opt->temp_met[kk + itp*nbmaxt]+tkelvi)
+        * pow((ps/at_opt->hyd_p_met[kk + itp*nbmaxt]), _rscp);
 
   }
 }
@@ -1559,6 +1561,228 @@ _log_meteo_profile(int                    itp,
 
 /*============================================================================
  * Fortran wrapper function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Access pointers for Fortran mapping.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_atmo_get_pointers(cs_real_t              **ps,
+                       int                    **syear,
+                       int                    **squant,
+                       int                    **shour,
+                       int                    **smin,
+                       cs_real_t              **ssec,
+                       cs_real_t              **longitude,
+                       cs_real_t              **latitude,
+                       bool                   **compute_z_ground,
+                       int                    **open_bcs_treatment,
+                       int                    **theo_interp,
+                       int                    **sedimentation_model,
+                       int                    **deposition_model,
+                       int                    **nucleation_model,
+                       int                    **subgrid_model,
+                       int                    **distribution_model,
+                       int                    **meteo_profile,
+                       int                    **nbmetd,
+                       int                    **nbmett,
+                       int                    **nbmetm,
+                       int                    **nbmaxt,
+                       int                    **soil_model,
+                       int                    **ihpm,
+                       cs_real_t              **sigc,
+                       int                    **idrayi,
+                       int                    **idrayst,
+                       int                    **igrid,
+                       cs_real_t              **aod_o3_tot,
+                       cs_real_t              **aod_h2o_tot)
+{
+  *ps        = &(_atmo_constants.ps);
+  *syear     = &(_atmo_option.syear);
+  *squant    = &(_atmo_option.squant);
+  *shour     = &(_atmo_option.shour);
+  *smin      = &(_atmo_option.smin);
+  *ssec      = &(_atmo_option.ssec);
+  *longitude = &(_atmo_option.longitude);
+  *latitude  = &(_atmo_option.latitude);
+  *compute_z_ground = &(_atmo_option.compute_z_ground);
+  *open_bcs_treatment = &(_atmo_option.open_bcs_treatment);
+  *theo_interp = &(_atmo_option.theo_interp);
+  *sedimentation_model = &(_atmo_option.sedimentation_model);
+  *deposition_model = &(_atmo_option.deposition_model);
+  *nucleation_model = &(_atmo_option.nucleation_model);
+  *subgrid_model = &(_atmo_option.subgrid_model);
+  *distribution_model = &(_atmo_option.distribution_model);
+  *meteo_profile = &(_atmo_option.meteo_profile);
+  *nbmetd     = &(_atmo_option.met_1d_nlevels_d);
+  *nbmett     = &(_atmo_option.met_1d_nlevels_t);
+  *nbmetm     = &(_atmo_option.met_1d_ntimes);
+  *nbmaxt     = &(_atmo_option.met_1d_nlevels_max_t);
+  *soil_model = &(_atmo_option.soil_model);
+  *ihpm = &(_atmo_option.hydrostatic_pressure_model);
+  *sigc  = &(_atmo_option.sigc);
+  *idrayi = &(_atmo_option.infrared_1D_profile);
+  *idrayst = &(_atmo_option.solar_1D_profile);
+  *igrid = &(_atmo_option.profiles_grid_id);
+  *aod_o3_tot  = &(_atmo_option.aod_o3_tot);
+  *aod_h2o_tot  = &(_atmo_option.aod_h2o_tot);
+}
+
+void
+cs_f_atmo_get_soil_zone(cs_lnum_t         *n_elts,
+                        int               *n_soil_cat,
+                        const cs_lnum_t  **elt_ids)
+{
+  *n_elts = 0;
+  *elt_ids = nullptr;
+
+  cs_atmo_option_t *at_opt = &_atmo_option;
+
+  /* Not defined */
+  if (at_opt->soil_zone_id < 0) {
+    *n_soil_cat = 0;
+    return;
+  }
+
+  const cs_zone_t *z = cs_boundary_zone_by_id(at_opt->soil_zone_id);
+  *elt_ids = z->elt_ids;
+  *n_elts = z->n_elts;
+  switch (at_opt->soil_cat) {
+    case CS_ATMO_SOIL_5_CAT:
+      *n_soil_cat = 5;
+      break;
+    case CS_ATMO_SOIL_7_CAT:
+      *n_soil_cat = 7;
+      break;
+    case CS_ATMO_SOIL_23_CAT:
+      *n_soil_cat = 23;
+      break;
+    default:
+      *n_soil_cat = 0;
+      break;
+  }
+}
+
+void
+cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
+                              cs_real_t **xyp_met,
+                              cs_real_t **u_met,
+                              cs_real_t **v_met,
+                              cs_real_t **w_met,
+                              cs_real_t **time_met,
+                              cs_real_t **hyd_p_met,
+                              cs_real_t **pot_t_met,
+                              cs_real_t **ek_met,
+                              cs_real_t **ep_met,
+                              cs_real_t **ttmet,
+                              cs_real_t **rmet,
+                              cs_real_t **qvmet,
+                              cs_real_t **ncmet,
+                              int         dim_nd_nt[2],
+                              int         dim_ntx_nt[2],
+                              int         dim_nd_3[2],
+                              int         dim_nt_3[2])
+{
+  int n_level = 0, n_level_t = 0;
+  int n_times = 0;
+  if (_atmo_option.meteo_profile) {
+    n_level = cs::max(1, _atmo_option.met_1d_nlevels_d);
+    n_level_t = cs::max(1, _atmo_option.met_1d_nlevels_max_t);
+    n_times = cs::max(1, _atmo_option.met_1d_ntimes);
+  }
+
+  CS_REALLOC(_atmo_option.z_dyn_met, n_level, cs_real_t);
+  CS_REALLOC(_atmo_option.z_temp_met, n_level_t, cs_real_t);
+  CS_REALLOC(_atmo_option.xyp_met, n_times*3, cs_real_t);
+  CS_REALLOC(_atmo_option.u_met, n_level*n_times, cs_real_t);
+  CS_REALLOC(_atmo_option.v_met, n_level*n_times, cs_real_t);
+  CS_REALLOC(_atmo_option.w_met, n_level*n_times, cs_real_t);
+  CS_REALLOC(_atmo_option.time_met, n_times, cs_real_t);
+  CS_REALLOC(_atmo_option.hyd_p_met, n_times * n_level_t, cs_real_t);
+  CS_REALLOC(_atmo_option.pot_t_met, n_level_t*n_times, cs_real_t);
+  CS_REALLOC(_atmo_option.ek_met, n_level*n_times, cs_real_t);
+  CS_REALLOC(_atmo_option.ep_met, n_level*n_times, cs_real_t);
+  CS_REALLOC(_atmo_option.temp_met, n_level_t*n_times, cs_real_t);
+  CS_REALLOC(_atmo_option.rho_met, n_level_t*n_times, cs_real_t);
+  CS_REALLOC(_atmo_option.qw_met, n_level_t*n_times, cs_real_t);
+  CS_REALLOC(_atmo_option.ndrop_met, n_level_t*n_times, cs_real_t);
+  CS_REALLOC(_atmo_option.dpdt_met, n_level, cs_real_t);
+  CS_REALLOC(_atmo_option.mom_met, n_level, cs_real_3_t);
+  CS_REALLOC(_atmo_option.mom_cs, n_level, cs_real_3_t);
+
+  *xyp_met   = _atmo_option.xyp_met;
+  *u_met     = _atmo_option.u_met;
+  *v_met     = _atmo_option.v_met;
+  *w_met     = _atmo_option.w_met;
+  *hyd_p_met = _atmo_option.hyd_p_met;
+  *pot_t_met = _atmo_option.pot_t_met;
+  *ek_met    = _atmo_option.ek_met;
+  *ep_met    = _atmo_option.ep_met;
+  *ttmet     = _atmo_option.temp_met;
+  *rmet      = _atmo_option.rho_met;
+  *qvmet     = _atmo_option.qw_met;
+  *ncmet     = _atmo_option.ndrop_met;
+
+  *z_temp_met = _atmo_option.z_temp_met;
+  *time_met   = _atmo_option.time_met;
+
+  /* number of layers for dynamics times number of time steps */
+  dim_nd_nt[0]     = _atmo_option.met_1d_nlevels_d;
+  dim_nd_nt[1]     = _atmo_option.met_1d_ntimes;
+  /* number of layers for temperature (max value) times number of time steps */
+  dim_ntx_nt[0] = _atmo_option.met_1d_nlevels_max_t;
+  dim_ntx_nt[1] = _atmo_option.met_1d_ntimes;
+  dim_nd_3[0]    = _atmo_option.met_1d_nlevels_d;
+  dim_nd_3[1]    = 3;
+  dim_nt_3[0]    = 3;
+  dim_nt_3[1]    = _atmo_option.met_1d_ntimes;
+}
+
+void
+cs_atmo_soil_init_arrays(int        *n_soil_cat,
+                         cs_real_t  **csol,
+                         cs_real_t  **rugdyn,
+                         cs_real_t  **rugthe,
+                         cs_real_t  **albedo,
+                         cs_real_t  **emissi,
+                         cs_real_t  **vegeta,
+                         cs_real_t  **c1w,
+                         cs_real_t  **c2w,
+                         cs_real_t  **r1,
+                         cs_real_t  **r2)
+
+ /* The dimension is n_soil_cat + 1 because the element at index 0
+    is kept unused. */
+{
+  CS_REALLOC(_atmo_option.soil_cat_roughness, *n_soil_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.soil_cat_thermal_inertia, *n_soil_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.soil_cat_thermal_roughness, *n_soil_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.soil_cat_albedo, *n_soil_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.soil_cat_emissi, *n_soil_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.soil_cat_vegeta, *n_soil_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.soil_cat_w1, *n_soil_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.soil_cat_w2, *n_soil_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.soil_cat_r1, *n_soil_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.soil_cat_r2, *n_soil_cat+1, cs_real_t);
+
+  *rugdyn = _atmo_option.soil_cat_roughness;
+  *csol   = _atmo_option.soil_cat_thermal_inertia;
+  *rugthe = _atmo_option.soil_cat_thermal_roughness;
+
+  *r1     = _atmo_option.soil_cat_r1;
+  *r2     = _atmo_option.soil_cat_r2 ;
+  *vegeta = _atmo_option.soil_cat_vegeta;
+  *albedo = _atmo_option.soil_cat_albedo;
+  *emissi = _atmo_option.soil_cat_emissi;
+  *c1w    = _atmo_option.soil_cat_w1;
+  *c2w    = _atmo_option.soil_cat_w2;
+}
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
@@ -1848,228 +2072,6 @@ cs_mo_compute_from_thermal_flux(cs_real_t   z,
     *ustar = kappa*du/coef_mom;
   }
 }
-
-/*----------------------------------------------------------------------------
- * Access pointers for Fortran mapping.
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_atmo_get_pointers(cs_real_t              **ps,
-                       int                    **syear,
-                       int                    **squant,
-                       int                    **shour,
-                       int                    **smin,
-                       cs_real_t              **ssec,
-                       cs_real_t              **longitude,
-                       cs_real_t              **latitude,
-                       bool                   **compute_z_ground,
-                       int                    **open_bcs_treatment,
-                       int                    **theo_interp,
-                       int                    **sedimentation_model,
-                       int                    **deposition_model,
-                       int                    **nucleation_model,
-                       int                    **subgrid_model,
-                       int                    **distribution_model,
-                       int                    **meteo_profile,
-                       int                    **nbmetd,
-                       int                    **nbmett,
-                       int                    **nbmetm,
-                       int                    **nbmaxt,
-                       int                    **soil_model,
-                       int                    **ihpm,
-                       cs_real_t              **sigc,
-                       int                    **idrayi,
-                       int                    **idrayst,
-                       int                    **igrid,
-                       cs_real_t              **aod_o3_tot,
-                       cs_real_t              **aod_h2o_tot)
-{
-  *ps        = &(_atmo_constants.ps);
-  *syear     = &(_atmo_option.syear);
-  *squant    = &(_atmo_option.squant);
-  *shour     = &(_atmo_option.shour);
-  *smin      = &(_atmo_option.smin);
-  *ssec      = &(_atmo_option.ssec);
-  *longitude = &(_atmo_option.longitude);
-  *latitude  = &(_atmo_option.latitude);
-  *compute_z_ground = &(_atmo_option.compute_z_ground);
-  *open_bcs_treatment = &(_atmo_option.open_bcs_treatment);
-  *theo_interp = &(_atmo_option.theo_interp);
-  *sedimentation_model = &(_atmo_option.sedimentation_model);
-  *deposition_model = &(_atmo_option.deposition_model);
-  *nucleation_model = &(_atmo_option.nucleation_model);
-  *subgrid_model = &(_atmo_option.subgrid_model);
-  *distribution_model = &(_atmo_option.distribution_model);
-  *meteo_profile = &(_atmo_option.meteo_profile);
-  *nbmetd     = &(_atmo_option.met_1d_nlevels_d);
-  *nbmett     = &(_atmo_option.met_1d_nlevels_t);
-  *nbmetm     = &(_atmo_option.met_1d_ntimes);
-  *nbmaxt     = &(_atmo_option.met_1d_nlevels_max_t);
-  *soil_model = &(_atmo_option.soil_model);
-  *ihpm = &(_atmo_option.hydrostatic_pressure_model);
-  *sigc  = &(_atmo_option.sigc);
-  *idrayi = &(_atmo_option.infrared_1D_profile);
-  *idrayst = &(_atmo_option.solar_1D_profile);
-  *igrid = &(_atmo_option.profiles_grid_id);
-  *aod_o3_tot  = &(_atmo_option.aod_o3_tot);
-  *aod_h2o_tot  = &(_atmo_option.aod_h2o_tot);
-}
-
-void
-cs_f_atmo_get_soil_zone(cs_lnum_t         *n_elts,
-                        int               *n_soil_cat,
-                        const cs_lnum_t  **elt_ids)
-{
-  *n_elts = 0;
-  *elt_ids = nullptr;
-
-  cs_atmo_option_t *at_opt = &_atmo_option;
-
-  /* Not defined */
-  if (at_opt->soil_zone_id < 0) {
-    *n_soil_cat = 0;
-    return;
-  }
-
-  const cs_zone_t *z = cs_boundary_zone_by_id(at_opt->soil_zone_id);
-  *elt_ids = z->elt_ids;
-  *n_elts = z->n_elts;
-  switch (at_opt->soil_cat) {
-    case CS_ATMO_SOIL_5_CAT:
-      *n_soil_cat = 5;
-      break;
-    case CS_ATMO_SOIL_7_CAT:
-      *n_soil_cat = 7;
-      break;
-    case CS_ATMO_SOIL_23_CAT:
-      *n_soil_cat = 23;
-      break;
-    default:
-      *n_soil_cat = 0;
-      break;
-  }
-}
-
-void
-cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
-                              cs_real_t **xyp_met,
-                              cs_real_t **u_met,
-                              cs_real_t **v_met,
-                              cs_real_t **w_met,
-                              cs_real_t **time_met,
-                              cs_real_t **hyd_p_met,
-                              cs_real_t **pot_t_met,
-                              cs_real_t **ek_met,
-                              cs_real_t **ep_met,
-                              cs_real_t **ttmet,
-                              cs_real_t **rmet,
-                              cs_real_t **qvmet,
-                              cs_real_t **ncmet,
-                              int         dim_nd_nt[2],
-                              int         dim_ntx_nt[2],
-                              int         dim_nd_3[2],
-                              int         dim_nt_3[2])
-{
-  int n_level = 0, n_level_t = 0;
-  int n_times = 0;
-  if (_atmo_option.meteo_profile) {
-    n_level = cs::max(1, _atmo_option.met_1d_nlevels_d);
-    n_level_t = cs::max(1, _atmo_option.met_1d_nlevels_max_t);
-    n_times = cs::max(1, _atmo_option.met_1d_ntimes);
-  }
-
-  CS_REALLOC(_atmo_option.z_dyn_met, n_level, cs_real_t);
-  CS_REALLOC(_atmo_option.z_temp_met, n_level_t, cs_real_t);
-  CS_REALLOC(_atmo_option.xyp_met, n_times*3, cs_real_t);
-  CS_REALLOC(_atmo_option.u_met, n_level*n_times, cs_real_t);
-  CS_REALLOC(_atmo_option.v_met, n_level*n_times, cs_real_t);
-  CS_REALLOC(_atmo_option.w_met, n_level*n_times, cs_real_t);
-  CS_REALLOC(_atmo_option.time_met, n_times, cs_real_t);
-  CS_REALLOC(_atmo_option.hyd_p_met, n_times * n_level_t, cs_real_t);
-  CS_REALLOC(_atmo_option.pot_t_met, n_level_t*n_times, cs_real_t);
-  CS_REALLOC(_atmo_option.ek_met, n_level*n_times, cs_real_t);
-  CS_REALLOC(_atmo_option.ep_met, n_level*n_times, cs_real_t);
-  CS_REALLOC(_atmo_option.temp_met, n_level_t*n_times, cs_real_t);
-  CS_REALLOC(_atmo_option.rho_met, n_level_t*n_times, cs_real_t);
-  CS_REALLOC(_atmo_option.qw_met, n_level_t*n_times, cs_real_t);
-  CS_REALLOC(_atmo_option.ndrop_met, n_level_t*n_times, cs_real_t);
-  CS_REALLOC(_atmo_option.dpdt_met, n_level, cs_real_t);
-  CS_REALLOC(_atmo_option.mom_met, n_level, cs_real_3_t);
-  CS_REALLOC(_atmo_option.mom_cs, n_level, cs_real_3_t);
-
-  *xyp_met   = _atmo_option.xyp_met;
-  *u_met     = _atmo_option.u_met;
-  *v_met     = _atmo_option.v_met;
-  *w_met     = _atmo_option.w_met;
-  *hyd_p_met = _atmo_option.hyd_p_met;
-  *pot_t_met = _atmo_option.pot_t_met;
-  *ek_met    = _atmo_option.ek_met;
-  *ep_met    = _atmo_option.ep_met;
-  *ttmet     = _atmo_option.temp_met;
-  *rmet      = _atmo_option.rho_met;
-  *qvmet     = _atmo_option.qw_met;
-  *ncmet     = _atmo_option.ndrop_met;
-
-  *z_temp_met = _atmo_option.z_temp_met;
-  *time_met   = _atmo_option.time_met;
-
-  /* number of layers for dynamics times number of time steps */
-  dim_nd_nt[0]     = _atmo_option.met_1d_nlevels_d;
-  dim_nd_nt[1]     = _atmo_option.met_1d_ntimes;
-  /* number of layers for temperature (max value) times number of time steps */
-  dim_ntx_nt[0] = _atmo_option.met_1d_nlevels_max_t;
-  dim_ntx_nt[1] = _atmo_option.met_1d_ntimes;
-  dim_nd_3[0]    = _atmo_option.met_1d_nlevels_d;
-  dim_nd_3[1]    = 3;
-  dim_nt_3[0]    = 3;
-  dim_nt_3[1]    = _atmo_option.met_1d_ntimes;
-}
-
-void
-cs_atmo_soil_init_arrays(int        *n_soil_cat,
-                         cs_real_t  **csol,
-                         cs_real_t  **rugdyn,
-                         cs_real_t  **rugthe,
-                         cs_real_t  **albedo,
-                         cs_real_t  **emissi,
-                         cs_real_t  **vegeta,
-                         cs_real_t  **c1w,
-                         cs_real_t  **c2w,
-                         cs_real_t  **r1,
-                         cs_real_t  **r2)
-
- /* The dimension is n_soil_cat + 1 because the element at index 0
-    is kept unused. */
-{
-  CS_REALLOC(_atmo_option.soil_cat_roughness, *n_soil_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.soil_cat_thermal_inertia, *n_soil_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.soil_cat_thermal_roughness, *n_soil_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.soil_cat_albedo, *n_soil_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.soil_cat_emissi, *n_soil_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.soil_cat_vegeta, *n_soil_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.soil_cat_w1, *n_soil_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.soil_cat_w2, *n_soil_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.soil_cat_r1, *n_soil_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.soil_cat_r2, *n_soil_cat+1, cs_real_t);
-
-  *rugdyn = _atmo_option.soil_cat_roughness;
-  *csol   = _atmo_option.soil_cat_thermal_inertia;
-  *rugthe = _atmo_option.soil_cat_thermal_roughness;
-
-  *r1     = _atmo_option.soil_cat_r1;
-  *r2     = _atmo_option.soil_cat_r2 ;
-  *vegeta = _atmo_option.soil_cat_vegeta;
-  *albedo = _atmo_option.soil_cat_albedo;
-  *emissi = _atmo_option.soil_cat_emissi;
-  *c1w    = _atmo_option.soil_cat_w1;
-  *c2w    = _atmo_option.soil_cat_w2;
-}
-
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
 
 /*----------------------------------------------------------------------------
  * initialize fields, stage 0

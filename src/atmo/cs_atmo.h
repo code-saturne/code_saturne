@@ -781,24 +781,20 @@ cs_atmo_soil_init_arrays(int        *n_soil_cat,
 
 /*----------------------------------------------------------------------------*/
 
+void
+cs_atmo_projection
+(
+  cs_atmo_projection_t origin_projection,
+  cs_atmo_projection_t target_projection,
+  cs_real_t            x_origin,
+  cs_real_t            y_origin,
+  cs_real_t*           x_target,
+  cs_real_t*           y_target,
+  int                  utm_fixed_zone
+);
 
-  void
-cs_atmo_projection(
-    cs_atmo_projection_t origin_projection,
-    cs_atmo_projection_t target_projection,
-    cs_real_t            x_origin,
-    cs_real_t            y_origin,
-    cs_real_t*           x_target,
-    cs_real_t*           y_target,
-    int                  utm_fixed_zone);
-
-
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
-
-
-
-
-
 
 #endif /* __CS_ATMO_H__ */
