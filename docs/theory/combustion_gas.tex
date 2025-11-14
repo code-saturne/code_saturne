@@ -110,7 +110,7 @@ In diffusion model, the combustion is assumed to be limited only by mixing
 equilibrium state and the temperature and concentrations can be computed for
 every value of the mixture fraction. In \CS~ the implemented version uses an
 extra hypothesis: the reaction is complete; so if the mixture is
-stoechiometric, the burnt gases contains only final products (none unburnt like
+stoichiometric, the burnt gases contains only final products (none unburnt like
 CO, except definition of product including a specified ratio of CO).  As a
 consequence, every concentration is a piecewise linear function of the mixture
 fraction (subroutines: \fort{d3pphy, d3pint, cpcym, fucym}).
@@ -127,8 +127,8 @@ fraction (subroutines: \fort{d3pphy, d3pint, cpcym, fucym}).
 \end{figure}
 %========================================
 
-Where $f_{\mbox{\footnotesize s}}$ is the stoechiometric mixture fraction, $Y_s$
-the concentrations in products of the complete reaction of a stoechiometric
+Where $f_{\mbox{\footnotesize s}}$ is the stoichiometric mixture fraction, $Y_s$
+the concentrations in products of the complete reaction of a stoichiometric
 mixture (in such products, the chemical reaction is no more possible :
 inert). Beware to distinguish $Y_{\mbox{\footnotesize fuel}}$ mass fraction of a
 species (depending on f) and $Y_{\mbox{\footnotesize fuel}}$ mass fraction of
@@ -159,7 +159,7 @@ function of the mixture fraction (the enthalpy is not modified by the
 reaction). As for premixed combustion, the following assumption is done
 \textit{"the hotter the gases, the worse the heat losses"}, so the enthalpy of
 pure oxidizer and fuel are supposed to be not modified in permeatic conditions,
-the enthalpy of products $h_{\mbox{\footnotesize s}}$ (at the stoechiometric
+the enthalpy of products $h_{\mbox{\footnotesize s}}$ (at the stoichiometric
 mixture fraction) is an unknown or auxiliary variable. The enthalpy of the
 mixture is supposed linear piecewise with $f$ (like concentrations but with an
 unkwnon at $f_{\mbox{\footnotesize s}}$) and the resulting mean enthalpy
@@ -285,9 +285,9 @@ In adiabatic conditions, the temperature can be computed for every pair $(f,Yfue
 
 As previously, with heat losses, it is assumed that the hottest gases have lost
 the more (of their thermal enthalpy), the enthalpy of the products at
-stoechiometric point $(fs,0)$ is an auxiliary variable, the enthaply being
+stoichiometric point $(fs,0)$ is an auxiliary variable, the enthaply being
 considered as a piecewise bilinear function. Fitting mean transported enthalpy
-and integrated ones, allows to determine the enthalpy of stoechiometric
+and integrated ones, allows to determine the enthalpy of stoichiometric
 products, then the enthalpy and temperature in the peaks conditions and, \emph{in fine} the reactions fluxes.
 
 %=====================================
@@ -432,4 +432,3 @@ Some numerical evaluations don't show large discrepancies ({\small among mass fr
 
 \newpage
 %===============================
-

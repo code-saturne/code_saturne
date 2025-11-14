@@ -126,7 +126,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Calculation of local stoechiometric enthalpy.
+ * \brief Calculation of local stoichiometric enthalpy.
  *
  * \param[in]       n_cells    number of cells
  * \param[in]       indpdf     indicator for pdf integration or mean value
@@ -137,7 +137,7 @@ BEGIN_C_DECLS
  * \param[in]       hrec       rectangle height
  * \param[in]       fm         mean mixture fraction at cell centers
  * \param[in]       hm         mean mixture enthalpy at cell centers
- * \param[in, out]  hstoe      local stoechiometric enthalpy
+ * \param[in, out]  hstoe      local stoichiometric enthalpy
  */
 /*----------------------------------------------------------------------------*/
 

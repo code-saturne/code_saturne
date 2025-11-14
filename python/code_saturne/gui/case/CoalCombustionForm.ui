@@ -1199,7 +1199,7 @@ p, li { white-space: pre-wrap; }
                        <item>
                         <widget class="QLabel" name="labelCoefY1">
                          <property name="text">
-                          <string>Stoechiometric coefficient</string>
+                          <string>Stoichiometric coefficient</string>
                          </property>
                         </widget>
                        </item>

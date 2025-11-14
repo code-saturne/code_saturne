@@ -1102,7 +1102,7 @@ cs_combustion_read_data(void)
 
     else {
 
-      // global stoechiometric coefficient, to write the reaction
+      // global stoichiometric coefficient, to write the reaction
 
       for (int igg = 0; igg < cm->n_gas_species; igg++) {
         double nmolg = 0.;

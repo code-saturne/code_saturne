@@ -287,7 +287,7 @@ typedef struct {
     (0.5 if 0, 1 if 1) */
   int ioetwt[CS_COMBUSTION_MAX_COALS];
 
-  /*! stoechiometric coeffficient; computed if iy1ch = 0; given if iy1ch = 1 */
+  /*! stoichiometric coeffficient; computed if iy1ch = 0; given if iy1ch = 1 */
   double  y1ch[CS_COMBUSTION_MAX_COALS];
 
   /*! pre-exponetial factor (1/s) */
@@ -296,7 +296,7 @@ typedef struct {
   /*! activation energy (J/mol) */
   double  e1ch[CS_COMBUSTION_MAX_COALS];
 
-  /*! stoechiometric coeffficient; computed if iy2ch = 0; given if iy2ch = 1 */
+  /*! stoichiometric coeffficient; computed if iy2ch = 0; given if iy2ch = 1 */
   double  y2ch[CS_COMBUSTION_MAX_COALS];
 
   /*! pre-exponetial factor (1/s) */
@@ -403,7 +403,7 @@ typedef struct {
   double chx2[CS_COMBUSTION_MAX_COALS];
 
   //@{
-  /*! low T devolatilization molar stoechiometric coefficients */
+  /*! low T devolatilization molar stoichiometric coefficients */
   double a1[CS_COMBUSTION_MAX_COALS];
   double b1[CS_COMBUSTION_MAX_COALS];
   double c1[CS_COMBUSTION_MAX_COALS];
