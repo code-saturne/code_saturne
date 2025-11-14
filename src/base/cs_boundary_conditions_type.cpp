@@ -652,7 +652,7 @@ cs_boundary_conditions_type(bool  init,
 
   /* If the reference point has not been specified by the user,
      we change it and shift coefu if there are outputs.
-     Total pressure is also shifted (a priori useless exept if
+     Total pressure is also shifted (a priori useless except if
      the user uses it in cs_user_source_terms for example) */
 
   if (fluid_props->ixyzp0 == 2) {
