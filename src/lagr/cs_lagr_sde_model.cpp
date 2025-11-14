@@ -1803,7 +1803,7 @@ _sde_i_ct(const cs_lnum_t       p_id,
 
     /* Scheme resolution (nor=1)*/
     cs_real_t xi = temp_s - time_temp_p * mass_evap * lv / (mass * cp);
-    cs_real_t aux = exp(- dt_part / time_temp_p);
+    aux = exp(- dt_part / time_temp_p);
 
     cs_real_t ter1 = cs_lagr_particles_get_real_n(p_set, p_id, 1,
                                                   CS_LAGR_TEMPERATURE) * aux;
