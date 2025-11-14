@@ -324,8 +324,8 @@ cs_cdofb_scaleq_diff_flux_faces(const cs_real_t             *f_values,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute an approximation of the the diffusive flux across each
- *        boundary face.
+ * \brief Compute an approximation of the diffusive flux across each boundary
+ *        face.
  *        Case of scalar-valued CDO-Fb schemes
  *
  * \param[in]      pot_f     array of values at faces

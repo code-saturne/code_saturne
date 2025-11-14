@@ -4127,7 +4127,8 @@ cs_cdovb_scaleq_get_vertex_values(void *context, bool previous)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdovb_scaleq_get_cell_values(void *context, bool previous)
+cs_cdovb_scaleq_get_cell_values(void *context,
+                                bool  previous)
 {
   cs_cdovb_scaleq_t *eqc = (cs_cdovb_scaleq_t *)context;
 

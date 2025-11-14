@@ -689,7 +689,7 @@ END_C_DECLS
 /*!
  * \brief Check if at least another iteration is needed.
  *
- * \return true if at least another itreation is needed, false otherwise.
+ * \return true if at least another iteration is needed, false otherwise.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -711,4 +711,3 @@ cs_time_step_t::needs_iteration
 }
 
 /*----------------------------------------------------------------------------*/
-
