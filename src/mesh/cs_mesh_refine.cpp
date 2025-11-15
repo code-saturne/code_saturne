@@ -1595,7 +1595,7 @@ _flag_faces_and_edges(cs_lnum_t               f_id,
  * \param[in]       m             mesh
  * \param[in]       check_convex  check if faces are convex ?
  * \param[in]       v2v           vertex->vertex adjacency
- * \param[in]       vtx_r_gen     vertex refinemnt generation
+ * \param[in]       vtx_r_gen     vertex refinement generation
  * \param[in]       c_r_level     cell refinement level
  * \param[in]       c_r_flag      cell refinement flag
  * \param[in, out]  f_r_flag      face refinement flag
