@@ -57,6 +57,9 @@ Master (not on release branches yet)
 
 ### Physical modelling
 
+- Major change in rough wall function. It is now merge with rough-smooth
+  wall functions.
+
 - Add a new plant model in the soil model. See J. Vernier et al. 2026
   "A Soil-Plant-Atmosphere Continuum model coupled to CFD to simulate plant
   energy and water exchanges in heterogeneous microclimates" for further

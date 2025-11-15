@@ -629,9 +629,8 @@ cs_mo_psih(cs_real_t              z,
  * \param[in]  z             altitude
  * \param[in]  z0
  * \param[in]  du            velocity difference
+ * \param[in]  buoyant_param  beta g
  * \param[in]  dt            thermal difference
- * \param[in]  beta          thermal expansion
- * \param[in]  gredu
  * \param[out] dlmo          Inverse Monin Obukhov length
  * \param[out] ustar         friction velocity
  */
@@ -641,9 +640,8 @@ void
 cs_mo_compute_from_thermal_diff(cs_real_t   z,
                                 cs_real_t   z0,
                                 cs_real_t   du,
+                                cs_real_t   buoyant_param,
                                 cs_real_t   dt,
-                                cs_real_t   beta,
-                                cs_real_t   gredu,
                                 cs_real_t   *dlmo,
                                 cs_real_t   *ustar);
 
@@ -655,9 +653,8 @@ cs_mo_compute_from_thermal_diff(cs_real_t   z,
  * \param[in]  z             altitude
  * \param[in]  z0
  * \param[in]  du            velocity difference
+ * \param[in]  buoyant_param  beta g
  * \param[in]  flux          thermal flux
- * \param[in]  beta          thermal expansion
- * \param[in]  gredu
  * \param[out] dlmo          Inverse Monin Obukhov length
  * \param[out] ustar         friction velocity
  */
@@ -667,9 +664,8 @@ void
 cs_mo_compute_from_thermal_flux(cs_real_t   z,
                                 cs_real_t   z0,
                                 cs_real_t   du,
+                                cs_real_t   buoyant_param,
                                 cs_real_t   flux,
-                                cs_real_t   beta,
-                                cs_real_t   gredu,
                                 cs_real_t   *dlmo,
                                 cs_real_t   *ustar);
 

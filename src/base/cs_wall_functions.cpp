@@ -59,6 +59,8 @@
 #include "base/cs_field_operator.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_field_default.h"
+#include "pprt/cs_physical_model.h"
+#include "atmo/cs_atmo.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -187,6 +189,123 @@ cs_get_glob_wall_functions(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute friction velocity u* and surface sensible heat flux q0
+ * for a non neutral atmospheric surface layer using the explicit formula
+ * developed for the ECMWF by Louis (1982)
+
+ * \param[in]     utau        tangential mean velocity
+ * \param[in]     rough_d     roughness z0
+ * \param[in]     distbf      distance between the cell center and
+                                  the center of gravity of the border face
+ * \param[in]     duplus      1 over dimensionless velocity in neutral
+ *                            conditions
+ * \param[in]     dtplus      1 over dimensionless temperature in neutral
+ *                            conditions
+ * \param[in]     prt         turbulent Prandtl number
+ * \param[in]     yplus_t     thermal dimensionless wall distance
+ * \param[in]     buoyant_param g beta delta Theta
+ * \param[in]     delta_t     delta Theta
+ * \param[out]    uet         friction velocity
+ * \param[out]    cfnns       non neutral correction coefficients for profiles
+                              of scalar
+ * \param[out]    cfnnk       non neutral correction coefficients
+                              for profiles of k
+ * \param[out]    cfnne       non neutral correction coefficients
+                              for profiles of eps
+ * \param[out]    dlmo        inverse Monin Obukhov length (for log only)
+ * \param[in]     temp        potential temperature in boundary cell
+ * \param[in]     totwt       total water content in boundary cell
+ * \param[in]     liqwt       liquid water content in boundary cell
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_atmo_louis(const cs_real_t  utau,
+            const cs_real_t  rough_d,
+            const cs_real_t  distbf,
+            const cs_real_t  duplus,
+            const cs_real_t  dtplus,
+            const cs_real_t  prt,
+            const cs_real_t  yplus_t,
+            const cs_real_t  buoyant_param,
+            const cs_real_t  delta_t,
+            cs_real_t       *uet,
+            cs_real_t       *cfnns,
+            cs_real_t       *cfnnk,
+            cs_real_t       *cfnne,
+            cs_real_t       *dlmo)
+{
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+  const cs_lnum_t nt_cur = cs_glob_time_step->nt_cur;
+
+  /* Initializations
+  --------------- */
+
+  const cs_real_t b = 5.0;
+  const cs_real_t c = b; // Already corrected with a equivalent Prantl number equal to 0.71
+  const cs_real_t d = b;
+
+  /* Compute layer average Richardson number */
+
+  /* NB: rib = 0 if thermal flux conditions are imposed and tpot1 not defined */
+  /* Patch for the initial time step when thermal field is not initalized */
+  cs_real_t rib;
+  if (cs::abs(utau) < cs_math_epzero || nt_cur == 1)
+    rib = 0.0;
+  else
+    rib = buoyant_param * delta_t * distbf/utau/utau;
+
+  /* Compute correction factors based on ECMWF parametrisation
+     Louis (1982) */
+
+  cs_real_t fm, fh, fmden1, fmden2, fhden;
+  if (rib >= cs_math_epzero) {
+    /* Stable case */
+    fm = 1.0 / (1.0 + 2.0*b*rib/sqrt(1.0 + d*rib));
+    fh = 1.0 / (1.0 + 3.0*b*rib*sqrt(1.0 + d*rib));
+  }
+  else {
+    /* Unstable case */
+    fmden1 = (yplus_t + 1.0) * cs::abs(rib);
+    fmden2 = 1.0 + 3.0 * b * c * duplus * prt * dtplus * sqrt(fmden1);
+    fm = 1.0 - 2.0 * b * rib / fmden2;
+    fhden = 3.0 * b * c * duplus * prt * dtplus * sqrt(yplus_t + 1.0);
+    fh = 1.0 - (3.0*b*rib)/(1.0 + fhden * sqrt(cs::abs(rib)));
+  }
+
+  if (fm <= cs_math_epzero)
+    fm = cs_math_epzero;
+
+  if (cs::abs(fh) <= cs_math_epzero)
+    fh = cs_math_epzero;
+
+  /* Stable */
+  if ((1.0-rib) > cs_math_epzero) {
+    *cfnnk = sqrt(1.0 - rib); /* TODO write it +correction with turbulent Prandtl */
+    *cfnne = (1.0 - rib) / sqrt(fm);
+  }
+  else {
+    *cfnnk = 1.0;
+    *cfnne = 1.0;
+  }
+
+  /* Note: non neutral correction coefficients for profiles of wind
+     (Re) compute friction velocity uet (for non neutral)
+     uet = U/U^+ = U / U^{+,n} * sqrt(fm) */
+  *uet = duplus * utau * sqrt(fm);
+
+  /* Compute surface sensible heat flux q0 (can be useful for post-processing)
+     Note: non-consistent with two velocity scales */
+  *cfnns = fh / sqrt(fm);
+  //Note:  q0 = (tpot1 - tpot2) * (*uet) * dtplus * (*cfnns);
+
+  /* Compute local Obukhov inverse length for log
+     1/L =  Ri / (z Phim) */
+  *dlmo = rib * sqrt(fm) / (distbf + rough_d);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the friction velocity and \f$y^+\f$ / \f$u^+\f$.
  *
  * \param[in]     iwallf        wall function type
@@ -198,9 +317,19 @@ cs_get_glob_wall_functions(void)
  *                              (not sand grain roughness)
  * \param[in]     rnnb          \f$\vec{n}.(\tens{R}\vec{n})\f$
  * \param[in]     kinetic_en    turbulent kinetic energy (cell center)
+ * \param[in]     rough_t       boundary_thermal_roughness
+ * \param[in]     buoyant_param Buoyant parameter: g beta delta Theta v
+ * \param[in]     delta_t       temperature delta
+ * \param[in]     turb_prandtl  turbulent Prandtl
+ * \param[in]     icodcl_th_fid  icodcl_th_f[f_id]]
+ * \param[in]     flux
  * \param[in,out] iuntur        indicator: 0 in the viscous sublayer
  * \param[in,out] nsubla        counter of cell in the viscous sublayer
  * \param[in,out] nlogla        counter of cell in the log-layer
+ * \param[out]    cfbnns        correctif factors
+ * \param[out]    cfnnk
+ * \param[out]    cfnne
+ * \param[out]    dlmo          inverse of Obukhov length
  * \param[out]    ustar         friction velocity
  * \param[out]    uk            friction velocity
  * \param[out]    yplus         dimensionless distance to the wall
@@ -221,6 +350,13 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
                            cs_real_t         rough_d,
                            cs_real_t         rnnb,
                            cs_real_t         kinetic_en,
+                           cs_real_t         rough_t,
+                           cs_real_t         buoyant_param,
+                           cs_real_t         delta_t,
+                           cs_real_t         turb_prandtl,
+                           cs_real_t         icodcl_th_fid,
+                           cs_real_t         flux,
+                           cs_field_t       *f_th,
                            int              *iuntur,
                            cs_gnum_t        *nsubla,
                            cs_gnum_t        *nlogla,
@@ -229,7 +365,11 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
                            cs_real_t        *yplus,
                            cs_real_t        *ypup,
                            cs_real_t        *cofimp,
-                           cs_real_t        *dplus)
+                           cs_real_t        *dplus,
+                           cs_real_t        *cfnns,
+                           cs_real_t        *cfnnk,
+                           cs_real_t        *cfnne,
+                           cs_real_t        *dlmo)
 {
   cs_real_t lmk;
   bool wf = true;
@@ -286,19 +426,22 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
                                  cofimp);
     break;
   case CS_WALL_F_2SCALES_LOG:
-    cs_wall_functions_2scales_log(l_visc,
-                                  t_visc,
-                                  vel,
-                                  y,
-                                  kinetic_en,
-                                  iuntur,
-                                  nsubla,
-                                  nlogla,
-                                  ustar,
-                                  uk,
-                                  yplus,
-                                  ypup,
-                                  cofimp);
+    cs_wall_functions_2scales_smooth_rough(l_visc,
+                                           t_visc,
+                                           vel,
+                                           y,
+                                           rough_d,
+                                           kinetic_en,
+                                           iuntur,
+                                           nsubla,
+                                           nlogla,
+                                           ustar,
+                                           uk,
+                                           yplus,
+                                           dplus,
+                                           ypup,
+                                           cofimp);
+
     break;
   case CS_WALL_F_SCALABLE_2SCALES_LOG:
     cs_wall_functions_2scales_scalable(l_visc,
@@ -373,6 +516,166 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
 
   /* To be coherent with a wall function, clip it to 0 */
   *cofimp = cs::max(*cofimp, 0.);
+  /* Louis or Monin Obukhov wall function for atmospheric flows */
+  cs_real_t yk = 0;
+  const cs_wall_f_s_type_t iwalfs = cs_glob_wall_functions->iwalfs;
+
+  const cs_real_t xkappa = cs_turb_xkappa;
+
+  //TODO buoyant correction (atmospheric flows)
+  // Louis or Monin-Obukhov
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1
+      && iwalfs != CS_WALL_F_S_MONIN_OBUKHOV) {
+    yk =  *uk * y / l_visc;
+    /* 1/U+ for neutral */
+    const cs_real_t duplus = *ypup / yk;
+
+    /* 1/T+
+     * "y+_t" tends to "y/rough_t" for rough regime and to "y+k"
+     * times a shift for smooth regime
+     *
+     * Rough regime reads:
+     *   T+ = Prt/kappa ln(y/rough_t) = Prt * (ln(y/zeta)/kappa + 8.5)
+     *      = Prt/kappa ln[y/zeta * exp(8.5 kappa)]
+     *
+     * Note zeta_t = rough_t * exp(8.5 kappa)
+     *
+     * Question: is 8.5 really in factor of Prt?
+     *
+     * Smooth regime reads:
+     * T+ = Prt *(ln(y uk/nu)/kappa + 5.2)
+     *    = Prt/kappa ln[y uk*exp(5.2 kappa) / nu]
+     *
+     * Mixed regime reads:
+     *   T+ = Prt/kappa ln[y uk*exp(5.2 kappa)/(nu + alpha uk zeta)]
+     *      = Prt/kappa ln[  y uk*exp(5.2 kappa)
+     *                   / (nu + alpha uk rough_t * exp(8.5 kappa))]
+     *      = Prt/kappa ln[  y uk*exp(5.2 kappa)
+     *                   / (nu + alpha uk rough_t * exp(8.5 kappa))]
+     * with
+     *   alpha * exp(8.5 kappa) / exp(5.2 kappa) = 1
+     * ie
+     *   alpha = exp(-(8.5-5.2) kappa) = 0.25
+     * so
+     *   T+ = Prt/kappa ln[  y uk*exp(5.2 kappa)
+     *                   / (nu + uk rough_t * exp(5.2 kappa))]
+     *      = Prt/kappa ln[y+k / (exp(-5.2 kappa) + uk rough_t/nu)]
+     */
+
+    /* shifted y+ */
+    /* FIXME use log constant */
+    const cs_real_t yplus_t
+      = yk / (exp(-xkappa * 5.2) + *uk *rough_t / l_visc);
+    /* 1/T+ for neutral */
+    bft_printf("xkappa: %f", xkappa);
+    bft_printf("yplus_t: %f", yplus_t);
+    bft_printf("turb_prandtl: %f", turb_prandtl);
+
+    const cs_real_t dtplus = xkappa / log(yplus_t) / turb_prandtl;
+
+    _atmo_louis(vel,
+                rough_d,
+                y,
+                duplus,
+                dtplus,
+                turb_prandtl,
+                yplus_t,
+                buoyant_param,
+                delta_t,
+                ustar,
+                cfnns,
+                cfnnk,
+                cfnne,
+                dlmo);
+
+    /* Dimensionless velocity, recomputed and therefore may
+       take stability into account */
+
+    cs_real_t uplus = vel / *ustar;
+
+    /* y+/U+ for non neutral is recomputed */
+    *ypup = yk / cs::max(uplus, cs_math_epzero);
+
+  }
+
+  else if (iwalfs == CS_WALL_F_S_MONIN_OBUKHOV) {
+    /* Compute local LMO */
+    if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
+
+      cs_mo_compute_from_thermal_diff(y,
+                                      rough_d,
+                                      vel,
+                                      buoyant_param,
+                                      delta_t,
+                                      dlmo,
+                                      ustar);
+
+    /* Take stability into account for the turbulent velocity scale */
+    cs_real_t coef_mom = cs_mo_phim(y + rough_d, *dlmo);
+    const cs_real_t one_minus_ri
+      = 1 - (y + rough_d) * *dlmo / coef_mom;
+    }
+
+    else if (icodcl_th_fid == 3) {
+
+      cs_mo_compute_from_thermal_flux(y,
+                                      rough_d,
+                                      vel,
+                                      buoyant_param,
+                                      flux,
+                                      dlmo,
+                                      ustar);
+    }
+    else {
+
+    /* No temperature delta: neutral */
+    const cs_real_t dt = 0., _beta = 0., gredu = 0.;
+
+    cs_mo_compute_from_thermal_diff(y,
+                                    rough_d,
+                                    vel,
+                                    buoyant_param,
+                                    delta_t,
+                                    dlmo,
+                                    ustar);
+  }
+
+  /* Take stability into account for the turbulent velocity scale */
+  cs_real_t coef_mom = cs_mo_phim(y + rough_d, *dlmo);
+  const cs_real_t one_minus_ri
+    = 1 - (y + rough_d) * (*dlmo) / coef_mom;
+
+  if (one_minus_ri > 0) {
+    /* Warning: overwritting uk, yplus should be recomputed */
+    *uk = *uk / pow(one_minus_ri, 0.25);
+    *yplus = y * (*uk) / l_visc;
+
+    /* Epsilon should be modified as well to get
+       P+G = P(1-Ri) = epsilon
+       P = -R_tn dU/dn = uk^2 uet Phi_m / (kappa z) */
+    *cfnne = one_minus_ri * coef_mom;
+    /* Nothing done for the moment for really high stability */
+  }
+  else {
+    *cfnne = 1.;
+  }
+    /* Boundary condition on the velocity to have approximately
+        the correct turbulence production */
+    coef_mom = cs_mo_phim(y+rough_d, *dlmo);
+    const cs_real_t coef_momm = cs_mo_phim(2 * y + rough_d, *dlmo);
+    cs_real_t rcprod =   2*y*sqrt(  xkappa*(*uk)*coef_mom/t_visc
+                                / (y+rough_d))
+              - coef_momm / (2.0 + rough_d / y);
+
+    *iuntur = 1;
+    const cs_real_t _uplus = vel / *ustar;
+    /* Coupled solving of the velocity components
+        The boundary term for velocity gradient is implicit
+        modified for non neutral boundary layer (in uplus) */
+    *cofimp  = cs::min(cs::max(1-1/(xkappa*_uplus) * rcprod, 0),
+                      1);
+    yk = y * (*uk) / l_visc;
+  } /* End Monin Obukhov */
 }
 
 /*----------------------------------------------------------------------------*/

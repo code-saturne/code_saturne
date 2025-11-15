@@ -1913,9 +1913,8 @@ cs_mo_psih(cs_real_t              z,
  * \param[in]  z             altitude
  * \param[in]  z0
  * \param[in]  du            velocity difference
+ * \param[in]  buoyant_param beta g
  * \param[in]  dt            thermal difference
- * \param[in]  beta          thermal expansion
- * \param[in]  gredu
  * \param[out] dlmo          Inverse Monin Obukhov length
  * \param[out] ustar         friction velocity
  */
@@ -1925,9 +1924,8 @@ void
 cs_mo_compute_from_thermal_diff(cs_real_t   z,
                                 cs_real_t   z0,
                                 cs_real_t   du,
+                                cs_real_t   buoyant_param,
                                 cs_real_t   dt,
-                                cs_real_t   beta,
-                                cs_real_t   gredu,
                                 cs_real_t   *dlmo,
                                 cs_real_t   *ustar)
 {
@@ -1970,7 +1968,7 @@ cs_mo_compute_from_thermal_diff(cs_real_t   z,
     coef_moh_old = coef_moh;
 
     /* Update LMO */
-    cs_real_t num = beta * cs_math_pow2(coef_mom) * gredu * dt;
+    cs_real_t num = buoyant_param * cs_math_pow2(coef_mom) * dt;
     cs_real_t denom = cs_math_pow2(du) * coef_moh;
     if (fabs(denom) > (cs_math_epzero * fabs(num)))
       *dlmo = num / denom;
@@ -2002,9 +2000,8 @@ cs_mo_compute_from_thermal_diff(cs_real_t   z,
  * \param[in]  z             altitude
  * \param[in]  z0
  * \param[in]  du            velocity difference
+ * \param[in]  buoyant_param  beta g
  * \param[in]  flux          thermal flux
- * \param[in]  beta          thermal expansion
- * \param[in]  gredu
  * \param[out] dlmo          Inverse Monin Obukhov length
  * \param[out] ustar         friction velocity
  */
@@ -2014,9 +2011,8 @@ void
 cs_mo_compute_from_thermal_flux(cs_real_t   z,
                                 cs_real_t   z0,
                                 cs_real_t   du,
+                                cs_real_t   buoyant_param,
                                 cs_real_t   flux,
-                                cs_real_t   beta,
-                                cs_real_t   gredu,
                                 cs_real_t   *dlmo,
                                 cs_real_t   *ustar)
 {
@@ -2049,7 +2045,7 @@ cs_mo_compute_from_thermal_flux(cs_real_t   z,
     coef_mom_old = coef_mom;
 
     /* Update LMO */
-    cs_real_t num = beta * cs_math_pow3(coef_mom) * gredu * flux;
+    cs_real_t num = buoyant_param * cs_math_pow3(coef_mom) * flux;
     cs_real_t denom = cs_math_pow3(du) * cs_math_pow2(kappa);
 
     if (fabs(denom) > (cs_math_epzero * fabs(num)))

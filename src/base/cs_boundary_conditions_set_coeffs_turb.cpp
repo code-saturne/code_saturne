@@ -1257,485 +1257,6 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
   CS_FREE(hint);
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute hflui and uiptn for smooth wall
- *
- * \param[in]        c_id         cell id
- * \param[in]        visclc       kinematic viscosity
- * \param[in]        visctc       turbulent kinematic viscosity
- * \param[in]        romc         density evaluated at cell_id
- * \param[in]        distbf       distance between the cell center and
-                                  the center of gravity of the border face
- * \param[in]        utau         tangential mean velocity
- * \param[in]        uet          boundary ustar value
- * \param[in]        uk           dimensionless velocity
- * \param[in]        yplus        dimensionless distance to the wall
- * \param[in]        ypup         yplus projected vel ratio
- * \param[in]        dplus        dimensionless shift to the wall for scalable
- *                                wall functions
- * \param[inout]     hflui        internal exchange coefficient
- * \param[inout]     uiptn        counter of reversal layer
- *
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_update_physical_quantities_smooth_wall(const cs_lnum_t  c_id,
-                                        const cs_real_t  visclc,
-                                        const cs_real_t  visctc,
-                                        const cs_real_t  romc,
-                                        const cs_real_t  distbf,
-                                        const cs_real_t  utau,
-                                        const cs_real_t  uet,
-                                        const cs_real_t  uk,
-                                        const cs_real_t  yplus,
-                                        const cs_real_t  ypup,
-                                        const cs_real_t  dplus,
-                                        cs_real_t       *hflui,
-                                        cs_real_t       *uiptn)
-
-{
-  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
-  const cs_real_t xkappa = cs_turb_xkappa;
-  const cs_turb_model_type_t  model =
-    static_cast<cs_turb_model_type_t>(cs_glob_turb_model->model);
-  const int itytur = cs_glob_turb_model->itytur;
-  const int order = cs_glob_turb_model->order;
-  const int type = cs_glob_turb_model->type;
-
-  /* Deprecated power law (Werner & Wengle) */
-  if (cs_glob_wall_functions->iwallf == CS_WALL_F_1SCALE_POWER) {
-    *uiptn  =    utau + uet * cs_turb_apow * cs_turb_bpow
-              * pow(yplus, cs_turb_bpow)*(pow(2, cs_turb_bpow - 1) - 2);
-  }
-
-  /* Dependent on the turbulence Model */
-  else {
-
-    /* uiptn respects the production of k
-       in a conditional manner --> rcprod coefficient */
-
-    /* k-epsilon and k-omega
-       --------------------- */
-
-    if (itytur == 2 || model == CS_TURB_K_OMEGA) {
-
-      const cs_real_t xmutlm = xkappa * visclc * (yplus + dplus);
-      /* FIXME should be efvisc... */
-
-      const cs_real_t mut_lm_dmut
-        = (cs_mesh_quantities_cell_is_active(fvq, c_id) == 1) ?
-        (xmutlm / visctc) : 0;
-
-      /* If yplus=0, uiptn is set to 0 to avoid division by 0.
-         By the way, in this case: iuntur=0 */
-
-      if (yplus > cs_math_epzero) { /* TODO use iuntur == 1 */
-        /* FIXME not valid for rough */
-        cs_real_t rcprod = cs::min(xkappa,
-                                     cs::max(1.0,sqrt(mut_lm_dmut))
-                                   / (yplus+dplus));
-
-        *uiptn =   utau - distbf * uet * uk * romc / xkappa / visclc
-                 * (2.0 * rcprod - 1.0 / (2.0 * yplus + dplus));
-      }
-      else {
-        *uiptn = 0.;
-      }
-
-    }
-
-    /* No turbulence, mixing length or Rij-espilon
-       -------------------------------------------*/
-
-    else if (   model == CS_TURB_NONE || model == CS_TURB_MIXING_LENGTH
-             || order == CS_TURB_SECOND_ORDER) {
-
-      /* In the case of elliptic weighting, we should ignore the wall laws.
-         So we use a test on the turbulence model:
-         With LRR or SSG use wall laws, with EBRSM, use no-slip condition. */
-
-      if (model == CS_TURB_RIJ_EPSILON_EBRSM || model ==  CS_TURB_NONE) {
-        *uiptn = 0.;
-
-      }
-      else {
-
-        /* If yplus=0, uiptn is set to 0 to avoid division by 0.
-           By the way, in this case: iuntur = 0 */
-        if (yplus > cs_math_epzero) /* FIXME use iuntur */
-          *uiptn =   utau - distbf * romc * uet * uk / xkappa / visclc
-                   * (2.0 / (yplus + dplus) - 1.0 / (2.0 * yplus + dplus));
-        else
-          *uiptn = 0.;
-
-      }
-    }
-
-    /* LES and Spalart Allmaras
-       ------------------------ */
-
-    else if (type == CS_TURB_LES || model == CS_TURB_SPALART_ALLMARAS) {
-
-      *uiptn  = utau - 1.5 * uet / xkappa;
-
-    }
-
-    /* v2f
-       --- */
-
-    else if (itytur == 5) {
-
-      /* With these conditions, no need to compute uiptmx, uiptmn
-         and iuiptn which are 0 (initialization value) */
-      *uiptn  = 0.;
-
-    }
-  }
-
-  /* Implicit the term (rho*uet*uk)
-   * hflui is always mu/d * y+/U+
-   * */
-  *hflui = visclc / distbf * ypup;
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Update physical quantities for rough wall.
- * TODO Should be moved to cs_wall_functions_velocity
- *
- * \param[in]         visclc       kinematic viscosity
- * \param[in]         visctc       turbulent kinematic viscosity
- * \param[in]         romc         density
- * \param[in]         distbf       distance between the cell center and
-                                   the center of gravity of the border face
- * \param[in]         utau         tangential mean velocity
- * \param[in]         uet          friction velocity
- * \param[in]         uk           friction velocity
- * \param[in]         uplus        dimensionless velocity
- * \param[in]         dplus        dimensionless shift to the wall for scalable
- *                                 wall functions
- * \param[in]         rough_d      roughness length scale (not sand grain)
- * \param[in]         dlmo         inverse Monin Obukhov length (for log only)
- * \param[in,out]     iuntur       indicator: 0 in the viscous sublayer
- * \param[in,out]     nlogla       counter of cell in the log-layer
- * \param[in,out]     nsubla       counter of cell in the viscous sublayer
- * \param[in,out]     cofimp       \f$\frac{|U_F|}{|U_I^p|}\f$ to ensure a good
- *                                 turbulence production
- * \param[in,out]     hflui        internal exchange coefficient
- * \param[in,out]     uiptn        counter of reversal layer
- *
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_update_physical_quantities_rough_wall(const cs_real_t  visclc,
-                                       const cs_real_t  visctc,
-                                       const cs_real_t  romc,
-                                       const cs_real_t  distbf,
-                                       const cs_real_t  utau,
-                                       const cs_real_t  uet,
-                                       const cs_real_t  uk,
-                                       const cs_real_t  uplus,
-                                       const cs_real_t  rough_d,
-                                       const cs_real_t  dlmo,
-                                       int             *iuntur,
-                                       cs_gnum_t       *nlogla,
-                                       cs_gnum_t       *nsubla,
-                                       cs_real_t       *cofimp,
-                                       cs_real_t       *hflui,
-                                       cs_real_t       *uiptn)
-{
-  const cs_real_t xkappa = cs_turb_xkappa;
-  const cs_turb_model_type_t model =
-    static_cast<cs_turb_model_type_t>(cs_glob_turb_model->model);
-  const int itytur = cs_glob_turb_model->itytur;
-  const cs_wall_f_s_type_t iwalfs = cs_glob_wall_functions->iwalfs;
-
-  /* uiptn respecte la production de k
-     de facon conditionnelle --> Coef RCPROD
-
-     All turbulence models (except v2f and EBRSM)
-    -------------------------------------------- */
-
-  if (   model == CS_TURB_NONE || itytur == 2 || itytur == 4
-      || model == CS_TURB_K_OMEGA
-      || model == CS_TURB_MIXING_LENGTH
-      || model == CS_TURB_RIJ_EPSILON_LRR
-      || model == CS_TURB_RIJ_EPSILON_SSG
-      || model == CS_TURB_RIJ_EPSILON_BFH
-      || model == CS_TURB_SPALART_ALLMARAS) {
-
-    if (visctc > cs_math_epzero) {
-
-      /* Pseudo shift of wall by rough_d ((distbf+rough_d)/rough_d) */
-      const cs_real_t distb0 = distbf + rough_d;
-
-      /* FIXME uk not modified for Louis yet.... */
-      const cs_real_t xmutlm = xkappa * uk * distb0 * romc;
-
-      if (iwalfs != CS_WALL_F_S_MONIN_OBUKHOV) {
-
-        const cs_real_t var
-          =  2.0 * sqrt(xmutlm/visctc) - distb0/distbf/(2.0 + rough_d / distb0);
-
-        cs_real_t rcprod = distbf / distb0 * cs::max(1.0, var);
-
-        /* Ground apparent velocity (for log only) */
-        *uiptn  = cs::max(utau - uet/xkappa * rcprod, 0.0);
-        *iuntur = 1;
-        *nlogla = *nlogla + 1;
-
-        /* Coupled solving of the velocity components
-           The boundary term for velocity gradient is implicit
-           modified for non neutral boundary layer (in uplus) */
-
-        *cofimp  = cs::max(1.0 - 1.0/(xkappa*uplus) * rcprod, 0.0);
-
-        /*The term (rho*uet*uk) is implicit */
-
-        /* TODO merge with MO without this max */
-        const cs_real_t rcflux = cs::max(xmutlm, visctc) / distb0;
-
-        *hflui = rcflux / (xkappa * uplus);
-      }
-      /* Monin Obukhov */
-      else {
-
-        /* Boundary condition on the velocity to have approximately the good
-           turbulence production */
-
-        const cs_real_t coef_mom = cs_mo_phim(distbf+rough_d, dlmo);
-        const cs_real_t coef_momm = cs_mo_phim(2.0*distbf+rough_d, dlmo);
-
-        cs_real_t rcprod =   2*distbf*sqrt( xkappa*uk*romc*coef_mom/visctc/distb0 )
-                 - coef_momm / (2.0 + rough_d / distbf);
-
-        /* Ground apparent velocity (for log only) */
-        *uiptn  = cs::max(utau - uet/xkappa * rcprod, 0.0);
-        *iuntur = 1;
-        *nlogla = *nlogla + 1;
-
-        /* Coupled solving of the velocity components
-          The boundary term for velocity gradient is implicit
-          modified for non neutral boundary layer (in uplus) */
-
-        *cofimp  = cs::min(cs::max(1. - 1./(xkappa*uplus) * rcprod, 0),
-                           1);
-
-        /* The term (rho*uet*uk) is implicit */
-        *hflui = romc * uk / uplus;
-
-      }
-
-    }
-    /* In the viscous sub-layer */
-    else {
-      *uiptn  = 0.0;
-      *iuntur = 0;
-      *nsubla = *nsubla + 1;
-
-      /* Coupled solving of the velocity components */
-      *cofimp  = 0.0;
-      *hflui = visclc / distbf;
-    }
-
-  }
-
-  /* Clipping :
-     We bound U_f, grad between 0 and Utau (we could probably do better...)
-     - 0    : forbid inversion at boundary, which is in contradiction
-              with the log law hypothesis.
-     - Utau : the turbulent production cannot be zero.
-              We prevent U_f, flux from being negative */
-
-  /* v2f and EBRSM !FIXME EBRSM
-     --------------------------*/
-
-  else if (itytur == 5) {
-
-    /* With these conditions, no need to compute uiptmx, uiptmn
-       and iuiptn which are zero (initialization value) */
-    *iuntur = 0;
-    *uiptn = 0.0;
-
-    /* Coupled solving of the velocity components */
-    *hflui = (visclc + visctc) / distbf;
-    *cofimp = 0.0;
-
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute friction velocity u* and surface sensible heat flux q0
- * for a non neutral atmospheric surface layer using the explicit formula
- * developed for the ECMWF by Louis (1982)
-
- * \param[in]     ifac        treated boundary face
- * \param[in]     utau        tangential mean velocity
- * \param[in]     rough_d     roughness z0
- * \param[in]     duplus      1 over dimensionless velocity in neutral
- *                            conditions
- * \param[in]     dtplus      1 over dimensionless temperature in neutral
- *                            conditions
- * \param[in]     yplus_t     thermal dimensionless wall distance
- * \param[out]    uet         friction velocity
- * \param[out]    gredu       reduced gravity for non horizontal wall
- * \param[out]    cfnns       non neutral correction coefficients for profiles
-                              of scalar
- * \param[out]    cfnnk       non neutral correction coefficients
-                              for profiles of k
- * \param[out]    cfnne       non neutral correction coefficients
-                              for profiles of eps
- * \param[out]    dlmo        inverse Monin Obukhov length (for log only)
- * \param[in]     temp        potential temperature in boundary cell
- * \param[in]     totwt       total water content in boundary cell
- * \param[in]     liqwt       liquid water content in boundary cell
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_atmo_cls(const cs_lnum_t  f_id,
-          const cs_real_t  utau,
-          const cs_real_t  rough_d,
-          const cs_real_t  duplus,
-          const cs_real_t  dtplus,
-          const cs_real_t  yplus_t,
-          cs_real_t       *uet,
-          const cs_real_t  gredu,
-          cs_real_t       *cfnns,
-          cs_real_t       *cfnnk,
-          cs_real_t       *cfnne,
-          cs_real_t       *dlmo,
-          const cs_real_t  temp,
-          const cs_real_t  totwt,
-          const cs_real_t  liqwt)
-{
-  CS_PROFILE_FUNC_RANGE();
-
-  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
-  const cs_lnum_t nt_cur = cs_glob_time_step->nt_cur;
-
-  cs_field_t *f_th = cs_thermal_model_field();
-  const cs_real_t *rcodcl1_th = f_th->bc_coeffs->rcodcl1;
-  const int *icodcl_th = f_th->bc_coeffs->icodcl;
-
-  cs_field_t *ym_water = cs_field_by_name_try("ym_water");
-  cs_real_t *rcodcl1_ymw = (ym_water != nullptr) ?
-    ym_water->bc_coeffs->rcodcl1 : nullptr;
-
-  const cs_real_t *b_dist = fvq->b_dist;
-  const cs_real_t distbf = b_dist[f_id];
-
-  const cs_real_t rvsra = cs_glob_fluid_properties->rvsra;
-
-  /* Initializations
-     --------------- */
-
-  const cs_real_t b = 5.0;
-  const cs_real_t c = b;
-  const cs_real_t d = b;
-
-  /* TODO: Take into account humidity in ratio r/cp */
-  /*
-  const cs_real_t cpvcpa = cs_glob_air_props->cp_v / cs_glob_air_props->cp_a;
-
-  const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
-  const cs_real_t cp0 = fluid_props->cp0;
-  const cs_real_t rair = fluid_props->r_pg_cnst;
-
-  cs_real_t rscp1, rscp2;
-  if (ym_water != nullptr) {
-    rscp1 = (rair / cp0) * (1.0 + (rvsra-cpvcpa) * rcodcl1_ymw[f_id]);
-    // Bouzerau PhD
-    rscp2 = (rair / cp0) * (1.0 + (rvsra-cpvcpa) * (totwt-liqwt));
-  }
-  else {
-    rscp1 = rair / cp0;
-    rscp2 = rair / cp0;
-  }
-  */
-
-  const cs_real_t tpot1 = rcodcl1_th[f_id];
-  const cs_real_t tpot2 = temp;
-
-  /* Compute virtual potential temperature at two levels */
-  cs_real_t tpotv1, tpotv2;
-  if (ym_water != nullptr) {
-    tpotv1 = tpot1 * (1.0 + (rvsra - 1.0) * rcodcl1_ymw[f_id]);
-      /* Bouzerau PhD */
-    tpotv2 = tpot2 * (1.0 + (rvsra - 1.0) * (totwt-liqwt));
-  }
-  else {
-    tpotv1 = tpot1;
-    tpotv2 = tpot2;
-  }
-
-  /* Patch for the initial time step when thermal field is not initalized */
-  if (nt_cur == 1)
-    tpotv2 = tpotv1;
-
-  /* Compute layer average Richardson number */
-
-  /* NB: rib = 0 if thermal flux conditions are imposed and tpot1 not defined */
-  cs_real_t rib;
-  if (cs::abs(utau) < cs_math_epzero || icodcl_th[f_id] == 3)
-    rib = 0.0;
-  else
-    rib = 2*gredu*distbf*(tpotv2 - tpotv1)/(tpotv1 + tpotv2)/utau/utau;
-
-  /* Compute correction factors based on ECMWF parametrisation
-     Louis (1982) */
-
-  cs_real_t fm, fh, fmden1, fmden2, fhden;
-  if (rib >= cs_math_epzero) {
-    /* Stable case */
-    fm = 1.0 / (1.0 + 2.0*b*rib/sqrt(1.0 + d*rib));
-    fh = 1.0 / (1.0 + 3.0*b*rib*sqrt(1.0 + d*rib));
-  }
-  else {
-    /* Unstable case */
-    fmden1 = (yplus_t + 1.0) * cs::abs(rib);
-    fmden2 = 1.0 + 3.0 * b * c * duplus *dtplus * sqrt(fmden1);
-    fm = 1.0 - 2.0 * b * rib / fmden2;
-    fhden = 3.0 * b * c * duplus * dtplus * sqrt(yplus_t + 1.0);
-    fh = 1.0 - (3.0*b*rib)/(1.0 + fhden * sqrt(cs::abs(rib)));
-  }
-
-  if (fm <= cs_math_epzero)
-    fm = cs_math_epzero;
-
-  if (cs::abs(fh) <= cs_math_epzero)
-    fh = cs_math_epzero;
-
-  if ((1.0-rib) > cs_math_epzero) {
-    *cfnnk = sqrt(1.0 - rib); /* +correction with turbulent Prandtl */
-    *cfnne = (1.0 - rib) / sqrt(fm);
-  }
-  else {
-    *cfnnk = 1.0;
-    *cfnne = 1.0;
-  }
-
-  /* Note: non neutral correction coefficients for profiles of wind
-     (Re) compute friction velocity uet (for non neutral)
-     uet = U/U^+ = U / U^{+,n} * sqrt(fm) */
-  *uet = duplus * utau * sqrt(fm);
-
-  /* Compute surface sensible heat flux q0 (can be useful for post-processing)
-     Note: non-consistent with two velocity scales */
-  *cfnns = fh / sqrt(fm);
-  //const cs_real_t q0 = (tpot1 - tpot2) * (*uet) * dtplus * (*cfnns);
-  /* FIXME tet should be output as uet is... */
-
-  /* Compute local Obukhov inverse length for log
-     1/L =  Ri / (z Phim) */
-  *dlmo = rib * sqrt(fm) / (distbf + rough_d);
-}
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -1848,7 +1369,6 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
   cs_real_t cofimp = 0;
   cs_real_t ek = 0.;
-  cs_real_t uiptn = 0;
   cs_real_t rnnb = 0;
 
   cs_real_t uet = 1;
@@ -2020,10 +1540,6 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     }
   }
 
-  /* min. and max. of wall tangential velocity */
-  cs_real_t uiptmx = -cs_math_big_r;
-  cs_real_t uiptmn = cs_math_big_r;
-
   /* min. and max. of wall friction velocity */
   cs_real_t uetmax = -cs_math_big_r;
   cs_real_t uetmin =  cs_math_big_r;
@@ -2066,13 +1582,6 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
   /* See the different model */
   const cs_real_t cl = 1.0 / (0.5 + 0.75 * cs_turb_crij_c0);
-
-  /* With v2f type model, (phi-fbar et BL-v2/k) u=0 is set directly, so
-     uiptmx and uiptmn are necessarily 0 */
-  if (itytur == 5) {
-    uiptmx = 0;
-    uiptmn = 0;
-  }
 
   /* Pointers to specific fields */
   cs_real_t *byplus = nullptr, *bdplus = nullptr, *bdlmo = nullptr;
@@ -2252,13 +1761,86 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       rnnb = cs_math_3_sym_33_3_dot_product(n, cvar_rij[c_id], n);
       rttb = cs_math_3_sym_33_3_dot_product(txyz, cvar_rij[c_id], txyz);
     }
-
     const cs_real_t rough_d = (rough != nullptr) ? bpro_rough[f_id] : 0;
+    const cs_real_t brough_t = (rough_t != nullptr) ? bpro_rough_t[f_id] : 0;
 
-    int iuntur;
+    // const cs_real_t brough_t = bpro_rough_t[f_id];
+     int iuntur;
     cs_real_t uk, ypup, dplus, yplus;
+    cs_real_t  icodcl_th_fid;
 
-    if (icodcl_vel[f_id] == 5) {
+
+    // Buoyant parameter: g beta
+    // it will be multiplied by delta Theta v
+    cs_real_t buoyant_param = 0.;
+    cs_real_t delta_t = 0.;
+    cs_real_t *rcodcl1_th = nullptr;
+    if (f_th != nullptr) {
+      rcodcl1_th = f_th->bc_coeffs->rcodcl1;
+      delta_t = theipb[f_id]-rcodcl1_th[f_id];
+    }
+
+    cs_real_t _beta = 0.;
+    if (cpro_beta != nullptr)
+      _beta = cpro_beta[c_id];
+    buoyant_param = _beta * cs_math_3_dot_product(gxyz, n);
+    cs_real_t flux;
+
+    /* Atmospheric Louis wall functions for rough wall */
+    if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
+
+      cs_field_t *f_th = cs_thermal_model_field();
+      const int *icodcl_th = f_th->bc_coeffs->icodcl;
+      cs_real_t  icodcl_th_fid = icodcl_th[f_id];
+
+      cs_field_t *ym_water = cs_field_by_name_try("ym_water");
+      cs_real_t *rcodcl1_ymw = (ym_water != nullptr) ?
+        ym_water->bc_coeffs->rcodcl1 : nullptr;
+      const cs_real_t temp = cvar_t[c_id];
+      cs_real_t totwt = 0.;
+      cs_real_t liqwt = 0.;
+
+      if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == 2) {
+        totwt = cvar_totwt[c_id];
+        liqwt = cpro_liqwt[c_id];
+      }
+
+      const cs_real_t tpot1 = rcodcl1_th[f_id];
+      const cs_real_t tpot2 = temp;
+      const cs_real_t rvsra = cs_glob_fluid_properties->rvsra;
+
+      /* Compute virtual potential temperature at two levels */
+      cs_real_t tpotv1, tpotv2;
+      // beta (thermal expansion)
+      if (ym_water != nullptr) {
+        tpotv1 = tpot1 * (1.0 + (rvsra - 1.0) * rcodcl1_ymw[f_id]);
+        /* Bouzerau PhD */
+        tpotv2 = tpot2 * (1.0 + (rvsra - 1.0) * (totwt-liqwt));
+      }
+      else {
+        tpotv1 = tpot1;
+        tpotv2 = tpot2;
+      }
+      delta_t = (tpotv2 - tpotv1);
+
+
+      buoyant_param = _beta * cs_math_3_dot_product(gxyz, n);
+
+      /* NB: rib = 0 if thermal flux conditions are imposed and
+       * tpot1 not defined */
+      if (icodcl_th[f_id] == 3)
+        delta_t = 0.;
+
+        const cs_real_t *rcodcl3_th = f_th->bc_coeffs->rcodcl3;
+        const cs_real_t cpp = (icp >= 0) ? cpro_cp[c_id] : cp0;
+        flux = rcodcl3_th[f_id] / romc / cpp;
+    }
+
+    cs_real_t dlmo = 0, yk = 0;
+    // Wall functions, smooth.
+    // TODO == 6 To be removed
+    if (  icodcl_vel[f_id] == 5
+        || icodcl_vel[f_id] == 6) {
 
       cs_wall_f_type_t iwallf_loc = cs_glob_wall_functions->iwallf;
       if (fvq->has_disable_flag) {
@@ -2274,6 +1856,13 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
                                  rough_d,
                                  rnnb,
                                  ek,
+                                 brough_t,
+                                 buoyant_param,
+                                 delta_t,
+                                 turb_prandtl,
+                                 icodcl_th_fid,
+                                 flux,
+                                 f_th,
                                  &iuntur,
                                  &nsubla,
                                  &nlogla,
@@ -2282,281 +1871,22 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
                                  &yplus,
                                  &ypup,
                                  &cofimp,
-                                 &dplus);
+                                 &dplus,
+                                 &cfnns,
+                                 &cfnnk,
+                                 &cfnne,
+                                 &dlmo);
 
     }
-    else if (icodcl_vel[f_id] == 6) {
-
-      /* Neutral value, might be overwritten after */
-      uk = sqrt(sqrt(cs_turb_cmu) * ek);
-
-      /* NB: for rough walls, yplus is computed from the roughness and not uk */
-      assert(rough != nullptr);
-      yplus = distbf / rough_d;
-
-    }
-
-    /* Louis or Monin Obukhov wall function for atmospheric flows */
-
-    cs_real_t dlmo = 0, yk = 0;
-
-    if (iwalfs != CS_WALL_F_S_MONIN_OBUKHOV) {
-
-      /* rough wall */
-      if (icodcl_vel[f_id] == 6) {
-
-        /* ustar for neutral, may be modified after */
-        uet = utau / log(yplus+1.0) * xkappa;
-
-        /* Dimensionless velocity, neutral wall function,
-           may be modified after */
-        const cs_real_t _uplus = log(yplus+1.0) / xkappa;
-
-        /* Atmospheric Louis wall functions for rough wall */
-        if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
-
-          const cs_real_t gredu = cs_math_3_dot_product(gxyz, n);
-          const cs_real_t temp = cvar_t[c_id];
-          cs_real_t totwt = 0.;
-          cs_real_t liqwt = 0.;
-
-          if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == 2) {
-            totwt = cvar_totwt[c_id];
-            liqwt = cpro_liqwt[c_id];
-          }
-
-          /* 1/U+ for neutral */
-          const cs_real_t duplus = 1.0 / _uplus;
-
-          const cs_real_t brough_t = bpro_rough_t[f_id];
-          const cs_real_t yplus_t = distbf / brough_t;
-
-          /* 1/T+ for neutral */
-          const cs_real_t dtplus
-            = xkappa / log((distbf + brough_t) / brough_t);
-
-          _atmo_cls(f_id,
-                    utau,
-                    rough_d,
-                    duplus,
-                    dtplus,
-                    yplus_t,
-                    &uet,
-                    gredu,
-                    &cfnns,
-                    &cfnnk,
-                    &cfnne,
-                    &dlmo,
-                    temp,
-                    totwt,
-                    liqwt);
-
-        }
-
-      }
-      /* Louis for the smooth wall case */
-      else if (   iwalfs == CS_WALL_F_S_LOUIS && icodcl_vel[f_id] == 5
-               && cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
-
-        /* Compute reduced gravity for non horizontal walls */
-        const cs_real_t gredu = cs_math_3_dot_product(gxyz, n);
-        const cs_real_t temp = cvar_t[c_id];
-        cs_real_t totwt = 0.;
-        cs_real_t liqwt = 0.;
-
-        if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == 2) {
-          totwt = cvar_totwt[c_id];
-          liqwt = cpro_liqwt[c_id];
-        }
-
-        yk = distbf * uk / xnuii;
-        /* 1/U+ for neutral */
-        const cs_real_t duplus = ypup / yk;
-        const cs_real_t brough_t = bpro_rough_t[f_id];
-
-        /* 1/T+
-         * "y+_t" tends to "y/rough_t" for rough regime and to "y+k"
-         * times a shift for smooth regime
-         *
-         * Rough regime reads:
-         *   T+ = Prt/kappa ln(y/rough_t) = Prt * (ln(y/zeta)/kappa + 8.5)
-         *      = Prt/kappa ln[y/zeta * exp(8.5 kappa)]
-         *
-         * Note zeta_t = rough_t * exp(8.5 kappa)
-         *
-         * Question: is 8.5 really in factor of Prt?
-         *
-         * Smooth regime reads:
-         * T+ = Prt *(ln(y uk/nu)/kappa + 5.2)
-         *    = Prt/kappa ln[y uk*exp(5.2 kappa) / nu]
-         *
-         * Mixed regime reads:
-         *   T+ = Prt/kappa ln[y uk*exp(5.2 kappa)/(nu + alpha uk zeta)]
-         *      = Prt/kappa ln[  y uk*exp(5.2 kappa)
-         *                   / (nu + alpha uk rough_t * exp(8.5 kappa))]
-         *      = Prt/kappa ln[  y uk*exp(5.2 kappa)
-         *                   / (nu + alpha uk rough_t * exp(8.5 kappa))]
-         * with
-         *   alpha * exp(8.5 kappa) / exp(5.2 kappa) = 1
-         * ie
-         *   alpha = exp(-(8.5-5.2) kappa) = 0.25
-         * so
-         *   T+ = Prt/kappa ln[  y uk*exp(5.2 kappa)
-         *                   / (nu + uk rough_t * exp(5.2 kappa))]
-         *      = Prt/kappa ln[y+k / (exp(-5.2 kappa) + uk rough_t/nu)]
-         */
-
-        /* shifted y+ */
-        /* FIXME use log constant */
-        const cs_real_t yplus_t
-          = yk / (exp(-xkappa * 5.2) + uk *brough_t / xnuii);
-        /* 1/T+ for neutral */
-        const cs_real_t dtplus = xkappa / log(yplus_t) / turb_prandtl;
-
-        _atmo_cls(f_id,
-                  utau,
-                  rough_d,
-                  duplus,
-                  dtplus,
-                  yplus_t,
-                  &uet,
-                  gredu,
-                  &cfnns,
-                  &cfnnk,
-                  &cfnne,
-                  &dlmo,
-                  temp,
-                  totwt,
-                  liqwt);
-
-      }
-
-    }
-    /* Monin Obukhov wall function for smooth and rough wall */
-    else if (iwalfs == CS_WALL_F_S_MONIN_OBUKHOV) {
-
-      /* Compute local LMO */
-      if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
-
-        cs_real_t _beta = 0.;
-        if (cpro_beta != nullptr)
-          _beta = cpro_beta[c_id];
-        const cs_real_t gredu = cs_math_3_dot_product(gxyz, n);
-
-        const int *icodcl_th = f_th->bc_coeffs->icodcl;
-
-        if (   icodcl_th[f_id] == 6
-            || (icodcl_th[f_id] == 5 && icodcl_vel[f_id] == 5)) {
-
-          const cs_real_t *rcodcl1_th = f_th->bc_coeffs->rcodcl1;
-          const cs_real_t dt = theipb[f_id]-rcodcl1_th[f_id];
-
-          cs_mo_compute_from_thermal_diff(distbf,
-                                          rough_d,
-                                          utau,
-                                          dt,
-                                          _beta,
-                                          gredu,
-                                          &dlmo,
-                                          &uet);
-
-        }
-        else if (icodcl_th[f_id] == 3) {
-
-          const cs_real_t *rcodcl3_th = f_th->bc_coeffs->rcodcl3;
-          const cs_real_t cpp = (icp >= 0) ? cpro_cp[c_id] : cp0;
-          const cs_real_t flux = rcodcl3_th[f_id] / romc / cpp;
-
-          cs_mo_compute_from_thermal_flux(distbf,
-                                          rough_d,
-                                          utau,
-                                          flux,
-                                          _beta,
-                                          gredu,
-                                          &dlmo,
-                                          &uet);
-        }
-
-      }
-      else {
-
-        /* No temperature delta: neutral */
-        const cs_real_t dt = 0., _beta = 0., gredu = 0.;
-
-        cs_mo_compute_from_thermal_diff(distbf,
-                                        rough_d,
-                                        utau,
-                                        dt,
-                                        _beta,
-                                        gredu,
-                                        &dlmo,
-                                        &uet);
-
-      }
-
-      /* Take stability into account for the turbulent velocity scale */
-      cs_real_t coef_mom = cs_mo_phim(distbf + rough_d, dlmo);
-      const cs_real_t one_minus_ri
-        = 1 - (distbf + rough_d) * dlmo / coef_mom;
-
-      if (one_minus_ri > 0) {
-        /* Warning: overwritting uk, yplus should be recomputed */
-        uk = uk / pow(one_minus_ri, 0.25);
-        yplus = distbf * uk / xnuii;
-
-        /* Epsilon should be modified as well to get
-           P+G = P(1-Ri) = epsilon
-           P = -R_tn dU/dn = uk^2 uet Phi_m / (kappa z) */
-        cfnne = one_minus_ri * coef_mom;
-        /* Nothing done for the moment for really high stability */
-      }
-      else {
-        cfnne = 1.;
-      }
-
-      if (icodcl_vel[f_id] == 5) {
-        /* Boundary condition on the velocity to have approximately
-           the correct turbulence production */
-        coef_mom = cs_mo_phim(distbf+rough_d, dlmo);
-        const cs_real_t coef_momm = cs_mo_phim(2 * distbf + rough_d, dlmo);
-        cs_real_t rcprod =   2*distbf*sqrt(  xkappa*uk*romc*coef_mom/visctc
-                                   / (distbf+rough_d))
-                 - coef_momm / (2.0 + rough_d / distbf);
-
-        iuntur = 1;
-
-        const cs_real_t _uplus = utau / uet;
-        /* Coupled solving of the velocity components
-           The boundary term for velocity gradient is implicit
-           modified for non neutral boundary layer (in uplus) */
-        cofimp  = cs::min(cs::max(1-1/(xkappa*_uplus) * rcprod, 0),
-                          1);
-        yk = distbf * uk / xnuii;
-
-      }
-
-    } /* End Monin Obukhov */
 
     /* Dimensionless velocity, recomputed and therefore may
        take stability into account */
 
-    cs_real_t uplus = 0.0;
-    if (   cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1
-        && (iwalfs == CS_WALL_F_S_LOUIS || iwalfs == CS_WALL_F_S_MONIN_OBUKHOV)
-        && icodcl_vel[f_id] == 5) {
 
-      uplus = utau / uet;
+    cs_real_t duplus = 0.0;
 
-      /* y+/U+ for non neutral is recomputed */
-      ypup = yk / cs::max(uplus, cs_math_epzero);
-    }
-    else if (icodcl_vel[f_id] == 6)
-      uplus = utau / uet;
-
-    /* Rough wall: one velocity scale: set uk to uet */
-    if (cs_glob_wall_functions->iwallf <= CS_WALL_F_1SCALE_LOG &&
-        icodcl_vel[f_id] == 6)
-      uk = uet;
+    if (utau > cs_math_epzero * uet)
+      duplus = uet / utau;
 
     uetmax  = cs::max(uet, uetmax);
     uetmin  = cs::min(uet, uetmin);
@@ -2585,44 +1915,30 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
        ============================ */
 
     cs_real_t hflui = 0;
-    if (icodcl_vel[f_id] == 5)
-      _update_physical_quantities_smooth_wall(c_id,
-                                              visclc,
-                                              visctc,
-                                              romc,
-                                              distbf,
-                                              utau,
-                                              uet,
-                                              uk,
-                                              yplus,
-                                              ypup,
-                                              dplus,
-                                              &hflui,
-                                              &uiptn);
-    else if (icodcl_vel[f_id] == 6)
-      _update_physical_quantities_rough_wall(visclc,
-                                             visctc,
-                                             romc,
-                                             distbf,
-                                             utau,
-                                             uet,
-                                             uk,
-                                             uplus,
-                                             rough_d,
-                                             dlmo,
-                                             &iuntur,
-                                             &nlogla,
-                                             &nsubla,
-                                             &cofimp,
-                                             &hflui,
-                                             &uiptn);
+    /* Implicit the term (rho*uet*uk)
+     * hflui is always mu/d * y+/U+
+     * or
+     * hflui = romc * uk / uplus;
+     * */
 
-    /* Min and Max and counter of reversal layer */
-    uiptmn = cs::min(uiptn * iuntur, uiptmn);
-    uiptmx = cs::max(uiptn * iuntur, uiptmx);
+    const cs_real_t xmutlm = xkappa * uk * distbf* romc;
 
-    if (uiptn * iuntur < - cs_math_epzero)
-      iuiptn = iuiptn + 1;
+    /* TODO merge with MO without this max */
+    if ((model == CS_TURB_NONE || itytur == 2 || itytur == 4
+      || model == CS_TURB_K_OMEGA
+      || model == CS_TURB_MIXING_LENGTH
+      || model == CS_TURB_RIJ_EPSILON_LRR
+      || model == CS_TURB_RIJ_EPSILON_SSG
+      || model == CS_TURB_SPALART_ALLMARAS)
+     && (visctc > cs_math_epzero)
+     && (iwalfs != CS_WALL_F_S_MONIN_OBUKHOV)
+     && (icodcl_vel[f_id] == 6)){
+      const cs_real_t rcflux = cs::max(xmutlm, visctc) / distbf;
+      hflui = rcflux * duplus/ (xkappa );
+    }
+    else {
+      hflui = romc * uk * duplus; // could be visclc / distbf * ypup;
+    }
 
     const cs_real_t hintv = (order == CS_TURB_SECOND_ORDER) ?
                             visclc / distbf:
@@ -2957,8 +2273,6 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
         hint = (visclc + visctc / sigmae) / distbf;
 
-        /* If yplus=0, uiptn is set to 0 to avoid division by 0.
-           By the way, in this case: iuntur=0 */
         if (yplus > cs_math_epzero && iuntur == 1) { /* FIXME use only iuntur */
           pimp =   distbf * 4 * pow(uk, 5)
                  / (xkappa * xnuii *xnuii * cs_math_pow2(yplus+2*dplus));
@@ -4003,14 +3317,14 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   if (cs_glob_rank_id > -1) {
 
     if (f_th != nullptr) {
-      cs_parall_min_scalars(uiptmn, uetmin, ukmin, yplumn,
+      cs_parall_min_scalars(uetmin, ukmin, yplumn,
                             tetmin, tplumn, dlmomin);
-      cs_parall_max_scalars(uiptmx, uetmax, ukmax, yplumx,
+      cs_parall_max_scalars(uetmax, ukmax, yplumx,
                             tetmax, tplumx, dlmomax);
     }
     else {
-      cs_parall_min_scalars(uiptmn, uetmin, ukmin, yplumn);
-      cs_parall_max_scalars(uiptmx, uetmax, ukmax, yplumx);
+      cs_parall_min_scalars(uetmin, ukmin, yplumn);
+      cs_parall_max_scalars(uetmax, ukmax, yplumx);
     }
   }
 
@@ -4068,11 +3382,10 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       cs_log_separator(CS_LOG_DEFAULT);
       cs_log_printf
         (CS_LOG_DEFAULT,
-         _("   Rel velocity at the wall uiptn : %12.5e %12.5e\n"
-           "   Friction velocity        uet   : %12.5e %12.5e\n"
+         _("   Friction velocity        uet   : %12.5e %12.5e\n"
            "   Friction velocity        uk    : %12.5e %12.5e\n"
            "   Dimensionless distance   yplus : %12.5e %12.5e\n"),
-         uiptmn, uiptmx, uetmin, uetmax, ukmin, ukmax, yplumn, yplumx);
+         uetmin, uetmax, ukmin, ukmax, yplumn, yplumx);
 
       if (f_th != nullptr) {
         cs_log_printf
