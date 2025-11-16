@@ -100,6 +100,24 @@
   functions.
 */
 
+/*============================================================================
+ * Private types
+ *============================================================================*/
+
+/*!
+ * Allocation types for logging/tracing.
+ */
+
+typedef enum {
+
+  CS_ALLOC_TRACE_HOST,          /*!< allocation on host only */
+  CS_ALLOC_TRACE_HOST_PINNED,   /*!< allocation on host, pinned memory */
+  CS_ALLOC_TRACE_USM,           /*!< unified shared memory allocation  */
+  CS_ALLOC_TRACE_DEVICE,        /*!< allocation on device only */
+  CS_ALLOC_TRACE_N              /*!< number of categories for tracing */
+
+} cs_alloc_count_t;
+
 /*-------------------------------------------------------------------------------
  * Local macro documentation
  *-----------------------------------------------------------------------------*/
@@ -413,6 +431,13 @@ _cs_mem_error_handler_default(const char  *file_name,
  * Local static variable definitions
  *-----------------------------------------------------------------------------*/
 
+static const int64_t _alloc_size_mask[CS_ALLOC_DEVICE+1][CS_ALLOC_TRACE_N] =
+  {{1, 0, 0, 0},  // mask for CS_ALLOC_HOST
+   {1, 0, 0, 1},  // mask for CS_ALLOC_HOST_DEVICE
+   {1, 1, 0, 1},  // mask for CS_ALLOC_HOST_DEVICE_PINNED
+   {1, 0, 1, 1},  // mask for CS_ALLOC_HOST_DEVICE_SHARED
+   {0, 0, 0, 1}}; // mask for CS_ALLOC_DEVICE
+
 static int  _cs_mem_global_init_mode = 0;
 #if defined(HAVE_ACCEL)
 static int  _n_async_copies_in_progress = 0;
@@ -422,8 +447,8 @@ static FILE *_cs_mem_global_file = nullptr;
 
 static std::map<const void *, cs_mem_block_t> _cs_alloc_map;
 
-static size_t  _cs_mem_global_alloc_cur = 0;
-static size_t  _cs_mem_global_alloc_max = 0;
+static size_t  _cs_mem_global_alloc_cur[CS_ALLOC_TRACE_N] = {0, 0, 0, 0};
+static size_t  _cs_mem_global_alloc_max[CS_ALLOC_TRACE_N] = {0, 0, 0, 0};
 
 static size_t  _cs_mem_global_n_allocs = 0;
 static size_t  _cs_mem_global_n_reallocs = 0;
@@ -479,7 +504,7 @@ cs_alloc_mode_t  cs_alloc_mode_device = CS_ALLOC_HOST;
 
 /*-----------------------------------------------------------------------------
  * Local function definitions
- *-----------------------------------------------------------------------------*/
+ *----------------------------------------------------------------------------*/
 
 /*-----------------------------------------------------------------------------
  * Given a character string representing a file name, returns
@@ -564,15 +589,27 @@ _cs_mem_summary(FILE   *f,
 
   /* Available memory usage information */
 
-  _cs_mem_size_val(_cs_mem_global_alloc_cur, value, &unit);
-  fprintf(f,
-          "Theoretical current allocated memory:   %8lu.%lu %cB\n",
-          value[0], value[1], unit);
+  const char *type_str[]
+    = {"allocated memory:",
+       "pinned memory:   ",
+       "unified memory:  ",
+       "device memory:   "};
 
-  _cs_mem_size_val(_cs_mem_global_alloc_max, value, &unit);
-  fprintf(f,
-          "Theoretical maximum allocated memory:   %8lu.%lu %cB\n",
-          value[0], value[1], unit);
+  for (int i = 0; i < 4; i++) {
+    if (_cs_mem_global_alloc_cur[i] > 0) {
+      _cs_mem_size_val(_cs_mem_global_alloc_cur[i], value, &unit);
+      fprintf(f,
+              "Theoretical current %s   %8lu.%lu %cB\n",
+              type_str[i], value[0], value[1], unit);
+    }
+
+    if (_cs_mem_global_alloc_max[i] > 0) {
+      _cs_mem_size_val(_cs_mem_global_alloc_max[i], value, &unit);
+      fprintf(f,
+              "Theoretical maximum %s   %8lu.%lu %cB\n",
+              type_str[i], value[0], value[1], unit);
+    }
+  }
 
   fprintf(f,
           "\n"
@@ -806,6 +843,48 @@ _get_block_info_try(const void  *p_get)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Update allocation sizes
+ *
+ * \param [in] mem_block  memory block
+ * \param [in] sign       1 for allocation, 0 for deallocation
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_update_alloc_sizes(const cs_mem_block_t  *mem_block,
+                    int64_t                sign)
+{
+  int64_t size = sign*mem_block->size;
+
+  if (mem_block->host_ptr != nullptr) {
+    _cs_mem_global_alloc_cur[CS_ALLOC_TRACE_HOST] += size;
+#if defined(HAVE_ACCEL)
+    for (int i = (int)CS_ALLOC_TRACE_HOST_PINNED;
+         i <= (int)CS_ALLOC_TRACE_USM; i++) {
+      _cs_mem_global_alloc_cur[i]
+        += _alloc_size_mask[mem_block->mode][i] * size;
+    }
+#endif
+  }
+
+#if defined(HAVE_ACCEL)
+  if (mem_block->device_ptr != nullptr) {
+    _cs_mem_global_alloc_cur[CS_ALLOC_TRACE_DEVICE] += size;
+  }
+#endif
+
+#if defined(HAVE_ACCEL)
+  for (int i = 0; i < 4; i++) {
+#else
+  for (int i = 0; i < 2; i++) {
+#endif
+    if (_cs_mem_global_alloc_max[i] < _cs_mem_global_alloc_cur[i])
+      _cs_mem_global_alloc_max[i] = _cs_mem_global_alloc_cur[i];
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Log matching memory operation if logging is enabled
  *
  * \param [in] var_name  allocated variable name string.
@@ -884,10 +963,10 @@ _update_block_info(const char            *var_name,
         _cs_mem_global_n_reallocs += 1;
       }
 
-      _cs_mem_global_alloc_cur += size_diff;
-
-      if (_cs_mem_global_alloc_max < _cs_mem_global_alloc_cur)
-        _cs_mem_global_alloc_max = _cs_mem_global_alloc_cur;
+      if (old_block != nullptr)
+        _update_alloc_sizes(old_block, -1);
+      if (new_block != nullptr)
+        _update_alloc_sizes(new_block, 1);
 
       /* Log to file */
 
@@ -912,7 +991,7 @@ _update_block_info(const char            *var_name,
                 var_name, (unsigned long)new_size);
         fprintf(_cs_mem_global_file, " : (%c%9lu) : %12lu : [%14p] : [%14p]",
                 c_sgn, (unsigned long)size_diff,
-                (unsigned long)_cs_mem_global_alloc_cur,
+                (unsigned long)_cs_mem_global_alloc_cur[CS_ALLOC_TRACE_HOST],
                 p_old, p_new);
 #if defined(HAVE_ACCEL)
         static const char *alloc_mode_s[5] = {
@@ -925,8 +1004,12 @@ _update_block_info(const char            *var_name,
           = (old_block != nullptr) ? old_block->device_ptr : nullptr;
         const void *p_new_d
           = (new_block != nullptr) ? new_block->device_ptr : nullptr;
-        fprintf(_cs_mem_global_file, " : [%14p] : [%14p] : %s",
-                p_old_d, p_new_d, alloc_mode_s[new_mode]);
+        if (new_size > 0)
+          fprintf(_cs_mem_global_file, " : [%14p] : [%14p] : %s",
+                  p_old_d, p_new_d, alloc_mode_s[new_mode]);
+        else
+          fprintf(_cs_mem_global_file, " : [%14p] : [%14p] : -",
+                  p_old_d, p_new_d);
 #endif
         fflush(_cs_mem_global_file);
 
@@ -2042,7 +2125,7 @@ cs_mem_memalign(size_t       alignment,
 size_t
 cs_mem_size_current(void)
 {
-  return (_cs_mem_global_alloc_cur / 1024);
+  return (_cs_mem_global_alloc_cur[CS_ALLOC_TRACE_HOST] / 1024);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2056,8 +2139,33 @@ cs_mem_size_current(void)
 size_t
 cs_mem_size_max(void)
 {
-  return (_cs_mem_global_alloc_max / 1024);
+  return (_cs_mem_global_alloc_max[CS_ALLOC_TRACE_HOST] / 1024);
 }
+
+END_C_DECLS
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return maximum theoretical allocated memory, per type.
+ *
+ * Types are:
+ *   0: host
+ *   1: pinned (included in host)
+ *   2: unified (included in host and device)
+ *   3: device
+ *
+ * \param [out]  m_max  max memory per type (in kB).
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mem_size_max_(size_t  m_max[4])
+{
+  for (int i = 0; i < 4; i++)
+    m_max[0] = _cs_mem_global_alloc_max[i] / 1024;
+}
+
+BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2065,8 +2173,14 @@ cs_mem_size_max(void)
  *
  * Availability of statistics depends on the cs_mem_init options.
  *
- * \param [out]  alloc_cur   current allocation size, or nullptr
- * \param [out]  alloc_max   max allocation size, or nullptr
+ * With acceleration, alloc_cur and alloc_max should have 4 entries each
+ *   0: host
+ *   1: pinned (included in host)
+ *   2: unified (included in host and device)
+ *   3: device
+ *
+ * \param [out]  alloc_cur   current allocation sizes, or nullptr
+ * \param [out]  alloc_max   max allocation sizes, or nullptr
  * \param [out]  n_allocs    total number of allocations, or nullptr
  * \param [out]  n_reallocs  total number of reallocations, or nullptr
  * \param [out]  n_frees     total number of frees, or nullptr
@@ -2087,10 +2201,19 @@ cs_mem_stats(uint64_t  *alloc_cur,
   int retval = 0;
 
   if (_cs_mem_global_init_mode > 1) {
-    if (alloc_cur != nullptr)
-      *alloc_cur = _cs_mem_global_alloc_cur;
-    if (alloc_max != nullptr)
-      *alloc_max = _cs_mem_global_alloc_max;
+#if defined(HAVE_ACCEL)
+    const int n_entries = 4;
+#else
+    const int n_entries = 1;
+#endif
+    if (alloc_cur != nullptr) {
+      for (int i = 0; i < n_entries; i++)
+        alloc_cur[i] = _cs_mem_global_alloc_cur[i];
+    }
+    if (alloc_max != nullptr) {
+      for (int i = 0; i < n_entries; i++)
+      alloc_max[i] = _cs_mem_global_alloc_max[i];
+    }
     if (n_allocs != nullptr)
       *n_allocs = _cs_mem_global_n_allocs;
     if (n_reallocs != nullptr)

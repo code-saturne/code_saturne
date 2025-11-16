@@ -1940,15 +1940,20 @@ cs_base_mem_finalize(void)
     CS_FREE(_cs_base_env_pkglibdir);
     CS_FREE(_bft_printf_file_name);
 
-    uint64_t mstats[6] = {0, 0, 0, 0, 0, 0};
-    int have_mem_stats = cs_mem_stats(mstats, mstats+1, mstats+2,
-                                      mstats+3, mstats+4, mstats+5);
+    uint64_t mstats_max[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    uint64_t mstats_min[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    int have_mem_stats
+      = cs_mem_stats(mstats_max, mstats_max+4, mstats_max+8,
+                     mstats_max+9, mstats_max+10, mstats_max+11);
+
     if (have_mem_stats) {
 #if defined(HAVE_MPI)
       if (cs_glob_n_ranks > 1) {
-        uint64_t mstats_l[6];
-        memcpy(mstats_l, mstats, 6*sizeof(uint64_t));
-        MPI_Reduce(mstats_l, mstats, 6, MPI_UINT64_T, MPI_MAX,
+        uint64_t mstats_l[12];
+        memcpy(mstats_l, mstats_max, 12*sizeof(uint64_t));
+        MPI_Reduce(mstats_l, mstats_min, 12, MPI_UINT64_T, MPI_MIN,
+                   0, cs_glob_mpi_comm);
+        MPI_Reduce(mstats_l, mstats_max, 12, MPI_UINT64_T, MPI_MAX,
                    0, cs_glob_mpi_comm);
       }
 #endif
@@ -1956,21 +1961,54 @@ cs_base_mem_finalize(void)
       cs_log_printf(CS_LOG_PERFORMANCE,
                     _("\nInstrumented dynamic memory statistics:\n\n"));
 
+      const char *type_str[]
+        = {"allocated memory:",
+           "pinned memory:   ",
+           "unified memory:  ",
+           "device memory:   "};
+
+      const char *cm_str[] = {"unfreed", "maximum"};
+
+      for (int i = 0; i < 8; i++) {
+        if (mstats_max[i] == 0)
+          continue;
+
+        cs_real_t rstat_max = mstats_max[i] / 1024;
+        cs_real_t rstat_min = mstats_min[i] / 1024;
+        for (itot = 0;  rstat_max > 1024 && itot < 8; itot++) {
+          rstat_max /= 1024.;
+          rstat_min /= 1024.;
+        }
+
+        if (cs_glob_n_ranks > 1)
+          cs_log_printf
+            (CS_LOG_PERFORMANCE,
+             _("  Theoretical %s %s   [%1.3f, %1.3f] %ciB\n"),
+             cm_str[i/4], type_str[i%4], rstat_min, rstat_max, unit[itot]);
+        else
+          cs_log_printf
+            (CS_LOG_PERFORMANCE,
+             _("Theoretical %s %s   %1.3f %ciB\n"),
+             cm_str[i/4], type_str[i%4], rstat_max, unit[itot]);
+      }
+
+      cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+
       cs_log_printf(CS_LOG_PERFORMANCE,
                     _("  Allocs:       %llu\n"),
-                    (unsigned long long)mstats[2]);
+                    (unsigned long long)mstats_max[8]);
       cs_log_printf(CS_LOG_PERFORMANCE,
                     _("  Reallocs:     %llu\n"),
-                    (unsigned long long)mstats[3]);
+                    (unsigned long long)mstats_max[9]);
       cs_log_printf(CS_LOG_PERFORMANCE,
                     _("  Frees:        %llu\n"),
-                    (unsigned long long)mstats[4]);
+                    (unsigned long long)mstats_max[10]);
 
-      if (mstats[5] > 0) {
+      if (mstats_max[11] > 0) {
         cs_log_printf(CS_LOG_PERFORMANCE,
                       _("  Non freed:    %llu (%llu bytes)\n"),
-                      (unsigned long long)mstats[5],
-                      (unsigned long long)mstats[0]);
+                      (unsigned long long)mstats_max[11],
+                      (unsigned long long)mstats_max[0]);
       }
     }
 
