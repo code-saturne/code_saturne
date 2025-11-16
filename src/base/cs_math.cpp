@@ -479,6 +479,15 @@ cs_math_33_eig_val_vec(const cs_real_t   m_in[3][3],
                        {m_in[2][0], m_in[2][1], m_in[2][2]}};
   cs_real_t epsilon = 1.0e-16;
 
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      if (i == j)
+        eig_vec[i][j] = 1.;
+      else
+        eig_vec[i][j] = 0.;
+    }
+  }
+
   for (int id = 0; id < 3; id++) {
     eig_val[id] = m_in[id][id];
     vec1[id] = eig_val[id];
