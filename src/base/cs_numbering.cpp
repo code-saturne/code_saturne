@@ -438,8 +438,6 @@ _log_threading_info(cs_log_t               log,
        _("  number of halo-independent groups:       %3d       %3d       %3d\n"),
        count_min[2], count_max[2], (int)(count_tot[2]/n_domains));
 
-#if defined(HAVE_MPI_IN_PLACE)
-
   cs_gnum_t *group_sum;
   cs_lnum_t *group_min;
   cs_lnum_t *group_max;
@@ -485,8 +483,6 @@ _log_threading_info(cs_log_t               log,
   CS_FREE(group_sum);
   CS_FREE(group_min);
   CS_FREE(group_max);
-
-#endif
 
   MPI_Allreduce(&imbalance, &imb_tot, 1, MPI_DOUBLE, MPI_SUM, comm);
   MPI_Allreduce(&imbalance, &imb_min, 1, MPI_DOUBLE, MPI_MIN, comm);

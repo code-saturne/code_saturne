@@ -348,7 +348,7 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
   # MPI libraries should now have been detected
 
   if test "x$cs_have_mpi" != "xno"; then
-    # Try to detect some MPI 2 features
+    # Try to detect some MPI 2+ features
     if test "x$mpi_io" = "xtrue"; then
       AC_MSG_CHECKING([for MPI I/O])
       AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
@@ -358,13 +358,6 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
                      [cs_have_mpi_io=no])
       AC_MSG_RESULT($cs_have_mpi_io)
     fi
-    AC_MSG_CHECKING([for MPI in place])
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],
-                   [[ MPI_Allreduce(MPI_IN_PLACE, (void *)0, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD); ]])],
-                   [AC_DEFINE([HAVE_MPI_IN_PLACE], 1, [MPI_IN_PLACE support])
-                   have_mpi_in_place=yes],
-                   [have_mpi_in_place=no])
-    AC_MSG_RESULT($have_mpi_in_place)
     # Try to detect some MPI 3 features
     AC_MSG_CHECKING([for MPI nonblocking barrier])
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <mpi.h>]],

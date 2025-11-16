@@ -112,7 +112,11 @@ static int _thread_debug = 0;
 
 /* Mean system rows threshold under which we use single-reduce version of PCG */
 
+#if defined(HAVE_MPI)
+
 static cs_lnum_t _pcg_sr_threshold = 512;
+
+#endif
 
 /*============================================================================
  * Private function definitions

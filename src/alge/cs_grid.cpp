@@ -586,7 +586,7 @@ _aggregation_stats_log(const cs_grid_t  *f,
           histogram[i] += 1;
       }
     }
-#if defined(HAVE_MPI) && defined(HAVE_MPI_IN_PLACE)
+#if defined(HAVE_MPI)
     if (f->comm != MPI_COMM_NULL)
       MPI_Allreduce(MPI_IN_PLACE, histogram, aggr_count, CS_MPI_LNUM, MPI_SUM,
                     f->comm);
@@ -5493,7 +5493,7 @@ _verify_grid_quantities_native(const cs_grid_t  *grid,
 
   cs_gnum_t n_clips[2] = {(cs_gnum_t)n_clips_min, (cs_gnum_t)n_clips_max};
 
-#if defined(HAVE_MPI) && defined(HAVE_MPI_IN_PLACE)
+#if defined(HAVE_MPI)
   MPI_Comm comm = grid->comm;
   if (comm != MPI_COMM_NULL) {
     MPI_Allreduce(MPI_IN_PLACE, n_clips, 2, CS_MPI_GNUM, MPI_SUM, comm);
@@ -5544,7 +5544,7 @@ _verify_grid_quantities_native(const cs_grid_t  *grid,
       anmax = w3[ic];
   }
 
-#if defined(HAVE_MPI) && defined(HAVE_MPI_IN_PLACE)
+#if defined(HAVE_MPI)
   if (comm != MPI_COMM_NULL) {
     MPI_Allreduce(MPI_IN_PLACE, &anmin, 1, MPI_DOUBLE, MPI_MIN, comm);
     MPI_Allreduce(MPI_IN_PLACE, &anmax, 1, MPI_DOUBLE, MPI_MAX, comm);
@@ -5563,7 +5563,7 @@ _verify_grid_quantities_native(const cs_grid_t  *grid,
       rmin = cs::min(rmin, xa[face_id*isym] / xa0[face_id]);
       rmax = cs::max(rmax, xa[face_id*isym] / xa0[face_id]);
     }
-#if defined(HAVE_MPI) && defined(HAVE_MPI_IN_PLACE)
+#if defined(HAVE_MPI)
     if (comm != MPI_COMM_NULL) {
       MPI_Allreduce(MPI_IN_PLACE, &rmin, 1, MPI_DOUBLE, MPI_MIN, comm);
       MPI_Allreduce(MPI_IN_PLACE, &rmax, 1, MPI_DOUBLE, MPI_MAX, comm);
@@ -5595,7 +5595,7 @@ _verify_grid_quantities_msr(const cs_grid_t  *grid,
 {
   cs_gnum_t n_clips[2] = {(cs_gnum_t)n_clips_min, (cs_gnum_t)n_clips_max};
 
-#if defined(HAVE_MPI) && defined(HAVE_MPI_IN_PLACE)
+#if defined(HAVE_MPI)
   MPI_Comm comm = grid->comm;
   if (comm != MPI_COMM_NULL) {
     MPI_Allreduce(MPI_IN_PLACE, n_clips, 2, CS_MPI_GNUM, MPI_SUM, comm);
@@ -5678,7 +5678,7 @@ _verify_grid_quantities_msr(const cs_grid_t  *grid,
       anmax = w3;
   }
 
-#if defined(HAVE_MPI) && defined(HAVE_MPI_IN_PLACE)
+#if defined(HAVE_MPI)
   if (comm != MPI_COMM_NULL) {
     double t[4] = {anmin, -anmax, rmin, -rmax};
     MPI_Allreduce(MPI_IN_PLACE, t, 4, MPI_DOUBLE, MPI_MIN, comm);

@@ -82,25 +82,24 @@ extern cs_e2n_sum_t cs_glob_e2n_sum_type;
  */
 /*----------------------------------------------------------------------------*/
 
-#if defined(HAVE_MPI_IN_PLACE)
-
 inline static void
 cs_parall_counter(cs_gnum_t   cpt[],
                   const int   n)
 {
+#if defined(HAVE_MPI)
+
   if (cs_glob_n_ranks > 1) {
     MPI_Allreduce(MPI_IN_PLACE, cpt, n, CS_MPI_GNUM, MPI_SUM,
                   cs_glob_mpi_comm);
   }
-}
 
 #else
 
-void
-cs_parall_counter(cs_gnum_t   cpt[],
-                  const int   n);
+  CS_UNUSED(cpt);
+  CS_UNUSED(n);
 
 #endif
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -111,25 +110,24 @@ cs_parall_counter(cs_gnum_t   cpt[],
  */
 /*----------------------------------------------------------------------------*/
 
-#if defined(HAVE_MPI_IN_PLACE)
-
 inline static void
 cs_parall_counter_max(cs_lnum_t   cpt[],
                       const int   n)
 {
+#if defined(HAVE_MPI)
+
   if (cs_glob_n_ranks > 1) {
     MPI_Allreduce(MPI_IN_PLACE, cpt, n, CS_MPI_LNUM, MPI_MAX,
                   cs_glob_mpi_comm);
   }
-}
 
 #else
 
-void
-cs_parall_counter_max(cs_lnum_t   cpt[],
-                      const int   n);
+  CS_UNUSED(cpt);
+  CS_UNUSED(n);
 
 #endif
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -141,27 +139,26 @@ cs_parall_counter_max(cs_lnum_t   cpt[],
  */
 /*----------------------------------------------------------------------------*/
 
-#if defined(HAVE_MPI_IN_PLACE)
-
 inline static void
 cs_parall_sum(int             n,
               cs_datatype_t   datatype,
               void           *val)
 {
+#if defined(HAVE_MPI)
+
   if (cs_glob_n_ranks > 1) {
     MPI_Allreduce(MPI_IN_PLACE, val, n, cs_datatype_to_mpi[datatype], MPI_SUM,
                   cs_glob_mpi_comm);
   }
-}
 
 #else
 
-void
-cs_parall_sum(int             n,
-              cs_datatype_t   datatype,
-              void           *val);
+  CS_UNUSED(n);
+  CS_UNUSED(datatype);
+  CS_UNUSED(val);
 
 #endif
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -174,27 +171,26 @@ cs_parall_sum(int             n,
  */
 /*----------------------------------------------------------------------------*/
 
-#if defined(HAVE_MPI_IN_PLACE)
-
 inline static void
 cs_parall_max(int             n,
               cs_datatype_t   datatype,
               void           *val)
 {
+#if defined(HAVE_MPI)
+
   if (cs_glob_n_ranks > 1) {
     MPI_Allreduce(MPI_IN_PLACE, val, n, cs_datatype_to_mpi[datatype], MPI_MAX,
                   cs_glob_mpi_comm);
   }
-}
 
 #else
 
-void
-cs_parall_max(int             n,
-              cs_datatype_t   datatype,
-              void           *val);
+  CS_UNUSED(n);
+  CS_UNUSED(datatype);
+  CS_UNUSED(val);
 
 #endif
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -207,27 +203,26 @@ cs_parall_max(int             n,
  */
 /*----------------------------------------------------------------------------*/
 
-#if defined(HAVE_MPI_IN_PLACE)
-
 inline static void
 cs_parall_min(int             n,
               cs_datatype_t   datatype,
               void           *val)
 {
+#if defined(HAVE_MPI)
+
   if (cs_glob_n_ranks > 1) {
     MPI_Allreduce(MPI_IN_PLACE, val, n, cs_datatype_to_mpi[datatype], MPI_MIN,
                   cs_glob_mpi_comm);
   }
-}
 
 #else
 
-void
-cs_parall_min(int             n,
-              cs_datatype_t   datatype,
-              void           *val);
+  CS_UNUSED(n);
+  CS_UNUSED(datatype);
+  CS_UNUSED(val);
 
 #endif
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -242,24 +237,27 @@ cs_parall_min(int             n,
  */
 /*----------------------------------------------------------------------------*/
 
-#if defined(HAVE_MPI)
-
 inline static void
 cs_parall_bcast(int             root_rank,
                 int             n,
                 cs_datatype_t   datatype,
                 void           *val)
 {
+#if defined(HAVE_MPI)
+
   if (cs_glob_n_ranks > 1)
     MPI_Bcast(val, n, cs_datatype_to_mpi[datatype], root_rank,
               cs_glob_mpi_comm);
-}
 
 #else
 
-#define cs_parall_bcast(_root_rank, _n, _datatype, _val);
+  CS_UNUSED(root_rank);
+  CS_UNUSED(n);
+  CS_UNUSED(datatype);
+  CS_UNUSED(val);
 
 #endif
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -700,27 +698,20 @@ END_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-#if defined(HAVE_MPI_IN_PLACE)
-
 inline static void
-cs_parall_counter(const cs_execution_context  *ec,
-                  cs_gnum_t                    cpt[],
-                  const int                    n)
+cs_parall_counter([[maybe_unused]] const cs_execution_context  *ec,
+                  [[maybe_unused]] cs_gnum_t                    cpt[],
+                  [[maybe_unused]] const int                    n)
 {
+#if defined(HAVE_MPI)
+
   if (ec->use_mpi()) {
     MPI_Allreduce(MPI_IN_PLACE, cpt, n, CS_MPI_GNUM, MPI_SUM,
                   ec->comm());
   }
-}
-
-#else
-
-void
-cs_parall_counter(const cs_execution_context  *ec,
-                  cs_gnum_t                    cpt[],
-                  const int                    n);
 
 #endif
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -732,27 +723,20 @@ cs_parall_counter(const cs_execution_context  *ec,
  */
 /*----------------------------------------------------------------------------*/
 
-#if defined(HAVE_MPI_IN_PLACE)
-
 inline static void
-cs_parall_counter_max(const cs_execution_context  *ec,
-                      cs_lnum_t                    cpt[],
-                      const int                    n)
+cs_parall_counter_max([[maybe_unused]] const cs_execution_context  *ec,
+                      [[maybe_unused]] cs_lnum_t                    cpt[],
+                      [[maybe_unused]] const int                    n)
 {
+#if defined(HAVE_MPI)
+
   if (ec->use_mpi()) {
     MPI_Allreduce(MPI_IN_PLACE, cpt, n, CS_MPI_LNUM, MPI_MAX,
                   ec->comm());
   }
-}
-
-#else
-
-void
-cs_parall_counter_max(const cs_execution_context  *ec,
-                      cs_lnum_t                    cpt[],
-                      const int                    n);
 
 #endif
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -765,30 +749,22 @@ cs_parall_counter_max(const cs_execution_context  *ec,
  */
 /*----------------------------------------------------------------------------*/
 
-#if defined(HAVE_MPI_IN_PLACE)
-
 inline static void
-cs_parall_sum(const cs_execution_context  *ec,
-              int                          n,
-              cs_datatype_t                datatype,
-              void                        *val)
+cs_parall_sum([[maybe_unused]] const cs_execution_context  *ec,
+              [[maybe_unused]] int                          n,
+              [[maybe_unused]] cs_datatype_t                datatype,
+              [[maybe_unused]] void                        *val)
 {
+#if defined(HAVE_MPI)
+
   if (ec->use_mpi()) {
     MPI_Allreduce(MPI_IN_PLACE, val, n,
                   cs_datatype_to_mpi[datatype], MPI_SUM,
                   ec->comm());
   }
-}
-
-#else
-
-void
-cs_parall_sum(const cs_execution_context  *ec,
-              int                          n,
-              cs_datatype_t                datatype,
-              void                        *val);
 
 #endif
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -802,30 +778,22 @@ cs_parall_sum(const cs_execution_context  *ec,
  */
 /*----------------------------------------------------------------------------*/
 
-#if defined(HAVE_MPI_IN_PLACE)
-
 inline static void
-cs_parall_max(const cs_execution_context  *ec,
-              int                          n,
-              cs_datatype_t                datatype,
-              void                        *val)
+cs_parall_max([[maybe_unused]] const cs_execution_context  *ec,
+              [[maybe_unused]] int                          n,
+              [[maybe_unused]] cs_datatype_t                datatype,
+              [[maybe_unused]] void                        *val)
 {
+#if defined(HAVE_MPI)
+
   if (ec->use_mpi()) {
     MPI_Allreduce(MPI_IN_PLACE, val, n,
                   cs_datatype_to_mpi[datatype], MPI_MAX,
                   ec->comm());
   }
-}
-
-#else
-
-void
-cs_parall_max(const cs_execution_context *ec,
-              int                         n,
-              cs_datatype_t               datatype,
-              void                       *val);
 
 #endif
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -839,30 +807,22 @@ cs_parall_max(const cs_execution_context *ec,
  */
 /*----------------------------------------------------------------------------*/
 
-#if defined(HAVE_MPI_IN_PLACE)
-
 inline static void
-cs_parall_min(const cs_execution_context  *ec,
-              int                          n,
-              cs_datatype_t                datatype,
-              void                        *val)
+cs_parall_min([[maybe_unused]] const cs_execution_context  *ec,
+              [[maybe_unused]] int                          n,
+              [[maybe_unused]] cs_datatype_t                datatype,
+              [[maybe_unused]] void                        *val)
 {
+#if defined(HAVE_MPI)
+
   if (ec->use_mpi()) {
     MPI_Allreduce(MPI_IN_PLACE, val, n,
                   cs_datatype_to_mpi[datatype], MPI_MIN,
                   ec->comm());
   }
-}
-
-#else
-
-void
-cs_parall_min(const cs_execution_context  *ec,
-              int                          n,
-              cs_datatype_t                datatype,
-              void                        *val);
 
 #endif
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
