@@ -467,6 +467,7 @@ cs_rad_transfer_bcs(int bc_type[])
   int       icoerr[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
   cs_real_t rvferr[27];
+  memset(rvferr, 0, sizeof(rvferr));
 
   {
     /* Error if isothm not defined on wall, or defined on non-wall */
@@ -1424,11 +1425,7 @@ cs_rad_transfer_bc_coeffs_p1(int                   bc_type[],
   cs_real_t *cofafp = bc_coeffs->af;
   cs_real_t *cofbfp = bc_coeffs->bf;
 
-  cs_real_t stephn = cs_physical_constants_stephan;
-  cs_real_t onedpi  = 1.0 / cs_math_pi;
-
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-  cs_nreal_3_t *b_face_u_normal = cs_glob_mesh_quantities->b_face_u_normal;
 
   /* Initialization */
 
