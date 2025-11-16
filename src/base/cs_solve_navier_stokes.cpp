@@ -2162,7 +2162,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   if (f != nullptr)
     tsexp = (cs_real_3_t *)f->val;
   else {
-    CS_MALLOC_HD(loctsexp, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+    CS_MALLOC_HD(loctsexp, n_cells_ext, cs_real_3_t, cs_alloc_mode_device);
     tsexp = loctsexp;
   }
 
@@ -2171,7 +2171,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   if (f != nullptr)
     tsimp = (cs_real_33_t *)f->val;
   else {
-    CS_MALLOC_HD(loctsimp, n_cells_ext, cs_real_33_t, cs_alloc_mode);
+    CS_MALLOC_HD(loctsimp, n_cells_ext, cs_real_33_t, cs_alloc_mode_device);
     tsimp = loctsimp;
   }
 
@@ -2232,7 +2232,7 @@ _velocity_prediction(const cs_mesh_t             *m,
     /* Note that this term is not added to tsexp because it should not be
      * taken into account by iphydr=1 */
     if (cs_glob_atmo_option->open_bcs_treatment > 0) {
-      CS_MALLOC_HD(meteo_st, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+      CS_MALLOC_HD(meteo_st, n_cells_ext, cs_real_3_t, cs_alloc_mode_device);
       cs_atmo_source_term_for_inlet(meteo_st);
     }
   }
@@ -2261,7 +2261,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   if (f != nullptr)
     cpro_gradp = (cs_real_3_t *)f->val;
   else {
-    CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+    CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode_device);
     cpro_gradp = grad;
   }
 
@@ -2283,7 +2283,7 @@ _velocity_prediction(const cs_mesh_t             *m,
       /* Time interpolated density */
       if (eqp_u->theta < 1.0 && iterns > 1) {
         cs_real_t theta = eqp_u->theta;
-        CS_MALLOC_HD(cpro_rho_tc, n_cells_ext, cs_real_t, cs_alloc_mode);
+        CS_MALLOC_HD(cpro_rho_tc, n_cells_ext, cs_real_t, cs_alloc_mode_device);
         ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           cpro_rho_tc[c_id] =          theta  * cpro_rho_mass[c_id]
                               + (1.0 - theta) * croma[c_id];
@@ -2685,7 +2685,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   cs_real_3_t *stf = nullptr;
   if (   cs_glob_vof_parameters->vof_model > 0
       && cs_glob_vof_parameters->sigma_s > 0) {
-    CS_MALLOC_HD(stf, n_cells, cs_real_3_t, cs_alloc_mode);
+    CS_MALLOC_HD(stf, n_cells, cs_real_3_t, cs_alloc_mode_device);
     cs_vof_surface_tension(m, mq, stf);
   }
 
@@ -2835,7 +2835,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   }
 
   /* External forces partially balanced with the pressure gradient
-   * -----------------------------------------------------------------
+   * -------------------------------------------------------------
    * (only for the first call, the second one is for error estimators) */
 
   if (iappel == 1 && vp_param->iphydr == 1)
@@ -2851,7 +2851,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   CS_FREE(icepdc);
 
   /* Solving of the 3x3xNcel coupled system
-   ======================================== */
+     ====================================== */
 
   cs_real_t *c_estim = nullptr;
   if (iappel == 1 && iespre != nullptr) {
@@ -3009,7 +3009,7 @@ _velocity_prediction(const cs_mesh_t             *m,
      ------------------------------ */
 
   cs_real_3_t *smbr;
-  CS_MALLOC_HD(smbr, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+  CS_MALLOC_HD(smbr, n_cells_ext, cs_real_3_t, cs_alloc_mode_device);
 
   /* If source terms are extrapolated in time */
   if (cs_glob_time_scheme->isno2t > 0) {
@@ -3115,12 +3115,12 @@ _velocity_prediction(const cs_mesh_t             *m,
 
   cs_real_3_t *eswork = nullptr;
   if (iespre != nullptr)
-    CS_MALLOC_HD(eswork, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+    CS_MALLOC_HD(eswork, n_cells_ext, cs_real_3_t, cs_alloc_mode_device);
 
   if (iappel == 1) {
     /* Store fimp as the velocity matrix is stored in codtiv call */
     cs_real_33_t *fimpcp = nullptr;
-    CS_MALLOC_HD(fimpcp, n_cells_ext, cs_real_33_t, cs_alloc_mode);
+    CS_MALLOC_HD(fimpcp, n_cells_ext, cs_real_33_t, cs_alloc_mode_device);
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (cs_lnum_t ii = 0; ii < 3; ii++)
         for (cs_lnum_t jj = 0; jj < 3; jj++)
@@ -3241,7 +3241,7 @@ _velocity_prediction(const cs_mesh_t             *m,
     if (vp_param->ipucou == 1) {
 
       cs_real_3_t *vect;
-      CS_MALLOC_HD(vect, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+      CS_MALLOC_HD(vect, n_cells_ext, cs_real_3_t, cs_alloc_mode_device);
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         const int ind = has_disable_flag * c_id;

@@ -161,7 +161,7 @@ cs_face_viscosity_secondary(cs_real_t  secvif[],
 
   /* Allocate temporary arrays */
   cs_real_t *secvis;
-  CS_MALLOC_HD(secvis, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(secvis, n_cells_ext, cs_real_t, cs_alloc_mode_device);
 
   cs_field_t *vel = CS_F_(vel);
   cs_equation_param_t *eqp_vel = cs_field_get_equation_param(vel);
@@ -543,7 +543,7 @@ cs_face_anisotropic_viscosity_vector(const cs_mesh_t             *m,
   }
   else if (porosi != nullptr && porosf == nullptr) {
 
-    CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+    CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode_device);
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (int isou = 0; isou < 6; isou++) {
         w2[c_id][isou] = porosi[c_id]*c_visc[c_id][isou];
@@ -557,7 +557,7 @@ cs_face_anisotropic_viscosity_vector(const cs_mesh_t             *m,
   }
   else if (porosi != nullptr && porosf != nullptr) {
 
-    CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+    CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode_device);
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cs_math_sym_33_product(porosf[c_id],
                              c_visc[c_id],
@@ -755,8 +755,8 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
 
   short *i_clip = nullptr, *b_clip = nullptr;
   if (iwarnp >= 3) {
-    CS_MALLOC_HD(i_clip, n_i_faces, short, cs_alloc_mode);
-    CS_MALLOC_HD(b_clip, n_b_faces, short, cs_alloc_mode);
+    CS_MALLOC_HD(i_clip, n_i_faces, short, cs_alloc_mode_device);
+    CS_MALLOC_HD(b_clip, n_b_faces, short, cs_alloc_mode_device);
 
     ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
       i_clip[f_id] = 0;
@@ -794,7 +794,7 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
   }
   else if (porosi != nullptr && porosf == nullptr) {
 
-    CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+    CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode_device);
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (int isou = 0; isou < 6; isou++) {
@@ -810,7 +810,7 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
   }
   else if (porosi != nullptr && porosf != nullptr) {
 
-    CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+    CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode_device);
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cs_math_sym_33_product(porosf[c_id],
