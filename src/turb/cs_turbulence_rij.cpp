@@ -722,6 +722,7 @@ _gravity_st_rij(const cs_field_t  *f_rij,
   cs_field_t *f_buo = cs_field_by_name_try("algo:rij_buoyancy");
 
   if (f_buo != nullptr) {
+    assert(f_buo->dim == 6);
     cpro_buoyancy = (cs_real_6_t*)f_buo->val;
   }
   else {
@@ -1101,8 +1102,10 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
   {
     cs_field_t *f_psc = cs_field_by_name_try
                           ("algo:rij_pressure_strain_correlation");
-    if (f_psc != nullptr)
+    if (f_psc != nullptr) {
+      assert(f_psc->dim == 6);
       cpro_press_correl = (cs_real_6_t *)f_psc->val;
+    }
   }
 
   /* Time extrapolation ? */
@@ -1526,8 +1529,10 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   {
     cs_field_t *f_psc = cs_field_by_name_try
                           ("algo:rij_pressure_strain_correlation");
-    if (f_psc != nullptr)
+    if (f_psc != nullptr) {
+      assert(f_psc->dim == 6);
       cpro_press_correl = (cs_real_6_t *)f_psc->val;
+    }
   }
 
  /* Time extrapolation ? */
@@ -2145,8 +2150,10 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
   {
     cs_field_t *f_psc = cs_field_by_name_try
                           ("algo:rij_pressure_strain_correlation");
-    if (f_psc != nullptr)
+    if (f_psc != nullptr) {
+      assert(f_psc->dim == 6);
       cpro_press_correl = (cs_real_6_t *)f_psc->val;
+    }
   }
 
   cs_field_t *f_beta2 = cs_field_by_name_try("algo:rij_beta2");
@@ -3062,10 +3069,10 @@ cs_turbulence_rij(int phase_id)
   /* Source terms for Rij
    * -------------------- */
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-    for (int ii = 0; ii < 6; ii++) {
-      rhs[c_id][ii] = 0.;
-      for (int jj = 0; jj < 6; jj++) {
-        fimp[c_id][ii][jj] = 0.;
+    for (int ij = 0; ij < 6; ij++) {
+      rhs[c_id][ij] = 0.;
+      for (int kl = 0; kl < 6; kl++) {
+        fimp[c_id][ij][kl] = 0.;
       }
     }
   });
@@ -3170,8 +3177,10 @@ cs_turbulence_rij(int phase_id)
   {
     cs_field_t *f_rij_p = cs_field_by_name_try
                              ("algo:rij_production");
-    if (f_rij_p != nullptr)
+    if (f_rij_p != nullptr) {
+      assert(f_rij_p->dim == 6);
       produc = (cs_real_6_t *)f_rij_p->val;
+    }
     else {
       CS_MALLOC_HD(_produc, n_cells_ext, cs_real_6_t, cs_alloc_mode);
       produc = _produc;
@@ -3188,8 +3197,10 @@ cs_turbulence_rij(int phase_id)
 
     if (f_vel->grad != nullptr)
       gradv = (cs_real_33_t *)f_vel->grad;
-    else if (f_vg != nullptr)
+    else if (f_vg != nullptr) {
+      assert(f_vg->dim == 9);
       gradv = (cs_real_33_t *)f_vg->val;
+    }
     else {
       CS_MALLOC_HD(_gradv, n_cells_ext, cs_real_33_t, cs_alloc_mode);
       gradv = _gradv;
