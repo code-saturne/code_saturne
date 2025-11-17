@@ -7271,6 +7271,7 @@ cs_face_diffusion_potential(const cs_field_t           *f,
 #endif
 
   const bool on_device = ctx_i.use_gpu();
+  const cs_alloc_mode_t amode = ctx_i.alloc_mode();
 
   /* Local variables */
 
@@ -7347,7 +7348,7 @@ cs_face_diffusion_potential(const cs_field_t           *f,
     ==========================================================================*/
 
     /* Allocate a work array for the gradient calculation */
-    CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+    CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, amode);
 
     /* Compute gradient */
     if (eqp->iwgrec > 0) {
@@ -7532,6 +7533,7 @@ cs_face_anisotropic_diffusion_potential
 #endif
 
   const bool on_device = ctx.use_gpu();
+  const cs_alloc_mode_t amode = ctx.alloc_mode();
 
   /*==========================================================================
     1. Initialization
@@ -7624,7 +7626,7 @@ cs_face_anisotropic_diffusion_potential
       /* With porosity */
     }
     else if (porosi != nullptr && porosf == nullptr) {
-      CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+      CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, amode);
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  cell_id) {
         for (cs_lnum_t isou = 0; isou < 6; isou++) {
           w2[cell_id][isou] = porosi[cell_id]*viscel[cell_id][isou];
@@ -7635,7 +7637,7 @@ cs_face_anisotropic_diffusion_potential
       /* With tensorial porosity */
     }
     else if (porosi != nullptr && porosf != nullptr) {
-      CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+      CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, amode);
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  cell_id) {
         cs_math_sym_33_product(porosf[cell_id],
                                viscel[cell_id],
@@ -7650,7 +7652,7 @@ cs_face_anisotropic_diffusion_potential
     cs_halo_sync_r(halo, CS_HALO_STANDARD, on_device, viscce);
 
     /* Allocate a work array for the gradient calculation */
-    CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+    CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, amode);
 
     /* Compute gradient */
     if (eqp->iwgrec > 0) {
@@ -8137,6 +8139,7 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
   const bool on_device = ctx.use_gpu();
+  const cs_alloc_mode_t amode = ctx.alloc_mode();
 
   /*==========================================================================
     1. Initialization
@@ -8243,7 +8246,7 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
       /* With tensorial porosity */
     }
     else if (porosi != nullptr && porosf != nullptr) {
-      CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+      CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, amode);
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  cell_id) {
         cs_math_sym_33_product(porosf[cell_id],
                                viscel[cell_id],
@@ -8258,7 +8261,7 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
     cs_halo_sync_r(halo, CS_HALO_STANDARD, on_device, viscce);
 
     /* Allocate a work array for the gradient calculation */
-    CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+    CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, amode);
 
     /* Compute gradient */
     if (eqp->iwgrec > 0) {

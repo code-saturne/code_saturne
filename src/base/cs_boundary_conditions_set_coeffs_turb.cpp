@@ -54,6 +54,7 @@
 #include "base/cs_ale.h"
 #include "atmo/cs_atmo.h"
 #include "base/cs_boundary_conditions_set_coeffs.h"
+#include "base/cs_dispatch.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_internal_coupling.h"
@@ -1568,7 +1569,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   cs_real_t tplumx = -cs_math_big_r;
   cs_real_t tplumn =  cs_math_big_r;
 
- /* Counters (turbulent, laminar, reversal, scale correction) */
+  /* Counters (turbulent, laminar, reversal, scale correction) */
   cs_gnum_t nlogla = 0;
   cs_gnum_t nsubla = 0;
   cs_lnum_t iuiptn = 0;
@@ -1588,6 +1589,9 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
   /* See the different model */
   const cs_real_t cl = 1.0 / (0.5 + 0.75 * cs_turb_crij_c0);
+
+  const cs_turbomachinery_model_t turbomachinery_model
+    = cs_turbomachinery_get_model();
 
   /* Pointers to specific fields */
   cs_real_t *byplus = nullptr, *bdplus = nullptr, *bdlmo = nullptr;
@@ -1672,7 +1676,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
        wall (absolute velocity solved in a relative frame of reference) */
 
     if (   cs_glob_ale == CS_ALE_NONE
-        && cs_turbomachinery_get_model() == CS_TURBOMACHINERY_NONE) {
+        && turbomachinery_model == CS_TURBOMACHINERY_NONE) {
 
       const cs_real_t rcodcn = cs_math_3_dot_product(rcodcxyz, n);
       rcodcxyz[0] = rcodcxyz[0] - rcodcn * n[0];

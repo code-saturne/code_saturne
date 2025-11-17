@@ -402,9 +402,13 @@ cs_boundary_conditions_set_dirichlet_vector_aniso
     }
     else {
       /* FIXME: at least log error message */
+#if defined(CS_DEVICE_COMPILE)
+      assert(0);
+#else
       bft_error(__FILE__, __LINE__, 0,
                 _(" %s: hextv not set for component %d."),
                 __func__, i);
+#endif
     }
   }
 

@@ -1741,12 +1741,12 @@ cs_internal_coupling_update_bc_coeffs_s
 
   cs_real_t *var_ext = nullptr, *var_ext_d = nullptr;
   cs_real_t *var_distant = nullptr, *var_distant_d = nullptr;
-  CS_MALLOC(var_ext, n_local, cs_real_t);
-  CS_MALLOC(var_distant, n_distant, cs_real_t);
+  CS_MALLOC_HD(var_ext, n_local, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(var_distant, n_distant, cs_real_t, cs_alloc_mode);
 
   if (compute_diffusion_coeffs && df_limiter != nullptr) {
-    CS_MALLOC(var_ext_d, n_local, cs_real_t);
-    CS_MALLOC(var_distant_d, n_distant, cs_real_t);
+    CS_MALLOC_HD(var_ext_d, n_local, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(var_distant_d, n_distant, cs_real_t, cs_alloc_mode);
   }
 
   const cs_lnum_t *restrict b_face_cells = mesh->b_face_cells;

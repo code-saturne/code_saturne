@@ -172,6 +172,8 @@ cs_local_time_step_compute(int  itrale)
 
   cs_dispatch_context ctx;
 
+  cs_alloc_mode_t amode = ctx.alloc_mode();
+
   /* Pointers to the mass fluxes */
 
   int iflmas_v
@@ -198,14 +200,14 @@ cs_local_time_step_compute(int  itrale)
   /* Allocate temporary arrays for the time-step resolution */
 
   cs_real_t *i_visc, *b_visc, *dam;
-  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(dam, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, amode);
+  CS_MALLOC_HD(dam, n_cells_ext, cs_real_t, amode);
+  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, amode);
 
   cs_field_bc_coeffs_t bc_coeffs_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_loc);
-  CS_MALLOC_HD(bc_coeffs_loc.b, n_b_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(bc_coeffs_loc.bf, n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(bc_coeffs_loc.b, n_b_faces, cs_real_t, amode);
+  CS_MALLOC_HD(bc_coeffs_loc.bf, n_b_faces, cs_real_t, amode);
 
   cs_real_t *coefbt = bc_coeffs_loc.b;
   cs_real_t *cofbft = bc_coeffs_loc.bf;
@@ -213,13 +215,13 @@ cs_local_time_step_compute(int  itrale)
   /* Allocate other arrays, depending on user options */
   cs_real_t *wcf = nullptr;
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)
-    CS_MALLOC_HD(wcf, n_cells_ext, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(wcf, n_cells_ext, cs_real_t, amode);
 
   /* Allocate work arrays */
   cs_real_t *w1, *w2, *w3;
-  CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(w2, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(w3, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, amode);
+  CS_MALLOC_HD(w2, n_cells_ext, cs_real_t, amode);
+  CS_MALLOC_HD(w3, n_cells_ext, cs_real_t, amode);
 
   const cs_real_t *viscl = CS_F_(mu)->val;
   const cs_real_t *visct = CS_F_(mu_t)->val;
@@ -316,12 +318,12 @@ cs_local_time_step_compute(int  itrale)
 
       /* Allocate a temporary array for the gradient calculation */
       cs_real_3_t *grad;
-      CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+      CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, amode);
 
       cs_field_bc_coeffs_t bc_coeffs_rho;
       cs_field_bc_coeffs_init(&bc_coeffs_rho);
 
-      CS_MALLOC_HD(bc_coeffs_rho.b, n_b_faces, cs_real_t, cs_alloc_mode);
+      CS_MALLOC_HD(bc_coeffs_rho.b, n_b_faces, cs_real_t, amode);
       cs_real_t *coefbr = bc_coeffs_rho.b;
 
       ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
@@ -801,7 +803,7 @@ cs_local_time_step_compute(int  itrale)
         && log_is_active) {
 
       cs_real_t *dtsdt0;
-      CS_MALLOC_HD(dtsdt0, n_cells, cs_real_t, cs_alloc_mode);
+      CS_MALLOC_HD(dtsdt0, n_cells, cs_real_t, amode);
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         dtsdt0[c_id] = dt[c_id] / w3[c_id];
@@ -1005,6 +1007,8 @@ cs_courant_fourier_compute(void)
 
   cs_dispatch_context ctx;
 
+  cs_alloc_mode_t amode = ctx.alloc_mode();
+
   /* Pointers to the mass fluxes */
 
   int iflmas_v
@@ -1030,21 +1034,21 @@ cs_courant_fourier_compute(void)
 
   /* Allocate temporary arrays for the time-step resolution */
   cs_real_t *i_visc, *b_visc, *dam;
-  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(dam, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, amode);
+  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, amode);
+  CS_MALLOC_HD(dam, n_cells_ext, cs_real_t, amode);
 
   cs_field_bc_coeffs_t bc_coeffs_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_loc);
-  CS_MALLOC_HD(bc_coeffs_loc.b, n_b_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(bc_coeffs_loc.bf, n_b_faces, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(bc_coeffs_loc.b, n_b_faces, cs_real_t, amode);
+  CS_MALLOC_HD(bc_coeffs_loc.bf, n_b_faces, cs_real_t, amode);
 
   cs_real_t *coefbt = bc_coeffs_loc.b;
   cs_real_t *cofbft = bc_coeffs_loc.bf;
 
   /* Allocate work arrays */
   cs_real_t *w1;
-  CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, amode);
 
   const cs_real_t *viscl = CS_F_(mu)->val;
   const cs_real_t *visct = CS_F_(mu_t)->val;

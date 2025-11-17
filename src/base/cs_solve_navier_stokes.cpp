@@ -800,7 +800,7 @@ _face_diff_vel(const cs_mesh_t             *m,
     cs_real_t idifft = eqp_u->idifft;
 
     cs_real_t *w1;
-    CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
+    CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, ctx.alloc_mode());
 
     if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER)
       cs_array_copy<cs_real_t>(n_cells, (const cs_real_t *)viscl, w1);

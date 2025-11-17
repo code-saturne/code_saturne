@@ -562,6 +562,15 @@ typedef enum {
 #endif
 
 /*----------------------------------------------------------------------------
+ * Macro to check if we are compiling for device
+ *----------------------------------------------------------------------------*/
+
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) \
+  || defined(__SYCL_DEVICE_ONLY__)
+#define CS_DEVICE_COMPILE
+#endif
+
+/*----------------------------------------------------------------------------
  * Macros for function type qualifiers
  *----------------------------------------------------------------------------*/
 

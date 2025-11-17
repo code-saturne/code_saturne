@@ -198,7 +198,7 @@ cs_mass_flux(const cs_mesh_t             *m,
   /* Parallel or device dispatch */
 
   cs_dispatch_context ctx, ctx_c;
-  cs_alloc_mode_t amode = ctx.alloc_mode(true);
+  cs_alloc_mode_t amode = ctx.alloc_mode();
 
   ctx_c.set_use_gpu(ctx.use_gpu()); /* Follows behavior of main context */
 #if defined(HAVE_CUDA)
@@ -222,8 +222,8 @@ cs_mass_flux(const cs_mesh_t             *m,
     is_p = 1;
   }
   else {
-    CS_MALLOC_HD(_i_f_face_factor, 1, cs_real_2_t, amode);
-    CS_MALLOC_HD(_b_f_face_factor, 1, cs_real_t, amode);
+    CS_MALLOC_HD(_i_f_face_factor, 1, cs_real_2_t, cs_alloc_mode);
+    CS_MALLOC_HD(_b_f_face_factor, 1, cs_real_t, cs_alloc_mode);
     i_f_face_factor = _i_f_face_factor;
     b_f_face_factor = _b_f_face_factor;
     i_f_face_factor[0][0] = i_f_face_factor[0][1] = 1.0;
@@ -1406,7 +1406,6 @@ cs_ext_force_flux(const cs_mesh_t          *m,
   /* Parallel or device dispatch */
 
   cs_dispatch_context ctx, ctx_c;
-  cs_alloc_mode_t amode = ctx.alloc_mode(true);
 
   ctx_c.set_use_gpu(ctx.use_gpu()); /* Follows behavior of main context */
 #if defined(HAVE_CUDA)
@@ -1434,7 +1433,7 @@ cs_ext_force_flux(const cs_mesh_t          *m,
   }
   else {
 
-    CS_MALLOC_HD(_f_ext, 1, cs_real_t, amode);
+    CS_MALLOC_HD(_f_ext, 1, cs_real_t, cs_alloc_mode);
     _f_ext[0] = 0.;
     i_poro_duq_0 = _f_ext;
     i_poro_duq_1 = _f_ext;
@@ -1642,7 +1641,7 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
   /* Parallel or device dispatch */
 
   cs_dispatch_context ctx, ctx_c;
-  cs_alloc_mode_t amode = ctx.alloc_mode(true);
+  cs_alloc_mode_t amode = ctx.alloc_mode();
 
   ctx_c.set_use_gpu(ctx.use_gpu()); /* Follows behavior of main context */
 #if defined(HAVE_CUDA)
@@ -1739,7 +1738,8 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
       viscce = w2;
 
       /* With tensorial porosity */
-    } else if (porosi != nullptr && porosf != nullptr) {
+    }
+    else if (porosi != nullptr && porosf != nullptr) {
       CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, amode);
       ctx_c.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
         cs_math_sym_33_product(porosf[cell_id],
