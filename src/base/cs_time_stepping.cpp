@@ -54,7 +54,7 @@
 #include "atmo/cs_atmo_chemistry.h"
 #include "atmo/cs_atmo_imbrication.h"
 #include "atmo/cs_at_data_assim.h"
-#include "atmo/cs_atmo_sol.h"
+#include "atmo/cs_atmo_soil_model.h"
 #include "base/cs_1d_wall_thermal.h"
 #include "base/cs_1d_wall_thermal_check.h"
 #include "base/cs_ale.h"
@@ -425,7 +425,7 @@ cs_time_stepping(void)
      --------------------------------------------- */
 
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0)
-    cs_atmsol();
+    cs_atmo_soil_initialize();
 
   /* Initialization for the Hybrid Temporal LES model (HTLES)
      -------------------------------------------------------- */

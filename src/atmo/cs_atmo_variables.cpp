@@ -941,6 +941,335 @@ cs_atmo_add_property_fields(void)
       cs_field_set_key_str(f, klbl, "Cover temperature radiation");
     }
 
+    if (cs_glob_atmo_option->soil_meb_model > 1.0) {
+
+      f = cs_field_create("source_term_vapor_mass_plant",
+                        field_type,
+                        z->location_id,
+                        1,
+                        false);
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "source_term_vapor_mass_plant");
+
+      f = cs_field_create("source_term_vapor_mass_soil",
+                        field_type,
+                        z->location_id,
+                        1,
+                        false);
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "source_term_vapor_mass_soil");
+
+      f = cs_field_create("source_term_imp_specific_humidity_plant",
+                        field_type,
+                        z->location_id,
+                        1,
+                        false);
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "source_term_imp_specific_humidity_plant");
+
+      f = cs_field_create("source_term_exp_specific_humidity_plant",
+                        field_type,
+                        z->location_id,
+                        1,
+                        false);
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "source_term_exp_specific_humidity_plant");
+
+      f = cs_field_create("source_term_convective_energy_soil",
+                        field_type,
+                        z->location_id,
+                        1,
+                        false);
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "source_term_convective_energy_soil");
+
+      f = cs_field_create("source_term_convective_energy_plant",
+                        field_type,
+                        z->location_id,
+                        1,
+                        false);
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "source_term_convective_energy_plant");
+
+      f = cs_field_create("source_term_mass_energy_plant",
+                        field_type,
+                        z->location_id,
+                        1,
+                        false);
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "source_term_mass_energy_plant");
+
+
+      f = cs_field_create("source_term_mass_energy_soil",
+                        field_type,
+                        z->location_id,
+                        1,
+                        false);
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "source_term_mass_energy_soil");
+
+
+      f = cs_field_create("source_term_rad_lw_up_soil",
+                        field_type,
+                        z->location_id,
+                        1,
+                        false);
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "source_term_rad_lw_up_soil");
+
+      f = cs_field_create("source_term_rad_sw_up_soil",
+                        field_type,
+                        z->location_id,
+                        1,
+                        false);
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "source_term_rad_sw_up_soil");
+
+      f = cs_field_create("source_term_rad_lw_up_plant",
+                        field_type,
+                        z->location_id,
+                        1,
+                        false);
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "source_term_rad_lw_up_plant");
+
+      f = cs_field_create("source_term_rad_sw_up_plant",
+                        field_type,
+                        z->location_id,
+                        1,
+                        false);
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "source_term_rad_sw_up_plant");
+
+      f = cs_field_create("ray_net_plant",
+                          field_type,
+                          z->location_id,
+                          1, /* dim */
+                          false); /* has_previous */
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "ray_net_plant");
+
+      f = cs_field_create("ray_net_ir_plant",
+                          field_type,
+                          z->location_id,
+                          1, /* dim */
+                          false); /* has_previous */
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "ray_net_ir_plant");
+
+      f = cs_field_create("ray_net_solar_plant",
+                          field_type,
+                          z->location_id,
+                          1, /* dim */
+                          false); /* has_previous */
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "ray_net_solar_plant");
+
+      f = cs_field_create("ray_ir_plant_to_soil",
+                          field_type,
+                          z->location_id,
+                          1, /* dim */
+                          false); /* has_previous */
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "ray_ir_plant_to_soil");
+
+      f = cs_field_create("ray_ir_atm_to_plant",
+                          field_type,
+                          z->location_id,
+                          1, /* dim */
+                          false); /* has_previous */
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "ray_ir_atm_to_plant");
+
+      f = cs_field_create("et_plant",
+                          field_type,
+                          z->location_id,
+                          1, /* dim */
+                          false); /* has_previous */
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "et_plant");
+
+      f = cs_field_create("et_soil",
+                          field_type,
+                          z->location_id,
+                          1, /* dim */
+                          false); /* has_previous */
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "et_soil");
+
+      f = cs_field_create("assimilation_rate",
+                          field_type,
+                          z->location_id,
+                          1, /* dim */
+                          false); /* has_previous */
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "assimilation_rate");
+
+      f = cs_field_create("gco2",
+                          field_type,
+                          z->location_id,
+                          1, /* dim */
+                          false); /* has_previous */
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "gco2");
+
+      f = cs_field_create("q_emitted_by_the_plant",
+                          field_type,
+                          z->location_id,
+                          1, /* dim */
+                          false); /* has_previous */
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "q_emitted_by_the_plant");
+
+      f = cs_field_create("soil_w1_transpirated_by_the_plant",
+                          field_type,
+                          z->location_id,
+                          1, /* dim */
+                          false); /* has_previous */
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "soil_w1_transpirated_by_the_plant");
+
+      f = cs_field_create("soil_w1_evaporated_by_the_soil",
+                          field_type,
+                          z->location_id,
+                          1, /* dim */
+                          false); /* has_previous */
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "soil_w1_evaporated_by_the_soil");
+
+      f = cs_field_create("leaf_temp",
+                          field_type,
+                          z->location_id,
+                          1, /* dim */
+                          false); /* has_previous */
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "leaf_temp");
+
+      f = cs_field_create("ci_pho",
+                          field_type,
+                          z->location_id,
+                          1, /* dim */
+                          false); /* has_previous */
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "ci_pho");
+
+      f = cs_field_create("latent_heat_plant_to_air",
+                          field_type,
+                          z->location_id,
+                          1, /* dim */
+                          false); /* has_previous */
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "latent_heat_plant_to_air");
+
+      f = cs_field_create("sensible_heat_plant_to_air",
+                          field_type,
+                          z->location_id,
+                          1, /* dim */
+                          false); /* has_previous */
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "sensible_heat_plant_to_air");
+
+      f = cs_field_create("soil_water_potential",
+                          field_type,
+                          z->location_id,
+                          1, /* dim */
+                          false); /* has_previous */
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "soil_water_potential");
+
+      f = cs_field_create("root_water_potential",
+                          field_type,
+                          z->location_id,
+                          1, /* dim */
+                          false); /* has_previous */
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "root_water_potential");
+
+      f = cs_field_create("plant_water_potential",
+                          field_type,
+                          z->location_id,
+                          1, /* dim */
+                          false); /* has_previous */
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "plant_water_potential");
+
+      f = cs_field_create("soil_p_water_volumetric_capacity",
+                          field_type,
+                          z->location_id,
+                          1, /* dim */
+                          false); /* has_previous */
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "soil_p_water_volumetric_capacity");
+
+      f = cs_field_create("root_p_water_volumetric_capacity",
+                          field_type,
+                          z->location_id,
+                          1, /* dim */
+                          false); /* has_previous */
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "root_p_water_volumetric_capacity");
+
+      f = cs_field_create("plant_air_resistance",
+                          field_type,
+                          z->location_id,
+                          1, /* dim */
+                          false); /* has_previous */
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "plant_air_resistance");
+
+      f = cs_field_create("soil_air_resistance",
+                          field_type,
+                          z->location_id,
+                          1, /* dim */
+                          false); /* has_previous */
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "soil_air_resistance");
+
+      f = cs_field_create("water_stress_factor",
+                          field_type,
+                          z->location_id,
+                          1, /* dim */
+                          false); /* has_previous */
+      cs_field_set_key_int(f, keyvis, post_flag);
+      cs_field_set_key_int(f, keylog, 1);
+      cs_field_set_key_str(f, klbl, "water_stress_factor");
+
+    }
   }
 }
 

@@ -91,7 +91,7 @@
 #include "atmo/cs_atmo.h"
 #include "atmo/cs_atmo_variables.h"
 #include "atmo/cs_at_data_assim.h"
-#include "atmo/cs_atmo_solcat.h"
+#include "atmo/cs_atmo_soil_model.h"
 #include "cfbl/cs_cf_thermo.h"
 #include "cogz/cs_combustion_gas.h"
 #include "cogz/cs_combustion_read_data.h"
