@@ -2189,55 +2189,59 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t *nsp,
 
   sc->apply_symmetry = cs_cdofb_symmetry;
 
-  switch (nsp->turbulence->model->model) {
-    case CS_TURB_NONE:
-      switch (mom_eqp->default_enforcement) {
-        case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
-          sc->apply_sliding_wall = cs_cdofb_block_dirichlet_alge;
-          sc->apply_fixed_wall   = cs_cdofb_block_dirichlet_alge;
-          break;
+  /* Default BC for walls */
 
-        case CS_PARAM_BC_ENFORCE_PENALIZED:
-          sc->apply_sliding_wall = cs_cdofb_block_dirichlet_pena;
-          sc->apply_fixed_wall   = cs_cdofb_block_dirichlet_pena;
-          break;
-
-        case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
-          sc->apply_sliding_wall = cs_cdofb_block_dirichlet_weak;
-          sc->apply_fixed_wall   = cs_cdofb_block_dirichlet_weak;
-          break;
-
-        case CS_PARAM_BC_ENFORCE_WEAK_SYM:
-          sc->apply_sliding_wall = cs_cdofb_block_dirichlet_wsym;
-          sc->apply_fixed_wall   = cs_cdofb_block_dirichlet_wsym;
-          break;
-
-        default:
-          bft_error(__FILE__,
-                    __LINE__,
-                    0,
-                    " %s: Invalid type of algorithm to enforce Wall BC.",
-                    __func__);
-      }
+  switch (mom_eqp->default_enforcement) {
+    case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
+      sc->apply_sliding_wall = cs_cdofb_block_dirichlet_alge;
+      sc->apply_fixed_wall   = cs_cdofb_block_dirichlet_alge;
       break;
 
-    case CS_TURB_K_EPSILON:
-    case CS_TURB_K_EPSILON_LIN_PROD:
-    case CS_TURB_K_EPSILON_LS:
-    case CS_TURB_K_EPSILON_QUAD:
-    case CS_TURB_K_OMEGA:
-      sc->apply_sliding_wall = cs_cdofb_prescribed_smooth_wall;
-      sc->apply_fixed_wall   = cs_cdofb_prescribed_smooth_wall;
+    case CS_PARAM_BC_ENFORCE_PENALIZED:
+      sc->apply_sliding_wall = cs_cdofb_block_dirichlet_pena;
+      sc->apply_fixed_wall   = cs_cdofb_block_dirichlet_pena;
+      break;
+
+    case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
+      sc->apply_sliding_wall = cs_cdofb_block_dirichlet_weak;
+      sc->apply_fixed_wall   = cs_cdofb_block_dirichlet_weak;
+      break;
+
+    case CS_PARAM_BC_ENFORCE_WEAK_SYM:
+      sc->apply_sliding_wall = cs_cdofb_block_dirichlet_wsym;
+      sc->apply_fixed_wall   = cs_cdofb_block_dirichlet_wsym;
       break;
 
     default:
       bft_error(__FILE__,
                 __LINE__,
                 0,
-                " %s: Invalid type of wall boundary treatment.",
+                " %s: Invalid type of algorithm to enforce Wall BC.",
                 __func__);
   }
 
+  /* Wall functions for turbulence */
+  if (cs_turb_wall_functions_is_activated(nsp->turbulence)) {
+    switch (nsp->turbulence->model->model) {
+      case CS_TURB_K_EPSILON:
+      case CS_TURB_K_EPSILON_LIN_PROD:
+      case CS_TURB_K_EPSILON_LS:
+      case CS_TURB_K_EPSILON_QUAD:
+      case CS_TURB_K_OMEGA:
+        sc->apply_sliding_wall = cs_cdofb_prescribed_smooth_wall;
+        sc->apply_fixed_wall   = cs_cdofb_prescribed_smooth_wall;
+        break;
+
+      default:
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
+                  " %s: Invalid type of wall boundary treatment.",
+                  __func__);
+    }
+  }
+
+  /* Inlet veloicity BC */
   switch (mom_eqp->default_enforcement) {
 
   case CS_PARAM_BC_ENFORCE_ALGEBRAIC:

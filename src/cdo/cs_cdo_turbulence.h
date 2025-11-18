@@ -524,6 +524,19 @@ cs_turb_compute_wall_bc_coeffs(const cs_equation_param_t  *eqp,
                                cs_real_t                  *res);
 
 /*----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return true if a wall function is used for turbulence.
+ *
+ * \param[in]   turbulence       pointer to a cs_turbulence_param_t
+ * \param[out]  retval          use or nor a wall function
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_turb_wall_functions_is_activated(const cs_turbulence_param_t *turbulence);
+
 END_C_DECLS
 
 #endif /* __CS_CDO_TURBULENCE_H__ */

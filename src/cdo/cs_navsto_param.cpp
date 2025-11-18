@@ -1210,8 +1210,9 @@ cs_navsto_set_fixed_walls(cs_navsto_param_t *nsp)
 
   const cs_boundary_t  *bdy = nsp->boundaries;
 
-  cs_flag_t bc_type = (nsp->turbulence->model->model == CS_TURB_NONE) ?
-                       CS_CDO_BC_HMG_DIRICHLET : CS_CDO_BC_WALL_PRESCRIBED;
+  cs_flag_t bc_type = cs_turb_wall_functions_is_activated(nsp->turbulence)
+                        ? CS_CDO_BC_WALL_PRESCRIBED
+                        : CS_CDO_BC_HMG_DIRICHLET;
 
   cs_xdef_t *d = nullptr;
 
@@ -1467,8 +1468,9 @@ cs_navsto_set_velocity_wall_by_value(cs_navsto_param_t *nsp,
 
   /* Add a new cs_xdef_t structure */
 
-  cs_flag_t bc_type = (nsp->turbulence->model->model == CS_TURB_NONE) ?
-                       CS_CDO_BC_DIRICHLET : CS_CDO_BC_WALL_PRESCRIBED;
+  cs_flag_t bc_type = cs_turb_wall_functions_is_activated(nsp->turbulence)
+                        ? CS_CDO_BC_WALL_PRESCRIBED
+                        : CS_CDO_BC_DIRICHLET;
 
   cs_real_3_t val_cpy = { values[0], values[1], values[2] };
   cs_xdef_t  *d       = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,

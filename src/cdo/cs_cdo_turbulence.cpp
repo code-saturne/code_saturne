@@ -1048,4 +1048,30 @@ cs_turb_compute_wall_bc_coeffs(const cs_equation_param_t  *eqp,
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return true if a wall function is used for turbulence.
+ *
+ * \param[in]   turbulence       pointer to a cs_turbulence_param_t
+ * \param[out]  retval          use or nor a wall function
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_turb_wall_functions_is_activated(const cs_turbulence_param_t *turbulence)
+{
+  if (turbulence == nullptr)
+    return false;
+
+  if (turbulence->model->model != CS_TURB_NONE) {
+    const cs_wall_functions_t *glob_wf = cs_get_glob_wall_functions();
+    const cs_wall_f_type_t     iwallf  = glob_wf->iwallf;
+    if (iwallf != CS_WALL_F_UNSET && iwallf != CS_WALL_F_DISABLED) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/*----------------------------------------------------------------------------*/
 END_C_DECLS
