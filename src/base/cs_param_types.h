@@ -491,20 +491,35 @@ typedef enum {
  */
 
 typedef enum {
-  CS_BC_HMG_DIRICHLET         = 0,
+  // DO NOT CHANGE, back-compatibility with icodcl = 0
+  CS_BC_UNDEF                 = 0,
+  CS_BC_HMG_DIRICHLET         = 10,
+  // DO NOT CHANGE, back-compatibility with icodcl = 1
   CS_BC_DIRICHLET             = 1,
+  // DO NOT CHANGE, back-compatibility with icodcl = 2
   CS_BC_RADIATIVE_OUTLET      = 2,
-  CS_BC_HMG_NEUMANN           = 3,
-  CS_BC_NEUMANN               = 4,
-  CS_BC_NEUMANN_FULL          = 5,
-  CS_BC_SYMMETRY              = 6,
-  CS_BC_WALL_MODELLED         = 7,
-  CS_BC_ROUGH_WALL_MODELLED   = 8,
+  CS_BC_HMG_NEUMANN           = 7,
+  // DO NOT CHANGE, back-compatibility with icodcl = 3
+  CS_BC_NEUMANN               = 3,
+  CS_BC_NEUMANN_FULL          = 8,
+  // DO NOT CHANGE, back-compatibility with icodcl = 4
+  CS_BC_SYMMETRY              = 4,
+  // DO NOT CHANGE, back-compatibility with icodcl = 5
+  CS_BC_WALL_MODELLED         = 5,
+  // DO NOT CHANGE, back-compatibility with icodcl = 6
+  // note: deprecated, to be removed
+  CS_BC_ROUGH_WALL_MODELLED   = 6,
   CS_BC_ROBIN                 = 9,
-  CS_BC_CIRCULATION           = 10,
-  CS_BC_IMPOSED_TOT_FLUX      = 11,
-  CS_BC_GENERALIZED_SYM       = 12,
-  CS_BC_IMPOSED_EXCHANGE_COEF = 13,
+  // DO NOT CHANGE, back-compatibility with icodcl = 11
+  // in legacy, it correspond to Neumann on normal component and
+  // Dirichlet on tangential ones for vectors
+  CS_BC_CIRCULATION           = 11,
+  // DO NOT CHANGE, back-compatibility with icodcl = 13
+  CS_BC_IMPOSED_TOT_FLUX      = 13,
+  // DO NOT CHANGE, back-compatibility with icodcl = 14
+  CS_BC_GENERALIZED_SYM       = 14,
+  // DO NOT CHANGE, back-compatibility with icodcl = 15
+  CS_BC_IMPOSED_EXCHANGE_COEF = 15,
 
   CS_PARAM_N_BC_TYPES
 
