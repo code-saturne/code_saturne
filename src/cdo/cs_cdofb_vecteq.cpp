@@ -452,15 +452,10 @@ cs_cdofb_vecteq_init_turb_bc(const cs_cell_mesh_t         *cm,
   if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
     const cs_lnum_t n_b_faces = cs_shared_quant->n_b_faces;
 
-    cs_real_t *rcodcl1_ux = nullptr,
-              *rcodcl1_uy = nullptr,
-              *rcodcl1_uz = nullptr;
+    assert(icodcl_vel != nullptr && rcodcl1_vel != nullptr);
 
-    if (rcodcl1_vel != nullptr) {
-      rcodcl1_ux = rcodcl1_vel;
-      rcodcl1_uy = rcodcl1_vel + n_b_faces;
-      rcodcl1_uz = rcodcl1_vel + 2*n_b_faces;
-    }
+    cs_real_t *rcodcl1_ux = rcodcl1_vel, *rcodcl1_uy = rcodcl1_vel + n_b_faces,
+              *rcodcl1_uz = rcodcl1_vel + 2 * n_b_faces;
 
     /* Identify which face is a boundary face */
 
@@ -484,12 +479,10 @@ cs_cdofb_vecteq_init_turb_bc(const cs_cell_mesh_t         *cm,
                                              uc,
                                              csys->rob_values);
 
-          if(icodcl_vel != nullptr && rcodcl1_vel != nullptr) {
-            icodcl_vel[bf_id] = CS_SMOOTHWALL;
-            rcodcl1_ux[bf_id] = csys->rob_values[9*f + 0];
-            rcodcl1_uy[bf_id] = csys->rob_values[9*f + 1];
-            rcodcl1_uz[bf_id] = csys->rob_values[9*f + 2];
-          }
+          icodcl_vel[bf_id] = CS_SMOOTHWALL;
+          rcodcl1_ux[bf_id] = csys->rob_values[9 * f + 0];
+          rcodcl1_uy[bf_id] = csys->rob_values[9 * f + 1];
+          rcodcl1_uz[bf_id] = csys->rob_values[9 * f + 2];
         }
       }
     }
@@ -1842,6 +1835,13 @@ cs_cdofb_vecteq_init_context(cs_equation_param_t    *eqp,
     eqb->bdy_flag |= CS_FLAG_COMP_HFQ;
     eqc->enforce_sliding = cs_cdo_diffusion_vfb_wsym_sliding;
 
+  }
+
+  if (eqb->face_bc->n_robin_faces > 0) {
+    /* There is at least one face with a robin conditions to handle */
+    /* Wall functions for turbulence need it*/
+
+    eqb->bdy_flag |= CS_FLAG_COMP_HFQ;
   }
 
   /* Advection part */
