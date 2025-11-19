@@ -2465,27 +2465,6 @@ _get_cell_cocg_lsq(const cs_mesh_t               *m,
   if (_cocg == nullptr)
     _compute_cell_cocg_lsq(m, extended, fvq, gq);
 
-  /* If used on accelerator, ensure arrays are available there */
-
-#if defined(HAVE_ACCEL)
-
-  if (accel) {
-
-    cs_alloc_mode_t alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
-
-    if (extended) {
-      cs_set_alloc_mode_r(gq->cocg_lsq_ext, alloc_mode);
-      cs_set_alloc_mode_r(gq->cocgb_s_lsq_ext, alloc_mode);
-    }
-    else {
-      cs_set_alloc_mode_r(gq->cocg_lsq, alloc_mode);
-      cs_set_alloc_mode_r(gq->cocgb_s_lsq, alloc_mode);
-    }
-
-  }
-
-#endif
-
   /* Set pointers */
 
   if (extended)

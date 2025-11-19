@@ -2877,6 +2877,9 @@ cs_multigrid_smoother_setup(void               *context,
       if (c->n_max_iter % wk_m)
         c->n_max_iter += wk_m - (c->n_max_iter%wk_m);
     }
+#if defined(HAVE_ACCEL)
+    c->on_device = on_device;
+#endif
     break;
 
   case CS_SLES_JACOBI:
@@ -2904,6 +2907,9 @@ cs_multigrid_smoother_setup(void               *context,
       }
 #endif
     }
+#if defined(HAVE_ACCEL)
+    c->on_device = on_device;
+#endif
     break;
 
   case CS_SLES_P_GAUSS_SEIDEL:

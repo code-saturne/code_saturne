@@ -493,6 +493,8 @@ _coarse_init(const cs_grid_t  *f,
   c->eb_size = f->eb_size;
 
   cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(f->matrix);
+  if (amode == CS_ALLOC_DEVICE)
+    amode = CS_ALLOC_HOST_DEVICE_SHARED;
   CS_MALLOC_HD(c->coarse_row, f->n_cols_ext, cs_lnum_t, amode);
 
 # pragma omp parallel for if(f->n_cols_ext > CS_THR_MIN)
@@ -4913,7 +4915,7 @@ _automatic_aggregation_dx_msr(const cs_grid_t       *f,
   const cs_lnum_t f_nnz = row_index[f_n_rows];
 
 #if defined(HAVE_ACCEL)
-  if (cs_matrix_get_alloc_mode(f->matrix) > CS_ALLOC_HOST) {
+  if (cs_matrix_get_alloc_mode(f->matrix) == CS_ALLOC_HOST_DEVICE_SHARED) {
     cs_real_t  *d_val_p = const_cast<cs_real_t *>(d_val);
     cs_real_t  *x_val_p = const_cast<cs_real_t *>(x_val);
     cs_prefetch_d2h(d_val_p, f_n_rows*db_size*db_size*sizeof(cs_real_t));
@@ -7794,6 +7796,8 @@ cs_grid_create_from_shared(cs_lnum_t              n_faces,
   g = _create_grid();
 
   g->alloc_mode = cs_matrix_get_alloc_mode(a);
+  if (g->alloc_mode == CS_ALLOC_DEVICE)
+    g->alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
   g->level = 0;
   g->conv_diff = conv_diff;
   g->symmetric = cs_matrix_is_symmetric(a);
@@ -8347,6 +8351,9 @@ cs_grid_coarsen(const cs_grid_t      *f,
   if (cs_glob_timer_kernels_flag > 0)
     t_start = std::chrono::high_resolution_clock::now();
 
+  if (alloc_mode == CS_ALLOC_DEVICE)
+    alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
+
   assert(f != nullptr);
 
   int recurse = 0;
@@ -8377,6 +8384,13 @@ cs_grid_coarsen(const cs_grid_t      *f,
 
   const cs_lnum_t db_size = f->db_size;
   const cs_lnum_t db_stride = db_size * db_size;
+
+  /* Since some coarsening steps are done on CPU in all cases,
+     relax allocation mode requirements. */
+
+  cs_alloc_mode_t alloc_mode_ref = alloc_mode;
+  if (alloc_mode == CS_ALLOC_DEVICE)
+    alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
 
   /* Initialization */
 
@@ -8423,6 +8437,16 @@ cs_grid_coarsen(const cs_grid_t      *f,
     if (f->face_cell == nullptr)
       coarsening_type = CS_GRID_COARSENING_SPD_MX;
   }
+
+  /* On device, ensure fine matrix values are accessible from CPU for
+     coarsening steps. */
+
+#if defined(HAVE_ACCEL)
+  cs_alloc_mode_t amode_prev = cs_matrix_get_alloc_mode(f->matrix);
+  if (amode_prev == CS_ALLOC_DEVICE)
+    cs_matrix_set_alloc_mode(const_cast<cs_matrix_t *>(f->matrix),
+                             CS_ALLOC_HOST_DEVICE_PINNED);
+#endif
 
   /* Determine fine->coarse cell connectivity (aggregation) */
 
@@ -8486,6 +8510,11 @@ cs_grid_coarsen(const cs_grid_t      *f,
                 _(cs_matrix_get_type_name(f->matrix)));
     }
   }
+
+#if defined(HAVE_ACCEL)
+  if (amode_prev == CS_ALLOC_DEVICE)
+    cs_matrix_set_alloc_mode(const_cast<cs_matrix_t *>(f->matrix), amode_prev);
+#endif
 
   _coarse_row_count_and_halo(f, c);
 

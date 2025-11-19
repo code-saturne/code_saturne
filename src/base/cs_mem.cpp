@@ -254,7 +254,7 @@ public:
   {
     bool moved_to_pool = false;
 
-    if (active_) {
+    if (active_ && me.mode >= CS_ALLOC_HOST_DEVICE_SHARED) {
       if (max_capacity_ == 0 || current_capacity_ + me.size < max_capacity_) {
 
         cs_mem_pool_block_t mpe = {.ptr   = me.device_ptr,
@@ -289,7 +289,7 @@ public:
   {
     void *ptr = nullptr;
 
-    if (active_) {
+    if (active_ && mode >= CS_ALLOC_HOST_DEVICE_SHARED) {
       std::lock_guard<std::mutex> lock(mutex_);
 
       auto &free_blocks = free_blocks_[mode];
@@ -1272,6 +1272,51 @@ _omp_target_mem_malloc_managed(size_t        n,
 #endif /* defined(HAVE_OPENMP_TARGET) */
 
 #if defined(HAVE_ACCEL)
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allocate pinned host memory for ni elements of size bytes.
+ *
+ * If a memory pool is present and active, it my be used
+ *
+ * \param [in]  me_size    allocation size
+ * \param [in]  var_name   allocated variable name string
+ * \param [in]  file_name  name of calling source file
+ * \param [in]  line_num   line number in calling source file
+ *
+ * \returns pointer to allocated memory.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void *
+_malloc_host_pinned(size_t            me_size,
+                    const char       *var_name,
+                    const char       *file_name,
+                    int               line_num)
+{
+  if (me_size == 0)
+    return nullptr;
+
+#if defined(HAVE_CUDA)
+
+  return cs_mem_cuda_malloc_host(me_size, var_name, file_name, line_num);
+
+#elif defined(SYCL_LANGUAGE_VERSION)
+
+  return _sycl_mem_malloc_host(me_size, var_name, file_name, line_num);
+
+#elif defined(HAVE_OPENMP_TARGET)
+
+  return _omp_target_mem_malloc_host(me_size, var_name, file_name, line_num);
+
+#else
+
+  assert(0);
+  return 0;
+
+#endif
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2330,31 +2375,11 @@ cs_mem_malloc_hd(cs_alloc_mode_t   mode,
   // cs_get_device_ptr. This applies for CS_ALLOC_HOST_DEVICE
   // and CS_ALLOC_HOST_DEVICE_PINNED modes
 
-#if defined(HAVE_CUDA)
-
   else if (mode == CS_ALLOC_HOST_DEVICE_PINNED)
-    me.host_ptr = cs_mem_cuda_malloc_host(me.size,
-                                          var_name,
-                                          file_name,
-                                          line_num);
-
-#elif defined(SYCL_LANGUAGE_VERSION)
-
-  else if (mode == CS_ALLOC_HOST_DEVICE_PINNED)
-    me.host_ptr = _sycl_mem_malloc_host(me.size,
-                                        var_name,
-                                        file_name,
-                                        line_num);
-
-#elif defined(HAVE_OPENMP_TARGET)
-
-  else if (mode == CS_ALLOC_HOST_DEVICE_PINNED)
-    me.host_ptr = _omp_target_mem_malloc_host(me.size,
-                                              var_name,
-                                              file_name,
-                                              line_num);
-
-#endif
+    me.host_ptr = _malloc_host_pinned(me.size,
+                                      var_name,
+                                      file_name,
+                                      line_num);
 
   else if (mode == CS_ALLOC_HOST_DEVICE_SHARED) {
     me.host_ptr = _malloc_shared(me.size,
@@ -2770,7 +2795,7 @@ cs_disassociate_device_ptr(void  *host_ptr)
  * the associated memory will be reallocated with the desired mode,
  * and the previous allocation freed.
  *
- * \param [in, out]  host_ptr   pointer to host pointer to modify
+ * \param [in, out]  ptr        pointer to pointer to modify
  * \param [in]       mode       desired allocation mode
  */
 /*----------------------------------------------------------------------------*/
@@ -2784,38 +2809,132 @@ cs_set_alloc_mode(void             **host_ptr,
 
   void *ret_ptr = *host_ptr;
 
-  void *_host_ptr = *host_ptr;
+  void *_ptr = *host_ptr;
 
-  if (_host_ptr == nullptr)
+  if (_ptr == nullptr)
     return;
 
-  cs_mem_block_t me = _get_block_info(_host_ptr);
+  cs_mem_block_t me = _get_block_info(_ptr);
 
   if (mode != me.mode) {
 
-    if (me.mode == CS_ALLOC_HOST_DEVICE)
-      cs_disassociate_device_ptr(_host_ptr);
+    const char var_name[] = "me.host_ptr";
+
+    if (   me.mode != CS_ALLOC_HOST_DEVICE_PINNED
+        && me.mode != CS_ALLOC_DEVICE) {
+      if (   mode != CS_ALLOC_HOST_DEVICE_PINNED
+          && mode != CS_ALLOC_DEVICE) {
+        cs_disassociate_device_ptr(_ptr);
+      }
+    }
 
     if (   mode == CS_ALLOC_HOST_DEVICE_SHARED
         || me.mode == CS_ALLOC_HOST_DEVICE_SHARED) {
 
       ret_ptr = cs_mem_malloc_hd(mode, 1, me.size,
-                                 "me.host_ptr", __FILE__, __LINE__);
+                                 var_name, __FILE__, __LINE__);
 
       /* TODO: check if we have multiple OpenMP threads, in which
          case applying a "first-touch" policy might be useful here */
 
       if (me.mode < CS_ALLOC_DEVICE) {
         if (mode < CS_ALLOC_DEVICE)
-          memcpy(ret_ptr, _host_ptr, me.size);
+          memcpy(ret_ptr, _ptr, me.size);
         else
-          cs_copy_h2d(ret_ptr, _host_ptr, me.size);
+          cs_copy_h2d(ret_ptr, _ptr, me.size);
       }
       else { /* if (old_mode == CS_ALLOC_DEVICE) */
-        cs_copy_d2h(ret_ptr, _host_ptr, me.size);
+        cs_copy_d2h(ret_ptr, _ptr, me.size);
       }
 
-      cs_mem_free(_host_ptr, "me.host_ptr", __FILE__, __LINE__);
+      cs_mem_free(_ptr, var_name, __FILE__, __LINE__);
+
+    }
+
+    else if (me.mode == CS_ALLOC_HOST_DEVICE) {
+
+      cs_mem_block_t me_new = me;
+      me_new.mode = mode;
+
+      // mode == CS_ALLOC_HOST_DEVICE_SHARED already handle above.
+
+      if (mode == CS_ALLOC_DEVICE) {
+        _free_hd_host(me, var_name, __FILE__, __LINE__);
+        me_new.host_ptr = nullptr;
+        ret_ptr = me_new.device_ptr;
+        _update_block_info(var_name, __FILE__, __LINE__, &me, &me_new);
+      }
+      else if (mode != CS_ALLOC_HOST) {
+        if (mode == CS_ALLOC_HOST_DEVICE_PINNED)
+          me_new.host_ptr = _malloc_host_pinned(me.size, var_name, nullptr, 0);
+        else if (mode == CS_ALLOC_HOST_DEVICE_SHARED) {
+          me_new.host_ptr = _malloc_shared(me.size, var_name, nullptr, 0);
+          me_new.device_ptr = me_new.host_ptr;
+        }
+        ret_ptr = me_new.host_ptr;
+        memcpy(ret_ptr, _ptr, me.size);
+        _free_hd_host(me, var_name, __FILE__, __LINE__);
+        _update_block_info(var_name, __FILE__, __LINE__, &me, &me_new);
+      }
+
+    }
+
+    else if (me.mode == CS_ALLOC_HOST_DEVICE_PINNED) {
+
+      cs_mem_block_t me_new = me;
+      me_new.mode = mode;
+
+      // mode == CS_ALLOC_HOST_DEVICE_SHARED already handle above.
+
+      if (   mode != CS_ALLOC_HOST_DEVICE_PINNED
+          && mode != CS_ALLOC_DEVICE)
+        cs_disassociate_device_ptr(_ptr);
+
+      if (mode <= CS_ALLOC_HOST_DEVICE_SHARED) {
+        if (mode <= CS_ALLOC_HOST_DEVICE_PINNED) {
+          ret_ptr = cs_mem_malloc(1,me.size, var_name,
+                                  __FILE__, __LINE__);
+        }
+        else if (mode == CS_ALLOC_HOST_DEVICE_SHARED)
+          ret_ptr = cs_mem_malloc_hd(mode, 1, me.size, var_name,
+                                     __FILE__, __LINE__);
+        memcpy(ret_ptr, _ptr, me.size);
+        cs_mem_free(host_ptr, var_name, __FILE__, __LINE__);
+      }
+      else if (mode == CS_ALLOC_DEVICE) {
+        _free_hd_host(me, var_name, __FILE__, __LINE__);
+        me_new.host_ptr = nullptr;
+        ret_ptr = me_new.device_ptr;
+        _update_block_info(var_name, __FILE__, __LINE__, &me, &me_new);
+      }
+
+    }
+
+    else if (me.mode == CS_ALLOC_DEVICE) {
+
+      cs_mem_block_t me_new = me;
+      me_new.mode = mode;
+
+      // mode == CS_ALLOC_HOST_DEVICE_SHARED already handle above.
+
+      if (mode < CS_ALLOC_HOST_DEVICE_PINNED) {
+        me_new.host_ptr = cs_mem_malloc(1, me.size, var_name, nullptr, 0);
+      }
+
+      else if (mode == CS_ALLOC_HOST_DEVICE_PINNED) {
+        me.host_ptr = _malloc_host_pinned(me.size, var_name, nullptr, 0);
+      }
+
+      ret_ptr = me_new.host_ptr;
+
+      cs_copy_d2h(ret_ptr, _ptr, me.size);
+
+      if (mode == CS_ALLOC_HOST) {
+        cs_mem_free(_ptr, var_name, __FILE__, __LINE__);
+        me.host_ptr = cs_mem_malloc(1, me.size, var_name, nullptr, 0);
+      }
+
+      _update_block_info(var_name, __FILE__, __LINE__, &me, &me_new);
 
     }
 

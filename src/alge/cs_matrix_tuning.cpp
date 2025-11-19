@@ -412,6 +412,13 @@ cs_matrix_variant_tuned(const cs_matrix_t  *m,
                     cs_matrix_get_type_name(m),
                     cs_matrix_fill_type_name[m->fill_type]);
 
+#if defined(HAVE_ACCEL)
+    cs_alloc_mode_t amode_prev = cs_matrix_get_alloc_mode(m);
+    if (amode_prev == CS_ALLOC_DEVICE)
+      cs_matrix_set_alloc_mode(const_cast<cs_matrix_t *>(m),
+                               CS_ALLOC_HOST_DEVICE_PINNED);
+#endif
+
     double *spmv_cost;
     CS_MALLOC(spmv_cost, n_variants*CS_MATRIX_SPMV_N_TYPES, double);
 
@@ -433,6 +440,11 @@ cs_matrix_variant_tuned(const cs_matrix_t  *m,
 
     cs_log_printf(CS_LOG_PERFORMANCE, "\n");
     cs_log_separator(CS_LOG_PERFORMANCE);
+
+#if defined(HAVE_ACCEL)
+    if (amode_prev == CS_ALLOC_DEVICE)
+      cs_matrix_set_alloc_mode(const_cast<cs_matrix_t *>(m), amode_prev);
+#endif
 
   }
 

@@ -196,6 +196,7 @@
  *                               (if iescap >= 0)
  */
 /*----------------------------------------------------------------------------*/
+
 template <cs_lnum_t stride>
 static void
 _equation_iterative_solve_strided(int                   idtvar,
@@ -377,6 +378,10 @@ _equation_iterative_solve_strided(int                   idtvar,
 
   cs_matrix_t *a = cs_sles_default_get_matrix
                      (f_id, var_name, stride, eb_size, symmetric);
+
+#if defined(HAVE_ACCEL)
+  cs_matrix_set_alloc_mode(a, ctx.alloc_mode());
+#endif
 
   int tensorial_diffusion = 1;
 
@@ -667,6 +672,15 @@ _equation_iterative_solve_strided(int                   idtvar,
     });
   }
 
+  // Number of local ghost cells may be different from that of mesh
+  // in case of internal coupling.
+  CS_PROFILE_MARK_LINE();
+  cs_lnum_t n_cols = cs_matrix_get_n_columns(a);
+
+  var_t *w1, *w2;
+  CS_MALLOC_HD(w1, n_cols, var_t, amode);
+  CS_MALLOC_HD(w2, n_cols, var_t, amode);
+
   ctx.wait();
   CS_PROFILE_MARK_LINE();
 
@@ -684,15 +698,6 @@ _equation_iterative_solve_strided(int                   idtvar,
      for ghost values. */
 
   /* Allocate a temporary array */
-
-  // Number of local ghost cells may be different from that of mesh
-  // in case of internal coupling.
-  CS_PROFILE_MARK_LINE();
-  cs_lnum_t n_cols = cs_matrix_get_n_columns(a);
-
-  var_t *w1, *w2;
-  CS_MALLOC_HD(w1, n_cols, var_t, amode);
-  CS_MALLOC_HD(w2, n_cols, var_t, amode);
 
   /* Compute the L2 norm of the variable */
 
@@ -1174,8 +1179,9 @@ _equation_iterative_solve_strided(int                   idtvar,
 
   if (iwarnp >= 1) {
     if (residu <= epsrsp*rnorm)
-      bft_printf("%s : CV_DIF_TS, converged at it: %d, Res: %12.5e, Norm: %12.5e\n",
-                 var_name, isweep-1, residu, rnorm);
+      bft_printf
+        ("%s : CV_DIF_TS, converged at it: %d, Res: %12.5e, Norm: %12.5e\n",
+         var_name, isweep-1, residu, rnorm);
     /* Writing: non-convergence */
     else if (isweep > nswmod)
       bft_printf("@\n@ @@ WARNING: %s CONVECTION-DIFFUSION-SOURCE-TERMS\n@"
@@ -1565,6 +1571,10 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
    *==========================================================================*/
 
   cs_matrix_t *a = cs_sles_default_get_matrix(f_id, var_name, 1, 1, symmetric);
+
+#if defined(HAVE_ACCEL)
+  cs_matrix_set_alloc_mode(a, ctx.alloc_mode());
+#endif
 
   /* For steady computations, the diagonal is relaxed */
   cs_real_t relaxp = (idtvar < 0) ? eqp->relaxv : 1.;

@@ -600,6 +600,11 @@ cs_matrix_get_alloc_mode(const cs_matrix_t  *matrix);
 /*!
  *\brief Set matrix allocation mode.
  *
+ * When coefficients are already present, their allocation mode will be
+ * changed only when owned directly by this matrix, not shared with another.
+ * Also, a matrix's allocation mode should ne be changed if some of its
+ * coefficients are already shared by another.
+ *
  * \param[in, out]  matrix      pointer to matrix structure
  * \param[in]      alloc_mode  host/device allocation mode
  */

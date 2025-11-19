@@ -307,6 +307,10 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
 
   cs_matrix_t *a = cs_sles_default_get_matrix(f->id, nullptr, 1, 1, true);
 
+#if defined(HAVE_ACCEL)
+  cs_matrix_set_alloc_mode(a, ctx.alloc_mode());
+#endif
+
   cs_matrix_compute_coeffs(a,
                            f,
                            eqp_pr->iconv,
@@ -1375,6 +1379,10 @@ _pressure_correction_fv(int                   iterns,
   ctx_c.wait(); // needed for i_visc
 
   cs_matrix_t *a = cs_sles_default_get_matrix(f_p->id, nullptr, 1, 1, symmetric);
+
+#if defined(HAVE_ACCEL)
+  cs_matrix_set_alloc_mode(a, ctx.alloc_mode());
+#endif
 
   cs_matrix_compute_coeffs(a,
                            f_p,

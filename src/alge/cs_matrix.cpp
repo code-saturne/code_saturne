@@ -5131,6 +5131,11 @@ cs_matrix_get_alloc_mode(const cs_matrix_t  *matrix)
 /*!
  *\brief Set matrix allocation mode.
  *
+ * When coefficients are already present, their allocation mode will be
+ * changed only when owned directly by this matrix, not shared with another.
+ * Also, a matrix's allocation mode should ne be changed if some of its
+ * coefficients are already shared by another.
+ *
  * \param[in, out]  matrix      pointer to matrix structure
  * \param[in]       alloc_mode  host/device allocation mode
  */
@@ -5141,6 +5146,31 @@ cs_matrix_set_alloc_mode(cs_matrix_t       *matrix,
                          cs_alloc_mode_t   alloc_mode)
 {
   matrix->alloc_mode = alloc_mode;
+
+  if (matrix->type < CS_MATRIX_N_BUILTIN_TYPES && matrix->coeffs != nullptr) {
+    auto mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
+
+    if (mc->_val != nullptr) {
+      cs_set_alloc_mode_r(mc->_val, alloc_mode);
+      mc->val = mc->_val;
+    }
+    if (mc->_d_val != nullptr) {
+      cs_set_alloc_mode_r(mc->_d_val, alloc_mode);
+      mc->d_val = mc->_d_val;
+    }
+    if (mc->_e_val != nullptr) {
+      cs_set_alloc_mode_r(mc->_e_val, alloc_mode);
+      mc->e_val = mc->_e_val;
+    }
+    if (mc->_h_val != nullptr) {
+      cs_set_alloc_mode_r(mc->_h_val, alloc_mode);
+      mc->h_val = mc->_h_val;
+    }
+    if (mc->d_idx != nullptr) {
+      cs_set_alloc_mode_r(mc->d_idx, alloc_mode);
+      mc->d_idx = mc->d_idx;
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/

@@ -309,6 +309,10 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
   ctx.wait();
   cs_matrix_t *a = cs_sles_default_get_matrix(CS_F_(p)->id, nullptr, 1, 1, true);
 
+#if defined(HAVE_ACCEL)
+  cs_matrix_set_alloc_mode(a, ctx.alloc_mode());
+#endif
+
   cs_matrix_compute_coeffs(a,
                            CS_F_(p),
                            eqp->iconv,

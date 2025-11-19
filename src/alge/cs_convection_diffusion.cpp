@@ -3216,8 +3216,6 @@ _convection_diffusion_unsteady_strided
 
   grad_t *grdpa = nullptr;
 
-  ctx.wait();
-
   if (iconvp > 0 && pure_upwind == false && isstpp == 0) {
     CS_MALLOC_HD(grdpa, n_cells_ext, grad_t, amode);
 
@@ -3241,6 +3239,8 @@ _convection_diffusion_unsteady_strided
     });
     ctx.wait();
   }
+
+  ctx.wait();
 
   /* Pure upwind flux
      ================ */
