@@ -483,7 +483,8 @@ cs_boundary_conditions_type(bool  init,
 
       if (!(f->type & CS_FIELD_VARIABLE))
         continue;
-      if (f->type & CS_FIELD_CDO && !(f == CS_F_(vel) || f == CS_F_(p)))
+      if (f->type & CS_FIELD_CDO && (!cs_param_cdo_has_NS_with_fv() ||
+                                     !(f == CS_F_(vel) || f == CS_F_(p))))
         continue;
 
       cs_real_t *rcodcl1 = f->bc_coeffs->rcodcl1;
@@ -1091,7 +1092,8 @@ cs_boundary_conditions_type(bool  init,
 
       if (!(f->type & CS_FIELD_VARIABLE))
         continue;
-      if (f->type & CS_FIELD_CDO && !(f == CS_F_(vel) || f == CS_F_(p)))
+      if (f->type & CS_FIELD_CDO && (!cs_param_cdo_has_NS_with_fv() ||
+                                     !(f == CS_F_(vel) || f == CS_F_(p))))
         continue;
 
       bool is_uncoupled_rij = false;
@@ -1167,7 +1169,8 @@ cs_boundary_conditions_type(bool  init,
 
       if (!(f->type & CS_FIELD_VARIABLE))
         continue;
-      if (f->type & CS_FIELD_CDO && !(f == CS_F_(vel) || f == CS_F_(p)))
+      if (f->type & CS_FIELD_CDO && (!cs_param_cdo_has_NS_with_fv() ||
+                                     !(f == CS_F_(vel) || f == CS_F_(p))))
         continue;
 
       int *icodcl = f->bc_coeffs->icodcl;
@@ -1329,7 +1332,8 @@ cs_boundary_conditions_type(bool  init,
 
       if (!(f->type & CS_FIELD_VARIABLE))
         continue;
-      if (f->type & CS_FIELD_CDO && !(f == CS_F_(vel) || f == CS_F_(p)))
+      if (f->type & CS_FIELD_CDO && (!cs_param_cdo_has_NS_with_fv() ||
+                                     !(f == CS_F_(vel) || f == CS_F_(p))))
         continue;
 
       int *icodcl = f->bc_coeffs->icodcl;
@@ -1498,7 +1502,8 @@ cs_boundary_conditions_type(bool  init,
 
       if (!(f->type & CS_FIELD_VARIABLE))
         continue;
-      if (f->type & CS_FIELD_CDO && !(f == CS_F_(vel) || f == CS_F_(p)))
+      if (f->type & CS_FIELD_CDO && (!cs_param_cdo_has_NS_with_fv() ||
+                                     !(f == CS_F_(vel) || f == CS_F_(p))))
         continue;
 
       int *icodcl = f->bc_coeffs->icodcl;
@@ -1620,7 +1625,8 @@ cs_boundary_conditions_type(bool  init,
 
     if (!(f->type & CS_FIELD_VARIABLE))
       continue;
-    if (f->type & CS_FIELD_CDO && !(f == CS_F_(vel) || f == CS_F_(p)))
+    if (f->type & CS_FIELD_CDO &&
+        (!cs_param_cdo_has_NS_with_fv() || !(f == CS_F_(vel) || f == CS_F_(p))))
       continue;
 
     /* Wall values for scalars without diffusion */

@@ -2534,7 +2534,8 @@ cs_boundary_conditions_compute([[maybe_unused]] int  bc_type[])
     /* Settings in eqp may not be well-defined at this stage. The following
        test should be more appropriate to decide if one skips this field or
        not */
-    if (f->type & CS_FIELD_CDO)
+    if (f->type & CS_FIELD_CDO &&
+        (!cs_param_cdo_has_NS_with_fv() || !(f == CS_F_(vel) || f == CS_F_(p))))
       continue;
 
     if (f->bc_coeffs == nullptr)
@@ -2701,7 +2702,8 @@ cs_boundary_conditions_complete(int  bc_type[])
     /* Settings in eqp may not be well-defined at this stage. The following
        test should be more appropriate to decide if one skips this field or
        not */
-    if (f->type & CS_FIELD_CDO)
+    if (f->type & CS_FIELD_CDO &&
+        (!cs_param_cdo_has_NS_with_fv() || !(f == CS_F_(vel) || f == CS_F_(p))))
       continue;
 
     if (f->bc_coeffs == nullptr)
