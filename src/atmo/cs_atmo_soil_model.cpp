@@ -1535,7 +1535,10 @@ cs_soil_model(void)
        * ============================ */
 
       cs_lnum_t iseuil = 0;
-      if (soil_temperature->val[soil_id] < tseuil)
+
+      /* Soil temp is in Celius.*/
+      if (soil_temperature->val[soil_id]
+          + cs_physical_constants_celsius_to_kelvin < tseuil)
         iseuil = 1;
 
       cs_lnum_t ichal = 1;
