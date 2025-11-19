@@ -2617,8 +2617,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
             /* TODO not available for k-eps */
 
             /* TODO transform it, it is only to be fully equivalent */
-            cs_real_t qimp = - pimp * hint;
             pimp = pimp * cfnne;
+            cs_real_t qimp = - pimp * hint;
 
             if (icodcl_vel[f_id] == 6) {
               pimp = cs_math_pow3(uk)/(xkappa*ydep*ydep)*distbf*cfnne;
