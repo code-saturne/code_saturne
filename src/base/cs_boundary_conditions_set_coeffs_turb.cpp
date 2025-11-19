@@ -1345,10 +1345,16 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
   const int kdflim = cs_field_key_id("diffusion_limiter_id");
 
+  const cs_real_t *rcodcl1_th = nullptr;
+  const cs_real_t *rcodcl3_th = nullptr;
+  const int *icodcl_th = nullptr;
   cs_real_t turb_prandtl = 1.;
-  if (f_th != nullptr)
+  if (f_th != nullptr) {
     turb_prandtl = cs_field_get_key_double(f_th, ksigmas);
-
+    icodcl_th = f_th->bc_coeffs->icodcl;
+    rcodcl1_th = f_th->bc_coeffs->rcodcl1;
+    rcodcl3_th = f_th->bc_coeffs->rcodcl3;
+  }
   /* Type of wall functions for scalar */
   const cs_wall_f_s_type_t iwalfs = cs_glob_wall_functions->iwalfs;
 
@@ -1765,18 +1771,15 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     const cs_real_t brough_t = (rough_t != nullptr) ? bpro_rough_t[f_id] : 0;
 
     // const cs_real_t brough_t = bpro_rough_t[f_id];
-     int iuntur;
+    int iuntur;
     cs_real_t uk, ypup, dplus, yplus;
-    cs_real_t  icodcl_th_fid;
-
+    int icodcl_th_fid = 0;
 
     // Buoyant parameter: g beta
     // it will be multiplied by delta Theta v
     cs_real_t buoyant_param = 0.;
     cs_real_t delta_t = 0.;
-    cs_real_t *rcodcl1_th = nullptr;
     if (f_th != nullptr) {
-      rcodcl1_th = f_th->bc_coeffs->rcodcl1;
       delta_t = theipb[f_id]-rcodcl1_th[f_id];
     }
 
@@ -1789,9 +1792,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     /* Atmospheric Louis wall functions for rough wall */
     if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
 
-      cs_field_t *f_th = cs_thermal_model_field();
-      const int *icodcl_th = f_th->bc_coeffs->icodcl;
-      cs_real_t  icodcl_th_fid = icodcl_th[f_id];
+      icodcl_th_fid = icodcl_th[f_id];
 
       cs_field_t *ym_water = cs_field_by_name_try("ym_water");
       cs_real_t *rcodcl1_ymw = (ym_water != nullptr) ?
@@ -1823,65 +1824,59 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       }
       delta_t = (tpotv2 - tpotv1);
 
-
       buoyant_param = _beta * cs_math_3_dot_product(gxyz, n);
 
       /* NB: rib = 0 if thermal flux conditions are imposed and
        * tpot1 not defined */
-      if (icodcl_th[f_id] == 3)
+      if (icodcl_th[f_id] == 3) {
         delta_t = 0.;
 
-        const cs_real_t *rcodcl3_th = f_th->bc_coeffs->rcodcl3;
         const cs_real_t cpp = (icp >= 0) ? cpro_cp[c_id] : cp0;
         flux = rcodcl3_th[f_id] / romc / cpp;
-    }
-
-    cs_real_t dlmo = 0, yk = 0;
-    // Wall functions, smooth.
-    // TODO == 6 To be removed
-    if (  icodcl_vel[f_id] == 5
-        || icodcl_vel[f_id] == 6) {
-
-      cs_wall_f_type_t iwallf_loc = cs_glob_wall_functions->iwallf;
-      if (fvq->has_disable_flag) {
-        if (fvq->c_disable_flag[c_id])
-          iwallf_loc = CS_WALL_F_DISABLED;
       }
-
-      cs_wall_functions_velocity(iwallf_loc,
-                                 xnuii,
-                                 xnuit,
-                                 utau,
-                                 distbf,
-                                 rough_d,
-                                 rnnb,
-                                 ek,
-                                 brough_t,
-                                 buoyant_param,
-                                 delta_t,
-                                 turb_prandtl,
-                                 icodcl_th_fid,
-                                 flux,
-                                 f_th,
-                                 &iuntur,
-                                 &nsubla,
-                                 &nlogla,
-                                 &uet,
-                                 &uk,
-                                 &yplus,
-                                 &ypup,
-                                 &cofimp,
-                                 &dplus,
-                                 &cfnns,
-                                 &cfnnk,
-                                 &cfnne,
-                                 &dlmo);
-
     }
+
+    cs_real_t dlmo = 0;
+
+    // Wall functions, smooth or rought
+
+    cs_wall_f_type_t iwallf_loc = cs_glob_wall_functions->iwallf;
+    if (fvq->has_disable_flag) {
+      if (fvq->c_disable_flag[c_id])
+        iwallf_loc = CS_WALL_F_DISABLED;
+    }
+
+    cs_wall_functions_velocity(iwallf_loc,
+                               xnuii,
+                               xnuit,
+                               utau,
+                               distbf,
+                               rough_d,
+                               rnnb,
+                               ek,
+                               brough_t,
+                               buoyant_param,
+                               delta_t,
+                               turb_prandtl,
+                               icodcl_th_fid,
+                               flux,
+                               f_th,
+                               &iuntur,
+                               &nsubla,
+                               &nlogla,
+                               &uet,
+                               &uk,
+                               &yplus,
+                               &ypup,
+                               &cofimp,
+                               &dplus,
+                               &cfnns,
+                               &cfnnk,
+                               &cfnne,
+                               &dlmo);
 
     /* Dimensionless velocity, recomputed and therefore may
        take stability into account */
-
 
     cs_real_t duplus = 0.0;
 

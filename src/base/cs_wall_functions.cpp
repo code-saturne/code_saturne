@@ -354,7 +354,7 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
                            cs_real_t         buoyant_param,
                            cs_real_t         delta_t,
                            cs_real_t         turb_prandtl,
-                           cs_real_t         icodcl_th_fid,
+                           int               icodcl_th_fid,
                            cs_real_t         flux,
                            cs_field_t       *f_th,
                            int              *iuntur,
@@ -522,7 +522,7 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
 
   const cs_real_t xkappa = cs_turb_xkappa;
 
-  //TODO buoyant correction (atmospheric flows)
+  // Buoyant correction (atmospheric flows)
   // Louis or Monin-Obukhov
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1
       && iwalfs != CS_WALL_F_S_MONIN_OBUKHOV) {
@@ -610,10 +610,10 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
                                       dlmo,
                                       ustar);
 
-    /* Take stability into account for the turbulent velocity scale */
-    cs_real_t coef_mom = cs_mo_phim(y + rough_d, *dlmo);
-    const cs_real_t one_minus_ri
-      = 1 - (y + rough_d) * *dlmo / coef_mom;
+      /* Take stability into account for the turbulent velocity scale */
+      cs_real_t coef_mom = cs_mo_phim(y + rough_d, *dlmo);
+      const cs_real_t one_minus_ri
+        = 1 - (y + rough_d) * *dlmo / coef_mom;
     }
 
     else if (icodcl_th_fid == 3) {
@@ -628,44 +628,44 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
     }
     else {
 
-    /* No temperature delta: neutral */
-    const cs_real_t dt = 0., _beta = 0., gredu = 0.;
+      /* No temperature delta: neutral */
+      const cs_real_t dt = 0., _beta = 0., gredu = 0.;
 
-    cs_mo_compute_from_thermal_diff(y,
-                                    rough_d,
-                                    vel,
-                                    buoyant_param,
-                                    delta_t,
-                                    dlmo,
-                                    ustar);
-  }
+      cs_mo_compute_from_thermal_diff(y,
+                                      rough_d,
+                                      vel,
+                                      buoyant_param,
+                                      delta_t,
+                                      dlmo,
+                                      ustar);
+    }
 
-  /* Take stability into account for the turbulent velocity scale */
-  cs_real_t coef_mom = cs_mo_phim(y + rough_d, *dlmo);
-  const cs_real_t one_minus_ri
-    = 1 - (y + rough_d) * (*dlmo) / coef_mom;
+    /* Take stability into account for the turbulent velocity scale */
+    cs_real_t coef_mom = cs_mo_phim(y + rough_d, *dlmo);
+    const cs_real_t one_minus_ri
+      = 1 - (y + rough_d) * (*dlmo) / coef_mom;
 
-  if (one_minus_ri > 0) {
-    /* Warning: overwritting uk, yplus should be recomputed */
-    *uk = *uk / pow(one_minus_ri, 0.25);
-    *yplus = y * (*uk) / l_visc;
+    if (one_minus_ri > 0) {
+      /* Warning: overwritting uk, yplus should be recomputed */
+      *uk = *uk / pow(one_minus_ri, 0.25);
+      *yplus = y * (*uk) / l_visc;
 
-    /* Epsilon should be modified as well to get
-       P+G = P(1-Ri) = epsilon
-       P = -R_tn dU/dn = uk^2 uet Phi_m / (kappa z) */
-    *cfnne = one_minus_ri * coef_mom;
-    /* Nothing done for the moment for really high stability */
-  }
-  else {
-    *cfnne = 1.;
-  }
+      /* Epsilon should be modified as well to get
+         P+G = P(1-Ri) = epsilon
+         P = -R_tn dU/dn = uk^2 uet Phi_m / (kappa z) */
+      *cfnne = one_minus_ri * coef_mom;
+      /* Nothing done for the moment for really high stability */
+    }
+    else {
+      *cfnne = 1.;
+    }
     /* Boundary condition on the velocity to have approximately
         the correct turbulence production */
     coef_mom = cs_mo_phim(y+rough_d, *dlmo);
     const cs_real_t coef_momm = cs_mo_phim(2 * y + rough_d, *dlmo);
     cs_real_t rcprod =   2*y*sqrt(  xkappa*(*uk)*coef_mom/t_visc
                                 / (y+rough_d))
-              - coef_momm / (2.0 + rough_d / y);
+                     - coef_momm / (2.0 + rough_d / y);
 
     *iuntur = 1;
     const cs_real_t _uplus = vel / *ustar;
