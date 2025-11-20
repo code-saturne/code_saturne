@@ -646,7 +646,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
             const cs_real_t mut_lm_dmut
               = (cs_mesh_quantities_cell_is_active(fvq, c_id) == 1) ?
-                 xmutlm/cs::max(visctc,1.e-12*visclc) : 0.0;
+                 xmutlm/cs::max(visctc, 1.e-12*visclc) : 0.0;
 
             const cs_real_t rcprod
               = cs::min(xkappa,
@@ -1754,19 +1754,19 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     const cs_real_t xnuit  = visctc / romc;
 
     cs_real_t rttb = 0;
-    if (cvar_k != nullptr) {
-      ek = cvar_k[c_id];
-      /* TODO: we could add 2*nu_T dv/dy to rnnb */
-      if (icodcl_vel[f_id] == 5)
-        rnnb = (2./3.) * ek;
-    }
-    else if (   turb_model->order == CS_TURB_SECOND_ORDER
+    if (   turb_model->order == CS_TURB_SECOND_ORDER
              && turb_model->type  == CS_TURB_RANS) {
       ek = 0.5 * (cvar_rij[c_id][0] + cvar_rij[c_id][1] + cvar_rij[c_id][2]);
 
       rnnb = cs_math_3_sym_33_3_dot_product(n, cvar_rij[c_id], n);
       rttb = cs_math_3_sym_33_3_dot_product(txyz, cvar_rij[c_id], txyz);
     }
+    else if (cvar_k != nullptr) {
+      ek = cvar_k[c_id];
+      /* TODO: we could add 2*nu_T dv/dy to rnnb */
+      rnnb = (2./3.) * ek;
+    }
+
     const cs_real_t rough_d = (rough != nullptr) ? bpro_rough[f_id] : 0;
     const cs_real_t brough_t = (rough_t != nullptr) ? bpro_rough_t[f_id] : 0;
 
@@ -1916,8 +1916,6 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
      * hflui = romc * uk / uplus;
      * */
 
-    const cs_real_t xmutlm = xkappa * uk * distbf* romc;
-
     /* TODO merge with MO without this max */
     if ((model == CS_TURB_NONE || itytur == 2 || itytur == 4
       || model == CS_TURB_K_OMEGA
@@ -1927,9 +1925,13 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       || model == CS_TURB_SPALART_ALLMARAS)
      && (visctc > cs_math_epzero)
      && (iwalfs != CS_WALL_F_S_MONIN_OBUKHOV)
-     && (icodcl_vel[f_id] == 6)){
-      const cs_real_t rcflux = cs::max(xmutlm, visctc) / distbf;
-      hflui = rcflux * duplus/ (xkappa );
+     && (icodcl_vel[f_id] == 6)) {
+      /* Note:
+       * max (rho kappa uk y, mut)/ (kappa y)
+       * = max (rho uk, mut / (kappa y))
+       * */
+      const cs_real_t rcflux = cs::max(romc * uk, visctc / (distbf * xkappa));
+      hflui = rcflux * duplus;
     }
     else {
       hflui = romc * uk * duplus; // could be visclc / distbf * ypup;

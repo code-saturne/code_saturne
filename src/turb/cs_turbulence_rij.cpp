@@ -2299,8 +2299,9 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
     _sym_33_eigen(matrn, eig_vals);
     cs_real_t lambda_min = eig_vals[0]; /* lambda^min(R)/k */
 
-    /* beta2 = 9/10 * Lambda_min/tr(R) = 3/5  * Lambda_min / k */
-    cs_real_t beta2 = crij2 * lambda_min;
+    /* beta2 = 9/10 * Lambda_min/tr(R) = 9/20 * Lambda_min / k
+     *       = 0.6 * 3/4 * Lambda_min / k */
+    cs_real_t beta2 = 0.75 * crij2 * lambda_min;
 
     if (f_beta2 != nullptr)
       f_beta2->val[c_id] = beta2;

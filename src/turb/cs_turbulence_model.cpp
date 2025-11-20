@@ -1327,7 +1327,6 @@ cs_turb_compute_constants(int phase_id)
     cs_turb_crij_c0 = (cs_turb_crij1-1.0)*2.0/3.0;
 
   if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_SSG
-      || cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_BFH
       || cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM
       || cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K)
     cs_turb_ce2 = 1.83;
