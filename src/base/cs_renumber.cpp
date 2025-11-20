@@ -225,6 +225,8 @@ static cs_renumber_ordering_t _i_faces_base_ordering = CS_RENUMBER_ADJACENT_LOW;
 static cs_renumber_cells_type_t _cells_algorithm[] = {CS_RENUMBER_CELLS_NONE,
                                                       CS_RENUMBER_CELLS_NONE};
 
+static float _rebalance_relax_factor = 0.5;
+
 #if defined(HAVE_OPENMP)
 static cs_renumber_i_faces_type_t _i_faces_algorithm
   = CS_RENUMBER_I_FACES_MULTIPASS;
@@ -2255,7 +2257,8 @@ _renum_face_multipass(cs_mesh_t    *mesh,
   const cs_lnum_t n_faces = mesh->n_i_faces;
   const cs_lnum_2_t *restrict i_face_cells = mesh->i_face_cells;
 
-  double redistribute_relaxation_factor = 0.5;
+  double redistribute_relaxation_factor
+    = _rebalance_relax_factor;
 
   cs_lnum_t new_count = 0;
   cs_lnum_t faces_list_size = n_faces, faces_list_size_new = 0;
@@ -5818,6 +5821,46 @@ cs_renumber_get_min_subset_size(cs_lnum_t  *min_i_subset_size,
     *min_i_subset_size = _min_i_subset_size;
   if (min_b_subset_size != nullptr)
     *min_b_subset_size = _min_b_subset_size;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the relaxtion factor for rebalancing with the
+ *        multipass algorithm.
+ *
+ * A relaxation factor of 0 disables rebalancing.
+ *
+ * Depending on the mesh numbering, rebalancing may interfere with the
+ * multigrid algorithm's coarsening, especially in the presence of
+ * cell renumbering. In some cases, the coarsening will be less constrained
+ * and lead to better aggregation (and performance) when combining
+ * cells renumbering and multipass interior faces renumbering with no
+ * reblancing (i. e. with a relaxation factor of 0).
+ *
+ * \param[in]  relaxation factor  multipass renumbering rebalance step
+ *                                relaxation factor.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_renumber_set_multipass_rebalance_factor(float  relaxation_factor)
+{
+  _rebalance_relax_factor = relaxation_factor;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the relaxtion factor for rebalancing with the
+ *        multipass algorithm.
+ *
+ * \return  relaxation factor for multipass renumbering rebalance step.
+ */
+/*----------------------------------------------------------------------------*/
+
+float
+cs_renumber_get_multipass_rebalance_factor(void)
+{
+  return _rebalance_relax_factor;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -72,6 +72,10 @@ cs_user_numbering(void)
   cs_renumber_set_min_subset_size(64,   /* min. interior_subset_size */
                                   64);  /* min. boundary subset_size */
 
+  /* Disable rebalancing in multipass algorithm */
+
+  cs_renumber_set_multipass_rebalance_factor(0.);
+
   /* Select renumbering algorithms */
 
   cs_renumber_set_algorithm
@@ -79,7 +83,7 @@ cs_user_numbering(void)
      false,                           /* halo_adjacent_i_faces_last */
      CS_RENUMBER_ADJACENT_LOW,        /* interior face base ordering  */
      CS_RENUMBER_CELLS_NONE,          /* cells_pre_numbering */
-     CS_RENUMBER_CELLS_NONE,          /* cells_numbering */
+     CS_RENUMBER_CELLS_MORTON,        /* cells_numbering */
      CS_RENUMBER_I_FACES_MULTIPASS,   /* interior faces numbering */
      CS_RENUMBER_B_FACES_THREAD,      /* boundary faces numbering */
      CS_RENUMBER_VERTICES_NONE);      /* vertices numbering */

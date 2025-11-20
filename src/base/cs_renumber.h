@@ -54,7 +54,7 @@ typedef enum {
   CS_RENUMBER_CELLS_SCOTCH_ORDER,    /* SCOTCH ordering */
   CS_RENUMBER_CELLS_METIS_PART,      /* METIS partitioning */
   CS_RENUMBER_CELLS_METIS_ORDER,     /* METIS ordering */
-  CS_RENUMBER_CELLS_MORTON,          /* Morton space filling curve */
+  CS_RENUMBER_CELLS_MORTON,          /* Morton/Lebesgue space filling curve */
   CS_RENUMBER_CELLS_HILBERT,         /* Hilbert space filling curve */
   CS_RENUMBER_CELLS_RCM,             /* Reverse Cuthill-McKee */
   CS_RENUMBER_CELLS_NONE             /* No cells renumbering */
@@ -151,7 +151,41 @@ cs_renumber_get_min_subset_size(cs_lnum_t  *min_i_subset_size,
                                 cs_lnum_t  *min_b_subset_size);
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief Set the relaxtion factor for rebalancing with the
+ *        multipass algorithm.
+ *
+ * A relaxation factor of 0 disables rebalancing.
+ *
+ * Depending on the mesh numbering, rebalancing may interfere with the
+ * multigrid algorithm's coarsening, especially in the presence of
+ * cell renumbering. In some cases, the coarsening will be less constrained
+ * and lead to better aggregation (and performance) when combining
+ * cells renumbering and multipass interior faces renumbering with no
+ * reblancing (i. e. with a relaxation factor of 0).
+ *
+ * \param[in]  relaxation factor  multipass renumbering rebalance step
+ *                                relaxation factor.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_renumber_set_multipass_rebalance_factor(float  relaxation_factor);
+
+/*----------------------------------------------------------------------------*/
 /*!
+ * \brief Get the relaxtion factor for rebalancing with the
+ *        multipass algorithm.
+ *
+ * \return  relaxation factor for multipass renumbering rebalance step.
+ */
+/*----------------------------------------------------------------------------*/
+
+float
+cs_renumber_get_multipass_rebalance_factor(void);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Select the algorithm for mesh renumbering.
  *
  * \param[in]  halo_adjacent_cells_last  if true, cells adjacent to ghost cells
@@ -181,7 +215,7 @@ cs_renumber_set_algorithm(bool                         halo_adjacent_cells_last,
                           cs_renumber_vertices_type_t  vertices_numbering);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return the algorithms for mesh renumbering.
  *
  * Any argument may be passed NULL if this option is not queried.
