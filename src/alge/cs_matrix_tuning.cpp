@@ -136,7 +136,6 @@ _matrix_tune_test(const cs_matrix_t     *m,
 {
   const int n_runs = (n_measure > 0) ? n_measure : 1;
 
-  double test_sum = 0.0;
   cs_real_t *x = nullptr, *y = nullptr;
 
   /* Allocate and initialize  working arrays */
@@ -147,8 +146,11 @@ _matrix_tune_test(const cs_matrix_t     *m,
 
   cs_lnum_t n = n_cols*b_size;
 
-  CS_MALLOC_HD(x, n, cs_real_t, m->alloc_mode);
-  CS_MALLOC_HD(y, n, cs_real_t, m->alloc_mode);
+  cs_alloc_mode_t amode = (m->alloc_mode > CS_ALLOC_HOST) ?
+    CS_ALLOC_HOST_DEVICE_SHARED : CS_ALLOC_HOST;
+
+  CS_MALLOC_HD(x, n, cs_real_t, amode);
+  CS_MALLOC_HD(y, n, cs_real_t, amode);
 
 # pragma omp parallel for  if(n > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n; i++) {
@@ -194,7 +196,8 @@ _matrix_tune_test(const cs_matrix_t     *m,
 #endif
 
       /* First, "untimed" run in case SpMV involves library initialization
-         time, which can weigh on measure */
+         time, and possibly host to device transfer time, which can weigh
+         on measure */
       if (op_type == 0)
         cs_matrix_vector_multiply(&m_t, x, y);
       else
@@ -202,14 +205,12 @@ _matrix_tune_test(const cs_matrix_t     *m,
 
       /* Now, time for a few runs */
       cs_timer_t wt0 = cs_timer_time();
-      test_sum = 0;
 
       for (int run_id = 0; run_id < n_runs; run_id++) {
         if (op_type == 0)
           cs_matrix_vector_multiply(&m_t, x, y);
         else
           cs_matrix_vector_multiply_partial(&m_t, op, x, y);
-        test_sum += y[n-1];
       }
       cs_timer_t wt1 = cs_timer_time();
       cs_timer_counter_t wt_d = cs_timer_diff(&wt0, &wt1);

@@ -6903,7 +6903,7 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
                      m->fill_type,
                      m->numbering,
                      "mkl",
-                   n_variants,
+                     n_variants,
                      &n_variants_max,
                      m_variant);
       }
