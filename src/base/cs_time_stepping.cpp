@@ -584,8 +584,12 @@ cs_time_stepping(void)
     const char s[] = "CS_DEVICE_MEM_POOL";
     if (getenv(s) != nullptr) {
       int i = atoi(getenv(s));
-      if (i > 0)
+      if (i > 0) {
         cs_mem_device_pool_set_active(true);
+        cs_mem_device_pool_set_max_capacity
+          (cs_glob_mesh->n_cells * 150 *sizeof(cs_real_t));
+        cs_mem_device_pool_set_max_tries(300);
+      }
     }
   }
 #endif
