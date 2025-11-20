@@ -2421,7 +2421,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         cs_lnum_t i = _iv2t[ij];
         cs_lnum_t j = _jv2t[ij];
 
-        /* LRR and the Standard SGG or EB-RSM + wall functions */
+        /* LRR and the Standard SSG or EB-RSM + wall functions */
         if (      ((iuntur == 1)
                && (   model == CS_TURB_RIJ_EPSILON_LRR
                    || model == CS_TURB_RIJ_EPSILON_SSG
