@@ -417,7 +417,7 @@ cs_matrix_variant_tuned(const cs_matrix_t  *m,
     cs_alloc_mode_t amode_prev = cs_matrix_get_alloc_mode(m);
     if (amode_prev == CS_ALLOC_DEVICE)
       cs_matrix_set_alloc_mode(const_cast<cs_matrix_t *>(m),
-                               CS_ALLOC_HOST_DEVICE_PINNED);
+                               CS_ALLOC_HOST_DEVICE);
 #endif
 
     double *spmv_cost;

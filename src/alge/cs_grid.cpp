@@ -493,7 +493,7 @@ _coarse_init(const cs_grid_t  *f,
   c->eb_size = f->eb_size;
 
   cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(f->matrix);
-  if (amode == CS_ALLOC_DEVICE)
+  if (amode != CS_ALLOC_HOST)
     amode = CS_ALLOC_HOST_DEVICE_SHARED;
   CS_MALLOC_HD(c->coarse_row, f->n_cols_ext, cs_lnum_t, amode);
 
@@ -8445,7 +8445,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
   cs_alloc_mode_t amode_prev = cs_matrix_get_alloc_mode(f->matrix);
   if (amode_prev == CS_ALLOC_DEVICE)
     cs_matrix_set_alloc_mode(const_cast<cs_matrix_t *>(f->matrix),
-                             CS_ALLOC_HOST_DEVICE_PINNED);
+                             CS_ALLOC_HOST_DEVICE);
 #endif
 
   /* Determine fine->coarse cell connectivity (aggregation) */
