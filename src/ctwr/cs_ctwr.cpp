@@ -492,14 +492,14 @@ cs_ctwr_define(const char           zone_criteria[],
 
     fprintf(f, "# Balance for the exchange zone %02d\n", ct->num);
     fprintf(f, "# ================================\n");
-    fprintf(f, "# Time, Flux air/liq");
-    fprintf(f, ", Temp liq in");
-    fprintf(f, ", Temp liq out");
-    fprintf(f, ", Temp air in");
-    fprintf(f, ", Temp air out");
-    fprintf(f, ", Flow liq in, Flow liq out");
-    fprintf(f, ", Flow air in, Flow air out");
-    fprintf(f, ", Pressure in, Pressure out\n");
+    fprintf(f, "# Time, Flux air/liq (Fa/Fe)");
+    fprintf(f, ", Temp liq in [C]");
+    fprintf(f, ", Temp liq out [C]");
+    fprintf(f, ", Temp air in [C] ");
+    fprintf(f, ", Temp air out [C]");
+    fprintf(f, ", Flow liq in [kg/s], Flow liq out [kg/s]");
+    fprintf(f, ", Flow air in [kg/s], Flow air out [kg/s]");
+    fprintf(f, ", Pressure in [Pa], Pressure out [Pa]\n");
     fclose(f);
   }
 }
@@ -966,14 +966,12 @@ cs_ctwr_log_balance(void)
 
     ct->t_l_in /= ct->q_l_in;
     ct->h_l_in /= ct->q_l_in;
-    ct->q_l_in /= ct->surface_in;
     ct->p_out /= ct->surface_in;
 
     if (cs::abs(ct->q_h_out) > 1e-10) {
       ct->t_h_out /= ct->q_h_out;
       ct->h_h_out /= ct->q_h_out;
     }
-    ct->q_h_out /= ct->surface_in;
 
     /* Compute liquid water quantities
      * And humid air quantities at liquid packing outlet  */
@@ -1017,14 +1015,12 @@ cs_ctwr_log_balance(void)
 
     ct->t_l_out /= ct->q_l_out;
     ct->h_l_out /= ct->q_l_out;
-    ct->q_l_out /= ct->surface_out;
     ct->p_in /= ct->surface_out;
 
     if (cs::abs(ct->q_h_in) > 1e-10) {
       ct->t_h_in /= ct->q_h_in;
       ct->h_h_in /= ct->q_h_in;
     }
-    ct->q_h_in /= ct->surface_out;
 
     /* Writings */
     if (cs_glob_rank_id <= 0) {
