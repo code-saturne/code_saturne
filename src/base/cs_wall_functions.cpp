@@ -517,7 +517,6 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
   /* To be coherent with a wall function, clip it to 0 */
   *cofimp = cs::max(*cofimp, 0.);
   /* Louis or Monin Obukhov wall function for atmospheric flows */
-  cs_real_t yk = 0;
   const cs_wall_f_s_type_t iwalfs = cs_glob_wall_functions->iwalfs;
 
   const cs_real_t xkappa = cs_turb_xkappa;
@@ -526,7 +525,7 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
   // Louis or Monin-Obukhov
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1
       && iwalfs != CS_WALL_F_S_MONIN_OBUKHOV) {
-    yk =  *uk * y / l_visc;
+    cs_real_t yk =  *uk * y / l_visc;
     /* 1/U+ for neutral */
     const cs_real_t duplus = *ypup / yk;
 
@@ -567,10 +566,11 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
     const cs_real_t yplus_t
       = yk / (exp(-xkappa * 5.2) + *uk *rough_t / l_visc);
     /* 1/T+ for neutral */
+#if 0
     bft_printf("xkappa: %f", xkappa);
     bft_printf("yplus_t: %f", yplus_t);
     bft_printf("turb_prandtl: %f", turb_prandtl);
-
+#endif
     const cs_real_t dtplus = xkappa / log(yplus_t) / turb_prandtl;
 
     _atmo_louis(vel,
@@ -599,11 +599,19 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
   }
 
   else if (iwalfs == CS_WALL_F_S_MONIN_OBUKHOV) {
+
+    /* In case this is called with rough_d = 0  (ie z0 =0)
+     * as we want U+ profile to get back to
+     * ln(z/z0)/kappa = (ln(z uk/nu) + 5.2)/kappa
+     * we clip z0 to be max between rough_d and
+     * nu exp( -kappa*5.2) /uk
+     */
+    cs_real_t z0 = cs::max(rough_d, l_visc * exp(-xkappa * 5.2) / *uk);
     /* Compute local LMO */
     if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
 
       cs_mo_compute_from_thermal_diff(y,
-                                      rough_d,
+                                      z0,
                                       vel,
                                       buoyant_param,
                                       delta_t,
@@ -611,15 +619,15 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
                                       ustar);
 
       /* Take stability into account for the turbulent velocity scale */
-      cs_real_t coef_mom = cs_mo_phim(y + rough_d, *dlmo);
+      cs_real_t coef_mom = cs_mo_phim(y + z0, *dlmo);
       const cs_real_t one_minus_ri
-        = 1 - (y + rough_d) * *dlmo / coef_mom;
+        = 1 - (y + z0) * *dlmo / coef_mom;
     }
 
     else if (icodcl_th_fid == 3) {
 
       cs_mo_compute_from_thermal_flux(y,
-                                      rough_d,
+                                      z0,
                                       vel,
                                       buoyant_param,
                                       flux,
@@ -632,7 +640,7 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
       const cs_real_t dt = 0., _beta = 0., gredu = 0.;
 
       cs_mo_compute_from_thermal_diff(y,
-                                      rough_d,
+                                      z0,
                                       vel,
                                       buoyant_param,
                                       delta_t,
@@ -641,9 +649,9 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
     }
 
     /* Take stability into account for the turbulent velocity scale */
-    cs_real_t coef_mom = cs_mo_phim(y + rough_d, *dlmo);
+    cs_real_t coef_mom = cs_mo_phim(y + z0, *dlmo);
     const cs_real_t one_minus_ri
-      = 1 - (y + rough_d) * (*dlmo) / coef_mom;
+      = 1 - (y + z0) * (*dlmo) / coef_mom;
 
     if (one_minus_ri > 0) {
       /* Warning: overwritting uk, yplus should be recomputed */
@@ -661,11 +669,11 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
     }
     /* Boundary condition on the velocity to have approximately
         the correct turbulence production */
-    coef_mom = cs_mo_phim(y+rough_d, *dlmo);
-    const cs_real_t coef_momm = cs_mo_phim(2 * y + rough_d, *dlmo);
+    coef_mom = cs_mo_phim(y+z0, *dlmo);
+    const cs_real_t coef_momm = cs_mo_phim(2 * y + z0, *dlmo);
     cs_real_t rcprod =   2*y*sqrt(  xkappa*(*uk)*coef_mom/t_visc
-                                / (y+rough_d))
-                     - coef_momm / (2.0 + rough_d / y);
+                                / (y+z0))
+                     - coef_momm / (2.0 + z0 / y);
 
     *iuntur = 1;
     const cs_real_t _uplus = vel / *ustar;
@@ -674,7 +682,6 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
         modified for non neutral boundary layer (in uplus) */
     *cofimp  = cs::min(cs::max(1-1/(xkappa*_uplus) * rcprod, 0),
                       1);
-    yk = y * (*uk) / l_visc;
   } /* End Monin Obukhov */
 }
 
