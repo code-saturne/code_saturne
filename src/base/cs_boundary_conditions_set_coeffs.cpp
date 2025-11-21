@@ -306,15 +306,6 @@ BEGIN_C_DECLS
 
 #define NOZPPM 2000 /* max number of boundary conditions zone */
 
-/*============================================================================
- * External function prototypes
- *============================================================================*/
-
-/* Bindings to Fortran routines */
-
-int *
-cs_f_boundary_conditions_get_bc_type(void);
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -814,7 +805,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
   cs_field_t *f_th = cs_thermal_model_field();
 
-  int *bc_type = cs_f_boundary_conditions_get_bc_type();
+  int *bc_type = cs_boundary_conditions_get_bc_type();
 
   int *impale = cs_glob_ale_data->impale;
   int *ale_bc_type = cs_glob_ale_data->bc_type; /* (ialtyb en fortran) */

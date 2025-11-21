@@ -154,20 +154,6 @@ cs_boundary_condition_pm_info_t  *cs_glob_bc_pm_info = nullptr;
  * (descriptions follow, with function bodies).
  *============================================================================*/
 
-int *
-cs_f_boundary_conditions_get_bc_type(void);
-
-void
-cs_f_boundary_conditions_mapped_set(int                        field_id,
-                                    ple_locator_t             *locator,
-                                    cs_mesh_location_type_t    location_type,
-                                    int                        enforce_balance,
-                                    int                        interpolate,
-                                    cs_lnum_t                  n_faces,
-                                    const cs_lnum_t           *faces,
-                                    cs_real_t                 *balance_w,
-                                    int                        nvar,
-                                    cs_real_t                 *rcodcl);
 
 void
 cs_f_boundary_conditions_get_pointers(int  **itypfb);
@@ -1446,84 +1432,6 @@ _update_inlet_outlet(cs_boundary_conditions_open_t  *c)
  * Fortran wrapper function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Return pointer to global boundary conditions type array.
- *----------------------------------------------------------------------------*/
-
-int *
-cs_f_boundary_conditions_get_bc_type(void)
-{
-  return _bc_type;
-}
-
-/*----------------------------------------------------------------------------
- * Set mapped boundary conditions for a given field and mapping locator.
- *
- * parameters:
- *   field_id        <-- id of field whose boundary conditions are set
- *   locator         <-- associated mapping locator, as returned
- *                       by cs_boundary_conditions_map().
- *   location_type   <-- matching values location (CS_MESH_LOCATION_CELLS or
- *                       CS_MESH_LOCATION_BOUNDARY_FACES)
- *   enforce_balance <-- balance handling option:
- *                         0: values are simply mapped
- *                         1: values are mapped, then multiplied
- *                            by a constant factor so that their
- *                            surface integral on selected faces
- *                            is preserved (relative to the
- *                            input values)
- *                         2: as 1, but with a boundary-defined
- *                            weight, defined by balance_w
- *                         3: as 1, but with a cell-defined
- *                            weight, defined by balance_w
- *   interpolate     <-- interpolation option:
- *                         0: values are simply based on matching
- *                            cell or face center values
- *                         1: values are based on matching cell
- *                            or face center values, corrected
- *                            by gradient interpolation
- *   n_faces         <-- number of selected boundary faces
- *   faces           <-- list of selected boundary faces (1 to n),
- *                       or nullptr if no indirection is needed
- *   balance_w       <-- optional balance weight, or nullptr
- *   nvar            <-- number of variables requiring BC's
- *   rcodcl          <-> boundary condition values
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_boundary_conditions_mapped_set(int                        field_id,
-                                    ple_locator_t             *locator,
-                                    cs_mesh_location_type_t    location_type,
-                                    int                        enforce_balance,
-                                    int                        interpolate,
-                                    cs_lnum_t                  n_faces,
-                                    const cs_lnum_t           *faces,
-                                    cs_real_t                 *balance_w,
-                                    int                        nvar,
-                                    cs_real_t                 *rcodcl)
-{
-  CS_UNUSED(nvar);
-  CS_UNUSED(rcodcl);
-
-  cs_lnum_t *_faces = nullptr;
-
-  if (faces != nullptr) {
-    CS_MALLOC(_faces, n_faces, cs_lnum_t);
-    for (cs_lnum_t i = 0; i < n_faces; i++)
-      _faces[i] = faces[i] - 1;
-  }
-
-  cs_boundary_conditions_mapped_set(cs_field_by_id(field_id),
-                                    locator,
-                                    location_type,
-                                    enforce_balance,
-                                    interpolate,
-                                    n_faces,
-                                    _faces,
-                                    balance_w);
-
-  CS_FREE(_faces);
-}
 
 /*----------------------------------------------------------------------------
  * Get pointers for Fortran bindings
