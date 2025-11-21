@@ -678,7 +678,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
           ct->inlet_faces_ids[ct->n_inlet_faces] = face_id;
 
           ct->n_inlet_faces ++;
-          ct->surface_in += liq_surf;
+          ct->surface_in += cs::abs(liq_surf);
           y_l_p[cell_id_2] = y_l_bc;
           t_l_p[cell_id_2] = ct->t_l_bc;
           yh_l_p[cell_id_2] = cs_liq_t_to_h(ct->t_l_bc);
@@ -695,7 +695,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
           ct->n_outlet_faces ++;
           ct->n_outlet_cells ++;
 
-          ct->surface_out += liq_surf;
+          ct->surface_out += cs::abs(liq_surf);
         }
       }
       else if (packing_cell[cell_id_1] == -1 && packing_cell[cell_id_2] >= 0) {
@@ -706,7 +706,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
           ct->inlet_faces_ids[ct->n_inlet_faces] = face_id;
 
           ct->n_inlet_faces ++;
-          ct->surface_in += liq_surf;
+          ct->surface_in += cs::abs(liq_surf);
           y_l_p[cell_id_1] = y_l_bc;
           t_l_p[cell_id_1] = ct->t_l_bc;
           yh_l_p[cell_id_1] = cs_liq_t_to_h(ct->t_l_bc);
@@ -721,7 +721,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
           ct->n_outlet_faces ++;
           ct->n_outlet_cells ++;
 
-          ct->surface_out += liq_surf;
+          ct->surface_out += cs::abs(liq_surf);
         }
 
         /* Neighbouring zones, inlet for one, outlet fot the other */
@@ -737,7 +737,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
           ct->inlet_faces_ids[ct->n_inlet_faces] = face_id;
 
           ct->n_inlet_faces ++;
-          ct->surface_in += liq_surf;
+          ct->surface_in += cs::abs(liq_surf);
 
           /* CT1 */
           ct = _ct_zone[packing_cell[cell_id_1]];
@@ -747,7 +747,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
 
           ct->n_outlet_faces ++;
           ct->n_outlet_cells ++;
-          ct->surface_out += liq_surf;
+          ct->surface_out += cs::abs(liq_surf);
 
         }
         /* cell_id_2 is an inlet for CT1, an outlet for CT2 */
@@ -760,7 +760,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
 
           ct->n_outlet_faces ++;
           ct->n_outlet_cells ++;
-          ct->surface_out += liq_surf;
+          ct->surface_out += cs::abs(liq_surf);
 
           /* CT1 */
           ct = _ct_zone[packing_cell[cell_id_1]];
@@ -768,7 +768,7 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
           ct->inlet_faces_ids[ct->n_inlet_faces] = face_id;
 
           ct->n_inlet_faces ++;
-          ct->surface_in += liq_surf;
+          ct->surface_in += cs::abs(liq_surf);
         }
 
       }
