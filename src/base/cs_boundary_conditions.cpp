@@ -365,9 +365,10 @@ _compute_hmg_dirichlet_bc(const cs_mesh_t            *mesh,
       boundaries->types[cs_boundary_id_by_zone_id(boundaries, def->z_id)];
   }
 
-  int bc_code = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
+  int bc_code = (boundary_type & CS_BOUNDARY_WALL) ?
+    CS_BC_WALL_MODELLED : CS_BC_DIRICHLET;
   if (boundary_type & CS_BOUNDARY_ROUGH_WALL)
-    bc_code = 6;
+    bc_code = CS_BC_ROUGH_WALL_MODELLED;
 
   bc_code *= icodcl_m;
 
@@ -450,7 +451,7 @@ _compute_dirichlet_bc(const cs_mesh_t            *mesh,
   if (f->dim == 3) {
     if (   (strcmp(f->name, "mesh_velocity") == 0)
         && (boundary_type & CS_BOUNDARY_WALL))
-      bc_code = 1;
+      bc_code = CS_BC_DIRICHLET;
   }
 
   if (f->dim != def_dim)
@@ -544,7 +545,7 @@ _compute_hmg_neumann_bc(const cs_mesh_t  *mesh,
 #   pragma omp parallel for if (n_elts > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       const cs_lnum_t  elt_id = elt_ids[i];
-      icodcl[elt_id] = 3;
+      icodcl[elt_id] = CS_BC_NEUMANN;
       rcodcl3[elt_id] = 0;
     }
 
@@ -591,7 +592,7 @@ _compute_neumann_bc(const cs_mesh_t            *mesh,
 
   assert(eqp->dim == def->dim);
 
-  const int bc_code = 3;
+  const int bc_code = CS_BC_NEUMANN;
 
   switch(def->type) {
 
@@ -706,9 +707,10 @@ _compute_robin_bc(const cs_mesh_t            *mesh,
       boundaries->types[cs_boundary_id_by_zone_id(boundaries, def->z_id)];
   }
 
-  int bc_code = (boundary_type & CS_BOUNDARY_WALL) ? 5 : 1;
+  int bc_code = (boundary_type & CS_BOUNDARY_WALL) ?
+    CS_BC_WALL_MODELLED : CS_BC_DIRICHLET;
   if (boundary_type & CS_BOUNDARY_ROUGH_WALL)
-    bc_code = 6;
+    bc_code = CS_BC_ROUGH_WALL_MODELLED;
 
   if (stride != def_dim) {
     bft_error(__FILE__, __LINE__, 0,
@@ -2345,7 +2347,7 @@ cs_boundary_conditions_reset(void)
 
       if (dim == 1) {
         ctx.parallel_for(n_d, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-          icodcl[face_id]  = 0;
+          icodcl[face_id]  = CS_BC_UNDEF;
           rcodcl1[face_id] = cs_math_infinite_r;
           rcodcl2[face_id] = cs_math_infinite_r;
           rcodcl3[face_id] = 0.;
@@ -2354,7 +2356,7 @@ cs_boundary_conditions_reset(void)
       else {
         ctx.parallel_for(n_d, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
           if (face_id % dim == 0)
-            icodcl[face_id / dim] = 0.;
+            icodcl[face_id / dim] = CS_BC_UNDEF;
           rcodcl1[face_id] = cs_math_infinite_r;
           rcodcl2[face_id] = cs_math_infinite_r;
           rcodcl3[face_id] = 0.;
@@ -2457,7 +2459,7 @@ cs_boundary_conditions_compute([[maybe_unused]] int  bc_type[])
     /* Conversion flag for enthalpy (temperature given);
        not active yet in GUI and XML. */
 
-    int icodcl_m = 1;
+    int icodcl_m = CS_BC_DIRICHLET;
 
     cs_lnum_t n_max_vals = (cs_lnum_t)(f->dim) * n_b_faces;
 

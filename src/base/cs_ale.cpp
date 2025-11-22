@@ -1728,9 +1728,9 @@ cs_boundary_condition_ale_type(const cs_mesh_t            *m,
       /* Fixed faces: we impose that nodes are also fixed */
       if (ale_bc_type[face_id] == CS_BOUNDARY_ALE_FIXED) {
         icpt = 0;
-        if (icodcl_mesh_u[face_id] == 0) {
+        if (icodcl_mesh_u[face_id] == CS_BC_UNDEF) {
           icpt++;
-          icodcl_mesh_u[face_id] = 1;
+          icodcl_mesh_u[face_id] = CS_BC_DIRICHLET;
           for (cs_lnum_t ii = 0; ii < 3; ii++)
             rcodcl1_mesh_u[n_b_faces * ii + face_id] = 0.;
         }
@@ -1751,20 +1751,20 @@ cs_boundary_condition_ale_type(const cs_mesh_t            *m,
 
       /* Sliding face */
       else if (ale_bc_type[face_id] == CS_BOUNDARY_ALE_SLIDING) {
-        if (icodcl_mesh_u[face_id] == 0)
-          icodcl_mesh_u[face_id] = 4;
+        if (icodcl_mesh_u[face_id] == CS_BC_UNDEF)
+          icodcl_mesh_u[face_id] = CS_BC_SYMMETRY;
       }
 
       /* Imposed mesh velocity face */
       else if (ale_bc_type[face_id] == CS_BOUNDARY_ALE_IMPOSED_VEL) {
-        if (icodcl_mesh_u[face_id] == 0)
-          icodcl_mesh_u[face_id] = 1;
+        if (icodcl_mesh_u[face_id] == CS_BC_UNDEF)
+          icodcl_mesh_u[face_id] = CS_BC_DIRICHLET;
       }
 
       /* Free surface face: the mesh velocity is imposed by the mass flux */
       else if (ale_bc_type[face_id] == CS_BOUNDARY_ALE_FREE_SURFACE) {
-        if (icodcl_mesh_u[face_id] == 0)
-          icodcl_mesh_u[face_id] = 1;
+        if (icodcl_mesh_u[face_id] == CS_BC_UNDEF)
+          icodcl_mesh_u[face_id] = CS_BC_DIRICHLET;
       }
     }
 

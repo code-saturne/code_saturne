@@ -1642,7 +1642,8 @@ _sat_interpolate_bc_from_b_face_data
 
   if (cs_glob_sat_coupling_face_interpolation_type == 1) {
 
-    int fld_icodcl = (f->id == CS_F_(p)->id) ? -1 : 1;
+    int fld_icodcl = (f->id == CS_F_(p)->id) ?
+                     -CS_BC_DIRICHLET : CS_BC_DIRICHLET;
 
     for (cs_lnum_t e_id = 0; e_id < n_b_faces_loc; e_id++) {
       cs_lnum_t f_id = b_faces_loc_ids[e_id];
@@ -1708,7 +1709,7 @@ _sat_interpolate_bc_from_b_face_data
   }
   else {
 
-    int fld_icodcl = (f->id == CS_F_(p)->id) ? 3 : 1;
+    int fld_icodcl = (f->id == CS_F_(p)->id) ? CS_BC_NEUMANN : CS_BC_DIRICHLET;
 
     for (cs_lnum_t e_id = 0; e_id < n_b_faces_loc; e_id++) {
       cs_lnum_t f_id = b_faces_loc_ids[e_id];
@@ -1805,7 +1806,7 @@ _sat_interpolate_bc_from_b_face_data
 
     bc_type[f_id] = cpl_bc_type;
 
-    f->bc_coeffs->icodcl[f_id] = 3;
+    f->bc_coeffs->icodcl[f_id] = CS_BC_NEUMANN;
     for (int i = 0; i < f->dim; i++)
       f->bc_coeffs->rcodcl3[n_b_faces * i + f_id] = 0.;
   }
@@ -2827,10 +2828,10 @@ cs_sat_coupling_bnd_initialize
           if (strcmp(f->name, "mesh_velocity") == 0)
             continue;
 
-          int fld_icodcl = 1;
+          int fld_icodcl = CS_BC_DIRICHLET;
           if (cs_glob_sat_coupling_face_interpolation_type != 1) {
             if (f->id == CS_F_(p)->id) {
-              fld_icodcl = 3;
+              fld_icodcl = CS_BC_NEUMANN;
             }
           }
 
@@ -2844,7 +2845,7 @@ cs_sat_coupling_bnd_initialize
           for (cs_lnum_t e_id = 0; e_id < n_b_faces_not_loc; e_id++) {
             cs_lnum_t f_id = b_faces_not_loc_ids[e_id];
             bc_type[f_id] = cpl_bc_type;
-            f->bc_coeffs->icodcl[f_id] = 3;
+            f->bc_coeffs->icodcl[f_id] = CS_BC_NEUMANN;
           }
         }
       }

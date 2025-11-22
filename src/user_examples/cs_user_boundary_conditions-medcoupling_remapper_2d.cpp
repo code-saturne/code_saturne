@@ -183,7 +183,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
   for (cs_lnum_t ielt = 0; ielt < z->n_elts; ielt++) {
     cs_lnum_t f_id = z->elt_ids[ielt];
 
-    icodcl[f_id] = 1;
+    icodcl[f_id] = CS_BC_DIRICHLET;
     rcodcl1[f_id] = bc_scalar[ielt];
   }
   /*! [dirichlet_condition] */

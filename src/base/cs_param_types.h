@@ -493,7 +493,7 @@ typedef enum {
 typedef enum {
   // DO NOT CHANGE, back-compatibility with icodcl = 0
   CS_BC_UNDEF                 = 0,
-  CS_BC_HMG_DIRICHLET         = 10,
+  CS_BC_HMG_DIRICHLET         = 16,
   // DO NOT CHANGE, back-compatibility with icodcl = 1
   CS_BC_DIRICHLET             = 1,
   // DO NOT CHANGE, back-compatibility with icodcl = 2
@@ -510,6 +510,16 @@ typedef enum {
   // note: deprecated, to be removed
   CS_BC_ROUGH_WALL_MODELLED   = 6,
   CS_BC_ROBIN                 = 9,
+  /* TODO add a code for:
+   * - 10, used by
+   * cs_boundary_conditions_set_affine_function_scalar
+   * - 12, used by
+   *   cs_boundary_conditions_set_affine_function_conv_neumann_diff_scalar
+   *   and
+   *   cs_boundary_conditions_set_total_flux
+   * - 13 and cs_boundary_conditions_set_dirichlet_conv_neumann_diff_scalar
+   * - 15 and cs_boundary_conditions_set_neumann_conv_h_neumann_diff_scalar
+   */
   // DO NOT CHANGE, back-compatibility with icodcl = 11
   // in legacy, it correspond to Neumann on normal component and
   // Dirichlet on tangential ones for vectors
@@ -521,7 +531,7 @@ typedef enum {
   // DO NOT CHANGE, back-compatibility with icodcl = 15
   CS_BC_IMPOSED_EXCHANGE_COEF = 15,
 
-  CS_PARAM_N_BC_TYPES
+  CS_PARAM_N_BC_TYPES = 17
 
 } cs_param_bc_type_t;
 

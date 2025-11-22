@@ -148,12 +148,40 @@ cs_boundary_conditions_check(int  bc_type[],
 
   /* Type ids and names */
 
-  const int type_id_vel[10] = {1, 2, 3, 4, 5, 6, 9, 11, 13, 14};
-  const int type_id_p[7]    = {1, 2, 3, 11, 12, 13, 15};
-  const int type_id_turb[] = {1, 2, 3, 5, 6, 13,
-                              4, 11}; /* the last two codes are for tensor
-                                         (Rij) only */
-  const int type_id_sc[11]  = {1, 2, 3, 4, 5, 6, 11, 12, 13, 14, 15};
+  const int type_id_vel[10] = {CS_BC_DIRICHLET,
+                               CS_BC_RADIATIVE_OUTLET,
+                               CS_BC_NEUMANN,
+                               CS_BC_SYMMETRY,
+                               CS_BC_WALL_MODELLED,
+                               CS_BC_ROUGH_WALL_MODELLED,
+                               CS_BC_ROBIN,
+                               CS_BC_CIRCULATION,
+                               CS_BC_IMPOSED_TOT_FLUX,
+                               CS_BC_GENERALIZED_SYM};
+  const int type_id_p[7]    = {CS_BC_DIRICHLET,
+                               CS_BC_RADIATIVE_OUTLET,
+                               CS_BC_NEUMANN,
+                               CS_BC_CIRCULATION,
+                               12,
+                               13,
+                               15};
+  const int type_id_turb[] = {CS_BC_DIRICHLET,
+                              CS_BC_RADIATIVE_OUTLET,
+                              CS_BC_NEUMANN,
+                              CS_BC_WALL_MODELLED,
+                              CS_BC_ROUGH_WALL_MODELLED,
+                              CS_BC_IMPOSED_TOT_FLUX,
+                              /* the last two codes are for tensor (Rij) only */
+                              CS_BC_SYMMETRY, CS_BC_CIRCULATION};
+
+  const int type_id_sc[11]  = {CS_BC_DIRICHLET,
+                               CS_BC_RADIATIVE_OUTLET,
+                               CS_BC_NEUMANN,
+                               CS_BC_SYMMETRY,
+                               CS_BC_WALL_MODELLED,
+                               CS_BC_ROUGH_WALL_MODELLED,
+                               CS_BC_CIRCULATION,
+                               12, 13, 14, 15};
 
   /* Initializations
      =============== */
@@ -211,7 +239,7 @@ cs_boundary_conditions_check(int  bc_type[],
 
     const int *icodcl_var = (const int *)f_var->bc_coeffs->icodcl;
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-      if (icodcl_var[f_id] == 0)
+      if (icodcl_var[f_id] == CS_BC_UNDEF)
         indef = true;
     }
 
@@ -233,7 +261,7 @@ cs_boundary_conditions_check(int  bc_type[],
 
       const int *icodcl_var = (const int *)f_var->bc_coeffs->icodcl;
       for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-        if (icodcl_var[f_id] == 0) {
+        if (icodcl_var[f_id] == CS_BC_UNDEF) {
           if (bc_type[f_id] > 0)
             bc_type[f_id] = - bc_type[f_id];
 
@@ -274,7 +302,7 @@ cs_boundary_conditions_check(int  bc_type[],
     }
 
     /* Check roughness if rough wall function */
-    if (icodcl_vel[f_id] == 6) {
+    if (icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED) {
 
       if (f_rough == nullptr)
         n_rough_error++;
@@ -394,7 +422,7 @@ cs_boundary_conditions_check(int  bc_type[],
 
       for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
-        if (icodcl_var[f_id] == 6) {
+        if (icodcl_var[f_id] == CS_BC_ROUGH_WALL_MODELLED) {
           if (bc_type[f_id] > 0)
             bc_type[f_id] = - bc_type[f_id];
 
@@ -459,9 +487,9 @@ cs_boundary_conditions_check(int  bc_type[],
       }
 
       if (iscavr >= 0) {
-        if (   icodcl_sc[f_id] == 5
-            || icodcl_sc[f_id] == 6
-            || icodcl_sc[f_id] == 15) {
+        if (   icodcl_sc[f_id] == CS_BC_WALL_MODELLED
+            || icodcl_sc[f_id] == CS_BC_ROUGH_WALL_MODELLED
+            || icodcl_sc[f_id] == CS_BC_IMPOSED_EXCHANGE_COEF) {
           if (bc_type[f_id] > 0)
             bc_type[f_id] = - bc_type[f_id];
 
@@ -472,7 +500,7 @@ cs_boundary_conditions_check(int  bc_type[],
       }
 
       /* Check roughness if rough wall function */
-      if (icodcl_sc[f_id] == 6) {
+      if (icodcl_sc[f_id] == CS_BC_ROUGH_WALL_MODELLED) {
         bool ierr_rough_sc = false;
 
         if (f_rough_t == nullptr)
@@ -541,7 +569,7 @@ cs_boundary_conditions_check(int  bc_type[],
   int icodcl_consis_turb[2] = {-1, -1};
 
   int id_turb_consis = -1;
-  int _icodcl[2] = {5, 6};
+  int _icodcl[2] = {CS_BC_WALL_MODELLED, CS_BC_ROUGH_WALL_MODELLED};
 
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
@@ -598,7 +626,8 @@ cs_boundary_conditions_check(int  bc_type[],
 
         int *icodcl_rij = CS_F_(rij)->bc_coeffs->icodcl;
 
-        if (icodcl_vel[f_id] == 4 || icodcl_rij[f_id] == 4) {
+        if (   icodcl_vel[f_id] == CS_BC_SYMMETRY
+            || icodcl_rij[f_id] == CS_BC_SYMMETRY) {
 
           bool icod_turb_outlet = true;
 
@@ -617,15 +646,15 @@ cs_boundary_conditions_check(int  bc_type[],
 
           }
 
-          if (   icodcl_vel[f_id] != 4
-              || icodcl_rij[f_id] != 4
+          if (   icodcl_vel[f_id] != CS_BC_SYMMETRY
+              || icodcl_rij[f_id] != CS_BC_SYMMETRY
               || icod_turb_outlet == false) {
 
             if (bc_type[f_id] > 0) {
               bc_type[f_id] = - bc_type[f_id];
             }
 
-            if (icodcl_rij[f_id] != 4)
+            if (icodcl_rij[f_id] != CS_BC_SYMMETRY)
               icodcl_consis_turb[0] = icodcl_rij[f_id];
 
             icodcl_consis_turb[1] = icodcl_vel[f_id];
@@ -659,8 +688,8 @@ cs_boundary_conditions_check(int  bc_type[],
 
       for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
-        if (   icodcl_sc[f_id] == 5
-            && icodcl_vel[f_id] != 5) {
+        if (   icodcl_sc[f_id] == CS_BC_WALL_MODELLED
+            && icodcl_vel[f_id] != CS_BC_WALL_MODELLED) {
 
           if (bc_type[f_id] > 0)
             bc_type[f_id] = - bc_type[f_id];

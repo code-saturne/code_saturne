@@ -104,8 +104,8 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
     bc_type[face_id] = CS_SMOOTHWALL;
 
-    scal->bc_coeffs->icodcl[face_id] = 1;
-    CS_F_(vel)->bc_coeffs->icodcl[face_id] = 1;
+    scal->bc_coeffs->icodcl[face_id] = CS_BC_DIRICHLET;
+    CS_F_(vel)->bc_coeffs->icodcl[face_id] = CS_BC_DIRICHLET;
 
     /* Dirichlet value */
 
@@ -155,7 +155,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
       if (!(f->type & CS_FIELD_VARIABLE))
         continue;
 
-      f->bc_coeffs->icodcl[face_id] = 3;
+      f->bc_coeffs->icodcl[face_id] = CS_BC_NEUMANN;
 
       for (cs_lnum_t ii = 0; ii < f->dim; ii++) {
         f->bc_coeffs->rcodcl1[n_b_faces*ii + face_id] = 0.;

@@ -52,6 +52,7 @@
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
+#include "base/cs_param_types.h"
 #include "mesh/cs_mesh_location.h"
 
 #include "turb/cs_turbulence_model.h"
@@ -846,7 +847,7 @@ cs_turbulence_bc_set_hmg_neumann(cs_lnum_t   face_id)
 
   if (turb_model->itytur == 2) {
 
-    _turb_bc_id.bc_k->icodcl[face_id] = 3;
+    _turb_bc_id.bc_k->icodcl[face_id] = CS_BC_NEUMANN;
     _turb_bc_id.bc_k->rcodcl3[face_id] = 0;
 
     _turb_bc_id.bc_eps->icodcl[face_id] = 3;
@@ -856,16 +857,16 @@ cs_turbulence_bc_set_hmg_neumann(cs_lnum_t   face_id)
 
   else if (turb_model->order == CS_TURB_SECOND_ORDER) {
 
-    _turb_bc_id.bc_rij->icodcl[face_id] = 3;
+    _turb_bc_id.bc_rij->icodcl[face_id] = CS_BC_NEUMANN;
 
     for (int ii = 3; ii < 6; ii++)
       _turb_bc_id.bc_rij->rcodcl3[ii*n_b_faces + face_id] = 0.;
 
-    _turb_bc_id.bc_eps->icodcl[face_id] = 3;
+    _turb_bc_id.bc_eps->icodcl[face_id] = CS_BC_NEUMANN;
     _turb_bc_id.bc_eps->rcodcl3[face_id] = 0;
 
     if (turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
-      _turb_bc_id.bc_alp_bl->icodcl[face_id] = 0.;
+      _turb_bc_id.bc_alp_bl->icodcl[face_id] = CS_BC_UNDEF;
       _turb_bc_id.bc_alp_bl->rcodcl3[face_id] = 0.;
     }
 
@@ -876,7 +877,7 @@ cs_turbulence_bc_set_hmg_neumann(cs_lnum_t   face_id)
     if (_turb_bc_id.size_ut > 0) {
       for (int id = 0; id < _turb_bc_id.size_ut; id++) {
         cs_field_t *fld = _turb_bc_id.f_ut[id];
-        fld->bc_coeffs->icodcl[face_id] = 3.;
+        fld->bc_coeffs->icodcl[face_id] = CS_BC_NEUMANN;
         for (int ii = 0; ii < fld->dim; ii++)
           fld->bc_coeffs->rcodcl3[ii*n_b_faces + face_id] = 0.;
       }
@@ -885,7 +886,7 @@ cs_turbulence_bc_set_hmg_neumann(cs_lnum_t   face_id)
     if (_turb_bc_id.size_alp_bl_t > 0) {
       for (int id = 0; id < _turb_bc_id.size_alp_bl_t; id++) {
         cs_field_t *fld = _turb_bc_id.f_alp_bl_t[id];
-        fld->bc_coeffs->icodcl[face_id] = 3.;
+        fld->bc_coeffs->icodcl[face_id] = CS_BC_NEUMANN;
         for (int ii = 0; ii < fld->dim; ii++)
           fld->bc_coeffs->rcodcl3[ii*n_b_faces + face_id] = 0.;
       }
@@ -894,35 +895,35 @@ cs_turbulence_bc_set_hmg_neumann(cs_lnum_t   face_id)
   }
   else if (turb_model->itytur == 5) {
 
-    _turb_bc_id.bc_k->icodcl[face_id] = 3;
+    _turb_bc_id.bc_k->icodcl[face_id] = CS_BC_NEUMANN;
     _turb_bc_id.bc_k->rcodcl3[face_id] = 0;
 
-    _turb_bc_id.bc_eps->icodcl[face_id] = 3;
+    _turb_bc_id.bc_eps->icodcl[face_id] = CS_BC_NEUMANN;
     _turb_bc_id.bc_eps->rcodcl3[face_id] = 0;
 
     _turb_bc_id.bc_phi->rcodcl3[face_id] = 0.;
     if (turb_model->model == CS_TURB_V2F_PHI) {
-      _turb_bc_id.bc_f_bar->icodcl[face_id] = 3.;
+      _turb_bc_id.bc_f_bar->icodcl[face_id] = CS_BC_NEUMANN;
       _turb_bc_id.bc_f_bar->rcodcl3[face_id] = 0.;
     }
     else if (turb_model->model == CS_TURB_V2F_BL_V2K) {
-      _turb_bc_id.bc_alp_bl->icodcl[face_id] = 3.;
+      _turb_bc_id.bc_alp_bl->icodcl[face_id] = CS_BC_NEUMANN;
       _turb_bc_id.bc_alp_bl->rcodcl3[face_id] = 0.;
     }
 
   }
   else if (turb_model->model == CS_TURB_K_OMEGA) {
 
-    _turb_bc_id.bc_k->icodcl[face_id] = 3.;
+    _turb_bc_id.bc_k->icodcl[face_id] = CS_BC_NEUMANN;
     _turb_bc_id.bc_k->rcodcl3[face_id] = 0.;
 
-    _turb_bc_id.bc_omg->icodcl[face_id] = 3.;
+    _turb_bc_id.bc_omg->icodcl[face_id] = CS_BC_NEUMANN;
     _turb_bc_id.bc_omg->rcodcl3[face_id] = 0.;
 
   }
   else if (turb_model->model == CS_TURB_SPALART_ALLMARAS) {
 
-    _turb_bc_id.bc_nusa->icodcl[face_id] = 3.;
+    _turb_bc_id.bc_nusa->icodcl[face_id] = CS_BC_NEUMANN;
     _turb_bc_id.bc_nusa->rcodcl3[face_id] = 0.;
 
   }

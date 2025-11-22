@@ -172,7 +172,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
          * the arbitrary value of 1.d6 corresponds to a temperature
          * of 2200 Kelvin for argon at atmospheric pressure (see dp_ELE) */
 
-        th_f->bc_coeffs->icodcl[face_id] = 1;
+        th_f->bc_coeffs->icodcl[face_id] = CS_BC_DIRICHLET;
         th_f->bc_coeffs->rcodcl1[face_id] = 1e6;
 
         /* Specific model for Electric arc:
@@ -188,11 +188,11 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
          * arc and from the electrodes (see above) */
 
         if (potva != nullptr) {
-          potva->bc_coeffs->icodcl[face_id] = 3;
+          potva->bc_coeffs->icodcl[face_id] = CS_BC_NEUMANN;
           potva->bc_coeffs->rcodcl3[face_id] = 0;
-          potva->bc_coeffs->icodcl[n_b_faces + face_id] = 3;
+          potva->bc_coeffs->icodcl[n_b_faces + face_id] = CS_BC_NEUMANN;
           potva->bc_coeffs->rcodcl3[n_b_faces + face_id] = 0;
-          potva->bc_coeffs->icodcl[n_b_faces*2 + face_id] = 3;
+          potva->bc_coeffs->icodcl[n_b_faces*2 + face_id] = CS_BC_NEUMANN;
           potva->bc_coeffs->rcodcl3[n_b_faces*2 + face_id] = 0;
         }
       }
@@ -243,7 +243,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
        * you can impose directly the value. */
 
       if (cs_glob_physical_model_flag[CS_JOULE_EFFECT] > -1) {
-        potr->bc_coeffs->icodcl[face_id] = 1;
+        potr->bc_coeffs->icodcl[face_id] = CS_BC_DIRICHLET;
         if (ielcor == 1) {
           const cs_real_t coejou = cs_glob_elec_option->coejou;
           potr->bc_coeffs->rcodcl1[face_id] = 500*coejou;
@@ -254,7 +254,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
       }
 
       if ( cs_glob_physical_model_flag[CS_JOULE_EFFECT] > 1) {
-        poti->bc_coeffs->icodcl[face_id] = 1;
+        poti->bc_coeffs->icodcl[face_id] = CS_BC_DIRICHLET;
         if (ielcor == 1) {
           const cs_real_t coejou = cs_glob_elec_option->coejou;
           poti->bc_coeffs->rcodcl1[face_id] = sqrt(3)*500*coejou;
@@ -317,7 +317,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
        * It is also possible to fix the value of the potential on the anode.
        * (for example, 1000 Volts).*/
 
-      potr->bc_coeffs->icodcl[face_id] = 1;
+      potr->bc_coeffs->icodcl[face_id] = CS_BC_DIRICHLET;
 
       if ((cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > -1) && (ielcor == 1))
         potr->bc_coeffs->rcodcl1[face_id] = cs_glob_elec_option->pot_diff;
@@ -397,13 +397,13 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
             || (cdgfbo[face_id][2] >= 249e-2)) {
 
           const cs_lnum_t c_id = b_face_cells[face_id];
-          potva->bc_coeffs->icodcl[face_id] = 1;
+          potva->bc_coeffs->icodcl[face_id] = CS_BC_DIRICHLET;
           potva->bc_coeffs->rcodcl1[face_id] = cvara_potva[c_id][0];
 
-          potva->bc_coeffs->icodcl[n_b_faces + face_id] = 1;
+          potva->bc_coeffs->icodcl[n_b_faces + face_id] = CS_BC_DIRICHLET;
           potva->bc_coeffs->rcodcl1[n_b_faces + face_id] = cvara_potva[c_id][1];
 
-          potva->bc_coeffs->icodcl[n_b_faces*2 + face_id] = 1;
+          potva->bc_coeffs->icodcl[n_b_faces*2 + face_id] = CS_BC_DIRICHLET;
           potva->bc_coeffs->rcodcl1[n_b_faces*2 + face_id]
             = cvara_potva[c_id][2];
 
@@ -432,14 +432,14 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
       /* Enthalpy (J/kg) :
        *   imposed heat transfer coefficient */
 
-      th_f->bc_coeffs->icodcl[face_id] = 1;
+      th_f->bc_coeffs->icodcl[face_id] = CS_BC_DIRICHLET;
       th_f->bc_coeffs->rcodcl1[face_id] = 2.e4;
       th_f->bc_coeffs->rcodcl2[face_id] = 1.e5;
 
       /* Real electrical potential: anode boundary condition;
        * pot_diff calculated in cs_user_electric_scaling.c */
 
-      potr->bc_coeffs->icodcl[face_id] = 1;
+      potr->bc_coeffs->icodcl[face_id] = CS_BC_DIRICHLET;
 
       if ((cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > 1) && (ielcor == 1)) {
         if (   (cs_glob_elec_option->irestrike == 1)
@@ -452,11 +452,11 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
             z2 = 2e-2;
 
           if ((cdgfbo[face_id][2] >= z1) && (cdgfbo[face_id][2] <= z2)) {
-            th_f->bc_coeffs->icodcl[face_id] = 1;
+            th_f->bc_coeffs->icodcl[face_id] = CS_BC_DIRICHLET;
             th_f->bc_coeffs->rcodcl1[face_id] = cs_glob_elec_option->pot_diff;
           }
           else {
-            th_f->bc_coeffs->icodcl[face_id] = 3;
+            th_f->bc_coeffs->icodcl[face_id] = CS_BC_NEUMANN;
             th_f->bc_coeffs->rcodcl3[face_id] = 0;
           }
         }
@@ -465,9 +465,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
       /* Vector potential : Zero flux */
 
       if (potva != nullptr) {
-        potva->bc_coeffs->icodcl[n_b_faces*0 + face_id] = 3;
-        potva->bc_coeffs->icodcl[n_b_faces*1 + face_id] = 3;
-        potva->bc_coeffs->icodcl[n_b_faces*2 + face_id] = 3;
+        potva->bc_coeffs->icodcl[face_id] = CS_BC_NEUMANN;
         potva->bc_coeffs->rcodcl3[n_b_faces*0 + face_id] = 0;
         potva->bc_coeffs->rcodcl3[n_b_faces*1 + face_id] = 0;
         potva->bc_coeffs->rcodcl3[n_b_faces*2 + face_id] = 0;
@@ -495,7 +493,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
        * electrical potential depending on the electrode configuration: */
 
       if (poti != nullptr) {
-        poti->bc_coeffs->icodcl[face_id] = 1;
+        poti->bc_coeffs->icodcl[face_id] = CS_BC_DIRICHLET;
         poti->bc_coeffs->rcodcl1[face_id] = 0.;
       }
     }

@@ -367,7 +367,8 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
     /* Test on the presence of a smooth/rough wall condition (start) */
-    if (icodcl_vel[f_id] != 5 && icodcl_vel[f_id] != 6)
+    if (   icodcl_vel[f_id] != CS_BC_WALL_MODELLED
+        && icodcl_vel[f_id] != CS_BC_ROUGH_WALL_MODELLED)
       continue;
 
     const cs_lnum_t c_id = b_face_cells[f_id];
@@ -458,22 +459,22 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       hint[f_id] = viscis / fikis;
     }
 
-    if (icodcl_vel[f_id] == 6)
+    if (icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED)
       continue;
 
     cs_real_t hflui = 0.0;
     cs_real_t prdtl = (rkl > DBL_MIN) ? cpp * visclc / rkl : cpp * visclc;
 
     /* User exchange coefficient */
-    if (icodcl_sc[f_id] == 15) {
+    if (icodcl_sc[f_id] == CS_BC_IMPOSED_EXCHANGE_COEF) {
       hflui = rcodcl2_sc[f_id];
       yptp[f_id] = hflui / prdtl * distbf / rkl / turb_schmidt;
     }
     /* Wall function and Dirichlet or Neumann on the scalar */
     else if (   model != CS_TURB_NONE
-        && (   icodcl_sc[f_id] == 5
-            || icodcl_sc[f_id] == 6
-            || icodcl_sc[f_id] == 3)) {
+        && (   icodcl_sc[f_id] == CS_BC_WALL_MODELLED
+            || icodcl_sc[f_id] == CS_BC_ROUGH_WALL_MODELLED
+            || icodcl_sc[f_id] == CS_BC_NEUMANN)) {
 
       /* Note: to make things clearer yplus is always
          "y uk /nu" even for rough modelling. And the roughness correction is
@@ -528,7 +529,9 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
   /* Loop on boundary faces */
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
-    if (icodcl_vel[f_id] != 5 && icodcl_vel[f_id] != 6 && icodcl_sc[f_id] != 15)
+    if (   icodcl_vel[f_id] != CS_BC_WALL_MODELLED
+        && icodcl_vel[f_id] != CS_BC_ROUGH_WALL_MODELLED
+        && icodcl_sc[f_id]  != CS_BC_IMPOSED_EXCHANGE_COEF)
       continue;
 
     const cs_real_t yplus = byplus[f_id];
@@ -552,7 +555,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       cpp = (icp >= 0) ? cpro_cp[c_id] - rair : cp0 - rair;
       /* FIXME: this formula does not seem consistent with that
          in cs_dilatable_scalar_diff_st, but was present in clptrg.f90 */
-      if (icodcl_vel[f_id] == 6) {
+      if (icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED) {
         cpp = (icp >= 0) ? cpro_cv[c_id] : cp0;
       }
     }
@@ -563,7 +566,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
     const cs_real_t hext = rcodcl2_sc[f_id];
     cs_real_t heq = 0.0, cofimp = 0.0, hflui = hbnd[f_id], tplus = 0.0;
 
-    if (icodcl_vel[f_id] == 5) {
+    if (icodcl_vel[f_id] == CS_BC_WALL_MODELLED) {
 
       /* T+ = (T_I - T_w) / Tet */
       if (fabs(yptp[f_id]) > 1e-24)  // TODO improve this test
@@ -571,8 +574,8 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       else
         tplus = HUGE_VAL;
     }
-
-    else if (icodcl_vel[f_id] == 6) {  /* rough wall (legacy) */
+    /* rough wall (legacy) */
+    else if (icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED) {
 
       /* Note: for Neumann, Tplus is chosen for post-processing */
       const cs_real_t rough_t = bpro_rough_t[f_id];
@@ -596,7 +599,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       }
 
       /* Dirichlet on the scalar, with wall function */
-      if (model != CS_TURB_NONE && icodcl_sc[f_id] == 6) {
+      if (model != CS_TURB_NONE && icodcl_sc[f_id] == CS_BC_ROUGH_WALL_MODELLED) {
         /* 1/T+ */
         const cs_real_t dtplus = 1.0 / tplus;
         /* FIXME apparently buet should be buk */
@@ -604,14 +607,14 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
         /* Neumann on the scalar, with wall function (for post-processing) */
       }
-      else if (icodcl_sc[f_id] != 15)
+      else if (icodcl_sc[f_id] != CS_BC_IMPOSED_EXCHANGE_COEF)
         hflui = hint[f_id];
 
     } /* End hflui computation */
 
     /* Compute heq for smooth and rough wall */
     if (   cs::abs(hext) > 0.5*cs_math_infinite_r
-        || icodcl_sc[f_id] == 15) {
+        || icodcl_sc[f_id] == CS_BC_IMPOSED_EXCHANGE_COEF) {
       heq = hflui;
       if (eqp_sc->icoupl > 0 && icodcl_vel[f_id] == 5) {
         /* ensure correct saving of flux in case of rad coupling */
@@ -625,13 +628,15 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
     /* Dirichlet Boundary condition with a wall function correction
        with or without an additional exchange coefficient hext */
 
-    bool is_wall_scalar_std = ((  icodcl_vel[f_id] == 5
-                                && (   icodcl_sc[f_id] == 5
-                                    || icodcl_sc[f_id] == 6))
-                               || icodcl_sc[f_id] == 15);
+    bool is_wall_scalar_std =
+      ((  icodcl_vel[f_id] == CS_BC_WALL_MODELLED
+          && ( icodcl_sc[f_id] == CS_BC_WALL_MODELLED
+            || icodcl_sc[f_id] == CS_BC_ROUGH_WALL_MODELLED))
+       || icodcl_sc[f_id] == CS_BC_IMPOSED_EXCHANGE_COEF);
 
-    bool is_wall_scalar_rough_legacy = (    (icodcl_vel[f_id] == 6
-                                        &&  icodcl_sc[f_id] == 6));
+    bool is_wall_scalar_rough_legacy =
+      (   icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED
+       && icodcl_sc[f_id] == CS_BC_ROUGH_WALL_MODELLED);
 
     if (is_wall_scalar_std || is_wall_scalar_rough_legacy) {
 
@@ -711,7 +716,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
       /* Set coef for coupled face just to ensure relevant saving
          of bfconv if rad transfer activated */
-      if (dist_theipb != nullptr && icodcl_vel[f_id] == 5) {
+      if (dist_theipb != nullptr && icodcl_vel[f_id] == CS_BC_WALL_MODELLED) {
         if (cpl_faces[f_id]) {
           /* Flux BCs */
           cofaf_sc[f_id] = - heq * dist_theipb[f_id];
@@ -758,10 +763,11 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
         bfconv[f_id] = cofaf_sc[f_id] + cofbf_sc[f_id] * theipb[f_id];
       }
 
-      /* For the coupled faces with h_user (ie icodcl_sc[f_id]=15)
+      /* For the coupled faces with h_user
+       * (ie icodcl_sc[f_id] = CS_BC_IMPOSED_EXCHANGE_COEF)
          reset to zero af/bf coeff.
          By default icodcl(f_id,ivar)=3) for coupled faces */
-      if (eqp_sc->icoupl > 0 && icodcl_vel[f_id] == 5) {
+      if (eqp_sc->icoupl > 0 && icodcl_vel[f_id] == CS_BC_WALL_MODELLED) {
         if (cpl_faces[f_id]) {
           /* Flux BCs */
           cofaf_sc[f_id] = 0.0;
@@ -769,7 +775,8 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
         }
       }
 
-    } /* End if icodcl == 5 or 6 or 15 */
+    } /* End if icodcl == CS_BC_WALL_MODELLED or CS_BC_ROUGH_WALL_MODELLED
+         or CS_BC_IMPOSED_EXCHANGE_COEF */
 
     /* Turbulent heat flux */
 
@@ -788,22 +795,22 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
       cs_real_t phit = 0.0, hintt[6];
 
-      if (icodcl_vel[f_id] == 5) {
-        if (   icodcl_sc[f_id] == 5
-            || icodcl_sc[f_id] == 6
-            || icodcl_sc[f_id] == 15)
+      if (icodcl_vel[f_id] == CS_BC_WALL_MODELLED) {
+        if (   icodcl_sc[f_id] == CS_BC_WALL_MODELLED
+            || icodcl_sc[f_id] == CS_BC_ROUGH_WALL_MODELLED
+            || icodcl_sc[f_id] == CS_BC_IMPOSED_EXCHANGE_COEF)
           phit = cofaf_sc[f_id] + cofbf_sc[f_id] * val_s[c_id];
 
-        else if (icodcl_sc[f_id] == 3)
+        else if (icodcl_sc[f_id] == CS_BC_NEUMANN)
           phit = rcodcl3_sc[f_id];
 
-        else if (icodcl_sc[f_id] == 1)
+        else if (icodcl_sc[f_id] == CS_BC_DIRICHLET)
           phit = heq * (val_s[c_id] - pimp);
 
         else
           phit = 0.0;
       }
-      else if (icodcl_vel[f_id] == 6)
+      else if (icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED)
         phit = cofaf_sc[f_id] + cofbf_sc[f_id] * val_s[c_id];
 
       hintt[0] =   0.5*(visclc+rkl)/distbf
@@ -825,7 +832,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       /* Add rho*uk*Tet to T'v' in High Reynolds */
 
       cs_real_t pimpv[3];
-      if (yplus >= ypth || icodcl_vel[f_id] == 6) {
+      if (yplus >= ypth || icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED) {
         for (int i = 0; i < 3; i++)
           pimpv[i] = n[i] * phit / (cpp * romc);
       }
@@ -851,7 +858,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
     /* EB-GGDH/AFM/DFM alpha boundary conditions */
 
-    if (f_al != nullptr && icodcl_vel[f_id] == 5) {
+    if (f_al != nullptr && icodcl_vel[f_id] == CS_BC_WALL_MODELLED) {
 
       cs_real_t *coefa_al = f_al->bc_coeffs->a;
       cs_real_t *coefb_al = f_al->bc_coeffs->b;
@@ -879,24 +886,27 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       cs_real_t phit = 0.0;
 
       /* Wall function */
-      if (  (   (   icodcl_vel[f_id] == 5
-                 && (icodcl_sc[f_id] == 5 || icodcl_sc[f_id] == 6))
-             || icodcl_sc[f_id] == 15)
-         || (icodcl_vel[f_id] == 6 && icodcl_sc[f_id] == 6)) {
+      if (  (   (   icodcl_vel[f_id] == CS_BC_WALL_MODELLED
+                 && ( icodcl_sc[f_id] == CS_BC_WALL_MODELLED
+                   || icodcl_sc[f_id] == CS_BC_ROUGH_WALL_MODELLED))
+             || icodcl_sc[f_id] == CS_BC_IMPOSED_EXCHANGE_COEF)
+         || ( icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED
+           && icodcl_sc[f_id] == CS_BC_ROUGH_WALL_MODELLED)) {
 
         phit = cofaf_sc[f_id] + cofbf_sc[f_id] * var_ip[f_id];
       }
-      else if (icodcl_sc[f_id] == 1 && icodcl_vel[f_id] == 5) {
+      else if (icodcl_sc[f_id] == CS_BC_DIRICHLET
+            && icodcl_vel[f_id] == CS_BC_WALL_MODELLED) {
         phit = heq * (var_ip[f_id] - pimp);
       }
       /* Imposed flux with wall function for post-processing */
-      else if (icodcl_sc[f_id] == 3)
+      else if (icodcl_sc[f_id] == CS_BC_NEUMANN)
         phit = rcodcl3_sc[f_id]; /* = 0 if current face is coupled */
       else
         phit = 0.0;
 
       /* if face is coupled */
-      if (eqp_sc->icoupl > 0 && icodcl_vel[f_id] == 5) {
+      if (eqp_sc->icoupl > 0 && icodcl_vel[f_id] == CS_BC_WALL_MODELLED) {
         if (cpl_faces[f_id])
           phit = heq * (theipb[f_id] - dist_theipb[f_id]);
       }
@@ -1035,7 +1045,7 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
     /* Test on the presence of a smooth wall condition (start) */
-    if (icodcl_vel[f_id] != 5)
+    if (icodcl_vel[f_id] != CS_BC_WALL_MODELLED)
       continue;
 
     /* Geometric quantities */
@@ -1074,7 +1084,8 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
     cs_real_t hflui = 0.0;
 
     /* Wall function and Dirichlet or Neumann on the scalar */
-    if (model != CS_TURB_NONE && (icodcl_v[f_id] == 5 || icodcl_v[f_id] == 3)) {
+    if (model != CS_TURB_NONE && (icodcl_v[f_id] == CS_BC_WALL_MODELLED
+                               || icodcl_v[f_id] == CS_BC_NEUMANN)) {
 
       const cs_real_t rough_t = (f_rough != nullptr) ? bpro_rough_t[f_id] : 0;
 
@@ -1098,7 +1109,7 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
 
     }
     /* User exchange coefficient */
-    else if (icodcl_v[f_id] == 15)
+    else if (icodcl_v[f_id] == CS_BC_IMPOSED_EXCHANGE_COEF)
       hflui = rcodcl2_v[f_id];
 
     else {
@@ -1120,7 +1131,7 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
     /* Test on the presence of a smooth wall condition (start) */
-    if (icodcl_vel[f_id] != 5)
+    if (icodcl_vel[f_id] != CS_BC_WALL_MODELLED)
       continue;
 
     const cs_real_t yplus = byplus[f_id];
@@ -1155,7 +1166,8 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
     rcodcn = cs_math_3_dot_product(rcodcxyz, n);
 
     cs_real_t heq = 0.0;
-    if (cs::abs(hext) > 0.5*cs_math_infinite_r || icodcl_v[f_id] == 15)
+    if (cs::abs(hext) > 0.5*cs_math_infinite_r
+        || icodcl_v[f_id] == CS_BC_IMPOSED_EXCHANGE_COEF)
       heq = hflui;
     else
       heq = hflui * hext / (hflui + hext);
@@ -1164,7 +1176,8 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
        with or without an additional exchange coefficient hext */
 
     cs_real_t cofimp = 0.0;
-    if (icodcl_v[f_id] == 5 || icodcl_v[f_id] == 15) {
+    if (   icodcl_v[f_id] == CS_BC_WALL_MODELLED
+        || icodcl_v[f_id] == CS_BC_IMPOSED_EXCHANGE_COEF) {
       /* DFM: the gradient BCs are so that the production term
          of u'T' is correcty computed */
 
@@ -1264,7 +1277,7 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Boundary conditions for smooth walls (icodcl = 5).
+ * \brief Boundary conditions for smooth walls (icodcl = CS_BC_WALL_MODELLED).
  *
  * The wall functions may change the value of the diffusive flux.
 
@@ -1646,7 +1659,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
     /* Test on the presence of a smooth/rough wall condition (start) */
-    if (icodcl_vel[f_id] != 5 && icodcl_vel[f_id] != 6)
+    if (icodcl_vel[f_id] != CS_BC_WALL_MODELLED
+     && icodcl_vel[f_id] != CS_BC_ROUGH_WALL_MODELLED)
       continue;
 
     const cs_lnum_t c_id = b_face_cells[f_id];
@@ -1832,7 +1846,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
       /* NB: rib = 0 if thermal flux conditions are imposed and
        * tpot1 not defined */
-      if (icodcl_th[f_id] == 3) {
+      if (icodcl_th[f_id] == CS_BC_NEUMANN) {
         delta_t = 0.;
 
         const cs_real_t cpp = (icp >= 0) ? cpro_cp[c_id] : cp0;
@@ -1842,7 +1856,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
     cs_real_t dlmo = 0;
 
-    // Wall functions, smooth or rought
+    // Wall functions, smooth or rough
 
     cs_wall_f_type_t iwallf_loc = cs_glob_wall_functions->iwallf;
     if (fvq->has_disable_flag) {
@@ -1901,7 +1915,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
        than one boundary face */
     if (type == CS_TURB_LES && cs_glob_turb_les_model->idries == 1) {
       if (visvdr[c_id] < -900.) {
-        if (icodcl_vel[f_id] == 5)
+        if (icodcl_vel[f_id] == CS_BC_WALL_MODELLED)
           visct[c_id] =   visct[c_id]
                         * cs_math_pow2(1.0 - exp(-yplus/cs_turb_cdries));
 
@@ -1929,7 +1943,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       || model == CS_TURB_SPALART_ALLMARAS)
      && (visctc > cs_math_epzero)
      && (iwalfs != CS_WALL_F_S_MONIN_OBUKHOV)
-     && (icodcl_vel[f_id] == 6)) {
+     && (icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED)) {
       /* Note:
        * max (rho kappa uk y, mut)/ (kappa y)
        * = max (rho uk, mut / (kappa y))
@@ -2025,7 +2039,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       /* Launder Sharma boundary conditions
          ================================== */
 
-      if (model == CS_TURB_K_EPSILON_LS && icodcl_vel[f_id] == 5) {
+      if (   model == CS_TURB_K_EPSILON_LS
+          && icodcl_vel[f_id] == CS_BC_WALL_MODELLED) {
 
         cs_real_t *coefa_ep = f_eps->bc_coeffs->a;
         cs_real_t *coefb_ep = f_eps->bc_coeffs->b;
@@ -2135,7 +2150,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       /* Quadratic Baglietto k-epsilon model
          =================================== */
 
-      else if (model == CS_TURB_K_EPSILON_QUAD && icodcl_vel[f_id] == 5) {
+      else if (model == CS_TURB_K_EPSILON_QUAD
+          && icodcl_vel[f_id] == CS_BC_WALL_MODELLED) {
 
         cs_real_t *coefa_ep = f_eps->bc_coeffs->a;
         cs_real_t *coefb_ep = f_eps->bc_coeffs->b;
@@ -2253,8 +2269,9 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         cs_real_t *cofbf_k = f_k->bc_coeffs->bf;
 
         cs_real_t qimp = 0.0;
-        cs_real_t pimp = (iuntur == 1 || icodcl_vel[f_id] == 6) ?
-                         uk*uk*cfnnk/sqrcmu : 0.0;
+        cs_real_t pimp =
+          (iuntur == 1 || icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED) ?
+          uk*uk*cfnnk/sqrcmu : 0.0;
 
         cs_real_t hint = (visclc + visctc / sigmak) / distbf;
 
@@ -2266,7 +2283,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
                                                     hint,
                                                     cs_math_infinite_r);
 
-        if (icodcl_vel[f_id] == 6 && df_limiter_k != nullptr)
+        if (icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED
+            && df_limiter_k != nullptr)
           df_limiter_k[c_id] = 0.0;
 
         /* Neumann Boundary Condition on epsilon
@@ -2287,7 +2305,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
         pimp = pimp * cfnne;
 
-        if (icodcl_vel[f_id] == 6) {
+        if (icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED) {
 
           pimp =   cs_math_pow3(uk) / (xkappa * ydep * ydep) * distbf * cfnne;
           qimp = - pimp * hint;
@@ -2318,12 +2336,12 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
             /* Use of wall functions */
             if (iuntur == 1) {
 
-              if (icodcl_vel[f_id] == 5) {
+              if (icodcl_vel[f_id] == CS_BC_WALL_MODELLED) {
 
                 pimp = cfnnk / (cfnne * uk) * cl / sqrcmu * xkappa
                   * (dplus * visclc / (romc * uk) + rough_d);
               }
-              else if (icodcl_vel[f_id] == 6)
+              else if (icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED)
                 pimp = cfnnk / (cfnne * uk) * cl / sqrcmu * xkappa * rough_d;
             }
             else {
@@ -2340,7 +2358,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
                                                       cs_math_infinite_r);
         }
 
-        if (icodcl_vel[f_id] == 6 && df_limiter_eps != nullptr)
+        if (icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED
+            && df_limiter_eps != nullptr)
           df_limiter_eps[c_id] = 0.0;
       }
     }
@@ -2419,7 +2438,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
       /* blending factor so that the component R(n,tau) have only
          -mu_T/(mu+mu_T)*uet*uk */
-      const cs_real_t bldr12 = (icodcl_vel[f_id] == 5) ?
+      const cs_real_t bldr12 = (icodcl_vel[f_id] == CS_BC_WALL_MODELLED) ?
                                 visctc / (visclc + visctc) : 1.0;
 
       for (int ij = 0; ij < 6; ij++) {
@@ -2435,7 +2454,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
             || (   model == CS_TURB_RIJ_EPSILON_EBRSM
                 && cs_glob_wall_functions->iwallf != CS_WALL_F_DISABLED
                 && yplus > cs_math_epzero)
-            || icodcl_vel[f_id] == 6) {
+            || icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED) {
 
           if (cs_glob_turb_rans_model->irijco == 1) {
 
@@ -2486,7 +2505,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
             + eloglo[1][i]*eloglo[0][j]) * bldr12*uet*uk*cfnnk;
 
           /* Translate into Diffusive flux BCs for rough wall */
-          if (icodcl_vel[f_id] == 6) {
+          if (icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED) {
             fcofaf[ij] = - hint * fcoefa[ij];
             fcofbf[ij] =   hint * (1.0 - fcoefb[ij]);
           }
@@ -2544,7 +2563,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
       }
 
-      if (icodcl_vel[f_id] == 6 && df_limiter_rij != nullptr)
+      if (icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED
+          && df_limiter_rij != nullptr)
         df_limiter_rij[c_id] = 0.0;
 
       /* Epsilon
@@ -2604,7 +2624,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         if (   model == CS_TURB_RIJ_EPSILON_LRR
             || model == CS_TURB_RIJ_EPSILON_SSG
             || model == CS_TURB_RIJ_EPSILON_BFH
-            || (order == CS_TURB_SECOND_ORDER && icodcl_vel[f_id] == 6)) {
+            || (order == CS_TURB_SECOND_ORDER
+              && icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED)) {
 
           /* Si yplus=0, on met coefa a 0 directement pour eviter une division
              par 0 */
@@ -2619,14 +2640,15 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
           /* Neumann Boundary Condition
              -------------------------- */
 
-          if (cs_glob_turb_rans_model->iclptr == 1 || icodcl_vel[f_id] == 6) {
+          if (cs_glob_turb_rans_model->iclptr == 1
+              || icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED) {
             /* TODO not available for k-eps */
 
             /* TODO transform it, it is only to be fully equivalent */
             pimp = pimp * cfnne;
             cs_real_t qimp = - pimp * hint;
 
-            if (icodcl_vel[f_id] == 6) {
+            if (icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED) {
               pimp = cs_math_pow3(uk)/(xkappa*ydep*ydep)*distbf*cfnne;
 
               /* TODO transform it to use d eps / d y directly */
@@ -2679,7 +2701,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
               /* Use of wall functions */
               if (iuntur == 1) {
 
-                if (icodcl_vel[f_id] == 5) {
+                if (icodcl_vel[f_id] == CS_BC_WALL_MODELLED) {
 
                   pimp = 0.5 * cfnnk / (cfnne * cs_math_pow3(uk)) * cl * xkappa
                   * (  coefa_rij[f_id][0] + coefb_rij[f_id][0][0] *rijipb[f_id][0]
@@ -2687,7 +2709,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
                      + coefa_rij[f_id][2] + coefb_rij[f_id][2][2] *rijipb[f_id][2])
                   * (dplus * visclc / (romc * uk) + rough_d);
                 }
-                else if (icodcl_vel[f_id] == 6) {
+                else if (icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED) {
                   pimp = 0.5 * cfnnk / (cfnne * cs_math_pow3(uk)) * cl * xkappa
                   * (  coefa_rij[f_id][0] + coefb_rij[f_id][0][0] *rijipb[f_id][0]
                      + coefa_rij[f_id][1] + coefb_rij[f_id][1][1] *rijipb[f_id][1]
@@ -2711,7 +2733,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         }
 
         /* process only for smooth wall here after */
-        else if (model == CS_TURB_RIJ_EPSILON_EBRSM && icodcl_vel[f_id] == 5) {
+        else if (model == CS_TURB_RIJ_EPSILON_EBRSM
+            && icodcl_vel[f_id] == CS_BC_WALL_MODELLED) {
 
           cs_real_t pimp = 0.0;
 
@@ -2835,7 +2858,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
         }
 
-        if (icodcl_vel[f_id] == 6 && df_limiter_eps != nullptr)
+        if (icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED
+            && df_limiter_eps != nullptr)
           df_limiter_eps[c_id] = 0.0;
 
       } /* End on epsilon */
@@ -3074,8 +3098,9 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       /* pimp > 0 if we are outside the visous sub-layer (really or through
          the scalable wall functions).
          pimp = 0 if we are in the viscous sub-layer */
-      cs_real_t pimp = (iuntur == 1 || icodcl_vel[f_id] == 6) ?
-                        uk*uk/sqrcmu : 0.0;
+      cs_real_t pimp =
+        (iuntur == 1 || icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED) ?
+        uk*uk/sqrcmu : 0.0;
 
       /* FIXME it is wrong because sigma is computed within the model
          see cs_turbulence_kw.c */
@@ -3096,7 +3121,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
          see cs_turbulence_kw.c (so the flux is not the one we impose!) */
       hint = (visclc + visctc / cs_turb_ckwsw2) / distbf;
 
-      if (cs_glob_turb_rans_model->ikwcln == 1 && icodcl_vel[f_id] == 5) {
+      if (cs_glob_turb_rans_model->ikwcln == 1
+          && icodcl_vel[f_id] == CS_BC_WALL_MODELLED) {
         /* In viscous sub layer */
         const cs_real_t pimp_lam
           = 60 * visclc / (romc * cs_turb_ckwbt1 * distbf * distbf);
@@ -3156,7 +3182,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
           pimp = pimp_lam;
 
         /* Compute pimp for rough wall */
-        if (icodcl_vel[f_id] == 6)
+        if (icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED)
           pimp = distbf*uk/(sqrcmu*xkappa*ydep*ydep) * cfnne / cfnnk;
 
         /* TODO transform it, it is only to be fully equivalent */
@@ -3187,10 +3213,10 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
           /* Use of wall functions */
           if (iuntur == 1) {
 
-            if (icodcl_vel[f_id] == 5)
+            if (icodcl_vel[f_id] == CS_BC_WALL_MODELLED)
               pimp = cfnnk / (cfnne * uk) * cl / sqrcmu * xkappa
                 * (dplus * visclc / (romc * uk) + rough_d);
-            else if (icodcl_vel[f_id] == 6)
+            else if (icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED)
               pimp = cfnnk / (cfnne * uk) * cl / sqrcmu * xkappa * rough_d;
 
           }
@@ -3221,7 +3247,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       cs_real_t *cofaf_nusa = f_nusa->bc_coeffs->af;
       cs_real_t *cofbf_nusa = f_nusa->bc_coeffs->bf;
 
-      if (icodcl_vel[f_id] == 5) {
+      if (icodcl_vel[f_id] == CS_BC_WALL_MODELLED) {
         cs_real_t pimp = 0.;
         /* Note: nusa is zero at the wall */
         cs_real_t hint = visclc / distbf / cs_turb_csasig;
@@ -3234,7 +3260,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
                                                     hint,
                                                     cs_math_infinite_r);
       }
-      else if (icodcl_vel[f_id] == 6) {
+      else if (icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED) {
 
         const cs_real_t *cvara_nusa = f_nusa->val_pre;
 
@@ -3267,7 +3293,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       yplbr[f_id] = yplus;
 
     /* FIXME note taken into account yet in cs_wall_functions_scalar, cfnns */
-    bcfnns[f_id] = (icodcl_vel[f_id] == 5) ? 1.0 : cfnns;
+    bcfnns[f_id] = (icodcl_vel[f_id] == CS_BC_WALL_MODELLED) ? 1.0 : cfnns;
     bdlmo[f_id] = dlmo;
     bpro_uk[f_id] = uk;
 

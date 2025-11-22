@@ -1299,11 +1299,11 @@ cs_boundary_conditions_set_coeffs(int         nvar,
   int iclsym = 0, ipatur = 0, ipatrg = 0;
 
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-    if (icodcl_vel[f_id] == 4)
+    if (icodcl_vel[f_id] == CS_BC_SYMMETRY)
       iclsym = 1;
-    else if (icodcl_vel[f_id] == 5)
+    else if (icodcl_vel[f_id] == CS_BC_WALL_MODELLED)
       ipatur = 1;
-    else if (icodcl_vel[f_id] == 6)
+    else if (icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED)
       ipatrg = 1;
 
     if (iclsym != 0 && ipatur != 0 && ipatrg != 0)
@@ -1340,7 +1340,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
     }
   }
 
-  /* Compute rij in i' for boundary cells */
+  /* Compute Rij in I' for boundary cells */
 
   cs_real_6_t *rijipb = nullptr;
   if ((iclsym != 0 || ipatur != 0 || ipatrg != 0)
@@ -1488,7 +1488,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
       /* Neumann boundary conditions
          --------------------------- */
 
-      else if (icodcl_vel[f_id] == 3) {
+      else if (icodcl_vel[f_id] == CS_BC_NEUMANN) {
 
         /* coupled solving of the velocity components */
 
@@ -1527,7 +1527,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
       /* Imposed value for the convection operator, imposed flux for diffusion
          --------------------------------------------------------------------- */
 
-      else if (icodcl_vel[f_id] == 13) {
+      else if (icodcl_vel[f_id] == CS_BC_IMPOSED_TOT_FLUX) {
 
         for (cs_lnum_t k = 0; k < 3; k++)
           pimpv[k] = rcodcl1_vel[n_b_faces*k + f_id];
@@ -1546,7 +1546,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
          (generalized symmetry condition)
          ----------------------------------------- */
 
-      else if (icodcl_vel[f_id] == 14) {
+      else if (icodcl_vel[f_id] == CS_BC_GENERALIZED_SYM) {
 
         for (cs_lnum_t k = 0; k < 3; k++)
           pimpv[k] = rcodcl1_vel[n_b_faces*k + f_id];
@@ -1569,7 +1569,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
       /* Neumann on the normal component, Dirichlet on tangential components
          ------------------------------------------------------------------- */
 
-      else if (icodcl_vel[f_id] == 11) {
+      else if (icodcl_vel[f_id] == CS_BC_CIRCULATION) {
 
         /* Dirichlet to impose on the tangential components */
         for (cs_lnum_t k = 0; k < 3; k++)
@@ -1715,7 +1715,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
         /* Neumann boundary conditions
            ---------------------------- */
 
-        if (icodcl_p[f_id] == 3) {
+        if (icodcl_p[f_id] == CS_BC_NEUMANN) {
 
           const cs_real_t dimp = rcodcl3_p[f_id];
 
@@ -1730,7 +1730,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
         /* Convective boundary conditions
            ------------------------------ */
 
-        else if (icodcl_p[f_id] == 2) {
+        else if (icodcl_p[f_id] == CS_BC_RADIATIVE_OUTLET) {
 
           const cs_real_t pimp = rcodcl1_p[f_id];
           const cs_real_t cfl  = rcodcl2_p[f_id];
@@ -1835,7 +1835,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
         /* Dirichlet boundary condition
            ---------------------------- */
 
-        if (icodcl_vol[f_id] == 1) {
+        if (icodcl_vol[f_id] == CS_BC_DIRICHLET) {
 
           const cs_real_t pimp = rcodcl1_vol[f_id];
           const cs_real_t hext = rcodcl2_vol[f_id];
@@ -1852,7 +1852,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
         /* Neumann boundary conditions
            --------------------------- */
 
-        if (icodcl_vol[f_id] == 3) {
+        if (icodcl_vol[f_id] == CS_BC_NEUMANN) {
 
           const cs_real_t dimp = rcodcl3_vol[f_id];
 
@@ -1867,7 +1867,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
         /* Convective boundary conditions
            ------------------------------ */
 
-        else if (icodcl_vol[f_id] == 2) {
+        else if (icodcl_vol[f_id] == CS_BC_RADIATIVE_OUTLET) {
 
           const cs_real_t pimp = rcodcl1_vol[f_id];
           const cs_real_t cfl  = rcodcl2_vol[f_id];
@@ -1944,7 +1944,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Dirichlet boundary condition
              ----------------------------- */
 
-          if (icodcl_turb[f_id] == 1) {
+          if (icodcl_turb[f_id] == CS_BC_DIRICHLET) {
 
             const cs_real_t pimp = rcodcl1_turb[f_id];
             const cs_real_t hext = rcodcl2_turb[f_id];
@@ -1962,7 +1962,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Neumann boundary conditions
              ---------------------------- */
 
-          if (icodcl_turb[f_id] == 3) {
+          if (icodcl_turb[f_id] == CS_BC_NEUMANN) {
 
             const cs_real_t dimp = rcodcl3_turb[f_id];
 
@@ -1977,7 +1977,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* convective boundary conditions
              ------------------------------- */
 
-          else if (icodcl_turb[f_id] == 2) {
+          else if (icodcl_turb[f_id] == CS_BC_RADIATIVE_OUTLET) {
 
             const cs_real_t pimp = rcodcl1_turb[f_id];
             const cs_real_t cfl  = rcodcl2_turb[f_id];
@@ -1992,7 +1992,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
              imposed flux for diffusion
              ---------------------------------------- */
 
-          else if (icodcl_turb[f_id] == 13) {
+          else if (icodcl_turb[f_id] == CS_BC_IMPOSED_TOT_FLUX) {
 
             const cs_real_t pimp = rcodcl1_turb[f_id];
             const cs_real_t dimp = rcodcl3_turb[f_id];
@@ -2108,7 +2108,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
         /* Dirichlet Boundary Condition
            ---------------------------- */
 
-        if (icodcl_ts[f_id] == 1) {
+        if (icodcl_ts[f_id] == CS_BC_DIRICHLET) {
 
           for (cs_lnum_t ij = 0; ij < 6; ij++)
             pimpts[ij] = rcodcl1_ts[n_b_faces*ij + f_id];
@@ -2134,7 +2134,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
         /* Neumann Boundary Condition
            -------------------------- */
 
-        else if (icodcl_ts[f_id] == 3) {
+        else if (icodcl_ts[f_id] == CS_BC_NEUMANN) {
 
           for (cs_lnum_t ij = 0; ij < 6; ij++)
             qimpts[ij] = rcodcl3_ts[n_b_faces*ij + f_id];
@@ -2156,7 +2156,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
         /* Convective Boundary Condition
            ----------------------------- */
 
-        else if (icodcl_ts[f_id] == 2) {
+        else if (icodcl_ts[f_id] == CS_BC_RADIATIVE_OUTLET) {
 
           for (cs_lnum_t ij = 0; ij < 6; ij++)
             pimpts[ij] = rcodcl1_ts[n_b_faces*ij + f_id];
@@ -2180,7 +2180,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
            imposed flux for diffusion
            ------------------------------------------ */
 
-        else if (icodcl_ts[f_id] == 13) {
+        else if (icodcl_ts[f_id] == CS_BC_IMPOSED_TOT_FLUX) {
 
           for (cs_lnum_t ij = 0; ij < 6; ij++)
             pimpts[ij] = rcodcl1_ts[n_b_faces*ij + f_id];
@@ -2203,7 +2203,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
         /* Neumann on the normal component, Dirichlet on tangential components
            ------------------------------------------------------------------- */
 
-        else if (icodcl_ts[f_id] == 11) {
+        else if (icodcl_ts[f_id] == 11) {//correspond to CS_BC_CIRCULATION
 
           /* Dirichlet to impose on the tangential components */
           for (cs_lnum_t ij = 0; ij < 6; ij++)
@@ -2317,7 +2317,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Dirichlet Boundary Condition
              ---------------------------- */
 
-          if (icodcl_eps[f_id] == 1) {
+          if (icodcl_eps[f_id] == CS_BC_DIRICHLET) {
 
             const cs_real_t pimp = rcodcl1_eps[f_id];
             const cs_real_t hext = rcodcl2_eps[f_id];
@@ -2334,7 +2334,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Neumann Boundary Condition
              -------------------------- */
 
-          else if (icodcl_eps[f_id] == 3) {
+          else if (icodcl_eps[f_id] == CS_BC_NEUMANN) {
 
             const cs_real_t dimp = rcodcl3_eps[f_id];
 
@@ -2349,7 +2349,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Convective Boundary Condition
              ----------------------------- */
 
-          else if (icodcl_eps[f_id] == 2) {
+          else if (icodcl_eps[f_id] == CS_BC_RADIATIVE_OUTLET) {
 
             const cs_real_t pimp = rcodcl1_eps[f_id];
             const cs_real_t cfl =  rcodcl2_eps[f_id];
@@ -2364,7 +2364,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
              imposed flux for diffusion
              ----------------------------------------- */
 
-          else if (icodcl_eps[f_id] == 13) {
+          else if (icodcl_eps[f_id] == CS_BC_IMPOSED_TOT_FLUX) {
 
             const cs_real_t pimp = rcodcl1_eps[f_id];
             const cs_real_t dimp = rcodcl3_eps[f_id];
@@ -2401,7 +2401,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Dirichlet Boundary Condition
              ---------------------------- */
 
-          if (icodcl_alp[f_id] == 1) {
+          if (icodcl_alp[f_id] == CS_BC_DIRICHLET) {
 
             const cs_real_t pimp = rcodcl1_alp[f_id];
             const cs_real_t hext = rcodcl2_alp[f_id];
@@ -2419,7 +2419,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Neumann Boundary Condition
              -------------------------- */
 
-          else if (icodcl_alp[f_id] == 3) {
+          else if (icodcl_alp[f_id] == CS_BC_NEUMANN) {
 
             const cs_real_t dimp = rcodcl3_alp[f_id];
 
@@ -2434,7 +2434,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Convective Boundary Condition
              ----------------------------- */
 
-          else if (icodcl_alp[f_id] == 2) {
+          else if (icodcl_alp[f_id] == CS_BC_RADIATIVE_OUTLET) {
 
             const cs_real_t pimp = rcodcl1_alp[f_id];
             const cs_real_t cfl  = rcodcl2_alp[f_id];
@@ -2449,7 +2449,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
              imposed flux for diffusion
              ------------------------------------------ */
 
-          else if (icodcl_alp[f_id] == 13) {
+          else if (icodcl_alp[f_id] == CS_BC_IMPOSED_TOT_FLUX) {
 
             const cs_real_t pimp = rcodcl1_alp[f_id];
             const cs_real_t dimp = rcodcl3_alp[f_id];
@@ -2513,7 +2513,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Dirichlet Boundary Condition
              ---------------------------- */
 
-          if (icodcl_v2f[f_id] == 1) {
+          if (icodcl_v2f[f_id] == CS_BC_DIRICHLET) {
 
             const cs_real_t pimp = rcodcl1_v2f[f_id];
             const cs_real_t hext = rcodcl2_v2f[f_id];
@@ -2530,7 +2530,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Neumann Boundary Condition
              -------------------------- */
 
-          if (icodcl_v2f[f_id] == 3) {
+          if (icodcl_v2f[f_id] == CS_BC_NEUMANN) {
 
             const cs_real_t dimp = rcodcl3_v2f[f_id];
 
@@ -2545,7 +2545,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Convective Boundary Condition
              ----------------------------- */
 
-          else if (icodcl_v2f[f_id] == 2) {
+          else if (icodcl_v2f[f_id] == CS_BC_RADIATIVE_OUTLET) {
 
             const cs_real_t pimp = rcodcl1_v2f[f_id];
             const cs_real_t cfl  = rcodcl2_v2f[f_id];
@@ -2560,7 +2560,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
              imposed flux for diffusion
              ----------------------------------------- */
 
-          else if (icodcl_v2f[f_id] == 13) {
+          else if (icodcl_v2f[f_id] == CS_BC_IMPOSED_TOT_FLUX) {
 
             const cs_real_t pimp = rcodcl1_v2f[f_id];
             const cs_real_t dimp = rcodcl3_v2f[f_id];
@@ -2604,7 +2604,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Dirichlet Boundary Condition
              ---------------------------- */
 
-          if (icodcl_fb[f_id] == 1) {
+          if (icodcl_fb[f_id] == CS_BC_DIRICHLET) {
 
             const cs_real_t pimp = rcodcl1_fb[f_id];
             const cs_real_t hext = rcodcl2_fb[f_id];
@@ -2621,7 +2621,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Neumann Boundary Condition
              -------------------------- */
 
-          if (icodcl_fb[f_id] == 3) {
+          if (icodcl_fb[f_id] == CS_BC_NEUMANN) {
 
             const cs_real_t dimp = rcodcl3_fb[f_id];
 
@@ -2636,7 +2636,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Convective Boundary Condition
              ------------------------------ */
 
-          else if (icodcl_fb[f_id] == 2) {
+          else if (icodcl_fb[f_id] == CS_BC_RADIATIVE_OUTLET) {
 
             const cs_real_t pimp = rcodcl1_fb[f_id];
             const cs_real_t cfl  = rcodcl2_fb[f_id];
@@ -2651,7 +2651,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
              imposed flux for diffusion
              ------------------------------------------ */
 
-          else if (icodcl_fb[f_id] == 13) {
+          else if (icodcl_fb[f_id] == CS_BC_IMPOSED_TOT_FLUX) {
 
             const cs_real_t pimp = rcodcl1_fb[f_id];
             const cs_real_t dimp = rcodcl3_fb[f_id];
@@ -2709,7 +2709,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Neumann Boundary Condition
              --------------------------- */
 
-          else if (icodcl_alp[f_id] == 3) {
+          else if (icodcl_alp[f_id] == CS_BC_NEUMANN) {
 
             const cs_real_t dimp = rcodcl3_alp[f_id];
 
@@ -2724,7 +2724,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Convective Boundary Condition
              ----------------------------- */
 
-          else if (icodcl_alp[f_id] == 2) {
+          else if (icodcl_alp[f_id] == CS_BC_RADIATIVE_OUTLET) {
 
             const cs_real_t pimp = rcodcl1_alp[f_id];
             const cs_real_t cfl  = rcodcl2_alp[f_id];
@@ -2739,7 +2739,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
              imposed flux for diffusion
              ------------------------------------------ */
 
-          else if (icodcl_alp[f_id] == 13) {
+          else if (icodcl_alp[f_id] == CS_BC_IMPOSED_TOT_FLUX) {
 
             const cs_real_t pimp = rcodcl1_alp[f_id];
             const cs_real_t dimp = rcodcl3_alp[f_id];
@@ -2783,7 +2783,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
         /* Dirichlet Boundary Condition
            ---------------------------- */
 
-        if (icodcl_nusa[f_id] == 1) {
+        if (icodcl_nusa[f_id] == CS_BC_DIRICHLET) {
 
           const cs_real_t pimp = rcodcl1_nusa[f_id];
           const cs_real_t hext = rcodcl2_nusa[f_id];
@@ -2800,7 +2800,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
         /* Neumann Boundary Condition
            -------------------------- */
 
-        if (icodcl_nusa[f_id] == 3) {
+        if (icodcl_nusa[f_id] == CS_BC_NEUMANN) {
 
           const cs_real_t dimp = rcodcl3_nusa[f_id];
 
@@ -2815,7 +2815,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
         /* Convective Boundary Condition
            ----------------------------- */
 
-        else if (icodcl_nusa[f_id] == 2) {
+        else if (icodcl_nusa[f_id] == CS_BC_RADIATIVE_OUTLET) {
 
           const cs_real_t pimp = rcodcl1_nusa[f_id];
           const cs_real_t cfl  = rcodcl2_nusa[f_id];
@@ -2830,7 +2830,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
            imposed flux for diffusion
            ----------------------------------------- */
 
-        else if (icodcl_nusa[f_id] == 13) {
+        else if (icodcl_nusa[f_id] == CS_BC_IMPOSED_TOT_FLUX) {
 
           const cs_real_t pimp = rcodcl1_nusa[f_id];
           const cs_real_t dimp = rcodcl3_nusa[f_id];
@@ -3092,7 +3092,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Dirichlet Boundary Condition
              ---------------------------- */
 
-          if (icodcl_sc[f_id] == 1) {
+          if (icodcl_sc[f_id] == CS_BC_DIRICHLET) {
 
             const cs_real_t pimp = rcodcl1_sc[f_id];
             const cs_real_t hext = rcodcl2_sc[f_id];
@@ -3113,7 +3113,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Neumann Boundary Conditions
              ---------------------------- */
 
-          if (icodcl_sc[f_id] == 3) {
+          if (icodcl_sc[f_id] == CS_BC_NEUMANN) {
 
             const cs_real_t dimp = rcodcl3_sc[f_id];
 
@@ -3126,8 +3126,8 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
             /* Store boundary value only for faces
                for which it was not previously computed
-               in clptur.f90 */
-            if (icodcl_vel[f_id] != 5) {
+               in cs_boundary_conditions_set_coeffs_turb.cpp */
+            if (icodcl_vel[f_id] != CS_BC_WALL_MODELLED) {
               if (f_scal_b != nullptr)
                 bvar_s[f_id] = coefa_sc[f_id] + coefb_sc[f_id] * bvar_s[f_id];
             }
@@ -3136,7 +3136,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Convective Boundary Condition
              ------------------------------ */
 
-          else if (icodcl_sc[f_id] == 2 && iterns <= 1) {
+          else if (icodcl_sc[f_id] == CS_BC_RADIATIVE_OUTLET && iterns <= 1) {
 
             const cs_real_t pimp = rcodcl1_sc[f_id];
             const cs_real_t cfl  = rcodcl2_sc[f_id];
@@ -3154,7 +3154,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Set total flux as a Robin condition
              ----------------------------------- */
 
-          else if (icodcl_sc[f_id] == 12) {
+          else if (icodcl_sc[f_id] == 12) {//TODO add an enum
 
             const cs_real_t hext = rcodcl2_sc[f_id];
             const cs_real_t dimp = rcodcl3_sc[f_id];
@@ -3175,7 +3175,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
              imposed flux for diffusion
              ------------------------------------------ */
 
-          else if (icodcl_sc[f_id] == 13) {
+          else if (icodcl_sc[f_id] == CS_BC_IMPOSED_TOT_FLUX) {
 
             const cs_real_t pimp = rcodcl1_sc[f_id];
             const cs_real_t dimp = rcodcl3_sc[f_id];
@@ -3195,7 +3195,8 @@ cs_boundary_conditions_set_coeffs(int         nvar,
              the exchange coefficient is in W/(m2 K)
              Useful for thermal coupling or radiative transfer */
 
-          if (icodcl_sc[f_id] == 1 || icodcl_sc[f_id] == 3) {
+          if (   icodcl_sc[f_id] == CS_BC_DIRICHLET
+              || icodcl_sc[f_id] == CS_BC_NEUMANN) {
             cs_real_t exchange_coef = 0.;
             if (   (rt_params_type >= 1 && f_th == f_scal)
                 || isvhbl > -1) {
@@ -3267,7 +3268,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
             /* Dirichlet Boundary Condition
                ---------------------------- */
 
-            if (icodcl_tf[f_id] == 1) {
+            if (icodcl_tf[f_id] == CS_BC_DIRICHLET) {
 
               for (cs_lnum_t k = 0; k < 3; k++)
                 pimpv[k] = rcodcl1_tf[n_b_faces*k + f_id];
@@ -3291,7 +3292,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
             /* Neumann Boundary Conditions
                ---------------------------- */
 
-            else if (icodcl_tf[f_id] == 3) {
+            else if (icodcl_tf[f_id] == CS_BC_NEUMANN) {
 
               for (cs_lnum_t k = 0; k < 3; k++)
                 qimpv[k] = rcodcl3_tf[n_b_faces*k + f_id];
@@ -3312,7 +3313,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
             /* Convective Boundary Conditions
                ------------------------------- */
 
-            else if (icodcl_tf[f_id] == 2) {
+            else if (icodcl_tf[f_id] == CS_BC_RADIATIVE_OUTLET) {
 
               for (cs_lnum_t k = 0; k < 3; k++)
                 pimpv[k] = rcodcl1_tf[n_b_faces*k + f_id];
@@ -3425,7 +3426,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Dirichlet Boundary Condition
              ---------------------------- */
 
-          if (icodcl_vtq[f_id] == 1) {
+          if (icodcl_vtq[f_id] == CS_BC_DIRICHLET) {
 
             for (cs_lnum_t k = 0; k < 3; k++)
               pimpv[k] = rcodcl1_vtq[n_b_faces*k + f_id];
@@ -3450,7 +3451,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Neumann Boundary Condition
              -------------------------- */
 
-          if (icodcl_vtq[f_id] == 3) {
+          if (icodcl_vtq[f_id] == CS_BC_NEUMANN) {
 
             for (cs_lnum_t k = 0; k < 3; k++)
               qimpv[k] = rcodcl3_vtq[n_b_faces*k + f_id];
@@ -3472,7 +3473,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Convective Boundary Condition
              ----------------------------- */
 
-          else if (icodcl_vtq[f_id] == 2) {
+          else if (icodcl_vtq[f_id] == CS_BC_RADIATIVE_OUTLET) {
 
             for (cs_lnum_t k = 0; k < 3; k++)
               pimpv[k] = rcodcl1_vtq[n_b_faces*k + f_id];
@@ -3498,7 +3499,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
              imposed flux for diffusion
              ---------------------------------------- */
 
-          else if (icodcl_vtq[f_id] == 13) {
+          else if (icodcl_vtq[f_id] == CS_BC_IMPOSED_TOT_FLUX) {
 
             for (cs_lnum_t k = 0; k < 3; k++)
               pimpv[k] = rcodcl1_vtq[n_b_faces*k + f_id];
@@ -3524,7 +3525,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
              (generalized symmetry condition)
              ------------------------------------------ */
 
-          else if (icodcl_vtq[f_id] == 14) {
+          else if (icodcl_vtq[f_id] == CS_BC_GENERALIZED_SYM) {
 
             for (cs_lnum_t k = 0; k < 3; k++)
               pimpv[k] = rcodcl1_vtq[n_b_faces*k + f_id];
@@ -3552,7 +3553,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
              Dirichlet on tangential components
              ---------------------------------- */
 
-          else if (icodcl_vtq[f_id] == 11) {
+          else if (icodcl_vtq[f_id] == CS_BC_CIRCULATION) {
 
             /* Dirichlet to impose on the tangential components */
             for (cs_lnum_t k = 0; k < 3; k++)
@@ -3604,7 +3605,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Dirichlet Boundary Condition
              ---------------------------- */
 
-          if (icodcl_al[f_id] == 1) {
+          if (icodcl_al[f_id] == CS_BC_DIRICHLET) {
 
             const cs_real_t pimp = rcodcl1_al[f_id];
             const cs_real_t hext = rcodcl2_al[f_id];
@@ -3622,7 +3623,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Neumann Boundary Condition
              -------------------------- */
 
-          if (icodcl_al[f_id] == 3) {
+          if (icodcl_al[f_id] == CS_BC_NEUMANN) {
 
             const cs_real_t dimp = rcodcl3_al[f_id];
 
@@ -3637,7 +3638,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Radiative Boundary Condition
              ---------------------------- */
 
-          else if (icodcl_al[f_id] == 2) {
+          else if (icodcl_al[f_id] == CS_BC_RADIATIVE_OUTLET) {
 
             const cs_real_t pimp = rcodcl1_al[f_id];
             const cs_real_t cfl  = rcodcl2_al[f_id];
@@ -3652,7 +3653,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
              imposed flux for diffusion
              ------------------------------------------- */
 
-          else if (icodcl_al[f_id] == 13) {
+          else if (icodcl_al[f_id] == CS_BC_IMPOSED_TOT_FLUX) {
 
             const cs_real_t pimp = rcodcl1_al[f_id];
             const cs_real_t dimp = rcodcl3_al[f_id];
@@ -3739,7 +3740,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
       /* Dirichlet Boundary Condition
          ---------------------------- */
 
-      if (icodcl_displ[f_id] == 1) {
+      if (icodcl_displ[f_id] == CS_BC_DIRICHLET) {
 
         for (cs_lnum_t k = 0; k < 3; k++)
           pimpv[k] = rcodcl1_displ[n_b_faces*k + f_id];
@@ -3756,7 +3757,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
       /* Neumann Boundary Condition
          -------------------------- */
 
-      else if (icodcl_displ[f_id] == 3) {
+      else if (icodcl_displ[f_id] == CS_BC_NEUMANN) {
 
         /* Coupled solving of the velocity components */
 
@@ -3772,7 +3773,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
       /* Convective Boundary Condition
          ----------------------------- */
 
-      else if (icodcl_displ[f_id] == 2) {
+      else if (icodcl_displ[f_id] == CS_BC_RADIATIVE_OUTLET) {
 
         /* Coupled solving of the velocity components */
 

@@ -290,22 +290,22 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
       *
       * By default, the wall is adiabatic.
       * If the wall has a prescribed temperature, indicate it by setting
-      * icodcl = 5 and define a value in Kelvin in rcodcl1
+      * icodcl = CS_BC_WALL_MODELLED and define a value in Kelvin in rcodcl1
       * In the following example, we prescribe T = 293.15 K
       * (example activated if needed=1) */
 
-     CS_F_(t_kelvin)->bc_coeffs->icodcl[face_id] = 5;
+     CS_F_(t_kelvin)->bc_coeffs->icodcl[face_id] = CS_BC_WALL_MODELLED;
      CS_F_(t_kelvin)->bc_coeffs->rcodcl1[face_id] = 20. + 273.15;
 
      /* Prescribed flux
 
       * By default, the wall is adiabatic.
       * If the wall has a prescribed flux, indicate it by setting
-      * icodcl = 3 and define the value in Watt/m2 in rcodcl3
+      * icodcl = CS_BC_NEUMANN and define the value in Watt/m2 in rcodcl3
       * In the following example, we prescribe a flux of 1000 W/m2
       * - a midday in the summer - (example is activated if needed=1) */
 
-     CS_F_(t_kelvin)->bc_coeffs->icodcl[face_id] = 3;
+     CS_F_(t_kelvin)->bc_coeffs->icodcl[face_id] = CS_BC_NEUMANN;
      CS_F_(t_kelvin)->bc_coeffs->rcodcl3[face_id] = 1000.0;
    }
    /*! [example_5] */

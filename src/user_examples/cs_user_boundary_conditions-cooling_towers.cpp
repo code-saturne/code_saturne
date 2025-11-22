@@ -104,15 +104,14 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
     bc_type[face_id] = CS_OUTLET;
 
-    /* Precribe a pressure profile for all faces
-     * Warning: the pressure has to be specified in term of TOTAL pressure
-     * i.e. including ro0, gravity ... */
+    /* Prescribe a pressure profile for all faces
+     * Warning: the pressure is prescribed as the solved pressure,
+     * that is p - rho0 g (z-z0)
+     * This is done by setting "-" CS_BC_DIRICHLET
+     * */
 
-    p_icodcl[face_id] = 1;
-    p_rcodcl1[face_id]
-      = ro0 * cs_math_3_distance_dot_product(xyzp0,
-                                             b_face_cog[face_id],
-                                             gravity);
+    p_icodcl[face_id] = -CS_BC_DIRICHLET;
+    p_rcodcl1[face_id] = 0.;
   }
   /*![example_1]*/
 }

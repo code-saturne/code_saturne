@@ -454,13 +454,13 @@ cs_boundary_conditions_type(bool  init,
           const cs_lnum_t f_id = bc_type_faces[ii];
 
           if (outflow_type[f_id] == 1) {
-            icodcl[f_id] = 3;
+            icodcl[f_id] = CS_BC_NEUMANN;
           }
           else {
             if (rcodcl1[f_id] < 0.5*cs_math_infinite_r)
-              icodcl[f_id] = 1;
+              icodcl[f_id] = CS_BC_DIRICHLET;
             else
-              icodcl[f_id] = 3;
+              icodcl[f_id] = CS_BC_NEUMANN;
           }
         }
 
@@ -532,7 +532,7 @@ cs_boundary_conditions_type(bool  init,
       cs_lnum_t e_id = bc_type_idx[o_type_id[jj] + 1];
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
         const cs_lnum_t f_id = bc_type_faces[ii];
-        if (icodcl_p[f_id] == 0) {
+        if (icodcl_p[f_id] == CS_BC_UNDEF) {
           const cs_real_t d0 = cs_math_3_square_distance(xyzp0,
                                                          b_face_cog[f_id]);
           if (d0 < d0min) {
@@ -570,7 +570,7 @@ cs_boundary_conditions_type(bool  init,
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
       isostd[f_id] = 0;
       if (   (bc_type[f_id] == CS_OUTLET || bc_type[f_id] == CS_FREE_INLET)
-          && (icodcl_p[f_id] == 0))
+          && (icodcl_p[f_id] == CS_BC_UNDEF))
         isostd[f_id] = 1;
     }
   }
@@ -624,7 +624,7 @@ cs_boundary_conditions_type(bool  init,
 
     cs_lnum_t ifadir = -1;
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-      if (abs(icodcl_p[f_id]) == 1) {
+      if (abs(icodcl_p[f_id]) == CS_BC_DIRICHLET) {
         const cs_real_t d0 = cs_math_3_square_distance(xyzp0,
                                                        b_face_cog[f_id]);
         if (d0 < d0min) {
@@ -840,9 +840,9 @@ cs_boundary_conditions_type(bool  init,
   if (CS_F_(p) != nullptr && cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
 
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-      if (icodcl_p[f_id] == -1)
-        icodcl_p[f_id] = 1;
-      else if (icodcl_p[f_id] != 0)
+      if (icodcl_p[f_id] == -CS_BC_DIRICHLET)
+        icodcl_p[f_id] = CS_BC_DIRICHLET;
+      else if (icodcl_p[f_id] != CS_BC_UNDEF)
         rcodcl1_p[f_id] += - ro0 * cs_math_3_distance_dot_product
                                      (xyzp0,
                                       b_face_cog[f_id],
@@ -873,8 +873,8 @@ cs_boundary_conditions_type(bool  init,
 
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
         const cs_lnum_t f_id = bc_type_faces[ii];
-        if (icodcl_p[f_id] == 0) {
-          icodcl_p[f_id] = 3;
+        if (icodcl_p[f_id] == CS_BC_UNDEF) {
+          icodcl_p[f_id] = CS_BC_NEUMANN;
           rcodcl1_p[f_id] = 0.;
           rcodcl2_p[f_id] = cs_math_infinite_r;
           rcodcl3_p[f_id] = 0.;
@@ -902,8 +902,8 @@ cs_boundary_conditions_type(bool  init,
 
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
         const cs_lnum_t f_id = bc_type_faces[ii];
-        if (icodcl_p[f_id] == 0) {
-          icodcl_p[f_id] = 1;
+        if (icodcl_p[f_id] == CS_BC_UNDEF) {
+          icodcl_p[f_id] = CS_BC_DIRICHLET;
           rcodcl1_p[f_id] = pripb[f_id] - pref;
           rcodcl2_p[f_id] = cs_math_infinite_r;
           rcodcl3_p[f_id] = 0.;
@@ -929,7 +929,7 @@ cs_boundary_conditions_type(bool  init,
         const cs_lnum_t f_id = bc_type_faces[ii];
         const cs_lnum_t c_id = b_face_cells[f_id];
 
-        if (icodcl_vel[f_id] == 0) {
+        if (icodcl_vel[f_id] == CS_BC_UNDEF) {
 
           const cs_real_t b_massflux = (b_massflux_val != nullptr) ?
             b_massflux_val[f_id] :
@@ -940,14 +940,14 @@ cs_boundary_conditions_type(bool  init,
 
           if (b_massflux < - cs_math_epzero) {
             /* Dirichlet boundary condition */
-            icodcl_vel[f_id] = 1;
+            icodcl_vel[f_id] = CS_BC_DIRICHLET;
             n_inout_faces++;
             if (f_inout_val != nullptr)
               f_inout_val[f_id] = b_massflux / b_face_surf[f_id];
           }
           else {
             /* Neumann boundary conditions */
-            icodcl_vel[f_id] = 3;
+            icodcl_vel[f_id] = CS_BC_NEUMANN;
 
             if (f_inout_val != nullptr)
               f_inout_val[f_id] = 0.;
@@ -992,7 +992,7 @@ cs_boundary_conditions_type(bool  init,
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
         const cs_lnum_t f_id = bc_type_faces[ii];
 
-        if (icodcl_p[f_id] == 0) {
+        if (icodcl_p[f_id] == CS_BC_UNDEF) {
 
           /* If the user has given a value of boundary head loss */
           if (rcodcl2_p[f_id] <= 0.5*cs_math_infinite_r)
@@ -1001,7 +1001,7 @@ cs_boundary_conditions_type(bool  init,
             b_head_loss[f_id] = 0.;
 
           /* Std outlet */
-          icodcl_p[f_id] = 1;
+          icodcl_p[f_id] = CS_BC_DIRICHLET;
           rcodcl1_p[f_id] = pripb[f_id] - pref;
           rcodcl2_p[f_id] = cs_math_infinite_r;
           rcodcl3_p[f_id] = 0.;
@@ -1016,7 +1016,7 @@ cs_boundary_conditions_type(bool  init,
         const cs_lnum_t f_id = bc_type_faces[ii];
         /* Homogeneous Neumann */
         if (icodcl_vel[f_id] == 0) {
-          icodcl_vel[f_id] = 3;
+          icodcl_vel[f_id] = CS_BC_NEUMANN;
 
           for (cs_lnum_t k = 0; k < 3; k++) {
             rcodcl1_vel[n_b_faces*k + f_id] = 0.;
@@ -1040,8 +1040,8 @@ cs_boundary_conditions_type(bool  init,
 
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
         const cs_lnum_t f_id = bc_type_faces[ii];
-        if (icodcl_p[f_id] == 0) {
-          icodcl_p[f_id] = 1;
+        if (icodcl_p[f_id] == CS_BC_UNDEF) {
+          icodcl_p[f_id] = CS_BC_DIRICHLET;
           rcodcl1_p[f_id]
             = - ro0 * cs_math_3_distance_dot_product(xyzp0,
                                                      b_face_cog[f_id],
@@ -1058,8 +1058,8 @@ cs_boundary_conditions_type(bool  init,
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
         const cs_lnum_t f_id = bc_type_faces[ii];
         /* Homogeneous Neumann */
-        if (icodcl_vel[f_id] == 0) {
-          icodcl_vel[f_id] = 3;
+        if (icodcl_vel[f_id] == CS_BC_UNDEF) {
+          icodcl_vel[f_id] = CS_BC_NEUMANN;
 
           for (cs_lnum_t k = 0; k < 3; k++) {
             rcodcl1_vel[n_b_faces*k + f_id] = 0.;
@@ -1111,8 +1111,8 @@ cs_boundary_conditions_type(bool  init,
         const cs_lnum_t f_id = bc_type_faces[ii];
 
         /* Special treatment for uncoupled version of Rij models */
-        if (icodcl[f_id] == 0 && is_uncoupled_rij) {
-          icodcl[f_id] = 4;
+        if (icodcl[f_id] == CS_BC_UNDEF && is_uncoupled_rij) {
+          icodcl[f_id] = CS_BC_SYMMETRY;
           for (cs_lnum_t k = 0; k < 6; k++) {
             rcodcl1[k*n_b_faces+f_id] = 0.;
             rcodcl2[k*n_b_faces+f_id] = cs_math_infinite_r;
@@ -1121,16 +1121,16 @@ cs_boundary_conditions_type(bool  init,
         }
 
         /* Homogeneous Neumann on scalars */
-        if (f->dim == 1 && icodcl[f_id] == 0) {
-          icodcl[f_id] = 3;
+        if (f->dim == 1 && icodcl[f_id] == CS_BC_UNDEF) {
+          icodcl[f_id] = CS_BC_NEUMANN;
           rcodcl1[f_id] = 0.;
           rcodcl2[f_id] = cs_math_infinite_r;
           rcodcl3[f_id] = 0.;
         }
 
         /* Symmetry BC if nothing is set by the user on vector and tensors */
-        else if (icodcl[f_id] == 0) {
-          icodcl[f_id] = 4;
+        else if (icodcl[f_id] == CS_BC_UNDEF) {
+          icodcl[f_id] = CS_BC_SYMMETRY;
           for (cs_lnum_t k = 0; k < f->dim; k++) {
             rcodcl1[k*n_b_faces+f_id] = 0.;
             rcodcl2[k*n_b_faces+f_id] = cs_math_infinite_r;
@@ -1146,7 +1146,7 @@ cs_boundary_conditions_type(bool  init,
   /* Smooth and rough walls
      ---------------------- */
 
-  /* Velocity and turbulent quantities have icodcl = 5
+  /* Velocity and turbulent quantities have icodcl = CS_BC_WALL_MODELLED
      Turbulent fluxes of scalars has 0 Dirichlet if scalars
      have a Dirichlet, otherwise treated in clptur.
      Other quantities are treated afterwards (Homogeneous Neumann) */
@@ -1158,7 +1158,9 @@ cs_boundary_conditions_type(bool  init,
     if (_n_bc_faces(wall_bc_type, bc_type_idx) <= 0)
       continue;
 
-    const int wall_bc_code = (wall_bc_type == CS_ROUGHWALL) ? 6 : 5;
+    const int wall_bc_code =
+      (wall_bc_type == CS_ROUGHWALL) ?
+      CS_BC_ROUGH_WALL_MODELLED : CS_BC_WALL_MODELLED;
 
     const cs_lnum_t s_id = bc_type_idx[wall_bc_type-1];
     const cs_lnum_t e_id = bc_type_idx[wall_bc_type];
@@ -1181,7 +1183,7 @@ cs_boundary_conditions_type(bool  init,
       if (f == CS_F_(vel)) {
         for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
           const cs_lnum_t f_id = bc_type_faces[ii];
-          if (icodcl[f_id] == 0) {
+          if (icodcl[f_id] == CS_BC_UNDEF) {
             icodcl[f_id] = wall_bc_code;
 
             for (cs_lnum_t k = 0; k < 3; k++) {
@@ -1201,7 +1203,7 @@ cs_boundary_conditions_type(bool  init,
         if (f->dim == 1) {
           for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
             const cs_lnum_t f_id = bc_type_faces[ii];
-            if (icodcl[f_id] == 0) {
+            if (icodcl[f_id] == CS_BC_UNDEF) {
               icodcl[f_id] = wall_bc_code;
               rcodcl1[f_id] = 0.;
               rcodcl2[f_id] = cs_math_infinite_r;
@@ -1212,7 +1214,7 @@ cs_boundary_conditions_type(bool  init,
         else {
           for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
             const cs_lnum_t f_id = bc_type_faces[ii];
-            if (icodcl[f_id] == 0) {
+            if (icodcl[f_id] == CS_BC_UNDEF) {
               icodcl[f_id] = wall_bc_code ;
               for (cs_lnum_t k = 0; k < f->dim; k++) {
                 rcodcl1[k*n_b_faces+f_id] = 0.;
@@ -1229,8 +1231,8 @@ cs_boundary_conditions_type(bool  init,
       else if (f == CS_F_(p)) {
         for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
           const cs_lnum_t f_id = bc_type_faces[ii];
-          if (icodcl[f_id] == 0) {
-            icodcl[f_id] = 3;
+          if (icodcl[f_id] == CS_BC_UNDEF) {
+            icodcl[f_id] = CS_BC_NEUMANN;
             rcodcl1[f_id] = 0.;
             rcodcl2[f_id] = cs_math_infinite_r;
             rcodcl3[f_id] = 0.;
@@ -1257,7 +1259,7 @@ cs_boundary_conditions_type(bool  init,
 
         for (cs_lnum_t jj = s_id; jj < e_id; jj++) {
           const cs_lnum_t f_id = bc_type_faces[jj];
-          if (icodcl_tf[f_id] == 0) {
+          if (icodcl_tf[f_id] == CS_BC_UNDEF) {
             icodcl_tf[f_id] = wall_bc_code;
             for (cs_lnum_t k = 0; k < f_tf->dim; k++)
               rcodcl1_tf[k*n_b_faces+f_id] = 0.;
@@ -1277,7 +1279,7 @@ cs_boundary_conditions_type(bool  init,
 
         for (cs_lnum_t jj = s_id; jj < e_id; jj++) {
           const cs_lnum_t f_id = bc_type_faces[jj];
-          if (icodcl_al[f_id] == 0) {
+          if (icodcl_al[f_id] == CS_BC_UNDEF) {
             icodcl_al[f_id] = wall_bc_code ;
             rcodcl1_al[f_id] = 0.;
           }
@@ -1357,12 +1359,12 @@ cs_boundary_conditions_type(bool  init,
         for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
           const cs_lnum_t f_id = bc_type_faces[ii];
 
-          if (icodcl[f_id] == 0) {
+          if (icodcl[f_id] == CS_BC_UNDEF) {
 
             /* For non convected variables,
                if nothing is defined: homogeneous Neumann */
             if (eqp->iconv == 0 && rcodcl1[f_id] > 0.5*cs_math_infinite_r) {
-              icodcl[f_id] = 3;
+              icodcl[f_id] = CS_BC_NEUMANN;
               for (cs_lnum_t k = 0; k < f->dim; k++) {
                 rcodcl1[k*n_b_faces+f_id] = 0.;
                 rcodcl2[k*n_b_faces+f_id] = cs_math_infinite_r;
@@ -1397,7 +1399,7 @@ cs_boundary_conditions_type(bool  init,
               if (   flumbf >= - cs_math_epzero
                   || f == f_yplus
                   || f == f_zground) {
-                icodcl[f_id] = 3;
+                icodcl[f_id] = CS_BC_NEUMANN;
                 for (cs_lnum_t k = 0; k < f->dim; k++) {
                   rcodcl1[k*n_b_faces+f_id] = 0.;
                   rcodcl2[k*n_b_faces+f_id] = cs_math_infinite_r;
@@ -1405,7 +1407,7 @@ cs_boundary_conditions_type(bool  init,
                 }
               }
               else if (   flumbf <= 0. && f == f_poro) {
-                icodcl[f_id] = 1;
+                icodcl[f_id] = CS_BC_DIRICHLET;
                 for (cs_lnum_t k = 0; k < f->dim; k++) {
                   rcodcl1[k*n_b_faces+f_id] = 0.;
                   rcodcl2[k*n_b_faces+f_id] = cs_math_infinite_r;
@@ -1521,10 +1523,10 @@ cs_boundary_conditions_type(bool  init,
         for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
           const cs_lnum_t f_id = bc_type_faces[ii];
 
-          if (icodcl[f_id] == 0) {
+          if (icodcl[f_id] == CS_BC_UNDEF) {
 
             if (rcodcl1[f_id] > 0.5*cs_math_infinite_r) {
-              icodcl[f_id] = 3;
+              icodcl[f_id] = CS_BC_NEUMANN;
               for (cs_lnum_t k = 0; k < f->dim; k++) {
                 rcodcl1[k*n_b_faces+f_id] = 0.;
                 rcodcl2[k*n_b_faces+f_id] = cs_math_infinite_r;
@@ -1532,7 +1534,7 @@ cs_boundary_conditions_type(bool  init,
               }
             }
             else {
-              icodcl[f_id] = 1;
+              icodcl[f_id] = CS_BC_DIRICHLET;
               for (cs_lnum_t k = 0; k < f->dim; k++) {
                 /* rcodcl1[k*n_b_faces+f_id] is given by the user */
                 rcodcl2[k*n_b_faces+f_id] = cs_math_infinite_r;
@@ -1580,8 +1582,8 @@ cs_boundary_conditions_type(bool  init,
       for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
         const cs_lnum_t f_id = bc_type_faces[ii];
 
-        if (icodcl[f_id] == 0) {
-          icodcl[f_id] = 3;
+        if (icodcl[f_id] == CS_BC_UNDEF) {
+          icodcl[f_id] = CS_BC_NEUMANN;
           for (cs_lnum_t k = 0; k < f->dim; k++) {
             rcodcl1[k*n_b_faces+f_id] = 0.;
             rcodcl2[k*n_b_faces+f_id] = cs_math_infinite_r;
@@ -1610,8 +1612,8 @@ cs_boundary_conditions_type(bool  init,
       int *icodcl_hp = f_hp->bc_coeffs->icodcl;
 
       for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-        if (icodcl_hp[f_id] == 0)
-          icodcl_hp[f_id] = 3;
+        if (icodcl_hp[f_id] == CS_BC_UNDEF)
+          icodcl_hp[f_id] = CS_BC_NEUMANN;
       }
     }
   }
@@ -1641,12 +1643,13 @@ cs_boundary_conditions_type(bool  init,
       cs_real_t *rcodcl3 = f->bc_coeffs->rcodcl3;
 
       for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-        if (icodcl[f_id] == 5 || icodcl[f_id] == 6) {
-          icodcl[f_id] = 3;
+        if (   icodcl[f_id] == CS_BC_WALL_MODELLED
+            || icodcl[f_id] == CS_BC_ROUGH_WALL_MODELLED) {
+          icodcl[f_id] = CS_BC_NEUMANN;
           for (cs_lnum_t k = 0; k < f->dim; k++)
             rcodcl3[k*n_b_faces+f_id] = 0.;
         }
-        else if (icodcl[f_id] == 3) {
+        else if (icodcl[f_id] == CS_BC_NEUMANN) {
           for (cs_lnum_t k = 0; k < f->dim; k++)
             rcodcl3[k*n_b_faces+f_id] = 0.;
         }
@@ -1667,13 +1670,13 @@ cs_boundary_conditions_type(bool  init,
 
       for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
         if (icodcl[f_id] == 0)
-          icodcl[f_id] = 3;
+          icodcl[f_id] = CS_BC_NEUMANN;
       }
     }
 
   }
 
-  /* Matrix diagonal reinforcement if no dirichlet points
+  /* Matrix diagonal reinforcement if no Dirichlet points
      ==================================================== */
 
   /* We reinforce if istat=0 and if the option is active (idircl=1).
@@ -1705,7 +1708,10 @@ cs_boundary_conditions_type(bool  init,
 
       int *icodcl = f->bc_coeffs->icodcl;
       for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-        if (icodcl[f_id] == 1 || icodcl[f_id] == 5 || icodcl[f_id] == 15)
+        if (   icodcl[f_id] == CS_BC_DIRICHLET
+            || icodcl[f_id] == CS_BC_WALL_MODELLED
+            //FIXME why not CS_BC_ROUGH_WALL_MODELLED ?
+            || icodcl[f_id] == CS_BC_IMPOSED_EXCHANGE_COEF)
           eqp->ndircl += 1;
       }
 

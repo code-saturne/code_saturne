@@ -236,17 +236,17 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
       continue;
 
     /* If temperature prescribed to 20 with wall law */
-    th_f->bc_coeffs->icodcl[face_id] = 5;
+    th_f->bc_coeffs->icodcl[face_id] = CS_BC_WALL_MODELLED;
     th_f->bc_coeffs->rcodcl1[face_id] = 20.;
 
     /* If temperature prescribed to 50 with no wall law (simple Dirichlet)
      *  with exchange coefficient 8 */
-    th_f->bc_coeffs->icodcl[face_id] = 1;
+    th_f->bc_coeffs->icodcl[face_id] = CS_BC_DIRICHLET;
     th_f->bc_coeffs->rcodcl1[face_id] = 50.;
     th_f->bc_coeffs->rcodcl2[face_id] = 8.;
 
     /* If flux prescribed to 4. */
-    th_f->bc_coeffs->icodcl[face_id] = 3;
+    th_f->bc_coeffs->icodcl[face_id] = CS_BC_NEUMANN;
     th_f->bc_coeffs->rcodcl3[face_id] = 4.;
   }
   /*![example_4]*/

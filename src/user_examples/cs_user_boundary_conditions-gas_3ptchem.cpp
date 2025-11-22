@@ -201,13 +201,15 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
       bc_type[face_id] = CS_FREE_INLET;
 
-      /* Imposed pressure */
+      /* Imposed pressure
+       * Note: it is expressed directly in term of solved pressure, that is
+       * p - rho0 g (z-z0).
+       *
+       * That is why it is "-" CS_BC_DIRICHLET
+       * */
 
-      const cs_real_t pimp
-        = fp->p0 + fp->ro0*cs_math_3_distance_dot_product(fp->xyzp0,
-                                                          cdgfbo[face_id],
-                                                          gxyz);
-      p_icodcl[face_id] = 1;
+      const cs_real_t pimp = 0.;
+      p_icodcl[face_id] = - CS_BC_DIRICHLET;
       p_rcodcl1[face_id] = pimp;
 
       /* Outlet: Neumann conditions by defauls */

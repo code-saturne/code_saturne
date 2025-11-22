@@ -75,7 +75,8 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Boundary conditions for symmetry (icodcl = 4) for a scalar.
+ * \brief Boundary conditions for symmetry (icodcl = CS_BC_SYMMETRY) for a
+ * scalar.
  *
  * \param[in]  f_sc  scalar field
  */
@@ -169,7 +170,7 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t  *f_sc)
   ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
     /* Test on symmetry boundary condition: start */
-    if (icodcl_vel[f_id] == 4) {
+    if (icodcl_vel[f_id] == CS_BC_SYMMETRY) {
 
       /* Geometric quantities */
       const cs_lnum_t c_id = b_face_cells[f_id];
@@ -296,7 +297,8 @@ _boundary_conditions_set_coeffs_symmetry_scalar(cs_field_t  *f_sc)
 }
 
 /*----------------------------------------------------------------------------*/
-/*! \brief Boundary conditions for symmetry (icodcl = 4) for a vector.
+/*! \brief Boundary conditions for symmetry (icodcl = CS_BC_SYMMETRY)
+ * for a vector.
  *
  * \param[in]  f_v  vector field
  */
@@ -363,7 +365,7 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t  *f_v)
   ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
     /* Test on symmetry boundary condition: start */
-    if (icodcl_v[f_id] == 4) {
+    if (icodcl_v[f_id] == CS_BC_SYMMETRY) {
 
       /* Geometric quantities */
       const cs_lnum_t c_id = b_face_cells[f_id];
@@ -476,7 +478,7 @@ _boundary_conditions_set_coeffs_symmetry_vector(cs_field_t  *f_v)
 /*!
  * \brief Symmetry boundary conditions for vectors and tensors.
  *
- * Corresponds to the code icodcl(ivar) = 4.
+ * Corresponds to the code icodcl(ivar) = CS_BC_SYMMETRY.
  *
  * Please refer to the
  * <a href="../../theory.pdf#clsyvt"><b>clsyvt</b></a> section of the
@@ -566,7 +568,7 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
   ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
     /* Test for symmetry on velocity */
-    if (icodcl_vel[f_id] != 4)
+    if (icodcl_vel[f_id] != CS_BC_SYMMETRY)
       return;
 
     /* To cancel the mass flux */
@@ -888,7 +890,7 @@ cs_boundary_conditions_set_coeffs_symmetry(cs_real_t  velipb[][3],
 
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
-      if (icodcl_displ[f_id] != 4)
+      if (icodcl_displ[f_id] != CS_BC_SYMMETRY)
         return;
 
       const cs_lnum_t c_id = b_face_cells[f_id];

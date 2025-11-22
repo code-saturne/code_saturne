@@ -52,6 +52,7 @@
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh_location.h"
+#include "base/cs_param_types.h"
 #include "base/cs_parall.h"
 #include "base/cs_porous_model.h"
 #include "base/cs_profiling.h"
@@ -2043,7 +2044,7 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
     cs_lnum_t n_d = n_elts[0]*dim;
 
     ctx.parallel_for(n_elts[0], [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
-      icodcl[i] = 0.;
+      icodcl[i] = CS_BC_UNDEF;
     });
 
     if (dim == 1 || coupled == 0) {

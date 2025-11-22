@@ -2511,14 +2511,14 @@ cs_atmo_bcond(void)
         if (th_f->bc_coeffs->rcodcl1[face_id] > cs_math_infinite_r*0.5) {
           // Dirichlet with wall function Expressed directly in term of
           // potential temperature
-          th_f->bc_coeffs->icodcl[face_id]  = -6;
+          th_f->bc_coeffs->icodcl[face_id]  = - CS_BC_ROUGH_WALL_MODELLED;
           th_f->bc_coeffs->rcodcl1[face_id] = bvar_tempp[ii];
         }
       }
       if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
         // If not yet specified
         if (ym_w->bc_coeffs->rcodcl1[face_id] > cs_math_infinite_r*0.5) {
-          ym_w->bc_coeffs->icodcl[face_id]  = 6;
+          ym_w->bc_coeffs->icodcl[face_id]  = CS_BC_ROUGH_WALL_MODELLED;
           ym_w->bc_coeffs->rcodcl1[face_id] = bvar_total_water[ii];
         }
       }
@@ -2735,7 +2735,7 @@ cs_atmo_bcond(void)
       if (   bc_type[face_id] == CS_SMOOTHWALL
           || bc_type[face_id] == CS_ROUGHWALL) {
 
-        yr->bc_coeffs->icodcl[face_id] = 1;
+        yr->bc_coeffs->icodcl[face_id] = CS_BC_DIRICHLET;
         yr->bc_coeffs->rcodcl1[face_id] = 0.;
       }
     }

@@ -130,12 +130,12 @@ cs_boundary_conditions_coupling_t_in(void)
   for (cs_lnum_t ii = 0; ii < nfpt1d; ii++) {
     const cs_lnum_t face_id = ifpt1d[ii] - 1;
 
-    if (  (   th_f->bc_coeffs->icodcl[face_id] != 1
-           && th_f->bc_coeffs->icodcl[face_id] != 5
-           && th_f->bc_coeffs->icodcl[face_id] != 6 )
+    if (  (   th_f->bc_coeffs->icodcl[face_id] != CS_BC_DIRICHLET
+           && th_f->bc_coeffs->icodcl[face_id] != CS_BC_WALL_MODELLED
+           && th_f->bc_coeffs->icodcl[face_id] != CS_BC_ROUGH_WALL_MODELLED )
         && (   cs_glob_bc_type[face_id] == CS_SMOOTHWALL
             || cs_glob_bc_type[face_id] == CS_ROUGHWALL))
-      th_f->bc_coeffs->icodcl[face_id] = 5;
+      th_f->bc_coeffs->icodcl[face_id] = CS_BC_WALL_MODELLED;
 
     th_f->bc_coeffs->rcodcl1[face_id] = tppt1d[ii];
     th_f->bc_coeffs->rcodcl2[face_id] = cs_math_infinite_r;

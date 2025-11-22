@@ -305,20 +305,20 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
       bc_type[face_id] = CS_SMOOTHWALL;
 
       if (transfo->ielect[i] != 0) {
-        potr_icodcl[face_id] = 1;
+        potr_icodcl[face_id] = CS_BC_DIRICHLET;
         potr_rcodcl1[face_id] = ur[transfo->ielect[i]][transfo->ielecb[i]];
 
         if (ieljou == 4) {
-          poti_icodcl[face_id] = 1;
+          poti_icodcl[face_id] = CS_BC_DIRICHLET;
           poti_rcodcl1[face_id] = ur[transfo->ielect[i]][transfo->ielecb[i]];
         }
       }
       else {
-        potr_icodcl[face_id] = 3;
+        potr_icodcl[face_id] = CS_BC_NEUMANN;
         potr_rcodcl3[face_id] = 0.;
 
         if (ieljou == 4) {
-          poti_icodcl[face_id] = 3;
+          poti_icodcl[face_id] = CS_BC_NEUMANN;
           poti_rcodcl3[face_id] = 0.;
         }
       }
@@ -332,7 +332,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
     int found = 0;
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       if (bc_type[face_id] == CS_SMOOTHWALL) {
-        if (potr_icodcl[face_id] == 1) {
+        if (potr_icodcl[face_id] == CS_BC_DIRICHLET) {
           if (ieljou == 3) {
             if (fabs(potr_rcodcl1[face_id]) < 1.e-20)
               found = 1;
