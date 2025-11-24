@@ -944,8 +944,8 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
   if (thermal_variable == CS_THERMAL_MODEL_ENTHALPY) {
 
-    CS_MALLOC_HD(lbt2h, n_b_faces, cs_lnum_t, amode);
-    CS_MALLOC_HD(vbt2h, n_b_faces, cs_real_t, amode);
+    CS_MALLOC_HD(lbt2h, n_b_faces, cs_lnum_t, CS_ALLOC_HOST);
+    CS_MALLOC_HD(vbt2h, n_b_faces, cs_real_t, CS_ALLOC_HOST);
 
     cs_field_t *f_h = CS_F_(h);
     cs_real_t *rcodcl1_h = f_h->bc_coeffs->rcodcl1;
@@ -1347,7 +1347,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
       && order == CS_TURB_SECOND_ORDER) {
 
     /* Allocate a work array to store rij values at boundary faces */
-    CS_MALLOC_HD(rijipb, n_b_faces, cs_real_6_t, amode);
+    CS_MALLOC_HD(rijipb, n_b_faces, cs_real_6_t, cs_alloc_mode);
 
     cs_equation_param_t *eqp_rij = cs_field_get_equation_param(CS_F_(rij));
 
@@ -3852,7 +3852,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
       if (b_f_id > -1)
         bvar_s = cs_field_by_id(b_f_id)->val;
       else {
-        CS_MALLOC_HD(bvar_s, n_b_faces, cs_real_t, amode);
+        CS_MALLOC_HD(bvar_s, n_b_faces, cs_real_t, cs_alloc_mode);
         ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
           bvar_s[f_id] = btemp_s[f_id];
         });

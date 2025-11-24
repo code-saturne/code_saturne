@@ -2733,8 +2733,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
         }
 
         /* process only for smooth wall here after */
-        else if (model == CS_TURB_RIJ_EPSILON_EBRSM
-            && icodcl_vel[f_id] == CS_BC_WALL_MODELLED) {
+        else if (   model == CS_TURB_RIJ_EPSILON_EBRSM
+                 && icodcl_vel[f_id] == CS_BC_WALL_MODELLED) {
 
           cs_real_t pimp = 0.0;
 
