@@ -259,13 +259,13 @@ _get_nb_classes(cs_lnum_t  array[][2],
 /*----------------------------------------------------------------------------*/
 
 static cs_lnum_t
-_gaps_classes(cs_lnum_2_t  *array,
-              cs_lnum_t     array_size,
-              cs_lnum_t     count_cls,
-              cs_lnum_t    *cls_gaps)
+_gaps_classes(cs_span_2d<cs_lnum_t> array,
+              cs_lnum_t             array_size,
+              cs_lnum_t             count_cls,
+              cs_span<cs_lnum_t>    cls_gaps)
 {
   if (array_size >= 1) {
-    cs_lnum_t prev_cls = array[0][0];
+    cs_lnum_t prev_cls = array(0, 0);
     cs_lnum_t curr_cls = prev_cls;
     cs_lnum_t counter = 0;
     cls_gaps[0] = 0;
@@ -273,7 +273,7 @@ _gaps_classes(cs_lnum_2_t  *array,
     counter = 1;
 
     for (cs_lnum_t part = 1; part < array_size; ++part) {
-      curr_cls = array[part][0];
+      curr_cls = array(part, 0);
       if (prev_cls != curr_cls) {
         cls_gaps[counter] = part;
         counter++;
@@ -416,18 +416,16 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
   }
 
   /* Create local array (containing the class and particle index) */
-  cs_lnum_2_t *interf;
-
-  CS_MALLOC(interf, lnum_particles, cs_lnum_2_t);
+  cs_array_2d<cs_lnum_t> interf(lnum_particles, 2);
 
   for (cs_lnum_t i = start_particle; i < end_particle; ++i) {
-    interf[i-start_particle][0]
+    interf(i-start_particle, 0)
       = cs_lagr_particles_get_lnum(p_set, i, CS_LAGR_AGGLO_CLASS_ID);
-    interf[i-start_particle][1] = i;
+    interf(i-start_particle, 1) = i;
   }
 
   /* Sort by class */
-  qsort(interf, lnum_particles, sizeof(cs_lnum_2_t), _compare_interface);
+  qsort(interf.data<cs_lnum_2_t>(), lnum_particles, sizeof(cs_lnum_2_t), _compare_interface);
 
   /* Select pairs of particles (for agglomeration) */
   cs_gnum_t _gn_particles = lnum_particles;
@@ -544,10 +542,10 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
       }
 
       /* Find one existing parcel with the same class (to merge with it) */
-      cs_lnum_t position = _find_class(interf, lnum_particles, n_classes_new);
+      cs_lnum_t position = _find_class(interf.data<cs_lnum_2_t>(), lnum_particles, n_classes_new);
 
       if (position >= 0) {
-        cs_lnum_t found_idx = interf[position][1];
+        cs_lnum_t found_idx = interf(position, 1);
         cs_real_t stat_weight
           = cs_lagr_particles_get_real(p_set, found_idx, CS_LAGR_STAT_WEIGHT);
 
@@ -652,43 +650,37 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
   }
 
   /* Store class and index of newly created particles */
-  cs_lnum_2_t *interf_agglo;
-  CS_MALLOC(interf_agglo, newpart, cs_lnum_2_t);
+  cs_array_2d<cs_lnum_t> interf_agglo(newpart, 2);
 
   for (cs_lnum_t i = 0; i < newpart; i++) {
     cs_lnum_t curr_class = cs_lagr_particles_get_lnum
                              (p_set, p_set->n_particles+i,
                               CS_LAGR_AGGLO_CLASS_ID);
-    interf_agglo[i][0] = curr_class;
-    interf_agglo[i][1] = p_set->n_particles+i;
+    interf_agglo(i, 0) = curr_class;
+    interf_agglo(i, 1) = p_set->n_particles+i;
   }
 
   /* Sort by the class */
-  qsort(interf_agglo, newpart, sizeof(cs_lnum_2_t), _compare_interface);
+  qsort(interf_agglo.data<cs_lnum_2_t>(), newpart, sizeof(cs_lnum_2_t), _compare_interface);
 
   /* Local array, containing all particles in the current cell,
      sorted by their class */
-  cs_lnum_2_t  *interf_tot;
   cs_lnum_t tot_size = lnum_particles+newpart;
 
-  CS_MALLOC(interf_tot, tot_size, cs_lnum_2_t);
+  cs_array_2d<cs_lnum_t> interf_tot(tot_size, 2);
 
   /* Merge arrays of existing particles and particles
      created by agglomeration */
-  cs_lagr_agglo_merge_arrays(interf, interf_agglo,
+  cs_lagr_agglo_merge_arrays(interf.data<cs_lnum_2_t>(), interf_agglo.data<cs_lnum_2_t>(),
                              lnum_particles, newpart,
-                             interf_tot);
-  CS_FREE(interf_agglo);
-  CS_FREE(interf);
+                             interf_tot.data<cs_lnum_2_t>());
 
-  cs_lnum_t nb_cls = _get_nb_classes(interf_tot, tot_size);
+  cs_lnum_t nb_cls = _get_nb_classes(interf_tot.data<cs_lnum_2_t>(), tot_size);
 
-  cs_lnum_t* cls_gaps;
+  cs_array<cs_lnum_t> cls_gaps(tot_size+1);
 
-  CS_MALLOC(cls_gaps, tot_size+1, cs_lnum_t);
-
-  _gaps_classes(interf_tot, tot_size,
-                nb_cls, cls_gaps);
+  _gaps_classes(interf_tot.view(), tot_size,
+                nb_cls, cls_gaps.view());
 
   /* Loop to merge particles of same class
      --> Keep only particles with large weight */
@@ -698,7 +690,7 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
 
     /* Only one particle of current class */
     if (end_gap - start_gap == 1) {
-      cs_lnum_t part_idx = interf_tot[start_gap][1];
+      cs_lnum_t part_idx = interf_tot(start_gap, 1);
       cs_real_t weight = cs_lagr_particles_get_real
                           (p_set, part_idx, CS_LAGR_STAT_WEIGHT);
       /* Delete particle (if weight < 0) */
@@ -721,7 +713,7 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
     cs_lnum_t found_small = 0;
 
     for (cs_lnum_t idx = start_gap; idx < end_gap; ++idx) {
-      cs_lnum_t part_idx = interf_tot[idx][1];
+      cs_lnum_t part_idx = interf_tot(idx, 1);
       cs_real_t weight = cs_lagr_particles_get_real(p_set, part_idx,
                                                     CS_LAGR_STAT_WEIGHT);
 
@@ -736,7 +728,7 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
       /* Put the small particles in a large one (if possible) */
       cs_lnum_t put_in_large = 0;
       for (cs_lnum_t idx = start_gap; idx < end_gap; ++idx) {
-        cs_lnum_t part_idx = interf_tot[idx][1];
+        cs_lnum_t part_idx = interf_tot(idx, 1);
         cs_real_t weight = cs_lagr_particles_get_real
                              (p_set, part_idx, CS_LAGR_STAT_WEIGHT);
 
@@ -754,12 +746,12 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
         last_small = -1;
       }
       else {
-        cs_lagr_particles_set_real(p_set, interf_tot[last_small][1],
+        cs_lagr_particles_set_real(p_set, interf_tot(last_small, 1),
                                    CS_LAGR_STAT_WEIGHT, sum);
       }
 
       for (cs_lnum_t idx = start_gap; idx < end_gap; ++idx) {
-        cs_lnum_t part_idx = interf_tot[idx][1];
+        cs_lnum_t part_idx = interf_tot(idx, 1);
         cs_real_t weight = cs_lagr_particles_get_real(p_set, part_idx,
                                                       CS_LAGR_STAT_WEIGHT);
         if (weight > 0. && weight < agglo_min_weight && idx != last_small) {
@@ -775,7 +767,7 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
 
     /* Eliminate particles (if statistical weight < 0) */
     for (cs_lnum_t idx = start_gap; idx < end_gap; ++idx) {
-      cs_lnum_t part_idx = interf_tot[idx][1];
+      cs_lnum_t part_idx = interf_tot(idx, 1);
       cs_real_t weight = cs_lagr_particles_get_real
                            (p_set, part_idx, CS_LAGR_STAT_WEIGHT);
 
@@ -789,9 +781,6 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
       }
     }
   }
-
-  CS_FREE(cls_gaps);
-  CS_FREE(interf_tot);
 
   p_set->n_particles += newpart;
 

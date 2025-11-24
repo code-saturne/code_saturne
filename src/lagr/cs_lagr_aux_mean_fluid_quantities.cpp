@@ -157,8 +157,7 @@ compute_particle_covariance_gradient(int          phase_id,
                           &var_cal_opt);
 
   /* Now compute the gradients */
-  cs_real_t *f_inter_cov;
-  CS_MALLOC(f_inter_cov, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
+  cs_array<cs_real_t> f_inter_cov(cs_glob_mesh->n_cells_with_ghosts);
 
   /* Get the variable we want to compute the gradients
    * from (covariance velocity seen/velocity) */
@@ -177,7 +176,7 @@ compute_particle_covariance_gradient(int          phase_id,
       f_inter_cov[iel_] = stat_cov_skp->val[9 * iel_ + i];
     }
     if (mesh->halo != nullptr)
-      cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, f_inter_cov);
+      cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, f_inter_cov.data());
 
     cs_gradient_scalar("intermediate cov skp gradient [Lagrangian module]",
                         CS_GRADIENT_GREEN_ITER,
@@ -192,7 +191,7 @@ compute_particle_covariance_gradient(int          phase_id,
                         var_cal_opt.climgr,
                         0,
                         nullptr,
-                        f_inter_cov,
+                        f_inter_cov.data(),
                         nullptr,
                         nullptr,
                         grad_cov_skp[i]);
@@ -211,7 +210,7 @@ compute_particle_covariance_gradient(int          phase_id,
       f_inter_cov[iel_] = stat_cov_sk->val[6 * iel_ + i];
     }
     if (mesh->halo != nullptr)
-      cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, f_inter_cov);
+      cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, f_inter_cov.data());
 
     cs_gradient_scalar("intermediate cov sk gradient [Lagrangian module]",
                         CS_GRADIENT_GREEN_ITER,
@@ -226,13 +225,12 @@ compute_particle_covariance_gradient(int          phase_id,
                         var_cal_opt.climgr,
                         0,
                         nullptr,
-                        f_inter_cov,
+                        f_inter_cov.data(),
                         nullptr,
                         nullptr,
                         grad_cov_sk[i]);
   }
 
-  CS_FREE(f_inter_cov);
 }
 
 /*----------------------------------------------------------------------------*/
