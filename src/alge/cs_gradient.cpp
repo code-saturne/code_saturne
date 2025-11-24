@@ -1483,7 +1483,7 @@ _renormalize_scalar_gradient(const cs_mesh_t                *m,
 
   ctx.wait();
 
-  _sync_strided_gradient_halo(m->halo, CS_HALO_EXTENDED, false, cor_mat);
+  _sync_strided_gradient_halo(m->halo, CS_HALO_EXTENDED, ctx.use_gpu(), cor_mat);
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  cell_id) {
     cs_real_t dvol;
@@ -1512,7 +1512,7 @@ _renormalize_scalar_gradient(const cs_mesh_t                *m,
   CS_FREE(cor_mat);
 
   /* Synchronize halos */
-  cs_halo_sync_r(m->halo, CS_HALO_EXTENDED, false, grad);
+  cs_halo_sync_r(m->halo, CS_HALO_EXTENDED, ctx.use_gpu(), grad);
 }
 
 /*----------------------------------------------------------------------------
@@ -3656,7 +3656,7 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
   /* Synchronize halos */
 
   ctx.wait();
-  cs_halo_sync_r(m->halo, CS_HALO_STANDARD, false, grad);
+  cs_halo_sync_r(m->halo, CS_HALO_STANDARD, ctx.use_gpu(), grad);
 }
 
 /*----------------------------------------------------------------------------
@@ -5318,7 +5318,7 @@ _initialize_strided_gradient(const cs_mesh_t              *m,
   /* Synchronize halos */
 
   ctx.wait();
-  _sync_strided_gradient_halo(m->halo, halo_type, false, grad);
+  _sync_strided_gradient_halo(m->halo, halo_type, ctx.use_gpu(), grad);
 }
 
 /*----------------------------------------------------------------------------
@@ -5844,7 +5844,7 @@ _iterative_strided_gradient(const cs_mesh_t               *m,
 
       /* Synchronize halos */
 
-      _sync_strided_gradient_halo(m->halo, halo_type, false, grad);
+      _sync_strided_gradient_halo(m->halo, halo_type, ctx.use_gpu(), grad);
 
       /* Convergence test (L2 norm) */
 
@@ -6284,7 +6284,7 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
 
   /* Synchronize halos */
 
-  _sync_strided_gradient_halo<stride>(m->halo, halo_type, false, grad);
+  _sync_strided_gradient_halo(m->halo, halo_type, false, grad);
 
   if (cs_glob_timer_kernels_flag > 0)
     t_halo = std::chrono::high_resolution_clock::now();
