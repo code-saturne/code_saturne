@@ -1760,12 +1760,6 @@ _bdf2_scheme_build(const cs_navsto_param_t  *nsp,
     assert(mom_eqb->dir_values != nullptr);
 #endif
 
-  /* Detect the first call (in this case, we compute the initial source term)*/
-
-  bool  compute_initial_source = false;
-  if (ts->nt_cur == ts->nt_prev || ts->nt_prev == 0)
-    compute_initial_source = true;
-
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
     const int  t_id = cs_get_thread_id();
@@ -1870,21 +1864,9 @@ _bdf2_scheme_build(const cs_navsto_param_t  *nsp,
       /* b) Source term computation (for the momentum equation) */
 
       if (cs_equation_param_has_sourceterm(mom_eqp)) {
-
-        if (compute_initial_source)
-          /* First time step: Compute source term at a previous step */
-          cs_cdofb_vecteq_sourceterm(cm, mom_eqp,
-                                     t_cur, 1.0,  /* time, scaling */
-                                     mass_hodge,
-                                     cb, mom_eqb, csys);
-
-        else /* Add the contribution of the previous time step */
-          for (short int k = 0; k < 3; k++)
-            csys->rhs[3*cm->n_fc + k] += mom_eqc->source_terms[3*c_id+k];
-
         cs_cdofb_vecteq_sourceterm(cm, mom_eqp,
                                    /* time       , scaling */
-                                   cb->t_st_eval, mom_eqp->theta,
+                                   cb->t_st_eval, 1.0,
                                    mass_hodge,
                                    cb, mom_eqb, csys);
 
