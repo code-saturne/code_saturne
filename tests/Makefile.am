@@ -147,13 +147,17 @@ cs_all_to_all_test_SOURCES  = cs_all_to_all_test.cpp
 cs_all_to_all_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
 cs_all_to_all_test_LDADD    = $(LDADD_CS_TESTS)
 
-cs_blas_test_SOURCES  = \
-cs_blas_test.cpp \
-cs_blas.cpp
+cs_blas_test_SOURCES = cs_blas_test.cpp
+
+cs_blas_test$(EXEEXT):
+	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
+	-o cs_blas_test $(top_srcdir)/tests/cs_blas_test.cpp
+
 cs_blas_test_CPPFLAGS  = \
 -I$(top_srcdir)/src -I$(top_builddir)/src \
  $(BLAS_CPPFLAGS) $(MPI_CPPFLAGS)
-cs_blas_test_CFLAGS  = $(AM_CFLAGS) $(CFLAGS_HOT)
+cs_blas_test_CXXFLAGS  = $(AM_CXXFLAGS) $(CXXFLAGS_HOT)
 cs_blas_test_LDFLAGS  = $(BLAS_LDFLAGS) $(LDFLAGS_CS_TESTS)
 cs_blas_test_LDADD    = $(BLASRUNPATH) $(BLAS_LIBS) $(LDADD_CS_TESTS)
 
@@ -246,8 +250,11 @@ cs_mesh_quantities_test$(EXEEXT): $(top_srcdir)/tests/cs_mesh_quantities_test.cp
 	-o cs_mesh_quantities_test $(top_srcdir)/tests/cs_mesh_quantities_test.cpp
 
 cs_moment_test_SOURCES  = cs_moment_test.cpp
-cs_moment_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
-cs_moment_test_LDADD    = -lm
+
+cs_moment_test$(EXEEXT):
+	PYTHONPATH=$(top_srcdir)/python/code_saturne/base \
+	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
+	-o cs_moment_test $(top_srcdir)/tests/cs_moment_test.cpp
 
 cs_random_test_SOURCES  = \
 cs_random_test.cpp \
@@ -299,6 +306,11 @@ $(top_srcdir)/tests/graphics
 clean-local:
 	-rm -f $(BUILT_SOURCES)
 	-rm -rf .deps
+
+if HAVE_CUDA_CPP
+.cpp.$(OBJEXT):
+	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I$(top_builddir)/src/base $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
+endif
 
 .cu.$(OBJEXT):
 	$(NVCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I$(top_builddir)/src/base $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) -c -o $@ $<
