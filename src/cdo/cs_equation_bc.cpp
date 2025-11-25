@@ -1798,53 +1798,59 @@ cs_equation_compute_neumann_sfb(cs_real_t                  t_eval,
 
   switch (def->type) {
 
-  case CS_XDEF_BY_VALUE: {
-    double *input = static_cast<double *>(def->context);
+  case CS_XDEF_BY_VALUE:
+    {
+      double *input = static_cast<double *>(def->context);
 
-    neu_values[f] = cm->face[f].meas * input[0];
-  } break;
+      neu_values[f] = cm->face[f].meas * input[0];
+    }
+    break;
 
-  case CS_XDEF_BY_TIME_FUNCTION: {
-    cs_xdef_time_func_context_t *tfc
-      = static_cast<cs_xdef_time_func_context_t *>(def->context);
-    assert(tfc != nullptr);
+  case CS_XDEF_BY_TIME_FUNCTION:
+    {
+      cs_xdef_time_func_context_t *tfc
+        = static_cast<cs_xdef_time_func_context_t *>(def->context);
+      assert(tfc != nullptr);
 
-    /* Evaluate the flux */
+      /* Evaluate the flux */
 
-    cs_real_t flux;
-    tfc->func(t_eval, tfc->input, &flux);
+      cs_real_t flux;
+      tfc->func(t_eval, tfc->input, &flux);
 
-    neu_values[f] = cm->face[f].meas * flux;
-  } break;
+      neu_values[f] = cm->face[f].meas * flux;
+    }
+    break;
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
     cs_xdef_cw_eval_flux_by_scalar_analytic(
       cm, f, t_eval, def->context, def->qtype, neu_values);
     break;
 
-  case CS_XDEF_BY_ARRAY: {
-    cs_xdef_array_context_t *ac
-      = static_cast<cs_xdef_array_context_t *>(def->context);
+  case CS_XDEF_BY_ARRAY:
+    {
+      cs_xdef_array_context_t *ac
+        = static_cast<cs_xdef_array_context_t *>(def->context);
 
-    assert(ac->stride == 1);
-    assert(cs_flag_test(ac->value_location, cs_flag_primal_face) ||
-           cs_flag_test(ac->value_location, cs_flag_boundary_face));
+      assert(ac->stride == 1);
+      assert(cs_flag_test(ac->value_location, cs_flag_primal_face) ||
+             cs_flag_test(ac->value_location, cs_flag_boundary_face));
 
-    cs_lnum_t bf_id = cm->f_ids[f] - cm->bface_shift;
-    assert(bf_id > -1);
+      cs_lnum_t bf_id = cm->f_ids[f] - cm->bface_shift;
+      assert(bf_id > -1);
 
-    if (ac->full_length)
-      neu_values[f] = cm->face[f].meas * ac->values[bf_id];
+      if (ac->full_length)
+        neu_values[f] = cm->face[f].meas * ac->values[bf_id];
 
-    else {
+      else {
 
-      assert(ac->full2subset != nullptr);
-      cs_lnum_t id = ac->full2subset[bf_id];
-      assert(id > -1);
+        assert(ac->full2subset != nullptr);
+        cs_lnum_t id = ac->full2subset[bf_id];
+        assert(id > -1);
 
-      neu_values[f] = cm->face[f].meas * ac->values[id];
+        neu_values[f] = cm->face[f].meas * ac->values[id];
+      }
     }
-  } break;
+    break;
 
   default:
     bft_error(__FILE__, __LINE__, 0,
@@ -2073,7 +2079,10 @@ cs_equation_bc_cw_robin(cs_real_t                  t_eval,
   assert(rob_values != nullptr && cm != nullptr && eqp != nullptr);
   assert(def_id > -1);
 
-  int dim = eqp->dim;
+  // There are three values associated to a Robin BC for each component
+  // FluxDiff = alpha * (u - u0) + beta => Set (alpha, u0, beta)
+
+  const int dim = eqp->dim, data_size = 3*dim;
 
   cs_xdef_t *def = eqp->bc_defs[def_id];
 
@@ -2085,61 +2094,67 @@ cs_equation_bc_cw_robin(cs_real_t                  t_eval,
   /* Evaluate the boundary condition at each boundary face */
   switch (def->type) {
 
-  case CS_XDEF_BY_VALUE: {
-    const cs_real_t *parameters = (cs_real_t *)def->context;
+  case CS_XDEF_BY_VALUE:
+    {
+      const cs_real_t *parameters = (cs_real_t *)def->context;
 
-    for (short int k = 0; k < 3*dim; k++)
-      rob_values[3*dim*f + k] = parameters[k];
-  } break;
-
-  case CS_XDEF_BY_ANALYTIC_FUNCTION: {
-    cs_real_t  buffer_params[16];
-    memset(buffer_params, 0, 16 * sizeof(cs_real_t));
-
-    cs_xdef_analytic_context_t *ac = (cs_xdef_analytic_context_t *)def->context;
-
-    ac->func(t_eval,
-             1,
-             nullptr,
-             cm->face[f].center,
-             true, /* dense output ? */
-             ac->input,
-             buffer_params);
-
-    for (short int k = 0; k < 3*dim; k++)
-      rob_values[3*dim*f + k] = buffer_params[k];
-  } break;
-
-  case CS_XDEF_BY_ARRAY: {
-    const cs_xdef_array_context_t *cx
-      = static_cast<const cs_xdef_array_context_t *>(def->context);
-
-    assert(cx->stride == 3*dim);
-    assert(cs_flag_test(cx->value_location, cs_flag_primal_face) ||
-           cs_flag_test(cx->value_location, cs_flag_boundary_face));
-
-    cs_lnum_t bf_id = cm->f_ids[f] - cm->bface_shift;
-    assert(bf_id > -1);
-    const cs_real_t *parameters;
-
-    if (cx->full_length)
-      parameters = cx->values + 3*dim*bf_id;
-
-    else {
-
-      assert(cx->full2subset != nullptr);
-      cs_lnum_t id = cx->full2subset[bf_id];
-      assert(id > -1);
-      parameters = cx->values + 3*dim*id;
+      for (short int k = 0; k < data_size; k++)
+        rob_values[data_size*f + k] = parameters[k];
     }
-    for (short int k = 0; k < 3*dim; k++)
-      rob_values[3*dim*f + k] = parameters[k];
-  } break;
+    break;
+
+  case CS_XDEF_BY_ANALYTIC_FUNCTION:
+    {
+      cs_real_t  buffer_params[16];
+      memset(buffer_params, 0, 16 * sizeof(cs_real_t));
+
+      cs_xdef_analytic_context_t *ac = (cs_xdef_analytic_context_t *)def->context;
+
+      ac->func(t_eval,
+               1,
+               nullptr,
+               cm->face[f].center,
+               true, /* dense output ? */
+               ac->input,
+               buffer_params);
+
+      for (short int k = 0; k < data_size; k++)
+        rob_values[data_size*f + k] = buffer_params[k];
+    }
+    break;
+
+  case CS_XDEF_BY_ARRAY:
+    {
+      const cs_xdef_array_context_t *cx
+        = static_cast<const cs_xdef_array_context_t *>(def->context);
+
+      assert(cx->stride == data_size);
+      assert(cs_flag_test(cx->value_location, cs_flag_primal_face) ||
+             cs_flag_test(cx->value_location, cs_flag_boundary_face));
+
+      cs_lnum_t bf_id = cm->f_ids[f] - cm->bface_shift;
+      assert(bf_id > -1);
+
+      const cs_real_t *parameters;
+      if (cx->full_length)
+        parameters = cx->values + data_size*bf_id;
+
+      else {
+        assert(cx->full2subset != nullptr);
+        cs_lnum_t id = cx->full2subset[bf_id];
+        assert(id > -1);
+        parameters = cx->values + data_size*id;
+      }
+
+      for (short int k = 0; k < data_size; k++)
+        rob_values[data_size*f + k] = parameters[k];
+    }
+    break;
 
   default:
     bft_error(__FILE__, __LINE__, 0,
               _(" Invalid type of definition.\n"
-                " Stop computing the Robin value.\n"));
+                " %s: Stop computing the Robin value.\n"), __func__);
 
   } /* switch def_type */
 }
@@ -2183,68 +2198,76 @@ cs_equation_bc_cw_turb_smooth_wall(cs_real_t                  t_eval,
 
   assert(eqp->dim == def->dim);
 
-  short int dim = eqp->dim;
+  const int dim = eqp->dim, data_size = data_size;
 
   if (def->meta & CS_CDO_BC_WALL_PRESCRIBED) {
 
     /* Evaluate the boundary condition at each boundary face */
     switch (def->type) {
 
-    case CS_XDEF_BY_VALUE: {
-      const cs_real_t *parameters = (cs_real_t *)def->context;
+    case CS_XDEF_BY_VALUE:
+      {
+        const cs_real_t *parameters = (cs_real_t *)def->context;
 
-      for (short int k = 0; k < dim; k++) /* Only set u0 */
-        rob_values[3*dim*f + k] = parameters[k];
-    } break;
-
-    case CS_XDEF_BY_ANALYTIC_FUNCTION: {
-      cs_real_t  buffer_params[16];
-      memset(buffer_params, 0, 16 * sizeof(cs_real_t));
-
-      cs_xdef_analytic_context_t *ac = (cs_xdef_analytic_context_t *)def->context;
-
-      ac->func(t_eval,
-               1,
-               nullptr,
-               cm->face[f].center,
-               true, /* dense output ? */
-               ac->input,
-               buffer_params);
-
-      for (short int k = 0; k < dim; k++) /* Only set u0 */
-        rob_values[3*dim*f + k] = buffer_params[k];
-    } break;
-
-    case CS_XDEF_BY_ARRAY: {
-      const cs_xdef_array_context_t *cx
-        = static_cast<const cs_xdef_array_context_t *>(def->context);
-
-      assert(cx->stride == 3*dim);
-      assert(cs_flag_test(cx->value_location, cs_flag_primal_face) ||
-             cs_flag_test(cx->value_location, cs_flag_boundary_face));
-
-      cs_lnum_t bf_id = cm->f_ids[f] - cm->bface_shift;
-      assert(bf_id > -1);
-      const cs_real_t *parameters;
-
-      if (cx->full_length)
-        parameters = cx->values + 3*dim*bf_id;
-
-      else {
-
-        assert(cx->full2subset != nullptr);
-        cs_lnum_t id = cx->full2subset[bf_id];
-        assert(id > -1);
-        parameters = cx->values + 3*dim*id;
+        for (short int k = 0; k < dim; k++) /* Only set u0 */
+          rob_values[data_size*f + k] = parameters[k];
       }
-      for (short int k = 0; k < dim; k++) /* Only set u0 */
-        rob_values[3*dim*f + k] = parameters[k];
-    } break;
+      break;
+
+    case CS_XDEF_BY_ANALYTIC_FUNCTION:
+      {
+        cs_real_t  buffer_params[16];
+        memset(buffer_params, 0, 16 * sizeof(cs_real_t));
+
+        cs_xdef_analytic_context_t *ac = (cs_xdef_analytic_context_t *)def->context;
+
+        ac->func(t_eval,
+                 1,
+                 nullptr,
+                 cm->face[f].center,
+                 true, /* dense output ? */
+                 ac->input,
+                 buffer_params);
+
+        for (short int k = 0; k < dim; k++) /* Only set u0 */
+          rob_values[data_size*f + k] = buffer_params[k];
+      }
+      break;
+
+    case CS_XDEF_BY_ARRAY:
+      {
+        const cs_xdef_array_context_t *cx
+          = static_cast<const cs_xdef_array_context_t *>(def->context);
+
+        assert(cx->stride == data_size);
+        assert(cs_flag_test(cx->value_location, cs_flag_primal_face) ||
+               cs_flag_test(cx->value_location, cs_flag_boundary_face));
+
+        cs_lnum_t bf_id = cm->f_ids[f] - cm->bface_shift;
+        assert(bf_id > -1);
+
+        const cs_real_t *parameters;
+        if (cx->full_length)
+          parameters = cx->values + data_size*bf_id;
+
+        else {
+
+          assert(cx->full2subset != nullptr);
+          cs_lnum_t id = cx->full2subset[bf_id];
+          assert(id > -1);
+          parameters = cx->values + data_size*id;
+
+        }
+
+        for (short int k = 0; k < dim; k++) /* Only set u0 */
+          rob_values[data_size*f + k] = parameters[k];
+      }
+      break;
 
     default:
       bft_error(__FILE__, __LINE__, 0,
                 _(" Invalid type of definition.\n"
-                  " Stop computing the Robin value.\n"));
+                  " %s: Stop computing the Robin value.\n"), __func__);
 
     } /* switch def_type */
 

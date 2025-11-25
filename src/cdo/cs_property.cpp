@@ -1739,22 +1739,22 @@ cs_property_get_array(const cs_property_t     *pty)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a \ref cs_property_data_t structure (not a pointer to this
- *         structure). If property is null then one considers that this is a
- *         unitary property
+ * \brief Define a \ref cs_property_data_t structure (not a pointer to this
+ *        structure). If property is null then one considers that this is a
+ *        unitary property
  *
- * \param[in]   need_tensor  true if one needs a tensor-valued evaluation
- * \param[in]   need_eigen   true if one needs an evaluation of eigen values
- * \param[in]   property     pointer to the \ref cs_property_t structure
+ * \param[in]  need_tensor  true if one needs a tensor-valued evaluation
+ * \param[in]  need_eigen   true if one needs an evaluation of eigen values
+ * \param[in]  property     pointer to the \ref cs_property_t structure
  *
  * \return an initialized structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_property_data_t
-cs_property_data_define(bool                     need_tensor,
-                        bool                     need_eigen,
-                        const cs_property_t     *property)
+cs_property_data_define(bool                 need_tensor,
+                        bool                 need_eigen,
+                        const cs_property_t *property)
 {
   cs_property_data_t data;
 

@@ -57,39 +57,40 @@ BEGIN_C_DECLS
  */
 
 typedef struct {
-  /* There is three important parameters */
-  /* Left bounds: easy problem and low cost */
-  /* Right bounds: hard problem and high cost */
-  /* - 1 <= harmonic_overlap <= 10 */
-  /* - 40 <= nb_eigenvector =< 500 */
-  /* - 0.5 >= relative_threshold >= 1.e-6 */
-  /* - 1 <= p < nb_mpi/2 */
 
-  bool use_neumann; /*!< Use neumann matrix on each subdomains */
+  /* There are three important parameters:
+   *   Left bound values  --> easy problem and low cost
+   *   Right bound values --> hard problem and high cost
+   *   - 1 <= harmonic_overlap <= 10
+   *   - 40 <= nb_eigenvector =< 500
+   *   - 0.5 >= relative_threshold >= 1.e-6
+   *   - 1 <= p < nb_mpi/2
+   */
 
-  int harmonic_overlap; /*!< Number of harmonic overlap */
+  bool use_neumann;      /*!< Use neumann matrix on each subdomains */
+  int  harmonic_overlap; /*!< Number of harmonic overlap */
+  int  nb_eigenvector;    /*!< Number of eigenvector to compute
+                          *    (= svd_nsv or eps_nev) */
 
-  int nb_eigenvector; /*!< Number of eigenvector to compute
-                       *    (= svd_nsv or eps_nev) */
-
-  int p; /*!< Number of mpi used to solve the coarse problem */
-
+  int    p;                  /*!< Number of mpi ranks used to solve the coarse problem */
   double relative_threshold; /*! < Thresold on eigenvalue to keep */
 
   /* Advanced options */
+
   bool adaptative; /* Compute parameters using adaptative algorithm */
+  int  min_harmonic_overlap; /*!< Min number of harmonic overlaps */
+  int  max_harmonic_overlap; /*!< Max number of harmonic overlaps */
 
-  int min_harmonic_overlap,
-    max_harmonic_overlap; /*!< Min/Max number of harmonic overlap */
+  int min_nb_eigenvector; /*!< Min number of eigenvectors to compute
+                           *    (= svd_nsv or eps_nev) */
+  int max_nb_eigenvector; /*!< Max number of eigenvectors to compute
+                           *    (= svd_nsv or eps_nev) */
 
-  int min_nb_eigenvector,
-    max_nb_eigenvector; /*!< Min/Max number of eigenvector to compute
-                         *    (= svd_nsv or eps_nev) */
+  int min_iter;
+  int max_iter;            /*!< Adaptation of setup if nb_iter <= min_iter
+                            *    or nb_iter >= max_iter */
 
-  int min_iter, max_iter; /*!< Adaptation of setup if nb_iter <= min_iter
-                           *    or nb_iter >= max_iter */
-
-  int nb_iter_prev; /* Number of iterations of previous solve */
+  int nb_iter_prev;        /* Number of iterations of previous solve */
 
 } cs_param_hpddm_t;
 

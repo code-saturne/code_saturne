@@ -3438,10 +3438,10 @@ cs_cdo_diffusion_wbs_face_flux(const cs_face_mesh_t      *fm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the normal diffusive flux for a face assuming only the
- *          knowledge of the potential at faces and cell.
- *          CO+ST algorithm is used for reconstructing the normal flux from
- *          the degrees of freedom.
+ * \brief Compute the normal diffusive flux for a face assuming only the
+ *        knowledge of the potential at faces and cell.
+ *        CO+ST algorithm is used for reconstructing the normal flux from the
+ *        degrees of freedom.
  *
  * \param[in]      f       face id in the cell mesh
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
@@ -3453,12 +3453,12 @@ cs_cdo_diffusion_wbs_face_flux(const cs_face_mesh_t      *fm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_sfb_cost_flux(short int                   f,
-                               const cs_cell_mesh_t       *cm,
-                               const cs_real_t            *pot,
-                               const cs_hodge_t           *hodge,
-                               cs_cell_builder_t          *cb,
-                               cs_real_t                  *flux)
+cs_cdo_diffusion_sfb_cost_flux(short int             f,
+                               const cs_cell_mesh_t *cm,
+                               const cs_real_t      *pot,
+                               const cs_hodge_t     *hodge,
+                               cs_cell_builder_t    *cb,
+                               cs_real_t            *flux)
 {
   if (flux == nullptr)
     return;
