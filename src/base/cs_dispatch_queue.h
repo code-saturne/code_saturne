@@ -617,7 +617,7 @@ public:
 //! Duration type for elapsed time between two events
 using cs_event_duration =
 #if defined(__CUDACC__)
-  // cudaEventElapsedTime_v2 gives a time in milliseconds
+  // cudaEventElapsedTime gives a time in milliseconds
   // with a resolution of around 0.5 microseconds
   std::chrono::microseconds;
 #else
@@ -643,10 +643,10 @@ cs_elapsed_time(cs_event_ref  start,
   end->wait();
 
 #if defined(__CUDACC__)
-  // cudaEventElapsedTime_v2 gives a time in milliseconds
+  // cudaEventElapsedTime gives a time in milliseconds
   // with a resolution of around 0.5 microseconds
   float result_ms;
-  cudaEventElapsedTime_v2(&result_ms, ~start, ~end);
+  cudaEventElapsedTime(&result_ms, ~start, ~end);
   return cs_event_duration{ long(result_ms * 1000.f) };
 #else
   return ~end - ~start;
