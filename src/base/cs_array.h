@@ -1637,7 +1637,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   void set_to_val
   (
     T               val,        /*!<[in] Value to set to entire data array. */
@@ -1669,7 +1669,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   void set_to_val
   (
     cs_dispatch_context &ctx,        /*!< Reference to dispatch context */
@@ -1697,7 +1697,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   void set_to_val_on_subset
   (
     T               val,      /*!<[in] Value to set to entire data array. */
@@ -1734,7 +1734,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   void set_to_val_on_subset
   (
     cs_dispatch_context &ctx,      /*!< Reference to dispatch context */
