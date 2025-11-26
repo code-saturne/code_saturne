@@ -702,7 +702,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
   const cs_real_t  *rho0ch = coal_model->rho0ch;
 
   const cs_real_t *cval_h = nullptr, *cval_t = nullptr, *cval_t_l = nullptr;
-  cs_real_t *_cval_t = nullptr;
+  cs_array<cs_real_t> _cval_t;
 
   cs_real_t tscl_shift = 0;
 
@@ -742,9 +742,9 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       && cval_t == nullptr
       && cval_h != nullptr) {
 
-    CS_MALLOC(_cval_t, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
-    cs_ht_convert_h_to_t_cells(cval_h, _cval_t);
-    cval_t = _cval_t;
+    _cval_t.reshape(cs_glob_mesh->n_cells_with_ghosts);
+    cs_ht_convert_h_to_t_cells(cval_h, _cval_t.data());
+    cval_t = _cval_t.data();
   }
 
   /* Initialization */
@@ -779,14 +779,14 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
   /* Random draws and computation of particle characteristic times */
 
   cs_real_3_t  **vagaus = nullptr;
-  cs_real_t *temp_vagaus = nullptr;
+  cs_array<cs_real_t> temp_vagaus;
 
   CS_MALLOC(vagaus, n_phases, cs_real_3_t *);
   for (int phase_id = 0; phase_id < n_phases; phase_id++)
     CS_MALLOC(vagaus[phase_id], n, cs_real_3_t);
 
-  cs_real_3_t *temp_vel_fluc_coef = nullptr;
-  cs_real_t *var_temp_corel_coef = nullptr;
+  cs_array_2d<cs_real_t> temp_vel_fluc_coef;
+  cs_array<cs_real_t> var_temp_corel_coef;
 
   for (int phase_id = 0; phase_id < n_phases; phase_id++) {
     if (cs_glob_lagr_model->idistu == 1 && n > 0) {
@@ -797,12 +797,12 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
             || extra->temperature_variance != nullptr)
           &&  extra->temperature != nullptr) {
         if (extra->temperature_turbulent_flux != nullptr)
-          CS_MALLOC(temp_vel_fluc_coef, n_cells, cs_real_3_t);
+          temp_vel_fluc_coef.reshape(n_cells, 3);
         if (extra->temperature_variance != nullptr)
-          CS_MALLOC(var_temp_corel_coef, n_cells, cs_real_t);
+          var_temp_corel_coef.reshape(n_cells);
 
-        CS_MALLOC(temp_vagaus, n, cs_real_t);
-        cs_random_normal(n, temp_vagaus);
+        temp_vagaus.reshape(n);
+        cs_random_normal(n, temp_vagaus.data());
       }
     }
     else {
@@ -903,7 +903,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
           cs_math_33_3_product
             (inv_vel_fluct_coef,
              &extra->temperature_turbulent_flux->val[3*cell_id],
-             temp_vel_fluc_coef[cell_id]);
+             temp_vel_fluc_coef.sub_array(cell_id));
         }
       } // end turbulent heat fluxes
 
@@ -915,7 +915,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
           if (extra->temperature_turbulent_flux != nullptr) {
             for (int i = 0; i < 3; i++)
               var_temp_corel_coef[cell_id] -=
-                cs_math_sq(temp_vel_fluc_coef[cell_id][i]);
+                cs_math_sq(temp_vel_fluc_coef(cell_id, i));
           }
           if (var_temp_corel_coef[cell_id] > 0.)
             var_temp_corel_coef[cell_id] = sqrt(var_temp_corel_coef[cell_id]);
@@ -1427,7 +1427,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       /* TODO adapt the value of the draws based not only on the first phase */
       if (extra->temperature_turbulent_flux != nullptr)
         temp_seen +=
-          cs_math_3_dot_product(temp_vel_fluc_coef[c_id], vagaus[0][l_id]);
+          cs_math_3_dot_product(temp_vel_fluc_coef.sub_array(c_id), vagaus[0][l_id]);
 
       /* Fluctuations to obtain the proper temperature variance */
       if (extra->temperature_variance != nullptr )
@@ -1636,13 +1636,9 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     CS_FREE(eig_val[phase_id]);
   }
 
-  CS_FREE(_cval_t);
   CS_FREE(vagaus);
   CS_FREE(eig_vec);
   CS_FREE(eig_val);
-  CS_FREE(var_temp_corel_coef);
-  CS_FREE(temp_vel_fluc_coef);
-  CS_FREE(temp_vagaus);
 }
 
 /*----------------------------------------------------------------------------*/

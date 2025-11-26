@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
+#include "base/cs_array.h"
 #include "base/cs_base.h"
 #include "base/cs_base_accel.h"
 #include "base/cs_interface.h"
@@ -965,6 +966,145 @@ cs_halo_sync_r(const cs_halo_t  *halo,
                cs_halo_type_t    sync_mode,
                bool              on_device,
                T                 val[][3][3]);
+
+/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+
+template<typename T, int N>
+void
+cs_halo_sync
+(
+  const cs_halo_t       *halo,
+  cs_halo_type_t         sync_mode,
+  [[maybe_unused]] bool  on_device,
+  cs_mdspan_r<T, N>      span
+)
+{
+  static_assert(N == 1 || N == 2,
+                "Only possible for arrays of dim 1 or 2.");
+
+  if (halo == nullptr)
+    return;
+
+  cs_datatype_t datatype = cs_datatype_from_type<T>();
+
+  T *val = span.data();
+
+  int Stride = (N == 1) ? 1 : span.extent(1);
+
+#if defined(HAVE_ACCEL)
+  if (on_device)
+    cs_halo_sync_pack_d(halo,
+                        sync_mode,
+                        datatype,
+                        Stride,
+                        val,
+                        nullptr,
+                        nullptr);
+  else
+#endif
+    cs_halo_sync_pack(halo,
+                      sync_mode,
+                      datatype,
+                      Stride,
+                      val,
+                      nullptr,
+                      nullptr);
+
+  cs_halo_sync_start(halo, val, nullptr);
+
+  cs_halo_sync_wait(halo, val, nullptr);
+}
+
+template<typename T, int N>
+void
+cs_halo_sync
+(
+  const cs_halo_t       *halo,
+  [[maybe_unused]] bool  on_device,
+  cs_mdspan_r<T, N>      span
+)
+{
+  cs_halo_sync<T, N>(halo, CS_HALO_STANDARD, on_device, span);
+}
+
+template<typename T, int N>
+void
+cs_halo_sync
+(
+  const cs_halo_t       *halo,
+  cs_halo_type_t         sync_mode,
+  cs_mdspan_r<T, N>      span
+)
+{
+  bool on_device = cs_mem_is_device_ptr(span.data());
+  cs_halo_sync<T, N>(halo, sync_mode, on_device, span);
+}
+
+template<typename T, int N>
+void
+cs_halo_sync
+(
+  const cs_halo_t       *halo,
+  cs_mdspan_r<T, N>      span
+)
+{
+  bool on_device = cs_mem_is_device_ptr(span.data());
+  cs_halo_sync<T, N>(halo, CS_HALO_STANDARD, on_device, span);
+}
+
+/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+
+template<typename T, int N>
+void
+cs_halo_sync
+(
+  const cs_halo_t       *halo,
+  cs_halo_type_t         sync_mode,
+  [[maybe_unused]] bool  on_device,
+  cs_mdarray_r<T, N>     array
+)
+{
+  cs_halo_sync<T, N>(halo, sync_mode, on_device, array.view());
+}
+
+template<typename T, int N>
+void
+cs_halo_sync
+(
+  const cs_halo_t       *halo,
+  [[maybe_unused]] bool  on_device,
+  cs_mdarray_r<T, N>     array
+)
+{
+  cs_halo_sync<T, N>(halo, CS_HALO_STANDARD, on_device, array.view());
+}
+
+template<typename T, int N>
+void
+cs_halo_sync
+(
+  const cs_halo_t       *halo,
+  cs_halo_type_t         sync_mode,
+  cs_mdarray_r<T, N>     array
+)
+{
+  bool on_device = cs_mem_is_device_ptr(array.data());
+  cs_halo_sync<T, N>(halo, sync_mode, on_device, array.view());
+}
+
+template<typename T, int N>
+void
+cs_halo_sync
+(
+  const cs_halo_t       *halo,
+  cs_mdarray_r<T, N>     array
+)
+{
+  bool on_device = cs_mem_is_device_ptr(array.data());
+  cs_halo_sync<T, N>(halo, CS_HALO_STANDARD, on_device, array.view());
+}
 
 /*----------------------------------------------------------------------------*/
 

@@ -161,9 +161,7 @@ _distribute_particles(cs_gnum_t         n_g_particles,
 
   /* Compute local element weight */
 
-  cs_real_t *elt_cm_weight = nullptr;
-
-  CS_MALLOC(elt_cm_weight, n_elts, cs_real_t);
+  cs_array<cs_real_t> elt_cm_weight(n_elts);
 
   if (elt_id != nullptr) {
     if (elt_profile != nullptr) {
@@ -289,11 +287,9 @@ _distribute_particles(cs_gnum_t         n_g_particles,
   for (cs_lnum_t i = 0; i < n_particles; i++) {
     cs_real_t r;
     cs_random_uniform(1, &r);
-    cs_lnum_t e_id = _segment_binary_search(n_elts, r, elt_cm_weight);
+    cs_lnum_t e_id = _segment_binary_search(n_elts, r, elt_cm_weight.data());
     elt_particle_idx[e_id+1] += 1;
   }
-
-  CS_FREE(elt_cm_weight);
 
   /* transform count to index */
 
@@ -968,8 +964,7 @@ cs_lagr_injection(int        time_id,
      ------------------------ */
 
   cs_lnum_t n_elts_m = cs::max(mesh->n_b_faces, mesh->n_cells);
-  cs_lnum_t *elt_particle_idx = nullptr;
-  CS_MALLOC(elt_particle_idx, n_elts_m+1, cs_lnum_t);
+  cs_array<cs_lnum_t> elt_particle_idx(n_elts_m+1);
 
   /* Loop in injection type (boundary, volume) */
 
@@ -1048,7 +1043,7 @@ cs_lagr_injection(int        time_id,
                                                    z_elt_ids,
                                                    elt_weight,
                                                    elt_profile,
-                                                   elt_particle_idx);
+                                                   elt_particle_idx.data());
 
         CS_FREE(elt_profile);
 
@@ -1074,12 +1069,12 @@ cs_lagr_injection(int        time_id,
           cs_lagr_new(p_set,
                       n_z_elts,
                       z_elt_ids,
-                      elt_particle_idx);
+                      elt_particle_idx.data());
         else
           cs_lagr_new_v(p_set,
                         n_z_elts,
                         z_elt_ids,
-                        elt_particle_idx);
+                        elt_particle_idx.data());
 
         CS_FREE(elt_profile);
 
@@ -1091,7 +1086,7 @@ cs_lagr_injection(int        time_id,
           if (zis->location_id == CS_MESH_LOCATION_BOUNDARY_FACES)
             particle_face_ids = _get_particle_face_ids(n_z_elts,
                                                        z_elt_ids,
-                                                       elt_particle_idx);
+                                                       elt_particle_idx.data());
 
           /* Initialize other particle attributes */
 
@@ -1099,7 +1094,7 @@ cs_lagr_injection(int        time_id,
                           zis,
                           n_z_elts,
                           z_elt_ids,
-                          elt_particle_idx);
+                          elt_particle_idx.data());
 
           /* Advanced user modification:
 
@@ -1394,8 +1389,6 @@ cs_lagr_injection(int        time_id,
     } /* end of loop on zones */
 
   } /* end of loop on zone types (boundary/volume) */
-
-  CS_FREE(elt_particle_idx);
 
   /* Update global particle counters */
 

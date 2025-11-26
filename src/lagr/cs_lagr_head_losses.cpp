@@ -139,13 +139,11 @@ _porcel(cs_real_t         mdiam[],
   }
 
   /* Allocate temporary arrays for the distance resolution */
-  cs_real_3_t  *q;
-  cs_real_t    *masflu, *depvol;
-
   cs_field_t *f_wall_dist = cs_field_by_name("wall_distance");
-  CS_MALLOC(q, ncelet, cs_real_3_t);
-  CS_MALLOC(masflu, ncelet, cs_real_t);
-  CS_MALLOC(depvol, ncelet, cs_real_t);
+
+  cs_array_2d<cs_real_t> q(ncelet, 3);
+  cs_array<cs_real_t> masflu(ncelet);
+  cs_array<cs_real_t> depvol(ncelet);
 
   /* Compute  n = Grad(DISTPW)/|Grad(DISTPW)|
    * ======================================== */
@@ -155,27 +153,27 @@ _porcel(cs_real_t         mdiam[],
   cs_field_gradient_scalar(f_wall_dist,
                            false, /* use_previous_t */
                            1,     /* inc */
-                           q);
+                           q.data<cs_real_3_t>());
 
   /* Normalization (caution, gradient can be zero sometimes) */
 
   for (cs_lnum_t iel = 0; iel < ncel; iel++) {
 
-    cs_real_t xnorm = cs::max(cs_math_3_norm(q[iel]),
+    cs_real_t xnorm = cs::max(cs_math_3_norm(q.sub_array(iel)),
                               cs_math_epzero);
 
     for (cs_lnum_t isou = 0; isou < 3; isou++)
-      q[iel][isou] /= xnorm;
+      q(iel, isou) /= xnorm;
 
   }
 
   /* Paralellism and periodicity */
 
-  cs_halo_sync_var_strided(m->halo, CS_HALO_STANDARD, (cs_real_t *)q, 3);
+  cs_halo_sync(m->halo, CS_HALO_STANDARD, q);
 
   if (m->n_init_perio > 0)
     cs_halo_perio_sync_var_vect(m->halo, CS_HALO_STANDARD,
-                                (cs_real_t *)q, 3);
+                                q.data(), 3);
 
   /* Compute  porosity
    * ================= */
@@ -224,8 +222,8 @@ _porcel(cs_real_t         mdiam[],
       cs_lnum_t iel1  = cs_glob_mesh->i_face_cells[ifac][0];
       cs_lnum_t iel2  = cs_glob_mesh->i_face_cells[ifac][1];
 
-      cs_real_t prod1 =  cs_math_3_dot_product(q[iel1], i_face_u_normal[ifac]);
-      cs_real_t prod2 = -cs_math_3_dot_product(q[iel2], i_face_u_normal[ifac]);
+      cs_real_t prod1 =  cs_math_3_dot_product(q.sub_array(iel1), i_face_u_normal[ifac]);
+      cs_real_t prod2 = -cs_math_3_dot_product(q.sub_array(iel2), i_face_u_normal[ifac]);
 
       if (porosi[iel1] < cs_glob_lagr_clogging_model->mporos && prod1 > epsi) {
         masflu[iel1] -=   (porosi[iel1] - cs_glob_lagr_clogging_model->mporos)
@@ -272,11 +270,6 @@ _porcel(cs_real_t         mdiam[],
 
   }
 
-  /* Free memory */
-
-  CS_FREE(masflu);
-  CS_FREE(depvol);
-  CS_FREE(q);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -332,8 +325,7 @@ cs_lagr_head_losses(cs_lnum_t        n_hl_cells,
    * by head losses
    * ====================================================================*/
 
-  cs_real_t *mdiam;
-  CS_MALLOC(mdiam, ncelet, cs_real_t);
+  cs_array<cs_real_t> mdiam(ncelet);
 
   /* cs_lnum_t poro_id; */
   /* field_get_id_try ("clogging_porosity", &poro_id); */
@@ -347,7 +339,7 @@ cs_lagr_head_losses(cs_lnum_t        n_hl_cells,
   else
     lporo = f_poro->val;
 
-  _porcel(mdiam, lporo, bc_type);
+  _porcel(mdiam.data(), lporo, bc_type);
 
   /* Calculation of the head loss term with the Ergun law
    * mdiam :  mean diameter of deposited particles
@@ -384,7 +376,6 @@ cs_lagr_head_losses(cs_lnum_t        n_hl_cells,
   if (f_poro == nullptr)
     CS_FREE(lporo);
 
-  CS_FREE(mdiam);
 }
 
 /*----------------------------------------------------------------------------*/

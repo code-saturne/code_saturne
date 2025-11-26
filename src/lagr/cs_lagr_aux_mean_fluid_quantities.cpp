@@ -176,7 +176,7 @@ compute_particle_covariance_gradient(int          phase_id,
       f_inter_cov[iel_] = stat_cov_skp->val[9 * iel_ + i];
     }
     if (mesh->halo != nullptr)
-      cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, f_inter_cov.data());
+      cs_halo_sync(mesh->halo, CS_HALO_STANDARD, f_inter_cov);
 
     cs_gradient_scalar("intermediate cov skp gradient [Lagrangian module]",
                         CS_GRADIENT_GREEN_ITER,
@@ -210,7 +210,7 @@ compute_particle_covariance_gradient(int          phase_id,
       f_inter_cov[iel_] = stat_cov_sk->val[6 * iel_ + i];
     }
     if (mesh->halo != nullptr)
-      cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, f_inter_cov.data());
+      cs_halo_sync(mesh->halo, CS_HALO_STANDARD, f_inter_cov);
 
     cs_gradient_scalar("intermediate cov sk gradient [Lagrangian module]",
                         CS_GRADIENT_GREEN_ITER,
@@ -534,7 +534,7 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
 
   if (cs_glob_lagr_model->cs_used == 1) {
 
-    cs_real_t *wpres = nullptr;
+    cs_array<cs_real_t> wpres;
 
     /* Hydrostatic pressure algorithm? */
     int hyd_p_flag = cs_glob_velocity_pressure_param->iphydr;
@@ -550,7 +550,8 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
     assert(turb_model != nullptr);
     if (turb_model->order <= CS_TURB_FIRST_ORDER
         && cs_glob_turb_rans_model->igrhok == 0) {
-      CS_MALLOC(wpres, n_cells_with_ghosts, cs_real_t);
+      wpres.reshape(n_cells_with_ghosts);
+
       int time_id = (extra->cvar_k->n_time_vals > 1) ? 1 : 0;
       const cs_real_t *cvar_k = extra->cvar_k->vals[time_id];
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -560,7 +561,7 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
       }
     }
     else {
-      wpres = solved_pres;
+      wpres = cs_array<cs_real_t>(solved_pres, n_cells_with_ghosts);
     }
 
     /* Parameters for gradient computation
@@ -625,13 +626,10 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
                        eqp->climgr,
                        f_ext,
                        extra_i[phase_id].pressure->bc_coeffs,
-                       wpres,
+                       wpres.data(),
                        weight,
                        cpl,
                        grad_pr);
-
-    if (wpres != solved_pres)
-      CS_FREE(wpres);
 
     if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
       if(cs_glob_velocity_pressure_model->idilat == 0) {
@@ -681,28 +679,24 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
       const cs_lnum_t n_b_faces = m->n_b_faces;
       const cs_lnum_t n_i_faces = m->n_i_faces;
 
-      cs_real_t *i_visc, *b_visc;
-      CS_MALLOC(i_visc, n_i_faces, cs_real_t);
-      CS_MALLOC(b_visc, n_b_faces, cs_real_t);
+      cs_array<cs_real_t> i_visc(n_i_faces);
+      cs_array<cs_real_t> b_visc(n_b_faces);
 
       cs_face_viscosity(m,
                         mq,
                         eqp_loc.imvisf,
                         CS_F_(mu)->val, // cell viscosity
-                        i_visc,
-                        b_visc);
+                        i_visc.data(),
+                        b_visc.data());
 
-      cs_real_t *i_massflux = nullptr;
-      cs_real_t *b_massflux = nullptr;
-
-      CS_MALLOC(i_massflux, n_i_faces, cs_real_t);
-      CS_MALLOC(b_massflux, n_b_faces, cs_real_t);
-      cs_array_real_fill_zero(n_i_faces, i_massflux);
-      cs_array_real_fill_zero(n_b_faces, b_massflux);
+      cs_array<cs_real_t> i_massflux(n_i_faces);
+      cs_array<cs_real_t> b_massflux(n_b_faces);
+      i_massflux.zero();
+      b_massflux.zero();
 
       cs_velocity_pressure_model_t *vp_model = cs_get_glob_velocity_pressure_model();
 
-      cs_real_3_t *_div_mu_gradvel = nullptr;
+      cs_array_2d<cs_real_t> _div_mu_gradvel;
       cs_real_3_t *div_mu_gradvel = nullptr;
       cs_field_t *f_visc_forces
         = cs_field_by_name_try("algo:viscous_shear_divergence");
@@ -710,19 +704,19 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
       if (f_visc_forces != nullptr)
         div_mu_gradvel = (cs_real_3_t *)f_visc_forces->val;
       else {
-        CS_MALLOC(_div_mu_gradvel,m->n_cells_with_ghosts, cs_real_3_t);
-        div_mu_gradvel = _div_mu_gradvel;
+        _div_mu_gradvel.reshape(m->n_cells_with_ghosts, 3);
+        div_mu_gradvel = _div_mu_gradvel.data<cs_real_3_t>();
       }
 
       /* Do not consider convective terms */
       eqp_loc.iconv = 0;
-      cs_real_t *i_secvis= nullptr;
-      cs_real_t *b_secvis= nullptr;
+      cs_array<cs_real_t> i_secvis;
+      cs_array<cs_real_t> b_secvis;
 
       //TODO: compute it
       if (vp_model->ivisse == 1) {
-        CS_MALLOC(i_secvis, n_i_faces, cs_real_t);
-        CS_MALLOC(b_secvis, n_b_faces, cs_real_t);
+        i_secvis.reshape(n_i_faces);
+        b_secvis.reshape(n_b_faces);
       }
 
       cs_array_real_fill_zero(3*n_cells_with_ghosts, (cs_real_t *)div_mu_gradvel);
@@ -739,12 +733,12 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
                         f_vel->bc_coeffs,
                         (cs_real_3_t *)f_vel->bc_coeffs->val_f,
                         (cs_real_3_t *)f_vel->bc_coeffs->flux,
-                        i_massflux,
-                        b_massflux,
-                        i_visc,
-                        b_visc,
-                        i_secvis,
-                        b_secvis,
+                        i_massflux.data(),
+                        b_massflux.data(),
+                        i_visc.data(),
+                        b_visc.data(),
+                        i_secvis.data(),
+                        b_secvis.data(),
                         nullptr,
                         nullptr,
                         nullptr,
@@ -765,13 +759,6 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
         }
       }
 
-      CS_FREE(i_massflux);
-      CS_FREE(b_massflux);
-      CS_FREE(_div_mu_gradvel);
-      CS_FREE(i_visc);
-      CS_FREE(b_visc);
-      CS_FREE(i_secvis);
-      CS_FREE(b_secvis);
     }
 
     /* Compute velocity gradient
