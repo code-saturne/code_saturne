@@ -402,7 +402,7 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
   cs_lnum_t newpart = 0;
 
   /* Get fluid and particle properties */
-  cs_lagr_particle_set_t *p_set = cs_glob_lagr_particle_set;
+  cs_lagr_particle_set_t p_set = cs_lagr_get_particle_set_ref();
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
   /* Get cell information */
@@ -419,8 +419,7 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
   cs_array_2d<cs_lnum_t> interf(lnum_particles, 2);
 
   for (cs_lnum_t i = start_particle; i < end_particle; ++i) {
-    interf(i-start_particle, 0)
-      = cs_lagr_particles_get_lnum(p_set, i, CS_LAGR_AGGLO_CLASS_ID);
+    interf(i-start_particle, 0) = p_set.attr_lnum(i, CS_LAGR_AGGLO_CLASS_ID);
     interf(i-start_particle, 1) = i;
   }
 
@@ -473,10 +472,8 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
     cs_real_t cker = 0, lambda = 0;
     cs_real_2_t stat_weights;  /* Weights of the two particles */
 
-    stat_weights[0] = cs_lagr_particles_get_real
-                        (p_set, p1+start_particle, CS_LAGR_STAT_WEIGHT);
-    stat_weights[1] = cs_lagr_particles_get_real
-                        (p_set, p2+start_particle, CS_LAGR_STAT_WEIGHT);
+    stat_weights[0] = p_set.attr_real(p1+start_particle, CS_LAGR_STAT_WEIGHT);
+    stat_weights[1] = p_set.attr_real(p2+start_particle, CS_LAGR_STAT_WEIGHT);
 
     cker = cs_glob_lagr_agglomeration_model->scalar_kernel;
 
@@ -516,20 +513,18 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
     if (vp > 0) {
 
       /* Remove elements from parcels p1 and p2 */
-      cs_lagr_particles_set_real(p_set, p1+start_particle,
-                                 CS_LAGR_STAT_WEIGHT, round(stat_weights[0])- vp );
-      stat_weights[1] = cs_lagr_particles_get_real(p_set, p2+start_particle,
-                                                   CS_LAGR_STAT_WEIGHT);
-      cs_lagr_particles_set_real(p_set, p2+start_particle,
-                                 CS_LAGR_STAT_WEIGHT, round(stat_weights[1]) - vp);
+      p_set.attr_real(p1+start_particle, CS_LAGR_STAT_WEIGHT)
+        = round(stat_weights[0])- vp;
+      stat_weights[1] = p_set.attr_real(p2+start_particle, CS_LAGR_STAT_WEIGHT);
+
+      p_set.attr_real(p2+start_particle, CS_LAGR_STAT_WEIGHT)
+        = round(stat_weights[1]) - vp;
 
       /* Add elements for parcel (p1+p2)
        * --> either add to an existing parcel (if it exists and is not too big)
        * --> or create a new parcel (otherwise) */
-      n_classes_new =   cs_lagr_particles_get_lnum
-                          (p_set, p1+start_particle, CS_LAGR_AGGLO_CLASS_ID)
-                     + cs_lagr_particles_get_lnum(p_set, p2+start_particle,
-                                                  CS_LAGR_AGGLO_CLASS_ID);
+      n_classes_new = p_set.attr_lnum(p1+start_particle, CS_LAGR_AGGLO_CLASS_ID)
+                    + p_set.attr_lnum(p2+start_particle, CS_LAGR_AGGLO_CLASS_ID);
 
       if (n_classes_new > cs_glob_lagr_agglomeration_model->n_max_classes) {
         bft_error(__FILE__, __LINE__, 0,
@@ -546,12 +541,11 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
 
       if (position >= 0) {
         cs_lnum_t found_idx = interf(position, 1);
-        cs_real_t stat_weight
-          = cs_lagr_particles_get_real(p_set, found_idx, CS_LAGR_STAT_WEIGHT);
+        cs_real_t stat_weight = p_set.attr_real(found_idx, CS_LAGR_STAT_WEIGHT);
 
         if (stat_weight + vp <= agglo_max_weight) {
-          cs_lagr_particles_set_real(p_set, found_idx,
-                                     CS_LAGR_STAT_WEIGHT, round(stat_weight)+vp);
+          p_set.attr_real(found_idx, CS_LAGR_STAT_WEIGHT)
+            = round(stat_weight)+vp;
 
           kk--;
           continue;
@@ -563,17 +557,14 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
 
       cs_lnum_t add_to_end = 1;
 
-      for (cs_lnum_t indx = p_set->n_particles;
-          indx < p_set->n_particles + newpart;
+      for (cs_lnum_t indx = p_set.n_particles;
+          indx < p_set.n_particles + newpart;
           indx++) {
-        cs_lnum_t stat_class
-          = cs_lagr_particles_get_lnum(p_set, indx, CS_LAGR_AGGLO_CLASS_ID);
-        cs_real_t stat_weight
-          = cs_lagr_particles_get_real(p_set, indx, CS_LAGR_STAT_WEIGHT);
+        cs_lnum_t stat_class = p_set.attr_lnum(indx, CS_LAGR_AGGLO_CLASS_ID);
+        cs_real_t stat_weight = p_set.attr_real(indx, CS_LAGR_STAT_WEIGHT);
         if (   (stat_class == n_classes_new)
             && (stat_weight + vp <= agglo_max_weight)) {
-          cs_lagr_particles_set_real(p_set, indx, CS_LAGR_STAT_WEIGHT,
-                                     round(stat_weight)+vp);
+          p_set.attr_real(indx, CS_LAGR_STAT_WEIGHT) = round(stat_weight)+vp;
 
           add_to_end = 0;
           break;
@@ -586,60 +577,49 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
         newpart++;
 
         /* Copy parcel p1 into a new parcel */
-        cs_lnum_t inserted_parts = p_set->n_particles + newpart;
+        cs_lnum_t inserted_parts = p_set.n_particles + newpart;
 
         cs_lagr_particle_set_resize(inserted_parts);
 
         cs_lagr_part_copy(inserted_parts-1, p1+start_particle);
 
         /* Set statistical weight*/
-        cs_lagr_particles_set_real(p_set, inserted_parts-1,
-                                   CS_LAGR_STAT_WEIGHT, vp);
+        p_set.attr_real(inserted_parts-1, CS_LAGR_STAT_WEIGHT) = vp;
 
         /* Set diameter (using a law based on fractal dimension of aggregates) */
         cs_real_t fractal_dim
-          = cs_lagr_particles_get_real(p_set, inserted_parts-1,
-                                       CS_LAGR_AGGLO_FRACTAL_DIM);
+          = p_set.attr_real(inserted_parts-1, CS_LAGR_AGGLO_FRACTAL_DIM);
         cs_real_t diam = minimum_particle_diam * pow((cs_real_t)n_classes_new,
                                                      1./fractal_dim);
-        cs_lagr_particles_set_real(p_set, inserted_parts-1,
-                                   CS_LAGR_DIAMETER, diam);
+        p_set.attr_real(inserted_parts-1, CS_LAGR_DIAMETER) = diam;
 
         /* Set mass (equal to the sum of the two mass) */
-        cs_real_t mass1
-          = cs_lagr_particles_get_real(p_set, p1+start_particle, CS_LAGR_MASS);
-        cs_real_t mass2
-          = cs_lagr_particles_get_real(p_set, p2+start_particle, CS_LAGR_MASS);
+        cs_real_t mass1 = p_set.attr_real(p1+start_particle, CS_LAGR_MASS);
+        cs_real_t mass2 = p_set.attr_real(p2+start_particle, CS_LAGR_MASS);
 
-        cs_lagr_particles_set_real(p_set, inserted_parts-1, CS_LAGR_MASS,
-                                   mass1 +mass2);
+        p_set.attr_real(inserted_parts-1, CS_LAGR_MASS) = mass1 +mass2;
 
         /* Set cell_id and Class_id */
-        cs_lagr_particles_set_lnum(p_set, inserted_parts-1,
-                                   CS_LAGR_CELL_ID, cell_id);
+        p_set.attr_lnum(inserted_parts-1, CS_LAGR_CELL_ID) = cell_id;
 
-        cs_lagr_particles_set_lnum(p_set, inserted_parts-1,
-                                   CS_LAGR_AGGLO_CLASS_ID, n_classes_new);
+        p_set.attr_lnum(inserted_parts-1, CS_LAGR_AGGLO_CLASS_ID) = n_classes_new;
 
         /* Set particle velocity */
 
         cs_real_t *inserted_vel
-          = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, inserted_parts-1,
-                                                      CS_LAGR_VELOCITY);
+          = p_set.attr_real_ptr(inserted_parts-1, CS_LAGR_VELOCITY);
         cs_real_t * p1_vel =
-          cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p1+start_particle,
-                                                    CS_LAGR_VELOCITY);
+          p_set.attr_real_ptr(p1+start_particle, CS_LAGR_VELOCITY);
         inserted_vel[0] = p1_vel[0];
         inserted_vel[1] = p1_vel[1];
         inserted_vel[2] = p1_vel[2];
 
         /* Set particle velocity seen*/
         cs_real_t * inserted_vel_seen
-          = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, inserted_parts-1,
-                                                      CS_LAGR_VELOCITY_SEEN);
+          = p_set.attr_real_ptr(inserted_parts-1, CS_LAGR_VELOCITY_SEEN);
         cs_real_t * p1_vel_seen
-          = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p1+start_particle,
-                                                      CS_LAGR_VELOCITY_SEEN);
+          = p_set.attr_real_ptr(p1+start_particle, CS_LAGR_VELOCITY_SEEN);
+
         inserted_vel_seen[0] = p1_vel_seen[0];
         inserted_vel_seen[1] = p1_vel_seen[1];
         inserted_vel_seen[2] = p1_vel_seen[2];
@@ -653,11 +633,10 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
   cs_array_2d<cs_lnum_t> interf_agglo(newpart, 2);
 
   for (cs_lnum_t i = 0; i < newpart; i++) {
-    cs_lnum_t curr_class = cs_lagr_particles_get_lnum
-                             (p_set, p_set->n_particles+i,
-                              CS_LAGR_AGGLO_CLASS_ID);
+    cs_lnum_t curr_class = p_set.attr_lnum(p_set.n_particles+i,
+                                                 CS_LAGR_AGGLO_CLASS_ID);
     interf_agglo(i, 0) = curr_class;
-    interf_agglo(i, 1) = p_set->n_particles+i;
+    interf_agglo(i, 1) = p_set.n_particles+i;
   }
 
   /* Sort by the class */
@@ -691,17 +670,12 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
     /* Only one particle of current class */
     if (end_gap - start_gap == 1) {
       cs_lnum_t part_idx = interf_tot(start_gap, 1);
-      cs_real_t weight = cs_lagr_particles_get_real
-                          (p_set, part_idx, CS_LAGR_STAT_WEIGHT);
+      cs_real_t weight = p_set.attr_real(part_idx, CS_LAGR_STAT_WEIGHT);
       /* Delete particle (if weight < 0) */
       if (weight <= 0.) {
-        cs_lagr_particles_set_lnum(p_set, part_idx,
-                                   CS_LAGR_AGGLO_CLASS_ID, 0);
-        cs_lagr_particles_set_real(p_set, part_idx, CS_LAGR_STAT_WEIGHT, 0);
-        cs_lagr_particles_set_lnum(p_set, part_idx,
-                                   CS_LAGR_P_FLAG, CS_LAGR_PART_TO_DELETE);
-
-
+        p_set.attr_lnum(part_idx, CS_LAGR_AGGLO_CLASS_ID) = 0;
+        p_set.attr_real(part_idx, CS_LAGR_STAT_WEIGHT) = 0;
+        p_set.attr_lnum(part_idx, CS_LAGR_P_FLAG) = CS_LAGR_PART_TO_DELETE;
       }
 
       continue;
@@ -714,8 +688,7 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
 
     for (cs_lnum_t idx = start_gap; idx < end_gap; ++idx) {
       cs_lnum_t part_idx = interf_tot(idx, 1);
-      cs_real_t weight = cs_lagr_particles_get_real(p_set, part_idx,
-                                                    CS_LAGR_STAT_WEIGHT);
+      cs_real_t weight = p_set.attr_real(part_idx, CS_LAGR_STAT_WEIGHT);
 
       if (weight > 0. && weight < agglo_min_weight) {
         last_small = idx;
@@ -729,13 +702,11 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
       cs_lnum_t put_in_large = 0;
       for (cs_lnum_t idx = start_gap; idx < end_gap; ++idx) {
         cs_lnum_t part_idx = interf_tot(idx, 1);
-        cs_real_t weight = cs_lagr_particles_get_real
-                             (p_set, part_idx, CS_LAGR_STAT_WEIGHT);
+        cs_real_t weight = p_set.attr_real(part_idx, CS_LAGR_STAT_WEIGHT);
 
         if (weight >= agglo_min_weight && sum + weight < agglo_max_weight) {
           put_in_large = 1;
-          cs_lagr_particles_set_real(p_set, part_idx,
-                                     CS_LAGR_STAT_WEIGHT, sum+weight);
+          p_set.attr_real(part_idx, CS_LAGR_STAT_WEIGHT) = sum+weight;
           break;
         }
       }
@@ -746,20 +717,16 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
         last_small = -1;
       }
       else {
-        cs_lagr_particles_set_real(p_set, interf_tot(last_small, 1),
-                                   CS_LAGR_STAT_WEIGHT, sum);
+        p_set.attr_real(interf_tot(last_small, 1), CS_LAGR_STAT_WEIGHT) = sum;
       }
 
       for (cs_lnum_t idx = start_gap; idx < end_gap; ++idx) {
         cs_lnum_t part_idx = interf_tot(idx, 1);
-        cs_real_t weight = cs_lagr_particles_get_real(p_set, part_idx,
-                                                      CS_LAGR_STAT_WEIGHT);
+        cs_real_t weight = p_set.attr_real(part_idx, CS_LAGR_STAT_WEIGHT);
         if (weight > 0. && weight < agglo_min_weight && idx != last_small) {
-          cs_lagr_particles_set_lnum(p_set, part_idx,
-                                     CS_LAGR_AGGLO_CLASS_ID, 0);
-          cs_lagr_particles_set_real(p_set, part_idx, CS_LAGR_STAT_WEIGHT, 0);
-          cs_lagr_particles_set_lnum(p_set, part_idx,
-                                     CS_LAGR_P_FLAG, CS_LAGR_PART_TO_DELETE);
+          p_set.attr_lnum(part_idx, CS_LAGR_AGGLO_CLASS_ID) = 0;
+          p_set.attr_real(part_idx, CS_LAGR_STAT_WEIGHT) = 0;
+          p_set.attr_lnum(part_idx, CS_LAGR_P_FLAG) = CS_LAGR_PART_TO_DELETE;
 
         }
       }
@@ -768,21 +735,18 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
     /* Eliminate particles (if statistical weight < 0) */
     for (cs_lnum_t idx = start_gap; idx < end_gap; ++idx) {
       cs_lnum_t part_idx = interf_tot(idx, 1);
-      cs_real_t weight = cs_lagr_particles_get_real
-                           (p_set, part_idx, CS_LAGR_STAT_WEIGHT);
+      cs_real_t weight = p_set.attr_real(part_idx, CS_LAGR_STAT_WEIGHT);
 
       if (weight <= 0.) {
-        cs_lagr_particles_set_lnum(p_set, part_idx,
-                                   CS_LAGR_AGGLO_CLASS_ID, 0);
-        cs_lagr_particles_set_real(p_set, part_idx, CS_LAGR_STAT_WEIGHT, 0);
-        cs_lagr_particles_set_lnum(p_set, part_idx,
-                                   CS_LAGR_P_FLAG, CS_LAGR_PART_TO_DELETE);
+        p_set.attr_lnum(part_idx, CS_LAGR_AGGLO_CLASS_ID) = 0;
+        p_set.attr_real(part_idx, CS_LAGR_STAT_WEIGHT) = 0;
+        p_set.attr_lnum(part_idx, CS_LAGR_P_FLAG) = CS_LAGR_PART_TO_DELETE;
 
       }
     }
   }
 
-  p_set->n_particles += newpart;
+  p_set.n_particles += newpart;
 
   return ret_val;
 }

@@ -435,16 +435,13 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
   /* Read coordinates and get mesh location */
   /*-----------------------------------------*/
 
-  cs_lnum_t  *p_cell_id;
-  cs_real_t  *p_coords;
-
-  CS_MALLOC(p_cell_id, n_particles, cs_lnum_t);
-  CS_MALLOC(p_coords, n_particles*3, cs_real_t);
+  cs_array<cs_lnum_t> p_cell_id(n_particles);
+  cs_array_2d<cs_real_t> p_coords(n_particles, 3);
 
   sec_code = cs_restart_read_particles(r,
                                        particles_location_id,
-                                       p_cell_id,
-                                       p_coords);
+                                       p_cell_id.data(),
+                                       p_coords.data());
 
   if (sec_code == CS_RESTART_SUCCESS) {
 
@@ -454,15 +451,12 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
       cs_lagr_particle_set_resize(p_set->n_particles);
 
     _set_particle_values(p_set, CS_LAGR_COORDS, CS_REAL_TYPE,
-                         3, -1, p_coords);
+                         3, -1, p_coords.data());
 
     _set_particle_values(p_set, CS_LAGR_CELL_ID, CS_LNUM_TYPE,
-                         1, -1, p_cell_id);
+                         1, -1, p_cell_id.data());
 
   }
-
-  CS_FREE(p_cell_id);
-  CS_FREE(p_coords);
 
   if (sec_code == CS_RESTART_SUCCESS)
     retval = 1;
@@ -512,8 +506,7 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
 
         /* Now read global numbers (1 to n, 0 for none) */
 
-        cs_gnum_t *gnum_read = nullptr;
-        CS_MALLOC(gnum_read, p_set->n_particles, cs_gnum_t);
+        cs_array<cs_gnum_t> gnum_read(p_set->n_particles);
 
         snprintf(sec_name, 127, "particle_%s::vals::0", "neighbor_face_num");
         _legacy_section_name(attr, old_name);
@@ -524,7 +517,7 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
                                                   particles_location_id,
                                                   stride,
                                                   CS_TYPE_cs_gnum_t,
-                                                  gnum_read);
+                                                  gnum_read.data());
 
         if (sec_code == CS_RESTART_SUCCESS)
           retval += 1;
@@ -582,8 +575,6 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
         else {
           assert(cell_b_faces != nullptr);
         }
-
-        CS_FREE(gnum_read);
 
         _set_particle_values(p_set,
                              attr,
@@ -704,28 +695,22 @@ cs_lagr_restart_write_particle_data(cs_restart_t  *r)
 
   _lagr_section_name(CS_LAGR_COORDS, -1, sec_name);
 
-  cs_lnum_t  *p_cell_id;
-  cs_real_t  *p_coords;
-
-  CS_MALLOC(p_cell_id, n_particles, cs_lnum_t);
-  CS_MALLOC(p_coords, n_particles*3, cs_real_t);
+  cs_array<cs_lnum_t> p_cell_id(n_particles);
+  cs_array_2d<cs_real_t> p_coords(n_particles, 3);
 
   cs_lagr_get_particle_values(p_set, CS_LAGR_COORDS, CS_REAL_TYPE,
-                              3, -1, n_particles, nullptr, p_coords);
+                              3, -1, n_particles, nullptr, p_coords.data());
 
   cs_lagr_get_particle_values(p_set, CS_LAGR_CELL_ID, CS_LNUM_TYPE,
-                              1, -1, n_particles, nullptr, p_cell_id);
+                              1, -1, n_particles, nullptr, p_cell_id.data());
 
   const int particles_location_id
     = cs_restart_write_particles(r,
                                  sec_name,
                                  false, /* number_by_coords */
                                  n_particles,
-                                 p_cell_id,
-                                 p_coords);
-
-  CS_FREE(p_cell_id);
-  CS_FREE(p_coords);
+                                 p_cell_id.data(),
+                                 p_coords.data());
 
   retval = 1;
 
@@ -768,8 +753,7 @@ cs_lagr_restart_write_particle_data(cs_restart_t  *r)
                                     nullptr,
                                     vals);
 
-        cs_gnum_t *gnum_write = nullptr;
-        CS_MALLOC(gnum_write, p_set->n_particles, cs_gnum_t);
+        cs_array<cs_gnum_t> gnum_write(p_set->n_particles);
 
         const cs_gnum_t *g_b_face_num = cs_glob_mesh->global_b_face_num;
         if (g_b_face_num != nullptr) {
@@ -798,9 +782,7 @@ cs_lagr_restart_write_particle_data(cs_restart_t  *r)
                                  particles_location_id,
                                  1,
                                  CS_TYPE_cs_gnum_t,
-                                 gnum_write);
-
-        CS_FREE(gnum_write);
+                                 gnum_write.data());
 
         retval += 1;
       }

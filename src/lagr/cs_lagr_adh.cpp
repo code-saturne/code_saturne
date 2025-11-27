@@ -280,7 +280,7 @@ cs_lagr_adh(cs_lnum_t   p_id,
   /* 0.    initialization */
   /* ================================================================  */
 
-  cs_lagr_particle_set_t *p_set = cs_glob_lagr_particle_set;
+  cs_lagr_particle_set_t p_set = cs_lagr_get_particle_set_ref();
   cs_lagr_physico_chemical_t *lag_pc = cs_glob_lagr_physico_chemical;
 
   /*     step = step used to calculate the adhesion force following    */
@@ -308,7 +308,7 @@ cs_lagr_adh(cs_lnum_t   p_id,
   /* Number of large-scale asperities    */
   /* *************************************/
 
-  cs_real_t rpart = 0.5 * cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_DIAMETER);
+  cs_real_t rpart = 0.5 * p_set.attr_real(p_id, CS_LAGR_DIAMETER);
 
   cs_real_t nmoyag = (2.0 * rpart + rayasg) / rayasg * scovag;
 
@@ -322,7 +322,7 @@ cs_lagr_adh(cs_lnum_t   p_id,
     tmp = (int)nmoyag + sqrt(nmoyag) * rtmp;
     tmp = cs::max(0, tmp);
 
-    cs_lagr_particles_set_lnum(p_set, p_id, CS_LAGR_N_LARGE_ASPERITIES, tmp);
+    p_set.attr_lnum(p_id, CS_LAGR_N_LARGE_ASPERITIES) = tmp;
 
   }
   else {
@@ -331,12 +331,12 @@ cs_lagr_adh(cs_lnum_t   p_id,
 
     cs_random_poisson(1, nmoyag, &ntmp);
 
-    cs_lagr_particles_set_lnum(p_set, p_id, CS_LAGR_N_LARGE_ASPERITIES, ntmp);
+    p_set.attr_lnum(p_id, CS_LAGR_N_LARGE_ASPERITIES) = ntmp;
 
   }
 
   int nbasg = 0;
-  if (cs_lagr_particles_get_lnum(p_set, p_id, CS_LAGR_N_LARGE_ASPERITIES) > 1) {
+  if (p_set.attr_lnum(p_id, CS_LAGR_N_LARGE_ASPERITIES) > 1) {
 
     nmoyag =  1.0
             +  2.0 * _d_cut_off * (2.0 * rpart + 2.0 * rayasg + 4.0 * _d_cut_off)
@@ -367,7 +367,7 @@ cs_lagr_adh(cs_lnum_t   p_id,
   }
   else {
 
-    nbasg = cs_lagr_particles_get_lnum(p_set, p_id, CS_LAGR_N_LARGE_ASPERITIES);
+    nbasg = p_set.attr_lnum(p_id, CS_LAGR_N_LARGE_ASPERITIES);
 
   }
 
@@ -391,7 +391,7 @@ cs_lagr_adh(cs_lnum_t   p_id,
       tmp = (int)nmoyap + sqrt(nmoyap) * rtmp;
       tmp = cs::max(0, tmp);
 
-      cs_lagr_particles_set_lnum(p_set, p_id, CS_LAGR_N_SMALL_ASPERITIES, tmp);
+      p_set.attr_lnum(p_id, CS_LAGR_N_SMALL_ASPERITIES) = tmp;
 
     }
     else {
@@ -400,11 +400,11 @@ cs_lagr_adh(cs_lnum_t   p_id,
 
       cs_random_poisson(1, nmoyap, &ntmp);
 
-      cs_lagr_particles_set_lnum(p_set, p_id, CS_LAGR_N_SMALL_ASPERITIES, ntmp);
+      p_set.attr_lnum(p_id, CS_LAGR_N_SMALL_ASPERITIES) = ntmp;
 
     }
 
-    if (cs_lagr_particles_get_lnum(p_set, p_id, CS_LAGR_N_SMALL_ASPERITIES) > 1) {
+    if (p_set.attr_lnum(p_id, CS_LAGR_N_SMALL_ASPERITIES) > 1) {
 
       nmoyap =  1
               +  2.0 * _d_cut_off * (2.0 * rpart + 2.0 * rayasp + 4.0 * _d_cut_off)
@@ -419,7 +419,7 @@ cs_lagr_adh(cs_lnum_t   p_id,
         nbasp = (int)nmoyap + sqrt (nmoyap) * rtmp;
         nbasp = cs::max(0, nbasp);
 
-        cs_lagr_particles_set_lnum(p_set, p_id, CS_LAGR_N_SMALL_ASPERITIES, nbasp);
+        p_set.attr_lnum(p_id, CS_LAGR_N_SMALL_ASPERITIES) = nbasp;
 
       }
       else {
@@ -436,13 +436,13 @@ cs_lagr_adh(cs_lnum_t   p_id,
     }
     else {
 
-      nbasp = cs_lagr_particles_get_lnum(p_set, p_id, CS_LAGR_N_SMALL_ASPERITIES);
+      nbasp = p_set.attr_lnum(p_id, CS_LAGR_N_SMALL_ASPERITIES);
 
     }
 
     /* Determination of the minimal distance between the particle and the plate */
 
-    dismin = rayasp * cs::min (1.0, cs_lagr_particles_get_lnum(p_set, p_id, CS_LAGR_N_SMALL_ASPERITIES));
+    dismin = rayasp * cs::min (1.0, p_set.attr_lnum(p_id, CS_LAGR_N_SMALL_ASPERITIES));
 
   }
  /* 2nd case: contact with large-scale asperities */
@@ -461,7 +461,7 @@ cs_lagr_adh(cs_lnum_t   p_id,
       tmp = (int)nmoyap + sqrt(nmoyap) * rtmp;
       tmp = cs::max(0, tmp);
 
-      cs_lagr_particles_set_lnum(p_set, p_id, CS_LAGR_N_SMALL_ASPERITIES, tmp);
+      p_set.attr_lnum(p_id, CS_LAGR_N_SMALL_ASPERITIES) = tmp;
 
     }
     else {
@@ -470,11 +470,11 @@ cs_lagr_adh(cs_lnum_t   p_id,
 
       cs_random_poisson(1, nmoyap, &ntmp);
 
-      cs_lagr_particles_set_lnum(p_set, p_id, CS_LAGR_N_SMALL_ASPERITIES, ntmp);
+      p_set.attr_lnum(p_id, CS_LAGR_N_SMALL_ASPERITIES) = ntmp;
 
     }
 
-    if (cs_lagr_particles_get_lnum(p_set, p_id, CS_LAGR_N_SMALL_ASPERITIES) > 1) {
+    if (p_set.attr_lnum(p_id, CS_LAGR_N_SMALL_ASPERITIES) > 1) {
 
       paramh =  0.5 * (2.0 * rpart + 2 * rayasp + 4.0 * _d_cut_off)
               * 2.0 * _d_cut_off / (rpart + rayasg + rayasp + _d_cut_off);
@@ -504,13 +504,13 @@ cs_lagr_adh(cs_lnum_t   p_id,
 
     }
     else
-      nbasp = cs_lagr_particles_get_lnum(p_set, p_id, CS_LAGR_N_SMALL_ASPERITIES);
+      nbasp = p_set.attr_lnum(p_id, CS_LAGR_N_SMALL_ASPERITIES);
 
     /* Mutliple contacts with large scale asperities?     */
     nbasp = nbasp * nbasg;
-    cs_lagr_particles_set_lnum(p_set, p_id, CS_LAGR_N_SMALL_ASPERITIES,
-                               cs_lagr_particles_get_lnum(p_set, p_id, CS_LAGR_N_SMALL_ASPERITIES)
-                               *cs_lagr_particles_get_lnum(p_set, p_id, CS_LAGR_N_LARGE_ASPERITIES));
+    p_set.attr_lnum(p_id, CS_LAGR_N_SMALL_ASPERITIES)
+      = p_set.attr_lnum(p_id, CS_LAGR_N_SMALL_ASPERITIES)
+      * p_set.attr_lnum(p_id, CS_LAGR_N_LARGE_ASPERITIES);
 
     /* Determination of the minimal distance between the particle and the plate */
     dismin = rayasp * cs::min(1.0, nbasp * 1.0) + rayasg * cs::min (1.0, nbasg * 1.0);
@@ -586,10 +586,10 @@ cs_lagr_adh(cs_lnum_t   p_id,
   /* The force is negative when it is attractive   */
 
   if (fadhes >= 0.0)
-    cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_ADHESION_FORCE, 0.0);
+    p_set.attr_real(p_id, CS_LAGR_ADHESION_FORCE) =  0.0;
 
   else
-    cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_ADHESION_FORCE, -fadhes);
+    p_set.attr_real(p_id, CS_LAGR_ADHESION_FORCE) =  -fadhes;
 
   /* The interaction should be negative to prevent reentrainment (attraction) */
   if (*adhesion_energ >= 0.0)
@@ -604,7 +604,7 @@ cs_lagr_adh(cs_lnum_t   p_id,
 
   cs_real_t dismom = rtmp;
   if (nbasp > 0)
-    dismom =  (pow(rtmp, 1.0 / cs_lagr_particles_get_lnum(p_set, p_id, CS_LAGR_N_SMALL_ASPERITIES)) * 2.0 - 1.0)
+    dismom =  (pow(rtmp, 1.0 / p_set.attr_lnum(p_id, CS_LAGR_N_SMALL_ASPERITIES)) * 2.0 - 1.0)
             * sqrt ((2.0 * rpart + rayasp) * rayasp);
 
   else {
@@ -618,9 +618,9 @@ cs_lagr_adh(cs_lnum_t   p_id,
 
   }
 
-  dismom *= cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_ADHESION_FORCE);
+  dismom *= p_set.attr_real(p_id, CS_LAGR_ADHESION_FORCE);
 
-  cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_ADHESION_TORQUE, dismom);
+  p_set.attr_real(p_id, CS_LAGR_ADHESION_TORQUE) = dismom;
 
 }
 

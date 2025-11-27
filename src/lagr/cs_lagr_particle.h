@@ -186,10 +186,12 @@ typedef enum {
 
 } cs_lagr_attribute_t;
 
+END_C_DECLS
+
 /*! Particle attribute structure mapping */
 /* ------------------------------------- */
 
-typedef struct {
+typedef struct cs_lagr_attribute_map_t {
 
   size_t          extents;                         /* size (in bytes) of particle
                                                       structure */
@@ -199,6 +201,7 @@ typedef struct {
 
   int             n_time_vals;                     /* number of time values
                                                       handled */
+
 
   size_t          size[CS_LAGR_N_ATTRIBUTES];      /* size (in bytes) of
                                                       attributes in particle
@@ -218,12 +221,177 @@ typedef struct {
                                                       for second-order scheme,
                                                       or NULL */
 
+#if defined(__cplusplus)
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Default constructor
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  cs_lagr_attribute_map_t();
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Constructor based on a list of attribute keys
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST
+  cs_lagr_attribute_map_t
+  (
+    cs_lnum_t attr_keys[CS_LAGR_N_ATTRIBUTES][3] /*!<[in] keys to sort attributes */
+  );
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Copy constructor using a shallow copy (no allocation)
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  cs_lagr_attribute_map_t
+  (
+    const cs_lagr_attribute_map_t& other
+  );
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Move constructor
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  cs_lagr_attribute_map_t
+  (
+    cs_lagr_attribute_map_t&& other /*!<[in] Original reference to move */
+  );
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Default destructor
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  ~cs_lagr_attribute_map_t();
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Assignment operator
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  cs_lagr_attribute_map_t& operator=(cs_lagr_attribute_map_t other);
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief get particle attribute offset
+   *
+   * \return offset value (cs_lnum_t)
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  inline
+  cs_lnum_t
+  particle_offset
+  (
+    cs_lnum_t           particle_id, /*!<[in] Particle id */
+    cs_lagr_attribute_t attr         /*!<[in] attribute id (enum) */
+  )
+  {
+    return extents*particle_id + _displ(0, attr);
+  }
+
+  CS_F_HOST_DEVICE
+  inline
+  cs_lnum_t
+  particle_offset
+  (
+    cs_lnum_t           particle_id, /*!<[in] Particle id */
+    cs_lagr_attribute_t attr         /*!<[in] attribute id (enum) */
+  ) const
+  {
+    return extents*particle_id + _displ(0, attr);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief get particle attribute offset
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  inline
+  cs_lnum_t
+  particle_offset
+  (
+    cs_lnum_t           particle_id,
+    int                 time_id,
+    cs_lagr_attribute_t attr
+  )
+  {
+    return extents*particle_id + _displ(time_id, attr);
+  }
+
+  CS_F_HOST_DEVICE
+  inline
+  cs_lnum_t
+  particle_offset
+  (
+    cs_lnum_t           particle_id,
+    int                 time_id,
+    cs_lagr_attribute_t attr
+  ) const
+  {
+    return extents*particle_id + _displ(time_id, attr);
+  }
+
+  /* Define particle set as a friend which can access private members */
+  friend struct cs_lagr_particle_set_t;
+private:
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Swap method
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  swap_members_
+  (
+    cs_lagr_attribute_map_t& first,
+    cs_lagr_attribute_map_t& second
+  );
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Update public pointers based on private objects
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  private_to_public_();
+
+  /* Private members */
+
+  cs_array_2d<int>       _count;
+  cs_array_2d<ptrdiff_t> _displ;
+  cs_array<ptrdiff_t>    _source_term_displ;
+
+#endif
 } cs_lagr_attribute_map_t;
+
 
 /* Particle set */
 /* ------------ */
 
-typedef struct {
+typedef struct cs_lagr_particle_set_t {
 
   cs_lnum_t  n_particles;                     /* number of particle in domain */
   cs_lnum_t  n_part_new;
@@ -249,7 +417,513 @@ typedef struct {
                                                    (p_am + i for time n-i) */
   unsigned char                  *p_buffer;   /*!< Particles data buffer */
 
+#if defined(__cplusplus)
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Default constructor
+   */
+  /*--------------------------------------------------------------------------*/
+
+  cs_lagr_particle_set_t();
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Constructor
+   */
+  /*--------------------------------------------------------------------------*/
+
+  cs_lagr_particle_set_t
+  (
+    cs_lnum_t                      n_part_max, /*!<[in] Maximal number of particles */
+    const cs_lagr_attribute_map_t *map         /*!<[in] Attribute map */
+  );
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Copy constructor (shallow copy)
+   */
+  /*--------------------------------------------------------------------------*/
+
+  cs_lagr_particle_set_t
+  (
+    const cs_lagr_particle_set_t& other /*!<[in] reference to other set */
+  );
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Move constructor
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  cs_lagr_particle_set_t
+  (
+    cs_lagr_particle_set_t&& other /*!<[in] && reference for move */
+  );
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Default destructor
+   */
+  /*--------------------------------------------------------------------------*/
+
+  ~cs_lagr_particle_set_t();
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Assignment operator
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  cs_lagr_particle_set_t& operator=(cs_lagr_particle_set_t other);
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Resize particles set
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  int
+  resize
+  (
+    const cs_lnum_t n_particles_max_min
+  );
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Access attribute based on particle id and a given type
+   *
+   * \tparam T : type used to cast attribute.
+   *
+   * \return reference to attribute of type "T"
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template <typename T>
+  CS_F_HOST_DEVICE
+  inline
+  T&
+  attr
+  (
+    cs_lnum_t           particle_id, /*!<[in] Particle id */
+    cs_lagr_attribute_t attr         /*!<[in] attribute id (enum) */
+  )
+  {
+    assert(_p_am._count(0,attr) > 0);
+    return get_ptr_<T>(particle_id, 0, attr)[0];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Access attribute based on particle id and a given type from a const
+   * particle set
+   *
+   * \tparam T : type used to cast attribute.
+   *
+   * \return reference to attribute of type "T"
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template <typename T>
+  CS_F_HOST_DEVICE
+  inline
+  T&
+  attr
+  (
+    cs_lnum_t           particle_id, /*!<[in] Particle id */
+    cs_lagr_attribute_t attr         /*!<[in] attribute id (enum) */
+  ) const
+  {
+    assert(_p_am._count(0,attr) > 0);
+    return get_ptr_<T>(particle_id, 0, attr)[0];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Access attribute based on particle id, time id and a given type
+   *
+   * \tparam T : type used to cast attribute.
+   *
+   * \return reference to attribute of type "T"
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template <typename T>
+  CS_F_HOST_DEVICE
+  inline
+  T&
+  attr_n
+  (
+    cs_lnum_t           particle_id, /*!<[in] Particle id */
+    int                 time_id,     /*!<[in] time id */
+    cs_lagr_attribute_t attr         /*!<[in] attribute id (enum) */
+  )
+  {
+    assert(_p_am._count(time_id,attr) > 0);
+    return get_ptr_<T>(particle_id, time_id, attr)[0];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Access attribute based on particle id, time id and a given type
+   * for a const particle set
+   *
+   * \tparam T : type used to cast attribute.
+   *
+   * \return reference to attribute of type "T"
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template <typename T>
+  CS_F_HOST_DEVICE
+  inline
+  T&
+  attr_n
+  (
+    cs_lnum_t           particle_id, /*!<[in] Particle id */
+    int                 time_id,     /*!<[in] time id */
+    cs_lagr_attribute_t attr         /*!<[in] attribute id (enum) */
+  ) const
+  {
+    assert(_p_am._count(time_id,attr) > 0);
+    return get_ptr_<T>(particle_id, time_id, attr)[0];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief  Get a pointer to attribute values
+   *
+   * \tparam T : type used to cast attribute.
+   *
+   * \return pointer of type T*
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template <typename T>
+  CS_F_HOST_DEVICE
+  inline
+  T *
+  attr_get_ptr
+  (
+    cs_lnum_t                particle_id, /*!<[in] particle id */
+    cs_lagr_attribute_t      attr         /*!<[in] attribute id (enum) */
+  )
+  {
+    assert(_p_am._count(0,attr) > 0);
+
+    return get_ptr_<T>(particle_id, 0, attr);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief  Get a const pointer to attribute values
+   *
+   * \tparam T : type used to cast attribute.
+   *
+   * \return const pointer of type T*
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template <typename T>
+  CS_F_HOST_DEVICE
+  inline
+  const T *
+  attr_get_const_ptr
+  (
+    cs_lnum_t                particle_id, /*!<[in] particle id */
+    cs_lagr_attribute_t      attr         /*!<[in] attribute id (enum) */
+  )
+  {
+    assert(_p_am._count(0,attr) > 0);
+
+    return get_const_ptr_<T>(particle_id, 0, attr);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief  Get a pointer to attribute values
+   *
+   * \tparam T : type used to cast attribute.
+   *
+   * \return pointer of type T*
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template <typename T>
+  CS_F_HOST_DEVICE
+  inline
+  T *
+  attr_n_get_ptr
+  (
+    cs_lnum_t                particle_id, /*!<[in] particle id */
+    int                      time_id,     /*!<[in] time id */
+    cs_lagr_attribute_t      attr         /*!<[in] attribute id (enum) */
+  )
+  {
+    assert(_p_am._count(time_id, attr) > 0);
+
+    return get_ptr_<T>(particle_id, time_id, attr);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief  Get a const pointer to attribute values
+   *
+   * \tparam T : type used to cast attribute.
+   *
+   * \return const pointer of type T*
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template <typename T>
+  CS_F_HOST_DEVICE
+  inline
+  const T *
+  attr_n_get_const_ptr
+  (
+    cs_lnum_t                particle_id, /*!<[in] particle id */
+    int                      time_id,     /*!<[in] time id */
+    cs_lagr_attribute_t      attr         /*!<[in] attribute id (enum) */
+  )
+  {
+    assert(_p_am._count(time_id, attr) > 0);
+
+    return get_const_ptr_<T>(particle_id, time_id, attr);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Check if a flag is set for a given particle based on a mask
+   *
+   * \return 1 if mask is set, 0 otherwise
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  inline
+  int
+  flag
+  (
+    cs_lnum_t particle_id, /*!<[in] particle id */
+    int       mask         /*!<[in] mask */
+  )
+  {
+    int flag = get_const_ptr_<cs_lnum_t>(particle_id, 0, CS_LAGR_P_FLAG)[0];
+
+    return (flag & mask);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Set flag for a given particle
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  inline
+  void
+  set_flag
+  (
+    cs_lnum_t particle_id, /*!<[in] particle id */
+    int       mask         /*!<[in] mask */
+  )
+  {
+    int flag = get_const_ptr_<cs_lnum_t>(particle_id, 0, CS_LAGR_P_FLAG)[0];
+    flag = flag | mask;
+    get_ptr_<cs_lnum_t>(particle_id, 0, CS_LAGR_P_FLAG)[0] = flag;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Unset a flag for a given particle
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  inline
+  void
+  unset_flag
+  (
+    cs_lnum_t particle_id, /*!<[in] particle id */
+    int       mask         /*!<[in] mask */
+  )
+  {
+    int flag = get_const_ptr_<cs_lnum_t>(particle_id, 0, CS_LAGR_P_FLAG)[0];
+    flag = (flag | mask) - mask;
+    get_ptr_<cs_lnum_t>(particle_id, 0, CS_LAGR_P_FLAG)[0] = flag;
+  }
+
+
+  /*--------------------------------------------------------------------------*/
+  /* Aliases to templated methods for shorter names used in code */
+  /*--------------------------------------------------------------------------*/
+
+  template<typename... Args>
+  inline auto
+  attr_real(Args&&... args) ->
+  decltype(attr<cs_real_t>(std::forward<Args>(args)...))
+  {
+    return attr<cs_real_t>(std::forward<Args>(args)...);
+  }
+
+  template<typename... Args>
+  inline auto
+  attr_lnum(Args&&... args) ->
+  decltype(attr<cs_lnum_t>(std::forward<Args>(args)...))
+  {
+    return attr<cs_lnum_t>(std::forward<Args>(args)...);
+  }
+
+  template<typename... Args>
+  inline auto
+  attr_gnum(Args&&... args) ->
+  decltype(attr<cs_gnum_t>(std::forward<Args>(args)...))
+  {
+    return attr<cs_gnum_t>(std::forward<Args>(args)...);
+  }
+
+  template<typename... Args>
+  inline auto
+  attr_n_real(Args&&... args) ->
+  decltype(attr_n<cs_real_t>(std::forward<Args>(args)...))
+  {
+    return attr_n<cs_real_t>(std::forward<Args>(args)...);
+  }
+
+  template<typename... Args>
+  inline auto
+  attr_n_lnum(Args&&... args) ->
+  decltype(attr_n<cs_lnum_t>(std::forward<Args>(args)...))
+  {
+    return attr_n<cs_lnum_t>(std::forward<Args>(args)...);
+  }
+
+  template<typename... Args>
+  inline auto
+  attr_n_gnum(Args&&... args) ->
+  decltype(attr_n<cs_gnum_t>(std::forward<Args>(args)...))
+  {
+    return attr_n<cs_gnum_t>(std::forward<Args>(args)...);
+  }
+
+  template<typename... Args>
+  inline auto
+  attr_real_ptr(Args&&... args) ->
+  decltype(attr_get_ptr<cs_real_t>(std::forward<Args>(args)...))
+  {
+    return attr_get_ptr<cs_real_t>(std::forward<Args>(args)...);
+  }
+
+  template<typename... Args>
+  inline auto
+  attr_lnum_ptr(Args&&... args) ->
+  decltype(attr_get_ptr<cs_lnum_t>(std::forward<Args>(args)...))
+  {
+    return attr_get_ptr<cs_lnum_t>(std::forward<Args>(args)...);
+  }
+
+  template<typename... Args>
+  inline auto
+  attr_gnum_ptr(Args&&... args) ->
+  decltype(attr_get_ptr<cs_gnum_t>(std::forward<Args>(args)...))
+  {
+    return attr_get_ptr<cs_gnum_t>(std::forward<Args>(args)...);
+  }
+
+private:
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Swap method
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  swap_members_
+  (
+    cs_lagr_particle_set_t& first,
+    cs_lagr_particle_set_t& second
+  );
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Update public pointers based on private objects
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  private_to_public_();
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Private method to access a pointer based on particle id, time id
+   * and attribute (enum).
+   *
+   * \tparam T : type used to cast pointer
+   *
+   * \return pointer of type T*
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template <typename T>
+  CS_F_HOST_DEVICE
+  inline
+  T *
+  get_ptr_
+  (
+    cs_lnum_t           particle_id, /*!<[in] particle id */
+    int                 time_id,     /*!<[in] time id */
+    cs_lagr_attribute_t attr         /*!<[in] attribute id (enum) */
+  )
+  {
+    return reinterpret_cast<T*>( _p_buffer.data()
+                               + _p_am.particle_offset(particle_id,
+                                                       time_id,
+                                                       attr) );
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Private method to access a const pointer based on particle id,
+   * time id and attribute (enum).
+   *
+   * \tparam T : type used to cast pointer
+   *
+   * \return const pointer of type T*
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template <typename T>
+  CS_F_HOST_DEVICE
+  inline
+  const T *
+  get_const_ptr_
+  (
+    cs_lnum_t           particle_id, /*!<[in] particle id */
+    int                 time_id,     /*!<[in] time id */
+    cs_lagr_attribute_t attr         /*!<[in] attribute id (enum) */
+  )
+  {
+    return reinterpret_cast<const T*>( _p_buffer.data()
+                                     + _p_am.particle_offset(particle_id,
+                                                             time_id,
+                                                             attr) );
+  }
+
+  /* Private members */
+
+  cs_array<unsigned char> _p_buffer;
+  cs_lagr_attribute_map_t _p_am;
+
+#endif
 } cs_lagr_particle_set_t;
+
+BEGIN_C_DECLS
 
 /*=============================================================================
  * Global variables
@@ -399,6 +1073,18 @@ cs_lagr_particle_attr_in_range(int  attr);
 
 cs_lagr_particle_set_t  *
 cs_lagr_get_particle_set(void);
+
+/*----------------------------------------------------------------------------
+ * Return reference to the main cs_lagr_particle_set_t structure.
+ *
+ * returns:
+ *   reference to current particle set, or NULL
+ *----------------------------------------------------------------------------*/
+
+#if defined(__cplusplus)
+cs_lagr_particle_set_t&
+cs_lagr_get_particle_set_ref(void);
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!

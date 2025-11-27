@@ -498,30 +498,26 @@ _vol_fraction(const void                 *input,
   CS_UNUSED(events);
 
   cs_lnum_t n_elts = cs_mesh_location_get_n_elts(location_id)[0];
-  cs_lagr_particle_set_t *p_set = cs_lagr_get_particle_set();
+  cs_lagr_particle_set_t p_set = cs_lagr_get_particle_set_ref();
 
   for (cs_lnum_t i = 0; i < n_elts; i++)
     vals[i] = 0.;
 
   if (class_id == 0) {
 
-    for (cs_lnum_t p_id = 0; p_id < p_set->n_particles; p_id++) {
+    for (cs_lnum_t p_id = 0; p_id < p_set.n_particles; p_id++) {
 
-      cs_real_t diam = cs_lagr_particles_get_real(p_set, p_id,
-                                                  CS_LAGR_DIAMETER);
+      cs_real_t diam = p_set.attr_real(p_id, CS_LAGR_DIAMETER);
 
       /* Increment statistic in the ending cell when a single subiter is made
        * and the starting cell when a cell-wie-integration is considered */
       cs_lnum_t cell_id;
       if (cs_glob_lagr_time_scheme->cell_wise_integ == 0)
-        cell_id = cs_lagr_particles_get_lnum(p_set, p_id,
-                                             CS_LAGR_CELL_ID);
+        cell_id = p_set.attr_lnum(p_id, CS_LAGR_CELL_ID);
       else
-        cell_id = cs_lagr_particles_get_lnum_n(p_set, p_id, 1,
-                                               CS_LAGR_CELL_ID);
+        cell_id = p_set.attr_n_lnum(p_id, 1, CS_LAGR_CELL_ID);
 
-      cs_real_t p_weight = cs_lagr_particles_get_real(p_set, p_id,
-                                                      CS_LAGR_STAT_WEIGHT);
+      cs_real_t p_weight = p_set.attr_real(p_id, CS_LAGR_STAT_WEIGHT);
 
       cs_real_t vol = cs_glob_mesh_quantities->cell_vol[cell_id];
 
@@ -531,30 +527,24 @@ _vol_fraction(const void                 *input,
   }
   else {
 
-    assert(p_set->p_am->displ[0][CS_LAGR_STAT_CLASS] > 0);
+    assert(p_set.p_am->displ[0][CS_LAGR_STAT_CLASS] > 0);
 
-    for (cs_lnum_t p_id = 0; p_id < p_set->n_particles; p_id++) {
+    for (cs_lnum_t p_id = 0; p_id < p_set.n_particles; p_id++) {
 
-      int p_class = cs_lagr_particles_get_lnum(p_set,
-                                               p_id,
-                                               CS_LAGR_STAT_CLASS);
+      int p_class = p_set.attr_lnum(p_id, CS_LAGR_STAT_CLASS);
 
       if (p_class == class_id) {
-        cs_real_t diam = cs_lagr_particles_get_real(p_set, p_id,
-                                                    CS_LAGR_DIAMETER);
+        cs_real_t diam = p_set.attr_real(p_id, CS_LAGR_DIAMETER);
 
         /* Increment statistic in the ending cell when a single subiter is made
          * and the starting cell when a cell-wie-integration is considered */
         cs_lnum_t cell_id;
         if (cs_glob_lagr_time_scheme->cell_wise_integ == 0)
-          cell_id = cs_lagr_particles_get_lnum(p_set, p_id,
-                                               CS_LAGR_CELL_ID);
+          cell_id = p_set.attr_lnum(p_id, CS_LAGR_CELL_ID);
         else
-          cell_id = cs_lagr_particles_get_lnum_n(p_set, p_id, 1,
-                                                 CS_LAGR_CELL_ID);
+          cell_id = p_set.attr_n_lnum(p_id, 1, CS_LAGR_CELL_ID);
 
-        cs_real_t p_weight = cs_lagr_particles_get_real(p_set, p_id,
-                                                        CS_LAGR_STAT_WEIGHT);
+        cs_real_t p_weight = p_set.attr_real(p_id, CS_LAGR_STAT_WEIGHT);
 
         cs_real_t vol = cs_glob_mesh_quantities->cell_vol[cell_id];
 
@@ -4916,7 +4906,7 @@ cs_lagr_stat_update_event(cs_lagr_event_set_t   *events,
                           cs_lagr_stat_group_t   group)
 {
   const cs_time_step_t  *ts = cs_glob_time_step;
-  cs_lagr_particle_set_t *p_set = cs_lagr_get_particle_set();
+  cs_lagr_particle_set_t p_set = cs_lagr_get_particle_set_ref();
   const cs_real_t *dt_val = _dt_val();
   cs_lnum_t dt_mult = (cs_glob_time_step->is_local) ? 1 : 0;
 
@@ -5043,7 +5033,7 @@ cs_lagr_stat_update_event(cs_lagr_event_set_t   *events,
                                                        location_attr);
 
             int p_class = 0;
-            if (p_set->p_am->displ[0][CS_LAGR_STAT_CLASS] > 0)
+            if (p_set.p_am->displ[0][CS_LAGR_STAT_CLASS] > 0)
               p_class = cs_lagr_events_get_lnum(events,
                                                 ev_id,
                                                 CS_LAGR_STAT_CLASS);
@@ -5211,7 +5201,7 @@ cs_lagr_stat_update_event(cs_lagr_event_set_t   *events,
                                                    location_attr);
 
         int p_class = 0;
-        if (p_set->p_am->displ[0][CS_LAGR_STAT_CLASS] > 0)
+        if (p_set.p_am->displ[0][CS_LAGR_STAT_CLASS] > 0)
           p_class = cs_lagr_events_get_lnum(events,
                                             ev_id,
                                             CS_LAGR_STAT_CLASS);

@@ -973,7 +973,7 @@ cs_lagr_particle_attr_initialize(void)
      (in the future, they should be created first, then marked,
      then built) */
 
-  _p_attr_map = _create_attr_map(attr_keys);
+  _p_attr_map = new cs_lagr_attribute_map_t(attr_keys);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1000,7 +1000,7 @@ cs_lagr_particle_get_attr_map(void)
 void
 cs_lagr_particle_set_create(void)
 {
-  cs_glob_lagr_particle_set = _create_particle_set(128, _p_attr_map);
+  cs_glob_lagr_particle_set = new cs_lagr_particle_set_t(128, _p_attr_map);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   bft_printf("\n PARTICLE SET AFTER CREATION\n");
@@ -1017,9 +1017,8 @@ cs_lagr_particle_set_create(void)
 void
 cs_lagr_particle_finalize(void)
 {
-  _destroy_particle_set(&cs_glob_lagr_particle_set);
-
-  _destroy_attr_map(&_p_attr_map);
+  delete cs_glob_lagr_particle_set;
+  delete _p_attr_map;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1193,6 +1192,12 @@ cs_lagr_get_particle_set(void)
   return cs_glob_lagr_particle_set;
 }
 
+cs_lagr_particle_set_t&
+cs_lagr_get_particle_set_ref(void)
+{
+  return *cs_glob_lagr_particle_set;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Resize particle set buffers if needed.
@@ -1221,7 +1226,7 @@ cs_lagr_particle_set_resize(cs_lnum_t  n_min_particles)
       retval = -1;
   }
   else
-    retval = _particle_set_resize(cs_glob_lagr_particle_set, n_min_particles);
+    retval = cs_glob_lagr_particle_set->resize(n_min_particles);
 
   return retval;
 }
@@ -1353,3 +1358,534 @@ cs_lagr_set_n_user_variables(int  n_user_variables)
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
+
+/*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Default constructor
+ */
+/*--------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE
+cs_lagr_attribute_map_t::cs_lagr_attribute_map_t()
+{
+  /* Private members */
+  extents = 0;
+  lb = 0;
+  n_time_vals = 0;
+
+  for (int i_attr = 0; i_attr < CS_LAGR_N_ATTRIBUTES; i_attr++) {
+    cs_lagr_attribute_t attr = static_cast<cs_lagr_attribute_t>(i_attr);
+    size[attr] = 0;
+    datatype[attr] = CS_REAL_TYPE;
+  }
+
+  /* Public members (to be removed when possible) */
+  private_to_public_();
+
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Constructor based on a list of attribute keys
+ */
+/*--------------------------------------------------------------------------*/
+
+CS_F_HOST
+cs_lagr_attribute_map_t::cs_lagr_attribute_map_t
+(
+  cs_lnum_t attr_keys[CS_LAGR_N_ATTRIBUTES][3]
+)
+{
+  /* Start of buffer is used for private tracking state info */
+
+  lb = _align_extents(sizeof(cs_lagr_tracking_info_t));
+  extents =  lb;
+
+  /* Currently, current and previous time values are managed */
+
+  n_time_vals = 2;
+
+  _displ.reshape(2, CS_LAGR_N_ATTRIBUTES);
+  _count.reshape(2, CS_LAGR_N_ATTRIBUTES);
+
+  for (int i_attr = 0; i_attr < CS_LAGR_N_ATTRIBUTES; i_attr++) {
+    cs_lagr_attribute_t attr = static_cast<cs_lagr_attribute_t>(i_attr);
+    size[attr] = 0;
+    datatype[attr] = CS_REAL_TYPE;
+
+    for (int time_id = 0; time_id < n_time_vals; time_id++) {
+      _displ(time_id, attr) = -1;
+      _count(time_id, attr) = 1;
+    }
+  }
+
+  cs_array<cs_lnum_t> order(CS_LAGR_N_ATTRIBUTES);
+
+  cs_order_lnum_allocated_s(nullptr,
+                            (const cs_lnum_t *)attr_keys,
+                            3,
+                            order.data(),
+                            CS_LAGR_N_ATTRIBUTES);
+
+  /* Loop on available times */
+
+  for (int time_id = 0; time_id < n_time_vals; time_id++) {
+
+    int array_prev = 0;
+
+    /* Now loop on ordered attributes */
+
+    for (int i = 0; i < CS_LAGR_N_ATTRIBUTES; i++) {
+
+      cs_datatype_t datatype_ = CS_REAL_TYPE;
+      int min_time_id = 0;
+      int max_time_id = 0;
+
+      cs_lagr_attribute_t attr = static_cast<cs_lagr_attribute_t>(order[i]);
+
+      if (time_id == 0)
+        datatype[attr] = CS_DATATYPE_NULL;
+
+      _displ(time_id, attr) = -1;
+      _count(time_id, attr) = 0;
+
+      if (attr_keys[attr][0] < 1) continue;
+
+      /*
+        ieptp/ieptpa integer values at current and previous time steps
+        pepa real values at current time step
+        ipepa integer values at current time step */
+
+      /* Behavior depending on array */
+
+      switch(attr_keys[attr][0]) {
+      case CS_LAGR_P_RVAR_TS:
+      case CS_LAGR_P_RVAR:
+        max_time_id = 1;
+        break;
+      case CS_LAGR_P_IVAR:
+        datatype_ = CS_LNUM_TYPE;
+        max_time_id = 1;
+        break;
+      case CS_LAGR_P_RPRP:
+        break;
+      case CS_LAGR_P_IPRP:
+        datatype_ = CS_LNUM_TYPE;
+        break;
+      case CS_LAGR_P_RKID:
+        datatype_ = CS_LNUM_TYPE;
+        min_time_id = 1;
+        max_time_id = 1;
+        break;
+      default:
+        continue;
+      }
+
+      if (time_id < min_time_id || time_id > max_time_id)
+        continue;
+
+      /* Add padding for alignment when changing array */
+
+      if (attr_keys[attr][0] != array_prev) {
+        extents = _align_extents(extents);
+        array_prev = attr_keys[attr][0];
+      }
+
+      /* Add attribute to map */
+
+      _displ(time_id, attr) = extents;
+      _count(time_id, attr) = attr_keys[attr][2];
+      if (time_id == min_time_id) {
+        datatype[attr] = datatype_;
+        size[attr] = _count(time_id, attr)
+                    * cs_datatype_size[datatype[attr]];
+      }
+
+      extents += size[attr];
+    }
+
+    extents = _align_extents(extents);
+  }
+
+  /* Add source terms for 2nd order */
+
+  if (cs_glob_lagr_time_scheme->t_order > 1) {
+    _source_term_displ.reshape(CS_LAGR_N_ATTRIBUTES);
+
+    /* loop again on ordered attributes */
+
+    for (int i = 0; i < CS_LAGR_N_ATTRIBUTES; i++) {
+
+      cs_lagr_attribute_t attr = static_cast<cs_lagr_attribute_t>(order[i]);
+
+      /* Add attribute to map if in CS_LAGR_P_RVARS array */
+
+      if (   attr_keys[attr][0] == CS_LAGR_P_RVAR_TS
+          && _count(0, attr) > 0) {
+        _source_term_displ[attr] = extents;
+        extents += size[attr];
+      }
+      else
+        _source_term_displ[attr] = -1;
+    }
+
+    extents = _align_extents(extents);
+  }
+
+  /* Public members (to be removed when possible) */
+  private_to_public_();
+
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Copy constructor using a shallow copy (no allocation)
+ */
+/*--------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE
+cs_lagr_attribute_map_t::cs_lagr_attribute_map_t
+(
+  const cs_lagr_attribute_map_t& other
+)
+{
+  extents = other.extents;
+  lb = other.lb;
+  n_time_vals = other.n_time_vals;
+
+  for (int i_attr = 0; i_attr < CS_LAGR_N_ATTRIBUTES; i_attr++) {
+    cs_lagr_attribute_t attr = static_cast<cs_lagr_attribute_t>(i_attr);
+    size[attr] = other.size[attr];
+    datatype[attr] = other.datatype[attr];
+  }
+  /* Non owner copies of arrays */
+  _count = cs_array_2d<int>(other._count);
+  _displ = cs_array_2d<ptrdiff_t>(other._displ);
+  _source_term_displ = cs_array<ptrdiff_t>(other._source_term_displ);
+
+  private_to_public_();
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Move constructor
+ */
+/*--------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE
+cs_lagr_attribute_map_t::cs_lagr_attribute_map_t
+(
+  cs_lagr_attribute_map_t&& other /*!<[in] Original reference to move */
+)
+{
+  swap_members_(*this, other);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Default destructor
+ */
+/*--------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE
+cs_lagr_attribute_map_t::~cs_lagr_attribute_map_t()
+{
+  count = nullptr;
+  displ = nullptr;
+  source_term_displ = nullptr;
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Swap method
+ */
+/*--------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE
+void
+cs_lagr_attribute_map_t::swap_members_
+(
+  cs_lagr_attribute_map_t& first,
+  cs_lagr_attribute_map_t& second
+)
+{
+  using std::swap;
+
+  /* Swap the different members */
+  swap(first.extents, second.extents);
+  swap(first.lb, second.lb);
+  swap(first.n_time_vals, second.n_time_vals);
+  swap(first.size, second.size);
+  swap(first.datatype, second.datatype);
+  swap(first._count, second._count);
+  swap(first.count, second.count);
+  swap(first._displ, second._displ);
+  swap(first.displ, second.displ);
+  swap(first._source_term_displ, second._source_term_displ);
+  swap(first.source_term_displ, second.source_term_displ);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Assignment operator
+ */
+/*--------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE
+cs_lagr_attribute_map_t&
+cs_lagr_attribute_map_t::operator=(cs_lagr_attribute_map_t other)
+{
+  swap_members_(*this, other);
+
+  return *this;
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Update public pointers based on private structures.
+ */
+/*--------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE
+void
+cs_lagr_attribute_map_t::private_to_public_()
+{
+  using  lagr_attr_ptrdiff_t = ptrdiff_t[CS_LAGR_N_ATTRIBUTES];
+  using  lagr_attr_int_t = int[CS_LAGR_N_ATTRIBUTES];
+
+  count = _count.data<lagr_attr_int_t>();
+  displ = _displ.data<lagr_attr_ptrdiff_t>();
+  source_term_displ = _source_term_displ.data();
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Default constructor
+ */
+/*--------------------------------------------------------------------------*/
+
+cs_lagr_particle_set_t::cs_lagr_particle_set_t()
+{
+  n_particles = 0;
+  n_part_new  = 0;
+  n_part_merged = 0;
+  n_part_out    = 0;
+  n_part_dep    = 0;
+  n_part_fou    = 0;
+  n_part_resusp = 0;
+  n_failed_part = 0;
+
+  weight = 0.0;
+  weight_new = 0.0;
+  weight_merged = 0.0;
+  weight_out = 0.0;
+  weight_dep = 0.0;
+  weight_fou = 0.0;
+  weight_resusp = 0.0;
+  weight_failed = 0.0;
+  n_particles_max = 0;
+
+  private_to_public_();
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Constructor
+ */
+/*--------------------------------------------------------------------------*/
+
+cs_lagr_particle_set_t::cs_lagr_particle_set_t
+(
+  cs_lnum_t                      n_part_max, /*!<[in] Maximal number of particles */
+  const cs_lagr_attribute_map_t *map         /*!<[in] Attribute map */
+)
+{
+  assert(n_part_max >= 1);
+
+  n_particles = 0;
+  n_part_new  = 0;
+  n_part_merged = 0;
+  n_part_out    = 0;
+  n_part_dep    = 0;
+  n_part_fou    = 0;
+  n_part_resusp = 0;
+  n_failed_part = 0;
+
+  weight = 0.0;
+  weight_new = 0.0;
+  weight_merged = 0.0;
+  weight_out = 0.0;
+  weight_dep = 0.0;
+  weight_fou = 0.0;
+  weight_resusp = 0.0;
+  weight_failed = 0.0;
+  n_particles_max = n_part_max;
+
+  _p_am = cs_lagr_attribute_map_t(*map);
+  _p_buffer.reshape(n_part_max * map->extents);
+  private_to_public_();
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Copy constructor (shallow copy)
+ */
+/*--------------------------------------------------------------------------*/
+
+cs_lagr_particle_set_t::cs_lagr_particle_set_t
+(
+  const cs_lagr_particle_set_t& other
+)
+{
+  n_particles = other.n_particles;
+  n_part_new = other.n_part_new;
+  n_part_merged = other.n_part_merged;
+  n_part_out = other.n_part_out;
+  n_part_dep = other.n_part_dep;
+  n_part_fou = other.n_part_fou;
+  n_part_resusp = other.n_part_resusp;
+  n_failed_part = other.n_failed_part;
+
+  weight = other.weight;
+  weight_new = other.weight_new;
+  weight_merged = other.weight_merged;
+  weight_out = other.weight_out;
+  weight_dep = other.weight_dep;
+  weight_fou = other.weight_fou;
+  weight_resusp = other.weight_resusp;
+  weight_failed = other.weight_failed;
+  n_particles_max = other.n_particles_max;
+
+  _p_buffer = cs_array<unsigned char>(other._p_buffer);
+  _p_am = cs_lagr_attribute_map_t(other._p_am);
+
+  private_to_public_();
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Move constructor
+ */
+/*--------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE
+cs_lagr_particle_set_t::cs_lagr_particle_set_t
+(
+  cs_lagr_particle_set_t&& other
+)
+{
+  swap_members_(*this, other);
+}
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Default destructor
+ */
+/*--------------------------------------------------------------------------*/
+
+cs_lagr_particle_set_t::~cs_lagr_particle_set_t()
+{
+  p_buffer = nullptr;
+  p_am = nullptr;
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Swap method
+ */
+/*--------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE
+void
+cs_lagr_particle_set_t::swap_members_
+(
+  cs_lagr_particle_set_t& first,
+  cs_lagr_particle_set_t& second
+)
+{
+  using std::swap;
+
+  swap(first.n_particles, second.n_particles);
+  swap(first.n_part_new, second.n_part_new);
+  swap(first.n_part_merged, second.n_part_merged);
+  swap(first.n_part_out, second.n_part_out);
+  swap(first.n_part_dep, second.n_part_dep);
+  swap(first.n_part_fou, second.n_part_fou);
+  swap(first.n_part_resusp, second.n_part_resusp);
+  swap(first.n_failed_part, second.n_failed_part);
+
+  swap(first.weight, second.weight);
+  swap(first.weight_new, second.weight_new);
+  swap(first.weight_merged, second.weight_merged);
+  swap(first.weight_out, second.weight_out);
+  swap(first.weight_dep, second.weight_dep);
+  swap(first.weight_fou, second.weight_fou);
+  swap(first.weight_resusp, second.weight_resusp);
+  swap(first.weight_failed, second.weight_failed);
+  swap(first.n_particles_max, second.n_particles_max);
+
+  swap(first._p_buffer, second._p_buffer);
+  swap(first.p_buffer, second.p_buffer);
+  swap(first._p_am, second._p_am);
+  swap(first.p_am, second.p_am);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Resize the particle set
+ */
+/*--------------------------------------------------------------------------*/
+
+CS_F_HOST
+int
+cs_lagr_particle_set_t::resize
+(
+  const cs_lnum_t n_particles_max_min /*!<[in] minimum local max number of particles */
+)
+{
+  int retval = 0;
+  assert(n_particles_max_min >= 0);
+
+  if (n_particles_max < n_particles_max_min) {
+
+    if (n_particles_max == 0)
+      n_particles_max = 1;
+
+    while (n_particles_max < n_particles_max_min)
+      n_particles_max *= _reallocation_factor;
+
+    _p_buffer.reshape(n_particles_max * _p_am.extents);
+
+    private_to_public_();
+
+    retval = 1;
+  }
+
+  return retval;
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Assignment operator
+ */
+/*--------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE
+cs_lagr_particle_set_t&
+cs_lagr_particle_set_t::operator=(cs_lagr_particle_set_t other)
+{
+  swap_members_(*this, other);
+
+  return *this;
+}
+
+CS_F_HOST_DEVICE
+void
+cs_lagr_particle_set_t::private_to_public_()
+{
+  p_buffer = _p_buffer.data();
+  p_am = &(_p_am);
+}
+
