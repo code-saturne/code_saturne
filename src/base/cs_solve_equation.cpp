@@ -1886,9 +1886,11 @@ cs_solve_equation_scalar(cs_field_t        *f,
         const cs_real_t p0 = fluid_props->p0;
         const cs_real_t t0 = fluid_props->t0;
 
-        h_ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        /* cs_atmo_profile_std is HOST only, and we are using a host_context.
+         * Once atmo is migrated to GPU aware code, CS_HOST_LAMBDA
+         * should be changed to CS_LAMBDA which is __host__ __device__ */
+        h_ctx.parallel_for(n_cells, CS_HOST_LAMBDA (cs_lnum_t c_id) {
           cs_real_t _pphy, dum;
-          /* Warning CUDA: The below function is HOST */
           cs_atmo_profile_std(0., /* z_ref */
                               p0,
                               t0,
@@ -1904,8 +1906,10 @@ cs_solve_equation_scalar(cs_field_t        *f,
         const cs_real_t *time_met = cs_glob_atmo_option->time_met;
         const cs_real_t *hyd_p_met = cs_glob_atmo_option->hyd_p_met;
 
-        h_ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-          /* Warning CUDA: The below function is HOST */
+        /* cs_intprf is HOST only, and we are using a host_context.
+         * Once atmo is migrated to GPU aware code, CS_HOST_LAMBDA
+         * should be changed to CS_LAMBDA which is __host__ __device__ */
+        h_ctx.parallel_for(n_cells, [=] CS_HOST_LAMBDA (cs_lnum_t c_id) {
           pphy[c_id] = cs_intprf(nbmett,
                                  nbmetm,
                                  z_temp_met,

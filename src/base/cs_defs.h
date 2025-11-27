@@ -595,6 +595,7 @@ typedef enum {
  *----------------------------------------------------------------------------*/
 
 #define CS_LAMBDA [=] CS_F_HOST_DEVICE
+#define CS_HOST_LAMBDA [=] CS_F_HOST
 #define CS_CLASS_LAMBDA [=, *this] CS_F_HOST_DEVICE
 
 /*=============================================================================
