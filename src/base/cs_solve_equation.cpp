@@ -1909,7 +1909,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
         /* cs_intprf is HOST only, and we are using a host_context.
          * Once atmo is migrated to GPU aware code, CS_HOST_LAMBDA
          * should be changed to CS_LAMBDA which is __host__ __device__ */
-        h_ctx.parallel_for(n_cells, [=] CS_HOST_LAMBDA (cs_lnum_t c_id) {
+        h_ctx.parallel_for(n_cells, CS_HOST_LAMBDA (cs_lnum_t c_id) {
           pphy[c_id] = cs_intprf(nbmett,
                                  nbmetm,
                                  z_temp_met,
