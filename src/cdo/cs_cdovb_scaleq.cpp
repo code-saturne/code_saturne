@@ -278,8 +278,8 @@ _svb_init_cell_system(const cs_cell_mesh_t          *cm,
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      mass_hodge  pointer to a Hodge structure or null if
- * useless \param[in]      eqb         pointer to the equation builder structure
+ * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr
+ * \param[in]      eqb         pointer to the equation builder structure
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  * \param[in, out] csys        pointer to a cs_cell_sys_t structure
  */
@@ -316,8 +316,8 @@ _svb_reaction(const cs_equation_param_t    *eqp,
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      mass_hodge  pointer to a Hodge structure or null if
- * useless \param[in]      eqb         pointer to the equation builder structure
+ * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr
+ * \param[in]      eqb         pointer to the equation builder structure
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  * \param[in, out] csys        pointer to a cs_cell_sys_t structure
  */
@@ -359,20 +359,20 @@ _svb_reaction_lumped(const cs_equation_param_t    *eqp,
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      mass_hodge  pointer to a Hodge structure or null if
- * useless \param[in]      eqb         pointer to the equation builder structure
+ * \param[in]      mass_hodge  pointer to a Hodge structure or nullptr
+ * \param[in]      eqb         pointer to the equation builder structure
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  * \param[in, out] csys        pointer to a cs_cell_sys_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_svb_reaction_lumped_subcell(const cs_equation_param_t    *eqp,
-                             const cs_cell_mesh_t         *cm,
-                             const cs_hodge_t             *mass_hodge,
-                             const cs_equation_builder_t  *eqb,
-                             cs_cell_builder_t            *cb,
-                             cs_cell_sys_t                *csys)
+_svb_reaction_lumped_subcell(const cs_equation_param_t   *eqp,
+                             const cs_cell_mesh_t        *cm,
+                             const cs_hodge_t            *mass_hodge,
+                             const cs_equation_builder_t *eqb,
+                             cs_cell_builder_t           *cb,
+                             cs_cell_sys_t               *csys)
 {
   CS_NO_WARN_IF_UNUSED(mass_hodge);
   CS_NO_WARN_IF_UNUSED(eqb);

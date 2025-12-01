@@ -310,8 +310,11 @@ cs_equation_builder_create(const cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Retrieve the range set structure associated to a builder structure
- *        for the block defined in block_id in the system helper structure
+ * \brief Retrieve the matrix structure associated to the given block_id
+ *        When there is only one block, this is simply 0.
+ *        One relies on the cs_cdo_system_helper_t structure to retrieve this
+ *        matrix.  So, the block_id must be consistent with the way to store
+ *        the blocks in this structure.
  *
  * \param[in, out]  builder      pointer to a cs_equation_builder_t
  * \param[in]       block_id     id of the block to consider

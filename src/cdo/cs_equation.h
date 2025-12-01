@@ -439,6 +439,7 @@ cs_equation_is_steady(const cs_equation_t *eq);
 /*!
  * \brief Return true is the given equation follows the new mechanism otherwise
  *        false
+ *        Only HHO and MAC schemes rely on the older mechanism
  *
  * \param[in] eq       pointer to a cs_equation_t structure
  *
