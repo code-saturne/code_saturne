@@ -101,6 +101,24 @@ struct cs_reduce_sum1r1i_max1i {    // struct: class with only public members
  * Semi-private function definitions
  *============================================================================*/
 
+typedef void
+(cs_test_func_t) (cs_lnum_t         elt_id,
+                  void             *input,
+                  cs_real_t        *vals);
+
+/* Function descriptor */
+/*---------------------*/
+
+typedef struct {
+
+  cs_test_func_t   *func;         /*!< Associated function, or nullptr */
+
+  void             *func_input;   /* Pointer to optional (untyped)
+                                     value or structure, for use by
+                                     evaluation function */
+
+} cs_test_struct_t;
+
 /*----------------------------------------------------------------------------
  * Test dispatch class.
  *----------------------------------------------------------------------------*/
@@ -138,7 +156,7 @@ _cs_dispatch_test(void)
     ctx.parallel_for(n, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       cs_lnum_t c_id = ii;
       // Test to show whether we are on GPU or CPU...
-#if defined( __CUDA_ARCH__) || defined( __SYCL_DEVICE_ONLY__)
+#if defined(CS_DEVICE_COMPILE)
       a0[ii] = c_id*0.1;
 #else
       a0[ii] = -c_id*0.1;
@@ -190,7 +208,7 @@ _cs_dispatch_test(void)
       (n_sum, s1, [=] CS_F_HOST_DEVICE (cs_lnum_t ii,
                                         CS_DISPATCH_REDUCER_TYPE(double) &sum) {
         cs_real_t x = (ii%10 - 3)*pi;
-#if defined( __CUDA_ARCH__) || defined( __SYCL_DEVICE_ONLY__)
+#if defined(CS_DEVICE_COMPILE)
       {sum += (double)x;}
 #else
       {sum += -(double)x;}
@@ -209,7 +227,7 @@ _cs_dispatch_test(void)
       (n_sum, rd, reducer,
        [=] CS_F_HOST_DEVICE (cs_lnum_t ii, cs_data_1r_2i &res)
       {
-#if defined( __CUDA_ARCH__) || defined( __SYCL_DEVICE_ONLY__)
+#if defined(CS_DEVICE_COMPILE)
         cs_real_t x = (ii%10 - 3)*pi;
 #else
         cs_real_t x = -(ii%10 - 3)*pi;
@@ -239,6 +257,77 @@ _cs_dispatch_test(void)
 
 /*----------------------------------------------------------------------------*/
 
+static inline CS_F_HOST_DEVICE void
+test_func_a(cs_lnum_t         elt_id,
+            void             *input,
+            cs_real_t        *vals)
+{
+  if (elt_id%32 == 0) {
+#if defined(CS_DEVICE_COMPILE)
+    printf("%s: on device, %d, %p %p\n", __func__, elt_id, input, vals);
+#else
+    printf("%s: on host, %d, %p %p\n", __func__, elt_id, input, vals);
+#endif
+  }
+#if defined(CS_DEVICE_COMPILE)
+  vals[elt_id] = -elt_id;
+#else
+  vals[elt_id] = elt_id;
+#endif
+}
+
+#if defined(HAVE_ACCEL)
+
+CS_F_DEVICE cs_test_func_t  *test_func_ad_p = test_func_a;
+
+#endif
+
+/*----------------------------------------------------------------------------
+ * Test dispatch class.
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_dispatch_function_pointer_test(void)
+{
+  const cs_lnum_t n = 100;
+
+  cs_dispatch_context ctx;
+
+  cs_alloc_mode_t amode = CS_ALLOC_HOST_DEVICE_SHARED;
+  cs_real_t *vals;
+  CS_MALLOC_HD(vals, n, cs_real_t, amode);
+
+  for (int l_i = 0; l_i < 2; l_i++) {
+    if (l_i == 1)
+      ctx.set_use_gpu(false);
+
+    printf("use GPU: %d\n", (int)(ctx.use_gpu()));
+
+    cs_test_func_t *f_ptr = test_func_a;
+#if defined(HAVE_CUDA)
+    if (ctx.use_gpu()) {
+      CS_CUDA_CHECK(cudaMemcpyFromSymbol(&f_ptr, test_func_ad_p, sizeof(cs_test_func_t *)));
+    }
+#endif
+
+    ctx.parallel_for(n, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
+      (f_ptr)(i, nullptr, vals);
+    });
+    ctx.wait();
+
+    for (cs_lnum_t ii = 0; ii < n/10; ii++) {
+      std::cout << ii << " " << vals[ii] << std::endl;
+    }
+
+  }
+
+  ctx.wait();
+
+  CS_FREE(vals);
+}
+
+/*----------------------------------------------------------------------------*/
+
 int
 main(int argc, char *argv[])
 {
@@ -260,6 +349,7 @@ main(int argc, char *argv[])
 #endif
 
   _cs_dispatch_test();
+  _cs_dispatch_function_pointer_test();
 
   exit(EXIT_SUCCESS);
 }
