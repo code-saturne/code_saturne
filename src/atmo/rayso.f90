@@ -141,13 +141,6 @@ subroutine reftra  &
             gama2=0.d0
             gama3=0.5d0 * (1.d0-gas)
             gama4=0.5d0 * (1.d0+gas)
-            expmuo=dexp(tau/muzero_cor*(1.d0-gama1*muzero_cor))
-            exnmuo=dexp(-tau/muzero_cor*(1.d0+gama1*muzero_cor))
-
-            ref=gama3*pic*(1.d0-exnmuo)/(1.d0+gama1*muzero_cor)
-
-            tra= dexp(-tau/muzero_cor)*(1.d0-pic*gama4*expmuo &
-              /(1.d0-gama1*muzero_cor))
           else
             ! Joseph correction
             fas=gas*gas
@@ -157,30 +150,33 @@ subroutine reftra  &
 
             gama1=(1.d0-pic*(1.d0+gas)/2.d0)/mui
             gama2=pic*(1.d0-gas)/(2.d0*mui)
-            gama3=0.5d0*(1.d0 - 3.d0* gas*muzero_cor * mui)
-            gama4=0.5d0*(1.d0 + 3.d0* gas*muzero_cor * mui)
-            a1=gama1*gama4+gama2*gama3
-            a2=gama1*gama3+gama2*gama4
-
-            kt=dsqrt(gama1*gama1-gama2*gama2)
-            ktmu=kt*muzero_cor
-            tln=kt*tau
-            extlnp=dexp(tln)
-            extlnm=dexp(-tln)
-            expmuo=dexp(tau/muzero_cor)
-            exnmuo=dexp(-tau/muzero_cor)
-            drt=(1.d0-ktmu*ktmu)*((kt+gama1)*extlnp+(kt-gama1)*extlnm)
-
-            rnum=(1.d0-ktmu)*(a2+kt*gama3)*extlnp &
-               - (1.d0+ktmu)*(a2-kt*gama3)*extlnm &
-               - 2.d0*kt*(gama3-a2*muzero_cor) * exnmuo
-            ref=pic*rnum/drt
-
-            tnum=(1.d0+ktmu)*(a1+kt*gama4)*extlnp &
-                -(1.d0-ktmu)*(a1-kt*gama4)*extlnm &
-                -2.d0*kt*(gama4+a1*muzero_cor)*expmuo
-            tra=exnmuo*(1.d0-pic*tnum/drt)
+            ! FIXME LH74 suggests
+            ! gama3=0.5d0*(1.d0 - 3.d0* gas*muzero_cor * mui)
+            ! gama4=0.5d0*(1.d0 + 3.d0* gas*muzero_cor * mui)
+            gama3=0.5d0*(1.d0 - gas)
+            gama4=0.5d0*(1.d0 + gas)
           endif
+          a1=gama1*gama4+gama2*gama3
+          a2=gama1*gama3+gama2*gama4
+
+          kt=dsqrt(gama1*gama1-gama2*gama2)
+          ktmu=kt*muzero_cor
+          tln=kt*tau
+          extlnp=dexp(tln)
+          extlnm=dexp(-tln)
+          expmuo=dexp(tau/muzero_cor)
+          exnmuo=dexp(-tau/muzero_cor)
+          drt=(1.d0-ktmu*ktmu)*((kt+gama1)*extlnp+(kt-gama1)*extlnm)
+
+          rnum=(1.d0-ktmu)*(a2+kt*gama3)*extlnp &
+            - (1.d0+ktmu)*(a2-kt*gama3)*extlnm &
+            - 2.d0*kt*(gama3-a2*muzero_cor) * exnmuo
+          ref=pic*rnum/drt
+
+          tnum=(1.d0+ktmu)*(a1+kt*gama4)*extlnp &
+            -(1.d0-ktmu)*(a1-kt*gama4)*extlnm &
+            -2.d0*kt*(gama4+a1*muzero_cor)*expmuo
+          tra=exnmuo*(1.d0-pic*tnum/drt)
         endif
       endif
 
