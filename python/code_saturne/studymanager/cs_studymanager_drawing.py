@@ -621,11 +621,18 @@ class Plotter(object):
         nodes_list, files = self.parser.getMeasurement(study_label)
         for i in range(len(files)):
             nodes = nodes_list[i]
-            file  = files[i]
+            fi  = files[i]
             for node in nodes:
-                curve = Plot(node, self.parser, file)
-                curve.setMeasurement(True)
-                self.curves.append(curve)
+
+                if not os.path.isfile(fi):
+                    file_name = os.path.basename(fi)
+                    msg += "    This measurement file does not exist: %s \
+                                (last call with path: %s)\n" % (file_name, fi)
+
+                else:
+                    curve = Plot(node, self.parser, fi)
+                    curve.setMeasurement(True)
+                    self.curves.append(curve)
 
         # Read the files for probes
         for case in list_cases:
