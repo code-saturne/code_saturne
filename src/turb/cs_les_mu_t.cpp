@@ -1051,6 +1051,7 @@ cs_les_mu_t_tausgs(void)
   const cs_real_t ales = cs_turb_ales;
   const cs_real_t bles = cs_turb_bles;
   const cs_real_t csmago = cs_turb_csmago;
+  const cs_real_t xkappa = cs_turb_xkappa;
 
   cs_dispatch_context ctx;
 
@@ -1060,12 +1061,14 @@ cs_les_mu_t_tausgs(void)
   cs_real_t *visct =  CS_F_(mu_t)->val;
   const cs_real_t *crom  = CS_F_(rho)->val;
   cs_real_6_t *cvar_rij = (cs_real_6_t *)(CS_F_(rij)->val);
+  const cs_real_t *w_dist = cs_field_by_name("wall_distance")->val;
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
     /* Computation of (dynamic) viscosity */
 
-    const cs_real_t delta = xlesfl * pow(ales*cell_vol[c_id], bles);
+    const cs_real_t delta = xlesfl * cs::min(pow(ales*cell_vol[c_id], bles),
+                                             xkappa * w_dist[c_id]);
 
     cs_real_t tke = 0.5 * cs_math_6_trace(cvar_rij[c_id]);
     visct[c_id] = crom[c_id] * csmago * delta * sqrt(tke);

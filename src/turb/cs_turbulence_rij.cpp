@@ -3527,13 +3527,15 @@ cs_turbulence_rij(int phase_id)
     const cs_real_t ales = cs_turb_ales;
     const cs_real_t bles = cs_turb_bles;
     const cs_real_t xlesfl = cs_turb_xlesfl;
+    const cs_real_t xkappa = cs_turb_xkappa;
 
     const cs_real_t *cell_vol = fvq->cell_vol;
+    const cs_real_t *w_dist = cs_field_by_name("wall_distance")->val;
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       /* Calculation of epsilon */
 
-      const cs_real_t delta = xlesfl * pow(ales*cell_vol[c_id],
-                                           bles);
+      const cs_real_t delta = xlesfl * cs::min(pow(ales*cell_vol[c_id], bles),
+                                               xkappa * w_dist[c_id]);
       cs_real_t tke = 0.5 * cs_math_6_trace(cvar_rij[c_id]);
       cvar_ep[c_id] = pow(tke, 1.5) / delta; //TODO: add constant ?
     });
