@@ -3475,7 +3475,13 @@ cs_cdo_diffusion_sfb_cost_flux(short int                   f,
   /* Compute the product: matpty*face unit normal */
 
   cs_real_t  pty_nuf[3] = {0, 0, 0};
-  cs_math_33_3_product(pty->tensor, pfq.unitv, pty_nuf);
+  if (pty->need_tensor)
+    cs_math_33_3_product(pty->tensor, pfq.unitv, pty_nuf);
+  else {
+    pty_nuf[0] = pty->value * pfq.unitv[0];
+    pty_nuf[1] = pty->value * pfq.unitv[1];
+    pty_nuf[2] = pty->value * pfq.unitv[2];
+  }
 
   /* Define a cellwise constant and consistent gradient */
   /* -------------------------------------------------- */

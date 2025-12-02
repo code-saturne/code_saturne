@@ -30,6 +30,9 @@ Release 9.0.2 (unreleased)
 
 - Add C16H34 and C2H6O in JANAF.
 
+- Add the postprocessing of diffusive boundary fluxes stemming from a
+  Robin boundary condition in scalar-valued CDO face-based schemes
+
 ### Architectural changes:
 
 - Fix for detection of MUMPS v5.7 and above. With those versions, the
