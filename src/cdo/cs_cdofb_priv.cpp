@@ -157,7 +157,7 @@ cs_cdofb_set_advection_function(const cs_equation_param_t   *eqp,
     case CS_PARAM_ADVECTION_SCHEME_SG:
       {
         eqc->advection_scheme = cs_cdofb_advection_sgcsv;
-        eqb->msh_flag |= CS_FLAG_COMP_DIAM;
+        eqb->msh_flag |= CS_FLAG_COMP_DIAM | CS_FLAG_COMP_EV | CS_FLAG_COMP_FE;
       }
       break;
 
@@ -199,7 +199,7 @@ cs_cdofb_set_advection_function(const cs_equation_param_t   *eqp,
     case CS_PARAM_ADVECTION_SCHEME_SG:
       {
         eqc->advection_scheme = cs_cdofb_advection_sgnoc;
-        eqb->msh_flag |= CS_FLAG_COMP_DIAM;
+        eqb->msh_flag |= CS_FLAG_COMP_DIAM | CS_FLAG_COMP_EV | CS_FLAG_COMP_FE;
       }
       break;
 
