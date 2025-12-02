@@ -133,16 +133,11 @@ static const char _err_empty_eq[]
 /*----------------------------------------------------------------------------*/
 
 static inline void *
-_init_context_do_nothing(cs_equation_param_t   *eqp,
-                         int                    var_id,
-                         int                    bflux_id,
-                         cs_equation_builder_t *eqb)
+_init_context_do_nothing([[maybe_unused]] cs_equation_param_t   *eqp,
+                         [[maybe_unused]] int                    var_id,
+                         [[maybe_unused]] int                    bflux_id,
+                         [[maybe_unused]] cs_equation_builder_t *eqb)
 {
-  CS_NO_WARN_IF_UNUSED(eqp);
-  CS_NO_WARN_IF_UNUSED(var_id);
-  CS_NO_WARN_IF_UNUSED(bflux_id);
-  CS_NO_WARN_IF_UNUSED(eqb);
-
   return nullptr;
 }
 
