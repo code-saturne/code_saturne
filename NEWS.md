@@ -23,14 +23,22 @@ Release 9.0.2 (unreleased)
 - GUI: remove visualization of probes in salome context because the feature is
   currently not functional.
 
+- Fix missing flags when building a SG advection scheme in CDO-Fb
+  discretizations
+
 ### User changes:
 
 - Add C16H34 and C2H6O in JANAF.
+
+- Add the postprocessing of diffusive boundary fluxes stemming from a
+  Robin boundary condition in scalar-valued CDO face-based schemes
 
 ### Architectural changes:
 
 - Fix for detection of MUMPS v5.7 and above. With those versions, the
   `Makefile.inc` file is located in a `share` subdirectory.
+
+- Enable the auto-restart functionnality with CDO schemes
 
 Release 9.0.1 (2025-10-17)
 --------------------------

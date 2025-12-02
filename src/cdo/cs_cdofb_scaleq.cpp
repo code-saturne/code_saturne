@@ -2896,6 +2896,10 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t           *pot_f,
     cs_real_t *pot = nullptr;
     BFT_MALLOC(pot, connect->n_max_fbyc + 1, cs_real_t); /* +1 for cell */
 
+    cs_real_t *robin_values = nullptr;
+    BFT_MALLOC(robin_values, 3*connect->n_max_fbyc, cs_real_t);
+    memset(robin_values, 0, 3*connect->n_max_fbyc*sizeof(cs_real_t));
+
     /* Each thread get back its related structures:
        Get the cellwise view of the mesh and the algebraic system */
 
@@ -2954,6 +2958,29 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t           *pot_f,
                                           bflux + bf_id);
         } break;
 
+      case CS_CDO_BC_ROBIN:
+        { /* Set the local mesh structure for the current cell */
+
+          // FluxDiff = alpha * (u - u0) + beta => Set (alpha, u0, beta)
+
+          cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
+
+          const short int  f = cs_cell_mesh_get_f(f_id, cm);
+
+          // Retrieve the Robin coefficients
+          cs_equation_bc_cw_robin(cb->t_bc_eval,
+                                  face_bc->def_ids[bf_id],
+                                  f,
+                                  eqp,
+                                  cm,
+                                  robin_values);
+
+          const cs_real_t *rob_coefs = robin_values + 3*f;
+          bflux[bf_id] = cm->face[f].meas *
+            ( rob_coefs[0]*(pot_f[f_id] - rob_coefs[1]) + rob_coefs[2] );
+        }
+        break;
+
       default:
         { /* Reconstruct a normal flux at the boundary face */
 
@@ -2991,6 +3018,7 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t           *pot_f,
     } /* End of loop on boundary faces */
 
     BFT_FREE(pot);
+    BFT_FREE(robin_values);
 
     /* Set the diffusion property data back to the initial pointer */
 
