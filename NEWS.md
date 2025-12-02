@@ -23,6 +23,9 @@ Release 9.0.2 (unreleased)
 - GUI: remove visualization of probes in salome context because the feature is
   currently not functional.
 
+- Fix missing flags when building a SG advection scheme in CDO-Fb
+  discretizations
+
 ### User changes:
 
 - Add C16H34 and C2H6O in JANAF.
