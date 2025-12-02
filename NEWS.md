@@ -32,6 +32,8 @@ Release 9.0.2 (unreleased)
 - Fix for detection of MUMPS v5.7 and above. With those versions, the
   `Makefile.inc` file is located in a `share` subdirectory.
 
+- Enable the auto-restart functionnality with CDO schemes
+
 Release 9.0.1 (2025-10-17)
 --------------------------
 
