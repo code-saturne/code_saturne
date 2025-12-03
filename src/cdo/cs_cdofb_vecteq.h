@@ -474,6 +474,25 @@ cs_cdofb_vecteq_solve_theta(bool                        cur2prev,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the balance for an equation over the full computational
+ *         domain between time t_cur and t_cur + dt_cur
+ *         Case of vector-valued CDO face-based scheme
+ *
+ * \param[in]      eqp       pointer to a \ref cs_equation_param_t structure
+ * \param[in, out] eqb       pointer to a \ref cs_equation_builder_t structure
+ * \param[in, out] context   pointer to a scheme builder structure
+ *
+ * \return a pointer to a \ref cs_cdo_balance_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_cdo_balance_t *
+cs_cdofb_vecteq_balance(const cs_equation_param_t     *eqp,
+                        cs_equation_builder_t         *eqb,
+                        void                          *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Operate a current to previous operation for the field associated to
  *         this equation and potentially for related fields/arrays.
  *
