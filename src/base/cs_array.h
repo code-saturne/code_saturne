@@ -2824,7 +2824,7 @@ private:
   data_offset_
   (
     Args... indices /*!<[in] Input arguments (parameter pack) */
-  )
+  ) const
   {
     static_assert(sizeof...(Args) <= N && sizeof...(Args) > 0,
                   "Too many or too few input arguments.");
@@ -2853,7 +2853,7 @@ private:
   contiguous_data_offset_
   (
     Args... indices /*!<[in] Input arguments (parameter pack) */
-  )
+  ) const
   {
     static_assert(sizeof...(Args) <= N && sizeof...(Args) > 0,
                   "Too many or too few input arguments.");
