@@ -351,10 +351,9 @@ _smoothe(const cs_mesh_t              *m,
   const cs_equation_param_t *eqp_volf
     = cs_field_get_equation_param_const(CS_F_(void_f));
 
-  cs_real_t *xam, *dam, *smbdp;
-  CS_MALLOC_HD(xam, n_i_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(dam, n_cells, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(smbdp, n_cells_ext, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> xam(n_i_faces, cs_alloc_mode);
+  cs_array<cs_real_t> dam(n_cells, cs_alloc_mode);
+  cs_array<cs_real_t> smbdp(n_cells_ext, cs_alloc_mode);
 
   /* Prepare system to solve */
   /* Compute the gradient of "diffused void fraction" */
@@ -377,8 +376,7 @@ _smoothe(const cs_mesh_t              *m,
     }
   }
 
-  cs_real_3_t *grad;
-  CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+  cs_array_2d<cs_real_t> grad(n_cells_ext, 3, cs_alloc_mode);
 
   cs_gradient_scalar("pvar_grad",
                      gradient_type,
@@ -396,7 +394,7 @@ _smoothe(const cs_mesh_t              *m,
                      pvar,
                      gweight,
                      nullptr, /* internal coupling */
-                     grad);
+                     grad.data<cs_real_3_t>());
 
   constexpr cs_real_t c_1ov3 = 1. / 3.;
 
@@ -404,6 +402,7 @@ _smoothe(const cs_mesh_t              *m,
     smbdp[c_id] = 0.;
   });
 
+//  cs_real_3_t *_grad = grad.data<cs_real_3_t>();
   ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
     cs_lnum_t ii = i_face_cells[f_id][0];
     cs_lnum_t jj = i_face_cells[f_id][1];
@@ -424,8 +423,8 @@ _smoothe(const cs_mesh_t              *m,
     xam[f_id] = -visc_f;
 
     cs_real_t reconstr
-      = visc_f * (  cs_math_3_dot_product(diipf[f_id], grad[ii])
-                  - cs_math_3_dot_product(djjpf[f_id], grad[jj]));
+      = visc_f * (  cs_math_3_dot_product(diipf[f_id], grad.sub_array(ii))
+                  - cs_math_3_dot_product(djjpf[f_id], grad.sub_array(jj)));
 
     if (ii < n_cells)
       cs_dispatch_sum(&smbdp[ii], -reconstr, i_sum_type);
@@ -483,11 +482,11 @@ _smoothe(const cs_mesh_t              *m,
 
   ctx.wait();
 
-  CS_FREE(grad);
+  grad.clear(); /* Free memory now */
 
   /* FIXME: the following synchronization should not
      be needed, unless perhaps when using a native matrix format */
-  cs_halo_sync_var(m->halo, CS_HALO_STANDARD, smbdp);
+  cs_halo_sync_var(m->halo, CS_HALO_STANDARD, smbdp.data());
 
   /* SOLVE SYSTEM
      Linear system initialization is in nc_sles_default
@@ -500,7 +499,7 @@ _smoothe(const cs_mesh_t              *m,
 
   /* Linear system resolution */
   /* Get the residual normalization */
-  cs_real_t rnorm = cs_dot(n_cells, smbdp, smbdp);
+  cs_real_t rnorm = cs_dot(n_cells, smbdp.data(), smbdp.data());
 
   cs_parall_sum(1, CS_REAL_TYPE, &rnorm);
   rnorm = sqrt(rnorm); /* Residual normalization */
@@ -509,12 +508,12 @@ _smoothe(const cs_mesh_t              *m,
                        "ITM_diffusion_equation",
                        true,                   /* symmetric */
                        1, 1,                   /* diag/extradiag block size */
-                       dam, xam,
+                       dam.data(), xam.data(),
                        precision,
                        rnorm,
                        &n_equiv_iter,
                        &residual,
-                       smbdp,
+                       smbdp.data(),
                        pvar);                  /* Distance to the wall */
 
   /* Free solver setup and associated matrix. */
@@ -524,9 +523,6 @@ _smoothe(const cs_mesh_t              *m,
 
   cs_halo_sync_var(m->halo, CS_HALO_STANDARD, pvar);
 
-  CS_FREE(xam);
-  CS_FREE(dam);
-  CS_FREE(smbdp);
 }
 
 END_C_DECLS // Temporary used here for the templated function
@@ -1140,13 +1136,12 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
 
     /* (Absolute) Mass flux divergence */
 
-    cs_real_t *divro;
-    CS_MALLOC_HD(divro, n_cells_with_ghosts, cs_real_t, cs_alloc_mode);
+    cs_array<cs_real_t> divro(n_cells_with_ghosts);
     cs_divergence(m,
                   1, /* initialize to 0 */
                   i_massflux,
                   b_massflux,
-                  divro);
+                  divro.data());
 
     double glob_m_budget = 0.;
 
@@ -1168,7 +1163,6 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
                   _("   ** VOF model, mass balance: %12.4e\n\n"),
                   glob_m_budget);
 
-    CS_FREE(divro);
   }
 
 }
@@ -1211,8 +1205,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
 
   const cs_real_t cpro_surftens = _vof_parameters.sigma_s;
 
-  cs_real_t *pvar;
-  CS_MALLOC_HD(pvar, n_cells_ext, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> pvar(n_cells_ext);
 
   /* Boundary condition */
 
@@ -1252,12 +1245,12 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
 
   ctx.wait();
 
-  cs_halo_sync_var(m->halo, CS_HALO_STANDARD, pvar);
+  cs_halo_sync_var(m->halo, CS_HALO_STANDARD, pvar.data());
 
   /* Void fraction diffusion solving */
   int ncycles = 5;
   for (cs_lnum_t i = 0; i < ncycles; i++) {
-    _smoothe(m, mq, &bc_coeffs_loc, pvar);
+    _smoothe(m, mq, &bc_coeffs_loc, pvar.data());
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
       pvar[c_id] = (pvar[c_id] <= 0.001) ? 0. : pvar[c_id];
       pvar[c_id] = (pvar[c_id] >= 0.999) ? 1. : pvar[c_id];
@@ -1267,8 +1260,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
   }
 
   /* Compute the gradient of "diffused void fraction" */
-  cs_real_3_t *surfxyz_unnormed;
-  CS_MALLOC_HD(surfxyz_unnormed, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+  cs_array_2d<cs_real_t> surfxyz_unnormed(n_cells_ext, 3);
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
@@ -1302,21 +1294,20 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
                      eqp_volf->climgr,
                      nullptr,
                      &bc_coeffs_loc,
-                     pvar,
+                     pvar.data(),
                      gweight,
                      nullptr, /* internal coupling */
-                     surfxyz_unnormed);
+                     surfxyz_unnormed.data<cs_real_3_t>());
 
   /* Compute the norm of grad(alpha_diffu) */
-  cs_real_3_t *surfxyz_norm;
-  CS_MALLOC_HD(surfxyz_norm, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+  cs_array_2d<cs_real_t> surfxyz_norm(n_cells_ext, 3);
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
-    cs_real_t snorm = cs_math_3_norm(surfxyz_unnormed[c_id])+1.e-8;
+    cs_real_t snorm = cs_math_3_norm(surfxyz_unnormed.sub_array(c_id))+1.e-8;
     cs_real_t unsnorm = 1. / snorm;
 
     for (cs_lnum_t i = 0; i < 3; i++)
-      surfxyz_norm[c_id][i] = surfxyz_unnormed[c_id][i] * unsnorm;
+      surfxyz_norm(c_id, i) = surfxyz_unnormed(c_id, i) * unsnorm;
   });
 
   ctx.wait();
@@ -1326,18 +1317,17 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
     _contact_angle_correction<CS_VOF_CONTACT_ANGLE_STATIC>(m,
                                                            mq,
                                                            ctx,
-                                                           surfxyz_norm);
+                                                           surfxyz_norm.data<cs_real_3_t>());
   }
   else if (_contact_angle_choice == CS_VOF_CONTACT_ANGLE_DYN) {
     _contact_angle_correction<CS_VOF_CONTACT_ANGLE_DYN>(m,
                                                         mq,
                                                         ctx,
-                                                        surfxyz_norm);
+                                                        surfxyz_norm.data<cs_real_3_t>());
   }
 
   /* Curvature Computation */
-  cs_real_33_t *gradnxyz;
-  CS_MALLOC_HD(gradnxyz, n_cells_ext, cs_real_33_t, cs_alloc_mode);
+  cs_array_3d<cs_real_t> gradnxyz(n_cells_ext, 3, 3);
 
   cs_gradient_vector("grad_diff_void_grad",
                      gradient_type,
@@ -1349,10 +1339,10 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
                      eqp_volf->epsrgr,
                      eqp_volf->climgr,
                      &bc_coeffs_v_loc,
-                     surfxyz_norm,
+                     surfxyz_norm.data<cs_real_3_t>(),
                      gweight,
                      nullptr,
-                     gradnxyz);
+                     gradnxyz.data<cs_real_33_t>());
 
   /* Reconstructions for curvature computation */
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
@@ -1371,12 +1361,12 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
       cs_real_t gradf[3];
 
       for (cs_lnum_t k = 0; k < 3; k++) {
-        gradf[k] =         pond[face_id]  * surfxyz_norm[c_id][k]
-                   + (1. - pond[face_id]) * surfxyz_norm[c_id_adj][k];
+        gradf[k] =         pond[face_id]  * surfxyz_norm(c_id, k)
+                   + (1. - pond[face_id]) * surfxyz_norm(c_id_adj, k);
 
         for (cs_lnum_t l = 0; l < 3; l++)
           gradf[k] +=   0.5 * dofij[face_id][l]
-                      * (gradnxyz[c_id][k][l] + gradnxyz[c_id_adj][k][l]);
+                      * (gradnxyz(c_id, k, l) + gradnxyz(c_id_adj, k, l));
       }
 
       cs_real_t flux =   f_sgn * i_face_surf[face_id]
@@ -1387,17 +1377,13 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
 
     /* Compute volumic surface tension */
     for (cs_lnum_t i = 0; i < 3; i++) {
-      stf[c_id][i] = -cpro_surftens * surfxyz_unnormed[c_id][i] * curv;
+      stf[c_id][i] = -cpro_surftens * surfxyz_unnormed(c_id, i) * curv;
     }
 
   });
 
   ctx.wait();
 
-  CS_FREE(surfxyz_norm);
-  CS_FREE(surfxyz_unnormed);
-  CS_FREE(gradnxyz);
-  CS_FREE(pvar);
   CS_FREE(coefa);
   CS_FREE(coefb);
   CS_FREE(coefa_vec);
@@ -1471,14 +1457,13 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
   if (ipro_idriftf == nullptr)
     bft_error(__FILE__, __LINE__, 0,_("error drift velocity not defined\n"));
 
-  cs_real_3_t *voidf_grad;
-  CS_MALLOC_HD(voidf_grad, n_cells_with_ghosts, cs_real_3_t, cs_alloc_mode);
+  cs_array_2d<cs_real_t> voidf_grad(n_cells_with_ghosts, 3);
 
   /* Compute the gradient of the void fraction */
   cs_field_gradient_scalar(CS_F_(void_f),
                            true,           // use_previous_t
                            1,              // inc
-                           voidf_grad);
+                           voidf_grad.data<cs_real_3_t>());
 
   /* Stabilization factor */
   const cs_real_t delta = 1.e-8/pow(tot_vol/n_g_cells,(1./3.));
@@ -1511,8 +1496,8 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
     cs_real_t gradface[3], normalface[3];
 
     for (cs_lnum_t idim = 0; idim < 3; idim++)
-      gradface[idim] = 0.5 * (  voidf_grad[cell_id1][idim]
-                              + voidf_grad[cell_id2][idim]);
+      gradface[idim] = 0.5 * (  voidf_grad(cell_id1, idim)
+                              + voidf_grad(cell_id2, idim));
 
     cs_real_t normgrad = cs_math_3_norm(gradface);
 
@@ -1527,7 +1512,6 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
 
   ctx.wait();
 
-  CS_FREE(voidf_grad);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1805,15 +1789,13 @@ cs_vof_solve_void_fraction(int  iterns)
 
   /* Allocate temporary arrays */
 
-  cs_real_t *i_visc, *b_visc, *smbrs, *rovsdt;
-  CS_MALLOC_HD(rovsdt, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(smbrs, n_cells_ext, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> rovsdt(n_cells_ext);
+  cs_array<cs_real_t> i_visc(n_i_faces);
+  cs_array<cs_real_t> b_visc(n_b_faces);
+  cs_array<cs_real_t> smbrs(n_cells_ext);
 
   /* Allocate work arrays */
-  cs_real_t *dpvar;
-  CS_MALLOC_HD(dpvar, n_cells_ext, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> dpvar(n_cells_ext);
 
   /* Boundary conditions */
   cs_field_bc_coeffs_t *bc_coeffs_vof = volf2->bc_coeffs;
@@ -1944,22 +1926,23 @@ cs_vof_solve_void_fraction(int  iterns)
      not used in the source terms hereafter) */
 
   cs_field_t *vel_div = cs_field_by_name_try("algo:velocity_divergence");
-  cs_real_t *divu = nullptr, *_divu = nullptr;
+  cs_array<cs_real_t> divu;
   if (vel_div != nullptr)
-    divu = vel_div->val;
+    divu = cs_array<cs_real_t>(vel_div->val, n_cells_ext);
   else {
     /* Allocation */
-    CS_MALLOC_HD(_divu, n_cells_ext, cs_real_t, cs_alloc_mode);
-    divu = _divu;
+    divu.reshape(n_cells_ext);
   }
 
   cs_divergence(mesh,
                 1, /* init */
                 i_mass_flux_volf,
                 b_mass_flux_volf,
-                divu);
+                divu.data());
 
-  CS_FREE(_divu);
+  /* Free temporary memory now to reduce global overhead */
+  if (divu.owner())
+    divu.clear();
 
   /* Construct the system to solve
      ----------------------------- */
@@ -2020,7 +2003,7 @@ cs_vof_solve_void_fraction(int  iterns)
                       eqp_vol->climgr,
                       cvar_voidf,
                       cvara_voidf,
-                      smbrs);
+                      smbrs.data());
   }
 
   /* Solving
@@ -2052,16 +2035,16 @@ cs_vof_solve_void_fraction(int  iterns)
                                      cvara_voidf,
                                      bc_coeffs_vof,
                                      i_mass_flux_volf, b_mass_flux_volf,
-                                     i_visc, b_visc,
-                                     i_visc, b_visc,
+                                     i_visc.data(), b_visc.data(),
+                                     i_visc.data(), b_visc.data(),
                                      nullptr, /* viscel */
                                      nullptr, nullptr, /* weighf, weighb */
                                      icvflb,
                                      nullptr, /* icvfli */
-                                     rovsdt,
-                                     smbrs,
+                                     rovsdt.data(),
+                                     smbrs.data(),
                                      cvar_voidf,
-                                     dpvar,
+                                     dpvar.data(),
                                      nullptr,  /* xcpp */
                                      nullptr); /* eswork */
 
@@ -2148,13 +2131,6 @@ cs_vof_solve_void_fraction(int  iterns)
 
   }
 
-  /* Free memory */
-
-  CS_FREE(rovsdt);
-  CS_FREE(i_visc);
-  CS_FREE(b_visc);
-  CS_FREE(smbrs);
-  CS_FREE(dpvar);
 }
 
 /*----------------------------------------------------------------------------
