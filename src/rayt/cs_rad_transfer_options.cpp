@@ -349,8 +349,8 @@ cs_rad_transfer_log_setup(void)
 
     cs_log_printf
       (CS_LOG_SETUP,
-       _("    save_radiance_dir:       %b\n"),
-       cs_glob_rad_transfer_params->save_radiance_dir);
+       _("    save_radiance_dir:       %s\n"),
+       cs_glob_rad_transfer_params->save_radiance_dir ? "true" : "false");
 
   }
 
