@@ -2895,9 +2895,11 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t           *pot_f,
     cs_real_t *pot = nullptr;
     CS_MALLOC(pot, connect->n_max_fbyc + 1, cs_real_t); /* +1 for cell */
 
-    cs_real_t *robin_values = nullptr;
-    CS_MALLOC(robin_values, 3*connect->n_max_fbyc, cs_real_t);
-    memset(robin_values, 0, 3*connect->n_max_fbyc*sizeof(cs_real_t));
+    // 3 * n_fc is needed by Robin BCs and n_fc for Neumann BCs
+
+    cs_real_t *bc_values = nullptr;
+    CS_MALLOC(bc_values, 3*connect->n_max_fbyc, cs_real_t);
+    memset(bc_values, 0, 3*connect->n_max_fbyc*sizeof(cs_real_t));
 
     /* Each thread get back its related structures:
        Get the cellwise view of the mesh and the algebraic system */
@@ -2954,7 +2956,9 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t           *pot_f,
                                           f,
                                           eqp,
                                           cm,
-                                          bflux + bf_id);
+                                          bc_values);
+
+          bflux[bf_id] = bc_values[f];
         }
         break;
 
@@ -2973,9 +2977,9 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t           *pot_f,
                                   f,
                                   eqp,
                                   cm,
-                                  robin_values);
+                                  bc_values);
 
-          const cs_real_t *rob_coefs = robin_values + 3*f;
+          const cs_real_t *rob_coefs = bc_values + 3*f;
           bflux[bf_id] = cm->face[f].meas *
             ( rob_coefs[0]*(pot_f[f_id] - rob_coefs[1]) + rob_coefs[2] );
         }
@@ -3018,7 +3022,7 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t           *pot_f,
     } /* End of loop on boundary faces */
 
     CS_FREE(pot);
-    CS_FREE(robin_values);
+    CS_FREE(bc_values);
 
     /* Set the diffusion property data back to the initial pointer */
 
