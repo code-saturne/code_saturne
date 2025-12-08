@@ -2945,8 +2945,7 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t           *pot_f,
       case CS_CDO_BC_NEUMANN:
         { /* Set the local mesh structure for the current cell */
 
-          cs_cell_mesh_build(c_id, msh_flag | CS_FLAG_COMP_EV | CS_FLAG_COMP_FE,
-                             connect, quant, cm);
+          cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
 
           const short int  f = cs_cell_mesh_get_f(f_id, cm);
 
@@ -2964,8 +2963,7 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t           *pot_f,
 
           // FluxDiff = alpha * (u - u0) + beta => Set (alpha, u0, beta)
 
-          cs_cell_mesh_build(c_id, msh_flag | CS_FLAG_COMP_EV | CS_FLAG_COMP_FE,
-                             connect, quant, cm);
+          cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
 
           const short int  f = cs_cell_mesh_get_f(f_id, cm);
 
