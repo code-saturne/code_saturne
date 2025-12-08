@@ -292,21 +292,18 @@ cs_wall_distance(int iterns)
   /* Prepare system to solve
      ----------------------- */
 
-  cs_real_t *rhs, *rovsdt;
-  CS_MALLOC_HD(rovsdt, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(rhs, n_cells_ext, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> rovsdt(n_cells_ext);
+  cs_array<cs_real_t> rhs(n_cells_ext);
 
   /* Allocate temporary arrays for the species resolution */
-  cs_real_t *dpvar, *i_visc, *b_visc, *i_mass_flux, *b_mass_flux;
-  CS_MALLOC_HD(dpvar, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(i_mass_flux, n_i_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(b_mass_flux, n_b_faces, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> dpvar(n_cells_ext);
+  cs_array<cs_real_t> i_visc(n_i_faces);
+  cs_array<cs_real_t> b_visc(n_b_faces);
+  cs_array<cs_real_t> i_mass_flux(n_i_faces);
+  cs_array<cs_real_t> b_mass_flux(n_b_faces);
 
   /* Allocate work arrays */
-  cs_real_t *w1;
-  CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> w1(n_cells_ext);
 
   /* Initialize variables to avoid compiler warnings */
 
@@ -336,9 +333,9 @@ cs_wall_distance(int iterns)
   cs_face_viscosity(mesh,
                     mq,
                     eqp_wd->imvisf,
-                    w1,
-                    i_visc,
-                    b_visc);
+                    w1.data(),
+                    i_visc.data(),
+                    b_visc.data());
 
   /* Solve system
      ------------ */
@@ -371,17 +368,17 @@ cs_wall_distance(int iterns)
                                      &eqp_loc,
                                      wall_dist_pre, wall_dist_pre,
                                      bc_coeffs_wd,
-                                     i_mass_flux, b_mass_flux,
-                                     i_visc, b_visc,
-                                     i_visc, b_visc,
+                                     i_mass_flux.data(), b_mass_flux.data(),
+                                     i_visc.data(), b_visc.data(),
+                                     i_visc.data(), b_visc.data(),
                                      nullptr, /* viscel */
                                      nullptr, /* weightf */
                                      nullptr, /* weighb */
                                      icvflb,
                                      nullptr, /* icvfli */
-                                     rovsdt,
-                                     rhs,
-                                     wall_dist, dpvar,
+                                     rovsdt.data(),
+                                     rhs.data(),
+                                     wall_dist, dpvar.data(),
                                      nullptr, /* xcpp */
                                      nullptr); /* eswork */
 
@@ -463,17 +460,17 @@ cs_wall_distance(int iterns)
                                            &eqp_loc,
                                            wall_dist_pre, wall_dist_pre,
                                            bc_coeffs_wd,
-                                           i_mass_flux, b_mass_flux,
-                                           i_visc, b_visc,
-                                           i_visc, b_visc,
+                                           i_mass_flux.data(), b_mass_flux.data(),
+                                           i_visc.data(), b_visc.data(),
+                                           i_visc.data(), b_visc.data(),
                                            nullptr, /* viscel */
                                            nullptr, /* weightf */
                                            nullptr, /* weighb */
                                            icvflb,
                                            nullptr, /* icvfli */
-                                           rovsdt,
-                                           rhs,
-                                           wall_dist, dpvar,
+                                           rovsdt.data(),
+                                           rhs.data(),
+                                           wall_dist, dpvar.data(),
                                            nullptr, /* xcpp */
                                            nullptr); /* eswork */
 
@@ -540,15 +537,14 @@ cs_wall_distance(int iterns)
      ------------------------ */
 
   /* Allocate a temporary array for the gradient calculation */
-  cs_real_3_t *grad;
-  CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+  cs_array_2d<cs_real_t> grad(n_cells_ext, 3);
 
   /* Compute current gradient */
 
   cs_field_gradient_scalar(f_w_dist,
                            false,
                            1, /* inc */
-                           grad);
+                           grad.data<cs_real_3_t>());
 
   struct cs_data_1int_2float rd_1i_2r;
   struct cs_reduce_min1float_max1float_sum1int reducer_1i_2r;
@@ -559,7 +555,8 @@ cs_wall_distance(int iterns)
 
     res.i[0] = 0;
 
-    const cs_real_t norm_grad = cs_math_3_dot_product(grad[c_id], grad[c_id]);
+    const cs_real_t norm_grad = cs_math_3_dot_product(grad.sub_array(c_id),
+                                                      grad.sub_array(c_id));
 
     if (norm_grad + 2.0 * dpvar[c_id] >= 0.0)
       wall_dist[c_id] = sqrt(norm_grad + 2.0*dpvar[c_id]) - sqrt(norm_grad);
@@ -602,15 +599,6 @@ cs_wall_distance(int iterns)
      _dismin, _dismax);
 
   /* Free memory */
-  CS_FREE(grad);
-  CS_FREE(i_visc);
-  CS_FREE(b_visc);
-  CS_FREE(dpvar);
-  CS_FREE(rhs);
-  CS_FREE(i_mass_flux);
-  CS_FREE(b_mass_flux);
-  CS_FREE(rovsdt);
-  CS_FREE(w1);
   CS_FREE(info);
 }
 
@@ -762,16 +750,14 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
   }
 
   /* Allocate temporary arrays for the distance resolution */
-  cs_real_t *dvarp, *smbdp, *rovsdp, *dpvar, *viscap;
-  CS_MALLOC_HD(dvarp, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(smbdp, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(dpvar, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(rovsdp, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(viscap, n_cells_ext, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> dvarp(n_cells_ext);
+  cs_array<cs_real_t> smbdp(n_cells_ext);
+  cs_array<cs_real_t> dpvar(n_cells_ext);
+  cs_array<cs_real_t> rovsdp(n_cells_ext);
+  cs_array<cs_real_t> viscap(n_cells_ext);
 
-  cs_real_t *i_visc, *b_visc;
-  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> i_visc(n_i_faces);
+  cs_array<cs_real_t> b_visc(n_b_faces);
 
   /* Boundary conditions
      ------------------- */
@@ -853,9 +839,9 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
   cs_face_viscosity(mesh,
                     mq,
                     eqp_yp->imvisf,
-                    viscap,
-                    i_visc,
-                    b_visc);
+                    viscap.data(),
+                    i_visc.data(),
+                    b_visc.data());
 
   /* Compute convective mass flux
      here -div(1 grad(y)) */
@@ -882,7 +868,7 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
        &eqp_loc_div,
        0, // iphydr,
        nullptr, // f_ext
-       viscap,
+       viscap.data(),
        nullptr, // vitenp
        nullptr, // weighb
        w_dist,
@@ -897,7 +883,7 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
        &eqp_loc_div,
        0, // iphydr,
        nullptr, // f_ext
-       viscap,
+       viscap.data(),
        nullptr, // vitenp
        nullptr, // weighb
        w_dist,
@@ -917,8 +903,8 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
                               f_wall_dist->bc_coeffs,
                               val_f,
                               flux,
-                              i_visc, b_visc,
-                              viscap,
+                              i_visc.data(), b_visc.data(),
+                              viscap.data(),
                               i_mass_flux, b_mass_flux);
 
   cs_clear_bc_coeffs_solve(bc_coeffs_solve);
@@ -1024,8 +1010,8 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
 
   ctx.wait();
 
-  cs_halo_sync_var(halo, CS_HALO_STANDARD, rovsdp);
-  cs_halo_sync_var(halo, CS_HALO_STANDARD, dvarp);
+  cs_halo_sync_var(halo, CS_HALO_STANDARD, rovsdp.data());
+  cs_halo_sync_var(halo, CS_HALO_STANDARD, dvarp.data());
 
   /* Solving
      ------- */
@@ -1056,8 +1042,8 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
                                      0, /* No error estimate */
                                      xnorm0,
                                      &eqp_loc,
-                                     dvarp,
-                                     dvarp,
+                                     dvarp.data(),
+                                     dvarp.data(),
                                      bc_coeffs_yp,
                                      i_mass_flux, b_mass_flux,
                                      i_mass_flux, b_mass_flux,
@@ -1066,9 +1052,9 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
                                      nullptr,
                                      icvflb,
                                      nullptr,
-                                     rovsdp,
-                                     smbdp,
-                                     dvarp, dpvar,
+                                     rovsdp.data(),
+                                     smbdp.data(),
+                                     dvarp.data(), dpvar.data(),
                                      nullptr, nullptr);
 
   /* Warning: no diffusion so no need of other diffusive
@@ -1120,14 +1106,6 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
      dismin, dismax);
   }
 
-  /* Free memory */
-  CS_FREE(dvarp);
-  CS_FREE(smbdp);
-  CS_FREE(dpvar);
-  CS_FREE(i_visc);
-  CS_FREE(b_visc);
-  CS_FREE(rovsdp);
-  CS_FREE(viscap);
 }
 
 /*----------------------------------------------------------------------------*/
