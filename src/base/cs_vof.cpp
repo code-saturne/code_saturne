@@ -1136,7 +1136,7 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
 
     /* (Absolute) Mass flux divergence */
 
-    cs_array<cs_real_t> divro(n_cells_with_ghosts);
+    cs_array<cs_real_t> divro(n_cells_with_ghosts, cs_alloc_mode);
     cs_divergence(m,
                   1, /* initialize to 0 */
                   i_massflux,
@@ -1205,7 +1205,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
 
   const cs_real_t cpro_surftens = _vof_parameters.sigma_s;
 
-  cs_array<cs_real_t> pvar(n_cells_ext);
+  cs_array<cs_real_t> pvar(n_cells_ext, cs_alloc_mode);
 
   /* Boundary condition */
 
@@ -1260,7 +1260,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
   }
 
   /* Compute the gradient of "diffused void fraction" */
-  cs_array_2d<cs_real_t> surfxyz_unnormed(n_cells_ext, 3);
+  cs_array_2d<cs_real_t> surfxyz_unnormed(n_cells_ext, 3, cs_alloc_mode);
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
@@ -1300,7 +1300,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
                      surfxyz_unnormed.data<cs_real_3_t>());
 
   /* Compute the norm of grad(alpha_diffu) */
-  cs_array_2d<cs_real_t> surfxyz_norm(n_cells_ext, 3);
+  cs_array_2d<cs_real_t> surfxyz_norm(n_cells_ext, 3, cs_alloc_mode);
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
     cs_real_t snorm = cs_math_3_norm(surfxyz_unnormed.sub_array(c_id))+1.e-8;
@@ -1327,7 +1327,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
   }
 
   /* Curvature Computation */
-  cs_array_3d<cs_real_t> gradnxyz(n_cells_ext, 3, 3);
+  cs_array_3d<cs_real_t> gradnxyz(n_cells_ext, 3, 3, cs_alloc_mode);
 
   cs_gradient_vector("grad_diff_void_grad",
                      gradient_type,
@@ -1457,7 +1457,7 @@ cs_vof_deshpande_drift_flux(const cs_mesh_t             *m,
   if (ipro_idriftf == nullptr)
     bft_error(__FILE__, __LINE__, 0,_("error drift velocity not defined\n"));
 
-  cs_array_2d<cs_real_t> voidf_grad(n_cells_with_ghosts, 3);
+  cs_array_2d<cs_real_t> voidf_grad(n_cells_with_ghosts, 3, cs_alloc_mode);
 
   /* Compute the gradient of the void fraction */
   cs_field_gradient_scalar(CS_F_(void_f),
@@ -1789,13 +1789,13 @@ cs_vof_solve_void_fraction(int  iterns)
 
   /* Allocate temporary arrays */
 
-  cs_array<cs_real_t> rovsdt(n_cells_ext);
-  cs_array<cs_real_t> i_visc(n_i_faces);
-  cs_array<cs_real_t> b_visc(n_b_faces);
-  cs_array<cs_real_t> smbrs(n_cells_ext);
+  cs_array<cs_real_t> rovsdt(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> i_visc(n_i_faces, cs_alloc_mode);
+  cs_array<cs_real_t> b_visc(n_b_faces, cs_alloc_mode);
+  cs_array<cs_real_t> smbrs(n_cells_ext, cs_alloc_mode);
 
   /* Allocate work arrays */
-  cs_array<cs_real_t> dpvar(n_cells_ext);
+  cs_array<cs_real_t> dpvar(n_cells_ext, cs_alloc_mode);
 
   /* Boundary conditions */
   cs_field_bc_coeffs_t *bc_coeffs_vof = volf2->bc_coeffs;
@@ -1931,6 +1931,7 @@ cs_vof_solve_void_fraction(int  iterns)
     divu = cs_array<cs_real_t>(vel_div->val, n_cells_ext);
   else {
     /* Allocation */
+    divu.set_alloc_mode(cs_alloc_mode);
     divu.reshape(n_cells_ext);
   }
 

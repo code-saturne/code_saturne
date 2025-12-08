@@ -292,18 +292,18 @@ cs_wall_distance(int iterns)
   /* Prepare system to solve
      ----------------------- */
 
-  cs_array<cs_real_t> rovsdt(n_cells_ext);
-  cs_array<cs_real_t> rhs(n_cells_ext);
+  cs_array<cs_real_t> rovsdt(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> rhs(n_cells_ext, cs_alloc_mode);
 
   /* Allocate temporary arrays for the species resolution */
-  cs_array<cs_real_t> dpvar(n_cells_ext);
-  cs_array<cs_real_t> i_visc(n_i_faces);
-  cs_array<cs_real_t> b_visc(n_b_faces);
-  cs_array<cs_real_t> i_mass_flux(n_i_faces);
-  cs_array<cs_real_t> b_mass_flux(n_b_faces);
+  cs_array<cs_real_t> dpvar(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> i_visc(n_i_faces, cs_alloc_mode);
+  cs_array<cs_real_t> b_visc(n_b_faces, cs_alloc_mode);
+  cs_array<cs_real_t> i_mass_flux(n_i_faces, cs_alloc_mode);
+  cs_array<cs_real_t> b_mass_flux(n_b_faces, cs_alloc_mode);
 
   /* Allocate work arrays */
-  cs_array<cs_real_t> w1(n_cells_ext);
+  cs_array<cs_real_t> w1(n_cells_ext, cs_alloc_mode);
 
   /* Initialize variables to avoid compiler warnings */
 
@@ -537,7 +537,7 @@ cs_wall_distance(int iterns)
      ------------------------ */
 
   /* Allocate a temporary array for the gradient calculation */
-  cs_array_2d<cs_real_t> grad(n_cells_ext, 3);
+  cs_array_2d<cs_real_t> grad(n_cells_ext, 3, cs_alloc_mode);
 
   /* Compute current gradient */
 
@@ -750,14 +750,14 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
   }
 
   /* Allocate temporary arrays for the distance resolution */
-  cs_array<cs_real_t> dvarp(n_cells_ext);
-  cs_array<cs_real_t> smbdp(n_cells_ext);
-  cs_array<cs_real_t> dpvar(n_cells_ext);
-  cs_array<cs_real_t> rovsdp(n_cells_ext);
-  cs_array<cs_real_t> viscap(n_cells_ext);
+  cs_array<cs_real_t> dvarp(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> smbdp(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> dpvar(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> rovsdp(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> viscap(n_cells_ext, cs_alloc_mode);
 
-  cs_array<cs_real_t> i_visc(n_i_faces);
-  cs_array<cs_real_t> b_visc(n_b_faces);
+  cs_array<cs_real_t> i_visc(n_i_faces, cs_alloc_mode);
+  cs_array<cs_real_t> b_visc(n_b_faces, cs_alloc_mode);
 
   /* Boundary conditions
      ------------------- */
