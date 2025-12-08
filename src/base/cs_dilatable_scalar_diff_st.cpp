@@ -126,12 +126,11 @@ cs_dilatable_scalar_diff_st(int iterns)
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
 
   /* Memory allocation */
-  cs_real_t *vistot, *i_visc, *b_visc, *xcpp;
-  CS_MALLOC_HD(vistot, n_cells_ext, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> vistot(n_cells_ext, cs_alloc_mode);
 
-  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(xcpp, n_cells_ext, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> i_visc(n_i_faces, cs_alloc_mode);
+  cs_array<cs_real_t> b_visc(n_b_faces, cs_alloc_mode);
+  cs_array<cs_real_t> xcpp(n_cells_ext, cs_alloc_mode);
 
   const cs_real_t *cpro_cp = nullptr;
   if (icp >= 0)
@@ -170,12 +169,12 @@ cs_dilatable_scalar_diff_st(int iterns)
     const int imucpp = (iscacp == 1) ? 1 : 0;
 
     if (imucpp == 0)
-      cs_array_real_set_scalar(n_cells, 1.0, xcpp);
+      xcpp.set_to_val(1.0, n_cells);
     else if (imucpp == 1) { // TODO: humid air
 
       if (icp >= 0) {
         if (iscacp == 1)
-          cs_array_real_copy(n_cells, cpro_cp, xcpp);
+          xcpp.copy_data((cs_real_t *)cpro_cp, n_cells);
         else if (iscacp == 2) {
 #         pragma omp parallel for if (n_cells > CS_THR_MIN)
           for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
@@ -184,15 +183,15 @@ cs_dilatable_scalar_diff_st(int iterns)
       }
       else {
         if (iscacp == 1)
-          cs_array_real_set_scalar(n_cells, cp0, xcpp);
+          xcpp.set_to_val(cp0, n_cells);
         else if (iscacp == 2)
-          cs_array_real_set_scalar(n_cells, cp0-rair, xcpp);
+          xcpp.set_to_val(cp0-rair, n_cells);
       }
     }
 
     /* Handle parallelism and periodicity */
     if (mesh->halo != nullptr) {
-      cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, xcpp);
+      cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, xcpp.data());
     }
 
     cs_equation_param_t *eqp_sc = cs_field_get_equation_param(f_scal);
@@ -243,15 +242,15 @@ cs_dilatable_scalar_diff_st(int iterns)
       cs_face_viscosity(mesh,
                         fvq,
                         eqp_sc->imvisf,
-                        vistot,
-                        i_visc,
-                        b_visc);
+                        vistot.data(),
+                        i_visc.data(),
+                        b_visc.data());
 
     }
     else {
-      cs_array_real_fill_zero(n_i_faces, i_visc);
-      cs_array_real_fill_zero(n_b_faces, b_visc);
-      cs_array_real_fill_zero(n_cells, vistot);
+      i_visc.zero();
+      b_visc.zero();
+      vistot.zero();
     }
 
     /* Source term */
@@ -293,9 +292,9 @@ cs_dilatable_scalar_diff_st(int iterns)
                       bc_coeffs_sc->val_f,
                       bc_coeffs_sc->flux,
                       i_mass_flux, b_mass_flux,
-                      i_visc, b_visc,
+                      i_visc.data(), b_visc.data(),
                       nullptr,  /* viscel */
-                      xcpp,
+                      xcpp.data(),
                       nullptr,  /* weighf */
                       nullptr,  /* weighb */
                       0,     /* icvflb; upwind scheme */
@@ -303,12 +302,6 @@ cs_dilatable_scalar_diff_st(int iterns)
                       cpro_tsscal);
   } /* end loop on fields */
 
-  /* Free memory */
-  CS_FREE(i_visc);
-  CS_FREE(b_visc);
-  CS_FREE(xcpp);
-
-  CS_FREE(vistot);
 }
 
 /*---------------------------------------------------------------------------- */

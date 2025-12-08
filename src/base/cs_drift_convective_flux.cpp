@@ -232,8 +232,6 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
   /* Mass fraction of gas */
   cs_field_t *f_xc = cs_field_by_name_try("x_c");
   cs_real_t *x1 = nullptr, *b_x1 = nullptr;
-  cs_real_t *i_mass_flux_gas = nullptr;
-  cs_real_t *b_mass_flux_gas = nullptr;
 
   if (f_xc != nullptr) {
     x1 = f_xc->val;
@@ -273,11 +271,9 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
   /* Vector containing all the additional convective terms */
 
-  cs_real_t *w1, *viscce;
-  cs_real_3_t *dudt;
-  CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(viscce, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(dudt, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+  cs_array<cs_real_t> w1(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> viscce(n_cells_ext, cs_alloc_mode);
+  cs_array_2d<cs_real_t> dudt(n_cells_ext, 3, cs_alloc_mode);
 
   cs_field_bc_coeffs_t bc_coeffs_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_loc);
@@ -299,16 +295,14 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
   cs_real_3_t  *coefa1 = (cs_real_3_t  *)bc_coeffs1_loc.a;
   cs_real_33_t *coefb1 = (cs_real_33_t *)bc_coeffs1_loc.b;
 
-  cs_real_t *i_visc, *flumas;
-  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(flumas, n_i_faces, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> i_visc(n_i_faces, cs_alloc_mode);
+  cs_array<cs_real_t> flumas(n_i_faces, cs_alloc_mode);
 
-  cs_real_t *b_visc, *flumab;
-  CS_MALLOC_HD(flumab, n_b_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> flumab(n_b_faces, cs_alloc_mode);
+  cs_array<cs_real_t> b_visc(n_b_faces, cs_alloc_mode);
 
-  CS_MALLOC_HD(i_mass_flux_gas, n_i_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(b_mass_flux_gas, n_b_faces, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> i_mass_flux_gas(n_i_faces, cs_alloc_mode);
+  cs_array<cs_real_t> b_mass_flux_gas(n_b_faces, cs_alloc_mode);
 
   cs_dispatch_context ctx;
 
@@ -364,8 +358,8 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
        it is initialized by the mass flux of the bulk */
 
     if (icla == 1 && f_xc != nullptr) {
-      cs_array_copy(n_i_faces, i_mass_flux_mix, i_mass_flux_gas);
-      cs_array_copy(n_b_faces, b_mass_flux_mix, b_mass_flux_gas);
+      i_mass_flux_gas.copy_data(ctx, i_mass_flux_mix, n_i_faces);
+      b_mass_flux_gas.copy_data(ctx, b_mass_flux_mix, n_b_faces);
     }
     /* Initialize the additional convective flux with the gravity term
        --------------------------------------------------------------- */
@@ -472,17 +466,17 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
         || (iscdri & CS_DRIFT_SCALAR_THERMOPHORESIS)) {
 
       /* Face diffusivity of rho to compute rho*(Grad K . n)_face */
-      cs_array_copy(n_cells, crom, w1);
+      w1.copy_data(ctx, (cs_real_t *)crom, n_cells);
 
       if (mesh->halo != nullptr)
-        cs_halo_sync(mesh->halo, CS_HALO_STANDARD, ctx.use_gpu(), w1);
+        cs_halo_sync(mesh->halo, CS_HALO_STANDARD, ctx.use_gpu(), w1.data());
 
       cs_face_viscosity(mesh,
                         fvq,
                         eqp_sc->imvisf,
-                        w1,
-                        i_visc,
-                        b_visc);
+                        w1.data(),
+                        i_visc.data(),
+                        b_visc.data());
 
       /* Homogeneous Neumann BC */
       {
@@ -525,10 +519,10 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
            &eqp_loc,
            false,   // hyd_p_flag
            nullptr, // f_ext
-           w1,
+           w1.data(),
            nullptr, // vitenp
            nullptr, // weighb
-           viscce,
+           viscce.data(),
            val_f,
            flux);
       else {
@@ -540,10 +534,10 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
            &eqp_loc,
            false,   // hyd_p_flag
            nullptr, // f_ext
-           w1,
+           w1.data(),
            nullptr, // vitenp
            nullptr, // weighb
-           viscce,
+           viscce.data(),
            val_f,
            flux);
       }
@@ -556,13 +550,13 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
                                   1, /* inc */
                                   0, /* iphydr */
                                   nullptr, /* frcxt */
-                                  viscce,
+                                  viscce.data(),
                                   &bc_coeffs_loc,
                                   val_f,
                                   flux,
-                                  i_visc, b_visc,
-                                  w1,
-                                  flumas, flumab);
+                                  i_visc.data(), b_visc.data(),
+                                  w1.data(),
+                                  flumas.data(), flumab.data());
 
       cs_clear_bc_coeffs_solve(bc_coeffs_solve);
 
@@ -578,9 +572,9 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         const cs_real_t rhovdt = crom[c_id] * cell_vol[c_id] / dt[c_id];
 
-        dudt[c_id][0] = - rhovdt * (vel[c_id][0]-vel_pre[c_id][0]);
-        dudt[c_id][1] = - rhovdt * (vel[c_id][1]-vel_pre[c_id][1]);
-        dudt[c_id][2] = - rhovdt * (vel[c_id][2]-vel_pre[c_id][2]);
+        dudt(c_id, 0) = - rhovdt * (vel[c_id][0]-vel_pre[c_id][0]);
+        dudt(c_id, 1) = - rhovdt * (vel[c_id][1]-vel_pre[c_id][1]);
+        dudt(c_id, 2) = - rhovdt * (vel[c_id][2]-vel_pre[c_id][2]);
       });
 
       /* Reset i_visc and b_visc */
@@ -624,25 +618,25 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
                         (cs_real_3_t *)bc_coeffs_vel->val_f,
                         (cs_real_3_t *)bc_coeffs_vel->flux,
                         i_mass_flux_mix, b_mass_flux_mix,
-                        i_visc, b_visc,
+                        i_visc.data(), b_visc.data(),
                         nullptr, nullptr, /* secvif, secvib */
                         nullptr, nullptr, nullptr,
                         0, nullptr, /* icvflb, icvfli */
                         nullptr, nullptr,
-                        dudt);
+                        dudt.data<cs_real_3_t>());
 
       /* Warning: cs_balance_vector adds "-( grad(u) . rho u)" */
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
         cpro_drift[c_id][0] =   cpro_drift[c_id][0]
-                              + cpro_taup[c_id]*dudt[c_id][0]/cell_vol[c_id];
+                              + cpro_taup[c_id]*dudt(c_id, 0)/cell_vol[c_id];
 
         cpro_drift[c_id][1] =   cpro_drift[c_id][1]
-                              + cpro_taup[c_id]*dudt[c_id][1]/cell_vol[c_id];
+                              + cpro_taup[c_id]*dudt(c_id, 1)/cell_vol[c_id];
 
         cpro_drift[c_id][2] =   cpro_drift[c_id][2]
-                              + cpro_taup[c_id]*dudt[c_id][2]/cell_vol[c_id];
+                              + cpro_taup[c_id]*dudt(c_id, 2)/cell_vol[c_id];
 
       });
 
@@ -728,7 +722,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
                    crom, brom,
                    cpro_drift,
                    &bc_coeffs1_loc,
-                   flumas, flumab);
+                   flumas.data(), flumab.data());
 
       /* Update the convective flux, exception for the Gas "class" */
       ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
@@ -855,14 +849,13 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
     }
     ctx.wait();
 
-    cs_real_t *divflu;
-    CS_MALLOC_HD(divflu, n_cells_ext, cs_real_t, cs_alloc_mode);
+    cs_array<cs_real_t> divflu(n_cells_ext, cs_alloc_mode);
 
     cs_divergence(mesh,
                   1, /* init */
-                  flumas,
-                  flumab,
-                  divflu);
+                  flumas.data(),
+                  flumab.data(),
+                  divflu.data());
 
     const int iconvp = eqp_sc->iconv;
 
@@ -892,19 +885,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
     ctx.wait();
 
     /* Free memory */
-    CS_FREE(divflu);
   }
-
-  CS_FREE(viscce);
-  CS_FREE(dudt);
-  CS_FREE(w1);
-  CS_FREE(i_visc);
-  CS_FREE(b_visc);
-  CS_FREE(flumas);
-  CS_FREE(flumab);
-
-  CS_FREE(i_mass_flux_gas);
-  CS_FREE(b_mass_flux_gas);
 
   CS_FREE(coefap);
   CS_FREE(coefbp);
