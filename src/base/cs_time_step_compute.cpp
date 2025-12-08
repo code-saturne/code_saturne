@@ -199,10 +199,9 @@ cs_local_time_step_compute(int  itrale)
 
   /* Allocate temporary arrays for the time-step resolution */
 
-  cs_real_t *i_visc, *b_visc, *dam;
-  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, amode);
-  CS_MALLOC_HD(dam, n_cells_ext, cs_real_t, amode);
-  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, amode);
+  cs_array<cs_real_t> i_visc(n_i_faces, amode);
+  cs_array<cs_real_t> dam(n_cells_ext, amode);
+  cs_array<cs_real_t> b_visc(n_b_faces, amode);
 
   cs_field_bc_coeffs_t bc_coeffs_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_loc);
@@ -213,15 +212,16 @@ cs_local_time_step_compute(int  itrale)
   cs_real_t *cofbft = bc_coeffs_loc.bf;
 
   /* Allocate other arrays, depending on user options */
-  cs_real_t *wcf = nullptr;
-  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)
-    CS_MALLOC_HD(wcf, n_cells_ext, cs_real_t, amode);
+  cs_array<cs_real_t> wcf;
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0) {
+    wcf.set_alloc_mode(amode);
+    wcf.reshape(n_cells_ext);
+  }
 
   /* Allocate work arrays */
-  cs_real_t *w1, *w2, *w3;
-  CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, amode);
-  CS_MALLOC_HD(w2, n_cells_ext, cs_real_t, amode);
-  CS_MALLOC_HD(w3, n_cells_ext, cs_real_t, amode);
+  cs_array<cs_real_t> w1(n_cells_ext, amode);
+  cs_array<cs_real_t> w2(n_cells_ext, amode);
+  cs_array<cs_real_t> w3(n_cells_ext, amode);
 
   const cs_real_t *viscl = CS_F_(mu)->val;
   const cs_real_t *visct = CS_F_(mu_t)->val;
@@ -233,7 +233,7 @@ cs_local_time_step_compute(int  itrale)
      ------------------------------------------------ */
 
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)
-    cs_cf_cfl_compute(wcf);
+    cs_cf_cfl_compute(wcf.data());
 
   /* Compute the diffusivity at the faces
      ------------------------------------ */
@@ -248,9 +248,9 @@ cs_local_time_step_compute(int  itrale)
     cs_face_viscosity(mesh,
                       fvq,
                       eqp_vel->imvisf,
-                      w1,
-                      i_visc,
-                      b_visc);
+                      w1.data(),
+                      i_visc.data(),
+                      b_visc.data());
   }
   else {
     ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
@@ -394,9 +394,9 @@ cs_local_time_step_compute(int  itrale)
                             &bc_coeffs_loc,
                             i_mass_flux_vel,
                             b_mass_flux_vel,
-                            i_visc,
-                            b_visc,
-                            dam);
+                            i_visc.data(),
+                            b_visc.data(),
+                            dam.data());
 
         /* Compute w1 = time step verifying CFL constraint given by the user */
 
@@ -415,9 +415,9 @@ cs_local_time_step_compute(int  itrale)
                               &bc_coeffs_loc,
                               i_mass_flux_volf,
                               b_mass_flux_volf,
-                              i_visc,
-                              b_visc,
-                              dam);
+                              i_visc.data(),
+                              b_visc.data(),
+                              dam.data());
 
           /* Compute w1 = time step verifying CFL constraint
              given by the user */
@@ -483,9 +483,9 @@ cs_local_time_step_compute(int  itrale)
                             &bc_coeffs_loc,
                             i_mass_flux_vel,
                             b_mass_flux_vel,
-                            i_visc,
-                            b_visc,
-                            dam);
+                            i_visc.data(),
+                            b_visc.data(),
+                            dam.data());
 
         const cs_real_t foumax = cs_glob_time_step_options->foumax;
 
@@ -839,7 +839,7 @@ cs_local_time_step_compute(int  itrale)
                                  CS_MESH_LOCATION_CELLS,
                                  true,
                                  1,
-                                 w2);
+                                 w2.data());
 
       if (eqp_p->verbosity >= 2) {
 
@@ -918,8 +918,8 @@ cs_local_time_step_compute(int  itrale)
                         &bc_coeffs_loc,
                         i_mass_flux_vel,
                         b_mass_flux_vel,
-                        i_visc,
-                        b_visc,
+                        i_visc.data(),
+                        b_visc.data(),
                         dt);
 
     const cs_real_t relaxv = eqp_vel->relaxv;
@@ -933,15 +933,6 @@ cs_local_time_step_compute(int  itrale)
   ctx.wait();
 
   /* Free memory */
-  CS_FREE(i_visc);
-  CS_FREE(b_visc);
-  CS_FREE(w1);
-
-  CS_FREE(dam);
-  CS_FREE(wcf);
-  CS_FREE(w2);
-  CS_FREE(w3);
-
   CS_FREE(bc_coeffs_loc.b);
   CS_FREE(bc_coeffs_loc.bf);
 }
@@ -1033,10 +1024,9 @@ cs_courant_fourier_compute(void)
   }
 
   /* Allocate temporary arrays for the time-step resolution */
-  cs_real_t *i_visc, *b_visc, *dam;
-  CS_MALLOC_HD(i_visc, n_i_faces, cs_real_t, amode);
-  CS_MALLOC_HD(b_visc, n_b_faces, cs_real_t, amode);
-  CS_MALLOC_HD(dam, n_cells_ext, cs_real_t, amode);
+  cs_array<cs_real_t> i_visc(n_i_faces, amode);
+  cs_array<cs_real_t> b_visc(n_b_faces, amode);
+  cs_array<cs_real_t> dam(n_cells_ext, amode);
 
   cs_field_bc_coeffs_t bc_coeffs_loc;
   cs_field_bc_coeffs_init(&bc_coeffs_loc);
@@ -1047,8 +1037,7 @@ cs_courant_fourier_compute(void)
   cs_real_t *cofbft = bc_coeffs_loc.bf;
 
   /* Allocate work arrays */
-  cs_real_t *w1;
-  CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, amode);
+  cs_array<cs_real_t> w1(n_cells_ext, amode);
 
   const cs_real_t *viscl = CS_F_(mu)->val;
   const cs_real_t *visct = CS_F_(mu_t)->val;
@@ -1076,9 +1065,9 @@ cs_courant_fourier_compute(void)
     cs_face_viscosity(mesh,
                       fvq,
                       eqp_vel->imvisf,
-                      w1,
-                      i_visc,
-                      b_visc);
+                      w1.data(),
+                      i_visc.data(),
+                      b_visc.data());
   }
   else {
     ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
@@ -1160,7 +1149,7 @@ cs_courant_fourier_compute(void)
                         "FOURIER", "COURANT/FOURIER"};
 
   cs_real_t *cpro_tab_list[4] = {courant_number, vol_courant_number,
-                                 fourier_number, w1};
+                                 fourier_number, w1.data()};
 
   for (int i = 0; i < 4; i++) {
 
@@ -1182,9 +1171,9 @@ cs_courant_fourier_compute(void)
                         &bc_coeffs_loc,
                         i_mass_flux,
                         b_mass_flux,
-                        i_visc,
-                        b_visc,
-                        dam);
+                        i_visc.data(),
+                        b_visc.data(),
+                        dam.data());
 
     cs_real_t *cpro_tab = cpro_tab_list[i];
 
@@ -1284,11 +1273,6 @@ cs_courant_fourier_compute(void)
   }
 
   /* Free memory */
-  CS_FREE(w1);
-  CS_FREE(i_visc);
-  CS_FREE(b_visc);
-
-  CS_FREE(dam);
   CS_FREE(bc_coeffs_loc.b);
   CS_FREE(bc_coeffs_loc.bf);
 }
