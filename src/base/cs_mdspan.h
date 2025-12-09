@@ -884,7 +884,7 @@ private:
   data_offset_
   (
     Args... indices /*!<[in] Input arguments (parameter pack) */
-  )
+  ) const
   {
     static_assert(sizeof...(Args) <= N && sizeof...(Args) > 0,
                   "Number of indices is out of bounds");
@@ -913,7 +913,7 @@ private:
   contiguous_data_offset_
   (
     Args... indices /*!<[in] Input arguments (parameter pack) */
-  )
+  ) const
   {
     static_assert(sizeof...(Args) <= N && sizeof...(Args) > 0,
                   "Number of indices is out of bounds");
