@@ -128,39 +128,33 @@ _vort_trace(cs_real_t   vort[],
 
   /* Allocate a temporary for the gradient calculation */
 
-  cs_real_33_t *grad_vel;
-  CS_MALLOC_HD(grad_vel, n_cells_ext, cs_real_33_t, cs_alloc_mode);
+  cs_array_3d<cs_real_t> grad_vel(n_cells_ext, 3, 3, cs_alloc_mode);
 
   cs_field_gradient_vector(CS_F_(vel),
                            true, // use_previous_t
                            1,    // inc
-                           grad_vel);
+                           grad_vel.data<cs_real_33_t>());
 
   for (cs_lnum_t i = 0; i < n_cells; i++) {
 
-    vort[i] =   cs_math_pow2(grad_vel[i][0][1] - grad_vel[i][1][0])
-              + cs_math_pow2(grad_vel[i][0][2] - grad_vel[i][2][0])
-              + cs_math_pow2(grad_vel[i][1][2] - grad_vel[i][2][1]);
+    vort[i] =   cs_math_pow2(grad_vel(i, 0, 1) - grad_vel(i, 1, 0))
+              + cs_math_pow2(grad_vel(i, 0, 2) - grad_vel(i, 2, 0))
+              + cs_math_pow2(grad_vel(i, 1, 2) - grad_vel(i, 2, 1));
 
-    tr_gr_u[i] = grad_vel[i][0][0] + grad_vel[i][1][1] + grad_vel[i][2][2];
+    tr_gr_u[i] = grad_vel(i, 0, 0) + grad_vel(i, 1, 1) + grad_vel(i, 2, 2);
 
   }
 
-  CS_FREE(grad_vel);
-
-  cs_real_3_t *grad_nu;
-  CS_MALLOC_HD(grad_nu, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+  cs_array_2d<cs_real_t> grad_nu(n_cells_ext, 3, cs_alloc_mode);
 
   cs_field_gradient_scalar(CS_F_(nusa),
                            true,   /* use_previous_t */
                            1,      /* inc */
-                           grad_nu);
+                           grad_nu.data<cs_real_3_t>());
 
   for (cs_lnum_t i = 0; i < n_cells; i++) {
-    tr_gr_nu[i] = cs_math_3_square_norm(grad_nu[i]);
+    tr_gr_nu[i] = cs_math_3_square_norm(grad_nu.sub_array(i));
   }
-
-  CS_FREE(grad_nu);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -237,24 +231,20 @@ _src_terms(const cs_real_t    dt[],
   /* Take into account the Spalart-Shur rotation/curvature correction,
      if necessary
      => variable production term coefficient (csab1) */
-  cs_real_t *csab1r;
-  CS_MALLOC(csab1r, n_cells, cs_real_t);
+  cs_array<cs_real_t> csab1r(n_cells);
 
   if (cs_glob_turb_rans_model->irccor == 1) {
-    cs_real_t *w1;
-    CS_MALLOC(w1, n_cells_ext, cs_real_t);
+    cs_array<cs_real_t> w1(n_cells_ext);
 
     /* Compute the rotation function (w1 array not used) */
-    cs_turbulence_rotation_correction(dt, csab1r, w1);
+    cs_turbulence_rotation_correction(dt, csab1r.data(), w1.data());
 
     for (cs_lnum_t i = 0; i < n_cells; i++) {
       csab1r[i] *= cs_turb_csab1;
     }
-
-    CS_FREE(w1);
   }
   else {
-    cs_array_real_set_scalar(n_cells, cs_turb_csab1, csab1r);
+    csab1r.set_to_val(cs_turb_csab1, n_cells);
   }
 
   /* To avoid numerical problem, constant used to prevent taussa from
@@ -336,7 +326,6 @@ _src_terms(const cs_real_t    dt[],
 
   }
 
-  CS_FREE(csab1r);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -456,22 +445,20 @@ cs_turbulence_sa(void)
   cs_real_t *cvar_nusa = CS_F_(nusa)->val;
   cs_real_t *cvara_nusa = CS_F_(nusa)->val_pre;
 
-  cs_real_t *vort;      /* vorticity omega*/
-  cs_real_t *tr_gr_u;   /* trace of the velocity gradient */
-  cs_real_t *tr_gr_nu;  /* trace of the gradient of field nusa */
+  /* vorticity omega*/
+  cs_array<cs_real_t> vort(n_cells_ext, cs_alloc_mode);
+  /* trace of the velocity gradient */
+  cs_array<cs_real_t> tr_gr_u(n_cells_ext, cs_alloc_mode);
+  /* trace of the gradient of field nusa */
+  cs_array<cs_real_t> tr_gr_nu(n_cells_ext, cs_alloc_mode);
 
-  cs_real_t *imp_sa, *rhs_sa;
-
-  CS_MALLOC(vort, n_cells_ext, cs_real_t);
-  CS_MALLOC(tr_gr_u, n_cells_ext, cs_real_t);
-  CS_MALLOC(tr_gr_nu, n_cells_ext, cs_real_t);
-  CS_MALLOC_HD(rhs_sa, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(imp_sa, n_cells_ext, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> rhs_sa(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> imp_sa(n_cells_ext, cs_alloc_mode);
 
   /* Compute the vorticity omega, the trace of the velocity gradient
      and the gradient of nusa */
 
-  _vort_trace(vort, tr_gr_u, tr_gr_nu);
+  _vort_trace(vort.data(), tr_gr_u.data(), tr_gr_nu.data());
 
   /* Compute the buoyant term:
      gravity is not taken into account at the moment */
@@ -479,16 +466,12 @@ cs_turbulence_sa(void)
   /* Source terms are finalized, stored in st_exp */
 
   _src_terms(dt,
-             tr_gr_nu,
-             vort,
+             tr_gr_nu.data(),
+             vort.data(),
              cpro_rho_o,
              cpro_viscl,
-             rhs_sa,
-             imp_sa);
-
-  CS_FREE(vort);
-  CS_FREE(tr_gr_u);
-  CS_FREE(tr_gr_nu);
+             rhs_sa.data(),
+             imp_sa.data());
 
   /* Take user source terms into account */
   /*!
@@ -497,10 +480,8 @@ cs_turbulence_sa(void)
    * The explicit part is stored in st_exp
    * The implicit part is stored in st_imp
    !*/
-  cs_real_t *st_exp, *st_imp;
-
-  CS_MALLOC(st_imp, n_cells_ext, cs_real_t);
-  CS_MALLOC(st_exp, n_cells_ext, cs_real_t);
+  cs_array<cs_real_t> st_imp(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> st_exp(n_cells_ext, cs_alloc_mode);
 
   for (cs_lnum_t i = 0; i < n_cells; i++) {
     st_exp[i] = 0;
@@ -509,8 +490,8 @@ cs_turbulence_sa(void)
 
   cs_user_source_terms(domain,
                        CS_F_(nusa)->id,
-                       st_exp,
-                       st_imp);
+                       st_exp.data(),
+                       st_imp.data());
 
   /* User source terms and d/dt(rho) and div(rho u) are taken into account
      stored in ext_term */
@@ -541,9 +522,6 @@ cs_turbulence_sa(void)
     }
   }
 
-  CS_FREE(st_exp);
-  CS_FREE(st_imp);
-
   for (cs_lnum_t i = 0; i < n_cells; i++) {
     const cs_real_t romvsd = cpro_rho[i]*cell_f_vol[i] / dt[i];
     /* imp_sa already contains the negative implicited source term */
@@ -556,7 +534,7 @@ cs_turbulence_sa(void)
 
     /* Explicit part: Gamma Pinj
        (if we extrapolate source terms, Gamma.var_prev is stored in prev. TS) */
-    cs_real_t *gapinj = (istprv >= 0) ? c_st_nusa_p : rhs_sa;
+    cs_real_t *gapinj = (istprv >= 0) ? c_st_nusa_p : rhs_sa.data();
 
     int *mst_type = nullptr;
     cs_lnum_t n_elts = 0;
@@ -578,8 +556,8 @@ cs_turbulence_sa(void)
                          cvara_nusa,
                          mst_val,
                          mst_val_p,
-                         rhs_sa,
-                         imp_sa,
+                         rhs_sa.data(),
+                         imp_sa.data(),
                          gapinj);
 
   }
@@ -598,16 +576,14 @@ cs_turbulence_sa(void)
 
   /* Solving of the transport equation on nusa */
 
-  cs_real_t *viscf, *viscb;
-  CS_MALLOC_HD(viscf, n_i_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(viscb, n_b_faces, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> viscf(n_i_faces, cs_alloc_mode);
+  cs_array<cs_real_t> viscb(n_b_faces, cs_alloc_mode);
 
   if (eqp_nusa->idiff >= 1) {
     const cs_real_t dsigma = 1.0 / cs_turb_csasig;
     const int idifft = eqp_nusa->idifft;
 
-    cs_real_t *w_1;
-    CS_MALLOC_HD(w_1, n_cells_ext, cs_real_t, cs_alloc_mode);
+    cs_array<cs_real_t> w_1(n_cells_ext, cs_alloc_mode);
 
     /* diffusivity: 1/sigma*(mu_laminar + rho*nusa) */
     for (cs_lnum_t i = 0; i < n_cells; i++) {
@@ -617,11 +593,9 @@ cs_turbulence_sa(void)
     cs_face_viscosity(m,
                       fvq,
                       cs_glob_space_disc->imvisf,
-                      w_1,
-                      viscf,
-                      viscb);
-
-    CS_FREE(w_1);
+                      w_1.data(),
+                      viscf.data(),
+                      viscb.data());
   }
   else {
     for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++)
@@ -641,8 +615,7 @@ cs_turbulence_sa(void)
   const cs_real_t *imasfl = cs_field_by_id(iflmas)->val;
   const cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
 
-  cs_real_t *dpvar;
-  CS_MALLOC_HD(dpvar, n_cells_ext, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> dpvar(n_cells_ext, cs_alloc_mode);
 
   cs_equation_param_t _eqp_nusa = *eqp_nusa;
 
@@ -659,30 +632,24 @@ cs_turbulence_sa(void)
                                      bc_coeffs_nusa,
                                      imasfl,
                                      bmasfl,
-                                     viscf,
-                                     viscb,
-                                     viscf,
-                                     viscb,
+                                     viscf.data(),
+                                     viscb.data(),
+                                     viscf.data(),
+                                     viscb.data(),
                                      nullptr,
                                      nullptr,
                                      nullptr,
                                      0, /* boundary convective upwind flux */
                                      nullptr,
-                                     imp_sa,
-                                     rhs_sa,
+                                     imp_sa.data(),
+                                     rhs_sa.data(),
                                      cvar_nusa,
-                                     dpvar,
+                                     dpvar.data(),
                                      nullptr,
                                      nullptr);
 
   /* Clip values */
   _clip(n_cells);
-
-  CS_FREE(rhs_sa);
-  CS_FREE(imp_sa);
-  CS_FREE(dpvar);
-  CS_FREE(viscf);
-  CS_FREE(viscb);
 }
 
 /*----------------------------------------------------------------------------*/

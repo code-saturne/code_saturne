@@ -167,18 +167,14 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
   /* Compute the strain rate and absolute vorticity tensor
      ----------------------------------------------------- */
 
-  cs_real_6_t *strain = nullptr;
-  cs_real_3_t *vortab = nullptr;
-  cs_real_33_t *gradv = nullptr;
-
-  CS_MALLOC(strain, n_cells_ext, cs_real_6_t);
-  CS_MALLOC(vortab, n_cells_ext, cs_real_3_t);
-  CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+  cs_array_2d<cs_real_t> strain(n_cells_ext, 6);
+  cs_array_2d<cs_real_t> vortab(n_cells_ext, 3);
+  cs_array_3d<cs_real_t> gradv(n_cells_ext, 3, 3);
 
   cs_field_gradient_vector(CS_F_(vel),
                            true,   /* use_previous_t */
                            1 ,     /* inc */
-                           gradv);
+                           gradv.data<cs_real_33_t>());
 
   /* Compute the strain rate tensor (symmetric)
    *          S_ij = 0.5(dU_i/dx_j+dU_j/dx_i)
@@ -190,28 +186,27 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     /* S11 */
-    strain[c_id][0] = gradv[c_id][0][0];
+    strain(c_id, 0) = gradv(c_id, 0, 0);
     /* S22 */
-    strain[c_id][1] = gradv[c_id][1][1];
+    strain(c_id, 1) = gradv(c_id, 1, 1);
     /* S33 */
-    strain[c_id][2] = gradv[c_id][2][2];
+    strain(c_id, 2) = gradv(c_id, 2, 2);
     /* S12 */
-    strain[c_id][3] = d1s2*(gradv[c_id][0][1] + gradv[c_id][1][0]);
+    strain(c_id, 3) = d1s2*(gradv(c_id, 0, 1) + gradv(c_id, 1, 0));
     /* S13 */
-    strain[c_id][4] = d1s2*(gradv[c_id][0][2] + gradv[c_id][2][0]);
+    strain(c_id, 4) = d1s2*(gradv(c_id, 0, 2) + gradv(c_id, 2, 0));
     /* S23 */
-    strain[c_id][5] = d1s2*(gradv[c_id][1][2] + gradv[c_id][2][1]);
+    strain(c_id, 5) = d1s2*(gradv(c_id, 1, 2) + gradv(c_id, 2, 1));
     /* W12 */
-    vortab[c_id][0] = d1s2*(gradv[c_id][0][1] - gradv[c_id][1][0]) + matrot[1][0];
+    vortab(c_id, 0) = d1s2*(gradv(c_id, 0, 1) - gradv(c_id, 1, 0)) + matrot[1][0];
     /* W13 */
-    vortab[c_id][1] = d1s2*(gradv[c_id][0][2] - gradv[c_id][2][0]) + matrot[2][0];
+    vortab(c_id, 1) = d1s2*(gradv(c_id, 0, 2) - gradv(c_id, 2, 0)) + matrot[2][0];
     /* W23 */
-    vortab[c_id][2] = d1s2*(gradv[c_id][1][2] - gradv[c_id][2][1]) + matrot[2][1];
+    vortab(c_id, 2) = d1s2*(gradv(c_id, 1, 2) - gradv(c_id, 2, 1)) + matrot[2][1];
   }
 
   /* Partially free memory (strain and vortab arrays are deallocated later) */
-
-  CS_FREE(gradv);
+  gradv.clear();
 
   /* Computation of:
    * --------------
@@ -221,15 +216,10 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
    *     eta2 = W_ij.W_ij
    */
 
-  cs_real_63_t *grdsij = nullptr;
-  cs_real_t *brtild = nullptr;
-  cs_real_t *eta1 = nullptr;
-  cs_real_t *eta2 = nullptr;
-
-  CS_MALLOC(grdsij, n_cells_ext, cs_real_63_t);
-  CS_MALLOC(brtild, n_cells, cs_real_t);
-  CS_MALLOC(eta1, n_cells, cs_real_t);
-  CS_MALLOC(eta2, n_cells, cs_real_t);
+  cs_array_3d<cs_real_t> grdsij(n_cells_ext, 6, 3);
+  cs_array<cs_real_t> brtild(n_cells);
+  cs_array<cs_real_t> eta1(n_cells);
+  cs_array<cs_real_t> eta2(n_cells);
 
   /* Index connectivity */
 
@@ -319,8 +309,8 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
                      epsrgp,
                      climgp,
                      nullptr,   /* Use default Neumann BC */
-                     strain,
-                     grdsij);
+                     strain.data<cs_real_6_t>(),
+                     grdsij.data<cs_real_63_t>());
 
   cs_real_t dsijdt, trrota, wiksjk;
 
@@ -332,33 +322,33 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
         if (cs_glob_time_step_options->idtvar < 0)
           dsijdt = 0.;
         else
-          dsijdt =    (strain[c_id][istrai[i][j]]
+          dsijdt =    (strain(c_id, istrai[i][j])
                     - cpro_straio[c_id][istrai[i][j]])/dt[c_id];
 
         dsijdt +=  cs_math_3_dot_product(vela[c_id],
-                                         grdsij[c_id][istrai[i][j]]);
+                                         grdsij.sub_array(c_id, istrai[i][j]));
 
         /* (e_imn.S_jn+e_jmn.S_in)*Omega_m term */
 
         trrota = 0.;
         for (cs_lnum_t k = 0; k < 3; k++) {
-          trrota +=   matrot[k][i] * strain[c_id][istrai[j][k]]
-                    + matrot[k][j] * strain[c_id][istrai[i][k]];
+          trrota +=   matrot[k][i] * strain(c_id, istrai[j][k])
+                    + matrot[k][j] * strain(c_id, istrai[i][k]);
         }
 
         /* W_ik.S_jk term */
 
         wiksjk = 0.;
         for (cs_lnum_t k = 0; k < 3; k++) {
-          wiksjk +=   sigvor[i][k]*vortab[c_id][ivorab[i][k]]
-                    * strain[c_id][istrai[j][k]];
+          wiksjk +=   sigvor[i][k]*vortab(c_id, ivorab[i][k])
+                    * strain(c_id, istrai[j][k]);
         }
 
         /* brtild, eta1, eta2 (see the definitions above) */
 
         brtild[c_id] += 2. * wiksjk * (dsijdt + trrota);
-        eta1[c_id] += cs_math_pow2(strain[c_id][istrai[i][j]]);
-        eta2[c_id] += cs_math_pow2(sigvor[i][j] * vortab[c_id][ivorab[i][j]]);
+        eta1[c_id] += cs_math_pow2(strain(c_id, istrai[i][j]));
+        eta2[c_id] += cs_math_pow2(sigvor[i][j] * vortab(c_id, ivorab[i][j]));
       }
     }
   }
@@ -443,18 +433,10 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
   if (cs_glob_time_step_options->idtvar >= 0) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       for (cs_lnum_t i = 0; i < 6; i++)
-        cpro_straio[c_id][i] = strain[c_id][i];
+        cpro_straio[c_id][i] = strain(c_id, i);
     }
   }
 
-  /* Free memory */
-
-  CS_FREE(strain);
-  CS_FREE(vortab);
-  CS_FREE(grdsij);
-  CS_FREE(brtild);
-  CS_FREE(eta1);
-  CS_FREE(eta2);
 }
 
 /*----------------------------------------------------------------------------*/

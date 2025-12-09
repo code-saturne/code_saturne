@@ -254,29 +254,23 @@ _gradfi_dot_gradk(const  cs_lnum_t   n_cells,
                   cs_real_t          grad_pk[])
 {
   /* Allocate temporary arrays gradients */
-  cs_real_3_t *grad_phi;
-  cs_real_3_t *grad_k;
-
-  CS_MALLOC_HD(grad_phi, n_cells_ext, cs_real_3_t, cs_alloc_mode);
-  CS_MALLOC_HD(grad_k, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+  cs_array_2d<cs_real_t> grad_phi(n_cells_ext, 3, cs_alloc_mode);
+  cs_array_2d<cs_real_t> grad_k(n_cells_ext, 3, cs_alloc_mode);
 
   cs_field_gradient_scalar(CS_F_(phi),
                            true,     /* use previous t */
                            1,        /* not on increment */
-                           grad_phi);
+                           grad_phi.data<cs_real_3_t>());
 
   cs_field_gradient_scalar(CS_F_(k),
                            true,     /* use previous t */
                            1,        /* not on increment */
-                           grad_k);
+                           grad_k.data<cs_real_3_t>());
 
   for (cs_lnum_t i = 0; i < n_cells; i++) {
-    grad_pk[i] = cs_math_3_dot_product(grad_phi[i], grad_k[i]);
+    grad_pk[i] = cs_math_3_dot_product(grad_phi.sub_array(i),
+                                       grad_k.sub_array(i));
   }
-
-  /* Free memory */
-  CS_FREE(grad_phi);
-  CS_FREE(grad_k);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -333,14 +327,12 @@ _solve_eq_fbr_al(const int         istprv,
   cs_real_t *val_f_phi = bc_coeffs_solve_phi.val_f;
   cs_real_t *flux_phi = bc_coeffs_solve_phi.flux;
 
-  cs_real_t  *w2, *visel, *w5, *viscf, *viscb;
-
   /* Allocate temporary arrays */
-  CS_MALLOC_HD(visel, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(w2, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(w5, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(viscf, n_i_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(viscb, n_b_faces, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> visel(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> w2(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> w5(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> viscf(n_i_faces, cs_alloc_mode);
+  cs_array<cs_real_t> viscb(n_b_faces, cs_alloc_mode);
 
   cs_field_t *f = nullptr;
 
@@ -426,15 +418,15 @@ _solve_eq_fbr_al(const int         istprv,
    *     \f[ -\div{\grad{ \dfrac{\overline{f}}{\alpha}}} = rhs \f]
    */
 
-  cs_arrays_set_value<cs_real_t, 1>(n_cells, 1., visel);
+  visel.set_to_val(ctx, 1., n_cells);
 
   int imvisf = cs_glob_space_disc->imvisf;
   cs_face_viscosity(m,
                     fvq,
                     imvisf,
-                    visel,
-                    viscf,
-                    viscb);
+                    visel.data(),
+                    viscf.data(),
+                    viscb.data());
 
   /* Translate coefa into cofaf and coefb into cofbf */
   cs_real_t *coefap = CS_F_(phi)->bc_coeffs->a;
@@ -470,7 +462,7 @@ _solve_eq_fbr_al(const int         istprv,
        eqp_phi,
        false, // hyd_p_flag
        nullptr, // f_ext
-       visel,
+       visel.data(),
        nullptr, // vitenp
        nullptr, // weighb
        CS_F_(phi)->val_pre,
@@ -485,7 +477,7 @@ _solve_eq_fbr_al(const int         istprv,
        eqp_phi,
        false, // hyd_p_flag
        nullptr, // f_ext
-       visel,
+       visel.data(),
        nullptr, // vitenp
        nullptr, // weighb
        CS_F_(phi)->val_pre,
@@ -505,10 +497,10 @@ _solve_eq_fbr_al(const int         istprv,
                          CS_F_(phi)->bc_coeffs,
                          val_f_phi,
                          flux_phi,
-                         viscf,
-                         viscb,
-                         visel,
-                         w2);
+                         viscf.data(),
+                         viscb.data(),
+                         visel.data(),
+                         w2.data());
 
   /* Explicit term, stores ke temporarily in w5
      w2 is already multiplied by the volume which already contains
@@ -648,10 +640,10 @@ _solve_eq_fbr_al(const int         istprv,
                                      f->bc_coeffs,
                                      i_massflux,
                                      b_massflux,
-                                     viscf,
-                                     viscb,
-                                     viscf,
-                                     viscb,
+                                     viscf.data(),
+                                     viscb.data(),
+                                     viscf.data(),
+                                     viscb.data(),
                                      nullptr,
                                      nullptr,
                                      nullptr,
@@ -660,18 +652,11 @@ _solve_eq_fbr_al(const int         istprv,
                                      rovsdt,
                                      rhs,
                                      cvar_var,
-                                     w2, /* dpvar work array */
+                                     w2.data(), /* dpvar work array */
                                      nullptr,
                                      nullptr);
 
   /* Free memory */
-  CS_FREE(visel);
-
-  CS_FREE(w2);
-  CS_FREE(w5);
-  CS_FREE(viscf);
-  CS_FREE(viscb);
-
   cs_clear_bc_coeffs_solve(bc_coeffs_solve_phi);
 }
 
@@ -720,12 +705,10 @@ _solve_eq_phi(const int           istprv,
 
   const cs_real_t *dt = CS_F_(dt)->val;
 
-  cs_real_t *w2, *viscf, *viscb;
-
   /* Allocate temporary arrays */
-  CS_MALLOC_HD(w2, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(viscf, n_i_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(viscb, n_b_faces, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> w2(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> viscf(n_i_faces, cs_alloc_mode);
+  cs_array<cs_real_t> viscb(n_b_faces, cs_alloc_mode);
 
   cs_field_t *f_phi = CS_F_(phi);
 
@@ -1010,9 +993,9 @@ _solve_eq_phi(const int           istprv,
     cs_face_viscosity(m,
                       fvq,
                       imvisf,
-                      w2,
-                      viscf,
-                      viscb);
+                      w2.data(),
+                      viscf.data(),
+                      viscb.data());
 
     const cs_real_t *distb = fvq->b_dist;
 
@@ -1070,10 +1053,10 @@ _solve_eq_phi(const int           istprv,
                                      f_phi->bc_coeffs,
                                      i_massflux,
                                      b_massflux,
-                                     viscf,
-                                     viscb,
-                                     viscf,
-                                     viscb,
+                                     viscf.data(),
+                                     viscb.data(),
+                                     viscf.data(),
+                                     viscb.data(),
                                      nullptr,
                                      nullptr,
                                      nullptr,
@@ -1082,13 +1065,10 @@ _solve_eq_phi(const int           istprv,
                                      rovsdt,
                                      rhs,
                                      cvar_phi,
-                                     w2,  /* dpvar work array */
+                                     w2.data(),  /* dpvar work array */
                                      nullptr,
                                      nullptr);
 
-  CS_FREE(w2);
-  CS_FREE(viscf);
-  CS_FREE(viscb);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1120,11 +1100,8 @@ cs_turbulence_v2f(const cs_real_t   prdv2f[])
   cs_real_t *c_st_a_p = nullptr;
   cs_real_t *c_st_phi_p = nullptr;
 
-  cs_real_t *rhs;
-  cs_real_t *rovsdt;
-
-  CS_MALLOC_HD(rhs, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(rovsdt, n_cells_ext, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> rhs(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> rovsdt(n_cells_ext, cs_alloc_mode);
 
   /* Map field arrays */
 
@@ -1182,10 +1159,9 @@ cs_turbulence_v2f(const cs_real_t   prdv2f[])
 
   /* Compute grad(phi).grad(k) */
 
-  cs_real_t *grad_pk;
-  CS_MALLOC_HD(grad_pk, n_cells_ext, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> grad_pk(n_cells_ext, cs_alloc_mode);
 
-  _gradfi_dot_gradk(n_cells, n_cells_ext, grad_pk);
+  _gradfi_dot_gradk(n_cells, n_cells_ext, grad_pk.data());
 
   /* Solve the equation of f_bar / alpha */
 
@@ -1195,11 +1171,11 @@ cs_turbulence_v2f(const cs_real_t   prdv2f[])
                    viscl,
                    cpro_pcvlo,
                    prdv2f,
-                   grad_pk,
+                   grad_pk.data(),
                    imasfl,
                    bmasfl,
-                   rhs,
-                   rovsdt,
+                   rhs.data(),
+                   rovsdt.data(),
                    c_st_a_p);
 
   /* Solve the equation of phi */
@@ -1209,16 +1185,12 @@ cs_turbulence_v2f(const cs_real_t   prdv2f[])
                 cromo,
                 viscl,
                 prdv2f,
-                grad_pk,
+                grad_pk.data(),
                 imasfl,
                 bmasfl,
-                rhs,
-                rovsdt,
+                rhs.data(),
+                rovsdt.data(),
                 c_st_phi_p);
-
-  CS_FREE(grad_pk);
-  CS_FREE(rhs);
-  CS_FREE(rovsdt);
 
   /* Clipping */
 
@@ -1299,41 +1271,42 @@ cs_turbulence_v2f_bl_v2k_mu_t(void)
    *       S2 = S11^2+S22^2+S33^2+2*(S12^2+S13^2+S23^2)
    * ================================================== */
 
-  cs_real_t *s2;
   cs_field_t *f_vel = CS_F_(vel);
-  cs_real_33_t *gradv = nullptr, *_gradv = nullptr;
+
+  cs_array_3d<cs_real_t> gradv;
   {
     cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
 
     if (f_vel->grad != nullptr)
-      gradv = (cs_real_33_t *)f_vel->grad;
+      gradv = cs_array_3d<cs_real_t>(f_vel->grad,
+                                     n_cells_ext, 3, 3);
     else if (f_vg != nullptr)
-      gradv = (cs_real_33_t *)f_vg->val;
+      gradv = cs_array_3d<cs_real_t>(f_vg->val,
+                                     n_cells_ext, 3, 3);
     else {
-      CS_MALLOC_HD(_gradv, n_cells_ext, cs_real_33_t, cs_alloc_mode);
-      gradv = _gradv;
+      gradv = cs_array_3d<cs_real_t>(n_cells_ext, 3, 3, cs_alloc_mode);
     }
   }
 
   /* Allocate arrays */
-  CS_MALLOC(s2, n_cells_ext, cs_real_t);
+  cs_array<cs_real_t> s2(n_cells_ext);
 
   cs_field_gradient_vector(f_vel,
                            false, // no use_previous_t
                            1,    // inc
-                           gradv);
+                           gradv.data<cs_real_33_t>());
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-    const cs_real_t s11 = gradv[c_id][0][0];
-    const cs_real_t s22 = gradv[c_id][1][1];
-    const cs_real_t s33 = gradv[c_id][2][2];
-    const cs_real_t dudy = gradv[c_id][0][1];
-    const cs_real_t dudz = gradv[c_id][0][2];
-    const cs_real_t dvdx = gradv[c_id][1][0];
-    const cs_real_t dvdz = gradv[c_id][1][2];
-    const cs_real_t dwdx = gradv[c_id][2][0];
-    const cs_real_t dwdy = gradv[c_id][2][1];
+    const cs_real_t s11 = gradv(c_id, 0, 0);
+    const cs_real_t s22 = gradv(c_id, 1, 1);
+    const cs_real_t s33 = gradv(c_id, 2, 2);
+    const cs_real_t dudy = gradv(c_id, 0, 1);
+    const cs_real_t dudz = gradv(c_id, 0, 2);
+    const cs_real_t dvdx = gradv(c_id, 1, 0);
+    const cs_real_t dvdz = gradv(c_id, 1, 2);
+    const cs_real_t dwdx = gradv(c_id, 2, 0);
+    const cs_real_t dwdy = gradv(c_id, 2, 1);
 
     s2[c_id] =  2.*(cs_math_pow2(s11)+cs_math_pow2(s22)+cs_math_pow2(s33))
               + cs_math_pow2(dudy+dvdx)
@@ -1341,9 +1314,6 @@ cs_turbulence_v2f_bl_v2k_mu_t(void)
               + cs_math_pow2(dvdz+dwdy);
     s2[c_id] = sqrt(fmax(s2[c_id], 1e-10));
   }
-
-  /* Free memory */
-  CS_FREE(_gradv);
 
   /* Calculation of viscosity
    * ========================= */
@@ -1406,8 +1376,6 @@ cs_turbulence_v2f_bl_v2k_mu_t(void)
     }
   }
 
-  /* Free memory */
-  CS_FREE(s2);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -86,13 +86,12 @@ cs_turbulence_ml_mu_t(void)
   const cs_real_t xlomlg = cs_glob_turb_rans_model->xlomlg;
   cs_real_t coef = cs_math_pow2(cs_turb_xkappa*xlomlg)*sqrt(2.0);
 
-  cs_real_33_t *gradv;
-  CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+  cs_array_3d<cs_real_t> gradv(n_cells_ext, 3, 3);
 
   cs_field_gradient_vector(CS_F_(vel),
                            false, // no use_previous_t
                            0,    // inc
-                           gradv);
+                           gradv.data<cs_real_33_t>());
 
   /* Compute S11^2+S22^2+S33^2+2*(S12^2+S13^2+S23^2),
      then dynamic viscosity */
@@ -100,12 +99,12 @@ cs_turbulence_ml_mu_t(void)
   if (f_lm == nullptr) {
 # pragma omp parallel for if(n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
-      visct[c_id] =   cs_math_pow2(gradv[c_id][0][0])
-                    + cs_math_pow2(gradv[c_id][1][1])
-                    + cs_math_pow2(gradv[c_id][2][2])
-                    +0.5 * (  cs_math_pow2(gradv[c_id][0][1]+gradv[c_id][1][0])
-                            + cs_math_pow2(gradv[c_id][0][2]+gradv[c_id][2][0])
-                            + cs_math_pow2(gradv[c_id][1][2]+gradv[c_id][2][1]));
+      visct[c_id] =   cs_math_pow2(gradv(c_id, 0, 0))
+                    + cs_math_pow2(gradv(c_id, 1, 1))
+                    + cs_math_pow2(gradv(c_id, 2, 2))
+                    +0.5 * (  cs_math_pow2(gradv(c_id, 0, 1)+gradv(c_id, 1, 0))
+                            + cs_math_pow2(gradv(c_id, 0, 2)+gradv(c_id, 2, 0))
+                            + cs_math_pow2(gradv(c_id, 1, 2)+gradv(c_id, 2, 1)));
 
       visct[c_id] = crom[c_id]*coef*sqrt(visct[c_id]);
     }
@@ -114,21 +113,18 @@ cs_turbulence_ml_mu_t(void)
   else {
 # pragma omp parallel for if(n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
-      visct[c_id] =   cs_math_pow2(gradv[c_id][0][0])
-                    + cs_math_pow2(gradv[c_id][1][1])
-                    + cs_math_pow2(gradv[c_id][2][2])
-                    +0.5 * (  cs_math_pow2(gradv[c_id][0][1]+gradv[c_id][1][0])
-                            + cs_math_pow2(gradv[c_id][0][2]+gradv[c_id][2][0])
-                            + cs_math_pow2(gradv[c_id][1][2]+gradv[c_id][2][1]));
+      visct[c_id] =   cs_math_pow2(gradv(c_id, 0, 0))
+                    + cs_math_pow2(gradv(c_id, 1, 1))
+                    + cs_math_pow2(gradv(c_id, 2, 2))
+                    +0.5 * (  cs_math_pow2(gradv(c_id, 0, 1)+gradv(c_id, 1, 0))
+                            + cs_math_pow2(gradv(c_id, 0, 2)+gradv(c_id, 2, 0))
+                            + cs_math_pow2(gradv(c_id, 1, 2)+gradv(c_id, 2, 1)));
 
       coef = cs_math_pow2(cs_turb_xkappa * f_lm->val[c_id])*sqrt(2.0);
       visct[c_id] = crom[c_id]*coef*sqrt(visct[c_id]);
     }
   }
 
-  /* Free temporary array */
-
-  CS_FREE(gradv);
 }
 
 /*----------------------------------------------------------------------------*/

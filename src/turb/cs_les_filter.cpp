@@ -310,9 +310,8 @@ cs_les_filter_scalar(const cs_real_t  val[],
 
   /* Allocate and initialize working buffer */
 
-  cs_real_t *v_val, *v_weight;
-  CS_MALLOC_HD(v_val, n_vertices, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(v_weight, n_vertices, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> v_val(n_vertices, cs_alloc_mode);
+  cs_array<cs_real_t> v_weight(n_vertices, cs_alloc_mode);
 
   /* Define filtered variable array */
 
@@ -322,7 +321,7 @@ cs_les_filter_scalar(const cs_real_t  val[],
                        cell_vol,
                        val,
                        nullptr,
-                       v_val);
+                       v_val.data());
 
   cs_cell_to_vertex<1>(CS_CELL_TO_VERTEX_LR,
                        0,
@@ -330,7 +329,7 @@ cs_les_filter_scalar(const cs_real_t  val[],
                        nullptr,
                        cell_vol,
                        nullptr,
-                       v_weight);
+                       v_weight.data());
 
   /* Build cell average */
 
@@ -354,8 +353,6 @@ cs_les_filter_scalar(const cs_real_t  val[],
 
   ctx.wait();
 
-  CS_FREE(v_weight);
-  CS_FREE(v_val);
 
   /* Synchronize variable */
   cs_halo_sync(mesh->halo, CS_HALO_STANDARD, ctx.use_gpu(), f_val);
@@ -402,13 +399,9 @@ cs_les_filter_strided(const cs_real_t  val[][stride],
   const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
   const cs_lnum_t  n_vertices = mesh->n_vertices;
 
-  using var_t = cs_real_t[stride];
-
   /* Allocate and initialize working buffer */
-  var_t *v_val;
-  cs_real_t *v_weight;
-  CS_MALLOC_HD(v_val, n_vertices, var_t, cs_alloc_mode);
-  CS_MALLOC_HD(v_weight, n_vertices, cs_real_t, cs_alloc_mode);
+  cs_array_2d<cs_real_t> v_val(n_vertices, stride, cs_alloc_mode);
+  cs_array<cs_real_t> v_weight(n_vertices, cs_alloc_mode);
 
   /* Define filtered variable array */
 
@@ -418,7 +411,7 @@ cs_les_filter_strided(const cs_real_t  val[][stride],
                             cell_vol,
                             reinterpret_cast<const cs_real_t *>(val),
                             nullptr,
-                            reinterpret_cast<cs_real_t *>(v_val));
+                            v_val.data());
 
   cs_cell_to_vertex<1>(CS_CELL_TO_VERTEX_LR,
                        0,
@@ -426,7 +419,7 @@ cs_les_filter_strided(const cs_real_t  val[][stride],
                        nullptr,
                        cell_vol,
                        nullptr,
-                       v_weight);
+                       v_weight.data());
 
   /* Build cell average */
 
@@ -446,7 +439,7 @@ cs_les_filter_strided(const cs_real_t  val[][stride],
       cs_lnum_t v_id = c2v_ids[j];
 
       for (cs_lnum_t k = 0; k < stride; k++) {
-        _f_val[k] += v_val[v_id][k] * v_weight[v_id];
+        _f_val[k] += v_val(v_id, k) * v_weight[v_id];
       }
       _f_weight += v_weight[v_id];
     }
@@ -458,9 +451,6 @@ cs_les_filter_strided(const cs_real_t  val[][stride],
   });
 
   ctx.wait();
-
-  CS_FREE(v_weight);
-  CS_FREE(v_val);
 
   /* Synchronize variable */
   cs_halo_sync_r(mesh->halo, CS_HALO_STANDARD, ctx.use_gpu(), f_val);
