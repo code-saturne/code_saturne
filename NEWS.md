@@ -21,6 +21,10 @@ Master (not on release branches yet)
     (using a `cs_cell_refine_helper` object per thread), and stored in buffers.
   * At the actual refinement stage, data is copied.
 
+### SMGR
+
+- SLURM batch mode: read batch example from installation config on cluster
+
 Release 9.1.0 (2025-12-30)
 --------------------------
 

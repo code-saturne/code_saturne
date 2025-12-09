@@ -1278,6 +1278,8 @@ class Studies(object):
                 self.__slurm_batch_size = 1
             if not self.__slurm_batch_wtime:
                 self.__slurm_batch_wtime = 8 * 60  # 8 hours in minutes
+            # initialize batch
+            self.batch = cs_batch.batch(self.__pkg)
 
         rm_template = resource_config['batch']
         if rm_template:
@@ -1936,13 +1938,6 @@ class Studies(object):
         time.
         """
 
-        slurm_batch_template = """#!/bin/sh
-#SBATCH --ntasks={0}
-#SBATCH --time={1}:{2}:00
-#SBATCH --output=vnv_{3}
-#SBATCH --error=vnv_{3}
-#SBATCH --job-name={4}_{3}
-"""
         cur_batch_id = 0
         tot_job_id_list = []
 
@@ -2000,32 +1995,15 @@ class Studies(object):
                                                str(cur_batch_id) + ".sh"
                             slurm_batch_file = open(slurm_batch_name, mode='w')
 
-                            # fill file with template
-                            hh, mm = divmod(batch_total_time, 60)
-                            cmd = slurm_batch_template.format(nproc+1,
-                                                              math.ceil(hh),
-                                                              math.ceil(mm),
-                                                              cur_batch_id,
-                                                              job_name)
+                            # generate slurm batch file based on template
+                            cmd = self.generate_slurm_batch(job_name,
+                                                            cur_batch_id,
+                                                            nproc+1,
+                                                            batch_total_time,
+                                                            self.__slurm_batch_args)
 
-                            # add exclusive option to batch template for
-                            # computation with at least 6 processes
-                            # force same processor otherwise
-                            if nproc+1 > 5:
-                                cmd += "#SBATCH --exclusive\n"
-                            else:
-                                cmd += "#SBATCH --nodes=1\n"
-                                cmd += "#SBATCH --ntasks-per-core=1\n"
-
-                            # add user defined options if needed
-                            if self.__slurm_batch_args:
-                                for _p in self.__slurm_batch_args:
-                                    cmd += "#SBATCH " + _p + "\n"
-
-                            cmd += "\n"
+                            # fill file with header and batch command for several cases
                             slurm_batch_file.write(cmd)
-
-                            # fill file with batch command for several cases
                             slurm_batch_file.write(batch_cmd)
                             slurm_batch_file.flush()
 
@@ -2082,28 +2060,15 @@ class Studies(object):
                                        str(cur_batch_id) + ".sh"
                     slurm_batch_file = open(slurm_batch_name, mode='w')
 
-                    # fill file with template
-                    hh, mm = divmod(batch_total_time, 60)
-                    cmd = slurm_batch_template.format(nproc+1,
-                                                      math.ceil(hh),
-                                                      math.ceil(mm),
-                                                      cur_batch_id,
-                                                      job_name)
+                    # generate slurm batch file based on template
+                    cmd = self.generate_slurm_batch(job_name,
+                                                    cur_batch_id,
+                                                    nproc+1,
+                                                    batch_total_time,
+                                                    self.__slurm_batch_args)
 
-                    # add exclusive option to batch template for
-                    # computation with at least 6 processes
-                    if nproc+1 > 5:
-                        cmd += "#SBATCH --exclusive\n"
-
-                    # add user defined options if needed
-                    if self.__slurm_batch_args:
-                        for _p in self.__slurm_batch_args:
-                            cmd += "#SBATCH " + _p + "\n"
-
-                    cmd += "\n"
+                    # fill file with header and batch command for several cases
                     slurm_batch_file.write(cmd)
-
-                    # fill file with batch command for several cases
                     slurm_batch_file.write(batch_cmd)
                     slurm_batch_file.flush()
 
@@ -2147,28 +2112,24 @@ class Studies(object):
         slurm_batch_name = "slurm_batch_file_" + str(cur_batch_id) + ".sh"
         slurm_batch_file = open(slurm_batch_name, mode='w')
 
-        # fill file with template
         # we consider 10 minutes per study
-        hh, mm = divmod(self.n_study*10, 60)
-        cmd = slurm_batch_template.format(1,
-                                          math.ceil(hh),
-                                          math.ceil(mm),
-                                          cur_batch_id,
-                                          job_name)
+        batch_total_time = self.n_study*10
 
-        # add user defined options if needed
-        if self.__slurm_batch_args:
-            for _p in self.__slurm_batch_args:
-                cmd += "#SBATCH " + _p + "\n"
+        # generate slurm batch file based on template
+        cmd = self.generate_slurm_batch(job_name,
+                                        cur_batch_id,
+                                        1,
+                                        batch_total_time,
+                                        self.__slurm_batch_args)
 
-        cmd += "\n"
+        # fill file with header
         slurm_batch_file.write(cmd)
 
         # fill file with batch command for state analysis
-        batch_cmd += self.build_final_batch(self.__postpro,
-                                            self.__compare,
-                                            self.__sheet,
-                                            state_file_name)
+        batch_cmd = self.build_final_batch(self.__postpro,
+                                           self.__compare,
+                                           self.__sheet,
+                                           state_file_name)
         slurm_batch_file.write(batch_cmd)
         slurm_batch_file.flush()
 
@@ -2192,6 +2153,46 @@ class Studies(object):
         os.chdir(self.__dest)
 
         self.reporting('')
+
+    #---------------------------------------------------------------------------
+
+    def generate_slurm_batch(self, job_name, cur_batch_id, ntasks,
+                             batch_total_time, slurm_batch_args):
+        """
+        Generate slurm batch file
+        """
+
+        slurm_batch = self.batch
+        slurm_batch_header = cs_batch.generate_header()
+        slurm_batch.parse_lines(slurm_batch_header)
+        rm_var = None
+
+        # modify batch parameters
+        slurm_batch.params["job_name"] = job_name + "_" + str(cur_batch_id)
+        slurm_batch.params["job_procs"] = ntasks
+        # add ntasks in header
+        slurm_batch.params["job_walltime"] = batch_total_time * 60 # in sec
+        ppn = slurm_batch.params["job_ppn"]
+        slurm_batch.params["job_ppn"] = None
+        if ntasks > int(ppn):
+            slurm_batch.params["job_nodes"] = None
+        else:
+            slurm_batch.params["job_nodes"] = 1
+        if ntasks < 6: rm_var=["--exclusive"]
+        # rm wckey example
+        rm_var.append("--wckey")
+        slurm_batch.update_lines(slurm_batch_header, add_var=["job_procs"],
+                                 rm_var=rm_var)
+
+        cmd = "#!/bin/sh\n"
+        cmd += '\n'.join(slurm_batch_header)
+        # add user defined options if needed
+        if slurm_batch_args:
+            for tmp in slurm_batch_args:
+                cmd += "#SBATCH " + tmp + "\n"
+        cmd += "\n"
+
+        return cmd
 
     #---------------------------------------------------------------------------
 
