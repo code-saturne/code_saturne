@@ -54,7 +54,7 @@
 #include "atmo/cs_atmo_chemistry.h"
 #include "atmo/cs_atmo_imbrication.h"
 #include "atmo/cs_at_data_assim.h"
-#include "atmo/cs_atmo_soil_model.h"
+#include "atmo/cs_atmo_ground_model.h"
 #include "base/cs_1d_wall_thermal.h"
 #include "base/cs_1d_wall_thermal_check.h"
 #include "base/cs_ale.h"
@@ -421,11 +421,11 @@ cs_time_stepping(void)
   int iterns = -1;
   cs_physical_properties_update(iterns);
 
-  /* Initialization for the atmospheric soil model
+  /* Initialization for the atmospheric ground model
      --------------------------------------------- */
 
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0)
-    cs_atmo_soil_initialize();
+    cs_atmo_ground_initialize();
 
   /* Initialization for the Hybrid Temporal LES model (HTLES)
      -------------------------------------------------------- */

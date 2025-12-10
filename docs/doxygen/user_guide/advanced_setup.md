@@ -43,7 +43,7 @@ documentation. It is also recommended to check the
 - [Groundwater flows (CDO)](@ref cs_ug_cdo_gwf)
 - \subpage advanced_solidification
 
-<!-- ----------------------------------------------------------------------- -->
+<!-- ======================================================================= -->
 
 \page low_level_boundary_condition_definitions Low-level finite-volume boundary-condition definitions
 
@@ -572,7 +572,7 @@ As always, it is recommended to specify only the values which need to be
 modified relative to the GUI definitions and default values, so as to
 keep user-defined functions concise, readable, and maintainable.
 
-<!-- ----------------------------------------------------------------------- -->
+<!-- ======================================================================= -->
 
 \page advanced_specific_physics Specific physical models
 
@@ -676,7 +676,7 @@ This file replaces `dp_C3P`.
 | 21    | # ...                        |              | Free comment                     |
 | 22    | # 300.    14000.  ...        | h \n roel \n cpel \n sigel \n visel \n xlabel \n xkabel | In line tabulation of the physical properties as a function of the temperature in Kelvin \n for each of the ngazg species \n Enthalpy in J/kg \n Density in kg/m3 \n Specific heat in J/(kg K) \n Electric conductivity in Ohm/m \n Dynamic viscosity in kg/(m s) \n Thermal conductivity in W/(m K) \n Absorption coefficient (radiation) |
 
-<!-- ----------------------------------------------------------------------- -->
+<!-- ======================================================================= -->
 
 \page advanced_coal_and_gas_combution Pulverized coal and gas combustion module
 
@@ -744,7 +744,7 @@ start, can be used to:
 - set the value of the constant \ref cebu of the Eddy Break Up model (only in
 \ref cs_user_finalize_setup).
 
-<!-- ----------------------------------------------------------------------- -->
+<!-- ======================================================================= -->
 
 \page advanced_radiative_thermal Radiative thermal transfers in semi-transparent gray media
 
@@ -803,7 +803,7 @@ and dp_FCP for pulverized coal combustion).
 \anchor gui_rad_transf_wall_params
 \image html gui_rad_transf_wall_params.png "Boundary conditions - example of wall thermal radiative transfer"
 
-<!-- ----------------------------------------------------------------------- -->
+<!-- ======================================================================= -->
 
 \page advanced_conjugate_heat_transfer Conjugate heat transfer
 
@@ -871,7 +871,7 @@ specified in case of 2D coupling.
 \anchor gui_syrthes_coupling
 \image html gui_syrthes_coupling.png "Coupling parameters - coupling with syrthes"
 
-<!-- ----------------------------------------------------------------------- -->
+<!-- ======================================================================= -->
 
 \page advanced_particle_tracking Particle-tracking (Lagrangian) module
 
@@ -987,7 +987,7 @@ User-defined particle thermal characteristic time
 The particle thermal characteristic time may be modified in the \ref cs_user_lagr_rt_t function according to the chosen correlation for the calculation of the
 Nusselt number see \ref cs_user_lagr_module_thermal_relaxation for examples.
 
-<!-- ----------------------------------------------------------------------- -->
+<!-- ======================================================================= -->
 
 \page advanced_compressible Compressible module
 
@@ -1060,7 +1060,7 @@ For some examples we can see:
  - [Ex. 5: molecular dynamic diffusivity of user-defined scalars varying with temperature](@ref example5_comp)
 
 
-<!-- ----------------------------------------------------------------------- -->
+<!-- ======================================================================= -->
 
 \page advanced_electric_arcs Electric arcs module
 
@@ -1183,7 +1183,7 @@ The following additional boundary conditions must be defined for tansformers:
 Finally, a test is performed to check if the offset is zero or if a boundary
  face is in contact with the ground.
 
-<!-- ----------------------------------------------------------------------- -->
+<!-- ======================================================================= -->
 
 \page advanced_coupling Coupling with other domains
 
@@ -1213,7 +1213,7 @@ structure numbers necessarily need to be negative;\n
 the references of coupled faces being (*i.e. -1, -2*), etc.
 For examples on the function we can see [examples](@ref cs_user_fluid_structure_interaction_h_usaste)
 
-<!-- ----------------------------------------------------------------------- -->
+<!-- ======================================================================= -->
 
 \page advanced_ale ALE (Arbitrary Lagrangian Eulerian) module
 
@@ -1323,7 +1323,7 @@ Slightly finer control over these settings is also possible using the
 the \ref cs_user_fluid_structure_interaction.c file, as shown in the
 [examples](@ref cs_user_fluid_structure_interaction_h_internal) section.
 
-<!-- ----------------------------------------------------------------------- -->
+<!-- ======================================================================= -->
 
 \page advanced_atmospheric Atmospheric flows module
 
@@ -1517,14 +1517,14 @@ User-defined functions
 User-defined functions may be used when the graphical user interface is not
 sufficient to set up the calculation. We provide some examples of user file for
 atmospheric application:
- - cs_user_source_terms.c: to add a source term in the prognostic equations for forest
+ - cs_user_source_terms.cpp: to add a source term in the prognostic equations for forest
    canopy modelling, wind turbine wake modelling... [examples](@ref user_source_terms)
  - cs_user_parameters.cpp: to activate the Cressman interpolation.
    For example, it is used to impose inhomogeneous boundary conditions.
    [examples](@ref cs_user_parameters)
  - cs_user_extra_operations.c to generate vertical profiles for post processing.
    [examples](@ref cs_user_extra_operations_examples_mean_profiles)
- - cs_user_boundary_conditions.f90: showq how to set up the boundary conditions and to set
+ - cs_user_boundary_conditions.cpp: showq how to set up the boundary conditions and to set
    a heterogeneous roughness length... [examples](@ref atmospheric_examples)
 
 Physical models
@@ -1573,14 +1573,15 @@ atmosphere at daily scale and the time evolution of ground surface temperature
 and humidity. Surface temperature is calculated with a prognostic equation
 whereas a 2-layers model is used to compute surface humidity.
 
-The parameter \ref iatsoil in the file \ref atini0.f90 needs to be equal to one to
-activate the model. Then, the source file \ref solvar.f90 is used.
+The parameter \ref cs_glob_atmo_option->ground_model in the file
+\ref cs_user_parameters.cpp needs to be equal to one to
+activate the model. Then, the source file \ref cs_atmo_groun_model.cpp  is used.
 
-Three variables need to be initialized in the file \ref atini0.f90: deep soil
+Three variables need to be initialized in the file \ref cs_user_initialization.cpp: deep ground
 temperature, surface temperature and humidity.
 
 The user needs to give the values of the model constants in the file
-\ref solcat.f90: roughness length, albedo, emissivity...
+\ref cs_user_parameters.cpp: roughness length, albedo, emissivity...
 
 In case of a 3D simulation domain, land use data has to be provided for the domain.
 Values of model constants for the land use categories have also to be
@@ -1597,11 +1598,11 @@ The radiative exchange is computed separately for two wave lengths intervals
 - Calculation in the infrared spectral domain (file \ref rayir.f90)
 - Calculation in the spectral range of solar radiation (file \ref rayso.f90)
 
-This 1D-radiative model is needed if the soil/atmosphere interaction model
+This 1D-radiative model is needed if the ground/atmosphere interaction model
 is activated.
 
-This model is activated if the parameter \ref iatra1 is equal to one in the
-file cs_users_parameters.f90.
+This model is activated if the parameter \ref radiative_model_1d is equal to one in the
+file cs_users_parameters.cpp.
 
 Atmospheric main variables
 ==========================
@@ -1684,7 +1685,7 @@ In some cases, results can be improved with the following modifications:
   avoid the case of vertical profile in the input data \texttt{meteo} file with
   changes of the sign of velocity of wind (\f$V_x\f$ or/and \f$V_y\f$).
 
-<!-- ----------------------------------------------------------------------- -->
+<!-- ======================================================================= -->
 
 \page advanced_turbomachinery Turbomachinery module
 
@@ -1781,7 +1782,7 @@ Data setting, keywords and examples
 Data setting, keywords and examples for turbomachinery computations
 (mesh joining or boundary conditions coupling), are provided in [the dedicated doxygen documentation.](@ref turbomachinery)
 
-<!-- ----------------------------------------------------------------------- -->
+<!-- ======================================================================= -->
 
 \page advanced_cavitation Cavitation module
 
@@ -1793,7 +1794,7 @@ of the liquid phase and the gas phase.
 For a description of the user management of the cavitation module,
 please refer to [the dedicated doxygen documentation.](@ref cavit)
 
-<!-- ----------------------------------------------------------------------- -->
+<!-- ======================================================================= -->
 
 \page advanced_solidification Solidification module
 

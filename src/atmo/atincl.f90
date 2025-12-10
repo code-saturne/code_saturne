@@ -435,7 +435,7 @@ integer(c_int), pointer, save :: rad_atmo_model
     !---------------------------------------------------------------------------
 
     subroutine cs_f_atmo_get_soil_zone(n_faces, n_soil_cat, face_ids)  &
-        bind(C, name='cs_f_atmo_get_soil_zone')
+        bind(C, name='cs_atmo_get_ground_zone')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), intent(out) :: n_faces

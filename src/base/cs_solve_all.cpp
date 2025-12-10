@@ -42,7 +42,7 @@
 
 #include "atmo/cs_atmo_1d_rad.h"
 #include "atmo/cs_atmo.h"
-#include "atmo/cs_atmo_soil_model.h"
+#include "atmo/cs_atmo_ground_model.h"
 #include "base/cs_1d_wall_thermal.h"
 #include "base/cs_ale.h"
 #include "base/cs_array.h"
@@ -570,9 +570,9 @@ _solve_most(int              n_var,
 
       /* FIXME why only we have atmo humid ?
          Deardorff force-restore model */
-      if (   cs_glob_atmo_option->soil_model == 1
+      if (   cs_glob_atmo_option->ground_model == 1
           && cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID)
-        cs_soil_model();
+        cs_ground_model();
     }
 
     /* After coefficients are computed, we can easily deduce the terms

@@ -205,10 +205,10 @@ static cs_atmo_option_t  _atmo_option = {
   .mom_cs     = nullptr,
   .hydrostatic_pressure_model = 0,
   .qv_profile = 0,
-  .soil_model = 0, /* off or user defined */
-  .soil_cat = (cs_atmo_soil_cat_t) 0, /* CS_ATMO_SOIL_5_CAT */
-  .soil_zone_id = -1,
-  .soil_meb_model = (cs_atmo_soil_meb_model_t) 0,
+  .ground_model = 0, /* off or user defined */
+  .ground_cat = (cs_atmo_ground_cat_t) 0, /* CS_ATMO_SOIL_5_CAT */
+  .ground_zone_id = -1,
+  .ground_meb_model = (cs_atmo_ground_meb_model_t) 0,
   .rain = false,
   .cloud_type = 0, /* 0 Continental, 1 Maritime */
   .accretion = false,
@@ -218,21 +218,21 @@ static cs_atmo_option_t  _atmo_option = {
   .precipitation = false,
   .evaporation = false,
   .rupture = false,
-  .soil_surf_temp = 20.0,
-  .soil_temperature = 20.0,
-  .soil_humidity = 0.0,
-  .soil_w1_ini = 0.0,
-  .soil_w2_ini = 0.0,
-  .soil_cat_thermal_inertia = nullptr,
-  .soil_cat_roughness = nullptr,
-  .soil_cat_thermal_roughness = nullptr,
-  .soil_cat_albedo = nullptr,
-  .soil_cat_emissi = nullptr,
-  .soil_cat_vegeta = nullptr,
-  .soil_cat_w1 = nullptr,
-  .soil_cat_w2 = nullptr,
-  .soil_cat_r1 = nullptr,
-  .soil_cat_r2 = nullptr,
+  .ground_surf_temp = 20.0,
+  .ground_temperature = 20.0,
+  .ground_humidity = 0.0,
+  .ground_w1_ini = 0.0,
+  .ground_w2_ini = 0.0,
+  .ground_cat_thermal_inertia = nullptr,
+  .ground_cat_roughness = nullptr,
+  .ground_cat_thermal_roughness = nullptr,
+  .ground_cat_albedo = nullptr,
+  .ground_cat_emissi = nullptr,
+  .ground_cat_vegeta = nullptr,
+  .ground_cat_w1 = nullptr,
+  .ground_cat_w2 = nullptr,
+  .ground_cat_r1 = nullptr,
+  .ground_cat_r2 = nullptr,
   .sigc = 0.53,
   .infrared_1D_profile = -1,
   .solar_1D_profile    = -1,
@@ -287,7 +287,7 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **nbmett,
                        int                    **nbmetm,
                        int                    **nbmaxt,
-                       int                    **soil_model,
+                       int                    **ground_model,
                        int                    **ihpm,
                        cs_real_t              **sigc,
                        int                    **idrayi,
@@ -317,8 +317,8 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
                               int         dim_nt_3[2]);
 
 void
-cs_f_atmo_get_soil_zone(cs_lnum_t         *n_elts,
-                        int               *n_soil_cat,
+cs_atmo_get_ground_zone(cs_lnum_t         *n_elts,
+                        int               *n_ground_cat,
                         const cs_lnum_t  **elt_ids);
 
 /*============================================================================
@@ -1589,7 +1589,7 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **nbmett,
                        int                    **nbmetm,
                        int                    **nbmaxt,
-                       int                    **soil_model,
+                       int                    **ground_model,
                        int                    **ihpm,
                        cs_real_t              **sigc,
                        int                    **idrayi,
@@ -1619,7 +1619,7 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
   *nbmett     = &(_atmo_option.met_1d_nlevels_t);
   *nbmetm     = &(_atmo_option.met_1d_ntimes);
   *nbmaxt     = &(_atmo_option.met_1d_nlevels_max_t);
-  *soil_model = &(_atmo_option.soil_model);
+  *ground_model = &(_atmo_option.ground_model);
   *ihpm = &(_atmo_option.hydrostatic_pressure_model);
   *sigc  = &(_atmo_option.sigc);
   *idrayi = &(_atmo_option.infrared_1D_profile);
@@ -1630,8 +1630,8 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
 }
 
 void
-cs_f_atmo_get_soil_zone(cs_lnum_t         *n_elts,
-                        int               *n_soil_cat,
+cs_atmo_get_ground_zone(cs_lnum_t         *n_elts,
+                        int               *n_ground_cat,
                         const cs_lnum_t  **elt_ids)
 {
   *n_elts = 0;
@@ -1640,26 +1640,26 @@ cs_f_atmo_get_soil_zone(cs_lnum_t         *n_elts,
   cs_atmo_option_t *at_opt = &_atmo_option;
 
   /* Not defined */
-  if (at_opt->soil_zone_id < 0) {
-    *n_soil_cat = 0;
+  if (at_opt->ground_zone_id < 0) {
+    *n_ground_cat = 0;
     return;
   }
 
-  const cs_zone_t *z = cs_boundary_zone_by_id(at_opt->soil_zone_id);
+  const cs_zone_t *z = cs_boundary_zone_by_id(at_opt->ground_zone_id);
   *elt_ids = z->elt_ids;
   *n_elts = z->n_elts;
-  switch (at_opt->soil_cat) {
+  switch (at_opt->ground_cat) {
     case CS_ATMO_SOIL_5_CAT:
-      *n_soil_cat = 5;
+      *n_ground_cat = 5;
       break;
     case CS_ATMO_SOIL_7_CAT:
-      *n_soil_cat = 7;
+      *n_ground_cat = 7;
       break;
     case CS_ATMO_SOIL_23_CAT:
-      *n_soil_cat = 23;
+      *n_ground_cat = 23;
       break;
     default:
-      *n_soil_cat = 0;
+      *n_ground_cat = 0;
       break;
   }
 }
@@ -1740,7 +1740,7 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
 }
 
 void
-cs_atmo_soil_init_arrays(int        *n_soil_cat,
+cs_atmo_ground_init_arrays(int        *n_ground_cat,
                          cs_real_t  **csol,
                          cs_real_t  **rugdyn,
                          cs_real_t  **rugthe,
@@ -1752,31 +1752,31 @@ cs_atmo_soil_init_arrays(int        *n_soil_cat,
                          cs_real_t  **r1,
                          cs_real_t  **r2)
 
- /* The dimension is n_soil_cat + 1 because the element at index 0
+ /* The dimension is n_ground_cat + 1 because the element at index 0
     is kept unused. */
 {
-  CS_REALLOC(_atmo_option.soil_cat_roughness, *n_soil_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.soil_cat_thermal_inertia, *n_soil_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.soil_cat_thermal_roughness, *n_soil_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.soil_cat_albedo, *n_soil_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.soil_cat_emissi, *n_soil_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.soil_cat_vegeta, *n_soil_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.soil_cat_w1, *n_soil_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.soil_cat_w2, *n_soil_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.soil_cat_r1, *n_soil_cat+1, cs_real_t);
-  CS_REALLOC(_atmo_option.soil_cat_r2, *n_soil_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.ground_cat_roughness, *n_ground_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.ground_cat_thermal_inertia, *n_ground_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.ground_cat_thermal_roughness, *n_ground_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.ground_cat_albedo, *n_ground_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.ground_cat_emissi, *n_ground_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.ground_cat_vegeta, *n_ground_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.ground_cat_w1, *n_ground_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.ground_cat_w2, *n_ground_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.ground_cat_r1, *n_ground_cat+1, cs_real_t);
+  CS_REALLOC(_atmo_option.ground_cat_r2, *n_ground_cat+1, cs_real_t);
 
-  *rugdyn = _atmo_option.soil_cat_roughness;
-  *csol   = _atmo_option.soil_cat_thermal_inertia;
-  *rugthe = _atmo_option.soil_cat_thermal_roughness;
+  *rugdyn = _atmo_option.ground_cat_roughness;
+  *csol   = _atmo_option.ground_cat_thermal_inertia;
+  *rugthe = _atmo_option.ground_cat_thermal_roughness;
 
-  *r1     = _atmo_option.soil_cat_r1;
-  *r2     = _atmo_option.soil_cat_r2 ;
-  *vegeta = _atmo_option.soil_cat_vegeta;
-  *albedo = _atmo_option.soil_cat_albedo;
-  *emissi = _atmo_option.soil_cat_emissi;
-  *c1w    = _atmo_option.soil_cat_w1;
-  *c2w    = _atmo_option.soil_cat_w2;
+  *r1     = _atmo_option.ground_cat_r1;
+  *r2     = _atmo_option.ground_cat_r2 ;
+  *vegeta = _atmo_option.ground_cat_vegeta;
+  *albedo = _atmo_option.ground_cat_albedo;
+  *emissi = _atmo_option.ground_cat_emissi;
+  *c1w    = _atmo_option.ground_cat_w1;
+  *c2w    = _atmo_option.ground_cat_w2;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -2491,12 +2491,12 @@ cs_atmo_bcond(void)
   /* Soil atmosphere boundary conditions
    *------------------------------------ */
 
-  if (at_opt->soil_model > 0) {
-    const cs_zone_t *z = cs_boundary_zone_by_id(at_opt->soil_zone_id);
+  if (at_opt->ground_model > 0) {
+    const cs_zone_t *z = cs_boundary_zone_by_id(at_opt->ground_zone_id);
     const cs_real_t *bvar_tempp
-      = cs_field_by_name("soil_pot_temperature")->val;
+      = cs_field_by_name("ground_pot_temperature")->val;
     const cs_real_t *bvar_total_water
-      = cs_field_by_name("soil_total_water")->val;
+      = cs_field_by_name("ground_total_water")->val;
 
     for (cs_lnum_t ii = 0; ii < z->n_elts; ii++) {
 
@@ -4968,16 +4968,16 @@ cs_atmo_finalize(void)
   CS_FREE(_atmo_option.mom_met);
   CS_FREE(_atmo_option.mom_cs);
 
-  CS_FREE(_atmo_option.soil_cat_r1);
-  CS_FREE(_atmo_option.soil_cat_r2);
-  CS_FREE(_atmo_option.soil_cat_vegeta);
-  CS_FREE(_atmo_option.soil_cat_albedo);
-  CS_FREE(_atmo_option.soil_cat_emissi);
-  CS_FREE(_atmo_option.soil_cat_roughness);
-  CS_FREE(_atmo_option.soil_cat_w1);
-  CS_FREE(_atmo_option.soil_cat_w2);
-  CS_FREE(_atmo_option.soil_cat_thermal_inertia);
-  CS_FREE(_atmo_option.soil_cat_thermal_roughness);
+  CS_FREE(_atmo_option.ground_cat_r1);
+  CS_FREE(_atmo_option.ground_cat_r2);
+  CS_FREE(_atmo_option.ground_cat_vegeta);
+  CS_FREE(_atmo_option.ground_cat_albedo);
+  CS_FREE(_atmo_option.ground_cat_emissi);
+  CS_FREE(_atmo_option.ground_cat_roughness);
+  CS_FREE(_atmo_option.ground_cat_w1);
+  CS_FREE(_atmo_option.ground_cat_w2);
+  CS_FREE(_atmo_option.ground_cat_thermal_inertia);
+  CS_FREE(_atmo_option.ground_cat_thermal_roughness);
 }
 
 /*----------------------------------------------------------------------------*/

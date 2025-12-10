@@ -86,7 +86,7 @@ typedef enum {
 } cs_atmo_universal_functions_t;
 
 /*----------------------------------------------------------------------------
- * Atmospheric soil model
+ * Atmospheric ground model
  *----------------------------------------------------------------------------*/
 
 typedef enum {
@@ -100,25 +100,25 @@ typedef enum {
       Julieta Silva et al. doi=10.1.1.608.2707 */
   CS_ATMO_SOIL_23_CAT = 2,
 
-} cs_atmo_soil_cat_t;
+} cs_atmo_ground_cat_t;
 
 /*----------------------------------------------------------------------------
- * Atmospheric soil micro-scale options
+ * Atmospheric ground micro-scale options
  *----------------------------------------------------------------------------*/
 
 typedef enum {
 
-  /*! Genuine Force-restore model (bare-soil or equivalent only) */
+  /*! Genuine Force-restore model (bare-ground or equivalent only) */
   CS_ATMO_SOIL_GENUINE = 0,
   /*! Force-restore model including photovoltaic layer */
   CS_ATMO_SOIL_PHOTOVOLTAICS = 1,
   /*! Force-restore model including vegetation layer */
   CS_ATMO_SOIL_VEGETATION = 2,
 
-} cs_atmo_soil_meb_model_t;
+} cs_atmo_ground_meb_model_t;
 
 /*----------------------------------------------------------------------------
- * Atmospheric soil micro-scale options
+ * Atmospheric ground micro-scale options
  *----------------------------------------------------------------------------*/
 
 typedef enum {
@@ -360,19 +360,19 @@ typedef struct {
   int qv_profile;
 
   /*! Soil model (1: on, 0: off) */
-  int soil_model;
+  int ground_model;
   /*! Soil categories:
    * - CS_ATMO_SOIL_5_CAT
    * - CS_ATMO_SOIL_7_CAT
    * - CS_ATMO_SOIL_23_CAT */
-  cs_atmo_soil_cat_t soil_cat;
+  cs_atmo_ground_cat_t ground_cat;
   /*! Soil zone id (or -1 if inactive) */
-  int soil_zone_id;
+  int ground_zone_id;
   /*! Solve supplementary heat budget equation (multi energy budget):
    * - CS_ATMO_SOIL_GENUINE
    * - CS_ATMO_SOIL_PHOTOVOLTAICS
    * - CS_ATMO_SOIL_VEGETATION */
-  cs_atmo_soil_meb_model_t soil_meb_model;
+  cs_atmo_ground_meb_model_t ground_meb_model;
 
   bool rain;
   int cloud_type;
@@ -384,38 +384,38 @@ typedef struct {
   bool evaporation;
   bool rupture;
 
-  /*! initial soil surface temperature
+  /*! initial ground surface temperature
    *  for Sea, it is also the surface temperature */
-  cs_real_t soil_surf_temp;
-  /*! initial deep soil temperature */
-  cs_real_t soil_temperature;
-  /*! initial soil specific humidity */
-  cs_real_t soil_humidity;
+  cs_real_t ground_surf_temp;
+  /*! initial deep ground temperature */
+  cs_real_t ground_temperature;
+  /*! initial ground specific humidity */
+  cs_real_t ground_humidity;
   /*! initial water content of the first reservoir */
-  cs_real_t soil_w1_ini;
+  cs_real_t ground_w1_ini;
   /*! initial water content of the second reservoir */
-  cs_real_t soil_w2_ini;
-  /*! Thermal inertia of the soil */
-  cs_real_t *soil_cat_thermal_inertia;
+  cs_real_t ground_w2_ini;
+  /*! Thermal inertia of the ground */
+  cs_real_t *ground_cat_thermal_inertia;
   /*! Dynamic roughness length */
-  cs_real_t *soil_cat_roughness;
+  cs_real_t *ground_cat_roughness;
   /*! Thermal roughness length*/
-  cs_real_t *soil_cat_thermal_roughness;
-  /*! Albedo per soil category */
-  cs_real_t *soil_cat_albedo;
-  /*! emissivity per soil category */
-  cs_real_t *soil_cat_emissi;
-  /*! Vegetation index per soil category */
-  cs_real_t *soil_cat_vegeta;
+  cs_real_t *ground_cat_thermal_roughness;
+  /*! Albedo per ground category */
+  cs_real_t *ground_cat_albedo;
+  /*! emissivity per ground category */
+  cs_real_t *ground_cat_emissi;
+  /*! Vegetation index per ground category */
+  cs_real_t *ground_cat_vegeta;
   /*! maximum water capacity of shallow reservoir*/
-  cs_real_t *soil_cat_w1;
+  cs_real_t *ground_cat_w1;
   /*! ratio of the maximum water capacity of the shallow
    *  reservoir to the deep reservoir [0,1]*/
-  cs_real_t *soil_cat_w2;
+  cs_real_t *ground_cat_w2;
   /*! Rij value for Rij1*/
-  cs_real_t *soil_cat_r1;
+  cs_real_t *ground_cat_r1;
   /*! Rij value for Rij2*/
-  cs_real_t *soil_cat_r2;
+  cs_real_t *ground_cat_r2;
  /*! adimensional : sigc=0.53 other referenced values are 0.28, 0.15 */
   cs_real_t sigc;
   /*! 1D infrared profile id */
@@ -736,34 +736,34 @@ cs_atmo_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Allow call of cs_user fonctions during soil model computation
+ * \brief Allow call of cs_user fonctions during ground model computation
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_soil_model(void);
+cs_user_ground_model(void);
 
 /*----------------------------------------------------------------------------*/
 
 void
-cs_f_atmo_get_soil_zone(cs_lnum_t         *n_elts,
-                        int               *n_soil_cat,
+cs_atmo_get_ground_zone(cs_lnum_t         *n_elts,
+                        int               *n_ground_cat,
                         const cs_lnum_t  **elt_ids);
 
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmo_soil_init_arrays(int        *n_soil_cat,
-                         cs_real_t  **csol,
-                         cs_real_t  **rugdyn,
-                         cs_real_t  **rugthe,
-                         cs_real_t  **albedo,
-                         cs_real_t  **emissi,
-                         cs_real_t  **vegeta,
-                         cs_real_t  **c1w,
-                         cs_real_t  **c2w,
-                         cs_real_t  **r1,
-                         cs_real_t  **r2);
+cs_atmo_ground_init_arrays(int        *n_ground_cat,
+                           cs_real_t  **csol,
+                           cs_real_t  **rugdyn,
+                           cs_real_t  **rugthe,
+                           cs_real_t  **albedo,
+                           cs_real_t  **emissi,
+                           cs_real_t  **vegeta,
+                           cs_real_t  **c1w,
+                           cs_real_t  **c2w,
+                           cs_real_t  **r1,
+                           cs_real_t  **r2);
 
 /*----------------------------------------------------------------------------*/
 

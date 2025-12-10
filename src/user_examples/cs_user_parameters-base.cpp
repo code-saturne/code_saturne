@@ -370,19 +370,19 @@ cs_user_model(void)
   /* Soil Atmosphere model
    * ---------------------*/
 
-  /*! [atmo_soil_set] */
-  at_opt->soil_model = 1; /* Switch on soil model */
+  /*! [atmo_ground_set] */
+  at_opt->ground_model = 1; /* Switch on ground model */
 
   /* Set the number of predefined categories (+1 which is the default one)
    * among:
    *  - CS_ATMO_SOIL_5_CAT
    *  - CS_ATMO_SOIL_7_CAT
    * */
-  at_opt->soil_cat= CS_ATMO_SOIL_5_CAT; /* Switch on soil model */
+  at_opt->ground_cat= CS_ATMO_SOIL_5_CAT; /* Switch on ground model */
 
   /* Specify the boundary zone which is modeled */
-  at_opt->soil_zone_id = cs_boundary_zone_by_name("Sol")->id;
-  /*! [atmo_soil_set] */
+  at_opt->ground_zone_id = cs_boundary_zone_by_name("Sol")->id;
+  /*! [atmo_ground_set] */
 
 /* 1-D radiative transfer
    * ---------------------*/
@@ -1986,9 +1986,9 @@ cs_user_finalize_setup([[maybe_unused]] cs_domain_t   *domain)
   cs_atmo_option_t *at_opt = cs_glob_atmo_option;
   cs_atmo_1d_rad_t *at_1d_rad = cs_glob_atmo_1d_rad;
 
-  /* Initializing the soil table of each vertical grid */
+  /* Initializing the ground table of each vertical grid */
 
-  if (at_opt->soil_model != 0) {
+  if (at_opt->ground_model != 0) {
     for (int i = 0; i < at_1d_rad->nvert; i++) {
       at_1d_rad->albedo0[i] = 0.25;
       at_1d_rad->emissi0[i] = 0.965;
@@ -1999,10 +1999,10 @@ cs_user_finalize_setup([[maybe_unused]] cs_domain_t   *domain)
       at_1d_rad->rho0   [i] = 1.23;
     }
 
-    /* Modify the soil parameters if activated */
-    at_opt->soil_cat_roughness[3] = 0.0012;
-    at_opt->soil_cat_thermal_inertia[3] = 1.7e-5;
-    at_opt->soil_cat_thermal_roughness[3] = 0.0012;
+    /* Modify the ground parameters if activated */
+    at_opt->ground_cat_roughness[3] = 0.0012;
+    at_opt->ground_cat_thermal_inertia[3] = 1.7e-5;
+    at_opt->ground_cat_thermal_roughness[3] = 0.0012;
   }
 
   /* Example: define 1-D radiative transfer mesh for

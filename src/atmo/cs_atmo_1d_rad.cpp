@@ -134,13 +134,13 @@ cs_f_atmo_arrays_get_radiative_model_1d(cs_real_t **xyvert,
                                         cs_real_t **ird,
                                         cs_real_t **solu,
                                         cs_real_t **sold,
-                                        cs_real_t **soil_albedo,
-                                        cs_real_t **soil_emissi,
-                                        cs_real_t **soil_ttsoil,
-                                        cs_real_t **soil_tpsoil,
-                                        cs_real_t **soil_totwat,
-                                        cs_real_t **soil_pressure,
-                                        cs_real_t **soil_density,
+                                        cs_real_t **ground_albedo,
+                                        cs_real_t **ground_emissi,
+                                        cs_real_t **ground_ttground,
+                                        cs_real_t **ground_tpground,
+                                        cs_real_t **ground_totwat,
+                                        cs_real_t **ground_pressure,
+                                        cs_real_t **ground_density,
                                         int         dim_xyvert[2],
                                         int         dim_kmx2[2],
                                         int         dim_kmx_nvert[2]);
@@ -213,13 +213,13 @@ cs_f_atmo_arrays_get_radiative_model_1d(cs_real_t **xyvert,
                                         cs_real_t **ird,
                                         cs_real_t **solu,
                                         cs_real_t **sold,
-                                        cs_real_t **soil_albedo,
-                                        cs_real_t **soil_emissi,
-                                        cs_real_t **soil_ttsoil,
-                                        cs_real_t **soil_tpsoil,
-                                        cs_real_t **soil_totwat,
-                                        cs_real_t **soil_pressure,
-                                        cs_real_t **soil_density,
+                                        cs_real_t **ground_albedo,
+                                        cs_real_t **ground_emissi,
+                                        cs_real_t **ground_ttground,
+                                        cs_real_t **ground_tpground,
+                                        cs_real_t **ground_totwat,
+                                        cs_real_t **ground_pressure,
+                                        cs_real_t **ground_density,
                                         int         dim_xyvert[2],
                                         int         dim_kmx2[2],
                                         int         dim_kmx_nvert[2])
@@ -354,13 +354,13 @@ cs_f_atmo_arrays_get_radiative_model_1d(cs_real_t **xyvert,
   *sold   = _atmo_1d_rad.sold  ;
 
   /* ground level arrays, of size n_vert */
-  *soil_albedo   = _atmo_1d_rad.albedo0;
-  *soil_emissi   = _atmo_1d_rad.emissi0;
-  *soil_ttsoil   = _atmo_1d_rad.temp0;
-  *soil_tpsoil   = _atmo_1d_rad.theta0;
-  *soil_totwat   = _atmo_1d_rad.qw0;
-  *soil_pressure = _atmo_1d_rad.p0;
-  *soil_density  = _atmo_1d_rad.rho0;
+  *ground_albedo   = _atmo_1d_rad.albedo0;
+  *ground_emissi   = _atmo_1d_rad.emissi0;
+  *ground_ttground   = _atmo_1d_rad.temp0;
+  *ground_tpground   = _atmo_1d_rad.theta0;
+  *ground_totwat   = _atmo_1d_rad.qw0;
+  *ground_pressure = _atmo_1d_rad.p0;
+  *ground_density  = _atmo_1d_rad.rho0;
 
   dim_kmx2[0]      = _atmo_1d_rad.nlevels_max;
   dim_kmx2[1]      = _atmo_1d_rad.nlevels_max;

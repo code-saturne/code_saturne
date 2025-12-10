@@ -63,7 +63,7 @@ cs_atmo_kinetic_rates.h \
 cs_atmo_profile_std.h \
 cs_atmo_source_terms.h \
 cs_atmo_variables.h \
-cs_atmo_soil_model.h \
+cs_atmo_ground_model.h \
 cs_atprke.h \
 cs_intprf.h
 
@@ -84,7 +84,7 @@ cs_atmo_kinetic_rates.cpp \
 cs_atmo_profile_std.cpp \
 cs_atmo_source_terms.cpp \
 cs_atmo_variables.cpp \
-cs_atmo_soil_model.cpp \
+cs_atmo_ground_model.cpp \
 cs_atprke.cpp \
 cs_intprf.cpp \
 rayigc.f90 \

@@ -1,8 +1,8 @@
-#ifndef CS_ATMO_SOIL_MODEL_H
-#define CS_ATMO_SOIL_MODEL_H
+#ifndef CS_ATMO_GROUND_MODEL_H
+#define CS_ATMO_GROUND_MODEL_H
 
 /*============================================================================
- * Atmospheric soil module - Build constants and variables to describe ground model
+ * Atmospheric ground module - Build constants and variables to describe ground model
  *============================================================================*/
 
 /*
@@ -37,7 +37,7 @@
 
 BEGIN_C_DECLS
 
-/*! \file cs_atmo_soil_model.h */
+/*! \file cs_atmo_ground_model.h */
 
 /*============================================================================
  * Type definitions
@@ -64,12 +64,12 @@ typedef struct {
   cs_real_t emi_plant;
   /*! CO2 concentration in the air */
   cs_real_t c_co2_air;
-  /*! Constant for the CO2 flux in the soil */
-  cs_real_t f_co2_0_soil;
+  /*! Constant for the CO2 flux in the ground */
+  cs_real_t f_co2_0_ground;
   /*! Reference temperature for the CO2 exchanges */
   cs_real_t temp_ref_co2;
   /*! Activation energy for the CO2 */
-  cs_real_t ea_soil;
+  cs_real_t ea_ground;
   /*! Stomatal conductance constant */
   cs_real_t a_pho;
   /*! Stomatal conductance minimum value */
@@ -128,7 +128,7 @@ typedef struct {
   cs_real_t r_root;
   /*! Root depth */
   cs_real_t z_root;
-  /*! Length of roots in a volume of soil */
+  /*! Length of roots in a volume of ground */
   cs_real_t ld_root;
   /*! Choice of water potential model */
   int water_potential_model;
@@ -136,7 +136,7 @@ typedef struct {
   cs_real_t psi_e;
   /*! Air hydraulic power */
   cs_real_t psi_pow;
-  /*! Reference soil hydraulic conductivity */
+  /*! Reference ground hydraulic conductivity */
   cs_real_t kref;
   /*! Canopy mixing length */
   cs_real_t canopy_mix_l;
@@ -144,7 +144,7 @@ typedef struct {
   cs_real_t turb_prandtl;
   /*! Leaf draf coefficient */
   cs_real_t cdrag_leaf;
-  /*! Bare soil rugosity */
+  /*! Bare ground rugosity */
   cs_real_t zos;
   /*! Reference height of the plant */
   cs_real_t zref_plant;
@@ -153,9 +153,9 @@ typedef struct {
   /*! Soil tortuosity factor */
   cs_real_t tort_factor;
   /*! Soil exchange length */
-  cs_real_t soil_exch_l;
-  /*! Dry soil porosity */
-  cs_real_t dry_soil_porosity;
+  cs_real_t ground_exch_l;
+  /*! Dry ground porosity */
+  cs_real_t dry_ground_porosity;
   /*! Soil constant for the porosity */
   cs_real_t dv;
 } cs_plant_option_t;
@@ -178,7 +178,7 @@ extern cs_plant_option_t *cs_glob_plant_option;
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmo_soil_initialize(void);
+cs_atmo_ground_initialize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -190,19 +190,19 @@ cs_atmo_soil_initialize(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmo_soil_cat(int call_stage);
+cs_atmo_ground_cat(int call_stage);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute soil and interface values using Deardorff force restore method
+ * \brief Compute ground and interface values using Deardorff force restore method
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_soil_model(void);
+cs_ground_model(void);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* CS_ATMO_SOIL_MODEL_H */
+#endif /* CS_ATMO_GROUND_MODEL_H */

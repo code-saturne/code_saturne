@@ -821,8 +821,8 @@
   One can set information relative to meteo chemistry:
   \snippet cs_user_parameters-base.cpp atmo_chem
 
-  One can set information relative to soil modelling:
-  \snippet cs_user_parameters-base.cpp atmo_soil_set
+  One can set information relative to ground modelling:
+  \snippet cs_user_parameters-base.cpp atmo_ground_set
 
   One can set information relative to 1D radiative transfer:
   \snippet cs_user_parameters-base.cpp atmo_1d_rad

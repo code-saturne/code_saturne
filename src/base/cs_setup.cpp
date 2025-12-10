@@ -91,7 +91,7 @@
 #include "atmo/cs_atmo.h"
 #include "atmo/cs_atmo_variables.h"
 #include "atmo/cs_at_data_assim.h"
-#include "atmo/cs_atmo_soil_model.h"
+#include "atmo/cs_atmo_ground_model.h"
 #include "cfbl/cs_cf_thermo.h"
 #include "cogz/cs_combustion_gas.h"
 #include "cogz/cs_combustion_read_data.h"
@@ -2778,9 +2778,9 @@ _init_user(void)
     if (cs_glob_atmo_option->meteo_profile == 2)
       cs_atmo_init_meteo_profiles();
 
-    /* Advanced init/allocation for the soil model */
-    if (cs_glob_atmo_option->soil_cat >= 0)
-      cs_atmo_soil_cat(1);
+    /* Advanced init/allocation for the ground model */
+    if (cs_glob_atmo_option->ground_cat >= 0)
+      cs_atmo_ground_cat(1);
   }
 
   /* If thermal solver, set appropriate flags for coupling if needed,

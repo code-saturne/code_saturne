@@ -257,8 +257,8 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
 
     ! Note: we use previous values of the soil to be coherent with
     ! previous datasetting and what have seen the fluid.
-    call field_get_val_prev_s_by_name("soil_pot_temperature", bvar_tempp)
-    call field_get_val_prev_s_by_name("soil_total_water", bvar_total_water)
+    call field_get_val_prev_s_by_name("ground_pot_temperature", bvar_tempp)
+    call field_get_val_prev_s_by_name("ground_total_water", bvar_total_water)
 
     call field_get_val_s_by_name("boundary_albedo", bpro_albedo)
     call field_get_val_s_by_name("emissivity", bpro_emissi)
