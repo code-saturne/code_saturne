@@ -1164,7 +1164,6 @@ _set_xa_coeffs_csr_increment(cs_matrix_t       *matrix,
                              const cs_lnum_2_t *restrict edges,
                              const cs_real_t   *restrict xa)
 {
-  cs_lnum_t  ii, jj, face_id;
   auto mc = static_cast<cs_matrix_coeff_t  *>(matrix->coeffs);
 
   auto ms = static_cast<const cs_matrix_struct_csr_t *>(matrix->structure);
@@ -1175,40 +1174,41 @@ _set_xa_coeffs_csr_increment(cs_matrix_t       *matrix,
 
   if (symmetric == false) {
 
-    for (face_id = 0; face_id < n_edges; face_id++) {
-      cs_lnum_t kk, ll;
-      ii = edges[face_id][0];
-      jj = edges[face_id][1];
+    for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
+      cs_lnum_t ii = edges[edge_id][0];
+      cs_lnum_t jj = edges[edge_id][1];
       if (ii < ms->n_rows) {
+        cs_lnum_t kk;
         for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
-        mc->_val[kk] += xa[2*face_id];
+        mc->_val[kk] += xa[2*edge_id];
       }
       if (jj < ms->n_rows) {
+        cs_lnum_t ll;
         for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
-        mc->_val[ll] += xa[2*face_id + 1];
+        mc->_val[ll] += xa[2*edge_id + 1];
       }
     }
 
   }
   else { /* if symmetric == true */
 
-    for (face_id = 0; face_id < n_edges; face_id++) {
-      cs_lnum_t kk, ll;
-      ii = edges[face_id][0];
-      jj = edges[face_id][1];
+    for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
+      cs_lnum_t ii = edges[edge_id][0];
+      cs_lnum_t jj = edges[edge_id][1];
       if (ii < ms->n_rows) {
+        cs_lnum_t kk;
         for (kk = ms->row_index[ii]; ms->col_id[kk] != jj; kk++);
-        mc->_val[kk] += xa[face_id];
+        mc->_val[kk] += xa[edge_id];
       }
       if (jj < ms->n_rows) {
+        cs_lnum_t ll;
         for (ll = ms->row_index[jj]; ms->col_id[ll] != ii; ll++);
-        mc->_val[ll] += xa[face_id];
+        mc->_val[ll] += xa[edge_id];
       }
 
     }
 
   } /* end of condition on coefficients symmetry */
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1284,7 +1284,6 @@ _set_coeffs_csr(cs_matrix_t *matrix,
       _set_xa_coeffs_csr_increment(matrix, symmetric, n_edges, edges, xa);
 
   }
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1766,49 +1765,58 @@ _set_e_coeffs_msr_direct(cs_matrix_t        *matrix,
                          const cs_lnum_2_t  *restrict edges,
                          const cs_real_t    *restrict xa)
 {
-  cs_lnum_t  ii, jj, face_id;
-  auto       mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
+  auto  mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
   auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
   const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
 
+  const cs_lnum_t n_rows = ms->n_rows;
+  const cs_lnum_t *row_index = ms_e->row_index;
+  const cs_lnum_t *col_id = ms_e->col_id;
+  cs_real_t *val = mc->_e_val;
+
   /* Copy extra-diagonal values */
+
+  cs_dispatch_context  ctx;
+  if (matrix->alloc_mode == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
 
   assert(edges != nullptr || n_edges == 0);
 
   if (symmetric == false) {
 
-    for (face_id = 0; face_id < n_edges; face_id++) {
-      cs_lnum_t kk, ll;
-      ii = edges[face_id][0];
-      jj = edges[face_id][1];
-      if (ii < ms->n_rows) {
-        for (kk = ms_e->row_index[ii]; ms_e->col_id[kk] != jj; kk++);
-        mc->_e_val[kk] = xa[2*face_id];
+    ctx.parallel_for(n_edges, [=] CS_F_HOST_DEVICE (cs_lnum_t edge_id) {
+      cs_lnum_t ii = edges[edge_id][0];
+      cs_lnum_t jj = edges[edge_id][1];
+      if (ii < n_rows) {
+        cs_lnum_t kk;
+        for (kk = row_index[ii]; col_id[kk] != jj; kk++);
+        val[kk] = xa[2*edge_id];
       }
-      if (jj < ms_e->n_rows) {
-        for (ll = ms_e->row_index[jj]; ms_e->col_id[ll] != ii; ll++);
-        mc->_e_val[ll] = xa[2*face_id + 1];
+      if (jj < n_rows) {
+        cs_lnum_t ll;
+        for (ll = row_index[jj]; col_id[ll] != ii; ll++);
+        val[ll] = xa[2*edge_id + 1];
       }
-    }
+    });
 
   }
   else { /* if symmetric == true */
 
-    for (face_id = 0; face_id < n_edges; face_id++) {
-      cs_lnum_t kk, ll;
-      ii = edges[face_id][0];
-      jj = edges[face_id][1];
-      if (ii < ms_e->n_rows) {
-        for (kk = ms_e->row_index[ii]; ms_e->col_id[kk] != jj; kk++);
-        mc->_e_val[kk] = xa[face_id];
+    ctx.parallel_for(n_edges, [=] CS_F_HOST_DEVICE (cs_lnum_t edge_id) {
+      cs_lnum_t ii = edges[edge_id][0];
+      cs_lnum_t jj = edges[edge_id][1];
+      if (ii < n_rows) {
+        cs_lnum_t kk;
+        for (kk = row_index[ii]; col_id[kk] != jj; kk++);
+        val[kk] = xa[edge_id];
       }
-      if (jj < ms_e->n_rows) {
-        for (ll = ms_e->row_index[jj]; ms_e->col_id[ll] != ii; ll++);
-        mc->_e_val[ll] = xa[face_id];
+      if (jj < n_rows) {
+        cs_lnum_t ll;
+        for (ll = row_index[jj]; col_id[ll] != ii; ll++);
+        val[ll] = xa[edge_id];
       }
-
-    }
+    });
 
   } /* end of condition on coefficients symmetry */
 
@@ -1839,49 +1847,57 @@ _set_e_coeffs_msr_direct_block(cs_matrix_t        *matrix,
   auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
   const cs_matrix_struct_csr_t  *ms_e = &(ms->e);
 
+  const cs_lnum_t  n_rows = ms_e->n_rows;
   const cs_lnum_t  b_size_2 = matrix->eb_size * matrix->eb_size;
+
+  const cs_lnum_t *row_index = ms_e->row_index;
+  const cs_lnum_t *col_id = ms_e->col_id;
+  cs_real_t *val = mc->_e_val;
 
   /* Copy extra-diagonal values */
 
   assert(edges != nullptr || n_edges == 0);
 
+  cs_dispatch_context  ctx;
+  if (matrix->alloc_mode == CS_ALLOC_HOST)
+    ctx.set_use_gpu(false);
+
   if (symmetric == false) {
 
-    for (cs_lnum_t face_id = 0; face_id < n_edges; face_id++) {
-      cs_lnum_t ii = edges[face_id][0];
-      cs_lnum_t jj = edges[face_id][1];
+    ctx.parallel_for(n_edges, [=] CS_F_HOST_DEVICE (cs_lnum_t edge_id) {
+      cs_lnum_t ii = edges[edge_id][0];
+      cs_lnum_t jj = edges[edge_id][1];
       cs_lnum_t kk, ll;
-      if (ii < ms_e->n_rows) {
-        for (kk = ms_e->row_index[ii]; ms_e->col_id[kk] != jj; kk++);
+      if (ii < n_rows) {
+        for (kk = row_index[ii]; col_id[kk] != jj; kk++);
         for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
-          mc->_e_val[kk*b_size_2 + pp] = xa[2*face_id*b_size_2 + pp];
+          val[kk*b_size_2 + pp] = xa[2*edge_id*b_size_2 + pp];
       }
-      if (jj < ms_e->n_rows) {
-        for (ll = ms_e->row_index[jj]; ms_e->col_id[ll] != ii; ll++);
+      if (jj < n_rows) {
+        for (ll = row_index[jj]; col_id[ll] != ii; ll++);
         for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
-          mc->_e_val[ll*b_size_2 + pp] = xa[(2*face_id+1)*b_size_2 + pp];
+          val[ll*b_size_2 + pp] = xa[(2*edge_id+1)*b_size_2 + pp];
       }
-    }
+    });
 
   }
   else { /* if symmetric == true */
 
-    for (cs_lnum_t face_id = 0; face_id < n_edges; face_id++) {
-      cs_lnum_t ii = edges[face_id][0];
-      cs_lnum_t jj = edges[face_id][1];
+    ctx.parallel_for(n_edges, [=] CS_F_HOST_DEVICE (cs_lnum_t edge_id) {
+      cs_lnum_t ii = edges[edge_id][0];
+      cs_lnum_t jj = edges[edge_id][1];
       cs_lnum_t kk, ll;
-      if (ii < ms_e->n_rows) {
-        for (kk = ms_e->row_index[ii]; ms_e->col_id[kk] != jj; kk++);
+      if (ii < n_rows) {
+        for (kk = row_index[ii]; col_id[kk] != jj; kk++);
         for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
-          mc->_e_val[kk*b_size_2 + pp] = xa[face_id*b_size_2 + pp];
+          val[kk*b_size_2 + pp] = xa[edge_id*b_size_2 + pp];
       }
-      if (jj < ms_e->n_rows) {
-        for (ll = ms_e->row_index[jj]; ms_e->col_id[ll] != ii; ll++);
+      if (jj < n_rows) {
+        for (ll = row_index[jj]; col_id[ll] != ii; ll++);
         for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
-          mc->_e_val[ll*b_size_2 + pp] = xa[face_id*b_size_2 + pp];
+          val[ll*b_size_2 + pp] = xa[edge_id*b_size_2 + pp];
       }
-
-    }
+    });
 
   } /* end of condition on coefficients symmetry */
 
@@ -1909,7 +1925,6 @@ _set_e_coeffs_msr_increment(cs_matrix_t        *matrix,
                             const cs_lnum_2_t  *restrict edges,
                             const cs_real_t    *restrict xa)
 {
-  cs_lnum_t  ii, jj, face_id;
   auto       mc = static_cast<cs_matrix_coeff_t *>(matrix->coeffs);
 
   auto ms = static_cast<const cs_matrix_struct_dist_t *>(matrix->structure);
@@ -1921,34 +1936,36 @@ _set_e_coeffs_msr_increment(cs_matrix_t        *matrix,
 
   if (symmetric == false) {
 
-    for (face_id = 0; face_id < n_edges; face_id++) {
-      cs_lnum_t kk, ll;
-      ii = edges[face_id][0];
-      jj = edges[face_id][1];
+    for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
+      cs_lnum_t ii = edges[edge_id][0];
+      cs_lnum_t jj = edges[edge_id][1];
       if (ii < ms_e->n_rows) {
+        cs_lnum_t kk;
         for (kk = ms_e->row_index[ii]; ms_e->col_id[kk] != jj; kk++);
-        mc->_e_val[kk] += xa[2*face_id];
+        mc->_e_val[kk] += xa[2*edge_id];
       }
       if (jj < ms_e->n_rows) {
+        cs_lnum_t ll;
         for (ll = ms_e->row_index[jj]; ms_e->col_id[ll] != ii; ll++);
-        mc->_e_val[ll] += xa[2*face_id + 1];
+        mc->_e_val[ll] += xa[2*edge_id + 1];
       }
     }
 
   }
   else { /* if symmetric == true */
 
-    for (face_id = 0; face_id < n_edges; face_id++) {
-      cs_lnum_t kk, ll;
-      ii = edges[face_id][0];
-      jj = edges[face_id][1];
+    for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
+      cs_lnum_t ii = edges[edge_id][0];
+      cs_lnum_t jj = edges[edge_id][1];
       if (ii < ms_e->n_rows) {
+        cs_lnum_t kk;
         for (kk = ms_e->row_index[ii]; ms_e->col_id[kk] != jj; kk++);
-        mc->_e_val[kk] += xa[face_id];
+        mc->_e_val[kk] += xa[edge_id];
       }
       if (jj < ms_e->n_rows) {
+        cs_lnum_t ll;
         for (ll = ms_e->row_index[jj]; ms_e->col_id[ll] != ii; ll++);
-        mc->_e_val[ll] += xa[face_id];
+        mc->_e_val[ll] += xa[edge_id];
       }
 
     }
@@ -1992,38 +2009,38 @@ _set_e_coeffs_msr_increment_block(cs_matrix_t        *matrix,
 
   if (symmetric == false) {
 
-    for (cs_lnum_t face_id = 0; face_id < n_edges; face_id++) {
-      cs_lnum_t ii = edges[face_id][0];
-      cs_lnum_t jj = edges[face_id][1];
+    for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
+      cs_lnum_t ii = edges[edge_id][0];
+      cs_lnum_t jj = edges[edge_id][1];
       cs_lnum_t kk, ll;
       if (ii < ms_e->n_rows) {
         for (kk = ms_e->row_index[ii]; ms_e->col_id[kk] != jj; kk++);
         for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
-          mc->_e_val[kk*b_size_2 + pp] += xa[2*face_id*b_size_2 + pp];
+          mc->_e_val[kk*b_size_2 + pp] += xa[2*edge_id*b_size_2 + pp];
       }
       if (jj < ms_e->n_rows) {
         for (ll = ms_e->row_index[jj]; ms_e->col_id[ll] != ii; ll++);
         for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
-          mc->_e_val[ll*b_size_2 + pp] += xa[(2*face_id+1)*b_size_2 + pp];
+          mc->_e_val[ll*b_size_2 + pp] += xa[(2*edge_id+1)*b_size_2 + pp];
       }
     }
 
   }
   else { /* if symmetric == true */
 
-    for (cs_lnum_t face_id = 0; face_id < n_edges; face_id++) {
-      cs_lnum_t ii = edges[face_id][0];
-      cs_lnum_t jj = edges[face_id][1];
+    for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
+      cs_lnum_t ii = edges[edge_id][0];
+      cs_lnum_t jj = edges[edge_id][1];
       cs_lnum_t kk, ll;
       if (ii < ms_e->n_rows) {
         for (kk = ms_e->row_index[ii]; ms_e->col_id[kk] != jj; kk++);
         for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
-          mc->_e_val[kk*b_size_2 + pp] += xa[face_id*b_size_2 + pp];
+          mc->_e_val[kk*b_size_2 + pp] += xa[edge_id*b_size_2 + pp];
       }
       if (jj < ms_e->n_rows) {
         for (ll = ms_e->row_index[jj]; ms_e->col_id[ll] != ii; ll++);
         for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
-          mc->_e_val[ll*b_size_2 + pp] += xa[face_id*b_size_2 + pp];
+          mc->_e_val[ll*b_size_2 + pp] += xa[edge_id*b_size_2 + pp];
       }
 
     }
@@ -3531,28 +3548,28 @@ _set_e_coeffs_dist_increment(cs_matrix_t        *matrix,
   const cs_lnum_t xa_stride = (symmetric) ? 1 : 2;
   const cs_lnum_t xa_sj = xa_stride / 2;
 
-  for (cs_lnum_t face_id = 0; face_id < n_edges; face_id++) {
+  for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
     cs_lnum_t kk, ll;
-    cs_lnum_t ii = edges[face_id][0];
-    cs_lnum_t jj = edges[face_id][1];
+    cs_lnum_t ii = edges[edge_id][0];
+    cs_lnum_t jj = edges[edge_id][1];
     if (ii < ms->n_rows) {
       if (jj < ms->n_rows) {
         for (kk = ms_e->row_index[ii]; ms_e->col_id[kk] != jj; kk++);
-        mc->_e_val[kk] += xa[xa_stride*face_id];
+        mc->_e_val[kk] += xa[xa_stride*edge_id];
       }
       else {
         for (kk = ms_h->row_index[ii]; ms_h->col_id[kk] != jj; kk++);
-        mc->_h_val[kk] += xa[xa_stride*face_id];
+        mc->_h_val[kk] += xa[xa_stride*edge_id];
       }
     }
     if (jj < ms->n_rows) {
       if (ii < ms->n_rows) {
         for (ll = ms_e->row_index[jj]; ms_e->col_id[ll] != ii; ll++);
-        mc->_e_val[ll] += xa[xa_stride*face_id + xa_sj];
+        mc->_e_val[ll] += xa[xa_stride*edge_id + xa_sj];
       }
       else {
         for (ll = ms_h->row_index[jj]; ms_h->col_id[ll] != ii; ll++);
-        mc->_h_val[ll] += xa[xa_stride*face_id + xa_sj];
+        mc->_h_val[ll] += xa[xa_stride*edge_id + xa_sj];
       }
     }
   }
@@ -3596,21 +3613,21 @@ _set_e_coeffs_dist_increment_block(cs_matrix_t        *matrix,
   const cs_lnum_t xa_stride = (symmetric) ? b_size_2 : 2*b_size_2;
   const cs_lnum_t xa_sj = (symmetric) ? 0 : b_size_2;
 
-  for (cs_lnum_t face_id = 0; face_id < n_edges; face_id++) {
-    cs_lnum_t ii = edges[face_id][0];
-    cs_lnum_t jj = edges[face_id][1];
+  for (cs_lnum_t edge_id = 0; edge_id < n_edges; edge_id++) {
+    cs_lnum_t ii = edges[edge_id][0];
+    cs_lnum_t jj = edges[edge_id][1];
     cs_lnum_t kk, ll;
     if (ii < ms->n_rows) {
       if (jj < ms->n_rows) {
         for (kk = ms_e->row_index[ii]; ms_e->col_id[kk] != jj; kk++) {
           for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
-            mc->_e_val[kk * b_size_2 + pp] += xa[xa_stride * face_id + pp];
+            mc->_e_val[kk * b_size_2 + pp] += xa[xa_stride * edge_id + pp];
         }
       }
       else {
         for (kk = ms_h->row_index[ii]; ms_h->col_id[kk] != jj; kk++) {
           for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
-            mc->_h_val[kk * b_size_2 + pp] += xa[xa_stride * face_id + pp];
+            mc->_h_val[kk * b_size_2 + pp] += xa[xa_stride * edge_id + pp];
         }
       }
     }
@@ -3619,14 +3636,14 @@ _set_e_coeffs_dist_increment_block(cs_matrix_t        *matrix,
         for (ll = ms_e->row_index[jj]; ms_e->col_id[ll] != ii; ll++) {
           for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
             mc->_e_val[ll * b_size_2 + pp] +=
-              xa[xa_stride * face_id + xa_sj + pp];
+              xa[xa_stride * edge_id + xa_sj + pp];
         }
       }
       else {
         for (ll = ms_h->row_index[jj]; ms_h->col_id[ll] != ii; ll++) {
           for (cs_lnum_t pp = 0; pp < b_size_2; pp++)
             mc->_h_val[ll * b_size_2 + pp] +=
-              xa[xa_stride * face_id + xa_sj + pp];
+              xa[xa_stride * edge_id + xa_sj + pp];
         }
       }
     }

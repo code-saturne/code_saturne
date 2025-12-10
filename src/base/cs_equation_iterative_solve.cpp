@@ -380,7 +380,15 @@ _equation_iterative_solve_strided(int                   idtvar,
                      (f_id, var_name, stride, eb_size, symmetric);
 
 #if defined(HAVE_ACCEL)
-  cs_matrix_set_alloc_mode(a, ctx.alloc_mode());
+  {
+    /* For non-symmetric matrices, the current MG coarsening
+       algorithm needs to be able to access some matrix values on CPU. */
+    cs_alloc_mode_t amode = ctx.alloc_mode();
+    if (symmetric == false && conv_diff_mg && amode == CS_ALLOC_DEVICE)
+      amode = CS_ALLOC_HOST_DEVICE_SHARED;
+
+    cs_matrix_set_alloc_mode(a, amode);
+  }
 #endif
 
   int tensorial_diffusion = 1;
@@ -1573,7 +1581,15 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   cs_matrix_t *a = cs_sles_default_get_matrix(f_id, var_name, 1, 1, symmetric);
 
 #if defined(HAVE_ACCEL)
-  cs_matrix_set_alloc_mode(a, ctx.alloc_mode());
+  {
+    /* For non-symmetric matrices, the current MG coarsening
+       algorithm needs to be able to access some matrix values on CPU. */
+    cs_alloc_mode_t amode = ctx.alloc_mode();
+    if (symmetric == false && conv_diff_mg && amode == CS_ALLOC_DEVICE)
+      amode = CS_ALLOC_HOST_DEVICE_SHARED;
+
+    cs_matrix_set_alloc_mode(a, amode);
+  }
 #endif
 
   /* For steady computations, the diagonal is relaxed */

@@ -749,7 +749,7 @@ _coarsen_face_cell(const cs_grid_t    *fine,
 
   /* Set return values */
 
-  CS_REALLOC(_c_face_cell, c_n_faces, cs_lnum_2_t);
+  CS_REALLOC_HD(_c_face_cell, c_n_faces, cs_lnum_2_t, coarse->alloc_mode);
 
   coarse->n_faces = c_n_faces;
   coarse->coarse_face = _coarse_face;
@@ -1898,9 +1898,9 @@ _append_face_data(cs_grid_t   *g,
     CS_REALLOC(g->_face_cell, n_faces_tot, cs_lnum_2_t);
 
     if (g->symmetric == true)
-      CS_REALLOC(g->_xa, n_faces_tot, cs_real_t);
+      CS_REALLOC_HD(g->_xa, n_faces_tot, cs_real_t, g->alloc_mode);
     else
-      CS_REALLOC(g->_xa, n_faces_tot*2, cs_real_t);
+      CS_REALLOC_HD(g->_xa, n_faces_tot*2, cs_real_t, g->alloc_mode);
 
     if (g->relaxation > 0) {
 
@@ -8532,10 +8532,10 @@ cs_grid_coarsen(const cs_grid_t      *f,
     /* Allocate permanent arrays in coarse grid */
 
     assert(c->_da == nullptr);
-    CS_MALLOC(c->_da, c->n_cols_ext * db_stride, cs_real_t);
+    CS_MALLOC_HD(c->_da, c->n_cols_ext * db_stride, cs_real_t, c->alloc_mode);
     c->da = c->_da;
 
-    CS_MALLOC(c->_xa, c->n_faces*isym, cs_real_t);
+    CS_MALLOC_HD(c->_xa, c->n_faces*isym, cs_real_t, c->alloc_mode);
     c->xa = c->_xa;
 
     CS_MALLOC(c->_cell_cen, c->n_cols_ext, cs_real_3_t);
