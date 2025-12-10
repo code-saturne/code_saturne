@@ -459,7 +459,7 @@ cs_ground_compute_mean(void)
     }
 
     bft_printf(" ** ========================================= **\n"
-               " ** Soil/atmosphere interface                 **\n"
+               " ** Ground/atmosphere interface                 **\n"
                " ** Array of constants                        **\n"
                " ** ========================================= **\n");
     bft_printf(" *            * minimum*    mean* maximum*\n");
@@ -480,7 +480,7 @@ cs_ground_compute_mean(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Soil Plant Atmo Continuum model - compute plant and ground convective
+ * \brief Ground Plant Atmo Continuum model - compute plant and ground convective
  * exchange resistances.
  *
  * \param[in] face_id and ground_id.
@@ -526,7 +526,7 @@ _compute_convective_exch_resistances(cs_lnum_t face_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Soil Plant Atmo Continuum model - compute water stress.
+ * \brief Ground Plant Atmo Continuum model - compute water stress.
  *
  * \param[in] face_id and ground_id.
  */
@@ -581,7 +581,7 @@ _compute_water_stress(cs_lnum_t ground_id)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Soil Plant Atmo Continuum model - compute stomatal conductance.
+ * \brief Ground Plant Atmo Continuum model - compute stomatal conductance.
  *
  * \param[in] face_id and ground_id.
  */
@@ -818,7 +818,7 @@ _compute_stomatal_conductance(cs_lnum_t ground_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Soil Plant Atmo Continuum model - compute energy exchanges and plant temperature.
+ * \brief Ground Plant Atmo Continuum model - compute energy exchanges and plant temperature.
  *
  * \param[in] face_id and ground_id.
  */
@@ -993,7 +993,7 @@ _compute_le_h_and_leaf_temp(cs_lnum_t ground_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Soil Plant Atmo Continuum model - compute source term plant and ground
+ * \brief Ground Plant Atmo Continuum model - compute source term plant and ground
  * to air.
  *
  * \param[in] face_id and ground_id.
@@ -1081,7 +1081,7 @@ cs_ground_model(void)
     cs_field_t *ground_visible_rad_absorbed
       = cs_field_by_name_try("ground_visible_rad_absorbed");
 
-    /* Soil related fields */
+    /* Ground related fields */
     cs_field_t *ground_temperature = cs_field_by_name("ground_temperature");
     cs_field_t *ground_pot_temperature = cs_field_by_name("ground_pot_temperature");
     cs_field_t *ground_total_water = cs_field_by_name("ground_total_water");
@@ -1317,7 +1317,7 @@ cs_ground_model(void)
        * Specific case for vegetation
        * ==================================== */
 
-      if (micro_scale_option == CS_ATMO_SOIL_VEGETATION) {
+      if (micro_scale_option == CS_ATMO_GROUND_VEGETATION) {
 
         /* Check if latent heat of vaporization of water (J/kg) is defined */
         if (ct_prop->hv0 < 100000.){
@@ -1536,7 +1536,7 @@ cs_ground_model(void)
 
       cs_lnum_t iseuil = 0;
 
-      /* Soil temp is in Celius.*/
+      /* Ground temp is in Celius.*/
       if (ground_temperature->val[ground_id]
           + cs_physical_constants_celsius_to_kelvin < tseuil)
         iseuil = 1;
@@ -1563,8 +1563,8 @@ cs_ground_model(void)
         * cs_math_pow4(ground_temperature->val[ground_id]
         + cs_physical_constants_celsius_to_kelvin);
 
-      if ((micro_scale_option == CS_ATMO_SOIL_PHOTOVOLTAICS) ||
-          (micro_scale_option == CS_ATMO_SOIL_VEGETATION)) {
+      if ((micro_scale_option == CS_ATMO_GROUND_PHOTOVOLTAICS) ||
+          (micro_scale_option == CS_ATMO_GROUND_VEGETATION)) {
         ray2 += cs_math_pow4(cover_temperature_radiative->val[ground_id]
             + cs_physical_constants_celsius_to_kelvin) * stephn
           * emi_eq * c_refl * refl;
@@ -1678,7 +1678,7 @@ cs_atmo_ground_initialize(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Soil - atmosphere parameters computed from a "Land use" file
+ * \brief Ground - atmosphere parameters computed from a "Land use" file
  *
  * \param[in] call_stage  first pass to set default values,
  *                        second pass to perform some checks and log
@@ -1731,7 +1731,7 @@ cs_atmo_ground_cat(int call_stage)
     building = 5;
   }
 
-  /* Soil categories names */
+  /* Ground categories names */
   if (water != inityp) strncpy(nomcat[water], "water", 6);
   if (forest != inityp) strncpy(nomcat[forest], "forest", 7);
   if (diverse != inityp) strncpy(nomcat[diverse], "diverse", 8);
@@ -1925,7 +1925,7 @@ cs_atmo_ground_cat(int call_stage)
 
   if (call_stage == 2) {
     /* Log */
-    bft_printf(" Soil-atmosphere interface model\n");
+    bft_printf(" Ground-atmosphere interface model\n");
     bft_printf(" Values of tabulated coefficients\n");
     bft_printf(" --------------------------------\n");
     bft_printf(" Name      z0 dyn   z0 th    albedo   emissi   "

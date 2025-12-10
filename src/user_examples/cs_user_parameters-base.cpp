@@ -367,7 +367,7 @@ cs_user_model(void)
   cs_glob_atmo_chemistry->frozen_gas_chem = false;
   /*! [atmo_chem] */
 
-  /* Soil Atmosphere model
+  /* Ground Atmosphere model
    * ---------------------*/
 
   /*! [atmo_ground_set] */
@@ -375,10 +375,10 @@ cs_user_model(void)
 
   /* Set the number of predefined categories (+1 which is the default one)
    * among:
-   *  - CS_ATMO_SOIL_5_CAT
-   *  - CS_ATMO_SOIL_7_CAT
+   *  - CS_ATMO_GROUND_5_CAT
+   *  - CS_ATMO_GROUND_7_CAT
    * */
-  at_opt->ground_cat= CS_ATMO_SOIL_5_CAT; /* Switch on ground model */
+  at_opt->ground_cat= CS_ATMO_GROUND_5_CAT; /* Switch on ground model */
 
   /* Specify the boundary zone which is modeled */
   at_opt->ground_zone_id = cs_boundary_zone_by_name("Sol")->id;

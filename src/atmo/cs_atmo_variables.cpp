@@ -674,13 +674,13 @@ cs_atmo_add_property_fields(void)
     const cs_zone_t *z = cs_boundary_zone_by_id(z_id);
     int ground_num = 5;
     switch (cs_glob_atmo_option->ground_cat) {
-    case CS_ATMO_SOIL_5_CAT:
+    case CS_ATMO_GROUND_5_CAT:
       ground_num = 5;
       break;
-    case CS_ATMO_SOIL_7_CAT:
+    case CS_ATMO_GROUND_7_CAT:
       ground_num = 7;
       break;
-    case CS_ATMO_SOIL_23_CAT:
+    case CS_ATMO_GROUND_23_CAT:
       ground_num = 23;
       break;
     }
@@ -912,7 +912,7 @@ cs_atmo_add_property_fields(void)
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Ground visible radiation absorbed");
 
-    if (cs_glob_atmo_option->ground_meb_model > CS_ATMO_SOIL_GENUINE) {
+    if (cs_glob_atmo_option->ground_meb_model > CS_ATMO_GROUND_GENUINE) {
       f = cs_field_create("cover_geometry_ratio",
                           field_type,
                           z->location_id,

@@ -206,7 +206,7 @@ static cs_atmo_option_t  _atmo_option = {
   .hydrostatic_pressure_model = 0,
   .qv_profile = 0,
   .ground_model = 0, /* off or user defined */
-  .ground_cat = (cs_atmo_ground_cat_t) 0, /* CS_ATMO_SOIL_5_CAT */
+  .ground_cat = (cs_atmo_ground_cat_t) 0, /* CS_ATMO_GROUND_5_CAT */
   .ground_zone_id = -1,
   .ground_meb_model = (cs_atmo_ground_meb_model_t) 0,
   .rain = false,
@@ -1649,13 +1649,13 @@ cs_atmo_get_ground_zone(cs_lnum_t         *n_elts,
   *elt_ids = z->elt_ids;
   *n_elts = z->n_elts;
   switch (at_opt->ground_cat) {
-    case CS_ATMO_SOIL_5_CAT:
+    case CS_ATMO_GROUND_5_CAT:
       *n_ground_cat = 5;
       break;
-    case CS_ATMO_SOIL_7_CAT:
+    case CS_ATMO_GROUND_7_CAT:
       *n_ground_cat = 7;
       break;
-    case CS_ATMO_SOIL_23_CAT:
+    case CS_ATMO_GROUND_23_CAT:
       *n_ground_cat = 23;
       break;
     default:
@@ -2488,7 +2488,7 @@ cs_atmo_bcond(void)
   cs_field_t *th_f = cs_thermal_model_field();
   cs_field_t *ym_w = cs_field_by_name_try("ym_water");
 
-  /* Soil atmosphere boundary conditions
+  /* Ground atmosphere boundary conditions
    *------------------------------------ */
 
   if (at_opt->ground_model > 0) {

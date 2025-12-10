@@ -92,13 +92,13 @@ typedef enum {
 typedef enum {
 
   /*! 5 categories: water, forest, diverse, mineral, building */
-  CS_ATMO_SOIL_5_CAT = 0,
+  CS_ATMO_GROUND_5_CAT = 0,
   /*! 7 categories: water, forest, diverse, mineral, diffuse buildings,
      mixtie buildings, dense buildings  */
-  CS_ATMO_SOIL_7_CAT = 1,
+  CS_ATMO_GROUND_7_CAT = 1,
   /*! Roughness length classification of Corine land cover classes
       Julieta Silva et al. doi=10.1.1.608.2707 */
-  CS_ATMO_SOIL_23_CAT = 2,
+  CS_ATMO_GROUND_23_CAT = 2,
 
 } cs_atmo_ground_cat_t;
 
@@ -109,11 +109,11 @@ typedef enum {
 typedef enum {
 
   /*! Genuine Force-restore model (bare-ground or equivalent only) */
-  CS_ATMO_SOIL_GENUINE = 0,
+  CS_ATMO_GROUND_GENUINE = 0,
   /*! Force-restore model including photovoltaic layer */
-  CS_ATMO_SOIL_PHOTOVOLTAICS = 1,
+  CS_ATMO_GROUND_PHOTOVOLTAICS = 1,
   /*! Force-restore model including vegetation layer */
-  CS_ATMO_SOIL_VEGETATION = 2,
+  CS_ATMO_GROUND_VEGETATION = 2,
 
 } cs_atmo_ground_meb_model_t;
 
@@ -359,19 +359,19 @@ typedef struct {
    *  qv_profile = 1 decreasing exponential */
   int qv_profile;
 
-  /*! Soil model (1: on, 0: off) */
+  /*! Ground model (1: on, 0: off) */
   int ground_model;
-  /*! Soil categories:
-   * - CS_ATMO_SOIL_5_CAT
-   * - CS_ATMO_SOIL_7_CAT
-   * - CS_ATMO_SOIL_23_CAT */
+  /*! Ground categories:
+   * - CS_ATMO_GROUND_5_CAT
+   * - CS_ATMO_GROUND_7_CAT
+   * - CS_ATMO_GROUND_23_CAT */
   cs_atmo_ground_cat_t ground_cat;
-  /*! Soil zone id (or -1 if inactive) */
+  /*! Ground zone id (or -1 if inactive) */
   int ground_zone_id;
   /*! Solve supplementary heat budget equation (multi energy budget):
-   * - CS_ATMO_SOIL_GENUINE
-   * - CS_ATMO_SOIL_PHOTOVOLTAICS
-   * - CS_ATMO_SOIL_VEGETATION */
+   * - CS_ATMO_GROUND_GENUINE
+   * - CS_ATMO_GROUND_PHOTOVOLTAICS
+   * - CS_ATMO_GROUND_VEGETATION */
   cs_atmo_ground_meb_model_t ground_meb_model;
 
   bool rain;

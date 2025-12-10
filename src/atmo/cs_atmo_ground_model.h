@@ -150,13 +150,13 @@ typedef struct {
   cs_real_t zref_plant;
   /*! Eddy diffusivity at the top of the canopy */
   cs_real_t k_eddy_hc;
-  /*! Soil tortuosity factor */
+  /*! Ground tortuosity factor */
   cs_real_t tort_factor;
-  /*! Soil exchange length */
+  /*! Ground exchange length */
   cs_real_t ground_exch_l;
   /*! Dry ground porosity */
   cs_real_t dry_ground_porosity;
-  /*! Soil constant for the porosity */
+  /*! Ground constant for the porosity */
   cs_real_t dv;
 } cs_plant_option_t;
 
@@ -182,7 +182,7 @@ cs_atmo_ground_initialize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Soil - atmosphere parameters computed from a "Land use" file
+ * \brief Ground - atmosphere parameters computed from a "Land use" file
  *
  * \param[in] call_stage  first pass to set default values,
  *                        second pass to perform some checks and log
