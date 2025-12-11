@@ -1365,15 +1365,15 @@ _define_export_mesh(cs_post_mesh_t  *post_mesh,
     }
     else {
 
-      cs_lnum_t n_b_faces_all = cs::min(cs_glob_mesh->n_b_faces,
+      cs_lnum_t n_b_faces_adj = cs::min(cs_glob_mesh->n_b_faces,
                                         cs_glob_mesh->n_b_faces_all);
 
-      if (n_b_faces >= n_b_faces_all && n_i_faces == 0)
+      if (n_b_faces >= n_b_faces_adj&& n_i_faces == 0)
         exp_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
                                                   post_mesh->name,
                                                   post_mesh->add_groups,
                                                   0,
-                                                  n_b_faces,
+                                                  n_b_faces_adj,
                                                   nullptr,
                                                   nullptr);
       else
