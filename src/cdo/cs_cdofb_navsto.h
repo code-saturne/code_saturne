@@ -760,6 +760,33 @@ cs_cdofb_navsto_stream_source_term(cs_lnum_t            n_elts,
                                    cs_real_t           *retval);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the balance for an NS system over the full computational
+ *         domain between time t_cur and t_cur + dt_cur
+ *         Case of Navier-Stokes system with CDO face-based scheme
+ *
+ * \param[in]      nsp           set of parameters to handle the Navier-Stokes system
+ * \param[in]      quant         pointer to a \ref cs_cdo_quantities_t struct.
+ * \param[in]      connect       pointer to a \ref cs_cdo_connect_t struct.
+ * \param[in]      ts            pointer to a \ref cs_time_step_t struct.
+ * \param[in]      pr_bc         set of definitions for the presuure BCs
+ * \param[in]      bf_type       type of boundaries for all boundary faces
+ * \param[in]      pr_c          scalar-valued pressure in each cell
+ *
+ * \return a pointer to a \ref cs_cdo_balance_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_cdo_balance_t *
+cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
+                        const cs_cdo_connect_t      *connect,
+                        const cs_cdo_quantities_t   *quant,
+                        const cs_time_step_t        *ts,
+                        const cs_cdo_bc_face_t      *pr_bc,
+                        const cs_boundary_type_t    *bf_type,
+                        const cs_real_t             *pr_c);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

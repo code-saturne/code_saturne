@@ -58,6 +58,8 @@
 #include "base/cs_math.h"
 #include "cdo/cs_navsto_coupling.h"
 #include "cdo/cs_navsto_param.h"
+#include "cdo/cs_navsto_system.h"
+#include "cdo/cs_cdofb_vecteq.h"
 #include "base/cs_parall.h"
 #include "base/cs_post.h"
 #include "cdo/cs_reco.h"
@@ -2312,6 +2314,434 @@ cs_cdofb_navsto_stream_source_term(cs_lnum_t            n_elts,
     retval[r_id] = w[3*id+2];   /* Extract the z component */
 
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the balance for an NS system over the full computational
+ *         domain between time t_cur and t_cur + dt_cur
+ *         Case of Navier-Stokes system with CDO face-based scheme
+ *
+ * \param[in]      nsp           set of parameters to handle the Navier-Stokes system
+ * \param[in]      quant         pointer to a \ref cs_cdo_quantities_t struct.
+ * \param[in]      connect       pointer to a \ref cs_cdo_connect_t struct.
+ * \param[in]      ts            pointer to a \ref cs_time_step_t struct.
+ * \param[in]      pr_bc         set of definitions for the presuure BCs
+ * \param[in]      bf_type       type of boundaries for all boundary faces
+ * \param[in]      pr_c          scalar-valued pressure in each cell
+ *
+ * \return a pointer to a \ref cs_cdo_balance_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_cdo_balance_t *
+cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
+                        const cs_cdo_connect_t      *connect,
+                        const cs_cdo_quantities_t   *quant,
+                        const cs_time_step_t        *ts,
+                        const cs_cdo_bc_face_t      *pr_bc,
+                        const cs_boundary_type_t    *bf_type,
+                        const cs_real_t             *pr_c)
+
+{
+  const char *func_name = __func__;
+
+  cs_timer_t  t0 = cs_timer_time();
+
+  cs_equation_t *mom_eq = cs_navsto_system_get_momentum_eq();
+  cs_cdofb_vecteq_t  *eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
+  cs_equation_param_t *eqp = mom_eq->param;
+  cs_equation_builder_t *eqb = mom_eq->builder;
+
+  cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
+  const cs_lnum_t  n_cells = quant->n_cells;
+  const cs_lnum_t  n_faces = quant->n_faces;
+
+  /* Allocate and initialize the structure storing the balance evaluation */
+
+  cs_cdo_balance_t  *eb = cs_cdo_balance_create(cs_flag_primal_cell,
+                                                3*(n_cells + n_faces));
+
+# pragma omp parallel if (n_cells > CS_THR_MIN)     \
+  shared(quant, connect, ts, eqp, eqb, eqc, pot, eb, \
+         func_name)
+  {
+    const int  t_id = cs_get_thread_id();
+
+    /* Each thread get back its related structures:
+       Get the cell-wise view of the mesh and the algebraic system */
+
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
+
+    cs_cell_sys_t     *csys = nullptr;
+    cs_cell_builder_t *cb   = nullptr;
+    cs_cdofb_vecteq_get(&csys, &cb);
+
+    cs_hodge_t         *diff_hodge = (eqc->diffusion_hodge == nullptr)
+                                       ? nullptr
+                                       : eqc->diffusion_hodge[t_id];
+    cs_hodge_t *mass_hodge
+      = (eqc->mass_hodge == nullptr) ? nullptr : eqc->mass_hodge[t_id];
+
+    const cs_real_t  t_cur = ts->t_cur;
+    const cs_real_t  dt_cur = ts->dt[0];
+    const cs_real_t  inv_dtcur = 1./dt_cur;
+
+    cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(nsp,
+                                                                    connect);
+
+    /* Set times at which one evaluates quantities if needed */
+
+    switch (eqp->time_scheme) {
+
+    case CS_TIME_SCHEME_EULER_EXPLICIT:
+      cb->t_pty_eval = t_cur;
+      cb->t_bc_eval = t_cur;
+      cb->t_st_eval = t_cur;
+      break;
+    case CS_TIME_SCHEME_CRANKNICO:
+      cb->t_pty_eval = t_cur + 0.5*dt_cur;
+      cb->t_bc_eval = t_cur + dt_cur;
+      cb->t_st_eval = t_cur + dt_cur;
+      break;
+    case CS_TIME_SCHEME_THETA:
+      cb->t_pty_eval = t_cur + eqp->theta*dt_cur;
+      cb->t_bc_eval = t_cur + dt_cur;
+      cb->t_st_eval = t_cur + dt_cur;
+      break;
+
+    default: /* Implicit (Forward Euler or BDF2) */
+      cb->t_pty_eval = t_cur + dt_cur;
+      cb->t_bc_eval = t_cur + dt_cur;
+      cb->t_st_eval = t_cur + dt_cur;
+      break;
+
+      } /* Switch on time scheme */
+
+    /* Initialization of the values of properties */
+
+    cs_equation_builder_init_properties(eqp, eqb, diff_hodge, cb);
+
+    /* Set inside the OMP section so that each thread has its own value */
+
+    cs_real_t  _p_cur[30], _p_prev[30], _p_theta[30];
+    cs_real_t *p_cur = nullptr, *p_prev = nullptr, *p_theta = nullptr;
+
+    if (connect->n_max_fbyc > 9) {
+      CS_MALLOC(p_cur, 3*(connect->n_max_fbyc + 1), cs_real_t);
+      CS_MALLOC(p_prev, 3*(connect->n_max_fbyc + 1), cs_real_t);
+      CS_MALLOC(p_theta, 3*(connect->n_max_fbyc + 1), cs_real_t);
+    }
+    else {
+      p_cur = _p_cur;
+      p_prev = _p_prev;
+      p_theta = _p_theta;
+    }
+
+    /* --------------------------------------------- */
+    /* Main loop on cells to build the linear system */
+    /* --------------------------------------------- */
+
+#   pragma omp for CS_CDO_OMP_SCHEDULE
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+      cb->cell_flag = connect->cell_flag[c_id];
+
+      /* Set the local mesh structure for the current cell */
+
+      cs_cell_mesh_build(c_id,
+                         cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
+                         connect, quant, cm);
+
+
+      /* Set the local (i.e. cellwise) structures for the current cell */
+
+      cs_cdofb_vecteq_init_cell_system(cm,
+                                       eqp,
+                                       eqb,
+                                       eqc->face_values,
+                                       pot->val,
+                                       nullptr,
+                                       nullptr, /* no n-1 state is given */
+                                       csys,
+                                       cb);
+
+
+      /* Setup the navsto local builder
+       * =================================
+       * - Set the type of boundary associated to each boundary face
+       * - Set the pressure boundary conditions (if required)
+       * - Define the divergence operator used in the linear system (div_op is
+       *   equal to minus the divergence)
+       */
+
+      cs_cdofb_navsto_define_builder(cb->t_bc_eval, nsp, cm, csys,
+                                     pr_bc, bf_type, &nsb);
+
+
+      if (eqb->sys_flag & CS_FLAG_SYS_MASS_MATRIX) { /* MASS MATRIX
+                                                      * =========== */
+        assert(mass_hodge != nullptr);
+
+        /* Build the mass matrix and store it in mass_hodge->matrix */
+
+        eqc->get_mass_matrix(cm, mass_hodge, cb);
+
+      }
+
+      /* Unsteady term + time scheme */
+
+      if (cs_equation_param_has_time(eqp)) {
+
+        if (!(eqb->time_pty_uniform))
+          cb->tpty_val = cs_property_value_in_cell(cm,
+                                                   eqp->time_property,
+                                                   cb->t_pty_eval);
+
+        /* Set the value of the current potential */
+
+        for (short int f = 0; f < cm->n_fc; f++)
+          for (short int k = 0; k < 3; k++) {
+            p_cur[3*f + k] = eqc->face_values[3*cm->f_ids[f] + k];
+            p_prev[3*f + k] = eqc->face_values_pre[3*cm->f_ids[f] + k];
+          }
+
+        for (short int k = 0; k < 3; k++) {
+          p_cur[3*cm->n_fc + k] = pot->val[3*cm->c_id + k];
+          p_prev[3*cm->n_fc + k] = pot->val_pre[3*cm->c_id + k];
+        }
+
+        /* Get the value of the time property */
+
+        const double  tptyc = inv_dtcur * cb->tpty_val;
+
+        /* Assign local matrix to a mass matrix to define */
+
+        CS_CDO_OMP_ASSERT(cb->loc->n_rows == cb->loc->n_cols);
+        CS_CDO_OMP_ASSERT(cb->loc->n_rows == cm->n_fc + 1);
+
+        if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) {
+          for (short int k = 0; k < 3; k++)
+            eb->unsteady_term[3*n_faces + 3*c_id + k] += tptyc * cm->vol_c *
+              (p_cur[3*cm->n_fc + k] - p_prev[3*cm->n_fc + k]);
+        }
+        else
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Not implemented yet.", func_name);
+
+      } /* End of time contribution */
+
+      /* Set p_theta */
+
+      switch (eqp->time_scheme) {
+
+      case CS_TIME_SCHEME_EULER_EXPLICIT:
+        for (short int i = 0; i < cm->n_fc + 1; i++)
+         for (int k = 0; k < 3; k++)
+           p_theta[3*i + k] = p_prev[3*i + k];
+        break;
+      case CS_TIME_SCHEME_CRANKNICO:
+        for (short int i = 0; i < cm->n_fc + 1; i++)
+          for (int k = 0; k < 3; k++)
+            p_theta[3*i + k] = 0.5*(p_cur[3*i + k] + p_prev[3*i + k]);
+        break;
+      case CS_TIME_SCHEME_THETA:
+        for (short int i = 0; i < cm->n_fc + 1; i++)
+          for (int k = 0; k < 3; k++)
+            p_theta[3*i + k] = eqp->theta*p_cur[3*i + k] +
+              (1-eqp->theta)*p_prev[3*i + k];
+        break;
+
+      case CS_TIME_SCHEME_EULER_IMPLICIT: /* Implicit (Euler or BDF2) */
+        for (short int i = 0; i < cm->n_fc + 1; i++)
+          for (int k = 0; k < 3; k++)
+            p_theta[3*i + k] = p_cur[3*i + k];
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+            "%s: Not implemented yet.", func_name);
+        break;
+
+      } /* Switch on time scheme */
+
+      /* Reaction term */
+
+      if (cs_equation_param_has_reaction(eqp)) {
+
+        /* Update the value of the reaction property(ies) if needed */
+
+        cs_equation_builder_set_reaction_pty_cw(eqp, eqb, cm, cb);
+
+        /* Define the local reaction property */
+
+        const double  rpty_val = cb->rpty_val * cm->vol_c;
+        for (int k = 0; k < 3; k++)
+          eb->reaction_term[3*n_faces + 3*c_id + k] += rpty_val * p_theta[3*cm->n_fc + k];
+
+      } /* Reaction */
+
+      /* Diffusion term */
+
+      if (cs_equation_param_has_diffusion(eqp)) {
+
+        assert(diff_hodge != nullptr);
+
+        /* Set the diffusion property */
+
+        if (!(eqb->diff_pty_uniform))
+          cs_hodge_evaluate_property_cw(cm, cb->t_pty_eval, cb->cell_flag,
+                                        diff_hodge);
+
+        /* Define the local stiffness matrix: local matrix owned by the cellwise
+           builder (store in cb->loc) */
+        cs_sdm_block33_init(csys->mat, cm->n_fc + 1, cm->n_fc + 1);
+
+        cs_cdofb_vecteq_diffusion(eqp, eqb, eqc, cm, diff_hodge, csys, cb);
+
+        cs_real_t  *res = cb->values;
+        memset(res, 0, 3*(cm->n_fc + 1)*sizeof(cs_real_t));
+        cs_sdm_block_matvec(csys->mat, p_theta, res);
+
+        for (short int i = 0; i < cm->n_fc; i++) {
+          const cs_lnum_t f_id = cm->f_ids[i];
+          for (short int k = 0; k < 3; k++)
+            eb->diffusion_term[3*f_id + k] += res[3*i + k];
+        }
+
+        for (short int k = 0; k < 3; k++)
+          eb->diffusion_term[3*n_faces + 3*cm->c_id + k] += res[3*cm->n_fc + k];
+
+      } /* End of diffusion */
+
+      /* Advection term */
+
+      if (cs_equation_param_has_convection(eqp)
+          && ((cb->cell_flag & CS_FLAG_SOLID_CELL) == 0)) { /* ADVECTION TERM
+                                                             * ============== */
+
+        /* Open hook: Compute the advection flux for the numerical scheme and store
+           the advection fluxes across primal faces */
+
+        eqc->advection_open(eqp, cm, csys, eqc->advection_input, cb);
+
+        /* Define the local advection matrix */
+
+        const cs_property_data_t *diff_pty =
+          (diff_hodge == nullptr) ? nullptr : diff_hodge->pty_data;
+
+        eqc->advection_main(eqp, cm, csys, diff_pty, eqc->advection_scheme, cb);
+
+        /* Close hook: Modify if needed the computed advection matrix and update
+           the local system */
+
+        cs_sdm_block33_init(csys->mat, cm->n_fc + 1, cm->n_fc + 1);
+
+        eqc->advection_close(eqp, cm, csys, cb, cb->loc);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
+        if (cs_dbg_cw_test(eqp, cm, csys))
+          cs_cell_sys_dump("\n>> Cell system after advection", csys);
+#endif
+        cs_real_t  *res = cb->values;
+        memset(res, 0, 3*(cm->n_fc + 1)*sizeof(cs_real_t));
+        cs_sdm_block_matvec(csys->mat, p_theta, res);
+
+        for (short int i = 0; i < cm->n_fc; i++) {
+          const cs_lnum_t f_id = cm->f_ids[i];
+          for (short int k = 0; k < 3; k++)
+            eb->advection_term[3*f_id + k] += res[3*i + k];
+        }
+
+        for (short int k = 0; k < 3; k++)
+          eb->advection_term[3*n_faces + 3*cm->c_id + k] += res[3*cm->n_fc + k];
+
+      } /* End of advection */
+
+      /* Source term */
+
+      if (cs_equation_param_has_sourceterm(eqp)) {
+
+        /* Reset the local contribution */
+
+        cs_real_t  *src = cb->values;
+        memset(src, 0, 3*(cm->n_fc + 1)*sizeof(cs_real_t));
+
+        /* Source term contribution to the algebraic system
+           If the equation is steady, the source term has already been computed
+           and is added to the right-hand side during its initialization. */
+
+        cs_source_term_compute_cellwise(eqp->n_source_terms,
+                    (cs_xdef_t *const *)eqp->source_terms,
+                                        cm,
+                                        eqb->source_mask,
+                                        eqb->compute_source,
+                                        cb->t_st_eval,
+                                        mass_hodge,
+                                        cb,
+                                        src);
+
+        for (short int i = 0; i < cm->n_fc; i++) {
+          const cs_lnum_t f_id = cm->f_ids[i];
+          for (short int k = 0; k < 3; k++)
+            eb->source_term[3*f_id + k] += src[3*i + k];
+        }
+
+        for (short int k = 0; k < 3; k++)
+          eb->source_term[3*n_faces + 3*cm->c_id + k] += src[3*cm->n_fc + k];
+
+      } /* End of term source contribution */
+
+      cs_real_t *div_op = nsb.div_op;
+
+      if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
+        const cs_boundary_type_t  *_bf_type = nsb.bf_type;
+
+        for (short int i = 0; i < csys->n_bc_faces; i++) {
+
+          /* Get the boundary face in the cell numbering */
+
+          const short int  f = csys->_f_ids[i];
+
+          if (_bf_type[i] & CS_BOUNDARY_IMPOSED_VEL
+           || _bf_type[i] & CS_BOUNDARY_SYMMETRY
+           || _bf_type[i] & CS_BOUNDARY_WALL) {
+
+            for (short int k = 0; k < 3; k++)
+              div_op[3*f+k] = 0.;
+          }
+        }
+      }
+
+      for (cs_lnum_t i = 0; i < cm->n_fc; i++) {
+        const cs_lnum_t f_id = cm->f_ids[i];
+        for (short int k = 0; k < 3; k++)
+          eb->source_term[3*f_id + k] -= div_op[3*i + k]*pr_c[c_id];
+      }
+
+    } /* Main loop on cells */
+
+    if (p_cur != _p_cur) {
+      CS_FREE(p_cur);
+      CS_FREE(p_prev);
+      CS_FREE(p_theta);
+    }
+
+    cs_cdofb_navsto_free_builder(&nsb);
+
+  } /* OPENMP Block */
+
+  for (cs_lnum_t dof_id = 0; dof_id < n_faces + n_cells; dof_id++)
+    for (short int k = 0; k < 3; k++)
+      eb->balance[3*dof_id + k] =
+        eb->unsteady_term[3*dof_id + k]  + eb->reaction_term[3*dof_id + k] +
+        eb->diffusion_term[3*dof_id + k] + eb->advection_term[3*dof_id + k] -
+        eb->source_term[3*dof_id + k];
+
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
+
+  return eb;
 }
 
 /*----------------------------------------------------------------------------*/
