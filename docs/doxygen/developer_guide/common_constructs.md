@@ -1,7 +1,7 @@
 <!--
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2024 EDF S.A.
+  Copyright (C) 1998-2025 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -222,10 +222,10 @@ public:
   // Operator
   void operator() (size_t  i)
   {
-    if (is_disabled[i])
+    if (is_disabled_[i])
       return;
 
-    y[i] += a * x[i];
+    y_[i] += a_ * x_[i];
   }
 
 };
@@ -281,7 +281,7 @@ parallel_for(size_t         n,
   auto_generated func(i_face_cells, a, x, y, i_sum_type);
 
   cs_cuda_kernel_parallel_for<<<l_grid_size, block_size_, 0, stream_>>>
-    (m->n_i_faces, f);
+    (n, f);
 }
 ```
 
@@ -365,13 +365,12 @@ On a CPU with OpenMP-based parallelism, the implementation expands to:
 ```{.cpp}
 void
 parallel_for_i_faces(cs_mesh_t            *m,
-                     const cs_lnum_2_t    *i_face_cells,
                      const cs_real_2_t    *a,
                      const cs_real_t      *x,
                      cs_real_t            *y,
                      cs_dispatch_sum_type  i_sum_type)
 {
-  auto_generated func(i_face_cells, a, x, y, i_sum_type);
+  auto_generated func(m->i_face_cells, a, x, y, i_sum_type);
 
   for (int ig = 0; ig < n_groups; ig++) {
     #pragma parallel for
