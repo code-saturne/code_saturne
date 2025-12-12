@@ -425,6 +425,22 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
+   * \brief Getter for total size.
+   *
+   * \return total size.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  inline
+  cs_lnum_t
+  size() const
+  {
+    return _size;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
    * \brief Getter for extent along a given dimension.
    *
    * \return extent.
@@ -438,6 +454,25 @@ public:
   (
     int i
   )
+  {
+    return _extent[i];
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Getter for extent along a given dimension.
+   *
+   * \return extent.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  inline
+  cs_lnum_t
+  extent
+  (
+    int i
+  ) const
   {
     return _extent[i];
   }
@@ -734,6 +769,38 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
+   * \brief Copy data from const raw pointer, we suppose that data size is same
+   *        as that of the array.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  copy_data
+  (
+    const T         *data,       /*!<[in] Pointer to copy */
+    const cs_lnum_t  n_vals = -1 /*!<[in] Number of values to copy.
+                                          If -1, default, we use array size */
+  )
+  {
+    assert(n_vals <= _size);
+
+    const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
+
+    // Explicit pointer, avoid passing internal member of class to the functor
+    T* data_ptr = _data;
+
+    cs_dispatch_context ctx;
+
+    ctx.parallel_for(loop_size, CS_LAMBDA (cs_lnum_t e_id) {
+        data_ptr[e_id] = data[e_id];
+    });
+
+    ctx.wait();
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
    * \brief Copy data from another mdspan, we suppose that data size is same
    *        as that of the array. An assert test the sizes in debug.
    */
@@ -781,6 +848,36 @@ public:
   (
     cs_dispatch_context &ctx,        /*!<[in] Reference to dispatch context  */
     T                   *data,       /*!<[in] Pointer to copy */
+    const cs_lnum_t      n_vals = -1 /*!<[in] Number of values to copy.
+                                              If -1, default, we use array size */
+  )
+  {
+    assert(n_vals <= _size);
+
+    const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
+
+    // Explicit pointer, avoid passing internal member of class to the functor
+    T* data_ptr = _data;
+
+    ctx.parallel_for(loop_size, CS_LAMBDA (cs_lnum_t e_id) {
+      data_ptr[e_id] = data[e_id];
+    });
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Copy data from const raw pointer, we suppose that data size is same
+   *        as that of the array. A dispatch_context is provided, hence
+   *        no implicit synchronization which should be done by the caller.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  copy_data
+  (
+    cs_dispatch_context &ctx,        /*!<[in] Reference to dispatch context  */
+    const T             *data,       /*!<[in] Pointer to copy */
     const cs_lnum_t      n_vals = -1 /*!<[in] Number of values to copy.
                                               If -1, default, we use array size */
   )
