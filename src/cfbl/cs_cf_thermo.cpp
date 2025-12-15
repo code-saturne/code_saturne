@@ -368,12 +368,11 @@ cs_cf_thermo_te_from_dp(cs_real_t   *cp,
   }
   /* ideal gas mixture */
   else if (ieos == CS_EOS_GAS_MIX) {
-    cs_real_t *gamma;
     cs_real_t psginf = cs_glob_cf_model->psginf;
 
-    CS_MALLOC(gamma, n_elts, cs_real_t);
+    cs_array<cs_real_t> gamma(n_elts);
 
-    cs_cf_thermo_gamma(cp, cv, gamma, n_elts);
+    cs_cf_thermo_gamma(cp, cv, gamma.data(), n_elts);
 
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       /*  temperature */
@@ -384,7 +383,6 @@ cs_cf_thermo_te_from_dp(cs_real_t   *cp,
                 + 0.5*v2;
     }
 
-    CS_FREE(gamma);
   }
 }
 
@@ -436,12 +434,11 @@ cs_cf_thermo_de_from_pt(cs_real_t   *cp,
   }
   /* ideal gas mixture */
   else if (ieos == CS_EOS_GAS_MIX) {
-    cs_real_t *gamma;
     cs_real_t psginf = cs_glob_cf_model->psginf;
 
-    CS_MALLOC(gamma, n_elts, cs_real_t);
+    cs_array<cs_real_t> gamma(n_elts);
 
-    cs_cf_thermo_gamma(cp, cv, gamma, n_elts);
+    cs_cf_thermo_gamma(cp, cv, gamma.data(), n_elts);
 
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       /*  Density */
@@ -452,7 +449,6 @@ cs_cf_thermo_de_from_pt(cs_real_t   *cp,
                 + 0.5*v2;
     }
 
-    CS_FREE(gamma);
   }
 }
 
@@ -509,12 +505,11 @@ cs_cf_thermo_dt_from_pe(cs_real_t   *cp,
   }
   /* ideal gas mixture */
   else if (ieos == CS_EOS_GAS_MIX) {
-    cs_real_t *gamma;
     cs_real_t psginf = cs_glob_cf_model->psginf;
 
-    CS_MALLOC(gamma, n_elts, cs_real_t);
+    cs_array<cs_real_t> gamma(n_elts);
 
-    cs_cf_thermo_gamma(cp, cv, gamma, n_elts);
+    cs_cf_thermo_gamma(cp, cv, gamma.data(), n_elts);
 
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       /*  Internal energy (to avoid the need to divide by the temperature
@@ -528,7 +523,6 @@ cs_cf_thermo_dt_from_pe(cs_real_t   *cp,
       temp[i] = (pres[i]+psginf) / ((gamma[i]-1.)*rho[i]*cv[i]);
     }
 
-    CS_FREE(gamma);
   }
 }
 
@@ -580,11 +574,10 @@ cs_cf_thermo_pe_from_dt(cs_real_t   *cp,
   }
   /* ideal gas mixture */
   else if (ieos == CS_EOS_GAS_MIX) {
-    cs_real_t *gamma;
     cs_real_t psginf = cs_glob_cf_model->psginf;
-    CS_MALLOC(gamma, n_elts, cs_real_t);
+    cs_array<cs_real_t> gamma(n_elts);
 
-    cs_cf_thermo_gamma(cp, cv, gamma, n_elts);
+    cs_cf_thermo_gamma(cp, cv, gamma.data(), n_elts);
 
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       /*  Pressure */
@@ -594,7 +587,6 @@ cs_cf_thermo_pe_from_dt(cs_real_t   *cp,
       ener[i] = (pres[i]+gamma[i]*psginf) / ((gamma[i]-1.)*rho[i]) + 0.5*v2;
     }
 
-    CS_FREE(gamma);
   }
 }
 
@@ -657,11 +649,10 @@ cs_cf_thermo_pt_from_de(cs_real_t   *cp,
   }
   /* ideal gas mixture */
   else if (ieos == CS_EOS_GAS_MIX) {
-    cs_real_t *gamma;
     cs_real_t psginf = cs_glob_cf_model->psginf;
-    CS_MALLOC(gamma, n_elts, cs_real_t);
+    cs_array<cs_real_t> gamma(n_elts);
 
-    cs_cf_thermo_gamma(cp, cv, gamma, n_elts);
+    cs_cf_thermo_gamma(cp, cv, gamma.data(), n_elts);
 
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       /*  Internal energy (to avoid the need to divide by the temperature
@@ -675,7 +666,6 @@ cs_cf_thermo_pt_from_de(cs_real_t   *cp,
       temp[i] = (pres[i]+psginf) / ((gamma[i]-1.)*rho[i]*cv[i]);
     }
 
-    CS_FREE(gamma);
   }
   /* homogeneous two phase */
   else if (ieos == CS_EOS_HOMOGENEOUS_TWO_PHASE) {
@@ -748,16 +738,14 @@ cs_cf_thermo_c_square(cs_real_t *cp,
   }
   /* ideal gas mixture */
   else if (ieos == CS_EOS_GAS_MIX) {
-    cs_real_t *gamma;
     cs_real_t psginf = cs_glob_cf_model->psginf;
-    CS_MALLOC(gamma, n_elts, cs_real_t);
+    cs_array<cs_real_t> gamma(n_elts);
 
-    cs_cf_thermo_gamma(cp, cv, gamma, n_elts);
+    cs_cf_thermo_gamma(cp, cv, gamma.data(), n_elts);
 
     for (cs_lnum_t i = 0; i < n_elts; i++)
       c2[i] = gamma[i] * (pres[i]+psginf) / rho[i];
 
-    CS_FREE(gamma);
   }
   else if (ieos == CS_EOS_HOMOGENEOUS_TWO_PHASE){
     for (cs_lnum_t i = 0; i < n_elts; i++) {
@@ -814,15 +802,13 @@ cs_cf_thermo_beta(cs_real_t *cp,
   }
   /* ideal gas mixture */
   else if (ieos == CS_EOS_GAS_MIX) {
-    cs_real_t *gamma;
-    CS_MALLOC(gamma, n_elts, cs_real_t);
+    cs_array<cs_real_t> gamma(n_elts);
 
-    cs_cf_thermo_gamma(cp, cv, gamma, n_elts);
+    cs_cf_thermo_gamma(cp, cv, gamma.data(), n_elts);
 
     for (cs_lnum_t i = 0; i < n_elts; i++)
       beta[i] = pow(rho[i],gamma[i]);
 
-    CS_FREE(gamma);
   }
 }
 
@@ -903,19 +889,17 @@ cs_cf_thermo_s_from_dp(cs_real_t *cp,
   }
   /* ideal gas mixture */
   else if (ieos == CS_EOS_GAS_MIX) {
-    cs_real_t *gamma;
     cs_real_t psginf = cs_glob_cf_model->psginf;
 
-    CS_MALLOC(gamma, n_elts, cs_real_t);
+    cs_array<cs_real_t> gamma(n_elts);
 
-    cs_cf_thermo_gamma(cp, cv, gamma, n_elts);
+    cs_cf_thermo_gamma(cp, cv, gamma.data(), n_elts);
 
     cs_cf_check_density(rho, n_elts);
 
     for (cs_lnum_t i = 0; i < n_elts; i++)
       entr[i] = (pres[i]+psginf) / pow(rho[i],gamma[i]);
 
-    CS_FREE(gamma);
   }
 }
 

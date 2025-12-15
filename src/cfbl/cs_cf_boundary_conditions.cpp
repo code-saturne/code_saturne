@@ -159,17 +159,15 @@ cs_cf_boundary_conditions(int  bc_type[])
   // Threshold to detect whether some BC values were set or are at default.
   const cs_real_t r_inf_05 = cs_math_infinite_r * 0.5;
 
-  cs_real_t *w5, *w7, *wbfa, *wbfb;
-  cs_real_3_t *bc_vel;
-  cs_real_t *bc_en, *bc_pr, *bc_tk;
-  CS_MALLOC(w5, n_cells_ext, cs_real_t);
-  CS_MALLOC(w7, n_b_faces, cs_real_t);
-  CS_MALLOC(wbfa, n_b_faces, cs_real_t);
-  CS_MALLOC(wbfb, n_b_faces, cs_real_t);
-  CS_MALLOC(bc_vel, n_b_faces, cs_real_3_t);
-  CS_MALLOC(bc_en, n_b_faces, cs_real_t);
-  CS_MALLOC(bc_pr, n_b_faces, cs_real_t);
-  CS_MALLOC(bc_tk, n_b_faces, cs_real_t);
+  cs_array<cs_real_t> w5(n_cells_ext);
+  cs_array<cs_real_t> w7(n_b_faces);
+  cs_array<cs_real_t> wbfa(n_b_faces);
+  cs_array<cs_real_t> wbfb(n_b_faces);
+  cs_array<cs_real_t> bc_en(n_b_faces);
+  cs_array<cs_real_t> bc_pr(n_b_faces);
+  cs_array<cs_real_t> bc_tk(n_b_faces);
+
+  cs_array_2d<cs_real_t> bc_vel(n_b_faces, 3);
 
   cs_field_t *f_vel = CS_F_(vel);
   cs_field_t *f_pr = CS_F_(p);
@@ -203,7 +201,10 @@ cs_cf_boundary_conditions(int  bc_type[])
     cpro_cv = static_cast<const cs_real_t *>
                 (cs_field_by_id(fluid_props->icv)->val);
 
-  cs_real_t *bc_fracv = nullptr, *bc_fracm = nullptr, *bc_frace = nullptr;
+  cs_array<cs_real_t> bc_fracv;
+  cs_array<cs_real_t> bc_fracm;
+  cs_array<cs_real_t> bc_frace;
+
   int *fracv_icodcl = nullptr;
   int *fracm_icodcl = nullptr;
   int *frace_icodcl = nullptr;
@@ -213,9 +214,9 @@ cs_cf_boundary_conditions(int  bc_type[])
 
   // Mixture fractions for the homogeneous two-phase flows
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 2) {
-    CS_MALLOC(bc_fracv, n_b_faces, cs_real_t);
-    CS_MALLOC(bc_fracm, n_b_faces, cs_real_t);
-    CS_MALLOC(bc_frace, n_b_faces, cs_real_t);
+    bc_fracv.reshape(n_b_faces);
+    bc_fracm.reshape(n_b_faces);
+    bc_frace.reshape(n_b_faces);
     fracv_icodcl = CS_F_(volume_f)->bc_coeffs->icodcl;
     fracm_icodcl = CS_F_(mass_f)->bc_coeffs->icodcl;
     frace_icodcl = CS_F_(energy_f)->bc_coeffs->icodcl;
@@ -224,7 +225,7 @@ cs_cf_boundary_conditions(int  bc_type[])
     frace_rcodcl1 = CS_F_(energy_f)->bc_coeffs->rcodcl1;
   }
 
-  cs_array_copy(n_b_faces, f_pr->bc_coeffs->b, wbfb);
+  wbfb.copy_data(f_pr->bc_coeffs->b, n_b_faces);
 
   /* Computation of epsilon_sup = e - CvT
      Needed if walls with imposed temperature are set. */
@@ -236,8 +237,8 @@ cs_cf_boundary_conditions(int  bc_type[])
   }
 
   if (icalep > 0) { // Local only, no need for parallel sync of icalep.
-    cs_cf_thermo_eps_sup(crom, w5, m->n_cells);
-    cs_cf_thermo_eps_sup(brom, w7, n_b_faces);
+    cs_cf_thermo_eps_sup(crom, w5.data(), m->n_cells);
+    cs_cf_thermo_eps_sup(brom, w7.data(), n_b_faces);
   }
 
   int *ifbet = cs_cf_boundary_conditions_get_ifbet();
@@ -277,7 +278,7 @@ cs_cf_boundary_conditions(int  bc_type[])
              (Pboundary = COEFB*Pi)
              The part deriving from pinf in stiffened gas is explicit for now */
 
-          cs_cf_thermo_wall_bc(wbfa, wbfb, face_id);
+          cs_cf_thermo_wall_bc(wbfa.data(), wbfb.data(), face_id);
 
           if (wbfb[face_id] < r_inf_05 && wbfb[face_id] > 0.) {
             pr_icodcl[face_id] = 12;
@@ -415,9 +416,10 @@ cs_cf_boundary_conditions(int  bc_type[])
         bc_pr[face_id] = pr_rcodcl1[face_id];
         bc_tk[face_id] = tk_rcodcl1[face_id];
         for (cs_lnum_t i = 0; i < 3; i++)
-          bc_vel[face_id][i] = vel_rcodcl1[n_b_faces*i + face_id];
+          bc_vel(face_id, i) = vel_rcodcl1[n_b_faces*i + face_id];
 
-        cs_cf_thermo(iccfth, face_id, bc_en, bc_pr, bc_tk, bc_vel);
+        cs_cf_thermo(iccfth, face_id, bc_en.data(),
+                     bc_pr.data(), bc_tk.data(), bc_vel.data<cs_real_3_t>());
       }
       break;
 
@@ -441,9 +443,10 @@ cs_cf_boundary_conditions(int  bc_type[])
         bc_pr[face_id] = pr_rcodcl1[face_id];
         bc_tk[face_id] = tk_rcodcl1[face_id];
         for (cs_lnum_t i = 0; i < 3; i++)
-          bc_vel[face_id][i] = vel_rcodcl1[n_b_faces*i + face_id];
+          bc_vel(face_id, i) = vel_rcodcl1[n_b_faces*i + face_id];
 
-        cs_cf_thermo_subsonic_outlet_bc(bc_en, bc_pr, bc_vel, face_id);
+        cs_cf_thermo_subsonic_outlet_bc(bc_en.data(), bc_pr.data(),
+                                        bc_vel.data<cs_real_3_t>(), face_id);
       }
       break;
 
@@ -470,9 +473,10 @@ cs_cf_boundary_conditions(int  bc_type[])
         bc_pr[face_id] = pr_rcodcl1[face_id];
         bc_tk[face_id] = tk_rcodcl1[face_id];
         for (cs_lnum_t i = 0; i < 3; i++)
-          bc_vel[face_id][i] = vel_rcodcl1[n_b_faces*i + face_id];
+          bc_vel(face_id, i) = vel_rcodcl1[n_b_faces*i + face_id];
 
-        cs_cf_thermo_ph_inlet_bc(bc_en, bc_pr, bc_vel, face_id);
+        cs_cf_thermo_ph_inlet_bc(bc_en.data(), bc_pr.data(),
+                                 bc_vel.data<cs_real_3_t>(), face_id);
       }
       break;
 
@@ -526,7 +530,8 @@ cs_cf_boundary_conditions(int  bc_type[])
       if (bc_type[face_id] == CS_ESICF) {
         // Dirichlet for velocity and pressure are computed in order to
         // impose the Rusanov fluxes in mass, momentum and energy balance.
-        cs_cf_boundary_rusanov(face_id, bc_en, bc_pr, bc_vel);
+        cs_cf_boundary_rusanov(face_id, bc_en.data(), bc_pr.data(),
+                               bc_vel.data<cs_real_3_t>());
       }
 
       // For the other types of inlets/outlets (subsonic outlet, QH inlet,
@@ -535,7 +540,8 @@ cs_cf_boundary_conditions(int  bc_type[])
       else if (bc_type[face_id] != CS_SSPCF) {
         // the pressure part of the boundary analytical flux is not added here,
         // but set through the pressure gradient boundary conditions (Dirichlet).
-        cs_cf_boundary_analytical_flux(face_id, bc_en, bc_pr, bc_vel);
+        cs_cf_boundary_analytical_flux(face_id, bc_en.data(), bc_pr.data(),
+                                       bc_vel.data<cs_real_3_t>());
       }
 
       /* Copy of boundary values into the Dirichlet values array */
@@ -545,7 +551,7 @@ cs_cf_boundary_conditions(int  bc_type[])
         pr_rcodcl1[face_id] = bc_pr[face_id];
         tk_rcodcl1[face_id] = bc_tk[face_id];
         for (cs_lnum_t i = 0; i < 3; i++)
-          vel_rcodcl1[n_b_faces*i + face_id]  = bc_vel[face_id][i];
+          vel_rcodcl1[n_b_faces*i + face_id]  = bc_vel(face_id, i);
         if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] == 2) {
           // FIXME fill bc_frac...
           assert(0);
@@ -614,20 +620,6 @@ cs_cf_boundary_conditions(int  bc_type[])
 
   } // Loop on boundary faces.
 
-  /* Free work arrays */
-
-  CS_FREE(w5);
-  CS_FREE(w7);
-  CS_FREE(wbfa);
-  CS_FREE(wbfb);
-  CS_FREE(bc_vel);
-  CS_FREE(bc_en);
-  CS_FREE(bc_pr);
-  CS_FREE(bc_tk);
-
-  CS_FREE(bc_fracv);
-  CS_FREE(bc_fracm);
-  CS_FREE(bc_frace);
 }
 
 /*----------------------------------------------------------------------------*/

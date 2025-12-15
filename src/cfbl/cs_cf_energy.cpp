@@ -140,12 +140,9 @@ _cf_div(cs_real_t div[])
 
   /* Allocate temporary arrays */
 
-  cs_real_t *vistot;
-  cs_real_33_t *gradv;
-  cs_real_3_t *tempv;
-  CS_MALLOC(vistot, n_cells_ext, cs_real_t);
-  CS_MALLOC(gradv, n_cells_ext, cs_real_33_t);
-  CS_MALLOC(tempv, n_cells_ext, cs_real_3_t);
+  cs_array<cs_real_t> vistot(n_cells_ext);
+  cs_array_3d<cs_real_t> gradv(n_cells_ext, 3, 3);
+  cs_array_2d<cs_real_t> tempv(n_cells_ext, 3);
 
   const cs_real_t *viscl = CS_F_(mu)->val;
   const cs_real_t *visct = CS_F_(mu_t)->val;
@@ -174,7 +171,7 @@ _cf_div(cs_real_t div[])
 
   if (cs_glob_rank_id > -1 || mesh->periodicity != nullptr) {
 
-    cs_halo_sync_var(halo, CS_HALO_STANDARD, vistot);
+    cs_halo_sync_var(halo, CS_HALO_STANDARD, vistot.data());
 
     if (f_viscv != nullptr)
       cs_halo_sync_var(halo, CS_HALO_STANDARD, cpro_kappa);
@@ -186,7 +183,7 @@ _cf_div(cs_real_t div[])
   cs_field_gradient_vector(f_vel,
                            true, /* iprev = 1 */
                            1, /* inc */
-                           gradv);
+                           gradv.data<cs_real_33_t>());
 
   /* Compute the vector \tens{\sigma}.\vect{v}
      i.e. sigma_ij v_j e_i */
@@ -200,27 +197,27 @@ _cf_div(cs_real_t div[])
     const cs_real_t kappa = (f_viscv != nullptr) ? cpro_kappa[c_id] : viscv0;
     const cs_real_t mu = vistot[c_id];
 
-    const cs_real_t trgdru = cs_math_33_trace(gradv[c_id]);
+    const cs_real_t trgdru = cs_math_33_trace((cs_real_3_t *)gradv.sub_array(c_id));
 
     /* Symmetric matrix sigma */
     cs_real_t sigma[6] = {0., 0., 0., 0., 0., 0.};
 
-    sigma[0] =   mu * 2.0 * gradv[c_id][0][0]
+    sigma[0] =   mu * 2.0 * gradv(c_id, 0, 0)
       + (kappa - 2.0 / 3.0 * mu) * trgdru;
 
-    sigma[1] =   mu * 2.0 * gradv[c_id][1][1]
+    sigma[1] =   mu * 2.0 * gradv(c_id, 1, 1)
       + (kappa - 2.0 / 3.0 * mu) * trgdru;
 
-    sigma[2] =   mu * 2.0 * gradv[c_id][2][2]
+    sigma[2] =   mu * 2.0 * gradv(c_id, 2, 2)
       + (kappa - 2.0 / 3.0 * mu) * trgdru;
 
-    sigma[3] = mu * (gradv[c_id][0][1] + gradv[c_id][1][0]);
+    sigma[3] = mu * (gradv(c_id, 0, 1) + gradv(c_id, 1, 0));
 
-    sigma[4] = mu * (gradv[c_id][1][2] + gradv[c_id][2][1]);
+    sigma[4] = mu * (gradv(c_id, 1, 2) + gradv(c_id, 2, 1));
 
-    sigma[5] = mu * (gradv[c_id][0][2] + gradv[c_id][2][0]);
+    sigma[5] = mu * (gradv(c_id, 0, 2) + gradv(c_id, 2, 0));
 
-    cs_math_sym_33_3_product(sigma, vel[c_id], tempv[c_id]);
+    cs_math_sym_33_3_product(sigma, vel[c_id], tempv.sub_array(c_id));
 
   }
 
@@ -229,13 +226,13 @@ _cf_div(cs_real_t div[])
   if (cs_glob_rank_id > -1 || mesh->periodicity != nullptr) {
     cs_halo_sync_var_strided(halo,
                              CS_HALO_STANDARD,
-                             (cs_real_t *)tempv,
+                             tempv.data(),
                              3);
 
     if (mesh->n_init_perio > 0)
       cs_halo_perio_sync_var_vect(halo,
                                   CS_HALO_STANDARD,
-                                  (cs_real_t *)tempv,
+                                  tempv.data(),
                                   3);
 
   }
@@ -257,9 +254,9 @@ _cf_div(cs_real_t div[])
 
     const cs_real_t vecfac
       =   0.5 * i_face_surf[f_id]
-          * (  i_face_u_normal[f_id][0]*(tempv[c_id0][0]+tempv[c_id1][0])
-             + i_face_u_normal[f_id][1]*(tempv[c_id0][1]+tempv[c_id1][1])
-             + i_face_u_normal[f_id][2]*(tempv[c_id0][2]+tempv[c_id1][2]));
+          * (  i_face_u_normal[f_id][0]*(tempv(c_id0, 0)+tempv(c_id1, 0))
+             + i_face_u_normal[f_id][1]*(tempv(c_id0, 1)+tempv(c_id1, 1))
+             + i_face_u_normal[f_id][2]*(tempv(c_id0, 2)+tempv(c_id1, 2)));
 
     div[c_id0] = div[c_id0] + vecfac;
     div[c_id1] = div[c_id1] - vecfac;
@@ -271,17 +268,13 @@ _cf_div(cs_real_t div[])
     const cs_lnum_t c_id = b_face_cells[f_id];
 
     const cs_real_t vecfac
-      = b_face_surf[f_id] * (  b_face_u_normal[f_id][0] * tempv[c_id][0]
-                             + b_face_u_normal[f_id][1] * tempv[c_id][1]
-                             + b_face_u_normal[f_id][2] * tempv[c_id][1]);
+      = b_face_surf[f_id] * (  b_face_u_normal[f_id][0] * tempv(c_id, 0)
+                             + b_face_u_normal[f_id][1] * tempv(c_id, 1)
+                             + b_face_u_normal[f_id][2] * tempv(c_id, 1));
 
     div[c_id] = div[c_id] + vecfac;
   }
 
-  /* Free memory */
-  CS_FREE(gradv);
-  CS_FREE(tempv);
-  CS_FREE(vistot);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -390,18 +383,15 @@ cs_cf_energy(int f_sc_id)
   /* Initialization */
 
   /* Allocate a temporary array */
-  cs_real_t *wb, *rhs, *rovsdt;
-  CS_MALLOC(wb, n_b_faces, cs_real_t);
-  CS_MALLOC(rhs, n_cells_ext, cs_real_t);
-  CS_MALLOC(rovsdt, n_cells_ext, cs_real_t);
+  cs_array<cs_real_t> wb(n_b_faces);
+  cs_array<cs_real_t> rhs(n_cells_ext);
+  cs_array<cs_real_t> rovsdt(n_cells_ext);
 
   /* Allocate work arrays */
-  cs_real_t *w7, *w9, *dpvar;
-  cs_real_3_t *grad;
-  CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
-  CS_MALLOC(w7, n_cells_ext, cs_real_t);
-  CS_MALLOC(w9, n_cells_ext, cs_real_t);
-  CS_MALLOC(dpvar, n_cells_ext, cs_real_t);
+  cs_array_2d<cs_real_t> grad(n_cells_ext, 3);
+  cs_array<cs_real_t> w7(n_cells_ext);
+  cs_array<cs_real_t> w9(n_cells_ext);
+  cs_array<cs_real_t> dpvar(n_cells_ext);
 
   /* Physical property numbers */
   cs_real_t *crom = CS_F_(rho)->val;
@@ -444,7 +434,7 @@ cs_cf_energy(int f_sc_id)
   /* Heat volume source term: rho * phi * volume
      -------------------------------------------- */
 
-  cs_user_source_terms(cs_glob_domain, f_sc->id, rhs, rovsdt);
+  cs_user_source_terms(cs_glob_domain, f_sc->id, rhs.data(), rovsdt.data());
 
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -485,8 +475,8 @@ cs_cf_energy(int f_sc_id)
                          energy,
                          smcel_sc,
                          smcel_p,
-                         rhs,
-                         rovsdt,
+                         rhs.data(),
+                         rovsdt.data(),
                          nullptr);
   }
 
@@ -507,16 +497,15 @@ cs_cf_energy(int f_sc_id)
   */
 
   if (eqp_vel->idiff >= 1)
-    _cf_div(rhs);
+    _cf_div(rhs.data());
 
   /*                              __   P        n+1
      Pressure transport term  : - >  (---)  *(Q    .n)  *S
      -----------------------      --  RHO ij   pr     ij  ij
   */
 
-  cs_real_t *iprtfl, *bprtfl;
-  CS_MALLOC(iprtfl, n_i_faces, cs_real_t);
-  CS_MALLOC(bprtfl, n_b_faces, cs_real_t);
+  cs_array<cs_real_t> iprtfl(n_i_faces);
+  cs_array<cs_real_t> bprtfl(n_b_faces);
 
   /* No reconstruction yet */
 
@@ -556,12 +545,9 @@ cs_cf_energy(int f_sc_id)
   /* Divergence */
   cs_divergence(mesh,
                 0, /* init */
-                iprtfl,
-                bprtfl,
-                rhs);
-
-  CS_FREE(iprtfl);
-  CS_FREE(bprtfl);
+                iprtfl.data(),
+                bprtfl.data(),
+                rhs.data());
 
   /* Gravitation force term: rho*g.u *cvolume
      ---------------------- */
@@ -579,10 +565,9 @@ cs_cf_energy(int f_sc_id)
 
   /* Only SGDH available */
 
-  cs_real_t *c_viscs_t, *i_visc, *b_visc;
-  CS_MALLOC(c_viscs_t, n_cells_ext, cs_real_t);
-  CS_MALLOC(i_visc, n_i_faces, cs_real_t);
-  CS_MALLOC(b_visc, n_b_faces, cs_real_t);
+  cs_array<cs_real_t> c_viscs_t(n_cells_ext);
+  cs_array<cs_real_t> i_visc(n_i_faces);
+  cs_array<cs_real_t> b_visc(n_b_faces);
 
   if (eqp_e->idiff >= 1) {
 
@@ -642,9 +627,9 @@ cs_cf_energy(int f_sc_id)
     cs_face_viscosity(mesh,
                       fvq,
                       eqp_vel->imvisf,
-                      c_viscs_t,
-                      i_visc,
-                      b_visc);
+                      c_viscs_t.data(),
+                      i_visc.data(),
+                      b_visc.data());
 
     /* Complementary diffusive term: - div( K grad ( epsilon - Cv.T ) )
        ----------------------------                  1  2
@@ -657,10 +642,10 @@ cs_cf_energy(int f_sc_id)
     /* Compute e - CvT */
 
     /* At cell centers */
-    cs_cf_thermo_eps_sup(crom, w9, n_cells);
+    cs_cf_thermo_eps_sup(crom, w9.data(), n_cells);
 
     /* At boundary faces centers */
-    cs_cf_thermo_eps_sup(brom, wb, n_b_faces);
+    cs_cf_thermo_eps_sup(brom, wb.data(), n_b_faces);
 
     /* Divergence computation with reconstruction */
 
@@ -693,10 +678,10 @@ cs_cf_energy(int f_sc_id)
                        eqp_vel->climgr,
                        nullptr,          /* f_ext */
                        nullptr,          /* bc_coeffs */
-                       w7,
+                       w7.data(),
                        nullptr,          /* c_weight */
                        nullptr,          /* cpl */
-                       grad);
+                       grad.data<cs_real_3_t>());
 
     /* Internal faces */
 
@@ -729,9 +714,9 @@ cs_cf_energy(int f_sc_id)
                i_face_cog[f_id][2] -  cell_cen[c_id1][2] +  pnd*_dijpf[2]};
 
           const cs_real_t pip =   w7[c_id0]
-                                + cs_math_3_dot_product(grad[c_id0], diipf);
+                                + cs_math_3_dot_product(grad.sub_array(c_id0), diipf);
           const cs_real_t pjp =   w7[c_id1]
-                                + cs_math_3_dot_product(grad[c_id1], djjpf);
+                                + cs_math_3_dot_product(grad.sub_array(c_id1), djjpf);
 
           const cs_real_t flux = i_visc[f_id] * (pip - pjp);
 
@@ -744,16 +729,16 @@ cs_cf_energy(int f_sc_id)
 
     }
 
-    cs_real_t *i_visck = nullptr, *b_visck = nullptr;
+    cs_array<cs_real_t> i_visck;
+    cs_array<cs_real_t> b_visck;
 
     if (cs_glob_physical_model_flag[CS_GAS_MIX] > 0) {
 
       /* Diffusion flux for the species at internal faces */
 
-      cs_real_t *kspe;
-      CS_MALLOC(kspe, n_cells_ext, cs_real_t);
-      CS_MALLOC(i_visck, n_i_faces, cs_real_t);
-      CS_MALLOC(b_visck, n_b_faces, cs_real_t);
+      cs_array<cs_real_t> kspe(n_cells_ext);
+      i_visck.reshape(n_i_faces);
+      b_visck.reshape(n_b_faces);
 
       /* Diffusion coefficient  T*lambda*Cvk/Cv */
 #     pragma omp parallel for if (n_cells > CS_THR_MIN)
@@ -764,15 +749,14 @@ cs_cf_energy(int f_sc_id)
       cs_face_viscosity(mesh,
                         fvq,
                         eqp_e->imvisf,
-                        kspe,
-                        i_visck,
-                        b_visck);
+                        kspe.data(),
+                        i_visck.data(),
+                        b_visck.data());
 
-      CS_FREE(kspe);
+      kspe.clear(); // free memory
 
-      cs_real_t *grad_dd;
-      CS_MALLOC(grad_dd, n_i_faces, cs_real_t);
-      cs_array_real_fill_zero(n_i_faces, grad_dd);
+      cs_array<cs_real_t> grad_dd(n_i_faces);
+      grad_dd.zero();
 
       for (cs_lnum_t spe_id = 0; spe_id < n_species_solved; spe_id++) {
 
@@ -790,7 +774,7 @@ cs_cf_energy(int f_sc_id)
         cs_field_gradient_scalar(f_spe,
                                  false,
                                  1, /* inc */
-                                 grad);
+                                 grad.data<cs_real_3_t>());
 
         for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
@@ -827,10 +811,10 @@ cs_cf_energy(int f_sc_id)
                    -  cell_cen[c_id1][2] +  pnd  * _dijpf[2]};
 
               const cs_real_t yip =   yk[c_id0]
-                                    + cs_math_3_dot_product(grad[c_id0], diipf);
+                                    + cs_math_3_dot_product(grad.sub_array(c_id0), diipf);
 
               const cs_real_t yjp =   yk[c_id1]
-                                    + cs_math_3_dot_product(grad[c_id1], djjpf);
+                                    + cs_math_3_dot_product(grad.sub_array(c_id1), djjpf);
 
               /* Gradient of deduced species */
               grad_dd[f_id] = grad_dd[f_id] - (yjp - yip);
@@ -886,8 +870,6 @@ cs_cf_energy(int f_sc_id)
 
       }
 
-      CS_FREE(grad_dd);
-
     } /* End gas mix process */
 
     /* Assembly based on boundary faces
@@ -940,14 +922,13 @@ cs_cf_energy(int f_sc_id)
       cs_real_t *coefat = f_tempk->bc_coeffs->a;
       cs_real_t *coefbt = f_tempk->bc_coeffs->b;
 
-      cs_real_t *grad_dd, *btemp;
-      CS_MALLOC(grad_dd, n_b_faces, cs_real_t);
-      CS_MALLOC(btemp, n_b_faces, cs_real_t);
+      cs_array<cs_real_t> grad_dd(n_b_faces);
+      cs_array<cs_real_t> btemp(n_b_faces);
 
       cs_field_gradient_scalar(f_tempk,
                                false,
                                1,
-                               grad);
+                               grad.data<cs_real_3_t>());
 
 #     pragma omp parallel for if (n_b_faces > CS_THR_MIN)
       for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
@@ -956,7 +937,7 @@ cs_cf_energy(int f_sc_id)
         const cs_lnum_t c_id = b_face_cells[f_id];
 
         const cs_real_t tip =   tempk[c_id]
-                              + cs_math_3_dot_product(grad[c_id],
+                              + cs_math_3_dot_product(grad.sub_array(c_id),
                                                       diipb[f_id]);
 
         btemp[f_id] = coefat[f_id] + coefbt[f_id] * tip;
@@ -981,7 +962,7 @@ cs_cf_energy(int f_sc_id)
         cs_field_gradient_scalar(f_spe,
                                  false,
                                  1, /* inc */
-                                 grad);
+                                 grad.data<cs_real_3_t>());
 
 #       pragma omp parallel for
         for (int t_id = 0; t_id < n_b_threads; t_id++) {
@@ -995,7 +976,7 @@ cs_cf_energy(int f_sc_id)
             const cs_lnum_t c_id = b_face_cells[f_id];
 
             const cs_real_t yip
-              = yk[c_id] + cs_math_3_dot_product(grad[c_id], diipb[f_id]);
+              = yk[c_id] + cs_math_3_dot_product(grad.sub_array(c_id), diipb[f_id]);
 
             const cs_real_t gradnb
               = coefayk[f_id] + (coefbyk[f_id] - 1.0) * yip;
@@ -1047,19 +1028,12 @@ cs_cf_energy(int f_sc_id)
         }
       }
 
-      CS_FREE(grad_dd);
-      CS_FREE(btemp);
-      CS_FREE(i_visck);
-      CS_FREE(b_visck);
-
     } /* End gas mix process */
 
   } /* End eqp_e->idiff >= 1 */
   else {
-
-    cs_array_real_fill_zero(n_i_faces, i_visc);
-    cs_array_real_fill_zero(n_b_faces, b_visc);
-
+    i_visc.zero();
+    b_visc.zero();
   }
 
   /* Solving
@@ -1093,21 +1067,17 @@ cs_cf_energy(int f_sc_id)
                                      energy_pre, energy_pre,
                                      bc_coeffs_sc,
                                      i_mass_flux, b_mass_flux,
-                                     i_visc, b_visc,
-                                     i_visc, b_visc,
+                                     i_visc.data(), b_visc.data(),
+                                     i_visc.data(), b_visc.data(),
                                      nullptr,   /* viscel */
                                      nullptr, nullptr, /* weighf, weighb */
                                      icvflb,
                                      icvfli,
-                                     rovsdt,
-                                     rhs,
-                                     energy, dpvar,
+                                     rovsdt.data(),
+                                     rhs.data(),
+                                     energy, dpvar.data(),
                                      nullptr,   /* xcpp */
                                      nullptr);  /* eswork */
-
-  CS_FREE(dpvar);
-  CS_FREE(i_visc);
-  CS_FREE(b_visc);
 
   /* Logging and clipping
      -------------------- */
@@ -1130,7 +1100,7 @@ cs_cf_energy(int f_sc_id)
                     * (energy[c_id] - energy_pre[c_id])
                     * cs::max(0., cs::min(eqp_e->nswrsm - 2., 1.));
 
-    const cs_real_t sclnor = sqrt(cs_gdot(n_cells, rhs, rhs));
+    const cs_real_t sclnor = sqrt(cs_gdot(n_cells, rhs.data(), rhs.data()));
 
     cs_log_printf(CS_LOG_DEFAULT,
                   _(" %s : EXPLICIT BALANCE = %14.5e"),
@@ -1171,14 +1141,6 @@ cs_cf_energy(int f_sc_id)
     cs_halo_sync_var(halo, CS_HALO_STANDARD, tempk);
   }
 
-  /* Free memory */
-  CS_FREE(wb);
-  CS_FREE(rhs);
-  CS_FREE(rovsdt);
-  CS_FREE(grad);
-  CS_FREE(c_viscs_t);
-  CS_FREE(w7);
-  CS_FREE(w9);
 }
 
 /*----------------------------------------------------------------------------*/

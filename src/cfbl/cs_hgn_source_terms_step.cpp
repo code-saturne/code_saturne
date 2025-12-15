@@ -153,17 +153,14 @@ cs_hgn_source_terms_step(const cs_mesh_t *m)
   cs_real_t *cvar_frace = CS_F_(energy_f)->val;
   cs_real_t *cvar_tempk = CS_F_(t)->val;
 
-  cs_real_t *ei, *v;
-  CS_MALLOC(ei, m->n_cells_with_ghosts, cs_real_t);
-  CS_MALLOC(v, m->n_cells_with_ghosts, cs_real_t);
+  cs_array<cs_real_t> ei(m->n_cells_with_ghosts);
+  cs_array<cs_real_t> v(m->n_cells_with_ghosts);
 
-  cs_real_t *alpha_eq, *y_eq, *z_eq;
-  CS_MALLOC(alpha_eq, m->n_cells_with_ghosts, cs_real_t);
-  CS_MALLOC(y_eq, m->n_cells_with_ghosts, cs_real_t);
-  CS_MALLOC(z_eq, m->n_cells_with_ghosts, cs_real_t);
+  cs_array<cs_real_t> alpha_eq(m->n_cells_with_ghosts);
+  cs_array<cs_real_t> y_eq(m->n_cells_with_ghosts);
+  cs_array<cs_real_t> z_eq(m->n_cells_with_ghosts);
 
-  cs_real_t *relax_tau;
-  CS_MALLOC(relax_tau, m->n_cells_with_ghosts, cs_real_t);
+  cs_array<cs_real_t> relax_tau(m->n_cells_with_ghosts);
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
     cs_real_t u2 = cs_math_3_norm(vel[cell_id]);
@@ -177,18 +174,18 @@ cs_hgn_source_terms_step(const cs_mesh_t *m)
        specific volume v and a given specific energy e */
     cs_hgn_thermo_eq(ei[cell_id],
                      v[cell_id],
-                     alpha_eq + cell_id,
-                     y_eq + cell_id,
-                     z_eq + cell_id);
+                     alpha_eq.data() + cell_id,
+                     y_eq.data() + cell_id,
+                     z_eq.data() + cell_id);
   }
 
   cs_user_hgn_thermo_relax_time(m,
-                                alpha_eq,
-                                y_eq,
-                                z_eq,
-                                ei,
-                                v,
-                                relax_tau);
+                                alpha_eq.data(),
+                                y_eq.data(),
+                                z_eq.data(),
+                                ei.data(),
+                                v.data(),
+                                relax_tau.data());
 
   /* Update the volume fraction, mass fraction and energy fraction using the
    * equilibrium fractions alpha_eq, y_eq, z_eq computed above. */
@@ -215,13 +212,6 @@ cs_hgn_source_terms_step(const cs_mesh_t *m)
                      &cvar_tempk[cell_id],
                      &cvar_pr[cell_id]);
   }
-
-  CS_FREE(ei);
-  CS_FREE(v);
-  CS_FREE(alpha_eq);
-  CS_FREE(y_eq);
-  CS_FREE(z_eq);
-  CS_FREE(relax_tau);
 
   /* synchronize */
   const cs_halo_t  *halo = cs_glob_mesh->halo;
