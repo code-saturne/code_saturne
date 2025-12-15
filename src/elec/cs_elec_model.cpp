@@ -469,27 +469,24 @@ _pot_gradient_im_f(int               location_id,
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_field_t *f = cs_field_by_name("elec_pot_i");
 
-  cs_real_3_t *grad;
-  CS_MALLOC(grad, m->n_cells_with_ghosts, cs_real_3_t);
+  cs_array_2d<cs_real_t> grad(m->n_cells_with_ghosts, 3);
 
-  cs_field_gradient_scalar(f, false, 1, grad);
+  cs_field_gradient_scalar(f, false, 1, grad.data<cs_real_3_t>());
 
   if (elt_ids != nullptr) {
     for (cs_lnum_t idx = 0; idx <  n_elts; idx++) {
       cs_lnum_t i = elt_ids[idx];
       for (cs_lnum_t j = 0; j < 3; j++)
-        v[idx][j] = grad[i][j];
+        v[idx][j] = grad(i, j);
     }
   }
 
   else {
     for (cs_lnum_t i = 0; i <  n_elts; i++) {
       for (cs_lnum_t j = 0; j < 3; j++)
-        v[i][j] = grad[i][j];
+        v[i][j] = grad(i, j);
     }
   }
-
-  CS_FREE(grad);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -523,10 +520,9 @@ _current_im_f(int               location_id,
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_field_t *f = cs_field_by_name("elec_pot_i");
 
-  cs_real_3_t *grad;
-  CS_MALLOC(grad, m->n_cells_with_ghosts, cs_real_3_t);
+  cs_array_2d<cs_real_t> grad(m->n_cells_with_ghosts, 3);
 
-  cs_field_gradient_scalar(f, false, 1, grad);
+  cs_field_gradient_scalar(f, false, 1, grad.data<cs_real_3_t>());
 
   const int kivisl = cs_field_key_id("diffusivity_id");
   const int diff_id = cs_field_get_key_int(f, kivisl);
@@ -538,14 +534,14 @@ _current_im_f(int               location_id,
       for (cs_lnum_t idx = 0; idx <  n_elts; idx++) {
         cs_lnum_t i = elt_ids[idx];
         for (cs_lnum_t j = 0; j < 3; j++)
-          v[idx][j] = -cvisii[i] * grad[i][j];
+          v[idx][j] = -cvisii[i] * grad(i, j);
       }
     }
 
     else {
       for (cs_lnum_t i = 0; i <  n_elts; i++) {
         for (cs_lnum_t j = 0; j < 3; j++)
-          v[i][j] = -cvisii[i] * grad[i][j];
+          v[i][j] = -cvisii[i] * grad(i, j);
       }
     }
   }
@@ -558,19 +554,18 @@ _current_im_f(int               location_id,
       for (cs_lnum_t idx = 0; idx <  n_elts; idx++) {
         cs_lnum_t i = elt_ids[idx];
         for (cs_lnum_t j = 0; j < 3; j++)
-          v[idx][j] = -visls_0 * grad[i][j];
+          v[idx][j] = -visls_0 * grad(i, j);
       }
     }
 
     else {
       for (cs_lnum_t i = 0; i <  n_elts; i++) {
         for (cs_lnum_t j = 0; j < 3; j++)
-          v[i][j] = -visls_0 * grad[i][j];
+          v[i][j] = -visls_0 * grad(i, j);
       }
     }
   }
 
-  CS_FREE(grad);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1099,17 +1094,15 @@ cs_elec_physical_properties(cs_domain_t  *domain)
     int n_gas = e_props->n_gas;
     int npt  = e_props->n_point;
 
-    cs_real_t *ym, *yvol, *roesp, *visesp, *cpesp;
-    cs_real_t *sigesp, *xlabes, *xkabes, *coef;
-    CS_MALLOC(ym,     n_gas, cs_real_t);
-    CS_MALLOC(yvol,   n_gas, cs_real_t);
-    CS_MALLOC(roesp,  n_gas, cs_real_t);
-    CS_MALLOC(visesp, n_gas, cs_real_t);
-    CS_MALLOC(cpesp,  n_gas, cs_real_t);
-    CS_MALLOC(sigesp, n_gas, cs_real_t);
-    CS_MALLOC(xlabes, n_gas, cs_real_t);
-    CS_MALLOC(xkabes, n_gas, cs_real_t);
-    CS_MALLOC(coef,   n_gas * n_gas, cs_real_t);
+    cs_array<cs_real_t> ym(n_gas);
+    cs_array<cs_real_t> yvol(n_gas);
+    cs_array<cs_real_t> roesp(n_gas);
+    cs_array<cs_real_t> visesp(n_gas);
+    cs_array<cs_real_t> cpesp(n_gas);
+    cs_array<cs_real_t> sigesp(n_gas);
+    cs_array<cs_real_t> xlabes(n_gas);
+    cs_array<cs_real_t> xkabes(n_gas);
+    cs_array_2d<cs_real_t> coef(n_gas, n_gas);
 
     int ifcsig = cs_field_get_key_int(CS_F_(potr), kivisl);
 
@@ -1117,7 +1110,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
       ym[0] = 1.;
 
       for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-        CS_F_(t)->val[iel] = cs_elec_convert_h_to_t(ym, CS_F_(h)->val[iel]);
+        CS_F_(t)->val[iel] = cs_elec_convert_h_to_t(ym.data(), CS_F_(h)->val[iel]);
     }
     else {
 
@@ -1129,7 +1122,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
           ym[n_gas - 1] -= ym[ii];
         }
 
-        CS_F_(t)->val[iel] = cs_elec_convert_h_to_t(ym, CS_F_(h)->val[iel]);
+        CS_F_(t)->val[iel] = cs_elec_convert_h_to_t(ym.data(), CS_F_(h)->val[iel]);
       }
     }
 
@@ -1264,12 +1257,12 @@ cs_elec_physical_properties(cs_domain_t  *domain)
       /* compute molecular viscosity : kg/(m s) */
       for (int iesp1 = 0; iesp1 < n_gas; iesp1++) {
         for (int iesp2 = 0; iesp2 < n_gas; iesp2++) {
-          coef[iesp1 * (n_gas - 1) + iesp2]
+          coef(iesp1, iesp2)
             = 1. +   sqrt(visesp[iesp1] / visesp[iesp2])
                    * sqrt(sqrt(roesp[iesp2] / roesp[iesp1]));
-          coef[iesp1 * (n_gas - 1) + iesp2] *= coef[iesp1 * (n_gas - 1) + iesp2];
-          coef[iesp1 * (n_gas - 1) + iesp2] /=    (sqrt(1. + roesp[iesp1]
-                                                / roesp[iesp2]) * sqrt(8.));
+          coef(iesp1, iesp2) *= coef(iesp1, iesp2);
+          coef(iesp1, iesp2) /= ( sqrt(1. + roesp[iesp1]
+                                / roesp[iesp2]) * sqrt(8.) );
         }
       }
 
@@ -1280,8 +1273,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
           double somphi = 0.;
           for (int iesp2 = 0; iesp2 < n_gas; iesp2++) {
             if (iesp1 != iesp2)
-              somphi +=   coef[iesp1 * (n_gas - 1) + iesp2]
-                        * yvol[iesp2] / yvol[iesp1];
+              somphi +=   coef(iesp1, iesp2) * yvol[iesp2] / yvol[iesp1];
           }
 
           CS_F_(mu)->val[iel] += visesp[iesp1] / (1. + somphi);
@@ -1300,13 +1292,11 @@ cs_elec_physical_properties(cs_domain_t  *domain)
 
         for (int iesp1 = 0; iesp1 < n_gas; iesp1++) {
           for (int iesp2 = 0; iesp2 < n_gas; iesp2++) {
-            coef[iesp1 * (n_gas - 1) + iesp2]
-              = 1. +   sqrt(xlabes[iesp1] / xlabes[iesp2])
-                     * sqrt(sqrt(roesp[iesp2] / roesp[iesp1]));
-            coef[iesp1 * (n_gas - 1) + iesp2]
-              *= coef[iesp1 * (n_gas - 1) + iesp2];
-            coef[iesp1 * (n_gas - 1) + iesp2]
-              /= (sqrt(1. + roesp[iesp1] / roesp[iesp2]) * sqrt(8.));
+            coef(iesp1, iesp2) = 1. +   sqrt(xlabes[iesp1] / xlabes[iesp2])
+                               * sqrt(sqrt(roesp[iesp2] / roesp[iesp1]));
+            coef(iesp1, iesp2) *= coef(iesp1, iesp2);
+            coef(iesp1, iesp2) /= ( sqrt(1. + roesp[iesp1] / roesp[iesp2])
+                                  * sqrt(8.));
           }
         }
         /* Lambda */
@@ -1317,8 +1307,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
             double somphi = 0.;
             for (int iesp2 = 0; iesp2 < n_gas; iesp2++) {
               if (iesp1 != iesp2)
-                somphi +=   coef[iesp1 * (n_gas - 1) + iesp2]
-                          * yvol[iesp2] / yvol[iesp1];
+                somphi +=   coef(iesp1, iesp2) * yvol[iesp2] / yvol[iesp1];
             }
 
             diff_th->val[iel] += xlabes[iesp1] / (1. + 1.065 * somphi);
@@ -1368,15 +1357,6 @@ cs_elec_physical_properties(cs_domain_t  *domain)
 
     } /* End of loop on cells */
 
-    CS_FREE(ym);
-    CS_FREE(yvol);
-    CS_FREE(roesp);
-    CS_FREE(visesp);
-    CS_FREE(cpesp);
-    CS_FREE(sigesp);
-    CS_FREE(xlabes);
-    CS_FREE(xkabes);
-    CS_FREE(coef);
   }
 
   /* now user properties (for joule effect particulary) */
@@ -1401,8 +1381,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
   bool log_active = cs_log_default_is_active();
 
   /* Reconstructed value */
-  cs_real_3_t *grad;
-  CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
+  cs_array_2d<cs_real_t> grad(n_cells_ext, 3);
 
   /* ----------------------------------------------------- */
   /* first call : J, E => J.E                              */
@@ -1417,13 +1396,13 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
     cs_field_gradient_scalar(CS_F_(potr),
                              false, /* use_previous_t */
                              1,    /* inc */
-                             grad);
+                             grad.data<cs_real_3_t>());
 
     /* compute electric field E = - grad (potR) */
     for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-      cpro_elefl[iel][0] = grad[iel][0];
-      cpro_elefl[iel][1] = grad[iel][1];
-      cpro_elefl[iel][2] = grad[iel][2];
+      cpro_elefl[iel][0] = grad(iel, 0);
+      cpro_elefl[iel][1] = grad(iel, 1);
+      cpro_elefl[iel][2] = grad(iel, 2);
     }
 
     /* compute current density j = sig E */
@@ -1435,18 +1414,18 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
     if (ieljou > 0 || ielarc > 0) {
       cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-        cpro_curre[iel][0] = -c_prop->val[iel] * grad[iel][0];
-        cpro_curre[iel][1] = -c_prop->val[iel] * grad[iel][1];
-        cpro_curre[iel][2] = -c_prop->val[iel] * grad[iel][2];
+        cpro_curre[iel][0] = -c_prop->val[iel] * grad(iel, 0);
+        cpro_curre[iel][1] = -c_prop->val[iel] * grad(iel, 1);
+        cpro_curre[iel][2] = -c_prop->val[iel] * grad(iel, 2);
       }
     }
 
     /* compute joule effect : j . E */
     for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
       CS_F_(joulp)->val[iel] =  c_prop->val[iel] *
-                               (grad[iel][0] * grad[iel][0] +
-                                grad[iel][1] * grad[iel][1] +
-                                grad[iel][2] * grad[iel][2]);
+                               (grad(iel, 0) * grad(iel, 0) +
+                                grad(iel, 1) * grad(iel, 1) +
+                                grad(iel, 2) * grad(iel, 2));
     }
 
     /* compute min max for E and J */
@@ -1465,8 +1444,8 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         for (int i = 0; i < 3; i++) {
-          vrmin[i] = cs::min(vrmin[i], grad[iel][i]);
-          vrmax[i] = cs::max(vrmax[i], grad[iel][i]);
+          vrmin[i] = cs::min(vrmin[i], grad(iel, i));
+          vrmax[i] = cs::max(vrmax[i], grad(iel, i));
         }
       }
 
@@ -1487,8 +1466,8 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         for (int i = 0; i < 3; i++) {
-          vrmin[i] = cs::min(vrmin[i], -c_prop->val[iel] * grad[iel][i]);
-          vrmax[i] = cs::max(vrmax[i], -c_prop->val[iel] * grad[iel][i]);
+          vrmin[i] = cs::min(vrmin[i], -c_prop->val[iel] * grad(iel, i));
+          vrmax[i] = cs::max(vrmax[i], -c_prop->val[iel] * grad(iel, i));
         }
       }
 
@@ -1509,7 +1488,7 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
       cs_field_gradient_scalar(CS_F_(poti),
                                false, /* use_previous_t */
                                1,    /* inc */
-                               grad);
+                               grad.data<cs_real_3_t>());
 
       /* compute electric field E = - grad (potI) */
 
@@ -1522,16 +1501,16 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
       if (ieljou == 4) {
         cs_real_3_t *cpro_curim = (cs_real_3_t *)(CS_F_(curim)->val);
         for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-          cpro_curim[iel][0] = -c_propi->val[iel] * grad[iel][0];
-          cpro_curim[iel][1] = -c_propi->val[iel] * grad[iel][1];
-          cpro_curim[iel][2] = -c_propi->val[iel] * grad[iel][2];
+          cpro_curim[iel][0] = -c_propi->val[iel] * grad(iel, 0);
+          cpro_curim[iel][1] = -c_propi->val[iel] * grad(iel, 1);
+          cpro_curim[iel][2] = -c_propi->val[iel] * grad(iel, 2);
         }
       }
 
       /* compute joule effect : j . E */
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         CS_F_(joulp)->val[iel] +=   c_propi->val[iel]
-                                  * cs_math_3_square_norm(grad[iel]);
+                                  * cs_math_3_square_norm(grad.sub_array(iel));
       }
 
       /* compute min max for E and J */
@@ -1548,8 +1527,8 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 
         for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
           for (int i = 0; i < 3; i++) {
-            vrmin[i] = cs::min(vrmin[i], grad[iel][0]);
-            vrmax[i] = cs::max(vrmax[i], grad[iel][0]);
+            vrmin[i] = cs::min(vrmin[i], grad(iel, 0));
+            vrmax[i] = cs::max(vrmax[i], grad(iel, 0));
           }
         }
 
@@ -1571,8 +1550,8 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
 
         for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
           for (int i = 0; i < 3; i++) {
-            vrmin[i] = cs::min(vrmin[i], -c_propi->val[iel] * grad[iel][i]);
-            vrmax[i] = cs::max(vrmax[i], -c_propi->val[iel] * grad[iel][i]);
+            vrmin[i] = cs::min(vrmin[i], -c_propi->val[iel] * grad(iel, i));
+            vrmax[i] = cs::max(vrmax[i], -c_propi->val[iel] * grad(iel, i));
           }
         }
 
@@ -1659,8 +1638,6 @@ cs_elec_compute_fields(const cs_mesh_t  *mesh,
     }
   }
 
-  /* Free memory */
-  CS_FREE(grad);
 }
 
 /*----------------------------------------------------------------------------
@@ -1683,8 +1660,7 @@ cs_elec_source_terms(const cs_mesh_t             *mesh,
 
   int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
 
-  cs_real_t *w1;
-  CS_MALLOC(w1, n_cells_ext, cs_real_t);
+  cs_array<cs_real_t> w1(n_cells_ext);
 
   /* enthalpy source term */
   if (strcmp(name, "enthalpy") == 0) {
@@ -1721,7 +1697,6 @@ cs_elec_source_terms(const cs_mesh_t             *mesh,
     }
   }
 
-  CS_FREE(w1);
 }
 
 /*----------------------------------------------------------------------------
@@ -1994,16 +1969,14 @@ cs_elec_fields_initialize(const cs_mesh_t   *mesh)
     /* enthalpy */
     cs_real_t hinit = 0.;
     if (ielarc > 0) {
-      cs_real_t *ym;
-      CS_MALLOC(ym, cs_glob_elec_properties->n_gas, cs_real_t);
+      cs_array<cs_real_t> ym(cs_glob_elec_properties->n_gas);
       ym[0] = 1.;
       if (cs_glob_elec_properties->n_gas > 1)
         for (int i = 1; i < cs_glob_elec_properties->n_gas; i++)
           ym[i] = 0.;
 
       cs_real_t tinit = cs_glob_fluid_properties->t0;
-      hinit = cs_elec_convert_t_to_h(ym, tinit);
-      CS_FREE(ym);
+      hinit = cs_elec_convert_t_to_h(ym.data(), tinit);
     }
 
     for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
@@ -2233,8 +2206,7 @@ cs_elec_convert_h_to_t_faces(const cs_real_t  h[],
 
     const cs_lnum_t *b_face_cells = m->b_face_cells;
 
-    cs_real_t *ym;
-    CS_MALLOC(ym, n_gasses, cs_real_t);
+    cs_array<cs_real_t> ym(n_gasses);
 
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
 
@@ -2246,11 +2218,9 @@ cs_elec_convert_h_to_t_faces(const cs_real_t  h[],
         ym[n_gasses - 1] -= ym[gas_id];
       }
 
-      t[f_id] = cs_elec_convert_h_to_t(ym, h[f_id]);
+      t[f_id] = cs_elec_convert_h_to_t(ym.data(), h[f_id]);
 
     }
-
-    CS_FREE(ym);
 
   }
 }
@@ -2345,8 +2315,7 @@ cs_elec_convert_t_to_h_cells(const cs_real_t  t[],
   }
   else {
 
-    cs_real_t *ym;
-    CS_MALLOC(ym, n_gasses, cs_real_t);
+    cs_array<cs_real_t> ym(n_gasses);
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
@@ -2356,11 +2325,9 @@ cs_elec_convert_t_to_h_cells(const cs_real_t  t[],
         ym[n_gasses - 1] -= ym[gas_id];
       }
 
-      h[c_id] = cs_elec_convert_t_to_h(ym, t[c_id]);
+      h[c_id] = cs_elec_convert_t_to_h(ym.data(), t[c_id]);
 
     }
-
-    CS_FREE(ym);
 
   }
 }
@@ -2404,8 +2371,7 @@ cs_elec_convert_t_to_h_faces(const cs_lnum_t  n_faces,
 
     const cs_lnum_t *b_face_cells = m->b_face_cells;
 
-    cs_real_t *ym;
-    CS_MALLOC(ym, n_gasses, cs_real_t);
+    cs_array<cs_real_t> ym(n_gasses);
 
     for (cs_lnum_t i = 0; i < n_faces; i++) {
 
@@ -2416,11 +2382,9 @@ cs_elec_convert_t_to_h_faces(const cs_lnum_t  n_faces,
         ym[n_gasses - 1] -= ym[gas_id];
       }
 
-      h[f_id] = cs_elec_convert_t_to_h(ym, t[f_id]);
+      h[f_id] = cs_elec_convert_t_to_h(ym.data(), t[f_id]);
 
     }
-
-    CS_FREE(ym);
 
   }
 }
