@@ -155,8 +155,7 @@ _tsepls(int       phase_id,
   /* Initialization
    * ============== */
 
-  cs_real_33_t *w7;
-  CS_MALLOC_HD(w7, n_cells_ext, cs_real_33_t, cs_alloc_mode);
+  cs_array_3d<cs_real_t> w7(n_cells_ext, 3, 3, cs_alloc_mode);
 
   /* Calculation of the term d2Ui/dxkdxj*d2Ui/dxkdxj
    * ================================================ */
@@ -166,18 +165,16 @@ _tsepls(int       phase_id,
   if (phase_id >= 0)
     f_vel = CS_FI_(vel, phase_id);
 
-  cs_real_33_t *gradv = nullptr, *_gradv = nullptr;
-
+  cs_array_3d<cs_real_t> gradv;
   {
     cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
 
     if (f_vel->grad != nullptr)
-      gradv = (cs_real_33_t *)f_vel->grad;
+      gradv = cs_array_3d<cs_real_t>(f_vel->grad, n_cells_ext, 3, 3);
     else if (f_vg != nullptr)
-      gradv = (cs_real_33_t *)f_vg->val;
+      gradv = cs_array_3d<cs_real_t>(f_vg->val, n_cells_ext, 3, 3);
     else {
-      CS_MALLOC_HD(_gradv, n_cells_ext, cs_real_33_t, cs_alloc_mode);
-      gradv = _gradv;
+      gradv = cs_array_3d<cs_real_t>(n_cells_ext, 3, 3, cs_alloc_mode);
     }
   }
 
@@ -186,7 +183,7 @@ _tsepls(int       phase_id,
     cs_field_gradient_vector(f_vel,
                              true,  /* use_previous_t */
                              1,     /* inc */
-                             gradv);
+                             gradv.data<cs_real_33_t>());
 
   /* Loop over u, v, w components:
      TODO interleave */
@@ -204,7 +201,7 @@ _tsepls(int       phase_id,
     ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (cs_lnum_t ii = 0; ii < 3; ii++) {
         for (cs_lnum_t jj = 0; jj < 3; jj++)
-          w7[c_id][ii][jj] = 0.;
+          w7(c_id, ii, jj) = 0.;
       }
     });
 
@@ -215,7 +212,7 @@ _tsepls(int       phase_id,
 
       cs_real_t duidxk[3], njsj[3];
       for (cs_lnum_t j = 0; j < 3; j++)
-        duidxk[j] = pnd * gradv[c_id0][i][j] + (1. - pnd) * gradv[c_id1][i][j];
+        duidxk[j] = pnd * gradv(c_id0, i, j) + (1. - pnd) * gradv(c_id1, i, j);
       for (cs_lnum_t j = 0; j < 3; j++)
         njsj[j] = i_face_u_normal[face_id][j] * i_face_surf[face_id];
 
@@ -226,16 +223,16 @@ _tsepls(int       phase_id,
           c_w7_1[k] = -duidxk[k]*njsj[j];
         }
         if (c_id0 < n_cells)
-          cs_dispatch_sum<3>(w7[c_id0][j], c_w7_0, i_sum_type);
+          cs_dispatch_sum<3>(w7.sub_array(c_id0, j), c_w7_0, i_sum_type);
         if (c_id1 < n_cells)
-          cs_dispatch_sum<3>(w7[c_id1][j], c_w7_1, i_sum_type);
+          cs_dispatch_sum<3>(w7.sub_array(c_id1, j), c_w7_1, i_sum_type);
       }
     });
 
     ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
       cs_lnum_t c_id0 = b_face_cells[face_id];
 
-      const cs_real_t *duidxk = gradv[c_id0][i];
+      const cs_real_t *duidxk = gradv.sub_array(c_id0, i);
       cs_real_t njsj[3];
       for (cs_lnum_t j = 0; j < 3; j++)
         njsj[j] = b_face_u_normal[face_id][j] * b_face_surf[face_id];
@@ -245,7 +242,7 @@ _tsepls(int       phase_id,
         for (cs_lnum_t k = 0; k < 3; k++) {
           c_w7[k] = duidxk[k]*njsj[j];
         }
-        cs_dispatch_sum<3>(w7[c_id0][j], c_w7, b_sum_type);
+        cs_dispatch_sum<3>(w7.sub_array(c_id0, j), c_w7, b_sum_type);
       }
     });
 
@@ -253,7 +250,7 @@ _tsepls(int       phase_id,
       cs_real_t w_temp = 0.;
       for (cs_lnum_t k = 0; k < 3; k++) {
         for (cs_lnum_t j = 0; j < 3; j++) {
-          w_temp += cs_math_pow2(w7[c_id][j][k] / volume[c_id]);
+          w_temp += cs_math_pow2(w7(c_id, j, k) / volume[c_id]);
         }
       }
       w1[c_id] += w_temp;
@@ -263,10 +260,6 @@ _tsepls(int       phase_id,
 
   }
 
-  /* Free memory */
-  CS_FREE(_gradv);
-
-  CS_FREE(w7);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -397,56 +390,52 @@ cs_turbulence_ke(int              phase_id,
 
   /* Allocate temporary arrays for the turbulence resolution */
 
-  cs_real_t *viscf, *viscb;
-  CS_MALLOC_HD(viscf, n_i_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(viscb, n_b_faces, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> viscf(n_i_faces, cs_alloc_mode);
+  cs_array<cs_real_t> viscb(n_b_faces, cs_alloc_mode);
 
-  cs_real_t *smbrk, *smbre;
-  CS_MALLOC_HD(smbrk, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(smbre, n_cells_ext, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> smbrk(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> smbre(n_cells_ext, cs_alloc_mode);
 
-  cs_real_t *prodk, *gk;
-  CS_MALLOC_HD(prodk, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(gk, n_cells_ext, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> prodk(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> gk(n_cells_ext, cs_alloc_mode);
 
-  cs_real_t *tinstk, *tinste, *divu, *strain_sq;
-  CS_MALLOC_HD(tinstk, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(tinste, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(divu, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(strain_sq, n_cells_ext, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> tinstk(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> tinste(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> divu(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> strain_sq(n_cells_ext, cs_alloc_mode);
 
   /* Allocate work arrays */
 
-  cs_real_t *w1, *w3, *w4;
+  cs_array<cs_real_t> w1(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> w3(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> w4(n_cells_ext, cs_alloc_mode);
 
-  CS_MALLOC_HD(w1, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(w3, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(w4, n_cells_ext, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> usimpk(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> usexpk(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> usexpe(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> usimpe(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> dpvar(n_cells_ext, cs_alloc_mode);
 
-  cs_real_t *usimpk, *usexpk, *usexpe, *usimpe, *dpvar;
-  CS_MALLOC_HD(usimpk, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(usexpk, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(usexpe, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(usimpe, n_cells_ext, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(dpvar, n_cells_ext, cs_real_t, cs_alloc_mode);
-
-  cs_real_t *prdtke = nullptr, *prdeps = nullptr;
-  cs_real_t *strain = nullptr, *sqrt_k = nullptr;
-  cs_real_3_t *grad_sqk = nullptr, *grad_s = nullptr;
-  cs_real_t *e_term = nullptr;
+  cs_array<cs_real_t> prdtke;
+  cs_array<cs_real_t> prdeps;
+  cs_array<cs_real_t> strain;
+  cs_array<cs_real_t> sqrt_k;
+  cs_array_2d<cs_real_t> grad_sqk;
+  cs_array_2d<cs_real_t> grad_s;
+  cs_array<cs_real_t> e_term;
 
   if (model == CS_TURB_K_EPSILON) {
-    CS_MALLOC_HD(prdtke, n_cells_ext, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(prdeps, n_cells_ext, cs_real_t, cs_alloc_mode);
+    prdtke = cs_array<cs_real_t>(n_cells_ext, cs_alloc_mode);
+    prdeps = cs_array<cs_real_t>(n_cells_ext, cs_alloc_mode);
   }
   else if (model == CS_TURB_K_EPSILON_LS) {
-    CS_MALLOC_HD(sqrt_k, n_cells_ext, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(strain, n_cells_ext, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(grad_sqk, n_cells_ext, cs_real_3_t, cs_alloc_mode);
-    CS_MALLOC_HD(grad_s, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+    sqrt_k = cs_array<cs_real_t>(n_cells_ext, cs_alloc_mode);
+    strain = cs_array<cs_real_t>(n_cells_ext, cs_alloc_mode);
+    grad_sqk = cs_array_2d<cs_real_t>(n_cells_ext, 3, cs_alloc_mode);
+    grad_s = cs_array_2d<cs_real_t>(n_cells_ext, 3, cs_alloc_mode);
   }
   else if (model == CS_TURB_V2F_BL_V2K) {
-    CS_MALLOC_HD(e_term, n_cells_ext, cs_real_t, cs_alloc_mode);
+    e_term = cs_array<cs_real_t>(n_cells_ext, cs_alloc_mode);
   }
 
   /* Map field arrays */
@@ -688,18 +677,16 @@ cs_turbulence_ke(int              phase_id,
      ======================================================================= */
 
   /* Allocate temporary arrays for gradients calculation */
-  cs_real_33_t *gradv = nullptr, *_gradv = nullptr;
-
+  cs_array_3d<cs_real_t> gradv;
   {
     cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
 
     if (f_vel->grad != nullptr)
-      gradv = (cs_real_33_t *)f_vel->grad;
+      gradv = cs_array_3d<cs_real_t>(f_vel->grad, n_cells_ext, 3, 3);
     else if (f_vg != nullptr)
-      gradv = (cs_real_33_t *)f_vg->val;
+      gradv = cs_array_3d<cs_real_t>(f_vg->val, n_cells_ext, 3, 3);
     else {
-      CS_MALLOC_HD(_gradv, n_cells_ext, cs_real_33_t, cs_alloc_mode);
-      gradv = _gradv;
+      gradv = cs_array_3d<cs_real_t>( n_cells_ext, 3, 3, cs_alloc_mode);
     }
   }
 
@@ -708,7 +695,7 @@ cs_turbulence_ke(int              phase_id,
     cs_field_gradient_vector(f_vel,
                              true,  /* use_previous_t */
                              1,     /* inc */
-                             gradv);
+                             gradv.data<cs_real_33_t>());
 
   const cs_real_t k_istat = eqp_k->istat;
   const cs_real_t eps_istat = eqp_eps->istat;
@@ -721,20 +708,20 @@ cs_turbulence_ke(int              phase_id,
        = dudx + dvdy + dwdz */
 
     strain_sq[c_id] = 2.
-      * (  cs_math_pow2(  d2s3*gradv[c_id][0][0]
-                        - d1s3*gradv[c_id][1][1]
-                        - d1s3*gradv[c_id][2][2])
-         + cs_math_pow2(- d1s3*gradv[c_id][0][0]
-                        + d2s3*gradv[c_id][1][1]
-                        - d1s3*gradv[c_id][2][2])
-         + cs_math_pow2(- d1s3*gradv[c_id][0][0]
-                        - d1s3*gradv[c_id][1][1]
-                        + d2s3*gradv[c_id][2][2]))
-      + cs_math_pow2(gradv[c_id][0][1] + gradv[c_id][1][0])
-      + cs_math_pow2(gradv[c_id][0][2] + gradv[c_id][2][0])
-      + cs_math_pow2(gradv[c_id][1][2] + gradv[c_id][2][1]);
+      * (  cs_math_pow2(  d2s3*gradv(c_id, 0, 0)
+                        - d1s3*gradv(c_id, 1, 1)
+                        - d1s3*gradv(c_id, 2, 2))
+         + cs_math_pow2(- d1s3*gradv(c_id, 0, 0)
+                        + d2s3*gradv(c_id, 1, 1)
+                        - d1s3*gradv(c_id, 2, 2))
+         + cs_math_pow2(- d1s3*gradv(c_id, 0, 0)
+                        - d1s3*gradv(c_id, 1, 1)
+                        + d2s3*gradv(c_id, 2, 2)))
+      + cs_math_pow2(gradv(c_id, 0, 1) + gradv(c_id, 1, 0))
+      + cs_math_pow2(gradv(c_id, 0, 2) + gradv(c_id, 2, 0))
+      + cs_math_pow2(gradv(c_id, 1, 2) + gradv(c_id, 2, 1));
 
-    divu[c_id] = cs_math_33_trace(gradv[c_id]);
+    divu[c_id] = cs_math_33_trace((cs_real_3_t *)gradv.sub_array(c_id));
 
     /* Unsteady terms (stored in tinstk and tinste)
        ============================================ */
@@ -790,23 +777,23 @@ cs_turbulence_ke(int              phase_id,
       cs_real_t xttke = xk/xeps;
 
       /* Sij */
-      xstrai[0][0] = gradv[c_id][0][0];
-      xstrai[1][0] = d1s2*(gradv[c_id][0][1]+gradv[c_id][1][0]);
+      xstrai[0][0] = gradv(c_id, 0, 0);
+      xstrai[1][0] = d1s2*(gradv(c_id, 0, 1)+gradv(c_id, 1, 0));
       xstrai[0][1] = xstrai[1][0];
-      xstrai[2][0] = d1s2*(gradv[c_id][0][2]+gradv[c_id][2][0]);
+      xstrai[2][0] = d1s2*(gradv(c_id, 0, 2)+gradv(c_id, 2, 0));
       xstrai[0][2] = xstrai[2][0];
-      xstrai[1][1] = gradv[c_id][1][1];
-      xstrai[2][1] = d1s2*(gradv[c_id][1][2]+gradv[c_id][2][1]);
+      xstrai[1][1] = gradv(c_id, 1, 1);
+      xstrai[2][1] = d1s2*(gradv(c_id, 1, 2)+gradv(c_id, 2, 1));
       xstrai[1][2] = xstrai[2][1];
-      xstrai[2][2] = gradv[c_id][2][2];
+      xstrai[2][2] = gradv(c_id, 2, 2);
 
       /* omegaij */
       xrotac[0][0] = 0.;
-      xrotac[1][0] = d1s2*(gradv[c_id][0][1]-gradv[c_id][1][0]);
-      xrotac[2][0] = d1s2*(gradv[c_id][0][2]-gradv[c_id][2][0]);
+      xrotac[1][0] = d1s2*(gradv(c_id, 0, 1)-gradv(c_id, 1, 0));
+      xrotac[2][0] = d1s2*(gradv(c_id, 0, 2)-gradv(c_id, 2, 0));
       xrotac[0][1] = -xrotac[1][0];
       xrotac[1][1] = 0.;
-      xrotac[2][1] = d1s2*(gradv[c_id][1][2]-gradv[c_id][2][1]);
+      xrotac[2][1] = d1s2*(gradv(c_id, 1, 2)-gradv(c_id, 2, 1));
       xrotac[0][2] = -xrotac[2][0];
       xrotac[1][2] = -xrotac[2][1];
       xrotac[2][2] = 0.;
@@ -876,9 +863,8 @@ cs_turbulence_ke(int              phase_id,
      is modified by rotation and curvature */
 
   /* Allocate an array for the modified Ceps2 coefficient */
-  cs_real_t *ce1rc, *ce2rc;
-  CS_MALLOC_HD(ce1rc, n_cells, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(ce2rc, n_cells, cs_real_t, cs_alloc_mode);
+  cs_array<cs_real_t> ce1rc(n_cells, cs_alloc_mode);
+  cs_array<cs_real_t> ce2rc(n_cells, cs_alloc_mode);
 
   /* Initialization of C_eps1 and C_eps2 k-epsilon models */
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -889,7 +875,7 @@ cs_turbulence_ke(int              phase_id,
   /* Compute the modified Ceps2 coefficient in case of rotation
    * (w1 array not used) */
   if (cs_glob_turb_rans_model->irccor == 1)
-    cs_turbulence_rotation_correction(dt, w1, ce2rc);
+    cs_turbulence_rotation_correction(dt, w1.data(), ce2rc.data());
 
   /* Launder-Sharma k-epsilon model
     or Baglietto quadratic k-epsilon model */
@@ -939,12 +925,13 @@ cs_turbulence_ke(int              phase_id,
   cs_real_t *coefap = nullptr, *coefbp = nullptr;
   cs_real_t *cofafp = nullptr, *cofbfp = nullptr;
 
-  cs_real_t *w10 = nullptr;
+  cs_array<cs_real_t> w10;
 
   /* Calculation of Ceps2* */
   if (model == CS_TURB_V2F_BL_V2K) {
 
-    CS_MALLOC_HD(w10, n_cells_ext, cs_real_t, cs_alloc_mode);
+    w10.set_alloc_mode(cs_alloc_mode);
+    w10.reshape(n_cells_ext);
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       w3[c_id] = cpro_pcvto[c_id] / cromo[c_id] / sigmak;
@@ -954,9 +941,9 @@ cs_turbulence_ke(int              phase_id,
     cs_face_viscosity(m,
                       fvq,
                       eqp_k->imvisf,
-                      w3,
-                      viscf,
-                      viscb);
+                      w3.data(),
+                      viscf.data(),
+                      viscb.data());
 
     coefap = f_k->bc_coeffs->a;
     coefbp = f_k->bc_coeffs->b;
@@ -986,7 +973,7 @@ cs_turbulence_ke(int              phase_id,
          eqp_k,
          false, // hyd_p_flag
          nullptr, // f_ext
-         w3,
+         w3.data(),
          nullptr, // vitenp
          nullptr, // weighb
          cvara_k,
@@ -1001,7 +988,7 @@ cs_turbulence_ke(int              phase_id,
          eqp_k,
          false, // hyd_p_flag
          nullptr, // f_ext
-         w3,
+         w3.data(),
          nullptr, // vitenp
          nullptr, // weighb
          cvara_k,
@@ -1021,10 +1008,10 @@ cs_turbulence_ke(int              phase_id,
                            f_k->bc_coeffs,
                            val_f_k,
                            flux_k,
-                           viscf,
-                           viscb,
-                           w3,
-                           w10);
+                           viscf.data(),
+                           viscb.data(),
+                           w3.data(),
+                           w10.data());
 
     const cs_real_t cpale4 = cs_turb_cpale4;
 
@@ -1045,7 +1032,7 @@ cs_turbulence_ke(int              phase_id,
   }
 
   ctx.wait();
-  CS_FREE(w10);
+  w10.clear();
 
   /* Compute the buoyancy term
    ======================================================== */
@@ -1055,7 +1042,7 @@ cs_turbulence_ke(int              phase_id,
   if (   cs_glob_turb_rans_model->has_buoyant_term == 1
       && cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {
 
-    cs_atmo_buoyancy_ke_prod(gk);
+    cs_atmo_buoyancy_ke_prod(gk.data());
 
     /* --- Buoyancy term     G = Beta*g.Grad(scalar)/prdtur/rho
        Here is computed  G =-g.grad(rho)/prdtur/rho */
@@ -1063,10 +1050,8 @@ cs_turbulence_ke(int              phase_id,
   else if (cs_glob_turb_rans_model->has_buoyant_term == 1) {
 
     /* Allocate a temporary for the gradient calculation */
-    cs_real_3_t *grad;
-    cs_real_t  *grad_dot_g;
-    CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, cs_alloc_mode);
-    CS_MALLOC_HD(grad_dot_g, n_cells_ext, cs_real_t, cs_alloc_mode);
+    cs_array_2d<cs_real_t> grad(n_cells_ext, 3, cs_alloc_mode);
+    cs_array<cs_real_t> grad_dot_g(n_cells_ext, cs_alloc_mode);
 
     cs_real_t prdtur = 1;
 
@@ -1086,7 +1071,7 @@ cs_turbulence_ke(int              phase_id,
       cs_field_gradient_scalar(f_thm,
                                true,
                                1,    /* inc */
-                               grad);
+                               grad.data<cs_real_3_t>());
 
       /* FIXME make it dependant on the scalar and use coupled_with_vel_p field */
       cs_real_t *cpro_beta = cs_field_by_name("thermal_expansion")->val;
@@ -1094,7 +1079,7 @@ cs_turbulence_ke(int              phase_id,
       /* - Beta grad(T) . g / Pr_T */
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         grad_dot_g[c_id]
-          = - cpro_beta[c_id] * (  cs_math_3_dot_product(grad[c_id], grav)
+          = - cpro_beta[c_id] * (  cs_math_3_dot_product(grad.sub_array(c_id), grav)
                                  / prdtur);
       });
 
@@ -1119,7 +1104,7 @@ cs_turbulence_ke(int              phase_id,
       cs_field_bc_coeffs_t bc_coeffs_loc;
       cs_field_bc_coeffs_init(&bc_coeffs_loc);
       bc_coeffs_loc.a = bromo;
-      bc_coeffs_loc.b = viscb;
+      bc_coeffs_loc.b = viscb.data();
 
       cs_gradient_scalar("cromo_grad",
                          gradient_type,
@@ -1137,10 +1122,10 @@ cs_turbulence_ke(int              phase_id,
                          cromo,
                          nullptr,
                          nullptr, /* internal coupling */
-                         grad);
+                         grad.data<cs_real_3_t>());
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        grad_dot_g[c_id] =   cs_math_3_dot_product(grad[c_id], grav)
+        grad_dot_g[c_id] =   cs_math_3_dot_product(grad.sub_array(c_id), grav)
                            / (cromo[c_id]*prdtur);
       });
     }
@@ -1167,9 +1152,6 @@ cs_turbulence_ke(int              phase_id,
 
     ctx.wait();
 
-    /* Free memory */
-    CS_FREE(grad);
-    CS_FREE(grad_dot_g);
   }
   else {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -1196,11 +1178,10 @@ cs_turbulence_ke(int              phase_id,
     /* Calculation of 2*Ceps3*(1-alpha)^3*nu*nut/eps*d2Ui/dxkdxj*d2Ui/dxkdxj:
        (i.e. E term / k)           : it is stored in e_term */
 
-    cs_real_t *w12 = nullptr;
     /* Allocate a work array */
-    CS_MALLOC_HD(w12, n_cells_ext, cs_real_t, cs_alloc_mode);
+    cs_array<cs_real_t> w12(n_cells_ext, cs_alloc_mode);
 
-    _tsepls(phase_id, w12);
+    _tsepls(phase_id, w12.data());
 
     const cs_real_t cpale3 = cs_turb_cpale3;
 
@@ -1215,9 +1196,6 @@ cs_turbulence_ke(int              phase_id,
 
     });
     ctx.wait();
-
-    /* Free memory */
-    CS_FREE(w12);
 
   }
 
@@ -1266,10 +1244,10 @@ cs_turbulence_ke(int              phase_id,
                        eqp_k->climgr,
                        nullptr,
                        &bc_coeffs_sqk_loc,
-                       sqrt_k,
+                       sqrt_k.data(),
                        nullptr,
                        nullptr,  /* internal coupling */
-                       grad_sqk);
+                       grad_sqk.data<cs_real_3_t>());
 
     cs_field_bc_coeffs_free_copy(f_k->bc_coeffs, &bc_coeffs_sqk_loc);
 
@@ -1305,10 +1283,10 @@ cs_turbulence_ke(int              phase_id,
                        eqp_k->climgr,
                        nullptr,
                        &bc_coeffs_sqs_loc,
-                       strain,
+                       strain.data(),
                        nullptr,
                        nullptr, /* internal coupling */
-                       grad_s);
+                       grad_s.data<cs_real_3_t>());
 
     CS_FREE(bc_coeffs_sqs_loc.a);
     CS_FREE(bc_coeffs_sqs_loc.b);
@@ -1364,7 +1342,7 @@ cs_turbulence_ke(int              phase_id,
         cs_real_t xnut  = cpro_pcvto[c_id]/rho;
 
         cs_real_t mu_gradk2 = cell_f_vol[c_id] *  2. * mu
-                        * cs_math_3_square_norm(grad_sqk[c_id]);
+                        * cs_math_3_square_norm(grad_sqk.sub_array(c_id));
 
         if (ikecou == 0)
           tinstk[c_id] += mu_gradk2/cvara_k[c_id];
@@ -1372,7 +1350,7 @@ cs_turbulence_ke(int              phase_id,
         smbrk[c_id] -= mu_gradk2;
 
         smbre[c_id] +=    cell_f_vol[c_id] * 2. * mu * xnut
-                        * cs_math_3_square_norm(grad_s[c_id]);
+                        * cs_math_3_square_norm(grad_s.sub_array(c_id));
       });
     }
 
@@ -1546,13 +1524,13 @@ cs_turbulence_ke(int              phase_id,
 
   cs_user_source_terms(domain,
                        f_k->id,
-                       usexpk,
-                       usimpk);
+                       usexpk.data(),
+                       usimpk.data());
 
   cs_user_source_terms(domain,
                        f_eps->id,
-                       usexpe,
-                       usimpe);
+                       usexpe.data(),
+                       usimpe.data());
 
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0) {
 
@@ -1560,11 +1538,11 @@ cs_turbulence_ke(int              phase_id,
 
     /* Nudging towards optimal interpolation for k */
     if (cs_field_get_key_int(f_k, k_interp_id) >= 0)
-      cs_at_data_assim_source_term(f_k->id, usexpk, usimpk);
+      cs_at_data_assim_source_term(f_k->id, usexpk.data(), usimpk.data());
 
     /* Nudging towards optimal interpolation for epsilon */
     if (cs_field_get_key_int(f_eps, k_interp_id) >= 0)
-      cs_at_data_assim_source_term(f_k->id, usexpe, usimpe);
+      cs_at_data_assim_source_term(f_k->id, usexpe.data(), usimpe.data());
 
   }
 
@@ -1677,8 +1655,8 @@ cs_turbulence_ke(int              phase_id,
     }
     /* Otherwise we put it directly in smbr */
     else {
-      gapinj_k = smbrk;
-      gapinj_eps = smbre;
+      gapinj_k = smbrk.data();
+      gapinj_eps = smbre.data();
     }
 
     /* We increment smbrs with -Gamma.var_prev and rovsdt with Gamma */
@@ -1700,8 +1678,8 @@ cs_turbulence_ke(int              phase_id,
                          cvara_k,
                          mst_val,
                          mst_val_p,
-                         smbrk,
-                         tinstk,
+                         smbrk.data(),
+                         tinstk.data(),
                          gapinj_k);
 
     /* For eps */
@@ -1721,8 +1699,8 @@ cs_turbulence_ke(int              phase_id,
                          cvara_ep,
                          mst_val,
                          mst_val_p,
-                         smbre,
-                         tinste,
+                         smbre.data(),
+                         tinste.data(),
                          gapinj_eps);
 
   }
@@ -1762,17 +1740,17 @@ cs_turbulence_ke(int              phase_id,
         cs_face_viscosity(m,
                           fvq,
                           eqp_k->imvisf,
-                          w4,
-                          viscf,
-                          viscb);
+                          w4.data(),
+                          viscf.data(),
+                          viscb.data());
       }
       else {
         cs_face_viscosity(m,
                           fvq,
                           eqp_k->imvisf,
                           const_cast<cs_real_t *>(viscl),
-                          viscf,
-                          viscb);
+                          viscf.data(),
+                          viscb.data());
       }
 
     }
@@ -1817,21 +1795,21 @@ cs_turbulence_ke(int              phase_id,
                       flux_k,
                       imasfl,
                       bmasfl,
-                      viscf,
-                      viscb,
+                      viscf.data(),
+                      viscb.data(),
                       nullptr,
                       nullptr,
                       nullptr,
                       nullptr,
                       0, /* boundary convective flux with upwind */
                       nullptr,
-                      usexpk);
+                      usexpk.data());
 
     if (eqp_k->verbosity >= 2) {
       cs_log_printf(CS_LOG_DEFAULT,
                     " Variable %s: explicit balance = %12.5e\n",
                     cs_field_get_label(f_k),
-                    sqrt(cs_gdot(n_cells, smbrk, smbrk)));
+                    sqrt(cs_gdot(n_cells, smbrk.data(), smbrk.data())));
     }
 
     /* Handle epsilon */
@@ -1850,13 +1828,13 @@ cs_turbulence_ke(int              phase_id,
         ctx.wait();
 
         cs_face_viscosity(m, fvq, eqp_eps->imvisf,
-                          w4,
-                          viscf, viscb);
+                          w4.data(),
+                          viscf.data(), viscb.data());
       }
       else {
         cs_face_viscosity(m, fvq, eqp_eps->imvisf,
                           const_cast<cs_real_t *>(viscl),
-                          viscf, viscb);
+                          viscf.data(), viscb.data());
       }
 
     }
@@ -1902,21 +1880,21 @@ cs_turbulence_ke(int              phase_id,
                       flux_ep,
                       imasfl,
                       bmasfl,
-                      viscf,
-                      viscb,
+                      viscf.data(),
+                      viscb.data(),
                       nullptr,
                       nullptr,
                       nullptr,
                       nullptr,
                       0, /* boundary convective flux with upwind */
                       nullptr,
-                      usexpe);
+                      usexpe.data());
 
     if (eqp_eps->verbosity >= 2) {
       cs_log_printf(CS_LOG_DEFAULT,
                     " Variable %s: EXPLICIT BALANCE =  %12.5e\n",
                     cs_field_get_label(f_eps),
-                    sqrt(cs_gdot(n_cells, smbre, smbre)));
+                    sqrt(cs_gdot(n_cells, smbre.data(), smbre.data())));
     }
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -1998,7 +1976,7 @@ cs_turbulence_ke(int              phase_id,
 
   ctx.wait();
 
-  cs_solid_zone_set_zero_on_cells(1, smbrk);
+  cs_solid_zone_set_zero_on_cells(1, smbrk.data());
 
   /* Solve for turbulent kinetic energy (k)
      ---------------------------------- */
@@ -2041,9 +2019,9 @@ cs_turbulence_ke(int              phase_id,
     cs_face_viscosity(m,
                       fvq,
                       eqp_k->imvisf,
-                      w1,
-                      viscf,
-                      viscb);
+                      w1.data(),
+                      viscf.data(),
+                      viscb.data());
 
   }
   else {
@@ -2073,19 +2051,19 @@ cs_turbulence_ke(int              phase_id,
                                      f_k->bc_coeffs,
                                      imasfl,
                                      bmasfl,
-                                     viscf,
-                                     viscb,
-                                     viscf,
-                                     viscb,
+                                     viscf.data(),
+                                     viscb.data(),
+                                     viscf.data(),
+                                     viscb.data(),
                                      nullptr,
                                      nullptr,
                                      nullptr,
                                      0, /* boundary convective upwind flux */
                                      nullptr,
-                                     tinstk,
-                                     smbrk,
+                                     tinstk.data(),
+                                     smbrk.data(),
                                      cvar_k,
-                                     dpvar,
+                                     dpvar.data(),
                                      nullptr,
                                      nullptr);
 
@@ -2126,9 +2104,9 @@ cs_turbulence_ke(int              phase_id,
     cs_face_viscosity(m,
                       fvq,
                       eqp_eps->imvisf,
-                      w1,
-                      viscf,
-                      viscb);
+                      w1.data(),
+                      viscf.data(),
+                      viscb.data());
   }
   else {
     ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
@@ -2157,19 +2135,19 @@ cs_turbulence_ke(int              phase_id,
                                      f_eps->bc_coeffs,
                                      imasfl,
                                      bmasfl,
-                                     viscf,
-                                     viscb,
-                                     viscf,
-                                     viscb,
+                                     viscf.data(),
+                                     viscb.data(),
+                                     viscf.data(),
+                                     viscb.data(),
                                      nullptr,
                                      nullptr,
                                      nullptr,
                                      0, /* boundary convective upwind flux */
                                      nullptr,
-                                     tinste,
-                                     smbre,
+                                     tinste.data(),
+                                     smbre.data(),
                                      cvar_ep,
-                                     dpvar,
+                                     dpvar.data(),
                                      nullptr,
                                      nullptr);
 
@@ -2181,41 +2159,6 @@ cs_turbulence_ke(int              phase_id,
                         1);
 
   /* Free memory */
-  CS_FREE(_gradv);
-  CS_FREE(viscf);
-  CS_FREE(viscb);
-  CS_FREE(usimpk);
-  CS_FREE(smbrk);
-  CS_FREE(smbre);
-  CS_FREE(prodk);
-  CS_FREE(gk);
-  CS_FREE(divu);
-  CS_FREE(strain_sq);
-  CS_FREE(w1);
-  CS_FREE(w3);
-  CS_FREE(w4);
-  CS_FREE(usexpk);
-  CS_FREE(usexpe);
-  CS_FREE(usimpe);
-  CS_FREE(dpvar);
-  CS_FREE(ce2rc);
-  CS_FREE(ce1rc);
-
-  CS_FREE(tinstk);
-  CS_FREE(tinste);
-
-  CS_FREE(e_term);
-  if (model == CS_TURB_K_EPSILON){
-    CS_FREE(prdtke);
-    CS_FREE(prdeps);
-  }
-  if (model == CS_TURB_K_EPSILON_LS) {
-    CS_FREE(sqrt_k);
-    CS_FREE(strain);
-    CS_FREE(grad_sqk);
-    CS_FREE(grad_s);
-  }
-
   cs_clear_bc_coeffs_solve(bc_coeffs_solve_ep);
   cs_clear_bc_coeffs_solve(bc_coeffs_solve_k);
 }
@@ -2603,17 +2546,16 @@ cs_turbulence_ke_q_mu_t(int phase_id)
    *   S2 = S11**2+S22**2+S33**2+2*(S12**2+S13**2+S23**2)
    * ==================================================== */
 
-  cs_real_33_t *gradv = nullptr, *_gradv = nullptr;
+  cs_array_3d<cs_real_t> gradv;
   {
     cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
 
     if (f_vel->grad != nullptr)
-      gradv = (cs_real_33_t *)f_vel->grad;
+      gradv = cs_array_3d<cs_real_t>(f_vel->grad, n_cells_ext, 3, 3);
     else if (f_vg != nullptr)
-      gradv = (cs_real_33_t *)f_vg->val;
+      gradv = cs_array_3d<cs_real_t>(f_vg->val, n_cells_ext, 3, 3);
     else {
-      CS_MALLOC_HD(_gradv, n_cells_ext, cs_real_33_t, cs_alloc_mode);
-      gradv = _gradv;
+      gradv = cs_array_3d<cs_real_t>(n_cells_ext, 3, 3, cs_alloc_mode);
     }
   }
 
@@ -2622,21 +2564,21 @@ cs_turbulence_ke_q_mu_t(int phase_id)
     cs_field_gradient_vector(f_vel,
                              true,  /* use_previous_t */
                              1,     /* inc */
-                             gradv);
+                             gradv.data<cs_real_33_t>());
 
   /* Compute turbulent viscosity
    * =========================== */
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-    const cs_real_t s11 = gradv[c_id][0][0];
-    const cs_real_t s22 = gradv[c_id][1][1];
-    const cs_real_t s33 = gradv[c_id][2][2];
-    const cs_real_t dudy = gradv[c_id][0][1];
-    const cs_real_t dudz = gradv[c_id][0][2];
-    const cs_real_t dvdx = gradv[c_id][1][0];
-    const cs_real_t dvdz = gradv[c_id][1][2];
-    const cs_real_t dwdx = gradv[c_id][2][0];
-    const cs_real_t dwdy = gradv[c_id][2][1];
+    const cs_real_t s11 = gradv(c_id, 0, 0);
+    const cs_real_t s22 = gradv(c_id, 1, 1);
+    const cs_real_t s33 = gradv(c_id, 2, 2);
+    const cs_real_t dudy = gradv(c_id, 0, 1);
+    const cs_real_t dudz = gradv(c_id, 0, 2);
+    const cs_real_t dvdx = gradv(c_id, 1, 0);
+    const cs_real_t dvdz = gradv(c_id, 1, 2);
+    const cs_real_t dwdx = gradv(c_id, 2, 0);
+    const cs_real_t dwdy = gradv(c_id, 2, 1);
 
     const cs_real_t s2 =   cs_math_pow2(s11) + cs_math_pow2(s22) + cs_math_pow2(s33)
                          + 0.5*cs_math_pow2(dudy+dvdx)
@@ -2663,7 +2605,6 @@ cs_turbulence_ke_q_mu_t(int phase_id)
 
   ctx.wait();
 
-  CS_FREE(_gradv);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2702,21 +2643,20 @@ cs_turbulence_ke_q(int          phase_id,
   /* Initialization
    * ============== */
 
-  cs_real_33_t *gradv = nullptr, *_gradv = nullptr;
-
+  cs_array_3d<cs_real_t> gradv;
   if (f_vel->grad == nullptr) {
-    CS_MALLOC(_gradv, n_cells_ext, cs_real_33_t);
-    gradv = _gradv;
+    gradv.set_alloc_mode(cs_alloc_mode);
+    gradv.reshape(n_cells_ext, 3, 3);
 
     /* Computation of the velocity gradient */
 
     cs_field_gradient_vector(f_vel,
                              true,  // use_previous_t
                              1,     // inc
-                             gradv);
+                             gradv.data<cs_real_33_t>());
   }
   else
-    gradv = (cs_real_33_t *)f_vel->grad;
+    gradv = cs_array_3d<cs_real_t>(f_vel->grad, n_cells_ext, 3, 3);
 
   const cs_real_t cnl1 = cs_turb_cnl1;
   const cs_real_t cnl2 = cs_turb_cnl2;
@@ -2741,23 +2681,23 @@ cs_turbulence_ke_q(int          phase_id,
     const cs_real_t xttke  = xk/xeps;
 
     /* Sij */
-    xstrai[0][0] = gradv[c_id][0][0];
-    xstrai[0][1] = d1s2*(gradv[c_id][0][1]+gradv[c_id][1][0]);
-    xstrai[0][2] = d1s2*(gradv[c_id][0][2]+gradv[c_id][2][0]);
+    xstrai[0][0] = gradv(c_id, 0, 0);
+    xstrai[0][1] = d1s2*(gradv(c_id, 0, 1)+gradv(c_id, 1, 0));
+    xstrai[0][2] = d1s2*(gradv(c_id, 0, 2)+gradv(c_id, 2, 0));
     xstrai[1][0] = xstrai[0][1];
-    xstrai[1][1] = gradv[c_id][1][1];
-    xstrai[1][2] = d1s2*(gradv[c_id][1][2]+gradv[c_id][2][1]);
+    xstrai[1][1] = gradv(c_id, 1, 1);
+    xstrai[1][2] = d1s2*(gradv(c_id, 1, 2)+gradv(c_id, 2, 1));
     xstrai[2][0] = xstrai[0][2];
     xstrai[2][1] = xstrai[1][2];
-    xstrai[2][2] = gradv[c_id][2][2];
+    xstrai[2][2] = gradv(c_id, 2, 2);
 
     /* omegaij */
     xrotac[0][0] = 0;
-    xrotac[0][1] = d1s2*(-gradv[c_id][0][1]+gradv[c_id][1][0]);
-    xrotac[0][2] = d1s2*(-gradv[c_id][0][2]+gradv[c_id][2][0]);
+    xrotac[0][1] = d1s2*(-gradv(c_id, 0, 1)+gradv(c_id, 1, 0));
+    xrotac[0][2] = d1s2*(-gradv(c_id, 0, 2)+gradv(c_id, 2, 0));
     xrotac[1][0] = -xrotac[0][1];
     xrotac[1][1] = 0;
-    xrotac[1][2] = d1s2*(-gradv[c_id][1][2]+gradv[c_id][2][1]);
+    xrotac[1][2] = d1s2*(-gradv(c_id, 1, 2)+gradv(c_id, 2, 1));
     xrotac[2][0] = -xrotac[0][2];
     xrotac[2][1] = -xrotac[1][2];
     xrotac[2][2] = 0;
@@ -2808,8 +2748,6 @@ cs_turbulence_ke_q(int          phase_id,
 
   ctx.wait();
 
-  /* Free memory */
-  CS_FREE(_gradv);
 }
 
 /*----------------------------------------------------------------------------*/
