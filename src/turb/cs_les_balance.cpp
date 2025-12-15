@@ -792,7 +792,7 @@ _les_balance_compute_smag(const void   *input,
 }
 
 /*----------------------------------------------------------------------------
- * Function which computes dkui+dkuj.
+ * Function which computes dkui.dkuj.
  *
  * parameters:
  *   input <-- pointer to simple data array (ignored here)
@@ -815,14 +815,14 @@ _les_balance_compute_dkuidkuj(const void   *input,
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
-    for (cs_lnum_t ii = 0; ii < 6; ii++) {
-      cs_lnum_t i = idirtens[ii][0];
-      cs_lnum_t j = idirtens[ii][1];
-      const cs_lnum_t id = 6*c_id + ii;
+    for (cs_lnum_t ij = 0; ij < 6; ij++) {
+      cs_lnum_t i = idirtens[ij][0];
+      cs_lnum_t j = idirtens[ij][1];
+      const cs_lnum_t id = 6*c_id + ij;
       vals[id] = 0.;
 
       for (cs_lnum_t k = 0; k < 3; k++)
-        vals[id] += grdv[c_id][i][k] + grdv[c_id][j][k];
+        vals[id] += grdv[c_id][i][k] * grdv[c_id][j][k];
     }
   });
 
@@ -1815,7 +1815,7 @@ _les_balance_time_moment_rij(void)
                                 CS_TIME_MOMENT_RESTART_AUTO,
                                 nullptr);
 
-  /* dk(ui+uj) mean */
+  /* d(ui)/dxk.d(uj)/dxk mean */
   cs_time_moment_define_by_func("dkuidkuj_m",
                                 CS_MESH_LOCATION_CELLS,
                                 6,
@@ -3334,9 +3334,9 @@ cs_les_balance_compute_rij(void)
 
   if (_les_balance.type & CS_LES_BALANCE_RIJ_FULL) {
 
-    for (cs_lnum_t iii = 0; iii < 6; iii++) {
-      const cs_lnum_t i = idirtens[iii][0];
-      const cs_lnum_t j = idirtens[iii][1];
+    for (cs_lnum_t ij = 0; ij < 6; ij++) {
+      const cs_lnum_t i = idirtens[ij][0];
+      const cs_lnum_t j = idirtens[ij][1];
       cs_real_33_t *uidujdxk_ii = (cs_real_33_t *)uidujdxk[i];
       cs_real_33_t *uidujdxk_jj = (cs_real_33_t *)uidujdxk[j];
 
@@ -3353,13 +3353,13 @@ cs_les_balance_compute_rij(void)
       _les_balance_divergence_vector(w1.data<cs_real_3_t>(), diverg.data());
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        budsgsfullij[c_id][iii][0] = diverg[c_id]/ro0;
-        budsgsfullij[c_id][iii][1] = nut[c_id]/viscl0*epsij[c_id][iii];
+        budsgsfullij[c_id][ij][0] = diverg[c_id]/ro0;
+        budsgsfullij[c_id][ij][1] = nut[c_id]/viscl0*epsij[c_id][ij];
 
         for (cs_lnum_t kk = 0; kk < 3; kk++) {
           cs_real_6_t *nutdkuiuj_loc = (cs_real_6_t*)nutdkuiuj[kk];
 
-          w1(c_id, kk) = nutdkuiuj_loc[c_id][iii]
+          w1(c_id, kk) = nutdkuiuj_loc[c_id][ij]
                       + 2.*nut[c_id]*(  ui[c_id][i]*duidxj[c_id][j][kk]
                                       + ui[c_id][j]*duidxj[c_id][i][kk])
                       - nut[c_id]*(  uidujdxk_ii[c_id][j][kk]
@@ -3376,10 +3376,10 @@ cs_les_balance_compute_rij(void)
       _les_balance_divergence_vector(w1.data<cs_real_3_t>(), diverg.data());
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        budsgsfullij[c_id][iii][2] = diverg[c_id]/ro0;
+        budsgsfullij[c_id][ij][2] = diverg[c_id]/ro0;
 
-        budsgsfullij[c_id][iii][3] =  nutduidxkdujdxk[c_id][iii]
-                                    - nut[c_id]*duidxkdujdxk[c_id][iii];
+        budsgsfullij[c_id][ij][3] =  nutduidxkdujdxk[c_id][ij]
+                                    - nut[c_id]*duidxkdujdxk[c_id][ij];
 
         cs_real_t xx = 0.;
         for (cs_lnum_t kk = 0; kk < 3; kk++)
@@ -3387,8 +3387,8 @@ cs_les_balance_compute_rij(void)
               - duidxj[c_id][i][kk]*nutduidxj[c_id][j][kk]
               - duidxj[c_id][j][kk]*nutduidxj[c_id][i][kk];
 
-        budsgsfullij[c_id][iii][3] += xx;
-        budsgsfullij[c_id][iii][3] = -2./ro0*budsgsfullij[c_id][iii][3];
+        budsgsfullij[c_id][ij][3] += xx;
+        budsgsfullij[c_id][ij][3] = -2./ro0*budsgsfullij[c_id][ij][3];
       });
     }
 
