@@ -308,3 +308,157 @@ cs_runge_kutta_integrators_destroy()
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief prepare and complete rhs per stage for Runge-Kutta integrator.
+ *        Align with legacy equations' building sequence.
+ *        1) Collect initial rhs done in
+ *        cs_solve_navier_stokes/cs_solve_equation_scalar
+ *        2) Complete rhs with adding explicit part of the
+ *        convection/diffusion balance
+ * More precisely, the right hand side \f$ \vect{Rhs} \f$ is updated as
+ * follows:
+ * \f[
+ * \vect{Rhs} = \vect{Rhs} - \sum_{\fij \in \Facei{\celli}}      \left(
+ *        \dot{m}_\ij \left( \vect{\varia}_\fij - \vect{\varia}_\celli \right)
+ *      - \mu_\fij \gradt_\fij \vect{\varia} \cdot \vect{S}_\ij  \right)
+ * \f]
+ *
+ * Warning:
+ * - \f$ \vect{Rhs} \f$ has already been initialized
+ *   before calling cs_balance_vector!
+ * - mind the sign minus
+ *
+ * \param[in]      ctx           Reference to dispatch context
+ * \param[in,out]  rk            pointer to a Runge-Kutta integrator
+ * \param[in]      idtvar        indicator of the temporal scheme
+ * \param[in]      f_id          field id (or -1)
+ * \param[in]      imucpp        indicator
+ *                               - 0 do not multiply the convectiv term by Cp
+ *                               - 1 do multiply the convectiv term by Cp
+ * \param[in]      eqp           pointer to a cs_equation_param_t structure which
+ *                               contains variable calculation options
+ * \param[in]      bc_coeffs     boundary condition structure for the variable
+ * \param[in]      i_massflux    mass flux at interior faces
+ * \param[in]      b_massflux    mass flux at boundary faces
+ * \param[in]      i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                                at interior faces for the r.h.s.
+ * \param[in]      b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
+ *                                at boundary faces for the r.h.s.
+ * \param[in]      viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
+ * \param[in]      weighf        internal face weight between cells i j in case
+ *                               of tensor diffusion
+ * \param[in]      weighb        boundary face weight for cells i in case
+ *                               of tensor diffusion
+ * \param[in]      icvflb        global indicator of boundary convection flux
+ *                                - 0 upwind scheme at all boundary faces
+ *                                - 1 imposed flux at some boundary faces
+ * \param[in]      icvfli        boundary face indicator array of convection flux
+ *                                - 0 upwind scheme
+ *                                - 1 imposed flux
+ * \param[in]      pvar          solved variable (current time step)
+ * \param[in]      xcpp          array of specific heat (Cp)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_runge_kutta_stage_complete_scalar_rhs
+  (cs_dispatch_context         &ctx,
+   cs_runge_kutta_integrator_t *rk,
+   int                          idtvar,
+   int                          f_id,
+   int                          imucpp,
+   cs_equation_param_t         *eqp,
+   cs_field_bc_coeffs_t        *bc_coeffs,
+   const cs_real_t              i_massflux[],
+   const cs_real_t              b_massflux[],
+   const cs_real_t              i_visc[],
+   const cs_real_t              b_visc[],
+   cs_real_t                    viscel[][6],
+   const cs_real_t              weighf[][2],
+   const cs_real_t              weighb[],
+   int                          icvflb,
+   const int                    icvfli[],
+   cs_real_t                    pvar[],
+   const cs_real_t              xcpp[])
+{
+  assert(rk != nullptr);
+  const int n_elts = rk->n_elts;
+  // get the current stage index
+  const int i_stg = rk->i_stage;
+
+  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+
+  cs_real_t *rhs = rk->rhs_stages + i_stg*n_elts;
+
+  cs_alloc_mode_t amode = ctx.alloc_mode(false);
+
+  /* Allocate non reconstructed face value only if presence of limiter */
+
+  cs_bc_coeffs_solve_t bc_coeffs_solve;
+  cs_init_bc_coeffs_solve(bc_coeffs_solve,
+                          n_b_faces,
+                          1,
+                          amode,
+                          false);
+
+  cs_real_t *val_f = bc_coeffs_solve.val_f;
+  cs_real_t *flux = bc_coeffs_solve.flux;
+
+  /* We compute the total explicit balance. */
+
+  int  inc = 1;
+
+    /* The added convective scalar mass flux is:
+     *      (thetex*Y_\face-imasac*Y_\celli)*mf.
+     * When building the explicit part of the rhs, one
+     * has to impose 0 on mass accumulation. */
+  int  imasac = 0;
+
+  eqp->theta = 1;
+
+  cs_field_t *f = nullptr;
+
+  if (f_id > -1)
+    f = cs_field_by_id(f_id);
+
+  cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+      (ctx,
+       f, bc_coeffs, inc,
+       eqp,
+       0, nullptr, // hyd_p_flag, f_ext
+       nullptr, viscel, weighb,
+       pvar,
+       val_f, flux);
+
+  cs_balance_scalar(idtvar,
+                    f_id,
+                    imucpp,
+                    imasac,
+                    inc,
+                    eqp,
+                    nullptr,
+                    pvar,
+                    bc_coeffs,
+                    val_f,
+                    flux,
+                    i_massflux,
+                    b_massflux,
+                    i_visc,
+                    b_visc,
+                    viscel,
+                    xcpp,
+                    weighf,
+                    weighb,
+                    icvflb,
+                    icvfli,
+                    rhs,
+                    nullptr,
+                    nullptr);
+
+  eqp->theta = 0;
+
+  cs_clear_bc_coeffs_solve(bc_coeffs_solve);
+  ctx.wait();
+}
+
+/*----------------------------------------------------------------------------*/
