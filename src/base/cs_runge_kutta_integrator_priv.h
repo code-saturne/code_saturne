@@ -73,6 +73,8 @@ typedef enum {
   CS_RK1,
   CS_RK2,
   CS_RK3,
+  CS_RK3_WRAY,
+  CS_RK3_SSP,
   CS_RK4
 } cs_runge_kutta_scheme_t;
 

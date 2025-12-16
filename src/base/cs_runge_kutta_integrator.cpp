@@ -117,6 +117,27 @@ _runge_kutta_integrator_init_scheme(cs_runge_kutta_integrator_t   *rk,
 
     break;
 
+  case CS_RK3_WRAY:
+    rk->n_stages = 3;
+
+    a[0] = 8.0/15.0;
+    a[4] = 1.0/4.0, a[5] = 5.0/12.0;
+    a[8] = 1.0/4.0, a[9] = 0.,  a[10] = 3./4.;
+
+    c[0] = 8.0/15.0, c[1] = 2./3., c[2] = 1.0;
+
+    break;
+  case CS_RK3_SSP:
+
+    rk->n_stages = 3;
+
+    a[0] = 1.0;
+    a[4] = 1.0/4.0, a[5] = 1.0/4.0;
+    a[8] = 1.0/6.0, a[9] = 1.0/6.0, a[10] = 2./3.;
+
+    c[0] = 1.0, c[1] = 1./2., c[2] = 1.0;
+
+    break;
   case CS_RK4:
     rk->n_stages = 4;
 
