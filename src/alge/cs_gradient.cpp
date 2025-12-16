@@ -9129,6 +9129,11 @@ cs_gradient_porosity_balance(int inc)
 {
   CS_PROFILE_FUNC_RANGE();
 
+  /*Additional terms due to porosity */
+  cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
+  if (f_i_poro_duq_0 == nullptr)
+    return;
+
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *mq = cs_glob_mesh_quantities;
   cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
@@ -9150,12 +9155,6 @@ cs_gradient_porosity_balance(int inc)
 
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_cells = m->n_cells;
-
-  /*Additional terms due to porosity */
-  cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
-
-  if (f_i_poro_duq_0 == nullptr)
-    return;
 
   cs_real_t *i_poro_duq_0 = f_i_poro_duq_0->val;
   cs_real_t *i_poro_duq_1 = cs_field_by_name("i_poro_duq_1")->val;
