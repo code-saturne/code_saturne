@@ -825,8 +825,6 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
   cs_dispatch_context ctx;
 
-  cs_alloc_mode_t amode = ctx.alloc_mode();
-
   CS_PROFILE_MARK_LINE();
 
   cs_boundary_conditions_reset();
@@ -4486,6 +4484,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
     cs_field_bc_coeffs_shallow_copy(bc_coeffs, bc_coeffs_loc);
 
     CS_MALLOC_HD(bc_coeffs_loc->a, n_b_faces, cs_real_t, amode);
+    bc_coeffs_loc->af = bc_coeffs_loc->a; // Also muted, can be shared.
 
     cs_real_t *bc_coeffs_a_loc = bc_coeffs_loc->a;
 
@@ -4762,6 +4761,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
  *                              (with limiter)
  */
 /*----------------------------------------------------------------------------*/
+
 template <cs_lnum_t stride>
 void
 cs_boundary_conditions_update_bc_coeff_face_values_strided
