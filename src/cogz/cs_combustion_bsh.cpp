@@ -302,7 +302,6 @@ _integral_phi_beta(cs_real_t *z,
 {
   cs_real_t  sum1, sum2, sum3, denom, beta_pdf;
   cs_real_t  zz_max, aa, bb, eps, aa_max, bb_max, dz;
-  cs_real_t *zz, *phi_;
   cs_lnum_t  m0, n0, dim_zz, ii;
 
   if (fabs(z_var) <= 1e-7) {
@@ -332,17 +331,17 @@ _integral_phi_beta(cs_real_t *z,
   eps = 1.0e-6;
 
   dim_zz = m0 + 2 * n0 * (cs_lnum_t)log10(0.1 / eps) + 1;
-  CS_MALLOC(zz, dim_zz, cs_real_t);
+  cs_array<cs_real_t> zz(dim_zz);
   for (ii = 0; ii < dim_zz; ii++) {
     zz[ii] = 0.0;
   }
 
-  CS_MALLOC(phi_, dim_zz, cs_real_t);
+  cs_array<cs_real_t> phi_(dim_zz);
   for (ii = 0; ii < dim_zz; ii++) {
     phi_[ii] = 0.0;
   }
 
-  _partition_zz(m0, n0, eps, zz);
+  _partition_zz(m0, n0, eps, zz.data());
 
   sum1 = pow(eps, aa) / aa;
   sum3 = pow(eps, bb) / bb;
@@ -358,7 +357,7 @@ _integral_phi_beta(cs_real_t *z,
 
   denom = sum1 + sum2 + sum3;
 
-  _interp1d(z, phi, zz, phi_, size_z, dim_zz);
+  _interp1d(z, phi, zz.data(), phi_.data(), size_z, dim_zz);
 
   sum1 = phi_[0] * pow(eps, aa) / aa / denom;
   sum3 = phi_[dim_zz - 1] * pow(eps, bb) / bb / denom;
@@ -375,8 +374,6 @@ _integral_phi_beta(cs_real_t *z,
 
   *phi_integral = sum1 + sum2 + sum3;
 
-  CS_FREE(zz);
-  CS_FREE(phi_);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

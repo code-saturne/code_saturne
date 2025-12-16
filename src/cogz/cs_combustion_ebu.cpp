@@ -199,16 +199,13 @@ cs_combustion_ebu_physical_prop(int  *mbrom)
 
   // Allocate temporary arrays
 
-  cs_real_t  *yfuegf, *yoxygf, *yprogf, *yfuegb, *yoxygb, *yprogb;
-  cs_real_t  *temp, *masmel;
-  CS_MALLOC(yfuegf, n_cells_ext, cs_real_t);
-  CS_MALLOC(yoxygf, n_cells_ext, cs_real_t);
-  CS_MALLOC(yprogf, n_cells_ext, cs_real_t);
-  CS_MALLOC(yfuegb, n_cells_ext, cs_real_t);
-  CS_MALLOC(yoxygb, n_cells_ext, cs_real_t);
-  CS_MALLOC(yprogb, n_cells_ext, cs_real_t);
-  CS_MALLOC(temp, n_cells_ext, cs_real_t);
-  CS_MALLOC(masmel, n_cells_ext, cs_real_t);
+  cs_array<cs_real_t> yfuegf(n_cells_ext);
+  cs_array<cs_real_t> yoxygf(n_cells_ext);
+  cs_array<cs_real_t> yprogf(n_cells_ext);
+  cs_array<cs_real_t> yfuegb(n_cells_ext);
+  cs_array<cs_real_t> yoxygb(n_cells_ext);
+  cs_array<cs_real_t> yprogb(n_cells_ext);
+  cs_array<cs_real_t> masmel(n_cells_ext);
 
   // Get variables and coefficients
 
@@ -399,15 +396,6 @@ cs_combustion_ebu_physical_prop(int  *mbrom)
     });
   }
 
-  CS_FREE(yfuegf);
-  CS_FREE(yoxygf);
-  CS_FREE(yprogf);
-  CS_FREE(yfuegb);
-  CS_FREE(yoxygb);
-  CS_FREE(yprogb);
-  CS_FREE(temp);
-  CS_FREE(masmel);
-
   *mbrom = 1;
 }
 
@@ -468,9 +456,10 @@ cs_combustion_ebu_source_terms(cs_field_t  *f_sc,
   const cs_real_t *cvara_omg = nullptr;
   const cs_real_6_t *cvara_rij = nullptr;
 
-  cs_real_t  *w1 = nullptr;
 
   cs_host_context ctx;
+
+  cs_array<cs_real_t> w1;
 
   if (   cs_glob_turb_model->itytur == 2
       || cs_glob_turb_model->itytur == 5) {
@@ -482,11 +471,11 @@ cs_combustion_ebu_source_terms(cs_field_t  *f_sc,
     cvara_rij = (const cs_real_6_t *)(CS_F_(k)->val_pre);
     cvara_ep = CS_F_(eps)->val_pre;
 
-    CS_MALLOC(w1, n_cells_ext, cs_real_t);
+    w1 = cs_array<cs_real_t>(n_cells_ext, CS_ALLOC_HOST);
     ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
       w1[c_id] = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
     });
-    cvara_k = w1;
+    cvara_k = w1.data();
   }
 
   else if (cs_glob_turb_model->model == CS_TURB_K_OMEGA) {
@@ -494,11 +483,11 @@ cs_combustion_ebu_source_terms(cs_field_t  *f_sc,
     cvara_omg = CS_F_(omg)->val_pre;
 
     const cs_real_t cmu = cs_turb_cmu;
-    CS_MALLOC(w1, n_cells_ext, cs_real_t);
+    w1 = cs_array<cs_real_t>(n_cells_ext, CS_ALLOC_HOST);
     ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
       w1[c_id] = cmu * cvara_k[c_id]* cvara_omg[c_id];
     });
-    cvara_ep = w1;
+    cvara_ep = w1.data();
   }
 
   const cs_real_t epzero = cs_math_epzero;
@@ -513,7 +502,6 @@ cs_combustion_ebu_source_terms(cs_field_t  *f_sc,
     }
   });
 
-  CS_FREE(w1);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -343,8 +343,7 @@ cs_combustion_ht_convert_t_to_h_faces_l(cs_lnum_t        n_faces,
     const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
     const cs_real_t *cvar_h = CS_F_(h)->val;
 
-    cs_real_t *h_in;
-    CS_MALLOC(h_in, n_b_faces, cs_real_t);
+    cs_array<cs_real_t> h_in(n_b_faces, CS_ALLOC_HOST);
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       h_in[face_id] = -HUGE_VALF;
     }
@@ -391,7 +390,6 @@ cs_combustion_ht_convert_t_to_h_faces_l(cs_lnum_t        n_faces,
       }
     }
 
-    CS_FREE(h_in);
   }
 }
 

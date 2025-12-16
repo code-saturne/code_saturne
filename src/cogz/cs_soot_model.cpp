@@ -269,12 +269,15 @@ cs_soot_production(int        f_id,
 
     if (f_id == CS_F_(fsm)->id) {
 
-      cs_real_t *wsf, *wso;
-      CS_MALLOC(wsf, n_cells, cs_real_t);
-      CS_MALLOC(wso, n_cells, cs_real_t);
+      cs_array<cs_real_t> wsf(n_cells, CS_ALLOC_HOST);
+      cs_array<cs_real_t> wso(n_cells, CS_ALLOC_HOST);
 
-      cs_array_real_fill_zero(n_cells, wso);
-      cs_array_real_fill_zero(n_cells, wsf);
+      cs_host_context ctx;
+      ctx.parallel_for(n_cells, CS_LAMBDA (cs_lnum_t c_id) {
+        wso[c_id] = 0.0;
+        wsf[c_id] = 0.0;
+      });
+      ctx.wait();
 
       const cs_real_t *cvar_fm = CS_F_(fm)->val;
 
@@ -309,10 +312,6 @@ cs_soot_production(int        f_id,
         smbrs[c_id]  += (wsf[c_id] + wso[c_id] *zetas) * volume[c_id];
         rovsdt[c_id] += cs::max(-wso[c_id], 0.) * volume[c_id];
       }
-
-      /* Free memory */
-      CS_FREE(wsf);
-      CS_FREE(wso);
 
     }
 

@@ -197,20 +197,18 @@ cs_combustion_physical_properties_update_d3p(void)
   /* Initializations
      --------------- */
 
-  cs_real_t  *dirmin, *dirmax, *fdeb, *ffin, *hrec, *tpdf;
-  CS_MALLOC(dirmin, n_cells, cs_real_t);
-  CS_MALLOC(dirmax, n_cells, cs_real_t);
-  CS_MALLOC(fdeb, n_cells, cs_real_t);
-  CS_MALLOC(ffin, n_cells, cs_real_t);
-  CS_MALLOC(hrec, n_cells, cs_real_t);
-  CS_MALLOC(tpdf, n_cells, cs_real_t);
+  cs_array<cs_real_t> dirmin(n_cells, CS_ALLOC_HOST);
+  cs_array<cs_real_t> dirmax(n_cells, CS_ALLOC_HOST);
+  cs_array<cs_real_t> fdeb(n_cells, CS_ALLOC_HOST);
+  cs_array<cs_real_t> ffin(n_cells, CS_ALLOC_HOST);
+  cs_array<cs_real_t> hrec(n_cells, CS_ALLOC_HOST);
+  cs_array<cs_real_t> tpdf(n_cells, CS_ALLOC_HOST);
 
   const cs_real_t *cvar_fm = CS_F_(fm)->val;
   cs_real_t *cvar_fp2m = CS_F_(fp2m)->val;
 
-  cs_real_t  *w1, *w2;
-  CS_MALLOC(w1, n_cells, cs_real_t);
-  CS_MALLOC(w2, n_cells, cs_real_t);
+  cs_array<cs_real_t> w1(n_cells, CS_ALLOC_HOST);
+  cs_array<cs_real_t> w2(n_cells, CS_ALLOC_HOST);
 
   cs_host_context ctx;
 
@@ -219,24 +217,30 @@ cs_combustion_physical_properties_update_d3p(void)
     w2[c_id] = 1.;
   });
 
-  int *indpdf;
-  CS_MALLOC(indpdf, n_cells, int);
+  cs_array<int> indpdf(n_cells, CS_ALLOC_HOST);
 
-  cs_combustion_dirac_pdf(n_cells, indpdf, tpdf, cvar_fm, cvar_fp2m,
-                          w1, w2, dirmin, dirmax, fdeb, ffin, hrec);
+  cs_combustion_dirac_pdf(n_cells,
+                          indpdf.data(),
+                          tpdf.data(),
+                          cvar_fm, cvar_fp2m,
+                          w1.data(),
+                          w2.data(),
+                          dirmin.data(),
+                          dirmax.data(),
+                          fdeb.data(),
+                          ffin.data(),
+                          hrec.data());
 
   /* Integrate probability density function to determine
      temperature, mass fractions, density, radiative qsp. */
 
-  cs_combustion_d3p_integration(indpdf,
-                                dirmin,
-                                dirmax,
-                                fdeb,
-                                ffin,
-                                hrec,
-                                w1);
-
-  CS_FREE(indpdf);
+  cs_combustion_d3p_integration(indpdf.data(),
+                                dirmin.data(),
+                                dirmax.data(),
+                                fdeb.data(),
+                                ffin.data(),
+                                hrec.data(),
+                                w1.data());
 
   /* Update density at boundary */
 
@@ -253,14 +257,6 @@ cs_combustion_physical_properties_update_d3p(void)
     }
   }
 
-  CS_FREE(dirmin);
-  CS_FREE(dirmax);
-  CS_FREE(fdeb);
-  CS_FREE(ffin);
-  CS_FREE(hrec);
-  CS_FREE(tpdf);
-  CS_FREE(w1);
-  CS_FREE(w2);
 }
 
 /*----------------------------------------------------------------------------*/

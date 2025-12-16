@@ -2222,19 +2222,18 @@ cs_combustion_lw_source_terms(cs_field_t  *f_sc,
 
     // Allocate work arrays
 
-    cs_real_3_t *gradf, *grady;
-    CS_MALLOC(gradf, n_cells_ext, cs_real_3_t);
-    CS_MALLOC(grady, n_cells_ext, cs_real_3_t);
+    cs_array_2d<cs_real_t> gradf(n_cells_ext, 3, CS_ALLOC_HOST);
+    cs_array_2d<cs_real_t> grady(n_cells_ext, 3, CS_ALLOC_HOST);
 
     // Gradient of F
-    cs_field_gradient_scalar(cm->fm, true, 1, gradf);
+    cs_field_gradient_scalar(cm->fm, true, 1, gradf.data<cs_real_3_t>());
 
     // Gradient of Yfuel
-    cs_field_gradient_scalar(cm->yfm, true, 1, grady);
+    cs_field_gradient_scalar(cm->yfm, true, 1, grady.data<cs_real_3_t>());
 
     // Access or reconstruct k and Epsilon based on turbulence model.
 
-    cs_real_t  *w1 = nullptr;
+    cs_array<cs_real_t> w1;
 
     if (   cs_glob_turb_model->itytur == 2
         || cs_glob_turb_model->itytur == 5) {
@@ -2246,11 +2245,11 @@ cs_combustion_lw_source_terms(cs_field_t  *f_sc,
       cvara_rij = (const cs_real_6_t *)(CS_F_(k)->val_pre);
       cvara_ep = CS_F_(eps)->val_pre;
 
-      CS_MALLOC(w1, n_cells_ext, cs_real_t);
+      w1 = cs_array<cs_real_t>(n_cells_ext, CS_ALLOC_HOST);
       ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
         w1[c_id] = 0.5 * cs_math_6_trace(cvara_rij[c_id]);
       });
-      cvara_k = w1;
+      cvara_k = w1.data();
     }
 
     else if (cs_glob_turb_model->model == CS_TURB_K_OMEGA) {
@@ -2258,11 +2257,11 @@ cs_combustion_lw_source_terms(cs_field_t  *f_sc,
       cvara_omg = CS_F_(omg)->val_pre;
 
       const cs_real_t cmu = cs_turb_cmu;
-      CS_MALLOC(w1, n_cells_ext, cs_real_t);
+      w1 = cs_array<cs_real_t>(n_cells_ext, CS_ALLOC_HOST);
       ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
         w1[c_id] = cmu * cvara_k[c_id]* cvara_omg[c_id];
       });
-      cvara_ep = w1;
+      cvara_ep = w1.data();
     }
 
     const int ksigmas = cs_field_key_id("turbulent_schmidt");
@@ -2288,7 +2287,8 @@ cs_combustion_lw_source_terms(cs_field_t  *f_sc,
 
       cs_real_t tsgrad =  (  2.0
                            * visct[c_id]/(turb_schmidt)
-                           * cs_math_3_dot_product(gradf[c_id], grady[c_id]))
+                           * cs_math_3_dot_product(gradf.sub_array(c_id),
+                                                   grady.sub_array(c_id)))
                          * volume[c_id];
 
       // Dissipation term
@@ -2309,9 +2309,6 @@ cs_combustion_lw_source_terms(cs_field_t  *f_sc,
       smbrs[c_id] += tschim + tsgrad + tsdiss;
     });
 
-    CS_FREE(w1);
-    CS_FREE(grady);
-    CS_FREE(gradf);
   }
 }
 
