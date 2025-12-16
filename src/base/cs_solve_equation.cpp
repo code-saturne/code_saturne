@@ -982,7 +982,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
                          cs_real_t          viscf[],
                          cs_real_t          viscb[])
 {
-
   std::chrono::high_resolution_clock::time_point t_start;
   if (cs_glob_timer_kernels_flag > 0) {
     t_start = std::chrono::high_resolution_clock::now();
@@ -1082,7 +1081,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
                                  rk_p,
                                  crom,
                                  cell_f_vol,
-                                 cvar_var);
+                                 cvara_var);
   }
 
   /* Source terms
@@ -2210,6 +2209,19 @@ cs_solve_equation_vector(cs_field_t       *f,
     bft_printf(" ** SOLVING VARIABLE %s\n"
                "    ----------------\n\n", f->name);
 
+  /* Retrieve the Runge-Kutta integrator if activated */
+  cs_runge_kutta_integrator_t *rk_p = nullptr;
+
+  if (eqp->rk_def.rk_id > -1) {
+    rk_p = cs_runge_kutta_integrator_by_id(eqp->rk_def.rk_id);
+
+    cs_runge_kutta_init_state<3>(ctx,
+                                 rk_p,
+                                 CS_F_(rho)->val,
+                                 cell_f_vol,
+                                 (cs_real_t *)cvara_var);
+  }
+
   /* Source terms
      ============ */
 
@@ -2500,6 +2512,36 @@ cs_solve_equation_vector(cs_field_t       *f,
       }
     });
     ctx.wait();
+  }
+
+  /* If a Runge-Kutta integrator is activated for the current scalar field */
+  if (cs_runge_kutta_is_active(rk_p)) {
+
+    while (cs_runge_kutta_is_staging(rk_p)) {
+      cs_runge_kutta_stage_set_initial_rhs<3>(ctx, rk_p, (cs_real_t *)rhs);
+      cs_runge_kutta_stage_complete_rhs<3>(ctx,
+                                           rk_p,
+                                           cs_glob_time_step_options->idtvar,
+                                           f->id,
+                                           0, // ivisep
+                                           eqp,
+                                           f->bc_coeffs,
+                                           imasfl,
+                                           bmasfl,
+                                           viscf,
+                                           viscb,
+                                           nullptr,
+                                           nullptr,
+                                           viscce,
+                                           weighf,
+                                           weighb,
+                                           0,        //icvflb
+                                           nullptr,  //icvfli
+                                           cvar_var);
+      cs_runge_kutta_staging<3>(ctx, rk_p, (cs_real_t *)cvar_var);
+    }
+    /* After the Explicit Runge-Kutta scheme, finish here */
+    return;
   }
 
   /* Solve
