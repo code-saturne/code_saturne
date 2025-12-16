@@ -1441,7 +1441,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   array
   (
     array&& other /*!<[in] Original reference to move */
@@ -1469,7 +1469,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   friend void
   swap
   (
@@ -1486,6 +1486,7 @@ public:
     swap(first._owner, second._owner);
     swap(first._data, second._data);
     swap(first._mode, second._mode);
+
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1494,7 +1495,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   array& operator=(array other)
   {
     swap(*this, other);
