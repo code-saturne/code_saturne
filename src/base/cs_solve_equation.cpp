@@ -30,6 +30,8 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <chrono>
+
 #include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -74,6 +76,7 @@
 #include "rayt/cs_rad_transfer.h"
 #include "rayt/cs_rad_transfer_source_terms.h"
 #include "base/cs_reducers.h"
+#include "base/cs_runge_kutta_integrator.h"
 #include "base/cs_sat_coupling.h"
 #include "base/cs_scalar_clipping.h"
 #include "base/cs_syr_coupling.h"
@@ -979,6 +982,12 @@ cs_solve_equation_scalar(cs_field_t        *f,
                          cs_real_t          viscf[],
                          cs_real_t          viscb[])
 {
+
+  std::chrono::high_resolution_clock::time_point t_start;
+  if (cs_glob_timer_kernels_flag > 0) {
+    t_start = std::chrono::high_resolution_clock::now();
+  }
+
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
@@ -1062,6 +1071,19 @@ cs_solve_equation_scalar(cs_field_t        *f,
   if (eqp->verbosity > 0)
     bft_printf(" ** SOLVING VARIABLE %s\n"
                "    ----------------\n\n", f->name);
+
+  /* Retrieve the Runge-Kutta integrator if activated */
+  cs_runge_kutta_integrator_t *rk_p = nullptr;
+
+  if (eqp->rk_def.rk_id > -1) {
+    rk_p = cs_runge_kutta_integrator_by_id(eqp->rk_def.rk_id);
+
+    cs_runge_kutta_init_state<1>(ctx,
+                                 rk_p,
+                                 crom,
+                                 cell_f_vol,
+                                 cvar_var);
+  }
 
   /* Source terms
      ============ */
@@ -1745,6 +1767,47 @@ cs_solve_equation_scalar(cs_field_t        *f,
     ctx.wait();
   }
 
+  /* If a Runge-Kutta integrator is activated for the current scalar field */
+  if (cs_runge_kutta_is_active(rk_p)) {
+
+    while (cs_runge_kutta_is_staging(rk_p)) {
+      cs_runge_kutta_stage_set_initial_rhs<1>(ctx, rk_p, rhs);
+      cs_runge_kutta_stage_complete_scalar_rhs(ctx,
+                                               rk_p,
+                                               cs_glob_time_step_options->idtvar,
+                                               f->id,
+                                               imucpp,
+                                               eqp,
+                                               f->bc_coeffs,
+                                               imasfl,
+                                               bmasfl,
+                                               viscf,
+                                               viscb,
+                                               viscce,
+                                               weighf,
+                                               weighb,
+                                               0,       // icvflb
+                                               nullptr, //icvfli
+                                               cvar_var,
+                                               xcpp);
+      cs_runge_kutta_staging<1>(ctx, rk_p, cvar_var);
+    }
+
+    if (cs_glob_timer_kernels_flag > 0) {
+      std::chrono::high_resolution_clock::time_point
+        t_stop = std::chrono::high_resolution_clock::now();
+
+      std::chrono::microseconds elapsed;
+      elapsed = std::chrono::duration_cast
+        <std::chrono::microseconds>(t_stop - t_start);
+
+      printf("%d: %s", cs_glob_rank_id, __func__);
+      printf(", total  = %ld\n", elapsed.count());
+    }
+    /* After the Explicit Runge-Kutta scheme, finish here */
+    return;
+  }
+
   /* Solve
    * ===== */
 
@@ -2044,6 +2107,18 @@ cs_solve_equation_scalar(cs_field_t        *f,
   }
 
   ctx.wait();
+
+  if (cs_glob_timer_kernels_flag > 0) {
+    std::chrono::high_resolution_clock::time_point
+      t_stop = std::chrono::high_resolution_clock::now();
+
+    std::chrono::microseconds elapsed;
+    elapsed = std::chrono::duration_cast
+      <std::chrono::microseconds>(t_stop - t_start);
+
+    printf("%d: %s", cs_glob_rank_id, __func__);
+    printf(", total  = %ld\n", elapsed.count());
+  }
 
   CS_FREE(dtr);
 
