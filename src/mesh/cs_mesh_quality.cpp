@@ -550,7 +550,7 @@ _get_face_warping(cs_lnum_t          idx_start,
 /*----------------------------------------------------------------------------
  * Compute cellwise the warping error
  *  Id = 1/|c| \sum_(f \in F_c) x_f \otimes \vect{f}
- * Froebinus norm is used to get a scalar-valued quantity
+ * Frobenius norm is used to get a scalar-valued quantity
  *
  * parameters:
  *   mesh             <-- pointer to mesh structure.
