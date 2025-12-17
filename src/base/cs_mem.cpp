@@ -182,6 +182,14 @@ _free_hd_device(void        *ptr,
 
 #endif
 
+/*-----------------------------------------------------------------------------
+ * Local static variable definitions
+ * (additional block, needed for following class definition)
+ *-----------------------------------------------------------------------------*/
+
+static size_t  _cs_mem_global_alloc_cur[CS_ALLOC_TRACE_N] = {0, 0, 0, 0};
+static size_t  _cs_mem_global_alloc_max[CS_ALLOC_TRACE_N] = {0, 0, 0, 0};
+
 /*-------------------------------------------------------------------------------
  * Local type definitions
  *-----------------------------------------------------------------------------*/
@@ -237,6 +245,30 @@ public:
   /*! destructor */
   ~cs_mem_pool()
   {
+    clear();
+  }
+
+  /*!
+   * \brief Update allocation sizes for memory pool operations
+   *
+   * \param [in] size_diff  allocation size difference
+   * \param [in] mode       allocation mode
+   */
+
+  void
+  update_alloc_sizes(int64_t          size_diff,
+                     cs_alloc_mode_t  mode)
+  {
+    assert(mode >= CS_ALLOC_HOST_DEVICE_SHARED);
+
+    cs_alloc_count_t s = (mode == CS_ALLOC_HOST_DEVICE_SHARED) ?
+      CS_ALLOC_TRACE_USM : CS_ALLOC_TRACE_DEVICE;
+
+    for (int i = s; i <= CS_ALLOC_TRACE_DEVICE; i++) {
+      _cs_mem_global_alloc_cur[i] += size_diff;
+      if (_cs_mem_global_alloc_max[i] < _cs_mem_global_alloc_cur[i])
+        _cs_mem_global_alloc_max[i] = _cs_mem_global_alloc_cur[i];
+    }
   }
 
   /*! Move memory block to memory pool if possible.
@@ -255,7 +287,7 @@ public:
     bool moved_to_pool = false;
 
     if (active_ && me.mode >= CS_ALLOC_HOST_DEVICE_SHARED) {
-      if (max_capacity_ == 0 || current_capacity_ + me.size < max_capacity_) {
+      if (current_capacity_ + me.size < max_capacity_) {
 
         cs_mem_pool_block_t mpe = {.ptr   = me.device_ptr,
                                    .size  = me.size,
@@ -263,6 +295,7 @@ public:
 
         free_blocks_[me.mode].push_back(mpe);
         current_capacity_ += me.size;
+        update_alloc_sizes(me.size, me.mode);
         if (current_capacity_ > peak_capacity_)
           peak_capacity_ = current_capacity_;
         moved_to_pool = true;
@@ -300,6 +333,7 @@ public:
         if (it->n_tries > n_tries_max_) {
           current_capacity_ -= it->size;
           _free_hd_device(it->ptr, "memory pool block", __FILE__, __LINE__);
+          update_alloc_sizes(- it->size, mode);
           it = free_blocks.erase(it);
         }
         else {
@@ -311,6 +345,7 @@ public:
         if (it->size == me_size) {
           ptr = it->ptr;
           current_capacity_ -= it->size;
+          update_alloc_sizes(- it->size, mode);
           free_blocks.erase(it);
           break;
         }
@@ -331,9 +366,10 @@ public:
     for (int i = 0; i < 2; i++) {
       auto &free_blocks = free_blocks_[modes[i]];
       for (auto it = free_blocks.begin(); it != free_blocks.end(); ++it) {
+        update_alloc_sizes(- it->size, modes[i]);
         _free_hd_device(it->ptr, "memory pool block", __FILE__, __LINE__);
       }
-      free_blocks_.clear();
+      free_blocks.clear();
     }
 
     free_blocks_.clear();
@@ -446,9 +482,6 @@ static int  _n_async_copies_in_progress = 0;
 static FILE *_cs_mem_global_file = nullptr;
 
 static std::map<const void *, cs_mem_block_t> _cs_alloc_map;
-
-static size_t  _cs_mem_global_alloc_cur[CS_ALLOC_TRACE_N] = {0, 0, 0, 0};
-static size_t  _cs_mem_global_alloc_max[CS_ALLOC_TRACE_N] = {0, 0, 0, 0};
 
 static size_t  _cs_mem_global_n_allocs = 0;
 static size_t  _cs_mem_global_n_reallocs = 0;
