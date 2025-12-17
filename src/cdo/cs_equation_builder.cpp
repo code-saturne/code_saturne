@@ -423,11 +423,14 @@ cs_equation_builder_log_performance(int                          n_time_steps,
                                     const cs_equation_param_t   *eqp,
                                     const cs_equation_builder_t *eqb)
 {
+  // Check if there is a case of immediate exit
   if (eqb == nullptr)
     return;
   if (eqp == nullptr)
     return;
   if (eqp->flag & CS_EQUATION_INSIDE_SYSTEM)
+    return;
+  if (n_time_steps == 0 || n_g_dofs == 0)
     return;
 
   double t[3]
