@@ -123,6 +123,7 @@ typedef enum {
 
 typedef enum {
 
+  CS_ATMO_PROJ_UNDEF = -1,
   CS_ATMO_PROJ_WGS84 = 0,
   /* Lambert93 projection type */
   CS_ATMO_PROJ_LAMBERT_93 = 1,

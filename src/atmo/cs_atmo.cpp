@@ -138,7 +138,7 @@ static cs_atmo_option_t  _atmo_option = {
   .y_l93 = 1e12,
   .x_origin = 1e12,
   .y_origin = 1e12,
-  .projection_type = CS_ATMO_PROJ_LAMBERT_93,
+  .projection_type = CS_ATMO_PROJ_UNDEF,
   .utm_zone = 0,
   {.met_1d_nlevels_d = 0},
   {.met_1d_nlevels_t = 0},
@@ -4502,12 +4502,14 @@ cs_atmo_log_setup(void)
      _("  Domain center:\n"
        "    latitude:  %6f\n"
        "    longitude: %6f\n"
-       "    x center (in Lambert-93) : %6f\n"
-       "    y center (in Lambert-93) : %6f\n\n"),
+       "    x center (in Lambert-93): %6f\n"
+       "    y center (in Lambert-93): %6f\n"
+       "    domain_orientation (in degree): %6f\n\n"),
      at_opt->latitude,
      at_opt->longitude,
      at_opt->x_l93,
-     at_opt->y_l93);
+     at_opt->y_l93,
+     at_opt->domain_orientation);
 
   if (at_opt->meteo_profile == 1) {
     cs_log_printf
