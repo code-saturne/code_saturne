@@ -459,6 +459,7 @@ END_C_DECLS
  * \param[in]     ctx              reference to dispatch context
  * \param[in]     bc_coeffs        associated BC coefficients structure
  * \param[in]     cpl              structure associated with internal coupling
+ * \param[in]     compute_diffusion_coeffs compute diffusion coefficients or not
  * \param[in]     halo_type        halo type
  * \param[in]     w_stride         stride for weighting coefficient
  * \param[in]     clip_coeff       clipping coefficient
@@ -476,13 +477,13 @@ END_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-template <bool compute_diffusion_coeffs>
 void
 cs_internal_coupling_update_bc_coeffs_s
 (
  cs_dispatch_context           &ctx,
  const cs_field_bc_coeffs_t    *bc_coeffs,
  const cs_internal_coupling_t  *cpl,
+ const bool                     compute_diffusion_coeffs,
  cs_halo_type_t                 halo_type,
  int                            w_stride,
  double                         clip_coeff,

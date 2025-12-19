@@ -263,12 +263,12 @@ _compute_bc_grad
   ctx.wait();
 }
 
-template <bool need_flux_reconstruction>
 static void
 _compute_bc_flux
   (
    cs_dispatch_context         &ctx,
    const cs_field_bc_coeffs_t  *bc_coeffs,
+   const bool                   need_flux_reconstruction,
    const cs_real_t              val_ip_d[],
    cs_real_t                    flux[])
 {
@@ -3904,8 +3904,9 @@ cs_boundary_conditions_set_coeffs(int         nvar,
                                                     cs_glob_time_step);
         if (!need_solve) {
           if (f->dim == 1) {
-            cs_boundary_conditions_update_bc_coeff_face_values<true,true>
+            cs_boundary_conditions_update_bc_coeff_face_values
               (ctx, f, eqp,
+               true, true,
                false, nullptr, // hyd_p_flag, f_ext
                nullptr, // visel
                nullptr, // weighb
@@ -4289,28 +4290,30 @@ END_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Update face value for gradient and diffusion when solving
- *         in increments
+ *         in increment.
  *
- * \param[in]      ctx          reference to dispatch context
- * \param[in]      f            pointer to field, or nullptr
- * \param[in]      bc_coeffs    boundary condition structure for the variable
- * \param[in]      inc          0 if an increment, 1 otherwise
- * \param[in]      eqp          equation parameters
- * \param[in]      hyd_p_flag   hydrostatic pressure indicator
- * \param[in]      f_ext        exterior force generating pressure
- * \param[in]      visel        viscosity by cell, or nullptr
- * \param[in]      viscel       symmetric cell tensor \f$ \tens{\mu}_\celli \f$,
-                                or nullptr
- * \param[in]      weighb       boundary face weight for cells i in case
- *                              of tensor diffusion, or nullptr
- * \param[in]      pvar         variable values at cell centers
- * \param[in,out]  var_ip       boundary variable values at I' position
- * \param[in,out]  var_f        face values for the gradient computation
- * \param[in,out]  flux         face flux values for the diffusion computation
+ * \param[in]      ctx                   reference to dispatch context
+ * \param[in]      f                     pointer to field
+ * \param[in]      bc_coeffs             boundary condition structure
+ * \param[in]      inc                   0 if an increment, 1 otherwise
+ * \param[in]      eqp                   equation parameters
+ * \param[in]      need_compute_bc_grad  val_f must be computed
+ * \param[in]      need_compute_bc_flux  flux must be computed
+ * \param[in]      hyd_p_flag            hydrostatic pressure indicator
+ * \param[in]      f_ext                 exterior force generating pressure
+ * \param[in]      visel                 viscosity by cell, or nullptr
+ * \param[in]      viscel                symmetric cell tensor
+                                         \f$ \tens{\mu}_\celli \f$,
+                                         or nullptr
+ * \param[in]      weighb                boundary face weight for cells i in
+ *                                       case of tensor diffusion, or nullptr
+ * \param[in]      var                   variable values at cell centers
+ * \param[in,out]  var_f                 face values for the gradient computation
+ * \param[in,out]  flux                  face values for the diffusion computation
+ *
  */
 /*----------------------------------------------------------------------------*/
 
-template <bool need_compute_bc_grad, bool need_compute_bc_flux>
 void
 cs_boundary_conditions_update_bc_coeff_face_values
   (cs_dispatch_context        &ctx,
@@ -4318,6 +4321,8 @@ cs_boundary_conditions_update_bc_coeff_face_values
    const cs_field_bc_coeffs_t *bc_coeffs,
    const int                   inc,
    const cs_equation_param_t  *eqp,
+   const bool                  need_compute_bc_grad,
+   const bool                  need_compute_bc_flux,
    int                         hyd_p_flag,
    cs_real_t                   f_ext[][3],
    cs_real_t                   visel[],
@@ -4352,10 +4357,6 @@ cs_boundary_conditions_update_bc_coeff_face_values
   const int ircflp = eqp->ircflu;
   const int ircflb = (ircflp > 0) ? eqp->b_diff_flux_rc : 0;
 
-  cs_real_t *val_ip_grad = nullptr;
-  if (need_compute_bc_grad)
-    CS_MALLOC_HD(val_ip_grad, n_b_faces, cs_real_t, amode);
-
   /* Boolean for flux */
 
   bool need_flux_reconstruction = (need_compute_bc_flux && ircflb > 0);
@@ -4370,6 +4371,10 @@ cs_boundary_conditions_update_bc_coeff_face_values
   /* variable at I' position for flux computation */
   if (need_compute_grad_for_flux)
     CS_MALLOC_HD(val_ip_flux, n_b_faces, cs_real_t, amode);
+
+  cs_real_t *val_ip_grad = nullptr;
+  if (need_compute_bc_grad || need_compute_grad_for_flux)
+    CS_MALLOC_HD(val_ip_grad, n_b_faces, cs_real_t, amode);
 
   if (f != nullptr) {
 
@@ -4517,10 +4522,11 @@ cs_boundary_conditions_update_bc_coeff_face_values
 
     bc_coeffs = bc_coeffs_loc;
 
-    cs_internal_coupling_update_bc_coeffs_s<need_compute_bc_flux>
+    cs_internal_coupling_update_bc_coeffs_s
       (ctx,
        bc_coeffs,
        cpl,
+       need_compute_bc_flux,
        halo_type,
        w_stride,
        b_climgr,
@@ -4623,9 +4629,13 @@ cs_boundary_conditions_update_bc_coeff_face_values
 
   else if (need_compute_bc_flux) {
     if (need_flux_reconstruction)
-      _compute_bc_flux<true>(ctx, bc_coeffs, val_ip_flux, flux);
+      _compute_bc_flux(ctx, bc_coeffs,
+                       need_flux_reconstruction,
+                       val_ip_flux, flux);
     else
-      _compute_bc_flux<false>(ctx, bc_coeffs, pvar, flux);
+      _compute_bc_flux(ctx, bc_coeffs,
+                       need_flux_reconstruction,
+                       pvar, flux);
   }
   else{
     bft_error(__FILE__, __LINE__, 0,
@@ -4645,30 +4655,34 @@ cs_boundary_conditions_update_bc_coeff_face_values
 }
 
 /*----------------------------------------------------------------------------*/
-/*
+/*!
  * \brief  Update boundary coefficient face values for gradient and diffusion
  *         when solving for a given field.
  *
- * \param[in]       ctx         reference to dispatch context
- * \param[in, out]  f           pointer to field
- * \param[in]       eqp         equation parameters
- * \param[in]       hyd_p_flag  flag for hydrostatic pressure
- * \param[in]       f_ext       exterior force generating pressure
- * \param[in]       viscel      symmetric cell tensor \f$ \tens{\mu}_\celli \f$,
-                                or nullptr
- * \param[in]       weighb      boundary face weight for cells i in case
- *                              of tensor diffusion, or nullptr
- * \param[in]       pvar        variable values at cell centers
+ * \param[in]       ctx                   reference to dispatch context
+ * \param[in, out]  f                     pointer to field
+ * \param[in]       eqp                   equation parameters
+ * \param[in]       need_compute_bc_grad  val_f must be computed
+ * \param[in]       need_compute_bc_flux  flux must be computed
+ * \param[in]       hyd_p_flag            flag for hydrostatic pressure
+ * \param[in]       f_ext                 exterior force generating pressure
+ * \param[in]       viscel                symmetric cell tensor
+                                          \f$ \tens{\mu}_\celli \f$,
+                                          or nullptr
+ * \param[in]       weighb                boundary face weight for cells i in
+ *                                        case of tensor diffusion, or nullptr
+ * \param[in]       pvar                  variable values at cell centers
  */
 /*----------------------------------------------------------------------------*/
 
-template <bool need_compute_bc_grad, bool need_compute_bc_flux>
 void
 cs_boundary_conditions_update_bc_coeff_face_values
 (
   cs_dispatch_context        &ctx,
   cs_field_t                 *f,
   const cs_equation_param_t  *eqp,
+  const bool                  need_compute_bc_grad,
+  const bool                  need_compute_bc_flux,
   int                         hyd_p_flag,
   cs_real_t                   f_ext[][3],
   cs_real_t                   viscel[][6],
@@ -4695,52 +4709,21 @@ cs_boundary_conditions_update_bc_coeff_face_values
   cs_real_t *val_f = f->bc_coeffs->val_f;
   cs_real_t *flux = f->bc_coeffs->flux;
 
-  if (need_compute_bc_grad && need_compute_bc_flux)
-    cs_boundary_conditions_update_bc_coeff_face_values<true, true>
-      (ctx,
-       f, f->bc_coeffs,
-       1,  // inc,
-       eqp,
-       hyd_p_flag,
-       f_ext,
-       nullptr, // visel
-       viscel,
-       weighb,
-       pvar,
-       val_f,
-       flux);
-  else if (need_compute_bc_grad && !need_compute_bc_flux)
-    cs_boundary_conditions_update_bc_coeff_face_values<true, false>
-      (ctx,
-       f, f->bc_coeffs,
-       1,  // inc,
-       eqp,
-       hyd_p_flag,
-       f_ext,
-       nullptr, // visel
-       viscel,
-       weighb,
-       pvar,
-       val_f,
-       flux);
-  else if (!need_compute_bc_grad && need_compute_bc_flux)
-    cs_boundary_conditions_update_bc_coeff_face_values<false, true>
-      (ctx,
-       f, f->bc_coeffs,
-       1,  // inc,
-       eqp,
-       hyd_p_flag,
-       f_ext,
-       nullptr, // visel
-       viscel,
-       weighb,
-       pvar,
-       val_f,
-       flux);
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              _(" %s: All template parameters can not be false."),
-              __func__);
+  cs_boundary_conditions_update_bc_coeff_face_values
+    (ctx,
+     f, f->bc_coeffs,
+     1,  // inc,
+     eqp,
+     need_compute_bc_grad,
+     need_compute_bc_flux,
+     hyd_p_flag,
+     f_ext,
+     nullptr, // visel
+     viscel,
+     weighb,
+     pvar,
+     val_f,
+     flux);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5126,99 +5109,6 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
   cs_dispatch_context  &ctx,
   cs_field_t           *f,
   const cs_real_t       pvar[][6]
-);
-
-template void
-cs_boundary_conditions_update_bc_coeff_face_values<true, true>
-(
-  cs_dispatch_context        &ctx,
-  cs_field_t                 *f,
-  const cs_equation_param_t  *eqp,
-  int                         hyd_p_flag,
-  cs_real_t                   f_ext[][3],
-  cs_real_t                   viscel[][6],
-  const cs_real_t             weighb[],
-  const cs_real_t             pvar[]
-);
-
-template void
-cs_boundary_conditions_update_bc_coeff_face_values<true, false>
-(
-  cs_dispatch_context        &ctx,
-  cs_field_t                 *f,
-  const cs_equation_param_t  *eqp,
-  int                         hyd_p_flag,
-  cs_real_t                   f_ext[][3],
-  cs_real_t                   viscel[][6],
-  const cs_real_t             weighb[],
-  const cs_real_t             pvar[]
-);
-
-template void
-cs_boundary_conditions_update_bc_coeff_face_values<false, true>
-(
-  cs_dispatch_context        &ctx,
-  cs_field_t                 *f,
-  const cs_equation_param_t  *eqp,
-  int                         hyd_p_flag,
-  cs_real_t                   f_ext[][3],
-  cs_real_t                   viscel[][6],
-  const cs_real_t             weighb[],
-  const cs_real_t             pvar[]
-);
-
-template void
-cs_boundary_conditions_update_bc_coeff_face_values<true, true>
-(
-  cs_dispatch_context        &ctx,
-  const cs_field_t           *f,
-  const cs_field_bc_coeffs_t *bc_coeffs,
-  const int                   inc,
-  const cs_equation_param_t  *eqp,
-  int                         hyd_p_flag,
-  cs_real_t                   f_ext[][3],
-  cs_real_t                   visel[],
-  cs_real_t                   viscel[][6],
-  const cs_real_t             weighb[],
-  const cs_real_t             pvar[],
-  cs_real_t                   val_f[],
-  cs_real_t                   flux[]
-);
-
-template void
-cs_boundary_conditions_update_bc_coeff_face_values<false, true>
-(
-  cs_dispatch_context        &ctx,
-  const cs_field_t           *f,
-  const cs_field_bc_coeffs_t *bc_coeffs,
-  const int                   inc,
-  const cs_equation_param_t  *eqp,
-  int                         hyd_p_flag,
-  cs_real_t                   f_ext[][3],
-  cs_real_t                   visel[],
-  cs_real_t                   viscel[][6],
-  const cs_real_t             weighb[],
-  const cs_real_t             pvar[],
-  cs_real_t                   val_f[],
-  cs_real_t                   flux[]
-);
-
-template void
-cs_boundary_conditions_update_bc_coeff_face_values<true, false>
-(
-  cs_dispatch_context        &ctx,
-  const cs_field_t           *f,
-  const cs_field_bc_coeffs_t *bc_coeffs,
-  const int                   inc,
-  const cs_equation_param_t  *eqp,
-  int                         hyd_p_flag,
-  cs_real_t                   f_ext[][3],
-  cs_real_t                   visel[],
-  cs_real_t                   viscel[][6],
-  const cs_real_t             weighb[],
-  const cs_real_t             pvar[],
-  cs_real_t                   val_f[],
-  cs_real_t                   flux[]
 );
 
 /*----------------------------------------------------------------------------*/

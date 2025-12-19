@@ -418,36 +418,25 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
       /*  ---> Handle parallelism and periodicity */
       cs_halo_sync(m->halo, ctx.use_gpu(), pot);
 
-      if (eqp->ircflu)
-        cs_boundary_conditions_update_bc_coeff_face_values<true, true>
-          (ctx,
-           nullptr, // field
-           &bc_coeffs_pot,
-           0, // inc
-           eqp,
-           false,   // hyd_p_flag
-           nullptr, // fext
-           dt,
-           nullptr, // vitenp
-           nullptr, // weighb
-           pot,
-           val_f_pot,
-           flux_pot);
-      else
-        cs_boundary_conditions_update_bc_coeff_face_values<false, true>
-          (ctx,
-           nullptr, // field
-           &bc_coeffs_pot,
-           0, // inc
-           eqp,
-           false,   // hyd_p_flag
-           nullptr, // f_ext
-           dt,
-           nullptr, // vitenp
-           nullptr, // weighb
-           pot,
-           val_f_pot,
-           flux_pot);
+      const bool need_compute_bc_flux = true;
+      const bool need_compute_bc_grad = (eqp->ircflu) ? true : false;
+
+      cs_boundary_conditions_update_bc_coeff_face_values
+        (ctx,
+         nullptr, // field
+         &bc_coeffs_pot,
+         0, // inc
+         eqp,
+         need_compute_bc_grad,
+         need_compute_bc_flux,
+         false,   // hyd_p_flag
+         nullptr, // fext
+         dt,
+         nullptr, // vitenp
+         nullptr, // weighb
+         pot,
+         val_f_pot,
+         flux_pot);
 
       cs_diffusion_potential(nullptr, /* field */
                              eqp,
@@ -510,36 +499,25 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
   /*  ---> Handle parallelism and periodicity */
   cs_halo_sync(m->halo, ctx.use_gpu(), pota);
 
-  if (eqp_loc.ircflu)
-    cs_boundary_conditions_update_bc_coeff_face_values<true, true>
-      (ctx,
-       nullptr, // field
-       &bc_coeffs_pot,
-       0, // inc
-       eqp,
-       false,   // hyd_p_flag
-       nullptr, // f_ext
-       dt,
-       nullptr, // vitenp
-       nullptr, // weighb
-       pota,
-       val_f_pot,
-       flux_pot);
-  else
-    cs_boundary_conditions_update_bc_coeff_face_values<false, true>
-      (ctx,
-       nullptr, // field
-       &bc_coeffs_pot,
-       0, // inc
-       eqp,
-       false,   // hyd_p_flag
-       nullptr, // f_ext
-       dt,
-       nullptr, // vitenp
-       nullptr, // weighb
-       pota,
-       val_f_pot,
-       flux_pot);
+  const bool need_compute_bc_flux = true;
+  const bool need_compute_bc_grad = (eqp_loc.ircflu) ? true : false;
+
+  cs_boundary_conditions_update_bc_coeff_face_values
+    (ctx,
+     nullptr, // field
+     &bc_coeffs_pot,
+     0, // inc
+     eqp,
+     need_compute_bc_grad,
+     need_compute_bc_flux,
+     false,   // hyd_p_flag
+     nullptr, // f_ext
+     dt,
+     nullptr, // vitenp
+     nullptr, // weighb
+     pota,
+     val_f_pot,
+     flux_pot);
 
   cs_face_diffusion_potential(nullptr,
                               &eqp_loc,
@@ -566,12 +544,13 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
   eqp_loc_last.iwgrec = 0;
   eqp_loc_last.ircflu = 0; // no reconstruction
 
-  cs_boundary_conditions_update_bc_coeff_face_values<false, true>
+  cs_boundary_conditions_update_bc_coeff_face_values
     (ctx,
      nullptr, // field
      &bc_coeffs_pot,
      0, // inc
      eqp,
+     false, true,
      false,   // hyd_p_flag
      nullptr, // f_ext
      dt,
@@ -4803,10 +4782,11 @@ cs_solve_navier_stokes(const int        iterns,
 
       /* Update boundary condition for pressure */
 
-      cs_boundary_conditions_update_bc_coeff_face_values<true,false>
+      cs_boundary_conditions_update_bc_coeff_face_values
         (ctx,
          CS_F_(p),
          eqp_p,
+         true, false,
          cs_glob_velocity_pressure_param->iphydr,
          frcxt,
          nullptr, //cpro_vitenp

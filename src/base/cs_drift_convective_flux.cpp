@@ -510,37 +510,25 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
       cs_real_t *val_f = bc_coeffs_solve.val_f;
       cs_real_t *flux = bc_coeffs_solve.flux;
 
-      if (eqp_loc.ircflu)
-        cs_boundary_conditions_update_bc_coeff_face_values<true, true>
-          (ctx,
-           nullptr, // field
-           &bc_coeffs_loc,
-           1, // inc
-           &eqp_loc,
-           false,   // hyd_p_flag
-           nullptr, // f_ext
-           w1.data(),
-           nullptr, // vitenp
-           nullptr, // weighb
-           viscce.data(),
-           val_f,
-           flux);
-      else {
-        cs_boundary_conditions_update_bc_coeff_face_values<false, true>
-          (ctx,
-           nullptr, // field
-           &bc_coeffs_loc,
-           1, // inc
-           &eqp_loc,
-           false,   // hyd_p_flag
-           nullptr, // f_ext
-           w1.data(),
-           nullptr, // vitenp
-           nullptr, // weighb
-           viscce.data(),
-           val_f,
-           flux);
-      }
+      const bool need_compute_bc_flux = true;
+      const bool need_compute_bc_grad = (eqp_loc.ircflu) ? true : false;
+
+      cs_boundary_conditions_update_bc_coeff_face_values
+        (ctx,
+         nullptr, // field
+         &bc_coeffs_loc,
+         1, // inc
+         &eqp_loc,
+         need_compute_bc_grad,
+         need_compute_bc_flux,
+         false,   // hyd_p_flag
+         nullptr, // f_ext
+         w1.data(),
+         nullptr, // vitenp
+         nullptr, // weighb
+         viscce.data(),
+         val_f,
+         flux);
 
       cs_face_diffusion_potential(nullptr, // field
                                   &eqp_loc,

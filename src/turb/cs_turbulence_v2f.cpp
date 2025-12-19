@@ -453,37 +453,26 @@ _solve_eq_fbr_al(const int         istprv,
     = cs_field_get_equation_param_const(CS_F_(phi));
 
   /* Update cvara_k BC */
-  if (eqp_phi->ircflu)
-    cs_boundary_conditions_update_bc_coeff_face_values<true, true>
-      (ctx,
-       f,
-       f->bc_coeffs,
-       1, //inc
-       eqp_phi,
-       false, // hyd_p_flag
-       nullptr, // f_ext
-       visel.data(),
-       nullptr, // vitenp
-       nullptr, // weighb
-       CS_F_(phi)->val_pre,
-       val_f_phi,
-       flux_phi);
-  else {
-    cs_boundary_conditions_update_bc_coeff_face_values<false, true>
-      (ctx,
-       f,
-       f->bc_coeffs,
-       1, // inc
-       eqp_phi,
-       false, // hyd_p_flag
-       nullptr, // f_ext
-       visel.data(),
-       nullptr, // vitenp
-       nullptr, // weighb
-       CS_F_(phi)->val_pre,
-       val_f_phi,
-       flux_phi);
-  }
+
+  const bool need_compute_bc_flux = true;
+  const bool need_compute_bc_grad = (eqp_phi->ircflu) ? true : false;
+
+  cs_boundary_conditions_update_bc_coeff_face_values
+    (ctx,
+     f,
+     f->bc_coeffs,
+     1, //inc
+     eqp_phi,
+     need_compute_bc_grad,
+     need_compute_bc_flux,
+     false, // hyd_p_flag
+     nullptr, // f_ext
+     visel.data(),
+     nullptr, // vitenp
+     nullptr, // weighb
+     CS_F_(phi)->val_pre,
+     val_f_phi,
+     flux_phi);
 
   cs_diffusion_potential(f,
                          eqp_phi,

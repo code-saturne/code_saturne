@@ -258,6 +258,9 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
   cs_real_t *val_f_hp = bc_coeffs_solve_hp.val_f;
   cs_real_t *flux_hp = bc_coeffs_solve_hp.flux;
 
+  const bool need_compute_bc_flux = true;
+  const bool need_compute_bc_grad = (eqp_pr->ircflu) ? true : false;
+
   cs_real_3_t *next_fext;
   CS_MALLOC_HD(next_fext, n_cells_ext, cs_real_3_t, amode);
 
@@ -377,36 +380,22 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
 
     cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), cvar_hydro_pres);
 
-    if (eqp_pr->ircflu)
-      cs_boundary_conditions_update_bc_coeff_face_values<true, true>
-        (ctx,
-         f,
-         bc_coeffs_hp,
-         1, // inc
-         eqp_pr,
-         1, // vp_param->iphydr
-         next_fext,
-         viscce,
-         nullptr, // viscel for tensor
-         nullptr, // weighb for tensor
-         cvar_hydro_pres,
-         val_f_hp,
-         flux_hp);
-    else
-      cs_boundary_conditions_update_bc_coeff_face_values<false, true>
-        (ctx,
-         f,
-         bc_coeffs_hp,
-         1, // inc
-         eqp_pr,
-         1, // vp_param->iphydr
-         next_fext,
-         viscce,
-         nullptr, // viscel for tensor
-         nullptr, // weighb for tensor
-         cvar_hydro_pres,
-         val_f_hp,
-         flux_hp);
+    cs_boundary_conditions_update_bc_coeff_face_values
+      (ctx,
+       f,
+       bc_coeffs_hp,
+       1, // inc
+       eqp_pr,
+       need_compute_bc_grad,
+       need_compute_bc_flux,
+       1, // vp_param->iphydr
+       next_fext,
+       viscce,
+       nullptr, // viscel for tensor
+       nullptr, // weighb for tensor
+       cvar_hydro_pres,
+       val_f_hp,
+       flux_hp);
 
     cs_diffusion_potential(nullptr,         /* field */
                            eqp_pr,
@@ -638,6 +627,9 @@ _pressure_correction_fv(int                   iterns,
     = cs_field_get_equation_param_const(f_vel);
   const cs_equation_param_t *eqp_p
     = cs_field_get_equation_param_const(f_p);
+
+  const bool need_compute_bc_flux = true;
+  const bool need_compute_bc_grad = (eqp_p->ircflu) ? true : false;
 
   const cs_velocity_pressure_param_t  *vp_param
     = cs_glob_velocity_pressure_param;
@@ -988,20 +980,20 @@ _pressure_correction_fv(int                   iterns,
          so as to be able to access device-only arrays on GPU. */
       ctx.parallel_for_reduce_sum
         (1, phydr0, [=] CS_F_HOST_DEVICE(cs_lnum_t i,
-        CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+         CS_DISPATCH_REDUCER_TYPE(double) &sum) {
 
-          cs_lnum_t f_id_0 = isostd[n_b_faces];
-          if (f_id_0 > -1) {
-            cs_lnum_t c_id_0 = b_face_cells[f_id_0];
-            cs_real_t d[3] = {b_face_cog[f_id_0][0] - cell_cen[c_id_0][0],
-                              b_face_cog[f_id_0][1] - cell_cen[c_id_0][1],
-                              b_face_cog[f_id_0][2] - cell_cen[c_id_0][2]};
-            sum +=   cvar_hydro_pres[c_id_0]
-                   + d[0] * (dfrcxt[c_id_0][0] + frcxt[c_id_0][0])
-                   + d[1] * (dfrcxt[c_id_0][1] + frcxt[c_id_0][1])
-                   + d[2] * (dfrcxt[c_id_0][2] + frcxt[c_id_0][2]);
-          }
-         });
+        cs_lnum_t f_id_0 = isostd[n_b_faces];
+        if (f_id_0 > -1) {
+          cs_lnum_t c_id_0 = b_face_cells[f_id_0];
+          cs_real_t d[3] = {b_face_cog[f_id_0][0] - cell_cen[c_id_0][0],
+                            b_face_cog[f_id_0][1] - cell_cen[c_id_0][1],
+                            b_face_cog[f_id_0][2] - cell_cen[c_id_0][2]};
+          sum +=   cvar_hydro_pres[c_id_0]
+                 + d[0] * (dfrcxt[c_id_0][0] + frcxt[c_id_0][0])
+                 + d[1] * (dfrcxt[c_id_0][1] + frcxt[c_id_0][1])
+                 + d[2] * (dfrcxt[c_id_0][2] + frcxt[c_id_0][2]);
+        }
+      });
 
       ctx.wait();
       cs_parall_sum(1, CS_REAL_TYPE, &phydr0);  /* > 0 only on one rank */
@@ -1706,36 +1698,23 @@ _pressure_correction_fv(int                   iterns,
       }
 
       /* Update pressure BC */
-      if (eqp_p->ircflu)
-        cs_boundary_conditions_update_bc_coeff_face_values<true, true>
-          (ctx,
-           nullptr, // field
-           bc_coeffs_p,
-           1, // inc
-           eqp_p,
-           vp_param->iphydr,
-           frcxt,
-           cpro_visc,
-           nullptr, // vitenp
-           nullptr, // weighb
-           cvar_pr,
-           val_f_p,
-           flux_p);
-      else
-        cs_boundary_conditions_update_bc_coeff_face_values<false, true>
-          (ctx,
-           nullptr, // field
-           bc_coeffs_p,
-           1, // inc
-           eqp_p,
-           vp_param->iphydr,
-           frcxt,
-           cpro_visc,
-           nullptr, // vitenp
-           nullptr, // weighb
-           cvar_pr,
-           val_f_p,
-           flux_p);
+
+      cs_boundary_conditions_update_bc_coeff_face_values
+        (ctx,
+         nullptr, // field
+         bc_coeffs_p,
+         1, // inc
+         eqp_p,
+         need_compute_bc_grad,
+         need_compute_bc_flux,
+         vp_param->iphydr,
+         frcxt,
+         cpro_visc,
+         nullptr, // vitenp
+         nullptr, // weighb
+         cvar_pr,
+         val_f_p,
+         flux_p);
 
       cs_face_diffusion_potential(nullptr,
                                   eqp_p,
@@ -1816,36 +1795,22 @@ _pressure_correction_fv(int                   iterns,
       }
 
       /* Update pressure BC */
-      if (eqp_p->ircflu)
-        cs_boundary_conditions_update_bc_coeff_face_values<true, true>
-          (ctx,
-           nullptr, // field
-           bc_coeffs_p,
-           1, // inc
-           eqp_p,
-           vp_param->iphydr,
-           frcxt,
-           nullptr, // cpro_visc
-           cpro_vitenp,
-           weighbtp,
-           cvar_pr,
-           val_f_p,
-           flux_p);
-      else
-        cs_boundary_conditions_update_bc_coeff_face_values<false, true>
-          (ctx,
-           nullptr, // field
-           bc_coeffs_p,
-           1, // inc
-           eqp_p,
-           vp_param->iphydr,
-           frcxt,
-           nullptr, // cpro_visc
-           cpro_vitenp,
-           weighbtp,
-           cvar_pr,
-           val_f_p,
-           flux_p);
+      cs_boundary_conditions_update_bc_coeff_face_values
+        (ctx,
+         nullptr, // field
+         bc_coeffs_p,
+         1, // inc
+         eqp_p,
+         need_compute_bc_grad,
+         need_compute_bc_flux,
+         vp_param->iphydr,
+         frcxt,
+         nullptr, // cpro_visc
+         cpro_vitenp,
+         weighbtp,
+         cvar_pr,
+         val_f_p,
+         flux_p);
 
       cs_face_anisotropic_diffusion_potential(nullptr, // field
                                               eqp_p,
@@ -2175,36 +2140,22 @@ _pressure_correction_fv(int                   iterns,
     cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), phi);
 
     /* Update phi BC */
-    if (eqp_p->ircflu)
-      cs_boundary_conditions_update_bc_coeff_face_values<true, true>
-        (ctx,
-         nullptr, // field
-         bc_coeffs_dp,
-         inc,
-         eqp_p,
-         vp_param->iphydr,
-         dfrcxt,
-         c_visc,
-         vitenp,
-         weighb,
-         phi,
-         val_f_dp,
-         flux_dp);
-    else
-      cs_boundary_conditions_update_bc_coeff_face_values<false, true>
-        (ctx,
-         nullptr, // field
-         bc_coeffs_dp,
-         inc,
-         eqp_p,
-         vp_param->iphydr,
-         dfrcxt,
-         c_visc,
-         vitenp,
-         weighb,
-         phi,
-         val_f_dp,
-         flux_dp);
+    cs_boundary_conditions_update_bc_coeff_face_values
+      (ctx,
+       nullptr, // field
+       bc_coeffs_dp,
+       inc,
+       eqp_p,
+       need_compute_bc_grad,
+       need_compute_bc_flux,
+       vp_param->iphydr,
+       dfrcxt,
+       c_visc,
+       vitenp,
+       weighb,
+       phi,
+       val_f_dp,
+       flux_dp);
 
     if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION) {
       cs_diffusion_potential(nullptr, /* field */
@@ -2352,36 +2303,22 @@ _pressure_correction_fv(int                   iterns,
       cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), dphi);
 
       /* Update dphi BC */
-      if (eqp_p->ircflu)
-        cs_boundary_conditions_update_bc_coeff_face_values<true, true>
-          (ctx,
-           nullptr, // field
-           bc_coeffs_dp,
-           inc,
-           eqp_p,
-           vp_param->iphydr,
-           dfrcxt,
-           c_visc,
-           vitenp,
-           weighb,
-           dphi,
-           val_f_dp,
-           flux_dp);
-      else
-        cs_boundary_conditions_update_bc_coeff_face_values<false, true>
-          (ctx,
-           nullptr, // field
-           bc_coeffs_dp,
-           inc,
-           eqp_p,
-           vp_param->iphydr,
-           dfrcxt,
-           c_visc,
-           vitenp,
-           weighb,
-           dphi,
-           val_f_dp,
-           flux_dp);
+      cs_boundary_conditions_update_bc_coeff_face_values
+        (ctx,
+         nullptr, // field
+         bc_coeffs_dp,
+         inc,
+         eqp_p,
+         need_compute_bc_grad,
+         need_compute_bc_flux,
+         vp_param->iphydr,
+         dfrcxt,
+         c_visc,
+         vitenp,
+         weighb,
+         dphi,
+         val_f_dp,
+         flux_dp);
 
       if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION) {
         cs_diffusion_potential(nullptr, /* field */
@@ -2550,36 +2487,22 @@ _pressure_correction_fv(int                   iterns,
       cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), phi);
 
       /* Update phi BC */
-      if (eqp_p->ircflu)
-        cs_boundary_conditions_update_bc_coeff_face_values<true, true>
-          (ctx,
-           nullptr, // field
-           bc_coeffs_dp,
-           inc,
-           eqp_p,
-           vp_param->iphydr,
-           dfrcxt,
-           c_visc,
-           vitenp,
-           weighb,
-           phi,
-           val_f_dp,
-           flux_dp);
-      else
-        cs_boundary_conditions_update_bc_coeff_face_values<false, true>
-          (ctx,
-           nullptr, // field
-           bc_coeffs_dp,
-           inc,
-           eqp_p,
-           vp_param->iphydr,
-           dfrcxt,
-           c_visc,
-           vitenp,
-           weighb,
-           phi,
-           val_f_dp,
-           flux_dp);
+      cs_boundary_conditions_update_bc_coeff_face_values
+        (ctx,
+         nullptr, // field
+         bc_coeffs_dp,
+         inc,
+         eqp_p,
+         need_compute_bc_grad,
+         need_compute_bc_flux,
+         vp_param->iphydr,
+         dfrcxt,
+         c_visc,
+         vitenp,
+         weighb,
+         phi,
+         val_f_dp,
+         flux_dp);
 
       if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION) {
         cs_diffusion_potential(nullptr, /* field */
@@ -2720,36 +2643,22 @@ _pressure_correction_fv(int                   iterns,
     /*  ---> Handle parallelism and periodicity */
     cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), phia);
 
-    if (eqp_p->ircflu)
-      cs_boundary_conditions_update_bc_coeff_face_values<true, true>
-        (ctx,
-         nullptr, // field
-         bc_coeffs_dp,
-         inc,
-         eqp_p,
-         vp_param->iphydr,
-         dfrcxt,
-         c_visc,
-         vitenp,
-         weighb,
-         phia,
-         val_f_dp,
-         flux_dp);
-    else
-      cs_boundary_conditions_update_bc_coeff_face_values<false, true>
-        (ctx,
-         nullptr, // field
-         bc_coeffs_dp,
-         inc,
-         eqp_p,
-         vp_param->iphydr,
-         dfrcxt,
-         c_visc,
-         vitenp,
-         weighb,
-         phia,
-         val_f_dp,
-         flux_dp);
+    cs_boundary_conditions_update_bc_coeff_face_values
+      (ctx,
+       nullptr, // field
+       bc_coeffs_dp,
+       inc,
+       eqp_p,
+       need_compute_bc_grad,
+       need_compute_bc_flux,
+       vp_param->iphydr,
+       dfrcxt,
+       c_visc,
+       vitenp,
+       weighb,
+       phia,
+       val_f_dp,
+       flux_dp);
 
     if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION) {
       cs_face_diffusion_potential(nullptr,
@@ -2791,24 +2700,25 @@ _pressure_correction_fv(int                   iterns,
        the continuity equation (see theory guide). The value of dfrcxt has
        no importance. */
 
-    // As reconstruction is cut, gradient is not computed
-    const bool need_compute_bc_grad = false;
-    const bool need_compute_bc_flux = true;
-
     cs_equation_param_t eqp_loc = *eqp_p;
     eqp_loc.ircflu = 0; // no reconstruction
     eqp_loc.b_diff_flux_rc = 0;
+
+    // As reconstruction is cut, gradient is not computed
+    const bool need_compute_bc_grad_loc = false;
+    const bool need_compute_bc_flux_loc = true;
 
     /* Handle parallelism and periodicity */
     cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), dphi);
 
     cs_boundary_conditions_update_bc_coeff_face_values
-      <need_compute_bc_grad, need_compute_bc_flux>
       (ctx,
        nullptr, // field
        bc_coeffs_dp,
        0, // inc
        &eqp_loc,
+       need_compute_bc_grad_loc,
+       need_compute_bc_flux_loc,
        vp_param->iphydr,
        dfrcxt,
        c_visc,
@@ -3013,10 +2923,11 @@ _pressure_correction_fv(int                   iterns,
 
   cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), cvar_pr);
 
-  cs_boundary_conditions_update_bc_coeff_face_values<true,true>
+  cs_boundary_conditions_update_bc_coeff_face_values
     (ctx,
      CS_F_(p),
      eqp_p,
+     true, true,
      vp_param->iphydr,
      frcxt,
      viten_p,

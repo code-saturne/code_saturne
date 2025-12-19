@@ -394,10 +394,11 @@ _update_pressure_temperature_idilat_2(cs_lnum_t  n_cells_ext)
       if (f_frcxt != nullptr)
         frcxt = (cs_real_3_t *)cs_field_by_name_try("volume_forces")->val;
 
-      cs_boundary_conditions_update_bc_coeff_face_values<true,false>
+      cs_boundary_conditions_update_bc_coeff_face_values
         (ctx,
          CS_F_(p),
          eqp_p,
+         true, false,
          cs_glob_velocity_pressure_param->iphydr,
          frcxt,
          nullptr, //cpro_vitenp
@@ -1050,10 +1051,11 @@ cs_solve_all()
 
     /* Update pressure gradient face value for cs_field_gradient_potential
        called in cs_pressure_correction */
-    cs_boundary_conditions_update_bc_coeff_face_values<true,false>
+    cs_boundary_conditions_update_bc_coeff_face_values
       (ctx,
        CS_F_(p),
        eqp_p,
+       true, false,
        cs_glob_velocity_pressure_param->iphydr,
        frcxt,
        nullptr, //cpro_vitenp

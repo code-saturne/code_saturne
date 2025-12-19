@@ -1693,10 +1693,11 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
     eqp->theta = thetex;
 
-    cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+    cs_boundary_conditions_update_bc_coeff_face_values
       (ctx,
        f, bc_coeffs, inc,
        eqp,
+       true, true,
        0, nullptr, // hyd_p_flag, f_ext
        nullptr, viscel, weighb,
        pvara,
@@ -1770,10 +1771,11 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   ctx_c.wait(); /* We now need pvar, computed by ctx_c */
   ctx.wait();   /* We now need rhs, computed by ctx */
 
-  cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+  cs_boundary_conditions_update_bc_coeff_face_values
     (ctx,
      f, bc_coeffs, inc,
      eqp,
+     true, true,
      false, nullptr, // hyd_p_flag, f_ext
      nullptr, viscel, weighb,
      pvar,
@@ -1989,10 +1991,11 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       /*  ---> Handle parallelism and periodicity */
       cs_halo_sync(m->halo, ctx.use_gpu(), dpvar);
 
-      cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+      cs_boundary_conditions_update_bc_coeff_face_values
         (ctx,
          f, bc_coeffs, inc,
          eqp,
+         true, true,
          false, nullptr, // hyd_p_flag, f_ext
          nullptr, viscel, weighb,
          dpvar,
@@ -2149,10 +2152,11 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
     ctx.wait();
 
-    cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+    cs_boundary_conditions_update_bc_coeff_face_values
       (ctx,
        f, bc_coeffs, inc,
        eqp,
+       true, true,
        false, nullptr, // hyd_p_flag, f_ext
        nullptr, viscel, weighb,
        pvar,
@@ -2251,10 +2255,11 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     eqp_loc.ircflu = 0;
     eqp_loc.blencv = 0.;
 
-    cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+    cs_boundary_conditions_update_bc_coeff_face_values
       (ctx,
        f, bc_coeffs, inc,
        eqp,
+       true, true,
        false, nullptr, // hyd_p_flag, f_ext
        nullptr, viscel, weighb,
        dpvar,
@@ -2318,10 +2323,11 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
     /* Without relaxation even for a steady computation */
 
-    cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+    cs_boundary_conditions_update_bc_coeff_face_values
       (ctx,
        f, bc_coeffs, inc,
        eqp,
+       true, true,
        false, nullptr, // hyd_p_flag, f_ext
        nullptr, viscel, weighb,
        pvar,
@@ -2375,9 +2381,10 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   cs_real_t *val_f_updated = bc_coeffs->val_f;
   cs_real_t *flux_updated = bc_coeffs->flux;
 
-  cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+  cs_boundary_conditions_update_bc_coeff_face_values
     (ctx, f, bc_coeffs, 1,
      eqp,
+     true, true,
      false, nullptr, // hyd_p_flag, f_ext
      nullptr, viscel, weighb,
      pvar,

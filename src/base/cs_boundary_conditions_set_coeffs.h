@@ -1251,26 +1251,28 @@ cs_boundary_conditions_set_dirichlet_conv_neumann_diff_scalar
  * \brief  Update face value for gradient and diffusion when solving
  *         in increment.
  *
- * \param[in]      ctx          reference to dispatch context
- * \param[in]      f            pointer to field
- * \param[in]      bc_coeffs    boundary condition structure for the variable
- * \param[in]      inc          0 if an increment, 1 otherwise
- * \param[in]      eqp          equation parameters
- * \param[in]      hyd_p_flag   hydrostatic pressure indicator
- * \param[in]      f_ext        exterior force generating pressure
- * \param[in]      visel        viscosity by cell, or nullptr
- * \param[in]      viscel       symmetric cell tensor \f$ \tens{\mu}_\celli \f$,
-                                or nullptr
- * \param[in]      weighb       boundary face weight for cells i in case
- *                              of tensor diffusion, or nullptr
- * \param[in]      var          variable values at cell centers
- * \param[in,out]  var_f        face values for the gradient computation
- * \param[in,out]  flux         face flux values for the diffusion computation
+ * \param[in]      ctx                   reference to dispatch context
+ * \param[in]      f                     pointer to field
+ * \param[in]      bc_coeffs             boundary condition structure
+ * \param[in]      inc                   0 if an increment, 1 otherwise
+ * \param[in]      eqp                   equation parameters
+ * \param[in]      need_compute_bc_grad  val_f must be computed
+ * \param[in]      need_compute_bc_flux  flux must be computed
+ * \param[in]      hyd_p_flag            hydrostatic pressure indicator
+ * \param[in]      f_ext                 exterior force generating pressure
+ * \param[in]      visel                 viscosity by cell, or nullptr
+ * \param[in]      viscel                symmetric cell tensor
+                                         \f$ \tens{\mu}_\celli \f$,
+                                         or nullptr
+ * \param[in]      weighb                boundary face weight for cells i in
+ *                                       case of tensor diffusion, or nullptr
+ * \param[in]      var                   variable values at cell centers
+ * \param[in,out]  var_f                 face values for the gradient computation
+ * \param[in,out]  flux                  face values for the diffusion computation
  *
  */
 /*----------------------------------------------------------------------------*/
 
-template <bool need_compute_bc_grad, bool need_compute_bc_flux>
 void
 cs_boundary_conditions_update_bc_coeff_face_values
   (cs_dispatch_context        &ctx,
@@ -1278,6 +1280,8 @@ cs_boundary_conditions_update_bc_coeff_face_values
    const cs_field_bc_coeffs_t *bc_coeffs,
    const int                   inc,
    const cs_equation_param_t  *eqp,
+   const bool                  need_compute_bc_grad,
+   const bool                  need_compute_bc_flux,
    int                         hyd_p_flag,
    cs_real_t                   f_ext[][3],
    cs_real_t                   visel[],
@@ -1292,25 +1296,29 @@ cs_boundary_conditions_update_bc_coeff_face_values
  * \brief  Update boundary coefficient face values for gradient and diffusion
  *         when solving for a given field.
  *
- * \param[in]       ctx         reference to dispatch context
- * \param[in, out]  f           pointer to field
- * \param[in]       eqp         equation parameters
- * \param[in]       hyd_p_flag  flag for hydrostatic pressure
- * \param[in]       f_ext       exterior force generating pressure
- * \param[in]       viscel      symmetric cell tensor \f$ \tens{\mu}_\celli \f$,
-                                or nullptr
- * \param[in]       weighb      boundary face weight for cells i in case
- *                              of tensor diffusion, or nullptr
- * \param[in]       pvar        variable values at cell centers
+ * \param[in]       ctx                   reference to dispatch context
+ * \param[in, out]  f                     pointer to field
+ * \param[in]       eqp                   equation parameters
+ * \param[in]       need_compute_bc_grad  val_f must be computed
+ * \param[in]       need_compute_bc_flux  flux must be computed
+ * \param[in]       hyd_p_flag            flag for hydrostatic pressure
+ * \param[in]       f_ext                 exterior force generating pressure
+ * \param[in]       viscel                symmetric cell tensor
+                                          \f$ \tens{\mu}_\celli \f$,
+                                          or nullptr
+ * \param[in]       weighb                boundary face weight for cells i in
+ *                                        case of tensor diffusion, or nullptr
+ * \param[in]       pvar                  variable values at cell centers
  */
 /*----------------------------------------------------------------------------*/
 
-template <bool need_compute_bc_grad, bool need_compute_bc_flux>
 void
 cs_boundary_conditions_update_bc_coeff_face_values
   (cs_dispatch_context        &ctx,
    cs_field_t                 *f,
    const cs_equation_param_t  *eqp,
+   const bool                  need_compute_bc_grad,
+   const bool                  need_compute_bc_flux,
    int                         hyd_p_flag,
    cs_real_t                   f_ext[][3],
    cs_real_t                   viscel[][6],

@@ -963,38 +963,26 @@ cs_turbulence_ke(int              phase_id,
 
     });
 
+    const bool need_compute_bc_flux_k = true;
+    const bool need_compute_bc_grad_k = (eqp_k->ircflu) ? true : false;
+
     /* Update cvara_k BC */
-    if (eqp_k->ircflu)
-      cs_boundary_conditions_update_bc_coeff_face_values<true, true>
-        (ctx,
-         f_k,
-         f_k->bc_coeffs,
-         1, //inc
-         eqp_k,
-         false, // hyd_p_flag
-         nullptr, // f_ext
-         w3.data(),
-         nullptr, // vitenp
-         nullptr, // weighb
-         cvara_k,
-         val_f_k,
-         flux_k);
-    else {
-      cs_boundary_conditions_update_bc_coeff_face_values<false, true>
-        (ctx,
-         f_k,
-         f_k->bc_coeffs,
-         1, // inc
-         eqp_k,
-         false, // hyd_p_flag
-         nullptr, // f_ext
-         w3.data(),
-         nullptr, // vitenp
-         nullptr, // weighb
-         cvara_k,
-         val_f_k,
-         flux_k);
-    }
+    cs_boundary_conditions_update_bc_coeff_face_values
+      (ctx,
+       f_k,
+       f_k->bc_coeffs,
+       1, //inc
+       eqp_k,
+       need_compute_bc_grad_k,
+       need_compute_bc_flux_k,
+       false, // hyd_p_flag
+       nullptr, // f_ext
+       w3.data(),
+       nullptr, // vitenp
+       nullptr, // weighb
+       cvara_k,
+       val_f_k,
+       flux_k);
 
     cs_diffusion_potential(f_k,
                            eqp_k,
@@ -1767,12 +1755,13 @@ cs_turbulence_ke(int              phase_id,
     eqp_k_loc.idften = CS_ISOTROPIC_DIFFUSION;
 
     /* Update cvara_k BC */
-    cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+    cs_boundary_conditions_update_bc_coeff_face_values
       (ctx,
        f_k,
        f_k->bc_coeffs,
        1, //inc
        &eqp_k_loc,
+       true, true,
        false, // hyd_p_flag
        nullptr, // f_ext
        nullptr, // visel
@@ -1852,12 +1841,13 @@ cs_turbulence_ke(int              phase_id,
     eqp_eps_loc.idften = CS_ISOTROPIC_DIFFUSION;
 
     /* Update cvara_ep BC */
-    cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+    cs_boundary_conditions_update_bc_coeff_face_values
       (ctx,
        f_eps, // field
        f_eps->bc_coeffs,
        1, //inc
        &eqp_eps_loc,
+       true, true,
        false, // hyd_p_flag
        nullptr, // f_ext
        nullptr, // visel

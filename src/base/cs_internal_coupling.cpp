@@ -1691,6 +1691,7 @@ END_C_DECLS
  * \param[in]     ctx              reference to dispatch context
  * \param[in]     bc_coeffs        associated BC coefficients structure
  * \param[in]     cpl              structure associated with internal coupling
+ * \param[in]     compute_diffusion_coeffs compute diffusion coefficients or not
  * \param[in]     halo_type        halo type
  * \param[in]     w_stride         stride for weighting coefficient
  * \param[in]     clip_coeff       clipping coefficient
@@ -1707,13 +1708,13 @@ END_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-template <bool compute_diffusion_coeffs>
 void
 cs_internal_coupling_update_bc_coeffs_s
 (
  cs_dispatch_context           &ctx,
  const cs_field_bc_coeffs_t    *bc_coeffs,
  const cs_internal_coupling_t  *cpl,
+ const bool                     compute_diffusion_coeffs,
  cs_halo_type_t                 halo_type,
  int                            w_stride,
  double                         clip_coeff,
@@ -2065,42 +2066,6 @@ cs_internal_coupling_update_bc_coeffs_strided
   CS_FREE(var_ext_lim);
   CS_FREE(var_distant_lim);
 }
-
-// Force instanciation
-
-template void
-cs_internal_coupling_update_bc_coeffs_s<true>
-(cs_dispatch_context           &ctx,
- const cs_field_bc_coeffs_t    *bc_coeffs,
- const cs_internal_coupling_t  *cpl,
- cs_halo_type_t                 halo_type,
- int                            w_stride,
- double                         clip_coeff,
- bool                           hyd_p_flag,
- cs_real_t                      f_ext[][3],
- cs_real_t                      viscel[][6],
- const cs_real_t                weighb[],
- cs_real_t                     *df_limiter,
- const cs_real_t               *var,
- const cs_real_t               *c_weight
-);
-
-template void
-cs_internal_coupling_update_bc_coeffs_s<false>
-(cs_dispatch_context           &ctx,
- const cs_field_bc_coeffs_t    *bc_coeffs,
- const cs_internal_coupling_t  *cpl,
- cs_halo_type_t                 halo_type,
- int                            w_stride,
- double                         clip_coeff,
- bool                           hyd_p_flag,
- cs_real_t                      f_ext[][3],
- cs_real_t                      viscel[][6],
- const cs_real_t                weighb[],
- cs_real_t                     *df_limiter,
- const cs_real_t               *var,
- const cs_real_t               *c_weight
-);
 
 template void
 cs_internal_coupling_update_bc_coeffs_strided

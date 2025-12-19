@@ -7789,19 +7789,20 @@ cs_gradient_scalar(const char                    *var_name,
                    uncoupled faces, and bc_coeff_a used for coupled faces. */
 
       cs_real_t _clip_coeff = (clip_mode >= 0) ? clip_coeff : -1;
-      cs_internal_coupling_update_bc_coeffs_s<false>(ctx,
-                                                     bc_coeffs,
-                                                     cpl,
-                                                     halo_type,
-                                                     w_stride,
-                                                     _clip_coeff,
-                                                     hyd_p_flag,
-                                                     f_ext,
-                                                     nullptr, // viscel
-                                                     nullptr, // weighb
-                                                     nullptr, // df_limiter
-                                                     var,
-                                                     c_weight);
+      cs_internal_coupling_update_bc_coeffs_s(ctx,
+                                              bc_coeffs,
+                                              cpl,
+                                              false,
+                                              halo_type,
+                                              w_stride,
+                                              _clip_coeff,
+                                              hyd_p_flag,
+                                              f_ext,
+                                              nullptr, // viscel
+                                              nullptr, // weighb
+                                              nullptr, // df_limiter
+                                              var,
+                                              c_weight);
 
 
       ctx.wait();

@@ -516,38 +516,26 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   if (sinfo != nullptr)
     sinfo->rhs_norm = residu;
 
+  const bool need_compute_bc_flux_p = true;
+  const bool need_compute_bc_grad_p = (eqp_p->ircflu) ? true : false;
+
   /* Update pvar BC */
-  if (eqp_p->ircflu)
-    cs_boundary_conditions_update_bc_coeff_face_values<true, true>
-      (ctx,
-       f,
-       f->bc_coeffs,
-       1, //inc
-       eqp_p,
-       1,         // hyd_p_flag
-       next_fext, // f_ext
-       c_visc,
-       nullptr, // vitenp
-       nullptr, // weighb
-       pvar,
-       val_f,
-       flux);
-  else {
-    cs_boundary_conditions_update_bc_coeff_face_values<false, true>
-      (ctx,
-       f,
-       f->bc_coeffs,
-       1, // inc
-       eqp_p,
-       1,         // hyd_p_flag
-       next_fext, // f_ext
-       c_visc,
-       nullptr, // vitenp
-       nullptr, // weighb
-       pvar,
-       val_f,
-       flux);
-  }
+  cs_boundary_conditions_update_bc_coeff_face_values
+    (ctx,
+     f,
+     f->bc_coeffs,
+     1, //inc
+     eqp_p,
+     need_compute_bc_grad_p,
+     need_compute_bc_flux_p,
+     1,         // hyd_p_flag
+     next_fext, // f_ext
+     c_visc,
+     nullptr, // vitenp
+     nullptr, // weighb
+     pvar,
+     val_f,
+     flux);
 
   /* Initial Right-Hand-Side */
   cs_diffusion_potential(f,
@@ -603,37 +591,22 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
       pvar[cell_id] += dpvar[cell_id];
 
     /* Update pvar BC */
-    if (eqp_p->ircflu)
-      cs_boundary_conditions_update_bc_coeff_face_values<true, true>
-        (ctx,
-         f,
-         f->bc_coeffs,
-         1, //inc
-         eqp_p,
-         1,         // hyd_p_flag
-         next_fext, // f_ext
-         c_visc,
-         nullptr, // vitenp
-         nullptr, // weighb
-         pvar,
-         val_f,
-         flux);
-    else {
-      cs_boundary_conditions_update_bc_coeff_face_values<false, true>
-        (ctx,
-         f,
-         f->bc_coeffs,
-         1, // inc
-         eqp_p,
-         1,         // hyd_p_flag
-         next_fext, // f_ext
-         c_visc,
-         nullptr, // vitenp
-         nullptr, // weighb
-         pvar,
-         val_f,
-         flux);
-    }
+    cs_boundary_conditions_update_bc_coeff_face_values
+      (ctx,
+       f,
+       f->bc_coeffs,
+       1, //inc
+       eqp_p,
+       need_compute_bc_grad_p,
+       need_compute_bc_flux_p,
+       1,         // hyd_p_flag
+       next_fext, // f_ext
+       c_visc,
+       nullptr, // vitenp
+       nullptr, // weighb
+       pvar,
+       val_f,
+       flux);
 
     cs_diffusion_potential(f,
                            eqp_p,

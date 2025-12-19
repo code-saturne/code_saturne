@@ -859,37 +859,25 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
   cs_real_t *val_f = bc_coeffs_solve.val_f;
   cs_real_t *flux = bc_coeffs_solve.flux;
 
-  if (eqp_loc_div.ircflu)
-    cs_boundary_conditions_update_bc_coeff_face_values<true, true>
-      (ctx,
-       nullptr, // field
-       f_wall_dist->bc_coeffs,
-       inc,
-       &eqp_loc_div,
-       0, // iphydr,
-       nullptr, // f_ext
-       viscap.data(),
-       nullptr, // vitenp
-       nullptr, // weighb
-       w_dist,
-       val_f,
-       flux);
-  else {
-    cs_boundary_conditions_update_bc_coeff_face_values<false, true>
-      (ctx,
-       nullptr, // field
-       f_wall_dist->bc_coeffs,
-       inc,
-       &eqp_loc_div,
-       0, // iphydr,
-       nullptr, // f_ext
-       viscap.data(),
-       nullptr, // vitenp
-       nullptr, // weighb
-       w_dist,
-       val_f,
-       flux);
-  }
+  const bool need_compute_bc_flux = true;
+  const bool need_compute_bc_grad = (eqp_loc_div.ircflu) ? true : false;
+
+  cs_boundary_conditions_update_bc_coeff_face_values
+    (ctx,
+     nullptr, // field
+     f_wall_dist->bc_coeffs,
+     inc,
+     &eqp_loc_div,
+     need_compute_bc_grad,
+     need_compute_bc_flux,
+     0, // iphydr,
+     nullptr, // f_ext
+     viscap.data(),
+     nullptr, // vitenp
+     nullptr, // weighb
+     w_dist,
+     val_f,
+     flux);
 
   cs_face_diffusion_potential(f_wall_dist,
                               &eqp_loc_div,

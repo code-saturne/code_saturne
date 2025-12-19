@@ -984,8 +984,9 @@ cs_balance_by_zone_compute(const char      *scalar_name,
        for example when nt_max = 0) */
 
     if (f->bc_coeffs->val_f == nullptr || f->bc_coeffs->flux == nullptr)
-      cs_boundary_conditions_update_bc_coeff_face_values<true,true>
+      cs_boundary_conditions_update_bc_coeff_face_values
         (ctx, f, eqp,
+         true, true,
          false, nullptr, // hyd_p_flag, f_ext
          nullptr, // visel
          nullptr, // weighb
@@ -2760,8 +2761,9 @@ cs_flux_through_surface(const char         *scalar_name,
     CS_MALLOC_HD(val_f_g_nr, n_b_faces, cs_real_t, cs_alloc_mode);
     CS_MALLOC_HD(flux_d_nr, n_b_faces, cs_real_t, cs_alloc_mode);
 
-    cs_boundary_conditions_update_bc_coeff_face_values<true, true>
+    cs_boundary_conditions_update_bc_coeff_face_values
       (ctx, f, f->bc_coeffs, 1, &eqp_loc,
+       true, true,
        false, nullptr, // hyp_p_flag, f_ext
        nullptr, nullptr, nullptr,
        f->val, val_f_g_nr, flux_d_nr);
