@@ -5021,6 +5021,8 @@ cs_solidification_init_values(const cs_mesh_t              *mesh,
 
       v_model->update_gl(mesh, connect, quant, time_step);
 
+      v_model->update_thm_st(mesh, connect, quant, time_step);
+
       if ( (solid->post_flag & CS_SOLIDIFICATION_POST_ENTHALPY) ||
            (solid->model == CS_SOLIDIFICATION_MODEL_VOLLER_NL) )
         _compute_enthalpy(quant,
