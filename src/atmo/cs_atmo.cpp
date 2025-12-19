@@ -3340,6 +3340,9 @@ cs_atmo_init_meteo_profiles(void)
   }
 
   switch (aopt->projection_type) {
+  case CS_ATMO_PROJ_UNDEF:
+      bft_printf(" No projection type set.\n");
+      break;
   case CS_ATMO_PROJ_LAMBERT_93:
       bft_printf(" Projection is Lambert 93\n");
       break;
