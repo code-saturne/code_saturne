@@ -3342,6 +3342,8 @@ cs_atmo_init_meteo_profiles(void)
   switch (aopt->projection_type) {
   case CS_ATMO_PROJ_UNDEF:
       bft_printf(" No projection type set.\n");
+      aopt->x_origin = 0.;
+      aopt->y_origin = 0.;
       break;
   case CS_ATMO_PROJ_LAMBERT_93:
       bft_printf(" Projection is Lambert 93\n");
@@ -5370,6 +5372,11 @@ cs_atmo_projection(cs_atmo_projection_t origin_projection,
                    cs_real_t*           y_target,
                    int                  utm_fixed_zone)
 {
+
+  /* If no projection defined, nothing to do. */
+  if (origin_projection == CS_ATMO_PROJ_UNDEF)
+    return;
+
   if (origin_projection == target_projection){
     *x_target = x_origin;
     *y_target = y_origin;
@@ -5379,7 +5386,7 @@ cs_atmo_projection(cs_atmo_projection_t origin_projection,
   cs_real_t lon_dummy = 0;
   cs_real_t lat_dummy = 0;
 
-  switch (origin_projection){
+  switch (origin_projection) {
   case (CS_ATMO_PROJ_WGS84):
     switch (target_projection){
     case (CS_ATMO_PROJ_LAMBERT_93):
