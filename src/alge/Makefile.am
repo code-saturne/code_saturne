@@ -229,9 +229,9 @@ if HAVE_CUDA_CPP
 cs_matrix_petsc = $(top_srcdir)/src/alge/cs_matrix_petsc.cpp
 cs_sles_petsc = $(top_srcdir)/src/alge/cs_sles_petsc.cpp
 libcsalge_petsc_a-cs_matrix_petsc.$(OBJEXT): $(cs_matrix_petsc)
-	$(NVCC) -c $(DEFS) $(AM_CPPFLAGS) $(PETSC_CPPFLAGS) $(NVCCFLAGS) $(NVCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c  $(cs_matrix_petsc) -o libcsalge_petsc_a-cs_matrix_petsc.$(OBJEXT)
+	$(NVCC) -c $(DEFS) $(AM_CPPFLAGS) $(PETSC_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c  $(cs_matrix_petsc) -o libcsalge_petsc_a-cs_matrix_petsc.$(OBJEXT)
 libcsalge_petsc_a-cs_sles_petsc.$(OBJEXT): $(cs_sles_petsc)
-	$(NVCC) -c $(DEFS) $(AM_CPPFLAGS) $(PETSC_CPPFLAGS) $(NVCCFLAGS) $(NVCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c  $(cs_sles_petsc) -o libcsalge_petsc_a-cs_sles_petsc.$(OBJEXT)
+	$(NVCC) -c $(DEFS) $(AM_CPPFLAGS) $(PETSC_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c  $(cs_sles_petsc) -o libcsalge_petsc_a-cs_sles_petsc.$(OBJEXT)
 endif
 endif
 
@@ -244,7 +244,7 @@ libcsalge_a_LIBADD += libcsalge_mumps_a-cs_sles_mumps.$(OBJEXT)
 if HAVE_CUDA_CPP
 cs_sles_mumps = $(top_srcdir)/src/alge/cs_sles_mumps.cpp
 libcsalge_mumps_a-cs_sles_mumps.$(OBJEXT): $(cs_sles_mumps)
-	$(NVCC) -c $(DEFS) $(AM_CPPFLAGS) $(MUMPS_CPPFLAGS) $(NVCCFLAGS) $(NVCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c  $(cs_sles_mumps) -o libcsalge_mumps_a-cs_sles_mumps.$(OBJEXT)
+	$(NVCC) -c $(DEFS) $(AM_CPPFLAGS) $(MUMPS_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c  $(cs_sles_mumps) -o libcsalge_mumps_a-cs_sles_mumps.$(OBJEXT)
 endif
 endif
 
@@ -261,9 +261,9 @@ if HAVE_CUDA_CPP
 cs_matrix_hypre = $(top_srcdir)/src/alge/cs_matrix_hypre.cpp
 cs_sles_hypre = $(top_srcdir)/src/alge/cs_sles_hypre.cpp
 libcsalge_hypre_a-cs_matrix_hypre.$(OBJEXT): $(cs_matrix_hypre)
-	$(NVCC) -c $(DEFS) $(AM_CPPFLAGS) $(HYPRE_CPPFLAGS) $(NVCCFLAGS) $(NVCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c  $(cs_matrix_hypre) -o libcsalge_hypre_a-cs_matrix_hypre.$(OBJEXT)
+	$(NVCC) -c $(DEFS) $(AM_CPPFLAGS) $(HYPRE_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c  $(cs_matrix_hypre) -o libcsalge_hypre_a-cs_matrix_hypre.$(OBJEXT)
 libcsalge_hypre_a-cs_sles_hypre.$(OBJEXT): $(cs_sles_hypre)
-	$(NVCC) -c $(DEFS) $(AM_CPPFLAGS) $(HYPRE_CPPFLAGS) $(NVCCFLAGS) $(NVCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c  $(cs_sles_hypre) -o libcsalge_hypre_a-cs_sles_hypre.$(OBJEXT)
+	$(NVCC) -c $(DEFS) $(AM_CPPFLAGS) $(HYPRE_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c  $(cs_sles_hypre) -o libcsalge_hypre_a-cs_sles_hypre.$(OBJEXT)
 endif
 endif
 
