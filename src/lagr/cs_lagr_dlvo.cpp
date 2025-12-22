@@ -193,18 +193,24 @@ cs_lagr_dlvo_finalize()
   CS_FREE(cs_lagr_dlvo_param.debye_length);
 }
 
+END_C_DECLS
+
+/*============================================================================
+ * Public C++ function prototypes
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------
  * Compute the energy barrier for a smooth wall.
  *----------------------------------------------------------------------------*/
 
 void
-cs_lagr_barrier(const cs_lagr_particle_set_t   *p_set,
-                cs_lnum_t                       p_id,
-                cs_lnum_t                       iel,
-                cs_real_t                      *energy_barrier)
+cs_lagr_barrier(cs_lagr_particle_set_t   &p_set,
+                cs_lnum_t                 p_id,
+                cs_lnum_t                 iel,
+                cs_real_t                *energy_barrier)
 {
   cs_lnum_t i;
-  cs_real_t rpart = cs_lagr_particles_get_real(p_set, p_id,
+  cs_real_t rpart = p_set.attr_real( p_id,
                                                CS_LAGR_DIAMETER) * 0.5;
 
   *energy_barrier = 0.;
@@ -461,5 +467,3 @@ cs_lagr_edl_sphere_sphere(cs_real_t  distcc,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

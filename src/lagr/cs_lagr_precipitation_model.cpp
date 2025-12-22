@@ -125,7 +125,7 @@ cs_lagr_precipitation_mass_st(cs_real_t        dtref,
   cs_mesh_t  *mesh = cs_glob_mesh;
   cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
-  cs_lagr_particle_set_t p_set = cs_lagr_get_particle_set_ref();
+  cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
 
   assert(cs_glob_lagr_model->precipitation == 1);
 
@@ -271,7 +271,7 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
   cs_mesh_t  *mesh = cs_glob_mesh;
   cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
-  cs_lagr_particle_set_t p_set = cs_lagr_get_particle_set_ref();
+  cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
 
   /* Initialization
      ============== */
@@ -371,8 +371,7 @@ cs_lagr_precipitation_injection(cs_real_t   *vela,
   cs_lnum_t npt = p_set.n_particles;
   p_set.n_part_new += nbprec_tot;
 
-  cs_lnum_t vv = cs_lagr_particle_set_resize
-                  (p_set.n_particles + p_set.n_part_new);
+  cs_lnum_t vv = p_set.resize(p_set.n_particles + p_set.n_part_new);
   assert(vv == 0);
 
   if (nbprec_tot >= 1) {

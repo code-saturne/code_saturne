@@ -70,7 +70,7 @@ cs_lagr_coupling_initialize(void);
  *          of the time step. If nor == 2 and the particle interacts with a
  *          boundary, then the source terms are computed as if nor == 1.
  *
- * \param[in]   p_set   pointer to particle set
+ * \param[in]   p_set   particle set
  * \param[in]   p_id    particle id
  * \param[in]   dt_part remaining time step associated to the particle
  * \param[in]   rebound true if a rebound occured over last trajectory step
@@ -82,7 +82,7 @@ cs_lagr_coupling_initialize(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       *p_set,
+cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t        p_set,
                                         const cs_lnum_t               p_id,
                                         const cs_real_t               dt_part,
                                         const bool                    rebound,

@@ -146,7 +146,7 @@ cs_lagr_car(int                iprev,
 
   int cell_wise_integ = cs_glob_lagr_time_scheme->cell_wise_integ;
 
-  cs_lagr_particle_set_t p_set = cs_lagr_get_particle_set_ref();
+  cs_lagr_particle_set_t &p_set = cs_lagr_get_particle_set_ref();
 
   /* FIXME we may still need to do computations here */
   if (p_set.flag(p_id, CS_LAGR_PART_FIXED))
@@ -640,7 +640,7 @@ cs_lagr_get_force_p(const cs_real_t    dt_part,
   /* Management of user external force field
      ---------------------------------------- */
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
-  cs_lagr_particle_set_t p_set = cs_lagr_get_particle_set_ref();
+  cs_lagr_particle_set_t &p_set = cs_lagr_get_particle_set_ref();
 
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
 

@@ -611,43 +611,6 @@ _dump_particle(const cs_lagr_particle_set_t  *p_set,
   bft_printf("\n");
 }
 
-/*----------------------------------------------------------------------------
- * Resize a cs_lagr_particle_set_t structure.
- *
- * parameters:
- *   particle_set        <-> pointer to a cs_lagr_particle_set_t structure
- *   n_particles_max_min <-- minimum local max. number of particles
- *
- * returns:
- *   1 if resizing was required, 0 otherwise
- *----------------------------------------------------------------------------*/
-
-static int
-_particle_set_resize(cs_lagr_particle_set_t   *particle_set,
-                     const cs_lnum_t           n_particles_max_min)
-{
-  int retval = 0;
-
-  assert(n_particles_max_min >= 0);
-
-  if (particle_set->n_particles_max < n_particles_max_min) {
-
-    if (particle_set->n_particles_max == 0)
-      particle_set->n_particles_max = 1;
-
-    while (particle_set->n_particles_max < n_particles_max_min)
-      particle_set->n_particles_max *= _reallocation_factor;
-
-    CS_REALLOC(particle_set->p_buffer,
-               particle_set->n_particles_max * particle_set->p_am->extents,
-               unsigned char);
-
-    retval = 1;
-  }
-
-  return retval;
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1036,13 +999,13 @@ void
 cs_lagr_part_copy(cs_lnum_t  dest,
                   cs_lnum_t  src)
 {
-  cs_lagr_particle_set_t  *particles = cs_glob_lagr_particle_set;
-  memcpy(particles->p_buffer + particles->p_am->extents*(dest),
-         particles->p_buffer + particles->p_am->extents*(src),
-         particles->p_am->extents);
+  cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
+  memcpy(p_set->p_buffer + p_set->p_am->extents*(dest),
+         p_set->p_buffer + p_set->p_am->extents*(src),
+         p_set->p_am->extents);
   cs_real_t random = -1;
   cs_random_uniform(1, &random);
-  cs_lagr_particles_set_real(particles, dest, CS_LAGR_RANDOM_VALUE,
+  cs_lagr_particles_set_real(p_set, dest, CS_LAGR_RANDOM_VALUE,
                              random);
 }
 
@@ -1053,7 +1016,7 @@ cs_lagr_part_copy(cs_lnum_t  dest,
  * For attributes not currently present, the displacement and data
  * size should be -1 and 0 respectively.
  *
- * \param[in]   particles  associated particle set
+ * \param[in]   p_set      pointer to particle set
  * \param[in]   time_id    associated time id (0: current, 1: previous)
  * \param[in]   attr       particle attribute
  * \param[out]  extents    size (in bytes) of particle structure, or nullptr
@@ -1068,7 +1031,7 @@ cs_lagr_part_copy(cs_lnum_t  dest,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_get_attr_info(const cs_lagr_particle_set_t  *particles,
+cs_lagr_get_attr_info(const cs_lagr_particle_set_t  *p_set,
                       int                            time_id,
                       cs_lagr_attribute_t            attr,
                       size_t                        *extents,
@@ -1078,34 +1041,34 @@ cs_lagr_get_attr_info(const cs_lagr_particle_set_t  *particles,
                       int                           *count)
 {
   if (extents)
-    *extents = particles->p_am->extents;
+    *extents = p_set->p_am->extents;
   if (size)
-    *size = particles->p_am->size[attr];
+    *size = p_set->p_am->size[attr];
   if (displ)
-    *displ = particles->p_am->displ[time_id][attr];
+    *displ = p_set->p_am->displ[time_id][attr];
   if (datatype)
-    *datatype = particles->p_am->datatype[attr];
+    *datatype = p_set->p_am->datatype[attr];
   if (count)
-    *count = particles->p_am->count[time_id][attr];
+    *count = p_set->p_am->count[time_id][attr];
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Check that query for a given particle attribute is valid.
  *
- * \param[in]   particles             associated particle set
- * \param[in]   attr                  attribute whose values are required
- * \param[in]   datatype              associated value type
- * \param[in]   stride                number of values per particle
- * \param[in]   component_id          if -1 : extract the whole attribute
- *                                    if >0 : id of the component to extract
+ * \param[in]   p_set             associated particle set
+ * \param[in]   attr              attribute whose values are required
+ * \param[in]   datatype          associated value type
+ * \param[in]   stride            number of values per particle
+ * \param[in]   component_id      if -1 : extract the whole attribute
+ *                                if >0 : id of the component to extract
  *
  * \return 0 in case of success, 1 in case of error
  */
 /*----------------------------------------------------------------------------*/
 
 int
-cs_lagr_check_attr_query(const cs_lagr_particle_set_t  *particles,
+cs_lagr_check_attr_query(const cs_lagr_particle_set_t  *p_set,
                          cs_lagr_attribute_t            attr,
                          cs_datatype_t                  datatype,
                          int                            stride,
@@ -1113,12 +1076,12 @@ cs_lagr_check_attr_query(const cs_lagr_particle_set_t  *particles,
 {
   int retval = 0;
 
-  assert(particles != nullptr);
+  assert(p_set != nullptr);
 
   int _count;
   cs_datatype_t _datatype;
 
-  cs_lagr_get_attr_info(particles, 0, attr,
+  cs_lagr_get_attr_info(p_set, 0, attr,
                         nullptr, nullptr, nullptr, &_datatype, &_count);
 
   if (   datatype != _datatype || stride != _count
@@ -1200,39 +1163,6 @@ cs_lagr_get_particle_set_ref(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Resize particle set buffers if needed.
- *
- * By default, the total number of particles is not limited. A global limit
- * may be set using \ref cs_lagr_set_n_g_particles_max.
- *
- * \param[in]  n_min_particles  minimum number of particles required
- *
- * \return  1 if resizing was required, -1 if the global minimum number
- *          of particles would exceed the global limit, 0 otherwise.
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_lagr_particle_set_resize(cs_lnum_t  n_min_particles)
-{
-  int retval = 0;
-
-  /* Do we have a limit ? */
-
-  if (_n_g_max_particles < ULLONG_MAX) {
-    cs_gnum_t _n_g_min_particles = n_min_particles;
-    cs_parall_counter(&_n_g_min_particles, 1);
-    if (_n_g_min_particles > _n_g_max_particles)
-      retval = -1;
-  }
-  else
-    retval = cs_glob_lagr_particle_set->resize(n_min_particles);
-
-  return retval;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Set reallocation factor for particle sets.
  *
  * This factor determines the multiplier used for reallocations when
@@ -1288,17 +1218,17 @@ cs_lagr_set_n_g_particles_max(unsigned long long  n_g_particles_max)
 /*!
  * \brief Copy current attributes to previous attributes.
  *
- * \param[in, out]  particles     associated particle set
+ * \param[in, out]  p_set     associated particle set
  * \param[in]       particle_id  id of particle
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_particles_current_to_previous(cs_lagr_particle_set_t  *particles,
+cs_lagr_particles_current_to_previous(cs_lagr_particle_set_t   p_set,
                                       cs_lnum_t                particle_id)
 {
-  const cs_lagr_attribute_map_t  *p_am = particles->p_am;
-  unsigned char *p_buf = particles->p_buffer + p_am->extents*(particle_id);
+  const cs_lagr_attribute_map_t  *p_am = p_set.p_am;
+  unsigned char *p_buf = p_set.p_buffer + p_am->extents*(particle_id);
 
   for (int i_attr = 0;
        i_attr < CS_LAGR_N_ATTRIBUTES;
@@ -1317,24 +1247,24 @@ cs_lagr_particles_current_to_previous(cs_lagr_particle_set_t  *particles,
 /*!
  * \brief Dump a cs_lagr_particle_set_t structure
  *
- * \param[in]  particles  cs_lagr_particle_t structure to dump
+ * \param[in]  p_set  cs_lagr_particle_t structure to dump
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_particle_set_dump(const cs_lagr_particle_set_t  *particles)
+cs_lagr_particle_set_dump(const cs_lagr_particle_set_t  *p_set)
 {
-  if (particles != nullptr) {
+  if (p_set != nullptr) {
 
     bft_printf("Particle set\n");
     bft_printf("------------\n");
-    bft_printf("  n_particles:      %10ld\n", (long)particles->n_particles);
-    bft_printf("  n_particles_max:  %10ld\n", (long)particles->n_particles_max);
+    bft_printf("  n_particles:      %10ld\n", (long)p_set->n_particles);
+    bft_printf("  n_particles_max:  %10ld\n", (long)p_set->n_particles_max);
 
     bft_printf_flush();
 
-    for (cs_lnum_t i = 0; i < particles->n_particles; i++) {
-      _dump_particle(particles, i);
+    for (cs_lnum_t i = 0; i < p_set->n_particles; i++) {
+      _dump_particle(p_set, i);
     }
 
   }
@@ -1848,7 +1778,15 @@ cs_lagr_particle_set_t::resize
   int retval = 0;
   assert(n_particles_max_min >= 0);
 
-  if (n_particles_max < n_particles_max_min) {
+  /* Do we have a limit ? */
+
+  if (_n_g_max_particles < ULLONG_MAX) {
+    cs_gnum_t _n_g_min_particles = n_particles_max_min;
+    cs_parall_counter(&_n_g_min_particles, 1);
+    if (_n_g_min_particles > _n_g_max_particles)
+      retval = -1;
+  }
+  else if (n_particles_max < n_particles_max_min) {
 
     if (n_particles_max == 0)
       n_particles_max = 1;

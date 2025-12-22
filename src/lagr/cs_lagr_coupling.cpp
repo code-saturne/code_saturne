@@ -243,7 +243,7 @@ cs_lagr_coupling_initialize(void)
  *          of the time step. If nor == 2 and the particle interacts with a
  *          boundary, then the source terms are computed as if nor == 1.
  *
- * \param[in]   p_set   pointer to particle set
+ * \param[in]   p_set   particle set
  * \param[in]   p_id    particle id
  * \param[in]   dt_part remaining time step associated to the particle
  * \param[in]   rebound true if a rebound occured over last trajectory step
@@ -255,7 +255,7 @@ cs_lagr_coupling_initialize(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       *p_set,
+cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t        p_set,
                                         const cs_lnum_t               p_id,
                                         const cs_real_t               dt_part,
                                         const bool                    rebound,
@@ -266,7 +266,7 @@ cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       *p_set,
   /* WARNING : Only based on the first continuous phase */
 
   /* The cell_id incremented is the cell_id at the begining of the time step */
-  cs_lnum_t c_id = cs_lagr_particles_get_lnum_n(p_set, p_id, 1, CS_LAGR_CELL_ID);
+  cs_lnum_t c_id = p_set.attr_n_lnum(p_id, 1, CS_LAGR_CELL_ID);
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   cs_real_t *cell_f_vol = mq->cell_vol;
   const int *restrict c_disable_flag = mq->c_disable_flag;
@@ -292,18 +292,15 @@ cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       *p_set,
   cs_real_t    *volp = lag_st->volp;
   cs_real_t    *volm = lag_st->volm;
 
-  cs_real_t  p_stat_w = cs_lagr_particles_get_real(p_set, p_id,
-                                                   CS_LAGR_STAT_WEIGHT);
+  cs_real_t  p_stat_w = p_set.attr_real(p_id,
+                                        CS_LAGR_STAT_WEIGHT);
   cs_real_t *p_vel    =
-    cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id, CS_LAGR_VELOCITY);
-  cs_real_t *prev_p_vel  =
-    cs_lagr_particles_attr_n_get_ptr<cs_real_t>(p_set, p_id, 1,
-                                                CS_LAGR_VELOCITY);
+    p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY);
 
-  cs_real_t  p_mass = cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_MASS);
-  cs_real_t  prev_p_mass = cs_lagr_particles_get_real_n(p_set, p_id, 1,
-                                                        CS_LAGR_MASS);
-
+  cs_real_t *prev_p_vel =
+    p_set.attr_n_get_ptr<cs_real_t>(p_id, 1, CS_LAGR_VELOCITY);
+  cs_real_t  p_mass = p_set.attr_real( p_id, CS_LAGR_MASS);
+  cs_real_t  prev_p_mass = p_set.attr_n_real(p_id, 1, CS_LAGR_MASS);
   cs_real_t dtp = cs_glob_lagr_time_step->dtp;
 
   cs_real_t rel_dt = dt_part / dtp;
@@ -335,8 +332,8 @@ cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       *p_set,
 
   if (lag_st->ltsdyn == 1) {
 
-    cs_real_t  prev_p_diam = cs_lagr_particles_get_real_n(p_set, p_id, 1,
-                                                          CS_LAGR_DIAMETER);
+    cs_real_t prev_p_diam = p_set.attr_n_real(p_id, 1, CS_LAGR_DIAMETER);
+
     volp[c_id] += p_stat_w * cs_math_pi * pow(prev_p_diam, 3) / 6.0 * rel_dt;
     volm[c_id] += p_stat_w * prev_p_mass * rel_dt;
 
@@ -350,12 +347,11 @@ cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       *p_set,
     /* Turbulence source terms
        ======================= */
 
-    cs_real_t *prev_vel_s  =
-      cs_lagr_particles_attr_n_get_ptr<cs_real_t>(p_set, p_id, 1,
-                                                  CS_LAGR_VELOCITY_SEEN);
+    cs_real_t *prev_vel_s =
+      p_set.attr_n_get_ptr<cs_real_t>(p_id, 1, CS_LAGR_VELOCITY_SEEN);
+
     cs_real_t *new_vel_s   =
-      cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                CS_LAGR_VELOCITY_SEEN);
+      p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY_SEEN);
 
     cs_real_3_t vel_s= {0.5 * (prev_vel_s[0] + new_vel_s[0]),
                         0.5 * (prev_vel_s[1] + new_vel_s[1]),
@@ -399,15 +395,13 @@ cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       *p_set,
           || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
           || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR)) {
 
-    cs_real_t  p_cp = cs_lagr_particles_get_real_n(p_set, p_id, 0,
-                                                  CS_LAGR_CP);
-    cs_real_t  prev_p_cp = cs_lagr_particles_get_real_n(p_set, p_id, 1,
-                                                       CS_LAGR_CP);
-    cs_real_t  p_tmp = cs_lagr_particles_get_real_n(p_set, p_id, 0,
-                                                   CS_LAGR_TEMPERATURE);
-    cs_real_t  prev_p_tmp = cs_lagr_particles_get_real_n(p_set, p_id, 1,
-                                                        CS_LAGR_TEMPERATURE);
+    cs_real_t  p_cp = p_set.attr_n_real(p_id, 0, CS_LAGR_CP);
 
+    cs_real_t  prev_p_cp = p_set.attr_n_real(p_id, 1, CS_LAGR_CP);
+
+    cs_real_t  p_tmp = p_set.attr_n_real(p_id, 0, CS_LAGR_TEMPERATURE);
+
+    cs_real_t  prev_p_tmp = p_set.attr_n_real(p_id, 1, CS_LAGR_TEMPERATURE);
 
     t_st_t_e[c_id] += - (p_mass * p_tmp * p_cp
                           - prev_p_mass * prev_p_tmp * prev_p_cp
@@ -419,10 +413,10 @@ cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       *p_set,
         && cs_glob_lagr_specific_physics->solve_temperature == 1
         && extra->radiative_model > 0) {
 
-      cs_real_t  p_diam = cs_lagr_particles_get_real_n(p_set, p_id, 0,
-                                                      CS_LAGR_DIAMETER);
-      cs_real_t  p_eps = cs_lagr_particles_get_real_n(p_set, p_id, 0,
-                                                     CS_LAGR_EMISSIVITY);
+      cs_real_t p_diam = p_set.attr_n_real(p_id, 0, CS_LAGR_DIAMETER);
+
+      cs_real_t p_eps = p_set.attr_n_real(p_id, 0, CS_LAGR_EMISSIVITY);
+
       cs_real_t aux2 = cs_math_pi * p_diam * p_diam * p_eps * dvol
                       * (extra->rad_energy->val[c_id]
                          - 4.0 * _c_stephan * cs_math_pow4(p_tmp)) * rel_dt;

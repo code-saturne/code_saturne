@@ -756,7 +756,6 @@ typedef struct cs_lagr_particle_set_t {
     get_ptr_<cs_lnum_t>(particle_id, 0, CS_LAGR_P_FLAG)[0] = flag;
   }
 
-
   /*--------------------------------------------------------------------------*/
   /* Aliases to templated methods for shorter names used in code */
   /*--------------------------------------------------------------------------*/
@@ -831,6 +830,78 @@ typedef struct cs_lagr_particle_set_t {
   decltype(attr_get_ptr<cs_gnum_t>(std::forward<Args>(args)...))
   {
     return attr_get_ptr<cs_gnum_t>(std::forward<Args>(args)...);
+  }
+
+  template<typename... Args>
+  inline auto
+  attr_real_const_ptr(Args&&... args) ->
+  decltype(attr_get_const_ptr<cs_real_t>(std::forward<Args>(args)...))
+  {
+    return attr_get_const_ptr<cs_real_t>(std::forward<Args>(args)...);
+  }
+
+  template<typename... Args>
+  inline auto
+  attr_lnum_const_ptr(Args&&... args) ->
+  decltype(attr_get_const_ptr<cs_lnum_t>(std::forward<Args>(args)...))
+  {
+    return attr_get_const_ptr<cs_lnum_t>(std::forward<Args>(args)...);
+  }
+
+  template<typename... Args>
+  inline auto
+  attr_gnum_const_ptr(Args&&... args) ->
+  decltype(attr_get_const_ptr<cs_gnum_t>(std::forward<Args>(args)...))
+  {
+    return attr_get_const_ptr<cs_gnum_t>(std::forward<Args>(args)...);
+  }
+
+  template<typename... Args>
+  inline auto
+  attr_n_real_ptr(Args&&... args) ->
+  decltype(attr_n_get_ptr<cs_real_t>(std::forward<Args>(args)...))
+  {
+    return attr_n_get_ptr<cs_real_t>(std::forward<Args>(args)...);
+  }
+
+  template<typename... Args>
+  inline auto
+  attr_n_lnum_ptr(Args&&... args) ->
+  decltype(attr_n_get_ptr<cs_lnum_t>(std::forward<Args>(args)...))
+  {
+    return attr_n_get_ptr<cs_lnum_t>(std::forward<Args>(args)...);
+  }
+
+  template<typename... Args>
+  inline auto
+  attr_n_gnum_ptr(Args&&... args) ->
+  decltype(attr_n_get_ptr<cs_gnum_t>(std::forward<Args>(args)...))
+  {
+    return attr_n_get_ptr<cs_gnum_t>(std::forward<Args>(args)...);
+  }
+
+  template<typename... Args>
+  inline auto
+  attr_n_real_const_ptr(Args&&... args) ->
+  decltype(attr_n_get_const_ptr<cs_real_t>(std::forward<Args>(args)...))
+  {
+    return attr_n_get_const_ptr<cs_real_t>(std::forward<Args>(args)...);
+  }
+
+  template<typename... Args>
+  inline auto
+  attr_n_lnum_const_ptr(Args&&... args) ->
+  decltype(attr_n_get_const_ptr<cs_lnum_t>(std::forward<Args>(args)...))
+  {
+    return attr_n_get_const_ptr<cs_lnum_t>(std::forward<Args>(args)...);
+  }
+
+  template<typename... Args>
+  inline auto
+  attr_n_gnum_const_ptr(Args&&... args) ->
+  decltype(attr_n_get_const_ptr<cs_gnum_t>(std::forward<Args>(args)...))
+  {
+    return attr_n_get_const_ptr<cs_gnum_t>(std::forward<Args>(args)...);
   }
 
 private:
@@ -1588,7 +1659,7 @@ cs_lagr_particles_set_real_n(cs_lagr_particle_set_t  *particle_set,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_lagr_particles_attributes_fill_zero(cs_lagr_particle_set_t  *p_set,
+cs_lagr_particles_attributes_fill_zero(cs_lagr_particle_set_t  *p_set,//TODO C++ by ref
                                        cs_lnum_t                p_id)
 {
   memset(p_set->p_buffer + p_set->p_am->extents * p_id,
@@ -2149,7 +2220,7 @@ cs_lagr_set_n_g_particles_max(unsigned long long  n_g_particles_max);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_particles_current_to_previous(cs_lagr_particle_set_t  *particles,
+cs_lagr_particles_current_to_previous(cs_lagr_particle_set_t   particles,
                                       cs_lnum_t                particle_id);
 
 /*----------------------------------------------------------------------------*/

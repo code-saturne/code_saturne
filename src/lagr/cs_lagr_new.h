@@ -37,8 +37,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -55,47 +53,7 @@ BEGIN_C_DECLS
  * Public function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Inject a series of particles at random positions on given faces.
- *
- * The fluid velocity and other variables and attributes are computed here.
- *
- * \param[in,out]  particles          pointer to particle set
- * \param[in]      n_faces            number of faces in zone
- * \param[in]      face_ids           ids of faces in zone
- * \param[in]      face_particle_idx  starting index of added particles
- *                                    for each face in zone
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_lagr_new(cs_lagr_particle_set_t  *particles,
-            cs_lnum_t                n_faces,
-            const cs_lnum_t          face_ids[],
-            const cs_lnum_t          face_particle_idx[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Inject a series of particles at random positions on given cells.
- *
- * \warning Currently works only for tri and quadrangular faces.
- *
- * The fluid velocity and other variables and attributes are computed here.
- *
- * \param[in,out]  particles          pointer to particle set
- * \param[in]      n_cells            number of cells in zone
- * \param[in]      cell_ids           ids of cells in zone
- * \param[in]      cell_particle_idx  starting index of added particles
- *                                    for each cell in zone
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
-              cs_lnum_t                n_cells,
-              const cs_lnum_t          cell_ids[],
-              const cs_lnum_t          cell_particle_idx[]);
+BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -121,5 +79,55 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
+
+#if defined(__cplusplus)
+
+/*=============================================================================
+ * Public C++ functions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Inject a series of particles at random positions on given faces.
+ *
+ * The fluid velocity and other variables and attributes are computed here.
+ *
+ * \param[in,out]  p_set              ref to particle set
+ * \param[in]      n_faces            number of faces in zone
+ * \param[in]      face_ids           ids of faces in zone
+ * \param[in]      face_particle_idx  starting index of added particles
+ *                                    for each face in zone
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_new(cs_lagr_particle_set_t  &p_set,
+            cs_lnum_t                n_faces,
+            const cs_lnum_t          face_ids[],
+            const cs_lnum_t          face_particle_idx[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Inject a series of particles at random positions on given cells.
+ *
+ * \warning Currently works only for tri and quadrangular faces.
+ *
+ * The fluid velocity and other variables and attributes are computed here.
+ *
+ * \param[in,out]  p_set              ref to particle set
+ * \param[in]      n_cells            number of cells in zone
+ * \param[in]      cell_ids           ids of cells in zone
+ * \param[in]      cell_particle_idx  starting index of added particles
+ *                                    for each cell in zone
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_lagr_new_v(cs_lagr_particle_set_t  &p_set,
+              cs_lnum_t                n_cells,
+              const cs_lnum_t          cell_ids[],
+              const cs_lnum_t          cell_particle_idx[]);
+
+#endif //__cplusplus
 
 #endif /* __CS_LAGR_NEW_H__ */

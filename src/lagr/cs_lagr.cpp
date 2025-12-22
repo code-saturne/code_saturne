@@ -843,9 +843,9 @@ _update_boundary_face_type(void)
 /*----------------------------------------------------------------------------*/
 
 static cs_lnum_t
-_get_n_occupied_cells(const cs_lagr_particle_set_t  *p_set,
-                      cs_lnum_t                      start,
-                      cs_lnum_t                      end)
+_get_n_occupied_cells(cs_lagr_particle_set_t  &p_set,
+                      cs_lnum_t                start,
+                      cs_lnum_t                end)
 {
   /*Initialization:
     counter for number of cells that contain particles */
@@ -855,16 +855,16 @@ _get_n_occupied_cells(const cs_lagr_particle_set_t  *p_set,
   if (end - start > 1) {
     counter_particle_cells = 1;
     cs_lnum_t prev_cell_id
-      = cs_lagr_particles_get_lnum(p_set, start, CS_LAGR_CELL_ID);
+      = p_set.attr_lnum(start, CS_LAGR_CELL_ID);
     cs_lnum_t curr_cell_id = prev_cell_id;
     for (cs_lnum_t p = start + 1; p < end; ++p) {
-      curr_cell_id = cs_lagr_particles_get_lnum(p_set, p, CS_LAGR_CELL_ID);
+      curr_cell_id = p_set.attr_lnum(p, CS_LAGR_CELL_ID);
       if (prev_cell_id != curr_cell_id)
         counter_particle_cells++;
       prev_cell_id = curr_cell_id;
     }
   }
-  else if (p_set->n_particles == 1) {
+  else if (p_set.n_particles == 1) {
     counter_particle_cells = 1;
   }
 
@@ -895,7 +895,7 @@ _get_n_occupied_cells(const cs_lagr_particle_set_t  *p_set,
 /*----------------------------------------------------------------------------*/
 
 static void
-_occupied_cells(cs_lagr_particle_set_t  *p_set,
+_occupied_cells(cs_lagr_particle_set_t  &p_set,
                 cs_lnum_t                start,
                 cs_lnum_t                end,
                 cs_lnum_t                n_occupied_cells,
@@ -905,7 +905,7 @@ _occupied_cells(cs_lagr_particle_set_t  *p_set,
   if (end - start >= 1) {
     /* Initialization */
     cs_lnum_t prev_cell_id
-      = cs_lagr_particles_get_lnum(p_set, start, CS_LAGR_CELL_ID);
+      = p_set.attr_lnum(start, CS_LAGR_CELL_ID);
     cs_lnum_t curr_cell_id = prev_cell_id;
     cs_lnum_t counter = 0;
     occupied_cell_ids[0] = curr_cell_id;
@@ -916,7 +916,7 @@ _occupied_cells(cs_lagr_particle_set_t  *p_set,
     /* Update lists */
     for (cs_lnum_t part = start + 1; part < end; ++part) {
       curr_cell_id
-        = cs_lagr_particles_get_lnum(p_set, part, CS_LAGR_CELL_ID);
+        = p_set.attr_lnum( part, CS_LAGR_CELL_ID);
       if (prev_cell_id != curr_cell_id) {
         occupied_cell_ids[counter] = curr_cell_id;
         particle_gaps[counter] = part;
@@ -924,7 +924,7 @@ _occupied_cells(cs_lagr_particle_set_t  *p_set,
       }
       prev_cell_id = curr_cell_id;
     }
-    particle_gaps[n_occupied_cells] = p_set->n_particles;
+    particle_gaps[n_occupied_cells] = p_set.n_particles;
   }
 }
 
@@ -942,14 +942,14 @@ _occupied_cells(cs_lagr_particle_set_t  *p_set,
 /*----------------------------------------------------------------------------*/
 
 static cs_lnum_t
-_get_n_deleted(cs_lagr_particle_set_t  *p_set,
+_get_n_deleted(cs_lagr_particle_set_t  &p_set,
                cs_lnum_t                start,
                cs_lnum_t                end)
 {
   cs_lnum_t res = 0;
 
   for (cs_lnum_t idx = start; idx < end; ++idx) {
-    if (cs_lagr_particles_get_flag(p_set, idx, CS_LAGR_PART_TO_DELETE))
+    if (p_set.flag(idx, CS_LAGR_PART_TO_DELETE))
       res++;
   }
   return res;
@@ -1311,25 +1311,25 @@ cs_lagr_get_particle_counter(void)
 cs_lagr_particle_counter_t *
 cs_lagr_update_particle_counter(void)
 {
-  cs_lagr_particle_set_t *p_set = cs_glob_lagr_particle_set;
+  cs_lagr_particle_set_t &p_set = cs_lagr_get_particle_set_ref();
   cs_lagr_particle_counter_t *pc = &_lagr_particle_counter;
 
-  cs_gnum_t gcount[] = {(cs_gnum_t)p_set->n_particles,
-                        (cs_gnum_t)p_set->n_part_new,
-                        (cs_gnum_t)p_set->n_part_merged,
-                        (cs_gnum_t)p_set->n_part_out,
-                        (cs_gnum_t)p_set->n_part_dep,
-                        (cs_gnum_t)p_set->n_part_fou,
-                        (cs_gnum_t)p_set->n_part_resusp,
-                        (cs_gnum_t)p_set->n_failed_part};
+  cs_gnum_t gcount[] = {(cs_gnum_t)p_set.n_particles,
+                        (cs_gnum_t)p_set.n_part_new,
+                        (cs_gnum_t)p_set.n_part_merged,
+                        (cs_gnum_t)p_set.n_part_out,
+                        (cs_gnum_t)p_set.n_part_dep,
+                        (cs_gnum_t)p_set.n_part_fou,
+                        (cs_gnum_t)p_set.n_part_resusp,
+                        (cs_gnum_t)p_set.n_failed_part};
 
-  cs_real_t wsum[] = {p_set->weight,
-                      p_set->weight_new,
-                      p_set->weight_merged,
-                      p_set->weight_out,
-                      p_set->weight_dep,
-                      p_set->weight_fou,
-                      p_set->weight_resusp};
+  cs_real_t wsum[] = {p_set.weight,
+                      p_set.weight_new,
+                      p_set.weight_merged,
+                      p_set.weight_out,
+                      p_set.weight_dep,
+                      p_set.weight_fou,
+                      p_set.weight_resusp};
 
   cs_lnum_t size_count = sizeof(gcount) / sizeof(gcount[0]);
   cs_lnum_t size_sum = sizeof(wsum) / sizeof(wsum[0]);
@@ -1773,7 +1773,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
   /* Initialization
      -------------- */
 
-  cs_lagr_particle_set_t *p_set = cs_glob_lagr_particle_set;
+  cs_lagr_particle_set_t &p_set = cs_lagr_get_particle_set_ref();
 
   /* First call (initializations)
      ---------------------------- */
@@ -1886,15 +1886,15 @@ cs_lagr_solve_time_step(const int         itypfb[],
   part_c->w_resuspended = 0;
 
   /* particles->n_part_new: handled in injection step */
-  p_set->weight = 0.0;
-  p_set->n_part_out = 0;
-  p_set->n_part_dep = 0;
-  p_set->n_part_fou = 0;
-  p_set->weight_out = 0.0;
-  p_set->weight_dep = 0.0;
-  p_set->weight_fou = 0.0;
-  p_set->n_failed_part = 0;
-  p_set->weight_failed = 0.0;
+  p_set.weight = 0.0;
+  p_set.n_part_out = 0;
+  p_set.n_part_dep = 0;
+  p_set.n_part_fou = 0;
+  p_set.weight_out = 0.0;
+  p_set.weight_dep = 0.0;
+  p_set.weight_fou = 0.0;
+  p_set.n_failed_part = 0;
+  p_set.weight_failed = 0.0;
 
   /* Initialization for the dlvo, roughness and clogging  model
      ---------------------------------------------------------- */
@@ -2040,23 +2040,19 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
   /* Record particle's starting cell and rank, and update rebound time id */
 
-    for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
+    for (cs_lnum_t p_id = 0; p_id < p_set.n_particles; p_id++) {
 
-      cs_lagr_particles_set_lnum_n
-        (p_set, ip, 1, CS_LAGR_CELL_ID,
-         cs_lagr_particles_get_lnum(p_set, ip, CS_LAGR_CELL_ID));
+      p_set.attr_n_lnum(p_id, 1, CS_LAGR_CELL_ID) =
+        p_set.attr_lnum(p_id, CS_LAGR_CELL_ID);
 
-      cs_lagr_particles_set_lnum_n(p_set, ip, 1, CS_LAGR_RANK_ID,
-                                   cs_glob_rank_id);
+      p_set.attr_n_lnum(p_id, 1, CS_LAGR_RANK_ID) = cs_glob_rank_id;
 
       cs_lnum_t rebound_id
-        = cs_lagr_particles_get_lnum(p_set, ip, CS_LAGR_REBOUND_ID);
+        = p_set.attr_lnum(p_id, CS_LAGR_REBOUND_ID);
       if (rebound_id >= 0)
-        cs_lagr_particles_set_lnum(p_set, ip, CS_LAGR_REBOUND_ID,
-                                   rebound_id + 1);
+        p_set.attr_lnum( p_id, CS_LAGR_REBOUND_ID) = rebound_id + 1;
       if (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
-        cs_lagr_particles_set_real(p_set, ip,
-                                   CS_LAGR_REMAINING_INTEG_TIME, 1.);
+        p_set.attr_real(p_id, CS_LAGR_REMAINING_INTEG_TIME) = 1.;
     }
 
     /* Compute the Lagrangian time */
@@ -2231,14 +2227,14 @@ cs_lagr_solve_time_step(const int         itypfb[],
     /* Particles progression
        --------------------- */
 
-    cs_lnum_t n_particles_prev = p_set->n_particles - p_set->n_part_new;
+    cs_lnum_t n_particles_prev = p_set.n_particles - p_set.n_part_new;
 
     /* Current to previous but not on new particles at the first time
      * because the user may have changed their position */
     for (cs_lnum_t ip = 0; ip < n_particles_prev; ip++)
       cs_lagr_particles_current_to_previous(p_set, ip);
 
-    n_particles_prev = p_set->n_particles;
+    n_particles_prev = p_set.n_particles;
 
     /* Agglomeration and fragmentation preparation */
 
@@ -2255,12 +2251,12 @@ cs_lagr_solve_time_step(const int         itypfb[],
         || cs_glob_lagr_model->fragmentation == 1 ) {
 
       n_occupied_cells
-        = _get_n_occupied_cells(p_set, 0, p_set->n_particles);
+        = _get_n_occupied_cells(p_set, 0, p_set.n_particles);
 
       CS_MALLOC_HD(occupied_cell_ids, n_occupied_cells, cs_lnum_t, cs_alloc_mode);
       CS_MALLOC_HD(particle_list, n_occupied_cells+1, cs_lnum_t, cs_alloc_mode);
 
-      _occupied_cells(p_set, 0, p_set->n_particles,
+      _occupied_cells(p_set, 0, p_set.n_particles,
                       n_occupied_cells,
                       occupied_cell_ids,
                       particle_list);
@@ -2278,7 +2274,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
       CS_MALLOC_HD(cell_particle_idx, n_occupied_cells+1, cs_lnum_t, cs_alloc_mode);
       cell_particle_idx[0] = 0;
 
-      cs_lnum_t enter_parts = p_set->n_particles;
+      cs_lnum_t enter_parts = p_set.n_particles;
 
       /* Loop on all cells that contain at least one particle */
       for (cs_lnum_t icell = 0; icell < n_occupied_cells; ++icell) {
@@ -2289,7 +2285,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
         cs_lnum_t start_part = particle_list[icell];
         cs_lnum_t end_part = particle_list[icell+1];
 
-        cs_lnum_t init_particles = p_set->n_particles;
+        cs_lnum_t init_particles = p_set.n_particles;
 
         /* Treat agglomeration */
         if (cs_glob_lagr_model->agglomeration == 1) {
@@ -2303,15 +2299,16 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
         /* Save number of created particles */
 
-        cs_lnum_t inserted_parts_agglo = p_set->n_particles - init_particles;
+        cs_lnum_t inserted_parts_agglo = p_set.n_particles - init_particles;
 
         /* Create local buffer (deleted particles at the end) */
 
         cs_lnum_t local_size = end_part - start_part;
         cs_lnum_t deleted_parts = _get_n_deleted(p_set, start_part, end_part);
-        size_t swap_buffer_size =   p_set->p_am->extents
+        //FIXME
+        size_t swap_buffer_size =   p_set.p_am->extents
                                   * (local_size - deleted_parts);
-        size_t swap_buffer_deleted = p_set->p_am->extents * deleted_parts;
+        size_t swap_buffer_deleted = p_set.p_am->extents * deleted_parts;
 
         /* Create buffers for deleted particles */
         unsigned char * swap_buffer, *deleted_buffer;
@@ -2321,32 +2318,32 @@ cs_lagr_solve_time_step(const int         itypfb[],
         /* Update buffer for existing particles */
         cs_lnum_t count_del = 0, count_swap = 0;
         for (cs_lnum_t i = start_part; i < end_part; ++i) {
-          if (cs_lagr_particles_get_flag(p_set, i,
+          if (p_set.flag(i,
                                          CS_LAGR_PART_TO_DELETE)) {
-            memcpy(deleted_buffer + p_set->p_am->extents * count_del,
-                   p_set->p_buffer + p_set->p_am->extents * i,
-                   p_set->p_am->extents);
+            memcpy(deleted_buffer + p_set.p_am->extents * count_del,
+                   p_set.p_buffer + p_set.p_am->extents * i,
+                   p_set.p_am->extents);
             count_del++;
           }
           else {
-            memcpy(swap_buffer + p_set->p_am->extents * count_swap,
-                   p_set->p_buffer + p_set->p_am->extents * i,
-                   p_set->p_am->extents);
+            memcpy(swap_buffer + p_set.p_am->extents * count_swap,
+                   p_set.p_buffer + p_set.p_am->extents * i,
+                   p_set.p_am->extents);
             count_swap++;
           }
         }
 
-        memcpy(p_set->p_buffer + p_set->p_am->extents * start_part,
+        memcpy(p_set.p_buffer + p_set.p_am->extents * start_part,
                swap_buffer, swap_buffer_size);
-        memcpy(  p_set->p_buffer
-               + p_set->p_am->extents * (local_size-deleted_parts+start_part),
+        memcpy(  p_set.p_buffer
+               + p_set.p_am->extents * (local_size-deleted_parts+start_part),
                deleted_buffer, swap_buffer_deleted);
 
         CS_FREE(deleted_buffer);
         CS_FREE(swap_buffer);
 
         /* Treat fragmentation */
-        init_particles = p_set->n_particles;
+        init_particles = p_set.n_particles;
 
         if (cs_glob_lagr_model->fragmentation == 1) {
           cs_lagr_fragmentation(dt[0],
@@ -2354,22 +2351,22 @@ cs_lagr_solve_time_step(const int         itypfb[],
                                 start_part,
                                 end_part - deleted_parts,
                                 init_particles,
-                                p_set->n_particles);
+                                p_set.n_particles);
         }
-        cs_lnum_t inserted_parts_frag = p_set->n_particles - init_particles;
+        cs_lnum_t inserted_parts_frag = p_set.n_particles - init_particles;
 
         cell_particle_idx[icell+1] =   cell_particle_idx[icell]
                                    + inserted_parts_agglo + inserted_parts_frag;
       }
 
-      p_set->n_particles = enter_parts;
+      p_set.n_particles = enter_parts;
 
       /* Introduce new particles (uniformly in the cell) */
       cs_lagr_new_v(p_set,
                     n_occupied_cells,
                     occupied_cell_ids,
                     cell_particle_idx);
-      p_set->n_particles += cell_particle_idx[n_occupied_cells];
+      p_set.n_particles += cell_particle_idx[n_occupied_cells];
 
       CS_FREE(cell_particle_idx);
     }
@@ -2410,7 +2407,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
     lag_bdi->npstf++;
     lag_bdi->npstft++;
 
-    cs_lnum_t particle_range[2] = {0, p_set->n_particles};
+    cs_lnum_t particle_range[2] = {0, p_set.n_particles};
     cs_lagr_integ_track_particles(vislen, particle_range, true);
 
     if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING)
@@ -2418,15 +2415,13 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
     /* Update residence time */
 
-    for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
+    for (cs_lnum_t npt = 0; npt < p_set.n_particles; npt++) {
 
-      if (cs_lagr_particles_get_lnum(p_set, npt, CS_LAGR_CELL_ID) >= 0) {
+      if (p_set.attr_lnum(npt, CS_LAGR_CELL_ID) >= 0) {
         cs_real_t res_time
-          = cs_lagr_particles_get_real(p_set, npt,
-                                       CS_LAGR_RESIDENCE_TIME)
+          = p_set.attr_real(npt, CS_LAGR_RESIDENCE_TIME)
             + cs_glob_lagr_time_step->dtp;
-        cs_lagr_particles_set_real
-          (p_set, npt, CS_LAGR_RESIDENCE_TIME, res_time);
+        p_set.attr_real(npt, CS_LAGR_RESIDENCE_TIME) = res_time;
       }
 
     }
@@ -2445,22 +2440,20 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
     if (cs_glob_lagr_consolidation_model->iconsol > 0) {
 
-      for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
+      for (cs_lnum_t npt = 0; npt < p_set.n_particles; npt++) {
 
-        if (cs_lagr_particles_get_flag(p_set, npt, deposition_mask)) {
+        if (p_set.flag(npt, deposition_mask)) {
 
           cs_real_t p_depo_time
-            = cs_lagr_particles_get_real(p_set, npt, CS_LAGR_DEPO_TIME);
+            = p_set.attr_real(npt, CS_LAGR_DEPO_TIME);
           cs_real_t p_consol_height
-            = cs::min(cs_lagr_particles_get_real(p_set, npt, CS_LAGR_HEIGHT),
+            = cs::min(p_set.attr_real(npt, CS_LAGR_HEIGHT),
                       cs_glob_lagr_consolidation_model->rate_consol * p_depo_time);
-          cs_lagr_particles_set_real(p_set, npt,
-                                     CS_LAGR_CONSOL_HEIGHT, p_consol_height);
-          cs_lagr_particles_set_real(p_set, npt, CS_LAGR_DEPO_TIME,
-                                     p_depo_time + cs_glob_lagr_time_step->dtp);
+          p_set.attr_real(npt, CS_LAGR_CONSOL_HEIGHT) = p_consol_height;
+          p_set.attr_real(npt, CS_LAGR_DEPO_TIME) = p_depo_time + cs_glob_lagr_time_step->dtp;
         }
         else {
-          cs_lagr_particles_set_real(p_set, npt, CS_LAGR_CONSOL_HEIGHT, 0.0);
+          p_set.attr_real(npt, CS_LAGR_CONSOL_HEIGHT) = 0.0;
         }
 
       }
@@ -2483,20 +2476,18 @@ cs_lagr_solve_time_step(const int         itypfb[],
         bound_stat[lag_bdi->ihdiam * n_b_faces + ifac] = 0.0;
       }
 
-      for (cs_lnum_t npt = 0; npt < p_set->n_particles; npt++) {
+      for (cs_lnum_t npt = 0; npt < p_set.n_particles; npt++) {
 
-        if (cs_lagr_particles_get_flag(p_set, npt, deposition_mask)) {
+        if (p_set.flag(npt, deposition_mask)) {
 
-          cs_lnum_t face_id = cs_lagr_particles_get_lnum
-                                (p_set, npt, CS_LAGR_NEIGHBOR_FACE_ID);
+          cs_lnum_t face_id = p_set.attr_lnum(npt, CS_LAGR_NEIGHBOR_FACE_ID);
 
-          cs_real_t p_diam = cs_lagr_particles_get_real
-                               (p_set, npt, CS_LAGR_DIAMETER);
+          cs_real_t p_diam = p_set.attr_real(npt, CS_LAGR_DIAMETER);
 
           bound_stat[lag_bdi->iclogt * n_b_faces + face_id]
-            += cs_lagr_particles_get_real(p_set, npt, CS_LAGR_DEPO_TIME);
+            += p_set.attr_real(npt, CS_LAGR_DEPO_TIME);
           bound_stat[lag_bdi->iclogh * n_b_faces + face_id]
-            +=  cs_lagr_particles_get_real(p_set, npt, CS_LAGR_CONSOL_HEIGHT)
+            +=  p_set.attr_real(npt, CS_LAGR_CONSOL_HEIGHT)
                 * cs_math_pi * cs_math_sq(p_diam) * 0.25 / b_face_surf[face_id];
 
         }

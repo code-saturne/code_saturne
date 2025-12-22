@@ -283,6 +283,7 @@ _random_point_in_face(cs_lnum_t        n_vertices,
   }
 }
 
+END_C_DECLS
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -295,7 +296,7 @@ _random_point_in_face(cs_lnum_t        n_vertices,
  *
  * The fluid velocity and other variables and attributes are computed here.
  *
- * \param[in,out]  particles          pointer to particle set
+ * \param[in,out]  p_set              ref to particle set
  * \param[in]      n_faces            number of faces in zone
  * \param[in]      face_ids           ids of faces in zone
  * \param[in]      face_particle_idx  starting index of added particles
@@ -304,7 +305,7 @@ _random_point_in_face(cs_lnum_t        n_vertices,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_new(cs_lagr_particle_set_t  *particles,
+cs_lagr_new(cs_lagr_particle_set_t   &p_set,
             cs_lnum_t                n_faces,
             const cs_lnum_t          face_ids[],
             const cs_lnum_t          face_particle_idx[])
@@ -326,7 +327,7 @@ cs_lagr_new(cs_lagr_particle_set_t  *particles,
     if (n_f_p < 1)
       continue;
 
-    cs_lnum_t p_s_id = particles->n_particles + face_particle_idx[li];
+    cs_lnum_t p_s_id = p_set.n_particles + face_particle_idx[li];
 
     const cs_lnum_t face_id = (face_ids != nullptr) ? face_ids[li] : li;
 
@@ -356,10 +357,10 @@ cs_lagr_new(cs_lagr_particle_set_t  *particles,
 
       cs_lnum_t p_id = p_s_id + i;
 
-      cs_lagr_particles_set_lnum(particles, p_id, CS_LAGR_CELL_ID, c_id);
+      p_set.attr_lnum(p_id, CS_LAGR_CELL_ID) =  c_id;
 
       cs_real_t *part_coord
-        = cs_lagr_particles_attr_get_ptr<cs_real_t>(particles, p_id, CS_LAGR_COORDS);
+        = p_set.attr_real_ptr(p_id, CS_LAGR_COORDS);
 
       _random_point_in_face(n_vertices,
                             vertex_ids,
@@ -388,16 +389,16 @@ cs_lagr_new(cs_lagr_particle_set_t  *particles,
  *
  * The fluid velocity and other variables and attributes are computed here.
  *
- * \param[in,out]  particles          pointer to particle set
+ * \param[in,out]  p_set              pointer to particle set
  * \param[in]      n_cells            number of cells in zone
  * \param[in]      cell_ids           ids of cells in zone
- * \param[in]      cell_particle_idx  starting index of added particles
+ * \param[in]      cell_particle_idx  starting index of added p_set
  *                                    for each cell in zone
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
+cs_lagr_new_v(cs_lagr_particle_set_t  &p_set,
               cs_lnum_t                n_cells,
               const cs_lnum_t          cell_ids[],
               const cs_lnum_t          cell_particle_idx[])
@@ -426,7 +427,7 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
     if (n_c_p < 1) /* ignore cells with no injected particles */
       continue;
 
-    cs_lnum_t p_s_id = particles->n_particles + cell_particle_idx[li];
+    cs_lnum_t p_s_id = p_set.n_particles + cell_particle_idx[li];
 
     const cs_lnum_t cell_id = (cell_ids != nullptr) ? cell_ids[li] : li;
 
@@ -562,11 +563,12 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
 
       cs_lnum_t p_id = p_s_id + c_i;
 
-      cs_lagr_particles_set_lnum(particles, p_id, CS_LAGR_CELL_ID, cell_id);
+      cs_lnum_t test = p_set.attr_lnum(p_id, CS_LAGR_CELL_ID);
+
+      p_set.attr_lnum(p_id, CS_LAGR_CELL_ID) = cell_id;
 
       cs_real_t *part_coord
-        = cs_lagr_particles_attr_get_ptr<cs_real_t>(particles, p_id,
-                                                    CS_LAGR_COORDS);
+        = p_set.attr_real_ptr(p_id, CS_LAGR_COORDS);
 
       /* search for matching center-to-face cone */
 
@@ -647,6 +649,8 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
   CS_FREE(cell_subface_index);
 }
 
+BEGIN_C_DECLS
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Initialization for new particles.
@@ -680,7 +684,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     return;
   }
 
-  cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
+  cs_lagr_particle_set_t &p_set = cs_lagr_get_particle_set_ref();
 
   const cs_mesh_adjacencies_t  *ma = cs_glob_mesh_adjacencies;
 
@@ -956,14 +960,13 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
   for (cs_lnum_t p_id = particle_range[0]; p_id < particle_range[1]; p_id++) {
 
-    cs_lnum_t c_id = cs_lagr_particles_get_lnum(p_set, p_id, CS_LAGR_CELL_ID);
+    cs_lnum_t c_id = p_set.attr_lnum(p_id, CS_LAGR_CELL_ID);
     cs_lnum_t l_id = p_id - particle_range[0];
 
     /* Particle velocity components */
 
     cs_real_t *part_vel =
-      cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                CS_LAGR_VELOCITY);
+      p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY);
 
     for (int phase_id = 0; phase_id < n_phases; phase_id++) {
       for (int i = 0; i < 3; i++)
@@ -975,8 +978,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
         /* gradients have been computed*/
         /* TODO compute gradient before injection */
         cs_real_t *part_coord
-          = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                      CS_LAGR_COORDS);
+          = p_set.attr_real_ptr(p_id, CS_LAGR_COORDS);
         for (int i = 0; i < 3; i++) {
           for (int j = 0; j < 3; j++)
             loc_fluid_vel[phase_id][i] +=
@@ -1011,12 +1013,9 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     /* velocity as seen from fluid */
 
     cs_real_t  *vel_seen
-      = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                  CS_LAGR_VELOCITY_SEEN);
+      = p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY_SEEN);
     cs_real_t *vel_seen_vel_cov
-      = cs_lagr_particles_attr_get_ptr<cs_real_t>
-          (p_set, p_id,
-           CS_LAGR_VELOCITY_SEEN_VELOCITY_COV);
+      = p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY_SEEN_VELOCITY_COV);
 
     /* Lagr velocity seen has to be computed for every fluid */
     /* Lagr covariance between velocity seen and velocity
@@ -1038,8 +1037,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
     /* Diameter (always set base) */
 
-    cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_DIAMETER,
-                               zis->diameter);
+    p_set.attr_real(p_id, CS_LAGR_DIAMETER) = zis->diameter;
 
     if (zis->diameter_variance > 0.0) {
 
@@ -1052,7 +1050,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       cs_real_t diam = m2 / (sqrt(m2 + v))
         * exp(sqrt(log(1. + v/m2)) * random);
 
-      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_DIAMETER, diam);
+      p_set.attr_real(p_id, CS_LAGR_DIAMETER) = diam;
 
     }
 
@@ -1061,8 +1059,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
         || shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL) {
 
       /* Spherical radii a b c */
-      auto *radii = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                              CS_LAGR_RADII);
+      auto *radii = p_set.attr_real_ptr(p_id, CS_LAGR_RADII);
 
       for (cs_lnum_t i = 0; i < 3; i++) {
         radii[i] = zis->radii[i];
@@ -1070,8 +1067,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
       /* Shape parameters */
       auto *shape_param =
-        cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                  CS_LAGR_SHAPE_PARAM);
+        p_set.attr_real_ptr(p_id, CS_LAGR_SHAPE_PARAM);
 
       /* Compute shape parameters from radii */
       /* FIXME valid for all spheroids only (a = b, c > a,b ) */
@@ -1107,11 +1103,9 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       if (shape == CS_LAGR_SHAPE_SPHEROID_STOC_MODEL) {
         /* Orientation */
         auto *orientation =
-          cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                    CS_LAGR_ORIENTATION);
+          p_set.attr_real_ptr(p_id, CS_LAGR_ORIENTATION);
         auto *quaternion =
-          cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                    CS_LAGR_QUATERNION);
+          p_set.attr_real_ptr(p_id, CS_LAGR_QUATERNION);
         for (cs_lnum_t i = 0; i < 3; i++) {
           orientation[i] = zis->orientation[i];
         }
@@ -1137,8 +1131,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       if (shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL) {
 
         /* Euler parameters */
-        auto *euler = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                                CS_LAGR_EULER);
+        auto *euler = p_set.attr_real_ptr(p_id, CS_LAGR_EULER);
 
         for (cs_lnum_t i = 0; i < 4; i++)
           euler[i] = zis->euler[i];
@@ -1219,8 +1212,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
                                     grad_vf_r);
 
         auto *ang_vel =
-          cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                    CS_LAGR_ANGULAR_VEL);
+          p_set.attr_real_ptr(p_id, CS_LAGR_ANGULAR_VEL);
 
         ang_vel[0] = 0.5*(grad_vf_r[2][1] - grad_vf_r[1][2]);
         ang_vel[1] = 0.5*(grad_vf_r[0][2] - grad_vf_r[2][0]);
@@ -1230,48 +1222,42 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     }
 
     /* Other parameters */
-    cs_real_t diam = cs_lagr_particles_get_real(p_set, p_id,
-                                                CS_LAGR_DIAMETER);
+    cs_real_t diam = p_set.attr_real(p_id, CS_LAGR_DIAMETER);
     cs_real_t mporos = cs_glob_lagr_clogging_model->mporos;
     if (cs_glob_lagr_model->clogging == 1) {
-      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_DIAMETER,
-                                 diam/(1.-mporos));
-      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_HEIGHT, diam);
+      p_set.attr_real(p_id, CS_LAGR_DIAMETER) = diam/(1.-mporos);
+      p_set.attr_real(p_id, CS_LAGR_HEIGHT) = diam;
     }
 
     /* Other variables (mass, ...) depending on physical model */
     cs_real_t d3 = pow(diam, 3.0);
 
     if (cs_glob_lagr_model->n_stat_classes > 0)
-      cs_lagr_particles_set_lnum(p_set, p_id, CS_LAGR_STAT_CLASS,
-                                 zis->cluster);
+      p_set.attr_lnum(p_id, CS_LAGR_STAT_CLASS) = zis->cluster;
 
     if (   cs_glob_lagr_model->agglomeration == 1
         || cs_glob_lagr_model->fragmentation == 1) {
-      cs_lagr_particles_set_lnum(p_set, p_id, CS_LAGR_AGGLO_CLASS_ID,
-                                 zis->aggregat_class_id);
-      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_AGGLO_FRACTAL_DIM,
-                                 zis->aggregat_fractal_dim);
+      p_set.attr_lnum(p_id, CS_LAGR_AGGLO_CLASS_ID) =
+        zis->aggregat_class_id;
+      p_set.attr_real(p_id, CS_LAGR_AGGLO_FRACTAL_DIM) = zis->aggregat_fractal_dim;
     }
 
      /* used for 2nd order only */
     ptrdiff_t displ;
-    cs_lagr_get_attr_info(p_set, 0, CS_LAGR_TAUP_AUX, nullptr, nullptr,
+    cs_lagr_get_attr_info(&p_set, 0, CS_LAGR_TAUP_AUX, nullptr, nullptr,
                           &displ, nullptr, nullptr);
 
     if (displ > 0)
-      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_TAUP_AUX, 0.0);
+      p_set.attr_real(p_id, CS_LAGR_TAUP_AUX) = 0.0;
 
     if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_OFF
         || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT) {
 
       if (cs_glob_lagr_model->clogging == 0)
-        cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_MASS,
-                                   zis->density * pis6 * d3);
+        p_set.attr_real(p_id, CS_LAGR_MASS) = zis->density * pis6 * d3;
       else
-        cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_MASS,
-                                   zis->density * pis6 * d3
-                                   * pow(1.0-mporos, 3));
+        p_set.attr_real(p_id, CS_LAGR_MASS) = zis->density * pis6 * d3
+          * pow(1.0-mporos, 3);
 
       if (cs_glob_lagr_specific_physics->solve_temperature_seen == 1
           && cval_t != nullptr) {
@@ -1281,21 +1267,16 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
         if (   cs_glob_lagr_time_scheme->interpol_field > 0
             && extra->grad_tempf != nullptr) {
           cs_real_t *part_coord
-            = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                        CS_LAGR_COORDS);
+            = p_set.attr_real_ptr(p_id, CS_LAGR_COORDS);
           for (int i = 0; i < 3; i++)
             loc_fluid_temp += extra->grad_tempf[c_id][i]
               * (part_coord[i] - cell_cen[c_id][i]);
         }
-        cs_lagr_particles_set_real(p_set, p_id,
-                                   CS_LAGR_TEMPERATURE_SEEN,
-                                   loc_fluid_temp);
+        p_set.attr_real(p_id, CS_LAGR_TEMPERATURE_SEEN) = loc_fluid_temp;
         /* Set particle temperature to fluid one if required */
         if (   zis->temperature_profile < 1
             && cs_glob_lagr_specific_physics->solve_temperature > 0)
-          cs_lagr_particles_set_real(p_set, p_id,
-                                     CS_LAGR_TEMPERATURE,
-                                     loc_fluid_temp);
+          p_set.attr_real(p_id, CS_LAGR_TEMPERATURE) = loc_fluid_temp;
 
       }
 
@@ -1303,14 +1284,11 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
           && cs_glob_lagr_specific_physics->solve_temperature == 1) {
         /* constant temperature set, may be modified later by user function */
         if (zis->temperature_profile == 1)
-          cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_TEMPERATURE,
-                                     zis->temperature);
+          p_set.attr_real(p_id, CS_LAGR_TEMPERATURE) = zis->temperature;
 
-        cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_CP,
-                                   zis->cp);
+        p_set.attr_real(p_id, CS_LAGR_CP) = zis->cp;
         if (extra->radiative_model > 0)
-          cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_EMISSIVITY,
-                                     zis->emissivity);
+          p_set.attr_real(p_id, CS_LAGR_EMISSIVITY) = zis->emissivity;
       }
     }
 
@@ -1318,23 +1296,20 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
       int coal_id = zis->coal_number - 1;
 
-      cs_lagr_particles_set_lnum(p_set, p_id, CS_LAGR_COAL_ID, coal_id);
+      p_set.attr_lnum(p_id, CS_LAGR_COAL_ID) = coal_id;
       cs_real_t loc_fluid_temp = cval_t[c_id] + tscl_shift;
       if (   cs_glob_lagr_time_scheme->interpol_field > 0
           && extra->grad_tempf != nullptr) { /* gradient have been computed */
         cs_real_t *part_coord
-          = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                      CS_LAGR_COORDS);
+          = p_set.attr_real_ptr(p_id, CS_LAGR_COORDS);
         for (int i = 0; i < 3; i++)
           loc_fluid_temp +=   extra->grad_tempf[c_id][i]
                             * (part_coord[i] - cell_cen[c_id][i]);
       }
-      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_TEMPERATURE_SEEN,
-                                 loc_fluid_temp);
+      p_set.attr_real(p_id, CS_LAGR_TEMPERATURE_SEEN) = loc_fluid_temp;
 
       auto *particle_temp
-        = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                    CS_LAGR_TEMPERATURE);
+        = p_set.attr_real_ptr(p_id, CS_LAGR_TEMPERATURE);
       for (int ilayer = 0;
            ilayer < cs_glob_lagr_model->n_temperature_layers;
            ilayer++)
@@ -1342,20 +1317,17 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
       /* composition from DP_FCP */
 
-      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_CP, cp2ch[coal_id]);
+      p_set.attr_real(p_id, CS_LAGR_CP) = cp2ch[coal_id];
 
       cs_real_t mass = rho0ch[coal_id] * pis6 * d3;
 
-      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_MASS, mass);
-      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_WATER_MASS,
-                                 xwatch[coal_id] * mass);
+      p_set.attr_real(p_id, CS_LAGR_MASS) =  mass;
+      p_set.attr_real(p_id, CS_LAGR_WATER_MASS) = xwatch[coal_id] * mass;
 
       cs_real_t *particle_coal_mass
-          = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                      CS_LAGR_COAL_MASS);
+          = p_set.attr_real_ptr(p_id, CS_LAGR_COAL_MASS);
       cs_real_t *particle_coke_mass
-        = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                    CS_LAGR_COKE_MASS);
+        = p_set.attr_real_ptr(p_id, CS_LAGR_COKE_MASS);
       for (int ilayer = 0;
            ilayer < cs_glob_lagr_model->n_temperature_layers;
            ilayer++) {
@@ -1363,24 +1335,19 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
         particle_coal_mass[ilayer]
           =    (1.0 - xwatch[coal_id]
                     - xashch[coal_id])
-            * cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_MASS)
+            * p_set.attr_real(p_id, CS_LAGR_MASS)
             / cs_glob_lagr_model->n_temperature_layers;
         particle_coke_mass[ilayer] = 0.0;
 
       }
 
-      cs_lagr_particles_set_real
-        (p_set, p_id,
-         CS_LAGR_SHRINKING_DIAMETER,
-         cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_DIAMETER));
-      cs_lagr_particles_set_real
-        (p_set, p_id,
-         CS_LAGR_INITIAL_DIAMETER,
-         cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_DIAMETER));
+      p_set.attr_real(p_id,CS_LAGR_SHRINKING_DIAMETER)
+         = p_set.attr_real(p_id, CS_LAGR_DIAMETER);
+      p_set.attr_real(p_id, CS_LAGR_INITIAL_DIAMETER)
+         = p_set.attr_real(p_id, CS_LAGR_DIAMETER);
 
       cs_real_t *particle_coal_density
-        = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                    CS_LAGR_COAL_DENSITY);
+        = p_set.attr_real_ptr(p_id, CS_LAGR_COAL_DENSITY);
       for (int ilayer = 0;
            ilayer < cs_glob_lagr_model->n_temperature_layers;
            ilayer++)
@@ -1391,27 +1358,26 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     /* Cooling tower model*/
     if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
 
-      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_MASS,
-                                 zis->density * pis6 * d3);
+      p_set.attr_real(p_id, CS_LAGR_MASS) =
+        zis->density * pis6 * d3;
 
-      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_CP,
-                                 zis->cp);
+      p_set.attr_real(p_id, CS_LAGR_CP) =
+        zis->cp;
 
-      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_TEMPERATURE,
-                                 cval_t_l[c_id]);
+      p_set.attr_real(p_id, CS_LAGR_TEMPERATURE) =
+        cval_t_l[c_id];
 
       cs_real_t loc_fluid_temp = cval_t[c_id] + tscl_shift;
       if (   cs_glob_lagr_time_scheme->interpol_field > 0
           && extra->grad_tempf != nullptr) { /* gradients have been computed */
         cs_real_t *part_coord
-          = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                      CS_LAGR_COORDS);
+          = p_set.attr_real_ptr(p_id, CS_LAGR_COORDS);
         for (int i = 0; i < 3; i++)
           loc_fluid_temp +=   extra->grad_tempf[c_id][i]
                             * (part_coord[i] - cell_cen[c_id][i]);
       }
-      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_TEMPERATURE_SEEN,
-                                 loc_fluid_temp);
+      p_set.attr_real(p_id, CS_LAGR_TEMPERATURE_SEEN) =
+        loc_fluid_temp;
     }
 
     if (    cs_glob_lagr_model->physical_model > CS_LAGR_PHYS_OFF
@@ -1421,7 +1387,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       /* Initialize temperature fluctuations */
 
       cs_real_t temp_seen =
-        cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_TEMPERATURE_SEEN);
+        p_set.attr_real(p_id, CS_LAGR_TEMPERATURE_SEEN);
 
       /* Fluctuations to obtain proper thermal turbulent fluxes */
       /* TODO adapt the value of the draws based not only on the first phase */
@@ -1433,16 +1399,16 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       if (extra->temperature_variance != nullptr )
         temp_seen += var_temp_corel_coef[c_id] * temp_vagaus[l_id];
 
-      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_TEMPERATURE_SEEN,
-                                 temp_seen);
+      p_set.attr_real(p_id, CS_LAGR_TEMPERATURE_SEEN) =
+        temp_seen;
     }
     /* statistical weight */
-    cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_STAT_WEIGHT,
-                               zis->stat_weight);
+    p_set.attr_real(p_id, CS_LAGR_STAT_WEIGHT) =
+      zis->stat_weight;
 
     /* Fouling index */
-    cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_FOULING_INDEX,
-                               zis->fouling_index);
+    p_set.attr_real(p_id, CS_LAGR_FOULING_INDEX) =
+      zis->fouling_index;
 
     /* Initialization of deposition model
      * And compute velocity fluctuation if deposition model is active */
@@ -1451,19 +1417,15 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
       cs_real_t random;
       cs_random_uniform(1, &random);
-      cs_lagr_particles_set_real(p_set, p_id,
-                                 CS_LAGR_INTERF, 5.0 + 15.0 * random);
-      cs_lagr_particles_set_real(p_set, p_id,
-                                 CS_LAGR_YPLUS, 1000.0);
-      cs_lagr_particles_set_lnum(p_set, p_id,
-                                 CS_LAGR_MARKO_VALUE, -1);
-      cs_lagr_particles_set_lnum(p_set, p_id,
-                                 CS_LAGR_NEIGHBOR_FACE_ID, -1);
+      p_set.attr_real(p_id, CS_LAGR_INTERF) = 5.0 + 15.0 * random;
+      p_set.attr_real(p_id, CS_LAGR_YPLUS) = 1000.0;
+      p_set.attr_lnum(p_id, CS_LAGR_MARKO_VALUE) = -1;
+      p_set.attr_lnum(p_id, CS_LAGR_NEIGHBOR_FACE_ID) = -1;
 
       /* Compute normalized wall-normal particle distance (y+) */
 
       cs_real_t yplus = 1000.0;
-      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_YPLUS, yplus);
+      p_set.attr_real(p_id, CS_LAGR_YPLUS) = yplus;
 
       for (cs_lnum_t il = ma->cell_b_faces_idx[c_id];
            il < ma->cell_b_faces_idx[c_id+1];
@@ -1486,62 +1448,53 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
           cs_real_t  *particle_yplus;
 
           neighbor_face_id
-            = cs_lagr_particles_attr_get_ptr<cs_lnum_t>(p_set, p_id,
-                                                        CS_LAGR_NEIGHBOR_FACE_ID);
+            = p_set.attr_lnum_ptr(p_id, CS_LAGR_NEIGHBOR_FACE_ID);
           particle_yplus
-            = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                        CS_LAGR_YPLUS);
+            = p_set.attr_real_ptr(p_id, CS_LAGR_YPLUS);
 
           cs_lagr_test_wall_cell(p_set, p_id, visc_length,
                                  particle_yplus, neighbor_face_id);
 
         }
         else {
-          cs_lagr_particles_set_lnum(p_set, p_id, CS_LAGR_NEIGHBOR_FACE_ID,
-                                     -1);
-          cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_YPLUS, 0.);
+          p_set.attr_lnum(p_id, CS_LAGR_NEIGHBOR_FACE_ID) = -1;
+          p_set.attr_real(p_id, CS_LAGR_YPLUS) = 0.;
         }
 
       }
 
-      if (yplus < cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_INTERF)) {
-        cs_lagr_particles_set_lnum
-          (p_set,
-           p_id,
-           CS_LAGR_MARKO_VALUE,
-           CS_LAGR_COHERENCE_STRUCT_DEGEN_INNER_ZONE_DIFF);
+      if (yplus < p_set.attr_real(p_id, CS_LAGR_INTERF)) {
+        p_set.attr_lnum(p_id,
+                        CS_LAGR_MARKO_VALUE)
+          = CS_LAGR_COHERENCE_STRUCT_DEGEN_INNER_ZONE_DIFF;
       }
 
       else if (yplus > 100.0) {
-        cs_lagr_particles_set_lnum(p_set,
-                                   p_id,
-                                   CS_LAGR_MARKO_VALUE,
-                                   CS_LAGR_COHERENCE_STRUCT_BULK);
+        p_set.attr_lnum(p_id,
+                        CS_LAGR_MARKO_VALUE)
+          = CS_LAGR_COHERENCE_STRUCT_BULK;
       }
 
       else {
         cs_random_uniform(1, &random);
 
         if (random < 0.25)
-          cs_lagr_particles_set_lnum(p_set,
-                                     p_id,
-                                     CS_LAGR_MARKO_VALUE,
-                                     CS_LAGR_COHERENCE_STRUCT_DEGEN_DIFFUSION);
+          p_set.attr_lnum(p_id,
+                          CS_LAGR_MARKO_VALUE)
+            = CS_LAGR_COHERENCE_STRUCT_DEGEN_DIFFUSION;
 
         else if (random > 0.625)
-          cs_lagr_particles_set_lnum(p_set,
-                                     p_id,
-                                     CS_LAGR_MARKO_VALUE,
-                                     CS_LAGR_COHERENCE_STRUCT_SWEEP);
+          p_set.attr_lnum(p_id,
+                          CS_LAGR_MARKO_VALUE)
+            = CS_LAGR_COHERENCE_STRUCT_SWEEP;
 
         else /* if ((random > 0.25) && (random < 0.625)) */
-          cs_lagr_particles_set_lnum(p_set,
-                                     p_id,
-                                     CS_LAGR_MARKO_VALUE,
-                                     CS_LAGR_COHERENCE_STRUCT_EJECTION);
+          p_set.attr_lnum(p_id,
+                          CS_LAGR_MARKO_VALUE)
+            = CS_LAGR_COHERENCE_STRUCT_EJECTION;
       }
 
-      if (yplus <= cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_INTERF)) {
+      if (yplus <= p_set.attr_real(p_id, CS_LAGR_INTERF)) {
         for (int phase_id = 0; phase_id < n_phases; phase_id++) {
           for (cs_lnum_t i = 0; i < 3; i++)
             vel_seen[phase_id * 3 + i] = loc_fluid_vel[phase_id][i];
@@ -1552,11 +1505,11 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
        * for the resuspension model              */
 
       if (cs_glob_lagr_model->resuspension > 0) {
-        cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_ADHESION_FORCE, 0.0);
-        cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_ADHESION_TORQUE, 0.0);
-        cs_lagr_particles_set_lnum(p_set, p_id, CS_LAGR_N_LARGE_ASPERITIES, 0);
-        cs_lagr_particles_set_lnum(p_set, p_id, CS_LAGR_N_SMALL_ASPERITIES, 0);
-        cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_DISPLACEMENT_NORM, 0.0);
+        p_set.attr_real(p_id, CS_LAGR_ADHESION_FORCE) = 0.0;
+        p_set.attr_real(p_id, CS_LAGR_ADHESION_TORQUE) =  0.0;
+        p_set.attr_lnum(p_id, CS_LAGR_N_LARGE_ASPERITIES) = 0;
+        p_set.attr_lnum(p_id, CS_LAGR_N_SMALL_ASPERITIES) = 0;
+        p_set.attr_real(p_id, CS_LAGR_DISPLACEMENT_NORM) = 0.0;
       }
 
     }
@@ -1564,17 +1517,16 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     /* Initialization of clogging model */
 
     if (cs_glob_lagr_model->clogging == 1) {
-      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_DEPO_TIME, 0.0);
-      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_CONSOL_HEIGHT, 0.0);
-      cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_CLUSTER_NB_PART, 1.0);
+      p_set.attr_real(p_id, CS_LAGR_DEPO_TIME) =  0.0;
+      p_set.attr_real(p_id, CS_LAGR_CONSOL_HEIGHT) =  0.0;
+      p_set.attr_real(p_id, CS_LAGR_CLUSTER_NB_PART) =  1.0;
     }
 
     /* Initialize the additional user variables */
 
     if (cs_glob_lagr_model->n_user_variables > 0) {
       cs_real_t  *user_attr
-        = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                   CS_LAGR_USER);
+        = p_set.attr_real_ptr(p_id, CS_LAGR_USER);
       for (int i = 0;
            i < cs_glob_lagr_model->n_user_variables;
            i++)
@@ -1598,7 +1550,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     cs_lnum_t p_e_id = particle_range[1];
 
     for (cs_lnum_t p_id = p_s_id; p_id < p_e_id; p_id++)
-      dmass += cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_MASS);
+      dmass += p_set.attr_real(p_id, CS_LAGR_MASS);
 
     cs_parall_sum(1, CS_REAL_TYPE, &dmass);
 
@@ -1608,7 +1560,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       cs_real_t s_weight =   zis->flow_rate * cs_glob_lagr_time_step->dtp
                            / dmass;
       for (cs_lnum_t p_id = p_s_id; p_id < p_e_id; p_id++)
-        cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_STAT_WEIGHT, s_weight);
+        p_set.attr_real(p_id, CS_LAGR_STAT_WEIGHT) = s_weight;
     }
 
     else {

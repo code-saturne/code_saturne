@@ -395,7 +395,7 @@ cs_lagr_poisson(const int  itypfb[])
 
   /* Initialization */
 
-  cs_lagr_particle_set_t p_set = cs_lagr_get_particle_set_ref();
+  cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
 
   /* Means of global class */
 

@@ -167,7 +167,7 @@ _add_resuspension_event(cs_lagr_event_set_t     *events,
 void
 cs_lagr_resuspension(void)
 {
-  cs_lagr_particle_set_t p_set = cs_lagr_get_particle_set_ref();
+  cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
   const cs_lagr_attribute_map_t *p_am = p_set.p_am;
 
   cs_lagr_boundary_interactions_t *lag_bi = cs_glob_lagr_boundary_interactions;

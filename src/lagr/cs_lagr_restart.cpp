@@ -448,7 +448,7 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
     p_set->n_particles = n_particles;
 
     if (p_set->n_particles_max < p_set->n_particles)
-      cs_lagr_particle_set_resize(p_set->n_particles);
+      p_set->resize(p_set->n_particles);
 
     _set_particle_values(p_set, CS_LAGR_COORDS, CS_REAL_TYPE,
                          3, -1, p_coords.data());

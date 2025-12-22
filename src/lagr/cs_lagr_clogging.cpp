@@ -197,6 +197,8 @@ cs_lagr_clogging_finalize(void)
   CS_FREE(cs_lagr_clogging_param.debye_length);
 }
 
+END_C_DECLS
+
 /*----------------------------------------------------------------------------
  * Clogging:
  *
@@ -205,7 +207,7 @@ cs_lagr_clogging_finalize(void)
  * - Re-compute the energy barrier if this number is greater than zero
  *
  * parameters:
- *   p_set            <-- pointer to particle set
+ *   p_set            <-- refence to particle set
  *   p_id             <-- particle id
  *   c_id             <-- id of cell where the particle is
  *   energy_barrier   <-> energy barrier
@@ -218,7 +220,7 @@ cs_lagr_clogging_finalize(void)
  *----------------------------------------------------------------------------*/
 
 int
-cs_lagr_clogging_barrier(const cs_lagr_particle_set_t   *p_set,
+cs_lagr_clogging_barrier(cs_lagr_particle_set_t         &p_set,
                          cs_lnum_t                       p_id,
                          cs_lnum_t                       c_id,
                          cs_real_t                      *energy_barrier,
@@ -242,7 +244,7 @@ cs_lagr_clogging_barrier(const cs_lagr_particle_set_t   *p_set,
   /* Assuming monodispersed calculation */
 
   double p_diameter
-    = cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_DIAMETER);
+    = p_set.attr_real(p_id, CS_LAGR_DIAMETER);
   cs_real_t depositing_radius = p_diameter * 0.5;
 
   deposited_radius = depositing_radius;
@@ -370,5 +372,3 @@ cs_lagr_clogging_barrier(const cs_lagr_particle_set_t   *p_set,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

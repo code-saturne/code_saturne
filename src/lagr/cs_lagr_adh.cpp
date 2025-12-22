@@ -280,7 +280,7 @@ cs_lagr_adh(cs_lnum_t   p_id,
   /* 0.    initialization */
   /* ================================================================  */
 
-  cs_lagr_particle_set_t p_set = cs_lagr_get_particle_set_ref();
+  cs_lagr_particle_set_t &p_set = cs_lagr_get_particle_set_ref();
   cs_lagr_physico_chemical_t *lag_pc = cs_glob_lagr_physico_chemical;
 
   /*     step = step used to calculate the adhesion force following    */

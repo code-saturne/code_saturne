@@ -99,7 +99,7 @@ static const double _k_boltz = 1.38e-23;
  * TODO add additional info to events.
  *
  * \param[in]  events             pointer to events set
- * \param[in]  particles          pointer to particle set
+ * \param[in]  p_set              particle set
  * \param[in]  p_id               particle id
  * \param[in]  face_id            associated face id
  * \param[in]  particle_velocity  velocity after event
@@ -108,7 +108,7 @@ static const double _k_boltz = 1.38e-23;
 
 static void
 _add_resuspension_event(cs_lagr_event_set_t     *events,
-                        cs_lagr_particle_set_t  *particles,
+                        cs_lagr_particle_set_t   p_set,
                         cs_lnum_t                p_id,
                         cs_lnum_t                face_id,
                         const cs_real_t          particle_velocity[3])
@@ -122,7 +122,7 @@ _add_resuspension_event(cs_lagr_event_set_t     *events,
     event_id = 0;
   }
 
-  cs_lagr_event_init_from_particle(events, particles, event_id, p_id);
+  cs_lagr_event_init_from_particle(events, &p_set, event_id, p_id);
 
   cs_lagr_events_set_lnum(events,
                           event_id,
@@ -255,12 +255,11 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
                                       const cs_real_3_t               beta)
 {
   /* Particles management */
-  cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
+  cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
 
   /* use previous step for t_order == 1 or prediction step
    * and current one for correction step */
-  cs_lnum_t cell_id = cs_lagr_particles_get_lnum_n(p_set, p_id, 2-nor,
-                                                  CS_LAGR_CELL_ID);
+  cs_lnum_t cell_id = p_set.attr_n_lnum(p_id, 2-nor, CS_LAGR_CELL_ID);
 
 
   if (cell_id <0)
@@ -365,26 +364,19 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
   /* Get particle coordinates, velocity and velocity seen*/
 
   auto *old_part_vel      =
-    cs_lagr_particles_attr_n_get_ptr<cs_real_t>(p_set, p_id, 1,
-                                                CS_LAGR_VELOCITY);
+    p_set.attr_n_real_ptr(p_id, 1, CS_LAGR_VELOCITY);
   auto *old_part_vel_seen =
-    cs_lagr_particles_attr_n_get_ptr<cs_real_t>(p_set, p_id, 1,
-                                                CS_LAGR_VELOCITY_SEEN);
+    p_set.attr_n_real_ptr(p_id, 1, CS_LAGR_VELOCITY_SEEN);
   auto *old_part_coords   =
-    cs_lagr_particles_attr_n_get_ptr<cs_real_t>(p_set, p_id, 1,
-                                                CS_LAGR_COORDS);
+    p_set.attr_n_real_ptr(p_id, 1, CS_LAGR_COORDS);
   auto *part_vel          =
-    cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                              CS_LAGR_VELOCITY);
+    p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY);
   auto *part_vel_seen     =
-    cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                              CS_LAGR_VELOCITY_SEEN);
+    p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY_SEEN);
   auto *part_coords       =
-    cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                              CS_LAGR_COORDS);
+    p_set.attr_real_ptr(p_id, CS_LAGR_COORDS);
 
-  int imposed_motion = cs_lagr_particles_get_flag(p_set, p_id,
-                                                  CS_LAGR_PART_IMPOSED_MOTION);
+  int imposed_motion = p_set.flag(p_id, CS_LAGR_PART_IMPOSED_MOTION);
   if (imposed_motion) {
     cs_real_t disp[3] = {0., 0., 0.};
 
@@ -552,8 +544,7 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
       {
         // Use Euler angles for spheroids (Jeffery)
         const cs_real_t *euler =
-          cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                    CS_LAGR_EULER);
+          p_set.attr_real_ptr(p_id, CS_LAGR_EULER);
 
         trans_m[0][0] = 2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5);
         trans_m[0][1] = 2.*(euler[1]*euler[2]+euler[0]*euler[3]);
@@ -571,8 +562,7 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
       {
         // Use rotation matrix for stochastic model
           cs_real_t *orient_loc  =
-            cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                      CS_LAGR_ORIENTATION);
+            p_set.attr_real_ptr(p_id, CS_LAGR_ORIENTATION);
         cs_real_t singularity_axis[3] = {1.0, 0.0, 0.0};
         // Get vector for rotation
         cs_real_t n_rot[3];
@@ -637,12 +627,10 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
           || cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL) {
 
         cs_real_t *radii =
-          cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                    CS_LAGR_RADII);
+          p_set.attr_real_ptr(p_id, CS_LAGR_RADII);
 
       cs_real_t *s_p =
-        cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                  CS_LAGR_SHAPE_PARAM);
+        p_set.attr_real_ptr(p_id, CS_LAGR_SHAPE_PARAM);
 
       for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
         taup_r[phase_id][0] = 3.0 / 8.0 * taup[phase_id]
@@ -937,8 +925,7 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
             tempf += tkelvi;
         }
 
-      cs_real_t p_mass = cs_lagr_particles_get_real(p_set, p_id,
-                                                   CS_LAGR_MASS);
+      cs_real_t p_mass = p_set.attr_real(p_id, CS_LAGR_MASS);
 
       cs_real_t ddbr = sqrt(2.0 * _k_boltz * tempf / (p_mass * taup_r[0][id]));
 
@@ -965,14 +952,13 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
       if (tiu2 > 0.0) {
         tbriu      = sqrt(tiu2) * brgaus[id + 3];
         if (cs_glob_lagr_time_scheme->t_order == 2)
-          cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_BROWN_STATE_1,
-                                     sqrt(tiu2));
+          p_set.attr_real(p_id, CS_LAGR_BROWN_STATE_1) = sqrt(tiu2);
 
       }
       else {
         tbriu     = 0.0;
         if (cs_glob_lagr_time_scheme->t_order == 2)
-          cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_BROWN_STATE_1, 0.);
+          p_set.attr_real(p_id, CS_LAGR_BROWN_STATE_1) = 0.;
       }
     }
     else {
@@ -1053,8 +1039,7 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
   if (   cs_glob_time_step->nt_cur > cs_glob_lagr_stat_options->idstnt
       && cs_glob_lagr_model->cs_used == 0) {
     cs_real_t *vel_seen_vel_cov
-      = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-          CS_LAGR_VELOCITY_SEEN_VELOCITY_COV);
+      = p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY_SEEN_VELOCITY_COV);
     for (int phase_id = 0; phase_id < n_phases; phase_id++) {
       for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
@@ -1121,8 +1106,8 @@ cs_sde_vels_pos_2_nd_order_time_integ(cs_lnum_t                       p_id,
   cs_real_t  tbriu = 0.;
 
   /* Particles management */
-  cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
-  const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
+  cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
+  const cs_lagr_attribute_map_t  *p_am = p_set.p_am;
 
   cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
   cs_lagr_extra_module_t *extra = extra_i;
@@ -1141,8 +1126,7 @@ cs_sde_vels_pos_2_nd_order_time_integ(cs_lnum_t                       p_id,
 
   /* use previous step for t_order == 1 or prediction step
    * and current one for correction step */
-  cs_lnum_t cell_id = cs_lagr_particles_get_lnum_n(p_set, p_id, 2-nor,
-                                                   CS_LAGR_CELL_ID);
+  cs_lnum_t cell_id = p_set.attr_n_lnum(p_id, 2-nor, CS_LAGR_CELL_ID);
 
   for (cs_lnum_t id = 0; id < 3; id++) {
     auxl[id] = force_p[id];
@@ -1162,7 +1146,7 @@ cs_sde_vels_pos_2_nd_order_time_integ(cs_lnum_t                       p_id,
   if (nor == 1) {
 
     /* Save tau_p^n */
-    cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_TAUP_AUX, taup[0]);
+    p_set.attr_real(p_id, CS_LAGR_TAUP_AUX) = taup[0];
 
     /* Save coupling */
     if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
@@ -1170,23 +1154,19 @@ cs_sde_vels_pos_2_nd_order_time_integ(cs_lnum_t                       p_id,
       aux0     = -dt_part / taup[0];
       aux1     =  exp(aux0);
       *tsfext  =   taup[0]
-                   * cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_MASS)
+                   * p_set.attr_real(p_id, CS_LAGR_MASS)
                    * (-aux1 + (aux1 - 1.0) / aux0);
     }
 
     /* Load terms at t = t_n : */
     auto *old_part_vel      =
-      cs_lagr_particles_attr_n_get_ptr<cs_real_t>(p_set, p_id,
-                                                  1, CS_LAGR_VELOCITY);
+      p_set.attr_n_real_ptr(p_id, 1, CS_LAGR_VELOCITY);
     auto *old_part_vel_seen =
-      cs_lagr_particles_attr_n_get_ptr<cs_real_t>(p_set, p_id,
-                                                  1, CS_LAGR_VELOCITY_SEEN);
+      p_set.attr_n_real_ptr(p_id, 1, CS_LAGR_VELOCITY_SEEN);
     auto *pred_part_vel_seen =
-      cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                CS_LAGR_PRED_VELOCITY_SEEN);
+      p_set.attr_real_ptr(p_id, CS_LAGR_PRED_VELOCITY_SEEN);
     auto *pred_part_vel =
-      cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                CS_LAGR_PRED_VELOCITY);
+      p_set.attr_real_ptr(p_id, CS_LAGR_PRED_VELOCITY);
 
     for (cs_lnum_t id = 0; id < 3; id++) {
 
@@ -1233,26 +1213,20 @@ cs_sde_vels_pos_2_nd_order_time_integ(cs_lnum_t                       p_id,
 
     /* Compute Us */
     /* FIXME bugged? should not be CS_LAGR_REBOUND_ID != 0 */
-    if (   !cs_lagr_particles_get_flag(p_set, p_id, CS_LAGR_PART_IMPOSED_MOTION)
-        && cs_lagr_particles_get_lnum(p_set, p_id, CS_LAGR_REBOUND_ID) == 0) {
+    if (   !p_set.flag(p_id, CS_LAGR_PART_IMPOSED_MOTION)
+        && p_set.attr_lnum(p_id, CS_LAGR_REBOUND_ID) == 0) {
       cs_real_t *part_vel
-        = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                    CS_LAGR_VELOCITY);
+        = p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY);
       cs_real_t *part_vel_seen
-        = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                    CS_LAGR_VELOCITY_SEEN);
+        = p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY_SEEN);
       cs_real_t *old_part_vel
-        = cs_lagr_particles_attr_n_get_ptr<cs_real_t>(p_set, p_id,
-                                                      1, CS_LAGR_VELOCITY);
+        = p_set.attr_n_real_ptr(p_id, 1, CS_LAGR_VELOCITY);
       cs_real_t *old_part_vel_seen
-        = cs_lagr_particles_attr_n_get_ptr<cs_real_t>(p_set, p_id,
-                                                      1, CS_LAGR_VELOCITY_SEEN);
+        = p_set.attr_n_real_ptr(p_id, 1, CS_LAGR_VELOCITY_SEEN);
       cs_real_t *pred_part_vel_seen
-        = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                    CS_LAGR_PRED_VELOCITY_SEEN);
+        = p_set.attr_real_ptr(p_id, CS_LAGR_PRED_VELOCITY_SEEN);
       cs_real_t *pred_part_vel
-        = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                    CS_LAGR_PRED_VELOCITY);
+        = p_set.attr_real_ptr(p_id, CS_LAGR_PRED_VELOCITY);
 
       for (cs_lnum_t id = 0; id < 3; id++) {
 
@@ -1286,7 +1260,7 @@ cs_sde_vels_pos_2_nd_order_time_integ(cs_lnum_t                       p_id,
                     + (tlag[0][id] / dt_part) * aux4 * aux5)
           + auxl[id] * (1.0 - (aux2 - 1.0) / aux0);
 
-        tapn    = cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_TAUP_AUX);
+        tapn    = p_set.attr_real(p_id, CS_LAGR_TAUP_AUX);
 
         aux7    = exp(-dt_part / tapn);
         aux8    = 1.0 - aux3 * aux7;
@@ -1322,7 +1296,7 @@ cs_sde_vels_pos_2_nd_order_time_integ(cs_lnum_t                       p_id,
         /* Compute terms in Brownian movement */
         if (cs_glob_lagr_brownian->lamvbr == 1)
           tbriu = brgaus[id + 3]
-            * cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_BROWN_STATE_1);
+            * p_set.attr_real(p_id, CS_LAGR_BROWN_STATE_1);
         else
           tbriu = 0.0;
 
@@ -1381,8 +1355,8 @@ _lagesd(cs_real_t                       dt_part,
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
   /* Particles management */
-  cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
-  const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
+  cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
+  const cs_lagr_attribute_map_t  *p_am = p_set.p_am;
 
   cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
   cs_lagr_extra_module_t *extra = extra_i;
@@ -1415,23 +1389,15 @@ _lagesd(cs_real_t                       dt_part,
 
   const cs_real_t  *grav  = cs_glob_physical_constants->gravity;
 
-  /* particle data */
-  unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
-
-  cs_real_t p_mass = cs_lagr_particles_get_real(p_set, p_id,
-                                                CS_LAGR_MASS);
-  cs_real_t p_diam = cs_lagr_particles_get_real(p_set, p_id,
-                                                CS_LAGR_DIAMETER);
-  cs_real_t p_stat_w = cs_lagr_particles_get_real(p_set, p_id,
-                                                  CS_LAGR_STAT_WEIGHT);
+  cs_real_t p_mass = p_set.attr_real(p_id, CS_LAGR_MASS);
+  cs_real_t p_diam = p_set.attr_real(p_id, CS_LAGR_DIAMETER);
+  cs_real_t p_stat_w = p_set.attr_real(p_id, CS_LAGR_STAT_WEIGHT);
 
   /* use previous step for t_order == 1 or prediction step
    * and current one for correction step */
-  cs_lnum_t cell_id = cs_lagr_particles_get_lnum_n(p_set, p_id, 2-nor,
-                                                   CS_LAGR_CELL_ID);
+  cs_lnum_t cell_id = p_set.attr_n_lnum(p_id, 2-nor, CS_LAGR_CELL_ID);
 
-  cs_lnum_t face_id = cs_lagr_particles_get_lnum(p_set, p_id,
-                                                 CS_LAGR_NEIGHBOR_FACE_ID);
+  cs_lnum_t face_id = p_set.attr_lnum(p_id, CS_LAGR_NEIGHBOR_FACE_ID);
 
   assert(face_id > -1);
 
@@ -1454,8 +1420,7 @@ _lagesd(cs_real_t                       dt_part,
 
   cs_real_t visccf = extra->viscl->val[cell_id] / romf;
 
-  cs_real_t yplus = cs_lagr_particles_get_real(p_set, p_id,
-                                               CS_LAGR_YPLUS);
+  cs_real_t yplus = p_set.attr_real(p_id, CS_LAGR_YPLUS);
 
   /* Turbulent kinetic energy and dissipation w.r.t y+  */
   cs_real_t energi, dissip;
@@ -1493,8 +1458,7 @@ _lagesd(cs_real_t                       dt_part,
   /* 2.1 - particle velocity   */
 
   cs_real_t *old_part_vel =
-    cs_lagr_particles_attr_n_get_ptr<cs_real_t>(p_set, p_id, 1,
-                                                CS_LAGR_VELOCITY);
+    p_set.attr_n_real_ptr(p_id, 1, CS_LAGR_VELOCITY);
   cs_real_t vpart[3];
 
   cs_math_33_3_product(rot_m, old_part_vel, vpart);
@@ -1504,8 +1468,7 @@ _lagesd(cs_real_t                       dt_part,
   /* 2.2 - flow-seen velocity  */
 
   cs_real_t *old_part_vel_seen =
-    cs_lagr_particles_attr_n_get_ptr<cs_real_t>(p_set, p_id, 1,
-                                                CS_LAGR_VELOCITY_SEEN);
+    p_set.attr_n_real_ptr(p_id, 1, CS_LAGR_VELOCITY_SEEN);
   cs_real_t vvue[3];
 
   cs_math_33_3_product(rot_m, old_part_vel_seen, vvue);
@@ -1583,9 +1546,8 @@ _lagesd(cs_real_t                       dt_part,
                       + extra->cvar_rij->vals[_prev_id][6*cell_id + 2]);
   }
 
-  cs_lnum_t marko  = cs_lagr_particles_get_lnum(p_set, p_id,
-                                                CS_LAGR_MARKO_VALUE);
-  cs_real_t interf = cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_INTERF);
+  cs_lnum_t marko  = p_set.attr_lnum(p_id, CS_LAGR_MARKO_VALUE);
+  cs_real_t interf = p_set.attr_real(p_id, CS_LAGR_INTERF);
   cs_real_t depl[3];
 
   cs_lagr_deposition(dt_part,
@@ -1608,9 +1570,9 @@ _lagesd(cs_real_t                       dt_part,
                      piilp,
                      depint);
 
-  cs_lagr_particles_set_lnum(p_set, p_id, CS_LAGR_MARKO_VALUE, marko);
+  p_set.attr_lnum(p_id, CS_LAGR_MARKO_VALUE) = marko;
 
-  if (cs_lagr_particles_get_flag(p_set, p_id, CS_LAGR_PART_DEPOSITION_FLAGS)) {
+  if (p_set.flag(p_id, CS_LAGR_PART_DEPOSITION_FLAGS)) {
 
     depl[0]  = 0.0;
     vpart[0] = 0.0;
@@ -1764,15 +1726,14 @@ _lagesd(cs_real_t                       dt_part,
 
   if (cs_glob_lagr_model->resuspension == 1) {
 
-    cs_real_t p_height = cs_lagr_particles_get_real(p_set, p_id,
-                                                    CS_LAGR_HEIGHT);
+    cs_real_t p_height = p_set.attr_real(p_id, CS_LAGR_HEIGHT);
 
     cs_lnum_t iresusp = 0;
 
-    if (cs_lagr_particles_get_flag(p_set, p_id, CS_LAGR_PART_DEPOSITION_FLAGS)) {
+    if (p_set.flag(p_id, CS_LAGR_PART_DEPOSITION_FLAGS)) {
 
       cs_lnum_t n_f_id
-        = cs_lagr_particles_get_lnum(p_set, p_id, CS_LAGR_NEIGHBOR_FACE_ID);
+        = p_set.attr_lnum(p_id, CS_LAGR_NEIGHBOR_FACE_ID);
 
       cs_lnum_t nfabor = cs_glob_mesh->n_b_faces;
 
@@ -1842,32 +1803,30 @@ _lagesd(cs_real_t                       dt_part,
 
         /* Case with consolidation */
         if (    cs_glob_lagr_consolidation_model->iconsol > 0
-             &&   cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_CONSOL_HEIGHT)
+             &&   p_set.attr_real(p_id, CS_LAGR_CONSOL_HEIGHT)
                 > 0.01 * diam_mean) {
 
-          cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_ADHESION_FORCE,
-                                     cs_glob_lagr_consolidation_model->force_consol);
-          cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_ADHESION_TORQUE,
-                                     cs_glob_lagr_consolidation_model->force_consol
-                                     * p_diam * 0.5);
+          p_set.attr_real(p_id, CS_LAGR_ADHESION_FORCE)
+            = cs_glob_lagr_consolidation_model->force_consol;
+          p_set.attr_real(p_id, CS_LAGR_ADHESION_TORQUE)
+            = cs_glob_lagr_consolidation_model->force_consol * p_diam * 0.5;
 
         }
 
         cs_real_t adhes_force =
-          cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_ADHESION_FORCE);
+          p_set.attr_real(p_id, CS_LAGR_ADHESION_FORCE);
 
         /* Is there direct wall-normal lift-off of the particle ? */
         if (   (adhes_force + grav_force[0] + lift_force[0] + drag_force[0]) < 0
             && iresusp == 0 ) {
 
           /* Update of the number and weight of resuspended particles     */
-          p_set->n_part_resusp += 1;
-          p_set->weight_resusp += p_stat_w;
+          p_set.n_part_resusp += 1;
+          p_set.weight_resusp += p_stat_w;
 
           if (events != nullptr) {
             const cs_real_t *part_vel
-              = cs_lagr_particles_attr_get_const_ptr<cs_real_t>(p_set, p_id,
-                                                                CS_LAGR_VELOCITY);
+              = p_set.attr_real_const_ptr(p_id, CS_LAGR_VELOCITY);
             _add_resuspension_event(events,
                                     p_set,
                                     p_id,
@@ -1877,7 +1836,7 @@ _lagesd(cs_real_t                       dt_part,
 
           /* Update of surface covered and deposit height
            * (for non-rolling particles) */
-          if (cs_lagr_particles_get_flag(p_set, p_id, CS_LAGR_PART_DEPOSITED)) {
+          if (p_set.flag(p_id, CS_LAGR_PART_DEPOSITED)) {
 
             bound_stat[n_f_id + nfabor * bi->iscovc]
               -=   cs_math_pi * cs_math_pow2(p_diam) * p_stat_w
@@ -1900,34 +1859,31 @@ _lagesd(cs_real_t                       dt_part,
           vpart[0] = cs::min(-1.0 / p_mass * dt_part
                              * cs::abs(drag_force[0] - adhes_force),
                              0.001);
-          if (cs_lagr_particles_get_flag(p_set, p_id, CS_LAGR_PART_DEPOSITED)) {
+          if (p_set.flag(p_id, CS_LAGR_PART_DEPOSITED)) {
             vpart[1] = 0.0;
             vpart[2] = 0.0;
           }
 
-          cs_lagr_particles_unset_flag(p_set, p_id, CS_LAGR_PART_DEPOSITION_FLAGS);
-          cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_ADHESION_FORCE, 0.0);
-          cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_ADHESION_TORQUE, 0.0);
+          p_set.unset_flag(p_id, CS_LAGR_PART_DEPOSITION_FLAGS);
+          p_set.attr_real(p_id, CS_LAGR_ADHESION_FORCE) = 0.0;
+          p_set.attr_real(p_id, CS_LAGR_ADHESION_TORQUE) = 0.0;
 
           if (cs_glob_lagr_model->clogging == 1) {
             if (cs::abs(p_height-p_diam)/p_diam > 1.0e-6) {
               cs_real_t d_resusp = pow(0.75 * cs_math_pow2(p_diam) * p_height, 1.0/3.0);
-              cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_DIAMETER, d_resusp);
-              cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_HEIGHT, d_resusp);
+              p_set.attr_real(p_id, CS_LAGR_DIAMETER) = d_resusp;
+              p_set.attr_real(p_id, CS_LAGR_HEIGHT) = d_resusp;
             }
           }
 
-          if (p_set->p_am->count[0][CS_LAGR_N_LARGE_ASPERITIES] > 0)
-            cs_lagr_particles_set_lnum(p_set, p_id,
-                                       CS_LAGR_N_LARGE_ASPERITIES, 0);
+          if (p_set.p_am->count[0][CS_LAGR_N_LARGE_ASPERITIES] > 0)
+            p_set.attr_lnum(p_id, CS_LAGR_N_LARGE_ASPERITIES) = 0;
 
-          if (p_set->p_am->count[0][CS_LAGR_N_SMALL_ASPERITIES] > 0)
-            cs_lagr_particles_set_lnum(p_set, p_id,
-                                       CS_LAGR_N_SMALL_ASPERITIES, 0);
+          if (p_set.p_am->count[0][CS_LAGR_N_SMALL_ASPERITIES] > 0)
+            p_set.attr_lnum(p_id, CS_LAGR_N_SMALL_ASPERITIES) = 0;
 
-          if (p_set->p_am->count[0][CS_LAGR_DISPLACEMENT_NORM] > 0)
-            cs_lagr_particles_set_real(p_set, p_id,
-                                       CS_LAGR_DISPLACEMENT_NORM, 0.0);
+          if (p_set.p_am->count[0][CS_LAGR_DISPLACEMENT_NORM] > 0)
+            p_set.attr_real(p_id, CS_LAGR_DISPLACEMENT_NORM) = 0.0;
 
           iresusp = 1;
         }
@@ -1939,8 +1895,7 @@ _lagesd(cs_real_t                       dt_part,
 
           for (cs_lnum_t id = 1; id < 3; id++) {
 
-            adhes_torque[id]  = - cs_lagr_particles_get_real(p_set, p_id,
-                                                             CS_LAGR_ADHESION_TORQUE)
+            adhes_torque[id]  = - p_set.attr_real(p_id, CS_LAGR_ADHESION_TORQUE)
               * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]));
           }
 
@@ -1972,7 +1927,7 @@ _lagesd(cs_real_t                       dt_part,
             /* If the particle stars rolling:
              * update of the surface covered and deposit height */
 
-            if (cs_lagr_particles_get_flag(p_set, p_id, CS_LAGR_PART_DEPOSITED)) {
+            if (p_set.flag(p_id, CS_LAGR_PART_DEPOSITED)) {
 
               bound_stat[n_f_id + nfabor * bi->iscovc]
                 -=   cs_math_pi * cs_math_pow2(p_diam) * p_stat_w
@@ -1992,8 +1947,8 @@ _lagesd(cs_real_t                       dt_part,
 
             }
 
-            cs_lagr_particles_unset_flag(p_set, p_id, CS_LAGR_PART_DEPOSITION_FLAGS);
-            cs_lagr_particles_set_flag(p_set, p_id, CS_LAGR_PART_ROLLING);
+            p_set.unset_flag(p_id, CS_LAGR_PART_DEPOSITION_FLAGS);
+            p_set.set_flag(p_id, CS_LAGR_PART_ROLLING);
 
             vpart[0] = 0.0;
 
@@ -2022,7 +1977,7 @@ _lagesd(cs_real_t                       dt_part,
 
             /* Simplified treatment:
              * no update of iscovc, ihdepm for particles that stop */
-            if (cs_lagr_particles_get_flag(p_set, p_id, CS_LAGR_PART_ROLLING))
+            if (p_set.flag(p_id, CS_LAGR_PART_ROLLING))
               iresusp = 1;
 
             for (cs_lnum_t id = 1; id < 3; id++) {
@@ -2050,7 +2005,7 @@ _lagesd(cs_real_t                       dt_part,
          * Principle: drag>0 for protruding clusters, 0 otherwise */
 
         if (   p_height > mean_depo_height
-            && cs_lagr_particles_get_flag(p_set, p_id, CS_LAGR_PART_DEPOSITED)) {
+            && p_set.flag(p_id, CS_LAGR_PART_DEPOSITED)) {
 
           /* Calculation of drag force and torque*/
           drag_force[0] =   3.0 * cs_math_pi * (p_height - mean_depo_height)
@@ -2103,8 +2058,7 @@ _lagesd(cs_real_t                       dt_part,
 
         }
         else if (   p_height <= mean_depo_height
-                 && cs_lagr_particles_get_flag(p_set, p_id,
-                                               CS_LAGR_PART_DEPOSITED)) {
+                 && p_set.flag(p_id, CS_LAGR_PART_DEPOSITED)) {
 
           /* Calculation of drag force and torque*/
           for (cs_lnum_t id = 0; id < 3; id++) {
@@ -2144,7 +2098,7 @@ _lagesd(cs_real_t                       dt_part,
           }
 
         }
-        else if (cs_lagr_particles_get_flag(p_set, p_id, CS_LAGR_PART_ROLLING)) {
+        else if (p_set.flag(p_id, CS_LAGR_PART_ROLLING)) {
 
           /* Calculation of drag force and torque*/
           drag_force[0] =  3.0 * cs_math_pi * p_diam
@@ -2206,11 +2160,10 @@ _lagesd(cs_real_t                       dt_part,
 
         /* Case with consolidation */
         if (   cs_glob_lagr_consolidation_model->iconsol > 0
-            && cs_lagr_particles_get_flag(p_set, p_id,
-                                          CS_LAGR_PART_DEPOSITED)) {
+            && p_set.flag(p_id, CS_LAGR_PART_DEPOSITED)) {
 
           const cs_real_t consol_height
-            = cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_CONSOL_HEIGHT);
+            = p_set.attr_real(p_id, CS_LAGR_CONSOL_HEIGHT);
 
           if (consol_height > 0.01 * diam_mean) {
             adhes_force = cs_glob_lagr_consolidation_model->force_consol +
@@ -2221,13 +2174,10 @@ _lagesd(cs_real_t                       dt_part,
           else {
             adhes_force *= ncont_pp;
           }
-          cs_lagr_particles_set_lnum(p_set, p_id, CS_LAGR_N_SMALL_ASPERITIES,
-                                     ncont_pp);
-          cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_ADHESION_FORCE,
-                                     adhes_force);
+          p_set.attr_lnum(p_id, CS_LAGR_N_SMALL_ASPERITIES) = ncont_pp;
+          p_set.attr_real(p_id, CS_LAGR_ADHESION_FORCE) = adhes_force;
           cs_real_t adhes_tor = adhes_force * p_diam * 0.5;
-          cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_ADHESION_TORQUE,
-                                     adhes_tor);
+          p_set.attr_real(p_id, CS_LAGR_ADHESION_TORQUE) = adhes_tor;
         }
         else {
           /* Case without consolidation */
@@ -2249,23 +2199,20 @@ _lagesd(cs_real_t                       dt_part,
 
           }
           ncont = cs::max(1, ncont);
-          cs_lagr_particles_set_lnum(p_set, p_id, CS_LAGR_N_SMALL_ASPERITIES,
-                                    ncont);
+          p_set.attr_lnum(p_id, CS_LAGR_N_SMALL_ASPERITIES) = ncont;
 
           adhes_energ *= ncont;
           adhes_force *= ncont;
-          cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_ADHESION_FORCE,
-                                    adhes_force);
+          p_set.attr_real(p_id, CS_LAGR_ADHESION_FORCE) = adhes_force;
 
           cs_real_t adhes_tor = adhes_force * p_diam * 0.5;
-          cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_ADHESION_TORQUE,
-                                    adhes_tor);
+          p_set.attr_real(p_id, CS_LAGR_ADHESION_TORQUE) = adhes_tor;
 
         }
 
         for (cs_lnum_t id = 1; id < 3; id++) {
           adhes_torque[id] =
-            - cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_ADHESION_TORQUE)
+            - p_set.attr_real(p_id, CS_LAGR_ADHESION_TORQUE)
             * vvue[id] / sqrt(cs_math_pow2(vvue[1]) + cs_math_pow2(vvue[2]) );
         }
 
@@ -2275,13 +2222,12 @@ _lagesd(cs_real_t                       dt_part,
              && iresusp == 0 ) {
 
           /* Update of the number and weight of resuspended particles     */
-          p_set->n_part_resusp += 1;
-          p_set->weight_resusp += p_stat_w;
+          p_set.n_part_resusp += 1;
+          p_set.weight_resusp += p_stat_w;
 
           if (events != nullptr) {
             const cs_real_t *part_vel
-              = cs_lagr_particles_attr_get_const_ptr<cs_real_t>(p_set, p_id,
-                                                                CS_LAGR_VELOCITY);
+              = p_set.attr_real_const_ptr(p_id, CS_LAGR_VELOCITY);
             _add_resuspension_event(events,
                                     p_set,
                                     p_id,
@@ -2291,7 +2237,7 @@ _lagesd(cs_real_t                       dt_part,
 
           /* Update of surface covered and deposit height
            * (for non-rolling particles) */
-          if (cs_lagr_particles_get_flag(p_set, p_id, CS_LAGR_PART_DEPOSITED)) {
+          if (p_set.flag(p_id, CS_LAGR_PART_DEPOSITED)) {
 
             bound_stat[n_f_id + nfabor * bi->iscovc] -=
               cs_math_pi * cs_math_pow2(p_diam) * p_stat_w
@@ -2315,32 +2261,29 @@ _lagesd(cs_real_t                       dt_part,
                             * cs::abs(-lift_force[0] - drag_force[0]
                                       - adhes_force -grav_force[0] ),
                             0.001);
-          if (cs_lagr_particles_get_flag(p_set, p_id, CS_LAGR_PART_DEPOSITED)) {
+          if (p_set.flag(p_id, CS_LAGR_PART_DEPOSITED)) {
             vpart[1] = 0.0;
             vpart[2] = 0.0;
           }
 
-          cs_lagr_particles_unset_flag(p_set, p_id, CS_LAGR_PART_DEPOSITION_FLAGS);
-          cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_ADHESION_FORCE, 0.0);
-          cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_ADHESION_TORQUE, 0.0);
+          p_set.unset_flag(p_id, CS_LAGR_PART_DEPOSITION_FLAGS);
+          p_set.attr_real(p_id, CS_LAGR_ADHESION_FORCE) = 0.0;
+          p_set.attr_real(p_id, CS_LAGR_ADHESION_TORQUE) = 0.0;
 
           if (cs::abs(p_height-p_diam)/p_diam > 1.0e-6) {
             cs_real_t d_resusp = pow(0.75 * cs_math_pow2(p_diam) * p_height, 1.0/3.0);
-            cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_DIAMETER, d_resusp);
-            cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_HEIGHT, d_resusp);
+            p_set.attr_real(p_id, CS_LAGR_DIAMETER) = d_resusp;
+            p_set.attr_real(p_id, CS_LAGR_HEIGHT) = d_resusp;
           }
 
-          if (p_set->p_am->count[0][CS_LAGR_N_LARGE_ASPERITIES] > 0)
-            cs_lagr_particles_set_lnum(p_set, p_id,
-                                       CS_LAGR_N_LARGE_ASPERITIES, 0);
+          if (p_set.p_am->count[0][CS_LAGR_N_LARGE_ASPERITIES] > 0)
+            p_set.attr_lnum(p_id, CS_LAGR_N_LARGE_ASPERITIES) = 0;
 
-          if (p_set->p_am->count[0][CS_LAGR_N_SMALL_ASPERITIES] > 0)
-            cs_lagr_particles_set_lnum(p_set, p_id,
-                                       CS_LAGR_N_SMALL_ASPERITIES, 0);
+          if (p_set.p_am->count[0][CS_LAGR_N_SMALL_ASPERITIES] > 0)
+            p_set.attr_lnum(p_id, CS_LAGR_N_SMALL_ASPERITIES) = 0;
 
-          if (p_set->p_am->count[0][CS_LAGR_DISPLACEMENT_NORM] > 0)
-            cs_lagr_particles_set_real(p_set, p_id,
-                                       CS_LAGR_DISPLACEMENT_NORM, 0.0);
+          if (p_set.p_am->count[0][CS_LAGR_DISPLACEMENT_NORM] > 0)
+            p_set.attr_real(p_id, CS_LAGR_DISPLACEMENT_NORM) = 0.0;
 
           iresusp = 1;
         }
@@ -2362,7 +2305,7 @@ _lagesd(cs_real_t                       dt_part,
            *  a) Already rolling clusters
            *  b) Deposited clusters being broken */
 
-          if (cs_lagr_particles_get_flag(p_set, p_id, CS_LAGR_PART_ROLLING)) {
+          if (p_set.flag(p_id, CS_LAGR_PART_ROLLING)) {
 
             cs_real_t iner_tor = (7.0 / 5.0) * p_mass
                                * cs_math_pow2((p_diam * 0.5));
@@ -2429,8 +2372,7 @@ _lagesd(cs_real_t                       dt_part,
 
           }
 
-          else if (   cs_lagr_particles_get_flag(p_set, p_id,
-                                                 CS_LAGR_PART_DEPOSITED)
+          else if (   p_set.flag(p_id, CS_LAGR_PART_DEPOSITED)
                    && iresusp == 0 ) {
             /* Cluster being broken:
              * we first check if there is resuspension */
@@ -2446,7 +2388,7 @@ _lagesd(cs_real_t                       dt_part,
               cs_real_t height_reent;
               cs_real_t random;
               /* Sample of a possible break line */
-              if (  cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_CONSOL_HEIGHT)
+              if (  p_set.attr_real(p_id, CS_LAGR_CONSOL_HEIGHT)
                   < diam_mean) {
                 cs_random_uniform(1, &random);
                 clust_consol_height = 0.0;
@@ -2462,7 +2404,7 @@ _lagesd(cs_real_t                       dt_part,
                   clust_consol_height = 0.; // Very high hydrodynamic forces
                 else
                   clust_consol_height =
-                    cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_CONSOL_HEIGHT)
+                    p_set.attr_real(p_id, CS_LAGR_CONSOL_HEIGHT)
                     * (1 + cs_glob_lagr_consolidation_model->slope_consol
                        * 0.5 * log((1.0+param)/(1.0-param) ) );
               }
@@ -2474,7 +2416,7 @@ _lagesd(cs_real_t                       dt_part,
               /* Treatment of the new rolling particle */
               cs_lnum_t itreated = 0;
               cs_lnum_t nb_part_reent = height_reent / p_height *
-              cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_CLUSTER_NB_PART);
+              p_set.attr_real(p_id, CS_LAGR_CLUSTER_NB_PART);
 
               if (nb_part_reent < 1.0 && itreated == 0) {
                 /* No resuspension (cluster too small)*/
@@ -2485,11 +2427,11 @@ _lagesd(cs_real_t                       dt_part,
                   depl[id]  = 0.0;
                 }
               }
-              else if ((cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_CLUSTER_NB_PART)
+              else if ((p_set.attr_real(p_id, CS_LAGR_CLUSTER_NB_PART)
                          -nb_part_reent) < 1.0 && itreated == 0) {
                 /* The whole cluster starts rolling*/
-                cs_lagr_particles_unset_flag(p_set, p_id, CS_LAGR_PART_DEPOSITION_FLAGS);
-                cs_lagr_particles_set_flag(p_set, p_id, CS_LAGR_PART_ROLLING);
+                p_set.unset_flag(p_id, CS_LAGR_PART_DEPOSITION_FLAGS);
+                p_set.set_flag(p_id, CS_LAGR_PART_ROLLING);
 
                 /* Update of surface covered and deposit height */
                 bound_stat[n_f_id + nfabor * bi->iscovc] -=
@@ -2509,8 +2451,8 @@ _lagesd(cs_real_t                       dt_part,
 
                 itreated = 1;
                 cs_real_t d_resusp = pow(0.75 * cs_math_pow2(p_diam) * p_height, 1.0/3.0);
-                cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_DIAMETER, d_resusp);
-                cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_HEIGHT, d_resusp);
+                p_set.attr_real(p_id, CS_LAGR_DIAMETER) = d_resusp;
+                p_set.attr_real(p_id, CS_LAGR_HEIGHT) = d_resusp;
 
                 /* Treatment of cluster motion */
                 cs_real_t iner_tor = (7.0 / 5.0) * p_mass * cs_math_pow2((p_diam * 0.5));
@@ -2544,26 +2486,25 @@ _lagesd(cs_real_t                       dt_part,
               else if (itreated == 0) {
                 /* Duplication of the particle */
                 *n_new_particles = *n_new_particles + 1;
-                cs_lnum_t new_p_id = p_set->n_particles + *n_new_particles;
-                cs_lagr_particle_set_resize(p_set->n_particles + *n_new_particles);
-                cs_lagr_part_copy(p_set->n_particles + *n_new_particles, p_id);
+                cs_lnum_t new_p_id = p_set.n_particles + *n_new_particles;
+                p_set.resize(p_set.n_particles + *n_new_particles);
+                cs_lagr_part_copy(p_set.n_particles + *n_new_particles, p_id);
 
                 /* We split both particles:
                 * Part p_id stays while the new one starts rolling */
                 cs_real_t nb_resusp =  height_reent / p_height
-                  * cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_CLUSTER_NB_PART);
-                cs_lagr_particles_set_real(p_set, new_p_id, CS_LAGR_CLUSTER_NB_PART,
-                                           nb_resusp);
-                cs_real_t m_resusp = cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_MASS)
-                  * cs_lagr_particles_get_real(p_set, new_p_id, CS_LAGR_CLUSTER_NB_PART)
-                  / cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_CLUSTER_NB_PART);
-                cs_lagr_particles_set_real(p_set, new_p_id, CS_LAGR_MASS, m_resusp);
+                  * p_set.attr_real(p_id, CS_LAGR_CLUSTER_NB_PART);
+                p_set.attr_real(new_p_id, CS_LAGR_CLUSTER_NB_PART) = nb_resusp;
+                cs_real_t m_resusp = p_set.attr_real(p_id, CS_LAGR_MASS)
+                  * p_set.attr_real(new_p_id, CS_LAGR_CLUSTER_NB_PART)
+                  / p_set.attr_real(p_id, CS_LAGR_CLUSTER_NB_PART);
+                p_set.attr_real(new_p_id, CS_LAGR_MASS) = m_resusp;
                 cs_real_t d_resusp = pow(0.75 * cs_math_pow2(p_diam) * p_height, 1.0/3.0);
-                cs_lagr_particles_set_real(p_set, new_p_id, CS_LAGR_DIAMETER, d_resusp);
-                cs_lagr_particles_set_real(p_set, new_p_id, CS_LAGR_HEIGHT, d_resusp);
+                p_set.attr_real(new_p_id, CS_LAGR_DIAMETER) = d_resusp;
+                p_set.attr_real(new_p_id, CS_LAGR_HEIGHT) = d_resusp;
 
-                cs_lagr_particles_unset_flag(p_set, p_id, CS_LAGR_PART_DEPOSITION_FLAGS);
-                cs_lagr_particles_set_flag(p_set, p_id, CS_LAGR_PART_DEPOSITED);
+                p_set.unset_flag(p_id, CS_LAGR_PART_DEPOSITION_FLAGS);
+                p_set.set_flag(p_id, CS_LAGR_PART_DEPOSITED);
                 vpart[0] = 0.0;
                 for (cs_lnum_t id = 1; id < 3; id++) {
                   vpart[id] = 0.0;
@@ -2571,9 +2512,8 @@ _lagesd(cs_real_t                       dt_part,
                 }
 
                 /* Update of deposit height */
-                cs_real_t d_stay = cs_lagr_particles_get_real(p_set, p_id,
-                                                              CS_LAGR_HEIGHT);
-                cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_HEIGHT, d_stay);
+                cs_real_t d_stay = p_set.attr_real(p_id, CS_LAGR_HEIGHT);
+                p_set.attr_real(p_id, CS_LAGR_HEIGHT) = d_stay;
 
                 bound_stat[n_f_id + nfabor * bi->ihdepm]
                   -= cs_math_pi * height_reent * cs_math_pow2(p_diam) * p_stat_w
@@ -2584,32 +2524,24 @@ _lagesd(cs_real_t                       dt_part,
                     * 0.25 / mq->b_face_surf[n_f_id]);
 
                 cs_real_t nb_stay
-                  =   cs_lagr_particles_get_real(p_set, p_id,
-                                                 CS_LAGR_CLUSTER_NB_PART)
-                    - cs_lagr_particles_get_real(p_set, new_p_id,
-                                                 CS_LAGR_CLUSTER_NB_PART);
-                cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_CLUSTER_NB_PART, nb_stay);
+                  =   p_set.attr_real(p_id, CS_LAGR_CLUSTER_NB_PART)
+                    - p_set.attr_real(new_p_id, CS_LAGR_CLUSTER_NB_PART);
+                p_set.attr_real(p_id, CS_LAGR_CLUSTER_NB_PART) = nb_stay;
 
                 cs_real_t mp_stay
-                  = p_mass - cs_lagr_particles_get_real(p_set, new_p_id,
-                                                        CS_LAGR_MASS);
-                cs_lagr_particles_set_real(p_set, p_id, CS_LAGR_MASS, mp_stay);
+                  = p_mass - p_set.attr_real(new_p_id, CS_LAGR_MASS);
+                p_set.attr_real(p_id, CS_LAGR_MASS) = mp_stay;
 
                 /* The new particle starts rolling */
-                cs_lagr_particles_unset_flag(p_set, p_id,
-                                             CS_LAGR_PART_DEPOSITION_FLAGS);
-                cs_lagr_particles_set_flag(p_set, p_id,
-                                           CS_LAGR_PART_ROLLING);
-                cs_lagr_particles_set_real(p_set,new_p_id,
-                                           CS_LAGR_ADHESION_FORCE, adhes_force);
-                cs_lagr_particles_set_lnum(p_set, p_id,
-                                           CS_LAGR_N_SMALL_ASPERITIES,
-                                           cs::max(1,ncont_pp));
-                cs_lagr_particles_set_real(p_set, new_p_id,
-                                           CS_LAGR_ADHESION_TORQUE,
-                                           adhes_force * d_resusp * 0.5);
-                cs_lagr_particles_set_real(p_set, new_p_id, CS_LAGR_DEPO_TIME, 0.0);
-                cs_lagr_particles_set_real(p_set, new_p_id, CS_LAGR_CONSOL_HEIGHT, 0.0);
+                p_set.unset_flag(p_id, CS_LAGR_PART_DEPOSITION_FLAGS);
+                p_set.set_flag(p_id, CS_LAGR_PART_ROLLING);
+                p_set.attr_real(new_p_id, CS_LAGR_ADHESION_FORCE) = adhes_force;
+                p_set.attr_lnum(p_id, CS_LAGR_N_SMALL_ASPERITIES)
+                  = cs::max(1,ncont_pp);
+                p_set.attr_real(new_p_id, CS_LAGR_ADHESION_TORQUE)
+                  = adhes_force * d_resusp * 0.5;
+                p_set.attr_real(new_p_id, CS_LAGR_DEPO_TIME) = 0.0;
+                p_set.attr_real(new_p_id, CS_LAGR_CONSOL_HEIGHT) = 0.0;
 
                 itreated = 1;
               }
@@ -2637,8 +2569,7 @@ _lagesd(cs_real_t                       dt_part,
   /* if ireent.eq.0 --> Motionless deposited particle */
   else {
 
-    if (cs_lagr_particles_get_flag(p_set, p_id,
-                                   CS_LAGR_PART_DEPOSITION_FLAGS)) {
+    if (p_set.flag(p_id, CS_LAGR_PART_DEPOSITION_FLAGS)) {
       for (cs_lnum_t id = 1; id < 3; id++) {
         vpart[id] = 0.0;
         vvue[id]  = 0.0;
@@ -2663,16 +2594,14 @@ _lagesd(cs_real_t                       dt_part,
   /* 3.2 - Particle velocity   */
 
   cs_real_t *part_vel =
-    cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                              CS_LAGR_VELOCITY);
+    p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY);
 
   cs_math_33t_3_product(rot_m, vpart, part_vel);
 
   /* 3.3 - flow-seen velocity  */
 
   cs_real_t *part_vel_seen =
-    cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                              CS_LAGR_VELOCITY_SEEN);
+    p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY_SEEN);
 
   cs_math_33t_3_product(rot_m, vvue, part_vel_seen);
 
@@ -2680,8 +2609,7 @@ _lagesd(cs_real_t                       dt_part,
    * ======================================== */
 
   cs_real_t *part_coords =
-    cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                              CS_LAGR_COORDS);
+    p_set.attr_real_ptr(p_id, CS_LAGR_COORDS);
   for (cs_lnum_t id = 0; id < 3; id++)
     part_coords[id] += depg[id];
 }
@@ -2728,8 +2656,8 @@ cs_sde_vels_pos_time_integ_depot(cs_lnum_t                       p_id,
                                  cs_lnum_t                      *n_new_particles)
 {
   /* Particles management */
-  cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
-  const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
+  cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
+  const cs_lagr_attribute_map_t  *p_am = p_set.p_am;
 
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
 
@@ -2769,36 +2697,28 @@ cs_sde_vels_pos_time_integ_depot(cs_lnum_t                       p_id,
    * Note: new particles will be integrated at the next time step, otherwise
    * positions might be overwritten */
 
-  unsigned char *particle = p_set->p_buffer + p_am->extents * p_id;
+  unsigned char *particle = p_set.p_buffer + p_am->extents * p_id;
 
-  int imposed_motion = cs_lagr_particles_get_flag(p_set, p_id,
-                                                  CS_LAGR_PART_IMPOSED_MOTION);
+  int imposed_motion = p_set.flag(p_id, CS_LAGR_PART_IMPOSED_MOTION);
 
   if (! imposed_motion) {
 
     /* use previous step for t_order == 1 or prediction step
      * and current one for correction step */
-    cs_lnum_t cell_id = cs_lagr_particles_get_lnum_n(p_set, p_id, 2-nor,
-                                                     CS_LAGR_CELL_ID);
+    cs_lnum_t cell_id = p_set.attr_n_lnum(p_id, 2-nor, CS_LAGR_CELL_ID);
 
     cs_real_t *old_part_vel      =
-      cs_lagr_particles_attr_n_get_ptr<cs_real_t>(p_set, p_id, 1,
-                                                  CS_LAGR_VELOCITY);
+      p_set.attr_n_real_ptr(p_id, 1, CS_LAGR_VELOCITY);
     cs_real_t *old_part_vel_seen =
-      cs_lagr_particles_attr_n_get_ptr<cs_real_t>(p_set, p_id, 1,
-                                                  CS_LAGR_VELOCITY_SEEN);
+      p_set.attr_n_real_ptr(p_id, 1, CS_LAGR_VELOCITY_SEEN);
     cs_real_t *part_vel          =
-      cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                CS_LAGR_VELOCITY);
+      p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY);
     cs_real_t *part_vel_seen     =
-      cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                CS_LAGR_VELOCITY_SEEN);
+      p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY_SEEN);
     cs_real_t *part_coords       =
-      cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                CS_LAGR_COORDS);
+      p_set.attr_real_ptr(p_id, CS_LAGR_COORDS);
     cs_real_t *old_part_coords   =
-      cs_lagr_particles_attr_n_get_ptr<cs_real_t>(p_set, p_id, 1,
-                                                  CS_LAGR_COORDS);
+      p_set.attr_n_real_ptr(p_id, 1, CS_LAGR_COORDS);
 
     /* Fluid temperature computation depending on the type of flow  */
     cs_real_t tempf;
@@ -2820,21 +2740,15 @@ cs_sde_vels_pos_time_integ_depot(cs_lnum_t                       p_id,
        the standard model is applied
        ============================================== */
 
-    cs_lnum_t face_id = cs_lagr_particles_get_lnum(p_set, p_id,
-                                                   CS_LAGR_NEIGHBOR_FACE_ID);
-    cs_real_t yplus = cs_lagr_particles_get_real(p_set, p_id,
-                                                 CS_LAGR_YPLUS);
+    cs_lnum_t face_id = p_set.attr_lnum(p_id, CS_LAGR_NEIGHBOR_FACE_ID);
+    cs_real_t yplus = p_set.attr_real(p_id, CS_LAGR_YPLUS);
 
     int deposition_flags
-      = cs_lagr_particles_get_flag(p_set, p_id,
-                                   CS_LAGR_PART_DEPOSITION_FLAGS);
+      = p_set.flag(p_id, CS_LAGR_PART_DEPOSITION_FLAGS);
 
     if (face_id < 0 || (yplus > depint && deposition_flags == 0)) {
 
-      cs_lagr_particles_set_lnum(p_set,
-                                 p_id,
-                                 CS_LAGR_MARKO_VALUE,
-                                 CS_LAGR_COHERENCE_STRUCT_BULK);
+      p_set.attr_lnum(p_id, CS_LAGR_MARKO_VALUE) = CS_LAGR_COHERENCE_STRUCT_BULK;
 
       for (cs_lnum_t id = 0; id < 3; id++) {
 
@@ -2968,13 +2882,9 @@ cs_sde_vels_pos_time_integ_depot(cs_lnum_t                       p_id,
 
     else if (! (deposition_flags & CS_LAGR_PART_TO_DELETE)) {
 
-      cs_lnum_t *marko_value
-        = (cs_lnum_t *)cs_lagr_particles_attr(p_set,
-                                              p_id,
-                                              CS_LAGR_MARKO_VALUE);
+      cs_lnum_t *marko_value = p_set.attr_lnum_ptr(p_id, CS_LAGR_MARKO_VALUE);
 
-      if (yplus< cs_lagr_particles_get_real(p_set, p_id,
-                                            CS_LAGR_INTERF)) {
+      if (yplus< p_set.attr_real(p_id, CS_LAGR_INTERF)) {
 
         if (*marko_value < 0)
           *marko_value = CS_LAGR_COHERENCE_STRUCT_DEGEN_INNER_ZONE_DIFF;
@@ -3014,22 +2924,18 @@ cs_sde_vels_pos_time_integ_depot(cs_lnum_t                       p_id,
 
   else if (imposed_motion) {
 
-      cs_real_t disp[3] = {0., 0., 0.};
+    cs_real_t disp[3] = {0., 0., 0.};
 
-      cs_real_t *old_part_coords =
-        cs_lagr_particles_attr_n_get_ptr<cs_real_t>(p_set, p_id, 1,
-                                                    CS_LAGR_COORDS);
-      cs_real_t *part_coords =
-        cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                  CS_LAGR_COORDS);
+    cs_real_t *old_part_coords =
+      p_set.attr_n_real_ptr(p_id, 1, CS_LAGR_COORDS);
+    cs_real_t *part_coords =
+      p_set.attr_real_ptr(p_id, CS_LAGR_COORDS);
 
-      cs_real_t *part_vel_seen =
-        cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                  CS_LAGR_VELOCITY_SEEN);
+    cs_real_t *part_vel_seen =
+      p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY_SEEN);
 
-      cs_real_t *part_vel =
-        cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
-                                                  CS_LAGR_VELOCITY);
+    cs_real_t *part_vel =
+      p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY);
 
     cs_user_lagr_imposed_motion(p_set,
                                 p_id,
@@ -3092,15 +2998,14 @@ cs_lagr_sde(cs_lnum_t                        p_id,
             cs_real_6_t                      brgaus,
             cs_lnum_t                       *n_new_particles)
 {
-  cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
+  cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
 
   cs_real_t romp;
 
   /* Computation of particle density */
   cs_real_t aa = 6.0 / cs_math_pi;
-  cs_real_t d3 = cs_math_pow3(cs_lagr_particles_get_real(p_set, p_id,
-                                                         CS_LAGR_DIAMETER));
-  romp = aa * cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_MASS) / d3;
+  cs_real_t d3 = cs_math_pow3(p_set.attr_real(p_id, CS_LAGR_DIAMETER));
+  romp = aa * p_set.attr_real(p_id, CS_LAGR_MASS) / d3;
 
   /* First order
      ----------- */
@@ -3194,12 +3099,12 @@ cs_lagr_sde_attr(cs_lagr_attribute_t   attr,
                  cs_real_t             pip)
 {
   /* Particles management */
-  cs_lagr_particle_set_t         *p_set = cs_glob_lagr_particle_set;
+  cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
 
   int ltsvar = 0;
 
-  if (p_set->p_am->source_term_displ != nullptr) {
-    if (p_set->p_am->source_term_displ[attr] >= 0)
+  if (p_set.p_am->source_term_displ != nullptr) {
+    if (p_set.p_am->source_term_displ[attr] >= 0)
       ltsvar = 1;
   }
 
@@ -3217,20 +3122,19 @@ cs_lagr_sde_attr(cs_lagr_attribute_t   attr,
 
     cs_real_t aux1 = dt_part / tcarac;
     if (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
-      aux1 *= cs_lagr_particles_get_real(p_set, p_id,
-                                         CS_LAGR_REMAINING_INTEG_TIME);
+      aux1 *= p_set.attr_real(p_id, CS_LAGR_REMAINING_INTEG_TIME);
     cs_real_t aux2 = exp(-aux1);
 
-    cs_real_t ter1 = cs_lagr_particles_get_real_n(p_set, p_id, 1, attr)*aux2;
+    cs_real_t ter1 = p_set.attr_n_real(p_id, 1, attr)*aux2;
     cs_real_t ter2 = pip * (1.0 - aux2);
 
     /* Pour le cas NORDRE= 1 ou s'il y a rebond,     */
     /* le ETTP suivant est le resultat final    */
-    cs_lagr_particles_set_real(p_set, p_id, attr, ter1 + ter2);
+    p_set.attr_real(p_id, attr) = ter1 + ter2;
 
     /* Pour le cas NORDRE= 2, on calcule en plus TSVAR pour NOR= 2  */
     if (ltsvar) {
-      cs_real_t *part_ptsvar = cs_lagr_particles_source_terms(p_set, p_id,
+      cs_real_t *part_ptsvar = cs_lagr_particles_source_terms(&p_set, p_id,
                                                               attr);
       cs_real_t ter3 = (-aux2 + (1.0 - aux2) / aux1) * pip;
       *part_ptsvar = 0.5 * ter1 + ter3;
@@ -3240,7 +3144,7 @@ cs_lagr_sde_attr(cs_lagr_attribute_t   attr,
   }
   else if (nor == 2) {
 
-    if (cs_lagr_particles_get_lnum(p_set, p_id, CS_LAGR_REBOUND_ID) > 0)
+    if (p_set.attr_lnum(p_id, CS_LAGR_REBOUND_ID) > 0)
     return;
 
     if (tcarac <= 0.0)
@@ -3253,17 +3157,14 @@ cs_lagr_sde_attr(cs_lagr_attribute_t   attr,
 
     cs_real_t aux1   = dt_part / tcarac;
     if (cs_glob_lagr_time_scheme->cell_wise_integ == 1)
-      aux1 *= cs_lagr_particles_get_real(p_set, p_id,
-                                         CS_LAGR_REMAINING_INTEG_TIME);
+      aux1 *= p_set.attr_real(p_id, CS_LAGR_REMAINING_INTEG_TIME);
     cs_real_t aux2   = exp(-aux1);
-    cs_real_t ter1   = 0.5 * cs_lagr_particles_get_real_n(p_set, p_id, 1,
-                                                          attr) * aux2;
+    cs_real_t ter1   = 0.5 * p_set.attr_n_real(p_id, 1, attr) * aux2;
     cs_real_t ter2   = pip  * (1.0 - (1.0 - aux2) / aux1);
 
     /* Pour le cas NORDRE= 2, le ETTP suivant est le resultat final */
-    cs_real_t *part_ptsvar = cs_lagr_particles_source_terms(p_set, p_id, attr);
-    cs_lagr_particles_set_real(p_set, p_id, attr,
-                               *part_ptsvar + ter1 + ter2);
+    cs_real_t *part_ptsvar = cs_lagr_particles_source_terms(&p_set, p_id, attr);
+    p_set.attr_real(p_id, attr) = *part_ptsvar + ter1 + ter2;
 
   }
 }

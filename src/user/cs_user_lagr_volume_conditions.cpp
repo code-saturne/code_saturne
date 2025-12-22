@@ -43,8 +43,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
@@ -69,7 +67,7 @@ cs_user_lagr_volume_conditions(void)
  * Handling of a particle interaction with a interior face of type
  * CS_LAGR_BC_USER.
  *
- * \param[in, out]  particles       pointer to particle set
+ * \param[in, out]  p_set           reference to particle set
  * \param[in]       p_id            particle id
  * \param[in]       face_id         interior face id
  * \param[in]       face_u_norm     unit face (or face subdivision) normal
@@ -85,7 +83,7 @@ cs_user_lagr_volume_conditions(void)
 void
 cs_lagr_user_internal_interaction
 (
-  [[maybe_unused]] cs_lagr_particle_set_t    *particles,
+  [[maybe_unused]] cs_lagr_particle_set_t    &p_set,
   [[maybe_unused]] cs_lnum_t                  p_id,
   [[maybe_unused]] cs_lnum_t                  face_id,
   [[maybe_unused]] const cs_nreal_t           face_u_norm[3],
@@ -98,4 +96,3 @@ cs_lagr_user_internal_interaction
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS

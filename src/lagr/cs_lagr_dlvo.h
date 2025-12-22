@@ -85,16 +85,6 @@ void
 cs_lagr_dlvo_finalize(void);
 
 /*----------------------------------------------------------------------------
- * Compute the energy barrier for a smooth wall.
- *----------------------------------------------------------------------------*/
-
-void
-cs_lagr_barrier(const cs_lagr_particle_set_t   *p_set,
-                cs_lnum_t                       p_id,
-                cs_lnum_t                       iel,
-                cs_real_t                      *energy_barrier);
-
-/*----------------------------------------------------------------------------
  * Compute the energy barrier for two spheres.
  *----------------------------------------------------------------------------*/
 
@@ -163,6 +153,26 @@ cs_lagr_edl_sphere_sphere(cs_real_t  distcc,
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
+
+/*=============================================================================
+ * C++ Function definitions
+ *============================================================================*/
+
+#if defined(__cplusplus)
+
+/*----------------------------------------------------------------------------
+ * Compute the energy barrier for a smooth wall.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_lagr_barrier(cs_lagr_particle_set_t   &p_set,
+                cs_lnum_t                 p_id,
+                cs_lnum_t                 iel,
+                cs_real_t                 *energy_barrier);
+
+#endif /* __cplusplus */
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* __CS_LAGR_DLVO_H__ */
 

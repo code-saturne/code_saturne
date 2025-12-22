@@ -402,7 +402,7 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
   cs_lnum_t newpart = 0;
 
   /* Get fluid and particle properties */
-  cs_lagr_particle_set_t p_set = cs_lagr_get_particle_set_ref();
+  cs_lagr_particle_set_t &p_set = cs_lagr_get_particle_set_ref();
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
   /* Get cell information */
@@ -579,7 +579,7 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
         /* Copy parcel p1 into a new parcel */
         cs_lnum_t inserted_parts = p_set.n_particles + newpart;
 
-        cs_lagr_particle_set_resize(inserted_parts);
+        p_set.resize(inserted_parts);
 
         cs_lagr_part_copy(inserted_parts-1, p1+start_particle);
 

@@ -48,8 +48,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -81,7 +79,7 @@ BEGIN_C_DECLS
  * with ids between \c pset->n_particles and \c n_elts are initialized
  * but may be modified by this function.
  *
- * \param[in,out]  particles         particle set
+ * \param[in,out]  p_set             particle set
  * \param[in]      zis               zone injection set data
  * \param[in]      particle_range    start and past-the-end ids of new particles
  *                                   for this zone and class
@@ -95,7 +93,7 @@ BEGIN_C_DECLS
 void
 cs_user_lagr_in
 (
-  [[maybe_unused]] cs_lagr_particle_set_t         *particles,
+  [[maybe_unused]] cs_lagr_particle_set_t         &p_set,
   [[maybe_unused]] const cs_lagr_injection_set_t  *zis,
   [[maybe_unused]] const cs_lnum_t                 particle_range[2],
   [[maybe_unused]] const cs_lnum_t                 particle_face_id[],
@@ -181,26 +179,25 @@ cs_user_lagr_in
   for (cs_lnum_t p_id = particle_range[0]; p_id < particle_range[1]; p_id++) {
 
     /* specific heat */
-    cs_lagr_particles_set_real(particles, p_id, CS_LAGR_CP, cp);
+    p_set.attr_real(p_id, CS_LAGR_CP) = cp;
 
     /* water mass fraction in the particle */
-    cs_lagr_particles_set_real(particles, p_id, CS_LAGR_WATER_MASS, water_mass_f);
+    p_set.attr_real(p_id, CS_LAGR_WATER_MASS) = water_mass_f;
 
-    cs_real_t diam = cs_lagr_particles_get_real(particles, p_id, CS_LAGR_DIAMETER);
+    cs_real_t diam = p_set.attr_real( p_id, CS_LAGR_DIAMETER);
     cs_real_t mass = density * cs_math_pi/6 * (diam*diam*diam);
 
-    cs_lagr_particles_set_real(particles, p_id, CS_LAGR_MASS, mass);
-    cs_lagr_particles_set_real(particles, p_id, CS_LAGR_WATER_MASS,
-                               water_mass_f * mass);
+    p_set.attr_real(p_id, CS_LAGR_MASS) = mass;
+    p_set.attr_real(p_id, CS_LAGR_WATER_MASS) = water_mass_f * mass;
 
     cs_real_t *particle_temperature
-      = (cs_real_t *)cs_lagr_particles_attr(particles, p_id, CS_LAGR_TEMPERATURE);
+      = p_set.attr_real_ptr(p_id, CS_LAGR_TEMPERATURE);
     cs_real_t *particle_coal_mass
-      = (cs_real_t *)cs_lagr_particles_attr(particles, p_id, CS_LAGR_COAL_MASS);
+      = p_set.attr_real_ptr(p_id, CS_LAGR_COAL_MASS);
     cs_real_t *particle_coke_mass
-      = (cs_real_t *)cs_lagr_particles_attr(particles, p_id, CS_LAGR_COKE_MASS);
+      = p_set.attr_real_ptr(p_id, CS_LAGR_COKE_MASS);
     cs_real_t *particle_coal_density
-      = (cs_real_t *)cs_lagr_particles_attr(particles, p_id, CS_LAGR_COAL_DENSITY);
+      = p_set.attr_real_ptr(p_id, CS_LAGR_COAL_DENSITY);
 
     for (int l_id = 0; l_id < n_layers; l_id++) {
       particle_temperature[l_id] = temperature[l_id];
@@ -209,14 +206,10 @@ cs_user_lagr_in
       particle_coal_density[l_id] = coke_density[l_id];
     }
 
-    cs_lagr_particles_set_real(particles, p_id, CS_LAGR_SHRINKING_DIAMETER,
-                               shrinking_diameter);
-    cs_lagr_particles_set_real(particles, p_id, CS_LAGR_INITIAL_DIAMETER,
-                               initial_diameter);
+    p_set.attr_real(p_id, CS_LAGR_SHRINKING_DIAMETER) = shrinking_diameter;
+    p_set.attr_real(p_id, CS_LAGR_INITIAL_DIAMETER) = initial_diameter;
   }
   /*! [lagr_inj_example_coal] */
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

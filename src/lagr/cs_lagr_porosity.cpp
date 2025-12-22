@@ -111,7 +111,7 @@ cs_lagr_porosity(void)
   const cs_mesh_quantities_t  *mq_g = cs_glob_mesh_quantities_g;
   const cs_lagr_model_t *lagr_model = cs_glob_lagr_model;
 
-  cs_lagr_particle_set_t  *particles = cs_glob_lagr_particle_set;
+  cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
 
   cs_lagr_internal_condition_t *internal_conditions
     = cs_glob_lagr_internal_conditions;
@@ -139,21 +139,19 @@ cs_lagr_porosity(void)
 
   if (lagr_model->deposition == 1) {
 
-    for (cs_lnum_t ip = 0; ip < particles->n_particles; ip++) {
+    for (cs_lnum_t p_id = 0; p_id < p_set.n_particles; p_id++) {
 
-      if (cs_lagr_particles_get_flag(particles, ip,
-                                     CS_LAGR_PART_IMPOSED_MOTION)) {
+      if (p_set.flag(p_id, CS_LAGR_PART_IMPOSED_MOTION)) {
 
         cs_lnum_t cell_id
-          = cs_lagr_particles_get_lnum(particles, ip, CS_LAGR_CELL_ID);
+          = p_set.attr_lnum(p_id, CS_LAGR_CELL_ID);
 
         cs_real_t diam2
-          = cs_math_pow2(cs_lagr_particles_get_real(particles, ip,
-                                                    CS_LAGR_DIAMETER));
+          = cs_math_pow2(p_set.attr_real(p_id, CS_LAGR_DIAMETER));
 
         covered_surface[cell_id] += cs_math_pi * 0.25 * diam2
-          * cs_lagr_particles_get_real(particles, ip, CS_LAGR_FOULING_INDEX)
-          * cs_lagr_particles_get_real(particles, ip, CS_LAGR_STAT_WEIGHT);
+          * p_set.attr_real(p_id, CS_LAGR_FOULING_INDEX)
+          * p_set.attr_real(p_id, CS_LAGR_STAT_WEIGHT);
 
       }
     }

@@ -498,7 +498,7 @@ _vol_fraction(const void                 *input,
   CS_UNUSED(events);
 
   cs_lnum_t n_elts = cs_mesh_location_get_n_elts(location_id)[0];
-  cs_lagr_particle_set_t p_set = cs_lagr_get_particle_set_ref();
+  cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
 
   for (cs_lnum_t i = 0; i < n_elts; i++)
     vals[i] = 0.;
@@ -2863,7 +2863,7 @@ _location_attr(int location_id)
 /*!
  * \brief Increment particle contibution on moment and time moment accumulators.
  *
- * \param[in]   p_set     pointer to particle set
+ * \param[in]   p_set     particle set
  * \param[in]   p_id      particle index in set
  * \param[in]   rel_time  relative time spent by the particle in the cell during
  *                        current iteration
@@ -2871,13 +2871,13 @@ _location_attr(int location_id)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_stat_update_all_incr(cs_lagr_particle_set_t *p_set,
+cs_lagr_stat_update_all_incr(cs_lagr_particle_set_t  p_set,
                              const cs_lnum_t         p_id,
                              const cs_real_t         rel_time)
 {
   const cs_time_step_t  *ts = cs_glob_time_step;
   unsigned char *particle
-    = p_set->p_buffer + p_set->p_am->extents * p_id;
+    = p_set.p_buffer + p_set.p_am->extents * p_id;
   const cs_real_t *dt_val = _dt_val();
   cs_lnum_t dt_mult = (cs_glob_time_step->is_local) ? 1 : 0;
 
@@ -2885,15 +2885,12 @@ cs_lagr_stat_update_all_incr(cs_lagr_particle_set_t *p_set,
    * and the starting cell when a cell-wie-integration is considered */
   cs_lnum_t cell_id;
   if (cs_glob_lagr_time_scheme->cell_wise_integ == 0)
-    cell_id = cs_lagr_particles_get_lnum(p_set, p_id, CS_LAGR_CELL_ID);
+    cell_id = p_set.attr_lnum(p_id, CS_LAGR_CELL_ID);
   else
-    cell_id = cs_lagr_particles_get_lnum_n(p_set, p_id, 1,
-                                           CS_LAGR_CELL_ID);
+    cell_id = p_set.attr_n_lnum(p_id, 1, CS_LAGR_CELL_ID);
   int p_class = 0;
-  if (p_set->p_am->displ[0][CS_LAGR_STAT_CLASS] > 0)
-    p_class = cs_lagr_particles_get_lnum(p_set,
-                                         p_id,
-                                         CS_LAGR_STAT_CLASS);
+  if (p_set.p_am->displ[0][CS_LAGR_STAT_CLASS] > 0)
+    p_class = p_set.attr_lnum(p_id, CS_LAGR_STAT_CLASS);
 
   /* Outer loop in weight accumulators, to avoid recomputing weights
      too many times */
@@ -2928,13 +2925,13 @@ cs_lagr_stat_update_all_incr(cs_lagr_particle_set_t *p_set,
     cs_real_t p_weight;
 
     if (mwa->p_data_func == nullptr)
-      p_weight = cs_lagr_particles_get_real(p_set,
+      p_weight = p_set.attr_real(
                                             p_id,
                                             CS_LAGR_STAT_WEIGHT);
     else
       mwa->p_data_func(mwa->data_input,
-                       particle,
-                       p_set->p_am,
+                       particle, //TODO use p_set function
+                       p_set.p_am,
                        &p_weight);
 
     p_weight *= dt_val[cell_id*dt_mult] * rel_time;
@@ -3000,12 +2997,10 @@ cs_lagr_stat_update_all_incr(cs_lagr_particle_set_t *p_set,
               cs_real_t *pval = nullptr;
               if (mt->p_data_func != nullptr) {
                 CS_MALLOC(pval, mt->data_dim, cs_real_t);
-                mt->p_data_func(mt->data_input, particle, p_set->p_am, pval);
+                mt->p_data_func(mt->data_input, particle, p_set.p_am, pval);
               }
               else
-                pval = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set,
-                                                                 p_id,
-                                                                 attr_id);
+                pval = p_set.attr_real_ptr(p_id, attr_id);
 
               /* update weight sum with new particle weight */
               new_wa_sum = prev_wa_sum + p_weight;
@@ -4874,9 +4869,9 @@ cs_lagr_stat_update(void)
       }
     }
 
-    cs_lagr_particle_set_t *p_set = cs_glob_lagr_particle_set;
+    cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
     /* Increment statistics over whole integration time */
-    for (cs_lnum_t p_id = 0; p_id < p_set->n_particles; p_id ++)
+    for (cs_lnum_t p_id = 0; p_id < p_set.n_particles; p_id ++)
       cs_lagr_stat_update_all_incr(p_set, p_id, 1.);
   }
   /* Case where data is mesh-based */
@@ -4906,7 +4901,7 @@ cs_lagr_stat_update_event(cs_lagr_event_set_t   *events,
                           cs_lagr_stat_group_t   group)
 {
   const cs_time_step_t  *ts = cs_glob_time_step;
-  cs_lagr_particle_set_t p_set = cs_lagr_get_particle_set_ref();
+  cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
   const cs_real_t *dt_val = _dt_val();
   cs_lnum_t dt_mult = (cs_glob_time_step->is_local) ? 1 : 0;
 

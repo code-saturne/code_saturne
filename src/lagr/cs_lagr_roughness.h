@@ -100,14 +100,14 @@ cs_lagr_roughness_finalize(void);
  * Compute the energy barrier for a rough wall.
  *
  * parameters:
- *   p_set          <-- pointer to particle set
+ *   p_set          <-- particle set
  *   p_id           <-- particle id
  *   iel            <-- id of cell where the particle is
  *   energy_barrier <-> energy barrier
  *----------------------------------------------------------------------------*/
 
 void
-cs_lagr_roughness_barrier(cs_lagr_particle_set_t         *p_set,
+cs_lagr_roughness_barrier(cs_lagr_particle_set_t          p_set,
                           cs_lnum_t                       p_id,
                           cs_lnum_t                       iel,
                           cs_real_t                      *energy_barrier);

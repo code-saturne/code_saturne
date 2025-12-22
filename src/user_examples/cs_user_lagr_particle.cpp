@@ -48,8 +48,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -66,12 +64,12 @@ static cs_real_t _m_flow[4];
  * Define inlet conditions based on experimental data for a given particle
  *
  * parameters:
- *   p_set  <-> particle
+ *   p_set  <-> particle set
  *   p_id   <-- particle id
  *----------------------------------------------------------------------------*/
 
 static void
-_inlet2(cs_lagr_particle_set_t  *p_set,
+_inlet2(cs_lagr_particle_set_t   p_set,
         cs_lnum_t                p_id)
 {
   const int itmx = 8;
@@ -80,9 +78,7 @@ _inlet2(cs_lagr_particle_set_t  *p_set,
      --------------------------------------------------- */
 
   const cs_real_t *part_coords =
-    (const cs_real_t *)cs_lagr_particles_attr_const(p_set,
-                                                    p_id,
-                                                    CS_LAGR_COORDS);
+    p_set.attr_real_const_ptr(p_id, CS_LAGR_COORDS);
   cs_real_t z = part_coords[2];
 
   /* transverse coordinate */
@@ -150,7 +146,7 @@ _inlet2(cs_lagr_particle_set_t  *p_set,
   cs_random_normal(2, vgauss);
 
   cs_real_t *part_vel
-    = (cs_real_t *)cs_lagr_particles_attr(p_set, p_id, CS_LAGR_VELOCITY);
+    = p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY);
   part_vel[0] = up  + vgauss[0] * upp;
   part_vel[1] = 0.0;
   part_vel[2] = wp + vgauss[1] * wpp;
@@ -224,7 +220,7 @@ cs_user_lagr_extra_operations([[maybe_unused]] const cs_real_t  dt[])
 {
   /*! [lagr_init] */
 
-  cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
+  cs_lagr_particle_set_t &p_set = cs_lagr_get_particle_set_ref();
 
   /*! [lagr_init] */
 
@@ -248,20 +244,18 @@ cs_user_lagr_extra_operations([[maybe_unused]] const cs_real_t  dt[])
 
     for (cs_lnum_t iplan = 0; iplan < 4; iplan++) {
 
-      for (cs_lnum_t p_id = 0; p_id < p_set->n_particles; p_id++) {
+      for (cs_lnum_t p_id = 0; p_id < p_set.n_particles; p_id++) {
 
         const cs_real_t *part_coords
-          = (const cs_real_t *)cs_lagr_particles_attr_const(p_set, p_id,
-                                                            CS_LAGR_COORDS);
+          = p_set.attr_real_const_ptr(p_id, CS_LAGR_COORDS);
         const cs_real_t *prev_part_coords
-          = (const cs_real_t *)cs_lagr_particles_attr_n_const(p_set, p_id, 1,
-                                                              CS_LAGR_COORDS);
+          = p_set.attr_n_real_const_ptr(p_id, 1, CS_LAGR_COORDS);
 
         if (    part_coords[0] > zz[iplan]
             && prev_part_coords[0] <= zz[iplan])
-          _m_flow[iplan] +=  cs_lagr_particles_get_real(p_set, p_id,
+          _m_flow[iplan] += p_set.attr_real( p_id,
                                                        CS_LAGR_STAT_WEIGHT)
-                           * cs_lagr_particles_get_real(p_set, p_id,
+                           * p_set.attr_real( p_id,
                                                        CS_LAGR_MASS);
 
       }
@@ -286,7 +280,7 @@ cs_user_lagr_extra_operations([[maybe_unused]] const cs_real_t  dt[])
  * User-defined modifications on the particle position and its
  * velocity.
  *
- * \param[in]   particles       pointer to particle set
+ * \param[in]   p_set           particle set
  * \param[in]   p_id            particle id
  * \param[in]   coords          old particle coordinates
  * \param[in]   dt              time step (per particle)
@@ -299,7 +293,7 @@ cs_user_lagr_extra_operations([[maybe_unused]] const cs_real_t  dt[])
 void
 cs_user_lagr_imposed_motion
 (
-  [[maybe_unused]] const cs_lagr_particle_set_t *particles,
+  [[maybe_unused]] cs_lagr_particle_set_t        p_set,
   [[maybe_unused]] cs_lnum_t                     p_id,
   [[maybe_unused]] const cs_real_t               coords[3],
   [[maybe_unused]] const cs_real_t               dt,
@@ -321,7 +315,7 @@ cs_user_lagr_imposed_motion
 
   /* If there is multiple class specify specific behaviour for a given class */
   if (cs_glob_lagr_model->n_stat_classes > 0) {
-    if (cs_lagr_particles_get_lnum(particles, p_id, CS_LAGR_STAT_CLASS) == 1) {
+    if (p_set.attr_lnum(p_id, CS_LAGR_STAT_CLASS) == 1) {
       for ( int i = 0; i < 3; i++)
         disp[i] *= -2;
     }
@@ -341,7 +335,7 @@ cs_user_lagr_imposed_motion
  * with ids between \c pset->n_particles and \c n_elts are initialized
  * but may be modified by this function.
  *
- * \param[in,out]  particles         particle set
+ * \param[in,out]  p_set             particle set
  * \param[in]      zis               zone injection set data
  * \param[in]      particle_range    start and past-the-end ids of new particles
  *                                   for this zone and class
@@ -357,7 +351,7 @@ cs_user_lagr_imposed_motion
 void
 cs_user_lagr_in_force_coords
 (
-  [[maybe_unused]] cs_lagr_particle_set_t         *particles,
+  [[maybe_unused]] cs_lagr_particle_set_t          p_set,
   [[maybe_unused]] const cs_lagr_injection_set_t  *zis,
   [[maybe_unused]] const cs_lnum_t                 particle_range[2],
   [[maybe_unused]] const cs_lnum_t                 particle_face_id[],
@@ -366,8 +360,7 @@ cs_user_lagr_in_force_coords
 {
   cs_real_t dest[3]  = {0., 0., 0.};
   for (cs_lnum_t p_id = particle_range[0]; p_id < particle_range[1]; p_id++) {
-    cs_real_t *part_coord
-      = (cs_real_t *)cs_lagr_particles_attr(particles, p_id, CS_LAGR_COORDS);
+    cs_real_t *part_coord = p_set.attr_real_ptr(p_id, CS_LAGR_COORDS);
     for (int i = 0; i < 3; i++) {
       part_coord[i] = dest[i];
     }
@@ -390,7 +383,7 @@ cs_user_lagr_in_force_coords
  * with ids between \c pset->n_particles and \c n_elts are initialized
  * but may be modified by this function.
  *
- * \param[in,out]  particles         particle set
+ * \param[in,out]  p_set         particle set
  * \param[in]      zis               zone injection set data
  * \param[in]      particle_range    start and past-the-end ids of new particles
  *                                   for this zone and class
@@ -405,7 +398,7 @@ cs_user_lagr_in_force_coords
 void
 cs_user_lagr_in
 (
-  [[maybe_unused]] cs_lagr_particle_set_t         *particles,
+  [[maybe_unused]] cs_lagr_particle_set_t         &p_set,
   [[maybe_unused]] const cs_lagr_injection_set_t  *zis,
   [[maybe_unused]] const cs_lnum_t                 particle_range[2],
   [[maybe_unused]] const cs_lnum_t                 particle_face_id[],
@@ -419,32 +412,29 @@ cs_user_lagr_in
 
     /* velocity */
 
-    auto part_vel
-      = cs_lagr_particles_attr_n_get_ptr<cs_real_t>(particles, p_id, 1, CS_LAGR_VELOCITY);
+    auto part_vel = p_set.attr_n_real_ptr(p_id, 1, CS_LAGR_VELOCITY);
     part_vel[0] = 1.0;
     part_vel[1] = 0.0;
     part_vel[2] = 0.0;
 
     /* diameter */
 
-    cs_lagr_particles_set_real(particles, p_id, CS_LAGR_DIAMETER, 5e-05);
+    p_set.attr_real(p_id, CS_LAGR_DIAMETER) = 5e-05;
 
     /* Temperature profile */
 
-    cs_lagr_particles_set_real(particles, p_id, CS_LAGR_TEMPERATURE, 20.0);
+    p_set.attr_real(p_id, CS_LAGR_TEMPERATURE) = 20.0;
 
     /* Statistical weight profile */
 
-    cs_lagr_particles_set_real(particles, p_id, CS_LAGR_STAT_WEIGHT, 0.01);
+    p_set.attr_real(p_id, CS_LAGR_STAT_WEIGHT) = 0.01;
 
     /* User variables */
 
     for (int attr_id = CS_LAGR_USER;
          attr_id < CS_LAGR_USER + cs_glob_lagr_model->n_user_variables;
          attr_id++) {
-      cs_real_t *user_var = (cs_real_t *)cs_lagr_particles_attr(particles,
-                                                                p_id,
-                                                                (cs_lagr_attribute_t)attr_id);
+      cs_real_t *user_var = p_set.attr_real_ptr(p_id, (cs_lagr_attribute_t) attr_id);
       *user_var = 0.;
     }
 
@@ -459,7 +449,7 @@ cs_user_lagr_in
   /* if new particles have entered the domain  */
 
   for (cs_lnum_t p_id = particle_range[0]; p_id < particle_range[1]; p_id++) {
-    _inlet2(particles, p_id);
+    _inlet2(p_set, p_id);
   }
 
   /*
@@ -535,9 +525,9 @@ cs_user_lagr_rt
 )
 {
   /* Particles management */
-  cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
+  cs_lagr_particle_set_t &p_set = cs_lagr_get_particle_set_ref();
 
-  cs_real_t p_diam = cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_DIAMETER);
+  cs_real_t p_diam = p_set.attr_real( p_id, CS_LAGR_DIAMETER);
 
   /*===============================================================================
    * Relaxation time with the standard (Wen-Yu) formulation of the drag coefficient
@@ -628,10 +618,10 @@ cs_user_lagr_rt_t
   [[maybe_unused]] const cs_real_t  dt
 )
 {
-  /* 1. Initializations: Particles management */
-  cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
+  /* Get reference to particle set */
+  cs_lagr_particle_set_t &p_set = cs_lagr_get_particle_set_ref();
 
-  /* 2. Standard thermal relaxation time */
+  /* Standard thermal relaxation time */
 
   /* This example gives the standard thermal relaxation time
    * as an indication.*/
@@ -640,8 +630,8 @@ cs_user_lagr_rt_t
 
   cs_real_t fnus = 2.0 + 0.55 * sqrt(re_p) * pow(prt, 1./3.);
 
-  cs_real_t diam = cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_DIAMETER);
-  cs_real_t cp_p = cs_lagr_particles_get_real(p_set, p_id, CS_LAGR_CP);
+  cs_real_t diam = p_set.attr_real( p_id, CS_LAGR_DIAMETER);
+  cs_real_t cp_p = p_set.attr_real( p_id, CS_LAGR_CP);
 
   tempct[0] = diam * diam * rho_p * cp_p  / ( fnus * 6.0 * rho_f * cp_f * k_f);
 }
@@ -702,9 +692,7 @@ cs_user_lagr_sde
   /* Initializations
      --------------- */
 
-  cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
-  const cs_lagr_attribute_map_t *p_am = p_set->p_am;
-  unsigned char *part = p_set->p_buffer + p_am->extents * p_id;
+  cs_lagr_particle_set_t &p_set = cs_lagr_get_particle_set_ref();
 
   cs_real_t tcarac;
   cs_real_t pip;
@@ -719,9 +707,9 @@ cs_user_lagr_sde
        i++) {
 
     cs_real_t *usr_var
-      = cs_lagr_particle_attr_n_get_ptr<cs_real_t>(part, p_am, 0, CS_LAGR_USER);
+      = p_set.attr_n_real_ptr(p_id, 0, CS_LAGR_USER);
     cs_real_t *prev_usr_var
-      = cs_lagr_particle_attr_n_get_ptr<cs_real_t>(part, p_am, 1, CS_LAGR_USER);
+      = p_set.attr_n_real_ptr(p_id, 1, CS_LAGR_USER);
 
     /* Characteristic time tca of the differential equation,
        This example must be adapted to the case */
@@ -747,5 +735,3 @@ cs_user_lagr_sde
 /*! [lagr_SDE] */
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

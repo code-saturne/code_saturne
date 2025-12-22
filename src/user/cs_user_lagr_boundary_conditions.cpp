@@ -43,8 +43,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
@@ -71,7 +69,7 @@ cs_user_lagr_boundary_conditions([[maybe_unused]] const int  bc_type[])
  * Handling of a particle interaction with a boundary of type
  * \ref CS_LAGR_BC_USER.
  *
- * \param[in, out]  particles       pointer to particle set
+ * \param[in, out]  p_set           particle set
  * \param[in]       p_id            particle id
  * \param[in]       face_id         boundary face id
  * \param[in]       face_norm       unit face (or face subdivision) normal
@@ -89,7 +87,7 @@ cs_user_lagr_boundary_conditions([[maybe_unused]] const int  bc_type[])
 void
 cs_lagr_user_boundary_interaction
 (
-  [[maybe_unused]] cs_lagr_particle_set_t    *particles,
+  [[maybe_unused]] cs_lagr_particle_set_t    &p_set,
   [[maybe_unused]] cs_lnum_t                  p_id,
   [[maybe_unused]] cs_lnum_t                  face_id,
   [[maybe_unused]] const cs_real_t            face_norm[3],
@@ -104,4 +102,3 @@ cs_lagr_user_boundary_interaction
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS

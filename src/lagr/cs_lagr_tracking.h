@@ -106,6 +106,14 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
 void
 cs_lagr_tracking_finalize(void);
 
+END_C_DECLS
+
+#if defined(__cplusplus)
+
+/*=============================================================================
+ * Public C++ functions
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Determine the number of the closest wall face from the particle
@@ -113,7 +121,7 @@ cs_lagr_tracking_finalize(void);
  *
  * Used for the deposition model.
  *
- * \param[in]   p_set        pointer to particle set
+ * \param[in]   p_set        reference to particle set
  * \param[in]   p_id         particle id
  * \param[in]   visc_length  viscous layer thickness
  * \param[out]  yplus        associated yplus value
@@ -122,7 +130,7 @@ cs_lagr_tracking_finalize(void);
 /*----------------------------------------------------------------------------*/
 
  void
- cs_lagr_test_wall_cell(const cs_lagr_particle_set_t   *p_set,
+ cs_lagr_test_wall_cell(cs_lagr_particle_set_t         &p_set,
                         cs_lnum_t                       p_id,
                         const cs_real_t                 visc_length[],
                         cs_real_t                      *yplus,
@@ -130,7 +138,6 @@ cs_lagr_tracking_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 
-
-END_C_DECLS
+#endif //__cplusplus
 
 #endif /* __CS_LAGR_TRACKING_H__ */

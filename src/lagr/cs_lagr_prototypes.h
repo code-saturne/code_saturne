@@ -44,7 +44,11 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
+/*============================================================================
+ * Public C++
+ *============================================================================*/
+
+#if defined(__cplusplus)
 
 /*============================================================================
  *  Lagrangian User function prototypes
@@ -75,7 +79,7 @@ cs_user_lagr_boundary_conditions(const int  itypfb[]);
  * \brief Handling of a particle interaction with a boundary of type
  *        \ref CS_LAGR_BC_USER.
  *
- * \param[in, out]  particles       pointer to particle set
+ * \param[in, out]  p_set           particle set
  * \param[in]       p_id            particle id
  * \param[in]       face_id         boundary face id
  * \param[in]       face_norm       unit face (or face subdivision) normal
@@ -90,7 +94,7 @@ cs_user_lagr_boundary_conditions(const int  itypfb[]);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_user_boundary_interaction(cs_lagr_particle_set_t    *particles,
+cs_lagr_user_boundary_interaction(cs_lagr_particle_set_t    &p_set,
                                   cs_lnum_t                  p_id,
                                   cs_lnum_t                  face_id,
                                   const cs_real_t            face_norm[3],
@@ -181,7 +185,7 @@ cs_user_lagr_extra_operations(const cs_real_t  dt[]);
  * User-defined modifications on the particle position and its
  * velocity.
  *
- * \param[in]   particles       pointer to particle set
+ * \param[in]   p_set           particle set
  * \param[in]   p_id            particle id
  * \param[in]   coords          old particle coordinates
  * \param[in]   dt              time step (per particle)
@@ -190,7 +194,7 @@ cs_user_lagr_extra_operations(const cs_real_t  dt[]);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_lagr_imposed_motion(const cs_lagr_particle_set_t *particles,
+cs_user_lagr_imposed_motion(cs_lagr_particle_set_t       &p_set,
                             cs_lnum_t                     p_id,
                             const cs_real_t               coords[3],
                             const cs_real_t               dt,
@@ -208,7 +212,7 @@ cs_user_lagr_imposed_motion(const cs_lagr_particle_set_t *particles,
  * with ids between \c pset->n_particles and \c n_elts are initialized
  * but may be modified by this function.
  *
- * \param[in,out]  particles         particle set
+ * \param[in,out]  p_set             particle set
  * \param[in]      zis               injection data for this set
  * \param[in]      particle_range    start and past-the-end ids of new particles
  *                                   for this zone and class
@@ -220,7 +224,7 @@ cs_user_lagr_imposed_motion(const cs_lagr_particle_set_t *particles,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_lagr_in_force_coords(cs_lagr_particle_set_t         *particles,
+cs_user_lagr_in_force_coords(cs_lagr_particle_set_t         &p_set,
                              const cs_lagr_injection_set_t  *zis,
                              const cs_lnum_t                 particle_range[2],
                              const cs_lnum_t                 particle_face_id[],
@@ -241,7 +245,7 @@ cs_user_lagr_in_force_coords(cs_lagr_particle_set_t         *particles,
  * with ids between \c pset->n_particles and \c n_elts are initialized
  * but may be modified by this function.
  *
- * \param[in,out]  particles         particle set
+ * \param[in,out]  p_set             reference to particle set
  * \param[in]      zis               injection data for this set
  * \param[in]      particle_range    start and past-the-end ids of new particles
  *                                   for this zone and class
@@ -253,7 +257,7 @@ cs_user_lagr_in_force_coords(cs_lagr_particle_set_t         *particles,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
+cs_user_lagr_in(cs_lagr_particle_set_t         &p_set,
                 const cs_lagr_injection_set_t  *zis,
                 const cs_lnum_t                 particle_range[2],
                 const cs_lnum_t                 particle_face_id[],
@@ -394,7 +398,7 @@ cs_user_lagr_volume_conditions(void);
  * \brief Handling of a particle interaction with a interior face of type
  *        \ref CS_LAGR_BC_USER.
  *
- * \param[in, out]  particles       pointer to particle set
+ * \param[in, out]  p_set           reference to particle set
  * \param[in]       p_id            particle id
  * \param[in]       face_id         interior face id
  * \param[in]       face_u_norm     unit face (or face subdivision) normal
@@ -407,7 +411,7 @@ cs_user_lagr_volume_conditions(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_user_internal_interaction(cs_lagr_particle_set_t    *particles,
+cs_lagr_user_internal_interaction(cs_lagr_particle_set_t    &p_set,
                                   cs_lnum_t                  p_id,
                                   cs_lnum_t                  face_id,
                                   const cs_nreal_t           face_u_norm[3],
@@ -415,8 +419,7 @@ cs_lagr_user_internal_interaction(cs_lagr_particle_set_t    *particles,
                                   cs_real_t                  t_intersect,
                                   cs_lagr_tracking_state_t  *tracking_state);
 
-/*----------------------------------------------------------------------------*/
+#endif /* __cplusplus  */
 
 #endif /* __CS_LAGR_PROTOTYPES_H__ */
 
-END_C_DECLS
