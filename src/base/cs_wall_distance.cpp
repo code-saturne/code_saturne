@@ -167,9 +167,15 @@ cs_wall_distance(int iterns)
 
   cs_field_t *f_w_dist_aux_pre = cs_field_by_name_try("wall_distance_aux_pre");
 
-  cs_real_t *wall_dist_pre = (f_w_dist_aux_pre != nullptr) ?
-                              f_w_dist_aux_pre->val:
-                              f_w_dist->val_pre;
+  cs_real_t *wall_dist_pre = nullptr;
+  if (f_w_dist_aux_pre != nullptr)
+    wall_dist_pre = f_w_dist_aux_pre->val;
+  else {
+    wall_dist_pre = f_w_dist->val_pre;
+
+    cs_span<cs_real_t> wall_dist_pre_view = f_w_dist->get_vals_s(1);
+    wall_dist_pre_view.zero();
+  }
 
   /* Boundary conditions
      ------------------- */
