@@ -1,6 +1,9 @@
 Master (not on release branches yet)
 ------------------------------------
 
+Release 9.1.0 (unreleased)
+--------------------------
+
 ### User changes:
 
 - Particle diameter in Lagrangian module now follow a log-normal distribution
