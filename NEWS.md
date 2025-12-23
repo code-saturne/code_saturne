@@ -3,6 +3,9 @@ Release 9.0.2 (unreleased)
 
 ### Bug fixes:
 
+- Fixes related to notebook variables: modification in smgr now dominates over
+  reading in checkpoint also fix incoherence between read and restart parameters
+
 - Fix incorrect wall distance computation when restarting with fixed mesh.
 
 - Scripts: avoid creating spurious hostsname file with OpenMPI 5 and SLURM.

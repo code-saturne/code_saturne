@@ -707,6 +707,7 @@ class domain(base_domain):
                         n_warnings += 1
                     if v != None:
                         notebookModel.setVariableValue(val=v, var=k)
+                        notebookModel.setVariableRestart(restart="No", var=k)
 
                 else:
                     fmt = ('Warning: {0} is not a known notebook variable.')
