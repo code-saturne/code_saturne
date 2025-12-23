@@ -36,10 +36,6 @@
 #include <math.h>
 #include <string.h>
 
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
-
 #if defined(HAVE_MUMPS)
 #include <dmumps_c.h>
 #include <smumps_c.h>

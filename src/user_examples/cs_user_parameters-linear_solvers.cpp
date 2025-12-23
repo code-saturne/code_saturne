@@ -36,10 +36,6 @@
 #include <math.h>
 #include <string.h>
 
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
-
 /* Avoid warnings due to previous values */
 #undef PACKAGE_BUGREPORT
 #undef PACKAGE_NAME

@@ -33,10 +33,6 @@
 #include <assert.h>
 #include <math.h>
 
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
-
 #include <iostream>
 #include <iterator>
 #include <map>
