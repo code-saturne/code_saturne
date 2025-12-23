@@ -75,14 +75,14 @@ class item_class(object):
     '''
     def __init__(self, idx, name, value, oturns_var, editable, restart, log,
                  description):
-        self.index  = idx
-        self.name   = name
-        self.value  = value
-        self.oturns = oturns_var
-        self.edit   = editable
-        self.read   = restart
-        self.log    = log
-        self.descr  = description
+        self.index   = idx
+        self.name    = name
+        self.value   = value
+        self.oturns  = oturns_var
+        self.edit    = editable
+        self.restart = restart
+        self.log     = log
+        self.descr   = description
 
 
     def __repr__(self):
@@ -90,7 +90,7 @@ class item_class(object):
                 "used with openturns : %s // editable : %s // " \
                 "read at restart : %s // log : %s //" \
                 % (str(self.index), str(self.name), str(self.value), \
-                   str(self.oturns), str(self.edit), str(self.read), \
+                   str(self.oturns), str(self.edit), str(self.restart), \
                    str(self.log)))
 
 #-------------------------------------------------------------------------------
@@ -140,7 +140,7 @@ class TreeItem(object):
             elif column == 3 and role == Qt.DisplayRole:
                 return self.item.edit
             elif column == 4 and role == Qt.DisplayRole:
-                return self.item.read
+                return self.item.restart
             elif column == 5 and role == Qt.DisplayRole:
                 return self.item.log
             elif column == 6 and role == Qt.DisplayRole:
@@ -322,14 +322,15 @@ class VariableStandardItemModel(QAbstractItemModel):
     def populateModel(self):
         for idx in self.mdl.getVarList():
             parentItem = self.rootItem
-            cname  = self.mdl.getVariableName(idx)
-            value  = self.mdl.getVariableValue(idx)
-            oturns = self.mdl.getVariableOt(idx)
-            edit   = self.mdl.getVariableEditable(idx)
-            read   = self.mdl.getVariableRestart(idx)
-            log    = self.mdl.getVariableLog(idx)
-            descr  = self.mdl.getVariableDescription(idx)
-            item = item_class(idx, cname, value, oturns, edit, read, log, descr)
+            cname   = self.mdl.getVariableName(idx)
+            value   = self.mdl.getVariableValue(idx)
+            oturns  = self.mdl.getVariableOt(idx)
+            edit    = self.mdl.getVariableEditable(idx)
+            restart = self.mdl.getVariableRestart(idx)
+            log     = self.mdl.getVariableLog(idx)
+            descr   = self.mdl.getVariableDescription(idx)
+            item = item_class(idx, cname, value, oturns, edit, restart, log,
+                              descr)
             new_item = TreeItem(item, cname, parentItem)
             parentItem.appendChild(new_item)
 
@@ -374,8 +375,8 @@ class VariableStandardItemModel(QAbstractItemModel):
 
         elif index.column() == 4:
             restart = from_qvariant(value, to_text_string)
-            item.item.read = restart
-            self.mdl.setVariableRestart(item.item.index, item.item.read)
+            item.item.restart = restart
+            self.mdl.setVariableRestart(item.item.restart, idx=item.item.index)
 
         elif index.column() == 5:
             log = from_qvariant(value, to_text_string)

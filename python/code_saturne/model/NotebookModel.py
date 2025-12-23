@@ -147,12 +147,12 @@ class NotebookModel(Model):
                 content = line.split(',')
 
             if len(content) >= 2:
-                var    = content[0]
-                value  = content[1]
-                oturns = None
-                read   = None
-                log    = None
-                descr  = None
+                var     = content[0]
+                value   = content[1]
+                oturns  = None
+                restart = None
+                log     = None
+                descr   = None
 
                 if len(content) >= 3:
                     oturns = content[2]
@@ -160,9 +160,9 @@ class NotebookModel(Model):
                     oturns = "No"
 
                 if len(content) >= 4:
-                    read = content[3]
+                    restart = content[3]
                 else:
-                    read = "Yes"
+                    restart = "Yes"
 
                 if len(content) >= 5:
                     log = content[4]
@@ -178,7 +178,7 @@ class NotebookModel(Model):
                     node = self.node_note.xmlGetNode("var", name = var)
                     node['value']       = value
                     node['oturns']      = oturns
-                    node['read']        = read
+                    node['restart']     = restart
                     node['log']         = log
                     node['description'] = descr
                 else:
@@ -187,7 +187,7 @@ class NotebookModel(Model):
                     self.setVariableValue(value, idx=idx-1)
                     self.setVariableName(idx-1, var)
                     self.setVariableOt(idx-1, oturns)
-                    self.setVariableRestart(idx-1, read)
+                    self.setVariableRestart(restart, idx=idx-1)
                     self.setVariableLog(idx-1, log)
 
 
@@ -332,12 +332,19 @@ class NotebookModel(Model):
 
 
     @Variables.undoGlobal
-    def setVariableRestart(self, idx, restart):
+    def setVariableRestart(self, restart, idx = None, var = None):
         """
         Set Yes or No to indicate if the parameter value will be read
         when reading a restart file.
         """
-        self._setVariableAttr(idx, 'restart', restart)
+        if idx != None:
+            node = self.node_note.xmlInitChildNode("var", id = idx)
+        elif var != None:
+            node = self.node_note.xmlInitChildNode("var", name = var)
+        else:
+            raise Exception("No id or name were specified for setVariableRestart")
+
+        node['restart'] = restart
 
 
     @Variables.noUndo

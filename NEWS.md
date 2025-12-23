@@ -94,6 +94,9 @@ Release 9.1.0 (unreleased)
 
 ### Bug fixes:
 
+- Fixes related to notebook variables: modification in smgr now dominates over
+  reading in checkpoint also fix incoherence between read and restart parameters
+
 - Fix periocidity with CDO-Fb scheme. This is now forbidden to have more than one periodic face by cell.
 
 - Fix the time used to solve CDO equations after FV-NSE since there is a constant offset between them.
