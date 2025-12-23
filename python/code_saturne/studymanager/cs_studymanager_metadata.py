@@ -61,13 +61,17 @@ class study_metadata:
         _smgr['xmlfile'] = filename
         parser = Parser(filename, doc=_smgr.doc)
 
-        sname = parser.getStudiesLabel()[0]
+        if len(parser.getStudiesLabel()) == 0:
+            self.study = ""
+            self.cases = []
+        else:
+            sname = parser.getStudiesLabel()[0]
 
-        md = parser.getStudyMetadata(sname)
+            md = parser.getStudyMetadata(sname)
 
-        self.study = md['study']
-        self.cases = md['cases']
-        self.n_cases = len(self.cases)
+            self.study = md['study']
+            self.cases = md['cases']
+            self.n_cases = len(self.cases)
 
     #---------------------------------------------------------------------------
 

@@ -393,7 +393,8 @@ class Parser(object):
             new_d['name'] = case_name
 
             for n in node_descr.getElementsByTagName('item'):
-                new_d['vnvitem'].append(str(n.firstChild.data))
+                if n.firstChild:
+                    new_d['vnvitem'].append(str(n.firstChild.data))
 
             data['cases'].append(new_d)
 
