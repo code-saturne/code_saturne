@@ -162,9 +162,13 @@ cs_wall_distance(int iterns)
 
   cs_field_t *f_w_dist_aux_pre = cs_field_by_name_try("wall_distance_aux_pre");
 
-  cs_real_t *wall_dist_pre = (f_w_dist_aux_pre != nullptr) ?
-                              f_w_dist_aux_pre->val:
-                              f_w_dist->val_pre;
+  cs_real_t *wall_dist_pre = nullptr;
+  if (f_w_dist_aux_pre != nullptr)
+    wall_dist_pre = f_w_dist_aux_pre->val;
+  else {
+    wall_dist_pre = f_w_dist->val_pre;
+    cs_array_real_fill_zero(n_cells_ext, wall_dist_pre);
+  }
 
   cs_real_t *smbrp, *rovsdt;
   CS_MALLOC_HD(rovsdt, n_cells_ext, cs_real_t, cs_alloc_mode);
@@ -231,7 +235,7 @@ cs_wall_distance(int iterns)
     cs_parall_max(1, CS_INT_TYPE, &have_diff);
   }
 
-  /* Time evolving mesh: always update */
+  /* Time evolving mesh (always update) or first time step */
 
   else {
     for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
@@ -252,10 +256,8 @@ cs_wall_distance(int iterns)
   }
 
   /* Immersed boundaries */
-  const cs_real_t *c_w_face_surf
-    = (const cs_real_t *)mq->c_w_face_surf;
-  const cs_real_t *c_w_dist_inv
-    = (const cs_real_t *)mq->c_w_dist_inv;
+  const cs_real_t *c_w_face_surf = mq->c_w_face_surf;
+  const cs_real_t *c_w_dist_inv = mq->c_w_dist_inv;
 
   if (c_w_face_surf != nullptr && c_w_dist_inv != nullptr) {
     have_diff = 0;
