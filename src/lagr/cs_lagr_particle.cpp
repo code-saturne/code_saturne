@@ -1123,9 +1123,9 @@ cs_lagr_attribute_map_t::cs_lagr_attribute_map_t
       if (attr_keys[attr][0] < 1) continue;
 
       /*
-        ieptp/ieptpa integer values at current and previous time steps
-        pepa real values at current time step
-        ipepa integer values at current time step */
+        integer values at current and previous time steps
+        real values at current time step
+        integer values at current time step */
 
       /* Behavior depending on array */
 

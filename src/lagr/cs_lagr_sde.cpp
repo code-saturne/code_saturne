@@ -3134,8 +3134,7 @@ cs_lagr_sde_attr(cs_lagr_attribute_t   attr,
 
     /* Pour le cas NORDRE= 2, on calcule en plus TSVAR pour NOR= 2  */
     if (ltsvar) {
-      cs_real_t *part_ptsvar = cs_lagr_particles_source_terms(&p_set, p_id,
-                                                              attr);
+      cs_real_t *part_ptsvar = p_set.source_terms(p_id, attr);
       cs_real_t ter3 = (-aux2 + (1.0 - aux2) / aux1) * pip;
       *part_ptsvar = 0.5 * ter1 + ter3;
 
@@ -3163,7 +3162,7 @@ cs_lagr_sde_attr(cs_lagr_attribute_t   attr,
     cs_real_t ter2   = pip  * (1.0 - (1.0 - aux2) / aux1);
 
     /* Pour le cas NORDRE= 2, le ETTP suivant est le resultat final */
-    cs_real_t *part_ptsvar = cs_lagr_particles_source_terms(&p_set, p_id, attr);
+    cs_real_t *part_ptsvar = p_set.source_terms(p_id, attr);
     p_set.attr_real(p_id, attr) = *part_ptsvar + ter1 + ter2;
 
   }

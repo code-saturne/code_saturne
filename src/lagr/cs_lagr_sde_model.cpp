@@ -377,8 +377,7 @@ _lagtmp(cs_lnum_t         p_id,
     cs_real_t *part_ts_temp = nullptr;
     if (p_set.p_am->source_term_displ != nullptr) {
       if (p_set.p_am->source_term_displ[CS_LAGR_TEMPERATURE] >= 0)
-        part_ts_temp = cs_lagr_particles_source_terms(&p_set, p_id,
-                                                      CS_LAGR_TEMPERATURE);
+        part_ts_temp = p_set.source_terms(p_id, CS_LAGR_TEMPERATURE);
     }
 
     if (nor == 1) {
@@ -452,7 +451,7 @@ _lagsec(cs_lnum_t         p_id,
   cs_real_t *ptsvar = nullptr;
   if (p_set.p_am->source_term_displ != nullptr) {
     if (p_set.p_am->source_term_displ[CS_LAGR_TEMPERATURE] >= 0)
-      ptsvar = cs_lagr_particles_source_terms(&p_set, p_id, CS_LAGR_TEMPERATURE);
+      ptsvar = p_set.source_terms(p_id, CS_LAGR_TEMPERATURE);
   }
 
   const cs_coal_model_t *coal_model = cs_glob_coal_model;
@@ -888,8 +887,7 @@ _sde_i_temp_seen(const cs_lnum_t       p_id,
     /* Pour le cas NORDRE= 2, on calcule en plus TSVAR pour NOR= 2  */
     if (ltsvar) {
       cs_real_t *part_ts_fluid_t
-        = cs_lagr_particles_source_terms(&p_set, p_id,
-                                         CS_LAGR_TEMPERATURE_SEEN);
+        = p_set.source_terms(p_id, CS_LAGR_TEMPERATURE_SEEN);
       *part_ts_fluid_t = 0.5 * ter1 - loc_tempf
                              * (aux2 + (aux2 - 1.0) * daux1);
     }
@@ -906,7 +904,7 @@ _sde_i_temp_seen(const cs_lnum_t       p_id,
         = 0.5 * p_set.attr_n_real(p_id, 1, CS_LAGR_TEMPERATURE_SEEN) * aux2;
       cs_real_t ter2   = loc_tempf * (1.0 + (aux2 - 1.0) * daux1);
       cs_real_t *part_ts_fluid_t
-        = cs_lagr_particles_source_terms(&p_set, p_id, CS_LAGR_TEMPERATURE_SEEN);
+        = p_set.source_terms(p_id, CS_LAGR_TEMPERATURE_SEEN);
 
       p_set.attr_real(p_id, CS_LAGR_TEMPERATURE_SEEN) = *part_ts_fluid_t + ter1 + ter2;
     }
