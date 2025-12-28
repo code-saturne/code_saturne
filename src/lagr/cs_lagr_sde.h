@@ -31,7 +31,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
+#if defined(__cplusplus)
 
 /*============================================================================
  * Public function prototypes
@@ -40,6 +40,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*! \brief Integration of SDEs by 1st order time scheme for one particle
  *
+ * \param[in]  p_set     reference to particle set
  * \param[in]  p_id      particle index in set
  * \param[in]  dt_part   remaining time step associated to the particle
  * \param[in]  nor       current step id (for 2nd order scheme)
@@ -53,8 +54,10 @@ BEGIN_C_DECLS
  * \param[in]  beta      proportional to the gradient of T_lag
  */
 /*----------------------------------------------------------------------------*/
+
 void
-cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
+cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t          &p_set,
+                                      cs_lnum_t                       p_id,
                                       cs_real_t                       dt_part,
                                       int                             nor,
                                       const cs_real_t                *taup,
@@ -73,6 +76,7 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
  * - Standard Model : First or second order
  * - Deposition submodel (Guingo & Minier, 2007) if needed
  *
+ * \param[in]  p_set     reference to particle set
  * \param[in]  p_id      particle index in set
  * \param[in]  dt_part   remaining time step associated to the particle
  * \param[in]  nor       current step id (for 2nd order scheme)
@@ -92,7 +96,8 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_sde(cs_lnum_t                        p_id,
+cs_lagr_sde(cs_lagr_particle_set_t          &p_set,
+            cs_lnum_t                        p_id,
             cs_real_t                        dt_part,
             int                              nor,
             const cs_real_t                 *taup,
@@ -137,6 +142,6 @@ cs_lagr_sde_attr(cs_lagr_attribute_t   attr,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
+#endif /* __cplusplus */
 
 #endif /* __CS_LAGR_LAGESP_H__ */

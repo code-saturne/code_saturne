@@ -71,8 +71,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -168,7 +166,7 @@ _x_expm1_p(double x)
 }
 
 // secant slope (f(b)-f(a)) / (b-a), numerically stable
-static double
+static inline double
 _secant_ter2p(double a,
               double b)
 {
@@ -183,7 +181,7 @@ _secant_ter2p(double a,
   }
 }
 
-static double
+static inline double
 _secant_ter2x(double a,
               double b) {
   const double eps = 1e-12;
@@ -197,7 +195,7 @@ _secant_ter2x(double a,
   }
 }
 
-static double
+static inline double
 _secant_ter7x(double a,
               double b) {
   const double eps = 1e-12;
@@ -211,7 +209,7 @@ _secant_ter7x(double a,
   }
 }
 
-static double
+static inline double
 _secant_ter7p(double a,
               double b) {
   const double eps = 1e-12;
@@ -228,6 +226,7 @@ _secant_ter7p(double a,
 /*----------------------------------------------------------------------------*/
 /*! \brief Integration of SDEs by 1st order time scheme for one particle
  *
+ * \param[in]  p_set     reference to particle set
  * \param[in]  p_id      particle index in set
  * \param[in]  dt_part   remaining time step associated to the particle
  * \param[in]  nor       current step id (for 2nd order scheme)
@@ -242,7 +241,8 @@ _secant_ter7p(double a,
  */
 /*----------------------------------------------------------------------------*/
 void
-cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
+cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
+                                      cs_lnum_t                       p_id,
                                       cs_real_t                       dt_part,
                                       int                             nor,
                                       const cs_real_t                *taup,
@@ -254,13 +254,10 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
                                       const cs_real_3_t               force_p,
                                       const cs_real_3_t               beta)
 {
-  /* Particles management */
-  cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
 
   /* use previous step for t_order == 1 or prediction step
    * and current one for correction step */
   cs_lnum_t cell_id = p_set.attr_n_lnum(p_id, 2-nor, CS_LAGR_CELL_ID);
-
 
   if (cell_id <0)
     return;
@@ -399,6 +396,19 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
     return;
   } /* End IMPOSED_MOTION */
 
+  /* Initialize (without change of frame)*/
+
+  cs_real_t part_vel_r[3] = {part_vel[0], part_vel[1], part_vel[2]};
+  cs_real_t old_part_vel_r[3] = {old_part_vel[0],
+                                 old_part_vel[1],
+                                 old_part_vel[2]};
+
+  cs_real_t force_p_r[3] = {force_p[0], force_p[1], force_p[2]};
+  cs_real_t taup_rm[3] = {0., 0., 0.};
+
+  cs_real_t displ_r[3];
+  cs_real_t trans_m[3][3];
+
   /* resolve SDEs*/
   for (int phase_id = 0; phase_id < n_phases; phase_id++) {
     if (cs_glob_lagr_time_scheme->interpol_field == 1) {
@@ -416,37 +426,25 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
     }
   }
 
-  /* Initialize (without change of frame)*/
-
-  cs_real_t part_vel_r[3] = {part_vel[0], part_vel[1], part_vel[2]};
-  cs_real_t old_part_vel_r[3] = {old_part_vel[0],
-                                 old_part_vel[1],
-                                 old_part_vel[2]};
-
   for (int phase_id = 0; phase_id < n_phases; phase_id++) {
-    for (int idim_ = 0; idim_ < 3; idim_++) {
-      part_vel_seen_r[phase_id][idim_] = part_vel_seen[phase_id * 3 + idim_];
-      old_part_vel_seen_r[phase_id][idim_] = old_part_vel_seen[phase_id * 3 + idim_];
-      fluid_vel_r[phase_id][idim_] = loc_fluid_vel[phase_id][idim_];
+    for (int i = 0; i < 3; i++) {
+      part_vel_seen_r[phase_id][i] = part_vel_seen[phase_id * 3 + i];
+      old_part_vel_seen_r[phase_id][i] = old_part_vel_seen[phase_id * 3 + i];
+      fluid_vel_r[phase_id][i] = loc_fluid_vel[phase_id][i];
     }
   }
 
-  cs_real_t force_p_r[3] = {force_p[0], force_p[1], force_p[2]};
-  cs_real_t taup_rm[3] = {0., 0., 0.};
-
-  cs_real_t displ_r[3];
-  cs_real_t trans_m[3][3];
   for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
-    for (int idim_ = 0; idim_ < 3; idim_ ++) {
-      piil_r[phase_id][idim_] = piil[phase_id][idim_];
-      tlag_r[phase_id][idim_] = tlag[phase_id][idim_];
-      taup_r[phase_id][idim_] = taup[phase_id];
-      taup_rm[idim_] += lambda[phase_id] / taup_r[phase_id][idim_];
+    for (int i = 0; i < 3; i ++) {
+      piil_r[phase_id][i] = piil[phase_id][i];
+      tlag_r[phase_id][i] = tlag[phase_id][i];
+      taup_r[phase_id][i] = taup[phase_id];
+      taup_rm[i] += lambda[phase_id] / taup_r[phase_id][i];
     }
   }
 
-  for (int idim_ = 0; idim_ < 3; idim_ ++)
-    taup_rm[idim_] = 1./taup_rm[idim_];
+  for (int i = 0; i < 3; i ++)
+    taup_rm[i] = 1./taup_rm[i];
 
   if (local_reference_frame) {
 
@@ -1083,7 +1081,8 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
 /*----------------------------------------------------------------------------*/
 
 static void
-cs_sde_vels_pos_2_nd_order_time_integ(cs_lnum_t                       p_id,
+cs_sde_vels_pos_2_nd_order_time_integ(cs_lagr_particle_set_t         &p_set,
+                                      cs_lnum_t                       p_id,
                                       cs_real_t                       dt_part,
                                       int                             nor,
                                       const cs_real_t                *taup,
@@ -1104,10 +1103,6 @@ cs_sde_vels_pos_2_nd_order_time_integ(cs_lnum_t                       p_id,
   cs_real_t  grgam2, gagam;
   cs_real_t  p11, p21, p22;
   cs_real_t  tbriu = 0.;
-
-  /* Particles management */
-  cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
-  const cs_lagr_attribute_map_t  *p_am = p_set.p_am;
 
   cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
   cs_lagr_extra_module_t *extra = extra_i;
@@ -1193,7 +1188,8 @@ cs_sde_vels_pos_2_nd_order_time_integ(cs_lnum_t                       p_id,
 
     /* Euler scheme */
 
-    cs_sde_vels_pos_1_st_order_time_integ(p_id,
+    cs_sde_vels_pos_1_st_order_time_integ(p_set,
+                                          p_id,
                                           dt_part,
                                           nor,
                                           taup,
@@ -1319,8 +1315,9 @@ cs_sde_vels_pos_2_nd_order_time_integ(cs_lnum_t                       p_id,
  *  4/ Modification of the coordinate system (local ->global)
  *  5/ Update of the particle position
  *
- * \param[in]  dt_part   remaining time step associated to the particle
+ * \param[in]  p_set     reference to particle set
  * \param[in]  p_id      particle index in set
+ * \param[in]  dt_part   remaining time step associated to the particle
  * \param[in]  nor       current step id (for 2nd order scheme)
  * \param[in]  taup      dynamic characteristic time
  * \param[in]  piil      term in integration of UP SDEs
@@ -1337,8 +1334,9 @@ cs_sde_vels_pos_2_nd_order_time_integ(cs_lnum_t                       p_id,
 /*----------------------------------------------------------------------------*/
 
 static void
-_lagesd(cs_real_t                       dt_part,
+_lagesd(cs_lagr_particle_set_t         &p_set,
         cs_lnum_t                       p_id,
+        cs_real_t                       dt_part,
         int                             nor,
         const cs_real_t                 taup,
         const cs_real_3_t               piil,
@@ -1353,10 +1351,6 @@ _lagesd(cs_real_t                       dt_part,
 {
   /* mesh and mesh quantities */
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-
-  /* Particles management */
-  cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
-  const cs_lagr_attribute_map_t  *p_am = p_set.p_am;
 
   cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
   cs_lagr_extra_module_t *extra = extra_i;
@@ -2625,6 +2619,7 @@ _lagesd(cs_real_t                       dt_part,
  *         * If y^+ > depint : the standard Langevin model is applied
  *         * If y^+ < depint : the deposition submodel is applied
  *
+ * \param[in]  p_set     reference to particle set
  * \param[in]  p_id      particle index in set
  * \param[in]  dt_part   remaining time step associated to the particle
  * \param[in]  nor       current step id (for 2nd order scheme)
@@ -2642,7 +2637,8 @@ _lagesd(cs_real_t                       dt_part,
 /*----------------------------------------------------------------------------*/
 
 static void
-cs_sde_vels_pos_time_integ_depot(cs_lnum_t                       p_id,
+cs_sde_vels_pos_time_integ_depot(cs_lagr_particle_set_t         &p_set,
+                                 cs_lnum_t                       p_id,
                                  cs_real_t                       dt_part,
                                  int                             nor,
                                  const cs_real_t                 taup,
@@ -2655,10 +2651,6 @@ cs_sde_vels_pos_time_integ_depot(cs_lnum_t                       p_id,
                                  const cs_real_t                 vislen[],
                                  cs_lnum_t                      *n_new_particles)
 {
-  /* Particles management */
-  cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
-  const cs_lagr_attribute_map_t  *p_am = p_set.p_am;
-
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
 
   /* Initialisations*/
@@ -2696,8 +2688,6 @@ cs_sde_vels_pos_time_integ_depot(cs_lnum_t                       p_id,
   /* Loop on the particles
    * Note: new particles will be integrated at the next time step, otherwise
    * positions might be overwritten */
-
-  unsigned char *particle = p_set.p_buffer + p_am->extents * p_id;
 
   int imposed_motion = p_set.flag(p_id, CS_LAGR_PART_IMPOSED_MOTION);
 
@@ -2902,8 +2892,9 @@ cs_sde_vels_pos_time_integ_depot(cs_lnum_t                       p_id,
 
       }
 
-      _lagesd(dt_part,
+      _lagesd(p_set,
               p_id,
+              dt_part,
               nor,
               taup,
               piil,
@@ -2964,6 +2955,7 @@ cs_sde_vels_pos_time_integ_depot(cs_lnum_t                       p_id,
  * - Standard Model : First or second order
  * - Deposition submodel (Guingo & Minier, 2007) if needed
  *
+ * \param[in]  p_set     reference to particle set
  * \param[in]  p_id      particle index in set
  * \param[in]  dt_part   remaining time step associated to the particle
  * \param[in]  nor       current step id (for 2nd order scheme)
@@ -2983,7 +2975,8 @@ cs_sde_vels_pos_time_integ_depot(cs_lnum_t                       p_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_sde(cs_lnum_t                        p_id,
+cs_lagr_sde(cs_lagr_particle_set_t          &p_set,
+            cs_lnum_t                        p_id,
             cs_real_t                        dt_part,
             int                              nor,
             const cs_real_t                 *taup,
@@ -2998,8 +2991,6 @@ cs_lagr_sde(cs_lnum_t                        p_id,
             cs_real_6_t                      brgaus,
             cs_lnum_t                       *n_new_particles)
 {
-  cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
-
   cs_real_t romp;
 
   /* Computation of particle density */
@@ -3016,7 +3007,8 @@ cs_lagr_sde(cs_lnum_t                        p_id,
        for every particle */
 
     if (cs_glob_lagr_model->deposition <= 0)
-      cs_sde_vels_pos_1_st_order_time_integ(p_id,
+      cs_sde_vels_pos_1_st_order_time_integ(p_set,
+                                            p_id,
                                             dt_part,
                                             nor,
                                             taup,
@@ -3032,7 +3024,8 @@ cs_lagr_sde(cs_lnum_t                        p_id,
 
     /* TODO extend to multiphase flow */
     else
-      cs_sde_vels_pos_time_integ_depot(p_id,
+      cs_sde_vels_pos_time_integ_depot(p_set,
+                                       p_id,
                                        dt_part,
                                        nor,
                                        taup[0],
@@ -3053,7 +3046,8 @@ cs_lagr_sde(cs_lnum_t                        p_id,
   else {
 
     /* TODO extend to multiphase flow */
-    cs_sde_vels_pos_2_nd_order_time_integ(p_id,
+    cs_sde_vels_pos_2_nd_order_time_integ(p_set,
+                                          p_id,
                                           dt_part,
                                           nor,
                                           taup,
@@ -3144,7 +3138,7 @@ cs_lagr_sde_attr(cs_lagr_attribute_t   attr,
   else if (nor == 2) {
 
     if (p_set.attr_lnum(p_id, CS_LAGR_REBOUND_ID) > 0)
-    return;
+      return;
 
     if (tcarac <= 0.0)
       bft_error
@@ -3169,5 +3163,3 @@ cs_lagr_sde_attr(cs_lagr_attribute_t   attr,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

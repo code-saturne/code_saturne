@@ -87,8 +87,6 @@
 
 #include "lagr/cs_lagr_car.h"
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -112,6 +110,7 @@ BEGIN_C_DECLS
  *                                   0: use fields at current time step
  *                                   1: use fields at previous time step
  * \param[in]  phase_id            carrier phase id
+ * \param[in]  p_set               reference to particle set
  * \param[in]  p_id                particle id in set
  * \param[in]  nor                 current step id (for 2nd order scheme)
  * \param[in]  dt_part             time step associated to the particle
@@ -128,25 +127,24 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_car(int                iprev,
-            int                phase_id,
-            cs_lnum_t          p_id,
-            int                nor,
-            const cs_real_t    dt_part,
-            cs_real_t         *taup,
-            cs_real_3_t        tlag,
-            cs_real_3_t        piil,
-            cs_real_33_t       bx,
-            cs_real_2_t        tempct,
-            cs_real_3_t        beta,
-            cs_real_3_t       *vagaus,
-            cs_real_6_t        br_gaus)
+cs_lagr_car(int                         iprev,
+            int                         phase_id,
+            cs_lagr_particle_set_t     &p_set,
+            cs_lnum_t                   p_id,
+            int                         nor,
+            const cs_real_t             dt_part,
+            cs_real_t                  *taup,
+            cs_real_3_t                 tlag,
+            cs_real_3_t                 piil,
+            cs_real_33_t                bx,
+            cs_real_2_t                 tempct,
+            cs_real_3_t                 beta,
+            cs_real_3_t                *vagaus,
+            cs_real_6_t                 br_gaus)
 {
   /* Particles management */
 
   int cell_wise_integ = cs_glob_lagr_time_scheme->cell_wise_integ;
-
-  cs_lagr_particle_set_t &p_set = cs_lagr_get_particle_set_ref();
 
   /* FIXME we may still need to do computations here */
   if (p_set.flag(p_id, CS_LAGR_PART_FIXED))
@@ -702,5 +700,3 @@ cs_lagr_get_force_p(const cs_real_t    dt_part,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

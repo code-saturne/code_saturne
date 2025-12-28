@@ -28,10 +28,9 @@
 /*----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
+#include "lagr/cs_lagr_particle.h"
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -44,6 +43,8 @@ BEGIN_C_DECLS
 /*=============================================================================
  * Global variables
  *============================================================================*/
+
+#if defined(__cplusplus)
 
 /*=============================================================================
  * Public function prototypes
@@ -58,7 +59,7 @@ BEGIN_C_DECLS
  *                                   0: use fields at current time step
  *                                   1: use fields at previous time step
  * \param[in]  phase_id            carrier phase id
- * \param[in]  ip                  particle index in set
+ * \param[in]  p_id                particle index in set
  * \param[in]  nor                 current step id (for 2nd order scheme)
  * \param[in]  dt_part             time step associated to the particle
  * \param[out] taup                dynamic characteristic time
@@ -74,26 +75,27 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_car(int                iprev,
-            int                phase_id,
-            cs_lnum_t          ip,
-            int                nor,
-            const cs_real_t    dt_part,
-            cs_real_t         *taup,
-            cs_real_3_t        tlag,
-            cs_real_3_t        piil,
-            cs_real_33_t       bx,
-            cs_real_2_t        tempct,
-            cs_real_3_t        beta,
-            cs_real_3_t       *vagaus,
-            cs_real_6_t        br_gaus);
+cs_lagr_car(int                         iprev,
+            int                         phase_id,
+            cs_lagr_particle_set_t     &p_set,
+            cs_lnum_t                   p_id,
+            int                         nor,
+            const cs_real_t             dt_part,
+            cs_real_t                  *taup,
+            cs_real_3_t                 tlag,
+            cs_real_3_t                 piil,
+            cs_real_33_t                bx,
+            cs_real_2_t                 tempct,
+            cs_real_3_t                 beta,
+            cs_real_3_t                *vagaus,
+            cs_real_6_t                 br_gaus);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute external force impacting the particle
  *
  * \param[in]  dt_part             time step associated to the particle
- * \param[in]  ip                  particle index in set
+ * \param[in]  p_id                particle index in set
  * \param[in]  taup                dynamic characteristic time
  * \param[in]  tlag                fluid characteristic Lagrangian time scale
  * \param[in]  piil                term in integration of up sde
@@ -108,7 +110,7 @@ cs_lagr_car(int                iprev,
 
 void
 cs_lagr_get_force_p(const cs_real_t    dt_part,
-                    cs_lnum_t          ip,
+                    cs_lnum_t          p_id,
                     cs_real_t         *taup,
                     cs_real_3_t       *tlag,
                     cs_real_3_t       *piil,
@@ -116,8 +118,9 @@ cs_lagr_get_force_p(const cs_real_t    dt_part,
                     cs_real_t          tsfext,
                     cs_real_3_t       *vagaus,
                     cs_real_3_t        force_p);
+
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
+#endif /* __cplusplus */
 
 #endif /* __CS_LAGR_LAGCAR_H__ */

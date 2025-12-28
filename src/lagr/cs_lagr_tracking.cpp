@@ -880,7 +880,8 @@ _integ_particle_quantities(cs_lagr_particle_set_t          &p_set,
           && p_set.flag(p_id,
                                         CS_LAGR_PART_IMPOSED_MOTION)))
       /* Integration of SDEs: position, fluid and particle velocity */
-      cs_lagr_sde(p_id,
+      cs_lagr_sde(p_set,
+                  p_id,
                   dt_part,
                   nor,
                   taup,
@@ -2296,6 +2297,7 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
       for (int phase_id = 0; phase_id < n_phases; phase_id ++)
         cs_lagr_car(1, /* iprev = 1: Use fields at previous time step    */
                     phase_id,
+                    p_set,
                     p_id,
                     nor,
                     dt_part,
@@ -2314,7 +2316,8 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
       cs_real_6_t null_brgaus = {0. ,0. ,0. ,0. , 0. , 0.};
 
       /* save the integrated fields */
-      cs_sde_vels_pos_1_st_order_time_integ(p_id,
+      cs_sde_vels_pos_1_st_order_time_integ(p_set,
+                                            p_id,
                                             dt_part,
                                             nor,
                                             taup,
@@ -2806,6 +2809,7 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
           for (int phase_id =0; phase_id < n_phases; phase_id++)
             cs_lagr_car(0, /* iprev = 0: Use fields at current time step    */
                         phase_id,
+                        p_set,
                         p_id,
                         nor,
                         dt_part,
@@ -3829,6 +3833,7 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
       for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
         cs_lagr_car(1, /* iprev = 1: Use fields at previous time step    */
                     phase_id,
+                    p_set,
                     p_id,
                     1, // nor
                     dtp,
@@ -4024,6 +4029,7 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
 
         cs_lagr_car(0, /* iprev = 0: Use fields at current time step    */
                     phase_id,
+                    p_set,
                     p_id,
                     nor,
                     dtp,
