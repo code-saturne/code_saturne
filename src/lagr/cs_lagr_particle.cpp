@@ -71,8 +71,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -957,17 +955,17 @@ cs_lagr_set_n_g_particles_max(unsigned long long  n_g_particles_max)
 /*!
  * \brief Copy current attributes to previous attributes.
  *
- * \param[in, out]  p_set     associated particle set
- * \param[in]       particle_id  id of particle
+ * \param[in, out]  p_set        reference to particle set
+ * \param[in]       p_id         id of particle
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_particles_current_to_previous(cs_lagr_particle_set_t   p_set,
-                                      cs_lnum_t                particle_id)
+cs_lagr_particles_current_to_previous(cs_lagr_particle_set_t  &p_set,
+                                      cs_lnum_t                p_id)
 {
   const cs_lagr_attribute_map_t  *p_am = p_set.p_am;
-  unsigned char *p_buf = p_set.p_buffer + p_am->extents*(particle_id);
+  unsigned char *p_buf = p_set.p_buffer + p_am->extents*(p_id);
 
   for (int i_attr = 0;
        i_attr < CS_LAGR_N_ATTRIBUTES;
@@ -1023,10 +1021,6 @@ cs_lagr_set_n_user_variables(int  n_user_variables)
 {
   cs_glob_lagr_model->n_user_variables = n_user_variables;
 }
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 

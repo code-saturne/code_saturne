@@ -59,6 +59,7 @@
  *                                   0: use fields at current time step
  *                                   1: use fields at previous time step
  * \param[in]  phase_id            carrier phase id
+ * \param[in]  p_set               reference to particle set
  * \param[in]  p_id                particle index in set
  * \param[in]  nor                 current step id (for 2nd order scheme)
  * \param[in]  dt_part             time step associated to the particle
@@ -68,8 +69,6 @@
  * \param[out] bx                  turbulence characteristics
  * \param[out] tempct              thermal characteristic time
  * \param[out] beta                for the extended scheme
- * \param[out] vagaus              gaussian random variables
- * \param[out] br_gaus             gaussian random variables
  *
  */
 /*----------------------------------------------------------------------------*/
@@ -86,15 +85,14 @@ cs_lagr_car(int                         iprev,
             cs_real_3_t                 piil,
             cs_real_33_t                bx,
             cs_real_2_t                 tempct,
-            cs_real_3_t                 beta,
-            cs_real_3_t                *vagaus,
-            cs_real_6_t                 br_gaus);
+            cs_real_3_t                 beta);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute external force impacting the particle
  *
  * \param[in]  dt_part             time step associated to the particle
+ * \param[in]  p_set               reference to particle set
  * \param[in]  p_id                particle index in set
  * \param[in]  taup                dynamic characteristic time
  * \param[in]  tlag                fluid characteristic Lagrangian time scale
@@ -103,21 +101,21 @@ cs_lagr_car(int                         iprev,
  * \param[in]  tempct              thermal characteristic time
  * \param[in]  beta                for the extended scheme
  * \param[in]  tsfext              info for return coupling source terms
- * \param[in]  vagaus              gaussian random variables
  * \param[in]  force_p             user external force field (m/s^2)$
  *
  */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_get_force_p(const cs_real_t    dt_part,
-                    cs_lnum_t          p_id,
-                    cs_real_t         *taup,
-                    cs_real_3_t       *tlag,
-                    cs_real_3_t       *piil,
-                    cs_real_33_t      *bx,
-                    cs_real_t          tsfext,
-                    cs_real_3_t       *vagaus,
-                    cs_real_3_t        force_p);
+cs_lagr_get_force_p(const cs_real_t             dt_part,
+                    cs_lagr_particle_set_t     &p_set,
+                    cs_lnum_t                   p_id,
+                    cs_real_t                  *taup,
+                    cs_real_3_t                *tlag,
+                    cs_real_3_t                *piil,
+                    cs_real_33_t               *bx,
+                    cs_real_t                   tsfext,
+                    cs_real_3_t                 force_p);
 
 /*----------------------------------------------------------------------------*/
 

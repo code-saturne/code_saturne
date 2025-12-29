@@ -145,7 +145,6 @@ cs_user_lagr_model(void);
  * \param[in]      piil     term in the integration of the sde
  * \param[in]      bx       characteristics of the turbulence
  * \param[in]      tsfext   infos for the return coupling
- * \param[in]      vagaus   Gaussian random variables
  * \param[in,out]  rho_p    particle density
  * \param[out]     fextla   user external force field (m/s^2)$
  */
@@ -159,7 +158,6 @@ cs_user_lagr_ef(cs_real_t            dt_p,
                 const cs_real_3_t   *piil,
                 const cs_real_33_t  *bx,
                 const cs_real_t      tsfext,
-                const cs_real_3_t   *vagaus,
                 const cs_real_3_t    gradpr,
                 const cs_real_33_t   gradvf,
                 cs_real_t            rho_p,

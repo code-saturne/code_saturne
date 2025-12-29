@@ -225,6 +225,7 @@ _secant_ter7p(double a,
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Integration of SDEs by 1st order time scheme for one particle
+ *  multiphase variant
  *
  * \param[in]  p_set     reference to particle set
  * \param[in]  p_id      particle index in set
@@ -241,18 +242,18 @@ _secant_ter7p(double a,
  */
 /*----------------------------------------------------------------------------*/
 void
-cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
-                                      cs_lnum_t                       p_id,
-                                      cs_real_t                       dt_part,
-                                      int                             nor,
-                                      const cs_real_t                *taup,
-                                      const cs_real_3_t              *tlag,
-                                      const cs_real_3_t              *piil,
-                                      const cs_real_33_t             *bx,
-                                      const cs_real_3_t              *vagaus,
-                                      const cs_real_6_t               brgaus,
-                                      const cs_real_3_t               force_p,
-                                      const cs_real_3_t               beta)
+_sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
+                                       cs_lnum_t                       p_id,
+                                       cs_real_t                       dt_part,
+                                       int                             nor,
+                                       const cs_real_t                *taup,
+                                       const cs_real_3_t              *tlag,
+                                       const cs_real_3_t              *piil,
+                                       const cs_real_33_t             *bx,
+                                       const cs_real_3_t              *vagaus,
+                                       const cs_real_6_t               brgaus,
+                                       const cs_real_3_t               force_p,
+                                       const cs_real_3_t               beta)
 {
 
   /* use previous step for t_order == 1 or prediction step
@@ -329,7 +330,8 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
   cs_real_3_t *old_part_vel_seen_r = nullptr;
   cs_real_3_t *fluid_vel_r = nullptr;
   cs_real_3_t *piil_r = nullptr;
-  cs_real_3_t *tlag_r = nullptr;
+  /* already in the local reference frame */
+  const cs_real_3_t *tlag_r = tlag;
   cs_real_3_t *taup_r = nullptr;
   CS_MALLOC(lambda, n_phases, cs_real_t);
   CS_MALLOC(loc_fluid_vel, n_phases, cs_real_3_t);
@@ -337,7 +339,6 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
   CS_MALLOC(old_part_vel_seen_r, n_phases, cs_real_3_t);
   CS_MALLOC(fluid_vel_r, n_phases, cs_real_3_t);
   CS_MALLOC(piil_r, n_phases, cs_real_3_t);
-  CS_MALLOC(tlag_r, n_phases, cs_real_3_t);
   CS_MALLOC(taup_r, n_phases, cs_real_3_t);
 
   /* Integrate SDE's over particles
@@ -424,20 +425,15 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
         loc_fluid_vel[phase_id][i] = cvar_vel[phase_id][cell_id][i];
       }
     }
-  }
 
-  for (int phase_id = 0; phase_id < n_phases; phase_id++) {
     for (int i = 0; i < 3; i++) {
       part_vel_seen_r[phase_id][i] = part_vel_seen[phase_id * 3 + i];
       old_part_vel_seen_r[phase_id][i] = old_part_vel_seen[phase_id * 3 + i];
       fluid_vel_r[phase_id][i] = loc_fluid_vel[phase_id][i];
     }
-  }
 
-  for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
     for (int i = 0; i < 3; i ++) {
       piil_r[phase_id][i] = piil[phase_id][i];
-      tlag_r[phase_id][i] = tlag[phase_id][i];
       taup_r[phase_id][i] = taup[phase_id];
       taup_rm[i] += lambda[phase_id] / taup_r[phase_id][i];
     }
@@ -871,7 +867,8 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
     p22 = gagam2;
     p32 = gagam_ome;
     p33 = ome2;
-    for (int phase_id = 0; phase_id < n_phases; phase_id++){
+
+    for (int phase_id = 0; phase_id < n_phases; phase_id++) {
       if (cs::abs(p11[phase_id]) > cs_math_epzero) {
         p21[phase_id] = gam_gagam[phase_id] / p11[phase_id];
         p31[phase_id] = gam_ome[phase_id] / p11[phase_id];
@@ -879,8 +876,7 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
         p21[phase_id] = 0.;
         p31[phase_id] = 0.;
       }
-    }
-    for (int phase_id = 0; phase_id < n_phases; phase_id++){
+
       p22 -= cs_math_pow2(p21[phase_id]);
       p32 -= p31[phase_id] * p21[phase_id];
       p33 -= cs_math_pow2(p31[phase_id]);
@@ -897,31 +893,31 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
     p33 = sqrt(cs::max(0.0, p33));
     ter5p = 0.;
     ter5x = 0.;
-    for (int phase_id = 0; phase_id < n_phases; phase_id++){
+    for (int phase_id = 0; phase_id < n_phases; phase_id++) {
       ter5p += p21[phase_id] * vagaus[phase_id][id];
       ter5x += p31[phase_id] * vagaus[phase_id][id];
     }
     ter5p += p22 * vagaus[n_phases][id];
     ter5x += p32 * vagaus[n_phases][id] + p33 * vagaus[n_phases + 1][id];
 
-      /* (2.3) Compute terms in the Brownian movement case */
-      /* TODO: Warning based on the first carrier phase with N fluids */
-      if (cs_glob_lagr_brownian->lamvbr == 1) {
+    /* (2.3) Compute terms in the Brownian movement case */
+    /* TODO: Warning based on the first carrier phase with N fluids */
+    if (cs_glob_lagr_brownian->lamvbr == 1) {
 
-        /* Compute temperature seen */
-        cs_real_t tempf;
-        if (extra->temperature != nullptr) {
-          if (t_scl == CS_TEMPERATURE_SCALE_KELVIN)
-            tempf = extra->temperature->val[cell_id];
-          else /* if (t_scl == CS_TEMPERATURE_SCALE_CELSIUS) */
-            tempf = extra->temperature->val[cell_id] + tkelvi;
-        }
+      /* Compute temperature seen */
+      cs_real_t tempf;
+      if (extra->temperature != nullptr) {
+        if (t_scl == CS_TEMPERATURE_SCALE_KELVIN)
+          tempf = extra->temperature->val[cell_id];
+        else /* if (t_scl == CS_TEMPERATURE_SCALE_CELSIUS) */
+          tempf = extra->temperature->val[cell_id] + tkelvi;
+      }
 
-        else {
-          tempf = cs_glob_fluid_properties->t0;
-          if (t_scl == CS_TEMPERATURE_SCALE_CELSIUS)
-            tempf += tkelvi;
-        }
+      else {
+        tempf = cs_glob_fluid_properties->t0;
+        if (t_scl == CS_TEMPERATURE_SCALE_CELSIUS)
+          tempf += tkelvi;
+      }
 
       cs_real_t p_mass = p_set.attr_real(p_id, CS_LAGR_MASS);
 
@@ -1054,10 +1050,686 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
   CS_FREE(old_part_vel_seen_r);
   CS_FREE(fluid_vel_r);
   CS_FREE(piil_r);
-  CS_FREE(tlag_r);
   CS_FREE(taup_r);
   CS_FREE(cvar_vel);
 }
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Integration of SDEs by 1st order time scheme for one particle
+ *
+ * \param[in]  p_set     reference to particle set
+ * \param[in]  p_id      particle index in set
+ * \param[in]  dt_part   remaining time step associated to the particle
+ * \param[in]  nor       current step id (for 2nd order scheme)
+ * \param[in]  taup      dynamic characteristic time
+ * \param[in]  tlag      lagrangian fluid characteristic time
+ * \param[in]  piil      term in integration of up sdes
+ * \param[in]  bx        turbulence characteristics
+ * \param[in]  vagaus    gaussian random variables
+ * \param[in]  brgaus    gaussian random variables
+ * \param[in]  force_p   forces per mass unit on particles (m/s^2)
+ * \param[in]  beta      proportional to the gradient of T_lag
+ */
+/*----------------------------------------------------------------------------*/
+void
+cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
+                                      cs_lnum_t                       p_id,
+                                      cs_real_t                       dt_part,
+                                      int                             nor,
+                                      const cs_real_t                *taup,
+                                      const cs_real_3_t              *tlag,
+                                      const cs_real_3_t              *piil,
+                                      const cs_real_33_t             *bx,
+                                      const cs_real_3_t              *vagaus,
+                                      const cs_real_6_t               brgaus,
+                                      const cs_real_3_t               force_p,
+                                      const cs_real_3_t               beta)
+{
+
+  /* use previous step for t_order == 1 or prediction step
+   * and current one for correction step */
+  cs_lnum_t cell_id = p_set.attr_n_lnum(p_id, 2-nor, CS_LAGR_CELL_ID);
+
+  if (cell_id <0)
+    return;
+  cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
+  cs_lagr_extra_module_t *extra = extra_i;
+
+  int phase_id = 0;
+  int n_phases = 1;
+
+  /* Initialisations*/
+
+  cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
+
+  cs_real_t aux1, aux1m, aux2, aux3, aux3m, aux4,
+            aux44, aux5, aux6, aux7, aux8,
+            aux9, aux10, aux11;
+  cs_real_t ter1f, ter2f, ter3f;
+  cs_real_t ter1p, ter2p, ter3p, ter4p, ter5p;
+  cs_real_t ter1x, ter2x, ter3x, ter4x, ter5x;
+  // Terms of the reduction matrix
+  cs_real_t p11, p21, p22, p31, p32, p33;
+  // Terms of the covariance matrix for the Gauss vector
+  cs_real_t gam2;
+  cs_real_t gam_gagam, gagam2;
+  cs_real_t gam_ome, gagam_ome, ome2;
+  cs_real_t tbrix1, tbrix2, tbriu;
+  cs_real_t ter7x, ter7p, ter7f;
+  ter7x = 0.;
+  ter7p = 0.;
+  ter7f = 0.;
+
+  const int _prev_id = (extra->vel->n_time_vals > 1) ? 1 : 0;
+
+  const cs_temperature_scale_t t_scl = cs_glob_thermal_model->temperature_scale;
+
+  const cs_real_3_t *cvar_vel =
+    (const cs_real_3_t *)(extra_i[0].vel->vals[_prev_id]);
+
+  /* Fluid particles need no change of reference frame, others do */
+
+  bool local_reference_frame = true;
+  if (   cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHERE_MODEL
+      && cs_glob_lagr_model->modcpl == 0)
+    local_reference_frame = false;
+
+  /* Obtain the mean particle velocity for each cell, if present */
+
+  cs_field_t *stat_vel = nullptr;
+  cs_field_t *stat_vel_s = nullptr;
+
+  if (   cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHERE_MODEL
+      && cs_glob_lagr_model->modcpl) {
+    int stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY);
+    stat_vel = cs_lagr_stat_get_moment(stat_type,
+                                       CS_LAGR_STAT_GROUP_PARTICLE,
+                                       CS_LAGR_MOMENT_MEAN,
+                                       0, -1);
+    stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY_SEEN);
+    stat_vel_s = cs_lagr_stat_get_moment(stat_type,
+                                       CS_LAGR_STAT_GROUP_PARTICLE,
+                                       CS_LAGR_MOMENT_MEAN,
+                                       0, -1);
+  }
+
+  cs_real_3_t loc_fluid_vel;
+  cs_real_3_t part_vel_seen_r;
+  cs_real_3_t old_part_vel_seen_r;
+  cs_real_3_t fluid_vel_r;
+  cs_real_3_t piil_r;
+  /* already in the local reference frame */
+  const cs_real_3_t *tlag_r = tlag;
+  cs_real_3_t taup_r;
+
+  /* Integrate SDE's over particles
+   * Note: new particles will be integrated at the next time step, otherwise
+   * positions might be overwritten */
+
+  const cs_real_t *cell_cen = cs_glob_mesh_quantities->cell_cen[cell_id];
+
+  /* Get particle coordinates, velocity and velocity seen*/
+
+  auto *old_part_vel      =
+    p_set.attr_n_real_ptr(p_id, 1, CS_LAGR_VELOCITY);
+  auto *old_part_vel_seen =
+    p_set.attr_n_real_ptr(p_id, 1, CS_LAGR_VELOCITY_SEEN);
+  auto *old_part_coords   =
+    p_set.attr_n_real_ptr(p_id, 1, CS_LAGR_COORDS);
+  auto *part_vel          =
+    p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY);
+  auto *part_vel_seen     =
+    p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY_SEEN);
+  auto *part_coords       =
+    p_set.attr_real_ptr(p_id, CS_LAGR_COORDS);
+
+  int imposed_motion = p_set.flag(p_id, CS_LAGR_PART_IMPOSED_MOTION);
+  if (imposed_motion) {
+    cs_real_t disp[3] = {0., 0., 0.};
+
+    cs_user_lagr_imposed_motion(p_set,
+                                p_id,
+                                old_part_coords,
+                                dt_part,
+                                disp);
+
+    for (cs_lnum_t id = 0; id < 3; id++) {
+
+      part_coords[id] = old_part_coords[id] + disp[id];
+
+      part_vel_seen[id] =  0.0;
+
+      part_vel[id] = disp[id] / dt_part;
+
+    }
+    return;
+  } /* End IMPOSED_MOTION */
+
+  /* Initialize (without change of frame)*/
+
+  cs_real_t part_vel_r[3] = {part_vel[0], part_vel[1], part_vel[2]};
+  cs_real_t old_part_vel_r[3] = {old_part_vel[0],
+                                 old_part_vel[1],
+                                 old_part_vel[2]};
+
+  cs_real_t force_p_r[3] = {force_p[0], force_p[1], force_p[2]};
+  cs_real_t taup_rm[3] = {0., 0., 0.};
+
+  cs_real_t displ_r[3];
+  cs_real_t trans_m[3][3];
+
+  /* resolve SDEs*/
+  if (cs_glob_lagr_time_scheme->interpol_field == 1) {
+    for (int i = 0; i < 3; i++) {
+      loc_fluid_vel[i] = cvar_vel[cell_id][i];
+      for (int j = 0; j < 3; j++)
+        loc_fluid_vel[i] += extra_i[phase_id].grad_vel[cell_id][i][j]
+                          * (part_coords[j] - cell_cen[j]);
+    }
+  }
+  else {
+    for (int i = 0; i < 3; i++) {
+      loc_fluid_vel[i] = cvar_vel[cell_id][i];
+    }
+  }
+
+  for (int i = 0; i < 3; i++) {
+    part_vel_seen_r[i] = part_vel_seen[i];
+    old_part_vel_seen_r[i] = old_part_vel_seen[i];
+    fluid_vel_r[i] = loc_fluid_vel[i];
+  }
+
+  for (int i = 0; i < 3; i ++) {
+    piil_r[i] = piil[phase_id][i];
+    taup_r[i] = taup[phase_id];
+    taup_rm[i] += 1. / taup_r[i];
+  }
+
+  for (int i = 0; i < 3; i ++)
+    taup_rm[i] = 1./taup_rm[i];
+
+  if (local_reference_frame) {
+
+    /* Global reference frame --> local reference frame depending on model
+       =================================================================== */
+
+    switch (cs_glob_lagr_model->shape) {
+
+    case CS_LAGR_SHAPE_SPHERE_MODEL:
+      {
+        /* Compute the main direction in the global reference
+         * frame */
+        cs_real_t dir[3];
+
+        /* Obtain the mean particle velocity for each cell */
+        const cs_real_t *mean_part_vel_p = stat_vel->val + (cell_id * 3);
+        const cs_real_t *mean_part_vel_s = stat_vel_s->val + (cell_id * 3);
+
+        /* Get Relative mean velocity */
+        /* Relative mean velocity
+         * <u_p> - <u_s> = <u_r>
+         * See Minier et al 2024.
+         * */
+        for (cs_lnum_t i = 0; i < 3; i++)
+          dir[i] = mean_part_vel_p[i] - mean_part_vel_s[i];
+
+        cs_math_3_normalize(dir, dir);
+
+        // Rotate the frame of reference with respect to the
+        // mean relative velocity direction.
+
+        // The rotation axis is the result of the cross product between
+        // the new direction vector and the main axis.
+        cs_real_t n_rot[3];
+        /* the direction in the local reference frame "_r" is (1, 0, 0)
+         * by convention */
+        const cs_real_t dir_r[3] = {1.0, 0.0, 0.0};
+
+        // Use quaternion (cos(theta/2), sin(theta/2) n_rot)
+        // where n_rot = dir ^ dir_r normalised
+        // so also       dir ^ (dir + dir_r)
+        //
+        // cos(theta/2) = || dir + dir_r|| / 2
+        cs_real_t dir_p_dir_r[3] = {dir[0] + dir_r[0],
+                                    dir[1] + dir_r[1],
+                                    dir[2] + dir_r[2]};
+        cs_real_t dir_p_dir_r_normed[3];
+        cs_math_3_normalize(dir_p_dir_r, dir_p_dir_r_normed);
+
+        /* dir ^(dir + dir_r) / || dir + dir_r|| = sin(theta/2) n_rot
+         * for the quaternion */
+        cs_math_3_cross_product(dir, dir_p_dir_r_normed, n_rot);
+
+        /* quaternion, could be normalized afterwards
+         *
+         * Note that the division seems stupid but is not
+         * in case of degenerated case where dir is null
+         * */
+        const cs_real_t euler[4] =
+        {  cs_math_3_norm(dir_p_dir_r)
+          / (cs_math_3_norm(dir) + cs_math_3_norm(dir_r)),
+              n_rot[0],
+              n_rot[1],
+              n_rot[2]};
+
+        trans_m[0][0] = 2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5);
+        trans_m[0][1] = 2.*(euler[1]*euler[2]+euler[0]*euler[3]);
+        trans_m[0][2] = 2.*(euler[1]*euler[3]-euler[0]*euler[2]);
+        trans_m[1][0] = 2.*(euler[1]*euler[2]-euler[0]*euler[3]);
+        trans_m[1][1] = 2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5);
+        trans_m[1][2] = 2.*(euler[2]*euler[3]+euler[0]*euler[1]);
+        trans_m[2][0] = 2.*(euler[1]*euler[3]+euler[0]*euler[2]);
+        trans_m[2][1] = 2.*(euler[2]*euler[3]-euler[0]*euler[1]);
+        trans_m[2][2] = 2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5);
+
+      }
+      break;
+
+    case CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL:
+      {
+        // Use Euler angles for spheroids (Jeffery)
+        const cs_real_t *euler =
+          p_set.attr_real_ptr(p_id, CS_LAGR_EULER);
+
+        trans_m[0][0] = 2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5);
+        trans_m[0][1] = 2.*(euler[1]*euler[2]+euler[0]*euler[3]);
+        trans_m[0][2] = 2.*(euler[1]*euler[3]-euler[0]*euler[2]);
+        trans_m[1][0] = 2.*(euler[1]*euler[2]-euler[0]*euler[3]);
+        trans_m[1][1] = 2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5);
+        trans_m[1][2] = 2.*(euler[2]*euler[3]+euler[0]*euler[1]);
+        trans_m[2][0] = 2.*(euler[1]*euler[3]+euler[0]*euler[2]);
+        trans_m[2][1] = 2.*(euler[2]*euler[3]-euler[0]*euler[1]);
+        trans_m[2][2] = 2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5);
+      }
+      break;
+
+    case CS_LAGR_SHAPE_SPHEROID_STOC_MODEL:
+      {
+        // Use rotation matrix for stochastic model
+          cs_real_t *orient_loc  =
+            p_set.attr_real_ptr(p_id, CS_LAGR_ORIENTATION);
+        cs_real_t singularity_axis[3] = {1.0, 0.0, 0.0};
+        // Get vector for rotation
+        cs_real_t n_rot[3];
+        cs_math_3_cross_product(orient_loc, singularity_axis, n_rot);
+        cs_math_3_normalize(n_rot, n_rot);
+        // Compute rotation angle
+        cs_real_t cosa = cs_math_3_dot_product(orient_loc, singularity_axis);
+        cs_real_t sina = sin(acos(cosa));
+
+        // Compute the rotation matrix
+        trans_m[0][0] = cosa + cs_math_pow2(n_rot[0])*(1.0 - cosa);
+        trans_m[0][1] = n_rot[0]*n_rot[1]*(1.0 - cosa) - n_rot[2]*sina;
+        trans_m[0][2] = n_rot[0]*n_rot[2]*(1.0 - cosa) + n_rot[1]*sina;
+        trans_m[1][0] = n_rot[0]*n_rot[1]*(1.0 - cosa) + n_rot[2]*sina;
+        trans_m[1][1] = cosa + cs_math_pow2(n_rot[1])*(1.0 - cosa);
+        trans_m[1][2] = n_rot[1]*n_rot[2]*(1.0 - cosa) - n_rot[0]*sina;
+        trans_m[2][0] = n_rot[0]*n_rot[2]*(1.0 - cosa) - n_rot[1]*sina;
+        trans_m[2][1] = n_rot[1]*n_rot[2]*(1.0 - cosa) + n_rot[0]*sina;
+        trans_m[2][2] = cosa + cs_math_pow2(n_rot[2])*(1.0 - cosa);
+      }
+        break;
+
+      default:
+        assert(0);
+        bft_error
+          (__FILE__, __LINE__, 0,
+           _("Change of reference frame not implemented\n"));
+
+      }
+
+    /* 1.1 - particle velocity */
+
+    cs_math_33_3_product(trans_m, old_part_vel, old_part_vel_r);
+
+    /* 1.2 - flow-seen velocity  */
+
+    cs_math_33_3_product(trans_m,
+        old_part_vel_seen,
+        old_part_vel_seen_r);
+
+    /* 1.3 Particle force: - pressure gradient/romp + external force + g */
+
+    cs_math_33_3_product(trans_m, force_p, force_p_r);
+
+    /* 1.4 - flow velocity  (current and previous) */
+
+    cs_math_33_3_product(trans_m,
+                         loc_fluid_vel,
+                         fluid_vel_r);
+
+    /* 1.5 - "piil" term    */
+
+    cs_math_33_3_product(trans_m, piil[phase_id], piil_r);
+
+    /* 1.6 - taup  */
+
+    if (   cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_STOC_MODEL
+          || cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL) {
+
+        cs_real_t *radii =
+          p_set.attr_real_ptr(p_id, CS_LAGR_RADII);
+
+      cs_real_t *s_p =
+        p_set.attr_real_ptr(p_id, CS_LAGR_SHAPE_PARAM);
+
+      taup_r[0] = 3.0 / 8.0 * taup[phase_id]
+        * (radii[0] * radii[0] * s_p[0] + s_p[3])
+        / pow(radii[0] * radii[1] * radii[2], 2.0 / 3.0);
+      taup_r[1] = 3.0 / 8.0 * taup[phase_id]
+        * (radii[1] * radii[1] * s_p[1] + s_p[3])
+        / pow(radii[0] * radii[1] * radii[2], 2.0 / 3.0);
+      taup_r[2] = 3.0 / 8.0 * taup[phase_id]
+        * (radii[2] * radii[2] * s_p[2] + s_p[3])
+        / pow(radii[0] * radii[1] * radii[2], 2.0 / 3.0);
+    }
+  }
+
+  /* Integration of the SDE on the particles
+   * ======================================= */
+
+  for (cs_lnum_t id = 0; id < 3; id++) {
+    gagam2 = 0.;
+    gagam_ome = 0.;
+    ome2 = 0.;
+
+    /* Preliminary computation:
+       ------------------------ */
+
+    cs_real_t tci;
+    /* velocity induced by a force by unit mass */
+    cs_real_t v_lim = force_p_r[id] * taup_rm[id];
+
+    /* Compute deterministic coefficients/terms
+       ---------------------------------------- */
+
+    aux1m = exp(-dt_part / taup_rm[id]);
+    cs_real_t bb, cc, dd, ff;
+
+    cs_real_t aa = taup_rm[id] * (1.0 - aux1m);
+    cs_real_t ee = 1.0 - aux1m;
+
+    /* --> first and second increment for particle velocity */
+    ter1p = old_part_vel_r[id] * aux1m;
+    ter4p = v_lim * ee;
+
+    /* --> first and second increment for particle position */
+    ter1x = aa * old_part_vel_r[id];
+    ter4x = (dt_part - aa) * v_lim;
+
+    /* Integral for the particles velocity */
+    aux10 = 0.5 * taup_rm[id] * (1.0 - aux1m * aux1m);
+
+    tci = piil_r[id] * tlag_r[phase_id][id];
+
+    tci += fluid_vel_r[id];
+
+    cs_real_t multiphase_coef = taup_rm[id] / taup_r[id];
+    cs_real_t multiphase_coef2 = cs_math_pow2(multiphase_coef);
+
+    /* Compute deterministic coefficients/terms
+    ---------------------------------------- */
+
+    cs_real_t taup_ddt = taup_r[id] / dt_part;
+    cs_real_t tlag_ddt = tlag_r[phase_id][id] / dt_part;
+    aux1 = exp(-dt_part / taup_r[id]);
+    aux2 = exp(-dt_part / tlag_r[phase_id][id]);
+    aux3 = tlag_r[phase_id][id]
+      / (tlag_r[phase_id][id] - taup_r[id]);
+    aux3m = tlag_r[phase_id][id]
+      / (tlag_r[phase_id][id] - taup_rm[id]);
+    aux4 = tlag_r[phase_id][id]
+      / (tlag_r[phase_id][id] + taup_r[id]);
+    aux44 = taup_rm[id] / (tlag_r[phase_id][id] + taup_rm[id]);
+
+    aux5 = tlag_r[phase_id][id] * (1.0 - aux2);
+    aux6 = cs_math_pow2(bx[phase_id][id][nor-1])
+      * tlag_r[phase_id][id];
+    aux7 = tlag_r[phase_id][id] - taup_r[id];
+    aux8 = cs_math_pow2(bx[phase_id][id][nor-1])
+      * cs_math_pow2(aux3m);
+    /* --> trajectory terms */
+    bb = tlag_r[phase_id][id] * _secant_ter2x(taup_ddt, tlag_ddt);
+    cc = dt_part - aa - bb;
+    ff = 1. / taup_r[id] * taup_rm[id];
+
+    ter2f = tci * (1.0 - aux2);
+
+    /* Integral on flow velocity seen */
+    gam2  = 0.5 * (1.0 - aux2 * aux2);
+    p11   = sqrt(gam2 * aux6);
+    ter3f = p11 * vagaus[phase_id][id];
+
+    /* Terms for particle velocity */
+    dd = tlag_ddt * _secant_ter2p(taup_ddt, tlag_ddt);
+
+    ter3p = tci * ff * (ee - dd);
+
+    /* Integral for the particles velocity */
+    aux9 = 0.5 * tlag_r[phase_id][id] * (1.0 - aux2 * aux2);
+    aux11 =   taup_rm[id] * tlag_r[phase_id][id]
+            * (1.0 - aux1m * aux2)
+            / (taup_rm[id] + tlag_r[phase_id][id]);
+
+    ter3x = ff * cc * tci;
+
+    /* Flow-seen velocity terms */
+    ter1f = old_part_vel_seen_r[id] * aux2;
+
+    /* Terms for particle velocity */
+    ter2p = old_part_vel_seen_r[id] * dd;
+
+    /* Terms for particle position */
+    ter2x = bb * old_part_vel_seen_r[id] ;
+
+    /* Compute the other terms for the covariance matrix of the Gauss vector */
+    gam_gagam = (aux9 - aux11) * (aux8 / aux3);
+
+    gagam2 = (aux9 - 2.0 * aux11 + aux10) * aux8;
+
+    gam_ome = ( (tlag_r[phase_id][id] - taup_r[id])
+        * (aux5 - aa)
+          - tlag_r[phase_id][id] * aux9
+          - taup_r[id] * aux10
+          + (tlag_r[phase_id][id] + taup_r[id]) * aux11)
+          * aux8;
+
+    gagam_ome = aux3 * (  (tlag_r[phase_id][id] - taup_r[id])
+        * (1.0 - aux2)
+                 - 0.5 * tlag_r[phase_id][id] * (1.0 - aux2 * aux2)
+                 + cs_math_pow2(taup_r[id])
+                 / (tlag_r[phase_id][id] + taup_r[id])
+                 * (1.0 - aux1 * aux2)) * aux6;
+
+    ome2 = aux7 * (aux7 * dt_part - 2.0
+          * (tlag_r[phase_id][id] * aux5 - taup_r[id] * aa))
+         + 0.5 * tlag_r[phase_id][id] * tlag_r[phase_id][id] * aux5
+         * (1.0 + aux2)
+         + 0.5 * taup_r[id] * taup_r[id] * aa * (1.0 + aux1)
+         - 2.0 * aux4 * tlag_r[phase_id][id]
+         * taup_r[id] * taup_r[id]
+               * (1.0 - aux1 * aux2);
+    ome2 = ome2 * aux8;
+
+    /* Additional terms when gradient of Tl is not negligible
+     * */
+    /* particle positions term */
+    cs_real_t aux5b = taup_r[id] * (1.0 - aux1);
+    ter7x = beta[id] * (
+        aux4 * cs_math_pow2(taup_r[id]) * dt_part
+      + cs_math_pow2(tlag_r[0][id]) * dt_part * aux2
+      - cs_math_pow3(tlag_r[0][id])*(1. - aux2)
+      + 0.5 * tlag_r[0][id] * (tlag_r[0][id] - 2. * taup_r[id])
+            * (dt_part - taup_r[id] * (1. - aux2))
+      + aux3 * taup_r[id] * (2. * tlag_r[0][id] - taup_r[id]) * (aux5 - aux5b)
+      - 0.25 * cs_math_pow3(tlag_r[0][id])
+             * _secant_ter7x(taup_ddt, 0.5*tlag_ddt)
+      - cs_math_pow2(aux4) * cs_math_pow3(taup_r[id]) * (1. - aux1*aux2)
+      );
+
+    /* particle velocity term */
+    ter7p = beta[id] * (
+      cs_math_pow2(taup_r[id]) * aux4 * (1. - aux1 * aux2)
+      - tlag_r[0][id] * dt_part * aux2
+      + 0.5 * tlag_r[0][id] * (tlag_r[0][id] - 2. * taup_r[id]) * (1. - aux1)
+      + taup_r[id] * aux3 * (2. * tlag_r[0][id] - taup_r[id]) * (aux2 - aux1)
+      - 0.25 * cs_math_pow3(tlag_r[0][id]) / dt_part
+             * _secant_ter7p(taup_ddt, 0.5*tlag_ddt)
+      );
+
+    /* velocity seen by the particle */
+    ter7f = beta[id] * (
+        tlag_r[0][id] * aux7 * (1. - (1. + dt_part / tlag_r[0][id]) * aux2)
+        - 0.5 *cs_math_pow2(aux5)
+        + cs_math_pow2(taup_r[id]) / (tlag_r[0][id] + taup_r[id])
+          * (aux5 - aux2 * aux5b)
+        );
+
+    /* Now we can compute the pij and then ter5p, ter5x
+    pij are the components of the matrix from the Cholesky decomposition of Cij
+    (covariance matrix of the Gauss vector) */
+
+    p22 = gagam2;
+    p32 = gagam_ome;
+    p33 = ome2;
+
+    if (cs::abs(p11) > cs_math_epzero) {
+      p21 = gam_gagam / p11;
+      p31 = gam_ome / p11;
+    } else {
+      p21 = 0.;
+      p31 = 0.;
+    }
+
+    p22 -= cs_math_pow2(p21);
+    p32 -= p31 * p21;
+    p33 -= cs_math_pow2(p31);
+
+    p22 = sqrt(cs::max(0.0, p22));
+
+    if (p22 > cs_math_epzero)
+      p32 /= p22;
+    else
+      p32 = 0.;
+
+    p33 -= cs_math_pow2(p32);
+    p33 = sqrt(cs::max(0.0, p33));
+    ter5p = p21 * vagaus[phase_id][id]
+          + p22 * vagaus[n_phases][id];
+    ter5x = p31 * vagaus[phase_id][id]
+          + p32 * vagaus[n_phases][id] + p33 * vagaus[n_phases + 1][id];
+
+    /* (2.3) Compute terms in the Brownian movement case */
+    /* TODO: Warning based on the first carrier phase with N fluids */
+    if (cs_glob_lagr_brownian->lamvbr == 1) {
+
+      /* Compute temperature seen */
+      cs_real_t tempf;
+      if (extra->temperature != nullptr) {
+        if (t_scl == CS_TEMPERATURE_SCALE_KELVIN)
+          tempf = extra->temperature->val[cell_id];
+        else /* if (t_scl == CS_TEMPERATURE_SCALE_CELSIUS) */
+          tempf = extra->temperature->val[cell_id] + tkelvi;
+      }
+
+      else {
+        tempf = cs_glob_fluid_properties->t0;
+        if (t_scl == CS_TEMPERATURE_SCALE_CELSIUS)
+          tempf += tkelvi;
+      }
+
+      cs_real_t p_mass = p_set.attr_real(p_id, CS_LAGR_MASS);
+
+      cs_real_t ddbr = sqrt(2.0 * _k_boltz * tempf / (p_mass * taup_r[id]));
+
+      cs_real_t tix2 =   cs_math_pow2((taup_r[id] * ddbr))
+        * (dt_part - taup_r[id] * (1.0 - aux1) * (3.0 - aux1) / 2.0);
+      cs_real_t tiu2 =   ddbr * ddbr * taup_r[id]
+                       * (1.0 - exp(-2.0 * dt_part / taup_r[id])) / 2.0;
+
+      cs_real_t tixiu  =
+        cs_math_pow2((ddbr * taup_r[id] * (1.0 - aux1))) / 2.0;
+
+      tbrix2 = tix2 - (tixiu * tixiu) / tiu2;
+
+      if (tbrix2 > 0.0)
+        tbrix2    = sqrt(tbrix2) * brgaus[id];
+      else
+        tbrix2    = 0.0;
+
+      if (tiu2 > 0.0)
+        tbrix1    = tixiu / sqrt(tiu2) * brgaus[id + 3];
+      else
+        tbrix1    = 0.0;
+
+      if (tiu2 > 0.0) {
+        tbriu      = sqrt(tiu2) * brgaus[id + 3];
+        if (cs_glob_lagr_time_scheme->t_order == 2)
+          p_set.attr_real(p_id, CS_LAGR_BROWN_STATE_1) = sqrt(tiu2);
+
+      }
+      else {
+        tbriu     = 0.0;
+        if (cs_glob_lagr_time_scheme->t_order == 2)
+          p_set.attr_real(p_id, CS_LAGR_BROWN_STATE_1) = 0.;
+      }
+    }
+    else {
+      tbrix1  = 0.0;
+      tbrix2  = 0.0;
+      tbriu   = 0.0;
+    }
+
+    /* Finalize increments */
+
+    /* trajectory  */
+    /* Initialized with the four terms not depending on continuous phases */
+    displ_r[id] = ter1x + ter4x + ter5x + ter7x + tbrix1 + tbrix2;
+
+    /* particles velocity */
+    /* Initialized with the four terms not depending on phases */
+    part_vel_r[id] = ter1p + ter4p + ter5p + ter7p + tbriu;
+
+    /* trajectory  */
+    displ_r[id] += ter2x + ter3x;
+
+    /* flow-seen velocity */
+    part_vel_seen_r[id]
+      = ter1f + ter2f + ter3f + ter7f;
+
+    /* particles velocity */
+    part_vel_r[id] += ter2p + ter3p;
+  }
+
+  /* Reference frame change: --> back to global reference frame
+   * NB: Inverse transformation: transpose of trans_m
+   * ================================================ */
+
+  if (local_reference_frame) {
+
+    /* Displacement */
+    cs_real_t displ[3];
+    cs_math_33t_3_product(trans_m, displ_r, displ);
+    for (cs_lnum_t id = 0; id < 3; id++)
+      part_coords[id] = old_part_coords[id] + displ[id];
+
+    /* Particle velocity */
+    cs_math_33t_3_product(trans_m, part_vel_r, part_vel);
+
+    /* Flow-seen velocity */
+    cs_math_33t_3_product(trans_m, part_vel_seen_r, part_vel_seen);
+  }
+
+  else { /* local_reference_frame == false */
+    for (cs_lnum_t id = 0; id < 3; id++) {
+      part_coords[id] = old_part_coords[id] + displ_r[id];
+      part_vel[id] = part_vel_r[id];
+      part_vel_seen[id] = part_vel_seen_r[id];
+    }
+  }
+
+}
+
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Integration of SDEs by 2nd order scheme
@@ -3006,7 +3678,22 @@ cs_lagr_sde(cs_lagr_particle_set_t          &p_set,
     /* If no deposition sub-model is activated, call of subroutine lages1
        for every particle */
 
-    if (cs_glob_lagr_model->deposition <= 0)
+    /* Multiphase variant */
+    if (cs_glob_lagr_model->cs_used == 0)
+      _sde_vels_pos_1_st_order_time_integ_mp(p_set,
+                                             p_id,
+                                             dt_part,
+                                             nor,
+                                             taup,
+                                             tlag,
+                                             piil,
+                                             bx,
+                                             vagaus,
+                                             brgaus,
+                                             force_p,
+                                             beta);
+
+    else if (cs_glob_lagr_model->deposition <= 0)
       cs_sde_vels_pos_1_st_order_time_integ(p_set,
                                             p_id,
                                             dt_part,

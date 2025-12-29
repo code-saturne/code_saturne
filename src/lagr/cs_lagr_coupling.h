@@ -31,8 +31,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -81,14 +79,16 @@ cs_lagr_coupling_initialize(void);
  */
 /*----------------------------------------------------------------------------*/
 
+#if defined(__cplusplus)
 void
-cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t        p_set,
+cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       &p_set,
                                         const cs_lnum_t               p_id,
                                         const cs_real_t               dt_part,
                                         const bool                    rebound,
                                         const cs_real_t               taup,
                                         const cs_real_3_t             force_p,
                                         const cs_real_2_t             tempct);
+#endif // defined(__cplusplus)
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -102,7 +102,5 @@ void
 cs_lagr_coupling_finalize(void);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_LAGR_COUPLING_H__ */

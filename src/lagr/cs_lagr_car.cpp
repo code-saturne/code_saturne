@@ -120,8 +120,6 @@
  * \param[out] bx                  turbulence characteristics
  * \param[out] tempct              thermal characteristic time
  * \param[out] beta                for the extended scheme
- * \param[out] vagaus              gaussian random variables
- * \param[out] br_gaus             gaussian random variables
  *
  */
 /*----------------------------------------------------------------------------*/
@@ -138,9 +136,7 @@ cs_lagr_car(int                         iprev,
             cs_real_3_t                 piil,
             cs_real_33_t                bx,
             cs_real_2_t                 tempct,
-            cs_real_3_t                 beta,
-            cs_real_3_t                *vagaus,
-            cs_real_6_t                 br_gaus)
+            cs_real_3_t                 beta)
 {
   /* Particles management */
 
@@ -196,9 +192,9 @@ cs_lagr_car(int                         iprev,
   cs_real_t *part_vel_seen = p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY_SEEN);
   cs_real_t *part_vel      = p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY);
 
-  for (int idim_ = 0; idim_ < 3; idim_++) {
-    rel_vel_norm += (part_vel_seen[3*phase_id + idim_] - part_vel[idim_])
-                  * (part_vel_seen[3*phase_id + idim_] - part_vel[idim_]);
+  for (int i = 0; i < 3; i++) {
+    rel_vel_norm += (part_vel_seen[3*phase_id + i] - part_vel[i])
+                  * (part_vel_seen[3*phase_id + i] - part_vel[i]);
   }
 
   rel_vel_norm = sqrt(rel_vel_norm);
@@ -283,31 +279,8 @@ cs_lagr_car(int                         iprev,
   /* Compute turbulent relaxation time and diffusion term associated to the
    * particle and based on turbulence model */
 
-  if (cs_glob_lagr_model->idistu == 1) {
-    if (phase_id == 0) {
-      /* -> Stochastic draws are made for all phase on the first loop */
-      if(nor == 1) {
-        cs_random_normal(3 * (n_phases + 2), (cs_real_t*)vagaus);
-        if (cs_glob_lagr_time_scheme->t_order== 2) {
-          /* save vagaus */
-          cs_real_t *_v_gaus =
-            p_set.attr_real_ptr(p_id, CS_LAGR_V_GAUSS);
-          for (cs_lnum_t i = 0; i < n_phases + 2; i++) {
-            for (cs_lnum_t id = 0; id < 3; id++)
-               _v_gaus[3 * i + id] = vagaus[i][id];
-          }
-        }
-      }
-      else {
-        /* Get previously drawn _v_gaus */
-        cs_real_t *_v_gaus = p_set.attr_real_ptr(p_id, CS_LAGR_V_GAUSS);
-        for (cs_lnum_t i = 0; i < n_phases + 2; i++) {
-          for (cs_lnum_t id = 0; id < 3; id++)
-            vagaus[i][id] = _v_gaus[3 * i + id];
-        }
-      }
-    }
 
+  if (cs_glob_lagr_model->idistu == 1) {
     /* Calculation of TL BX and potentially beta */
     cs_real_t energi = extra_i[phase_id].cvar_k->val[cell_id];
     if (   extra_i[phase_id].lagr_time->val[cell_id] > cs_math_epzero
@@ -397,44 +370,14 @@ cs_lagr_car(int                         iprev,
     }
   } // end if idistu == 1
   else {
-    if (phase_id == 0) {
-      for (cs_lnum_t i = 0; i < n_phases + 2; i++) {
-        for (cs_lnum_t id = 0; id < 3; id++)
-          vagaus[i][id] = 0.0;
-      }
-      if (extra->grad_lagr_time_r_et != nullptr) {
-        for (int id = 0; id < 3; id++)
-          beta[id] = 0.;
-      }
+    if (extra->grad_lagr_time_r_et != nullptr) {
+      for (int id = 0; id < 3; id++)
+        beta[id] = 0.;
     }
     for (cs_lnum_t id = 0; id < 3; id++ ) {
       tlag[id] = cs_math_epzero;
       bx[id][nor-1] = 0.0;
     }
-  }
-
-  if ( cs_glob_lagr_brownian->lamvbr == 1) {
-
-    /* -> Stochastic draws anly in the first phase_id*/
-    if(nor == 1 && phase_id == 0) {
-      cs_random_normal(6, (cs_real_t*)br_gaus);
-      if (cs_glob_lagr_time_scheme->t_order== 2) {
-        /* Save br_gaus */
-        cs_real_t *_br_gaus = p_set.attr_real_ptr(p_id, CS_LAGR_BR_GAUSS);
-        for (cs_lnum_t id = 0; id < 6; id++)
-          _br_gaus[id] = br_gaus[id];
-      }
-    }
-    else if(phase_id == 0) {
-      /* Get previously drawn _br_gaus */
-      cs_real_t *_br_gaus = p_set.attr_real_ptr(p_id, CS_LAGR_V_GAUSS);
-      for(int id = 0; id < 6; id++)
-        br_gaus[id] = _br_gaus[id];
-    }
-  }
-  else if (phase_id == 0) {
-    for(int id = 0; id < 6; id++)
-      br_gaus[id] = 0.;
   }
 
   /* Compute Pii
@@ -618,27 +561,25 @@ cs_lagr_car(int                         iprev,
  * \param[in]  tempct              thermal characteristic time
  * \param[in]  beta                for the extended scheme
  * \param[in]  tsfext              info for return coupling source terms
- * \param[in]  vagaus              gaussian random variables
  * \param[in]  force_p             user external force field (m/s^2)$
  *
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_get_force_p(const cs_real_t    dt_part,
-                    cs_lnum_t          p_id,
-                    cs_real_t         *taup,
-                    cs_real_3_t       *tlag,
-                    cs_real_3_t       *piil,
-                    cs_real_33_t      *bx,
-                    cs_real_t          tsfext,
-                    cs_real_3_t       *vagaus,
-                    cs_real_3_t        force_p)
+cs_lagr_get_force_p(const cs_real_t             dt_part,
+                    cs_lagr_particle_set_t     &p_set,
+                    cs_lnum_t                   p_id,
+                    cs_real_t                  *taup,
+                    cs_real_3_t                *tlag,
+                    cs_real_3_t                *piil,
+                    cs_real_33_t               *bx,
+                    cs_real_t                   tsfext,
+                    cs_real_3_t                 force_p)
 {
   /* Management of user external force field
      ---------------------------------------- */
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
-  cs_lagr_particle_set_t &p_set = cs_lagr_get_particle_set_ref();
 
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
 
@@ -659,7 +600,6 @@ cs_lagr_get_force_p(const cs_real_t    dt_part,
                   piil,
                   bx,
                   tsfext,
-                  vagaus,
                   extra->grad_pr[cell_id],
                   extra->grad_vel[cell_id],
                   p_rom,

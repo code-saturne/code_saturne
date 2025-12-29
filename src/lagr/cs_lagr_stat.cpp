@@ -77,8 +77,6 @@
 
 #include "lagr/cs_lagr_stat.h"
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -2871,7 +2869,7 @@ _location_attr(int location_id)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_stat_update_all_incr(cs_lagr_particle_set_t  p_set,
+cs_lagr_stat_update_all_incr(cs_lagr_particle_set_t &p_set,
                              const cs_lnum_t         p_id,
                              const cs_real_t         rel_time)
 {
@@ -2925,9 +2923,7 @@ cs_lagr_stat_update_all_incr(cs_lagr_particle_set_t  p_set,
     cs_real_t p_weight;
 
     if (mwa->p_data_func == nullptr)
-      p_weight = p_set.attr_real(
-                                            p_id,
-                                            CS_LAGR_STAT_WEIGHT);
+      p_weight = p_set.attr_real(p_id, CS_LAGR_STAT_WEIGHT);
     else
       mwa->p_data_func(mwa->data_input,
                        particle, //TODO use p_set function
@@ -6005,5 +6001,3 @@ cs_lagr_stat_get_moment_age(cs_field_t  *f)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

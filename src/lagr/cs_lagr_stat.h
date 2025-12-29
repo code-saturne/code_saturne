@@ -40,8 +40,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -628,17 +626,19 @@ cs_lagr_stat_prepare(void);
 /*!
  * \brief Increment particle contibution on moment and time moment accumulators.
  *
- * \param[in]   p_set     particle set
+ * \param[in]   p_set     reference particle set
  * \param[in]   p_id      particle index in set
  * \param[in]   rel_time  relative time spent by the particle in the cell during
  *                        current iteration
  */
 /*----------------------------------------------------------------------------*/
 
+#if defined(__cplusplus)
 void
-cs_lagr_stat_update_all_incr(cs_lagr_particle_set_t  p_set,
+cs_lagr_stat_update_all_incr(cs_lagr_particle_set_t &p_set,
                              const cs_lnum_t         p_id,
                              const cs_real_t         rel_time);
+#endif /* __cplusplus */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -764,7 +764,5 @@ cs_real_t
 cs_lagr_stat_get_moment_age(cs_field_t  *f);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_LAGR_STAT_H__ */

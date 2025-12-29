@@ -996,8 +996,6 @@ private:
 #endif
 } cs_lagr_particle_set_t;
 
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Global variables
  *============================================================================*/
@@ -1157,7 +1155,6 @@ cs_lagr_get_particle_set(void);
 #if defined(__cplusplus)
 cs_lagr_particle_set_t&
 cs_lagr_get_particle_set_ref(void);
-#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1716,25 +1713,25 @@ cs_lagr_set_n_g_particles_max(unsigned long long  n_g_particles_max);
 /*!
  * \brief Copy current attributes to previous attributes.
  *
- * \param[in, out]  particles     associated particle set
- * \param[in]       particle_id  id of particle
+ * \param[in, out]  p_set        associated particle set
+ * \param[in]       p_id         id of particle
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_particles_current_to_previous(cs_lagr_particle_set_t   particles,
-                                      cs_lnum_t                particle_id);
+cs_lagr_particles_current_to_previous(cs_lagr_particle_set_t  &p_set,
+                                      cs_lnum_t                p_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Dump a cs_lagr_particle_set_t structure
  *
- * \param[in]  particles  cs_lagr_particle_t structure to dump
+ * \param[in]  p_set  cs_lagr_particle_t structure to dump
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_particle_set_dump(const cs_lagr_particle_set_t  *particles);
+cs_lagr_particle_set_dump(const cs_lagr_particle_set_t  *p_set);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1749,13 +1746,9 @@ cs_lagr_set_n_user_variables(int  n_user_variables);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
 /*============================================================================
  * Public C++ templates
  *============================================================================*/
-
-#if defined(__cplusplus)
 
 template <typename T>
 T *

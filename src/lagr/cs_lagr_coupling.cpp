@@ -72,8 +72,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -255,7 +253,7 @@ cs_lagr_coupling_initialize(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t        p_set,
+cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       &p_set,
                                         const cs_lnum_t               p_id,
                                         const cs_real_t               dt_part,
                                         const bool                    rebound,
@@ -663,5 +661,3 @@ cs_lagr_coupling_finalize(void)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

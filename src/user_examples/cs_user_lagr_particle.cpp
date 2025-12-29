@@ -176,7 +176,6 @@ _inlet2(cs_lagr_particle_set_t   p_set,
  * \param[in]      piil     term in the integration of the sde
  * \param[in]      bx       characteristics of the turbulence
  * \param[in]      tsfext   infos for the return coupling
- * \param[in]      vagaus   Gaussian random variables
  * \param[in,out]  rho_p     particle density
  * \param[out]     fextla   user external force field (m/s^2)$
  */
@@ -191,7 +190,6 @@ cs_user_lagr_ef([[maybe_unused]] cs_real_t            dt_p,
                 [[maybe_unused]] const cs_real_3_t   *piil,
                 [[maybe_unused]] const cs_real_33_t  *bx,
                 [[maybe_unused]] const cs_real_t      tsfext,
-                [[maybe_unused]] const cs_real_3_t   *vagaus,
                 [[maybe_unused]] const cs_real_3_t    gradpr,
                 [[maybe_unused]] const cs_real_33_t   gradvf,
                 [[maybe_unused]] cs_real_t            rho_p,
