@@ -284,6 +284,15 @@ _equation_iterative_solve_strided(int                   idtvar,
       eb_size = 3;
   }
 
+  /* Halo type for BC coeffs */
+  cs_halo_type_t bc_halo_type = CS_HALO_STANDARD;
+  {
+    cs_gradient_type_t gradient_type;
+    cs_gradient_type_by_imrgra(eqp->imrgra,
+                               &gradient_type,
+                               &bc_halo_type);
+  }
+
   /* Parallel or device dispatch */
 
   cs_dispatch_context ctx, ctx_c;
@@ -871,7 +880,7 @@ _equation_iterative_solve_strided(int                   idtvar,
       ctx.wait();
       CS_PROFILE_MARK_LINE();
 
-      cs_halo_sync_r(halo, ctx.use_gpu(), dpvar);
+      cs_halo_sync_r(halo, bc_halo_type, ctx.use_gpu(), dpvar);
 
       /* update with dpvar */
       cs_boundary_conditions_update_bc_coeff_face_values_strided<stride>
@@ -1055,7 +1064,7 @@ _equation_iterative_solve_strided(int                   idtvar,
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         for (cs_lnum_t i = 0; i < stride; i++) {
           pvar[c_id][i] +=   alph*dpvar[c_id][i]
-                              + beta*dpvarm1[c_id][i];
+                           + beta*dpvarm1[c_id][i];
         }
 
         for (cs_lnum_t i = 0; i < stride; i++) {
@@ -1551,6 +1560,15 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       conv_diff_mg = true;
   }
 
+  /* Halo type for BC coeffs */
+  cs_halo_type_t bc_halo_type = CS_HALO_STANDARD;
+  {
+    cs_gradient_type_t gradient_type;
+    cs_gradient_type_by_imrgra(eqp->imrgra,
+                               &gradient_type,
+                               &bc_halo_type);
+  }
+
   /* Allocate temporary arrays */
 
   cs_real_t *adxk = nullptr, *adxkm1 = nullptr;
@@ -1988,8 +2006,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
       ctx.wait(); /* We now need adxk, computed by ctx */
 
-      /*  ---> Handle parallelism and periodicity */
-      cs_halo_sync(m->halo, ctx.use_gpu(), dpvar);
+      cs_halo_sync(m->halo, bc_halo_type, ctx.use_gpu(), dpvar);
 
       cs_boundary_conditions_update_bc_coeff_face_values
         (ctx,
@@ -2138,7 +2155,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     ctx.wait();
 
     /*  ---> Handle parallelism and periodicity */
-    cs_halo_sync(m->halo, ctx.use_gpu(), pvar);
+    cs_halo_sync(m->halo, bc_halo_type, ctx.use_gpu(), pvar);
 
     /* Compute the beta (min/max) limiter */
     if (f_id > -1)
