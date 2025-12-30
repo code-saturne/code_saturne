@@ -406,14 +406,11 @@ _update_pressure_temperature_idilat_2(cs_lnum_t  n_cells_ext)
          cvar_pr);
 
       ctx.wait();
-
-      cs_field_current_to_previous(CS_F_(p));
     }
   }
-  else {
-    // Save pressure corrected in cs_pressure_correction as previous one.
-    cs_field_current_to_previous(CS_F_(p));
-  }
+
+  // Save pressure corrected in cs_pressure_correction as previous one.
+  cs_field_current_to_previous(CS_F_(p));
 }
 
 /*----------------------------------------------------------------------------*/

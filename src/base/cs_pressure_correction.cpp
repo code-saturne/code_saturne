@@ -1162,7 +1162,7 @@ _pressure_correction_fv(int                   iterns,
   int thermal_variable = cs_glob_thermal_model->thermal_variable;
   int kinetic_st = cs_glob_thermal_model->has_kinetic_st;
 
-  const cs_real_t *temp = nullptr;
+  const cs_real_t *ther_var = nullptr;
   cs_real_t *xcpp = nullptr, *dc2 = nullptr;
   cs_real_t *cvar_th = nullptr, *tempk = nullptr;
   cs_real_t _coef = 0;
@@ -1170,20 +1170,14 @@ _pressure_correction_fv(int                   iterns,
 
   if (idilat == 2) {
 
-    /* Get the temperature */
-    if (thermal_variable == CS_THERMAL_MODEL_TEMPERATURE)
-      temp = CS_F_(t)->val;
-    else {
+    ther_var = cs_thermal_model_field()->val;
+
+    if (thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY){
       const cs_field_t *f_t = cs_field_by_name_try("temperature");
-      if (f_t != nullptr) {
-        tempk = f_t->val;
-        temp = f_t->val;
-      }
+      tempk = f_t->val;
     }
 
-    if (temp != nullptr) {
-
-      cvar_th = CS_F_(t)->val;
+    if (ther_var != nullptr) {
 
       /* Allocation */
       CS_MALLOC_HD(dc2, n_cells_ext, cs_real_t, amode);
@@ -1216,7 +1210,7 @@ _pressure_correction_fv(int                   iterns,
 
       /* Compute dc2 */
       cs_thermal_model_c_square(xcpp,
-                                temp,
+                                ther_var,
                                 cvar_pr,
                                 yv,
                                 cvar_fracm,
@@ -2849,6 +2843,8 @@ _pressure_correction_fv(int                   iterns,
       && ieos == CS_EOS_MOIST_AIR) {
     /* Last argument is the method used, 1 for the newton, 2 for the
      * pressure increment (explicit correction)*/
+    cvar_th = CS_F_(t)->val;
+
     cs_thermal_model_newton_t(2,
                               pk1,
                               cvar_th,

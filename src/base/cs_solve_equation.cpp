@@ -1230,16 +1230,31 @@ cs_solve_equation_scalar(cs_field_t        *f,
     });
   }
 
-  /* Add thermodynamic pressure variation for the low-Mach algorithm */
+  const cs_thermal_model_t *th_model = cs_glob_thermal_model;
+
+  /* Add thermodynamic pressure variation in case of solving the enthalpy equation */
   /* NB: cs_thermal_model_field is the Enthalpy. */
   const int ipthrm = fluid_props->ipthrm;
   const int idilat = cs_glob_velocity_pressure_model->idilat;
-  if ((idilat == 3 || ipthrm == 1) && is_thermal_model_field) {
+  if (   (idilat == 3 || ipthrm == 1
+          || (   idilat == 2
+              && th_model->thermal_variable == CS_THERMAL_MODEL_ENTHALPY))
+      && is_thermal_model_field) {
     const cs_real_t pther = fluid_props->pther;
     const cs_real_t pthera = fluid_props->pthera;
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      rhs[c_id] += (pther - pthera) / dt[c_id]*cell_f_vol[c_id];
-    });
+    if (idilat == 3) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      	rhs[c_id] += (pther - pthera) / dt[c_id]*cell_f_vol[c_id];
+      });
+    }
+    else {
+      const cs_field_t *f_p = CS_F_(p);
+      const cs_real_t *cvar_pr = f_p->val;
+      const cs_real_t *cvara_pr = f_p->val_pre;
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        rhs[c_id] += (cvar_pr[c_id] - cvara_pr[c_id]) / dt[c_id]*cell_f_vol[c_id];
+      });
+    }
   }
 
   ctx.wait();
@@ -1248,7 +1263,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
      Add to the RHS -pdiv(u) + tau:u
      In case of no specific EOS, skip this */
 
-  const cs_thermal_model_t *th_model = cs_glob_thermal_model;
   const cs_cf_model_t *th_cf_model = cs_glob_cf_model;
 
   const cs_real_t *temp = nullptr, *tempa = nullptr, *cpro_yw = nullptr;

@@ -316,6 +316,7 @@ cs_thermal_model_c_square(const cs_real_t  cp[],
   const int ieos = cs_glob_cf_model->ieos;
   const cs_real_t rair = cs_glob_fluid_properties->r_pg_cnst;
   const cs_fluid_properties_t *phys_prop = cs_glob_fluid_properties;
+  int thermal_variable = cs_glob_thermal_model->thermal_variable;
 
   cs_dispatch_context ctx;
 
@@ -332,8 +333,13 @@ cs_thermal_model_c_square(const cs_real_t  cp[],
     });
   }
   else if (ieos == CS_EOS_IDEAL_GAS) {
+    cs_real_t mult = 1.0;
+    // TODO cp/cv variable
+    if (thermal_variable == CS_THERMAL_MODEL_ENTHALPY){
+      mult = cs_glob_fluid_properties->cp0;
+    }
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      dc2[c_id] = 1. / (rair * temp[c_id]);
+      dc2[c_id] = mult / (rair * temp[c_id]);
     });
   }
 
@@ -842,16 +848,15 @@ cs_thermal_model_cv(cs_real_t  *xcvv)
     });
   }
   else if (cs_glob_cf_model->ieos == CS_EOS_IDEAL_GAS) {
+    cs_real_t r_pg_cnst = phys_pro->r_pg_cnst;
     if (phys_pro->icp > 0) {
       cs_real_t *cp = CS_F_(cp)->val;
-      cs_real_t r_pg_cnst = phys_pro->r_pg_cnst;
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         xcvv[c_id] = cp[c_id] - r_pg_cnst;
       });
     }
     else {
       cs_real_t cp0 = phys_pro->cp0;
-      cs_real_t r_pg_cnst = phys_pro->r_pg_cnst;
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         xcvv[c_id] = cp0 - r_pg_cnst;
       });
