@@ -1,7 +1,7 @@
 Master (not on release branches yet)
 ------------------------------------
 
-Release 9.1.0 (unreleased)
+Release 9.1.0 (2025-12-30)
 --------------------------
 
 ### User changes:
