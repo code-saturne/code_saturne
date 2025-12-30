@@ -3,6 +3,9 @@ Release 9.0.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix incomplete halo exchange for some vector and tensor boundary
+  condition updates when an extended neighborhood is used.
+
 - Fixes related to notebook variables: modification in smgr now dominates over
   reading in checkpoint also fix incoherence between read and restart parameters
 
