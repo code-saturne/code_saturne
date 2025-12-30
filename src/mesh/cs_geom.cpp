@@ -108,7 +108,7 @@ BEGIN_C_DECLS
  *   1 if positive, -1 otherwise
  *----------------------------------------------------------------------------*/
 
-static int
+static inline int
 _test_edge(const cs_real_t  sx0[3],
            const cs_real_t  sx1[3],
            const cs_real_t  vtx_0[3],
@@ -116,23 +116,29 @@ _test_edge(const cs_real_t  sx0[3],
 {
   /* vO vector where the choice for v between v0 and v1 has no importance
    * so we take the smaller vertex id */
-  cs_real_3_t vO = {sx0[0] - vtx_0[0],
-                    sx0[1] - vtx_0[1],
-                    sx0[2] - vtx_0[2]};
+  const cs_real_3_t vO = {sx0[0] - vtx_0[0],
+                          sx0[1] - vtx_0[1],
+                          sx0[2] - vtx_0[2]};
 
-  cs_real_3_t edge = {vtx_1[0] - vtx_0[0],
-                      vtx_1[1] - vtx_0[1],
-                      vtx_1[2] - vtx_0[2]};
+  const cs_real_3_t edge = {vtx_1[0] - vtx_0[0],
+                            vtx_1[1] - vtx_0[1],
+                            vtx_1[2] - vtx_0[2]};
 
-  cs_real_3_t disp = {sx1[0] - sx0[0],
-                      sx1[1] - sx0[1],
-                      sx1[2] - sx0[2]};
+#if 0
+  const cs_real_3_t disp = {sx1[0] - sx0[0],
+                            sx1[1] - sx0[1],
+                            sx1[2] - sx0[2]};
   /* p = edge ^ vO */
   const cs_real_3_t p = {edge[1]*vO[2] - edge[2]*vO[1],
                          edge[2]*vO[0] - edge[0]*vO[2],
                          edge[0]*vO[1] - edge[1]*vO[0]};
+#endif
+  /* (sx1-sx0) . (edge ^ vO) */
+  cs_real_t disp_dot_p = (sx1[0] - sx0[0]) * (edge[1]*vO[2] - edge[2]*vO[1])
+                       + (sx1[1] - sx0[1]) * (edge[2]*vO[0] - edge[0]*vO[2])
+                       + (sx1[2] - sx0[2]) * (edge[0]*vO[1] - edge[1]*vO[0]);
 
-  return (cs_math_3_dot_product(disp, p) > 0 ? 1 : -1);
+  return (disp_dot_p > 0 ? 1 : -1);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

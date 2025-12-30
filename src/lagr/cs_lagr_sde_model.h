@@ -31,8 +31,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -61,7 +59,8 @@ BEGIN_C_DECLS
  * - variables related to coal grains (Temp, MCH, MCK)
  * - additional user parameters
 
- * \param[in]  ip           particle id
+ * \param[in]  p_set        reference to particle set
+ * \param[in]  p_id         particle id
  * \param[in]  dt_part      time step associated to the particle
  * \param[in]  nor          current step id (for 2nd order scheme)
  * \param[in]  tempct       thermal characteristic time
@@ -71,17 +70,17 @@ BEGIN_C_DECLS
  */
 /*------------------------------------------------------------------------- */
 
+#if defined(__cplusplus)
 void
-cs_lagr_sde_model(const cs_lnum_t    ip,
-                  const cs_real_t    dt_part,
-                  int                nor,
-                  const cs_real_2_t  tempct,
-                  cs_real_t          *cpgd1,
-                  cs_real_t          *cpgd2,
-                  cs_real_t          *cpght);
-
+cs_lagr_sde_model(cs_lagr_particle_set_t  &p_set,
+                  const cs_lnum_t          p_id,
+                  const cs_real_t          dt_part,
+                  int                      nor,
+                  const cs_real_2_t        tempct,
+                  cs_real_t                *cpgd1,
+                  cs_real_t                *cpgd2,
+                  cs_real_t                *cpght);
+#endif
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_LAGR_SDE_MODEL_H__ */

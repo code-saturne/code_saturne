@@ -97,7 +97,7 @@ static const double _k_boltz = 1.38e-23;
  * TODO add additional info to events.
  *
  * \param[in]  events             pointer to events set
- * \param[in]  p_set              particle set
+ * \param[in]  p_set              reference to particle set
  * \param[in]  p_id               particle id
  * \param[in]  face_id            associated face id
  * \param[in]  particle_velocity  velocity after event
@@ -106,7 +106,7 @@ static const double _k_boltz = 1.38e-23;
 
 static void
 _add_resuspension_event(cs_lagr_event_set_t     *events,
-                        cs_lagr_particle_set_t   p_set,
+                        cs_lagr_particle_set_t  &p_set,
                         cs_lnum_t                p_id,
                         cs_lnum_t                face_id,
                         const cs_real_t          particle_velocity[3])
@@ -1102,7 +1102,7 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
 
   cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
 
-  cs_real_t aux1, aux1m, aux2, aux3, aux3m, aux4,
+  cs_real_t aux1, aux2, aux3, aux4,
             aux44, aux5, aux6, aux7, aux8,
             aux9, aux10, aux11;
   cs_real_t ter1f, ter2f, ter3f;
@@ -1213,7 +1213,6 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
                                  old_part_vel[2]};
 
   cs_real_t force_p_r[3] = {force_p[0], force_p[1], force_p[2]};
-  cs_real_t taup_rm[3] = {0., 0., 0.};
 
   cs_real_t displ_r[3];
   cs_real_t trans_m[3][3];
@@ -1242,11 +1241,7 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
   for (int i = 0; i < 3; i ++) {
     piil_r[i] = piil[phase_id][i];
     taup_r[i] = taup[phase_id];
-    taup_rm[i] += 1. / taup_r[i];
   }
-
-  for (int i = 0; i < 3; i ++)
-    taup_rm[i] = 1./taup_rm[i];
 
   if (local_reference_frame) {
 
@@ -1436,21 +1431,22 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
     /* Preliminary computation:
        ------------------------ */
 
-    cs_real_t tci;
     /* velocity induced by a force by unit mass */
-    cs_real_t v_lim = force_p_r[id] * taup_rm[id];
+    cs_real_t v_lim = force_p_r[id] * taup_r[id];
 
     /* Compute deterministic coefficients/terms
        ---------------------------------------- */
 
-    aux1m = exp(-dt_part / taup_rm[id]);
-    cs_real_t bb, cc, dd, ff;
+    cs_real_t taup_ddt = taup_r[id] / dt_part;
+    cs_real_t tlag_ddt = tlag_r[phase_id][id] / dt_part;
+    aux1 = exp(-dt_part / taup_r[id]);
+    aux2 = exp(-dt_part / tlag_r[phase_id][id]);
 
-    cs_real_t aa = taup_rm[id] * (1.0 - aux1m);
-    cs_real_t ee = 1.0 - aux1m;
+    cs_real_t aa = taup_r[id] * (1.0 - aux1);
+    cs_real_t ee = 1.0 - aux1;
 
     /* --> first and second increment for particle velocity */
-    ter1p = old_part_vel_r[id] * aux1m;
+    ter1p = old_part_vel_r[id] * aux1;
     ter4p = v_lim * ee;
 
     /* --> first and second increment for particle position */
@@ -1458,60 +1454,45 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
     ter4x = (dt_part - aa) * v_lim;
 
     /* Integral for the particles velocity */
-    aux10 = 0.5 * taup_rm[id] * (1.0 - aux1m * aux1m);
+    aux10 = 0.5 * taup_r[id] * (1.0 - aux1 * aux1);
 
-    tci = piil_r[id] * tlag_r[phase_id][id];
-
-    tci += fluid_vel_r[id];
-
-    cs_real_t multiphase_coef = taup_rm[id] / taup_r[id];
-    cs_real_t multiphase_coef2 = cs_math_pow2(multiphase_coef);
+    cs_real_t tci = piil_r[id] * tlag_r[phase_id][id] + fluid_vel_r[id];
 
     /* Compute deterministic coefficients/terms
     ---------------------------------------- */
 
-    cs_real_t taup_ddt = taup_r[id] / dt_part;
-    cs_real_t tlag_ddt = tlag_r[phase_id][id] / dt_part;
-    aux1 = exp(-dt_part / taup_r[id]);
-    aux2 = exp(-dt_part / tlag_r[phase_id][id]);
-    aux3 = tlag_r[phase_id][id]
-      / (tlag_r[phase_id][id] - taup_r[id]);
-    aux3m = tlag_r[phase_id][id]
-      / (tlag_r[phase_id][id] - taup_rm[id]);
-    aux4 = tlag_r[phase_id][id]
-      / (tlag_r[phase_id][id] + taup_r[id]);
-    aux44 = taup_rm[id] / (tlag_r[phase_id][id] + taup_rm[id]);
+    aux3  = tlag_r[phase_id][id] / (tlag_r[phase_id][id] - taup_r[id]);
+    aux4 = tlag_r[phase_id][id] / (tlag_r[phase_id][id] + taup_r[id]);
+    aux44 = taup_r[id] / (tlag_r[phase_id][id] + taup_r[id]);
 
     aux5 = tlag_r[phase_id][id] * (1.0 - aux2);
     aux6 = cs_math_pow2(bx[phase_id][id][nor-1])
       * tlag_r[phase_id][id];
     aux7 = tlag_r[phase_id][id] - taup_r[id];
     aux8 = cs_math_pow2(bx[phase_id][id][nor-1])
-      * cs_math_pow2(aux3m);
+      * cs_math_pow2(aux3);
     /* --> trajectory terms */
-    bb = tlag_r[phase_id][id] * _secant_ter2x(taup_ddt, tlag_ddt);
-    cc = dt_part - aa - bb;
-    ff = 1. / taup_r[id] * taup_rm[id];
+    cs_real_t bb = tlag_r[phase_id][id] * _secant_ter2x(taup_ddt, tlag_ddt);
+    cs_real_t cc = dt_part - aa - bb;
 
     ter2f = tci * (1.0 - aux2);
 
     /* Integral on flow velocity seen */
     gam2  = 0.5 * (1.0 - aux2 * aux2);
     p11   = sqrt(gam2 * aux6);
-    ter3f = p11 * vagaus[phase_id][id];
+    ter3f = p11 * vagaus[0][id];
 
     /* Terms for particle velocity */
-    dd = tlag_ddt * _secant_ter2p(taup_ddt, tlag_ddt);
-
-    ter3p = tci * ff * (ee - dd);
+    cs_real_t dd = tlag_ddt * _secant_ter2p(taup_ddt, tlag_ddt);
+    ter3p = tci * (ee - dd);
 
     /* Integral for the particles velocity */
     aux9 = 0.5 * tlag_r[phase_id][id] * (1.0 - aux2 * aux2);
-    aux11 =   taup_rm[id] * tlag_r[phase_id][id]
-            * (1.0 - aux1m * aux2)
-            / (taup_rm[id] + tlag_r[phase_id][id]);
+    aux11 =   taup_r[id] * tlag_r[phase_id][id]
+            * (1.0 - aux1 * aux2)
+            / (taup_r[id] + tlag_r[phase_id][id]);
 
-    ter3x = ff * cc * tci;
+    ter3x = cc * tci;
 
     /* Flow-seen velocity terms */
     ter1f = old_part_vel_seen_r[id] * aux2;
@@ -1520,7 +1501,7 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
     ter2p = old_part_vel_seen_r[id] * dd;
 
     /* Terms for particle position */
-    ter2x = bb * old_part_vel_seen_r[id] ;
+    ter2x = old_part_vel_seen_r[id] * bb;
 
     /* Compute the other terms for the covariance matrix of the Gauss vector */
     gam_gagam = (aux9 - aux11) * (aux8 / aux3);
@@ -1614,10 +1595,9 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
 
     p33 -= cs_math_pow2(p32);
     p33 = sqrt(cs::max(0.0, p33));
-    ter5p = p21 * vagaus[phase_id][id]
-          + p22 * vagaus[n_phases][id];
-    ter5x = p31 * vagaus[phase_id][id]
-          + p32 * vagaus[n_phases][id] + p33 * vagaus[n_phases + 1][id];
+    ter5p = p21 * vagaus[0][id] + p22 * vagaus[1][id];
+    ter5x = p31 * vagaus[0][id]
+          + p32 * vagaus[1][id] + p33 * vagaus[2][id];
 
     /* (2.3) Compute terms in the Brownian movement case */
     /* TODO: Warning based on the first carrier phase with N fluids */
@@ -1684,21 +1664,17 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
 
     /* trajectory  */
     /* Initialized with the four terms not depending on continuous phases */
-    displ_r[id] = ter1x + ter4x + ter5x + ter7x + tbrix1 + tbrix2;
+    displ_r[id] = ter1x + ter2x + ter3x + ter4x + ter5x + ter7x
+                + tbrix1 + tbrix2;
 
     /* particles velocity */
     /* Initialized with the four terms not depending on phases */
-    part_vel_r[id] = ter1p + ter4p + ter5p + ter7p + tbriu;
+    part_vel_r[id] = ter1p + ter2p + ter3p + ter4p + ter5p + ter7p + tbriu;
 
-    /* trajectory  */
-    displ_r[id] += ter2x + ter3x;
 
     /* flow-seen velocity */
-    part_vel_seen_r[id]
-      = ter1f + ter2f + ter3f + ter7f;
+    part_vel_seen_r[id] = ter1f + ter2f + ter3f + ter7f;
 
-    /* particles velocity */
-    part_vel_r[id] += ter2p + ter3p;
   }
 
   /* Reference frame change: --> back to global reference frame
@@ -1729,7 +1705,6 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
   }
 
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Integration of SDEs by 2nd order scheme

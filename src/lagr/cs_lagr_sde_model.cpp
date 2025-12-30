@@ -80,8 +80,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -699,14 +697,11 @@ _lagsec(cs_lnum_t         p_id,
  *----------------------------------------------------------------------------*/
 
 static void
-_lagimp(const cs_lnum_t       p_id,
-        const cs_real_t       dt_part,
-        int                   nor)
+_lagimp(cs_lagr_particle_set_t  &p_set,
+        const cs_lnum_t          p_id,
+        const cs_real_t          dt_part,
+        int                      nor)
 {
-  /* Particles management */
-
-  cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
-
   cs_real_t tcarac;
   cs_real_t pip;
 
@@ -723,14 +718,11 @@ _lagimp(const cs_lnum_t       p_id,
  *----------------------------------------------------------------------------*/
 
 static void
-_lagidp(const cs_lnum_t       p_id,
-        const cs_real_t       dt_part,
-        int                   nor)
+_lagidp(cs_lagr_particle_set_t  &p_set,
+        const cs_lnum_t          p_id,
+        const cs_real_t          dt_part,
+        int                      nor)
 {
-  /* Particles management */
-
-  cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
-
   cs_real_t tcarac;
   cs_real_t pip;
 
@@ -747,14 +739,12 @@ _lagidp(const cs_lnum_t       p_id,
  *----------------------------------------------------------------------------*/
 
 static void
-_lagitp(const cs_lnum_t       p_id,
-        const cs_real_t       dt_part,
-        int                   nor,
-        const cs_real_2_t     tempct)
+_lagitp(cs_lagr_particle_set_t  &p_set,
+        const cs_lnum_t          p_id,
+        const cs_real_t          dt_part,
+        int                      nor,
+        const cs_real_2_t        tempct)
 {
-  /* Particles management */
-  cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
-
   cs_real_t tcarac;
   cs_real_t pip;
 
@@ -818,15 +808,13 @@ _lagitp(const cs_lnum_t       p_id,
  *----------------------------------------------------------------------------*/
 
 static void
-_sde_i_temp_seen(const cs_lnum_t       p_id,
-                 const cs_real_t       dt_part,
-                 int                   nor)
+_sde_i_temp_seen(cs_lagr_particle_set_t  &p_set,
+                 const cs_lnum_t          p_id,
+                 const cs_real_t          dt_part,
+                 int                      nor)
 {
   const cs_real_3_t *cell_cen = cs_glob_mesh_quantities->cell_cen;
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
-
-  /* Particles management */
-  cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
 
   /* use previous step for t_order == 1 or prediction step
    * and current one for correction step */
@@ -926,17 +914,17 @@ _sde_i_temp_seen(const cs_lnum_t       p_id,
  *----------------------------------------------------------------------------*/
 
 static void
-_lagich(const cs_lnum_t       p_id,
-        const cs_real_t       dt_part,
-        int                   nor,
-        const cs_real_2_t     tempct,
-        cs_real_t            *cpgd1,
-        cs_real_t            *cpgd2,
-        cs_real_t            *cpght)
+_lagich(cs_lagr_particle_set_t  &p_set,
+        const cs_lnum_t          p_id,
+        const cs_real_t          dt_part,
+        int                      nor,
+        const cs_real_2_t        tempct,
+        cs_real_t               *cpgd1,
+        cs_real_t               *cpgd2,
+        cs_real_t               *cpght)
 {
   /* Particles management */
 
-  cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
   const cs_coal_model_t *coal_model = cs_glob_coal_model;
 
   const int ico = coal_model->ico - 1;
@@ -1554,19 +1542,19 @@ _lewis_factor(const int        evap_model,
  * model (see the cs_ctwr.c subroutine).
  *
  * parameters:
- *   p_id         <--  particle id
+ *   p_id        <--  particle id
  *   dt_part     <--  time step associated to the particle
  *   nor         <--  current step id (for 2nd order scheme)
  *
  *----------------------------------------------------------------------------*/
 
 static void
-_sde_i_ct(const cs_lnum_t       p_id,
-          const cs_real_t       dt_part,
-          int                   nor)
+_sde_i_ct(cs_lagr_particle_set_t  &p_set,
+          const cs_lnum_t          p_id,
+          const cs_real_t          dt_part,
+          int                      nor)
 {
   /* Adressing structures of the Lagrangian module */
-  cs_lagr_particle_set_t& p_set = cs_lagr_get_particle_set_ref();
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
 
   /* Adressing structures of the cooling tower module */
@@ -1793,6 +1781,7 @@ _sde_i_ct(const cs_lnum_t       p_id,
  * - variables related to coal grains (Temp, MCH, MCK)
  * - additional user parameters
  *
+ * \param[in]  p_set        reference to particle set
  * \param[in]  p_id         particle id
  * \param[in]  dt_part      time step associated to the particle
  * \param[in]  nor          current step id (for 2nd order scheme)
@@ -1804,48 +1793,47 @@ _sde_i_ct(const cs_lnum_t       p_id,
 /*------------------------------------------------------------------------- */
 
 void
-cs_lagr_sde_model(const cs_lnum_t    p_id,
-                  const cs_real_t    dt_part,
-                  int                nor,
-                  const cs_real_2_t  tempct,
-                  cs_real_t         *cpgd1,
-                  cs_real_t         *cpgd2,
-                  cs_real_t         *cpght)
+cs_lagr_sde_model(cs_lagr_particle_set_t  &p_set,
+                  const cs_lnum_t          p_id,
+                  const cs_real_t          dt_part,
+                  int                      nor,
+                  const cs_real_2_t        tempct,
+                  cs_real_t               *cpgd1,
+                  cs_real_t               *cpgd2,
+                  cs_real_t               *cpght)
 {
   /* Integration of temperature seen by particles */
 
   if (cs_glob_lagr_specific_physics->solve_temperature_seen == 1)
-    _sde_i_temp_seen(p_id, dt_part, nor);
+    _sde_i_temp_seen(p_set, p_id, dt_part, nor);
 
   /* Integration of particles temperature (CTWR and COAL done after) */
 
   if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
       && cs_glob_lagr_specific_physics->solve_temperature == 1)
-    _lagitp(p_id, dt_part, nor, tempct);
+    _lagitp(p_set, p_id, dt_part, nor, tempct);
 
   /* Integration of particles diameter (CTWR and COAL done after) */
 
   if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
       && cs_glob_lagr_specific_physics->solve_diameter == 1)
-    _lagidp(p_id, dt_part, nor);
+    _lagidp(p_set, p_id, dt_part, nor);
 
   /* Integration of particles mass (CTWR and COAL done after) */
 
   if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
       && cs_glob_lagr_specific_physics->solve_mass == 1)
-    _lagimp(p_id, dt_part, nor);
+    _lagimp(p_set, p_id, dt_part, nor);
 
   /* Integration of coal equations: hp, mch, mck */
 
   if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL)
-    _lagich(p_id , dt_part, nor, tempct, cpgd1, cpgd2, cpght);
+    _lagich(p_set, p_id , dt_part, nor, tempct, cpgd1, cpgd2, cpght);
 
   /* Integration of cooling tower model equations*/
 
   if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR)
-    _sde_i_ct(p_id, dt_part, nor);
+    _sde_i_ct(p_set, p_id, dt_part, nor);
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

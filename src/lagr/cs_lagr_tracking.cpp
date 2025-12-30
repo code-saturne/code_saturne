@@ -1001,7 +1001,7 @@ _integ_particle_quantities(cs_lagr_particle_set_t          &p_set,
 
   /* Integration of SDE related to physical models */
   if (lagr_model->physical_model != CS_LAGR_PHYS_OFF)
-    cs_lagr_sde_model(p_id, dt_part, nor, tempct, cpgd1, cpgd2, cpght);
+    cs_lagr_sde_model(p_set, p_id, dt_part, nor, tempct, cpgd1, cpgd2, cpght);
 
   /* Integration of additional user variables
      -----------------------------------------*/
