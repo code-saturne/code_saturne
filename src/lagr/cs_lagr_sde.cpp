@@ -958,7 +958,7 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lnum_t                       p_id,
         tbrix2    = 0.0;
 
       if (tiu2 > 0.0)
-        tbrix1    = tixiu / sqrt(tiu2) * brgaus[3];
+        tbrix1    = tixiu / sqrt(tiu2) * brgaus[id + 3];
       else
         tbrix1    = 0.0;
 

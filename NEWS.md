@@ -3,6 +3,8 @@ Release 9.1.1 (unreleased)
 
 ### Bug fixes:
 
+- Lagrangian module: fix bug in Brownian motion (introduced in v9.1).
+
 - Fix `--mem-log` run option which was broken before release.
 
 Release 9.1.0 (2025-12-30)
@@ -104,13 +106,17 @@ Release 9.1.0 (2025-12-30)
 - Fixes related to notebook variables: modification in smgr now dominates over
   reading in checkpoint also fix incoherence between read and restart parameters
 
-- Fix periocidity with CDO-Fb scheme. This is now forbidden to have more than one periodic face by cell.
+- Fix periocidity with CDO-Fb scheme. It is now forbidden to have more than
+  one periodic face by cell.
 
-- Fix the time used to solve CDO equations after FV-NSE since there is a constant offset between them.
+- Fix the time used to solve CDO equations after FV-NSE since there is a
+  constant offset between them.
 
-- Fix treatments of BC conditions with CDO-FB. If imposed pression is used on a face, it can missed other boundary faces of the same cells.
+- Fix treatments of BC conditions with CDO-FB. If imposed pression is used on
+  a face, it can missed other boundary faces of the same cells.
 
-- Reintroduce `CS_BC_HMG_NEUMANN` since it is really different to `CS_BC_SYMMETRY` for CDO.
+- Reintroduce `CS_BC_HMG_NEUMANN` since it is really different from
+  `CS_BC_SYMMETRY` for CDO.
 
 - Fix symmetry boundary conditions defined inside GUI. Not read before.
 
