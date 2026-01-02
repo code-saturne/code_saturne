@@ -1170,14 +1170,15 @@ _pressure_correction_fv(int                   iterns,
 
   if (idilat == 2) {
 
-    ther_var = cs_thermal_model_field()->val;
-
-    if (thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY){
-      const cs_field_t *f_t = cs_field_by_name_try("temperature");
+    if (thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
+      const cs_field_t *f_t = cs_field_by_name("temperature");
       tempk = f_t->val;
     }
 
-    if (ther_var != nullptr) {
+    cs_field_t *th_f = cs_thermal_model_field();
+    if (th_f != nullptr) {
+
+      ther_var = th_f->val;
 
       /* Allocation */
       CS_MALLOC_HD(dc2, n_cells_ext, cs_real_t, amode);
