@@ -379,10 +379,10 @@ cs_boundary_conditions_type(bool  init,
     for (int ii = 0; ii < CS_MAX_BC_TYPE; ii++) {
       if (is_user_type[ii] != 1)
         continue;
-      cs_gnum_t inb_user = bc_type_idx[ii+1] - bc_type_idx[ii];
+      cs_gnum_t inb_user = inb[ii];
       if (inb_user > 0)
         cs_log_printf
-          (CS_LOG_DEFAULT,_("%-17s %8d %12llu\n"),
+          (CS_LOG_DEFAULT,_("%-17s  %8d%12llu\n"),
            "User type", ii+1,  (unsigned long long)inb_user);
     }
 
@@ -1844,9 +1844,9 @@ cs_boundary_conditions_type(bool  init,
       for (cs_lnum_t ii = 0; ii < CS_MAX_BC_TYPE; ii++) {
         if (is_user_type[ii] != 1)
           continue;
-        cs_gnum_t inb_user = bc_type_idx[ii+1] - bc_type_idx[ii];
+        cs_gnum_t inb_user = inb[ii];
         if (inb_user > 0)
-          cs_log_printf(CS_LOG_DEFAULT, _("%-17s %8d %12llu %e18.9\n"),
+          cs_log_printf(CS_LOG_DEFAULT, _("%-17s  %8d%12llu      %18.9e\n"),
                         "User type", ii+1,
                         (unsigned long long)inb_user, flumty[ii]);
       }
