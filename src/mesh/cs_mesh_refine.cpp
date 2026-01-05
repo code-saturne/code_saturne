@@ -275,6 +275,7 @@ public:
 
   char          f_r_range[2];     /* min and max face refinement levels */
 
+  int16_t      *sc_equiv;         /* equivalence for sub-cells */
   int16_t      *e_f2c;            /* exterior face to sub-cell id */
   _mrh_edge_t  *edges;            /* edges -> vertices and exterior faces */
 
@@ -299,6 +300,7 @@ public:
 
     c_vtx_id = -1;
 
+    CS_MALLOC(sc_equiv, n_faces_max, int16_t);
     CS_MALLOC(e_f2c, n_faces_max, int16_t);
 
     CS_MALLOC(edges, n_edges_max, _mrh_edge_t);
@@ -319,6 +321,7 @@ public:
     CS_FREE(edges);
 
     CS_FREE(e_f2c);
+    CS_FREE(sc_equiv);
   }
 
   /*--------------------------------------------------------------------------
@@ -361,6 +364,7 @@ public:
     if (n_faces + n_f_vtx > n_faces_max) {
       n_faces_max *= 2;
       CS_REALLOC(e_f2c, n_faces_max, int16_t);
+      CS_MALLOC(sc_equiv, n_faces_max, int16_t);
     }
     if (n_edges + n_f_vtx > n_edges_max) {
       n_edges_max *= 2;
@@ -424,6 +428,7 @@ public:
     }
 
     n_faces += 1;
+    n_sub_cells += 1;
   }
 
   /*--------------------------------------------------------------------------
@@ -539,8 +544,118 @@ public:
   }
 
   /*--------------------------------------------------------------------------
+   * Merge equivalent sub-cells.
+   *
+   * \param[in]  vtx_r_gen  refinedment level associated to each vertex.
+   *--------------------------------------------------------------------------*/
+
+  void
+  merge_equivalent_sub_cells()
+  {
+    /* First pass: ensure equivalences point to anchor for each sub-cell */
+
+    int16_t count = 0;
+
+    for (int16_t i = 0; i < n_sub_cells; i++) {
+      int16_t j = sc_equiv[i];
+      if (j == i)
+        count++;
+      else {
+        int16_t k = sc_equiv[j];
+        while (k < j) {
+          j = k;
+          sc_equiv[i] = j;
+          k = sc_equiv[j];
+        }
+      }
+    }
+
+    /* Return if no cells need to be merged */
+
+    if (count == n_sub_cells)
+      return;
+
+    /* Second pass: compact numbering for anchor (sub-cell with no lower
+       id equivalent) of each sub-cell. Use negative numbers to mark
+       sub-cell as anchor. */
+
+    count = 1;
+    for (int16_t i = 1; i < n_sub_cells; i++) {
+      if (sc_equiv[i] == i) {
+        sc_equiv[i] = - count - 1;
+        count++;
+      }
+    }
+
+    /* Third pass: update equivalences (point to root) for each sub-cell */
+
+    for (int16_t i = 0; i < n_sub_cells; i++) {
+      int16_t j = sc_equiv[i];
+      if (j < 0)
+        sc_equiv[i] = -j -1;
+      else {
+        j = sc_equiv[i]; // points to anchor
+        assert(j > -1);
+        sc_equiv[i] = sc_equiv[j];
+      }
+    }
+
+    /* Now update edges, removing those pointing to equivalent cells,
+       since no interior face will be based on them. */
+
+    cs_lnum_t j = 0;
+    for (cs_lnum_t i = 0; i < n_edges; i++) {
+      _mrh_edge_t *e = edges + i;
+      e->c0 = sc_equiv[e->c0];
+      e->c1 = sc_equiv[e->c1];
+      if (e->c0 != e->c1) {
+        edges[j] = edges[i];
+        j++;
+      }
+    }
+
+    n_edges = j;
+    n_sub_cells = count;
+
+    /* Finally, update exterior faces to cells adjacency */
+
+    for (int16_t i = 0; i < n_faces; i++)
+      e_f2c[i] = sc_equiv[e_f2c[i]];
+  }
+
+  /*--------------------------------------------------------------------------
+   * Remove edges connecting only vertices of higher refinement level
+   * than local cells.
+   *
+   * \param[in]  vtx_r_gen  refinedment level associated to each vertex.
+   *--------------------------------------------------------------------------*/
+
+  void
+  filter_high_refinement_level_edges(const char  vtx_r_gen[])
+  {
+    for (int16_t i = 0; i < n_sub_cells; i++)
+      sc_equiv[i] = i;
+
+    char r_threshold = f_r_range[0];
+
+    for (cs_lnum_t i = 1; i < n_edges; i++) {
+      _mrh_edge_t *e = edges + i;
+      if (   vtx_r_gen[e->v0] > r_threshold
+          && vtx_r_gen[e->v1] > r_threshold) {
+        if (e->c0 > e->c1)
+          sc_equiv[e->c0] = sc_equiv[e->c1];
+        else
+          sc_equiv[e->c1] = sc_equiv[e->c0];
+      }
+    }
+
+    merge_equivalent_sub_cells();
+  }
+
+  /*--------------------------------------------------------------------------
    * Refine cell using scheme with central vertex
    *
+   * \param[in]   vtx_r_gen  refinedment level associated to each vertex.
    * \param[out]  c_n_s_cells      number of sub-cells
    * \param[out]  c_n_i_faces      number of added interior faces
    * \param[out]  c_i_faces_size   size of added interior faces connectivity
@@ -552,13 +667,13 @@ public:
    *--------------------------------------------------------------------------*/
 
   void
-  refine_cell_with_center_vertex(cs_lnum_t   &c_n_s_cells,
+  refine_cell_with_center_vertex(const char  vtx_r_gen[],
+                                 cs_lnum_t   &c_n_s_cells,
                                  cs_lnum_t   &c_n_i_faces,
                                  cs_lnum_t   &c_i_faces_size,
                                  int16_t      e_f2c_pre[],
                                  int16_t      i_f2c_pre[][2],
                                  cs_lnum_t    i_f2v_pre[])
-
   {
     cs_lnum_t c_n_s_cells_max = c_n_s_cells;
     cs_lnum_t c_n_i_faces_max = c_n_i_faces;
@@ -602,6 +717,8 @@ public:
     // ---------------------------------------------------
     // Associated cell indexes need to be updated, as this
     // amounts to merging 2 adjacent pyramidal cells.
+
+    filter_high_refinement_level_edges(vtx_r_gen);
 
     // TODO (improve algorithm here)
 
@@ -5038,7 +5155,8 @@ _pre_refine_poly_cell(const cs_mesh_t            *m,
   }
 
   if (c_r_flag == CS_REFINE_POLYHEDRON)
-    crh->refine_cell_with_center_vertex(c_n_s_cells,
+    crh->refine_cell_with_center_vertex(m->vtx_r_gen,
+                                        c_n_s_cells,
                                         c_n_i_faces,
                                         c_i_faces_size,
                                         e_f2c_pre,
