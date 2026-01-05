@@ -86,6 +86,7 @@
 #include "rayt/cs_rad_transfer_fields.h"
 #include "rayt/cs_rad_transfer_options.h"
 #include "turb/cs_turbulence_model.h"
+#include "turb/cs_les_balance.h"
 
 #include "pprt/cs_physical_model.h"
 #include "atmo/cs_atmo.h"
@@ -3657,6 +3658,9 @@ cs_setup(void)
   /* Time moments called after additional creation */
   cs_gui_time_moments();
   cs_user_time_moments();
+
+  if (cs_glob_les_balance->i_les_balance > 0)
+    cs_les_balance_create();
 
   /* GUI based boundary condition definitions */
   cs_gui_boundary_conditions_define(cs_glob_domain->boundaries);

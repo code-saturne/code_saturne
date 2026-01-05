@@ -2841,7 +2841,7 @@ _les_balance_destroy_tui(cs_les_balance_tui_t **btui)
  * Create, allocate and initialize a the brij structure of _les_balance.
  *----------------------------------------------------------------------------*/
 
-static void
+static cs_les_balance_rij_t *
 _les_balance_create_rij(void)
 {
   /* Creation and allocation of the structure containing
@@ -2852,6 +2852,7 @@ _les_balance_create_rij(void)
   /* Initialization of working arrays and reading
      restart file in case of restart */
   _les_balance_initialize_rij();
+  return _les_balance.brij;
 }
 
 /*----------------------------------------------------------------------------
@@ -3018,8 +3019,6 @@ cs_les_balance_create(void)
     /* Creation of the time moments for Rij */
     _les_balance_time_moment_rij();
 
-    /* Creation of the brij structure inside _les_balance */
-    _les_balance_create_rij();
   }
 
   /* If Tui balance is active */
@@ -3079,6 +3078,10 @@ cs_les_balance_compute_rij(void)
 
   /* Rij balance structure */
   cs_les_balance_rij_t *brij = _les_balance.brij;
+
+  /* Creation of the brij structure inside _les_balance */
+  if (brij == nullptr)
+    brij = _les_balance_create_rij();
 
   cs_real_3_t *nutui = nullptr, *dnutdxkdukdxi = nullptr, *dnutdxi = nullptr;
   cs_real_6_t *nutduidxkdujdxk = nullptr, *dnutdxkuidukdxjsym = nullptr;
@@ -3174,15 +3177,25 @@ cs_les_balance_compute_rij(void)
   cs_array<cs_real_t> lapl(n_cells_ext, cs_alloc_mode);
 
   cs_real_6_t *prodij = brij->prodij;
+  assert(prodij != nullptr);
   cs_real_6_t *epsij = brij->epsij;
+  assert(epsij != nullptr);
   cs_real_6_t *phiij = brij->phiij;
+  assert(phiij != nullptr);
   cs_real_6_t *difftij = brij->difftij;
+  assert(difftij != nullptr);
   cs_real_6_t *difftpij = brij->difftpij;
+  assert(difftpij != nullptr);
   cs_real_6_t *convij = brij->convij;
+  assert(convij != nullptr);
   cs_real_6_t *difflamij = brij->difflamij;
+  assert(difflamij != nullptr);
   cs_real_6_t *unstij = brij->unstij;
+  assert(unstij != nullptr);
   cs_real_6_t *budsgsij = brij->budsgsij;
+  assert(budsgsij != nullptr);
   cs_real_69_t *budsgsfullij = brij->budsgsfullij;
+  assert(budsgsfullij != nullptr);
 
   const int idirtens[6][2] = _IJV2T;
   const int ipdirtens[3][3] = _PIJV2T;
@@ -3205,14 +3218,14 @@ cs_les_balance_compute_rij(void)
       const cs_lnum_t i = idirtens[ij][0];
       const cs_lnum_t j = idirtens[ij][1];
 
-      for (cs_lnum_t kk = 0; kk < 3; kk++) {
-        const cs_lnum_t jj = ipdirtens[i][kk];
-        const cs_lnum_t ll = ipdirtens[j][kk];
+      for (cs_lnum_t k = 0; k < 3; k++) {
+        const cs_lnum_t ik = ipdirtens[i][k];
+        const cs_lnum_t jk = ipdirtens[j][k];
 
-        prodij[c_id][ij] -=   rij[c_id][ll]*duidxj[c_id][i][kk]
-                            + rij[c_id][jj]*duidxj[c_id][j][kk];
+        prodij[c_id][ij] -=   rij[c_id][jk]*duidxj[c_id][i][k]
+                            + rij[c_id][ik]*duidxj[c_id][j][k];
 
-        epsij[c_id][ij] -= duidxj[c_id][i][kk]*duidxj[c_id][j][kk];
+        epsij[c_id][ij] -= duidxj[c_id][i][k]*duidxj[c_id][j][k];
       }
 
       phiij[c_id][ij] = (  pduidxj[c_id][ij]
@@ -3224,14 +3237,14 @@ cs_les_balance_compute_rij(void)
   });
 
   /* convij */
-  for (cs_lnum_t iii = 0; iii < 6; iii++) {
-    const cs_lnum_t i = idirtens[iii][0];
-    const cs_lnum_t j = idirtens[iii][1];
+  for (cs_lnum_t ij = 0; ij < 6; ij++) {
+    const cs_lnum_t i = idirtens[ij][0];
+    const cs_lnum_t j = idirtens[ij][1];
 
     /* convij */
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      for (cs_lnum_t kk = 0; kk < 3; kk++)
-        w1(c_id, kk) = ui[c_id][kk]*rij[c_id][iii];
+      for (cs_lnum_t k = 0; k < 3; k++)
+        w1(c_id, k) = ui[c_id][k]*rij[c_id][ij];
     });
 
     ctx.wait();
@@ -3239,19 +3252,19 @@ cs_les_balance_compute_rij(void)
     _les_balance_divergence_vector(w1.data<cs_real_3_t>(), diverg.data());
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      convij[c_id][iii] = diverg[c_id];
+      convij[c_id][ij] = diverg[c_id];
 
       /* difftij */
-      for (cs_lnum_t kk = 0; kk < 3; kk++) {
-        const cs_lnum_t jjj = ipdirtens[i][kk];
-        const cs_lnum_t kkk = ipdirtens[j][kk];
-        const cs_lnum_t lll = ipdirtens3[i][j][kk];
-        cs_real_t *triple_corr = uiujuk[lll];
+      for (cs_lnum_t k = 0; k < 3; k++) {
+        const cs_lnum_t ik = ipdirtens[i][k];
+        const cs_lnum_t jk = ipdirtens[j][k];
+        const cs_lnum_t ijk = ipdirtens3[i][j][k];
+        cs_real_t *triple_corr = uiujuk[ijk];
 
-        w1(c_id, kk) = - triple_corr[c_id] - 2.*ui[c_id][i]*ui[c_id][j]*ui[c_id][kk]
-                                         + ui[c_id][i]*uiuj[c_id][kkk]
-                                         + ui[c_id][j]*uiuj[c_id][jjj]
-                                         + ui[c_id][kk]*uiuj[c_id][iii];
+        w1(c_id, k) = - triple_corr[c_id] - 2.*ui[c_id][i]*ui[c_id][j]*ui[c_id][k]
+                                         + ui[c_id][i]*uiuj[c_id][jk]
+                                         + ui[c_id][j]*uiuj[c_id][ik]
+                                         + ui[c_id][k]*uiuj[c_id][ij];
       }
     });
 
@@ -3260,7 +3273,7 @@ cs_les_balance_compute_rij(void)
     _les_balance_divergence_vector(w1.data<cs_real_3_t>(), diverg.data());
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      difftij[c_id][iii] = diverg[c_id];
+      difftij[c_id][ij] = diverg[c_id];
 
       /* difftpij */
       for (cs_lnum_t kk = 0; kk < 3; kk++) {
@@ -3278,10 +3291,10 @@ cs_les_balance_compute_rij(void)
     _les_balance_divergence_vector(w1.data<cs_real_3_t>(), diverg.data());
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      difftpij[c_id][iii] = diverg[c_id] / ro0;
+      difftpij[c_id][ij] = diverg[c_id] / ro0;
 
       /* Laminar diffusion */
-      w2[c_id] = rij[c_id][iii];
+      w2[c_id] = rij[c_id][ij];
       lapl[c_id] = 0.;
     });
 
@@ -3290,7 +3303,7 @@ cs_les_balance_compute_rij(void)
     _les_balance_laplacian(w2.data(), lapl.data(), 0);
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      difflamij[c_id][iii] = viscl0*lapl[c_id]/ro0;
+      difflamij[c_id][ij] = viscl0*lapl[c_id]/ro0;
     });
 
     ctx.wait();
@@ -3298,9 +3311,9 @@ cs_les_balance_compute_rij(void)
 
   if (_les_balance.type & CS_LES_BALANCE_RIJ_BASE) {
 
-    for (cs_lnum_t iii = 0; iii < 6; iii++) {
-      const cs_lnum_t i = idirtens[iii][0];
-      const cs_lnum_t j = idirtens[iii][1];
+    for (cs_lnum_t ij = 0; ij < 6; ij++) {
+      const cs_lnum_t i = idirtens[ij][0];
+      const cs_lnum_t j = idirtens[ij][1];
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         for (cs_lnum_t kk = 0; kk < 3; kk++)
@@ -3312,7 +3325,7 @@ cs_les_balance_compute_rij(void)
       _les_balance_divergence_vector(w1.data<cs_real_3_t>(), diverg.data());
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        budsgsij[c_id][iii]
+        budsgsij[c_id][ij]
           = -(uidtaujkdxk[c_id][i][j]-ui[c_id][i]*diverg[c_id]);
 
         for (cs_lnum_t kk = 0; kk < 3; kk++)
@@ -3324,9 +3337,9 @@ cs_les_balance_compute_rij(void)
       _les_balance_divergence_vector(w1.data<cs_real_3_t>(), diverg.data());
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        budsgsij[c_id][iii] -= (  uidtaujkdxk[c_id][j][i]
+        budsgsij[c_id][ij] -= (  uidtaujkdxk[c_id][j][i]
                                      - ui[c_id][j]*diverg[c_id]);
-        budsgsij[c_id][iii] /= ro0;
+        budsgsij[c_id][ij] /= ro0;
       });
 
       ctx.wait();
@@ -3342,11 +3355,11 @@ cs_les_balance_compute_rij(void)
       cs_real_33_t *uidujdxk_jj = (cs_real_33_t *)uidujdxk[j];
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        for (cs_lnum_t kk = 0; kk < 3; kk++)
-          w1(c_id, kk) = nut[c_id]*( (  uidujdxk_ii[c_id][j][kk]
-                                      - ui[c_id][i]*duidxj[c_id][j][kk])
-                                    +(  uidujdxk_jj[c_id][i][kk]
-                                      - ui[c_id][j]*duidxj[c_id][i][kk]));
+        for (cs_lnum_t k = 0; k < 3; k++)
+          w1(c_id, k) = nut[c_id]*( (  uidujdxk_ii[c_id][j][k]
+                                      - ui[c_id][i]*duidxj[c_id][j][k])
+                                    +(  uidujdxk_jj[c_id][i][k]
+                                      - ui[c_id][j]*duidxj[c_id][i][k]));
       });
 
       ctx.wait();
@@ -3357,18 +3370,18 @@ cs_les_balance_compute_rij(void)
         budsgsfullij[c_id][ij][0] = diverg[c_id]/ro0;
         budsgsfullij[c_id][ij][1] = nut[c_id]/viscl0*epsij[c_id][ij];
 
-        for (cs_lnum_t kk = 0; kk < 3; kk++) {
-          cs_real_6_t *nutdkuiuj_loc = (cs_real_6_t*)nutdkuiuj[kk];
+        for (cs_lnum_t k = 0; k < 3; k++) {
+          cs_real_6_t *nutdkuiuj_loc = (cs_real_6_t*)nutdkuiuj[k];
 
-          w1(c_id, kk) = nutdkuiuj_loc[c_id][ij]
-                      + 2.*nut[c_id]*(  ui[c_id][i]*duidxj[c_id][j][kk]
-                                      + ui[c_id][j]*duidxj[c_id][i][kk])
-                      - nut[c_id]*(  uidujdxk_ii[c_id][j][kk]
-                                   + uidujdxk_jj[c_id][i][kk])
-                      - ui[c_id][i]*nutduidxj[c_id][j][kk]
-                      - ui[c_id][j]*nutduidxj[c_id][i][kk]
-                      - duidxj[c_id][j][kk]*nutui[c_id][i]
-                      - duidxj[c_id][i][kk]*nutui[c_id][j];
+          w1(c_id, k) = nutdkuiuj_loc[c_id][ij]
+                      + 2.*nut[c_id]*(  ui[c_id][i]*duidxj[c_id][j][k]
+                                      + ui[c_id][j]*duidxj[c_id][i][k])
+                      - nut[c_id]*(  uidujdxk_ii[c_id][j][k]
+                                   + uidujdxk_jj[c_id][i][k])
+                      - ui[c_id][i]*nutduidxj[c_id][j][k]
+                      - ui[c_id][j]*nutduidxj[c_id][i][k]
+                      - duidxj[c_id][j][k]*nutui[c_id][i]
+                      - duidxj[c_id][i][k]*nutui[c_id][j];
         }
       });
 
@@ -3383,10 +3396,10 @@ cs_les_balance_compute_rij(void)
                                     - nut[c_id]*duidxkdujdxk[c_id][ij];
 
         cs_real_t xx = 0.;
-        for (cs_lnum_t kk = 0; kk < 3; kk++)
-          xx += 2.*nut[c_id]*duidxj[c_id][i][kk]*duidxj[c_id][j][kk]
-              - duidxj[c_id][i][kk]*nutduidxj[c_id][j][kk]
-              - duidxj[c_id][j][kk]*nutduidxj[c_id][i][kk];
+        for (cs_lnum_t k = 0; k < 3; k++)
+          xx += 2.*nut[c_id]*duidxj[c_id][i][k]*duidxj[c_id][j][k]
+              - duidxj[c_id][i][k]*nutduidxj[c_id][j][k]
+              - duidxj[c_id][j][k]*nutduidxj[c_id][i][k];
 
         budsgsfullij[c_id][ij][3] += xx;
         budsgsfullij[c_id][ij][3] = -2./ro0*budsgsfullij[c_id][ij][3];
@@ -3423,42 +3436,42 @@ cs_les_balance_compute_rij(void)
                        nullptr,
                        w3.data<cs_real_3_t>());
 
-    for (cs_lnum_t iii = 0; iii < 6; iii++) {
-      const cs_lnum_t i = idirtens[iii][0];
-      const cs_lnum_t j = idirtens[iii][1];
+    for (cs_lnum_t ij = 0; ij < 6; ij++) {
+      const cs_lnum_t i = idirtens[ij][0];
+      const cs_lnum_t j = idirtens[ij][1];
       cs_real_33_t *uidujdxk_ii = (cs_real_33_t*)uidujdxk[i];
       cs_real_33_t *uidujdxk_jj = (cs_real_33_t*)uidujdxk[j];
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        budsgsfullij[c_id][iii][4] = 0.;
+        budsgsfullij[c_id][ij][4] = 0.;
 
-        budsgsfullij[c_id][iii][5] =  dnutdxkuidukdxjsym[c_id][iii]
+        budsgsfullij[c_id][ij][5] =  dnutdxkuidukdxjsym[c_id][ij]
                                     - ui[c_id][i]*dnutdxkdukdxi[c_id][j]
                                     - ui[c_id][j]*dnutdxkdukdxi[c_id][i];
 
         cs_real_t xx = 0.;
-        for (cs_lnum_t kk = 0; kk < 3; kk++) {
-          budsgsfullij[c_id][iii][4]
-            += w3(c_id, kk)
-               *(  uidujdxk_ii[c_id][kk][j]-ui[c_id][i]*duidxj[c_id][kk][j]
-                 + uidujdxk_jj[c_id][kk][i]-ui[c_id][j]*duidxj[c_id][kk][i] );
+        for (cs_lnum_t k = 0; k < 3; k++) {
+          budsgsfullij[c_id][ij][4]
+            += w3(c_id, k)
+               *(  uidujdxk_ii[c_id][k][j]-ui[c_id][i]*duidxj[c_id][k][j]
+                 + uidujdxk_jj[c_id][k][i]-ui[c_id][j]*duidxj[c_id][k][i] );
 
-          xx += 2.*dnutdxi[c_id][kk]*(  ui[c_id][i]*duidxj[c_id][kk][j]
-                                      + ui[c_id][j]*duidxj[c_id][kk][i])
-                 - dnutdxi[c_id][kk]*(  uidujdxk_ii[c_id][kk][j]
-                                      + uidujdxk_jj[c_id][kk][i])
-                 - duidxj[c_id][kk][j]*uidnutdxj[c_id][i][kk]
-                 - duidxj[c_id][kk][i]*uidnutdxj[c_id][j][kk];
+          xx += 2.*dnutdxi[c_id][k]*(  ui[c_id][i]*duidxj[c_id][k][j]
+                                      + ui[c_id][j]*duidxj[c_id][k][i])
+                 - dnutdxi[c_id][k]*(  uidujdxk_ii[c_id][k][j]
+                                      + uidujdxk_jj[c_id][k][i])
+                 - duidxj[c_id][k][j]*uidnutdxj[c_id][i][k]
+                 - duidxj[c_id][k][i]*uidnutdxj[c_id][j][k];
 
-          w1(c_id, kk)
-            =  (nutui[c_id][j]-nut[c_id]*ui[c_id][j])*duidxj[c_id][i][kk]
-             + (nutui[c_id][i]-nut[c_id]*ui[c_id][i])*duidxj[c_id][j][kk];
+          w1(c_id, k)
+            =  (nutui[c_id][j]-nut[c_id]*ui[c_id][j])*duidxj[c_id][i][k]
+             + (nutui[c_id][i]-nut[c_id]*ui[c_id][i])*duidxj[c_id][j][k];
         }
 
-        budsgsfullij[c_id][iii][4] /= ro0;
+        budsgsfullij[c_id][ij][4] /= ro0;
 
-        budsgsfullij[c_id][iii][5] += xx;
-        budsgsfullij[c_id][iii][5] /= ro0;
+        budsgsfullij[c_id][ij][5] += xx;
+        budsgsfullij[c_id][ij][5] /= ro0;
       });
 
       ctx.wait();
@@ -3466,31 +3479,31 @@ cs_les_balance_compute_rij(void)
       _les_balance_divergence_vector(w1.data<cs_real_3_t>(), diverg.data());
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        budsgsfullij[c_id][iii][6] = diverg[c_id]/ro0;
-        budsgsfullij[c_id][iii][7] = 0.;
-        budsgsfullij[c_id][iii][8] = 0.;
+        budsgsfullij[c_id][ij][6] = diverg[c_id]/ro0;
+        budsgsfullij[c_id][ij][7] = 0.;
+        budsgsfullij[c_id][ij][8] = 0.;
 
-        for (cs_lnum_t kk = 0; kk < 3; kk++) {
-          budsgsfullij[c_id][iii][7]
-            -=    (  nutduidxj[c_id][j][kk]
-                   - nut[c_id]*duidxj[c_id][j][kk]) * duidxj[c_id][i][kk]
-                + (  nutduidxj[c_id][i][kk]
-                   - nut[c_id]*duidxj[c_id][i][kk]) * duidxj[c_id][j][kk];
+        for (cs_lnum_t k = 0; k < 3; k++) {
+          budsgsfullij[c_id][ij][7]
+            -=    (  nutduidxj[c_id][j][k]
+                   - nut[c_id]*duidxj[c_id][j][k]) * duidxj[c_id][i][k]
+                + (  nutduidxj[c_id][i][k]
+                   - nut[c_id]*duidxj[c_id][i][k]) * duidxj[c_id][j][k];
 
-          budsgsfullij[c_id][iii][8]
-            +=      (uidnutdxj[c_id][i][kk]-ui[c_id][i]*dnutdxi[c_id][kk])
-                  * duidxj[c_id][kk][j]
-                +   (uidnutdxj[c_id][j][kk]-ui[c_id][j]*dnutdxi[c_id][kk])
-                  * duidxj[c_id][kk][i];
+          budsgsfullij[c_id][ij][8]
+            +=      (uidnutdxj[c_id][i][k]-ui[c_id][i]*dnutdxi[c_id][k])
+                  * duidxj[c_id][k][j]
+                +   (uidnutdxj[c_id][j][k]-ui[c_id][j]*dnutdxi[c_id][k])
+                  * duidxj[c_id][k][i];
         }
 
-        budsgsfullij[c_id][iii][7] /= ro0;
-        budsgsfullij[c_id][iii][8] /= ro0;
+        budsgsfullij[c_id][ij][7] /= ro0;
+        budsgsfullij[c_id][ij][8] /= ro0;
       });
 
       ctx.wait();
 
-    } /* End loop on iii */
+    } /* End loop on ij */
   } /* end test on CS_LES_BALANCE_RIJ_FULL */
 
   CS_FREE(uiujuk);
@@ -3673,9 +3686,9 @@ cs_les_balance_compute_tui(void)
 
       tptp[c_id] = t2[c_id] - cs_math_sq(t[c_id]);
 
-      for (cs_lnum_t ii = 0; ii < 3; ii++) {
-        tpuip[c_id][ii] = tui[c_id][ii] - t[c_id]*ui[c_id][ii];
-        unstti[c_id][ii] = (tpuip[c_id][ii] - unstti[c_id][ii]) / dtref;
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        tpuip[c_id][i] = tui[c_id][i] - t[c_id]*ui[c_id][i];
+        unstti[c_id][i] = (tpuip[c_id][i] - unstti[c_id][i]) / dtref;
       }
 
       for (cs_lnum_t ii = 0; ii < 3; ii++) {
@@ -3688,13 +3701,13 @@ cs_les_balance_compute_tui(void)
         convti[c_id][ii]    = 0.;
         difflamti[c_id][ii] = 0.;
 
-        for (cs_lnum_t kk = 0; kk < 3; kk++) {
-          cs_lnum_t iii = ipdirtens[ii][kk];
+        for (cs_lnum_t k = 0; k < 3; k++) {
+          cs_lnum_t iii = ipdirtens[ii][k];
 
-          prodtUi[c_id][ii] -= tpuip[c_id][kk]*duidxj[c_id][ii][kk];
-          cs_real_t wvar = uiuj[c_id][iii] - ui[c_id][ii]*ui[c_id][kk];
-          prodtTi[c_id][ii] -= wvar*dtdxi[c_id][kk];
-          epsti[c_id][ii] -= dtdxi[c_id][kk]*duidxj[c_id][ii][kk];
+          prodtUi[c_id][ii] -= tpuip[c_id][k]*duidxj[c_id][ii][k];
+          cs_real_t wvar = uiuj[c_id][iii] - ui[c_id][ii]*ui[c_id][k];
+          prodtTi[c_id][ii] -= wvar*dtdxi[c_id][k];
+          epsti[c_id][ii] -= dtdxi[c_id][k]*duidxj[c_id][ii][k];
         }
 
         epsti[c_id][ii] *= -xvistot/ro0;

@@ -80,6 +80,7 @@
 #include "base/cs_io.h"
 #include "mesh/cs_join.h"
 #include "turb/cs_les_inflow.h"
+#include "turb/cs_les_balance.h"
 #include "base/cs_log.h"
 #include "base/cs_log_iteration.h"
 #include "base/cs_log_setup.h"
@@ -626,6 +627,8 @@ _run(void)
   cs_function_destroy_all();
 
   /* Free moments info */
+  if (cs_glob_les_balance->i_les_balance > 0)
+    cs_les_balance_finalize();
 
   cs_time_moment_destroy_all();
 

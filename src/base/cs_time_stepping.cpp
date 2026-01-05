@@ -320,9 +320,6 @@ cs_time_stepping(void)
   if (cs_glob_lagr_time_scheme->iilagr > 0)
     cs_lagr_init_arrays();
 
-  if (cs_glob_les_balance->i_les_balance > 0)
-    cs_les_balance_create();
-
   /* Default initializations
      ----------------------- */
 
@@ -911,9 +908,6 @@ cs_time_stepping(void)
   if (   cs_glob_1d_wall_thermal->nfpt1d > 0
       || cs_get_glob_1d_wall_thermal()->nfpt1t == 0)
     cs_1d_wall_thermal_finalize();
-
-  if (cs_glob_les_balance->i_les_balance > 0)
-    cs_les_balance_finalize();
 
   cs_runge_kutta_integrators_destroy();
 
