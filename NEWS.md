@@ -3,6 +3,8 @@ Release 9.0.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix restart in case of solidification with an existing mushy zone (CDO schemes)
+
 - Fix flux postprocessing in scalar-valued CDO-Fb schemes (Neumann BCs)
 
 - Fix incomplete halo exchange for some vector and tensor boundary
