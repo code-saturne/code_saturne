@@ -1591,14 +1591,12 @@ _cell_r_type(const cs_mesh_t              *m,
 
   case 6: /* hexahedron ? */
     {
-      for (cs_lnum_t i = 1; i < 6; i++) {
-        if (_f_r_flag[i] != _f_r_flag[0]) {
+      c_r_flag[cell_id] = CS_REFINE_HEXA;
+      for (cs_lnum_t i = 0; i < 6; i++) {
+        if (_f_r_flag[i] != CS_REFINE_QUAD) {
           c_r_flag[cell_id] = CS_REFINE_POLYHEDRON;
           return;
         }
-      }
-      if (_f_r_flag[0] == CS_REFINE_QUAD) {
-        c_r_flag[cell_id] = CS_REFINE_HEXA;
       }
     }
     break;
@@ -2377,7 +2375,7 @@ _new_edge_and_face_vertex_ids(cs_mesh_t                    *m,
       _flag_faces_and_edges(f_id,
                             n_fv,
                             check_convex,
-                            c_r_level[c_id],
+                            f_r_level[f_id],
                             m->b_face_vtx_lst + m->b_face_vtx_idx[f_id],
                             v2v,
                             vtx_coords,
@@ -5390,6 +5388,9 @@ _subdivide_cells(const cs_mesh_t              *m,
                         _i_f2c_pre + i_f2c_pre_idx[c_idx],
                         i_f2v_pre + i_f2v_pre_idx[c_idx]);
 
+      cs_lnum_t e_id = c_f_n_idx[c_id+1];
+      for (cs_lnum_t f_id = c_f_n_idx[c_id]; f_id < e_id; f_id++)
+        m->i_face_r_gen[f_id] = c_r_level[c_id] + 1;
     }
 
   }
