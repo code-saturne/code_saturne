@@ -415,9 +415,9 @@ cs_thermal_model_c_square(const cs_real_t  cp[],
  * \brief Compute the derivative of the internal energy related to the
  *        temperature at constant pressure.
  *
- * \param[in]  pres  array of pressure values
- * \param[in]  temp  array of temperature values (in Kelvin)
- * \param[in]  yw    array of the total water mass fraction
+ * \param[in]  pres   array of pressure values
+ * \param[in]  temp   array of temperature values (in Kelvin)
+ * \param[in]  yw     array of the total water mass fraction
  * \param[in]  rvsra  ratio gas constant h2o / dry air
  * \param[in]  cva    difference between heat capacity of the dry air
  *                    and r_pg_const

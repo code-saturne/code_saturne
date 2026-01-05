@@ -747,15 +747,15 @@ cs_cf_thermo_c_square(cs_real_t *cp,
       c2[i] = gamma[i] * (pres[i]+psginf) / rho[i];
 
   }
-  else if (ieos == CS_EOS_HOMOGENEOUS_TWO_PHASE){
+  else if (ieos == CS_EOS_HOMOGENEOUS_TWO_PHASE) {
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       cs_real_t tau = 1./rho[i];
 
       c2[i] = cs_hgn_thermo_c2(fracv[i],
-                                fracm[i],
-                                frace[i],
-                                pres[i],
-                                tau);
+                               fracm[i],
+                               frace[i],
+                               pres[i],
+                               tau);
     }
   }
 }
