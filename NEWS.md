@@ -3,6 +3,8 @@ Release 9.0.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix flux postprocessing in scalar-valued CDO-Fb schemes (Neumann BCs)
+
 - Fix incomplete halo exchange for some vector and tensor boundary
   condition updates when an extended neighborhood is used.
 
