@@ -454,14 +454,14 @@ public:
     cs_lnum_t *f2v_pre = i_f2v_pre + c_i_f2v_size;
 
     int e0 = 0;
-    cs_lnum_t j = 1;
+    cs_lnum_t i_face_size = e_id - s_id + 2;
 
     cs_lnum_t v0 = cs::min(edges[s_id].v0, edges[s_id].v1);
     f2v_pre[0] = v0;
 
     /* In case of single edge, simply start face with smallest vertex id */
 
-    if (e_id - s_id == 1) {
+    if (i_face_size == 3) {
       _mrh_edge_t *e = edges + s_id;
       if (e->v0 == v0) {
         f2v_pre[1] = e->v1;
@@ -469,13 +469,14 @@ public:
       else {
         f2v_pre[1] = e->v0;
       }
-      j = 2;
+      f2v_pre[2] = c_vtx_id;
     }
 
     /* In case of multiple edges sharing faces, link edges from s_id to e_id;
        first (reference) edge is that with lowest vertex id */
 
     else {
+      cs_lnum_t j = 1;
       int n_e = e_id - s_id;
       constexpr int n_f_vtx_max = 16;
       cs_lnum_t edge_queue[n_f_vtx_max];
@@ -488,6 +489,8 @@ public:
           e0 = i - s_id;
         }
       }
+
+      cs_lnum_t v_s = v0;
 
       int edge_queue_size = n_e;
       for (int i = 0; i < n_e; i++)
@@ -512,22 +515,45 @@ public:
         }
         v0 = v1;
         if (v1 == -1)
+          break;
+      }
+
+      /* Now continue contour with cell center */
+
+      f2v_pre[j] = c_vtx_id;
+
+      /* If some edges are still not connected, they should
+         loop back to the starting point */
+
+      v0 = v_s;
+      cs_lnum_t k = i_face_size -1;
+      while (edge_queue_size > 0) {
+        cs_lnum_t v1 = -1;
+        for (int i = 0; i < edge_queue_size; i++) {
+          _mrh_edge_t *e = edges + edge_queue[i];
+          if (e->v0 == v0)
+            v1 = e->v1;
+          else if (e->v1 == v0)
+            v1 = e->v0;
+          if (v1 != -1) {
+            f2v_pre[k] = v1;
+          k--;
+          edge_queue[i] = edge_queue[edge_queue_size - 1];
+          edge_queue_size -= 1;
+          break;
+        }
+        }
+        v0 = v1;
+        assert(k == j);
+        if (v1 == -1)
           bft_error(__FILE__, __LINE__, 0,
                     _("Error connecting edges with adjacent faces."));
       }
-
     }
 
-    assert(j == e_id - s_id + 1);
-
-    /* Now close contour with cell center */
-
-    f2v_pre[j++] = c_vtx_id;
-    c_i_faces_size += j; // size in final connectivity
-
     /* Mark end of face */
-    f2v_pre[j] = -1;
-    c_i_f2v_size += j+1; // size in temporary connectivity
+
+    f2v_pre[i_face_size] = -1;
 
     /* Update indexes and metadata */
 
@@ -540,6 +566,8 @@ public:
     n_sub_cells = cs::max(n_sub_cells,
                           (int16_t)(cs::max(e->c0, e->c1) + 1));
 
+    c_i_f2v_size += i_face_size+1; // size in temporary connectivity
+    c_i_faces_size += i_face_size; // size in final connectivity
     c_n_i_faces += 1;
   }
 
@@ -633,12 +661,9 @@ public:
   void
   filter_high_refinement_level_edges(const char  vtx_r_gen[])
   {
-    for (int16_t i = 0; i < n_sub_cells; i++)
-      sc_equiv[i] = i;
-
     char r_threshold = f_r_range[0];
 
-    for (cs_lnum_t i = 1; i < n_edges; i++) {
+    for (cs_lnum_t i = 0; i < n_edges; i++) {
       _mrh_edge_t *e = edges + i;
       if (   vtx_r_gen[e->v0] > r_threshold
           && vtx_r_gen[e->v1] > r_threshold) {
@@ -648,8 +673,30 @@ public:
           sc_equiv[e->c1] = sc_equiv[e->c0];
       }
     }
+  }
 
-    merge_equivalent_sub_cells();
+  /*--------------------------------------------------------------------------
+   * Remove edges connected to corners present at lower refinement level
+   * of local cells.
+   *
+   * \param[in]  vtx_r_gen  refinedment level associated to each vertex.
+   *--------------------------------------------------------------------------*/
+
+  void
+  filter_corner_edges(const char  vtx_r_gen[])
+  {
+    char r_threshold = f_r_range[0];
+
+    for (cs_lnum_t i = 0; i < n_edges; i++) {
+      _mrh_edge_t *e = edges + i;
+      if (   vtx_r_gen[e->v0] < r_threshold
+          || vtx_r_gen[e->v1] < r_threshold) {
+        if (e->c0 > e->c1)
+          sc_equiv[e->c0] = sc_equiv[e->c1];
+        else
+          sc_equiv[e->c1] = sc_equiv[e->c0];
+      }
+    }
   }
 
   /*--------------------------------------------------------------------------
@@ -718,9 +765,13 @@ public:
     // Associated cell indexes need to be updated, as this
     // amounts to merging 2 adjacent pyramidal cells.
 
-    filter_high_refinement_level_edges(vtx_r_gen);
+    for (int16_t i = 0; i < n_sub_cells; i++)
+      sc_equiv[i] = i;
 
-    // TODO (improve algorithm here)
+    filter_high_refinement_level_edges(vtx_r_gen);
+    filter_corner_edges(vtx_r_gen);
+
+    merge_equivalent_sub_cells();
 
     // Now reorder edges based on sub-cells adjacency
     // -----------------------------------------------
