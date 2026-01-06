@@ -39,6 +39,12 @@
 #include <string.h>
 
 /*----------------------------------------------------------------------------
+ * Standard C++ library headers
+ *----------------------------------------------------------------------------*/
+
+#include <string>
+
+/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
@@ -4536,6 +4542,32 @@ cs_field
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return a pointer to a field based on its name.
+ *        This function requires that a field of the given name is defined.
+ *
+ * \return  pointer to the field structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_field_t *
+cs_field
+(
+  const std::string& name /*!<[in] field name */
+)
+{
+  int id = cs_map_name_to_id_try(_field_map, name.c_str());
+
+  if (id > -1)
+    return _fields[id];
+  else {
+    bft_error(__FILE__, __LINE__, 0,
+              _("Field \"%s\" is not defined."), name.c_str());
+    return nullptr;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Return a pointer to a field based on its id.
  *        If no field of the given name is defined, nullptr is returned.
  *
@@ -4571,6 +4603,29 @@ cs_field_try
 )
 {
   int id = cs_map_name_to_id_try(_field_map, name);
+
+  if (id > -1)
+    return _fields[id];
+  else
+    return nullptr;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a pointer to a field based on its name.
+ *        If no field of the given name is defined, nullptr is returned.
+ *
+ * \return  pointer to the field structure, or nullptr
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_field_t *
+cs_field_try
+(
+  const std::string& name /*!<[in] field name */
+)
+{
+  int id = cs_map_name_to_id_try(_field_map, name.c_str());
 
   if (id > -1)
     return _fields[id];
