@@ -1355,6 +1355,28 @@ cs_f_field_get_label(int           f_id,
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
+void
+cs_field_get_bc_coeff_mult(cs_field_t *f,
+                           int *i_mult,
+                           int *a_mult,
+                           int *b_mult)
+{
+  *i_mult = f->dim;
+  *a_mult = f->dim;
+  *b_mult = f->dim;
+
+  if (f->type & CS_FIELD_VARIABLE) {
+    int coupled = 0;
+    int coupled_key_id = cs_field_key_id_try("coupled");
+    if (coupled_key_id > -1)
+      coupled = cs_field_get_key_int(f, coupled_key_id);
+    if (coupled) {
+      *i_mult = 1;
+      *b_mult *= f->dim;
+    }
+  }
+}
+
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
@@ -1834,26 +1856,14 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
 {
   /* Add boundary condition coefficients if required */
 
-  cs_lnum_t i_mult = f->dim;
-  cs_lnum_t a_mult = f->dim;
-  cs_lnum_t b_mult = f->dim;
+  int i_mult, a_mult, b_mult;
+  cs_field_get_bc_coeff_mult(f, &i_mult, &a_mult, &b_mult);
 
   cs_alloc_mode_t amode = cs_alloc_mode;
 
   cs_base_check_bool(&have_flux_bc);
   cs_base_check_bool(&have_mom_bc);
   cs_base_check_bool(&have_conv_bc);
-
-  if (f->type & CS_FIELD_VARIABLE) {
-    int coupled = 0;
-    int coupled_key_id = cs_field_key_id_try("coupled");
-    if (coupled_key_id > -1)
-      coupled = cs_field_get_key_int(f, coupled_key_id);
-    if (coupled) {
-      i_mult = 1;
-      b_mult *= f->dim;
-    }
-  }
 
   if (f->location_id == CS_MESH_LOCATION_CELLS) {
 

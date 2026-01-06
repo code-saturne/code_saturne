@@ -1321,6 +1321,12 @@ cs_field_define_keys_base(void);
 const char *
 cs_field_get_label(const cs_field_t  *f);
 
+void
+cs_field_get_bc_coeff_mult(cs_field_t *f,
+                           int *i_mult,
+                           int *a_mult,
+                           int *b_mult);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

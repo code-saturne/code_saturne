@@ -3406,6 +3406,12 @@ cs_boundary_conditions_inlet_set_turbulence_intensity(const  cs_zone_t  *zone,
   c->turb_intensity = ti;
 }
 
+void
+cs_boundary_conditions_get_bc_type_addr(int **bc_type[])
+{
+  *bc_type = &_bc_type;
+}
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

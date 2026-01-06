@@ -260,7 +260,11 @@ cs_renumber_get_algorithm(bool                        *halo_adjacent_cells_last,
  *----------------------------------------------------------------------------*/
 
 void
-cs_renumber_mesh(cs_mesh_t  *mesh);
+cs_renumber_mesh(cs_mesh_t  *mesh,
+                 cs_lnum_t *cell_map[],
+                 cs_lnum_t *i_face_map[],
+                 cs_lnum_t *b_face_map[],
+                 cs_lnum_t *vtx_map[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

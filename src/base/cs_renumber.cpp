@@ -4882,7 +4882,7 @@ _renumber_vertices_by_face_adjacency(cs_mesh_t  *mesh,
  *----------------------------------------------------------------------------*/
 
 static void
-_renumber_cells(cs_mesh_t  *mesh)
+_renumber_cells(cs_mesh_t  *mesh, cs_lnum_t *cell_map[])
 {
   cs_lnum_t  *new_to_old_c = nullptr;
   int retval = 0;
@@ -4964,7 +4964,10 @@ _renumber_cells(cs_mesh_t  *mesh)
 
   /* Now free remaining array */
 
-  CS_FREE(new_to_old_c);
+  if (cell_map)
+    *cell_map = new_to_old_c;
+  else
+    CS_FREE(new_to_old_c);
 }
 
 /*----------------------------------------------------------------------------
@@ -4980,7 +4983,7 @@ _renumber_cells(cs_mesh_t  *mesh)
  *----------------------------------------------------------------------------*/
 
 static void
-_renumber_i_faces(cs_mesh_t  *mesh)
+_renumber_i_faces(cs_mesh_t  *mesh, cs_lnum_t *i_face_map[])
 {
   int  n_i_groups = 1, n_i_no_adj_halo_groups = 0;
   cs_lnum_t  max_group_size = 1014;       /* Default */
@@ -5100,7 +5103,10 @@ _renumber_i_faces(cs_mesh_t  *mesh)
   /* Free memory */
 
   CS_FREE(i_group_index);
-  CS_FREE(new_to_old_i);
+  if (i_face_map)
+    *i_face_map = new_to_old_i;
+  else
+    CS_FREE(new_to_old_i);
 }
 
 /*----------------------------------------------------------------------------
@@ -5111,7 +5117,7 @@ _renumber_i_faces(cs_mesh_t  *mesh)
  *----------------------------------------------------------------------------*/
 
 static void
-_renumber_b_faces(cs_mesh_t  *mesh)
+_renumber_b_faces(cs_mesh_t  *mesh, cs_lnum_t *b_face_map[])
 {
   cs_lnum_t  ii;
   cs_lnum_t  *new_to_old_b = nullptr;
@@ -5221,7 +5227,10 @@ _renumber_b_faces(cs_mesh_t  *mesh)
   /* Free memory */
 
   CS_FREE(b_group_index);
-  CS_FREE(new_to_old_b);
+  if (b_face_map)
+    *b_face_map = new_to_old_b;
+  else
+    CS_FREE(new_to_old_b);
 }
 
 /*----------------------------------------------------------------------------
@@ -5233,7 +5242,7 @@ _renumber_b_faces(cs_mesh_t  *mesh)
  *----------------------------------------------------------------------------*/
 
 static void
-_renumber_vertices(cs_mesh_t  *mesh)
+_renumber_vertices(cs_mesh_t  *mesh, cs_lnum_t *vtx_map[])
 {
   if (_vertices_algorithm == CS_RENUMBER_VERTICES_NONE)
     return;
@@ -5293,7 +5302,10 @@ _renumber_vertices(cs_mesh_t  *mesh)
 
   /* Now free remaining array */
 
-  CS_FREE(n2o_v);
+  if (vtx_map)
+    *vtx_map = n2o_v;
+  else
+    CS_FREE(n2o_v);
 }
 
 /*----------------------------------------------------------------------------
@@ -5620,7 +5632,11 @@ _renumber_b_test(cs_mesh_t  *mesh)
  *----------------------------------------------------------------------------*/
 
 static void
-_renumber_mesh(cs_mesh_t  *mesh)
+_renumber_mesh(cs_mesh_t  *mesh,
+               cs_lnum_t *cell_map[],
+               cs_lnum_t *i_face_map[],
+               cs_lnum_t *b_face_map[],
+               cs_lnum_t *vtx_map[])
 {
   const char *p = nullptr;
 
@@ -5722,16 +5738,16 @@ _renumber_mesh(cs_mesh_t  *mesh)
 
   /* Renumber cells first */
 
-  _renumber_cells(mesh);
+  _renumber_cells(mesh, cell_map);
 
   /* Renumber faces afterwards */
 
-  _renumber_i_faces(mesh);
-  _renumber_b_faces(mesh);
+  _renumber_i_faces(mesh, i_face_map);
+  _renumber_b_faces(mesh, b_face_map);
 
   /* Renumber vertices afterwards */
 
-  _renumber_vertices(mesh);
+  _renumber_vertices(mesh, vtx_map);
 
   if (mesh->verbosity > 0)
     bft_printf
@@ -5976,12 +5992,16 @@ cs_renumber_get_algorithm(bool                        *halo_adjacent_cells_last,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_renumber_mesh(cs_mesh_t  *mesh)
+cs_renumber_mesh(cs_mesh_t  *mesh,
+                 cs_lnum_t *cell_map[],
+                 cs_lnum_t *i_face_map[],
+                 cs_lnum_t *b_face_map[],
+                 cs_lnum_t *vtx_map[])
 {
   bft_printf(_("\n Renumbering mesh:\n"));
   bft_printf_flush();
 
-  _renumber_mesh(mesh);
+  _renumber_mesh(mesh, cell_map, i_face_map, b_face_map, vtx_map);
 
   if (mesh->cell_numbering == nullptr)
     mesh->cell_numbering = cs_numbering_create_default(mesh->n_cells);
@@ -6035,7 +6055,7 @@ cs_renumber_cells(cs_mesh_t  *mesh)
 
   /* Apply renumbering */
 
-  _renumber_cells(mesh);
+  _renumber_cells(mesh, nullptr);
 
   if (mesh->verbosity > 0)
     bft_printf
@@ -6085,7 +6105,7 @@ cs_renumber_i_faces(cs_mesh_t  *mesh)
 
   /* Apply renumbering */
 
-  _renumber_i_faces(mesh);
+  _renumber_i_faces(mesh, nullptr);
 
   if (mesh->verbosity > 0)
     bft_printf
@@ -6167,7 +6187,7 @@ cs_renumber_b_faces(cs_mesh_t  *mesh)
 
   /* Apply renumbering */
 
-  _renumber_b_faces(mesh);
+  _renumber_b_faces(mesh, nullptr);
 
   if (mesh->verbosity > 0)
     bft_printf
@@ -6405,7 +6425,7 @@ cs_renumber_vertices(cs_mesh_t  *mesh)
 
   /* Apply renumbering */
 
-  _renumber_vertices(mesh);
+  _renumber_vertices(mesh, nullptr);
 
   if (mesh->verbosity > 0)
     bft_printf

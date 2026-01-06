@@ -427,8 +427,10 @@ _mesh_to_builder_g(cs_mesh_t          *mesh,
                                pp_out);
   }
 
+#if 0
   if (transfer == false)
     CS_FREE(mb->face_cells);
+#endif
 
   /* Now write pre-distributed blocks for cell group classes if required */
 
@@ -595,10 +597,12 @@ _mesh_to_builder_g(cs_mesh_t          *mesh,
   if (pp_out != nullptr)
     _write_face_vertices_g(mesh, mb, transfer, pp_out);
 
+#if 0
   if (transfer == false) {
     CS_FREE(mb->face_vertices_idx);
     CS_FREE(mb->face_vertices);
   }
+#endif
 
   /* Free face part to block distribution structures */
 
@@ -696,12 +700,14 @@ _mesh_to_builder_g(cs_mesh_t          *mesh,
 
   }
 
+#if 0
   if (transfer == true)
     CS_FREE(mesh->global_vtx_num);
   else {
     CS_FREE(mb->vertex_coords);
     CS_FREE(mb->vtx_r_gen);
   }
+#endif
 
   cs_part_to_block_destroy(&d);
 }

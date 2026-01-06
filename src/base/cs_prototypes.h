@@ -1634,6 +1634,9 @@ cs_user_wall_condensation(int  iappel);
 void
 cs_user_zones(void);
 
+void
+cs_user_repartition(int cell_dest[]);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

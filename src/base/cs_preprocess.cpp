@@ -376,7 +376,7 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
   cs_user_numbering();
 
-  cs_renumber_mesh(m);
+  cs_renumber_mesh(m, nullptr, nullptr, nullptr, nullptr);
 
   /* Initialize group classes */
 

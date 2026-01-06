@@ -235,6 +235,11 @@ cs_user_mesh_modify_partial
 {
 }
 
+#pragma weak cs_user_repartition
+void
+cs_user_repartition(int cell_dest[])
+{}
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
