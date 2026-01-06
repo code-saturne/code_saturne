@@ -286,7 +286,17 @@ typedef struct {
   ) const;
 
   void
+  update_public_pointers(void);
+
+  void
   update_size(void);
+
+  void
+  map_values
+  (
+    cs_real_t *val_new,
+    cs_real_t *val_pre_new
+  );
 
   cs_array_2d<cs_real_t> **_vals;
 

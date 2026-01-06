@@ -1760,25 +1760,18 @@ cs_field_allocate_values(cs_field_t  *f)
 
   if (f->is_owner) {
 
-    const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
+    /* Update sizes and pointers' addresses. */
 
-    /* Use host_context in this part to avoid access by GPU (too soon...) */
-    cs_dispatch_context ctx;
+    f->update_size();
 
     /* Initialization */
 
+    cs_dispatch_context ctx;
     for (int ii = 0; ii < f->n_time_vals; ii++) {
-      f->_vals[ii]->reshape(n_elts[2], f->dim);
       f->_vals[ii]->zero(ctx);
-
-      f->vals[ii] = f->_vals[ii]->data();
     }
-
     ctx.wait();
 
-    f->val = f->_vals[0]->data();
-    if (f->n_time_vals > 1)
-      f->val_pre = f->_vals[1]->data();
   }
 }
 
@@ -1801,25 +1794,7 @@ cs_field_map_values(cs_field_t   *f,
   if (f == nullptr)
     return;
 
-  if (f->is_owner) {
-    for (int i = 0; i < f->n_time_vals; i++) {
-      f->_vals[i]->clear();
-      f->vals[i] = nullptr;
-    }
-    f->val = nullptr;
-    f->val_pre = nullptr;
-    f->is_owner = false;
-  }
-
-  f->val = val;
-  f->vals[0] = val;
-
-  /* Add previous time step values if necessary */
-
-  if (f->n_time_vals > 1) {
-    f->val_pre = val_pre;
-    f->vals[1] = val_pre;
-  }
+  f->map_values(val, val_pre);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5037,6 +5012,27 @@ cs_field_t::get_vals_alloc_mode
   return this->_vals[time_id]->mode();
 }
 
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Update public pointers based on private members
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_field_t::update_public_pointers()
+{
+  for (int i = 0; i < this->n_time_vals; i++) {
+    this->vals[i] = this->_vals[i]->data();
+  }
+
+  /* Update val and val_pre pointers */
+  this->val = this->_vals[0]->data();
+  if (this->n_time_vals > 1)
+    this->val_pre = this->_vals[1]->data();
+  else
+    this->val_pre = nullptr;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Resize field values automatically (vals, val, val_pre) based
@@ -5055,17 +5051,44 @@ cs_field_t::update_size()
   if (new_size == this->_vals[0]->extent(0) || !(this->is_owner))
     return;
 
-  /* Reallocate all necessary values and update pointers */
+  /* Reallocate all necessary values */
   for (int i = 0; i < this->n_time_vals; i++) {
     this->_vals[i]->reshape(new_size, this->dim);
-
-    this->vals[i] = this->_vals[i]->data();
   }
 
-  /* Update val and val_pre pointers */
-  this->val = this->_vals[0]->data();
+  /* Update pointers */
+  this->update_public_pointers();
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Map existing value arrays to field descriptor
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_field_t::map_values
+(
+  cs_real_t *val_new,    /*!<[in] pointer to array of values */
+  cs_real_t *val_pre_new /*!<[in] pointer to array of previous values, or nullptr */
+)
+{
+  if (this->is_owner) {
+    for (int i = 0; i < this->n_time_vals; i++) {
+      delete this->_vals[i];
+    }
+    this->is_owner = false;
+  }
+
+  /* Set _vals to non owner views of pointers and update public pointers */
+  const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(this->location_id);
+  const cs_lnum_t n_vals = n_elts[2];
+
+  this->_vals[0] = new cs_array_2d<cs_real_t>(val_new, n_vals, this->dim);
   if (this->n_time_vals > 1)
-    this->val_pre = this->_vals[1]->data();
+    this->_vals[1] = new cs_array_2d<cs_real_t>(val_pre_new, n_vals, this->dim);
+
+  this->update_public_pointers();
 }
 
 /*----------------------------------------------------------------------------*/
