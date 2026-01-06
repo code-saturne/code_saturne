@@ -2191,6 +2191,40 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
+   * \brief Resize data array and copy old data (4D)
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  void
+  reshape_and_copy
+  (
+    const cs_lnum_t size1,  /*!<[in] Size along first dimension */
+    const cs_lnum_t size2,  /*!<[in] Size along second dimension */
+    const cs_lnum_t size3,  /*!<[in] Size along third dimension */
+    const cs_lnum_t size4,  /*!<[in] Size along fourth dimension */
+    cs_lnum_t size_to_keep, /*!<[in] Size to keep when copying data  (-1 for all) */
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+  __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
+#endif
+  )
+  {
+    static_assert(N == 4,
+                  "Method reshape_and_copy(size1, size2, size3, size4, ...)"
+                  " only possible for cs::array<T,4>");
+    cs_lnum_t tmp_size[N] = {size1, size2, size3, size4};
+
+    reshape_and_copy(tmp_size, size_to_keep, file_name, line_number);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
    * \brief Set memory allocation mode.
    */
   /*--------------------------------------------------------------------------*/
