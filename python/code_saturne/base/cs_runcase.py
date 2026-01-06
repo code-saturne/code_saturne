@@ -45,7 +45,8 @@ class runcase(object):
                  epilogue=None,
                  casedir=None,
                  autorestart=False,
-                 memlog=False):
+                 memlog=False,
+                 coupled_domains=[]):
         """
         Initialize runcase info object.
         """
@@ -55,6 +56,7 @@ class runcase(object):
         self.autorestart = autorestart
         self.mem_log = memlog
         self.casedir = casedir
+        self.coupled_domains = coupled_domains
 
         if submit:
             self.build_template(job_header=job_header,
@@ -226,9 +228,29 @@ class runcase(object):
             sys.stdout.write('User requested auto restart if exceeding wall time\n')
             sys.stdout.write('--------------------------------------------------\n\n')
 
-            resu_dir_name = os.path.basename(os.path.dirname(self.path))
-            data_dir_name = os.path.join(self.casedir, 'DATA')
-            self.lines.append("if [ -f run_status.exceeded_time_limit ]; then")
+            if len(self.coupled_domains) > 0:
+                for d in self.coupled_domains:
+                    if d['solver'] != "Code_Saturne":
+                        sys.stdout.write('Auto restart cannot be used for coupled cases')
+                        sys.stdout.write('with domains other than code_saturne or neptune_cfd.')
+                        exit(1)
+
+                resu_dir_name = os.path.join("RESU_COUPLING",
+                                             os.path.basename(os.path.dirname(self.path)))
+                data_dir_name = os.path.join(self.casedir)
+                for d_id, d in enumerate(self.coupled_domains):
+                    rest_fname = 'run_status.exceeded_time_limit'
+                    if d_id == 0:
+                        self.lines.append("if [[ -f {}/{} || \\".format(d['domain'], rest_fname))
+                    elif d_id < len(self.coupled_domains) - 1:
+                        self.lines.append("      -f {}/{} || \\".format(d['domain'], rest_fname))
+                    else:
+                        self.lines.append("      -f {}/{} ]]; then".format(d['domain'], rest_fname))
+            else:
+                resu_dir_name = os.path.basename(os.path.dirname(self.path))
+                data_dir_name = os.path.join(self.casedir, 'DATA')
+                self.lines.append("if [ -f run_status.exceeded_time_limit ]; then")
+
             self.lines.append('  cd ' + enquote_arg(data_dir_name))
             restart_cmd = enquote_arg(exec_path) + ' submit'
             restart_cmd += ' --auto-restart'

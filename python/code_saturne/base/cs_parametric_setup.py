@@ -597,7 +597,7 @@ class case_setup_filter(object):
 # Function which will update case in memory based on the case_setup_filter class
 #-------------------------------------------------------------------------------
 
-def update_case_model(case, options, pkg):
+def update_case_model(case, options, pkg, case_name=None):
     """
     Update a Case model in memory with given options
     """
@@ -665,7 +665,10 @@ def update_case_model(case, options, pkg):
     # ------------------
 
     if options.RestartRun:
-        restart_path = os.path.join('RESU', options.RestartRun, 'checkpoint')
+        if 'RESU_COUPLING' in options.RestartRun:
+            restart_path = os.path.join('..', options.RestartRun, case_name, 'checkpoint')
+        else:
+            restart_path = os.path.join('RESU', options.RestartRun, 'checkpoint')
         xml_controller.setRestartPath(restart_path, options.DiffRestartMesh)
 
     if options.DiffRestartMeshPath:
@@ -675,7 +678,7 @@ def update_case_model(case, options, pkg):
 # Main function which modifies the case setup based on given argument list
 #-------------------------------------------------------------------------------
 
-def update_case_setup(case, args, pkg):
+def update_case_setup(case, args, pkg, case_name=None):
 
     # Read input arguments
     # --------------------
@@ -692,7 +695,7 @@ def update_case_setup(case, args, pkg):
 
     if case:
         xml_controller = case_setup_filter(case, pkg=pkg)
-        update_case_model(xml_controller.case, options, pkg)
+        update_case_model(xml_controller.case, options, pkg, case_name)
 
     else:
         print("parsed options:", options)
