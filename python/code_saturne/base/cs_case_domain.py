@@ -686,7 +686,8 @@ class domain(base_domain):
         if self.parametric_args:
             from code_saturne.base import cs_parametric_setup
             cs_parametric_setup.update_case_setup(case, self.parametric_args,
-                                                  pkg=self.package)
+                                                  pkg=self.package,
+                                                  case_name=self.name)
 
         if self.notebook:
             from code_saturne.model.NotebookModel import NotebookModel

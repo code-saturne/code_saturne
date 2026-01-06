@@ -133,7 +133,8 @@ def main(argv, pkg):
                                  epilogue = r_c['run_epilogue'],
                                  casedir  = r_c['casedir'],
                                  autorestart = run_args.auto_restart,
-                                 memlog = r_c['mem_log'])
+                                 memlog = r_c['mem_log'],
+                                 coupled_domains=r_c['coupled_domains'])
     runcase.save()
 
     # Now submit case
