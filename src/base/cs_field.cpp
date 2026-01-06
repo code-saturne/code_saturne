@@ -1698,6 +1698,15 @@ cs_field_set_n_time_vals(cs_field_t  *f,
   for (int i = n_time_vals_ini; i < f->n_time_vals; i++)
     f->vals[i] = nullptr;
 
+  // Avoid memory leak if new number of values is smaller
+  // Since Realloc change size of "_vals", we call destructors here
+  if (n_time_vals_ini > _n_time_vals && f->_vals != nullptr) {
+    for (int i = _n_time_vals; i < n_time_vals_ini; i++) {
+      delete f->_vals[i];
+      f->_vals[i] = nullptr;
+    }
+  }
+
   CS_REALLOC(f->_vals, f->n_time_vals, cs_array_2d<cs_real_t> *);
   for (int i = n_time_vals_ini; i < f->n_time_vals; i++)
     f->_vals[i] = new cs_array_2d<cs_real_t>(); // empty container;
