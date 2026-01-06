@@ -665,14 +665,13 @@ cs_equation_builder_enforce_block_dofs(const cs_equation_builder_t   *eqb,
 {
   /* Enforcement of internal DoFs */
 
-  double  *x_vals = cb->values; /* define with cs_enforcement_dofs_cw() */
-  double  *ax = cb->values + csys->n_dofs;
-
   memset(cb->values, 0, 2*csys->n_dofs*sizeof(double));
 
+  double  *x_vals = cb->values; /* define with cs_enforcement_dofs_cw() */
+  double  *ax = cb->values + csys->n_dofs;
   bool do_enforcement = cs_enforcement_dofs_cw(eqb->enforced_values,
                                                csys,
-                                               cb->values);
+                                               x_vals);
 
   csys->has_internal_enforcement = do_enforcement;
 

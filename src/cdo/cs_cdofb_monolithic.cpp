@@ -1146,7 +1146,7 @@ _implicit_euler_build(const cs_navsto_param_t *nsp,
   cs_equation_param_t  *mom_eqp = mom_eq->param;
   cs_equation_builder_t  *mom_eqb = mom_eq->builder;
 
-  cs_turbulence_param_t *tp = nsp->turbulence;
+  cs_turbulence_param_t *turbp = nsp->turbulence;
 
   /* Retrieve shared structures */
 
@@ -1164,15 +1164,16 @@ _implicit_euler_build(const cs_navsto_param_t *nsp,
 
   const cs_real_t *kener = nullptr;
 
-  if (tp->model->itytur == 2 || tp->model->itytur == 6)
+  if (turbp->model->itytur == 2 || turbp->model->itytur == 6)
     kener = cs_field_by_name("k")->val;
 
   cs_lnum_t *icodcl_vel = nullptr;
   cs_real_t *rcodcl1_vel = nullptr;
 
   /* Communicate with legacy structures to ensure coherency in
-   * computing BC for turbulence equations (eg. k, eps, omega)*/
-  if (tp->shared_from_legacy) {
+   * computing BC for turbulence equations (eg. k, eps, omega) */
+
+  if (turbp->shared_from_legacy) {
     icodcl_vel = sc->velocity->bc_coeffs->icodcl;
     rcodcl1_vel = sc->velocity->bc_coeffs->rcodcl1;
   }
@@ -1246,12 +1247,12 @@ _implicit_euler_build(const cs_navsto_param_t *nsp,
                                        mom_eqb,
                                        vel_f_n,
                                        vel_c_n,
-                                       nullptr,
+                                       nullptr, /* no n-1 state is given */
                                        nullptr, /* no n-1 state is given */
                                        csys,
                                        cb);
 
-      if (tp->model->itytur == 2 || tp->model->itytur == 6)
+      if (turbp->model->itytur == 2 || turbp->model->itytur == 6)
         cs_cdofb_vecteq_init_turb_bc(cm, mom_eqp, mom_eqb,
                                      mu_l/rho,
                                      kener[c_id], vel_c_n + 3*c_id,
@@ -2203,6 +2204,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t *nsp,
   }
 
   /* Wall functions for turbulence */
+
   if (cs_turb_wall_functions_is_activated(nsp->turbulence)) {
     switch (nsp->turbulence->model->model) {
       case CS_TURB_K_EPSILON:
@@ -2223,7 +2225,8 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t *nsp,
     }
   }
 
-  /* Inlet veloicity BC */
+  /* Inlet velocity BC */
+
   switch (mom_eqp->default_enforcement) {
 
   case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
