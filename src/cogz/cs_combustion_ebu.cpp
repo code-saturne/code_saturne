@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -455,7 +455,6 @@ cs_combustion_ebu_source_terms(cs_field_t  *f_sc,
   const cs_real_t *cvara_ep = nullptr;
   const cs_real_t *cvara_omg = nullptr;
   const cs_real_6_t *cvara_rij = nullptr;
-
 
   cs_host_context ctx;
 

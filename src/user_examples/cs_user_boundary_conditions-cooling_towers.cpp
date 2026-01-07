@@ -7,7 +7,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -70,12 +70,11 @@ void
 cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
                             [[maybe_unused]] int           bc_type[])
 {
-  const cs_real_3_t *b_face_cog
-    = (const cs_real_3_t *)domain->mesh_quantities->b_face_cog;
+  // const cs_real_3_t *b_face_cog = domain->mesh_quantities->b_face_cog;
 
-  const cs_real_t ro0 = cs_glob_fluid_properties->ro0;
-  const cs_real_t *gravity = cs_glob_physical_constants->gravity;
-  const cs_real_t *xyzp0 = (const cs_real_t *)cs_glob_fluid_properties->xyzp0;
+  // const cs_real_t ro0 = cs_glob_fluid_properties->ro0;
+  // const cs_real_t *gravity = cs_glob_physical_constants->gravity;
+  // const cs_real_t *xyzp0 = cs_glob_fluid_properties->xyzp0;
 
   const cs_zone_t  *zn = nullptr;
 
@@ -87,7 +86,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
   int       *p_icodcl  = CS_F_(p)->bc_coeffs->icodcl;
   cs_real_t *p_rcodcl1 = CS_F_(p)->bc_coeffs->rcodcl1;
 
-  /* Set BC's over zone. */
+  /* Set BCs over zone. */
 
   zn = cs_boundary_zone_by_name("OUTLET");
 
@@ -95,7 +94,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
     /* outlet: zero flux for velocity and temperature, prescribed pressure
      *         note that pressure will be set to P0 on the free outlet face
-     *         (CS_OUTLET) closest to xyz0 */
+     *         (CS_OUTLET) closest to xyzp0 */
     const cs_lnum_t face_id = zn->elt_ids[ilelt];
 
     bc_type[face_id] = CS_OUTLET;
