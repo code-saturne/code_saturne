@@ -585,7 +585,7 @@ cs_lagr_get_force_p(const cs_real_t             dt_part,
 
   cs_lnum_t cell_id  = p_set.attr_lnum(p_id, CS_LAGR_CELL_ID);
   cs_real_t d6spi  = 6.0 / cs_math_pi;
-  cs_real_t p_diam   = p_set.attr_lnum(p_id, CS_LAGR_DIAMETER);
+  cs_real_t p_diam   = p_set.attr_real(p_id, CS_LAGR_DIAMETER);
   cs_real_t p_mass = p_set.attr_real(p_id, CS_LAGR_MASS);
   cs_real_t p_rom  = p_mass * d6spi / cs_math_pow3(p_diam);
   cs_real_t romf           = extra->cromf->val[cell_id];
