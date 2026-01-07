@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -108,6 +108,17 @@ extern "C" {
 #undef HAVE_OPENMP_SIMD
 #define HAVE_OPENMP_SIMD 1
 #endif
+
+#else
+
+// The compiler may sometimes use OpenMP in adapters to external libraries
+// even when OpenMP is disabled for code_saturne due to propagation of
+// compiler flags for external libraries. Filtering those flags would
+// be complex with the current build system, so here the macro
+// defined directly by the compiler is disabled. Note that this could affect
+// external including calls to code_saturne, so a filtering of compiler
+// flags would be preferrable.
+#undef _OPENMP
 
 #endif
 
