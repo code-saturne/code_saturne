@@ -1,6 +1,12 @@
 Master (not on release branches yet)
 ------------------------------------
 
+### User changes:
+
+- Separate mesh refinement element level and generation extraction functions.
+  This allows visualizing both refinement level and generation for
+  interior faces.
+
 ### Architectural changes:
 
 - Mesh refinement: restuctured handling of polyhedral cells refinement,

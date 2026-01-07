@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -266,7 +266,7 @@ _location_mpi_rank_id(int               location_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Evaluate the refinement level at a given mesh location.
+ * \brief Evaluate the refinement generation at a given mesh location.
  *
  * \param[in]       location_id  base associated mesh location id
  * \param[in]       n_elts       number of associated elements
@@ -286,10 +286,9 @@ _location_r_gen(int               location_id,
                 void             *input,
                 void             *vals)
 {
-  const cs_mesh_t *m       = static_cast<const cs_mesh_t *>(input);
+  const cs_mesh_t *m = static_cast<const cs_mesh_t *>(input);
   const char *e_r_gen = nullptr;
 
-  char *c_r_gen = nullptr;
   int  *r_gen   = static_cast<int *>(vals);
 
   /* Locations with stored refinement generations */
@@ -298,55 +297,6 @@ _location_r_gen(int               location_id,
     e_r_gen = m->i_face_r_gen;
   else if (location_id == CS_MESH_LOCATION_VERTICES)
     e_r_gen = m->vtx_r_gen;
-
-  /* other base locations */
-
-  if (   location_id == CS_MESH_LOCATION_CELLS
-      || location_id == CS_MESH_LOCATION_BOUNDARY_FACES) {
-
-    CS_MALLOC(c_r_gen, m->n_cells_with_ghosts, char);
-
-    for (cs_lnum_t i = 0; i < m->n_cells_with_ghosts; i++)
-      c_r_gen[i] = 0;
-
-    /* Note: when mesh/face adjacencies are available,
-       a cell-based loop would allow easier threading. */
-
-    const cs_lnum_2_t *restrict i_face_cells =
-      (const cs_lnum_2_t *)m->i_face_cells;
-
-    for (cs_lnum_t i = 0; i < m->n_i_faces; i++) {
-      char f_r_gen = m->i_face_r_gen[i];
-      for (cs_lnum_t j = 0; j < 2; j++) {
-        cs_lnum_t c_id = i_face_cells[i][j];
-        if (c_r_gen[c_id] < f_r_gen)
-          c_r_gen[c_id] = f_r_gen;
-      }
-    }
-
-    if (location_id == CS_MESH_LOCATION_CELLS)
-      e_r_gen = c_r_gen;
-
-    else if (location_id == CS_MESH_LOCATION_BOUNDARY_FACES) {
-      if (elt_ids != nullptr) {
-        for (cs_lnum_t idx = 0; idx < n_elts; idx++) {
-          cs_lnum_t i = elt_ids[idx];
-          cs_lnum_t c_id = m->b_face_cells[i];
-          r_gen[idx] = c_r_gen[c_id];
-        }
-      }
-      else {
-        for (cs_lnum_t i = 0; i < n_elts; i++) {
-          cs_lnum_t c_id = m->b_face_cells[i];
-          r_gen[i] = c_r_gen[c_id];
-        }
-      }
-      CS_FREE(c_r_gen);
-      return;
-
-    }
-
-  }
 
   /* Now apply stored or generated refinement generation
      (note that for boundary faces, processing has already been done
@@ -369,8 +319,113 @@ _location_r_gen(int               location_id,
     for (cs_lnum_t i = 0; i < n_elts; i++)
       r_gen[i] = 0;
   }
+}
 
-  CS_FREE(c_r_gen);
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Evaluate the refinement level at a given mesh location.
+ *
+ * \param[in]       location_id  base associated mesh location id
+ * \param[in]       n_elts       number of associated elements
+ * \param[in]       elt_ids      ids of associated elements, or null if no
+ *                               filtering is required
+ * \param[in, out]  input        pointer to associated mesh structure
+ *                               (to be cast as cs_mesh_t *)
+ * \param[in, out]  vals         pointer to output values
+ *                               (size: n_elts*dimension)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_location_r_level(int               location_id,
+                  cs_lnum_t         n_elts,
+                  const cs_lnum_t  *elt_ids,
+                  void             *input,
+                  void             *vals)
+{
+  const cs_mesh_t *m = static_cast<const cs_mesh_t *>(input);
+  const char *e_r_level = nullptr;
+
+  char *c_r_level = nullptr;
+  int  *r_level   = static_cast<int *>(vals);
+
+  assert (location_id != CS_MESH_LOCATION_VERTICES);
+
+  if (   location_id == CS_MESH_LOCATION_CELLS
+      || location_id == CS_MESH_LOCATION_INTERIOR_FACES
+      || location_id == CS_MESH_LOCATION_BOUNDARY_FACES) {
+
+    CS_MALLOC(c_r_level, m->n_cells_with_ghosts, char);
+
+    for (cs_lnum_t i = 0; i < m->n_cells_with_ghosts; i++)
+      c_r_level[i] = 0;
+
+    if (m->i_face_r_gen != nullptr) {
+
+      /* Note: when mesh/face adjacencies are available,
+         a cell-based loop would allow easier threading. */
+
+      const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+
+      for (cs_lnum_t i = 0; i < m->n_i_faces; i++) {
+        char f_r_gen = m->i_face_r_gen[i];
+        for (cs_lnum_t j = 0; j < 2; j++) {
+          cs_lnum_t c_id = i_face_cells[i][j];
+          if (c_r_level[c_id] < f_r_gen)
+            c_r_level[c_id] = f_r_gen;
+        }
+      }
+
+      if (location_id == CS_MESH_LOCATION_CELLS)
+        e_r_level = c_r_level;
+
+      else if (location_id == CS_MESH_LOCATION_INTERIOR_FACES) {
+        for (cs_lnum_t idx = 0; idx < n_elts; idx++) {
+          cs_lnum_t i = (elt_ids != nullptr) ? elt_ids[idx] : idx;
+          cs_lnum_t c_id0 = m->i_face_cells[i][0];
+          cs_lnum_t c_id1 = m->i_face_cells[i][0];
+          r_level[idx] = cs::max(c_r_level[c_id0], c_r_level[c_id1]);
+        }
+        CS_FREE(c_r_level);
+        return;
+
+      }
+      else if (location_id == CS_MESH_LOCATION_BOUNDARY_FACES) {
+        for (cs_lnum_t idx = 0; idx < n_elts; idx++) {
+          cs_lnum_t i = (elt_ids != nullptr) ? elt_ids[idx] : idx;
+          cs_lnum_t c_id = m->b_face_cells[i];
+          r_level[idx] = c_r_level[c_id];
+        }
+        CS_FREE(c_r_level);
+        return;
+      }
+
+    }
+  }
+
+  /* Now apply stored or generated refinement generation
+     (note that for boundary faces, processing has already been done
+     and we have returned prior to reaching this point) */
+
+  if (e_r_level != nullptr) {
+    if (elt_ids != nullptr) {
+      for (cs_lnum_t idx = 0; idx < n_elts; idx++) {
+        cs_lnum_t i = elt_ids[idx];
+        r_level[idx] = e_r_level[i];
+      }
+    }
+    else {
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+        r_level[i] = e_r_level[i];
+      }
+    }
+  }
+  else {
+    for (cs_lnum_t i = 0; i < n_elts; i++)
+      r_level[i] = 0;
+  }
+
+  CS_FREE(c_r_level);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -781,7 +836,11 @@ cs_function_define_mpi_rank_id(cs_mesh_location_type_t  location_id)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Create or access a function for evaluation of mesh element's
- *        refinement generation (i.e. level).
+ *        refinement generation.
+ *
+ * The refinement generation indicates at which refinement level a given
+ * vertex or interior face was inserted into the mesh. Cells and boundary
+ * faces always have a generation of 0.
  *
  * \param[in]   location_id  base associated mesh location id
  *
@@ -823,6 +882,66 @@ cs_function_define_refinement_generation(cs_mesh_location_type_t  location_id)
   }
   else {
     const char base_name_v[] = "r_gen_v";
+    CS_MALLOC(f->label, strlen(base_name_v) + 1, char);
+    strcpy(f->label, base_name_v);
+  }
+
+  f->type = 0;
+  if (cs_glob_mesh->time_dep < CS_MESH_TRANSIENT_CONNECT)
+    f->type |= CS_FUNCTION_TIME_INDEPENDENT;
+
+  f->post_vis = CS_POST_ON_LOCATION;
+
+  return f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create or access a function for evaluation of mesh element's
+ *        refinement level.
+ *
+ * For vertices, the refinement level equivalent to the refinement generation.
+ *
+ * \param[in]   location_id  base associated mesh location id
+ *
+ * \return  pointer to the associated function object in case of success,
+ *          or null in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_function_t *
+cs_function_define_refinement_level(cs_mesh_location_type_t  location_id)
+{
+  const char base_name[] = "r_level";
+  const char *loc_name = cs_mesh_location_get_name(location_id);
+
+  size_t l_name = strlen(loc_name) + strlen(base_name) + 1;
+  char *name;
+  CS_MALLOC(name, l_name + 1, char);
+  snprintf(name, l_name, "%s_%s", base_name, loc_name);
+
+  cs_function_t *f
+    = cs_function_define_by_func(name,
+                                 location_id,
+                                 1,
+                                 false,
+                                 CS_INT_TYPE,
+                                 _location_r_level,
+                                 cs_glob_mesh);
+
+  CS_FREE(name);
+
+  /* Use a different label for vertex data and element data, to avoid
+     conflicts when outputting values with some writer formats,
+     which do not accept 2 fields of the same name on different locations */
+
+  cs_mesh_location_type_t loc_type = cs_mesh_location_get_type(location_id);
+  if (loc_type != CS_MESH_LOCATION_VERTICES) {
+    CS_MALLOC(f->label, strlen(base_name) + 1, char);
+    strcpy(f->label, base_name);
+  }
+  else {
+    const char base_name_v[] = "r_level_v";
     CS_MALLOC(f->label, strlen(base_name_v) + 1, char);
     strcpy(f->label, base_name_v);
   }

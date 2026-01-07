@@ -7,7 +7,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1729,6 +1729,20 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
   cs_function_define_q_criterion();
 
   /*! [param_var_q_criterion] */
+
+  /* Example: post-process mesh refinement information */
+  /*---------------------------------------------------*/
+
+  /*! [param_funcs_postprocess_refinement] */
+
+  cs_function_define_refinement_generation(CS_MESH_LOCATION_INTERIOR_FACES);
+  cs_function_define_refinement_generation(CS_MESH_LOCATION_VERTICES);
+
+  cs_function_define_refinement_level(CS_MESH_LOCATION_CELLS);
+  cs_function_define_refinement_level(CS_MESH_LOCATION_INTERIOR_FACES);
+  cs_function_define_refinement_level(CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  /*! [param_funcs_postprocess_refinement] */
 
   /* Example: post-process error estimators */
   /*----------------------------------------*/

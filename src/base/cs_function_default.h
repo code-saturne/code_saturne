@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -87,9 +87,13 @@ cs_function_t *
 cs_function_define_mpi_rank_id(cs_mesh_location_type_t  location_id);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Create or access a function for evaluation of mesh element's
- *        refinement generation (i.e. level).
+ *        refinement generation.
+ *
+ * The refinement generation indicates at which refinement level a given
+ * vertex or interior face was inserted into the mesh. Cells and boundary
+ * faces always have a generation of 0.
  *
  * \param[in]   location_id  base associated mesh location id
  *
@@ -100,6 +104,23 @@ cs_function_define_mpi_rank_id(cs_mesh_location_type_t  location_id);
 
 cs_function_t *
 cs_function_define_refinement_generation(cs_mesh_location_type_t  location_id);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Create or access a function for evaluation of mesh element's
+ *        refinement level.
+ *
+ * For vertices, the refinement level equivalent to the refinement generation.
+ *
+ * \param[in]   location_id  base associated mesh location id
+ *
+ * \return  pointer to the associated function object in case of success,
+ *          or null in case of error
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_function_t *
+cs_function_define_refinement_level(cs_mesh_location_type_t  location_id);
 
 /*----------------------------------------------------------------------------*/
 /*!
