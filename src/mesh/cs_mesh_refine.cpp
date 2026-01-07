@@ -2332,8 +2332,10 @@ _flag_faces_and_edges(cs_lnum_t               f_id,
       last_corner_idx = idx1;
     }
 
-    else if (r_lv1 > r_lv0 && r_lv1 < r_lv2) // Pre-existing mid-point
-      n_mid += 1;
+    else {
+      if (r_lv1 == f_r_level + 1) // Pre-existing mid-point
+        n_mid += 1;
+    }
 
     // Prepare for next vertex.
     v0 = v1;
@@ -2345,18 +2347,18 @@ _flag_faces_and_edges(cs_lnum_t               f_id,
 
   /* Determine specific template */
 
-  n_fv_c += n_mid;
+  n_mid += (n_fv_c - n_fv);  // Add new mid-points to old ones
 
   if (_f_flag == CS_REFINE_DEFAULT) {
     _f_flag = CS_REFINE_POLYGON_Q;
-    if (n_corner == 3 && n_fv == 3 && n_fv_c == 6) {
+    if (n_corner == 3 && n_fv_c == 6) {
       _f_flag = _refine_tria_type;
     }
-    else if (n_corner == 4 && n_fv == 4 && n_fv_c == 8) {
+    else if (n_corner == 4 && n_fv_c == 8) {
       _f_flag = CS_REFINE_QUAD;
     }
     if (_f_flag == CS_REFINE_POLYGON_Q) {
-      if (n_fv_c != n_corner*2) {
+      if (n_mid != n_corner) {
         _f_flag = CS_REFINE_POLYGON;
       }
     }
@@ -3255,7 +3257,7 @@ _count_face_edge_vertices_sub(int                    n_fv,
 
 static void
 _subdivided_face_sizes(const cs_lnum_t          n_fv,
-                       cs_mesh_refine_type_t    f_r_flag,
+                       cs_mesh_refine_type_t   &f_r_flag,
                        const char               f_r_level_o,
                        const cs_lnum_t          f2v_lst_o[],
                        const cs_adjacency_t    *v2v,
@@ -3264,57 +3266,72 @@ _subdivided_face_sizes(const cs_lnum_t          n_fv,
                        cs_lnum_t               *n_sub,
                        cs_lnum_t               *connect_size)
 {
-  switch(f_r_flag) {
-  case CS_REFINE_NONE:
-    {
+  if (f_r_flag < CS_REFINE_POLYGON) {
+    cs_lnum_t n_fv_c = _count_face_edge_vertices_new(n_fv,
+                                                     f2v_lst_o,
+                                                     v2v,
+                                                     e_v_idx);
+    switch(f_r_flag) {
+    case CS_REFINE_NONE:
       *n_sub = 1;
-      *connect_size = _count_face_edge_vertices_new(n_fv,
-                                                    f2v_lst_o,
-                                                    v2v,
-                                                    e_v_idx);
-    }
-    break;
-  case CS_REFINE_TRIA:
-    *n_sub = 4;
-    *connect_size = 12;
-    break;
-  case CS_REFINE_TRIA_Q:
-    *n_sub =3;
-    *connect_size = 12;
-    break;
-  case CS_REFINE_QUAD:
-    *n_sub = 4;
-    *connect_size = 16;
-    break;
-  default:
-    {
-      cs_lnum_t n_fv_tot, n_corner, n_mid;
-      _count_face_edge_vertices_sub(n_fv,
-                                    f_r_level_o,
-                                    f2v_lst_o,
-                                    v2v,
-                                    vtx_r_gen,
-                                    e_v_idx,
-                                    n_fv_tot,
-                                    n_corner,
-                                    n_mid);
-      switch(f_r_flag) {
-      case CS_REFINE_POLYGON_T:
-        *n_sub = n_fv_tot;
-        *connect_size = n_fv_tot*3;
-        break;
-      case CS_REFINE_POLYGON_Q:
-        *n_sub = n_corner;
-        *connect_size = n_fv_tot + n_mid*2;
-        break;
-      case CS_REFINE_POLYGON:
-        *n_sub = n_fv_tot-2;
-        *connect_size = (n_fv_tot-2)*3;
-        break;
-      default:
-        *n_sub = 1;
-        *connect_size = n_fv_tot;
+      *connect_size = n_fv_c;
+      break;
+    case CS_REFINE_TRIA:
+      *n_sub = 4;
+      *connect_size = n_fv_c + 6;
+      if (n_fv_c != 6)
+        f_r_flag = CS_REFINE_POLYGON_Q;
+      break;
+    case CS_REFINE_TRIA_Q:
+      *n_sub = 3;
+      *connect_size = n_fv_c + 6;
+      if (n_fv_c != 6) {
+        f_r_flag = CS_REFINE_POLYGON_Q;
+        /* TODO: the setting above modifies the behavior for trianges, as this
+         * is the equivalent of replacing CS_REFINE_TRIA with CS_REFINE_TRIA_Q.
+         * For this reason, handling subdivided edges in the CS_REFINE_TRIA case
+         * in _subdivide_face and in the CS_REFINE_TETRA, CS_REFINE_PYRAM, and
+         * CS_REFINE_PRISME matching and subdivision functions should be done. */
       }
+      break;
+    case CS_REFINE_QUAD:
+      *n_sub = 4;
+      *connect_size = n_fv_c + 8;
+      if (n_fv_c != 8)
+        f_r_flag = CS_REFINE_POLYGON_Q;
+      break;
+    default:
+      break;
+    }
+  }
+
+  else {
+    cs_lnum_t n_fv_tot, n_corner, n_mid;
+    _count_face_edge_vertices_sub(n_fv,
+                                  f_r_level_o,
+                                  f2v_lst_o,
+                                  v2v,
+                                  vtx_r_gen,
+                                  e_v_idx,
+                                  n_fv_tot,
+                                  n_corner,
+                                  n_mid);
+    switch(f_r_flag) {
+    case CS_REFINE_POLYGON_T:
+      *n_sub = n_fv_tot;
+      *connect_size = n_fv_tot*3;
+      break;
+    case CS_REFINE_POLYGON_Q:
+      *n_sub = n_corner;
+      *connect_size = n_fv_tot + n_mid*2;
+      break;
+    case CS_REFINE_POLYGON:
+      *n_sub = n_fv_tot-2;
+      *connect_size = (n_fv_tot-2)*3;
+      break;
+    default:
+      *n_sub = 1;
+      *connect_size = n_fv_tot;
     }
   }
 }
@@ -3656,7 +3673,23 @@ _subdivide_face(cs_lnum_t                 f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute connectivity sizes for a given faces set
+ * \brief Compute connectivity sizes for a given faces set.
+ *
+ * The face refinement flag may also be adjusted for faces with simple
+ * refinement templates containing some edges which have further been marked
+ * for subdivision due to a neighboring faces subdivision.
+ *
+ * For example, for a simple quad subdivision with 8 vertices on the contour:
+ *   3---6---2
+ *   |   |   |
+ *   7---8---5
+ *   |   |   |
+ *   0---4---1
+ *
+ * if edge 0-4 was already subdivided into edges 0-4 and 4-1 du to a higher
+ * refinement level in the adjecent face, and one of the adjacent faces is
+ * further refined (so the edge is further subdivided), the face contour
+ * will now contain at least one additional vertex.
  *
  * \param[in]       v2v          vertex->vertex adjacency
  * \param[in]       vtx_r_gen    vertices refinement generation
@@ -3664,7 +3697,7 @@ _subdivide_face(cs_lnum_t                 f_id,
  * \param[in]       e_v_idx      for each edge, start index of added vertices
  * \param[in]       f_v_idx      for each face, start index of added vertices
  * \param[in]       n_faces      number of faces
- * \param[in]       f_r_flag     face refinement type flag
+ * \param[in, out]  f_r_flag     face refinement type flag
  * \param[in]       f2v_idx      face->vertices index
  * \param[in]       f2v_lst      face->vertices connectivity
  * \param[out]      f_o2n_idx    old to new faces index
@@ -3678,7 +3711,7 @@ _subdivided_faces_sizes(const cs_adjacency_t       *v2v,
                         const char                  f_r_level_o[],
                         const cs_lnum_t             e_v_idx[],
                         cs_lnum_t                   n_faces,
-                        const cs_mesh_refine_type_t f_r_flag[],
+                        cs_mesh_refine_type_t       f_r_flag[],
                         const cs_lnum_t             f2v_idx[],
                         const cs_lnum_t             f2v_lst[],
                         cs_lnum_t         *restrict f_o2n_idx,
@@ -5916,9 +5949,9 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
      0: total
      1: update mesh structure (ghosts, ...)
      2: build edge and face indexing
-     3: build cell->faces connectivity and identify refined cell types
-     4: build new vertices
-     5: compute sub-face indexing
+     3: compute sub-face indexing
+     4: build cell->faces connectivity and identify refined cell types
+     5: build new vertices
      6: subdivide faces connectivity
      7: compute added interior faces indexing
      8: subdivide cells
@@ -6088,6 +6121,46 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   cs_timer_counter_add_diff(&(timers[2]), &t1, &t2);
   t1 = t2;
 
+  /* Compute number of sub-faces and associated connectivity.
+     Size will be transformed to index later so named as index,
+     and values for f_id placed in position f_id+1 */
+
+  cs_lnum_t *b_face_o2n_idx, *b_face_o2n_connect_idx;
+
+  CS_MALLOC(b_face_o2n_idx, m->n_b_faces + 1, cs_lnum_t);
+  CS_MALLOC(b_face_o2n_connect_idx, m->n_b_faces + 1, cs_lnum_t);
+
+  _subdivided_faces_sizes(v2v,
+                          m->vtx_r_gen,
+                          f_r_level_ini,
+                          e_v_idx,
+                          m->n_b_faces,
+                          f_r_flag,
+                          m->b_face_vtx_idx,
+                          m->b_face_vtx_lst,
+                          b_face_o2n_idx,
+                          b_face_o2n_connect_idx);
+
+  cs_lnum_t *i_face_o2n_idx, *i_face_o2n_connect_idx;
+
+  CS_MALLOC(i_face_o2n_idx, m->n_i_faces + 1, cs_lnum_t);
+  CS_MALLOC(i_face_o2n_connect_idx, m->n_i_faces + 1, cs_lnum_t);
+
+  _subdivided_faces_sizes(v2v,
+                          m->vtx_r_gen,
+                          f_r_level_ini + m->n_b_faces,
+                          e_v_idx,
+                          m->n_i_faces,
+                          f_r_flag + m->n_b_faces,
+                          m->i_face_vtx_idx,
+                          m->i_face_vtx_lst,
+                          i_face_o2n_idx,
+                          i_face_o2n_connect_idx);
+
+  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(timers[3]), &t1, &t2);
+  t1 = t2;
+
   /* Build cell->faces connectivity and identify refined cell types
      ------------------------------------------------------------- */
 
@@ -6122,7 +6195,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   _new_cell_vertex_ids(m, c_r_flag, c_v_idx, n_add_vtx);
 
   t2 = cs_timer_time();
-  cs_timer_counter_add_diff(&(timers[3]), &t1, &t2);
+  cs_timer_counter_add_diff(&(timers[4]), &t1, &t2);
   t1 = t2;
 
   /* Free mesh data that will be rebuilt, as it would become
@@ -6189,46 +6262,6 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
 
   m->n_vertices = n_vtx_new;
   m->n_g_vertices = n_g_vtx_new;
-
-  t2 = cs_timer_time();
-  cs_timer_counter_add_diff(&(timers[4]), &t1, &t2);
-  t1 = t2;
-
-  /* Compute number of sub-faces and associated connectivity size;
-     will be transformed to index later so named as index,
-     and values for f_id placed in position f_id+1 */
-
-  cs_lnum_t *b_face_o2n_idx, *b_face_o2n_connect_idx;
-
-  CS_MALLOC(b_face_o2n_idx, m->n_b_faces + 1, cs_lnum_t);
-  CS_MALLOC(b_face_o2n_connect_idx, m->n_b_faces + 1, cs_lnum_t);
-
-  _subdivided_faces_sizes(v2v,
-                          m->vtx_r_gen,
-                          f_r_level_ini,
-                          e_v_idx,
-                          m->n_b_faces,
-                          f_r_flag,
-                          m->b_face_vtx_idx,
-                          m->b_face_vtx_lst,
-                          b_face_o2n_idx,
-                          b_face_o2n_connect_idx);
-
-  cs_lnum_t *i_face_o2n_idx, *i_face_o2n_connect_idx;
-
-  CS_MALLOC(i_face_o2n_idx, m->n_i_faces + 1, cs_lnum_t);
-  CS_MALLOC(i_face_o2n_connect_idx, m->n_i_faces + 1, cs_lnum_t);
-
-  _subdivided_faces_sizes(v2v,
-                          m->vtx_r_gen,
-                          f_r_level_ini + m->n_b_faces,
-                          e_v_idx,
-                          m->n_i_faces,
-                          f_r_flag + m->n_b_faces,
-                          m->i_face_vtx_idx,
-                          m->i_face_vtx_lst,
-                          i_face_o2n_idx,
-                          i_face_o2n_connect_idx);
 
   t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(timers[5]), &t1, &t2);
@@ -6470,9 +6503,9 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
        _("\nMesh refinement:\n\n"
          "  Pre and post update of mesh structure:        %.3g\n"
          "  Edge and face indexing:                       %.3g\n"
+         "  Build sub-face indexing:                      %.3g\n"
          "  Cell-faces indexing and type identification:  %.3g\n"
          "  Build new vertices:                           %.3g\n"
-         "  Build sub-face indexing:                      %.3g\n"
          "  Subdivide faces:                              %.3g\n"
          "  Build added interior faces indexing:          %.3g\n"
          "  Subdivide cells                               %.3g\n\n"
