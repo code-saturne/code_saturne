@@ -421,7 +421,7 @@ typedef struct cs_lagr_particle_set_t {
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   int
   resize
   (
