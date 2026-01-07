@@ -8,6 +8,8 @@ Release 9.0.2 (unreleased)
 - Fix incorrect Cp/Cv mixup in compressible model turbulent boundary
   conditions setting for temperature.
 
+- Fix log output in case of restart (CDO schemes)
+
 - Fix restart in case of solidification with an existing mushy zone (CDO schemes)
 
 - Fix flux postprocessing in scalar-valued CDO-Fb schemes (Neumann BCs)
@@ -2838,11 +2840,11 @@ Architectural changes:
     The usipsc subroutine is also removed, and scalar variable diffusivity
     behavior may be activated through usipsu.
   * merge (usebu1, uslwc1, usd3pt1, uscpl1, user_coal_ini1, user_fuel_ini1)
-          in cs_user_combustion (in cs_user_paramters.f90)
+	  in cs_user_combustion (in cs_user_paramters.f90)
   * split and rename usray1 in cs_user_radiative_transfer
     (in cs_user_parameters.f90)
-          (Note that the declaration of the use of radiative transfer is in
-                usppmo, as the other specific physics models)
+	  (Note that the declaration of the use of radiative transfer is in
+		usppmo, as the other specific physics models)
   * rename usray2 in cs_user_radiative_transfer_bcs
   * merge usalin into usipph (in cs_user_parameters.f90)
   * rename ustsma into cs_user_mass_source_terms
@@ -2985,11 +2987,11 @@ Bug fixes:
 
  - Fix bug in the Generalized Gradient Diffusion Hypothesis (GGDH).
       - swich between two components (R13 and R23): this is not impacting the validation
-        database because this model is only validated on 2D test cases
-        where the R13 and R23 components are both 0.
+	database because this model is only validated on 2D test cases
+	where the R13 and R23 components are both 0.
       - from version 3.1, it is impacting all the Rij-epsilon calculations
-        because from this version, the Daly Harlow model is passed by default on Rij
-        (this model induces a GGDH on Rij and epsilon).
+	because from this version, the Daly Harlow model is passed by default on Rij
+	(this model induces a GGDH on Rij and epsilon).
 
 
 Release 3.2.0 (2013-12-04)
@@ -3358,9 +3360,9 @@ Changes:
 - Add GGDH-AFM and DFM models for the thermal scalar. This options is available
   with the key word iturbt (0, 10, 20, 30).
   Warning: the transport equation on turbulent fluxes (DFM) requires changing
-           the gradient boundary conditions on the thermal scalar to have the
-           proper production term. It is now consistent with the gardient
-           boundary conditions on the velocity.
+	   the gradient boundary conditions on the thermal scalar to have the
+	   proper production term. It is now consistent with the gardient
+	   boundary conditions on the velocity.
 
 - Improve user scripts, to add data preparation and results copying user hooks.
   An example is provided, allowing simplified successive restart handling.
@@ -3395,12 +3397,12 @@ Changes:
 - Add a new algorithm to solve diffusion term with anisotropic & heterogenous
   viscosity for scalars (for use with GGDH);
   to activate it set idften(ivar) = 6 (for symmetric tensor diffusion)
-                                  = 1 (for standard scalar diffusion)
-                                  = 3 (be for orthotropic diffusion, diagonal tensor)
+				  = 1 (for standard scalar diffusion)
+				  = 3 (be for orthotropic diffusion, diagonal tensor)
 
 - Add a new dynamic relaxation for solving the Poisson equation on the pressure;
   to activate it set iswdyn(ivar) = 1 for a relaxation with the last increment
-                                  = 2 for a relaxation with the two last increments.
+				  = 2 for a relaxation with the two last increments.
   should be used only for transport equation without advection.
 
 - Replace depecrated activated() SIGNALs by triggered() ones as advised by
@@ -3418,9 +3420,9 @@ Changes:
     not computed correctly.
   - The wall shear stress in Rij-epsilon was counted twice.
     Note: The previous versions of CS for Rij didn't ensure that rho uk*uet was
-          the wall shear stress.
+	  the wall shear stress.
     Note 2: The 2 scales of velocity for Rij does not work properly in a channel,
-            because the scale uk is underestimated.
+	    because the scale uk is underestimated.
 
 GUI changes:
 
