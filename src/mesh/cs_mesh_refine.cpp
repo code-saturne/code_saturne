@@ -145,8 +145,11 @@ typedef enum {
   CS_REFINE_PRISM,       /*!< simple prism subdivision scheme */
   CS_REFINE_HEXA,        /*!< simple hexahedron subdivision scheme */
 
-  CS_REFINE_POLYHEDRON,  /*!< refine polyhedron by addition of center vertex
-                            and tetrahedra/pyramids joining faces to center */
+  CS_REFINE_POLYHEDRON,     /*!< refine polyhedron by addition of center vertex
+                              and tetrahedra/pyramids joining faces to center,
+                              with an attempt at */
+  CS_REFINE_POLYHEDRON_P,  /*!< refine polyhedron by addition of center vertex
+                             and tetrahedra/pyramids joining faces to center */
 
   CS_REFINE_N_TYPES      /*!< number of available refinement templates */
 
@@ -434,6 +437,8 @@ public:
   /*--------------------------------------------------------------------------
    * Add interior face for cell refinement with center vertex scheme
    *
+   * \param[in]   s_id             start edge id
+   * \param[in]   e_id             past the end edge id
    * \param[out]  c_n_s_cells      number of sub-cells
    * \param[out]  c_n_i_faces      number of added interior faces
    * \param[out]  c_i_faces_size   size of added interior faces connectivity
@@ -449,7 +454,6 @@ public:
                                          cs_lnum_t   &c_i_faces_size,
                                          int16_t      i_f2c_pre[][2],
                                          cs_lnum_t    i_f2v_pre[])
-
   {
     cs_lnum_t *f2v_pre = i_f2v_pre + c_i_f2v_size;
 
@@ -702,7 +706,8 @@ public:
   /*--------------------------------------------------------------------------
    * Refine cell using scheme with central vertex
    *
-   * \param[in]   vtx_r_gen  refinedment level associated to each vertex.
+   * \param[in]   c_r_flag         cell refinement type flag
+   * \param[in]   vtx_r_gen        refinement level associated to each vertex.
    * \param[out]  c_n_s_cells      number of sub-cells
    * \param[out]  c_n_i_faces      number of added interior faces
    * \param[out]  c_i_faces_size   size of added interior faces connectivity
@@ -714,13 +719,14 @@ public:
    *--------------------------------------------------------------------------*/
 
   void
-  refine_cell_with_center_vertex(const char  vtx_r_gen[],
-                                 cs_lnum_t   &c_n_s_cells,
-                                 cs_lnum_t   &c_n_i_faces,
-                                 cs_lnum_t   &c_i_faces_size,
-                                 int16_t      e_f2c_pre[],
-                                 int16_t      i_f2c_pre[][2],
-                                 cs_lnum_t    i_f2v_pre[])
+  refine_cell_with_center_vertex(cs_mesh_refine_type_t   c_r_flag,
+                                 const char              vtx_r_gen[],
+                                 cs_lnum_t              &c_n_s_cells,
+                                 cs_lnum_t              &c_n_i_faces,
+                                 cs_lnum_t              &c_i_faces_size,
+                                 int16_t                 e_f2c_pre[],
+                                 int16_t                 i_f2c_pre[][2],
+                                 cs_lnum_t               i_f2v_pre[])
   {
     cs_lnum_t c_n_s_cells_max = c_n_s_cells;
     cs_lnum_t c_n_i_faces_max = c_n_i_faces;
@@ -769,7 +775,9 @@ public:
       sc_equiv[i] = i;
 
     filter_high_refinement_level_edges(vtx_r_gen);
-    filter_corner_edges(vtx_r_gen);
+
+    if (c_r_flag == CS_REFINE_POLYHEDRON) // not CS_REFINE_POLYHEDRON_P
+      filter_corner_edges(vtx_r_gen);
 
     merge_equivalent_sub_cells();
 
@@ -1563,8 +1571,13 @@ _cell_r_type(const cs_mesh_t              *m,
      of highest levels if possible to see if a pattern of cells with some
      faces already subdivided can be identified. */
 
-  if (n_cell_faces > 6 && c_r_flag[cell_id] == CS_REFINE_DEFAULT)
+  if (n_cell_faces > 6 && c_r_flag[cell_id] == CS_REFINE_DEFAULT) {
     c_r_flag[cell_id] = CS_REFINE_POLYHEDRON;
+    for (cs_lnum_t i = s_id; i < e_id; i++) {
+      if (f_r_flag[c2f->ids[i]] == CS_REFINE_POLYGON)
+        c_r_flag[cell_id] = CS_REFINE_POLYHEDRON_P;
+    }
+  }
   else if (conforming) {
     for (cs_lnum_t i = s_id; i < e_id; i++) {
       if (f_r_flag[c2f->ids[i]] > CS_REFINE_NONE) {
@@ -1575,7 +1588,7 @@ _cell_r_type(const cs_mesh_t              *m,
   }
 
   if (   c_r_flag[cell_id] == CS_REFINE_NONE
-      || c_r_flag[cell_id] == CS_REFINE_POLYHEDRON)
+      || c_r_flag[cell_id] >= CS_REFINE_POLYHEDRON)
     return;
 
   /*
@@ -1593,6 +1606,10 @@ _cell_r_type(const cs_mesh_t              *m,
       cs_lnum_t l_id = i - s_id;
       cs_lnum_t f_id = c2f->ids[i];
       _f_r_flag[l_id] = f_r_flag[f_id];
+      if (_f_r_flag[l_id] == CS_REFINE_POLYGON_T) {
+        c_r_flag[cell_id] = CS_REFINE_POLYHEDRON_P;
+        return;
+      }
     }
   }
 
@@ -1908,7 +1925,7 @@ _new_cells_i_faces_count(const cs_mesh_t            *m,
 
     c_poly_s_idx[cell_id] = 0;
 
-    if (rf != CS_REFINE_POLYHEDRON) {
+    if (rf < CS_REFINE_POLYHEDRON) {
       c_n_s_cells[cell_id] = n_sub_cells[rf];
       c_n_i_faces[cell_id] = n_type_faces[rf];
       c_i_faces_size[cell_id] = n_type_size[rf];
@@ -2555,6 +2572,7 @@ _new_cell_vertex_ids(cs_mesh_t                    *m,
 
     if (   c_r_flag[c_id] == CS_REFINE_HEXA
         || c_r_flag[c_id] == CS_REFINE_POLYHEDRON
+        || c_r_flag[c_id] == CS_REFINE_POLYHEDRON_P
         || c_r_flag[c_id] == CS_REFINE_TETRA_H)
       c_v_idx[c_id+1] = 1;
     else
@@ -2999,6 +3017,7 @@ _build_cell_vertices(cs_mesh_t                    *m,
       case CS_REFINE_HEXA:
       case CS_REFINE_PRISM:
       case CS_REFINE_POLYHEDRON:
+      case CS_REFINE_POLYHEDRON_P:
         {
           const cs_lnum_t v_id = c_v_idx[c_id];
           for (cs_lnum_t i = 0; i < 3; i++)
@@ -5026,87 +5045,6 @@ _subdivide_cell_hexa(const cs_mesh_t              *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define interior face if not already present and associate with cell.
- *
- * \param[in, out]  m             pointer to mesh structure
- * \param[in]       cell_id       cell id to which face is added
- * \param[in, out]  vertex_ids    associated vertex ids (may be permuted)
- * \param[in]       f_id_range    first and past-the last face ids to which
- *                                the new face must be assigned
- * \param[in, out]  i_face_end    past-the-end associated interior face id
- *                                added so far
- */
-/*----------------------------------------------------------------------------*/
-
-inline static void
-_add_or_match_interior_face_triangle(const cs_mesh_t   *m,
-                                     cs_lnum_t          cell_id,
-                                     cs_lnum_t          vertex_ids[],
-                                     const cs_lnum_t    c_f_range[2],
-                                     cs_lnum_t         *i_face_end)
-{
-  cs_lnum_t _vertex_ids[3];
-
-  /* Order / orient by increasing start vertex ids */
-
-  int orient_id;
-
-  cs_lnum_t idx0 = 0;
-  for (cs_lnum_t i = 0; i < 3; i++) {
-    _vertex_ids[i] = vertex_ids[i];
-    if (vertex_ids[i] < vertex_ids[idx0])
-      idx0 = i;
-  }
-
-  if (_vertex_ids[(idx0+1)%3] < _vertex_ids[(idx0+2)%3]) {
-    vertex_ids[0] = _vertex_ids[idx0];
-    vertex_ids[1] = _vertex_ids[(idx0+1)%3];
-    vertex_ids[2] = _vertex_ids[(idx0+2)%3];
-    orient_id = 0;
-  }
-  else {
-    vertex_ids[0] = _vertex_ids[idx0];
-    vertex_ids[1] = _vertex_ids[(idx0+2)%3];
-    vertex_ids[2] = _vertex_ids[(idx0+1)%3];
-    orient_id = 1;
-  }
-
-  cs_lnum_t f_id;
-  cs_lnum_t *_vtx_lst;
-
-  /* Check if face is already present */
-
-  for (f_id = c_f_range[0]; f_id < *i_face_end; f_id++) {
-    _vtx_lst = m->i_face_vtx_lst + m->i_face_vtx_idx[f_id];
-    if (   _vtx_lst[0] == vertex_ids[0]
-        && _vtx_lst[1] == vertex_ids[1]
-        && _vtx_lst[2] == vertex_ids[2]) {
-      m->i_face_cells[f_id][orient_id] = cell_id;
-      return;
-    }
-  }
-
-  /* Add otherwise */
-
-  assert(*i_face_end >= c_f_range[0]);
-  assert(*i_face_end < c_f_range[1]);
-  *i_face_end = *i_face_end + 1;
-
-  _vtx_lst = m->i_face_vtx_lst + m->i_face_vtx_idx[f_id];
-
-  for (cs_lnum_t i = 0; i < 3; i++)
-    _vtx_lst[i] = vertex_ids[i];
-
-  if (f_id < c_f_range[1]-1)
-    m->i_face_vtx_idx[f_id+1] = m->i_face_vtx_idx[f_id] + 3;
-  else
-    assert(m->i_face_vtx_idx[f_id+1] == m->i_face_vtx_idx[f_id] + 3);
-
-  m->i_face_cells[f_id][orient_id] = cell_id;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Pre-refine polyhedral cell.
  *
  * Here, the actual refinement is determined, but stored to temporary
@@ -5119,11 +5057,10 @@ _add_or_match_interior_face_triangle(const cs_mesh_t   *m,
  * \param[in, out]  crh             cell refinement helper
  * \param[in]       c_id            cell id
  * \param[in]       n_b_f_ini       old number of boundary faces
- * \param[in]       c_r_flag        cell refinement type
- * \param[in]       c_r_level       previous cell refinement level
- * \param[in]       c_v_idx         for each cell, start index of added vertices
+ * \param[in]       c_r_flag        cell refinement type flag
  * \param[in]       b_face_o2n_idx  boundary subface index
  * \param[in]       i_face_o2n_idx  interior subface index
+ * \param[in]       c_v_idx         for each cell, start index of added vertices
  * \param[in]       f_r_level_o  old faces refinement level
  * \param[out]      c_n_s_cells     number of sub-cells
  * \param[out]      c_n_i_faces     number of added interior faces
@@ -5141,7 +5078,6 @@ _pre_refine_poly_cell(const cs_mesh_t            *m,
                       cs_lnum_t                   c_id,
                       cs_lnum_t                   n_b_f_ini,
                       cs_mesh_refine_type_t       c_r_flag,
-                      char                        c_r_level,
                       const cs_lnum_t             b_face_o2n_idx[],
                       const cs_lnum_t             i_face_o2n_idx[],
                       const cs_lnum_t             c_v_idx[],
@@ -5203,8 +5139,10 @@ _pre_refine_poly_cell(const cs_mesh_t            *m,
 
   }
 
-  if (c_r_flag == CS_REFINE_POLYHEDRON)
-    crh->refine_cell_with_center_vertex(m->vtx_r_gen,
+  if (   c_r_flag == CS_REFINE_POLYHEDRON
+      || c_r_flag == CS_REFINE_POLYHEDRON_P)
+    crh->refine_cell_with_center_vertex(c_r_flag,
+                                        m->vtx_r_gen,
                                         c_n_s_cells,
                                         c_n_i_faces,
                                         c_i_faces_size,
@@ -6414,7 +6352,6 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
                             c_id,
                             n_b_f_ini,
                             c_r_flag[c_id],
-                            c_r_level[c_id],
                             b_face_o2n_idx,
                             i_face_o2n_idx,
                             c_v_idx,
