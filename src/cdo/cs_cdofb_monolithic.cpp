@@ -1048,23 +1048,11 @@ _steady_build(const cs_navsto_param_t *nsp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump("\n>> Cell system matrix before augmentation", csys);
+        cs_cell_sys_dump("\n>> Cell system matrix after the 1st BC treatment",
+                         csys);
 #endif
 
-      /* 4) Augmentation of the linear system (if needed)
-       * =================================================
-       * This is an algebraic manipulation of the system used to enforce the
-       * divergence constrain in the momentum equation
-       */
-
-      _mono_system_augmentation(cm, &nsb, sc, csys);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
-      if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump("\n>> Cell system matrix after augmentation", csys);
-#endif
-
-      /* 5) Static condensation
+      /* 4) Static condensation
        * ======================
        * Static condensation of the local system matrix. Merge the contribution
        * of the cell velocity with the one associated to the faces. The system
@@ -1084,13 +1072,27 @@ _steady_build(const cs_navsto_param_t *nsp,
                          csys);
 #endif
 
-      /* 6) Algebraic enforcement of DoF values
+      /* 5) Algebraic enforcement of DoF values
        * ======================================
        * Some types of boundary conditions and interior DoF enforcement
        */
 
       _mono_algebraic_enforcement(mom_eqp, mom_eqb, cm, diff_hodge->pty_data,
                                   sc, csys, cb, &nsb);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
+      if (cs_dbg_cw_test(mom_eqp, cm, csys))
+        cs_cell_sys_dump("\n>> Cell system matrix after algebraic enforcement",
+                         csys);
+#endif
+
+      /* 6) Augmentation of the linear system (if needed)
+       * =================================================
+       * This is an algebraic manipulation of the system used to enforce the
+       * divergence constrain in the momentum equation
+       */
+
+      _mono_system_augmentation(cm, &nsb, sc, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 0
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
@@ -1351,20 +1353,7 @@ _implicit_euler_build(const cs_navsto_param_t *nsp,
         cs_cell_sys_dump("\n>> Cell system matrix before augmentation", csys);
 #endif
 
-      /* 5) Augmentation of the linear system (if needed)
-       * =================================================
-       * This is an algebraic manipulation of the system used to enforce the
-       * divergence constrain in the momentum equation
-       */
-
-      _mono_system_augmentation(cm, &nsb, sc, csys);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
-      if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump("\n>> Cell system matrix after augmentation", csys);
-#endif
-
-      /* 6) Static condensation
+      /* 5) Static condensation
        * ======================
        * Static condensation of the local system matrix. Merge the contribution
        * of the cell velocity with the one associated to the faces. The system
@@ -1384,13 +1373,26 @@ _implicit_euler_build(const cs_navsto_param_t *nsp,
                          csys);
 #endif
 
-      /* 7) Algebraic enforcement of DoF values
+      /* 6) Algebraic enforcement of DoF values
        * ======================================
        * Some types of boundary conditions and interior DoF enforcement
        */
 
       _mono_algebraic_enforcement(mom_eqp, mom_eqb, cm, diff_hodge->pty_data,
                                   sc, csys, cb, &nsb);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
+      if (cs_dbg_cw_test(mom_eqp, cm, csys))
+        cs_cell_sys_dump("\n>> Cell system matrix after augmentation", csys);
+#endif
+
+      /* 7) Augmentation of the linear system (if needed)
+       * =================================================
+       * This is an algebraic manipulation of the system used to enforce the
+       * divergence constrain in the momentum equation
+       */
+
+      _mono_system_augmentation(cm, &nsb, sc, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 0
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
@@ -1658,20 +1660,13 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
         bft_error(__FILE__, __LINE__, 0,
                   "Only diagonal time treatment available so far.");
 
-      /* 5) Augmentation of the linear system (if needed)
-       * =================================================
-       * This is an algebraic manipulation of the system used to enforce the
-       * divergence constrain in the momentum equation
-       */
-
-      _mono_system_augmentation(cm, &nsb, sc, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump("\n>> Cell system matrix after augmentation", csys);
+        cs_cell_sys_dump("\n>> Cell system matrix after unsteady term", csys);
 #endif
 
-      /* 6) Static condensation
+      /* 5) Static condensation
        * ======================
        * Static condensation of the local system matrix. Merge the contribution
        * of the cell velocity with the one associated to the faces. The system
@@ -1691,13 +1686,28 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
                          csys);
 #endif
 
-      /* 7) Algebraic enforcement of DoF values
+      /* 6) Algebraic enforcement of DoF values
        * ======================================
        * Some types of boundary conditions and interior DoF enforcement
        */
 
       _mono_algebraic_enforcement(mom_eqp, mom_eqb, cm, diff_hodge->pty_data,
                                      sc, csys, cb, &nsb);
+
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
+      if (cs_dbg_cw_test(mom_eqp, cm, csys))
+        cs_cell_sys_dump("\n>> Cell system matrix after algebraic enforcement",
+                         csys);
+#endif
+
+      /* 7) Augmentation of the linear system (if needed)
+       * =================================================
+       * This is an algebraic manipulation of the system used to enforce the
+       * divergence constrain in the momentum equation
+       */
+
+      _mono_system_augmentation(cm, &nsb, sc, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 0
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
@@ -1925,23 +1935,10 @@ _bdf2_scheme_build(const cs_navsto_param_t  *nsp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump("\n>> Cell system matrix before augmentation", csys);
+        cs_cell_sys_dump("\n>> Cell system matrix after unsteady term", csys);
 #endif
 
-      /* 5) Augmentation of the linear system (if needed)
-       * =================================================
-       * This is an algebraic manipulation of the system used to enforce the
-       * divergence constrain in the momentum equation
-       */
-
-      _mono_system_augmentation(cm, &nsb, sc, csys);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
-      if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump("\n>> Cell system matrix after augmentation", csys);
-#endif
-
-      /* 6) Static condensation
+      /* 5) Static condensation
        * ======================
        * Static condensation of the local system matrix. Merge the contribution
        * of the cell velocity with the one associated to the faces. The system
@@ -1961,13 +1958,27 @@ _bdf2_scheme_build(const cs_navsto_param_t  *nsp,
                          csys);
 #endif
 
-      /* 7) Algebraic enforcement of DoF values
+      /* 6) Algebraic enforcement of DoF values
        * ======================================
        * Some types of boundary conditions and interior DoF enforcement
        */
 
       _mono_algebraic_enforcement(mom_eqp, mom_eqb, cm, diff_hodge->pty_data,
                                   sc, csys, cb, &nsb);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
+      if (cs_dbg_cw_test(mom_eqp, cm, csys))
+        cs_cell_sys_dump("\n>> Cell system matrix after algebraic enforcement",
+                         csys);
+#endif
+
+      /* 7) Augmentation of the linear system (if needed)
+       * =================================================
+       * This is an algebraic manipulation of the system used to enforce the
+       * divergence constrain in the momentum equation
+       */
+
+      _mono_system_augmentation(cm, &nsb, sc, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 0
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
