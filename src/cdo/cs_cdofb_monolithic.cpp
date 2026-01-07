@@ -435,7 +435,6 @@ _mono_algebraic_enforcement(const cs_equation_param_t   *eqp,
 
     const cs_boundary_type_t  *bf_type = nsb->bf_type;
     cs_real_t  *div_op = nsb->div_op;
-    cs_real_t  *mass_rhs = sc->system_helper->rhs + 3*cs_shared_quant->n_faces;
 
     /* Update the divergence operator and the right-hand side related to the
      * mass equation.
@@ -454,8 +453,8 @@ _mono_algebraic_enforcement(const cs_equation_param_t   *eqp,
           /* Update mass RHS (constrain on the velocity divergence) from the
              knowledge of the boundary face velocity */
 
-          mass_rhs[cm->c_id] -= cs_math_3_dot_product(csys->dir_values + 3*f,
-                                                      div_op + 3*f);
+          nsb->mass_rhs -= cs_math_3_dot_product(csys->dir_values + 3*f,
+                                                 div_op + 3*f);
 
           /* Strong enforcement of u.n on the divergence */
 
@@ -510,7 +509,10 @@ _mono_algebraic_enforcement(const cs_equation_param_t   *eqp,
 
   if (cs_equation_param_has_internal_enforcement(eqp)) {
 
-    /* Internal enforcement of DoFs: Update csys (matrix and rhs) */
+    /* Internal enforcement of DoFs:
+        - Update csys (matrix and rhs)
+        - The cb->vals buffer stores the enforcement value for each DoF
+    */
 
     cs_equation_builder_enforce_block_dofs(eqb, cb, csys);
 
@@ -520,9 +522,12 @@ _mono_algebraic_enforcement(const cs_equation_param_t   *eqp,
     if (csys->has_internal_enforcement) {
 
       cs_real_t  *div_op = nsb->div_op;
-      for (int i = 0; i < 3*cm->n_fc; i++)
-        if (csys->dof_is_forced[i])
-          div_op[i] = 0.; /* The velocity-block set the value of this DoF */
+      for (int i = 0; i < 3*cm->n_fc; i++) {
+        if (csys->dof_is_forced[i]) { // Velocity value is enforced for this DoF
+          nsb->mass_rhs -= cb->values[i]*div_op[i];
+          div_op[i] = 0.;
+        }
+      }
 
     }
 
