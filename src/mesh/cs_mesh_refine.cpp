@@ -541,18 +541,18 @@ public:
             v1 = e->v0;
           if (v1 != -1) {
             f2v_pre[k] = v1;
-          k--;
-          edge_queue[i] = edge_queue[edge_queue_size - 1];
-          edge_queue_size -= 1;
-          break;
-        }
+            k--;
+            edge_queue[i] = edge_queue[edge_queue_size - 1];
+            edge_queue_size -= 1;
+            break;
+          }
         }
         v0 = v1;
-        assert(k == j);
         if (v1 == -1)
           bft_error(__FILE__, __LINE__, 0,
                     _("Error connecting edges with adjacent faces."));
       }
+      assert(k == j);
     }
 
     /* Mark end of face */
