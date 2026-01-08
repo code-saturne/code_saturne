@@ -318,6 +318,13 @@ _mono_apply_bc_mostly(const cs_cdofb_monolithic_t     *sc,
           else
             sc->apply_fixed_wall(f, mom_eqp, cm, diff_pty, cb, csys);
 
+          /* Strong enforcement of u.n on the divergence. No flux accross a
+             wall in any case. This improves the convergence in case of
+             augmentation of the linear system. */
+
+          cs_real_t  *div_op = nsb->div_op;
+          for (int k = 0; k < 3; k++) div_op[3*f + k] = 0;
+
         }
 
       }
@@ -338,6 +345,13 @@ _mono_apply_bc_mostly(const cs_cdofb_monolithic_t     *sc,
            velocity-block */
 
         sc->apply_symmetry(f, mom_eqp, cm, diff_pty, cb, csys);
+
+        /* But strongly enforcement of u.n on the divergence. No flux accross a
+           symmetry plane in any case. This improves the convergence in case of
+           augmentation of the linear system. */
+
+        cs_real_t  *div_op = nsb->div_op;
+        for (int k = 0; k < 3; k++) div_op[3*f + k] = 0;
 
       }
 
