@@ -129,7 +129,7 @@ BEGIN_C_DECLS
 #define CS_FLAG_BORDER    (1 << 10) /*!< 1024: located on the boundary */
 #define CS_FLAG_BY_CELL   (1 << 11) /*!< 2048: by cell (c2e, c2f, c2v) */
 #define CS_FLAG_BY_FACE   (1 << 12) /*!< 4096: by face (bf2v) */
-#define CS_FLAG_MAC_LOC (1 << 13)   /*!< 8192: by face (bf2v) */
+#define CS_FLAG_MAC_LOC   (1 << 13) /*!< 8192: MAC */
 
 /*!
  * @}

@@ -1621,7 +1621,7 @@ cs_cdofb_block_dirichlet_weak(short int                  fb,
 
   /* 2) Update the bc_op matrix and the RHS with the Dirichlet values. */
 
-  /* --> coeff * |f| / h_f = |f|*|f|/|pvol_f|  */
+  /* h_f \approx |pvol_f| / |f| */
 
   const cs_quant_t pfq = cm->face[fb];
   const double pcoef
@@ -1829,7 +1829,7 @@ cs_cdofb_symmetry(short int                  fb,
         { nf[1] * nf[0], nf[1] * nf[1], nf[1] * nf[2] },
         { nf[2] * nf[0], nf[2] * nf[1], nf[2] * nf[2] } };
 
-  /* coeff * \meas{f} / h_f  \equiv coeff * h_f */
+  /* 1/h_f \approx |f| / |pvol_fc| */
 
   const double pcoef
     = eqp->weak_pena_bc_coeff * pfq.meas * pfq.meas / cm->pvol_f[fb];
@@ -1841,9 +1841,9 @@ cs_cdofb_symmetry(short int                  fb,
 
   const cs_real_t _val = pcoef + 2 * bc_op->val[fb * (n_dofs + 1)];
   for (short int k = 0; k < 3; k++) {
-    bFF->val[3 * k] += nf_nf[0][k] * _val;
-    bFF->val[3 * k + 1] += nf_nf[1][k] * _val;
-    bFF->val[3 * k + 2] += nf_nf[2][k] * _val;
+    bFF->val[3*k    ] += nf_nf[0][k] * _val;
+    bFF->val[3*k + 1] += nf_nf[1][k] * _val;
+    bFF->val[3*k + 2] += nf_nf[2][k] * _val;
   }
 
   for (short int xj = 0; xj < n_dofs; xj++) {
@@ -1865,65 +1865,18 @@ cs_cdofb_symmetry(short int                  fb,
 
     for (int k = 0; k < 3; k++) {
 
-      bFJ->val[3 * k] += nf_nf[0][k] * _val_fj_jf;
-      bFJ->val[3 * k + 1] += nf_nf[1][k] * _val_fj_jf;
-      bFJ->val[3 * k + 2] += nf_nf[2][k] * _val_fj_jf;
+      bFJ->val[3*k    ] += nf_nf[0][k] * _val_fj_jf;
+      bFJ->val[3*k + 1] += nf_nf[1][k] * _val_fj_jf;
+      bFJ->val[3*k + 2] += nf_nf[2][k] * _val_fj_jf;
 
       /* nf_nf is symmetric */
 
-      bJF->val[3 * k] += nf_nf[0][k] * _val_fj_jf;
-      bJF->val[3 * k + 1] += nf_nf[1][k] * _val_fj_jf;
-      bJF->val[3 * k + 2] += nf_nf[2][k] * _val_fj_jf;
+      bJF->val[3*k    ] += nf_nf[0][k] * _val_fj_jf;
+      bJF->val[3*k + 1] += nf_nf[1][k] * _val_fj_jf;
+      bJF->val[3*k + 2] += nf_nf[2][k] * _val_fj_jf;
     }
 
   } /* Loop on xj */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Take into account a wall BCs by a weak enforcement using Nitsche
- *        technique plus a symmetric treatment.
- *        This prototype matches the function pointer cs_cdo_apply_boundary_t
- *
- * \param[in]      fb    face id in the cell mesh numbering
- * \param[in]      eqp   pointer to a \ref cs_equation_param_t struct.
- * \param[in]      cm    pointer to a cellwise mesh structure
- * \param[in]      pty   pointer to a \ref cs_property_data_t structure
- * \param[in, out] cb    pointer to a \ref cs_cell_builder_t structure
- * \param[in, out] csys  structure storing the cellwise system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_fixed_wall(short int                  fb,
-                    const cs_equation_param_t *eqp,
-                    const cs_cell_mesh_t      *cm,
-                    const cs_property_data_t  *pty,
-                    cs_cell_builder_t         *cb,
-                    cs_cell_sys_t             *csys)
-{
-  CS_UNUSED(cb);
-  CS_UNUSED(pty);
-
-  assert(cm != nullptr && csys != nullptr); /* Sanity checks */
-  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PFC));
-
-  const cs_quant_t  pfq = cm->face[fb];
-  const cs_real_t  *ni = pfq.unitv;
-  const cs_real_t  ni_ni[9] = { ni[0]*ni[0], ni[0]*ni[1], ni[0]*ni[2],
-                                ni[1]*ni[0], ni[1]*ni[1], ni[1]*ni[2],
-                                ni[2]*ni[0], ni[2]*ni[1], ni[2]*ni[2] };
-
-  /* coeff * \meas{fb} / h_fb \equiv coeff * h_fb */
-
-  const double pcoef
-    = eqp->weak_pena_bc_coeff * pfq.meas * pfq.meas / cm->pvol_f[fb];
-
-  cs_sdm_t  *bii = cs_sdm_get_block(csys->mat, fb, fb);
-  assert(bii->n_rows == bii->n_cols && bii->n_rows == 3);
-
-  for (short int k = 0; k < 9; k++)
-    bii->val[k] += pcoef * ni_ni[k];
 }
 
 /*----------------------------------------------------------------------------*/

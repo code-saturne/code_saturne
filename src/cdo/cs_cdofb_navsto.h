@@ -576,29 +576,6 @@ cs_cdofb_symmetry(short int                  fb,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Take into account a wall BCs by a weak enforcement using Nitsche
- *        technique plus a symmetric treatment.
- *        This prototype matches the function pointer cs_cdo_apply_boundary_t
- *
- * \param[in]      fb    face id in the cell mesh numbering
- * \param[in]      eqp   pointer to a \ref cs_equation_param_t struct.
- * \param[in]      cm    pointer to a cellwise mesh structure
- * \param[in]      pty   pointer to a \ref cs_property_data_t structure
- * \param[in, out] cb    pointer to a \ref cs_cell_builder_t structure
- * \param[in, out] csys  structure storing the cellwise system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_fixed_wall(short int                  fb,
-                    const cs_equation_param_t *eqp,
-                    const cs_cell_mesh_t      *cm,
-                    const cs_property_data_t  *pty,
-                    cs_cell_builder_t         *cb,
-                    cs_cell_sys_t             *csys);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Take into account a wall BCs by a weak enforcement using Nitsche
  *        technique.
  *        This prototype matches the function pointer cs_cdo_apply_boundary_t
  *

@@ -328,7 +328,7 @@ _mono_apply_bc_mostly(const cs_cdofb_monolithic_t     *sc,
         const cs_real_t  *div_op = nsb->div_op;
 
         for (int k = 0; k < 3; k++)
-          csys->rhs[3 * f + k] += div_op[3 * f + k] * nsb->pressure_bc_val[i];
+          csys->rhs[3*f + k] += div_op[3*f + k] * nsb->pressure_bc_val[i];
 
       }
       else if (bf_type[i] & CS_BOUNDARY_SYMMETRY) {
@@ -458,7 +458,7 @@ _mono_algebraic_enforcement(const cs_equation_param_t   *eqp,
 
           /* Strong enforcement of u.n on the divergence */
 
-          for (int k = 0; k < 3; k++) div_op[3*f+k] = 0;
+          for (int k = 0; k < 3; k++) div_op[3*f + k] = 0;
 
           /* Enforcement of the velocity DoFs for the velocity-block
            * Dirichlet BCs on the three components of the velocity field.
@@ -474,7 +474,7 @@ _mono_algebraic_enforcement(const cs_equation_param_t   *eqp,
 
           /* Strong enforcement of u.n on the divergence */
 
-          for (int k = 0; k < 3; k++) div_op[3 * f + k] = 0;
+          for (int k = 0; k < 3; k++) div_op[3*f + k] = 0;
 
           /* Enforcement of the velocity for the velocity-block
            * Dirichlet on the three components of the velocity field */
@@ -568,7 +568,7 @@ _velocity_full_assembly(const cs_cell_sys_t             *csys,
   cs_cdo_system_helper_t  *sh = sc->system_helper;
 
   /* 1. Store divergence operator in non assembly
-   * ======================================================== */
+   * ============================================ */
 
   cs_real_t  *_div = sc->block21_op + 3*connect->c2f->idx[cm->c_id];
   memcpy(_div, nsb->div_op, 3*n_f*sizeof(cs_real_t));
@@ -1152,7 +1152,6 @@ _implicit_euler_build(const cs_navsto_param_t *nsp,
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t  *mom_eqp = mom_eq->param;
   cs_equation_builder_t  *mom_eqb = mom_eq->builder;
-
   cs_turbulence_param_t *turbp = nsp->turbulence;
 
   /* Retrieve shared structures */
@@ -1388,7 +1387,8 @@ _implicit_euler_build(const cs_navsto_param_t *nsp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump("\n>> Cell system matrix after augmentation", csys);
+        cs_cell_sys_dump("\n>> Cell system matrix after algebraic enforcement",
+                         csys);
 #endif
 
       /* 7) Augmentation of the linear system (if needed)
