@@ -37,6 +37,7 @@
 
 #ifdef __cplusplus
 #include <type_traits>
+#include <utility>
 #endif
 
 /*============================================================================
@@ -845,6 +846,52 @@ struct are_integral<T, Args...> {
 template <typename... Args>
 struct always_true : std::true_type {};
 
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief A swap method which is callable from GPU and not only CPU.
+ *
+ * \tparam[] T class object which is movable
+ */
+/*--------------------------------------------------------------------------*/
+
+template <class T>
+CS_F_HOST_DEVICE
+constexpr
+std::enable_if_t<std::is_move_constructible<T>::value &&
+                 std::is_move_assignable<T>::value>
+swap_objects
+(
+  T& obj1, /*!<[in,out] first object to swap */
+  T& obj2  /*!<[in,out] second object to swap */
+)
+{
+  T tmp(std::move(obj1));
+  obj1 = std::move(obj2);
+  obj2 = std::move(tmp);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief
+ *
+ * \tparam[] T class object which is movable
+ * \tparam[] N size of array
+ */
+/*--------------------------------------------------------------------------*/
+
+template <class T, std::size_t N>
+CS_F_HOST_DEVICE
+constexpr
+void
+swap_objects
+(
+  T (&obj1)[N], /*!<[in,out] first array of objects to swap */
+  T (&obj2)[N]  /*!<[in,out] second array of objects to swap */
+)
+{
+  for (std::size_t i = 0; i < N; ++i)
+    swap_objects(obj1[i], obj2[i]);
+}
 /*----------------------------------------------------------------------------*/
 
 } // namespace cs

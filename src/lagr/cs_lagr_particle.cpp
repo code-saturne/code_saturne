@@ -1274,20 +1274,18 @@ cs_lagr_attribute_map_t::swap_members_
   cs_lagr_attribute_map_t& second
 )
 {
-  using std::swap;
-
   /* Swap the different members */
-  swap(first.extents, second.extents);
-  swap(first.lb, second.lb);
-  swap(first.n_time_vals, second.n_time_vals);
-  swap(first.size, second.size);
-  swap(first.datatype, second.datatype);
-  swap(first._count, second._count);
-  swap(first.count, second.count);
-  swap(first._displ, second._displ);
-  swap(first.displ, second.displ);
-  swap(first._source_term_displ, second._source_term_displ);
-  swap(first.source_term_displ, second.source_term_displ);
+  cs::swap_objects(first.extents, second.extents);
+  cs::swap_objects(first.lb, second.lb);
+  cs::swap_objects(first.n_time_vals, second.n_time_vals);
+  cs::swap_objects(first.size, second.size);
+  cs::swap_objects(first.datatype, second.datatype);
+  cs::swap_objects(first._count, second._count);
+  cs::swap_objects(first.count, second.count);
+  cs::swap_objects(first._displ, second._displ);
+  cs::swap_objects(first.displ, second.displ);
+  cs::swap_objects(first._source_term_displ, second._source_term_displ);
+  cs::swap_objects(first.source_term_displ, second.source_term_displ);
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1467,31 +1465,29 @@ cs_lagr_particle_set_t::swap_members_
   cs_lagr_particle_set_t& second
 )
 {
-  using std::swap;
+  cs::swap_objects(first.n_particles, second.n_particles);
+  cs::swap_objects(first.n_part_new, second.n_part_new);
+  cs::swap_objects(first.n_part_merged, second.n_part_merged);
+  cs::swap_objects(first.n_part_out, second.n_part_out);
+  cs::swap_objects(first.n_part_dep, second.n_part_dep);
+  cs::swap_objects(first.n_part_fou, second.n_part_fou);
+  cs::swap_objects(first.n_part_resusp, second.n_part_resusp);
+  cs::swap_objects(first.n_failed_part, second.n_failed_part);
 
-  swap(first.n_particles, second.n_particles);
-  swap(first.n_part_new, second.n_part_new);
-  swap(first.n_part_merged, second.n_part_merged);
-  swap(first.n_part_out, second.n_part_out);
-  swap(first.n_part_dep, second.n_part_dep);
-  swap(first.n_part_fou, second.n_part_fou);
-  swap(first.n_part_resusp, second.n_part_resusp);
-  swap(first.n_failed_part, second.n_failed_part);
+  cs::swap_objects(first.weight, second.weight);
+  cs::swap_objects(first.weight_new, second.weight_new);
+  cs::swap_objects(first.weight_merged, second.weight_merged);
+  cs::swap_objects(first.weight_out, second.weight_out);
+  cs::swap_objects(first.weight_dep, second.weight_dep);
+  cs::swap_objects(first.weight_fou, second.weight_fou);
+  cs::swap_objects(first.weight_resusp, second.weight_resusp);
+  cs::swap_objects(first.weight_failed, second.weight_failed);
+  cs::swap_objects(first.n_particles_max, second.n_particles_max);
 
-  swap(first.weight, second.weight);
-  swap(first.weight_new, second.weight_new);
-  swap(first.weight_merged, second.weight_merged);
-  swap(first.weight_out, second.weight_out);
-  swap(first.weight_dep, second.weight_dep);
-  swap(first.weight_fou, second.weight_fou);
-  swap(first.weight_resusp, second.weight_resusp);
-  swap(first.weight_failed, second.weight_failed);
-  swap(first.n_particles_max, second.n_particles_max);
-
-  swap(first._p_buffer, second._p_buffer);
-  swap(first.p_buffer, second.p_buffer);
-  swap(first._p_am, second._p_am);
-  swap(first.p_am, second.p_am);
+  cs::swap_objects(first._p_buffer, second._p_buffer);
+  cs::swap_objects(first.p_buffer, second.p_buffer);
+  cs::swap_objects(first._p_am, second._p_am);
+  cs::swap_objects(first.p_am, second.p_am);
 }
 
 /*--------------------------------------------------------------------------*/

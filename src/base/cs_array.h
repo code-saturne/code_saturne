@@ -1441,7 +1441,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST
+  CS_F_HOST_DEVICE
   array
   (
     array&& other /*!<[in] Original reference to move */
@@ -1469,7 +1469,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST
+  CS_F_HOST_DEVICE
   friend void
   swap
   (
@@ -1477,16 +1477,13 @@ public:
     array& second /*!<[in] Second instance to swap */
   )
   {
-    using std::swap;
-
     /* Swap the different members between the two references. */
-    swap(first._extent, second._extent);
-    swap(first._offset, second._offset);
-    swap(first._size, second._size);
-    swap(first._owner, second._owner);
-    swap(first._data, second._data);
-    swap(first._mode, second._mode);
-
+    cs::swap_objects(first._extent, second._extent);
+    cs::swap_objects(first._offset, second._offset);
+    cs::swap_objects(first._size, second._size);
+    cs::swap_objects(first._owner, second._owner);
+    cs::swap_objects(first._data, second._data);
+    cs::swap_objects(first._mode, second._mode);
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1495,7 +1492,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST
+  CS_F_HOST_DEVICE
   array& operator=(array other)
   {
     swap(*this, other);

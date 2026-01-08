@@ -149,7 +149,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST
+  CS_F_HOST_DEVICE
   mdspan
   (
     mdspan&& other /*!<[in] reference to other instance */
@@ -177,7 +177,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST
+  CS_F_HOST_DEVICE
   friend void
   swap
   (
@@ -185,12 +185,10 @@ public:
     mdspan& second /*!<[in] reference to second instance to swap */
   )
   {
-    using std::swap;
-
-    swap(first._extent, second._extent);
-    swap(first._offset, second._offset);
-    swap(first._size, second._size);
-    swap(first._data, second._data);
+    cs::swap_objects(first._extent, second._extent);
+    cs::swap_objects(first._offset, second._offset);
+    cs::swap_objects(first._size, second._size);
+    cs::swap_objects(first._data, second._data);
   }
 
   /*===========================================================================
@@ -216,7 +214,7 @@ public:
     return *this;
   }
 
-  CS_F_HOST
+  CS_F_HOST_DEVICE
   mdspan& operator=(mdspan&& other)
   {
 
