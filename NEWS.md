@@ -1,3 +1,10 @@
+Release 9.1.1 (unreleased)
+--------------------------
+
+### Bug fixes:
+
+- Fix `--mem-log` run option which was broken before release.
+
 Release 9.1.0 (2025-12-30)
 --------------------------
 
