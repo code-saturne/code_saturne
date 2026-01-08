@@ -1040,10 +1040,18 @@ _petsc_pchpddm_hook(const char *prefix, cs_param_sles_t *slesp, PC pc)
                prefix_pc,
                "svd_nsv",
                std::to_string(hpddmp->nb_eigenvector).c_str());
+
+#if PETSC_VERSION_GE(3,24,0)
+    _petsc_cmd(true,
+               prefix_pc,
+               "svd_threshold_relative",
+               std::to_string(hpddmp->relative_threshold).c_str());
+#else
     _petsc_cmd(true,
                prefix_pc,
                "svd_relative_threshold",
                std::to_string(hpddmp->relative_threshold).c_str());
+#endif
 
     _petsc_cmd(true, prefix_pc, "sub_pc_factor_mat_solver_type", "mumps");
     if (slesp->mat_is_sym) {
