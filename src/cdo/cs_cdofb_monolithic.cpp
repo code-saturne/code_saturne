@@ -587,6 +587,20 @@ _velocity_full_assembly(const cs_cell_sys_t             *csys,
   cs_real_t  *_div = sc->block21_op + 3*connect->c2f->idx[cm->c_id];
   memcpy(_div, nsb->div_op, 3*n_f*sizeof(cs_real_t));
 
+  // Output the divergence operator really considered for debug purpose
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
+  if (cs_dbg_cw_test(nullptr, cm, csys)) {
+    cs_log_printf(CS_LOG_DEFAULT, "\n>> (DIV_OP:cell%d)\n", cm->c_id);
+    for (int i = 0; i < n_f; i++)
+      cs_log_printf(CS_LOG_DEFAULT,
+                    " (%02d)  %10.5e [%d]; %10.5e [%d]; %10.5e [%d]\n", i,
+                    _div[3*i],   csys->dof_is_forced[3*i],
+                    _div[3*i+1], csys->dof_is_forced[3*i+1],
+                    _div[3*i+2], csys->dof_is_forced[3*i+2]);
+  }
+#endif
+
   /* 2. Matrix assembly
    * ================== */
 
@@ -642,6 +656,20 @@ _full_system_assembly(const cs_cell_sys_t             *csys,
   cs_real_t  *mass_rhs = sh->rhs + 3*n_faces;
 
   const cs_range_set_t  *rset = xb->range_set;
+
+  // Output the divergence operator really considered for debug purpose
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
+  if (cs_dbg_cw_test(nullptr, cm, csys)) {
+    cs_log_printf(CS_LOG_DEFAULT, "\n>> (DIV_OP:cell%d)\n", cm->c_id);
+    for (int i = 0; i < n_f; i++)
+      cs_log_printf(CS_LOG_DEFAULT,
+                    " (%02d)  %10.5e [%d]; %10.5e [%d]; %10.5e [%d]\n", i,
+                    nsb->div_op[3*i  ], csys->dof_is_forced[3*i],
+                    nsb->div_op[3*i+1], csys->dof_is_forced[3*i+1],
+                    nsb->div_op[3*i+2], csys->dof_is_forced[3*i+2]);
+  }
+#endif
 
   /* 1. Matrix assembly
    * ================== */
