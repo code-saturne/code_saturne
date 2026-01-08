@@ -1582,7 +1582,7 @@ class case:
         # If user asked for it, place CS_MEM_LOG variable
         if self.mem_log:
             s.write('# Memory log\n')
-            write_export_env(s, 'CS_MEM_LOG', 'cs_mem.log')
+            cs_exec_environment.write_export_env(s, 'CS_MEM_LOG', 'cs_mem.log')
             s.write('\n\n')
 
         # Add user-defined prologue if defined
