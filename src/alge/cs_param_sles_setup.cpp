@@ -952,7 +952,9 @@ _petsc_pchpddm_adapt(cs_param_hpddm_t *hpddmp)
 /*----------------------------------------------------------------------------*/
 
 static void
-_petsc_pchpddm_hook(const char *prefix, cs_param_sles_t *slesp, PC pc)
+_petsc_pchpddm_hook(const char      *prefix,
+                    cs_param_sles_t *slesp,
+                    PC               pc)
 {
   assert(prefix != nullptr);
   assert(slesp != nullptr);
@@ -976,6 +978,7 @@ _petsc_pchpddm_hook(const char *prefix, cs_param_sles_t *slesp, PC pc)
   /* Symmetric matrix ? */
 
   if (hpddmp->use_neumann) {
+
     assert(slesp->mat_is_sym);
     /* Define generic options */
     sprintf(prefix_pc, "%s%s", prefix, "pc_hpddm_");
@@ -989,7 +992,6 @@ _petsc_pchpddm_hook(const char *prefix, cs_param_sles_t *slesp, PC pc)
 
     _petsc_cmd(true, prefix_pc, "pc_type", "asm");
     _petsc_cmd(true, prefix_pc, "st_share_sub_ksp", "");
-    _petsc_cmd(true, prefix_pc, "st_pc_factor_mat_solver_type", "mumps");
     _petsc_cmd(true,
                prefix_pc,
                "eps_nev",
@@ -1017,8 +1019,11 @@ _petsc_pchpddm_hook(const char *prefix, cs_param_sles_t *slesp, PC pc)
     _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_3", "1.e-50");
     _petsc_cmd(true, prefix_pc, "mat_mumps_cntl_5", "0.");
     _petsc_cmd(true, prefix_pc, "p", "1");
+
   }
   else { /* Define generic options */
+         /* ---------------------- */
+
     sprintf(prefix_pc, "%s%s", prefix, "pc_hpddm_");
 
     /* No Neumann matrix */
@@ -1033,7 +1038,6 @@ _petsc_pchpddm_hook(const char *prefix, cs_param_sles_t *slesp, PC pc)
 
     _petsc_cmd(true, prefix_pc, "pc_type", "asm");
     _petsc_cmd(true, prefix_pc, "st_share_sub_ksp", "");
-    _petsc_cmd(true, prefix_pc, "st_pc_factor_mat_solver_type", "mumps");
 
     _petsc_cmd(true, prefix_pc, "svd_type", "lanczos");
     _petsc_cmd(true,
