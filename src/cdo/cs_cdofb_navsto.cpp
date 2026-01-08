@@ -1594,6 +1594,7 @@ cs_cdofb_block_dirichlet_weak(short int                  fb,
 
   assert(cm != nullptr && cb != nullptr && csys != nullptr && pty != nullptr);
   assert(pty->is_iso == true);
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PFC));
 
   /* 0) Pre-compute the product between diffusion property and the
      face vector areas */
@@ -1620,9 +1621,11 @@ cs_cdofb_block_dirichlet_weak(short int                  fb,
 
   /* 2) Update the bc_op matrix and the RHS with the Dirichlet values. */
 
-  /* coeff * \meas{f} / h_f  */
+  /* --> coeff * |f| / h_f = |f|*|f|/|pvol_f|  */
 
-  const cs_real_t pcoef = eqp->weak_pena_bc_coeff * sqrt(cm->face[fb].meas);
+  const cs_quant_t pfq = cm->face[fb];
+  const double pcoef
+    = eqp->weak_pena_bc_coeff * pfq.meas * pfq.meas / cm->pvol_f[fb];
 
   bc_op->val[fb * (n_dofs + 1)] += pcoef; /* Diagonal term */
 
@@ -1788,6 +1791,7 @@ cs_cdofb_symmetry(short int                  fb,
   assert(cm != nullptr && cb != nullptr && csys != nullptr && pty != nullptr);
   assert(pty->is_iso == true); /* if not the case something else TODO ? */
   assert(cs_equation_param_has_diffusion(eqp));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PFC));
 
   /* 0) Pre-compute the product between diffusion property and the
      face vector areas */
@@ -1827,7 +1831,8 @@ cs_cdofb_symmetry(short int                  fb,
 
   /* coeff * \meas{f} / h_f  \equiv coeff * h_f */
 
-  const double pcoef = eqp->weak_pena_bc_coeff * sqrt(pfq.meas);
+  const double pcoef
+    = eqp->weak_pena_bc_coeff * pfq.meas * pfq.meas / cm->pvol_f[fb];
 
   /* Handle the diagonal block: Retrieve the 3x3 matrix */
 
@@ -1901,6 +1906,7 @@ cs_cdofb_fixed_wall(short int                  fb,
   CS_UNUSED(pty);
 
   assert(cm != nullptr && csys != nullptr); /* Sanity checks */
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PFC));
 
   const cs_quant_t  pfq = cm->face[fb];
   const cs_real_t  *ni = pfq.unitv;
@@ -1909,7 +1915,9 @@ cs_cdofb_fixed_wall(short int                  fb,
                                 ni[2]*ni[0], ni[2]*ni[1], ni[2]*ni[2] };
 
   /* coeff * \meas{fb} / h_fb \equiv coeff * h_fb */
-  const cs_real_t  pcoef = eqp->weak_pena_bc_coeff * sqrt(pfq.meas);
+
+  const double pcoef
+    = eqp->weak_pena_bc_coeff * pfq.meas * pfq.meas / cm->pvol_f[fb];
 
   cs_sdm_t  *bii = cs_sdm_get_block(csys->mat, fb, fb);
   assert(bii->n_rows == bii->n_cols && bii->n_rows == 3);
