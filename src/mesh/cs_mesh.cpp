@@ -2018,6 +2018,7 @@ cs_mesh_create(void)
   mesh->have_r_gen = false;
   mesh->i_face_r_gen = nullptr;
   mesh->vtx_r_gen = nullptr;
+  mesh->b_cell_face_id = nullptr;
 
   /* Selector features */
 
@@ -2124,6 +2125,7 @@ cs_mesh_reinit(cs_mesh_t  *mesh)
 
   CS_FREE(mesh->i_face_r_gen);
   CS_FREE(mesh->vtx_r_gen);
+  CS_FREE(mesh->b_cell_face_id);
 
   /* Halo metadata */
 
@@ -2149,6 +2151,7 @@ cs_mesh_reinit(cs_mesh_t  *mesh)
   mesh->have_r_gen = false;
   mesh->i_face_r_gen = nullptr;
   mesh->vtx_r_gen = nullptr;
+  mesh->b_cell_face_id = nullptr;
 
   /* Status flags */
 
@@ -2412,6 +2415,7 @@ cs_mesh_discard_refinement_info(cs_mesh_t  *mesh)
 
   CS_FREE(mesh->i_face_r_gen);
   CS_FREE(mesh->vtx_r_gen);
+  CS_FREE(mesh->b_cell_face_id);
 
   mesh->modified = CS_MESH_MODIFIED;
 }
@@ -3779,6 +3783,12 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
     bft_printf("Refinement generation of each vertex:\n");
     for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++)
       bft_printf("   < %3ld >  %5d\n", (long)i, (int)(mesh->vtx_r_gen[i]));
+  }
+
+  if (mesh->b_cell_face_id != nullptr) {
+    bft_printf("Local numbering of each boundary face:\n");
+    for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++)
+      bft_printf("   < %3ld >  %5d\n", (long)i, (int)(mesh->b_cell_face_id[i]));
   }
 
   if (mesh->global_i_face_num != nullptr) {

@@ -1131,117 +1131,40 @@ _merge_i_faces(cs_mesh_t       *m,
  *
  * \param[in]       n_faces      number of faces to filter
  * \param[in]       face_ids     ids of faces to filter
- * \param[in]       f2v_idx      face->vertices index
- * \param[in]       f2v_lst      face->vertices connectivity
- * \param[in]       vtx_lv       vertex level
  * \param[in, out]  face_equiv   face equivalence info (face ids in,
  *                               lowest merged face id out)
- * \param[in, out]  s            face merge state helper structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _filter_b_face_equiv(cs_lnum_t                    n_faces,
                      cs_lnum_t                    face_ids[],
-                     cs_lnum_t                    f2v_idx[],
-                     cs_lnum_t                    f2v_lst[],
-                     char                         vtx_lv[],
                      cs_lnum_t                    face_equiv[],
-                     cs_mesh_face_merge_state_t  *s)
+                     char                         b_cell_face_id[])
 {
-  s->n_edges = 0;
-  s->n_vertices = 0;
 
-  /* Determine reference level from adjacent vertex with
-     highest generation */
-
-  char lv_min = 127;
-  char lv_max = 0;
-
-  for (cs_lnum_t f_i = 0; f_i < n_faces; f_i++) {
-    cs_lnum_t f_id = face_ids[f_i];
-    cs_lnum_t s_id = f2v_idx[f_id];
-    cs_lnum_t e_id = f2v_idx[f_id+1];
-
-    for (cs_lnum_t i = s_id; i < e_id; i++) {
-      char lv = vtx_lv[f2v_lst[i]];
-      if (lv > lv_max)
-        lv_max = lv;
-      else if (lv < lv_min)
-        lv_min = lv;
-    }
-  }
-
-  if (lv_min == lv_max)
-    return;
-
-  /* Loop over cell's faces */
+  cs_lnum_t n_b_loc_face = 0;
 
   for (cs_lnum_t f_i = 0; f_i < n_faces; f_i++) {
 
     cs_lnum_t f_id = face_ids[f_i];
+    cs_lnum_t local_order = b_cell_face_id[f_id];
 
-    cs_lnum_t s_id = f2v_idx[f_id];
-    cs_lnum_t e_id = f2v_idx[f_id+1];
-    cs_lnum_t n_f_vtx = e_id - s_id;
+    if (face_equiv[f_id] == f_id) {
+      n_b_loc_face ++;
 
-    cs_lnum_t e_vtx[2];
-
-    /* Check if one of the face's edges can be merged */
-
-    for (cs_lnum_t i = 0; i < n_f_vtx; i++) {
-
-      e_vtx[0] = f2v_lst[s_id + i];
-      e_vtx[1] = f2v_lst[s_id + (i+1)%n_f_vtx];
-
-      /* If edge is not of maximum level, it cannot join
-         2 sub-faces */
-
-      if (vtx_lv[e_vtx[0]] != lv_max || vtx_lv[e_vtx[1]] != lv_max)
-        continue;
-
-      /* Compare to edges list: add if not present, cancel if present */
-
-      bool insert = true;
-
-      for (cs_lnum_t j = 0; j < s->n_edges; j++) {
-        /* If present, must be in opposite direction */
-        if (e_vtx[1] == s->e2v[j][0] && e_vtx[0] == s->e2v[j][1]) {
-          cs_lnum_t f_id_eq = s->e2f[j];
-          cs_lnum_t eq_0 = face_equiv[f_id_eq];
-          cs_lnum_t eq_1 = face_equiv[f_id];
-          cs_lnum_t eq_lo = cs::min(eq_0, eq_1);
-          for (cs_lnum_t k = 0; k < n_faces; k++) {
-            cs_lnum_t l = face_ids[k];
-            if (face_equiv[l] == eq_0 || face_equiv[l] == eq_1)
-              face_equiv[l] = eq_lo;
-          }
-          //_propagate_equiv(f_id, f_id_eq, face_equiv);
-          /* Remove from queue */
-          insert = false;
-          _face_merge_state_remove_edge_e2f(s, j);
-          break;
+      for (cs_lnum_t i = 0; i < n_faces; i++) {
+        cs_lnum_t face_id = face_ids[i];
+        if (  b_cell_face_id[face_id] == local_order
+            && face_id != f_id){
+          face_equiv[face_id] = f_id;
+          n_b_loc_face ++;
         }
       }
-
-      if (insert) {
-        if (s->n_edges >= s->n_edges_max) {
-          s->n_edges_max *= 2;
-          CS_REALLOC(s->e2v, s->n_edges_max, cs_lnum_2_t);
-          CS_REALLOC(s->e2f, s->n_edges_max, cs_lnum_t);
-        }
-        cs_lnum_t j = s->n_edges;
-        s->e2v[j][0] = e_vtx[0];
-        s->e2v[j][1] = e_vtx[1];
-        s->e2f[j] = f_id;
-        s->n_edges += 1;
-      }
-
     }
-
   }
 
-  s->n_edges = 0;
+  assert(n_b_loc_face == n_faces);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1278,8 +1201,6 @@ _b_faces_equiv(cs_mesh_t  *m,
 
   cs_adjacency_t *c2f = cs_mesh_adjacency_c2f_boundary(m);
 
-  cs_mesh_face_merge_state_t *s = _face_merge_state_create(true);
-
   /* Now filter build faces equivalence */
 
   for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
@@ -1290,15 +1211,10 @@ _b_faces_equiv(cs_mesh_t  *m,
     if ((c_r_flag[c_id] > 0) && (e_id - s_id > 1))
       _filter_b_face_equiv(e_id - s_id,
                            c2f->ids + s_id,
-                           m->b_face_vtx_idx,
-                           m->b_face_vtx_lst,
-                           m->vtx_r_gen,
                            _b_f_o2n,
-                           s);
+                           m->b_cell_face_id);
 
   }
-
-  _face_merge_state_destroy(&s);
 
   cs_adjacency_destroy(&c2f);
 
@@ -1433,13 +1349,16 @@ _merge_b_faces(cs_mesh_t       *m,
 
   cs_lnum_t  *b_face_cells;
   int  *b_face_family;
+  char *b_cell_face_id;
   CS_MALLOC(b_face_family, n_new, int);
   CS_MALLOC(b_face_cells, n_new, cs_lnum_t);
+  CS_MALLOC(b_cell_face_id, n_new, char);
 
   for (cs_lnum_t i = 0; i < n_new; i++) {
     cs_lnum_t j = n2o[i];
     b_face_cells[i] = m->b_face_cells[j];
     b_face_family[i] = m->b_face_family[j];
+    b_cell_face_id[i] = m->b_cell_face_id[j];
   }
 
   CS_FREE(m->b_face_cells);
@@ -1449,6 +1368,10 @@ _merge_b_faces(cs_mesh_t       *m,
   CS_FREE(m->b_face_family);
   m->b_face_family = b_face_family;
   b_face_family = nullptr;
+
+  CS_FREE(m->b_cell_face_id);
+  m->b_cell_face_id = b_cell_face_id;
+  b_cell_face_id = nullptr;
 
   /* Update global numbering */
 
@@ -1554,6 +1477,7 @@ _update_vertices(cs_mesh_t  *m,
           m->vtx_coord[j*3 + l] = m->vtx_coord[i*3 + l];
         if (m->global_vtx_num != nullptr)
           m->global_vtx_num[j] = m->global_vtx_num[i];
+        m->vtx_r_gen[j] = m->vtx_r_gen[i];
       }
     }
 
@@ -1562,6 +1486,7 @@ _update_vertices(cs_mesh_t  *m,
     m->n_vertices = n_vtx_new;
 
     CS_REALLOC(m->vtx_coord, n_vtx_new*3, cs_real_t);
+    CS_REALLOC(m->vtx_r_gen, n_vtx_new, char);
 
     if (m->global_vtx_num != nullptr)
       CS_REALLOC(m->global_vtx_num, n_vtx_new, cs_gnum_t);

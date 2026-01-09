@@ -205,6 +205,7 @@ typedef struct {
   bool        have_r_gen;          /*!< has mesh refinement information */
   char       *i_face_r_gen;        /*!< interior face refinement generation */
   char       *vtx_r_gen;           /*!< vertex refinement generation */
+  char       *b_cell_face_id;      /*!< local face numbering for boundary cells */
 
   /* Status flags */
 

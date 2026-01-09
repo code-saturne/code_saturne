@@ -828,6 +828,9 @@ _cs_renumber_update_b_faces(cs_mesh_t        *mesh,
 
     _update_family(n_b_faces_connect, new_to_old_b, mesh->b_face_family);
 
+    if (mesh->b_cell_face_id != nullptr)
+      _update_r_gen(n_b_faces_connect, new_to_old_b, mesh->b_cell_face_id);
+
     _update_global_num(n_b_faces_connect, new_to_old_b, &(mesh->global_b_face_num));
 
     /* Update parent face numbers for post-processing meshes
