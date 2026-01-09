@@ -1006,9 +1006,9 @@ _merge_i_faces(cs_mesh_t       *m,
 
     /* If face does not need to be merged, simply copy it */
 
-    if (n_s_faces == 1) {
+    cs_lnum_t f_id = n2o[s_id];
 
-      cs_lnum_t f_id = n2o[s_id];
+    if (n_s_faces == 1) {
 
       cs_lnum_t v_s_id_src = m->i_face_vtx_idx[f_id];
       cs_lnum_t n_f_vtx = m->i_face_vtx_idx[f_id+1] - v_s_id_src;
@@ -1029,7 +1029,7 @@ _merge_i_faces(cs_mesh_t       *m,
         n_s_f_max = n_s_faces;
         CS_REALLOC(f_orient, n_s_f_max, short int);
       }
-      cs_lnum_t c_id0_cur = m->i_face_cells[s_id][0];
+      cs_lnum_t c_id0_cur = m->i_face_cells[f_id][0];
       f_orient[0] = 1;
 
       for (cs_lnum_t i = 0; i < n_s_faces; i++) {
@@ -1040,7 +1040,6 @@ _merge_i_faces(cs_mesh_t       *m,
           assert(m->i_face_cells[j][1] == c_id0_cur);
           f_orient[i] = -1;
         }
-
       }
 
       _build_merged_face(n_s_faces,
