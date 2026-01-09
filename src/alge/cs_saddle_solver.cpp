@@ -3856,6 +3856,7 @@ cs_saddle_solver_minres(cs_saddle_solver_t  *solver,
 
   cs_iter_algo_update_residual(algo, residual_norm);
   cs_iter_algo_set_normalization(algo, residual_norm);
+  cs_iter_algo_log_cvg(algo, "# Saddle.Minres");
 
   /* dp = eta = <v, z>; beta = sqrt(dp) */
 
@@ -4111,6 +4112,7 @@ cs_saddle_solver_gcr(cs_saddle_solver_t  *solver,
 
   cs_iter_algo_update_residual(algo, residual_norm);
   cs_iter_algo_set_normalization(algo, residual_norm);
+  cs_iter_algo_log_cvg(algo, "# Saddle.GCR");
 
   /* --- MAIN LOOP --- */
 

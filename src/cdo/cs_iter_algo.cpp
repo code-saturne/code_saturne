@@ -110,6 +110,7 @@ _reset_default(cs_iter_algo_default_t    *c)
   c->prev_res = cs_math_big_r;
   c->res = cs_math_big_r;
 
+  c->tol = -1.0;
   c->n_algo_iter = 0;
   c->n_inner_iter = 0;
   c->last_inner_iter = 0;
@@ -139,6 +140,7 @@ _reset_anderson(cs_iter_algo_aac_t    *c)
   c->n_algo_iter = 0;
   c->n_inner_iter = 0;
   c->last_inner_iter = 0;
+  c->tol = -1;
 
   c->n_dir = 0;
 }
@@ -409,6 +411,7 @@ cs_iter_algo_create(cs_iter_algo_type_t    type)
 
   algo->type = type;
   algo->verbosity = 0;
+  algo->header_done = false;
   algo->cvg_param.atol = 1e-15;
   algo->cvg_param.rtol = 1e-6;
   algo->cvg_param.dtol = 1e3;
@@ -545,6 +548,8 @@ cs_iter_algo_reset(cs_iter_algo_t      *algo)
 {
   if (algo == nullptr)
     return;
+
+  algo->header_done = false;
 
   if (algo->type & CS_ITER_ALGO_DEFAULT) {
 
@@ -1415,26 +1420,30 @@ cs_iter_algo_log_cvg(cs_iter_algo_t      *algo,
 
     if (algo->type & CS_ITER_ALGO_TWO_LEVEL) {
 
-      if (c->n_algo_iter == 1)
+      if (!algo->header_done) {
         cs_log_printf(CS_LOG_DEFAULT,
                       "##%s.It    | %10s  %10s  %10s  %10s\n", label,
                       "Algo.res", "Inner.iter", "Cumul.iter", "Tolerance");
+        algo->header_done = true;
+      }
 
       cs_log_printf(CS_LOG_DEFAULT,
-                    "##%s.It%03d | %10.4e  %10d  %10d  %10.4e\n", label,
+                    "##%s.It%03d | %10.4e  %10d  %10d  % 9.4e\n", label,
                     c->n_algo_iter, c->res, c->last_inner_iter, c->n_inner_iter,
                     c->tol);
 
     }
     else {
 
-      if (c->n_algo_iter == 1)
+      if (!algo->header_done) {
         cs_log_printf(CS_LOG_DEFAULT,
                       "##%s.It    | %10s  %10s\n",
                       label, "Algo.res", "Tolerance");
+        algo->header_done = true;
+      }
 
       cs_log_printf(CS_LOG_DEFAULT,
-                    "##%s.It%03d | %10.4e  %10.4e\n",
+                    "##%s.It%03d | %10.4e  % 9.4e\n",
                     label, c->n_algo_iter, c->res, c->tol);
 
     }
@@ -1446,30 +1455,35 @@ cs_iter_algo_log_cvg(cs_iter_algo_t      *algo,
 
     if (algo->type & CS_ITER_ALGO_TWO_LEVEL) {
 
-      if (c->n_algo_iter == 1)
+      if (!algo->header_done) {
         cs_log_printf(CS_LOG_DEFAULT,
                       "##%s.It    | %10s  %10s  %10s  %10s\n", label,
                       "Algo.res", "Inner.iter", "Cumul.iter", "Tolerance");
+        algo->header_done = true;
+      }
 
       cs_log_printf(CS_LOG_DEFAULT,
-                    "##%s.It%03d | %10.4e  %10d  %10d  %10.4e\n", label,
+                    "##%s.It%03d | %10.4e  %10d  %10d  % 9.4e\n", label,
                     c->n_algo_iter, c->res, c->last_inner_iter, c->n_inner_iter,
                     c->tol);
 
     }
     else {
 
-      if (c->n_algo_iter == 1)
+      if (!algo->header_done) {
         cs_log_printf(CS_LOG_DEFAULT,
                       "##%s.It    | %10s  %10s\n",
                       label, "Algo.res", "Tolerance");
+        algo->header_done = true;
+      }
 
       cs_log_printf(CS_LOG_DEFAULT,
-                    "##%s.It%03d | %10.4e  %10.4e\n",
+                    "##%s.It%03d | %10.4e  % 9.4e\n",
                     label, c->n_algo_iter, c->res, c->tol);
+
     }
 
-  }
+  } // Anderson algorithm
 }
 
 /*----------------------------------------------------------------------------*/

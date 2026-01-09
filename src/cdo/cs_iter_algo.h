@@ -297,17 +297,20 @@ typedef struct {
  * \var cvg_param
  * structure storing the main settings
  *
- * \var context
- * pointer to structure cast on the fly
- *
  * \var verbosity
  * Level of printed information
  *
+ * \var header_done
+ * Is the header line printed ? true or false
+ *
+ * \var context
+ * pointer to structure cast on the fly
  */
 
   cs_iter_algo_type_t              type;
   cs_param_convergence_t           cvg_param;
   int                              verbosity;
+  bool                             header_done;
 
   void                            *context;
 
