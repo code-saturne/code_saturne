@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -631,6 +631,11 @@ _copy_mesh(const cs_mesh_t  *mesh,
     CS_MALLOC(mesh_copy->i_face_r_gen, mesh->n_i_faces, char);
     memcpy(mesh_copy->i_face_r_gen, mesh->i_face_r_gen,
            mesh->n_i_faces);
+  }
+  if (mesh->b_face_r_c_idx != nullptr) {
+    CS_MALLOC(mesh_copy->b_face_r_c_idx, mesh->n_b_faces, char);
+    memcpy(mesh_copy->b_face_r_c_idx, mesh->b_face_r_c_idx,
+           mesh->n_b_faces);
   }
   if (mesh->vtx_r_gen != nullptr) {
     CS_MALLOC(mesh_copy->vtx_r_gen, mesh->n_vertices, char);

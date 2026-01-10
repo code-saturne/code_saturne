@@ -5793,11 +5793,11 @@ _o2n_idx_update_b_face_arrays(cs_mesh_t        *m,
 
   cs_lnum_t *b_face_cells;
   int *b_face_family;
-  char *b_cell_face_id;
+  char *b_face_r_c_idx;
 
   CS_MALLOC(b_face_cells, n_new, cs_lnum_t);
   CS_MALLOC(b_face_family, n_new, int);
-  CS_MALLOC(b_cell_face_id, n_new, char);
+  CS_MALLOC(b_face_r_c_idx, n_new, char);
 
   for (cs_lnum_t o_id = 0; o_id < n_old; o_id++) {
     for (cs_lnum_t n_id = o2n_idx[o_id]; n_id < o2n_idx[o_id+1]; n_id++) {
@@ -5805,17 +5805,17 @@ _o2n_idx_update_b_face_arrays(cs_mesh_t        *m,
       b_face_cells[n_id] = m->b_face_cells[o_id];
       /* update family */
       b_face_family[n_id] = m->b_face_family[o_id];
-      /* update local numbering of boundary faces */
-      b_cell_face_id[n_id] = m->b_cell_face_id[o_id];
+      /* update local index of boundary faces */
+      b_face_r_c_idx[n_id] = m->b_face_r_c_idx[o_id];
     }
   }
 
   CS_FREE(m->b_face_family);
   CS_FREE(m->b_face_cells);
-  CS_FREE(m->b_cell_face_id);
+  CS_FREE(m->b_face_r_c_idx);
   m->b_face_cells = b_face_cells;
   m->b_face_family = b_face_family;
-  m->b_cell_face_id = b_cell_face_id;
+  m->b_face_r_c_idx = b_face_r_c_idx;
 
   /* Update global numbering */
 
@@ -6016,8 +6016,8 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
       m->i_face_r_gen[i] = 0;
   }
 
-  if (m->b_cell_face_id == nullptr) {
-    CS_MALLOC(m->b_cell_face_id, m->n_b_faces, char);
+  if (m->b_face_r_c_idx == nullptr) {
+    CS_MALLOC(m->b_face_r_c_idx, m->n_b_faces, char);
 
     /* Build cell->faces connectivity to group associated faces */
     cs_adjacency_t *c2f = cs_mesh_adjacency_c2f_boundary(m);
@@ -6028,7 +6028,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
       cs_lnum_t n_loc_b_faces = e_id - s_id;
       for (cs_lnum_t f_b_loc = 0; f_b_loc < n_loc_b_faces; f_b_loc++){
         cs_lnum_t f_id = c2f->ids[s_id + f_b_loc];
-        m->b_cell_face_id[f_id] = f_b_loc;
+        m->b_face_r_c_idx[f_id] = f_b_loc;
       }
     }
 

@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -307,32 +307,32 @@ _update_family(cs_lnum_t         n_elts,
 }
 
 /*----------------------------------------------------------------------------
- * Redistribute face generation level in case of renubering
+ * Redistribute refinement info values in case of renubering
  *
  * parameters:
  *   n_elts     <--  Number of elements
  *   new_to_old <--  Pointer to renumbering array
- *   family     <->  Pointer to array of family ids (or nullptr)
+ *   r_info     <->  Pointer to array of refinement info values (or nullptr)
  *----------------------------------------------------------------------------*/
 
 static void
-_update_r_gen(cs_lnum_t         n_elts,
-              const cs_lnum_t  *new_to_old,
-              char             *r_gen)
+_update_r_info(cs_lnum_t         n_elts,
+               const cs_lnum_t  *new_to_old,
+               char             *r_info)
 {
-  char *old_r_gen;
+  char *old_r_info;
 
-  if (r_gen == nullptr)
+  if (r_info == nullptr)
     return;
 
-  CS_MALLOC(old_r_gen, n_elts, char);
+  CS_MALLOC(old_r_info, n_elts, char);
 
-  memcpy(old_r_gen, r_gen, n_elts);
+  memcpy(old_r_info, r_info, n_elts);
 
   for (cs_lnum_t ii = 0; ii < n_elts; ii++)
-    r_gen[ii] = old_r_gen[new_to_old[ii]];
+    r_info[ii] = old_r_info[new_to_old[ii]];
 
-  CS_FREE(old_r_gen);
+  CS_FREE(old_r_info);
 }
 
 /*----------------------------------------------------------------------------
@@ -767,7 +767,7 @@ _cs_renumber_update_i_faces(cs_mesh_t        *mesh,
     _update_family(n_i_faces, new_to_old_i, mesh->i_face_family);
 
     if (mesh->i_face_r_gen != nullptr)
-      _update_r_gen(n_i_faces, new_to_old_i, mesh->i_face_r_gen);
+      _update_r_info(n_i_faces, new_to_old_i, mesh->i_face_r_gen);
 
     _update_global_num(n_i_faces, new_to_old_i, &(mesh->global_i_face_num));
 
@@ -828,8 +828,8 @@ _cs_renumber_update_b_faces(cs_mesh_t        *mesh,
 
     _update_family(n_b_faces_connect, new_to_old_b, mesh->b_face_family);
 
-    if (mesh->b_cell_face_id != nullptr)
-      _update_r_gen(n_b_faces_connect, new_to_old_b, mesh->b_cell_face_id);
+    if (mesh->b_face_r_c_idx != nullptr)
+      _update_r_info(n_b_faces_connect, new_to_old_b, mesh->b_face_r_c_idx);
 
     _update_global_num(n_b_faces_connect, new_to_old_b, &(mesh->global_b_face_num));
 
@@ -914,7 +914,7 @@ _cs_renumber_update_vertices(cs_mesh_t        *mesh,
   /* Update refinement level */
 
   if (mesh->vtx_r_gen != nullptr)
-    _update_r_gen(n_vertices, n2o_v, mesh->vtx_r_gen);
+    _update_r_info(n_vertices, n2o_v, mesh->vtx_r_gen);
 
   /* Build the old --> new numbering */
 

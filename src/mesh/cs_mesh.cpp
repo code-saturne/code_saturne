@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -2017,8 +2017,8 @@ cs_mesh_create(void)
 
   mesh->have_r_gen = false;
   mesh->i_face_r_gen = nullptr;
+  mesh->b_face_r_c_idx = nullptr;
   mesh->vtx_r_gen = nullptr;
-  mesh->b_cell_face_id = nullptr;
 
   /* Selector features */
 
@@ -2124,8 +2124,8 @@ cs_mesh_reinit(cs_mesh_t  *mesh)
   CS_FREE(mesh->b_face_family);
 
   CS_FREE(mesh->i_face_r_gen);
+  CS_FREE(mesh->b_face_r_c_idx);
   CS_FREE(mesh->vtx_r_gen);
-  CS_FREE(mesh->b_cell_face_id);
 
   /* Halo metadata */
 
@@ -2150,8 +2150,8 @@ cs_mesh_reinit(cs_mesh_t  *mesh)
 
   mesh->have_r_gen = false;
   mesh->i_face_r_gen = nullptr;
+  mesh->b_face_r_c_idx = nullptr;
   mesh->vtx_r_gen = nullptr;
-  mesh->b_cell_face_id = nullptr;
 
   /* Status flags */
 
@@ -2414,8 +2414,8 @@ cs_mesh_discard_refinement_info(cs_mesh_t  *mesh)
   mesh->have_r_gen = false;
 
   CS_FREE(mesh->i_face_r_gen);
+  CS_FREE(mesh->b_face_r_c_idx);
   CS_FREE(mesh->vtx_r_gen);
-  CS_FREE(mesh->b_cell_face_id);
 
   mesh->modified = CS_MESH_MODIFIED;
 }
@@ -2554,6 +2554,33 @@ cs_mesh_update_b_cells(cs_mesh_t  *mesh)
   }
 
   CS_FREE(flag);
+
+  if (mesh->have_r_gen) {
+    char *shift = nullptr;
+    CS_MALLOC(shift, mesh->n_cells, char);
+
+    for (i = 0; i < mesh->n_cells; i++)
+      shift[i] = 0;
+
+    for (i = 0; i < mesh->n_b_faces; i++) {
+      cs_lnum_t j = mesh->b_face_cells[i];
+      char r_c_idx = mesh->b_face_r_c_idx[i];
+      if (j > -1 && r_c_idx != 127) { // already set
+        shift[j] = cs::max(shift[j], r_c_idx);
+      }
+    }
+
+    for (i = 0; i < mesh->n_b_faces; i++) {
+      char r_c_idx = mesh->b_face_r_c_idx[i];
+      if (r_c_idx == 127) {
+        cs_lnum_t j = mesh->b_face_cells[i];
+        shift[j] += 1;
+        mesh->b_face_r_c_idx[i] = shift[j];
+      }
+    }
+
+    CS_FREE(shift);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -3785,10 +3812,10 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
       bft_printf("   < %3ld >  %5d\n", (long)i, (int)(mesh->vtx_r_gen[i]));
   }
 
-  if (mesh->b_cell_face_id != nullptr) {
-    bft_printf("Local numbering of each boundary face:\n");
+  if (mesh->b_face_r_c_idx != nullptr) {
+    bft_printf("Local index in root cell of each boundary face:\n");
     for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++)
-      bft_printf("   < %3ld >  %5d\n", (long)i, (int)(mesh->b_cell_face_id[i]));
+      bft_printf("   < %3ld >  %5d\n", (long)i, (int)(mesh->b_face_r_c_idx[i]));
   }
 
   if (mesh->global_i_face_num != nullptr) {

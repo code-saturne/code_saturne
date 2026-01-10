@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1348,6 +1348,7 @@ _add_side_faces(cs_mesh_t           *m,
     int *a_face_gc = nullptr;
     cs_gnum_t *a_face_gnum = nullptr;
     char *a_face_r_gen = nullptr;
+    char *a_face_r_c_idx = nullptr;
 
     if (e2f_stride == 2) {
       cs_lnum_t f2v_size_ini = m->i_face_vtx_idx[m->n_i_faces];
@@ -1374,6 +1375,10 @@ _add_side_faces(cs_mesh_t           *m,
       CS_REALLOC(m->b_face_vtx_idx, m->n_b_faces + n_faces_add + 1, cs_lnum_t);
       CS_REALLOC(m->b_face_vtx_lst, f2v_size_ini + f2v_size_add, cs_lnum_t);
       CS_REALLOC(m->b_face_family, m->n_b_faces + n_faces_add, int);
+      if (m->have_r_gen) {
+        CS_REALLOC(m->b_face_r_c_idx, m->n_b_faces + n_faces_add, char);
+        a_face_r_c_idx = m->b_face_r_c_idx + m->n_b_faces;
+      }
       a_face_cell = m->b_face_cells + m->n_b_faces;
       p_face_vtx_idx = m->b_face_vtx_idx + m->n_b_faces;
       p_face_vtx_lst = m->b_face_vtx_lst + f2v_size_ini;
@@ -1504,6 +1509,10 @@ _add_side_faces(cs_mesh_t           *m,
       else {
         for (cs_lnum_t k = 0; k < n_f_sub; k++)
           a_face_gc[f_shift[i] + k] = e_gc[i];
+        if (m->have_r_gen) {
+          for (cs_lnum_t k = 0; k < n_f_sub; k++)
+            a_face_r_c_idx[f_shift[i] + k] = 127; // Mark for later update.
+        }
       }
 
       /* Global number */

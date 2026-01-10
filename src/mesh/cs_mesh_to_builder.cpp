@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -533,7 +533,7 @@ _mesh_to_builder_g(cs_mesh_t          *mesh,
     for (i = 0; i < n_i_faces; i++)
       face_r_gen[i] = mesh->i_face_r_gen[i];
     for (i = 0, j = n_i_faces; i < n_b_faces; i++, j++)
-      face_r_gen[j] = 0;
+      face_r_gen[j] = mesh->b_face_r_c_idx[i];
 
     /* Distribute to blocks, write if required */
 
@@ -572,8 +572,10 @@ _mesh_to_builder_g(cs_mesh_t          *mesh,
     }
   }
 
-  if (transfer == true)
+  if (transfer == true) {
     CS_FREE(mesh->i_face_r_gen);
+    CS_FREE(mesh->b_face_r_c_idx);
+  }
 
   if (transfer == false)
     CS_FREE(mb->face_r_gen);
@@ -927,10 +929,12 @@ _mesh_to_builder_l(cs_mesh_t          *mesh,
     for (i = 0; i < n_i_faces; i++)
       mb->face_r_gen[i] = mesh->i_face_r_gen[i_order[i]];
     for (i = 0, j = n_i_faces; i < n_b_faces; i++, j++)
-      mb->face_r_gen[j] = 0;
+      mb->face_r_gen[j] = mesh->b_face_r_c_idx[i];
 
-    if (transfer == true)
+    if (transfer == true) {
       CS_FREE(mesh->i_face_r_gen);
+      CS_FREE(mesh->b_face_r_c_idx);
+    }
 
     if (pp_out != nullptr) {
       if (transfer == true)

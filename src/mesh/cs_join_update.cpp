@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -4200,6 +4200,8 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
   assert(mesh != nullptr);
   assert(join_mesh != nullptr);
   assert(mesh_builder != nullptr);
+
+  cs_assert(mesh->have_r_gen == false);  // Not handled yet.
 
   /* Get associated global cell number */
 

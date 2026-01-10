@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1627,10 +1627,16 @@ _boundary_insert(cs_mesh_t           *mesh,
                face_id,
                n_faces);
 
+  if (mesh->have_r_gen) {
+    CS_REALLOC(mesh->b_face_r_c_idx, n_b_faces + count[0], char);
+    // Mark for later update.
+    memset(mesh->b_face_r_c_idx + n_b_faces, 127, count[0]);
+  }
+
   mesh->n_b_faces = n_b_faces + count[0];
   mesh->b_face_vtx_connect_size =  b_face_vtx_connect_size + count[1];
 
-  cs_lnum_t _n_g_b_faces = mesh->n_g_b_faces;
+  cs_gnum_t _n_g_b_faces = mesh->n_g_b_faces;
 
 #if defined(HAVE_MPI)
 

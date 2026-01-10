@@ -1,7 +1,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -690,6 +690,8 @@ _cut_cell(cs_mesh_t            *mesh,
 
     mesh->b_face_cells[f_id_new] = mesh->n_cells;
     mesh->b_face_family[f_id_new] = mesh->b_face_family[f_id];
+    if (mesh->have_r_gen)
+      mesh->b_face_r_c_idx[f_id_new] = mesh->b_face_r_c_idx[f_id];
   }
 
   assert(seeds_updated);
@@ -722,6 +724,9 @@ _cut_cell(cs_mesh_t            *mesh,
     }
 
     mesh->b_face_family[f_id] = _default_family_id;
+    if (mesh->have_r_gen) {
+      mesh->b_face_r_c_idx[f_id] = 127;  // Mark for later update.
+    }
 
     polys[cd->n_polys++] = f_id;
 
@@ -744,7 +749,8 @@ _cut_cell(cs_mesh_t            *mesh,
           found = true;
           reverse = true;
           break;
-        } else if (p == _q && q == _p) {
+        }
+        else if (p == _q && q == _p) {
           found = true;
           reverse = false;
           break;
@@ -1083,6 +1089,13 @@ _resize_mesh(cs_mesh_t  *mesh,
 
   for (cs_lnum_t i = mesh->n_b_faces; i < mesh->n_b_faces+n_new_faces; i++)
     mesh->b_face_family[i] = _default_family_id;
+
+  if (mesh->have_r_gen) {
+    CS_REALLOC(mesh->b_face_r_c_idx, mesh->n_b_faces+n_new_faces, char);
+    for (cs_lnum_t i = mesh->n_b_faces; i < mesh->n_b_faces+n_new_faces; i++) {
+      mesh->b_face_r_c_idx[i] = 127; // Will be updated
+    }
+  }
 }
 
 /*------------------------------------------------------------------------------

@@ -1129,33 +1129,33 @@ _merge_i_faces(cs_mesh_t       *m,
  * of maximum vertex level for that face. Thi topological criterion allows
  * avoiding merging sub-faces from different original faces.
  *
- * \param[in]       n_faces      number of faces to filter
- * \param[in]       face_ids     ids of faces to filter
- * \param[in, out]  face_equiv   face equivalence info (face ids in,
- *                               lowest merged face id out)
+ * \param[in]       n_faces         number of faces to filter
+ * \param[in]       face_ids        ids of faces to filter
+ * \param[in, out]  face_equiv      face equivalence info (face ids in,
+ *                                  lowest merged face id out)
+ * \param[in, out]  b_face_r_c_idx  index of boundary face in root cell
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_filter_b_face_equiv(cs_lnum_t                    n_faces,
-                     cs_lnum_t                    face_ids[],
-                     cs_lnum_t                    face_equiv[],
-                     char                         b_cell_face_id[])
+_filter_b_face_equiv(cs_lnum_t        n_faces,
+                     cs_lnum_t        face_ids[],
+                     cs_lnum_t        face_equiv[],
+                     char             b_face_r_c_idx[])
 {
-
   cs_lnum_t n_b_loc_face = 0;
 
   for (cs_lnum_t f_i = 0; f_i < n_faces; f_i++) {
 
     cs_lnum_t f_id = face_ids[f_i];
-    cs_lnum_t local_order = b_cell_face_id[f_id];
+    cs_lnum_t local_order = b_face_r_c_idx[f_id];
 
     if (face_equiv[f_id] == f_id) {
       n_b_loc_face ++;
 
       for (cs_lnum_t i = 0; i < n_faces; i++) {
         cs_lnum_t face_id = face_ids[i];
-        if (  b_cell_face_id[face_id] == local_order
+        if (  b_face_r_c_idx[face_id] == local_order
             && face_id != f_id){
           face_equiv[face_id] = f_id;
           n_b_loc_face ++;
@@ -1212,7 +1212,7 @@ _b_faces_equiv(cs_mesh_t  *m,
       _filter_b_face_equiv(e_id - s_id,
                            c2f->ids + s_id,
                            _b_f_o2n,
-                           m->b_cell_face_id);
+                           m->b_face_r_c_idx);
 
   }
 
@@ -1349,16 +1349,16 @@ _merge_b_faces(cs_mesh_t       *m,
 
   cs_lnum_t  *b_face_cells;
   int  *b_face_family;
-  char *b_cell_face_id;
+  char *b_face_r_c_idx;
   CS_MALLOC(b_face_family, n_new, int);
   CS_MALLOC(b_face_cells, n_new, cs_lnum_t);
-  CS_MALLOC(b_cell_face_id, n_new, char);
+  CS_MALLOC(b_face_r_c_idx, n_new, char);
 
   for (cs_lnum_t i = 0; i < n_new; i++) {
     cs_lnum_t j = n2o[i];
     b_face_cells[i] = m->b_face_cells[j];
     b_face_family[i] = m->b_face_family[j];
-    b_cell_face_id[i] = m->b_cell_face_id[j];
+    b_face_r_c_idx[i] = m->b_face_r_c_idx[j];
   }
 
   CS_FREE(m->b_face_cells);
@@ -1369,9 +1369,9 @@ _merge_b_faces(cs_mesh_t       *m,
   m->b_face_family = b_face_family;
   b_face_family = nullptr;
 
-  CS_FREE(m->b_cell_face_id);
-  m->b_cell_face_id = b_cell_face_id;
-  b_cell_face_id = nullptr;
+  CS_FREE(m->b_face_r_c_idx);
+  m->b_face_r_c_idx = b_face_r_c_idx;
+  b_face_r_c_idx = nullptr;
 
   /* Update global numbering */
 

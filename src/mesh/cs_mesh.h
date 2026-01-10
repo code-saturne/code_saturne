@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -204,8 +204,9 @@ typedef struct {
 
   bool        have_r_gen;          /*!< has mesh refinement information */
   char       *i_face_r_gen;        /*!< interior face refinement generation */
+  char       *b_face_r_c_idx;      /*!< local index in root cell id for
+                                     boundary faces */
   char       *vtx_r_gen;           /*!< vertex refinement generation */
-  char       *b_cell_face_id;      /*!< local face numbering for boundary cells */
 
   /* Status flags */
 
