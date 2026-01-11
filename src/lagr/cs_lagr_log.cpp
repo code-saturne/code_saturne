@@ -526,10 +526,12 @@ cs_lagr_log_setup(void)
     (CS_LOG_SETUP,
      _("\n  Numerical options:\n"
        "    Trajectory time scheme order:                 %d\n"
+       "    max_track_propagation_loops:                  %d\n"
        "    Cell-wise integration (time-splitting alg.)   %s\n"
        "    Extended time scheme:                         %s\n"
        "    Poisson correction for particle velocity:     %s\n"),
      cs_glob_lagr_time_scheme->t_order,
+     cs_glob_lagr_time_scheme->max_track_propagation_loops,
      _status(cs_glob_lagr_time_scheme->cell_wise_integ),
      _status(cs_glob_lagr_time_scheme->extended_t_scheme),
      _status(cs_glob_lagr_time_scheme->ilapoi));

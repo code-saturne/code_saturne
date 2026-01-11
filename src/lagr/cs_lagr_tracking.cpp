@@ -2351,9 +2351,7 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
         particle_coord[k] = cell_cen[k];
       }
 
-      cs_lnum_t n_rep
-        = p_set.attr_lnum(p_id, CS_LAGR_TR_REPOSITION);
-      p_set.attr_lnum(p_id, CS_LAGR_TR_REPOSITION) = n_rep+1;
+      p_set.attr_lnum(p_id, CS_LAGR_TR_REPOSITION) += 1;
 
       return particle_state;
     }
@@ -2640,9 +2638,7 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
       for (int k = 0; k < 3; k++)
         prev_location[k] = cell_cen[k];
 
-      cs_lnum_t n_rep
-        = p_set.attr_lnum(p_id, CS_LAGR_TR_REPOSITION);
-      p_set.attr_lnum(p_id, CS_LAGR_TR_REPOSITION) = n_rep+1;
+      p_set.attr_lnum(p_id, CS_LAGR_TR_REPOSITION) += 1;
 
       if (!(restart))
         restart = true;
@@ -4070,9 +4066,7 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
           p_info->state = CS_LAGR_PART_TREATED;
           cs_real_t *cell_cen = fvq->cell_cen[cell_id];
 
-          cs_lnum_t n_rep =
-            p_set.attr_lnum(p_id, CS_LAGR_TR_REPOSITION);
-          p_set.attr_lnum(p_id, CS_LAGR_TR_REPOSITION) = n_rep+1;
+          p_set.attr_lnum(p_id, CS_LAGR_TR_REPOSITION) += 1;
 
           for (int k = 0; k < 3; k++) {
             p_info->start_coords[k] = cell_cen[k];
@@ -4101,6 +4095,19 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
     /* Update size of the particle set if it has changed */
     p_set.n_particles += n_new_particles;
   } /* End of while (global displacement) */
+
+
+  /* Log of numer of tracking reposition */
+  if (cs_glob_lagr_model->verbosity > 0) {
+    cs_lnum_t n_rep = 0;
+    for (cs_lnum_t p_id = 0; p_id < p_set.n_particles; p_id++) {
+      n_rep += p_set.attr_lnum(p_id, CS_LAGR_TR_REPOSITION);
+    }
+
+    cs_parall_sum(1, CS_INT_TYPE, &n_rep);
+
+    bft_printf("ln number of tracking reposition of particles %d\n", n_rep);
+  }
 
   if (   cell_wise_integ == 0
       && cs_glob_lagr_time_scheme->t_order == 2

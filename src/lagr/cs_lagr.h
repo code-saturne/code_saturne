@@ -358,6 +358,8 @@ typedef struct {
   /*! Take viscous terms into account */
   bool viscous_terms;
 
+  /*! Verbose mode if > 0 */
+  int  verbosity;
 } cs_lagr_model_t;
 
 /*! Particle counters for the Lagrangian module */

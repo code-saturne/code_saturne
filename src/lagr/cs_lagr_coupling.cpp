@@ -290,15 +290,13 @@ cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       &p_set,
   cs_real_t    *volp = lag_st->volp;
   cs_real_t    *volm = lag_st->volm;
 
-  cs_real_t  p_stat_w = p_set.attr_real(p_id,
-                                        CS_LAGR_STAT_WEIGHT);
-  cs_real_t *p_vel    =
-    p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY);
+  cs_real_t  p_stat_w = p_set.attr_real(p_id, CS_LAGR_STAT_WEIGHT);
+  cs_real_t *p_vel = p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY);
 
   cs_real_t *prev_p_vel =
     p_set.attr_n_get_ptr<cs_real_t>(p_id, 1, CS_LAGR_VELOCITY);
-  cs_real_t  p_mass = p_set.attr_real( p_id, CS_LAGR_MASS);
-  cs_real_t  prev_p_mass = p_set.attr_n_real(p_id, 1, CS_LAGR_MASS);
+  cs_real_t p_mass = p_set.attr_real( p_id, CS_LAGR_MASS);
+  cs_real_t prev_p_mass = p_set.attr_n_real(p_id, 1, CS_LAGR_MASS);
   cs_real_t dtp = cs_glob_lagr_time_step->dtp;
 
   cs_real_t rel_dt = dt_part / dtp;
