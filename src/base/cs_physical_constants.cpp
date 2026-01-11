@@ -477,15 +477,11 @@ void
 cs_f_physical_constants_get_pointers(double  **gz);
 
 void
-cs_f_fluid_properties_get_pointers(double  **ro0,
-                                   double  **viscl0,
-                                   double  **p0,
+cs_f_fluid_properties_get_pointers(double  **p0,
                                    double  **t0,
                                    double  **cp0,
                                    double  **rair,
-                                   double  **rvapor,
-                                   double  **rvsra,
-                                   double  **pther);
+                                   double  **rvsra);
 
 /*============================================================================
  * Private function definitions
@@ -518,37 +514,25 @@ cs_f_physical_constants_get_pointers(double  **gz)
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   ro0      --> pointer to cs_glob_fluid_properties->ro0
- *   viscl0   --> pointer to cs_glob_fluid_properties->viscl0
  *   p0       --> pointer to cs_glob_fluid_properties->p0
  *   t0       --> pointer to cs_glob_fluid_properties->t0
  *   cp0      --> pointer to cs_glob_fluid_properties->cp0
  *   rair     --> pointer to cs_glob_fluid_properties->r_pg_cnst
- *   rvapor   --> pointer to cs_glob_fluid_properties->r_v_cnst
  *   rvsra    --> pointer to cs_glob_fluid_properties->rvsra
- *   pther    --> pointer to cs_glob_fluid_properties->pther
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_fluid_properties_get_pointers(double  **ro0,
-                                   double  **viscl0,
-                                   double  **p0,
+cs_f_fluid_properties_get_pointers(double  **p0,
                                    double  **t0,
                                    double  **cp0,
                                    double  **rair,
-                                   double  **rvapor,
-                                   double  **rvsra,
-                                   double  **pther)
+                                   double  **rvsra)
 {
-  *ro0      = &(_fluid_properties.ro0);
-  *viscl0   = &(_fluid_properties.viscl0);
   *p0       = &(_fluid_properties.p0);
   *t0       = &(_fluid_properties.t0);
   *cp0      = &(_fluid_properties.cp0);
   *rair     = &(_fluid_properties.r_pg_cnst);
-  *rvapor   = &(_fluid_properties.r_v_cnst);
   *rvsra    = &(_fluid_properties.rvsra);
-  *pther    = &(_fluid_properties.pther);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

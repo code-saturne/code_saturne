@@ -392,9 +392,7 @@ cs_wall_condensation_1d_thermal.cpp \
 cs_wall_distance.cpp \
 cs_wall_functions.cpp \
 cs_xdef_eval_at_zone.cpp \
-csinit.f90 \
-iniini.f90 \
-majgeo.f90
+iniini.f90
 
 libcsbase_a_LIBADD =
 local_libraries_add =

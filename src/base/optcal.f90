@@ -39,16 +39,6 @@ module optcal
   !> \{
 
   !----------------------------------------------------------------------------
-  ! Space discretisation
-  !----------------------------------------------------------------------------
-
-  !> Indicator of a calculation restart (=1) or not (=0).
-  !> This value is set automatically by the code; depending on
-  !> whether a restart directory is present, and should not be modified by
-  !> the user (no need for C mapping).
-  integer, save :: isuite = 0
-
-  !----------------------------------------------------------------------------
   ! Time stepping options
   !----------------------------------------------------------------------------
 
@@ -66,12 +56,7 @@ module optcal
   !> Current absolute time.
   !>
   !> For the restart calculations, \ref ttcabs takes
-  !> into account the physical time of the previous calculations.\n
-  !> If the time step is uniform (\ref idtvar = 0 or 1), \ref ttcabs
-  !> increases of \ref dt (value of the time step) at each iteration.
-  !> If the time step is non-uniform (\ref idtvar=2), \ref ttcabs
-  !> increases of \ref dtref at each time step.\n
-  !> \ref ttcabs} is initialised and updated automatically by the code,
+  !> into account the physical time of the previous calculations.
   !> its value is not to be modified by the user.
   real(c_double), pointer, save :: ttcabs
 
@@ -83,19 +68,6 @@ module optcal
   !> If the numerical scheme is a second-order in time, only the
   !> option 0 is allowed.
   integer(c_int), pointer, save :: idtvar
-
-  !> Reference time step
-  !>
-  !> This is the time step value used in the case of a calculation run with a
-  !> uniform and constant time step, i.e. \ref idtvar =0 (restart calculation
-  !> or not). It is the value used to initialize the time step in the case of
-  !> an initial calculation run with a non-constant time step(\ref idtvar=1 or
-  !> 2). It is also the value used to initialise the time step in the case of
-  !> a restart calculation in which the type of time step has been changed
-  !> (for instance, \ref idtvar=1 in the new calculation and \ref idtvar = 0 or
-  !> 2 in the previous calculation).\n
-  !> See \subpage user_initialization_time_step for examples.
-  real(c_double), pointer, save :: dtref
 
   !> \}
 
@@ -114,12 +86,12 @@ module optcal
     ! Interface to C function retrieving pointers to members of the
     ! global time step structure
 
-    subroutine cs_f_time_step_get_pointers(nt_cur, dt_ref, t_cur)   &
+    subroutine cs_f_time_step_get_pointers(nt_cur, t_cur)   &
       bind(C, name='cs_f_time_step_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: nt_cur
-      type(c_ptr), intent(out) :: dt_ref, t_cur
+      type(c_ptr), intent(out) :: t_cur
     end subroutine cs_f_time_step_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -146,19 +118,6 @@ contains
 
   !=============================================================================
 
-  !> \brief Initialize isuite
-
-  subroutine indsui () &
-    bind(C, name='cs_f_indsui')
-
-    use, intrinsic :: iso_c_binding
-    use cs_c_bindings
-    implicit none
-
-    isuite = cs_restart_present()
-
-  end subroutine indsui
-
   !> \brief Initialize Fortran time step API.
   !> This maps Fortran pointers to global C structure members.
 
@@ -170,12 +129,11 @@ contains
     ! Local variables
 
     type(c_ptr) :: c_ntcabs
-    type(c_ptr) :: c_dtref, c_ttcabs
+    type(c_ptr) :: c_ttcabs
 
-    call cs_f_time_step_get_pointers(c_ntcabs, c_dtref, c_ttcabs)
+    call cs_f_time_step_get_pointers(c_ntcabs, c_ttcabs)
 
     call c_f_pointer(c_ntcabs, ntcabs)
-    call c_f_pointer(c_dtref,  dtref)
     call c_f_pointer(c_ttcabs, ttcabs)
 
   end subroutine time_step_init

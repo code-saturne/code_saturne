@@ -119,16 +119,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function which returns if the restart present
-    function cs_restart_present() result(flag) &
-      bind(C, name='cs_restart_present')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      integer(c_int) :: flag
-    end function cs_restart_present
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function for atmo
 
     subroutine raysze(xlat, xlong, jour, heurtu, imer, albe, za, muzero, &

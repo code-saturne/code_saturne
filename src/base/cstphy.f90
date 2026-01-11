@@ -42,44 +42,19 @@ module cstphy
   double precision :: tkelvi
   parameter(tkelvi = 273.15d0)
 
-  !> Calories (1 cvar_al = xcal2j J)
-  double precision :: xcal2j
-  parameter(xcal2j = 4.1855d0)
-
   !> Stephan constant for the radiative module \f$\sigma\f$
   !> in \f$W.m^{-2}.K^{-4}\f$
   double precision :: stephn
   parameter(stephn = 5.6703d-8)
 
-  !> Perfect gas constant for air (mixture)
-  real(c_double), pointer, save :: rair
-
-  !> Moist air gas constant (mixture)
-  real(c_double), pointer, save :: rvapor
-
-  !> ratio gas constant h2o/ dry air
-  real(c_double), pointer, save :: rvsra
-
-  !> Boltzmann constant (\f$J.K^{-1}\f$)
-  double precision kboltz
-  parameter(kboltz = 1.380649d-23)
-
-  !> Ideal gas constant (\f$J.mol^{-1}.K^{-1}\f$)
-  double precision cs_physical_constants_r
-  parameter(cs_physical_constants_r = 8.31446261815324d0)
-
   !> Gravity
   real(c_double), pointer, save :: gy, gz
 
-  !> reference density.\n
-  real(c_double), pointer, save :: ro0
+  !> Perfect gas constant for air (mixture)
+  real(c_double), pointer, save :: rair
 
-  !> reference molecular dynamic viscosity.\n
-  !>
-  !> Negative value: not initialized.
-  !> Always useful, it is the used value unless the user specifies the
-  !> viscosity in the subroutine \ref cs_user_physical_properties
-  real(c_double), pointer, save :: viscl0
+  !> ratio gas constant h2o/ dry air
+  real(c_double), pointer, save :: rvsra
 
   !> reference pressure for the total pressure.\n
   real(c_double), pointer, save :: p0
@@ -104,9 +79,6 @@ module cstphy
   !> based on their conductivity; it is therefore needed, unless the
   !> diffusivity is also specified in \ref cs_user_physical_properties.
   real(c_double), pointer, save :: cp0
-
-  !> Thermodynamic pressure for the current time step
-  real(c_double), pointer, save :: pther
 
   !> \}
 
@@ -133,22 +105,16 @@ module cstphy
     ! Interface to C function retrieving pointers to members of the
     ! global fluid properties structure
 
-    subroutine cs_f_fluid_properties_get_pointers(ro0,     &
-                                                  viscl0,  &
-                                                  p0,      &
+    subroutine cs_f_fluid_properties_get_pointers(p0,      &
                                                   t0,      &
                                                   cp0,     &
                                                   rair,    &
-                                                  rvapor,  &
-                                                  rvsra,   &
-                                                  pther)   &
+                                                  rvsra)   &
       bind(C, name='cs_f_fluid_properties_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: ro0, viscl0
       type(c_ptr), intent(out) :: p0, t0, cp0
-      type(c_ptr), intent(out) :: rair, rvapor, rvsra
-      type(c_ptr), intent(out) :: pther
+      type(c_ptr), intent(out) :: rair, rvsra
     end subroutine cs_f_fluid_properties_get_pointers
 
     !---------------------------------------------------------------------------
@@ -193,25 +159,17 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_ro0, c_viscl0, c_p0
-    type(c_ptr) :: c_t0, c_cp0
-    type(c_ptr) :: c_rair,c_rvapor, c_rvsra
-    type(c_ptr) :: c_pther
+    type(c_ptr) :: c_p0, c_t0, c_cp0
+    type(c_ptr) :: c_rair, c_rvsra
 
-    call cs_f_fluid_properties_get_pointers(c_ro0, c_viscl0,                &
-                                            c_p0, c_t0, c_cp0,              &
-                                            c_rair, c_rvapor, c_rvsra,      &
-                                            c_pther)
+    call cs_f_fluid_properties_get_pointers(c_p0, c_t0, c_cp0,              &
+                                            c_rair, c_rvsra)
 
-    call c_f_pointer(c_ro0, ro0)
-    call c_f_pointer(c_viscl0, viscl0)
     call c_f_pointer(c_p0, p0)
     call c_f_pointer(c_t0, t0)
     call c_f_pointer(c_cp0, cp0)
     call c_f_pointer(c_rair, rair)
-    call c_f_pointer(c_rvapor, rvapor)
     call c_f_pointer(c_rvsra, rvsra)
-    call c_f_pointer(c_pther, pther)
 
   end subroutine fluid_properties_init
 

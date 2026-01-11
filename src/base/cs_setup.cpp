@@ -125,9 +125,6 @@ BEGIN_C_DECLS
 /* Bindings to Fortran routines */
 
 void
-cs_f_indsui(void);
-
-void
 cs_f_iniini(void);
 
 void
@@ -2815,9 +2812,6 @@ _init_user(void)
   if (cs_glob_time_step_options->idtvar == 2
     || cs_glob_time_step_options->idtvar == -1)
     cs_time_step_define_local(1);
-
-  /* Initialize Fortran restarted computation flag (isuite) */
-  cs_f_indsui();
 
   /* Default value of physical properties for the compressible model */
   if (pm_flag[CS_COMPRESSIBLE] != -1) {

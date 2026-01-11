@@ -52,7 +52,6 @@ base/cstphy.f90 \
 base/cstnum.f90 \
 base/optcal.f90 \
 base/parall.f90 \
-base/pointe.f90 \
 base/cs_c_bindings.f90 \
 atmo/atincl.f90 \
 pprt/ppincl.f90

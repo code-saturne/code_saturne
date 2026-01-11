@@ -284,7 +284,6 @@ static double _c = 0; /* compensation term for Kahan sum */
 
 void
 cs_f_time_step_get_pointers(int     **nt_cur,
-                            double  **dtref,
                             double  **t_cur);
 
 void
@@ -306,17 +305,14 @@ cs_f_time_step_options_get_pointers(int  **idtvar);
  *
  * parameters:
  *   nt_cur  --> pointer to cs_glob_time_step->nt_cur
- *   dt_ref  --> pointer to cs_glob_time_step->dt_ref
  *   t_cur   --> pointer to cs_glob_time_step->t_cur
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_time_step_get_pointers(int      **nt_cur,
-                            double   **dtref,
                             double   **t_cur)
 {
   *nt_cur = &(_time_step.nt_cur);
-  *dtref  = &(_time_step.dt_ref);
   *t_cur = &(_time_step.t_cur);
 }
 

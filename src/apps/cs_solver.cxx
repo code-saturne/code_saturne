@@ -155,8 +155,7 @@ BEGIN_C_DECLS
 /* Initialize Fortran base common block values */
 
 extern void
-cs_f_init(int  irgpar,   /* MPI Rank in parallel, -1 otherwise */
-          int  nrgpar);  /* Number of MPI processes, or 1 */
+cs_f_init(int  irgpar);  /* MPI Rank in parallel, -1 otherwise */
 
 /*============================================================================
  * Static global variables
@@ -310,7 +309,7 @@ _run(void)
     if (cs_file_isreg(default_restart_mesh))
       cs_restart_map_set_mesh_input(default_restart_mesh);
 
-    cs_f_init(cs_glob_rank_id, cs_glob_n_ranks);
+    cs_f_init(cs_glob_rank_id);
 
     cs_setup();
 

@@ -67,6 +67,26 @@ module parall
 
   end interface
 
+  !=============================================================================
+
+contains
+
+  !=============================================================================
+
+  !> \brief Initialize parallel parameters.
+
+  !> \param[int]  irgpar  rank if parallel; -1 if sequantial
+
+  subroutine csinit(irgpar)  &
+    bind(C, name='cs_f_init')
+
+    use, intrinsic :: iso_c_binding
+
+    integer(c_int), value :: irgpar
+    irangp = irgpar
+
+  end subroutine csinit
+
 end module parall
 
 

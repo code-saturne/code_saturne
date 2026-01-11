@@ -94,4 +94,46 @@ contains
 
   !> \}
 
+  !=============================================================================
+
+  ! Pass mesh arrays from C to Fortran
+
+  subroutine majgeo &
+   ( ncel2  , ncele2 , nfabo2 ,                                     &
+     ifabo2 ,                                                       &
+     xyzce2 , cdgfb2 , srfbn2 )                                     &
+
+    bind(C, name="cs_f_majgeo")
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer(c_int), intent(in) :: ncel2, ncele2, nfabo2
+    integer(c_int), dimension(nfabo2), target :: ifabo2
+    real(c_double), dimension(3,ncele2), target :: xyzce2
+    real(c_double), dimension(3,nfabo2), target :: cdgfb2
+    real(c_double), dimension(nfabo2), target :: srfbn2
+
+    ! Update number of cells, faces, and vertices
+
+    ncel = ncel2
+    ncelet = ncele2
+    nfabor = nfabo2
+
+    ! Define pointers on mesh structure
+
+    ifabor_0 => ifabo2(1:nfabor)
+    xyzcen => xyzce2(1:3,1:ncelet)
+
+    ! Define pointers on mesh quantities
+
+    cdgfbo => cdgfb2(1:3,1:nfabor)
+    surfbn => srfbn2(1:nfabor)
+
+  end subroutine majgeo
+
+  !=============================================================================
+
 end module mesh
