@@ -766,19 +766,9 @@ cs_lagr_orientation_dyn_jeffery(cs_lnum_t        p_id,
   auto *euler = cs_lagr_particles_attr_get_ptr<cs_real_t>(p_set, p_id,
                                                           CS_LAGR_EULER);
 
-  cs_real_33_t trans_m = {
-    {2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5),   /* (0,0) */
-     2.*(euler[1]*euler[2]+euler[0]*euler[3])    ,   /* (0,1) */
-     2.*(euler[1]*euler[3]-euler[0]*euler[2])    },  /* (0,2) */
-
-    {2.*(euler[1]*euler[2]-euler[0]*euler[3])    ,  /* (1,0) */
-     2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5),  /* (1,1) */
-     2.*(euler[2]*euler[3]+euler[0]*euler[1])    }, /* (1,2) */
-
-    {2.*(euler[1]*euler[3]+euler[0]*euler[2])    ,  /* (2,0) */
-     2.*(euler[2]*euler[3]-euler[0]*euler[1])    ,  /* (2,1) */
-     2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5)}  /* (2,2) */
-  };
+  cs_real_33_t trans_m;
+  // Call function to transform the 4 euler parameters into a rotation
+  cs_math_quaternions_into_33_rotation(euler, trans_m);
 
   /* Fluid velocity gradient in the relative reference frame of the particle */
   cs_real_t grad_vf_r[3][3];

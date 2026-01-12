@@ -1193,16 +1193,12 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
         /* Write Euler angles */
         cs_real_t random;
         cs_random_uniform(1, &random);
-        if (random >= 0.5)
-          euler[0] = pow(0.25*(trans_m[0][0]+trans_m[1][1]+trans_m[2][2]+1.),
-                         0.5);
-        else
-          euler[0] = -pow(0.25*(trans_m[0][0]+trans_m[1][1]+trans_m[2][2]+1.),
-                          0.5);
-        euler[1] = 0.25 * (trans_m[2][1] - trans_m[1][2]) / euler[0];
-        euler[2] = 0.25 * (trans_m[0][2] - trans_m[2][0]) / euler[0];
-        euler[3] = 0.25 * (trans_m[1][0] - trans_m[0][1]) / euler[0];
-
+        // Call function to transform rotation matrix into the 4 euler parameters
+        cs_math_33_rotation_into_quaternions(trans_m, euler);
+        if (random >= 0.5) {
+          for (cs_lnum_t id = 0; id < 4; id++)
+            euler[id] *= -1;
+        }
         /* Compute initial angular velocity */
 
         /* Local reference frame */

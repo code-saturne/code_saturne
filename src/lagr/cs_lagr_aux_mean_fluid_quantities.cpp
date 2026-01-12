@@ -333,7 +333,7 @@ compute_anisotropic_prop(int            iprev,
 
         /* Compute the main direction in the global reference
          * frame */
-         cs_math_3_normalize(dir, dir);
+        cs_math_3_normalize(dir, dir);
 
         /* Compute k_tilde in each cell */
         cs_real_t ktil = 0;
@@ -363,55 +363,20 @@ compute_anisotropic_prop(int            iprev,
         }
         if (grad_lagr_time_r_et != nullptr) {
           cs_real_33_t trans_m;
-          /* Rotate the frame of reference with respect to the
-           * mean relative velocity direction.
-           * This referential differs the referential associated directly
-           * to the particle for non spheric particle
-           * TODO extend extended scheme to non spheric particle*/
-
-          // The rotation axis is the result of the cross product between
-          // the new direction vector and the main axis.
-          cs_real_t n_rot[3];
+          // FIXME: check if 2nd order scheme still works
+          // especially if reading the anisotropic_euler makes sense
+          // (provided it has been computed once before)
           /* the direction in the local reference frame "_r" is (1, 0, 0)
            * by convention */
           const cs_real_t dir_r[3] = {1.0, 0.0, 0.0};
 
-          // Use quaternion (cos(theta/2), sin(theta/2) n_rot)
-          // where n_rot = dir ^ dir_r normalised
-          // so also       dir ^ (dir + dir_r)
-          //
-          // cos(theta/2) = || dir + dir_r|| / 2
-          cs_real_t dir_p_dir_r[3] = {dir[0] + dir_r[0],
-            dir[1] + dir_r[1],
-            dir[2] + dir_r[2]};
-          cs_real_t dir_p_dir_r_normed[3];
-          cs_math_3_normalize(dir_p_dir_r, dir_p_dir_r_normed);
+          /* Compute Euler quaternions */
+          cs_real_t euler[4];
+          cs_math_quaternions_from_2_vectors(dir, dir_r, euler);
 
-          /* dir ^(dir + dir_r) / || dir + dir_r|| = sin(theta/2) n_rot
-           * for the quaternion */
-          cs_math_3_cross_product(dir, dir_p_dir_r_normed, n_rot);
-
-          /* quaternion, could be normalized afterwards
-           *
-           * Note that the division seems stupid but is not
-           * in case of degenerated case where dir is null
-           * */
-          const cs_real_t euler[4] =
-          {  cs_math_3_norm(dir_p_dir_r)
-            / (cs_math_3_norm(dir) + cs_math_3_norm(dir_r)),
-            n_rot[0],
-            n_rot[1],
-            n_rot[2]};
-
-          trans_m[0][0] = 2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5);
-          trans_m[0][1] = 2.*(euler[1]*euler[2]+euler[0]*euler[3]);
-          trans_m[0][2] = 2.*(euler[1]*euler[3]-euler[0]*euler[2]);
-          trans_m[1][0] = 2.*(euler[1]*euler[2]-euler[0]*euler[3]);
-          trans_m[1][1] = 2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5);
-          trans_m[1][2] = 2.*(euler[2]*euler[3]+euler[0]*euler[1]);
-          trans_m[2][0] = 2.*(euler[1]*euler[3]+euler[0]*euler[2]);
-          trans_m[2][1] = 2.*(euler[2]*euler[3]-euler[0]*euler[1]);
-          trans_m[2][2] = 2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5);
+          // Compute the matrix to change the Frame of Reference
+          // using the function to transform the 4 euler parameters into a rotation
+          cs_math_quaternions_into_33_rotation(euler, trans_m);
 
           /* transform grad(Tl) in the local
            * reference frame */

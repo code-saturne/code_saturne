@@ -1942,6 +1942,134 @@ cs_math_sym_33_product(const cs_real_t      s1[6],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the 4 Euler parameters (defining a quaternion)
+ *        knowing the rotation matrix m
+ * Based on: J.E. Mebius "Derivation of the Euler-Rodrigues formula
+ *                        for 3D rotations from the general formula
+ *                        for 4D rotations",
+ *           arXiv communication (January 2007)
+ *           arXiv:math/0701759
+ *
+ * \param[in]     m            3x3 matrix
+ * \param[out]    e            Vector with 4 components
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE static inline void
+cs_math_33_rotation_into_quaternions(const cs_real_t       m[3][3],
+                                     cs_real_t             e[4])
+{
+  /* Distinguish 4 different cases to avoid division by 0 */
+  if (fabs(1.+m[0][0]+m[1][1]+m[2][2]) > 1.0e-12) {
+    // Case 1: e[0] is not equal to 0
+    e[0] = 0.5*sqrt(1+m[0][0]+m[1][1]+m[2][2]);
+    e[1] = 0.25*(m[2][1]-m[1][2])/e[0];
+    e[2] = 0.25*(m[0][2]-m[2][0])/e[0];
+    e[3] = 0.25*(m[1][0]-m[0][1])/e[0];
+  }
+  else if (fabs(1+m[0][0]-m[1][1]-m[2][2]) > 1.0e-12) {
+    // Case 2: e[1] is not equal to 0
+    e[1] = 0.5*sqrt(1+m[0][0]-m[1][1]-m[2][2]);
+    e[0] = 0.25*(m[2][1]-m[1][2])/e[1];
+    e[2] = 0.25*(m[1][0]+m[0][1])/e[1];
+    e[3] = 0.25*(m[0][2]+m[2][0])/e[1];
+  }
+  else if (fabs(1-m[0][0]+m[1][1]-m[2][2]) > 1.0e-12) {
+    // Case 3: e[2] is not equal to 0
+    e[2] = 0.5*sqrt(1-m[0][0]+m[1][1]-m[2][2]);
+    e[0] = 0.25*(m[0][2]-m[2][0])/e[2];
+    e[1] = 0.25*(m[1][0]+m[0][1])/e[2];
+    e[3] = 0.25*(m[2][1]+m[1][2])/e[2];
+  }
+  else if (fabs(1-m[0][0]-m[1][1]+m[2][2]) > 1.0e-12) {
+    // Case 4: e[3] is not equal to 0
+    e[3] = 0.5*sqrt(1-m[0][0]-m[1][1]+m[2][2]);
+    e[0] = 0.25*(m[1][0]-m[0][1])/e[3];
+    e[1] = 0.25*(m[0][2]+m[2][0])/e[3];
+    e[2] = 0.25*(m[2][1]+m[1][2])/e[3];
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the rotation matrix m (3x3 matrix)
+ *        knowing the 4 Euler parameters (defining a quaternion)
+ * Based on: J.E. Mebius "Derivation of the Euler-Rodrigues formula
+ *                        for 3D rotations from the general formula
+ *                        for 4D rotations",
+ *           arXiv communication (January 2007)
+ *           arXiv:math/0701759
+ *
+ * \param[in]     e            Vector with 4 components
+ * \param[out]    m            3x3 matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE static inline void
+cs_math_quaternions_into_33_rotation(const cs_real_t       e[4],
+                                     cs_real_t             m[3][3])
+{
+  m[0][0] = 2.*(e[0]*e[0]+e[1]*e[1]-0.5);
+  m[0][1] = 2.*(e[1]*e[2]+e[0]*e[3]);
+  m[0][2] = 2.*(e[1]*e[3]-e[0]*e[2]);
+  m[1][0] = 2.*(e[1]*e[2]-e[0]*e[3]);
+  m[1][1] = 2.*(e[0]*e[0]+e[2]*e[2]-0.5);
+  m[1][2] = 2.*(e[2]*e[3]+e[0]*e[1]);
+  m[2][0] = 2.*(e[1]*e[3]+e[0]*e[2]);
+  m[2][1] = 2.*(e[2]*e[3]-e[0]*e[1]);
+  m[2][2] = 2.*(e[0]*e[0]+e[3]*e[3]-0.5);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the 4 Euler parameters using 2 direction vectors
+ *        one for the relative mean velocity in the global coordinates
+ *        the other one expressed in the local coordinates
+ *
+ * \param[in]     dir            Vector with 3 components
+ * \param[in]     dir_r          Vector with 3 components
+ * \param[out]    euler          Vector with 4 components
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE static inline void
+cs_math_quaternions_from_2_vectors(const cs_real_t       dir[3],
+                                   const cs_real_t       dir_r[3],
+                                   cs_real_t             euler[4])
+{
+  // The rotation axis is the result of the cross product between
+  // the new direction vector and the main axis.
+  cs_real_t n_rot[3];
+
+  // Use quaternion (cos(theta/2), sin(theta/2) n_rot)
+  // where n_rot = dir ^ dir_r normalised
+  // so also       dir ^ (dir + dir_r)
+  //
+  // cos(theta/2) = || dir + dir_r|| / 2
+  cs_real_t dir_p_dir_r[3] = {dir[0] + dir_r[0],
+                              dir[1] + dir_r[1],
+                              dir[2] + dir_r[2]};
+  cs_real_t dir_p_dir_r_normed[3];
+  cs_math_3_normalize(dir_p_dir_r, dir_p_dir_r_normed);
+
+  /* dir ^(dir + dir_r) / || dir + dir_r|| = sin(theta/2) n_rot
+   * for the quaternion */
+  cs_math_3_cross_product(dir, dir_p_dir_r_normed, n_rot);
+
+  /* quaternion, could be normalized afterwards
+   *
+   * Note that the division seems stupid but is not
+   * in case of degenerated case where dir is null
+   * */
+  euler[0] = cs_math_3_norm(dir_p_dir_r)
+           / (cs_math_3_norm(dir) + cs_math_3_norm(dir_r));
+  euler[1] = n_rot[0];
+  euler[2] = n_rot[1];
+  euler[3] = n_rot[2];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute a 6x6 matrix A, equivalent to a 3x3 matrix s, such as:
  *        A*R_6 = R*s^t + s*R
  *
