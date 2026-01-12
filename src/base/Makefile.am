@@ -64,7 +64,6 @@ cs_ale.h \
 cs_all_to_all.h \
 cs_array.h \
 cs_array_reduce.h \
-cs_array_2dspan.h \
 cs_assert.h \
 cs_ast_coupling.h \
 cs_base.h \
