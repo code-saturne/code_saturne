@@ -4165,9 +4165,14 @@ cs_cdovb_scaleq_get_cell_values(void *context,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Retrieve the array storing the source term values at dual mesh cells.
+ *        If this array does not exist, it is allocated and build using the
+ *        current state.
+ *
  *        The lifecycle of this array is managed by the code. So one does not
  *        have to free the return pointer.
  *
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
  * \param[in, out] context    pointer to a data structure cast on-the-fly
  *
  * \return a pointer to an array of cs_real_t (size n_vertices)
@@ -4175,12 +4180,93 @@ cs_cdovb_scaleq_get_cell_values(void *context,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdovb_scaleq_get_source_term_values(void *context)
+cs_cdovb_scaleq_get_source_term_values(const cs_equation_param_t *eqp,
+                                       cs_equation_builder_t     *eqb,
+                                       void                      *context)
 {
   cs_cdovb_scaleq_t *eqc = (cs_cdovb_scaleq_t *)context;
 
   if (eqc == nullptr)
     return nullptr;
+
+  if (eqc->source_terms != nullptr)
+    return eqc->source_terms;
+
+  CS_MALLOC(eqc->source_terms, eqc->n_dofs, cs_real_t);
+  cs_array_real_fill_zero(eqc->n_dofs, eqc->source_terms);
+
+  const cs_cdo_connect_t    *connect = cs_shared_connect;
+  const cs_cdo_quantities_t *quant   = cs_shared_quant;
+
+#pragma omp parallel if (quant->n_cells > CS_THR_MIN)
+  {
+    /* Set variables and structures inside the OMP section so that each thread
+       has its own value */
+
+    const int t_id = cs_get_thread_id();
+
+    /* Each thread get back its related structures:
+       Get the cell-wise view of the mesh and the algebraic system */
+
+    const cs_real_t time_eval = cs_shared_time_step->t_cur;
+    cs_cell_sys_t     *csys = _svb_cell_system[t_id];
+    cs_cell_builder_t *cb   = _svb_cell_builder[t_id];
+    cs_cell_mesh_t    *cm   = cs_cdo_local_get_cell_mesh(t_id);
+
+    cs_hodge_t *mass_hodge =
+      (eqc->mass_hodge == nullptr) ? nullptr : eqc->mass_hodge[t_id];
+
+    /* Set times at which one evaluates quantities if needed */
+
+    cb->t_pty_eval = time_eval;
+    cb->t_st_eval  = time_eval;
+
+    /* --------------------------------------------- */
+    /* Main loop on cells to build the linear system */
+    /* --------------------------------------------- */
+
+#pragma omp for CS_CDO_OMP_SCHEDULE
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+      /* Set the current cell flag */
+
+      cb->cell_flag = connect->cell_flag[c_id];
+
+      /* Set the local mesh structure for the current cell */
+
+      cs_cell_mesh_build(c_id,
+                         cs_equation_builder_cell_mesh_flag(cb->cell_flag, eqb),
+                         connect,
+                         quant,
+                         cm);
+
+      memset(csys->source, 0, cm->n_vc * sizeof(cs_real_t));
+
+      if (eqb->sys_flag & CS_FLAG_SYS_MASS_MATRIX)
+        /* stored in mass_hodge->matrix */
+        eqc->get_mass_matrix(cm, mass_hodge, cb);
+
+      /* Source term contribution to the algebraic system
+         If the equation is steady, the source term has already been computed
+         and is added to the right-hand side during its initialization. */
+
+      cs_source_term_compute_cellwise(eqp->n_source_terms,
+                                      (cs_xdef_t *const *)eqp->source_terms,
+                                      cm,
+                                      eqb->source_mask,
+                                      eqb->compute_source,
+                                      cb->t_st_eval,
+                                      mass_hodge,
+                                      cb,
+                                      csys->source);
+
+      for (int v = 0; v < cm->n_vc; v++)
+#       pragma omp atomic
+        eqc->source_terms[cm->v_ids[v]] += csys->source[v];
+
+    } /* Main loop on cells */
+
+  } /* OPENMP Block */
 
   return eqc->source_terms;
 }
@@ -4730,14 +4816,14 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t           *values,
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN)                          \
   shared(quant,                                                                \
-           connect,                                                            \
-           eqp,                                                                \
-           eqb,                                                                \
-           eqc,                                                                \
-           vf_flux,                                                            \
-           values,                                                             \
-           diff_pty,                                                           \
-           _svb_cell_builder) firstprivate(t_eval)
+         connect,                                                              \
+         eqp,                                                                  \
+         eqb,                                                                  \
+         eqc,                                                                  \
+         vf_flux,                                                              \
+         values,                                                               \
+         diff_pty,                                                             \
+         _svb_cell_builder) firstprivate(t_eval)
   {
     const int t_id = cs_get_thread_id();
 

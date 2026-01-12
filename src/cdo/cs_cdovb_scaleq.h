@@ -451,9 +451,14 @@ cs_cdovb_scaleq_get_cell_values(void      *context,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Retrieve the array storing the source term values at dual mesh cells.
+ *        If this array does not exist, it is allocated and build using the
+ *        current state.
+ *
  *        The lifecycle of this array is managed by the code. So one does not
  *        have to free the return pointer.
  *
+ * \param[in]      eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
  * \param[in, out] context    pointer to a data structure cast on-the-fly
  *
  * \return a pointer to an array of cs_real_t (size n_vertices)
@@ -461,7 +466,9 @@ cs_cdovb_scaleq_get_cell_values(void      *context,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdovb_scaleq_get_source_term_values(void    *context);
+cs_cdovb_scaleq_get_source_term_values(const cs_equation_param_t *eqp,
+                                       cs_equation_builder_t     *eqb,
+                                       void                      *context);
 
 /*----------------------------------------------------------------------------*/
 /*!

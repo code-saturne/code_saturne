@@ -1016,7 +1016,9 @@ cs_equation_get_source_term_array(const cs_equation_t *eq)
       switch (eqp->space_scheme) {
 
       case CS_SPACE_SCHEME_CDOVB:
-        return cs_cdovb_scaleq_get_source_term_values(eq->scheme_context);
+        return cs_cdovb_scaleq_get_source_term_values(eqp,
+                                                      eq->builder,
+                                                      eq->scheme_context);
 
       case CS_SPACE_SCHEME_CDOFB:
         return cs_cdofb_scaleq_get_source_term_values(eq->scheme_context);
