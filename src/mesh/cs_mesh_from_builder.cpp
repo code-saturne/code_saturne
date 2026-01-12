@@ -1512,13 +1512,11 @@ _decompose_data_l(cs_mesh_t          *mesh,
 
   CS_FREE(mb->face_gc_id);
 
-  if (mesh->have_r_gen) {
-    _extract_face_r_gen(mesh,
-                        _n_faces,
-                        mb->face_r_gen,
-                        face_type);
-    CS_FREE(mb->face_r_gen);
-  }
+  _extract_face_r_gen(mesh,
+                      _n_faces,
+                      mb->face_r_gen,
+                      face_type);
+  CS_FREE(mb->face_r_gen);
 
   CS_FREE(face_type);
 }
