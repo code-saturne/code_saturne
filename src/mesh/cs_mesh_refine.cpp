@@ -367,7 +367,7 @@ public:
     if (n_faces + n_f_vtx > n_faces_max) {
       n_faces_max *= 2;
       CS_REALLOC(e_f2c, n_faces_max, int16_t);
-      CS_MALLOC(sc_equiv, n_faces_max, int16_t);
+      CS_REALLOC(sc_equiv, n_faces_max, int16_t);
     }
     if (n_edges + n_f_vtx > n_edges_max) {
       n_edges_max *= 2;
