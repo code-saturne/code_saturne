@@ -76,7 +76,8 @@ compute_anisotropic_prop(int            iprev,
                          cs_real_3_t   *anisotropic_lagr_time,
                          cs_real_3_t   *anisotropic_bx,
                          cs_real_3_t   *grad_lagr_time_r_et,
-                         cs_real_3_t   *grad_lagr_time);
+                         cs_real_3_t   *grad_lagr_time,
+                         cs_real_4_t   *anisotropic_euler);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -137,7 +138,8 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev,
                                   cs_real_3_t   *anisotropic_lagr_time,
                                   cs_real_3_t   *anisotropic_bx,
                                   cs_real_3_t   *grad_lagr_time_r_et,
-                                  cs_real_3_t   *grad_lagr_time);
+                                  cs_real_3_t   *grad_lagr_time,
+                                  cs_real_4_t   *anisotropic_euler);
 
 /*----------------------------------------------------------------------------*/
 

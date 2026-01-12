@@ -66,6 +66,8 @@
 #include "pprt/cs_physical_model.h"
 #include "turb/cs_turbulence_model.h"
 #include "base/cs_velocity_pressure.h"
+#include "turb/cs_turbulence_model.h"
+#include "turb/cs_les_balance.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -250,6 +252,8 @@ compute_particle_covariance_gradient(int          phase_id,
  * \param[out]  grad_lagr_time_r_et    anisotropic Lagrangian time gradient in
  *                                     relative basis
  * \param[in]   grad_lagr_time         Lagrangian time gradient
+ * \param[in]   anisotropic_euler     Eigenvector to rotate the frame of reference
+ *                                      in the local one (where TL is diagonal)
  *
  */
 /*----------------------------------------------------------------------------*/
@@ -260,7 +264,8 @@ compute_anisotropic_prop(int            iprev,
                          cs_real_3_t   *anisotropic_lagr_time,
                          cs_real_3_t   *anisotropic_bx,
                          cs_real_3_t   *grad_lagr_time_r_et,
-                         cs_real_3_t   *grad_lagr_time)
+                         cs_real_3_t   *grad_lagr_time,
+                         cs_real_4_t   *anisotropic_euler )
 
 {
   int cell_wise_integ = cs_glob_lagr_time_scheme->cell_wise_integ;
@@ -272,6 +277,21 @@ compute_anisotropic_prop(int            iprev,
 
   cs_real_t *energi = extra_i[phase_id].cvar_k->val;
   cs_real_t *dissip = extra_i[phase_id].cvar_ep->val;
+
+  // Add cases where the turbulence model is based on Rij or K-Omega
+  if (extra_i[phase_id].itytur == 3) {
+    for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++)
+      energi[cell_id] = 0.5 * (  extra_i[phase_id].cvar_rij->val[6*cell_id]
+          + extra_i[phase_id].cvar_rij->val[6*cell_id+1]
+          + extra_i[phase_id].cvar_rij->val[6*cell_id+2]);
+
+  }
+  else if (extra_i[phase_id].iturb == CS_TURB_K_OMEGA) {
+
+    for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++)
+      dissip[cell_id] = extra_i[phase_id].cmu * energi[cell_id]
+        * extra_i[phase_id].cvar_omg->val[cell_id];
+  }
 
   /* Compute anisotropic value of the lagr_time and diffusion matrix */
   /* complete model */
@@ -302,6 +322,7 @@ compute_anisotropic_prop(int            iprev,
       if (stat_w->vals[cell_wise_integ][cell_id] >
             cs_glob_lagr_stat_options->threshold) {
         /* compute mean relative velocity <Up> - <Us>*/
+        // TODO: add case for neptune_cfd
         for (int i = 0; i < 3; i++)
           dir[i] = stat_vel->vals[cell_wise_integ][cell_id * 3 + i]
                  - stat_vel_s->vals[cell_wise_integ][cell_id * 3 + i];
@@ -335,6 +356,13 @@ compute_anisotropic_prop(int            iprev,
          * frame */
         cs_math_3_normalize(dir, dir);
 
+        /* Compute the 4 Euler parameters using the projection of
+         * two vectors (note that the direction in the local reference
+         * frame "_r" is (1, 0, 0) by convention */
+        const cs_real_t dir_r[3] = {1.0, 0.0, 0.0};
+        cs_math_quaternions_from_2_vectors(dir, dir_r,
+                                           anisotropic_euler[cell_id]);
+
         /* Compute k_tilde in each cell */
         cs_real_t ktil = 0;
         if (extra_i[phase_id].itytur == 3) {
@@ -346,12 +374,66 @@ compute_anisotropic_prop(int            iprev,
           ktil = 3.0 * (rnn * bbi[0] + (tr_r -rnn) * bbi[1])
                / (2.0 * (bbi[0] + bbi[1] + bbi[2]));
           /* bbi[1] == bbi[2] is used */
-        }
-        else if (   extra_i[phase_id].itytur == 2
-                 || extra_i[phase_id].itytur == 4
-                 || extra_i[phase_id].itytur == 5
-                 || extra_i[phase_id].iturb == CS_TURB_K_OMEGA) {
-          ktil  = energi[cell_id];
+
+          /* Specific treatment for a generic GLM */
+          if (cs_glob_lagr_model->transport_GLM_rotated) {
+            /* Compute new matrix A such that AR = - nu_f * Lapl R
+             * Note that -nu_f Lapl R is directly given by difflamij
+             * which is computed in turb/cs_les_balance.cpp */
+            cs_real_6_t A;
+            cs_real_6_t rij_inv;
+            cs_math_sym_33_inv_cramer(rij,rij_inv); // Inverse matrix Rij
+            cs_les_balance_t *les_balance = cs_get_glob_les_balance();
+            cs_real_6_t *difflamij = les_balance->brij->difflamij;
+            cs_math_sym_33_product(difflamij[cell_id], rij_inv, A);
+
+            /* Now we rotate the matrix A in the frame of reference
+             * where the matrix G is diagonal = (1/2 + 3/4C0) eps/k delta_ij */
+            cs_real_33_t trans_m;
+            /* Rotate the frame of reference with respect to the
+             * mean relative velocity direction by calling the
+             * function to transform the 4 euler parameters into a rotation */
+            cs_math_quaternions_into_33_rotation(anisotropic_euler[cell_id],
+                trans_m);
+
+            /* Now transform A in this local frame of reference */
+            cs_real_6_t a_rotated;
+            cs_math_sym_33_transform_a_to_r(A, trans_m, a_rotated);
+            /* Add the components of G on the diagonal of the rotated A*/
+            for (int i = 0; i < 3; i++)
+              a_rotated[i] -= 1./cl * dissip[cell_id] / energi[cell_id] ;
+
+            /* Compute the eigenvalues and eigenvectors of a_rotated */
+            cs_real_t eig_val[3];
+            cs_real_t eig_vec[3][3];
+            cs_real_t tol_err = 1.0e-12;
+            // Define a_rot = equivalent [3][3] matrix
+            cs_real_33_t a_rot;
+            a_rot[0][0] = a_rotated[0];
+            a_rot[0][1] = a_rotated[3];
+            a_rot[0][2] = a_rotated[5];
+            a_rot[1][0] = a_rotated[3];
+            a_rot[1][1] = a_rotated[1];
+            a_rot[1][2] = a_rotated[4];
+            a_rot[2][0] = a_rotated[5];
+            a_rot[2][1] = a_rotated[4];
+            a_rot[2][2] = a_rotated[2];
+            // Call specific function for eigevalues & eigenvectors
+            cs_math_33_eig_val_vec(a_rot, tol_err, eig_val, eig_vec);
+
+            /* The eigenvalues are the new Lagrangian time */
+            for (int id = 0; id < 3; id++)
+              anisotropic_lagr_time[cell_id][id] = eig_val[id];
+            /* The eigenvectors are the corresponding rotations
+             * needed to reach this frame of reference */
+            for (int id = 0; id < 4; id++) {
+              /* Call function to transform the rotation matrix
+               * (which is based on the three eigenvectors)
+               * into a quaternion (i.e. 4 Euler parameters for the rotation) */
+              cs_math_33_rotation_into_quaternions(eig_vec,
+                  anisotropic_euler[cell_id]);
+            }
+          }
         }
 
         for (int i = 0; i <3; i++) {
@@ -366,17 +448,10 @@ compute_anisotropic_prop(int            iprev,
           // FIXME: check if 2nd order scheme still works
           // especially if reading the anisotropic_euler makes sense
           // (provided it has been computed once before)
-          /* the direction in the local reference frame "_r" is (1, 0, 0)
-           * by convention */
-          const cs_real_t dir_r[3] = {1.0, 0.0, 0.0};
-
-          /* Compute Euler quaternions */
-          cs_real_t euler[4];
-          cs_math_quaternions_from_2_vectors(dir, dir_r, euler);
-
           // Compute the matrix to change the Frame of Reference
           // using the function to transform the 4 euler parameters into a rotation
-          cs_math_quaternions_into_33_rotation(euler, trans_m);
+          cs_math_quaternions_into_33_rotation(anisotropic_euler[cell_id],
+                                               trans_m);
 
           /* transform grad(Tl) in the local
            * reference frame */
@@ -433,6 +508,8 @@ compute_anisotropic_prop(int            iprev,
  * \param[out]  grad_lagr_time_r_et    anisotropic Lagrangian time gradient in
  *                                     relative basis
  * \param[out]  grad_lagr_time         Lagrangian time gradient
+ * \param[in]   anisotropic_euler      Eigenvector to rotate the frame of reference
+ *                                      in the local one (where TL is diagonal)
  *
  */
 /*----------------------------------------------------------------------------*/
@@ -447,7 +524,8 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
                                   cs_real_3_t   *anisotropic_lagr_time,
                                   cs_real_3_t   *anisotropic_bx,
                                   cs_real_3_t   *grad_lagr_time_r_et,
-                                  cs_real_3_t   *grad_lagr_time)
+                                  cs_real_3_t   *grad_lagr_time,
+                                  cs_real_4_t   *anisotropic_euler)
 {
   /* TODO compute cell properties in coherence with iprev */
   cs_lnum_t n_cells_with_ghosts = cs_glob_mesh->n_cells_with_ghosts;
@@ -828,7 +906,8 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
                                anisotropic_lagr_time,
                                anisotropic_bx,
                                grad_lagr_time_r_et,
-                               grad_lagr_time);
+                               grad_lagr_time,
+                               anisotropic_euler);
 
 
     else if (grad_lagr_time_r_et != nullptr) {

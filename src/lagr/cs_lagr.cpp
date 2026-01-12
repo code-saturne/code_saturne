@@ -191,6 +191,7 @@ static cs_lagr_model_t  _lagr_model
      .fragmentation = 0,
      .n_stat_classes = 0,
      .n_user_variables = 0,
+     .transport_GLM_rotated = false,
      .viscous_terms = false,
      .verbosity = 0};
 
@@ -401,6 +402,7 @@ static void _lagr_map_field_initialize(cs_lnum_t n_phases)
     _lagr_extra_module[phase_id].anisotropic_lagr_time = nullptr;
     _lagr_extra_module[phase_id].anisotropic_bx = nullptr;
     _lagr_extra_module[phase_id].grad_lagr_time_r_et = nullptr;
+    _lagr_extra_module[phase_id].anisotropic_euler = nullptr;
     for (int i = 0; i < 9; i++)
       _lagr_extra_module[phase_id].grad_cov_skp[i] = nullptr;
     for (int i = 0; i < 6; i++)
@@ -1055,6 +1057,7 @@ cs_lagr_finalize(void)
     CS_FREE(extra[phase_id].grad_lagr_time_r_et);
     CS_FREE(extra[phase_id].anisotropic_lagr_time);
     CS_FREE(extra[phase_id].anisotropic_bx);
+    CS_FREE(extra[phase_id].anisotropic_euler);
   }
   CS_FREE(cs_glob_lagr_extra_module);
 }
@@ -2160,6 +2163,9 @@ cs_lagr_solve_time_step(const int         itypfb[],
           CS_MALLOC_HD(extra_i[phase_id].anisotropic_lagr_time, ncelet, cs_real_3_t, cs_alloc_mode);
           CS_MALLOC_HD(extra_i[phase_id].anisotropic_bx, ncelet, cs_real_3_t, cs_alloc_mode);
         }
+        if (cs_glob_lagr_model->transport_GLM_rotated ) {
+          CS_MALLOC_HD(extra_i[phase_id].anisotropic_euler, ncelet, cs_real_4_t, cs_alloc_mode);
+        }
         cs_lagr_aux_mean_fluid_quantities(0,
                                           phase_id,
                                           extra_i[phase_id].lagr_time,
@@ -2169,7 +2175,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
                                           extra_i[phase_id].anisotropic_lagr_time,
                                           extra_i[phase_id].anisotropic_bx,
                                           extra_i[phase_id].grad_lagr_time_r_et,
-                                          extra_i[phase_id].grad_lagr_time);
+                                          extra_i[phase_id].grad_lagr_time,
+                                          extra_i[phase_id].anisotropic_euler);
       }
       else if (   (   cs_glob_lagr_time_scheme->iilagr
                    != CS_LAGR_FROZEN_CONTINUOUS_PHASE)
@@ -2192,6 +2199,9 @@ cs_lagr_solve_time_step(const int         itypfb[],
                        cs_real_3_t);
           if (extra_i[phase_id].grad_lagr_time != nullptr)
             CS_REALLOC(extra_i[phase_id].grad_lagr_time, n_cells_ext, cs_real_3_t);
+          if (extra_i[phase_id].anisotropic_euler != nullptr)
+            CS_REALLOC(extra_i[phase_id].anisotropic_euler, n_cells_ext, cs_real_4_t);
+
         }
 
         /* TODO compute carrier field at current and previous time step
@@ -2205,7 +2215,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
                                           extra_i[phase_id].anisotropic_lagr_time,
                                           extra_i[phase_id].anisotropic_bx,
                                           extra_i[phase_id].grad_lagr_time_r_et,
-                                          extra_i[phase_id].grad_lagr_time);
+                                          extra_i[phase_id].grad_lagr_time,
+                                          extra_i[phase_id].anisotropic_euler);
       }
       else {
         if (   cs_glob_lagr_model->modcpl > 0
@@ -2216,7 +2227,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
                                  extra_i[phase_id].anisotropic_lagr_time,
                                  extra_i[phase_id].anisotropic_bx,
                                  extra_i[phase_id].grad_lagr_time_r_et,
-                                 extra_i[phase_id].grad_lagr_time);
+                                 extra_i[phase_id].grad_lagr_time,
+                                 extra_i[phase_id].anisotropic_euler);
 
         if (cs_glob_lagr_model->cs_used == 0)
           compute_particle_covariance_gradient(phase_id,

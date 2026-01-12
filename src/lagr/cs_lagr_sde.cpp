@@ -451,47 +451,9 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
 
     case CS_LAGR_SHAPE_SPHERE_MODEL:
       {
-        /* Compute the main direction in the global reference
-         * frame */
-        cs_real_t dir[3];
-
-        /* Obtain the mean particle velocity for each cell */
-        const cs_real_t *mean_part_vel_p = stat_vel->val + (cell_id * 3);
-        const cs_real_t *mean_part_vel_s = stat_vel_s->val + (cell_id * 3);
-
-        /* Get Relative mean velocity */
-        if (cs_glob_lagr_model->cs_used == 1) {
-          /* Relative mean velocity
-           * <u_p> - <u_s> = <u_r>
-           * See Minier et al 2024.
-           * */
-          for (cs_lnum_t i = 0; i < 3; i++)
-            dir[i] = mean_part_vel_p[i] - mean_part_vel_s[i];
-        }
-        else { /* neptune is used */
-          /* Change the direction since mean part vel contains
-           * mean velocity fluctuation */
-          cs_real_t fluid_vel_mel[3] = {0., 0., 0.};
-          for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
-            const cs_real_t *fluid_vel = cvar_vel[phase_id][cell_id];
-            for (cs_lnum_t i = 0; i < 3; i++) {
-              fluid_vel_mel[i] += lambda[phase_id] * fluid_vel[i];
-            }
-          }
-          for (cs_lnum_t i = 0; i < 3; i++)
-            dir[i] = mean_part_vel_p[i] - fluid_vel_mel[i];
-        }
-
-        cs_math_3_normalize(dir, dir);
-
-        /* the direction in the local reference frame "_r" is (1, 0, 0)
-         * by convention */
-        const cs_real_t dir_r[3] = {1.0, 0.0, 0.0};
-
-        /* Compute Euler quaternions */
-        cs_real_t euler[4];
-        cs_math_quaternions_from_2_vectors(dir, dir_r, euler);
-
+        /* Use Euler angles for spheres
+           /  Note that they are computed in aux_mean_fluid_quantities.cpp */
+        const cs_real_t *euler = p_set.attr_real_ptr(p_id, CS_LAGR_EULER);
         // Compute the matrix to change the Frame of Reference
         // using the function to transform the 4 euler parameters into a rotation
         cs_math_quaternions_into_33_rotation(euler, trans_m);

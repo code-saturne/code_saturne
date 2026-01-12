@@ -435,6 +435,15 @@ cs_lagr_particle_attr_initialize(void)
   attr_keys[CS_LAGR_DIAMETER][0] = CS_LAGR_P_RVAR_TS;
   attr_keys[CS_LAGR_DIAMETER][1] = ++loc_count;
 
+  /* Activate Euler angles for spheroids / generic GLM
+   * in order to compute a local frame of reference */
+  // FIXME: change to activate all the time ?
+  if (lagr_model->shape != CS_LAGR_SHAPE_SPHERE_MODEL
+      || lagr_model->transport_GLM_rotated ) {
+    attr_keys[CS_LAGR_EULER][1] = ++loc_count;
+    attr_keys[CS_LAGR_EULER][2] = 4;
+  }
+
   /* Non-sphere model
    * TODO activate only required arrays */
   if (lagr_model->shape != CS_LAGR_SHAPE_SPHERE_MODEL) {
@@ -453,9 +462,6 @@ cs_lagr_particle_attr_initialize(void)
 
     attr_keys[CS_LAGR_ANGULAR_VEL][1] = ++loc_count;
     attr_keys[CS_LAGR_ANGULAR_VEL][2] = 3;
-
-    attr_keys[CS_LAGR_EULER][1] = ++loc_count;
-    attr_keys[CS_LAGR_EULER][2] = 4;
 
     attr_keys[CS_LAGR_SHAPE_PARAM][0] = CS_LAGR_P_RPRP;
     attr_keys[CS_LAGR_SHAPE_PARAM][1] = ++loc_count;

@@ -355,6 +355,9 @@ typedef struct {
 
   int  n_user_variables;
 
+  /* Handle transport with a generic GLM */
+  bool transport_GLM_rotated;
+
   /*! Take viscous terms into account */
   bool viscous_terms;
 
@@ -1067,6 +1070,10 @@ typedef struct {
   /* (if extended_t_scheme && modcpl) gradient of anistropic Lagrangien time
    * int the relative basis used to compute beta */
   cs_real_3_t *grad_lagr_time_r_et;
+
+  /* (if transport_GLM_generic) save the Euler parameters associated to the
+   * eigenvectors for the rotation matrix (where G is diagonal) */
+  cs_real_4_t *anisotropic_euler;
 
 } cs_lagr_extra_module_t;
 
