@@ -209,16 +209,10 @@ _init_r_flags(const cs_mesh_t  *m,
         }
       }
     }
-  }
-
-  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
-    if (f_r_flag[f_id] < 1)
-      continue;
-    const cs_lnum_t *c_ids = m->i_face_cells[f_id];
-    const char i_f_r_gen = f_r_flag[f_id];
-    char f_c_r_level[2] = {c_r_level[c_ids[0]], c_r_level[c_ids[1]]};
-    if (i_f_r_gen < f_c_r_level[0] || i_f_r_gen < f_c_r_level[1])
-      f_r_flag[f_id] = 0;
+    if (i_f_r_gen > 0) {
+      if (i_f_r_gen < f_c_r_level[0] || i_f_r_gen < f_c_r_level[1])
+        f_r_flag[f_id] = 0;
+    }
   }
 
   if (cell_flag != nullptr) {
@@ -308,7 +302,7 @@ _cell_equiv(cs_mesh_t   *m,
 
   for (cs_lnum_t i = 0; i < n_cells; i++) {
     cs_lnum_t j = c_o2n[i];
-    if (cell_flag[i] == 0 || c_r_flag[j] == 0)
+    if (c_r_flag[i] == 0)
       c_r_flag[j] = 0;
   }
 
