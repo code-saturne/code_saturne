@@ -566,11 +566,21 @@ _extract_face_r_gen(cs_mesh_t        *mesh,
   /* Now copy face refinement generation
      (or index in root cell for boundary faces) */
 
-  for (cs_lnum_t i = 0; i < n_faces; i++) {
-    if (face_type[i] == '\0')
-      mesh->i_face_r_gen[n_i_faces++] = face_r_gen[i];
-    else
-      mesh->b_face_r_c_idx[n_b_faces++] = face_r_gen[i];
+  if (face_r_gen != nullptr) {
+    for (cs_lnum_t i = 0; i < n_faces; i++) {
+      if (face_type[i] == '\0')
+        mesh->i_face_r_gen[n_i_faces++] = face_r_gen[i];
+      else
+        mesh->b_face_r_c_idx[n_b_faces++] = face_r_gen[i];
+    }
+  }
+  else {
+    for (cs_lnum_t i = 0; i < n_faces; i++) {
+      if (face_type[i] == '\0')
+        mesh->i_face_r_gen[n_i_faces++] = 0;
+      else
+        mesh->b_face_r_c_idx[n_b_faces++] = 127;  // For future update
+    }
   }
 }
 
@@ -1367,13 +1377,11 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   CS_FREE(_face_gc_id);
 
-  if (mesh->have_r_gen) {
-    _extract_face_r_gen(mesh,
-                        _n_faces,
-                        _face_r_gen,
-                        face_type);
-    CS_FREE(_face_r_gen);
-  }
+  _extract_face_r_gen(mesh,
+                      _n_faces,
+                      _face_r_gen,
+                      face_type);
+  CS_FREE(_face_r_gen);
 
   CS_FREE(face_type);
 }
