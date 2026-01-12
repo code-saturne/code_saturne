@@ -162,8 +162,10 @@ _init_r_flags(const cs_mesh_t  *m,
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_i_faces = m->n_i_faces;
 
+  char *c_r_level;
+  CS_MALLOC(c_r_level, n_cells_ext, char);
   for (cs_lnum_t i = 0; i < n_cells_ext; i++) {
-    c_r_flag[i] = 0;
+    c_r_level[i] = 0;
   }
 
   for (cs_lnum_t i = 0; i < n_i_faces; i++) {
@@ -177,13 +179,17 @@ _init_r_flags(const cs_mesh_t  *m,
       continue;
     for (cs_lnum_t i = 0; i < 2; i++) {
       cs_lnum_t c_id = m->i_face_cells[f_id][i];
-      if (f_r_flag[f_id] > c_r_flag[c_id])
-        c_r_flag[c_id] = f_r_flag[f_id];
+      if (f_r_flag[f_id] > c_r_level[c_id])
+        c_r_level[c_id] = f_r_flag[f_id];
     }
   }
 
   if (halo != nullptr)
-    cs_halo_sync_untyped(m->halo, CS_HALO_STANDARD, 1, c_r_flag);
+    cs_halo_sync_untyped(m->halo, CS_HALO_STANDARD, 1, c_r_level);
+
+  for (cs_lnum_t i = 0; i < n_cells_ext; i++) {
+    c_r_flag[i] = c_r_level[i];
+  }
 
   /* If a cell shares a face of a generation at least as high as the
      current refinement level with a cell of higher refinement,
@@ -193,11 +199,11 @@ _init_r_flags(const cs_mesh_t  *m,
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
     const cs_lnum_t *c_ids = m->i_face_cells[f_id];
     const char i_f_r_gen = f_r_flag[f_id];
-    char f_c_r_flag[2] = {c_r_flag[c_ids[0]], c_r_flag[c_ids[1]]};
+    char f_c_r_level[2] = {c_r_level[c_ids[0]], c_r_level[c_ids[1]]};
     for (int i = 0; i < 2; i++) {
       int j = (i+1)%2;
-      if (i_f_r_gen >= f_c_r_flag[i]) { // mergeable face
-        if (f_c_r_flag[j] > f_c_r_flag[i]) {
+      if (i_f_r_gen >= f_c_r_level[i]) { // mergeable face
+        if (f_c_r_level[j] > f_c_r_level[i]) {
           c_r_flag[c_ids[i]] = 0;
           f_r_flag[f_id] = 0;
         }
@@ -210,8 +216,8 @@ _init_r_flags(const cs_mesh_t  *m,
       continue;
     const cs_lnum_t *c_ids = m->i_face_cells[f_id];
     const char i_f_r_gen = f_r_flag[f_id];
-    char f_c_r_flag[2] = {c_r_flag[c_ids[0]], c_r_flag[c_ids[1]]};
-    if (i_f_r_gen != f_c_r_flag[0] || f_c_r_flag[0] != f_c_r_flag[1])
+    char f_c_r_level[2] = {c_r_level[c_ids[0]], c_r_level[c_ids[1]]};
+    if (i_f_r_gen < f_c_r_level[0] || i_f_r_gen < f_c_r_level[1])
       f_r_flag[f_id] = 0;
   }
 
@@ -221,6 +227,8 @@ _init_r_flags(const cs_mesh_t  *m,
         c_r_flag[i] = 0;
     }
   }
+
+  CS_FREE(c_r_level);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1820,12 +1828,12 @@ cs_mesh_coarsen_cells_dest_rank(const cs_mesh_t  *m,
         reloop = 1;
       }
 
-      cs_parall_max(1, CS_INT_TYPE, &reloop);
-
-      if (m->halo != nullptr)
-        cs_halo_sync(m->halo, CS_HALO_STANDARD, 1, dest_rank);
-
     }
+
+    cs_parall_max(1, CS_INT_TYPE, &reloop);
+
+    if (m->halo != nullptr)
+      cs_halo_sync(m->halo, CS_HALO_STANDARD, 1, dest_rank);
 
   } while (reloop);
 
