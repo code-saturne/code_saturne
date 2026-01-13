@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2025 EDF S.A.
+# Copyright (C) 1998-2026 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -85,7 +85,6 @@ fvm_to_ensight_case.h \
 fvm_to_histogram.h \
 fvm_to_medcoupling.h \
 fvm_to_melissa.h \
-fvm_to_vtk_histogram.h \
 fvm_to_plot.h \
 fvm_to_time_plot.h \
 fvm_writer_helper.h \
@@ -238,8 +237,7 @@ $(CATALYST_CPPFLAGS) $(MPI_CPPFLAGS)
 libfvm_catalyst_a_CXXFLAGS = \
 $(CXXFLAGS_DBG) $(CXXFLAGS_OPT) \
 $(CATALYST_CXXFLAGS) $(CXXFLAGS_SHARED)
-libfvm_catalyst_a_SOURCES = fvm_to_catalyst.cxx \
-                            fvm_to_vtk_histogram.cxx
+libfvm_catalyst_a_SOURCES = fvm_to_catalyst.cxx
 noinst_LIBRARIES += libfvm_catalyst.a
 
 if HAVE_PLUGIN_CATALYST
@@ -257,8 +255,7 @@ local_libraries_add += fvm_catalyst.${SHARED_LIB_EXT}
 else
 
 libfvm_filters_a_LIBADD += \
-libfvm_catalyst_a-fvm_to_catalyst.$(OBJEXT) \
-libfvm_catalyst_a-fvm_to_vtk_histogram.$(OBJEXT)
+libfvm_catalyst_a-fvm_to_catalyst.$(OBJEXT)
 
 endif
 

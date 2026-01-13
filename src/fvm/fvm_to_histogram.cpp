@@ -6,7 +6,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -53,7 +54,6 @@
 #include "fvm/fvm_io_num.h"
 #include "fvm/fvm_nodal.h"
 #include "fvm/fvm_nodal_priv.h"
-#include "fvm/fvm_to_vtk_histogram.h"
 #include "fvm/fvm_writer_helper.h"
 #include "fvm/fvm_writer_priv.h"
 
@@ -100,45 +100,9 @@ typedef struct {
  * Static global variables
  *============================================================================*/
 
-#if defined(HAVE_PLUGIN_CATALYST)
-static void * _catalyst_plugin = nullptr;
-#endif
-
-#if defined(HAVE_CATALYST)
-static fvm_to_histogram_display_t  *_fvm_to_vtk_display_histogram_png = nullptr;
-#endif
-
 /*============================================================================
  * Private function definitions
  *============================================================================*/
-
-#if defined(HAVE_PLUGIN_CATALYST)
-
-/*----------------------------------------------------------------------------
- * Load Catalyst plugin.
- *----------------------------------------------------------------------------*/
-
-static void
-_load_plugin_catalyst(void)
-{
-  /* Open from shared library */
-
-  _catalyst_plugin = cs_base_dlopen_plugin("fvm_catalyst");
-
-  /* Load symbols from shared library */
-
-  /* Function pointers need to be double-casted so as to first convert
-     a (void *) type to a memory address and then convert it back to the
-     original type. Otherwise, the compiler may issue a warning.
-     This is a valid ISO C construction. */
-
-  _fvm_to_vtk_display_histogram_png = (fvm_to_histogram_display_t *) (intptr_t)
-    cs_base_get_dl_function_pointer(_catalyst_plugin,
-                                    "fvm_to_vtk_display_histogram_png",
-                                    true);
-}
-
-#endif /* defined(HAVE_PLUGIN_CATALYST)*/
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -209,7 +173,7 @@ _display_histogram_txt(cs_real_t                   var_min,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * Display histograms in tex format.
+ * Display histograms in TeX format.
  *
  * parameters:
  *  var_min  <--  minimum variable value
@@ -274,6 +238,169 @@ _display_histogram_tex(cs_real_t                   var_min,
     fprintf(w->f, "\\end{tikzpicture}\n");
     fprintf(w->f, "\\end{center}\n");
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * Display histograms in SVG format.
+ *
+ * parameters:
+ *  var_min  <--  minimum variable value
+ *  var_max  <--  maximum variable value
+ *  count    <--  count for each histogram slice
+ *  w        <--> histogram writer
+ *  var_name <--  name of the variable
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_display_histogram_svg(cs_real_t                   var_min,
+                       cs_real_t                   var_max,
+                       cs_gnum_t                   count[],
+                       fvm_to_histogram_writer_t  *w,
+                       char                       *var_name)
+{
+  int canvas_w = 650, canvas_h = 650;
+  // Scaling factors from percentage to absolute.
+  double x_scale = canvas_w/100., y_scale = canvas_h/100.;
+  double var_step = cs::abs(var_max - var_min) / w->n_sub;
+
+  if (var_step <= 0)
+    return;
+
+  time_t  date;
+  char  str_date[81];
+  if (   time(&date) == -1
+      || strftime(str_date, 80, "%c", localtime(&date)) == 0)
+    strcpy(str_date, "");
+
+  static const char fmt_header[] =
+    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n"
+    "<svg xmlns=\"http://www.w3.org/2000/svg\"\n"
+    "     xmlns:xlink=\"http://www.w3.org/1999/xlink\"\n"
+    "     width=\"%d\" height=\"%d\">\n"
+    "<title>code_saturne %s export</title>\n"
+    "<desc>\n"
+    "Creator: code_saturne, (C) 2026 EDF S.A.\n"
+    "For: code_saturne\n"
+    "CreationDate: %s\n"
+    "</desc>\n"
+    "<defs>\n"
+    "</defs>\n"
+    "<g>\n";
+
+  static const char fmt_footer[] =
+    "</g>\n"
+    "</svg>\n";
+
+  /* Open the tex file if non-zero histogram */
+  w->f = fopen(w->file_name, "w");
+
+  if (w->f ==  nullptr) {
+    bft_error(__FILE__, __LINE__, errno,
+              _("Error opening file: \"%s\""), w->file_name);
+    return;
+  }
+
+  fprintf(w->f, fmt_header, canvas_w, canvas_h, var_name, str_date);
+
+  const char fmt_var[] =
+    "<text fill=\"#000000\" x=\"%d\" y=\"%d\" font-size=\"16\" "
+    "text-anchor=\"middle\" alignment-baseline=\"middle\" "
+    "font-family=\"Helvetica\">%s</text>\n";
+  const char fmt_rectangle[] =
+    "<rect fill=\"#0000ff\" shape-rendering=\"crispEdges\" "
+    "x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\"/>\n";
+
+  {
+    int x = 50*x_scale;
+    int y = 95*x_scale;
+    fprintf(w->f, fmt_var, x, y, var_name);
+  }
+
+  cs_gnum_t count_max = 0;
+  for (int i = 0 ; i < w->n_sub ; i++)
+    count_max = cs::max(count_max, count[i]);
+
+  // Use sizes in percentages for easier change of scale and comprehension.
+
+  float t_margin = 5, b_margin = 15;
+  float l_margin = 10, r_margin = 5;
+  float bar_gap = 0;
+  if (w->n_sub > 0)
+    bar_gap = 10/w->n_sub;
+
+  float bar_width = (100 - l_margin - r_margin) / w->n_sub;
+  float vscale = 0.;
+  if (count_max > 0)
+    vscale = (100 - t_margin - b_margin) / count_max;
+  for (int i = 0 ; i < w->n_sub ; i++) {
+    float h = count[i] * vscale;
+    float px = l_margin + bar_width*i;
+    float py = 100 - b_margin - h;
+    int x = (px+bar_gap)*x_scale;
+    int dx = (bar_width-2*bar_gap)*x_scale;
+    int y = py*y_scale;
+    int dy = h*x_scale;
+    fprintf(w->f, fmt_rectangle, x, y, dx, dy);
+  }
+
+  // It seems coordinates for transform cannot be given as a percentage,
+  // so compute explicit values for x axis text coordinates,
+  // (and for the rest for consistency).
+
+  const char fmt_line[] =
+    "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" "
+    "style=\"fill:none;stroke:black;stroke-width:%d\"/>\n";
+
+  float yb = 100 - b_margin;
+
+  {
+    int x0 = l_margin*x_scale;
+    int x1 = (100-r_margin)*x_scale;
+    int y0 = yb*y_scale;
+    int y1 = t_margin*y_scale;
+    fprintf(w->f, fmt_line, x0, y0, x1, y0, 1);
+    fprintf(w->f, fmt_line, x0, y0, x0, y1, 1);
+  }
+
+  float tw = 2; // tick width
+  int n_w_ticks = w->n_sub;
+  while (n_w_ticks > 8)  // keep things readable
+    n_w_ticks /= 2;
+  double x_t_min = l_margin + bar_width/2;
+  double x_t_max = 100 - r_margin - bar_width/2;
+  double t_step = (x_t_max - x_t_min) / (double)(n_w_ticks-1);
+  double t_v_step = (var_max - var_min) / (double)(n_w_ticks-1);
+
+  const char fmt_tick_label[] =
+    "<text fill=\"#000000\" x=\"%d\" y=\"%d\" font-size=\"12\" "
+    "text-anchor=\"middle\" alignment-baseline=\"middle\" "
+    "font-family=\"Helvetica\">%3g</text>\n";
+  const char fmt_y_label[] =
+    "<text fill=\"#000000\" font-size=\"12\" "
+    "text-anchor=\"middle\" alignment-baseline=\"middle\" "
+    "transform=\"translate(%d, %d) rotate(-90)\" "
+    "font-family=\"Helvetica\">Number of values</text>\n";
+
+  {
+    int y0 = (yb+tw)*y_scale;
+    int y1 = yb*y_scale;
+    int y2 = (yb+tw+3)*y_scale;
+
+    for (int i = 0; i < n_w_ticks; i++) {
+      int x = (x_t_min + i*t_step)*x_scale;
+      fprintf(w->f, fmt_line, x, y0, x, y1, 1);
+      float v = (i < n_w_ticks-1) ? var_min+t_v_step*i : var_max;
+      fprintf(w->f, fmt_tick_label, x, y2, v);
+    }
+  }
+
+  int tr_x = (l_margin-2)*x_scale;
+  int tr_y = (t_margin + (yb-t_margin)*0.5)*canvas_h/100;
+  fprintf(w->f, fmt_y_label, tr_x, tr_y);
+
+  fprintf(w->f, fmt_footer);
 }
 
 /*----------------------------------------------------------------------------
@@ -494,23 +621,24 @@ _field_output(void           *context,
 
   const cs_real_t *vals = (const cs_real_t *)buffer;
 
-  if (w->format == CS_HISTOGRAM_TXT) {
-
+  switch(w->format) {
+  case CS_HISTOGRAM_TXT:
     sprintf(w->file_name, "%s%s%s.txt", w->path, w->name, t_stamp);
     _histogram(n_vals, vals, _display_histogram_txt, w, var_name);
+    break;
 
-  } else if (w->format == CS_HISTOGRAM_TEX) {
-
+  case CS_HISTOGRAM_TEX:
     sprintf(w->file_name, "%s%s%s.tex", w->path, w->name, t_stamp);
     _histogram(n_vals, vals, _display_histogram_tex, w, var_name);
+    break;
 
-#if defined(HAVE_CATALYST)
-  } else if (w->format == CS_HISTOGRAM_PNG) {
+  case CS_HISTOGRAM_SVG:
+    sprintf(w->file_name, "%s%s%s.svg", w->path, w->name, t_stamp);
+    _histogram(n_vals, vals, _display_histogram_svg, w, var_name);
+    break;
 
-    sprintf(w->file_name, "%s%s%s.png", w->path, w->name, t_stamp);
-    _histogram(n_vals, vals, _fvm_to_vtk_display_histogram_png, w, var_name);
-
-#endif
+  default:
+    assert(0);
   }
 }
 
@@ -620,18 +748,14 @@ fvm_to_histogram_init_writer(const char             *name,
         if (!n_sub_read)
           w->n_sub = 10;
       }
-#if defined(HAVE_CATALYST)
-      else if ((l_opt == 3) && (strncmp(options + i1, "png", l_opt) == 0)) {
-        w->format = CS_HISTOGRAM_PNG;
+      else if ((l_opt == 3) &&
+               (   strncmp(options + i1, "svg", l_opt) == 0
+                || strncmp(options + i1, "png", l_opt) == 0)) {
+        w->format = CS_HISTOGRAM_SVG;
         if (!n_sub_read)
           w->n_sub = 10;
-#if defined(HAVE_PLUGIN_CATALYST)
-        _load_plugin_catalyst();
-#else
-        _fvm_to_vtk_display_histogram_png = fvm_to_vtk_display_histogram_png;
-#endif
       }
-#endif
+
       else {
         const char *n_sub_opt = options+i1;
         while (*n_sub_opt != '\0' && !isdigit(*n_sub_opt))
@@ -675,12 +799,6 @@ fvm_to_histogram_finalize_writer(void  *writer)
   fvm_to_histogram_flush(writer);
 
   CS_FREE(w->file_name);
-
-#if defined(HAVE_PLUGIN_CATALYST)
-  if (w->format == CS_HISTOGRAM_PNG)
-    cs_base_dlclose("fvm_catalyst",
-                    _catalyst_plugin); /* decrease reference count or free */
-#endif
 
   CS_FREE(w);
 

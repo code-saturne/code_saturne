@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2025 EDF S.A.
+# Copyright (C) 1998-2026 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1403,7 +1403,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         self.modelFormatH.addItem(self.tr("text"), 'text')
         self.modelFormatH.addItem(self.tr("TeX (TikZ)"), 'tex')
-        self.modelFormatH.addItem(self.tr("PNG"), 'png', warn=no_catalyst)
+        self.modelFormatH.addItem(self.tr("SVG"), 'svg')
 
         self.modelImplementC.addItem(self.tr("ParaView"), 'paraview', warn=no_catalyst2)
         self.modelImplementC.addItem(self.tr("Stub"), 'stub', warn=no_catalyst2)

@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2024 EDF S.A.
+# Copyright (C) 1998-2026 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -371,6 +371,9 @@ class XMLinit(BaseXmlInit):
             if from_vers[:3] < "8.1.0":
                 self.__backwardCompatibilityFrom_8_0()
 
+        if from_vers[:3] < "10.0.0":
+            if from_vers[:3] < "9.1.0":
+                self.__backwardCompatibilityFrom_9_0()
 
     def __backwardCompatibilityBefore_3_0(self):
         """
@@ -2048,7 +2051,7 @@ class XMLinit(BaseXmlInit):
         """
         return
 
-    def _backwardCompatibilityCurrentVersion(self):
+    def __backwardCompatibilityFrom_9_0(self):
         """
         Change XML in order to ensure backward compatibility.
         """
@@ -2070,6 +2073,23 @@ class XMLinit(BaseXmlInit):
                 idiver = n.xmlGetInt('thermal_radiative_source_term')
                 if idiver in (0, 1):
                     n.xmlRemoveChild('thermal_radiative_source_term')
+
+        return
+
+    def _backwardCompatibilityCurrentVersion(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
+
+        XMLAnaControl = self.case.xmlGetNode('analysis_control')
+        if XMLAnaControl:
+            node_out = XMLAnaControl.xmlGetNode('output')
+            if node_out:
+                lst = node_out.xmlGetNodeList('format',
+                                              name="histogram",
+                                              options="png")
+                for n in lst:
+                    n['options'] = "svg"
 
         return
 

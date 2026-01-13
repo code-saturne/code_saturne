@@ -3,6 +3,9 @@ Master (not on release branches yet)
 
 ### User changes:
 
+- Histograms: replace PNG format output option with SVG.
+  This allows removing the dependency on Catalyst for this option.
+
 - Separate mesh refinement element level and generation extraction functions.
   This allows visualizing both refinement level and generation for
   interior faces.
