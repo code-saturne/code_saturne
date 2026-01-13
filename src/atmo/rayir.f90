@@ -224,7 +224,7 @@ do k = k1, kmray
   ! in case, microphysics data is available
   if (ncray(k).gt.epzero.and.qlray(k).gt.epzero) then
     req = 1.d6*( (3.d0*romray(k)*qlray(k)) /                     &
-                 (4.d0*pi*1000.d0*ncray(k)*1.d6) )**(1./3.)      &
+                 (4.d0*pi*1000.d0*ncray(k)*1.d6) )**(1.d0/3.d0)      &
           *exp(sigc**2)
   ! otherwise
   else
