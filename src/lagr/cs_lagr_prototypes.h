@@ -296,15 +296,16 @@ cs_user_lagr_in(cs_lagr_particle_set_t         &p_set,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_lagr_rt(int              phase_id,
-                cs_lnum_t        id_p,
-                cs_real_t        re_p,
-                cs_real_t        uvwr,
-                cs_real_t        rho_f,
-                cs_real_t        rho_p,
-                cs_real_t        nu_f,
-                cs_real_t       *taup,
-                const cs_real_t  dt);
+cs_user_lagr_rt(int                        phase_id,
+                cs_lagr_particle_set_t    &p_set,
+                cs_lnum_t                  p_id,
+                cs_real_t                  re_p,
+                cs_real_t                  uvwr,
+                cs_real_t                  rho_f,
+                cs_real_t                  rho_p,
+                cs_real_t                  nu_f,
+                cs_real_t                 *taup,
+                const cs_real_t            dt);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -317,16 +318,17 @@ cs_user_lagr_rt(int              phase_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_lagr_rt_t(cs_lnum_t        id_p,
-                  cs_real_t        re_p,
-                  cs_real_t        uvwr,
-                  cs_real_t        rho_f,
-                  cs_real_t        rho_p,
-                  cs_real_t        nu_f,
-                  cs_real_t        cp_f,
-                  cs_real_t        k_f,
-                  cs_real_2_t      tempct,
-                  const cs_real_t  dt);
+cs_user_lagr_rt_t(cs_lagr_particle_set_t    &p_set,
+                  cs_lnum_t                  p_id,
+                  cs_real_t                  re_p,
+                  cs_real_t                  uvwr,
+                  cs_real_t                  rho_f,
+                  cs_real_t                  rho_p,
+                  cs_real_t                  nu_f,
+                  cs_real_t                  cp_f,
+                  cs_real_t                  k_f,
+                  cs_real_2_t                tempct,
+                  const cs_real_t            dt);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -221,7 +221,7 @@ cs_lagr_car(int                         iprev,
 
   /* Tp user computation */
 
-  cs_user_lagr_rt(phase_id, p_id, rep, rel_vel_norm,
+  cs_user_lagr_rt(phase_id, p_set, p_id, rep, rel_vel_norm,
                   romf, p_rom, xnul, taup, dt_part);
 
   /* Tc computation  computed only at the first phase*/
@@ -266,7 +266,7 @@ cs_lagr_car(int                         iprev,
     tempct[0] = d2 * p_rom * p_cp / (fnus * 6.0 * lambda_f);
 
     /* User computation for Tc */
-    cs_user_lagr_rt_t(p_id, rep, rel_vel_norm, romf, p_rom,
+    cs_user_lagr_rt_t(p_set, p_id, rep, rel_vel_norm, romf, p_rom,
                       xnul, xcp, diff_f/romf, tempct, dt_part);
 
     /* Implicit source term for return thermal coupling */

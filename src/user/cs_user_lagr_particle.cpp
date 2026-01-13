@@ -122,7 +122,7 @@ cs_user_lagr_extra_operations([[maybe_unused]] const cs_real_t  dt[])
  * User-defined modifications on the particle position and its
  * velocity.
  *
- * \param[in]   p_set           particle set
+ * \param[in]   p_set           reference to particle set
  * \param[in]   p_id            particle id
  * \param[in]   coords          old particle coordinates
  * \param[in]   dt              time step (per particle)
@@ -250,6 +250,7 @@ cs_user_lagr_in
  *     \f$ P_{rt}\f$    : Prandtl number
  *
  * \param[in]   phase_id   carrier phase_id
+ * \param[in]   p_set  reference to particle set
  * \param[in]   p_id       particle id
  * \param[in]   re_p       particle Reynolds number
  * \param[in]   uvwr       relative velocity of the particle
@@ -266,15 +267,16 @@ cs_user_lagr_in
 void
 cs_user_lagr_rt
 (
-  [[maybe_unused]] int              phase_id,
-  [[maybe_unused]] cs_lnum_t        p_id,
-  [[maybe_unused]] cs_real_t        re_p,
-  [[maybe_unused]] cs_real_t        uvwr,
-  [[maybe_unused]] cs_real_t        rho_f,
-  [[maybe_unused]] cs_real_t        rho_p,
-  [[maybe_unused]] cs_real_t        nu_f,
-  [[maybe_unused]] cs_real_t       *taup,
-  [[maybe_unused]] const cs_real_t  dt
+  [[maybe_unused]] int                             phase_id,
+  [[maybe_unused]] cs_lagr_particle_set_t         &p_set,
+  [[maybe_unused]] cs_lnum_t                       p_id,
+  [[maybe_unused]] cs_real_t                       re_p,
+  [[maybe_unused]] cs_real_t                       uvwr,
+  [[maybe_unused]] cs_real_t                       rho_f,
+  [[maybe_unused]] cs_real_t                       rho_p,
+  [[maybe_unused]] cs_real_t                       nu_f,
+  [[maybe_unused]] cs_real_t                      *taup,
+  [[maybe_unused]] const cs_real_t                 dt
 )
 {
 }
@@ -288,6 +290,7 @@ cs_user_lagr_rt
  * This function is called in a loop on the particles, so be careful
  * to avoid too costly operations.
  *
+ * \param[in]   p_set  reference to particle set
  * \param[in]   p_id   particle id
  * \param[in]   re_p   particle Reynolds number
  * \param[in]   uvwr   relative velocity of the particle
@@ -306,16 +309,17 @@ cs_user_lagr_rt
 void
 cs_user_lagr_rt_t
 (
-  [[maybe_unused]] cs_lnum_t        p_id,
-  [[maybe_unused]] cs_real_t        re_p,
-  [[maybe_unused]] cs_real_t        uvwr,
-  [[maybe_unused]] cs_real_t        rho_f,
-  [[maybe_unused]] cs_real_t        rho_p,
-  [[maybe_unused]] cs_real_t        nu_f,
-  [[maybe_unused]] cs_real_t        cp_f,
-  [[maybe_unused]] cs_real_t        k_f,
-  [[maybe_unused]] cs_real_2_t      tempct,
-  [[maybe_unused]] const cs_real_t  dt
+  [[maybe_unused]] cs_lagr_particle_set_t         &p_set,
+  [[maybe_unused]] cs_lnum_t                       p_id,
+  [[maybe_unused]] cs_real_t                       re_p,
+  [[maybe_unused]] cs_real_t                       uvwr,
+  [[maybe_unused]] cs_real_t                       rho_f,
+  [[maybe_unused]] cs_real_t                       rho_p,
+  [[maybe_unused]] cs_real_t                       nu_f,
+  [[maybe_unused]] cs_real_t                       cp_f,
+  [[maybe_unused]] cs_real_t                       k_f,
+  [[maybe_unused]] cs_real_2_t                     tempct,
+  [[maybe_unused]] const cs_real_t                 dt
 )
 {
 }
