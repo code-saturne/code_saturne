@@ -2338,6 +2338,7 @@ cs_mesh_discard_free_faces(cs_mesh_t  *mesh)
 
     CS_REALLOC(mesh->b_face_cells, j, cs_lnum_t);
     CS_REALLOC(mesh->b_face_family, j, int);
+    CS_REALLOC(mesh->b_face_r_c_idx, j, char);
     CS_REALLOC(mesh->b_face_vtx_idx, j+1, cs_lnum_t);
     CS_REALLOC(mesh->b_face_vtx_lst, k, cs_lnum_t);
     if (mesh->global_b_face_num != nullptr) {

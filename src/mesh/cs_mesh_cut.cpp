@@ -1090,11 +1090,9 @@ _resize_mesh(cs_mesh_t  *mesh,
   for (cs_lnum_t i = mesh->n_b_faces; i < mesh->n_b_faces+n_new_faces; i++)
     mesh->b_face_family[i] = _default_family_id;
 
-  if (mesh->have_r_gen) {
-    CS_REALLOC(mesh->b_face_r_c_idx, mesh->n_b_faces+n_new_faces, char);
-    for (cs_lnum_t i = mesh->n_b_faces; i < mesh->n_b_faces+n_new_faces; i++) {
-      mesh->b_face_r_c_idx[i] = 127; // Will be updated
-    }
+  CS_REALLOC(mesh->b_face_r_c_idx, mesh->n_b_faces+n_new_faces, char);
+  for (cs_lnum_t i = mesh->n_b_faces; i < mesh->n_b_faces+n_new_faces; i++) {
+    mesh->b_face_r_c_idx[i] = 127; // Will be updated
   }
 }
 

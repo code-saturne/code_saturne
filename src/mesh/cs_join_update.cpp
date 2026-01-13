@@ -3013,6 +3013,7 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
   cs_gnum_t  n_g_ib_faces = mesh->n_g_b_faces;
   cs_lnum_t  *new_f2v_idx = nullptr, *new_f2v_lst = nullptr, *ltmp = nullptr;
   int  *_new_face_family = nullptr;
+  char *_new_face_r_c_idx = nullptr;
   cs_lnum_t  *new_face_cells = nullptr;
   cs_gnum_t  *new_fgnum = nullptr, *gtmp = nullptr;
 
@@ -3028,6 +3029,7 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
   CS_MALLOC(new_f2v_idx, n_fb_faces + 1, cs_lnum_t);
   CS_MALLOC(new_face_cells, n_fb_faces, cs_lnum_t);
   CS_MALLOC(_new_face_family, n_fb_faces, int);
+  CS_MALLOC(_new_face_r_c_idx, n_fb_faces, char);
 
   if (n_ranks > 1)
     CS_MALLOC(new_fgnum, n_fb_faces, cs_gnum_t);
@@ -3069,6 +3071,7 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
 
       new_face_cells[n_fb_faces] = mesh->b_face_cells[i];
       _new_face_family[n_fb_faces] = mesh->b_face_family[i];
+      _new_face_r_c_idx[n_fb_faces] = mesh->b_face_r_c_idx[i];
 
       n_fb_faces++;
       n_face_vertices = mesh->b_face_vtx_idx[i+1] - mesh->b_face_vtx_idx[i];
@@ -3107,6 +3110,7 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
 
         new_face_cells[n_fb_faces] = mesh->b_face_cells[fid];
         _new_face_family[n_fb_faces] = new_face_family[i];
+        _new_face_r_c_idx[n_fb_faces] = 127; // Marked for later update
 
         if (n_ranks > 1)
           new_fgnum[n_fb_faces] = jmesh->face_gnum[i] + n_g_ib_faces;
@@ -3196,6 +3200,7 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
             }
 
             _new_face_family[n_fb_faces] = new_face_family[i];
+            _new_face_r_c_idx[n_fb_faces] = 127; // Marked for later update
           }
 
         }
@@ -3298,6 +3303,7 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
   CS_FREE(mesh->b_face_vtx_lst);
   CS_FREE(mesh->b_face_cells);
   CS_FREE(mesh->b_face_family);
+  CS_FREE(mesh->b_face_r_c_idx);
 
   /* Update structure */
 
@@ -3305,6 +3311,7 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
   mesh->b_face_vtx_lst = new_f2v_lst;
   mesh->b_face_cells = new_face_cells;
   mesh->b_face_family = _new_face_family;
+  mesh->b_face_r_c_idx = _new_face_r_c_idx;
   mesh->b_face_vtx_connect_size = new_f2v_idx[n_fb_faces];
 }
 

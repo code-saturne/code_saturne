@@ -1375,10 +1375,8 @@ _add_side_faces(cs_mesh_t           *m,
       CS_REALLOC(m->b_face_vtx_idx, m->n_b_faces + n_faces_add + 1, cs_lnum_t);
       CS_REALLOC(m->b_face_vtx_lst, f2v_size_ini + f2v_size_add, cs_lnum_t);
       CS_REALLOC(m->b_face_family, m->n_b_faces + n_faces_add, int);
-      if (m->have_r_gen) {
-        CS_REALLOC(m->b_face_r_c_idx, m->n_b_faces + n_faces_add, char);
-        a_face_r_c_idx = m->b_face_r_c_idx + m->n_b_faces;
-      }
+      CS_REALLOC(m->b_face_r_c_idx, m->n_b_faces + n_faces_add, char);
+      a_face_r_c_idx = m->b_face_r_c_idx + m->n_b_faces;
       a_face_cell = m->b_face_cells + m->n_b_faces;
       p_face_vtx_idx = m->b_face_vtx_idx + m->n_b_faces;
       p_face_vtx_lst = m->b_face_vtx_lst + f2v_size_ini;

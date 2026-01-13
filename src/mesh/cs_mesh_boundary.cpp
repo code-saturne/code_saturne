@@ -1627,11 +1627,9 @@ _boundary_insert(cs_mesh_t           *mesh,
                face_id,
                n_faces);
 
-  if (mesh->have_r_gen) {
-    CS_REALLOC(mesh->b_face_r_c_idx, n_b_faces + count[0], char);
-    // Mark for later update.
-    memset(mesh->b_face_r_c_idx + n_b_faces, 127, count[0]);
-  }
+  CS_REALLOC(mesh->b_face_r_c_idx, n_b_faces + count[0], char);
+  // Mark for later update.
+  memset(mesh->b_face_r_c_idx + n_b_faces, 127, count[0]);
 
   mesh->n_b_faces = n_b_faces + count[0];
   mesh->b_face_vtx_connect_size =  b_face_vtx_connect_size + count[1];
