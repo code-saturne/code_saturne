@@ -3,9 +3,14 @@ Master (not on release branches yet)
 
 ### Numerics:
 
-- Change the default algorithm to compute geometrical quantities in
+- CDO: Change the default algorithm to compute geometrical quantities in
   CDO schemes. The new choice should be more robust on very low
   quality meshes.
+
+- CDO: Several fixes in the order of building the cell system in CDOFb
+  monolithic schemes. A carful care has to be done between the
+  augmentation of the system, the static condensation and the way to
+  enforce Dirichlet boundary conditions.
 
 ### User changes:
 
