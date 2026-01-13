@@ -401,24 +401,45 @@ public:
     return _data[data_offset_(indices...)];
   }
 
+
   /*===========================================================================
-   * Getters
+   * Getters / Setters
    *==========================================================================*/
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Getter for total size.
-   *
-   * \return total size.
+   * \brief Set data pointer
    */
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  inline
-  cs_lnum_t
-  size()
+  void
+  set_data_ptr
+  (
+    T* data_ptr /*!<[in] new pointer */
+  ) const
   {
-    return _size;
+    _data = data_ptr;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Update data pointer and dimensions of span.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<typename... Args>
+  CS_F_HOST_DEVICE
+  void
+  update_data
+  (
+    T*      data_ptr, /*!<[in] New data pointer */
+    Args... dims      /*!<[in] New dimensions (integer types) */
+  ) const
+  {
+    check_operator_args_(dims...);
+    set_size_(dims...);
+    set_data_ptr(data_ptr);
   }
 
   /*--------------------------------------------------------------------------*/
@@ -451,7 +472,7 @@ public:
   extent
   (
     int i
-  )
+  ) const
   {
     return _extent[i];
   }
@@ -467,12 +488,12 @@ public:
   CS_F_HOST_DEVICE
   inline
   cs_lnum_t
-  extent
+  offset
   (
     int i
   ) const
   {
-    return _extent[i];
+    return _offset[i];
   }
 
   /*--------------------------------------------------------------------------*/
@@ -485,7 +506,7 @@ public:
 
   CS_F_HOST_DEVICE
   T*
-  data()
+  data() const
   {
     return _data;
   }
@@ -503,7 +524,7 @@ public:
   template<typename U>
   CS_F_HOST_DEVICE
   U*
-  data()
+  data() const
   {
     return reinterpret_cast<U*>(_data);
   }
@@ -555,6 +576,25 @@ public:
   (
     Args... indices /*!<[in] Input arguments (parameter pack) */
   )
+  {
+    check_sub_function_args_(indices...);
+
+    return _data + contiguous_data_offset_(indices...);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Get sub array based on index.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  template<typename... Args>
+  CS_F_HOST_DEVICE
+  T*
+  sub_array
+  (
+    Args... indices /*!<[in] Input arguments (parameter pack) */
+  ) const
   {
     check_sub_function_args_(indices...);
 
@@ -924,7 +964,8 @@ public:
     });
   }
 
-private:
+//private:
+protected:
 
   /*--------------------------------------------------------------------------*/
   /*!
@@ -1099,7 +1140,7 @@ private:
   cs_lnum_t  _extent[N];
   cs_lnum_t  _offset[N];
   cs_lnum_t  _size;
-  T*         _data;
+  mutable T*         _data;
 };
 
 } /* namespace cs */

@@ -1108,10 +1108,14 @@ namespace cs {
 /*----------------------------------------------------------------------------*/
 
 template<class T, int N = 1, layout L = layout::right>
-class array {
+class array : public mdspan<T, N, L> {
+
+private:
+  using _span = mdspan<T,N,L>;
 
 public:
 
+  using mdspan<T,N,L>::copy_data;
   /*--------------------------------------------------------------------------*/
   /*!
    * \brief Default constructor method leading to "empty container".
@@ -1119,13 +1123,9 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
-  array():
-    _extent{0},
-    _offset{0},
-    _size(0),
-    _owner(true),
-    _data(nullptr)
+  array()
   {
+    _owner = true;
 #if !defined(__CUDA_ARCH__) && \
     !defined(SYCL_LANGUAGE_VERSION) && \
     !defined(__HIP_DEVICE_COMPILE__)
@@ -1158,18 +1158,14 @@ public:
 #endif
   )
   :
-    _extent{0},
-    _offset{0},
-    _size(size),
     _owner(true),
-    _data(nullptr),
     _mode(alloc_mode)
   {
     /* Only usable for array */
     static_assert(N == 1,
                   "Instantiation using only total size only possible for "
                   " cs::array<T,1> or cs::array<T>");
-    set_size_(size);
+    _span::set_size_(size);
     allocate_(file_name, line_number);
   }
 
@@ -1195,13 +1191,10 @@ public:
 #endif
   )
   :
-    _extent{0},
-    _offset{0},
     _owner(true),
-    _data(nullptr),
     _mode(alloc_mode)
   {
-    set_size_(dims);
+    _span::set_size_(dims);
     allocate_(file_name, line_number);
   }
 
@@ -1228,10 +1221,7 @@ public:
 #endif
   )
   :
-    _extent{0},
-    _offset{0},
     _owner(true),
-    _data(nullptr),
     _mode(alloc_mode)
   {
     /* Only usable for array */
@@ -1239,7 +1229,7 @@ public:
                   "Instantiation using (size1, size2) only possible for "
                   " cs::array<T,2>");
     cs_lnum_t tmp_size[N] = {size1, size2};
-    set_size_(tmp_size);
+    _span::set_size_(tmp_size);
     allocate_(file_name, line_number);
   }
 
@@ -1267,10 +1257,7 @@ public:
 #endif
   )
   :
-    _extent{0},
-    _offset{0},
     _owner(true),
-    _data(nullptr),
     _mode(alloc_mode)
   {
     /* Only usable for array */
@@ -1278,7 +1265,7 @@ public:
                   "Instantiation using (size1, size2, size3) only possible "
                   " for cs::array<T,3>");
     cs_lnum_t tmp_size[N] = {size1, size2, size3};
-    set_size_(tmp_size);
+    _span::set_size_(tmp_size);
     allocate_(file_name, line_number);
   }
 
@@ -1307,10 +1294,7 @@ public:
 #endif
   )
   :
-    _extent{0},
-    _offset{0},
     _owner(true),
-    _data(nullptr),
     _mode(alloc_mode)
   {
     /* Only usable for array */
@@ -1318,7 +1302,7 @@ public:
                   "Instantiation using (size1, size2, size3, size4) only possible "
                   " for cs::array<T,4>");
     cs_lnum_t tmp_size[N] = {size1, size2, size3, size4};
-    set_size_(tmp_size);
+    _span::set_size_(tmp_size);
     allocate_(file_name, line_number);
   }
 
@@ -1336,13 +1320,17 @@ public:
     Args...  indices /*!<[in] Size of array */
   )
   :
-    _extent{0},
-    _offset{0},
+    _span(data, indices...),
     _owner(false)
   {
-    check_operator_args_(indices...);
-    set_size_(indices...);
-    _data = data;
+#if !defined(__CUDA_ARCH__) && \
+    !defined(SYCL_LANGUAGE_VERSION) && \
+    !defined(__HIP_DEVICE_COMPILE__)
+    _mode = cs_alloc_mode;
+#else
+   // use default and avoid compiler warnings
+    _mode = CS_ALLOC_HOST_DEVICE_SHARED;
+#endif
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1358,8 +1346,7 @@ public:
     const cs_lnum_t(&dims)[N] /*!<[in] Array of dimensions sizes */
   )
   :
-    _extent{0},
-    _offset{0},
+    _span(data, dims),
     _owner(false)
   {
 #if !defined(__CUDA_ARCH__) && \
@@ -1370,8 +1357,6 @@ public:
    // use default and avoid compiler warnings
     _mode = CS_ALLOC_HOST_DEVICE_SHARED;
 #endif
-    set_size_(dims);
-    _data = data;
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1401,7 +1386,7 @@ public:
 #endif
   )
   {
-    set_size_(other._extent);
+    _span::set_size_(other._extent);
     _mode = other._mode;
 
     /* If shallow copy new instance is not owner. Otherwise same ownership
@@ -1422,7 +1407,7 @@ public:
     // Only HOST can allocate and be owner. We avoid a compiler warning
     // since a static test is done above.
       allocate_(file_name, line_number);
-      copy_data(other._data);
+      copy_data(other.data());
 #else
       CS_UNUSED(file_name);
       CS_UNUSED(line_number);
@@ -1431,7 +1416,7 @@ public:
     else {
       CS_UNUSED(file_name);
       CS_UNUSED(line_number);
-      _data = other._data;
+      _span::set_data_ptr(other.data());
     }
   }
 
@@ -1478,11 +1463,11 @@ public:
   )
   {
     /* Swap the different members between the two references. */
-    cs::swap_objects(first._extent, second._extent);
-    cs::swap_objects(first._offset, second._offset);
-    cs::swap_objects(first._size, second._size);
+    cs::swap_objects(first._span::_extent, second._span::_extent);
+    cs::swap_objects(first._span::_offset, second._span::_offset);
+    cs::swap_objects(first._span::_size, second._span::_size);
+    cs::swap_objects(first._span::_data, second._span::_data);
     cs::swap_objects(first._owner, second._owner);
-    cs::swap_objects(first._data, second._data);
     cs::swap_objects(first._mode, second._mode);
   }
 
@@ -1515,16 +1500,16 @@ public:
 #if   !defined(__CUDA_ARCH__) && \
       !defined(SYCL_LANGUAGE_VERSION) &&  \
       !defined(__HIP_DEVICE_COMPILE__)
-      CS_FREE(_data);
+      CS_FREE(_span::_data);
 #endif
     }
     else {
-      _data = nullptr;
+      _span::set_data_ptr(nullptr);
     }
-    _size = 0;
+    _span::_size = 0;
     for (int i = 0; i < N; i++) {
-      _offset[i] = 0;
-      _extent[i] = 0;
+      _span::_offset[i] = 0;
+      _span::_extent[i] = 0;
     }
   }
 
@@ -1540,28 +1525,7 @@ public:
   mdspan<T, N, L>
   view()
   {
-    return mdspan<T,N,L>(_data, _extent);
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Get span sub-view of array, with lower dimensionality.
-   *
-   * \return mdspan view with Nd = N - Nargs.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  template<typename... Args>
-  CS_F_HOST_DEVICE
-  mdspan<T, N-sizeof...(Args), L>
-  sub_view
-  (
-    Args... indices /*!<[in] Input arguments (parameter pack) */
-  )
-  {
-    check_sub_function_args_(indices...);
-
-    return (this->view()).sub_view(indices...);
+    return mdspan<T,N,L>(_span::_data, _span::_extent);
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1587,20 +1551,20 @@ public:
     for (int i = 0; i < _N_; i++)
       s *= dims[i];
 
-    if (s != _size) {
+    if (s != _span::_size) {
 #if !defined(__CUDA_ARCH__) && \
     !defined(SYCL_LANGUAGE_VERSION) && \
     !defined(__HIP_DEVICE_COMPILE__)
       bft_error(__FILE__, __LINE__, 0,
                 _("%s: requested span has total size of %d instead of %d "
                   "for this array.\n"),
-                __func__, s, _size);
+                __func__, s, _span::_size);
 #else
       return mdspan<T,_N_,_L_>();
 #endif
     }
 
-    return mdspan<T,_N_,_L_>(_data, dims);
+    return mdspan<T,_N_,_L_>(_span::_data, dims);
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1631,180 +1595,6 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Set all values of the data array to a constant value.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST
-  void set_to_val
-  (
-    T               val,        /*!<[in] Value to set to entire data array. */
-    const cs_lnum_t n_vals = -1 /*!<[in] Number of values to copy.
-                                         If -1, default, we use array size */
-  )
-  {
-    assert(n_vals <= _size);
-
-    const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
-
-    // Explicit pointer, avoid passing internal member of class to the functor
-    T* data_ptr = _data;
-
-    cs_dispatch_context ctx;
-
-    ctx.parallel_for(loop_size, CS_LAMBDA (cs_lnum_t e_id) {
-      data_ptr[e_id] = val;
-    });
-
-    ctx.wait();
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Set all values of the data array to a constant value while providing
-   *        a dispatch context. It is up to the call to synchronize the context
-   *        after this call.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST
-  void set_to_val
-  (
-    cs_dispatch_context &ctx,        /*!< Reference to dispatch context */
-    T                    val,        /*!<[in] Value to set to entire data array. */
-    const cs_lnum_t      n_vals = -1 /*!<[in] Number of values to copy.
-                                              If -1, default, we use array size */
-  )
-  {
-    assert(n_vals <= _size);
-
-    const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
-
-    // Explicit pointer, avoid passing internal member of class to the functor
-    T* data_ptr = _data;
-
-    /* No wait here since context is passed as argument */
-    ctx.parallel_for(loop_size, CS_LAMBDA (cs_lnum_t e_id) {
-      data_ptr[e_id] = val;
-    });
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Set subset of values of the data array to a constant value.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST
-  void set_to_val_on_subset
-  (
-    T               val,      /*!<[in] Value to set to entire data array. */
-    const cs_lnum_t n_elts,   /*!<[in] Number of values to set. */
-    const cs_lnum_t elt_ids[] /*!<[in] list of ids in the subset or null (size:n_elts) */
-  )
-  {
-    assert(n_elts <= _size && n_elts >= 0);
-
-    if (n_elts < 1)
-      return;
-
-    cs_dispatch_context ctx;
-
-    if (elt_ids == nullptr)
-      set_to_val(ctx, val, n_elts);
-    else {
-      // Explicit pointer, avoid passing internal member of class to the functor
-      T* data_ptr = _data;
-
-      ctx.parallel_for(n_elts, CS_LAMBDA (cs_lnum_t e_id) {
-        data_ptr[elt_ids[e_id]] = val;
-      });
-    }
-
-    ctx.wait();
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Set a subset of values of the data array to a constant value while
-   *        providing a dispatch context. It is up to the call to synchronize
-   *        the context after this call.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST
-  void set_to_val_on_subset
-  (
-    cs_dispatch_context &ctx,      /*!< Reference to dispatch context */
-    T                    val,      /*!<[in] Value to set to entire data array. */
-    const cs_lnum_t      n_elts,   /*!<[in] Number of values to set. */
-    const cs_lnum_t      elt_ids[] /*!<[in] list of ids in the subset or null
-                                       (size:n_elts) */
-  )
-  {
-    assert(n_elts <= _size && n_elts >= 0);
-
-    if (n_elts < 1)
-      return;
-
-    /* No wait here since context is passed as argument */
-    if (elt_ids == nullptr)
-      set_to_val(ctx, val, n_elts);
-    else {
-      // Explicit pointer, avoid passing internal member of class to the functor
-      T* data_ptr = _data;
-
-      ctx.parallel_for(n_elts, CS_LAMBDA (cs_lnum_t e_id) {
-        data_ptr[elt_ids[e_id]] = val;
-      });
-    }
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Set all values of the data array to 0.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST
-  void
-  zero()
-  {
-    cs_dispatch_context ctx;
-
-    // Explicit pointer, avoid passing internal member of class to the functor
-    T* data_ptr = _data;
-
-    ctx.parallel_for(_size, CS_LAMBDA (cs_lnum_t e_id) {
-      data_ptr[e_id] = static_cast<T>(0);
-    });
-
-    ctx.wait();
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Set all values of the data array to 0.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST
-  void
-  zero
-  (
-    cs_dispatch_context &ctx /*!< Reference to dispatch context */
-  )
-  {
-    // Explicit pointer, avoid passing internal member of class to the functor
-    T* data_ptr = _data;
-
-    ctx.parallel_for(_size, CS_LAMBDA (cs_lnum_t e_id) {
-      data_ptr[e_id] = static_cast<T>(0);
-    });
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
    * \brief Initializer method for empty containers.
    */
   /*--------------------------------------------------------------------------*/
@@ -1813,10 +1603,16 @@ public:
   void
   set_empty()
   {
-    set_size_(0);
+    _span::set_size_(0);
+    _span::set_data_ptr(nullptr);
     _owner = false;
-    _data = nullptr;
+#if !defined(__CUDA_ARCH__) && \
+    !defined(SYCL_LANGUAGE_VERSION) && \
+    !defined(__HIP_DEVICE_COMPILE__)
     _mode = cs_alloc_mode;
+#else
+    _mode = CS_ALLOC_HOST_DEVICE_SHARED;
+#endif
   }
 
   /*--------------------------------------------------------------------------*/
@@ -1846,11 +1642,11 @@ public:
     assert(new_size >= 0);
 
     /* If same dimensions, nothing to do ... */
-    if (new_size == _size)
+    if (new_size == _span::_size)
       return;
 
     if (_owner) {
-      set_size_(new_size);
+      _span::set_size_(new_size);
       reallocate_(file_name, line_number);
     }
     else
@@ -1887,13 +1683,13 @@ public:
                   "Method reshape_and_copy(size, ...) only possible for "
                   " cs::array<T> or cs::array<T,1>");
     assert(new_size >= 0);
-    assert(size_to_keep <= new_size && size_to_keep <= _size);
+    assert(size_to_keep <= new_size && size_to_keep <= _span::_size);
 
     /* If same dimensions, nothing to do ... */
-    if (new_size == _size)
+    if (new_size == _span::_size)
       return;
 
-    if (!(size_to_keep <= new_size && size_to_keep <= _size))
+    if (!(size_to_keep <= new_size && size_to_keep <= _span::_size))
       bft_error(__FILE__, __LINE__, 0,
                 "%s: Data cannot be saved when new size is smaller "
                 "than size to keep.\n",
@@ -1901,7 +1697,7 @@ public:
 
     if (_owner) {
       /* If new size is larger, realloc is sufficient. */
-      set_size_(new_size);
+      _span::set_size_(new_size);
       reallocate_(file_name, line_number);
     }
     else
@@ -1934,14 +1730,14 @@ public:
     /* If same dimensions, nothing to do ... */
     bool same_dim = true;
     for (int i = 0; i < N; i++)
-      if (dims[i] != _extent[i])
+      if (dims[i] != _span::_extent[i])
         same_dim = false;
 
     if (same_dim)
       return;
 
     if (_owner) {
-      set_size_(dims);
+      _span::set_size_(dims);
       reallocate_(file_name, line_number);
     }
     else
@@ -1972,12 +1768,12 @@ public:
 #endif
   )
   {
-    assert(size_to_keep <= dims[N-1] && size_to_keep <= _extent[N-1]);
+    assert(size_to_keep <= dims[N-1] && size_to_keep <= _span::_extent[N-1]);
 
     /* If same dimensions, nothing to do ... */
     bool same_dim = true;
     for (int i = 0; i < N; i++)
-      if (dims[i] != _extent[i])
+      if (dims[i] != _span::_extent[i])
         same_dim = false;
 
     if (same_dim)
@@ -1990,27 +1786,27 @@ public:
         array<T,N,L> tmp(*this, true);
 
         /* Update instance size */
-        set_size_(dims);
+        _span::set_size_(dims);
         reallocate_(file_name, line_number);
 
         /* Local copies for the context loop */
         cs_lnum_t new_o[N], new_e[N], old_o[N], old_e[N], max_e[N];
 
         for (int i = 0; i < N; i++) {
-          new_o[i] = _offset[i];
-          new_e[i] = _extent[i];
-          old_o[i] = tmp._offset[i];
-          old_e[i] = tmp._extent[i];
+          new_o[i] = _span::offset(i);
+          new_e[i] = _span::extent(i);
+          old_o[i] = tmp.offset(i);
+          old_e[i] = tmp.extent(i);
 
           max_e[i] = (new_e[i] > old_e[i]) ? old_e[i] : new_e[i];
         }
         if (max_e[N-1] > size_to_keep && size_to_keep > 0)
           max_e[N-1] = size_to_keep;
 
-        T* old_data = tmp._data;
-        T* new_data = _data;
+        T* old_data = tmp.data();
+        T* new_data = _span::data();
 
-        cs_lnum_t loop_size = tmp._size;
+        cs_lnum_t loop_size = tmp.size();
 
         /* Loop using dispatch */
         cs_dispatch_context ctx;
@@ -2234,399 +2030,11 @@ public:
   {
     if (_mode != mode) {
       /* Since allocation mode is changed, deallocate data */
-      if (_size != 0)
+      if (_span::_size != 0)
         clear();
 
       _mode = mode;
     }
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Get sub array based on index.
-   *
-   * \return raw pointer of sub array
-   */
-  /*--------------------------------------------------------------------------*/
-
-  template<typename... Args>
-  CS_F_HOST_DEVICE
-  T*
-  sub_array
-  (
-    Args... indices /*!<[in] Input arguments (parameter pack) */
-  )
-  {
-    check_sub_function_args_(indices...);
-
-    return _data + contiguous_data_offset_(indices...);
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Const get sub array based on index.
-   *
-   * \return const raw pointer of sub array
-   */
-  /*--------------------------------------------------------------------------*/
-
-  template<typename... Args>
-  CS_F_HOST_DEVICE
-  T*
-  sub_array
-  (
-    Args... indices /*!<[in] Input arguments (parameter pack) */
-  ) const
-  {
-    check_sub_function_args_(indices...);
-
-    return _data + contiguous_data_offset_(indices...);
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Getter to data array
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST_DEVICE
-  T*
-  data()
-  {
-    return _data;
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Getter for data raw pointer with recast (casts T* to U*)
-   *
-   * @tparam U : data type used to cast T* into U*
-   *
-   * \return raw pointer (U*)
-   */
-  /*--------------------------------------------------------------------------*/
-
-  template<typename U>
-  CS_F_HOST_DEVICE
-  U*
-  data()
-  {
-    return reinterpret_cast<U*>(_data);
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Const getter to data array
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST_DEVICE
-  const T*
-  data() const
-  {
-    return _data;
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Overloaded [] operator to access the ith value (val[i]).
-   *
-   * \returns raw pointer to the i-th value
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST_DEVICE
-  inline
-  T& operator[]
-  (
-    cs_lnum_t i /*!<[in] Index of value to get */
-  )
-  {
-    return _data[i];
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Overloaded [] operator to access the ith value (val[i]).
-   *
-   * \returns raw pointer to the i-th value
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST_DEVICE
-  inline
-  T& operator[]
-  (
-    cs_lnum_t i /*!<[in] Index of value to get */
-  ) const
-  {
-    return _data[i];
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Overloaded () operator to access the ith value (val[i]).
-   *
-   * \returns raw pointer to the i-th value
-   */
-  /*--------------------------------------------------------------------------*/
-
-  template<typename Id1>
-  CS_F_HOST_DEVICE
-  inline
-  std::enable_if_t<cs::always_true<Id1>::value && N==1, T&>
-  operator()
-  (
-    Id1 i /*!<[in] Index of value to get */
-  )
-  {
-    check_operator_args_(i);
-    return _data[i];
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Overloaded [] operator to access the ith value (val[i]).
-   *
-   * \returns raw pointer to the i-th value
-   */
-  /*--------------------------------------------------------------------------*/
-
-  template<typename Id1>
-  CS_F_HOST_DEVICE
-  inline
-  std::enable_if_t<cs::always_true<Id1>::value && N==1, T&>
-  operator()
-  (
-    Id1 i /*!<[in] Index of value to get */
-  ) const
-  {
-    check_operator_args_(i);
-    return _data[i];
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Overloaded () operator to access the (i,j)-th value couple.
-   *
-   * \returns reference to the (i,j)-th value
-   */
-  /*--------------------------------------------------------------------------*/
-
-  template<typename Id1, typename Id2>
-  CS_F_HOST_DEVICE
-  inline
-  std::enable_if_t<cs::always_true<Id1, Id2>::value && N==2, T&>
-  operator()
-  (
-    Id1 i, /*!<[in] Index along first dimension */
-    Id2 j  /*!<[in] Index along second dimension */
-  )
-  {
-    check_operator_args_(i,j);
-
-    if (L == layout::right)
-      return _data[i*_offset[0] + j];
-    else if (L == layout::left)
-      return _data[i + j*_offset[1]];
-    else
-      return _data[i*_offset[0] + j*_offset[1]];
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Overloaded () operator to access the (i,j)-th value couple.
-   *
-   * \returns const reference to the (i,j)-th value
-   */
-  /*--------------------------------------------------------------------------*/
-
-  template<typename Id1, typename Id2>
-  CS_F_HOST_DEVICE
-  inline
-  std::enable_if_t<cs::always_true<Id1, Id2>::value && N==2, T&>
-  operator()
-  (
-    Id1 i, /*!<[in] Index along first dimension */
-    Id2 j  /*!<[in] Index along second dimension */
-  ) const
-  {
-    check_operator_args_(i,j);
-
-    if (L == layout::right)
-      return _data[i*_offset[0] + j];
-    else if (L == layout::left)
-      return _data[i + j*_offset[1]];
-    else
-      return _data[i*_offset[0] + j*_offset[1]];
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Overloaded () operator using N-values tuple..
-   *
-   * \returns reference to the (i_1, ...,i_n)-th value
-   */
-  /*--------------------------------------------------------------------------*/
-
-  template<typename... Args>
-  CS_F_HOST_DEVICE
-  inline
-  std::enable_if_t<cs::always_true<Args...>::value && (N!=2) && (N!=1), T&>
-  operator()
-  (
-    Args... indices /*!<[in] Input arguments (parameter pack) */
-  )
-  {
-    check_operator_args_(indices...);
-
-    return _data[data_offset_(indices...)];
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Overloaded () operator using N-values tuple..
-   *
-   * \returns const reference to the (i_1, ...,i_n)-th value
-   */
-  /*--------------------------------------------------------------------------*/
-
-  template<typename... Args>
-  CS_F_HOST_DEVICE
-  inline
-  std::enable_if_t<cs::always_true<Args...>::value && (N!=2) && (N!=1), T&>
-  operator()
-  (
-    Args... indices /*!<[in] Input arguments (parameter pack) */
-  ) const
-  {
-    check_operator_args_(indices...);
-
-    return _data[data_offset_(indices...)];
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Getter function for size per dimension (extent).
-   *
-   * \returns value of size for given dimension of data array (cs_lnum_t)
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST_DEVICE
-  inline
-  cs_lnum_t
-  extent
-  (
-    int i /*!<[in] dimension id */
-  )
-  {
-    return _extent[i];
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Getter function for size per dimension (extent).
-   *
-   * \returns value of size for given dimension of data array (cs_lnum_t)
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST_DEVICE
-  inline
-  cs_lnum_t
-  extent
-  (
-    int i /*!<[in] dimension id */
-  ) const
-  {
-    return _extent[i];
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Getter function for offset per dimension.
-   *
-   * \returns value of offset- given dimension (cs_lnum_t)
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST_DEVICE
-  inline
-  cs_lnum_t
-  offset
-  (
-    int i /*!<[in] dimension id */
-  )
-  {
-    return _offset[i];
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Getter function for offset per dimension.
-   *
-   * \returns value of offset- given dimension (cs_lnum_t)
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST_DEVICE
-  inline
-  cs_lnum_t
-  offset
-  (
-    int i /*!<[in] dimension id */
-  ) const
-  {
-    return _offset[i];
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Getter function for total size.
-   *
-   * \returns value for total size of data array (cs_lnum_t)
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST_DEVICE
-  inline
-  cs_lnum_t
-  size()
-  {
-    return _size;
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Getter function for total size.
-   *
-   * \returns value for total size of data array (cs_lnum_t)
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST_DEVICE
-  inline
-  cs_lnum_t
-  size() const
-  {
-    return _size;
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Getter function for owner status.
-   *
-   * \returns True if owner, false otherwise (bool)
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST_DEVICE
-  inline
-  bool
-  owner()
-  {
-    return _owner;
   }
 
   /*--------------------------------------------------------------------------*/
@@ -2656,89 +2064,9 @@ public:
   CS_F_HOST_DEVICE
   inline
   cs_alloc_mode_t
-  mode()
-  {
-    return _mode;
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Getter function for allocation mode.
-   *
-   * \returns memory allocation mode (cs_alloc_mode_t)
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST_DEVICE
-  inline
-  cs_alloc_mode_t
   mode() const
   {
     return _mode;
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Copy data from raw pointer, we suppose that data size is same
-   *        as that of the array.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST
-  void
-  copy_data
-  (
-    T               *data,       /*!<[in] Pointer to copy */
-    const cs_lnum_t  n_vals = -1 /*!<[in] Number of values to copy.
-                                          If -1, default, we use array size */
-  )
-  {
-    assert(n_vals <= _size);
-
-    const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
-
-    // Explicit pointer, avoid passing internal member of class to the functor
-    T* data_ptr = _data;
-
-    cs_dispatch_context ctx;
-
-    ctx.parallel_for(loop_size, CS_LAMBDA (cs_lnum_t e_id) {
-      data_ptr[e_id] = data[e_id];
-    });
-
-    ctx.wait();
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Copy data from const raw pointer, we suppose that data size is same
-   *        as that of the array.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST
-  void
-  copy_data
-  (
-    const T         *data,       /*!<[in] Pointer to copy */
-    const cs_lnum_t  n_vals = -1 /*!<[in] Number of values to copy.
-                                          If -1, default, we use array size */
-  )
-  {
-    assert(n_vals <= _size);
-
-    const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
-
-    // Explicit pointer, avoid passing internal member of class to the functor
-    T* data_ptr = _data;
-
-    cs_dispatch_context ctx;
-
-    ctx.parallel_for(loop_size, CS_LAMBDA (cs_lnum_t e_id) {
-      data_ptr[e_id] = data[e_id];
-    });
-
-    ctx.wait();
   }
 
   /*--------------------------------------------------------------------------*/
@@ -2757,14 +2085,14 @@ public:
                                          If -1, default, we use array size */
   )
   {
-    const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
+    const cs_lnum_t loop_size = (n_vals == -1) ? _span::_size : n_vals;
 
-    assert(loop_size <= _size);
-    assert(loop_size <= other._size);
+    assert(loop_size <= _span::size());
+    assert(loop_size <= other.size());
 
     // Explicit pointer, avoid passing internal member of class to the functor
-    T* data_ptr = _data;
-    T* o_data_ptr = other._data;
+    T* data_ptr = _span::data();
+    T* o_data_ptr = other.data();
 
     cs_dispatch_context ctx;
 
@@ -2773,98 +2101,6 @@ public:
     });
 
     ctx.wait();
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Copy data from a span, we suppose that data size is same
-   *        as that of the array. An assert test the sizes in debug.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST
-  void
-  copy_data
-  (
-    mdspan<T, N, L>& span,       /*!<[in] Reference to a span object */
-    const cs_lnum_t  n_vals = -1 /*!<[in] Number of values to copy.
-                                          If -1, default, we use array size */
-  )
-  {
-    const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
-
-    assert(loop_size <= _size);
-    assert(loop_size <= span._size);
-
-    // Explicit pointer, avoid passing internal member of class to the functor
-    T* data_ptr = _data;
-    T* s_data_ptr = span._data;
-
-    cs_dispatch_context ctx;
-
-    ctx.parallel_for(loop_size, CS_LAMBDA (cs_lnum_t e_id) {
-      data_ptr[e_id] = s_data_ptr[e_id];
-    });
-
-    ctx.wait();
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Copy data from raw pointer, we suppose that data size is same
-   *        as that of the array. A dispatch_context is provided, hence
-   *        no implicit synchronization which should be done by the caller.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST
-  void
-  copy_data
-  (
-    cs_dispatch_context &ctx,        /*!<[in] Reference to dispatch context  */
-    T                   *data,       /*!<[in] Pointer to copy */
-    const cs_lnum_t      n_vals = -1 /*!<[in] Number of values to copy.
-                                         If -1, default, we use array size */
-  )
-  {
-    assert(n_vals <= _size);
-    const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
-
-    // Explicit pointer, avoid passing internal member of class to the functor
-    T* data_ptr = _data;
-
-    ctx.parallel_for(loop_size, CS_LAMBDA (cs_lnum_t e_id) {
-      data_ptr[e_id] = data[e_id];
-    });
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Copy data from const raw pointer, we suppose that data size is same
-   *        as that of the array. A dispatch_context is provided, hence
-   *        no implicit synchronization which should be done by the caller.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST
-  void
-  copy_data
-  (
-    cs_dispatch_context &ctx,        /*!<[in] Reference to dispatch context  */
-    const T             *data,       /*!<[in] Pointer to copy */
-    const cs_lnum_t      n_vals = -1 /*!<[in] Number of values to copy.
-                                         If -1, default, we use array size */
-  )
-  {
-    assert(n_vals <= _size);
-    const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
-
-    // Explicit pointer, avoid passing internal member of class to the functor
-    T* data_ptr = _data;
-
-    ctx.parallel_for(loop_size, CS_LAMBDA (cs_lnum_t e_id) {
-      data_ptr[e_id] = data[e_id];
-    });
   }
 
   /*--------------------------------------------------------------------------*/
@@ -2885,91 +2121,21 @@ public:
                                               If -1, default, we use array size */
   )
   {
-    const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
+    const cs_lnum_t loop_size = (n_vals == -1) ? _span::_size : n_vals;
 
-    assert(loop_size <= _size);
-    assert(loop_size <= other._size);
+    assert(loop_size <= _span::size());
+    assert(loop_size <= other.size());
 
     // Explicit pointer, avoid passing internal member of class to the functor
-    T* data_ptr = _data;
-    T* o_data_ptr = other._data;
+    T* data_ptr = _span::data();
+    T* o_data_ptr = other.data();
 
     ctx.parallel_for(loop_size, CS_LAMBDA (cs_lnum_t e_id) {
       data_ptr[e_id] = o_data_ptr[e_id];
     });
   }
 
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Copy data from a span, we suppose that data size is same
-   *        as that of the array. A dispatch_context is provided, hence
-   *        no implicit synchronization which should be done by the caller.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST
-  void
-  copy_data
-  (
-    cs_dispatch_context &ctx,        /*!<[in] Reference to dispatch context  */
-    mdspan<T,N,L>       &span,       /*!<[in] Reference to a span object */
-    const cs_lnum_t      n_vals = -1 /*!<[in] Number of values to copy.
-                                         If -1, default, we use array size */
-  )
-  {
-    const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
-
-    assert(loop_size <= _size);
-    assert(loop_size <= span._size);
-
-    // Explicit pointer, avoid passing internal member of class to the functor
-    T* data_ptr = _data;
-    T* s_data_ptr = span._data;
-
-    ctx.parallel_for(loop_size, CS_LAMBDA (cs_lnum_t e_id) {
-      data_ptr[e_id] = s_data_ptr[e_id];
-    });
-  }
-
 private:
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Helper function to static check operator input arguments.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  template<typename... Args>
-  CS_F_HOST_DEVICE
-  static inline
-  void
-  check_operator_args_
-  (
-    Args... /*!<[in] Input arguments (parameter pack) */
-  )
-  {
-    static_assert(sizeof...(Args) == N, "Wrong number of arguments");
-    static_assert(cs::are_integral<Args...>::value, "Non integral input arguments.");
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Helper function to static check sub-function input arguments.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  template<typename... Args>
-  CS_F_HOST_DEVICE
-  static inline
-  void
-  check_sub_function_args_
-  (
-    Args... /*!<[in] Input arguments (parameter pack) */
-  )
-  {
-    static_assert(sizeof...(Args) < N, "Too many input arguments.");
-    static_assert(cs::are_integral<Args...>::value, "Non integral input arguments.");
-  }
 
   /*--------------------------------------------------------------------------*/
   /*!
@@ -2992,128 +2158,6 @@ private:
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Helper function to compute value offset.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  template<typename... Args>
-  CS_F_HOST_DEVICE
-  inline
-  cs_lnum_t
-  data_offset_
-  (
-    Args... indices /*!<[in] Input arguments (parameter pack) */
-  ) const
-  {
-    static_assert(sizeof...(Args) <= N && sizeof...(Args) > 0,
-                  "Too many or too few input arguments.");
-
-    constexpr int n_idx = sizeof...(Args);
-
-    cs_lnum_t _indices[n_idx] = {indices...};
-
-    cs_lnum_t retval = 0;
-    for (int i = 0; i < n_idx; i++)
-      retval +=_indices[i] * _offset[i];
-
-    return retval;
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Helper function to compute value offset.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  template<typename... Args>
-  CS_F_HOST_DEVICE
-  inline
-  cs_lnum_t
-  contiguous_data_offset_
-  (
-    Args... indices /*!<[in] Input arguments (parameter pack) */
-  ) const
-  {
-    static_assert(sizeof...(Args) <= N && sizeof...(Args) > 0,
-                  "Too many or too few input arguments.");
-
-    constexpr int n_idx = sizeof...(Args);
-
-    cs_lnum_t _indices[n_idx] = {indices...};
-
-    cs_lnum_t retval = 0;
-    if (L == layout::right) {
-      for (int i = 0; i < n_idx; i++)
-        retval +=_indices[i] * _offset[i];
-    }
-    else if (L == layout::left) {
-      for (int i = 0; i < n_idx; i++)
-        retval +=_indices[i] * _offset[N-1-i];
-    }
-
-    return retval;
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Set size of array based on dimensions.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST_DEVICE
-  void
-  set_size_
-  (
-    const cs_lnum_t(&dims)[N] /*!<[in] array of sizes along dimensions */
-  )
-  {
-    _size = (N > 0) ? 1 : 0;
-    for (int i = 0; i < N; i++) {
-      _extent[i] = dims[i];
-      _size *= dims[i];
-      _offset[i] = 1;
-    }
-
-    /* Compute offset values for getters */
-
-    if (L == layout::right) {
-      /* Version for Layout right */
-      for (int i = 0; i < N-1; i++) {
-        for (int j = i + 1; j < N; j++)
-          _offset[i] *= dims[j];
-      }
-    }
-    else if (L == layout::left) {
-      for (int i = N-1; i >= 1; i--) {
-        for (int j = i - 1; j >= 0; j--)
-          _offset[i] *= dims[j];
-      }
-    }
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
-   * \brief Set size of N indices (variadic template)
-   */
-  /*--------------------------------------------------------------------------*/
-
-  template<typename... Args>
-  CS_F_HOST_DEVICE
-  void
-  set_size_
-  (
-    Args... dims /*!<[in] Array of dimensions' sizes */
-  )
-  {
-    check_operator_args_(dims...);
-
-    cs_lnum_t loc_dims[N] = {dims...};
-
-    set_size_(loc_dims);
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
    * \brief Private allocator
    */
   /*--------------------------------------------------------------------------*/
@@ -3127,12 +2171,12 @@ private:
   )
   {
     const char *_ptr_name = "cs::array._data";
-    _data = static_cast<T *>(cs_mem_malloc_hd(_mode,
-                                              _size,
-                                              sizeof(T),
-                                              _ptr_name,
-                                              file_name,
-                                              line_number));
+    _span::_data = static_cast<T *>(cs_mem_malloc_hd(_mode,
+                                                     _span::_size,
+                                                     sizeof(T),
+                                                     _ptr_name,
+                                                     file_name,
+                                                     line_number));
   }
 
   /*--------------------------------------------------------------------------*/
@@ -3152,13 +2196,13 @@ private:
     /* If not owner no-op */
     if (_owner) {
       const char *_ptr_name = "cs::array._data";
-      _data = static_cast<T *>(cs_mem_realloc_hd(_data,
-                                                 _mode,
-                                                 _size,
-                                                 sizeof(T),
-                                                 _ptr_name,
-                                                 file_name,
-                                                 line_number));
+      _span::_data = static_cast<T *>(cs_mem_realloc_hd(_span::_data,
+                                                        _mode,
+                                                        _span::_size,
+                                                        sizeof(T),
+                                                        _ptr_name,
+                                                        file_name,
+                                                        line_number));
     }
   };
 
@@ -3166,11 +2210,7 @@ private:
    * Private members
    *==========================================================================*/
 
-  cs_lnum_t       _extent[N];
-  cs_lnum_t       _offset[N];
-  cs_lnum_t       _size;
   bool            _owner;
-  T*              _data;
   cs_alloc_mode_t _mode;
 
 };

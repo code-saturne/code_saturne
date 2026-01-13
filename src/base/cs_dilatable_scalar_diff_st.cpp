@@ -174,7 +174,7 @@ cs_dilatable_scalar_diff_st(int iterns)
 
       if (icp >= 0) {
         if (iscacp == 1)
-          xcpp.copy_data((cs_real_t *)cpro_cp, n_cells);
+          xcpp.copy_data(cpro_cp, n_cells);
         else if (iscacp == 2) {
 #         pragma omp parallel for if (n_cells > CS_THR_MIN)
           for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
