@@ -80,6 +80,43 @@ static cs_stl_mesh_info_t _stl_meshes = {nullptr, 0, 0};
 
 cs_stl_mesh_info_t *cs_glob_stl_meshes = &_stl_meshes;
 
+static int _stl_read_mode = 0;
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the bounding box for each STL mesh coordinates.
+ *
+ * The corresponding array is allocated by this function, and it is the
+ * caller's responsability to free it when they are no longer needed.
+ *
+ * \param[in]   m          pointer to STL mesh structure
+ * \param[in]   tolerance  addition to local extents of each element:
+ *                         extent = base_extent * (1 + tolerance)
+ *
+ * \return  pointer to newly allocated cell volumes array
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_real_6_t *
+_stl_vertex_extents(const cs_stl_mesh_t  *stl_mesh,
+                    const cs_real_t       tolerance)
+{
+  const cs_real_3_t *coords = stl_mesh->coords;
+  const cs_lnum_t n_old_vtx = 3*stl_mesh->n_faces;
+
+  cs_real_6_t *bbox;
+  CS_MALLOC(bbox, n_old_vtx, cs_real_6_t);
+
+  for (cs_lnum_t v0 = 0; v0 < n_old_vtx; v0++) {
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      bbox[v0][i]   = coords[v0][i] - tolerance;
+      bbox[v0][3+i] = coords[v0][i] + tolerance;
+    }
+  }
+
+  return bbox;
+}
+
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
@@ -137,8 +174,8 @@ _cut32(uint8_t *out, int val)
   ----------------------------------------------------------------------------*/
 
 static void
-_compute_normal(cs_real_t  coords[3][3],
-                cs_real_t  normal[3])
+_compute_normal(const cs_real_t  coords[3][3],
+                cs_real_t        normal[3])
 {
   /* Compute and Write the face normal coordinates */
   const cs_real_t *a = coords[0], *b = coords[1], *c = coords[2];
@@ -1064,8 +1101,7 @@ _tetrahedron_plane_volume_intersection(cs_real_t x1[3],
 static void
 _update_init_mesh(cs_stl_mesh_t *stl_mesh)
 {
-  cs_lnum_t n_tria = stl_mesh->n_faces;
-  cs_lnum_t n_points = n_tria*3;
+  const cs_lnum_t n_points = stl_mesh->n_points;
 
   for (cs_lnum_t i = 0; i < n_points; i++) {
     for (int j = 0; j < 3; j++) {
@@ -1085,7 +1121,7 @@ _update_init_mesh(cs_stl_mesh_t *stl_mesh)
 /*!
  * \brief Add a new STL mesh structure.
  *
- * \param[in] name name of the STL mesh
+ * \param[in] name of the STL mesh
  *
  * \return pointer to the new STL mesh structure
  */
@@ -1120,9 +1156,11 @@ cs_stl_mesh_add(const char  *name)
 
     memset(stl_mesh->header, 0, 80);
     stl_mesh->n_faces = 0;
+    stl_mesh->n_points = 0;
     stl_mesh->coords = nullptr;
     stl_mesh->n_seeds = 0;
     stl_mesh->seed_coords = nullptr;
+    stl_mesh->tria_vtx_ids = nullptr;
     stl_mesh->is_porous = false;
     stl_mesh->ext_mesh = nullptr;
 
@@ -1172,6 +1210,7 @@ cs_stl_mesh_destroy_all(void)
     cs_stl_mesh_t *ptr = _stl_meshes.mesh_list[s_id];
     CS_FREE(ptr->coords);
     CS_FREE(ptr->coords_ini);
+    CS_FREE(ptr->tria_vtx_ids);
     CS_FREE(ptr->seed_coords);
     CS_FREE(ptr);
   }
@@ -1250,6 +1289,7 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
     /* Allocation*/
     CS_MALLOC(stl_mesh->coords     , 3*n_tria, cs_real_3_t);
     CS_MALLOC(loc_coords , 9, float);
+    CS_MALLOC(stl_mesh->tria_vtx_ids, n_tria, cs_lnum_3_t);
 
     /* Loop on triangle faces
        ---------------------- */
@@ -1288,7 +1328,10 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
       cs_real_t nn = cs_math_3_norm(n);
 
       if (nn > 1.e-20) {
+
         for (cs_lnum_t dir = 0; dir < 3; dir ++) {
+          stl_mesh->tria_vtx_ids[n_tria_new][dir] = 3*n_tria_new + dir;
+
           for (cs_lnum_t vi = 0; vi < 3; vi ++) {
             stl_mesh->coords[3*n_tria_new + vi][dir]
               = (cs_real_t)loc_coords[3*vi + dir];
@@ -1308,21 +1351,395 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
 
     n_tria = n_tria_new;
     stl_mesh->n_faces = n_tria;
+    stl_mesh->n_points = n_tria*3;
 
     /* Re-allocation*/
-    CS_REALLOC(stl_mesh->coords    , 3*n_tria, cs_real_3_t);
+    CS_REALLOC(stl_mesh->coords, stl_mesh->n_points, cs_real_3_t);
 
     /* Copy coordinates to a work aray that
      * will contain all the init coordinates */
-    CS_MALLOC(stl_mesh->coords_ini , 3*n_tria, cs_real_3_t);
-    for (int i = 0; i < 3*n_tria; i++)
+    CS_MALLOC(stl_mesh->coords_ini , stl_mesh->n_points, cs_real_3_t);
+    for (int i = 0; i < stl_mesh->n_points; i++) {
       for (int j = 0; j < 3; j++)
         stl_mesh->coords_ini[i][j] = stl_mesh->coords[i][j];
+    }
 
     CS_FREE(loc_coords);
     fclose(fp);
 
-  }
+    /* Alternative STL reader that avoids duplicate coordinates by
+       merging shared vertices using bounding-box intersections */
+
+    if (_stl_read_mode == 1) {
+
+      /* Unique number of vertices */
+      cs_lnum_t n_old_vtx = 3*n_tria;
+
+      cs_lnum_t *old_to_new;
+      CS_MALLOC(old_to_new, n_old_vtx, cs_lnum_t);
+      for (cs_lnum_t i = 0; i < n_old_vtx; i++)
+        old_to_new[i] = i;
+
+      const cs_real_3_t *stl_vtx_coord = stl_mesh->coords;
+
+      cs_real_6_t *bbox = nullptr;
+      const cs_real_t eps = 1.0e-9;
+      bbox = _stl_vertex_extents(stl_mesh, eps);
+
+      cs_lnum_t n_boxes = n_old_vtx;
+      cs_gnum_t *box_gnum = nullptr;
+      cs_coord_t *extents = nullptr;
+      cs_lnum_t dim = 3;
+
+      CS_MALLOC(box_gnum, n_boxes, cs_gnum_t);
+      CS_MALLOC(extents , 2*dim*n_boxes, cs_coord_t);
+
+      /* Global numbering construction */
+      for (cs_lnum_t i = 0; i < n_boxes; i++)
+        box_gnum[i] = i + 1;
+
+      for (cs_lnum_t i = 0; i < n_old_vtx; i++) {
+        for (int id = 0; id < 6; id ++)
+          extents[6*i + id] = bbox[i][id];
+      }
+
+      CS_FREE(bbox);
+
+      fvm_neighborhood_t  *vtx_neighborhood = nullptr;
+
+#if defined HAVE_MPI
+      vtx_neighborhood = fvm_neighborhood_create(MPI_COMM_NULL);
+#else
+      vtx_neighborhood = fvm_neighborhood_create();
+#endif
+
+      // Compute intersections by boxes (transfer ownership)
+      fvm_neighborhood_by_boxes(vtx_neighborhood,
+                                dim,
+                                n_boxes,
+                                box_gnum,
+                                extents,
+                                nullptr,
+                                nullptr);
+
+      cs_lnum_t  n_elts = 0;
+      cs_gnum_t *elt_num = nullptr;
+      cs_lnum_t *neighbor_index = nullptr;
+      cs_gnum_t *neighbor_num = nullptr;
+
+      // Get the data back
+      fvm_neighborhood_transfer_data(vtx_neighborhood,
+                                     &n_elts,
+                                     &elt_num,
+                                     &neighbor_index,
+                                     &neighbor_num);
+
+      cs_lnum_t n_remove = 0;
+
+      /* Loop on the elements that have neighbors */
+      for (cs_lnum_t i = 0; i < n_elts; i++) {
+
+        const cs_lnum_t s_id = neighbor_index[i];
+        const cs_lnum_t e_id = neighbor_index[i+1];
+
+        cs_lnum_t v0 = elt_num[i] - 1;
+
+        if (v0 < 0 || v0 >= n_old_vtx) {
+          assert(0);
+          continue;
+        }
+
+        // Loop on the neighbors
+        for (cs_lnum_t j = s_id; j < e_id; j++) {
+          cs_lnum_t v1 = neighbor_num[j] - 1;
+
+          if (v1 == v0) {
+            assert(0);
+            continue;
+          }
+
+          if (v1 < 0 || v1 >= n_old_vtx) {
+            assert(0);
+            continue;
+          }
+
+          cs_lnum_t min_id = (v0 < v1) ? v0 : v1;
+          cs_lnum_t max_id = (v0 < v1) ? v1 : v0;
+
+          if (old_to_new[max_id] == max_id) {
+            old_to_new[max_id] = min_id;
+            n_remove++;
+          }
+        }
+      }
+
+      cs_lnum_t new_size = n_old_vtx - n_remove;
+      cs_real_3_t *unique_coord;
+      CS_MALLOC(unique_coord, new_size, cs_real_3_t);
+
+      cs_lnum_t elt_id = 0;
+      for (cs_lnum_t i = 0; i < n_old_vtx; i++) {
+        if (old_to_new[i] == i) {
+          old_to_new[i] = - elt_id - 1;
+          elt_id++;
+        }
+      }
+
+      for (cs_lnum_t i = 0; i < n_old_vtx; i++) {
+        cs_lnum_t j = old_to_new[i];
+        if (j < 0)
+          old_to_new[i] = - j - 1;
+        else {
+          j = old_to_new[i];
+          assert(j > -1);
+          old_to_new[i] = old_to_new[j];
+        }
+      }
+
+      bool *filled;
+      CS_MALLOC(filled, new_size, bool);
+      for (cs_lnum_t i = 0; i < new_size; i++)
+        filled[i] = false;
+
+      for (cs_lnum_t i = 0; i < n_old_vtx; i++) {
+        cs_lnum_t j = old_to_new[i];
+
+        if (!filled[j]) {
+          unique_coord[j][0] = stl_vtx_coord[i][0];
+          unique_coord[j][1] = stl_vtx_coord[i][1];
+          unique_coord[j][2] = stl_vtx_coord[i][2];
+          filled[j] = true;
+        }
+      }
+
+      CS_FREE(filled);
+      assert(elt_id == new_size);
+
+      /* Compute new ID of coordinates of triangles + verification */
+
+      cs_lnum_3_t *tria_vtx_ids;
+      CS_MALLOC(tria_vtx_ids, n_tria, cs_lnum_3_t);
+
+      bool inconsistency = false;
+      const cs_real_t tol = 1.0e-9;
+
+      for (cs_lnum_t i = 0; i < n_tria; i++) {
+
+        const cs_lnum_t vtx_ids[3] = {3*i + 0,
+                                      3*i + 1,
+                                      3*i + 2};
+
+        const cs_real_t coord_1_init[3] = {stl_vtx_coord[vtx_ids[0]][0],
+                                           stl_vtx_coord[vtx_ids[0]][1],
+                                           stl_vtx_coord[vtx_ids[0]][2]};
+
+        const cs_real_t coord_2_init[3] = {stl_vtx_coord[vtx_ids[1]][0],
+                                           stl_vtx_coord[vtx_ids[1]][1],
+                                           stl_vtx_coord[vtx_ids[1]][2]};
+
+        const cs_real_t coord_3_init[3] = {stl_vtx_coord[vtx_ids[2]][0],
+                                           stl_vtx_coord[vtx_ids[2]][1],
+                                           stl_vtx_coord[vtx_ids[2]][2]};
+
+        tria_vtx_ids[i][0] = old_to_new[3*i + 0];
+        tria_vtx_ids[i][1] = old_to_new[3*i + 1];
+        tria_vtx_ids[i][2] = old_to_new[3*i + 2];
+
+        cs_lnum_t a = tria_vtx_ids[i][0];
+        cs_lnum_t b = tria_vtx_ids[i][1];
+        cs_lnum_t c = tria_vtx_ids[i][2];
+
+        const cs_real_t *coord_1 = unique_coord[a];
+        const cs_real_t *coord_2 = unique_coord[b];
+        const cs_real_t *coord_3 = unique_coord[c];
+
+        for (int j = 0; j < 3; j++) {
+          if (cs::abs(coord_1[j] - coord_1_init[j]) > tol) {
+            inconsistency = true;
+          }
+          if (cs::abs(coord_2[j] - coord_2_init[j]) > tol) {
+            inconsistency = true;
+          }
+          if (cs::abs(coord_3[j] - coord_3_init[j]) > tol) {
+            inconsistency = true;
+          }
+        }
+      } /* End loop on triangles */
+
+      assert(inconsistency == false);
+      fvm_neighborhood_destroy(&vtx_neighborhood);
+      CS_FREE(elt_num);
+      CS_FREE(neighbor_index);
+      CS_FREE(neighbor_num);
+      CS_FREE(box_gnum);
+      CS_FREE(extents);
+
+      CS_FREE(old_to_new);
+      CS_FREE(stl_mesh->coords);
+      CS_FREE(stl_mesh->tria_vtx_ids);
+
+      stl_mesh->coords = unique_coord;
+      stl_mesh->tria_vtx_ids = tria_vtx_ids;
+      stl_mesh->n_points = new_size;
+
+      /* Copy coordinates to a work aray that
+       * will contain all the init coordinates */
+      CS_REALLOC(stl_mesh->coords_ini , new_size, cs_real_3_t);
+      for (cs_lnum_t i = 0; i < new_size; i++)
+        for (cs_lnum_t j = 0; j < 3; j++)
+          stl_mesh->coords_ini[i][j] = stl_mesh->coords[i][j];
+
+      /* Some log information */
+      bft_printf(_("\n"
+                   " ** Reading of STL mesh (mode 1) \"%s\"\n"
+                   "    Number of triangles: %d\n"
+                   "    Number of initial vertices: %d\n"
+                   "    Number of duplicate vertices removed: %d\n"
+                   "    Number of unique vertices: %d\n\n"),
+                 stl_mesh->name, n_tria, 3*n_tria,
+                 n_old_vtx-new_size, new_size);
+
+    } /* End mode = 1 */
+  } /* End if rank = 0 */
+
+  /* Merge identical vertices
+     ------------------------ */
+
+  if (_stl_read_mode == 2) {
+    const cs_lnum_t n_coo_ini = n_tria*3;
+
+    fvm_io_num_t *v_io_num
+      = fvm_io_num_create_from_sfc((const cs_coord_t *)stl_mesh->coords,
+                                   3,
+                                   n_coo_ini,
+                                   FVM_IO_NUM_SFC_MORTON_BOX);
+
+    cs_gnum_t *vtx_gnum = fvm_io_num_transfer_global_num(v_io_num);
+
+    cs_lnum_t *order = cs_order_gnum(nullptr, vtx_gnum, n_coo_ini);
+
+    v_io_num = fvm_io_num_destroy(v_io_num);
+
+    if (cs_glob_rank_id < 1) {
+
+      const cs_real_t eps = 1.0e-9;
+
+      cs_coord_3_t *vertex_coord = nullptr;
+      CS_MALLOC(vertex_coord, n_coo_ini, cs_coord_3_t);
+
+      cs_lnum_t *old_to_new;
+      CS_MALLOC(old_to_new, n_coo_ini, cs_lnum_t);
+      for (cs_lnum_t i = 0; i < n_coo_ini; i++)
+        old_to_new[i] = i;
+
+      const cs_real_3_t *stl_vtx_coord = stl_mesh->coords;
+
+      cs_lnum_t n_coo_new = 0;
+      for (cs_lnum_t i = 0; i < n_coo_ini; i++) {
+        cs_lnum_t j = order[i];
+        const cs_coord_t *c0 = stl_vtx_coord[j];
+
+        bool identical = false;
+        if (n_coo_new > 0) {
+          const cs_coord_t *c1 = vertex_coord[n_coo_new - 1];
+          const cs_real_t dist = cs_math_3_square_distance(c0, c1);
+          const cs_real_t eps2 = eps * eps;
+
+          identical = (dist <= eps2);
+        }
+
+        if (identical) {
+          old_to_new[j] = n_coo_new - 1;
+        }
+        else {
+          vertex_coord[n_coo_new][0] = c0[0];
+          vertex_coord[n_coo_new][1] = c0[1];
+          vertex_coord[n_coo_new][2] = c0[2];
+          old_to_new[j] = n_coo_new;
+          n_coo_new++;
+        }
+      }
+
+      CS_REALLOC(vertex_coord, n_coo_new, cs_coord_3_t);
+      stl_mesh->n_points = n_coo_new;
+
+      /* Compute new ID of coordinates of triangles + verification */
+
+      bool inconsistency = false;
+      const cs_real_t tol = 1.0e-9;
+      cs_lnum_3_t *tria_vtx_ids = stl_mesh->tria_vtx_ids;
+
+      for (cs_lnum_t i = 0; i < n_tria; i++) {
+
+        const cs_lnum_t vtx_ids[3] = {3*i + 0,
+                                      3*i + 1,
+                                      3*i + 2};
+
+        const cs_real_t coord_1_init[3] = {stl_vtx_coord[vtx_ids[0]][0],
+                                           stl_vtx_coord[vtx_ids[0]][1],
+                                           stl_vtx_coord[vtx_ids[0]][2]};
+
+        const cs_real_t coord_2_init[3] = {stl_vtx_coord[vtx_ids[1]][0],
+                                           stl_vtx_coord[vtx_ids[1]][1],
+                                           stl_vtx_coord[vtx_ids[1]][2]};
+
+        const cs_real_t coord_3_init[3] = {stl_vtx_coord[vtx_ids[2]][0],
+                                           stl_vtx_coord[vtx_ids[2]][1],
+                                           stl_vtx_coord[vtx_ids[2]][2]};
+
+        tria_vtx_ids[i][0] = old_to_new[3*i + 0];
+        tria_vtx_ids[i][1] = old_to_new[3*i + 1];
+        tria_vtx_ids[i][2] = old_to_new[3*i + 2];
+
+        cs_lnum_t a = tria_vtx_ids[i][0];
+        cs_lnum_t b = tria_vtx_ids[i][1];
+        cs_lnum_t c = tria_vtx_ids[i][2];
+
+        const cs_real_t *coord_1 = vertex_coord[a];
+        const cs_real_t *coord_2 = vertex_coord[b];
+        const cs_real_t *coord_3 = vertex_coord[c];
+
+        for (int j = 0; j < 3; j++) {
+          if (cs::abs(coord_1[j] - coord_1_init[j]) > tol) {
+            inconsistency = true;
+          }
+          if (cs::abs(coord_2[j] - coord_2_init[j]) > tol) {
+            inconsistency = true;
+          }
+          if (cs::abs(coord_3[j] - coord_3_init[j]) > tol) {
+            inconsistency = true;
+          }
+        }
+      }
+
+      assert(inconsistency == false);
+      CS_FREE(stl_mesh->coords);
+      CS_FREE(old_to_new);
+      CS_FREE(vtx_gnum);
+      CS_FREE(order);
+
+      stl_mesh->coords = (cs_real_3_t *)vertex_coord;
+
+      /* Some log information */
+      bft_printf(_("\n"
+                   " ** Reading of STL mesh (mode 2) \"%s\"\n"
+                   "    Number of triangles: %d\n"
+                   "    Number of initial vertices: %d\n"
+                   "    Number of duplicate vertices removed: %d\n"
+                   "    Number of unique vertices: %d\n\n"),
+                 stl_mesh->name, n_tria, 3*n_tria,
+                 n_coo_ini-n_coo_new, n_coo_new);
+
+      /* Copy coordinates to a work aray that
+       * will contain all the init coordinates */
+      CS_REALLOC(stl_mesh->coords_ini , n_coo_new, cs_real_3_t);
+      for (cs_lnum_t i = 0; i < n_coo_new; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++)
+          stl_mesh->coords_ini[i][j] = stl_mesh->coords[i][j];
+      }
+
+    } /* End test on root rank */
+  } /* End _stl_read_mode == 2 */
 
   /* Broadcast to other ranks */
 
@@ -1331,89 +1748,51 @@ cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
                   CS_LNUM_TYPE,
                   &(stl_mesh->n_faces));
 
+  cs_parall_bcast(0, /* root_rank */
+                  1,
+                  CS_LNUM_TYPE,
+                  &(stl_mesh->n_points));
+
   if (cs_glob_rank_id > 0) {
-    CS_MALLOC(stl_mesh->coords    , stl_mesh->n_faces*3, cs_real_3_t);
-    CS_MALLOC(stl_mesh->coords_ini, stl_mesh->n_faces*3, cs_real_3_t);
+    CS_MALLOC(stl_mesh->coords, stl_mesh->n_points, cs_real_3_t);
+    CS_MALLOC(stl_mesh->coords_ini, stl_mesh->n_points, cs_real_3_t);
+    CS_MALLOC(stl_mesh->tria_vtx_ids, stl_mesh->n_faces, cs_lnum_3_t);
   }
 
   cs_parall_bcast(0, /* root_rank */
-                  stl_mesh->n_faces*9,
+                  stl_mesh->n_points*3,
                   CS_REAL_TYPE,
                   stl_mesh->coords);
 
   cs_parall_bcast(0, /* root_rank */
-                  stl_mesh->n_faces*9,
+                  stl_mesh->n_points*3,
                   CS_REAL_TYPE,
                   stl_mesh->coords_ini);
 
+  cs_parall_bcast(0, /* root_rank */
+                  stl_mesh->n_faces*3,
+                  CS_LNUM_TYPE,
+                  stl_mesh->tria_vtx_ids);
 
-  /* Merge identical vertices
-     ------------------------ */
-
-#if 0
-  cs_lnum_t n_coo_ini = n_tria*3;
-
-  cs_coord_t *_face_vtx_coord = nullptr;
-  CS_MALLOC(_face_vtx_coord, n_coo_ini*3, cs_coord_t);
-  for (cs_lnum_t i = 0; i < n_coo_ini*3; i++)
-    _face_vtx_coord[i] = stl_mesh->coords[i];
-
-  fvm_io_num_t *v_io_num = fvm_io_num_create_from_sfc(_face_vtx_coord,
-                                                      3,
-                                                      n_coo_ini,
-                                                      FVM_IO_NUM_SFC_MORTON_BOX);
-
-  CS_FREE(_face_vtx_coord);
-
-  cs_gnum_t *vtx_gnum = fvm_io_num_transfer_global_num(v_io_num);
-
-  cs_lnum_t *order = cs_order_gnum(nullptr, vtx_gnum, n_coo_ini);
-
-  v_io_num = fvm_io_num_destroy(v_io_num);
-
-  cs_coord_t  *vertex_coord = nullptr;
-  cs_lnum_t  *vertex_num = nullptr;
+  cs_lnum_t *vertex_num = nullptr;
+  cs_gnum_t *vertex_gnum = nullptr;
+  cs_gnum_t *faces_gnum = nullptr;
 
   if (cs_glob_rank_id < 1) {
-
-    CS_MALLOC(vertex_coord, n_coo_ini*3, cs_coord_t);
     CS_MALLOC(vertex_num, n_tria*3, cs_lnum_t);
+    CS_MALLOC(vertex_gnum, stl_mesh->n_points, cs_gnum_t);
+    CS_MALLOC(faces_gnum, n_tria,   cs_gnum_t);
 
-    for (cs_lnum_t i = 0; i < n_coo_ini; i++)
-      vertex_num[i] = -1;
+    for (cs_lnum_t i = 0; i < n_tria; i++) {
+      vertex_num[3*i]   = stl_mesh->tria_vtx_ids[i][0] + 1;
+      vertex_num[3*i+1] = stl_mesh->tria_vtx_ids[i][1] + 1;
+      vertex_num[3*i+2] = stl_mesh->tria_vtx_ids[i][2] + 1;
 
-    cs_lnum_t n_coo_new = 0;
-    for (cs_lnum_t i = 0; i < n_coo_ini; i++) {
-      cs_lnum_t j = order[i];
-      vertex_num[j] = n_coo_new + 1;
-      bool identical = false;
-      if (! identical) {
-        for (cs_lnum_t k = 0; k < 3; k++)
-          vertex_coord[n_coo_new*3 + k] = stl_mesh->coords[j*3 + k];
-        n_coo_new++;
-      }
+      faces_gnum[i] = i+1;
     }
 
-    CS_REALLOC(vertex_coord, n_coo_new*3, cs_coord_t);
-
-  }
-#endif
-
-  cs_lnum_t  *vertex_num   = nullptr;
-  cs_gnum_t  *vertex_gnum  = nullptr;
-  cs_gnum_t  *faces_gnum   = nullptr;
-
-  if (cs_glob_rank_id < 1) {
-    CS_MALLOC(vertex_num  , n_tria*3, cs_lnum_t);
-    CS_MALLOC(vertex_gnum , n_tria*3, cs_gnum_t);
-    CS_MALLOC(faces_gnum  , n_tria,   cs_gnum_t);
-
-    for (cs_lnum_t j = 0; j < n_tria*3; j++) {
-      vertex_num[j] = j+1;
+    for (cs_lnum_t j = 0; j < stl_mesh->n_points; j++)
       vertex_gnum[j] = j+1;
-    }
-    for (cs_lnum_t j = 0; j < n_tria; j++)
-      faces_gnum[j] = j+1;
   }
 
   fvm_nodal_t *ext_mesh = fvm_nodal_create(stl_mesh->name, 3);
@@ -1459,8 +1838,7 @@ void
 cs_stl_mesh_transform(cs_stl_mesh_t  *stl_mesh,
                       double          matrix[3][4])
 {
-  cs_lnum_t n_tria = stl_mesh->n_faces;
-  cs_lnum_t n_points = n_tria*3;
+  const cs_lnum_t n_points = stl_mesh->n_points;
 
   for (cs_lnum_t i = 0; i < n_points; i++) {
 
@@ -1496,8 +1874,7 @@ void
 cs_stl_mesh_transform_from_init(cs_stl_mesh_t  *stl_mesh,
                                 double          matrix[3][4])
 {
-  cs_lnum_t n_tria = stl_mesh->n_faces;
-  cs_lnum_t n_points = n_tria*3;
+  const cs_lnum_t n_points = stl_mesh->n_points;
 
   for (cs_lnum_t i = 0; i < n_points; i++) {
 
@@ -1530,8 +1907,7 @@ void
 cs_stl_mesh_translate(cs_stl_mesh_t  *stl_mesh,
                       cs_real_t      vector[3])
 {
-  cs_lnum_t n_tria = stl_mesh->n_faces;
-  cs_lnum_t n_points = n_tria*3;
+  const cs_lnum_t n_points = stl_mesh->n_points;
 
   for (cs_lnum_t i = 0; i < n_points; i++) {
     for (cs_lnum_t j = 0; j < 3; j++) {
@@ -1580,8 +1956,7 @@ void
 cs_stl_mesh_scale(cs_stl_mesh_t  *stl_mesh,
                   double          scale)
 {
-  cs_lnum_t n_tria = stl_mesh->n_faces;
-  cs_lnum_t n_points = n_tria*3;
+  const cs_lnum_t n_points = stl_mesh->n_points;
 
   for (cs_lnum_t i = 0; i < n_points; i++) {
     for (cs_lnum_t j = 0; j < 3; j++) {
@@ -1603,7 +1978,7 @@ cs_stl_mesh_scale(cs_stl_mesh_t  *stl_mesh,
 
 void
 cs_stl_set_porosity_seed(cs_stl_mesh_t  *stl_mesh,
-                         int            n_points,
+                         int             n_points,
                          cs_real_t      *coords)
 {
   stl_mesh->n_seeds = n_points;
@@ -1811,18 +2186,19 @@ cs_stl_file_write(cs_stl_mesh_t  *stl_mesh,
 
 void
 cs_stl_intersection(cs_stl_mesh_t *stl_mesh,
-                    cs_lnum_t     n_input,
+                    cs_lnum_t      n_input,
                     cs_lnum_t     *input_idx,
                     cs_lnum_t     *n_selected_cells,
                     cs_lnum_t     *selected_cells,
                     cs_lnum_t     *tria_in_cell_idx,
-                    cs_lnum_t     **tria_in_cell_lst,
+                    cs_lnum_t    **tria_in_cell_lst,
                     cs_lnum_t     *max_size)
 {
   cs_mesh_t *m = cs_glob_mesh;
 
   cs_lnum_t  n_cells = n_input;// Local number of cells of the main mesh
   cs_lnum_t  n_tria_stl = stl_mesh->n_faces; // Local number of triangles of the STL
+  const cs_lnum_3_t *tria_vtx_ids = stl_mesh->tria_vtx_ids;
   cs_lnum_t  n_boxes = n_cells + n_tria_stl;
   int dim = 3;
 
@@ -1870,12 +2246,13 @@ cs_stl_intersection(cs_stl_mesh_t *stl_mesh,
 
   for (cs_lnum_t i = 0; i < n_tria_stl; i++) {
     for (int vtx_id = 0; vtx_id < 3; vtx_id ++) {
-      bbox[i][0] = cs::min(bbox[i][0], stl_mesh->coords[3*i + vtx_id][0]);
-      bbox[i][3] = cs::max(bbox[i][3], stl_mesh->coords[3*i + vtx_id][0]);
-      bbox[i][1] = cs::min(bbox[i][1], stl_mesh->coords[3*i + vtx_id][1]);
-      bbox[i][4] = cs::max(bbox[i][4], stl_mesh->coords[3*i + vtx_id][1]);
-      bbox[i][2] = cs::min(bbox[i][2], stl_mesh->coords[3*i + vtx_id][2]);
-      bbox[i][5] = cs::max(bbox[i][5], stl_mesh->coords[3*i + vtx_id][2]);
+      const cs_lnum_t v = tria_vtx_ids[i][vtx_id];
+      bbox[i][0] = cs::min(bbox[i][0], stl_mesh->coords[v][0]);
+      bbox[i][3] = cs::max(bbox[i][3], stl_mesh->coords[v][0]);
+      bbox[i][1] = cs::min(bbox[i][1], stl_mesh->coords[v][1]);
+      bbox[i][4] = cs::max(bbox[i][4], stl_mesh->coords[v][1]);
+      bbox[i][2] = cs::min(bbox[i][2], stl_mesh->coords[v][2]);
+      bbox[i][5] = cs::max(bbox[i][5], stl_mesh->coords[v][2]);
     }
   }
 
@@ -1941,12 +2318,16 @@ cs_stl_intersection(cs_stl_mesh_t *stl_mesh,
         if (neighbor_num[j] > _n_cells) {
 
           // Local number of the triangle
-          cs_lnum_t ntria_id = neighbor_num[j] - n_cells - 1;
+          cs_lnum_t tria_id = neighbor_num[j] - n_cells - 1;
+
+          const cs_lnum_t vtx_ids_l[3] = {tria_vtx_ids[tria_id][0],
+                                          tria_vtx_ids[tria_id][1],
+                                          tria_vtx_ids[tria_id][2]};
 
           cs_real_t tri_coords[3][3];
           for (cs_lnum_t k = 0; k < 3; k++) {
             for (cs_lnum_t l = 0; l < 3; l++)
-              tri_coords[k][l] = stl_mesh->coords[3*ntria_id + k][l];
+              tri_coords[k][l] = stl_mesh->coords[vtx_ids_l[k]][l];
           }
 
           // Additional tests to know weather the triangle
@@ -1963,7 +2344,7 @@ cs_stl_intersection(cs_stl_mesh_t *stl_mesh,
                 *max_size *= 2;
                 CS_REALLOC(_tria_in_cell_lst, *max_size, cs_lnum_t);
               }
-              _tria_in_cell_lst[idx_num] = ntria_id;
+              _tria_in_cell_lst[idx_num] = tria_id;
               idx_num ++;
             }
 
@@ -2165,6 +2546,8 @@ cs_stl_compute_porosity(cs_stl_mesh_t *stl_mesh,
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
   cs_stl_mesh_t *stl = stl_mesh;
+  const cs_lnum_3_t *tria_vtx_ids = stl_mesh->tria_vtx_ids;
+  const cs_real_3_t *stl_vtx_coord = stl_mesh->coords;
 
   const cs_real_t *volume   = mq->cell_vol;
   const cs_real_3_t *xyzcen = mq->cell_cen;
@@ -2180,7 +2563,7 @@ cs_stl_compute_porosity(cs_stl_mesh_t *stl_mesh,
               _("Error in STL porosity computation: no seed points"
                 "for STL mesh %s is given."), stl_mesh->name);
 
-  /* Initialisation */
+  /* Initialization */
   cs_lnum_t n_input_cells      = m->n_cells;
   cs_lnum_t n_selected_cells   = 0;
   cs_lnum_t *input_cells       = nullptr;
@@ -2209,8 +2592,21 @@ cs_stl_compute_porosity(cs_stl_mesh_t *stl_mesh,
   }
 
   /* Compute normals */
-  for (cs_lnum_t i = 0; i < stl->n_faces; i++)
-    _compute_normal(stl_mesh->coords + (3*i), stl_normals + (3*i));
+  for (cs_lnum_t i = 0; i < stl->n_faces; i++) {
+    cs_real_t coords_loc[3][3];
+
+    const cs_lnum_t vtx_ids_l[3] = {tria_vtx_ids[i][0],
+                                    tria_vtx_ids[i][1],
+                                    tria_vtx_ids[i][2]};
+
+    for (int dir = 0; dir < 3; dir ++) {
+      coords_loc[0][dir] = stl_vtx_coord[vtx_ids_l[0]][dir];
+      coords_loc[1][dir] = stl_vtx_coord[vtx_ids_l[1]][dir];
+      coords_loc[2][dir] = stl_vtx_coord[vtx_ids_l[2]][dir];
+    }
+
+    _compute_normal(coords_loc, stl_normals + (3*i));
+  }
 
   /* Get the intersection
    * ==================== */
@@ -2254,9 +2650,19 @@ cs_stl_compute_porosity(cs_stl_mesh_t *stl_mesh,
 
         cs_lnum_t f_tria_id = tria_in_cell_lst[tri];
 
-        cs_real_3_t *coords  = stl_mesh->coords + (3*f_tria_id);
-        cs_real_t *n         = stl_normals + (3*f_tria_id);
-        cs_real_t *aabb      = &bbox[cell_id][0];
+        const cs_lnum_t vtx_ids_l[3] = {tria_vtx_ids[f_tria_id][0],
+                                        tria_vtx_ids[f_tria_id][1],
+                                        tria_vtx_ids[f_tria_id][2]};
+
+        cs_real_t coords[3][3];
+        for (int dir = 0; dir < 3; dir ++) {
+          coords[0][dir] = stl_vtx_coord[vtx_ids_l[0]][dir];
+          coords[1][dir] = stl_vtx_coord[vtx_ids_l[1]][dir];
+          coords[2][dir] = stl_vtx_coord[vtx_ids_l[2]][dir];
+        }
+
+        cs_real_t *n = stl_normals + (3*f_tria_id);
+        cs_real_t *aabb = &bbox[cell_id][0];
         const cs_real_t *cog = xyzcen[cell_id];
 
         /* Compute the surface of the triangle in the box */
@@ -2300,8 +2706,11 @@ cs_stl_compute_porosity(cs_stl_mesh_t *stl_mesh,
     } else {
       cs_lnum_t f_tria_id = tria_in_cell_lst[start_id];
 
+      /* First coordinates of the triangle */
+      const cs_lnum_t v0 = tria_vtx_ids[f_tria_id][0];
+
       for (int k = 0; k < 3; k++) {
-        mean_plane_def[6*i + k] = stl_mesh->coords[3*f_tria_id][k];
+        mean_plane_def[6*i + k] = stl_vtx_coord[v0][k];
         mean_plane_def[6*i + 3 + k] = stl_normals[3*f_tria_id + k];
       }
 

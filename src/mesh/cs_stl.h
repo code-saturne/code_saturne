@@ -59,8 +59,13 @@ typedef struct {
 
   cs_lnum_t      n_faces;          /*!< Number of triangles */
 
+  cs_lnum_t      n_points;          /*!< Number of coordinates
+                                    *  (duplicated or not) */
+
   cs_real_3_t   *coords;           /*!< Array of face vertex coordinates
                                    *  coord[n_vertices][3] */
+
+  cs_lnum_3_t   *tria_vtx_ids;     /*!< List of coordinates for triangle */
 
   cs_real_3_t   *coords_ini;       /*!< Array of face vertex coordinates
                                    *  at init coord_ini[n_vertices][3] */
