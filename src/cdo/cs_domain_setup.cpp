@@ -532,6 +532,14 @@ cs_domain_setup_init_cdo_structures(cs_domain_t *domain)
                                                    domain->mesh_quantities,
                                                    domain->connect);
 
+#if defined(DEBUG) && !defined(NDEBUG)
+  cs_cdo_quantities_check(domain->verbosity,
+                          domain->mesh,
+                          domain->mesh_quantities,
+                          domain->connect,
+                          domain->cdo_quantities);
+#endif
+
   /* Main generic structures are shared with low-level files.
      Avoid the declaration of global variables by sharing pointers */
 

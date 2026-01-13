@@ -41,6 +41,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "bft/bft_printf.h"
 #include "base/cs_mem.h"
 
 #include "base/cs_array.h"
@@ -1681,6 +1682,186 @@ cs_cdo_quantities_build(const cs_mesh_t            *m,
   cs_cdo_quantities_time += time_count.nsec;
 
   return cdoq;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check that global quantities are consistently computed
+ *
+ * \param[in] verb  level of verbosity
+ * \param[in] m     pointer to a cs_mesh_t structure
+ * \param[in] mq    pointer to a cs_mesh_quantities_t structure
+ * \param[in] topo  pointer to a cs_cdo_connect_t structure
+ * \param[in] cdoq  pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_quantities_check(int                         verb,
+                        const cs_mesh_t            *m,
+                        const cs_mesh_quantities_t *mq,
+                        const cs_cdo_connect_t     *topo,
+                        const cs_cdo_quantities_t  *cdoq)
+{
+  cs_timer_t t0 = cs_timer_time();
+
+  const double threshold = 0.001; // Detect ratio above 0.1%
+
+  // Sanity checks
+
+  assert(m != nullptr);
+  assert(mq != nullptr);
+  assert(cdoq != nullptr);
+  assert(topo != nullptr && topo->c2f != nullptr);
+
+  // Check the total volume
+
+  cs_gnum_t n_neg_volumes = 0, n_c_issues = 0, n_vc_issues = 0, n_fc_issues = 0;
+  double min_vol = 0, max_c_pct = -1, max_vc_pct = -1, max_fc_pct = -1;
+  double pct;
+
+  // Primal quantities
+
+  for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
+
+    if (mq->cell_vol[i] > 0) {
+      pct = fabs(mq->cell_vol[i] - cdoq->cell_vol[i])/mq->cell_vol[i];
+      max_c_pct = fmax(pct, max_c_pct);
+      if (pct > threshold) {
+        n_c_issues++;
+        if (verb > 2)
+          bft_printf(" %s: cell %d --> Delta volume: %6.3e\%\n",
+                     __func__, i, pct*100);
+      }
+    }
+    else {
+      n_neg_volumes++;
+      min_vol = fmin(mq->cell_vol[i], min_vol);
+      if (verb > 2)
+        bft_printf(" %s: cell %d --> Negative volume: %6.3e\n",
+                   __func__, i, mq->cell_vol[i]);
+    }
+
+  } // Loop on primal cells
+
+  // Face quantities
+
+  if (cdoq->pvol_fc != nullptr) {
+
+    const cs_adjacency_t *c2f = topo->c2f;
+
+    for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
+
+      const double volc = cs::abs(mq->cell_vol[i]);
+
+      double vol_fc = 0;
+      for (cs_lnum_t j = c2f->idx[i]; j < c2f->idx[i+1]; j++)
+        vol_fc += cdoq->pvol_fc[j];
+
+      if (volc > 0) {
+        pct = fabs(volc - vol_fc)/volc;
+        max_fc_pct = fmax(pct, max_fc_pct);
+        if (pct > threshold) {
+          n_fc_issues++;
+          if (verb > 2)
+            bft_printf(" %s: cell %d --> Delta Pfc volume: %6.3e\%\n",
+                       __func__, i, pct*100);
+        }
+      }
+
+    } // Loop on primal cells
+
+  }
+
+  // Dual quantities
+
+  if (cdoq->pvol_vc != nullptr) {
+
+    const cs_adjacency_t *c2v = topo->c2v;
+
+    for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
+
+      const double volc = cs::abs(mq->cell_vol[i]);
+
+      double vol_vc = 0;
+      for (cs_lnum_t j = c2v->idx[i]; j < c2v->idx[i+1]; j++)
+        vol_vc += cdoq->pvol_vc[j];
+
+      if (volc > 0) {
+        pct = fabs(volc - vol_vc)/volc;
+        max_vc_pct = fmax(pct, max_vc_pct);
+        if (pct > threshold) {
+          n_vc_issues++;
+          if (verb > 2)
+            bft_printf(" %s: cell %d --> Delta dual volume: %6.3e\%\n",
+                       __func__, i, pct*100);
+        }
+      }
+
+    } // Loop on primal cells
+
+  }
+
+  // Parallel synchronizations
+
+  cs_gnum_t counters[4] =
+    {n_neg_volumes, n_c_issues, n_fc_issues, n_vc_issues};
+  cs_parall_counter(counters, 4);
+  n_neg_volumes = counters[0];
+  n_c_issues    = counters[1];
+  n_fc_issues   = counters[2];
+  n_vc_issues   = counters[3];
+
+  cs_parall_min(1, CS_DOUBLE, &min_vol);
+
+  double max_pct[3] = {max_c_pct, max_fc_pct, max_vc_pct};
+  cs_parall_max(3, CS_DOUBLE, &max_pct);
+  max_c_pct  = max_pct[0];
+  max_fc_pct = max_pct[1];
+  max_vc_pct = max_pct[2];
+
+  // Synthesis of the checks
+
+  if (verb > 0) {
+
+    cs_log_printf(CS_LOG_DEFAULT, "\n\n CDO quantities checks:\n");
+    cs_log_printf(CS_LOG_DEFAULT, "    negative volumes: %lu\n", n_neg_volumes);
+    cs_log_printf(CS_LOG_DEFAULT, "    \"primal quantities\" issues: %lu\n",
+                  n_c_issues);
+    cs_log_printf(CS_LOG_DEFAULT, "    \"face quantities\" issues: %lu\n",
+                  n_fc_issues);
+    cs_log_printf(CS_LOG_DEFAULT, "    \"dual quantities\" issues: %lu\n",
+                  n_vc_issues);
+
+    if (verb > 1) {
+      cs_log_printf(CS_LOG_DEFAULT, "    \"primal volume gap\"  %8.3e\%\n",
+                    max_c_pct*100);
+      cs_log_printf(CS_LOG_DEFAULT, "    \"face volume gap\"    %8.3e\%\n",
+                    max_fc_pct*100);
+      cs_log_printf(CS_LOG_DEFAULT, "    \"dual volume gap\"    %8.3e\%\n",
+                    max_vc_pct*100);
+    }
+
+  }
+
+  cs_gnum_t n_issues = 0;
+  for (int i = 0; i < 4; i++)
+    n_issues += counters[i];
+
+  if (n_issues > 0)
+    cs_log_printf(CS_LOG_WARNINGS,
+                  " %s --> Issues detected in mesh or cdo quantities.\n"
+                  " Increase the domain verbosity"
+                  " and check the run_solver.log.\n"
+                  " We strongly advise you to perform a mesh quality run.\n",
+                  __func__);
+
+  // Monitoring
+
+  cs_timer_t         t1         = cs_timer_time();
+  cs_timer_counter_t time_count = cs_timer_diff(&t0, &t1);
+
+  cs_cdo_quantities_time += time_count.nsec;
 }
 
 /*----------------------------------------------------------------------------*/

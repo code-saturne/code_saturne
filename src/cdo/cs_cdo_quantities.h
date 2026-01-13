@@ -358,6 +358,25 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check that global quantities are consistently computed
+ *
+ * \param[in] verb  level of verbosity
+ * \param[in] m     pointer to a cs_mesh_t structure
+ * \param[in] mq    pointer to a cs_mesh_quantities_t structure
+ * \param[in] topo  pointer to a cs_cdo_connect_t structure
+ * \param[in] cdoq  pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_quantities_check(int                         verb,
+                        const cs_mesh_t            *m,
+                        const cs_mesh_quantities_t *mq,
+                        const cs_cdo_connect_t     *topo,
+                        const cs_cdo_quantities_t  *cdoq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Destroy a cs_cdo_quantities_t structure
  *
  * \param[in]  cdoq    pointer to structure to free
