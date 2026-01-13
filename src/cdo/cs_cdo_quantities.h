@@ -54,19 +54,20 @@ BEGIN_C_DECLS
  *  \brief Type of algorithm used to compute the cell centers
  *
  * \var CS_CDO_QUANTITIES_MEANV_CENTER
- * Center is computed as the mean of cell vertices
+ * Cell center is computed as the mean of cell vertices
  *
  * \var CS_CDO_QUANTITIES_BARYC_CENTER
- * Center is computed as the real cell barycenter (default choice)
+ * Cell center is computed as the real cell barycenter (default choice relying
+ * on an adaptation of the Mirtich algorithm
  *
  * \var CS_CDO_QUANTITIES_SATURNE_CENTER
- * Center is the one defined in cs_mesh_quantities_t (i.e. the one
- * used in the legacy Finite Volume scheme).
+ * Cell center corresponds to the one defined in cs_mesh_quantities_t (i.e. one
+ * points to the one used in the legacy Finite Volume scheme).
  *
  * \var CS_CDO_QUANTITIES_SUBDIV_CENTER
- * Center is computed to thanks to an implicit face/cell subdivision into
+ * Cell center is computed thanks to an implicit face/cell subdivision into
  * tetrahedra. This may be useful to handle properly meshes with non-planar
- * faces
+ * faces or with a poor mesh quality.
  */
 
 typedef enum {

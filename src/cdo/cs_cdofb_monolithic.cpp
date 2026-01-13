@@ -1353,11 +1353,10 @@ _implicit_euler_build(const cs_navsto_param_t *nsp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump("\n>> Cell system matrix before unsteady term",
+        cs_cell_sys_dump("\n>> Cell system matrix after source term",
                          csys);
 #endif
 
-      /* 4) Unsteady term
       /* 3) Unsteady term
        * ================
        * Time contribution (mass lumping or voronoï)
@@ -1390,15 +1389,15 @@ _implicit_euler_build(const cs_navsto_param_t *nsp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump("\n>> Cell system matrix before augmentation", csys);
+        cs_cell_sys_dump("\n>> Cell system matrix after unsteady term", csys);
 #endif
+
       /* 4) Boundary conditions (most of them)
        * =====================================
        * Apply a part of BC before the time scheme */
 
       _mono_apply_bc_mostly(sc, mom_eqp, cm, &nsb, diff_hodge->pty_data,
                             csys, cb);
-
 
       /* 5) Static condensation
        * ======================
