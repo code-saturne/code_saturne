@@ -149,7 +149,7 @@ cs_flag_t  cs_cdo_quantities_flag = 0;
 /* Algorithm used to compute the cell center */
 
 cs_cdo_quantities_cell_center_algo_t
-cs_cdo_cell_center_algo = CS_CDO_QUANTITIES_BARYC_CENTER;
+cs_cdo_cell_center_algo = CS_CDO_QUANTITIES_SUBDIV_CENTER;
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 

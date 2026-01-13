@@ -1,6 +1,12 @@
 Master (not on release branches yet)
 ------------------------------------
 
+### Numerics:
+
+- Change the default algorithm to compute geometrical quantities in
+  CDO schemes. The new choice should be more robust on very low
+  quality meshes.
+
 ### User changes:
 
 - Histograms: replace PNG format output option with SVG.
