@@ -1242,7 +1242,7 @@ _filter_b_face_equiv(cs_lnum_t        n_faces,
 
 static cs_lnum_t
 _b_faces_equiv(cs_mesh_t  *m,
-               const char  c_r_flag[],
+               const int   c_r_flag[],
                cs_lnum_t  *b_f_o2n[])
 {
   const cs_lnum_t n_b_faces = m->n_b_faces;
@@ -1933,7 +1933,7 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
   /* Then merge boundary faces */
 
   cs_lnum_t  *b_f_o2n = nullptr;
-  cs_lnum_t  n_b_f_new = _b_faces_equiv(m, c_r_flag, &b_f_o2n);
+  cs_lnum_t  n_b_f_new = _b_faces_equiv(m, c_flag_n, &b_f_o2n);
 
   _merge_b_faces(m, n_b_f_new, b_f_o2n);
 
