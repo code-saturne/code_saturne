@@ -1555,8 +1555,14 @@ cs_cdo_quantities_build(const cs_mesh_t            *m,
     /* The computation of the cell barycenter with the Mirtich algorithm is
        false when boundary faces are removed. Switch to a correct one. */
 
-    if (cs_cdo_cell_center_algo == CS_CDO_QUANTITIES_BARYC_CENTER)
+    if (cs_cdo_cell_center_algo == CS_CDO_QUANTITIES_BARYC_CENTER) {
       cs_cdo_cell_center_algo = CS_CDO_QUANTITIES_MEANV_CENTER;
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_WARNINGS,
+                    " %s: Automatic switch to an algorithm \"MeanV\" to compute"
+                    " cell centers.\n", __func__);
+    }
+
   }
 
   /* 1) Initialize shared quantities */
