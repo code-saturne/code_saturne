@@ -1385,6 +1385,7 @@ public:
     const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
 #endif
   )
+  :_span()
   {
     _span::set_size_(other._extent);
     _mode = other._mode;
