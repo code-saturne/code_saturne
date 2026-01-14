@@ -3,6 +3,9 @@ Release 9.0.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix incorrect Cp/Cv mixup in compressible model turbulent boundary
+  conditions setting for temperature.
+
 - Fix restart in case of solidification with an existing mushy zone (CDO schemes)
 
 - Fix flux postprocessing in scalar-valued CDO-Fb schemes (Neumann BCs)
