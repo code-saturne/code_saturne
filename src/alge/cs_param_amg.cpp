@@ -429,10 +429,10 @@ cs_param_amg_gamg_create(void)
 
   /* Main options */
 
-  gamgp->n_down_iter   = 1;
-  gamgp->down_smoother = CS_PARAM_AMG_GAMG_FORWARD_GS;
-  gamgp->n_up_iter     = 3;
-  gamgp->up_smoother   = CS_PARAM_AMG_GAMG_BACKWARD_GS;
+  gamgp->n_down_iter   = 2;
+  gamgp->down_smoother = CS_PARAM_AMG_GAMG_CHEBYSHEV;
+  gamgp->n_up_iter     = 4;
+  gamgp->up_smoother   = CS_PARAM_AMG_GAMG_CHEBYSHEV;
   gamgp->coarse_solver = CS_PARAM_AMG_GAMG_BJACOBI_LU;
 
   /* Advanced options */

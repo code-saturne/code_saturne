@@ -390,6 +390,7 @@ _set_petsc_mg_levels(const char                        *prefix,
 
     case CS_PARAM_AMG_GAMG_CHEBYSHEV:
       _petsc_cmd(true, prefix, "mg_levels_ksp_type", "chebyshev");
+      _petsc_cmd(true, prefix, "mg_levels_ksp_chebyshev_kind", "opt_fourth");
       _petsc_cmd(true, prefix, "mg_levels_ksp_chebyshev_eigenvalues",
                  "0.1,1");  // rough estimation of min./max. eigenvalues
       _petsc_cmd(true, prefix, "mg_levels_pc_type", "jacobi");
@@ -448,6 +449,7 @@ _set_petsc_mg_levels(const char                        *prefix,
 
     case CS_PARAM_AMG_GAMG_CHEBYSHEV:
       _petsc_cmd(true, prefix, "mg_levels_ksp_type", "chebyshev");
+      _petsc_cmd(true, prefix, "mg_levels_ksp_chebyshev_kind", "opt_fourth");
       _petsc_cmd(true, prefix, "mg_levels_ksp_chebyshev_eigenvalues",
                  "0.1,1");  // rough estimation of min./max. eigenvalues
       _petsc_cmd(true, prefix, "mg_levels_pc_type", "jacobi");
@@ -507,6 +509,7 @@ _set_petsc_mg_levels(const char                        *prefix,
 
     case CS_PARAM_AMG_GAMG_CHEBYSHEV:
       _petsc_cmd(true, prefix, "mg_levels_up_ksp_type", "chebyshev");
+      _petsc_cmd(true, prefix, "mg_levels_up_ksp_chebyshev_kind", "opt_fourth");
       _petsc_cmd(true, prefix, "mg_levels_up_ksp_chebyshev_eigenvalues",
                  "0.1,1");  // rough estimation of min./max. eigenvalues
       _petsc_cmd(true, prefix, "mg_levels_up_pc_type", "jacobi");
