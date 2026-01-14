@@ -3,6 +3,9 @@ Release 9.0.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix incorrect Cp/Cv mixup in compressible model turbulent boundary
+  conditions setting for temperature.
+
 - Fix restart in case of solidification with an existing mushy zone (CDO schemes)
 
 - Fix flux postprocessing in scalar-valued CDO-Fb schemes (Neumann BCs)
@@ -49,8 +52,10 @@ Release 9.0.2 (unreleased)
 
 ### Architectural changes:
 
+- Fix for compilation with PETSc >= 3.24.0.
+
 - Enable auto-restart functionnality for coupled runs
-  (code_saturne/neptune_cfd only)
+  (code_saturne/neptune_cfd only).
 
 - Fix for detection of MUMPS v5.7 and above. With those versions, the
   `Makefile.inc` file is located in a `share` subdirectory.

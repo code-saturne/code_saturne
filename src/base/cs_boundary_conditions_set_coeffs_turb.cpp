@@ -386,7 +386,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
     if (iscacp == 1)
       cpp = (icp >= 0) ? cpro_cp[c_id] : cp0;
     else if (iscacp == 2)
-      cpp = (icp >= 0) ? cpro_cv[c_id] : cp0;
+      cpp = (icv >= 0) ? cpro_cv[c_id] : cv0;
     else if (iscacp == 3) {
       cpp = (icp >= 0) ? cpro_cp[c_id] : cp0;
       cpp = (icv >= 0) ? cpp / cpro_cv[c_id] : cpp / cv0;
