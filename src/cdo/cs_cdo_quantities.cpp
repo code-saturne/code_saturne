@@ -1059,6 +1059,7 @@ _mirtich_algorithm(const cs_mesh_t            *mesh,
  *          This subdivision relies on an implicit subdivision of each face
  *          into triangles.
  *
+ * \param[in]     mesh  pointer to a cs_mesh_t structure
  * \param[in]     fvq   pointer to a cs_mesh_quantities_t structure
  * \param[in]     topo  pointer to a cs_cdo_connect_t structure
  * \param[in,out] cdoq  pointer to a cs_cdo_quantities_t structure
@@ -1066,7 +1067,8 @@ _mirtich_algorithm(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_subdiv_cell_quantities(const cs_mesh_quantities_t *fvq,
+_update_subdiv_cell_quantities(const cs_mesh_t            *mesh,
+                               const cs_mesh_quantities_t *fvq,
                                const cs_cdo_connect_t     *topo,
                                cs_cdo_quantities_t        *cdoq)
 {
@@ -1083,18 +1085,26 @@ _update_subdiv_cell_quantities(const cs_mesh_quantities_t *fvq,
 #endif
 
   for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+
     const int        n_cell_vertices = c2v->idx[c_id + 1] - c2v->idx[c_id];
     const cs_real_t *ref_xc = (const cs_real_t *)fvq->cell_cen + 3 * c_id;
 
     cs_real_t *new_xc = cdoq->cell_centers[c_id];
 
-    if (n_cell_vertices == 4) { // Copy mesh quantities
+    if (n_cell_vertices == 4) { // Specific treatment for a tetrahedra
 
       vol_tot += fvq->cell_vol[c_id];
       cdoq->cell_vol[c_id] = fvq->cell_vol[c_id];
 
       for (int k = 0; k < 3; k++)
-        new_xc[k] = ref_xc[k];
+        new_xc[k] = 0.;
+
+      for (cs_lnum_t i = c2v->idx[c_id]; i < c2v->idx[c_id+1]; i++) {
+        const cs_real_t *v_xyz = mesh->vtx_coord + 3*c2v->ids[i];
+        for (int k = 0; k < 3; k++)
+          new_xc[k] += 0.25*v_xyz[k];
+      }
+
     }
     else { // Perform an implicit subdivision into tetrahedra
 
@@ -1454,7 +1464,7 @@ _subdiv_algorithm(const cs_mesh_t            *mesh,
   // into triangles of each face and on the cell subdivision into tetrahedra
   // hinging on the face sudvision
 
-  _update_subdiv_cell_quantities(fvq, topo, cdoq);
+  _update_subdiv_cell_quantities(mesh, fvq, topo, cdoq);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
