@@ -367,22 +367,23 @@ class batch:
         for i in range(len(batch_lines)):
             if batch_lines[i][0:7] == '#SBATCH':
                 rm_line = False
-                for item in rm_var:
-                   if item in batch_lines[i]:
-                       # determine nb of slurm options in line (first is SBATCH)
-                       options = re.split(r"--", batch_lines[i])
-                       options.remove('#SBATCH ')
-                       if len(options) == 1:
-                           # remove the entire line as only one option is found
-                           list_rm_line.append(i)
-                           rm_line = True
-                       elif len(options) > 1:
-                           # only remove option in the line
-                           line = '#SBATCH '
-                           for opt in options:
-                               if opt.strip() not in item:
-                                   line += "--"+opt.strip()+" "
-                           batch_lines[i] = line
+                if rm_var:
+                    for item in rm_var:
+                        if item in batch_lines[i]:
+                            # determine nb of slurm options in line (first is SBATCH)
+                            options = re.split(r"--", batch_lines[i])
+                            options.remove('#SBATCH ')
+                            if len(options) == 1:
+                                # remove the entire line as only one option is found
+                                list_rm_line.append(i)
+                                rm_line = True
+                            elif len(options) > 1:
+                                # only remove option in the line
+                                line = '#SBATCH '
+                                for opt in options:
+                                    if opt.strip() not in item:
+                                        line += "--"+opt.strip()+" "
+                                batch_lines[i] = line
                 if rm_line: continue
                 batch_args = self.__pre_parse__(batch_lines[i][7:])
                 if batch_args[0:2] == '--':
@@ -434,39 +435,40 @@ class batch:
              for nb_line in list_rm_line:
                   batch_lines.pop(nb_line)
 
-        for item in add_var:
-            if item in self.params:
-                val = str(self.params[item])
-                if item == 'job_name':
-                    kw = '--job-name='
-                elif item == 'job_procs':
-                    kw = '--ntasks='
-                elif item == 'job_nodes':
-                    kw = '--nodes='
-                elif item == 'job_ppn':
-                    kw = '--ntasks-per-node='
-                elif item == 'job_threads':
-                    kw = '--cpus-per-task='
-                elif item == 'job_walltime':
-                    kw = '--time='
-                    wt = self.params['job_walltime']
-                    if wt > 86400: # 3600*24
-                        val = '%d-%d:%02d:%02d' % (wt//86400,
-                                                   (wt%86400)//3600,
-                                                   (wt%3600)//60,
-                                                   wt%60)
-                    else:
-                        val = '%d:%02d:%02d' % (wt//3600,
-                                                    (wt%3600)//60,
-                                                    wt%60)
-                elif item == 'job_class':
-                    kw = '--partition='
-                elif item == 'job_account':
-                    kw = '--account='
-                elif item == 'job_wckey':
-                    kw = '--wckey='
-                if val:
-                    batch_lines.insert(1, '#SBATCH ' + kw + str(val))
+        if add_var:
+            for item in add_var:
+                if item in self.params:
+                    val = str(self.params[item])
+                    if item == 'job_name':
+                        kw = '--job-name='
+                    elif item == 'job_procs':
+                        kw = '--ntasks='
+                    elif item == 'job_nodes':
+                        kw = '--nodes='
+                    elif item == 'job_ppn':
+                        kw = '--ntasks-per-node='
+                    elif item == 'job_threads':
+                        kw = '--cpus-per-task='
+                    elif item == 'job_walltime':
+                        kw = '--time='
+                        wt = self.params['job_walltime']
+                        if wt > 86400: # 3600*24
+                            val = '%d-%d:%02d:%02d' % (wt//86400,
+                                                       (wt%86400)//3600,
+                                                       (wt%3600)//60,
+                                                       wt%60)
+                        else:
+                            val = '%d:%02d:%02d' % (wt//3600,
+                                                        (wt%3600)//60,
+                                                        wt%60)
+                    elif item == 'job_class':
+                        kw = '--partition='
+                    elif item == 'job_account':
+                        kw = '--account='
+                    elif item == 'job_wckey':
+                        kw = '--wckey='
+                    if val:
+                        batch_lines.insert(1, '#SBATCH ' + kw + str(val))
 
     #---------------------------------------------------------------------------
 
