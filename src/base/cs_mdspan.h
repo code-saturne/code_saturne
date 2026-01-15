@@ -853,11 +853,10 @@ public:
                                          If -1, default, we use array size */
   )
   {
-    assert(other._size == _size);
-
-    assert(n_vals <= _size);
-
     const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
+
+    assert(loop_size <= _size);
+    assert(loop_size <= other.size());
 
     // Explicit pointer, avoid passing internal member of class to the functor
     T* data_ptr = _data;
@@ -949,11 +948,10 @@ public:
                                               If -1, default, we use array size */
   )
   {
-    assert(other.size() == _size);
-
-    assert(n_vals <= _size);
-
     const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
+
+    assert(loop_size <= _size);
+    assert(loop_size <= other.size());
 
     // Explicit pointer, avoid passing internal member of class to the functor
     T* data_ptr = _data;
