@@ -531,6 +531,21 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
+   * \brief Get span 1D view of the array, same total size.
+   *
+   * \return mdspan<T,1,L> view with same total size as original object.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  mdspan<T, 1, L>
+  view_1d()
+  {
+    return mdspan<T,1,L>(_data, _size);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
    * \brief Getter for a subspan based on first dimension
    *
    * \return pointer
