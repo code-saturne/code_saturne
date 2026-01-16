@@ -4944,7 +4944,7 @@ cs_field_t::get_vals_s
               _("%s: Field \"%s\" is not a scalar and has dimension %d\n"),
               __func__, this->name, this->dim);
 
-  return this->_vals[time_id]->get_mdspan({this->_vals[time_id]->size()});
+  return this->_vals[time_id]->view_1d();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4967,8 +4967,10 @@ cs_field_t::get_vals_v
               _("%s: Field \"%s\" is not a vector and has dimension %d\n"),
               __func__, this->name, this->dim);
 
-  const cs_lnum_t n_elts = this->_vals[time_id]->size() / this->dim;
-  return this->_vals[time_id]->get_mdspan<2>({n_elts, this->dim});
+  /* Object is cs_array_2d, hence 'view()' already returns a cs_span_2d
+   * with correct dimensions.
+   */
+  return this->_vals[time_id]->view();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4991,8 +4993,10 @@ cs_field_t::get_vals_t
               _("%s: Field \"%s\" is not a tensor and has dimension %d\n"),
               __func__, this->name, this->dim);
 
-  const cs_lnum_t n_elts = this->_vals[time_id]->size() / this->dim;
-  return this->_vals[time_id]->get_mdspan<2>({n_elts, this->dim});
+  /* Object is cs_array_2d, hence 'view()' already returns a cs_span_2d
+   * with correct dimensions.
+   */
+  return this->_vals[time_id]->view();
 }
 
 /*----------------------------------------------------------------------------*/
