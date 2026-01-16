@@ -3997,8 +3997,11 @@ cs_turbulence_rij_clip(int        phase_id,
          not count as clippings) */
 
       if (c_is_solid[solid_stride*c_id]) {
-        for (cs_lnum_t ij = 0; ij < 6; ij++)
+        for (cs_lnum_t ij = 0; ij < 6; ij++) {
+          if (cpro_rij_clipped != nullptr)
+            cpro_rij_clipped[c_id][ij] = cvar_rij[c_id][ij];
           cvar_rij[c_id][ij] = 0;
+        }
         return;
       }
 
