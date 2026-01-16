@@ -466,7 +466,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
         || (iscdri & CS_DRIFT_SCALAR_THERMOPHORESIS)) {
 
       /* Face diffusivity of rho to compute rho*(Grad K . n)_face */
-      w1.copy_data(ctx, (cs_real_t *)crom, n_cells);
+      w1.copy_data(ctx, crom, n_cells);
 
       if (mesh->halo != nullptr)
         cs_halo_sync(mesh->halo, CS_HALO_STANDARD, ctx.use_gpu(), w1.data());
