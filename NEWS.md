@@ -3,6 +3,8 @@ Release 9.0.2 (unreleased)
 
 ### Bug fixes:
 
+- ALE: fix incorrect index for z-component of fluid velocity.
+
 - Fix incorrect Cp/Cv mixup in compressible model turbulent boundary
   conditions setting for temperature.
 
