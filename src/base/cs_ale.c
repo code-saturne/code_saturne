@@ -744,7 +744,7 @@ _update_bcs(const cs_domain_t  *domain,
 
             b_fluid_vel[face_id][0] += portion_surf * _val[0];
             b_fluid_vel[face_id][1] += portion_surf * _val[1];
-            b_fluid_vel[face_id][2] += portion_surf * _val[1];
+            b_fluid_vel[face_id][2] += portion_surf * _val[2];
           }
 
         }
