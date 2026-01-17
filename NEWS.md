@@ -3,6 +3,9 @@ Release 8.0.6 (unreleased)
 
 ### Bug fixes:
 
+- ALE: fix incorrect index for z-component of fluid velocity in
+  fixed-displacement boundary conditions..
+
 - GUI: fix crash with some batch file templates due to old Python2
   division syntax.
 
