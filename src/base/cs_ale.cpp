@@ -808,14 +808,14 @@ _update_bcs(const cs_domain_t  *domain,
             /* Portion of the surface associated to the vertex
              * projected in the normal direction */
             cs_real_t portion_surf = 0.25 * dsurf  * (
-                cs_math_3_triple_product(v0v1, v1_cog, normal)
+                  cs_math_3_triple_product(v0v1, v1_cog, normal)
                 + cs_math_3_triple_product(v1v2, v1_cog, normal));
 
             cs_real_t *_val = _cdo_bc->vtx_values + 3*v_id1;
 
             b_fluid_vel[face_id][0] += portion_surf * _val[0];
             b_fluid_vel[face_id][1] += portion_surf * _val[1];
-            b_fluid_vel[face_id][2] += portion_surf * _val[1];
+            b_fluid_vel[face_id][2] += portion_surf * _val[2];
           }
 
         }

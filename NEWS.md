@@ -3,6 +3,8 @@ Release 9.1.1 (unreleased)
 
 ### Bug fixes:
 
+- ALE: fix incorrect index for z-component of fluid velocity.
+
 - Lagrangian module: fix bug in Brownian motion (introduced in v9.1).
 
 - Fix `--mem-log` run option which was broken before release.
