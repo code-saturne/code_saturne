@@ -284,6 +284,9 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   /* Initialize extended connectivity, ghost cells and other remaining
      parallelism-related structures */
 
+  if (cs_ext_neighborhood_get_type() > CS_EXT_NEIGHBORHOOD_NONE)
+    halo_type = CS_HALO_EXTENDED;
+
   cs_mesh_init_halo(m, cs_glob_mesh_builder, halo_type, m->verbosity, true);
   cs_mesh_update_auxiliary(m);
 
