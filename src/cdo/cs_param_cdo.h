@@ -94,12 +94,12 @@ BEGIN_C_DECLS
 
 typedef enum {
 
-  CS_PARAM_CDO_MODE_OFF     = -1,  /* CDO schemes are not used */
-  CS_PARAM_CDO_MODE_WITH_FV =  1,  /* CDO and legacy FV schemes are used */
-  CS_PARAM_CDO_MODE_NS_WITH_FV = 2,   /* CDO schemes activated for NSE
-                                         and legacy FV schemes for
-                                         other equations */
-  CS_PARAM_CDO_MODE_ONLY = 3          /* Only CDO schemes are used */
+  CS_PARAM_CDO_MODE_OFF        = -1, /* CDO schemes are not used */
+  CS_PARAM_CDO_MODE_WITH_FV    =  1, /* CDO and legacy FV schemes are used */
+  CS_PARAM_CDO_MODE_NS_WITH_FV =  2, /* CDO schemes activated for NSE and
+                                        legacy FV schemes for other
+                                        equations */
+  CS_PARAM_CDO_MODE_ONLY       =  3  /* Only CDO schemes are used */
 
 } cs_param_cdo_mode_t;
 

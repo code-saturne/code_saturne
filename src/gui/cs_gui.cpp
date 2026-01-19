@@ -1949,7 +1949,7 @@ cs_gui_dt_param(void)
 {
   /* If HTSolver & steady state exit */
   if (   cs_glob_physical_model_flag[CS_HEAT_TRANSFER] > -1
-      && cs_glob_domain->time_options->idtvar == CS_TIME_STEP_LOCAL)
+      && cs_glob_domain->time_step_options->idtvar == CS_TIME_STEP_LOCAL)
     return;
 
   /* Default, forbidden values for time step factor */
@@ -1958,30 +1958,30 @@ cs_gui_dt_param(void)
   cs_tree_node_t *tn
     = cs_tree_get_node(cs_glob_tree, "analysis_control/time_parameters");
 
-  cs_time_step_options_t *time_opt = cs_get_glob_time_step_options();
-  cs_time_step_t *time_stp = cs_get_glob_time_step();
+  cs_time_step_options_t *ts_opt = cs_get_glob_time_step_options();
+  cs_time_step_t *ts = cs_get_glob_time_step();
 
-  cs_gui_node_get_child_real(tn, "time_step_ref", &(time_stp->dt_ref));
+  cs_gui_node_get_child_real(tn, "time_step_ref", &(ts->dt_ref));
   cs_gui_node_get_child_real(tn, "time_step_min_factor", &cdtmin);
   cs_gui_node_get_child_real(tn, "time_step_max_factor", &cdtmax);
-  cs_gui_node_get_child_real(tn, "max_courant_num", &(time_opt->coumax));
-  cs_gui_node_get_child_real(tn, "max_fourier_num", &(time_opt->foumax));
-  cs_gui_node_get_child_real(tn, "time_step_var", &(time_opt->varrdt));
-  cs_gui_node_get_child_real(tn, "relaxation_coefficient", &(time_opt->relxst));
+  cs_gui_node_get_child_real(tn, "max_courant_num", &(ts_opt->coumax));
+  cs_gui_node_get_child_real(tn, "max_fourier_num", &(ts_opt->foumax));
+  cs_gui_node_get_child_real(tn, "time_step_var", &(ts_opt->varrdt));
+  cs_gui_node_get_child_real(tn, "relaxation_coefficient", &(ts_opt->relxst));
 
   /* Call CDO function for HT Solver */
   if (   cs_glob_physical_model_flag[CS_HEAT_TRANSFER] > -1
-      && time_opt->idtvar == CS_TIME_STEP_CONSTANT)
-    cs_domain_def_time_step_by_value(cs_glob_domain, time_stp->dt_ref);
+      && ts_opt->idtvar == CS_TIME_STEP_CONSTANT)
+    cs_domain_def_time_step_by_value(cs_glob_domain, ts->dt_ref);
 
   if (cdtmin > 0)
-    time_opt->dtmin = cdtmin * time_stp->dt_ref;
+    ts_opt->dtmin = cdtmin * ts->dt_ref;
   if (cdtmax > 0)
-    time_opt->dtmax = cdtmax * time_stp->dt_ref;
+    ts_opt->dtmax = cdtmax * ts->dt_ref;
 
   /* We keep these two lines in case we read an old XML file... */
-  cs_gui_node_get_child_real(tn, "time_step_min", &(time_opt->dtmin));
-  cs_gui_node_get_child_real(tn, "time_step_max", &(time_opt->dtmax));
+  cs_gui_node_get_child_real(tn, "time_step_min", &(ts_opt->dtmin));
+  cs_gui_node_get_child_real(tn, "time_step_max", &(ts_opt->dtmax));
 
   /* Stop criterion */
 
@@ -1989,41 +1989,41 @@ cs_gui_dt_param(void)
 
   cs_gui_node_get_child_real(tn, "maximum_time", &_t_max);
   if (_t_max >= 0)
-    time_stp->t_max = _t_max;
+    ts->t_max = _t_max;
   else {
     cs_gui_node_get_child_real(tn, "maximum_time_add", &_t_max);
     if (_t_max >= 0)
-      time_stp->t_max = time_stp->t_prev + _t_max;
+      ts->t_max = ts->t_prev + _t_max;
   }
 
   if (_t_max < 0) {
     int _nt_max = -1;
     cs_gui_node_get_child_int(tn, "iterations", &_nt_max);
     if (_nt_max > -1)
-      time_stp->nt_max = _nt_max;
+      ts->nt_max = _nt_max;
     else {
       cs_gui_node_get_child_int(tn, "iterations_add", &_nt_max);
       if (_nt_max > -1)
-        time_stp->nt_max = time_stp->nt_prev + _nt_max;
+        ts->nt_max = ts->nt_prev + _nt_max;
     }
   }
 
   cs_gui_node_get_child_status_int(tn,
                                    "thermal_time_step",
-                                   &(time_opt->iptlro));
+                                   &(ts_opt->iptlro));
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
-  bft_printf("--idtvar = %i\n", time_opt->idtvar);
-  bft_printf("--iptlro = %i\n", time_opt->iptlro);
-  bft_printf("--ntmabs = %i\n", time_stp->nt_max);
-  bft_printf("--dtref = %f\n",  time_stp->dt_ref);
-  bft_printf("--dtmin = %f\n",  time_opt->dtmin);
-  bft_printf("--dtmax = %f\n",  time_opt->dtmax);
-  bft_printf("--coumax = %f\n", time_opt->coumax);
-  bft_printf("--foumax = %f\n", time_opt->foumax);
-  bft_printf("--varrdt = %f\n", time_opt->varrdt);
-  bft_printf("--relxst = %f\n", time_opt->relxst);
+  bft_printf("--idtvar = %i\n", ts_opt->idtvar);
+  bft_printf("--iptlro = %i\n", ts_opt->iptlro);
+  bft_printf("--ntmabs = %i\n", ts->nt_max);
+  bft_printf("--dtref = %f\n",  ts->dt_ref);
+  bft_printf("--dtmin = %f\n",  ts_opt->dtmin);
+  bft_printf("--dtmax = %f\n",  ts_opt->dtmax);
+  bft_printf("--coumax = %f\n", ts_opt->coumax);
+  bft_printf("--foumax = %f\n", ts_opt->foumax);
+  bft_printf("--varrdt = %f\n", ts_opt->varrdt);
+  bft_printf("--relxst = %f\n", ts_opt->relxst);
 #endif
 }
 

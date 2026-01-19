@@ -238,8 +238,7 @@ cs_domain_create(void)
   /* Global structure for time step management */
 
   domain->time_step = cs_get_glob_time_step();
-
-  domain->time_options = cs_get_glob_time_step_options();
+  domain->time_step_options = cs_get_glob_time_step_options();
 
   /* Other options */
 

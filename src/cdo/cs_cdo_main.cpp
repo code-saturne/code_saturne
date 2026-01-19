@@ -432,7 +432,7 @@ _initialize_time_step(cs_time_step_t         *ts,
 
   if (cs_property_is_steady(cs_dt_pty) == false) { /* dt_cur may change */
 
-    /* Update time_options */
+    /* Update time_step_options */
 
     double dtmin = cs::min(ts_opt->dtmin, dt_init);
     double dtmax = cs::max(ts_opt->dtmax, dt_init);
@@ -473,7 +473,7 @@ _define_current_time_step(cs_time_step_t           *ts,
 
   if (cs_property_is_steady(cs_dt_pty) == false) {  /* dt_cur may change */
 
-    /* Update time_options */
+    /* Update time_step_options */
 
     double  dtmin = cs::min(ts_opt->dtmin, ts->dt[0]);
     double  dtmax = cs::max(ts_opt->dtmax, ts->dt[0]);
@@ -482,7 +482,7 @@ _define_current_time_step(cs_time_step_t           *ts,
     ts_opt->dtmax = dtmax;
 
     /* TODO: Check how the following value is set in FORTRAN
-     * domain->time_options.dtref = 0.5*(dtmin + dtmax); */
+     * domain->time_step_options.dtref = 0.5*(dtmin + dtmax); */
 
     if (ts->dt_ref < 0) /* Should be the initial val. */
       ts->dt_ref = ts->dt[0];
@@ -1149,7 +1149,7 @@ cs_cdo_main(cs_domain_t   *domain)
   /* Set the initial values of the fields and properties for all equations and
    * systems of equations to be solved */
 
-  _initialize_time_step(domain->time_step, domain->time_options);
+  _initialize_time_step(domain->time_step, domain->time_step_options);
 
   cs_domain_setup_init_state(domain);
 
@@ -1186,7 +1186,7 @@ cs_cdo_main(cs_domain_t   *domain)
 
     /* Define the current time step */
 
-    _define_current_time_step(domain->time_step, domain->time_options);
+    _define_current_time_step(domain->time_step, domain->time_step_options);
 
     /* Read a control file if present */
 

@@ -2656,7 +2656,7 @@ _init_user(void)
 
   /* If CDO is active, initialize the context structures for models which
    * have been activated */
-  if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_OFF) {
+  if (!cs_param_cdo_has_fv_only()) {
     /* Groundwater flow module */
     if (cs_gwf_is_activated())
       cs_gwf_init_model_context();
@@ -2677,7 +2677,8 @@ _init_user(void)
   cs_gui_user_arrays();
   cs_gui_calculator_functions();
 
-  if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY) {
+  if (!cs_param_cdo_has_cdo_only()) {
+
     /* Solid zones */
     cs_velocity_pressure_set_solid();
 
@@ -2693,6 +2694,7 @@ _init_user(void)
 
     /* Activate pressure correction model if CDO mode is not stand-alone */
     cs_pressure_correction_model_activate();
+
   }
 
   if (cs_glob_ale != CS_ALE_NONE)
