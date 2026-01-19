@@ -158,9 +158,7 @@ _init_setup(void)
 
   /* Other mappings */
 
-  if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY) {
-    cs_set_glob_turb_model(); /* set global pointer to turbulence model */
-  }
+  cs_set_glob_turb_model(); /* set global pointer to turbulence model */
 
   /* Initializations for some specific physical models.
      At this stage, physical model flags may not be set yet, so only default
