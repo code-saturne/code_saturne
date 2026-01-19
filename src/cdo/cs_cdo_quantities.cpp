@@ -1746,7 +1746,7 @@ cs_cdo_quantities_check(int                         verb,
       if (pct > threshold) {
         n_c_issues++;
         if (verb > 2)
-          bft_printf(" %s: cell %d --> Delta volume: %6.3e\%\n",
+          bft_printf(" %s: cell %d --> Delta volume: %6.3e%%\n",
                      __func__, i, pct*100);
       }
     }
@@ -1780,7 +1780,7 @@ cs_cdo_quantities_check(int                         verb,
         if (pct > threshold) {
           n_fc_issues++;
           if (verb > 2)
-            bft_printf(" %s: cell %d --> Delta Pfc volume: %6.3e\%\n",
+            bft_printf(" %s: cell %d --> Delta Pfc volume: %6.3e%%\n",
                        __func__, i, pct*100);
         }
       }
@@ -1809,7 +1809,7 @@ cs_cdo_quantities_check(int                         verb,
         if (pct > threshold) {
           n_vc_issues++;
           if (verb > 2)
-            bft_printf(" %s: cell %d --> Delta dual volume: %6.3e\%\n",
+            bft_printf(" %s: cell %d --> Delta dual volume: %6.3e%%\n",
                        __func__, i, pct*100);
         }
       }
@@ -1850,11 +1850,11 @@ cs_cdo_quantities_check(int                         verb,
                   n_vc_issues);
 
     if (verb > 1) {
-      cs_log_printf(CS_LOG_DEFAULT, "    \"primal volume gap\"  %8.3e\%\n",
+      cs_log_printf(CS_LOG_DEFAULT, "    \"primal volume gap\"  %8.3e%%\n",
                     max_c_pct*100);
-      cs_log_printf(CS_LOG_DEFAULT, "    \"face volume gap\"    %8.3e\%\n",
+      cs_log_printf(CS_LOG_DEFAULT, "    \"face volume gap\"    %8.3e%%\n",
                     max_fc_pct*100);
-      cs_log_printf(CS_LOG_DEFAULT, "    \"dual volume gap\"    %8.3e\%\n",
+      cs_log_printf(CS_LOG_DEFAULT, "    \"dual volume gap\"    %8.3e%%\n",
                     max_vc_pct*100);
     }
 
