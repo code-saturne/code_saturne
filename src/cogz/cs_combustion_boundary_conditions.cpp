@@ -284,7 +284,7 @@ cs_combustion_boundary_conditions(int  bc_type[])
     cs_real_t h_in = -HUGE_VALF;
     cs_real_t fm_in = 0, fp2m_fsqm_in = 0, pvm_in = 0;
 
-    if ((ci->ientfu != 1 && ci->ientox != 1) || qimp < 0)
+    if (ci->ientfu != 1 && ci->ientox != 1)
       continue;
 
     cs_real_t coefg[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES];
@@ -516,7 +516,8 @@ cs_combustion_boundary_conditions_lw(int  bc_type[])
 
   for (int bdy_idx = 0; bdy_idx < bdy->n_boundaries; bdy_idx += 1) {
 
-    if (! (bdy->types[bdy_idx] & CS_BOUNDARY_INLET))
+    if (! (bdy->types[bdy_idx] & CS_BOUNDARY_INLET
+        || bdy->types[bdy_idx] & CS_BOUNDARY_CONVECTIVE_INLET))
       continue;
 
     const cs_zone_t *z = cs_boundary_zone_by_id(bdy->zone_ids[bdy_idx]);
@@ -814,7 +815,8 @@ cs_combustion_boundary_conditions_mean_inlet_ebu_lw(cs_real_t  *fmm,
 
   const cs_boundary_t *bdy = cs_glob_boundaries;
   for (int bdy_idx = 0; bdy_idx < bdy->n_boundaries; bdy_idx += 1) {
-    if (! (bdy->types[bdy_idx] & CS_BOUNDARY_INLET))
+    if (! (bdy->types[bdy_idx] & CS_BOUNDARY_INLET
+        || bdy->types[bdy_idx] & CS_BOUNDARY_CONVECTIVE_INLET))
       continue;
 
     const cs_zone_t *z = cs_boundary_zone_by_id(bdy->zone_ids[bdy_idx]);
