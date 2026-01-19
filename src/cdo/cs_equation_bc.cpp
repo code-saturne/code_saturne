@@ -2198,7 +2198,7 @@ cs_equation_bc_cw_turb_smooth_wall(cs_real_t                  t_eval,
 
   assert(eqp->dim == def->dim);
 
-  const int dim = eqp->dim, data_size = data_size;
+  const int dim = eqp->dim, data_size = 3*dim;
 
   if (def->meta & CS_CDO_BC_WALL_PRESCRIBED) {
 
