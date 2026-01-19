@@ -1587,12 +1587,23 @@ cs_turb_model_log_setup(void)
 
     if (   cs_glob_turb_rans_model->ikecou == 0
         && cs_glob_time_step_options->idtvar >= 0) {
-      cs_real_t relaxvk = cs_field_get_equation_param_const(CS_F_(k))->relaxv;
-      cs_real_t relaxve = cs_field_get_equation_param_const(CS_F_(eps))->relaxv;
+
+      const cs_equation_param_t *eqp_k
+        = cs_field_get_equation_param_const(CS_F_(k));
+      const cs_equation_param_t *eqp_e
+        = cs_field_get_equation_param_const(CS_F_(eps));
+
+      if (eqp_k == nullptr || eqp_e == nullptr)
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: k-epsilon turbulence model set but no related equation"
+                  " is found.\n Please check your settings.",
+                  __func__);
+
       cs_log_printf(CS_LOG_SETUP,
                     _("    relaxv:      %14.5e for k (Relaxation)\n"
                       "    relaxv:      %14.5e for epsilon (Relaxation)\n"),
-                    relaxvk, relaxve);
+                    eqp_k->relaxv, eqp_e->relaxv);
+
     }
     else
       cs_log_printf(CS_LOG_SETUP, _("\n"));
@@ -1690,12 +1701,21 @@ cs_turb_model_log_setup(void)
     if (   cs_glob_turb_rans_model->ikecou == 0
         && cs_glob_time_step_options->idtvar >= 0) {
 
-      cs_real_t relaxvk = cs_field_get_equation_param_const(CS_F_(k))->relaxv;
-      cs_real_t relaxve = cs_field_get_equation_param_const(CS_F_(eps))->relaxv;
+      const cs_equation_param_t *eqp_k
+        = cs_field_get_equation_param_const(CS_F_(k));
+      const cs_equation_param_t *eqp_e
+        = cs_field_get_equation_param_const(CS_F_(eps));
+
+      if (eqp_k == nullptr || eqp_e == nullptr)
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: v2f-phi turbulence model set but no related equation"
+                  " is found.\n Please check your settings.",
+                  __func__);
+
       cs_log_printf(CS_LOG_SETUP,
                     _("    relaxv:      %14.5e for k (Relaxation)\n"
                       "    relaxv:      %14.5e for epsilon (Relaxation)\n"),
-                    relaxvk, relaxve);
+                    eqp_k->relaxv, eqp_e->relaxv);
 
     }
     else
@@ -1726,12 +1746,21 @@ cs_turb_model_log_setup(void)
     if (   cs_glob_turb_rans_model->ikecou == 0
         && cs_glob_time_step_options->idtvar >= 0) {
 
-      cs_real_t relaxvk = cs_field_get_equation_param_const(CS_F_(k))->relaxv;
-      cs_real_t relaxve = cs_field_get_equation_param_const(CS_F_(eps))->relaxv;
+      const cs_equation_param_t *eqp_k
+        = cs_field_get_equation_param_const(CS_F_(k));
+      const cs_equation_param_t *eqp_e
+        = cs_field_get_equation_param_const(CS_F_(eps));
+
+      if (eqp_k == nullptr || eqp_e == nullptr)
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: v2f-bl-v2k turbulence model set but no related equation"
+                  " is found.\n Please check your settings.",
+                  __func__);
+
       cs_log_printf(CS_LOG_SETUP,
                     _("    relaxv:      %14.5e for k (Relaxation)\n"
                       "    relaxv:      %14.5e for epsilon (Relaxation)\n"),
-                    relaxvk, relaxve);
+                    eqp_k->relaxv, eqp_e->relaxv);
 
     }
     else
@@ -1762,12 +1791,22 @@ cs_turb_model_log_setup(void)
     if (   cs_glob_turb_rans_model->ikecou == 0
         && cs_glob_time_step_options->idtvar >= 0) {
 
-      cs_real_t relaxvk = cs_field_get_equation_param_const(CS_F_(k))->relaxv;
-      cs_real_t relaxvo = cs_field_get_equation_param_const(CS_F_(omg))->relaxv;
+      const cs_equation_param_t *eqp_k
+        = cs_field_get_equation_param_const(CS_F_(k));
+      const cs_equation_param_t *eqp_o
+        = cs_field_get_equation_param_const(CS_F_(omg));
+
+      if (eqp_k == nullptr || eqp_o == nullptr)
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: k-omega turbulence model set but no related equation"
+                  " is found.\n Please check your settings.",
+                  __func__);
+
       cs_log_printf(CS_LOG_SETUP,
                     _("    relaxv:      %14.5e for k (Relaxation)\n"
                       "    relaxv:      %14.5e for omega (Relaxation)\n"),
-                    relaxvk, relaxvo);
+                    eqp_k->relaxv, eqp_o->relaxv);
+
     }
     else
       cs_log_printf(CS_LOG_SETUP,_("\n"));
@@ -1775,12 +1814,20 @@ cs_turb_model_log_setup(void)
   }
   else if (turb_model->model == CS_TURB_SPALART_ALLMARAS) {
 
-    cs_real_t relaxv = cs_field_get_equation_param_const(CS_F_(nusa))->relaxv;
+    const cs_equation_param_t *eqp_nusa
+      = cs_field_get_equation_param_const(CS_F_(nusa));
+
+    if (eqp_nusa == nullptr)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Spalart-Allmaras turbulence model set but no related"
+                " equation is found.\n Please check your settings.",
+                __func__);
+
     cs_log_printf(CS_LOG_SETUP,
                   _("    uref:        %14.5e (Characteristic velocity)\n"
                     "    relaxv:      %14.5e for nu (Relaxation)\n"),
                   cs_glob_turb_ref_values->uref,
-                  relaxv);
+                  eqp_nusa->relaxv);
 
   }
 
