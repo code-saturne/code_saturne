@@ -3,6 +3,14 @@ Master (not on release branches yet)
 
 ### Numerics:
 
+- Gradients: added computation mode for cell-based gradient clipping,
+  to ensure reconstruction at I'/J' values does not break monotonicity
+  for scalars, and remains within the bounds of the maximum variation
+  between cell and neighbor values for vectors and tensors.
+  The cast of this new CS_GRADIENT_LIMIT_RC implementation is comparable
+  to that of the CS_GRADIENT_LIMIT_FACE one, but should provide for better
+  boundedness with less clipping (so higher precision).
+
 - CDO: Change the default algorithm to compute geometrical quantities in
   CDO schemes. The new choice should be more robust on very low
   quality meshes.

@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -684,6 +684,7 @@ _get_clip_factor_try(const char  *var_name)
  *   verbosity      <-- output level
  *   climgp         <-- clipping coefficient for the computation of the gradient
  *   pvar           <-- variable
+ *   val_f          <-- boundary face value for gradient
  *   grad           <-> gradient of pvar (du/dx_j : grad[][j])
  *----------------------------------------------------------------------------*/
 
@@ -697,15 +698,18 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
                           cs_real_t                     climgp,
                           const char                   *var_name,
                           const cs_real_t              *restrict  pvar,
+                          const cs_real_t               val_f[],
                           cs_real_t                   (*restrict grad)[3])
 {
+  CS_PROFILE_FUNC_RANGE();
+
+  if (clip_mode < 0 || climgp < 0)
+    return;
+
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
-
-  if (clip_mode < 0 || climgp < 0)
-    return;
 
   cs_dispatch_context ctx;
   bool use_gpu = ctx.use_gpu();
@@ -908,6 +912,123 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
     CS_FREE(factor);
 
   } /* End for clip_mode == CS_GRADIENT_LIMIT_FACE */
+
+  /* Third clipping Algorithm: based on reconstructed values at I'/J' */
+  /*------------------------------------------------------------------*/
+
+  else if (clip_mode == CS_GRADIENT_LIMIT_RC) {
+
+    const cs_lnum_t *c2f = ma->cell_i_faces;
+    const short int *c2f_sgn = ma->cell_i_faces_sgn;
+    const cs_lnum_t *restrict c2b_idx = ma->cell_b_faces_idx;
+    const cs_lnum_t *restrict c2b = ma->cell_b_faces;
+    const cs_rreal_3_t *restrict diipf = fvq->diipf;
+    const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
+
+    ctx.parallel_for(n_blocks, [=] CS_F_HOST_DEVICE (cs_lnum_t b_id) {
+
+      cs_lnum_t s_id = b_id*_loop_block_size, e_id = (b_id+1)*_loop_block_size;
+      if (e_id > n_cells) e_id = n_cells;
+
+      cs_real_t v_min[_loop_block_size];
+      cs_real_t v_max[_loop_block_size];
+
+      cs_lnum_t b_e_id = e_id - s_id;
+
+      for (cs_lnum_t i = 0; i < b_e_id; i++) {
+        v_min[i] = pvar[s_id + i];
+        v_max[i] = pvar[s_id + i];
+      }
+
+      /* Min and max over neighboring cells */
+
+      for (int adj_id = 0; adj_id < n_adj; adj_id++) {
+
+        const cs_lnum_t *restrict cell_cells_idx;
+        const cs_lnum_t *restrict cell_cells;
+
+        if (adj_id == 0) {
+          cell_cells_idx = c2c_idx;
+          cell_cells = c2c;
+        }
+        else if (c2c_e_idx != nullptr) {
+          cell_cells_idx = c2c_e_idx;
+          cell_cells = c2c_e;
+        }
+        else
+          break;
+
+        for (cs_lnum_t i = 0; i < b_e_id; i++) { /* Loop on block elements */
+          cs_lnum_t c_id1 = i + s_id;
+
+          for (cs_lnum_t cidx = cell_cells_idx[c_id1];
+               cidx < cell_cells_idx[c_id1+1];
+               cidx++) {
+            cs_lnum_t c_id2 = cell_cells[cidx];
+
+            v_min[i] = cs::min(v_min[i], pvar[c_id2]);
+            v_max[i] = cs::max(v_max[i], pvar[c_id2]);
+          }
+        }
+
+      }
+
+      /* Add Min and max from boundary faces, then shift */
+
+      for (cs_lnum_t i = 0; i < b_e_id; i++) { /* Loop on block elements */
+        cs_lnum_t c_id1 = i + s_id;
+
+        cs_lnum_t s_id_b = c2b_idx[c_id1];
+        cs_lnum_t e_id_b = c2b_idx[c_id1+1];
+
+        for (cs_lnum_t j = s_id_b; j < e_id_b; j++) {
+          cs_lnum_t c_f_id = c2b[j];
+
+          v_min[i] = cs::min(v_min[i], val_f[c_f_id]);
+          v_max[i] = cs::max(v_max[i], val_f[c_f_id]);
+        }
+
+        /* Shift by cell value */
+
+        v_min[i] -= pvar[c_id1];
+        v_max[i] -= pvar[c_id1];
+      }
+
+      /* Now compute limiter */
+
+      for (cs_lnum_t i = 0; i < b_e_id; i++) { /* Loop on block elements */
+        cs_lnum_t c_id1 = i + s_id;
+        cs_lnum_t s_id_c = c2c_idx[c_id1], e_id_c = c2c_idx[c_id1+1];
+
+        cs_real_t ccf = 1.;
+
+        for (cs_lnum_t cidx = s_id_c; cidx < e_id_c; cidx++) {
+          const cs_lnum_t f_id = c2f[cidx];
+          const cs_rreal_t *dkkpf = (c2f_sgn[cidx] > 0) ?
+            diipf[f_id] : djjpf[f_id];
+
+          cs_real_t sub_factor = 1.;
+
+          cs_real_t v_r =   dkkpf[0]*grad[c_id1][0]
+                          + dkkpf[1]*grad[c_id1][1]
+                          + dkkpf[2]*grad[c_id1][2];
+          if (v_r < v_min[i])
+            sub_factor = cs::abs(v_min[i]) / cs::abs(v_r);
+          else if (v_r > v_max[i])
+            sub_factor = cs::abs(v_max[i]) / cs::abs(v_r);
+
+          ccf = cs::min(ccf, sub_factor*climgp);
+        }
+
+        clip_factor[c_id1] = ccf;
+
+      }  /* End of loop on block elements */
+
+    }); /* End of (parallel) loop on blocks */
+
+    ctx.wait();
+
+  } /* End for clip_mode == CS_GRADIENT_LIMIT_RC */
 
   /* Synchronize variable */
 
@@ -2493,7 +2614,7 @@ _get_cell_cocg_lsq(const cs_mesh_t               *m,
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   bc_coeffs      <-- B.C. structure for boundary face normals
  *   pvar           <-- variable
- *   val_f          <-- face value for gradient
+ *   val_f          <-- boundary face value for gradient
  *   c_weight       <-- weighted gradient coefficient variable,
  *                      or nullptr
  *   grad           --> gradient of pvar (halo prepared for periodicity
@@ -3676,7 +3797,7 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
  *   c_weight_s     <-- weighted gradient coefficient variable
  *   t_f_weight     <-- face weight for tensor cell weight, nullptr otherwise
  *   c_var          <-- variable
- *   val_f          <-- face value for gradient
+ *   val_f          <-- boundary face value for gradient
  *   r_grad         <-- gradient used for reconstruction
  *   grad           <-> gradient of c_var (halo prepared for periodicity
  *                      of rotation)
@@ -4801,6 +4922,36 @@ _tensor_norm_2(const cs_real_t  t[6])
   return retval;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute bounds associated with a value, used for clipping.
+ *
+ * - For a vector, square of norm.
+ * - For a symmetric tensor, square of Frombenius norm.
+ *
+ * \param[in]  t  scalar, vector, or tensor values
+ *
+ * \return the square of the norm
+ */
+/*----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride>
+CS_F_HOST_DEVICE inline cs_real_t
+_norm_2(const cs_real_t  t[stride])
+{
+  cs_real_t retval;
+
+  if (stride == 3)
+    retval = t[0]*t[0] + t[1]*t[1] + t[2]*t[2];
+  else if (stride == 6)
+    retval =     t[0]*t[0] +   t[1]*t[1] +   t[2]*t[2]
+             + 2*t[3]*t[3] + 2*t[4]*t[4] + 2*t[5]*t[5];
+  else
+    retval = 1;
+
+  return retval;
+}
+
 /*----------------------------------------------------------------------------
  * Clip the gradient of a vector or tensor if necessary.
  * This function deals with the standard or extended neighborhood.
@@ -4818,6 +4969,7 @@ _tensor_norm_2(const cs_real_t  t[6])
  *   climgp         <-- clipping coefficient for the computation of the gradient
  *   var_name       <-- name of the current variable
  *   pvar           <-- variable
+ *   val_f          <-- face value for gradient
  *   grad           <-> gradient of pvar (du_i/dx_j : grad[][i][j])
  *----------------------------------------------------------------------------*/
 
@@ -4832,9 +4984,13 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
                            cs_real_t                     climgp,
                            const char                   *var_name,
                            const cs_real_t    (*restrict pvar)[stride],
+                           const cs_real_t    (*restrict val_f)[stride],
                            cs_real_t          (*restrict grad)[stride][3])
 {
   CS_PROFILE_FUNC_RANGE();
+
+  if (clip_mode < 0 || climgp < 0)
+    return;
 
   const cs_real_t  clipp_coef_sq = climgp*climgp;
 
@@ -4842,9 +4998,6 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
-
-  if (clip_mode < 0 || climgp < 0)
-    return;
 
   cs_dispatch_context ctx;
   bool use_gpu = ctx.use_gpu();
@@ -5075,6 +5228,125 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
     CS_FREE(factor);
 
   } /* End for clip_mode == CS_GRADIENT_LIMIT_FACE */
+
+  /* Third clipping Algorithm: based on reconstructed values at I'/J' */
+  /*------------------------------------------------------------------*/
+
+  else if (clip_mode == CS_GRADIENT_LIMIT_RC) {
+
+    const cs_lnum_t *c2f = ma->cell_i_faces;
+    const short int *c2f_sgn = ma->cell_i_faces_sgn;
+    const cs_lnum_t *restrict c2b_idx = ma->cell_b_faces_idx;
+    const cs_lnum_t *restrict c2b = ma->cell_b_faces;
+    const cs_rreal_3_t *restrict diipf = fvq->diipf;
+    const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
+
+    ctx.parallel_for(n_blocks, [=] CS_F_HOST_DEVICE (cs_lnum_t b_id) {
+
+      cs_lnum_t s_id = b_id*_loop_block_size, e_id = (b_id+1)*_loop_block_size;
+      if (e_id > n_cells) e_id = n_cells;
+
+      /* v_max: maximum l2 norm of the variation of the gradient squared */
+      cs_real_t v_max[_loop_block_size];
+
+      cs_lnum_t b_e_id = e_id - s_id;
+
+      for (cs_lnum_t i = 0; i < b_e_id; i++)
+        v_max[i] = 0;
+
+      /* Max over neighboring cells */
+
+      for (int adj_id = 0; adj_id < n_adj; adj_id++) {
+
+        const cs_lnum_t *restrict cell_cells_idx;
+        const cs_lnum_t *restrict cell_cells;
+
+        if (adj_id == 0) {
+          cell_cells_idx = c2c_idx;
+          cell_cells = c2c;
+        }
+        else if (c2c_e_idx != nullptr) {
+          cell_cells_idx = c2c_e_idx;
+          cell_cells = c2c_e;
+        }
+        else
+          break;
+
+        for (cs_lnum_t i = 0; i < b_e_id; i++) { /* Loop on block elements */
+          cs_lnum_t c_id1 = i + s_id;
+          cs_real_t var_i[stride];
+          for (cs_lnum_t k = 0; k < stride; k++)
+            var_i[k] = pvar[c_id1][k];
+
+          for (cs_lnum_t cidx = cell_cells_idx[c_id1];
+               cidx < cell_cells_idx[c_id1+1];
+               cidx++) {
+            cs_lnum_t c_id2 = cell_cells[cidx];
+
+            cs_real_t v_delta[stride];
+            for (cs_lnum_t k = 0; k < stride; k++)
+              v_delta[k] = pvar[c_id2][k] - var_i[k];
+            v_max[i] = cs::max(v_max[i], _norm_2<stride>(v_delta));
+          }
+        }
+
+      }
+
+      /* Add Min and max from boundary faces */
+
+      for (cs_lnum_t i = 0; i < b_e_id; i++) { /* Loop on block elements */
+        cs_lnum_t c_id1 = i + s_id;
+
+        cs_lnum_t s_id_b = c2b_idx[c_id1];
+        cs_lnum_t e_id_b = c2b_idx[c_id1+1];
+
+        for (cs_lnum_t j = s_id_b; j < e_id_b; j++) {
+          cs_lnum_t c_f_id = c2b[j];
+
+          cs_real_t v_delta[stride];
+          for (cs_lnum_t k = 0; k < stride; k++)
+            v_delta[k] = val_f[c_f_id][k] - pvar[c_id1][k];
+          v_max[i] = cs::max(v_max[i], _norm_2<stride>(v_delta) * climgp);
+        }
+      }
+
+      /* Now compute limiter */
+
+      for (cs_lnum_t i = 0; i < b_e_id; i++) { /* Loop on block elements */
+        cs_lnum_t c_id1 = i + s_id;
+        cs_lnum_t s_id_c = c2c_idx[c_id1], e_id_c = c2c_idx[c_id1+1];
+
+        cs_real_t ccf = 1.;
+
+        for (cs_lnum_t cidx = s_id_c; cidx < e_id_c; cidx++) {
+          const cs_lnum_t f_id = c2f[cidx];
+          const cs_rreal_t *dkkpf = (c2f_sgn[cidx] > 0) ?
+            diipf[f_id] : djjpf[f_id];
+
+          cs_real_t sub_factor = 1.;
+
+          cs_real_t r_delta[stride];
+          for (cs_lnum_t k = 0; k < stride; k++) {
+            r_delta[k] =   dkkpf[0]*grad[c_id1][k][0]
+                         + dkkpf[1]*grad[c_id1][k][1]
+                         + dkkpf[2]*grad[c_id1][k][2];
+          }
+          cs_real_t v_r = _norm_2<stride>(r_delta);
+          if (v_r > v_max[i])
+            sub_factor = cs::abs(v_max[i]) / v_r;
+
+          ccf = cs::min(ccf, sub_factor);  // climgp already included in v_max
+        }
+
+        clip_factor[c_id1] = ccf;
+
+      }  /* End of loop on block elements */
+
+    }); /* End of (parallel) loop on blocks */
+
+    ctx.wait();
+
+  }
 
   /* Synchronize variable */
 
@@ -6832,6 +7104,7 @@ _gradient_scalar(cs_dispatch_context           &ctx,
                             clip_coeff,
                             var_name,
                             var,
+                            val_f,
                             grad);
 
   if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION)
@@ -6993,6 +7266,7 @@ _gradient_vector(const char                     *var_name,
                              clip_coeff,
                              var_name,
                              var,
+                             val_f,
                              grad);
 
   if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION)
@@ -7149,6 +7423,7 @@ _gradient_tensor(const char                 *var_name,
                              clip_coeff,
                              var_name,
                              (const cs_real_6_t *)var,
+                             val_f,
                              grad);
 }
 

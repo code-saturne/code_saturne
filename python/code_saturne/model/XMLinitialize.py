@@ -2091,6 +2091,11 @@ class XMLinit(BaseXmlInit):
                 for n in lst:
                     n['options'] = "svg"
 
+        for varNode in self.case.xmlGetNodeList('variable'):
+            n = varNode.xmlGetNode("gradient_limiter_factor")
+            if n:
+                n.xmlRemoveNode()
+
         return
 
 #-------------------------------------------------------------------------------

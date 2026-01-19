@@ -942,13 +942,13 @@ _var_gradient_type(cs_tree_node_t  *tn_v,
  * Get the attribute value for a variable's cell gradient
  *
  * parameters:
- *   tn_v    <-- node assocaited with variable
- *   keyword -->  value of attribute node
+ *   tn_v <-- node assocaited with variable
+ *   eqp  --> associated equation parameters
  *----------------------------------------------------------------------------*/
 
 static void
-_var_gradient_limiter_type(cs_tree_node_t  *tn_v,
-                           int             *keyword)
+_var_gradient_limiter_type(cs_tree_node_t       *tn_v,
+                           cs_equation_param_t  *eqp)
 {
   const char *choice = cs_tree_node_get_child_value_str(tn_v,
                                                         "gradient_limiter_type");
@@ -956,10 +956,18 @@ _var_gradient_limiter_type(cs_tree_node_t  *tn_v,
   if (choice != nullptr) {
     /* Default: "none" for -1 */
 
-    if (strcmp(choice, "cell") == 0)
-      *keyword = 0;
-    else if (strcmp(choice, "face") == 0)
-      *keyword = 1;
+    if (strcmp(choice, "cell") == 0) {
+      eqp->imligr = 0;
+      eqp->d_climgr = 1.0;
+    }
+    else if (strcmp(choice, "face") == 0) {
+      eqp->imligr = 1;
+      eqp->d_climgr = 1.5;
+    }
+    else if (strcmp(choice, "rc_clip") == 0) {
+      eqp->imligr = 1;
+      eqp->d_climgr = 1.0;
+    }
   }
 }
 
@@ -2212,9 +2220,7 @@ cs_gui_equation_parameters(void)
                            &(eqp->b_gradient_r));
         cs_gui_node_get_child_real(tn_v, "gradient_epsilon",
                                    &(eqp->epsrgr));
-        _var_gradient_limiter_type(tn_v, &(eqp->imligr));
-        cs_gui_node_get_child_real(tn_v, "gradient_limiter_factor",
-                                   &(eqp->d_climgr));
+        _var_gradient_limiter_type(tn_v, eqp);
       }
 
       /* only for additional variables (user or model) */

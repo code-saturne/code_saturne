@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2024 EDF S.A.
+# Copyright (C) 1998-2026 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -763,37 +763,12 @@ class NumericalParamEquationModel(Model):
         """
         Set gradient limiter type for specified variable.
         """
-        self.isInList(value, ('none', 'cell', 'face'))
+        self.isInList(value, ('none', 'cell', 'face', 'rc_clip'))
         node = self._getSchemeNameNode(name)
         if value == self.default['imligr']:
             node.xmlRemoveChild('gradient_limiter_type')
         else:
             node.xmlSetData('gradient_limiter_type', value)
-
-
-    @Variables.noUndo
-    def getGradientLimitFactor(self, name):
-        """
-        Get value of gradient limiter factor for specified variable
-        """
-        node = self._getSchemeNameNode(name)
-        value = node.xmlGetDouble('gradient_limiter_factor')
-        if not value:
-            value = self.default['climgr']
-
-        return value
-
-
-    @Variables.undoGlobal
-    def setGradientLimitFactor(self, name, value):
-        """
-        Set value of gradient limiter factor for specified variable.
-        """
-        node = self._getSchemeNameNode(name)
-        if value == self.default['climgr']:
-            node.xmlRemoveChild('gradient_limiter_factor')
-        else:
-            node.xmlSetData('gradient_limiter_factor', value)
 
 
 # Following methods for dependances of solver:

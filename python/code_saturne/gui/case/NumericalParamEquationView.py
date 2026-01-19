@@ -846,12 +846,13 @@ class GradientLimiterDelegate(QItemDelegate):
         editor.addItem("Disabled")
         editor.addItem("Cell gradient")
         editor.addItem("Face gradient")
+        editor.addItem("Reconstruction clip")
         editor.installEventFilter(self)
         return editor
 
 
     def setEditorData(self, comboBox, index):
-        dico = {"none": 0, "cell": 1, "face": 2}
+        dico = {"none": 0, "cell": 1, "face": 2, "rc_clip": 3}
         row = index.row()
         string = index.model().dataScheme[row]['imligr']
         idx = dico[string]
@@ -921,11 +922,9 @@ class StandardItemModelGradient(QStandardItemModel):
                         self.tr("Reconstruction\nGradient"),
                         self.tr("Boundary\nReconstruction"),
                         self.tr("Fixed-point\nThreshold"),
-                        self.tr("Limiter\nType"),
-                        self.tr("Limiter\nFactor")]
+                        self.tr("Limiter\nType")]
         self.keys = ['name', 'c_gradient_r', 'b_gradient_r',
-                     'd_gradient_r', 'epsrgr',
-                     'imligr', 'climgr']
+                     'd_gradient_r', 'epsrgr', 'imligr']
         self.setColumnCount(len(self.headers))
 
         # Initialize the flags
@@ -970,10 +969,8 @@ class StandardItemModelGradient(QStandardItemModel):
             self.tr("Equation parameter: 'imligr'\n\n"
                     "Gradient limiter type.\n"
                     "For the default/least squares boundary reconstruction\n",
-                    "the face gradient limiter is replaced\n"
-                    "by the cell gradient limiter"),
-            self.tr("Equation parameter: 'cmligr'\n\n"
-                    "Gradient limiter factor.")
+                    "other limiters are replaced by the\n"
+                    "reconstruction clipping limiter")
         ]
 
 
@@ -992,7 +989,8 @@ class StandardItemModelGradient(QStandardItemModel):
 
         self.dicoV2M_imligr = {"Disabled": 'none',
                                "Cell gradient": 'cell',
-                               "Face gradient": 'face'}
+                               "Face gradient": 'face',
+                               "Reconstruction clip": 'rc_clip'}
         self.dicoM2V_imligr = {}
         for k in self.dicoV2M_imligr:
             self.dicoM2V_imligr[self.dicoV2M_imligr[k]] = k
@@ -1006,7 +1004,6 @@ class StandardItemModelGradient(QStandardItemModel):
             dico['b_gradient_r'] = self.NPE.getBoundaryGradientType(name)
             dico['epsrgr'] = self.NPE.getGradientEpsilon(name)
             dico['imligr'] = self.NPE.getGradientLimiter(name)
-            dico['climgr'] = self.NPE.getGradientLimitFactor(name)
             self.dataScheme.append(dico)
             log.debug("populateModel-> dataScheme = %s" % dico)
             row = self.rowCount()

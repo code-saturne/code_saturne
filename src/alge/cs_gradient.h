@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -84,6 +84,12 @@ typedef enum {
                                    (mean of cell gradients) extrapolated to
                                    neighbor cells can not exceed the limiting
                                    factor times the actual value */
+  CS_GRADIENT_LIMIT_RC   = 2    /*!< values reconstructed at I'/J' values
+                                   associated to each face must not exceed
+                                   neighboring cell values by more than the
+                                   limiting factor (i.e. ensure monotonicity
+                                   with a factor of 1). */
+
 
 } cs_gradient_limit_t;
 

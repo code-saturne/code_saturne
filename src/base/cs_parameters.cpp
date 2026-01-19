@@ -396,7 +396,7 @@ static cs_equation_param_t _equation_param_default
    .epsrsm = 1.e-4,
    .epsrgr = 1.e-4,
    .climgr = -1.,
-   .d_climgr = 1.5,
+   .d_climgr = 1.,
    .b_climgr = 1.,
    .relaxv = 1.,
    .d_gradient_r = 2,

@@ -960,7 +960,7 @@ cs_equation_param_create(const char         *name,
   eqp->epsrsm = 1.e-4;
   eqp->epsrgr = 1.e-4;
   eqp->climgr = -1;
-  eqp->d_climgr = 1.5;
+  eqp->d_climgr = 1.;
   eqp->b_climgr = 1.;
   eqp->relaxv = 1.;
   eqp->d_gradient_r = 2;
@@ -972,7 +972,7 @@ cs_equation_param_create(const char         *name,
 
   eqp->default_bc = default_bc;
   eqp->n_bc_defs = 0;
-  eqp->bc_defs              = nullptr;
+  eqp->bc_defs = nullptr;
   eqp->default_enforcement = CS_PARAM_BC_ENFORCE_ALGEBRAIC;
   eqp->strong_pena_bc_coeff = _strong_pena_bc_coef_by_default;
   eqp->weak_pena_bc_coeff = _weak_pena_bc_coef_by_default;

@@ -351,6 +351,7 @@ typedef struct {
    * - -1 (CS_GRADIENT_LIMIT_NONE): no limitation
    * - 0 (CS_GRADIENT_LIMIT_CELL): based on the neighbors
    * - 1 (CS_GRADIENT_LIMIT_FACE): superior order
+   * - 2 (CS_GRADIENT_LIMIT_RC): based on reconstruction monotonicity
    *
    * \var ircflu
    * Indicate whether the convective and diffusive fluxes at the faces should be
@@ -435,7 +436,7 @@ typedef struct {
    * \var b_climgr
    * For least-squares gradient-based boundary reconstruction, factor of gradient
    * limitation (high value means little limitation, no limitation if negative).
-   * A (default) value of 1 ensures the reconstructed value is with bounds of
+   * A (default) value of 1 ensures the reconstructed value is within bounds of
    * adjacent cell values.
    *
    * \var relaxv
