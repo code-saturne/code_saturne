@@ -885,6 +885,11 @@ _create_property_fields(void)
     _add_property_field("smagorinsky_constant^2", "Csdyn2", 1, false);
   }
 
+  /* Additional beta2 "coefficient" for BFH */
+  if (turb_model->model == CS_TURB_RIJ_EPSILON_BFH) {
+    _add_property_field("algo:rij_beta2", "beta2", 1, false);
+  }
+
   /* Additions for specific models
      ----------------------------- */
 

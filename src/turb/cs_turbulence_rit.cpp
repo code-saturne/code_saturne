@@ -212,7 +212,10 @@ _turb_flux_st(const char          *name,
   const cs_real_t rhebdfm = 0.5;
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
 
+  cs_field_t *f_beta2 = cs_field_by_name_try("algo:rij_beta2");
+
   const cs_real_t c1trit = cs_turb_c1trit;
+  const cs_real_t crij1  = cs_turb_crij1;
   const cs_real_t c2trit = cs_turb_c2trit;
   const cs_real_t c3trit = cs_turb_c3trit;
   const cs_real_t c4trit = cs_turb_c4trit;
@@ -246,6 +249,7 @@ _turb_flux_st(const char          *name,
     cs_real_t xxc1 = 0, xxc2 = 0, xxc3 = 0;
     cs_real_t xnal[3] = {0, 0, 0};
 
+    /* EB-DFM */
     if (turb_flux_model == 31) {
       alpha = cvar_al[c_id];
       /* FIXME Warning / rhebdfm**0.5 compared to F Dehoux
@@ -280,37 +284,97 @@ _turb_flux_st(const char          *name,
     }
 
     cs_real_t phiith[3], phiitw[3];
+    cs_real_t phiit[3];
+
+
+    /* Pressure/thermal fluctuation correlation term
+     * --------------------------------------------- */
+
+    /* Dynamic model must impose dynamic part for the thermal model
+     * See BFH */
+    if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_BFH) {
+
+      cs_real_t beta2 = c2trit;
+      /* Production of TKE */
+      cs_real_t pk = 0;
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t j = 0; j < 3; j++)
+          pk -= xrij[i][j]*gradv[c_id][i][j];
+      }
+
+      if (f_beta2 != nullptr)
+        beta2 = f_beta2->val[c_id];
+
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        /* Pope 1994:
+         * - 0.5 (C_theta / Tt - 2 alpha1 / Td) * T'u'i
+         *   with Tt the thermal time scale and Td the dynamique time scale
+         *
+         *   -2 alpha1 correspond to C1 (Rotta constant)
+         *
+         *   Rapid term writes:
+         *   beta2 (gradu + gradu^T - Pk / k Id)_ij T'u'j
+         *
+         *   Note that the last term is added to term proportional to u'T'
+         *   (in factor)
+         * */
+        cs_real_t factor = 0.5 * (c1trit / xttdrbt + crij1 /xttke)
+                         - beta2 *pk/tke;
+
+        phiit[i] = - factor * xuta[c_id][i];
+        for (cs_lnum_t j = 0; j < 3; j++)
+          phiit[i] += beta2
+            * (gradv[c_id][i][j]+gradv[c_id][j][i])* xuta[c_id][j];
+
+         if ((cvar_tt != nullptr) && (cpro_beta != nullptr)
+             && rans_mdl->has_buoyant_term == 1)
+           phiit[i] += c3trit*(cpro_beta[c_id] * grav[i] * cvar_tt[c_id]);
+
+         if (f_phi_ut != nullptr) /* Save it if needed */
+           phi_ut[c_id][i] = phiit[i];
+
+         cs_real_t imp_term = cell_f_vol[c_id] * crom[c_id] * factor;
+
+         fimp[c_id][i][i] += cs::max(imp_term, 0);
+
+      }
+
+    }
+    /* Phi_T for other models */
+    else {
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        /* */
+        phiith[i] = - c1trit / xttdrbt * xuta[c_id][i]
+                    + c2trit * cs_math_3_dot_product( gradv[c_id][i], xuta[c_id])
+                    + c4trit * (-xrij[0][i] * gradt[c_id][0]
+                                -xrij[1][i] * gradt[c_id][1]
+                                -xrij[2][i] * gradt[c_id][2]);
+
+         if ((cvar_tt != nullptr) && (cpro_beta != nullptr)
+             && rans_mdl->has_buoyant_term == 1)
+           phiith[i] += c3trit*(cpro_beta[c_id] * grav[i] * cvar_tt[c_id]);
+
+         phiitw[i] =   -1. / xttdrbw *xxc1   /* FIXME full implicit */
+                     * (  xuta[c_id][0]*xnal[0]*xnal[i]
+                        + xuta[c_id][1]*xnal[1]*xnal[i]
+                        + xuta[c_id][2]*xnal[2]*xnal[i]);
+
+         phiit[i] = alpha * phiith[i] + (1.-alpha) * phiitw[i];
+         if (f_phi_ut != nullptr) /* Save it if needed */
+           phi_ut[c_id][i] = phiit[i];
+
+         cs_real_t imp_term
+           =   cell_f_vol[c_id] * crom[c_id]
+             * (      alpha  * (c1trit/xttdrbt - c2trit*gradv[c_id][i][i])
+                 // TODO All the following matrix can be implicit
+                + (1.-alpha) * (xxc1*xnal[i]*xnal[i]/xttdrbw));
+
+         fimp[c_id][i][i] += cs::max(imp_term, 0);
+
+      }
+    }
 
     for (cs_lnum_t i = 0; i < 3; i++) {
-       phiith[i] = - c1trit / xttdrbt * xuta[c_id][i]
-                   + c2trit * cs_math_3_dot_product( gradv[c_id][i], xuta[c_id])
-                   + c4trit * (-xrij[0][i] * gradt[c_id][0]
-                               -xrij[1][i] * gradt[c_id][1]
-                               -xrij[2][i] * gradt[c_id][2]);
-
-       if ((cvar_tt != nullptr) && (cpro_beta != nullptr)
-           && rans_mdl->has_buoyant_term == 1)
-         phiith[i] += c3trit*(cpro_beta[c_id] * grav[i] * cvar_tt[c_id]);
-
-       phiitw[i] =   -1. / xttdrbw *xxc1   /* FIXME full implicit */
-                   * (  xuta[c_id][0]*xnal[0]*xnal[i]
-                      + xuta[c_id][1]*xnal[1]*xnal[i]
-                      + xuta[c_id][2]*xnal[2]*xnal[i]);
-
-       /* Pressure/thermal fluctuation correlation term
-        * --------------------------------------------- */
-       const cs_real_t press_correl_i =       alpha  * phiith[i]
-                                        + (1.-alpha) * phiitw[i];
-       if (f_phi_ut != nullptr) /* Save it if needed */
-         phi_ut[c_id][i] = press_correl_i;
-
-       cs_real_t imp_term
-         =   cell_f_vol[c_id] * crom[c_id]
-           * (      alpha  * (c1trit/xttdrbt - c2trit*gradv[c_id][i][i])
-              + (1.-alpha) * (xxc1*xnal[i]*xnal[i]/xttdrbw));
-
-       fimp[c_id][i][i] += cs::max(imp_term, 0);
-
        /* Production terms
         *----------------- */
 
@@ -351,11 +415,11 @@ _turb_flux_st(const char          *name,
                           + buoyancy_i - dissip_i;
 
        rhs_ut[c_id][i] += (  prod_by_vel_grad_i + prod_by_scal_grad_i
-                           + buoyancy_i + press_correl_i - dissip_i)
+                           + buoyancy_i + phiit[i] - dissip_i)
                          * cell_f_vol[c_id]*crom[c_id];
 
        /* TODO we can implicit more terms */
-       imp_term =   cell_f_vol[c_id] * crom[c_id]
+       cs_real_t imp_term =   cell_f_vol[c_id] * crom[c_id]
                   * (1.-alpha)/xttdrbw * (xxc2+xxc3*xnal[i]*xnal[i]);
 
        fimp[c_id][i][i] += cs::max(imp_term, 0);
