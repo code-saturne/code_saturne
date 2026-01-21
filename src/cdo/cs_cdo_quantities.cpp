@@ -1182,6 +1182,7 @@ _update_subdiv_cell_quantities(const cs_mesh_t            *mesh,
 
   } // Loop on cells
 
+  cs::parall::sum(vol_tot);
   cdoq->vol_tot = vol_tot;
 }
 
