@@ -1227,7 +1227,7 @@ cs_gradient_boundary_iprime_lsq_strided
       var_i[ll] = var[c_id][ll];
     }
 
-    cs_real_t var_max = _norm_2<stride>(var_i);
+    cs_real_t var_max = 0;
 
     /* Contribution from adjacent cells */
 
@@ -1270,13 +1270,15 @@ cs_gradient_boundary_iprime_lsq_strided
           cocg[5] += dc[0]*dc[2]*ddc;
 
           const cs_real_t *var_j = var[c_id1];
+          cs_real_t var_d[stride];
 
           for (cs_lnum_t kk = 0; kk < stride; kk++) {
-            cs_real_t pfac = (var_j[kk] - var_i[kk]) * ddc;
+            var_d[kk] = var_j[kk] - var_i[kk];
+            cs_real_t pfac = var_d[kk] * ddc;
             for (cs_lnum_t ll = 0; ll < 3; ll++)
               rhs[kk][ll] += dc[ll] * pfac;
           }
-          var_max = cs::max(var_max, _norm_2<stride>(var_j));
+          var_max = cs::max(var_max, _norm_2<stride>(var_d));
 
         }
 
@@ -1303,14 +1305,16 @@ cs_gradient_boundary_iprime_lsq_strided
 
           cs_real_t _weight =   2. * c_weight[c_id1]
                               / (c_weight[c_id] + c_weight[c_id1]);
+          cs_real_t var_d[stride];
 
           for (cs_lnum_t kk = 0; kk < stride; kk++) {
-            cs_real_t pfac = (var_j[kk] - var_i[kk]) * ddc;
+            var_d[kk] = var_j[kk] - var_i[kk];
+            cs_real_t pfac = var_d[kk] * ddc;
             for (cs_lnum_t ll = 0; ll < 3; ll++)
               rhs[kk][ll] += dc[ll] * pfac * _weight;
           }
 
-          var_max = cs::max(var_max, _norm_2<stride>(var_j));
+          var_max = cs::max(var_max, _norm_2<stride>(var_d));
         }
       }
 
@@ -1345,7 +1349,7 @@ cs_gradient_boundary_iprime_lsq_strided
       cs_lnum_t i_rel = i - s_id;
       cs_lnum_t c_f_id = cell_b_faces[i];
 
-      cs_real_t var_f[stride];
+      cs_real_t var_f[stride], var_d[stride];
 
       for (cs_lnum_t kk = 0; kk < stride; kk++) {
         var_f[kk] = a[c_f_id][kk];
@@ -1354,9 +1358,10 @@ cs_gradient_boundary_iprime_lsq_strided
           /* Using absolute value below safer but terms should be positive */
           b_sum += b[c_f_id][ll][kk];
         }
+        var_d[kk] = var_f[kk] - var_i[kk];
       }
 
-      var_max = cs::max(var_max, _norm_2<stride>(var_f));
+      var_max = cs::max(var_max, _norm_2<stride>(var_d));
 
       cs_real_t dif[3];
       cs_real_t ddif;
@@ -1613,7 +1618,8 @@ cs_gradient_boundary_iprime_lsq_strided
          (additional precaution, not encountered in testing). */
 
       if (var_ip_d_norm2 > eps_dvg2 * ref_norm2) {
-        memcpy(var_ip, var_i, stride*sizeof(cs_real_t));
+        for (cs_lnum_t ii = 0; ii < stride; ii++)
+          var_ip[ii] = var_i[ii];
 #if 0
         printf("%s: non-convergence for face %ld\n"
                "  use non-recontruced value\n", __func__, (long)f_id);
@@ -1640,11 +1646,14 @@ cs_gradient_boundary_iprime_lsq_strided
 
     if (b_clip_coeff >= 0) {
       var_max *= b_clip_coeff;
-      cs_real_t var_n2 = _norm_2<stride>(var_ip);
+      cs_real_t var_d[stride];
+      for (cs_lnum_t ii = 0; ii < stride; ii++)
+        var_d[ii] = var_ip[ii] - var_i[ii];
+      cs_real_t var_n2 = _norm_2<stride>(var_d);
       if (var_n2 > var_max) {
         cs_real_t s = sqrt(var_max / var_n2); // scaling factor
         for (cs_lnum_t ii = 0; ii < stride; ii++)
-          var_ip[ii] *= s;
+          var_ip[ii] = var_i[ii] + var_d[ii]*s;
       }
     }
 
