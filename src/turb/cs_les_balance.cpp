@@ -2579,18 +2579,18 @@ _les_balance_initialize_rij(void)
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
-    for (cs_lnum_t i = 0; i < 6; i++) {
-      prodij[c_id][i] = 0.;
-      epsij[c_id][i] = 0.;
-      phiij[c_id][i] = 0.;
-      difftij[c_id][i] = 0.;
-      difftpij[c_id][i] = 0.;
-      convij[c_id][i] = 0.;
-      difflamij[c_id][i] = 0.;
-      unstij[c_id][i] = 0.;
+    for (cs_lnum_t ij = 0; ij < 6; ij++) {
+      prodij[c_id][ij] = 0.;
+      epsij[c_id][ij] = 0.;
+      phiij[c_id][ij] = 0.;
+      difftij[c_id][ij] = 0.;
+      difftpij[c_id][ij] = 0.;
+      convij[c_id][ij] = 0.;
+      difflamij[c_id][ij] = 0.;
+      unstij[c_id][ij] = 0.;
 
       if (is_rij_base)
-        budsgsij[c_id][i] = 0.;
+        budsgsij[c_id][ij] = 0.;
     }
 
     if (is_rij_full)
@@ -3121,7 +3121,7 @@ cs_les_balance_compute_rij(void)
       = (cs_real_33_t *)_les_balance_get_tm_by_name("uidjnut_m")->val;
   }
 
-  /* Get the triple corrleations mean UiUjUk */
+  /* Get the triple correlations mean UiUjUk */
   cs_real_t **uiujuk;
   CS_MALLOC(uiujuk, 10, cs_real_t*);
 
@@ -3206,14 +3206,13 @@ cs_les_balance_compute_rij(void)
 
     for (cs_lnum_t ij = 0; ij < 6; ij++) {
       prodij[c_id][ij] = 0.;
-      epsij[c_id][ij] = 0.;
+      epsij[c_id][ij] = duidxkdujdxk[c_id][ij];
       phiij[c_id][ij] = 0.;
       difftij[c_id][ij] = 0.;
       difftpij[c_id][ij] = 0.;
       convij[c_id][ij] = 0.;
       difflamij[c_id][ij] = 0.;
       unstij[c_id][ij] = (rij[c_id][ij] - unstij[c_id][ij]) / dtref;
-      epsij[c_id][ij] = duidxkdujdxk[c_id][ij];
 
       const cs_lnum_t i = idirtens[ij][0];
       const cs_lnum_t j = idirtens[ij][1];
@@ -3254,7 +3253,12 @@ cs_les_balance_compute_rij(void)
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       convij[c_id][ij] = diverg[c_id];
 
-      /* difftij */
+      /* difftij  = <u'i u'j u'k>
+       *          = <ui uj uk> + 2 <ui> <uj> <uk>
+       *                       - <ui> <uj uk>
+       *                       - <uj> <ui uk>
+       *                       - <uk> <ui uk>
+       */
       for (cs_lnum_t k = 0; k < 3; k++) {
         const cs_lnum_t ik = ipdirtens[i][k];
         const cs_lnum_t jk = ipdirtens[j][k];
@@ -3275,14 +3279,14 @@ cs_les_balance_compute_rij(void)
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       difftij[c_id][ij] = diverg[c_id];
 
-      /* difftpij */
-      for (cs_lnum_t kk = 0; kk < 3; kk++) {
-        w1(c_id, kk) = 0.;
+      /* difftpij = d_k( p'u'i deltajk + p'u'j deltaik */
+      for (cs_lnum_t k = 0; k < 3; k++) {
+        w1(c_id, k) = 0.;
 
-        if (kk == i)
-          w1(c_id, kk) -= pu[c_id][j] - p[c_id]*ui[c_id][j];
-        else if (kk == j)
-          w1(c_id, kk) -= pu[c_id][i] - p[c_id]*ui[c_id][i];
+        if (k == i)
+          w1(c_id, k) -= pu[c_id][j] - p[c_id]*ui[c_id][j];
+        else if (k == j)
+          w1(c_id, k) -= pu[c_id][i] - p[c_id]*ui[c_id][i];
       }
     });
 
