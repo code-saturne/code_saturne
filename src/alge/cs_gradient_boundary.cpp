@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -72,8 +72,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional Doxygen documentation
  *============================================================================*/
@@ -103,6 +101,36 @@ const cs_real_t _eps_r_2 = 1e-3 * 1e-3;
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute bounds associated with a value, used for clipping.
+ *
+ * - For a vector, square of norm.
+ * - For a symmetric tensor, square of Frombenius norm.
+ *
+ * \param[in]  t  scalar, vector, or tensor values
+ *
+ * \return the square of the norm
+ */
+/*----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride>
+CS_F_HOST_DEVICE inline cs_real_t
+_norm_2(const cs_real_t  t[stride])
+{
+  cs_real_t retval;
+
+  if (stride == 3)
+    retval = t[0]*t[0] + t[1]*t[1] + t[2]*t[2];
+  else if (stride == 6)
+    retval =     t[0]*t[0] +   t[1]*t[1] +   t[2]*t[2]
+             + 2*t[3]*t[3] + 2*t[4]*t[4] + 2*t[5]*t[5];
+  else
+    retval = 1;
+
+  return retval;
+}
 
 /*----------------------------------------------------------------------------
  * Add compute 3x3 cocg for least squares algorithm contribution from hidden
@@ -144,8 +172,6 @@ _add_hb_faces_cocg_lsq_cell(cs_lnum_t         c_id,
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-END_C_DECLS
 
 /*============================================================================
  * Public function definitions
@@ -1192,17 +1218,16 @@ cs_gradient_boundary_iprime_lsq_strided
 
     cs_real_t cocg[6] = {0., 0., 0., 0., 0., 0.};
     cs_real_t rhs[stride][3];
-    cs_real_t var_i[stride], var_min[stride], var_max[stride];
+    cs_real_t var_i[stride];
 
     for (cs_lnum_t ll = 0; ll < stride; ll++) {
       rhs[ll][0] = 0;
       rhs[ll][1] = 0;
       rhs[ll][2] = 0;
-
       var_i[ll] = var[c_id][ll];
-      var_min[ll] = var_i[ll];
-      var_max[ll] = var_i[ll];
     }
+
+    cs_real_t var_max = _norm_2<stride>(var_i);
 
     /* Contribution from adjacent cells */
 
@@ -1251,10 +1276,7 @@ cs_gradient_boundary_iprime_lsq_strided
             for (cs_lnum_t ll = 0; ll < 3; ll++)
               rhs[kk][ll] += dc[ll] * pfac;
           }
-          for (cs_lnum_t ll = 0; ll < stride; ll++) {
-            var_min[ll] = cs::min(var_min[ll], var_j[ll]);
-            var_max[ll] = cs::max(var_max[ll], var_j[ll]);
-          }
+          var_max = cs::max(var_max, _norm_2<stride>(var_j));
 
         }
 
@@ -1288,10 +1310,7 @@ cs_gradient_boundary_iprime_lsq_strided
               rhs[kk][ll] += dc[ll] * pfac * _weight;
           }
 
-          for (cs_lnum_t ll = 0; ll < stride; ll++) {
-            var_min[ll] = cs::min(var_min[ll], var_j[ll]);
-            var_max[ll] = cs::max(var_max[ll], var_j[ll]);
-          }
+          var_max = cs::max(var_max, _norm_2<stride>(var_j));
         }
       }
 
@@ -1337,10 +1356,7 @@ cs_gradient_boundary_iprime_lsq_strided
         }
       }
 
-      for (cs_lnum_t ll = 0; ll < stride; ll++) {
-        var_min[ll] = cs::min(var_min[ll], var_f[ll]);
-        var_max[ll] = cs::max(var_max[ll], var_f[ll]);
-      }
+      var_max = cs::max(var_max, _norm_2<stride>(var_f));
 
       cs_real_t dif[3];
       cs_real_t ddif;
@@ -1623,15 +1639,12 @@ cs_gradient_boundary_iprime_lsq_strided
     /* Apply simple limiter */
 
     if (b_clip_coeff >= 0) {
-      for (cs_lnum_t ii = 0; ii < stride; ii++) {
-        cs_real_t d = var_max[ii] - var_min[ii];
-        var_max[ii] += d*b_clip_coeff;
-        var_min[ii] -= d*b_clip_coeff;
-
-        if (var_ip[ii] < var_min[ii])
-          var_ip[ii] = var_min[ii];
-        if (var_ip[ii] > var_max[ii])
-          var_ip[ii] = var_max[ii];
+      var_max *= b_clip_coeff;
+      cs_real_t var_n2 = _norm_2<stride>(var_ip);
+      if (var_n2 > var_max) {
+        cs_real_t s = sqrt(var_max / var_n2); // scaling factor
+        for (cs_lnum_t ii = 0; ii < stride; ii++)
+          var_ip[ii] *= s;
       }
     }
 
