@@ -294,14 +294,16 @@ _compute_unsteady_user_equations(cs_domain_t   *domain,
 static void
 _solve_steady_state_domain(cs_domain_t  *domain)
 {
+  const cs_time_step_t *ts = domain->time_step;
+  const int nt_cur = ts->nt_cur;
+
   if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_ONLY) {
 
     /* Otherwise log is called from the FORTRAN part */
 
     if (!cs_equation_needs_steady_state_solve()) {
       cs_log_printf(CS_LOG_DEFAULT, "\n%s", cs_sep_h1);
-      cs_log_printf(CS_LOG_DEFAULT,
-                    "# Iter: 0 >> Initial state");
+      cs_log_printf(CS_LOG_DEFAULT, "# Iter: %d >> Initial state", nt_cur);
       cs_log_printf(CS_LOG_DEFAULT, "\n%s\n", cs_sep_h1);
 
       /* Extra operations and post-processing of the computed solutions */
@@ -328,7 +330,8 @@ _solve_steady_state_domain(cs_domain_t  *domain)
   else if (do_output) {
     cs_log_printf(CS_LOG_DEFAULT, "\n%s", cs_sep_h1);
     cs_log_printf(CS_LOG_DEFAULT,
-                  "# Iter: 0 >> Solve only requested steady-state equations");
+                  "# Iter: %d >> Solve only requested steady-state equations",
+                  nt_cur);
     cs_log_printf(CS_LOG_DEFAULT, "\n%s\n", cs_sep_h1);
   }
 

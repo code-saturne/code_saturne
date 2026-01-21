@@ -3,10 +3,15 @@ Release 9.0.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix the computation of CDO quantities when the algorithm is equal to
+  CS_CDO_QUANTITIES_SUBDIV_CENTER
+
 - ALE: fix incorrect index for z-component of fluid velocity.
 
 - Fix incorrect Cp/Cv mixup in compressible model turbulent boundary
   conditions setting for temperature.
+
+- Fix log output in case of restart (CDO schemes)
 
 - Fix restart in case of solidification with an existing mushy zone (CDO schemes)
 
