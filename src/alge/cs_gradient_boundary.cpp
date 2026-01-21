@@ -300,6 +300,15 @@ cs_gradient_boundary_iprime_lsq_s
     b_poro_duq = cs_field_by_name("b_poro_duq")->val;
   }
 
+  /* For consistency with strided values, ensure bounds with clip_coeff = 1.
+     As the value at I may not be centered between min and max, use same
+     behavior for all clip_coeff values in [0, 1]. For values > 1,
+     allow exceeding bounds by (clip_coeff - 1)*(v_max - v_min). */
+
+  if (clip_coeff >= 0) {
+    clip_coeff = cs::max(0., clip_coeff - 1.0);
+  }
+
   /* Loop on selected boundary faces */
 
   ctx.parallel_for(n_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_idx) {
@@ -758,6 +767,15 @@ cs_gradient_boundary_iprime_lsq_s_ani
     i_poro_duq_0 = f_i_poro_duq_0->val;
     i_poro_duq_1 = cs_field_by_name("i_poro_duq_1")->val;
     b_poro_duq = cs_field_by_name("b_poro_duq")->val;
+  }
+
+  /* For consistency with strided values, ensure bounds with clip_coeff = 1.
+     As the value at I may not be centered between min and max, use same
+     behavior for all clip_coeff values in [0, 1]. For values > 1,
+     allow exceeding bounds by (clip_coeff - 1)*(v_max - v_min). */
+
+  if (clip_coeff >= 0) {
+    clip_coeff = cs::max(0., clip_coeff - 1.0);
   }
 
   /* Loop on selected boundary faces */
