@@ -986,8 +986,10 @@ cs_lagr_init_arrays(void)
 
   assert(bound_stat == nullptr);
 
-  if (n_boundary_stats > 0)
+  if (n_boundary_stats > 0) {
     CS_MALLOC_HD(bound_stat, n_b_faces * n_boundary_stats, cs_real_t, cs_alloc_mode);
+    cs_array_real_fill_zero(n_b_faces * n_boundary_stats, bound_stat);
+  }
 }
 
 /*----------------------------------------------------------------------------
