@@ -3,6 +3,8 @@ Release 9.0.2 (unreleased)
 
 ### Bug fixes:
 
+- Lagragien model: fix possibly uninitialized boundary statistics.
+
 - Fix the computation of CDO quantities when the algorithm is equal to
   CS_CDO_QUANTITIES_SUBDIV_CENTER
 
