@@ -1399,8 +1399,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
         temp_seen;
     }
     /* statistical weight */
-    p_set.attr_real(p_id, CS_LAGR_STAT_WEIGHT) =
-      zis->stat_weight;
+    p_set.attr_real(p_id, CS_LAGR_STAT_WEIGHT) = zis->stat_weight;
 
     /* Fouling index */
     p_set.attr_real(p_id, CS_LAGR_FOULING_INDEX) =
