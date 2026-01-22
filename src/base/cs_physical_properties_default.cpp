@@ -266,7 +266,7 @@ _compute_turbulence_mu(cs_dispatch_context &ctx,
     cs_turbulence_ke_mu_t(-1);
 
   else if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
-      && cs_glob_turb_model->type == CS_TURB_RANS)
+      &&   cs_glob_turb_model->type == CS_TURB_RANS)
     cs_turbulence_rij_mu_t(-1);
 
   // LES (Smagorinsky, dynamic Smagorinsky, or Wale)
@@ -349,7 +349,8 @@ _compute_anisotropic_turbulent_viscosity
     = (cs_real_6_t *)cs_field_by_name
                        ("anisotropic_turbulent_viscosity")->val;
 
-  if (cs_glob_turb_model->itytur == 3) {
+  if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
+      && cs_glob_turb_model->type == CS_TURB_RANS) {
     cs_turbulence_rij_anisotropic_mu_t(mq,
                                        n_cells,
                                        -1,

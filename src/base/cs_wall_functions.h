@@ -273,7 +273,7 @@ cs_wall_functions_1scale_log(cs_real_t    l_visc,
 }
 
 /*----------------------------------------------------------------------------
- * Compute du+/dy+ for a given yk+.
+ * Compute int_{0}^yk+ (du+/dy+) for a given yk+.
  *
  * parameters:
  *   yplus     <--  dimensionless distance
@@ -420,12 +420,12 @@ cs_wall_functions_2scales_continuous(cs_real_t   rnnb,
      * scales wall function (iwallf = 3).
      * ------------------------------------------------------------*/
 
-    /* Turbulent viscocity is modified for RSM so that its expression
+    /* Turbulent viscosity is modified for RSM so that its expression
      * remain valid down to the wall, according to Durbin :
      * nu_t = 0.22 * v'2 * k / eps */
     const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
     assert(turb_model != NULL);
-    if (turb_model->itytur == 3)
+    if (turb_model->order == CS_TURB_SECOND_ORDER)
       t_visc_durb = t_visc / (kinetic_en * cs_turb_cmu ) * rnnb * 0.22;
     else
       t_visc_durb = t_visc;

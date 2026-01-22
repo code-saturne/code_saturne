@@ -2204,9 +2204,9 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
           }
           else
             pimp = pimp_lam;
-          }
-          else
-            pimp = 2 * visclc / romc * cvar_k[c_id] / (distbf * distbf);
+        }
+        else
+          pimp = 2 * visclc / romc * cvar_k[c_id] / (distbf * distbf);
 
         pimp = pimp * cfnne;
 

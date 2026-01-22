@@ -460,7 +460,7 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
                                        cofimp);
     break;
   case CS_WALL_F_2SCALES_VDRIEST:
-   cs_wall_functions_2scales_vdriest(rnnb,
+    cs_wall_functions_2scales_vdriest(rnnb,
                                       l_visc,
                                       vel,
                                       y,

@@ -1898,12 +1898,12 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
          * to phi and epsilon.
          * Compute the term near the wall \f$ \Phi_{ij}^w \f$ --> w3
          *
-         * Phiw = -5.0 * (eps/k) * [R*Xn + Xn^T*R - 0.5*tr(Xn*R)*(Xn+Id)] */
+         * Phiw = -5.0 (eps/k) * [R*n(x)n + n(x)n^T*R - 0.5*Rnn)*(n(x)n+Id)] */
         const cs_real_t xnnd = d1s2 * (xnal[i]*xnal[j] + st_deltaij[ij]);
 
         cs_real_t phiijw = 0;
         for (cs_lnum_t k = 0; k < 3; k++) {
-          phiijw += m_rij[k][i] * xnal[j] * xnal[k];
+          phiijw += m_rij[i][k] * xnal[j] * xnal[k];
           phiijw += m_rij[k][j] * xnal[i] * xnal[k];
           for (cs_lnum_t l = 0; l < 3; l++)
             phiijw -= m_rij[l][k] * xnal[k] * xnal[l] * xnnd;
@@ -1920,10 +1920,10 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
 
         /* Compute \f $\e_{ij}^w \f$ (Rotta model)
          * Rij/k*epsilon */
-        const cs_real_t epsijw = m_rij[j][i] / tke * cvara_ep[c_id];
+        const cs_real_t epsijw = crijeps * m_rij[j][i] / tke * cvara_ep[c_id];
 
         /* Compute \e_{ij}^h */
-        const cs_real_t epsij = d2s3 * cvara_ep[c_id] * st_deltaij[ij];
+        const cs_real_t epsij = crijeps * d2s3 * cvara_ep[c_id] * st_deltaij[ij];
 
         /* Compute explicit ST of the Rij equation
          *  \f[ P_{ij} + (1-\alpha^3)\Phi_{ij}^w + \alpha^3\Phi_{ij}^h
@@ -1933,7 +1933,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
         /* save the pressure correlation  term for Rij
          * ----------------------------------------------
          * Phi,ij = Phi1,ij+Phi2,ij
-         * Phi1 is the socalled slow term, Phi2, the rapid term
+         * Phi1 is the so-called slow term, Phi2, the rapid term
          */
 
         if (cpro_press_correl != nullptr)

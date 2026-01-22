@@ -704,9 +704,7 @@ cs_post_evm_reynolds_stresses(cs_field_interpolate_t  interpolation_type,
   const cs_turb_model_t  *turb_model = cs_glob_turb_model;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
-  if (   turb_model->itytur != 2
-      && turb_model->itytur != 6
-      && turb_model->itytur != 5)
+  if (turb_model->order != CS_TURB_FIRST_ORDER)
     bft_error(__FILE__, __LINE__, 0,
               _("This post-processing utility function is only available for "
                 "Eddy Viscosity Models."));

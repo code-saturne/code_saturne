@@ -365,7 +365,7 @@ cs_lagr_car(int                         iprev,
       }
       if (extra->grad_lagr_time_r_et != nullptr && phase_id == 0) {
         for (int id = 0; id < 3; id++)
-            beta[id] = 0.;
+          beta[id] = 0.;
       }
     }
   } // end if idistu == 1
