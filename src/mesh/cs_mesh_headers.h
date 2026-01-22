@@ -50,6 +50,7 @@
 #include "mesh/cs_mesh_coarsen.h"
 #include "mesh/cs_mesh_coherency.h"
 #include "mesh/cs_mesh_connect.h"
+#include "mesh/cs_redistribute.h"
 #if defined(__cplusplus)
 #include "mesh/cs_mesh_cut.h"
 #endif

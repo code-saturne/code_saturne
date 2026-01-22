@@ -117,6 +117,7 @@
 #include "turb/cs_turbulence_model.h"
 
 #include "base/cs_field_default.h"
+#include "mesh/cs_redistribute.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -673,6 +674,10 @@ cs_time_stepping(void)
 
     cs_volume_zone_build_all(mesh_modified);
     cs_boundary_zone_build_all(mesh_modified);
+
+    if (mesh_modified) {
+      cs_redistribute(nullptr);
+    }
 
     cs_real_t titer1 = cs_timer_wtime();
 

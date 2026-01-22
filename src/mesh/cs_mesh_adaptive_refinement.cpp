@@ -173,13 +173,13 @@ _realloc_and_update_field_refinement(cs_field_t       *f,
                                      const cs_real_t   measure[])
 {
   cs_lnum_t n_new = cs_mesh_location_get_n_elts(f->location_id)[0];
-  cs_lnum_t n_alloc_new = cs_mesh_location_get_n_elts(f->location_id)[2]; 
+  cs_lnum_t n_alloc_new = cs_mesh_location_get_n_elts(f->location_id)[2];
   cs_field_t *f_vel = CS_F_(vel);
 
   cs_real_t *grad = f->grad;
   const cs_lnum_t dim = f->dim;
 
-  int interpolation_type = _amr_info.interpolation; 
+  int interpolation_type = _amr_info.interpolation;
 
   for (int i = 0; i < f->n_time_vals; i++){
     // New array for current time vals
@@ -219,7 +219,7 @@ _realloc_and_update_field_refinement(cs_field_t       *f,
           cs_real_3_t d = {cell_cen[n_id][0] - cog[o_id][0],
                            cell_cen[n_id][1] - cog[o_id][1],
                            cell_cen[n_id][2] - cog[o_id][2]};
-          
+
           for (cs_lnum_t j = 0; j < dim; j++) {
             cs_lnum_t k = o_id*dim + j;
             new_val_i(n_id, j) = f_val_i(o_id, j)
@@ -228,10 +228,10 @@ _realloc_and_update_field_refinement(cs_field_t       *f,
 
           }
         }
-      } 
+      }
       else {
         for (cs_lnum_t n_id = s_id; n_id < e_id; n_id++)
-          for (cs_lnum_t j = 0; j < dim; j++) 
+          for (cs_lnum_t j = 0; j < dim; j++)
             new_val_i(n_id, j) = f_val_i(o_id, j) * measure_ratio[n_id-s_id];
       }
       CS_FREE(measure_ratio);
@@ -247,14 +247,14 @@ _realloc_and_update_field_refinement(cs_field_t       *f,
    * For those elements, no interpolation could be performed
    * as sush. */
   if (new_idx != nullptr) {
-    cs_field_t *f_imf = cs_field_by_name("inner_mass_flux"); 
+    cs_field_t *f_imf = cs_field_by_name("inner_mass_flux");
 
     /* When field is defined on vertices, we do not know
      * for now what to impose on newly created vertices.
      * When field is on interior faces, a specific treatment
      * is done for mass fluxes, but other fields are set to
      * 0 for now. */
-    if (  f->location_id != CS_MESH_LOCATION_INTERIOR_FACES 
+    if (  f->location_id != CS_MESH_LOCATION_INTERIOR_FACES
         || f->id != f_imf->id){
       for (int i = 0; i < f->n_time_vals; i++){
         auto f_view_i = f->_vals[i]->view();
@@ -279,7 +279,7 @@ _realloc_and_update_field_refinement(cs_field_t       *f,
 
       for (int i = 0; i < f->n_time_vals; i++){
         auto f_view_i = f->_vals[i]->view();
-          
+
         // Initialisation
         for (cs_lnum_t n_id = new_idx[0]; n_id < n_new; n_id++)
           f_view_i(n_id, 0) = 0;
@@ -290,7 +290,7 @@ _realloc_and_update_field_refinement(cs_field_t       *f,
 
           cs_real_t w_1 = weight[n_id];
           cs_real_t w_2 = (1. - weight[n_id]);
-          
+
           cs_real_t q = 0.0;
           for (cs_lnum_t idim = 0; idim < 3; idim ++){
             cs_real_t qdm1 = crom[c_id1]*vel[c_id1][idim];
@@ -314,7 +314,7 @@ _realloc_and_update_field_refinement(cs_field_t       *f,
 
 /*----------------------------------------------------------------------------
  * In case of refinement during an AMR step, this function perform the
- * memory reallocation for a given field bc_coeffs and interpolate its values 
+ * memory reallocation for a given field bc_coeffs and interpolate its values
  * on the new mesh.
  *
  * parameters:
@@ -351,7 +351,7 @@ _realloc_and_update_bc_coeffs_refinement(const cs_field_t *f,
      * or flux, resp. */
     if (k>0)
       prev_ptr   = array_list[k-1];
-    
+
     if (bc_val != nullptr && bc_val != prev_ptr) {
 
       cs_real_t *i_vals     = nullptr;
@@ -374,14 +374,14 @@ _realloc_and_update_bc_coeffs_refinement(const cs_field_t *f,
   /* Make vals member of the current field
      point toward the newly allocated one*/
   f->bc_coeffs->val_f     = array_out[0];
-  
+
   if (array_list[1] == array_list[0])
     f->bc_coeffs->val_f_lim = array_out[0];
   else
     f->bc_coeffs->val_f_lim = array_out[1];
 
   f->bc_coeffs->flux      = array_out[2];
-  
+
   if (array_list[3] == array_list[2])
     f->bc_coeffs->flux_lim  = array_out[2];
   else
@@ -412,7 +412,7 @@ _realloc_and_update_field_coarsening(cs_field_t      *f,
                                      const cs_real_t measure[])
 {
   cs_lnum_t n_new = cs_mesh_location_get_n_elts(f->location_id)[0];
-  cs_lnum_t n_alloc_new = cs_mesh_location_get_n_elts(f->location_id)[2]; 
+  cs_lnum_t n_alloc_new = cs_mesh_location_get_n_elts(f->location_id)[2];
 
   for (int i = 0; i < f->n_time_vals; i++){
     // New array for current time vals
@@ -422,7 +422,7 @@ _realloc_and_update_field_coarsening(cs_field_t      *f,
     auto f_val_i = f->_vals[i]->view();
 
     for (cs_lnum_t idim = 0; idim < f->dim; idim ++){
-    
+
       /* Fill vals with P0 interpolation */
       for (cs_lnum_t n_id = 0; n_id < n_new; n_id++){
         cs_lnum_t s_id = n2o_idx[n_id], e_id = n2o_idx[n_id+1];
@@ -458,7 +458,7 @@ _realloc_and_update_field_coarsening(cs_field_t      *f,
 
 /*----------------------------------------------------------------------------
  * In case of refinement during an AMR step, this function perform the
- * memory reallocation for a given field bc_coeffs and interpolate its values 
+ * memory reallocation for a given field bc_coeffs and interpolate its values
  * on the new mesh.
  *
  * parameters:
@@ -498,7 +498,7 @@ _realloc_and_update_bc_coeffs_coarsening(cs_field_t      *f,
      * or flux, resp. */
     if (k>0)
       prev_ptr   = array_list[k-1];
-    
+
     if (bc_val != nullptr && bc_val != prev_ptr) {
 
       cs_real_t *i_vals = nullptr;
@@ -511,11 +511,11 @@ _realloc_and_update_bc_coeffs_coarsening(cs_field_t      *f,
       /* Fill vals with P0 interpolation */
       for (cs_lnum_t n_id = 0; n_id < n_new; n_id++){
         cs_lnum_t s_id = n2o_idx[n_id], e_id = n2o_idx[n_id+1];
-    
+
         cs_real_t measure_tot = 0.0;
         for (cs_lnum_t idim = 0; idim < f->dim; idim ++)
           val_mean[idim]     = 0.0;
-    
+
         for (cs_lnum_t i = s_id; i < e_id; i++) {
           cs_lnum_t o_id = n2o[i];
           /* Compute mean value */
@@ -524,7 +524,7 @@ _realloc_and_update_bc_coeffs_coarsening(cs_field_t      *f,
                val_mean[idim] += bc_val[f->dim * o_id  + idim]
                                        * measure[o_id];
         }
-    
+
         for (cs_lnum_t idim = 0; idim < f->dim; idim ++)
           i_vals[f->dim * n_id + idim]     = val_mean[idim]/measure_tot;
       }
@@ -538,14 +538,14 @@ _realloc_and_update_bc_coeffs_coarsening(cs_field_t      *f,
   /* Make vals member of the current field
      point toward the newly allocated one*/
   f->bc_coeffs->val_f     = array_out[0];
-  
+
   if (array_list[1] == array_list[0])
     f->bc_coeffs->val_f_lim = array_out[0];
   else
     f->bc_coeffs->val_f_lim = array_out[1];
 
   f->bc_coeffs->flux      = array_out[2];
-  
+
   if (array_list[3] == array_list[2])
     f->bc_coeffs->flux_lim  = array_out[2];
   else
@@ -560,7 +560,7 @@ static void
 _halo_sync(cs_field_t *f)
 {
   const cs_halo_t *halo = cs_glob_mesh->halo;
-  
+
   for (int kk = 0; kk < f->n_time_vals; kk++) {
 
     if (halo != nullptr) {
@@ -631,7 +631,7 @@ _realloc_and_interp_after_refinement(cs_mesh_t         *mesh,
     }
 
     if (   location_id == CS_MESH_LOCATION_BOUNDARY_FACES
-        && field_loc_type == CS_MESH_LOCATION_CELLS 
+        && field_loc_type == CS_MESH_LOCATION_CELLS
         && f->bc_coeffs != nullptr)
         _realloc_and_update_bc_coeffs_refinement(f, n_old, o2n_idx);
   }
@@ -675,13 +675,13 @@ _realloc_and_interp_after_coarsening(cs_mesh_t       *mesh,
 
       /* When dealing with fields on cells, we need to sync halo cells*/
       if (field_loc_type == CS_MESH_LOCATION_CELLS)
-        _halo_sync(f); 
+        _halo_sync(f);
     }
 
     if (   location_id == CS_MESH_LOCATION_BOUNDARY_FACES
         && field_loc_type == CS_MESH_LOCATION_CELLS
         && f->bc_coeffs != nullptr)
-        _realloc_and_update_bc_coeffs_coarsening(f, 
+        _realloc_and_update_bc_coeffs_coarsening(f,
                                                  n_old,
                                                  n2o_idx,
                                                  n2o,
@@ -701,7 +701,7 @@ _realloc_and_interp_after_coarsening(cs_mesh_t       *mesh,
  *   indic       <-> initial array containing the flagged cells
  *----------------------------------------------------------------------------*/
 
-static void 
+static void
 _propagate_refinement(cs_mesh_t *m,
                       char       c_r_level[],
                       cs_lnum_t  indic[])
@@ -781,7 +781,7 @@ _block_coarsening(cs_mesh_t *m,
   for (cs_lnum_t f_id = 0; f_id < m->n_i_faces; f_id ++){
     cs_lnum_t c_id1 = m->i_face_cells[f_id][0];
     cs_lnum_t c_id2 = m->i_face_cells[f_id][1];
-    
+
     int face_r_gen  = (int)m->i_face_r_gen[f_id];
     int c_r_level_1 = (int)c_r_level[c_id1];
     int c_r_level_2 = (int)c_r_level[c_id2];
@@ -794,13 +794,13 @@ _block_coarsening(cs_mesh_t *m,
       if (indic[c_id1] != indic[c_id2]){
         indic[c_id1] = 0;
         indic[c_id2] = 0;
-      }  
+      }
     }
   }
 
   cs_halo_sync_num(m->halo, CS_HALO_STANDARD, indic);
 
-  do { 
+  do {
 
     reloop = 0;
 
@@ -856,7 +856,7 @@ cs_adaptive_refinement_update_gradients(void)
   const int n_fields = cs_field_n_fields();
   int interpolation_type = _amr_info.interpolation;
   cs_field_t *fv = cs_field_by_name("velocity");
-  
+
   /* Velocity field is always interpolated using P1
    * to reconstruct mass flux at newly created internal
    * faces */
@@ -870,7 +870,7 @@ cs_adaptive_refinement_update_gradients(void)
 
   /* In cas of P1 interpolation requested by user, we compute
    * all fields gradients for cell based fields.
-   * This is also done to update the gradient in case it was 
+   * This is also done to update the gradient in case it was
    * set by user. */
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
@@ -881,10 +881,10 @@ cs_adaptive_refinement_update_gradients(void)
       = cs_mesh_location_get_type(f->location_id);
 
     if (   field_loc_type == CS_MESH_LOCATION_CELLS
-        && f->id != fv->id 
+        && f->id != fv->id
         && (interpolation_type == 1 || f->grad != nullptr) ){
       cs_field_allocate_gradient(f);
-      
+
       switch (f->dim) {
       case 1: {
         cs_real_3_t *grad = (cs_real_3_t *)f->grad;
@@ -1004,7 +1004,7 @@ cs_adaptive_refinement_step(void)
 
   _amr_info.indic_func(_amr_info.indic_input, s);
 
-  /* Flag cells and eventually propagate refinement 
+  /* Flag cells and eventually propagate refinement
    * to avoid jump in refinement levels*/
 
   for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id ++)
@@ -1105,12 +1105,12 @@ cs_adaptive_refinement_step(void)
   CS_FREE(s);
   CS_FREE(indic);
   CS_FREE(c_r_level);
-  
+
   cs_glob_mesh->n_b_faces_all = cs_glob_mesh->n_b_faces;
 
   /* Renumber mesh based on code options */
 
-  cs_renumber_mesh(m);
+  cs_renumber_mesh(m, nullptr, nullptr, nullptr, nullptr);
 
   /* Free and compute mesh related quantities */
 
@@ -1132,7 +1132,7 @@ cs_adaptive_refinement_step(void)
   cs_gradient_free_quantities();
   cs_matrix_update_mesh();
 
-  /* Free gradients 
+  /* Free gradients
    * WARNING : for now stored gradients are not necessary
    * but one should remain cautious here if gradient are
    * needed afterwards */
