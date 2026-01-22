@@ -160,11 +160,11 @@ _lagr_min_max_boundary_stats(int         s_id,
 
   cs_real_t threshold = cs_glob_lagr_stat_options->threshold;
 
-  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-    if (bound_stat[ifac + n_b_faces * lagr_bd_i->inbr] > threshold) {
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+    if (bound_stat[face_id + n_b_faces * lagr_bd_i->inbr] > threshold) {
       *nbrfac = *nbrfac + 1;
-      *gmax = cs::max(*gmax, bound_stat[ifac + n_b_faces * s_id]);
-      *gmin = cs::min(*gmin, bound_stat[ifac + n_b_faces * s_id]);
+      *gmax = cs::max(*gmax, bound_stat[face_id + n_b_faces * s_id]);
+      *gmin = cs::min(*gmin, bound_stat[face_id + n_b_faces * s_id]);
     }
   }
 }

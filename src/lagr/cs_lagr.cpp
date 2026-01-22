@@ -2409,10 +2409,10 @@ cs_lagr_solve_time_step(const int         itypfb[],
       lag_bdi->tstatp = 0.0;
       lag_bdi->npstf  = 0;
 
-      for (int  ii = 0; ii < cs_glob_lagr_dim->n_boundary_stats; ii++) {
+      for (int s_id = 0; s_id < cs_glob_lagr_dim->n_boundary_stats; s_id++) {
 
-        for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
-          bound_stat[ii * n_b_faces + ifac] = 0.0;
+        for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
+          bound_stat[s_id * n_b_faces + face_id] = 0.0;
 
       }
 
@@ -2485,10 +2485,10 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
       /* Height and time of deposit     */
 
-      for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
-        bound_stat[lag_bdi->iclogt * n_b_faces + ifac] = 0.0;
-        bound_stat[lag_bdi->iclogh * n_b_faces + ifac] = 0.0;
-        bound_stat[lag_bdi->ihdiam * n_b_faces + ifac] = 0.0;
+      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+        bound_stat[lag_bdi->iclogt * n_b_faces + face_id] = 0.0;
+        bound_stat[lag_bdi->iclogh * n_b_faces + face_id] = 0.0;
+        bound_stat[lag_bdi->ihdiam * n_b_faces + face_id] = 0.0;
       }
 
       for (cs_lnum_t npt = 0; npt < p_set.n_particles; npt++) {
@@ -2509,21 +2509,21 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
       }
 
-      for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
+      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
-        if (bound_stat[lag_bdi->inclg * n_b_faces + ifac] > 0) {
+        if (bound_stat[lag_bdi->inclg * n_b_faces + face_id] > 0) {
 
-          bound_stat[lag_bdi->iclogt * n_b_faces + ifac]
-            /=  bound_stat[lag_bdi->inclg * n_b_faces + ifac];
-          bound_stat[lag_bdi->ihdiam * n_b_faces + ifac]
-            =   bound_stat[lag_bdi->ihsum  * n_b_faces + ifac]
-              / bound_stat[lag_bdi->inclgt * n_b_faces + ifac];
+          bound_stat[lag_bdi->iclogt * n_b_faces + face_id]
+            /=  bound_stat[lag_bdi->inclg * n_b_faces + face_id];
+          bound_stat[lag_bdi->ihdiam * n_b_faces + face_id]
+            =   bound_stat[lag_bdi->ihsum  * n_b_faces + face_id]
+              / bound_stat[lag_bdi->inclgt * n_b_faces + face_id];
 
         }
-        else if (bound_stat[lag_bdi->inclg * n_b_faces + ifac] <= 0) {
+        else if (bound_stat[lag_bdi->inclg * n_b_faces + face_id] <= 0) {
 
-          bound_stat[lag_bdi->iclogt * n_b_faces + ifac] = 0.0;
-          bound_stat[lag_bdi->ihdiam * n_b_faces + ifac] = 0.0;
+          bound_stat[lag_bdi->iclogt * n_b_faces + face_id] = 0.0;
+          bound_stat[lag_bdi->ihdiam * n_b_faces + face_id] = 0.0;
 
         }
         else {
@@ -2535,7 +2535,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
                      "---------------------------------------------\n\n\n"
                      "** Ifac = %ld  and inclg = %g\n"
                      "-------------------------------------------------\n",
-                     (long)ifac, bound_stat[lag_bdi->inclg * n_b_faces + ifac]);
+                     (long)face_id, bound_stat[lag_bdi->inclg * n_b_faces + face_id]);
         }
 
       }
