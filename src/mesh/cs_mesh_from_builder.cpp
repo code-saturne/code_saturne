@@ -1240,6 +1240,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   size_t _n_vertices = 0;
 
+  CS_FREE(mesh->global_vtx_num);
   cs_order_single_gnum(_face_vertices_idx[_n_faces],
                        1, /* base */
                        _face_gvertices,
