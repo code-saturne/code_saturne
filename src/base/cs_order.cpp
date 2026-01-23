@@ -1407,7 +1407,7 @@ cs_order_reorder_data(cs_lnum_t         n_elts,
  * \brief Build a sorted array containing a single occurence of each global
  *        number in a given array.
  *
- * Global numbers under a given "base" value are extruded.
+ * Global numbers under a given "base" value are excluded.
  *
  * The caller is responsible for freeing the returned array.
  *
