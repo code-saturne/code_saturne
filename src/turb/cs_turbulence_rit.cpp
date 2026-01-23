@@ -156,6 +156,9 @@ _turb_flux_st(const char          *name,
   const cs_real_t *cvar_tt = nullptr, *cvara_tt = nullptr, *cvar_al = nullptr;
 
   const cs_turb_rans_model_t *rans_mdl = cs_glob_turb_rans_model;
+  const cs_turb_model_type_t model
+    = (cs_turb_model_type_t)cs_glob_turb_model->model;
+
   /* Get the turbulent flux model */
   const int kturt = cs_field_key_id("turbulent_flux_model");
   int turb_flux_model =  cs_field_get_key_int(f, kturt);
@@ -292,7 +295,7 @@ _turb_flux_st(const char          *name,
 
     /* Dynamic model must impose dynamic part for the thermal model
      * See BFH */
-    if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_BFH) {
+    if (model == CS_TURB_RIJ_EPSILON_BFH) {
 
       cs_real_t beta2 = c2trit;
       /* Production of TKE */
