@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -2086,6 +2086,7 @@ _compute_shapef_3d(fvm_element_t  elt_type,
  *   tolerance           <-- location tolerance factor
  *   uvw[]               --> parametric coordinates of point in element
 *----------------------------------------------------------------------------*/
+
 static int
 _compute_uvw(fvm_element_t      elt_type,
              const cs_coord_t   point_coords[],
@@ -2193,7 +2194,7 @@ _locate_in_cell_3d(cs_lnum_t          elt_num,
   int i, j, k, n_vertices;
   cs_lnum_t coord_idx, vertex_id;
 
-  double uvw[3], dist, shapef[8], max_dist;
+  double uvw[3], dist, max_dist;
   double  _vertex_coords[8][3];
 
   n_vertices = fvm_nodal_n_vertices_element[elt_type];
@@ -2260,14 +2261,15 @@ _locate_in_cell_3d(cs_lnum_t          elt_num,
 
         else {
 
+          double shapef[8] = {0, 0, 0, 0, 0, 0, 0, 0};
           _compute_shapef_3d(elt_type, uvw, shapef, nullptr);
 
-          for (j = 0; j < n_vertices; j++){
+          for (j = 0; j < n_vertices; j++) {
 
             dist = 2.*cs::abs(shapef[j] - 0.5);
 
-          if (max_dist < dist)
-            max_dist = dist;
+            if (max_dist < dist)
+              max_dist = dist;
           }
 
         }

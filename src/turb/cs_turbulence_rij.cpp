@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -2149,7 +2149,6 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
     ccorio = 1;
 
   const cs_real_t d1s2 = 0.5;
-  const cs_real_t d1s3 = 1./3.;
   const cs_real_t d2s3 = 2./3.;
 
   const cs_real_t cmu = cs_turb_cmu;
@@ -2454,8 +2453,6 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
  *        turbulence model.
  *
  * \param[in]   phase_id  turbulent phase id (-1 for single phase flow)
- * \param[in]   gradv     work array for the term grad
- *                        of velocity only for model=31
  * \param[in]   prod      work array for production (without
  *                        rho volume) only for model=30
  * \param[in]   up_rhop   work array for \f$ \vect{u}'\rho' \f$
@@ -2470,7 +2467,6 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
 
 static void
 _solve_epsilon(int              phase_id,
-               const cs_real_t  gradv[][3][3],
                const cs_real_t  prod[][6],
                const cs_real_t  up_rhop[][3],
                const cs_real_t  grav[],
@@ -3489,7 +3485,6 @@ cs_turbulence_rij(int phase_id)
     cs_array<cs_real_t> _fimp(n_cells_ext, cs_alloc_mode);
 
     _solve_epsilon(phase_id,
-                   gradv.data<cs_real_33_t>(),
                    prod.data<cs_real_6_t>(),
                    up_rhop.data<cs_real_3_t>(),
                    grav,
@@ -4176,10 +4171,6 @@ cs_turbulence_rij_mu_t(int  phase_id)
   cs_field_t *f_mut = CS_F_(mu_t);
 
   const int t2v[3][3] = _T2V;
-  const int iv2t[6] = _IV2T;
-  const int jv2t[6] = _JV2T;
-  const cs_real_t m_deltaij[3][3] = {{1., 0., 0.}, {0., 1., 0.}, {0., 0., 1.}};
-  const cs_real_t st_deltaij[6] = {1, 1, 1, 0, 0, 0};
 
   if (phase_id >= 0) {
     f_rij = CS_FI_(rij, phase_id);

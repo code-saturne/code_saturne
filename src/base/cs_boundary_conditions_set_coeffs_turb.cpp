@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1805,7 +1805,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     if (cpro_beta != nullptr)
       _beta = cpro_beta[c_id];
     buoyant_param = _beta * cs_math_3_dot_product(gxyz, n);
-    cs_real_t flux;
+    cs_real_t flux = 0.;
 
     /* Atmospheric Louis wall functions for rough wall */
     if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 1) {

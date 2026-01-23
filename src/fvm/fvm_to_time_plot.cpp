@@ -6,7 +6,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -148,13 +148,13 @@ typedef struct {
  *----------------------------------------------------------------------------*/
 
 static void
-_coords_output(void           *context,
-               cs_datatype_t   datatype,
-               int             dimension,
-               int             component_id,
-               cs_gnum_t       block_start,
-               cs_gnum_t       block_end,
-               void           *buffer)
+_coords_output(void                            *context,
+               [[maybe_unused]] cs_datatype_t   datatype,
+               int                              dimension,
+               [[maybe_unused]] int             component_id,
+               cs_gnum_t                        block_start,
+               cs_gnum_t                        block_end,
+               void                            *buffer)
 {
   if (dimension > 3 || buffer == nullptr)
     return;

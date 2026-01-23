@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -411,8 +411,9 @@ _gas_comb(cs_lnum_t        n_cells,
     zzs2[ih2o]= zzs2[ih2o] + cx2m[c_id] * 0.5 * zzs2[icb2];
     zzs2[icb2]= 0.0;
     zzs2[io2] = 0.0;
+    zzs3[iso2]  = 0.0;
 
-    // 4eme reaction:  H2S + 3/2 O2 => H2O + SO2
+    // 4th reaction:  H2S + 3/2 O2 => H2O + SO2
 
     cs_real_t fs3 = fs2;
     if (zzs2[ih2s] > 0.0 && zzox[io2] > 0.0)

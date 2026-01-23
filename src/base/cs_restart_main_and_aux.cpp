@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -674,16 +674,12 @@ _write_auxiliary_checkpoint(void)
 
   if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0) {
     cs_coal_model_t  *cm = cs_glob_coal_model;
-    const char *_prefix = "masse_volumique_charbon";
-    int _len = strlen(_prefix) + 3;
+    const char *_prefix = "coal_density";
+    int _len = strlen(_prefix) + 10;
 
     for (int i = 0; i < cm->n_coals; i++) {
       char _rub[64] = "";
-
-      if (i < 100) // Hard coded limit, is it still needed ?
-        snprintf(_rub, _len, "%s%02d", _prefix, i);
-      else
-        snprintf(_rub, _len, "%sXX", _prefix);
+      snprintf(_rub, _len, "%s%02d", _prefix, i);
 
       cs_real_t dummy_real = cm->rhock[i];
       _WRITE_REAL_VAL(_rub);
@@ -1183,17 +1179,12 @@ _read_auxiliary_checkpoint(cs_map_name_to_id_t *old_field_map)
 
   if (cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0) {
     cs_coal_model_t  *cm = cs_glob_coal_model;
-    const char *_prefix = "masse_volumique_charbon";
-    int _len = strlen(_prefix) + 3;
+    const char *_prefix = "coal_density";
+    int _len = strlen(_prefix) + 10;
 
     for (int i = 0; i < cm->n_coals; i++) {
       char _rub[64] = "";
-
-      if (i < 100) // Hard coded limit, is it still needed ?
-        snprintf(_rub, _len, "%s%02d", _prefix, i);
-      else
-        snprintf(_rub, _len, "%sYY", _prefix);
-
+      snprintf(_rub, _len, "%s%d", _prefix, i);
       retval = _READ_REAL_VAL(_rub);
       if (retval == CS_RESTART_SUCCESS)
         cm->rhock[i] = dummy_real;

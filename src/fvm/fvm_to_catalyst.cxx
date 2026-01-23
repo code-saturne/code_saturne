@@ -6,7 +6,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -357,7 +357,7 @@ _add_v2_pipeline(const char  *path)
 
   size_t l = strlen(path);
   CS_MALLOC(_scripts[id], l+1, char);
-  strncpy(_scripts[id], path, l);
+  strncpy(_scripts[id], path, l+1);
   _scripts[id][l] = '\0';
 
   /* pipeline->SetGhostLevel(1); */
@@ -434,7 +434,7 @@ _add_script(const char         *path)
 
   size_t l = strlen(path);
   CS_MALLOC(_scripts[id], l+1, char);
-  strncpy(_scripts[id], path, l);
+  strncpy(_scripts[id], path, l+1);
   _scripts[id][l] = '\0';
 
   /* Add Catalyst pipeline */

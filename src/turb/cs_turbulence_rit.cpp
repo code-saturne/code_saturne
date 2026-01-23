@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -888,7 +888,7 @@ _solve_rit(const cs_field_t     *f,
 
   int kstprv = cs_field_key_id("source_term_prev_id");
   int st_prv_id = cs_field_get_key_int(f_ut, kstprv);
-  cs_real_3_t *c_st_prv;
+  cs_real_3_t *c_st_prv = nullptr;
   if (st_prv_id > -1)
     c_st_prv = (cs_real_3_t *)cs_field_by_id(st_prv_id)->val;
 

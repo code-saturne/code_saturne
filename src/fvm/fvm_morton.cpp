@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -854,7 +854,7 @@ _get_coord_extents(cs_lnum_t         n_coords,
   ctx.parallel_for_reduce
     (n_coords, rd, reducer,
      [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_double_n<dim*2> &res) {
-       for (cs_lnum_t j = 0; j < 3; j++) {
+       for (cs_lnum_t j = 0; j < dim; j++) {
          res.r[j]       = coords[c_id*dim + j];
          res.r[j + dim] = coords[c_id*dim + j];
        }
@@ -893,7 +893,7 @@ _get_global_extents(cs_lnum_t         n_extents,
   ctx.parallel_for_reduce
     (n_extents, rd, reducer,
      [=] CS_F_HOST_DEVICE (cs_lnum_t c_id, cs_double_n<dim*2> &res) {
-       for (cs_lnum_t j = 0; j < 3; j++) {
+       for (cs_lnum_t j = 0; j < dim; j++) {
          res.r[j]       = extents[c_id*dim*2 + j];
          res.r[j + dim] = extents[c_id*dim*2 + j + dim];
        }

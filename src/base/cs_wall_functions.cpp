@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -326,7 +326,7 @@ _atmo_louis(const cs_real_t  utau,
  * \param[in,out] iuntur        indicator: 0 in the viscous sublayer
  * \param[in,out] nsubla        counter of cell in the viscous sublayer
  * \param[in,out] nlogla        counter of cell in the log-layer
- * \param[out]    cfbnns        correctif factors
+ * \param[out]    cfbnns        corrective factors
  * \param[out]    cfnnk
  * \param[out]    cfnne
  * \param[out]    dlmo          inverse of Obukhov length
@@ -637,8 +637,6 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
     else {
 
       /* No temperature delta: neutral */
-      const cs_real_t dt = 0., _beta = 0., gredu = 0.;
-
       cs_mo_compute_from_thermal_diff(y,
                                       z0,
                                       vel,

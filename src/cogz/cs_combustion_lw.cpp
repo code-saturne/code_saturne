@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -341,6 +341,7 @@ _pdflwc(cs_lnum_t         n_cells,
 
   const int n_dirac = cm->lw.n_dirac;
   for (int dirac_id = 0; dirac_id < n_dirac; dirac_id++) {
+    g[dirac_id] = 0.;
     cpro_fmel[dirac_id] = cm->lw.fmel[dirac_id]->val;
     cpro_fmal[dirac_id] = cm->lw.fmal[dirac_id]->val;
     cpro_teml[dirac_id] = cm->lw.teml[dirac_id]->val;

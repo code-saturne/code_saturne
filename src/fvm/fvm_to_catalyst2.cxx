@@ -6,7 +6,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -76,6 +76,7 @@
 
 #include "base/cs_mem.h"
 #include "base/cs_file.h"
+#include "base/cs_log.h"
 #include "base/cs_parall.h"
 #include "base/cs_tree.h"
 
@@ -385,8 +386,17 @@ _add_script(const char  *path)
     MPI_Bcast(&is_catalyst, 1, MPI_INT, 0, _comm);
 #endif
 
-  if (is_catalyst < 1)
+  if (is_catalyst < 2) {
+    if (is_catalyst == 1) {
+      cs_log_printf(CS_LOG_WARNINGS,
+                    "Warning\n"
+                    "File %s seems to be a legacy Catalyst 1 script\n"
+                    "and will be ignored for Catalyst 2 output.\n",
+                    path);
+      cs_log_printf_flush(CS_LOG_WARNINGS);
+    }
     return -1;
+  }
 
   _n_scripts += 1;
 

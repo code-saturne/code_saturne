@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1094,7 +1094,7 @@ cs_wall_condensation_compute(cs_real_t  total_htc[])
 
     /* Exchange coefficients */
 
-    cs_real_t hconv, hcond;
+    cs_real_t hconv = 0, hcond = 0;
     _compute_exchange_coefficients(ii, &hconv, &hcond);
     _wall_cond.convective_htc[ii]   = hconv;
     _wall_cond.condensation_htc[ii] = hcond;
