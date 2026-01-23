@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -255,16 +255,24 @@ cs_renumber_get_algorithm(bool                        *halo_adjacent_cells_last,
  * It is also possible to place cells connected to ghost cells last,
  * which may be useful to enable computation/communication overlap.
  *
+ * If new_to_old pointers are provided, the new to old mappings will
+ * be passed to this pointer. The caller then takes ownership and is
+ * responsible for freeing them
+ *
  * parameters:
- *   mesh  <->  pointer to global mesh structure
+ *   mesh       <->  pointer to global mesh structure
+ *   cell_n2o   <-> pointer to new to old cells array, or nullptr
+ *   i_face_n2o <-> pointer to new to old interior faces array, or nullptr
+ *   b_face_n2o <-> pointer to new to old boundary faces array, or nullptr
+ *   vtx_n2o    <-> pointer to new to old vertices array, or nullptr
  *----------------------------------------------------------------------------*/
 
 void
-cs_renumber_mesh(cs_mesh_t  *mesh,
-                 cs_lnum_t *cell_map[],
-                 cs_lnum_t *i_face_map[],
-                 cs_lnum_t *b_face_map[],
-                 cs_lnum_t *vtx_map[]);
+cs_renumber_mesh(cs_mesh_t   *mesh,
+                 cs_lnum_t  **cell_n2o,
+                 cs_lnum_t  **i_face_n2o,
+                 cs_lnum_t  **b_face_n2o,
+                 cs_lnum_t  **vtx_n2o);
 
 /*----------------------------------------------------------------------------*/
 /*!

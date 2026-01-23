@@ -4877,12 +4877,18 @@ _renumber_vertices_by_face_adjacency(cs_mesh_t  *mesh,
  * Renumber cells for locality and possible computation/communication
  * overlap.
  *
+ * If a new_to_old pointer is provided, the new to old mapping will
+ * be passed to this pointer. The caller then takes ownership and is responsible
+ * for freeing it.
+ *
  * parameters:
- *   mesh <-> pointer to global mesh structure
+ *   mesh       <-> pointer to global mesh structure
+ *   new_to_old <-> pointer to new to old array, or nullptr
  *----------------------------------------------------------------------------*/
 
 static void
-_renumber_cells(cs_mesh_t  *mesh, cs_lnum_t *cell_map[])
+_renumber_cells(cs_mesh_t   *mesh,
+                cs_lnum_t  **new_to_old)
 {
   cs_lnum_t  *new_to_old_c = nullptr;
   int retval = 0;
@@ -4964,8 +4970,8 @@ _renumber_cells(cs_mesh_t  *mesh, cs_lnum_t *cell_map[])
 
   /* Now free remaining array */
 
-  if (cell_map)
-    *cell_map = new_to_old_c;
+  if (new_to_old != nullptr)
+    *new_to_old = new_to_old_c;
   else
     CS_FREE(new_to_old_c);
 }
@@ -4978,12 +4984,18 @@ _renumber_cells(cs_mesh_t  *mesh, cs_lnum_t *cell_map[])
  * A thread pool may thus be built, with 1 thread per color.
  * Groups may then be built, containing only cells of a given color.
  *
+ * If a new_to_old pointer is provided, the new to old mapping will
+ * be passed to this pointer. The caller then takes ownership and is responsible
+ * for freeing it.
+ *
  * parameters:
- *   mesh <-> pointer to global mesh structure
+ *   mesh       <-> pointer to global mesh structure
+ *   new_to_old <-> pointer to new to old array, or nullptr
  *----------------------------------------------------------------------------*/
 
 static void
-_renumber_i_faces(cs_mesh_t  *mesh, cs_lnum_t *i_face_map[])
+_renumber_i_faces(cs_mesh_t   *mesh,
+                  cs_lnum_t  **new_to_old)
 {
   int  n_i_groups = 1, n_i_no_adj_halo_groups = 0;
   cs_lnum_t  max_group_size = 1014;       /* Default */
@@ -5103,8 +5115,8 @@ _renumber_i_faces(cs_mesh_t  *mesh, cs_lnum_t *i_face_map[])
   /* Free memory */
 
   CS_FREE(i_group_index);
-  if (i_face_map)
-    *i_face_map = new_to_old_i;
+  if (new_to_old != nullptr)
+    *new_to_old = new_to_old_i;
   else
     CS_FREE(new_to_old_i);
 }
@@ -5112,12 +5124,18 @@ _renumber_i_faces(cs_mesh_t  *mesh, cs_lnum_t *i_face_map[])
 /*----------------------------------------------------------------------------
  * Try to apply renumbering of boundary faces.
  *
+ * If a new_to_old pointer is provided, the new to old mapping will
+ * be passed to this pointer. The caller then takes ownership and is responsible
+ * for freeing it.
+ *
  * parameters:
- *   mesh <-> pointer to global mesh structure
+ *   mesh       <-> pointer to global mesh structure
+ *   new_to_old <-> pointer to new to old array, or nullptr
  *----------------------------------------------------------------------------*/
 
 static void
-_renumber_b_faces(cs_mesh_t  *mesh, cs_lnum_t *b_face_map[])
+_renumber_b_faces(cs_mesh_t   *mesh,
+                  cs_lnum_t  **new_to_old)
 {
   cs_lnum_t  ii;
   cs_lnum_t  *new_to_old_b = nullptr;
@@ -5227,8 +5245,8 @@ _renumber_b_faces(cs_mesh_t  *mesh, cs_lnum_t *b_face_map[])
   /* Free memory */
 
   CS_FREE(b_group_index);
-  if (b_face_map)
-    *b_face_map = new_to_old_b;
+  if (new_to_old != nullptr)
+    *new_to_old = new_to_old_b;
   else
     CS_FREE(new_to_old_b);
 }
@@ -5237,12 +5255,18 @@ _renumber_b_faces(cs_mesh_t  *mesh, cs_lnum_t *b_face_map[])
  * Renumber vertices for locality and possible computation/communication
  * overlap.
  *
+ * If a new_to_old pointer is provided, the new to old mapping will
+ * be passed to this pointer. The caller then takes ownership and is responsible
+ * for freeing it.
+ *
  * parameters:
- *   mesh <-> pointer to global mesh structure
+ *   mesh       <-> pointer to global mesh structure
+ *   new_to_old <-> pointer to new to old array, or nullptr
  *----------------------------------------------------------------------------*/
 
 static void
-_renumber_vertices(cs_mesh_t  *mesh, cs_lnum_t *vtx_map[])
+_renumber_vertices(cs_mesh_t   *mesh,
+                   cs_lnum_t  **new_to_old)
 {
   if (_vertices_algorithm == CS_RENUMBER_VERTICES_NONE)
     return;
@@ -5302,8 +5326,8 @@ _renumber_vertices(cs_mesh_t  *mesh, cs_lnum_t *vtx_map[])
 
   /* Now free remaining array */
 
-  if (vtx_map)
-    *vtx_map = n2o_v;
+  if (new_to_old)
+    *new_to_old = n2o_v;
   else
     CS_FREE(n2o_v);
 }
@@ -5627,16 +5651,24 @@ _renumber_b_test(cs_mesh_t  *mesh)
  * Renumber mesh elements for vectorization or OpenMP depending on code
  * options and target machine.
  *
+ * If new_to_old pointers are provided, the new to old mappings will
+ * be passed to this pointer. The caller then takes ownership and is
+ * responsible for freeing them
+ *
  * parameters:
- *   mesh  <->  Pointer to global mesh structure
+ *   mesh       <-> Pointer to global mesh structure
+ *   cell_n2o   <-> pointer to new to old cells array, or nullptr
+ *   i_face_n2o <-> pointer to new to old interior faces array, or nullptr
+ *   b_face_n2o <-> pointer to new to old boundary faces array, or nullptr
+ *   vtx_n2o    <-> pointer to new to old vertices array, or nullptr
  *----------------------------------------------------------------------------*/
 
 static void
-_renumber_mesh(cs_mesh_t  *mesh,
-               cs_lnum_t *cell_map[],
-               cs_lnum_t *i_face_map[],
-               cs_lnum_t *b_face_map[],
-               cs_lnum_t *vtx_map[])
+_renumber_mesh(cs_mesh_t   *mesh,
+               cs_lnum_t  **cell_n2o,
+               cs_lnum_t  **i_face_n2o,
+               cs_lnum_t  **b_face_n2o,
+               cs_lnum_t  **vtx_n2o)
 {
   const char *p = nullptr;
 
@@ -5738,16 +5770,16 @@ _renumber_mesh(cs_mesh_t  *mesh,
 
   /* Renumber cells first */
 
-  _renumber_cells(mesh, cell_map);
+  _renumber_cells(mesh, cell_n2o);
 
   /* Renumber faces afterwards */
 
-  _renumber_i_faces(mesh, i_face_map);
-  _renumber_b_faces(mesh, b_face_map);
+  _renumber_i_faces(mesh, i_face_n2o);
+  _renumber_b_faces(mesh, b_face_n2o);
 
   /* Renumber vertices afterwards */
 
-  _renumber_vertices(mesh, vtx_map);
+  _renumber_vertices(mesh, vtx_n2o);
 
   if (mesh->verbosity > 0)
     bft_printf
@@ -5984,24 +6016,32 @@ cs_renumber_get_algorithm(bool                        *halo_adjacent_cells_last,
  * It is also possible to place cells connected to ghost cells last,
  * which may be useful to enable computation/communication overlap.
  *
+ * If new_to_old pointers are provided, the new to old mappings will
+ * be passed to this pointer. The caller then takes ownership and is
+ * responsible for freeing them
+ *
  * parameters:
- *   mesh  <->  pointer to global mesh structure
+ *   mesh       <->  pointer to global mesh structure
+ *   cell_n2o   <-> pointer to new to old cells array, or nullptr
+ *   i_face_n2o <-> pointer to new to old interior faces array, or nullptr
+ *   b_face_n2o <-> pointer to new to old boundary faces array, or nullptr
+ *   vtx_n2o    <-> pointer to new to old vertices array, or nullptr
  *
  * \param[in, out]  mesh  pointer to global mesh structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_renumber_mesh(cs_mesh_t  *mesh,
-                 cs_lnum_t *cell_map[],
-                 cs_lnum_t *i_face_map[],
-                 cs_lnum_t *b_face_map[],
-                 cs_lnum_t *vtx_map[])
+cs_renumber_mesh(cs_mesh_t   *mesh,
+                 cs_lnum_t  **cell_n2o,
+                 cs_lnum_t  **i_face_n2o,
+                 cs_lnum_t  **b_face_n2o,
+                 cs_lnum_t  **vtx_n2o)
 {
   bft_printf(_("\n Renumbering mesh:\n"));
   bft_printf_flush();
 
-  _renumber_mesh(mesh, cell_map, i_face_map, b_face_map, vtx_map);
+  _renumber_mesh(mesh, cell_n2o, i_face_n2o, b_face_n2o, vtx_n2o);
 
   if (mesh->cell_numbering == nullptr)
     mesh->cell_numbering = cs_numbering_create_default(mesh->n_cells);
@@ -6433,7 +6473,6 @@ cs_renumber_vertices(cs_mesh_t  *mesh)
 
   if (mesh->vtx_numbering == nullptr)
     mesh->vtx_numbering = cs_numbering_create_default(mesh->n_vertices);
-
 }
 
 /*----------------------------------------------------------------------------*/

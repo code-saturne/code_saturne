@@ -57,7 +57,6 @@
 #include "base/cs_assert.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
-#include "base/cs_order.h"
 #include "base/cs_parall.h"
 
 #include "mesh/cs_mesh.h"
@@ -65,8 +64,6 @@
 #include "mesh/cs_mesh_location.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "mesh/cs_mesh_adaptive_refinement.h"
-#include "base/cs_order.h"
-#include "base/cs_parall.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -2314,9 +2311,9 @@ _flag_faces_and_edges(cs_lnum_t               f_id,
   last_corner_idx = 0;  // Last corner
 
   for (cs_lnum_t i = 0; i < n_fv; i++) {
-    int idx1 = (i+1)%n_fv, idx2 = (i+2)%n_fv;
+    int idx1 = (i+1)%n_fv;
     cs_lnum_t v1 = f2v_lst[idx1];
-    char r_lv1 = vtx_r_gen_f[idx1], r_lv2 = vtx_r_gen_f[idx2];
+    char r_lv1 = vtx_r_gen_f[idx1];
 
     if (r_lv1 <= f_r_level) {  // Corner
       n_corner += 1;

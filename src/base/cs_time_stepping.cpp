@@ -6,7 +6,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -63,14 +63,12 @@
 #include "base/cs_boundary_conditions_set_coeffs.h"
 #include "base/cs_control.h"
 #include "base/cs_coupling.h"
+#include "base/cs_field_default.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_gas_mix.h"
 #include "base/cs_ibm.h"
 #include "base/cs_initialize_fields.h"
 #include "base/cs_log_iteration.h"
-#include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_save.h"
-#include "mesh/cs_mesh_adaptive_refinement.h"
 #include "base/cs_mobile_structures.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
@@ -105,8 +103,12 @@
 #include "gui/cs_gui.h"
 #include "lagr/cs_lagr.h"
 #include "lagr/cs_lagr_lec.h"
+
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_save.h"
+#include "mesh/cs_mesh_adaptive_refinement.h"
+#include "mesh/cs_redistribute.h"
+
 #include "pprt/cs_physical_model.h"
 #include "rayt/cs_rad_transfer.h"
 #include "rayt/cs_rad_transfer_restart.h"
@@ -115,9 +117,6 @@
 #include "turb/cs_turbulence_bc.h"
 #include "turb/cs_turbulence_htles.h"
 #include "turb/cs_turbulence_model.h"
-
-#include "base/cs_field_default.h"
-#include "mesh/cs_redistribute.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -661,22 +660,15 @@ cs_time_stepping(void)
            ts->t_cur, ts->nt_cur);
     }
 
-    bool mesh_modified = false;
-
-
     /* Adaptive Mesh Refinement (AMR) operations */
-    if (  cs_glob_amr_info->is_set
-      && (ts->nt_cur % cs_glob_amr_info->n_freq == 0)
-      && ts->nt_cur != 1){
-      cs_adaptive_refinement_step();
-      mesh_modified = true;
-    }
 
-    cs_volume_zone_build_all(mesh_modified);
-    cs_boundary_zone_build_all(mesh_modified);
-
-    if (mesh_modified) {
-      cs_redistribute(nullptr);
+    if (cs_glob_amr_info->is_set) {
+      if (cs_time_control_is_active(&(cs_glob_amr_info->time_control), ts)) {
+        cs_adaptive_refinement_step();
+        cs_volume_zone_build_all(true);
+        cs_boundary_zone_build_all(true);
+        cs_redistribute(nullptr);
+      }
     }
 
     cs_real_t titer1 = cs_timer_wtime();
