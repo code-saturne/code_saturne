@@ -144,7 +144,6 @@ _filtered_physical_prop(const bool        update_rad,
                         cs_real_t        *rad_work)
 {
   assert(phim != nullptr);
-  assert(rad_work != nullptr);
 
   const cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
   const cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
@@ -402,8 +401,8 @@ _filtered_density(const cs_real_t   zm,
   const int rho_zm_idx = 0;
   const int rho_zvar_idx = 1;
   const int rho_xr_idx = 2;
-  const int rho_idx = 3;
-  const int rho_ki_idx = 4;
+  const int rho_ki_idx = 3;
+  const int rho_idx = 4;
 
   CS_MALLOC(xdata, nzm, cs_real_t);
 
@@ -826,8 +825,8 @@ _filtered_density_progvar(const cs_real_t   zm,
   const int rho_zm_idx = 0;
   const int rho_zvar_idx = 1;
   const int rho_xr_idx = 2;
-  const int rho_idx = 3;
-  const int rho_c_idx = 4;
+  const int rho_c_idx = 3;
+  const int rho_idx = 4;
 
   CS_MALLOC(xdata, nzm, cs_real_t);
 
@@ -1151,9 +1150,11 @@ cs_combustion_slfm_physical_properties(int   iterns)
         continue;
       if (f_scal->type & CS_FIELD_USER)
         continue;
+
       const int ifcvsl = cs_field_get_key_int(f_scal, kivisl);
       if (ifcvsl > -1)
-        cpro_viscls[i] = cs_field_by_id(ifcvsl)->val;
+        cpro_viscls[nscapp] = cs_field_by_id(ifcvsl)->val;
+      nscapp += 1;
     }
 
     CS_MALLOC(cpro_species, cm->n_gas_fl, cs_real_t *);

@@ -643,9 +643,6 @@ cs_combustion_boundary_conditions_density(void)
 
   for (int bdy_idx = 0; bdy_idx < bdy->n_boundaries; bdy_idx += 1) {
 
-    if (! (bdy->types[bdy_idx] & CS_BOUNDARY_INLET))
-      continue;
-
     const cs_zone_t *z = cs_boundary_zone_by_id(bdy->zone_ids[bdy_idx]);
 
     const cs_lnum_t n_elts = z->n_elts;

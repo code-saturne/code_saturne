@@ -359,24 +359,18 @@ _combustion_slfm_read_thermophysical_library(void)
                                + iki*nxr*nlibvar
                                    + ixr*nlibvar;
 
-            char* token = strtok(line, " ,\t"); // Delimited by space/comma/tab
-            int idx = 0;
-            while (token != nullptr && idx < nlibvar) {
+            char *ss = line;
+            for (int idx = 0; idx < nlibvar; idx++) {
+              char* token = _extract_token(file_name, "flamelet library",
+                  ss, last, line_num, shift);
               flamelet_library[shift + idx] = atof(token);
-              idx++;
-              token = strtok(nullptr, " ,\t"); // Next token
             }
-            if (idx != nlibvar) {
-              bft_error(__FILE__, __LINE__, 0,
-               _("%s: error reading flamelet base at line %d."),
-               __func__,  line_num);
-            }
-            _next_line(file_name, line_num, line, last, false);
+            _next_line(file_name, line_num, line, last, true);
           }
         }
 
     const int var_sel[5] = {flamelet_zm, flamelet_zvar, flamelet_xr,
-                            flamelet_rho, flamelet_ki};
+                            flamelet_ki, flamelet_rho};
 
     const int n_var_local = 5;
     for (int iz = 0; iz < nzm; iz++)
@@ -388,8 +382,15 @@ _combustion_slfm_read_thermophysical_library(void)
                                + iki*nxr*n_var_local
                                    + ixr*n_var_local;
 
+            int _shift = iz*nzvar*nki*nxr*nlibvar
+                          + izvar*nki*nxr*nlibvar
+                                + iki*nxr*nlibvar
+                                    + ixr*nlibvar;
+
+
             for (int idx = 0; idx < n_var_local; idx++)
-              rho_library[shift + idx] = flamelet_library[shift + var_sel[idx]];
+              rho_library[shift + idx] =
+                flamelet_library[_shift + var_sel[idx]];
           }
   }
   else { // FPV tabulation order
@@ -413,25 +414,18 @@ _combustion_slfm_read_thermophysical_library(void)
                                + ixr*nki*nlibvar
                                    + iki*nlibvar;
 
-            char* token = strtok(line, " ,\t"); // Delimited by space/comma/tab
-
-            int idx = 0;
-            while (token != nullptr && idx < nlibvar) {
+            char *ss = line;
+            for (int idx = 0; idx < nlibvar; idx++) {
+              char* token = _extract_token(file_name, "flamelet library",
+                  ss, last, line_num, shift);
               flamelet_library[shift + idx] = atof(token);
-              idx++;
-              token = strtok(nullptr, " ,\t"); // Next token
             }
-            if (idx != nlibvar) {
-              bft_error(__FILE__, __LINE__, 0,
-               _("%s: error reading flamelet base at line %d."),
-               __func__,  line_num);
-            }
-            _next_line(file_name, line_num, line, last, false);
+            _next_line(file_name, line_num, line, last, true);
           }
         }
 
     const int var_sel[5] = {flamelet_zm, flamelet_zvar, flamelet_xr,
-                            flamelet_rho, flamelet_c};
+                            flamelet_c, flamelet_rho};
     const int n_var_local = 5;
     for (int iz = 0; iz < nzm; iz++)
       for (int izvar = 0; izvar < nzvar; izvar++)
@@ -442,9 +436,16 @@ _combustion_slfm_read_thermophysical_library(void)
                                + ixr*nki*n_var_local
                                    + iki*n_var_local;
 
+            int _shift = iz*nzvar*nki*nxr*nlibvar
+                          + izvar*nki*nxr*nlibvar
+                                + iki*nxr*nlibvar
+                                    + ixr*nlibvar;
+
+
             for (int idx = 0; idx < n_var_local; idx++)
-              rho_library[shift + idx] = flamelet_library[shift + var_sel[idx]];
-        }
+              rho_library[shift + idx] =
+                flamelet_library[_shift + var_sel[idx]];
+          }
   }
 }
 

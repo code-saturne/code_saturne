@@ -360,10 +360,10 @@ cs_combustion_gas_set_model(cs_combustion_gas_model_type_t  type)
   cm->iio2 = 0;
   cm->isoot = -1;
 
-  cm->hinfue = cs_math_big_r;
+  cm->hinfue = -cs_math_big_r;
   cm->tinfue = - cs_math_big_r;
   cm->tinoxy = - cs_math_big_r;
-  cm->hinoxy = cs_math_big_r;
+  cm->hinoxy = -cs_math_big_r;
 
   cm->xsoot = 0.;
   cm->rosoot = 0.;
@@ -736,16 +736,15 @@ cs_combustion_gas_setup(void)
                                      "flamelet_omg_c", cm->flamelet_omg_c, -1);
     }
 
-    if (cm->hinfue < - cs_math_big_r)
-      cs_parameters_error
-        (CS_ABORT_DELAYED, _(section_name),
-         _("hinfue must be set by the user, and not remain at %g.\n"),
-         cm->hinfue);
-    if (cm->hinoxy < - cs_math_big_r)
-      cs_parameters_error
-        (CS_ABORT_DELAYED, _(section_name),
-         _("hinoxy must be set by the user, and not remain at %g.\n"),
-         cm->hinoxy);
+    if (cm->type%2 == 1) {
+
+      cs_parameters_is_greater_double(CS_ABORT_DELAYED,
+                                      _(section_name),
+                                      "hinfue", cm->hinfue, -cs_math_big_r);
+      cs_parameters_is_greater_double(CS_ABORT_DELAYED,
+                                      _(section_name),
+                                      "hinoxy", cm->hinoxy, -cs_math_big_r);
+    }
   }
 
   else if (macro_type == CS_COMBUSTION_EBU) {
@@ -783,7 +782,7 @@ cs_combustion_gas_setup(void)
        cm->isoot);
   }
 
-  if (   (cs_glob_combustion_gas_model->type)%2 == 0
+  if (   (cm->type)%2 == 0
       && rt_model_type != CS_RAD_TRANSFER_NONE) {
     cs_parameters_error
       (CS_ABORT_DELAYED,
