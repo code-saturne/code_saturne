@@ -327,11 +327,14 @@ BEGIN_C_DECLS
 
 static void
 _specific_physical_model_bc_types(bool   init,
-                                  int   *itypfb)
+                                  int   *bc_type)
 {
   CS_PROFILE_FUNC_RANGE();
 
   const int *pm_flag = cs_glob_physical_model_flag;
+
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)
+    cs_cf_boundary_conditions(bc_type);
 
   if (pm_flag[CS_ATMOSPHERIC] >= 0)
     cs_atmo_bcond();
@@ -344,16 +347,16 @@ _specific_physical_model_bc_types(bool   init,
 
   if (   pm_flag[CS_COMBUSTION_3PT] >= 0
       || pm_flag[CS_COMBUSTION_SLFM] >= 0)
-    cs_combustion_boundary_conditions(itypfb);
+    cs_combustion_boundary_conditions(bc_type);
 
   else if (pm_flag[CS_COMBUSTION_EBU] >= 0)
-    cs_combustion_boundary_conditions_ebu(itypfb);
+    cs_combustion_boundary_conditions_ebu(bc_type);
 
   else if (pm_flag[CS_COMBUSTION_LW] >= 0)
-    cs_combustion_boundary_conditions_lw(itypfb);
+    cs_combustion_boundary_conditions_lw(bc_type);
 
   if (pm_flag[CS_COMBUSTION_COAL] >= 0)
-    cs_coal_boundary_conditions(itypfb);
+    cs_coal_boundary_conditions(bc_type);
 }
 
 /*----------------------------------------------------------------------------
@@ -1067,15 +1070,8 @@ cs_boundary_conditions_set_coeffs(int         nvar,
   CS_PROFILE_MARK_LINE();
 
   {
-    if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)
-      cs_cf_boundary_conditions(bc_type);
-
-    if (   cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >=  1
-        && cs_glob_physical_model_flag[CS_GAS_MIX]             == -1
-        && cs_glob_physical_model_flag[CS_JOULE_EFFECT]        == -1
-        && cs_glob_physical_model_flag[CS_ELECTRIC_ARCS]       == -1) {
+    if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >= 1)
       _specific_physical_model_bc_types(false, bc_type);
-    }
 
     if (cs_glob_ale != CS_ALE_NONE)
       cs_boundary_condition_ale_type(mesh,
@@ -4049,16 +4045,8 @@ cs_boundary_conditions_set_coeffs_init(void)
     cs_sat_coupling_bnd_initialize(bc_type);
   }
 
-  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)
-    cs_cf_boundary_conditions(bc_type);
-
-  if (   cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >=  1
-      && cs_glob_physical_model_flag[CS_GAS_MIX]             == -1
-      && cs_glob_physical_model_flag[CS_JOULE_EFFECT]        == -1
-      && cs_glob_physical_model_flag[CS_ELECTRIC_ARCS]       == -1) {
-
+  if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >= 1)
     _specific_physical_model_bc_types(true, bc_type);
-  }
 
   int *isostd;
   CS_MALLOC_HD(isostd, n_b_faces+1, int, cs_alloc_mode);
