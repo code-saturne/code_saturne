@@ -202,39 +202,39 @@ BEGIN_C_DECLS
 };
 
 #define _PIJV2T { \
-    {5, 5, 5}, \
-    {5, 1, 4}, \
+    {0, 3, 5}, \
+    {3, 1, 4}, \
     {5, 4, 2}  \
 };
 
 #define _IJV2T3 { \
-    {0, 1, 2}, \
-    {0, 0, 0}, \
-    {0, 0, 1}, \
-    {0, 0, 2}, \
-    {1, 1, 0}, \
-    {1, 1, 1}, \
-    {1, 1, 2}, \
-    {2, 2, 0}, \
-    {2, 2, 1}, \
-    {2, 2, 2}  \
+   {0, 0, 0}, \
+   {1, 1, 1}, \
+   {2, 2, 2}, \
+   {0, 0, 1}, \
+   {0, 1, 1}, \
+   {1, 1, 2}, \
+   {1, 2, 2}, \
+   {0, 0, 2}, \
+   {0, 2, 2}, \
+   {0, 1, 2} \
 };
 
 #define _PIJV2T3 { \
     { \
-        {7, 7, 7}, \
-        {7, 7, 7}, \
-        {7, 7, 7}  \
+        {0, 3, 7}, \
+        {3, 4, 9}, \
+        {7, 9, 8}  \
     }, \
     { \
-        {7, 7, 7}, \
-        {7, 5, 6}, \
-        {7, 6, 8}  \
+        {3, 4, 9}, \
+        {4, 1, 5}, \
+        {9, 5, 6}  \
     }, \
     { \
-        {7, 7, 7}, \
-        {7, 6, 8}, \
-        {7, 8, 9}  \
+        {7, 9, 8}, \
+        {9, 5, 6}, \
+        {8, 6, 2}  \
     }  \
 };
 
@@ -1766,27 +1766,27 @@ _les_balance_time_moment_rij(void)
     int moment_f_id[] = {CS_F_(vel)->id, CS_F_(vel)->id, CS_F_(vel)->id};
     int n_fields = 3;
 
-    const char *name[] = { "u1u2u3_m",
-                           "u1u1u1_m",
-                           "u1u1u2_m",
-                           "u1u1u3_m",
-                           "u2u2u1_m",
+    const char *name[] = { "u1u1u1_m",
                            "u2u2u2_m",
+                           "u3u3u3_m",
+                           "u1u1u2_m",
+                           "u1u2u2_m",
                            "u2u2u3_m",
-                           "u3u3u1_m",
-                           "u3u3u2_m",
-                           "u3u3u3_m" };
+                           "u2u3u3_m",
+                           "u1u1u3_m",
+                           "u1u3u3_m",
+                           "u1u2u3_m" };
 
-    int moment_c_id[][3] = { {0, 1, 2},
-                             {0, 0, 0},
-                             {0, 0, 1},
-                             {0, 0, 2},
-                             {1, 1, 0},
+    int moment_c_id[][3] = { {0, 0, 0},
                              {1, 1, 1},
+                             {2, 2, 2},
+                             {0, 0, 1},
+                             {0, 1, 1},
                              {1, 1, 2},
-                             {2, 2, 0},
-                             {2, 2, 1},
-                             {2, 2, 2} };
+                             {1, 2, 2},
+                             {0, 0, 2},
+                             {0, 2, 2},
+                             {0, 1, 2} };
 
     for (int ii = 0; ii < 10; ii++) {
       cs_time_moment_define_by_field_ids(name[ii],
@@ -2988,22 +2988,6 @@ cs_les_balance_create(void)
     if (isca > 0) nscal++;
   }
 
-  /* I keep this comment to undestand how _PIJV2T3 is computed */
-  /* Remplissage des tableaux de directions de tenseurs */
-  /*for (cs_lnum_t ii = 0; ii < 3; ii++)
-    for (cs_lnum_t jj = 0; jj < 3; jj++)
-      for (cs_lnum_t iii = 0; iii < 6; iii++)
-        if ((ii+1)*(jj+1) == (idirtens[iii][0]+1)*(idirtens[iii][1]+1))
-          ipdirtens[ii][jj] = iii;
-
-  for (cs_lnum_t ii = 0; ii < 3; ii++)
-    for (cs_lnum_t jj = 0; jj < 3; jj++)
-      for (cs_lnum_t kk = 0; kk < 3; kk++)
-        for (cs_lnum_t iii = 0; iii < 10; iii++)
-          if ((ii+1)*(jj+1)*(kk+1)
-          == (idirtens3[iii][0]+1)*(idirtens3[iii][1]+1)*(idirtens3[iii][2]+1))
-            ipdirtens3[ii][jj][kk] = iii;*/
-
   if (cs_restart_present())
     _check_restart_type();
 
@@ -3125,16 +3109,16 @@ cs_les_balance_compute_rij(void)
   cs_real_t **uiujuk;
   CS_MALLOC(uiujuk, 10, cs_real_t*);
 
-  uiujuk[0] = cs_field_by_name("u1u2u3_m")->val;
-  uiujuk[1] = cs_field_by_name("u1u1u1_m")->val;
-  uiujuk[2] = cs_field_by_name("u1u1u2_m")->val;
-  uiujuk[3] = cs_field_by_name("u1u1u3_m")->val;
-  uiujuk[4] = cs_field_by_name("u2u2u1_m")->val;
-  uiujuk[5] = cs_field_by_name("u2u2u2_m")->val;
-  uiujuk[6] = cs_field_by_name("u2u2u3_m")->val;
-  uiujuk[7] = cs_field_by_name("u3u3u1_m")->val;
-  uiujuk[8] = cs_field_by_name("u3u3u2_m")->val;
-  uiujuk[9] = cs_field_by_name("u3u3u3_m")->val;
+  uiujuk[0] = cs_field_by_name("u1u1u1_m")->val;
+  uiujuk[1] = cs_field_by_name("u2u2u2_m")->val;
+  uiujuk[2] = cs_field_by_name("u3u3u3_m")->val;
+  uiujuk[3] = cs_field_by_name("u1u1u2_m")->val;
+  uiujuk[4] = cs_field_by_name("u1u2u2_m")->val;
+  uiujuk[5] = cs_field_by_name("u2u2u3_m")->val;
+  uiujuk[6] = cs_field_by_name("u2u3u3_m")->val;
+  uiujuk[7] = cs_field_by_name("u1u1u3_m")->val;
+  uiujuk[8] = cs_field_by_name("u1u3u3_m")->val;
+  uiujuk[9] = cs_field_by_name("u1u2u3_m")->val;
 
   /* Get additional averaged fields */
   cs_real_6_t  **nutdkuiuj;
