@@ -1084,7 +1084,8 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
                                     &bc_coeffs_ts_loc,
                                     (const cs_real_6_t *)c_mass_var,
                                     val_f,
-                                    c_grad_mvar);
+                                    c_grad_mvar,
+                                    nullptr);
 
     CS_FREE(val_f);
 

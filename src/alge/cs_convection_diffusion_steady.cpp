@@ -451,13 +451,14 @@ cs_convection_diffusion_steady_scalar
                                     eqp.verbosity,
                                     (cs_gradient_limit_t)eqp.imligr,
                                     eqp.epsrgr,
-                                    eqp.d_climgr,
+                                    eqp.climgr,
                                     nullptr, /* f_ext exterior force */
                                     bc_coeffs,
                                     _pvar,
                                     val_f_g,
                                     gweight, /* Weighted gradient */
-                                    grad);
+                                    grad,
+                                    nullptr);
 
   }
   else {
@@ -1296,7 +1297,8 @@ cs_face_convection_steady_scalar
                                     _pvar,
                                     val_f_g,
                                     gweight, /* Weighted gradient */
-                                    grad);
+                                    grad,
+                                    nullptr);
 
   }
   else {

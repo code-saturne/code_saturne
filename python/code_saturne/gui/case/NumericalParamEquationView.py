@@ -438,6 +438,52 @@ class SchemeNVDLimiterDelegate(QItemDelegate):
                 model.setData(idx, value)
 
 #-------------------------------------------------------------------------------
+# Combo box delegate for ircfu / rc_clip_factor
+#-------------------------------------------------------------------------------
+
+class SchemeFluxReconstructionDelegate(QItemDelegate):
+    """
+    Use of a combo box in the table.
+    """
+    def __init__(self, parent=None, xml_model=None):
+        super(SchemeFluxReconstructionDelegate, self).__init__(parent)
+        self.parent = parent
+        self.mdl = xml_model
+
+
+    def createEditor(self, parent, option, index):
+        editor = QComboBox(parent)
+        row = index.row()
+        category = index.model().dataScheme[row]['category']
+        if category > 0:
+            editor.addItem("Unbounded")
+            editor.addItem("Bounded")
+            editor.addItem("Disabled")
+        editor.installEventFilter(self)
+        return editor
+
+
+    def setEditorData(self, comboBox, index):
+        row = index.row()
+        idx = 0
+        if index.model().dataScheme[row]['ircflu'] == 'off':
+            idx = 2
+        else:
+            rc_clip_factor = index.model().dataScheme[row]['rc_clip_factor']
+            if rc_clip_factor >= 0:
+                idx = 1
+        comboBox.setCurrentIndex(idx)
+
+
+    def setModelData(self, comboBox, model, index):
+        value = comboBox.currentText()
+        selectionModel = self.parent.selectionModel()
+        for idx in selectionModel.selectedIndexes():
+            if idx.column() == index.column():
+                model.setData(idx, value)
+
+
+#-------------------------------------------------------------------------------
 # Combo box delegate for b_diff_flux_rc
 #-------------------------------------------------------------------------------
 
@@ -501,21 +547,22 @@ class StandardItemModelScheme(QStandardItemModel):
                         self.tr("NVD\nLimiter"),
                         self.tr("Flux\nReconstruction"),
                         self.tr("Boundary Flux\nReconstruction"),
+                        self.tr("Reconstruction\nClip Factor"),
                         self.tr("RHS Sweep\nReconstruction")]
         self.keys = ['name', 'ischcv', 'blencv', 'isstpc', 'nvd_limiter',
-                     'ircflu', 'b_diff_flux_rc', 'nswrsm']
+                     'ircflu', 'b_diff_flux_rc', 'rc_clip_factor', 'nswrsm']
+        self.ircflu_and_clip_keys = ["Unbounded", "Bounded", "Disabled"]
+
         self.setColumnCount(len(self.headers))
 
         # Initialize the flags
         for row in range(self.rowCount()):
             for column in range(self.columnCount()):
-                if column in (1, 2, 3, 4, 6, 7):
-                    role = Qt.DisplayRole
-                else:
-                    role = Qt.CheckStateRole
+                role = Qt.DisplayRole
                 index = self.index(row, column)
                 value = self.data(index, role)
-                self.setData(index, value)
+                if column != 5:
+                    self.setData(index, value)
 
         self.tooltips = [
             self.tr("Equation parameter: 'ischcv'\n\n"
@@ -538,15 +585,24 @@ class StandardItemModelScheme(QStandardItemModel):
                     "effect on the calculation.\n\n"
                     "It is sometimes useful with the k−ε model, if the mesh\n"
                     "is strongly non-orthogonal in the near-wall region,\n"
-                    " where the gradients of k and ε are strong"),
+                    " where the gradients of k and ε are strong."),
             self.tr("Equation parameter: 'b_diff_flux_rc'\n\n"
-                    "Flux reconstruction: indicate whether the diffusiv fluxes\n"
+                    "Flux reconstruction: indicate whether the diffusive fluxes\n"
                     "should be reconstructed at non-orthogonal boundary faces.\n"
                     "Deactivating this reconstruction can have a stabilizing\n"
                     "effect on the calculation, with less precision loss than\n"
                     "deactiving fluxes in the volume (i.e. ircflu = 0).\n\n"
                     "It can be useful if the mesh is strongly non-orthogonal\n"
-                    "in the near-wall region, where gradients are strong"),
+                    "in the near-wall region, where gradients are strong."),
+            self.tr("Equation parameter: 'rc_clip_factor'\n\n"
+                    "If >= 0, clipping factor for reconstructed values\n"
+                    "(in flux computation).\n"
+                    "If active (>= 0), scalar minima and maxima may be exceeded\n"
+                    "only by a factor s = (rc_clip_factor - 1), so with a value\n"
+                    "of 1, clipping is done exactly at the minima and maxima.\n"
+                    "For vectors and tensors, the distance to neighbor cell values\n"
+                    "and vector norm are used as bounds instead,\n"
+                    "as minima and maxima are not defined."),
             self.tr("Equation parameter: 'nswrsm'\n\n"
                     "RHS Sweep Reconstruction: number of iterations for the\n"
                     "reconstruction of the right-hand sides of the equation")
@@ -590,6 +646,7 @@ class StandardItemModelScheme(QStandardItemModel):
             dico['nvd_limiter'] = self.NPE.getNVDLimiter(name)
             dico['ircflu'] = self.NPE.getFluxReconstruction(name)
             dico['b_diff_flux_rc'] = self.NPE.getBoundaryDiffFluxReconstruction(name)
+            dico['rc_clip_factor'] = self.NPE.getRCClipFactor(name)
             dico['nswrsm'] = self.NPE.getRhsReconstruction(name)
             dico['category'] = v[1]
             self.dataScheme.append(dico)
@@ -612,12 +669,12 @@ class StandardItemModelScheme(QStandardItemModel):
 
         if role == Qt.ToolTipRole:
             col = index.column()
-            if col > 0 and col < 8:
+            if col > 0 and col < 9:
                 return self.tooltips[col-1]
             elif col > 0:
                 return self.tr("code_saturne keyword: " + key)
 
-        elif role == Qt.DisplayRole and not column == 5:
+        elif role == Qt.DisplayRole:
             if key == 'ischcv':
                 return self.dicoM2V[dico[key]]
             elif key == 'isstpc':
@@ -631,22 +688,29 @@ class StandardItemModelScheme(QStandardItemModel):
                     return v.upper()
                 else:
                     return v
+            elif key == 'ircflu':
+                idx = 0
+                ircflu = dico[key]
+                if ircflu == 'off':
+                    idx = 2
+                else:
+                    rc_clip_factor = dico['rc_clip_factor']
+                    if rc_clip_factor >= 0.:
+                        idx = 1
+                return self.ircflu_and_clip_keys[idx]
             elif key == 'b_diff_flux_rc':
                 if self.dataScheme[row]['ircflu'] != 'off':
                     return self.dicoM2V_b_diff_flux_rc[dico[key]]
                 else:
                     return ""
+            elif key == 'rc_clip_factor':
+                v = dico[key]
+                if v >= 0:
+                    return str(v)
+                else:
+                    return ""
             else:
                 return dico[key]
-
-        elif role == Qt.CheckStateRole and column == 5:
-            st = None
-            if key in ['ircflu']:
-                st = dico[key]
-            if st == 'on':
-                return Qt.Checked
-            else:
-                return Qt.Unchecked
 
         elif role == Qt.TextAlignmentRole:
             return Qt.AlignCenter
@@ -679,9 +743,14 @@ class StandardItemModelScheme(QStandardItemModel):
             else:
                 return Qt.NoItemFlags
         elif column == 5:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
         elif column == 6:
             if self.dataScheme[row]['ircflu'] != 'off':
+                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            else:
+                return Qt.NoItemFlags
+        elif column == 7:
+            if self.dataScheme[row]['rc_clip_factor'] >= 0.:
                 return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
             else:
                 return Qt.NoItemFlags
@@ -696,7 +765,7 @@ class StandardItemModelScheme(QStandardItemModel):
         if role == Qt.ToolTipRole:
             if section == 0:
                 return self.tr("variable or equation name")
-            elif section < 7:
+            elif section < 8:
                 return self.tooltips[section-1]
 
         return None
@@ -709,7 +778,7 @@ class StandardItemModelScheme(QStandardItemModel):
 
         # for Pressure, most fields are empty
         if column > 0 and str(from_qvariant(value, to_text_string)) in ['', 'None']:
-            if column not in (3, 4):
+            if column not in (3, 4, 7):
                 if (row, column) not in self.disabledItem:
                     self.disabledItem.append((row, column))
             else:
@@ -755,13 +824,30 @@ class StandardItemModelScheme(QStandardItemModel):
 
         # set IRCFLU
         elif column == 5:
-            v = from_qvariant(value, int)
-            if v == Qt.Unchecked:
-                self.dataScheme[row]['ircflu'] = "off"
+            s = str(from_qvariant(value, to_text_string))
+            rc_clip_factor = self.dataScheme[row]['rc_clip_factor']
+            rc_clip_factor_n = None
+            idx = self.ircflu_and_clip_keys.index(s)
+            if idx == 2:
+                self.dataScheme[row]['ircflu'] = 'off'
+                if rc_clip_factor >= 0.:
+                    rc_clip_factor_n = -1.
             else:
+                self.dataScheme[row]['ircflu'] = 'on'
+                if idx == 0:
+                    if rc_clip_factor >= 0.:
+                        rc_clip_factor_n = -1.
+                elif idx == 1:
+                    if rc_clip_factor < 0.:
+                        rc_clip_factor_n = 1.
                 self.dataScheme[row]['ircflu'] = "on"
             self.NPE.setFluxReconstruction(name, self.dataScheme[row]['ircflu'])
+            if rc_clip_factor_n:
+                self.dataScheme[row]['rc_clip_factor'] = rc_clip_factor_n
+                self.NPE.setRCClipFactor(name, rc_clip_factor_n)
             e_index = self.index(row, column+1)
+            self.dataChanged.emit(index, e_index)
+            e_index = self.index(row, column+2)
             self.dataChanged.emit(index, e_index)
 
         # set b_diff_flux_rc
@@ -769,8 +855,13 @@ class StandardItemModelScheme(QStandardItemModel):
             self.dataScheme[row]['b_diff_flux_rc'] = self.dicoV2M_b_diff_flux_rc[str(from_qvariant(value, to_text_string))]
             self.NPE.setBoundaryDiffFluxReconstruction(name, self.dataScheme[row]['b_diff_flux_rc'])
 
-        # set NSWRSM
+        # set rc_clip_factor
         elif column == 7:
+            self.dataScheme[row]['rc_clip_factor'] = from_qvariant(value, float)
+            self.NPE.setRCClipFactor(name, self.dataScheme[row]['rc_clip_factor'])
+
+        # set NSWRSM
+        elif column == 8:
             self.dataScheme[row]['nswrsm'] = from_qvariant(value, int)
             self.NPE.setRhsReconstruction(name, self.dataScheme[row]['nswrsm'])
 
@@ -968,9 +1059,8 @@ class StandardItemModelGradient(QStandardItemModel):
                     "fixed-point Neumann BC computation for least-squares gradient."),
             self.tr("Equation parameter: 'imligr'\n\n"
                     "Gradient limiter type.\n"
-                    "For the default/least squares boundary reconstruction\n",
-                    "other limiters are replaced by the\n"
-                    "reconstruction clipping limiter")
+                    "Set for both base and reconstruction gradient\n"
+                    "(separate values may be set with cs_user_parameters).")
         ]
 
 
@@ -1582,11 +1672,14 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         delegateNVDLIM = SchemeNVDLimiterDelegate(self.tableViewScheme)
         self.tableViewScheme.setItemDelegateForColumn(4, delegateNVDLIM)
 
+        delegateDiffFluxRC = SchemeFluxReconstructionDelegate(self.tableViewScheme)
+        self.tableViewScheme.setItemDelegateForColumn(5, delegateDiffFluxRC)
+
         delegateBDiffFluxRC = SchemeBoundaryDiffFluxDelegate(self.tableViewScheme)
         self.tableViewScheme.setItemDelegateForColumn(6, delegateBDiffFluxRC)
 
         delegateNSWRSM = RhsReconstructionDelegate(self.tableViewScheme, self.turb)
-        self.tableViewScheme.setItemDelegateForColumn(7, delegateNSWRSM)
+        self.tableViewScheme.setItemDelegateForColumn(8, delegateNSWRSM)
 
         # Solver
         self.modelSolver = StandardItemModelSolver(self.NPE)

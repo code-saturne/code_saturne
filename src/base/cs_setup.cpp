@@ -1807,6 +1807,7 @@ _additional_fields_stage_2(void)
     eqp->climgr = eqp_pr->climgr;
     eqp->b_rc_clip_factor = eqp_pr->b_rc_clip_factor;
     eqp->b_rc_gradient = eqp_pr->b_rc_gradient;
+    eqp->rc_clip_factor = eqp_pr->rc_clip_factor;  // unused in call path
   }
 
   /* Head losses weighting field in case of Lagrangian deposition and

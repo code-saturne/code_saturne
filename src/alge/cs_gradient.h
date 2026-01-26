@@ -278,6 +278,8 @@ cs_gradient_tensor(const char                  *var_name,
  * \param[in]   val_f           boundary face value
  * \param[in]   c_weight        cell variable weight, or nullptr
  * \param[out]  grad            gradient
+ * \param[out]  bounds          optional minima and maxima of values in
+ *                              adjacent cells and faces, or null
  */
 /*----------------------------------------------------------------------------*/
 
@@ -298,7 +300,8 @@ cs_gradient_scalar_synced_input(const char                    *var_name,
                                 const cs_real_t                var[],
                                 const cs_real_t                val_f[],
                                 const cs_real_t               *c_weight,
-                                cs_real_t                      grad[][3]);
+                                cs_real_t                      grad[][3],
+                                cs_real_t                   (*bounds)[2]);
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -323,24 +326,27 @@ cs_gradient_scalar_synced_input(const char                    *var_name,
  * \param[in]   c_weight        cell variable weight, or nullptr
  * \param[out]  grad            gradient
                                 (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
+ * \param[out]  bounds          optional bounds (square distance, square norm)
+ *                              of values in adjacent cells and faces, or null
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gradient_vector_synced_input(const char                    *var_name,
-                                cs_gradient_type_t             gradient_type,
-                                cs_halo_type_t                 halo_type,
-                                int                            inc,
-                                int                            n_r_sweeps,
-                                int                            verbosity,
-                                cs_gradient_limit_t            clip_mode,
-                                double                         epsilon,
-                                double                         clip_coeff,
-                                const cs_field_bc_coeffs_t    *bc_coeffs_v,
-                                const cs_real_t                var[][3],
-                                const cs_real_t                val_f[][3],
-                                const cs_real_t                c_weight[],
-                                cs_real_t                      grad[][3][3]);
+cs_gradient_vector_synced_input(const char                  *var_name,
+                                cs_gradient_type_t           gradient_type,
+                                cs_halo_type_t               halo_type,
+                                int                          inc,
+                                int                          n_r_sweeps,
+                                int                          verbosity,
+                                cs_gradient_limit_t          clip_mode,
+                                double                       epsilon,
+                                double                       clip_coeff,
+                                const cs_field_bc_coeffs_t  *bc_coeffs_v,
+                                const cs_real_t              var[][3],
+                                const cs_real_t              val_f[][3],
+                                const cs_real_t              c_weight[],
+                                cs_real_t                    grad[][3][3],
+                                cs_real_t                  (*bounds)[2]);
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -364,6 +370,8 @@ cs_gradient_vector_synced_input(const char                    *var_name,
  * \param[in, out]  var             gradient's base variable:
  * \param[out]      grad            gradient
                                     (\f$ \der{t_ij}{x_k} \f$ is grad[][ij][k])
+ * \param[out]      bounds          optional bounds (square distance) of values
+ *                                  in adjacent cells and faces, or null
  */
 /*----------------------------------------------------------------------------*/
 
@@ -380,7 +388,8 @@ cs_gradient_tensor_synced_input(const char                  *var_name,
                                 const cs_field_bc_coeffs_t  *bc_coeffs_ts,
                                 const cs_real_t              var[][6],
                                 const cs_real_t              val_f[][6],
-                                cs_real_63_t                *grad);
+                                cs_real_63_t                *grad,
+                                cs_real_t                  (*bounds)[1]);
 
 /*----------------------------------------------------------------------------*/
 /*

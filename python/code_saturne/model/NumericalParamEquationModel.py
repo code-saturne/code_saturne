@@ -106,7 +106,6 @@ class NumericalParamEquationModel(Model):
         self.default['b_rc_gradient'] = 'automatic'
         self.default['epsrgr'] = 1e-4
         self.default['imligr'] = 'none'
-        self.default['climgr'] = 1.5
 
 
     def _defaultValues(self, name=""):
@@ -140,6 +139,8 @@ class NumericalParamEquationModel(Model):
         if CompressibleModel(self.case).getCompressibleModel() != 'off':
             default['blending_factor'] = 0.
         del CompressibleModel
+
+        default['rc_clip_factor'] = -1.;
 
         if TurbulenceModel(self.case).getTurbulenceModel() in \
             ('LES_Smagorinsky', 'LES_dynamique', 'LES_WALE'):
@@ -621,6 +622,27 @@ class NumericalParamEquationModel(Model):
         else:
             n = node.xmlInitNode('boundary_diffusion_flux_reconstruction')
             n['mode']=value
+
+
+    @Variables.noUndo
+    def getRCClipFactor(self, name):
+        """ Return clip factor for flux reconstruction for specified variable """
+        node = self._getSchemeNameNode(name)
+        value = node.xmlGetDouble('rc_clip_factor')
+        if value is None:
+            value = self._defaultValues()['rc_clip_factor']
+        return value
+
+
+    @Variables.undoLocal
+    def setRCClipFactor(self, name, value):
+        """ Set clip factor for flux reconstruction for specified variable """
+        node = self._getSchemeNameNode(name)
+        if value == self._defaultValues()['rc_clip_factor'] \
+           or value == "" or value == None:
+            node.xmlRemoveChild('rc_clip_factor')
+        else:
+            node.xmlSetData('rc_clip_factor', value)
 
 
     @Variables.noUndo

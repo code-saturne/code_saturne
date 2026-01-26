@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -114,8 +114,10 @@ struct cs_data_double_int_n {
   cs_lnum_t  i[stride];
 };
 
-/* Reduction
-   --------- */
+/* Reductions
+   ---------- */
+
+// Min (1 real), Max (1 real), Sum (2 reals)
 
 struct cs_reduce_min1r_max1r_sum2r {
   using T = cs_data_double_n<4>;
@@ -136,6 +138,8 @@ struct cs_reduce_min1r_max1r_sum2r {
     a.r[3] += b.r[3];
   }
 };
+
+// Sum (1 lnum) and Min (1 reals)
 
 struct cs_reduce_sum1i_min1float {
   using T = cs_data_1int_1float;
@@ -536,6 +540,36 @@ struct cs_reduce_minmaxloc_n {
         a.i[stride + i] = b.i[stride + i];
       }
     }
+  }
+};
+
+// max (double) and sum (double, 2 lnums)
+
+struct cs_reduce_max2double_sum2double_sum4i {
+  using T = cs_data_double_int_n<4>;
+
+  CS_F_HOST_DEVICE void
+  identity(T &a) const {
+    a.r[0] = -cs_math_infinite_r;
+    a.r[1] = -cs_math_infinite_r;
+    a.r[2] = 0.;
+    a.r[3] = 0.;
+    a.i[0] = 0;
+    a.i[1] = 0;
+    a.i[2] = 0;
+    a.i[3] = 0;
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile T &a, volatile const T &b) const {
+    a.r[0] = cs::max(a.r[0], b.r[0]);
+    a.r[1] = cs::max(a.r[1], b.r[1]);
+    a.r[2] += b.r[2];
+    a.r[3] += b.r[3];
+    a.i[0] += b.i[0];
+    a.i[1] += b.i[1];
+    a.i[2] += b.i[2];
+    a.i[3] += b.i[3];
   }
 };
 

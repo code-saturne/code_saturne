@@ -398,6 +398,7 @@ static cs_equation_param_t _equation_param_default
    .epsrgr = 1.e-4,
    .climgr = -1.,
    .d_climgr = -1.,
+   .rc_clip_factor = -1.,
    .b_rc_clip_factor = 1.,
    .relaxv = 1.,
    .d_gradient_r = 2,
@@ -591,6 +592,7 @@ _log_func_var_cal_opt(const void *t)
   cs_log_printf(CS_LOG_SETUP, fmt_r, "epsrgr", _t->epsrgr);
   cs_log_printf(CS_LOG_SETUP, fmt_r, "climgr", _t->climgr);
   cs_log_printf(CS_LOG_SETUP, fmt_r, "d_climgr", _t->d_climgr);
+  cs_log_printf(CS_LOG_SETUP, fmt_r, "rc_clip_factor", _t->rc_clip_factor);
   cs_log_printf(CS_LOG_SETUP, fmt_r, "b_rc_clip_factor", _t->b_rc_clip_factor);
   cs_log_printf(CS_LOG_SETUP, fmt_r, "relaxv", _t->relaxv);
 
@@ -659,7 +661,7 @@ _log_func_default_var_cal_opt(const void *t)
   cs_log_printf(CS_LOG_SETUP, fmt_i, "imligr", _t->imligr,
                 _("< 0, 0 or 2 (gradient limitation method)"));
   cs_log_printf(CS_LOG_SETUP, fmt_r, "climgr", _t->climgr,
-                _("> 1 or 1 (gradient limitation coefficient)"));
+                _(">= 1 if used (gradient limitation coefficient)"));
   cs_log_printf(CS_LOG_SETUP, fmt_i, "iwgrec", _t->iwgrec,
                 _("Gradient calculation: standard (0) or weighted (1)"));
 
@@ -670,20 +672,22 @@ _log_func_default_var_cal_opt(const void *t)
   cs_log_printf(CS_LOG_SETUP, fmt_i, "d_imligr", _t->d_imligr,
                 _("< 0, 0 or 2 (reconstruction gradient limitation)"));
   cs_log_printf(CS_LOG_SETUP, fmt_r, "d_climgr", _t->d_climgr,
-                _("> 1 or 1 (reconstruction gradient limitation coefficient)"));
+                _(">= 1 if used (reconstruction gradient limitation coefficient)"));
 
   cs_log_printf(CS_LOG_SETUP,
                 "    Boundary value reconstruction gradients calculation\n");
   cs_log_printf(CS_LOG_SETUP, fmt_i, "b_rc_gradient", _t->b_rc_gradient,
                 _("Boundary Reconstruction gradient mode"));
   cs_log_printf(CS_LOG_SETUP, fmt_r, "b_rc_clip_factor", _t->b_rc_clip_factor,
-                _("(if >= 0, boundary reconstruction limitation factor)"));
+                _("If >= 0, boundary reconstruction limitation factor"));
 
   cs_log_printf(CS_LOG_SETUP,"    Rhs reconstruction\n");
   cs_log_printf(CS_LOG_SETUP, fmt_i, "ircflu", _t->ircflu,
                 _("0 or 1 (flux reconstruction)"));
   cs_log_printf(CS_LOG_SETUP, fmt_i, "b_diff_flux_rc", _t->ircflu,
                 _("0 or 1 (boundary flux reconstruction)"));
+  cs_log_printf(CS_LOG_SETUP, fmt_r, "rc_clip_factor", _t->b_rc_clip_factor,
+                _("If >= 0, Reconstruction limitation factor"));
   cs_log_printf(CS_LOG_SETUP, fmt_i, "nswrsm", _t->nswrsm,
                 _("Number of sweeps rhs reconstruction"));
   cs_log_printf(CS_LOG_SETUP, fmt_r, "epsrsm", _t->epsrsm,

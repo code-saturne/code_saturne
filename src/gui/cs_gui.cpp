@@ -959,21 +959,24 @@ _var_gradient_limiter_type(cs_tree_node_t       *tn_v,
     if (strcmp(choice, "cell") == 0) {
       eqp->imligr = 0;
       eqp->climgr = 1.0;
-      eqp->d_imligr = 0;
-      eqp->d_climgr = 1.0;
     }
     else if (strcmp(choice, "face") == 0) {
       eqp->imligr = 1;
       eqp->climgr = 1.5;
-      eqp->d_imligr = 1;
-      eqp->d_climgr = 1.5;
     }
     else if (strcmp(choice, "cell_gradient_rc") == 0) {
       eqp->imligr = 2;
       eqp->climgr = 1.0;
-      eqp->d_imligr = 2;
-      eqp->d_climgr = 1.0;
     }
+
+    /* Remark: if a reconstruction clipping is used, it could supercede the
+       gradient limiter, as it plays a similar role, and combining the two
+       approaches would add extra cost. For now, we still allow combining
+       both approaches, pending feedback on varied cases. */
+    { // Could be "if (eqp->rc_clip_factor < 0)".
+      eqp->d_imligr = eqp->imligr;
+      eqp->d_climgr = eqp->climgr;
+    };
   }
 }
 
@@ -2176,6 +2179,10 @@ cs_gui_equation_parameters(void)
       cs_gui_node_get_child_real(tn_v, "solver_precision", &(eqp->epsilo));
       cs_gui_node_get_child_status_int(tn_v, "flux_reconstruction",
                                        &(eqp->ircflu));
+      if (eqp->ircflu)
+        cs_gui_node_get_child_real(tn_v, "rc_clip_factor",
+                                   &(eqp->rc_clip_factor));
+
 
       {
         cs_tree_node_t *tn

@@ -434,6 +434,14 @@ typedef struct {
    * little limitation, negative value means no limitation).\n
    * Relevant when \ref imligr > CS_GRADIENT_LIMIT_NONE.
    *
+   * \var rc_clip_factor
+   * If >= 0, clipping factor for reconstructed values (in flux computation).
+   * If active (>= 0), scalar minima and maxima may be exceeded only
+   * by a factor s = (rc_clip_factor - 1), so with
+   * a value of 1, clipping is done exactly at the minima and maxima.
+   * For vectors and tensors, the distance to neighbors an vector norm are
+   * used as bounds, as minima and maxima are not defined.
+   *
    * \var b_rc_clip_factor
    * For least-squares gradient-based boundary reconstruction, factor of gradient
    * limitation (high value means little limitation, no limitation if negative).
@@ -509,6 +517,7 @@ typedef struct {
   double epsrgr;
   double climgr;
   double d_climgr;
+  double rc_clip_factor;
   double b_rc_clip_factor;
   double relaxv;
 

@@ -2766,6 +2766,12 @@ template void
 cs_halo_sync(const cs_halo_t  *halo,
              cs_halo_type_t    sync_mode,
              bool              on_device,
+             cs_real_t         val[][2]);
+
+template void
+cs_halo_sync(const cs_halo_t  *halo,
+             cs_halo_type_t    sync_mode,
+             bool              on_device,
              cs_real_t         val[][3]);
 
 template void
@@ -2826,6 +2832,11 @@ cs_halo_sync(const cs_halo_t  *halo,
 }
 
 // Force instanciation
+
+template void
+cs_halo_sync(const cs_halo_t  *halo,
+             bool              on_device,
+             cs_real_t         val[][2]);
 
 template void
 cs_halo_sync(const cs_halo_t  *halo,
