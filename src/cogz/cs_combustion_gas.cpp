@@ -259,7 +259,7 @@ _add_property_1d(const char  *name,
   int f_id = cs_physical_property_field_id_by_name(name);
   cs_field_t *f = cs_field_by_id(f_id);
 
-  cs_field_set_key_int(f, keyvis, 0);
+  cs_field_set_key_int(f, keyvis, 1);
   cs_field_set_key_int(f, keylog, 1);
   if (label != nullptr)
     cs_field_set_key_str(f, keylbl, label);

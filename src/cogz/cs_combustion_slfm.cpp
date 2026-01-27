@@ -1048,6 +1048,7 @@ cs_combustion_slfm_physical_properties(int   iterns)
   const cs_real_t *cvar_fm = CS_F_(fm)->val;
 
   cs_real_t *cvar_scalt = nullptr, *cpro_xr = nullptr, *fp2m = nullptr;
+  cs_real_t *_cpro_xr = nullptr;
   if (cm->mode_fp2m == 0)
     fp2m = cm->fp2m->val;
   else {
@@ -1070,8 +1071,9 @@ cs_combustion_slfm_physical_properties(int   iterns)
     });
   }
   else {
-    CS_MALLOC(cpro_xr, n_cells, cs_real_t);
-    cs_array_real_fill_zero(n_cells, cpro_xr);
+    CS_MALLOC(_cpro_xr, n_cells, cs_real_t);
+    cs_array_real_fill_zero(n_cells, _cpro_xr);
+    cpro_xr = _cpro_xr;
   }
 
   cs_real_t *cvar_progvar = nullptr,*cpro_omegac = nullptr,*cpro_totki = nullptr;
@@ -1276,7 +1278,7 @@ cs_combustion_slfm_physical_properties(int   iterns)
 
   CS_FREE(cpro_viscls);
   CS_FREE(cpro_species);
-  CS_FREE(cpro_xr);
+  CS_FREE(_cpro_xr);
 }
 
 /*----------------------------------------------------------------------------*/
