@@ -3,6 +3,8 @@ Release 9.1.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix memory leak in medcoupling intersector function
+
 - ALE: fix incorrect index for z-component of fluid velocity.
 
 - Lagrangian module: fix bug in Brownian motion (introduced in v9.1).
