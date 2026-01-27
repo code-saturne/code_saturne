@@ -3,6 +3,9 @@ Release 9.0.2 (unreleased)
 
 ### Bug fixes:
 
+- Fix memory leak in cs_medcoupling_intersector due to non-freed MEDCoupling
+  objects.
+
 - Lagragien model: fix possibly uninitialized boundary statistics.
 
 - Fix the computation of CDO quantities when the algorithm is equal to

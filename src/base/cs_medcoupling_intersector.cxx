@@ -192,9 +192,7 @@ _allocate_intersector_external_mesh(cs_medcoupling_intersector_t *mi,
 
   b_mesh->convertAllToPoly();
 
-  DataArrayDouble *b_coords = DataArrayDouble::New();
-
-  b_coords = b_mesh->getCoordinatesAndOwner();
+  DataArrayDouble *b_coords = b_mesh->getCoordinatesAndOwner();
 
   cs_lnum_t n_b_vtx = b_mesh->getNumberOfNodes();
 
@@ -210,11 +208,9 @@ _allocate_intersector_external_mesh(cs_medcoupling_intersector_t *mi,
   }
 
   /* Generate FVM structure */
-  DataArrayIdType *vtx_lst = DataArrayIdType::New();
-  DataArrayIdType *vtx_idx = DataArrayIdType::New();
+  DataArrayIdType *vtx_lst = b_mesh->getNodalConnectivity();
+  DataArrayIdType *vtx_idx = b_mesh->getNodalConnectivityIndex();
 
-  vtx_lst = b_mesh->getNodalConnectivity();
-  vtx_idx = b_mesh->getNodalConnectivityIndex();
   cs_lnum_t n_b_faces = vtx_idx->getNbOfElems()-1;
   cs_lnum_t n_elt_lst = vtx_lst->getNbOfElems()- n_b_faces;
 
@@ -282,6 +278,10 @@ _allocate_intersector_external_mesh(cs_medcoupling_intersector_t *mi,
     CS_FREE(vertex_gnum);
     CS_FREE(faces_gnum);
   }
+
+  /* Ensure cleanup for MEDCoupling objects */
+  b_coords->decrRef();
+  b_mesh->decrRef();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -371,8 +371,7 @@ _allocate_intersector(cs_medcoupling_intersector_t *mi,
 
   CS_MALLOC(mi->init_coords, n_vtx, cs_coord_3_t);
 
-  DataArrayDouble *med_coords = DataArrayDouble::New();
-  med_coords = mi->source_mesh->getCoordinatesAndOwner();
+  DataArrayDouble *med_coords = mi->source_mesh->getCoordinatesAndOwner();
 
   for (cs_lnum_t i = 0; i < n_vtx; i++) {
     for (cs_lnum_t j = 0; j < dim; j++)
@@ -391,6 +390,10 @@ _allocate_intersector(cs_medcoupling_intersector_t *mi,
   CS_MALLOC(mi->intersect_vals, _n_intersect_vals, cs_real_t);
   for (cs_lnum_t e_id = 0; e_id < _n_intersect_vals; e_id++)
     mi->intersect_vals[e_id] = 0.;
+
+  /* Ensure cleanup for MEDCoupling objects */
+  med_coords->decrRef();
+  mesh->decrRef();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -539,6 +542,7 @@ _assign_vertex_coords(MEDCouplingUMesh   *med_mesh,
         med_coords->setIJ(i, j, coords[i][j]);
   }
 
+  /* Ensure cleanup for MEDCoupling objects */
   med_mesh->setCoords(med_coords);
   med_coords->decrRef();
 }
@@ -563,6 +567,7 @@ _destroy_intersector(cs_medcoupling_intersector_t *mi)
   CS_FREE(mi->init_boundary_coords);
   CS_FREE(mi->intersect_vals);
 
+  /* Ensure cleanup for MEDCoupling objects */
   mi->source_mesh->decrRef();
 
   // Mesh will deallocated afterwards since it can be shared
@@ -653,10 +658,12 @@ _compute_intersection_volumes(cs_medcoupling_intersector_t *mi)
     const DataArrayIdType *subcells
       = mi->source_mesh->getCellsInBoundingBox(bbox, 1.05);
 
+      auto *sub_part_mesh = mi->source_mesh->buildPartOfMySelf(subcells->begin(),
+                                                              subcells->end(),
+                                                              true);
+
     MEDCouplingNormalizedUnstructuredMesh<3,3>
-      sMesh_wrapper(mi->source_mesh->buildPartOfMySelf(subcells->begin(),
-                                                       subcells->end(),
-                                                       true));
+    sMesh_wrapper(sub_part_mesh);
 
     /* Compute the intersection matrix between source and target meshes */
     std::vector<std::map<mcIdType, double> > mat;
@@ -683,6 +690,9 @@ _compute_intersection_volumes(cs_medcoupling_intersector_t *mi)
         mi->intersect_vals[c_id] += it->second;
     }
 
+    /* Ensure cleanup for MEDCoupling objects */
+    sub_part_mesh->decrRef();
+    subcells->decrRef();
   }
 }
 
