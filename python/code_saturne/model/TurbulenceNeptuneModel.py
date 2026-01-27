@@ -38,11 +38,13 @@ class TurbulenceModelsDescription:
     """
     continuousTurbulenceModels = ['none', 'mixing_length',
                                   'k-epsilon', 'k-epsilon_linear_production',
+                                  'k-omega-SST',
                                   'rij-epsilon_ssg', 'rij-epsilon_ebrsm',
-                                  'les_smagorinsky', 'les_wale', 'k-omega-SST']
+                                  'les_smagorinsky', 'les_wale']
 
     reverseCouplingModels = ['k-epsilon', 'k-epsilon_linear_production',
-                             'rij-epsilon_ssg', 'rij-epsilon_ebrsm', 'k-omega-SST']
+                             'k-omega-SST',
+                             'rij-epsilon_ssg', 'rij-epsilon_ebrsm']
 
     dispersedTurbulenceModels = ['none', 'q2-q12-tchen', 'r2-q12', 'q2-q12', 'r2-r12-tchen']
 
