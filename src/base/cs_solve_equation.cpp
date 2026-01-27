@@ -1418,27 +1418,10 @@ cs_solve_equation_scalar(cs_field_t        *f,
   if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] > 0)
     _physical_model_source_terms(f, rhs, fimp);
 
-  /*  Radiative model
-   *  2nd order not handled */
-  cs_real_t *cpro_tsscal = nullptr;
-  if (idilat > 3) {
-    char fname[128];
-    snprintf(fname, 128, "%s_dila_st", f->name); fname[127] = '\0';
-    cpro_tsscal = cs_field_by_name_try(fname)->val;
-  }
-
   if (cs_glob_rad_transfer_params->type > CS_RAD_TRANSFER_NONE) {
 
     if (is_thermal_model_field) {
       cs_rad_transfer_source_terms(rhs, fimp);
-
-      /* Store the explicit radiative source term */
-      if (idilat > 3) {
-        const cs_real_t *cpro_tsre1 = cs_field_by_name("rad_st")->val;
-        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-          cpro_tsscal[c_id] += cpro_tsre1[c_id]*cell_f_vol[c_id];
-        });
-      }
     }
 
     /* Pulverized coal; order 2 not handled */
@@ -2016,59 +1999,6 @@ cs_solve_equation_scalar(cs_field_t        *f,
 
     } // qliqmax > 1.e-8
   } // for humid atmosphere physics only
-
-  if ((idilat > 3) && (itspdv == 1)) {
-
-    if (turb_model->itytur == 2 || turb_model->itytur == 5) {
-      const cs_real_t *xk = CS_F_(k)->val_pre;
-      const cs_real_t *xe = CS_F_(eps)->val_pre;
-
-      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        const cs_real_t rhovst =   xcpp[c_id] * crom[c_id] * xe[c_id]
-                                 / (xk[c_id] * rvarfl)
-                                 * cell_f_vol[c_id];
-        cpro_tsscal[c_id] -= rhovst * cvar_var[c_id];
-      });
-    }
-
-    else if (turb_model->itytur == 3) {
-      const cs_real_6_t *cvara_rij = (const cs_real_6_t*)CS_F_(rij)->val_pre;
-      const cs_real_t *xe = CS_F_(eps)->val_pre;
-
-      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        cs_real_t xk = 0.5*cs_math_6_trace(cvara_rij[c_id]);
-        const cs_real_t rhovst =   xcpp[c_id] * crom[c_id] * xe[c_id]
-                                 / (xk * rvarfl)
-                                 * cell_f_vol[c_id];
-        cpro_tsscal[c_id] -= rhovst * cvar_var[c_id];
-      });
-    }
-
-    else if (turb_model->model == CS_TURB_K_OMEGA) {
-      const cs_real_t *xk = CS_F_(k)->val_pre;
-      const cs_real_t *xomg = CS_F_(omg)->val_pre;
-      const cs_real_t cmu = cs_turb_cmu;
-
-      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        const cs_real_t xe = cmu*xomg[c_id];
-        const cs_real_t rhovst =   xcpp[c_id] * crom[c_id] * xe
-                                 / (xk[c_id] * rvarfl)
-                                 * cell_f_vol[c_id];
-        cpro_tsscal[c_id] -= rhovst * cvar_var[c_id];
-      });
-    }
-  }
-
-  /* Store the implicit part of the radiative source term */
-  if (   idilat > 3
-      && cs_glob_rad_transfer_params->type > CS_RAD_TRANSFER_NONE
-      && is_thermal_model_field) {
-    const cs_real_t *cpro_tsri1 = cs_field_by_name("rad_st_implicit")->val;
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      const cs_real_t dvar = cvar_var[c_id]-cvara_var[c_id];
-      cpro_tsscal[c_id] -= cpro_tsri1[c_id]*dvar*cell_f_vol[c_id];
-    });
-  }
 
   /* Explicit balance
    * (See cs_equation_iterative_solve_scalar: remove the increment)
