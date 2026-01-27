@@ -407,6 +407,8 @@ class TurbulenceModel(Variables, Model):
             )
         elif 'mixing' in turb_model or 'none' in turb_model:
             return ()
+        elif 'les_smagorinsky' in turb_model or 'les_wale' in turb_model:
+            return ()
         else:
             msg = "Reference value initialization for turbulence model "\
                     + turb_model + " is not defined"
