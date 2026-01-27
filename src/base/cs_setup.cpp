@@ -43,6 +43,7 @@
 #include "bft/bft_printf.h"
 #include "base/cs_ale.h"
 #include "base/cs_coupling.h"
+#include "base/cs_ext_neighborhood.h"
 #include "base/cs_fan.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
@@ -2741,6 +2742,8 @@ _init_user(void)
 
   if (cs_glob_param_cdo_mode != CS_PARAM_CDO_MODE_ONLY)
     cs_gui_numerical_options();
+  else
+    cs_ext_neighborhood_set_type(CS_EXT_NEIGHBORHOOD_NONE);
 
   /* Physical properties */
   cs_gui_physical_properties();
