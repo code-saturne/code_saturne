@@ -55,6 +55,7 @@
 #include "base/cs_post.h"
 #include "base/cs_pressure_correction.h"
 #include "base/cs_prototypes.h"
+#include "base/cs_resource.h"
 #include "base/cs_syr_coupling.h"
 #include "base/cs_timer.h"
 #include "base/cs_timer_stats.h"
@@ -1152,6 +1153,14 @@ cs_cdo_main(cs_domain_t   *domain)
   _initialize_time_step(domain->time_step, domain->time_step_options);
 
   cs_domain_setup_init_state(domain);
+
+  /* If HTSolver is used in combination with CHT coupling with a fluid
+   * domaine (code_saturne or neptune_cfd), we deactivate the wall time
+   * limit check. This can be undone in cs_user_extra_operations_initialize
+   * using cs_resource_wt_limit_check_set_status(true); */
+
+  if (cs_thermal_system_is_activated() && cs_syr_coupling_n_couplings() > 0)
+    cs_resource_wt_limit_check_set_status(false);
 
   /* Initialization for user-defined extra operations. Should be done
      after the domain initialization if one wants to overwrite the field
