@@ -59,6 +59,18 @@ BEGIN_C_DECLS
  * Public function prototypes
  *============================================================================*/
 
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Set wall time limit check to false or true.
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_resource_wt_limit_check_set_status
+(
+  const bool status /*!<[in] status to set (activation or deactivation) */
+);
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Get current wall-clock time limit.
