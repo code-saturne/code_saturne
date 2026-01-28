@@ -84,6 +84,7 @@ BEGIN_C_DECLS
  *  Global variables
  *============================================================================*/
 
+static bool    _wt_limit_check_needed = true;
 static double  _wt_limit = -1.;
 static double  _wt_safe = 0.95;
 
@@ -208,6 +209,22 @@ _init_wt_limit(void)
  * Public function definitions
  *============================================================================*/
 
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Set wall time limit check to false or true.
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_resource_wt_limit_check_set_status
+(
+  const bool status /*!<[in] status to set (activation or deactivation) */
+)
+{
+  _wt_limit_check_needed = status;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Get current wall-clock time limit.
@@ -250,6 +267,10 @@ void
 cs_resource_get_max_timestep(int   ts_cur,
                              int  *ts_max)
 {
+  /* If time limit test is not required for this instance, return here */
+  if (!_wt_limit_check_needed)
+    return;
+
   /* Local variables */
 
   int t_lim_flag;
