@@ -3,6 +3,11 @@ Release 9.1.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix potential deadlock in CHT runs by deactivating wall time limit check in
+  the HTSolver when coupled. This choice may be overridden in the solid
+  domain by calling `cs_resource_wt_limit_check_set_status(true);` in
+  `cs_user_extra_operations_initialize`.
+
 - Fix memory leak in medcoupling intersector function
 
 - ALE: fix incorrect index for z-component of fluid velocity.
