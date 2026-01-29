@@ -3560,8 +3560,9 @@ cs_atmo_compute_meteo_profiles(void)
     cs_field_t *f_z_ground = cs_field_by_name("z_ground");
 
     /* Do not recompute in case of restart */
+    int nt_loc = cs_glob_time_step->nt_cur - cs_glob_time_step->nt_prev;
     int has_restart = cs_restart_present();
-    if (has_restart == 1) {
+    if (has_restart == 1 && nt_loc <= 1) {
       cs_restart_t *rp = cs_restart_create("main.csc",
                                            nullptr,
                                            CS_RESTART_MODE_READ);
@@ -3569,12 +3570,14 @@ cs_atmo_compute_meteo_profiles(void)
       int retval = cs_restart_read_field_vals(rp,
                                               f_z_ground->id,
                                               0);    /* current value */
+
+      cs_restart_destroy(&rp);
       if (retval != CS_RESTART_SUCCESS)
         has_restart = 0;
     }
 
     /* z_ground needs to be computed? */
-    if (has_restart == 0)
+    if (has_restart == 0 && nt_loc <= 1)
       cs_atmo_z_ground_compute();
 
     z_ground = f_z_ground->val;
@@ -4081,9 +4084,11 @@ cs_atmo_hydrostatic_profiles_compute(void)
 
   cs_real_t p_ground = aopt->meteo_psea;
 
-  /* Check if restart is read and if meteo_pressure is present */
+  /* Check if restart is read and if meteo_pressure is present
+   * at the first (local) time step. */
   int has_restart = cs_restart_present();
-  if (has_restart == 1) {
+  int nt_loc = cs_glob_time_step->nt_cur - cs_glob_time_step->nt_prev;
+  if (has_restart == 1 &&  nt_loc <= 1) {
     cs_restart_t *rp = cs_restart_create("main.csc",
                                          nullptr,
                                          CS_RESTART_MODE_READ);
@@ -4091,6 +4096,8 @@ cs_atmo_hydrostatic_profiles_compute(void)
     int retval = cs_restart_read_field_vals(rp,
                                             f->id, /* meteo_pressure */
                                             0);    /* current value */
+
+    cs_restart_destroy(&rp);
     if (retval != CS_RESTART_SUCCESS)
       has_restart = 0;
 
@@ -4109,7 +4116,7 @@ cs_atmo_hydrostatic_profiles_compute(void)
     temp->val[cell_id] = aopt->meteo_t0 * factor;
 
     /* Do not overwrite pressure in case of restart */
-    if (has_restart == 0)
+    if (has_restart == 0 && nt_loc <= 1)
       f->val[cell_id] =   p_ground * pow(factor, 1./rscp)
                           /* correction factor for z > 11000m */
                         * exp(- g/(rair*temp->val[cell_id]) * (z - zt));
@@ -4124,8 +4131,8 @@ cs_atmo_hydrostatic_profiles_compute(void)
       density->val[cell_id] = phys_pro->ro0;
   }
 
-  if (has_restart == 1 || cs_glob_physical_model_flag[CS_ATMOSPHERIC]
-        == CS_ATMO_CONSTANT_DENSITY)
+  if (has_restart == 1 && nt_loc <= 1
+    || cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_CONSTANT_DENSITY)
     return;
 
   /* Boussinesq hypothesis */
