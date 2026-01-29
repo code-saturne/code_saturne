@@ -3,6 +3,8 @@ Release 9.1.1 (unreleased)
 
 ### Bug fixes:
 
+- Atmo: fix meteo profile memory leak in case of restart.
+
 - Fix potential deadlock in CHT runs by deactivating wall time limit check in
   the HTSolver when coupled. This choice may be overridden in the solid
   domain by calling `cs_resource_wt_limit_check_set_status(true);` in
