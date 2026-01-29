@@ -2208,7 +2208,7 @@ class meg_to_c_interpreter:
                                     boundary.getScalarFormulaComponents(sp_id, _s)
                                 self.init_block('bnd',
                                                 zone.getLabel(),
-                                                spm.getScalarLabelByName(_s),
+                                                _s,
                                                 exp,
                                                 req,
                                                 sym,
