@@ -3,6 +3,8 @@ Release 9.0.2 (unreleased)
 
 ### Bug fixes:
 
+- Atmo: fix meteo profile memory leak in case of restart.
+
 - Fix application of formula based BC for NCFD scalars defined in GUI.
 
 - Fix potential deadlock in CHT runs by deactivating wall time limit check in
