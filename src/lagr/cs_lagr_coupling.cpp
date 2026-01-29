@@ -321,7 +321,7 @@ cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       &p_set,
   cs_real_3_t auxl;
   for (cs_lnum_t i = 0; i < 3; i++)
     auxl[i] = p_stat_w * ((p_mass * p_vel[i] - prev_p_mass * prev_p_vel[i])
-                           - force_p[i] * tsfext) / dtp;
+                           - force_p[i] * tsfext) / dtp * rel_dt;
 
   /* Momentum source terms
      ===================== */
@@ -379,7 +379,7 @@ cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       &p_set,
           || cs_glob_lagr_specific_physics->solve_diameter == 1
           || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR )) {
 
-      t_st_p[c_id] += - p_stat_w * (p_mass - prev_p_mass) / dtp * dvol;
+      t_st_p[c_id] += - p_stat_w * (p_mass - prev_p_mass) / dtp * dvol * rel_dt;
   }
 
   /* Thermal source terms
@@ -401,9 +401,9 @@ cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       &p_set,
 
     t_st_t_e[c_id] += - (p_mass * p_tmp * p_cp
                           - prev_p_mass * prev_p_tmp * prev_p_cp
-                          ) / dtp * p_stat_w * dvol;
+                          ) / dtp * p_stat_w * dvol * rel_dt;
     t_st_t_i[c_id] += p_stat_w * p_mass * p_cp * dvol
-                      / tempct[0];//FIXME rel_dt
+                      / tempct[0] * rel_dt;
 
     if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
         && cs_glob_lagr_specific_physics->solve_temperature == 1
@@ -416,7 +416,7 @@ cs_lagr_coupling_increment_part_contrib(cs_lagr_particle_set_t       &p_set,
       cs_real_t aux2 = cs_math_pi * p_diam * p_diam * p_eps * dvol
                       * (extra->rad_energy->val[c_id]
                          - 4.0 * _c_stephan * cs_math_pow4(p_tmp)) * rel_dt;
-      t_st_t_e[c_id] += aux2 * p_stat_w * rel_dt;
+      t_st_t_e[c_id] += aux2 * p_stat_w;
 
     }
   }
