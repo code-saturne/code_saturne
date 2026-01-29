@@ -875,6 +875,8 @@ cs_adaptive_refinement_define(int                  n_layers,
   _amr_info.fields_interp_refinement_func = _realloc_and_interp_after_refinement;
   _amr_info.fields_interp_coarsening_func = _realloc_and_interp_after_coarsening;
   _amr_info.interpolation = interpolation;
+
+  cs_glob_mesh->time_dep = CS_MESH_TRANSIENT_CONNECT;
 }
 
 /*----------------------------------------------------------------------------*/
