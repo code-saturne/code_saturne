@@ -4208,8 +4208,6 @@ cs_join_update_mesh_after_split(cs_join_param_t          join_param,
   assert(join_mesh != nullptr);
   assert(mesh_builder != nullptr);
 
-  cs_assert(mesh->have_r_gen == false);  // Not handled yet.
-
   /* Get associated global cell number */
 
   _get_linked_cell_gnum_and_family(join_select, join_param, n2o_face_hist, mesh,
