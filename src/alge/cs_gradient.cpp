@@ -8184,10 +8184,32 @@ cs_gradient_scalar(const char                    *var_name,
         cs_real_t *coefa = bc_coeffs->a;
         cs_real_t *coefb = bc_coeffs->b;
 
-        ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-          val_f_wrk[face_id] =  inc * coefa[face_id]
-                              + coefb[face_id] * val_ip[face_id];
-        }); /* End loop on boundary faces */
+        if (hyd_p_flag) {
+          const cs_lnum_t *b_face_cells = mesh->b_face_cells;
+          const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
+          const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
+          const cs_rreal_3_t *restrict diipb = fvq->diipb;
+
+          ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+            cs_lnum_t c_id = b_face_cells[face_id];
+            cs_real_t vec_iprime[3] = {cell_cen[c_id][0] + diipb[face_id][0],
+                                       cell_cen[c_id][1] + diipb[face_id][1],
+                                       cell_cen[c_id][2] + diipb[face_id][2]};
+
+            val_f_wrk[face_id] =  inc * coefa[face_id]
+                                + coefb[face_id] * val_ip[face_id];
+            val_f_wrk[face_id] += coefb[face_id]
+              * cs_math_3_distance_dot_product(vec_iprime,
+                                               b_face_cog[face_id],
+                                               f_ext[c_id]);
+          }); /* End loop on boundary faces */
+        }
+        else {
+          ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+            val_f_wrk[face_id] =  inc * coefa[face_id]
+                                + coefb[face_id] * val_ip[face_id];
+          }); /* End loop on boundary faces */
+        }
 
         ctx.wait();
 
