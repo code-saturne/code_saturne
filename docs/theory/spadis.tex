@@ -444,7 +444,7 @@ Please refer to the \doxygenfile{cs__gradient_8c.html}{programmers reference of 
 dedicated subroutine} for further details.
 
 %-------------------------------------------------------------------------------
-\subsection{Standard method: iterative process}\label{sec:spadis:iteratif_gradient}
+\subsection{Green Gauss iterative process}\label{sec:spadis:iteratif_gradient}
 
 
 \subsubsection{General description}
@@ -714,7 +714,7 @@ and so $\left( \grad^{k+1}_{\celli} \varia \right)$. The iterative process stops
 of $\left( \delta \grad^{k}_{\celli} \varia \right)$ falls under a threshold) or when the number of iterations reaches the maximal number of iterations.
 
 %-------------------------------------------------------------------------------
-\subsection{Standard method: iterative process for vectorial fields}\label{sec:spadis:iteratif_gradient_vectors}
+\subsection{Green Gauss iterative process for vectorial fields}\label{sec:spadis:iteratif_gradient_vectors}
 In this section, the adaptation of the calculation presented in \S~\ref{sec:spadis:iteratif_gradient} is adapted to
 vectorial fields. Some minor modifications are required, especially for the boundary condition treatment, but the core of the
 formulae are the very similar. The notations of the geometrical quantities are recalled in \figurename~\ref{fig:geom_gradrc}.
@@ -1315,12 +1315,12 @@ This section aims at describing the option \texttt{iphydr} corresponding to an
 improved interpolation scheme, activated by default in the user interface (set
 to 1). It imposes the equilibrium of the static part of the pressure with any
 external force, head losses included (it can also be set to 2 in user routines
-to compute the hydrostatic pressure with an apriori momentum equation to obtain
+to compute the hydrostatic pressure with an a priori momentum equation to obtain
 a hydrostatic pressure taking into account the imbalance between the pressure
 gradient and the gravity source term). In the following we describe option
 \texttt{iphydr}=1. When density effects are important, it improves the
 interpolation of the pressure and corrects non-physical velocities in highly
-stratifed areas, near horizontal walls or also near high head losses zones.
+stratified areas, near horizontal walls or also near high head losses zones.
 
 The pressure is split into its hydrostatic and dynamic parts following the
 relation:
@@ -1346,9 +1346,9 @@ correction for non orthogonalities:
 $\epsilon$ is set to $1$ if non orthogonalities are reconstructed, $0$ otherwise.
 Hence the pressure writes
 \begin{align*}
-	p_{\face}&=&p_{\face}^{h}+p_{f}^\star \\
-	&=&p_{\face}^{h}+\alpha_{\face}p_{\celli}^\star+\left(1-\alpha_{\face}\right)p_{\cellj}^\star+\frac{1}{2}\epsilon\left(\centf-\cento\right)\cdot\left(\grad_{\celli}{p}^\star+\grad_{\cellj}{p}^\star\right) \\
-	&=&p_{f}^{h}+\alpha_{\face}p_{\celli}+\left(1-\alpha_{\face}\right)p_{\cellj}-\alpha_{\face}p_{\celli}^{h}-\left(1-\alpha_{\face}\right)p_{\cellj}^{h}+\epsilon\frac{1}{2}\left(\centf-\cento\right)\cdot\left(\grad_{\celli}{p}-\vect{f}_{\celli}+\grad_{\cellj}{p}-\vect{f}_{\cellj}\right) \\
+	p_{\face}&=p_{\face}^{h}+p_{f}^\star \\
+	&=p_{\face}^{h}+\alpha_{\face}p_{\celli}^\star+\left(1-\alpha_{\face}\right)p_{\cellj}^\star+\frac{1}{2}\epsilon\left(\centf-\cento\right)\cdot\left(\grad_{\celli}{p}^\star+\grad_{\cellj}{p}^\star\right) \\
+	&=p_{f}^{h}+\alpha_{\face}p_{\celli}+\left(1-\alpha_{\face}\right)p_{\cellj}-\alpha_{\face}p_{\celli}^{h}-\left(1-\alpha_{\face}\right)p_{\cellj}^{h}+\epsilon\frac{1}{2}\left(\centf-\cento\right)\cdot\left(\grad_{\celli}{p}-\vect{f}_{\celli}+\grad_{\cellj}{p}-\vect{f}_{\cellj}\right)
 \end{align*}
 As
 \begin{equation}
@@ -1357,7 +1357,7 @@ As
 \end{equation}
 One gets
 \begin{align*}
-  p_{f}&=&\alpha_{\face}p_{\celli}+\left(1-\alpha_{\face}\right)p_{\cellj}+\frac{1}{2}\epsilon\left(\centf-\cento\right)\cdot\left(\grad_{\celli}{p}-\vect{f}_{\celli}+\grad_{\cellj}{p}-\vect{f}_{\cellj}\right) \\ &&-\alpha_{\face}\left(\centi-\centf\right)\cdot\vect{f}_{\celli}-\left(1-\alpha_{\face}\right)\left(\centj-\centf\right)\cdot\vect{f}_{\cellj}
+  p_{f}&=\alpha_{\face}p_{\celli}+\left(1-\alpha_{\face}\right)p_{\cellj}+\frac{1}{2}\epsilon\left(\centf-\cento\right)\cdot\left(\grad_{\celli}{p}-\vect{f}_{\celli}+\grad_{\cellj}{p}-\vect{f}_{\cellj}\right) \\ & \ -\alpha_{\face}\left(\centi-\centf\right)\cdot\vect{f}_{\celli}-\left(1-\alpha_{\face}\right)\left(\centj-\centf\right)\cdot\vect{f}_{\cellj}
 \end{align*}
 Hence
 \begin{align*}
@@ -1440,7 +1440,7 @@ For an homogeneous Neumann condition $A^{g}_{\fib}=0$ and $B^{g}_{\fib}=0$ so th
 $\grad_{\fib}{p^\star}\cdot\vect{d}_{\ib}=0$. For a Dirichlet condition
 $B^{g}_{\fib}=0$ and one gets:
 \begin{align*}
-	\grad_{\fib}{p^\star}\cdot\vect{d}_{\ib} \\ &=&\frac{1}{\norm{\centfb-\centip}}\left(p_{\fib}^\star-p_{\cellip}^\star\right) \\
+	\grad_{\fib}{p^\star}\cdot\vect{d}_{\ib} &=\frac{1}{\norm{\centfb-\centip}}\left(p_{\fib}^\star-p_{\cellip}^\star\right) \\
 	&=\frac{1}{\norm{\centfb-\centip}}\left(p_{\fib}-p_{\celli'}-p_{\fib}^{h}+p_{\celli'}^{h}\right) \\
 	&=\frac{1}{\norm{\centfb-\centip}}\left(A^{g}_{\fib}-p_{\celli}-\left(\centip-\centi\right)\cdot\grad_{\celli}{p}-\left(\centfb-\centip\right)\cdot\vect{f}_{\celli}\right) \\
 	&=\frac{1}{\norm{\centfb-\centip}}\left(A^{g}_{\fib}-p_{\celli}-\left(\centip-\centi\right)\grad_{\celli}{p^\star}-\left(\centip-\centi\right)\cdot\vect{f}_{\celli}-\left(\centfb-\centip\right)\cdot\vect{f}_{\celli}\right) \\
