@@ -1,4 +1,4 @@
-Release 9.0.2 (unreleased)
+Release 9.0.2 (2026-01-30)
 --------------------------
 
 ### Bug fixes:
