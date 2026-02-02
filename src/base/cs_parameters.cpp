@@ -1153,6 +1153,7 @@ cs_parameters_define_auxiliary_fields(void)
 
   cs_thermal_model_t *th_model = cs_get_glob_thermal_model();
   cs_cf_model_t *th_cf_model = cs_get_glob_cf_model();
+  cs_fluid_properties_t *fluid_pro = cs_get_glob_fluid_properties();
 
   if (th_model->has_kinetic_st == 1) {
     cs_field_t *fld
@@ -1215,7 +1216,9 @@ cs_parameters_define_auxiliary_fields(void)
 
     /* Pressure gradient */
     if (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
-        || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
+        || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY
+        || (th_cf_model->ieos == CS_EOS_GAS_MIX
+            && cs_glob_velocity_pressure_model->idilat == 2)) {
 
       cs_field_create("algo:pressure_gradient",
                       0,
@@ -1242,6 +1245,12 @@ cs_parameters_define_auxiliary_fields(void)
 
     }
 
+    /* For gas mix: variable rho, Cp, Cv */
+    if (th_cf_model->ieos == CS_EOS_GAS_MIX) {
+      fluid_pro->ivivar = 1;
+      fluid_pro->icp = 0;
+      fluid_pro->icv = 0;
+    }
   }
 
   /* Temperature in case of solving the internal energy equation */

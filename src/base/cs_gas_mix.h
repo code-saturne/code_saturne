@@ -57,6 +57,8 @@ typedef enum {
   CS_GAS_MIX_AIR_HELIUM_STEAM = 3,       /*!< helium/steam, steam deduced */
   CS_GAS_MIX_AIR_HYDROGEN_STEAM = 4,     /*!< hydrogen/steam, steam deduced */
   CS_GAS_MIX_HELIUM_AIR = 5,             /*!< helium/air, O2 from air deduced */
+  CS_GAS_MIX_CO2_AIR = 6,                /*!< CO2/air, O2 from air deduced */
+  CS_GAS_MIX_NO2_AIR = 7,                /*!< NO2/air, O2 from air deduced */
   CS_GAS_MIX_USER                        /*!< user defined */
 
 } cs_gas_mix_type_t;

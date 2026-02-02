@@ -401,7 +401,7 @@ _init_variable_fields(void)
     if (cs_glob_physical_model_flag[ipp] != -1) {
       nmodpp += 1;
       if (   cs_glob_physical_model_flag[ipp] < -1
-          || cs_glob_physical_model_flag[ipp] > 5) {
+          || cs_glob_physical_model_flag[ipp] > 8) {
         cs_parameters_error
           (CS_ABORT_DELAYED,
            _("initial data verification"),
@@ -420,7 +420,13 @@ _init_variable_fields(void)
     nmodpp_compatibility -= 1;
   }
 
-  /* Atmo in humid atmosphere et Couling tower (iaeros) coupling */
+  /* Compressible module and gas mix are compatible */
+  if (   cs_glob_physical_model_flag[CS_GAS_MIX] != -1
+      && cs_glob_physical_model_flag[CS_ATMOSPHERIC] != -1) {
+    nmodpp_compatibility -= 1;
+  }
+
+  /* Atmo in humid atmosphere et Cooling tower (iaeros) coupling */
   if (   cs_glob_physical_model_flag[CS_ATMOSPHERIC] == 2
       && cs_glob_physical_model_flag[CS_COOLING_TOWERS] != -1) {
     nmodpp_compatibility -= 1;

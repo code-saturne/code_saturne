@@ -59,7 +59,7 @@
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_parall.h"
 #include "base/cs_physical_constants.h"
-
+#include "pprt/cs_physical_model.h"
 
 #include "cdo/cs_xdef.h"
 #include "cfbl/cs_cf_model.h"
@@ -288,24 +288,26 @@ cs_thermal_model_init(void)
  * \brief Compute the inverse of the square of sound velocity multiplied
  *        by gamma.
  *
- * \param[in]      cp      array of isobaric specific heat values for dry air
+ * \param[in]      cp      array of isobaric specific heat values
+ * \param[in]      cv      array of isovolume specific heat values
  * \param[in]      temp    array of temperature values
  * \param[in]      pres    array of pressure values
  * \param[in,out]  fracv   array of volume fraction values
  * \param[in,out]  fracm   array of mass fraction values
  * \param[in,out]  frace   array of energy fraction values
- * \param[out]     dc2     array of the values of the square of sound velocity
+ * \param[out]     gdc2    array of the values of the square of sound velocity
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_thermal_model_c_square(const cs_real_t  cp[],
-                          const cs_real_t  temp[],
-                          const cs_real_t  pres[],
-                          const cs_real_t  fracv[],
-                          const cs_real_t  fracm[],
-                          const cs_real_t  frace[],
-                          cs_real_t        dc2[])
+cs_thermal_model_gamma_d_c_square(const cs_real_t  cp[],
+                                  const cs_real_t  cv[],
+                                  const cs_real_t  temp[],
+                                  const cs_real_t  pres[],
+                                  const cs_real_t  fracv[],
+                                  const cs_real_t  fracm[],
+                                  const cs_real_t  frace[],
+                                  cs_real_t        gdc2[])
 {
   CS_NO_WARN_IF_UNUSED(cp);
   CS_NO_WARN_IF_UNUSED(fracm);
@@ -320,26 +322,35 @@ cs_thermal_model_c_square(const cs_real_t  cp[],
 
   cs_dispatch_context ctx;
 
-  /* no specific eos : the pressure equation is a Poisson equation */
-  cs_field_t *fhyd = cs_field_by_name_try("H2");
+  /* Mult */
+  cs_real_t mult = 1.0;
+  // TODO cp/cv variable
+  if (cs_glob_thermal_model->thermal_variable == CS_THERMAL_MODEL_ENTHALPY){
+    mult = cs_glob_fluid_properties->cp0;
+  } else if (cs_glob_thermal_model->thermal_variable
+      == CS_THERMAL_MODEL_INTERNAL_ENERGY) {
+    mult = cs_glob_fluid_properties->cv0;
+  }
 
-  /* Ideal gas */
-  if (ieos == CS_EOS_GAS_MIX && fhyd != nullptr) {
-    /* WIP : only available in this function for hydrogen and air */
-    cs_real_t rh = 4157.; /* R/MH2 */
-    cs_real_t *yhyd = cs_field_by_name("H2")->val;
+  /* In atmospherical flow, temperature is in C°*/
+  cs_real_t t_add = 0.;
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0) {
+    t_add = cs_physical_constants_celsius_to_kelvin;
+  }
+
+  /* no specific eos : the pressure equation is a Poisson equation */
+
+  /* Ideal gas mixtures TODO : in case of solving enthalpy, variable cp*/
+  if (ieos == CS_EOS_GAS_MIX) {
+    cs_real_t *mix_mol_mas = cs_field_by_name("mix_mol_mas")->val;
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      dc2[c_id] = 1. / (temp[c_id]*((1. - yhyd[c_id])*rair + yhyd[c_id]*rh));
-    });
+      gdc2[c_id] = mult * mix_mol_mas[c_id]
+      / ((temp[c_id] + t_add)* cs_physical_constants_r);
+      });
   }
   else if (ieos == CS_EOS_IDEAL_GAS) {
-    cs_real_t mult = 1.0;
-    // TODO cp/cv variable
-    if (thermal_variable == CS_THERMAL_MODEL_ENTHALPY){
-      mult = cs_glob_fluid_properties->cp0;
-    }
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      dc2[c_id] = mult / (rair * temp[c_id]);
+      gdc2[c_id] = mult / (rair * (temp[c_id] + t_add));
     });
   }
 
@@ -394,16 +405,16 @@ cs_thermal_model_c_square(const cs_real_t  cp[],
                                                 rvsra, cva, cvv, cvl, l00);
 
         // compute drho/dp (at constant internal energy)
-        dc2[c_id] = -drhodt * dedp /dedt + drhodp;
+        gdc2[c_id] = -drhodt * dedp /dedt + drhodp;
       }
       else {
-        dc2[c_id] = 1. / (rair * temp[c_id] * (1. - frace[c_id] + fracv[c_id] * rvsra));
+        gdc2[c_id] = 1. / (rair * temp[c_id] * (1. - frace[c_id] + fracv[c_id] * rvsra));
       }
     });
   }
   else {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      dc2[c_id] = 0.;
+      gdc2[c_id] = 0.;
     });
   }
 
@@ -685,7 +696,29 @@ cs_thermal_model_add_kst(cs_real_t  smbrs[])
       const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
       const cs_real_t *kst = f_sk->val;
 
-      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0) {
+        cs_real_t *cvar_p = CS_F_(p)->val;
+        cs_real_t *meteo_p = cs_field_by_name("meteo_pressure")->val;
+        cs_real_t *mol_mass = nullptr;
+        cs_real_t *cpro_cp = nullptr;
+        if (cs_glob_cf_model->ieos == CS_EOS_GAS_MIX){
+          mol_mass = cs_field_by_name("mix_mol_mas")->val;
+          cpro_cp = CS_F_(cp)->val;
+        }
+        else {
+          ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+              mol_mass[c_id] = cs_glob_fluid_properties->r_pg_cnst;
+              cpro_cp[c_id] = cs_glob_fluid_properties->cp0;
+              });
+        }
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+            smbrs[c_id] += kst[c_id] *
+                          pow((meteo_p[c_id] + cvar_p[c_id])/cs_glob_fluid_properties->p0
+                          ,(cs_physical_constants_r/mol_mass[c_id])/cpro_cp[c_id]);
+            });
+      }
+      else
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         smbrs[c_id] += kst[c_id];
       });
 
@@ -817,6 +850,74 @@ cs_thermal_model_cflp(const cs_real_t  croma[],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the density for an ideal gas (only used in the compressible
+ * algorithm (idilat = 2)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_eos_predicted_rho(void)
+{
+  /* Get global data */
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+
+  const cs_fluid_properties_t *phys_pro = cs_glob_fluid_properties;
+
+  const cs_real_t *cvar_pr = CS_F_(p)->val;
+  cs_real_t *cvar_rho = CS_F_(rho)->val;
+
+  /* Get the temperature */
+  cs_dispatch_context ctx;
+
+  cs_real_t *var_th = nullptr;
+  cs_real_t t_add = 0.0;
+  cs_real_t mult = 1.0;
+
+  /* Thermal model */
+  cs_thermal_model_t *thm = cs_get_glob_thermal_model();
+
+  /* Get the temperature */
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0) {
+    var_th = cs_field_by_name("real_temperature")->val;
+    t_add = cs_physical_constants_celsius_to_kelvin;
+  }
+  else if (thm->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE) {
+    var_th = cs_field_by_name("temperature")->val;
+    if (thm->temperature_scale == CS_TEMPERATURE_SCALE_CELSIUS)
+      t_add = cs_physical_constants_celsius_to_kelvin;
+  }
+  else if (cs_glob_cf_model->ieos == CS_EOS_GAS_MIX) {
+    var_th = cs_field_by_name("tempk")->val;
+  }
+  else if (thm->thermal_variable == CS_THERMAL_MODEL_ENTHALPY) {
+    var_th = cs_field_by_name("enthalpy")->val;
+    mult = cs_glob_fluid_properties->cp0;
+  }
+
+  if (cs_glob_cf_model->ieos == CS_EOS_IDEAL_GAS) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        cvar_rho[c_id] = mult * (cvar_pr[c_id] + cs_glob_fluid_properties->p0)
+        / (cs_glob_fluid_properties->r_pg_cnst * (var_th[c_id] + t_add));
+        });
+  }
+  else if (cs_glob_cf_model->ieos == CS_EOS_GAS_MIX) {
+    cs_real_t *mix_mol_mas = cs_field_by_name("mix_mol_mas")->val;
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        cvar_rho[c_id]
+        = (cvar_pr[c_id] + cs_glob_fluid_properties->p0) * mix_mol_mas[c_id]
+        /(cs_physical_constants_r * (var_th[c_id] + t_add));
+        });
+  }
+
+  /* TODO other ieos values ... */
+  ctx.wait(); // needed for CPU cs_solve_equation.c
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the isochoric heat capacity
  *
  * \param[in]     xcvv      isobaric heat capacity
@@ -862,7 +963,9 @@ cs_thermal_model_cv(cs_real_t  *xcvv)
       });
     }
   }
-  else { /* quid when ieos = CS_EOS_MOIST_AIR */
+  else if (cs_glob_cf_model->ieos == CS_EOS_GAS_MIX) { /*Pas de calcul de cv*/
+    return;
+  } else { /* quid when ieos = CS_EOS_MOIST_AIR */
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       xcvv[c_id] = 1.;
     });

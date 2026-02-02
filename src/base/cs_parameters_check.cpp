@@ -1580,6 +1580,17 @@ cs_parameters_check(void)
          "with the dilatable or low-mach flows\n"));
 
   /*--------------------------------------------------------------------------
+   * Verification for idilat compressible scheme
+   *--------------------------------------------------------------------------*/
+  if (cs_glob_velocity_pressure_model->idilat == 2 &&
+      cs_glob_cf_model->ieos > 0 &&
+      cs_glob_thermal_model->temperature_scale == CS_TEMPERATURE_SCALE_CELSIUS)
+    cs_parameters_error
+      (CS_ABORT_DELAYED,
+       _("in the compressible idilat scheme"),
+       _("The scheme is not compatible yet with temperature in celsius\n"));
+
+  /*--------------------------------------------------------------------------
    * checkpoint options
    *--------------------------------------------------------------------------*/
 

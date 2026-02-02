@@ -147,24 +147,26 @@ cs_thermal_model_init(void);
  * \brief Compute the inverse of the square of sound velocity multiplied
  *        by gamma.
  *
- * \param[in]      cp      array of isobaric specific heat values for dry air
+ * \param[in]      cp      array of isobaric specific heat values
+ * \param[in]      cv      array of isovolume specific heat values
  * \param[in]      temp    array of temperature values
  * \param[in]      pres    array of pressure values
  * \param[in,out]  fracv   array of volume fraction values
  * \param[in,out]  fracm   array of mass fraction values
  * \param[in,out]  frace   array of energy fraction values
- * \param[out]     dc2     array of the values of the square of sound velocity
+ * \param[out]     gdc2    array of the values of the square of sound velocity
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_thermal_model_c_square(const cs_real_t  cp[],
-                          const cs_real_t  temp[],
-                          const cs_real_t  pres[],
-                          const cs_real_t  fracv[],
-                          const cs_real_t  fracm[],
-                          const cs_real_t  frace[],
-                          cs_real_t        dc2[]);
+cs_thermal_model_gamma_d_c_square(const cs_real_t  cp[],
+                                  const cs_real_t  cv[],
+                                  const cs_real_t  temp[],
+                                  const cs_real_t  pres[],
+                                  const cs_real_t  fracv[],
+                                  const cs_real_t  fracm[],
+                                  const cs_real_t  frace[],
+                                  cs_real_t        gdc2[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -307,6 +309,16 @@ cs_thermal_model_cflt(const cs_real_t  croma[],
                       const cs_real_t  i_massflux[],
                       const cs_real_t  b_massflux[],
                       cs_real_t        cflt[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the density for an ideal gas or mixture of ideal gases
+ * (only used in the compressible algorithm (idilat = 2)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_eos_predicted_rho(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -61,6 +61,7 @@
 #include "base/cs_post.h"
 #include "base/cs_thermal_model.h"
 #include "base/cs_velocity_pressure.h"
+#include "cfbl/cs_cf_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -207,6 +208,14 @@ _compute_mu_lambda(const char                       *name,
   }
   else if (strcmp(name, "y_h2") == 0) {
     _mu     = spro.mu_a     * (tk-tkelvin) + spro.mu_b;
+    _lambda = spro.lambda_a * tk + spro.lambda_b;
+  }
+  else if (strcmp(name, "y_co2") == 0) {
+    _mu     = spro.mu_a     * tk + spro.mu_b;
+    _lambda = spro.lambda_a * tk + spro.lambda_b;
+  }
+  else if (strcmp(name, "y_no2") == 0) {
+    _mu     = spro.mu_a     * tk + spro.mu_b;
     _lambda = spro.lambda_a * tk + spro.lambda_b;
   }
   else if (   strcmp(name, "y_o2") == 0
@@ -480,6 +489,38 @@ _set_predefined_property(cs_field_t  *f)
     gmp.slam = 78.;
   }
 
+  else if (strcmp(f->name, "y_co2") == 0) {
+    gmp.mol_mas = 0.044;
+    gmp.cp = 846.;
+    gmp.vol_dif = 2.67; // check
+    gmp.mu_a = 4.0e-8; // between 250 and 400 K
+    gmp.mu_b = -1.0e-6;
+    gmp.lambda_a = 1.07e-4; // between 250 and 400 K
+    gmp.lambda_b = -1.27e-2;
+    gmp.muref = 1.48e-5;
+    gmp.lamref = 0.0146;
+    gmp.trefmu = 273.;
+    gmp.treflam = 273.;
+    gmp.smu = 133.;
+    gmp.slam = 180.;
+  }
+
+  else if (strcmp(f->name, "y_no2") == 0) {
+    gmp.mol_mas = 0.046;
+    gmp.cp = 804.;
+    gmp.vol_dif = 2.67; // check
+    gmp.mu_a = 3.5e-8; /* Vérifier validité de Sutherland pour ce gaz.. */
+    gmp.mu_b = 4.0e-6;
+    gmp.lambda_a = 7.0e-5;
+    gmp.lambda_b = -4e-3;
+    gmp.muref = 1.32e-5;
+    gmp.lamref = 0.0167;
+    gmp.trefmu = 298.;
+    gmp.treflam = 298.;
+    gmp.smu = 220.;
+    gmp.slam = 200.;
+  }
+
   else if (strcmp(f->name, "y_h2") == 0) {
     gmp.mol_mas = 0.002;
     gmp.cp = 14560.;
@@ -584,11 +625,13 @@ cs_gas_mix_add_species(int  f_id)
   if (   strcmp(f->name, "y_o2") != 0
       && strcmp(f->name, "y_n2") != 0
       && strcmp(f->name, "y_he") != 0
+      && strcmp(f->name, "y_co2") != 0
+      && strcmp(f->name, "y_no2") != 0
       && strcmp(f->name, "y_h2") != 0)
                 bft_error(__FILE__, __LINE__, 0,
                           _("Only the species having the following field names "
                             "can be added to a gas mix:\n"
-                            "y_o2, y_n2, y_he, y_h2\n"));
+                            "y_o2, y_n2, y_he, y_co2, y_no2, y_h2\n"));
 
   _map_field(f);
 
@@ -678,8 +721,10 @@ cs_gas_mix_add_variable_fields(void)
   cs_field_t *f;
   int f_id;
 
-  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
-    cs_thermal_model_t *thm = cs_get_glob_thermal_model();
+  cs_thermal_model_t *thm = cs_get_glob_thermal_model();
+  // If thermal field has been already created (e.g. for atmo or
+  // compressible module...) then it is enthalpy by default
+  if (thm->thermal_variable == CS_THERMAL_MODEL_INIT) {
     thm->thermal_variable = CS_THERMAL_MODEL_ENTHALPY;
 
     f_id = cs_variable_field_create("enthalpy",
@@ -689,6 +734,18 @@ cs_gas_mix_add_variable_fields(void)
 
     f = cs_field_by_id(f_id);
     cs_field_pointer_map(CS_ENUMF_(h), f);
+    cs_add_model_field_indexes(f);
+  }
+  else if (thm->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
+      && cs_glob_physical_model_flag[CS_ATMOSPHERIC]< 0) {
+
+    f_id = cs_variable_field_create("temperature",
+                                    "Temperature",
+                                    CS_MESH_LOCATION_CELLS,
+                                    1);
+
+    f = cs_field_by_id(f_id);
+    cs_field_pointer_map(CS_ENUMF_(t), f);
     cs_add_model_field_indexes(f);
   }
 
@@ -722,6 +779,14 @@ cs_gas_mix_add_variable_fields(void)
   case CS_GAS_MIX_HELIUM_AIR:
     _add_species_field("y_n2", "Y_N2");
     _add_species_field("y_he", "Y_He");
+    break;
+  case CS_GAS_MIX_CO2_AIR:
+    _add_species_field("y_n2", "Y_N2");
+    _add_species_field("y_co2", "Y_CO2");
+    break;
+  case CS_GAS_MIX_NO2_AIR:
+    _add_species_field("y_n2", "Y_N2");
+    _add_species_field("y_NO2", "Y_NO2");
     break;
 
   default:
@@ -773,6 +838,16 @@ cs_gas_mix_add_property_fields(void)
     strncpy(label, "Y_O2", 32);
     break;
 
+  case CS_GAS_MIX_CO2_AIR:
+    strncpy(name, "y_o2", 32);
+    strncpy(label, "Y_O2", 32);
+    break;
+
+  case CS_GAS_MIX_NO2_AIR:
+    strncpy(name, "y_o2", 32);
+    strncpy(label, "Y_O2", 32);
+    break;
+
   default:
     add_deduced = false;  /* should be added by user */
 
@@ -795,6 +870,8 @@ cs_gas_mix_add_property_fields(void)
     _map_field(f);
     _set_predefined_property(f);
 
+    /* For the moment we don't need this using idilat 2 */
+    /* TODO : see if needed */
     /* Add binary diffusion coefficient of steam into non-condensables */
     f = cs_field_create("steam_binary_diffusion",
                         field_type,
@@ -815,17 +892,23 @@ cs_gas_mix_add_property_fields(void)
     cs_field_set_key_int(f, keyvis, 0);
     cs_field_set_key_int(f, keylog, 1);
 
-    /* Add temperature in kelvin */
-    f = cs_field_create("tempk",
-                        field_type,
-                        CS_MESH_LOCATION_CELLS,
-                        1, /* dim */
-                        false);
+    cs_thermal_model_t *thm = cs_get_glob_thermal_model();
+    /* In case of solving the temperature, we do not need to define tempk */
+    /* TODO: note that in atmo "real_temperature" exist but is in Celsius */
+    if (thm->thermal_variable != CS_THERMAL_MODEL_TEMPERATURE &&
+          cs_glob_physical_model_flag[CS_ATMOSPHERIC] < 0) {
+        /* Add temperature in kelvin */
+        f = cs_field_create("tempk",
+                            field_type,
+                            CS_MESH_LOCATION_CELLS,
+                            1, /* dim */
+                            false);
 
-    cs_field_set_key_int(f, keyvis, 0);
-    cs_field_set_key_int(f, keylog, 1);
+        cs_field_set_key_int(f, keyvis, 0);
+        cs_field_set_key_int(f, keylog, 1);
 
-    cs_field_pointer_map(CS_ENUMF_(t_kelvin), f);
+        cs_field_pointer_map(CS_ENUMF_(t_kelvin), f);
+     }
   }
 
   /* Add molar mass property */
@@ -882,13 +965,19 @@ cs_gas_mix_physical_properties(void)
   /*  Initializations
       --------------- */
 
-  cs_real_t *tempk = nullptr;
+  cs_real_t *temp = nullptr;
+  cs_real_t t_add = 0.0;
   cs_real_t *lambda = nullptr;
   cs_real_t *cpro_rho = nullptr;
   const cs_real_t *cvar_enth = nullptr;
 
   /* Specific heat value */
   cs_real_t *cpro_cp = CS_F_(cp)->val;
+  cs_real_t *cpro_cv = nullptr;
+
+  if (cs_field_by_name_try("isobaric_heat_capacity") != nullptr &&
+      cs_glob_fluid_properties->icv >= 0)
+    cpro_cv = cs_field_by_name("isobaric_heat_capacity")->val;
 
   /* Molecular dynamic viscosity value */
   cs_real_t *cpro_viscl = CS_F_(mu)->val;
@@ -902,8 +991,7 @@ cs_gas_mix_physical_properties(void)
   cs_real_t *mol_mas_ncond = cs_field_by_name("mol_mas_ncond")->val;
 
   /* Deduce mass fraction (y_d) which is
-   * y_h2o_g in presence of steam or
-   * y_he/y_h2 with noncondensable gases */
+   * the remaining scalar that is not transported */
   const cs_field_t *f = nullptr;
   cs_gas_mix_species_prop_t s_d;
   const int k_id = cs_gas_mix_get_field_key();
@@ -923,15 +1011,33 @@ cs_gas_mix_physical_properties(void)
   /* Storage the previous value of the deduced mass fraction ya_d */
   cs_array_real_copy(n_cells_ext, y_d, f->val_pre);
 
+  cs_cf_model_t *th_cf_model = cs_get_glob_cf_model();
+  cs_thermal_model_t *thm = cs_get_glob_thermal_model();
+
   /* In compressible, the density is updated after the pressure step */
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
-    cvar_enth = th_f->val;
+
+    if (thm->thermal_variable == CS_THERMAL_MODEL_ENTHALPY)
+      cvar_enth = th_f->val;
+
     cpro_rho  = CS_F_(rho)->val;
-    tempk     = cs_field_by_name("tempk")->val;
+    // For atmospheric module, thermal variable is potential temperature
+    // and real_temperature is in Celcius
+    if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0) {
+      t_add = cs_physical_constants_celsius_to_kelvin;
+      temp = cs_field_by_name("real_temperature")->val;
+    }
+    else if (thm->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE) {
+      temp = cs_field_by_name("temperature")->val;
+      if (thm->temperature_scale == CS_TEMPERATURE_SCALE_CELSIUS)
+        t_add = cs_physical_constants_celsius_to_kelvin;
+    }
+    else
+      temp = cs_field_by_name("tempk")->val;
     CS_MALLOC(lambda, n_cells_ext, cs_real_t);
   }
   else {
-    tempk = CS_F_(t_kelvin)->val;
+    temp = CS_F_(t_kelvin)->val;
     ifcvsl = cs_field_get_key_int(CS_F_(t_kelvin), kivisl);
     lambda = cs_field_by_id(ifcvsl)->val;
   }
@@ -945,8 +1051,18 @@ cs_gas_mix_physical_properties(void)
    ---------------------------------------------------------------------------*/
 
   cs_real_t pressure = cs_glob_fluid_properties->p0;
+  //FIXME MF not always if 1/C2 = 0 !!!
+  // On a tout de même une pression "dynamique" même lorsque 1/C2 = 0 ?
+  // Je vois ce que tu veux dire : il faut que cvar_pr = 0. dans la loi d'état
+  // lorsqu'on la calcule. Mais en fait, on vient dans cette fonction et en idilat 2
+  // que quand 1/C2 est différent de 0
+  /* If idilat = 2, the pressure is a field */
+  cs_real_t *cvar_pr = nullptr;
+
   if (cs_glob_velocity_pressure_model->idilat == 3)
     pressure = cs_glob_fluid_properties->pther;
+  else if (cs_glob_velocity_pressure_model->idilat == 2)
+    cvar_pr = CS_F_(p)->val;
 
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
@@ -1003,6 +1119,7 @@ cs_gas_mix_physical_properties(void)
        *                        + y_d.cp_d
        *             -----------------------------
        * remark:
+       * TODO : mettre à jour cette description
        *   The mass fraction is deduced depending of the
        *    modelling chosen by the user, with:
        *      - CS_GAS_MIX = CS_GAS_MIX_AIR_HELIUM or
@@ -1018,7 +1135,22 @@ cs_gas_mix_physical_properties(void)
       cs_field_get_key_struct(f_spe, k_id, &s_k);
       cpro_cp[c_id] += cvar_yk[c_id]*s_k.cp;
     }
+    /* Mixture isochoric specific heat */
+    if (cs_glob_velocity_pressure_model->idilat == 2 &&
+        cs_glob_fluid_properties->icv >= 0) {
+      for (int spe_id = 0; spe_id < _gas_mix.n_species_solved + 1; spe_id++) {
+        const int f_spe_id = _gas_mix.species_to_field_id[spe_id];
+        const cs_field_t *f_spe = cs_field_by_id(f_spe_id);
+        if (spe_id == _gas_mix.n_species_solved)
+          f_spe = f;
 
+        cs_gas_mix_species_prop_t s_k;
+        cs_field_get_key_struct(f_spe, k_id, &s_k);
+        /* cv = cp - R */
+        cpro_cv[c_id] = cpro_cp[c_id]
+          - cs_physical_constants_r / mix_mol_mas[c_id] ;
+      }
+    }
   }
 
   /* gas mixture density function of the temperature, pressure
@@ -1037,15 +1169,22 @@ cs_gas_mix_physical_properties(void)
    *         p0            : atmos. pressure (Pa)
    *         pther         : pressure (Pa) integrated on the
    *                         fluid domain */
-  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0)
-#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+  if (cvar_enth != nullptr) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
       // Evaluate the temperature thanks to the enthalpy
-      tempk[c_id] = cvar_enth[c_id]/ cpro_cp[c_id];
-      cpro_rho[c_id]
-        = pressure*mix_mol_mas[c_id]/(cs_physical_constants_r*tempk[c_id]);
+      temp[c_id] = cvar_enth[c_id]/ cpro_cp[c_id];
     }
-
+  }
+  /* For compressible flows, the density is computed afterwards */
+  if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0
+      && cs_glob_cf_model->ieos == -1) {
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
+      cpro_rho[c_id]
+        = pressure*mix_mol_mas[c_id]/(cs_physical_constants_r
+            * (temp[c_id] + t_add));
+    }
+  }
   /* Dynamic viscosity and conductivity coefficient
    * the physical properties associated to the gas
    * mixture with or without condensable gas */
@@ -1071,6 +1210,8 @@ cs_gas_mix_physical_properties(void)
           && (strcmp(f_spe->name, "y_h2")    != 0)
           && (strcmp(f_spe->name, "y_o2")    != 0)
           && (strcmp(f_spe->name, "y_n2")    != 0)
+          && (strcmp(f_spe->name, "y_co2")    != 0)
+          && (strcmp(f_spe->name, "y_no2")    != 0)
           && (strcmp(f_spe->name, "y_h2o_g") != 0)   )
         bft_error(__FILE__, __LINE__, 0,
                   _("%s: no predefined properties for field %s."),
@@ -1083,10 +1224,10 @@ cs_gas_mix_physical_properties(void)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
 
       if (ivsuth == 0)
-        _compute_mu_lambda(f_spe->name, tempk[c_id], s_i,
+        _compute_mu_lambda(f_spe->name, temp[c_id] + t_add, s_i,
                            &mu_i, &lambda_i);
       else
-        _compute_mu_lambda_suth(tempk[c_id], s_i,
+        _compute_mu_lambda_suth(temp[c_id] + t_add, s_i,
                                 &mu_i, &lambda_i);
 
       cs_real_t xsum_mu = 0.0, xsum_lambda = 0.0;
@@ -1104,10 +1245,10 @@ cs_gas_mix_physical_properties(void)
         cs_field_get_key_struct(f_s, k_id, &s_j);
 
         if (ivsuth == 0)
-          _compute_mu_lambda(f_s->name, tempk[c_id], s_j,
+          _compute_mu_lambda(f_s->name, temp[c_id] + t_add, s_j,
                              &mu_j, &lambda_j);
         else
-          _compute_mu_lambda_suth(tempk[c_id], s_j,
+          _compute_mu_lambda_suth(temp[c_id] + t_add, s_j,
                                   &mu_j, &lambda_j);
 
         const cs_real_t phi_mu
@@ -1159,7 +1300,7 @@ cs_gas_mix_physical_properties(void)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
 
     cs_real_t x_ncond_tot = 0.0;
-    const cs_real_t ratio_tkpr = pow(tempk[c_id], 1.75)/pressure;
+    const cs_real_t ratio_tkpr = pow(temp[c_id] + t_add, 1.75)/pressure;
 
     for (int spe_id = 0; spe_id < _gas_mix.n_species_solved; spe_id++) {
       const int f_spe_id = _gas_mix.species_to_field_id[spe_id];
@@ -1233,13 +1374,13 @@ cs_gas_mix_initialization(void)
 
   /* Initializations
      ---------------- */
-  cs_real_t *cvar_enth = nullptr;
+  cs_real_t *cvar_ther = nullptr;
 
   /* Specific heat value */
   cs_real_t *cpro_cp = CS_F_(cp)->val;
 
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0)
-    cvar_enth = cs_thermal_model_field()->val;
+    cvar_ther = cs_thermal_model_field()->val;
 
   /* Deduced species (h2o_g) with steam gas
    * or Helium or Hydrogen  with noncondensable gases */
@@ -1301,8 +1442,11 @@ cs_gas_mix_initialization(void)
     // specific heat (Cp_m0) of the gas mixture
     cpro_cp[c_id] += y_d[c_id]*s_d.cp;
 
-    if (cvar_enth != nullptr)
-      cvar_enth[c_id] = cpro_cp[c_id]*t0;
+    /* In case of solving enthalpy, initialize with mixture cp */
+    cs_thermal_model_t *thm = cs_get_glob_thermal_model();
+
+    if (thm->thermal_variable == CS_THERMAL_MODEL_ENTHALPY)
+      cvar_ther[c_id] = cpro_cp[c_id]*t0;
 
     mix_mol_mas[c_id] += y_d[c_id]/s_d.mol_mas;
     mix_mol_mas[c_id]  = 1.0/mix_mol_mas[c_id];

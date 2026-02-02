@@ -1492,10 +1492,15 @@ cs_solve_equation_scalar(cs_field_t        *f,
     }
 
     if (iscacp == 2) {
-      cs_real_t rair = fluid_props->r_pg_cnst;
-      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        xcpp[c_id] -= rair;
-      });
+      if (th_cf_model->ieos == CS_EOS_GAS_MIX){
+        cs_array_copy<cs_real_t>(n_cells,
+            cs_field_by_name("isobaric_heat_capacity")->val, xcpp);
+      } else {
+        cs_real_t rair = fluid_props->r_pg_cnst;
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+            xcpp[c_id] -= rair;
+        });
+      }
     }
   }
   ctx.wait();

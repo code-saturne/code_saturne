@@ -1178,29 +1178,25 @@ _pressure_correction_fv(int                   iterns,
     cs_field_t *th_f = cs_thermal_model_field();
     if (th_f != nullptr) {
 
-      ther_var = th_f->val;
+      if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0)
+        ther_var = cs_field_by_name("real_temperature")->val;
+      else
+        ther_var = th_f->val;
 
       /* Allocation */
       CS_MALLOC_HD(dc2, n_cells_ext, cs_real_t, amode);
-      CS_MALLOC_HD(xcpp, n_cells_ext, cs_real_t, amode);
 
+      cs_real_t *cpro_cp = nullptr;
+      cs_real_t *cpro_cv = nullptr;
       /* Theta scheme related term */
       _coef = 1. + 2. * (1. - eqp_u->theta);
 
       /* Get cp */
-      if (fluid_props->icp > 0) {
-        cs_real_t *cpro_cp = CS_F_(cp)->val;
-        ctx_c.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-          xcpp[c_id] = cpro_cp[c_id];
-        });
-      }
-      else {
-        ctx_c.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-          xcpp[c_id] = 1.;
-        });
-      }
+      if (fluid_props->icp >= 0)
+        cpro_cp = CS_F_(cp)->val;
+      if (fluid_props->icv >= 0)
+        cpro_cv = cs_field_by_name("isobaric_heat_capacity")->val;
 
-      ctx_c.wait();
 
       /* Get mass fractions if needed */
       if (ieos == CS_EOS_MOIST_AIR) {
@@ -1209,20 +1205,19 @@ _pressure_correction_fv(int                   iterns,
       }
       cs_real_t *cvar_fracm = nullptr;
 
-      /* Compute dc2 */
-      cs_thermal_model_c_square(xcpp,
-                                ther_var,
-                                cvar_pr,
-                                yv,
-                                cvar_fracm,
-                                yw,
-                                dc2);
+      /* Compute "gamma / c2" (0 for incompressible flows) */
+      cs_thermal_model_gamma_d_c_square(cpro_cp,
+                                        cpro_cv,
+                                        ther_var,
+                                        cvar_pr,
+                                        yv,
+                                        cvar_fracm,
+                                        yw,
+                                        dc2);
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         rovsdt[c_id] += cell_vol[c_id] * _coef * dc2[c_id] / dt[c_id];
       });
-
-      CS_FREE(xcpp);
 
     }
   }

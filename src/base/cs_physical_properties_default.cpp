@@ -936,6 +936,11 @@ _physical_properties_update_models_stage_2(void)
 
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)
     cs_cf_physical_properties();
+
+  if ((cs_glob_cf_model->ieos == CS_EOS_GAS_MIX
+        || cs_glob_cf_model->ieos == CS_EOS_IDEAL_GAS)
+      && cs_glob_velocity_pressure_model->idilat == 2)
+    cs_eos_predicted_rho();
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
