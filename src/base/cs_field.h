@@ -1321,11 +1321,23 @@ cs_field_define_keys_base(void);
 const char *
 cs_field_get_label(const cs_field_t  *f);
 
+/*----------------------------------------------------------------------------
+ * Get the boundary coefficient multipliers for some field.
+ *
+ * This function is intended for use by the field redistribution routines.
+ *
+ * parameters:
+ *   f      <-- pointer to the field
+ *   i_mult <-> multiplier for the integer bc coefficients.
+ *   a_mult <-> multiplier for the "a" bc coefficients.
+ *   b_mult <-> multiplier for the "b" bc coefficients.
+ *----------------------------------------------------------------------------*/
+
 void
-cs_field_get_bc_coeff_mult(cs_field_t *f,
-                           int *i_mult,
-                           int *a_mult,
-                           int *b_mult);
+cs_field_get_bc_coeff_mult(const cs_field_t  *f,
+                           int               *i_mult,
+                           int               *a_mult,
+                           int               *b_mult);
 
 /*----------------------------------------------------------------------------*/
 

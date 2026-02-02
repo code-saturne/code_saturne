@@ -1168,8 +1168,8 @@ cs_f_field_bc_coeffs_ptr_by_id(int          id,
           dim[1] = _n_elts;
           cur_p_rank = 2;
         }
-        else { /* if (pointer_type == 2 || pointer_type == 4 || pointer_type == 6
-                      || pointer_type == 8) */
+        else { /* if (pointer_type == 2 || pointer_type == 4 ||
+                      pointer_type == 6 || pointer_type == 8) */
           dim[0] = f->dim;
           dim[1] = f->dim;
           dim[2] = _n_elts;
@@ -1353,13 +1353,23 @@ cs_f_field_get_label(int           f_id,
   }
 }
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+/*----------------------------------------------------------------------------
+ * Get the boundary coefficient multipliers for some field.
+ *
+ * This function is intended for use by the fields redistribution routines.
+ *
+ * parameters:
+ *   f      <-- pointer to the field
+ *   i_mult <-> multiplier for integer coefficients.
+ *   a_mult <-> multiplier for the "a" bc coefficients.
+ *   b_mult <-> multiplier for the "b" bc coefficients.
+ *----------------------------------------------------------------------------*/
 
 void
-cs_field_get_bc_coeff_mult(cs_field_t *f,
-                           int *i_mult,
-                           int *a_mult,
-                           int *b_mult)
+cs_field_get_bc_coeff_mult(const cs_field_t  *f,
+                           int               *i_mult,
+                           int               *a_mult,
+                           int               *b_mult)
 {
   *i_mult = f->dim;
   *a_mult = f->dim;
@@ -1376,6 +1386,8 @@ cs_field_get_bc_coeff_mult(cs_field_t *f,
     }
   }
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function definitions
