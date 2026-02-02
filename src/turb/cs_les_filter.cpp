@@ -163,7 +163,7 @@ _les_filter_ext_neighborhood_scalar(cs_dispatch_context  &ctx,
   /* Synchronize variable */
 
   ctx.wait();
-  cs_halo_sync(mesh->halo, CS_HALO_STANDARD, ctx.use_gpu(), f_val);
+  cs_halo_sync(mesh->halo, CS_HALO_EXTENDED, ctx.use_gpu(), f_val);
 }
 
 END_C_DECLS
