@@ -2677,9 +2677,6 @@ _init_user(void)
   if (cs_glob_ale != CS_ALE_NONE)
     cs_gui_mobile_mesh_structures_add();
 
-  /* Read thermomechanical data for specific physics */
-  _read_specific_physics_data();
-
   /* Other model parameters, including user-defined scalars */
   cs_gui_user_variables();
   cs_gui_user_arrays();
@@ -2704,6 +2701,9 @@ _init_user(void)
     cs_pressure_correction_model_activate();
 
   }
+
+  /* Read thermomechanical data for specific physics */
+  _read_specific_physics_data();
 
   if (cs_glob_ale != CS_ALE_NONE)
     cs_gui_ale_diffusion_type();

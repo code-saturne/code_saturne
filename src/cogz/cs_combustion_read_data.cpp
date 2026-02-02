@@ -508,7 +508,7 @@ _combustion_slfm_read_radiation_library(void)
                                      + ixr*nwsgg*2;
               sscanf(line, "%lf %lf", &radiation_library[shift],
                                       &radiation_library[shift + 1]);
-              _next_line(file_name, line_num, line, last, false);
+              _next_line(file_name, line_num, line, last, true);
             }
           }
   }
@@ -527,7 +527,7 @@ _combustion_slfm_read_radiation_library(void)
                                      + iki*nwsgg*2;
               sscanf(line, "%lf %lf", &radiation_library[shift],
                                       &radiation_library[shift + 1]);
-              _next_line(file_name, line_num, line, last, false);
+              _next_line(file_name, line_num, line, last, true);
             }
           }
   }
