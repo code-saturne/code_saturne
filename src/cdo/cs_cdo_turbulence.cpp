@@ -1028,6 +1028,7 @@ cs_turb_compute_wall_bc_coeffs(const cs_equation_param_t  *eqp,
                                const double                k,
                                const double                hfc,
                                const double                uct,
+                               const double                uft,
                                cs_real_t                  *res)
 {
   const double ypluli = cs_get_glob_wall_functions()->ypluli;
@@ -1035,11 +1036,13 @@ cs_turb_compute_wall_bc_coeffs(const cs_equation_param_t  *eqp,
   double re = sqrt(k)*hfc/nu;
   double g = exp(-re/11.);
 
-  double ustar = sqrt((1.-g)*sqrt(cs_turb_cmu)*k + g*nu*uct/hfc);
+  double uk = sqrt((1.-g)*sqrt(cs_turb_cmu)*k + g*nu*uct/hfc);
 
-  double yplus = hfc*ustar/nu;
+  double yplus = hfc*uk/nu;
 
-  double h_t = ustar*cs_turb_xkappa/(log(2.0*yplus) + cs_turb_cstlog - 2.0);
+  double ustar = uct/(log(yplus)/cs_turb_xkappa + cs_turb_cstlog);
+
+  double h_t = uk*ustar/uft;
 
   if (yplus > ypluli) /* In the logarithm zone */
     res[0] = cs::max(h_t, 0.0);

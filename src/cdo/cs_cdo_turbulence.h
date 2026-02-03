@@ -511,6 +511,7 @@ cs_turb_update_shared_legacy(const cs_mesh_t           *mesh,
  * \param[in]      k           turbulent kinetic energy
  * \param[in]      hfc         distance from cell center to the wall
  * \param[in]      uct         norm of tangential components of cell velocity
+ * \param[in]      uft         norm of tangential components of face velocity
  * \param[in, out] retval      exchange coefficients result
  */
 /*----------------------------------------------------------------------------*/
@@ -521,6 +522,7 @@ cs_turb_compute_wall_bc_coeffs(const cs_equation_param_t  *eqp,
                                const double                k,
                                const double                hfc,
                                const double                uct,
+                               const double                uft,
                                cs_real_t                  *res);
 
 /*----------------------------------------------------------------------------*/

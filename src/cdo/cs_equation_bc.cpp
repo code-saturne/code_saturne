@@ -2172,7 +2172,8 @@ cs_equation_bc_cw_robin(cs_real_t                  t_eval,
  * \param[in]      nu          laminar kinematic viscosity
  * \param[in]      kener       turbulent kinetic energy
  * \param[in]      hfc         distance from cell center to the wall
- * \param[in]      uc          norm of tangential components of cell velocity
+ * \param[in]      uc          cell velocity
+ * \param[in]      uf          face velocity
  * \param[in, out] rob_values  array storing Robin values to use
  */
 /*----------------------------------------------------------------------------*/
@@ -2187,6 +2188,7 @@ cs_equation_bc_cw_turb_smooth_wall(cs_real_t                  t_eval,
                                    const cs_real_t            kener,
                                    const cs_real_t            hfc,
                                    const cs_real_t           *uc,
+                                   const cs_real_t           *uf,
                                    double                    *rob_values)
 {
   assert(rob_values != nullptr && cm != nullptr && eqp != nullptr);
@@ -2272,26 +2274,46 @@ cs_equation_bc_cw_turb_smooth_wall(cs_real_t                  t_eval,
     } /* switch def_type */
 
     /* Relative cell velocity */
-    cs_real_3_t ur =  {uc[0] - rob_values[9 * f],
-                       uc[1] - rob_values[9 * f + 1],
-                       uc[2] - rob_values[9 * f + 2]};
+    cs_real_3_t ucr =  {uc[0] - rob_values[9 * f],
+                        uc[1] - rob_values[9 * f + 1],
+                        uc[2] - rob_values[9 * f + 2]};
+
+    cs_real_3_t ufr =  {uf[0] - rob_values[9 * f],
+                        uf[1] - rob_values[9 * f + 1],
+                        uf[2] - rob_values[9 * f + 2]};
 
     const cs_quant_t  pfq = cm->face[f];
     const cs_real_t  *ni = pfq.unitv;
 
     /* Normal components to wall */
-    cs_real_t urn_norm = ur[0]*ni[0] + ur[1]*ni[1] + ur[2]*ni[2];
-    cs_real_3_t urn = {urn_norm*ni[0], urn_norm*ni[1], urn_norm*ni[2]};
+    cs_real_t ucrn_norm = cs_math_3_dot_product(ucr, ni);
+    cs_real_3_t ucrn = {ucrn_norm*ni[0], ucrn_norm*ni[1], ucrn_norm*ni[2]};
+
+    /* Normal components to wall */
+    cs_real_t ufrn_norm = cs_math_3_dot_product(ufr, ni);
+    cs_real_3_t ufrn = {ufrn_norm*ni[0], ufrn_norm*ni[1], ufrn_norm*ni[2]};
 
     /* Tangential components to wall */
-    cs_real_3_t urt = {ur[0] - urn[0],
-                       ur[1] - urn[1],
-                       ur[2] - urn[2]};
+    cs_real_3_t ucrt = {ucr[0] - ucrn[0],
+                        ucr[1] - ucrn[1],
+                        ucr[2] - ucrn[2]};
 
-    cs_real_t urt_norm = cs_math_3_norm(urt);
+    /* Tangential components to wall */
+    cs_real_3_t ufrt = {ufr[0] - ufrn[0],
+                        ufr[1] - ufrn[1],
+                        ufr[2] - ufrn[2]};
+
+    cs_real_t ucrt_norm = cs_math_3_norm(ucrt);
+    cs_real_t ufrt_norm = cs_math_3_norm(ufrt);
     cs_real_t ht = 0.;
 
-    cs_turb_compute_wall_bc_coeffs(eqp, nu, kener, hfc, urt_norm, &ht);
+    cs_turb_compute_wall_bc_coeffs(eqp,
+                                   nu,
+                                   kener,
+                                   hfc,
+                                   ucrt_norm,
+                                   ufrt_norm,
+                                   &ht);
 
     /* u0_x, u0_y, u0_z */
     // rob_values[9 * f]     = set before

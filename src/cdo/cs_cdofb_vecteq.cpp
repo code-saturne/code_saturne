@@ -430,6 +430,7 @@ cs_cdofb_vecteq_init_cell_system(const cs_cell_mesh_t         *cm,
  * \param[in]      nu          laminar kinematic viscosity
  * \param[in]      k           turbulent kinetic energy
  * \param[in]      uc          cell velocity
+ * \param[in]      uf          face velocity
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
  * \param[in, out] icodcl_vel  bc type indicator for legacy velocity, maybe null
@@ -477,6 +478,7 @@ cs_cdofb_vecteq_init_turb_bc(const cs_cell_mesh_t         *cm,
                                              k,
                                              cm->hfc[f],
                                              uc,
+                                             csys->val_n + 3*f,
                                              csys->rob_values);
 
           icodcl_vel[bf_id] = CS_SMOOTHWALL;
