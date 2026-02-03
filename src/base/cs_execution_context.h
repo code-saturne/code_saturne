@@ -35,15 +35,13 @@
 
 #include "base/cs_defs.h"
 
+#include "base/cs_dispatch.h"
+
 /*----------------------------------------------------------------------------
  * Standard C++ library headers
  *----------------------------------------------------------------------------*/
 
 #include <utility>
-
-#if defined(SYCL_LANGUAGE_VERSION)
-#include <sycl/sycl.hpp>
-#endif
 
 /*============================================================================
  * Type definitions
@@ -79,6 +77,9 @@ public:
     this->_comm_rank    = 0;
     this->_comm_n_ranks = 0;
     this->_thread_id    = 0;
+
+    this->h_ctx = cs_host_context();
+    this->g_ctx = cs_dispatch_context();
   };
 
   /*--------------------------------------------------------------------------*/
@@ -250,12 +251,11 @@ private:
   int _comm_n_ranks; /*!< Number of ranks inside the MPI communicator */
   int _thread_id;    /*!< Thread id */
 
-#if defined(__CUDACC__)
-  cudaStream_t _stream; /*!< CUDA stream */
+public:
+  cs_host_context h_ctx;
 
-#elif defined(SYCL_LANGUAGE_VERSION)
-  sycl::queue _queue; /*!< SYCL queue */
-#endif
+  cs_dispatch_context g_ctx;
+
 
 };
 
@@ -281,6 +281,28 @@ cs_execution_context_get(void);
 
 const cs_execution_context *
 cs_execution_context_glob_get(void);
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Get the global default dispatch context
+ *
+ * \return reference of default global dispatch context
+ */
+/*--------------------------------------------------------------------------*/
+
+cs_dispatch_context&
+cs_execution_context_glob_get_ctx(void);
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the global default host context
+ *
+ * \return reference of default global host context
+ */
+/*--------------------------------------------------------------------------*/
+
+cs_host_context&
+cs_execution_context_glob_get_h_ctx(void);
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 #endif /* __cplusplus */
@@ -312,4 +334,377 @@ cs_execution_context_glob_finalize(void);
 
 END_C_DECLS
 
+
+#if defined(__cplusplus)
+
+namespace cs {
+
+enum class exec_type {
+  device,
+  host,
+  unknown
+};
+
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief parallel_for construct using a dispatch context based on template
+ * parameter (enum) "exec_type"
+ */
+/*--------------------------------------------------------------------------*/
+
+template<exec_type _EXEC_, class F, class... Args>
+bool
+parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
+  auto _ctx = (_EXEC_ != exec_type::host) ?
+    cs_execution_context_glob_get_ctx() : cs_execution_context_glob_get_h_ctx();
+  return _ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief parallel_for construct using the default global dispatch context
+ */
+/*--------------------------------------------------------------------------*/
+
+template <class F, class... Args>
+bool
+parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
+  auto _ctx = cs_execution_context_glob_get_ctx();
+  return _ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief parallel_for construct using a dispatch context as input argument
+ */
+/*--------------------------------------------------------------------------*/
+
+template <class F, class... Args>
+bool
+parallel_for(cs_dispatch_context& ctx, cs_lnum_t n, F&& f, Args&&... args) {
+  return ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief parallel_for construct using a host context as input argument
+ */
+/*--------------------------------------------------------------------------*/
+
+template <class F, class... Args>
+bool
+parallel_for(cs_host_context& ctx, cs_lnum_t n, F&& f, Args&&... args) {
+  return ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+}
+
+// paralell_for_i_faces
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief parallel_for_i_faces construct using a dispatch context based on
+ * template parameter (enum) "exec_type"
+ */
+/*--------------------------------------------------------------------------*/
+
+template <exec_type _EXEC_, class M, class F, class... Args>
+bool
+parallel_for_i_faces(const M* m, F&& f, Args&&... args) {
+  const cs_lnum_t n = m->n_i_faces;
+  auto _ctx = (_EXEC_ != exec_type::host) ?
+    cs_execution_context_glob_get_ctx() : cs_execution_context_glob_get_h_ctx();
+  return _ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief parallel_for_i_faces construct using the default global dispatch
+ * context
+ */
+/*--------------------------------------------------------------------------*/
+
+template <class M, class F, class... Args>
+bool
+parallel_for_i_faces(const M* m, F&& f, Args&&... args) {
+  const cs_lnum_t n = m->n_i_faces;
+  auto _ctx = cs_execution_context_glob_get_ctx();
+  return _ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief parallel_for_i_faces construct using dispatch context as input argument
+ */
+/*--------------------------------------------------------------------------*/
+
+template <class M, class F, class... Args>
+bool
+parallel_for_i_faces(cs_dispatch_context& ctx, const M* m, F&& f, Args&&... args) {
+  const cs_lnum_t n = m->n_i_faces;
+  return ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief parallel_for_i_faces construct using host context as input argument
+ */
+/*--------------------------------------------------------------------------*/
+
+template <class M, class F, class... Args>
+bool
+parallel_for_i_faces(cs_host_context& ctx, const M* m, F&& f, Args&&... args) {
+  const cs_lnum_t n = m->n_i_faces;
+  return ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief parallel_for_reduce_sum construct using a dispatch context based on
+ * template parameter (enum) "exec_type"
+ */
+/*--------------------------------------------------------------------------*/
+
+template <exec_type _EXEC_, class T, class F, class... Args>
+bool
+parallel_for_reduce_sum(
+  cs_lnum_t n,
+  T&        sum,
+  F&&       f,
+  Args&&... args)
+{
+  auto _ctx = (_EXEC_ != exec_type::host) ?
+    cs_execution_context_glob_get_ctx() : cs_execution_context_glob_get_h_ctx();
+  return _ctx.parallel_for_reduce_sum(n,
+                                      sum,
+                                      static_cast<F&&>(f),
+                                      static_cast<Args&&>(args)...);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief parallel_for_reduce_sum construct using the default global
+ * dispatch context
+ */
+/*--------------------------------------------------------------------------*/
+
+template <class T, class F, class... Args>
+bool
+parallel_for_reduce_sum(
+  cs_lnum_t n,
+  T&        sum,
+  F&&       f,
+  Args&&... args)
+{
+  auto _ctx = cs_execution_context_glob_get_ctx();
+  return _ctx.parallel_for_reduce_sum(n,
+                                      sum,
+                                      static_cast<F&&>(f),
+                                      static_cast<Args&&>(args)...);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief parallel_for_reduce_sum construct using the default global
+ * dispatch context
+ */
+/*--------------------------------------------------------------------------*/
+
+template <class T, class F, class... Args>
+bool
+parallel_for_reduce_sum(
+  cs_dispatch_context& ctx,
+  cs_lnum_t            n,
+  T&                   sum,
+  F&&                  f,
+  Args&&...            args)
+{
+  return ctx.parallel_for_reduce_sum(n,
+                                     sum,
+                                     static_cast<F&&>(f),
+                                     static_cast<Args&&>(args)...);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief parallel_for_reduce_sum construct using the default global
+ * host context
+ */
+/*--------------------------------------------------------------------------*/
+
+template <class T, class F, class... Args>
+bool
+parallel_for_reduce_sum(
+  cs_host_context& ctx,
+  cs_lnum_t        n,
+  T&               sum,
+  F&&              f,
+  Args&&...        args)
+{
+  return ctx.parallel_for_reduce_sum(n,
+                                     sum,
+                                     static_cast<F&&>(f),
+                                     static_cast<Args&&>(args)...);
+}
+
+// Parallel reduction with general reducer.
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief parallel_for_reduce construct using a dispatch context based on
+ * template parameter (enum) "exec_type"
+ */
+/*--------------------------------------------------------------------------*/
+
+template <exec_type _EXEC_, class T, class R, class F, class... Args>
+bool
+parallel_for_reduce (
+  cs_lnum_t n,
+  T&        result,
+  R&        reducer,
+  F&&       f,
+  Args&&... args)
+{
+  auto _ctx = (_EXEC_ != exec_type::host) ?
+    cs_execution_context_glob_get_ctx() : cs_execution_context_glob_get_h_ctx();
+  return _ctx.parallel_for_reduce(n,
+                                  result,
+                                  reducer,
+                                  static_cast<F&&>(f),
+                                  static_cast<Args&&>(args)...);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief parallel_for_reduce construct using the default global
+ * dispatch context
+ */
+/*--------------------------------------------------------------------------*/
+
+template <class T, class R, class F, class... Args>
+bool
+parallel_for_reduce (
+  cs_lnum_t n,
+  T&        result,
+  R&        reducer,
+  F&&       f,
+  Args&&... args)
+{
+  auto _ctx = cs_execution_context_glob_get_ctx();
+  return _ctx.parallel_for_reduce(n,
+                                  result,
+                                  reducer,
+                                  static_cast<F&&>(f),
+                                  static_cast<Args&&>(args)...);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief parallel_for_reduce_sum construct using the default global
+ * dispatch context
+ */
+/*--------------------------------------------------------------------------*/
+
+template <class T, class R, class F, class... Args>
+bool
+parallel_for_reduce (
+  cs_dispatch_context& ctx,
+  cs_lnum_t            n,
+  T&                   result,
+  R&                   reducer,
+  F&&                  f,
+  Args&&...            args)
+{
+  return ctx.parallel_for_reduce(n,
+                                 result,
+                                 reducer,
+                                 static_cast<F&&>(f),
+                                 static_cast<Args&&>(args)...);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief parallel_for_reduce_sum construct using the default global
+ * host context
+ */
+/*--------------------------------------------------------------------------*/
+
+template <class T, class R, class F, class... Args>
+bool
+parallel_for_reduce (
+  cs_host_context& ctx,
+  cs_lnum_t        n,
+  T&               result,
+  R&               reducer,
+  F&&              f,
+  Args&&...        args)
+{
+  return ctx.parallel_for_reduce(n,
+                                 result,
+                                 reducer,
+                                 static_cast<F&&>(f),
+                                 static_cast<Args&&>(args)...);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief wait construct using a dispatch context based on template parameter
+ * of exec_type (enum)
+ */
+/*--------------------------------------------------------------------------*/
+
+template<exec_type _EXEC_, class... Args>
+bool
+wait(void)
+{
+  auto _ctx = (_EXEC_ != exec_type::host) ?
+    cs_execution_context_glob_get_ctx() : cs_execution_context_glob_get_h_ctx();
+  return _ctx.wait();
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief wait construct using the default global dispatch context
+ */
+/*--------------------------------------------------------------------------*/
+
+template<class... Args>
+bool
+wait(void)
+{
+  auto _ctx = cs_execution_context_glob_get_ctx();
+  return _ctx.wait();
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief wait construct using a dispatch context as input argument
+ */
+/*--------------------------------------------------------------------------*/
+
+template<class... Args>
+bool
+wait
+(
+  cs_dispatch_context& ctx
+)
+{
+  return ctx.wait();
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief wait construct using a host context as input argument
+ */
+/*--------------------------------------------------------------------------*/
+
+template<class... Args>
+bool
+wait
+(
+  cs_host_context& ctx
+)
+{
+  return ctx.wait();
+}
+
+}
+#endif
 #endif /* __CS_EXECUTION_CONTEXT_H__ */

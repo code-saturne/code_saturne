@@ -63,6 +63,26 @@ cs_execution_context_glob_get(void)
   return _glob_context;
 }
 
+/*----------------------------------------------------------------------------*/
+/* Get the global dispatch context. */
+/*----------------------------------------------------------------------------*/
+
+cs_dispatch_context&
+cs_execution_context_glob_get_ctx(void)
+{
+  return _glob_context->g_ctx;
+}
+
+/*----------------------------------------------------------------------------*/
+/* Get the global host context. */
+/*----------------------------------------------------------------------------*/
+
+cs_host_context&
+cs_execution_context_glob_get_h_ctx(void)
+{
+  return _glob_context->h_ctx;
+}
+
 /*--------------------------------------------------------------------------*/
 /*!
  * \brief Call MPI_Barrier over the MPI communicator, do nothing if no MPI.
