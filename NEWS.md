@@ -1,3 +1,13 @@
+Release 9.0.3 (unreleased)
+--------------------------
+
+### Bug fixes:
+
+- CDO : Ensure that post-processing is done for final iteration when coupled.
+  The final iteration post-processing could, potentially, not be done when
+  the computation stop is imposed by either another instance (coupling) or
+  the wall time limit test.
+
 Release 9.0.2 (2026-01-30)
 --------------------------
 
