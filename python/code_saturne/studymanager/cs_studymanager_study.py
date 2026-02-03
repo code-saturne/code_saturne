@@ -2165,7 +2165,7 @@ class Studies(object):
         slurm_batch = self.batch
         slurm_batch_header = cs_batch.generate_header()
         slurm_batch.parse_lines(slurm_batch_header)
-        rm_var = None
+        rm_var = []
 
         # modify batch parameters
         slurm_batch.params["job_name"] = job_name + "_" + str(cur_batch_id)

@@ -357,7 +357,7 @@ class batch:
 
     #---------------------------------------------------------------------------
 
-    def __update_lines_slurm__(self, lines, add_var=None, rm_var=None):
+    def __update_lines_slurm__(self, lines, add_var=None, rm_var=[]):
         """
         Update the SLURM batch file from dictionary self.params.
         """
@@ -792,7 +792,7 @@ class batch:
 
     #---------------------------------------------------------------------------
 
-    def update_lines(self, lines, keyword=None, add_var=None, rm_var=None):
+    def update_lines(self, lines, keyword=None, add_var=None, rm_var=[]):
         """
         Update the batch file from reading dictionary self.params.
         If a keyword is given, its presence is checked.
