@@ -1247,6 +1247,20 @@ cs_cdo_main(cs_domain_t   *domain)
 
   }
 
+  /* We call the post-processing stage again here.
+   * This is done in the case where the computation is stopped either by
+   * another instance (coupling) or by the wall time limit test.
+   * This step includes also a call to cs_user_extra_operations.
+   * This is needed because if the stop criterion is modified in either case,
+   * the main loop is stopped but post-processing is not activated since
+   * the code does not enter the loop for a final iteration
+   */
+  cs_post_time_step_begin(domain->time_step);
+
+  cs_domain_post(domain);
+
+  cs_post_time_step_end();
+
   cs_domain_set_stage(domain, CS_DOMAIN_STAGE_AFTER_TIME_LOOP);
 
   /* User-defined update/settings of physical properties (finalization stage) */
