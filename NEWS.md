@@ -3,6 +3,11 @@ Release 9.1.1 (unreleased)
 
 ### Bug fixes:
 
+- CDO: Ensure that post-processing is done for final iteration when coupled.
+  The final iteration post-processing could, potentially, not be done when
+  the computation stop is imposed by either another instance (coupling) or
+  the wall time limit test.
+
 - Atmo: fix meteo profile memory leak in case of restart.
 
 - Fix potential deadlock in CHT runs by deactivating wall time limit check in
