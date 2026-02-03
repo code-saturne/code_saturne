@@ -63,6 +63,7 @@
 #include "base/cs_order.h"
 #include "base/cs_sort.h"
 #include "base/cs_parall.h"
+#include "mesh/cs_redistribute.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -134,97 +135,25 @@ _print_mesh_counts(const cs_mesh_t  *m,
              (unsigned long long)(m->n_g_vertices));
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Initialize cells refinement flag
- *
- * Cells can only be merged when all cells they should be merged with
- * are also flagged for merging (isotropic merging), which should be handled
- * in a later step (as following steps can be optimized differently for cell
- * merging and destination rank determination).
- *
- * \param[in]  m     mesh
- * \param[in]  halo  halo, if used, or null otherwise
- * \param[in]        cell_flag  coarsening flag for each cell (0: no 1: yes)
- * \param[out]       c_r_flag   cell initial refinement level if coarsened,
- *                              0 otherwise.
- * \param[out]       f_r_flag   interior face refinement flag, (1 if face
- *                              face joins merged cells, 0 otherwise)
- */
-/*----------------------------------------------------------------------------*/
-
 static void
-_init_r_flags(const cs_mesh_t  *m,
-              const cs_halo_t  *halo,
-              const int         cell_flag[],
-              char              c_r_flag[],
-              char              f_r_flag[])
+_compute_cell_levels(cs_mesh_t *mesh, int c_r_level[])
 {
-  const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const cs_lnum_t n_i_faces = m->n_i_faces;
-
-  char *c_r_level;
-  CS_MALLOC(c_r_level, n_cells_ext, char);
-  for (cs_lnum_t i = 0; i < n_cells_ext; i++) {
+  for (cs_lnum_t i = 0; i < mesh->n_cells_with_ghosts; i++) {
     c_r_level[i] = 0;
-  }
-
-  for (cs_lnum_t i = 0; i < n_i_faces; i++) {
-    f_r_flag[i] = m->i_face_r_gen[i];
   }
 
   /* Assign refinement level based on highest generation face */
 
-  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
-    if (m->i_face_r_gen[f_id] < 1)
-      continue;
+  for (cs_lnum_t f_id = 0; f_id < mesh->n_i_faces; f_id++) {
     for (cs_lnum_t i = 0; i < 2; i++) {
-      cs_lnum_t c_id = m->i_face_cells[f_id][i];
-      if (f_r_flag[f_id] > c_r_level[c_id])
-        c_r_level[c_id] = f_r_flag[f_id];
+      cs_lnum_t c_id = mesh->i_face_cells[f_id][i];
+      if (mesh->i_face_r_gen[f_id] > c_r_level[c_id])
+        c_r_level[c_id] = mesh->i_face_r_gen[f_id];
     }
   }
 
-  if (halo != nullptr)
-    cs_halo_sync_untyped(m->halo, CS_HALO_STANDARD, 1, c_r_level);
-
-  for (cs_lnum_t i = 0; i < n_cells_ext; i++) {
-    c_r_flag[i] = c_r_level[i];
-  }
-
-  /* If a cell shares a face of a generation at least as high as the
-     current refinement level with a cell of higher refinement,
-     it cannot be coarsened in this step, as the more refined cell
-     needs to be refined first. */
-
-  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
-    const cs_lnum_t *c_ids = m->i_face_cells[f_id];
-    const char i_f_r_gen = f_r_flag[f_id];
-    char f_c_r_level[2] = {c_r_level[c_ids[0]], c_r_level[c_ids[1]]};
-    for (int i = 0; i < 2; i++) {
-      int j = (i+1)%2;
-      if (i_f_r_gen >= f_c_r_level[i]) { // mergeable face
-        if (f_c_r_level[j] > f_c_r_level[i]) {
-          c_r_flag[c_ids[i]] = 0;
-          f_r_flag[f_id] = 0;
-        }
-      }
-    }
-    if (i_f_r_gen > 0) {
-      if (i_f_r_gen < f_c_r_level[0] || i_f_r_gen < f_c_r_level[1])
-        f_r_flag[f_id] = 0;
-    }
-  }
-
-  if (cell_flag != nullptr) {
-    for (cs_lnum_t i = 0; i < n_cells; i++) {
-      if (cell_flag[i] < 1)
-        c_r_flag[i] = 0;
-    }
-  }
-
-  CS_FREE(c_r_level);
+  if (mesh->halo != nullptr)
+    cs_halo_sync_untyped(mesh->halo, CS_HALO_STANDARD, sizeof(int), c_r_level);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -236,56 +165,237 @@ _init_r_flags(const cs_mesh_t  *m,
  *
  * The caller is responsible for freeing the returned array.
  *
- * \param[in, out]  m          mesh
- * \param[in]       cell_flag  coarsening flag for each cell (0: no 1: yes)
+ * \param[in, out]  mesh       pointer to the mesh
+ * \param[in]       cell_flag  initial cells coarsening flag (0: no 1: yes)
  * \param[out]      c_o2n      cell old to new renumbering
- * \param[out]      c_r_flag   cell initial refinement level if coarsened,
- *                             0 otherwise.
- *
- * \return  number of new cells
+ * \param[out]      c_r_flag   consistent cells coarsening flag (0: no 1: yes)
+ * \param[out]      n_c_ini    number of cells post coarsening redistribution.
+ * \param[out]      n_c_new    number of cells post merge step.
  */
 /*----------------------------------------------------------------------------*/
 
-static cs_lnum_t
-_cell_equiv(cs_mesh_t   *m,
-            const int    cell_flag[],
+static void
+_cell_equiv(cs_mesh_t  *mesh,
+            const int   cell_flag[],
             cs_lnum_t  *&c_o2n,
-            char       *&c_r_flag)
+            int        *&c_r_flag,
+            cs_lnum_t  *n_c_ini,
+            cs_lnum_t  *n_c_new)
 {
-  const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const cs_lnum_t n_i_faces = m->n_i_faces;
+  cs_lnum_t n_cells = mesh->n_cells;
+  cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
+  cs_lnum_t n_i_faces = mesh->n_i_faces;
 
-  char *f_r_flag = nullptr;
+  int *c_r_level;
+  CS_MALLOC(c_r_level, n_cells_ext, int);
 
-  CS_MALLOC(c_o2n, n_cells_ext, cs_lnum_t);
-  CS_MALLOC(c_r_flag, n_cells_ext, char);
-  CS_MALLOC(f_r_flag, n_i_faces, char);
+  _compute_cell_levels(mesh, c_r_level);
 
-  /* Assign refinement level based on highest generation face, filtering
-     cells joined with faces joining cells of higher refinement levels. */
+  // If a cell is an original cell, it can't be coarsened.
 
-  _init_r_flags(m, nullptr, cell_flag, c_r_flag, f_r_flag);
+  CS_MALLOC(c_r_flag, n_cells_ext, int);
 
-  for (cs_lnum_t i = 0; i < n_cells_ext; i++) {
-    c_o2n[i] = i;
+  for (cs_lnum_t i = 0; i < n_cells; i++) {
+    c_r_flag[i] = cell_flag[i];
+    if (c_r_level[i] == 0)
+      c_r_flag[i] = 0;
   }
 
-  /* Now determine cells built from the same parent */
-  /* TODO handle parallelism, with parent split across
-     multiple ranks */
+  if (mesh->halo != nullptr)
+    cs_halo_sync_untyped(mesh->halo, CS_HALO_STANDARD, sizeof(int), c_r_flag);
 
-  int reloop = 0;
+  // If a cell is tagged for coarsening and it neighbors a finer cell, untag it.
+
+  int reloop;
+
+  int pass = 0;
+
+  do {
+    reloop = 0;
+
+    pass++;
+
+    for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+      cs_lnum_t c0 = mesh->i_face_cells[f_id][0];
+      cs_lnum_t c1 = mesh->i_face_cells[f_id][1];
+
+      if (c_r_flag[c0] > 0 && (c_r_level[c0] < c_r_level[c1])) {
+        c_r_flag[c0] = 0;
+        reloop = 1;
+      }
+
+      if (c_r_flag[c1] > 0 && (c_r_level[c1] < c_r_level[c0])) {
+        c_r_flag[c1] = 0;
+        reloop = 1;
+      }
+    }
+
+    cs_parall_max(1, CS_INT32, &reloop);
+
+    if (mesh->halo != nullptr)
+      cs_halo_sync_untyped(mesh->halo, CS_HALO_STANDARD, sizeof(int), c_r_flag);
+
+  } while (reloop);
+
+#if 0
+  if (cs_glob_rank_id <= 0)
+    printf("Coarse-fine passes: %d\n", pass);
+#endif
+
+  pass = 0;
+
+  // All sibling must be tagged. Otherwise untag them all.
+
+  do {
+    reloop = 0;
+
+    pass++;
+
+    for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+      int f_r_level = mesh->i_face_r_gen[f_id];
+
+      if (f_r_level == 0)
+        continue;
+
+      cs_lnum_t c0 = mesh->i_face_cells[f_id][0];
+      cs_lnum_t c1 = mesh->i_face_cells[f_id][1];
+
+      if (c_r_level[c0] != f_r_level || c_r_level[c1] != f_r_level)
+        continue;
+
+      if ((c_r_flag[c0] > 0 && c_r_flag[c1] == 0) ||
+          (c_r_flag[c1] > 0 && c_r_flag[c0] == 0)) {
+        c_r_flag[c0] = 0;
+        c_r_flag[c1] = 0;
+        reloop = 1;
+      }
+    }
+
+    cs_parall_max(1, CS_INT32, &reloop);
+
+    if (mesh->halo != nullptr)
+      cs_halo_sync_untyped(mesh->halo, CS_HALO_STANDARD, sizeof(int), c_r_flag);
+
+  } while (reloop);
+
+  // At this stage the correct c_r_flag is set for all cells.
+  // Transfer all the siblings to the lowest rank to enable coarsening.
+
+  int *dest_rank;
+  CS_MALLOC(dest_rank, n_cells_ext, int);
+  for (int i = 0; i < n_cells; i++)
+    dest_rank[i] = cs_glob_rank_id;
+
+  if (mesh->halo != nullptr)
+    cs_halo_sync_untyped(mesh->halo, CS_HALO_STANDARD, sizeof(int), dest_rank);
+
+  pass = 0;
+
+  do {
+    pass++;
+
+    reloop = 0;
+
+    for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
+
+      int f_r_gen = mesh->i_face_r_gen[f_id];
+
+      if (f_r_gen == 0)
+        continue;
+
+      cs_lnum_t c0 = mesh->i_face_cells[f_id][0];
+      cs_lnum_t c1 = mesh->i_face_cells[f_id][1];
+
+      // Cells must be siblings.
+      if (f_r_gen != c_r_level[c0] || f_r_gen != c_r_level[c1])
+        continue;
+
+      // Both cells must be tagged for coarsening.
+      if (c_r_flag[c0] == 0 || c_r_flag[c1] == 0)
+        continue;
+
+      // Transfer the siblings from the higher rank to the lower rank.
+
+      int min_rank = cs::min(dest_rank[c0], dest_rank[c1]);
+
+      if (dest_rank[c0] > min_rank) {
+        dest_rank[c0] = min_rank;
+        reloop = 1;
+      }
+
+      if (dest_rank[c1] > min_rank) {
+        dest_rank[c1] = min_rank;
+        reloop = 1;
+      }
+    }
+
+    cs_parall_max(1, CS_INT32, &reloop);
+
+    if (mesh->halo != nullptr)
+      cs_halo_sync_untyped(mesh->halo, CS_HALO_STANDARD, sizeof(int), dest_rank);
+
+  } while (reloop);
+
+#if 0
+  if (cs_glob_rank_id <= 0)
+    printf("Dest rank passes: %d\n", pass);
+#endif
+
+  // Redistribute the mesh.
+  // All siblings tagged for refinement should reside within the same proc.
+
+  {
+    cs_redistribute_data_t *data = cs_glob_redistribute_data;
+    data->c_r_flag = c_r_flag;
+    data->c_r_level = c_r_level;
+
+    cs_redistribute(dest_rank, data);
+
+    c_r_flag = data->c_r_flag;
+    c_r_level = data->c_r_level;
+
+    data->c_r_flag = nullptr;
+    data->c_r_level = nullptr;
+  }
+
+  n_i_faces = mesh->n_i_faces;
+  n_cells_ext = mesh->n_cells_with_ghosts;
+  n_cells = mesh->n_cells;
+
+  // Determine the local old-to-new cell numbering.
+  // This step doesn't need halo exchanges.
+
+  CS_MALLOC(c_o2n, n_cells, cs_lnum_t);
+
+  for (cs_lnum_t i = 0; i < n_cells; i++) {
+    c_o2n[i] = i;
+  }
 
   do {
 
     reloop = 0;
 
     for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
-      if (f_r_flag[f_id] < 1)
+      int f_r_gen = mesh->i_face_r_gen[f_id];
+
+      cs_lnum_t c_id0 = mesh->i_face_cells[f_id][0];
+      cs_lnum_t c_id1 = mesh->i_face_cells[f_id][1];
+
+      // This is a local operation.
+
+      if (c_id0 >= n_cells || c_id1 >= n_cells)
         continue;
-      cs_lnum_t c_id0 = m->i_face_cells[f_id][0];
-      cs_lnum_t c_id1 = m->i_face_cells[f_id][1];
+
+      // Can't merge an original face.
+
+      if (f_r_gen == 0)
+        continue;
+
+      // Cells should be siblings.
+
+      if (f_r_gen != c_r_level[c_id0] || f_r_gen != c_r_level[c_id1])
+        continue;
+
       cs_lnum_t min_equiv = cs::min(c_o2n[c_id0], c_o2n[c_id1]);
       if (c_o2n[c_id0] > min_equiv) {
         c_o2n[c_id0] = min_equiv;
@@ -298,6 +408,8 @@ _cell_equiv(cs_mesh_t   *m,
     }
 
   } while (reloop);
+
+  CS_FREE(c_r_level);
 
   /* Now determine whether all sub-cells of a given parent are flagged
      for merging; otherwise do not merge */
@@ -320,11 +432,11 @@ _cell_equiv(cs_mesh_t   *m,
 
   /* Now compact renumbering array */
 
-  cs_lnum_t n_c_new = 0;
+  cs_lnum_t _n_c_new = 0;
   for (cs_lnum_t i = 0; i < n_cells; i++) {
     if (c_o2n[i] == i) {
-      c_o2n[i] = n_c_new;
-      n_c_new += 1;
+      c_o2n[i] = _n_c_new;
+      _n_c_new += 1;
     }
     else {
       assert(c_o2n[i] < i);
@@ -332,9 +444,8 @@ _cell_equiv(cs_mesh_t   *m,
     }
   }
 
-  CS_FREE(f_r_flag);
-
-  return n_c_new;
+  *n_c_ini = n_cells;
+  *n_c_new = _n_c_new;
 }
 
 /*----------------------------------------------------------------------------
@@ -1459,7 +1570,7 @@ _merge_b_faces(cs_mesh_t       *m,
 
 static cs_lnum_t *
 _flag_vertices(cs_mesh_t  *m,
-               const char  c_r_flag[])
+               const int   c_r_flag[])
 {
   const cs_lnum_t n_vtx = m->n_vertices;
   const cs_lnum_t n_i_faces = m->n_i_faces;
@@ -1762,81 +1873,6 @@ _filter_vertices(cs_mesh_t  *m,
  * Public function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Determine rank which should be assigned to given cells to allow
- *        mesh coarsening.
- *
- * All sub-cells of a given parent cell should be on the same rank to allow
- * coarsening, so this updates a destination rank array to ensure this.
- *
- * The dest_rank array should be initialized using a prior partitioning
- * step, or set to the current local rank id.
- *
- * \param[in]       m          mesh
- * \param[in]       cell_flag  coarsening flag for each cell (0: no 1: yes),
- *                             or null (in which case 1 is assumed uniformly)
- * \param[in, out]  dest_rank  cell initial refinement level if coarsened,
- *                             0 otherwise (size: n_cells_ext).
- *
- * \return  number of new cells
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_mesh_coarsen_cells_dest_rank(const cs_mesh_t  *m,
-                                const int        *cell_flag,
-                                int               dest_rank[])
-{
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const cs_lnum_t n_i_faces = m->n_i_faces;
-
-  char *c_r_flag, *f_r_flag;
-  CS_MALLOC(c_r_flag, n_cells_ext, char);
-  CS_MALLOC(f_r_flag, n_i_faces, char);
-
-  _init_r_flags(m, m->halo, cell_flag, c_r_flag, f_r_flag);
-
-  /* Now update destination rank for cells sharing an interior
-     face flagged for coarsening. */
-
-  if (m->halo != nullptr)
-    cs_halo_sync(m->halo, CS_HALO_STANDARD, 1, dest_rank);
-
-  int reloop = 0;
-
-  do {
-
-    reloop = 0;
-
-    for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
-      if (f_r_flag[f_id] < 1)
-        continue;
-      cs_lnum_t c_id0 = m->i_face_cells[f_id][0];
-      cs_lnum_t c_id1 = m->i_face_cells[f_id][1];
-      cs_lnum_t min_rank = cs::min(dest_rank[c_id0], dest_rank[c_id1]);
-      if (dest_rank[c_id0] > min_rank) {
-        dest_rank[c_id0] = min_rank;
-        reloop = 1;
-      }
-      if (dest_rank[c_id1] > min_rank) {
-        dest_rank[c_id1] = min_rank;
-        reloop = 1;
-      }
-
-    }
-
-    cs_parall_max(1, CS_INT_TYPE, &reloop);
-
-    if (m->halo != nullptr)
-      cs_halo_sync(m->halo, CS_HALO_STANDARD, 1, dest_rank);
-
-  } while (reloop);
-
-  CS_FREE(f_r_flag);
-  CS_FREE(c_r_flag);
-}
-
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
@@ -1872,6 +1908,13 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
     cs_mesh_init_halo(m, mb, halo_type, -1, true);
   }
 
+  /* Determine cells that should be merged */
+
+  cs_lnum_t  *c_o2n = nullptr;
+  int *c_r_flag = nullptr;
+  cs_lnum_t n_c_ini, n_c_new;
+  _cell_equiv(m, cell_flag, c_o2n, c_r_flag, &n_c_ini, &n_c_new);
+
   /* Free data that can be rebuilt */
 
   cs_mesh_free_rebuildable(m, false);
@@ -1889,8 +1932,6 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
     _print_mesh_counts(cs_glob_mesh, _("Mesh before coarsening"));
   }
 
-  cs_lnum_t n_c_ini = m->n_cells;
-
   /* In case of adaptive mesh refinement, we need to keep the measure
      of cells, internal faces and boundary faces */
   cs_real_t *volume = nullptr;
@@ -1906,12 +1947,11 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
 
   cs_timer_counter_add_diff(&(timers[0]), &t0, &t2);
 
-  /* Determine cells that should be merged and flag associated vertices */
+  /* Flag associated vertices of cells to be merged */
 
-  cs_lnum_t  *c_o2n = nullptr;
-  char *c_r_flag = nullptr;
-  cs_lnum_t  n_c_new = _cell_equiv(m, cell_flag, c_o2n, c_r_flag);
   cs_lnum_t *vtx_flag = _flag_vertices(m, c_r_flag);
+
+  /* Merge step */
 
   _merge_cells(m, n_c_new, c_o2n);
 
@@ -1920,7 +1960,7 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
     CS_MALLOC(i_face_cog, m->n_i_faces * m->dim, cs_real_t);
     CS_MALLOC(i_face_normal, m->n_i_faces * m->dim, cs_real_t);
 
-    cs_mesh_quantities_compute_face_cog_sn(m->n_i_faces, 
+    cs_mesh_quantities_compute_face_cog_sn(m->n_i_faces,
                                            (const cs_real_3_t *)m->vtx_coord,
                                            m->i_face_vtx_idx,
                                            m->i_face_vtx_lst,
@@ -1931,7 +1971,7 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
     CS_MALLOC(b_face_cog, m->n_b_faces * m->dim, cs_real_t);
     CS_MALLOC(b_face_normal, m->n_b_faces * m->dim, cs_real_t);
 
-    cs_mesh_quantities_compute_face_cog_sn(m->n_b_faces, 
+    cs_mesh_quantities_compute_face_cog_sn(m->n_b_faces,
                                            (const cs_real_3_t *)m->vtx_coord,
                                            m->b_face_vtx_idx,
                                            m->b_face_vtx_lst,
@@ -1955,7 +1995,7 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
 
   cs_lnum_t  *i_f_o2n = nullptr;
   cs_lnum_t  n_i_f_new = _i_faces_equiv(m, &i_f_o2n);
-  cs_real_t n_i_old = m->n_i_faces;
+  cs_lnum_t n_i_old = m->n_i_faces;
 
   _merge_i_faces(m, n_i_f_new, i_f_o2n);
 
@@ -1963,7 +2003,7 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
 
   cs_lnum_t  *b_f_o2n = nullptr;
   cs_lnum_t  n_b_f_new = _b_faces_equiv(m, c_flag_n, &b_f_o2n);
-  cs_real_t n_b_old = m->n_b_faces;
+  cs_lnum_t n_b_old = m->n_b_faces;
 
   _merge_b_faces(m, n_b_f_new, b_f_o2n);
 
@@ -1979,6 +2019,7 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
 
   CS_FREE(vtx_o2n);
 
+  m->n_b_faces_all = m->n_b_faces;
   m->modified |= (CS_MESH_MODIFIED | CS_MESH_MODIFIED_BALANCE);
 
   /* Rebuild auxiliary information  */

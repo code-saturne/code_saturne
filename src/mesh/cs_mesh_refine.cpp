@@ -5981,8 +5981,8 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   cs_timer_t t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(timers[1]), &t0, &t1);
 
-  /* Before any refinement operations, we need to 
-   * save, at least, velocity gradient for mass 
+  /* Before any refinement operations, we need to
+   * save, at least, velocity gradient for mass
    * flux interpolations. */
   cs_real_3_t *o_cog = nullptr;
   if (cs_glob_amr_info->is_set) {
@@ -6437,7 +6437,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(timers[8]), &t1, &t2);
   t1 = t2;
-  
+
   /* Rebuild ghosts (has to be done before fields update
    *in case of AMR ) */
 
@@ -6545,6 +6545,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   CS_FREE(c_r_flag);
   CS_FREE(f_r_flag);
 
+  m->n_b_faces_all = m->n_b_faces;
   m->modified |= (CS_MESH_MODIFIED | CS_MESH_MODIFIED_BALANCE);
 
   t2 = cs_timer_time();

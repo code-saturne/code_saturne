@@ -48,32 +48,6 @@
  * Public function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Determine rank which should be assigned to given cells to allow
- *        mesh coarsening.
- *
- * All sub-cells of a given parent cell should be on the same rank to allow
- * coarsening, so this updates a destination rank array to ensure this.
- *
- * The dest_rank array should be initialized using a prior partitioning
- * step, or set to the current local rank id.
- *
- * \param[in]       m          mesh
- * \param[in]       cell_flag  coarsening flag for each cell (0: no 1: yes),
- *                             or null (in which case 1 is assumed uniformly)
- * \param[in, out]  dest_rank  cell initial refinement level if coarsened,
- *                             0 otherwise.
- *
- * \return  number of new cells
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_mesh_coarsen_cells_dest_rank(const cs_mesh_t  *m,
-                                const int        *cell_flag,
-                                int               dest_rank[]);
-
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/

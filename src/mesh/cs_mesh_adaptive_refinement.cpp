@@ -72,6 +72,7 @@
 #include "base/cs_field_default.h"
 #include "base/cs_parall.h"
 #include "base/cs_renumber.h"
+#include "mesh/cs_redistribute.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -121,7 +122,7 @@ cs_amr_info_t *cs_glob_amr_info = &_amr_info;
 
 static void
 _build_cell_r_level(cs_mesh_t *m,
-                    char      *c_r_level)
+                    int       *c_r_level)
 {
   for (cs_lnum_t i = 0; i < m->n_cells_with_ghosts; i++)
     c_r_level[i] = 0;
@@ -139,7 +140,7 @@ _build_cell_r_level(cs_mesh_t *m,
   if (m->halo != NULL)
     cs_halo_sync_untyped(m->halo,
                          CS_HALO_STANDARD,
-                         1,
+                         sizeof(int),
                          c_r_level);
 }
 
@@ -693,8 +694,8 @@ _realloc_and_interp_after_coarsening
 }
 
 /*----------------------------------------------------------------------------
- * Refinement operations could introduce jump in cell refinement level of more
- * than 1. This could be numerrically unstable. This subroutine flag the cells
+ * Refinement operations could introduce jumps in cell refinement level of more
+ * than 1. This could be numerically unstable. This subroutine flags the cells
  * that would lead to jump of more than one so that they are also refined.
  *
  * parameters:
@@ -705,15 +706,12 @@ _realloc_and_interp_after_coarsening
 
 static void
 _propagate_refinement(cs_mesh_t  *m,
-                      char        c_r_level[],
-                      cs_lnum_t   indic[])
+                      const int   c_r_level[],
+                      int         indic[])
 {
-  int c_r_level_max = _amr_info.n_layers;
-  int reloop = 0;
+  cs_halo_sync_untyped(m->halo, CS_HALO_STANDARD, sizeof(int), indic);
 
-  cs_lnum_t  *balance_indic = nullptr;
-  CS_MALLOC(balance_indic, m->n_cells_with_ghosts, cs_lnum_t);
-  cs_array_int_fill_zero(m->n_cells_with_ghosts, balance_indic);
+  int reloop = 0;
 
   do {
     reloop = 0;
@@ -722,124 +720,28 @@ _propagate_refinement(cs_mesh_t  *m,
       cs_lnum_t c_id1 = m->i_face_cells[f_id][0];
       cs_lnum_t c_id2 = m->i_face_cells[f_id][1];
 
-      int r_level_1 = cs::min(c_r_level_max,
-                              (int)c_r_level[c_id1] + indic[c_id1]);
-
-      int r_level_2 = cs::min(c_r_level_max,
-                              (int)c_r_level[c_id2] + indic[c_id2]);
+      int r_level_1 = indic[c_id1] + c_r_level[c_id1];
+      int r_level_2 = indic[c_id2] + c_r_level[c_id2];
 
       if (r_level_1 > r_level_2 + 1) {
-        balance_indic[c_id2] = 1;
-        //reloop = 1;
+        indic[c_id2]++;
+        reloop = 1;
       }
 
       if (r_level_2 > r_level_1 + 1) {
-        balance_indic[c_id1] = 1;
-        //reloop = 1;
+        indic[c_id1]++;
+        reloop = 1;
       }
     }
 
-    for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id++) {
-      if (balance_indic[c_id] > 0)
-        indic[c_id] = 1;
-    }
-
     cs_parall_max(1, CS_INT_TYPE, &reloop);
-    cs_halo_sync_num(m->halo, CS_HALO_STANDARD, indic);
-
+    if (m->halo != nullptr) {
+      cs_halo_sync_untyped(m->halo,
+                           CS_HALO_STANDARD,
+                           sizeof(int),
+                           indic);
+    }
   } while (reloop);
-
-  CS_FREE(balance_indic);
-}
-
-/*----------------------------------------------------------------------------
- * Coarsening operations could introduce jump in cell refinement level of more
- * than 1. This could be numerically unstable. This subroutine flag the cells
- * that would lead to jump of more than one so that they are not coarsened.
- *
- * parameters:
- *   mesh        <-- pointer to the mesh
- *   c_r_level   <-- cell refinement level before the refinement process
- *   indic       <-> initial array containing the flagged cells
- *----------------------------------------------------------------------------*/
-
-static void
-_block_coarsening(cs_mesh_t  *m,
-                  char        c_r_level[],
-                  cs_lnum_t   indic[])
-{
-  // int c_r_level_max = _amr_info.n_layers;
-  int reloop = 0;
-
-  const cs_lnum_t n_i_faces = m->n_i_faces;
-  const cs_lnum_2_t *i_face_cells = m->i_face_cells;
-
-  cs_lnum_t *balance_indic = nullptr;
-  CS_MALLOC(balance_indic, m->n_cells_with_ghosts, cs_lnum_t);
-  cs_array_int_fill_zero(m->n_cells_with_ghosts, balance_indic);
-
-  /* Now check if all cells of a given mother cell are tagged.
-   * This might not be necessary as cs_mesh_coarsen do only coarsen
-   * if all cells of a mother cells are flagged... */
-
-  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id ++) {
-    cs_lnum_t c_id1 = i_face_cells[f_id][0];
-    cs_lnum_t c_id2 = i_face_cells[f_id][1];
-
-    int face_r_gen  = (int)m->i_face_r_gen[f_id];
-    int c_r_level_1 = (int)c_r_level[c_id1];
-    int c_r_level_2 = (int)c_r_level[c_id2];
-
-    // If true, we have cells of a same mother cell
-    if (   face_r_gen == c_r_level_1
-        && face_r_gen == c_r_level_2) {
-      // If true, coarsening of only a portion of mother
-      // cell is required : we cancel this requirement
-      if (indic[c_id1] != indic[c_id2]) {
-        indic[c_id1] = 0;
-        indic[c_id2] = 0;
-      }
-    }
-  }
-
-  cs_halo_sync_num(m->halo, CS_HALO_STANDARD, indic);
-
-  do {
-    reloop = 0;
-
-    /* Now do not permit coarsening if it would generate
-     * cell jump of more than 1 refinement level */
-    for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id ++) {
-      cs_lnum_t c_id1 = i_face_cells[f_id][0];
-      cs_lnum_t c_id2 = i_face_cells[f_id][1];
-
-      int r_level_1 = cs::max(0,
-                             (int)c_r_level[c_id1] - indic[c_id1]);
-      int r_level_2 = cs::max(0,
-                             (int)c_r_level[c_id2] - indic[c_id2]);
-
-      if (r_level_1 > r_level_2 + 1) {
-        balance_indic[c_id2] = 1;
-        //reloop = 1;
-      }
-
-      if (r_level_2 > r_level_1 + 1) {
-        balance_indic[c_id1] = 1;
-        //reloop = 1;
-      }
-    }
-
-    for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id ++) {
-      if (balance_indic[c_id] > 0)
-        indic[c_id] = 0;
-    }
-
-    cs_parall_max(1, CS_INT_TYPE, &reloop);
-    cs_halo_sync_num(m->halo, CS_HALO_STANDARD, indic);
-
-  } while(reloop);
-
-  CS_FREE(balance_indic);
 }
 
 /*============================================================================
@@ -974,103 +876,114 @@ cs_adaptive_refinement_free_gradients(void)
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_adaptive_refinement_step(void)
+static void
+_refine_step(void)
 {
-  cs_mesh_t *m = cs_glob_mesh;
+  if (cs_glob_rank_id <= 0)
+    printf("  Refinement...\n");
 
-  int c_r_level_max = _amr_info.n_layers;
+  cs_mesh_t *mesh = cs_glob_mesh;
 
-  cs_log_printf(CS_LOG_DEFAULT,
-                _("\n"
-                  "Starting mesh adaptation (AMR)\n"
-                  "------------------------------\n\n"));
-
-  /* ----------------
-     Refinement stage
-     ---------------- */
-
+  const int c_r_level_max = _amr_info.n_layers;
   cs_lnum_t   n_selected_cells = 0;
   cs_lnum_t  *selected_cells = nullptr;
-  cs_lnum_t  *s = nullptr;
-  cs_lnum_t  *indic = nullptr;
-  char *c_r_level = nullptr;
+  int        *s = nullptr;
+  int        *indic = nullptr;
+  int        *c_r_level = nullptr;
 
-  CS_MALLOC(selected_cells, m->n_cells, cs_lnum_t);
-  CS_MALLOC(s, m->n_cells, int);
-  CS_MALLOC(indic, m->n_cells_with_ghosts, int);
-  CS_MALLOC(c_r_level, m->n_cells_with_ghosts, char);
+  CS_MALLOC(selected_cells, mesh->n_cells, cs_lnum_t);
+  CS_MALLOC(s, mesh->n_cells, int);
+  CS_MALLOC(indic, mesh->n_cells_with_ghosts, int);
+  CS_MALLOC(c_r_level, mesh->n_cells_with_ghosts, int);
 
   /* Determine current cell refinement level */
 
-  _build_cell_r_level(m, c_r_level);
+  _build_cell_r_level(mesh, c_r_level);
 
   /* Compute the user criteria */
 
-  cs_array_int_fill_zero(m->n_cells, s);
-  cs_array_int_fill_zero(m->n_cells_with_ghosts, indic);
+  memset(s, 0, mesh->n_cells*sizeof(int));
+  memset(indic, 0, mesh->n_cells_with_ghosts*sizeof(int));
 
   _amr_info.indic_func(_amr_info.indic_input, s);
 
   /* Flag cells and eventually propagate refinement
    * to avoid jump in refinement levels*/
 
-  int n_threads = cs_parall_n_threads(m->n_cells, CS_THR_MIN);
+  int n_threads = cs_parall_n_threads(mesh->n_cells, CS_THR_MIN);
 # pragma omp parallel for  num_threads(n_threads)
-  for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id ++) {
-    if (s[c_id] > 0)
+  for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id ++) {
+    if (s[c_id] > 0 && c_r_level[c_id] < c_r_level_max)
       indic[c_id] = 1;
     else
       indic[c_id] = 0;
   }
 
-  cs_halo_sync_num(m->halo, CS_HALO_STANDARD, indic);
-
-  _propagate_refinement(m, c_r_level, indic);
+  _propagate_refinement(mesh, c_r_level, indic);
 
   /* Refinement */
 
-  {
-    cs_lnum_t n_cells = m->n_cells;
-
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {
-      if (indic[c_id] > 0 && c_r_level[c_id] < c_r_level_max) {
-        selected_cells[n_selected_cells] = c_id;
-        n_selected_cells++;
-      }
+  for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id ++) {
+    if (indic[c_id] > 0) {
+      selected_cells[n_selected_cells] = c_id;
+      n_selected_cells++;
     }
   }
 
-  cs_mesh_refine_simple_selected(cs_glob_mesh,
+  cs_mesh_refine_simple_selected(mesh,
                                  false,
                                  n_selected_cells,
                                  selected_cells);
+
+  CS_FREE(selected_cells);
+  CS_FREE(s);
+  CS_FREE(indic);
+  CS_FREE(c_r_level);
+
+  /* Renumber mesh based on code options */
+
+  cs_renumber_mesh(mesh, nullptr, nullptr, nullptr, nullptr);
 
   /* Free and re-compute mesh related quantities */
 
   cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
   cs_glob_mesh_quantities = cs_mesh_quantities_create();
-  cs_mesh_quantities_compute(cs_glob_mesh,cs_glob_mesh_quantities);
+  cs_mesh_quantities_compute(mesh, cs_glob_mesh_quantities);
   cs_glob_mesh_quantities_g = cs_glob_mesh_quantities;
 
-  /* ----------------
-     Coarsening stage
-     ---------------- */
+  /* Reset boundary conditions */
 
-  n_selected_cells = 0;
-  CS_REALLOC(selected_cells, cs_glob_mesh->n_cells, cs_lnum_t);
-  CS_REALLOC(s, cs_glob_mesh->n_cells, cs_lnum_t);
-  CS_REALLOC(indic, cs_glob_mesh->n_cells_with_ghosts, cs_lnum_t);
-  CS_REALLOC(c_r_level, m->n_cells_with_ghosts, char);
+  cs_boundary_conditions_realloc();
+  cs_field_map_and_init_bcs();
 
-  /* Determine again current cell refinement level */
+#if 0
+  /* Robusteness test */
 
-  _build_cell_r_level(m, c_r_level);
+  cs_redistribute(nullptr, nullptr);
+#endif
+}
 
-  /* Compute again the user criteria */
+static void
+_coarsen_step(void)
+{
+  if (cs_glob_rank_id <= 0)
+    printf("  Coarsening...\n");
 
-  cs_array_int_fill_zero(m->n_cells_with_ghosts, indic);
-  cs_array_int_fill_zero(m->n_cells, s);
+  cs_mesh_t *mesh = cs_glob_mesh;
+
+  cs_lnum_t   n_selected_cells = 0;
+  cs_lnum_t  *selected_cells = nullptr;
+  int        *s = nullptr;
+  int        *indic = nullptr;
+
+  CS_MALLOC(selected_cells, mesh->n_cells, cs_lnum_t);
+  CS_MALLOC(s, mesh->n_cells, int);
+  CS_MALLOC(indic, mesh->n_cells_with_ghosts, int);
+
+  /* Compute the user criteria */
+
+  memset(s, 0, mesh->n_cells*sizeof(int));
+  memset(indic, 0, mesh->n_cells_with_ghosts*sizeof(int));
 
   _amr_info.indic_func(_amr_info.indic_input, s);
 
@@ -1078,42 +991,33 @@ cs_adaptive_refinement_step(void)
    * Eventually, block coarsening operations
    * to avoid jump in cell refinement levels */
 
-  n_threads = cs_parall_n_threads(m->n_cells, CS_THR_MIN);
+  int n_threads = cs_parall_n_threads(mesh->n_cells, CS_THR_MIN);
 # pragma omp parallel for  num_threads(n_threads)
-  for (cs_lnum_t c_id = 0; c_id < m->n_cells; c_id ++) {
+  for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id ++) {
     if (s[c_id] > 0)
       indic[c_id] = 0;
     else
       indic[c_id] = 1;
   }
 
-  cs_halo_sync_num(m->halo, CS_HALO_STANDARD, indic);
-
-  _block_coarsening(m, c_r_level, indic);
-
-  /* Coarsening */
-
-  for (cs_lnum_t c_id = 0; c_id < cs_glob_mesh->n_cells; c_id ++) {
-    if (indic[c_id] > 0 && c_r_level[c_id] > 0) {
+  for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id ++) {
+    if (indic[c_id] > 0) {
       selected_cells[n_selected_cells] = c_id;
-      n_selected_cells ++;
+      n_selected_cells++;
     }
   }
 
-  cs_mesh_coarsen_simple_selected(cs_glob_mesh,
+  cs_mesh_coarsen_simple_selected(mesh,
                                   n_selected_cells,
                                   selected_cells);
 
   CS_FREE(selected_cells);
   CS_FREE(s);
   CS_FREE(indic);
-  CS_FREE(c_r_level);
-
-  cs_glob_mesh->n_b_faces_all = cs_glob_mesh->n_b_faces;
 
   /* Renumber mesh based on code options */
 
-  cs_renumber_mesh(m, nullptr, nullptr, nullptr, nullptr);
+  cs_renumber_mesh(mesh, nullptr, nullptr, nullptr, nullptr);
 
   /* Free and compute mesh related quantities */
 
@@ -1129,7 +1033,34 @@ cs_adaptive_refinement_step(void)
   cs_volume_zone_build_all(true);
   cs_boundary_zone_build_all(true);
 
-  /* Other update */
+  /* Update for boundary conditions */
+
+  cs_boundary_conditions_realloc();
+  cs_field_map_and_init_bcs();
+}
+
+void
+cs_adaptive_refinement_step(void)
+{
+  static int amr_iter = 0;
+  amr_iter++;
+  if (cs_glob_rank_id <= 0) {
+    printf("\n");
+    printf("/*-----------------------*/\n");
+    printf("  AMR step: %d\n", amr_iter);
+    printf("/*-----------------------*/\n");
+  }
+
+  cs_log_printf(CS_LOG_DEFAULT,
+                _("\n"
+                  "Starting mesh adaptation (AMR)\n"
+                  "------------------------------\n\n"));
+
+  _refine_step();
+
+  _coarsen_step();
+
+  /* Post-adaptation updates */
 
   cs_mesh_adjacencies_update_mesh();
   cs_gradient_free_quantities();
@@ -1142,10 +1073,8 @@ cs_adaptive_refinement_step(void)
 
   cs_adaptive_refinement_free_gradients();
 
-  /* Update for boundary conditions */
-
-  cs_boundary_conditions_realloc();
-  cs_field_map_and_init_bcs();
+  if (cs_glob_rank_id <= 0)
+    printf("  Done!\n");
 
   cs_log_printf(CS_LOG_DEFAULT,
                 _("\n"

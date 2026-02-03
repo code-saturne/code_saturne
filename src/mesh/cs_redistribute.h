@@ -27,22 +27,42 @@
 
 /*----------------------------------------------------------------------------*/
 
+/*============================================================================
+ * Type definitions
+ *============================================================================*/
+
+typedef struct {
+  int *c_r_level;
+  int *c_r_flag;
+} cs_redistribute_data_t;
+
 /*=============================================================================
+ * Static global variables
+ *============================================================================*/
+
+extern cs_redistribute_data_t  *cs_glob_redistribute_data;
+
+/*============================================================================
  * Public function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Redistribute mesh and fields based on a cell destination rank map.
+ * \brief Redistribute mesh, fields and data based on a cell destination rank
+ * map.
  *
  * If no cell map is given, a random one is created.
+ * If pointer to data is not null, this function will try to redistribute all
+ * its internal buffers.
  *
- * \param[in]  cell_dest_rank  destination rank for each cell
+ * \param[in]     cell_dest_rank  destination rank for each cell
+ * \param[inout]  data            pointer to redistribution data structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_redistribute(int  cell_dest_rank[]);
+cs_redistribute(int                      cell_dest_rank[],
+                cs_redistribute_data_t  *data);
 
 /*----------------------------------------------------------------------------*/
 

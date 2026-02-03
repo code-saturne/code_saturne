@@ -107,7 +107,6 @@
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_save.h"
 #include "mesh/cs_mesh_adaptive_refinement.h"
-#include "mesh/cs_redistribute.h"
 
 #include "pprt/cs_physical_model.h"
 #include "rayt/cs_rad_transfer.h"
@@ -667,7 +666,6 @@ cs_time_stepping(void)
         cs_adaptive_refinement_step();
         cs_volume_zone_build_all(true);
         cs_boundary_zone_build_all(true);
-        cs_redistribute(nullptr);
       }
     }
 

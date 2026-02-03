@@ -60,7 +60,7 @@
 
 typedef void
 (cs_amr_indicator_t) (const void  *input,
-                      cs_lnum_t   *vals);
+                      int         *vals);
 
 /*----------------------------------------------------------------------------
  * Function pointer for field reallocation and interpolation when refining.

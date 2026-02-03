@@ -80,6 +80,13 @@
  * Static global variables
  *============================================================================*/
 
+static cs_redistribute_data_t _redistribute_data = {
+  .c_r_level = nullptr,
+  .c_r_flag = nullptr,
+};
+
+cs_redistribute_data_t *cs_glob_redistribute_data = &_redistribute_data;
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -298,7 +305,7 @@ _distribute_bc_type(cs_all_to_all_t  *bfd,
 }
 
 /*----------------------------------------------------------------------------
- * Determine destination ranks for cells based on refinement info
+ * Compute random destination ranks for cells.
  *
  * parameters:
  *   mesh           <-- pointer to mesh
@@ -309,79 +316,9 @@ static void
 _compute_cell_dest_rank(cs_mesh_t  *mesh,
                         int         cell_dest[])
 {
-  // Cells sharing a parent should have the same destination.
-
-  char *c_r_level;
-  CS_MALLOC(c_r_level, mesh->n_cells, char);
-  for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id++)
-    c_r_level[c_id] = 0;
-
-  for (cs_lnum_t f_id = 0; f_id < mesh->n_i_faces; f_id++) {
-    // Can't merge an original face.
-    if (mesh->i_face_r_gen[f_id] < 1)
-      continue;
-
-    for (int i = 0; i < 2; i++) {
-      cs_lnum_t c_id = mesh->i_face_cells[f_id][i];
-      if (c_id < mesh->n_cells) {
-        // cell refinement level is max i_face_r_gen over its internal faces.
-        if (mesh->i_face_r_gen[f_id] > c_r_level[c_id]) {
-          c_r_level[c_id] = mesh->i_face_r_gen[f_id];
-        }
-      }
-    }
-  }
-
-  int reloop = 0;
-
-  cs_lnum_t *c_equiv = nullptr;
-  CS_MALLOC(c_equiv, mesh->n_cells, cs_lnum_t);
-  for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id++)
-    c_equiv[c_id] = c_id;
-
-  do {
-
-    reloop = 0;
-
-    for (cs_lnum_t f_id = 0; f_id < mesh->n_i_faces; f_id++) {
-      if (mesh->i_face_r_gen[f_id] < 1)
-        continue;
-
-      cs_lnum_t c_id0 = mesh->i_face_cells[f_id][0];
-      cs_lnum_t c_id1 = mesh->i_face_cells[f_id][1];
-
-      if (c_id0 >= mesh->n_cells || c_id1 >= mesh->n_cells)
-        continue;
-
-      if (mesh->i_face_r_gen[f_id] == c_r_level[c_id0] &&
-          mesh->i_face_r_gen[f_id] == c_r_level[c_id1]) {
-        cs_lnum_t min_equiv = cs::min(c_equiv[c_id0], c_equiv[c_id1]);
-
-        if (c_equiv[c_id0] > min_equiv) {
-          c_equiv[c_id0] = min_equiv;
-          reloop = 1;
-        }
-
-        if (c_equiv[c_id1] > min_equiv) {
-          c_equiv[c_id1] = min_equiv;
-          reloop = 1;
-        }
-      }
-    }
-  } while (reloop);
-
-  CS_FREE(c_r_level);
-
   for (int c_id = 0; c_id < mesh->n_cells; c_id++) {
-    if (c_id == c_equiv[c_id]) {
-      cell_dest[c_id] = rand() % cs_glob_n_ranks;
-    } else {
-      assert(c_id > c_equiv[c_id]);
-      cell_dest[c_id] = cell_dest[c_equiv[c_id]];
-    }
+    cell_dest[c_id] = rand() % cs_glob_n_ranks;
   }
-
-  CS_FREE(c_equiv);
 }
 
 /*----------------------------------------------------------------------------
@@ -708,6 +645,83 @@ _distribute_fields(cs_all_to_all_t  *cd,
                       b_face_n2o);
 }
 
+/*----------------------------------------------------------------------------
+ * Free field gradients.
+ *
+ * Gradients are assumed to be computed on-the-fly when needed.
+ *----------------------------------------------------------------------------*/
+
+static void
+_free_field_gradients(void)
+{
+  const int n_fields = cs_field_n_fields();
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (f->grad)
+      CS_FREE(f->grad);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Distribute additional data.
+ *
+ * The correct numbering is applied to the buffers.
+ *
+ * If a data buffer is not null, this function will try to redistribute it.
+ *
+ * parameters:
+ *   cd             <-- pointer to cells distributor
+ *   n_cells_ini    <-- number of cells to send
+ *   cell_order     <-- cells ordering by associated global number
+ *   cell_n2o       <-- cells new-to-old mapping
+ *   data           <-> pointer to data to be redistributed
+ *----------------------------------------------------------------------------*/
+
+void
+_distribute_data(cs_all_to_all_t *cd,
+                 const int cell_order[],
+                 const int cell_n2o[],
+                 cs_redistribute_data_t *data)
+{
+  if (!data)
+    return;
+
+  cs_mesh_t *mesh = cs_glob_mesh;
+
+  if (data->c_r_level) {
+    int *c_r_level = cs_all_to_all_copy_array(cd, 1, false, data->c_r_level);
+    CS_REALLOC(data->c_r_level, mesh->n_cells_with_ghosts, int);
+    for (cs_lnum_t new_slot = 0; new_slot < mesh->n_cells; new_slot++) {
+      int old_slot = cell_n2o ? cell_n2o[new_slot] : new_slot;
+      int pre_slot = cell_order ? cell_order[old_slot] : old_slot;
+      data->c_r_level[new_slot] = c_r_level[pre_slot];
+    }
+    CS_FREE(c_r_level);
+
+    cs_halo_sync_untyped(mesh->halo,
+                         CS_HALO_STANDARD,
+                         sizeof(int),
+                         data->c_r_level);
+  }
+
+  if (data->c_r_flag) {
+    int *c_r_flag = cs_all_to_all_copy_array(cd, 1, false, data->c_r_flag);
+    CS_REALLOC(data->c_r_flag, mesh->n_cells_with_ghosts, int);
+    for (cs_lnum_t new_slot = 0; new_slot < mesh->n_cells; new_slot++) {
+      int old_slot = cell_n2o ? cell_n2o[new_slot] : new_slot;
+      int pre_slot = cell_order ? cell_order[old_slot] : old_slot;
+      data->c_r_flag[new_slot] = c_r_flag[pre_slot];
+    }
+    CS_FREE(c_r_flag);
+
+    cs_halo_sync_untyped(mesh->halo,
+                         CS_HALO_STANDARD,
+                         sizeof(int),
+                         data->c_r_flag);
+  }
+}
+
 /*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -725,8 +739,12 @@ _distribute_fields(cs_all_to_all_t  *cd,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_redistribute(int  *cell_dest_rank)
+cs_redistribute(int                     *cell_dest_rank,
+                cs_redistribute_data_t  *data)
 {
+  if (cs_glob_rank_id < 0)
+    return;
+
   static int iter = 0;
   iter++;
 
@@ -778,7 +796,7 @@ cs_redistribute(int  *cell_dest_rank)
 
       if (cs_glob_rank_id <= 0) {
         seed = time(NULL);
-        //seed = 1; // Fix the seed for debugging.
+        //seed = 123456; // Fix the seed for debugging.
       }
 
       MPI_Bcast(&seed, 1, MPI_UINT32_T, 0, comm);
@@ -833,7 +851,7 @@ cs_redistribute(int  *cell_dest_rank)
 
   CS_FREE(cell_gnum);
 
-  // Distribute cell family
+  // Distribute cell family.
 
   int *cell_family = cs_all_to_all_copy_array(cd, 1, false, mesh->cell_family);
   CS_REALLOC(mesh->cell_family, n_cells, int);
@@ -1369,8 +1387,10 @@ cs_redistribute(int  *cell_dest_rank)
 
   cs_mesh_init_group_classes(mesh);
 
-  cs_mesh_quantities_free_all(cs_glob_mesh_quantities);
-  cs_mesh_quantities_compute(mesh, cs_glob_mesh_quantities);
+  cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
+  cs_glob_mesh_quantities = cs_mesh_quantities_create();
+  cs_mesh_quantities_compute(cs_glob_mesh,cs_glob_mesh_quantities);
+  cs_glob_mesh_quantities_g = cs_glob_mesh_quantities;
 
   cs_mesh_update_selectors(mesh);
   cs_mesh_location_build(mesh, -1);
@@ -1399,6 +1419,9 @@ cs_redistribute(int  *cell_dest_rank)
                      i_face_order,
                      i_face_n2o);
 
+  _distribute_data(cd, cell_order, cell_n2o, data);
+
+  _free_field_gradients();
   cs_gradient_free_quantities();
   cs_cell_to_vertex_free();
   cs_mesh_adjacencies_update_mesh();
