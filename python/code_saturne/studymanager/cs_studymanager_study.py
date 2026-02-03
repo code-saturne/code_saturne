@@ -2181,15 +2181,17 @@ class Studies(object):
         if ntasks < 6: rm_var=["--exclusive"]
         # rm wckey example
         rm_var.append("--wckey")
-        slurm_batch.update_lines(slurm_batch_header, add_var=["job_procs"],
+        # add total number of mpi tasks
+        add_var=["job_procs"]
+        # add user defined options if needed
+        if slurm_batch_args:
+            add_var.extend(slurm_batch_args)
+
+        slurm_batch.update_lines(slurm_batch_header, add_var=add_var,
                                  rm_var=rm_var)
 
         cmd = "#!/bin/sh\n"
         cmd += '\n'.join(slurm_batch_header)
-        # add user defined options if needed
-        if slurm_batch_args:
-            for tmp in slurm_batch_args:
-                cmd += "#SBATCH " + tmp + "\n"
         cmd += "\n"
 
         return cmd

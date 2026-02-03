@@ -436,6 +436,13 @@ class batch:
                   batch_lines.pop(nb_line)
 
         if add_var:
+
+            # determine last line starting with SBATCH
+            insert_line = 0
+            for i in range(len(batch_lines)):
+                if batch_lines[i][0:7] == '#SBATCH':
+                    insert_line = i
+
             for item in add_var:
                 if item in self.params:
                     val = str(self.params[item])
@@ -468,7 +475,9 @@ class batch:
                     elif item == 'job_wckey':
                         kw = '--wckey='
                     if val:
-                        batch_lines.insert(1, '#SBATCH ' + kw + str(val))
+                        batch_lines.insert(insert_line+1, '#SBATCH ' + kw + str(val))
+                else:
+                   batch_lines.insert(insert_line+1, '#SBATCH ' + str(item))
 
     #---------------------------------------------------------------------------
 
