@@ -24,6 +24,12 @@ Master (not on release branches yet)
 
 ### User changes:
 
+- Add high level API which is GPU compatible for users. This allows not having
+  to specify a context directly. This modification also now defines a
+  default context which is reachable in all routines.
+  As en example, users can now simply write :
+  cs::parallel_for(n_values, CS_LAMBDA (cs_lnum_t e_id) {...});
+
 - Restart: selection of further mesh preprocessing behavior and/or
   restarting from another mesh is now more explicit and consistent.
   When restarting from another mesh, it should now always be

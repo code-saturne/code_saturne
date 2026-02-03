@@ -490,7 +490,7 @@ _cs_base_exit(int status)
     }
 
     /* Clean execution context */
-    cs_execution_context_glob_finalize();
+    cs_execution_default_env_finalize();
 
 #if defined(HAVE_MPI)
     {
@@ -1425,8 +1425,6 @@ cs_base_mpi_init(int    *argc,
 
 #endif /* defined(HAVE_ACCEL) */
 
-  /* Initialize execution context */
-  cs_execution_context_glob_init();
 }
 
 /*----------------------------------------------------------------------------
