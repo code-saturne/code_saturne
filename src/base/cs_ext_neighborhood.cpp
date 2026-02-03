@@ -6,7 +6,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -167,7 +167,7 @@ const char *cs_ext_neighborhood_type_name[]
    N_("non-orthogonality threshold")};
 
 static cs_ext_neighborhood_type_t _ext_nbh_type
-  = CS_EXT_NEIGHBORHOOD_CELL_CENTER_OPPOSITE;
+  = CS_EXT_NEIGHBORHOOD_NONE;
 static cs_real_t                  _non_ortho_max = 45;
 static bool                       _full_nb_boundary = false;
 
