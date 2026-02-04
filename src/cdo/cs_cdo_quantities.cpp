@@ -1912,9 +1912,10 @@ cs_cdo_quantities_free(cs_cdo_quantities_t *cdoq)
     CS_FREE(cdoq->i_face_normal);
     CS_FREE(cdoq->i_face_surf);
     CS_FREE(cdoq->i_face_center);
-
-    CS_FREE(cdoq->cell_vol);
   }
+
+  // Properly manage the pointer to the cell_vol array which is not always owned
+  cs_cdo_quantities_free_cell_vol(cdoq);
 
   /* Face-related quantities */
 
@@ -1937,6 +1938,24 @@ cs_cdo_quantities_free(cs_cdo_quantities_t *cdoq)
   CS_FREE(cdoq);
 
   return nullptr;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Properly free the cell_vol array according to the settings
+ *
+ * \param[in, out] cdoq  pointer to cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_quantities_free_cell_vol(cs_cdo_quantities_t *cdoq)
+{
+  if (cdoq == nullptr)
+    return;
+
+  if (cs_glob_mesh_quantities->cell_vol != cdoq->cell_vol)
+    CS_FREE(cdoq->cell_vol);
 }
 
 /*----------------------------------------------------------------------------*/

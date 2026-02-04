@@ -2468,7 +2468,11 @@ cs_ale_initialize_volume_fields(void)
 
   mq->cell_vol = cell_vol_pre;
 
+  /* Be careful if CS_CDO_QUANTITIES_SUBDIV_CENTER is set. The value of
+     cell_vol in the CDO part is replaced by the one in the FV part */
+
   if (cs_glob_ale == CS_ALE_CDO) {
+    cs_cdo_quantities_free_cell_vol(cs_glob_domain->cdo_quantities);
     cs_glob_domain->cdo_quantities->cell_vol = cell_vol_pre;
   }
 

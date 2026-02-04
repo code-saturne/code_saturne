@@ -391,6 +391,17 @@ cs_cdo_quantities_free(cs_cdo_quantities_t   *cdoq);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Properly free the cell_vol array according to the settings
+ *
+ * \param[in, out] cdoq  pointer to cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_quantities_free_cell_vol(cs_cdo_quantities_t *cdoq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Summarize generic information about the cdo mesh quantities
  *
  * \param[in] cdoq     pointer to cs_cdo_quantities_t structure
