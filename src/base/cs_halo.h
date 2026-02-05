@@ -984,7 +984,7 @@ cs_halo_sync
   const cs_halo_t       *halo,      /*!<[in] pointer to halo structure */
   cs_halo_type_t         sync_mode, /*!<[in] synchronization mode (std or ext) */
   [[maybe_unused]] bool  on_device, /*!<[in] run on accelerated device if possible */
-  cs_mdspan_r<T, N>&     span       /*!<[in,out] reference to mdspan_r */
+  cs_mdspan_r<T, N>      span       /*!<[in,out] reference to mdspan_r */
 )
 {
   static_assert(N == 1 || N == 2,
