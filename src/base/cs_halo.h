@@ -967,17 +967,24 @@ cs_halo_sync_r(const cs_halo_t  *halo,
                bool              on_device,
                T                 val[][3][3]);
 
-/*----------------------------------------------------------------------------*/
-/*----------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Update ghost cell values of an mdspan with layout right data storage.
+ *        Only callable for mdspan with N = 1 or N = 2.
+ *
+ * \tparam[in] T value type
+ * \tparam[in] N stride size
+ */
+/*--------------------------------------------------------------------------*/
 
 template<typename T, int N>
 void
 cs_halo_sync
 (
-  const cs_halo_t       *halo,
-  cs_halo_type_t         sync_mode,
-  [[maybe_unused]] bool  on_device,
-  cs_mdspan_r<T, N>      span
+  const cs_halo_t       *halo,      /*!<[in] pointer to halo structure */
+  cs_halo_type_t         sync_mode, /*!<[in] synchronization mode (std or ext) */
+  [[maybe_unused]] bool  on_device, /*!<[in] run on accelerated device if possible */
+  cs_mdspan_r<T, N>&     span       /*!<[in,out] reference to mdspan_r */
 )
 {
   static_assert(N == 1 || N == 2,
@@ -1016,90 +1023,169 @@ cs_halo_sync
   cs_halo_sync_wait(halo, val, nullptr);
 }
 
-template<typename T, int N>
-void
-cs_halo_sync
-(
-  const cs_halo_t       *halo,
-  [[maybe_unused]] bool  on_device,
-  cs_mdspan_r<T, N>      span
-)
-{
-  cs_halo_sync<T, N>(halo, CS_HALO_STANDARD, on_device, span);
-}
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Update ghost cell values of an mdspan with layout right data storage,
+ *        and using the standard halo mode
+ *        Only callable for mdspan with N = 1 or N = 2.
+ *
+ * \tparam[in] T value type
+ * \tparam[in] N stride size
+ */
+/*--------------------------------------------------------------------------*/
 
 template<typename T, int N>
 void
 cs_halo_sync
 (
-  const cs_halo_t       *halo,
-  cs_halo_type_t         sync_mode,
-  cs_mdspan_r<T, N>      span
+  const cs_halo_t       *halo,      /*!<[in] pointer to halo structure */
+  [[maybe_unused]] bool  on_device, /*!<[in] run on accelerated device if possible */
+  cs_mdspan_r<T, N>&     span       /*!<[in,out] reference to mdspan_r */
+)
+{
+  cs_halo_sync<T, N>(halo, CS_HALO_STANDARD, on_device, span);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Update ghost cell values of an mdspan with layout right data storage,
+ *        will try to run on accelerated device if data pointer is recognized
+ *        as a device pointer.
+ *        Only callable for mdspan with N = 1 or N = 2.
+ *
+ * \tparam[in] T value type
+ * \tparam[in] N stride size
+ */
+/*--------------------------------------------------------------------------*/
+
+template<typename T, int N>
+void
+cs_halo_sync
+(
+  const cs_halo_t       *halo,      /*!<[in] pointer to halo structure */
+  cs_halo_type_t         sync_mode, /*!<[in] synchronization mode (std or ext) */
+  cs_mdspan_r<T, N>&     span       /*!<[in,out] reference to mdspan_r */
 )
 {
   bool on_device = cs_mem_is_device_ptr(span.data());
   cs_halo_sync<T, N>(halo, sync_mode, on_device, span);
 }
 
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Update ghost cell values of an mdspan with layout right data storage,
+ *        using the standard synchronization mode and
+ *        will try to run on accelerated device if data pointer is recognized
+ *        as a device pointer.
+ *        Only callable for mdspan with N = 1 or N = 2.
+ *
+ * \tparam[in] T value type
+ * \tparam[in] N stride size
+ */
+/*--------------------------------------------------------------------------*/
+
 template<typename T, int N>
 void
 cs_halo_sync
 (
-  const cs_halo_t       *halo,
-  cs_mdspan_r<T, N>      span
+  const cs_halo_t       *halo, /*!<[in] pointer to halo structure */
+  cs_mdspan_r<T, N>&     span  /*!<[in,out] reference to mdspan_r */
 )
 {
   bool on_device = cs_mem_is_device_ptr(span.data());
   cs_halo_sync<T, N>(halo, CS_HALO_STANDARD, on_device, span);
 }
 
-/*----------------------------------------------------------------------------*/
-/*----------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Update ghost cell values of an mdarray with layout right data storage.
+ *        Only callable for mdarray with N = 1 or N = 2.
+ *
+ * \tparam[in] T value type
+ * \tparam[in] N stride size
+ */
+/*--------------------------------------------------------------------------*/
 
 template<typename T, int N>
 void
 cs_halo_sync
 (
-  const cs_halo_t       *halo,
-  cs_halo_type_t         sync_mode,
-  [[maybe_unused]] bool  on_device,
-  cs_mdarray_r<T, N>     array
+  const cs_halo_t       *halo,      /*!<[in] pointer to halo structure */
+  cs_halo_type_t         sync_mode, /*!<[in] synchronization mode (std or ext) */
+  [[maybe_unused]] bool  on_device, /*!<[in] run on accelerated device if possible */
+  cs_mdarray_r<T, N>&    array      /*!<[in,out] reference to mdarray_r */
 )
 {
   cs_halo_sync<T, N>(halo, sync_mode, on_device, array.view());
 }
 
-template<typename T, int N>
-void
-cs_halo_sync
-(
-  const cs_halo_t       *halo,
-  [[maybe_unused]] bool  on_device,
-  cs_mdarray_r<T, N>     array
-)
-{
-  cs_halo_sync<T, N>(halo, CS_HALO_STANDARD, on_device, array.view());
-}
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Update ghost cell values of an mdarray with layout right data storage,
+ *        and using the standard halo mode
+ *        Only callable for mdarray with N = 1 or N = 2.
+ *
+ * \tparam[in] T value type
+ * \tparam[in] N stride size
+ */
+/*--------------------------------------------------------------------------*/
 
 template<typename T, int N>
 void
 cs_halo_sync
 (
-  const cs_halo_t       *halo,
-  cs_halo_type_t         sync_mode,
-  cs_mdarray_r<T, N>     array
+  const cs_halo_t       *halo,      /*!<[in] pointer to halo structure */
+  [[maybe_unused]] bool  on_device, /*!<[in] run on accelerated device if possible */
+  cs_mdarray_r<T, N>&    array      /*!<[in,out] reference to mdarray_r */
+)
+{
+  cs_halo_sync<T, N>(halo, CS_HALO_STANDARD, on_device, array.view());
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Update ghost cell values of an mdarray with layout right data storage,
+ *        will try to run on accelerated device if data pointer is recognized
+ *        as a device pointer.
+ *        Only callable for mdarray with N = 1 or N = 2.
+ *
+ * \tparam[in] T value type
+ * \tparam[in] N stride size
+ */
+/*--------------------------------------------------------------------------*/
+
+template<typename T, int N>
+void
+cs_halo_sync
+(
+  const cs_halo_t       *halo,      /*!<[in] pointer to halo structure */
+  cs_halo_type_t         sync_mode, /*!<[in] synchronization mode (std or ext) */
+  cs_mdarray_r<T, N>&    array      /*!<[in,out] reference to mdarray_r */
 )
 {
   bool on_device = cs_mem_is_device_ptr(array.data());
   cs_halo_sync<T, N>(halo, sync_mode, on_device, array.view());
 }
 
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Update ghost cell values of an mdarray with layout right data storage,
+ *        using the standard synchronization mode and
+ *        will try to run on accelerated device if data pointer is recognized
+ *        as a device pointer.
+ *        Only callable for mdarray with N = 1 or N = 2.
+ *
+ * \tparam[in] T value type
+ * \tparam[in] N stride size
+ */
+/*--------------------------------------------------------------------------*/
+
 template<typename T, int N>
 void
 cs_halo_sync
 (
-  const cs_halo_t       *halo,
-  cs_mdarray_r<T, N>     array
+  const cs_halo_t       *halo, /*!<[in] pointer to halo structure */
+  cs_mdarray_r<T, N>&    array /*!<[in,out] reference to mdarray_r */
 )
 {
   bool on_device = cs_mem_is_device_ptr(array.data());
