@@ -554,6 +554,7 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
 
       cs_field_t *fth = cs_thermal_model_field();
       cs_real_t *th_rcodcl3 = fth->bc_coeffs->rcodcl3;
+      int *th_icodcl = fth->bc_coeffs->icodcl;
 
       for (cs_lnum_t i = 0; i < n_faces; i++) {
         cs_lnum_t face_id = faces_list[i];
@@ -575,6 +576,13 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
         if (isothp[face_id] == CS_BOUNDARY_RAD_WALL_GRAY) {
           if (_boundary->emissivity[z_id] >= 0.)
             epsp[face_id] = _boundary->emissivity[z_id];
+          // If flux condition switch to COND_FLUX !
+          if (th_icodcl[face_id] == CS_BC_NEUMANN) {
+            if (cs_gui_is_equal_real(_boundary->emissivity[z_id], 0.))
+              isothp[face_id] = CS_BOUNDARY_RAD_WALL_REFL_COND_FLUX;
+            else
+              isothp[face_id] = CS_BOUNDARY_RAD_WALL_GRAY_COND_FLUX;
+          }
         }
         else if (isothp[face_id] == CS_BOUNDARY_RAD_WALL_GRAY_EXTERIOR_T) {
           if (_boundary->thermal_conductivity[z_id] >= 0.)
