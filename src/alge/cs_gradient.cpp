@@ -8042,13 +8042,13 @@ cs_gradient_scalar(const char                    *var_name,
   /* Update of local BC. coefficients for internal coupling */
 
   cs_real_t *bc_coeff_loc_cpl_a = nullptr;
+  cs_field_bc_coeffs_t bc_coeffs_loc_cpl;
 
   if (cpl != nullptr) {
 
     if (bc_coeffs != nullptr) {
 
       cs_real_t *bc_coeff_a = bc_coeffs->a;
-      cs_field_bc_coeffs_t bc_coeffs_loc_cpl;
       cs_field_bc_coeffs_shallow_copy(bc_coeffs, &bc_coeffs_loc_cpl);
       CS_MALLOC_HD(bc_coeffs_loc_cpl.a, n_b_faces, cs_real_t, amode);
 
@@ -8348,13 +8348,13 @@ cs_gradient_vector(const char                    *var_name,
   /* Update of local BC. coefficients for internal coupling */
 
   cs_real_3_t *bc_coeff_loc_cpl_a = nullptr;
+  cs_field_bc_coeffs_t bc_coeffs_loc_cpl;
 
   if (cpl != nullptr) {
 
     if (bc_coeffs_v != nullptr) {
 
       cs_real_3_t *bc_coeff_a = (cs_real_3_t *)bc_coeffs_v->a;
-      cs_field_bc_coeffs_t bc_coeffs_loc_cpl;
       cs_field_bc_coeffs_shallow_copy(bc_coeffs_v, &bc_coeffs_loc_cpl);
       CS_MALLOC_HD(bc_coeffs_loc_cpl.a, 3*n_b_faces, cs_real_t, amode);
 
@@ -8612,6 +8612,7 @@ cs_gradient_tensor(const char                  *var_name,
 
   /* Use Neumann BC's as default if not provided */
 
+  cs_field_bc_coeffs_t bc_coeffs_ts_loc;
   cs_real_6_t  *bc_coeff_loc_a = nullptr;
   cs_real_66_t *bc_coeff_loc_b = nullptr;
   cs_real_6_t *val_f = nullptr, *val_ip = nullptr;
@@ -8619,7 +8620,6 @@ cs_gradient_tensor(const char                  *var_name,
 
   if (bc_coeffs_ts == nullptr) {
 
-    cs_field_bc_coeffs_t bc_coeffs_ts_loc;
     cs_field_bc_coeffs_init(&bc_coeffs_ts_loc);
 
     CS_MALLOC_HD(bc_coeffs_ts_loc.a, 6*n_b_faces, cs_real_t, amode);
