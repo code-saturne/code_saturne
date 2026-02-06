@@ -2162,69 +2162,68 @@ cs_saddle_solver_free(cs_saddle_solver_t  **p_solver)
 
   case CS_PARAM_SADDLE_SOLVER_ALU:
     {
-    cs_saddle_solver_context_alu_t *ctx =
-      static_cast<cs_saddle_solver_context_alu_t *>(solver->context);
+      cs_saddle_solver_context_alu_t *ctx =
+        static_cast<cs_saddle_solver_context_alu_t *>(solver->context);
 
-    cs_saddle_solver_context_alu_free(&ctx);
+      cs_saddle_solver_context_alu_free(&ctx);
 
-    CS_FREE(ctx);
+      CS_FREE(ctx);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GCR:
   case CS_PARAM_SADDLE_SOLVER_MINRES:
     {
-    cs_saddle_solver_context_block_pcd_t *ctx =
-      static_cast<cs_saddle_solver_context_block_pcd_t *>(solver->context);
+      cs_saddle_solver_context_block_pcd_t *ctx =
+        static_cast<cs_saddle_solver_context_block_pcd_t *>(solver->context);
 
-    cs_saddle_solver_context_block_pcd_free(&ctx);
+      cs_saddle_solver_context_block_pcd_free(&ctx);
 
-    CS_FREE(ctx);
+      CS_FREE(ctx);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GKB:
     {
-    cs_saddle_solver_context_gkb_t *ctx =
-      static_cast<cs_saddle_solver_context_gkb_t *>(solver->context);
+      cs_saddle_solver_context_gkb_t *ctx =
+        static_cast<cs_saddle_solver_context_gkb_t *>(solver->context);
 
-    cs_saddle_solver_context_gkb_free(&ctx);
+      cs_saddle_solver_context_gkb_free(&ctx);
 
-    CS_FREE(ctx);
+      CS_FREE(ctx);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_NOTAY_TRANSFORM:
     {
-    cs_saddle_solver_context_notay_t *ctx =
-      static_cast<cs_saddle_solver_context_notay_t *>(solver->context);
+      cs_saddle_solver_context_notay_t *ctx =
+        static_cast<cs_saddle_solver_context_notay_t *>(solver->context);
 
-    CS_FREE(ctx);
+      CS_FREE(ctx);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
     {
-    cs_saddle_solver_context_uzawa_cg_t *ctx =
-      static_cast<cs_saddle_solver_context_uzawa_cg_t *>(solver->context);
+      cs_saddle_solver_context_uzawa_cg_t *ctx =
+        static_cast<cs_saddle_solver_context_uzawa_cg_t *>(solver->context);
 
-    cs_saddle_solver_context_uzawa_cg_free(&ctx);
+      cs_saddle_solver_context_uzawa_cg_free(&ctx);
 
-    CS_FREE(ctx);
+      CS_FREE(ctx);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_SIMPLE:
     {
-    cs_saddle_solver_context_simple_t *ctx =
-      static_cast<cs_saddle_solver_context_simple_t *>(solver->context);
+      cs_saddle_solver_context_simple_t *ctx =
+        static_cast<cs_saddle_solver_context_simple_t *>(solver->context);
 
-    cs_saddle_solver_context_simple_free(&ctx);
+      cs_saddle_solver_context_simple_free(&ctx);
 
-    CS_FREE(ctx);
+      CS_FREE(ctx);
     }
     break;
-
 
   default:
     break; /* Nothing to do */
@@ -2264,49 +2263,50 @@ cs_saddle_solver_clean(cs_saddle_solver_t  *solver)
 
   case CS_PARAM_SADDLE_SOLVER_ALU:
     {
-    cs_saddle_solver_context_alu_t *ctx =
-      static_cast<cs_saddle_solver_context_alu_t *>(solver->context);
+      cs_saddle_solver_context_alu_t *ctx =
+        static_cast<cs_saddle_solver_context_alu_t *>(solver->context);
 
-    cs_saddle_solver_context_alu_clean(ctx);
+      cs_saddle_solver_context_alu_clean(ctx);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GCR:
   case CS_PARAM_SADDLE_SOLVER_MINRES:
     {
-    cs_saddle_solver_context_block_pcd_t *ctx =
-      static_cast<cs_saddle_solver_context_block_pcd_t *>(solver->context);
+      cs_saddle_solver_context_block_pcd_t *ctx =
+        static_cast<cs_saddle_solver_context_block_pcd_t *>(solver->context);
 
-    cs_saddle_solver_context_block_pcd_clean(ctx);
+      cs_saddle_solver_context_block_pcd_clean(ctx);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_GKB:
     {
-    cs_saddle_solver_context_gkb_t *ctx =
-      static_cast<cs_saddle_solver_context_gkb_t *>(solver->context);
+      cs_saddle_solver_context_gkb_t *ctx =
+        static_cast<cs_saddle_solver_context_gkb_t *>(solver->context);
 
-    cs_saddle_solver_context_gkb_clean(ctx);
+      cs_saddle_solver_context_gkb_clean(ctx);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_UZAWA_CG:
     {
-    cs_saddle_solver_context_uzawa_cg_t *ctx =
-      static_cast<cs_saddle_solver_context_uzawa_cg_t *>(solver->context);
+      cs_saddle_solver_context_uzawa_cg_t *ctx =
+        static_cast<cs_saddle_solver_context_uzawa_cg_t *>(solver->context);
 
-    cs_saddle_solver_context_uzawa_cg_clean(ctx);
+      cs_saddle_solver_context_uzawa_cg_clean(ctx);
     }
     break;
 
   case CS_PARAM_SADDLE_SOLVER_SIMPLE:
     {
-    cs_saddle_solver_context_simple_t *ctx =
-      static_cast<cs_saddle_solver_context_simple_t *>(solver->context);
+      cs_saddle_solver_context_simple_t *ctx =
+        static_cast<cs_saddle_solver_context_simple_t *>(solver->context);
 
-    cs_saddle_solver_context_simple_clean(ctx);
+      cs_saddle_solver_context_simple_clean(ctx);
     }
     break;
+
   default:
   case CS_PARAM_SADDLE_SOLVER_FGMRES:
   case CS_PARAM_SADDLE_SOLVER_MUMPS:
@@ -4973,7 +4973,7 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
   double  _nrhs1_square = 0;
 
   if (rset != nullptr) { /* Switch to a gather view to avoid summing an element
-                       twice */
+                            twice */
 
     cs_range_set_gather(rset,
                         CS_REAL_TYPE,/* type */

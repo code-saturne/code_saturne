@@ -176,7 +176,7 @@ cs_domain_create(void)
 
   /* Initialization of several modules */
 
-  cs_quadrature_setup();         /* Compute constant used in quadrature rules */
+  cs_quadrature_setup();       /* Compute constants used in quadrature rules */
 
   /* Add two predefined properties which can be called from everywhere:
    *  1. the unity property

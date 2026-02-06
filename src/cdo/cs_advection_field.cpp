@@ -3206,6 +3206,7 @@ cs_advection_field_update(cs_real_t t_eval, bool cur2prev)
           cs_field_current_to_previous(bfld);
 
         cs_advection_field_across_boundary(adv, t_eval, bfld->val);
+
       }
 
     } /* User or Legacy FV */
@@ -3222,6 +3223,7 @@ cs_advection_field_update(cs_real_t t_eval, bool cur2prev)
       /* Set the new values */
 
       cs_advection_field_at_vertices(adv, t_eval, vfld->val);
+
     }
 
   } /* Loop on advection fields */

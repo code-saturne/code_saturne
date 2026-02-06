@@ -140,7 +140,7 @@ typedef struct {
   cs_mesh_quantities_t     *mesh_quantities;
 
   /* CDO structures:
-   * - cs_cdo_connect_t contains additional information about connectivity
+   * - cs_cdo_connect_t contains additional information about connectivities
    * - cs_cdo_quantities_t contains additional information on mesh quantities
    */
 
