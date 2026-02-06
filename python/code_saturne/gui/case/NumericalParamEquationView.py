@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2024 EDF S.A.
+# Copyright (C) 1998-2026 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -923,8 +923,8 @@ class StandardItemModelGradient(QStandardItemModel):
                         self.tr("Boundary\nReconstruction"),
                         self.tr("Fixed-point\nThreshold"),
                         self.tr("Limiter\nType")]
-        self.keys = ['name', 'c_gradient_r', 'b_gradient_r',
-                     'd_gradient_r', 'epsrgr', 'imligr']
+        self.keys = ['name', 'c_gradient_r', 'd_gradient_r',
+                     'b_gradient_r', 'epsrgr', 'imligr']
         self.setColumnCount(len(self.headers))
 
         # Initialize the flags
@@ -1093,14 +1093,14 @@ class StandardItemModelGradient(QStandardItemModel):
             self.NPE.setCellGradientType(name, c_gradient_r)
 
         elif column == 2:
-            b_gradient_r = self.dicoV2M[str(from_qvariant(value, to_text_string))]
-            self.dataScheme[row]['b_gradient_r'] = b_gradient_r
-            self.NPE.setBoundaryGradientType(name, b_gradient_r)
-
-        elif column == 3:
             d_gradient_r = self.dicoV2M[str(from_qvariant(value, to_text_string))]
             self.dataScheme[row]['d_gradient_r'] = d_gradient_r
             self.NPE.setDiffusionGradientType(name, d_gradient_r)
+
+        elif column == 3:
+            b_gradient_r = self.dicoV2M[str(from_qvariant(value, to_text_string))]
+            self.dataScheme[row]['b_gradient_r'] = b_gradient_r
+            self.NPE.setBoundaryGradientType(name, b_gradient_r)
 
         elif column == 4:
             v = from_qvariant(value, float)
