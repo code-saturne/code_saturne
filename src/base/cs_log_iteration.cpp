@@ -1719,6 +1719,20 @@ cs_log_iteration(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Retrieve the time control associated to the iteration logging
+ *
+ * \return a pointer to the time control structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_time_control_t *
+cs_log_iteration_get_time_control(void)
+{
+  return cs_glob_log_iteration_time_control;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Default function for equation convergence log info.
  */
 /*----------------------------------------------------------------------------*/

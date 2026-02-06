@@ -42,6 +42,7 @@
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "cdo/cs_param_cdo.h"
+#include "base/cs_time_control.h"
 #include "base/cs_time_step.h"
 #include "base/cs_timer.h"
 #include "cdo/cs_xdef.h"
@@ -161,6 +162,10 @@ typedef struct {
   cs_time_step_options_t   *time_step_options; /* time step options */
 
   cs_domain_stage_t         stage;   /* Store the stage of the computation */
+
+  /* Extra_operations */
+
+  cs_time_control_t        *extra_op_time_control;
 
   /* Output options */
 
@@ -330,6 +335,19 @@ cs_domain_needs_iteration(cs_domain_t  *domain);
 
 bool
 cs_domain_needs_log(const cs_domain_t  *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if one has to perform extra-operations
+ *
+ * \param[in, out] domain  pointer to a cs_domain_t structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_domain_needs_extra_op(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!

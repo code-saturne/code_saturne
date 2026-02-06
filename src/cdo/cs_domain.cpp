@@ -242,6 +242,7 @@ cs_domain_create(void)
 
   /* Other options */
 
+  domain->extra_op_time_control = nullptr;
   domain->restart_nt = CS_RESTART_INTERVAL_DEFAULT;
   domain->output_nt = -10;  /* automatic with 10 first iterations */
   domain->verbosity = 1;    /* default verbosity */
@@ -290,6 +291,8 @@ cs_domain_free(cs_domain_t   **p_domain)
 
   if (domain->cdo_context != nullptr)
     CS_FREE(domain->cdo_context);
+
+  CS_FREE(domain->extra_op_time_control);
 
   /* Free arrays related to the domain boundary */
 
@@ -460,6 +463,35 @@ cs_domain_needs_log(const cs_domain_t  *domain)
     return true;
 
   return cs_log_default_is_active();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if one has to perform extra-operations
+ *
+ * \param[in, out] domain  pointer to a cs_domain_t structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_domain_needs_extra_op(cs_domain_t  *domain)
+{
+  if (domain == nullptr)
+    return false;
+
+  cs_time_step_t *ts = domain->time_step;
+  cs_time_control_t *tc = domain->extra_op_time_control;
+  if (tc == nullptr)
+    return false;
+  if (ts == nullptr)
+    return false;
+
+  if (tc->current_time_step == ts->nt_cur) // Already done
+    return false;
+  else
+    return cs_time_control_is_active(tc, ts);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -303,20 +303,26 @@ _solve_steady_state_domain(cs_domain_t  *domain)
     /* Otherwise log is called from the FORTRAN part */
 
     if (!cs_equation_needs_steady_state_solve()) {
+
       cs_log_printf(CS_LOG_DEFAULT, "\n%s", cs_sep_h1);
       cs_log_printf(CS_LOG_DEFAULT, "# Iter: %d >> Initial state", nt_cur);
       cs_log_printf(CS_LOG_DEFAULT, "\n%s\n", cs_sep_h1);
 
-      /* Extra operations and post-processing of the computed solutions */
-
       cs_post_time_step_begin(domain->time_step);
 
-      cs_domain_post(domain);
+      /* Predefined extra operations of the computed solutions */
+
+      cs_domain_extra_op(domain);
+
+      /* Predefined postprocessings */
+
+      cs_post_time_step_output(domain->time_step);
 
       cs_post_time_step_end();
 
       return;
     }
+
   }
 
   bool  do_output = cs_domain_needs_log(domain);
@@ -398,9 +404,24 @@ _solve_steady_state_domain(cs_domain_t  *domain)
 
   }
 
-  cs_domain_post(domain);
+  /* Predefined extra-operations */
+
+  cs_domain_extra_op(domain);
+
+  /* User-defined extra operations */
+
+  cs_user_extra_operations(domain);
+
+  /* Predefined post-processings */
+
+  cs_post_time_step_output(domain->time_step);
 
   cs_post_time_step_end();
+
+  /* Log output */
+
+  if (cs_domain_needs_log(domain) && cs_param_cdo_has_cdo_only())
+    cs_log_iteration();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -746,7 +767,11 @@ cs_cdo_solve_unsteady_state_domain(void)
   /* From now - FV and CDO use the same time */
   /* Extra operations and post-processing of the computed solutions */
 
-  cs_domain_post(cs_glob_domain);
+  cs_post_time_step_begin(ts);
+
+  cs_domain_extra_op(cs_glob_domain);
+
+  cs_post_time_step_end();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -863,6 +888,19 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
     cs_log_iteration_set_interval(domain->output_nt);
   else if (domain->output_nt < 0)
     cs_log_iteration_set_automatic(-domain->output_nt);
+
+  if (domain->extra_op_time_control == nullptr) {
+
+    // If the time control is not specified during the setup phase, then switch
+    // to the behavior of the log iteration by default
+
+    cs_time_control_t *log_tc = cs_log_iteration_get_time_control();
+    assert(log_tc != nullptr);
+
+    CS_MALLOC(domain->extra_op_time_control, 1, cs_time_control_t);
+    cs_time_control_copy(log_tc, domain->extra_op_time_control);
+
+  }
 
   /* Assign to a cs_equation_t structure a list of functions to manage this
    * structure during the computation.
@@ -1231,9 +1269,33 @@ cs_cdo_main(cs_domain_t   *domain)
 
     cs_post_time_step_begin(domain->time_step);
 
-    cs_domain_post(domain);
+    /* Predefined extra operations */
+
+    cs_domain_extra_op(domain);
+
+    /* User-defined extra operations */
+
+    cs_user_extra_operations(domain);
+
+    /* Predefined extra-postprocessing related to
+       - the domain (advection fields and properties),
+       - equations
+       - groundwater flows
+       - Maxwell module
+       - Navier-Stokes
+       - Solidification
+       are also handled during the call of this function thanks to
+       cs_post_add_time_mesh_dep_output() function pointer
+    */
+
+    cs_post_time_step_output(domain->time_step);
 
     cs_post_time_step_end();
+
+    /* Log output */
+
+    if (cs_domain_needs_log(domain) && cs_param_cdo_has_cdo_only())
+      cs_log_iteration();
 
     /* Add a checkpoint if needed */
 
@@ -1255,9 +1317,10 @@ cs_cdo_main(cs_domain_t   *domain)
    * the main loop is stopped but post-processing is not activated since
    * the code does not enter the loop for a final iteration
    */
+
   cs_post_time_step_begin(domain->time_step);
 
-  cs_domain_post(domain);
+  cs_post_time_step_output(domain->time_step);
 
   cs_post_time_step_end();
 

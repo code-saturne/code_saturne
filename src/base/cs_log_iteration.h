@@ -37,6 +37,7 @@
 
 #include "base/cs_base.h"
 #include "mesh/cs_mesh_location.h"
+#include "base/cs_time_control.h"
 #include "base/cs_time_step.h"
 
 /*----------------------------------------------------------------------------*/
@@ -72,6 +73,17 @@ cs_log_iteration_destroy_all(void);
 
 void
 cs_log_iteration(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Retrieve the time control associated to the iteration logging
+ *
+ * \return a pointer to the time control structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_time_control_t *
+cs_log_iteration_get_time_control(void);
 
 /*----------------------------------------------------------------------------
  * Log field and other array statistics for the current time step.

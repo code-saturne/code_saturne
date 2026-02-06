@@ -386,6 +386,32 @@ _domain_post(void                      *input,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Add a time control dedicated to the extra-operations.
+ *        The lifecycle of the time control is now managed by the domain
+ *        structure
+ *
+ * \param[in,out] domain  pointer to a cs_domain_t structure
+ * \param[in]     tc      pointer to a time control structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_add_extra_op_time_control(cs_domain_t        *domain,
+                                    cs_time_control_t  *tc)
+{
+  if (domain == nullptr)
+    return;
+  if (tc == nullptr)
+    return;
+
+  if (domain->extra_op_time_control != nullptr)
+    CS_FREE(domain->extra_op_time_control);
+
+  domain->extra_op_time_control = tc;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Initialize the generic post-processing related to a domain
  *
  * \param[in]  domain   pointer to a cs_domain_t structure
@@ -402,14 +428,16 @@ cs_domain_post_init(cs_domain_t   *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Post-processing of the computational domain after a resolution
+ * \brief Extra-operations of the computational domain after a resolution.
+ *        Mostly used inside CDO schemes
+ *        User-defined extra-operations are also called inside this function.
  *
- * \param[in]  domain            pointer to a cs_domain_t structure
+ * \param[in, out] domain  pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_post(cs_domain_t  *domain)
+cs_domain_extra_op(cs_domain_t  *domain)
 {
   cs_timer_t  t0 = cs_timer_time();
 
@@ -418,13 +446,11 @@ cs_domain_post(cs_domain_t  *domain)
   /* Extra-operations */
   /* ================ */
 
-  /* Predefined extra-operations related to advection fields */
+  if (cs_domain_needs_extra_op(domain)) {
 
-  cs_advection_field_update(domain->time_step->t_cur, true);
+    /* Predefined extra-operations related to advection fields */
 
-  /* Log output */
-
-  if (cs_domain_needs_log(domain)) {
+    cs_advection_field_update(domain->time_step->t_cur, true);
 
     /* Post-processing */
     /* =============== */
@@ -517,29 +543,7 @@ cs_domain_post(cs_domain_t  *domain)
                                  domain->cdo_quantities,
                                  domain->time_step);
 
-    /* Basic statistic related to variables */
-
-    if (cs_param_cdo_has_cdo_only())
-      cs_log_iteration(); /* Otherwise called from the FORTRAN part */
-
-  } /* Needs a new log */
-
-  /* Predefined extra-postprocessing related to
-     - the domain (advection fields and properties),
-     - equations
-     - groundwater flows
-     - Maxwell module
-     - Navier-Stokes
-     - Solidification
-     are also handled during the call of this function thanks to
-     cs_post_add_time_mesh_dep_output() function pointer
-  */
-
-  cs_post_time_step_output(domain->time_step);
-
-  /* User-defined extra operations */
-
-  cs_user_extra_operations(domain);
+  }
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(domain->tcp), &t0, &t1);

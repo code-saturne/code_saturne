@@ -55,6 +55,21 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Add a time control dedicated to the extra-operations.
+ *        The lifecycle of the time control is now managed by the domain
+ *        structure
+ *
+ * \param[in,out] domain  pointer to a cs_domain_t structure
+ * \param[in]     tc      pointer to a time control structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_domain_add_extra_op_time_control(cs_domain_t        *domain,
+                                    cs_time_control_t  *tc);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Initialize the generic post-processing related to a domain
  *
  * \param[in]  domain   pointer to a cs_domain_t structure
@@ -66,14 +81,16 @@ cs_domain_post_init(cs_domain_t   *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Post-processing of the computational domain after a resolution
+ * \brief Extra-operations of the computational domain after a resolution.
+ *        Mostly used inside CDO schemes
+ *        User-defined extra-operations are also called inside this function.
  *
- * \param[in]  domain            pointer to a cs_domain_t structure
+ * \param[in, out] domain  pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_domain_post(cs_domain_t  *domain);
+cs_domain_extra_op(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
