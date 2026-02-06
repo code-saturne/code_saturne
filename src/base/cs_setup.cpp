@@ -2592,7 +2592,6 @@ _read_specific_physics_data(void)
 
   /* Pulverized coal combustion */
   if (pm_flag[CS_COMBUSTION_COAL] != -1) {
-    cs_gui_coal_model();
     cs_coal_read_data();
   }
 
@@ -2675,6 +2674,9 @@ _init_user(void)
 
   if (cs_glob_ale != CS_ALE_NONE)
     cs_gui_mobile_mesh_structures_add();
+
+  if (pm_flag[CS_COMBUSTION_COAL] != -1)
+    cs_gui_coal_model();
 
   /* Other model parameters, including user-defined scalars */
   cs_gui_user_variables();
