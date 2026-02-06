@@ -156,7 +156,7 @@ De même, on résout une équation de convection/diffusion/termes sources pour l
 
 \begin{equation}
 \begin{array} {ll}
-\displaystyle \rho\frac{\partial \varepsilon}{\partial t} +
+\displaystyle\frac{\partial \rho\varepsilon}{\partial t} +
 \dive\left[\rho \vect{u}\,\varepsilon-
 (\mu \grad{\varepsilon})\right] = &
 \displaystyle \it{d}_{\,\varepsilon}
@@ -361,7 +361,7 @@ $R_{ij}$.
 d_{\,\varepsilon}^{\,n,n+1} \\
 &
 \displaystyle
-+ C_{\varepsilon_1} \frac{k^n}{\varepsilon^n} \left[ \mathcal{P}^n + \mathcal{G}^n_{\varepsilon} \right]
++ C_{\varepsilon_1} \frac{\varepsilon^n}{k^n} \left[ \mathcal{P}^n + \mathcal{G}^n_{\varepsilon} \right]
 - \rho^n C_{\varepsilon_2} \frac{(\varepsilon^n)^2}{k^n} \\
 &
 \displaystyle
