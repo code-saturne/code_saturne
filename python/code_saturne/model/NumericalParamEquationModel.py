@@ -103,7 +103,7 @@ class NumericalParamEquationModel(Model):
         self.default['verbosity'] = 0
         self.default['c_gradient_r'] = 'global'
         self.default['d_gradient_r'] = 'automatic'
-        self.default['b_gradient_r'] = 'automatic'
+        self.default['b_rc_gradient'] = 'automatic'
         self.default['epsrgr'] = 1e-4
         self.default['imligr'] = 'none'
         self.default['climgr'] = 1.5
@@ -674,7 +674,7 @@ class NumericalParamEquationModel(Model):
         node = self._getSchemeNameNode(name)
         value = node.xmlGetString('boundary_gradient_type')
         if not value:
-            value = self.default['b_gradient_r']
+            value = self.default['b_rc_gradient']
 
         return value
 
@@ -687,7 +687,7 @@ class NumericalParamEquationModel(Model):
         self.isInList(value, ('automatic', 'green_iter', 'lsq', 'lsq_ext',
                               'green_lsq', 'green_lsq_ext', 'green_vtx'))
         node = self._getSchemeNameNode(name)
-        if value == self.default['b_gradient_r']:
+        if value == self.default['b_rc_gradient']:
             node.xmlRemoveChild('boundary_gradient_type')
         else:
             node.xmlSetData('boundary_gradient_type', value)

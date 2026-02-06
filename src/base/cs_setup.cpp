@@ -1805,8 +1805,8 @@ _additional_fields_stage_2(void)
     eqp->nswrgr = eqp_pr->nswrgr;
     eqp->epsrgr = eqp_pr->epsrgr;
     eqp->climgr = eqp_pr->climgr;
-    eqp->b_climgr = eqp_pr->b_climgr;
-    eqp->b_gradient_r = eqp_pr->b_gradient_r;
+    eqp->b_rc_clip_factor = eqp_pr->b_rc_clip_factor;
+    eqp->b_rc_gradient = eqp_pr->b_rc_gradient;
   }
 
   /* Head losses weighting field in case of Lagrangian deposition and

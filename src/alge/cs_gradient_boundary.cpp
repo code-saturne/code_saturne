@@ -102,36 +102,6 @@ const cs_real_t _eps_r_2 = 1e-3 * 1e-3;
  * Private function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute bounds associated with a value, used for clipping.
- *
- * - For a vector, square of norm.
- * - For a symmetric tensor, square of Frombenius norm.
- *
- * \param[in]  t  scalar, vector, or tensor values
- *
- * \return the square of the norm
- */
-/*----------------------------------------------------------------------------*/
-
-template <cs_lnum_t stride>
-CS_F_HOST_DEVICE inline cs_real_t
-_norm_2(const cs_real_t  t[stride])
-{
-  cs_real_t retval;
-
-  if (stride == 3)
-    retval = t[0]*t[0] + t[1]*t[1] + t[2]*t[2];
-  else if (stride == 6)
-    retval =     t[0]*t[0] +   t[1]*t[1] +   t[2]*t[2]
-             + 2*t[3]*t[3] + 2*t[4]*t[4] + 2*t[5]*t[5];
-  else
-    retval = 1;
-
-  return retval;
-}
-
 /*----------------------------------------------------------------------------
  * Add compute 3x3 cocg for least squares algorithm contribution from hidden
  * faces (as pure homogeneous Neumann BC's) to a single cell
@@ -647,9 +617,12 @@ cs_gradient_boundary_iprime_lsq_s
     /* Apply simple limiter */
 
     if (clip_coeff >= 0) {
-      cs_real_t d = var_max - var_min;
-      var_max += d*clip_coeff;
-      var_min -= d*clip_coeff;
+      if (clip_coeff < 1. || clip_coeff > 1.) {
+        cs_real_t d_min = var_min - var_i;
+        cs_real_t d_max = var_max - var_i;
+        var_min = var_i + d_min*clip_coeff;
+        var_max = var_i + d_max*clip_coeff;
+      }
 
       if (var_ip < var_min)
         var_ip = var_min;
@@ -1245,7 +1218,9 @@ cs_gradient_boundary_iprime_lsq_strided
       var_i[ll] = var[c_id][ll];
     }
 
-    cs_real_t var_max = 0;
+    cs_real_t d2_max = 0, a2_max = 0;
+    if (stride == 3)
+      a2_max = cs_math_square_norm<stride>(var_i);
 
     /* Contribution from adjacent cells */
 
@@ -1296,7 +1271,9 @@ cs_gradient_boundary_iprime_lsq_strided
             for (cs_lnum_t ll = 0; ll < 3; ll++)
               rhs[kk][ll] += dc[ll] * pfac;
           }
-          var_max = cs::max(var_max, _norm_2<stride>(var_d));
+          d2_max = cs::max(d2_max, cs_math_square_norm<stride>(var_d));
+          if (stride == 3)
+            a2_max = cs::max(a2_max, cs_math_square_norm<stride>(var_j));
 
         }
 
@@ -1332,7 +1309,10 @@ cs_gradient_boundary_iprime_lsq_strided
               rhs[kk][ll] += dc[ll] * pfac * _weight;
           }
 
-          var_max = cs::max(var_max, _norm_2<stride>(var_d));
+          d2_max = cs::max(d2_max, cs_math_square_norm<stride>(var_d));
+          if (stride == 3)
+            a2_max = cs::max(a2_max, cs_math_square_norm<stride>(var_j));
+
         }
       }
 
@@ -1379,7 +1359,9 @@ cs_gradient_boundary_iprime_lsq_strided
         var_d[kk] = var_f[kk] - var_i[kk];
       }
 
-      var_max = cs::max(var_max, _norm_2<stride>(var_d));
+      d2_max = cs::max(d2_max, cs_math_square_norm<stride>(var_d));
+      if (stride == 3)
+        a2_max = cs::max(a2_max, cs_math_square_norm<stride>(var_f));
 
       cs_real_t dif[3];
       cs_real_t ddif;
@@ -1663,15 +1645,24 @@ cs_gradient_boundary_iprime_lsq_strided
     /* Apply simple limiter */
 
     if (b_clip_coeff >= 0) {
-      var_max *= b_clip_coeff;
+      d2_max *= b_clip_coeff;
       cs_real_t var_d[stride];
       for (cs_lnum_t ii = 0; ii < stride; ii++)
         var_d[ii] = var_ip[ii] - var_i[ii];
-      cs_real_t var_n2 = _norm_2<stride>(var_d);
-      if (var_n2 > var_max) {
-        cs_real_t s = sqrt(var_max / var_n2); // scaling factor
+      cs_real_t var_n2 = cs_math_square_norm<stride>(var_d);
+      if (var_n2 > d2_max) {
+        cs_real_t s = sqrt(d2_max / var_n2); // scaling factor
         for (cs_lnum_t ii = 0; ii < stride; ii++)
           var_ip[ii] = var_i[ii] + var_d[ii]*s;
+      }
+      if (stride == 3) { // Additional test on vector norm
+        a2_max *= cs::max(1., b_clip_coeff);
+        cs_real_t var_a2 = cs_math_square_norm<stride>(var_ip);
+        if (var_a2 > a2_max) {
+          cs_real_t s = sqrt(a2_max / var_a2); // scaling factor
+          for (cs_lnum_t ii = 0; ii < stride; ii++)
+            var_ip[ii] *= s;
+        }
       }
     }
 

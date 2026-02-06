@@ -924,7 +924,7 @@ class StandardItemModelGradient(QStandardItemModel):
                         self.tr("Fixed-point\nThreshold"),
                         self.tr("Limiter\nType")]
         self.keys = ['name', 'c_gradient_r', 'd_gradient_r',
-                     'b_gradient_r', 'epsrgr', 'imligr']
+                     'b_rc_gradient', 'epsrgr', 'imligr']
         self.setColumnCount(len(self.headers))
 
         # Initialize the flags
@@ -952,7 +952,7 @@ class StandardItemModelGradient(QStandardItemModel):
                     "- Green LSQ: Green-Gauss with LSQ gradient face values\n"
                     "- Green LSQ Ext: Green-Gauss with LSQ Ext gradient face values\n"
                     "- Green VTX: Green-Gauss with vertex interpolated face values."),
-            self.tr("Equation parameter: 'b_gradient_r'\n\n"
+            self.tr("Equation parameter: 'b_rc_gradient'\n\n"
                     "Local boundary gradient for reconstruction at boundaries;\n"
                     "Using the default least-squares reconstruction\n"
                     "allows computing the gradient only at selected cells\n"
@@ -1001,7 +1001,7 @@ class StandardItemModelGradient(QStandardItemModel):
             dico['name']  = name
             dico['c_gradient_r'] = self.NPE.getCellGradientType(name)
             dico['d_gradient_r'] = self.NPE.getDiffusionGradientType(name)
-            dico['b_gradient_r'] = self.NPE.getBoundaryGradientType(name)
+            dico['b_rc_gradient'] = self.NPE.getBoundaryGradientType(name)
             dico['epsrgr'] = self.NPE.getGradientEpsilon(name)
             dico['imligr'] = self.NPE.getGradientLimiter(name)
             self.dataScheme.append(dico)
@@ -1098,9 +1098,9 @@ class StandardItemModelGradient(QStandardItemModel):
             self.NPE.setDiffusionGradientType(name, d_gradient_r)
 
         elif column == 3:
-            b_gradient_r = self.dicoV2M[str(from_qvariant(value, to_text_string))]
-            self.dataScheme[row]['b_gradient_r'] = b_gradient_r
-            self.NPE.setBoundaryGradientType(name, b_gradient_r)
+            b_rc_gradient = self.dicoV2M[str(from_qvariant(value, to_text_string))]
+            self.dataScheme[row]['b_rc_gradient'] = b_rc_gradient
+            self.NPE.setBoundaryGradientType(name, b_rc_gradient)
 
         elif column == 4:
             v = from_qvariant(value, float)
@@ -1641,7 +1641,7 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         self.tableViewGradient.setItemDelegateForColumn(2, delegateIMRGRD)
 
         delegateIMRGRB = GradientTypeDelegate(self.tableViewGradient,
-                                              category='b_gradient_r')
+                                              category='b_rc_gradient')
         self.tableViewGradient.setItemDelegateForColumn(3, delegateIMRGRB)
 
         delegateEPSRGR = GradientFloatDelegate(self.tableViewGradient, 1.0)

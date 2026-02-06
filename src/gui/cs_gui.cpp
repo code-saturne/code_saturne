@@ -2217,7 +2217,7 @@ cs_gui_equation_parameters(void)
         _var_gradient_type(tn_v, "diffusion_gradient_type",
                            &(eqp->d_gradient_r));
         _var_gradient_type(tn_v, "boundary_gradient_type",
-                           &(eqp->b_gradient_r));
+                           &(eqp->b_rc_gradient));
         cs_gui_node_get_child_real(tn_v, "gradient_epsilon",
                                    &(eqp->epsrgr));
         _var_gradient_limiter_type(tn_v, eqp);

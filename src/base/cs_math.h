@@ -233,6 +233,36 @@ cs_math_3_sym_33_3_dot_product(const T  n1[3],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute a square norm associated with a vector or tensor.
+ *
+ * - For a vector, square of norm (equivalent to \ref cs_math_3_square_norm)
+ * - For a symmetric tensor, square of Frobenius norm.
+ *
+ * \param[in]  t  vector, or tensor values
+ *
+ * \return the square of the norm
+ */
+/*----------------------------------------------------------------------------*/
+
+template <cs_lnum_t stride>
+CS_F_HOST_DEVICE inline cs_real_t
+cs_math_square_norm(const cs_real_t  t[stride])
+{
+  cs_real_t retval;
+
+  if (stride == 3)
+    retval = t[0]*t[0] + t[1]*t[1] + t[2]*t[2];
+  else if (stride == 6)
+    retval =     t[0]*t[0] +   t[1]*t[1] +   t[2]*t[2]
+             + 2*t[3]*t[3] + 2*t[4]*t[4] + 2*t[5]*t[5];
+  else
+    retval = 1;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the square norm of a vector of 3 real values.
  *
  * \tparam T  input value type

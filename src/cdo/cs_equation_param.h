@@ -9,7 +9,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -348,10 +348,7 @@ typedef struct {
    *
    * \var imligr
    * Type of gradient limiter
-   * - -1 (CS_GRADIENT_LIMIT_NONE): no limitation
-   * - 0 (CS_GRADIENT_LIMIT_CELL): based on the neighbors
-   * - 1 (CS_GRADIENT_LIMIT_FACE): superior order
-   * - 2 (CS_GRADIENT_LIMIT_RC): based on reconstruction monotonicity
+   * - See \ref cs_gradient_limit_t
    *
    * \var ircflu
    * Indicate whether the convective and diffusive fluxes at the faces should be
@@ -433,7 +430,7 @@ typedef struct {
    * little limitation, negative value means no limitation).\n
    * Relevant when \ref imligr > CS_GRADIENT_LIMIT_NONE.
    *
-   * \var b_climgr
+   * \var b_rc_clip_factor
    * For least-squares gradient-based boundary reconstruction, factor of gradient
    * limitation (high value means little limitation, no limitation if negative).
    * A (default) value of 1 ensures the reconstructed value is within bounds of
@@ -460,7 +457,7 @@ typedef struct {
    * Same codes as for \ref imrgra
    * (default is 2: least-squares, using extended neighborhood if available)
    *
-   * \var b_gradient_r
+   * \var b_rc_gradient
    * Type of boundary gradient reconstruction
    * Same codes as for \ref imrgra
    * (default is 2: least-squares, using extended neighborhood if available)
@@ -507,11 +504,11 @@ typedef struct {
   double epsrgr;
   double climgr;
   cs_real_t d_climgr;
-  cs_real_t b_climgr;
+  cs_real_t b_rc_clip_factor;
   double relaxv;
 
   int  d_gradient_r;
-  int  b_gradient_r;
+  int  b_rc_gradient;
   int  b_diff_flux_rc;
 
   cs_runge_kutta_def_t rk_def;

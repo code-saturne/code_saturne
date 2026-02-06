@@ -6,7 +6,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -961,10 +961,10 @@ cs_equation_param_create(const char         *name,
   eqp->epsrgr = 1.e-4;
   eqp->climgr = -1;
   eqp->d_climgr = 1.;
-  eqp->b_climgr = 1.;
+  eqp->b_rc_clip_factor = -1.;
   eqp->relaxv = 1.;
   eqp->d_gradient_r = 2;
-  eqp->b_gradient_r = 2;
+  eqp->b_rc_gradient = 2;
   eqp->b_diff_flux_rc = 1;
 
   /* Boundary conditions structure.

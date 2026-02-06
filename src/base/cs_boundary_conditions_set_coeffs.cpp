@@ -4466,7 +4466,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
   }
 
   /* gradient clipping on boundary */
-  cs_real_t b_climgr = (eqp->imligr < 0) ? -1.0 : eqp->b_climgr;
+  cs_real_t b_rc_clip_factor = (eqp->imligr < 0) ? -1.0 : eqp->b_rc_clip_factor;
 
   cs_field_bc_coeffs_t *bc_coeffs_loc = nullptr;
 
@@ -4517,7 +4517,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
        need_compute_bc_flux,
        halo_type,
        w_stride,
-       b_climgr,
+       b_rc_clip_factor,
        hyd_p_flag,
        f_ext,
        viscel,
@@ -4542,7 +4542,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
                                         n_b_faces,
                                         nullptr,
                                         halo_type,
-                                        b_climgr,
+                                        b_rc_clip_factor,
                                         hyd_p_flag,
                                         f_ext,
                                         df_limiter,
@@ -4562,7 +4562,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
                                             mq,
                                             n_b_faces,
                                             nullptr,
-                                            b_climgr,
+                                            b_rc_clip_factor,
                                             hyd_p_flag,
                                             f_ext,
                                             df_limiter,
@@ -4817,7 +4817,7 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
   }
 
   /* gradient clipping on boundary */
-  cs_real_t b_climgr = (eqp->imligr < 0) ? -1.0 : eqp->b_climgr;
+  cs_real_t b_rc_clip_factor = (eqp->imligr < 0) ? -1.0 : eqp->b_rc_clip_factor;
 
   cs_field_bc_coeffs_t *bc_coeffs_loc = nullptr;
 
@@ -4868,7 +4868,7 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
                                                           bc_coeffs,
                                                           cpl,
                                                           halo_type,
-                                                          b_climgr,
+                                                          b_rc_clip_factor,
                                                           df_limiter,
                                                           pvar,
                                                           gweight);
@@ -4883,7 +4883,7 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
                                                   n_b_faces,
                                                   nullptr,
                                                   halo_type,
-                                                  b_climgr,
+                                                  b_rc_clip_factor,
                                                   df_limiter,
                                                   bc_coeffs,
                                                   gweight,

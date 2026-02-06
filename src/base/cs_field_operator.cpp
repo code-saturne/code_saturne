@@ -813,7 +813,7 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
   if (f_parent_id > -1)
     parent_f = cs_field_by_id(f_parent_id);
 
-  int b_gradient_r = cs_glob_space_disc->imrgra;
+  int b_rc_gradient = cs_glob_space_disc->imrgra;
   cs_equation_param_t eqp_default = cs_parameters_equation_param_default();
 
   /* Get the calculation option from the field */
@@ -821,11 +821,11 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
     *eqp = cs_field_get_equation_param_const(parent_f);
 
   if (eqp != nullptr)
-    b_gradient_r = eqp->b_gradient_r;
+    b_rc_gradient = eqp->b_rc_gradient;
   else
     eqp = &eqp_default;
 
-  cs_gradient_type_by_imrgra(b_gradient_r,
+  cs_gradient_type_by_imrgra(b_rc_gradient,
                              &gradient_type,
                              &halo_type);
 
@@ -990,7 +990,7 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
   if (f_parent_id > -1)
     parent_f = cs_field_by_id(f_parent_id);
 
-  int b_gradient_r = cs_glob_space_disc->imrgra;
+  int b_rc_gradient = cs_glob_space_disc->imrgra;
   cs_equation_param_t eqp_default = cs_parameters_equation_param_default();
 
   /* Get the calculation option from the field */
@@ -998,11 +998,11 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
     *eqp = cs_field_get_equation_param_const(parent_f);
 
   if (eqp != nullptr)
-    b_gradient_r = eqp->b_gradient_r;
+    b_rc_gradient = eqp->b_rc_gradient;
   else
     eqp = &eqp_default;
 
-  cs_gradient_type_by_imrgra(b_gradient_r,
+  cs_gradient_type_by_imrgra(b_rc_gradient,
                              &gradient_type,
                              &halo_type);
 
@@ -1152,7 +1152,7 @@ cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
   if (f_parent_id > -1)
     parent_f = cs_field_by_id(f_parent_id);
 
-  int b_gradient_r = cs_glob_space_disc->imrgra;
+  int b_rc_gradient = cs_glob_space_disc->imrgra;
   cs_equation_param_t eqp_default = cs_parameters_equation_param_default();
 
   /* Get the calculation option from the field */
@@ -1160,11 +1160,11 @@ cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
     *eqp = cs_field_get_equation_param_const(parent_f);
 
   if (eqp != nullptr)
-    b_gradient_r = eqp->b_gradient_r;
+    b_rc_gradient = eqp->b_rc_gradient;
   else
     eqp = &eqp_default;
 
-  cs_gradient_type_by_imrgra(b_gradient_r,
+  cs_gradient_type_by_imrgra(b_rc_gradient,
                              &gradient_type,
                              &halo_type);
 

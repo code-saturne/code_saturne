@@ -397,10 +397,10 @@ static cs_equation_param_t _equation_param_default
    .epsrgr = 1.e-4,
    .climgr = -1.,
    .d_climgr = 1.,
-   .b_climgr = 1.,
+   .b_rc_clip_factor = 1.,
    .relaxv = 1.,
    .d_gradient_r = 2,
-   .b_gradient_r = 2,
+   .b_rc_gradient = 2,
    .b_diff_flux_rc = 1,
    .rk_def = {.rk_id = -1,
               .scheme = CS_RK_NONE},
@@ -589,11 +589,11 @@ _log_func_var_cal_opt(const void *t)
   cs_log_printf(CS_LOG_SETUP, fmt_r, "epsrgr", _t->epsrgr);
   cs_log_printf(CS_LOG_SETUP, fmt_r, "climgr", _t->climgr);
   cs_log_printf(CS_LOG_SETUP, fmt_r, "d_climgr", _t->d_climgr);
-  cs_log_printf(CS_LOG_SETUP, fmt_r, "b_climgr", _t->b_climgr);
+  cs_log_printf(CS_LOG_SETUP, fmt_r, "b_rc_clip_factor", _t->b_rc_clip_factor);
   cs_log_printf(CS_LOG_SETUP, fmt_r, "relaxv", _t->relaxv);
 
   cs_log_printf(CS_LOG_SETUP, fmt_i, "d_gradient_r", _t->d_gradient_r);
-  cs_log_printf(CS_LOG_SETUP, fmt_i, "b_gradient_r", _t->b_gradient_r);
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "b_rc_gradient", _t->b_rc_gradient);
   cs_log_printf(CS_LOG_SETUP, fmt_i, "b_diff_flux_rc", _t->b_diff_flux_rc);
 }
 
