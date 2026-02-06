@@ -2683,7 +2683,11 @@ cs_saddle_solver_context_alu_free
   if (ctx == nullptr)
     return;
 
-  cs_saddle_solver_context_alu_clean(ctx);
+  CS_FREE(ctx->inv_m22);
+  CS_FREE(ctx->res2);
+  CS_FREE(ctx->m21x1);
+  CS_FREE(ctx->b1_tilda);
+  CS_FREE(ctx->rhs);
 
   CS_FREE(ctx);
   *p_ctx = nullptr;
@@ -2840,7 +2844,10 @@ cs_saddle_solver_context_block_pcd_free
   if (ctx == nullptr)
     return;
 
-  cs_saddle_solver_context_block_pcd_clean(ctx);
+  CS_FREE(ctx->schur_diag);
+  CS_FREE(ctx->schur_xtra);
+  CS_FREE(ctx->m22_mass_diag);
+  CS_FREE(ctx->m11_inv_diag);
 
   CS_FREE(ctx);
   *p_ctx = nullptr;
@@ -2977,7 +2984,18 @@ cs_saddle_solver_context_gkb_free
   if (ctx == nullptr)
     return;
 
-  cs_saddle_solver_context_gkb_clean(ctx);
+  CS_FREE(ctx->zeta_array);
+  CS_FREE(ctx->q);
+  CS_FREE(ctx->d);
+  CS_FREE(ctx->m21v);
+  CS_FREE(ctx->inv_m22);
+
+  CS_FREE(ctx->w);
+  CS_FREE(ctx->v);
+  CS_FREE(ctx->m12q);
+  CS_FREE(ctx->x1_tilda);
+
+  CS_FREE(ctx->rhs_tilda);
 
   CS_FREE(ctx);
   *p_ctx = nullptr;
@@ -3202,7 +3220,17 @@ cs_saddle_solver_context_uzawa_cg_free
   if (ctx == nullptr)
     return;
 
-  cs_saddle_solver_context_uzawa_cg_clean(ctx);
+  CS_FREE(ctx->res2);
+  CS_FREE(ctx->m21x1);
+  CS_FREE(ctx->gk);
+  CS_FREE(ctx->b1_tilda);
+  CS_FREE(ctx->dzk);
+  CS_FREE(ctx->rhs);
+
+  CS_FREE(ctx->schur_diag);
+  CS_FREE(ctx->schur_xtra);
+  CS_FREE(ctx->m11_inv_diag);
+  CS_FREE(ctx->inv_m22);
 
   CS_FREE(ctx);
   *p_ctx = nullptr;
