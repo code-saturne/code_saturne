@@ -76,19 +76,20 @@ typedef enum {
 
 typedef enum {
 
-  CS_GRADIENT_LIMIT_NONE = -1,   /*!< no limiter */
-  CS_GRADIENT_LIMIT_CELL = 0,    /*!< cell values extrapolated by cell gradient
-                                   to neighbor cells can not exceed the
-                                   limiting factor  times the actual value */
-  CS_GRADIENT_LIMIT_FACE = 1,    /*!< cell values extrapolated by face gradient
-                                   (mean of cell gradients) extrapolated to
-                                   neighbor cells can not exceed the limiting
-                                   factor times the actual value */
-  CS_GRADIENT_LIMIT_RC   = 2    /*!< values reconstructed at I'/J' values
-                                   associated to each face must not exceed
-                                   neighboring cell values by more than the
-                                   limiting factor (i.e. ensure monotonicity
-                                   with a factor of 1). */
+  CS_GRADIENT_LIMIT_NONE = -1,     /*!< no limiter */
+  CS_GRADIENT_LIMIT_CELL = 0,      /*!< cell values extrapolated by cell gradient
+                                     to neighbor cells can not exceed the
+                                     limiting factor  times the actual value */
+  CS_GRADIENT_LIMIT_FACE = 1,      /*!< cell values extrapolated by face gradient
+                                     (mean of cell gradients) extrapolated to
+                                     neighbor cells can not exceed the limiting
+                                     factor times the actual value */
+  CS_GRADIENT_LIMIT_CELL_RC = 2    /*!< values reconstructed at I'/J' values
+                                     using cell gradient must not exceed
+                                     neighboring cell values by more than the
+                                     limiting factor (i.e. ensure monotonicity
+                                     with a factor of 1). */
+
 
 
 } cs_gradient_limit_t;

@@ -763,7 +763,7 @@ class NumericalParamEquationModel(Model):
         """
         Set gradient limiter type for specified variable.
         """
-        self.isInList(value, ('none', 'cell', 'face', 'rc_clip'))
+        self.isInList(value, ('none', 'cell', 'face', 'cell_gradient_rc'))
         node = self._getSchemeNameNode(name)
         if value == self.default['imligr']:
             node.xmlRemoveChild('gradient_limiter_type')

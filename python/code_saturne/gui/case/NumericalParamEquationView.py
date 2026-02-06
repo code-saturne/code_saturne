@@ -846,13 +846,13 @@ class GradientLimiterDelegate(QItemDelegate):
         editor.addItem("Disabled")
         editor.addItem("Cell gradient")
         editor.addItem("Face gradient")
-        editor.addItem("Reconstruction clip")
+        editor.addItem("Cell gradient RC")
         editor.installEventFilter(self)
         return editor
 
 
     def setEditorData(self, comboBox, index):
-        dico = {"none": 0, "cell": 1, "face": 2, "rc_clip": 3}
+        dico = {"none": 0, "cell": 1, "face": 2, "cell_gradient_rc": 3}
         row = index.row()
         string = index.model().dataScheme[row]['imligr']
         idx = dico[string]
@@ -990,7 +990,7 @@ class StandardItemModelGradient(QStandardItemModel):
         self.dicoV2M_imligr = {"Disabled": 'none',
                                "Cell gradient": 'cell',
                                "Face gradient": 'face',
-                               "Reconstruction clip": 'rc_clip'}
+                               "Cell gradient RC": 'cell_gradient_rc'}
         self.dicoM2V_imligr = {}
         for k in self.dicoV2M_imligr:
             self.dicoM2V_imligr[self.dicoV2M_imligr[k]] = k

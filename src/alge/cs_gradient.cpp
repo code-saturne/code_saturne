@@ -736,8 +736,8 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
   const size_t n_blocks = (ctx.use_gpu()) ?
     n_cells : cs_parall_block_count(n_cells, _loop_block_size);
 
-  /* First clipping Algorithm: based on the cell gradient */
-  /*------------------------------------------------------*/
+  /* Clipping Algorithm: based on the cell gradient */
+  /*------------------------------------------------*/
 
   if (clip_mode == CS_GRADIENT_LIMIT_CELL) {
 
@@ -819,8 +819,8 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
 
   } /* End for clip_mode == CS_GRADIENT_LIMIT_CELL */
 
-  /* Second clipping Algorithm: based on the face gradient */
-  /*-------------------------------------------------------*/
+  /* Clipping Algorithm: based on the face gradient */
+  /*------------------------------------------------*/
 
   else if (clip_mode == CS_GRADIENT_LIMIT_FACE) {
 
@@ -913,10 +913,10 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
 
   } /* End for clip_mode == CS_GRADIENT_LIMIT_FACE */
 
-  /* Third clipping Algorithm: based on reconstructed values at I'/J' */
-  /*------------------------------------------------------------------*/
+  /* Clipping Algorithm: based on cell gradient reconstructed values at I'/J' */
+  /*--------------------------------------------------------------------------*/
 
-  else if (clip_mode == CS_GRADIENT_LIMIT_RC) {
+  else if (clip_mode == CS_GRADIENT_LIMIT_CELL_RC) {
 
     const cs_lnum_t *c2f = ma->cell_i_faces;
     const short int *c2f_sgn = ma->cell_i_faces_sgn;
@@ -988,10 +988,10 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
           v_max[i] = cs::max(v_max[i], val_f[c_f_id]);
         }
 
-        /* Shift by cell value */
+        /* Shift by cell value and scale by climgp */
 
-        v_min[i] -= pvar[c_id1];
-        v_max[i] -= pvar[c_id1];
+        v_min[i] = (v_min[i] - pvar[c_id1]) * climgp;
+        v_max[i] = (v_max[i] - pvar[c_id1]) * climgp;
       }
 
       /* Now compute limiter */
@@ -1017,7 +1017,7 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
           else if (v_r > v_max[i])
             sub_factor = cs::abs(v_max[i]) / cs::abs(v_r);
 
-          ccf = cs::min(ccf, sub_factor*climgp);
+          ccf = cs::min(ccf, sub_factor);
         }
 
         clip_factor[c_id1] = ccf;
@@ -1028,7 +1028,7 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
 
     ctx.wait();
 
-  } /* End for clip_mode == CS_GRADIENT_LIMIT_RC */
+  } /* End for clip_mode == CS_GRADIENT_LIMIT_CELL_RC */
 
   /* Synchronize variable */
 
@@ -5232,7 +5232,7 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
   /* Third clipping Algorithm: based on reconstructed values at I'/J' */
   /*------------------------------------------------------------------*/
 
-  else if (clip_mode == CS_GRADIENT_LIMIT_RC) {
+  else if (clip_mode == CS_GRADIENT_LIMIT_CELL_RC) {
 
     const cs_lnum_t *c2f = ma->cell_i_faces;
     const short int *c2f_sgn = ma->cell_i_faces_sgn;
@@ -5331,7 +5331,7 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
                          + dkkpf[1]*grad[c_id1][k][1]
                          + dkkpf[2]*grad[c_id1][k][2];
           }
-          cs_real_t v_r = _norm_2<stride>(r_delta);
+          cs_real_t v_r = cs_math_square_norm<stride>(r_delta);
           if (v_r > v_max[i])
             sub_factor = cs::abs(v_max[i]) / v_r;
 
