@@ -52,11 +52,11 @@ We explain the method used to calculate the pair of coefficients $A_b$ and $B_b$
 used for the computation of certain discrete terms in the equations to solve and notably allow
 us to determine a value associated to the boundary faces $f_{b,int}$ (at a point located
 at the \begin{quotation}
-centre
-\end{quotation}of the boundary face, barycentre of its vertices) using the relation
+center
+\end{quotation}of the boundary face, center of mass of its vertices) using the relation
 $f_{b,int} = A_b+B_b\,f_{I'}$ ($f_{I'}$ is the value of the variable at point
-$I'$, projection of the centre of the boundary cell on the normal to the boundary face
-and passing through its centre: see figure~\ref{fig_flux_clptur}).
+$I'$, projection of the center of the boundary cell on the normal to the boundary face
+and passing through its center: see figure~\ref{fig_flux_clptur}).
 
 See the \doxygenfile{clptrg_8f90.html}{programmers reference of the dedicated subroutine} for further details.
 
@@ -112,7 +112,7 @@ $f(z_p)= \displaystyle\frac{1}{\kappa} ln \left ( \displaystyle \frac
       {z_p+z_0}{z_0} \right ) $
 
 \item [-] The velocity scales, $u_k$ and $u^*$, are easy to compute, although their
-computation does require knowledge of the turbulent energy $k_I$ at the centre of the
+computation does require knowledge of the turbulent energy $k_I$ at the center of the
 adjoining cell to the boundary face.
 
 \item [-] The two-scale model is set as the default model in \CS. It
@@ -179,7 +179,7 @@ $k-\varepsilon$ standard ({\it \begin{quotation}
 Proposed modification of the turbulent wall boundary conditions for the
 Common Solver in the frame of the standard $k-\varepsilon$ model
 \end{quotation} }), EDF report HI-81/00/019/A, 2000, M. Boucker, J.-D. Mattei.}
-($\rho_I$ is the density at the centre of cell $I$). The term requiring the boundary
+($\rho_I$ is the density at the center of cell $I$). The term requiring the boundary
 conditions is the one that contains the normal derivative of the velocity at the wall,
 this being\footnote{The transpose gradient term is dealt with in \fort{visecv}
 and will not be considered here.}: $(\mu_I+\mu_{t,I})\ggrad{\vect{u}}\,\vect{n}$.

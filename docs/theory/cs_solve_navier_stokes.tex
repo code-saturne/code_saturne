@@ -253,7 +253,7 @@ for the system concerning the quantity $(\vect{\widetilde{u}}^{n+1}-\vect {u}^{n
  -\grad P^{n-1+\theta} + \dive \left[ (\mu \transpose{ \left( \gradt \vect{u}\right) })^{n+\theta_{S}}- \frac{2}{3} ( \mu  \dive \vect{u})^{n+\theta_{S}}\tens{Id} \,\right]+\vect{TS}^{n+\theta_{S}}- \,\tens{K}^{n} \vect{u}^{n}+\vect{u}^{n} \dive{(\rho\vect{u})}.
  \end{equation*}
 To integrate these terms over a cell $\vol{\celli}$, we multiply their local value
-at the cell centre by the volume of the cell.
+at the cell center by the volume of the cell.
 
 \paragraph{Convection  \\}
 
@@ -263,8 +263,8 @@ parts of the velocity field $\theta\,{\dive\left(\vect{\widetilde{u}}^{n+1}\otim
 (\rho \vect{u})\right)}$ and $(1-\theta)\,{\dive\left(
 \vect{u}^{n}\otimes (\rho \vect{u})\right)}$ yields a sum of the numerical
 fluxes ${\vect{F}\,_{\,ij}}$ calculated at the faces of the internal cells and ${\vect{F}_{\,b_{ik}}}$ calculated at the boundary faces of the domain $\Omega$.
-Taking $Neigh(i)$ as the set of the centres of the neighbouring cells of
-${\Omega_i}$ and $\gamma_b(i)$ the set of the centres of the boundary faces of
+Taking $Neigh(i)$ as the set of the centers of the neighbouring cells of
+${\Omega_i}$ and $\gamma_b(i)$ the set of the centers of the boundary faces of
 ${\Omega_i}$, we obtain:
 
 \begin{equation*}
@@ -299,9 +299,9 @@ where:
 \end{array}
 \end{equation}
 %
-\item a second-order centred scheme:\\
+\item a second-order centered scheme:\\
 $\vect{F}_{\,ij}((\rho \vect{u}), \vect{u})=
-\vect{F}^{\text{\it{centred}}}_{\,ij}((\rho\vect{u}),\vect{u})$\\
+\vect{F}^{\text{\it{centered}}}_{\,ij}((\rho\vect{u}),\vect{u})$\\
 with:
 \begin{equation}
 \vect{u}_{\fij}=
@@ -338,7 +338,7 @@ with the boundary value ${\vect{u}_{\ {b}_{ik}}}$ obtained from the prescribed
 boundary conditions.
 
 \begin{remark}
-When a centred scheme is used, for the simple reason of numerical stability
+When a centered scheme is used, for the simple reason of numerical stability
 we actually write:
 
 \begin{equation*}
@@ -378,7 +378,7 @@ keeping the same notations employed beforehand and with the value
 ${\vect{u}_{\fib}}$ at the boundary provided directly by the specified
 boundary conditions.
 
-The face value of the viscosity $\mu_{\fij}$ is calculated from the cell centre
+The face value of the viscosity $\mu_{\fij}$ is calculated from the cell center
 values using a specified function $\face$:
 \begin{equation*}
 \mu_{\fij} = f(\mu_\celli,\mu_\cellj)
@@ -560,7 +560,7 @@ numerical scheme here used, particularly for the following equation
 (1-\alpha_{\ij}) (\rho\vect{\widetilde{u}})^{n+1}_{\centjp}\right] \cdot \vect{S}_{\ij}
 \end{equation}
 
-As for the numerical flux calculation in the centred scheme, we legitimately
+As for the numerical flux calculation in the centered scheme, we legitimately
 use the following approximation:
 \begin{equation}
 \begin{array}{ll}
@@ -673,7 +673,7 @@ The mass flux is updated at each iteration step, using $\delta(\delta P)$. At co
 \vect{\widetilde{u}})^{n+1}_{\fij}\right]^{Corr} \cdot \vect{S}_{\ij}-\vect{D}_{\ij}(\Delta
 t^n,\delta P^{n+\theta})
 \end{equation}
-and we compute the new velocity field at the centre of the cells thanks
+and we compute the new velocity field at the center of the cells thanks
 to the equality:
 %
 % et en fait c'est chiant parcque on ne peut pas ecrire ca justement

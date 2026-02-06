@@ -103,7 +103,7 @@ expression contains:\\
 \underline{u})\,a)]^{\textit{upwind}} - \theta\,\, [\dive(\mu_{\,tot}\,\grad a)]^{\textit{N Rec}}
 \end{equation}
 This operator helps circumvent the difficulty caused by the presence of nonlinearities (which may be introduced if the slope test is activated in conjunction with the convection scheme) and the high fill-in that occurs in the matrix structure owing to the presence of reconstruction gradients.\\
-We have, for each cell $\Omega_I$ of centre $I$, the following relation\footnote{For further details regarding $\mathcal{EM_{\it{disc}}}$, the discrete operator acting on a scalar $a$, the reader can refer to the subroutine
+We have, for each cell $\Omega_I$ of center $I$, the following relation\footnote{For further details regarding $\mathcal{EM_{\it{disc}}}$, the discrete operator acting on a scalar $a$, the reader can refer to the subroutine
 \fort{matrix}.}:
 \begin{equation}\notag
 \mathcal{EM_{\it{disc}}}(a,I) = \int_{\Omega_i}\mathcal{EM}_{n}(a)  \, d\Omega
@@ -118,7 +118,7 @@ Hence:
 \end{equation}
 In order to do so, we will use a fixed-point algorithm, defining the
 sequence $(a^{n+1,\,k})_{k\in \mathbb{N}}$\footnote{If the fixed-point iterative algorithm is used
-to solve the velocity-pressure system (\var{NTERUP}$>$ 1), $a^{n+1,0}$ is initialised by
+to solve the velocity-pressure system (\var{NTERUP}$>$ 1), $a^{n+1,0}$ is initialized by
 the last value that was obtained for $a^{n+1}$.}:
 \begin{equation}\notag
 \left\{\begin{array}{l}
@@ -205,7 +205,7 @@ The loop in $k$ is then the following:
 \item Computation of the right-hand side of the equation, without the contribution of
 the explicit convection-diffusion terms $\var{RHSINI}$; as for the whole right-hand side corresponding
 to $\mathcal{E}_{n}(a^{n+1,\,k-1})$, it is stored in the array $\var{RHS}$,
-initialised by $\var{RHSINI}$ and completed with the reconstructed
+initialized by $\var{RHSINI}$ and completed with the reconstructed
 convection-diffusion terms by a call to the subroutine \fort{cs\_balance}.\\
 At iteration $k$, $\var{RHSINI}$ noted  $\var{RHSINI}^{\,k}$ is equal to:\\
 \begin{equation}\notag
@@ -264,7 +264,7 @@ where
 a^{n+1,\,1}=\var{PVAR}^{\,1}=\var{PVAR}^{\,0}+\var{DPVAR}^{\,1}=a^{n+1,\,0}+\delta a^{n+1,\,1}
 \end{equation}
 $\bullet$ for iteration $k+1$,\\
-The array $\var{RHSINI}^{\,k+1}$ initialises the entire right side
+The array $\var{RHSINI}^{\,k+1}$ initializes the entire right side
 $\var{RHS}^{\,k+1}$ to which will be added the convective and diffusive contributions
 {\it via} the subroutine \fort{cs\_balance}.\\
 The array formula is given by:
@@ -276,10 +276,10 @@ The array formula is given by:
 Then follows the computation and the addition of the reconstructed convection-diffusion terms of
 $-\  \mathcal{E}_{n}(a^{n+1,\,k})$, by a call to the \fort{cs\_balance} subroutine. Remember
 that the convection is taken into account at this step by the user-specified numerical scheme
-(first-order accurate in space upwind scheme, centred scheme with second-order spatial discretisation, second-order
-linear upwind "SOLU" scheme or a weighted average (blending) of one of the second-order schemes (either centred or SOLU) and the first-order upwind scheme, with potential use of a slope test).\\
+(first-order accurate in space upwind scheme, centered scheme with second-order spatial discretisation, second-order
+linear upwind "SOLU" scheme or a weighted average (blending) of one of the second-order schemes (either centered or SOLU) and the first-order upwind scheme, with potential use of a slope test).\\
 This contribution (convection-diffusion) is then added in to the right side of the
-equation  $\var{RHS}^{\,k+1}$ (initialised by $\var{RHSINI}^{\,k+1}$).
+equation  $\var{RHS}^{\,k+1}$ (initialized by $\var{RHSINI}^{\,k+1}$).
 \begin{equation}\notag
 \begin{array}{ll}
 \var{RHS}^{\,k+1}\ &= \var{RHSINI}^{\,k+1} - \theta\,\left[\,\dive\left((\rho \underline{u})\,a^{n+1,\,k}\right)- \dive\left(\mu_{\,tot}\,\grad a^{n+1,\,k}\right)\right]\\
@@ -330,7 +330,7 @@ End of the loop.
 \etape{Approximation $\mathcal{EM}_{n}$ of the operator
 $\mathcal{E}_{n}$}
 Alternative approaches should be investigated with the aim of either modifying the current definition
-of the approximate operator so that the centred scheme without reconstruction, for example, is
+of the approximate operator so that the centered scheme without reconstruction, for example, is
 taken into account, or abandoning it altogether.\\
 
 \etape{Test of convergence}

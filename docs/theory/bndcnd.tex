@@ -448,7 +448,7 @@ $\hat {\mathcal R}=(\vect{t}, \, -\vect{n}, \, \vect{b})$:
 \item [$\bullet$] $-\vect{n}$ is the unit vector orthogonal to the wall and directed towards the interior of the computational domain,
 \item[$\bullet$] $\vect{b}$ is the unit vector which completes the positively oriented coordinate system.
 \end{itemize}
-In this reference-frame the wall distance of the cell centre to the wall $\norm{\centf - \centip}$ is denoted by $y$.
+In this reference-frame the wall distance of the cell center to the wall $\norm{\centf - \centip}$ is denoted by $y$.
 
 The objective of wall functions
 is to increase the exchange coefficient
@@ -457,7 +457,7 @@ turbulence and due to effectively much sharper gradients of the computed variabl
 linear profile assumed inside each cell by Finite Volumes discretisation. The end result (Cf \eqref{eq:bndcnd:boundary_condition_wall_function}) will
 be to correct the laminar coefficient, $h_{int} = \lambda / y $, by a dimensionless analytical function (a
 "wall function") $u^+$ that represents the realistic non-linear profile. The correction is moreover
-proportional to the cell centre to wall dimensionless distance, $y^+$, over which a linear profile
+proportional to the cell center to wall dimensionless distance, $y^+$, over which a linear profile
 assumption may or may not be appropriate.
 These functions $u^+$ and $y^+$ that depends on the level of turbulent kinetic energy,
 are made dimensionless by:
@@ -711,7 +711,7 @@ Vedat S. Arpaci and Poul S. Larsen, Prentice-Hall, Inc was used.
 The approach is really similar to what is performed on the fluid velocity:
 \begin{itemize}
 \item if the wall value $\varia_{wall}$ is imposed, the Dirichlet boundary condition is
-substituted by a Robin-type one where the diffusive flux is function of the cell centre scalar value,
+substituted by a Robin-type one where the diffusive flux is function of the cell center scalar value,
 \item if a Neumann value is imposed (that is to say that the user has prescribed the flux of $\varia$), then the wall
 function is used to evaluate the corresponding wall value $\varia_{wall}$ which is displayed by the code.
 \end{itemize}

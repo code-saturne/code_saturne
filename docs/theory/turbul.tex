@@ -93,7 +93,7 @@ See the \doxygenfile{turbke_8f90.html}{programmers reference of the dedicated su
 \subsection{$k-\epsilon-\overline{v^2}/k$ elliptic blending turbulence model}
 
 The BL-$\overline{v^2}/k$~ \cite{Billard:2012} is a  elliptic-blending based $\overline{v^2}-f$ model.
-It is a low Reynolds number model and as such the wall distance of the first off-wall cell centre must be of order of unity when expressed in viscous unit.
+It is a low Reynolds number model and as such the wall distance of the first off-wall cell center must be of order of unity when expressed in viscous unit.
 
 The following gives details about the model followed by some description of its implementation into \CS.
 
@@ -768,7 +768,7 @@ T_{ij}-\frac{1}{3}\trace \tens{T} \delta_{ij} &=& -2 C \widetilde{\Delta}^2 |\wi
 \end{equation}
 where
 $\overline{u}$ stands for the \emph{implicit-filtered} value of a variable $u$
-defined at the centres of the cells and $\tilde{u}$ represents the
+defined at the centers of the cells and $\tilde{u}$ represents the
 \emph{explicit-filtered} value associated with the variable $u$. It follows that
 the numerical computation of $L_{ij}$ is possible, since it requires the
 explicit filtering to be applied to implicitly filtered variables only

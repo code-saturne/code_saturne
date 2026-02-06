@@ -34,7 +34,7 @@ This function is dedicated to the calculation of the wall boundary conditions. T
 
 The wall boundary conditions refer to all the boundary conditions for the velocity, the turbulent variables ($k$, $\varepsilon$, $R_{ij}$), the temperature when it has a prescribed value at the wall (or the enthalpy and more generally the {\it VarScalaires}\footnote{As in \fort{cs\_boundary\_conditions} the {\it VarScalaire} are any solution of a convection-diffusion equation apart from the velocity, the pressure and the turbulent variables  $k$, $\varepsilon$ and $R_{ij}$. More specifically, the name {\it VarScalaire} can refer to the temperature, the enthalpy or a passive scalar.  } to treat at the wall by using a similarity law for the associated boundary layer). For the {\it VarScalaire} in particular, when the boundary conditions at the wall are of Neumann type (homogeneous or not), they are treated in  \fort{cs\_boundary\_conditions} and don't present them here. In particular, the boundary conditions of the {\it VarScalaires} are not treated here because their treatment at the wall is of homogeneous Neumann type.
 
-We present the calculation of the pair of coefficients $A_b$ and $B_b$ which are used during the computation of certain discretized terms of the equations to solve, and which allow in particular to determine a value associated with the boundary faces $f_{b,int}$ (at a point located at the "centre" of the boundary face, the barycentre of its vertices) using the formulae   $f_{b,int} = A_b+B_b\,f_{I'}$ ($f_{I'}$ is the value of the variable at point $I'$, the projection of the centre of the boundary cell onto the line normal to the boundary face and passing through its centre: see figure~\ref{Base_Clptur_fig_flux_clptur}).
+We present the calculation of the pair of coefficients $A_b$ and $B_b$ which are used during the computation of certain discretized terms of the equations to solve, and which allow in particular to determine a value associated with the boundary faces $f_{b,int}$ (at a point located at the "center" of the boundary face, the center of mass of its vertices) using the formulae   $f_{b,int} = A_b+B_b\,f_{I'}$ ($f_{I'}$ is the value of the variable at point $I'$, the projection of the center of the boundary cell onto the line normal to the boundary face and passing through its center: see figure~\ref{Base_Clptur_fig_flux_clptur}).
 
 See the \doxygenfile{clptur_8f90.html}{programmers reference of the dedicated subroutine} for further details.
 
@@ -81,7 +81,7 @@ We write $u^*$ the friction velocity at the wall calculated from the equation
 \item [-]
 $y^+_k$  represents a dimensionless wall distance,
 $y^+_k= \displaystyle\frac{u_k\,I'F}{\nu}$ ($\nu$ is the molecular kinematic viscosity
-taken at the centre $I$ of the boundary cell).
+taken at the center $I$ of the boundary cell).
 The function $f$ gives the ideal shape of the velocity profile.
 It is piecewisely approximated by the logarithmic law
  $f(z)=f_1(z)= \displaystyle\frac{1}{\kappa}ln(z)+5,2$ for
@@ -90,7 +90,7 @@ and by the linear law $f(z)=f_2(z)=z$ otherwise.
 
 \item [-] The two velocity scale $u_k$ and $u^*$ are simple to compute
 but their computation requires the knowledge of the turbulent kinetic energy $k_I$
-at the centre of cell adjoint to the boundary face  (with the $R_{ij}-\varepsilon$ model, we use half the trace of the Reynolds stress tensor).
+at the center of cell adjoint to the boundary face  (with the $R_{ij}-\varepsilon$ model, we use half the trace of the Reynolds stress tensor).
 
 
 \item [-] The two velocity scale model is the default model in \CS.
@@ -130,7 +130,7 @@ friction velocity at the wall solution of the equation
 $\displaystyle\frac{u^r_{\tau,I'}}{u^*} = f(y^+)$.
 $y^+$  represents a dimensionless wall distance
 $y^+=\displaystyle\frac{u^*\,I'F}{\nu}$ ($\nu$ is the molecular kinematic viscosity
-taken at the centre $I$ of the boundary cell).
+taken at the center $I$ of the boundary cell).
 The function $f$ gives the ideal shape of the velocity profile, as in the case of the two velocity scale model. One can note that this friction velocity, calculated using a more complicated approach (Newton method), can however be obtained without making any reference to the turbulent variables ($k$, $\varepsilon$, $R_{ij}$). For convenience in the case of the one velocity scale model, we write $u_k=u^*$.
 
 Later on, we will use $u^*$ and $u_k$ for the boundary conditions of the velocity and scalars (in particular the temperature).
@@ -186,7 +186,7 @@ The boundary conditions are necessary to prescribe at the boundary
 equation\footnote{Proposition de modification des conditions aux limites de
 paroi turbulente pour le Solveur Commun dans le cadre du mod\`ele
 $k-\varepsilon$ standard, rapport EDF HI-81/00/019/A, 2000, M. Boucker, J.-D. Mattei.}
-($\rho_I$ is the density at the centre of cell $I$).
+($\rho_I$ is the density at the center of cell $I$).
 The term which requires boundary conditions is the one containing the
 velocity derivative in the normal direction to the wall\footnote{The transpose gradient term is treated in \fort{visecv}
 and thus will not be considered here.}:
@@ -1082,7 +1082,7 @@ around 11.81 instead of 10.88 for the law adopted here
 $U^+=8,3\,(y^+)^\frac{1}{7}$).
 
 
-The values of all the physical properties are taken at the cell centres,
+The values of all the physical properties are taken at the cell centers,
 without any reconstruction. Without modifying this approach, it would be
 useful to keep this in mind.
 

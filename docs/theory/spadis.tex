@@ -33,9 +33,9 @@ This section is limited to a brief description of the way $0^{th}$-order, convec
 the equations are integrated using the budget methodology. Specific attention is devoted to the
 calculation of gradients, since it is a major characteristic of the
 co-located finite volume method (all the variables are associated with the
-same point, namely the cell centre\footnote{%
-The centre of a cell is a geometric point associated with the cell and
-located preferably inside the cell. Nevertheless, the word \emph{centre} shall
+same point, namely the cell center\footnote{%
+The center of a cell is a geometric point associated with the cell and
+located preferably inside the cell. Nevertheless, the word \emph{center} shall
 not be taken literally,
 especially in the case of polyhedral cells that do not have a regular shape.}%
 ).
@@ -61,7 +61,7 @@ example, $\rho \vect{g}$ becomes $\norm{\vol{\celli}} \rho_{\celli} \vect{g}$.
 In this expression, $\norm{\vol{\celli}}$ is the measure of cell volume $\vol{\celli}$ and
 $\rho_{\celli}$ denotes the average of $\rho $ over the control volume
 (the cell) $\vol{\celli}$ applying \eqref{eq:spadis:variai_def}.
-\nomenclature[riu]{$\centi$}{centre of $\vol{\celli}$}
+\nomenclature[riu]{$\centi$}{center of $\vol{\celli}$}
 
 %-----------------------------------------
 \paragraph{Divergence operator--conservative gradient terms:}
@@ -93,7 +93,7 @@ In expression \eqref{eq:spadis:green_relation}, face values of the field $\varia
 \end{equation}
 %
 so that the relationship \eqref{eq:spadis:green_relation} is exact. As the field $\varia$ is linear over the face $\face$,
-$\varia_\face$ can be associated to the face centre $\centf$:
+$\varia_\face$ can be associated to the face center $\centf$:
 \begin{equation}\label{eq:spadis:variaf_id}
 \varia_{\centf} = \varia_\face.
 \end{equation}
@@ -146,7 +146,7 @@ Moreover, the unsteady and convection terms are usually written in a \emph{non-c
  \end{array}
  \end{equation}
 the second line is obtained using once again Green's formula. In formula \eqref{eq:spadis:convection_def}, one still has to express the face value
- $\varia_\face$ and also the value of the mass flux $\left(\rho \vect{u}\right)_\face\cdot \vect{S}_{\bij}$: all the available convective schemes (\emph{upwind, centred, SOLU, etc.}) are presented in \S~\ref{sec:spadis:convection}. Let $\dot{m}_{\bij}$ be the outgoing
+ $\varia_\face$ and also the value of the mass flux $\left(\rho \vect{u}\right)_\face\cdot \vect{S}_{\bij}$: all the available convective schemes (\emph{upwind, centered, SOLU, etc.}) are presented in \S~\ref{sec:spadis:convection}. Let $\dot{m}_{\bij}$ be the outgoing
  mass flux from cell $\celli$ through the face $\face$:
  %
   \begin{equation}\label{eq:spadis:massflux_def}
@@ -198,11 +198,11 @@ The diffusion operator can be extended to anisotropic tensor dynamic diffusivity
  \paragraph{More geometrical quantities:}
 To end up the general description of the discretized operators, let us introduce some geometrical
 quantities which will be used during the approximation process of linking face fluxes to
-cell centred quantities.
+cell centered quantities.
 % fa modification : reconstruction is compulsory for consistence
 For consistency and to reach a higher order in space, the values of the
 variables at points $\centip$ and $\centjp$ are used.
-These points are respectively the projection of the centres $\centi$ and $\centj$
+These points are respectively the projection of the centers $\centi$ and $\centj$
 along the orthogonal line to the interior face $\fij$ passing through $\centf$.
 When considering a boundary face $\fib$, $\centip$ is defined as the projection of $\centi$
 on the normal to the boundary face $\fib$ passing through $\centf$. All the geometrical
@@ -300,15 +300,15 @@ with
 
 
 %-------------------------------------------------------------------------------
-\subsection{Centred}
-For a centred scheme, the convective flux reads:
+\subsection{Centered}
+For a centered scheme, the convective flux reads:
 
 \begin{equation}
-C_{\bij}^{centred} \left( \dot{m}_{\bij} , \, \varia \right)  \equiv \left(\varia_\fij^{centred} - \varia_{\celli} \right) \dot{m}_{\bij} ,
+C_{\bij}^{centered} \left( \dot{m}_{\bij} , \, \varia \right)  \equiv \left(\varia_\fij^{centered} - \varia_{\celli} \right) \dot{m}_{\bij} ,
 \end{equation}
 with
 \begin{equation}
-\varia_\fij^{centred} = \alpha_{\bij} \varia_{\centip} + \left( 1 - \alpha_{\bij} \right) \varia_{\centjp}.
+\varia_\fij^{centered} = \alpha_{\bij} \varia_{\centip} + \left( 1 - \alpha_{\bij} \right) \varia_{\centjp}.
 \end{equation}
 
 \begin{remark}
@@ -316,7 +316,7 @@ with
 We actually write
 %
 \begin{equation}
-\varia_\fij^{centred} = \alpha_{\bij} \varia_{\celli} + \left( 1 - \alpha_{\bij} \right) \varia_{\cellj}
+\varia_\fij^{centered} = \alpha_{\bij} \varia_{\celli} + \left( 1 - \alpha_{\bij} \right) \varia_{\cellj}
 +
 \dfrac{1}{2} \left[ \grad_{\celli} \varia + \grad_{\cellj} \varia \right] \cdot \left(\centf - \cento\right),
 \end{equation}
@@ -328,7 +328,7 @@ The factor $ \frac{1}{2}$ is used for numerical stability reasons.
 %-------------------------------------------------------------------------------
 \subsection{Second Order Linear Upwind (SOLU)}
 For a $2^{nd}$-order linear upwind scheme\footnotetext{%
-Extrapolation  of the upwind value at the faces centre.}%
+Extrapolation  of the upwind value at the faces center.}%
 , the convective flux reads:
 
 \begin{equation}
@@ -355,8 +355,8 @@ A^g_{\fib}  + B^g_{\fib} \varia_{\centip}  & \text{ if } \dot{m}_{\ib} < 0.
 
 \begin{remark}
 A slope test (which may introduce non-linearities in the convection operator) allows to switch from
-the centred or SOLU scheme to the first-order upwind scheme (without blending). Additionally, the default option to deal with $\varia_\fij$ is
-computed as a weighted average between the upstream value and the centred value (blending), according to users' choice.
+the centered or SOLU scheme to the first-order upwind scheme (without blending). Additionally, the default option to deal with $\varia_\fij$ is
+computed as a weighted average between the upstream value and the centered value (blending), according to users' choice.
 \end{remark}
 
 
@@ -880,7 +880,7 @@ been motivated to minimize truncation errors.
 Notations of the geometrical quantities are recalled in \figurename~\ref{fig:geom_gradrc}.
 The aim of the present algorithm is to compute the cell gradient $\grad_{\celli} \varia $ of the scalar field $\varia$
 using a least squares method.
-The idea is to evaluate the gradient of the variable at the cell faces using the value of the gradient at the cell centres.
+The idea is to evaluate the gradient of the variable at the cell faces using the value of the gradient at the cell centers.
 The method is not expected to be as robust as the \emph{iterative} process presented in \S~\ref{sec:spadis:iteratif_gradient},
 but much more efficient.
 
@@ -931,7 +931,7 @@ The following choice makes it possible:
 \end{equation}
 
 Thus, for internal faces $\fij$, $\vect{d}_{\bij}$ is the normalized vector joining
-the centres $\centi$ and $\centj$ oriented from cell $\celli$ to $\cellj$.
+the centers $\centi$ and $\centj$ oriented from cell $\celli$ to $\cellj$.
 The quantity  $\grad_{\fij} \varia   \cdot \vect{d}_{\bij}$ is given by:
 \begin{equation}
 \grad_{\fij} \varia   \cdot \vect{d}_{\bij} =\dfrac{\varia_{\cellj} - \varia_{\celli} }{\norm{\centj - \centi}}.
@@ -1141,7 +1141,7 @@ depend on $\grad_{\celli} \varia $ is made:
 \end{equation}
 
 Thus, for internal faces $\fij$, $\vect{d}_{\bij}$ is still the normalized vector joining
-the centres $\centi$ and $\centj$ oriented from cell $\celli$ to $\cellj$.
+the centers $\centi$ and $\centj$ oriented from cell $\celli$ to $\cellj$.
 The quantity  $\gradt_{\fij} \variav   \cdot \vect{d}_{\bij}$ is given by:
 \begin{equation}
 \gradt_{\fij} \variav   \cdot \vect{d}_{\bij} =\dfrac{\variav_{\cellj} - \variav_{\celli} }{\norm{\centj - \centi}}.

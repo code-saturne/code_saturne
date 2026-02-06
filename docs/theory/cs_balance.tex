@@ -67,8 +67,8 @@ of $\mathcal{B_{\mathcal{\beta}}}$ can be written as a sum of the
 numerical fluxes $F_{\,ij}$ calculated at the faces of the internal
 cells, and the numerical fluxes $F_{\,b_{ik}}$ calculated at the
 boundary faces of the computational domain $\Omega$. Let's take
-$\Neigh{i}$ the set of the centres of the neighbouring cells of
-${\Omega_i}$ and $\gamma_b(i)$ the set of the centres of the boundary
+$\Neigh{i}$ the set of the centers of the neighbouring cells of
+${\Omega_i}$ and $\gamma_b(i)$ the set of the centers of the boundary
 faces of ${\Omega_i}$ (if they exist). Thus we can write
 
 \begin{equation}\notag
@@ -132,7 +132,7 @@ a_J + \vect{JF}\,.\,(\grad a)_{\,J}
 \end{array}\right.$\\
 \end{tabular}\\
 \renewcommand{\arraystretch}{1.}
-\footnotetext{Extrapolation  of the upwind value at the faces centre.}
+\footnotetext{Extrapolation  of the upwind value at the faces center.}
 
 The value of $F_{\,b_{ik}}$ is calculated as :
 \begin{equation}\notag
@@ -359,7 +359,7 @@ $\Omega_i$  and $\Omega_j$.
 \subsubsection*{\bf Calculation of the flux in pure upwind $\var{IUPWIN} = 1$}
 
 In this case, there is no reconstruction since only
-the values \var{PVAR(II)} and \var{PVAR(JJ)} at the cell centres are needed.
+the values \var{PVAR(II)} and \var{PVAR(JJ)} at the cell centers are needed.
 \begin{equation}
 \begin{array}{ll}
 \var{PIF} &= \var{PVAR(II)} \\
@@ -584,8 +584,8 @@ Wether the slope test is activated or not, when the centered or the SOLU schemes
 a blending coefficient (\var{BLENCP}) between 0 and 1, provided by the user, enables to blend, if desired, the chosen scheme and the pure upwind scheme following the formulae:
 \begin{equation}
 \begin{array}{ll}
-P_{IF} &= \var{BLENCP} P^{\,\it (centre\  ou\  SOLU) }_{\,IF} + (1 - \var{BLENCP})\  P_{II}\\
-P_{JF} &= \var{BLENCP} P^{\,\it (centre\  ou\  SOLU) }_{\,JF} + (1 - \var{BLENCP})\  P_{JJ}\\
+P_{IF} &= \var{BLENCP} P^{\,\it (center\  or\  SOLU) }_{\,IF} + (1 - \var{BLENCP})\  P_{II}\\
+P_{JF} &= \var{BLENCP} P^{\,\it (center\  or\  SOLU) }_{\,JF} + (1 - \var{BLENCP})\  P_{JJ}\\
 \end{array}
 \end{equation}
 $\bullet$ calculation of \var{FLUI} and \var{FLUJ},\\

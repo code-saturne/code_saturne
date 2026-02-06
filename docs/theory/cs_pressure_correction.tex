@@ -200,12 +200,12 @@ With "strengthened velocity-pressure coupling", we invert the system\footnote{$\
 
 The use of operators when writing out the equations presents a major inconvenience when used in conjunction with collocated discretization. More specifically, the operator\footnote{We emphasize again that the operator $\tens{G}$ is the "cell gradients" operator applied to the explicit pressure during velocity prediction.}
 $\tens{D}\ \tens{B}^{-1}\ \tens{G}$ can lead to odd-even decoupling of the nodes on a regular Cartesian
-mesh\footnote{If $u_i$ is the value of a variable at the cell centres on a 1D Cartesian mesh, the Laplacian
+mesh\footnote{If $u_i$ is the value of a variable at the cell centers on a 1D Cartesian mesh, the Laplacian
 of $u$ calculated by this operator in $i$ is written: $\displaystyle
 \frac{u_{i-2}+2u_i-u_{i+2}}{4h^2}$, where $\displaystyle h$ is the space step.  This is where the decoupling of the cells originates.}.
 To avoid this problem, we use the operator $\tens{L}$ (already present in the collocated finite volume
-formulation of the operator $\dive(\,\grad\,))$ defined in each cell\footnote{Recalling that $Neigh(i)$ is the set of cell centres of the neighbouring cells of ${\Omega_i}$ and
-$\gamma_b(i)$ the set of centres of the boundary faces, if any, of ${\Omega_i}$.} $\Omega_i$ of centre $I$ by\footnote{If $u_i$ is the value of a variable at the cell centres on a 1D Cartesian mesh, the Laplacian
+formulation of the operator $\dive(\,\grad\,))$ defined in each cell\footnote{Recalling that $Neigh(i)$ is the set of cell centers of the neighbouring cells of ${\Omega_i}$ and
+$\gamma_b(i)$ the set of centers of the boundary faces, if any, of ${\Omega_i}$.} $\Omega_i$ of center $I$ by\footnote{If $u_i$ is the value of a variable at the cell centers on a 1D Cartesian mesh, the Laplacian
 of $u$ calculated by the latter operator in $i$ reads: $\displaystyle \frac{u_{i-1}+2u_i-u_{i+1}}{4h^2}$, with $\displaystyle h$ the spatial step.}:
 \begin{equation}\label{Base_Resopv_eqn7}
 \begin{array}{ll}

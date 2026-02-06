@@ -696,7 +696,7 @@ ajoutée au second membre par \fort{cs\_balance} ; l'autre
 partie sera explicite et prise en compte dans $f_s^{\,exp}$.
 \begin{itemize}
 \item [$\star$] On effectue une boucle d'indice \var{IEL} sur les cellules
-$\Omega_l$ de centre $L$~:
+$\Omega_l$ de center $L$~:
 \begin{itemize}
 \item [$\Rightarrow$] $\displaystyle \var{TRRIJ }= \frac{1}{2} (R^{\,n}_{ii})_L $
 \item [$\Rightarrow$] $\displaystyle \var{CSTRIJ} = \rho^n_L \ C_S \ \frac{(R^{\,n}_{ii})_L}{2\,\varepsilon^n_L}$
@@ -712,7 +712,7 @@ $\Omega_l$ de centre $L$~:
 purement internes $lm$ pour remplir le tableau \var{VISCF}~:
 \begin{itemize}
 \item [$\Rightarrow$] Identification des cellules $\Omega_l$ et $\Omega_m$ de
-centre respectif $L$ (variable \var{II}) et $M$ (variable \var{JJ}), se trouvant de chaque c\^oté de la face
+center respectif $L$ (variable \var{II}) et $M$ (variable \var{JJ}), se trouvant de chaque c\^oté de la face
 $lm$\footnote{La normale à la face est orientée de L vers M.}.
 \item [$\Rightarrow$] Calcul du carré de la surface de la face. La valeur est
 stockée dans le tableau \var{SURFN2}.
@@ -807,7 +807,7 @@ $\Omega_l$~:
 \footnote{Comme dans le sous-programme \fort{cs\_face\_viscosity}, on multiplie la viscosité par
 $\displaystyle \frac{S_{\,lm}}{\overline{L'M'}}$, où $S_{\,lm}$ et
 $\overline{L'M'}$ représentent respectivement la surface de la face $lm$ et la
-mesure algébrique du segment reliant les projections des centres des cellules
+mesure algébrique du segment reliant les projections des centers des cellules
 voisines sur la normale à la face. On garde dans ce sous-programme  la possibilité d'interpoler la viscosité aux cellules linéairement ou d'utiliser une moyenne harmonique. La viscosité au bord est celle de la cellule de bord correspondante.}
 $ \gamma^n_{\,lm} = (\tens{D}^{\,n}\,\vect{n}_{\,lm}).\vect{n}_{\,lm}$ aux faces $lm$
 
@@ -835,7 +835,7 @@ On décrit ci-dessous le sous-programme \fort{reseps}, les commentaires du sous-
 
 Appel de \fort{cs\_user\_turbulence\_source\_terms} pour charger les termes sources utilisateurs. Ils sont
 stockés dans les tableaux suivants~:\\
-pour la cellule $\Omega_l$ représentée par $\var{IEL}$ de centre $L$, on a~:
+pour la cellule $\Omega_l$ représentée par $\var{IEL}$ de center $L$, on a~:
 \begin{equation}\notag
 \left\{\begin{array}{lll}
 &\var{ROVSDT(IEL)}&= |\Omega_l| \ \alpha_{\varepsilon}\\
@@ -878,7 +878,7 @@ On incrémente ensuite \var{SMBR} et \var{ROVSDT}.
  $\displaystyle \rho\,C_{\varepsilon_1}\,\frac{\varepsilon}{k}\,\mathcal{P}$
  et du terme de dissipation $-\,\displaystyle \rho\,C_{\varepsilon_2}\,\frac{\varepsilon}{k}\,\varepsilon$ \\
 pour cela, on effectue une boucle d'indice \var{IEL} sur les cellules $\Omega_l$
-de centre $L$~:
+de center $L$~:
 \begin{itemize}
 \item [$\Rightarrow$] $\displaystyle \var{TRPROD}= \frac{1}{2} (\mathcal{P}^n_{ii})_L = \frac{1}{2} \left[ \var{PRODUC(1,IEL)} +  \var{PRODUC(2,IEL)} +  \var{PRODUC(3,IEL)} \right] $
 \item [$\Rightarrow$] $\displaystyle \var{TRRIJ }= \frac{1}{2} (R^n_{ii})_L $

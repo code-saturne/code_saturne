@@ -394,7 +394,7 @@ Therefore, when there is neither source term extrapolation nor iteration over \f
 
 \item If source term extrapolation is used, at the first iteration over \fort{cs\_solve\_navier\_stokes}, the vector \var{TRAV} (or \var{TRAVA}) receives $-\theta_S$ times the contribution at time $n-1$ of the source terms to be extrapolated\footnote{Because
 $(\vect{T}_s^{exp})^{n+\theta_S}=(1+\theta_S)\,(\vect{T}_s^{exp})^n
--\,\theta_S\, (\vect{T}_s^{exp})^{n-1}$} (stored in \var{PROPCE}). \var{PROPCE} is then reinitialised to zero so as to be able to receive afterwards the contribution at the current time step of the extrapolated source terms.
+-\,\theta_S\, (\vect{T}_s^{exp})^{n-1}$} (stored in \var{PROPCE}). \var{PROPCE} is then reinitialized to zero so as to be able to receive afterwards the contribution at the current time step of the extrapolated source terms.
 
 \item The value of the term corresponding to the turbulence model is only calculated during the first iteration over \fort{cs\_solve\_navier\_stokes} then added to \var{TRAVA}, \var{TRAV} or \var{PROPCE} depending on whether the source terms are extrapolated, and/or whether we iterate over \fort{cs\_solve\_navier\_stokes}.\\
 
