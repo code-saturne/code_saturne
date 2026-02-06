@@ -3374,7 +3374,14 @@ cs_saddle_solver_context_simple_free
   if (ctx == nullptr)
     return;
 
-  cs_saddle_solver_context_simple_clean(ctx);
+  CS_FREE(ctx->m21x1);
+  CS_FREE(ctx->b1_tilda);
+  CS_FREE(ctx->rhs);
+
+  CS_FREE(ctx->schur_diag);
+  CS_FREE(ctx->schur_xtra);
+  CS_FREE(ctx->m11_inv_diag);
+  CS_FREE(ctx->inv_m22);
 
   CS_FREE(ctx);
   *p_ctx = nullptr;
