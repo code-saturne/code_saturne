@@ -969,9 +969,9 @@ _var_gradient_limiter_type(cs_tree_node_t       *tn_v,
       eqp->d_climgr = 1.5;
     }
     else if (strcmp(choice, "cell_gradient_rc") == 0) {
-      eqp->imligr = 1;
+      eqp->imligr = 2;
       eqp->climgr = 1.0;
-      eqp->d_imligr = 1;
+      eqp->d_imligr = 2;
       eqp->d_climgr = 1.0;
     }
   }
