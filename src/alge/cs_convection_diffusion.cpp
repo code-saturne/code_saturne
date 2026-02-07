@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -53,8 +53,6 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
-#include "alge/cs_blas.h"
-#include "alge/cs_bad_cells_regularisation.h"
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_dispatch.h"
 #include "cdo/cs_equation_param.h"
@@ -68,15 +66,18 @@
 #include "base/cs_field_default.h"
 #include "base/cs_field_operator.h"
 #include "base/cs_field_pointer.h"
-#include "alge/cs_gradient.h"
-#include "alge/cs_gradient_boundary.h"
-#include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
 #include "base/cs_porous_model.h"
 #include "base/cs_profiling.h"
 #include "base/cs_timer.h"
 #include "base/cs_velocity_pressure.h"
+
+#include "alge/cs_blas.h"
+#include "alge/cs_bad_cells_regularisation.h"
+#include "alge/cs_gradient.h"
+#include "alge/cs_gradient_boundary.h"
+#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -199,12 +200,7 @@ _beta_limiter_denom(cs_field_t                 *f,
 
   /* select halo type according to field gradient method */
 
-  cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
-
-  cs_gradient_type_by_imrgra(eqp->imrgra,
-                             &gradient_type,
-                             &halo_type);
+  cs_halo_type_t halo_type = cs_gradient_halo_type_by_imrgra(eqp->d_gradient_r);
 
   /* for NVD / TVD schemes (including VoF schemes) */
 
@@ -454,7 +450,7 @@ _beta_limiter_denom(cs_field_t                 *f,
 
   ctx.wait();
 
-  //Free Gradient arrays
+  // Free Gradient arrays
   CS_FREE(local_min);
   CS_FREE(local_max);
   CS_FREE(courant);
@@ -1416,7 +1412,7 @@ _convection_diffusion_scalar_unsteady
                                     0, /* hyd_p_flag */
                                     w_stride,
                                     eqp.verbosity,
-                                    (cs_gradient_limit_t)(eqp.imligr),
+                                    (cs_gradient_limit_t)(eqp.d_imligr),
                                     eqp.epsrgr,
                                     eqp.d_climgr,
                                     nullptr, /* f_ext exterior force */
@@ -2424,7 +2420,7 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
                                     0, /* hyd_p_flag */
                                     w_stride,
                                     eqp.verbosity,
-                                    (cs_gradient_limit_t)eqp.imligr,
+                                    (cs_gradient_limit_t)eqp.d_imligr,
                                     eqp.epsrgr,
                                     eqp.d_climgr,
                                     nullptr, /* f_ext exterior force */
@@ -3029,7 +3025,6 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
  *       - \mu_\fij \gradt_\fij \vect{\varia} \cdot \vect{S}_\ij  \right)
  * \f]
  *
->>>>>>> 63ac7852a ([BC_coeffs] scalar boundary coefficients are now computed in the sweep loop)
  * Remark:
  * if ivisep = 1, then we also take \f$ \mu \transpose{\gradt\vect{\varia}}
  * + \lambda \trace{\gradt\vect{\varia}} \f$, where \f$ \lambda \f$ is
@@ -4556,7 +4551,7 @@ cs_convection_diffusion_vector(int                         idtvar,
                                     inc,
                                     eqp.nswrgr,
                                     eqp.verbosity,
-                                    (cs_gradient_limit_t)(eqp.imligr),
+                                    (cs_gradient_limit_t)(eqp.d_imligr),
                                     eqp.epsrgr,
                                     eqp.d_climgr,
                                     bc_coeffs_v,
@@ -4863,7 +4858,6 @@ cs_convection_diffusion_tensor(int                          idtvar,
       || (   eqp.iconv != 0 && eqp.blencv > 0.
           && (eqp.ischcv == 0 || eqp.ircflu == 1 || eqp.isstpc == 0))) {
 
-    const cs_gradient_limit_t imligp = (cs_gradient_limit_t)(eqp.imligr);
     const cs_real_6_t  *restrict _pvar
       = (pvar != nullptr) ? (const cs_real_6_t  *)pvar : pvara;
 
@@ -4873,7 +4867,7 @@ cs_convection_diffusion_tensor(int                          idtvar,
                                     inc,
                                     eqp.nswrgr,
                                     eqp.verbosity,
-                                    imligp,
+                                    (cs_gradient_limit_t)(eqp.d_imligr),
                                     eqp.epsrgr,
                                     eqp.d_climgr,
                                     bc_coeffs_ts,
@@ -5085,7 +5079,6 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
   CS_PROFILE_FUNC_RANGE();
 
   const int nswrgp = eqp.nswrgr;
-  const cs_gradient_limit_t imligp = (cs_gradient_limit_t)(eqp.imligr);
   const int ircflp = eqp.ircflu;
   const int ircflb = (ircflp > 0) ? eqp.b_diff_flux_rc : 0;
   const int iwarnp = eqp.verbosity;
@@ -5255,7 +5248,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
                                     0, /* hyd_p_flag */
                                     w_stride,
                                     iwarnp,
-                                    imligp,
+                                    (cs_gradient_limit_t)(eqp.d_imligr),
                                     epsrgp,
                                     eqp.d_climgr,
                                     nullptr, /* f_ext exterior force */
@@ -5651,8 +5644,6 @@ cs_anisotropic_left_diffusion_vector
 
   char var_name[64];
 
-  cs_real_33_t *gradv;
-
   cs_field_t *f = nullptr;
 
   /* Dispatch */
@@ -5663,6 +5654,7 @@ cs_anisotropic_left_diffusion_vector
   /* 1. Initialization */
 
   /* Allocate work arrays */
+  cs_real_33_t *gradv;
   CS_MALLOC_HD(gradv, n_cells_ext, cs_real_33_t, cs_alloc_mode);
 
   /* Choose gradient type */
@@ -5714,7 +5706,7 @@ cs_anisotropic_left_diffusion_vector
                                     inc,
                                     eqp.nswrgr,
                                     eqp.verbosity,
-                                    (cs_gradient_limit_t)(eqp.imligr),
+                                    (cs_gradient_limit_t)(eqp.d_imligr),
                                     eqp.epsrgr,
                                     eqp.d_climgr,
                                     bc_coeffs_v,
@@ -5758,8 +5750,7 @@ cs_anisotropic_left_diffusion_vector
             bldfrp = cs::max(cs::min(df_limiter[ii], df_limiter[jj]),
                              0.);
 
-          /*-----------------
-            X-Y-Z components, p = u, v, w */
+          /* X-Y-Z components, p = u, v, w */
           for (cs_lnum_t isou = 0; isou < 3; isou++) {
 
             cs_real_t dpvf[3];
@@ -6117,13 +6108,6 @@ cs_anisotropic_right_diffusion_vector
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
   /* Internal coupling variables */
-  cs_real_3_t *pvar_local = nullptr;
-  cs_real_33_t *grad_local = nullptr;
-  cs_real_t *df_limiter_local = nullptr;
-  cs_real_6_t *viscce_local = nullptr;
-  cs_real_t *weighb_local = nullptr;
-  const cs_lnum_t *faces_local = nullptr, *faces_distant = nullptr;
-  cs_lnum_t n_local = 0, n_distant = 0;
   int coupling_id = -1;
   cs_internal_coupling_t *cpl = nullptr;
 
@@ -6189,11 +6173,6 @@ cs_anisotropic_right_diffusion_vector
     const int coupling_key_id = cs_field_key_id("coupling_entity");
     coupling_id = cs_field_get_key_int(f, coupling_key_id);
     cpl = cs_internal_coupling_by_id(coupling_id);
-    cs_internal_coupling_coupled_faces(cpl,
-                                       &n_local,
-                                       &faces_local,
-                                       &n_distant,
-                                       &faces_distant);
   }
 
   /* 2. Compute the diffusive part with reconstruction technics */
@@ -6208,7 +6187,7 @@ cs_anisotropic_right_diffusion_vector
                                     inc,
                                     eqp.nswrgr,
                                     eqp.verbosity,
-                                    (cs_gradient_limit_t)(eqp.imligr),
+                                    (cs_gradient_limit_t)(eqp.d_imligr),
                                     eqp.epsrgr,
                                     eqp.d_climgr,
                                     bc_coeffs_v,
@@ -6317,7 +6296,6 @@ cs_anisotropic_right_diffusion_vector
 
             pir[isou] = pi[isou]/relaxp - (1.-relaxp)/relaxp * pia[isou];
             pjr[isou] = pj[isou]/relaxp - (1.-relaxp)/relaxp * pja[isou];
-
 
             /* pr in I" and J" */
             pippr[isou] = pir[isou] + bldfrp*( grad[ii][isou][0]*diippf[0]
@@ -6525,7 +6503,20 @@ cs_anisotropic_right_diffusion_vector
 
     /* The vector is internal_coupled and an implicit contribution
      * is required */
-    if (icoupl > 0) {
+    if (cpl != nullptr) {
+
+      cs_real_3_t *pvar_local = nullptr;
+      cs_real_3_t *pvar_r, *pvar_r_local = nullptr;
+      cs_real_t *df_limiter_local = nullptr;
+      cs_real_t *weighb_local = nullptr;
+      const cs_lnum_t *faces_local = nullptr, *faces_distant = nullptr;
+      cs_lnum_t n_local = 0, n_distant = 0;
+
+      cs_internal_coupling_coupled_faces(cpl,
+                                         &n_local,
+                                         &faces_local,
+                                         &n_distant,
+                                         &faces_distant);
 
       /* Exchange pvar */
       CS_MALLOC(pvar_local, n_local, cs_real_3_t);
@@ -6533,20 +6524,6 @@ cs_anisotropic_right_diffusion_vector
                                                3, /* Dimension */
                                                (const cs_real_t*)_pvar,
                                                (cs_real_t *)pvar_local);
-
-      /* Exchange grad */
-      CS_MALLOC(grad_local, n_local, cs_real_33_t);
-      cs_internal_coupling_exchange_by_cell_id(cpl,
-                                               9, /* Dimension */
-                                               (const cs_real_t*)grad,
-                                               (cs_real_t *)grad_local);
-
-      /* Exchange viscce */
-      CS_MALLOC(viscce_local, n_local, cs_real_6_t);
-      cs_internal_coupling_exchange_by_cell_id(cpl,
-                                               6, /* Dimension */
-                                               (const cs_real_t*)viscce,
-                                               (cs_real_t *)viscce_local);
 
       /* Exchange weighb */
       CS_MALLOC(weighb_local, n_local, cs_real_t);
@@ -6556,37 +6533,43 @@ cs_anisotropic_right_diffusion_vector
                                                (cs_real_t *)weighb_local);
 
       /* Exchange diffusion limiter */
-      if (df_limiter != nullptr) {
+      if (df_limiter != nullptr && ircflb > 0) {
         CS_MALLOC(df_limiter_local, n_local, cs_real_t);
-        cs_internal_coupling_exchange_var(cpl,
-                                          1, /* Dimension */
-                                          df_limiter,
-                                          df_limiter_local);
+        cs_internal_coupling_exchange_by_cell_id(cpl,
+                                                 1, /* Dimension */
+                                                 df_limiter,
+                                                 df_limiter_local);
       }
 
-      /* Flux contribution */
+      /* Reconstructed values */
+      CS_MALLOC(pvar_r, m->n_b_faces, cs_real_3_t);
+      CS_MALLOC(pvar_r_local, n_local, cs_real_3_t);
+
+      /* Reconstruct variable for each coupled face;
+         only compute values at coupled faces, but allocate on all boundary
+         faces so as to be able to simplify access since there is no guarantee
+         that faces_distant and faces_local are aligned (i.e. they should
+         contain the same lists but can be ordered differently) */
+
       for (cs_lnum_t jj = 0; jj < n_local; jj++) {
         cs_lnum_t face_id = faces_local[jj];
         cs_lnum_t ii = b_face_cells[face_id];
 
-        cs_real_t pipp[3], pjpp[3];
-        cs_real_t pi[3], pj[3];
+        cs_real_t pi[3];
 
-        for (cs_lnum_t isou = 0; isou < 3; isou++) {
+        for (cs_lnum_t isou = 0; isou < 3; isou++)
           pi[isou] = _pvar[ii][isou];
-          pj[isou] = pvar_local[jj][isou];
-        }
 
         cs_real_t bldfrp = (cs_real_t) ircflb;
         /* Local limitation of the reconstruction */
         if (df_limiter != nullptr && ircflb > 0)
-          bldfrp = cs::max(cs::min(df_limiter_local[ii],
-                                   df_limiter[jj]),
+          bldfrp = cs::max(cs::min(df_limiter_local[jj],
+                                   df_limiter[ii]),
                            0.);
 
-        /* Recompute II" and JJ" */
-        cs_real_t visci[3][3], viscj[3][3];
-        cs_real_t diippf[3], djjppf[3];
+        /* Recompute II" */
+        cs_real_t visci[3][3];
+        cs_real_t diippf[3];
 
         visci[0][0] = viscce[ii][0];
         visci[1][1] = viscce[ii][1];
@@ -6609,40 +6592,33 @@ cs_anisotropic_right_diffusion_vector
                                 + visci[2][i]*b_face_u_normal[face_id][2]);
         }
 
-        viscj[0][0] = viscce_local[jj][0];
-        viscj[1][1] = viscce_local[jj][1];
-        viscj[2][2] = viscce_local[jj][2];
-        viscj[1][0] = viscce_local[jj][3];
-        viscj[0][1] = viscce_local[jj][3];
-        viscj[2][1] = viscce_local[jj][4];
-        viscj[1][2] = viscce_local[jj][4];
-        viscj[2][0] = viscce_local[jj][5];
-        viscj[0][2] = viscce_local[jj][5];
-
-        /* FJ.Kj.S / ||Kj.S||^2
-         * weighb_local defined with vector JF and surface -S */
-        cs_real_t fjkdvi_s = weighb_local[jj] * b_face_surf[face_id];
-
-        /* JJ" = JF + FJ"
-         *   */
-        for (cs_lnum_t i = 0; i < 3; i++) {
-          djjppf[i] =   b_face_cog[face_id][i]
-                      - cell_cen[ii][i] - cpl->ci_cj_vect[jj][i]
-                       + fjkdvi_s*(  viscj[0][i]*b_face_u_normal[face_id][0]
-                                   + viscj[1][i]*b_face_u_normal[face_id][1]
-                                   + viscj[2][i]*b_face_u_normal[face_id][2]);
+        for (cs_lnum_t isou = 0; isou < 3; isou++) {
+          pvar_r[face_id][isou] =   pi[isou]
+                                  + bldfrp*(  grad[ii][isou][0]*diippf[0]
+                                            + grad[ii][isou][1]*diippf[1]
+                                            + grad[ii][isou][2]*diippf[2]);
         }
+      }
+
+      cs_internal_coupling_exchange_by_face_id(cpl,
+                                               3, /* Dimension */
+                                               (const cs_real_t*)pvar_r,
+                                               (cs_real_t *)pvar_r_local);
+
+      /* Remote data no longer needed */
+      CS_FREE(df_limiter_local);
+
+      /* Flux contribution */
+      for (cs_lnum_t jj = 0; jj < n_local; jj++) {
+        cs_lnum_t face_id = faces_local[jj];
+        cs_lnum_t ii = b_face_cells[face_id];
+
+        cs_real_t pipp[3], pjpp[3];
 
         for (cs_lnum_t isou = 0; isou < 3; isou++) {
-          /* p in I" and J" */
-          pipp[isou] = pi[isou] + bldfrp*(  grad[ii][isou][0]*diippf[0]
-                                          + grad[ii][isou][1]*diippf[1]
-                                          + grad[ii][isou][2]*diippf[2]);
-          pjpp[isou] = pj[isou] + bldfrp*(  grad_local[jj][isou][0]*djjppf[0]
-                                          + grad_local[jj][isou][1]*djjppf[1]
-                                          + grad_local[jj][isou][2]*djjppf[2]);
+          pipp[isou] = pvar_r[face_id][isou];
+          pjpp[isou] = pvar_r_local[jj][isou];
 
-          /* Reproduce multiplication by i_visc[face_id] */
           cs_real_t flux =   (pipp[isou] - pjpp[isou])
                            / (weighb[face_id] + weighb_local[jj]);
 
@@ -6653,10 +6629,8 @@ cs_anisotropic_right_diffusion_vector
 
       /* Remote data no longer needed */
       CS_FREE(pvar_local);
-      if (df_limiter != nullptr)
-        CS_FREE(df_limiter_local);
-      CS_FREE(grad_local);
-      CS_FREE(viscce_local);
+      CS_FREE(pvar_r);
+      CS_FREE(pvar_r_local);
       CS_FREE(weighb_local);
 
     }
@@ -6864,7 +6838,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
                                     inc,
                                     eqp.nswrgr,
                                     eqp.verbosity,
-                                    (cs_gradient_limit_t)(eqp.imligr),
+                                    (cs_gradient_limit_t)(eqp.d_imligr),
                                     eqp.epsrgr,
                                     eqp.d_climgr,
                                     bc_coeffs_ts,
@@ -7339,13 +7313,15 @@ cs_face_diffusion_potential(const cs_field_t           *f,
 
       i_massflux[face_id] += i_visc[face_id]*(pvar[ii] - pvar[jj]);
     });
+
   }
-  else {
 
   /*==========================================================================
     3. Update mass flux with reconstruction technique if the mesh is non
        orthogonal
-    ==========================================================================*/
+       ==========================================================================*/
+
+  else {
 
     /* Allocate a work array for the gradient calculation */
     CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, amode);
@@ -7385,7 +7361,7 @@ cs_face_diffusion_potential(const cs_field_t           *f,
                                     eqp->verbosity,
                                     (cs_gradient_limit_t)(eqp->imligr),
                                     eqp->epsrgr,
-                                    eqp->d_climgr,
+                                    eqp->climgr,
                                     frcxt,
                                     bc_coeffs,
                                     (const cs_real_t *)pvar,
@@ -7552,17 +7528,15 @@ cs_face_anisotropic_diffusion_potential
               _("invalid value of init"));
   }
 
-  /* Use iterative gradient */
-
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  cs_gradient_type_by_imrgra(eqp->imrgra,
-                             &gradient_type,
-                             &halo_type);
+  if (ircflp)
+    cs_gradient_type_by_imrgra(eqp->d_gradient_r,
+                               &gradient_type,
+                               &halo_type);
 
   if (f != nullptr) {
-
     int df_limiter_id =
       cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
     if (df_limiter_id > -1)
@@ -7686,9 +7660,9 @@ cs_face_anisotropic_diffusion_potential
                                     iphydp,
                                     w_stride,
                                     eqp->verbosity,
-                                    (cs_gradient_limit_t)(eqp->imligr),
+                                    (cs_gradient_limit_t)(eqp->d_imligr),
                                     eqp->epsrgr,
-                                    eqp->climgr,
+                                    eqp->d_climgr,
                                     frcxt,
                                     bc_coeffs,
                                     pvar,
@@ -8155,17 +8129,16 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
               _("invalid value of init"));
   }
 
-  /* Use iterative gradient */
+  /* Choose gradient type */
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  cs_gradient_type_by_imrgra(eqp->imrgra,
+  cs_gradient_type_by_imrgra(eqp->d_gradient_r,
                              &gradient_type,
                              &halo_type);
 
   if (f != nullptr) {
-
     int df_limiter_id
       = cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
     if (df_limiter_id > -1)
@@ -8295,9 +8268,9 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
                                     iphydp,
                                     w_stride,
                                     eqp->verbosity,
-                                    (cs_gradient_limit_t)(eqp->imligr),
+                                    (cs_gradient_limit_t)(eqp->d_imligr),
                                     eqp->epsrgr,
-                                    eqp->climgr,
+                                    eqp->d_climgr,
                                     frcxt,
                                     bc_coeffs,
                                     pvar,

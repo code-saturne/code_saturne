@@ -9365,10 +9365,10 @@ cs_gradient_tensor_cell(const cs_mesh_t             *m,
 }
 
 /*----------------------------------------------------------------------------
- * Determine gradient type by Fortran "imrgra" value
+ * Determine gradient type by legacy "imrgra" value
  *
  * parameters:
- *   imrgra         <-- Fortran gradient option
+ *   imrgra         <-- gradient option numerical code
  *   gradient_type  --> gradient type
  *   halo_type      --> halo type
  *----------------------------------------------------------------------------*/
@@ -9389,6 +9389,7 @@ cs_gradient_type_by_imrgra(int                  imrgra,
     *gradient_type = CS_GRADIENT_LSQ;
     break;
   case 2:
+    [[fallthrough]];
   case 3:
     *gradient_type = CS_GRADIENT_LSQ;
     *halo_type = CS_HALO_EXTENDED;
@@ -9397,6 +9398,7 @@ cs_gradient_type_by_imrgra(int                  imrgra,
     *gradient_type = CS_GRADIENT_GREEN_LSQ;
     break;
   case 5:
+    [[fallthrough]];
   case 6:
     *gradient_type = CS_GRADIENT_GREEN_LSQ;
     *halo_type = CS_HALO_EXTENDED;
@@ -9411,6 +9413,39 @@ cs_gradient_type_by_imrgra(int                  imrgra,
     *gradient_type = CS_GRADIENT_GREEN_ITER;
     break;
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Determine halo type based on associated type by legacy "imrgra" value
+ *
+ * \param[in]  imrgra  gradient option numerical code
+ *
+ * \return associated gradient halo type
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_halo_type_t
+cs_gradient_halo_type_by_imrgra(int  imrgra)
+{
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+
+  switch (imrgra) {
+  case 2:
+    [[fallthrough]];
+  case 3:
+    [[fallthrough]];
+  case 5:
+    [[fallthrough]];
+  case 6:
+    halo_type = CS_HALO_EXTENDED;
+    break;
+  default:
+    halo_type = CS_HALO_STANDARD;
+    break;
+  }
+
+  return halo_type;
 }
 
 /*----------------------------------------------------------------------------*/

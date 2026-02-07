@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -2124,7 +2124,14 @@ cs_parameters_check(void)
                                     "equation param imligr "
                                     "(gradient limitation method)",
                                     eqp->imligr,
-                                    -1, 2);
+                                    -1, 3);
+
+      cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                    _(f_desc),
+                                    "equation param imligr "
+                                    "(gradient limitation method)",
+                                    eqp->d_imligr,
+                                    -1, 3);
 
       if (eqp->climgr >= 0)
         cs_parameters_is_greater_double(CS_ABORT_DELAYED,

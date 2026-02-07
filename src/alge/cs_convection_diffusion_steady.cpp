@@ -1290,7 +1290,7 @@ cs_face_convection_steady_scalar
                                     eqp.verbosity,
                                     (cs_gradient_limit_t)(eqp.imligr),
                                     eqp.epsrgr,
-                                    eqp.climgr,
+                                    eqp.d_climgr,
                                     nullptr, /* f_ext exterior force */
                                     bc_coeffs,
                                     _pvar,

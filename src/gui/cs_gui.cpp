@@ -958,14 +958,20 @@ _var_gradient_limiter_type(cs_tree_node_t       *tn_v,
 
     if (strcmp(choice, "cell") == 0) {
       eqp->imligr = 0;
+      eqp->climgr = 1.0;
+      eqp->d_imligr = 0;
       eqp->d_climgr = 1.0;
     }
     else if (strcmp(choice, "face") == 0) {
       eqp->imligr = 1;
+      eqp->climgr = 1.5;
+      eqp->d_imligr = 1;
       eqp->d_climgr = 1.5;
     }
     else if (strcmp(choice, "cell_gradient_rc") == 0) {
       eqp->imligr = 1;
+      eqp->climgr = 1.0;
+      eqp->d_imligr = 1;
       eqp->d_climgr = 1.0;
     }
   }

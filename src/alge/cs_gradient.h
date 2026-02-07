@@ -90,8 +90,6 @@ typedef enum {
                                      limiting factor (i.e. ensure monotonicity
                                      with a factor of 1). */
 
-
-
 } cs_gradient_limit_t;
 
 /*============================================================================
@@ -499,6 +497,19 @@ void
 cs_gradient_type_by_imrgra(int                  imrgra,
                            cs_gradient_type_t  *gradient_type,
                            cs_halo_type_t      *halo_type);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Determine halo type based on associated type by legacy "imrgra" value
+ *
+ * \param[in]  imrgra  gradient option numerical code
+ *
+ * \return associated gradient halo type
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_halo_type_t
+cs_gradient_halo_type_by_imrgra(int  imrgra);
 
 /*----------------------------------------------------------------------------*/
 /*!

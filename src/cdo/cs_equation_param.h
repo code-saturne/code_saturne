@@ -350,6 +350,10 @@ typedef struct {
    * Type of gradient limiter
    * - See \ref cs_gradient_limit_t
    *
+   * \var d_imligr
+   * Type of diffusion reconstruction gradient limiter
+   * - See \ref cs_gradient_limit_t
+   *
    * \var ircflu
    * Indicate whether the convective and diffusive fluxes at the faces should be
    * reconstructed:
@@ -493,6 +497,7 @@ typedef struct {
   int imvisf;
   int imrgra;
   int imligr;
+  int d_imligr;
   int ircflu;
   int iwgrec;
   int icoupl;
@@ -503,8 +508,8 @@ typedef struct {
   double epsrsm;
   double epsrgr;
   double climgr;
-  cs_real_t d_climgr;
-  cs_real_t b_rc_clip_factor;
+  double d_climgr;
+  double b_rc_clip_factor;
   double relaxv;
 
   int  d_gradient_r;

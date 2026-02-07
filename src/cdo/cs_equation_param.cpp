@@ -950,6 +950,7 @@ cs_equation_param_create(const char         *name,
   eqp->imvisf = 0;
   eqp->imrgra = -1;
   eqp->imligr = -1;
+  eqp->d_imligr = -1;
   eqp->ircflu = 1;
   eqp->iwgrec = 0;
   eqp->icoupl = -1;
