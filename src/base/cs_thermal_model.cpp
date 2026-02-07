@@ -318,7 +318,6 @@ cs_thermal_model_gamma_d_c_square(const cs_real_t  cp[],
   const int ieos = cs_glob_cf_model->ieos;
   const cs_real_t rair = cs_glob_fluid_properties->r_pg_cnst;
   const cs_fluid_properties_t *phys_prop = cs_glob_fluid_properties;
-  int thermal_variable = cs_glob_thermal_model->thermal_variable;
 
   cs_dispatch_context ctx;
 
@@ -695,6 +694,7 @@ cs_thermal_model_add_kst(cs_real_t  smbrs[])
       cs_dispatch_context ctx;
       const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
       const cs_real_t *kst = f_sk->val;
+      const cs_real_t p0 = cs_glob_fluid_properties->p0;
 
       if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0) {
         cs_real_t *cvar_p = CS_F_(p)->val;
@@ -706,16 +706,18 @@ cs_thermal_model_add_kst(cs_real_t  smbrs[])
           cpro_cp = CS_F_(cp)->val;
         }
         else {
+          cs_real_t r_pg_cnst = cs_glob_fluid_properties->r_pg_cnst;
+          cs_real_t cp0 = cs_glob_fluid_properties->cp0;
           ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-              mol_mass[c_id] = cs_glob_fluid_properties->r_pg_cnst;
-              cpro_cp[c_id] = cs_glob_fluid_properties->cp0;
-              });
+            mol_mass[c_id] = r_pg_cnst;
+            cpro_cp[c_id] = cp0;
+          });
         }
         ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-            smbrs[c_id] += kst[c_id] *
-                          pow((meteo_p[c_id] + cvar_p[c_id])/cs_glob_fluid_properties->p0
-                          ,(cs_physical_constants_r/mol_mass[c_id])/cpro_cp[c_id]);
-            });
+          smbrs[c_id] += kst[c_id] *
+                         pow((meteo_p[c_id] + cvar_p[c_id])/p0,
+                             (cs_physical_constants_r/mol_mass[c_id])/cpro_cp[c_id]);
+        });
       }
       else
         ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -834,18 +836,17 @@ cs_thermal_model_cflp(const cs_real_t  croma[],
   }
 
   ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  f_id) {
-      cs_lnum_t c_id = b_face_cells[f_id];
-      cs_real_t surf = b_face_surf[f_id];
+    cs_lnum_t c_id = b_face_cells[f_id];
+    cs_real_t surf = b_face_surf[f_id];
 
-      cs_real_t fluxi = surf * dt[c_id] / (croma[c_id] * cell_f_vol[c_id])
-        * cs_math_3_dot_product(trav2[c_id], b_face_u_normal[f_id]);
+    cs_real_t fluxi =   surf * dt[c_id] / (croma[c_id] * cell_f_vol[c_id])
+                      * cs_math_3_dot_product(trav2[c_id],
+                                              b_face_u_normal[f_id]);
 
-      cs_dispatch_sum(&cflp[c_id], fluxi, b_sum_type);
-
+    cs_dispatch_sum(&cflp[c_id], fluxi, b_sum_type);
   });
 
   ctx.wait();
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -861,9 +862,10 @@ cs_eos_predicted_rho(void)
   /* Get global data */
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
   const cs_fluid_properties_t *phys_pro = cs_glob_fluid_properties;
+  const cs_real_t p0 = phys_pro->p0;
+  const cs_real_t r_pg_cnst = cs_glob_fluid_properties->r_pg_cnst;
 
   const cs_real_t *cvar_pr = CS_F_(p)->val;
   cs_real_t *cvar_rho = CS_F_(rho)->val;
@@ -898,23 +900,21 @@ cs_eos_predicted_rho(void)
 
   if (cs_glob_cf_model->ieos == CS_EOS_IDEAL_GAS) {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        cvar_rho[c_id] = mult * (cvar_pr[c_id] + cs_glob_fluid_properties->p0)
-        / (cs_glob_fluid_properties->r_pg_cnst * (var_th[c_id] + t_add));
-        });
+      cvar_rho[c_id] = mult * (cvar_pr[c_id] + p0)
+                      / (r_pg_cnst * (var_th[c_id] + t_add));
+    });
   }
   else if (cs_glob_cf_model->ieos == CS_EOS_GAS_MIX) {
     cs_real_t *mix_mol_mas = cs_field_by_name("mix_mol_mas")->val;
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        cvar_rho[c_id]
-        = (cvar_pr[c_id] + cs_glob_fluid_properties->p0) * mix_mol_mas[c_id]
-        /(cs_physical_constants_r * (var_th[c_id] + t_add));
-        });
+      cvar_rho[c_id] = (cvar_pr[c_id] + p0) * mix_mol_mas[c_id]
+                       /(cs_physical_constants_r * (var_th[c_id] + t_add));
+    });
   }
 
   /* TODO other ieos values ... */
   ctx.wait(); // needed for CPU cs_solve_equation.c
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1016,7 +1016,6 @@ cs_thermal_model_dissipation(const cs_real_t  vistot[],
 
     ctx.wait(); // needed for CPU cs_solve_equation
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1079,25 +1078,12 @@ cs_thermal_model_newton_t(int               method,
    * The second, yv_cor = 2, performs a increment on
    * the vapour mass fraction following dp */
 
-  const cs_real_t *xyzp0 = phys_pro->xyzp0;
-  const cs_real_t *gxyz = pc->gravity;
-#if defined(HAVE_ACCEL)
-  cs_real_t *_gxyz = nullptr, *_xyzp0 = nullptr;
-  if (cs_get_device_id() > -1) {
-    CS_MALLOC_HD(_gxyz, 3, cs_real_t, cs_alloc_mode);
-    CS_MALLOC_HD(_xyzp0, 3, cs_real_t, cs_alloc_mode);
-    for (int i = 0; i < 3; i++) {
-      _gxyz[i] = cs_glob_physical_constants->gravity[i];
-      _xyzp0[i] = phys_pro->xyzp0[i];
-    }
-
-    cs_mem_advise_set_read_mostly(_gxyz);
-    cs_mem_advise_set_read_mostly(_xyzp0);
-
-    xyzp0 = _xyzp0;
-    gxyz = _gxyz;
-  }
-#endif
+  const cs_real_t xyzp0[3] = {phys_pro->xyzp0[0],
+                              phys_pro->xyzp0[1],
+                              phys_pro->xyzp0[2]};
+  const cs_real_t gxyz[3] = {pc->gravity[0],
+                             pc->gravity[1],
+                             pc->gravity[2]};
 
   if (method == 1) {
 
@@ -1267,12 +1253,6 @@ cs_thermal_model_newton_t(int               method,
   }
 
   ctx.wait(); // needed for the cs_solve_equation CPU function
-
-#if defined(HAVE_ACCEL)
-  CS_FREE(_gxyz);
-  CS_FREE(_xyzp0);
-#endif
-
 }
 
 /*----------------------------------------------------------------------------*/
