@@ -503,7 +503,7 @@ _rosenbrock_solver(cs_real_t dlconc[],
 
   const cs_real_t igamma = 1.0 + 1.0/sqrt(2.0);
 
-  /* Computes the chemistry
+  /* Compute the chemistry
      --------------------- */
 
   cs_real_t dlr[n_species_g];

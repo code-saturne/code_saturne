@@ -70,9 +70,9 @@
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_coarsen_cells_dest_rank(cs_mesh_t   *m,
-                                const int   *cell_flag,
-                                int          dest_rank[]);
+cs_mesh_coarsen_cells_dest_rank(const cs_mesh_t  *m,
+                                const int        *cell_flag,
+                                int               dest_rank[]);
 
 BEGIN_C_DECLS
 

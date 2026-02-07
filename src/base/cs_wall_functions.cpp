@@ -235,7 +235,6 @@ _atmo_louis(const cs_real_t  utau,
             cs_real_t       *cfnne,
             cs_real_t       *dlmo)
 {
-  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_lnum_t nt_cur = cs_glob_time_step->nt_cur;
 
   /* Initializations

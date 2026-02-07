@@ -115,31 +115,6 @@
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Return the equivalent heat transfer coefficient. If both terms are
- * below a given tolerance, 0. is returned.
- *
- * parameters:
- *   h1     <-- first exchange coefficient
- *   h2     <-- second exchange coefficient
- *
- * return:
- *   value of equivalent exchange coefficient
- *----------------------------------------------------------------------------*/
-
-static inline cs_real_t
-_calc_heq(cs_real_t h1,
-          cs_real_t h2)
-{
-  const cs_real_t h_eps = 1.e-12;
-
-  cs_real_t heq = 0.;
-  if (h1 + h2 > h_eps)
-    heq = h1 * h2 / (h1 + h2);
-
-  return heq;
-}
-
-/*----------------------------------------------------------------------------
  * Return the denominator to build the beta blending coefficient of the
  * beta limiter (ensuring preservation of a given min/max pair of values).
  *

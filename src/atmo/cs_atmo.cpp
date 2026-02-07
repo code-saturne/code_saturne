@@ -4131,8 +4131,9 @@ cs_atmo_hydrostatic_profiles_compute(void)
       density->val[cell_id] = phys_pro->ro0;
   }
 
-  if (has_restart == 1 && nt_loc <= 1
-    || cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_CONSTANT_DENSITY)
+  if ((has_restart == 1 && nt_loc <= 1)
+      || (cs_glob_physical_model_flag[CS_ATMOSPHERIC]
+          == CS_ATMO_CONSTANT_DENSITY))
     return;
 
   /* Boussinesq hypothesis */

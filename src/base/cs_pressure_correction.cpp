@@ -1163,7 +1163,7 @@ _pressure_correction_fv(int                   iterns,
   int kinetic_st = cs_glob_thermal_model->has_kinetic_st;
 
   const cs_real_t *ther_var = nullptr;
-  cs_real_t *xcpp = nullptr, *dc2 = nullptr;
+  cs_real_t *dc2 = nullptr;
   cs_real_t *cvar_th = nullptr, *tempk = nullptr;
   cs_real_t _coef = 0;
   cs_real_t *yw = nullptr, *yv = nullptr;

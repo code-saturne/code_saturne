@@ -2220,31 +2220,6 @@ cs_mem_size_max(void)
   return (_cs_mem_global_alloc_max[CS_ALLOC_TRACE_HOST] / 1024);
 }
 
-END_C_DECLS
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Return maximum theoretical allocated memory, per type.
- *
- * Types are:
- *   0: host
- *   1: pinned (included in host)
- *   2: unified (included in host and device)
- *   3: device
- *
- * \param [out]  m_max  max memory per type (in kB).
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_mem_size_max_(size_t  m_max[4])
-{
-  for (int i = 0; i < 4; i++)
-    m_max[0] = _cs_mem_global_alloc_max[i] / 1024;
-}
-
-BEGIN_C_DECLS
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return current theoretical dynamic memory allocated.

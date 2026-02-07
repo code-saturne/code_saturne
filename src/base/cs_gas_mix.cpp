@@ -1011,7 +1011,6 @@ cs_gas_mix_physical_properties(void)
   /* Storage the previous value of the deduced mass fraction ya_d */
   cs_array_real_copy(n_cells_ext, y_d, f->val_pre);
 
-  cs_cf_model_t *th_cf_model = cs_get_glob_cf_model();
   cs_thermal_model_t *thm = cs_get_glob_thermal_model();
 
   /* In compressible, the density is updated after the pressure step */
@@ -1052,11 +1051,11 @@ cs_gas_mix_physical_properties(void)
 
   cs_real_t pressure = cs_glob_fluid_properties->p0;
   //FIXME MF not always if 1/C2 = 0 !!!
-  // On a tout de même une pression "dynamique" même lorsque 1/C2 = 0 ?
-  // Je vois ce que tu veux dire : il faut que cvar_pr = 0. dans la loi d'état
-  // lorsqu'on la calcule. Mais en fait, on vient dans cette fonction et en idilat 2
-  // que quand 1/C2 est différent de 0
-  /* If idilat = 2, the pressure is a field */
+  // Do we still have a "dynamic" pressure even when 1/C2 = 0 ?
+  // We should have cvar_pr = 0. in the law of state when we compute it.
+  // But we enter this function in idilat 2 only when 1/C2 != 0
+  /* If idilat = 2, the pressure is a field
+     (not used here, as indicated by compiler warning) */
   cs_real_t *cvar_pr = nullptr;
 
   if (cs_glob_velocity_pressure_model->idilat == 3)

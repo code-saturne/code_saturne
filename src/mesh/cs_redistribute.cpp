@@ -305,7 +305,7 @@ _distribute_bc_type(cs_all_to_all_t  *bfd,
  *   cell_dest_rank --> cell destination rank
  *----------------------------------------------------------------------------*/
 
-void
+static void
 _compute_cell_dest_rank(cs_mesh_t  *mesh,
                         int         cell_dest[])
 {

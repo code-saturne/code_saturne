@@ -285,8 +285,6 @@ cs_combustion_boundary_conditions(int  bc_type[])
     if (ci == nullptr)
       continue;
 
-    cs_real_t qimp = cs_boundary_conditions_open_get_mass_flow_rate(z);
-
     cs_real_t h_in = -HUGE_VALF;
     cs_real_t fm_in = 0, fp2m_fsqm_in = 0, pvm_in = 0;
 

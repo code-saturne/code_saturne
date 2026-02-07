@@ -860,8 +860,6 @@ typedef void
  * Static global variables.
  *============================================================================*/
 
-constexpr int _n_f_vtx_max = 96;
-
 static cs_mesh_refine_type_t _refine_tria_type = CS_REFINE_TRIA;
 
 /*============================================================================
@@ -3335,32 +3333,6 @@ _subdivided_face_sizes(const cs_lnum_t          n_fv,
       *connect_size = n_fv_tot;
     }
   }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief return vertex id ad mid-edge for simple edge subdivision patterns
- *
- * \param[in]   v0       first vertex id
- * \param[in]   v1       second vertex id
- * \param[in]   v2v      vertex adjacency
- * \param[in]   e_v_idx  for each edge, start index of added vertices
-
- * \return mid-edge vertex id
- */
-/*----------------------------------------------------------------------------*/
-
-static inline cs_lnum_t
-_v2v_mid_vtx_id(cs_lnum_t              v0,
-                cs_lnum_t              v1,
-                const cs_adjacency_t  *v2v,
-                const cs_lnum_t        e_v_idx[])
-{
-  cs_lnum_t edge_id = _v2v_edge_id(v0, v1, v2v);
-
-  assert(edge_id > -1);
-
-  return e_v_idx[edge_id];
 }
 
 /*----------------------------------------------------------------------------*/

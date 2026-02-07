@@ -291,7 +291,7 @@ cs_user_lagr_extra_operations([[maybe_unused]] const cs_real_t  dt[])
 void
 cs_user_lagr_imposed_motion
 (
-  [[maybe_unused]] cs_lagr_particle_set_t        p_set,
+  [[maybe_unused]] cs_lagr_particle_set_t       &p_set,
   [[maybe_unused]] cs_lnum_t                     p_id,
   [[maybe_unused]] const cs_real_t               coords[3],
   [[maybe_unused]] const cs_real_t               dt,
@@ -349,7 +349,7 @@ cs_user_lagr_imposed_motion
 void
 cs_user_lagr_in_force_coords
 (
-  [[maybe_unused]] cs_lagr_particle_set_t          p_set,
+  [[maybe_unused]] cs_lagr_particle_set_t         &p_set,
   [[maybe_unused]] const cs_lagr_injection_set_t  *zis,
   [[maybe_unused]] const cs_lnum_t                 particle_range[2],
   [[maybe_unused]] const cs_lnum_t                 particle_face_id[],

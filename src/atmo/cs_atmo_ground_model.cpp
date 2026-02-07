@@ -493,11 +493,12 @@ _compute_convective_exch_resistances(cs_lnum_t face_id,
 {
   cs_plant_option_t *plant_opt = cs_glob_plant_option;
 
-  cs_field_t *u_k_atm = cs_field_by_name_try("boundary_k");
   cs_field_t *u_star_atm = cs_field_by_name_try("boundary_ustar");
 
-  cs_field_t *plant_air_resistance = cs_field_by_name_try("plant_air_resistance");
-  cs_field_t *ground_air_resistance = cs_field_by_name_try("ground_air_resistance");
+  cs_field_t *plant_air_resistance
+    = cs_field_by_name_try("plant_air_resistance");
+  cs_field_t *ground_air_resistance
+    = cs_field_by_name_try("ground_air_resistance");
 
   cs_real_t eta_ext_coef = plant_opt->h_canopy
     * pow(plant_opt->cdrag_leaf
@@ -513,10 +514,12 @@ _compute_convective_exch_resistances(cs_lnum_t face_id,
   cs_real_t canopy_exch_height = plant_opt->h_canopy
     * (1+log(1-exp(-eta_ext_coef)) / 2 / eta_ext_coef);
 
-  cs_real_t g_plant_forced = u_star_plant * plant_opt->canopy_mix_l / canopy_exch_height / plant_opt->turb_prandtl;
+  cs_real_t g_plant_forced = u_star_plant * plant_opt->canopy_mix_l
+    / canopy_exch_height / plant_opt->turb_prandtl;
   cs_real_t g_plant_nat = 0.005; /* TODO use expression in term of T_plant - T_air */
 
-  cs_real_t g_ground_forced = u_star_ground * plant_opt->canopy_mix_l / canopy_exch_height / plant_opt->turb_prandtl;
+  cs_real_t g_ground_forced = u_star_ground * plant_opt->canopy_mix_l
+    / canopy_exch_height / plant_opt->turb_prandtl;
   cs_real_t g_ground_nat = 0.005; /* TODO use expression in term of T_plant - T_air */
 
   /* Results */
@@ -538,15 +541,16 @@ _compute_water_stress(cs_lnum_t ground_id)
   cs_plant_option_t *plant_opt = cs_glob_plant_option;
   cs_air_fluid_props_t *ct_prop = cs_glob_air_props;
 
-  cs_field_t *ground_water_capacity = cs_field_by_name("ground_water_capacity");
   cs_field_t *ground_w1 = cs_field_by_name("ground_w1");
   cs_field_t *et_plant = cs_field_by_name_try("et_plant");
-  cs_field_t *ground_water_potential = cs_field_by_name_try("ground_water_potential");
-  cs_field_t *root_water_potential = cs_field_by_name_try("root_water_potential");
-  cs_field_t *plant_water_potential = cs_field_by_name_try("plant_water_potential");
-  cs_field_t *root_p_water_volumetric_capacity = cs_field_by_name_try("root_p_water_volumetric_capacity");
-  cs_field_t *ground_p_water_volumetric_capacity = cs_field_by_name_try("ground_p_water_volumetric_capacity");
-  cs_field_t *water_stress_factor = cs_field_by_name_try("water_stress_factor");
+  cs_field_t *ground_water_potential
+    = cs_field_by_name_try("ground_water_potential");
+  cs_field_t *root_water_potential
+    = cs_field_by_name_try("root_water_potential");
+  cs_field_t *plant_water_potential
+    = cs_field_by_name_try("plant_water_potential");
+  cs_field_t *water_stress_factor
+    = cs_field_by_name_try("water_stress_factor");
 
   /* Resistive approach */
 
@@ -576,7 +580,6 @@ _compute_water_stress(cs_lnum_t ground_id)
   ground_water_potential->val[ground_id] = psis;
   root_water_potential->val[ground_id] = psir;
   plant_water_potential->val[ground_id] = psiv;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -599,8 +602,8 @@ _compute_stomatal_conductance(cs_lnum_t ground_id,
   cs_field_t *ci_pho = cs_field_by_name_try("ci_pho");
   cs_field_t *assimilation_rate = cs_field_by_name_try("assimilation_rate");
   cs_field_t *gco2 = cs_field_by_name_try("gco2");
-  cs_field_t *plant_air_resistance = cs_field_by_name_try("plant_air_resistance");
-  cs_field_t *ground_air_resistance = cs_field_by_name_try("ground_air_resistance");
+  cs_field_t *plant_air_resistance
+    = cs_field_by_name_try("plant_air_resistance");
   cs_field_t *water_stress_factor = cs_field_by_name_try("water_stress_factor");
   cs_field_t *ground_temperature = cs_field_by_name("ground_temperature");
   cs_field_t *leaf_temp = cs_field_by_name_try("leaf_temp");
@@ -813,12 +816,12 @@ _compute_stomatal_conductance(cs_lnum_t ground_id,
   cs_real_t gco2_min = gco2_previous + plant_opt->v_gco2_decr*dtref;
   gco2->val[ground_id] = cs::min(gco2->val[ground_id],gco2_max);
   gco2->val[ground_id] = cs::max(gco2->val[ground_id],gco2_min);
-
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Ground Plant Atmo Continuum model - compute energy exchanges and plant temperature.
+ * \brief Ground Plant Atmo Continuum model - compute energy exchanges
+ *        and plant temperature.
  *
  * \param[in] face_id and ground_id.
  */
@@ -842,7 +845,6 @@ _compute_le_h_and_leaf_temp(cs_lnum_t ground_id,
 
   cs_field_t *cover_geometry_ratio
     = cs_field_by_name_try("cover_geometry_ratio");
-  cs_field_t *gco2 = cs_field_by_name_try("gco2");
   cs_field_t *plant_air_resistance
     = cs_field_by_name_try("plant_air_resistance");
   cs_field_t *leaf_temp = cs_field_by_name_try("leaf_temp");
@@ -988,7 +990,6 @@ _compute_le_h_and_leaf_temp(cs_lnum_t ground_id,
     + cs_physical_constants_celsius_to_kelvin)
     * cover_geometry_ratio->val[ground_id];
   ray_ir_atm_to_plant->val[ground_id] = rn_thermal_atm_plant;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1006,7 +1007,6 @@ _compute_plant_to_air_source_terms(cs_lnum_t ground_id,
                                    cs_real_t dz_max,
                                    cs_real_t rho_moist_air)
 {
-
   cs_air_fluid_props_t *ct_prop = cs_glob_air_props;
 
   cs_field_t *leaf_temp = cs_field_by_name_try("leaf_temp");
@@ -1036,7 +1036,6 @@ _compute_plant_to_air_source_terms(cs_lnum_t ground_id,
   st_mass_energy_p->val[ground_id] = drho_p_to_atm
     * ct_prop->cp_v * ( leaf_temp->val[ground_id]
     + cs_physical_constants_celsius_to_kelvin ) / dtref;
-
 }
 
 /*============================================================================
@@ -1140,29 +1139,46 @@ cs_ground_model(void)
     /* Plant related fields */
     cs_field_t *ray_net_plant = cs_field_by_name_try("ray_net_plant");
     cs_field_t *ray_net_ir_plant = cs_field_by_name_try("ray_net_ir_plant");
-    cs_field_t *ray_net_solar_plant = cs_field_by_name_try("ray_net_solar_plant");
-    cs_field_t *ray_ir_plant_to_ground = cs_field_by_name_try("ray_ir_plant_to_ground");
-    cs_field_t *ray_ir_atm_to_plant = cs_field_by_name_try("ray_ir_atm_to_plant");
+    cs_field_t *ray_net_solar_plant
+      = cs_field_by_name_try("ray_net_solar_plant");
+    cs_field_t *ray_ir_plant_to_ground
+      = cs_field_by_name_try("ray_ir_plant_to_ground");
+    cs_field_t *ray_ir_atm_to_plant
+      = cs_field_by_name_try("ray_ir_atm_to_plant");
     cs_field_t *et_plant = cs_field_by_name_try("et_plant");
     cs_field_t *et_ground = cs_field_by_name_try("et_ground");
     cs_field_t *assimilation_rate = cs_field_by_name_try("assimilation_rate");
     cs_field_t *gco2 = cs_field_by_name_try("gco2");
-    cs_field_t *ground_w1_transpirated_by_the_plant = cs_field_by_name_try("ground_w1_transpirated_by_the_plant");
-    cs_field_t *ground_w1_evaporated_by_the_ground = cs_field_by_name_try("ground_w1_evaporated_by_the_ground");
-    cs_field_t *q_emitted_by_the_plant = cs_field_by_name_try("q_emitted_by_the_plant");
+    cs_field_t *ground_w1_transpirated_by_the_plant
+      = cs_field_by_name_try("ground_w1_transpirated_by_the_plant");
+    cs_field_t *ground_w1_evaporated_by_the_ground
+      = cs_field_by_name_try("ground_w1_evaporated_by_the_ground");
+    cs_field_t *q_emitted_by_the_plant
+      = cs_field_by_name_try("q_emitted_by_the_plant");
     cs_field_t *leaf_temp = cs_field_by_name_try("leaf_temp");
-    cs_field_t *sensible_heat_plant_to_air = cs_field_by_name_try("sensible_heat_plant_to_air");
-    cs_field_t *root_p_water_volumetric_capacity = cs_field_by_name_try("root_p_water_volumetric_capacity");
-    cs_field_t *ground_p_water_volumetric_capacity = cs_field_by_name_try("ground_p_water_volumetric_capacity");
-    cs_field_t *water_stress_factor = cs_field_by_name_try("water_stress_factor");
-    cs_field_t *sensible_heat_plant = cs_field_by_name_try("sensible_heat_plant");
-    cs_field_t *latent_heat_plant = cs_field_by_name_try("latent_heat_plant");
-    cs_field_t *plant_air_resistance = cs_field_by_name_try("plant_air_resistance");
-    cs_field_t *ground_air_resistance = cs_field_by_name_try("ground_air_resistance");
+    cs_field_t *sensible_heat_plant_to_air
+      = cs_field_by_name_try("sensible_heat_plant_to_air");
+    cs_field_t *root_p_water_volumetric_capacity
+      = cs_field_by_name_try("root_p_water_volumetric_capacity");
+    cs_field_t *ground_p_water_volumetric_capacity
+      = cs_field_by_name_try("ground_p_water_volumetric_capacity");
+    cs_field_t *water_stress_factor
+      = cs_field_by_name_try("water_stress_factor");
+    cs_field_t *sensible_heat_plant
+      = cs_field_by_name_try("sensible_heat_plant");
+    cs_field_t *latent_heat_plant
+      = cs_field_by_name_try("latent_heat_plant");
+    cs_field_t *plant_air_resistance
+      = cs_field_by_name_try("plant_air_resistance");
+    cs_field_t *ground_air_resistance
+      = cs_field_by_name_try("ground_air_resistance");
 
-    cs_field_t *st_rho_s = cs_field_by_name_try("source_term_vapor_mass_ground");
-    cs_field_t *st_conv_energy_s = cs_field_by_name_try("source_term_convective_energy_ground");
-    cs_field_t *st_mass_energy_s = cs_field_by_name_try("source_term_mass_energy_ground");
+    cs_field_t *st_rho_s
+      = cs_field_by_name_try("source_term_vapor_mass_ground");
+    cs_field_t *st_conv_energy_s
+      = cs_field_by_name_try("source_term_convective_energy_ground");
+    cs_field_t *st_mass_energy_s
+      = cs_field_by_name_try("source_term_mass_energy_ground");
 
     /*
     plant_opt->h_canopy = cs_notebook_parameter_value_by_name("h_canopy");
@@ -1402,8 +1418,8 @@ cs_ground_model(void)
           / (237.7 + air_leaf_temp) + log(h_rel));
 
         cs_real_t pvsat_dewpoint = cs_air_pwv_sat(t_dewpoint);
-
-        cs_real_t pvsat_ground = cs_air_pwv_sat(ground_temperature->val[ground_id]);
+        cs_real_t pvsat_ground
+          = cs_air_pwv_sat(ground_temperature->val[ground_id]);
 
         /* ============================
          * Water potential

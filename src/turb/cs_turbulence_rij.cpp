@@ -2160,9 +2160,6 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
 
   const cs_real_t crij1 = cs_turb_crij1;
 
-  const cs_turb_model_type_t model
-    = (cs_turb_model_type_t)cs_glob_turb_model->model;
-
   const int t2v[3][3] = _T2V;
   const int iv2t[6] = _IV2T;
   const int jv2t[6] = _JV2T;
@@ -2307,9 +2304,9 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
       cs_math_33_eig_val_vec(h_s, cs_math_epzero,
                              eig_val, eig_vec);
 
-      cs_real_t implmat2add[3][3] = {0., 0., 0.,
-                                     0., 0., 0.,
-                                     0., 0., 0.};
+      cs_real_t implmat2add[3][3] = {{0., 0., 0.,},
+                                     {0., 0., 0.,},
+                                     {0., 0., 0.}};
       for (cs_lnum_t i = 0; i < 3; i++) {
         for (cs_lnum_t j = 0; j < 3; j++) {
           /* Rotation in Pij and Coriolis is implicited */
