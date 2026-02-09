@@ -708,6 +708,12 @@ _distribute_fields(cs_all_to_all_t  *cd,
                       b_face_n2o);
 }
 
+/*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Redistribute mesh and fields based on a cell destination rank map.
