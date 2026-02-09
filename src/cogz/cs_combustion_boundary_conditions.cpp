@@ -632,6 +632,10 @@ cs_combustion_boundary_conditions_density(void)
 
   const cs_real_t *crom = CS_F_(rho)->val;
   cs_real_t *brom = CS_F_(rho_b)->val;
+  const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
+  const int iflmab = cs_field_get_key_int(CS_F_(vel), kbmasf);
+
+  cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
 
   /* Mass density on edges for all faces */
 
@@ -686,14 +690,9 @@ cs_combustion_boundary_conditions_density(void)
 
       for (cs_lnum_t elt_idx = 0; elt_idx < n_elts; elt_idx++) {
         cs_lnum_t face_id = elt_ids[elt_idx];
-        cs_lnum_t cell_id = b_face_cells[face_id];
-        const cs_real_t vs = cs_math_3_dot_product(cvar_vel[cell_id],
-                                                   f_n[face_id]);
-
-        if (vs < 0) // inflow
+        if (bmasfl[face_id] <= 0.0)
           brom[face_id] = rho_b_in;
       }
-
     } /* Test on zone type */
 
   } /* loop on boundary zones */
