@@ -236,8 +236,7 @@ _order_by_direction(void)
   /* Global direction id */
   int kdir = 0;
 
-  cs_real_t *s;
-  CS_MALLOC(s, n_cells, cs_real_t);
+  cs_array<cs_real_t> s(n_cells);
 
   for (int kk = -1; kk < 2; kk+=2) {
     for (int ii = -1; ii < 2; ii+=2) {
@@ -272,7 +271,7 @@ _order_by_direction(void)
               cs_lnum_t *order;
               CS_MALLOC(order, n_cells, cs_lnum_t);
 
-              _order_axis(s, order, n_cells);
+              _order_axis(s.data(), order, n_cells);
 
               cs_sles_it_assign_order(sc, &order); /* becomes owner of order */
 
@@ -295,7 +294,6 @@ _order_by_direction(void)
     }
   }
 
-  CS_FREE(s);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -412,16 +410,14 @@ _cs_rad_transfer_sol(int                        gg_id,
 
   /* Allocate work arrays */
 
-  cs_real_t *rhs0, *dpvar;
-  cs_real_t *ck_u_d = nullptr;
-  CS_MALLOC(rhs0,  n_cells_ext, cs_real_t);
-  CS_MALLOC(dpvar, n_cells_ext, cs_real_t);
+  cs_array<cs_real_t> ck_u_d;
+  cs_array<cs_real_t> rhs0(n_cells_ext);
+  cs_array<cs_real_t> dpvar(n_cells_ext);
 
   /* Specific heat capacity of the bulk phase */
   // CAUTION FOR NEPTUNE INTEGRATION HERE
 
-  cs_real_t *dcp;
-  CS_MALLOC(dcp, n_cells_ext, cs_real_t);
+  cs_array<cs_real_t> dcp(n_cells_ext);
 
   if (cs_glob_fluid_properties->icp > 0) {
     const cs_field_t *f_cp = CS_F_(cp);
@@ -444,7 +440,7 @@ _cs_rad_transfer_sol(int                        gg_id,
     f_up = cs_field_by_name_try("rad_flux_up");
     f_down = cs_field_by_name_try("rad_flux_down");
 
-    CS_MALLOC(ck_u_d,  n_cells_ext, cs_real_t);
+    ck_u_d.reshape(n_cells_ext);
     ck_u = cs_field_by_name("rad_absorption_coeff_up")->val;
     ck_d = cs_field_by_name("rad_absorption_coeff_down")->val;
 
@@ -818,7 +814,7 @@ _cs_rad_transfer_sol(int                        gg_id,
                                              rovsdt,
                                              rhs,
                                              radiance,
-                                             dpvar,
+                                             dpvar.data(),
                                              nullptr,
                                              nullptr);
 
@@ -972,8 +968,6 @@ _cs_rad_transfer_sol(int                        gg_id,
 
   }
 
-  CS_FREE(dcp);
-
 #if 0
   /* TODO add clean generation and log of "per day source terms"
      for atmospheric radiative model */
@@ -991,11 +985,6 @@ _cs_rad_transfer_sol(int                        gg_id,
   }
 #endif
 
-  /* Free memory */
-
-  CS_FREE(ck_u_d);
-  CS_FREE(rhs0);
-  CS_FREE(dpvar);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1137,9 +1126,8 @@ _net_flux_internal_coupling_contribution(cs_internal_coupling_t  *cpl,
                                      &n_distant,
                                      &faces_distant);
 
-  cs_real_t *net_flux_local, *net_flux_distant;
-  CS_MALLOC(net_flux_local, n_local, cs_real_t);
-  CS_MALLOC(net_flux_distant, n_distant, cs_real_t);
+  cs_array<cs_real_t> net_flux_local(n_local);
+  cs_array<cs_real_t> net_flux_distant(n_distant);
 
   /* Compute radiant net flux at internal coupling boundary face */
 
@@ -1150,8 +1138,8 @@ _net_flux_internal_coupling_contribution(cs_internal_coupling_t  *cpl,
 
   cs_internal_coupling_exchange_var(cpl,
                                     1, /* Dimension */
-                                    net_flux_distant,
-                                    net_flux_local);
+                                    net_flux_distant.data(),
+                                    net_flux_local.data());
 
   for (cs_lnum_t i = 0; i < n_local; i++) {
     cs_lnum_t face_id = faces_local[i];
@@ -1162,8 +1150,6 @@ _net_flux_internal_coupling_contribution(cs_internal_coupling_t  *cpl,
                          / mq->cell_vol[cell_id];
   }
 
-  CS_FREE(net_flux_local);
-  CS_FREE(net_flux_distant);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1212,22 +1198,19 @@ _rad_transfer_solve(int bc_type[])
     return;
 
   /* Allocate temporary arrays for the radiative equations resolution */
-  cs_real_t *viscf, *viscb, *rhs, *rovsdt;
-  CS_MALLOC(viscf, n_i_faces, cs_real_t);
-  CS_MALLOC(viscb, n_b_faces, cs_real_t);
-  CS_MALLOC(rhs, n_cells_ext, cs_real_t);
-  CS_MALLOC(rovsdt, n_cells_ext, cs_real_t);
+  cs_array<cs_real_t> viscf(n_i_faces);
+  cs_array<cs_real_t> viscb(n_b_faces);
+  cs_array<cs_real_t> rhs(n_cells_ext);
+  cs_array<cs_real_t> rovsdt(n_cells_ext);
 
   /* Allocate specific arrays for the radiative transfer module */
-  cs_real_t *tempk, *flurds, *flurdb;
-  CS_MALLOC(tempk, n_cells * rt_params->nrphas, cs_real_t);
-  CS_MALLOC(flurds, n_i_faces, cs_real_t);
-  CS_MALLOC(flurdb, n_b_faces, cs_real_t);
+  cs_array_2d<cs_real_t> tempk(rt_params->nrphas, n_cells);
+  cs_array<cs_real_t> flurds(n_i_faces);
+  cs_array<cs_real_t> flurdb(n_b_faces);
 
   /* Allocate work arrays */
   /* Absorption coefficient of the bulk phase */
-  cs_real_t *ckmix;
-  CS_MALLOC(ckmix, n_cells_ext, cs_real_t);
+  cs_array<cs_real_t> ckmix(n_cells_ext);
 
   /* Map field arrays */
   cs_field_t *f_tempb = CS_F_(t_b);
@@ -1247,16 +1230,13 @@ _rad_transfer_solve(int bc_type[])
   /* Radiation coefficient kgi and corresponding weight agi
      of the i-th grey gas
      (the sum over the grey gases is  CS_FI_(rad_cak, 0)->val) */
-  cs_real_t *kgi, *agi;
-  CS_MALLOC(kgi, n_cells_ext * nwsgg, cs_real_t);
-  CS_MALLOC(agi, n_cells_ext * nwsgg, cs_real_t);
+  cs_array_2d<cs_real_t> kgi(nwsgg, n_cells_ext);
+  cs_array_2d<cs_real_t> agi(nwsgg, n_cells_ext);
 
-  cs_real_t *int_rad_domega;
-  CS_MALLOC(int_rad_domega, n_cells_ext, cs_real_t);
+  cs_array<cs_real_t> int_rad_domega(n_cells_ext);
 
   /* Flux density components   */
-  cs_real_3_t *iqpar;
-  CS_MALLOC(iqpar, n_cells_ext, cs_real_3_t);
+  cs_array_2d<cs_real_t> iqpar(n_cells_ext, 3);
 
   cs_coal_model_t *coal = cs_glob_coal_model;
 
@@ -1267,12 +1247,10 @@ _rad_transfer_solve(int bc_type[])
 
   /* Irradiating flux density at walls.
      Careful: Should not be confused with qinci */
-  cs_real_t *iqpato;
-  CS_MALLOC(iqpato, n_b_faces, cs_real_t);
+  cs_array<cs_real_t> iqpato(n_b_faces);
 
   /* Weight of the i-th grey gas at walls     */
-  cs_real_t *w_gg;
-  CS_MALLOC(w_gg, n_b_faces * nwsgg, cs_real_t);
+  cs_array_2d<cs_real_t> w_gg(nwsgg, n_b_faces);
 
   /* Wall temperature */
   cs_real_t xptk;
@@ -1281,8 +1259,7 @@ _rad_transfer_solve(int bc_type[])
   else
     xptk = 0.0;
 
-  cs_real_t *twall;
-  CS_MALLOC(twall, n_b_faces, cs_real_t);
+  cs_array<cs_real_t> twall(n_b_faces);
 
   for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
     if (   bc_type[ifac] == CS_SMOOTHWALL
@@ -1340,9 +1317,9 @@ _rad_transfer_solve(int bc_type[])
   cs_real_t *ckg = CS_FI_(rad_cak, 0)->val;
 
   /* Work arrays */
-  cs_real_t *int_abso = nullptr, *int_emi, *int_rad_ist;
-  CS_MALLOC(int_emi, n_cells_ext, cs_real_t);
-  CS_MALLOC(int_rad_ist, n_cells_ext, cs_real_t);
+  cs_array<cs_real_t> int_abso;
+  cs_array<cs_real_t> int_emi(n_cells_ext);
+  cs_array<cs_real_t> int_rad_ist(n_cells_ext);
 
   cs_real_t *cpro_lumin = CS_F_(rad_energy)->val;
   cs_real_3_t *cpro_q = (cs_real_3_t *)(CS_F_(rad_q)->val);
@@ -1387,8 +1364,8 @@ _rad_transfer_solve(int bc_type[])
    * agi must be set to 1. */
   for (int i = 0; i < nwsgg; i++) {
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      kgi[n_cells*i + cell_id] = 0.0;
-      agi[n_cells*i + cell_id] = 1.0;
+      kgi(i, cell_id) = 0.0;
+      agi(i, cell_id) = 1.0;
     }
   }
 
@@ -1397,14 +1374,12 @@ _rad_transfer_solve(int bc_type[])
     /* In case of grey gas radiation properties (kgi != f(lambda))
      * w_gg must be set to 1. */
     for (int i = 0; i < nwsgg; i++) {
-      w_gg[ifac + i * n_b_faces] = 1.0;
+      w_gg(i, ifac) = 1.0;
     }
   }
 
   if (rt_params->imfsck == 2)
-    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
-      for (int i = 0; i < nwsgg; i++)
-        w_gg[ifac + i * n_b_faces] = 0.0;
+    w_gg.zero();
 
   /* Absorbed and emitted radiation of a single coal class
    * (needed to compute the source terms of the particle enthalpy equation) */
@@ -1443,6 +1418,13 @@ _rad_transfer_solve(int bc_type[])
     else
       cvara_scalt = CS_FI_(t, 0)->val;
 
+    // OK here, since tempk is an array_2d (nrphas, n_cells), but
+    // here we work on the first block of size "n_cells".
+    // operator [] (1d), is usable by all arrays, even multi-d, and does
+    // not use md location compute.
+    // () operators do use the md position and hence would not work here.
+    // For cell_id in [0,n_cells-1], tempk[cell_id] is the same as
+    // tempk(0, cell_id)
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
       tempk[cell_id] = cvara_scalt[cell_id] + xptk;
 
@@ -1455,7 +1437,7 @@ _rad_transfer_solve(int bc_type[])
 
     const cs_real_t *cvara_scalt = CS_F_(h)->vals[1];
 
-    cs_ht_convert_h_to_t_cells(cvara_scalt, tempk);
+    cs_ht_convert_h_to_t_cells(cvara_scalt, tempk.data());
 
     /* Coal particles temperature */
     for (int class_id = 0; class_id < n_classes; class_id++) {
@@ -1464,7 +1446,7 @@ _rad_transfer_solve(int bc_type[])
       cs_field_t *f_temp2 = cs_field_by_name(fname);
       cs_lnum_t class_num = class_id + 1;
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-        tempk[n_cells*class_num + cell_id] = f_temp2->val[cell_id];
+        tempk(class_num, cell_id) = f_temp2->val[cell_id];
       }
     }
 
@@ -1494,7 +1476,7 @@ _rad_transfer_solve(int bc_type[])
       || pm_flag[CS_JOULE_EFFECT] >= 0
       || pm_flag[CS_ELECTRIC_ARCS] >= 0
       || pm_flag[CS_GAS_MIX] >= 0)
-    cs_rad_transfer_absorption(tempk, ckg, kgi, agi, w_gg);
+    cs_rad_transfer_absorption(tempk.data(), ckg, kgi.data(), agi.data(), w_gg.data());
 
   else {
 
@@ -1544,7 +1526,7 @@ _rad_transfer_solve(int bc_type[])
     else {
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         for (int gg_id = 0; gg_id < nwsgg; gg_id++)
-          ckmin = cs::min(ckmin, kgi[n_cells*gg_id + cell_id]);
+          ckmin = cs::min(ckmin, kgi(gg_id, cell_id));
       }
 
     }
@@ -1565,8 +1547,7 @@ _rad_transfer_solve(int bc_type[])
 
   /* Specific heat capacity of the bulk phase */
   // CAUTION FOR NEPTUNE INTEGRATION HERE
-  cs_real_t *dcp;
-  CS_MALLOC(dcp, n_cells_ext, cs_real_t);
+  cs_array<cs_real_t> dcp(n_cells_ext);
 
   if (cs_glob_fluid_properties->icp > 0) {
     const cs_field_t *f_cp = CS_F_(cp);
@@ -1598,16 +1579,17 @@ _rad_transfer_solve(int bc_type[])
     char f_name[64];
     snprintf(f_name, 63, "spectral_absorption_%02d", gg_id + 1);
     cs_field_t *f_abs  = cs_field_by_name_try(f_name);
-    if (f_abs != nullptr)
-      int_abso = f_abs->val;
-    else if (int_abso == nullptr)
-      CS_MALLOC(int_abso, n_cells_ext, cs_real_t);
+    if (f_abs != nullptr) {
+      int_abso = cs_array<cs_real_t>(f_abs->val, n_cells_ext);
+    }
+    else if (int_abso.size() == 0)
+      int_abso.reshape(n_cells_ext);
 
     if (rt_params->imoadf >= 1 || rt_params->imfsck >= 1) {
 
       /* assert(gg_id == 0);  TODO: merge ckg and kgi ? */
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-        ckg[cell_id] = kgi[n_cells*gg_id + cell_id];
+        ckg[cell_id] = kgi(gg_id, cell_id);
 
     }
     else if (rt_params->atmo_model == CS_RAD_ATMO_3D_NONE) {
@@ -1689,7 +1671,7 @@ _rad_transfer_solve(int bc_type[])
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
         rhs[cell_id] =  3.0 * ckg[cell_id]
                             * cs_math_pow4(tempk[cell_id])
-                            * agi[n_cells*gg_id + cell_id]
+                            * agi(gg_id, cell_id)
                             * cell_vol[cell_id];
 
       /* Solid phase/coal particles (or spray):
@@ -1703,8 +1685,8 @@ _rad_transfer_solve(int bc_type[])
         cs_lnum_t class_num = class_id + 1;
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
           rhs[cell_id] +=  3.0 * f_x2->val[cell_id] * cpro_cak[cell_id]
-                               * cs_math_pow4(tempk[n_cells*class_num + cell_id])
-                               * agi[n_cells*gg_id + cell_id]
+                               * cs_math_pow4(tempk(class_num, cell_id))
+                               * agi(gg_id, cell_id)
                                * cell_vol[cell_id];
       }
 
@@ -1762,22 +1744,22 @@ _rad_transfer_solve(int bc_type[])
       /* Update Boundary condition coefficients */
 
       cs_rad_transfer_bc_coeffs_p1(bc_type,
-                                   ckmix,
+                                   ckmix.data(),
                                    cs_field_by_name("emissivity")->val,
-                                   w_gg,   gg_id,
+                                   w_gg.data(),   gg_id,
                                    bc_coeffs_rad);
       /* Solving */
       cs_rad_transfer_pun(gg_id,
                           bc_type,
                           bc_coeffs_rad,
-                          flurds, flurdb,
-                          viscf, viscb,
-                          rhs, rovsdt,
-                          twall, ckmix,
-                          iqpar,
-                          w_gg,
-                          int_rad_domega,
-                          int_abso);
+                          flurds.data(), flurdb.data(),
+                          viscf.data(), viscb.data(),
+                          rhs.data(), rovsdt.data(),
+                          twall.data(), ckmix.data(),
+                          iqpar.data<cs_real_3_t>(),
+                          w_gg.data(),
+                          int_rad_domega.data(),
+                          int_abso.data());
 
       /* Precomputed absorption and emission */
       /* Absorption */
@@ -1852,7 +1834,7 @@ _rad_transfer_solve(int bc_type[])
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
           rhs[cell_id] = c_stefan * ckg[cell_id]
                                     * cs_math_pow4(tempk[cell_id])
-                                    * agi[n_cells*gg_id + cell_id]
+                                    * agi(gg_id, cell_id)
                                     * cell_vol[cell_id]
                                     * onedpi;
       }
@@ -1862,7 +1844,7 @@ _rad_transfer_solve(int bc_type[])
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
           rhs[cell_id] =  c_stefan * ckg[cell_id]
                                    * cpro_t4m[cell_id]
-                                   * agi[n_cells*gg_id + cell_id]
+                                   * agi(gg_id, cell_id)
                                    * cell_vol[cell_id]
                                    * onedpi;
       }
@@ -1879,10 +1861,10 @@ _rad_transfer_solve(int bc_type[])
         cs_lnum_t class_num = class_id + 1;
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
           rhs[cell_id] +=   f_x2->val[cell_id]
-                          * agi[n_cells*gg_id + cell_id]
+                          * agi(gg_id, cell_id)
                           * c_stefan
                           * cpro_cak[cell_id]
-                          * cs_math_pow4(tempk[n_cells*class_num + cell_id])
+                          * cs_math_pow4(tempk(class_num, cell_id))
                           * cell_vol[cell_id]
                           * onedpi;
       }
@@ -1915,24 +1897,24 @@ _rad_transfer_solve(int bc_type[])
         cs_rad_transfer_bc_coeffs_dom(bc_type,
                                       nullptr, /*no specific direction */
                                       cs_field_by_name("emissivity")->val,
-                                      w_gg  , gg_id,
+                                      w_gg.data()  , gg_id,
                                       bc_coeffs_rad);
 
       /* Solving */
       _cs_rad_transfer_sol(gg_id,
-                           w_gg,
-                           tempk,
+                           w_gg.data(),
+                           tempk.data(),
                            ckg,
                            bc_type,
                            bc_coeffs_rad,
-                           flurds, flurdb,
-                           viscf, viscb,
-                           rhs, rovsdt,
-                           iqpar,
-                           int_rad_domega,
-                           int_abso,
-                           int_emi,
-                           int_rad_ist);
+                           flurds.data(), flurdb.data(),
+                           viscf.data(), viscb.data(),
+                           rhs.data(), rovsdt.data(),
+                           iqpar.data<cs_real_3_t>(),
+                           int_rad_domega.data(),
+                           int_abso.data(),
+                           int_emi.data(),
+                           int_rad_ist.data());
 
     }
 
@@ -1961,9 +1943,6 @@ _rad_transfer_solve(int bc_type[])
       }
     }
 
-    if (f_abs == nullptr && gg_id == nwsgg-1)
-      CS_FREE(int_abso);
-
     /* Emission
      * -------- */
 
@@ -1972,11 +1951,11 @@ _rad_transfer_solve(int bc_type[])
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         emim[cell_id] +=   int_emi[cell_id]
-                         * agi[n_cells*gg_id + cell_id]
+                         * agi(gg_id, cell_id)
                          * wq[gg_id];
 
         rad_istm[cell_id] +=   int_rad_ist[cell_id]
-                             * agi[n_cells*gg_id + cell_id]
+                             * agi(gg_id, cell_id)
                              * wq[gg_id];
       }
 
@@ -2008,14 +1987,14 @@ _rad_transfer_solve(int bc_type[])
 
         cs_real_t sig_ck_t4
           = 4. * c_stefan * cpro_cak[cell_id]
-               * cs_math_pow4(tempk[n_cells*class_num + cell_id])
-               * agi[n_cells*gg_id + cell_id]
+               * cs_math_pow4(tempk(class_num, cell_id))
+               * agi(gg_id, cell_id)
                * wq[gg_id];
 
         cs_real_t sig_ck_t3dcp2
           = 16. * c_stefan * cpro_cak[cell_id]
-                * cs_math_pow3(tempk[n_cells*class_num + cell_id])
-                * agi[n_cells*gg_id + cell_id]
+                * cs_math_pow3(tempk(class_num, cell_id))
+                * agi(gg_id, cell_id)
                 * wq[gg_id] / cp2;
 
         /* Add Emission of particles to emim: kp * c_stefan * T^4 *agi */
@@ -2044,9 +2023,9 @@ _rad_transfer_solve(int bc_type[])
       cpro_lumin[cell_id] += (int_rad_domega[cell_id] * wq[gg_id]);
 
       /* Flux vector components    */
-      cpro_q[cell_id][0] += iqpar[cell_id][0] * wq[gg_id];
-      cpro_q[cell_id][1] += iqpar[cell_id][1] * wq[gg_id];
-      cpro_q[cell_id][2] += iqpar[cell_id][2] * wq[gg_id];
+      cpro_q[cell_id][0] += iqpar(cell_id, 0) * wq[gg_id];
+      cpro_q[cell_id][1] += iqpar(cell_id, 1) * wq[gg_id];
+      cpro_q[cell_id][2] += iqpar(cell_id, 2) * wq[gg_id];
     }
 
     /* If the ADF model is activated we have to sum
@@ -2058,9 +2037,6 @@ _rad_transfer_solve(int bc_type[])
     }
 
   } /* end loop on grey gas */
-
-  CS_FREE(dcp);
-  CS_FREE(int_rad_domega);
 
   /* The total radiative flux is copied in qinci
    * a) for post-processing reasons and
@@ -2080,7 +2056,7 @@ _rad_transfer_solve(int bc_type[])
   /* Basic definition for net flux */
 
   // TODO compute net flux per band and global one...
-  _compute_net_flux(bc_type, twall, f_qinci->val, f_eps->val, f_fnet->val);
+  _compute_net_flux(bc_type, twall.data(), f_qinci->val, f_eps->val, f_fnet->val);
 
   /*---> Reading of User data
    * CAREFUL: The user has access to the radiation coefficient (field f_cak1)
@@ -2095,7 +2071,7 @@ _rad_transfer_solve(int bc_type[])
    */
 
   cs_user_rad_transfer_net_flux(bc_type,
-                                twall,
+                                twall.data(),
                                 f_qinci->val,
                                 f_xlam->val,
                                 f_epa->val,
@@ -2119,11 +2095,9 @@ _rad_transfer_solve(int bc_type[])
   const int n_zones = cs_boundary_zone_max_class_or_zone_id() + 1;
   const int *b_face_class_id = cs_boundary_zone_face_class_or_zone_id();
 
-  int *iflux;
-  CS_MALLOC(iflux, n_zones, int);
+  cs_array<int> iflux(n_zones);
 
-  cs_real_t *flux;
-  CS_MALLOC(flux, n_zones, cs_real_t);
+  cs_array<cs_real_t> flux(n_zones);
 
   for (int izone = 0; izone < n_zones; izone++) {
     flux[izone]  = 0.0;
@@ -2137,8 +2111,8 @@ _rad_transfer_solve(int bc_type[])
   }
 
   if (cs_glob_rank_id >= 0) {
-    cs_parall_sum(n_zones, CS_REAL_TYPE, flux);
-    cs_parall_max(n_zones, CS_INT_TYPE, iflux);
+    cs_parall_sum(n_zones, CS_REAL_TYPE, flux.data());
+    cs_parall_max(n_zones, CS_INT_TYPE, iflux.data());
   }
 
   if (verbosity > 0) {
@@ -2348,26 +2322,6 @@ _rad_transfer_solve(int bc_type[])
   if (verbosity > 0)
     cs_log_separator(CS_LOG_DEFAULT);
 
-  /* Free memory */
-
-  CS_FREE(iflux);
-  CS_FREE(flux);
-  CS_FREE(iqpato);
-  CS_FREE(viscf);
-  CS_FREE(viscb);
-  CS_FREE(rhs);
-  CS_FREE(rovsdt);
-  CS_FREE(tempk);
-  CS_FREE(flurds);
-  CS_FREE(flurdb);
-  CS_FREE(int_emi);
-  CS_FREE(int_rad_ist);
-  CS_FREE(ckmix);
-  CS_FREE(twall);
-  CS_FREE(kgi);
-  CS_FREE(agi);
-  CS_FREE(w_gg);
-  CS_FREE(iqpar);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2414,16 +2368,14 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
     return;
 
   /* Allocate temporary arrays for the radiative equations resolution */
-  cs_real_t *viscf, *viscb, *rhs, *rovsdt;
-  CS_MALLOC(viscf, n_i_faces, cs_real_t);
-  CS_MALLOC(viscb, n_b_faces, cs_real_t);
-  CS_MALLOC(rhs, n_cells_ext, cs_real_t);
-  CS_MALLOC(rovsdt, n_cells_ext, cs_real_t);
+  cs_array<cs_real_t> viscf(n_i_faces);
+  cs_array<cs_real_t> viscb(n_b_faces);
+  cs_array<cs_real_t> rhs(n_cells_ext);
+  cs_array<cs_real_t> rovsdt(n_cells_ext);
 
   /* Allocate specific arrays for the radiative transfer module */
-  cs_real_t *flurds, *flurdb;
-  CS_MALLOC(flurds, n_i_faces, cs_real_t);
-  CS_MALLOC(flurdb, n_b_faces, cs_real_t);
+  cs_array<cs_real_t> flurds(n_i_faces);
+  cs_array<cs_real_t> flurdb(n_b_faces);
 
   /* Map field arrays */
   cs_field_t *f_tempb = CS_F_(t_b);
@@ -2441,25 +2393,20 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
   /* Radiation coefficient kgi and corresponding weight agi
      of the i-th grey gas
      (the sum over the grey gases is  CS_FI_(rad_cak, 0)->val) */
-  cs_real_t *kgi, *agi;
-  CS_MALLOC(kgi, n_cells_ext * nwsgg, cs_real_t);
-  CS_MALLOC(agi, n_cells_ext * nwsgg, cs_real_t);
+  cs_array_2d<cs_real_t> kgi(nwsgg, n_cells_ext);
+  cs_array_2d<cs_real_t> agi(nwsgg, n_cells_ext);
 
-  cs_real_t *int_rad_domega;
-  CS_MALLOC(int_rad_domega, n_cells_ext, cs_real_t);
+  cs_array<cs_real_t> int_rad_domega(n_cells_ext);
 
   /* Flux density components   */
-  cs_real_3_t *iqpar;
-  CS_MALLOC(iqpar, n_cells_ext, cs_real_3_t);
+  cs_array_2d<cs_real_t> iqpar(n_cells_ext, 3);
 
   /* Irradiating flux density at walls.
      Careful: Should not be confused with qinci */
-  cs_real_t *iqpato;
-  CS_MALLOC(iqpato, n_b_faces, cs_real_t);
+  cs_array<cs_real_t> iqpato(n_b_faces);
 
   /* Weight of the i-th grey gas at walls     */
-  cs_real_t *w_gg;
-  CS_MALLOC(w_gg, n_b_faces * nwsgg, cs_real_t);
+  cs_array_2d<cs_real_t> w_gg(nwsgg, n_b_faces);
 
   /* Wall temperature */
   cs_real_t xptk;
@@ -2468,8 +2415,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
   else
     xptk = 0.0;
 
-  cs_real_t *twall;
-  CS_MALLOC(twall, n_b_faces, cs_real_t);
+  cs_array<cs_real_t> twall(n_b_faces);
 
   for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
     if (bc_type[ifac] == CS_SMOOTHWALL || bc_type[ifac] == CS_ROUGHWALL)
@@ -2512,9 +2458,9 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
   cs_real_t *ckg = CS_FI_(rad_cak, 0)->val;
 
   /* Work arrays */
-  cs_real_t *int_abso = nullptr, *int_emi, *int_rad_ist;
-  CS_MALLOC(int_emi, n_cells_ext, cs_real_t);
-  CS_MALLOC(int_rad_ist, n_cells_ext, cs_real_t);
+  cs_array<cs_real_t> int_abso;
+  cs_array<cs_real_t> int_emi(n_cells_ext);
+  cs_array<cs_real_t> int_rad_ist(n_cells_ext);
 
   cs_real_t   *cpro_lumin = CS_F_(rad_energy)->val;
   cs_real_3_t *cpro_q     = (cs_real_3_t *)(CS_F_(rad_q)->val);
@@ -2555,8 +2501,8 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
    * agi must be set to 1. */
   for (int i = 0; i < nwsgg; i++) {
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      kgi[n_cells * i + cell_id] = 0.0;
-      agi[n_cells * i + cell_id] = 1.0;
+      kgi(i, cell_id) = 0.0;
+      agi(i, cell_id) = 1.0;
     }
   }
 
@@ -2565,14 +2511,14 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
     /* In case of grey gas radiation properties (kgi != f(lambda))
      * w_gg must be set to 1. */
     for (int i = 0; i < nwsgg; i++) {
-      w_gg[ifac + i * n_b_faces] = 1.0;
+      w_gg(i, ifac) = 1.0;
     }
   }
 
   if (pm_flag[CS_COMBUSTION_SLFM] >= 0)
     for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
       for (int i = 0; i < nwsgg; i++)
-        w_gg[ifac + i * n_b_faces] = 0.0;
+        w_gg(i, ifac) = 0.0;
 
   /* Upward/Downward atmospheric integration */
   /* Postprocessing atmospheric upward and downward flux */
@@ -2586,7 +2532,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
   /* Absorption coefficient for different modules */
 
   if (pm_flag[CS_COMBUSTION_3PT] >= 0)
-    cs_rad_transfer_rcfsk_absorption(tempk, kgi, agi, w_gg);
+    cs_rad_transfer_rcfsk_absorption(tempk, kgi.data(), agi.data(), w_gg.data());
 
   if (pm_flag[CS_COMBUSTION_SLFM] >= 0) {
     for (int gg_id = 0; gg_id < nwsgg; gg_id++) {
@@ -2596,7 +2542,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
 
       if (f_kgabs != nullptr)
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-          kgi[n_cells * gg_id + cell_id] = f_kgabs->val[cell_id];
+          kgi(gg_id, cell_id) = f_kgabs->val[cell_id];
     }
   }
 
@@ -2616,13 +2562,14 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
     snprintf(f_name, 63, "spectral_absorption_%02d", gg_id + 1);
     cs_field_t *f_abs = cs_field_by_name_try(f_name);
 
-    if (f_abs != nullptr)
-      int_abso = f_abs->val;
-    else if (int_abso == nullptr)
-      CS_MALLOC(int_abso, n_cells_ext, cs_real_t);
+    if (f_abs != nullptr) {
+      int_abso = cs_array<cs_real_t>(f_abs->val, n_cells_ext);
+    }
+    else if (int_abso.size() == 0)
+      int_abso.reshape(n_cells_ext);
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-      ckg[cell_id] = kgi[n_cells * gg_id + cell_id];
+      ckg[cell_id] = kgi(gg_id, cell_id);
 
     /* -> Gas phase: Implicit source term of the ETR */
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
@@ -2641,13 +2588,13 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
     else if (pm_flag[CS_COMBUSTION_3PT] == -1) {
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
         rhs[cell_id] = c_stefan * ckg[cell_id] * cs_math_pow4(tempk[cell_id])
-                       * agi[n_cells * gg_id + cell_id] * cell_vol[cell_id]
+                       * agi(gg_id, cell_id) * cell_vol[cell_id]
                        * onedpi;
     }
     else if (pm_flag[CS_COMBUSTION_3PT] >= 0) {
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
         rhs[cell_id] = c_stefan * ckg[cell_id] * cpro_t4m[cell_id]
-                       * agi[n_cells * gg_id + cell_id] * cell_vol[cell_id]
+                       * agi(gg_id, cell_id) * cell_vol[cell_id]
                        * onedpi;
     }
 
@@ -2659,28 +2606,28 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
     cs_rad_transfer_bc_coeffs_dom(bc_type,
                                   nullptr, /*no specific direction */
                                   cs_field_by_name("emissivity")->val,
-                                  w_gg,
+                                  w_gg.data(),
                                   gg_id,
                                   bc_coeffs_rad);
 
     /* Solving */
     _cs_rad_transfer_sol(gg_id,
-                         w_gg,
+                         w_gg.data(),
                          tempk,
                          ckg,
                          bc_type,
                          bc_coeffs_rad,
-                         flurds,
-                         flurdb,
-                         viscf,
-                         viscb,
-                         rhs,
-                         rovsdt,
-                         iqpar,
-                         int_rad_domega,
-                         int_abso,
-                         int_emi,
-                         int_rad_ist);
+                         flurds.data(),
+                         flurdb.data(),
+                         viscf.data(),
+                         viscb.data(),
+                         rhs.data(),
+                         rovsdt.data(),
+                         iqpar.data<cs_real_3_t>(),
+                         int_rad_domega.data(),
+                         int_abso.data(),
+                         int_emi.data(),
+                         int_rad_ist.data());
 
     /* Summing up the quantities of each grey gas    */
 
@@ -2692,7 +2639,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
     if (pm_flag[CS_COMBUSTION_3PT] >= 0) {
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         emim[cell_id] -= ckg[cell_id] * 4.0 * c_stefan * cpro_t4m[cell_id]
-                         * agi[n_cells * gg_id + cell_id];
+                         * agi(gg_id, cell_id);
       }
     }
     else if (pm_flag[CS_COMBUSTION_SLFM] >= 0) {
@@ -2706,9 +2653,9 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
       cpro_lumin[cell_id] += int_rad_domega[cell_id];
 
       /* Flux vector components    */
-      cpro_q[cell_id][0] += iqpar[cell_id][0];
-      cpro_q[cell_id][1] += iqpar[cell_id][1];
-      cpro_q[cell_id][2] += iqpar[cell_id][2];
+      cpro_q[cell_id][0] += iqpar(cell_id, 0);
+      cpro_q[cell_id][1] += iqpar(cell_id, 1);
+      cpro_q[cell_id][2] += iqpar(cell_id, 2);
     }
 
     /* Total spectral flux densities */
@@ -2717,11 +2664,9 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
       iqpato[ifac] += f_qinsp->val[gg_id + ifac * nwsgg];
 
     if (f_abs == nullptr && gg_id == nwsgg - 1)
-      CS_FREE(int_abso);
+      int_abso.clear();
 
   } /* end loop on grey gas */
-
-  CS_FREE(int_rad_domega);
 
   /* Calculation of divQr */
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
@@ -2742,7 +2687,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
 
   /* Basic definition for net flux */
   _compute_net_flux(bc_type,
-                    twall,
+                    twall.data(),
                     f_qinci->val,
                     f_eps->val,
                     f_fnet->val);
@@ -2760,7 +2705,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
    */
 
   cs_user_rad_transfer_net_flux(bc_type,
-                                twall,
+                                twall.data(),
                                 f_qinci->val,
                                 f_xlam->val,
                                 f_epa->val,
@@ -2784,11 +2729,9 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
   const int  n_zones         = cs_boundary_zone_max_class_or_zone_id() + 1;
   const int *b_face_class_id = cs_boundary_zone_face_class_or_zone_id();
 
-  int *iflux;
-  CS_MALLOC(iflux, n_zones, int);
+  cs_array<int> iflux(n_zones);
 
-  cs_real_t *flux;
-  CS_MALLOC(flux, n_zones, cs_real_t);
+  cs_array<cs_real_t> flux(n_zones);
 
   for (int izone = 0; izone < n_zones; izone++) {
     flux[izone]  = 0.0;
@@ -2802,8 +2745,8 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
   }
 
   if (cs_glob_rank_id >= 0) {
-    cs_parall_sum(n_zones, CS_REAL_TYPE, flux);
-    cs_parall_max(n_zones, CS_INT_TYPE, iflux);
+    cs_parall_sum(n_zones, CS_REAL_TYPE, flux.data());
+    cs_parall_max(n_zones, CS_INT_TYPE, iflux.data());
   }
 
   if (verbosity > 0) {
@@ -2854,24 +2797,6 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
   if (verbosity > 0)
     cs_log_separator(CS_LOG_DEFAULT);
 
-  /* Free memory */
-
-  CS_FREE(iflux);
-  CS_FREE(flux);
-  CS_FREE(iqpato);
-  CS_FREE(viscf);
-  CS_FREE(viscb);
-  CS_FREE(rhs);
-  CS_FREE(rovsdt);
-  CS_FREE(flurds);
-  CS_FREE(flurdb);
-  CS_FREE(int_emi);
-  CS_FREE(int_rad_ist);
-  CS_FREE(twall);
-  CS_FREE(kgi);
-  CS_FREE(agi);
-  CS_FREE(w_gg);
-  CS_FREE(iqpar);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

@@ -435,7 +435,7 @@ public:
   (
     T*      data_ptr, /*!<[in] New data pointer */
     Args... dims      /*!<[in] New dimensions (integer types) */
-  ) const
+  )
   {
     check_operator_args_(dims...);
     set_size_(dims...);

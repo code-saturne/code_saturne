@@ -81,33 +81,33 @@ BEGIN_C_DECLS
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
+ * Local constexpr variables
+ *============================================================================*/
+
+constexpr int ng = 100;
+constexpr int nt     = 38;
+constexpr int nconc  = 5;
+constexpr int nband  = 450;
+constexpr int maxit  = 1000;
+constexpr int imlinear    = 0;
+constexpr int im2dspline  = 6;
+constexpr cs_real_t eps    = 3e-14;
+constexpr cs_real_t x_kg[5] = {0.0001, 0.25, 0.5, 0.75, 1.0};
+
+/*=============================================================================
  * Local static variables
  *============================================================================*/
 
 static int ipass = 0;
 
-static cs_real_t  *gi;
-static cs_real_t  *tt;
-static cs_real_t  *kpco2;
-static cs_real_t  *kph2o;
-static cs_real_t  *wv;
-static cs_real_t  *dwv;
-static cs_real_t  *kmfs;
-static cs_real_t  *gq;
-
-/*=============================================================================
- * Local const variables
- *============================================================================*/
-
-const int ng = 100;
-const int nt     = 38;
-const int nconc  = 5;
-const int nband  = 450;
-const int maxit  = 1000;
-const int imlinear    = 0;
-const int im2dspline  = 6;
-const cs_real_t eps    = 3e-14;
-const cs_real_t x_kg[5] = {0.0001, 0.25, 0.5, 0.75, 1.0};
+static cs_real_t gi[ng];
+static cs_real_t tt[nt];
+static cs_real_t kpco2[nt];
+static cs_real_t kph2o[nt];
+static cs_real_t wv[nband];
+static cs_real_t dwv[nband];
+static cs_real_t kmfs[nconc*nconc*nt*nt*ng];
+static cs_real_t *gq;
 
 /*=============================================================================
  * Private function definitions
@@ -646,18 +646,16 @@ _interpolation4d(cs_real_t trad,
   int itx[4][4];
   int nix, nit;
 
-  cs_real_t *karray, *kint1, *kint2, *kint3;
-  CS_MALLOC(karray, ng*4*4*4*4, cs_real_t);
-  CS_MALLOC(kint1,  ng*4*4*4, cs_real_t);
-  CS_MALLOC(kint2,  ng*4*4, cs_real_t);
-  CS_MALLOC(kint3,  ng*4, cs_real_t);
+  cs_mdarray<cs_real_t, 5> karray({ng, 4, 4, 4, 4});
+  cs_array_4d<cs_real_t> kint1(ng, 4, 4, 4);
+  cs_array_3d<cs_real_t> kint2(ng, 4, 4);
+  cs_array_2d<cs_real_t> kint3(ng, 4);
 
-  cs_real_t *b, *c, *d, *kg_t2, *kg_x2;
-  CS_MALLOC(b, 4, cs_real_t);
-  CS_MALLOC(c, 4, cs_real_t);
-  CS_MALLOC(d, 4, cs_real_t);
-  CS_MALLOC(kg_t2, 4, cs_real_t);
-  CS_MALLOC(kg_x2, 4, cs_real_t);
+  cs_real_t b[4];
+  cs_real_t c[4];
+  cs_real_t d[4];
+  cs_real_t kg_t2[4];
+  cs_real_t kg_x2[4];
 
   /* Determine positions in x and T
    * in the NB database for interpolation. */
@@ -701,11 +699,7 @@ _interpolation4d(cs_real_t trad,
       for (int it = 0; it < nit; it++) {
         for (int itrad = 0; itrad < nit; itrad++) {
           for (int ig = 0; ig < ng; ig++) {
-            karray[  ih2o
-                   + ico2*4
-                   + it*4*4
-                   + itrad*4*4*4
-                   + ig*4*4*4*4]
+            karray(ig, itrad, it, ico2, ih2o)
               = kmfs[  ih2oa[ih2o]
                      + ico2a[ico2]*nconc
                      + ita[it]*nconc*nconc
@@ -732,16 +726,16 @@ _interpolation4d(cs_real_t trad,
             int nargs = 4;
             _splmi(nargs,
                    kg_x2,
-                   &karray[ih2o + ico2*4 + it*4*4 + itrad*4*4*4 + ig*4*4*4*4],
+                   karray.sub_array(ig, itrad, it, ico2),
                    b,
                    c,
                    d);
 
-            kint1[ico2 + it*4 + itrad*4*4 + ig*4*4*4]
+            kint1(ig, itrad, ig, ico2)
               = _seval(nargs,
                        xh2o,
                        kg_x2,
-                       &karray[ih2o + ico2*4 + it*4*4 + itrad*4*4*4 + ig*4*4*4*4],
+                       karray.sub_array(ig, itrad, it, ico2),
                        b,
                        c,
                        d);
@@ -756,9 +750,9 @@ _interpolation4d(cs_real_t trad,
       for (int it = 0; it < nit; it++) {
         for (int itrad = 0; itrad < nit; itrad++) {
           for (int ig = 0; ig < ng; ig++) {
-            kint1[ico2 + it*4 + itrad*4*4 + ig*4*4*4]
-              =          wx  * karray[1 + ico2*4 + it*4*4 + itrad*4*4*4 + ig*4*4*4*4]
-                + (1.0 - wx) * karray[0 + ico2*4 + it*4*4 + itrad*4*4*4 + ig*4*4*4*4];
+            kint1(ig, itrad, it, ico2)
+              =          wx  * karray(ig, itrad, it, ico2, 1)
+                + (1.0 - wx) * karray(ig, itrad, it, ico2, 0);
           }
         }
       }
@@ -780,15 +774,15 @@ _interpolation4d(cs_real_t trad,
           int nargs = 4;
           _splmi(nargs,
                  kg_x2,
-                 &kint1[ico2 + it*4 + itrad*4*4 + ig*4*4*4],
+                 kint1.sub_array(ig, itrad, it),
                  b,
                  c,
                  d);
-          kint2[it + itrad*4 + ig*4*4]
+          kint2(ig, itrad, it)
             = _seval(nargs,
                      xco2,
                      kg_x2,
-                     &kint1[ico2 + it*4 + itrad*4*4 + ig*4*4*4],
+                     kint1.sub_array(ig, itrad, it),
                      b,
                      c,
                      d);
@@ -801,9 +795,9 @@ _interpolation4d(cs_real_t trad,
     for (int it = 0; it < nit; it++) {
       for (int itrad = 0; itrad < nit; itrad++) {
         for (int ig = 0; ig < ng; ig++) {
-          kint2[it + itrad*4 + ig*4*4]
-            =          wx  * kint1[1 + it*4 + itrad*4*4 + ig*4*4*4]
-              + (1.0 - wx) * kint1[0 + it*4 + itrad*4*4 + ig*4*4*4];
+          kint2(ig, itrad, it)
+            =          wx  * kint1(ig, itrad, it, 1)
+              + (1.0 - wx) * kint1(ig, itrad, it, 0);
         }
       }
     }
@@ -821,17 +815,17 @@ _interpolation4d(cs_real_t trad,
         int nargs = 4;
         _splmi(nargs,
                kg_t2,
-               &kint2[0 + itrad*4 + ig*4*4],
+               kint2.sub_array(ig, itrad),
                b,
                c,
                d);
-        kint3[itrad + ig*4] = _seval(nargs,
-                                     t,
-                                     kg_t2,
-                                     &kint2[0 + itrad*4 + ig*4*4],
-                                     b,
-                                     c,
-                                     d);
+        kint3(ig, itrad) = _seval(nargs,
+                                  t,
+                                  kg_t2,
+                                  kint2.sub_array(ig, itrad),
+                                  b,
+                                  c,
+                                  d);
       }
     }
   }
@@ -839,8 +833,8 @@ _interpolation4d(cs_real_t trad,
     cs_real_t wt = (t - tt[ita[0]]) / (tt[ita[1]] - tt[ita[0]]);
     for (int itrad = 0; itrad < nit; itrad++) {
       for (int ig = 0; ig < ng; ig++) {
-        kint3[itrad + ig*4] =         wt  * kint2[1 + itrad*4 + ig*4*4]
-                             + (1.0 - wt) * kint2[0 + itrad*4 + ig*4*4];
+        kint3(ig, itrad) =        wt  * kint2(ig, itrad, 1)
+                         + (1.0 - wt) * kint2(ig, itrad, 0);
       }
     }
   }
@@ -856,30 +850,20 @@ _interpolation4d(cs_real_t trad,
       int nargs = 4;
       _splmi(nargs,
              kg_t2,
-             &kint3[0 + ig*4],
+             kint3.sub_array(ig),
              b,
              c,
              d);
-      kdb[ig] = _seval(nargs, trad, kg_t2, &kint3[0 + ig*4], b, c, d);
+      kdb[ig] = _seval(nargs, trad, kg_t2, kint3.sub_array(ig), b, c, d);
     }
   }
   else {
     cs_real_t wt = (trad - tt[itrada[0]]) / (tt[itrada[1]] - tt[itrada[0]]);
     for (int ig = 0; ig < ng; ig++) {
-      kdb[ig] = wt * kint3[1 + ig*4] + (1.0 - wt) * kint3[0 + ig*4];
+      kdb[ig] = wt * kint3(ig, 1) + (1.0 - wt) * kint3(ig, 0);
     }
   }
 
-  /* Free memory */
-  CS_FREE(karray);
-  CS_FREE(kint1);
-  CS_FREE(kint2);
-  CS_FREE(kint3);
-  CS_FREE(b);
-  CS_FREE(c);
-  CS_FREE(d);
-  CS_FREE(kg_t2);
-  CS_FREE(kg_x2);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -912,20 +896,17 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
 {
   /* Initialization */
 
-  cs_real_t   *gfskref, *kfskref, *kfsk, *gfsk, *gg1;
-  cs_real_t   *kg1, *as, *ag, *aw, *kloctmp;
+  cs_real_t gfskref[ng];
+  cs_real_t kfskref[ng];
+  cs_real_t gfsk[ng];
+  cs_real_t kfsk[ng];
+  cs_real_t gg1[ng];
+  cs_real_t kg1[ng];
+  cs_real_t as[ng];
 
-  CS_MALLOC(gfskref, ng, cs_real_t);
-  CS_MALLOC(kfskref, ng, cs_real_t);
-  CS_MALLOC(gfsk, ng, cs_real_t);
-  CS_MALLOC(kfsk, ng, cs_real_t);
-  CS_MALLOC(gg1, ng, cs_real_t);
-  CS_MALLOC(kg1, ng, cs_real_t);
-  CS_MALLOC(as, ng, cs_real_t);
-
-  CS_MALLOC(ag, cs_glob_rad_transfer_params->nwsgg, cs_real_t);
-  CS_MALLOC(aw, cs_glob_rad_transfer_params->nwsgg, cs_real_t);
-  CS_MALLOC(kloctmp, cs_glob_rad_transfer_params->nwsgg, cs_real_t);
+  cs_array<cs_real_t> ag(cs_glob_rad_transfer_params->nwsgg);
+  cs_array<cs_real_t> aw(cs_glob_rad_transfer_params->nwsgg);
+  cs_array<cs_real_t> kloctmp(cs_glob_rad_transfer_params->nwsgg);
 
   cs_field_t *f_bound_t = cs_field_by_name_try("boundary_temperature");
   cs_real_t *tpfsck = f_bound_t->val;
@@ -938,15 +919,6 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
     FILE *radfile = nullptr;
     const char *pathdatadir = cs_base_get_pkgdatadir();
     char filepath[256];
-
-    CS_MALLOC(gi,    ng, cs_real_t);
-    CS_MALLOC(tt,    nt, cs_real_t);
-    CS_MALLOC(kpco2, nt, cs_real_t);
-    CS_MALLOC(kph2o, nt, cs_real_t);
-    CS_MALLOC(wv,    nband, cs_real_t);
-    CS_MALLOC(dwv,   nband, cs_real_t);
-
-    CS_MALLOC(kmfs, nconc * nconc * nt * nt * ng, cs_real_t);
 
     /* Read k-distributions */
     {
@@ -1027,17 +999,15 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
     /* Allocation */
     CS_MALLOC(gq, cs_glob_rad_transfer_params->nwsgg, cs_real_t);
     int m = (cs_glob_rad_transfer_params->nwsgg + 1) / 2;
-    cs_real_t *p1, *p2, *p3, *pp;
-    cs_real_t *z, *z1, *arth;
-    bool *unfinished;
-    CS_MALLOC(p1, m, cs_real_t);
-    CS_MALLOC(p2, m, cs_real_t);
-    CS_MALLOC(p3, m, cs_real_t);
-    CS_MALLOC(pp, m, cs_real_t);
-    CS_MALLOC(z,  m, cs_real_t);
-    CS_MALLOC(z1, m, cs_real_t);
-    CS_MALLOC(arth, m, cs_real_t);
-    CS_MALLOC(unfinished, m, bool);
+
+    cs_array<cs_real_t> p1(m);
+    cs_array<cs_real_t> p2(m);
+    cs_array<cs_real_t> p3(m);
+    cs_array<cs_real_t> pp(m);
+    cs_array<cs_real_t> z(m);
+    cs_array<cs_real_t> z1(m);
+    cs_array<cs_real_t> arth(m);
+    cs_array<bool> unfinished(m);
 
     /* Boundaries */
     cs_real_t x1 = 0.0;
@@ -1126,19 +1096,10 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
 
     for (int j = 0; j < m; j++) {
       cs_glob_rad_transfer_params->wq[j]
-        = 2.0 * xl / ((1.0 - pow(z[j], 2.0)) * pow(pp[j], 2.0));
+        = 2.0 * xl / ((1.0 - pow(z[j], 2.0)) * cs::pow2(pp[j]));
       cs_glob_rad_transfer_params->wq[n - j + 1]
         = cs_glob_rad_transfer_params->wq[j];
     }
-
-    CS_FREE(p1);
-    CS_FREE(p2);
-    CS_FREE(p3);
-    CS_FREE(pp);
-    CS_FREE(z);
-    CS_FREE(z1);
-    CS_FREE(arth);
-    CS_FREE(unfinished);
 
   }
 
@@ -1230,7 +1191,7 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
                     kfsk,
                     cs_glob_rad_transfer_params->nwsgg,
                     gq,
-                    kloctmp);
+                    kloctmp.data());
     for (int i = 0; i < cs_glob_rad_transfer_params->nwsgg; i++)
       kloc[i * cs_glob_mesh->n_cells + iel] = kloctmp[i];
 
@@ -1267,7 +1228,7 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
                     as,
                     cs_glob_rad_transfer_params->nwsgg,
                     gq,
-                    ag);
+                    ag.data());
     for (int i = 0; i < cs_glob_rad_transfer_params->nwsgg; i++)
       aloc[i * cs_glob_mesh->n_cells + iel] = ag[i];
 
@@ -1300,24 +1261,16 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
                     as,
                     cs_glob_rad_transfer_params->nwsgg,
                     gq,
-                    aw);
+                    aw.data());
     for (int i = 0; i < cs_glob_rad_transfer_params->nwsgg; i++)
       alocb[i * cs_glob_mesh->n_b_faces + ifac] = aw[i];
   }
 
   /* free memory */
   if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_max) {
-    CS_FREE(gi);
-    CS_FREE(tt);
-    CS_FREE(kpco2);
-    CS_FREE(kph2o);
-    CS_FREE(wv);
-    CS_FREE(dwv);
-    CS_FREE(kmfs);
     CS_FREE(gq);
   }
 
-  CS_FREE(kloctmp);
 }
 
 /*----------------------------------------------------------------------------*/

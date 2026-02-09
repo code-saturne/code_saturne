@@ -126,7 +126,9 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
                            cs_real_t        agas[],
                            cs_real_t        agasb[])
 {
-  cs_real_t *w1 = nullptr, *w2 = nullptr, *w3 = nullptr;
+  cs_array<cs_real_t> w1;
+  cs_array<cs_real_t> w2;
+  cs_array<cs_real_t> w3;
 
   const cs_mesh_t *m = cs_glob_mesh;
   const int n_cells = m->n_cells;
@@ -140,9 +142,9 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
   if (   rt_params->imgrey >= 1
       || rt_params->imoadf >= 1
       || rt_params->imfsck >= 1) {
-    CS_MALLOC(w1, n_cells_ext, cs_real_t);
-    CS_MALLOC(w2, n_cells_ext, cs_real_t);
-    CS_MALLOC(w3, n_cells_ext, cs_real_t);
+    w1.reshape(n_cells_ext);
+    w2.reshape(n_cells_ext);
+    w3.reshape(n_cells_ext);
   }
 
   cs_real_t *crom = CS_F_(rho)->val;
@@ -166,12 +168,11 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
       const int n_gas_g = cm->n_gas_species;
       cs_real_t xpro;
 
-      cs_real_t *_w;
-      CS_MALLOC(_w, n_gas_e + n_gas_g + n_gas_e, cs_real_t);
+      cs_array<cs_real_t> _w(n_gas_e + n_gas_g + n_gas_e);
 
-      cs_real_t *xk = _w;
-      cs_real_t *yi = _w + n_gas_e;
-      cs_real_t *yk = _w + (n_gas_e + n_gas_g);
+      cs_real_t *xk = _w.data();
+      cs_real_t *yi = _w.data() + n_gas_e;
+      cs_real_t *yk = _w.data() + (n_gas_e + n_gas_g);
 
       const cs_real_t xsoot = cm->xsoot;
       const cs_real_t rosoot = cm->rosoot;
@@ -229,10 +230,9 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
       }
 
       if (rt_params->imgrey == 1) {
-        cs_rad_transfer_modak(cpro_cak0, w1, w2, w3, cpro_temp);
+        cs_rad_transfer_modak(cpro_cak0, w1.data(), w2.data(), w3.data(), cpro_temp);
       }
 
-      CS_FREE(_w);
     }
     else if (rt_params->imfsck == 2) {
 
@@ -280,16 +280,16 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
       }
 
       if (rt_params->imgrey == 1)
-        cs_rad_transfer_modak(cpro_cak0, w1, w2, w3, cpro_temp);
+        cs_rad_transfer_modak(cpro_cak0, w1.data(), w2.data(), w3.data(), cpro_temp);
 
       else if (rt_params->imoadf == 1)
-        cs_rad_transfer_adf08(w1, w2, tempk, kgas, agas, agasb);
+        cs_rad_transfer_adf08(w1.data(), w2.data(), tempk, kgas, agas, agasb);
 
       else if (rt_params->imoadf == 2)
-        cs_rad_transfer_adf50(w1, w2, tempk, kgas, agas, agasb);
+        cs_rad_transfer_adf50(w1.data(), w2.data(), tempk, kgas, agas, agasb);
 
       else if (rt_params->imfsck >= 1)
-        cs_rad_transfer_fsck(w1, w2, tempk, kgas, agas, agasb);
+        cs_rad_transfer_fsck(w1.data(), w2.data(), tempk, kgas, agas, agasb);
     }
 
     else {
@@ -298,12 +298,6 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
     }
 
   }
-
-  /* Free temporary memory */
-
-  CS_FREE(w1);
-  CS_FREE(w2);
-  CS_FREE(w3);
 
   /* Absorption coefficient of particles per class k2/x2 (m-1)
      --------------------------------------------------------- */
@@ -377,8 +371,10 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
      Do not use with ADF model !!! */
 
   if (rt_params->type == CS_RAD_TRANSFER_P1 && rt_params->imoadf == 0) {
-
-    CS_MALLOC(w3, n_cells_ext, cs_real_t);
+    if (w3.size() == 0)
+      w3.reshape(n_cells_ext);
+    else
+      w3.zero();
 
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
       w3[cell_id] = cpro_cak0[cell_id];
@@ -404,9 +400,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
 
     }
 
-    cs_rad_transfer_absorption_check_p1(w3);
-
-    CS_FREE(w3);
+    cs_rad_transfer_absorption_check_p1(w3.data());
 
   }
 }
@@ -429,8 +423,6 @@ cs_rad_transfer_rcfsk_absorption(const cs_real_t  tempk[],
                                  cs_real_t        agas[],
                                  cs_real_t        agasb[])
 {
-  cs_real_t *w1 = nullptr, *w2 = nullptr, *w3 = nullptr;
-
   const cs_mesh_t *m           = cs_glob_mesh;
   const int        n_cells     = m->n_cells;
   const int        n_cells_ext = m->n_cells_with_ghosts;
@@ -440,9 +432,9 @@ cs_rad_transfer_rcfsk_absorption(const cs_real_t  tempk[],
 
   /* Initialization */
 
-  CS_MALLOC(w1, n_cells_ext, cs_real_t);
-  CS_MALLOC(w2, n_cells_ext, cs_real_t);
-  CS_MALLOC(w3, n_cells_ext, cs_real_t);
+  cs_array<cs_real_t> w1(n_cells_ext);
+  cs_array<cs_real_t> w2(n_cells_ext);
+  cs_array<cs_real_t> w3(n_cells_ext);
 
   cs_real_t *crom = CS_F_(rho)->val;
 
@@ -491,15 +483,10 @@ cs_rad_transfer_rcfsk_absorption(const cs_real_t  tempk[],
     }
 
     /* Calculation of the absorption coefficient using the RCFSK scheme */
-    cs_rad_transfer_rcfsk(w1, w2, w3, tempk, kgas, agas, agasb);
+    cs_rad_transfer_rcfsk(w1.data(), w2.data(), w3.data(), tempk, kgas, agas, agasb);
 
   }
 
-  /* Free temporary memory */
-
-  CS_FREE(w1);
-  CS_FREE(w2);
-  CS_FREE(w3);
 }
 
 /*----------------------------------------------------------------------------*/

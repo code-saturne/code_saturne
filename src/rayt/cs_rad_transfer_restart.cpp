@@ -147,8 +147,7 @@ cs_rad_transfer_write(void)
     cs_restart_write_field_vals(rp, f_btemp->id, 0);
 
   else {
-    cs_real_t *tb_save;
-    CS_MALLOC(tb_save, cs_glob_mesh->n_b_faces, cs_real_t);
+    cs_array<cs_real_t> tb_save(cs_glob_mesh->n_b_faces);
 
     for (cs_lnum_t ifac = 0; ifac < cs_glob_mesh->n_b_faces; ifac++)
       tb_save[ifac] = f_btemp->val[ifac] + tkelvi;
@@ -158,8 +157,7 @@ cs_rad_transfer_write(void)
                              CS_MESH_LOCATION_BOUNDARY_FACES,
                              1,
                              CS_TYPE_cs_real_t,
-                             tb_save);
-    CS_FREE(tb_save);
+                             tb_save.data());
   }
 
   cs_restart_write_field_vals(rp, CS_F_(qinci)->id, 0);

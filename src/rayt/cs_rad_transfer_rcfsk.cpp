@@ -302,12 +302,10 @@ _interpolation4d_rcfsk(int       val_cal,
   int nit = 2;
   int nis = 2;
 
-  cs_real_t *karray, *kint1, *kint2, *kint3;
-
-  CS_MALLOC(karray, 2 * 2 * 2 * 2 * nq_rcfsk, cs_real_t);
-  CS_MALLOC(kint1, 2 * 2 * 2 * nq_rcfsk, cs_real_t);
-  CS_MALLOC(kint2, 2 * 2 * nq_rcfsk, cs_real_t);
-  CS_MALLOC(kint3, 2 * nq_rcfsk, cs_real_t);
+  cs_mdarray<cs_real_t, 5> karray({nq_rcfsk, 2, 2, 2, 2});
+  cs_array_4d<cs_real_t> kint1(nq_rcfsk, 2, 2, 2);
+  cs_array_3d<cs_real_t> kint2(nq_rcfsk, 2, 2);
+  cs_array_2d<cs_real_t> kint3(nq_rcfsk, 2);
 
   /* number of interpolation points along t & x */
   _gridposnbsg1_rcfsk(t, xco2, xh2o, fvs, itx);
@@ -339,16 +337,14 @@ _interpolation4d_rcfsk(int       val_cal,
         for (it = 0; it < nit; it++) {
           for (ig = 0; ig < nq_rcfsk; ig++) {
             if (val_cal == 1) {
-              karray[is + ih2o * 2 + ico2 * 2 * 2 + it * 2 * 2 * 2
-                     + ig * 2 * 2 * 2 * 2]
+              karray(ig, it, ico2, ih2o, is)
                 = agdatabase[ifvsa[is] + ih2oa[ih2o] * nfvs_rcfsk
                              + ico2a[ico2] * nfvs_rcfsk * nconc_rcfsk
                              + ita[it] * nfvs_rcfsk * nconc_rcfsk * nconc_rcfsk
                              + ig * nfvs_rcfsk * nconc_rcfsk * nconc_rcfsk * nt_rcfsk];
             }
             else if (val_cal == 2) {
-              karray[is + ih2o * 2 + ico2 * 2 * 2 + it * 2 * 2 * 2
-                     + ig * 2 * 2 * 2 * 2]
+              karray(ig, it, ico2, ih2o, is)
                 = kgdatabase[ifvsa[is] + ih2oa[ih2o] * nfvs_rcfsk
                              + ico2a[ico2] * nfvs_rcfsk * nconc_rcfsk
                              + ita[it] * nfvs_rcfsk * nconc_rcfsk * nconc_rcfsk
@@ -369,13 +365,9 @@ _interpolation4d_rcfsk(int       val_cal,
     for (ico2 = 0; ico2 < nix; ico2++) {
       for (it = 0; it < nit; it++) {
         for (ig = 0; ig < nq_rcfsk; ig++) {
-          kint1[ih2o + ico2 * 2 + it * 2 * 2 + ig * 2 * 2 * 2]
-            = wxfvs
-                * karray[1 + ih2o * 2 + ico2 * 2 * 2 + it * 2 * 2 * 2
-                         + ig * 2 * 2 * 2 * 2]
-              + (1.0 - wxfvs)
-                  * karray[0 + ih2o * 2 + ico2 * 2 * 2 + it * 2 * 2 * 2
-                           + ig * 2 * 2 * 2 * 2];
+          kint1(ig, it, ico2, ih2o)
+            = wxfvs * karray(ig, it, ico2, ih2o, 1)
+              + (1.0 - wxfvs) * karray(ig, it, ico2, ih2o, 0);
         }
       }
     }
@@ -389,9 +381,8 @@ _interpolation4d_rcfsk(int       val_cal,
   for (ico2 = 0; ico2 < nix; ico2++) {
     for (it = 0; it < nit; it++) {
       for (ig = 0; ig < nq_rcfsk; ig++) {
-        kint2[ico2 + it * 2 + ig * 2 * 2]
-          = wxh2o * kint1[1 + ico2 * 2 + it * 2 * 2 + ig * 2 * 2 * 2]
-            + (1.0 - wxh2o) * kint1[0 + ico2 * 2 + it * 2 * 2 + ig * 2 * 2 * 2];
+        kint2(ig, it, ico2) = wxh2o * kint1(ig, it, ico2, 1)
+                            + (1.0 - wxh2o) * kint1(ig, it, ico2, 0);
       }
     }
   }
@@ -403,8 +394,8 @@ _interpolation4d_rcfsk(int       val_cal,
 
   for (it = 0; it < nit; it++) {
     for (ig = 0; ig < nq_rcfsk; ig++) {
-      kint3[it + ig * 2] = wxco2 * kint2[1 + it * 2 + ig * 2 * 2]
-                           + (1.0 - wxco2) * kint2[0 + it * 2 + ig * 2 * 2];
+      kint3(ig, it) = wxco2 * kint2(ig, it, 1)
+                    + (1.0 - wxco2) * kint2(ig, it, 0);
     }
   }
 
@@ -413,14 +404,9 @@ _interpolation4d_rcfsk(int       val_cal,
   const cs_real_t wt = (t - t_kg_rcfsk[ita[0]]) / (t_kg_rcfsk[ita[1]] - t_kg_rcfsk[ita[0]]);
 
   for (ig = 0; ig < nq_rcfsk; ig++) {
-    phi[ig] = wt * kint3[1 + ig * 2] + (1.0 - wt) * kint3[0 + ig * 2];
+    phi[ig] = wt * kint3(ig, 1) + (1.0 - wt) * kint3(ig, 0);
   }
 
-  /* Free memory */
-  CS_FREE(karray);
-  CS_FREE(kint1);
-  CS_FREE(kint2);
-  CS_FREE(kint3);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -512,9 +498,8 @@ cs_rad_transfer_rcfsk(const cs_real_t  *restrict pco2,
 
   /* Determination of the local absorption coefficient and local function a */
 
-  cs_real_t *kgfsk, *agfsk;
-  CS_MALLOC(kgfsk, cs_glob_rad_transfer_params->nwsgg, cs_real_t);
-  CS_MALLOC(agfsk, cs_glob_rad_transfer_params->nwsgg, cs_real_t);
+  cs_array<cs_real_t> kgfsk(cs_glob_rad_transfer_params->nwsgg);
+  cs_array<cs_real_t> agfsk(cs_glob_rad_transfer_params->nwsgg);
 
   for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++) {
 
@@ -527,8 +512,8 @@ cs_rad_transfer_rcfsk(const cs_real_t  *restrict pco2,
     const cs_real_t xco2loc = cs::max(pco2[iel], 1e-5);
     const cs_real_t sootloc = cs::min(cs::max(fvsloc[iel], 1e-15), 1e-5);
 
-    _interpolation4d_rcfsk(2, tloc, xco2loc, xh2oloc, sootloc, kgfsk);
-    _interpolation4d_rcfsk(1, tloc, xco2loc, xh2oloc, sootloc, agfsk);
+    _interpolation4d_rcfsk(2, tloc, xco2loc, xh2oloc, sootloc, kgfsk.data());
+    _interpolation4d_rcfsk(1, tloc, xco2loc, xh2oloc, sootloc, agfsk.data());
 
     for (int i = 0; i < cs_glob_rad_transfer_params->nwsgg; i++) {
       kloc[i * cs_glob_mesh->n_cells + iel] = kgfsk[i];
@@ -536,17 +521,13 @@ cs_rad_transfer_rcfsk(const cs_real_t  *restrict pco2,
     }
   }
 
-  CS_FREE(kgfsk);
-  CS_FREE(agfsk);
-
   /* Determination of the function a for boundary faces  */
 
   cs_field_t *f_bound_t = cs_field_by_name_try("boundary_temperature");
   cs_real_t  *tpfsck    = f_bound_t->val;
-  cs_real_t  *agb;
   cs_lnum_t  *ifabor = cs_glob_mesh->b_face_cells;
 
-  CS_MALLOC(agb, cs_glob_rad_transfer_params->nwsgg, cs_real_t);
+  cs_array<cs_real_t> agb(cs_glob_rad_transfer_params->nwsgg);
 
   for (cs_lnum_t ifac = 0; ifac < cs_glob_mesh->n_b_faces; ifac++) {
 
@@ -557,14 +538,13 @@ cs_rad_transfer_rcfsk(const cs_real_t  *restrict pco2,
     const cs_real_t xco2loc = cs::max(pco2[cell_id], 1e-5);
     const cs_real_t sootloc = cs::min(cs::max(fvsloc[cell_id], 1e-15), 1.e-5);
 
-    _interpolation4d_rcfsk(1, tbord, xco2loc, xh2oloc, sootloc, agb);
+    _interpolation4d_rcfsk(1, tbord, xco2loc, xh2oloc, sootloc, agb.data());
 
     for (int i = 0; i < cs_glob_rad_transfer_params->nwsgg; i++) {
       alocb[i * cs_glob_mesh->n_b_faces + ifac] = agb[i];
     }
   }
 
-  CS_FREE(agb);
 }
 
 /*----------------------------------------------------------------------------*/

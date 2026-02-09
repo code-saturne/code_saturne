@@ -173,19 +173,20 @@ cs_rad_transfer_adf08(const cs_real_t  pco2[],
 
   /* Memory allocation and initialization */
 
-  cs_real_t *y, *tpaadf;
   cs_field_t *f_b_temp = cs_field_by_name_try("boundary_temperature");
-  CS_MALLOC(y, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
+
+  cs_array<cs_real_t> tpaadf;
+  cs_array<cs_real_t> y(cs_glob_mesh->n_cells_with_ghosts);
 
   if (cs_glob_thermal_model->temperature_scale == CS_TEMPERATURE_SCALE_CELSIUS) {
 
-    CS_MALLOC(tpaadf, nfabor, cs_real_t );
+    tpaadf.reshape(nfabor);
     for (cs_lnum_t ifac = 0; ifac < nfabor; ifac++)
       tpaadf[ifac] = f_b_temp->val[ifac] + tkelvi;
 
   }
   else
-    tpaadf = f_b_temp->val;
+    tpaadf = cs_array<cs_real_t>(f_b_temp->val, nfabor);
 
   /* Absorption coefficient of gas mix (m-1)
      --------------------------------------- */
@@ -261,22 +262,20 @@ cs_rad_transfer_adf08(const cs_real_t  pco2[],
       fgets(line, 256, radfile);
 
       for (int j = 0; j < ntsto; j++) {
-        cs_real_t *temp;
-        CS_MALLOC(temp, 2*nysto, cs_real_t);
+        cs_array_2d<cs_real_t>temp(2, nysto);
         int nvalues;
-        _line_to_array(radfile, temp, &nvalues);
+        _line_to_array(radfile, temp.data(), &nvalues);
         assert(nvalues == nysto * 2);
         for (int k = 0; k < nysto; k++) {
-          ksto2[i + k * nwsgg + j * nysto * nwsgg] = temp[k];
+          ksto2[i + k * nwsgg + j * nysto * nwsgg] = temp(0, k);
           /* ksto2(i,k,j): Radiation coefficient of the i-th grey gas, */
           /*               the k-th ratio of ph2o/pco2, and */
           /*               the j-th tabulated temperature   */
-          asto[i + k * nwsgg + j * nysto * nwsgg] = temp[k + nysto];
+          asto[i + k * nwsgg + j * nysto * nwsgg] = temp(1, k);
           /* asto2(i,k,j): Weight of the i-th grey gas,     */
           /*               the k-th ratio of ph2o/pco2, and */
           /*               the j-th tabulated temperature   */
         }
-        CS_FREE(temp);
       }
     }
   }
@@ -402,7 +401,6 @@ cs_rad_transfer_adf08(const cs_real_t  pco2[],
 
   }
 
-  CS_FREE(tpaadf);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -443,18 +441,18 @@ cs_rad_transfer_adf50(const cs_real_t  pco2[],
 
   /* Memory allocation and initialization */
 
-  cs_real_t *tpaadf;
+  cs_array<cs_real_t> tpaadf;
   cs_field_t *f_b_temp = cs_field_by_name_try("boundary_temperature");
 
   if (cs_glob_thermal_model->temperature_scale == CS_TEMPERATURE_SCALE_CELSIUS) {
 
-    CS_MALLOC(tpaadf, nfabor, cs_real_t );
+    tpaadf.reshape(nfabor);
     for (cs_lnum_t ifac = 0; ifac < nfabor; ifac++)
       tpaadf[ifac] = f_b_temp->val[ifac] + tkelvi;
 
   }
   else
-    tpaadf = f_b_temp->val;
+    tpaadf = cs_array<cs_real_t>(f_b_temp->val, nfabor);
 
   /* Absorption coefficient of gas mix (m-1)
      --------------------------------------- */
@@ -676,7 +674,6 @@ cs_rad_transfer_adf50(const cs_real_t  pco2[],
     }
   }
 
-  CS_FREE(tpaadf);
 }
 
 /*----------------------------------------------------------------------------*/

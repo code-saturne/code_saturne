@@ -162,9 +162,8 @@ cs_rad_transfer_pun(int                          iband,
   cs_field_t *f_eps = CS_F_(emissivity);
 
   /* Allocate temporary arrays */
-  cs_real_t *dpvar, *thetaa;
-  CS_MALLOC(dpvar, n_cells_ext, cs_real_t);
-  CS_MALLOC(thetaa, n_cells_ext, cs_real_t);
+  cs_array<cs_real_t> dpvar(n_cells_ext);
+  cs_array<cs_real_t> thetaa(n_cells_ext);
 
   /* Solver settings and initialization */
 
@@ -225,8 +224,8 @@ cs_rad_transfer_pun(int                          iband,
                                      imucpp,
                                      -1, /* normp */
                                      &eqp_loc,
-                                     thetaa,
-                                     thetaa,
+                                     thetaa.data(),
+                                     thetaa.data(),
                                      bc_coeffs,
                                      flurds,
                                      flurdb,
@@ -242,7 +241,7 @@ cs_rad_transfer_pun(int                          iband,
                                      rovsdt,
                                      smbrs,
                                      theta4,
-                                     dpvar,
+                                     dpvar.data(),
                                      nullptr,
                                      nullptr);
 
@@ -340,9 +339,6 @@ cs_rad_transfer_pun(int                          iband,
     }
   }
 
-  /* Free memory */
-  CS_FREE(dpvar);
-  CS_FREE(thetaa);
 }
 
 /*----------------------------------------------------------------------------*/

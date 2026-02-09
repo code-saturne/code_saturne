@@ -151,26 +151,22 @@ _set_internal_coupling_bcs(cs_internal_coupling_t  *cpl,
   }
 
   if (have_unset) {
-    int *is_solid = nullptr;
 
     if (n_distant > 0) {
       cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-      CS_MALLOC(is_solid, n_cells_ext, int);
-      for (cs_lnum_t i = 0; i < n_cells_ext; i++)
-        is_solid[i] = 0;
-      cs_volume_zone_tag_cell_type(CS_VOLUME_ZONE_SOLID, 1, is_solid);
-    }
+      cs_array<int> is_solid(n_cells_ext);
+      is_solid.zero();
+      cs_volume_zone_tag_cell_type(CS_VOLUME_ZONE_SOLID, 1, is_solid.data());
 
-    for (cs_lnum_t i = 0; i < n_distant; i++) {
-      cs_lnum_t face_id = faces_local[i];
-      if (beps[face_id] < 0) {
-        cs_lnum_t cell_id = m->b_face_cells[face_id];
-        if (is_solid[cell_id])
-          beps[face_id] = 0;
+      for (cs_lnum_t i = 0; i < n_distant; i++) {
+        cs_lnum_t face_id = faces_local[i];
+        if (beps[face_id] < 0) {
+          cs_lnum_t cell_id = m->b_face_cells[face_id];
+          if (is_solid[cell_id])
+            beps[face_id] = 0;
+        }
       }
     }
-
-    CS_FREE(is_solid);
   }
 }
 
@@ -257,12 +253,10 @@ cs_rad_transfer_bcs(int bc_type[])
 
   /* Allocate temporary arrays */
 
-  int  *isothm;
-  cs_real_t *tempk, *text, *twall;
-  CS_MALLOC(isothm, n_b_faces, int);
-  CS_MALLOC(tempk, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
-  CS_MALLOC(text, n_b_faces, cs_real_t);
-  CS_MALLOC(twall, n_b_faces, cs_real_t);
+  cs_array<int> isothm(n_b_faces);
+  cs_array<cs_real_t> tempk(cs_glob_mesh->n_cells_with_ghosts);
+  cs_array<cs_real_t> text(n_b_faces);
+  cs_array<cs_real_t> twall(n_b_faces);
 
   /* Map field arrays */
   cs_field_t *f_tempb = CS_F_(t_b);
@@ -369,27 +363,27 @@ cs_rad_transfer_bcs(int bc_type[])
     /* User definitions */
 
     cs_gui_radiative_transfer_bcs(bc_type,
-                                  isothm,
+                                  isothm.data(),
                                   f_beps->val,
                                   f_bepa->val,
-                                  text,
+                                  text.data(),
                                   f_bxlam->val);
 
     cs_user_radiative_transfer_bcs(cs_glob_domain,
                                    bc_type,
-                                   isothm,
+                                   isothm.data(),
                                    &tmin,
                                    &tmax,
                                    &tx,
                                    dt,
-                                   twall,
+                                   twall.data(),
                                    f_qinci->val,
                                    f_bhconv->val,
                                    f_bfconv->val,
                                    f_bxlam->val,
                                    f_bepa->val,
                                    f_beps->val,
-                                   text);
+                                   text.data());
 
     cs_log_printf(CS_LOG_DEFAULT,
                   _("\n"
@@ -416,27 +410,27 @@ cs_rad_transfer_bcs(int bc_type[])
   /* Values for boundary faces */
 
   cs_gui_radiative_transfer_bcs(bc_type,
-                                isothm,
+                                isothm.data(),
                                 f_beps->val,
                                 f_bepa->val,
-                                text,
+                                text.data(),
                                 f_bxlam->val);
 
   cs_user_radiative_transfer_bcs(cs_glob_domain,
                                  bc_type,
-                                 isothm,
+                                 isothm.data(),
                                  &tmin,
                                  &tmax,
                                  &tx,
                                  dt,
-                                 twall,
+                                 twall.data(),
                                  f_qinci->val,
                                  f_bhconv->val,
                                  f_bfconv->val,
                                  f_bxlam->val,
                                  f_bepa->val,
                                  f_beps->val,
-                                 text);
+                                 text.data());
 
   /* Internal coupling settings */
   if (cs_internal_coupling_n_couplings() > 0) {
@@ -452,10 +446,10 @@ cs_rad_transfer_bcs(int bc_type[])
 
     if (cpl != nullptr)
       _set_internal_coupling_bcs(cpl,
-                                 isothm,
+                                 isothm.data(),
                                  f_bxlam->val,
                                  f_beps->val,
-                                 text);
+                                 text.data());
   }
 
   /* Check user BC definitions */
@@ -941,7 +935,7 @@ cs_rad_transfer_bcs(int bc_type[])
     cs_field_t *f_enthalpy = CS_F_(h);
 
     /* Results: T to K */
-    cs_ht_convert_h_to_t_cells(f_enthalpy->val, tempk);
+    cs_ht_convert_h_to_t_cells(f_enthalpy->val, tempk.data());
 
   }
 
@@ -980,19 +974,19 @@ cs_rad_transfer_bcs(int bc_type[])
   }
 
   if (!is_start)
-    cs_rad_transfer_compute_wall_t(isothm,
+    cs_rad_transfer_compute_wall_t(isothm.data(),
                                    tmin,
                                    tmax,
                                    tx,
                                    f_qinci->val,
-                                   text,
+                                   text.data(),
                                    f_bxlam->val,
                                    f_bepa->val,
                                    f_beps->val,
                                    f_bhconv->val,
                                    f_bfconv->val,
-                                   tempk,
-                                   twall);
+                                   tempk.data(),
+                                   twall.data());
 
   /* Change user boundary conditions */
 
@@ -1025,11 +1019,10 @@ cs_rad_transfer_bcs(int bc_type[])
     /* Read user data;
      * convert twall to enthalpy at boundary */
 
-    cs_lnum_t *lstfac;
-    CS_MALLOC(lstfac, n_b_faces, cs_lnum_t);
+    cs_array<cs_lnum_t> lstfac(n_b_faces);
 
-    cs_real_t *wall_enth = nullptr, *ext_enth = nullptr;
-    CS_MALLOC(wall_enth, n_b_faces, cs_real_t);
+    cs_array<cs_real_t> ext_enth;
+    cs_array<cs_real_t> wall_enth(n_b_faces);
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
       wall_enth[face_id] = 0.;
 
@@ -1046,7 +1039,7 @@ cs_rad_transfer_bcs(int bc_type[])
       }
     }
     if (nlst > 0)
-      cs_ht_convert_t_to_h_faces_l(nlst, lstfac, twall, wall_enth);
+      cs_ht_convert_t_to_h_faces_l(nlst, lstfac.data(), twall.data(), wall_enth.data());
 
     nlst = 0;
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
@@ -1060,11 +1053,9 @@ cs_rad_transfer_bcs(int bc_type[])
     }
 
     if (nlst > 0) {
-      CS_MALLOC(ext_enth, n_b_faces, cs_real_t);
-      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-        ext_enth[face_id] = 0.;
-
-      cs_ht_convert_t_to_h_faces_l(nlst, lstfac, text, ext_enth);
+      ext_enth.reshape(n_b_faces);
+      ext_enth.zero();
+      cs_ht_convert_t_to_h_faces_l(nlst, lstfac.data(), text.data(), ext_enth.data());
     }
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
@@ -1113,9 +1104,6 @@ cs_rad_transfer_bcs(int bc_type[])
       }
     }
 
-    CS_FREE(lstfac);
-    CS_FREE(ext_enth);
-    CS_FREE(wall_enth);
   }
 
   /* Update boundary temperature field   */
@@ -1137,12 +1125,6 @@ cs_rad_transfer_bcs(int bc_type[])
     }
   }
 
-  /* Free memory */
-
-  CS_FREE(isothm);
-  CS_FREE(tempk);
-  CS_FREE(text);
-  CS_FREE(twall);
 }
 
 /*----------------------------------------------------------------------------*/
