@@ -171,6 +171,9 @@ over accuracy:
 - No flux reconstruction for the turbulence variables (k and epsilon).
 - Threshold for the convergence of the iterative solvers: 10<sup>-5</sup>.
 - Least-squares gradient reconstruction with extended neighborhood.
+  - Activate gradient limiters (the face gradient and cell-based
+    reconstruction limiters are more efficient than the cell gradient limiter),
+    or use bounded reconstruction rather than unbounded reconstruction.
 - Pressure increments under-relaxation (0.7 instead of 1).
 
 If the computation runs correctly with these options but not with default
