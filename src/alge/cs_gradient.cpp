@@ -9450,7 +9450,6 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
  * \param[in]   var             gradient's base variable
  * \param[in]   val_f           boundary face value
  * \param[in]   c_weight        cell variable weight, or nullptr
- * \param[in]   cpl             associated internal coupling, or nullptr
  * \param[out]  grad            gradient
  *                              (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
  * \param[out]  bounds          optional bounds (square distance, square norm)
@@ -9539,6 +9538,7 @@ cs_gradient_vector_synced_input(const char                  *var_name,
  * \param[in]       clip_coeff      clipping coefficient
  * \param[in]       bc_coeffs_ts    boundary condition structure
  * \param[in, out]  var             gradient's base variable
+ * \param[in]       val_f           boundary face value
  * \param[out]      grad            gradient
                                     (\f$ \der{t_ij}{x_k} \f$ is grad[][ij][k])
  * \param[out]      bounds          optional bounds (square distance) of values
@@ -9874,7 +9874,7 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
  * \param[in]   fvq             pointer to associated finite volume quantities
  * \param[in]   c_id            cell id
  * \param[in]   halo_type       halo type
- * \param[in]   bc_coeffs       boundary condition structure
+ * \param[in]   bc_coeffs_v     boundary condition structure
  * \param[in]   var             gradient's base variable
  * \param[in]   c_weight        cell variable weight, or nullptr
  * \param[out]  grad            gradient

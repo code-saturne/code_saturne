@@ -4986,7 +4986,7 @@ cs_convection_diffusion_scalar(int                         idtvar,
  * \f]
  *
  * \param[in]     idtvar        indicator of the temporal scheme
- * \param[in]     f_id          pointer to field
+ * \param[in]     f_id          field id (or -1)
  * \param[in]     eqp           equation parameters
  * \param[in]     icvflb        global indicator of boundary convection flux
  *                               - 0 upwind scheme at all boundary faces
@@ -5116,7 +5116,7 @@ cs_face_convection_scalar(int                         idtvar,
  *                               - 1 imposed flux
  * \param[in]     bc_coeffs_v   boundary conditions structure for the variable
  * \param[in]     val_f         boundary face value for gradient
- * \param[in]     flux          boundary flux
+ * \param[in]     flux_d        boundary flux
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -6368,7 +6368,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     bc_coeffs_v   boundary condition structure for the variable
- * \param[in]     val_f_g       boundary face value for gradient
+ * \param[in]     val_f         boundary face value
  * \param[in]     flux_d        boundary flux
  * \param[in]     i_visc        \f$ \tens{\mu}_\fij \dfrac{S_\fij}{\ipf\jpf} \f$
  *                               at interior faces for the r.h.s.

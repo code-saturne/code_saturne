@@ -850,7 +850,7 @@ struct always_true : std::true_type {};
 /*!
  * \brief A swap method which is callable from GPU and not only CPU.
  *
- * \tparam[] T class object which is movable
+ * \tparam T class object which is movable
  */
 /*--------------------------------------------------------------------------*/
 
@@ -874,8 +874,8 @@ swap_objects
 /*!
  * \brief
  *
- * \tparam[] T class object which is movable
- * \tparam[] N size of array
+ * \tparam T class object which is movable
+ * \tparam N size of array
  */
 /*--------------------------------------------------------------------------*/
 

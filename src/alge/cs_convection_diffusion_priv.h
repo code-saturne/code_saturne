@@ -3056,8 +3056,6 @@ cs_b_relax_c_val_strided(const double     relaxp,
  * \param[in]     pi           value at cell i
  * \param[in]     pir          relaxed value at cell i
  * \param[in]     pipr         relaxed reconstructed value at cell i
- * \param[in]     coefap       explicit boundary coefficient for convection operator
- * \param[in]     coefbp       implicit boundary coefficient for convection operator
  * \param[in]     coface       explicit imposed convective flux value (0 otherwise).
  * \param[in]     cofbce       implicit part of imp. conv. flux value
  * \param[in]     b_massflux   mass flux at boundary face

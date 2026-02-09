@@ -1547,7 +1547,7 @@ cs_equation_param_has_name(cs_equation_param_t *eqp,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Create a \ref cs_equation_param_t structure
  *
  * \param[in] name        name of the equation
@@ -1566,7 +1566,7 @@ cs_equation_param_create(const char         *name,
                          cs_param_bc_type_t  default_bc);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Create a \ref cs_equation_param_t structure
  *
  * \deprecated Renamed to\ref cs_equation_param_create.
@@ -1590,7 +1590,7 @@ cs_equation_create_param(const char         *name,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Copy the settings from one \ref cs_equation_param_t structure to
  *        another one. The name is not copied.
  *
@@ -1606,7 +1606,7 @@ cs_equation_param_copy_from(const cs_equation_param_t *ref,
                             bool                       copy_fld_id);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Copy only the part dedicated to the boundary conditions and the DoF
  *        (degrees of freedom) enforcement from one \ref cs_equation_param_t
  *        structure to another one.
@@ -1621,7 +1621,7 @@ cs_equation_param_copy_bc(const cs_equation_param_t *ref,
                           cs_equation_param_t       *dst);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Copy the settings from one \ref cs_equation_param_t structure to
  *        another one. The name is not copied.
  *
@@ -1642,7 +1642,7 @@ cs_equation_copy_param_from(const cs_equation_param_t *ref,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Free the contents of a \ref cs_equation_param_t
  *
  * The cs_equation_param_t structure itself is not freed, but all its
@@ -1659,7 +1659,7 @@ void
 cs_equation_param_clear(cs_equation_param_t *eqp);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Free a \ref cs_equation_param_t
  *
  * \param[in] eqp  pointer to a \ref cs_equation_param_t
@@ -1672,7 +1672,7 @@ cs_equation_param_t *
 cs_equation_param_free(cs_equation_param_t *eqp);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set a parameter attached to a keyname in a \ref cs_equation_param_t
  *        structure
  *
@@ -1688,7 +1688,7 @@ cs_equation_param_set(cs_equation_param_t *eqp,
                       const char          *keyval);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set a parameter attached to a keyname in a \ref cs_equation_param_t
  *        structure
  *
@@ -1709,7 +1709,7 @@ cs_equation_set_param(cs_equation_param_t *eqp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Get the pointer to the set of parameters to handle the SLES solver
  *        associated to this set of equation parameters
  *
@@ -1723,7 +1723,7 @@ cs_param_sles_t *
 cs_equation_param_get_sles_param(cs_equation_param_t *eqp);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Get the pointer to the set of parameters to handle the SLES solver
  *        associated to this set of equation parameters
  *
@@ -1737,7 +1737,7 @@ cs_param_saddle_t *
 cs_equation_param_get_saddle_param(cs_equation_param_t *eqp);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set parameters for initializing SLES structures used for the
  *        resolution of the linear system.
  *        Settings are related to this equation.
@@ -1750,7 +1750,7 @@ void
 cs_equation_param_set_sles(cs_equation_param_t *eqp);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Apply the given quadrature rule to all existing definitions under the
  *        cs_equation_param_t structure. To get a more detailed control of the
  *        quadrature rule, please consider the function
@@ -1766,7 +1766,7 @@ cs_equation_param_set_quadrature_to_all(cs_equation_param_t  *eqp,
                                         cs_quadrature_type_t  qtype);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Lock settings to prevent from unwanted modifications.
  *
  * \param[in, out] eqp  pointer to a \ref cs_equation_param_t structure
@@ -1777,7 +1777,7 @@ void
 cs_equation_param_lock_settings(cs_equation_param_t *eqp);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Unlock settings. Be sure that is really wanted (inconsistency between
  *        the setup logging and what is used may appear)
  *
@@ -1789,7 +1789,7 @@ void
 cs_equation_param_unlock_settings(cs_equation_param_t *eqp);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief At this stage, the numerical settings should not be modified anymore
  *        by the user. One makes a last set of modifications if needed to
  *        ensure a consistent numerical settings.
@@ -1802,7 +1802,7 @@ void
 cs_equation_param_ensure_consistent_settings(cs_equation_param_t *eqp);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Print the detail of a \ref cs_equation_param_t structure
  *
  * \param[in] eqp  pointer to a \ref cs_equation_param_t structure
@@ -1813,7 +1813,7 @@ void
 cs_equation_param_log(const cs_equation_param_t *eqp);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Ask if the parameter settings of the equation has requested the
  *        treatment of Robin boundary conditions
  *
@@ -1827,7 +1827,7 @@ bool
 cs_equation_param_has_robin_bc(const cs_equation_param_t *eqp);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define the initial condition for the unknown related to this
  *        equation. This definition applies to a volume zone.
  *        By default, the unknown is set to zero everywhere.
@@ -1849,7 +1849,7 @@ cs_equation_add_ic_by_value(cs_equation_param_t *eqp,
                             cs_real_t           *val);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define the initial condition for the unknown related to this
  *        equation. This definition applies to a volume zone.
  *        By default, the unknown is set to zero everywhere.
@@ -1872,7 +1872,7 @@ cs_equation_add_ic_by_qov(cs_equation_param_t *eqp,
                           double               quantity);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define the initial condition for the unknown related to this
  *        equation. This definition applies to a volume zone.
  *        By default, the unknown is set to zero everywhere.
@@ -1896,7 +1896,7 @@ cs_equation_add_ic_by_analytic(cs_equation_param_t *eqp,
                                void                *input);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define the initial condition for the unknown related to this
  *        equation. This definition applies to a volume zone.
  *        By default, the unknown is set to zero everywhere.
@@ -1921,7 +1921,7 @@ cs_equation_add_ic_by_dof_func(cs_equation_param_t *eqp,
                                void                *input);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set a boundary condition from an existing \ref cs_xdef_t structure
  *        The lifecycle of the cs_xdef_t structure is now managed by the
  *        current \ref cs_equation_param_t structure.
@@ -1936,7 +1936,7 @@ cs_equation_add_xdef_bc(cs_equation_param_t *eqp,
                         cs_xdef_t           *xdef);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define and initialize a new structure to set a boundary condition
  *        related to the given equation structure
  *        z_name corresponds to the name of a pre-existing cs_zone_t
@@ -1957,7 +1957,7 @@ cs_equation_add_bc_by_value(cs_equation_param_t      *eqp,
                             cs_real_t                *values);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define and initialize a new structure to set a boundary condition
  *        related to the given equation structure
  *        z_name corresponds to the name of a pre-existing cs_zone_t
@@ -1989,7 +1989,7 @@ cs_equation_add_bc_by_array(cs_equation_param_t      *eqp,
                             bool                      full_length);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define and initialize a new structure to set a boundary condition
  *        related to the given equation structure
  *        z_name corresponds to the name of a pre-existing cs_zone_t
@@ -2010,7 +2010,7 @@ cs_equation_add_bc_by_field(cs_equation_param_t      *eqp,
                             cs_field_t               *field);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define and initialize a new structure to set a boundary condition
  *        related to the given equation param structure
  *        ml_name corresponds to the name of a pre-existing cs_mesh_location_t
@@ -2034,7 +2034,7 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t      *eqp,
                                void                     *input);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define and initialize a new structure to set a boundary condition
  *        related to the given equation param structure
  *        ml_name corresponds to the name of a pre-existing cs_mesh_location_t
@@ -2059,7 +2059,7 @@ cs_equation_add_bc_by_time_func(cs_equation_param_t      *eqp,
                                 void                     *input);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define and initialize a new structure to set a boundary condition
  *        related to the given cs_equation_param_t structure
  *        ml_name corresponds to the name of a pre-existing cs_mesh_location_t
@@ -2085,7 +2085,7 @@ cs_equation_add_bc_by_dof_func(cs_equation_param_t      *eqp,
                                void                     *input);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add a new volume mass injection definition source term by
  *        initializing a cs_xdef_t structure, using an array.
  *
@@ -2115,7 +2115,7 @@ cs_equation_add_volume_mass_injection_by_array(cs_equation_param_t *eqp,
                                                bool                 full_length);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return pointer to existing boundary condition definition structure
  *        for the given equation param structure and zone.
  *
@@ -2132,7 +2132,7 @@ cs_equation_find_bc(cs_equation_param_t *eqp,
                     const char          *z_name);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Remove boundary condition from the given equation param structure
  *        for a given zone.
  *
@@ -2150,7 +2150,7 @@ cs_equation_remove_bc(cs_equation_param_t *eqp,
                       const char          *z_name);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Remove initial condition from the given equation param structure
  *        for a given zone.
  *
@@ -2168,7 +2168,7 @@ cs_equation_remove_ic(cs_equation_param_t *eqp,
                       const char          *z_name);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define and initialize a new structure to set a sliding boundary
  *        condition related to the given equation structure
  *        z_name corresponds to the name of a pre-existing cs_zone_t
@@ -2183,7 +2183,7 @@ cs_equation_add_sliding_condition(cs_equation_param_t *eqp,
                                   const char          *z_name);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Associate a new term related to the Laplacian operator for the
  *        equation associated to the given \ref cs_equation_param_t structure
  *        Laplacian means div-grad (either for vector-valued or scalar-valued
@@ -2199,7 +2199,7 @@ cs_equation_add_diffusion(cs_equation_param_t *eqp,
                           cs_property_t       *property);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Associate a new term related to the curl-curl operator for the
  *        equation associated to the given \ref cs_equation_param_t structure
  *
@@ -2215,7 +2215,7 @@ cs_equation_add_curlcurl(cs_equation_param_t *eqp,
                          int                  inversion);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Associate a new term related to the grad-div operator for the
  *        equation associated to the given \ref cs_equation_param_t structure
  *
@@ -2229,7 +2229,7 @@ cs_equation_add_graddiv(cs_equation_param_t *eqp,
                         cs_property_t       *property);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Associate a new term related to the time derivative operator for
  *        the equation associated to the given \ref cs_equation_param_t
  *        structure
@@ -2244,7 +2244,7 @@ cs_equation_add_time(cs_equation_param_t *eqp,
                      cs_property_t       *property);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Associate a new term related to the advection operator for the
  *        equation associated to the given \ref cs_equation_param_t structure
  *
@@ -2258,7 +2258,7 @@ cs_equation_add_advection(cs_equation_param_t *eqp,
                           cs_adv_field_t      *adv_field);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Associate a scaling property to the advection
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
@@ -2271,7 +2271,7 @@ cs_equation_add_advection_scaling_property(cs_equation_param_t *eqp,
                                            cs_property_t       *property);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Associate a new term related to the reaction operator for the
  *        equation associated to the given \ref cs_equation_param_t structure
  *
@@ -2287,7 +2287,7 @@ cs_equation_add_reaction(cs_equation_param_t *eqp,
                          cs_property_t       *property);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add a new source term by initializing a cs_xdef_t structure.
  *        Case of a definition by a constant value
  *
@@ -2306,7 +2306,7 @@ cs_equation_add_source_term_by_val(cs_equation_param_t *eqp,
                                    cs_real_t           *val);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add a new source term by initializing a cs_xdef_t structure.
  *        Case of a definition by an analytical function
  *
@@ -2327,7 +2327,7 @@ cs_equation_add_source_term_by_analytic(cs_equation_param_t *eqp,
                                         void                *input);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add a new source term by initializing a cs_xdef_t structure.
  *        Case of a definition by a DoF function
  *
@@ -2350,7 +2350,7 @@ cs_equation_add_source_term_by_dof_func(cs_equation_param_t *eqp,
                                         void                *input);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add a new source term by initializing a cs_xdef_t structure.
  *        Case of a definition by an array.
  *
@@ -2380,7 +2380,7 @@ cs_equation_add_source_term_by_array(cs_equation_param_t *eqp,
                                      bool                 full_length);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add a new volume mass injection definition source term by
  *        initializing a cs_xdef_t structure, using a constant value.
  *
@@ -2399,7 +2399,7 @@ cs_equation_add_volume_mass_injection_by_value(cs_equation_param_t *eqp,
                                                double              *val);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add a new volume mass injection definition source term by
  *        initializing a cs_xdef_t structure, using a constant quantity
  *        distributed over the associated zone's volume.
@@ -2419,7 +2419,7 @@ cs_equation_add_volume_mass_injection_by_qov(cs_equation_param_t *eqp,
                                              double              *quantity);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add a new volume mass injection definition source term by
  *        initializing a cs_xdef_t structure, using an analytical function.
  *
@@ -2440,7 +2440,7 @@ cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t *eqp,
                                                   void                *input);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add a new volume mass injection definition source term by
  *        initializing a cs_xdef_t structure, using a DoF function.
  *
@@ -2463,7 +2463,7 @@ cs_equation_add_volume_mass_injection_by_dof_func(cs_equation_param_t *eqp,
                                                   void                *input);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add an enforcement of the value of degrees of freedom located at
  *        the mesh vertices.
  *        The spatial discretization scheme for the given equation has to be
@@ -2491,7 +2491,7 @@ cs_equation_add_vertex_dof_enforcement(cs_equation_param_t *eqp,
                                        const cs_real_t      vtx_values[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add an enforcement of the value of degrees of freedom located at
  *        the mesh edges.
  *        The spatial discretization scheme for the given equation has to be
@@ -2519,7 +2519,7 @@ cs_equation_add_edge_dof_enforcement(cs_equation_param_t *eqp,
                                      const cs_real_t      edge_values[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add an enforcement of the value of degrees of freedom located at
  *        the mesh faces.
  *        The spatial discretization scheme for the given equation has to be
@@ -2547,7 +2547,7 @@ cs_equation_add_face_dof_enforcement(cs_equation_param_t *eqp,
                                      const cs_real_t      face_values[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add an enforcement of the value related to the degrees of freedom
  *        associated to the list of selected cells.
  *
@@ -2573,7 +2573,7 @@ cs_equation_add_cell_enforcement(cs_equation_param_t *eqp,
                                  const cs_real_t      cell_values[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add a new enforcement if enforcement_id does not exist or replace it
  *        otherwise. Enforcement of the value related to the degrees of freedom
  *        associated to the list of selected cells.
