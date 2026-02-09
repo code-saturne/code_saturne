@@ -2212,10 +2212,14 @@ class Studies(object):
         slurm_batch.params["job_walltime"] = batch_total_time * 60 # in sec
         ppn = slurm_batch.params["job_ppn"]
         slurm_batch.params["job_ppn"] = None
-        if ntasks > int(ppn):
-            slurm_batch.params["job_nodes"] = None
+        if ppn:
+          if ntasks > int(ppn):
+              slurm_batch.params["job_nodes"] = None
+          else:
+              slurm_batch.params["job_nodes"] = 1
         else:
-            slurm_batch.params["job_nodes"] = 1
+          self.reporting('ERROR in cluster configuration. \n Please define '
+                         'batch file in /etc/code_saturne.cfg\n')
         if ntasks < 6: rm_var=["--exclusive"]
         # rm wckey example
         rm_var.append("--wckey")
