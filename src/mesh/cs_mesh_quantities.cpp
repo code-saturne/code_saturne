@@ -1947,8 +1947,7 @@ _compute_face_distances(cs_lnum_t         n_i_faces,
  * orthogonal to the face passing through the center of gravity F of the face.
  *   (only I' is defined for a border face)
  *
- * We compute here the vector I'J' for interior faces (dijpf)
- *                 the vector II'  for border faces   (diipb)
+ * We compute here the vector II'  for border faces   (diipb)
  *                 the vector OF   for interior faces (dofij)
  *
  * We also have the following formulae
@@ -1956,20 +1955,18 @@ _compute_face_distances(cs_lnum_t         n_i_faces,
  *   JJ' = JG - (JG.Nij)Nij
  *
  * parameters:
- *   dim            <--  dimension
- *   n_i_faces      <--  number of interior faces
- *   n_b_faces      <--  number of border  faces
- *   i_face_cells   <--  interior "faces -> cells" connectivity
- *   b_face_cells   <--  border "faces -> cells" connectivity
- *   i_face_u_norm  <--  unit normal of interior faces
- *   b_face_u_norm  <--  unit normal of border faces
- *   i_face_cog     <--  center of gravity of interior faces
- *   b_face_cog     <--  center of gravity of border faces
- *   cell_cen       <--  cell center
- *   weight         <--  weighting factor (Aij=pond Ai+(1-pond)Aj)
- *   dijpf          -->  vector i'j' for interior faces
- *   diipb          -->  vector ii'  for border faces
- *   dofij          -->  vector OF   for interior faces
+ *   dim              <--  dimension
+ *   n_i_faces        <--  number of interior faces
+ *   n_b_faces        <--  number of border  faces
+ *   i_face_cells     <--  interior "faces -> cells" connectivity
+ *   b_face_cells     <--  border "faces -> cells" connectivity
+ *   b_face_u_normal  <--  unit normal of border faces
+ *   i_face_cog       <--  center of gravity of interior faces
+ *   b_face_cog       <--  center of gravity of border faces
+ *   cell_cen         <--  cell center
+ *   weight           <--  weighting factor (Aij=pond Ai+(1-pond)Aj)
+ *   diipb            -->  vector ii'  for border faces
+ *   dofij            -->  vector OF   for interior faces
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1978,14 +1975,12 @@ _compute_face_vectors(int               dim,
                       cs_lnum_t         n_b_faces,
                       const cs_lnum_t   i_face_cells[][2],
                       const cs_lnum_t   b_face_cells[],
-                      const cs_nreal_t  i_face_u_normal[][3],
                       const cs_nreal_t  b_face_u_normal[][3],
                       const cs_real_t   i_face_cog[],
                       const cs_real_t   b_face_cog[],
                       const cs_real_t   cell_cen[],
                       const cs_real_t   weight[],
                       const cs_real_t   b_dist[],
-                      cs_real_t         dijpf[][3],
                       cs_rreal_t        diipb[][3],
                       cs_real_t         dofij[])
 {
@@ -1995,24 +1990,6 @@ _compute_face_vectors(int               dim,
 
     const cs_lnum_t cell_id1 = i_face_cells[face_id][0];
     const cs_lnum_t cell_id2 = i_face_cells[face_id][1];
-
-    const cs_nreal_t *surfn = i_face_u_normal[face_id];
-
-    /* ---> IJ */
-    const cs_real_t vecijx
-      = cell_cen[cell_id2*dim]     - cell_cen[cell_id1*dim];
-    const cs_real_t vecijy
-      = cell_cen[cell_id2*dim + 1] - cell_cen[cell_id1*dim + 1];
-    const cs_real_t vecijz
-      = cell_cen[cell_id2*dim + 2] - cell_cen[cell_id1*dim + 2];
-
-    /* ---> DIJPP = IJ.NIJ */
-    const cs_real_t dipjp = vecijx*surfn[0] + vecijy*surfn[1] + vecijz*surfn[2];
-
-    /* ---> DIJPF = (IJ.NIJ).NIJ */
-    dijpf[face_id][0] = dipjp*surfn[0];
-    dijpf[face_id][1] = dipjp*surfn[1];
-    dijpf[face_id][2] = dipjp*surfn[2];
 
     const cs_real_t pond = weight[face_id];
 
@@ -2718,7 +2695,6 @@ cs_mesh_quantities_create(void)
   mesh_quantities->b_dist = nullptr;
   mesh_quantities->c_w_dist_inv = nullptr;
   mesh_quantities->weight = nullptr;
-  mesh_quantities->dijpf = nullptr;
   mesh_quantities->diipb = nullptr;
   mesh_quantities->dofij = nullptr;
   mesh_quantities->diipf = nullptr;
@@ -2792,7 +2768,6 @@ cs_mesh_quantities_free_all(cs_mesh_quantities_t  *mq)
 
   CS_FREE(mq->weight);
 
-  CS_FREE(mq->dijpf);
   CS_FREE(mq->diipb);
   CS_FREE(mq->dofij);
   CS_FREE(mq->diipf);
@@ -4208,14 +4183,12 @@ cs_mesh_quantities_solid_compute(const cs_mesh_t       *m,
                         m->n_b_faces,
                         m->i_face_cells,
                         m->b_face_cells,
-                        mq_f->i_face_u_normal,
                         mq_f->b_face_u_normal,
                         (const cs_real_t *)mq_f->i_face_cog,
                         (const cs_real_t *)mq_f->b_face_cog,
                         (const cs_real_t *)mq_f->cell_cen,
                         mq_f->weight,
                         mq_f->b_dist,
-                        mq_f->dijpf,
                         mq_f->diipb,
                         (cs_real_t *)mq_f->dofij);
 
@@ -4589,11 +4562,6 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
   else
     cs_mem_advise_unset_read_mostly(mq->weight);
 
-  if (mq->dijpf == nullptr)
-    CS_MALLOC_HD(mq->dijpf, n_i_faces, cs_real_3_t, amode);
-  else
-    cs_mem_advise_unset_read_mostly(mq->dijpf);
-
   if (mq->diipb == nullptr)
     CS_MALLOC_HD(mq->diipb, n_b_faces, cs_rreal_3_t, amode);
   else
@@ -4647,14 +4615,12 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
                         m->n_b_faces,
                         (const cs_lnum_2_t *)(m->i_face_cells),
                         m->b_face_cells,
-                        mq->i_face_u_normal,
                         mq->b_face_u_normal,
                         (const cs_real_t *)mq->i_face_cog,
                         (const cs_real_t *)mq->b_face_cog,
                         (const cs_real_t *)mq->cell_cen,
                         mq->weight,
                         mq->b_dist,
-                        mq->dijpf,
                         mq->diipb,
                         (cs_real_t *)mq->dofij);
 
@@ -4682,7 +4648,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
     void * arrays[]
       = {mq->c_disable_flag,
          mq->i_dist, mq->b_dist, mq->weight,
-         mq->dijpf, mq->diipb, mq->dofij,
+         mq->diipb, mq->dofij,
          mq->diipf, mq->djjpf, mq->b_sym_flag};
 
     size_t n_arrays = sizeof(arrays)/sizeof(void*);

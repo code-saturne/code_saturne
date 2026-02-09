@@ -310,11 +310,10 @@ cs_cf_energy(int f_sc_id)
   const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
   const cs_real_t *b_dist = fvq->b_dist;
-  const cs_real_3_t *cell_cen = fvq->cell_cen;
-  const cs_real_3_t *i_face_cog = fvq->i_face_cog;
   const cs_real_t *cell_f_vol = fvq->cell_vol;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
-  const cs_real_3_t *restrict dijpf = fvq->dijpf;
+  const cs_rreal_3_t *restrict diipf = fvq->diipf;
+  const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
 
   const int kivisl  = cs_field_key_id("diffusivity_id");
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
@@ -349,7 +348,6 @@ cs_cf_energy(int f_sc_id)
   cs_real_t *pr = f_pr->val;
 
   cs_equation_param_t *eqp_vel = cs_field_get_equation_param(f_vel);
-  cs_equation_param_t *eqp_p = cs_field_get_equation_param(f_pr);
   cs_equation_param_t *eqp_e = cs_field_get_equation_param(f_sc);
 
   if (eqp_e->verbosity >= 1) {
@@ -658,14 +656,13 @@ cs_cf_energy(int f_sc_id)
     /* Note: by default, since the parameters are unknown, the
        velocity parameters are taken */
 
-    int imrgrp = eqp_p->imrgra;
     cs_halo_type_t halo_type = CS_HALO_STANDARD;
     cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
-    cs_gradient_type_by_imrgra(imrgrp,
+    cs_gradient_type_by_imrgra(eqp_vel->d_gradient_r,
                                &gradient_type,
                                &halo_type);
 
-    cs_gradient_scalar("Work array",
+    cs_gradient_scalar("cs_cf_energy:0.5*u*u+epsilon_sup",
                        gradient_type,
                        halo_type,
                        1, /* inc */
@@ -673,9 +670,9 @@ cs_cf_energy(int f_sc_id)
                        0,             /* iphydp */
                        1,             /* w_stride */
                        eqp_vel->verbosity,
-                       (cs_gradient_limit_t) eqp_vel->imligr,
+                       (cs_gradient_limit_t) eqp_vel->d_imligr,
                        eqp_vel->epsrgr,
-                       eqp_vel->climgr,
+                       eqp_vel->d_climgr,
                        nullptr,          /* f_ext */
                        nullptr,          /* bc_coeffs */
                        w7.data(),
@@ -697,26 +694,12 @@ cs_cf_energy(int f_sc_id)
           const cs_lnum_t c_id0 = i_face_cells[f_id][0];
           const cs_lnum_t c_id1 = i_face_cells[f_id][1];
 
-          const cs_real_t *_dijpf = dijpf[f_id];
-
-          const cs_real_t pnd = weight[f_id];
-
-          /* Computation of II' and JJ' */
-
-          const cs_real_t diipf[3]
-            = {i_face_cog[f_id][0] - (cell_cen[c_id0][0] + (1.0-pnd)*_dijpf[0]),
-               i_face_cog[f_id][1] - (cell_cen[c_id0][1] + (1.0-pnd)*_dijpf[1]),
-               i_face_cog[f_id][2] - (cell_cen[c_id0][2] + (1.0-pnd)*_dijpf[2])};
-
-          const cs_real_t djjpf[3]
-            = {i_face_cog[f_id][0] -  cell_cen[c_id1][0] +  pnd*_dijpf[0],
-               i_face_cog[f_id][1] -  cell_cen[c_id1][1] +  pnd*_dijpf[1],
-               i_face_cog[f_id][2] -  cell_cen[c_id1][2] +  pnd*_dijpf[2]};
-
           const cs_real_t pip =   w7[c_id0]
-                                + cs_math_3_dot_product(grad.sub_array(c_id0), diipf);
+                                + cs_math_3_dot_product(grad.sub_array(c_id0),
+                                                        diipf[f_id]);
           const cs_real_t pjp =   w7[c_id1]
-                                + cs_math_3_dot_product(grad.sub_array(c_id1), djjpf);
+                                + cs_math_3_dot_product(grad.sub_array(c_id1),
+                                                        djjpf[f_id]);
 
           const cs_real_t flux = i_visc[f_id] * (pip - pjp);
 
@@ -788,33 +771,15 @@ cs_cf_energy(int f_sc_id)
               const cs_lnum_t c_id0 = i_face_cells[f_id][0];
               const cs_lnum_t c_id1 = i_face_cells[f_id][1];
 
-              const cs_real_t *_dijpf = dijpf[f_id];
-
-              const cs_real_t pnd = weight[f_id];
-
               /* Computation of II' and JJ' */
 
-              const cs_real_t diipf[3]
-                = {  i_face_cog[f_id][0]
-                   - (cell_cen[c_id0][0] + (1.0-pnd) * _dijpf[0]),
-                     i_face_cog[f_id][1]
-                   - (cell_cen[c_id0][1] + (1.0-pnd) * _dijpf[1]),
-                     i_face_cog[f_id][2]
-                   - (cell_cen[c_id0][2] + (1.0-pnd) * _dijpf[2])};
-
-              const cs_real_t djjpf[3]
-                = {  i_face_cog[f_id][0]
-                   -  cell_cen[c_id1][0] +  pnd  * _dijpf[0],
-                     i_face_cog[f_id][1]
-                   -  cell_cen[c_id1][1] +  pnd  * _dijpf[1],
-                     i_face_cog[f_id][2]
-                   -  cell_cen[c_id1][2] +  pnd  * _dijpf[2]};
-
               const cs_real_t yip =   yk[c_id0]
-                                    + cs_math_3_dot_product(grad.sub_array(c_id0), diipf);
+                                    + cs_math_3_dot_product(grad.sub_array(c_id0),
+                                                            diipf[f_id]);
 
               const cs_real_t yjp =   yk[c_id1]
-                                    + cs_math_3_dot_product(grad.sub_array(c_id1), djjpf);
+                                    + cs_math_3_dot_product(grad.sub_array(c_id1),
+                                                            djjpf[f_id]);
 
               /* Gradient of deduced species */
               grad_dd[f_id] = grad_dd[f_id] - (yjp - yip);

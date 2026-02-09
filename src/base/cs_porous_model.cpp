@@ -155,7 +155,6 @@ _porous_mesh_quantities_f_free(void)
     CS_FREE(mq_f->diipf);
     CS_FREE(mq_f->dofij);
     CS_FREE(mq_f->diipb);
-    CS_FREE(mq_f->dijpf);
     CS_FREE(mq_f->weight);
     CS_FREE(mq_f->i_dist);
     CS_FREE(mq_f->b_dist);
