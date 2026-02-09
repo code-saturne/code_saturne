@@ -94,12 +94,73 @@
  *============================================================================*/
 
 /*! \file  cs_convection_diffusion.cpp
- *
- * \brief Convection-diffusion operators.
- *
- * Please refer to the
- * <a href="../../theory.pdf#conv-diff"><b>convection-diffusion</b></a> section
- *  of the theory guide for more informations.
+  \brief Convection-diffusion operators.
+
+  Please refer to the
+  <a href="../../theory.pdf#conv-diff"><b>convection-diffusion</b></a> section
+  of the theory guide for more information.
+
+  \section rc_bounds Bounds for diffusion scheme value reconstruction.
+
+  For non-orthogonal meshes, the diffusion scheme involves reconstruction
+  of cell variables at points orthogonal to the associated face centers.
+  Deactivating this reconstruction improves robustness, at the cost of the
+  loss of the scheme's second order spatial accuracy and even consistency.
+
+  Since the reconstruction (based on 1st order Taylor expansion using
+  the cell gradients or face gradients (mean or adjacent cell gradients)
+  can lead to reconstructed values outside the range of values in neighboring
+  cells, diffusion from a cell _I_ with a given field value to a cell _J_
+  with a higher value is possible if the reconstructed value at the _I'_
+  location associated to face _IJ_ is higher than the value in J, leading
+  to loss of monotonicity.
+
+  To avoid this, using gradient limiters can reduce the reconstructed
+  values range where computed gradients are detected as being too strong.
+  It is now also possible to use *bounded reconstruction*, where the gradient
+  value is not modified, but values outside the range of adjacent cell
+  (and boundary face) values are clipped to values within this range.
+
+  For scalars, bounds are naturally based on the minimum and maximum values
+  at adjacent cells and boundary faces. the actual upper bound  applied in
+  cell _I_ is equal to
+  \f$ \varia_clip = \varia_\celli + rc{\_}clip{\_}factor . (\varia_{max} - \varia_\celli) \f$
+  so using a reconstruction clipping factor of 0 is equivalent to disabling
+  reconstruction, and using a clipping factor of 1 limits the reconstructed
+  value to the exact bounds of adjacent cells (using face adjacency only
+  or additional cell neighbors based on the cell neighborhood used for
+  the matching reconstruction gradient. The lower bound is defined in a
+  similar manner.
+
+  For vector and tensor gradients, bounds are not so straightforward, as
+  component-based bounds are not invariant by rotation.
+  So we choose 2 different bounds for vectors:
+  - A _dispersion_ bound, so the Euclidean norm of the difference between the
+    reconstructed vector and the non-reconstructed vector in cell I does
+    not exceed that of if the norm of this difference with all adjacent cell
+    and boundary face values.
+    If this bound is exceeded, the reconstruction gradient is scaled so
+    that the reconstructed value lies withing this bound
+    (here again a reconstruction clipping factor multiplier may be used,
+    so a factor of 0 disables reconstruction entirely, while a factor of 1
+    limits the reconstruction so as to exactly fit the bound).
+  - An L2 norm bound, ensuring that the L2 norm of the reconstructed vector
+    does not exceed that at adjacent cells and boundary faces.
+    If this bound is exceeded, the vector is scaled accordingly
+    (applying a reconstruction factor only if it > 1).
+
+  This is illustrated in the following figures:
+  \image html vector_bounds_a.svg "Vector values in cell _I_ and adjacent cells." width=40%
+
+  Placing vectors at the same origin, we can compute their dispersion:
+  \image html vector_bounds_b.svg "Vector values in cell _I_ and adjacent cells."  width=40%
+
+  Finally, the value reconstructed at _I'_ should fir inside both circles:
+  \image html vector_bounds_c.svg "Vector value bounds at _I'_." width=40%
+
+  For tensors, since the Frobenius norm used is not invariant by rotation,
+  only the dispersion bound is used.
+
  */
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -1724,7 +1785,7 @@ _adjust_and_check_bounds_strided
  *
  * Please refer to the
  * <a href="../../theory.pdf#bilsc2"><b>bilsc2</b></a> section of the
- * theory guide for more informations.
+ * theory guide for more information.
  *
  * \param[in]     f             pointer to field
  * \param[in]     eqp           equation parameters
@@ -4802,7 +4863,7 @@ cs_beta_limiter_building(int                   f_id,
  *
  * Please refer to the
  * <a href="../../theory.pdf#bilsc2"><b>bilsc2</b></a> section of the
- * theory guide for more informations.
+ * theory guide for more information.
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          field id (or -1)
@@ -5451,8 +5512,8 @@ cs_convection_diffusion_vector(int                         idtvar,
  * \param[in]     pvar          solved velocity (current time step)
  * \param[in]     pvara         solved velocity (previous time step)
  * \param[in]     bc_coeffs_ts  boundary condition structure for the variable
- * \param[in]     val_f_g       boundary face value for gradient
- * \param[in]     flux_d        boundary flux
+ * \param[in]     val_f         boundary face value
+ * \param[in]     flux          boundary flux
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -5740,7 +5801,7 @@ cs_convection_diffusion_thermal(int                         idtvar,
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     val_f_g       boundary face value for gradient
+ * \param[in]     val_f         boundary face value
  * \param[in]     flux_d        boundary flux
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
@@ -7451,7 +7512,7 @@ cs_anisotropic_right_diffusion_vector
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     bc_coeffs_ts  boundary condition structure for the variable
  * \param[in]     val_f         boundary face value for gradient
- * \param[in]     flux          boundary flux
+ * \param[in]     flux_d        boundary flux
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -7979,9 +8040,6 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
  *                               - 0 when solving an increment
  *                               - 1 otherwise
  * \param[in]     iphydp        hydrostatic pressure indicator
- * \param[in]     iwgrp         indicator
- *                               - 1 weight gradient by vicosity*porosity
- *                               - weighting determined by field options
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     bc_coeffs     boundary condition structure for the variable

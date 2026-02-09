@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -79,10 +79,6 @@ typedef enum {
  *  Global variables
  *============================================================================*/
 
-/*============================================================================
- * Public function prototypes for Fortran API
- *============================================================================*/
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -103,7 +99,7 @@ cs_get_v_slope_test(int                        f_id,
                     const cs_equation_param_t  eqp);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Compute the beta blending coefficient of the
  * beta limiter (ensuring preservation of a given min/max pair of values).
  *
@@ -119,7 +115,7 @@ cs_beta_limiter_building(int              f_id,
                          const cs_real_t  rovsdt[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add the explicit part of the convection/diffusion terms of a
  * standard transport equation of a scalar field \f$ \varia \f$.
  *
@@ -137,7 +133,7 @@ cs_beta_limiter_building(int              f_id,
  *
  * Please refer to the
  * <a href="../../theory.pdf#bilsc2"><b>bilsc2</b></a> section of the
- * theory guide for more informations.
+ * theory guide for more information.
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          field id (or -1)
@@ -324,7 +320,7 @@ cs_convection_diffusion_vector(int                         idtvar,
                                cs_real_3_t                *rhs);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add the explicit part of the convection/diffusion terms of a transport
  *  equation of a tensor field \f$ \tens{\varia} \f$.
  *
@@ -384,7 +380,7 @@ cs_convection_diffusion_tensor(int                          idtvar,
                                cs_real_6_t                 *rhs);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add the explicit part of the convection/diffusion terms of a transport
  * equation of a scalar field \f$ \varia \f$ such as the temperature.
  *
@@ -691,7 +687,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
  * Please refer to the
  * <a href="../../theory.pdf#cs_face_diffusion_potential">
      <b>cs_face_diffusion_potential/cs_diffusion_potential</b></a>
- * section of the theory guide for more information.
+ * section of the theory guide for more informatio.
  *
  * \param[in]     f             pointer to field or nullptr
  * \param[in]     eqp           equation parameters
@@ -804,7 +800,7 @@ cs_face_anisotropic_diffusion_potential
 );
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Update the cell mass flux divergence with the face pressure (or
  * pressure increment, or pressure double increment) gradient.
  *
@@ -923,7 +919,7 @@ END_C_DECLS
 #ifdef __cplusplus
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Compute the upwind gradient used in the slope tests.
  *
  * This function assumes the input gradient and pvar values have already

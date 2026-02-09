@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -53,8 +53,6 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
-#include "alge/cs_blas.h"
-#include "alge/cs_bad_cells_regularisation.h"
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_dispatch.h"
 #include "cdo/cs_equation_param.h"
@@ -68,15 +66,18 @@
 #include "base/cs_field_default.h"
 #include "base/cs_field_operator.h"
 #include "base/cs_field_pointer.h"
-#include "alge/cs_gradient.h"
-#include "alge/cs_gradient_boundary.h"
-#include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
 #include "base/cs_porous_model.h"
 #include "base/cs_profiling.h"
 #include "base/cs_timer.h"
 #include "base/cs_velocity_pressure.h"
+
+#include "alge/cs_blas.h"
+#include "alge/cs_bad_cells_regularisation.h"
+#include "alge/cs_gradient.h"
+#include "alge/cs_gradient_boundary.h"
+#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -91,13 +92,13 @@
  * Additional Doxygen documentation
  *============================================================================*/
 
-/*! \file  cs_convection_diffusion.cpp
+/*! \file  cs_convection_diffusion_steady.cpp
  *
  * \brief Convection-diffusion operators.
  *
  * Please refer to the
  * <a href="../../theory.pdf#conv-diff"><b>convection-diffusion</b></a> section
- *  of the theory guide for more informations.
+ *  of the theory guide for more information.
  */
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -206,7 +207,7 @@ _sync_strided_gradient_halo(const cs_mesh_t         *m,
  *
  * Please refer to the
  * <a href="../../theory.pdf#bilsc2"><b>bilsc2</b></a> section of the
- * theory guide for more informations.
+ * theory guide for more information.
  *
  * \param[in]     f             pointer to field
  * \param[in]     eqp           equation parameters
