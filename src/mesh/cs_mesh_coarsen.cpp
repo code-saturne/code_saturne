@@ -237,11 +237,6 @@ _cell_equiv(cs_mesh_t  *mesh,
 
   } while (reloop);
 
-#if 0
-  if (cs_glob_rank_id <= 0)
-    printf("Coarse-fine passes: %d\n", pass);
-#endif
-
   pass = 0;
 
   // All sibling must be tagged. Otherwise untag them all.
@@ -337,11 +332,6 @@ _cell_equiv(cs_mesh_t  *mesh,
       cs_halo_sync_untyped(mesh->halo, CS_HALO_STANDARD, sizeof(int), dest_rank);
 
   } while (reloop);
-
-#if 0
-  if (cs_glob_rank_id <= 0)
-    printf("Dest rank passes: %d\n", pass);
-#endif
 
   // Redistribute the mesh.
   // All siblings tagged for coarsening should reside within the same proc.

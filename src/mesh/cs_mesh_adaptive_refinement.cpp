@@ -871,9 +871,6 @@ _load_balance(bool write_stats)
 static void
 _refine_step(void)
 {
-  if (cs_glob_rank_id <= 0)
-    printf("  Refinement...\n");
-
   cs_mesh_t *mesh = cs_glob_mesh;
 
   const int c_r_level_max = _amr_info.n_layers;
@@ -956,9 +953,6 @@ _refine_step(void)
 static void
 _coarsen_step(void)
 {
-  if (cs_glob_rank_id <= 0)
-    printf("  Coarsening...\n");
-
   cs_mesh_t *mesh = cs_glob_mesh;
 
   cs_lnum_t   n_selected_cells = 0;
@@ -1164,15 +1158,6 @@ cs_adaptive_refinement_free_gradients(void)
 void
 cs_adaptive_refinement_step(void)
 {
-  static int amr_iter = 0;
-  amr_iter++;
-  if (cs_glob_rank_id <= 0) {
-    printf("\n");
-    printf("/*-----------------------*/\n");
-    printf("  AMR step: %d\n", amr_iter);
-    printf("/*-----------------------*/\n");
-  }
-
   cs_log_printf(CS_LOG_DEFAULT,
                 _("\n"
                   "Starting mesh adaptation (AMR)\n"
@@ -1199,9 +1184,6 @@ cs_adaptive_refinement_step(void)
 
   bool write_stats = true;
   _load_balance(write_stats);
-
-  if (cs_glob_rank_id <= 0)
-    printf("  Done!\n");
 
   cs_log_printf(CS_LOG_DEFAULT,
                 _("\n"
