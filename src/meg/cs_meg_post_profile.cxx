@@ -54,7 +54,7 @@
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief This function is used to define profile coordinates.
  *
  * \param[in]      name          name of matching profile

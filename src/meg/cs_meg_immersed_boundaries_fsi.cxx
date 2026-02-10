@@ -52,20 +52,20 @@
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief This function is used to indicate to compute user defined values
  *        over a given FSI immersed object. The mathematical expression
  *        is defined in the GUI.
- *
- * \param[in] object_name  Name of the immersed object
- * \param[in] var_name     Name of the variable
  */
 /*----------------------------------------------------------------------------*/
 
 #pragma weak cs_meg_ibm_fsi_func_by_name
 cs_ibm_fsi_func_t *
-cs_meg_ibm_fsi_func_by_name(const char *object_name,
-                            const char *gui_var_name)
+cs_meg_ibm_fsi_func_by_name
+(
+  const char *object_name,
+  const char *gui_var_name
+)
 {
   cs_ibm_fsi_func_t *f = nullptr;
 

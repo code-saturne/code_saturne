@@ -57,7 +57,7 @@ layout {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \class Templated mdspan class. (non owner)
+ * \brief Define a templated mdspan class (non owner of data)
  *
  * @tparam T : data type
  * @tparam N : number of dimensions (int)

@@ -59,47 +59,39 @@ typedef void
  * \brief This function is used to compute user defined values for fields over
  *        a given boundary zone. The mathematical expression is defined in the
  *        GUI.
- *
- * \param[in]  zone_name    name of a boundary zone
- * \param[in]  n_elts       number of elements related to the zone
- * \param[in]  elt_ids      list of element ids related to the zone
- * \param[in]  xyz          list of coordinates related to the zone
- * \param[in]  field_name   name of the variable field
- * \param[in]  condition    condition type defined as a string
- * \param[out] retvals      array of computed values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_meg_boundary_function(const char       *zone_name,
-                         const cs_lnum_t   n_elts,
-                         const cs_lnum_t  *elt_ids,
-                         const cs_real_t   xyz[][3],
-                         const char       *field_name,
-                         const char       *condition,
-                         cs_real_t        *retvals);
+cs_meg_boundary_function
+(
+  const char       *zone_name,  /*!<[in]  name of a boundary zone */
+  const cs_lnum_t   n_elts,     /*!<[in]  number of elements */
+  const cs_lnum_t  *elt_ids,    /*!<[in]  list of element ids */
+  const cs_real_t   xyz[][3],   /*!<[in]  list of coordinates */
+  const char       *field_name, /*!<[in]  name of the variable field */
+  const char       *condition,  /*!<[in]  condition type defined as a string */
+  cs_real_t        *retvals     /*!<[out] array of computed values */
+);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function is used to compute user defined values for fields over
  *        a given volume zone. The mathematical expression is defined in the
  *        GUI.
- *
- * \param[in]      zone_name  name of a volume zone
- * \param[in]      n_elts     number of elements related to the zone
- * \param[in]      elt_ids    list of element ids related to the zone
- * \param[in]      xyz        list of coordinates related to the zone
- * \param[in, out] f          array of pointers to cs_field_t structures
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_meg_volume_function(const char        *zone_name,
-                       const cs_lnum_t    n_elts,
-                       const cs_lnum_t   *elt_ids,
-                       const cs_real_t    xyz[][3],
-                       const char        *fields_names,
-                       cs_real_t         *fvals[]);
+cs_meg_volume_function
+(
+  const char      *zone_name,    /*!<[in] name of a volume zone */
+  const cs_lnum_t  n_elts,       /*!<[in] number of elements */
+  const cs_lnum_t *elt_ids,      /*!<[in] list of element ids */
+  const cs_real_t  xyz[][3],     /*!<[in] list of coordinates */
+  const char      *fields_names, /*!<[in]  associated variable field names */
+  cs_real_t       *fvals[]       /*!<[in, out] array of value arrays */
+);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -107,24 +99,19 @@ cs_meg_volume_function(const char        *zone_name,
  *        volume zone. The mathematical expression is defined in the GUI.
  *
  * The caller is responsible for freeing the associated array.
- *
- * \param[in]  zone_name    name of a volume zone
- * \param[in]  n_elts       number of elements related to the zone
- * \param[in]  elt_ids      list of element ids related to the zone
- * \param[in]  xyz          list of coordinates related to the zone
- * \param[in]  field_name   associated variable field name
- * \param[out] retvals      array of computed values
- *
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_meg_initialization(const char       *zone_name,
-                      const cs_lnum_t   n_elts,
-                      const cs_lnum_t  *elt_ids,
-                      const cs_real_t   xyz[][3],
-                      const char       *field_name,
-                      cs_real_t        *retvals);
+cs_meg_initialization
+(
+  const char      *zone_name,  /*!<[in]  name of a volume zone */
+  const cs_lnum_t  n_elts,     /*!<[in]  number of elements */
+  const cs_lnum_t *elt_ids,    /*!<[in]  list of element ids */
+  const cs_real_t  xyz[][3],   /*!<[in]  list of coordinates */
+  const char      *field_name, /*!<[in]  associated variable field name */
+  cs_real_t       *retvals     /*!<[out] array of computed values */
+);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -132,44 +119,36 @@ cs_meg_initialization(const char       *zone_name,
  *        mathematical expression is defined in the GUI.
  *
  * The caller is responsible for freeing the returned array.
- *
- * \param[in]  zone_name     name of a volume zone
- * \param[in]  n_elts        number of elements related to the zone
- * \param[in]  elt_ids       list of element ids related to the zone
- * \param[in]  xyz           list of coordinates related to the zone
- * \param[in]  field_name    variable field name
- * \param[in]  source_type   source term type
- * \param[out] retvals       array of computed values
- *
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_meg_source_terms(const char       *zone_name,
-                    const cs_lnum_t   n_elts,
-                    const cs_lnum_t  *elt_ids,
-                    const cs_real_t   xyz[][3],
-                    const char       *name,
-                    const char       *source_type,
-                    cs_real_t        *retvals);
+cs_meg_source_terms
+(
+  const char      *zone_name,   /*!<[in]  name of a volume zone */
+  const cs_lnum_t  n_elts,      /*!<[in]  number of elements */
+  const cs_lnum_t *elt_ids,     /*!<[in]  list of element ids */
+  const cs_real_t  xyz[][3],    /*!<[in]  list of coordinates */
+  const char      *name,        /*!<[in]  variable field name */
+  const char      *source_type, /*!<[in]  source term type */
+  cs_real_t       *retvals      /*!<[out] array of computed values */
+);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function is used to query FSI internal coupling structure values
  *        for a given boundary and structure.
- *
- * \param[in]      object_type   name of object type
- * \param[in]      name          name of matching boundary
- * \param[in]      fluid_f       array of fluid forces on the object
- * \param[in, out] val[]         matrix or vector coefficients
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_meg_fsi_struct(const char       *object_type,
-                  const char       *name,
-                  const cs_real_t   fluid_f[],
-                  cs_real_t         val[]);
+cs_meg_fsi_struct
+(
+  const char       *object_type, /*!<[in] name of object type */
+  const char       *name,        /*!<[in] name of matching boundary */
+  const cs_real_t   fluid_f[],   /*!<[in] array of fluid forces on the object */
+  cs_real_t         val[]        /*!<[in,out] matrix or vector coefficients */
+);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -183,37 +162,33 @@ cs_meg_post_activate(void);
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function is used to define profile coordinates.
- *
- * \param[in]      name          name of matching profile
- * \param[in]      n_coords      number of point coordinates
- * \param[in, out] coords        point coordinates
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_meg_post_profiles(const char   *name,
-                     int           n_coords,
-                     cs_real_t     coords[][3]);
+cs_meg_post_profiles
+(
+  const char   *name,       /*!<[in]      name of matching profile */
+  int           n_coords,   /*!<[in]      number of point coordinates */
+  cs_real_t     coords[][3] /*!<[in, out] point coordinates */
+);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function is used to compute user defined calculator formulae.
  *        The mathematical expression is defined in the GUI.
- *
- * \param[in]  field_name   function name
- * \param[in]  n_elts       number of elements related to the zone
- * \param[in]  elt_ids      list of element ids related to the zone
- * \param[in]  xyz          list of coordinates related to the zone
- * \param[out] retvals      array of computed values
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_meg_post_calculator(const char       *name,
-                       const cs_lnum_t   n_elts,
-                       const cs_lnum_t  *elt_ids,
-                       const cs_real_t   xyz[][3],
-                       cs_real_t        *retvals);
+cs_meg_post_calculator
+(
+  const char      *name,     /*!<[in] function name */
+  const cs_lnum_t  n_elts,   /*!<[in] number of elements related to the zone */
+  const cs_lnum_t *elt_ids,  /*!<[in] list of element ids related to the zone */
+  const cs_real_t  xyz[][3], /*!<[in] list of coordinates related to the zone */
+  cs_real_t       *retvals   /*!<[out] array of computed values */
+);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -241,8 +216,11 @@ cs_meg_ibm_func_by_name
 /*----------------------------------------------------------------------------*/
 
 cs_ibm_volume_func_t *
-cs_meg_ibm_volume_func_by_name(const char *object_name,
-                               const char *gui_var_name);
+cs_meg_ibm_volume_func_by_name
+(
+  const char *object_name, /*!<[in] Name of the immersed object */
+  const char *gui_var_name /*!<[in] Name of the variable */
+);
 
 /*----------------------------------------------------------------------------*/
 
@@ -257,8 +235,11 @@ cs_meg_ibm_volume_func_by_name(const char *object_name,
 /*----------------------------------------------------------------------------*/
 
 cs_ibm_fsi_func_t *
-cs_meg_ibm_fsi_func_by_name(const char *object_name,
-                            const char *gui_var_name);
+cs_meg_ibm_fsi_func_by_name
+(
+  const char *object_name, /*!<[in] Name of the immersed object */
+  const char *gui_var_name /*!<[in] Name of the variable */
+);
 
 /*----------------------------------------------------------------------------*/
 

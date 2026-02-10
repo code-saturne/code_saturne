@@ -54,7 +54,7 @@
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief This function is used to query FSI internal coupling structure values
  *        for a given boundary and structure.
  *

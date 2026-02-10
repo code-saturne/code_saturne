@@ -112,6 +112,7 @@ _meg_alloc_size_from_location
  *
  * \param[in] type              type of meg function linked to this input
  * \param[in] z_id              id of zone on which this function is defined
+ * \param[in] location          mesh location type (CELLS, FACES,...)
  * \param[in] stride            stride of data
  * \param[in] name              name related to function
  * \param[in] additional_data   additional data (char *) provided to function,
@@ -122,12 +123,15 @@ _meg_alloc_size_from_location
 /*----------------------------------------------------------------------------*/
 
 cs_meg_xdef_input_t *
-cs_meg_xdef_wrapper_add_input(const cs_meg_function_type_t   type,
-                              const int                      z_id,
-                              const cs_mesh_location_type_t  location,
-                              const int                      stride,
-                              const char                    *name,
-                              const char                    *additional_data)
+cs_meg_xdef_wrapper_add_input
+(
+  const cs_meg_function_type_t   type,
+  const int                      z_id,
+  const cs_mesh_location_type_t  location,
+  const int                      stride,
+  const char                    *name,
+  const char                    *additional_data
+)
 {
   if (_n_meg_defs == 0)
     cs_base_at_finalize(_meg_xdef_wrapper_finalize);
@@ -179,13 +183,16 @@ cs_meg_xdef_wrapper_add_input(const cs_meg_function_type_t   type,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_meg_xdef_wrapper(cs_real_t         time,
-                    cs_lnum_t         n_elts,
-                    const cs_lnum_t  *elt_ids,
-                    const cs_real_t  *coords,
-                    bool              dense_output,
-                    void             *input,
-                    cs_real_t        *retval)
+cs_meg_xdef_wrapper
+(
+  cs_real_t         time,
+  cs_lnum_t         n_elts,
+  const cs_lnum_t  *elt_ids,
+  const cs_real_t  *coords,
+  bool              dense_output,
+  void             *input,
+  cs_real_t        *retval
+)
 {
   CS_UNUSED(time);
 
@@ -338,22 +345,23 @@ cs_meg_xdef_wrapper(cs_real_t         time,
  * \brief Wrapper function allowing to call MEG functions by xdef structres.
  * This is done by using the cs_xdef_function type.
  *
- * \param[in] time          when ?
+ * \param[in] location_id   index of used mesh_location
  * \param[in] n_elts        number of elements to consider
  * \param[in] elt_ids       list of elements ids (in coords and retval)
- * \param[in] coords        where ?
- * \param[in] dense_output  perform an indirection in retval or not
  * \param[in] input         pointer to cs_meg_xdef_input_t
  * \param[in] retval        resultint value(s). Must be allocated
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_meg_xdef_eval_func_wrapper(int              location_id,
-                              cs_lnum_t        n_elts,
-                              const cs_lnum_t *elt_ids,
-                              void            *input,
-                              void            *retval)
+cs_meg_xdef_eval_func_wrapper
+(
+  int              location_id,
+  cs_lnum_t        n_elts,
+  const cs_lnum_t *elt_ids,
+  void            *input,
+  void            *retval
+)
 {
     const cs_mesh_location_type_t loc_type
       = cs_mesh_location_get_type(location_id);

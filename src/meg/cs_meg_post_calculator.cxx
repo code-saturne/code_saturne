@@ -52,7 +52,7 @@
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \file cs_meg_post_calculator.cxx
  *
  * \brief This function is used to compute user defined calculator formulae.

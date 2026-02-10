@@ -1099,7 +1099,7 @@ namespace cs {
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \class Templated data array class.
+ * \brief Define a templated array class (owner of data)
  *
  * @tparam T : data type
  * @tparam N : number of dimensions (int)

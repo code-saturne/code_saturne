@@ -52,7 +52,7 @@
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief This function is used to compute user defined values for fields over
  *        a given boundary zone. The mathematical expression is defined in the
  *        GUI.

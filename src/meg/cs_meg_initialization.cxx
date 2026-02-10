@@ -52,7 +52,7 @@
 BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief This function is used for the initalization of fields over a given
  *        volume zone. The mathematical expression is defined in the GUI.
  *

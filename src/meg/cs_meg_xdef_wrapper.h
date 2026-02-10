@@ -87,16 +87,9 @@ typedef struct {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add a MEG function xdef wrapper input data. Allocated memory is
  *  deleted by cs_meg_xdef_wrapper_finalize
- *
- * \param[in] type              type of meg function linked to this input
- * \param[in] z_id              id of zone on which this function is defined
- * \param[in] stride            stride of data
- * \param[in] name              name related to function
- * \param[in] additional_data   additional data (char *) provided to function,
- *                              such as condition or source type
  *
  * \returns pointer to newly allocated input data structure
  */
@@ -111,17 +104,10 @@ cs_meg_xdef_wrapper_add_input(const cs_meg_function_type_t  type,
                               const char                   *additional_data);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Wrapper function allowing to call MEG functions by xdef structres.
  * This is done by using the cs_xdef_analytic_function type.
  *
- * \param[in] time          when ?
- * \param[in] n_elts        number of elements to consider
- * \param[in] elt_ids       list of elements ids (in coords and retval)
- * \param[in] coords        where ?
- * \param[in] dense_output  perform an indirection in retval or not
- * \param[in] input         pointer to cs_meg_xdef_input_t
- * \param[in] retval        resultint value(s). Must be allocated
  */
 /*----------------------------------------------------------------------------*/
 
@@ -135,17 +121,10 @@ cs_meg_xdef_wrapper(cs_real_t         time,
                     cs_real_t        *retval);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Wrapper function allowing to call MEG functions by xdef structres.
  * This is done by using the cs_xdef_function type.
  *
- * \param[in] time          when ?
- * \param[in] n_elts        number of elements to consider
- * \param[in] elt_ids       list of elements ids (in coords and retval)
- * \param[in] coords        where ?
- * \param[in] dense_output  perform an indirection in retval or not
- * \param[in] input         pointer to cs_meg_xdef_input_t
- * \param[in] retval        resultint value(s). Must be allocated
  */
 /*----------------------------------------------------------------------------*/
 
