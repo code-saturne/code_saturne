@@ -10,7 +10,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -52,7 +52,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Allocate and initialize the model context structure for two-phase
  *        flows in a porous media
  *
@@ -66,7 +66,7 @@ cs_gwf_tpf_t *
 cs_gwf_tpf_create(cs_gwf_model_type_t      model);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Free the context structure associated to the modelling of two-phase
  *        flows in a porous media
  *
@@ -78,7 +78,7 @@ void
 cs_gwf_tpf_free(cs_gwf_tpf_t    **p_tpf);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define the relaxation property by value and set this value.
  *
  * \param[in] tpf  pointer to the model context structure
@@ -91,7 +91,7 @@ cs_gwf_tpf_define_relax_pty_by_value(cs_gwf_tpf_t *tpf,
                                      double        val);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define the relaxation property by value and set this value.
  *
  * \param[in] tpf          pointer to the model context structure
@@ -108,7 +108,7 @@ cs_gwf_tpf_define_relax_pty_by_time_func(cs_gwf_tpf_t   *tpf,
                                          void           *func_context);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Log the setup related to the model context of two-phase flows.
  *        Common to the different sub-models relying on two-phase flows.
  *
@@ -120,7 +120,7 @@ void
 cs_gwf_tpf_log_setup(cs_gwf_tpf_t          *tpf);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Initialize the model context according to the settings done inside
  *        the function cs_user_model()
  *        Case of a two-phase flows model in porous media
@@ -135,7 +135,7 @@ cs_gwf_tpf_init(cs_gwf_tpf_t            *tpf,
                 cs_property_type_t       perm_type);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Initial setup stage for two-phase flows in porous media. At this
  *        stage, all soils have been defined and equation parameters are set.
  *        Case of a miscible or immiscible model.
@@ -150,7 +150,7 @@ cs_gwf_tpf_init_setup(cs_flag_t         post_flag,
                       cs_gwf_tpf_t     *tpf);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Last setup stage in the case of two-phase flows in a porous media
  *        (miscible or immiscible case)
  *
@@ -168,7 +168,7 @@ cs_gwf_tpf_finalize_setup(const cs_cdo_connect_t      *connect,
                           cs_gwf_tpf_t                *tpf);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Last setup stage in the case of two-phase flows in a porous media
  *        (miscible or immiscible case)
  *
@@ -184,7 +184,7 @@ cs_gwf_tpf_init_values(const cs_cdo_connect_t        *connect,
                        cs_gwf_tpf_t                  *tpf);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Compute the new state for the groundwater flows module.
  *        Case of two-phase flows in porous media.
  *
@@ -206,7 +206,7 @@ cs_gwf_tpf_compute(const cs_mesh_t               *mesh,
                    cs_gwf_tpf_t                  *tpf);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Operate a "current to previous" step on fields or arrays which have
  *        at least a storage of the previous step (time t^n when computing
  *        t^{n+1})
@@ -221,7 +221,7 @@ cs_gwf_tpf_current_to_previous(const cs_cdo_connect_t *connect,
                                cs_gwf_tpf_t           *tpf);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Perform the update step in the case of a two-phase flow model in
  *        porous media (miscible or immiscible). To operate a "current to
  *        previous" step, one has to call the dedicated function \ref
@@ -245,7 +245,7 @@ cs_gwf_tpf_update(const cs_mesh_t           *mesh,
                   cs_gwf_tpf_t              *tpf);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Predefined extra-operations for the groundwater flow module in case
  *        of miscible or immiscible two-phase flows in porous media
  *
@@ -265,7 +265,7 @@ cs_gwf_tpf_extra_op(const cs_cdo_connect_t       *connect,
                     cs_gwf_tpf_t                 *tpf);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Predefined post-processing output for the groundwater flow module
  *        in case of saturated two-phase flows (tpf) in porous media.
  *

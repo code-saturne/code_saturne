@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -158,7 +158,7 @@ _get_momentum_param(cs_navsto_param_t    *nsp)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Create a new structure to store all numerical parameters related
  *        to the resolution of the Navier-Stokes (NS) system
  *
@@ -331,7 +331,7 @@ cs_navsto_param_create(const cs_boundary_t          *boundaries,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Free a \ref cs_navsto_param_t structure
  *
  * \param[in, out] param  pointer to a \ref cs_navsto_param_t structure
@@ -413,7 +413,7 @@ cs_navsto_param_free(cs_navsto_param_t *param)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Set a parameter attached to a keyname in a \ref cs_navsto_param_t
  *         structure
  *
@@ -549,7 +549,7 @@ cs_navsto_param_set(cs_navsto_param_t *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Apply the numerical settings defined for the Navier-Stokes system to
  *        an equation related to this system. Be aware that the user-defined
  *        settings can be modified in this function when a different choice is
@@ -583,7 +583,7 @@ cs_navsto_param_transfer(const cs_navsto_param_t *nsp, cs_equation_param_t *eqp)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Summary of the main cs_navsto_param_t structure
  *
  * \param[in]  nsp    pointer to a cs_navsto_param_t structure
@@ -722,7 +722,7 @@ cs_navsto_param_log(const cs_navsto_param_t *nsp)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add a new Boussinesq term (source term for the momemtum equation)
  *
  * \param[in, out] nsp               pointer to a cs_navsto_param_t struct.
@@ -761,7 +761,7 @@ cs_navsto_param_add_boussinesq_term(cs_navsto_param_t *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Set the array of values to consider in the Boussinesq term
  *
  * \param[in, out]  bp    pointer to a cs_navsto_param_boussinesq_t structure
@@ -781,7 +781,7 @@ cs_navsto_param_set_boussinesq_array(cs_navsto_param_boussinesq_t *bp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Retrieve the \ref cs_equation_param_t structure related to the
  *         velocity equation (momentum equation in most of the cases)
  *
@@ -817,7 +817,7 @@ cs_navsto_param_get_velocity_param(const cs_navsto_param_t *nsp)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Retrieve the name of the model system of equations
  *
  * \param[in]   model    a \ref cs_navsto_param_model_t
@@ -845,7 +845,7 @@ cs_navsto_param_get_model_name(cs_navsto_param_model_t   model)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Retrieve the name of the coupling algorithm
  *
  * \param[in]     coupling    a \ref cs_navsto_param_coupling_t
@@ -874,7 +874,7 @@ cs_navsto_param_get_coupling_name(cs_navsto_param_coupling_t  coupling)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Set the value to consider for the reference pressure
  *
  * \param[in]  nsp       pointer to a \ref cs_navsto_param_t structure
@@ -893,7 +893,7 @@ cs_navsto_set_reference_pressure(cs_navsto_param_t    *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Apply the given quadrature rule to all existing definitions under
  *        the cs_navsto_param_t structure
  *
@@ -958,7 +958,7 @@ cs_navsto_param_set_quadrature_to_all(cs_navsto_param_t    *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Define the initial condition for the velocity unknowns.
  *         This definition can be done on a specified mesh location.
  *         By default, the unknown is set to zero everywhere.
@@ -1022,7 +1022,7 @@ cs_navsto_add_velocity_ic_by_value(cs_navsto_param_t *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Define the initial condition for the velocity unknowns.
  *         This definition can be done on a specified mesh location.
  *         By default, the unknown is set to zero everywhere.
@@ -1088,7 +1088,7 @@ cs_navsto_add_velocity_ic_by_analytic(cs_navsto_param_t  *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Define the initial condition for the pressure unknowns.
  *         This definition can be done on a specified mesh location.
  *         By default, the unknown is set to zero everywhere.
@@ -1137,7 +1137,7 @@ cs_navsto_add_pressure_ic_by_value(cs_navsto_param_t *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Define the initial condition for the pressure unknowns.
  *         This definition can be done on a specified mesh location.
  *         By default, the unknown is set to zero everywhere.
@@ -1189,7 +1189,7 @@ cs_navsto_add_pressure_ic_by_analytic(cs_navsto_param_t      *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add the definition of boundary conditions related to a fixed wall
  *        into the set of parameters for the management of the Navier-Stokes
  *        system of equations
@@ -1245,7 +1245,7 @@ cs_navsto_set_fixed_walls(cs_navsto_param_t *nsp)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add the definition of boundary conditions related to a symmetry
  *        into the set of parameters for the management of the Navier-Stokes
  *        system of equations
@@ -1296,7 +1296,7 @@ cs_navsto_set_symmetries(cs_navsto_param_t *nsp)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Add the definition of boundary conditions related to outlets
  *         into the set of parameters for the management of the Navier-Stokes
  *         system of equations
@@ -1348,7 +1348,7 @@ cs_navsto_set_outlets(cs_navsto_param_t    *nsp)
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Set the pressure field on a boundary using a uniform value.
  *
  * \param[in] nsp       pointer to a \ref cs_navsto_param_t structure
@@ -1426,7 +1426,7 @@ cs_navsto_set_pressure_bc_by_value(cs_navsto_param_t *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Define the velocity field for a sliding wall boundary using a
  *         uniform value
  *
@@ -1494,7 +1494,7 @@ cs_navsto_set_velocity_wall_by_value(cs_navsto_param_t *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Define the velocity field for an inlet boundary using a uniform
  *         value
  *
@@ -1557,7 +1557,7 @@ cs_navsto_set_velocity_inlet_by_value(cs_navsto_param_t *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Define the velocity field for an inlet boundary using an analytical
  *         function
  *
@@ -1622,7 +1622,7 @@ cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Define the velocity field for an inlet boundary using an array
  *         of values
  *
@@ -1709,7 +1709,7 @@ cs_navsto_set_velocity_inlet_by_array(cs_navsto_param_t    *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Define the velocity field for an inlet boundary using a DoF function
  *
  * \param[in]  nsp         pointer to a \ref cs_navsto_param_t structure
@@ -1778,7 +1778,7 @@ cs_navsto_set_velocity_inlet_by_dof_func(cs_navsto_param_t    *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Define a new source term structure defined by an analytical function
  *
  * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
@@ -1808,7 +1808,7 @@ cs_navsto_add_source_term_by_analytic(cs_navsto_param_t    *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Define a new source term structure defined by a constant value
  *
  * \param[in]      nsp       pointer to a \ref cs_navsto_param_t structure
@@ -1835,7 +1835,7 @@ cs_navsto_add_source_term_by_value(cs_navsto_param_t *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Define a new source term structure defined by an array
  *
  * \param[in] nsp           pointer to a \ref cs_navsto_param_t structure
@@ -1871,7 +1871,7 @@ cs_navsto_add_source_term_by_array(cs_navsto_param_t    *nsp,
 }
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Add a advection field for the Oseen problem
  *
  * \param[in, out]    nsp        pointer to a \ref cs_navsto_param_t

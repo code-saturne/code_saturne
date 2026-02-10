@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -324,7 +324,7 @@ typedef struct {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Create and initialize by default a new cs_iter_algo_t structure
  *
  * \param[in] type    type of iterative algorithm
@@ -337,7 +337,7 @@ cs_iter_algo_t *
 cs_iter_algo_create(cs_iter_algo_type_t    type);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Create a new cs_iter_algo_t structure with the given settings
  *
  * \param[in] type       type of iterative algorithm
@@ -355,7 +355,7 @@ cs_iter_algo_create_with_settings(cs_iter_algo_type_t     type,
                                   cs_param_convergence_t  cvg_param);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Free a cs_iter_algo_t structure
  *
  * \param[in, out] p_algo     double pointer on the structure to free
@@ -366,7 +366,7 @@ void
 cs_iter_algo_free(cs_iter_algo_t   **p_algo);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Reset a cs_iter_algo_t structure
  *
  * \param[in, out] algo           pointer to a cs_iter_algo_t
@@ -377,7 +377,7 @@ void
 cs_iter_algo_reset(cs_iter_algo_t      *algo);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Free the members (arrays and matrix) associated to the context
  *        structure of an Anderson acceleration
  *
@@ -389,7 +389,7 @@ void
 cs_iter_algo_release_anderson_arrays(cs_iter_algo_aac_t      *c);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define the verbosity of the given iterative algorithm
  *
  * \param[in, out] algo       pointer to the structure to update
@@ -402,7 +402,7 @@ cs_iter_algo_set_verbosity(cs_iter_algo_t     *algo,
                            int                 verbosity);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define the criteria related to the convergence of the given iterative
  *        algorithm
  *
@@ -417,7 +417,7 @@ cs_iter_algo_set_cvg_param(cs_iter_algo_t         *algo,
                            cs_param_convergence_t  cvg_param);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set the final tolerance used to check the convergence of the algorithm
  *        This tolerance should take into account rtol and atol for instance
  *
@@ -431,7 +431,7 @@ cs_iter_algo_set_tolerance(cs_iter_algo_t   *algo,
                            double            tol);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set the initial residual used to detect a divergence
  *
  * \param[in, out] algo     pointer to the structure to update
@@ -444,7 +444,7 @@ cs_iter_algo_set_initial_residual(cs_iter_algo_t   *algo,
                                   double            value);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set the normalization to apply when checking the convergence of the
  *        algorithm.
  *
@@ -458,7 +458,7 @@ cs_iter_algo_set_normalization(cs_iter_algo_t   *algo,
                                double            value);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set the convergence status of the given structure
  *
  * \param[in, out] algo        pointer to the structure to update
@@ -471,7 +471,7 @@ cs_iter_algo_set_cvg_status(cs_iter_algo_t                  *algo,
                             cs_sles_convergence_state_t      cvg_status);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Create a new cs_iter_algo_aac_t structure for Anderson acceleration
  *
  * \param[in, out] algo        pointer to the structure to update
@@ -486,7 +486,7 @@ cs_iter_algo_set_anderson_param(cs_iter_algo_t             *algo,
                                 cs_lnum_t                   n_elts);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Retrieve the current number of iterations done
  *
  * \param[in, out] algo       pointer to the structure to examine
@@ -499,7 +499,7 @@ int
 cs_iter_algo_get_n_iter(const cs_iter_algo_t        *algo);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Retrieve the cumulated number of inner iterations done
  *
  * \param[in, out] algo       pointer to the structure to examine
@@ -512,7 +512,7 @@ int
 cs_iter_algo_get_n_inner_iter(const cs_iter_algo_t        *algo);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Retrieve the last computed residual
  *
  * \param[in, out] algo       pointer to the structure to examine
@@ -525,7 +525,7 @@ double
 cs_iter_algo_get_residual(const cs_iter_algo_t        *algo);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Retrieve the last convergence state
  *
  * \param[in, out] algo       pointer to the structure to examine
@@ -538,7 +538,7 @@ cs_sles_convergence_state_t
 cs_iter_algo_get_cvg_status(const cs_iter_algo_t        *algo);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Get the normalization to apply when computing the tolerance threshold
  *
  * \param[in] algo   pointer to a cs_iter_algo_t structure
@@ -549,7 +549,7 @@ double
 cs_iter_algo_get_normalization(const cs_iter_algo_t    *algo);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Retrieve the set of parameters for an Anderson algorithm
  *
  * \param[in, out] algo      pointer to a cs_iter_algo_t structure
@@ -562,7 +562,7 @@ cs_iter_algo_param_aac_t
 cs_iter_algo_get_anderson_param(cs_iter_algo_t         *algo);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Apply one more iteration of the Anderson acceleration
  *
  * \param[in, out] algo           pointer to a cs_iter_algo_t structure
@@ -581,7 +581,7 @@ cs_iter_algo_update_anderson(cs_iter_algo_t               *algo,
                              cs_cdo_blas_square_norm_t    *sqnorm);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Update the counting of inner iterations in two-level algorithms
  *
  * \param[in, out] algo               pointer to the structure to update
@@ -594,7 +594,7 @@ cs_iter_algo_update_inner_iters(cs_iter_algo_t   *algo,
                                 int               n_last_inner_iter);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Update the value of the residual and its associated members.
  *
  * \param[in, out] algo      pointer to a cs_iter_algo_t structure
@@ -607,7 +607,7 @@ cs_iter_algo_update_residual(cs_iter_algo_t      *algo,
                              double               res);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Update the convergence status and the number of iterations. The
  *        tolerance threshold is given so that it has to be computed before
  *        calling this function.
@@ -624,7 +624,7 @@ cs_iter_algo_update_cvg_tol_given(cs_iter_algo_t         *algo,
                                   double                  tol);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Update the convergence status and the number of iterations. The
  *        tolerance threshold is automatically computed by a default formula
  *        relying on the relative tolerance scaled by the normalization factor
@@ -640,7 +640,7 @@ cs_sles_convergence_state_t
 cs_iter_algo_update_cvg_tol_auto(cs_iter_algo_t         *algo);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Log the convergence of the iterative algorithm
  *
  * \param[in] algo     pointer to the iterative algorithm structure
@@ -653,7 +653,7 @@ cs_iter_algo_log_cvg(cs_iter_algo_t      *algo,
                      const char          *label);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Check if something wrong happens during the iterative process after
  *        one new iteration
  *
