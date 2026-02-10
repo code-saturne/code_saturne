@@ -724,8 +724,7 @@ cs_gas_mix_add_variable_fields(void)
   cs_thermal_model_t *thm = cs_get_glob_thermal_model();
   // If thermal field has been already created (e.g. for atmo or
   // compressible module...) then it is enthalpy by default
-  if (thm->thermal_variable == CS_THERMAL_MODEL_INIT) {
-    thm->thermal_variable = CS_THERMAL_MODEL_ENTHALPY;
+  if (thm->thermal_variable == CS_THERMAL_MODEL_ENTHALPY) {
 
     f_id = cs_variable_field_create("enthalpy",
                                     "Enthalpy",
