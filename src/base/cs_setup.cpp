@@ -2600,6 +2600,7 @@ _read_specific_physics_data(void)
   /* Pulverized coal combustion */
   if (pm_flag[CS_COMBUSTION_COAL] != -1) {
     cs_coal_read_data();
+    cs_gui_coal_model();
   }
 
   /* Joule effect, electric arc or ionic conduction */
@@ -2682,8 +2683,8 @@ _init_user(void)
   if (cs_glob_ale != CS_ALE_NONE)
     cs_gui_mobile_mesh_structures_add();
 
-  if (pm_flag[CS_COMBUSTION_COAL] != -1)
-    cs_gui_coal_model();
+  /* Read thermomechanical data for specific physics */
+  _read_specific_physics_data();
 
   /* Other model parameters, including user-defined scalars */
   cs_gui_user_variables();
@@ -2709,9 +2710,6 @@ _init_user(void)
     cs_pressure_correction_model_activate();
 
   }
-
-  /* Read thermomechanical data for specific physics */
-  _read_specific_physics_data();
 
   if (cs_glob_ale != CS_ALE_NONE)
     cs_gui_ale_diffusion_type();
