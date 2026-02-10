@@ -2599,8 +2599,8 @@ _read_specific_physics_data(void)
 
   /* Pulverized coal combustion */
   if (pm_flag[CS_COMBUSTION_COAL] != -1) {
-    cs_coal_read_data();
     cs_gui_coal_model();
+    cs_coal_read_data();
   }
 
   /* Joule effect, electric arc or ionic conduction */
