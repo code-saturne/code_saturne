@@ -29,13 +29,14 @@
 import os, sys
 import shutil, re
 import subprocess
-import threading
 import string
 import time
 import logging
 import fnmatch
 import math
 import configparser
+import concurrent.futures
+from multiprocessing import Lock
 from collections import OrderedDict
 
 #-------------------------------------------------------------------------------
@@ -1243,6 +1244,15 @@ class Studies(object):
         # use the mem-log option for unfreed pointers
         self.__mem_log           = options.mem_log
 
+        # Threading options and objects
+        self.__max_workers = 1
+        self.lock = Lock()
+
+        try:
+            self.__max_workers = int(os.getenv('CS_SMGR_MAX_THREADS'))
+        except Exception:
+            pass
+
         # Query install configuration and current environment
         # (add number of procs based on resources to install
         # configuration).
@@ -1576,6 +1586,23 @@ class Studies(object):
 
     #---------------------------------------------------------------------------
 
+    def __prepare_run_folder(self, case):
+        """
+        Prepare a run folder.
+        """
+
+        log_lines = case.prepare_run_folder()
+
+        # Use to ensure log lines from different directories
+        # are not intermixed.
+
+        self.lock.acquire()
+        for line in log_lines:
+            self.reporting(line)
+        self.lock.release()
+
+    #---------------------------------------------------------------------------
+
     def create_studies(self, run_step):
         """
         Create all studies and all cases.
@@ -1617,11 +1644,10 @@ class Studies(object):
                                            "are removed (option --rm activated)"
                                            %(case.label, case.resu))
 
-                # thrid step: prepare run folder
-                log_lines = case.prepare_run_folder()
-
-                for line in log_lines:
-                    self.reporting(line)
+        if run_step:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=self.__max_workers) as executor:
+                results = executor.map(self.__prepare_run_folder,
+                                       self.graph.graph_dict)
 
         self.reporting('')
 
