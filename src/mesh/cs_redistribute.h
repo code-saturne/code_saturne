@@ -61,7 +61,7 @@ extern cs_redistribute_data_t  *cs_glob_redistribute_data;
 /*----------------------------------------------------------------------------*/
 
 void
-cs_redistribute(int                      cell_dest_rank[],
+cs_redistribute(const int                cell_dest_rank[],
                 cs_redistribute_data_t  *data);
 
 /*----------------------------------------------------------------------------*/

@@ -309,7 +309,7 @@ _distribute_bc_type(cs_all_to_all_t  *bfd,
  *
  * parameters:
  *   mesh           <-- pointer to mesh
- *   cell_dest_rank --> cell destination rank
+ *   cell_dest      --> cells destination rank
  *----------------------------------------------------------------------------*/
 
 static void
@@ -730,16 +730,21 @@ _distribute_data(cs_all_to_all_t *cd,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Redistribute mesh and fields based on a cell destination rank map.
+ * \brief Redistribute mesh, fields and data based on a cell destination rank
+ * map.
  *
  * If no cell map is given, a random one is created.
  *
- * \param[in]  cell_dest_rank  destination rank for each cell
+ * If pointer to data is not null, this function will try to redistribute all
+ * its non-null internal buffers.
+ *
+ * \param[in]     cell_dest_rank  destination rank for each cell
+ * \param[inout]  data            pointer to redistribution data structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_redistribute(int                     *cell_dest_rank,
+cs_redistribute(const int                cell_dest_rank[],
                 cs_redistribute_data_t  *data)
 {
   if (cs_glob_rank_id < 0)
@@ -782,10 +787,9 @@ cs_redistribute(int                     *cell_dest_rank,
   // Random cell destinations if cell_dest_rank is not prescribed.
 
   int *_dest_rank = nullptr;
-  if (cell_dest_rank == nullptr) {
+  CS_MALLOC(_dest_rank, mesh->n_cells_with_ghosts, int);
 
-    CS_MALLOC(_dest_rank, mesh->n_cells_with_ghosts, int);
-    cell_dest_rank = _dest_rank;
+  if (cell_dest_rank == nullptr) {
 
     // RNG
     static bool rng_on = false;
@@ -809,12 +813,12 @@ cs_redistribute(int                     *cell_dest_rank,
     do {
       if (cd) cs_all_to_all_destroy(&cd);
 
-      _compute_cell_dest_rank(mesh, cell_dest_rank);
+      _compute_cell_dest_rank(mesh, _dest_rank);
 
       cd = cs_all_to_all_create(mesh->n_cells,
                                 cd_flags,
                                 nullptr,
-                                cell_dest_rank,
+                                _dest_rank,
                                 comm);
       n_cells = cs_all_to_all_n_elts_dest(cd);
 
@@ -823,11 +827,14 @@ cs_redistribute(int                     *cell_dest_rank,
     } while (g_min_n_cells == 0);
   }
   else {
+    memcpy(_dest_rank, cell_dest_rank, mesh->n_cells*sizeof(int));
+
     cd = cs_all_to_all_create(mesh->n_cells,
                               cd_flags,
                               nullptr,
-                              cell_dest_rank,
+                              _dest_rank,
                               comm);
+
     n_cells = cs_all_to_all_n_elts_dest(cd);
   }
 
@@ -866,7 +873,7 @@ cs_redistribute(int                     *cell_dest_rank,
   int *b_face_dest;
   CS_MALLOC(b_face_dest, mesh->n_b_faces, int);
   for (cs_lnum_t f_id = 0; f_id < mesh->n_b_faces; f_id++)
-    b_face_dest[f_id] = cell_dest_rank[mesh->b_face_cells[f_id]];
+    b_face_dest[f_id] = _dest_rank[mesh->b_face_cells[f_id]];
 
   // Boundary face distributor.
   int bfd_flags = 0;
@@ -1012,7 +1019,7 @@ cs_redistribute(int                     *cell_dest_rank,
   cs_halo_sync_untyped(mesh->halo,
                        mesh->halo_type,
                        sizeof(int),
-                       cell_dest_rank);
+                       _dest_rank);
 
   // We need the ranks of the halo cells.
   int *cell_rank;
@@ -1041,7 +1048,7 @@ cs_redistribute(int                     *cell_dest_rank,
     int prev_rank = -1;
 
     for (int j = 0; j < 2; j++) {
-      dest_rank = cell_dest_rank[mesh->i_face_cells[f_id][j]];
+      dest_rank = _dest_rank[mesh->i_face_cells[f_id][j]];
       if (dest_rank != prev_rank) {
         i_face_lst[n_i_faces_ini] = f_id;
         i_face_dest[n_i_faces_ini] = dest_rank;

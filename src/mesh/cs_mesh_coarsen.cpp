@@ -307,10 +307,12 @@ _cell_equiv(cs_mesh_t  *mesh,
       cs_lnum_t c1 = mesh->i_face_cells[f_id][1];
 
       // Cells must be siblings.
+
       if (f_r_gen != c_r_level[c0] || f_r_gen != c_r_level[c1])
         continue;
 
       // Both cells must be tagged for coarsening.
+
       if (c_r_flag[c0] == 0 || c_r_flag[c1] == 0)
         continue;
 
@@ -342,7 +344,7 @@ _cell_equiv(cs_mesh_t  *mesh,
 #endif
 
   // Redistribute the mesh.
-  // All siblings tagged for refinement should reside within the same proc.
+  // All siblings tagged for coarsening should reside within the same proc.
 
   {
     cs_redistribute_data_t *data = cs_glob_redistribute_data;
