@@ -441,7 +441,6 @@ _combustion_slfm_read_thermophysical_library(void)
                                 + iki*nxr*nlibvar
                                     + ixr*nlibvar;
 
-
             for (int idx = 0; idx < n_var_local; idx++)
               rho_library[shift + idx] =
                 flamelet_library[_shift + var_sel[idx]];
@@ -505,9 +504,15 @@ _combustion_slfm_read_radiation_library(void)
               int shift = iz*nzvar*nki*nxr*nwsgg*2
                            + izvar*nki*nxr*nwsgg*2
                                  + iki*nxr*nwsgg*2
-                                     + ixr*nwsgg*2;
-              sscanf(line, "%lf %lf", &radiation_library[shift],
-                                      &radiation_library[shift + 1]);
+                                     + ixr*nwsgg*2
+                                             +ig*2;
+
+              char *ss = line;
+              for (int idx = 0; idx < 2; idx++) {
+                char* token = _extract_token(file_name, "radiation library",
+                  ss, last, line_num, shift);
+                radiation_library[shift + idx] = atof(token);
+              }
               _next_line(file_name, line_num, line, last, true);
             }
           }
@@ -524,9 +529,14 @@ _combustion_slfm_read_radiation_library(void)
               int shift = iz*nzvar*nxr*nki*nwsgg*2
                            + izvar*nxr*nki*nwsgg*2
                                  + ixr*nki*nwsgg*2
-                                     + iki*nwsgg*2;
-              sscanf(line, "%lf %lf", &radiation_library[shift],
-                                      &radiation_library[shift + 1]);
+                                     + iki*nwsgg*2
+                                             +ig*2;
+              char *ss = line;
+              for (int idx = 0; idx < 2; idx++) {
+                char* token = _extract_token(file_name, "radiation library",
+                  ss, last, line_num, shift);
+                radiation_library[shift + idx] = atof(token);
+              }
               _next_line(file_name, line_num, line, last, true);
             }
           }

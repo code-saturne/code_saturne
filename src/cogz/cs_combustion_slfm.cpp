@@ -1176,10 +1176,10 @@ cs_combustion_slfm_physical_properties(int   iterns)
 
       for (int ig = 0; ig < nwsgg; ig++) {
         f_name[63]='\0';
-        snprintf(f_name, 64, "spectral_absorption_coeff_%d",ig + 1);
+        snprintf(f_name, 64, "spectral_absorption_coeff_%02d",ig + 1);
         cpro_kg[ig] = cs_field_by_name(f_name)->val;
         f_name[63]='\0';
-        snprintf(f_name, 64, "spectral_emission_%d",ig + 1);
+        snprintf(f_name, 64, "spectral_emission_%02d",ig + 1);
         cpro_emi[ig] = cs_field_by_name(f_name)->val;
       }
     }

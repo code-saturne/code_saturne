@@ -2537,7 +2537,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
   if (pm_flag[CS_COMBUSTION_SLFM] >= 0) {
     for (int gg_id = 0; gg_id < nwsgg; gg_id++) {
       char f_name[64];
-      snprintf(f_name, 63, "spectral_absorption_coeff_%2d", gg_id + 1);
+      snprintf(f_name, 63, "spectral_absorption_coeff_%02d", gg_id + 1);
       cs_field_t *f_kgabs = cs_field_by_name_try(f_name);
 
       if (f_kgabs != nullptr)

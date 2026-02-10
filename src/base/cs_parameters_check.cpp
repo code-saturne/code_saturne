@@ -1222,7 +1222,7 @@ cs_parameters_check(void)
           = cs_field_get_key_double(f, key_scalar_st_exp);
         if (scalar_exp_extrap > 0. || scalar_time_order > 0)
             cs_parameters_error
-              (CS_ABORT_DELAYED,
+              (CS_WARNING,
                _("in the radiation module"),
                _("Source terms coming from radiation module will not be computed\n"
                  "with second order in this version despite the user settings\n"
