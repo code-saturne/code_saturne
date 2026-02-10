@@ -1090,8 +1090,7 @@ cs_equation_param_create(const char         *name,
     .n_max_dir = 6,
     .starting_iter = 3,
     .max_cond = -1, /* No test by default */
-    .beta = 1.0,    /* No damping by default */
-    .dp_type = CS_PARAM_DOTPROD_EUCLIDEAN };
+    .beta = 1.0 };    /* No damping by default */
 
   eqp->time_control_owner = false;
   eqp->time_control = nullptr; /* nullptr by default (allways active) */
@@ -1295,7 +1294,6 @@ cs_equation_param_copy_from(const cs_equation_param_t *ref,
     dst->incremental_anderson_param.starting_iter = aacp.starting_iter;
     dst->incremental_anderson_param.max_cond = aacp.max_cond;
     dst->incremental_anderson_param.beta = aacp.beta;
-    dst->incremental_anderson_param.dp_type = aacp.dp_type;
   }
 }
 
@@ -2071,11 +2069,9 @@ cs_equation_param_log(const cs_equation_param_t *eqp)
                     aap.starting_iter,
                     aap.max_cond,
                     aap.beta);
-      cs_log_printf(CS_LOG_SETUP,
-                    "  * %s | Anderson param: Dot product type: %s\n",
-                    eqname,
-                    cs_param_get_dotprod_type_name(aap.dp_type));
+
     }
+
   }
 
   // SLES information

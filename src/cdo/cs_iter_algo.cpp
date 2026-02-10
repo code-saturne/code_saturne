@@ -440,7 +440,6 @@ cs_iter_algo_create(cs_iter_algo_type_t    type)
     c->param.starting_iter = 3;
     c->param.max_cond = 500;
     c->param.beta = 0;
-    c->param.dp_type = CS_PARAM_DOTPROD_EUCLIDEAN;
 
     /* Other variables */
 
@@ -788,7 +787,6 @@ cs_iter_algo_set_anderson_param(cs_iter_algo_t             *algo,
   c->param.starting_iter = aac_param.starting_iter;
   c->param.max_cond = aac_param.max_cond;
   c->param.beta = aac_param.beta;
-  c->param.dp_type = aac_param.dp_type;
 
   c->n_elts = n_elts;
 }

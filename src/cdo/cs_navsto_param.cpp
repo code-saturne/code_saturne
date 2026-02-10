@@ -242,7 +242,6 @@ cs_navsto_param_create(const cs_boundary_t          *boundaries,
   nsp->anderson_param.starting_iter = 3;
   nsp->anderson_param.max_cond = -1; /* No test by default */
   nsp->anderson_param.beta = 1.0;    /* No damping by default */
-  nsp->anderson_param.dp_type = CS_PARAM_DOTPROD_EUCLIDEAN;
 
   /* This first settings can be modified when initializing a coupling
      context (cf. cs_navsto_coupling.c) */
@@ -692,8 +691,7 @@ cs_navsto_param_log(const cs_navsto_param_t *nsp)
                     " start: %d; drop. tol: %5.3e; relax: %5.3e\n",
                     navsto, aap.n_max_dir, aap.starting_iter, aap.max_cond,
                     aap.beta);
-      cs_log_printf(CS_LOG_SETUP, "%s Anderson param: Dot product type: %s\n",
-                    navsto, cs_param_get_dotprod_type_name(aap.dp_type));
+
     }
 
   } /* A non-linear treatment is requested */

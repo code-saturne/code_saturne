@@ -1995,30 +1995,11 @@ cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t        nl_algo_type,
     /* The Anderson acceleration can modified the current iterate to speed_up
        the convergence of the non-linear algorithm */
 
-    cs_iter_algo_param_aac_t  aap = cs_iter_algo_get_anderson_param(algo);
-
-    switch (aap.dp_type) {
-
-    case CS_PARAM_DOTPROD_EUCLIDEAN:
-      cs_iter_algo_update_anderson(algo,
-                                   cur_iterate,
-                                   pre_iterate,
-                                   cs_cdo_blas_dotprod_face,
-                                   cs_cdo_blas_square_norm_face);
-      break;
-
-    case CS_PARAM_DOTPROD_CDO:
-      cs_iter_algo_update_anderson(algo,
-                                   cur_iterate,
-                                   pre_iterate,
-                                   cs_cdo_blas_dotprod_pfsf,
-                                   cs_cdo_blas_square_norm_pfsf);
-      break;
-
-    default:
-      bft_error(__FILE__, __LINE__, 0, "%s: Invalid case.\n", __func__);
-
-    }
+    cs_iter_algo_update_anderson(algo,
+                                 cur_iterate,
+                                 pre_iterate,
+                                 cs_cdo_blas_dotprod_pfsf,
+                                 cs_cdo_blas_square_norm_pfsf);
 
   } /* Anderson acceleration */
 

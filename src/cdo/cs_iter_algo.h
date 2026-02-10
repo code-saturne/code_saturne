@@ -151,16 +151,12 @@ typedef struct {
  * \var beta
  * Value of the relaxation coefficient (if this is equal to zero then there is
  * non relaxation to perform)
- *
- * \var dp_type
- * Type of dot product to apply (usual Euclidean 2-norm or CDO-based one)
  */
 
   int                        n_max_dir;
   int                        starting_iter;
   double                     max_cond;
   double                     beta;
-  cs_param_dotprod_type_t    dp_type;
 
 } cs_iter_algo_param_aac_t;
 

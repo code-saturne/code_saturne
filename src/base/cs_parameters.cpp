@@ -459,8 +459,7 @@ static cs_equation_param_t _equation_param_default
    {.atol = -1., .rtol = -1., .dtol = -1., .n_max_iter = -1},
     .incremental_relax_factor = -1.,
     .incremental_anderson_param = {.n_max_dir = 0, .starting_iter = 0,
-                                   .max_cond = -1., .beta = 0.,
-                                   .dp_type = CS_PARAM_N_DOTPROD_TYPES},
+                                   .max_cond = -1., .beta = 0.},
    .time_control_owner = false,
    .time_control = nullptr
 };

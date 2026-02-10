@@ -2445,7 +2445,6 @@ cs_gwf_tpf_create(cs_gwf_model_type_t  model)
   tpf->anderson_param.starting_iter = 3;
   tpf->anderson_param.max_cond = -1; /* No test by default */
   tpf->anderson_param.beta = 1.0;    /* No damping by default */
-  tpf->anderson_param.dp_type = CS_PARAM_DOTPROD_EUCLIDEAN;
 
   tpf->nl_algo = nullptr;
 
@@ -2672,8 +2671,6 @@ cs_gwf_tpf_log_setup(cs_gwf_tpf_t *tpf)
       cs_log_printf(CS_LOG_SETUP, "  * GWF | Anderson param: max. dir: %d; "
                     " start: %d; drop. tol: %5.3e; relax: %5.3e\n",
                     aap.n_max_dir, aap.starting_iter, aap.max_cond, aap.beta);
-      cs_log_printf(CS_LOG_SETUP, "  * GWF | Anderson param: Dot product: %s\n",
-                    cs_param_get_dotprod_type_name(aap.dp_type));
 
     }
 
