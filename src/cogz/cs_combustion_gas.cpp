@@ -652,7 +652,7 @@ cs_combustion_gas_setup(void)
       continue;
 
     int variance_id = cs_field_get_key_int(f, kscavr);
-    if (f != CS_F_(h) && variance_id <= 0) {
+    if (variance_id <= 0) {
       // We consider that turbulent viscosity domintes. We prohibit
       // the computation of laminar flames with  =/= 1
       cs_field_set_key_double(f, kvisl0, viscl0);
@@ -976,8 +976,6 @@ cs_combustion_gas_add_variable_fields(void)
     {
       const int kivisl  = cs_field_key_id("diffusivity_id");
       const int key_coupled_with_vel_p = cs_field_key_id("coupled_with_vel_p");
-      const int key_turb_diff = cs_field_key_id("turbulent_diffusivity_id");
-      const int key_sgs_sca_coef = cs_field_key_id("sgs_scalar_flux_coef_id");
 
       // Mixture fraction and its variance
       cm->fm = _add_model_variable("mixture_fraction", "Fra_MEL");
@@ -986,11 +984,6 @@ cs_combustion_gas_add_variable_fields(void)
 
       cs_field_set_key_int(cm->fm, key_coupled_with_vel_p, 1);
       cs_field_set_key_int(cm->fm, kivisl, 0);
-
-      if (cs_glob_turb_model->model == CS_TURB_LES_SMAGO_DYN) {
-        cs_field_set_key_int(cm->fm, key_turb_diff, 0);
-        cs_field_set_key_int(cm->fm, key_sgs_sca_coef, 0);
-      }
 
       if (cm->mode_fp2m == 0) {
         cm->fp2m = _add_model_variable("mixture_fraction_variance", "Var_FrMe");
@@ -1004,21 +997,11 @@ cs_combustion_gas_add_variable_fields(void)
         cs_field_set_key_double(cm->fsqm, kscmax, 1.);
         cs_field_set_key_int(cm->fsqm, key_coupled_with_vel_p, 1);
         cs_field_set_key_int(cm->fsqm, kivisl, 0);
-
-        if (cs_glob_turb_model->model == CS_TURB_LES_SMAGO_DYN) {
-          cs_field_set_key_int(cm->fsqm, key_turb_diff, 0);
-          cs_field_set_key_int(cm->fsqm, key_sgs_sca_coef, 0);
-        }
       }
 
       if (CS_F_(h) != nullptr) {
         cs_field_set_key_int(CS_F_(h), key_coupled_with_vel_p, 1);
         cs_field_set_key_int(CS_F_(h), kivisl, 0);
-
-        if (cs_glob_turb_model->model == CS_TURB_LES_SMAGO_DYN) {
-          cs_field_set_key_int(CS_F_(h), key_turb_diff, 0);
-          cs_field_set_key_int(CS_F_(h), key_sgs_sca_coef, 0);
-        }
       }
 
       // Flamelet/Progress variable model
@@ -1028,11 +1011,6 @@ cs_combustion_gas_add_variable_fields(void)
         cs_field_set_key_double(cm->pvm, kscmax, cs_math_big_r);
         cs_field_set_key_int(cm->pvm, key_coupled_with_vel_p, 1);
         cs_field_set_key_int(cm->pvm, kivisl, 0);
-
-        if (cs_glob_turb_model->model == CS_TURB_LES_SMAGO_DYN) {
-          cs_field_set_key_int(cm->pvm, key_turb_diff, 0);
-          cs_field_set_key_int(cm->pvm, key_sgs_sca_coef, 0);
-        }
       }
     }
     break;
@@ -1287,7 +1265,8 @@ cs_combustion_gas_add_property_fields(void)
      ------------------------------- */
 
   if (   cs_glob_rad_transfer_params->type != CS_RAD_TRANSFER_NONE
-      && CS_F_(h) != nullptr) {
+      && CS_F_(h) != nullptr
+      && cm->type/100 != CS_COMBUSTION_SLFM) {
     cm->ckabs = _add_property_1d("kabs", "KABS");
     cm->t4m = _add_property_1d("temperature_4", "Temp4");
     cm->t3m = _add_property_1d("temperature_3", "Temp3");

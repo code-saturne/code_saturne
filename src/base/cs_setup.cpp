@@ -1938,14 +1938,6 @@ _additional_fields_stage_2(void)
       s_name[127] = '\0';
       s_label[127] = '\0';
 
-      if (pm_flag[CS_COMBUSTION_SLFM] >= 0) {
-        int ifm_ifcdep = cs_field_get_key_int(CS_F_(fm), key_turb_diff);
-        if (f != CS_F_(fm)) {
-          cs_field_set_key_int(f, key_turb_diff, ifm_ifcdep);
-          continue;
-        }
-      }
-
       /* Now create matching property */
       cs_field_t *f_s = _add_property_field(s_name,
                                             s_label,
@@ -1996,13 +1988,6 @@ _additional_fields_stage_2(void)
         s_name[127] = '\0';
         s_label[127] = '\0';
 
-        if (pm_flag[CS_COMBUSTION_SLFM] >= 0) {
-          int ifm_ifcdep = cs_field_get_key_int(CS_F_(fm), key_sgs_sca_coef);
-          if (f != CS_F_(fm)) {
-            cs_field_set_key_int(f, key_sgs_sca_coef, ifm_ifcdep);
-            continue;
-          }
-        }
         /* Now create matching property */
         cs_field_t *f_s = _add_property_field(s_name,
                                               s_label,
