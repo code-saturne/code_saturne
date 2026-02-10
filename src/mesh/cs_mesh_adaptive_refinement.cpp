@@ -748,6 +748,8 @@ _propagate_refinement(cs_mesh_t  *m,
  * Write in a CSV file the load imbalance of all ranks.
  *----------------------------------------------------------------------------*/
 
+#if defined(HAVE_MPI)
+
 static void
 _write_load_balance_stats(void)
 {
@@ -781,7 +783,8 @@ _write_load_balance_stats(void)
       for (int i = 0; i < n_ranks; i++)
         fprintf(fh, "P%d ", i);
       fprintf(fh, "\n");
-    } else {
+    }
+    else {
       fh = fopen(fname, "a");
     }
 
@@ -793,7 +796,8 @@ _write_load_balance_stats(void)
 
     fclose(fh);
 
-  } else {
+  }
+  else {
     float to_send = (float)mesh->n_cells;
     MPI_Send(&to_send, 1, MPI_FLOAT, 0, tag, comm);
   }
@@ -863,6 +867,8 @@ _load_balance(bool write_stats)
   if (write_stats)
     _write_load_balance_stats();
 }
+
+#endif // defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * Refinement step function.
@@ -1182,8 +1188,10 @@ cs_adaptive_refinement_step(void)
 
   /* Perform load balancing */
 
+#if defined(HAVE_MPI)
   bool write_stats = true;
   _load_balance(write_stats);
+#endif
 
   cs_log_printf(CS_LOG_DEFAULT,
                 _("\n"

@@ -87,6 +87,8 @@ static cs_redistribute_data_t _redistribute_data = {
 
 cs_redistribute_data_t *cs_glob_redistribute_data = &_redistribute_data;
 
+#if defined(HAVE_MPI)
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -722,6 +724,8 @@ _distribute_data(cs_all_to_all_t *cd,
   }
 }
 
+#endif // defined(HAVE_MPI)
+
 /*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -747,6 +751,8 @@ void
 cs_redistribute(const int                cell_dest_rank[],
                 cs_redistribute_data_t  *data)
 {
+#if defined(HAVE_MPI)
+
   if (cs_glob_rank_id < 0)
     return;
 
@@ -1450,6 +1456,8 @@ cs_redistribute(const int                cell_dest_rank[],
   cs_all_to_all_destroy(&ifd);
 
   CS_FREE(_dest_rank);
+
+#endif // defined(HAVE_MPI)
 }
 
 /*----------------------------------------------------------------------------*/
