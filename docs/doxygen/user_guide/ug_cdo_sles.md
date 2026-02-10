@@ -234,7 +234,7 @@ where the function `_hypre_p_setup_hook` is defined as follows:
 \snippet cs_user_parameters-linear_solvers.cpp sles_hypre_hook_1
 
 
-### GAMG {#cs_ug_cdo_sles_amg_gamg}
+#### GAMG advanced settings {#cs_ug_cdo_sles_amg_gamg_adv}
 
 Up to now, the advanced settings of GAMG is possible inside \ref cs_user_linear_solvers
 Here is an example of a such usage
@@ -531,7 +531,7 @@ the vector \f$\mathsf{L}\f$ from the resolution of \f$\mathsf{A\,L =
 ### Example 1: "mass_scaled"
 
 In the first example, one assumes that the saddle-point solver is
-associated to the structure \cs_equation_param_t nammed `mom_eqp`. For
+associated to the structure \ref cs_equation_param_t nammed `mom_eqp`. For
 instance, one uses a `gcr` strategy for solving the saddle-point
 problem. This is one of the simpliest settings for the Schur
 complement approximation. The `"mass_scaled"` approximation is
@@ -545,7 +545,7 @@ of the Schur complement.
 ### Example 2: "mass_scaled_diag_inv"
 
 In the second example, one assumes that the saddle-point solver is
-associated to the structure \cs_equation_param_t nammed `mom_eqp`. One
+associated to the structure \ref cs_equation_param_t nammed `mom_eqp`. One
 now considers a more elaborated approximation which needs to solve a
 system implying the Schur complement approximation.
 
@@ -555,7 +555,7 @@ system implying the Schur complement approximation.
 ### Example 3: "lumped_inv"
 
 In the third and last example, one assumes that the saddle-point solver is
-associated to the structure \cs_equation_param_t nammed `mom_eqp`. One
+associated to the structure \ref cs_equation_param_t nammed `mom_eqp`. One
 now considers a more elaborated approximation which needs to solve a
 system implying the Schur complement approximation and an additional
 system to build the Schur complement approximation (the system related

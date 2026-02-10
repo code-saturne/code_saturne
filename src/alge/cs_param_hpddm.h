@@ -52,8 +52,7 @@ BEGIN_C_DECLS
 
 /*! \struct cs_param_hpddm_t
  *  \brief Set of parameters to specify additional options to HPDDM
- *  For more advanced settings, one has to use the \ref cs_user_sles_hpddm_hook
- *  function. Please also refer to the HPDDM user guide for more details.
+ *  Please refer to the HPDDM user guide for more details.
  */
 
 typedef struct {

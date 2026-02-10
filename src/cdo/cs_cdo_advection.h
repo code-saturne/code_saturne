@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -196,7 +196,7 @@ typedef void
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Perform preprocessing such as the computation of the advection flux
  *         at the expected location in order to be able to build the advection
  *         matrix. Follow the prototype given by cs_cdofb_adv_open_hook_t
@@ -218,7 +218,7 @@ cs_cdofb_advection_open_default(const cs_equation_param_t   *eqp,
                                 cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Operation done after the matrix related to the advection term has
  *         been defined.
  *         Follow the prototype given by cs_cdofb_adv_close_hook_t
@@ -240,7 +240,7 @@ cs_cdofb_advection_close_default_scal(const cs_equation_param_t   *eqp,
                                       cs_sdm_t                    *adv);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Operation done after the matrix related to the advection term has
  *         been defined.
  *         Follow the prototype given by cs_cdofb_adv_close_hook_t
@@ -262,7 +262,7 @@ cs_cdofb_advection_close_default_vect(const cs_equation_param_t   *eqp,
                                       cs_sdm_t                    *adv);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Operation done after the matrix related to the advection term has
  *         been defined.
  *         Follow the prototype given by cs_cdofb_adv_close_hook_t
@@ -284,7 +284,7 @@ cs_cdofb_advection_close_exp_none_scal(const cs_equation_param_t   *eqp,
                                        cs_sdm_t                    *adv);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Operation done after the matrix related to the advection term has
  *         been defined.
  *         Follow the prototype given by cs_cdofb_adv_close_hook_t
@@ -306,7 +306,7 @@ cs_cdofb_advection_close_exp_none_vect(const cs_equation_param_t   *eqp,
                                        cs_sdm_t                    *adv);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Main function to build the cellwise advection operator for CDO-Fb
  *         schemes The local matrix related to this operator is stored in
  *         cb->loc
@@ -334,7 +334,7 @@ cs_cdofb_advection_no_diffusion(const cs_equation_param_t *eqp,
                                 cs_cell_builder_t         *cb);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief   Main function to build the cellwise advection operator for CDO
  *          face-based schemes.
  *          The local matrix related to this operator is stored in cb->loc
@@ -361,7 +361,7 @@ cs_cdofb_advection(const cs_equation_param_t *eqp,
                    cs_cell_builder_t         *cb);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the convection operator attached to a cell with a CDO
  *         face-based scheme
  *         - non-conservative formulation \f$ \vec{beta} \cdot \nabla \f$
@@ -389,7 +389,7 @@ cs_cdofb_advection_upwnoc(int                   dim,
                           cs_sdm_t             *adv);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the convection operator attached to a cell with a CDO
  *         face-based scheme
  *         - conservative formulation \f$ \nabla\cdot(\beta ) \f$
@@ -417,7 +417,7 @@ cs_cdofb_advection_upwcsv(int                        dim,
                           cs_sdm_t                  *adv);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the convection operator attached to a cell with a CDO
  *         face-based scheme
  *         - non-conservative formulation \f$ \vec{beta} \cdot \nabla \f$
@@ -445,7 +445,7 @@ cs_cdofb_advection_upwnoc_v8(int                   dim,
                              cs_sdm_t             *adv);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the convection operator attached to a cell with a CDO
  *         face-based scheme
  *         - conservative formulation \f$ \nabla\cdot(\beta ) \f$
@@ -473,7 +473,7 @@ cs_cdofb_advection_upwcsv_v8(int                   dim,
                              cs_sdm_t             *adv);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the convection operator attached to a cell with a CDO
  *         face-based scheme
  *         - non-conservative formulation beta.grad
@@ -501,7 +501,7 @@ cs_cdofb_advection_cennoc_v8(int                   dim,
                              cs_sdm_t             *adv);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the convection operator attached to a cell with a CDO
  *         face-based scheme
  *         - conservative formulation div(beta )
@@ -529,7 +529,7 @@ cs_cdofb_advection_cencsv_v8(int                   dim,
                              cs_sdm_t             *adv);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the convection operator attached to a cell with a CDO
  *         face-based scheme
  *         - non-conservative formulation beta.grad
@@ -557,7 +557,7 @@ cs_cdofb_advection_L0noc(int                   dim,
                          cs_sdm_t             *adv);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the convection operator attached to a cell with a CDO
  *         face-based scheme
  *         - conservative formulation div(beta )
@@ -585,7 +585,7 @@ cs_cdofb_advection_L0csv(int                   dim,
                          cs_sdm_t             *adv);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the convection operator attached to a cell with a CDO
  *         face-based scheme
  *         - non-conservative formulation beta.grad
@@ -612,23 +612,23 @@ cs_cdofb_advection_cennoc(int                   dim,
                           cs_sdm_t             *adv);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the convection operator attached to a cell with a CDO
- *         face-based scheme
- *         - conservative formulation div(beta )
- *         - centered scheme
- *         Rely on the work performed during R. Milani's PhD
+/*
+ * \brief Compute the convection operator attached to a cell with a CDO
+ *        face-based scheme
+ *        - conservative formulation div(beta )
+ *        - centered scheme
+ *        Rely on the work performed during R. Milani's PhD
  *
- *         A scalar-valued version is built. Only the enforcement of the
- *         boundary condition depends on the variable dimension.
- *         Remark: Usually the local matrix called hereafter adv is stored
- *         in cb->loc
+ *        A scalar-valued version is built. Only the enforcement of the
+ *        boundary condition depends on the variable dimension.
+ *        Remark: Usually the local matrix called hereafter adv is stored
+ *        in cb->loc
  *
- * \param[in]      dim     dimension of the variable (1 or 3)
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in]      csys    pointer to a cs_cell_sys_t structure
- * \param[in]      cb      pointer to a cs_cell_builder_t structure
- * \param[in, out] adv     pointer to a local matrix to build
+ * \param[in]      dim   dimension of the variable (1 or 3)
+ * \param[in]      cm    pointer to a cs_cell_mesh_t structure
+ * \param[in]      csys  pointer to a cs_cell_sys_t structure
+ * \param[in]      cb    pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv   pointer to a local matrix to build
  */
 /*----------------------------------------------------------------------------*/
 
@@ -640,7 +640,7 @@ cs_cdofb_advection_cencsv(int                   dim,
                           cs_sdm_t             *adv);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the convection operator attached to a cell with a CDO
  *         face-based scheme
  *         - conservative formulation \f$ \nabla\cdot(\beta ) \f$
@@ -668,7 +668,7 @@ cs_cdofb_advection_mixcsv(int                   dim,
                           cs_sdm_t             *adv);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the convection operator attached to a cell with a CDO
  *         face-based scheme
  *         - non-conservative formulation \f$ \nabla\cdot(\beta ) \f$
@@ -696,7 +696,7 @@ cs_cdofb_advection_mixnoc(int                   dim,
                           cs_sdm_t             *adv);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the convection operator attached to a cell with a CDO
  *         face-based scheme
  *         - conservative formulation \f$ \nabla\cdot(\beta ) \f$
@@ -724,7 +724,7 @@ cs_cdofb_advection_sgcsv(int                   dim,
                          cs_sdm_t             *adv);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute the convection operator attached to a cell with a CDO
  *         face-based scheme
  *         - non-conservative formulation \f$ \nabla\cdot(\beta ) \f$
@@ -752,7 +752,7 @@ cs_cdofb_advection_sgnoc(int                   dim,
                          cs_sdm_t             *adv);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief   Compute the convection operator attached to a cell with a CDO
  *          vertex-based scheme with an upwind scheme and a conservative
  *          formulation. The portion of upwinding relies on an evaluation
@@ -777,7 +777,7 @@ cs_cdo_advection_vb_upwcsv_wpty(const cs_equation_param_t   *eqp,
                                 cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief   Compute the convection operator attached to a cell with a CDO
  *          vertex-based scheme without diffusion and an upwind scheme and a
  *          conservative formulation is used.
@@ -801,7 +801,7 @@ cs_cdo_advection_vb_upwcsv(const cs_equation_param_t   *eqp,
                            cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief   Compute the convection operator attached to a cell with a CDO
  *          vertex-based scheme when a centered scheme and a conservative
  *          formulation is used.
@@ -825,7 +825,7 @@ cs_cdo_advection_vb_cencsv(const cs_equation_param_t   *eqp,
                            cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief   Compute the convection operator attached to a cell with a CDO
  *          vertex-based scheme when a mixed centered/upwind scheme with
  *          a conservative formulation is used.
@@ -849,7 +849,7 @@ cs_cdo_advection_vb_mcucsv(const cs_equation_param_t   *eqp,
                            cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief   Compute the convection operator attached to a cell with a CDO
  *          vertex-based scheme when a mixed centered/upwind scheme with
  *          a non-conservative formulation is used.
@@ -873,7 +873,7 @@ cs_cdo_advection_vb_mcunoc(const cs_equation_param_t   *eqp,
                            cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief   Compute the convection operator attached to a cell with a CDO
  *          vertex-based scheme with an upwind scheme and a conservative
  *          formulation. The portion of upwinding relies on an evaluation
@@ -898,7 +898,7 @@ cs_cdo_advection_vb_upwnoc_wpty(const cs_equation_param_t   *eqp,
                                 cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief   Compute the convection operator attached to a cell with a CDO
  *          vertex-based scheme without diffusion when an upwind scheme and a
  *          conservative formulation is used.
@@ -922,7 +922,7 @@ cs_cdo_advection_vb_upwnoc(const cs_equation_param_t   *eqp,
                            cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief   Compute the convection operator attached to a cell with a CDO
  *          vertex-based scheme when a centered scheme and a non-conservative
  *          formulation is used.
@@ -946,7 +946,7 @@ cs_cdo_advection_vb_cennoc(const cs_equation_param_t    *eqp,
                            cs_cell_builder_t            *cb);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Compute the convection operator attached to a cell with a CDO
  *        vertex+cell-based scheme when the advection field is cellwise
  *        constant
@@ -967,7 +967,7 @@ cs_cdo_advection_vcb_cw_cst(const cs_equation_param_t   *eqp,
                             cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief   Compute the convection operator attached to a cell with a CDO
  *          vertex+cell-based scheme
  *
@@ -987,7 +987,7 @@ cs_cdo_advection_vcb(const cs_equation_param_t   *eqp,
                      cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief   Compute the BC contribution for the convection operator
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
@@ -1008,7 +1008,7 @@ cs_cdo_advection_vb_bc(const cs_cell_mesh_t       *cm,
                        cs_cell_sys_t              *csys);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief   Compute the BC contribution for the convection operator with CDO
  *          V+C schemes
  *
@@ -1030,7 +1030,7 @@ cs_cdo_advection_vcb_bc(const cs_cell_mesh_t        *cm,
                         cs_cell_sys_t               *csys);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief   Compute the value of the upwinding coefficient in each cell knowing
  *          the related Peclet number
  *

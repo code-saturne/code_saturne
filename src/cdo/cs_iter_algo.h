@@ -173,6 +173,9 @@ typedef struct {
 typedef struct {
 
   /*!
+   * @name Main parameters
+   * @{
+   *
    * \var param
    * Set of parameters driving the behavior of the Anderson acceleration
    */

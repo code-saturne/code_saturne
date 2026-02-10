@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -251,24 +251,24 @@ cs_basis_func_get_poly_order(const cs_basis_func_t   *bf)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Allocate a cs_basis_func_t structure
  *
  * \param[in]  flag     metadata related to the way of building basis functions
- * \param[in]  k        order
- * \param[in]  dim      2 or 3 geometrical dimension
+ * \param[in]  k        polynomial order
+ * \param[in]  dim      2 or 3 w.r.t. the geometrical dimension
  *
  * \return a pointer to the new cs_basis_func_t
  */
 /*----------------------------------------------------------------------------*/
 
 cs_basis_func_t *
-cs_basis_func_create(cs_flag_t      flag,
-                     short int      k,
-                     short int      dim);
+cs_basis_func_create(cs_flag_t  flag,
+                     short int  k,
+                     short int  dim);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Allocate a cs_basis_func_t structure which is associated to an
  *         existing set of basis functions.
  *         Up to now, only cell basis functions are handled.
@@ -285,7 +285,7 @@ cs_basis_func_t *
 cs_basis_func_grad_create(const cs_basis_func_t   *ref);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Copy the center and the different axis from the reference basis
  *         Up to now, only cell basis functions are handled.
  *
@@ -299,7 +299,7 @@ cs_basis_func_copy_setup(const cs_basis_func_t   *ref,
                          cs_basis_func_t         *rcv);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Free a cs_basis_func_t structure
  *
  * \param[in, out]  pbf   pointer to the cs_basis_func_t structure to free
@@ -312,7 +312,7 @@ cs_basis_func_t *
 cs_basis_func_free(cs_basis_func_t  *pbf);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Set options for basis functions when using HHO schemes
  *
  * \param[in]  face_flag    options related to face basis functinos
@@ -325,7 +325,7 @@ cs_basis_func_set_hho_flag(cs_flag_t   face_flag,
                            cs_flag_t   cell_flag);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Get options for basis functions when using HHO schemes
  *
  * \param[out] face_flag   pointer to options related to face basis functinos
@@ -338,7 +338,7 @@ cs_basis_func_get_hho_flag(cs_flag_t   *face_flag,
                            cs_flag_t   *cell_flag);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Dump a cs_basis_func_t structure
  *
  * \param[in]  pbf   pointer to the cs_basis_func_t structure to dump
@@ -349,7 +349,7 @@ void
 cs_basis_func_dump(const cs_basis_func_t  *pbf);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Print a cs_basis_func_t structure
  *         Print into the file f if given otherwise open a new file named
  *         fname if given otherwise print into the standard output

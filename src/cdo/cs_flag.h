@@ -57,6 +57,7 @@ BEGIN_C_DECLS
  * \def CS_FLAG_SOLID_CELL
  * \brief (= 8) cell attached to a solid zone during the calculation
  *
+ * @}
  */
 
 #define CS_FLAG_BOUNDARY_CELL_BY_FACE     (1 << 0)
@@ -75,13 +76,14 @@ BEGIN_C_DECLS
  * \def CS_FLAG_INITIALIZATION
  * \brief (value = 2) This is the first time that the update is called so it is
  *        also an initialization step
- */
+ *
+ * @}
+*/
 
 #define CS_FLAG_CURRENT_TO_PREVIOUS       (1 << 0)
 #define CS_FLAG_INITIALIZATION            (1 << 1)
 
 /*!
- * @}
  * @name Flag related to the way a CDO system is built
  * @{
  */
@@ -393,7 +395,9 @@ cs_eflag_test(cs_eflag_t flag_to_check,
 /*!
  * \brief Retrieve the label associated to a location flag
  *
- * \return a string
+ * \param[in] loc  flag related to the location of a mesh entitiy
+ *
+ * \return a string associated to the given location
  */
 /*----------------------------------------------------------------------------*/
 

@@ -393,8 +393,6 @@ typedef struct {
 
   cs_iter_algo_param_aac_t      anderson_param;
 
-  /*! @} */
-
   /*! \var delta_thermal_tolerance
    * Value under which one considers that the thermal equation is converged
    * \f$ max_{c \in Cells} |T_c - T_{ref}|/|T_{ref}| < \epsilon\f$

@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -2291,21 +2291,21 @@ cs_cdofb_advection_L0csv(int                   dim,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the convection operator attached to a cell with a CDO
- *         face-based scheme
- *         - non-conservative formulation beta.grad
- *         - centered scheme
+ * \brief Compute the convection operator attached to a cell with a CDO
+ *        face-based scheme
+ *        - non-conservative formulation beta.grad
+ *        - centered scheme
  *
- *         A scalar-valued version is built. Only the enforcement of the
- *         boundary condition depends on the variable dimension.
- *         Remark: Usually the local matrix called hereafter adv is stored
- *         in cb->loc
+ *        A scalar-valued version is built. Only the enforcement of the
+ *        boundary condition depends on the variable dimension.
+ *        Remark: Usually the local matrix called hereafter adv is stored
+ *        in cb->loc
  *
- * \param[in]      dim     dimension of the variable (1 or 3)
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in]      csys    pointer to a cs_cell_sys_t structure
- * \param[in]      cb      pointer to a cs_cell_builder_t structure
- * \param[in, out] adv     pointer to a local matrix to build
+ * \param[in]      dim   dimension of the variable (1 or 3)
+ * \param[in]      cm    pointer to a cs_cell_mesh_t structure
+ * \param[in]      csys  pointer to a cs_cell_sys_t structure
+ * \param[in]      cb    pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv   pointer to a local matrix to build
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2326,21 +2326,22 @@ cs_cdofb_advection_cennoc(int                   dim,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the convection operator attached to a cell with a CDO
- *         face-based scheme
- *         - conservative formulation div(beta )
- *         - centered scheme
+ * \brief Compute the convection operator attached to a cell with a CDO
+ *        face-based scheme
+ *        - conservative formulation div(beta )
+ *        - centered scheme
+ *        Rely on the work performed during R. Milani's PhD
  *
- *         A scalar-valued version is built. Only the enforcement of the
- *         boundary condition depends on the variable dimension.
- *         Remark: Usually the local matrix called hereafter adv is stored
- *         in cb->loc
+ *        A scalar-valued version is built. Only the enforcement of the
+ *        boundary condition depends on the variable dimension.
+ *        Remark: Usually the local matrix called hereafter adv is stored
+ *        in cb->loc
  *
- * \param[in]      dim     dimension of the variable (1 or 3)
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in]      csys    pointer to a cs_cell_sys_t structure
- * \param[in]      cb      pointer to a cs_cell_builder_t structure
- * \param[in, out] adv     pointer to a local matrix to build
+ * \param[in]      dim   dimension of the variable (1 or 3)
+ * \param[in]      cm    pointer to a cs_cell_mesh_t structure
+ * \param[in]      csys  pointer to a cs_cell_sys_t structure
+ * \param[in]      cb    pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv   pointer to a local matrix to build
  */
 /*----------------------------------------------------------------------------*/
 

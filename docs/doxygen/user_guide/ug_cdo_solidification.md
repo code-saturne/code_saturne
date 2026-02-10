@@ -41,7 +41,7 @@ The solidification module described in this page relies on CDO schemes
 and especially, CDO face-based schemes.
 
 To set-up a computation taking into account the solidification
-process, one has to update the \ref cs_user_parameters.c user source
+process, one has to update the \ref cs_user_parameters.cpp user source
 file and edit at least the user-defined functions \ref cs_user_model
 and \ref cs_user_finalize_setup in simple cases. In more complex
 cases, editing the function \ref cs_user_parameters and defining

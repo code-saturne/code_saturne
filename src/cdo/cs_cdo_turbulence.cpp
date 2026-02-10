@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1009,16 +1009,16 @@ cs_turb_compute_k_eps(const cs_mesh_t            *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Function used to define the exchange coefficients for
- *         tangential and normal components.
+ * \brief Function used to define the exchange coefficients for tangential and
+ *        normal components.
  *
- * \param[in]      eqp         pointer to a cs_equation_param_t
- * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      nu          laminar kinematic viscosity
- * \param[in]      k           turbulent kinetic energy
- * \param[in]      hfc         distance from cell center to the wall
- * \param[in]      uct         norm of tangential components of cell velocity
- * \param[in, out] retval      exchange coefficients result
+ * \param[in]      eqp  pointer to a cs_equation_param_t
+ * \param[in]      nu   laminar kinematic viscosity
+ * \param[in]      k    turbulent kinetic energy
+ * \param[in]      hfc  distance from cell center to the wall
+ * \param[in]      uct  norm of tangential components of cell velocity
+ * \param[in]      uft  norm of tangential components of face velocity
+ * \param[in, out] res  value of the resulting exchange coefficients
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1035,13 +1035,9 @@ cs_turb_compute_wall_bc_coeffs(const cs_equation_param_t  *eqp,
 
   double re = sqrt(k)*hfc/nu;
   double g = exp(-re/11.);
-
   double uk = sqrt((1.-g)*sqrt(cs_turb_cmu)*k + g*nu*uct/hfc);
-
   double yplus = hfc*uk/nu;
-
   double ustar = uct/(log(yplus)/cs_turb_xkappa + cs_turb_cstlog);
-
   double h_t = uk*ustar/uft;
 
   if (yplus > ypluli) /* In the logarithm zone */
@@ -1052,10 +1048,11 @@ cs_turb_compute_wall_bc_coeffs(const cs_equation_param_t  *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Return true if a wall function is used for turbulence.
+ * \brief Return true if a wall function is used for turbulence.
  *
- * \param[in]   turbulence       pointer to a cs_turbulence_param_t
- * \param[out]  retval          use or nor a wall function
+ * \param[in] turbulence  pointer to a cs_turbulence_param_t
+ *
+ *\return true or false
  */
 /*----------------------------------------------------------------------------*/
 

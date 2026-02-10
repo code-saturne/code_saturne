@@ -125,9 +125,11 @@ const cs_eflag_t  cs_flag_need_pfc =
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Retrieve the label associated to a location flag
+ * \brief Retrieve the label associated to a location flag
  *
- * \return a string
+ * \param[in] loc  flag related to the location of a mesh entitiy
+ *
+ * \return a string associated to the given location
  */
 /*----------------------------------------------------------------------------*/
 

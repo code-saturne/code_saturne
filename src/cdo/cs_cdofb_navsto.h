@@ -107,6 +107,8 @@ typedef enum {
 typedef struct {
 
   /*!
+   * @name Properties
+   * @{
    * \var rho_c
    * Value of the mass density for the current cell
    *

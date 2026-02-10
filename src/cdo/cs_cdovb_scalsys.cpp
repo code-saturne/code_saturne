@@ -160,7 +160,8 @@ typedef int
 
 struct _cs_cdovb_scalsys_t {
 
-  /* @name General information
+  /*!
+   * @name General information
    * @{
    *
    * \var n_dofs

@@ -228,10 +228,13 @@ typedef enum {
 
   CS_GWF_ENFORCE_DIVERGENCE_FREE         = 1<< 8   /* =  256 */
 
+  /*!
+   * @}
+   */
+
 } cs_gwf_model_bit_t;
 
 /*!
- * @}
  * @name Soil modelling
  * @{
  *

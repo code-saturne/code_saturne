@@ -87,7 +87,9 @@ BEGIN_C_DECLS
  * \def CS_SOLIDIFICATION_ADVANCED_ANALYSIS
  * \brief Activate a set of post-processing (Advanced usage. Only for the
  * understanding of the solidification process)
-*/
+ *
+ * @}
+ */
 
 #define CS_SOLIDIFICATION_POST_CELL_STATE             (1 << 0) /* =   1 */
 #define CS_SOLIDIFICATION_POST_ENTHALPY               (1 << 1) /* =   2 */
@@ -127,6 +129,15 @@ BEGIN_C_DECLS
  * \brief Option related to the PATH strategy.
  *        Introduce a reaction term and a source term in order to remain on
  *        the eutectic plateau.
+ *
+ * @}
+ */
+
+/*!
+ * @name Flags associated to the binary alloy model
+ * Automatically set by the code if user functions are used
+ * The following flags are set when calling \ref cs_solidification_set_functions
+ * @{
  */
 
 #define CS_SOLIDIFICATION_USE_ENTHALPY_VARIABLE             (1 << 0) /*=    1 */
@@ -135,8 +146,7 @@ BEGIN_C_DECLS
 #define CS_SOLIDIFICATION_USE_EXTRAPOLATION                 (1 << 3) /*=    8 */
 #define CS_SOLIDIFICATION_WITH_PENALIZED_EUTECTIC           (1 << 4) /*=   16 */
 
-/* Automatically set by the code if user functions are used
- * The following flags are set when calling \ref cs_solidification_set_functions
+/*
  *
  * \def CS_SOLIDIFICATION_BINARY_ALLOY_M_FUNC
  * \brief the update of the forcing term (penalization) in the momentum equation
@@ -152,6 +162,7 @@ BEGIN_C_DECLS
  * \def CS_SOLIDIFICATION_BINARY_ALLOY_T_FUNC
  * \brief the update of the thermal source term is defined using a user function
  */
+
 #define CS_SOLIDIFICATION_BINARY_ALLOY_M_FUNC               (1 << 7) /*=  128 */
 #define CS_SOLIDIFICATION_BINARY_ALLOY_C_FUNC               (1 << 8) /*=  256 */
 #define CS_SOLIDIFICATION_BINARY_ALLOY_G_FUNC               (1 << 9) /*=  512 */
@@ -976,12 +987,12 @@ cs_solidification_init_values(const cs_mesh_t              *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve equations related to the solidification module
+ * \brief Solve equations related to the solidification module
  *
- * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      connect    pointer to a cs_cdo_connect_t structure
- * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]      time_step  pointer to a cs_time_step_t structure
+ * \param[in] mesh       pointer to a cs_mesh_t structure
+ * \param[in] connect    pointer to a cs_cdo_connect_t structure
+ * \param[in] quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in] time_step  pointer to a cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 

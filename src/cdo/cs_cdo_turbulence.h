@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -207,6 +207,7 @@ struct _cs_turbulence_t {
   /*!
    * @}
    * @name Main properties related to the turbulence modelling
+   * @{
    */
 
   /*! \var rho
@@ -313,7 +314,7 @@ struct _cs_turbulence_t {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Allocate the structure storing the set of parameters for the
  *         turbulence modelling
  *
@@ -325,7 +326,7 @@ cs_turbulence_param_t *
 cs_turbulence_param_create(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Allocate the structure managing the turbulence modelling
  *
  * \param[in] tbp       pointer to a \ref cs_turbulence_param_t structure
@@ -338,7 +339,7 @@ cs_turbulence_t *
 cs_turbulence_create(cs_turbulence_param_t    *tbp);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Free the structure managing the turbulence modelling
  *
  * \param[in, out]  p_turb_struct   pointer to the structure to free
@@ -349,7 +350,7 @@ void
 cs_turbulence_free(cs_turbulence_t   **p_turb_struct);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Initialize the structure managing the turbulence modelling
  *
  * \param[in, out]  tbs     pointer to the structure to initialize
@@ -362,7 +363,7 @@ cs_turbulence_init_setup(cs_turbulence_t     *tbs,
                          cs_equation_t       *mom_eq);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Finalize the setup of the turbulence modelling and especially the
  *         equations/properties and other related quantities
  *
@@ -382,7 +383,7 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
                              cs_turbulence_t            *tbs);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Indicate whether use Legacy solved turbulent viscosity
  * \param[in, out] tbs        pointer to the turbulence main structure
  * \param[in]      is_shared  boolean parameter to set
@@ -393,7 +394,7 @@ void
 cs_turbulence_set_shared_from_fv(cs_turbulence_t *tbs, bool is_shared);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Initialize the values of quantities related to a turbulence model.
  *
  * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
@@ -412,7 +413,7 @@ cs_turbulence_init_values(const cs_mesh_t             *mesh,
                           cs_turbulence_t             *tbs);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Allocate and initialize the context structure related to the
  *         k-epsilon turbulence model
  *
@@ -426,7 +427,7 @@ void *
 cs_turb_init_k_eps_context(const cs_turb_model_t      *tbm);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Free the context structure related to the k-epsilon turbulence model
  *
  * \param[in, out]  tbc   pointer to a structure context cast on-the-fly
@@ -439,7 +440,7 @@ void *
 cs_turb_free_k_eps_context(void     *tbc);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Compute for the current time step the new state for the turbulence
  *         model. This means that all related equations are built and then
  *         solved.
@@ -461,7 +462,7 @@ cs_turb_compute_k_eps(const cs_mesh_t            *mesh,
 
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Update for the current time step the new state for the turbulence
  *         model. This is used to update the turbulent viscosity.
  *
@@ -481,7 +482,7 @@ cs_turb_update_k_eps(const cs_mesh_t              *mesh,
                      const cs_turbulence_t        *tbs);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Update for the current time step the new state for the turbulence
  *         model. directly update the turbulent viscosity from Legacy.
  *
@@ -501,18 +502,17 @@ cs_turb_update_shared_legacy(const cs_mesh_t           *mesh,
                              const cs_turbulence_t     *tbs);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief  Function used to define the exchange coefficients for
- *         tangential and normal components.
+/*
+ * \brief Function used to define the exchange coefficients for tangential and
+ *        normal components.
  *
- * \param[in]      eqp         pointer to a cs_equation_param_t
- * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      nu          laminar kinematic viscosity
- * \param[in]      k           turbulent kinetic energy
- * \param[in]      hfc         distance from cell center to the wall
- * \param[in]      uct         norm of tangential components of cell velocity
- * \param[in]      uft         norm of tangential components of face velocity
- * \param[in, out] retval      exchange coefficients result
+ * \param[in]      eqp  pointer to a cs_equation_param_t
+ * \param[in]      nu   laminar kinematic viscosity
+ * \param[in]      k    turbulent kinetic energy
+ * \param[in]      hfc  distance from cell center to the wall
+ * \param[in]      uct  norm of tangential components of cell velocity
+ * \param[in]      uft  norm of tangential components of face velocity
+ * \param[in, out] res  value of the resulting exchange coefficients
  */
 /*----------------------------------------------------------------------------*/
 
@@ -526,18 +526,19 @@ cs_turb_compute_wall_bc_coeffs(const cs_equation_param_t  *eqp,
                                cs_real_t                  *res);
 
 /*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return true if a wall function is used for turbulence.
+/*
+ * \brief Return true if a wall function is used for turbulence.
  *
- * \param[in]   turbulence       pointer to a cs_turbulence_param_t
- * \param[out]  retval          use or nor a wall function
+ * \param[in] turbulence  pointer to a cs_turbulence_param_t
+ *
+ *\return true or false
  */
 /*----------------------------------------------------------------------------*/
 
 bool
 cs_turb_wall_functions_is_activated(const cs_turbulence_param_t *turbulence);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

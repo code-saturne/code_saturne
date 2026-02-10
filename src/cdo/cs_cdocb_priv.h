@@ -95,6 +95,12 @@ typedef int
 
 struct _cs_cdocb_t {
 
+  /*!
+   * @name Main parameters
+   * Main members of the CDO cell-based structure
+   * @{
+   */
+
   /* Ids related to the variable field and to the boundary flux field */
 
   int          var_field_id;

@@ -1,7 +1,7 @@
 <!--
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2024 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -50,11 +50,11 @@ The activation of the NavSto module is done thanks to the function \ref cs_navst
 For instance, here are two examples to activate and set the main parameters for the
 NavSto module
 
-\snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_activate
+\snippet cs_user_parameters-cdo-navsto.cpp param_cdo_navsto_activate
 
 or
 
-\snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_activate2
+\snippet cs_user_parameters-cdo-navsto.cpp param_cdo_navsto_activate2
 
 The first parameter is the structure managing the domain boundaries. An example
 of settings for the domain boundaries is described [here](@ref ug_cdo_sec_domain_boundaries).
@@ -126,11 +126,11 @@ In the case of the NavSto module, this is done as follows (One does not access
 to the equation directly since it depends on the way the velocity/pressure
 coupling is done).
 
-\snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_bc1
+\snippet cs_user_parameters-cdo-navsto.cpp param_cdo_navsto_bc1
 
 where the function `_vel_def` is defined as follows
 
-\snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_vel_function
+\snippet cs_user_parameters-cdo-navsto.cpp param_cdo_navsto_vel_function
 
 Definition of source terms
 ---------------------
@@ -139,11 +139,11 @@ Since the equation on which this source term applies, depends on the
 choice of the velocity-pressure algorithm, the way to proceed varies
 slightly of the way used on a user-defined equation.
 
-\snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_st1
+\snippet cs_user_parameters-cdo-navsto.cpp param_cdo_navsto_st1
 
 where the function `_src_def` is defined as follows
 
-\snippet cs_user_parameters-cdo-navsto.c param_cdo_navsto_st_function
+\snippet cs_user_parameters-cdo-navsto.cpp param_cdo_navsto_st_function
 
 
 Settings done in cs_user_parameters() {#cs_ug_cdo_navsto_set_param}

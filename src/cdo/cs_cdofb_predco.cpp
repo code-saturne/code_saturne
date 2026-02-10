@@ -123,6 +123,7 @@ typedef struct {
   /*!
    * @name Main field variables
    * Fields for every main variable of the equation. Got from cs_navsto_system_t
+   * @{
    */
 
   /*! \var velocity
