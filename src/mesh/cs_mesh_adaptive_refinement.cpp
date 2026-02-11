@@ -245,7 +245,6 @@ _realloc_and_update_field_refinement(cs_field_t        *f,
     // We delete old ptr, and replace by the new one
     delete f->_vals[i];
     f->_vals[i] = new_val_i_ptr;
-    f->vals[i] = f->_vals[i]->data();
   }
 
   /* For internal faces or vertices fields, new elements are created
@@ -311,10 +310,8 @@ _realloc_and_update_field_refinement(cs_field_t        *f,
     }
   }
 
-  /* Update val & val_pre */
-  f->val = f->_vals[0]->data();
-  if (f->n_time_vals > 1)
-    f->val_pre = f->_vals[1]->data();
+  /* Update public pointers (vals[x], val & val_pre) */
+  f->update_public_pointers();
 }
 
 /*----------------------------------------------------------------------------
@@ -456,13 +453,10 @@ _realloc_and_update_field_coarsening(cs_field_t      *f,
     // We delete old ptr, and replace by new one
     delete f->_vals[i];
     f->_vals[i] = new_val_i_ptr;
-    f->vals[i] = f->_vals[i]->data();
   }
 
-  /* Update val & val_pre */
-  f->val = f->_vals[0]->data();
-  if (f->n_time_vals > 1)
-    f->val_pre = f->_vals[1]->data();
+  /* Update public pointers (vals[x], val & val_pre) */
+  f->update_public_pointers();
 }
 
 /*----------------------------------------------------------------------------
