@@ -4983,6 +4983,25 @@ cs_field_t::get_key_str
 
 /*----------------------------------------------------------------------------*/
 
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 2D span view of field values (n_vals, dim), even if the
+ *        field is a scalar, in which case dim = 1.
+ *
+ * \return cs_span_2d<cs_real_t> view of field values
+ */
+/*--------------------------------------------------------------------------*/
+
+cs_span_2d<cs_real_t>
+cs_field_t::view
+(
+  const int time_id /*!<[in] time value id to get. 0 for val, 1 for val_pre */
+) const
+{
+  assert(time_id < this->n_time_vals && time_id >= 0);
+  return this->_vals[time_id]->view();
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return a 1D span view of field values. If the field is not a scalar
@@ -5056,6 +5075,32 @@ cs_field_t::get_vals_t
    * with correct dimensions.
    */
   return this->_vals[time_id]->view();
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 3D span view of field values. The view is of dimensions
+ * (ns_fields, n_vals, dim)
+ *
+ * \return cs_span_3d<cs_real_t> view of ns field values.
+ */
+/*--------------------------------------------------------------------------*/
+
+cs_span_3d<cs_real_t>
+cs_field_t::ns_view
+(
+  const int time_id /*!<[in] time value id to get. 0 for val, 1 for val_pre */
+) const
+{
+  assert(time_id < this->n_time_vals && time_id >= 0);
+
+  if (this->_ns_vals == nullptr && this->ns_owner == this->id)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not associated to a multidimensional "
+                "series.\n"),
+              __func__, this->name);
+
+  return  _fields[this->ns_owner]->_ns_vals[time_id]->view();
 }
 
 /*----------------------------------------------------------------------------*/

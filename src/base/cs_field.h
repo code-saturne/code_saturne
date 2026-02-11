@@ -265,6 +265,12 @@ typedef struct {
   const char *
   get_key_str(const char  *key);
 
+  cs_span_2d<cs_real_t>
+  view
+  (
+    const int time_id = 0
+  ) const;
+
   cs_span<cs_real_t>
   get_vals_s
   (
@@ -285,6 +291,12 @@ typedef struct {
 
   cs_alloc_mode_t
   get_vals_alloc_mode
+  (
+    const int time_id = 0
+  ) const;
+
+  cs_span_3d<cs_real_t>
+  ns_view
   (
     const int time_id = 0
   ) const;
