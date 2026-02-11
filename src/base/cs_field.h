@@ -198,6 +198,10 @@ typedef struct {
 
   bool                    is_owner;     /* Ownership flag for values */
 
+  int                     ns_size;      /* Multidim series size */
+  int                     ns_idx;       /* Multidim series index of field */
+  int                     ns_owner;     /* Multidim series owner id */
+
 #if defined(__cplusplus)
 
   /* Setter and getter methods for key-based values
@@ -285,11 +289,41 @@ typedef struct {
     const int time_id = 0
   ) const;
 
+  cs_span_2d<cs_real_t>
+  get_ns_vals_s
+  (
+    const int time_id = 0
+  ) const;
+
+  cs_span_3d<cs_real_t>
+  get_ns_vals_v
+  (
+    const int time_id = 0
+  ) const;
+
+  cs_span_3d<cs_real_t>
+  get_ns_vals_t
+  (
+    const int time_id = 0
+  ) const;
+
   void
   update_public_pointers(void);
 
   void
-  update_size(void);
+  update_size
+  (
+    const int time_id = -1
+  );
+
+  void
+  clear
+  (
+    const int time_id = -1
+  );
+
+  void
+  update_sub_fields_mapping(void) const;
 
   void
   map_values
@@ -299,6 +333,84 @@ typedef struct {
   );
 
   cs_array_2d<cs_real_t> **_vals;
+  cs_array_3d<cs_real_t> **_ns_vals;
+
+public:
+
+  CS_F_HOST_DEVICE
+  void
+  set_ns_owner
+  (
+    int owner_id
+  )
+  {
+    ns_owner = owner_id;
+  }
+
+  CS_F_HOST_DEVICE
+  void
+  set_ns_parameters
+  (
+    const int series_size,
+    const int series_idx,
+    const int series_owner
+  )
+  {
+    ns_size  = series_size;
+    ns_idx   = series_idx;
+    ns_owner = series_owner;
+  }
+
+  CS_F_HOST_DEVICE
+  inline
+  bool
+  owner() const
+  {
+    return (is_owner && id == ns_owner);
+  }
+
+  CS_F_HOST_DEVICE
+  inline
+  bool
+  is_series_owner() const
+  {
+    return (ns_owner == id);
+  }
+
+  CS_F_HOST_DEVICE
+  inline
+  bool
+  has_sub_fields() const
+  {
+    return (ns_size > 1 && is_series_owner());
+  }
+
+  CS_F_HOST_DEVICE
+  inline
+  bool
+  is_sub_field() const
+  {
+    return (ns_size > 1 && !is_series_owner());
+  }
+
+  CS_F_HOST_DEVICE
+  inline
+  bool
+  is_sub_field_of
+  (
+    const int owner_id
+  ) const
+  {
+    return (is_sub_field() && ns_owner == owner_id);
+  }
+
+  CS_F_HOST
+  void
+  initialize_sub_fields(void);
+
+  CS_F_HOST
+  void
+  map_to_ns_data(void);
 
 #endif
 
@@ -473,6 +585,16 @@ cs_field_set_n_time_vals(cs_field_t  *f,
 
 void
 cs_field_allocate_values(cs_field_t  *f);
+
+/*----------------------------------------------------------------------------
+ * Remap arrays for sub-field values.
+ *
+ * parameters:
+ *   owner_id <-- id of owner field structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_field_remap_sub_fields_data(const int owner_id);
 
 /*----------------------------------------------------------------------------
  * Map existing value arrays to field descriptor.

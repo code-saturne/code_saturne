@@ -1735,9 +1735,16 @@ cs_turbomachinery_reinit_i_face_fields(void)
     cs_field_t *f = cs_field_by_id(f_id);
 
     if (   cs_mesh_location_get_type(f->location_id)
-        == CS_MESH_LOCATION_INTERIOR_FACES)
+        == CS_MESH_LOCATION_INTERIOR_FACES) {
       cs_field_allocate_values(f);
+
+      /* if sub-fields, update their pointers  */
+      if (f->has_sub_fields())
+        cs_field_remap_sub_fields_data(f->id);
+    }
   }
+
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1761,53 +1768,84 @@ cs_turbomachinery_resize_cell_fields(void)
 
     cs_field_t *f = cs_field_by_id(f_id);
 
-    if (   f->location_id == CS_MESH_LOCATION_CELLS
-        && f->is_owner) {
+    if (f->location_id == CS_MESH_LOCATION_CELLS) {
 
       /* Ghost cell sizes may change, but the number of main cells
          is unchanged, so a simple reallocation will do */
 
-      f->update_size();
+      if (f->owner()) {
+        f->update_size();
 
-      for (int kk = 0; kk < f->n_time_vals; kk++) {
+        for (int kk = 0; kk < f->n_time_vals; kk++) {
 
-        if (halo != nullptr) {
+          if (halo != nullptr) {
 
-          cs_halo_sync_untyped(halo,
-                               CS_HALO_EXTENDED,
-                               f->dim*sizeof(cs_real_t),
-                               f->vals[kk]);
-          if (f->dim == 3)
-            cs_halo_perio_sync_var_vect(halo,
-                                        CS_HALO_EXTENDED,
-                                        f->vals[kk],
-                                        f->dim);
+            cs_halo_sync_untyped(halo,
+                                 CS_HALO_EXTENDED,
+                                 f->dim*sizeof(cs_real_t),
+                                 f->vals[kk]);
+            if (f->dim == 3)
+              cs_halo_perio_sync_var_vect(halo,
+                                          CS_HALO_EXTENDED,
+                                          f->vals[kk],
+                                          f->dim);
+          }
         }
+
+        /* Remap sub-fields pointers */
+        if (f->has_sub_fields()) {
+          cs_field_remap_sub_fields_data(f->id);
+
+          if (halo != nullptr) {
+            for (int sf_id = 0; sf_id < n_fields; sf_id++) {
+              cs_field_t *sf = cs_field_by_id(sf_id);
+              if (sf->is_sub_field_of(f_id)) {
+                for (int kk = 0; kk < sf->n_time_vals; kk++) {
+                  cs_halo_sync_untyped(halo,
+                                       CS_HALO_EXTENDED,
+                                       sf->dim*sizeof(cs_real_t),
+                                       sf->vals[kk]);
+                  if (sf->dim == 3)
+                    cs_halo_perio_sync_var_vect(halo,
+                                                CS_HALO_EXTENDED,
+                                                sf->vals[kk],
+                                                sf->dim);
+                }
+              }
+            }
+          }
+        }
+
       }
 
-      if (f->grad != nullptr) {
+      /* grad not yet handled as cs_array => Hence it is based
+       * on "is_owner" and not "owner()"
+       */
+      if (f->is_owner) {
+        if (f->grad != nullptr) {
 
-        CS_REALLOC(f->grad, _n_cells*f->dim*3, cs_real_t);
+          CS_REALLOC(f->grad, _n_cells*f->dim*3, cs_real_t);
 
-        if (halo != nullptr) {
-          cs_halo_sync_var_strided(halo,
-                                   CS_HALO_EXTENDED,
-                                   f->grad,
-                                   3*f->dim);
+          if (halo != nullptr) {
+            cs_halo_sync_var_strided(halo,
+                                     CS_HALO_EXTENDED,
+                                     f->grad,
+                                     3*f->dim);
 
-          if (f->dim == 1)
-            cs_halo_perio_sync_var_vect(halo,
-                                        CS_HALO_EXTENDED,
-                                        f->grad,
-                                        3);
-          else if (f->dim == 3)
-            cs_halo_perio_sync_var_tens(halo,
-                                        CS_HALO_EXTENDED,
-                                        f->grad);
-          else if (f->dim == 6)
-            cs_halo_perio_sync_var_sym_tens_grad(halo,
-                                                 CS_HALO_EXTENDED,
-                                                 f->grad);
+            if (f->dim == 1)
+              cs_halo_perio_sync_var_vect(halo,
+                                          CS_HALO_EXTENDED,
+                                          f->grad,
+                                          3);
+            else if (f->dim == 3)
+              cs_halo_perio_sync_var_tens(halo,
+                                          CS_HALO_EXTENDED,
+                                          f->grad);
+            else if (f->dim == 6)
+              cs_halo_perio_sync_var_sym_tens_grad(halo,
+                                                   CS_HALO_EXTENDED,
+                                                   f->grad);
+          }
         }
       }
     }

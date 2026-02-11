@@ -493,6 +493,12 @@ _field_create(const char   *name,
 
   f->is_owner = true;
 
+  /* Multidimensional series parameters */
+  f->ns_size = 1;
+  f->ns_idx  = 0;
+  f->ns_owner = field_id;
+  f->_ns_vals = nullptr;
+
   /* Mark key values as not set */
 
   for (key_id = 0; key_id < _n_keys_max; key_id++) {
@@ -1756,24 +1762,19 @@ cs_field_set_n_time_vals(cs_field_t  *f,
   if (f->val != nullptr) {
     if (n_time_vals_ini > _n_time_vals) {
       assert(n_time_vals_ini == 2 && _n_time_vals == 1);
-      if (f->is_owner)
-        f->_vals[1]->clear(); // Free internal data
 
-      f->val_pre = nullptr;
-      f->vals[1] = nullptr;
+      // clear() method updates public pointers as well
+      if (f->is_owner)
+        f->clear(1);
     }
     else { /* if (n_time_vals_ini < _n_time_vals) */
       if (f->is_owner) {
-        const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
-        f->_vals[1]->reshape(n_elts[2], f->dim);
+        f->update_size(1); /* Update size of vals[1] or ns_vals[1] */
 
-        /* Use host_context in this part to avoid access by GPU (too soon...) */
+        /* Initialize to 0. Public pointers are updated in "update_size" */
         cs_dispatch_context ctx;
         f->_vals[1]->zero(ctx);
         ctx.wait();
-
-        f->vals[1] = f->_vals[1]->data();
-        f->val_pre = f->_vals[1]->data();
       }
     }
   }
@@ -1806,6 +1807,26 @@ cs_field_allocate_values(cs_field_t  *f)
     }
     ctx.wait();
 
+  }
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Update data pointers of sub-fields of a given field
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_field_remap_sub_fields_data
+(
+  const int owner_id
+)
+{
+  for (int i = 0; i < _n_fields; i++) {
+    cs_field_t *f = _fields[i];
+    if (f->is_sub_field_of(owner_id)) {
+      f->map_to_ns_data();
+    }
   }
 }
 
@@ -2261,9 +2282,14 @@ cs_field_destroy_all(void)
         for (int ii = 0; ii < f->n_time_vals; ii++)
           delete f->_vals[ii];
       }
+      if (f->_ns_vals != nullptr) {
+        for (int ii = 0; ii < f->n_time_vals; ii++)
+          delete f->_ns_vals[ii];
+      }
     }
     CS_FREE(f->vals);
     CS_FREE(f->_vals);
+    CS_FREE(f->_ns_vals);
 
     if (f->grad != nullptr)
       CS_FREE(f->grad);
@@ -2329,17 +2355,28 @@ cs_field_allocate_or_map_all(void)
 {
   int i;
 
+  /* First loop for owner fields */
   for (i = 0; i < _n_fields; i++) {
     cs_field_t  *f = _fields[i];
-    if (f->is_owner)
-      cs_field_allocate_values(f);
-    else {
-      if (f->val == nullptr)
+    if (f->owner()) {
+      f->initialize_sub_fields();
+      cs_field_allocate_values(f); /* Only allocates if owner */
+    }
+  }
+
+  /* Second loop for mapped sub-fields */
+  for (i = 0; i < _n_fields; i++) {
+    cs_field_t  *f = _fields[i];
+    if (f->is_sub_field()) {
+      f->map_to_ns_data();
+    }
+
+    /* Sanity check now for null val pointer */
+    if (f->val == nullptr)
         bft_error(__FILE__, __LINE__, 0,
                   _("Field \"%s\"\n"
                     " requires mapped values which have not been set."),
                   f->name);
-    }
   }
 }
 
@@ -5023,6 +5060,104 @@ cs_field_t::get_vals_t
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return a 1D span view of field values. If the field is not a scalar
+ *        a fatal error is provoked.
+ *
+ * \return  cs_span<cs_real_t> view of field values.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_span_2d<cs_real_t>
+cs_field_t::get_ns_vals_s
+(
+  const int time_id /*!<[in] time value id to get. 0 for val, 1 for val_pre */
+) const
+{
+  if (this->dim != 1)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not a scalar and has dimension %d\n"),
+              __func__, this->name, this->dim);
+
+  if (this->_ns_vals == nullptr && this->ns_owner == this->id)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not associated to a multidimensional "
+                "series.\n"),
+              __func__, this->name);
+
+  cs_field_t *ofield = _fields[this->ns_owner];
+
+  cs_lnum_t dim1 = ofield->_ns_vals[time_id]->extent(0);
+  cs_lnum_t dim2 = ofield->_ns_vals[time_id]->extent(1);
+
+  return ofield->_ns_vals[time_id]->get_mdspan(dim1, dim2);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 2D span view of field values. If the field is not a vector
+ *        a fatal error is provoked.
+ *
+ * \return  cs_span_2d<cs_real_t>(:,3) view of field values.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_span_3d<cs_real_t>
+cs_field_t::get_ns_vals_v
+(
+  const int time_id /*!<[in] time value id to get. 0 for val, 1 for val_pre */
+) const
+{
+  if (this->dim != 3)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not a vector and has dimension %d\n"),
+              __func__, this->name, this->dim);
+
+  if (this->_ns_vals == nullptr && this->ns_owner == this->id)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not associated to a multidimensional "
+                "series.\n"),
+              __func__, this->name);
+
+  /* Object is cs_array_3d, hence 'view()' already returns a cs_span_3d
+   * with correct dimensions.
+   */
+ return  _fields[this->ns_owner]->_ns_vals[time_id]->view();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 2D span view of field values. If the field is not a tensor
+ *        a fatal error is provoked.
+ *
+ * \return  cs_span_2d<cs_real_t>(:,6) view of field values.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_span_3d<cs_real_t>
+cs_field_t::get_ns_vals_t
+(
+  const int time_id /*!<[in] time value id to get. 0 for val, 1 for val_pre */
+) const
+{
+  if (this->dim != 6)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not a tensor and has dimension %d\n"),
+              __func__, this->name, this->dim);
+
+  if (this->_ns_vals == nullptr && this->ns_owner == this->id)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not associated to a multidimensional "
+                "series.\n"),
+              __func__, this->name);
+
+  /* Object is cs_array_3d, hence 'view()' already returns a cs_span_3d
+   * with correct dimensions.
+   */
+  return _fields[this->ns_owner]->_ns_vals[time_id]->view();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Get the allocation mode of the values array.
  *
  * \return cs_alloc_mode_t corresponding to the used allocation mode.
@@ -5067,23 +5202,111 @@ cs_field_t::update_public_pointers()
 /*----------------------------------------------------------------------------*/
 
 void
-cs_field_t::update_size()
+cs_field_t::update_size
+(
+  const int time_id /*!<[in] time_id to reshape, -1 for all (default) */
+)
 {
+  assert(time_id < this->n_time_vals);
+
   /* Sanity checks */
   const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(this->location_id);
   cs_lnum_t new_size = n_elts[2];
 
   /* If same size as before or not owner, nothing to do */
-  if (new_size == this->_vals[0]->extent(0) || !(this->is_owner))
+  int ref_id = (time_id < 0) ? 0 : time_id;
+  if (new_size == this->_vals[ref_id]->extent(0) || !(this->is_owner))
     return;
 
-  /* Reallocate all necessary values */
-  for (int i = 0; i < this->n_time_vals; i++) {
-    this->_vals[i]->reshape(new_size, this->dim);
-  }
+  /* Check if we have multi-dimensional arrays or not */
+  if (this->has_sub_fields()) {
+    /* Reallocate all necessary values */
+    if (time_id < 0) {
+      for (int i = 0; i < this->n_time_vals; i++) {
+        this->_ns_vals[i]->reshape_and_copy(this->ns_size,
+                                            new_size,
+                                            this->dim,
+                                            -1); /* keep old values */
+      }
+    }
+    else
+      this->_ns_vals[time_id]->reshape_and_copy(this->ns_size,
+                                                new_size,
+                                                this->dim,
+                                                -1); /* keep old values */
 
-  /* Update pointers */
-  this->update_public_pointers();
+    /* The map_to_ns_data calls update_public_pointers */
+    this->map_to_ns_data();
+
+  }
+  else {
+    /* Reallocate all necessary values */
+    if (time_id < 0) {
+      for (int i = 0; i < this->n_time_vals; i++) {
+        this->_vals[i]->reshape(new_size, this->dim);
+      }
+    }
+    else
+        this->_vals[time_id]->reshape(new_size, this->dim);
+
+    /* Update pointers */
+    this->update_public_pointers();
+  }
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Clear data allocation
+*/
+/*--------------------------------------------------------------------------*/
+
+void
+cs_field_t::clear
+(
+  const int time_id
+)
+{
+  if (this->ns_size > 1 && this->owner()) {
+    if (time_id < 0) {
+      for (int i = 0; i < this->n_time_vals; i++)
+        this->_ns_vals[i]->clear();
+    }
+    else {
+      this->_ns_vals[time_id]->clear();
+    }
+
+    this->map_to_ns_data();
+  }
+  else if (this->owner()) {
+    if (time_id < 0) {
+      for (int i = 0; i < this->n_time_vals; i++)
+        this->_vals[i]->clear();
+    }
+    else
+      this->_vals[time_id]->clear();
+
+    this->update_public_pointers();
+  }
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Update data mapping for all sub-fields
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_field_t::update_sub_fields_mapping
+() const
+{
+  if (this->is_series_owner()) {
+    for (int i = 0; i < cs_field_n_fields(); i++) {
+      cs_field_t *f = cs_field_by_id(i);
+      if (f->is_sub_field_of(this->id)) {
+        f->map_to_ns_data();
+      }
+    }
+  }
 }
 
 /*--------------------------------------------------------------------------*/
@@ -5113,6 +5336,84 @@ cs_field_t::map_values
   this->_vals[0] = new cs_array_2d<cs_real_t>(val_new, n_vals, this->dim);
   if (this->n_time_vals > 1)
     this->_vals[1] = new cs_array_2d<cs_real_t>(val_pre_new, n_vals, this->dim);
+
+  this->update_public_pointers();
+}
+
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize values related to sub-fields (indices mainly)
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_field_t::initialize_sub_fields
+()
+{
+  /* Nothing to do if not an owner */
+  if (!(this->is_series_owner()))
+    return;
+
+  cs_array<int> sub_fields_idx(_n_fields);
+  int n_sub_fields = 0;
+
+  /* Find and count all sub-fields */
+  for (int i = 0; i < _n_fields; i++) {
+    cs_field_t *sf = _fields[i];
+    // check if current field is owner and that subfield is not current one
+    if (sf->id != this->id &&
+        sf->ns_owner == this->id) {
+      sub_fields_idx[n_sub_fields] = sf->id;
+      n_sub_fields += 1;
+    }
+  }
+
+  /* if no sub-fields exit function */
+  if (n_sub_fields == 0)
+    return;
+
+  int owner_id = this->id;
+
+  this->set_ns_parameters(n_sub_fields + 1,
+                          0,
+                          owner_id);
+
+  CS_MALLOC(this->_ns_vals, this->n_time_vals, cs_array_3d<cs_real_t> *);
+  for (int i = 0; i < this->n_time_vals; i++)
+    this->_ns_vals[i] = new cs_array_3d<cs_real_t>();
+
+  for (int i = 0; i < n_sub_fields; i++) {
+    int sf_id = sub_fields_idx[i];
+    _fields[sf_id]->set_ns_parameters(n_sub_fields + 1,
+                                      i + 1,
+                                      owner_id);
+
+    _fields[sf_id]->map_to_ns_data();
+  }
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Map internal and public pointers to data series owner
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_field_t::map_to_ns_data()
+{
+  cs_field_t *ofield = _fields[this->ns_owner];
+
+  assert(this->dim == ofield->dim);
+
+  for (int i = 0; i < this->n_time_vals; i++) {
+    /* Ensure array is empty */
+    this->_vals[i]->set_empty();
+    this->_vals[i]->set_alloc_mode(ofield->_ns_vals[i]->mode());
+    this->_vals[i]->update_data(ofield->_ns_vals[i]->sub_array(this->ns_idx),
+                                ofield->_ns_vals[i]->extent(1),
+                                ofield->_ns_vals[i]->extent(2));
+  }
 
   this->update_public_pointers();
 }

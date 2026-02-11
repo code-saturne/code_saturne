@@ -31,6 +31,15 @@ Master (not on release branches yet)
 
 ### Architectural changes:
 
+- Add multi-dimensional arrays for "linked" fields.
+  * It is now possible to define, for a cs_field_t object, that it is a part of
+    a series. By doing so, one of the linked fields is defined as the owner of
+    the series, and handles the data allocation. The other fields then
+    only use a view of the data (non owners).
+  * This new mechanism uses "cs_array_3d" objects which are owned and managed
+    by the series' owner. The other fields have ther "_vals" (cs_array_2d)
+    objects pointing to sub_arrays of the owner cs_array_3d.
+
 - Mesh refinement: restuctured handling of polyhedral cells refinement,
   based on the hypothesis than in most cases, only a small subset of all
   cells require refinement with a polyhedra template, but that this refinement
