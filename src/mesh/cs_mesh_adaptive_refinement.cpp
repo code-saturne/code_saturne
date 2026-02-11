@@ -184,7 +184,7 @@ _realloc_and_update_field_refinement(cs_field_t        *f,
     cs_array_2d<cs_real_t> *new_val_i_ptr
       = new cs_array_2d<cs_real_t>(n_alloc_new, f->dim);
     auto new_val_i = new_val_i_ptr->view();
-    auto f_val_i = f->_vals[i]->view();
+    auto f_val_i = f->view(i);
 
     // Loop on old elements counts
     for (cs_lnum_t o_id = 0; o_id < n_old; o_id++) {
@@ -262,7 +262,7 @@ _realloc_and_update_field_refinement(cs_field_t        *f,
     if (  f->location_id != CS_MESH_LOCATION_INTERIOR_FACES
         || f->id != f_imf->id) {
       for (int i = 0; i < f->n_time_vals; i++) {
-        auto f_view_i = f->_vals[i]->view();
+        auto f_view_i = f->view(i);
         for (cs_lnum_t idim = 0; idim < f->dim; idim ++) {
           for (cs_lnum_t n_id = new_idx[0]; n_id < n_new; n_id++) {
             f_view_i(n_id, idim) = 0.;
@@ -283,7 +283,7 @@ _realloc_and_update_field_refinement(cs_field_t        *f,
       const cs_real_3_t *vel = (const cs_real_3_t *)(CS_F_(vel)->val);
 
       for (int i = 0; i < f->n_time_vals; i++) {
-        auto f_view_i = f->_vals[i]->view();
+        auto f_view_i = f->view(i);
 
         // Initialisation
         for (cs_lnum_t n_id = new_idx[0]; n_id < n_new; n_id++)
@@ -423,7 +423,7 @@ _realloc_and_update_field_coarsening(cs_field_t      *f,
     cs_array_2d<cs_real_t> *new_val_i_ptr
       = new cs_array_2d<cs_real_t>(n_alloc_new, f->dim);
     auto new_val_i = new_val_i_ptr->view();
-    auto f_val_i = f->_vals[i]->view();
+    auto f_val_i = f->view(i);
 
     for (cs_lnum_t idim = 0; idim < f->dim; idim ++) {
 
