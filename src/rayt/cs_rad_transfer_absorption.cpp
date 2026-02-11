@@ -141,7 +141,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
 
   if (   rt_params->imgrey >= 1
       || rt_params->imoadf >= 1
-      || rt_params->imfsck >= 1) {
+      || rt_params->imfsck == 1) {
     w1.reshape(n_cells_ext);
     w2.reshape(n_cells_ext);
     w3.reshape(n_cells_ext);
@@ -234,18 +234,6 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
       }
 
     }
-    else if (rt_params->imfsck == 2) {
-
-      for (int gg_id = 0; gg_id < rt_params->nwsgg; gg_id++) {
-        char f_name[64];
-        snprintf(f_name, 63, "spectral_absorption_coeff_%02d", gg_id + 1);
-        cs_field_t *f_kgabs = cs_field_by_name_try(f_name);
-
-        if (f_kgabs != nullptr)
-          for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-            kgas[n_cells*gg_id + cell_id] = f_kgabs->val[cell_id];
-      }
-    }
     else { /* if (rt_params->imgrey != 1) */
       const cs_real_t *cpro_ckabs = cs_field_by_name("kabs")->val;
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
@@ -268,7 +256,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
 
     if (   rt_params->imgrey == 1
         || rt_params->imoadf >= 1
-        || rt_params->imfsck >= 1) {
+        || rt_params->imfsck == 1) {
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         /* CO2 volume concentration */
@@ -288,7 +276,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
       else if (rt_params->imoadf == 2)
         cs_rad_transfer_adf50(w1.data(), w2.data(), tempk, kgas, agas, agasb);
 
-      else if (rt_params->imfsck >= 1)
+      else if (rt_params->imfsck == 1)
         cs_rad_transfer_fsck(w1.data(), w2.data(), tempk, kgas, agas, agasb);
     }
 

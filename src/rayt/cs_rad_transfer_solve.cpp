@@ -515,7 +515,7 @@ _cs_rad_transfer_sol(int                        gg_id,
   /* Pointer to the spectral flux density field */
   cs_field_t *f_qinspe = nullptr;
   if (   rt_params->imoadf  >= 1
-      || rt_params->imfsck  >= 1
+      || rt_params->imfsck  == 1
       || rt_params->imrcfsk == 1
       || rt_params->atmo_model != CS_RAD_ATMO_3D_NONE)
     f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
@@ -1224,7 +1224,7 @@ _rad_transfer_solve(int bc_type[])
   /* Irradiating spectral flux density */
   cs_field_t *f_qinsp = nullptr;
   if (   rt_params->imoadf >= 1
-      || rt_params->imfsck >= 1)
+      || rt_params->imfsck == 1)
     f_qinsp = cs_field_by_name("spectral_rad_incident_flux");
 
   /* Radiation coefficient kgi and corresponding weight agi
@@ -1377,9 +1377,6 @@ _rad_transfer_solve(int bc_type[])
       w_gg(i, ifac) = 1.0;
     }
   }
-
-  if (rt_params->imfsck == 2)
-    w_gg.zero();
 
   /* Absorbed and emitted radiation of a single coal class
    * (needed to compute the source terms of the particle enthalpy equation) */
@@ -1585,7 +1582,7 @@ _rad_transfer_solve(int bc_type[])
     else if (int_abso.size() == 0)
       int_abso.reshape(n_cells_ext);
 
-    if (rt_params->imoadf >= 1 || rt_params->imfsck >= 1) {
+    if (rt_params->imoadf >= 1 || rt_params->imfsck == 1) {
 
       /* assert(gg_id == 0);  TODO: merge ckg and kgi ? */
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
@@ -2031,7 +2028,7 @@ _rad_transfer_solve(int bc_type[])
     /* If the ADF model is activated we have to sum
        the spectral flux densities */
 
-    if (rt_params->imoadf >= 1 || rt_params->imfsck >= 1) {
+    if (rt_params->imoadf >= 1 || rt_params->imfsck == 1) {
       for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
         iqpato[ifac] += f_qinsp->val[gg_id + ifac * nwsgg] * wq[gg_id];
     }
@@ -2041,7 +2038,7 @@ _rad_transfer_solve(int bc_type[])
   /* The total radiative flux is copied in qinci
    * a) for post-processing reasons and
    * b) in order to calculate bfnet */
-  if (rt_params->imoadf >= 1 || rt_params->imfsck >= 1) {
+  if (rt_params->imoadf >= 1 || rt_params->imfsck == 1) {
     for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
       f_qinci->val[ifac] = iqpato[ifac];
   }
@@ -2550,7 +2547,12 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
      Loop over all gray gases. In case of the basic radiation models
      of code_saturne, nwsgg=1 */
 
-  cs_real_t *cpro_t4m = cs_field_by_name("temperature_4")->val;
+
+  cs_real_t *cpro_t4m = nullptr;
+  cs_field_t *f_t4m =  cs_field_by_name_try("temperature_4");
+
+  if (f_t4m != nullptr)
+    cpro_t4m = f_t4m->val;
 
   for (int gg_id = 0; gg_id < nwsgg; gg_id++) {
 
