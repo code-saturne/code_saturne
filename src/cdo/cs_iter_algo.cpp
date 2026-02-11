@@ -45,6 +45,7 @@
 #include "base/cs_array.h"
 #include "base/cs_log.h"
 #include "base/cs_parall.h"
+#include "cdo/cs_param_cdo.h"
 #include "cdo/cs_sdm.h"
 
 /*----------------------------------------------------------------------------
@@ -341,7 +342,7 @@ _anderson_damping(cs_iter_algo_aac_t    *c,
 
     const cs_real_t  *Qj = c->Q + j*c->n_elts;  /* get row j */
 
-#   pragma omp parallel if (c->n_elts > CS_THR_MIN)
+#   pragma omp parallel for if (c->n_elts > CS_THR_MIN) CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t l = 0; l < c->n_elts; l++)
       x[l] += omb * (Qj[l] * R_gamma - c->fold[l]);
 
@@ -1045,7 +1046,7 @@ cs_iter_algo_update_anderson(cs_iter_algo_t               *algo,
 
     /* Set fold and gold */
 
-#   pragma omp parallel if (c->n_elts > CS_THR_MIN)
+#   pragma omp parallel for if (c->n_elts > CS_THR_MIN) CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t i = 0; i < c->n_elts; i++) {
       c->fold[i] = gcur[i] - pre_iterate[i];
       c->gold[i] = gcur[i];
@@ -1075,10 +1076,10 @@ cs_iter_algo_update_anderson(cs_iter_algo_t               *algo,
 
     /* Set dg, df, fold and gold */
 
-#   pragma omp parallel if (c->n_elts > CS_THR_MIN)
+#   pragma omp parallel for if (c->n_elts > CS_THR_MIN) CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t i = 0; i < c->n_elts; i++) {
 
-      cs_real_t  fcur = gcur[i] - pre_iterate[i];
+      const cs_real_t  fcur = gcur[i] - pre_iterate[i];
 
       dg[i] = gcur[i] - c->gold[i];
       c->df[i] = fcur - c->fold[i];
@@ -1104,16 +1105,31 @@ cs_iter_algo_update_anderson(cs_iter_algo_t               *algo,
   if (c->n_dir == 1) {
 
     const double  df_norm = sqrt(sqnorm(c->df));
-    const cs_real_t  coef = 1.0/df_norm;
 
     Rval[0] = df_norm; /* R(0,0) = |df|_L2 */
 
-#   pragma omp parallel if (c->n_elts > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < c->n_elts; i++)
-      c->Q[i] = c->df[i]*coef; /* Q(0) = df/|df|_L2 */
+    if (df_norm > 0.) {
+
+      const cs_real_t  coef = 1.0/df_norm;
+
+#     pragma omp parallel for if (c->n_elts > CS_THR_MIN) CS_CDO_OMP_SCHEDULE
+      for (cs_lnum_t i = 0; i < c->n_elts; i++)
+        c->Q[i] = c->df[i]*coef; /* Q(0) = df/|df|_L2 */
+
+    }
+    else {
+
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_WARNINGS, " %s: Unexpected behavior. df_norm = 0.\n",
+                    __func__);
+
+      for (cs_lnum_t i = 0; i < c->n_elts; i++)
+        c->Q[i] = 0;
+
+    }
 
   }
-  else {
+  else { // n_dir > 1
 
     if (c->n_dir > m_max) { /* Remove the first column and last line in the
                                 Q.R factorization */
@@ -1131,7 +1147,7 @@ cs_iter_algo_update_anderson(cs_iter_algo_t               *algo,
 
       Rval[j*m_max + (c->n_dir-1)] = prod;  /* R(j, n_dir) = Qj*df */
 
-#     pragma omp parallel if (c->n_elts > CS_THR_MIN)
+#     pragma omp parallel for if (c->n_elts > CS_THR_MIN) CS_CDO_OMP_SCHEDULE
       for (cs_lnum_t l = 0; l < c->n_elts; l++)
         c->df[l] -= prod*Qj[l];  /* update df = df - R(j, n_dir)*Qj */
 
@@ -1148,7 +1164,7 @@ cs_iter_algo_update_anderson(cs_iter_algo_t               *algo,
 
     cs_real_t *q_n_dir = c->Q + (c->n_dir-1)*c->n_elts;
 
-#   pragma omp parallel if (c->n_elts > CS_THR_MIN)
+#   pragma omp parallel for if (c->n_elts > CS_THR_MIN) CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t i = 0; i < c->n_elts; i++)
       q_n_dir[i] = c->df[i]*coef;  /* Q(n_dir, :) = df/|df|_L2 */
 
@@ -1194,7 +1210,7 @@ cs_iter_algo_update_anderson(cs_iter_algo_t               *algo,
     const cs_real_t  *dg_j = c->dg + j*c->n_elts;
     const double  gamma_j = c->gamma[j];
 
-#   pragma omp parallel if (c->n_elts > CS_THR_MIN)
+#   pragma omp parallel for if (c->n_elts > CS_THR_MIN) CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t l = 0; l < c->n_elts; l++)
       cur_iterate[l] -= gamma_j * dg_j[l];
 
