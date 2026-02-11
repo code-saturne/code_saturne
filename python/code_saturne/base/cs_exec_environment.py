@@ -840,6 +840,13 @@ def set_modules(pkg):
     if pkg.config.env_modules == "no":
         return
 
+    if hasattr(pkg, "set_modules_cache"):
+        for e in pkg.set_modules_cache:
+            exec(e)
+        return
+
+    set_modules_cache = []
+
     cmd_prefix = pkg.config.env_modulecmd
 
     cmds = ['purge']
@@ -850,6 +857,9 @@ def set_modules(pkg):
                                            universal_newlines=True,
                                            stdout=subprocess.PIPE).communicate()
         exec(output)
+        set_modules_cache.append(output)
+
+    pkg.set_modules_cache = set_modules_cache
 
 #-------------------------------------------------------------------------------
 

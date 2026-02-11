@@ -1066,7 +1066,11 @@ class domain(base_domain):
                     restart_input = self.__input_path_abs_dir__(restart_input)
 
                 if not os.path.exists(restart_input):
-                    err_str += restart_input + ' does not exist.\n\n'
+                    if os.environ['CS_SMGR_ASYNC_PREPARE'] == '1':
+                        r = os.path.join(restart_input, 'main.csc')
+                        upstream_pending = [r]
+                    else:
+                        err_str += restart_input + ' does not exist.\n\n'
                 elif not os.path.isdir(restart_input):
                     err_str += restart_input + ' is not a directory.\n\n.'
                 else:

@@ -1645,9 +1645,20 @@ class Studies(object):
                                            %(case.label, case.resu))
 
         if run_step:
+
+            # Tell lower level code_saturne initialization that some checkpoint
+            # directories may not be available yet because the matching
+            # cases are prepared in an asynchronous manner.
+            if self.__max_workers > 1:
+                key_a = 'CS_SMGR_ASYNC_PREPARE'
+                os.environ[key_a] = '1'
+
             with concurrent.futures.ThreadPoolExecutor(max_workers=self.__max_workers) as executor:
                 results = executor.map(self.__prepare_run_folder,
                                        self.graph.graph_dict)
+
+            if self.__max_workers > 1:
+                del os.environ[key_a]
 
         self.reporting('')
 
