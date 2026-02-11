@@ -840,7 +840,7 @@ _assign_edge_ifs_rs(const cs_mesh_t     *mesh,
     cs_gnum_t *e2v_gnum = nullptr;
     CS_MALLOC(e2v_gnum, n_edges * 2, cs_gnum_t);
 
-#pragma omp parallel for if (n_edges > CS_THR_MIN)
+#   pragma omp parallel for if (n_edges > CS_THR_MIN)
     for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++) {
 
       cs_gnum_t       *v_gids = e2v_gnum + 2 * e_id;
@@ -861,7 +861,7 @@ _assign_edge_ifs_rs(const cs_mesh_t     *mesh,
 
     cs_gnum_t *order_couples = nullptr;
     CS_MALLOC(order_couples, 2 * n_edges, cs_gnum_t);
-#pragma omp parallel for if (n_edges > CS_THR_MIN)
+#   pragma omp parallel for if (n_edges > CS_THR_MIN)
     for (cs_lnum_t e = 0; e < n_edges; e++) {
       const cs_lnum_t o_id     = 2 * order[e];
       order_couples[2 * e]     = e2v_gnum[o_id];
@@ -883,7 +883,7 @@ _assign_edge_ifs_rs(const cs_mesh_t     *mesh,
   }
   else {
 
-#pragma omp parallel for if (n_edges > CS_THR_MIN)
+#   pragma omp parallel for if (n_edges > CS_THR_MIN)
     for (cs_gnum_t i = 0; i < n_g_edges; i++)
       edge_gnum[i] = i + 1;
 
@@ -1202,8 +1202,8 @@ cs_cdo_connect_build(cs_mesh_t *mesh,
 
   /* CDO face-based schemes or HHO schemes with k=0 */
 
-  if (fb_scheme_flag > 0 || cb_scheme_flag > 0 || hho_scheme_flag > 0
-      || mac_scheme_flag > 0) {
+  if (fb_scheme_flag > 0 || cb_scheme_flag > 0 || hho_scheme_flag > 0 ||
+      mac_scheme_flag > 0) {
 
     connect->face_ifs = _define_face_interface(mesh);
 
@@ -1437,7 +1437,7 @@ cs_cdo_connect_allocate_cw_buffer(const cs_cdo_connect_t *connect)
   CS_MALLOC(cs_cdo_connect_cw_buffer, cs_glob_n_threads, double *);
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-#pragma omp parallel
+# pragma omp parallel
   {
     int t_id = omp_get_thread_num();
     assert(t_id < cs_glob_n_threads);
@@ -1471,7 +1471,7 @@ cs_cdo_connect_free_cw_buffer(void)
   cs_cdo_connect_cw_buffer_size = 0;
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-#pragma omp parallel
+# pragma omp parallel
   {
     int t_id = omp_get_thread_num();
     assert(t_id < cs_glob_n_threads);
@@ -1607,7 +1607,7 @@ cs_cdo_connect_discrete_curl(const cs_cdo_connect_t *connect,
   const cs_adjacency_t *f2e = connect->f2e;
   assert(f2e != nullptr && f2e->sgn != nullptr); /* Sanity checks */
 
-#pragma omp parallel for if (n_faces > CS_THR_MIN)
+# pragma omp parallel for if (n_faces > CS_THR_MIN)
   for (cs_lnum_t f = 0; f < n_faces; f++) {
 
     const cs_lnum_t  start = f2e->idx[f], end = f2e->idx[f + 1];

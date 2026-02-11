@@ -615,7 +615,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t *topo,
   CS_MALLOC(edge_center, 3 * n_edges, cs_real_t);
   CS_MALLOC(quant->edge_vector, 3 * n_edges, cs_real_t);
 
-#pragma omp parallel for if (n_edges > CS_THR_MIN)
+# pragma omp parallel for if (n_edges > CS_THR_MIN)
   for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++) {
     /* Get the two vertex ids related to the current edge */
 
@@ -656,13 +656,14 @@ _compute_edge_based_quantities(const cs_cdo_connect_t *topo,
   CS_MALLOC(quant->pvol_ec, topo->c2e->idx[n_cells], cs_real_t);
   CS_MALLOC(quant->dface_normal, 3 * topo->c2e->idx[n_cells], cs_real_t);
 
-#pragma omp parallel shared(quant, topo, edge_center)
+# pragma omp parallel shared(quant, topo, edge_center)
   { /* OMP Block */
 
     const cs_adjacency_t *c2f = topo->c2f, *f2e = topo->f2e;
 
-#pragma omp for CS_CDO_OMP_SCHEDULE
+#   pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
       const cs_lnum_t *c2e_idx = topo->c2e->idx + c_id;
       const cs_lnum_t *c2e_ids = topo->c2e->ids + c2e_idx[0];
       const short int  n_ec    = c2e_idx[1] - c2e_idx[0];
@@ -774,8 +775,9 @@ _compute_dcell_quantities(const cs_cdo_connect_t *topo,
 
   CS_MALLOC(quant->pvol_vc, topo->c2v->idx[quant->n_cells], double);
 
-#pragma omp parallel for shared(quant, topo, c2f, f2e) CS_CDO_OMP_SCHEDULE
+# pragma omp parallel for shared(quant, topo, c2f, f2e) CS_CDO_OMP_SCHEDULE
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
     /* Compute part of dual volume related to each primal cell */
 
     const cs_lnum_t *c2v_idx = topo->c2v->idx + c_id;
@@ -1006,7 +1008,7 @@ _mirtich_algorithm(const cs_mesh_t            *mesh,
   assert(connect->f2c != nullptr);
   assert(connect->c2f != nullptr);
 
-#pragma omp parallel for if (n_cells > CS_THR_MIN)
+# pragma omp parallel for if (n_cells > CS_THR_MIN) CS_CDO_OMP_SCHEDULE
   for (cs_lnum_t i = 0; i < n_cells; i++) {
     quant->cell_centers[i][0] = 0.0;
     quant->cell_centers[i][1] = 0.0;
@@ -1045,7 +1047,7 @@ _mirtich_algorithm(const cs_mesh_t            *mesh,
 
   /* Compute cell center of gravity and total volume */
 
-#pragma omp parallel for if (n_cells > CS_THR_MIN)
+# pragma omp parallel for if (n_cells > CS_THR_MIN) CS_CDO_OMP_SCHEDULE
   for (cs_lnum_t i = 0; i < n_cells; i++) {
     const double inv_2vol = 0.5 / quant->cell_vol[i];
     for (int k = 0; k < 3; k++)
@@ -2171,7 +2173,7 @@ cs_cdo_quantities_compute_pvol_fc(const cs_cdo_quantities_t *cdoq,
   cs_array_real_fill_zero(c2f->idx[n_cells], pvol_fc);
 #endif
 
-#pragma omp parallel for if (n_cells > CS_THR_MIN)
+# pragma omp parallel for if (n_cells > CS_THR_MIN) CS_CDO_OMP_SCHEDULE
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id + 1]; j++) {
 
