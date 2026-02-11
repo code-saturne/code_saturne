@@ -5611,13 +5611,13 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
       cs_lnum_t s_id = b_id*_loop_block_size, e_id = (b_id+1)*_loop_block_size;
       if (e_id > n_cells) e_id = n_cells;
 
-      /* v_max: maximum l2 norm of the variation of the gradient squared */
-      cs_real_t v_max[_loop_block_size];
+      /* d2_max: maximum l2 norm of the variation of the gradient squared */
+      cs_real_t d2_max[_loop_block_size];
 
       cs_lnum_t b_e_id = e_id - s_id;
 
       for (cs_lnum_t i = 0; i < b_e_id; i++)
-        v_max[i] = 0;
+        d2_max[i] = 0;
 
       /* Max over neighboring cells */
 
@@ -5651,7 +5651,7 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
             cs_real_t v_delta[stride];
             for (cs_lnum_t k = 0; k < stride; k++)
               v_delta[k] = pvar[c_id2][k] - var_i[k];
-            v_max[i] = cs::max(v_max[i], cs_math_square_norm<stride>(v_delta));
+            d2_max[i] = cs::max(d2_max[i], cs_math_square_norm<stride>(v_delta));
           }
         }
 
@@ -5671,7 +5671,8 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
           cs_real_t v_delta[stride];
           for (cs_lnum_t k = 0; k < stride; k++)
             v_delta[k] = val_f[c_f_id][k] - pvar[c_id1][k];
-          v_max[i] = cs::max(v_max[i], cs_math_square_norm<stride>(v_delta) * climgp);
+          d2_max[i] = cs::max(d2_max[i],
+                              cs_math_square_norm<stride>(v_delta) * climgp);
         }
       }
 
@@ -5697,10 +5698,10 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
                          + dkkpf[2]*grad[c_id1][k][2];
           }
           cs_real_t v_r = cs_math_square_norm<stride>(r_delta);
-          if (v_r > v_max[i])
-            sub_factor = cs::abs(v_max[i]) / v_r;
+          if (v_r > d2_max[i])
+            sub_factor = cs::abs(d2_max[i]) / v_r;
 
-          ccf = cs::min(ccf, sub_factor);  // climgp already included in v_max
+          ccf = cs::min(ccf, sub_factor);  // climgp already included in d2_max
         }
 
         clip_factor[c_id1] = ccf;
@@ -5794,7 +5795,6 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
  *
  * template parameters:
  *   stride        3 for vectors, 6 for symmetric tensors
- *   b_stride      2 for vectors, 1 for symmetric tensors
  *
  * parameters:
  *   ctx            <-- reference to dispatch context
@@ -5804,11 +5804,10 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
  *   pvar           <-- variable
  *   val_f          <-- boundary face value for gradient
  *   bounds         --> bounds of pvar in neighboring cells
- *                      - square distance to ref, square norm for vector
- *                      - square distance to ref for tensor
+ *                      - square distance to ref
  *----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride, cs_lnum_t b_stride>
+template <cs_lnum_t stride>
 static void
 _strided_bounds(cs_dispatch_context          &ctx,
                 const cs_mesh_t              *m,
@@ -5816,7 +5815,7 @@ _strided_bounds(cs_dispatch_context          &ctx,
                 cs_halo_type_t                halo_type,
                 const cs_real_t    (*restrict pvar)[stride],
                 const cs_real_t    (*restrict val_f)[stride],
-                cs_real_t          (*restrict bounds)[b_stride])
+                cs_real_t           *restrict bounds)
 {
   CS_PROFILE_FUNC_RANGE();
 
@@ -5843,16 +5842,13 @@ _strided_bounds(cs_dispatch_context          &ctx,
     cs_lnum_t s_id = b_id*_loop_block_size, e_id = (b_id+1)*_loop_block_size;
     if (e_id > n_cells) e_id = n_cells;
 
-    /* v_max: maximum l2 norm of the variation of the variable */
-    cs_real_t v_max[_loop_block_size];
-    cs_real_t a_max[_loop_block_size];
+    /* d2_max: maximum l2 norm of the variation of the variable */
+    cs_real_t d2_max[_loop_block_size];
 
     cs_lnum_t b_e_id = e_id - s_id;
 
     for (cs_lnum_t i = 0; i < b_e_id; i++) {
-      v_max[i] = 0;
-      if (stride == 3)
-        a_max[i] = cs_math_3_square_norm(pvar[s_id+i]);
+      d2_max[i] = 0;
     }
 
     /* Bounds over neighboring cells */
@@ -5887,9 +5883,7 @@ _strided_bounds(cs_dispatch_context          &ctx,
           cs_real_t v_delta[stride];
           for (cs_lnum_t k = 0; k < stride; k++)
             v_delta[k] = pvar[c_id2][k] - var_i[k];
-          v_max[i] = cs::max(v_max[i], cs_math_square_norm<stride>(v_delta));
-          if (stride == 3)
-            a_max[i] = cs::max(a_max[i], cs_math_3_square_norm(pvar[c_id2]));
+          d2_max[i] = cs::max(d2_max[i], cs_math_square_norm<stride>(v_delta));
         }
       }
 
@@ -5909,9 +5903,7 @@ _strided_bounds(cs_dispatch_context          &ctx,
         cs_real_t v_delta[stride];
         for (cs_lnum_t k = 0; k < stride; k++)
           v_delta[k] = val_f[c_f_id][k] - pvar[c_id1][k];
-        v_max[i] = cs::max(v_max[i], cs_math_square_norm<stride>(v_delta));
-        if (stride == 3)
-          a_max[i] = cs::max(a_max[i], cs_math_3_square_norm(val_f[c_f_id]));
+        d2_max[i] = cs::max(d2_max[i], cs_math_square_norm<stride>(v_delta));
       }
     }
 
@@ -5919,9 +5911,7 @@ _strided_bounds(cs_dispatch_context          &ctx,
 
     for (cs_lnum_t i = 0; i < b_e_id; i++) { /* Loop on block elements */
       cs_lnum_t c_id1 = i + s_id;
-      bounds[c_id1][0] = v_max[i];
-      if (stride == 3)
-        bounds[c_id1][1] = a_max[i];
+      bounds[c_id1] = d2_max[i];
     }
 
   }); /* End of (parallel) loop on blocks */
@@ -7687,7 +7677,7 @@ _gradient_vector(const char                     *var_name,
                  const cs_real_t                 val_f[][3],
                  const cs_real_t       *restrict c_weight,
                  cs_real_33_t          *restrict grad,
-                 cs_real_t                     (*bounds)[2])
+                 cs_real_t                      *bounds)
 {
   CS_PROFILE_FUNC_RANGE();
 
@@ -7808,13 +7798,13 @@ _gradient_vector(const char                     *var_name,
 
   if (bounds != nullptr) {
     cs_dispatch_context ctx;
-    _strided_bounds<3, 2>(ctx,
-                          mesh,
-                          madj,
-                          halo_type,
-                          var,
-                          val_f,
-                          bounds);
+    _strided_bounds<3>(ctx,
+                       mesh,
+                       madj,
+                       halo_type,
+                       var,
+                       val_f,
+                       bounds);
 
     cs_halo_sync(mesh->halo, halo_type, ctx.use_gpu(), bounds);
   }
@@ -7862,7 +7852,7 @@ _gradient_tensor(const char                 *var_name,
                  const cs_real_6_t          *restrict var,
                  const cs_real_6_t          *restrict val_f,
                  cs_real_63_t               *restrict grad,
-                 cs_real_t                  (*bounds)[1])
+                 cs_real_t                  *bounds)
 {
   CS_PROFILE_FUNC_RANGE();
 
@@ -7981,15 +7971,15 @@ _gradient_tensor(const char                 *var_name,
 
   if (bounds != nullptr) {
     cs_dispatch_context ctx;
-    _strided_bounds<6, 1>(ctx,
-                          mesh,
-                          madj,
-                          halo_type,
-                          var,
-                          val_f,
-                          bounds);
+    _strided_bounds<6>(ctx,
+                       mesh,
+                       madj,
+                       halo_type,
+                       var,
+                       val_f,
+                       bounds);
 
-    cs_halo_sync(mesh->halo, halo_type, ctx.use_gpu(), (cs_real_t *)bounds);
+    cs_halo_sync(mesh->halo, halo_type, ctx.use_gpu(), bounds);
   }
 }
 
@@ -9452,7 +9442,7 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
  * \param[in]   c_weight        cell variable weight, or nullptr
  * \param[out]  grad            gradient
  *                              (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
- * \param[out]  bounds          optional bounds (square distance, square norm)
+ * \param[out]  bounds          optional bounds (square distance)
  *                              of values in adjacent cells and faces, or null
  */
 /*----------------------------------------------------------------------------*/
@@ -9472,7 +9462,7 @@ cs_gradient_vector_synced_input(const char                  *var_name,
                                 const cs_real_t              val_f[][3],
                                 const cs_real_t              c_weight[],
                                 cs_real_t                    grad[][3][3],
-                                cs_real_t                  (*bounds)[2])
+                                cs_real_t                   *bounds)
 {
   CS_PROFILE_FUNC_RANGE();
 
@@ -9541,8 +9531,8 @@ cs_gradient_vector_synced_input(const char                  *var_name,
  * \param[in]       val_f           boundary face value
  * \param[out]      grad            gradient
                                     (\f$ \der{t_ij}{x_k} \f$ is grad[][ij][k])
- * \param[out]      bounds          optional bounds (square distance) of values
- *                                  in adjacent cells and faces, or null
+ * \param[out]      bounds          optional bounds (square distance)
+ *                                  of values in adjacent cells and faces, or null
  */
 /*----------------------------------------------------------------------------*/
 
@@ -9560,7 +9550,7 @@ cs_gradient_tensor_synced_input(const char                  *var_name,
                                 const cs_real_t              var[][6],
                                 const cs_real_t              val_f[][6],
                                 cs_real_63_t                *grad,
-                                cs_real_t                  (*bounds)[1])
+                                cs_real_t                   *bounds)
 {
   CS_PROFILE_FUNC_RANGE();
 

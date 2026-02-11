@@ -641,7 +641,6 @@ cs_clip_quantity(const cs_real_t    bounds[2],
  *
  * template parameters:
  *   stride        3 for vectors, 6 for symmetric tensors
- *   b_stride      2 for vectors, 1 for symmetric tensors
  *
  * \param[in]       bounds    bounds at cell (size 2 if stride 3, 1 otherwise)
  * \param[in]       pi        value at cell i
@@ -649,9 +648,9 @@ cs_clip_quantity(const cs_real_t    bounds[2],
  */
 /*----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride, cs_lnum_t b_stride>
+template <cs_lnum_t stride>
 CS_F_HOST_DEVICE inline static void
-cs_clip_quantity_strided(const cs_real_t    bounds[b_stride],
+cs_clip_quantity_strided(const cs_real_t   &bounds,
                          const cs_real_t    pi[stride],
                          cs_real_t          pip[stride])
 {
@@ -660,20 +659,11 @@ cs_clip_quantity_strided(const cs_real_t    bounds[b_stride],
     v_r[isou] = pip[isou] - pi[isou];
 
   cs_real_t d2 = cs_math_square_norm<stride>(v_r);
-  if (d2 > bounds[0]) {
-    cs_real_t s = sqrt(bounds[0] / d2); // scaling factor
+  if (d2 > bounds) {
+    cs_real_t s = sqrt(bounds / d2); // scaling factor
 
     for (cs_lnum_t isou = 0; isou < stride; isou++)
       pip[isou] = pip[isou] + v_r[isou]*s;
-  }
-
-  if (stride == 3) { // Additional test on vector norm
-    cs_real_t a2 = cs_math_square_norm<stride>(pip);
-    if (a2 > bounds[1]) {
-      cs_real_t s = sqrt(bounds[1] / a2); // scaling factor
-      for (cs_lnum_t isou = 0; isou < stride; isou++)
-        pip[isou] *= s;
-    }
   }
 }
 

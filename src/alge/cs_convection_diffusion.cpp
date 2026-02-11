@@ -132,22 +132,17 @@
   the matching reconstruction gradient. The lower bound is defined in a
   similar manner.
 
-  For vector and tensor gradients, bounds are not so straightforward, as
+  For vectors and tensors, bounds are not so straightforward, as
   component-based bounds are not invariant by rotation.
-  So we choose 2 different bounds for vectors:
-  - A _dispersion_ bound, so the Euclidean norm of the difference between the
-    reconstructed vector and the non-reconstructed vector in cell I does
-    not exceed that of if the norm of this difference with all adjacent cell
-    and boundary face values.
-    If this bound is exceeded, the reconstruction gradient is scaled so
-    that the reconstructed value lies withing this bound
-    (here again a reconstruction clipping factor multiplier may be used,
-    so a factor of 0 disables reconstruction entirely, while a factor of 1
-    limits the reconstruction so as to exactly fit the bound).
-  - An L2 norm bound, ensuring that the L2 norm of the reconstructed vector
-    does not exceed that at adjacent cells and boundary faces.
-    If this bound is exceeded, the vector is scaled accordingly
-    (applying a reconstruction factor only if it > 1).
+  So we choose a simpled dispersion bound for vectors, for which the
+  Euclidean norm of the difference between the reconstructed vector and
+  the non-reconstructed vector in cell I does not exceed that of if the
+  norm of this difference with all adjacent cell and boundary face values.
+  If this bound is exceeded, the reconstruction gradient is scaled so
+  that the reconstructed value lies withing this bound
+  (here again a reconstruction clipping factor multiplier may be used,
+  so a factor of 0 disables reconstruction entirely, while a factor of 1
+  limits the reconstruction so as to exactly fit the bound).
 
   This is illustrated in the following figures:
   \image html vector_bounds_a.svg "Vector values in cell _I_ and adjacent cells." width=40%
@@ -157,9 +152,6 @@
 
   Finally, the value reconstructed at _I'_ should fir inside both circles:
   \image html vector_bounds_c.svg "Vector value bounds at _I'_." width=40%
-
-  For tensors, since the Frobenius norm used is not invariant by rotation,
-  only the dispersion bound is used.
 
  */
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -1475,7 +1467,6 @@ _adjust_and_check_bounds_scalar
  *
  * template parameters:
  *   stride         3 for vectors, 6 for symmetric tensors
- *   b_stride       2 for vectors, 1 for symmetric tensors
  *   face_gradient  reconstruct face gradient (mean of adjacent cell gradients)
  *                  if true, cell gradient if false.
  *
@@ -1486,7 +1477,6 @@ _adjust_and_check_bounds_scalar
  *   fvq            <-- pointer to associated finite volume quantities
  *   ma             <-- mesh adjacencies
  *   ircflb         <-- 1 if reconstruction should be done at boundaries
- *   pvar           <-- variable
  *   grad           <-> gradient of pvar (du/dx_j : grad[][j])
  *   bounds         <-- bounds of pvar in neighboring cells
  *                      - square distance to ref, square norm for vector
@@ -1495,7 +1485,7 @@ _adjust_and_check_bounds_scalar
  *   c_ratio        --> optional reconstruction clip ratio, or null
  *----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride, cs_lnum_t b_stride, bool face_gradient>
+template <cs_lnum_t stride, bool face_gradient>
 static void
 _reconstruction_check_bounds_strided
 (
@@ -1505,9 +1495,8 @@ _reconstruction_check_bounds_strided
   const cs_mesh_quantities_t   *fvq,
   const cs_mesh_adjacencies_t  *ma,
   int                           ircflb,
-  const cs_real_t             (*restrict pvar)[stride],
   const cs_real_t             (*restrict grad)[stride][3],
-  const cs_real_t             (*restrict bounds)[b_stride],
+  const cs_real_t              *restrict bounds,
   const cs_real_t              *df_limiter,
   cs_real_t                    *c_ratio
 )
@@ -1540,13 +1529,9 @@ _reconstruction_check_bounds_strided
     if (face_gradient)
       rf *= (cs_real_t)0.5;  // to average sum of 2 gradient values
 
-    const cs_real_t *var_i = pvar[c_id];
     cs_lnum_t n_loc_clip = 0;
     cs_real_t c_rel_max = 0., c_rel_sum = 0.;
-    cs_real_t d2_max = bounds[c_id][0];
-    cs_real_t a2_max;
-    if (stride == 3) // Additional test on vector norm
-      a2_max = bounds[c_id][1];
+    cs_real_t d2_max = bounds[c_id];
 
     /* Loop on neighboring cells */
 
@@ -1555,7 +1540,7 @@ _reconstruction_check_bounds_strided
       const cs_rreal_t *dkkpf = (c2f_sgn[cidx] > 0) ?
         diipf[f_id] : djjpf[f_id];
 
-      cs_real_t var_ip[stride], v_r[stride];
+      cs_real_t v_r[stride];
 
       for (cs_lnum_t ii = 0; ii < stride; ii++) {
         if (face_gradient) {
@@ -1569,8 +1554,6 @@ _reconstruction_check_bounds_strided
                      + dkkpf[1]*grad[c_id][ii][1]
                      + dkkpf[2]*grad[c_id][ii][2]) * rf;
         }
-        if (stride == 3)
-          var_ip[ii] = var_i[ii] + v_r[ii];
       }
 
       cs_real_t c_rel = 0.;
@@ -1578,21 +1561,9 @@ _reconstruction_check_bounds_strided
       cs_real_t s = 1.;
       if (d2 > d2_max) {
         s = sqrt(d2_max / d2); // scaling factor
-        if (stride == 3) {
-          for (cs_lnum_t ii = 0; ii < stride; ii++)
-            var_ip[ii] = var_i[ii] + v_r[ii]*s;
-        }
         /* If all values are nearly identical, relative error can be neglected,
            as it will be very noisy. */
         c_rel = (s > 1e-16) ? 1./s : 0.;
-      }
-
-      if (stride == 3) { // Additional test on vector norm
-        cs_real_t a2 = cs_math_square_norm<stride>(var_ip);
-        if (a2 > a2_max) {
-          s *= sqrt(a2_max / a2); // scaling factor
-          c_rel = (s > 1e-16) ? 1./s : 0.;
-        }
       }
 
       if (c_rel > 0.) {
@@ -1620,14 +1591,12 @@ _reconstruction_check_bounds_strided
       for (cs_lnum_t i = s_id_b; i < e_id_b; i++) {
         cs_lnum_t c_f_id = c2b[i];
 
-        cs_real_t var_ip[stride], v_r[stride];
+        cs_real_t v_r[stride];
 
         for (cs_lnum_t ii = 0; ii < stride; ii++) {
           v_r[ii] = (  diipb[c_f_id][0]*grad[c_id][ii][0]
                      + diipb[c_f_id][1]*grad[c_id][ii][1]
                      + diipb[c_f_id][2]*grad[c_id][ii][2]) * rf;
-          if (stride == 3)
-            var_ip[ii] = var_i[ii] + v_r[ii];
         }
 
         cs_real_t c_rel = 0.;
@@ -1635,21 +1604,7 @@ _reconstruction_check_bounds_strided
         cs_real_t s = 1.;
         if (d2 > d2_max) {
           s = sqrt(d2_max / d2); // scaling factor
-          if (stride == 3) {
-            for (cs_lnum_t ii = 0; ii < stride; ii++)
-              var_ip[ii] = var_i[ii] + v_r[ii]*s;
-          }
           c_rel = (s > 1e-16) ? 1./s : 0.;
-        }
-
-        if (stride == 3) { // Additional test on vector norm
-          cs_real_t a2 = cs_math_square_norm<stride>(var_ip);
-          if (a2 > a2_max) {
-            s *= sqrt(a2_max / a2); // scaling factor
-            /* If all values are nearly identical, relative error can be neglected,
-               as it will be very noisy. */
-            c_rel = (s > 1e-16) ? 1./s : 0.;
-          }
         }
 
         if (c_rel > 0.) {
@@ -1683,7 +1638,6 @@ _reconstruction_check_bounds_strided
  *
  * template parameters:
  *   stride        3 for vectors, 6 for symmetric tensors
- *   b_stride      2 for vectors, 1 for symmetric tensors
  *
  * parameters:
  *   ctx            <-> dispatch context
@@ -1695,7 +1649,6 @@ _reconstruction_check_bounds_strided
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
  *   ircflu         <-- 1 if reconstruction should be done at boundaries
- *   pvar           <-- variable
  *   grad           <-> gradient of pvar (du/dx_j : grad[][j])
  *   df_limiter     <-- optional reconstruction limiter factor, or null
  *   bounds         <-- bounds of pvar in neighboring cells
@@ -1704,7 +1657,7 @@ _reconstruction_check_bounds_strided
  */
 /*----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride, cs_lnum_t b_stride>
+template <cs_lnum_t stride>
 static void
 _adjust_and_check_bounds_strided
 (
@@ -1715,10 +1668,9 @@ _adjust_and_check_bounds_strided
   int                          ircflb,
   const cs_mesh_t              *m,
   const cs_mesh_quantities_t   *fvq,
-  const cs_real_t             (*restrict pvar)[stride],
   const cs_real_t             (*restrict grad)[stride][3],
   const cs_real_t              *df_limiter,
-  cs_real_t                   (*restrict bounds)[b_stride]
+  cs_real_t                    *restrict bounds
 )
 {
   bool no_op = true;
@@ -1731,11 +1683,7 @@ _adjust_and_check_bounds_strided
 
     ctx.parallel_for(m->n_cells_with_ghosts,
                      [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      bounds[c_id][0] *= rc_clip_factor;
-      if (stride == 3) {
-        if (rc_clip_factor > 1)
-          bounds[c_id][1] *= rc_clip_factor;
-      }
+      bounds[c_id] *= rc_clip_factor;
     });
   }
 
@@ -1747,18 +1695,18 @@ _adjust_and_check_bounds_strided
   if (bounds != nullptr && (f_cr != nullptr || eqp.verbosity >= 2)) {
     no_op = false;
     if (face_gradient)
-      _reconstruction_check_bounds_strided<stride, b_stride, true>
+      _reconstruction_check_bounds_strided<stride, true>
         (var_name, eqp.verbosity,
          m, fvq, cs_glob_mesh_adjacencies,
          ircflb,
-         pvar, grad, bounds, df_limiter,
+         grad, bounds, df_limiter,
          c_ratio);
     else
-      _reconstruction_check_bounds_strided<stride, b_stride, false>
+      _reconstruction_check_bounds_strided<stride, false>
         (var_name, eqp.verbosity,
          m, fvq, cs_glob_mesh_adjacencies,
          ircflb,
-         pvar, grad, bounds, df_limiter,
+         grad, bounds, df_limiter,
          c_ratio);
   }
 
@@ -3770,13 +3718,13 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
  * \param[in]     i_pvar        velocity at interior faces
  * \param[in]     b_pvar        velocity at boundary faces
  * \param[in]     grad          associated gradient
- * \param[in]     bounds        optional bounds (square distance, square norm)
+ * \param[in]     bounds        optional bounds (square distance)
  *                              of values in adjacent cells and faces, or null
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/
 
-template <cs_lnum_t stride, cs_lnum_t b_stride, bool porous_vel>
+template <cs_lnum_t stride, bool porous_vel>
 static void
 _convection_diffusion_unsteady_strided
   (cs_dispatch_context         &ctx,
@@ -3798,7 +3746,7 @@ _convection_diffusion_unsteady_strided
    cs_real_t         (*restrict i_pvar)[stride],
    cs_real_t         (*restrict b_pvar)[stride],
    cs_real_t         (*restrict grad)[stride][3],
-   cs_real_t         (*restrict bounds)[b_stride],
+   cs_real_t          *restrict bounds,
    cs_real_t         (*restrict rhs)[stride])
 {
   using grad_t = cs_real_t[stride][3];
@@ -3922,7 +3870,6 @@ _convection_diffusion_unsteady_strided
                                      true, // face gradient reconstruction
                                      m,
                                      fvq,
-                                     _pvar,
                                      grad,
                                      df_limiter,
                                      bounds);
@@ -4009,8 +3956,8 @@ _convection_diffusion_unsteady_strided
                                                 pip, pjp);
 
         if (bounds != nullptr) {
-          cs_clip_quantity_strided<stride, b_stride>(bounds[ii], _pi, pip);
-          cs_clip_quantity_strided<stride, b_stride>(bounds[jj], _pj, pjp);
+          cs_clip_quantity_strided<stride>(bounds[ii], _pi, pip);
+          cs_clip_quantity_strided<stride>(bounds[jj], _pj, pjp);
         }
       }
       else {
@@ -4127,8 +4074,8 @@ _convection_diffusion_unsteady_strided
                                                   pip, pjp);
 
           if (bounds != nullptr) {
-            cs_clip_quantity_strided<stride, b_stride>(bounds[ii], _pi, pip);
-            cs_clip_quantity_strided<stride, b_stride>(bounds[jj], _pj, pjp);
+            cs_clip_quantity_strided<stride>(bounds[ii], _pi, pip);
+            cs_clip_quantity_strided<stride>(bounds[jj], _pj, pjp);
           }
         }
         else {
@@ -4320,8 +4267,8 @@ _convection_diffusion_unsteady_strided
                                                   pip, pjp);
 
           if (bounds != nullptr) {
-            cs_clip_quantity_strided<stride, b_stride>(bounds[ii], _pi, pip);
-            cs_clip_quantity_strided<stride, b_stride>(bounds[jj], _pj, pjp);
+            cs_clip_quantity_strided<stride>(bounds[ii], _pi, pip);
+            cs_clip_quantity_strided<stride>(bounds[jj], _pj, pjp);
           }
         }
         else {
@@ -5260,8 +5207,7 @@ cs_convection_diffusion_vector(int                         idtvar,
   grad_t *grad;
   CS_MALLOC_HD(grad, n_cells_ext, grad_t, amode);
 
-  using bounds_t = cs_real_t[2];
-  bounds_t *bounds = nullptr;
+  cs_real_t *bounds = nullptr;
 
   if (  (eqp.idiff != 0 && eqp.ircflu == 1)
       || ivisep == 1
@@ -5271,7 +5217,7 @@ cs_convection_diffusion_vector(int                         idtvar,
     const cs_real_t rc_clip_factor
       = (eqp.ircflu != 0) ? eqp.rc_clip_factor : -1;
     if (rc_clip_factor >= 0)
-      CS_MALLOC_HD(bounds, n_cells_ext, bounds_t, cs_alloc_mode);
+      CS_MALLOC_HD(bounds, n_cells_ext, cs_real_t, cs_alloc_mode);
 
     cs_real_t *gweight = nullptr;
     if (f_id != -1) {
@@ -5327,7 +5273,7 @@ cs_convection_diffusion_vector(int                         idtvar,
     if (cs_glob_porous_model == 3 && f == CS_F_(vel))
       porous_vel = true;
     if (porous_vel == false)
-      _convection_diffusion_unsteady_strided<3, 2, false>
+      _convection_diffusion_unsteady_strided<3, false>
         (ctx, f, var_name, eqp, icvflb, inc, imasac,
          pvar, pvara,
          icvfli,
@@ -5336,7 +5282,7 @@ cs_convection_diffusion_vector(int                         idtvar,
          i_visc, b_visc,
          i_pvar, b_pvar, grad, bounds, rhs);
     else
-      _convection_diffusion_unsteady_strided<3, 2, true>
+      _convection_diffusion_unsteady_strided<3, true>
         (ctx, f, var_name, eqp, icvflb, inc, imasac,
          pvar, pvara,
          icvfli,
@@ -5603,15 +5549,14 @@ cs_convection_diffusion_tensor(int                          idtvar,
   grad_t *grad;
   CS_MALLOC_HD(grad, n_cells_ext, grad_t, amode);
 
-  using bounds_t = cs_real_t[1];
-  bounds_t *bounds = nullptr;
+  cs_real_t *bounds = nullptr;
 
   if (  (eqp.idiff != 0 && eqp.ircflu == 1)
       || (   eqp.iconv != 0 && eqp.blencv > 0.
           && (eqp.ischcv == 0 || eqp.ircflu == 1 || eqp.isstpc == 0))) {
 
     if (eqp.rc_clip_factor >= 0)
-      CS_MALLOC_HD(bounds, n_cells_ext, bounds_t, cs_alloc_mode);
+      CS_MALLOC_HD(bounds, n_cells_ext, cs_real_t, cs_alloc_mode);
 
     const cs_real_6_t  *restrict _pvar
       = (pvar != nullptr) ? (const cs_real_6_t *)pvar : pvara;
@@ -5647,7 +5592,7 @@ cs_convection_diffusion_tensor(int                          idtvar,
 
   if (idtvar >= 0) {
     assert(icvflb == 0);
-    _convection_diffusion_unsteady_strided<6, 1, false>
+    _convection_diffusion_unsteady_strided<6, false>
       (ctx, f, var_name, eqp, 0, inc, imasac,
        pvar, pvara,
        nullptr, // icvfli,
@@ -6488,15 +6433,14 @@ cs_anisotropic_left_diffusion_vector
 
   /* 2. Compute the diffusive part with reconstruction */
 
-  using bounds_t = cs_real_t[2];
-  bounds_t *bounds = nullptr;
+  cs_real_t *bounds = nullptr;
 
   /* Compute the gradient of the current variable if needed */
 
   if (ircflp == 1 || ivisep == 1) {
 
     if (eqp.rc_clip_factor >= 0)
-      CS_MALLOC_HD(bounds, n_cells_ext, bounds_t, cs_alloc_mode);
+      CS_MALLOC_HD(bounds, n_cells_ext, cs_real_t, cs_alloc_mode);
 
     cs_gradient_vector_synced_input(var_name,
                                     gradient_type,
@@ -6522,7 +6466,6 @@ cs_anisotropic_left_diffusion_vector
                                        true, // face gradient reconstruction
                                        m,
                                        fvq,
-                                       _pvar,
                                        gradv,
                                        df_limiter,
                                        bounds);
@@ -6990,15 +6933,14 @@ cs_anisotropic_right_diffusion_vector
 
   /* 2. Compute the diffusive part with reconstruction */
 
-  using bounds_t = cs_real_t[2];
-  bounds_t *bounds = nullptr;
+  cs_real_t *bounds = nullptr;
 
   /* Compute the gradient of the current variable if needed */
 
   if (ircflp == 1) {
 
     if (eqp.rc_clip_factor >= 0 && idtvar >= 0)
-      CS_MALLOC_HD(bounds, n_cells_ext, bounds_t, cs_alloc_mode);
+      CS_MALLOC_HD(bounds, n_cells_ext, cs_real_t, cs_alloc_mode);
 
     cs_gradient_vector_synced_input(var_name,
                                     gradient_type,
@@ -7017,17 +6959,16 @@ cs_anisotropic_right_diffusion_vector
                                     bounds);
 
     if (eqp.rc_clip_factor >= 0)
-      _adjust_and_check_bounds_strided<3, 2>(ctx,
-                                             var_name,
-                                             eqp,
-                                             1, // possible exchanges if cpl
-                                             false, // cell gradient reconstr.
-                                             m,
-                                             fvq,
-                                             _pvar,
-                                             grad,
-                                             df_limiter,
-                                             bounds);
+      _adjust_and_check_bounds_strided<3>(ctx,
+                                          var_name,
+                                          eqp,
+                                          1, // possible exchanges if cpl
+                                          false, // cell gradient reconstr.
+                                          m,
+                                          fvq,
+                                          grad,
+                                          df_limiter,
+                                          bounds);
 
   }
   else {
@@ -7230,8 +7171,8 @@ cs_anisotropic_right_diffusion_vector
       }
 
       if (bounds != nullptr) {
-        cs_clip_quantity_strided<3, 2>(bounds[ii], pi, pipp);
-        cs_clip_quantity_strided<3, 2>(bounds[jj], pj, pjpp);
+        cs_clip_quantity_strided<3>(bounds[ii], pi, pipp);
+        cs_clip_quantity_strided<3>(bounds[jj], pj, pjpp);
       }
 
       for (cs_lnum_t isou = 0; isou < 3; isou++) {
@@ -7440,7 +7381,7 @@ cs_anisotropic_right_diffusion_vector
         }
 
         if (bounds != nullptr)
-          cs_clip_quantity_strided<3, 2>(bounds[ii], pi, pvar_r[face_id]);
+          cs_clip_quantity_strided<3>(bounds[ii], pi, pvar_r[face_id]);
       }
 
       cs_internal_coupling_exchange_by_face_id(cpl,
@@ -7670,8 +7611,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
 
   /* 2. Compute the diffusive part with reconstruction */
 
-  using bounds_t = cs_real_t[1];
-  bounds_t *bounds = nullptr;
+  cs_real_t *bounds = nullptr;
 
   /* ======================================================================
      ---> Compute the gradient of the current variable if needed
@@ -7682,7 +7622,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
     const cs_real_t rc_clip_factor
       = (eqp.ircflu != 0) ? eqp.rc_clip_factor : -1;
     if (rc_clip_factor >= 0)
-      CS_MALLOC_HD(bounds, n_cells_ext, bounds_t, cs_alloc_mode);
+      CS_MALLOC_HD(bounds, n_cells_ext, cs_real_t, cs_alloc_mode);
 
     cs_gradient_tensor_synced_input(var_name,
                                     gradient_type,

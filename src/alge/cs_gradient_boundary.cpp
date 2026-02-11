@@ -1218,9 +1218,7 @@ cs_gradient_boundary_iprime_lsq_strided
       var_i[ll] = var[c_id][ll];
     }
 
-    cs_real_t d2_max = 0, a2_max = 0;
-    if (stride == 3)
-      a2_max = cs_math_square_norm<stride>(var_i);
+    cs_real_t d2_max = 0;
 
     /* Contribution from adjacent cells */
 
@@ -1272,8 +1270,6 @@ cs_gradient_boundary_iprime_lsq_strided
               rhs[kk][ll] += dc[ll] * pfac;
           }
           d2_max = cs::max(d2_max, cs_math_square_norm<stride>(var_d));
-          if (stride == 3)
-            a2_max = cs::max(a2_max, cs_math_square_norm<stride>(var_j));
 
         }
 
@@ -1310,8 +1306,6 @@ cs_gradient_boundary_iprime_lsq_strided
           }
 
           d2_max = cs::max(d2_max, cs_math_square_norm<stride>(var_d));
-          if (stride == 3)
-            a2_max = cs::max(a2_max, cs_math_square_norm<stride>(var_j));
 
         }
       }
@@ -1360,8 +1354,6 @@ cs_gradient_boundary_iprime_lsq_strided
       }
 
       d2_max = cs::max(d2_max, cs_math_square_norm<stride>(var_d));
-      if (stride == 3)
-        a2_max = cs::max(a2_max, cs_math_square_norm<stride>(var_f));
 
       cs_real_t dif[3];
       cs_real_t ddif;
@@ -1469,18 +1461,10 @@ cs_gradient_boundary_iprime_lsq_strided
          necessary.
 
          We do not know whether the value at I or F (not reconstructed)
-         is the largest, so we take the average if the 2 matching norms. */
+         is the largest, so we take the average of the 2 matching norms. */
 
-      cs_real_t ref_norm2 = 0;
-
-      if (stride == 3) {
-        ref_norm2 =   cs_math_3_square_norm(var_i)
-                    + cs_math_3_square_norm(var_ip);
-      }
-      else {
-        for (cs_lnum_t ii = 0; ii < stride; ii++)
-          ref_norm2 += cs_math_sq(var_i[ii]) + cs_math_sq(var_ip[ii]);
-      }
+      cs_real_t ref_norm2 =   cs_math_square_norm<stride>(var_i)
+                            + cs_math_square_norm<stride>(var_ip);
 
       cs_real_t var_ip_0[stride];
       cs_real_t grad_0[stride][3];
@@ -1589,13 +1573,7 @@ cs_gradient_boundary_iprime_lsq_strided
           var_ip_d[ll] = var_ip_prv[ll] - var_ip[ll];
         }
 
-        if (stride == 3)
-          var_ip_d_norm2 = cs_math_3_square_norm(var_ip_d);
-        else {
-          var_ip_d_norm2 = 0;
-          for (cs_lnum_t ii = 0; ii < stride; ii++)
-            var_ip_d_norm2 += cs_math_sq(var_ip_d[ii]);
-        }
+        var_ip_d_norm2 = cs_math_square_norm<stride>(var_ip_d);
 
 #if 0
         printf("grads %d: it %d, ref_norm %g, it_norm %g\n",
@@ -1654,15 +1632,6 @@ cs_gradient_boundary_iprime_lsq_strided
         cs_real_t s = sqrt(d2_max / var_n2); // scaling factor
         for (cs_lnum_t ii = 0; ii < stride; ii++)
           var_ip[ii] = var_i[ii] + var_d[ii]*s;
-      }
-      if (stride == 3) { // Additional test on vector norm
-        a2_max *= cs::max(1., b_clip_coeff);
-        cs_real_t var_a2 = cs_math_square_norm<stride>(var_ip);
-        if (var_a2 > a2_max) {
-          cs_real_t s = sqrt(a2_max / var_a2); // scaling factor
-          for (cs_lnum_t ii = 0; ii < stride; ii++)
-            var_ip[ii] *= s;
-        }
       }
     }
 
