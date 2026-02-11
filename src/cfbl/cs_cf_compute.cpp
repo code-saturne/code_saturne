@@ -390,7 +390,7 @@ _compressible_pressure_mass_flux(cs_dispatch_context &ctx,
                          tsexp.data());
   }
 
-# pragma omp parallel if(n_cells > CS_THR_MIN)
+# pragma omp parallel for if(n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
     /* Volumic forces term (gravity) */
@@ -649,7 +649,7 @@ cs_cf_convective_mass_flux(int  iterns)
                         c2.data(),
                         n_cells);
 
-# pragma omp parallel if(n_cells > CS_THR_MIN)
+# pragma omp parallel for if(n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     rovsdt[c_id] =   rovsdt[c_id]
                    + eqp_p->istat*(cell_f_vol[c_id]/(dt[c_id]*c2[c_id]));
@@ -669,7 +669,7 @@ cs_cf_convective_mass_flux(int  iterns)
   /* Mass flux at internal faces (upwind scheme for the density)
      (negative because added to RHS) */
 
-# pragma omp parallel if(n_i_faces > CS_THR_MIN)
+# pragma omp parallel for if(n_i_faces > CS_THR_MIN)
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
     const cs_lnum_t c_id1 = i_face_cells[f_id][0];
     const cs_lnum_t c_id2 = i_face_cells[f_id][1];
@@ -682,7 +682,7 @@ cs_cf_convective_mass_flux(int  iterns)
   /* Mass flux at boundary faces
      (negative because added to RHS) */
 
-# pragma omp parallel if(n_b_faces > CS_THR_MIN)
+# pragma omp parallel for if(n_b_faces > CS_THR_MIN)
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++)
     wflmab[f_id] = -brom[f_id] * bvolfl[f_id];
 

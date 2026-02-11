@@ -1512,7 +1512,7 @@ _matrix_assembler_compute_halo(cs_matrix_assembler_t  *ma,
   CS_MALLOC(rank_id, n_e_g_ids, int);
   CS_MALLOC(r_loc_id, n_e_g_ids, cs_lnum_t);
 
-# pragma omp parallel if(n_e_g_ids > CS_THR_MIN)
+# pragma omp parallel for if(n_e_g_ids > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < n_e_g_ids; i++) {
     cs_gnum_t g_id = e_g_id[i];
     int r_id = _g_id_rank_index(arn->size, d_ranges, g_id);

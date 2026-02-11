@@ -1224,7 +1224,7 @@ cs_cdo_connect_build(cs_mesh_t *mesh,
   /* Build the cell type for each cell */
 
   CS_MALLOC(connect->cell_type, n_cells, fvm_element_t);
-#pragma omp parallel if (n_cells > CS_THR_MIN)
+# pragma omp parallel for if (n_cells > CS_THR_MIN) CS_CDO_OMP_SCHEDULE
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     connect->cell_type[c_id] = _get_cell_type(c_id, connect);
 

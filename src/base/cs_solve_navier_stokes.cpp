@@ -728,7 +728,7 @@ _turbomachinery_mass_flux(const cs_mesh_t             *m,
     }
   }
 
-# pragma omp parallel if (n_b_faces > CS_THR_MIN)
+# pragma omp parallel for if (n_b_faces > CS_THR_MIN)
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
     cs_real_t vr[3];
     const cs_lnum_t c_id = b_face_cells[face_id];
