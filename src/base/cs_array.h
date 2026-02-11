@@ -1604,7 +1604,8 @@ public:
   void
   set_empty()
   {
-    _span::set_size_(0);
+    cs_lnum_t tmp[N] = {0};
+    _span::set_size_(tmp);
     _span::set_data_ptr(nullptr);
     _owner = false;
 #if !defined(__CUDA_ARCH__) && \
