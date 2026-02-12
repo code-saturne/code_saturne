@@ -1514,6 +1514,30 @@ public:
     }
   }
 
+  CS_F_HOST_DEVICE
+  array<T, N, L>
+  get_deep_copy
+  (
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+  __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
+#endif
+  )
+  {
+    array<T, N, L> new_array(this->_extent,
+                             this->_mode,
+                             file_name,
+                             line_number);
+    new_array.copy_data(*this);
+
+    return new_array;
+  }
+
   /*--------------------------------------------------------------------------*/
   /*!
    * \brief Get span view of array, same dimensions as array.
