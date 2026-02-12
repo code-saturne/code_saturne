@@ -178,6 +178,7 @@ _realloc_and_update_field_refinement(cs_field_t        *f,
   const cs_lnum_t dim = f->dim;
 
   int interpolation_type = _amr_info.interpolation;
+  int _field_interp_type = f->get_key_int("amr_interpolation_scheme");
 
   for (int i = 0; i < f->n_time_vals; i++) {
     // New array for current time vals
@@ -217,7 +218,7 @@ _realloc_and_update_field_refinement(cs_field_t        *f,
       /* Velocity is always extrapolated with gradient
        * otherwise specified by user for fields on cells. */
       if (f->location_id == CS_MESH_LOCATION_CELLS &&
-          (f->id == f_vel->id || interpolation_type == 1)) {
+          (_field_interp_type == 1 || interpolation_type == 1)) {
 
         for (cs_lnum_t n_id = s_id; n_id < e_id; n_id++) {
           cs_real_3_t d = {cell_cen[n_id][0] - cog[o_id][0],
@@ -556,21 +557,90 @@ _realloc_and_update_bc_coeffs_coarsening(cs_field_t      *f,
   f->bc_coeffs->val_f_pre = array_out[4];
 }
 
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief
+ *
+ * \param[] f
+ * \param[] halo
+ */
+/*--------------------------------------------------------------------------*/
 static void
-_halo_sync(cs_field_t  *f)
+_halo_sync_std_owner
+(
+  cs_field_t      *f,
+  const cs_halo_t *halo
+)
 {
-  const cs_halo_t *halo = cs_glob_mesh->halo;
-  if (halo != nullptr) {
-    for (int kk = 0; kk < f->n_time_vals; kk++) {
+  for (int kk = 0; kk < f->n_time_vals; kk++) {
+    cs_halo_sync_untyped(halo,
+                         CS_HALO_EXTENDED,
+                         f->dim*sizeof(cs_real_t),
+                         f->vals[kk]);
+    if (f->dim == 3)
+      cs_halo_perio_sync_var_vect(halo,
+                                  CS_HALO_EXTENDED,
+                                  f->vals[kk],
+                                  f->dim);
+  }
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief
+ *
+ * \param[] f
+ * \param[] h
+ */
+/*--------------------------------------------------------------------------*/
+static void
+_halo_sync_series_owner
+(
+  cs_field_t      *f,
+  const cs_halo_t *halo
+)
+{
+  for (int kk = 0; kk < f->n_time_vals; kk++) {
+    auto f_view = f->ns_view(kk);
+    for (int i_s = 0; i_s < f->series_size(); i_s++) {
+      cs_real_t *_vals = f_view.sub_array(i_s);
+
       cs_halo_sync_untyped(halo,
                            CS_HALO_EXTENDED,
                            f->dim*sizeof(cs_real_t),
-                           f->vals[kk]);
+                           _vals);
       if (f->dim == 3)
         cs_halo_perio_sync_var_vect(halo,
                                     CS_HALO_EXTENDED,
-                                    f->vals[kk],
+                                    _vals,
                                     f->dim);
+    }
+  }
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief
+ *
+ * \param[] f
+ */
+/*--------------------------------------------------------------------------*/
+static void
+_halo_sync
+(
+  cs_field_t *f
+)
+{
+  const cs_halo_t *halo = cs_glob_mesh->halo;
+  if (halo != nullptr) {
+    /* Check if series owner, handle then case for all fields.
+     * If not, check if simply owner. Else, nothing to do.
+     */
+    if (f->has_sub_fields()) {
+      _halo_sync_series_owner(f, halo);
+    }
+    else if (f->owner()) {
+      _halo_sync_std_owner(f, halo);
     }
   }
 }
@@ -617,7 +687,8 @@ _realloc_and_interp_after_refinement([[maybe_unused]] cs_mesh_t  *mesh,
     const cs_mesh_location_type_t field_loc_type
       = cs_mesh_location_get_type(f->location_id);
 
-    if (field_loc_type == location_id) {
+    /* Handle refinement for series owners only */
+    if (field_loc_type == location_id && f->owner()) {
       _realloc_and_update_field_refinement(f, n_old, o2n_idx, new_idx,
                                            o_cog, n_cog, measure);
 

@@ -921,6 +921,9 @@ cs_parameters_define_field_keys(void)
 
   /* field units */
   cs_field_define_key_str("units", "", 0);
+
+  /* AMR interpolation scheme */
+  cs_field_define_key_int("amr_interpolation_scheme", 0, 0);
 }
 
 /*----------------------------------------------------------------------------*/

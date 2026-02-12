@@ -496,6 +496,9 @@ _create_variable_fields(void)
                       : _add_variable_cdo_field("velocity", "Velocity", 3);
     cs_field_set_key_int(f, keycpl, 1);
     cs_field_pointer_map(CS_ENUMF_(vel), f);
+
+    /* Force AMR interpolation scheme to 1 for velocity */
+    f->set_key_int("amr_interpolation_scheme", 1);
   }
 
   /* Pressure */
