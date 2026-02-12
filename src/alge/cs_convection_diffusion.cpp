@@ -6832,7 +6832,6 @@ cs_anisotropic_right_diffusion_vector
 
   const int ircflp = eqp.ircflu;
   const int ircflb = (ircflp > 0) ? eqp.b_diff_flux_rc : 0;
-  const int icoupl = eqp.icoupl;
   const double relaxp = eqp.relaxv;
   const double thetap = eqp.theta;
 
@@ -6862,10 +6861,6 @@ cs_anisotropic_right_diffusion_vector
   cs_dispatch_context ctx;
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
-
-  /* Internal coupling variables */
-  int coupling_id = -1;
-  cs_internal_coupling_t *cpl = nullptr;
 
   /* Local variables */
 
@@ -6923,13 +6918,6 @@ cs_anisotropic_right_diffusion_vector
   var_name[63] = '\0';
 
   viscce = viscel;
-
-  if (icoupl > 0) {
-    assert(f_id != -1);
-    const int coupling_key_id = cs_field_key_id("coupling_entity");
-    coupling_id = cs_field_get_key_int(f, coupling_key_id);
-    cpl = cs_internal_coupling_by_id(coupling_id);
-  }
 
   /* 2. Compute the diffusive part with reconstruction */
 
@@ -7281,143 +7269,6 @@ cs_anisotropic_right_diffusion_vector
     });
 
     ctx.wait();
-
-    /* The vector is internal_coupled and an implicit contribution
-     * is required */
-    if (cpl != nullptr) {
-
-      cs_real_3_t *pvar_local = nullptr;
-      cs_real_3_t *pvar_r, *pvar_r_local = nullptr;
-      cs_real_t *df_limiter_local = nullptr;
-      cs_real_t *weighb_local = nullptr;
-      const cs_lnum_t *faces_local = nullptr, *faces_distant = nullptr;
-      cs_lnum_t n_local = 0, n_distant = 0;
-
-      cs_internal_coupling_coupled_faces(cpl,
-                                         &n_local,
-                                         &faces_local,
-                                         &n_distant,
-                                         &faces_distant);
-
-      /* Exchange pvar */
-      CS_MALLOC(pvar_local, n_local, cs_real_3_t);
-      cs_internal_coupling_exchange_by_cell_id(cpl,
-                                               3, /* Dimension */
-                                               (const cs_real_t*)_pvar,
-                                               (cs_real_t *)pvar_local);
-
-      /* Exchange weighb */
-      CS_MALLOC(weighb_local, n_local, cs_real_t);
-      cs_internal_coupling_exchange_by_face_id(cpl,
-                                               1, /* Dimension */
-                                               (const cs_real_t*)weighb,
-                                               (cs_real_t *)weighb_local);
-
-      /* Exchange diffusion limiter */
-      if (df_limiter != nullptr && ircflb > 0) {
-        CS_MALLOC(df_limiter_local, n_local, cs_real_t);
-        cs_internal_coupling_exchange_by_cell_id(cpl,
-                                                 1, /* Dimension */
-                                                 df_limiter,
-                                                 df_limiter_local);
-      }
-
-      /* Reconstructed values */
-      CS_MALLOC(pvar_r, m->n_b_faces, cs_real_3_t);
-      CS_MALLOC(pvar_r_local, n_local, cs_real_3_t);
-
-      /* Reconstruct variable for each coupled face;
-         only compute values at coupled faces, but allocate on all boundary
-         faces so as to be able to simplify access since there is no guarantee
-         that faces_distant and faces_local are aligned (i.e. they should
-         contain the same lists but can be ordered differently) */
-
-      for (cs_lnum_t jj = 0; jj < n_local; jj++) {
-        cs_lnum_t face_id = faces_local[jj];
-        cs_lnum_t ii = b_face_cells[face_id];
-
-        cs_real_t pi[3];
-
-        for (cs_lnum_t isou = 0; isou < 3; isou++)
-          pi[isou] = _pvar[ii][isou];
-
-        cs_real_t bldfrp = (cs_real_t) ircflb;
-        /* Local limitation of the reconstruction */
-        if (df_limiter != nullptr && ircflb > 0)
-          bldfrp = cs::max(cs::min(df_limiter_local[jj],
-                                   df_limiter[ii]),
-                           0.);
-
-        /* Recompute II" */
-        cs_real_t visci[3][3];
-        cs_real_t diippf[3];
-
-        visci[0][0] = viscce[ii][0];
-        visci[1][1] = viscce[ii][1];
-        visci[2][2] = viscce[ii][2];
-        visci[1][0] = viscce[ii][3];
-        visci[0][1] = viscce[ii][3];
-        visci[2][1] = viscce[ii][4];
-        visci[1][2] = viscce[ii][4];
-        visci[2][0] = viscce[ii][5];
-        visci[0][2] = viscce[ii][5];
-
-        /* IF.Ki.S / ||Ki.S||^2 */
-        cs_real_t fikdvi_s = weighb[face_id] * b_face_surf[face_id];
-
-        /* II" = IF + FI" */
-        for (cs_lnum_t i = 0; i < 3; i++) {
-          diippf[i] = b_face_cog[face_id][i]-cell_cen[ii][i]
-                    - fikdvi_s*(  visci[0][i]*b_face_u_normal[face_id][0]
-                                + visci[1][i]*b_face_u_normal[face_id][1]
-                                + visci[2][i]*b_face_u_normal[face_id][2]);
-        }
-
-        for (cs_lnum_t isou = 0; isou < 3; isou++) {
-          pvar_r[face_id][isou] =   pi[isou]
-                                  + bldfrp*(  grad[ii][isou][0]*diippf[0]
-                                            + grad[ii][isou][1]*diippf[1]
-                                            + grad[ii][isou][2]*diippf[2]);
-        }
-
-        if (bounds != nullptr)
-          cs_clip_quantity_strided<3>(bounds[ii], pi, pvar_r[face_id]);
-      }
-
-      cs_internal_coupling_exchange_by_face_id(cpl,
-                                               3, /* Dimension */
-                                               (const cs_real_t*)pvar_r,
-                                               (cs_real_t *)pvar_r_local);
-
-      /* Remote data no longer needed */
-      CS_FREE(df_limiter_local);
-
-      /* Flux contribution */
-      for (cs_lnum_t jj = 0; jj < n_local; jj++) {
-        cs_lnum_t face_id = faces_local[jj];
-        cs_lnum_t ii = b_face_cells[face_id];
-
-        cs_real_t pipp[3], pjpp[3];
-
-        for (cs_lnum_t isou = 0; isou < 3; isou++) {
-          pipp[isou] = pvar_r[face_id][isou];
-          pjpp[isou] = pvar_r_local[jj][isou];
-
-          cs_real_t flux =   (pipp[isou] - pjpp[isou])
-                           / (weighb[face_id] + weighb_local[jj]);
-
-          rhs[ii][isou] -= thetap*flux;
-        }
-
-      }
-
-      /* Remote data no longer needed */
-      CS_FREE(pvar_local);
-      CS_FREE(pvar_r);
-      CS_FREE(pvar_r_local);
-      CS_FREE(weighb_local);
-
-    }
 
   } /* idtvar */
 
