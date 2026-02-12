@@ -850,8 +850,7 @@ def set_modules(pkg):
     cmd_prefix = pkg.config.env_modulecmd
 
     cmds = ['purge']
-    for m in pkg.config.env_modules.strip().split():
-        cmds.append('load ' + m)
+    cmds = ['load ' + pkg.config.env_modules.strip()]
     for cmd in cmds:
         (output, error) = subprocess.Popen([cmd_prefix, 'python'] + cmd.split(),
                                            universal_newlines=True,
