@@ -391,6 +391,30 @@ public:
 
   CS_F_HOST_DEVICE
   inline
+  const int
+  series_size() const
+  {
+    return ns_size;
+  }
+
+  CS_F_HOST_DEVICE
+  inline
+  const int
+  series_owner() const
+  {
+    return ns_owner;
+  }
+
+  CS_F_HOST_DEVICE
+  inline
+  const int
+  series_id() const
+  {
+    return ns_idx;
+  }
+
+  CS_F_HOST_DEVICE
+  inline
   bool
   has_sub_fields() const
   {
