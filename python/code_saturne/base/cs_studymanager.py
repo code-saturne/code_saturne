@@ -129,6 +129,9 @@ def process_cmd_line(argv, pkg):
                       type="string",
                       help="name of job launched in slurm batch mode (default value is 'saturne_vnv')")
 
+    parser.add_option("-j", "--jobs",  dest="n_jobs", default=1, type="int",
+                      help="Optional number of studymanager workers for cases setup (not computation).")
+
     parser.add_option("-z", "--disable-tex",
                       action="store_true", dest="disable_tex", default=False,
                       help="disable text rendering with LaTex in Matplotlib (use Mathtext)")

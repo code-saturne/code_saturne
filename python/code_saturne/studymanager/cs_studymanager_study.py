@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2024 EDF S.A.
+# Copyright (C) 1998-2026 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1245,13 +1245,8 @@ class Studies(object):
         self.__mem_log           = options.mem_log
 
         # Threading options and objects
-        self.__max_workers = 1
+        self.__max_workers = options.n_jobs
         self.lock = Lock()
-
-        try:
-            self.__max_workers = int(os.getenv('CS_SMGR_MAX_THREADS'))
-        except Exception:
-            pass
 
         # Query install configuration and current environment
         # (add number of procs based on resources to install
