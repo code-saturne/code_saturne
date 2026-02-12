@@ -809,7 +809,7 @@ class case:
                 raise RunCaseError(err_str)
 
         else:
-            os.makedirs(self.exec_dir)
+            cs_exec_environment.makedir_threadsafe(self.exec_dir)
 
         # Set execution directory
 
@@ -833,7 +833,7 @@ class case:
             r += '_COUPLING'
 
         if not os.path.isdir(r):
-            os.makedirs(r)
+            cs_exec_environment.makedir_threadsafe(r)
 
         self.result_dir = os.path.join(r, self.run_id)
 

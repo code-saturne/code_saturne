@@ -1109,6 +1109,26 @@ def get_parent_process_path():
 
 #-------------------------------------------------------------------------------
 
+def makedir_threadsafe(path):
+    """
+    Create directory with possible concurrency
+    """
+    if not os.path.isdir(path):
+        try:
+            os.makedirs(path)
+        except FileExistsError as ee:
+            # Another thread may have created the directory
+            # after the test before and before its creation...
+            if os.path.isfile(path):
+                err_msg = 'Failed to create directory: ' + path + \
+                    '. (a regular file of than name already exists).'
+                raise Exception(err_msg) from ee
+        except Exception as e:
+            err_msg = 'Failed to create directory: ' + path
+            raise Exception(err_msg: ' + path) from e
+
+#-------------------------------------------------------------------------------
+
 class batch_info:
 
     #---------------------------------------------------------------------------
