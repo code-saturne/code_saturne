@@ -1125,7 +1125,7 @@ def makedir_threadsafe(path):
                 raise Exception(err_msg) from ee
         except Exception as e:
             err_msg = 'Failed to create directory: ' + path
-            raise Exception(err_msg: ' + path) from e
+            raise Exception(err_msg) from e
 
 #-------------------------------------------------------------------------------
 
