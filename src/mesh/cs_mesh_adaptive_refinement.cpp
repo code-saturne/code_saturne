@@ -1254,8 +1254,10 @@ cs_adaptive_refinement_step(void)
   /* Perform load balancing */
 
 #if defined(HAVE_MPI)
-  bool write_stats = true;
-  _load_balance(write_stats);
+  if (cs_glob_n_ranks > 1) {
+    bool write_stats = true;
+    _load_balance(write_stats);
+  }
 #endif
 
   cs_log_printf(CS_LOG_DEFAULT,
