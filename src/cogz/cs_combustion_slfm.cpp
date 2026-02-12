@@ -1233,8 +1233,8 @@ cs_combustion_slfm_physical_properties(int   iterns)
 
       if (update_rad) {
         for (int ig = 0; ig < nwsgg; ig++) {
-          cpro_kg[ig][c_id] = rad_work[ig];
-          cpro_emi[ig][c_id] = rad_work[ig+1];
+          cpro_kg[ig][c_id] = rad_work[2*ig];
+          cpro_emi[ig][c_id] = rad_work[2*ig+1];
         }
       }
     });
