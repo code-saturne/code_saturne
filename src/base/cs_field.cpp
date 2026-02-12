@@ -5260,7 +5260,18 @@ cs_field_t::update_size
 
   /* If same size as before or not owner, nothing to do */
   int ref_id = (time_id < 0) ? 0 : time_id;
-  if (new_size == this->_vals[ref_id]->extent(0) || !(this->is_owner))
+  auto f_view = this->view(ref_id);
+
+  /* Check size. To avoid errors on "0" sized fields on first pass,
+   * we "force" an allocation to size 0 and not have a nullptr
+   * as data() output (which then leads to an error in
+   * "cs_field_allocate_or_map_all"
+   */
+  cs_lnum_t ref_size = f_view.extent(0);
+  if (f_view.extent(0) == 0 && f_view.data() == nullptr)
+    ref_size = -1;
+
+  if (new_size == ref_size || !(this->is_owner))
     return;
 
   /* Check if we have multi-dimensional arrays or not */
