@@ -180,73 +180,171 @@ _realloc_and_update_field_refinement(cs_field_t        *f,
   int interpolation_type = _amr_info.interpolation;
   int _field_interp_type = f->get_key_int("amr_interpolation_scheme");
 
+  //TODO: Handle grad also as series ?
+  cs_real_t **ns_grad = nullptr;
+  if (f->has_sub_fields()) {
+    CS_MALLOC(ns_grad, f->series_size(), cs_real_t *);
+    ns_grad[0] = f->grad;
+    for (int i = 0; i < cs_field_n_fields(); i++) {
+      cs_field_t *sub_f = cs_field_by_id(i);
+      if (sub_f->is_sub_field_of(f->id))
+        ns_grad[sub_f->series_id()] = sub_f->grad;
+    }
+  }
+
   for (int i = 0; i < f->n_time_vals; i++) {
-    // New array for current time vals
-    cs_array_2d<cs_real_t> *new_val_i_ptr
-      = new cs_array_2d<cs_real_t>(n_alloc_new, f->dim);
-    auto new_val_i = new_val_i_ptr->view();
-    auto f_val_i = f->view(i);
+    /* If current field is the owner of a linked series, it handles the
+     * the interpolation and resizing for everyone.
+     */
+    if (f->has_sub_fields()) {
+      /* temporary deep copy of original data */
+      auto old_val_i = f->_ns_vals[i]->get_deep_copy();
 
-    // Loop on old elements counts
-    for (cs_lnum_t o_id = 0; o_id < n_old; o_id++) {
+      /* update_size uses the field's location id to update size */
+      f->update_size(i);
+      auto new_val_i = f->ns_view(i);
 
-      // Get list of new elements for current old entity
-      cs_lnum_t s_id = o2n_idx[o_id];
-      cs_lnum_t e_id = o2n_idx[o_id+1];
+      // Loop on old elements counts
+      for (cs_lnum_t o_id = 0; o_id < n_old; o_id++) {
 
-      // If the field is extensive, me must weight its new
-      // value according to local measure
-      cs_real_t o_m = 0.0;
-      cs_real_t *_measure_ratio = nullptr;
-      cs_real_t measure_ratio_s[64]; // Enough for most cases
-      cs_real_t *measure_ratio = measure_ratio_s;
-      if (e_id-s_id > 64) {
-        CS_MALLOC(_measure_ratio, e_id-s_id, cs_real_t);
-        measure_ratio = _measure_ratio;
-      }
+        // Get list of new elements for current old entity
+        cs_lnum_t s_id = o2n_idx[o_id];
+        cs_lnum_t e_id = o2n_idx[o_id+1];
 
-      for (cs_lnum_t n_id = s_id; n_id < e_id; n_id++) {
-        measure_ratio[n_id-s_id] = 1.0;
-        o_m += measure[n_id];
-      }
-
-      if (f->type == CS_FIELD_EXTENSIVE) {
-        for (cs_lnum_t n_id = s_id; n_id < e_id; n_id++)
-          measure_ratio[n_id-s_id] = measure[n_id]/o_m;
-      }
-
-      /* Some fields (like velocity) are always extrapolated with gradient
-       * otherwise specified by user for fields on cells. */
-      if (f->location_id == CS_MESH_LOCATION_CELLS &&
-          (_field_interp_type == 1 || interpolation_type == 1)) {
+        // If the field is extensive, me must weight its new
+        // value according to local measure
+        cs_real_t o_m = 0.0;
+        cs_real_t *_measure_ratio = nullptr;
+        cs_real_t measure_ratio_s[64]; // Enough for most cases
+        cs_real_t *measure_ratio = measure_ratio_s;
+        if (e_id-s_id > 64) {
+          CS_MALLOC(_measure_ratio, e_id-s_id, cs_real_t);
+          measure_ratio = _measure_ratio;
+        }
 
         for (cs_lnum_t n_id = s_id; n_id < e_id; n_id++) {
-          cs_real_3_t d = {cell_cen[n_id][0] - cog[o_id][0],
-                           cell_cen[n_id][1] - cog[o_id][1],
-                           cell_cen[n_id][2] - cog[o_id][2]};
+          measure_ratio[n_id-s_id] = 1.0;
+          o_m += measure[n_id];
+        }
 
-          for (cs_lnum_t j = 0; j < dim; j++) {
-            cs_lnum_t k = o_id*dim + j;
-            new_val_i(n_id, j) =   f_val_i(o_id, j)
-                                 + cs_math_3_dot_product(d, grad+3*k);
-            new_val_i(n_id, j) *= measure_ratio[n_id-s_id];
+        if (f->type == CS_FIELD_EXTENSIVE) {
+          for (cs_lnum_t n_id = s_id; n_id < e_id; n_id++)
+            measure_ratio[n_id-s_id] = measure[n_id]/o_m;
+        }
+
+        /* Some fields (like velocity) are always extrapolated with gradient
+         * otherwise specified by user for fields on cells. */
+        if (f->location_id == CS_MESH_LOCATION_CELLS &&
+            (_field_interp_type == 1 || interpolation_type == 1)) {
+
+          for (cs_lnum_t n_id = s_id; n_id < e_id; n_id++) {
+            cs_real_3_t d = {cell_cen[n_id][0] - cog[o_id][0],
+                             cell_cen[n_id][1] - cog[o_id][1],
+                             cell_cen[n_id][2] - cog[o_id][2]};
+
+            for (int sf_id = 0; sf_id < f->series_size(); sf_id++) {
+              cs_real_t *_grad = ns_grad[sf_id];
+              for (cs_lnum_t j = 0; j < dim; j++) {
+                cs_lnum_t k = o_id*dim + j;
+                new_val_i(sf_id, n_id, j) = old_val_i(sf_id, o_id, j)
+                                          + cs_math_3_dot_product(d, _grad+3*k);
+                new_val_i(sf_id, n_id, j) *= measure_ratio[n_id-s_id];
+              }
+            }
           }
         }
-      }
-      else {
-        for (cs_lnum_t n_id = s_id; n_id < e_id; n_id++) {
-          for (cs_lnum_t j = 0; j < dim; j++)
-            new_val_i(n_id, j) = f_val_i(o_id, j) * measure_ratio[n_id-s_id];
+        else {
+          for (int sf_id = 0; sf_id < f->series_size(); sf_id++) {
+            for (cs_lnum_t n_id = s_id; n_id < e_id; n_id++) {
+              for (cs_lnum_t j = 0; j < dim; j++)
+                new_val_i(sf_id, n_id, j) = old_val_i(sf_id, o_id, j)
+                                          * measure_ratio[n_id-s_id];
+            }
+          }
         }
+
+        CS_FREE(_measure_ratio);
       }
-
-      CS_FREE(_measure_ratio);
     }
+    else {
+      /* temporary deep copy of original data */
+      auto old_val_i = f->_vals[i]->get_deep_copy();
 
-    // We delete old ptr, and replace by the new one
-    delete f->_vals[i];
-    f->_vals[i] = new_val_i_ptr;
+      /* update_size uses the field's location id to update size */
+      f->update_size(i);
+      auto new_val_i = f->view(i);
+
+      // Loop on old elements counts
+      for (cs_lnum_t o_id = 0; o_id < n_old; o_id++) {
+
+        // Get list of new elements for current old entity
+        cs_lnum_t s_id = o2n_idx[o_id];
+        cs_lnum_t e_id = o2n_idx[o_id+1];
+
+        // If the field is extensive, me must weight its new
+        // value according to local measure
+        cs_real_t o_m = 0.0;
+        cs_real_t *_measure_ratio = nullptr;
+        cs_real_t measure_ratio_s[64]; // Enough for most cases
+        cs_real_t *measure_ratio = measure_ratio_s;
+        if (e_id-s_id > 64) {
+          CS_MALLOC(_measure_ratio, e_id-s_id, cs_real_t);
+          measure_ratio = _measure_ratio;
+        }
+
+        for (cs_lnum_t n_id = s_id; n_id < e_id; n_id++) {
+          measure_ratio[n_id-s_id] = 1.0;
+          o_m += measure[n_id];
+        }
+
+        if (f->type == CS_FIELD_EXTENSIVE) {
+          for (cs_lnum_t n_id = s_id; n_id < e_id; n_id++)
+            measure_ratio[n_id-s_id] = measure[n_id]/o_m;
+        }
+
+        /* Some fields (like velocity) are always extrapolated with gradient
+         * otherwise specified by user for fields on cells. */
+        if (f->location_id == CS_MESH_LOCATION_CELLS &&
+            (_field_interp_type == 1 || interpolation_type == 1)) {
+
+          for (cs_lnum_t n_id = s_id; n_id < e_id; n_id++) {
+            cs_real_3_t d = {cell_cen[n_id][0] - cog[o_id][0],
+                             cell_cen[n_id][1] - cog[o_id][1],
+                             cell_cen[n_id][2] - cog[o_id][2]};
+
+            for (cs_lnum_t j = 0; j < dim; j++) {
+              cs_lnum_t k = o_id*dim + j;
+              new_val_i(n_id, j) =   old_val_i(o_id, j)
+                                   + cs_math_3_dot_product(d, grad+3*k);
+              new_val_i(n_id, j) *= measure_ratio[n_id-s_id];
+            }
+          }
+        }
+        else {
+          for (cs_lnum_t n_id = s_id; n_id < e_id; n_id++) {
+            for (cs_lnum_t j = 0; j < dim; j++)
+              new_val_i(n_id, j) = old_val_i(o_id, j) * measure_ratio[n_id-s_id];
+          }
+        }
+
+        CS_FREE(_measure_ratio);
+      }
+    }
   }
+
+  if (f->has_sub_fields())
+    CS_FREE(ns_grad);
+
+  /* Update public pointers (vals[x], val & val_pre) */
+  f->update_public_pointers();
+
+  /* If current field is a series owner, update data mapping
+   * of linked fields. This method updates their cs_array objects
+   * and also calls "update_public_pointers" so that val/val_pre/vals are
+   * pointing to correct values.
+   */
+  if (f->is_series_owner())
+    f->update_sub_fields_mapping();
 
   /* For internal faces or vertices fields, new elements are created
    * but do not depend on older elements.
@@ -263,10 +361,24 @@ _realloc_and_update_field_refinement(cs_field_t        *f,
     if (  f->location_id != CS_MESH_LOCATION_INTERIOR_FACES
         || f->id != f_imf->id) {
       for (int i = 0; i < f->n_time_vals; i++) {
-        auto f_view_i = f->view(i);
-        for (cs_lnum_t idim = 0; idim < f->dim; idim ++) {
-          for (cs_lnum_t n_id = new_idx[0]; n_id < n_new; n_id++) {
-            f_view_i(n_id, idim) = 0.;
+        /* Series owner */
+        if (f->has_sub_fields()) {
+          auto f_view_i = f->ns_view(i);
+          for (cs_lnum_t sf_id = 0; sf_id < f->series_size(); sf_id++) {
+            for (cs_lnum_t n_id = new_idx[0]; n_id < n_new; n_id++) {
+              for (cs_lnum_t idim = 0; idim < f->dim; idim ++) {
+                f_view_i(sf_id, n_id, idim) = 0.;
+              }
+            }
+          }
+        }
+        /* Standard field */
+        else {
+          auto f_view_i = f->view(i);
+          for (cs_lnum_t idim = 0; idim < f->dim; idim ++) {
+            for (cs_lnum_t n_id = new_idx[0]; n_id < n_new; n_id++) {
+              f_view_i(n_id, idim) = 0.;
+            }
           }
         }
       }
@@ -284,35 +396,65 @@ _realloc_and_update_field_refinement(cs_field_t        *f,
       const cs_real_3_t *vel = (const cs_real_3_t *)(CS_F_(vel)->val);
 
       for (int i = 0; i < f->n_time_vals; i++) {
-        auto f_view_i = f->view(i);
+        // TODO: Handling of mass flux should not be based on id but on
+        // a specific key (like for interpolation method)
+        if (f->has_sub_fields()) {
+          auto f_view_i = f->ns_view(i);
 
-        // Initialisation
-        for (cs_lnum_t n_id = new_idx[0]; n_id < n_new; n_id++)
-          f_view_i(n_id, 0) = 0;
-
-        for (cs_lnum_t n_id = new_idx[0]; n_id < n_new; n_id++) {
-          cs_lnum_t c_id1 = i_face_cells[n_id][0];
-          cs_lnum_t c_id2 = i_face_cells[n_id][1];
-
-          cs_real_t w_1 = weight[n_id];
-          cs_real_t w_2 = (1. - weight[n_id]);
-
-          cs_real_t q = 0.0;
-          for (cs_lnum_t idim = 0; idim < 3; idim ++) {
-            cs_real_t qdm1 = crom[c_id1]*vel[c_id1][idim];
-            cs_real_t qdm2 = crom[c_id2]*vel[c_id2][idim];
-            q +=   (w_1 * qdm1 + w_2 * qdm2)
-                 * i_face_u_normal[n_id][idim];
+          // Initialisation
+          for (cs_lnum_t sf_id = 0; sf_id < f->series_size(); sf_id++) {
+            for (cs_lnum_t n_id = new_idx[0]; n_id < n_new; n_id++)
+              f_view_i(sf_id, n_id, 0) = 0;
           }
 
-          f_view_i(n_id, 0) += q *  i_face_surf[n_id];
+          for (cs_lnum_t n_id = new_idx[0]; n_id < n_new; n_id++) {
+            cs_lnum_t c_id1 = i_face_cells[n_id][0];
+            cs_lnum_t c_id2 = i_face_cells[n_id][1];
+
+            cs_real_t w_1 = weight[n_id];
+            cs_real_t w_2 = (1. - weight[n_id]);
+
+            cs_real_t q = 0.0;
+            for (cs_lnum_t idim = 0; idim < 3; idim ++) {
+              cs_real_t qdm1 = crom[c_id1]*vel[c_id1][idim];
+              cs_real_t qdm2 = crom[c_id2]*vel[c_id2][idim];
+              q +=   (w_1 * qdm1 + w_2 * qdm2)
+                   * i_face_u_normal[n_id][idim];
+            }
+
+            for (cs_lnum_t sf_id = 0; sf_id < f->series_size(); sf_id++)
+              f_view_i(sf_id, n_id, 0) += q *  i_face_surf[n_id];
+          }
+        }
+        else {
+          auto f_view_i = f->view(i);
+
+          // Initialisation
+          for (cs_lnum_t n_id = new_idx[0]; n_id < n_new; n_id++)
+            f_view_i(n_id, 0) = 0;
+
+          for (cs_lnum_t n_id = new_idx[0]; n_id < n_new; n_id++) {
+            cs_lnum_t c_id1 = i_face_cells[n_id][0];
+            cs_lnum_t c_id2 = i_face_cells[n_id][1];
+
+            cs_real_t w_1 = weight[n_id];
+            cs_real_t w_2 = (1. - weight[n_id]);
+
+            cs_real_t q = 0.0;
+            for (cs_lnum_t idim = 0; idim < 3; idim ++) {
+              cs_real_t qdm1 = crom[c_id1]*vel[c_id1][idim];
+              cs_real_t qdm2 = crom[c_id2]*vel[c_id2][idim];
+              q +=   (w_1 * qdm1 + w_2 * qdm2)
+                   * i_face_u_normal[n_id][idim];
+            }
+
+            f_view_i(n_id, 0) += q *  i_face_surf[n_id];
+          }
         }
       }
     }
   }
 
-  /* Update public pointers (vals[x], val & val_pre) */
-  f->update_public_pointers();
 }
 
 /*----------------------------------------------------------------------------
