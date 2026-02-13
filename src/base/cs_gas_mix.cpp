@@ -1380,6 +1380,11 @@ cs_gas_mix_initialization(void)
   /* Specific heat value */
   cs_real_t *cpro_cp = CS_F_(cp)->val;
 
+  cs_real_t *cpro_cv = nullptr;
+  if (cs_field_by_name_try("isobaric_heat_capacity") != nullptr &&
+      cs_glob_fluid_properties->icv >= 0)
+    cpro_cv = cs_field_by_name("isobaric_heat_capacity")->val;
+
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0)
     cvar_ther = cs_thermal_model_field()->val;
 
@@ -1454,6 +1459,11 @@ cs_gas_mix_initialization(void)
 
     /* Gas deduced and Total gas volumes injected */
     vol_d += cell_vol[c_id]*(y_d[c_id]/s_d.mol_mas)*mix_mol_mas[c_id];
+
+    /* Initialise Cv */
+   if (cpro_cv != nullptr)
+     cpro_cv[c_id] = cpro_cp[c_id]
+       - cs_physical_constants_r / mix_mol_mas[c_id];
 
   }
 

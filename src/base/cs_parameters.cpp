@@ -1243,8 +1243,7 @@ cs_parameters_define_auxiliary_fields(void)
     /* Pressure gradient */
     if (   th_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE
         || th_model->thermal_variable == CS_THERMAL_MODEL_INTERNAL_ENERGY
-        || (th_cf_model->ieos == CS_EOS_GAS_MIX
-            && cs_glob_velocity_pressure_model->idilat == 2)) {
+        || th_cf_model->ieos == CS_EOS_GAS_MIX) {
 
       cs_field_create("algo:pressure_gradient",
                       0,
