@@ -215,7 +215,7 @@ _realloc_and_update_field_refinement(cs_field_t        *f,
           measure_ratio[n_id-s_id] = measure[n_id]/o_m;
       }
 
-      /* Velocity is always extrapolated with gradient
+      /* Some fields (like velocity) are always extrapolated with gradient
        * otherwise specified by user for fields on cells. */
       if (f->location_id == CS_MESH_LOCATION_CELLS &&
           (_field_interp_type == 1 || interpolation_type == 1)) {
@@ -417,47 +417,102 @@ _realloc_and_update_field_coarsening(cs_field_t      *f,
                                      const cs_real_t  measure[])
 {
   cs_lnum_t n_new = cs_mesh_location_get_n_elts(f->location_id)[0];
-  cs_lnum_t n_alloc_new = cs_mesh_location_get_n_elts(f->location_id)[2];
 
   for (int i = 0; i < f->n_time_vals; i++) {
-    // New array for current time vals
-    cs_array_2d<cs_real_t> *new_val_i_ptr
-      = new cs_array_2d<cs_real_t>(n_alloc_new, f->dim);
-    auto new_val_i = new_val_i_ptr->view();
-    auto f_val_i = f->view(i);
 
-    for (cs_lnum_t idim = 0; idim < f->dim; idim ++) {
+    /* If current field is the owner of a linked series, it handles the
+     * the interpolation and resizing for everyone.
+     */
+    if (f->has_sub_fields()) {
+      /* temporary deep copy of original data */
+      auto old_val_i = f->_ns_vals[i]->get_deep_copy();
 
-      /* Fill vals with P0 interpolation */
-      for (cs_lnum_t n_id = 0; n_id < n_new; n_id++) {
-        cs_lnum_t s_id = n2o_idx[n_id], e_id = n2o_idx[n_id+1];
+      /* update_size uses the field's location id to update size */
+      f->update_size(i);
+      auto new_val_i = f->ns_view(i);
 
-        cs_real_t measure_tot = 0.0;
-        cs_real_t val_mean    = 0.0;
-        cs_real_t val_sum     = 0.0;
+      /* Temporary work array of size n_fields*2 */
+      cs_array<cs_real_t> val_sum(f->series_size());
+      cs_array<cs_real_t> val_mean(f->series_size());
 
-        /* Compute mean value on old cells */
-        for (cs_lnum_t j = s_id; j < e_id; j++) {
-          cs_lnum_t o_id = n2o[j];
-           measure_tot += measure[o_id];
-           val_mean    += f_val_i(o_id,idim) * measure[o_id];
-           val_sum     += f_val_i(o_id,idim);
+      for (cs_lnum_t idim = 0; idim < f->dim; idim ++) {
+
+        /* Fill vals with P0 interpolation */
+        for (cs_lnum_t n_id = 0; n_id < n_new; n_id++) {
+          cs_lnum_t s_id = n2o_idx[n_id], e_id = n2o_idx[n_id+1];
+
+          for (cs_lnum_t tmp_id = 0; tmp_id < f->series_size(); tmp_id++) {
+            val_sum[tmp_id] = 0.;
+            val_mean[tmp_id] = 0.;
+          }
+
+          cs_real_t measure_tot = 0.0;
+
+          /* Compute mean value on old cells */
+          for (cs_lnum_t j = s_id; j < e_id; j++) {
+            cs_lnum_t o_id = n2o[j];
+            measure_tot += measure[o_id];
+            for (cs_lnum_t k = 0; k < f->series_size(); k++) {
+              val_mean(k) += old_val_i(k, o_id, idim) * measure[o_id];
+              val_sum(k) += old_val_i(k, o_id, idim);
+            }
+          }
+          if (f->type == CS_FIELD_EXTENSIVE)
+            for (cs_lnum_t k = 0; k < f->series_size(); k++)
+              new_val_i(k, n_id, idim) = val_sum(k);
+          else
+            for (cs_lnum_t k = 0; k < f->series_size(); k++)
+              new_val_i(k, n_id, idim) = val_mean(k) / measure_tot;
         }
-        if (f->type == CS_FIELD_EXTENSIVE)
-          new_val_i(n_id, idim) = val_sum;
-        else
-          new_val_i(n_id, idim) = val_mean/measure_tot;
+
       }
 
-    }
+    } /* Field is "just" an owner, handle resizing + interpolation */
+    else if (f->owner()) {
+      /* Copy values to a temporary array and update size of field array. */
+      auto old_val_i = f->_vals[i]->get_deep_copy();
 
-    // We delete old ptr, and replace by new one
-    delete f->_vals[i];
-    f->_vals[i] = new_val_i_ptr;
+      /* update_size uses the field's location id to update size */
+      f->update_size(i);
+      auto new_val_i = f->view(i);
+
+      for (cs_lnum_t idim = 0; idim < f->dim; idim ++) {
+
+        /* Fill vals with P0 interpolation */
+        for (cs_lnum_t n_id = 0; n_id < n_new; n_id++) {
+          cs_lnum_t s_id = n2o_idx[n_id], e_id = n2o_idx[n_id+1];
+
+          cs_real_t measure_tot = 0.0;
+          cs_real_t val_mean    = 0.0;
+          cs_real_t val_sum     = 0.0;
+
+          /* Compute mean value on old cells */
+          for (cs_lnum_t j = s_id; j < e_id; j++) {
+            cs_lnum_t o_id = n2o[j];
+             measure_tot += measure[o_id];
+             val_mean    += old_val_i(o_id,idim) * measure[o_id];
+             val_sum     += old_val_i(o_id,idim);
+          }
+          if (f->type == CS_FIELD_EXTENSIVE)
+            new_val_i(n_id, idim) = val_sum;
+          else
+            new_val_i(n_id, idim) = val_mean/measure_tot;
+        }
+
+      }
+    }
   }
 
   /* Update public pointers (vals[x], val & val_pre) */
   f->update_public_pointers();
+
+  /* If current field is a series owner, update data mapping
+   * of linked fields. This method updates their cs_array objects
+   * and also calls "update_public_pointers" so that val/val_pre/vals are
+   * pointing to correct values.
+   */
+  if (f->is_series_owner())
+    f->update_sub_fields_mapping();
 }
 
 /*----------------------------------------------------------------------------
@@ -559,17 +614,14 @@ _realloc_and_update_bc_coeffs_coarsening(cs_field_t      *f,
 
 /*--------------------------------------------------------------------------*/
 /*!
- * \brief
- *
- * \param[] f
- * \param[] halo
+ * \brief Sync a standard field
  */
 /*--------------------------------------------------------------------------*/
 static void
 _halo_sync_std_owner
 (
-  cs_field_t      *f,
-  const cs_halo_t *halo
+  cs_field_t      *f,   /*!<[in] pointer to cs_field_t */
+  const cs_halo_t *halo /*!<[in] pointer to cs_halo_t */
 )
 {
   for (int kk = 0; kk < f->n_time_vals; kk++) {
@@ -587,21 +639,19 @@ _halo_sync_std_owner
 
 /*--------------------------------------------------------------------------*/
 /*!
- * \brief
- *
- * \param[] f
- * \param[] h
+ * \brief Sync a field which is a series owner and has subfields
  */
 /*--------------------------------------------------------------------------*/
 static void
 _halo_sync_series_owner
 (
-  cs_field_t      *f,
-  const cs_halo_t *halo
+  cs_field_t      *f,   /*!<[in] pointer to cs_field_t */
+  const cs_halo_t *halo /*!<[in] pointer to cs_halo_t */
 )
 {
   for (int kk = 0; kk < f->n_time_vals; kk++) {
     auto f_view = f->ns_view(kk);
+    /* We can loop on series size since its equal to 1 + n_sub_fields */
     for (int i_s = 0; i_s < f->series_size(); i_s++) {
       cs_real_t *_vals = f_view.sub_array(i_s);
 
@@ -620,15 +670,13 @@ _halo_sync_series_owner
 
 /*--------------------------------------------------------------------------*/
 /*!
- * \brief
- *
- * \param[] f
+ * \brief Sync a field
  */
 /*--------------------------------------------------------------------------*/
 static void
 _halo_sync
 (
-  cs_field_t *f
+  cs_field_t *f /*!<[in] pointer to cs_field_t */
 )
 {
   const cs_halo_t *halo = cs_glob_mesh->halo;
