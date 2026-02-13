@@ -2124,7 +2124,8 @@ _compute_cell_cog(const cs_mesh_t            *mesh,
 
   const cs_real_3_t *cell_cen = cs_glob_mesh_quantities_g->cell_cen;
   cs_real_3_t *cell_f_cen = mesh_quantities->cell_cen;
-  cs_real_3_t *cell_s_cen = mesh_quantities->cell_s_cen;
+  cs_real_3_t *cell_s_cen
+    = (cs_real_3_t *)(cs_field_by_name("cell_s_cen")->val);
   const cs_real_3_t *i_face_cog = mesh_quantities->i_face_cog;
   const cs_real_3_t *b_face_cog = mesh_quantities->b_face_cog;
 
@@ -3029,7 +3030,8 @@ _compute_solid_surface_cog(const cs_mesh_t            *mesh,
 
   const cs_real_3_t *cell_cen = cs_glob_mesh_quantities_g->cell_cen;
   const cs_real_3_t *cell_f_cen = mesh_quantities->cell_cen;
-  cs_real_3_t *cell_s_cen = mesh_quantities->cell_s_cen;
+  cs_real_3_t *cell_s_cen
+    = (cs_real_3_t *)(cs_field_by_name("cell_s_cen")->val);
   const cs_real_3_t *i_face_cog = mesh_quantities->i_face_cog;
   const cs_real_3_t *i_face_normal
     = (const cs_real_3_t *)mesh_quantities->i_face_normal;

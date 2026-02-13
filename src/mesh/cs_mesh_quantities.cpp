@@ -2675,7 +2675,6 @@ cs_mesh_quantities_create(void)
   CS_MALLOC(mesh_quantities, 1, cs_mesh_quantities_t);
 
   mesh_quantities->cell_cen = nullptr;
-  mesh_quantities->cell_s_cen = nullptr;
   mesh_quantities->cell_vol = nullptr;
   mesh_quantities->_cell_vol = nullptr;
   mesh_quantities->i_face_normal = nullptr;
@@ -2741,7 +2740,6 @@ void
 cs_mesh_quantities_free_all(cs_mesh_quantities_t  *mq)
 {
   CS_FREE(mq->cell_cen);
-  mq->cell_s_cen = nullptr;
   CS_FREE(mq->_cell_vol);
   mq->cell_vol = nullptr;
 

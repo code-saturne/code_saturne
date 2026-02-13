@@ -92,7 +92,6 @@ BEGIN_C_DECLS
 typedef struct {
 
   cs_real_3_t   *cell_cen;       /* Cell center coordinates */
-  cs_real_3_t   *cell_s_cen;     /* Cell solid center coordinates  */
 
   cs_real_t     *cell_vol;       /* Pointer to cell volume */
   cs_real_t     *_cell_vol;      /* Cell volume, if owner */
