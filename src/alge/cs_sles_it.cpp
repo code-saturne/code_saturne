@@ -244,6 +244,7 @@ _convergence_test(cs_sles_it_t              *c,
 {
   const int verbosity = convergence->verbosity;
   const cs_sles_it_setup_t  *s = c->setup_data;
+  bool diverges = false;
 
   const char final_fmt[]
     = N_("  n_iter: %5d, res_abs: %11.4e, res_nor: %11.4e, norm: %11.4e,"
@@ -303,24 +304,17 @@ _convergence_test(cs_sles_it_t              *c,
   }
 
   /* If diverged */
-  else {
-    int diverges = 0;
-    if (residual > s->initial_residual * 10000.0 && residual > 100.)
-      diverges = 1;
-#if (__STDC_VERSION__ >= 199901L)
-    else if (isnan(residual) || isinf(residual)) {
-      diverges = 1;
-    }
-#endif
-    if (diverges == 1) {
-      bft_printf(_("\n\n"
-                   "%s [%s]: divergence after %u iterations:\n"
-                   "  initial residual: %11.4e; current residual: %11.4e\n"),
-                 cs_sles_it_type_name[c->type], convergence->name,
-                 convergence->n_iterations,
-                 s->initial_residual, convergence->residual);
-      return CS_SLES_DIVERGED;
-    }
+  else if (residual > s->initial_residual * 10000.0 && residual > 100.)
+    diverges = true;
+
+  if (diverges || isnan(residual) || isinf(residual)) {
+    bft_printf(_("\n\n"
+                 "%s [%s]: divergence after %u iterations:\n"
+                 "  initial residual: %11.4e; current residual: %11.4e\n"),
+               cs_sles_it_type_name[c->type], convergence->name,
+               convergence->n_iterations,
+               s->initial_residual, convergence->residual);
+    return CS_SLES_DIVERGED;
   }
 
   return CS_SLES_ITERATING;

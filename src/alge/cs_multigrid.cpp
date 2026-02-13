@@ -2970,6 +2970,8 @@ _convergence_test(cs_multigrid_t        *mg,
     = N_("   N. cycles: %4d; Fine mesh cumulative iter: %5d; "
          "Norm. residual %12.4e\n");
 
+  bool diverges = false;
+
   /* Compute residual */
 
   *residual = sqrt(_dot_xx(mg, n_f_rows, rhs));
@@ -3025,9 +3027,7 @@ _convergence_test(cs_multigrid_t        *mg,
   else {
 
     if (*residual > initial_residual * 10000.0 && *residual > 100.) {
-      if (verbosity > 2)
-        bft_printf(_(cycle_fmt), cycle_id, n_iters, *residual/r_norm);
-      return CS_SLES_DIVERGED;
+      diverges = 1;
     }
     else if (verbosity > 2) {
       if (cycle_id == 1)
@@ -3035,10 +3035,12 @@ _convergence_test(cs_multigrid_t        *mg,
       bft_printf(_(cycle_cv_fmt), cycle_id, n_iters, *residual/r_norm);
     }
 
-#if (__STDC_VERSION__ >= 199901L)
-    if (isnan(*residual) || isinf(*residual))
-      return CS_SLES_DIVERGED;
-#endif
+  }
+
+  if (diverges || isnan(*residual) || isinf(*residual)) {
+    if (verbosity > 2)
+      bft_printf(_(cycle_fmt), cycle_id, n_iters, *residual/r_norm);
+    return CS_SLES_DIVERGED;
   }
 
   return CS_SLES_ITERATING;
