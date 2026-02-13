@@ -1006,10 +1006,8 @@ _refine_step(void)
 
   /* Free and re-compute mesh related quantities */
 
-  cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
-  cs_glob_mesh_quantities = cs_mesh_quantities_create();
+  cs_mesh_quantities_free_all(cs_glob_mesh_quantities);
   cs_mesh_quantities_compute(mesh, cs_glob_mesh_quantities);
-  cs_glob_mesh_quantities_g = cs_glob_mesh_quantities;
 
   /* Reset boundary conditions */
 
@@ -1076,10 +1074,8 @@ _coarsen_step(void)
 
   /* Free and compute mesh related quantities */
 
-  cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
-  cs_glob_mesh_quantities = cs_mesh_quantities_create();
+  cs_mesh_quantities_free_all(cs_glob_mesh_quantities);
   cs_mesh_quantities_compute(cs_glob_mesh,cs_glob_mesh_quantities);
-  cs_glob_mesh_quantities_g = cs_glob_mesh_quantities;
 
   /* Initialize selectors and locations for the mesh */
 

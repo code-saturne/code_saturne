@@ -6460,8 +6460,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   if (cs_glob_amr_info->is_set) {
 
    /* At this step we are able to recompute mesh_quantities */
-    cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
-    cs_glob_mesh_quantities   = cs_mesh_quantities_create();
+    cs_mesh_quantities_free_all(cs_glob_mesh_quantities);
     cs_mesh_quantities_compute(cs_glob_mesh,cs_glob_mesh_quantities);
     cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 

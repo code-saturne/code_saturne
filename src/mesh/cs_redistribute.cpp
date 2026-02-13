@@ -1400,10 +1400,8 @@ cs_redistribute(const int                cell_dest_rank[],
 
   cs_mesh_init_group_classes(mesh);
 
-  cs_mesh_quantities_destroy(cs_glob_mesh_quantities);
-  cs_glob_mesh_quantities = cs_mesh_quantities_create();
+  cs_mesh_quantities_free_all(cs_glob_mesh_quantities);
   cs_mesh_quantities_compute(cs_glob_mesh,cs_glob_mesh_quantities);
-  cs_glob_mesh_quantities_g = cs_glob_mesh_quantities;
 
   cs_mesh_update_selectors(mesh);
   cs_mesh_location_build(mesh, -1);
