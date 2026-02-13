@@ -2760,22 +2760,24 @@ cs_mesh_quantities_free_all(cs_mesh_quantities_t  *mq)
   mq->i_f_face_factor = nullptr;
   mq->b_f_face_factor = nullptr;
 
+  CS_FREE(mq->diipb);
+  CS_FREE(mq->dofij);
+  CS_FREE(mq->diipf);
+  CS_FREE(mq->djjpf);
+
   CS_FREE(mq->i_dist);
   CS_FREE(mq->b_dist);
   mq->c_w_dist_inv = nullptr;
 
   CS_FREE(mq->weight);
 
-  CS_FREE(mq->diipb);
-  CS_FREE(mq->dofij);
-  CS_FREE(mq->diipf);
-  CS_FREE(mq->djjpf);
-
   CS_FREE(mq->corr_grad_lin_det);
   CS_FREE(mq->corr_grad_lin);
   CS_FREE(mq->b_sym_flag);
   CS_FREE(mq->c_disable_flag);
   CS_FREE(mq->bad_cell_flag);
+
+  mq->has_disable_flag = 0;
 }
 
 /*----------------------------------------------------------------------------*/
