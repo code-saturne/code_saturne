@@ -391,7 +391,7 @@ public:
 
   CS_F_HOST_DEVICE
   inline
-  const int
+  int
   series_size() const
   {
     return ns_size;
@@ -399,7 +399,7 @@ public:
 
   CS_F_HOST_DEVICE
   inline
-  const int
+  int
   series_owner() const
   {
     return ns_owner;
@@ -407,7 +407,7 @@ public:
 
   CS_F_HOST_DEVICE
   inline
-  const int
+  int
   series_id() const
   {
     return ns_idx;
