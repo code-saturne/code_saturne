@@ -115,6 +115,8 @@ cs_rad_transfer_add_variable_fields(void)
 
   cs_parameters_error_barrier();
 
+  const int keyvis = cs_field_key_id("post_vis");
+
   /* radiance (per band) */
   char f_name[80];
   char f_label[80];
@@ -161,6 +163,8 @@ cs_rad_transfer_add_variable_fields(void)
 
               cs_field_pointer_map_indexed(CS_ENUMF_(radiance), rad_id, f);
 
+              cs_field_set_key_int(f, keyvis, 0);
+
               /* Equation parameters */
               cs_equation_param_t *eqp = cs_field_get_equation_param(f);
               eqp->verbosity =  rt_params->verbosity - 1;
@@ -202,6 +206,8 @@ cs_rad_transfer_add_variable_fields(void)
       cs_field_t *f = cs_field_by_id(f_id);
 
       cs_field_pointer_map_indexed(CS_ENUMF_(radiance), gg_id, f);
+
+      cs_field_set_key_int(f, keyvis, 0);
 
       /* Equation parameters */
       cs_equation_param_t *eqp = cs_field_get_equation_param(f);
