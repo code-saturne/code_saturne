@@ -1418,10 +1418,11 @@ cs_adaptive_refinement_free_gradients(void)
 void
 cs_adaptive_refinement_step(void)
 {
-  cs_log_printf(CS_LOG_DEFAULT,
-                _("\n"
-                  "Starting mesh adaptation (AMR)\n"
-                  "------------------------------\n\n"));
+  if (cs_log_default_is_active())
+    cs_log_printf(CS_LOG_DEFAULT,
+                  _("\n"
+                    "Starting mesh adaptation (AMR)\n"
+                    "------------------------------\n\n"));
 
   cs_mesh_t *mesh = cs_glob_mesh;
   int *&indic = cs_glob_amr_info->indic_cells;
@@ -1443,7 +1444,7 @@ cs_adaptive_refinement_step(void)
 
   /* Post-adaptation updates */
 
-  cs_matrix_update_mesh();
+  cs_gradient_free_quantities();
 
   /* Perform load balancing */
 
@@ -1454,10 +1455,14 @@ cs_adaptive_refinement_step(void)
   }
 #endif
 
-  cs_log_printf(CS_LOG_DEFAULT,
-                _("\n"
-                  "Completed mesh adaptation\n"
-                  "-------------------------\n\n"));
+  cs_mesh_adjacencies_update_mesh();
+  cs_matrix_update_mesh();
+
+  if (cs_log_default_is_active())
+    cs_log_printf(CS_LOG_DEFAULT,
+                  _("\n"
+                    "Completed mesh adaptation\n"
+                    "-------------------------\n\n"));
 }
 
 /*----------------------------------------------------------------------------*/

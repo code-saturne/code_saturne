@@ -5960,7 +5960,6 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
     cs_halo_type_t halo_type = m->halo_type;
     cs_mesh_builder_t *mb = (m == cs_glob_mesh) ? cs_glob_mesh_builder : nullptr;
     cs_mesh_init_halo(m, mb, halo_type, -1, true);
-    cs_mesh_update_auxiliary(m);
   }
 
   m->verbosity = mv_save;
