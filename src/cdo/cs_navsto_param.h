@@ -200,17 +200,6 @@ typedef enum {
 
 } cs_navsto_param_post_bit_t;
 
-typedef struct {
-
-  /*! \var verbosity
-   *  Level of information printed
-   */
-
-  int                           verbosity;
-
-
-} cs_navsto_param_sles_t;
-
 /*! \enum cs_navsto_param_coupling_t
  *  \brief Choice of algorithm for solving the system
  *
