@@ -294,39 +294,6 @@ cs_cdo_blas_dotprod_2pvsp(const cs_real_t *a,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the dot product of two arrays using the classical Euclidean
- *        dot product (without weight).
- *        Case of a scalar-valued arrays defined at primal faces.
- *        The computed quantity is synchronized in parallel.
- *
- * \param[in] a  first array to handle
- * \param[in] b  second array to handle
- *
- * \return the value of the dot product
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t
-cs_cdo_blas_dotprod_face(const cs_real_t *a,
-                         const cs_real_t *b);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the square norm of an array using an Euclidean 2-norm.
- *        Case of a scalar-valued array defined at primal faces.
- *        The computed quantities are synchronized in parallel.
- *
- * \param[in] array  array to handle
- *
- * \return the square weighted L2-norm
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t
-cs_cdo_blas_square_norm_face(const cs_real_t *array);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Compute the square norm of an array
  *        Case of a scalar-valued array defined as a potential at primal
  *        faces. Thus, the weigth is the pyramid of apex the cell center and of
