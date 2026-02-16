@@ -381,6 +381,116 @@ cs_cdo_blas_square_norm_pfsf_diff(const cs_real_t *a,
                                   const cs_real_t *b);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the square norm of an array
+ *        Case of a scalar-valued array defined as the flux at primal faces.
+ *        The trace on the skeleton of the mesh is used to compute the norm.
+ *        The computed quantities are synchronized in parallel.
+ *
+ * \param[in] array  array to handle
+ *
+ * \return the square weighted L2-norm
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_cdo_blas_square_norm_pfsf_trace(const cs_real_t *array);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the norm ||b - a||**2
+ *        Case of a scalar-valued array defined as the flux at primal faces.
+ *        The trace on the skeleton of the mesh is used to compute the norm.
+ *        The computed quantities are synchronized in parallel.
+ *
+ * \param[in] a  first array to handle
+ * \param[in] b  second array to handle
+ *
+ * \return the value of ||b - a||**2
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_cdo_blas_square_norm_pfsf_trace_diff(const cs_real_t *a,
+                                        const cs_real_t *b);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the dot product of two arrays using a H(div)-like dot product
+ *        relying on CDO quantities.
+ *        Case of a scalar-valued arrays defined as a flux at primal
+ *        faces. Thus, the weigth is the pyramid of apex the cell center and of
+ *        basis the face. Each face quantity is normalized by the face
+ *        surface. In addition, the L2-norm of the div(flux) is computed.
+ *        The computed quantity is synchronized in parallel.
+ *
+ * \param[in] a  first array to handle
+ * \param[in] b  second array to handle
+ *
+ * \return the value of the dot product
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_cdo_blas_dotprod_pfsf_trace(const cs_real_t *a,
+                               const cs_real_t *b);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the square norm of an array
+ *        Case of a scalar-valued array defined as the flux at primal faces.
+ *        The Hdiv-like norm is used to compute the norm.
+ *        The computed quantities are synchronized in parallel.
+ *
+ * \param[in] array  array to handle
+ *
+ * \return the square weighted L2-norm
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_cdo_blas_square_norm_pfsf_hdiv(const cs_real_t *array);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the norm ||b - a||**2
+ *        Case of a scalar-valued array defined as the flux at primal faces.
+ *        The Hdiv-like norm is used to compute the norm.
+ *        The computed quantities are synchronized in parallel.
+ *
+ * \param[in] a  first array to handle
+ * \param[in] b  second array to handle
+ *
+ * \return the value of ||b - a||**2
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_cdo_blas_square_norm_pfsf_hdiv_diff(const cs_real_t *a,
+                                       const cs_real_t *b);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the dot product of two arrays using a H(div)-like dot product
+ *        relying on CDO quantities.
+ *        Case of a scalar-valued arrays defined as a flux at primal
+ *        faces. Thus, the weigth is the pyramid of apex the cell center and of
+ *        basis the face. Each face quantity is normalized by the face
+ *        surface. In addition, the L2-norm of the div(flux) is computed.
+ *        The computed quantity is synchronized in parallel.
+ *
+ * \param[in] a  first array to handle
+ * \param[in] b  second array to handle
+ *
+ * \return the value of the dot product
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_cdo_blas_dotprod_pfsf_hdiv(const cs_real_t *a,
+                              const cs_real_t *b);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

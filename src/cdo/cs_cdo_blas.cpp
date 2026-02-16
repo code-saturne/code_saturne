@@ -38,6 +38,7 @@
 #include "alge/cs_blas.h"
 #include "base/cs_math.h"
 #include "base/cs_parall.h"
+#include "cdo/cs_param_cdo.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -331,6 +332,476 @@ _c2x_vector_sqnorm(const cs_lnum_t       size,
   cs::parall::sum(l2norm);
 
   return (cs_real_t)l2norm;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the weighted square trace norm of a flux-based array relying
+ *        on a weight which is associated to faces. Norm on the mesh skeleton.
+ *
+ * \param[in] size      size of the weight array
+ * \param[in] c2f       pointer to the adjacency used to access the weights
+ * \param[in] i_surf    surface of interior faces
+ * \param[in] b_surf    surface of boundary faces
+ * \param[in] array     array to handle
+ * \param[in] do_redux  perform the parallel reduction ?
+ *
+ * \return the square weighted L2-norm
+ */
+/*----------------------------------------------------------------------------*/
+
+static double
+_c2f_flux_trace_sqnorm(const cs_lnum_t       size,
+                       const cs_adjacency_t *c2f,
+                       const cs_real_t      *i_surf,
+                       const cs_real_t      *b_surf,
+                       const cs_real_t      *array,
+                       bool                  do_redux)
+{
+ /*
+  * The algorithm used is l3superblock60, based on the article:
+  * "Reducing Floating Point Error in Dot Product Using the Superblock Family
+  * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
+  * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156--1174
+  * 2008 Society for Industrial and Applied Mathematics
+  */
+
+  double  l2norm = 0;
+
+# pragma omp parallel reduction(+:l2norm) if (size > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    _thread_range(size, &s_id, &e_id);
+
+    const cs_lnum_t  n = e_id - s_id;
+    const cs_lnum_t  *_ids = c2f->ids + s_id;
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    cs_lnum_t  shift = 0;
+
+    for (cs_lnum_t s = 0; s < n_sblocks; s++) { /* Loop on slices */
+
+      double  s_l2norm = 0.0;
+
+      for (cs_lnum_t b_id = 0; b_id < blocks_in_sblocks; b_id++) {
+
+        const cs_lnum_t  start_id = shift;
+        shift += block_size;
+        if (shift > n)
+          shift = n, b_id = blocks_in_sblocks;
+        const cs_lnum_t  end_id = shift;
+
+        double  _l2norm = 0.0;
+        for (cs_lnum_t j = start_id; j < end_id; j++) {
+
+          // weights for interior faces is 1/(2*i_surf) since an interior
+          // appears twice in the c2f adjacency
+
+          const cs_lnum_t  f_id = _ids[j];
+          const double v = array[f_id];
+          const double surf = (f_id < cs_cdo_quant->n_i_faces) ?
+            2*i_surf[f_id] : b_surf[f_id - cs_cdo_quant->n_i_faces];
+
+          _l2norm += (v*v)/surf;
+
+        } /* Loop on block_size */
+
+        s_l2norm += _l2norm;
+
+      } /* Loop on blocks */
+
+      l2norm += s_l2norm;
+
+    } /* Loop on super-blocks */
+
+  } /* OpenMP block */
+
+  /* Parallel treatment */
+
+  if (do_redux)
+    cs::parall::sum(l2norm);
+
+  return l2norm;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the norm ||b - a||**2
+ *        Case of a scalar-valued array defined as the flux at primal faces.
+ *        Compute the weighted square trace norm of a flux-based array relying
+ *        on a weight which is associated to faces. Norm on the mesh skeleton.
+ *
+ * \param[in] size      size of the weight array
+ * \param[in] c2f       pointer to the adjacency used to access the weights
+ * \param[in] i_surf    surface of interior faces
+ * \param[in] b_surf    surface of boundary faces
+ * \param[in] a         first array to handle
+ * \param[in] b         second array to handle
+ * \param[in] do_redux  perform the parallel reduction ?
+ *
+ * \return the square weighted L2-norm
+ */
+/*----------------------------------------------------------------------------*/
+
+static double
+_c2f_flux_trace_sqnorm_diff(const cs_lnum_t       size,
+                            const cs_adjacency_t *c2f,
+                            const cs_real_t      *i_surf,
+                            const cs_real_t      *b_surf,
+                            const cs_real_t      *a,
+                            const cs_real_t      *b,
+                            bool                  do_redux)
+{
+ /*
+  * The algorithm used is l3superblock60, based on the article:
+  * "Reducing Floating Point Error in Dot Product Using the Superblock Family
+  * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
+  * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156--1174
+  * 2008 Society for Industrial and Applied Mathematics
+  */
+
+  double  l2norm = 0;
+
+# pragma omp parallel reduction(+:l2norm) if (size > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    _thread_range(size, &s_id, &e_id);
+
+    const cs_lnum_t  n = e_id - s_id;
+    const cs_lnum_t  *_ids = c2f->ids + s_id;
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    cs_lnum_t  shift = 0;
+
+    for (cs_lnum_t s = 0; s < n_sblocks; s++) { /* Loop on slices */
+
+      double  s_l2norm = 0.0;
+
+      for (cs_lnum_t b_id = 0; b_id < blocks_in_sblocks; b_id++) {
+
+        const cs_lnum_t  start_id = shift;
+        shift += block_size;
+        if (shift > n)
+          shift = n, b_id = blocks_in_sblocks;
+        const cs_lnum_t  end_id = shift;
+
+        double  _l2norm = 0.0;
+        for (cs_lnum_t j = start_id; j < end_id; j++) {
+
+          // weights for interior faces is 1/(2*i_surf) since an interior
+          // appears twice in the c2f adjacency
+
+          const cs_lnum_t  f_id = _ids[j];
+          const double v = b[f_id] - a[f_id];
+          const double surf = (f_id < cs_cdo_quant->n_i_faces) ?
+            2*i_surf[f_id] : b_surf[f_id - cs_cdo_quant->n_i_faces];
+
+          _l2norm += (v*v)/surf;
+
+        } /* Loop on block_size */
+
+        s_l2norm += _l2norm;
+
+      } /* Loop on blocks */
+
+      l2norm += s_l2norm;
+
+    } /* Loop on super-blocks */
+
+  } /* OpenMP block */
+
+  /* Parallel treatment */
+
+  if (do_redux)
+    cs::parall::sum(l2norm);
+
+  return l2norm;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the dot product (a,b)
+ *        Case of a scalar-valued array defined as the flux at primal faces.
+ *        Compute the trace dot product of a flux-based array only relying on
+ *        the mesh skeleton.
+ *
+ * \param[in] size      size of the weight array
+ * \param[in] c2f       pointer to the adjacency used to access the weights
+ * \param[in] i_surf    surface of interior faces
+ * \param[in] b_surf    surface of boundary faces
+ * \param[in] a         first array to handle
+ * \param[in] b         second array to handle
+ * \param[in] do_redux  perform the parallel reduction ?
+ *
+ * \return the square weighted L2-norm
+ */
+/*----------------------------------------------------------------------------*/
+
+static double
+_c2f_flux_trace_dotprod(const cs_lnum_t       size,
+                        const cs_adjacency_t *c2f,
+                        const cs_real_t      *i_surf,
+                        const cs_real_t      *b_surf,
+                        const cs_real_t      *a,
+                        const cs_real_t      *b,
+                        bool                  do_redux)
+{
+ /*
+  * The algorithm used is l3superblock60, based on the article:
+  * "Reducing Floating Point Error in Dot Product Using the Superblock Family
+  * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
+  * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156--1174
+  * 2008 Society for Industrial and Applied Mathematics
+  */
+
+  double  dp = 0;
+
+# pragma omp parallel reduction(+:dp) if (size > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    _thread_range(size, &s_id, &e_id);
+
+    const cs_lnum_t  n = e_id - s_id;
+    const cs_lnum_t  *_ids = c2f->ids + s_id;
+    const cs_lnum_t block_size = CS_SBLOCK_BLOCK_SIZE;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    _sbloc_sizes(n, block_size, &n_sblocks, &blocks_in_sblocks);
+
+    cs_lnum_t  shift = 0;
+
+    for (cs_lnum_t s = 0; s < n_sblocks; s++) { /* Loop on slices */
+
+      double  s_dp = 0.0;
+
+      for (cs_lnum_t b_id = 0; b_id < blocks_in_sblocks; b_id++) {
+
+        const cs_lnum_t  start_id = shift;
+        shift += block_size;
+        if (shift > n)
+          shift = n, b_id = blocks_in_sblocks;
+        const cs_lnum_t  end_id = shift;
+
+        double  _dp = 0.0;
+        for (cs_lnum_t j = start_id; j < end_id; j++) {
+
+          // weights for interior faces is 1/(2*i_surf) since an interior
+          // appears twice in the c2f adjacency
+
+          const cs_lnum_t  f_id = _ids[j];
+          const double surf = (f_id < cs_cdo_quant->n_i_faces) ?
+            2*i_surf[f_id] : b_surf[f_id - cs_cdo_quant->n_i_faces];
+          _dp += (a[f_id]*b[f_id])/surf;
+
+        } /* Loop on block_size */
+
+        s_dp += _dp;
+
+      } /* Loop on blocks */
+
+      dp += s_dp;
+
+    } /* Loop on super-blocks */
+
+  } /* OpenMP block */
+
+  /* Parallel treatment */
+
+  if (do_redux)
+    cs::parall::sum(dp);
+
+  return dp;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the weighted square trace norm of a flux-based array relying
+ *        on a weight which is associated to faces.
+ *
+ * \param[in] c2f       pointer to the adjacency used to access the weights
+ * \param[in] i_surf    surface of interior faces
+ * \param[in] b_surf    surface of boundary faces
+ * \param[in] array     array to handle
+ * \param[in] do_redux  perform the parallel reduction ?
+ *
+ * \return the square weighted L2-norm
+ */
+/*----------------------------------------------------------------------------*/
+
+static double
+_c2f_flux_hdiv_sqnorm(const cs_adjacency_t *c2f,
+                      const cs_real_t      *w_c2f,
+                      const cs_real_t      *i_surf,
+                      const cs_real_t      *b_surf,
+                      const cs_real_t      *array,
+                      bool                  do_redux)
+{
+  double  l2norm = 0;
+
+# pragma omp parallel for reduction(+:l2norm)                   \
+  if (cs_cdo_quant->n_cells > CS_THR_MIN) CS_CDO_OMP_SCHEDULE
+  for (cs_lnum_t c_id = 0; c_id < cs_cdo_quant->n_cells; c_id++) {
+
+    const cs_lnum_t s_id = c2f->idx[c_id], e_id = c2f->idx[c_id+1];
+    const cs_lnum_t *_ids = c2f->ids + s_id;
+    const cs_real_t *_w = w_c2f + s_id;
+
+    double l2n_c = 0., divn_c = 0.;
+    for (cs_lnum_t i = 0; i < e_id-s_id; i++) {
+
+      const cs_lnum_t f_id = _ids[i];
+      const double surf = (f_id < cs_cdo_quant->n_i_faces) ?
+      i_surf[f_id] : b_surf[f_id - cs_cdo_quant->n_i_faces];
+      const double  v = array[f_id]/surf;
+
+      l2n_c += _w[i]*v*v;
+      divn_c += array[f_id];
+
+    } /* Loop on cell faces */
+
+    l2norm += l2n_c + divn_c*divn_c/cs_cdo_quant->cell_vol[c_id];
+
+  } /* OpenMP loop on cells */
+
+  /* Parallel treatment */
+
+  if (do_redux)
+    cs::parall::sum(l2norm);
+
+  return l2norm;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the norm ||b - a||**2
+ *        Case of a scalar-valued array defined as the flux at primal faces.
+ *        The Hdiv-like norm is used to compute the norm.
+ *        The computed quantities are synchronized in parallel.
+ *
+ * \param[in] c2f       pointer to the adjacency used to access the weights
+ * \param[in] i_surf    surface of interior faces
+ * \param[in] b_surf    surface of boundary faces
+ * \param[in] a         first array to handle
+ * \param[in] b         second array to handle
+ * \param[in] do_redux  perform the parallel reduction ?
+ *
+ * \return the dot product
+ */
+/*----------------------------------------------------------------------------*/
+
+static double
+_c2f_flux_hdiv_sqnorm_diff(const cs_adjacency_t *c2f,
+                           const cs_real_t      *w_c2f,
+                           const cs_real_t      *i_surf,
+                           const cs_real_t      *b_surf,
+                           const cs_real_t      *a,
+                           const cs_real_t      *b,
+                           bool                  do_redux)
+{
+  double  l2norm = 0;
+
+# pragma omp parallel for reduction(+:l2norm)                   \
+  if (cs_cdo_quant->n_cells > CS_THR_MIN) CS_CDO_OMP_SCHEDULE
+  for (cs_lnum_t c_id = 0; c_id < cs_cdo_quant->n_cells; c_id++) {
+
+    const cs_lnum_t s_id = c2f->idx[c_id], e_id = c2f->idx[c_id+1];
+    const cs_lnum_t *_ids = c2f->ids + s_id;
+    const cs_real_t *_w = w_c2f + s_id;
+
+    double l2n_c = 0., divn_c = 0.;
+    for (cs_lnum_t i = 0; i < e_id-s_id; i++) {
+
+      const cs_lnum_t f_id = _ids[i];
+      const double invsurf = (f_id < cs_cdo_quant->n_i_faces) ?
+      1./i_surf[f_id] : 1./b_surf[f_id - cs_cdo_quant->n_i_faces];
+      const double _amb = (a[f_id] - b[f_id]);
+      const double _ambinvsurf = (a[f_id] - b[f_id])*invsurf;
+
+      l2n_c += _w[i]*_ambinvsurf*_ambinvsurf;
+      divn_c += _amb;
+
+    } /* Loop on cell faces */
+
+    double _norm_c = l2n_c + divn_c*divn_c/cs_cdo_quant->cell_vol[c_id];
+
+    l2norm += _norm_c;
+
+  } /* OpenMP loop on cells */
+
+  /* Parallel treatment */
+
+  if (do_redux)
+    cs::parall::sum(l2norm);
+
+  return l2norm;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the H(div)-like dot product of flux-based arrays relying
+ *        associated to primal faces.
+ *
+ * \param[in] c2f       pointer to the adjacency used to access the weights
+ * \param[in] i_surf    surface of interior faces
+ * \param[in] b_surf    surface of boundary faces
+ * \param[in] a         first array to handle
+ * \param[in] b         second array to handle
+ * \param[in] do_redux  perform the parallel reduction ?
+ *
+ * \return the dot product
+ */
+/*----------------------------------------------------------------------------*/
+
+static double
+_c2f_flux_hdiv_dotprod(const cs_adjacency_t *c2f,
+                       const cs_real_t      *w_c2f,
+                       const cs_real_t      *i_surf,
+                       const cs_real_t      *b_surf,
+                       const cs_real_t      *a,
+                       const cs_real_t      *b,
+                       bool                  do_redux)
+{
+  double  dp = 0;
+
+# pragma omp parallel for reduction(+:dp)                   \
+  if (cs_cdo_quant->n_cells > CS_THR_MIN) CS_CDO_OMP_SCHEDULE
+  for (cs_lnum_t c_id = 0; c_id < cs_cdo_quant->n_cells; c_id++) {
+
+    const cs_lnum_t s_id = c2f->idx[c_id], e_id = c2f->idx[c_id+1];
+    const cs_lnum_t *_ids = c2f->ids + s_id;
+    const cs_real_t *_w = w_c2f + s_id;
+
+    double l2dp_c = 0., diva_c = 0., divb_c = 0.;
+    for (cs_lnum_t i = 0; i < e_id-s_id; i++) {
+
+      const cs_lnum_t f_id = _ids[i];
+      const double invsurf = (f_id < cs_cdo_quant->n_i_faces) ?
+      1./i_surf[f_id] : 1./b_surf[f_id - cs_cdo_quant->n_i_faces];
+      const double _a = a[f_id]*invsurf;
+      const double _b = b[f_id]*invsurf;
+
+      l2dp_c += _w[i]*_a*_b;
+      diva_c += a[f_id];
+      divb_c += b[f_id];
+
+    } /* Loop on cell faces */
+
+    dp += l2dp_c + diva_c*divb_c/cs_cdo_quant->cell_vol[c_id];
+
+  } /* OpenMP loop on cells */
+
+  /* Parallel treatment */
+
+  if (do_redux)
+    cs::parall::sum(dp);
+
+  return dp;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1333,6 +1804,194 @@ cs_cdo_blas_square_norm_pfsf_diff(const cs_real_t *a,
   cs::parall::sum(l2norm);
 
   return (cs_real_t)l2norm;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the square norm of an array
+ *        Case of a scalar-valued array defined as the flux at primal faces.
+ *        The trace on the skeleton of the mesh is used to compute the norm.
+ *        The computed quantities are synchronized in parallel.
+ *
+ * \param[in] array  array to handle
+ *
+ * \return the square weighted L2-norm
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_cdo_blas_square_norm_pfsf_trace(const cs_real_t *array)
+{
+  const cs_adjacency_t *c2f = cs_cdo_connect->c2f;
+
+  assert(cs_cdo_quant != nullptr && cs_cdo_connect != nullptr);
+
+  if (c2f == nullptr)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: The c2f cs_adjacency_t structure is not allocated.\n",
+              __func__);
+
+  return _c2f_flux_trace_sqnorm(c2f->idx[cs_cdo_quant->n_cells], c2f,
+                                cs_cdo_quant->i_face_surf,
+                                cs_cdo_quant->b_face_surf,
+                                array, true); /* do parallel sum */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the norm ||b - a||**2
+ *        Case of a scalar-valued array defined as the flux at primal faces.
+ *        The trace on the skeleton of the mesh is used to compute the norm.
+ *        The computed quantities are synchronized in parallel.
+ *
+ * \param[in] a  first array to handle
+ * \param[in] b  second array to handle
+ *
+ * \return the value of ||b - a||**2
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_cdo_blas_square_norm_pfsf_trace_diff(const cs_real_t *a,
+                                        const cs_real_t *b)
+{
+  const cs_adjacency_t *c2f = cs_cdo_connect->c2f;
+
+  assert(cs_cdo_quant != nullptr && cs_cdo_connect != nullptr);
+
+  if (c2f == nullptr)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: The c2f cs_adjacency_t structure is not allocated.\n",
+              __func__);
+
+  return _c2f_flux_trace_sqnorm_diff(c2f->idx[cs_cdo_quant->n_cells], c2f,
+                                     cs_cdo_quant->i_face_surf,
+                                     cs_cdo_quant->b_face_surf,
+                                     a, b, true); /* do parallel sum */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the dot product of two arrays using a H(div)-like dot product
+ *        relying on CDO quantities.
+ *        Case of a scalar-valued arrays defined as a flux at primal
+ *        faces. Thus, the weigth is the pyramid of apex the cell center and of
+ *        basis the face. Each face quantity is normalized by the face
+ *        surface. In addition, the L2-norm of the div(flux) is computed.
+ *        The computed quantity is synchronized in parallel.
+ *
+ * \param[in] a  first array to handle
+ * \param[in] b  second array to handle
+ *
+ * \return the value of the dot product
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_cdo_blas_dotprod_pfsf_trace(const cs_real_t *a,
+                               const cs_real_t *b)
+{
+  const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
+
+  assert(cs_cdo_quant != nullptr && cs_cdo_connect != nullptr);
+
+  if (c2f == nullptr)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: The c2f cs_adjacency_t structure is not allocated.\n",
+              __func__);
+
+  return _c2f_flux_trace_dotprod(c2f->idx[cs_cdo_quant->n_cells], c2f,
+                                 cs_cdo_quant->i_face_surf,
+                                 cs_cdo_quant->b_face_surf,
+                                 a, b, true); /* do parallel sum */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the square norm of an array
+ *        Case of a scalar-valued array defined as the flux at primal faces.
+ *        The Hdiv-like norm is used to compute the norm.
+ *        The computed quantities are synchronized in parallel.
+ *
+ * \param[in] array  array to handle
+ *
+ * \return the square weighted L2-norm
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_cdo_blas_square_norm_pfsf_hdiv(const cs_real_t *array)
+{
+  const cs_adjacency_t *c2f = cs_cdo_connect->c2f;
+  const cs_real_t  *w_c2f = cs_cdo_quant->pvol_fc;
+
+  _sanity_checks(__func__, c2f, w_c2f);
+
+  return _c2f_flux_hdiv_sqnorm(c2f, w_c2f,
+                               cs_cdo_quant->i_face_surf,
+                               cs_cdo_quant->b_face_surf,
+                               array, true); /* do parallel sum */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the norm ||b - a||**2
+ *        Case of a scalar-valued array defined as the flux at primal faces.
+ *        The Hdiv-like norm is used to compute the norm.
+ *        The computed quantities are synchronized in parallel.
+ *
+ * \param[in] a  first array to handle
+ * \param[in] b  second array to handle
+ *
+ * \return the value of ||b - a||**2
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_cdo_blas_square_norm_pfsf_hdiv_diff(const cs_real_t *a,
+                                       const cs_real_t *b)
+{
+  const cs_adjacency_t *c2f = cs_cdo_connect->c2f;
+  const cs_real_t  *w_c2f = cs_cdo_quant->pvol_fc;
+
+  _sanity_checks(__func__, c2f, w_c2f);
+
+  return _c2f_flux_hdiv_sqnorm_diff(c2f, w_c2f,
+                                    cs_cdo_quant->i_face_surf,
+                                    cs_cdo_quant->b_face_surf,
+                                    a, b, true); /* do parallel sum */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the dot product of two arrays using a H(div)-like dot product
+ *        relying on CDO quantities.
+ *        Case of a scalar-valued arrays defined as a flux at primal
+ *        faces. Thus, the weigth is the pyramid of apex the cell center and of
+ *        basis the face. Each face quantity is normalized by the face
+ *        surface. In addition, the L2-norm of the div(flux) is computed.
+ *        The computed quantity is synchronized in parallel.
+ *
+ * \param[in] a  first array to handle
+ * \param[in] b  second array to handle
+ *
+ * \return the value of the dot product
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_cdo_blas_dotprod_pfsf_hdiv(const cs_real_t *a,
+                              const cs_real_t *b)
+{
+  const cs_adjacency_t  *c2f = cs_cdo_connect->c2f;
+  const cs_real_t  *w_c2f = cs_cdo_quant->pvol_fc;
+
+  _sanity_checks(__func__, c2f, w_c2f);
+
+  return _c2f_flux_hdiv_dotprod(c2f, w_c2f,
+                                cs_cdo_quant->i_face_surf,
+                                cs_cdo_quant->b_face_surf,
+                                a, b, true); /* do parallel sum */
 }
 
 /*----------------------------------------------------------------------------*/
