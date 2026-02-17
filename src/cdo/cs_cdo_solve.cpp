@@ -411,12 +411,9 @@ cs_cdo_solve_scalar_system(cs_lnum_t               n_scatter_dofs,
   assert(slesp != nullptr);
 
   if (sles == nullptr)
-    bft_error(__FILE__,
-              __LINE__,
-              0,
+    bft_error(__FILE__, __LINE__, 0,
               "%s(): SLES structure is nullptr for SLES \"%s\"\n",
-              __func__,
-              slesp->name);
+              __func__, slesp->name);
 
   /* Set xsol (manage allocation and initialization in case of parallelism) */
 
@@ -447,7 +444,7 @@ cs_cdo_solve_scalar_system(cs_lnum_t               n_scatter_dofs,
 
   sinfo.n_it = 0;
   sinfo.res_norm = DBL_MAX;
-  sinfo.rhs_norm = normalization;
+  sinfo.rhs_norm = (normalization > 0) ? normalization : 1.0;
 
   cs_sles_convergence_state_t code = cs_sles_solve(sles,
                                                    matrix,
