@@ -34,6 +34,7 @@
 typedef struct {
   int *c_r_level;
   int *c_r_flag;
+  int *indic;
 } cs_redistribute_data_t;
 
 /*=============================================================================

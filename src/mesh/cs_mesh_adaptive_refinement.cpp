@@ -103,7 +103,8 @@ static cs_amr_info_t _amr_info = {
   nullptr,
   nullptr,
   nullptr,
-  0
+  0,
+  nullptr
 };
 
 cs_amr_info_t *cs_glob_amr_info = &_amr_info;
@@ -953,16 +954,23 @@ _realloc_and_interp_after_coarsening
  *
  * parameters:
  *   mesh        <-- pointer to the mesh
- *   c_r_level   <-- cell refinement level before the refinement process
  *   indic       <-> initial array containing the flagged cells
  *----------------------------------------------------------------------------*/
 
 static void
 _propagate_refinement(cs_mesh_t  *m,
-                      const int   c_r_level[],
                       int         indic[])
 {
-  cs_halo_sync_untyped(m->halo, CS_HALO_STANDARD, sizeof(int), indic);
+  int *c_r_level = nullptr;
+  CS_MALLOC(c_r_level, m->n_cells_with_ghosts, int);
+  _build_cell_r_level(m, c_r_level);
+
+  const int max_cell_level = _amr_info.n_layers;
+
+  if (m->halo)
+    cs_halo_sync_untyped(m->halo, CS_HALO_STANDARD, sizeof(int), indic);
+
+  // Propagate.
 
   int reloop = 0;
 
@@ -976,6 +984,9 @@ _propagate_refinement(cs_mesh_t  *m,
       int r_level_1 = indic[c_id1] + c_r_level[c_id1];
       int r_level_2 = indic[c_id2] + c_r_level[c_id2];
 
+      r_level_1 = cs::min(r_level_1, max_cell_level);
+      r_level_2 = cs::min(r_level_2, max_cell_level);
+
       if (r_level_1 > r_level_2 + 1) {
         indic[c_id2]++;
         reloop = 1;
@@ -988,6 +999,7 @@ _propagate_refinement(cs_mesh_t  *m,
     }
 
     cs_parall_max(1, CS_INT_TYPE, &reloop);
+
     if (m->halo != nullptr) {
       cs_halo_sync_untyped(m->halo,
                            CS_HALO_STANDARD,
@@ -995,6 +1007,48 @@ _propagate_refinement(cs_mesh_t  *m,
                            indic);
     }
   } while (reloop);
+
+  CS_FREE(c_r_level);
+}
+
+/*----------------------------------------------------------------------------
+ * Block coarsening in the neighborhood of the cells to be refined.
+ *
+ * parameters:
+ *   mesh        <-- pointer to the mesh
+ *   indic       <-> initial array containing the flagged cells
+ *----------------------------------------------------------------------------*/
+
+static void
+_build_coarsen_refine_buffer_zone(cs_mesh_t *mesh, int indic[])
+{
+  // Cells that are not tagged for refinement are pre-tagged for coarsening.
+
+  for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id++) {
+    if (indic[c_id] == 0)
+      indic[c_id] = -1;
+  }
+
+  if (mesh->halo)
+    cs_halo_sync(mesh->halo, CS_HALO_STANDARD, sizeof(int), indic);
+
+  // Block the coarsening in the vicinity of the cells to be refined.
+
+  for (cs_lnum_t f_id = 0; f_id < mesh->n_i_faces; f_id++) {
+    cs_lnum_t c_id0 = mesh->i_face_cells[f_id][0];
+    cs_lnum_t c_id1 = mesh->i_face_cells[f_id][1];
+
+    if (indic[c_id0] > 0 && indic[c_id1] < 0) {
+      indic[c_id1] = 0;
+    }
+
+    if (indic[c_id1] > 0 && indic[c_id0] < 0) {
+      indic[c_id0] = 0;
+    }
+  }
+
+  if (mesh->halo)
+    cs_halo_sync(mesh->halo, CS_HALO_STANDARD, sizeof(int), indic);
 }
 
 /*----------------------------------------------------------------------------
@@ -1049,6 +1103,7 @@ _write_load_balance_stats(void)
 
     fclose(fh);
 
+    CS_FREE(imbalance);
   }
   else {
     float to_send = (float)mesh->n_cells;
@@ -1124,69 +1179,13 @@ _load_balance(bool write_stats)
 #endif // defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
- * Refinement step function.
+ * Update mesh data after refinement / coarsening steps.
  *----------------------------------------------------------------------------*/
 
 static void
-_refine_step(void)
+_update_post_adaptation_mesh_data(void)
 {
   cs_mesh_t *mesh = cs_glob_mesh;
-
-  const int   c_r_level_max = _amr_info.n_layers;
-  cs_lnum_t   n_selected_cells = 0;
-  cs_lnum_t  *selected_cells = nullptr;
-  int        *s = nullptr;
-  int        *indic = nullptr;
-  int        *c_r_level = nullptr;
-
-  CS_MALLOC(selected_cells, mesh->n_cells, cs_lnum_t);
-  CS_MALLOC(s, mesh->n_cells, int);
-  CS_MALLOC(indic, mesh->n_cells_with_ghosts, int);
-  CS_MALLOC(c_r_level, mesh->n_cells_with_ghosts, int);
-
-  /* Determine current cell refinement level */
-
-  _build_cell_r_level(mesh, c_r_level);
-
-  /* Compute the user criteria */
-
-  memset(s, 0, mesh->n_cells*sizeof(int));
-  memset(indic, 0, mesh->n_cells_with_ghosts*sizeof(int));
-
-  _amr_info.indic_func(_amr_info.indic_input, s);
-
-  /* Flag cells and eventually propagate refinement
-   * to avoid jump in refinement levels*/
-
-  int n_threads = cs_parall_n_threads(mesh->n_cells, CS_THR_MIN);
-# pragma omp parallel for  num_threads(n_threads)
-  for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id ++) {
-    if (s[c_id] > 0 && c_r_level[c_id] < c_r_level_max)
-      indic[c_id] = 1;
-    else
-      indic[c_id] = 0;
-  }
-
-  _propagate_refinement(mesh, c_r_level, indic);
-
-  /* Refinement */
-
-  for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id ++) {
-    if (indic[c_id] > 0) {
-      selected_cells[n_selected_cells] = c_id;
-      n_selected_cells++;
-    }
-  }
-
-  cs_mesh_refine_simple_selected(mesh,
-                                 false,
-                                 n_selected_cells,
-                                 selected_cells);
-
-  CS_FREE(selected_cells);
-  CS_FREE(s);
-  CS_FREE(indic);
-  CS_FREE(c_r_level);
 
   /* Renumber mesh based on code options */
 
@@ -1221,48 +1220,58 @@ _refine_step(void)
 }
 
 /*----------------------------------------------------------------------------
- * Coarsening step function.
+ * Refinement step function.
  *----------------------------------------------------------------------------*/
 
 static void
-_coarsen_step(void)
+_refine_step(const int indic[])
 {
   cs_mesh_t *mesh = cs_glob_mesh;
 
   cs_lnum_t   n_selected_cells = 0;
   cs_lnum_t  *selected_cells = nullptr;
-  int        *s = nullptr;
-  int        *indic = nullptr;
 
   CS_MALLOC(selected_cells, mesh->n_cells, cs_lnum_t);
-  CS_MALLOC(s, mesh->n_cells, int);
-  CS_MALLOC(indic, mesh->n_cells_with_ghosts, int);
 
-  /* Compute the user criteria */
+  int *c_r_level = nullptr;
+  CS_MALLOC(c_r_level, mesh->n_cells_with_ghosts, int);
+  _build_cell_r_level(mesh, c_r_level);
 
-  memset(s, 0, mesh->n_cells*sizeof(int));
-  memset(indic, 0, mesh->n_cells_with_ghosts*sizeof(int));
-
-  _amr_info.indic_func(_amr_info.indic_input, s);
-
-  /* First we tag cell according to indicator.
-   * Eventually, block coarsening operations
-   * to avoid jump in cell refinement levels */
-
-  int n_threads = cs_parall_n_threads(mesh->n_cells, CS_THR_MIN);
-# pragma omp parallel for  num_threads(n_threads)
-  for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id ++) {
-    if (s[c_id] > 0)
-      indic[c_id] = 0;
-    else
-      indic[c_id] = 1;
+  for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id++) {
+    if (indic[c_id] > 0 && c_r_level[c_id] < _amr_info.n_layers) {
+      selected_cells[n_selected_cells++] = c_id;
+    }
   }
 
-  for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id ++) {
-    if (indic[c_id] > 0) {
-      selected_cells[n_selected_cells] = c_id;
-      n_selected_cells++;
-    }
+  CS_FREE(c_r_level);
+
+  cs_mesh_refine_simple_selected(mesh,
+                                 false,
+                                 n_selected_cells,
+                                 selected_cells);
+
+  CS_FREE(selected_cells);
+
+  _update_post_adaptation_mesh_data();
+}
+
+/*----------------------------------------------------------------------------
+ * Coarsening step function.
+ *----------------------------------------------------------------------------*/
+
+static void
+_coarsen_step(const int indic[])
+{
+  cs_mesh_t *mesh = cs_glob_mesh;
+
+  cs_lnum_t   n_selected_cells = 0;
+  cs_lnum_t  *selected_cells = nullptr;
+
+  CS_MALLOC(selected_cells, mesh->n_cells, cs_lnum_t);
+
+  for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id++) {
+    if (indic[c_id] < 0)
+      selected_cells[n_selected_cells++] = c_id;
   }
 
   cs_mesh_coarsen_simple_selected(mesh,
@@ -1270,39 +1279,8 @@ _coarsen_step(void)
                                   selected_cells);
 
   CS_FREE(selected_cells);
-  CS_FREE(s);
-  CS_FREE(indic);
 
-  /* Renumber mesh based on code options */
-
-  cs_renumber_mesh(mesh, nullptr, nullptr, nullptr, nullptr);
-
-  /* Free and compute mesh related quantities */
-
-  cs_mesh_quantities_free_all(cs_glob_mesh_quantities);
-  cs_mesh_quantities_compute(mesh, cs_glob_mesh_quantities);
-
-  /* Update mesh adjacencies */
-
-  cs_mesh_adjacencies_update_mesh();
-
-  /* Initialize selectors and locations for the mesh */
-
-  cs_mesh_update_selectors(mesh);
-  cs_mesh_location_build(mesh, -1);
-  cs_volume_zone_build_all(true);
-  cs_boundary_zone_build_all(true);
-
-  /* Update for boundary conditions */
-
-  cs_boundary_conditions_realloc();
-  cs_field_map_and_init_bcs();
-
-  /* Free gradients and related quantities since they can be recomputed
-   * on-the-fly */
-
-   cs_gradient_free_quantities();
-   cs_adaptive_refinement_free_gradients();
+  _update_post_adaptation_mesh_data();
 }
 
 /*============================================================================
@@ -1445,9 +1423,23 @@ cs_adaptive_refinement_step(void)
                   "Starting mesh adaptation (AMR)\n"
                   "------------------------------\n\n"));
 
-  _coarsen_step();
+  cs_mesh_t *mesh = cs_glob_mesh;
+  int *&indic = cs_glob_amr_info->indic_cells;
 
-  _refine_step();
+  CS_MALLOC(indic, mesh->n_cells_with_ghosts, int);
+  memset(indic, 0, mesh->n_cells_with_ghosts*sizeof(int));
+
+  _amr_info.indic_func(_amr_info.indic_input, indic);
+
+  _propagate_refinement(mesh, indic);
+
+  _build_coarsen_refine_buffer_zone(mesh, indic);
+
+  _coarsen_step(indic);
+
+  _refine_step(indic);
+
+  CS_FREE(indic);
 
   /* Post-adaptation updates */
 

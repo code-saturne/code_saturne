@@ -112,15 +112,15 @@ typedef void
 
 typedef struct {
 
-  bool                    is_set;       /*!< Idicates if AMR is active. */
+  bool                    is_set;       /*!< Indicates if AMR is active. */
   int                     n_layers;     /*!< Number of refinement layers
-                                          around user zone*/
+                                          around user zone. */
   cs_time_control_t       time_control; /*!< Time step interval at which an AMR
-                                          step is performed */
+                                          step is performed. */
   cs_amr_indicator_t     *indic_func;   /*!< Associated indicator
-                                          computation function*/
-  const void             *indic_input;  /*!< pointer to optional
-                                          (untyped) value or structure */
+                                          computation function. */
+  const void             *indic_input;  /*!< Pointer to optional
+                                          (untyped) value or structure. */
 
   /*! Fields interpolation function for refinement */
   cs_amr_refinement_interpolation_t *fields_interp_refinement_func;
@@ -132,9 +132,14 @@ typedef struct {
                                            1: simple gradient-based
                                            interpolation for fields
                                            on cells (ignored for
-                                           boundaries) */
+                                           boundaries). */
 
-} cs_amr_info_t ;
+  int                    *indic_cells;   /*!< Array of size
+                                           cs_glob_mesh->n_cells_with_ghosts
+                                           that tags cells for
+                                           coarsening/refinement. */
+
+} cs_amr_info_t;
 
 /*=============================================================================
  * Static global variables

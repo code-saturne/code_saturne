@@ -83,6 +83,7 @@
 static cs_redistribute_data_t _redistribute_data = {
   .c_r_level = nullptr,
   .c_r_flag = nullptr,
+  .indic = nullptr
 };
 
 cs_redistribute_data_t *cs_glob_redistribute_data = &_redistribute_data;
@@ -722,6 +723,22 @@ _distribute_data(cs_all_to_all_t *cd,
                          sizeof(int),
                          data->c_r_flag);
   }
+
+  if (data->indic) {
+    int *indic = cs_all_to_all_copy_array(cd, 1, false, data->indic);
+    CS_REALLOC(data->indic, mesh->n_cells_with_ghosts, int);
+    for (cs_lnum_t new_slot = 0; new_slot < mesh->n_cells; new_slot++) {
+      int old_slot = cell_n2o ? cell_n2o[new_slot] : new_slot;
+      int pre_slot = cell_order ? cell_order[old_slot] : old_slot;
+      data->indic[new_slot] = indic[pre_slot];
+    }
+    CS_FREE(indic);
+
+    cs_halo_sync_untyped(mesh->halo,
+                         CS_HALO_STANDARD,
+                         sizeof(int),
+                         data->indic);
+  }
 }
 
 #endif // defined(HAVE_MPI)
@@ -1277,7 +1294,7 @@ cs_redistribute(const int                cell_dest_rank[],
 
   // Note: to simplify implementation for now, we use the block vertices.
   // Later on, we might do a "pure" part-to-part distribution for vertices,
-  // for example by splitting the vertices into two part: inner vertices
+  // for example by splitting the vertices into two parts: inner vertices
   // (shared by pure internal/boundary faces only), and outer vertices
   // (those that are connected to faces shared by neighbouring procs).
   // TODO(Imad): distribute vertex-centered fields.
@@ -1299,6 +1316,8 @@ cs_redistribute(const int                cell_dest_rank[],
 
   if (mesh->have_r_gen) {
     assert(builder->vtx_r_gen);
+    assert(mesh->vtx_r_gen);
+    CS_FREE(mesh->vtx_r_gen);
     mesh->vtx_r_gen = cs_all_to_all_copy_array(vd,
                                                1,
                                                true,

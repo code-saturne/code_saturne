@@ -340,14 +340,19 @@ _cell_equiv(cs_mesh_t  *mesh,
     cs_redistribute_data_t *data = cs_glob_redistribute_data;
     data->c_r_flag = c_r_flag;
     data->c_r_level = c_r_level;
+    data->indic = cs_glob_amr_info->indic_cells;
 
     cs_redistribute(dest_rank, data);
 
+    CS_FREE(dest_rank);
+
     c_r_flag = data->c_r_flag;
     c_r_level = data->c_r_level;
+    cs_glob_amr_info->indic_cells = data->indic;
 
     data->c_r_flag = nullptr;
     data->c_r_level = nullptr;
+    data->indic = nullptr;
   }
 
   n_i_faces = mesh->n_i_faces;
@@ -678,6 +683,15 @@ _merge_cells(cs_mesh_t       *m,
   CS_FREE(m->cell_family);
   m->cell_family = cell_family;
   cell_family = nullptr;
+
+  int *indic = nullptr;
+  CS_MALLOC(indic, n_new, int);
+  for (cs_lnum_t c_id = 0; c_id < n_new; c_id++) {
+    cs_lnum_t old_id = c_n2o[c_id];
+    indic[c_id] = cs_glob_amr_info->indic_cells[old_id];
+  }
+  CS_FREE(cs_glob_amr_info->indic_cells);
+  cs_glob_amr_info->indic_cells = indic;
 
   /* Update global numbering */
 
