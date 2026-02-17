@@ -185,8 +185,12 @@ class _build_qt_files(_cs_build_py_dummy):
     def run(self):
         build_command = self.distribution.command_obj.get('build', None)
         qtpkg = None
-        if _cs_opts['use_qt'] in (5, 6):
-            qtpkg = 'qt'+str(_cs_opts['use_qt'])
+        if _cs_opts['use_qt'] == 'pyqt5':
+            qtpkg = 'qt5'
+        elif _cs_opts['use_qt'] == 'pyqt6':
+            qtpkg = 'qt6'
+        elif _cs_opts['use_qt'] == 'pyside6':
+            qtpkg = 'pyside6'
         if build_command and qtpkg:
             _p1 = os.path.join('code_saturne', 'gui', 'base')
             for _f in glob.glob(os.path.join(SRC_PATH, _p1,
