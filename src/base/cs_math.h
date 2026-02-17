@@ -312,6 +312,32 @@ cs_math_3_normalize(const T  vin[3],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the product of a matrix of 3x3 real values by a vector of 3
+ * real values.
+ *
+ * \tparam T input value type
+ * \tparam U input value type
+ * \tparam V input value type
+ *
+ * \param[in]     m             matrix of 3x3 real values
+ * \param[in]     v             vector of 3 real values
+ * \param[out]    mv            vector of 3 real values
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T, typename U, typename V>
+CS_F_HOST_DEVICE static inline void
+cs_math_33_3_product(const T      m[3][3],
+                     const U      v[3],
+                     V  *restrict mv)
+{
+  mv[0] = m[0][0]*v[0] + m[0][1]*v[1] + m[0][2]*v[2];
+  mv[1] = m[1][0]*v[0] + m[1][1]*v[1] + m[1][2]*v[2];
+  mv[2] = m[2][0]*v[0] + m[2][1]*v[1] + m[2][2]*v[2];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the product of a symmetric matrix of 3x3 real values by
  * a vector of 3 real values.
  * NB: Symmetric matrix are stored as follows (s11, s22, s33, s12, s23, s13)
@@ -1159,26 +1185,6 @@ cs_math_33_normal_scaling_add(const cs_real_t  n[3],
     for (int j = 0; j < 3; j++)
       t[i][j] += n_t_n * n[i] * n[j];
   }
-}
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the product of a matrix of 3x3 real values by a vector of 3
- * real values.
- *
- * \param[in]     m             matrix of 3x3 real values
- * \param[in]     v             vector of 3 real values
- * \param[out]    mv            vector of 3 real values
- */
-/*----------------------------------------------------------------------------*/
-
-CS_F_HOST_DEVICE static inline void
-cs_math_33_3_product(const cs_real_t      m[3][3],
-                     const cs_real_t      v[3],
-                     cs_real_t  *restrict mv)
-{
-  mv[0] = m[0][0]*v[0] + m[0][1]*v[1] + m[0][2]*v[2];
-  mv[1] = m[1][0]*v[0] + m[1][1]*v[1] + m[1][2]*v[2];
-  mv[2] = m[2][0]*v[0] + m[2][1]*v[1] + m[2][2]*v[2];
 }
 
 /*----------------------------------------------------------------------------*/

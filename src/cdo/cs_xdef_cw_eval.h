@@ -34,9 +34,10 @@
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_local.h"
 #include "cdo/cs_cdo_quantities.h"
-#include "mesh/cs_mesh.h"
 #include "cdo/cs_quadrature.h"
 #include "cdo/cs_xdef.h"
+
+#include "mesh/cs_mesh.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -310,37 +311,6 @@ cs_xdef_cw_eval_flux_by_vector_val(const cs_cell_mesh_t     *cm,
   const cs_quant_t  fq = cm->face[f];
 
   eval[f] = fq.meas * _dp3(fq.unitv, flux);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Function pointer for evaluating the normal flux of a quantity
- *         defined by values.
- *         Use of a \ref cs_cell_mesh_t structure.
- *
- * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
- * \param[in]      f          local face id
- * \param[in]      time_eval  physical time at which one evaluates the term
- * \param[in]      input      pointer to an input structure
- * \param[in, out] eval       result of the evaluation (set inside)
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_xdef_cw_eval_flux_by_tensor_val(const cs_cell_mesh_t     *cm,
-                                   short int                 f,
-                                   cs_real_t                 time_eval,
-                                   void                     *input,
-                                   cs_real_t                *eval)
-{
-  CS_UNUSED(time_eval);
-
-  cs_real_t  *flux = (cs_real_t *)input;
-  const cs_quant_t  fq = cm->face[f];
-
-  cs_math_33_3_product((const cs_real_t (*)[3])flux, fq.unitv, eval);
-  for (int k = 0; k < 3; k++)
-    eval[3*f+k] *= fq.meas;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1180,5 +1150,40 @@ cs_xdef_cw_eval_vect_avg_reduction_by_analytic(const cs_cell_mesh_t    *cm,
 #undef _dp3
 
 END_C_DECLS
+
+#if defined(__cplusplus)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer for evaluating the normal flux of a quantity
+ *         defined by values.
+ *         Use of a \ref cs_cell_mesh_t structure.
+ *
+ * \param[in]      cm         pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]      f          local face id
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in]      input      pointer to an input structure
+ * \param[in, out] eval       result of the evaluation (set inside)
+ */
+/*----------------------------------------------------------------------------*/
+
+inline void
+cs_xdef_cw_eval_flux_by_tensor_val(const cs_cell_mesh_t     *cm,
+                                   short int                 f,
+                                   cs_real_t                 time_eval,
+                                   void                     *input,
+                                   cs_real_t                *eval)
+{
+  CS_UNUSED(time_eval);
+
+  cs_real_t  *flux = (cs_real_t *)input;
+  const cs_quant_t  fq = cm->face[f];
+
+  cs_math_33_3_product((const cs_real_t (*)[3])flux, fq.unitv, eval);
+  for (int k = 0; k < 3; k++)
+    eval[3*f+k] *= fq.meas;
+}
+
+#endif // defined(__cplusplus)
 
 #endif /* __CS_XDEF_CW_EVAL_H__ */

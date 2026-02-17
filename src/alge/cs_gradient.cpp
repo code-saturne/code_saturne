@@ -6697,7 +6697,7 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict b_dist = fvq->b_dist;
-  const cs_real_3_t *restrict diipb = fvq->diipb;
+  const cs_rreal_3_t *restrict diipb = fvq->diipb;
 
 #if (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
