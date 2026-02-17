@@ -171,8 +171,6 @@ _realloc_and_update_field_refinement(cs_field_t        *f,
                                      const cs_real_t    measure[])
 {
   cs_lnum_t n_new = cs_mesh_location_get_n_elts(f->location_id)[0];
-  cs_lnum_t n_alloc_new = cs_mesh_location_get_n_elts(f->location_id)[2];
-  cs_field_t *f_vel = CS_F_(vel);
 
   cs_real_t *grad = f->grad;
   const cs_lnum_t dim = f->dim;
@@ -1134,7 +1132,7 @@ _refine_step(void)
 {
   cs_mesh_t *mesh = cs_glob_mesh;
 
-  const int c_r_level_max = _amr_info.n_layers;
+  const int   c_r_level_max = _amr_info.n_layers;
   cs_lnum_t   n_selected_cells = 0;
   cs_lnum_t  *selected_cells = nullptr;
   int        *s = nullptr;
@@ -1199,10 +1197,27 @@ _refine_step(void)
   cs_mesh_quantities_free_all(cs_glob_mesh_quantities);
   cs_mesh_quantities_compute(mesh, cs_glob_mesh_quantities);
 
+  /* Update mesh adjacencies */
+
+  cs_mesh_adjacencies_update_mesh();
+
+  /* Initialize selectors and locations for the mesh */
+
+  cs_mesh_update_selectors(mesh);
+  cs_mesh_location_build(mesh, -1);
+  cs_volume_zone_build_all(true);
+  cs_boundary_zone_build_all(true);
+
   /* Reset boundary conditions */
 
   cs_boundary_conditions_realloc();
   cs_field_map_and_init_bcs();
+
+  /* Free gradients and related quantities since they can be recomputed
+   * on-the-fly */
+
+  cs_gradient_free_quantities();
+  cs_adaptive_refinement_free_gradients();
 }
 
 /*----------------------------------------------------------------------------
@@ -1265,12 +1280,16 @@ _coarsen_step(void)
   /* Free and compute mesh related quantities */
 
   cs_mesh_quantities_free_all(cs_glob_mesh_quantities);
-  cs_mesh_quantities_compute(cs_glob_mesh,cs_glob_mesh_quantities);
+  cs_mesh_quantities_compute(mesh, cs_glob_mesh_quantities);
+
+  /* Update mesh adjacencies */
+
+  cs_mesh_adjacencies_update_mesh();
 
   /* Initialize selectors and locations for the mesh */
 
-  cs_mesh_update_selectors(cs_glob_mesh);
-  cs_mesh_location_build(cs_glob_mesh, -1);
+  cs_mesh_update_selectors(mesh);
+  cs_mesh_location_build(mesh, -1);
   cs_volume_zone_build_all(true);
   cs_boundary_zone_build_all(true);
 
@@ -1278,6 +1297,12 @@ _coarsen_step(void)
 
   cs_boundary_conditions_realloc();
   cs_field_map_and_init_bcs();
+
+  /* Free gradients and related quantities since they can be recomputed
+   * on-the-fly */
+
+   cs_gradient_free_quantities();
+   cs_adaptive_refinement_free_gradients();
 }
 
 /*============================================================================
@@ -1420,22 +1445,13 @@ cs_adaptive_refinement_step(void)
                   "Starting mesh adaptation (AMR)\n"
                   "------------------------------\n\n"));
 
-  _refine_step();
-
   _coarsen_step();
+
+  _refine_step();
 
   /* Post-adaptation updates */
 
-  cs_mesh_adjacencies_update_mesh();
-  cs_gradient_free_quantities();
   cs_matrix_update_mesh();
-
-  /* Free gradients
-   * WARNING : for now stored gradients are not necessary
-   * but one should remain cautious here if gradient are
-   * needed afterwards */
-
-  cs_adaptive_refinement_free_gradients();
 
   /* Perform load balancing */
 
