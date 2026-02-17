@@ -1408,14 +1408,13 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   /* Set the normalization of the non-linear algo to the value of the first
      mass flux norm */
 
-  normalization = sqrt(cs_cdo_blas_square_norm_pfsf(sc->mass_flux_array));
-
-  cs_iter_algo_set_normalization(nl_algo, normalization);
+  cs_iter_algo_set_normalization(nl_algo,
+                                 sqrt(nsp->square_norm(sc->mass_flux_array)));
 
   /* Check the convergence status and update the nl_algo structure related
    * to the convergence monitoring */
 
-  while (cs_cdofb_navsto_nl_algo_cvg(nl_algo_type,
+  while (cs_cdofb_navsto_nl_algo_cvg(nsp,
                                      sc->mass_flux_array_pre,
                                      sc->mass_flux_array,
                                      nl_algo) == CS_SLES_ITERATING) {

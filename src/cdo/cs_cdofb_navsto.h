@@ -600,24 +600,24 @@ cs_cdofb_prescribed_smooth_wall(short int                  fb,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Test if one has to do one more non-linear iteration.
- *         Test if performed on the relative norm on the increment between
- *         two iterations
+ * \brief Test if one has to do one more non-linear iteration.
+ *        Test if performed on the relative norm on the increment
+ *        between two iterations
  *
- * \param[in]      nl_algo_type   type of non-linear algorithm
- * \param[in]      pre_iterate    previous state of the mass flux iterate
- * \param[in]      cur_iterate    current state of the mass flux iterate
- * \param[in, out] algo           pointer to a cs_iter_algo_t structure
+ * \param[in]      nsp          set of parameters for the Navier-Stokes system
+ * \param[in]      pre_iterate  previous state of the mass flux iterate
+ * \param[in]      cur_iterate  current state of the mass flux iterate
+ * \param[in, out] algo         pointer to a cs_iter_algo_t structure
  *
  * \return the convergence state
  */
 /*----------------------------------------------------------------------------*/
 
 cs_sles_convergence_state_t
-cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t        nl_algo_type,
-                            const cs_real_t          *pre_iterate,
-                            cs_real_t                *cur_iterate,
-                            cs_iter_algo_t           *algo);
+cs_cdofb_navsto_nl_algo_cvg(const cs_navsto_param_t *nsp,
+                            const cs_real_t         *pre_iterate,
+                            cs_real_t               *cur_iterate,
+                            cs_iter_algo_t          *algo);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -231,6 +231,11 @@ cs_navsto_param_create(const cs_boundary_t          *boundaries,
    * useful if the advection term is implicit
    */
 
+  nsp->norm_type = CS_NAVSTO_PARAM_NORM_L2;
+  nsp->square_norm = cs_cdo_blas_square_norm_pfsf;
+  nsp->square_norm_diff = cs_cdo_blas_square_norm_pfsf_diff;
+  nsp->dotprod = cs_cdo_blas_dotprod_pfsf;
+
   nsp->nl_algo_type = CS_PARAM_NL_ALGO_NONE;
 
   nsp->nl_cvg_param.n_max_iter = 25;
@@ -504,6 +509,32 @@ cs_navsto_param_set(cs_navsto_param_t *nsp,
                 __func__);
     break;
 
+  case CS_NSKEY_NORM_TYPE:
+    if (strcmp(val, "l2") == 0) {
+      nsp->norm_type = CS_NAVSTO_PARAM_NORM_L2;
+      nsp->square_norm = cs_cdo_blas_square_norm_pfsf;
+      nsp->square_norm_diff = cs_cdo_blas_square_norm_pfsf_diff;
+      nsp->dotprod = cs_cdo_blas_dotprod_pfsf;
+    }
+    else if (strcmp(val, "hdiv") == 0) {
+      nsp->norm_type = CS_NAVSTO_PARAM_NORM_HDIV;
+      nsp->square_norm = cs_cdo_blas_square_norm_pfsf_hdiv;
+      nsp->square_norm_diff = cs_cdo_blas_square_norm_pfsf_hdiv_diff;
+      nsp->dotprod = cs_cdo_blas_dotprod_pfsf_hdiv;
+    }
+    else if (strcmp(val, "trace") == 0) {
+      nsp->norm_type = CS_NAVSTO_PARAM_NORM_TRACE;
+      nsp->square_norm = cs_cdo_blas_square_norm_pfsf_trace;
+      nsp->square_norm_diff = cs_cdo_blas_square_norm_pfsf_trace_diff;
+      nsp->dotprod = cs_cdo_blas_dotprod_pfsf_trace;
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid value (\"%s\") for the choice of the norm"
+                " applied during the non-linear algorithm\n",
+                __func__, val);
+    break;
+
   case CS_NSKEY_SPACE_SCHEME:
     if (strcmp(val, "cdo_fb") == 0) {
       nsp->space_scheme = CS_SPACE_SCHEME_CDOFB;
@@ -682,6 +713,23 @@ cs_navsto_param_log(const cs_navsto_param_t *nsp)
                   " rtol: %5.3e; atol: %5.3e; dtol: %5.3e; max_iter: %d\n",
                   navsto, nsp->nl_cvg_param.rtol, nsp->nl_cvg_param.atol,
                   nsp->nl_cvg_param.dtol, nsp->nl_cvg_param.n_max_iter);
+
+    switch (nsp->norm_type) {
+    case CS_NAVSTO_PARAM_NORM_L2:
+      cs_log_printf(CS_LOG_SETUP, "%s Norm type: l2 in the volume\n", navsto);
+      break;
+    case CS_NAVSTO_PARAM_NORM_HDIV:
+      cs_log_printf(CS_LOG_SETUP, "%s Norm type: H(div) in the volume\n",
+                    navsto);
+      break;
+    case CS_NAVSTO_PARAM_NORM_TRACE:
+      cs_log_printf(CS_LOG_SETUP, "%s Norm type: l2 on the mesh skeleton\n",
+                    navsto);
+      break;
+    default:
+      cs_log_printf(CS_LOG_SETUP, "%s Norm type: Unknown\n", navsto);
+      break;
+    }
 
     if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
 

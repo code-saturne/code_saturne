@@ -1464,10 +1464,8 @@ cs_macfb_monolithic_steady_nl(const cs_mesh_t         *mesh,
   /* Set the normalization of the non-linear algo to the value of the first
      mass flux norm */
 
-  double normalization
-    = sqrt(cs_cdo_blas_square_norm_pfsf(sc->mass_flux_array));
-
-  cs_iter_algo_set_normalization(nl_algo, normalization);
+  cs_iter_algo_set_normalization(nl_algo,
+                                 sqrt(nsp->square_norm(sc->mass_flux_array)));
 
   /*--------------------------------------------------------------------------
    *                   PICARD ITERATIONS: START
@@ -1476,10 +1474,10 @@ cs_macfb_monolithic_steady_nl(const cs_mesh_t         *mesh,
   /* Check the convergence status and update the nl_algo structure related
    * to the convergence monitoring */
 
-  while (
-    cs_macfb_navsto_nl_algo_cvg(
-      nsp->nl_algo_type, sc->mass_flux_array_pre, sc->mass_flux_array, nl_algo)
-    == CS_SLES_ITERATING) {
+  while (cs_macfb_navsto_nl_algo_cvg(nsp,
+                                     sc->mass_flux_array_pre,
+                                     sc->mass_flux_array, nl_algo)
+         == CS_SLES_ITERATING) {
 
     /* Main loop on cells to define the linear system to solve */
 
@@ -1709,10 +1707,8 @@ cs_macfb_monolithic_nl(const cs_mesh_t         *mesh,
   /* Set the normalization of the non-linear algo to the value of the first
      mass flux norm */
 
-  double normalization
-    = sqrt(cs_cdo_blas_square_norm_pfsf(sc->mass_flux_array));
-
-  cs_iter_algo_set_normalization(nl_algo, normalization);
+  cs_iter_algo_set_normalization(nl_algo,
+                                 sqrt(nsp->square_norm(sc->mass_flux_array)));
 
   /*--------------------------------------------------------------------------
    *                   PICARD ITERATIONS: START
@@ -1723,7 +1719,7 @@ cs_macfb_monolithic_nl(const cs_mesh_t         *mesh,
    *   sc->mass_flux_array     -> flux at t^n,1 (call to .._navsto_mass_flux */
 
   cs_sles_convergence_state_t cvg_status = cs_macfb_navsto_nl_algo_cvg(
-    nsp->nl_algo_type, sc->mass_flux_array_pre, sc->mass_flux_array, nl_algo);
+    nsp, sc->mass_flux_array_pre, sc->mass_flux_array, nl_algo);
 
   cs_real_t *mass_flux_array_k   = nullptr;
   cs_real_t *mass_flux_array_kp1 = sc->mass_flux_array;
@@ -1768,8 +1764,10 @@ cs_macfb_monolithic_nl(const cs_mesh_t         *mesh,
     /* Check the convergence status and update the nl_algo structure related
      * to the convergence monitoring */
 
-    cvg_status = cs_macfb_navsto_nl_algo_cvg(
-      nsp->nl_algo_type, mass_flux_array_k, mass_flux_array_kp1, nl_algo);
+    cvg_status = cs_macfb_navsto_nl_algo_cvg(nsp,
+                                             mass_flux_array_k,
+                                             mass_flux_array_kp1,
+                                             nl_algo);
 
   } /* Loop on non-linear iterations */
 
@@ -1778,7 +1776,6 @@ cs_macfb_monolithic_nl(const cs_mesh_t         *mesh,
    *--------------------------------------------------------------------------*/
 
   if (nsp->verbosity > 1 && cs_log_default_is_active()) {
-
     cs_log_printf(CS_LOG_DEFAULT,
                   " -cvg- NavSto: cumulated_inner_iters: %d\n",
                   cs_iter_algo_get_n_inner_iter(nl_algo));

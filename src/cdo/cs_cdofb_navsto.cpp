@@ -1969,28 +1969,28 @@ cs_cdofb_prescribed_smooth_wall(short int                  fb,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Test if one has to do one more non-linear iteration.
- *         Test if performed on the relative norm on the increment between
- *         two iterations
+ * \brief Test if one has to do one more non-linear iteration.
+ *        Test if performed on the relative norm on the increment
+ *        between two iterations
  *
- * \param[in]      nl_algo_type   type of non-linear algorithm
- * \param[in]      pre_iterate    previous state of the mass flux iterate
- * \param[in]      cur_iterate    current state of the mass flux iterate
- * \param[in, out] algo           pointer to a cs_iter_algo_t structure
+ * \param[in]      nsp          set of parameters for the Navier-Stokes system
+ * \param[in]      pre_iterate  previous state of the mass flux iterate
+ * \param[in]      cur_iterate  current state of the mass flux iterate
+ * \param[in, out] algo         pointer to a cs_iter_algo_t structure
  *
  * \return the convergence state
  */
 /*----------------------------------------------------------------------------*/
 
 cs_sles_convergence_state_t
-cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t        nl_algo_type,
-                            const cs_real_t          *pre_iterate,
-                            cs_real_t                *cur_iterate,
-                            cs_iter_algo_t           *algo)
+cs_cdofb_navsto_nl_algo_cvg(const cs_navsto_param_t *nsp,
+                            const cs_real_t         *pre_iterate,
+                            cs_real_t               *cur_iterate,
+                            cs_iter_algo_t          *algo)
 {
-  assert(algo != nullptr);
+  assert(nsp != nullptr && algo != nullptr);
 
-  if (nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
+  if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
 
     /* The Anderson acceleration can modified the current iterate to speed_up
        the convergence of the non-linear algorithm */
@@ -1998,15 +1998,15 @@ cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t        nl_algo_type,
     cs_iter_algo_update_anderson(algo,
                                  cur_iterate,
                                  pre_iterate,
-                                 cs_cdo_blas_dotprod_pfsf,
-                                 cs_cdo_blas_square_norm_pfsf);
+                                 nsp->dotprod,
+                                 nsp->square_norm);
 
   } /* Anderson acceleration */
 
   /* Update the residual values. Compute the norm of the difference between the
      two mass fluxes (the current one and the previous one) */
 
-  double  res = cs_cdo_blas_square_norm_pfsf_diff(pre_iterate, cur_iterate);
+  double  res = nsp->square_norm_diff(pre_iterate, cur_iterate);
 
   cs_iter_algo_update_residual(algo, sqrt(res));
 
@@ -2017,7 +2017,7 @@ cs_cdofb_navsto_nl_algo_cvg(cs_param_nl_algo_t        nl_algo_type,
 
   /* Log the convergence if needed */
 
-  cs_iter_algo_log_cvg(algo, cs_param_get_nl_algo_label(nl_algo_type));
+  cs_iter_algo_log_cvg(algo, cs_param_get_nl_algo_label(nsp->nl_algo_type));
 
   return cvg_status;
 }

@@ -33,6 +33,7 @@
 #include "cdo/cs_cdo_turbulence.h"
 #include "cdo/cs_equation_param.h"
 #include "cdo/cs_iter_algo.h"
+#include "cdo/cs_cdo_blas.h"
 #include "base/cs_math.h"
 #include "alge/cs_param_sles.h"
 #include "base/cs_physical_constants.h"
@@ -225,6 +226,31 @@ typedef enum {
 
 } cs_navsto_param_coupling_t;
 
+/*! \enum cs_navsto_param_norm_type_t
+ *  \brief Choice of the norm for the mass flux used in the non-linear
+ *  algorithm
+ *
+ * \var CS_NAVSTO_PARAM_NORM_L2
+ * Classical Euclidean l2 norm in the volume mesh
+ *
+ * \var CS_NAVSTO_PARAM_NORM_HDIV
+ * Classical Euclidean l2 norm plus a l2 norm for the divergence of the mass
+ * flux in the volume mesh
+ *
+ * \var CS_NAVSTO_PARAM_NORM_TRACE
+ * Euclidean l2 norm on the mesh skeleton
+ */
+
+typedef enum {
+
+  CS_NAVSTO_PARAM_NORM_L2,
+  CS_NAVSTO_PARAM_NORM_HDIV,
+  CS_NAVSTO_PARAM_NORM_TRACE,
+
+  CS_NAVSTO_PARAM_N_NORM_TYPES
+
+} cs_navsto_param_norm_type_t;
+
 /*! \struct cs_navsto_param_boussinesq_t
  *  \brief Structure storing the parameters related to the Boussinesq source
  *         term in the momentum equation
@@ -359,6 +385,27 @@ typedef struct {
    * the Navier--Stokes system
    * @{
    */
+
+  /*! \var norm_type
+   *  Type of algorithm used to build the norm used in the treatment of the
+   *  non-linearity arising from the advection term
+   */
+
+  cs_navsto_param_norm_type_t   norm_type;
+
+  /*! \var square_norm
+   *  Function used to compute the square norm of the mass flux
+   *
+   *  \var square_norm_diff
+   *  Function used to compute the square norm of the difference of mass fluxes
+   *
+   *  \var dotprod
+   *  Function used to compute the dot product between two mass flux arrays
+   */
+
+  cs_cdo_blas_square_norm_t      *square_norm;
+  cs_cdo_blas_square_norm_diff_t *square_norm_diff;
+  cs_cdo_blas_dotprod_t          *dotprod;
 
   /*! \var nl_algo_type
    *  Type of algorithm used to tackle the non-linearity arising from the
@@ -557,6 +604,10 @@ typedef struct {
  * Relative tolerance at which the non-linearity arising from the advection
  * term is resolved
  *
+ * \var CS_NSKEY_NORM_TYPE
+ * Type of norm (and dot product) to consider to compute the normalization and
+ * quantities when performing the non-linear algorithm.
+ *
  * \var CS_NSKEY_SPACE_SCHEME
  * Numerical scheme for the space discretization. Available choices are:
  * - "cdo_fb" or "cdofb" for CDO face-based scheme
@@ -578,6 +629,7 @@ typedef enum {
   CS_NSKEY_NL_ALGO_DTOL,
   CS_NSKEY_NL_ALGO_MAX_ITER,
   CS_NSKEY_NL_ALGO_RTOL,
+  CS_NSKEY_NORM_TYPE,
   CS_NSKEY_SPACE_SCHEME,
   CS_NSKEY_THERMAL_TOLERANCE,
   CS_NSKEY_VERBOSITY,

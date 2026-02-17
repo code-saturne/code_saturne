@@ -2698,8 +2698,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   /* Set the normalization of the non-linear algo to the value of the first
      mass flux norm */
 
-  double  normalization =
-    sqrt(cs_cdo_blas_square_norm_pfsf(sc->mass_flux_array));
+  double  normalization = sqrt(nsp->square_norm(sc->mass_flux_array));
 
   cs_iter_algo_set_normalization(nl_algo, normalization);
 
@@ -2710,7 +2709,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   /* Check the convergence status and update the nl_algo structure related
    * to the convergence monitoring */
 
-  while (cs_cdofb_navsto_nl_algo_cvg(nsp->nl_algo_type,
+  while (cs_cdofb_navsto_nl_algo_cvg(nsp,
                                      sc->mass_flux_array_pre,
                                      sc->mass_flux_array,
                                      nl_algo) == CS_SLES_ITERATING) {
@@ -3011,8 +3010,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   /* Set the normalization of the non-linear algo to the value of the first
      mass flux norm */
 
-  double  normalization =
-    sqrt(cs_cdo_blas_square_norm_pfsf(sc->mass_flux_array));
+  double  normalization = sqrt(nsp->square_norm(sc->mass_flux_array));
 
   cs_iter_algo_set_normalization(nl_algo, normalization);
 
@@ -3025,7 +3023,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
    *   sc->mass_flux_array     -> flux at t^n,1 (call to .._navsto_mass_flux */
 
   cs_sles_convergence_state_t
-    cvg_status = cs_cdofb_navsto_nl_algo_cvg(nsp->nl_algo_type,
+    cvg_status = cs_cdofb_navsto_nl_algo_cvg(nsp,
                                              sc->mass_flux_array_pre,
                                              sc->mass_flux_array,
                                              nl_algo);
@@ -3088,7 +3086,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
     /* Check the convergence status and update the nl_algo structure related
      * to the convergence monitoring */
 
-    cvg_status = cs_cdofb_navsto_nl_algo_cvg(nsp->nl_algo_type,
+    cvg_status = cs_cdofb_navsto_nl_algo_cvg(nsp,
                                              mass_flux_array_k,
                                              mass_flux_array_kp1,
                                              nl_algo);
