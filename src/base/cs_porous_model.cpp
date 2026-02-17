@@ -784,6 +784,7 @@ cs_porous_model_convert_cell_to_boundary(const cs_lnum_t   n_ib_cells,
   /* Realloc mesh quantities array wich are not fields */
   CS_REALLOC_HD(m->b_face_family, n_b_faces_tot, cs_lnum_t, cs_alloc_mode);
   CS_REALLOC_HD(m->b_face_cells, n_b_faces_tot, cs_lnum_t, cs_alloc_mode);
+  CS_REALLOC_HD(m->b_face_r_c_idx, n_b_faces_tot, char, cs_alloc_mode);
   /*CS_REALLOC_HD(m->b_face_vtx_idx, n_b_faces_tot+1, cs_lnum_t, cs_alloc_mode);
   CS_REALLOC_HD(m->b_face_vtx_lst, m->b_face_vtx_idx[n_b_faces_old]+n_glob_vtx,
                 cs_lnum_t, cs_alloc_mode);*/
@@ -816,6 +817,7 @@ cs_porous_model_convert_cell_to_boundary(const cs_lnum_t   n_ib_cells,
   /* Initialization in the ibm zone for cs_mesh_update_selectors */
   for (cs_lnum_t face_id = n_b_faces_old; face_id < n_b_faces_tot; face_id++) {
     m->b_face_family[face_id] = 1;
+    m->b_face_r_c_idx[face_id] = 127;
   }
 
   /* Rebuild the boundary zone */
