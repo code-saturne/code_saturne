@@ -1357,23 +1357,23 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
 
   cs_iter_algo_reset(nl_algo);
 
-  /* Solve the linear system (treated as a scalar-valued system
-   * with 3 times more DoFs) */
+  /* Solve the linear system (treated as a scalar-valued system with 3 times
+   * more DoFs) */
 
-  cs_real_t  normalization = 1.0; /* TODO: Try something better */
+  cs_real_t  normalization = cs_cdo_blas_square_norm_pfvp(vel_f);
   cs_sles_t *sles = cs_sles_find_or_add(mom_eqp->sles_param->field_id, nullptr);
   cs_matrix_t  *matrix = cs_cdo_system_get_matrix(mom_sh, 0);
   cs_range_set_t  *range_set = cs_cdo_system_get_range_set(mom_sh, 0);
 
   int  n_inner_iter = cs_cdo_solve_scalar_system(3*n_faces,
-                                                    mom_eqp->sles_param,
-                                                    matrix,
-                                                    range_set,
-                                                    normalization,
-                                                    true, /* rhs_redux */
-                                                    sles,
-                                                    vel_f,
-                                                    rhs);
+                                                 mom_eqp->sles_param,
+                                                 matrix,
+                                                 range_set,
+                                                 normalization,
+                                                 true, /* rhs_redux */
+                                                 sles,
+                                                 vel_f,
+                                                 rhs);
 
   cs_iter_algo_update_inner_iters(nl_algo, n_inner_iter);
 
@@ -1451,6 +1451,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
     sles = cs_sles_find_or_add(mom_eqp->sles_param->field_id, nullptr);
     cs_sles_setup(sles, matrix);
 
+    normalization = cs_cdo_blas_square_norm_pfvp(vel_f);
     n_inner_iter = cs_cdo_solve_scalar_system(3*n_faces,
                                               mom_eqp->sles_param,
                                               matrix,
@@ -1483,7 +1484,6 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
    *--------------------------------------------------------------------------*/
 
   if (nsp->verbosity > 1 && cs_log_default_is_active()) {
-
     cs_log_printf(CS_LOG_DEFAULT, " -cvg- NavSto: cumulated_inner_iters: %d\n",
                   cs_iter_algo_get_n_inner_iter(nl_algo));
     cs_log_printf_flush(CS_LOG_DEFAULT);
