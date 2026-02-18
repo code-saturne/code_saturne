@@ -167,7 +167,7 @@ _tsepls(int       phase_id,
 
   cs_array_3d<cs_real_t> gradv;
   {
-    cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
+    cs_field_t *f_vg = cs_field_try("algo:velocity_gradient");
 
     if (f_vel->grad != nullptr)
       gradv = cs_array_3d<cs_real_t>(f_vel->grad, n_cells_ext, 3, 3);
@@ -348,27 +348,23 @@ cs_turbulence_ke(int              phase_id,
     f_alpbl = CS_FI_(alp_bl, phase_id);
   }
 
-  cs_real_t sigmak = cs_field_get_key_double(f_k,
-                                             cs_field_key_id("turbulent_schmidt"));
+  cs_real_t sigmak = f_k->get_key_double("turbulent_schmidt");
 
   /* If turbulent Schmidt is variable, id of the corresponding field */
-  int sigmak_id = cs_field_get_key_int(f_k,
-                                       cs_field_key_id("turbulent_schmidt_id"));
+  int sigmak_id = f_k->get_key_int("turbulent_schmidt_id");
 
   cs_real_t *cpro_sigmak = nullptr;
   if (sigmak_id >= 0)
-    cpro_sigmak = cs_field_by_id(sigmak_id)->val;
+    cpro_sigmak = cs_field(sigmak_id)->val;
 
-  cs_real_t sigmae = cs_field_get_key_double(f_eps,
-                                             cs_field_key_id("turbulent_schmidt"));
+  cs_real_t sigmae = f_eps->get_key_double("turbulent_schmidt");
 
   /* If turbulent Schmidt is variable, id of the corresponding field */
-  int sigmae_id = cs_field_get_key_int(f_eps,
-                                       cs_field_key_id("turbulent_schmidt_id"));
+  int sigmae_id = f_eps->get_key_int("turbulent_schmidt_id");
 
   cs_real_t *cpro_sigmae = nullptr;
   if (sigmae_id >= 0)
-    cpro_sigmae = cs_field_by_id(sigmae_id)->val;
+    cpro_sigmae = cs_field(sigmae_id)->val;
 
   /* Initialization of work arrays in case of Hybrid turbulence modelling
    * ==================================================================== */
@@ -377,9 +373,9 @@ cs_turbulence_ke(int              phase_id,
   cs_real_t *htles_t         = nullptr;
   cs_real_t *hybrid_fd_coeff = nullptr;
   if (cs_glob_turb_model->hybrid_turb == 4) {
-    htles_psi = cs_field_by_name("htles_psi")->val;
-    htles_t   = cs_field_by_name("htles_t")->val;
-    hybrid_fd_coeff = cs_field_by_name("hybrid_blend")->val;
+    htles_psi = cs_field("htles_psi")->val;
+    htles_t   = cs_field("htles_t")->val;
+    hybrid_fd_coeff = cs_field("hybrid_blend")->val;
   }
 
   /* Initialization
@@ -454,11 +450,11 @@ cs_turbulence_ke(int              phase_id,
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-  int iflmas =  cs_field_get_key_int(f_vel, kimasf);
-  int iflmab =  cs_field_get_key_int(f_vel, kbmasf);
+  int iflmas =  f_vel->get_key_int(kimasf);
+  int iflmab =  f_vel->get_key_int(kbmasf);
 
-  const cs_real_t *imasfl =  cs_field_by_id(iflmas)->val;
-  const cs_real_t *bmasfl =  cs_field_by_id(iflmab)->val;
+  const cs_real_t *imasfl =  cs_field(iflmas)->val;
+  const cs_real_t *bmasfl =  cs_field(iflmab)->val;
 
   cs_real_t *cvar_k   =  f_k->val;
   cs_real_t *cvara_k  =  f_k->val_pre;
@@ -475,18 +471,18 @@ cs_turbulence_ke(int              phase_id,
   }
   const cs_real_t *w_dist = nullptr;
   if (model == CS_TURB_K_EPSILON_QUAD) {
-    w_dist =  cs_field_by_name("wall_distance")->val;
+    w_dist =  cs_field("wall_distance")->val;
   }
 
   int kstprv = cs_field_key_id("source_term_prev_id");
-  int istprv =  cs_field_get_key_int(f_k, kstprv);
+  int istprv =  f_k->get_key_int(kstprv);
   cs_real_t *c_st_k_p = nullptr;
   cs_real_t *c_st_eps_p = nullptr;
   if (istprv >= 0) {
-    c_st_k_p = cs_field_by_id(istprv)->val;
-    istprv = cs_field_get_key_int(f_eps, kstprv);
+    c_st_k_p = cs_field(istprv)->val;
+    istprv = f_eps->get_key_int(kstprv);
     if (istprv >= 0){
-      c_st_eps_p = cs_field_by_id(istprv)->val;
+      c_st_eps_p = cs_field(istprv)->val;
     }
     if (istprv >= 0)
       istprv = 1;
@@ -512,15 +508,15 @@ cs_turbulence_ke(int              phase_id,
   int key_t_ext_id = cs_field_key_id("time_extrapolated");
 
   if (istprv >= 0) {
-    int iroext = cs_field_get_key_int(f_rho, key_t_ext_id);
+    int iroext = f_rho->get_key_int(key_t_ext_id);
     if (iroext > 0) {
       cromo = f_rho->val_pre;
       bromo = f_rhob->val_pre;
     }
-    int iviext =  cs_field_get_key_int(f_mu, key_t_ext_id);
+    int iviext =  f_mu->get_key_int(key_t_ext_id);
     if (iviext > 0)
       cpro_pcvlo = f_mu->val_pre;
-    iviext = cs_field_get_key_int(f_mut, key_t_ext_id);
+    iviext = f_mut->get_key_int(key_t_ext_id);
     if (iviext > 0) {
       cpro_pcvto = f_mut->val_pre;
     }
@@ -679,7 +675,7 @@ cs_turbulence_ke(int              phase_id,
   /* Allocate temporary arrays for gradients calculation */
   cs_array_3d<cs_real_t> gradv;
   {
-    cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
+    cs_field_t *f_vg = cs_field_try("algo:velocity_gradient");
 
     if (f_vel->grad != nullptr)
       gradv = cs_array_3d<cs_real_t>(f_vel->grad, n_cells_ext, 3, 3);
@@ -749,7 +745,7 @@ cs_turbulence_ke(int              phase_id,
    * the production term is assumed to be asymptotic in S and
    * not in mu_TxS**2 */
 
-  cs_field_t *f_tke_prod = cs_field_by_name_try("algo:k_production");
+  cs_field_t *f_tke_prod = cs_field_try("algo:k_production");
 
   if (model == CS_TURB_K_EPSILON_LIN_PROD) {
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -1048,8 +1044,7 @@ cs_turbulence_ke(int              phase_id,
       f_thm = CS_FI_(h_tot, phase_id);
 
     if (f_thm != nullptr) {
-      prdtur = cs_field_get_key_double(f_thm,
-                                       cs_field_key_id("turbulent_schmidt"));
+      prdtur = f_thm->get_key_double("turbulent_schmidt");
     }
 
     /* Boussinesq approximation, only for the thermal scalar for the moment */
@@ -1062,7 +1057,7 @@ cs_turbulence_ke(int              phase_id,
                                grad.data<cs_real_3_t>());
 
       /* FIXME make it dependant on the scalar and use coupled_with_vel_p field */
-      cs_real_t *cpro_beta = cs_field_by_name("thermal_expansion")->val;
+      cs_real_t *cpro_beta = cs_field("thermal_expansion")->val;
 
       /* - Beta grad(T) . g / Pr_T */
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -1120,7 +1115,7 @@ cs_turbulence_ke(int              phase_id,
 
     /* Production term due to buoyancy */
 
-    cs_field_t *f_tke_buoy = cs_field_by_name_try("algo:k_buoyancy");
+    cs_field_t *f_tke_buoy = cs_field_try("algo:k_buoyancy");
     cs_real_t *tke_buoy = nullptr;
     if (f_tke_buoy != nullptr)
       tke_buoy = f_tke_buoy->val;
@@ -1525,11 +1520,11 @@ cs_turbulence_ke(int              phase_id,
     int k_interp_id = cs_field_key_id("opt_interp_id");
 
     /* Nudging towards optimal interpolation for k */
-    if (cs_field_get_key_int(f_k, k_interp_id) >= 0)
+    if (f_k->get_key_int(k_interp_id) >= 0)
       cs_at_data_assim_source_term(f_k->id, usexpk.data(), usimpk.data());
 
     /* Nudging towards optimal interpolation for epsilon */
-    if (cs_field_get_key_int(f_eps, k_interp_id) >= 0)
+    if (f_eps->get_key_int(k_interp_id) >= 0)
       cs_at_data_assim_source_term(f_k->id, usexpe.data(), usimpe.data());
 
   }
@@ -1590,8 +1585,8 @@ cs_turbulence_ke(int              phase_id,
 
     if (lag_st->ltsdyn == 1) {
 
-      cs_real_t *lag_st_k = cs_field_by_name("lagr_st_k")->val;
-      cs_real_t *lag_st_i = cs_field_by_name("lagr_st_imp_velocity")->val;
+      cs_real_t *lag_st_k = cs_field("lagr_st_k")->val;
+      cs_real_t *lag_st_i = cs_field("lagr_st_imp_velocity")->val;
 
       const cs_real_t ce4 = cs_turb_ce4;
 
@@ -2207,16 +2202,16 @@ cs_turbulence_ke_clip(int        phase_id,
 
   int key_clipping_id = cs_field_key_id("clipping_id");
 
-  int clip_k_id = cs_field_get_key_int(f_k, key_clipping_id);
+  int clip_k_id = f_k->get_key_int(key_clipping_id);
   cs_real_t *cpro_k_clipped = nullptr;
   if (clip_k_id >= 0) {
-    cpro_k_clipped = cs_field_by_id(clip_k_id)->val;
+    cpro_k_clipped = cs_field(clip_k_id)->val;
   }
 
-  int clip_e_id = cs_field_get_key_int(f_eps, key_clipping_id);
+  int clip_e_id = f_eps->get_key_int(key_clipping_id);
   cs_real_t *cpro_e_clipped = nullptr;
   if (clip_e_id >= 0) {
-    cpro_e_clipped = cs_field_by_id(clip_e_id)->val;
+    cpro_e_clipped = cs_field(clip_e_id)->val;
   }
 
   /* Save min and max for log
@@ -2530,7 +2525,7 @@ cs_turbulence_ke_q_mu_t(int phase_id)
   const cs_real_t *cvar_k = f_k->val;
   const cs_real_t *cvar_ep = f_eps->val;
 
-  const cs_real_t *w_dist = cs_field_by_name("wall_distance")->val;
+  const cs_real_t *w_dist = cs_field("wall_distance")->val;
 
   /* Calculation of velocity gradient and of
    *   S2 = S11**2+S22**2+S33**2+2*(S12**2+S13**2+S23**2)
@@ -2538,7 +2533,7 @@ cs_turbulence_ke_q_mu_t(int phase_id)
 
   cs_array_3d<cs_real_t> gradv;
   {
-    cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
+    cs_field_t *f_vg = cs_field_try("algo:velocity_gradient");
 
     if (f_vel->grad != nullptr)
       gradv = cs_array_3d<cs_real_t>(f_vel->grad, n_cells_ext, 3, 3);

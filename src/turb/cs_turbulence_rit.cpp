@@ -141,7 +141,7 @@ _turb_flux_st(const char          *name,
 {
   const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
 
-  cs_field_t *f = cs_field_by_name(name);
+  cs_field_t *f = cs_field(name);
 
   const cs_real_t *crom = CS_F_(rho)->val;
   const cs_real_t *cvar_ep = CS_F_(eps)->val;
@@ -150,8 +150,8 @@ _turb_flux_st(const char          *name,
   const cs_real_3_t *xuta = (const cs_real_3_t *)f_ut->val_pre;
 
   cs_real_t *cpro_beta = nullptr;
-  if (cs_field_by_name_try("thermal_expansion") != nullptr)
-    cpro_beta = cs_field_by_name_try("thermal_expansion")->val;
+  if (cs_field_try("thermal_expansion") != nullptr)
+    cpro_beta = cs_field_try("thermal_expansion")->val;
 
   const cs_real_t *cvar_tt = nullptr, *cvara_tt = nullptr, *cvar_al = nullptr;
 
@@ -160,8 +160,7 @@ _turb_flux_st(const char          *name,
     = (cs_turb_model_type_t)cs_glob_turb_model->model;
 
   /* Get the turbulent flux model */
-  const int kturt = cs_field_key_id("turbulent_flux_model");
-  int turb_flux_model =  cs_field_get_key_int(f, kturt);
+  int turb_flux_model =  f->get_key_int("turbulent_flux_model");
 
   if (f_tv != nullptr) {
     cvar_tt = f_tv->val;
@@ -215,7 +214,7 @@ _turb_flux_st(const char          *name,
   const cs_real_t rhebdfm = 0.5;
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
 
-  cs_field_t *f_beta2 = cs_field_by_name_try("algo:rij_beta2");
+  cs_field_t *f_beta2 = cs_field_try("algo:rij_beta2");
 
   const cs_real_t c1trit = cs_turb_c1trit;
   const cs_real_t crij1  = cs_turb_crij1;
@@ -504,7 +503,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
   const cs_real_t *cvara_ep = CS_F_(eps)->val_pre;
   const cs_real_6_t *cvara_rij = (const cs_real_6_t *)CS_F_(rij)->val_pre;
 
-  const cs_field_t *f_beta = cs_field_by_name_try("thermal_expansion");
+  const cs_field_t *f_beta = cs_field_try("thermal_expansion");
   const cs_turb_rans_model_t *rans_mdl = cs_glob_turb_rans_model;
   const cs_real_t *cpro_beta = nullptr, *cvara_tt = nullptr;
   if (f_beta != nullptr)
@@ -517,15 +516,13 @@ _thermal_flux_and_diff(cs_field_t         *f,
   cs_real_t _visls_0 = -1;
   const cs_real_t *viscls = nullptr;
   {
-    const int kivisl = cs_field_key_id("diffusivity_id");
-    int ifcvsl = cs_field_get_key_int(f, kivisl);
+    int ifcvsl = f->get_key_int("diffusivity_id");
     if (ifcvsl > -1) {
-      viscls = cs_field_by_id(ifcvsl)->val;
+      viscls = cs_field(ifcvsl)->val;
       l_viscls = 1;
     }
     else {
-      const int kvisls0 = cs_field_key_id("diffusivity_ref");
-      _visls_0 = cs_field_get_key_double(f, kvisls0);
+      _visls_0 = f->get_key_double("diffusivity_ref");
       viscls = &_visls_0;
       l_viscls = 0;
     }
@@ -539,8 +536,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
 
   const cs_real_t *grav = cs_glob_physical_constants->gravity;
 
-  const int kctheta = cs_field_key_id("turbulent_flux_ctheta");
-  const cs_real_t ctheta_c = cs_field_get_key_double(f, kctheta);
+  const cs_real_t ctheta_c = f->get_key_double("turbulent_flux_ctheta");
 
   const int has_buoyant_term = rans_mdl->has_buoyant_term;
 
@@ -864,16 +860,16 @@ _solve_rit(const cs_field_t     *f,
   const cs_real_t *viscl  = CS_F_(mu)->val;
   const cs_real_t *visct = CS_F_(mu_t)->val;
   const cs_real_6_t *visten
-    = (const cs_real_6_t *)cs_field_by_name
+    = (const cs_real_6_t *)cs_field
                              ("anisotropic_turbulent_viscosity")->val;
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-  const int iflmas = cs_field_get_key_int(CS_F_(vel), kimasf);
-  const int iflmab = cs_field_get_key_int(CS_F_(vel), kbmasf);
+  const int iflmas = CS_F_(vel)->get_key_int(kimasf);
+  const int iflmab = CS_F_(vel)->get_key_int(kbmasf);
 
-  const cs_real_t *imasfl = cs_field_by_id(iflmas)->val;
-  const cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
+  const cs_real_t *imasfl = cs_field(iflmas)->val;
+  const cs_real_t *bmasfl = cs_field(iflmab)->val;
 
   const cs_real_3_t *xuta = (cs_real_3_t *)f_ut->val_pre;
   cs_real_3_t *xut = (cs_real_3_t *)f_ut->val;
@@ -889,25 +885,22 @@ _solve_rit(const cs_field_t     *f,
   if (eqp->verbosity >= 1)
     bft_printf(" Solving variable %s\n", f_ut->name);
 
-  int kstprv = cs_field_key_id("source_term_prev_id");
-  int st_prv_id = cs_field_get_key_int(f_ut, kstprv);
+  int st_prv_id = f_ut->get_key_int("source_term_prev_id");
   cs_real_3_t *c_st_prv = nullptr;
   if (st_prv_id > -1)
-    c_st_prv = (cs_real_3_t *)cs_field_by_id(st_prv_id)->val;
+    c_st_prv = (cs_real_3_t *)cs_field(st_prv_id)->val;
 
   cs_lnum_t l_viscls = 0; /* stride for uniform/local viscosity access */
   cs_real_t _visls_0 = -1;
   const cs_real_t *viscls = nullptr;
   {
-    const int kivisl = cs_field_key_id("diffusivity_id");
-    int ifcvsl = cs_field_get_key_int(f, kivisl);
+    int ifcvsl = f->get_key_int("diffusivity_id");
     if (ifcvsl > -1) {
-      viscls = cs_field_by_id(ifcvsl)->val;
+      viscls = cs_field(ifcvsl)->val;
       l_viscls = 1;
     }
     else {
-      const int kvisls0 = cs_field_key_id("diffusivity_ref");
-      _visls_0 = cs_field_get_key_double(f, kvisls0);
+      _visls_0 = f->get_key_double("diffusivity_ref");
       viscls = &_visls_0;
       l_viscls = 0;
     }
@@ -1007,8 +1000,7 @@ _solve_rit(const cs_field_t     *f,
 
   cs_real_t mdifft = (cs_real_t)(eqp_ut->idifft);
 
-  const int kctheta = cs_field_key_id("turbulent_flux_ctheta");
-  const cs_real_t ctheta = cs_field_get_key_double(f, kctheta);
+  const cs_real_t ctheta = f->get_key_double("turbulent_flux_ctheta");
 
   /* Symmetric tensor diffusivity (GGDH) */
   if (eqp_ut->idiff > 0) {
@@ -1062,13 +1054,13 @@ _solve_rit(const cs_field_t     *f,
 
   /* Add Rusanov fluxes */
   if (cs_glob_turb_rans_model->irijnu == 2) {
-    cs_real_t *ipro_rusanov = cs_field_by_name("i_rusanov_diff")->val;
+    cs_real_t *ipro_rusanov = cs_field("i_rusanov_diff")->val;
     ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       viscf[face_id] = cs::max(viscf[face_id], 0.5 * ipro_rusanov[face_id]);
     });
 
     const cs_nreal_3_t *restrict b_face_u_normal = mq->b_face_u_normal;
-    cs_real_t *bpro_rusanov = cs_field_by_name("b_rusanov_diff")->val;
+    cs_real_t *bpro_rusanov = cs_field("b_rusanov_diff")->val;
 
     //cs_real_3_t *coefap = (cs_real_3_t *)f_ut->bc_coeffs->a;
     cs_real_33_t *cofbfp = (cs_real_33_t *)f_ut->bc_coeffs->bf;
@@ -1161,15 +1153,14 @@ cs_turbulence_rit_div(const int        field_id,
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
   /* TODO: declare field as const when ctheta issue (#387) is solved */
-  cs_field_t *f = cs_field_by_id(field_id);
+  cs_field_t *f = cs_field(field_id);
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_i_faces = m->n_i_faces;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  const int kturt = cs_field_key_id("turbulent_flux_model");
-  const int turb_flux_model = cs_field_get_key_int(f, kturt);
+  const int turb_flux_model = f->get_key_int("turbulent_flux_model");
   const int turb_flux_model_type = turb_flux_model / 10;
 
   cs_dispatch_context ctx;
@@ -1184,7 +1175,7 @@ cs_turbulence_rit_div(const int        field_id,
 
   cs_array_3d<cs_real_t> gradv;
   {
-    cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
+    cs_field_t *f_vg = cs_field_try("algo:velocity_gradient");
 
     if (f_vel->grad != nullptr)
       gradv = cs_array_3d<cs_real_t>(f_vel->grad,
@@ -1301,8 +1292,7 @@ cs_turbulence_rit_div(const int        field_id,
 
     /*  Clipping of the turbulence flux vector */
     if ((f_tv != nullptr) && (cs_glob_time_step->nt_cur > 1)) {
-      const int kclipp = cs_field_key_id("is_clipped");
-      const int clprit = cs_field_get_key_int(f_ut, kclipp);
+      const int clprit = f_ut->get_key_int("is_clipped");
       if (clprit > 0)
         cs_clip_turbulent_fluxes(f_ut->id,
                                  f_tv->id);

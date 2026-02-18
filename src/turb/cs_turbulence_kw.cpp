@@ -166,16 +166,16 @@ cs_turbulence_kw_clip(int       phase_id,
 
   int kclipp = cs_field_key_id("clipping_id");
 
-  int clip_k_id = cs_field_get_key_int(f_k, kclipp);
+  int clip_k_id = f_k->get_key_int(kclipp);
   cs_real_t *cpro_k_clipped = nullptr;
   if (clip_k_id >= 0) {
-    cpro_k_clipped = cs_field_by_id(clip_k_id)->val;
+    cpro_k_clipped = cs_field(clip_k_id)->val;
   }
 
-  int clip_w_id =  cs_field_get_key_int(f_omg, kclipp);
+  int clip_w_id =  f_omg->get_key_int(kclipp);
   cs_real_t *cpro_w_clipped = nullptr;
   if (clip_w_id >= 0) {
-    cpro_w_clipped = cs_field_by_id(clip_w_id)->val;
+    cpro_w_clipped = cs_field(clip_w_id)->val;
   }
 
   /* These two kernels are optional, and are activated only if the user
@@ -350,8 +350,8 @@ cs_turbulence_kw(int phase_id)
 
   /* Allocate work arrays */
 
-  cs_field_t *f_tke_prod = cs_field_by_name_try("algo:k_production");
-  cs_field_t *f_tke_buoy = cs_field_by_name_try("algo:k_buoyancy");
+  cs_field_t *f_tke_prod = cs_field_try("algo:k_production");
+  cs_field_t *f_tke_buoy = cs_field_try("algo:k_buoyancy");
 
   cs_array<cs_real_t> dpvar(n_cells_ext, cs_alloc_mode);
   cs_array<cs_real_t> w1(n_cells_ext, cs_alloc_mode);
@@ -378,10 +378,8 @@ cs_turbulence_kw(int phase_id)
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-  const cs_real_t *i_massflux
-    = cs_field_by_id(cs_field_get_key_int(f_vel, kimasf))->val;
-  const cs_real_t *b_massflux
-    = cs_field_by_id(cs_field_get_key_int(f_vel, kbmasf))->val;
+  const cs_real_t *i_massflux = cs_field(f_vel->get_key_int(kimasf))->val;
+  const cs_real_t *b_massflux = cs_field(f_vel->get_key_int(kbmasf))->val;
 
   cs_real_t *crom = (cs_real_t *)f_rho->val;
   cs_real_t *cromo = (cs_real_t *)f_rho->val;
@@ -426,33 +424,33 @@ cs_turbulence_kw(int phase_id)
   const cs_equation_param_t *eqp_u
     = cs_field_get_equation_param_const(f_vel);
 
-  cs_field_t *f_s2kw = cs_field_by_name_try("s2");
-  cs_field_t *f_divukw = cs_field_by_name_try("vel_gradient_trace");
+  cs_field_t *f_s2kw = cs_field_try("s2");
+  cs_field_t *f_divukw = cs_field_try("vel_gradient_trace");
 
   if (phase_id >= 0) {
     char f_name[64]; /* should be much larger than needed */
 
     snprintf(f_name, 63, "s2_%d", phase_id + 1);
     f_name[63] = '\0';
-    f_s2kw = cs_field_by_name(f_name);
+    f_s2kw = cs_field(f_name);
 
     snprintf(f_name, 63, "vel_gradient_trace_%d", phase_id + 1);
-    f_divukw = cs_field_by_name(f_name);
+    f_divukw = cs_field(f_name);
   }
 
   const cs_real_t *cpro_s2kw = f_s2kw->val;
   const cs_real_t *cpro_divukw = f_divukw->val;
 
   int kstprv = cs_field_key_id("source_term_prev_id");
-  int istprv =  cs_field_get_key_int(f_k, kstprv);
+  int istprv =  f_k->get_key_int(kstprv);
   cs_real_t *c_st_k_p = nullptr;
   cs_real_t *c_st_omg_p = nullptr;
 
   if (istprv >= 0) {
-    c_st_k_p = cs_field_by_id(istprv)->val;
-    istprv = cs_field_get_key_int(f_eps, kstprv);
+    c_st_k_p = cs_field(istprv)->val;
+    istprv = f_eps->get_key_int(kstprv);
     if (istprv >= 0) {
-      c_st_omg_p = cs_field_by_id(istprv)->val;
+      c_st_omg_p = cs_field(istprv)->val;
     }
     if (istprv >= 0)
       istprv = 1;
@@ -464,21 +462,21 @@ cs_turbulence_kw(int phase_id)
 
   int iroext, iviext;
   if (istprv >= 0) {
-    iroext = cs_field_get_key_int(f_rho, key_t_ext_id);
+    iroext = f_rho->get_key_int(key_t_ext_id);
     if (iroext > 0) {
       cromo = (cs_real_t *)f_rho->val_pre;
       bromo = (cs_real_t *)f_rhob->val_pre;
     }
-    iviext =  cs_field_get_key_int(f_mu, key_t_ext_id);
+    iviext =  f_mu->get_key_int(key_t_ext_id);
     if (iviext > 0)
       cpro_pcvlo = (cs_real_t *)f_mu->val_pre;
-    iviext = cs_field_get_key_int(f_mut, key_t_ext_id);
+    iviext = f_mut->get_key_int(key_t_ext_id);
     if (iviext > 0) {
       cpro_pcvto = (cs_real_t *)f_mut->val_pre;
     }
   }
 
-  const cs_real_t *w_dist = cs_field_by_name("wall_distance")->val;
+  const cs_real_t *w_dist = cs_field("wall_distance")->val;
 
   if (eqp_k->verbosity >= 1)
     cs_log_printf(CS_LOG_DEFAULT,
@@ -584,7 +582,7 @@ cs_turbulence_kw(int phase_id)
   cs_real_t *htles_kwsst_f1  = nullptr;
   if (hybrid_turb != CS_HYBRID_NONE) {
     /* For all hybrid model, possibility to have hybrid scheme */
-    hybrid_fd_coeff = cs_field_by_name("hybrid_blend")->val;
+    hybrid_fd_coeff = cs_field("hybrid_blend")->val;
   }
 
   if (hybrid_turb == CS_HYBRID_DDES) {
@@ -595,7 +593,7 @@ cs_turbulence_kw(int phase_id)
 
     cs_array_3d<cs_real_t> gradv;
     {
-      cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
+      cs_field_t *f_vg = cs_field_try("algo:velocity_gradient");
 
       if (f_vel->grad != nullptr)
         gradv = cs_array_3d<cs_real_t>(f_vel->grad, n_cells_ext, 3, 3);
@@ -624,7 +622,7 @@ cs_turbulence_kw(int phase_id)
   }
   else if (hybrid_turb == CS_HYBRID_SAS) {
 
-    sas_source_term = cs_field_by_name("hybrid_sas_source_term")->val;
+    sas_source_term = cs_field("hybrid_sas_source_term")->val;
 
     /* Scale Adaptive hybrid model (Menter et al.)
        Computation of max(|grad k|^2 /k^2 , |grad w|^2/w^2 )
@@ -710,10 +708,10 @@ cs_turbulence_kw(int phase_id)
   else if (hybrid_turb == CS_HYBRID_HTLES) {
     /* HTLES model [Manceau; 2018] */
 
-    psi = cs_field_by_name("htles_psi")->val;
-    htles_t   = cs_field_by_name("htles_t")->val;
+    psi = cs_field("htles_psi")->val;
+    htles_t   = cs_field("htles_t")->val;
 
-    htles_kwsst_f1 = cs_field_by_name("f1_kwsst")->val;
+    htles_kwsst_f1 = cs_field("f1_kwsst")->val;
   }
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -864,8 +862,7 @@ cs_turbulence_kw(int phase_id)
       f_thm = CS_FI_(h_tot, phase_id);
 
     if (f_thm != nullptr) {
-      prdtur = cs_field_get_key_double(f_thm,
-                                       cs_field_key_id("turbulent_schmidt"));
+      prdtur = f_thm->get_key_double("turbulent_schmidt");
     }
 
     /* Buoyant term:     G = Beta*g*GRAD(T)/PrT/ro
@@ -881,7 +878,7 @@ cs_turbulence_kw(int phase_id)
                                grad.data<cs_real_3_t>());
 
       /* FIXME make it dependant on the scalar and use coupled_with_vel_p field */
-      cs_real_t *cpro_beta = cs_field_by_name("thermal_expansion")->val;
+      cs_real_t *cpro_beta = cs_field("thermal_expansion")->val;
 
       /* - Beta grad(T) . g / Pr_T */
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -1209,8 +1206,8 @@ cs_turbulence_kw(int phase_id)
 
     if (lag_st->ltsdyn == 1) {
 
-      cs_real_t *lag_st_k = cs_field_by_name("lagr_st_k")->val;
-      cs_real_t *lag_st_i = cs_field_by_name("lagr_st_imp_velocity")->val;
+      cs_real_t *lag_st_k = cs_field("lagr_st_k")->val;
+      cs_real_t *lag_st_i = cs_field("lagr_st_imp_velocity")->val;
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
@@ -1848,7 +1845,7 @@ cs_turbulence_kw_mu_t(int phase_id)
   const cs_real_t *cvar_k  = (const cs_real_t *)f_k->val;
   const cs_real_t *cvar_omg = (const cs_real_t *)f_omg->val;
 
-  const cs_real_t *w_dist = cs_field_by_name("wall_distance")->val;
+  const cs_real_t *w_dist = cs_field("wall_distance")->val;
 
   /* Compute the scalar s2kw rate SijSij and the trace of the velocity
    * gradient
@@ -1858,7 +1855,7 @@ cs_turbulence_kw_mu_t(int phase_id)
 
   cs_array_3d<cs_real_t> gradv;
   {
-    cs_field_t *f_vg = cs_field_by_name_try("algo:velocity_gradient");
+    cs_field_t *f_vg = cs_field_try("algo:velocity_gradient");
 
     if (f_vel->grad != nullptr)
       gradv = cs_array_3d<cs_real_t>(f_vel->grad, n_cells_ext, 3, 3);
@@ -1885,18 +1882,18 @@ cs_turbulence_kw_mu_t(int phase_id)
   const cs_real_t d1s3 = 1./3.;
   const cs_real_t d2s3 = 2./3.;
 
-  cs_field_t *f_s2kw = cs_field_by_name_try("s2");
-  cs_field_t *f_divukw = cs_field_by_name_try("vel_gradient_trace");
+  cs_field_t *f_s2kw = cs_field_try("s2");
+  cs_field_t *f_divukw = cs_field_try("vel_gradient_trace");
 
   if (phase_id >= 0) {
     char f_name[64]; /* should be much larger than needed */
 
     snprintf(f_name, 63, "s2_%d", phase_id + 1);
     f_name[63] = '\0';
-    f_s2kw = cs_field_by_name(f_name);
+    f_s2kw = cs_field(f_name);
 
     snprintf(f_name, 63, "vel_gradient_trace_%d", phase_id + 1);
-    f_divukw = cs_field_by_name(f_name);
+    f_divukw = cs_field(f_name);
   }
 
   cs_real_t *cpro_s2kw = f_s2kw->val;
@@ -1928,8 +1925,8 @@ cs_turbulence_kw_mu_t(int phase_id)
   cs_real_t *blend = nullptr;
   const int hybrid_turb = cs_glob_turb_model->hybrid_turb;
   if (hybrid_turb == CS_HYBRID_HTLES) {
-    psi = cs_field_by_name("htles_psi")->val;
-    blend = cs_field_by_name("hybrid_blend")->val;
+    psi = cs_field("htles_psi")->val;
+    blend = cs_field("hybrid_blend")->val;
   }
 
   const cs_real_t cmu = cs_turb_cmu;

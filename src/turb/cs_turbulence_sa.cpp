@@ -189,7 +189,7 @@ _src_terms(const cs_real_t    dt[],
   const cs_real_t *b_dist = mq->b_dist;
   const cs_real_t *cell_f_vol = mq->cell_vol;
 
-  const cs_real_t *w_dist = cs_field_by_name("wall_distance")->val;
+  const cs_real_t *w_dist = cs_field("wall_distance")->val;
   const cs_real_t *cvara_nusa = CS_F_(nusa)->val_pre;
 
   const cs_real_t dsigma = 1.0 / cs_turb_csasig;
@@ -206,7 +206,7 @@ _src_terms(const cs_real_t    dt[],
      face (and then give it the appropriate roughness value). This could be done
      at the cost of using a diffusion equation. */
 
-  const cs_field_t  *f_r = cs_field_by_name_try("boundary_roughness");
+  const cs_field_t  *f_r = cs_field_try("boundary_roughness");
   if (f_r != nullptr) {
     const cs_real_t *b_roughness = f_r->val;
     const cs_real_t *coefbp = CS_F_(nusa)->bc_coeffs->b;
@@ -341,13 +341,11 @@ _clip(cs_lnum_t  n_cells)
 {
   cs_real_t *cvar_nusa = CS_F_(nusa)->val;
 
-  int key_clipping_id = cs_field_key_id("clipping_id");
-
   /* Postprocess clippings? */
-  int clip_nusa_id = cs_field_get_key_int(CS_F_(nusa), key_clipping_id);
+  int clip_nusa_id = CS_F_(nusa)->get_key_int("clipping_id");
   cs_real_t *cpro_nusa_clipped = nullptr;
   if (clip_nusa_id >= 0) {
-    cpro_nusa_clipped = cs_field_by_id(clip_nusa_id)->val;
+    cpro_nusa_clipped = cs_field(clip_nusa_id)->val;
     cs_array_real_fill_zero(n_cells, cpro_nusa_clipped);
   }
 
@@ -424,15 +422,12 @@ cs_turbulence_sa(void)
   const cs_real_t *cpro_rho_o = CS_F_(rho)->val;
   const cs_real_t *cpro_viscl = CS_F_(mu)->val;
 
-  int key_t_ext_id = cs_field_key_id("time_extrapolated");
-  int kstprv = cs_field_key_id("source_term_prev_id");
-
   cs_real_t *c_st_nusa_p = nullptr;
 
-  int istprv = cs_field_get_key_int(CS_F_(nusa), kstprv);
+  int istprv = CS_F_(nusa)->get_key_int("source_term_prev_id");
   if (istprv >= 0) {
-    c_st_nusa_p = cs_field_by_id(istprv)->val;
-    if (cs_field_get_key_int(CS_F_(rho), key_t_ext_id) > 0)
+    c_st_nusa_p = cs_field(istprv)->val;
+    if (CS_F_(rho)->get_key_int("time_extrapolated") > 0)
       cpro_rho_o = CS_F_(rho)->val_pre;
   }
 
@@ -610,10 +605,10 @@ cs_turbulence_sa(void)
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-  const int iflmas = cs_field_get_key_int(CS_F_(nusa), kimasf);
-  const int iflmab = cs_field_get_key_int(CS_F_(nusa), kbmasf);
-  const cs_real_t *imasfl = cs_field_by_id(iflmas)->val;
-  const cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
+  const int iflmas = CS_F_(nusa)->get_key_int(kimasf);
+  const int iflmab = CS_F_(nusa)->get_key_int(kbmasf);
+  const cs_real_t *imasfl = cs_field(iflmas)->val;
+  const cs_real_t *bmasfl = cs_field(iflmab)->val;
 
   cs_array<cs_real_t> dpvar(n_cells_ext, cs_alloc_mode);
 

@@ -337,7 +337,7 @@ cs_les_mu_t_smago_dyn(void)
   const cs_real_3_t *vel = (const cs_real_3_t *)CS_F_(vel)->val;
 
   cs_real_t *cpro_smago
-    = cs_field_by_name("smagorinsky_constant^2")->val;
+    = cs_field("smagorinsky_constant^2")->val;
 
   /* For the calculation of the viscosity of the sub-mesh */
 
@@ -427,8 +427,8 @@ cs_les_mu_t_smago_dyn(void)
   });
 
   /* Compute k_SGS and its dissipation if need (e.g. Lagrangian module) */
-  cs_field_t *f_k = cs_field_by_name_try("k_sgs");
-  cs_field_t *f_eps = cs_field_by_name_try("epsilon_sgs");
+  cs_field_t *f_k = cs_field_try("k_sgs");
+  cs_field_t *f_eps = cs_field_try("epsilon_sgs");
 
   if (f_k != nullptr && f_eps != nullptr) {
     cs_real_t *cvar_k = f_k->val;
@@ -538,10 +538,10 @@ cs_les_mu_t_smago_dyn(void)
   const int kscavr = cs_field_key_id("first_moment_id");
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
-    cs_field_t *fld = cs_field_by_id(f_id);
+    cs_field_t *fld = cs_field(f_id);
 
-    int sc_id = cs_field_get_key_int(fld, keysca)-1;
-    int iscavr = cs_field_get_key_int(fld, kscavr);
+    int sc_id = fld->get_key_int(keysca)-1;
+    int iscavr = fld->get_key_int(kscavr);
     /* For variance of a scalar, the turbulent diffusivity is not computed */
     if ((sc_id < 0) || (iscavr > -1))
       continue;
@@ -553,12 +553,12 @@ cs_les_mu_t_smago_dyn(void)
         continue;
     }
 
-    int t_dif_id = cs_field_get_key_int(fld, key_turb_diff);
-    int sca_dync_id = cs_field_get_key_int(fld, key_sgs_sca_coef);
+    int t_dif_id = fld->get_key_int(key_turb_diff);
+    int sca_dync_id = fld->get_key_int(key_sgs_sca_coef);
 
     if ((t_dif_id >= 0) && (sca_dync_id >= 0)) {
-      cs_real_t *cpro_turb_diff = cs_field_by_id(t_dif_id)->val;
-      cs_real_t *cpro_sca_dync = cs_field_by_id(sca_dync_id)->val;
+      cs_real_t *cpro_turb_diff = cs_field(t_dif_id)->val;
+      cs_real_t *cpro_sca_dync = cs_field(sca_dync_id)->val;
 
       /* Compute the Mi for scalar
        * ========================= */
@@ -749,8 +749,8 @@ cs_les_mu_t_smago_const(void)
   });
 
   /* Compute k_SGS and its dissipation if need (e.g. Lagrangian module) */
-  cs_field_t *f_k = cs_field_by_name_try("k_sgs");
-  cs_field_t *f_eps = cs_field_by_name_try("epsilon_sgs");
+  cs_field_t *f_k = cs_field_try("k_sgs");
+  cs_field_t *f_eps = cs_field_try("epsilon_sgs");
 
   if (f_k != nullptr && f_eps != nullptr) {
     cs_real_t *cvar_k = f_k->val;
@@ -841,8 +841,8 @@ cs_les_mu_t_wale(void)
 
   /* Compute k_SGS and its dissipation if need (e.g. Lagrangian module) */
 
-  cs_field_t *f_k = cs_field_by_name_try("k_sgs");
-  cs_field_t *f_eps = cs_field_by_name_try("epsilon_sgs");
+  cs_field_t *f_k = cs_field_try("k_sgs");
+  cs_field_t *f_eps = cs_field_try("epsilon_sgs");
   cs_array<cs_real_t> s_eq;
 
   /* Store inverse of the time scale if needed */
@@ -1008,7 +1008,7 @@ cs_les_mu_t_tausgs(void)
   cs_real_t *visct =  CS_F_(mu_t)->val;
   const cs_real_t *crom  = CS_F_(rho)->val;
   cs_real_6_t *cvar_rij = (cs_real_6_t *)(CS_F_(rij)->val);
-  const cs_real_t *w_dist = cs_field_by_name("wall_distance")->val;
+  const cs_real_t *w_dist = cs_field("wall_distance")->val;
 
   ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
