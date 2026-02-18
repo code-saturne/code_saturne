@@ -34,7 +34,7 @@ else
   CMD_UIC = --uic $(UIC)
 endif
 if HAVE_PYRCC
-  CMD_CC = --pyrcc $(PYSIDE6RCC)
+  CMD_RCC = --pyrcc $(PYSIDE6RCC)
 else
   CMD_RCC = --rcc $(RCC)
 endif
