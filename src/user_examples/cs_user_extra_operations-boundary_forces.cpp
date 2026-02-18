@@ -67,7 +67,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 {
   /*! [boundary_forces_ex1] */
   {
-    cs_field_t *b_forces = cs_field_by_name_try("boundary_stress");
+    cs_field_t *b_forces = cs_field_try("boundary_stress");
 
     if (b_forces != nullptr) {
       cs_real_3_t total_b_forces = {0., 0., 0.};
@@ -101,9 +101,8 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
     const cs_zone_t *zn = cs_boundary_zone_by_name("selected_wall");
 
     /* compute static pressure on selected boundary faces */
-    cs_real_t *p_b_val;
-    CS_MALLOC(p_b_val, zn->n_elts, cs_real_t);
-    cs_post_b_pressure(zn->n_elts, zn->elt_ids, p_b_val);
+    cs_array<cs_real_t> p_b_val(zn->n_elts);
+    cs_post_b_pressure(zn->n_elts, zn->elt_ids, p_b_val.data());
 
     for (cs_lnum_t e_id = 0; e_id < zn->n_elts; e_id++) {
       cs_lnum_t face_id = zn->elt_ids[e_id];
@@ -112,8 +111,6 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
                                * b_face_u_normal[face_id][i]
                                * b_face_surf[face_id];
     }
-
-    CS_FREE(p_b_val);
 
     /* parallel sum */
     cs_parall_sum(3, CS_REAL_TYPE, total_b_p_forces);

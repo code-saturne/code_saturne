@@ -74,28 +74,26 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
     = domain->mesh_quantities->b_face_u_normal;
 
   const cs_real_t    *f_b_temp
-    = (const cs_real_t *)cs_field_by_name("boundary_temperature")->val;
+    = (const cs_real_t *)cs_field("boundary_temperature")->val;
   const cs_real_3_t  *b_stress
-    = (const cs_real_3_t *)cs_field_by_name("boundary_stress")->val;
+    = (const cs_real_3_t *)cs_field("boundary_stress")->val;
 
   cs_field_t *f = cs_thermal_model_field();
-  const double visls_0
-    = cs_field_get_key_double(f, cs_field_key_id("diffusivity_ref"));
+  const double visls_0 = f->get_key_double("diffusivity_ref");
 
   if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_max) {
 
     /* Compute the thermal fluxes at selected boundary faces */
     const int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
     const cs_lnum_t n_elts = cs_mesh_location_get_n_elts(location_id)[0];
-    cs_real_t *boundary_flux = nullptr;
-    CS_MALLOC(boundary_flux, n_elts, cs_real_t);
+    cs_array<cs_real_t> boundary_flux(n_elts);
 
-    cs_post_boundary_flux(f->name, n_elts, nullptr, boundary_flux);
+    cs_post_boundary_flux(f->name, n_elts, nullptr, boundary_flux.data());
 
-    /* Some declarations */
-    cs_real_t *loc_nusselt = nullptr, *glo_nusselt = nullptr;
-    cs_real_t *loc_friction = nullptr, *glo_friction = nullptr;
-    cs_real_t *loc_coords = nullptr, *glo_coords = nullptr;
+    /* Some declarations -> Declared like this, the arrays are of size 0*/
+    cs_array<cs_real_t> glo_nusselt;
+    cs_array<cs_real_t> glo_friction;
+    cs_array<cs_real_t> glo_coords;
 
     /* Print Nusselt and friction coeff file header*/
     if (cs_glob_rank_id <= 0) {
@@ -125,14 +123,14 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
     cs_parall_sum(1 , CS_GNUM_TYPE, &n_selected_faces_g);
 
     /*Allocate local and global arrays to store the desired data */
-    CS_MALLOC(loc_nusselt,  n_selected_faces, cs_real_t);
-    CS_MALLOC(loc_friction, n_selected_faces, cs_real_t);
-    CS_MALLOC(loc_coords,   n_selected_faces, cs_real_t);
+    cs_array<cs_real_t> loc_nusselt(n_selected_faces);
+    cs_array<cs_real_t> loc_friction(n_selected_faces);
+    cs_array<cs_real_t> loc_coords(n_selected_faces);
 
     if (cs_glob_n_ranks > 1) {
-      CS_MALLOC(glo_nusselt , n_selected_faces_g, cs_real_t);
-      CS_MALLOC(glo_friction, n_selected_faces_g, cs_real_t);
-      CS_MALLOC(glo_coords  , n_selected_faces_g, cs_real_t);
+      glo_nusselt.reshape(n_selected_faces_g);
+      glo_friction.reshape(n_selected_faces_g);
+      glo_coords.reshape(n_selected_faces_g);
     }
 
     /* Add some reference values */
@@ -167,11 +165,11 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
     /* Gather the data of all ranks */
     if (cs_glob_n_ranks > 1) {
       cs_parall_allgather_r(n_selected_faces, n_selected_faces_g,
-                            loc_nusselt,      glo_nusselt);
+                            loc_nusselt.data(),      glo_nusselt.data());
       cs_parall_allgather_r(n_selected_faces, n_selected_faces_g,
-                            loc_friction,     glo_friction);
+                            loc_friction.data(),     glo_friction.data());
       cs_parall_allgather_r(n_selected_faces, n_selected_faces_g,
-                            loc_coords,       glo_coords);
+                            loc_coords.data(),       glo_coords.data());
     }
 
     /* Print in file */
@@ -185,16 +183,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
     }
 
     /* Free allocated memory */
-    CS_FREE(boundary_flux);
     CS_FREE(selected_faces);
-
-    CS_FREE(loc_nusselt);
-    CS_FREE(loc_friction);
-    CS_FREE(loc_coords);
-
-    CS_FREE(glo_nusselt);
-    CS_FREE(glo_friction);
-    CS_FREE(glo_coords);
   }
 }
 

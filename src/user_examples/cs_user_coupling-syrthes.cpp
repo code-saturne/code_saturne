@@ -224,21 +224,18 @@ cs_user_syrthes_coupling_volume_h
 
   const cs_field_t *fth = cs_thermal_model_field();
 
-  const int viscl_id = cs_field_get_key_int(fth,
-                                            cs_field_key_id("diffusivity_id"));
+  const int viscl_id = fth->get_key_int("diffusivity_id");
 
   if (viscl_id > -1) {
     cpro_viscls = (const cs_real_t *)cs_field_by_id(viscl_id)->val;
     viscls_step = 1;
   }
   else {
-    visls_0 = cs_field_get_key_double(fth, cs_field_key_id("diffusivity_ref"));
+    visls_0 = fth->get_key_double("diffusivity_ref");
     cpro_viscls = &visls_0;
   }
 
-  const int is_temperature
-    = cs_field_get_key_int(fth,
-                           cs_field_key_id("is_temperature"));
+  const int is_temperature = fth->get_key_int("is_temperature");
   /*! [example_2_init] */
 
   /*! [example_2] */
@@ -276,7 +273,7 @@ cs_user_syrthes_coupling_volume_h
 
     /* Compute Nusselt number using Colburn correlation */
 
-    cs_real_t nu = 0.023 * pow(re, 0.8) * pow(pr, 1./3.);
+    cs_real_t nu = 0.023 * pow(re, 0.8) * cbrt(pr);
     cs_real_t h_corr = nu * lambda / l0;
 
     /* Compute hvol */

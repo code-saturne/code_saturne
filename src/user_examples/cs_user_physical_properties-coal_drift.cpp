@@ -77,16 +77,15 @@ cs_user_physical_properties
 
   const int *iym1 = cs_glob_coal_model->iym1;
 
-  cs_real_t *cpro_ym1_3 = cs_field_by_id(iym1[2])->val;
-  cs_real_t *cpro_ym1_5 = cs_field_by_id(iym1[4])->val;
-  cs_real_t *cpro_ym1_7 = cs_field_by_id(iym1[6])->val;
-  cs_real_t *cpro_ym1_8 = cs_field_by_id(iym1[7])->val;
-  cs_real_t *cpro_ym1_9 = cs_field_by_id(iym1[8])->val;
-  cs_real_t *cpro_ym1_11 = cs_field_by_id(iym1[10])->val;
-  cs_real_t *cpro_ym1_12 = cs_field_by_id(iym1[11])->val;
+  cs_real_t *cpro_ym1_3 = cs_field(iym1[2])->val;
+  cs_real_t *cpro_ym1_5 = cs_field(iym1[4])->val;
+  cs_real_t *cpro_ym1_7 = cs_field(iym1[6])->val;
+  cs_real_t *cpro_ym1_8 = cs_field(iym1[7])->val;
+  cs_real_t *cpro_ym1_9 = cs_field(iym1[8])->val;
+  cs_real_t *cpro_ym1_11 = cs_field(iym1[10])->val;
+  cs_real_t *cpro_ym1_12 = cs_field(iym1[11])->val;
 
-  cs_real_t *visco;
-  CS_MALLOC(visco, n_cells_ext, cs_real_t);
+  cs_array<cs_real_t> visco(n_cells_ext);
   /*![init]*/
 
   /* The following examples should be adapted by the user
@@ -101,7 +100,7 @@ cs_user_physical_properties
   const cs_real_t *cpro_temp = CS_F_(t)->val;
 
   /* Gas density */
-  cs_real_t *cpro_rom1 = cs_field_by_name("rho_gas")->val;
+  auto cpro_rom1 = cs_field("rho_gas")->get_vals_s();
 
   /* First initialization */
   if (cs_glob_time_step->nt_cur <= 1) {
@@ -112,8 +111,8 @@ cs_user_physical_properties
     const double *rho20  = cs_glob_coal_model->rho20;
     const double *diam20 = cs_glob_coal_model->diam20;
 
-    cs_array_real_set_scalar(n_cells, viscl0, visco);
-    cs_array_real_set_scalar(n_cells, ro0, cpro_rom1);
+    visco.set_to_val(viscl0, n_cells);
+    cpro_rom1.set_to_val(ro0, n_cells);
 
     for (int icla = 0; icla < n_class; icla++) {
       char rho_name[64], diam_name[64];
@@ -121,8 +120,8 @@ cs_user_physical_properties
       snprintf(rho_name, 63, "rho_p_%02d", icla+1);
       snprintf(diam_name, 63, "diam_p_%02d", icla+1);
 
-      cs_real_t *cpro_rom2 = cs_field_by_name(rho_name)->val;
-      cs_real_t *cpro_diam2 = cs_field_by_name(diam_name)->val;
+      cs_real_t *cpro_rom2 = cs_field(rho_name)->val;
+      cs_real_t *cpro_diam2 = cs_field(diam_name)->val;
 
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         cpro_rom2[c_id] = rho20[icla];
@@ -195,18 +194,18 @@ cs_user_physical_properties
   }
 
   /* get x1 = 1 - sum cpro_x2 */
-  cs_real_t *cpro_x1 = cs_field_by_name("x_c")->val;
+  cs_real_t *cpro_x1 = cs_field("x_c")->val;
 
   /* All gas scalars have the same drift as if1m(1)
    *-----------------------------------------------*/
 
   /* Loop on fields */
   for (int f_id = 0; f_id < n_fields; f_id++) {
-    const cs_field_t *fld =  cs_field_by_id(f_id);
+    const cs_field_t *fld =  cs_field(f_id);
 
     /* Index of the scalar class (<0 if the scalar belongs to the gas phase) */
-    int icla =  cs_field_get_key_int(fld, keyccl);
-    int iscdri = cs_field_get_key_int(fld, keydri);
+    int icla =  fld->get_key_int(keyccl);
+    int iscdri = fld->get_key_int(keydri);
 
     /*  We only handle here one scalar with a drift per gas class */
     if ((icla < 0) && (iscdri & CS_DRIFT_SCALAR_ADD_DRIFT_FLUX)) {
@@ -226,11 +225,11 @@ cs_user_physical_properties
    * ------------------------------------------- */
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
-    const cs_field_t *fld =  cs_field_by_id(f_id);
+    const cs_field_t *fld =  cs_field(f_id);
 
     /* Index of the scalar class (<0 if the scalar belongs to the gas phase) */
-    int icla =  cs_field_get_key_int(fld, keyccl);
-    int iscdri = cs_field_get_key_int(fld, keydri);
+    int icla =  fld->get_key_int(keyccl);
+    int iscdri = fld->get_key_int(keydri);
 
     /* We only handle here one scalar with a drift per particle class */
     if ((icla > -1) && (iscdri & CS_DRIFT_SCALAR_ADD_DRIFT_FLUX)) {
@@ -240,9 +239,9 @@ cs_user_physical_properties
       snprintf(diam_name, 63, "diam_p_%02d", icla+1);
       snprintf(x2_name, 63, "x_p_%02d", icla+1);
 
-      cs_real_t *cpro_x2 = cs_field_by_name(x2_name)->val;
-      cs_real_t *cpro_rom2 = cs_field_by_name(rho_name)->val;
-      cs_real_t *cpro_diam2 = cs_field_by_name(diam_name)->val;
+      cs_real_t *cpro_x2 = cs_field(x2_name)->val;
+      cs_real_t *cpro_rom2 = cs_field(rho_name)->val;
+      cs_real_t *cpro_diam2 = cs_field(diam_name)->val;
 
       /* Name of the drift scalar */
       cs_real_t *cpro_taup
@@ -265,9 +264,6 @@ cs_user_physical_properties
         cpro_taup[c_id] += -(cpro_taup[c_id]*cpro_x2[c_id]);
     }
   }
-
-  /* Free memory */
-  CS_FREE(visco);
 
   /*![example_1]*/
 }

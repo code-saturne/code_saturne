@@ -95,7 +95,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
   /* Get physical fields */
   const cs_real_t *dt = CS_F_(dt)->val;
   const cs_real_t *rho = CS_F_(rho)->val;
-  const cs_field_t *h = cs_field_by_name_try("enthalpy");
+  const cs_field_t *h = cs_field_try("enthalpy");
 
   /*! [physical_fields] */
 
@@ -157,15 +157,14 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
   const cs_real_t *bf_H = h->bc_coeffs->bf;
 
   /* Convective mass fluxes for inner and boundary faces */
-  int iflmas = cs_field_get_key_int(h, cs_field_key_id("inner_mass_flux_id"));
-  const cs_real_t *i_mass_flux = cs_field_by_id(iflmas)->val;
+  int iflmas = h->get_key_int("inner_mass_flux_id");
+  const cs_real_t *i_mass_flux = cs_field(iflmas)->val;
 
-  int iflmab = cs_field_get_key_int(h, cs_field_key_id("boundary_mass_flux_id"));
-  const cs_real_t *b_mass_flux = cs_field_by_id(iflmab)->val;
+  int iflmab = h->get_key_int("boundary_mass_flux_id");
+  const cs_real_t *b_mass_flux = cs_field(iflmab)->val;
 
   /* Allocate temporary array */
-  cs_real_t *h_reconstructed;
-  CS_MALLOC(h_reconstructed, n_b_faces, cs_real_t);
+  cs_array<cs_real_t> h_reconstructed(n_b_faces);
 
   /* Reconstructed value */
   if (false) {
@@ -359,7 +358,6 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 
   /* Free memory */
   CS_FREE(face_list);
-  CS_FREE(h_reconstructed);
 
   /* Sum of values on all ranks (parallel calculations) */
 

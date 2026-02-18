@@ -104,11 +104,9 @@ cs_user_scaling_elec
     double amex = 1.e30;
     double aiex = -1.e30;
     double emax = 0.;
-    double *w1;
-    CS_MALLOC(w1, ncelet, double);
-    int diff_id = cs_field_get_key_int(CS_FI_(curre, 0), kivisl);
-    cs_field_t *c_prop = nullptr;
-    c_prop = cs_field_by_id(diff_id);
+    cs_array<cs_real_t> w1(ncelet);
+    int diff_id = CS_FI_(curre, 0)->get_key_int(kivisl);
+    cs_field_t *c_prop = cs_field(diff_id);
 
     for (int iel = 0; iel < ncel; iel++) {
       double xelec = CS_FI_(curre, 0)->val[iel] / c_prop->val[iel];
@@ -157,8 +155,6 @@ cs_user_scaling_elec
                  elec_opt->restrike_point[1],
                  elec_opt->restrike_point[2]);
     }
-
-    CS_FREE(w1);
 
     if (cs_glob_time_step->nt_cur <= elec_opt->ntdcla + 30) {
       double z1 = elec_opt->restrike_point[0] - 3.e-4;
