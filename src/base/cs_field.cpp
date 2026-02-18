@@ -4725,7 +4725,7 @@ int
 cs_field_t::get_key_int
 (
   int  key_id  /*!<[in]  key id */
-)
+) const
 {
   return cs_field_get_key_int(this, key_id);
 }
@@ -4736,7 +4736,7 @@ int
 cs_field_t::get_key_int
 (
   const char  *key    /*!<[in]  key string */
-)
+) const
 {
   int key_id = cs_field_key_id(key);
 
@@ -4884,7 +4884,7 @@ double
 cs_field_t::get_key_double
 (
   int  key_id  /*!<[in]  key id */
-)
+) const
 {
   return cs_field_get_key_double(this, key_id);
 }
@@ -4895,7 +4895,7 @@ double
 cs_field_t::get_key_double
 (
   const char  *key    /*!<[in]  key string */
-)
+) const
 {
   int key_id = cs_field_key_id(key);
 
@@ -4961,7 +4961,7 @@ const char *
 cs_field_t::get_key_str
 (
   int  key_id  /*!<[in]  key id */
-)
+) const
 {
   return cs_field_get_key_str(this, key_id);
 }
@@ -4972,7 +4972,7 @@ const char *
 cs_field_t::get_key_str
 (
   const char  *key    /*!<[in]  key string */
-)
+) const
 {
   int key_id = cs_field_key_id(key);
 

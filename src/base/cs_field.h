@@ -216,10 +216,10 @@ typedef struct {
               int          value);
 
   int
-  get_key_int(int  key_id);
+  get_key_int(int  key_id) const;
 
   int
-  get_key_int(const char  *key);
+  get_key_int(const char  *key) const;
 
   int
   set_key_int_bits(int  key_id,
@@ -246,10 +246,10 @@ typedef struct {
                  double       value);
 
   double
-  get_key_double(int  key_id);
+  get_key_double(int  key_id) const;
 
   double
-  get_key_double(const char  *key);
+  get_key_double(const char  *key) const;
 
   int
   set_key_str(int          key_id,
@@ -260,10 +260,10 @@ typedef struct {
               const char  *str);
 
   const char *
-  get_key_str(int  key_id);
+  get_key_str(int  key_id) const;
 
   const char *
-  get_key_str(const char  *key);
+  get_key_str(const char  *key) const;
 
   cs_span_2d<cs_real_t>
   view
