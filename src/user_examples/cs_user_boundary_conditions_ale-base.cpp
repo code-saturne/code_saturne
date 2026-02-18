@@ -121,8 +121,7 @@ cs_user_boundary_conditions_ale([[maybe_unused]] cs_domain_t  *domain,
   const cs_real_t *dt = CS_F_(dt)->val;
 
   /* nodes displacement */
-  cs_real_3_t *disale
-    = (cs_real_3_t*)cs_field_by_name("mesh_displacement")->val;
+  auto disale = cs_field("mesh_displacement")->get_vals_v();
 
   const cs_zone_t  *zn = nullptr;
 
@@ -172,9 +171,9 @@ cs_user_boundary_conditions_ale([[maybe_unused]] cs_domain_t  *domain,
          ii++) {
       const cs_lnum_t vtx_id = b_face_vtx_lst[ii];
       if (impale[vtx_id] == 0) {
-        disale[vtx_id][0] = 0;
-        disale[vtx_id][1] = 0;
-        disale[vtx_id][2] = delta;
+        disale(vtx_id, 0) = 0;
+        disale(vtx_id, 1) = 0;
+        disale(vtx_id, 2) = delta;
         impale[vtx_id] = 1;
       }
     }

@@ -80,14 +80,14 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
   const int ielcor = cs_glob_elec_option->ielcor;
 
-  cs_field_t *potr = cs_field_by_name("elec_pot_r");;
+  cs_field_t *potr = cs_field("elec_pot_r");;
   cs_field_t *poti = nullptr;
   cs_field_t *potva = nullptr;
   if (cs_glob_physical_model_flag[CS_JOULE_EFFECT] > 1) {
-    poti = cs_field_by_name("elec_pot_i");
+    poti = cs_field("elec_pot_i");
   }
   if (cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > 1) {
-    potva = cs_field_by_name("vec_potential");
+    potva = cs_field("vec_potential");
   }
 
   /* Assign boundary conditions to boundary faces here
@@ -337,8 +337,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
   /*! [example_4] */
   {
-    const cs_real_3_t *cvara_potva
-      = (const cs_real_3_t *)cs_field_by_name("vec_potential")->val_pre;
+    cs_span_2d<cs_real_t> cvara_potva = cs_field("vec_potential")->get_vals_v(1);
 
     const cs_zone_t *zone = cs_boundary_zone_by_name("2");
     for (cs_lnum_t ilelt = 0; ilelt < zone->n_elts; ilelt++) {
@@ -394,14 +393,14 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
           const cs_lnum_t c_id = b_face_cells[face_id];
           potva->bc_coeffs->icodcl[face_id] = CS_BC_DIRICHLET;
-          potva->bc_coeffs->rcodcl1[face_id] = cvara_potva[c_id][0];
+          potva->bc_coeffs->rcodcl1[face_id] = cvara_potva(c_id, 0);
 
           potva->bc_coeffs->icodcl[n_b_faces + face_id] = CS_BC_DIRICHLET;
-          potva->bc_coeffs->rcodcl1[n_b_faces + face_id] = cvara_potva[c_id][1];
+          potva->bc_coeffs->rcodcl1[n_b_faces + face_id] = cvara_potva(c_id, 1);
 
           potva->bc_coeffs->icodcl[n_b_faces*2 + face_id] = CS_BC_DIRICHLET;
           potva->bc_coeffs->rcodcl1[n_b_faces*2 + face_id]
-            = cvara_potva[c_id][2];
+            = cvara_potva(c_id, 2);
 
         }
       }

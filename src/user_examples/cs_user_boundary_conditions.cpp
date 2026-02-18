@@ -346,7 +346,7 @@ cs_user_boundary_conditions_setup([[maybe_unused]] cs_domain_t  *domain)
 
   {
     /*! [inlet_scalar_analytic] */
-    cs_field_t  *f = cs_field_by_name("scalar1");
+    cs_field_t  *f = cs_field("scalar1");
     cs_equation_param_t  *eqp = cs_equation_param_by_name("scalar1");
 
     cs_equation_add_bc_by_analytic(eqp,
@@ -380,7 +380,7 @@ cs_user_boundary_conditions_setup([[maybe_unused]] cs_domain_t  *domain)
      with user-defined callback function. */
   {
     /*! [wall_scalar_exchange_dof] */
-    cs_field_t  *f = cs_field_by_name("scalar1");
+    cs_field_t  *f = cs_field("scalar1");
     cs_equation_param_t  *eqp = cs_equation_param_by_name("scalar1");
 
     cs_equation_add_bc_by_dof_func(eqp,

@@ -175,12 +175,12 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
     /*  Handle scalars (avoid modifying rho and energy) */
     for (int f_id = 0; f_id < n_fields; f_id++) {
-      cs_field_t *fld  = cs_field_by_id(f_id);
+      cs_field_t *fld  = cs_field(f_id);
       if ((fld == CS_F_(rho)) || (fld == CS_F_(e_tot)))
         continue;
       int sc_id = -1;
       if (fld->type & CS_FIELD_VARIABLE)
-        sc_id = cs_field_get_key_int(fld, keysca) - 1;
+        sc_id = fld->get_key_int(keysca) - 1;
       if (sc_id < 0)
         continue;
       fld->bc_coeffs->rcodcl1[face_id] = 1.0;
@@ -236,12 +236,12 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
      /*  Handle scalars
          (do not loop on nscal to avoid modifying rho and energy) */
      for (int f_id = 0; f_id < n_fields; f_id++) {
-       cs_field_t *fld  = cs_field_by_id(f_id);
+       cs_field_t *fld  = cs_field(f_id);
        if ((fld == CS_F_(rho)) || (fld == CS_F_(e_tot)))
          continue;
        int sc_id = -1;
        if (fld->type & CS_FIELD_VARIABLE)
-         sc_id = cs_field_get_key_int(fld, keysca) - 1;
+         sc_id = fld->get_key_int(keysca) - 1;
        if (sc_id < 0)
          continue;
        fld->bc_coeffs->rcodcl1[face_id] = 1.0;

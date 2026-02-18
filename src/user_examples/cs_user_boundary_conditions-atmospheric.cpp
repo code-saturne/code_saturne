@@ -101,12 +101,12 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
     const cs_real_3_t *restrict b_face_cog
       = (const cs_real_3_t *)domain->mesh_quantities->b_face_cog;
 
-    const cs_real_t d2o3 = 2./3;
+    constexpr cs_real_t d2o3 = 2./3;
 
     /* Parameters for the analytical rough wall law (neutral) */
-    const cs_real_t rugd = 0.10;
-    const cs_real_t zref = 10.0;
-    const cs_real_t xuref = 10.0;
+    constexpr cs_real_t rugd = 0.10;
+    constexpr cs_real_t zref = 10.0;
+    constexpr cs_real_t xuref = 10.0;
 
     const cs_zone_t *zn = cs_boundary_zone_by_name("inlet_3");
 
@@ -162,16 +162,16 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
   /*! [example_4] */
   {
     /* Parameters for the analytical rough wall law (neutral) */
-    const cs_real_t rugd = 0.10;
+    constexpr cs_real_t rugd = 0.10;
 
-    cs_real_t *bpro_roughness = nullptr;
-    cs_real_t *bpro_roughness_t = nullptr;
+    cs_span<cs_real_t> bpro_roughness;
+    cs_span<cs_real_t> bpro_roughness_t;
 
-    if (cs_field_by_name_try("boundary_roughness") != nullptr)
-      bpro_roughness = cs_field_by_name_try("boundary_roughness")->val;
+    if (cs_field_try("boundary_roughness") != nullptr)
+      bpro_roughness = cs_field("boundary_roughness")->get_vals_s();
 
-    if (cs_field_by_name_try("boundary_thermal_roughness") != nullptr)
-      bpro_roughness = cs_field_by_name_try("boundary_thermal_roughness")->val;
+    if (cs_field_try("boundary_thermal_roughness") != nullptr)
+      bpro_roughness = cs_field("boundary_thermal_roughness")->get_vals_s();
 
     const cs_zone_t *zn = cs_boundary_zone_by_name("b_5");
 
@@ -180,10 +180,10 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
       const cs_lnum_t face_id = zn->elt_ids[e_idx];
       bc_type[face_id] = CS_ROUGHWALL;
 
-      if (bpro_roughness != nullptr)
+      if (bpro_roughness.size() != 0)
         bpro_roughness[face_id] = rugd;
 
-      if (bpro_roughness_t != nullptr)
+      if (bpro_roughness_t.size() != 0)
         bpro_roughness_t[face_id] = 0.01;
     }
   }
@@ -194,19 +194,21 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
   int z_id = cs_glob_atmo_option->ground_zone_id;
   if (z_id > -1) {
     const cs_zone_t *z = cs_boundary_zone_by_id(z_id);
-    cs_field_t *ground_temperature = cs_field_by_name_try("ground_temperature");
-    cs_field_t *ground_pot_temperature = cs_field_by_name_try("ground_pot_temperature");
-    cs_field_t *ground_total_water = cs_field_by_name_try("ground_total_water");
+
+    auto ground_temperature = cs_field("ground_temperature")->get_vals_s();
+    auto ground_pot_temperature = cs_field("ground_pot_temperature")->get_vals_s();
+    auto ground_total_water = cs_field("ground_total_water")->get_vals_s();
+
     cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
 
+    /* read external data to set potential temperature and specific humidity */
+    constexpr cs_real_t tetas = 16.504682364;
+    constexpr cs_real_t qvs = 0.00583966915;
     for (cs_lnum_t ground_id = 0; ground_id < z->n_elts; ground_id++) {
-      /* read external data to set potential temperature and specific humidity */
-      cs_real_t tetas = 16.504682364;
-      cs_real_t qvs = 0.00583966915;
 
-      ground_temperature->val[ground_id] = tetas - tkelvi;
-      ground_pot_temperature->val[ground_id] = tetas;
-      ground_total_water->val[ground_id] = qvs;
+      ground_temperature[ground_id] = tetas - tkelvi;
+      ground_pot_temperature[ground_id] = tetas;
+      ground_total_water[ground_id] = qvs;
     }
   }
   /*! [atmo_ground_temperature] */

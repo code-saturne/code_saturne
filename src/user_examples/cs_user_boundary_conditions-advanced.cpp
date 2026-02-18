@@ -84,7 +84,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
   const cs_zone_t  *zn = nullptr;
 
-  cs_field_t *scal = cs_field_by_name("scalar1");
+  cs_field_t *scal = cs_field("scalar1");
   /*! [loc_var_dec] */
 
   /*! [example_1] */
@@ -147,7 +147,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
     for (int f_id = 0; f_id < n_fields; f_id++) {
 
-      cs_field_t *f = cs_field_by_id(f_id);
+      cs_field_t *f = cs_field(f_id);
       if (!(f->type & CS_FIELD_VARIABLE))
         continue;
 
@@ -171,9 +171,9 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
   /*! [example_3] */
   zn = cs_boundary_zone_by_name("r_wall");
 
-  if (cs_field_by_name_try("boundary_roughness") != nullptr) {
+  if (cs_field_try("boundary_roughness") != nullptr) {
 
-    cs_real_t *bpro_roughness = cs_field_by_name_try("boundary_roughness")->val;
+    cs_real_t *bpro_roughness = cs_field("boundary_roughness")->val;
 
     for (cs_lnum_t ilelt = 0; ilelt < zn->n_elts; ilelt++) {
 

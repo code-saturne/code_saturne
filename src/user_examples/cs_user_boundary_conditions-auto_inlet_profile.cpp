@@ -107,7 +107,7 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
   /*! [example_1] */
   zn = cs_boundary_zone_by_name("inlet");
 
-  const cs_real_t fmprsc = 1.; // mean prescribed velocity
+  constexpr cs_real_t fmprsc = 1.; // mean prescribed velocity
 
   if (nt_cur == 1) {
 
@@ -185,10 +185,10 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
                                       viscl0);
 
       for (int f_id = 0; f_id < n_fields; f_id++) {
-        cs_field_t *fld = cs_field_by_id(f_id);
+        cs_field_t *fld = cs_field(f_id);
 
         /* Here we only handle user scalar */
-        int sc_id = cs_field_get_key_int(fld, keysca) - 1;
+        int sc_id = fld->get_key_int(keysca) - 1;
         if (sc_id < 0)
           continue;
 
@@ -279,10 +279,10 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
       }
 
       for (int f_id = 0; f_id < n_fields; f_id++) {
-        cs_field_t *fld = cs_field_by_id(f_id);
+        cs_field_t *fld = cs_field(f_id);
 
         /* Here we only handle user scalar */
-        int sc_id = cs_field_get_key_int(fld, keysca) - 1;
+        int sc_id = fld->get_key_int(keysca) - 1;
         if (sc_id < 0)
           continue;
 
