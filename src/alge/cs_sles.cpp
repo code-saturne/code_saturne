@@ -84,8 +84,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_sles.cpp
-
+  \file
   \brief Sparse linear equation solver driver.
 
   The Sparse Linear Equation Solver subsystem is designed to allow
@@ -103,21 +102,6 @@ BEGIN_C_DECLS
   driver, with the real work being done by functions bound to this model.
   The main intent is to help manage passing varied user options to the
   solvers, and handling consistency of logging.
-
-  \enum cs_sles_convergence_state_t
-  \brief Convergence status indicator.
-
-  \var CS_SLES_DIVERGED
-       The solver has diverged
-  \var CS_SLES_BREAKDOWN
-       The solver has broken down, and cannot make any more progress
-  \var CS_SLES_MAX_ITERATION
-       Maximum number of iterations has been reached, without reaching
-       the required convergence
-  \var CS_SLES_ITERATING
-       The solver is iterating
-  \var CS_SLES_CONVERGED
-       The solver has converged
 
   \typedef  cs_sles_setup_t
 

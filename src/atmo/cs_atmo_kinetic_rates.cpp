@@ -122,8 +122,8 @@ END_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_atmo_kinrates.cpp
-        Computation of reaction rates for atmospheric chemistry
+ * \file
+ * \brief Computation of reaction rates for atmospheric chemistry
  */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */

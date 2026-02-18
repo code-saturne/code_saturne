@@ -53,13 +53,17 @@ BEGIN_C_DECLS
  * Convergence status
  *----------------------------------------------------------------------------*/
 
+/*! Convergence status indicator. */
 typedef enum {
 
-  CS_SLES_DIVERGED = -3,
-  CS_SLES_BREAKDOWN = -2,
-  CS_SLES_MAX_ITERATION = -1,
-  CS_SLES_ITERATING = 0,
-  CS_SLES_CONVERGED = 1
+  CS_SLES_DIVERGED = -3,      /*!< The solver has diverged */
+  CS_SLES_BREAKDOWN = -2,     /*!< The solver has broken down, and cannot make
+                                   any more progress*/
+  CS_SLES_MAX_ITERATION = -1, /*!< Maximum number of iterations has been
+                                   reached, without reaching the required
+                                   convergence */
+  CS_SLES_ITERATING = 0,      /*!< The solver is iterating */
+  CS_SLES_CONVERGED = 1       /*!< The solver has converged */
 
 } cs_sles_convergence_state_t;
 

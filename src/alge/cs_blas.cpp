@@ -60,21 +60,9 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_blas.cpp
-        BLAS (Basic Linear Algebra Subroutines) type functions
-
-  \enum cs_blas_reduce_t
-
-  \brief Reduction algorithm type
-
-  \var CS_BLAS_REDUCE_SUPERBLOCK
-       Reduction based on l3superblock60 algorithm, described in
-       \cite Castaldo:2008
-
-  \var CS_BLAS_REDUCE_KAHAN
-       Reduction based on Kahan's compensated summation, described in
-       \cite Kahan:1965
-*/
+ * \file
+ * \brief BLAS (Basic Linear Algebra Subroutines) type functions
+ */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 

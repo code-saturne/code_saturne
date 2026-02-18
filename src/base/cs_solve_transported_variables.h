@@ -47,8 +47,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*! \file cs_solve_transported_variables.c
- *
+/*! \file
  * \brief Resolution of source term convection diffusion equations
  *        for scalars in a time step.
  */

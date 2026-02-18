@@ -75,7 +75,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_sles_pc.cpp
+  \file
 
   \brief Sparse linear equation solver preconditioner driver and
   simple preconditioners.
@@ -88,20 +88,6 @@ BEGIN_C_DECLS
   driver, with the real work being done by functions bound to this model.
   The main intent is to help manage passing varied user options to the
   preconditioners, and handling consistency of logging.
-
-  \enum cs_sles_pc_state_t
-
-  \brief Convergence status indicator.
-
-  \var CS_SLES_PC_DIVERGED
-       The preconditioner has diverged
-  \var CS_SLES_PC_BREAKDOWN
-       The preconditioner has broken down, and cannot make any more progress
-  \var CS_SLES_PC_MAX_ITERATION
-       Maximum number of iterations has been reached, without reaching
-       convergence
-  \var CS_SLES_CONVERGED
-       The preconditioner has converged
 
   \typedef  cs_sles_pc_get_type_t
 

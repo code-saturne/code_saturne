@@ -64,11 +64,13 @@ BEGIN_C_DECLS
 
 /* All-to-all algorithm choice */
 
+/*! All-to-all algorithm selection */
 typedef enum {
 
-  CS_ALL_TO_ALL_MPI_DEFAULT,
-  CS_ALL_TO_ALL_HYBRID,
-  CS_ALL_TO_ALL_CRYSTAL_ROUTER
+  CS_ALL_TO_ALL_MPI_DEFAULT,   /*!< Use MPI_Alltoall and MPI_Alltoallv
+                                    sequences */
+  CS_ALL_TO_ALL_HYBRID,        /*!< */
+  CS_ALL_TO_ALL_CRYSTAL_ROUTER /*!< Use crystal router algorithm */
 
 } cs_all_to_all_type_t;
 

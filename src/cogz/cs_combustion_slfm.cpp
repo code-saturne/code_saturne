@@ -96,9 +96,9 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_combustion_slfm.cpp
-        Steady laminar flamelet gas combustion model.
-*/
+ * \file
+ * \brief Steady laminar flamelet gas combustion model.
+ */
 
 /*----------------------------------------------------------------------------*/
 
@@ -966,6 +966,8 @@ _filtered_density_progvar(const cs_real_t   zm,
   CS_FREE(phi_3);
   CS_FREE(phi_4);
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
  * Public function prototypes

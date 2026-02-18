@@ -75,16 +75,6 @@ BEGIN_C_DECLS
   \typedef cs_all_to_all_t
         Opaque all-to-all distribution structure
 
-  \enum cs_all_to_all_type_t
-
-  \brief All-to-all algorithm selection
-
-  \var CS_ALL_TO_ALL_MPI_DEFAULT
-       Use MPI_Alltoall and MPI_Alltoallv sequences
-
-  \var CS_ALL_TO_ALL_CRYSTAL_ROUTER
-       Use crystal router algorithm
-
   \paragraph all_to_all_flags Using flags
   \parblock
 

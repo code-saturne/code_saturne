@@ -52,12 +52,15 @@ BEGIN_C_DECLS
  * Convergence status
  *----------------------------------------------------------------------------*/
 
+/*! Convergence status indicator. */
 typedef enum {
 
-  CS_SLES_PC_DIVERGED = -2,
-  CS_SLES_PC_BREAKDOWN = -1,
-  CS_SLES_PC_MAX_ITERATION = 0,
-  CS_SLES_PC_CONVERGED = 1
+  CS_SLES_PC_DIVERGED = -2,     /*!< The preconditioner has diverged */
+  CS_SLES_PC_BREAKDOWN = -1,    /*!< The preconditioner has broken down, and
+                                     cannot make any more progress */
+  CS_SLES_PC_MAX_ITERATION = 0, /*!< Maximum number of iterations has been
+                                     reached, without reaching convergence */
+  CS_SLES_PC_CONVERGED = 1      /*!< The preconditioner has converged */
 
 } cs_sles_pc_state_t;
 

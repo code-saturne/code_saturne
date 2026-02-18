@@ -55,10 +55,13 @@ BEGIN_C_DECLS
 
 /* BLAS reduction algorithm families */
 
+/*! Reduction algorithm type */
 typedef enum {
 
-  CS_BLAS_REDUCE_SUPERBLOCK,
-  CS_BLAS_REDUCE_KAHAN
+  CS_BLAS_REDUCE_SUPERBLOCK, /*!< Reduction based on l3superblock60 algorithm,
+                                  described in \cite Castaldo:2008 */
+  CS_BLAS_REDUCE_KAHAN       /*!< Reduction based on Kahan's compensated
+                                  summation, described in \cite Kahan:1965 */
 
 } cs_blas_reduce_t;
 
