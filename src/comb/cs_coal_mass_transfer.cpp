@@ -73,11 +73,10 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_coal_masstransfer.cpp
-
-  \brief Coal combustion model: Calculation of the terms of mass transfer
-         between the continous phase and the dispersed phase.
-*/
+ * \file
+ * \brief Coal combustion model: Calculation of the terms of mass transfer
+ *        between the continous phase and the dispersed phase.
+ */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 

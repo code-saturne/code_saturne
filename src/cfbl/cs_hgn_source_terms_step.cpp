@@ -68,7 +68,7 @@ BEGIN_C_DECLS
  * Additional Doxygen documentation
  *============================================================================*/
 
-/*! \file cs_hgn_source_terms_step.c
+/*! \file
  *
  *  \brief Return to equilibrium source terms computation for volume, mass,
  *         energy fractions in compressible homogeneous two-phase model.

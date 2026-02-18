@@ -73,8 +73,8 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_coal ht_convert.cpp
-        Enthalpy to and from temperature conversion for coal combustion.
+ * \file
+ * \brief Enthalpy to and from temperature conversion for coal combustion.
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
