@@ -246,15 +246,15 @@ _clip_alpha(cs_dispatch_context  &ctx,
             cs_lnum_t             n_cells,
             const cs_real_t       alpha_min[])
 {
-  cs_real_t *cvar_al = cs_field_by_id(f_id)->val;
+  cs_real_t *cvar_al = cs_field(f_id)->val;
 
   int kclipp = cs_field_key_id("clipping_id");
 
   /* Postprocess clippings ? */
   cs_real_t *cpro_a_clipped = nullptr;
-  int clip_a_id = cs_field_get_key_int(cs_field_by_id(f_id), kclipp);
+  int clip_a_id = cs_field(f_id)->get_key_int(kclipp);
   if (clip_a_id > -1) {
-    cpro_a_clipped = cs_field_by_id(clip_a_id)->val;
+    cpro_a_clipped = cs_field(clip_a_id)->val;
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cpro_a_clipped[c_id] = 0.;
     });
@@ -354,7 +354,7 @@ _compute_up_rhop(int                 phase_id,
   const int kturt = cs_field_key_id("turbulent_flux_model");
   int turb_flux_model = 0;
   if (thf != nullptr)
-    turb_flux_model = cs_field_get_key_int(thf, kturt);
+    turb_flux_model = thf->get_key_int(kturt);
   const int turb_flux_model_type = turb_flux_model / 10;
 
   cs_field_t *f_hf = nullptr;
@@ -559,8 +559,7 @@ _rij_echo(int              phase_id,
   const cs_real_6_t *cvara_rij = (const cs_real_6_t *)f_rij->val_pre;
 
   cs_real_t *cromo = nullptr;
-  int key_t_ext_id = cs_field_key_id("time_extrapolated");
-  int iroext = cs_field_get_key_int(f_rho, key_t_ext_id);
+  int iroext = f_rho->get_key_int("time_extrapolated");
   if ((cs_glob_time_scheme->isto2t > 0) && (iroext > 0))
     cromo = f_rho->val_pre;
   else
@@ -931,16 +930,16 @@ _gravity_st_epsilon(int              phase_id,
 
   cs_field_t *f_t = cs_thermal_model_field();
   if (f_t != nullptr){
-    turb_flux_model =  cs_field_get_key_int(f_t, kturt);
+    turb_flux_model = f_t->get_key_int(kturt);
 
     cs_field_t *f_t_var = cs_field_get_variance(f_t);
     if (f_t_var != nullptr)
       rvarfl = cs_field_get_key_double(f_t_var, krvarfl);
 
     const int kivisl = cs_field_key_id("diffusivity_id");
-    int ifcvsl = cs_field_get_key_int(f_t, kivisl);
+    int ifcvsl = f_t->get_key_int(kivisl);
     if (ifcvsl > -1) {
-      viscls = cs_field_by_id(ifcvsl)->val;
+      viscls = cs_field(ifcvsl)->val;
       l_viscls = 1;
     }
     else {
@@ -1084,9 +1083,9 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
 
   cs_real_6_t *c_st_prv = nullptr;
   int kstprv = cs_field_key_id("source_term_prev_id");
-  int st_prv_id = cs_field_get_key_int(f_rij, kstprv);
+  int st_prv_id = f_rij->get_key_int(kstprv);
   if (st_prv_id > -1)
-    c_st_prv = (cs_real_6_t *)cs_field_by_id(st_prv_id)->val;
+    c_st_prv = (cs_real_6_t *)cs_field(st_prv_id)->val;
 
   cs_real_6_t *cpro_press_correl = nullptr;
   {
@@ -1100,8 +1099,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
 
   /* Time extrapolation ? */
   cs_real_t *cromo = nullptr;
-  int key_t_ext_id = cs_field_key_id("time_extrapolated");
-  int iroext = cs_field_get_key_int(f_rho, key_t_ext_id);
+  int iroext = f_rho->get_key_int("time_extrapolated");
   if ((iroext > 0) && (st_prv_id > -1))
     cromo = f_rho->val_pre;
   else
@@ -1505,10 +1503,9 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
   const int coupled_components = cs_glob_turb_rans_model->irijco;
 
   cs_real_6_t *c_st_prv = nullptr;
-  int kstprv = cs_field_key_id("source_term_prev_id");
-  int st_prv_id = cs_field_get_key_int(f_rij, kstprv);
+  int st_prv_id = f_rij->get_key_int("source_term_prev_id");
   if (st_prv_id > -1)
-    c_st_prv = (cs_real_6_t *)cs_field_by_id(st_prv_id)->val;
+    c_st_prv = (cs_real_6_t *)cs_field(st_prv_id)->val;
 
   cs_real_6_t *cpro_press_correl = nullptr;
   {
@@ -1522,8 +1519,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
 
  /* Time extrapolation ? */
   cs_real_t *cromo = nullptr;
-  int key_t_ext_id = cs_field_key_id("time_extrapolated");
-  int iroext = cs_field_get_key_int(f_rho, key_t_ext_id);
+  int iroext = f_rho->get_key_int("time_extrapolated");
   if ((st_prv_id > -1) && (iroext > 0))
     cromo = f_rho->val_pre;
   else
@@ -2114,15 +2110,13 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
   const int coupled_components = cs_glob_turb_rans_model->irijco;
 
   cs_real_6_t *c_st_prv = nullptr;
-  int kstprv = cs_field_key_id("source_term_prev_id");
-  int st_prv_id = cs_field_get_key_int(f_rij, kstprv);
+  int st_prv_id = f_rij->get_key_int("source_term_prev_id");
   if (st_prv_id > -1)
-    c_st_prv = (cs_real_6_t *)cs_field_by_id(st_prv_id)->val;
+    c_st_prv = (cs_real_6_t *)cs_field(st_prv_id)->val;
 
   /* time extrapolation ? */
   cs_real_t *cromo = nullptr;
-  int key_t_ext_id = cs_field_key_id("time_extrapolated");
-  int iroext = cs_field_get_key_int(f_rho, key_t_ext_id);
+  int iroext = f_rho->get_key_int("time_extrapolated");
   if ((st_prv_id > -1) && (iroext > 0))
     cromo = f_rho->val_pre;
   else
@@ -2517,11 +2511,11 @@ _solve_epsilon(int              phase_id,
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-  int iflmas =  cs_field_get_key_int(f_vel, kimasf);
-  int iflmab =  cs_field_get_key_int(f_vel, kbmasf);
+  int iflmas =  f_vel->get_key_int(kimasf);
+  int iflmab =  f_vel->get_key_int(kbmasf);
 
-  const cs_real_t *imasfl = cs_field_by_id(iflmas)->val;
-  const cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
+  const cs_real_t *imasfl = cs_field(iflmas)->val;
+  const cs_real_t *bmasfl = cs_field(iflmab)->val;
 
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
   const cs_real_t sigmae = cs_field_get_key_double(f_eps, ksigmas);
@@ -2549,14 +2543,12 @@ _solve_epsilon(int              phase_id,
   if (c_is_solid == nullptr)
     c_is_solid = c_is_solid_ref;
 
-  int kstprv = cs_field_key_id("source_term_prev_id");
-  int st_prv_id = cs_field_get_key_int(f_eps, kstprv);
+  int st_prv_id = f_eps->get_key_int("source_term_prev_id");
   cs_real_t *c_st_prv = nullptr, *cromo = nullptr;
   if (st_prv_id > -1)
-    c_st_prv = cs_field_by_id(st_prv_id)->val;
+    c_st_prv = cs_field(st_prv_id)->val;
 
-  int key_t_ext_id = cs_field_key_id("time_extrapolated");
-  int iroext = cs_field_get_key_int(f_rho, key_t_ext_id);
+  int iroext = f_rho->get_key_int("time_extrapolated");
   if ((iroext > 0) && (st_prv_id > -1))
     cromo = f_rho->val_pre;
   else
@@ -3009,10 +3001,9 @@ cs_turbulence_rij(int phase_id)
 
   /* Time extrapolation ? */
   cs_real_6_t *c_st_prv = nullptr;
-  int kstprv = cs_field_key_id("source_term_prev_id");
-  int st_prv_id = cs_field_get_key_int(f_rij, kstprv);
+  int st_prv_id = f_rij->get_key_int("source_term_prev_id");
   if (st_prv_id > -1)
-    c_st_prv = (cs_real_6_t *)cs_field_by_id(st_prv_id)->val;
+    c_st_prv = (cs_real_6_t *)cs_field(st_prv_id)->val;
 
   const cs_equation_param_t *eqp
     = cs_field_get_equation_param_const(f_rij);
@@ -3059,11 +3050,11 @@ cs_turbulence_rij(int phase_id)
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-  const int iflmas =  cs_field_get_key_int(f_vel, kimasf);
-  const int iflmab =  cs_field_get_key_int(f_vel, kbmasf);
+  const int iflmas =  f_vel->get_key_int(kimasf);
+  const int iflmab =  f_vel->get_key_int(kbmasf);
 
-  const cs_real_t *imasfl = cs_field_by_id(iflmas)->val;
-  const cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
+  const cs_real_t *imasfl = cs_field(iflmas)->val;
+  const cs_real_t *bmasfl = cs_field(iflmab)->val;
 
   const cs_real_t ro0 = cs_glob_fluid_properties->ro0;
   const cs_real_t viscl0 = cs_glob_fluid_properties->viscl0;
@@ -3574,7 +3565,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
   const cs_lnum_t *b_face_cells = m->b_face_cells;
   const cs_lnum_2_t *i_face_cells = m->i_face_cells;
 
-  cs_real_t *cvar_al = cs_field_by_id(f_id)->val;
+  cs_real_t *cvar_al = cs_field(f_id)->val;
 
   cs_field_t *f_rho = CS_F_(rho);
   cs_field_t *f_mu = CS_F_(mu);
@@ -3593,16 +3584,16 @@ cs_turbulence_rij_solve_alpha(int        f_id,
   const cs_real_t *crom = f_rho->val;
   const cs_real_t *viscl = f_mu->val;
   const cs_real_t *cvara_ep = f_eps->val_pre;
-  const cs_real_t *cvara_al = cs_field_by_id(f_id)->val_pre;
+  const cs_real_t *cvara_al = cs_field(f_id)->val_pre;
   const cs_real_6_t *cvara_rij = (const cs_real_6_t *)f_rij->val_pre;
 
   const int kimasf = cs_field_key_id("inner_mass_flux_id");
   const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-  int iflmas =  cs_field_get_key_int(f_vel, kimasf);
-  int iflmab =  cs_field_get_key_int(f_vel, kbmasf);
+  int iflmas =  f_vel->get_key_int(kimasf);
+  int iflmab =  f_vel->get_key_int(kbmasf);
 
-  const cs_real_t *imasfl = cs_field_by_id(iflmas)->val;
-  const cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
+  const cs_real_t *imasfl = cs_field(iflmas)->val;
+  const cs_real_t *bmasfl = cs_field(iflmab)->val;
 
   const cs_real_t d1s2 = 0.50;
   const cs_real_t d1s4 = 0.25;
@@ -3613,12 +3604,12 @@ cs_turbulence_rij_solve_alpha(int        f_id,
      =============================== */
 
   const cs_equation_param_t *eqp
-    = cs_field_get_equation_param(cs_field_by_id(f_id));
+    = cs_field_get_equation_param(cs_field(f_id));
 
   if (eqp->verbosity == 1) {
     cs_log_printf(CS_LOG_DEFAULT,
                   _(" Solving the variable %s\n"),
-                  cs_field_get_label(cs_field_by_id(f_id)));
+                  cs_field_get_label(cs_field(f_id)));
   }
 
   /* Allocate temporary arrays */
@@ -3713,7 +3704,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
   /* Effective resolution of the equation of alpha
      ============================================= */
 
-  cs_field_bc_coeffs_t *bc_coeffs = cs_field_by_id(f_id)->bc_coeffs;
+  cs_field_bc_coeffs_t *bc_coeffs = cs_field(f_id)->bc_coeffs;
 
   cs_equation_param_t eqp_loc = *eqp;
 
@@ -3892,8 +3883,8 @@ cs_turbulence_rij_clip(int        phase_id,
   int kisclp = cs_field_key_id("is_clipped");
   int kclipp = cs_field_key_id("clipping_id");
 
-  int is_rij_clipped = cs_field_get_key_int(f_rij, kisclp);
-  int is_eps_clipped = cs_field_get_key_int(f_eps, kisclp);
+  int is_rij_clipped = f_rij->get_key_int(kisclp);
+  int is_eps_clipped = f_eps->get_key_int(kisclp);
 
   cs_dispatch_context ctx;
 
@@ -3901,16 +3892,16 @@ cs_turbulence_rij_clip(int        phase_id,
 
   cs_real_t *cpro_eps_clipped = nullptr;
   cs_real_6_t *cpro_rij_clipped = nullptr;
-  int clip_e_id = cs_field_get_key_int(f_eps, kclipp);
+  int clip_e_id = f_eps->get_key_int(kclipp);
   if (clip_e_id > -1) {
-    cpro_eps_clipped = cs_field_by_id(clip_e_id)->val;
+    cpro_eps_clipped = cs_field(clip_e_id)->val;
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       cpro_eps_clipped[ii] = 0.;
     });
   }
-  int clip_r_id = cs_field_get_key_int(f_rij, kclipp);
+  int clip_r_id = f_rij->get_key_int(kclipp);
   if (clip_r_id > -1) {
-    cs_real_t *p_cpro_rij_clipped = cs_field_by_id(clip_r_id)->val;
+    cs_real_t *p_cpro_rij_clipped = cs_field(clip_r_id)->val;
     ctx.parallel_for(n_cells*f_rij->dim, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       p_cpro_rij_clipped[ii] = 0.;
     });
