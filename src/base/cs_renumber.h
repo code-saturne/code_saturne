@@ -48,51 +48,74 @@ BEGIN_C_DECLS
 
 /* Renumbering algorithms */
 
+/*! Cell renumbering algorithm types */
 typedef enum {
 
-  CS_RENUMBER_CELLS_SCOTCH_PART,     /* SCOTCH partitioning */
-  CS_RENUMBER_CELLS_SCOTCH_ORDER,    /* SCOTCH ordering */
-  CS_RENUMBER_CELLS_METIS_PART,      /* METIS partitioning */
-  CS_RENUMBER_CELLS_METIS_ORDER,     /* METIS ordering */
-  CS_RENUMBER_CELLS_MORTON,          /* Morton/Lebesgue space filling curve */
-  CS_RENUMBER_CELLS_HILBERT,         /* Hilbert space filling curve */
-  CS_RENUMBER_CELLS_RCM,             /* Reverse Cuthill-McKee */
-  CS_RENUMBER_CELLS_NONE             /* No cells renumbering */
+  CS_RENUMBER_CELLS_SCOTCH_PART,  /*!< Subpartition for thread blocks based
+                                       SCOTCH library. */
+  CS_RENUMBER_CELLS_SCOTCH_ORDER, /*!< Fill-reducing ordering based on SCOTCH
+                                       library. */
+  CS_RENUMBER_CELLS_METIS_PART,   /*!< Subpartition for thread blocks based
+                                       METIS library. */
+  CS_RENUMBER_CELLS_METIS_ORDER,  /*!< Fill-reducing ordering based on METIS
+                                       library. */
+  CS_RENUMBER_CELLS_MORTON,       /*!< Order cells using domain-local Morton
+                                       space-filling curve. */
+  CS_RENUMBER_CELLS_HILBERT,      /*!< Order cells using domain-local Hilbert
+                                       space-filling curve. */
+  CS_RENUMBER_CELLS_RCM,          /*!< Order cells using domain-local reverse
+                                       Cuthill-McKee algorithm. */
+  CS_RENUMBER_CELLS_NONE          /*!< No cells renumbering */
 
 } cs_renumber_cells_type_t;
 
+/*! Interior faces renumbering algorithm types */
 typedef enum {
 
-  CS_RENUMBER_I_FACES_BLOCK,         /* No shared cell in block */
-  CS_RENUMBER_I_FACES_MULTIPASS,     /* Use multipass face numbering */
-  CS_RENUMBER_I_FACES_SIMD,          /* Renumber for vector (SIMD) operations */
-  CS_RENUMBER_I_FACES_NONE           /* No interior face numbering */
+  CS_RENUMBER_I_FACES_BLOCK,     /*!< No shared cell in block
+                                      This should produce blocks of similar
+                                      (prescribed) size across thread groups.*/
+  CS_RENUMBER_I_FACES_MULTIPASS, /*!< Use multipass face numbering.
+                                      This should produce a smaller number of
+                                      blocks, with a diminishing number of
+                                      faces per thread group.*/
+  CS_RENUMBER_I_FACES_SIMD,      /*!< Renumber to allow SIMD operations in
+                                      interior face->cell gather operations
+                                      (such as SpMV products with native matrix
+                                      representation).*/
+  CS_RENUMBER_I_FACES_NONE       /*!< No interior face numbering */
 
 } cs_renumber_i_faces_type_t;
 
+/*! Boundary faces renumbering algorithm types */
 typedef enum {
 
-  CS_RENUMBER_B_FACES_THREAD,        /* No cell shared between threads */
-  CS_RENUMBER_B_FACES_SIMD,          /* Renumber for vector (SIMD) operations */
-  CS_RENUMBER_B_FACES_NONE           /* No boundary face numbering */
+  CS_RENUMBER_B_FACES_THREAD, /*!< Renumber for threads, with one block per
+                                   thread, and no cell referenced by faces in
+                                   different threads blocks.*/
+  CS_RENUMBER_B_FACES_SIMD,   /*!< Renumber to allow SIMD operations in boundary
+                                   face->cell gather operations. */
+  CS_RENUMBER_B_FACES_NONE    /*!< No boundary face numbering */
 
 } cs_renumber_b_faces_type_t;
 
+/*! Vertices renumbering algorithm types */
 typedef enum {
 
-  CS_RENUMBER_VERTICES_BY_CELL_ADJ,  /* Renumbering based on cell adjacency */
-  CS_RENUMBER_VERTICES_BY_FACE_ADJ,  /* Renumbering based on face adjacency */
-  CS_RENUMBER_VERTICES_NONE          /* No vertex numbering */
+  CS_RENUMBER_VERTICES_BY_CELL_ADJ, /*!< Renumbering based on cell adjacency */
+  CS_RENUMBER_VERTICES_BY_FACE_ADJ, /*!< Renumbering based on face adjacency */
+  CS_RENUMBER_VERTICES_NONE         /*!< No vertex renumbering */
 
 } cs_renumber_vertices_type_t;
 
 /* Ordering options for adjacency arrays */
 
+/*! Ordering options for adjacency arrays */
 typedef enum {
-
-  CS_RENUMBER_ADJACENT_LOW,         /* Lowest adjacent id first */
-  CS_RENUMBER_ADJACENT_HIGH         /* Highest adjacent id first */
-
+  CS_RENUMBER_ADJACENT_LOW, /*!< Lexicographical ordering with lowest adjacent
+                                 id first */
+  CS_RENUMBER_ADJACENT_HIGH /*!< Lexicographical ordering with highest adjacent
+                                 id first */
 } cs_renumber_ordering_t;
 
 /*=============================================================================

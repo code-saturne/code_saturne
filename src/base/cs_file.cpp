@@ -113,63 +113,6 @@ BEGIN_C_DECLS
 
   \typedef cs_file_off_t
            Offset for file position indicator
-
-  \enum cs_file_mode_t
-
-  \brief File acces modes
-
-  \var CS_FILE_MODE_READ
-       Read mode
-  \var CS_FILE_MODE_WRITE
-       Write mode
-  \var CS_FILE_MODE_APPEND
-       Append
-
-  \enum cs_file_seek_t
-
-  \brief seek semantics (third argument of \ref cs_file_seek)
-
-  \var CS_FILE_SEEK_SET
-       Seek from beginning of file
-  \var CS_FILE_SEEK_CUR
-       Seek from current position
-  \var CS_FILE_SEEK_END
-       Seek from end of file
-
-  \enum cs_file_access_t
-
-  \brief Shared file access methods
-
-  \var CS_FILE_DEFAULT
-       Default IO option
-  \var CS_FILE_STDIO_SERIAL
-       Serial standard C IO (funnelled through rank 0 in parallel)
-  \var CS_FILE_STDIO_PARALLEL
-       Per-process standard C IO (for reading only)
-  \var CS_FILE_MPI_INDEPENDENT
-       Non-collective MPI-IO with independent file open and close
-       (for reading only)
-  \var CS_FILE_MPI_NON_COLLECTIVE
-       Non-collective MPI-IO with collective file open and close
-  \var CS_FILE_MPI_COLLECTIVE
-       Collective MPI-IO
-  \var CS_FILE_IN_MEMORY_SERIAL
-       Buffer in rank 0 memory (serialized in parallel)
-
-  \enum cs_file_mpi_positioning_t
-
-  \brief MPI-IO positioning methods
-  \details It is not always known whether a performance or robustness
-          difference is to be expected using explicit file offsets
-          or individual file pointers. Perusal of a sampling of ROMIO
-          code would seem to indicate that no difference is to be
-          expected, but this might change with MPI IO variants
-          or file systems, so an advanced setting is made possible.
-
-  \var CS_FILE_MPI_EXPLICIT_OFFSETS
-       Use explicit offsets positioning with MPI-IO
-  \var CS_FILE_MPI_INDIVIDUAL_POINTERS
-       Use individual file pointer positioning with MPI-IO
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */

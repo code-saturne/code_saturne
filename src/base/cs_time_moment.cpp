@@ -80,33 +80,6 @@ BEGIN_C_DECLS
   \file cs_time_moment.cpp
 
   \brief Temporal moments management.
-
-  \enum cs_time_moment_type_t
-
-  \brief Moment type
-
-  \var CS_TIME_MOMENT_MEAN
-       Moment is a mean
-  \var CS_TIME_MOMENT_VARIANCE
-       Moment is a variance
-
-  \enum cs_time_moment_restart_t
-
-  \brief Moment restart behavior.
-
-  \var CS_TIME_MOMENT_RESTART_RESET
-       Moment is reset in case of a restart file:
-       starting time step will be no older than the restart time step.
-  \var CS_TIME_MOMENT_RESTART_AUTO
-       Moment uses restart information if available:
-       if the requested time step is older than the restart time step,
-       restart information will be used, though the starting time step
-       is not guaranteed.
-  \var CS_TIME_MOMENT_RESTART_EXACT
-       If the requested time step is older than the restart time step,
-       restart information will be used, and if the start time step
-       or time does not match the one available, an error is thrown.
-
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */

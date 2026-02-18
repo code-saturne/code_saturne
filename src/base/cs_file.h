@@ -61,44 +61,61 @@ typedef struct _cs_file_serializer_t cs_file_serializer_t;
 
 /* File modes */
 
+/*! File acces modes */
 typedef enum {
 
-  CS_FILE_MODE_READ,   /* Read mode */
-  CS_FILE_MODE_WRITE,  /* Write mode */
-  CS_FILE_MODE_APPEND  /* Append mode */
+  CS_FILE_MODE_READ,   /*!< Read mode */
+  CS_FILE_MODE_WRITE,  /*!< Write mode */
+  CS_FILE_MODE_APPEND  /*!< Append mode */
 
 } cs_file_mode_t;
 
 /* Possibilities for the third argument of cs_file_seek() */
 
+/*! seek semantics (third argument of \ref cs_file_seek) */
 typedef enum {
 
-  CS_FILE_SEEK_SET,   /* Seek from beginning of file */
-  CS_FILE_SEEK_CUR,   /* Seek from current position */
-  CS_FILE_SEEK_END    /* Seek from end of file */
+  CS_FILE_SEEK_SET,   /*!< Seek from beginning of file */
+  CS_FILE_SEEK_CUR,   /*!< Seek from current position */
+  CS_FILE_SEEK_END    /*!< Seek from end of file */
 
 } cs_file_seek_t;
 
 /* File access methods */
 
+/*! Shared file access methods */
 typedef enum {
 
-  CS_FILE_DEFAULT,
-  CS_FILE_STDIO_SERIAL,
-  CS_FILE_STDIO_PARALLEL,
-  CS_FILE_MPI_INDEPENDENT,
-  CS_FILE_MPI_NON_COLLECTIVE,
-  CS_FILE_MPI_COLLECTIVE,
-  CS_FILE_IN_MEMORY_SERIAL
+  CS_FILE_DEFAULT,            /*!< Default IO option */
+  CS_FILE_STDIO_SERIAL,       /*!< Serial standard C IO (funnelled through rank
+                                   0 in parallel) */
+  CS_FILE_STDIO_PARALLEL,     /*!< Per-process standard C IO (for reading only) */
+  CS_FILE_MPI_INDEPENDENT,    /*!< Non-collective MPI-IO with independent file
+                                   open and close (for reading only) */
+  CS_FILE_MPI_NON_COLLECTIVE, /*!< Non-collective MPI-IO with collective file
+                                   open and close */
+  CS_FILE_MPI_COLLECTIVE,     /*!< Collective MPI-IO */
+  CS_FILE_IN_MEMORY_SERIAL    /*!< Buffer in rank 0 memory
+                                   (serialized in parallel) */
 
 } cs_file_access_t;
 
 /* MPI-IO file positioning methods */
 
+/*! MPI-IO positioning methods
+ * \details It is not always known whether a performance or robustness
+ *          difference is to be expected using explicit file offsets
+ *          or individual file pointers. Perusal of a sampling of ROMIO
+ *          code would seem to indicate that no difference is to be
+ *          expected, but this might change with MPI IO variants
+ *          or file systems, so an advanced setting is made possible.
+ */
 typedef enum {
 
-  CS_FILE_MPI_EXPLICIT_OFFSETS,
-  CS_FILE_MPI_INDIVIDUAL_POINTERS
+  CS_FILE_MPI_EXPLICIT_OFFSETS,   /*!< Use explicit offsets positioning with
+                                       MPI-IO */
+  CS_FILE_MPI_INDIVIDUAL_POINTERS /*!< Use individual file pointer positioning
+                                       with MPI-IO */
 
 } cs_file_mpi_positioning_t;
 

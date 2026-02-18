@@ -48,7 +48,6 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 /*! Parameter check behavior when an error is detected */
-
 typedef enum {
 
   CS_WARNING,                  /*!< Warn only */

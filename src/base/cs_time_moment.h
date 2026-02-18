@@ -54,20 +54,33 @@ BEGIN_C_DECLS
 
 /* Moment type */
 
+/*! Temporal moments management. */
 typedef enum {
 
-  CS_TIME_MOMENT_MEAN,
-  CS_TIME_MOMENT_VARIANCE
+  CS_TIME_MOMENT_MEAN,    /*!< Moment is a mean */
+  CS_TIME_MOMENT_VARIANCE /*!< Moment is a variance */
 
 } cs_time_moment_type_t;
 
 /* Moment restart behavior */
 
+/*! Moment restart behavior */
 typedef enum {
 
-  CS_TIME_MOMENT_RESTART_RESET,
-  CS_TIME_MOMENT_RESTART_AUTO,
-  CS_TIME_MOMENT_RESTART_EXACT
+  CS_TIME_MOMENT_RESTART_RESET, /*!< Moment is reset in case of a restart file:
+                                     starting time step will be no older than
+                                     the restart time step.*/
+  CS_TIME_MOMENT_RESTART_AUTO,  /*!< Moment uses restart information if
+                                     available:
+                                     if the requested time step is older than
+                                     the restart time step, restart information
+                                     will be used, though the starting time step
+                                     is not guaranteed*/
+  CS_TIME_MOMENT_RESTART_EXACT  /*!< If the requested time step is older than
+                                     the restart time step, restart information
+                                     will be used, and if the start time step
+                                     or time does not match the one available,
+                                     an error is thrown.*/
 
 } cs_time_moment_restart_t;
 
