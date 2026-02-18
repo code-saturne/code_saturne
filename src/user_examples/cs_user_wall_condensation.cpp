@@ -275,17 +275,19 @@ cs_user_wall_condensation(int  iappel)
      */
 
     if (CS_F_(cp) == nullptr)
-      bft_error(__FILE__, __LINE__, 0,_("error lambda not variable\n"));
+      bft_error(__FILE__, __LINE__, 0,
+                _("%s: Heat capacity not variable\n"), __func__);
 
     if (CS_F_(h) == nullptr)
-      bft_error(__FILE__, __LINE__, 0,_("error lambda not variable\n"));
+      bft_error(__FILE__, __LINE__, 0,
+                _("%s: Enthalpy field not found...\n"), __func__);
 
     cs_real_t *cpro_cp = CS_F_(cp)->val;
     cs_real_t *cvar_h= CS_F_(h)->val;
 
     // Get specific heat of steam
     int k_id = cs_gas_mix_get_field_key();
-    cs_field_t *f = cs_field_by_name("y_h2o_g");
+    cs_field_t *f = cs_field("y_h2o_g");
     cs_gas_mix_species_prop_t gmp;
     cs_field_get_key_struct(f, k_id, &gmp);
     cs_real_t cp_vap = gmp.cp;
@@ -293,18 +295,18 @@ cs_user_wall_condensation(int  iappel)
     // Get variable ids of quantities of interest
     const int var_id_key = cs_field_key_id("variable_id");
 
-    f      = cs_field_by_name("velocity");
-    int iu = cs_field_get_key_int(f, var_id_key) - 1;
+    f      = cs_field("velocity");
+    int iu = f->get_key_int(var_id_key) - 1;
     int iv = iu + 1;
     int iw = iv + 1;
 
     const cs_turb_model_t *turb_mdl = cs_glob_turb_model;
     int                    ik = -1, iep = -1;
     if (turb_mdl->itytur == 2) {
-      f   = cs_field_by_name("k");
-      ik  = cs_field_get_key_int(f, var_id_key) - 1;
-      f   = cs_field_by_name("epsilon");
-      iep = cs_field_get_key_int(f, var_id_key) - 1;
+      f   = cs_field("k");
+      ik  = f->get_key_int(var_id_key) - 1;
+      f   = cs_field("epsilon");
+      iep = f->get_key_int(var_id_key) - 1;
     }
 
     const int keysca   = cs_field_key_id("scalar_id");
@@ -346,9 +348,9 @@ cs_user_wall_condensation(int  iappel)
       for (int f_id = 0; f_id < n_fields; f_id++) {
         f = cs_field_by_id(f_id);
         if (f->type & CS_FIELD_VARIABLE) {
-          int iscal = cs_field_get_key_int(f, keysca);
+          int iscal = f->get_key_int( keysca);
           if (iscal > 0) {
-            int ivar = cs_field_get_key_int(f, var_id_key) - 1;
+            int ivar = f->get_key_int(var_id_key) - 1;
             wall_cond->itypcd[ivar * nfbpcd + ieltcd] = 1;
             if (f == cs_thermal_model_field()) {
               wall_cond->spcond[ivar * nfbpcd + ieltcd] = hvap; // enthalpy
@@ -382,10 +384,10 @@ cs_user_wall_condensation(int  iappel)
       f = cs_field_by_id(f_id);
       if (!(f->type & CS_FIELD_VARIABLE))
         continue;
-      int iscal = cs_field_get_key_int(f, keysca);
+      int iscal = f->get_key_int(keysca);
       if (iscal <= 0)
         continue;
-      int ivar = cs_field_get_key_int(f, var_id_key) - 1;
+      int ivar = f->get_key_int(var_id_key) - 1;
 
       int h_f_id = cs_thermal_model_field()->id;
 
