@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2024 EDF S.A.
+# Copyright (C) 1998-2026 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -129,8 +129,8 @@ class QMegHighlighter(QSyntaxHighlighter):
         rules += [(r'\b%s\b' % s, STYLES['symbols']) for s,l in symbols]
         rules += [(r'#[^\n]*', STYLES['comment'])]
 
-        # Build a QRegExp for each pattern
-        self.rules = [(QRegExp(pat), fmt) for (pat, fmt) in rules]
+        # Build a QRegularExpression for each pattern
+        self.rules = [(QRegularExpression(pat), fmt) for (pat, fmt) in rules]
 
 
     def highlightBlock(self, text):
@@ -138,12 +138,16 @@ class QMegHighlighter(QSyntaxHighlighter):
         Apply syntax highlighting to the given block of text.
         """
         for rx, fmt in self.rules:
-            pos = rx.indexOf(text, 0)
-            while pos != -1:
-                pos = rx.pos(0)
-                s = rx.cap(0)
-                self.setFormat(pos, len(s), fmt)
-                pos = rx.indexOf( text, pos+rx.matchedLength() )
+            offset = 0
+            match = rx.match(text, offset)
+
+            while match.hasMatch():
+                pos = match.capturedStart()
+                length = match.capturedLength()
+                self.setFormat(pos, length, fmt)
+
+                offset = pos + length
+                match = rx.match(text, offset)
 
 #-------------------------------------------------------------------------------
 # Dialog for mathematical expression interpretor
@@ -378,7 +382,7 @@ class QMegEditorView(QDialog, Ui_QMegDialog):
         new_exp = str(self.textEditExpression.toPlainText()) + '\n'
         check = 0
         for func_type in self.meg_to_c.funcs.keys():
-            for k in self.meg_to_c.funcs[func_type].keys():
+            for k in self.meg_to_c.funcs[func_tqregexype].keys():
                 self.meg_to_c.update_block_expression(func_type, k, new_exp)
                 check, err_msg, n_erros = self.meg_to_c.check_meg_code_syntax(func_type)
 
