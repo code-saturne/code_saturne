@@ -263,10 +263,10 @@ _evap_rain(cs_air_fluid_props_t *air_prop,
 
   /* Nusselt number correlations */
   /* Ranz-Marshall or Hughmark when rey <= 776.06 && pr <= 250. */
-  cs_real_t nusselt = 2. + 0.6 * sqrt(rey) * pow(pr,(1./3.));
+  cs_real_t nusselt = 2. + 0.6 * sqrt(rey) * cbrt(pr);
   /* Hughmark when rey > 776.06 && pr <= 250. */
   if (rey > 776.06 && pr <= 250.) {
-    nusselt = 2. + 0.27 * pow(rey, 0.62) * pow(pr,(1./3.));
+    nusselt = 2. + 0.27 * pow(rey, 0.62) * cbrt(pr);
   }
 
   /* Convective exchange coefficient 'a_c' */

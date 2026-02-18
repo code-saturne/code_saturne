@@ -1711,10 +1711,10 @@ _boundary_treatment(cs_lagr_particle_set_t    &p_set,
               * cur_part_stat_weight / face_area;
 
             p_set.attr_real(cur_p_id, CS_LAGR_DIAMETER)
-              = pow(  cs_math_pow3(cur_part_diameter)
-                  + cs_math_pow3(particle_diameter)
-                  * particle_stat_weight
-                  / cur_part_stat_weight, 1./3.);
+              = cbrt( cs_math_pow3(cur_part_diameter)
+                    + cs_math_pow3(particle_diameter)
+                    * particle_stat_weight
+                    / cur_part_stat_weight);
 
             cur_part_diameter = p_set.attr_real( cur_p_id,
                                                            CS_LAGR_DIAMETER);
@@ -2423,7 +2423,7 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
 
     /* Dimension less test: no movement ? */
     const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
-    cs_real_t inv_ref_length = 1./pow(cell_vol[cell_id], 1./3.);
+    cs_real_t inv_ref_length = 1./cbrt(cell_vol[cell_id]);
     cs_real_t  disp[3];
     for (int k = 0; k < 3; k++)
       disp[k] = next_location[k] - prev_location[k];
@@ -3993,7 +3993,7 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
         disp[k] = particle_coord[k] - prev_location[k];
 
       cs_lnum_t cell_id = p_set.attr_lnum(p_id, CS_LAGR_CELL_ID);
-      cs_real_t inv_ref_length = 1. / pow(cell_vol[cell_id], 1./3.);
+      cs_real_t inv_ref_length = 1. / cbrt(cell_vol[cell_id]);
 
       if (   fabs(disp[0] * inv_ref_length) < 1e-15
           && fabs(disp[1] * inv_ref_length) < 1e-15

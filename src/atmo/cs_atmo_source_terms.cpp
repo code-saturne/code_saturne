@@ -500,8 +500,8 @@ cs_atmo_source_term(int              f_id,
       /* Compute r3 */
       cs_real_t r3;
       if (nc[cell_id] >= 1){
-        r3 = pow((0.75*rho_h[cell_id]*yc[cell_id])
-                          / (cs_math_pi*rho_l*nc[cell_id]), 1./3.);
+        r3 = cbrt((0.75*rho_h[cell_id]*yc[cell_id])
+                          / (cs_math_pi*rho_l*nc[cell_id]));
       }
       else {
         r3 = 0.;

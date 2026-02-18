@@ -242,7 +242,7 @@ cs_turbulence_htles(void)
 
     /* Analytic energy ratio r */
     cs_real_t xbt0   = cs_turb_chtles_bt0;
-    cs_real_t xdelta = pow(cell_f_vol[c_id], 1./3.);
+    cs_real_t xdelta = cbrt(cell_f_vol[c_id]);
     cs_real_t xus = xum + sqrt(d2s3)*sqrt(xkt);
     cs_real_t xwc = cs::min(cs_math_pi/dt[c_id], xus*cs_math_pi/xdelta);
     cs_real_t xrk = 1.0/xbt0 * pow(xus/sqrt(xkt), d2s3)

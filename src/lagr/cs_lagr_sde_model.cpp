@@ -950,7 +950,6 @@ _lagich(cs_lagr_particle_set_t  &p_set,
   /* Numerical variables */
   cs_real_t d6spi  = 6.0 / cs_math_pi;
   cs_real_t dpis6  = cs_math_pi / 6.0;
-  cs_real_t d1s3   = 1.0 / 3.0;
   cs_real_t d2s3   = 2.0 / 3.0;
 
   /* File variables */
@@ -1049,7 +1048,7 @@ _lagich(cs_lagr_particle_set_t  &p_set,
   cs_real_t radius[nlayer];
   for (cs_lnum_t l_id = 0; l_id < nlayer; l_id++) {
     cs_real_t f_l = l_id+1;
-    radius[l_id] = (init_diam/2.0) * pow(f_l/f_nlayer, d1s3);
+    radius[l_id] = (init_diam/2.0) * cbrt(f_l/f_nlayer);
   }
 
   cs_real_t mp0  = dpis6 * _pow3(init_diam) * coal_model->rho0ch[co_id];
@@ -1429,11 +1428,10 @@ _lagich(cs_lagr_particle_set_t  &p_set,
     /* Distribute char in uniform manner */
     if (l_id_het == 0) {
 
-      aux5 = pow(  d6spi
+      aux5 = cbrt(  d6spi
                  / (1.0 - coal_model->xashch[co_id])
                  * (  part_coal_mass[l_id_het] / coal_model->rho0ch[co_id]
-                    + part_coke_mass[l_id_het] / part_coal_density[l_id_het]),
-                   d1s3);
+                    + part_coke_mass[l_id_het] / part_coal_density[l_id_het]));
 
       /* Clipping   */
       if (aux5 > 2.0 * radius[l_id_het])
@@ -1451,9 +1449,9 @@ _lagich(cs_lagr_particle_set_t  &p_set,
       cs_real_t f2 = 0;
       if (part_coal_density[l_id_het] > 0.0)
         f2 = part_coke_mass[l_id_het] / part_coal_density[l_id_het];
-      aux5 = pow(  cs_math_pow3(2.0 * radius[l_id_het - 1])
+      aux5 = cbrt(  cs_math_pow3(2.0 * radius[l_id_het - 1])
                  + (  d6spi / (1.0 - coal_model->xashch[co_id])
-                    * (f1 + f2)), d1s3);
+                    * (f1 + f2)));
 
       /* Clipping   */
       if (aux5 > 2.0 * radius[l_id_het])

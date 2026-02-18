@@ -187,7 +187,6 @@ cs_soot_production(int        f_id,
     cs_real_t ccc = 0.1;    // m^3.kg^-2/3.K^-1/2.s^-1
     cs_real_t taa = 46.1e3; // K
     cs_real_t tcc = 12.6e3; // K
-    cs_real_t d1s3 = 1./3.;
 
     # pragma omp parallel for  if (n_cells > CS_THR_MIN)
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -230,7 +229,7 @@ cs_soot_production(int        f_id,
       wox =   1.2e2 * (  (ka * po2 * chi) / (1. + kz * po2)
                        + kb * po2 * (1. - chi));
 
-      dd = pow(36. * acos(-1.) / cs_math_pow2(cm->rosoot), d1s3);
+      dd = cbrt(36. * acos(-1.) / cs_math_pow2(cm->rosoot));
 
       zetas = cvara_ys[c_id];
       zetan = cvara_yp[c_id];
@@ -238,9 +237,9 @@ cs_soot_production(int        f_id,
       if (f_id == CS_F_(fsm)->id) {
         /* Surface growth : quadratic */
         if (zetas >= epsi) {
-          cimp =   volume[c_id] *(pow(nn0, d1s3) * rho * cc * pow(zetas, -d1s3)
-                 * pow(zetan, d1s3) - rho * dd * pow(nn0, d1s3)
-                 * pow(zetan, d1s3) * pow(zetas, -d1s3) * wox);
+          cimp =   volume[c_id] *(cbrt(nn0) * rho * cc * (1./cbrt(zetas))
+                 * cbrt(zetan) - rho * dd * cbrt(nn0)
+                 * cbrt(zetan) * (1./cbrt(zetas)) * wox);
         }
         cexp = volume[c_id] * (144. * aa);
       }

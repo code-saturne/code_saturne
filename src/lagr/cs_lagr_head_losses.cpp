@@ -351,7 +351,7 @@ cs_lagr_head_losses(cs_lnum_t        n_hl_cells,
 
     if (mdiam[iel] > 0.0) {
 
-      cs_real_t lcell = pow(volume[iel], 1.0 / 3.0);
+      cs_real_t lcell = cbrt(volume[iel]);
       cs_real_t romf  = extra->cromf->val[iel];
       cs_real_t visccf = extra->viscl->val[iel] / romf;
       cs_real_t v      = sqrt (  pow(extra->vel->vals[1][iel * 3 + 0], 2)

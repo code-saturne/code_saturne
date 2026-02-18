@@ -625,7 +625,7 @@ cs_user_lagr_rt_t
 
   cs_real_t prt = nu_f / k_f;
 
-  cs_real_t fnus = 2.0 + 0.55 * sqrt(re_p) * pow(prt, 1./3.);
+  cs_real_t fnus = 2.0 + 0.55 * sqrt(re_p) * cbrt(prt);
 
   cs_real_t diam = p_set.attr_real( p_id, CS_LAGR_DIAMETER);
   cs_real_t cp_p = p_set.attr_real( p_id, CS_LAGR_CP);

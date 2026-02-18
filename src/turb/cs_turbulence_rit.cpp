@@ -222,7 +222,6 @@ _turb_flux_st(const char          *name,
   const cs_real_t c3trit = cs_turb_c3trit;
   const cs_real_t c4trit = cs_turb_c4trit;
 
-  constexpr cs_real_t c_1ov3 = 1./3.;
   const int has_buoyant_term = rans_mdl->has_buoyant_term;
 
   cs_dispatch_context ctx;
@@ -261,7 +260,7 @@ _turb_flux_st(const char          *name,
 
       /* Compute the unit normal vector */
       cs_real_t xnoral = cs_math_3_norm(grad_al[c_id]);
-      const cs_real_t eps = cs_math_epzero/pow(cell_f_vol[c_id], c_1ov3);
+      const cs_real_t eps = cs_math_epzero/cbrt(cell_f_vol[c_id]);
       if (xnoral > eps) {
         for (cs_lnum_t i = 0; i < 3; i++)
           xnal[i] = grad_al[c_id][i] / xnoral;
@@ -599,7 +598,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
       /* Unit normal vector */
       cs_real_t xnoral = cs_math_3_norm(grad_al[c_id]);
 
-      const cs_real_t eps = cs_math_epzero/pow(cell_f_vol[c_id], 1./3);
+      const cs_real_t eps = cs_math_epzero/cbrt(cell_f_vol[c_id]);
       if (xnoral > eps) {
         for (cs_lnum_t i = 0; i < 3; i++)
           xnal[i] = grad_al[c_id][i] / xnoral;

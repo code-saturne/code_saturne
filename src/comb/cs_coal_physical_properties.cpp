@@ -1189,8 +1189,6 @@ _physprop1(const  cs_real_t  f1m[],
 static void
 _physprop2(cs_lnum_t  n_cells)
 {
-  constexpr cs_real_t c_1ov3 = 1./3.;
-
   // Coefficient relating to the coke diameter
   const cs_real_t coedmi = 1.2;
 
@@ -1282,7 +1280,7 @@ _physprop2(cs_lnum_t  n_cells)
       if (xuash > cs_coal_epsilon) {
 
         // Calculation of the reactive coal diameter: Dch
-        dch = diam20 * pow(xch/xuash, c_1ov3);
+        dch = diam20 * cbrt(xch/xuash);
 
         // Eventual clipping for the reactive coal diameter
         if (dch > (diam20 + cs_coal_epsilon)) {
@@ -1297,8 +1295,8 @@ _physprop2(cs_lnum_t  n_cells)
         }
 
         // Calculation of the coke diameter: Dck stores in cpro_diam2[c_id]
-        cs_real_t dck = pow(  (xch/rho20 + xck/rhock)
-                            / ((1.-xashcl)*pi/6.0*xnp), c_1ov3);
+        cs_real_t dck = cbrt( (xch/rho20 + xck/rhock)
+                            / ((1.-xashcl)*pi/6.0*xnp));
 
         // Eventual clipping for the coke diameter
         if (dck >  coedmi*diam20) {

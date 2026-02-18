@@ -2119,7 +2119,7 @@ cs_turb_init_ref_quantities(void)
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
   if (_turb_ref_values.almax < 0)
-    _turb_ref_values.almax = pow(mq->tot_vol, 1./3.);
+    _turb_ref_values.almax = cbrt(mq->tot_vol);
 
   if (   _turb_model.type == CS_TURB_RANS
       || _turb_model.type == CS_TURB_HYBRID) {

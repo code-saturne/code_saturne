@@ -538,7 +538,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
           exp_st += cpro_ghh2o[c_id];
 
         exp_st = -2./3. * crom[c_id] * exp_st
-                        * cell_f_vol[c_id] / pow(cvara_xckcl[c_id], (1./3.));
+                        * cell_f_vol[c_id] / cbrt(cvara_xckcl[c_id]);
       }
 
       // Compute the explicit part of the Source term
@@ -939,7 +939,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
         gamhet =   crom[c_id]*cpro_cght[c_id]
                  * (          pow(cvara_xckcl[c_id], 2./3.)
                     + 2./3. * (cvar_xckcl[c_id]-cvara_xckcl[c_id])
-                            / pow(cvara_xckcl[c_id], 1./3.));
+                            / cbrt(cvara_xckcl[c_id]));
       }
 
       gamhet *=   (wmole[ico]*xhco - wmolat[cs_coal_atom_id_o]*xho2)
@@ -983,7 +983,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
           gamhet =   crom[c_id]*cpro_ghco2[c_id]
                  * (          pow(cvara_xckcl[c_id], 2./3.)
                     + 2./3. * (cvar_xckcl[c_id]-cvara_xckcl[c_id])
-                            / pow(cvara_xckcl[c_id], 1./3.));
+                            / cbrt(cvara_xckcl[c_id]));
         }
 
         gamhet *=   (2.*wmole[ico]*xhco-wmole[ico2]*xhco2)
@@ -1037,7 +1037,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
           gamhet =   crom[c_id]*cpro_ghh2o[c_id]
                  * (          pow(cvara_xckcl[c_id], 2./3.)
                     + 2./3. * (cvar_xckcl[c_id]-cvara_xckcl[c_id])
-                            / pow(cvara_xckcl[c_id], 1./3.));
+                            / cbrt(cvara_xckcl[c_id]));
         }
 
         gamhet *=  (wmole[ico]*xhco+wmole[ihy]*xhh2 - wmole[ih2o]*xhh2o)
@@ -1200,7 +1200,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
           w1[c_id] -=  crom[c_id]*cpro_cght[c_id]
                        * (   pow(cvara_xckcl[c_id], 2./3.)
                           + 2./3.*(cvar_xckcl[c_id] - cvara_xckcl[c_id])
-                                 / pow(cvara_xckcl[c_id], 1./3.));
+                                 / cbrt(cvara_xckcl[c_id]));
         }
       }
     }
@@ -1232,7 +1232,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
           w1[c_id] -=  crom[c_id]*cpro_ghco2[c_id]
                        * (   pow(cvara_xckcl[c_id], 2./3.)
                           + 2./3.*(cvar_xckcl[c_id] - cvara_xckcl[c_id])
-                                 / pow(cvara_xckcl[c_id], 1./3.));
+                                 / cbrt(cvara_xckcl[c_id]));
         }
       }
     }
@@ -1264,7 +1264,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
           w1[c_id] -=  crom[c_id]*cpro_ghh2o[c_id]
                        * (   pow(cvara_xckcl[c_id], 2./3.)
                           + 2./3.*(cvar_xckcl[c_id] - cvara_xckcl[c_id])
-                                 / pow(cvara_xckcl[c_id], 1./3.));
+                                 / cbrt(cvara_xckcl[c_id]));
         }
       }
     }
@@ -1715,7 +1715,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
                      * (  pow(cvara_xck[class_id][c_id], 2./3.)
                         + 2./3. * (  cvar_xck[class_id][c_id]
                                    - cvara_xck[class_id][c_id])
-                                / pow(cvara_xck[class_id][c_id], 1./3.));
+                                / cbrt(cvara_xck[class_id][c_id]));
             smbrs[c_id] -= gamhet *(  wmole[ico]*xhco
                                     - wmolat[cs_coal_atom_id_o]*xho2)
                                   / wmolat[cs_coal_atom_id_c]
@@ -1759,7 +1759,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
                        * (  pow(cvara_xck[class_id][c_id], 2./3.)
                           + 2./3. * (  cvar_xck[class_id][c_id]
                                      - cvara_xck[class_id][c_id])
-                                  / pow(cvara_xck[class_id][c_id], 1./3.));
+                                  / cbrt(cvara_xck[class_id][c_id]));
               smbrs[c_id] -=  gamhet * (2.*wmole[ico]*xhco-wmole[ico2]*xhco2)
                                      / wmolat[cs_coal_atom_id_c]
                                      * cell_f_vol[c_id];
@@ -1813,7 +1813,7 @@ cs_coal_source_terms_scalar(cs_field_t  *fld_scal,
                        * (  pow(cvara_xck[class_id][c_id], 2./3.)
                           + 2./3. * (  cvar_xck[class_id][c_id]
                                      - cvara_xck[class_id][c_id])
-                                  / pow(cvara_xck[class_id][c_id], 1./3.));
+                                  / cbrt(cvara_xck[class_id][c_id]));
               smbrs[c_id] -= gamhet  * (  wmole[ico]*xhco
                                         + wmole[ihy]*xhh2
                                         - wmole[ih2o]*xhh2o)

@@ -403,7 +403,7 @@ _compute_offsetting(const cs_mesh_t               *mesh,
         double of_s =   cs_math_3_norm(dofij[face_id])
                       * i_face_surf[face_id];
 
-        offset = cs::min(offset, 1. - pow(of_s/vol, 1./3.));
+        offset = cs::min(offset, 1. - cbrt(of_s/vol));
       }
     }
 

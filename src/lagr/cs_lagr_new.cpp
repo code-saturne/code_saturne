@@ -625,7 +625,7 @@ cs_lagr_new_v(cs_lagr_particle_set_t  &p_set,
 
       if (fallback == false) {
 
-        cs_real_t t = pow(r[1], 1./3.) * (1.0 - d_eps);
+        cs_real_t t = cbrt(r[1]) * (1.0 - d_eps);
         for (cs_lnum_t j = 0; j < 3; j++)
           part_coord[j] += (cell_cen[j] - part_coord[j]) * (1. - t);
       }

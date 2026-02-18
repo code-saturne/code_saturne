@@ -1154,7 +1154,7 @@ cs_lagr_injection(int        time_id,
             /* Check if a particle has moved*/
             const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
             /* Dimensionless test: no movement ? */
-            cs_real_t inv_ref_length = 1./pow(cell_vol[saved_cell_id[i]],1./3.);
+            cs_real_t inv_ref_length = 1./cbrt(cell_vol[saved_cell_id[i]]);
             cs_real_3_t disp;
             for (int k = 0; k < 3; k++)
               disp[k] = p_coords[k] - p_coords_prev[k];

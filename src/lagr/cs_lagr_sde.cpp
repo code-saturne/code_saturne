@@ -2430,7 +2430,7 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
 
           if (cs_glob_lagr_model->clogging == 1) {
             if (cs::abs(p_height-p_diam)/p_diam > 1.0e-6) {
-              cs_real_t d_resusp = pow(0.75 * cs_math_pow2(p_diam) * p_height, 1.0/3.0);
+              cs_real_t d_resusp = cbrt(0.75 * cs_math_pow2(p_diam) * p_height);
               p_set.attr_real(p_id, CS_LAGR_DIAMETER) = d_resusp;
               p_set.attr_real(p_id, CS_LAGR_HEIGHT) = d_resusp;
             }
@@ -2831,7 +2831,7 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
           p_set.attr_real(p_id, CS_LAGR_ADHESION_TORQUE) = 0.0;
 
           if (cs::abs(p_height-p_diam)/p_diam > 1.0e-6) {
-            cs_real_t d_resusp = pow(0.75 * cs_math_pow2(p_diam) * p_height, 1.0/3.0);
+            cs_real_t d_resusp = cbrt(0.75 * cs_math_pow2(p_diam) * p_height);
             p_set.attr_real(p_id, CS_LAGR_DIAMETER) = d_resusp;
             p_set.attr_real(p_id, CS_LAGR_HEIGHT) = d_resusp;
           }
