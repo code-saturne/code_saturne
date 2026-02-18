@@ -895,7 +895,7 @@ if test "x$cs_have_gui" = "xcheck" ; then
   cs_have_pyuic=no
   cs_have_pyrcc=no
 
-  if test "x$QT_SELECT" = "x" -o "x$QT_SELECT" = "xpyqt5" ; then
+  if test "x$QT_SELECT" = "x" -o "x$QT_SELECT" = "xpyqt5" -o "x$QT_SELECT" = "x5" ; then
 
     AC_MSG_CHECKING([for PyQt5])
 
@@ -1018,7 +1018,7 @@ fi
 
 if test "x$cs_have_gui" = "xcheck" ; then
 
-  if test "x$QT_SELECT" = "x" -o "x$QT_SELECT" = "xpyside6" ; then
+  if test "x$QT_SELECT" = "x" -o "x$QT_SELECT" = "xpyside6" -o "x$QT_SELECT" = "x6" ; then
 
     AC_MSG_CHECKING([for PySide6])
 

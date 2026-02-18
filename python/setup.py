@@ -58,6 +58,7 @@ _cs_opts = {'enable_gui':False,
             'use_qt':None,
             'exclude_dirs':[],
             'pyuic':None,
+            'uic':None,
             'pyrcc':None,
             'rcc':None,
             'version':None
@@ -123,6 +124,7 @@ else:
     _cs_opts['exclude_dirs'] = ['*gui*']
     # If gui  disabled, remove all options
     _cs_opts['pyuic'] = None
+    _cs_opts['uic'] = None
     _cs_opts['pyrcc'] = None
     _cs_opts['rcc'] = None
     _cs_opts['use_qt'] = False
