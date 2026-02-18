@@ -987,21 +987,19 @@ cs_coal_ht_convert_h_to_t_particles(void)
  * \remark  Function not called in code, so should probably be removed,
  *          unless useful for advanced postprocessing.
  *
- * \param[in]  enthal     mass enthalpy (\f$ j . kg^{-1} \f$)
- * \param[in]  class_id   class id (0 to n-1)
- * \param[in]  xesp       mass fraction of components
- *                        (size: cm->nsolid)
- * \param[in]  t1         coal inlet/boundary temperature
- *
  * \return   temperature (in kelvin)
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_coal_ht_convert_h_to_t_particles_by_yi(cs_real_t        enthal,
-                                          int              class_id,
-                                          const cs_real_t  xsolid[],
-                                          cs_real_t        t1)
+cs_coal_ht_convert_h_to_t_particles_by_yi
+(
+ cs_real_t        enthal,   /*!<[in] mass enthalpy (\f$ j . kg^{-1} \f$) */
+ int              class_id, /*!<[in] class id (0 to n-1) */
+ const cs_real_t  xsolid[], /*!<[in] mass fraction of components
+                                     (size: cm->nsolid)*/
+ cs_real_t        t1        /*!<[in] coal inlet/boundary temperature */
+)
 {
   cs_real_t  temper = -HUGE_VAL;
 
@@ -1067,19 +1065,18 @@ cs_coal_ht_convert_h_to_t_particles_by_yi(cs_real_t        enthal,
  * \brief Calculation of the particles enthalpy from particles temperature and
  *        given mass fractions for coal combustion.
  *
- * \param[in]  temper        temperature (in kelvin)
- * \param[in]  class_id      class id (0 to n-1)
- * \param[in]  xesp          mass fraction of components
- *                           (size: cm->nsolid)
- *
  * \return  mass enthalpy (\f$ j . kg^{-1} \f$)
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_coal_ht_convert_t_to_h_particles_by_yi(cs_real_t        temper,
-                                          int              class_id,
-                                          const cs_real_t  xsolid[])
+cs_coal_ht_convert_t_to_h_particles_by_yi
+(
+ cs_real_t        temper,  /*!<[in] temperature (in kelvin)*/
+ int              class_id,/*!<[in] class id (0 to n-1)*/
+ const cs_real_t  xsolid[] /*!<[in] mass fraction of components
+                                    (size: cm->nsolid)*/
+)
 {
   cs_real_t  enthal = -HUGE_VAL;
 
