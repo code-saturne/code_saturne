@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -180,7 +180,6 @@ void
 cs_preprocess_mesh_define(void)
 {
   cs_gui_mesh_restart_mode();
-  cs_user_mesh_restart_mode();
 
   if (   cs_preprocessor_data_get_restart_mode()
       == CS_PREPROCESSOR_DATA_RESTART_ONLY)

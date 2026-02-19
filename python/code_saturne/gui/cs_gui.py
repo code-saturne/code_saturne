@@ -47,18 +47,28 @@ try:
     from code_saturne.gui.base.QtWidgets import *
 except ImportError:
     print("\n  Error: Unable to import QtCore or QtGui modules.")
-    print("  Please check your PyQt6 or PyQt5 installation.\n")
+    print("  Please check your PyQt or PySide installation.\n")
     sys.exit(0)
 
+qt_version_str = ["", ""]
 
-if list(map(int, QT_VERSION_STR.split( "."))) < [4, 3, 0]:
-    raise SystemExit("Graphical user interface requires Qt 4.3 or later "\
-                     "(found %s)." % QT_VERSION_STR)
+if QT_API in ("PYQT5", "PYQT6"):
+    qtcore_version_str = QT_VERSION_STR
+elif QT_API == "PYSIDE6":
+    from PySide6.QtCore import __version__ as qtcore_version_str
 
-
-if list(map(int, PYQT_VERSION_STR.split("."))) < [4, 5, 0]:
-    raise SystemExit("Graphical user interface requires PyQt 4.5 or later "\
-                     "(found %s)." % PYQT_VERSION_STR)
+if list(map(int, qtcore_version_str.split( "."))) < [5, 0, 0]:
+        raise SystemExit("Graphical user interface requires Qt 5.0 or later "\
+                         "(found %s)." % qtcore_version_str)
+if QT_API in ("PYQT5", "PYQT6"):
+    if list(map(int, PYQT_VERSION_STR.split( "."))) < [5, 0, 0]:
+        raise SystemExit("Graphical user interface requires PyQt 5.0 or later "\
+                         "(found %s)." % PYQT_VERSION_STR)
+elif QT_API == "PYSIDE6":
+    from PySide6 import __version__ as pyside6_version_str
+    if list(map(int, pyside6_version_str.split("."))) < [6, 5, 0]:
+        raise SystemExit("Graphical user interface requires PySide 6.5.0 or later "\
+                         "(found %s)." % pyside6_version_str)
 
 #-------------------------------------------------------------------------------
 # Processes the passed command line arguments

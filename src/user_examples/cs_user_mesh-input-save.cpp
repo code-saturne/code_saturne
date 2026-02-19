@@ -10,7 +10,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -87,27 +87,6 @@ _combine_tr_matrixes(const double  a[3][4],
 /*============================================================================
  * User function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*
- * Force preprocessing behavior in case of restart.
- *
- * By default, in case of restart, if a "restart/mesh_input.csm" file
- * is present, it will be read and proprocessing will be skipped.
- *
- * This behavior may be changed in the GUI (in the "Mesh" section, unchecking
- * "Use unmodified checkpoint mesh in case of restart"), or by calling
- * \ref cs_preprocessor_data_set_restart_mode in this function.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_mesh_restart_mode(void)
-{
-  /*! [mesh_restart_1] */
-  cs_preprocessor_data_set_restart_mode(CS_PREPROCESSOR_DATA_RESTART_NONE);
-  /*! [mesh_restart_1] */
-}
 
 /*----------------------------------------------------------------------------*/
 /*

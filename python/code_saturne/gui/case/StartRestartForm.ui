@@ -145,31 +145,49 @@
         <layout class="QVBoxLayout" name="verticalLayout">
          <item>
           <layout class="QGridLayout" name="gridLayout">
-           <item row="3" column="1">
-            <widget class="QLabel" name="labelCheckRestartMesh">
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Map restart from a checkpoint based on a different mesh than the current computational mesh.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <item row="4" column="2">
+            <spacer name="horizontalSpacerMesh">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
              </property>
-             <property name="text">
-              <string>Different mesh</string>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>0</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item row="3" column="2">
+            <widget class="QComboBox" name="comboBoxMesh">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Determine restart behavior relative to the mesh :&lt;br/&gt;&lt;/p&gt;&lt;table border=&quot;0&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px;&quot; cellspacing=&quot;2&quot; cellpadding=&quot;0&quot;&gt;&lt;tr&gt;&lt;td&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Automatic&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td&gt;&lt;p&gt;Same as &lt;span style=&quot; font-style:italic;&quot;&gt;unmodified &lt;/span&gt;if &lt;span style=&quot; font-family:'monospace';&quot;&gt;restart/mesh_input.csm&lt;/span&gt; is present, &lt;span style=&quot; font-style:italic;&quot;&gt;rebuild same mesh &lt;/span&gt;otherwise.&lt;br/&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Unmodified&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td&gt;&lt;p&gt;Read mesh directly from the &lt;span style=&quot; font-family:'monospace';&quot;&gt;restart&lt;/span&gt; checkpoint directory, with no additional preprocessing.&lt;br/&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Different Mesh&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td&gt;&lt;p&gt;Execute standard import or generation and preprocessing steps, &lt;span style=&quot; font-weight:600;&quot;&gt;interpolating&lt;/span&gt; field data from the &lt;span style=&quot; font-weight:600;&quot;&gt;restart&lt;/span&gt; checkpoint mesh. &lt;br/&gt;&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Rebuild same mesh&lt;/span&gt;&lt;/p&gt;&lt;/td&gt;&lt;td&gt;&lt;p&gt;Do not use mesh in &lt;span style=&quot; font-family:'monospace';&quot;&gt;restart&lt;/span&gt; checkpoint directory even if present, importing and/or reprocessing mesh as for initial run.&lt;/p&gt;&lt;p&gt;This can be useful when saving the mesh modified by preprocessing was disabled in the previous run (presumably to save disk space or I/O time for large runs), and applying the same preprocessing steps will rebuild the mesh matching the other restart files.&lt;/p&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;p&gt;In complex cases where the &lt;span style=&quot; font-family:'monospace';&quot;&gt;restart/mesh_input.csm&lt;/span&gt; file does not match the other files in the restart directory, but a matching &lt;span style=&quot; font-family:'monospace';&quot;&gt;mesh_input.csm&lt;/span&gt; can be located or generated, placing it in the matching checkpoint directory post-hoc is suggested. An alternative is also to use the &lt;span style=&quot; font-family:'monospace';&quot;&gt;cs_restart_map_set_mesh_input&lt;/span&gt; user_defined function to specify the path of the file which should be used, combined with the &lt;span style=&quot; font-style:italic;&quot;&gt;Different Mesh&lt;/span&gt; option above (as the path defined through the user function will override the default one).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
             </widget>
            </item>
-           <item row="0" column="4">
-            <widget class="QToolButton" name="toolButton">
+           <item row="1" column="2">
+            <widget class="QLineEdit" name="lineEditIteration">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the restart directory (Ex: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;STUDY/CASE/RESU/run_id/checkpoint&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Cumulative number of iterations in previous computation.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
-             <property name="text">
-              <string>...</string>
+             <property name="frame">
+              <bool>false</bool>
              </property>
-             <property name="icon">
-              <iconset resource="resources_pages.qrc">
-               <normaloff>:/new/prefix1/data/icons/22x22/document-open.png</normaloff>:/new/prefix1/data/icons/22x22/document-open.png</iconset>
+             <property name="readOnly">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
-           <item row="0" column="3">
+           <item row="0" column="2">
             <widget class="QLineEdit" name="lineEdit">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -188,94 +206,7 @@
              </property>
             </widget>
            </item>
-           <item row="3" column="4">
-            <widget class="QToolButton" name="toolButtonRestartMesh">
-             <property name="text">
-              <string>...</string>
-             </property>
-             <property name="icon">
-              <iconset resource="resources_pages.qrc">
-               <normaloff>:/new/prefix1/data/icons/22x22/document-new.png</normaloff>:/new/prefix1/data/icons/22x22/document-new.png</iconset>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="3">
-            <widget class="QLineEdit" name="lineEditRestartMesh">
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;mesh_input&lt;/span&gt; or &lt;span style=&quot; font-weight:600;&quot;&gt;mesh_output&lt;/span&gt; from previous run matching the restart files.&lt;/p&gt;&lt;p&gt;If this file is not available (not saved in previous calculation), re-running the previous calculation in &amp;quot;preprocessing only&amp;quot; mode may allow rebuilding it.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="3">
-            <spacer name="horizontalSpacerMesh">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>0</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item row="0" column="1">
-            <widget class="QLabel" name="labelRestartDir">
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the restart directory (Ex: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;STUDY/CASE/RESU/run_id/checkpoint&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="text">
-              <string>Checkpoint directory</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QCheckBox" name="checkBoxRestartMesh">
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Map restart from a checkpoint based on a different mesh than the current computational mesh.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QLabel" name="labelIteration">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="text">
-              <string>Iterations</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1">
-            <widget class="QLabel" name="labelTime">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="text">
-              <string>Time</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="3">
-            <widget class="QLineEdit" name="lineEditIteration">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Cumulative number of iterations in previous computation.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="frame">
-              <bool>false</bool>
-             </property>
-             <property name="readOnly">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="3">
+           <item row="2" column="2">
             <widget class="QLineEdit" name="lineEditTime">
              <property name="enabled">
               <bool>false</bool>
@@ -288,6 +219,60 @@
              </property>
              <property name="readOnly">
               <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="labelIteration">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string>Iterations</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="3">
+            <widget class="QToolButton" name="toolButton">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the restart directory (Ex: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;STUDY/CASE/RESU/run_id/checkpoint&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="text">
+              <string>...</string>
+             </property>
+             <property name="icon">
+              <iconset resource="resources_pages.qrc">
+               <normaloff>:/new/prefix1/data/icons/22x22/document-open.png</normaloff>:/new/prefix1/data/icons/22x22/document-open.png</iconset>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="labelRestartDir">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the restart directory (Ex: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;STUDY/CASE/RESU/run_id/checkpoint&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="text">
+              <string>Checkpoint directory</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="labelTime">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string>Time</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="labelRestartMesh">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Map restart from a checkpoint based on a different mesh than the current computational mesh.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="text">
+              <string>Mesh</string>
              </property>
             </widget>
            </item>

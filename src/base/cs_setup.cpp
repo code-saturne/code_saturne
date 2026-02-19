@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -63,6 +63,7 @@
 #include "base/cs_pressure_correction.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_restart.h"
+#include "base/cs_restart_map.h"
 #include "base/cs_runaway_check.h"
 #include "base/cs_syr_coupling.h"
 #include "base/cs_thermal_model.h"
@@ -3683,6 +3684,14 @@ cs_setup(void)
 
   /* Log output */
   _log_variable_counts();
+
+  /* Additional setup actions */
+  if (cs_glob_ale != CS_ALE_NONE) {
+    cs_restart_map_set_locations(true, true);
+    cs_gui_mobile_mesh_get_boundaries(cs_glob_domain);
+    if (cs_glob_mesh->time_dep < CS_MESH_TRANSIENT_COORDS)
+      cs_glob_mesh->time_dep = CS_MESH_TRANSIENT_COORDS;
+  }
 }
 
 /*-----------------------------------------------------------------------------*/

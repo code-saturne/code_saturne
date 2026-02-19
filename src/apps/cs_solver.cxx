@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -305,23 +305,12 @@ _run(void)
 
   if ((opts.preprocess | opts.verif) == false && opts.benchmark <= 0) {
 
-    const char default_restart_mesh[] = "restart_mesh_input";
-    if (cs_file_isreg(default_restart_mesh))
-      cs_restart_map_set_mesh_input(default_restart_mesh);
-
     cs_f_init(cs_glob_rank_id);
 
     cs_setup();
 
     if (cs_parameters_need_extended_neighborhood())
       halo_type = CS_HALO_EXTENDED;
-
-    if (cs_glob_ale != CS_ALE_NONE) {
-      cs_restart_map_set_locations(true, true);
-      cs_gui_mobile_mesh_get_boundaries(cs_glob_domain);
-      if (cs_glob_mesh->time_dep < CS_MESH_TRANSIENT_COORDS)
-        cs_glob_mesh->time_dep = CS_MESH_TRANSIENT_COORDS;
-    }
 
     /* Initialization step for the setup of CDO schemes
      * - Perform the initialization for each activated module

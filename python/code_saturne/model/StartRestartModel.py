@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2024 EDF S.A.
+# Copyright (C) 1998-2026 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -147,6 +147,7 @@ class StartRestartModel(Model):
         default['restart']                = "off"
         default['frozen_field']           = "off"
         default['restart_with_auxiliary'] = "on"
+        default['restart_mesh']           = "automatic"
         default['restart_rescue']         = 0
         default['period_rescue']          = "4 output"
         return default
@@ -181,28 +182,36 @@ class StartRestartModel(Model):
 
 
     @Variables.noUndo
-    def getRestartMeshPath(self):
+    def getRestartMeshBehavior(self):
         """
-        Return restart mesh path if applicable
+        Return if restart is done from a different mesh
         """
-        restart_mesh = None
-        node = self.node_start.xmlGetNode('restart_mesh', 'path')
+        status = None
+        k = 'restart_mesh'
+        node = self.node_start.xmlGetNode(k, 'choice')
         if node:
-            restart_mesh = node['path']
-        return restart_mesh
+            status = node['choice']
+
+        if status is None:
+            status = self._defaultStartRestartValues()[k]
+        return status
 
 
     @Variables.undoLocal
-    def setRestartMeshPath(self, v):
+    def setRestartMeshBehavior(self, v):
         """
-        Set restart mesh path if applicable
+        Set restart on different mesh field status
         """
-        node = self.node_start.xmlGetNode('restart_mesh')
-        if v:
-            if not node:
-                node = self.node_start.xmlInitNode('restart_mesh', 'path')
-            node['path'] = v
-        elif node:
+        self.isInList(v, ['automatic',
+                          'unmodified',
+                          'different_mesh',
+                          'same_mesh_preprocess'])
+
+        k = 'restart_mesh'
+        node = self.node_start.xmlInitNode(k, 'choice')
+        if v != self._defaultStartRestartValues()[k]:
+            node['choice'] = v
+        else:
             node.xmlRemoveNode()
 
 
@@ -211,21 +220,27 @@ class StartRestartModel(Model):
         """
         Return if the velocity and the pressure are solved
         """
-        node = self.node_start.xmlInitNode('frozen_field', 'status')
-        status = node['status']
-        if not status:
-            v = self._defaultStartRestartValues()['frozen_field']
-            self.setFrozenField(v)
+        status = None
+        node = self.node_start.xmlGetNode('frozen_field', 'status')
+        if node:
+            status = node['status']
+
+        if status is None:
+            status = self._defaultStartRestartValues()['frozen_field']
         return status
 
 
     @Variables.undoLocal
     def setFrozenField(self, v):
         """
+        Set frozen field status
         """
         self.isOnOff(v)
         node = self.node_start.xmlInitNode('frozen_field', 'status')
-        node['status'] = v
+        if v != self._defaultStartRestartValues()['frozen_field']:
+            node['status'] = v
+        else:
+            node.xmlRemoveNode()
 
 
     @Variables.noUndo
@@ -233,11 +248,12 @@ class StartRestartModel(Model):
         """
         Return status of reading auxiliary restart file for advanced options.
         """
-        node = self.node_start.xmlInitNode('restart_with_auxiliary', 'status')
-        status = node['status']
-        if not status:
+        status = None
+        node = self.node_start.xmlGetNode('restart_with_auxiliary', 'status')
+        if node:
+            status = node['status']
+        if status is None:
             status = self._defaultStartRestartValues()['restart_with_auxiliary']
-            self.setRestartWithAuxiliaryStatus(status)
         return status
 
 

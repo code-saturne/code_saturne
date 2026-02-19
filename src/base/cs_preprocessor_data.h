@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -52,12 +52,11 @@ BEGIN_C_DECLS
 
 typedef enum {
 
+  CS_PREPROCESSOR_DATA_RESTART_AUTO,        /*!< use restart mesh for
+                                              computation if present */
   CS_PREPROCESSOR_DATA_RESTART_NONE,        /*!< do not use restart mesh
-                                              for computation, or restart
-                                              mesh not present */
-  CS_PREPROCESSOR_DATA_RESTART_AND_MODIFY,  /*!< read restart mesh and enable
-                                               further preprocessing */
-  CS_PREPROCESSOR_DATA_RESTART_ONLY,        /*!< use restart mesh as-is,
+                                              for computation */
+  CS_PREPROCESSOR_DATA_RESTART_ONLY         /*!< use restart mesh as-is,
                                               with no additional
                                               preprocessing (default if
                                               restart is present) */

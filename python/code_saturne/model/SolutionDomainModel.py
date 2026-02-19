@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2024 EDF S.A.
+# Copyright (C) 1998-2026 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1529,37 +1529,6 @@ class SolutionDomainModel(MeshModel, Model):
         node.xmlRemoveNode()
         if thin_id < self.getExtrudeSelectionsCount():
             self._updateExtrudeNumbers()
-
-
-    # Methods to manage restart behavior
-    #===================================
-
-    @Variables.noUndo
-    def getPreprocessOnRestart(self):
-        """
-        Get preprocess on restart option.
-        """
-
-        val = False
-        if self.node_ecs:
-            s = self.node_ecs.xmlGetString('preprocess_on_restart')
-            if str(s) == 'yes':
-                val = True
-
-        return val
-
-
-    @Variables.undoLocal
-    def setPreprocessOnRestart(self, val):
-        """
-        Set run type.
-        """
-        if val == True:
-            self.node_ecs.xmlSetData('preprocess_on_restart', 'yes')
-        else:
-            node = self.node_ecs.xmlGetNode('preprocess_on_restart')
-            if node:
-                node.xmlRemoveNode()
 
 
     # Methods to manage run type

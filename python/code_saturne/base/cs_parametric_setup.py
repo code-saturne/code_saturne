@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2024 EDF S.A.
+# Copyright (C) 1998-2026 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -62,10 +62,6 @@ def arg_parser(argv):
                         action="store_true",
                         help="Restart from run on a different mesh. " \
                         "Will check for mesh in checkpoint folder.")
-
-    parser.add_argument("--different-restart-mesh-path", dest="DiffRestartMeshPath", type=str,
-                        help="Restart from run on a different mesh. " \
-                        "Provide original mesh with this argument.")
 
     parser.add_argument("-n", "--iter-num", dest="iterationsNumber", type=int,
                         help="New iteration number")
@@ -414,41 +410,28 @@ class case_setup_filter(object):
         bnd.setScalarChoice(scalar_name, "dirichlet")
         bnd.setScalarValue(scalar_name, "dirichlet", val)
 
-        pass
-
     #---------------------------------------------------------------------------
 
-    def setRestartPath(self, checkpoint_path, diff_restart_mesh=False):
+    def setRestartPath(self, checkpoint_path):
         """
         Set restart path in xml file.
         @param path: path to checkpoint folder
         """
 
         self.initRestartModel()
-
-        # If restart is done using a new mesh which is in the checkpoint folder
-        if diff_restart_mesh:
-            _mp = os.path.join(checkpoint_path, "mesh_input.csm")
-            self.setDifferentRestartMesh(_mp)
-
         self.restartModel.setRestartPath(checkpoint_path)
-        pass
-
 
     #---------------------------------------------------------------------------
 
-    def setDifferentRestartMesh(self, restart_mesh_path):
+    def setDifferentRestartMesh(self):
         """
-        Set a different mesh for restart data than the one used for current
+        Allow a different mesh for restart data than the one used for current
         computation.
-        @param restart_mesh_path: path to original mesh
         """
 
         self.initRestartModel()
+        self.restartModel.setRestartMeshBehavior('different_mesh')
 
-        self.restartModel.setRestartMeshPath(restart_mesh_path)
-
-        pass
     #---------------------------------------------------------------------------
 
     def removeRestartPath(self):
@@ -459,8 +442,6 @@ class case_setup_filter(object):
         self.initRestartModel()
 
         self.restartModel.setRestartPath(None)
-        self.restartModel.setRestartMeshPath(None)
-        pass
 
     #---------------------------------------------------------------------------
 
@@ -669,10 +650,10 @@ def update_case_model(case, options, pkg, case_name=None):
             restart_path = os.path.join('..', options.RestartRun, case_name, 'checkpoint')
         else:
             restart_path = os.path.join('RESU', options.RestartRun, 'checkpoint')
-        xml_controller.setRestartPath(restart_path, options.DiffRestartMesh)
+        xml_controller.setRestartPath(restart_path)
 
-    if options.DiffRestartMeshPath:
-        xml_controller.setDifferentRestartMesh(options.DiffRestartMeshPath)
+    if options.DiffRestartMesh:
+        xml_controller.setDifferentRestartMesh()
 
 #-------------------------------------------------------------------------------
 # Main function which modifies the case setup based on given argument list

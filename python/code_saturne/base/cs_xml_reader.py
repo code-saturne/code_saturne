@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2024 EDF S.A.
+# Copyright (C) 1998-2026 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -217,12 +217,6 @@ class Parser:
         if sol_domain_node is None:
             return
 
-        # Check whether additionnal preprocessing is done upon restart
-
-        val = getDataFromNode(sol_domain_node, 'preprocess_on_restart')
-        if val in ('yes', 'on'):
-            self.dict['preprocess_on_restart'] = True
-
         # Get mesh_input if available; in this case, no mesh
         # import will be necessary, so we are done.
 
@@ -322,11 +316,11 @@ class Parser:
                     is_restart = True
 
         if sr_node != None:
-            node = getChildNode(sr_node, 'restart_mesh')
-            if node != None:
-                path = str(node.getAttribute('path'))
-                if path:
-                    self.dict['restart_mesh_input'] = path
+            dm_node = getChildNode(sr_node, 'restart_mesh')
+            if dm_node:
+                c = str(dm_node.getAttribute('choice'))
+                if c:
+                    self.dict['restart_mesh_behavior'] = c
 
         node = getChildNode(calc_node, 'partitioning')
         if node != None:

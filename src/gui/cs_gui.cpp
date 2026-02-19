@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -86,6 +86,8 @@
 #include "mesh/cs_partition.h"
 #include "pprt/cs_physical_model.h"
 #include "cdo/cs_property.h"
+#include "base/cs_restart.h"
+#include "base/cs_restart_map.h"
 #include "base/cs_rotation.h"
 #include "base/cs_selector.h"
 #include "base/cs_timer.h"
@@ -2147,6 +2149,11 @@ cs_gui_checkpoint_parameters(void)
 
   cs_time_scheme_t *t_sch = cs_get_glob_time_scheme();
   cs_gui_node_get_child_status_int(tn, "frozen_field", &(t_sch->iccvfg));
+
+  bool dm = false;
+  cs_gui_node_get_child_status_bool(tn, "restart_from_different_mesh", &dm);
+  if (dm)
+    cs_restart_map_set_mesh_input("restart/mesh_input.csm");
 
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);

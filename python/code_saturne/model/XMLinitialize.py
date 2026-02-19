@@ -2081,6 +2081,43 @@ class XMLinit(BaseXmlInit):
         Change XML in order to ensure backward compatibility.
         """
 
+        # Update mesh restart behavior
+
+        pp_on_restart = False
+        restart_different_mesh = False
+
+        node_0 = self.case.xmlGetNode('solution_domain_control')
+        if node_0:
+            n = node_0.xmlGetNode('preprocess_on_restart')
+            if n:
+                if node_0.xmlGetString('preprocess_on_restart') == 'yes':
+                    pp_on_restart = True
+                n.xmlRemoveNode()
+
+        node_0 = self.case.xmlGetNode('calculation_management')
+        if node_0:
+            n = self.case.xmlGetNode('start_restart')
+            if n:
+                n = n.xmlGetNode(n, 'restart_mesh', 'path')
+                if n:
+                    if n['path']:
+                        restart_different_mesh = True
+                    n.xmlRemoveNode()
+
+        if pp_on_restart or restart_different_mesh:
+            choice = None
+            if restart_different_mesh:
+                choice = 'different_mesh'
+            else:
+                choice = 'same_mesh_preprocess'
+            if choice:
+                n = self.case.xmlInitNode('calculation_management')
+                n = n.xmlInitNode('start_restart')
+                n = n.xmlInitNode('restart_mesh', 'choice')
+                n['choice'] = choice
+
+        # Update postprocessing options
+
         XMLAnaControl = self.case.xmlGetNode('analysis_control')
         if XMLAnaControl:
             node_out = XMLAnaControl.xmlGetNode('output')
@@ -2090,6 +2127,8 @@ class XMLinit(BaseXmlInit):
                                               options="png")
                 for n in lst:
                     n['options'] = "svg"
+
+        # Update numerical options
 
         for varNode in self.case.xmlGetNodeList('variable'):
             n = varNode.xmlGetNode("gradient_limiter_factor")

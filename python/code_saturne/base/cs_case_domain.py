@@ -5,7 +5,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2024 EDF S.A.
+# Copyright (C) 1998-2026 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -505,9 +505,9 @@ class domain(base_domain):
 
         # Directories, and files in case structure
 
-        self.restart_input = None
-        self.restart_mesh_input = None
         self.mesh_input = None
+        self.restart_input = None
+        self.restart_mesh_behavior = None
         self.partition_input = None
 
         # Default executable
@@ -522,7 +522,6 @@ class domain(base_domain):
 
         # Solver options
 
-        self.preprocess_on_restart = False
         self.exec_solver = True
 
         if param:
@@ -719,6 +718,44 @@ class domain(base_domain):
 
     # ---------------------------------------------------------------------------
 
+    def __select_restart_mesh__(self, upstream_pending=None):
+        """
+        Return restart mesh input based on restart behavior.
+        Return None if not a restart or restart mesh input is not used
+        """
+
+        assert self.restart_input  # called only in this case
+        restart_mesh_input = None
+
+        # In case of simple restart, update mesh_input
+        if self.restart_mesh_behavior not in ('different_mesh',
+                                              'same_mesh_preprocess'):
+            restart_mesh_input = os.path.join(self.exec_dir,
+                                              'restart',
+                                              'mesh_input.csm')
+            # For 'unmodified' case, always try to use
+            # restart mesh input. If it is not available,
+            # we will have an error.
+
+            # For 'automatic' (or undefined, considered as automatic)
+            if self.restart_mesh_behavior != 'unmodified':
+                if not os.path.exists(restart_mesh_input):
+                    # If mesh is not present in restart:
+                    # - Either restart directory is nonempty, in which case we
+                    #   can consider that the mesh was not saved in the restart
+                    #   and needs to be rebuilt
+                    # - Either restart directory is empty, in which case we can
+                    #   consider that the upstream case had not run yet, and that
+                    #   file will be present when we actually run. We may need to
+                    #   check this hypothesis at the preprocessing stage in case
+                    #   the checkpoint does not contain the mesh at that point.
+                    if not upstream_pending:
+                        restart_mesh_input = None
+
+        return restart_mesh_input
+
+    # ---------------------------------------------------------------------------
+
     def for_domain_str(self):
 
         if self.name is None:
@@ -852,11 +889,10 @@ class domain(base_domain):
             self.solver_path = os.path.join('.', solver)
 
         # In case of simple restart, update mesh_input
-        if self.preprocess_on_restart == False and self.restart_mesh_input == None \
-           and self.restart_input:
-            restart_input_mesh = os.path.join(self.exec_dir, 'restart', 'mesh_input.csm')
-            if os.path.exists(restart_input_mesh):
-                self.mesh_input = restart_input_mesh
+        if self.restart_input:
+            restart_mesh_input = self.__select_restart_mesh__()
+            if restart_mesh_input:
+                self.mesh_input = restart_mesh_input
 
     # ---------------------------------------------------------------------------
 
@@ -1066,7 +1102,7 @@ class domain(base_domain):
                     restart_input = self.__input_path_abs_dir__(restart_input)
 
                 if not os.path.exists(restart_input):
-                    if os.environ['CS_SMGR_ASYNC_PREPARE'] == '1':
+                    if os.getenv('CS_SMGR_ASYNC_PREPARE') == '1':
                         r = os.path.join(restart_input, 'main.csc')
                         upstream_pending = [r]
                     else:
@@ -1087,71 +1123,34 @@ class domain(base_domain):
                         if not os.path.isfile(os.path.join(self.restart_input, 'main')):
                             upstream_pending = [r]
 
-            if self.restart_mesh_input != None and err_str == '':
-
-                restart_mesh_input =  os.path.expanduser(self.restart_mesh_input)
-                if not os.path.isabs(restart_mesh_input):
-                    restart_mesh_input = self.__input_path_abs_dir__(restart_mesh_input)
-
-                if not os.path.exists(restart_mesh_input):
-                    if upstream_pending:
-                        upstream_pending.append(restart_mesh_input)
-                    else:
-                        err_str += restart_mesh_input + ' does not exist.\n\n'
-
-                elif not os.path.isfile(restart_mesh_input):
-                    err_str += restart_mesh_input + ' is not a file.\n\n.'
-
-                if err_str == '':
-                    self.symlink(restart_mesh_input,
-                                 os.path.join(self.exec_dir, 'restart_mesh_input'),
-                                 check_type='allow_future')
-
-                print(' Restart mesh ' + self.restart_mesh_input + '\n')
-
         # Mesh input file
 
-        restart_input_mesh = None
+        restart_mesh_input = None
         if self.restart_input:
-            restart_input_mesh = os.path.join(self.exec_dir, 'restart', 'mesh_input.csm')
-            if not os.path.exists(restart_input_mesh):
-                # If mesh is not present in restart:
-                # - Either restart directory is nonempty, in which case we
-                #   can consider that the mesh was not saved in the restart
-                #   and needs to be rebuilt
-                # - Either restart directory is empty, in which case we can
-                #   consider that the upstream case had not run yet, and that
-                #   file will be present when we actually run. We may need to
-                #   check this hypothesis at the preprocessing stage in case
-                #   the checkpoint does not contain the mesh at that point.
+            restart_mesh_input = self.__select_restart_mesh__(upstream_pending)
+
+        if restart_mesh_input:
+            self.mesh_input = restart_mesh_input
+
+        elif self.mesh_input:
+            mesh_input = os.path.expanduser(self.mesh_input)
+            if not os.path.isabs(mesh_input):
+                mesh_input = self.__input_path_abs_dir__(mesh_input)
+
+            # Differentiate between a folder and file, since we now
+            # have a file extension
+            if os.path.isdir(mesh_input):
+                link_path = os.path.join(self.exec_dir, 'mesh_input')
+            else:
+                link_path = os.path.join(self.exec_dir, 'mesh_input.csm')
+
+            self.purge_result(link_path) # in case of previous run here
+            self.symlink(mesh_input, link_path, check_type='allow_future')
+
+            if not os.path.exists(mesh_input):
                 if not upstream_pending:
-                    restart_input_mesh = None
-
-        if restart_input_mesh is None or self.preprocess_on_restart \
-           or self.restart_mesh_input:
-            if self.mesh_input:
-                mesh_input = os.path.expanduser(self.mesh_input)
-                if not os.path.isabs(mesh_input):
-                    mesh_input = self.__input_path_abs_dir__(mesh_input)
-
-                # Differentiate between a folder and file, since we now
-                # have a file extension
-                if os.path.isdir(mesh_input):
-                    link_path = os.path.join(self.exec_dir, 'mesh_input')
-                else:
-                    link_path = os.path.join(self.exec_dir, 'mesh_input.csm')
-
-                self.purge_result(link_path) # in case of previous run here
-                self.symlink(mesh_input, link_path, check_type='allow_future')
-
-                if not os.path.exists(mesh_input):
-                    if not upstream_pending:
-                        upstream_pending = []
-                    upstream_pending.append(mesh_input)
-
-        else:
-            # use mesh from restart, with no symbolic link
-            self.mesh_input = restart_input_mesh
+                    upstream_pending = []
+                upstream_pending.append(mesh_input)
 
         # Partition input files
 

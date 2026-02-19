@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2024 EDF S.A.
+# Copyright (C) 1998-2026 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -896,9 +896,6 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         # Checkboxes
 
-        self.checkBoxMeshRestart.setChecked(not self.mdl.getPreprocessOnRestart())
-        self.checkBoxMeshRestart.clicked.connect(self.slotMeshRestart)
-
         self.checkBoxMeshSave.setChecked(self.mdl.getMeshSaveOnModify())
         self.checkBoxMeshSave.clicked.connect(self.slotMeshSaveOnModify)
 
@@ -1253,14 +1250,6 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.mdl.delMesh(mesh)
 
         self._tableViewLayout()
-
-
-    @pyqtSlot()
-    def slotMeshRestart(self):
-        """
-        Input if preprocessing should be done on restart or not
-        """
-        self.mdl.setPreprocessOnRestart(not self.checkBoxMeshRestart.isChecked())
 
 
     @pyqtSlot(str)

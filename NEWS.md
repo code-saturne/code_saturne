@@ -22,6 +22,11 @@ Master (not on release branches yet)
 
 ### User changes:
 
+- Restart: selection of further mesh preprocessing behavior and/or
+  restarting from another mesh is now more explicit and consistent.
+  When restarting from another mesh, it should now always be
+  in `restart/mesh_input.csm`.
+
 - Histograms: replace PNG format output option with SVG.
   This allows removing the dependency on Catalyst for this option.
 

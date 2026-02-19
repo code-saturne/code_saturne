@@ -1,7 +1,7 @@
 <!--
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2024 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -152,14 +152,13 @@ choosing which modules to run, either through the GUI or through the
 * When running a follow-up computation (restarted from a previous computation),
   preprocessing in general is avoided, and the `mesh_input.csm` file
   from the previous checkpoint directory is used.
-  This behavior can be modified in the GUI (under "Mesh/Execution mode",
-  un-checking "Use unmodified checkpoint mesh in case of restart",
-  or setting `domain.preprocess_on_restart = True` in `cs_user_scripts.py`).
-  This may be useful in 2 cases:
-  - when the pre-processed mesh has not been saved from a previous run
-    (usually so as to save disk space)
-  - when the computation restarted from used a different mesh than the
-    current one (to which data will be interpolated).
+  This behavior can be modified in the GUI (under "Time settings"/"Start/Restart"/"Mesh",
+  or setting `domain.restart_mesh_behavior` in `cs_user_scripts.py` to one of:
+  - `different_mesh` when the computation restarted from is based on a different
+     mesh than the current one (to which data will be interpolated),
+  - `same_mesh_preprocess` to preprocess the mesh anew instead of reading it
+     from the checkpoint directory when the previous pre-processed mesh
+     was not saved after modification (usually so as to save disk space).
 
 In a similar manner, the Solver accepts several command-line options relative to
 execution mode, notably `domain.solver_args = '--preprocess` or `--quality`,

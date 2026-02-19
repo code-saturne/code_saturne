@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -194,12 +194,20 @@ _check_input_presense(void)
 
       input_present = 0;
 
-      if (_restart_mode != CS_PREPROCESSOR_DATA_RESTART_NONE) {
+      if (   _restart_mode == CS_PREPROCESSOR_DATA_RESTART_AUTO
+          || _restart_mode == CS_PREPROCESSOR_DATA_RESTART_ONLY) {
         if (cs_file_isdir("restart")) {
           if (cs_file_isreg(_cp_input_default))
             input_present = 11;
           else if (cs_file_isreg(_cp_input_default_noext))
             input_present = 12;
+          if (   _restart_mode == CS_PREPROCESSOR_DATA_RESTART_ONLY
+              && input_present == 0) {
+            bft_error(__FILE__, __LINE__, 0,
+                      _("No \"%s\" file or directory found,\n"
+                        "but \"%s\" restart mesh behavior was requested."),
+                      _cp_input_default, "unmodified");
+          }
         }
       }
 
@@ -223,6 +231,8 @@ _check_input_presense(void)
 
     if ((input_present % 100) < 10)
       _restart_mode = CS_PREPROCESSOR_DATA_RESTART_NONE;
+    else if (_restart_mode == CS_PREPROCESSOR_DATA_RESTART_AUTO)
+      _restart_mode = CS_PREPROCESSOR_DATA_RESTART_ONLY;
   }
 }
 

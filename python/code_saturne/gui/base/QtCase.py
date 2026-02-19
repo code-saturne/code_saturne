@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2024 EDF S.A.
+# Copyright (C) 1998-2026 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -52,7 +52,10 @@ from code_saturne.gui.base.QtCore    import *
 #-------------------------------------------------------------------------------
 
 class QtCase(Case, QObject):
-    undo_signal = pyqtSignal()
+    if QT_API in ("PYQT5", "PYQT6"):
+        undo_signal = pyqtSignal()
+    else:
+        undo_signal = Signal()
 
     def __init__(self, package=None, file_name="", studymanager=False):
         """

@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -59,6 +59,8 @@
 #include "mesh/cs_mesh_extrude.h"
 #include "base/cs_parameters.h"
 #include "base/cs_preprocessor_data.h"
+#include "base/cs_restart.h"
+#include "base/cs_restart_map.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -293,31 +295,42 @@ _get_cartesian_parameters(int        idim,
 void
 cs_gui_mesh_restart_mode(void)
 {
-  const char path0[] = "calculation_management/start_restart/restart_mesh/path";
-  const char path1[] = "solution_domain/preprocess_on_restart";
-
-  cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
-
-  if (tn != nullptr) {
-    if (tn->value != nullptr) {
-      cs_preprocessor_data_set_restart_mode(CS_PREPROCESSOR_DATA_RESTART_NONE);
-      return;
-    }
-  }
-
-  tn = cs_tree_get_node(cs_glob_tree, path1);
-  const bool *v = cs_tree_node_get_values_bool(tn);
-  if (v != nullptr) {
-    if (v[0] == true) {
-      cs_preprocessor_data_set_restart_mode
-        (CS_PREPROCESSOR_DATA_RESTART_AND_MODIFY);
-    }
-    else if (v[0] == false) {
-      cs_preprocessor_data_set_restart_mode
-        (CS_PREPROCESSOR_DATA_RESTART_ONLY);
-    }
+  if (cs_restart_present() == 0)
     return;
+
+  cs_preprocessor_data_restart_mode_t mesh_restart_mode
+    = CS_PREPROCESSOR_DATA_RESTART_AUTO;
+
+  /* If restarting from a different mesh, we cannot use the one from the
+     restart directory for the computation. Otherwise, we select
+     that mesh. */
+
+  const char kp[] = "calculation_management/start_restart/restart_mesh";
+
+  const char *choice = nullptr;
+  cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, kp);
+  if (tn != nullptr)
+    choice = cs_gui_node_get_tag(tn, "choice");
+
+  if (choice != nullptr) {
+    const char std_path[] = "restart/mesh_input.csm";
+
+    if (strcmp(choice, "automatic") == 0) {
+      mesh_restart_mode = CS_PREPROCESSOR_DATA_RESTART_AUTO;
+    }
+    else if (strcmp(choice, "unmodified") == 0) {
+      mesh_restart_mode = CS_PREPROCESSOR_DATA_RESTART_ONLY;
+    }
+    else if (strcmp(choice, "different_mesh") == 0) {
+      mesh_restart_mode = CS_PREPROCESSOR_DATA_RESTART_NONE;
+      cs_restart_map_set_mesh_input(std_path);
+    }
+    else if (strcmp(choice, "same_mesh_preprocess") == 0) {
+      mesh_restart_mode = CS_PREPROCESSOR_DATA_RESTART_NONE;
+    }
   }
+
+  cs_preprocessor_data_set_restart_mode(mesh_restart_mode);
 }
 
 /*-----------------------------------------------------------------------------
