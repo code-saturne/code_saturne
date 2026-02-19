@@ -6,7 +6,7 @@
   This file is part of the code_saturne Preprocessor, element of the
   code_saturne CFD tool.
 
-  Copyright (C) 1999-2024 EDF S.A., France
+  Copyright (C) 1999-2026 EDF S.A., France
 
   contact: saturne-support@edf.fr
 
