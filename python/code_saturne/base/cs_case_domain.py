@@ -648,7 +648,10 @@ class domain(base_domain):
                 except Exception:
                     print('checkpoint of result: ' + r + ' does not seem usable')
                     continue
-                self.restart_input = os.path.join(results_dir, r, 'checkpoint')
+                if self.result_dir == self.exec_dir:
+                    self.restart_input = os.path.join('..', r, 'checkpoint')
+                else:
+                    self.restart_input = os.path.join(results_dir, r, 'checkpoint')
                 break
 
         return
@@ -1099,7 +1102,15 @@ class domain(base_domain):
 
                 restart_input =  os.path.expanduser(self.restart_input)
                 if not os.path.isabs(restart_input):
-                    restart_input = self.__input_path_abs_dir__(restart_input)
+                    # Check if relative path is of the ../<run_id>/checkpoint form
+                    standard_relative_form = False
+                    a, b = os.path.split(restart_input)
+                    if b == 'checkpoint':
+                        a = os.path.split(a)[0]
+                        if a == '..':
+                            standard_relative_form = True
+                    if not standard_relative_form:
+                         restart_input = self.__input_path_abs_dir__(restart_input)
 
                 if not os.path.exists(restart_input):
                     if os.getenv('CS_SMGR_ASYNC_PREPARE') == '1':
