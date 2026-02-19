@@ -147,7 +147,7 @@ _cf_div(cs_real_t div[])
   const cs_real_t *viscl = CS_F_(mu)->val;
   const cs_real_t *visct = CS_F_(mu_t)->val;
 
-  cs_field_t *f_viscv = cs_field_by_name_try("volume_viscosity");
+  cs_field_t *f_viscv = cs_field_try("volume_viscosity");
   cs_real_t *cpro_kappa = nullptr;
 
   if (f_viscv != nullptr)
@@ -306,7 +306,6 @@ cs_cf_energy(int f_sc_id)
   const cs_lnum_t n_cells = mesh->n_cells;
   const cs_lnum_t n_i_faces = mesh->n_i_faces;
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
-  const cs_real_t *restrict weight = fvq->weight;
   const cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
   const cs_lnum_t *b_face_cells = mesh->b_face_cells;
   const cs_real_t *b_dist = fvq->b_dist;
@@ -314,9 +313,6 @@ cs_cf_energy(int f_sc_id)
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_rreal_3_t *restrict diipf = fvq->diipf;
   const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
-
-  const int kivisl  = cs_field_key_id("diffusivity_id");
-  const int ksigmas = cs_field_key_id("turbulent_schmidt");
 
   const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
   const cs_real_t cp0 = fluid_props->cp0;
@@ -336,7 +332,7 @@ cs_cf_energy(int f_sc_id)
 
   /* Map field arrays */
 
-  cs_field_t *f_sc = cs_field_by_id(f_sc_id);
+  cs_field_t *f_sc = cs_field(f_sc_id);
   cs_field_t *f_vel = CS_F_(vel);
   cs_field_t *f_pr = CS_F_(p);
   cs_field_t *f_tempk = CS_F_(t);
@@ -376,7 +372,7 @@ cs_cf_energy(int f_sc_id)
     cpro_cp = CS_F_(cp)->val;
 
   if (icv >= 0)
-    cpro_cv = cs_field_by_id(icv)->val;
+    cpro_cv = cs_field(icv)->val;
 
   /* Initialization */
 
@@ -405,16 +401,16 @@ cs_cf_energy(int f_sc_id)
     frace = (cs_real_t *)CS_F_(energy_f)->val;
   }
 
-  int iflmas = cs_field_get_key_int(f_sc, cs_field_key_id("inner_mass_flux_id"));
-  const cs_real_t *i_mass_flux = cs_field_by_id(iflmas)->val;
+  int iflmas = f_sc->get_key_int("inner_mass_flux_id");
+  const cs_real_t *i_mass_flux = cs_field(iflmas)->val;
 
-  int iflmab = cs_field_get_key_int(f_sc, cs_field_key_id("boundary_mass_flux_id"));
-  const cs_real_t *b_mass_flux = cs_field_by_id(iflmab)->val;
+  int iflmab = f_sc->get_key_int("boundary_mass_flux_id");
+  const cs_real_t *b_mass_flux = cs_field(iflmab)->val;
 
-  const int ifcvsl = cs_field_get_key_int(f_sc, kivisl);
+  const int ifcvsl = f_sc->get_key_int("diffusivity_id");
   cs_real_t *viscls = nullptr;
   if (ifcvsl > -1)
-    viscls = cs_field_by_id(ifcvsl)->val;
+    viscls = cs_field(ifcvsl)->val;
 
   /* Source terms */
 
@@ -569,7 +565,7 @@ cs_cf_energy(int f_sc_id)
 
   if (eqp_e->idiff >= 1) {
 
-    const cs_real_t turb_schmidt = cs_field_get_key_double(f_sc, ksigmas);
+    const cs_real_t turb_schmidt = f_sc->get_key_double("turbulent_schmidt");
     const int kvisl0 = cs_field_key_id("diffusivity_ref");
 
     const int n_i_groups = mesh->i_face_numbering->n_groups;
@@ -611,7 +607,7 @@ cs_cf_energy(int f_sc_id)
 
       /* (cp/cv)*mu_t/turb_schmidt+lambda/cv */
       if (ifcvsl < 0) {
-        cs_real_t visls_0 = cs_field_get_key_double(f_sc, kvisl0);
+        cs_real_t visls_0 = f_sc->get_key_double(kvisl0);
         for (cs_lnum_t c_id = s_id; c_id < e_id; c_id++)
           c_viscs_t[c_id] += visls_0;
       }
@@ -744,7 +740,7 @@ cs_cf_energy(int f_sc_id)
       for (cs_lnum_t spe_id = 0; spe_id < n_species_solved; spe_id++) {
 
         const int f_spe_id = cs_glob_gas_mix->species_to_field_id[spe_id];
-        cs_field_t *f_spe = cs_field_by_id(f_spe_id);
+        cs_field_t *f_spe = cs_field(f_spe_id);
         cs_real_t *yk = f_spe->val;
 
         cs_gas_mix_species_prop_t s_k;
@@ -804,7 +800,7 @@ cs_cf_energy(int f_sc_id)
         iddgas = cs_glob_gas_mix->species_to_field_id[n_species_solved];
 
       assert(iddgas > -1);
-      cs_field_t *f_iddgas = cs_field_by_id(iddgas);
+      cs_field_t *f_iddgas = cs_field(iddgas);
       cs_gas_mix_species_prop_t s_k;
       cs_field_get_key_struct(f_iddgas, k_id, &s_k);
 
@@ -911,7 +907,7 @@ cs_cf_energy(int f_sc_id)
       for (cs_lnum_t spe_id = 0; spe_id < n_species_solved; spe_id++) {
 
         const int f_spe_id = cs_glob_gas_mix->species_to_field_id[spe_id];
-        cs_field_t *f_spe = cs_field_by_id(f_spe_id);
+        cs_field_t *f_spe = cs_field(f_spe_id);
 
         cs_real_t *yk = f_spe->val;
         cs_real_t *coefayk = f_spe->bc_coeffs->a;
@@ -966,7 +962,7 @@ cs_cf_energy(int f_sc_id)
         iddgas = cs_glob_gas_mix->species_to_field_id[n_species_solved];
 
       assert(iddgas > -1);
-      cs_field_t *f_iddgas = cs_field_by_id(iddgas);
+      cs_field_t *f_iddgas = cs_field(iddgas);
       cs_gas_mix_species_prop_t s_k;
       cs_field_get_key_struct(f_iddgas, k_id, &s_k);
 

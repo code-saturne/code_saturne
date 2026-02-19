@@ -530,13 +530,11 @@ cs_cf_convective_mass_flux(int  iterns)
 
   /* Mass flux associated to energy */
 
-  int iflmas_e
-    = cs_field_get_key_int(e_tot, cs_field_key_id("inner_mass_flux_id"));
-  cs_real_t *i_mass_flux_e = cs_field_by_id(iflmas_e)->val;
+  int iflmas_e = e_tot->get_key_int("inner_mass_flux_id");
+  cs_real_t *i_mass_flux_e = cs_field(iflmas_e)->val;
 
-  int iflmab_e
-    = cs_field_get_key_int(e_tot, cs_field_key_id("boundary_mass_flux_id"));
-  cs_real_t *b_mass_flux_e = cs_field_by_id(iflmab_e)->val;
+  int iflmab_e = e_tot->get_key_int("boundary_mass_flux_id");
+  cs_real_t *b_mass_flux_e = cs_field(iflmab_e)->val;
 
   cs_real_t *crom = CS_F_(rho)->val;
   const cs_real_t *brom = CS_F_(rho_b)->val;
@@ -580,7 +578,7 @@ cs_cf_convective_mass_flux(int  iterns)
     cpro_cp = CS_F_(cp)->val;
 
   if (icv >= 0)
-    cpro_cv = cs_field_by_id(icv)->val;
+    cpro_cv = cs_field(icv)->val;
 
   /* Computation of the boundary coefficients for the pressure
      gradient recontruction in accordance with the diffusion
@@ -693,7 +691,7 @@ cs_cf_convective_mass_flux(int  iterns)
                 smbrs.data());
 
   cs_field_t *f_divu
-    = cs_field_by_name_try("algo:predicted_velocity_divergence");
+    = cs_field_try("algo:predicted_velocity_divergence");
 
   if (f_divu != nullptr) {
     cs_real_t * cpro_divu = f_divu->val;
@@ -915,7 +913,7 @@ cs_cf_cfl_compute(cs_real_t wcf[]) // before : cfdttv
     cpro_cp = CS_F_(cp)->val;
 
   if (icv >= 0)
-    cpro_cv = cs_field_by_id(icv)->val;
+    cpro_cv = cs_field(icv)->val;
 
   /* Computation of the convective flux associated to the density */
   i_mass_flux.zero(ctx);

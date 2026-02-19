@@ -218,7 +218,7 @@ cs_cf_add_variable_fields(void)
   /* Total energy */
   {
     cs_field_t *f
-      = cs_field_by_id(cs_variable_field_create("total_energy",
+      = cs_field(cs_variable_field_create("total_energy",
                                                 "TotEner",
                                                 CS_MESH_LOCATION_CELLS,
                                                 1));
@@ -227,15 +227,15 @@ cs_cf_add_variable_fields(void)
     cs_field_pointer_map(CS_ENUMF_(e_tot), f);
 
     /* Reference value for diffusivity */
-    cs_field_set_key_int (f, kivisl, -1);
-    cs_field_set_key_double(f, kvisl0, epzero);
+    f->set_key_int(kivisl, -1);
+    f->set_key_double(kvisl0, epzero);
   }
 
   /* Temperature (postprocessing);
      TODO: should be a property, not a variable */
   {
     cs_field_t *f
-      = cs_field_by_id(cs_variable_field_create("temperature",
+      = cs_field(cs_variable_field_create("temperature",
                                                 "TempK",
                                                 CS_MESH_LOCATION_CELLS,
                                                 1));
@@ -244,12 +244,12 @@ cs_cf_add_variable_fields(void)
     /* Map to both temperature and secondary t_kelvin pointers */
     cs_field_pointer_map(CS_ENUMF_(t), f);
     cs_field_pointer_map(CS_ENUMF_(t_kelvin),
-                       cs_field_by_name_try("temperature"));
+                       cs_field_try("temperature"));
 
 
     /* Reference value for conductivity */
-    cs_field_set_key_int (f, kivisl, -1);
-    cs_field_set_key_double(f, kvisl0, epzero);
+    f->set_key_int(kivisl, -1);
+    f->set_key_double(kvisl0, epzero);
   }
 
   /* Mixture fractions (two-phase homogeneous flows) */
@@ -274,7 +274,7 @@ cs_cf_add_variable_fields(void)
 
     for (int idx = 0; idx < 3; idx++) {
       cs_field_t *f
-        = cs_field_by_id(cs_variable_field_create(f_names[idx],
+        = cs_field(cs_variable_field_create(f_names[idx],
                                                   f_labels[idx],
                                                   CS_MESH_LOCATION_CELLS,
                                                   1));
@@ -283,15 +283,15 @@ cs_cf_add_variable_fields(void)
       cs_field_pointer_map(f_pointers[idx], f);
 
       /* Reference value for diffusivity */
-      cs_field_set_key_int (f, kivisl, -1);
-      cs_field_set_key_double(f, kvisl0, epzero);
+      f->set_key_int(kivisl, -1);
+      f->set_key_double(kvisl0, epzero);
 
       /* Pure convection equation */
       cs_equation_param_t *eqp = cs_field_get_equation_param(f);
       eqp->idifft= 0;
 
       /* Set restart file for fractions */
-      cs_field_set_key_int(f, keyrf, CS_RESTART_MAIN);
+      f->set_key_int(keyrf, CS_RESTART_MAIN);
     }
   }
 }
@@ -312,11 +312,11 @@ cs_cf_add_property_fields(void)
 
   const int kivisl = cs_field_key_id("diffusivity_id");
 
-  cs_field_t *f_e_tot = cs_field_by_name("total_energy");
-  int ifcvsl = cs_field_get_key_int(f_e_tot, kivisl);
+  cs_field_t *f_e_tot = cs_field("total_energy");
+  int ifcvsl = f_e_tot->get_key_int(kivisl);
 
   if (ifcvsl < 0 && fp->icv >= 0)
-    cs_field_set_key_int(f_e_tot, kivisl, 0);
+    f_e_tot->set_key_int(kivisl, 0);
 
   /* Property field definitions according to their variability */
 
@@ -331,9 +331,9 @@ cs_cf_add_property_fields(void)
                                     CS_MESH_LOCATION_CELLS,
                                     1,       /* dim */
                                     false);  /* has_previous */
-    cs_field_set_key_int(f, keyvis, 0);
-    cs_field_set_key_int(f, keylog, 0);
-    cs_field_set_key_str(f, klbl, "Cv");
+    f->set_key_int(keyvis, 0);
+    f->set_key_int(keylog, 0);
+    f->set_key_str(klbl, "Cv");
     cs_physical_property_define_from_field(f->name, f->type,
                                            f->location_id, f->dim, false);
     fp->icv = f->id;
@@ -347,9 +347,9 @@ cs_cf_add_property_fields(void)
                                     CS_MESH_LOCATION_CELLS,
                                     1,       /* dim */
                                     false);  /* has_previous */
-    cs_field_set_key_int(f, keyvis, 0);
-    cs_field_set_key_int(f, keylog, 0);
-    cs_field_set_key_str(f, klbl, "Volume_Viscosity");
+    f->set_key_int(keyvis, 0);
+    f->set_key_int(keylog, 0);
+    f->set_key_str(klbl, "Volume_Viscosity");
     cs_physical_property_define_from_field(f->name, f->type,
                                            f->location_id, f->dim, false);
     fp->iviscv = f->id;
@@ -373,14 +373,13 @@ cs_cf_setup(void)
   // TODO check this; should be 1 for temperature unless handled in
   // another manner, which migh be the case using Cv instead of Cp...
 
-  const int kscacp  = cs_field_key_id("is_temperature");
-  cs_field_set_key_int(cs_field_by_name("temperature"), kscacp, 0);
+  cs_field("temperature")->set_key_int("is_temperature", 0);
 
   // Set upwind convection scheme fo all fields
 
   const int n_fields = cs_field_n_fields();
   for (int f_id = 0; f_id < n_fields; f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
+    cs_field_t *f = cs_field(f_id);
     if (   f->type & CS_FIELD_VARIABLE
         && !(f->type & CS_FIELD_CDO)) {
       cs_equation_param_t *eqp = cs_field_get_equation_param(f);
@@ -458,9 +457,9 @@ cs_cf_initialize(void)
 
   const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
   if (fluid_props->icv > -1) {
-    cs_real_t *cpro_cp = cs_field_by_id(fluid_props->icp)->val;
-    cs_real_t *cpro_cv = cs_field_by_id(fluid_props->icv)->val;
-    cs_real_t *mix_mol_mas = cs_field_by_name("mix_mol_mas")->val;
+    cs_real_t *cpro_cp = cs_field(fluid_props->icp)->val;
+    cs_real_t *cpro_cv = cs_field(fluid_props->icv)->val;
+    cs_real_t *mix_mol_mas = cs_field("mix_mol_mas")->val;
 
     cs_cf_thermo_cv(cpro_cp, mix_mol_mas, cpro_cv, cs_glob_mesh->n_cells);
   }
@@ -488,27 +487,27 @@ cs_cf_physical_properties(void)
 
   const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
   const int kivisl  = cs_field_key_id("diffusivity_id");
-  int ifcven = cs_field_get_key_int(CS_F_(e_tot), kivisl);
+  int ifcven = CS_F_(e_tot)->get_key_int(kivisl);
 
   if (ifcven >= 0) {
 
-    cs_real_t *cpro_venerg = cs_field_by_id(ifcven)->val;
+    cs_real_t *cpro_venerg = cs_field(ifcven)->val;
 
-    int ifclam = cs_field_get_key_int(CS_F_(t), kivisl);
+    int ifclam = CS_F_(t)->get_key_int(kivisl);
     if (ifclam >= 0) {
-      const cs_real_t *cpro_lambda = cs_field_by_id(ifclam)->val;
+      const cs_real_t *cpro_lambda = cs_field(ifclam)->val;
       cs_array_real_copy(n_cells, cpro_lambda, cpro_venerg);
     }
     else {
       const int kvisl0 = cs_field_key_id("diffusivity_ref");
-      double visls_0 = cs_field_get_key_double(CS_F_(t), kvisl0);
+      double visls_0 = CS_F_(t)->get_key_double(kvisl0);
       cs_array_real_set_scalar(n_cells, visls_0, cpro_venerg);
     }
 
     if (fluid_props->icv > -1) {
-      cs_real_t *cpro_cp = cs_field_by_id(fluid_props->icp)->val;
-      cs_real_t *cpro_cv = cs_field_by_id(fluid_props->icv)->val;
-      cs_real_t *mix_mol_mas = cs_field_by_name("mix_mol_mas")->val;
+      cs_real_t *cpro_cp = cs_field(fluid_props->icp)->val;
+      cs_real_t *cpro_cv = cs_field(fluid_props->icv)->val;
+      cs_real_t *mix_mol_mas = cs_field("mix_mol_mas")->val;
 
       cs_cf_thermo_cv(cpro_cp, mix_mol_mas, cpro_cv, n_cells);
 
@@ -536,9 +535,9 @@ cs_cf_physical_properties(void)
     // (i.e. after setup logging), which is ugly and risky.
 
     const int kvisl0 = cs_field_key_id("diffusivity_ref");
-    double visls_0 = cs_field_get_key_double(CS_F_(t), kvisl0);
+    double visls_0 = CS_F_(t)->get_key_double(kvisl0);
     visls_0 /= fluid_props->cv0;
-    cs_field_set_key_double(CS_F_(e_tot), kvisl0, visls_0);
+    CS_F_(e_tot)->set_key_double(kvisl0, visls_0);
   }
 }
 
