@@ -376,17 +376,25 @@ public:
   CS_F_HOST_DEVICE
   inline
   bool
-  owner() const
+  is_series_owner() const
   {
-    return (is_owner && id == ns_owner);
+    return (ns_owner == id);
   }
 
   CS_F_HOST_DEVICE
   inline
   bool
-  is_series_owner() const
+  is_part_of_series() const
   {
-    return (ns_owner == id);
+    return (ns_owner > -1);
+  }
+
+  CS_F_HOST_DEVICE
+  inline
+  bool
+  owner() const
+  {
+    return (is_owner && (is_series_owner() || !is_part_of_series()) );
   }
 
   CS_F_HOST_DEVICE

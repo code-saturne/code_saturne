@@ -181,7 +181,7 @@ _realloc_and_update_field_refinement(cs_field_t        *f,
 
   //TODO: Handle grad also as series ?
   cs_real_t **ns_grad = nullptr;
-  if (f->has_sub_fields()) {
+  if (f->is_series_owner()) {
     CS_MALLOC(ns_grad, f->series_size(), cs_real_t *);
     ns_grad[0] = f->grad;
     for (int i = 0; i < cs_field_n_fields(); i++) {
@@ -195,7 +195,7 @@ _realloc_and_update_field_refinement(cs_field_t        *f,
     /* If current field is the owner of a linked series, it handles the
      * the interpolation and resizing for everyone.
      */
-    if (f->has_sub_fields()) {
+    if (f->is_series_owner()) {
       /* temporary deep copy of original data */
       auto old_val_i = f->_ns_vals[i]->get_deep_copy();
 
@@ -331,7 +331,7 @@ _realloc_and_update_field_refinement(cs_field_t        *f,
     }
   }
 
-  if (f->has_sub_fields())
+  if (f->is_series_owner())
     CS_FREE(ns_grad);
 
   /* Update public pointers (vals[x], val & val_pre) */
@@ -361,7 +361,7 @@ _realloc_and_update_field_refinement(cs_field_t        *f,
         || f->id != f_imf->id) {
       for (int i = 0; i < f->n_time_vals; i++) {
         /* Series owner */
-        if (f->has_sub_fields()) {
+        if (f->is_series_owner()) {
           auto f_view_i = f->ns_view(i);
           for (cs_lnum_t sf_id = 0; sf_id < f->series_size(); sf_id++) {
             for (cs_lnum_t n_id = new_idx[0]; n_id < n_new; n_id++) {
@@ -397,7 +397,7 @@ _realloc_and_update_field_refinement(cs_field_t        *f,
       for (int i = 0; i < f->n_time_vals; i++) {
         // TODO: Handling of mass flux should not be based on id but on
         // a specific key (like for interpolation method)
-        if (f->has_sub_fields()) {
+        if (f->is_series_owner()) {
           auto f_view_i = f->ns_view(i);
 
           // Initialisation
@@ -564,7 +564,7 @@ _realloc_and_update_field_coarsening(cs_field_t      *f,
     /* If current field is the owner of a linked series, it handles the
      * the interpolation and resizing for everyone.
      */
-    if (f->has_sub_fields()) {
+    if (f->is_series_owner()) {
       /* temporary deep copy of original data */
       auto old_val_i = f->_ns_vals[i]->get_deep_copy();
 
@@ -825,7 +825,7 @@ _halo_sync
     /* Check if series owner, handle then case for all fields.
      * If not, check if simply owner. Else, nothing to do.
      */
-    if (f->has_sub_fields()) {
+    if (f->is_series_owner()) {
       _halo_sync_series_owner(f, halo);
     }
     else if (f->owner()) {

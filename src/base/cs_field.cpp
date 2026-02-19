@@ -496,7 +496,7 @@ _field_create(const char   *name,
   /* Multidimensional series parameters */
   f->ns_size = 1;
   f->ns_idx  = 0;
-  f->ns_owner = field_id;
+  f->ns_owner = -1;
   f->_ns_vals = nullptr;
 
   /* Mark key values as not set */
@@ -1793,7 +1793,7 @@ cs_field_allocate_values(cs_field_t  *f)
 {
   assert(f != nullptr);
 
-  if (f->is_owner) {
+  if (f->owner()) {
 
     /* Update sizes and pointers' addresses. */
 
@@ -5094,7 +5094,7 @@ cs_field_t::ns_view
 {
   assert(time_id < this->n_time_vals && time_id >= 0);
 
-  if (this->_ns_vals == nullptr && this->ns_owner == this->id)
+  if (this->_ns_vals == nullptr && this->is_series_owner())
     bft_error(__FILE__, __LINE__, 0,
               _("%s: Field \"%s\" is not associated to a multidimensional "
                 "series.\n"),
@@ -5123,7 +5123,7 @@ cs_field_t::get_ns_vals_s
               _("%s: Field \"%s\" is not a scalar and has dimension %d\n"),
               __func__, this->name, this->dim);
 
-  if (this->_ns_vals == nullptr && this->ns_owner == this->id)
+  if (this->_ns_vals == nullptr && this->is_series_owner())
     bft_error(__FILE__, __LINE__, 0,
               _("%s: Field \"%s\" is not associated to a multidimensional "
                 "series.\n"),
@@ -5157,7 +5157,7 @@ cs_field_t::get_ns_vals_v
               _("%s: Field \"%s\" is not a vector and has dimension %d\n"),
               __func__, this->name, this->dim);
 
-  if (this->_ns_vals == nullptr && this->ns_owner == this->id)
+  if (this->_ns_vals == nullptr && this->is_series_owner())
     bft_error(__FILE__, __LINE__, 0,
               _("%s: Field \"%s\" is not associated to a multidimensional "
                 "series.\n"),
@@ -5189,7 +5189,7 @@ cs_field_t::get_ns_vals_t
               _("%s: Field \"%s\" is not a tensor and has dimension %d\n"),
               __func__, this->name, this->dim);
 
-  if (this->_ns_vals == nullptr && this->ns_owner == this->id)
+  if (this->_ns_vals == nullptr && this->is_series_owner())
     bft_error(__FILE__, __LINE__, 0,
               _("%s: Field \"%s\" is not associated to a multidimensional "
                 "series.\n"),
@@ -5266,7 +5266,7 @@ cs_field_t::update_size
     return;
 
   /* Check if we have multi-dimensional arrays or not */
-  if (this->has_sub_fields()) {
+  if (this->is_series_owner()) {
     /* Reallocate all necessary values */
     if (time_id < 0) {
       for (int i = 0; i < this->n_time_vals; i++) {
@@ -5286,7 +5286,7 @@ cs_field_t::update_size
     this->map_to_ns_data();
 
   }
-  else {
+  else if (this->owner()) {
     /* Reallocate all necessary values */
     if (time_id < 0) {
       for (int i = 0; i < this->n_time_vals; i++) {
@@ -5313,7 +5313,7 @@ cs_field_t::clear
   const int time_id
 )
 {
-  if (this->ns_size > 1 && this->owner()) {
+  if (this->is_series_owner()) {
     if (time_id < 0) {
       for (int i = 0; i < this->n_time_vals; i++)
         this->_ns_vals[i]->clear();
@@ -5416,10 +5416,9 @@ cs_field_t::initialize_sub_fields
     }
   }
 
-  /* if no sub-fields exit function */
-  if (n_sub_fields == 0)
-    return;
-
+  /* We allocate the ns_vals array to keep compatibility in case of only
+   * one field in the list...
+   */
   int owner_id = this->id;
 
   this->set_ns_parameters(n_sub_fields + 1,
@@ -5429,6 +5428,10 @@ cs_field_t::initialize_sub_fields
   CS_MALLOC(this->_ns_vals, this->n_time_vals, cs_array_3d<cs_real_t> *);
   for (int i = 0; i < this->n_time_vals; i++)
     this->_ns_vals[i] = new cs_array_3d<cs_real_t>();
+
+  /* if no sub-fields exit function */
+  if (n_sub_fields == 0)
+    return;
 
   for (int i = 0; i < n_sub_fields; i++) {
     int sf_id = sub_fields_idx[i];
@@ -5449,6 +5452,9 @@ cs_field_t::initialize_sub_fields
 void
 cs_field_t::map_to_ns_data()
 {
+  if (!this->is_part_of_series())
+    return;
+
   cs_field_t *ofield = _fields[this->ns_owner];
 
   assert(this->dim == ofield->dim);
