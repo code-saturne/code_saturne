@@ -218,7 +218,7 @@ _add_model_variable(const char  *name,
                     const char  *label)
 {
   int f_id = cs_variable_field_create(name, label, CS_MESH_LOCATION_CELLS, 1);
-  cs_field_t *f = cs_field_by_id(f_id);
+  cs_field_t *f = cs_field(f_id);
 
   cs_add_model_field_indexes(f);
 
@@ -240,11 +240,7 @@ static cs_field_t *
 _add_property_1d(const char  *name,
                  const char  *label)
 {
-  const int keyvis = cs_field_key_id("post_vis");
-  const int keylog = cs_field_key_id("log");
-  const int keylbl = cs_field_key_id("label");
-
-  if (cs_field_by_name_try(name) != nullptr)
+  if (cs_field_try(name) != nullptr)
     cs_parameters_error(CS_ABORT_IMMEDIATE,
                         _("initial data setup"),
                         _("Field %s has already been assigned.\n"),
@@ -257,12 +253,12 @@ _add_property_1d(const char  *name,
                                          false);  // has previous
 
   int f_id = cs_physical_property_field_id_by_name(name);
-  cs_field_t *f = cs_field_by_id(f_id);
+  cs_field_t *f = cs_field(f_id);
 
-  cs_field_set_key_int(f, keyvis, 1);
-  cs_field_set_key_int(f, keylog, 1);
+  f->set_key_int("post_vis", 1);
+  f->set_key_int("log", 1);
   if (label != nullptr)
-    cs_field_set_key_str(f, keylbl, label);
+    f->set_key_str("label", label);
 
   return f;
 }
@@ -624,42 +620,42 @@ cs_combustion_gas_setup(void)
 
   if (macro_type == CS_COMBUSTION_3PT) {
     // Clipping to scamax of the mixture fraction variance.
-    cs_field_set_key_int(cm->fp2m, kclvfl, 2);
+    cm->fp2m->set_key_int(kclvfl, 2);
   }
 
   else if (macro_type == CS_COMBUSTION_SLFM) {
     if (cm->mode_fp2m == 0) {
       // Clipping by max of fm
-      cs_field_set_key_int(cm->fp2m, kclvfl, 1);
+      cm->fp2m->set_key_int(kclvfl, 1);
     }
   }
 
   else if (macro_type == CS_COMBUSTION_LW) {
-    cs_field_set_key_int(cm->fp2m, kclvfl, 0);
-    cs_field_set_key_int(cm->yfp2m, kclvfl, 0);
+    cm->fp2m->set_key_int(kclvfl, 0);
+    cm->yfp2m->set_key_int(kclvfl, 0);
   }
 
   // Physical or numerical values specific to combustion scalars
 
   const int n_fields = cs_field_n_fields();
   for (int f_id = 0; f_id < n_fields; f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
+    cs_field_t *f = cs_field(f_id);
     if (!(f->type & CS_FIELD_VARIABLE))
       continue;
     if (f->type & CS_FIELD_CDO || f->type & CS_FIELD_USER)
       continue;
-    if (cs_field_get_key_int(f, keysca) <= 0)
+    if (f->get_key_int(keysca) <= 0)
       continue;
 
-    int variance_id = cs_field_get_key_int(f, kscavr);
+    int variance_id = f->get_key_int(kscavr);
     if (variance_id <= 0) {
       // We consider that turbulent viscosity domintes. We prohibit
       // the computation of laminar flames with  =/= 1
-      cs_field_set_key_double(f, kvisl0, viscl0);
+      f->set_key_double(kvisl0, viscl0);
     }
 
     // Turbulent Schmidt or Prandtl
-    cs_field_set_key_double(f, ksigmas, 0.7);
+    f->set_key_double(ksigmas, 0.7);
   }
 
   /* Additional information
@@ -942,12 +938,12 @@ cs_combustion_gas_add_variable_fields(void)
   if (cm->type%2 == 1) {
     int f_id = cs_variable_field_create("enthalpy", "Enthalpy",
                                         CS_MESH_LOCATION_CELLS, 1);
-    cs_field_t *f = cs_field_by_id(f_id);
+    cs_field_t *f = cs_field(f_id);
     cs_field_pointer_map(CS_ENUMF_(h), f);
     cs_add_model_field_indexes(f);
 
-    cs_field_set_key_double(f, kscmin, -cs_math_big_r);
-    cs_field_set_key_double(f, kscmax, cs_math_big_r);
+    f->set_key_double(kscmin, -cs_math_big_r);
+    f->set_key_double(kscmax, cs_math_big_r);
 
     /* set thermal model */
     cs_thermal_model_t *thermal = cs_get_glob_thermal_model();
@@ -962,11 +958,11 @@ cs_combustion_gas_add_variable_fields(void)
     {
       // Mixture fraction and its variance
       cm->fm = _add_model_variable("mixture_fraction", "Fra_MEL");
-      cs_field_set_key_double(cm->fm, kscmin, 0.);
-      cs_field_set_key_double(cm->fm, kscmax, 1.);
+      cm->fm->set_key_double(kscmin, 0.);
+      cm->fm->set_key_double(kscmax, 1.);
 
       cm->fp2m = _add_model_variable("mixture_fraction_variance", "Var_FrMe");
-      cs_field_set_key_int(cm->fp2m, kscavr, cm->fm->id);
+      cm->fp2m->set_key_int(kscavr, cm->fm->id);
     }
     break;
 
@@ -979,38 +975,38 @@ cs_combustion_gas_add_variable_fields(void)
 
       // Mixture fraction and its variance
       cm->fm = _add_model_variable("mixture_fraction", "Fra_MEL");
-      cs_field_set_key_double(cm->fm, kscmin, 0.);
-      cs_field_set_key_double(cm->fm, kscmax, 1.);
+      cm->fm->set_key_double(kscmin, 0.);
+      cm->fm->set_key_double(kscmax, 1.);
 
-      cs_field_set_key_int(cm->fm, key_coupled_with_vel_p, 1);
-      cs_field_set_key_int(cm->fm, kivisl, 0);
+      cm->fm->set_key_int(key_coupled_with_vel_p, 1);
+      cm->fm->set_key_int(kivisl, 0);
 
       if (cm->mode_fp2m == 0) {
         cm->fp2m = _add_model_variable("mixture_fraction_variance", "Var_FrMe");
-        cs_field_set_key_int(cm->fp2m, kscavr, cm->fm->id);
-        cs_field_set_key_int(cm->fp2m, key_coupled_with_vel_p, 1);
+        cm->fp2m->set_key_int(kscavr, cm->fm->id);
+        cm->fp2m->set_key_int(key_coupled_with_vel_p, 1);
       }
       else if (cm->mode_fp2m == 1) {
         cm->fsqm = _add_model_variable("mixture_fraction_2nd_moment",
                                        "2nd_Moment_FrMe");
-        cs_field_set_key_double(cm->fsqm, kscmin, 0.);
-        cs_field_set_key_double(cm->fsqm, kscmax, 1.);
-        cs_field_set_key_int(cm->fsqm, key_coupled_with_vel_p, 1);
-        cs_field_set_key_int(cm->fsqm, kivisl, 0);
+        cm->fsqm->set_key_double(kscmin, 0.);
+        cm->fsqm->set_key_double(kscmax, 1.);
+        cm->fsqm->set_key_int(key_coupled_with_vel_p, 1);
+        cm->fsqm->set_key_int(kivisl, 0);
       }
 
       if (CS_F_(h) != nullptr) {
-        cs_field_set_key_int(CS_F_(h), key_coupled_with_vel_p, 1);
-        cs_field_set_key_int(CS_F_(h), kivisl, 0);
+        CS_F_(h)->set_key_int(key_coupled_with_vel_p, 1);
+        CS_F_(h)->set_key_int(kivisl, 0);
       }
 
       // Flamelet/Progress variable model
       if (cm->type%100 >= 2) {
         cm->pvm = _add_model_variable("progress_variable", "Prog_Var");
-        cs_field_set_key_double(cm->pvm, kscmin, 0.);
-        cs_field_set_key_double(cm->pvm, kscmax, cs_math_big_r);
-        cs_field_set_key_int(cm->pvm, key_coupled_with_vel_p, 1);
-        cs_field_set_key_int(cm->pvm, kivisl, 0);
+        cm->pvm->set_key_double(kscmin, 0.);
+        cm->pvm->set_key_double(kscmax, cs_math_big_r);
+        cm->pvm->set_key_int(key_coupled_with_vel_p, 1);
+        cm->pvm->set_key_int(kivisl, 0);
       }
     }
     break;
@@ -1021,15 +1017,15 @@ cs_combustion_gas_add_variable_fields(void)
     {
       // Mass fraction of fresh gas
       cm->ygfm = _add_model_variable("fresh_gas_fraction", "Fra_GF");
-      cs_field_set_key_double(cm->ygfm, kscmin, 0.);
-      cs_field_set_key_double(cm->ygfm, kscmax, 1.);
+      cm->ygfm->set_key_double(kscmin, 0.);
+      cm->ygfm->set_key_double(kscmax, 1.);
 
       // Mixture fraction
       if (   cm->type == CS_COMBUSTION_EBU_VARIABLE_ADIABATIC
           || cm->type == CS_COMBUSTION_EBU_VARIABLE_PERMEATIC) {
         cm->fm = _add_model_variable("mixture_fraction", "Fra_MEL");
-        cs_field_set_key_double(cm->fm, kscmin, 0.);
-        cs_field_set_key_double(cm->fm, kscmax, 1.);
+        cm->fm->set_key_double(kscmin, 0.);
+        cm->fm->set_key_double(kscmax, 1.);
       }
     }
     break;
@@ -1039,24 +1035,24 @@ cs_combustion_gas_add_variable_fields(void)
        ------------------------------------ */
     {
       cm->fm = _add_model_variable("mixture_fraction", "Fra_MEL");
-      cs_field_set_key_double(cm->fm, kscmin, 0.);
-      cs_field_set_key_double(cm->fm, kscmax, 1.);
+      cm->fm->set_key_double(kscmin, 0.);
+      cm->fm->set_key_double(kscmax, 1.);
 
       cm->fp2m = _add_model_variable("mixture_fraction_variance", "Var_FrMe");
-      cs_field_set_key_int(cm->fp2m, kscavr, cm->fm->id);
+      cm->fp2m->set_key_int(kscavr, cm->fm->id);
 
       cm->yfm = _add_model_variable("mass_fraction", "Fra_Mas");
-      cs_field_set_key_double(cm->yfm, kscmin, 0.);
-      cs_field_set_key_double(cm->yfm, kscmax, 1.);
+      cm->yfm->set_key_double(kscmin, 0.);
+      cm->yfm->set_key_double(kscmax, 1.);
 
       cm->yfp2m = _add_model_variable("mass_fraction_variance", "Var_FMa");
-      cs_field_set_key_int(cm->yfp2m, kscavr, cm->yfm->id);
+      cm->yfp2m->set_key_int(kscavr, cm->yfm->id);
 
       if (cm->type%100 >= 2) {
         cs_field_t *f = _add_model_variable("mass_fraction_covariance",
                                             "COYF_PP4");
-        cs_field_set_key_double(f, kscmin, -0.25);
-        cs_field_set_key_double(f, kscmax, 0.25);
+        f->set_key_double(kscmin, -0.25);
+        f->set_key_double(kscmax, 0.25);
       }
     }
     break;
@@ -1076,13 +1072,13 @@ cs_combustion_gas_add_variable_fields(void)
   // Soot mass fraction and precursor number
   if (cm->isoot >= 1) {
     cm->fsm = _add_model_variable("soot_mass_fraction", "Fra_Soot");
-    cs_field_set_key_double(cm->fsm, kscmin, 0.);
-    cs_field_set_key_double(cm->fsm, kscmax, 1.);
+    cm->fsm->set_key_double(kscmin, 0.);
+    cm->fsm->set_key_double(kscmax, 1.);
     cs_field_pointer_map(CS_ENUMF_(fsm), cm->fsm);
 
     cm->npm = _add_model_variable("soot_precursor_number", "NPr_Soot");
-    cs_field_set_key_double(cm->npm, kscmin, 0.);
-    cs_field_set_key_double(cm->npm, kscmax, 1.);
+    cm->npm->set_key_double(kscmin, 0.);
+    cm->npm->set_key_double(kscmax, 1.);
     cs_field_pointer_map(CS_ENUMF_(npm), cm->npm);
   }
 
@@ -1093,12 +1089,12 @@ cs_combustion_gas_add_variable_fields(void)
   const int keysca = cs_field_key_id("scalar_id");
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
+    cs_field_t *f = cs_field(f_id);
     if (!(f->type & CS_FIELD_VARIABLE))
       continue;
     if (f->type & CS_FIELD_CDO || f->type & CS_FIELD_USER)
       continue;
-    if (cs_field_get_key_int(f, keysca) <= 0)
+    if (f->get_key_int(keysca) <= 0)
       continue;
 
     cs_equation_param_t *eqp = cs_field_get_equation_param(f);
@@ -1197,9 +1193,7 @@ cs_combustion_gas_add_property_fields(void)
       cm->ym[CS_COMBUSTION_GAS_MAX_GLOBAL_SPECIES - 1] = f;
 
       // Add restart_file key info
-      cs_field_set_key_int(f,
-                           cs_field_key_id("restart_file"),
-                           CS_RESTART_AUXILIARY);
+      f->set_key_int("restart_file", CS_RESTART_AUXILIARY);
     }
     break;
 

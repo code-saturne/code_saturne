@@ -2265,10 +2265,8 @@ cs_combustion_lw_source_terms(cs_field_t  *f_sc,
       cvara_ep = w1.data();
     }
 
-    const int ksigmas = cs_field_key_id("turbulent_schmidt");
-    const int krvarfl = cs_field_key_id("variance_dissipation");
-    cs_real_t turb_schmidt = cs_field_get_key_double(f_sc, ksigmas);
-    cs_real_t rvarfl = cs_field_get_key_double(f_sc, krvarfl);
+    cs_real_t turb_schmidt = f_sc->get_key_double("turbulent_schmidt");
+    cs_real_t rvarfl = f_sc->get_key_double("variance_dissipation");
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
 

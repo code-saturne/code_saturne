@@ -222,7 +222,7 @@ cs_combustion_boundary_conditions(int  bc_type[])
 
   cs_field_t *f;
 
-  f = cs_field_by_name_try("mixture_fraction");
+  f = cs_field_try("mixture_fraction");
   if (f != nullptr) {
     icodcl_fm = f->bc_coeffs->icodcl;
     rcodcl1_fm = f->bc_coeffs->rcodcl1;
@@ -239,26 +239,26 @@ cs_combustion_boundary_conditions(int  bc_type[])
   }
 
   if (mode_fp2m == 0) {
-    f = cs_field_by_name_try("mixture_fraction_variance");
+    f = cs_field_try("mixture_fraction_variance");
     if (f != nullptr)
       rcodcl1_fp2m_fsqm = f->bc_coeffs->rcodcl1;
   }
   else if (mode_fp2m == 1) {
-    f = cs_field_by_name_try("mixture_fraction_2nd_moment");
+    f = cs_field_try("mixture_fraction_2nd_moment");
     if (f != nullptr)
         rcodcl1_fp2m_fsqm = f->bc_coeffs->rcodcl1;
   }
 
   if (pm_flag[CS_COMBUSTION_SLFM] >= 2) {
-    f = cs_field_by_name_try("progress_variable");
+    f = cs_field_try("progress_variable");
     if (f != nullptr)
       rcodcl1_pvm = f->bc_coeffs->rcodcl1;
   }
 
   if (cm->isoot == 1) {
-    rcodcl1_ifsm = cs_field_by_name("soot_mass_fraction")->bc_coeffs->rcodcl1;
+    rcodcl1_ifsm = cs_field("soot_mass_fraction")->bc_coeffs->rcodcl1;
     rcodcl1_inpm
-      = cs_field_by_name("soot_precursor_number")->bc_coeffs->rcodcl1;
+      = cs_field("soot_precursor_number")->bc_coeffs->rcodcl1;
   }
 
   /* Loop on inlet boundaries
@@ -480,25 +480,25 @@ cs_combustion_boundary_conditions_lw(int  bc_type[])
 
   /* Boundary conditions of mass fraction of fuel */
   cs_real_t *rcodcl1_yfm
-    = cs_field_by_name("mass_fraction")->bc_coeffs->rcodcl1;
+    = cs_field("mass_fraction")->bc_coeffs->rcodcl1;
 
   /* Boundary conditions of mass fraction variance of fuel */
   cs_real_t *rcodcl1_yfp2m
-    = cs_field_by_name("mass_fraction_variance")->bc_coeffs->rcodcl1;
+    = cs_field("mass_fraction_variance")->bc_coeffs->rcodcl1;
 
   /* Boundary conditions of mixture fraction */
   cs_real_t *rcodcl1_fm
-    = cs_field_by_name("mixture_fraction")->bc_coeffs->rcodcl1;
+    = cs_field("mixture_fraction")->bc_coeffs->rcodcl1;
 
   /* Boundary conditions of mixture fraction variance */
   cs_real_t *rcodcl1_fp2m
-    = cs_field_by_name("mixture_fraction_variance")->bc_coeffs->rcodcl1;
+    = cs_field("mixture_fraction_variance")->bc_coeffs->rcodcl1;
 
   /* Boundary conditions for H */
   cs_real_t *rcodcl1_coyfp = nullptr;
   if (lw_model >= 2) {
     rcodcl1_coyfp
-      = cs_field_by_name("mass_fraction_covariance")->bc_coeffs->rcodcl1;
+      = cs_field("mass_fraction_covariance")->bc_coeffs->rcodcl1;
   }
 
   /* Boundary conditions for H */
@@ -628,10 +628,9 @@ cs_combustion_boundary_conditions_density(void)
 
   const cs_real_t *crom = CS_F_(rho)->val;
   cs_real_t *brom = CS_F_(rho_b)->val;
-  const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
-  const int iflmab = cs_field_get_key_int(CS_F_(vel), kbmasf);
+  const int iflmab = CS_F_(vel)->get_key_int("boundary_mass_flux_id");
 
-  cs_real_t *bmasfl = cs_field_by_id(iflmab)->val;
+  cs_real_t *bmasfl = cs_field(iflmab)->val;
 
   /* Mass density on edges for all faces */
 

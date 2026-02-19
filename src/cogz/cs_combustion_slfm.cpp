@@ -1129,11 +1129,11 @@ cs_combustion_slfm_physical_properties(int   iterns)
     int nscapp = 0;
     for (int ii = 0; ii < n_fields; ii++) {
 
-      cs_field_t *f_scal = cs_field_by_id(ii);
+      cs_field_t *f_scal = cs_field(ii);
 
       if (!(f_scal->type & CS_FIELD_VARIABLE))
         continue;
-      if (cs_field_get_key_int(f_scal, keysca) <= 0)
+      if (f_scal->get_key_int(keysca) <= 0)
         continue;
       if (f_scal->type & CS_FIELD_USER)
         continue;
@@ -1146,18 +1146,18 @@ cs_combustion_slfm_physical_properties(int   iterns)
     nscapp = 0;
     for (int i = 0; i < n_fields; i++) {
 
-      cs_field_t *f_scal = cs_field_by_id(i);
+      cs_field_t *f_scal = cs_field(i);
 
       if (!(f_scal->type & CS_FIELD_VARIABLE))
         continue;
-      if (cs_field_get_key_int(f_scal, keysca) <= 0)
+      if (f_scal->get_key_int(keysca) <= 0)
         continue;
       if (f_scal->type & CS_FIELD_USER)
         continue;
 
-      const int ifcvsl = cs_field_get_key_int(f_scal, kivisl);
+      const int ifcvsl = f_scal->get_key_int( kivisl);
       if (ifcvsl > -1)
-        cpro_viscls[nscapp] = cs_field_by_id(ifcvsl)->val;
+        cpro_viscls[nscapp] = cs_field(ifcvsl)->val;
       nscapp += 1;
     }
 
@@ -1179,10 +1179,10 @@ cs_combustion_slfm_physical_properties(int   iterns)
       for (int ig = 0; ig < nwsgg; ig++) {
         f_name[63]='\0';
         snprintf(f_name, 64, "spectral_absorption_coeff_%02d",ig + 1);
-        cpro_kg[ig] = cs_field_by_name(f_name)->val;
+        cpro_kg[ig] = cs_field(f_name)->val;
         f_name[63]='\0';
         snprintf(f_name, 64, "spectral_emission_%02d",ig + 1);
-        cpro_emi[ig] = cs_field_by_name(f_name)->val;
+        cpro_emi[ig] = cs_field(f_name)->val;
       }
     }
 
@@ -1309,19 +1309,17 @@ cs_combustion_scalar_dissipation_rate(const cs_field_t   *f,
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   const cs_real_t *cell_vol = cs_glob_mesh_quantities->cell_vol;
 
-  const int kivisl = cs_field_key_id("diffusivity_id");
-  const int ifcvsl = cs_field_get_key_int(f, kivisl);
+  const int ifcvsl = f->get_key_int("diffusivity_id");
   cs_real_t *cpro_viscls = nullptr;
 
   if (ifcvsl > -1)
-    cpro_viscls = cs_field_by_id(ifcvsl)->val;
+    cpro_viscls = cs_field(ifcvsl)->val;
 
-  const int key_turb_diff = cs_field_key_id("turbulent_diffusivity_id");
-  const int t_dif_id = cs_field_get_key_int(f, key_turb_diff);
+  const int t_dif_id = f->get_key_int("turbulent_diffusivity_id");
   cs_real_t *cpro_turb_diff = nullptr;
 
   if (t_dif_id > -1)
-   cpro_turb_diff = cs_field_by_id(t_dif_id)->val;
+   cpro_turb_diff = cs_field(t_dif_id)->val;
 
   const cs_real_t coef_k = 7.0e-2;
   cs_host_context ctx;
@@ -1494,9 +1492,6 @@ cs_combustion_slfm_source_terms(cs_field_t  *f_sc,
 
   const int *bc_type = cs_glob_bc_type;
 
-  const int kivisl  = cs_field_key_id("diffusivity_id");
-  const int key_turb_diff = cs_field_key_id("turbulent_diffusivity_id");
-
   /* Initialization
      -------------- */
 
@@ -1508,10 +1503,10 @@ cs_combustion_slfm_source_terms(cs_field_t  *f_sc,
   cs_real_t *scal_pre = f_sc->val_pre;
   cs_equation_param_t *eqp_sc = cs_field_get_equation_param(f_sc);
 
-  const int ifcvsl = cs_field_get_key_int(f_sc, kivisl);
+  const int ifcvsl = f_sc->get_key_int("diffusivity_id");
   const cs_real_t *viscls = nullptr;
   if (ifcvsl >= 0)
-    viscls = cs_field_by_id(ifcvsl)->val;
+    viscls = cs_field(ifcvsl)->val;
 
   /* Logging
      ------- */
@@ -1521,15 +1516,15 @@ cs_combustion_slfm_source_terms(cs_field_t  *f_sc,
                   _("Specific physics source terms for the variable %s\n"),
                   f_sc->name);
 
-  cs_field_t *f_recvr = cs_field_by_name_try("reconstructed_fp2m");
+  cs_field_t *f_recvr = cs_field_try("reconstructed_fp2m");
   cs_field_t *f_fp2m = CS_F_(fp2m);
 
   cs_real_t *turb_diff = nullptr;
   if (cs_glob_turb_model->model == 41) {
     /* Retrieve turbulent diffusivity value for the mixture fraction */
-    const int t_dif_id = cs_field_get_key_int(f_fm, key_turb_diff);
+    const int t_dif_id = f_fm->get_key_int("turbulent_diffusivity_id");
     if (t_dif_id > -1)
-      turb_diff = cs_field_by_id(t_dif_id)->val;
+      turb_diff = cs_field(t_dif_id)->val;
 
     /* --- Cuenot et al.:
      * STE: Prod := 0
@@ -1607,7 +1602,7 @@ cs_combustion_slfm_source_terms(cs_field_t  *f_sc,
 
       CS_FREE(grad);
     }
-    else if (f_sc == cs_field_by_name_try("mixture_fraction_2nd_moment")) {
+    else if (f_sc == cs_field_try("mixture_fraction_2nd_moment")) {
 
       cs_real_t *fp2m = f_recvr->val;
 
@@ -1635,8 +1630,8 @@ cs_combustion_slfm_source_terms(cs_field_t  *f_sc,
 
   if (cs_glob_physical_model_flag[CS_COMBUSTION_SLFM] >= 2) {
 
-    if (f_sc == cs_field_by_name_try("progress_variable")) {
-      cs_real_t *omega_c = cs_field_by_name("omega_c")->val;
+    if (f_sc == cs_field_try("progress_variable")) {
+      cs_real_t *omega_c = cs_field("omega_c")->val;
 
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         const cs_real_t cexp = omega_c[c_id];
