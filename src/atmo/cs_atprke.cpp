@@ -241,8 +241,7 @@ _dry_atmosphere(const cs_real_t  cromo[],
   cs_real_t prdtur = 1;
 
   if (f_thm != nullptr) {
-    prdtur = cs_field_get_key_double(f_thm,
-                                     cs_field_key_id("turbulent_schmidt"));
+    prdtur = f_thm->get_key_double("turbulent_schmidt");
   }
 
   /* Allocate work arrays */
@@ -265,8 +264,8 @@ _dry_atmosphere(const cs_real_t  cromo[],
   /* TKE Production by gravity term G */
 
   cs_real_t rho, visct, gravke;
-  cs_field_t *f_tke_buoy = cs_field_by_name_try("tke_buoyancy");
-  cs_field_t *f_beta = cs_field_by_name("thermal_expansion");
+  cs_field_t *f_tke_buoy = cs_field_try("tke_buoyancy");
+  cs_field_t *f_beta = cs_field("thermal_expansion");
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     rho    = cromo[c_id];
@@ -320,11 +319,10 @@ _humid_atmosphere(const cs_real_t  cpro_pcvto[],
   cs_real_t prdtur = 1;
 
   if (f_thm != nullptr) {
-    prdtur = cs_field_get_key_double(f_thm,
-                                     cs_field_key_id("turbulent_schmidt"));
+    prdtur = f_thm->get_key_double("turbulent_schmidt");
   }
 
-  cs_field_t *f_beta = cs_field_by_name("thermal_expansion");
+  cs_field_t *f_beta = cs_field("thermal_expansion");
 
   /* Allocate work arrays */
   cs_real_3_t *grad;
@@ -344,15 +342,15 @@ _humid_atmosphere(const cs_real_t  cpro_pcvto[],
   /* Computation of the gradient of the potentalp_bl temperature */
 
   cs_real_t *cvar_tpp  = f_thm->val;
-  cs_real_t *cvar_qw   = cs_field_by_name("ym_water")->val;
-  cs_real_t *cpro_pcliq = cs_field_by_name("liquid_water")->val;
+  cs_real_t *cvar_qw   = cs_field("ym_water")->val;
+  cs_real_t *cpro_pcliq = cs_field("liquid_water")->val;
 
   /* compute the coefficients etheta,eq */
 
   cs_real_t pphy, dum;
 
-  cs_real_t *diag_neb = cs_field_by_name("nebulosity_diag")->val;
-  cs_real_t *frac_neb = cs_field_by_name("nebulosity_frac")->val;
+  cs_real_t *diag_neb = cs_field("nebulosity_diag")->val;
+  cs_real_t *frac_neb = cs_field("nebulosity_frac")->val;
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
@@ -376,7 +374,7 @@ _humid_atmosphere(const cs_real_t  cpro_pcvto[],
                        cs_glob_time_step->t_cur);
     }
     else {
-      pphy = cs_field_by_name("meteo_pressure")->val[c_id];
+      pphy = cs_field("meteo_pressure")->val[c_id];
     }
 
     _etheq(pphy,
@@ -415,7 +413,7 @@ _humid_atmosphere(const cs_real_t  cpro_pcvto[],
   /* Compute the turbulent production/destruction terms:
    * humid atmo: (1/turb_schmidt*theta_v)*(dtheta_l/dz)*gz */
 
-  cs_field_gradient_scalar(cs_field_by_name("ym_water"),
+  cs_field_gradient_scalar(cs_field("ym_water"),
                            false, // use_previous_t
                            1,    // inc
                            grad);
@@ -486,10 +484,10 @@ cs_atmo_buoyancy_ke_prod(cs_real_t  gk[])
   const cs_time_scheme_t *time_scheme = cs_glob_time_scheme;
 
   if (time_scheme->isto2t > 0) {
-    if (cs_field_get_key_int(CS_F_(rho), key_t_ext_id) > 0) {
+    if (CS_F_(rho)->get_key_int(key_t_ext_id) > 0) {
       cromo = CS_F_(rho)->val_pre;
     }
-    if (cs_field_get_key_int(CS_F_(mu), key_t_ext_id) > 0) {
+    if (CS_F_(mu)->get_key_int(key_t_ext_id) > 0) {
       cpro_pcvto = CS_F_(mu_t)->val_pre;
     }
   }

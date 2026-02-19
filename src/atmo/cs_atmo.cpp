@@ -368,7 +368,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   cs_mesh_t *m = domain->mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
   const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
-  cs_field_t *f = cs_field_by_name(name);
+  cs_field_t *f = cs_field(name);
   cs_equation_param_t *eqp_p = cs_field_get_equation_param(f);
   int f_id = f->id;
   int niterf;
@@ -398,7 +398,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   cs_solving_info_t *sinfo = nullptr;
   int key_sinfo_id = cs_field_key_id("solving_info");
   if (f_id > -1) {
-    f = cs_field_by_id(f_id);
+    f = cs_field(f_id);
     sinfo = (cs_solving_info_t *)cs_field_get_key_struct_ptr(f, key_sinfo_id);
     sinfo->n_it = 0;
   }
@@ -1917,8 +1917,7 @@ cs_mo_compute_from_thermal_diff(cs_real_t   z,
 
   cs_real_t prt = 1.;
   if (CS_F_(t) != nullptr)
-    prt = cs_field_get_key_double(CS_F_(t),
-                                  cs_field_key_id("turbulent_schmidt"));
+    prt = CS_F_(t)->get_key_double("turbulent_schmidt");
 
   /* Call universal functions */
   cs_real_t zref = z+z0;
@@ -2119,7 +2118,7 @@ cs_atmo_fields_init0(void)
     for (int kk = 0; kk < at_chem->n_species_profiles; kk++) {
 
       const int f_id = at_chem->species_profiles_to_field_id[kk];
-      cs_real_t *cvar_despgi = cs_field_by_id(f_id)->val;
+      cs_real_t *cvar_despgi = cs_field(f_id)->val;
 
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
         cvar_despgi[c_id]= cs_intprf(at_chem->n_z_profiles,
@@ -2167,7 +2166,7 @@ cs_atmo_fields_init0(void)
 
       for (int ii = 0; ii < size; ii++) {
         int f_id = at_chem->species_to_field_id[at_chem->n_species + ii];
-        cs_real_t *cvar_sc = cs_field_by_id(f_id)->val;
+        cs_real_t *cvar_sc = cs_field(f_id)->val;
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
           cvar_sc[c_id] = at_chem->dlconc0[ii];
       }
@@ -2196,37 +2195,37 @@ cs_atmo_fields_init0(void)
 
   /* Meteo large scale fields */
   cs_real_3_t *cpro_met_vel = nullptr;
-  cs_field_t *f_met_vel = cs_field_by_name_try("meteo_velocity");
+  cs_field_t *f_met_vel = cs_field_try("meteo_velocity");
   if (f_met_vel != nullptr)
     cpro_met_vel = (cs_real_3_t *) (f_met_vel->val);
 
   cs_real_t *cpro_met_potemp = nullptr;
-  cs_field_t *f_met_potemp = cs_field_by_name_try("meteo_pot_temperature");
+  cs_field_t *f_met_potemp = cs_field_try("meteo_pot_temperature");
   if (f_met_potemp != nullptr)
     cpro_met_potemp = f_met_potemp->val;
 
   cs_real_t *cpro_met_k = nullptr;
-  cs_field_t *f_met_k = cs_field_by_name_try("meteo_tke");
+  cs_field_t *f_met_k = cs_field_try("meteo_tke");
   if (f_met_k != nullptr)
     cpro_met_k = f_met_k->val;
 
   cs_real_t *cpro_met_eps = nullptr;
-  cs_field_t *f_met_eps = cs_field_by_name_try("meteo_eps");
+  cs_field_t *f_met_eps = cs_field_try("meteo_eps");
   if (f_met_eps != nullptr)
     cpro_met_eps = f_met_eps->val;
 
   cs_real_6_t *cpro_met_rij = nullptr;
-  cs_field_t *f_met_rij = cs_field_by_name_try("meteo_rij");
+  cs_field_t *f_met_rij = cs_field_try("meteo_rij");
   if (f_met_rij != nullptr)
     cpro_met_rij = (cs_real_6_t *) (f_met_rij->val);
 
   cs_real_t *cpro_met_qv = nullptr;
-  cs_field_t *f_met_qv = cs_field_by_name_try("meteo_humidity");
+  cs_field_t *f_met_qv = cs_field_try("meteo_humidity");
   if (f_met_qv != nullptr)
     cpro_met_qv = f_met_qv->val;
 
   cs_real_t *cpro_met_nc = nullptr;
-  cs_field_t *f_met_nc = cs_field_by_name_try("meteo_drop_nb");
+  cs_field_t *f_met_nc = cs_field_try("meteo_drop_nb");
   if (f_met_nc != nullptr)
     cpro_met_nc = f_met_nc->val;
 
@@ -2263,8 +2262,8 @@ cs_atmo_fields_init0(void)
   cs_real_t *cvar_totwt = nullptr;
   cs_real_t *cvar_ntdrp = nullptr;
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
-    cvar_totwt = cs_field_by_name("ym_water")->val;
-    cvar_ntdrp = cs_field_by_name("number_of_droplets")->val;
+    cvar_totwt = cs_field("ym_water")->val;
+    cvar_ntdrp = cs_field("number_of_droplets")->val;
   }
 
   if (at_opt->meteo_profile == 0) {
@@ -2459,7 +2458,7 @@ cs_atmo_bcond(void)
   cs_real_t rscp = rair/cp0;
 
   cs_field_t *th_f = cs_thermal_model_field();
-  cs_field_t *ym_w = cs_field_by_name_try("ym_water");
+  cs_field_t *ym_w = cs_field_try("ym_water");
 
   /* Ground atmosphere boundary conditions
    *------------------------------------ */
@@ -2467,9 +2466,9 @@ cs_atmo_bcond(void)
   if (at_opt->ground_model > 0) {
     const cs_zone_t *z = cs_boundary_zone_by_id(at_opt->ground_zone_id);
     const cs_real_t *bvar_tempp
-      = cs_field_by_name("ground_pot_temperature")->val;
+      = cs_field("ground_pot_temperature")->val;
     const cs_real_t *bvar_total_water
-      = cs_field_by_name("ground_total_water")->val;
+      = cs_field("ground_total_water")->val;
 
     for (cs_lnum_t ii = 0; ii < z->n_elts; ii++) {
 
@@ -2599,7 +2598,7 @@ cs_atmo_bcond(void)
 
     if (   at_imbr->cressman_nc
         && cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
-      cs_field_t *f = cs_field_by_name("number_of_droplets");
+      cs_field_t *f = cs_field("number_of_droplets");
       cs_real_t *rcodcl1 = f->bc_coeffs->rcodcl1;
       cs_measures_set_t *ms = cs_measures_set_by_id(at_imbr->id_nc);
       cs_cressman_interpol(ms, rcodcl1, id_type);
@@ -2630,7 +2629,7 @@ cs_atmo_bcond(void)
          (eg, in cs_user_boundary_conditions) */
       for (int ii = 0; ii < at_chem->n_species_profiles; ii++) {
         const int f_id = at_chem->species_to_field_id[ii];
-        cs_field_t *f = cs_field_by_id(f_id);
+        cs_field_t *f = cs_field(f_id);
         if (f->bc_coeffs->rcodcl1[face_id] <= cs_math_infinite_r*0.5)
           continue;
         const cs_real_t xcent = cs_intprf(at_chem->n_z_profiles,
@@ -2648,7 +2647,7 @@ cs_atmo_bcond(void)
        (eg, in cs_user_boundary_conditions) */
       for (int ii = 0; ii < at_chem->n_species; ii++) {
         const int f_id = at_chem->species_to_field_id[ii];
-        cs_field_t *f = cs_field_by_id(f_id);
+        cs_field_t *f = cs_field(f_id);
         if (f->bc_coeffs->rcodcl1[face_id] > cs_math_infinite_r*0.5)
           f->bc_coeffs->rcodcl1[face_id] = 0.0;
       }
@@ -2671,7 +2670,7 @@ cs_atmo_bcond(void)
 
       for (int ii = 0; ii < nlayer_aer*n_aer+n_aer; ii++) {
         const int f_id = at_chem->species_to_field_id[ii];
-        cs_field_t *f = cs_field_by_id(f_id);
+        cs_field_t *f = cs_field(f_id);
         if (f->bc_coeffs->rcodcl1[face_id] > cs_math_infinite_r*0.5)
           f->bc_coeffs->rcodcl1[face_id] = at_chem->dlconc0[ii];
       }
@@ -2680,7 +2679,7 @@ cs_atmo_bcond(void)
          unless they have already been treated earlier */
       for (int ii = 0; ii < nlayer_aer*n_aer+n_aer; ii++) {
         const int f_id = at_chem->species_to_field_id[ii];
-        cs_field_t *f = cs_field_by_id(f_id);
+        cs_field_t *f = cs_field(f_id);
         if (f->bc_coeffs->rcodcl1[face_id] > cs_math_infinite_r*0.5)
           f->bc_coeffs->rcodcl1[face_id] = 0.0;
       }
@@ -2691,7 +2690,7 @@ cs_atmo_bcond(void)
          zero Dirichlet conditions are imposed */
       for (int ii = 0; ii < nespg; ii++) {
         const int f_id = at_chem->species_to_field_id[ii];
-        cs_field_t *f = cs_field_by_id(f_id);
+        cs_field_t *f = cs_field(f_id);
         if (f->bc_coeffs->rcodcl1[face_id] > cs_math_infinite_r*0.5)
           f->bc_coeffs->rcodcl1[face_id] = 0.0;
       }
@@ -2701,7 +2700,7 @@ cs_atmo_bcond(void)
 
   /* Boundary condition for rain phase */
   if (rain == true) {
-    cs_field_t *yr= cs_field_by_name("ym_l_r");
+    cs_field_t *yr= cs_field("ym_l_r");
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
@@ -2741,53 +2740,53 @@ cs_atmo_bcond(void)
   cs_real_t *rcodcl1_qw = nullptr;
   cs_real_t *rcodcl1_nc = nullptr;
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
-    rcodcl1_qw = cs_field_by_name("ym_water")->bc_coeffs->rcodcl1;
-    rcodcl1_nc = cs_field_by_name("number_of_droplets")->bc_coeffs->rcodcl1;
+    rcodcl1_qw = cs_field("ym_water")->bc_coeffs->rcodcl1;
+    rcodcl1_nc = cs_field("number_of_droplets")->bc_coeffs->rcodcl1;
   }
 
   /* Meteo large scale fields */
   cs_real_3_t *cpro_met_vel = nullptr;
-  cs_field_t *f_met_vel = cs_field_by_name_try("meteo_velocity");
+  cs_field_t *f_met_vel = cs_field_try("meteo_velocity");
   if (f_met_vel != nullptr)
     cpro_met_vel = (cs_real_3_t *) (f_met_vel->val);
 
   cs_real_t *cpro_met_potemp = nullptr;
-  cs_field_t *f_met_potemp = cs_field_by_name_try("meteo_pot_temperature");
+  cs_field_t *f_met_potemp = cs_field_try("meteo_pot_temperature");
   if (f_met_potemp != nullptr)
     cpro_met_potemp = f_met_potemp->val;
 
   cs_real_t *cpro_met_p = nullptr;
-  cs_field_t *f_met_p = cs_field_by_name_try("meteo_pressure");
+  cs_field_t *f_met_p = cs_field_try("meteo_pressure");
   if (f_met_p != nullptr)
     cpro_met_p = f_met_p->val;
 
   cs_real_t *cpro_met_rho = nullptr;
-  cs_field_t *f_met_rho = cs_field_by_name_try("meteo_density");
+  cs_field_t *f_met_rho = cs_field_try("meteo_density");
   if (f_met_rho != nullptr)
     cpro_met_rho = f_met_rho->val;
 
   cs_real_t *cpro_met_k = nullptr;
-  cs_field_t *f_met_k = cs_field_by_name_try("meteo_tke");
+  cs_field_t *f_met_k = cs_field_try("meteo_tke");
   if (f_met_k != nullptr)
     cpro_met_k = f_met_k->val;
 
   cs_real_t *cpro_met_eps = nullptr;
-  cs_field_t *f_met_eps = cs_field_by_name_try("meteo_eps");
+  cs_field_t *f_met_eps = cs_field_try("meteo_eps");
   if (f_met_eps != nullptr)
     cpro_met_eps = f_met_eps->val;
 
   cs_real_6_t *cpro_met_rij = nullptr;
-  cs_field_t *f_met_rij = cs_field_by_name_try("meteo_rij");
+  cs_field_t *f_met_rij = cs_field_try("meteo_rij");
   if (f_met_rij != nullptr)
     cpro_met_rij = (cs_real_6_t *) (f_met_rij->val);
 
   cs_real_t *cpro_met_qv = nullptr;
-  cs_field_t *f_met_qv = cs_field_by_name_try("meteo_humidity");
+  cs_field_t *f_met_qv = cs_field_try("meteo_humidity");
   if (f_met_qv != nullptr)
     cpro_met_qv = f_met_qv->val;
 
   cs_real_t *cpro_met_nc = nullptr;
-  cs_field_t *f_met_nc = cs_field_by_name_try("meteo_drop_nb");
+  cs_field_t *f_met_nc = cs_field_try("meteo_drop_nb");
   if (f_met_nc != nullptr)
     cpro_met_nc = f_met_nc->val;
 
@@ -3063,7 +3062,7 @@ cs_atmo_bcond(void)
       cs_real_t *rcodcl1_tf = f_tf->bc_coeffs->rcodcl1;
 
       cs_real_3_t *muptp =
-        (cs_real_3_t *)(cs_field_by_name("meteo_temperature_turbulent_flux")->val);
+        (cs_real_3_t *)(cs_field("meteo_temperature_turbulent_flux")->val);
       for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
         if (   bc_type[face_id] == CS_INLET
@@ -3127,14 +3126,12 @@ cs_atmo_init_meteo_profiles(void)
 
   cs_real_t prt = 1.;
   if (CS_F_(t) != nullptr)
-    prt = cs_field_get_key_double(CS_F_(t),
-                                  cs_field_key_id("turbulent_schmidt"));
+    prt = CS_F_(t)->get_key_double("turbulent_schmidt");
 
   cs_real_t scht = 1.;
-  cs_field_t *f_qw = cs_field_by_name_try("ym_water");
+  cs_field_t *f_qw = cs_field_try("ym_water");
   if (f_qw != nullptr)
-    scht = cs_field_get_key_double(f_qw,
-                                   cs_field_key_id("turbulent_schmidt"));
+    scht = f_qw->get_key_double("turbulent_schmidt");
 
   if (!is_humid)
     aopt->meteo_qwstar = 0.;
@@ -3507,12 +3504,12 @@ cs_atmo_compute_meteo_profiles(void)
   bft_printf(" Computing meteo profiles from large scale meteo data\n\n");
 
   /* Get fields */
-  cs_real_t *cpro_met_potemp = cs_field_by_name("meteo_pot_temperature")->val;
+  cs_real_t *cpro_met_potemp = cs_field("meteo_pot_temperature")->val;
   cs_real_3_t *cpro_met_vel
-    = (cs_real_3_t *) (cs_field_by_name("meteo_velocity")->val);
-  cs_real_t *cpro_met_k = cs_field_by_name("meteo_tke")->val;
-  cs_real_t *cpro_met_eps = cs_field_by_name("meteo_eps")->val;
-  cs_field_t *f_met_qw = cs_field_by_name_try("meteo_humidity");
+    = (cs_real_3_t *) (cs_field("meteo_velocity")->val);
+  cs_real_t *cpro_met_k = cs_field("meteo_tke")->val;
+  cs_real_t *cpro_met_eps = cs_field("meteo_eps")->val;
+  cs_field_t *f_met_qw = cs_field_try("meteo_humidity");
 
   /* Some turbulence constants */
   cs_real_t kappa = cs_turb_xkappa;
@@ -3540,8 +3537,7 @@ cs_atmo_compute_meteo_profiles(void)
   cs_real_t tstar = aopt->meteo_tstar;
   cs_real_t prt = 1.;
   if (CS_F_(t) != nullptr)
-    prt = cs_field_get_key_double(CS_F_(t),
-                                  cs_field_key_id("turbulent_schmidt"));
+    prt = CS_F_(t)->get_key_double("turbulent_schmidt");
 
   /* Humidity field */
 
@@ -3557,7 +3553,7 @@ cs_atmo_compute_meteo_profiles(void)
   cs_real_t *z_ground = nullptr;
   if (aopt->compute_z_ground == true) {
 
-    cs_field_t *f_z_ground = cs_field_by_name("z_ground");
+    cs_field_t *f_z_ground = cs_field("z_ground");
 
     /* Do not recompute in case of restart */
     int nt_loc = cs_glob_time_step->nt_cur - cs_glob_time_step->nt_prev;
@@ -3592,7 +3588,7 @@ cs_atmo_compute_meteo_profiles(void)
 
   /* For DRSM models store Rxz/k */
   cs_real_6_t *cpro_met_rij = nullptr;
-  cs_field_t *f_met_rij = cs_field_by_name_try("meteo_rij");
+  cs_field_t *f_met_rij = cs_field_try("meteo_rij");
   if (f_met_rij != nullptr)
     cpro_met_rij = (cs_real_6_t *) (f_met_rij->val);
 
@@ -3667,10 +3663,9 @@ cs_atmo_compute_meteo_profiles(void)
   cs_parall_min(1, CS_REAL_TYPE, &theta_met_min);
   if (f_met_qw != nullptr) {
     cs_real_t scht = 1.;
-    cs_field_t *f_qw = cs_field_by_name_try("ym_water");
+    cs_field_t *f_qw = cs_field_try("ym_water");
     if (f_qw != nullptr)
-      scht = cs_field_get_key_double(f_qw,
-                                     cs_field_key_id("turbulent_schmidt"));
+      scht = f_qw->get_key_double("turbulent_schmidt");
 
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
       cs_real_t z_grd = 0.;
@@ -3801,14 +3796,12 @@ cs_atmo_z_ground_compute(void)
   const short int *cell_i_faces_sgn = ma->cell_i_faces_sgn;
 
   /* Pointer to z_ground field */
-  cs_field_t *f = cs_field_by_name_try("z_ground");
+  cs_field_t *f = cs_field_try("z_ground");
 
   cs_real_t *restrict i_massflux
-    = cs_field_by_id
-        (cs_field_get_key_int(f, cs_field_key_id("inner_mass_flux_id")))->val;
+    = cs_field(f->get_key_int("inner_mass_flux_id"))->val;
   cs_real_t *restrict b_massflux
-    = cs_field_by_id
-        (cs_field_get_key_int(f, cs_field_key_id("boundary_mass_flux_id")))->val;
+    = cs_field(f->get_key_int("boundary_mass_flux_id"))->val;
 
   cs_equation_param_t *eqp_p = cs_field_get_equation_param(f);
 
@@ -4049,10 +4042,10 @@ cs_atmo_hydrostatic_profiles_compute(void)
   const cs_real_3_t *restrict cell_cen = mq->cell_cen;
 
   cs_physical_constants_t *phys_cst = cs_get_glob_physical_constants();
-  cs_field_t *f = cs_field_by_name("meteo_pressure");
-  cs_field_t *potemp = cs_field_by_name("meteo_pot_temperature");
-  cs_field_t *density = cs_field_by_name("meteo_density");
-  cs_field_t *temp = cs_field_by_name("meteo_temperature");
+  cs_field_t *f = cs_field("meteo_pressure");
+  cs_field_t *potemp = cs_field("meteo_pot_temperature");
+  cs_field_t *density = cs_field("meteo_density");
+  cs_field_t *temp = cs_field("meteo_temperature");
   cs_equation_param_t *eqp_p = cs_field_get_equation_param(f);
   cs_atmo_option_t *aopt = &_atmo_option;
   cs_real_t g = cs_math_3_norm(phys_cst->gravity);

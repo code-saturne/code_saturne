@@ -1591,8 +1591,7 @@ cs_at_opt_interp_compute_analysis(cs_field_t         *f,
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
 
   /* measures set */
-  const int key_ms = cs_field_key_id("measures_set_id");
-  const int ims = cs_field_get_key_int(f, key_ms);
+  const int ims = f->get_key_int("measures_set_id");
   cs_measures_set_t *ms = cs_measures_set_by_id(ims);
 
   cs_real_t *proj = oi->model_to_obs_proj;

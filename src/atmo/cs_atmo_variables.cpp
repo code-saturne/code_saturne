@@ -148,8 +148,8 @@ _gaussian(const cs_mesh_t             *m,
   else if (turb_model->model == CS_TURB_SPALART_ALLMARAS)
     cvar_nusa = CS_F_(nusa)->val;
 
-  cs_real_t *nn = cs_field_by_name("nebulosity_frac")->val;
-  cs_real_t *nebdia = cs_field_by_name("nebulosity_diag")->val;
+  cs_real_t *nn = cs_field("nebulosity_frac")->val;
+  cs_real_t *nebdia = cs_field("nebulosity_diag")->val;
 
   /* Gradients are used for estimating standard
      deviations of the subgrid fluctuations */
@@ -172,7 +172,7 @@ _gaussian(const cs_mesh_t             *m,
   CS_MALLOC_HD(dtlsd, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
   cs_field_gradient_scalar(th_f, true, 1, dtlsd);
-  cs_field_gradient_scalar(cs_field_by_name("ym_water"), true, 1, dqsd);
+  cs_field_gradient_scalar(cs_field("ym_water"), true, 1, dqsd);
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
@@ -325,7 +325,7 @@ cs_atmo_add_variable_fields(void)
                                         "Mass frac rain",
                                         CS_MESH_LOCATION_CELLS,
                                         1);
-    f = cs_field_by_id(f_id);
+    f = cs_field(f_id);
 
     /* Clipping of rain mass fraction 0 <= ym_l_r <=1 */
     cs_field_set_key_double(f, kscmin, 0.e0);
@@ -347,7 +347,7 @@ cs_atmo_add_variable_fields(void)
                                     "Number of rain drops",
                                     CS_MESH_LOCATION_CELLS,
                                     1);
-    f = cs_field_by_id(f_id);
+    f = cs_field(f_id);
     eqp = cs_field_get_equation_param(f);
 
     /* Clipping of rain mass fraction 0 <= ym_l_r <=1 */
@@ -378,7 +378,7 @@ cs_atmo_add_variable_fields(void)
                                         "PotTemp",
                                         CS_MESH_LOCATION_CELLS,
                                         1);
-    cs_field_t *f = cs_field_by_id(f_id);
+    cs_field_t *f = cs_field(f_id);
     cs_field_pointer_map(CS_ENUMF_(t), f);
     cs_add_model_field_indexes(f);
     cs_field_set_key_double(f, kscmin, 0.0);
@@ -394,7 +394,7 @@ cs_atmo_add_variable_fields(void)
                                         "LqPotTmp",
                                         CS_MESH_LOCATION_CELLS,
                                         1);
-    cs_field_t *f = cs_field_by_id(f_id);
+    cs_field_t *f = cs_field(f_id);
     cs_field_pointer_map(CS_ENUMF_(t), f);
     cs_add_model_field_indexes(f);
     cs_field_set_key_double(f, kscmin, 200.0);
@@ -404,7 +404,7 @@ cs_atmo_add_variable_fields(void)
                                     "Ym water",
                                     CS_MESH_LOCATION_CELLS,
                                     1);
-    f = cs_field_by_id(f_id);
+    f = cs_field(f_id);
     cs_add_model_field_indexes(f);
     cs_field_set_key_double(f, kscmin, 0.0);
 
@@ -413,7 +413,7 @@ cs_atmo_add_variable_fields(void)
                                     "TotDrop",
                                     CS_MESH_LOCATION_CELLS,
                                     1);
-    f = cs_field_by_id(f_id);
+    f = cs_field(f_id);
     cs_add_model_field_indexes(f);
     cs_field_set_key_double(f, kscmin, 0.0);
 
@@ -465,7 +465,7 @@ cs_atmo_add_variable_fields(void)
   // Set clippings for gas aerosol species
   if (at_chem->model > 0) {
     for (int ii = 0; ii  < at_chem->n_species; ii++) {
-      cs_field_t *f = cs_field_by_id(at_chem->species_to_field_id[ii]);
+      cs_field_t *f = cs_field(at_chem->species_to_field_id[ii]);
       cs_field_set_key_double(f, kscmin, 0.0);
     }
   }
@@ -474,13 +474,13 @@ cs_atmo_add_variable_fields(void)
     const int n_end
       = at_chem->n_species + at_chem->n_size*(at_chem->n_layer + 1);
     for (int ii = at_chem->n_species; ii < n_end; ii++) {
-      cs_field_t *f = cs_field_by_id(at_chem->species_to_field_id[ii]);
+      cs_field_t *f = cs_field(at_chem->species_to_field_id[ii]);
       cs_field_set_key_double(f, kscmin, 0.0);
     }
     // Allow large aerosol numbers
     const int n_start = at_chem->n_species + at_chem->n_size*at_chem->n_layer;
     for (int ii = n_start; ii < n_end; ii++) {
-      cs_field_t *f = cs_field_by_id(at_chem->species_to_field_id[ii]);
+      cs_field_t *f = cs_field(at_chem->species_to_field_id[ii]);
       cs_field_set_key_double(f, kscmax, 1.0e40);
     }
   }
@@ -573,7 +573,7 @@ cs_atmo_add_property_fields(void)
   /* Temperature for DRY or HUMID */
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > CS_ATMO_CONSTANT_DENSITY) {
 
-    f = cs_field_by_name_try("real_temperature");
+    f = cs_field_try("real_temperature");
     cs_physical_property_define_from_field("real_temperature",
                                            field_type,
                                            CS_MESH_LOCATION_CELLS,
@@ -592,7 +592,7 @@ cs_atmo_add_property_fields(void)
     cs_field_set_key_int(f, keylog, 0);
     cs_field_set_key_str(f, klbl, "Non Neutral Scalar Correction");
 
-    f = cs_field_by_name_try("thermal_expansion");
+    f = cs_field_try("thermal_expansion");
     cs_physical_property_define_from_field("thermal_expansion",
                                            field_type,
                                            CS_MESH_LOCATION_CELLS,
@@ -606,7 +606,7 @@ cs_atmo_add_property_fields(void)
   /* Liquid water content HUMID */
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
 
-    f = cs_field_by_name_try("liquid_water");
+    f = cs_field_try("liquid_water");
     cs_physical_property_define_from_field("liquid_water",
                                            field_type,
                                            CS_MESH_LOCATION_CELLS,
@@ -631,7 +631,7 @@ cs_atmo_add_property_fields(void)
                                              CS_MESH_LOCATION_CELLS,
                                              1,
                                              false);
-      f = cs_field_by_name_try("radiative_cooling");
+      f = cs_field_try("radiative_cooling");
       cs_field_set_key_int(f, keyvis, 1);
       cs_field_set_key_int(f, keylog, 1);
       cs_field_set_key_str(f, klbl, "Radiative cooling");
@@ -643,7 +643,7 @@ cs_atmo_add_property_fields(void)
                                            CS_MESH_LOCATION_CELLS,
                                            1,
                                            false);
-    f = cs_field_by_name_try("nebulosity_frac");
+    f = cs_field_try("nebulosity_frac");
     cs_field_set_key_int(f, keyvis, 1);
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Nebulo frac");
@@ -654,7 +654,7 @@ cs_atmo_add_property_fields(void)
                                            CS_MESH_LOCATION_CELLS,
                                            1,
                                            false);
-    f = cs_field_by_name_try("nebulosity_diag");
+    f = cs_field_try("nebulosity_diag");
     cs_field_set_key_int(f, keyvis, 1);
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Nebulo diag");
@@ -664,7 +664,7 @@ cs_atmo_add_property_fields(void)
                                            CS_MESH_LOCATION_CELLS,
                                            1,
                                            false);
-    f = cs_field_by_name_try("droplet_eq_radius");
+    f = cs_field_try("droplet_eq_radius");
     cs_field_set_key_int(f, keyvis, 1);
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Drop eq radius3");
@@ -785,7 +785,7 @@ cs_atmo_add_property_fields(void)
     cs_field_set_key_int(f, keylog, 1);
     cs_field_set_key_str(f, klbl, "Albedo");
 
-    f = cs_field_by_name_try("emissivity");
+    f = cs_field_try("emissivity");
     if (f == nullptr)
       f = cs_field_create("emissivity",
                           field_type,
@@ -1299,12 +1299,12 @@ cs_atmo_physical_properties_update(void)
   cs_real_t *cpro_met_p = nullptr;
   cs_real_t *cpro_met_rho = nullptr;
 
-  if (cs_field_by_name_try("thermal_expansion") != nullptr)
-    cpro_beta = cs_field_by_name("thermal_expansion")->val;
+  if (cs_field_try("thermal_expansion") != nullptr)
+    cpro_beta = cs_field("thermal_expansion")->val;
 
   if (at_opt->meteo_profile > 1) {
-    cpro_met_p = cs_field_by_name("meteo_pressure")->val;
-    cpro_met_rho = cs_field_by_name("meteo_density")->val;
+    cpro_met_p = cs_field("meteo_pressure")->val;
+    cpro_met_rho = cs_field("meteo_density")->val;
   }
 
   /* This routine computes the density and the thermodynamic temperature.
@@ -1327,12 +1327,12 @@ cs_atmo_physical_properties_update(void)
 
   cs_real_t *cvar_totwt = nullptr, *cpro_liqwt = nullptr;
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
-    cvar_totwt = cs_field_by_name("ym_water")->val;
-    cpro_liqwt = cs_field_by_name("liquid_water")->val;
+    cvar_totwt = cs_field("ym_water")->val;
+    cpro_liqwt = cs_field("liquid_water")->val;
   }
   cs_real_t *crom = CS_F_(rho)->val;
   const cs_real_t *cvar_vart = cs_thermal_model_field()->val;
-  cs_real_t *cpro_tempc = cs_field_by_name("real_temperature")->val;
+  cs_real_t *cpro_tempc = cs_field("real_temperature")->val;
 
   /* From potential temperature, compute:
    * - Temperature in Celsius
@@ -1440,9 +1440,9 @@ cs_atmo_physical_properties_update(void)
     return;
 
   cs_real_t *ym_w = (cs_real_t *)CS_F_(ym_w)->val;     // Water mass fraction
-  cs_real_t *yr = cs_field_by_name_try("ym_l_r")->val;   // Rain mass fraction
-  cs_real_t *rho_h = cs_field_by_name("rho_humid_air")->val; // Humid air density
-  cs_real_t *theta_liq = cs_field_by_name("temperature")->val; // Liq. pot. temp.
+  cs_real_t *yr = cs_field_try("ym_l_r")->val;   // Rain mass fraction
+  cs_real_t *rho_h = cs_field("rho_humid_air")->val; // Humid air density
+  cs_real_t *theta_liq = cs_field("temperature")->val; // Liq. pot. temp.
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     cs_rho_humidair(ym_w[c_id],
@@ -1513,8 +1513,8 @@ cs_atmo_init_variables_1(void)
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
-    const int sc_id = cs_field_get_key_int(f, keysca) - 1;
+    cs_field_t *f = cs_field(f_id);
+    const int sc_id = f->get_key_int(keysca) - 1;
     if (sc_id < 0)
       continue;
     cs_field_set_key_double(f, ksigmas, 0.7);

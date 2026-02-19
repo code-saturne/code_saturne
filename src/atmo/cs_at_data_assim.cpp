@@ -138,7 +138,7 @@ cs_at_data_assim_initialize(void)
   const int n_fields = cs_field_n_fields();
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
+    cs_field_t *f = cs_field(f_id);
 
     /* optimal interpolation can be defined only on variables
        and can not be defined on pressure */
@@ -148,7 +148,7 @@ cs_at_data_assim_initialize(void)
 
     /* Is an optimal interpolation defined for current variable? */
 
-    int oi_id = cs_field_get_key_int(f, key_oi);
+    int oi_id = f->get_key_int(key_oi);
     if (oi_id == -1)
       continue;
 
@@ -232,7 +232,7 @@ cs_at_data_assim_build_ops(void)
   const int n_fields = cs_field_n_fields();
 
   for (int f_id = 0; f_id < n_fields; f_id++) {
-    cs_field_t *f = cs_field_by_id(f_id);
+    cs_field_t *f = cs_field(f_id);
 
     /* optimal interpolation can be defined only on variables
        and can not be defined on pressure */
@@ -242,13 +242,13 @@ cs_at_data_assim_build_ops(void)
 
     /* Is an optimal interpolation defined for current variable? */
 
-    int oi_id = cs_field_get_key_int(f, key_oi);
+    int oi_id = f->get_key_int(key_oi);
     if (oi_id == -1)
       continue;
 
     cs_at_opt_interp_t *oi = cs_at_opt_interp_by_id(oi_id);
 
-    int ms_id = cs_field_get_key_int(f, key_ms);
+    int ms_id = f->get_key_int(key_ms);
     cs_measures_set_t *ms = cs_measures_set_by_id(ms_id);
     cs_lnum_t n_obs = ms->nb_measures;
 
@@ -520,16 +520,16 @@ cs_at_data_assim_source_term(int        f_id,
   const int key_oi = cs_field_key_id("opt_interp_id");
   const int key_oia = cs_field_key_id("opt_interp_analysis_id");
 
-  cs_field_t *f = cs_field_by_id(f_id);
+  cs_field_t *f = cs_field(f_id);
 
-  int ms_id = cs_field_get_key_int(f, key_ms);
+  int ms_id = f->get_key_int(key_ms);
   cs_measures_set_t *ms = cs_measures_set_by_id(ms_id);
 
-  int oi_id = cs_field_get_key_int(f, key_oi);
+  int oi_id = f->get_key_int(key_oi);
   cs_at_opt_interp_t *oi = cs_at_opt_interp_by_id(oi_id);
 
-  int f_oia_id = cs_field_get_key_int(f, key_oia);
-  cs_field_t *f_oia = cs_field_by_id(f_oia_id);
+  int f_oia_id = f->get_key_int(key_oia);
+  cs_field_t *f_oia = cs_field(f_oia_id);
 
   bool nudging = false;
 
