@@ -664,8 +664,6 @@ cs_time_stepping(void)
     if (cs_glob_amr_info->is_set) {
       if (cs_time_control_is_active(&(cs_glob_amr_info->time_control), ts)) {
         cs_adaptive_refinement_step();
-        cs_volume_zone_build_all(true);
-        cs_boundary_zone_build_all(true);
       }
     }
 
