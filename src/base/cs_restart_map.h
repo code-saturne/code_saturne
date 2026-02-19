@@ -74,6 +74,18 @@ cs_restart_map_set_mesh_input(const char  *mesh_path);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Return path of mesh if a restart mapping of restart files to
+ *         a different mesh has been defined, null otherwise.
+ *
+ * \return  path to mapped mesh input file, or null.
+ */
+/*----------------------------------------------------------------------------*/
+
+const char *
+cs_restart_map_get_mesh_input(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set options relative to restart file mapping to a given mesh input.
  *
  * \param[in]  apply_mesh_deformation  apply mesh deformation from upstream
