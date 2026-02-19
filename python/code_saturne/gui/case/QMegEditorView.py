@@ -382,7 +382,7 @@ class QMegEditorView(QDialog, Ui_QMegDialog):
         new_exp = str(self.textEditExpression.toPlainText()) + '\n'
         check = 0
         for func_type in self.meg_to_c.funcs.keys():
-            for k in self.meg_to_c.funcs[func_tqregexype].keys():
+            for k in self.meg_to_c.funcs[func_type].keys():
                 self.meg_to_c.update_block_expression(func_type, k, new_exp)
                 check, err_msg, n_erros = self.meg_to_c.check_meg_code_syntax(func_type)
 
