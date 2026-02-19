@@ -908,7 +908,7 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
   cs_array<cs_real_t> aw(cs_glob_rad_transfer_params->nwsgg);
   cs_array<cs_real_t> kloctmp(cs_glob_rad_transfer_params->nwsgg);
 
-  cs_field_t *f_bound_t = cs_field_by_name_try("boundary_temperature");
+  cs_field_t *f_bound_t = cs_field_try("boundary_temperature");
   cs_real_t *tpfsck = f_bound_t->val;
 
   /* Read the data base files */

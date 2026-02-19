@@ -127,7 +127,7 @@ cs_rad_transfer_source_terms(cs_real_t  rhs[],
     /* Conversion Temperature -> potential Temperature (theta) */
     if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] >= 0) {
       const cs_real_t *pottemp = CS_F_(t)->val;
-      const cs_real_t *tempc = cs_field_by_name("real_temperature")->val;
+      const cs_real_t *tempc = cs_field("real_temperature")->val;
       const cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         cs_real_t cor_factor = pottemp[c_id] / (tempc[c_id] + tkelvi);

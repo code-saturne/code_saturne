@@ -261,9 +261,9 @@ cs_rad_transfer_bcs(int bc_type[])
   /* Map field arrays */
   cs_field_t *f_tempb = CS_F_(t_b);
   cs_field_t *f_qinci = CS_F_(qinci);
-  cs_field_t *f_bxlam  = cs_field_by_name_try("wall_thermal_conductivity");
-  cs_field_t *f_bepa   = cs_field_by_name_try("wall_thickness");
-  cs_field_t *f_beps   = cs_field_by_name_try("emissivity");
+  cs_field_t *f_bxlam  = cs_field_try("wall_thermal_conductivity");
+  cs_field_t *f_bepa   = cs_field_try("wall_thickness");
+  cs_field_t *f_beps   = cs_field_try("emissivity");
 
   /* Call counter  */
   ipacli++;
@@ -317,7 +317,7 @@ cs_rad_transfer_bcs(int bc_type[])
   cs_real_t *th_rcodcl2 = fth->bc_coeffs->rcodcl2;
   cs_real_t *th_rcodcl3 = fth->bc_coeffs->rcodcl3;
 
-  cs_field_t *f_hgas = cs_field_by_name_try("x_c_h");
+  cs_field_t *f_hgas = cs_field_try("x_c_h");
 
   int *hg_icodcl = nullptr;
   cs_real_t *hg_rcodcl1 = nullptr;
@@ -332,8 +332,8 @@ cs_rad_transfer_bcs(int bc_type[])
   }
 
   /* Pointers to specific fields */
-  cs_field_t *f_bfconv = cs_field_by_name_try("rad_convective_flux");
-  cs_field_t *f_bhconv = cs_field_by_name_try("rad_exchange_coefficient");
+  cs_field_t *f_bfconv = cs_field_try("rad_convective_flux");
+  cs_field_t *f_bhconv = cs_field_try("rad_exchange_coefficient");
 
   /* If no restart info is available, then initialization at first pass,
    * for qincid:
@@ -438,8 +438,7 @@ cs_rad_transfer_bcs(int bc_type[])
 
     cs_field_t *tf = cs_thermal_model_field();
     if (tf != nullptr) {
-      const int coupling_key_id = cs_field_key_id("coupling_entity");
-      int coupling_id = cs_field_get_key_int(tf, coupling_key_id);
+      int coupling_id = tf->get_key_int("coupling_entity");
       if (coupling_id >= 0)
         cpl = cs_internal_coupling_by_id(coupling_id);
     }
@@ -1177,7 +1176,7 @@ cs_rad_transfer_bc_coeffs_dom(int                   bc_type[],
   /* Initialization */
 
   /* Pointer to the spectral flux density field */
-  cs_field_t *f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
+  cs_field_t *f_qinspe = cs_field_try("spectral_rad_incident_flux");
 
   cs_real_t *q_incid = nullptr;
   cs_lnum_t stride = 1;
@@ -1186,11 +1185,11 @@ cs_rad_transfer_bc_coeffs_dom(int                   bc_type[],
     stride = f_qinspe->dim;
   }
   else
-    q_incid = cs_field_by_name("rad_incident_flux")->val;
+    q_incid = cs_field("rad_incident_flux")->val;
 
 
   /* Pointer to the wall emissivity field */
-  cs_field_t *f_eps = cs_field_by_name("emissivity");
+  cs_field_t *f_eps = cs_field("emissivity");
 
   /* Wall temperature */
   cs_field_t *f_tempb = CS_F_(t_b);

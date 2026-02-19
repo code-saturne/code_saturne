@@ -523,7 +523,7 @@ cs_rad_transfer_rcfsk(const cs_real_t  *restrict pco2,
 
   /* Determination of the function a for boundary faces  */
 
-  cs_field_t *f_bound_t = cs_field_by_name_try("boundary_temperature");
+  cs_field_t *f_bound_t = cs_field_try("boundary_temperature");
   cs_real_t  *tpfsck    = f_bound_t->val;
   cs_lnum_t  *ifabor = cs_glob_mesh->b_face_cells;
 

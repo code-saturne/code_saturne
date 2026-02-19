@@ -156,7 +156,7 @@ cs_rad_transfer_pun(int                          iband,
   /* Pointer to the spectral flux density field */
   cs_field_t *f_qinspe = nullptr;
   if (cs_glob_rad_transfer_params->imoadf >= 1)
-    f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
+    f_qinspe = cs_field_try("spectral_rad_incident_flux");
 
   cs_field_t *f_qinci = CS_F_(qinci);
   cs_field_t *f_eps = CS_F_(emissivity);

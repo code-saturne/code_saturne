@@ -188,9 +188,9 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
       else
         cpro_temp = CS_FI_(t, 0)->val;
 
-      const cs_real_t *cpro_ym1 = cs_field_by_name("ym_fuel")->val;
-      const cs_real_t *cpro_ym2 = cs_field_by_name("ym_oxyd")->val;
-      const cs_real_t *cpro_ym3 = cs_field_by_name("ym_prod")->val;
+      const cs_real_t *cpro_ym1 = cs_field("ym_fuel")->val;
+      const cs_real_t *cpro_ym2 = cs_field("ym_oxyd")->val;
+      const cs_real_t *cpro_ym3 = cs_field("ym_prod")->val;
 
       const double *restrict wmolg = cm->wmolg;
 
@@ -235,7 +235,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
 
     }
     else { /* if (rt_params->imgrey != 1) */
-      const cs_real_t *cpro_ckabs = cs_field_by_name("kabs")->val;
+      const cs_real_t *cpro_ckabs = cs_field("kabs")->val;
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
         cpro_cak0[cell_id] = cpro_ckabs[cell_id];
     }
@@ -245,10 +245,10 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
 
     cs_coal_model_t  *cm = cs_glob_coal_model;
 
-    cs_real_t *cpro_temp = cs_field_by_name("temperature")->val;
-    cs_real_t *cpro_yco2 = cs_field_by_name("ym_co2")->val;
-    cs_real_t *cpro_yh2o = cs_field_by_name("ym_h2o")->val;
-    cs_real_t *cpro_mmel = cs_field_by_name("xm")->val;
+    cs_real_t *cpro_temp = cs_field("temperature")->val;
+    cs_real_t *cpro_yco2 = cs_field("ym_co2")->val;
+    cs_real_t *cpro_yh2o = cs_field("ym_h2o")->val;
+    cs_real_t *cpro_mmel = cs_field("xm")->val;
 
     const double *restrict wmole = cm->wmole;
     const int ico2 = cm->ico2 - 1;
@@ -303,10 +303,10 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
       int icha = cm->ichcor[icla] - 1;
 
       snprintf(s, 63, "diam_p_%02d", icla+1); s[63] = '\0';
-      cs_real_t *cpro_diam2 = cs_field_by_name(s)->val;
+      cs_real_t *cpro_diam2 = cs_field(s)->val;
 
       snprintf(s, 63, "rho_p_%02d", icla+1); s[63] = '\0';
-      cs_real_t *cpro_rom2 = cs_field_by_name(s)->val;
+      cs_real_t *cpro_rom2 = cs_field(s)->val;
 
       cs_real_t *cpro_cak = CS_FI_(rad_cak, 1 + icla)->val;
 
@@ -378,7 +378,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
         char s[64];
 
         snprintf(s, 63, "x_p_%02d", icla+1); s[63] = '\0';
-        cs_real_t *cpro_x_p = cs_field_by_name(s)->val;  /* property here */
+        cs_real_t *cpro_x_p = cs_field(s)->val;  /* property here */
         cs_real_t *cpro_cak = CS_FI_(rad_cak, 1 + icla)->val;
 
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
@@ -441,9 +441,9 @@ cs_rad_transfer_rcfsk_absorption(const cs_real_t  tempk[],
 
   if (pm_flag[CS_COMBUSTION_3PT] >= 0) {
 
-    const cs_real_t *cpro_ym1 = cs_field_by_name("ym_fuel")->val;
-    const cs_real_t *cpro_ym2 = cs_field_by_name("ym_oxyd")->val;
-    const cs_real_t *cpro_ym3 = cs_field_by_name("ym_prod")->val;
+    const cs_real_t *cpro_ym1 = cs_field("ym_fuel")->val;
+    const cs_real_t *cpro_ym2 = cs_field("ym_oxyd")->val;
+    const cs_real_t *cpro_ym3 = cs_field("ym_prod")->val;
 
     const double *restrict wmolg = cm->wmolg;
 

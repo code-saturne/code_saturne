@@ -406,7 +406,7 @@ _cs_rad_transfer_sol(int                        gg_id,
   /* Total incident radiative flux  */
   cs_field_t *f_qinci = CS_F_(qinci);
 
-  cs_field_t *f_snplus = cs_field_by_name("rad_net_flux");
+  cs_field_t *f_snplus = cs_field("rad_net_flux");
 
   /* Allocate work arrays */
 
@@ -437,16 +437,16 @@ _cs_rad_transfer_sol(int                        gg_id,
   cs_real_t *w0 = nullptr, *g_apc = nullptr;
 
   if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE) {
-    f_up = cs_field_by_name_try("rad_flux_up");
-    f_down = cs_field_by_name_try("rad_flux_down");
+    f_up = cs_field_try("rad_flux_up");
+    f_down = cs_field_try("rad_flux_down");
 
     ck_u_d.reshape(n_cells_ext);
-    ck_u = cs_field_by_name("rad_absorption_coeff_up")->val;
-    ck_d = cs_field_by_name("rad_absorption_coeff_down")->val;
+    ck_u = cs_field("rad_absorption_coeff_up")->val;
+    ck_d = cs_field("rad_absorption_coeff_down")->val;
 
-    w0 = cs_field_by_name("simple_diffusion_albedo")->val;
+    w0 = cs_field("simple_diffusion_albedo")->val;
     /* asymmetry factor for aerosol plus cloud */
-    g_apc = cs_field_by_name("asymmetry_factor")->val;
+    g_apc = cs_field("asymmetry_factor")->val;
   }
 
   cs_real_t vect_s[3];
@@ -518,7 +518,7 @@ _cs_rad_transfer_sol(int                        gg_id,
       || rt_params->imfsck  == 1
       || rt_params->imrcfsk == 1
       || rt_params->atmo_model != CS_RAD_ATMO_3D_NONE)
-    f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
+    f_qinspe = cs_field_try("spectral_rad_incident_flux");
 
   if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_prev + 1)
     _order_by_direction();
@@ -642,7 +642,7 @@ _cs_rad_transfer_sol(int                        gg_id,
           cs_real_t *bpro_eps = nullptr;
           if ( rt_params->atmo_model == CS_RAD_ATMO_3D_NONE
               ||  gg_id == rt_params->atmo_ir_id)
-            bpro_eps = cs_field_by_name("emissivity")->val;
+            bpro_eps = cs_field("emissivity")->val;
 
           if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE)
             cs_rad_transfer_bc_coeffs_dom(bc_type,
@@ -863,7 +863,7 @@ _cs_rad_transfer_sol(int                        gg_id,
 
           /* Flux incident to boundary */
 
-          cs_field_t *f_albedo = cs_field_by_name_try("boundary_albedo");
+          cs_field_t *f_albedo = cs_field_try("boundary_albedo");
           for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
             cs_lnum_t cell_id = cs_glob_mesh->b_face_cells[face_id];
             cs_real_t aa = cs_math_3_dot_product(vect_s, b_face_u_normal[face_id]);
@@ -913,7 +913,7 @@ _cs_rad_transfer_sol(int                        gg_id,
     /* For atmospheric radiation, direct solar produces an incident upward
      * flux for diffuse solar that is equal to albedo times the incident
      * direct solar radiation */
-    cs_field_t *f_albedo = cs_field_by_name_try("boundary_albedo");
+    cs_field_t *f_albedo = cs_field_try("boundary_albedo");
     if (gg_id == rt_params->atmo_dr_id
         && rt_params->atmo_model & CS_RAD_ATMO_3D_DIFFUSE_SOLAR) {
       for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
@@ -954,8 +954,8 @@ _cs_rad_transfer_sol(int                        gg_id,
       }
     }
     else {
-      cs_real_t *cpro_t4m = cs_field_by_name("temperature_4")->val;
-      cs_real_t *cpro_t3m = cs_field_by_name("temperature_3")->val;
+      cs_real_t *cpro_t4m = cs_field("temperature_4")->val;
+      cs_real_t *cpro_t3m = cs_field("temperature_3")->val;
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         int_emi[cell_id] -=   ckg[cell_id] * 4.0 * c_stefan
@@ -1225,7 +1225,7 @@ _rad_transfer_solve(int bc_type[])
   cs_field_t *f_qinsp = nullptr;
   if (   rt_params->imoadf >= 1
       || rt_params->imfsck == 1)
-    f_qinsp = cs_field_by_name("spectral_rad_incident_flux");
+    f_qinsp = cs_field("spectral_rad_incident_flux");
 
   /* Radiation coefficient kgi and corresponding weight agi
      of the i-th grey gas
@@ -1395,8 +1395,8 @@ _rad_transfer_solve(int bc_type[])
   /* Upward/Downward atmospheric integration */
   /* Postprocessing atmospheric upward and downward flux */
   if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE) {
-    cs_field_t *f_up = cs_field_by_name_try("rad_flux_up");
-    cs_field_t *f_down = cs_field_by_name_try("rad_flux_down");
+    cs_field_t *f_up = cs_field_try("rad_flux_up");
+    cs_field_t *f_down = cs_field_try("rad_flux_down");
     cs_field_set_values(f_up, 0.);
     cs_field_set_values(f_down, 0.);
   }
@@ -1408,7 +1408,7 @@ _rad_transfer_solve(int bc_type[])
   if (cs_glob_thermal_model->thermal_variable == CS_THERMAL_MODEL_TEMPERATURE) {
 
     /* val index to access, necessary for compatibility with neptune */
-    cs_field_t *temp_field = cs_field_by_name_try("temperature");
+    cs_field_t *temp_field = cs_field_try("temperature");
     cs_real_t *cvara_scalt;
     if (temp_field != nullptr)
       cvara_scalt = temp_field->vals[1];
@@ -1440,7 +1440,7 @@ _rad_transfer_solve(int bc_type[])
     for (int class_id = 0; class_id < n_classes; class_id++) {
       if (pm_flag[CS_COMBUSTION_COAL] >= 0)
         snprintf(fname, 80, "t_p_%02d", class_id+1);
-      cs_field_t *f_temp2 = cs_field_by_name(fname);
+      cs_field_t *f_temp2 = cs_field(fname);
       cs_lnum_t class_num = class_id + 1;
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         tempk(class_num, cell_id) = f_temp2->val[cell_id];
@@ -1575,7 +1575,7 @@ _rad_transfer_solve(int bc_type[])
     /* Use absorption field if existing */
     char f_name[64];
     snprintf(f_name, 63, "spectral_absorption_%02d", gg_id + 1);
-    cs_field_t *f_abs  = cs_field_by_name_try(f_name);
+    cs_field_t *f_abs  = cs_field_try(f_name);
     if (f_abs != nullptr) {
       int_abso = cs_array<cs_real_t>(f_abs->val, n_cells_ext);
     }
@@ -1607,8 +1607,8 @@ _rad_transfer_solve(int bc_type[])
 
     /* atmospheric model (Direct Solar, diFuse Solar, Ifra Red) */
     else {
-      cs_real_t *ck_u = cs_field_by_name("rad_absorption_coeff_up")->val;
-      cs_real_t *ck_d = cs_field_by_name("rad_absorption_coeff_down")->val;
+      cs_real_t *ck_u = cs_field("rad_absorption_coeff_up")->val;
+      cs_real_t *ck_d = cs_field("rad_absorption_coeff_down")->val;
 
       cs_real_t ckumax = 0.0;
 
@@ -1656,7 +1656,7 @@ _rad_transfer_solve(int bc_type[])
     }
 
     snprintf(f_name, 63, "spectral_emission_%02d", gg_id + 1);
-    cs_field_t *f_emi = cs_field_by_name_try(f_name);
+    cs_field_t *f_emi = cs_field_try(f_name);
 
     /* P-1 radiation model
        ------------------- */
@@ -1677,7 +1677,7 @@ _rad_transfer_solve(int bc_type[])
 
         cs_real_t *cpro_cak = CS_FI_(rad_cak, class_id+1)->val;
         snprintf(fname, 80, "x_p_%02d", class_id+1);
-        cs_field_t *f_x2 = cs_field_by_name(fname);
+        cs_field_t *f_x2 = cs_field(fname);
 
         cs_lnum_t class_num = class_id + 1;
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
@@ -1698,7 +1698,7 @@ _rad_transfer_solve(int bc_type[])
         cs_real_t *cpro_cak = CS_FI_(rad_cak, class_id+1)->val;
 
         snprintf(fname, 80, "x_p_%02d", class_id + 1);
-        cs_field_t *f_x2 = cs_field_by_name(fname);
+        cs_field_t *f_x2 = cs_field(fname);
 
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
           rovsdt[cell_id] +=  3.0 * f_x2->val[cell_id] * cpro_cak[cell_id]
@@ -1716,7 +1716,7 @@ _rad_transfer_solve(int bc_type[])
         cs_real_t *cpro_cak = CS_FI_(rad_cak, class_id+1)->val;
 
         snprintf(fname, 80, "x_p_%02d", class_id + 1);
-        cs_field_t *f_x2 = cs_field_by_name(fname);
+        cs_field_t *f_x2 = cs_field(fname);
 
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
           ckmix[cell_id] += f_x2->val[cell_id] * cpro_cak[cell_id];
@@ -1742,7 +1742,7 @@ _rad_transfer_solve(int bc_type[])
 
       cs_rad_transfer_bc_coeffs_p1(bc_type,
                                    ckmix.data(),
-                                   cs_field_by_name("emissivity")->val,
+                                   cs_field("emissivity")->val,
                                    w_gg.data(),   gg_id,
                                    bc_coeffs_rad);
       /* Solving */
@@ -1776,8 +1776,8 @@ _rad_transfer_solve(int bc_type[])
         }
       }
       else {
-        const cs_real_t *cpro_t4m = cs_field_by_name("temperature_4")->val;
-        const cs_real_t *cpro_t3m = cs_field_by_name("temperature_3")->val;
+        const cs_real_t *cpro_t4m = cs_field("temperature_4")->val;
+        const cs_real_t *cpro_t3m = cs_field("temperature_3")->val;
 
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
           int_emi[cell_id] =   -4.0 * ckg[cell_id]
@@ -1805,7 +1805,7 @@ _rad_transfer_solve(int bc_type[])
 
           snprintf(f_name, 63, "spectral_absorption_%02d",
                    rt_params->atmo_dr_id + 1);
-          cs_field_t *f_abs_dr = cs_field_by_name_try(f_name);
+          cs_field_t *f_abs_dr = cs_field_try(f_name);
           /* Emission initialized by direct absorption S0
            * Note: radiance is "1/(2pi) * direct flux"
            * */
@@ -1816,7 +1816,7 @@ _rad_transfer_solve(int bc_type[])
 
           snprintf(f_name, 63, "spectral_absorption_%02d",
                    rt_params->atmo_dr_o3_id + 1);
-          cs_field_t *f_abs_dr = cs_field_by_name_try(f_name);
+          cs_field_t *f_abs_dr = cs_field_try(f_name);
           /* Emission initialized by direct absorption S0 * dtau/dz */
           for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
             f_emi->val[cell_id] = 0.5 * f_abs_dr->val[cell_id] * onedpi;
@@ -1836,7 +1836,7 @@ _rad_transfer_solve(int bc_type[])
                                     * onedpi;
       }
       else {
-        cs_real_t *cpro_t4m = cs_field_by_name("temperature_4")->val;
+        cs_real_t *cpro_t4m = cs_field("temperature_4")->val;
 
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
           rhs[cell_id] =  c_stefan * ckg[cell_id]
@@ -1853,7 +1853,7 @@ _rad_transfer_solve(int bc_type[])
 
         cs_real_t *cpro_cak = CS_FI_(rad_cak, class_id+1)->val;
         snprintf(fname, 80, "x_p_%02d", class_id+1);
-        cs_field_t *f_x2 = cs_field_by_name(fname);
+        cs_field_t *f_x2 = cs_field(fname);
 
         cs_lnum_t class_num = class_id + 1;
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
@@ -1877,7 +1877,7 @@ _rad_transfer_solve(int bc_type[])
         cs_real_t *cpro_cak = CS_FI_(rad_cak, class_id+1)->val;
 
         snprintf(fname, 80, "x_p_%02d", class_id + 1);
-        cs_field_t *f_x2 = cs_field_by_name(fname);
+        cs_field_t *f_x2 = cs_field(fname);
 
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
           rovsdt[cell_id] +=   f_x2->val[cell_id]
@@ -1893,7 +1893,7 @@ _rad_transfer_solve(int bc_type[])
       if (!(rt_params->save_radiance_dir))
         cs_rad_transfer_bc_coeffs_dom(bc_type,
                                       nullptr, /*no specific direction */
-                                      cs_field_by_name("emissivity")->val,
+                                      cs_field("emissivity")->val,
                                       w_gg.data()  , gg_id,
                                       bc_coeffs_rad);
 
@@ -1931,7 +1931,7 @@ _rad_transfer_solve(int bc_type[])
       cs_real_t *cpro_cak = CS_FI_(rad_cak, class_id+1)->val;
 
       snprintf(fname, 80, "x_p_%02d", class_id + 1);
-      cs_field_t *f_x2 = cs_field_by_name(fname);
+      cs_field_t *f_x2 = cs_field(fname);
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         /* Absorption of particles is added to absom */
@@ -1974,7 +1974,7 @@ _rad_transfer_solve(int bc_type[])
       cs_real_t *cpro_emi  = CS_FI_(rad_emi, class_num)->val;
       cs_real_t *cpro_stri = CS_FI_(rad_ist, class_num)->val;
       snprintf(fname, 80, "x_p_%02d", class_num);
-      cs_field_t *f_x2 = cs_field_by_name(fname);
+      cs_field_t *f_x2 = cs_field(fname);
 
       cs_real_t cp2 = 1.;
       if (pm_flag[CS_COMBUSTION_COAL] >= 0)
@@ -2306,8 +2306,7 @@ _rad_transfer_solve(int bc_type[])
 
     cs_field_t *tf = cs_thermal_model_field();
     if (tf != nullptr) {
-      const int coupling_key_id = cs_field_key_id("coupling_entity");
-      int coupling_id = cs_field_get_key_int(tf, coupling_key_id);
+      int coupling_id = tf->get_key_int("coupling_entity");
       if (coupling_id >= 0)
         cpl = cs_internal_coupling_by_id(coupling_id);
     }
@@ -2384,8 +2383,8 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
 
   /* ADF model parameters */
   /* Irradiating spectral flux density */
-  cs_field_t *f_qinsp = cs_field_by_name("spectral_rad_incident_flux");
-  cs_real_t *tempk = cs_field_by_name("temperature")->val;
+  cs_field_t *f_qinsp = cs_field("spectral_rad_incident_flux");
+  cs_real_t *tempk = cs_field("temperature")->val;
 
   /* Radiation coefficient kgi and corresponding weight agi
      of the i-th grey gas
@@ -2520,8 +2519,8 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
   /* Upward/Downward atmospheric integration */
   /* Postprocessing atmospheric upward and downward flux */
   if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE) {
-    cs_field_t *f_up   = cs_field_by_name_try("rad_flux_up");
-    cs_field_t *f_down = cs_field_by_name_try("rad_flux_down");
+    cs_field_t *f_up   = cs_field_try("rad_flux_up");
+    cs_field_t *f_down = cs_field_try("rad_flux_down");
     cs_field_set_values(f_up, 0.);
     cs_field_set_values(f_down, 0.);
   }
@@ -2535,7 +2534,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
     for (int gg_id = 0; gg_id < nwsgg; gg_id++) {
       char f_name[64];
       snprintf(f_name, 63, "spectral_absorption_coeff_%02d", gg_id + 1);
-      cs_field_t *f_kgabs = cs_field_by_name_try(f_name);
+      cs_field_t *f_kgabs = cs_field_try(f_name);
 
       if (f_kgabs != nullptr)
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
@@ -2549,7 +2548,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
 
 
   cs_real_t *cpro_t4m = nullptr;
-  cs_field_t *f_t4m =  cs_field_by_name_try("temperature_4");
+  cs_field_t *f_t4m =  cs_field_try("temperature_4");
 
   if (f_t4m != nullptr)
     cpro_t4m = f_t4m->val;
@@ -2562,7 +2561,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
     /* Use absorption field if existing */
     char f_name[64];
     snprintf(f_name, 63, "spectral_absorption_%02d", gg_id + 1);
-    cs_field_t *f_abs = cs_field_by_name_try(f_name);
+    cs_field_t *f_abs = cs_field_try(f_name);
 
     if (f_abs != nullptr) {
       int_abso = cs_array<cs_real_t>(f_abs->val, n_cells_ext);
@@ -2578,7 +2577,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
       rovsdt[cell_id] = ckg[cell_id] * cell_vol[cell_id];
 
     snprintf(f_name, 63, "spectral_emission_%02d", gg_id + 1);
-    cs_field_t *f_emi = cs_field_by_name_try(f_name);
+    cs_field_t *f_emi = cs_field_try(f_name);
 
     /* -> Gas phase: Explicit source term of the ETR */
     if (pm_flag[CS_COMBUSTION_SLFM] >= 0) {
@@ -2607,7 +2606,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
      * afterwards */
     cs_rad_transfer_bc_coeffs_dom(bc_type,
                                   nullptr, /*no specific direction */
-                                  cs_field_by_name("emissivity")->val,
+                                  cs_field("emissivity")->val,
                                   w_gg.data(),
                                   gg_id,
                                   bc_coeffs_rad);
@@ -2786,8 +2785,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
 
     cs_field_t *tf = cs_thermal_model_field();
     if (tf != nullptr) {
-      const int coupling_key_id = cs_field_key_id("coupling_entity");
-      int       coupling_id     = cs_field_get_key_int(tf, coupling_key_id);
+      int coupling_id = tf->get_key_int("coupling_entity");
       if (coupling_id >= 0)
         cpl = cs_internal_coupling_by_id(coupling_id);
     }
