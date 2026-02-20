@@ -81,7 +81,7 @@ class BoundaryConditionsFractionView(QWidget, Ui_BoundaryConditionsFraction) :
 
         # Connections
         self.lineEditFraction.textChanged[str].connect(self.__slotFraction)
-        self.comboBoxFraction.activated[str].connect(self.__slotChoiceFraction)
+        self.comboBoxFraction.activated[int].connect(self.__slotChoiceFraction)
 
         validatorFraction = DoubleValidator(self.lineEditFraction, min = 0., max = 1.)
         validatorFraction.setExclusiveMin(False)
@@ -140,11 +140,12 @@ class BoundaryConditionsFractionView(QWidget, Ui_BoundaryConditionsFraction) :
             self.__boundary.setFraction(self.__currentField, value)
 
 
-    @Slot(str)
-    def __slotChoiceFraction(self, text):
+    @Slot(int)
+    def __slotChoiceFraction(self, idx):
         """
         INPUT choice of method of calculation of fraction for outlet
         """
+        text = self.comboBoxFraction.currentText()
         fraction_choice = self.__modelFraction.dicoV2M[str(text)]
         self.__boundary.setFractionChoice(self.__currentField, fraction_choice)
 

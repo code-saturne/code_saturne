@@ -98,7 +98,7 @@ class NameDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         self.old_pname = str(value)
         editor.setText(value)
 
@@ -130,7 +130,7 @@ class NameDelegate(QItemDelegate):
                 else:
                     new_pname = self.old_pname
 
-            model.setData(index, str(new_pname), Qt.DisplayRole)
+            model.setData(index, str(new_pname), Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -176,7 +176,7 @@ class GGDHDelegate(QItemDelegate):
     def setModelData(self, comboBox, model, index):
         txt = str(comboBox.currentText())
         value = self.modelCombo.dicoV2M[txt]
-        model.setData(index, value, Qt.DisplayRole)
+        model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -205,7 +205,7 @@ class VarianceNameDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         self.old_pname = str(value)
         editor.setText(value)
 
@@ -234,7 +234,7 @@ class VarianceNameDelegate(QItemDelegate):
                 else:
                     new_pname = self.old_pname
 
-            model.setData(index, str(new_pname), Qt.DisplayRole)
+            model.setData(index, str(new_pname), Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -259,7 +259,7 @@ class VarianceDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole),
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole),
                               to_text_string)
         if value in index.model().mdl.getGasCombScalarsNameList():
             self.modelCombo.addItem(value, value)
@@ -277,7 +277,7 @@ class VarianceDelegate(QItemDelegate):
     def setModelData(self, comboBox, model, index):
         txt = str(comboBox.currentText())
         value = self.modelCombo.dicoV2M[txt]
-        model.setData(index, value, Qt.DisplayRole)
+        model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -308,7 +308,7 @@ class StandardItemModelScalars(QStandardItemModel):
         row = index.row()
         col = index.column()
 
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return self._data[row][col]
 
         return None
@@ -318,21 +318,21 @@ class StandardItemModelScalars(QStandardItemModel):
         # first variable if thermal scalar
         if self.mdl.getThermalScalarName():
             if index.row() == 0 and index.column() == 0 :
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         if not index.isValid():
-            return Qt.ItemIsEnabled
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemFlag.ItemIsEnabled
+        return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
 
     def setData(self, index, value, role):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         # Update the row in the table
         row = index.row()
@@ -438,7 +438,7 @@ class StandardItemModelVariance(QStandardItemModel):
         row = index.row()
         col = index.column()
 
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return self._data[row][col]
 
         return None
@@ -446,19 +446,19 @@ class StandardItemModelVariance(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemFlag.ItemIsEnabled
+        return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
 
     def setData(self, index, value, role):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         # Update the row in the table
         row = index.row()

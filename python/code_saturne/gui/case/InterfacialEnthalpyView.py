@@ -214,14 +214,14 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         self.comboBoxLiquidVaporFields.currentTextChanged[str].connect(self.slotSelectInteraction)
         self.comboBoxSolidEnergyTransfer.currentTextChanged[str].connect(self.slotSolidEnergyTransfer)
         self.comboBoxFieldaModel.currentTextChanged[str].connect(self.slotFieldaModel)
-        self.comboBoxPonderationCoefFielda.activated[str].connect(self.slotPonderationCoefFielda)
+        self.comboBoxPonderationCoefFielda.activated[int].connect(self.slotPonderationCoefFielda)
         self.comboBoxFieldbModel.currentTextChanged[str].connect(self.slotFieldbModel)
-        self.comboBoxPonderationCoefFieldb.activated[str].connect(self.slotPonderationCoefFieldb)
+        self.comboBoxPonderationCoefFieldb.activated[int].connect(self.slotPonderationCoefFieldb)
         self.lineEditRelaxationTimeFielda.textChanged[str].connect(self.slotRelaxationTimeFielda)
         self.lineEditRelaxationTimeFieldb.textChanged[str].connect(self.slotRelaxationTimeFieldb)
         self.checkBoxActivatePool.stateChanged.connect(self.slotPoolBoilingModel)
 
-    @Slot(str)
+    @Slot()
     def slotSelectInteraction(self, value):
         """
         Select a Field in the QTable
@@ -323,7 +323,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
                 self.modelFieldaModel.addItem(self.tr("Droplet model for vapour"), "droplet_model_for_vapour")
                 self.modelFieldbModel.addItem(self.tr("Droplet model for liquid"), "droplet_model_for_liquid")
 
-    @Slot(str)
+    @Slot()
     def slotSolidEnergyTransfer(self, text):
         """
         set model for solid enthalpy transfer
@@ -331,7 +331,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         choice = self.modelSolidEnergyTransfer.dicoV2M[text]
         self.mdl.setSolidEnergyTransfer(choice)
 
-    @Slot(str)
+    @Slot()
     def slotFieldaModel(self, text):
         """
         set model for field a
@@ -342,17 +342,18 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         self.updateLiquidVaporModel()
 
 
-    @Slot(str)
-    def slotPonderationCoefFielda(self, text):
+    @Slot(int)
+    def slotPonderationCoefFielda(self, idx):
         """
         set ponderation coefficient for field a
         """
+        text = self.comboBoxPonderationCoefFielda.currentText()
         selection = self.modelLiquidVaporFields.dicoV2M[self.comboBoxLiquidVaporFields.currentText()]
         choice = self.modelPonderationCoefFielda.dicoV2M[text]
         self.mdl.setPonderationCoef(self.field_a, self.field_b, self.field_a, choice)
 
 
-    @Slot(str)
+    @Slot()
     def slotFieldbModel(self, text):
         """
         set model for field b
@@ -363,18 +364,19 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         self.updateLiquidVaporModel()
 
 
-    @Slot(str)
-    def slotPonderationCoefFieldb(self, text):
+    @Slot(int)
+    def slotPonderationCoefFieldb(self, idx):
         """
         set ponderation coefficient for field b
         """
         selection = self.modelLiquidVaporFields.dicoV2M[self.comboBoxLiquidVaporFields.currentText()]
         fieldIda, fieldIdb = selection.split("_")
+        text = self.comboBoxPonderationCoefFieldb.currentText()
         choice = self.modelPonderationCoefFieldb.dicoV2M[text]
         self.mdl.setPonderationCoef(self.field_a, self.field_b, self.field_b, choice)
 
 
-    @Slot(str)
+    @Slot()
     def slotRelaxationTimeFielda(self, text):
         """
         Update the relaxation time for field a
@@ -385,7 +387,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
             self.mdl.setRelaxationTime(self.field_a, self.field_b, self.field_a, value)
 
 
-    @Slot(str)
+    @Slot()
     def slotRelaxationTimeFieldb(self, text):
         """
         Update the relaxation time for field b

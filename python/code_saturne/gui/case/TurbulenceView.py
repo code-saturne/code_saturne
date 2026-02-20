@@ -151,15 +151,15 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
 
         # Connections
 
-        self.comboBoxTurbModel.activated[str].connect(self.slotTurbulenceModel)
-        self.comboBoxWallFunctions.activated[str].connect(self.slotWallFunction)
-        self.comboBoxTurbDiff.activated[str].connect(self.slotTurbDiff)
+        self.comboBoxTurbModel.activated[int].connect(self.slotTurbulenceModel)
+        self.comboBoxWallFunctions.activated[int].connect(self.slotWallFunction)
+        self.comboBoxTurbDiff.activated[int].connect(self.slotTurbDiff)
         self.checkBoxGravity.clicked.connect(self.slotGravity)
         self.checkBoxRijCoupled.clicked.connect(self.slotRijCoupled)
         self.lineEditLength.textChanged[str].connect(self.slotLengthScale)
 
         self.lineEditV0.textChanged[str].connect(self.slotVelocity)
-        self.comboBoxLength.activated[str].connect(self.slotLengthChoice)
+        self.comboBoxLength.activated[int].connect(self.slotLengthChoice)
         self.lineEditL0.textChanged[str].connect(self.slotLength)
 
         # Frames display
@@ -308,22 +308,22 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         """
         if self.lineEditLength.validator().state == QValidator.State.Acceptable:
             l_scale = from_qvariant(text, float)
-            self.model.setLengthScale(l_scale)
+            self.model.setLengthScale(float(l_scale))
 
 
-    @Slot(str)
-    def slotTurbulenceModel(self, text):
+    @Slot(int)
+    def slotTurbulenceModel(self, idx):
         """
         Private slot.
         Input ITURB.
         """
-        model = self.modelTurbModel.dicoV2M[str(text)]
+        model = self.modelTurbModel.dicoV2M[str(self.comboBoxTurbModel.currentText())]
         self.model.setTurbulenceModel(model)
         self.__initializeView()
 
 
-    @Slot(str)
-    def slotWallFunction(self, text):
+    @Slot(int)
+    def slotWallFunction(self, idx):
         """
         Private slot.
         Input iwallf.
@@ -336,8 +336,8 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
             self.labelWallFunctionsDesc.hide()
 
 
-    @Slot(str)
-    def slotTurbDiff(self, text):
+    @Slot(int)
+    def slotTurbDiff(self, idx):
         """
         Private slot.
         Input iwallf.
@@ -354,16 +354,16 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         """
         if self.lineEditV0.validator().state == QValidator.State.Acceptable:
             v = from_qvariant(text, float)
-            self.model.setVelocity(v)
+            self.model.setVelocity(float(v))
 
 
-    @Slot(str)
-    def slotLengthChoice(self,text):
+    @Slot(int)
+    def slotLengthChoice(self,idx):
         """
         Private slot.
         Input mode for reference length.
         """
-        choice = self.modelLength.dicoV2M[str(text)]
+        choice = self.modelLength.dicoV2M[str(self.comboBoxLength.currentText())]
         self.model.setLengthChoice(choice)
         if choice == 'automatic':
             self.lineEditL0.setText(str())
@@ -385,7 +385,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         """
         if self.lineEditL0.validator().state == QValidator.State.Acceptable:
             l = from_qvariant(text, float)
-            self.model.setLength(l)
+            self.model.setLength(float(l))
 
 
     @Slot()

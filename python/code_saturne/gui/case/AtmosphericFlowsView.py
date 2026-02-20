@@ -212,7 +212,10 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
     #--------------- Functions for the groupBox LargeScalaMeteData--------------
     @Slot(QDateTime)
     def __slotDateTime(self, startTime):
-            self.__model.setStartTime(startTime.toPyDateTime())
+            if hasattr(startTime, 'toPython'):  # Pyside6
+                self.__model.setStartTime(startTime.toPython())
+            else: # PyQt5
+                self.__model.setStartTime(startTime.toPyDateTime())
 
     @Slot(int)
     def __slotComboBoxUrefOrDlmo(self, indCurrent):
@@ -312,7 +315,7 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
             self.__model.setMeteoT0(val)
 
     @Slot(int)
-    def slotWindDir(self, text):
+    def slotWindDir(self, idx):
         val = self.spinBoxWindDir.value()
         self.__model.setWindDir(val)
 

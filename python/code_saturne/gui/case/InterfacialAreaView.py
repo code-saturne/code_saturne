@@ -139,9 +139,9 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
         self.lineEditMaxDiameter.setValidator(validatorMaxDiam)
 
         # Connect signals to slots
-        self.comboBoxField.activated[str].connect(self.slotField)
-        self.comboBoxModel.activated[str].connect(self.slotModel)
-        self.comboBoxSourceTerm.activated[str].connect(self.slotSourceTerm)
+        self.comboBoxField.activated[int].connect(self.slotField)
+        self.comboBoxModel.activated[int].connect(self.slotModel)
+        self.comboBoxSourceTerm.activated[int].connect(self.slotSourceTerm)
         self.lineEditDefaultDiameter.textChanged[str].connect(self.slotDefaultDiameter)
         self.lineEditMinDiameter.textChanged[str].connect(self.slotMinDiameter)
         self.lineEditMaxDiameter.textChanged[str].connect(self.slotMaxDiameter)
@@ -152,11 +152,12 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
         self.case.undoStartGlobal()
 
 
-    @Slot(str)
-    def slotField(self, text):
+    @Slot(int)
+    def slotField(self, idx):
         """
         INPUT label for choice of field
         """
+        text = self.comboBoxField.currentText()
         self.currentid = self.modelField.dicoV2M[text]
         self.initializeVariables(self.currentid)
         field = self.mdl.mainFieldsModel.getFieldFromId(self.currentid)
@@ -167,26 +168,28 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
             self.modelSourceTerm.disableItem(0)
 
 
-    @Slot(str)
-    def slotModel(self, text):
+    @Slot(int)
+    def slotModel(self, idx):
         """
         INPUT type for choice of model
         """
+        text = self.comboBoxModel.currentText()
         model = self.modelModel.dicoV2M[text]
         self.mdl.setAreaModel(self.currentid, model)
         self.initializeVariables(self.currentid)
 
 
-    @Slot(str)
-    def slotSourceTerm(self, text):
+    @Slot(int)
+    def slotSourceTerm(self, idx):
         """
         INPUT type for choice of model source term
         """
+        text = self.comboBoxSourceTerm.currentText()
         model = self.modelSourceTerm.dicoV2M[text]
         self.mdl.setSourceTerm(self.currentid, model)
 
 
-    @Slot(str)
+    @Slot()
     def slotDefaultDiameter(self, var):
         """
         """
@@ -195,7 +198,7 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
             self.mdl.setInitialDiameter(self.currentid, value)
 
 
-    @Slot(str)
+    @Slot()
     def slotMinDiameter(self, var):
         """
         """
@@ -204,7 +207,7 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
             self.mdl.setMinDiameter(self.currentid, value)
 
 
-    @Slot(str)
+    @Slot()
     def slotMaxDiameter(self, var):
         """
         """

@@ -99,7 +99,7 @@ class MovingTypeDelegate(QItemDelegate):
 
     def setModelData(self, comboBox, model, index):
         value = comboBox.currentText()
-        model.setData(index, value, Qt.DisplayRole)
+        model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 
     def updateComboBoxItems(self, comboBox, index):
@@ -160,22 +160,22 @@ class StandardItemVolume(QStandardItemModel):
         col = index.column()
 
         # Tooltips
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return self.tooltip[col]
 
-        elif role == Qt.CheckStateRole:
+        elif role == Qt.ItemDataRole.CheckStateRole:
             if col == 1 or col == 3 or col == 4 or col == 5 or col == 6:
                 data_vol = self.data_vol[row][col]
                 if data_vol == "on":
-                    return Qt.Checked
+                    return Qt.CheckState.Checked
                 else:
-                    return Qt.Unchecked
+                    return Qt.CheckState.Unchecked
 
         # Display
-        elif role == Qt.DisplayRole:
+        elif role == Qt.ItemDataRole.DisplayRole:
             return self.data_vol[row][col]
 
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             return Qt.AlignCenter
 
         return None
@@ -183,51 +183,51 @@ class StandardItemVolume(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         row = index.row()
         col = index.column()
 
         if col == 0:
-            return Qt.ItemIsSelectable
+            return Qt.ItemFlag.ItemIsSelectable
 
         elif (col == 1):
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsUserCheckable
 
         elif (col == 2):
             is_fsi = self.data_vol[row][1]
             if is_fsi == 'on':
                 # The moving type is always 'computed' when solving FSI
-                return Qt.ItemIsSelectable
+                return Qt.ItemFlag.ItemIsSelectable
             else:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
         elif col == 3:
             if self.is_thermal == False:
                 # CHT can't be activated without thermal
-                return Qt.ItemIsSelectable
+                return Qt.ItemFlag.ItemIsSelectable
             else:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
+                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsUserCheckable
 
         elif (col == 4):
-            return Qt.ItemIsSelectable
+            return Qt.ItemFlag.ItemIsSelectable
 
         elif (col == 5):
-            return Qt.ItemIsSelectable
+            return Qt.ItemFlag.ItemIsSelectable
 
         elif (col == 6):
-            return Qt.ItemIsSelectable
+            return Qt.ItemFlag.ItemIsSelectable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
 
     def setData(self, index, value, role):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         row = index.row()
         col = index.column()
@@ -241,7 +241,7 @@ class StandardItemVolume(QStandardItemModel):
         if col == 1:
             state = from_qvariant(value, int)
 
-            if state == Qt.Unchecked:
+            if state == Qt.CheckState.Unchecked:
                 self.data_vol[row][col] = "off"
             else:
                 self.data_vol[row][col] = "on"
@@ -301,7 +301,7 @@ class StandardItemVolume(QStandardItemModel):
             if (self.is_thermal == False):
                 self.data_vol[row][col] = "off"
             else:
-                if state == Qt.Unchecked:
+                if state == Qt.CheckState.Unchecked:
                     self.data_vol[row][col] = "off"
                 else:
                     self.data_vol[row][col] = "on"
@@ -354,7 +354,7 @@ class StandardItemVolume(QStandardItemModel):
 
         elif col == 4:
             state = from_qvariant(value, int)
-            if state == Qt.Unchecked:
+            if state == Qt.CheckState.Unchecked:
                 self.data_vol[row][col] = "off"
             else:
                 self.data_vol[row][col] = "on"
@@ -363,7 +363,7 @@ class StandardItemVolume(QStandardItemModel):
 
         elif col == 5:
             state = from_qvariant(value, int)
-            if state == Qt.Unchecked:
+            if state == Qt.CheckState.Unchecked:
                 self.data_vol[row][col] = "off"
             else:
                 self.data_vol[row][col] = "on"
@@ -372,7 +372,7 @@ class StandardItemVolume(QStandardItemModel):
 
         elif col == 6:
             state = from_qvariant(value, int)
-            if state == Qt.Unchecked:
+            if state == Qt.CheckState.Unchecked:
                 self.data_vol[row][col] = "off"
             else:
                 self.data_vol[row][col] = "on"
@@ -509,7 +509,7 @@ class ImmersedBoundariesVolumicViewNeptune(QWidget, Ui_ImmersedBoundariesVolumic
         self.case.undoStartGlobal()
 
 
-    @Slot("QModelIndex")
+    @Slot()
     def slotChangedSelection(self, index):
         """
         detect change in selection and update view

@@ -101,11 +101,11 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.pushButtonPotElecFormula.clicked.connect(self.slotPotElecFormula)
         self.pushButtonPotElecImFormula.clicked.connect(self.slotPotElecImFormula)
 
-        self.comboBoxTypePotElec.activated[str].connect(self.slotPotElecChoice)
-        self.comboBoxTypePotElecIm.activated[str].connect(self.slotPotElecImChoice)
-        self.comboBoxTypePotVector.activated[str].connect(self.slotPotVectorChoice)
-        self.comboBoxSpecies.activated[str].connect(self.slotSpeciesChoice)
-        self.comboBoxPotVector.activated[str].connect(self.slotPotVectorComponentChoice)
+        self.comboBoxTypePotElec.activated[int].connect(self.slotPotElecChoice)
+        self.comboBoxTypePotElecIm.activated[int].connect(self.slotPotElecImChoice)
+        self.comboBoxTypePotVector.activated[int].connect(self.slotPotVectorChoice)
+        self.comboBoxSpecies.activated[int].connect(self.slotSpeciesChoice)
+        self.comboBoxPotVector.activated[int].connect(self.slotPotVectorComponentChoice)
 
         ## Validators
         validatorPotElec      = DoubleValidator(self.lineEditValuePotElec)
@@ -265,55 +265,60 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
                 self.lineEditValueSpecies.setText(str(v))
 
 
-    @Slot(str)
-    def slotPotElecChoice(self, text):
+    @Slot(int)
+    def slotPotElecChoice(self, idx):
         """
         INPUT choice for electric potential type
         """
+        text = self.comboBoxTypePotElec.currentText()
         potElec_type = self.modelPotElec.dicoV2M[str(text)]
         self.__b.setElecScalarChoice(self.potElec, potElec_type)
         self.initializeVariables()
 
 
-    @Slot(str)
-    def slotPotElecImChoice(self, text):
+    @Slot(int)
+    def slotPotElecImChoice(self, idx):
         """
         INPUT choice for imaginary electric potential type
         """
+        text = self.comboBoxTypePotElecIm.currentText()
         potElecIm_type = self.modelPotElecIm.dicoV2M[str(text)]
         self.__b.setElecScalarChoice(self.potElecIm, potElecIm_type)
         self.initializeVariables()
 
 
-    @Slot(str)
-    def slotPotVectorChoice(self, text):
+    @Slot(int)
+    def slotPotVectorChoice(self, idx):
         """
         INPUT choice for potential vector type
         """
+        text = self.comboBoxTypePotVector.currentText()
         potVec_choice = self.modelPotVector.dicoV2M[str(text)]
         self.__b.setPotentialVectorChoice(self.potVect, potVec_choice)
         self.initializeVariables()
 
 
-    @Slot(str)
-    def slotSpeciesChoice(self, text):
+    @Slot(int)
+    def slotSpeciesChoice(self, idx):
         """
         INPUT species choice
         """
+        text = self.comboBoxSpecies.currentText()
         self.species = self.modelSpecies.dicoV2M[str(text)]
         self.initializeVariables()
 
 
-    @Slot(str)
-    def slotPotVectorComponentChoice(self, text):
+    @Slot(int)
+    def slotPotVectorComponentChoice(self, idx):
         """
         INPUT potential vector component choice
         """
+        text = self.comboBoxPotVector.currentText()
         self.potVect = self.modelPotVectLabel.dicoV2M[str(text)]
         self.initializeVariables()
 
 
-    @Slot(str)
+    @Slot()
     def slotPotElec(self, var):
         """
         """
@@ -322,7 +327,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
             self.__b.setElecScalarValue(self.potElec, self.potElec_type, value)
 
 
-    @Slot(str)
+    @Slot()
     def slotPotElecIm(self, var):
         """
         """
@@ -331,7 +336,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
             self.__b.setElecScalarValue(self.potElecIm, self.potElecIm_type, value)
 
 
-    @Slot(str)
+    @Slot()
     def slotSpecies(self, var):
         """
         """

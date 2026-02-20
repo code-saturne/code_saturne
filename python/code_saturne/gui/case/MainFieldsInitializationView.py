@@ -99,11 +99,11 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         self.defineConnections()
 
     def defineConnections(self):
-        self.comboBoxField.activated[str].connect(self.slotField)
-        self.comboBoxEnergy.activated[str].connect(self.slotEnergyModel)
-        self.comboBoxTurbulence.activated[str].connect(self.slotTurbulenceModel)
-        self.comboBoxNonCondensable.activated[str].connect(self.slotNonCondensableType)
-        self.comboBoxScalar.activated[str].connect(self.slotScalarName)
+        self.comboBoxField.activated[int].connect(self.slotField)
+        self.comboBoxEnergy.activated[int].connect(self.slotEnergyModel)
+        self.comboBoxTurbulence.activated[int].connect(self.slotTurbulenceModel)
+        self.comboBoxNonCondensable.activated[int].connect(self.slotNonCondensableType)
+        self.comboBoxScalar.activated[int].connect(self.slotScalarName)
         self.pushButtonPressure.clicked.connect(self.slotPressure)
         self.pushButtonVelocity.clicked.connect(self.slotVelocity)
         self.pushButtonFraction.clicked.connect(self.slotFraction)
@@ -243,11 +243,12 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         else:
             self.groupBoxDefinition.hide()
 
-    @Slot(str)
-    def slotField(self, text):
+    @Slot(int)
+    def slotField(self, idx):
         """
         INPUT label for choice of field
         """
+        text = self.comboBoxField.currentText()
         self.currentid = self.modelField.dicoV2M[str(text)]
         self.initializeVariables(self.zone_id, self.currentid)
 
@@ -321,11 +322,12 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
                 self.pushButtonScalar.setStyleSheet("background-color: red")
 
 
-    @Slot(str)
-    def slotTurbulenceModel(self, text):
+    @Slot(int)
+    def slotTurbulenceModel(self, idx):
         """
         INPUT label for choice of turbulence model
         """
+        text = self.comboBoxTurbulence.currentText()
         choice = self.modelTurbulence.dicoV2M[str(text)]
         zoneId = str(self.zone.getCodeNumber())
         fieldId = self.currentid
@@ -344,11 +346,12 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             self.pushButtonTurbulence.hide()
 
 
-    @Slot(str)
-    def slotEnergyModel(self, text):
+    @Slot(int)
+    def slotEnergyModel(self, idx):
         """
         INPUT label for choice of energy model
         """
+        text = self.comboBoxEnergy.currentText()
         model = self.modelEnergy.dicoV2M[str(text)]
         self.mdl.setEnergyModel(self.zone_id, self.currentid, model)
 
@@ -370,11 +373,12 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             self.pushButtonEnergy.setStyleSheet("background-color: None")
 
 
-    @Slot(str)
-    def slotNonCondensableType(self, text):
+    @Slot(int)
+    def slotNonCondensableType(self, idx):
         """
         INPUT label for choice of non condensable model
         """
+        text = self.comboBoxNonCondensable.currentText()
         self.currentNonCond = self.modelNonCondensable.dicoV2M[str(text)]
         self.currentNonCondLabel = str(text)
         exp = self.mdl.getFormulaNonCondensable(self.zone_id, self.currentid, self.currentNonCond)
@@ -385,11 +389,12 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             self.pushButtonNonCondensable.setStyleSheet("background-color: red")
 
 
-    @Slot(str)
-    def slotScalarName(self, text):
+    @Slot(int)
+    def slotScalarName(self, idx):
         """
         INPUT label for choice of scalar
         """
+        text = self.comboBoxScalar.currentText()
         self.currentScalar = self.modelScalar.dicoV2M[str(text)]
         self.currentScalarLabel = str(text)
         exp = self.mdl.getFormulaScalar(self.zone_id, self.currentid, self.currentScalar)

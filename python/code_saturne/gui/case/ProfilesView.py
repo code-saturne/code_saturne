@@ -78,27 +78,27 @@ class StandardItemModelProfile(QStandardItemModel):
     def data(self, index, role):
         if not index.isValid():
             return None
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return self.dataProfile[index.row()][index.column()]
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             return Qt.AlignCenter
         return None
 
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             if section == 0:
                 return self.tr("Filename")
             elif section == 1:
                 return self.tr("Variables")
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             return Qt.AlignCenter
         return None
 
@@ -212,8 +212,8 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.pushButtonDelete.clicked.connect(self.slotDeleteProfile)
         self.pushButtonAddVar.clicked.connect(self.slotAddVarProfile)
         self.pushButtonSuppressVar.clicked.connect(self.slotDeleteVarProfile)
-        self.comboBoxFreq.activated[str].connect(self.slotFrequencyType)
-        self.comboBoxFormat.activated[str].connect(self.slotFormatType)
+        self.comboBoxFreq.activated[int].connect(self.slotFrequencyType)
+        self.comboBoxFormat.activated[int].connect(self.slotFormatType)
         self.pushButtonFormula.clicked.connect(self.slotFormula)
         self.lineEditBaseName.textChanged[str].connect(self.slotBaseName)
         self.lineEditFreq.textChanged[str].connect(self.slotFrequence)
@@ -269,7 +269,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             default['regexp'] = QRegularExpression(rx)
             from code_saturne.gui.case.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
             dialog = VerifyExistenceLabelDialogView(self, default)
-            if dialog.exec_():
+            if dialog.exec():
                 result = dialog.get_result()
                 label = result['label']
                 if result['label'] == default['label']:
@@ -277,11 +277,12 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         return label
 
 
-    @Slot(str)
-    def slotFrequencyType(self, text):
+    @Slot(int)
+    def slotFrequencyType(self, idx):
         """
         Input choice for frequency for profile.
         """
+        text = self.comboBoxFreq.currentText()
         choice = self.modelFreq.dicoV2M[str(text)]
 
         if choice == "end":
@@ -312,11 +313,12 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.mdl.setOutputFrequency(self.label_select, nfreq)
 
 
-    @Slot(str)
-    def slotFormatType(self, text):
+    @Slot(int)
+    def slotFormatType(self, idx):
         """
         Input choice for frequency for profile.
         """
+        text = self.comboBoxFormat.currentText()
         fmt = self.modelFormat.dicoV2M[str(text)]
         self.mdl.setFormat(self.label_select, fmt)
 
@@ -366,7 +368,7 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
             self.__eraseEntries()
 
 
-    @Slot("QModelIndex")
+    @Slot(QModelIndex)
     def slotSelectProfile(self, index):
         """
         Return the selected item from the list.
@@ -501,7 +503,7 @@ z = z1*s + z0*(1.-s);"""
                                 required   = req,
                                 symbols    = sym,
                                 examples   = exa)
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotLineFormula -> %s" % str(result))
             self.mdl.setFormula(self.label_select, str(result))

@@ -92,7 +92,7 @@ class MainFieldsSourceTermsView(QWidget, Ui_MainFieldsSourceTerms):
         self.defineConnections()
 
     def defineConnections(self):
-        self.comboBoxField.activated[str].connect(self.slotField)
+        self.comboBoxField.activated[int].connect(self.slotField)
         self.pushButtonThermal.clicked.connect(self.slotThermalFormula)
 
     def setup(self, case, zone_name):
@@ -176,11 +176,12 @@ class MainFieldsSourceTermsView(QWidget, Ui_MainFieldsSourceTerms):
             self.pushButtonThermal.setStyleSheet("background-color: green")
 
 
-    @Slot(str)
-    def slotField(self, text):
+    @Slot(int)
+    def slotField(self, idx):
         """
         INPUT label for choice of field
         """
+        text = self.comboBoxField.currentText()
         self.currentId = self.modelField.dicoV2M[str(text)]
 
         exp = self.mdl.getThermalFormula(self.zone_id,

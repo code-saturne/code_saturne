@@ -122,7 +122,7 @@ class TurbulenceDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, self.dicoM2V[value], Qt.DisplayRole)
+                model.setData(idx, self.dicoM2V[value], Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -194,7 +194,7 @@ class CouplingDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, self.dicoM2V[value], Qt.DisplayRole)
+                model.setData(idx, self.dicoM2V[value], Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -248,7 +248,7 @@ class TurbFluxDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, self.dicoM2V[value], Qt.DisplayRole)
+                model.setData(idx, self.dicoM2V[value], Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -283,17 +283,17 @@ class StandardItemModelTurbulence(QStandardItemModel):
         if not index.isValid():
             return None
 
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return None
 
-        elif role == Qt.DisplayRole:
+        elif role == Qt.ItemDataRole.DisplayRole:
             data = self._data[index.row()][index.column()]
             if data:
                 return data
             else:
                 return None
 
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             return Qt.AlignCenter
 
         return None
@@ -306,33 +306,33 @@ class StandardItemModelTurbulence(QStandardItemModel):
         field = self.mdl.mainFieldsModel.list_of_fields[index.row()]
         fieldId = field.f_id
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         if index.column() == 2 :
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
         if index.column() == 3 :
             if self.mdl.useAdvancedThermalFluxes(fieldId) == True \
                 and field.enthalpy_model != 'off':
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
             else:
-                return Qt.NoItemFlags
+                return Qt.ItemFlag.NoItemFlags
         elif index.column() == 1 or index.column() == 4 :
             if field.flow_type == "continuous" :
-                return Qt.NoItemFlags
+                return Qt.ItemFlag.NoItemFlags
             else :
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
 
     def setData(self, index, value, role):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         row = index.row()
         col = index.column()
@@ -519,7 +519,7 @@ class TurbulenceView(QWidget, Ui_Turbulence):
         self.tableModelTurbulence.dataChanged.connect(self.dataChanged)
         self.lineEditMixingLength.textChanged[str].connect(self.slotMixingLength)
         self.tableViewTurbulence.clicked.connect(self.slotChangeSelection)
-        self.comboBoxContinuousCoupling.activated[str].connect(self.slotContinuousCoupling)
+        self.comboBoxContinuousCoupling.activated[int].connect(self.slotContinuousCoupling)
 
         # hide/show groupBoxContinuousCoupling
         if len(self.mdl.mainFieldsModel.getContinuousFieldList()) >=2 :
@@ -571,7 +571,7 @@ class TurbulenceView(QWidget, Ui_Turbulence):
                     self.mdl.setThermalTurbulentFlux(fieldId, 'sgdh')
 
 
-    @Slot(str)
+    @Slot()
     def slotMixingLength(self, text):
         """
         Update the mixing length
@@ -583,11 +583,12 @@ class TurbulenceView(QWidget, Ui_Turbulence):
             self.mdl.setMixingLength(fieldId, mix)
 
 
-    @Slot(str)
-    def slotContinuousCoupling(self, text):
+    @Slot(int)
+    def slotContinuousCoupling(self, idx):
         """
         define continuous/continuous coupling modele
         """
+        text = self.comboBoxContinuousCoupling.currentText()
         value = self.modelContinuousCoupling.dicoV2M[text]
         log.debug("slotContinuousCoupling -> %s" % value)
         self.mdl.setContinuousCouplingModel(value)

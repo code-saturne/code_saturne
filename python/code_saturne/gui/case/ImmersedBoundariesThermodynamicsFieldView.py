@@ -171,7 +171,7 @@ class ImmersedBoundariesThermodynamicsFieldView(QWidget, Ui_ImmersedBoundariesTh
         self.comboBoxes['Dam']     = self.comboBoxDamping
 
         for k in self.comboBoxes.keys():
-            self.comboBoxes[k].activated[str].connect(getattr(self,"slotState"+k))
+            self.comboBoxes[k].activated[int].connect(getattr(self,"slotState"+k))
 
         self.update()
         self.case.undoStartGlobal()
@@ -363,83 +363,87 @@ class ImmersedBoundariesThermodynamicsFieldView(QWidget, Ui_ImmersedBoundariesTh
                 __button.setStyleSheet("background-color: red")
 
 
-    @Slot(str)
+    @Slot()
     def slotObjDensity(self, text):
         if self.lineEditDensity.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.ibm.setObjectDensity(self.current_obj, val)
 
 
-    @Slot(str)
+    @Slot()
     def slotObjMass(self, text):
         if self.lineEditMass.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.ibm.setObjectMass(self.current_obj, val)
 
 
-    @Slot(str)
+    @Slot()
     def slotObjStiffness(self, text):
         if self.lineEditStiffness.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.ibm.setObjectStiffness(self.current_obj, val)
 
 
-    @Slot(str)
+    @Slot()
     def slotObjDamping(self, text):
         if self.lineEditDamping.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.ibm.setObjectDamping(self.current_obj, val)
 
 
-    @Slot(str)
+    @Slot()
     def slotObjSpecificHeat(self, text):
         if self.lineEditSpecificHeat.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.ibm.setObjectSpecificHeat(self.current_obj, val)
 
-    @Slot(str)
+    @Slot()
     def slotObjThermalConductivity(self, text):
         if self.lineEditThermalConductivity.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.ibm.setObjectThermalConductivity(self.current_obj, val)
 
 
-    @Slot(str)
-    def slotStateRho(self, text):
+    @Slot(int)
+    def slotStateRho(self, idx):
         """
         Method to call 'getState' with correct arguements for 'Rho'
         """
+        text = self.comboBoxDensity.currentText()
         self.__changeChoice(str(text), 'Density', 'density')
 
 
-    @Slot(str)
-    def slotStateSti(self, text):
+    @Slot(int)
+    def slotStateSti(self, idx):
         """
         Method to call 'getState' with correct arguements for 'Sti'
         """
+        text = self.comboBoxStiffness.currentText()
         self.__changeChoice(str(text), 'Stiffness', 'stiffness')
 
-    @Slot(str)
-    def slotStateDam(self, text):
+    @Slot(int)
+    def slotStateDam(self, idx):
         """
         Method to call 'getState' with correct arguements for 'Dam'
         """
         self.__changeChoice(str(text), 'Damping', 'damping')
 
 
-    @Slot(str)
-    def slotStateCp(self, text):
+    @Slot(int)
+    def slotStateCp(self, idx):
         """
         Method to call 'getState' with correct arguements for 'Cp'
         """
+        text = self.comboBoxDamping.currentText()
         self.__changeChoice(str(text), 'SpecificHeat', 'specific_heat')
 
 
-    @Slot(str)
-    def slotStateAl(self, text):
+    @Slot(int)
+    def slotStateAl(self, idx):
         """
         Method to call 'getState' with correct arguements for 'Al'
         """
+        text = self.comboBoxThermalConductivity.currentText()
         self.__changeChoice(str(text), 'ThermalConductivity', 'thermal_conductivity')
 
 

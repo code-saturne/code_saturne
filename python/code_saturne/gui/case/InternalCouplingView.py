@@ -73,7 +73,7 @@ class InternalCouplingView(QWidget):
         self.comboBoxScalars = QComboBox()
         self.comboBoxScalars.setObjectName("comboBoxScalars")
 
-        self.comboBoxScalars.currentIndexChanged[str].connect(self.slotScalarName)
+        self.comboBoxScalars.currentIndexChanged[int].connect(self.slotScalarName)
 
         self.checkBoxScalars = QCheckBox()
         self.checkBoxScalars.setObjectName("checkBoxScalars")
@@ -122,7 +122,7 @@ class InternalCouplingView(QWidget):
                 self.checkBoxScalars.setChecked(True)
 
 
-    @Slot(int)
+    @Slot()
     def slotScalarState(self, val):
 
         if val == 0:
@@ -130,9 +130,10 @@ class InternalCouplingView(QWidget):
         else:
             self.mdl.addScalar(self.sca)
 
-    @Slot(str)
-    def slotScalarName(self, val):
-        self.sca = str(val)
+    @Slot(int)
+    def slotScalarName(self, idx):
+        text = self.comboBoxScalars.currentText()
+        self.sca = str(text)
 
         scalar_is_coupled = self.mdl.isScalarCoupled(self.sca)
 

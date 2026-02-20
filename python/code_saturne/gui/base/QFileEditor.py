@@ -421,7 +421,8 @@ class FileSystemModel(QtWidgets.QFileSystemModel):
 
 
     def headerData(self, section, orientation, role):
-        if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
+        if orientation == QtCore.Qt.Orientation.Horizontal \
+          and role == QtCore.Qt.ItemDataRole.DisplayRole:
             if section == 0:
                 return self.tr(self.title)
         return None
@@ -487,7 +488,7 @@ class Explorer():
             tree.hideColumn(i)
 
         # Right click menu
-        tree.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        tree.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         tree.customContextMenuRequested.connect(self.explorerContextMenu)
 
         # Double click
@@ -550,13 +551,13 @@ class Explorer():
         path2file = ''
         fname = ''
         for idx in self.explorer.selectedIndexes():
-            fname = idx.data(QtCore.Qt.DisplayRole)
+            fname = idx.data(QtCore.Qt.ItemDataRole.DisplayRole)
             c = idx
             p = c.parent()
-            ps = p.data(QtCore.Qt.DisplayRole)
+            ps = p.data(QtCore.Qt.ItemDataRole.DisplayRole)
             while True:
-                ctxt = c.data(QtCore.Qt.DisplayRole)
-                ptxt = p.data(QtCore.Qt.DisplayRole)
+                ctxt = c.data(QtCore.Qt.ItemDataRole.DisplayRole)
+                ptxt = p.data(QtCore.Qt.ItemDataRole.DisplayRole)
                 if ptxt in [None, self.parent.case_name]:
                     pe = ptxt
                     break
@@ -700,7 +701,7 @@ class QFileEditor(QMainWindow):
         # Open file action
         open_img_path = os.path.join(icons_path, 'document-open.png')
         icon_open     = QtGui.QIcon()
-        icon_open.addPixmap(QtGui.QPixmap(open_img_path),
+        icon_open.addPixmap(QtGui.QPixmap(_fromUtf8(open_img_path)),
                             QtGui.QIcon.Mode.Normal,
                             QtGui.QIcon.State.Off)
         self.openFileAction = QAction(icon_open, "Open", self)
@@ -905,7 +906,7 @@ class QFileEditor(QMainWindow):
             tree.hideColumn(i)
 
         # Right click menu
-        tree.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        tree.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         tree.customContextMenuRequested.connect(self.explorerContextMenu)
 
         # Double click

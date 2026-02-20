@@ -98,7 +98,7 @@ class DropletCondensationEvaporationView(QWidget, Ui_DropletCondensationEvaporat
         self.lineEditYPlus.setValidator(validatorYplus)
 
         # Connect signals to slots
-        self.comboBoxYPlus.activated[str].connect(self.slotYPlus)
+        self.comboBoxYPlus.activated[int].connect(self.slotYPlus)
         self.lineEditYPlus.textChanged[str].connect(self.slotYPlusValue)
 
         isYPlus = self.mdl.getYPlusModel()
@@ -112,11 +112,12 @@ class DropletCondensationEvaporationView(QWidget, Ui_DropletCondensationEvaporat
 
         self.case.undoStartGlobal()
 
-    @Slot(str)
-    def slotYPlus(self, text):
+    @Slot(int)
+    def slotYPlus(self, idx):
         """
         configure Y Plus model
         """
+        text = self.comboBoxYPlus.currentText()
         value = self.modelYPlus.dicoV2M[text]
         log.debug("slotYPlus -> %s" % value)
         self.mdl.setYPlusModel(value)

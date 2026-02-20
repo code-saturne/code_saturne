@@ -168,7 +168,7 @@ class PreconditioningChoiceDelegate(QItemDelegate):
 
     def setModelData(self, comboBox, model, index):
         value = comboBox.currentText()
-        model.setData(index, value, Qt.DisplayRole)
+        model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # Line edit delegate for BLENCV
@@ -194,7 +194,7 @@ class BlendingFactorDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         editor.setText(value)
 
 
@@ -226,7 +226,7 @@ class RhsReconstructionDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         editor.setText(value)
 
 
@@ -265,7 +265,7 @@ class SolverDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         editor.setText(value)
 
 
@@ -558,7 +558,7 @@ class StandardItemModelScheme(QStandardItemModel):
         # Initialize the flags
         for row in range(self.rowCount()):
             for column in range(self.columnCount()):
-                role = Qt.DisplayRole
+                role = Qt.ItemDataRole.DisplayRole
                 index = self.index(row, column)
                 value = self.data(index, role)
                 if column != 5:
@@ -667,14 +667,14 @@ class StandardItemModelScheme(QStandardItemModel):
         if dico[key] is None:
             return None
 
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             col = index.column()
             if col > 0 and col < 9:
                 return self.tooltips[col-1]
             elif col > 0:
                 return self.tr("code_saturne keyword: " + key)
 
-        elif role == Qt.DisplayRole:
+        elif role == Qt.ItemDataRole.DisplayRole:
             if key == 'ischcv':
                 return self.dicoM2V[dico[key]]
             elif key == 'isstpc':
@@ -712,7 +712,7 @@ class StandardItemModelScheme(QStandardItemModel):
             else:
                 return dico[key]
 
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             return Qt.AlignCenter
 
         return None
@@ -720,49 +720,49 @@ class StandardItemModelScheme(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.NoItemFlags
+            return Qt.ItemFlag.NoItemFlags
 
         column = index.column()
         row = index.row()
         # disabled item
         if (row, column) in self.disabledItem:
-            return Qt.NoItemFlags
+            return Qt.ItemFlag.NoItemFlags
 
         if column == 0:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         elif column in (1, 2, 6):
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
         elif column == 3:
             if self.dataScheme[row]['blencv'] > 0:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
             else:
-                return Qt.NoItemFlags
+                return Qt.ItemFlag.NoItemFlags
         elif column == 4:
             if self.dataScheme[row]['ischcv'] == 'nvd_tvd':
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
             else:
-                return Qt.NoItemFlags
+                return Qt.ItemFlag.NoItemFlags
         elif column == 5:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
         elif column == 6:
             if self.dataScheme[row]['ircflu'] != 'off':
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
             else:
-                return Qt.NoItemFlags
+                return Qt.ItemFlag.NoItemFlags
         elif column == 7:
             if self.dataScheme[row]['rc_clip_factor'] >= 0.:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
             else:
-                return Qt.NoItemFlags
+                return Qt.ItemFlag.NoItemFlags
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
 
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             if section == 0:
                 return self.tr("variable or equation name")
             elif section < 8:
@@ -792,7 +792,7 @@ class StandardItemModelScheme(QStandardItemModel):
             ischcv = self.dicoV2M[str(from_qvariant(value, to_text_string))]
             self.dataScheme[row]['ischcv'] = ischcv
             self.NPE.setScheme(name, ischcv)
-            self.NPE.setBlendingFactor(name, self.dataScheme[row]['blencv'])
+            self.NPE.setBlendingFactor(name, float(self.dataScheme[row]['blencv']))
             nvd_inc = 0
             if ischcv_prev == 'nvd_tvd':
                 nvd_inc -= 1
@@ -810,7 +810,7 @@ class StandardItemModelScheme(QStandardItemModel):
         # set BLENCV
         elif column == 2:
             self.dataScheme[row]['blencv'] = from_qvariant(value, float)
-            self.NPE.setBlendingFactor(name, self.dataScheme[row]['blencv'])
+            self.NPE.setBlendingFactor(name, float(self.dataScheme[row]['blencv']))
 
         # set ISSTPC
         elif column == 3:
@@ -863,7 +863,7 @@ class StandardItemModelScheme(QStandardItemModel):
         # set NSWRSM
         elif column == 8:
             self.dataScheme[row]['nswrsm'] = from_qvariant(value, int)
-            self.NPE.setRhsReconstruction(name, self.dataScheme[row]['nswrsm'])
+            self.NPE.setRhsReconstruction(name, int(self.dataScheme[row]['nswrsm']))
 
         self.dataChanged.emit(index, index)
         return True
@@ -981,7 +981,7 @@ class GradientFloatDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         editor.setText(value)
 
 
@@ -1021,7 +1021,7 @@ class StandardItemModelGradient(QStandardItemModel):
         # Initialize the flags
         for row in range(self.rowCount()):
             for column in range(self.columnCount()):
-                role = Qt.DisplayRole
+                role = Qt.ItemDataRole.DisplayRole
                 index = self.index(row, column)
                 value = self.data(index, role)
                 self.setData(index, value)
@@ -1112,14 +1112,14 @@ class StandardItemModelGradient(QStandardItemModel):
         if dico[key] is None:
             return None
 
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             col = index.column()
             if col > 0 and col < 7:
                 return self.tooltips[col-1]
             elif col > 0:
                 return self.tr("code_saturne keyword: " + key)
 
-        elif role == Qt.DisplayRole:
+        elif role == Qt.ItemDataRole.DisplayRole:
             if column in (1, 2, 3):
                 return self.dicoM2V[dico[key]]
             elif column == 5:
@@ -1132,7 +1132,7 @@ class StandardItemModelGradient(QStandardItemModel):
             else:
                 return dico[key]
 
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             return Qt.AlignCenter
 
         return None
@@ -1140,30 +1140,30 @@ class StandardItemModelGradient(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.NoItemFlags
+            return Qt.ItemFlag.NoItemFlags
 
         column = index.column()
         row = index.row()
         # disabled item
         if (row, column) in self.disabledItem:
-            return Qt.NoItemFlags
+            return Qt.ItemFlag.NoItemFlags
 
         if column == 0:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         elif column == 6:
             if self.dataScheme[row]['imligr'] != 'none':
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
             else:
-                return Qt.NoItemFlags
+                return Qt.ItemFlag.NoItemFlags
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
 
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             if section == 0:
                 return self.tr("variable or equation name")
             elif section < 6:
@@ -1293,7 +1293,7 @@ class StandardItemModelSolver(QStandardItemModel):
         if not index.isValid():
             return None
 
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             if index.column() == 3:
                 return self.tr("Equation parameter: epsilo\n\n"
                                "Convergence threshold for linear solver")
@@ -1302,7 +1302,7 @@ class StandardItemModelSolver(QStandardItemModel):
             elif index.column() == 5:
                 return self.tr("code_saturne keyword: cdtvar")
 
-        elif role == Qt.DisplayRole:
+        elif role == Qt.ItemDataRole.DisplayRole:
             row = index.row()
             dico = self.dataSolver[row]
 
@@ -1326,7 +1326,7 @@ class StandardItemModelSolver(QStandardItemModel):
             else:
                 return None
 
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             return Qt.AlignCenter
 
         return None
@@ -1334,29 +1334,29 @@ class StandardItemModelSolver(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         row = index.row()
         column = index.column()
         # disable item
         if (row, column) in self.disabledItem:
-            return Qt.NoItemFlags
+            return Qt.ItemFlag.NoItemFlags
 
         if column == 0:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         elif column == 2:
             if self.dataSolver[row]['iresol'] not in ('multigrid', 'jacobi',
                                                       'gauss_seidel',
                                                       'symmetric_gauss_seidel'):
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
             else:
-                return Qt.NoItemFlags
+                return Qt.ItemFlag.NoItemFlags
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             if section == 0:
                 return self.tr("Name")
             elif section == 1:
@@ -1421,7 +1421,7 @@ class MinimumDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         editor.setText(value)
 
     def setModelData(self, editor, model, index):
@@ -1434,7 +1434,7 @@ class MinimumDelegate(QItemDelegate):
                     maxi = model.getData(idx)['scamax']
                     name = model.getData(idx)['name']
                     if model.checkMinMax(name, value, maxi):
-                        model.setData(idx, value, Qt.DisplayRole)
+                        model.setData(idx, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -1458,7 +1458,7 @@ class VerbosityDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         editor.setText(value)
 
 
@@ -1490,7 +1490,7 @@ class MaximumDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         editor.setText(value)
 
 
@@ -1504,7 +1504,7 @@ class MaximumDelegate(QItemDelegate):
                     mini = model.getData(idx)['scamin']
                     name = model.getData(idx)['name']
                     if model.checkMinMax(name, mini, value):
-                        model.setData(idx, value, Qt.DisplayRole)
+                        model.setData(idx, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -1551,9 +1551,9 @@ class StandardItemModelClipping(QStandardItemModel):
         row = index.row()
         col = index.column()
 
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return None
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             row = index.row()
             dico = self._data[row]
             if col == 0:
@@ -1564,7 +1564,7 @@ class StandardItemModelClipping(QStandardItemModel):
                 return dico['scamax']
             else:
                 return None
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             return Qt.AlignCenter
 
         return None
@@ -1572,23 +1572,23 @@ class StandardItemModelClipping(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         if index.column() == 0:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
 
     def setData(self, index, value, role=None):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         row = index.row()
         name = self._data[row]['name']
 
@@ -1759,7 +1759,7 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
 
         self.tabWidgetScheme.setCurrentIndex(self.case['current_tab'])
 
-        self.tabWidgetScheme.currentChanged[int].connect(self.slotchanged)
+        self.tabWidgetScheme.currentChanged.connect(self.slotchanged)
 
         self.case.undoStartGlobal()
 

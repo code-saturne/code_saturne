@@ -133,14 +133,14 @@ class SolidView(QWidget, Ui_Solid):
         self.lineEditElastCoef.setValidator(validatorElast)
 
         # Connect signals to slots
-        self.comboBoxField.activated[str].connect(self.slotField)
-        self.comboBoxFriction.activated[str].connect(self.slotFriction)
-        self.comboBoxGranular.activated[str].connect(self.slotGranular)
-        self.comboBoxKinetic.activated[str].connect(self.slotKinetic)
-        self.lineEditCompaction.textChanged[str].connect(self.slotCompaction)
-        self.lineEditFrictonalThres.textChanged[str].connect(self.slotFrictionalThreshold)
-        self.lineEditElastCoef.textChanged[str].connect(self.slotSetElasticity)
-        self.checkBoxCoupling.clicked[bool].connect(self.slotCoupling)
+        self.comboBoxField.activated[int].connect(self.slotField)
+        self.comboBoxFriction.activated[int].connect(self.slotFriction)
+        self.comboBoxGranular.activated[int].connect(self.slotGranular)
+        self.comboBoxKinetic.activated[int].connect(self.slotKinetic)
+        self.lineEditCompaction.textChanged[str.connect(self.slotCompaction)
+        self.lineEditFrictonalThres.textChanged.connect(self.slotFrictionalThreshold)
+        self.lineEditElastCoef.textChanged.connect(self.slotSetElasticity)
+        self.checkBoxCoupling.clicked.connect(self.slotCoupling)
 
         # Show / hide polydispersed parameter
         has_qp_qfp = False
@@ -161,43 +161,47 @@ class SolidView(QWidget, Ui_Solid):
         self.case.undoStartGlobal()
 
 
-    @Slot(str)
-    def slotField(self, text):
+    @Slot(int)
+    def slotField(self, idx):
         """
         INPUT label for choice of field
         """
+        text = self.comboBoxField.currentText()
         self.currentid = self.modelField.dicoV2M[text]
         self.initializeVariables(self.currentid)
 
 
-    @Slot(str)
-    def slotFriction(self, text):
+    @Slot(int)
+    def slotFriction(self, idx):
         """
         INPUT type for choice of friction model
         """
+        text = self.comboBoxFriction.currentText()
         model = self.modelFriction.dicoV2M[text]
         self.mdl.setFrictionModel(self.currentid, model)
 
 
-    @Slot(str)
-    def slotGranular(self, text):
+    @Slot(int)
+    def slotGranular(self, idx):
         """
         INPUT type for choice of granular model
         """
+        text = self.comboBoxGranular.currentText()
         model = self.modelGranular.dicoV2M[text]
         self.mdl.setGranularModel(self.currentid, model)
 
 
-    @Slot(str)
-    def slotKinetic(self, text):
+    @Slot(int)
+    def slotKinetic(self, idx):
         """
         INPUT type for choice of kinetic model
         """
+        text = self.comboBoxKinetic.currentText()
         model = self.modelKinetic.dicoV2M[text]
         self.mdl.setKineticModel(self.currentid, model)
 
 
-    @Slot(str)
+    @Slot()
     def slotCompaction(self, var):
         """
         """
@@ -206,7 +210,7 @@ class SolidView(QWidget, Ui_Solid):
             self.mdl.setCompaction(value)
 
 
-    @Slot(str)
+    @Slot()
     def slotFrictionalThreshold(self, var):
         """
         Setter slot.
@@ -216,7 +220,7 @@ class SolidView(QWidget, Ui_Solid):
             self.mdl.setMinFrictionalThreshold(value)
 
 
-    @Slot(str)
+    @Slot()
     def slotSetElasticity(self, var):
         """
         Set elasiticity coefficient
@@ -250,7 +254,7 @@ class SolidView(QWidget, Ui_Solid):
         self.modelKinetic.setItem(str_model = model)
 
 
-    @Slot(bool)
+    @Slot()
     def slotCoupling(self, checked):
         """
         check box for polydispersed coupling

@@ -82,10 +82,10 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.setupUi(self)
 
         # Connections
-        self.comboBoxVelocity.activated[str].connect(self.__slotChoiceVelocity)
+        self.comboBoxVelocity.activated[int].connect(self.__slotChoiceVelocity)
         self.lineEditVelocity.textChanged[str].connect(self.__slotVelocityValue)
 
-        self.comboBoxDirection.activated[str].connect(self.__slotChoiceDirection)
+        self.comboBoxDirection.activated[int].connect(self.__slotChoiceDirection)
 
         # Combo models
         self.modelVelocity = ComboModel(self.comboBoxVelocity, 4, 1)
@@ -161,8 +161,8 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.hide()
 
 
-    @Slot(str)
-    def __slotChoiceVelocity(self, text):
+    @Slot(int)
+    def __slotChoiceVelocity(self, idx):
         """
         Private slot.
 
@@ -171,6 +171,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         @type text: C{QString}
         @param text: velocity boundary type choice.
         """
+        text = self.comboBoxVelocity.currentText()
         c = self.modelVelocity.dicoV2M[str(text)]
         log.debug("slotChoiceVelocity: %s " % c)
         self.__boundary.setVelocityChoice(self.__currentField, c)
@@ -273,11 +274,12 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.pushButtonVelocityFormula.setStyleSheet("background-color: green")
 
 
-    @Slot(str)
+    @Slot()
     def __slotChoiceDirection(self, text):
         """
         Input the direction type choice.
         """
+        text = self.comboBoxDirection.currentText()
         c = self.modelDirection.dicoV2M[str(text)]
         log.debug("slotChoiceVelocity: %s " % c)
         self.__boundary.setDirectionChoice(self.__currentField, c)

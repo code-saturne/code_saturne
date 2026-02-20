@@ -99,7 +99,7 @@ class StartRestartAdvancedDialogView(QDialog, Ui_StartRestartAdvancedDialogForm)
 
         # Connections
 
-        self.comboBoxFreq.activated[str].connect(self.slotFreq)
+        self.comboBoxFreq.activated[int].connect(self.slotFreq)
         self.lineEditNSUIT.textChanged[str].connect(self.slotNsuit)
 
         # Validator
@@ -143,11 +143,12 @@ class StartRestartAdvancedDialogView(QDialog, Ui_StartRestartAdvancedDialogForm)
         self.case.undoStartGlobal()
 
 
-    @Slot(str)
-    def slotFreq(self, text):
+    @Slot(int)
+    def slotFreq(self, idx):
         """
         Creation of popup window's widgets
         """
+        text = self.comboBoxFreq.currentText()
         self.freq = self.modelFreq.dicoV2M[str(text)]
         log.debug("getFreq-> %s" % self.freq)
 
@@ -246,7 +247,7 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
                                       "different_mesh")
         self.__comboModelMesh.addItem(self.tr("Rebuild same mesh"),
                                       "same_mesh_preprocess")
-        self.comboBoxMesh.activated[str].connect(self.slotRestartMesh)
+        self.comboBoxMesh.activated[int].connect(self.slotRestartMesh)
 
         self.model = StartRestartModel(self.case)
 
@@ -386,7 +387,7 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
 
         dialog.setLabelText(QFileDialog.DialogLabel.Accept, str(self.tr("Select")))
 
-        if dialog.exec_() == 1:
+        if dialog.exec() == 1:
 
             s = dialog.selectedFiles()
 
@@ -441,11 +442,12 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
             self.updateRestartTimes()
 
 
-    @Slot(str)
-    def slotRestartMesh(self, text):
+    @Slot(int)
+    def slotRestartMesh(self, idx):
         """
         Define restart mesh behavior.
         """
+        text = self.comboBoxMesh.currentText()
         v = self.__comboModelMesh.dicoV2M[str(text)]
         if v == self.model.getRestartMeshBehavior():
             return
@@ -480,7 +482,7 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
 
         dialog = StartRestartAdvancedDialogView(self, self.case, default)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotAdvancedOptions -> %s" % str(result))
             self.model.setRestartWithAuxiliaryStatus(result['restart_with_auxiliary'])

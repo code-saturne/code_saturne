@@ -115,10 +115,10 @@ class StandardItemModelTables(QStandardItemModel):
 
         col = index.column()
 
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return self.tooltip[col]
 
-        elif role == Qt.DisplayRole:
+        elif role == Qt.ItemDataRole.DisplayRole:
             d = self.dataTables[index.row()][col]
             if d:
                 return d
@@ -133,16 +133,16 @@ class StandardItemModelTables(QStandardItemModel):
         Return Qt flags
         """
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         if index.column() == 2:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         else:
             return None
@@ -264,16 +264,16 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         self.tableViewTimeTables.clicked.connect(self.slotSelectTable)
 
         self.spinBoxRows.valueChanged[int].connect(self.slotRowsToSkip)
-        self.comboBoxCols.activated[str].connect(self.slotColImportMode)
+        self.comboBoxCols.activated[int].connect(self.slotColImportMode)
         self.lineEditColumnsList.textChanged[str].connect(self.slotColToImport)
 
-        self.comboBoxHeaders.activated[str].connect(self.slotHeadImportMode)
+        self.comboBoxHeaders.activated[int].connect(self.slotHeadImportMode)
         self.lineEditHeadersList.textChanged[str].connect(self.slotHeadToImport)
 
         self.pushButtonImportheaders.clicked.connect(self.slotImportHeadersFromFile)
         self.spinBoxHeadersRow.valueChanged[int].connect(self.slotHeadLine)
 
-        self.comboBoxTimeOffset.activated[str].connect(self.slotTimeOffsetMode)
+        self.comboBoxTimeOffset.activated[int].connect(self.slotTimeOffsetMode)
         self.lineEditTimeOffset.textChanged[str].connect(self.slotTimeOffsetVal)
         self.lineEditTimeOffset.setValidator(DoubleValidator(self.lineEditTimeOffset))
 
@@ -308,7 +308,7 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         self.lineEditTimeOffset.setEnabled(use_offset)
 
 
-    @Slot("QModelIndex")
+    @Slot()
     def slotSelectTable(self, index):
         """
         Action when user clicks on the table
@@ -357,40 +357,42 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         self.mdl.deleteTable(idx)
 
 
-    @Slot(int)
+    @Slot()
     def slotRowsToSkip(self, val):
         """
         Set number of rows to skip when importing table
         """
         self.mdl.setTableProperty(self.table_id, 'skip_rows', str(val))
 
-    @Slot(str)
-    def slotColImportMode(self, text):
+    @Slot(int)
+    def slotColImportMode(self, idx):
         """
         Set import mode of data columns
         """
+        text = self.comboBoxCols.currentText()
         self.mdl.setTableProperty(self.table_id, 'cols2import', str(text))
         self._update_page_view()
 
-    @Slot(str)
+    @Slot()
     def slotColToImport(self, text):
         """
         Set selection criteria for columns (if user defined import mode)
         """
         self.mdl.setTableProperty(self.table_id, 'col_ids', str(text))
 
-    @Slot(str)
-    def slotHeadImportMode(self, text):
+    @Slot(int)
+    def slotHeadImportMode(self, idx):
         """
         Set import mode for headers (data labels)
         """
+        text = self.comboBoxHeaders.currentText()
         self.mdl.setTableProperty(self.table_id, 'headers_def', str(text))
 
         self.lineEditHeadersList.setReadOnly(text == 'file')
 
         self._update_page_view()
 
-    @Slot(str)
+    @Slot()
     def slotHeadToImport(self, text):
         """
         Set headers value
@@ -415,7 +417,7 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         return
 
 
-    @Slot(int)
+    @Slot()
     def slotHeadLine(self, val):
         """
         Define line from which to import headers
@@ -423,7 +425,7 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         self.mdl.setTableProperty(self.table_id, 'headers_line', int(val))
 
 
-    @Slot(str)
+    @Slot()
     def slotTimeOffsetMode(self, mode):
         """
         Set Offset mode if needed.
@@ -434,7 +436,7 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         self._update_page_view()
 
 
-    @Slot(str)
+    @Slot()
     def slotTimeOffsetVal(self, val):
         """
         Set Offset mode if needed.
@@ -469,7 +471,7 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
             dialog.setOptions(options)
         dialog.setFileMode(QFileDialog.FileMode.ExistingFiles)
 
-        if dialog.exec_() == 1:
+        if dialog.exec() == 1:
             s = dialog.selectedFiles()
             count = len(s)
             for i in range(count):

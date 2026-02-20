@@ -122,7 +122,7 @@ class ThermodynamicsInteractionView(QWidget, Ui_ThermodynamicsInteraction):
         self.tableViewInteractions.resizeRowsToContents()
         self.tableViewInteractions.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
 
-    @Slot("QModelIndex")
+    @Slot()
     def slotSelectInteraction(self, index):
         self.groupBoxGeneral.show()
 
@@ -146,7 +146,7 @@ class ThermodynamicsInteractionView(QWidget, Ui_ThermodynamicsInteraction):
         self.modelSurfaceTensionValue.setItem(str_model=choice)
         self.comboBoxSurfaceTensionValue.currentTextChanged[str].emit(text)
 
-    @Slot(str)
+    @Slot()
     def slotSurfaceTensionType(self, text):
         choice = self.modelSurfaceTensionValue.dicoV2M[text]
         tag = "surface_tension"
@@ -174,7 +174,7 @@ class ThermodynamicsInteractionView(QWidget, Ui_ThermodynamicsInteraction):
             self.pushButtonSurfaceTension.setEnabled(True)
         return
 
-    @Slot(str)
+    @Slot()
     def slotSurfaceTensionValue(self, value):
         """
         Update the surface tension

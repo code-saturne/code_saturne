@@ -88,7 +88,7 @@ class LabelDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         self.old_plabel = str(value)
         editor.setText(value)
 
@@ -115,7 +115,7 @@ class ValueDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         editor.setText(value)
 
 
@@ -126,7 +126,7 @@ class ValueDelegate(QItemDelegate):
             value = from_qvariant(editor.text(), float)
             for idx in self.parent.selectionModel().selectedIndexes():
                 if idx.column() == index.column():
-                    model.setData(idx, value, Qt.DisplayRole)
+                    model.setData(idx, value, Qt.ItemDataRole.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # StandarItemModel for Coals
@@ -171,11 +171,11 @@ class StandardItemModelCoals(QStandardItemModel):
             return None
 
         # ToolTips
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return self.tr("Code_Saturne key word: " + self.kwords[index.column()])
 
         # Display
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return self.dataCoals[index.row()][index.column()]
 
         return None
@@ -183,15 +183,15 @@ class StandardItemModelCoals(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         if index.column() == 0:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
@@ -259,8 +259,8 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         self.checkBoxISUILA.clicked.connect(self.slotISUILA)
         self.checkBoxISTTIO.clicked.connect(self.slotISTTIO)
         self.checkBoxIDEPST.clicked.connect(self.slotIDEPST)
-        self.comboBoxIPHYLA.activated[str].connect(self.slotIPHYLA)
-        self.comboBoxNORDRE.activated[str].connect(self.slotNORDRE)
+        self.comboBoxIPHYLA.activated[int].connect(self.slotIPHYLA)
+        self.comboBoxNORDRE.activated[int].connect(self.slotNORDRE)
         self.checkBoxITPVAR.clicked.connect(self.slotITPVAR)
         self.checkBoxIMPVAR.clicked.connect(self.slotIMPVAR)
         self.checkBoxIENCRA.clicked.connect(self.slotIENCRA)
@@ -354,11 +354,12 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
 
         self.case.undoStartGlobal()
 
-    @Slot(str)
-    def slotNORDRE(self, text):
+    @Slot(int)
+    def slotNORDRE(self, idx):
         """
         Input NORDRE.
         """
+        text = self.comboBoxNORDRE.currentText()
         value = self.modelNORDRE.dicoV2M[str(text)]
         self.model.setSchemeOrder(int(value))
 
@@ -407,11 +408,12 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.model.setDepositionSubmodel("off")
 
 
-    @Slot(str)
-    def slotIPHYLA(self, text):
+    @Slot(int)
+    def slotIPHYLA(self, idx):
         """
         Input IPHYLA.
         """
+        text = self.comboBoxIPHYLA.currentText()
         value = self.modelIPHYLA.dicoV2M[str(text)]
         self.model.setParticlesModel(value)
 

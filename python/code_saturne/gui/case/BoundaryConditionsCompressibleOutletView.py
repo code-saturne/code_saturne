@@ -89,7 +89,7 @@ class BoundaryConditionsCompressibleOutletView(QWidget, Ui_BoundaryConditionsCom
         self.mdl = CompressibleModel(self.case)
 
         # Connections
-        self.comboBoxTypeOutlet.activated[str].connect(self.slotOutletType)
+        self.comboBoxTypeOutlet.activated[int].connect(self.slotOutletType)
         self.lineEditPressure.textChanged[str].connect(self.slotPressureValue)
 
         # Combo models
@@ -139,11 +139,12 @@ class BoundaryConditionsCompressibleOutletView(QWidget, Ui_BoundaryConditionsCom
         self.hide()
 
 
-    @Slot(str)
+    @Slot(int)
     def slotOutletType(self, text):
         """
         INPUT outlet type
         """
+        text = self.comboBoxTypeOutlet.currentText()
         value = self.modelTypeOutlet.dicoV2M[str(text)]
         log.debug("__slotOutletType value = %s " % value)
 

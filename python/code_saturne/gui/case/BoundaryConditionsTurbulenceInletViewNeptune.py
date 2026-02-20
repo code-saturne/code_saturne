@@ -85,7 +85,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         self.setupUi(self)
 
         # Connections
-        self.comboBoxTurbulence.activated[str].connect(self.__slotChoiceTurbulence)
+        self.comboBoxTurbulence.activated[int].connect(self.__slotChoiceTurbulence)
 
         self.__modelTurbulence = ComboModel(self.comboBoxTurbulence, 3, 1)
         self.__modelTurbulence.addItem(self.tr("Calculation by hydraulic diameter"), 'hydraulic_diameter')
@@ -167,11 +167,12 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         self.hide()
 
 
-    @Slot(str)
-    def __slotChoiceTurbulence(self, text):
+    @Slot(int)
+    def __slotChoiceTurbulence(self, idx):
         """
         INPUT choice of method of calculation of the turbulence
         """
+        text = self.comboBoxTurbulence.currentText()
         turb_choice = self.__modelTurbulence.dicoV2M[str(text)]
         self.__boundary.setTurbulenceChoice(self.__currentField, turb_choice)
 

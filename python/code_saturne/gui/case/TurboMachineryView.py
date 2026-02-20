@@ -79,13 +79,13 @@ class LineEditDelegateSelector(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         editor.setText(value)
 
 
     def setModelData(self, editor, model, index):
         value = editor.text()
-        model.setData(index, value, Qt.DisplayRole)
+        model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -107,7 +107,7 @@ class VelocityDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         editor.setText(value)
 
 
@@ -117,7 +117,7 @@ class VelocityDelegate(QItemDelegate):
 
         if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), float)
-            model.setData(index, value, Qt.DisplayRole)
+            model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # Model class
@@ -147,10 +147,10 @@ class StandardItemModelRotor(QStandardItemModel):
         if not index.isValid():
             return None
 
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return self.tooltip[index.column()]
 
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             data = self._data[index.row()][index.column()]
             if index.column() in (0, 1):
                 if data:
@@ -163,12 +163,12 @@ class StandardItemModelRotor(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemFlag.ItemIsEnabled
+        return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
@@ -354,7 +354,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         self.updateView()
 
 
-    @Slot("QModelIndex")
+    @Slot()
     def slotChangeSelection(self, text=None):
         """
         detect change selection to update constant properties
@@ -385,7 +385,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
         self.updateView()
 
 
-    @Slot(str)
+    @Slot()
     def slotRotationX(self, text):
         """
         Periodicity rotation for X
@@ -396,7 +396,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
             self.mdl.setRotationVector(rotor_id, "axis_x", val)
 
 
-    @Slot(str)
+    @Slot()
     def slotRotationY(self, text):
         """
         Periodicity rotation for Y
@@ -407,7 +407,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
             self.mdl.setRotationVector(rotor_id, "axis_y", val)
 
 
-    @Slot(str)
+    @Slot()
     def slotRotationZ(self, text):
         """
         Periodicity rotation for Z
@@ -418,7 +418,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
             self.mdl.setRotationVector(rotor_id, "axis_z", val)
 
 
-    @Slot(str)
+    @Slot()
     def slotCenterRotationX1(self, text):
         """
         Periodicity : center of rotation
@@ -429,7 +429,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
             self.mdl.setRotationCenter(rotor_id, "invariant_x", val)
 
 
-    @Slot(str)
+    @Slot()
     def slotCenterRotationY1(self, text):
         """
         Periodicity : center of rotation
@@ -440,7 +440,7 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
             self.mdl.setRotationCenter(rotor_id, "invariant_y", val)
 
 
-    @Slot(str)
+    @Slot()
     def slotCenterRotationZ1(self, text):
         """
         Periodicity : center of rotation

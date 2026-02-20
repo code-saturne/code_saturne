@@ -107,17 +107,17 @@ class StandardItemModelOutput(QStandardItemModel):
             return None
 
         # ToolTips BUG
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             if index.column() == 2:
                 return self.tr("code_saturne keyword: ipstdv")
 
         # StatusTips
-        if role == Qt.StatusTipRole:
+        if role == Qt.ItemDataRole.StatusTipRole:
             if index.column() == 2:
                 return "Post-processing"
 
         # Display
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             row = index.row()
             if index.column() == 0:
                 return self.dataLabel[row]
@@ -127,36 +127,36 @@ class StandardItemModelOutput(QStandardItemModel):
                 return None
 
         # CheckState
-        if role == Qt.CheckStateRole:
+        if role == Qt.ItemDataRole.CheckStateRole:
             row = index.row()
             if index.column() == 2:
                 value = self.dataPost[row]
                 if value == 'on':
-                    return Qt.Checked
+                    return Qt.CheckState.Checked
                 else:
-                    return Qt.Unchecked
+                    return Qt.CheckState.Unchecked
 
         return None
 
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         if (index.row(), index.column()) in self.disableItem:
-            return Qt.ItemIsSelectable
+            return Qt.ItemFlag.ItemIsSelectable
         elif index.column() == 0 :
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
         elif index.column() == 1 :
-            return  Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return  Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         elif index.column() == 2 :
-            return  Qt.ItemIsEnabled | Qt.ItemIsUserCheckable
+            return  Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsUserCheckable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             if section == 0:
                 return self.tr("Output label")
             if section == 1:
@@ -176,8 +176,8 @@ class StandardItemModelOutput(QStandardItemModel):
             self.dataLabel[row] = label
 
         elif index.column() == 2:
-            v = from_qvariant(value, int)
-            if v == Qt.Checked:
+            v = Qt.CheckState(value)
+            if v == Qt.CheckState.Checked:
                 self.dataPost[row] = "on"
             else:
                 self.dataPost[row] = "off"

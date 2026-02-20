@@ -169,16 +169,16 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
         self.tableModelInteractions.dataChanged.connect(self.dataChanged)
         self.tableViewInteractions.clicked[QModelIndex].connect(self.slotSelectInteraction)
 
-        self.comboBoxContinuousMomentumTransfer.currentTextChanged[str].connect(self.slotContinuousMomentumTransfer)
-        self.comboBoxInterfaceSharpening.activated[str].connect(self.slotInterfaceSharpening)
+        self.comboBoxContinuousMomentumTransfer.currentTextChanged.connect(self.slotContinuousMomentumTransfer)
+        self.comboBoxInterfaceSharpening.activated[int].connect(self.slotInterfaceSharpening)
 
-        self.comboBoxDispersedDrag.activated[str].connect(self.slotDispersedDrag)
-        self.comboBoxLift.activated[str].connect(self.slotLift)
-        self.comboBoxAddedMass.activated[str].connect(self.slotAddedMass)
-        self.comboBoxTurbulenceDispersion.activated[str].connect(self.slotTurbulenceDispersion)
-        self.comboBoxWallForce.activated[str].connect(self.slotWallForce)
+        self.comboBoxDispersedDrag.activated[int].connect(self.slotDispersedDrag)
+        self.comboBoxLift.activated[int].connect(self.slotLift)
+        self.comboBoxAddedMass.activated[int].connect(self.slotAddedMass)
+        self.comboBoxTurbulenceDispersion.activated[int].connect(self.slotTurbulenceDispersion)
+        self.comboBoxWallForce.activated[int].connect(self.slotWallForce)
 
-        self.comboBoxSurfaceTension.currentTextChanged[str].connect(self.slotSurfaceTensionModel)
+        self.comboBoxSurfaceTension.currentTextChanged.connect(self.slotSurfaceTensionModel)
 
     def _displayDispersedModels(self):
         self.groupBoxDispersedMomentumTransfer.show()
@@ -255,7 +255,7 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
 
         if GTD_condition_1 and GTD_condition_2:
             self.modelTurbulenceDispersion.setItem(str_model="GTD_model")
-            self.comboBoxTurbulenceDispersion.activated[str].emit("GTD model")
+            self.comboBoxTurbulenceDispersion.activated[int].emit("GTD model")
         self.comboBoxDispersedDrag.setEnabled(False)
         self.comboBoxLift.setEnabled(False)
         self.comboBoxAddedMass.setEnabled(False)
@@ -282,7 +282,7 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
         self.tableViewInteractions.resizeRowsToContents()
         self.tableViewInteractions.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
 
-    @Slot("QModelIndex")
+    @Slot()
     def slotSelectInteraction(self, index):
         if not(index.isValid()):
             self.groupBoxContinuousMomentumTransfer.hide()
@@ -309,7 +309,7 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
         elif predefined_flow == "multiregime":
             self.lockMultiregimeFlowOptions()
 
-    @Slot(str)
+    @Slot()
     def slotContinuousMomentumTransfer(self, text):
         """
         configure momentum transfer for continuous phases
@@ -319,45 +319,50 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
 
         self.mdl.setContinuousCouplingModel(self.field_id_a, self.field_id_b, value)
 
-    @Slot(str)
-    def slotInterfaceSharpening(self, text):
+    @Slot(int)
+    def slotInterfaceSharpening(self, idx):
+        text = self.comboBoxInterfaceSharpening.currentText()
         model = self.modelInterfaceSharpening.dicoV2M[text]
         log.debug("slotInterfaceSharpening -> %s" % model)
         self.mdl.setInterfaceSharpeningModel(self.field_id_a, self.field_id_b, model)
 
-    @Slot(str)
+    @Slot()
     def slotSurfaceTensionModel(self, text):
         model = self.modelSurfaceTension.dicoV2M[text]
         log.debug("slotSurfaceTension -> %s" % model)
         self.mdl.setSurfaceTensionModel(self.field_id_a, self.field_id_b, model)
 
 
-    @Slot(str)
-    def slotDispersedDrag(self, text):
+    @Slot(int)
+    def slotDispersedDrag(self, idx):
+        text = self.comboBoxDispersedDrag.currentText()
         model = self.modelDispersedDrag.dicoV2M[text]
         log.debug("slotDispersedDrag -> %s" % model)
         self.mdl.setDragModel(self.field_id_a, self.field_id_b, model)
 
-    @Slot(str)
-    def slotLift(self, text):
+    @Slot(int)
+    def slotLift(self, idx):
+        text = self.comboBoxLift.currentText()
         model = self.modelLift.dicoV2M[text]
         log.debug("slotLift -> %s" % model)
         self.mdl.setLiftModel(self.field_id_a, self.field_id_b, model)
 
-    @Slot(str)
-    def slotAddedMass(self, text):
+    @Slot(int)
+    def slotAddedMass(self, idx):
+        text = self.comboBoxAddedMass.currentText()
         model = self.modelAddedMass.dicoV2M[text]
         log.debug("slotAddedMass -> %s" % model)
         self.mdl.setAddMassModel(self.field_id_a, self.field_id_b, model)
 
-    @Slot(str)
-    def slotTurbulenceDispersion(self, text):
+    @Slot(int)
+    def slotTurbulenceDispersion(self, idx):
         model = self.modelTurbulenceDispersion.dicoV2M[text]
         log.debug("slotTurbulenceDispersion -> %s" % model)
         self.mdl.setTurbDispModel(self.field_id_a, self.field_id_b, model)
 
-    @Slot(str)
-    def slotWallForce(self, text):
+    @Slot(int)
+    def slotWallForce(self, idx):
+        text = self.comboBoxWallForce.currentText()
         model = self.modelWallForce.dicoV2M[text]
         log.debug("slotWallForce -> %s" % model)
         self.mdl.setWallForceModel(self.field_id_a, self.field_id_b, model)

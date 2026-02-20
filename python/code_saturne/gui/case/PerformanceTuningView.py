@@ -102,9 +102,9 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         try:
             cfg = case.case['package'].config
             if cfg.libs['scotch'].have == False:
-                self.comboBox_PartType.setItemData(1, QColor(Qt.red), Qt.TextColorRole);
+                self.comboBox_PartType.setItemData(1, QColor(Qt.GlobalColor.red), Qt.TextColorRole);
             if cfg.libs['metis'].have == False:
-                self.comboBox_PartType.setItemData(2, QColor(Qt.red), Qt.TextColorRole);
+                self.comboBox_PartType.setItemData(2, QColor(Qt.GlobalColor.red), Qt.TextColorRole);
         except Exception:  # if case/package not available (should not happen)
             print("Warning: package configuration not available")
             pass
@@ -143,23 +143,23 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.radioButtonYes.clicked.connect(self.slotPartition)
         self.radioButtonNo.clicked.connect(self.slotPartition)
         self.toolButton_PartInputDir.pressed.connect(self.slotSearchPartInputDirectory)
-        self.comboBox_PartOutput.activated[str].connect(self.slotPartOut)
+        self.comboBox_PartOutput.activated[int].connect(self.slotPartOut)
 
-        self.comboBox_PartType.activated[str].connect(self.slotPartType)
+        self.comboBox_PartType.activated[int].connect(self.slotPartType)
         self.lineEdit_PartList.textChanged[str].connect(self.slotPartitionList)
         self.spinBoxRankStep.valueChanged[int].connect(self.slotRankStep)
 
-        self.checkBox_IgnorePerio.clicked[bool].connect(self.slotIgnorePerio)
+        self.checkBox_IgnorePerio.clicked.connect(self.slotIgnorePerio)
 
-        self.comboBox_IORead.activated[str].connect(self.slotBlockIOReadMethod)
-        self.comboBox_IOWrite.activated[str].connect(self.slotBlockIOWriteMethod)
+        self.comboBox_IORead.activated[int].connect(self.slotBlockIOReadMethod)
+        self.comboBox_IOWrite.activated[int].connect(self.slotBlockIOWriteMethod)
 
         self.spinBoxIORankStep.valueChanged[int].connect(self.slotBlockIORankStep)
         self.spinBoxIOMinBlockSize.valueChanged[int].connect(self.slotBlockIOMinSize)
 
-        self.comboBox_AllToAll.activated[str].connect(self.slotAllToAll)
+        self.comboBox_AllToAll.activated[int].connect(self.slotAllToAll)
 
-        self.tabWidget.currentChanged[int].connect(self.slotchanged)
+        self.tabWidget.currentChanged.connect(self.slotchanged)
 
         # Widget initialization
 
@@ -254,7 +254,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         dialog.setSidebarUrls(l_restart_dirs)
         dialog.setFileMode(QFileDialog.FileMode.Directory)
 
-        if dialog.exec_() == 1:
+        if dialog.exec() == 1:
 
             s = dialog.selectedFiles()
 
@@ -301,7 +301,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
             self.lineEditPartInputDir.setText("")
 
 
-    @Slot(str)
+    @Slot()
     def slotPartitionList(self, text):
         """
         Input for Partitioner.
@@ -310,29 +310,32 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.mdl.setPartitionList(self.partition_list.strip())
 
 
-    @Slot(str)
-    def slotPartOut(self, text):
+    @Slot(int)
+    def slotPartOut(self, idx):
         """
         Partitioner execution mode option.
         """
-        self.partition_out = self.modelPartOut.dicoV2M[str(text)]
+        text = self.comboBox_PartOutput.currentText()
+        self.partition_out = self.modelPartOut.dicoV2M[str(self.comboBox_PartOutput.currentText())]
         self.mdl.setPartitionOut(self.partition_out)
 
 
-    @Slot(str)
-    def slotPartType(self, text):
+    @Slot(int)
+    def slotPartType(self, idx):
         """
         Partitioner execution mode option.
         """
-        self.partition_alg = self.modelPartType.dicoV2M[str(text)]
+        text = self.comboBox_PartType.currentText()
+        self.partition_alg = self.modelPartType.dicoV2M[str(self.comboBox_PartType.currentText())]
         self.mdl.setPartitionType(self.partition_alg)
 
 
     @Slot(int)
-    def slotRankStep(self, text):
+    def slotRankStep(self, idx):
         """
         Input for Partitioner.
         """
+        #text = self.spinBoxRankStep.currentText()
         self.rank_step = self.spinBoxRankStep.value()
         self.mdl.setPartitionRankStep(self.rank_step)
 
@@ -348,26 +351,28 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
             self.mdl.setIgnorePerio("off")
 
 
-    @Slot(str)
-    def slotBlockIOReadMethod(self, text):
+    @Slot(int)
+    def slotBlockIOReadMethod(self, idx):
         """
         Partitioner execution mode option.
         """
-        self.blockio_read_method = self.modelBlockIORead.dicoV2M[str(text)]
+        text = self.comboBox_IORead.currentText()
+        self.blockio_read_method = self.modelBlockIORead.dicoV2M[str(self.comboBox_IORead.currentText())]
         self.mdl.setBlockIOReadMethod(self.blockio_read_method)
 
 
-    @Slot(str)
-    def slotBlockIOWriteMethod(self, text):
+    @Slot(int)
+    def slotBlockIOWriteMethod(self, idx):
         """
         Partitioner execution mode option.
         """
-        self.blockio_write_method = self.modelBlockIOWrite.dicoV2M[str(text)]
+        text = self.comboBox_IOWrite.currentText()
+        self.blockio_write_method = self.modelBlockIOWrite.dicoV2M[str(self.comboBox_IOWrite.currentText())]
         self.mdl.setBlockIOWriteMethod(self.blockio_write_method)
 
 
     @Slot(int)
-    def slotBlockIORankStep(self, text):
+    def slotBlockIORankStep(self, idx):
         """
         Input for Partitioner.
         """
@@ -376,7 +381,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
 
 
     @Slot(int)
-    def slotBlockIOMinSize(self, text):
+    def slotBlockIOMinSize(self, idx):
         """
         Input for Partitioner.
         """
@@ -384,12 +389,13 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.mdl.setBlockIOMinSize(self.blockio_min_size)
 
 
-    @Slot(str)
-    def slotAllToAll(self, text):
+    @Slot(int)
+    def slotAllToAll(self, idx):
         """
         All to all data exchange option.
         """
-        self.all_to_all = self.modelAllToAll.dicoV2M[str(text)]
+        text = self.comboBox_AllToAll.currentText()
+        self.all_to_all = self.modelAllToAll.dicoV2M[str(self.comboBox_AllToAll.currentText())]
         self.mdl.setAllToAll(self.all_to_all)
 
 

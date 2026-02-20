@@ -146,8 +146,8 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
 
         # ---------------------------------------
         # Connections:
-        self.comboBoxStudyMode.activated[str].connect(self.slotOtStudyMode)
-        self.comboBoxDistantBuilds.activated[str].connect(self.slotBuildChoice)
+        self.comboBoxStudyMode.activated[int].connect(self.slotOtStudyMode)
+        self.comboBoxDistantBuilds.activated[int].connect(self.slotBuildChoice)
 
         self.lineEditDistWorkDir.textChanged[str].connect(self.slotOtDistWdir)
 
@@ -205,11 +205,12 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.case.undoStartGlobal()
 
 
-    @Slot(str)
-    def slotOtStudyMode(self, text):
+    @Slot(int)
+    def slotOtStudyMode(self, idx):
         """
         Host type: localhost or a distant one (defined in code_saturne.cfg).
         """
+        text= self.comboBoxStudyMode.currentText()
         host_name = self.modelOtStudyHosts.dicoV2M[str(text)]
 
         self.mdl.setHostName(host_name)
@@ -231,15 +232,16 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.mdl.arch_path = self.hosts_binpath[host_name]
 
 
-    @Slot(str)
-    def slotBuildChoice(self, text):
+    @Slot(int)
+    def slotBuildChoice(self, idx):
         """
         Sets the hostname
         """
+        text = self.comboBoxDistantBuilds.currentText()
         self.mdl.setBuildName(text)
 
 
-    @Slot(str)
+    @Slot()
     def slotOtDistWdir(self, text):
         """
         Set the distant workdir path
@@ -247,7 +249,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.mdl.setDistWorkdir(text)
 
 
-    @Slot(int)
+    @Slot()
     def slotUpdateNodesNumber(self, v):
         """
         Update the number of required computation nodes
@@ -256,7 +258,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         n = int(self.spinBoxNumberNodes.text())
         self.mdl.setClusterParams(nnodes=n)
 
-    @Slot(int)
+    @Slot()
     def slotUpdateNprocs(self, v):
         """
         Update the number of required processes
@@ -265,7 +267,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         n = int(self.spinBoxLocalProcs.text())
         self.mdl.setNprocs(n)
 
-    @Slot(int)
+    @Slot()
     def slotUpdateTasksNumber(self, v):
         """
         Update the number of required mpi tasks per node
@@ -275,7 +277,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.mdl.setClusterParams(ntasks=n)
 
 
-    @Slot(int)
+    @Slot()
     def slotUpdateThreadsNumber(self, v):
         """
         Update the number of required threads per processor
@@ -285,7 +287,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.mdl.setClusterParams(nthreads=n)
 
 
-    @Slot(int)
+    @Slot()
     def slotUpdateWCDays(self, v):
         """
         Update the wall clock days value
@@ -297,7 +299,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.mdl.setWallClockTime(d, h, m, s)
 
 
-    @Slot(int)
+    @Slot()
     def slotUpdateWCHours(self, v):
         """
         Update the wall clock hours value
@@ -309,7 +311,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.mdl.setWallClockTime(d, h, m, s)
 
 
-    @Slot(int)
+    @Slot()
     def slotUpdateWCMinutes(self, v):
         """
         Update the wall clock minutes value
@@ -321,7 +323,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.mdl.setWallClockTime(d, h, m, s)
 
 
-    @Slot(int)
+    @Slot()
     def slotUpdateWCSeconds(self, v):
         """
         Update the wall clock seconds value
@@ -333,7 +335,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.mdl.setWallClockTime(d, h, m, s)
 
 
-    @Slot(str)
+    @Slot()
     def slotUpdateWckey(self, text):
         """
         Update the WCKEY variable

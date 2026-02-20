@@ -135,9 +135,9 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
 
 
         # Connect signals to slots
-        self.comboBoxHeatTransferModel.activated[str].connect(self.slotHeatTransferModel)
-        self.comboBoxWallFunctionModel.activated[str].connect(self.slotWallFunctionModel)
-        self.comboBoxYPlus.activated[str].connect(self.slotYPlus)
+        self.comboBoxHeatTransferModel.activated[int].connect(self.slotHeatTransferModel)
+        self.comboBoxWallFunctionModel.activated[int].connect(self.slotWallFunctionModel)
+        self.comboBoxYPlus.activated[int].connect(self.slotYPlus)
         self.checkBoxThickness.clicked.connect(self.slotThickness)
         self.lineEditYPlus.textChanged[str].connect(self.slotYPlusValue)
         self.lineEditMaxRadius.textChanged[str].connect(self.slotMaxRadius)
@@ -200,11 +200,12 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
 
         self.case.undoStartGlobal()
 
-    @Slot(str)
-    def slotHeatTransferModel(self, text):
+    @Slot(int)
+    def slotHeatTransferModel(self, idx):
         """
         configure standard or extend kurul-podowski model
         """
+        text = self.comboBoxHeatTransferModel.currentText()
         value = self.modelHeatTransferModel.dicoV2M[text]
         log.debug("slotHeatTransferModel -> %s" % value)
         self.mdl.setHeatTransferModel(value)
@@ -226,21 +227,23 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
             self.lineEditMaxDiam.setText(str(self.mdl.getMaxDiameter()))
 
 
-    @Slot(str)
-    def slotWallFunctionModel(self, text):
+    @Slot(int)
+    def slotWallFunctionModel(self, idx):
         """
         configure wall function model
         """
+        text = self.comboBoxWallFunctionModel.currentText()
         value = self.modelWallFunctionModel.dicoV2M[text]
         log.debug("slotWallFunctionModel -> %s" % value)
         self.mdl.setWallFunctionModel(value)
 
 
-    @Slot(str)
-    def slotYPlus(self, text):
+    @Slot(int)
+    def slotYPlus(self, idx):
         """
         configure Y Plus model
         """
+        text = self.comboBoxYPlus.currentText()
         value = self.modelYPlus.dicoV2M[text]
         log.debug("slotYPlus -> %s" % value)
         self.mdl.setYPlusModel(value)
@@ -252,7 +255,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
            self.lineEditYPlus.hide()
 
 
-    @Slot(str)
+    @Slot()
     def slotYPlusValue(self, text):
         """
         Update the Yplus value
@@ -262,7 +265,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
             self.mdl.setYPlusValue(value)
 
 
-    @Slot(str)
+    @Slot()
     def slotMaxRadius(self, text):
         """
         Update the max radius
@@ -272,7 +275,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
             self.mdl.setMaxRadius(value)
 
 
-    @Slot(str)
+    @Slot()
     def slotMaxDiam(self, text):
         """
         Update the max diameter
@@ -282,7 +285,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
             self.mdl.setMaxDiameter(value)
 
 
-    @Slot(str)
+    @Slot()
     def slotMaxOverSaturation(self, text):
         """
         Update the maximum oversaturation temperature
@@ -292,7 +295,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
             self.mdl.setMaxOverSaturation(value)
 
 
-    @Slot(str)
+    @Slot()
     def slotThermalConductivity(self, text):
         """
         Update the thermal conductivity
@@ -302,7 +305,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
             self.mdl.setThermalConductivity(value)
 
 
-    @Slot(str)
+    @Slot()
     def slotDensity(self, text):
         """
         Update the density
@@ -312,7 +315,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
             self.mdl.setDensity(value)
 
 
-    @Slot(str)
+    @Slot()
     def slotSpecificHeat(self, text):
         """
         Update the specific heat
@@ -322,7 +325,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
             self.mdl.setSpecificHeat(value)
 
 
-    @Slot(bool)
+    @Slot()
     def slotThickness(self, checked):
         """
         check box for Y Plus
@@ -343,7 +346,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
             self.labelThickness2.hide()
 
 
-    @Slot(str)
+    @Slot()
     def slotThicknessValue(self, text):
         """
         Update the thickness value

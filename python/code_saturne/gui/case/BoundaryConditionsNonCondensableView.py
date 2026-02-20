@@ -78,7 +78,7 @@ class BoundaryConditionsNonCondensableView(QWidget, Ui_BoundaryConditionsNonCond
         self.setupUi(self)
 
         # Connections
-        self.comboBoxNonCondensable.activated[str].connect(self.__slotChoiceNonCondensable)
+        self.comboBoxNonCondensable.activated[int].connect(self.__slotChoiceNonCondensable)
 
         self.__NonCondensablemodel = ComboModel(self.comboBoxNonCondensable, 1, 1)
 
@@ -131,11 +131,12 @@ class BoundaryConditionsNonCondensableView(QWidget, Ui_BoundaryConditionsNonCond
         self.hide()
 
 
-    @Slot(str)
-    def __slotChoiceNonCondensable(self, text):
+    @Slot(int)
+    def __slotChoiceNonCondensable(self, idx):
         """
         INPUT choice of non condensable
         """
+        text = self.comboBoxNonCondensable.currentText()
         self.__currentNonCondensable = self.__NonCondensablemodel.dicoV2M[str(text)]
 
         val = self.__boundary.getNonCondensableValue(self.__currentField, self.__currentNonCondensable)

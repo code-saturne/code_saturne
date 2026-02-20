@@ -78,7 +78,7 @@ class BoundaryConditionsWallView(QWidget, Ui_BoundaryConditionsWall) :
         self.setupUi(self)
 
         # Connections
-        self.comboBoxWallModel.activated[str].connect(self.__slotWall)
+        self.comboBoxWallModel.activated[int].connect(self.__slotWall)
 
         self.__WallModel = ComboModel(self.comboBoxWallModel, 5, 1)
         self.__WallModel.addItem(self.tr("adherence"), "adherence")
@@ -118,11 +118,12 @@ class BoundaryConditionsWallView(QWidget, Ui_BoundaryConditionsWall) :
         self.hide()
 
 
-    @Slot(str)
-    def __slotWall(self, text):
+    @Slot(int)
+    def __slotWall(self, idx):
         """
         INPUT wall model
         """
+        text = self.comboBoxWallModel.currentText()
         mdl =  self.__WallModel.dicoV2M[str(text)]
         self.__boundary.setWallModel(self.__currentField, mdl)
 

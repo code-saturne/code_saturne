@@ -92,22 +92,22 @@ class StandardItemModelCoal(QStandardItemModel):
     def data(self, index, role):
         if not index.isValid():
             return None
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return self.dataCoal[index.row()][index.column()]
         return None
 
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         elif index.column() in [1,2]:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
@@ -171,7 +171,7 @@ class StandardItemModelCoalMass(QStandardItemModel):
     def data(self, index, role):
         if not index.isValid():
             return None
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             classe = index.row()
             coal   = index.column()
             if classe < self.coalClassesNumber[coal]:
@@ -184,17 +184,17 @@ class StandardItemModelCoalMass(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         elif index.row() >= self.coalClassesNumber[index.column()]:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return "Coal" + " " + str(section+1)
-        if orientation == Qt.Vertical and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Vertical and role == Qt.ItemDataRole.DisplayRole:
             return "Class" + " " + str(section+1)
         return None
 
@@ -259,13 +259,13 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         self.notebook = NotebookModel(self.case)
 
         # Connections
-        self.comboBoxTypeInlet.activated[str].connect(self.__slotInletType)
-        self.comboBoxVelocity.activated[str].connect(self.__slotChoiceVelocity)
+        self.comboBoxTypeInlet.activated[int].connect(self.__slotInletType)
+        self.comboBoxVelocity.activated[int].connect(self.__slotChoiceVelocity)
         self.lineEditVelocity.textChanged[str].connect(self.__slotVelocityValue)
         self.lineEditTemperature.textChanged[str].connect(self.__slotTemperature)
         self.spinBoxOxydantNumber.valueChanged[int].connect(self.__slotOxydantNumber)
 
-        self.comboBoxDirection.activated[str].connect(self.__slotChoiceDirection)
+        self.comboBoxDirection.activated[int].connect(self.__slotChoiceDirection)
         self.lineEditDirectionX.textChanged[str].connect(self.__slotDirX)
         self.lineEditDirectionY.textChanged[str].connect(self.__slotDirY)
         self.lineEditDirectionZ.textChanged[str].connect(self.__slotDirZ)
@@ -448,8 +448,8 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         self.__modelCoalMass.setRatio(self.__ratio)
 
 
-    @Slot(str)
-    def __slotChoiceVelocity(self, text):
+    @Slot(int)
+    def __slotChoiceVelocity(self, idx):
         """
         Private slot.
 
@@ -458,6 +458,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
         @type text: C{QString}
         @param text: velocity boundary type choice.
         """
+        text = comboBoxVelocity.currentText()
         c = self.modelVelocity.dicoV2M[str(text)]
         log.debug("slotChoiceVelocity: %s " % c)
         self.__boundary.setVelocityChoice(c)
@@ -558,11 +559,12 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
             self.pushButtonVelocityFormula.setStyleSheet("background-color: green")
 
 
-    @Slot(str)
-    def __slotChoiceDirection(self, text):
+    @Slot(int)
+    def __slotChoiceDirection(self, idx):
         """
         Input the direction type choice.
         """
+        text = comboBoxDirection.currentText()
         c = self.modelDirection.dicoV2M[str(text)]
         log.debug("slotChoiceVelocity: %s " % c)
         self.__boundary.setDirectionChoice(c)
@@ -664,11 +666,12 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
 
 
 
-    @Slot(str)
-    def __slotInletType(self, text):
+    @Slot(int)
+    def __slotInletType(self, idx):
         """
         INPUT inlet type : 'oxydant' or 'oxydant + coal'
         """
+        text = comboBoxTypeInlet.currentText()
         value = self.modelTypeInlet.dicoV2M[str(text)]
         log.debug("__slotInletType value = %s " % value)
 

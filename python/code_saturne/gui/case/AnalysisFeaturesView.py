@@ -202,23 +202,23 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         # Connect signals to slots
 
-        self.comboBoxAtmospheric.activated[str].connect(self.slotAtmospheric)
-        self.comboBoxReactiveFlows.activated[str].connect(self.slotReactiveFlows)
-        self.comboBoxGasCombustion.activated[str].connect(self.slotGasCombustion)
+        self.comboBoxAtmospheric.activated[int].connect(self.slotAtmospheric)
+        self.comboBoxReactiveFlows.activated[int].connect(self.slotReactiveFlows)
+        self.comboBoxGasCombustion.activated[int].connect(self.slotGasCombustion)
         self.checkBoxPther.clicked.connect(self.slotPther)
-        self.comboBoxCoalCombustion.activated[str].connect(self.slotCoalCombustion)
-        self.comboBoxJouleEffect.activated[str].connect(self.slotJouleEffect)
-        self.comboBoxSinglePhase.activated[str].connect(self.slotSinglePhase)
-        self.comboBoxGroundwater.activated[str].connect(self.slotGroundwater)
-        self.comboBoxHgn.activated[str].connect(self.slotHgn)
-        self.comboBoxHTS.activated[str].connect(self.slotHTS)
+        self.comboBoxCoalCombustion.activated[int].connect(self.slotCoalCombustion)
+        self.comboBoxJouleEffect.activated[int].connect(self.slotJouleEffect)
+        self.comboBoxSinglePhase.activated[int].connect(self.slotSinglePhase)
+        self.comboBoxGroundwater.activated[int].connect(self.slotGroundwater)
+        self.comboBoxHgn.activated[int].connect(self.slotHgn)
+        self.comboBoxHTS.activated[int].connect(self.slotHTS)
         self.comboBoxNeptuneCFD.currentTextChanged[str].connect(self.slotNeptuneCFD)
         self.checkBoxNeptuneHeatMass.stateChanged.connect(self.slotNeptuneHeatMass)
         self.checkBoxALE.stateChanged.connect(self.slotALE)
         self.checkBoxFans.stateChanged.connect(self.slotFans)
 
-        self.comboBoxLagrangian.activated[str].connect(self.slotLagrangian)
-        self.comboBoxTurboMachinery.activated[str].connect(self.slotTurboModel)
+        self.comboBoxLagrangian.activated[int].connect(self.slotLagrangian)
+        self.comboBoxTurboMachinery.activated[int].connect(self.slotTurboModel)
 
         for ind in ['SinglePhase', 'Atmospheric',
                     'JouleEffect', 'Groundwater', 'ReactiveFlows',
@@ -713,8 +713,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.checkPrev = checkCur
 
 
-    @Slot(str)
-    def slotLagrangian(self, text):
+    @Slot(int)
+    def slotLagrangian(self, idx):
         """
         Private slot.
         Put value beyond the multi-phase flow treatment is choosen or not.
@@ -726,8 +726,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.browser.configureTree(self.case)
 
 
-    @Slot(str)
-    def slotAtmospheric(self, text):
+    @Slot(int)
+    def slotAtmospheric(self, idx):
         """
         Called when the comboBoxAtmospheric changed
         """
@@ -737,8 +737,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.browser.configureTree(self.case)
 
 
-    @Slot(str)
-    def slotJouleEffect(self, text):
+    @Slot(int)
+    def slotJouleEffect(self, idx):
         """
         Private slot.
         Binding method for electrical models
@@ -750,8 +750,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.browser.configureTree(self.case)
 
 
-    @Slot(str)
-    def slotSinglePhase(self, text):
+    @Slot(int)
+    def slotSinglePhase(self, idx):
         """
         Private slot.
         Binding method for gas SinglePhase models.
@@ -763,8 +763,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.browser.configureTree(self.case)
 
 
-    @Slot(str)
-    def slotGroundwater(self, text):
+    @Slot(int)
+    def slotGroundwater(self, idx):
         """
         Called when the comboBoxGroundwater changed
         """
@@ -815,12 +815,12 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.checkBoxFans.hide()
 
         if model == "particles_flow":
-            self.checkBoxNeptuneHeatMass.setCheckState(Qt.Unchecked)
+            self.checkBoxNeptuneHeatMass.setCheckState(Qt.CheckState.Unchecked)
             self.nept.setPhaseChangeTransferStatus("off")
             self.checkBoxNeptuneHeatMass.setEnabled(False)
         else:
             phase_change_transfer = self.nept.getPhaseChangeTransferStatus()
-            check_state = {"on": Qt.Checked, "off": Qt.Unchecked}[phase_change_transfer]
+            check_state = {"on": Qt.Checked, "off": Qt.CheckState.Unchecked}[phase_change_transfer]
             self.checkBoxNeptuneHeatMass.setEnabled(True)
             self.checkBoxNeptuneHeatMass.setCheckState(check_state)
 
@@ -840,8 +840,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
                     field.enthalpy_model = "total_enthalpy"
         self.browser.configureTree(self.case)
 
-    @Slot(str)
-    def slotReactiveFlows(self, text):
+    @Slot(int)
+    def slotReactiveFlows(self, idx):
         """
         Called when the ReactiveFlows changed
         """
@@ -866,8 +866,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             self.checkBoxPther.hide()
 
 
-    @Slot(str)
-    def slotGasCombustion(self, text):
+    @Slot(int)
+    def slotGasCombustion(self, idx):
         """
         Private slot.
         Binding method for gas combustion models.
@@ -880,8 +880,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.browser.configureTree(self.case)
 
 
-    @Slot(str)
-    def slotCoalCombustion(self, text):
+    @Slot(int)
+    def slotCoalCombustion(self, idx):
         """
         Private slot.
         Binding method for coal combustion models.
@@ -899,8 +899,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.browser.configureTree(self.case)
 
 
-    @Slot(str)
-    def slotHgn(self, text):
+    @Slot(int)
+    def slotHgn(self, idx):
         """
         Called when the comboBoxHgn changed
         """
@@ -910,8 +910,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         self.browser.configureTree(self.case)
 
-    @Slot(str)
-    def slotHTS(self, text):
+    @Slot(int)
+    def slotHTS(self, idx):
         """
         Called when the comboBoxHTS changed
         """
@@ -924,13 +924,13 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
 
         self.browser.configureTree(self.case)
 
-    @Slot(str)
-    def slotTurboModel(self, text):
+    @Slot(int)
+    def slotTurboModel(self, idx):
         """
         Input turbomachinery model.
         """
-        mdl = self.modelTurboMachinery.dicoV2M[str(text)]
-        self.tbm.setTurboMachineryModel(mdl)
+        model = self.__stringModelFromCombo('TurboMachinery')
+        self.tbm.setTurboMachineryModel(model)
 
         self.browser.configureTree(self.case)
 

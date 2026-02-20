@@ -657,7 +657,7 @@ class MainView(object):
             path = os.path.split(path)[0]  # case directory
             path = os.path.split(path)[0]  # parent directory
         dialog = NewCaseDialogView(self, self.package, path)
-        if dialog.exec_():
+        if dialog.exec():
             if not hasattr(self, 'case'):
                 self.fileNew()
             else:
@@ -1107,7 +1107,7 @@ class MainView(object):
                     warnings += line
                 box.setDetailedText(warnings)
 
-            box.exec_()
+            box.exec()
         else:
             msg = "There are no user files inside the SRC subfolder."
             QMessageBox.information(self, self.tr(test_title), msg)

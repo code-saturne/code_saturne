@@ -103,23 +103,23 @@ class StandardItemModelCathare(QStandardItemModel):
     def data(self, index, role):
         if not index.isValid():
             return None
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return self.tooltip[index.column()]
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return self.dataCathare[index.row()][index.column()]
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             return Qt.AlignCenter
         return None
 
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemFlag.ItemIsEnabled
+        return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
@@ -258,7 +258,7 @@ class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
         self.pushButtonAdd.clicked.connect(self.slotAddCathare)
         self.pushButtonDelete.clicked.connect(self.slotDeleteCathare)
 
-        self.comboBoxActiveCpl.activated[str].connect(self.slotActivateCpl)
+        self.comboBoxActiveCpl.activated[int].connect(self.slotActivateCpl)
 
         self.radioButtonOnePhase.clicked.connect(self.slotOnePhase)
         self.radioButtonAllPhases.clicked.connect(self.slotAllPhases)
@@ -466,7 +466,7 @@ class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
         dialog.setSidebarUrls(l_mesh_dirs)
         dialog.setFileMode(QFileDialog.FileMode.Directory)
 
-        if dialog.exec_() == 1:
+        if dialog.exec() == 1:
 
             s = dialog.selectedFiles()
             instance_name = os.path.split(str(s[0]))[-1]
@@ -497,7 +497,7 @@ class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
         dialog.setSidebarUrls(l_mesh_dirs)
         dialog.setFileMode(QFileDialog.FileMode.Directory)
 
-        if dialog.exec_() == 1:
+        if dialog.exec() == 1:
 
             s = dialog.selectedFiles()
             instance_name = os.path.split(str(s[0]))[-1]
@@ -528,7 +528,7 @@ class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
         dialog.setSidebarUrls(l_mesh_dirs)
         dialog.setNameFilter(self.tr("*.dat"))
 
-        if dialog.exec_() == 1:
+        if dialog.exec() == 1:
 
             s = dialog.selectedFiles()
             file_name = os.path.split(str(s[0]))[-1]

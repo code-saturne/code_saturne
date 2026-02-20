@@ -144,8 +144,8 @@ if (xray2 < xr2) {
 
         # Connections
         self.lineEditNALINF.textChanged[str].connect(self.slotNalinf)
-        self.comboBoxALESOLVER.activated[str].connect(self.slotALESolverType)
-        self.comboBoxVISCOSITY.activated[str].connect(self.slotViscosityType)
+        self.comboBoxALESOLVER.activated[int].connect(self.slotALESolverType)
+        self.comboBoxVISCOSITY.activated[int].connect(self.slotViscosityType)
         self.pushButtonFormula.clicked.connect(self.slotFormula)
 
         # Validators
@@ -175,13 +175,14 @@ if (xray2 < xr2) {
         """
         if self.lineEditNALINF.validator().state == QValidator.State.Acceptable:
             nalinf = from_qvariant(text, int)
-            self.mdl.setSubIterations(nalinf)
+            self.mdl.setSubIterations(int(nalinf))
 
-    @Slot(str)
-    def slotViscosityType(self, text):
+    @Slot(int)
+    def slotViscosityType(self, idx):
         """
         Input viscosity type of mesh : isotrop or orthotrop.
         """
+        text = self.comboBoxVISCOSITY.currentText()
         self.viscosity_type = self.modelVISCOSITY.dicoV2M[str(text)]
         visco = self.viscosity_type
         self.mdl.setViscosity(visco)
@@ -193,11 +194,12 @@ if (xray2 < xr2) {
             self.pushButtonFormula.setStyleSheet("background-color: red")
         return visco
 
-    @Slot(str)
-    def slotALESolverType(self, text):
+    @Slot(int)
+    def slotALESolverType(self, idx):
         """
         Input ALE solver : legacy or cdo.
         """
+        text = self.comboBoxALESOLVER.currentText()
         self.ale_solver = self.modelALESOLVER.dicoV2M[str(text)]
         solver = self.ale_solver
         self.mdl.setALESolver(solver)

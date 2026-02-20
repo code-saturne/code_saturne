@@ -94,7 +94,7 @@ class LabelDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         self.old_plabel = str(value)
         editor.setText(value)
 
@@ -122,7 +122,7 @@ class LabelDelegate(QItemDelegate):
                 else:
                     new_plabel = self.old_plabel
 
-            model.setData(index, new_plabel, Qt.DisplayRole)
+            model.setData(index, new_plabel, Qt.ItemDataRole.DisplayRole)
 
 
 class TypeDelegate(QItemDelegate):
@@ -161,7 +161,7 @@ class TypeDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, value, Qt.DisplayRole)
+                model.setData(idx, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -205,7 +205,7 @@ class FieldDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, value, Qt.DisplayRole)
+                model.setData(idx, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -228,7 +228,7 @@ class ValueDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = index.model().data(index, Qt.DisplayRole)
+        value = index.model().data(index, Qt.ItemDataRole.DisplayRole)
         editor.setText(value)
 
 
@@ -239,7 +239,7 @@ class ValueDelegate(QItemDelegate):
             value = from_qvariant(editor.text(), float)
             for idx in self.parent.selectionModel().selectedIndexes():
                 if idx.column() == index.column():
-                    model.setData(idx, value, Qt.DisplayRole)
+                    model.setData(idx, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -274,17 +274,17 @@ class StandardItemModelNonCondensable(QStandardItemModel):
         if not index.isValid():
             return None
 
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return None
 
-        elif role == Qt.DisplayRole:
+        elif role == Qt.ItemDataRole.DisplayRole:
             data = self._data[index.row()][index.column()]
             if data:
                 return data
             else:
                 return None
 
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             return Qt.AlignCenter
 
         return None
@@ -292,22 +292,22 @@ class StandardItemModelNonCondensable(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         if index.column() > 2 :
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         else :
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
 
     def setData(self, index, value, role):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         # Update the row in the table
         row = index.row()

@@ -115,7 +115,7 @@ class PorosityView(QWidget, Ui_PorosityForm):
             self.modelPorosityType = ComboModel(self.comboBoxType, 1, 1)
             self.modelPorosityType.addItem(self.tr("isotropic"), 'isotropic')
             self.modelPorosityType.disableItem(index=0)
-        self.comboBoxType.activated[str].connect(self.slotPorosity)
+        self.comboBoxType.activated[int].connect(self.slotPorosity)
         self.pushButtonPorosity.clicked.connect(self.slotFormulaPorosity)
         self.selectPorosityZones()
 
@@ -138,11 +138,12 @@ class PorosityView(QWidget, Ui_PorosityForm):
         else:
             self.pushButtonPorosity.setStyleSheet("background-color: red")
 
-    @Slot(str)
-    def slotPorosity(self, text):
+    @Slot(int)
+    def slotPorosity(self, idx):
         """
         Method to call 'getState' with correct arguements for 'rho'
         """
+        text = self.comboBoxType.currentText()
         zone_id = self.zone.getCodeNumber()
         choice = self.modelPorosityType.dicoV2M[str(text)]
 

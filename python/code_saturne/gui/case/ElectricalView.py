@@ -105,9 +105,9 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         self.lineEditPower.textChanged[str].connect(self.slotPower)
         self.lineEditCurrent.textChanged[str].connect(self.slotCurrent)
         self.checkBoxScaling.clicked.connect(self.slotScaling)
-        self.comboBoxJouleModel.activated[str].connect(self.slotJouleModel)
-        self.comboBoxScalingModel.activated[str].connect(self.slotScalingModel)
-        self.comboBoxDirection.activated[str].connect(self.slotDirection)
+        self.comboBoxJouleModel.activated[int].connect(self.slotJouleModel)
+        self.comboBoxScalingModel.activated[int].connect(self.slotScalingModel)
+        self.comboBoxDirection.activated[int].connect(self.slotDirection)
         self.lineEditPlaneDefinitionA.textChanged[str].connect(self.slotPlaneDefA)
         self.lineEditPlaneDefinitionB.textChanged[str].connect(self.slotPlaneDefB)
         self.lineEditPlaneDefinitionC.textChanged[str].connect(self.slotPlaneDefC)
@@ -196,7 +196,7 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         """
         if self.lineEditPower.validator().state == QValidator.State.Acceptable:
             power = from_qvariant(text, float)
-            self.model.setPower(power)
+            self.model.setPower(float(power))
 
 
     @Slot(str)
@@ -209,11 +209,12 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
             self.model.setCurrent(current)
 
 
-    @Slot(str)
-    def slotJouleModel(self, text):
+    @Slot(int)
+    def slotJouleModel(self, idx):
         """
         Input Joule model.
         """
+        text = self.comboBoxJouleModel.currentText()
         model = self.modelJoule.dicoV2M[str(text)]
         self.model.setJouleModel(model)
 
@@ -231,21 +232,23 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
         self.__initializeWidget()
 
 
-    @Slot(str)
-    def slotScalingModel(self, text):
+    @Slot(int)
+    def slotScalingModel(self, idx):
         """
         Input scaling model.
         """
-        model = self.modelScaling.dicoV2M[str(text)]
+        text = self.comboBoxScalingModel.currentText()
+        model = self.modelScaling.dicoV2M[text]
         self.model.setScalingModel(model)
         self.__initializeWidget()
 
 
-    @Slot(str)
-    def slotDirection(self, text):
+    @Slot(int)
+    def slotDirection(self, idx):
         """
         Input current density direction for scaling.
         """
+        text = self.comboBoxDirection.currentText()
         direction = self.modelDirection.dicoV2M[str(text)]
         self.model.setDirection(direction)
 

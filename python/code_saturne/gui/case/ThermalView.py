@@ -218,7 +218,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
         self.modelThermal.addItem(self.tr("Liquid potential temperature"), 'liquid_potential_temperature')
         self.modelThermal.addItem(self.tr("Total energy (J/kg)"), 'total_energy')
 
-        self.comboBoxThermal.activated[str].connect(self.slotThermalScalar)
+        self.comboBoxThermal.activated[int].connect(self.slotThermalScalar)
 
         # Update the thermal scalar list with the calculation features
 
@@ -275,7 +275,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
                 if self._current_particle_f_id == None:
                     self._current_particle_f_id = name
 
-            self.comboBoxEmissivity.activated[str].connect(self.slotEmissivityField)
+            self.comboBoxEmissivity.activated[int].connect(self.slotEmissivityField)
 
             self.partRadiationModel = ThermalParticlesRadiationModel(self.case)
             self.__setParticlesRadiation__()
@@ -311,7 +311,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
         self.lineEditEmissivity.setValidator(validator)
 
         self.groupBoxParticlesRadiation.toggled[bool].connect(self.slotActivateParticlesRadiation)
-        self.lineEditEmissivity.textChanged[str].connect(self.slotSetEmissivity)
+        self.lineEditEmissivity.textChanged.connect(self.slotSetEmissivity)
 
         # Initialization from XML model
         if self.partRadiationModel.isActivated == "on":
@@ -372,11 +372,11 @@ class ThermalView(QWidget, Ui_ThermalForm):
 
         # Connections
 
-        self.comboBoxRadModel.activated[str].connect(self.slotFluidRadiativeTransfer)
-        self.checkBoxRadRestart.stateChanged.connect(self.slotRadRestart)
-        self.comboBoxQuadrature.activated[str].connect(self.slotDirection)
-        self.lineEditNdirec.textChanged[str].connect(self.slotNdirec)
-        self.comboBoxAbsorption.activated[str].connect(self.slotTypeCoefficient)
+        self.comboBoxRadModel.activated[int].connect(self.slotFluidRadiativeTransfer)
+        self.checkBoxRadRestart.stateChanged[int].connect(self.slotRadRestart)
+        self.comboBoxQuadrature.activated[int].connect(self.slotDirection)
+        self.lineEditNdirec.textChanged.connect(self.slotNdirec)
+        self.comboBoxAbsorption.activated[int].connect(self.slotTypeCoefficient)
         self.lineEditCoeff.textChanged[str].connect(self.slotAbsorptionCoefficient)
         self.toolButtonAdvanced.clicked.connect(self.slotAdvancedOptions)
 
@@ -418,7 +418,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
                 self.modelRadModel.disableItem(str_model='dom')
                 self.modelRadModel.disableItem(str_model='p-1')
 
-        self.slotFluidRadiativeTransfer()
+        self.slotFluidRadiativeTransfer(id)
 
         if self.rmdl.getRestart() == 'on':
             self.checkBoxRadRestart.setChecked(True)
@@ -459,10 +459,10 @@ class ThermalView(QWidget, Ui_ThermalForm):
 
         # Connections
 
-        self.comboBoxSoot.activated[str].connect(self.slotSoot)
-        self.lineEditSootDensity.textChanged[str].connect(self.slotSootDensity)
-        self.lineEditSootFraction.textChanged[str].connect(self.slotSootFraction)
-        self.lineEditLspFuel.textChanged[str].connect(self.slotLspFuel)
+        self.comboBoxSoot.activated[int].connect(self.slotSoot)
+        self.lineEditSootDensity.textChanged.connect(self.slotSootDensity)
+        self.lineEditSootFraction.textChanged.connect(self.slotSootFraction)
+        self.lineEditLspFuel.textChanged.connect(self.slotLspFuel)
 
         # Validator
 
@@ -485,19 +485,20 @@ class ThermalView(QWidget, Ui_ThermalForm):
         self.slotSoot()
 
 
-    @Slot(str)
-    def slotThermalScalar(self, text):
+    @Slot(int)
+    def slotThermalScalar(self, idx):
         """
         Update the thermal scalar markup.
         """
-        th = self.modelThermal.dicoV2M[str(text)]
+        text = self.comboBoxThermal.currentText()
+        th = self.modelThermal.dicoV2M[str(self.comboBoxThermal.currentText())]
         self.thermal.setThermalModel(th)
 
         self.__setFluidRadiation__(th)
         self.browser.configureTree(self.case)
 
 
-    @Slot(str)
+    @Slot()
     def slotEmissivityField(self, text):
         """
         Update current field id for particles radiaitive model.
@@ -507,10 +508,11 @@ class ThermalView(QWidget, Ui_ThermalForm):
 
         self._update_emissivity_line()
 
-    @Slot(str)
-    def slotFluidRadiativeTransfer(self):
+    @Slot(int)
+    def slotFluidRadiativeTransfer(self,idx):
         """
         """
+        text = self.comboBoxRadModel.currentText()
         self.gas = GasCombustionModel(self.case)
         model = self.modelRadModel.dicoV2M[str(self.comboBoxRadModel.currentText())]
         self.rmdl.setRadiativeModel(model)
@@ -552,11 +554,12 @@ class ThermalView(QWidget, Ui_ThermalForm):
             self.rmdl.setRestart("on")
 
 
-    @Slot(str)
-    def slotDirection(self, text):
+    @Slot(int)
+    def slotDirection(self, idx):
         """
         """
-        n = int(self.modelDirection.dicoV2M[str(text)])
+        text = self.comboBoxQuadrature.currentText()
+        n = int(self.modelDirection.dicoV2M[str(self.comboBoxQuadrature.currentText())])
         self.rmdl.setQuadrature(n)
 
         if n == 6:
@@ -577,11 +580,12 @@ class ThermalView(QWidget, Ui_ThermalForm):
             self.rmdl.setNbDir(n)
 
 
-    @Slot(str)
-    def slotTypeCoefficient(self, text):
+    @Slot(int)
+    def slotTypeCoefficient(self, idx):
         """
         """
-        typeCoeff = self.modelAbsorption.dicoV2M[str(text)]
+        text = self.comboBoxAbsorption.currentText()
+        typeCoeff = self.modelAbsorption.dicoV2M[str(self.comboBoxAbsorption.currentText())]
         self.rmdl.setTypeCoeff(typeCoeff)
 
         self.gas = GasCombustionModel(self.case)
@@ -617,7 +621,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
         """
         if self.lineEditCoeff.validator().state == QValidator.State.Acceptable:
             c  = from_qvariant(text, float)
-            self.rmdl.setAbsorCoeff(c)
+            self.rmdl.setAbsorCoeff(float(c))
 
 
     @Slot()
@@ -634,7 +638,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
         log.debug("slotAdvancedOptions -> %s" % str(default))
 
         dialog = ThermalRadiationAdvancedDialogView(self, self.case, default)
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             print(result)
             log.debug("slotAdvancedOptions -> %s" % str(result))
@@ -644,10 +648,11 @@ class ThermalView(QWidget, Ui_ThermalForm):
             self.rmdl.setIntensityResolution(result['intensity'])
 
 
-    @Slot(str)
-    def slotSoot(self):
+    @Slot(int)
+    def slotSoot(self, idx):
         """
         """
+        text = self.comboBoxSoot.currentText()
         model = self.modelSoot.dicoV2M[str(self.comboBoxSoot.currentText())]
         self.gas.setSootModel(model)
         if model == 'off':
@@ -716,7 +721,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
         """
         if self.lineEditSootDensity.validator().state == QValidator.State.Acceptable:
             c  = from_qvariant(text, float)
-            self.gas.setSootDensity(c)
+            self.gas.setSootDensity(float(c))
 
     @Slot(str)
     def slotSootFraction(self, text):

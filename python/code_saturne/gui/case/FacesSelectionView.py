@@ -81,13 +81,13 @@ class LineEditDelegateVerbosity(QItemDelegate):
 
 
     def setEditorData(self, lineEdit, index):
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         lineEdit.setText(value)
 
 
     def setModelData(self, lineEdit, model, index):
         value = lineEdit.text()
-        model.setData(index, value, Qt.DisplayRole)
+        model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # Line edit delegate for selection
@@ -122,13 +122,13 @@ class LineEditDelegateSelector(QItemDelegate):
         # This line is used to avoid an overlay of old and new text
         lineEdit.setAutoFillBackground(True)
 
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         lineEdit.setText(value)
 
 
     def setModelData(self, lineEdit, model, index):
         value = lineEdit.text()
-        model.setData(index, value, Qt.DisplayRole)
+        model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # Line edit delegate for Fraction and Plane
@@ -149,14 +149,14 @@ class FractionPlaneDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         editor.setText(value)
 
 
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), float)
-            model.setData(index, value, Qt.DisplayRole)
+            model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # Model class
@@ -221,10 +221,10 @@ class StandardItemModelFaces(QStandardItemModel):
         row = index.row()
         col = index.column()
 
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return self.tooltip[col]
 
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             if col == 0:
                 return self.dataFaces[row]['fraction']
             elif col == 1:
@@ -241,12 +241,12 @@ class StandardItemModelFaces(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemFlag.ItemIsEnabled
+        return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 

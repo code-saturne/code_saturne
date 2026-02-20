@@ -97,7 +97,7 @@ class LabelDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        v = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        v = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         self.p_value = str(v)
         editor.setText(v)
 
@@ -125,7 +125,7 @@ class LabelDelegate(QItemDelegate):
                 else:
                     p_value = self.p_value
 
-            model.setData(index, p_value, Qt.DisplayRole)
+            model.setData(index, p_value, Qt.ItemDataRole.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # QLineEdit delegate for the zone
@@ -147,7 +147,7 @@ class CodeNumberDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        v = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        v = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         editor.setText(self.value)
 
 
@@ -163,7 +163,7 @@ class CodeNumberDelegate(QItemDelegate):
                 QMessageBox.warning(self.parent, title, msg)
                 return
 
-            model.setData(index, value, Qt.DisplayRole)
+            model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 
 class LocalizationSelectorDelegate(QItemDelegate):
@@ -195,7 +195,7 @@ class LocalizationSelectorDelegate(QItemDelegate):
         # This line is used to avoid an overlay of old and new text
         editor.setAutoFillBackground(True)
 
-        self.value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        self.value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         editor.setText(self.value)
 
 
@@ -210,7 +210,7 @@ class LocalizationSelectorDelegate(QItemDelegate):
             return
 
         if str(value) != "" :
-            model.setData(index, value, Qt.DisplayRole)
+            model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 
 class DefineZonesTableModel(QStandardItemModel):
@@ -236,7 +236,7 @@ class DefineZonesTableModel(QStandardItemModel):
         if not index.isValid():
             return None
 
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             row = index.row()
             col = index.column()
             return self._data[row][col]
@@ -245,13 +245,13 @@ class DefineZonesTableModel(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         if (index.row(), index.column()) in self._disable:
-            return Qt.ItemIsSelectable
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemFlag.ItemIsSelectable
+        return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
@@ -402,7 +402,7 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
             self.pushButtonSalome.clicked.connect(self.slotAddFromSalome)
 
         # Context menu
-        self.tableView.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.tableView.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.tableView.customContextMenuRequested[QPoint].connect(self.slotContextMenu)
 
         self.case.undoStartGlobal()

@@ -92,7 +92,7 @@ class NameDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         self.old_pname = str(value)
         editor.setText(value)
 
@@ -120,7 +120,7 @@ class NameDelegate(QItemDelegate):
                 else:
                     new_pname = self.old_pname
 
-            model.setData(index, new_pname, Qt.DisplayRole)
+            model.setData(index, new_pname, Qt.ItemDataRole.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # Line edit delegate for the chemical formula
@@ -148,7 +148,7 @@ class ChemicalFormulaDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         self.old_pname = str(value)
         editor.setText(value)
 
@@ -176,7 +176,7 @@ class ChemicalFormulaDelegate(QItemDelegate):
                 else:
                     new_pname = self.old_pname
 
-            model.setData(index, new_pname, Qt.DisplayRole)
+            model.setData(index, new_pname, Qt.ItemDataRole.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # Line edit delegate for the value
@@ -197,7 +197,7 @@ class ValueDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         editor.setText(value)
 
 
@@ -208,7 +208,7 @@ class ValueDelegate(QItemDelegate):
             value = from_qvariant(editor.text(), float)
             for idx in self.parent.selectionModel().selectedIndexes():
                 if idx.column() == index.column():
-                    model.setData(idx, value, Qt.DisplayRole)
+                    model.setData(idx, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -244,7 +244,7 @@ class StandardItemModelSpecies(QStandardItemModel):
         row = index.row()
         col = index.column()
 
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return self._data[row][col]
 
         return None
@@ -252,22 +252,22 @@ class StandardItemModelSpecies(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         if index.column() != 0:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
         else:
-            return Qt.ItemIsSelectable
+            return Qt.ItemFlag.ItemIsSelectable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
 
     def setData(self, index, value, role):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         # Update the row in the table
         row = index.row()
@@ -418,21 +418,21 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         self.userModeForChemicalReaction.addItem("Defined by user", 'user')
 
         # Connections
-        self.comboBoxUserChoice.activated[str].connect(self.slotUserChoice)
-        self.comboBoxGasCombustionOption.activated[str].connect(self.slotGasCombustionOption)
+        self.comboBoxUserChoice.activated[int].connect(self.slotUserChoice)
+        self.comboBoxGasCombustionOption.activated[int].connect(self.slotGasCombustionOption)
         self.pushButtonThermochemistryData.pressed.connect(self.__slotSearchThermochemistryData)
         self.radioButtonCreateJanafFile.clicked.connect(self.slotCreateJanafFile)
-        self.lineEditNbPointsTabu.textChanged[str].connect(self.slotNbPointsTabu)
-        self.lineEditMaximumTemp.textChanged[str].connect(self.slotMaximumTemp)
-        self.lineEditMinimumTemp.textChanged[str].connect(self.slotMinimumTemp)
+        self.lineEditNbPointsTabu.textChanged.connect(self.slotNbPointsTabu)
+        self.lineEditMaximumTemp.textChanged.connect(self.slotMaximumTemp)
+        self.lineEditMinimumTemp.textChanged.connect(self.slotMinimumTemp)
         self.pushButtonAddSpecies.clicked.connect(self.slotAddSpecies)
         self.pushButtonDeleteSpecies.clicked.connect(self.slotDeleteSpecies)
         self.pushButtonGenerateJanafFile.clicked.connect(self.slotGenerateJanafFile)
-        self.lineEditFuel.textChanged[str].connect(self.slotFuel)
-        self.lineEditO2.textChanged[str].connect(self.slotVolPropO2)
-        self.lineEditN2.textChanged[str].connect(self.slotVolPropN2)
-        self.lineEditCOyield.textChanged[str].connect(self.slotCOyield)
-        self.lineEditCSyield.textChanged[str].connect(self.slotCSyield)
+        self.lineEditFuel.textChanged.connect(self.slotFuel)
+        self.lineEditO2.textChanged.connect(self.slotVolPropO2)
+        self.lineEditN2.textChanged.connect(self.slotVolPropN2)
+        self.lineEditCOyield.textChanged.connect(self.slotCOyield)
+        self.lineEditCSyield.textChanged.connect(self.slotCSyield)
         self.modelSpecies.dataChanged.connect(self.dataChanged)
 
         # Validators
@@ -532,13 +532,14 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         self.case.undoStartGlobal()
 
 
-    @Slot(str)
-    def slotGasCombustionOption(self, text):
+    @Slot(int)
+    def slotGasCombustionOption(self, idx):
         """
         Private slot.
         Binding method for gas combustion models.
         """
-        option = self.modelGasCombustionOption.dicoV2M[str(text)]
+        text = self.comboBoxGasCombustionOption.currentText()
+        option = self.modelGasCombustionOption.dicoV2M[text]
         self.mdl.setGasCombustionOption(option)
 
 
@@ -578,7 +579,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
             self.lineEditNbPointsTabu.setText(str(self.thermodata.getNbPointsTabu()))
             self.lineEditMaximumTemp.setText(str(self.thermodata.getMaximumTemp()))
             self.lineEditMinimumTemp.setText(str(self.thermodata.getMinimumTemp()))
-            self.slotUserChoice()
+            self.slotUserChoice(id)
             return
         else:
             self.thermodata.setCreateThermoDataFile("off")
@@ -588,10 +589,11 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
             self.groupBoxGenerateDataFile.hide()
             self.groupBoxAutomatic.hide()
 
-    @Slot(str)
-    def slotUserChoice(self):
+    @Slot(int)
+    def slotUserChoice(self, idx):
         """
         """
+        text = self.comboBoxUserChoice.currentText()
         model = self.userModeForChemicalReaction.dicoV2M[str(self.comboBoxUserChoice.currentText())]
         self.thermodata.setUserModeForChemicalReaction(model)
         self.groupBoxGenerateDataFile.show()
@@ -620,7 +622,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         """
         if self.lineEditNbPointsTabu.validator().state == QValidator.State.Acceptable:
             NbPointsTabu = from_qvariant(text, int)
-            self.thermodata.setNbPointsTabu(NbPointsTabu)
+            self.thermodata.setNbPointsTabu(int(NbPointsTabu))
 
     @Slot(str)
     def slotMaximumTemp(self, text):
@@ -629,7 +631,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         """
         if self.lineEditMaximumTemp.validator().state == QValidator.State.Acceptable:
             MaximumTemp = from_qvariant(text, float)
-            self.thermodata.setMaximumTemp(MaximumTemp)
+            self.thermodata.setMaximumTemp(float(MaximumTemp))
 
     @Slot(str)
     def slotMinimumTemp(self, text):
@@ -638,7 +640,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         """
         if self.lineEditMinimumTemp.validator().state == QValidator.State.Acceptable:
             MinimumTemp = from_qvariant(text, float)
-            self.thermodata.setMinimumTemp(MinimumTemp)
+            self.thermodata.setMinimumTemp(float(MinimumTemp))
 
     @Slot(str)
     def slotFuel(self, text):
@@ -656,8 +658,8 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         """
         if self.lineEditO2.validator().state == QValidator.State.Acceptable:
             VolPropO2 = from_qvariant(text, float)
-            self.thermodata.setVolPropO2(VolPropO2)
-            self.lineEditN2.setText(str(round(1.0 - VolPropO2,12)))
+            self.thermodata.setVolPropO2(float(VolPropO2))
+            self.lineEditN2.setText(str(round(1.0 - float(VolPropO2),12)))
 
     @Slot(str)
     def slotVolPropN2(self, text):
@@ -666,8 +668,8 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         """
         if self.lineEditN2.validator().state == QValidator.State.Acceptable:
             VolPropN2 = from_qvariant(text, float)
-            self.thermodata.setVolPropN2(VolPropN2)
-            self.lineEditO2.setText(str(round(1.0 - VolPropN2,12)))
+            self.thermodata.setVolPropN2(float(VolPropN2))
+            self.lineEditO2.setText(str(round(1.0 - float(VolPropN2),12)))
 
     @Slot(str)
     def slotCOyield(self, text):
@@ -676,7 +678,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         """
         if self.lineEditCOyield.validator().state == QValidator.State.Acceptable:
             COyield = from_qvariant(text, float)
-            self.thermodata.setCOyield(COyield)
+            self.thermodata.setCOyield(float(COyield))
 
     @Slot(str)
     def slotCSyield(self, text):
@@ -685,7 +687,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         """
         if self.lineEditCSyield.validator().state == QValidator.State.Acceptable:
             CSyield = from_qvariant(text, float)
-            self.thermodata.setCSyield(CSyield)
+            self.thermodata.setCSyield(float(CSyield))
 
     @Slot()
     def slotAddSpecies(self):

@@ -83,7 +83,7 @@ class StandardItemModelScalars(QStandardItemModel):
     def data(self, index, role):
         if not index.isValid():
             return None
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             if index.column() == 0:
                 return self.lst[index.row()][1]
             elif index.column() == 1:
@@ -221,7 +221,7 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
         self.modelRadiative.addItem(self.tr("Fixed conduction flux"), 'ifgrno')
 
         # Connections
-        self.comboBoxRadiative.activated[str].connect(self.slotRadiativeChoice)
+        self.comboBoxRadiative.activated[int].connect(self.slotRadiativeChoice)
 
         self.lineEditEmissivity.textChanged[str].connect(self.slotEmissivity)
         self.lineEditConductivity.textChanged[str].connect(self.slotConductivity)
@@ -254,8 +254,9 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
         self.hide()
 
 
-    @Slot(str)
-    def slotRadiativeChoice(self, text):
+    @Slot(int)
+    def slotRadiativeChoice(self, idx):
+        text = comboBoxRadiative.currentText()
         cond = self.modelRadiative.dicoV2M[str(text)]
         log.debug("slotRadiativeChoice cond = %s "%cond)
         self.__boundary.setRadiativeChoice(cond)

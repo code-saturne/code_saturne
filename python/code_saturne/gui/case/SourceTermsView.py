@@ -99,11 +99,11 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         self.setConnections()
 
     def setConnections(self):
-        self.comboBoxSpecies.activated[str].connect(self.slotSpeciesChoice)
+        self.comboBoxSpecies.activated[int].connect(self.slotSpeciesChoice)
         self.pushButtonMomentum.clicked.connect(self.slotMomentumFormula)
         self.pushButtonThermal.clicked.connect(self.slotThermalFormula)
         self.pushButtonSpecies.clicked.connect(self.slotSpeciesFormula)
-        self.comboBoxSpecies2.activated[str].connect(self.slotSpeciesChoice)
+        self.comboBoxSpecies2.activated[int].connect(self.slotSpeciesChoice)
         self.pushButtonSpecies2.clicked.connect(self.slotSpeciesGroundWaterFormula)
         self.pushButtonRichards.clicked.connect(self.slotRichardsFormula)
 
@@ -240,11 +240,12 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
             self.labelSpecies.hide()
             self.groupBoxTransport.hide()
 
-    @Slot(str)
-    def slotSpeciesChoice(self, text):
+    @Slot(int)
+    def slotSpeciesChoice(self, idx):
         """
         INPUT label for choice of species
         """
+        text = self.comboBoxSpecies.currentText()
         self.scalar = self.modelSpecies.dicoV2M[str(text)]
         exp = self.mdl.getSpeciesFormula(self.zone_id, self.scalar)
         if exp:

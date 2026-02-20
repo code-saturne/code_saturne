@@ -305,7 +305,7 @@ class ListingDialogView(CommandMgrDialogView):
         default = {}
         default['iter'] = 100
         dlg = BatchRunningStopByIterationDialogView(self, default)
-        if dlg.exec_():
+        if dlg.exec():
             result = dlg.get_result()
             msg = self.tr("Stop at iteration number: %i" % result['iter'])
             self.__stopExec(result['iter'], msg)
@@ -352,7 +352,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         """
         Constructor
         """
-        QWidget.__init__(self, parent)
+        QDialog.__init__(self, parent)
 
         Ui_BatchRunningDialogForm.__init__(self)
         self.setupUi(self)
@@ -468,7 +468,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
             self.spinBoxHours.valueChanged[int].connect(self.slotJobWallTime)
             self.spinBoxMinutes.valueChanged[int].connect(self.slotJobWallTime)
             self.spinBoxSeconds.valueChanged[int].connect(self.slotJobWallTime)
-            self.comboBoxClass.activated[str].connect(self.slotClass)
+            self.comboBoxClass.activated[int].connect(self.slotClass)
             self.lineEditJobAccount.textChanged[str].connect(self.slotJobAccount)
             self.lineEditJobWCKey.textChanged[str].connect(self.slotJobWCKey)
 
@@ -639,7 +639,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
             self.lineEditThreadsPerNode.setText(str(node_threads))
 
 
-    @Slot()
+    @Slot(int)
     def slotJobWallTime(self):
 
         h_cput = self.spinBoxDays.value()*24 + self.spinBoxHours.value()
@@ -649,7 +649,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         self.jmdl.batch.params['job_walltime'] = job_walltime
 
 
-    @Slot()
+    @Slot(int)
     def slotClass(self):
 
         self.jmdl.batch.params['job_class'] \

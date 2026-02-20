@@ -62,6 +62,7 @@ log = logging.getLogger("OutputVolumicVariablesView")
 log.setLevel(GuiParam.DEBUG)
 
 _calculator_group = "User functions"
+
 #-------------------------------------------------------------------------------
 #
 #-------------------------------------------------------------------------------
@@ -71,13 +72,13 @@ class LabelDelegate(QItemDelegate):
     """
     def __init__(self, parent=None, xml_model=None):
         super(LabelDelegate, self).__init__(parent)
-        self.parent = parent
+        self.parent_widget = parent
         self.mdl = xml_model
 
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
-        rx = "[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
+        rx = r"[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
         self.regExp = QRegularExpression(rx)
         v =  RegExpValidator(editor, self.regExp)
         editor.setValidator(v)
@@ -85,7 +86,7 @@ class LabelDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        v = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        v = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         self.p_value = str(v)
         editor.setText(v)
 
@@ -105,14 +106,14 @@ class LabelDelegate(QItemDelegate):
 
                 from code_saturne.gui.case.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
-                if dialog.exec_():
+                if dialog.exec():
                     result = dialog.get_result()
                     p_value = result['label']
                     log.debug("setModelData-> result = %s" % result)
                 else:
                     p_value = self.p_value
 
-            model.setData(index, p_value, Qt.DisplayRole)
+            model.setData(index, p_value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -169,18 +170,18 @@ class TreeItem(object):
             else:
                 return None
         else:
-            if column == 0 and role == Qt.DisplayRole:
+            if column == 0 and role == Qt.ItemDataRole.DisplayRole:
                 return self.item.label
-            elif column == 1 and role == Qt.DisplayRole:
+            elif column == 1 and role == Qt.ItemDataRole.DisplayRole:
                 return self.item.name
-            elif column >= 2 and role == Qt.CheckStateRole:
+            elif column >= 2 and role == Qt.ItemDataRole.CheckStateRole:
                 value = self.item.status[column - 2]
                 if value == 'on':
-                    return Qt.Checked
+                    return Qt.CheckState.Checked
                 elif value == 'onoff':
-                    return Qt.PartiallyChecked
+                    return Qt.CheckState.PartiallyChecked
                 else:
-                    return Qt.Unchecked
+                    return Qt.CheckState.Unchecked
         return None
 
     def parent(self):
@@ -203,7 +204,7 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
         """
         QAbstractItemModel.__init__(self)
 
-        self.parent = parent
+        self.parent_widget = parent
         self.case   = case
         self.mdl    = mdl
         self.calculator = calculator
@@ -260,11 +261,11 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
         item = index.internalPointer()
 
         # ToolTips
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return None
 
         # StatusTips
-        if role == Qt.StatusTipRole:
+        if role == Qt.ItemDataRole.StatusTipRole:
             if index.column() == 0:
                 return self.tr("Variable/Scalar name")
             elif index.column() == 2:
@@ -275,11 +276,11 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
                 return self.tr("Monitoring")
 
         # Display
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return item.data(index.column(), role)
-        elif role == Qt.CheckStateRole:
+        elif role == Qt.ItemDataRole.CheckStateRole:
             return item.data(index.column(), role)
-        #if role == Qt.TextAlignmentRole and index.column() > 1:
+        #if role == Qt.ItemDataRole.TextAlignmentRole and index.column() > 1:
         #    return Qt.AlignHCenter
 
         return None
@@ -287,30 +288,30 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         # disable item
         if (index.row(), index.column()) in self.disabledItem:
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         itm = index.internalPointer()
         if itm in self.noderoot.values():
             # traitement des categories
             if index.column() >= 2:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable | Qt.ItemIsTristate
+                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsAutoTristate
             else:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         else:
             if index.column() >= 2:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
+                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsUserCheckable
             elif index.column() == 1:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
             else:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             if section == 0:
                 return self.tr("Output label")
             elif section == 1:
@@ -475,15 +476,24 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
 
         elif index.column() >= 2:
             c_id = index.column() - 2
-            v = from_qvariant(value, int)
-            if v == Qt.Checked:
+
+            # PySide6: value can be an int or a Qt.CheckState
+            if isinstance(value, int):
+                checked = (value == 2)  # 2 = Qt.CheckState.Checked
+            else:
+                checked = (value == Qt.CheckState.Checked)
+
+            if checked:
                 item.item.status[c_id] = "on"
             else:
                 item.item.status[c_id] = "off"
+
             if c_id == 1:
                 if not OutputControlModel(self.case).isVolumeWriterActive():
                     item.item.status[1] = "off"
+
             if item not in self.noderoot.values():
+                # C'est un enfant — on met a jour le modele XML
                 if item.item.value == _calculator_group:
                     if c_id == 0:
                         self.calculator.setPrintingStatus(item.item.name,
@@ -504,12 +514,13 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
                     elif c_id == 2:
                         self.mdl.setMonitorStatus(item.item.name,
                                                   item.item.status[2])
-                # count for parent item
+
+                # Update parent based on children
                 size = len(item.parentItem.childItems)
                 active = 0
                 for itm in item.parentItem.childItems:
                     if itm.item.status[c_id] == "on":
-                        active = active + 1
+                        active += 1
                 if active == 0:
                     item.parentItem.item.status[c_id] = "off"
                 elif active == size:
@@ -517,8 +528,23 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
                 else:
                     item.parentItem.item.status[c_id] = "onoff"
 
+                # Notify Qt that parent has changed
+                parent_index = self.parent(index)
+                if parent_index.isValid():
+                    grandparent_index = self.parent(parent_index)
+                    parent_col_index = self.index(parent_index.row(),
+                                                  index.column(),
+                                                  grandparent_index)
+                    if parent_col_index.isValid():
+                        self.dataChanged.emit(parent_col_index, parent_col_index)
+
             else:
+                # It si a parent — propagate status to all children.
+                # Index is on the checked column, rebuild with column 0.
+                parent_col0 = self.index(index.row(), 0, self.parent(index))
+
                 for itm in item.childItems:
+                    itm.item.status[c_id] = item.item.status[c_id]
                     if itm.item.value == _calculator_group:
                         if c_id == 0:
                             self.calculator.setPrintingStatus(itm.item.name,
@@ -540,9 +566,15 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
                             self.mdl.setMonitorStatus(itm.item.name,
                                                       item.item.status[2])
 
-                    itm.item.status[c_id] = item.item.status[c_id]
+                # Notify Qt that childred have changed.
+                if item.childItems and parent_col0.isValid():
+                    first_child = self.index(0, index.column(), parent_col0)
+                    last_child = self.index(len(item.childItems) - 1,
+                                            index.column(), parent_col0)
+                    if first_child.isValid() and last_child.isValid():
+                        self.dataChanged.emit(first_child, last_child)
 
-        self.dataChanged.emit(QModelIndex(), QModelIndex())
+        self.dataChanged.emit(index, index)
 
         return True
 
@@ -564,7 +596,7 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         self.setupUi(self)
 
         self.case = case
-        self.parent = parent
+        self.parent_widget = parent
         self.case.undoStopGlobal()
         self.info_turb_name = []
 
@@ -609,10 +641,10 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
             self.totalEstimator.addItem(self.tr("off"), '0')
             self.totalEstimator.addItem(self.tr("on"), '2')
 
-            self.comboBoxIescor.activated[str].connect(self.slotCorrectionEstimator)
-            self.comboBoxIesder.activated[str].connect(self.slotDriftEstimator)
-            self.comboBoxIespre.activated[str].connect(self.slotPredictionEstimator)
-            self.comboBoxIestot.activated[str].connect(self.slotTotalEstimator)
+            self.comboBoxIescor.activated[int].connect(self.slotCorrectionEstimator)
+            self.comboBoxIesder.activated[int].connect(self.slotDriftEstimator)
+            self.comboBoxIespre.activated[int].connect(self.slotPredictionEstimator)
+            self.comboBoxIestot.activated[int].connect(self.slotTotalEstimator)
 
             modelIescor = self.mdl.getEstimatorModel("Correction")
             self.correctionEstimator.setItem(str_model=modelIescor)
@@ -626,7 +658,6 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
             modelIestot = self.mdl.getEstimatorModel("Total")
             self.totalEstimator.setItem(str_model=modelIestot)
 
-
         self.case.undoStartGlobal()
 
 
@@ -638,12 +669,13 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         self.treeViewOutput.expandAll()
 
 
-    @Slot(str)
-    def slotCorrectionEstimator(self, text):
+    @Slot(int)
+    def slotCorrectionEstimator(self, idx):
         """
         Private slot.
         Input ITURB.
         """
+        text = self.comboBoxIescor.currentText()
         model = self.correctionEstimator.dicoV2M[str(text)]
         self.mdl.setEstimatorModel("Correction", model)
         self.mdl.updateList()
@@ -651,12 +683,13 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         self.initializeView()
 
 
-    @Slot(str)
-    def slotDriftEstimator(self, text):
+    @Slot(int)
+    def slotDriftEstimator(self, idx):
         """
         Private slot.
         Input ITURB.
         """
+        text = self.comboBoxIesder.currentText()
         model = self.driftEstimator.dicoV2M[str(text)]
         self.mdl.setEstimatorModel("Drift", model)
         self.mdl.updateList()
@@ -664,12 +697,13 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         self.initializeView()
 
 
-    @Slot(str)
-    def slotPredictionEstimator(self, text):
+    @Slot(int)
+    def slotPredictionEstimator(self, idx):
         """
         Private slot.
         Input ITURB.
         """
+        text = self.comboBoxIespre.currentText()
         model = self.predictionEstimator.dicoV2M[str(text)]
         self.mdl.setEstimatorModel("Prediction", model)
         self.mdl.updateList()
@@ -677,12 +711,13 @@ class OutputVolumicVariablesView(QWidget, Ui_OutputVolumicVariablesForm):
         self.initializeView()
 
 
-    @Slot(str)
-    def slotTotalEstimator(self, text):
+    @Slot(int)
+    def slotTotalEstimator(self, idx):
         """
         Private slot.
         Input ITURB.
         """
+        text = self.comboBoxIestot.currentText()
         model = self.totalEstimator.dicoV2M[str(text)]
         self.mdl.setEstimatorModel("Total", model)
         self.mdl.updateList()

@@ -82,7 +82,7 @@ class BoundaryConditionsPressureView(QWidget, Ui_BoundaryConditionsPressure) :
 
         self.lineEditPressure.setValidator(validatorPressure)
 
-        self.comboBoxPressureMode.activated[str].connect(self._slotChoicePressure)
+        self.comboBoxPressureMode.activated[int].connect(self._slotChoicePressure)
         self._modelPressure = ComboModel(self.comboBoxPressureMode, 2, 1);
 
 
@@ -128,12 +128,12 @@ class BoundaryConditionsPressureView(QWidget, Ui_BoundaryConditionsPressure) :
             value = from_qvariant(text, float)
             self.__boundary.setReferencePressure(value)
 
-    @Slot(str)
-    def _slotChoicePressure(self, text):
+    @Slot(int)
+    def _slotChoicePressure(self, idx):
         """
         Input choice of pressure boundary condition.
         """
-
+        text = self.comboBoxPressureMode.currentText()
         p_choice = self._modelPressure.dicoV2M[str(text)]
 
         self.__boundary.setPressureChoice(p_choice)

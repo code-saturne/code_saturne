@@ -98,13 +98,13 @@ class LineEditDelegateSelector(QItemDelegate):
 
 
     def setEditorData(self, lineEdit, index):
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         lineEdit.setText(value)
 
 
     def setModelData(self, lineEdit, model, index):
         value = lineEdit.text()
-        model.setData(index, value, Qt.DisplayRole)
+        model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -126,14 +126,14 @@ class FloatDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         editor.setText(value)
 
 
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), float)
-            model.setData(index, value, Qt.DisplayRole)
+            model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -155,14 +155,14 @@ class IntDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         editor.setText(value)
 
 
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), int)
-            model.setData(index, value, Qt.DisplayRole)
+            model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -192,17 +192,17 @@ class StandardItemModelThinWall(QStandardItemModel):
         if not index.isValid():
             return None
 
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return None
 
-        elif role == Qt.DisplayRole:
+        elif role == Qt.ItemDataRole.DisplayRole:
             data = self._data[index.row()][index.column()]
             if data:
                 return data
             else:
                 return None
 
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             return Qt.AlignCenter
 
         return None
@@ -210,22 +210,22 @@ class StandardItemModelThinWall(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         if index.column() == 0 :
-            return Qt.ItemIsSelectable
+            return Qt.ItemFlag.ItemIsSelectable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
 
     def setData(self, index, value, role):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         # Update the row in the table
         row = index.row()
@@ -306,17 +306,17 @@ class StandardItemModelExtrude(QStandardItemModel):
         if not index.isValid():
             return None
 
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return None
 
-        elif role == Qt.DisplayRole:
+        elif role == Qt.ItemDataRole.DisplayRole:
             data = self._data[index.row()][index.column()]
             if data:
                 return data
             else:
                 return None
 
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             return Qt.AlignCenter
 
         return None
@@ -324,22 +324,22 @@ class StandardItemModelExtrude(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         if index.column() == 0 :
-            return Qt.ItemIsSelectable
+            return Qt.ItemFlag.ItemIsSelectable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
 
     def setData(self, index, value, role):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         # Update the row in the table
         row = index.row()
@@ -555,7 +555,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
 
         self.widgetFacesPerio.pushButtonDelete.clicked.connect(self.slotDeletePeriodicity)
 
-        self.comboBoxPeriodicity.activated[str].connect(self.slotPeriodicityMode)
+        self.comboBoxPeriodicity.activated[int].connect(self.slotPeriodicityMode)
 
         self.lineEditTX.textChanged[str].connect(self.slotTranslationX)
         self.lineEditTY.textChanged[str].connect(self.slotTranslationY)
@@ -798,12 +798,12 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
         txt = str(self.comboBoxPeriodicity.currentText())
         self.slotPeriodicityMode(txt)
 
-    @Slot(str)
-    def slotPeriodicityMode(self, text):
+    @Slot(int)
+    def slotPeriodicityMode(self, idx):
         """
         Do we have a periodicity ?
         """
-
+        text = self.comboBoxPeriodicity.currentText()
         self.perio_mode = self.modelComboPeriod.dicoV2M[str(text)]
 
         log.debug("slotPeriodicityMode  = %s " % self.perio_mode)
@@ -1034,7 +1034,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
                 self.mdl.setTransformationMatrix(self.perio_id, pos, val)
 
 
-    @Slot(str)
+    @Slot()
     def slotCenterRotationX2(self, text):
         """
         Periodicity : center of rotation
@@ -1045,7 +1045,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
                 self.mdl.setRotationCenter(self.perio_id, "invariant_x", val)
 
 
-    @Slot(str)
+    @Slot()
     def slotCenterRotationY2(self, text):
         """
         Periodicity : center of rotation
@@ -1056,7 +1056,7 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
                 self.mdl.setRotationCenter(self.perio_id, "invariant_y", val)
 
 
-    @Slot(str)
+    @Slot()
     def slotCenterRotationZ2(self, text):
         """
         Periodicity : center of rotation

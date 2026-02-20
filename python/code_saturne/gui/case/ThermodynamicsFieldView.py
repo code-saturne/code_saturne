@@ -129,7 +129,7 @@ class MaterialsDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, self.modelCombo.dicoM2V[value], Qt.DisplayRole)
+                model.setData(idx, self.modelCombo.dicoM2V[value], Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -188,7 +188,7 @@ class MethodDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, self.modelCombo.dicoM2V[value], Qt.DisplayRole)
+                model.setData(idx, self.modelCombo.dicoM2V[value], Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -249,7 +249,7 @@ class ReferenceDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, self.modelCombo.dicoM2V[value], Qt.DisplayRole)
+                model.setData(idx, self.modelCombo.dicoM2V[value], Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -285,10 +285,10 @@ class StandardItemModelProperty(QStandardItemModel):
         if not index.isValid():
             return None
 
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return None
 
-        elif role == Qt.DisplayRole:
+        elif role == Qt.ItemDataRole.DisplayRole:
             data = self._data[index.row()][index.column()]
             if index.column() in (0, 1, 2, 3):
                 if data:
@@ -301,21 +301,21 @@ class StandardItemModelProperty(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.NoItemFlags
+            return Qt.ItemFlag.NoItemFlags
         # Lock fields with non condensable gas
         field_id = index.row() + 1
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+        return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
 
     def setData(self, index, value, role):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         # Update the row in the table
         row = index.row()
@@ -615,7 +615,7 @@ temperature = enthalpy / 1000;
 
         # Connect combo-boxes and disable them if not main zone
         for k in self.comboBoxes.keys():
-            self.comboBoxes[k].activated[str].connect(getattr(self,"slotState"+k))
+            self.comboBoxes[k].activated[int].connect(getattr(self,"slotState"+k))
             self.comboBoxes[k].setEnabled(is_main_zone)
 
         self.tableModelProperties.dataChanged.connect(self.dataChanged)
@@ -692,7 +692,7 @@ temperature = enthalpy / 1000;
         self.mdl.setPropertyMode(currentFluid, tag, choice)
 
 
-    @Slot(str)
+    @Slot()
     def slotStateRho(self, text):
         """
         Method to call 'getState' with correct arguements for 'rho'
@@ -700,7 +700,7 @@ temperature = enthalpy / 1000;
         self.__changeChoice(str(text), 'Density', 'density')
 
 
-    @Slot(str)
+    @Slot()
     def slotStateMu(self, text):
         """
         Method to call 'getState' with correct arguements for 'Mu'
@@ -708,7 +708,7 @@ temperature = enthalpy / 1000;
         self.__changeChoice(str(text), 'Viscosity', 'molecular_viscosity')
 
 
-    @Slot(str)
+    @Slot()
     def slotStateCp(self, text):
         """
         Method to call 'getState' with correct arguements for 'Cp'
@@ -716,7 +716,7 @@ temperature = enthalpy / 1000;
         self.__changeChoice(str(text), 'SpecificHeat', 'specific_heat')
 
 
-    @Slot(str)
+    @Slot()
     def slotStateAl(self, text):
         """
         Method to call 'getState' with correct arguements for 'Al'
@@ -848,7 +848,7 @@ temperature = enthalpy / 1000;
             self.groupBoxConstantProperties.hide()
 
 
-    @Slot(str)
+    @Slot()
     def slotRho(self, text):
         """
         Update the density
@@ -859,7 +859,7 @@ temperature = enthalpy / 1000;
             self.mdl.setInitialValueDensity(fieldId, rho)
 
 
-    @Slot(str)
+    @Slot()
     def slotMu(self, text):
         """
         Update the molecular viscosity
@@ -870,7 +870,7 @@ temperature = enthalpy / 1000;
             self.mdl.setInitialValueViscosity(fieldId,mu)
 
 
-    @Slot(str)
+    @Slot()
     def slotCp(self, text):
         """
         Update the specific heat
@@ -881,7 +881,7 @@ temperature = enthalpy / 1000;
             self.mdl.setInitialValueHeat(fieldId,cp)
 
 
-    @Slot(str)
+    @Slot()
     def slotAl(self, text):
         """
         Update the thermal conductivity

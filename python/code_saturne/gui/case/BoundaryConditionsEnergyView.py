@@ -94,7 +94,7 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
         self.setupUi(self)
 
         # Connections
-        self.comboBoxEnergy.activated[str].connect(self.__slotChoiceEnergy)
+        self.comboBoxEnergy.activated[int].connect(self.__slotChoiceEnergy)
 
         self.__modelEnergy = ComboModel(self.comboBoxEnergy, 1, 1)
 
@@ -230,11 +230,12 @@ class BoundaryConditionsEnergyView(QWidget, Ui_BoundaryConditionsEnergy) :
             self.labelEnergy.setText(bc_energy_units.get(energyChoice,''))
 
 
-    @Slot(str)
-    def __slotChoiceEnergy(self, text):
+    @Slot(int)
+    def __slotChoiceEnergy(self, idx):
         """
         INPUT choice of method of calculation of the energy
         """
+        text = self.comboBoxEnergy.currentText()
         energy_choice = self.__modelEnergy.dicoV2M[str(text)]
         old_choice = self.__boundary.getEnthalpyChoice(self.__currentField)
         # If we switch from coupling to BC condition, delete all previous

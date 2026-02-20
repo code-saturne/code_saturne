@@ -106,7 +106,7 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
         self.lineEditValueHydraulicHead.textChanged[str].connect(self.slotHydraulicHeadValue)
         self.lineEditExHydraulicHead.textChanged[str].connect(self.slotHydraulicHeadFlux)
         self.pushButtonHydraulicHead.clicked.connect(self.slotHydraulicHeadFormula)
-        self.comboBoxTypeHydraulicHead.activated[str].connect(self.slotHydraulicHeadChoice)
+        self.comboBoxTypeHydraulicHead.activated[int].connect(self.slotHydraulicHeadChoice)
 
         self.case.undoStartGlobal()
 
@@ -221,11 +221,12 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
             self.pushButtonHydraulicHead.setToolTip(result)
 
 
-    @Slot(str)
-    def slotHydraulicHeadChoice(self, text):
+    @Slot(int)
+    def slotHydraulicHeadChoice(self, idx):
         """
         INPUT label for choice of zone
         """
+        text = self.comboBoxTypeHydraulicHead.currentTeext()
         HydraulicChoice = self.modelTypeHydraulic.dicoV2M[str(text)]
         self.__boundary.setHydraulicHeadChoice(HydraulicChoice)
         self.initialize()

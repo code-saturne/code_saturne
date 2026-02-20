@@ -211,8 +211,8 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
 
         self.checkBoxStructureTimePlot.stateChanged.connect(self.slotStructureTimePlot)
 
-        self.spinBox_ast_log.valueChanged[int].connect(self.slot_ast_log)
-        self.spinBox_ast_viz.valueChanged[int].connect(self.slot_ast_vis)
+        self.spinBox_ast_log.valueChanged.connect(self.slot_ast_log)
+        self.spinBox_ast_viz.valueChanged.connect(self.slot_ast_vis)
 
         if self.checkBoxStructureTimePlot.isChecked():
             synchronization = 'on'
@@ -258,7 +258,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         """
         if self.sender().validator().state == QValidator.State.Acceptable:
             nalimx = from_qvariant(text, int)
-            self.__model.setMaxIterations(nalimx)
+            self.__model.setMaxIterations(int(nalimx))
 
 
     @Slot(str)
@@ -268,7 +268,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
         """
         if self.sender().validator().state == QValidator.State.Acceptable:
             epalim = from_qvariant(text, float)
-            self.__model.setPrecision(epalim)
+            self.__model.setPrecision(float(epalim))
 
 
     @Slot(int)

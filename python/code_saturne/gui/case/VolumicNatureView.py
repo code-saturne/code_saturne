@@ -97,19 +97,19 @@ class VolumicZoneNatureModel(QAbstractTableModel):
     def data(self, index, role):
         if not index.isValid():
             return None
-        if role == Qt.DisplayRole and index.column() == 0:
+        if role == Qt.ItemDataRole.DisplayRole and index.column() == 0:
             return self._data[index.row()][index.column()]
-        elif role == Qt.CheckStateRole and index.column() > 0:
+        elif role == Qt.ItemDataRole.CheckStateRole and index.column() > 0:
             return self.checkState(QPersistentModelIndex(index))
         else:
             return None
 
     def checkState(self, index):
         if not index.isValid():
-            return Qt.Unchecked
+            return Qt.CheckState.Unchecked
         return bool2CheckState(self._data[index.row()][index.column()])
 
-    def setData(self, index, value, role=Qt.DisplayRole):
+    def setData(self, index, value, role=Qt.ItemDataRole.DisplayRole):
         col = index.column()
         if not index.isValid():
             return False
@@ -150,21 +150,18 @@ class VolumicZoneNatureModel(QAbstractTableModel):
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self._headers[section]
         return None
 
     def rowCount(self, index):
-        # The length of the outer list.
         return len(self._data)
 
     def columnCount(self, index):
-        # The following takes the first sub-list, and returns
-        # the length (only works if all rows are an equal length)
         return len(self._headers)
 
     def flags(self, index):
-        base_flags = Qt.ItemIsEnabled
+        base_flags = Qt.ItemFlag.ItemIsEnabled
         col = index.column()
         row = index.row()
 
@@ -173,9 +170,9 @@ class VolumicZoneNatureModel(QAbstractTableModel):
         else:
             # For HTSolver deactivate "Solid" option
             if col == self._solid_idx and HTSModel(self._zoneModel.case).getHTSModel() != 'off':
-                return Qt.ItemIsSelectable
+                return Qt.ItemFlag.ItemIsSelectable
             else:
-                return base_flags | Qt.ItemIsUserCheckable
+                return base_flags | Qt.ItemFlag.ItemIsUserCheckable
 
 
 # Helper functions
@@ -196,11 +193,14 @@ def sort_headers(header):
 
 
 def checkState2Bool(check_state):
-    return {Qt.Unchecked: False, Qt.Checked: True}[check_state]
+    # PySide6: check_state can be a Qt.CheckState enum or an int
+    if isinstance(check_state, int):
+        return check_state == 2  # 2 = Qt.CheckState.Checked
+    return check_state == Qt.CheckState.Checked
 
 
 def bool2CheckState(bool_value):
-    return {True: Qt.Checked, False: Qt.Unchecked}[bool_value]
+    return Qt.CheckState.Checked if bool_value else Qt.CheckState.Unchecked
 
 
 # -------------------------------------------------------------------------------
@@ -216,7 +216,7 @@ class VolumicNatureView(QWidget, Ui_VolumicNatureForm):
         self.setupUi(self)
 
         self.case = case
-        self.parent = parent
+        self.parent_widget = parent
         self.tree = tree
 
         # Get list of zones
@@ -240,4 +240,3 @@ class VolumicNatureView(QWidget, Ui_VolumicNatureForm):
 
         if self.tree:
             self.tree.configureTree(self.case)
-

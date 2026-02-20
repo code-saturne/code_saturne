@@ -138,23 +138,23 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
         self.lineEditIHPT.setValidator(validatorIHPT)
 
     def _setConnections(self):
-        self.comboBoxBoundary.activated[str].connect(self.slotSetParticleBoundary)
+        self.comboBoxBoundary.activated[int].connect(self.slotSetParticleBoundary)
         self.lineEditNbSets.editingFinished.connect(self.slotNbSets)
-        self.spinBoxICLAS.valueChanged[int].connect(self.slotICLAS)
-        self.lineEditIJNBP.textChanged[str].connect(self.slotIJNBP)
-        self.lineEditIJFRE.textChanged[str].connect(self.slotIJFRE)
-        self.lineEditICLST.textChanged[str].connect(self.slotICLST)
+        self.spinBoxICLAS.valueChanged.connect(self.slotICLAS)
+        self.lineEditIJNBP.textChanged.connect(self.slotIJNBP)
+        self.lineEditIJFRE.textChanged.connect(self.slotIJFRE)
+        self.lineEditICLST.textChanged.connect(self.slotICLST)
         self.lineEditIDEBT.textChanged[str].connect(self.slotIDEBT)
-        self.comboBoxIPOIT.activated[str].connect(self.slotIPOITChoice)
+        self.comboBoxIPOIT.activated[int].connect(self.slotIPOITChoice)
         self.lineEditIPOIT.textChanged[str].connect(self.slotIPOIT)
         self.lineEditIROPT.textChanged[str].connect(self.slotIROPT)
         self.lineEditIRCOLM.textChanged[str].connect(self.slotIRCOLM)
-        self.comboBoxIJUVW.activated[str].connect(self.slotIJUVW)
+        self.comboBoxIJUVW.activated[int].connect(self.slotIJUVW)
         self.lineEditIUNO.textChanged[str].connect(self.slotIUNO)
         self.lineEditIUPT.textChanged[str].connect(self.slotIUPT)
         self.lineEditIVPT.textChanged[str].connect(self.slotIVPT)
         self.lineEditIWPT.textChanged[str].connect(self.slotIWPT)
-        self.comboBoxIJRTP.activated[str].connect(self.slotIJRTP)
+        self.comboBoxIJRTP.activated[int].connect(self.slotIJRTP)
         self.lineEditITPT.textChanged[str].connect(self.slotITPT)
         self.lineEditICPT.textChanged[str].connect(self.slotICPT)
         self.lineEditIEPSI.textChanged[str].connect(self.slotIEPSI)
@@ -286,9 +286,10 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
 
         return
 
-    @Slot(str)
-    def slotSetParticleBoundary(self, interaction):
-        interaction = self.dicoV2M[interaction]
+    @Slot(int)
+    def slotSetParticleBoundary(self, idx):
+        text = self.comboBoxBoundary.currentText()
+        interaction = self.dicoV2M[text]
         self.model.setBoundaryChoice(self.zone.getNature(), self.zone.getLabel(), interaction)
         if interaction == "inlet":
             self.groupBoxNbSets.show()
@@ -296,7 +297,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             self.lineEditNbSets.setText("0")
             self.groupBoxNbSets.hide()
 
-    @Slot(int)
+    @Slot()
     def slotICLAS(self, iset):
         """
         Input ICLAS.
@@ -386,7 +387,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             rho = self.model.getDensityValue(label, self.iset)
             self.lineEditIROPT.setText(str(rho))
 
-    @Slot(str)
+    @Slot()
     def slotIJNBP(self, text):
         """
         Input IJNBP.
@@ -395,7 +396,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, int)
             self.model.setNumberOfParticulesInSetValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot(str)
+    @Slot()
     def slotIJFRE(self, text):
         """
         Input IJFRE.
@@ -404,7 +405,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, int)
             self.model.setInjectionFrequencyValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot(str)
+    @Slot()
     def slotICLST(self, text):
         """
         Input ICLST.
@@ -413,7 +414,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, int)
             self.model.setParticleGroupNumberValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot(str)
+    @Slot()
     def slotIDEBT(self, text):
         """
         Input IDEBT.
@@ -422,11 +423,12 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, float)
             self.model.setMassFlowRateValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot(str)
-    def slotIPOITChoice(self, text):
+    @Slot(int)
+    def slotIPOITChoice(self, idx):
         """
         Input IPOIT.
         """
+        text = self.comboBoxIPOIT.currentText()
         choice = self.modelIPOIT.dicoV2M[str(text)]
         self.model.setStatisticalWeightChoice(self.zone.getLabel(), self.iset, choice)
         self.frameMassRate.hide()
@@ -441,7 +443,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             weight = self.model.getStatisticalWeightValue(self.zone.getLabel(), self.iset)
             self.lineEditIPOIT.setText(str(weight))
 
-    @Slot(str)
+    @Slot()
     def slotIPOIT(self, text):
         """
         Input IPOIT.
@@ -450,7 +452,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, float)
             self.model.setStatisticalWeightValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot(str)
+    @Slot()
     def slotIROPT(self, text):
         """
         Input IROPT.
@@ -459,7 +461,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, float)
             self.model.setDensityValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot(str)
+    @Slot()
     def slotIRCOLM(self, text):
         """
         Input IRCOLM.
@@ -468,11 +470,12 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, float)
             self.model.setFoulingIndexValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot(str)
-    def slotIJUVW(self, text):
+    @Slot(int)
+    def slotIJUVW(self, idx):
         """
         Input IJUVW.
         """
+        text = self.comboBoxIJUVW.currentText()
         choice = self.modelIJUVW.dicoV2M[str(text)]
         self.model.setVelocityChoice(self.zone.getLabel(), self.iset, choice)
         self.frameVelocityNorm.hide()
@@ -490,7 +493,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             self.lineEditIVPT.setText(str(vv))
             self.lineEditIWPT.setText(str(vw))
 
-    @Slot(str)
+    @Slot()
     def slotIUNO(self, text):
         """
         Input IUNO.
@@ -499,7 +502,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, float)
             self.model.setVelocityNormValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot(str)
+    @Slot()
     def slotIUPT(self, text):
         """
         Input IUPT.
@@ -508,7 +511,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, float)
             self.model.setVelocityDirectionValue(self.zone.getLabel(), self.iset, "x", value)
 
-    @Slot(str)
+    @Slot()
     def slotIVPT(self, text):
         """
         Input IVPT.
@@ -517,7 +520,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, float)
             self.model.setVelocityDirectionValue(self.zone.getLabel(), self.iset, "y", value)
 
-    @Slot(str)
+    @Slot()
     def slotIWPT(self, text):
         """
         Input IWPT.
@@ -526,11 +529,12 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, float)
             self.model.setVelocityDirectionValue(self.zone.getLabel(), self.iset, "z", value)
 
-    @Slot(str)
-    def slotIJRTP(self, text):
+    @Slot(int)
+    def slotIJRTP(self, idx):
         """
         Input IJRTP.
         """
+        text = self.comboBoxIJRTP.currentText()
         choice = self.modelIJRTP.dicoV2M[str(text)]
         self.model.setTemperatureChoice(self.zone.getLabel(), self.iset, choice)
         if choice == "prescribed":
@@ -540,7 +544,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
         else:
             self.frameTemperature.hide()
 
-    @Slot(str)
+    @Slot()
     def slotITPT(self, text):
         """
         Input ITPT.
@@ -549,7 +553,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, float)
             self.model.setTemperatureValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot(str)
+    @Slot()
     def slotICPT(self, text):
         """
         Input ICPT.
@@ -558,7 +562,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, float)
             self.model.setSpecificHeatValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot(str)
+    @Slot()
     def slotIEPSI(self, text):
         """
         Input IEPSI.
@@ -567,7 +571,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, float)
             self.model.setEmissivityValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot(str)
+    @Slot()
     def slotIDPT(self, text):
         """
         Input IDPT.
@@ -576,7 +580,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, float)
             self.model.setDiameterValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot(str)
+    @Slot()
     def slotIVDPT(self, text):
         """
         Input IVDPT.
@@ -585,7 +589,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, float)
             self.model.setDiameterVarianceValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot(str)
+    @Slot()
     def slotINUCHL(self, text):
         """
         Input IHPT.
@@ -594,7 +598,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, int)
             self.model.setCoalNumberValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot(str)
+    @Slot()
     def slotIHPT(self, text):
         """
         Input IHPT.

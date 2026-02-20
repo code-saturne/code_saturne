@@ -114,9 +114,9 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
         self.lineEditDecayRate.setValidator(DoubleValidator(self.lineEditDecayRate))
 
         # Connections
-        self.comboBoxPermeability.activated[str].connect(self.slotPermeabilityType)
-        self.comboBoxChemistryModel.activated[str].connect(self.slotChemistryModel)
-        self.comboBoxSpeciesName.activated[str].connect(self.slotSpeciesName)
+        self.comboBoxPermeability.activated[int].connect(self.slotPermeabilityType)
+        self.comboBoxChemistryModel.activated[int].connect(self.slotChemistryModel)
+        self.comboBoxSpeciesName.activated[int].connect(self.slotSpeciesName)
         self.lineEditDecayRate.textChanged[str].connect(self.slotDecayRate)
 
         self.initializeWidget(scalar_list)
@@ -138,20 +138,22 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
             self.modelChemistryModel.setItem(str_model=value)
 
 
-    @Slot(str)
-    def slotPermeabilityType(self, text):
+    @Slot(int)
+    def slotPermeabilityType(self, idx):
         """
         Input permeability type : isotrop or anisotrop.
         """
+        text = self.comboBoxPermeability.currentText()
         mdl = self.modelPermeability.dicoV2M[str(text)]
         self.mdl.setPermeabilityType(mdl)
 
 
-    @Slot(str)
-    def slotSpeciesName(self, text):
+    @Slot(int)
+    def slotSpeciesName(self, idx):
         """
         Method to choose the scalar whose properties shall be changed
         """
+        text = self.comboBoxSpeciesName.currentText()
         mdl = self.modelSpeciesName.dicoV2M[str(text)]
         self.scalar = str(text)
         scal = self.scalar
@@ -161,17 +163,18 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
         self.modelChemistryModel.setItem(str_model=value)
 
 
-    @Slot(str)
-    def slotChemistryModel(self, text):
+    @Slot(int)
+    def slotChemistryModel(self, idx):
         """
         Input chemistry model for soil-water partition : Kd or Kd + precipitation
         """
+        text = self.comboBoxChemistryModel.currentText()
         choice = self.modelChemistryModel.dicoV2M[str(text)]
         scal = self.scalar
         self.mdl.setChemistryModel(scal, choice)
 
 
-    @Slot(str)
+    @Slot()
     def slotDecayRate(self, text):
         """
         """

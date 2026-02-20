@@ -242,11 +242,11 @@ class InitializationView(QWidget, Ui_InitializationForm):
 
 
     def defineConnections(self):
-        self.comboBoxThermal.activated[str].connect(self.slotThermalChoice)
-        self.comboBoxTurbulence.activated[str].connect(self.slotTurbulenceChoice)
-        self.comboBoxSpecies.activated[str].connect(self.slotSpeciesChoice)
-        self.comboBoxMeteo.activated[str].connect(self.slotMeteoChoice)
-        self.comboBoxCombustion.activated[str].connect(self.slotCombustionChoice)
+        self.comboBoxThermal.activated[int].connect(self.slotThermalChoice)
+        self.comboBoxTurbulence.activated[int].connect(self.slotTurbulenceChoice)
+        self.comboBoxSpecies.activated[int].connect(self.slotSpeciesChoice)
+        self.comboBoxMeteo.activated[int].connect(self.slotMeteoChoice)
+        self.comboBoxCombustion.activated[int].connect(self.slotCombustionChoice)
         self.checkBoxPressure.clicked.connect(self.slotPressure)
         self.checkBoxDensity.clicked.connect(self.slotDensity)
         self.checkBoxTemperature.clicked.connect(self.slotTemperature)
@@ -430,12 +430,13 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.pushButtonCombustion.hide()
 
 
-    @Slot(str)
-    def slotTurbulenceChoice(self, text):
+    @Slot(int)
+    def slotTurbulenceChoice(self, idx):
         """
         INPUT choice of method of initialization
         """
-        choice = self.modelTurbulence.dicoV2M[str(text)]
+        text = self.comboBoxTurbulence.currentText()
+        choice = self.modelTurbulence.dicoV2M[str(self.comboBoxTurbulence.currentText())]
         log.debug("slotTurbulenceChoice choice =  %s " % str(choice))
         zone_id = str(self.zone.getCodeNumber())
         self.init.setInitialTurbulenceChoice(zone_id, choice)
@@ -458,13 +459,14 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.init.setTurbFormula(zone_id, None)
 
 
-    @Slot(str)
-    def slotThermalChoice(self, text):
+    @Slot(int)
+    def slotThermalChoice(self, idx):
         """
         INPUT choice of method of initialization
         """
+        text = self.comboBoxThermal.currentText()
         zone_id = str(self.zone.getCodeNumber())
-        choice = self.modelThermal.dicoV2M[str(text)]
+        choice = self.modelThermal.dicoV2M[str(self.comboBoxThermal.currentText())]
         log.debug("slotThermalChoice choice =  %s " % str(choice))
         if choice == 'formula':
             th_formula = self.init.getThermalFormula(zone_id)
@@ -480,32 +482,35 @@ class InitializationView(QWidget, Ui_InitializationForm):
             self.pushButtonThermal.hide()
 
 
-    @Slot(str)
-    def slotSpeciesChoice(self, text):
+    @Slot(int)
+    def slotSpeciesChoice(self, idx):
         """
         INPUT label for choice of zone_id
         """
-        self.scalar = self.modelSpecies.dicoV2M[str(text)]
+        text = self.comboBoxSpecies.currentText()
+        self.scalar = self.modelSpecies.dicoV2M[str(self.comboBoxSpecies.currentText())]
         zone_id = str(self.zone.getCodeNumber())
         self.updateViewSpecies(zone_id)
 
 
-    @Slot(str)
-    def slotMeteoChoice(self, text):
+    @Slot(int)
+    def slotMeteoChoice(self, idx):
         """
         INPUT label for choice of zone_id
         """
+        text = self.comboBoxMeteo.currentText()
         self.scalar_meteo = self.modelMeteo.dicoV2M[str(text)]
         zone_id = str(self.zone.getCodeNumber())
         self.updateViewMeteo(zone_id)
 
 
-    @Slot(str)
-    def slotCombustionChoice(self, text):
+    @Slot(int)
+    def slotCombustionChoice(self, idx):
         """
         INPUT label for choice of zone_id
         """
-        self.scalar_combustion = self.modelCombustion.dicoV2M[str(text)]
+        text = self.comboBoxCombustion.currentText()
+        self.scalar_combustion = self.modelCombustion.dicoV2M[str(self.comboBoxCombustion.currentText())]
         zone_id = str(self.zone.getCodeNumber())
         self.updateViewCombustion(zone_id)
 

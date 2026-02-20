@@ -132,7 +132,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.groupBoxSoluteProperties.hide()
 
     def setConnections(self):
-        self.comboBoxType.activated[str].connect(self.slotGroundwaterLaw)
+        self.comboBoxType.activated[int].connect(self.slotGroundwaterLaw)
         self.lineEditKs.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks"))
         self.lineEditKsXX.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_xx"))
         self.lineEditKsYY.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_yy"))
@@ -142,20 +142,20 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.lineEditKsYZ.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_yz"))
         self.lineEditThetas.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "thetas"))
         self.lineEditKsSaturated.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks"))
-        self.lineEditKsSaturatedXX.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_xx"))
-        self.lineEditKsSaturatedYY.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_yy"))
-        self.lineEditKsSaturatedZZ.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_zz"))
-        self.lineEditKsSaturatedXY.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_xy"))
-        self.lineEditKsSaturatedXZ.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_xz"))
-        self.lineEditKsSaturatedYZ.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "ks_yz"))
-        self.lineEditThetasSaturated.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "thetas"))
-        self.lineEditThetar.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "thetar"))
-        self.lineEditN.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "n"))
-        self.lineEditL.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "l"))
-        self.lineEditAlpha.textChanged[str].connect(lambda x: self.slotSetModelValue(x, "alpha"))
-        self.lineEditSoilDensity.textChanged[str].connect(self.slotSetSoilDensity)
+        self.lineEditKsSaturatedXX.textChanged.connect(lambda x: self.slotSetModelValue(x, "ks_xx"))
+        self.lineEditKsSaturatedYY.textChanged.connect(lambda x: self.slotSetModelValue(x, "ks_yy"))
+        self.lineEditKsSaturatedZZ.textChanged.connect(lambda x: self.slotSetModelValue(x, "ks_zz"))
+        self.lineEditKsSaturatedXY.textChanged.connect(lambda x: self.slotSetModelValue(x, "ks_xy"))
+        self.lineEditKsSaturatedXZ.textChanged.connect(lambda x: self.slotSetModelValue(x, "ks_xz"))
+        self.lineEditKsSaturatedYZ.textChanged.connect(lambda x: self.slotSetModelValue(x, "ks_yz"))
+        self.lineEditThetasSaturated.textChanged.connect(lambda x: self.slotSetModelValue(x, "thetas"))
+        self.lineEditThetar.textChanged.connect(lambda x: self.slotSetModelValue(x, "thetar"))
+        self.lineEditN.textChanged.connect(lambda x: self.slotSetModelValue(x, "n"))
+        self.lineEditL.textChanged.connect(lambda x: self.slotSetModelValue(x, "l"))
+        self.lineEditAlpha.textChanged.connect(lambda x: self.slotSetModelValue(x, "alpha"))
+        self.lineEditSoilDensity.textChanged.connect(self.slotSetSoilDensity)
         self.pushButtonUserLaw.clicked.connect(self.slotFormula)
-        self.comboBoxNameDiff.activated[str].connect(self.slotNameDiff)
+        self.comboBoxNameDiff.activated[int].connect(self.slotNameDiff)
         self.lineEditDiffusivity.textChanged[str].connect(lambda x: self.slotSetScalarProperty(x, "diffusivity"))
         self.lineEditKd.textChanged[str].connect(lambda x: self.slotSetScalarProperty(x, "kd"))
         self.lineEdit_clstar.textChanged[str].connect(lambda x: self.slotSetScalarProperty(x, "clstar"))
@@ -188,7 +188,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.lineEditKd.setValidator(DoubleValidator(self.lineEditKd))
         self.lineEdit_clstar.setValidator(DoubleValidator(self.lineEdit_clstar))
 
-    @Slot("QModelIndex")
+    @Slot()
     def selectGroundwaterLawZones(self):
         label = self.zone.getLabel()
         name = self.zone.getCodeNumber()
@@ -340,12 +340,13 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
         self.groupBoxSaturated.hide()
         self.groupBoxSoluteProperties.hide()
 
-    @Slot(str)
-    def slotGroundwaterLaw(self, text):
+    @Slot(int)
+    def slotGroundwaterLaw(self, idx):
         """
         Method to call 'getState' with correct arguements for 'rho'
         """
         name = self.zone.getCodeNumber()
+        text = self.comboBoxType.currentText()
         choice = self.modelGroundwaterLawType.dicoV2M[str(text)]
 
         self.mdl.setGroundwaterLawModel(name, choice)
@@ -395,7 +396,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
                                                         field_name,
                                                         value)
 
-    @Slot(str)
+    @Slot()
     def slotSetSoilDensity(self, text):
         """
         """
@@ -431,12 +432,13 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             self.pushButtonUserLaw.setStyleSheet("background-color: green")
             self.pushButtonUserLaw.setToolTip(result)
 
-    @Slot(str)
-    def slotNameDiff(self, text):
+    @Slot(int)
+    def slotNameDiff(self, idx):
         """
         Method to choose the scalar which properties shall be changed
         """
         name = self.zone.getCodeNumber()
+        text = self.comboBoxNameDiff.currentText()
         log.debug("slotNameDiff -> %s" % (text))
         self.scalar = str(text)
         scalar = self.scalar

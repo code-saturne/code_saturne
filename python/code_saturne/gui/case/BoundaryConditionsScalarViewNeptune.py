@@ -80,11 +80,11 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
         self.setupUi(self)
 
         # Connections
-        self.comboBoxScalar.activated[str].connect(self.__slotChoiceScalar)
+        self.comboBoxScalar.activated[int].connect(self.__slotChoiceScalar)
 
         self.__Scalarmodel = ComboModel(self.comboBoxScalar, 1, 1)
 
-        self.comboBoxScalarChoice.activated[str].connect(self.slotScalarTypeChoice)
+        self.comboBoxScalarChoice.activated[int].connect(self.slotScalarTypeChoice)
         self.scalarChoiceModel = ComboModel(self.comboBoxScalarChoice, 1, 1)
         self.scalarChoiceModel.addItem(self.tr("Value"), 'dirichlet')
         self.scalarChoiceModel.addItem(self.tr("Value (user law)"), 'dirichlet_formula')
@@ -180,11 +180,12 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
         self.hide()
 
 
-    @Slot(str)
-    def __slotChoiceScalar(self, text):
+    @Slot(int)
+    def __slotChoiceScalar(self, idx):
         """
         INPUT choice of non condensable
         """
+        text = self.comboBoxScalar.currentText()
         for _s in self.__scalarsList:
             if _s[1] == self.__Scalarmodel.dicoV2M[str(text)]:
                 self.__currentScalar = _s
@@ -200,11 +201,12 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
         self.updateWidget()
 
 
-    @Slot(str)
-    def slotScalarTypeChoice(self, text):
+    @Slot(int)
+    def slotScalarTypeChoice(self, idx):
         """
         INPUT Condition type choice for scalar
         """
+        text = self.comboBoxScalarChoice.currentText()
         choice = self.scalarChoiceModel.dicoV2M[str(text)]
 
         _f_id, _sname = self.__currentScalar

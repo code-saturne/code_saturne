@@ -110,37 +110,37 @@ class StandardItemModelVolumicNames(QStandardItemModel):
             return
 
         # ToolTips
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             if index.column() in [0, 1]:
                 return self.tr("field label base")
 
         # Display
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             if index.column() in [0,1]:
                 return self.dataVolumicNames[index.row()][index.column()]
 
         # CheckState
-        elif role == Qt.CheckStateRole:
+        elif role == Qt.ItemDataRole.CheckStateRole:
             if index.column() == 2:
                 if self.dataVolumicNames[index.row()][index.column()] == 'on':
-                    return Qt.Checked
+                    return Qt.CheckState.Checked
                 else:
-                    return Qt.Unchecked
+                    return Qt.CheckState.Unchecked
 
         return
 
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         elif index.column() == [0,1]:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsUserCheckable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsUserCheckable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return
 
@@ -159,7 +159,7 @@ class StandardItemModelVolumicNames(QStandardItemModel):
 
         elif index.column() == 2:
             v = from_qvariant(value, int)
-            if v == Qt.Unchecked:
+            if v == Qt.CheckState.Unchecked:
                 status = "off"
                 self.dataVolumicNames[index.row()][index.column()] = "off"
             else:
@@ -222,37 +222,37 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
             return
 
         # ToolTips
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             if index.column() in [0, 1]:
                 return self.tr("field label base")
 
         # Display
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             if index.column() in [0,1]:
                 return self.dataBoundariesNames[index.row()][index.column()]
 
         # CheckState
-        elif role == Qt.CheckStateRole:
+        elif role == Qt.ItemDataRole.CheckStateRole:
             if index.column() ==2:
                 if self.dataBoundariesNames[index.row()][index.column()] == 'on':
-                    return Qt.Checked
+                    return Qt.CheckState.Checked
                 else:
-                    return Qt.Unchecked
+                    return Qt.CheckState.Unchecked
 
         return
 
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         elif index.column() == 0:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsUserCheckable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return
 
@@ -271,7 +271,7 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
 
         elif index.column() == 2:
             v = from_qvariant(value, int)
-            if v == Qt.Unchecked:
+            if v == Qt.CheckState.Unchecked:
                 status = "off"
                 self.dataBoundariesNames[index.row()][index.column()] = "off"
             else:
@@ -310,13 +310,13 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         self.model = LagrangianStatisticsModel(self.case)
 
         self.checkBoxISUIST.clicked.connect(self.slotISUIST)
-        self.lineEditNBCLST.textChanged[str].connect(self.slotNBCLST)
+        self.lineEditNBCLST.textChanged.connect(self.slotNBCLST)
 
         self.groupBoxISTALA.clicked.connect(self.slotISTALA)
         self.lineEditIDSTNT.editingFinished.connect(self.slotIDSTNT)
         self.lineEditNSTIST.editingFinished.connect(self.slotNSTIST)
 
-        self.lineEditSEUIL.textChanged[str].connect(self.slotSEUIL)
+        self.lineEditSEUIL.textChanged.connect(self.slotSEUIL)
 
         self.groupBoxIENSI3.clicked.connect(self.slotIENSI3)
 
@@ -417,7 +417,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         """
         if self.lineEditNBCLST.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, int)
-            self.model.setGroupOfParticlesValue(value)
+            self.model.setGroupOfParticlesValue(int(value))
 
     @Slot()
     def slotISTALA(self):
@@ -483,7 +483,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         """
         if self.lineEditSEUIL.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(text, float)
-            self.model.setThresholdValue(value)
+            self.model.setThresholdValue(float(value))
 
 
     @Slot()

@@ -125,14 +125,14 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.pushButtonSpecies.clicked.connect(self.slotSpeciesFormula)
         self.pushButtonVoidFraction.clicked.connect(self.slotVoidFractionFormula)
         self.pushButtonMeteo.clicked.connect(self.slotMeteoFormula)
-        self.comboBoxThermal.activated[str].connect(self.slotThermalChoice)
-        self.comboBoxTypeThermal.activated[str].connect(self.slotThermalTypeChoice)
-        self.comboBoxSpecies.activated[str].connect(self.slotSpeciesChoice)
-        self.comboBoxTypeSpecies.activated[str].connect(self.slotSpeciesTypeChoice)
-        self.comboBoxVoidFraction.activated[str].connect(self.slotVoidFractionChoice)
-        self.comboBoxTypeVoidFraction.activated[str].connect(self.slotVoidFractionTypeChoice)
-        self.comboBoxMeteo.activated[str].connect(self.slotMeteoChoice)
-        self.comboBoxTypeMeteo.activated[str].connect(self.slotMeteoTypeChoice)
+        self.comboBoxThermal.activated[int].connect(self.slotThermalChoice)
+        self.comboBoxTypeThermal.activated[int].connect(self.slotThermalTypeChoice)
+        self.comboBoxSpecies.activated[int].connect(self.slotSpeciesChoice)
+        self.comboBoxTypeSpecies.activated[int].connect(self.slotSpeciesTypeChoice)
+        self.comboBoxVoidFraction.activated[int].connect(self.slotVoidFractionChoice)
+        self.comboBoxTypeVoidFraction.activated[int].connect(self.slotVoidFractionTypeChoice)
+        self.comboBoxMeteo.activated[int].connect(self.slotMeteoChoice)
+        self.comboBoxTypeMeteo.activated[int].connect(self.slotMeteoTypeChoice)
 
         # Syrthes coupling
         self.lineEditSyrthesInstance.editingFinished.connect(self.slotChooseSyrthesInstance)
@@ -554,20 +554,22 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.hide()
 
 
-    @Slot(str)
-    def slotThermalChoice(self, text):
+    @Slot(int)
+    def slotThermalChoice(self, idx):
         """
         INPUT label for choice of zone
         """
+        text = self.comboBoxThermal.currentText()
         self.thermal = self.modelThermal.dicoV2M[str(text)]
         self.initializeVariables()
 
 
-    @Slot(str)
-    def slotThermalTypeChoice(self, text):
+    @Slot(int)
+    def slotThermalTypeChoice(self, idx):
         """
         INPUT label for choice of zone
         """
+        text = self.comboBoxTypeThermal.currentText()
         self.thermal_type = self.modelTypeThermal.dicoV2M[str(text)]
         thermal_type, convert = self.__get_thermal_type__()
         self.__boundary.setScalarChoice(self.thermal, thermal_type)
@@ -578,60 +580,66 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
         self.initializeVariables()
 
 
-    @Slot(str)
-    def slotSpeciesChoice(self, text):
+    @Slot(int)
+    def slotSpeciesChoice(self, idx):
         """
         INPUT label for choice of zone
         """
+        text = self.comboBoxSpecies.currentText()
         self.species = self.modelSpecies.dicoV2M[str(text)]
         self.initializeVariables()
 
 
-    @Slot(str)
-    def slotSpeciesTypeChoice(self, text):
+    @Slot(int)
+    def slotSpeciesTypeChoice(self, idx):
         """
         INPUT label for choice of zone
         """
+        text = self.comboBoxTypeSpecies.currentText()
         self.species_type = self.modelTypeSpecies.dicoV2M[str(text)]
         self.__boundary.setScalarChoice(self.species, self.species_type)
         self.initializeVariables()
 
 
-    @Slot(str)
-    def slotVoidFractionChoice(self, text):
+    @Slot(int)
+    def slotVoidFractionChoice(self, idx):
         """
         INPUT label for choice of zone
         """
+        text = self.comboBoxVoidFraction.currentText()
         raise Exception("This function cannot be called")
         #FIXME: What to do with this name ?
         _name = self.modelVoidFraction.dicoV2M[str(text)]
         self.initializeVariables()
 
 
-    @Slot(str)
-    def slotVoidFractionTypeChoice(self, text):
+    @Slot(int)
+    def slotVoidFractionTypeChoice(self, idx):
         """
         INPUT label for choice of zone
         """
+        text = self.comboBoxTypeVoidFraction.currentText()
         self.hgn_type = self.modelTypeVoidFraction.dicoV2M[str(text)]
         self.__boundary.setScalarChoice(self.hgn.getHgnName(), self.hgn_type)
         self.initializeVariables()
 
 
-    @Slot(str)
-    def slotMeteoChoice(self, text):
+    @Slot(int)
+    def slotMeteoChoice(self, idx):
         """
         INPUT label for choice of zone
         """
+        text = self.comboBoxMeteo.currentText()
         self.meteo = self.modelMeteo.dicoV2M[str(text)]
         self.initializeVariables()
 
 
-    @Slot(str)
-    def slotMeteoTypeChoice(self, text):
+    @Slot(int)
+    def slotMeteoTypeChoice(self, idx):
         """
         INPUT label for choice of zone
         """
+        text = self.comboBoxTypeMeteo.currentText()
         self.meteo_type= self.modelTypeMeteo.dicoV2M[str(text)]
         self.__boundary.setScalarChoice(self.meteo, self.meteo_type)
         self.initializeVariables()

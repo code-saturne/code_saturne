@@ -115,7 +115,7 @@ class ImmersedBoundariesBoundaryConditionsWallView(QWidget, Ui_ImmersedBoundarie
             self.__modelEnergy.addItem(self.tr("Temperature"), 'temperature')
             self.__modelEnergy.addItem(self.tr("Temperature (user law)"), 'temperature_formula')
             #Thermal BC connections
-            self.comboBoxEnergy.activated[str].connect(self.__slotChoiceEnergy)
+            self.comboBoxEnergy.activated[int].connect(self.__slotChoiceEnergy)
             self.lineEditEnergy.textChanged[str].connect(self.__slotEnergy)
             validatorEner = DoubleValidator(self.lineEditEnergy)
             self.lineEditEnergy.setValidator(validatorEner)
@@ -213,12 +213,13 @@ class ImmersedBoundariesBoundaryConditionsWallView(QWidget, Ui_ImmersedBoundarie
             self.ibm.setObjectBoundaryVelocityMode(self.current_obj,'wall_law')
 
 
-    @Slot(str)
-    def __slotChoiceEnergy(self, text):
+    @Slot(int)
+    def __slotChoiceEnergy(self, idx):
         """
         INPUT choice of method of calculation of the energy
         """
 
+        text = self.comboBoxEnergy.currentText()  
         energy_mode = self.__modelEnergy.dicoV2M[str(text)]
         self.ibm.setObjectBoundaryEnergyMode(self.current_obj, energy_mode)
 
@@ -254,7 +255,7 @@ class ImmersedBoundariesBoundaryConditionsWallView(QWidget, Ui_ImmersedBoundarie
 
 
 
-    @Slot(str)
+    @Slot()
     def __slotEnergy(self, text):
         """
         INPUT energy value

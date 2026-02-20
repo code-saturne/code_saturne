@@ -115,7 +115,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         self.modelTimeStop.addItem(self.tr("Additional physical time (s)"), "maximum_time_add")
 
         # Connections
-        self.comboBoxOptions.activated[str].connect(self.slotTimePassing)
+        self.comboBoxOptions.activated[int].connect(self.slotTimePassing)
         self.lineEditDTREF.textChanged[str].connect(self.slotTimeStep)
         self.lineEditRELXST.textChanged[str].connect(self.slotRelaxCoef)
         self.lineEditCOUMAX.textChanged[str].connect(self.slotTimeOptionCOUMAX)
@@ -124,9 +124,9 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         self.lineEditCDTMAX.textChanged[str].connect(self.slotTimeOptionCDTMAX)
         self.lineEditVARRDT.textChanged[str].connect(self.slotTimeOptionVARRDT)
         self.checkBoxIPTLRO.clicked.connect(self.slotThermalTimeStep)
-        self.comboBoxNTERUP.activated[str].connect(self.slotNTERUP)
-        self.spinBoxNTERUP.valueChanged[int].connect(self.slotNTERUP2)
-        self.comboBoxStopCrit.activated[str].connect(self.slotStopCritModel)
+        self.comboBoxNTERUP.activated[int].connect(self.slotNTERUP)
+        self.spinBoxNTERUP.valueChanged.connect(self.slotNTERUP2)
+        self.comboBoxStopCrit.activated[int].connect(self.slotStopCritModel)
         self.lineEditStop.textChanged[str].connect(self.slotStopCritValue)
 
         # Validators
@@ -376,23 +376,25 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         self.lineEditStop.setText(str(value))
 
 
-    @Slot(str)
-    def slotTimePassing(self, text):
+    @Slot(int)
+    def slotTimePassing(self, idx):
         """
         Input IDTVAR.
         """
-        idtvar = int(self.modelTimeOptions.dicoV2M[str(text)])
+        text = self.comboBoxOptions.currentText()
+        idtvar = int(self.modelTimeOptions.dicoV2M[str(self.comboBoxOptions.currentText())])
 
         self.mdl.setTimePassing(idtvar)
 
         self.__setTimePassingDisplay(idtvar)
 
 
-    @Slot(str)
-    def slotStopCritModel(self, text):
+    @Slot(int)
+    def slotStopCritModel(self, idx):
         """
         Select stop criterion model
         """
+        text = self.comboBoxStopCrit.currentText()
         m_prev, c_prev = self.mdl.getStopCriterion()
         model = self.modelTimeStop.dicoV2M[str(text)]
 
@@ -434,17 +436,19 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         """
         Input DTREF.
         """
+        #text = self.lineEditDTREF.currentText()
         if self.lineEditDTREF.validator().state == QValidator.State.Acceptable:
             time_step = from_qvariant(text, float)
-            self.mdl.setTimeStep(time_step)
+            self.mdl.setTimeStep(float(time_step))
 
 
-    @Slot(str)
-    def slotNTERUP(self,text):
+    @Slot(int)
+    def slotNTERUP(self,idx):
         """
         Set value for parameterNTERUP
         """
-        NTERUP = self.modelNTERUP.dicoV2M[str(text)]
+        text = self.comboBoxNTERUP.currentText()
+        NTERUP = self.modelNTERUP.dicoV2M[text]
         self.mdl.setVelocityPressureAlgorithm(NTERUP)
         if NTERUP == 'piso':
             self.spinBoxNTERUP.show()
@@ -525,7 +529,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.mdl.setOptions('time_step_var', time_step_var)
 
 
-    @Slot()
+    @Slot(bool)
     def slotThermalTimeStep(self):
         """
         Input IPTLRO.

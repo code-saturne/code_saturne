@@ -128,10 +128,10 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.checkBoxImprovedPressure.clicked.connect(self.slotImprovedPressure)
         self.checkBoxICFGRP.clicked.connect(self.slotICFGRP)
         self.lineEditRELAXP.textChanged[str].connect(self.slotRELAXP)
-        self.comboBoxGradientType.activated[str].connect(self.slotGradientType)
-        self.comboBoxExtNeighbors.activated[str].connect(self.slotExtNeighbors)
+        self.comboBoxGradientType.activated[int].connect(self.slotGradientType)
+        self.comboBoxExtNeighbors.activated[int].connect(self.slotExtNeighbors)
         self.lineEditSRROM.textChanged[str].connect(self.slotSRROM)
-        self.comboBoxDensityVar.activated[str].connect(self.slotDensityVar)
+        self.comboBoxDensityVar.activated[int].connect(self.slotDensityVar)
 
         # Validators
         validatorRELAXP = DoubleValidator(self.lineEditRELAXP, min=0., max=1.)
@@ -265,28 +265,29 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         Set value for parameter RELAXP
         """
         if self.lineEditRELAXP.validator().state == QValidator.State.Acceptable:
-            relaxp = from_qvariant(text, float)
+            relaxp = float(from_qvariant(text, float))
             self.model.setPressureRelaxation(relaxp)
             log.debug("slotRELAXP-> %s" % relaxp)
 
 
-    @Slot(str)
+    @Slot()
     def slotSRROM(self, text):
         """
         Set value for parameter SRROM
         """
         if self.lineEditSRROM.validator().state == QValidator.State.Acceptable:
             srrom = from_qvariant(text, float)
-            self.model.setDensityRelaxation(srrom)
+            self.model.setDensityRelaxation(float(srrom))
             log.debug("slotSRROM-> %s" % srrom)
 
 
-    @Slot(str)
-    def slotGradientType(self, text):
+    @Slot(int)
+    def slotGradientType(self, idx):
         """
         Set value for parameter GradientType
         """
-        grd_type = self.modelGradientType.dicoV2M[str(text)]
+        text = self.comboBoxGradientType.currentText()
+        grd_type = self.modelGradientType.dicoV2M[str(self.comboBoxGradientType.currentText())]
         self.model.setGradientReconstruction(grd_type)
         log.debug("slotGradientType-> %s" % grd_type)
 
@@ -298,21 +299,23 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.comboBoxExtNeighbors.show()
 
 
-    @Slot(str)
-    def slotExtNeighbors(self, text):
+    @Slot(int)
+    def slotExtNeighbors(self, idx):
         """
         Set extended neighborhood type
         """
-        enh_type = self.modelExtNeighbors.dicoV2M[str(text)]
+        text = self.comboBoxExtNeighbors.currentText()
+        enh_type = self.modelExtNeighbors.dicoV2M[str(self.comboBoxExtNeighbors.currentText())]
         self.model.setExtendedNeighborType(enh_type)
         log.debug("slotExtNeighbors-> %s" % enh_type)
 
-    @Slot(str)
-    def slotDensityVar(self, text):
+    @Slot(int)
+    def slotDensityVar(self, idx):
         """
         Set algorithm for density variation in time
         """
-        dv_type = self.modelDensityVar.dicoV2M[str(text)]
+        text = self.comboBoxDensityVar.currentText()
+        dv_type = self.modelDensityVar.dicoV2M[str(self.comboBoxDensityVar.currentText())]
         self.model.setDensityVar(dv_type)
         log.debug("slotDensityVar-> %s" % dv_type)
 

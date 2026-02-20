@@ -82,7 +82,7 @@ class LabelWriterDelegate(QItemDelegate):
     """
     def __init__(self, parent=None):
         QItemDelegate.__init__(self, parent)
-        self.parent = parent
+        self.parent_widget = parent
         self.old_plabel = ""
 
 
@@ -98,7 +98,7 @@ class LabelWriterDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         self.old_plabel = str(value)
         editor.setText(value)
 
@@ -119,14 +119,14 @@ class LabelWriterDelegate(QItemDelegate):
 
                 from code_saturne.gui.case.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
-                if dialog.exec_():
+                if dialog.exec():
                     result = dialog.get_result()
                     new_plabel = result['label']
                     log.debug("setModelData -> result = %s" % result)
                 else:
                     new_plabel = self.old_plabel
 
-            model.setData(index, new_plabel, Qt.DisplayRole)
+            model.setData(index, new_plabel, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -139,7 +139,7 @@ class LabelMeshDelegate(QItemDelegate):
     """
     def __init__(self, parent=None):
         QItemDelegate.__init__(self, parent)
-        self.parent = parent
+        self.parent_widget = parent
         self.old_plabel = ""
 
 
@@ -155,7 +155,7 @@ class LabelMeshDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         self.old_plabel = str(value)
         editor.setText(value)
 
@@ -176,14 +176,14 @@ class LabelMeshDelegate(QItemDelegate):
 
                 from code_saturne.gui.case.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
-                if dialog.exec_():
+                if dialog.exec():
                     result = dialog.get_result()
                     new_plabel = result['label']
                     log.debug("setModelData -> result = %s" % result)
                 else:
                     new_plabel = self.old_plabel
 
-            model.setData(index, new_plabel, Qt.DisplayRole)
+            model.setData(index, new_plabel, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -196,7 +196,7 @@ class FormatWriterDelegate(QItemDelegate):
     """
     def __init__(self, parent=None, xml_model=None, cfg_libs=None):
         super(FormatWriterDelegate, self).__init__(parent)
-        self.parent = parent
+        self.parent_widget = parent
         self.mdl = xml_model # TODO change this
         self.cfg_libs = cfg_libs
 
@@ -214,16 +214,16 @@ class FormatWriterDelegate(QItemDelegate):
 
         if self.cfg_libs != None:
             if self.cfg_libs['med'].have == False:
-                editor.setItemData(1, QColor(Qt.red), Qt.TextColorRole);
+                editor.setItemData(1, QColor(Qt.red), Qt.ForegroundRole);
             if self.cfg_libs['cgns'].have == False:
-                editor.setItemData(2, QColor(Qt.red), Qt.TextColorRole);
+                editor.setItemData(2, QColor(Qt.red), Qt.ForegroundRole);
             if self.cfg_libs['catalyst'].have == False \
                and self.cfg_libs['catalyst2'].have == False:
-                editor.setItemData(3, QColor(Qt.red), Qt.TextColorRole);
+                editor.setItemData(3, QColor(Qt.red), Qt.ForegroundRole);
             if self.cfg_libs['melissa'].have == False:
-                editor.setItemData(5, QColor(Qt.red), Qt.TextColorRole);
+                editor.setItemData(5, QColor(Qt.red), Qt.ForegroundRole);
             if self.cfg_libs['ccm'].have == False:
-                editor.setItemData(6, QColor(Qt.red), Qt.TextColorRole);
+                editor.setItemData(6, QColor(Qt.red), Qt.ForegroundRole);
 
         return editor
 
@@ -255,7 +255,7 @@ class TypeMeshDelegate(QItemDelegate):
     """
     def __init__(self, parent=None, xml_model=None, typ=0):
         super(TypeMeshDelegate, self).__init__(parent)
-        self.parent = parent
+        self.parent_widget = parent
         self.mdl = xml_model # TODO review this
         self.lag = typ
 
@@ -331,7 +331,7 @@ class TypeMeshDelegate(QItemDelegate):
             painter.setPen(QPen(Qt.NoPen))
             painter.drawRect(option.rect)
             painter.setPen(QPen(Qt.black))
-            value = index.data(Qt.DisplayRole)
+            value = index.data(Qt.ItemDataRole.DisplayRole)
             if value.isValid():
                 text = from_qvariant(value, to_text_string)
                 painter.drawText(option.rect, Qt.AlignLeft, text)
@@ -345,7 +345,7 @@ class TypeMeshDelegate(QItemDelegate):
 class LocationSelectorDelegate(QItemDelegate):
     def __init__(self, parent, mdl):
         super(LocationSelectorDelegate, self).__init__(parent)
-        self.parent = parent
+        self.parent_widget = parent
         self.mdl = mdl
         self.editor_type = 'line'
 
@@ -385,7 +385,7 @@ class LocationSelectorDelegate(QItemDelegate):
     def setEditorData(self, editor, index):
         # This line is used to avoid an overlay of old and new text
         editor.setAutoFillBackground(True)
-        self.value = from_qvariant(index.model().data(index, Qt.DisplayRole),
+        self.value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole),
                                    to_text_string)
         if self.editor_type == 'line':
             editor.setText(self.value)
@@ -408,7 +408,7 @@ class LocationSelectorDelegate(QItemDelegate):
            return
 
         if str(value) != "" :
-            model.setData(index, value, Qt.DisplayRole)
+            model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -418,7 +418,7 @@ class LocationSelectorDelegate(QItemDelegate):
 class DensitySelectorDelegate(QItemDelegate):
     def __init__(self, parent, mdl):
         super(DensitySelectorDelegate, self).__init__(parent)
-        self.parent = parent
+        self.parent_widget = parent
         self.mdl = mdl
 
 
@@ -431,7 +431,7 @@ class DensitySelectorDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        self.value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        self.value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         editor.setText(self.value)
 
 
@@ -445,7 +445,7 @@ class DensitySelectorDelegate(QItemDelegate):
            return
 
         if str(value) != "" :
-            model.setData(index, value, Qt.DisplayRole)
+            model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -485,7 +485,7 @@ class AssociatedWriterDelegate(QItemDelegate):
     def setModelData(self, comboBox, model, index):
         txt = str(comboBox.currentText())
         value = self.modelCombo.dicoV2M[txt]
-        model.setData(index, value, Qt.DisplayRole)
+        model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -548,7 +548,7 @@ class StandardItemModelMesh(QStandardItemModel):
         if not index.isValid():
             return None
 
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
 
             row = index.row()
             col = index.column()
@@ -565,7 +565,7 @@ class StandardItemModelMesh(QStandardItemModel):
             else:
                 return None
 
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             if index.column() != 3:
                 return Qt.AlignCenter
             else:
@@ -576,20 +576,20 @@ class StandardItemModelMesh(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         # default item
         col_id = index.column()
         if index.row() in self.defaultItem:
             if col_id == 1 or col_id == 2:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         else:
             if col_id == 1:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+        return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             if section == 0:
                 return self.tr("Name")
             elif section == 1:
@@ -716,7 +716,7 @@ class StandardItemModelLagrangianMesh(QStandardItemModel):
         if not index.isValid():
             return None
 
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
 
             row = index.row()
             col = index.column()
@@ -735,7 +735,7 @@ class StandardItemModelLagrangianMesh(QStandardItemModel):
             else:
                 return None
 
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             if index.column() != 4:
                 return Qt.AlignCenter
             else:
@@ -746,20 +746,20 @@ class StandardItemModelLagrangianMesh(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         # default item
         col_id = index.column()
         if index.row() in self.defaultItem:
             if col_id == 1 or col_id == 2:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         else:
             if col_id == 1:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+        return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             if section == 0:
                 return self.tr("Name")
             elif section == 1:
@@ -849,7 +849,7 @@ class StandardItemModelWriter(QStandardItemModel):
         self.dataWriter = []
         self.mdl = mdl
         self.defaultItem = []
-        self.parent = parent
+        self.parent_widget = parent
         self.populateModel()
 
     def populateModel(self):
@@ -887,7 +887,7 @@ class StandardItemModelWriter(QStandardItemModel):
         if not index.isValid():
             return None
 
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
 
             row = index.row()
             col = index.column()
@@ -904,7 +904,7 @@ class StandardItemModelWriter(QStandardItemModel):
             else:
                 return None
 
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             return Qt.AlignCenter
 
         return None
@@ -912,16 +912,16 @@ class StandardItemModelWriter(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         # default item
         if index.column() == 1:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             if section == 0:
                 return self.tr("Name")
             elif section == 1:
@@ -1017,7 +1017,7 @@ class StandardItemModelAssociatedWriter(QStandardItemModel):
         self.setColumnCount(len(self.headers))
 
         self._data = []
-        self.parent = parent
+        self.parent_widget = parent
         self.mdl  = mdl
         self.mesh_id = mesh_id
 
@@ -1029,7 +1029,7 @@ class StandardItemModelAssociatedWriter(QStandardItemModel):
         row = index.row()
         col = index.column()
 
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return self._data[row]
 
         return None
@@ -1037,19 +1037,19 @@ class StandardItemModelAssociatedWriter(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemFlag.ItemIsEnabled
+        return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
 
     def setData(self, index, value, role):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         # Update the row in the table
         row = index.row()
         col = index.column()
@@ -1131,7 +1131,7 @@ class StandardItemModelMonitoring(QStandardItemModel):
         if not index.isValid():
             return None
 
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
 
             row = index.row()
             dico = self.dataMonitoring[row]
@@ -1149,7 +1149,7 @@ class StandardItemModelMonitoring(QStandardItemModel):
             else:
                 return None
 
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             return Qt.AlignCenter
 
         return None
@@ -1157,15 +1157,15 @@ class StandardItemModelMonitoring(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         if index.column() == 0:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             if section == 0:
                 return self.tr("n")
             elif section == 1:
@@ -1294,7 +1294,7 @@ class MonitoringPointDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        text = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        text = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         if isinstance(editor, QLineEdit):
             editor.setText(text)
 
@@ -1307,7 +1307,7 @@ class MonitoringPointDelegate(QItemDelegate):
             item = editor.text()
             selectionModel = self.table.selectionModel()
             for index in selectionModel.selectedRows(index.column()):
-                model.setData(index, item, Qt.DisplayRole)
+                model.setData(index, item, Qt.ItemDataRole.DisplayRole)
                 dico = model.dataMonitoring[index.row()]
                 x = float(dico['X'])
                 y = float(dico['Y'])
@@ -1547,19 +1547,19 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.lineEditFRTimePlot.textChanged[str].connect(self.slotMonitoringPointFrequencyTime)
 
         # comboBox
-        self.comboBoxOutput.activated[str].connect(self.slotOutputListing)
-        self.comboBoxNTLAL.activated[str].connect(self.slotChoiceNTLAL)
+        self.comboBoxOutput.activated[int].connect(self.slotOutputListing)
+        self.comboBoxNTLAL.activated[int].connect(self.slotChoiceNTLAL)
 
-        self.comboBoxTimeDependency.activated[str].connect(self.slotWriterTimeDependency)
-        self.comboBoxFrequency.activated[str].connect(self.slotWriterFrequencyChoice)
-        self.comboBoxFormatE.activated[str].connect(self.slotWriterOptions)
-        self.comboBoxFormatH.activated[str].connect(self.slotWriterOptions)
-        self.comboBoxStructureC.activated[str].connect(self.slotWriterOptions)
-        self.comboBoxPolygon.activated[str].connect(self.slotWriterOptions)
-        self.comboBoxPolyhedra.activated[str].connect(self.slotWriterOptions)
-        self.comboBoxImplementC.activated[str].connect(self.slotCatalystImplementation)
-        self.comboBoxTimePlot.activated[str].connect(self.slotMonitoringPoint)
-        self.comboBoxProbeFmt.activated[str].connect(self.slotOutputProbeFmt)
+        self.comboBoxTimeDependency.activated[int].connect(self.slotWriterTimeDependency)
+        self.comboBoxFrequency.activated[int].connect(self.slotWriterFrequencyChoice)
+        self.comboBoxFormatE.activated[int].connect(self.slotWriterOptions)
+        self.comboBoxFormatH.activated[int].connect(self.slotWriterOptions)
+        self.comboBoxStructureC.activated[int].connect(self.slotWriterOptions)
+        self.comboBoxPolygon.activated[int].connect(self.slotWriterOptions)
+        self.comboBoxPolyhedra.activated[int].connect(self.slotWriterOptions)
+        self.comboBoxImplementC.activated[int].connect(self.slotCatalystImplementation)
+        self.comboBoxTimePlot.activated[int].connect(self.slotMonitoringPoint)
+        self.comboBoxProbeFmt.activated[int].connect(self.slotOutputProbeFmt)
 
         # Check box
         self.checkBoxSnapToCenter.clicked.connect(self.slotProbeSnapMode)
@@ -1728,11 +1728,12 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.case.undoStartGlobal()
 
 
-    @Slot(str)
-    def slotOutputListing(self, text):
+    @Slot(int)
+    def slotOutputListing(self, idx):
         """
         INPUT choice of the output listing
         """
+        text = self.comboBoxOutput.currentText()
         listing = self.modelOutput.dicoV2M[str(text)]
         log.debug("slotOutputListing-> listing = %s" % listing)
 
@@ -1757,11 +1758,12 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.lineEditNTLIST.setText(str(ntlist))
 
 
-    @Slot(str)
-    def slotChoiceNTLAL(self, text):
+    @Slot(int)
+    def slotChoiceNTLAL(self, idx):
         """
         INPUT choice of the output listing for lagrangian variables
         """
+        text = self.comboBoxNTLAL.currentText()
         listing = self.modelNTLAL.dicoV2M[str(text)]
         log.debug("slotChoiceNTLAL-> listing = %s" % listing)
 
@@ -1780,7 +1782,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         elif listing == "Frequency_l":
             self.lineEditNTLAL.setEnabled(True)
             ntlist = from_qvariant(self.lineEditNTLAL.text(), int)
-            if ntlist < 1:
+            if int(ntlist) < 1:
                 ntlist = 1
                 self.mdl.setListingFrequencyLagrangian(ntlist)
                 self.lineEditNTLAL.setText(str(ntlist))
@@ -1794,7 +1796,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         if self.lineEditNTLIST.validator().state == QValidator.State.Acceptable:
             n = from_qvariant(text, int)
             log.debug("slotListingFrequency-> NTLIST = %s" % n)
-            self.mdl.setListingFrequency(n)
+            self.mdl.setListingFrequency(int(n))
 
 
     @Slot(str)
@@ -1805,7 +1807,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         if self.lineEditNTLAL.validator().state == QValidator.State.Acceptable:
             n = from_qvariant(text, int)
             log.debug("slotNTLAL-> NTLIST = %s" % n)
-            self.mdl.setListingFrequencyLagrangian(n)
+            self.mdl.setListingFrequencyLagrangian(int(n))
 
 
     def __insertWriter(self, name, writer_id, format, directory):
@@ -2001,11 +2003,12 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.__updateOptionsFormat(options, row)
 
 
-    @Slot(str)
-    def slotWriterFrequencyChoice(self, text):
+    @Slot(int)
+    def slotWriterFrequencyChoice(self, idx):
         """
         INPUT choice of the output frequency for a writer
         """
+        text = self.comboBoxFrequency.currentText()
         cindex = self.tableViewWriter.currentIndex()
         if cindex != (-1, -1):
             row = cindex.row()
@@ -2115,7 +2118,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                                     required   = req,
                                     symbols    = sym,
                                     examples   = exa)
-            if dialog.exec_():
+            if dialog.exec():
                 result = str(dialog.get_result())
                 log.debug("slotWriterFrequencyFormula -> %s" % result)
                 self.mdl.setWriterFrequency(writer_id, result)
@@ -2123,11 +2126,12 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                 self.pushButtonFrequency.setToolTip(result)
 
 
-    @Slot(str)
-    def slotWriterTimeDependency(self, text):
+    @Slot(int)
+    def slotWriterTimeDependency(self, idx):
         """
         Input type of post-processing for mesh
         """
+        text = self.comboBoxTimeDependency.currentText()
         cindex = self.tableViewWriter.currentIndex()
         if cindex != (-1,-1):
             row = cindex.row()
@@ -2230,8 +2234,8 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.mdl.setWriterOptions(writer_id, l)
 
 
-    @Slot(str)
-    def slotWriterOptions(self):
+    @Slot(int)
+    def slotWriterOptions(self, idx):
         """
         Create line for command of format's options
         """
@@ -2398,11 +2402,12 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.modelLagrangianMesh.newData(name, mesh_id, mesh_type, density, selection)
 
 
-    @Slot(str)
-    def slotCatalystImplementation(self, text):
+    @Slot(int)
+    def slotCatalystImplementation(self, idx):
         """
         Select Catalyst implementation type
         """
+        text = self.comboBoxImplementC.currentText()
         impl_type = self.modelImplementC.dicoV2M[str(text)]
         log.debug("slotslotCatalystImplementation-> implementation = %s" % impl_type)
         self.mdl.setCatalystImplementation(impl_type)
@@ -2715,21 +2720,23 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
                     self.__insertAssociatedLagrangianWriter(label)
 
 
-    @Slot(str)
-    def slotOutputProbeFmt(self, text):
+    @Slot(int)
+    def slotOutputProbeFmt(self, idx):
         """
         INPUT choice of the output for the probes (.dat, .csv)
         """
+        text = self.comboBoxProbeFmt.currentText()
         fmt = self.modelProbeFmt.dicoV2M[str(text)]
         log.debug("slotOutputProbeFmt-> fmt = %s" % fmt)
         self.mdl.setMonitoringPointFormat(fmt)
 
 
-    @Slot(str)
-    def slotMonitoringPoint(self, text):
+    @Slot(int)
+    def slotMonitoringPoint(self, idx):
         """
         Input choice of the output of monitoring points files
         """
+        text = self.comboBoxTimePlot.currentText()
         histo = self.modelTimePlot.dicoV2M[str(text)]
         log.debug("slotMonitoringPoint-> histo = %s" % histo)
         self.mdl.setMonitoringPointType(histo)

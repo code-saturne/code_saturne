@@ -102,7 +102,7 @@ class BoundaryNatureDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, value, Qt.DisplayRole)
+                model.setData(idx, value, Qt.ItemDataRole.DisplayRole)
 
 
 # -------------------------------------------------------------------------------
@@ -131,7 +131,7 @@ class StandardItemModelLocalization(QStandardItemModel):
         if not index.isValid():
             return None
 
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             row = index.row()
             col = index.column()
 
@@ -146,13 +146,13 @@ class StandardItemModelLocalization(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         if index.column() == 0:
-            return Qt.ItemIsEnabled
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemFlag.ItemIsEnabled
+        return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
@@ -249,8 +249,8 @@ class BoundaryNatureView(QWidget, Ui_BoundaryNatureForm):
         self.tableView.clicked.connect(self.slotChangeSelection)
 
         # Context menu
-        self.tableView.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.tableView.customContextMenuRequested[QPoint].connect(self.slotContextMenu)
+        self.tableView.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.tableView.customContextMenuRequested.connect(self.slotContextMenu)
 
         self.case.undoStartGlobal()
 

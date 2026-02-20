@@ -237,28 +237,28 @@ class ImmersedBoundariesFSIView(QWidget, Ui_ImmersedBoundariesFSI):
             self.groupBoxFSIParam.hide()
 
 
-    @Slot(str)
+    @Slot()
     def slotObjMinCycle(self, text):
         if self.lineEditMinSubCycles.validator().state == QValidator.State.Acceptable:
             val = int(text)
             self.ibm.setObjectMinCycle(self.current_obj, text)
 
 
-    @Slot(str)
+    @Slot()
     def slotObjMaxCycle(self, text):
         if self.lineEditMaxSubCycles.validator().state == QValidator.State.Acceptable:
             val = int(text)
             self.ibm.setObjectMaxCycle(self.current_obj, text)
 
 
-    @Slot(str)
+    @Slot()
     def slotObjCvCriteria(self, text):
         if self.lineEditConvergenceCriteria.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.ibm.setObjectCvCriteria(self.current_obj, text)
 
 
-    @Slot(str)
+    @Slot()
     def slotObjXinit(self, text):
         if text == '':
             text=0.
@@ -266,7 +266,7 @@ class ImmersedBoundariesFSIView(QWidget, Ui_ImmersedBoundariesFSI):
         self.ibm.setObjectInitPosition(self.current_obj, xini=text)
 
 
-    @Slot(str)
+    @Slot()
     def slotObjYinit(self, text):
         if text == '':
             text=0.
@@ -274,7 +274,7 @@ class ImmersedBoundariesFSIView(QWidget, Ui_ImmersedBoundariesFSI):
         self.ibm.setObjectInitPosition(self.current_obj, yini=text)
 
 
-    @Slot(str)
+    @Slot()
     def slotObjZinit(self, text):
         if text == '':
             text=0.
@@ -282,7 +282,7 @@ class ImmersedBoundariesFSIView(QWidget, Ui_ImmersedBoundariesFSI):
         self.ibm.setObjectInitPosition(self.current_obj, zini=text)
 
 
-    @Slot(str)
+    @Slot()
     def slotObjXeq(self, text):
         if text == '':
             text=0.
@@ -290,7 +290,7 @@ class ImmersedBoundariesFSIView(QWidget, Ui_ImmersedBoundariesFSI):
         self.ibm.setObjectEqPosition(self.current_obj, xeq=text)
 
 
-    @Slot(str)
+    @Slot()
     def slotObjYeq(self, text):
         if text == '':
             text=0.
@@ -298,7 +298,7 @@ class ImmersedBoundariesFSIView(QWidget, Ui_ImmersedBoundariesFSI):
         self.ibm.setObjectEqPosition(self.current_obj, yeq=text)
 
 
-    @Slot(str)
+    @Slot()
     def slotObjZeq(self, text):
         if text == '':
             text=0.
@@ -306,7 +306,7 @@ class ImmersedBoundariesFSIView(QWidget, Ui_ImmersedBoundariesFSI):
         self.ibm.setObjectEqPosition(self.current_obj, zeq=text)
 
 
-    @Slot(str)
+    @Slot()
     def slotObjVelXinit(self, text):
         if text == '':
             text=0.
@@ -314,7 +314,7 @@ class ImmersedBoundariesFSIView(QWidget, Ui_ImmersedBoundariesFSI):
         self.ibm.setObjectInitVel(self.current_obj, vx=text)
 
 
-    @Slot(str)
+    @Slot()
     def slotObjVelYinit(self, text):
         if text == '':
             text=0.
@@ -322,7 +322,7 @@ class ImmersedBoundariesFSIView(QWidget, Ui_ImmersedBoundariesFSI):
         self.ibm.setObjectInitVel(self.current_obj, vy=text)
 
 
-    @Slot(str)
+    @Slot()
     def slotObjVelZinit(self, text):
         if text == '':
             text=0.
@@ -330,63 +330,63 @@ class ImmersedBoundariesFSIView(QWidget, Ui_ImmersedBoundariesFSI):
         self.ibm.setObjectInitVel(self.current_obj, vz=text)
 
 
-    @Slot(str)
+    @Slot()
     def slotObjAccXinit(self, text):
         if text == '':
             text=0.
 
         self.ibm.setObjectInitAcc(self.current_obj, ax=text)
 
-    @Slot(str)
+    @Slot()
     def slotObjAccYinit(self, text):
         if text == '':
             text=0.
 
         self.ibm.setObjectInitAcc(self.current_obj, ay=text)
 
-    @Slot(str)
+    @Slot()
     def slotObjAccZinit(self, text):
         if text == '':
             text=0.
 
         self.ibm.setObjectInitAcc(self.current_obj, az=text)
 
-    @Slot(str)
+    @Slot()
     def slotObjOmegaX(self, text):
         if text == '':
             text=0.
 
         self.ibm.setObjectAngularVel(self.current_obj, wx=text)
 
-    @Slot(str)
+    @Slot()
     def slotObjOmegaY(self, text):
         if text == '':
             text=0.
 
         self.ibm.setObjectAngularVel(self.current_obj, wy=text)
 
-    @Slot(str)
+    @Slot()
     def slotObjOmegaZ(self, text):
         if text == '':
             text=0
 
         self.ibm.setObjectAngularVel(self.current_obj, wz=text)
 
-    @Slot(str)
+    @Slot()
     def slotObjAnglesXinit(self, text):
         if text == '':
             text=0.
 
         self.ibm.setObjectInitialAngles(self.current_obj, theta_x=text)
 
-    @Slot(str)
+    @Slot()
     def slotObjAnglesYinit(self, text):
         if text == '':
             text=0.
 
         self.ibm.setObjectInitialAngles(self.current_obj, theta_y=text)
 
-    @Slot(str)
+    @Slot()
     def slotObjAnglesZinit(self, text):
         if text == '':
             text=0.
@@ -423,7 +423,7 @@ class ImmersedBoundariesFSIView(QWidget, Ui_ImmersedBoundariesFSI):
             self.ibm.setFSIObjectRhoFormula(objId-1, result)
 
 
-    @Slot(int)
+    @Slot()
     def slotCheckBoxBlockDX(self, val):
         text = ''
         if val == 0:
@@ -434,7 +434,7 @@ class ImmersedBoundariesFSIView(QWidget, Ui_ImmersedBoundariesFSI):
         self.ibm.setObjectBlockDX(self.current_obj, text)
 
 
-    @Slot(int)
+    @Slot()
     def slotCheckBoxBlockDY(self, val):
         text = ''
         if val == 0:
@@ -445,7 +445,7 @@ class ImmersedBoundariesFSIView(QWidget, Ui_ImmersedBoundariesFSI):
         self.ibm.setObjectBlockDY(self.current_obj, text)
 
 
-    @Slot(int)
+    @Slot()
     def slotCheckBoxBlockDZ(self, val):
         text = ''
         if val == 0:
@@ -456,7 +456,7 @@ class ImmersedBoundariesFSIView(QWidget, Ui_ImmersedBoundariesFSI):
         self.ibm.setObjectBlockDZ(self.current_obj, text)
 
 
-    @Slot(int)
+    @Slot()
     def slotCheckBoxBlockRX(self, val):
         text = ''
         if val == 0:
@@ -467,7 +467,7 @@ class ImmersedBoundariesFSIView(QWidget, Ui_ImmersedBoundariesFSI):
         self.ibm.setObjectBlockRX(self.current_obj, text)
 
 
-    @Slot(int)
+    @Slot()
     def slotCheckBoxBlockRY(self, val):
         text = ''
         if val == 0:
@@ -478,7 +478,7 @@ class ImmersedBoundariesFSIView(QWidget, Ui_ImmersedBoundariesFSI):
         self.ibm.setObjectBlockRY(self.current_obj, text)
 
 
-    @Slot(int)
+    @Slot()
     def slotCheckBoxBlockRZ(self, val):
         text = ''
         if val == 0:

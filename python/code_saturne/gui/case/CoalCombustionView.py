@@ -91,7 +91,7 @@ class LabelFuelDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         self.old_plabel = str(value)
         editor.setText(value)
 
@@ -119,7 +119,7 @@ class LabelFuelDelegate(QItemDelegate):
                 else:
                     new_plabel = self.old_plabel
 
-            model.setData(index, str(new_plabel), Qt.DisplayRole)
+            model.setData(index, str(new_plabel), Qt.ItemDataRole.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # Combo box delegate for the fuel type
@@ -156,7 +156,7 @@ class TypeFuelDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, value, Qt.DisplayRole)
+                model.setData(idx, value, Qt.ItemDataRole.DisplayRole)
 
 
     def paint(self, painter, option, index):
@@ -177,7 +177,7 @@ class TypeFuelDelegate(QItemDelegate):
             painter.setPen(QPen(Qt.NoPen))
             painter.drawRect(option.rect)
             painter.setPen(QPen(Qt.black))
-            value = index.data(Qt.DisplayRole)
+            value = index.data(Qt.ItemDataRole.DisplayRole)
             if value.isValid():
                 text = from_qvariant(value, to_text_string)
                 painter.drawText(option.rect, Qt.AlignLeft, text)
@@ -203,14 +203,14 @@ class DiameterDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         editor.setText(value)
 
 
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), float)
-            model.setData(index, value, Qt.DisplayRole)
+            model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # Delegate for refusal
@@ -232,14 +232,14 @@ class RefusalDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         editor.setText(value)
 
 
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), float)
-            model.setData(index, value, Qt.DisplayRole)
+            model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # Delegate for oxidant composition
@@ -260,14 +260,14 @@ class OxidantDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         editor.setText(value)
 
 
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), float)
-            model.setData(index, value, Qt.DisplayRole)
+            model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # StandarItemModel for Coals
@@ -309,7 +309,7 @@ class StandardItemModelCoals(QStandardItemModel):
         if not index.isValid():
             return None
 
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             row = index.row()
             col = index.column()
             dico = self.dataCoals[row]
@@ -321,7 +321,7 @@ class StandardItemModelCoals(QStandardItemModel):
             else:
                 return None
 
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             return Qt.AlignCenter
 
         return None
@@ -329,13 +329,13 @@ class StandardItemModelCoals(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
@@ -430,29 +430,29 @@ class StandardItemModelClasses(QStandardItemModel):
     def data(self, index, role):
         if not index.isValid():
             return None
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return self.dataClasses[index.row()][index.column()]
         return None
 
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         elif index.column() == 1:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
 
     def setData(self, index, value, role):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         row = index.row()
         col = index.column()
         ClassId = row + 1
@@ -524,29 +524,29 @@ class StandardItemModelOxidant(QStandardItemModel):
     def data(self, index, role):
         if not index.isValid():
             return None
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return self.dataClasses[index.row()][index.column()]
         return None
 
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         elif index.column() != 0:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
 
     def setData(self, index, value, role):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         row = index.row()
         col = index.column()
         v = from_qvariant(value, float)
@@ -623,29 +623,29 @@ class StandardItemModelRefusal(QStandardItemModel):
     def data(self, index, role):
         if not index.isValid():
             return None
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return self.dataClasses[index.row()][index.column()]
         return None
 
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         elif index.column() != 0:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
 
     def setData(self, index, value, role):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         row = index.row()
         col = index.column()
         v = from_qvariant(value, float)
@@ -799,7 +799,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
 
         # Connections
         # -----------
-        self.comboBoxKineticModel.activated[str].connect(self.slotKineticModel)
+        self.comboBoxKineticModel.activated[int].connect(self.slotKineticModel)
         self.treeViewCoals.clicked[QModelIndex].connect(self.slotSelectCoal)
         self.pushButtonAddCoal.clicked.connect(self.slotCreateCoal)
         self.pushButtonDeleteCoal.clicked.connect(self.slotDeleteCoal)
@@ -807,7 +807,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.pushButtonDeleteClass.clicked.connect(self.slotDeleteClass)
         self.pushButtonAddRefusal.clicked.connect(self.slotCreateRefusal)
         self.pushButtonDeleteRefusal.clicked.connect(self.slotDeleteRefusal)
-        self.comboBoxDiameter.activated[str].connect(self.slotDiameterType)
+        self.comboBoxDiameter.activated[int].connect(self.slotDiameterType)
         self.pushButtonAddOxidant.clicked.connect(self.slotCreateOxidant)
         self.pushButtonDeleteOxidant.clicked.connect(self.slotDeleteOxidant)
 
@@ -822,8 +822,8 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.lineEditCp.textChanged[str].connect(self.slotThermalCapacity)
         self.lineEditThermalCond.textChanged[str].connect(self.slotThermalConductivity)
         self.lineEditDensity.textChanged[str].connect(self.slotDensity)
-        self.comboBoxPCIList.activated[str].connect(self.slotPCIChoice)
-        self.comboBoxPCIType.activated[str].connect(self.slotPCIType)
+        self.comboBoxPCIList.activated[int].connect(self.slotPCIChoice)
+        self.comboBoxPCIType.activated[int].connect(self.slotPCIType)
         self.lineEditCCoke.textChanged[str].connect(self.slotCCompositionCoke)
         self.lineEditHCoke.textChanged[str].connect(self.slotHCompositionCoke)
         self.lineEditOCoke.textChanged[str].connect(self.slotOCompositionCoke)
@@ -834,7 +834,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.lineEditAshesEnthalpy.textChanged[str].connect(self.slotAshesFormingEnthalpy)
         self.lineEditAshesCp.textChanged[str].connect(self.slotAshesThermalCapacity)
 
-        self.comboBoxY1Y2.activated[str].connect(self.slotY1Y2)
+        self.comboBoxY1Y2.activated[int].connect(self.slotY1Y2)
         self.lineEditCoefY1.textChanged[str].connect(self.slotY1CH)
         self.lineEditCoefY2.textChanged[str].connect(self.slotY2CH)
         self.lineEditCoefA1.textChanged[str].connect(self.slotA1CH)
@@ -844,15 +844,15 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
 
         self.lineEditConstO2.textChanged[str].connect(self.slotPreExpoCstO2)
         self.lineEditEnergyO2.textChanged[str].connect(self.slotActivEnergyO2)
-        self.comboBoxReactO2.activated[str].connect(self.slotReactTypeO2)
+        self.comboBoxReactO2.activated[int].connect(self.slotReactTypeO2)
         self.lineEditConstCO2.textChanged[str].connect(self.slotPreExpoCstCO2)
         self.lineEditEnergyCO2.textChanged[str].connect(self.slotActivEnergyCO2)
-        self.comboBoxReactCO2.activated[str].connect(self.slotReactTypeCO2)
+        self.comboBoxReactCO2.activated[int].connect(self.slotReactTypeCO2)
         self.lineEditConstH2O.textChanged[str].connect(self.slotPreExpoCstH2O)
         self.lineEditEnergyH2O.textChanged[str].connect(self.slotActivEnergyH2O)
-        self.comboBoxReactH2O.activated[str].connect(self.slotReactTypeH2O)
-        self.comboBoxOxidant.activated[str].connect(self.slotOxidantType)
-        self.comboBoxReburning.activated[str].connect(self.slotReburning)
+        self.comboBoxReactH2O.activated[int].connect(self.slotReactTypeH2O)
+        self.comboBoxOxidant.activated[int].connect(self.slotOxidantType)
+        self.comboBoxReburning.activated[int].connect(self.slotReburning)
 
         self.lineEditQPR.textChanged[str].connect(self.slotQPR)
         self.lineEditNitrogenConcentration.textChanged[str].connect(self.slotNitrogenConcentration)
@@ -1256,11 +1256,12 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.lineEditMoisture.setDisabled(True)
 
 
-    @Slot(str)
-    def slotKineticModel(self, text):
+    @Slot(int)
+    def slotKineticModel(self, idx):
         """
         Change the diameter type
         """
+        text = self.comboBoxKineticModel.textChanged()
         key = self.modelKineticModel.dicoV2M[str(text)]
         self.model.setKineticModel(key)
 
@@ -1509,20 +1510,22 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setPCIValue(self.fuel, PCI)
 
 
-    @Slot(str)
-    def slotPCIType(self, text):
+    @Slot(int)
+    def slotPCIType(self, idx):
         """
         Change the PCI type
         """
+        text = self.comboBoxPCITypeself.comboBoxPCIType
         key = self.modelPCIType.dicoV2M[str(text)]
         self.model.setPCIType(self.fuel, key)
 
 
-    @Slot(str)
-    def slotPCIChoice(self, text):
+    @Slot(int)
+    def slotPCIChoice(self, idx):
         """
         Change the PCI choice
         """
+        text = self.comboBoxPCIList.currentText()
         key = self.modelPCI.dicoV2M[str(text)]
         self.model.setPCIChoice(self.fuel, key)
         if key == 'IGT_correlation':
@@ -1603,11 +1606,12 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.stbar.showMessage(msg, 2000)
 
 
-    @Slot(str)
-    def slotDiameterType(self, text):
+    @Slot(int)
+    def slotDiameterType(self, idx):
         """
         Change the diameter type
         """
+        text = self.comboBoxDiameter.currentText()
         key = self.modelDiameter.dicoV2M[str(text)]
         self.model.setDiameterType(self.fuel, key)
 
@@ -1726,11 +1730,12 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setY2StoichiometricCoefficient(self.fuel, Y2CH)
 
 
-    @Slot(str)
-    def slotY1Y2(self, text):
+    @Slot(int)
+    def slotY1Y2(self, idx):
         """
         Change the Y1Y2 type
         """
+        text = self.comboBoxY1Y2.currentText()
         key = self.modelY1Y2.dicoV2M[str(text)]
         self.model.setY1Y2(self.fuel, key)
         if key == 'automatic_CHONS':
@@ -1801,11 +1806,12 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setEnergyOfActivation(self.fuel, "O2", value)
 
 
-    @Slot(str)
-    def slotReactTypeO2(self, text):
+    @Slot(int)
+    def slotReactTypeO2(self, idx):
         """
         Change the order of reaction of O2
         """
+        text = self.comboBoxReactO2.currentTexet()
         key = self.modelReactTypeO2.dicoV2M[str(text)]
         self.model.setOrderOfReaction(self.fuel, "O2", key)
         if text =='1':
@@ -1834,11 +1840,12 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setEnergyOfActivation(self.fuel, "CO2", value)
 
 
-    @Slot(str)
-    def slotReactTypeCO2(self, text):
+    @Slot(int)
+    def slotReactTypeCO2(self, idx):
         """
         Change the order of reaction for CO2
         """
+        text = self.comboBoxReactCO2.currentText()
         key = self.modelReactTypeCO2.dicoV2M[str(text)]
         self.model.setOrderOfReaction(self.fuel, "CO2", key)
         if text =='1':
@@ -1867,11 +1874,12 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setEnergyOfActivation(self.fuel, "H2O", value)
 
 
-    @Slot(str)
-    def slotReactTypeH2O(self, text):
+    @Slot(int)
+    def slotReactTypeH2O(self, idx):
         """
         Change the order of reaction
         """
+        text = self.comboBoxReactH2O.currentText()
         key = self.modelReactTypeH2O.dicoV2M[str(text)]
         self.model.setOrderOfReaction(self.fuel, "H2O", key)
         if text =='1':
@@ -1950,20 +1958,22 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
             self.model.setNOxFormationParameter(self.fuel, 'percentage_HCN_char_combustion', value)
 
 
-    @Slot(str)
-    def slotOxidantType(self, text):
+    @Slot(int)
+    def slotOxidantType(self, idx):
         """
         Change the oxidant type
         """
+        text = self.comboBoxOxidant.currentText()
         key = self.modelOxidantType.dicoV2M[str(text)]
         self.model.setOxidantType(key)
 
 
-    @Slot(str)
-    def slotReburning(self, text):
+    @Slot(int)
+    def slotReburning(self, idx):
         """
         Change the reburning type
         """
+        text = self.comboBoxReburning.currentText()
         key = self.modelReburning.dicoV2M[str(text)]
         self.model.setReburning(self.fuel, key)
 

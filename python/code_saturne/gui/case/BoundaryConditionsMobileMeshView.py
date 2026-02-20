@@ -456,14 +456,14 @@ class BoundaryConditionsMobileMeshView(QWidget,
         self.__comboModel.addItem(self.tr("Fixed displacement"), "fixed_displacement")
         self.__comboModel.addItem(self.tr("Internal coupling"), "internal_coupling")
         self.__comboModel.addItem(self.tr("External coupling"), "external_coupling")
-        self.comboMobilBoundary.activated[str].connect(self.__slotCombo)
+        self.comboMobilBoundary.activated[int].connect(self.__slotCombo)
         self.pushButtonMobilBoundary.clicked.connect(self.__slotFormula)
 
         # Combo model FSISOLVER
         self.__modelExtSOLVER = ComboModel(self.comboMobilExternalSolver, 2, 1)
         self.__modelExtSOLVER.addItem(self.tr("code_aster"), "code_aster")
         self.__modelExtSOLVER.addItem(self.tr("user"), "user")
-        self.comboMobilExternalSolver.activated[str].connect(self.__slotExtSolverType)
+        self.comboMobilExternalSolver.activated[int].connect(self.__slotExtSolverType)
 
         # Coupling Manager
         self.__couplingManager = CouplingManager(self, case)
@@ -524,11 +524,12 @@ class BoundaryConditionsMobileMeshView(QWidget,
             self.pushButtonMobilBoundary.setStyleSheet("background-color: green")
             self.pushButtonMobilBoundary.setToolTip(result)
 
-    @Slot(str)
-    def __slotExtSolverType(self, text):
+    @Slot(int)
+    def __slotExtSolverType(self, idx):
         """
         Input External solver : code_aster or user.
         """
+        text = self.comboMobilExternalSolver.currentText()
         solver = self.__modelExtSOLVER.dicoV2M[str(text)]
 
         if solver == self.__boundary.getALEExtSolver():
@@ -536,11 +537,12 @@ class BoundaryConditionsMobileMeshView(QWidget,
 
         self.__boundary.setALEExtSolver(solver)
 
-    @Slot(str)
-    def __slotCombo(self, text):
+    @Slot(int)
+    def __slotCombo(self, idx):
         """
         Called when the combobox changed.
         """
+        text = self.comboMobilBoundary.currentText()
         modelData = self.__comboModel.dicoV2M[str(text)]
 
         if modelData == self.__boundary.getALEChoice():

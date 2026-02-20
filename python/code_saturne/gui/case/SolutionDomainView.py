@@ -88,7 +88,7 @@ class MeshNameDelegate(QItemDelegate):
             painter.setPen(QPen(Qt.NoPen))
             painter.drawRect(option.rect)
             painter.setPen(QPen(Qt.black))
-            value = index.data(Qt.DisplayRole)
+            value = index.data(Qt.ItemDataRole.DisplayRole)
             if value != None:
                 text = from_qvariant(value, to_text_string)
                 painter.drawText(option.rect, Qt.AlignLeft, text)
@@ -168,7 +168,7 @@ class MeshFormatDelegate(QItemDelegate):
             painter.setPen(QPen(Qt.NoPen))
             painter.drawRect(option.rect)
             painter.setPen(QPen(Qt.black))
-            value = index.data(Qt.DisplayRole)
+            value = index.data(Qt.ItemDataRole.DisplayRole)
             if value != None:
                 if value.isValid():
                     text = from_qvariant(value, to_text_string)
@@ -257,13 +257,13 @@ class LineEditDelegateSelector(QItemDelegate):
 
 
     def setEditorData(self, lineEdit, index):
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         lineEdit.setText(value)
 
 
     def setModelData(self, lineEdit, model, index):
         value = lineEdit.text()
-        model.setData(index, value, Qt.DisplayRole)
+        model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -285,14 +285,14 @@ class FloatDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         editor.setText(value)
 
 
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), float)
-            model.setData(index, value, Qt.DisplayRole)
+            model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -314,14 +314,14 @@ class IntDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         editor.setText(value)
 
 
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(editor.text(), int)
-            model.setData(index, value, Qt.DisplayRole)
+            model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -370,7 +370,7 @@ class StandardItemModelMeshes(QStandardItemModel):
         # Initialize the flags
         for row in range(self.rowCount()):
             for column in range(self.columnCount()):
-                role = Qt.DisplayRole
+                role = Qt.ItemDataRole.DisplayRole
                 index = self.index(row, column)
                 value = self.data(index, role)
                 if column != 1:
@@ -416,10 +416,10 @@ class StandardItemModelMeshes(QStandardItemModel):
 
         col = index.column()
 
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return self.tooltip[col]
 
-        elif role == Qt.DisplayRole:
+        elif role == Qt.ItemDataRole.DisplayRole:
             d = self.dataMeshes[index.row()][col]
             if d:
                 if col == 1:
@@ -431,19 +431,19 @@ class StandardItemModelMeshes(QStandardItemModel):
             else:
                 return None
 
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             if col == 7:
                 return Qt.AlignLeft
             else:
                 return Qt.AlignCenter
 
-        elif role == Qt.CheckStateRole:
+        elif role == Qt.ItemDataRole.CheckStateRole:
             if col in (3, 4):
                 d = self.dataMeshes[index.row()][col]
                 if d == True:
-                    return Qt.Checked
+                    return Qt.CheckState.Checked
                 else:
-                    return Qt.Unchecked
+                    return Qt.CheckState.Unchecked
             else:
                 return None
 
@@ -452,24 +452,24 @@ class StandardItemModelMeshes(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         self.__disableData(index.row())
 
         # disable item
         if (index.row(), index.column()) in self.disabledItem:
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         if index.column() in (0, 7):
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         elif index.column() in (1, 2, 5, 6):
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
         elif index.column() in (3, 4):
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsUserCheckable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
@@ -493,17 +493,17 @@ class StandardItemModelMeshes(QStandardItemModel):
             if value:
                 self.mdl.setMeshNumbers(mesh, v)
 
-        elif col == 3 and role == Qt.CheckStateRole:
+        elif col == 3 and role == Qt.ItemDataRole.CheckStateRole:
             state = from_qvariant(value, int)
-            if state == Qt.Unchecked:
+            if state == Qt.CheckState.Unchecked:
                 self.dataMeshes[row][col] = False
             else:
                 self.dataMeshes[row][col] = True
             self.mdl.setMeshReorient(mesh, self.dataMeshes[row][col])
 
-        elif col == 4 and role == Qt.CheckStateRole:
+        elif col == 4 and role == Qt.ItemDataRole.CheckStateRole:
             state = from_qvariant(value, int)
-            if state == Qt.Unchecked:
+            if state == Qt.CheckState.Unchecked:
                 self.dataMeshes[row][col] = False
             else:
                 self.dataMeshes[row][col] = True
@@ -760,11 +760,11 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.cartParams[k].addItem(self.tr("geometric"), "geometric")
             self.cartParams[k].addItem(self.tr("parabolic"), "parabolic")
 
-        self.comboBoxXlaw.activated[str].connect(lambda val:
+        self.comboBoxXlaw.activated[int].connect(lambda val:
                 self.slotSetCartesianParam(val, "x_law"))
-        self.comboBoxYlaw.activated[str].connect(lambda val:
+        self.comboBoxYlaw.activated[int].connect(lambda val:
                 self.slotSetCartesianParam(val, "y_law"))
-        self.comboBoxZlaw.activated[str].connect(lambda val:
+        self.comboBoxZlaw.activated[int].connect(lambda val:
                 self.slotSetCartesianParam(val, "z_law"))
 
         # Set initial values
@@ -892,7 +892,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         else:
             self.modelArg_cs_verif.enableItem(str_model='none')
 
-        self.comboBoxRunType.activated[str].connect(self.slotArgRunType)
+        self.comboBoxRunType.activated[int].connect(self.slotArgRunType)
 
         # Checkboxes
 
@@ -939,7 +939,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         dialog.setSidebarUrls(l_mesh_dirs)
         dialog.setFileMode(QFileDialog.FileMode.Directory)
 
-        if dialog.exec_() == 1:
+        if dialog.exec() == 1:
 
             s = dialog.selectedFiles()
 
@@ -1006,7 +1006,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         dialog.setSidebarUrls(l_mesh_dirs)
         dialog.setFileMode(QFileDialog.FileMode.ExistingFiles)
 
-        if dialog.exec_() == 1:
+        if dialog.exec() == 1:
             s = dialog.selectedFiles()
             count = len(s)
             for i in range(count):
@@ -1114,7 +1114,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
         dialog = MeshInputDialog(search_dirs = search_dirs)
 
-        if dialog.exec_() == 1:
+        if dialog.exec() == 1:
 
             s = dialog.selectedFiles()
 
@@ -1124,7 +1124,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
             self.modifyInputMesh(mi)
 
-    @Slot(str)
+    @Slot()
     def modifyInputMesh(self, text):
         """
         Modify the mesh_input/mesh_output value
@@ -1199,12 +1199,12 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             self.slotSetCartesianParam(val, k)
 
 
-    @Slot(str)
+    @Slot(int)
     def slotSetCartesianParam(self, text, name):
 
         val = text
         if name in ("x_law", "y_law", "z_law"):
-            self.cartParams[name].setItem(str_model=val)
+            self.cartParams[name].setItem(str_model=str(val))
             l0 = name[0]
             if val == 'constant':
                 self.cartParams[l0+'_prog'].hide()
@@ -1252,12 +1252,13 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self._tableViewLayout()
 
 
-    @Slot(str)
-    def slotArgRunType(self, text):
+    @Slot(int)
+    def slotArgRunType(self, idx):
         """
         Input run type option.
         """
-        run_type = self.modelArg_cs_verif.dicoV2M[str(text)]
+        text = self.comboBoxRunType.currentText()
+        run_type = self.modelArg_cs_verif.dicoV2M[str(self.comboBoxRunType.currentText())]
         self.mdl.setRunType(run_type)
         self.root.initCase()
         self.browser.configureTree(self.case)

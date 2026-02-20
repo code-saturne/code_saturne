@@ -77,7 +77,7 @@ class NameDelegate(QItemDelegate):
     """
     def __init__(self, parent=None):
         QItemDelegate.__init__(self, parent)
-        self.parent = parent
+        self.parent_widget = parent
         self.old_pname = ""
 
 
@@ -93,7 +93,7 @@ class NameDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         self.old_pname = str(value)
         editor.setText(value)
 
@@ -114,14 +114,14 @@ class NameDelegate(QItemDelegate):
 
                 from code_saturne.gui.case.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
-                if dialog.exec_():
+                if dialog.exec():
                     result = dialog.get_result()
                     new_pname = result['name']
                     log.debug("setModelData -> result = %s" % result)
                 else:
                     new_pname = self.old_pname
 
-            model.setData(index, new_pname, Qt.DisplayRole)
+            model.setData(index, new_pname, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -134,7 +134,7 @@ class LocationDelegate(QItemDelegate):
     """
     def __init__(self, parent):
         super(LocationDelegate, self).__init__(parent)
-        self.parent = parent
+        self.parent_widget = parent
 
 
     def createEditor(self, parent, option, index):
@@ -165,7 +165,7 @@ class LocationDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, value, Qt.DisplayRole)
+                model.setData(idx, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -179,7 +179,7 @@ class FuncDimensionDelegate(QItemDelegate):
 
     def __init__(self, parent):
         super(FuncDimensionDelegate, self).__init__(parent)
-        self.parent = parent
+        self.parent_widget = parent
 
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
@@ -208,7 +208,7 @@ class FuncDimensionDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, value, Qt.DisplayRole)
+                model.setData(idx, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -227,7 +227,7 @@ class StandardItemModelCalculator(QStandardItemModel):
                         self.tr("Dimension")]
 
         self.setColumnCount(len(self.headers))
-        self.parent = parent
+        self.parent_widget = parent
 
         self.tooltip = []
 
@@ -239,10 +239,10 @@ class StandardItemModelCalculator(QStandardItemModel):
         if not index.isValid():
             return None
 
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return None
 
-        elif role == Qt.DisplayRole:
+        elif role == Qt.ItemDataRole.DisplayRole:
             data = self._data[index.row()][index.column()]
             if data:
                 return data
@@ -254,19 +254,19 @@ class StandardItemModelCalculator(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemFlag.ItemIsEnabled
+        return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
 
     def setData(self, index, value, role):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         # Update the row in the table
         row = index.row()
@@ -426,7 +426,7 @@ class UserCalculatorView(QWidget, Ui_UserCalculator):
                                 known_fields  = sca,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaCalculator -> {}".format(str(result)))
             self.mdl.setFunctionFormula(self.current_name, str(result))
@@ -434,13 +434,13 @@ class UserCalculatorView(QWidget, Ui_UserCalculator):
             self.pushButtonFormula.setStyleSheet("background-color: green")
 
 
-    @Slot("QModelIndex")
+    @Slot(QModelIndex)
     def __slotSelectCalc(self, index):
         """
         Select the user array in the QTable
         """
 
-        _id = self.tableViewUserCalculator.currentIndex();
+        _id = self.tableViewUserCalculator.currentIndex()
 
         row_id = _id.row()
         self.current_id = _id

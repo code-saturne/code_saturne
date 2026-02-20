@@ -140,7 +140,7 @@ class ProbesDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         editor.setText(value)
 
 
@@ -150,7 +150,7 @@ class ProbesDelegate(QItemDelegate):
             selectionModel = self.parent.selectionModel()
             for idx in selectionModel.selectedIndexes():
                 if idx.column() == index.column():
-                    model.setData(idx, value, Qt.DisplayRole)
+                    model.setData(idx, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -179,7 +179,7 @@ class NameDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         self.old_plabel = str(value)
         editor.setText(value)
 
@@ -207,7 +207,7 @@ class NameDelegate(QItemDelegate):
                 else:
                     new_plabel = self.old_plabel
 
-            model.setData(index, new_plabel, Qt.DisplayRole)
+            model.setData(index, new_plabel, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -241,25 +241,25 @@ class StandardItemModelGlobalVariables(QStandardItemModel):
         if not index.isValid():
             return None
 
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return None
 
-        elif role == Qt.DisplayRole:
+        elif role == Qt.ItemDataRole.DisplayRole:
             data = self._data[index.row()][index.column()]
             if data:
                 return data
             else:
                 return None
 
-        elif role == Qt.CheckStateRole:
+        elif role == Qt.ItemDataRole.CheckStateRole:
             data = self._data[index.row()][index.column()]
             if index.column() == 1 or index.column() == 2 :
                 if data == 'on':
-                    return Qt.Checked
+                    return Qt.CheckState.Checked
                 else:
-                    return Qt.Unchecked
+                    return Qt.CheckState.Unchecked
 
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             return Qt.AlignCenter
 
         return None
@@ -267,23 +267,23 @@ class StandardItemModelGlobalVariables(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         row = index.row()
         if index.column() == 1 or index.column() == 2 :
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsUserCheckable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
 
     def setData(self, index, value, role):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         # Update the row in the table
         row = index.row()
@@ -299,7 +299,7 @@ class StandardItemModelGlobalVariables(QStandardItemModel):
         elif col == 1:
             state = from_qvariant(value, int)
             label = self._data[row][0]
-            if state == Qt.Unchecked:
+            if state == Qt.CheckState.Unchecked:
                 self._data[row][col] = "off"
                 self.mdl.setListingStatus(self.currentid, label, "off")
             else:
@@ -309,7 +309,7 @@ class StandardItemModelGlobalVariables(QStandardItemModel):
         elif col == 2:
             state = from_qvariant(value, int)
             label = self._data[row][0]
-            if state == Qt.Unchecked:
+            if state == Qt.CheckState.Unchecked:
                 self._data[row][col] = "off"
                 self.mdl.setPostProcessingStatus(self.currentid, label, "off")
             else:
@@ -429,7 +429,7 @@ class OutputFieldsView(QWidget, Ui_OutputFields):
         # Connect signals to slots
         self.tableModelGlobalVariables.dataChanged.connect(self.dataChangedGlobalVariables)
         self.tableModelFieldsVariables.dataChanged.connect(self.dataChangedFieldsVariables)
-        self.comboBoxField.activated[str].connect(self.slotField)
+        self.comboBoxField.activated[int].connect(self.slotField)
 
         for var in self.mdl.getGlobalVariables() :
             self.tableModelGlobalVariables.newItem("none", var)
@@ -457,11 +457,12 @@ class OutputFieldsView(QWidget, Ui_OutputFields):
             self.tableViewFieldsVariables.resizeColumnToContents(col)
 
 
-    @Slot(str)
-    def slotField(self, text):
+    @Slot(int)
+    def slotField(self, idx):
         """
         INPUT label for choice of field
         """
+        text = self.comboBoxField.currentText()
         self.currentid = self.modelField.dicoV2M[text]
         self.initializeVariables(self.currentid)
 

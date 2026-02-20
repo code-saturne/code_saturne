@@ -69,6 +69,7 @@ _forbidden_labels = GuiLabelManager().getForbidden("notebook")
 #-------------------------------------------------------------------------------
 # item class
 #-------------------------------------------------------------------------------
+
 class item_class(object):
     '''
     custom data object
@@ -96,6 +97,7 @@ class item_class(object):
 #-------------------------------------------------------------------------------
 # Treeitem class
 #-------------------------------------------------------------------------------
+
 class TreeItem(object):
     '''
     a python object used to return row/column data, and keep note of
@@ -131,19 +133,19 @@ class TreeItem(object):
             else:
                 return None
         else:
-            if column == 0 and role == Qt.DisplayRole:
+            if column == 0 and role == Qt.ItemDataRole.DisplayRole:
                 return self.item.name
-            elif column == 1 and role == Qt.DisplayRole:
+            elif column == 1 and role == Qt.ItemDataRole.DisplayRole:
                 return self.item.value
-            elif column == 2 and role == Qt.DisplayRole:
+            elif column == 2 and role == Qt.ItemDataRole.DisplayRole:
                 return self.item.oturns
-            elif column == 3 and role == Qt.DisplayRole:
+            elif column == 3 and role == Qt.ItemDataRole.DisplayRole:
                 return self.item.edit
-            elif column == 4 and role == Qt.DisplayRole:
+            elif column == 4 and role == Qt.ItemDataRole.DisplayRole:
                 return self.item.restart
-            elif column == 5 and role == Qt.DisplayRole:
+            elif column == 5 and role == Qt.ItemDataRole.DisplayRole:
                 return self.item.log
-            elif column == 6 and role == Qt.DisplayRole:
+            elif column == 6 and role == Qt.ItemDataRole.DisplayRole:
                 return self.item.descr
         return None
 
@@ -185,7 +187,7 @@ class VariableStandardItemModel(QAbstractItemModel):
         """
         QAbstractItemModel.__init__(self)
 
-        self.parent = parent
+        self.parent_widget = parent
         self.case   = case
         self.mdl    = mdl
 
@@ -210,11 +212,11 @@ class VariableStandardItemModel(QAbstractItemModel):
         item = index.internalPointer()
 
         # ToolTips
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return None
 
         # StatusTips
-        if role == Qt.StatusTipRole:
+        if role == Qt.ItemDataRole.StatusTipRole:
             if index.column() == 0:
                 return self.tr("variable name")
             elif index.column() == 1:
@@ -231,7 +233,7 @@ class VariableStandardItemModel(QAbstractItemModel):
                 return self.tr("Description")
 
         # Display
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return item.data(index.column(), role)
 
         return None
@@ -239,23 +241,23 @@ class VariableStandardItemModel(QAbstractItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         # disable item
         if (index.row(), index.column()) in self.disabledItem:
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         if index.column() == 3:
             if "Yes" in self.mdl.getVariableOt(index.row()):
-                return Qt.NoItemFlags
+                return Qt.ItemFlag.NoItemFlags
             else:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             if section == 0:
                 return self.tr("Variable name")
             elif section == 1:
@@ -387,7 +389,12 @@ class VariableStandardItemModel(QAbstractItemModel):
             description = from_qvariant(value, to_text_string)
             item.item.descr = description
             self.mdl.setVariableDescription(item.item.index, item.item.descr)
-        self.dataChanged.emit(QModelIndex(), QModelIndex())
+
+        # Here we could simply use index as top_lft and bottom_right, but
+        # we update the whole line in case future changes require it.
+        top_left = self.createIndex(index.row(), 0, index)
+        bottom_right = self.createIndex(index.row(), 6, index)
+        self.dataChanged.emit(top_left, bottom_right)
 
         return True
 
@@ -411,11 +418,11 @@ class NotebookView(QWidget, Ui_NotebookForm):
         self.setupUi(self)
 
         self.case = case
-        self.parent = parent
+        self.parent_widget = parent
         self.case.undoStopGlobal()
         self.mdl = NotebookModel(self.case)
 
-        self.modelVar = VariableStandardItemModel(self.parent, self.case, self.mdl)
+        self.modelVar = VariableStandardItemModel(self.parent_widget, self.case, self.mdl)
         self.treeViewNotebook.setModel(self.modelVar)
         self.treeViewNotebook.setAlternatingRowColors(True)
         self.treeViewNotebook.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectItems)
@@ -482,7 +489,7 @@ class NotebookView(QWidget, Ui_NotebookForm):
         Add one variable
         """
         self.mdl.addVariable()
-        self.modelVar = VariableStandardItemModel(self.parent, self.case, self.mdl)
+        self.modelVar = VariableStandardItemModel(self.parent_widget, self.case, self.mdl)
         self.treeViewNotebook.setModel(self.modelVar)
         self.treeViewNotebook.expandAll()
 
@@ -496,7 +503,7 @@ class NotebookView(QWidget, Ui_NotebookForm):
         current = self.treeViewNotebook.currentIndex()
         idx = current.row()
         self.mdl.deleteVariable(idx)
-        self.modelVar = VariableStandardItemModel(self.parent, self.case, self.mdl)
+        self.modelVar = VariableStandardItemModel(self.parent_widget, self.case, self.mdl)
         self.treeViewNotebook.setModel(self.modelVar)
         self.treeViewNotebook.expandAll()
 
@@ -518,7 +525,7 @@ class NotebookView(QWidget, Ui_NotebookForm):
         fle = os.path.abspath(fle)
 
         self.mdl.ImportVariableFromFile(fle)
-        self.modelVar = VariableStandardItemModel(self.parent, self.case, self.mdl)
+        self.modelVar = VariableStandardItemModel(self.parent_widget, self.case, self.mdl)
         self.treeViewNotebook.setModel(self.modelVar)
         self.treeViewNotebook.expandAll()
 

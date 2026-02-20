@@ -339,7 +339,7 @@ class QMegEditorView(QDialog, Ui_QMegDialog):
         for p, q in symbols:
             self.known_symbols_box.addItem(self.tr(p,p))
 
-        self.comboBox_Insert.activated[str].connect(self._addOperator)
+        self.comboBox_Insert.activated[int].connect(self._addOperator)
 
     @Slot()
     def slotClearBackground(self):
@@ -357,7 +357,7 @@ class QMegEditorView(QDialog, Ui_QMegDialog):
             block_format.clearBackground()
             cursor.setBlockFormat(block_format)
 
-    @Slot(str)
+    @Slot()
     def _addOperator(self, _operator):
         self.textEditExpression.textCursor().insertText(_operator)
 
@@ -425,7 +425,7 @@ if __name__ == "__main__":
     dlg = QMegEditorView(parent)
     dlg.show()
     signal.signal(signal.SIGINT, signal.SIG_DFL)
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 #-------------------------------------------------------------------------------
 # End

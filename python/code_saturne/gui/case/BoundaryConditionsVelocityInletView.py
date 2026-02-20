@@ -99,15 +99,15 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.notebook = NotebookModel(self.case)
 
         # Connections
-        self.comboBoxVelocity.activated[str].connect(self.__slotChoiceVelocity)
+        self.comboBoxVelocity.activated[int].connect(self.__slotChoiceVelocity)
         self.lineEditVelocity.textChanged[str].connect(self.__slotVelocityValue)
 
-        self.comboBoxDirection.activated[str].connect(self.__slotChoiceDirection)
+        self.comboBoxDirection.activated[int].connect(self.__slotChoiceDirection)
         self.lineEditDirectionX.textChanged[str].connect(self.__slotDirX)
         self.lineEditDirectionY.textChanged[str].connect(self.__slotDirY)
         self.lineEditDirectionZ.textChanged[str].connect(self.__slotDirZ)
 
-        self.comboBoxTypeInlet.activated[str].connect(self.__slotInletType)
+        self.comboBoxTypeInlet.activated[int].connect(self.__slotInletType)
         self.checkBoxPressure.clicked.connect(self.__slotPressure)
         self.checkBoxDensity.clicked.connect(self.__slotDensity)
         self.checkBoxTemperature.clicked.connect(self.__slotTemperature)
@@ -119,7 +119,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.lineEditTemperature.textChanged[str].connect(self.__slotTemperatureValue)
         self.lineEditEnergy.textChanged[str].connect(self.__slotEnergyValue)
 
-        self.comboBoxTypeInletGasComb.activated[str].connect(self.__slotInletTypeGasComb)
+        self.comboBoxTypeInletGasComb.activated[int].connect(self.__slotInletTypeGasComb)
         self.lineEditTemperatureGasComb.textChanged[str].connect(self.__slotTemperatureGasComb)
         self.lineEditFraction.textChanged[str].connect(self.__slotMeanMixtureFraction)
 
@@ -346,8 +346,8 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         self.hide()
 
 
-    @Slot(str)
-    def __slotChoiceVelocity(self, text):
+    @Slot(int)
+    def __slotChoiceVelocity(self, idx):
         """
         Private slot.
 
@@ -356,6 +356,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
         @type text: C{QString}
         @param text: velocity boundary type choice.
         """
+        text = self.comboBoxVelocity.currentText()
         c = self.modelVelocity.dicoV2M[str(text)]
         log.debug("slotChoiceVelocity: %s " % c)
         self.__boundary.setVelocityChoice(c)
@@ -457,11 +458,12 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.pushButtonVelocityFormula.setToolTip(result)
 
 
-    @Slot(str)
-    def __slotChoiceDirection(self, text):
+    @Slot(int)
+    def __slotChoiceDirection(self, idx):
         """
         Input the direction type choice.
         """
+        text = self.comboBoxDirection.currentText()
         c = self.modelDirection.dicoV2M[str(text)]
         log.debug("slotChoiceVelocity: %s " % c)
         self.__boundary.setDirectionChoice(c)
@@ -565,11 +567,12 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.pushButtonDirectionFormula.setStyleSheet("background-color: green")
 
 
-    @Slot(str)
-    def __slotInletType(self, text):
+    @Slot(int)
+    def __slotInletType(self, idx):
         """
         INPUT inlet type : 'oxydant'/'fuel' or 'burned'/'unburned'
         """
+        text = self.comboBoxTypeInlet.currentText()
         value = self.modelTypeInlet.dicoV2M[str(text)]
         log.debug("__slotInletType value = %s " % value)
 
@@ -705,11 +708,12 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.__boundary.setMeanMixtureFraction(f)
 
 
-    @Slot(str)
-    def __slotInletTypeGasComb(self, text):
+    @Slot(int)
+    def __slotInletTypeGasComb(self, idx):
         """
         INPUT inlet type : 'oxydant'/'fuel' or 'burned'/'unburned'
         """
+        text = self.comboBoxTypeInletGasComb.currentText()
         value = self.modelTypeInletGasComb.dicoV2M[str(text)]
         log.debug("__slotInletTypeGasComb value = %s " % value)
         self.__boundary.setInletGasCombustionType(value)

@@ -97,7 +97,7 @@ class BoundaryConditionNatureTypeDelegate(QItemDelegate):
 
     def setModelData(self, comboBox, model, index):
         value = comboBox.currentText()
-        model.setData(index, value, Qt.DisplayRole)
+        model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # StandarItemModel class
@@ -126,14 +126,14 @@ class StandardItemBoundary(QStandardItemModel):
         col = index.column()
 
         # Tooltips
-        #if role == Qt.ToolTipRole:
+        #if role == Qt.ItemDataRole.ToolTipRole:
         #    return self.tooltip[col]
 
         # Display
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return self.data[row][col]
 
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             return Qt.AlignCenter
 
         return None
@@ -141,20 +141,20 @@ class StandardItemBoundary(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         row = index.row()
         col = index.column()
 
         if col == 0:
-            return Qt.ItemIsSelectable
+            return Qt.ItemFlag.ItemIsSelectable
 
         elif (col == 1):
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
@@ -162,7 +162,7 @@ class StandardItemBoundary(QStandardItemModel):
     def setData(self, index, value, role):
         if not index.isValid():
             #return
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         row = index.row()
         col = index.column()
@@ -248,7 +248,7 @@ class ImmersedBoundariesBoundaryViewNeptune(QWidget, Ui_ImmersedBoundariesBounda
         self.case.undoStartGlobal()
 
 
-    @Slot("QModelIndex")
+    @Slot()
     def slotChangedSelection(self, index):
         """
         detect change in selection and update view

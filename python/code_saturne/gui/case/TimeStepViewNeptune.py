@@ -84,7 +84,7 @@ class ValueDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         editor.setText(value)
 
 
@@ -95,7 +95,7 @@ class ValueDelegate(QItemDelegate):
             value = from_qvariant(editor.text(), float)
             for idx in self.parent.selectionModel().selectedIndexes():
                 if idx.column() == index.column():
-                    model.setData(idx, value, Qt.DisplayRole)
+                    model.setData(idx, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -125,17 +125,17 @@ class StandardItemModelCourantFourier(QStandardItemModel):
         if not index.isValid():
             return None
 
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return None
 
-        elif role == Qt.DisplayRole:
+        elif role == Qt.ItemDataRole.DisplayRole:
             data = self._data[index.row()][index.column()]
             if data:
                 return data
             else:
                 return None
 
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             return Qt.AlignCenter
 
         return None
@@ -143,22 +143,22 @@ class StandardItemModelCourantFourier(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         if index.column() == 0 :
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
 
     def setData(self, index, value, role):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         row = index.row()
         col = index.column()
@@ -278,8 +278,8 @@ class TimeStepView(QWidget, Ui_TimeStep):
         self.tableViewCourantFourier.setItemDelegateForColumn(2, delegateMaxCourant)
 
         # Connect signals to slots
-        self.comboBoxTimeStepOption.activated[str].connect(self.slotTimeStepOption)
-        self.comboBoxTimeStopType.activated[str].connect(self.slotTimeStop)
+        self.comboBoxTimeStepOption.activated[int].connect(self.slotTimeStepOption)
+        self.comboBoxTimeStopType.activated[int].connect(self.slotTimeStop)
         self.lineEditReferenceTimeStep.textChanged[str].connect(self.slotReferenceTimeStep)
         self.lineEditNumberTimeStep.textChanged[str].connect(self.slotNumberTimeStep)
         self.lineEditTimeAnalysis.textChanged[str].connect(self.slotTimeAnalysis)
@@ -302,21 +302,23 @@ class TimeStepView(QWidget, Ui_TimeStep):
             self.tableViewCourantFourier.resizeColumnToContents(col)
 
 
-    @Slot(str)
-    def slotTimeStepOption(self, text):
+    @Slot(int)
+    def slotTimeStepOption(self, idx):
         """
         INPUT time option
         """
+        text = self.comboBoxTimeStepOption.currentText()
         model = self.modelTimeStepOption.dicoV2M[text]
         self.mdl.setTimePassingChoice(model)
         self.initializeVariables()
 
 
-    @Slot(str)
-    def slotTimeStop(self, text):
+    @Slot(int)
+    def slotTimeStop(self, idx):
         """
         INPUT time stop option
         """
+        text = self.comboBoxTimeStopType.currentText()
         model = self.modelTimeStop.dicoV2M[text]
         self.mdl.setTimeStopChoice(model)
 
@@ -332,7 +334,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
             self.lineEditTimeAnalysis.hide()
 
 
-    @Slot(str)
+    @Slot()
     def slotReferenceTimeStep(self, var):
         """
         """
@@ -341,7 +343,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
             self.mdl.setTimeStep(value)
 
 
-    @Slot(str)
+    @Slot()
     def slotNumberTimeStep(self, var):
         """
         """
@@ -350,7 +352,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
             self.mdl.setTimeStepsNumber(value)
 
 
-    @Slot(str)
+    @Slot()
     def slotTimeAnalysis(self, var):
         """
         """
@@ -359,7 +361,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
             self.mdl.setMaximumTime(value)
 
 
-    @Slot(str)
+    @Slot()
     def slotDtMin(self, var):
         """
         """
@@ -368,7 +370,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
             self.mdl.setMinDtDt0Variation(value)
 
 
-    @Slot(str)
+    @Slot()
     def slotDtMax(self, var):
         """
         """
@@ -377,7 +379,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
             self.mdl.setMaxDtDt0Variation(value)
 
 
-    @Slot(str)
+    @Slot()
     def slotDtIncreasingMax(self, var):
         """
         """
@@ -386,7 +388,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
             self.mdl.setMaxDtVariationIncreasing(value)
 
 
-    @Slot(str)
+    @Slot()
     def slotDtDecreasingMax(self, var):
         """
         """

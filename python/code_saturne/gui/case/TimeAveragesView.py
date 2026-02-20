@@ -87,7 +87,7 @@ class LabelDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         self.old_p_value = str(value)
         editor.setText(value)
 
@@ -107,7 +107,7 @@ class LabelDelegate(QItemDelegate):
 
             if p_value and p_value != self.old_p_value:
                 self.mdl.setName(self.old_p_value, p_value)
-                model.setData(index, p_value, Qt.DisplayRole)
+                model.setData(index, p_value, Qt.ItemDataRole.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # QComboBox delegate for the start type
@@ -146,7 +146,7 @@ class StartTypeDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, txt, Qt.DisplayRole)
+                model.setData(idx, txt, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -171,7 +171,7 @@ class StartValueDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         editor.setText(str(value))
 
     def setModelData(self, editor, model, index):
@@ -182,7 +182,7 @@ class StartValueDelegate(QItemDelegate):
                 value = from_qvariant(editor.text(), int)
             else:
                 value = from_qvariant(editor.text(), float)
-            model.setData(index, value, Qt.DisplayRole)
+            model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -226,7 +226,7 @@ class RestartTypeDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, value, Qt.DisplayRole)
+                model.setData(idx, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -253,28 +253,28 @@ class StandardItemModelAverage(QStandardItemModel):
     def data(self, index, role):
         if not index.isValid():
             return None
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return self.dataAverage[index.row()][index.column()]
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             return Qt.AlignCenter
         return None
 
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         else:
             col = index.column()
             if col > 0 and col < 5:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
             else:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             return Qt.AlignCenter
         return None
 
@@ -524,7 +524,7 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.__eraseEntries()
 
 
-    @Slot("QModelIndex")
+    @Slot(QModelIndex)
     def slotSelectAverage(self, index):
         """
         Return the selected item from the Hlist.

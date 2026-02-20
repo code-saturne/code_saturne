@@ -161,7 +161,7 @@ class GroupItem():
         font.setBold(True)
         font.setItalic(True)
         item.setFont(font)
-        item.setFlags(item.flags() & ~Qt.ItemIsSelectable)
+        item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsSelectable)
 
         return item
 
@@ -241,7 +241,8 @@ def to_str(s):
 # Wrappers around QFileDialog static methods
 #==============================================================================
 
-def getexistingdirectory(parent=None, caption='', basedir=''):
+def getexistingdirectory(parent=None, caption='', basedir='',
+                         options=QFileDialog.Option.ShowDirsOnly):
     """Wrapper around QtGui.QFileDialog.getExistingDirectory static method
     Compatible with PyQt and PySide."""
     # Calling QFileDialog static method
@@ -274,19 +275,11 @@ def _qfiledialog_wrapper(attr, parent=None, caption='', basedir='',
     if options is None:
         options = QFileDialog.Options(0)
 
-    try:
-        from code_saturne.gui.base.QtCore import QString
-    except ImportError:
-        QString = None  # analysis:ignore
-
     tuple_returned = True
     try:
         func = getattr(QFileDialog, attr+'AndFilter')
     except AttributeError:
         func = getattr(QFileDialog, attr)
-        if QString is not None:
-            selectedfilter = QString()
-            tuple_returned = False
 
     if sys.platform == "win32":
         # On Windows platforms: redirect standard outputs
@@ -307,15 +300,6 @@ def _qfiledialog_wrapper(attr, parent=None, caption='', basedir='',
         output, selectedfilter = result
     else:
         output = result
-    if QString is not None:
-        # PyQt API #1: conversions needed from QString/QStringList
-        selectedfilter = to_text_string(selectedfilter)
-        if isinstance(output, QString):
-            # Single filename
-            output = to_text_string(output)
-        else:
-            # List of filenames
-            output = [to_text_string(fname) for fname in output]
 
     # Always returns the tuple (output, selectedfilter)
     return output, selectedfilter
@@ -484,8 +468,8 @@ class ComboModel:
 
         if warn:
             self.combo.setItemData(index,
-                                   QColor(Qt.red),
-                                   Qt.TextColorRole)
+                                   QColor(Qt.GlobalColor.red),
+                                   Qt.ItemDataRole.ForegroundRole)
 
         self.last += 1
 
@@ -625,7 +609,7 @@ class ComboModel:
             except Exception:
                 self._displayWarning(str_model)
                 # Throw signals to ensure XML is updated (not very elegant)
-                self.combo.activated[str].emit(self.dicoM2V[self.items[0]])
+                self.combo.activated[int].emit(self.dicoM2V[self.items[0]])
                 self.combo.currentTextChanged[str].emit(self.dicoM2V[self.items[0]])
                 self.combo.currentIndexChanged[int].emit(0)
                 index = 0
@@ -833,7 +817,7 @@ class DoubleValidator(QDoubleValidator):
         self.__min = min
         self.__max = max
 
-        self.setNotation(self.ScientificNotation)
+        self.setNotation(QDoubleValidator.Notation.ScientificNotation)
 
         if type(min) != float or type(max) != float:
             raise ValueError("The given parameters are not floats.")
@@ -953,14 +937,19 @@ class RegExpValidator(QRegularExpressionValidator):
         """
         Initialization for validator
         """
-        QRegularExpressionValidator.__init__(self, parent)
+        if hasattr(rx, 'pattern'):
+            pattern = rx.pattern()
+        else:
+            pattern = str(rx)
+
+        regex = QRegularExpression(pattern)
+
+        QRegularExpressionValidator.__init__(self, regex, parent)
         self.parent = parent
-        self.state = QRegularExpressionValidator.Invalid
+        self.state = QValidator.State.Invalid
         self.forbidden = forbidden_labels
 
-        self.__validator = QRegularExpressionValidator(rx, parent)
-
-        if "{1," + str(LABEL_LENGTH_MAX) + "}" in rx.pattern():
+        if "{1," + str(LABEL_LENGTH_MAX) + "}" in pattern:
             msg = self.tr("The maximum length of the label is %i characters" % LABEL_LENGTH_MAX)
             self.parent.setStatusTip(str(msg))
 
@@ -973,7 +962,8 @@ class RegExpValidator(QRegularExpressionValidator):
         QValidator.State.Intermediate  1  The string is a plausible intermediate value during editing.
         QValidator.State.Acceptable    2  The string is acceptable as a final result; i.e. it is valid.
         """
-        state = self.__validator.validate(stri, pos)[0]
+        # state = self.__validator.validate(stri, pos)[0]
+        state = super().validate(stri, pos)[0]
 
         if self.forbidden:
             if stri in self.forbidden:
@@ -1299,7 +1289,7 @@ class ComboDelegate(QItemDelegate):
             idx = editor.findText(name)
             editor.model().item(idx).setEnabled(isActive)
             if not isAvail:
-                editor.setItemData(idx, QColor(Qt.red), Qt.TextColorRole)
+                editor.setItemData(idx, QColor(Qt.GlobalColor.red), Qt.ItemDataRole.ForegroundRole)
 
         editor.installEventFilter(self)
 
@@ -1347,15 +1337,15 @@ class BasicTableModel(QAbstractTableModel):
         return self.data_table[index.row()][index.column()]
 
     def headerData(self, section, orientation, role=Qt.ItemDataRole.DisplayRole):
-        if role == Qt.ItemDataRole.DisplayRole and orientation == Qt.Horizontal:
+        if role == Qt.ItemDataRole.DisplayRole and orientation == Qt.Orientation.Horizontal:
             return self.headers[section]
         return None
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.NoItemFlags
+            return Qt.ItemFlag.NoItemFlags
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
 
     def setData(self, index, value, role=Qt.ItemDataRole.EditRole):
         if (role == Qt.ItemDataRole.EditRole) and (index.isValid()):

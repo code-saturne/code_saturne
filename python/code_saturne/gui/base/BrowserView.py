@@ -65,13 +65,6 @@ logging.basicConfig()
 log = logging.getLogger("BrowserView")
 log.setLevel(GuiParam.DEBUG)
 
-try:
-    _fromUtf8 = QString.fromUtf8
-except Exception:
-    def _fromUtf8(s):
-        return s
-
-
 class TreeItem:
     """ Reimplementation of the Qt TreeItem.
         Most attribute and method names are not PEP-8 compliant but follow the Qt convention.
@@ -158,7 +151,7 @@ class TreeModel(QAbstractItemModel):
     def __init__(self, data, parent=None):
         """Constructs a new item model with the given I{parent}.
 
-        @type data: C{QString}
+        @type data: C{str}
         @param data: content of the new item
         @type parent: C{QObject} or C{None}
         @param parent: parent of the new item
@@ -210,43 +203,43 @@ class TreeModel(QAbstractItemModel):
 
                 if page_name == self.tr('Mesh'):
                     img_path = os.path.join(icons_path, 'cube_mesh.png')
-                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
+                    icon.addPixmap(QPixmap((img_path)), QIcon.Mode.Normal, QIcon.State.Off)
                 elif page_name == self.tr('Calculation features'):
                     img_path = os.path.join(icons_path, 'calculation_features.png')
-                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
+                    icon.addPixmap(QPixmap((img_path)), QIcon.Mode.Normal, QIcon.State.Off)
 #                elif page_name == self.tr('Volume zones'):
 #                    img_path = ":/icons/22x22/volume_zones.png"
-#                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
+#                    icon.addPixmap(QPixmap((img_path)), QIcon.Mode.Normal, QIcon.State.Off)
                 elif page_name == self.tr('Volume conditions'):
                     img_path = os.path.join(icons_path, 'cube_volume_zone_v2.png')
-                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
+                    icon.addPixmap(QPixmap((img_path)), QIcon.Mode.Normal, QIcon.State.Off)
                 elif page_name == self.tr('Immersed volume conditions'):
                     img_path = os.path.join(icons_path, 'cube_volume_zone_v2.png')
-                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
+                    icon.addPixmap(QPixmap((img_path)), QIcon.Mode.Normal, QIcon.State.Off)
 #                elif page_name == self.tr('Boundary zones'):
 #                    img_path = os.path.join(icons_path, 'boundary_conditions.png')
-#                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
+#                    icon.addPixmap(QPixmap((img_path)), QIcon.Mode.Normal, QIcon.State.Off)
                 elif page_name == self.tr('Boundary conditions'):
                     img_path = os.path.join(icons_path, 'cube_bc.png')
-                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
+                    icon.addPixmap(QPixmap((img_path)), QIcon.Mode.Normal, QIcon.State.Off)
                 elif page_name == self.tr('Immersed boundary conditions'):
                     img_path = os.path.join(icons_path, 'cube_volume_zone_v2.png')
-                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
+                    icon.addPixmap(QPixmap((img_path)), QIcon.Mode.Normal, QIcon.State.Off)
                 elif page_name == self.tr('Time settings'):
                     img_path = os.path.join(icons_path, 'time_stepping.png')
-                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
+                    icon.addPixmap(QPixmap((img_path)), QIcon.Mode.Normal, QIcon.State.Off)
                 elif page_name == self.tr('Numerical parameters'):
                     img_path = os.path.join(icons_path, 'numerical_params.png')
-                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
+                    icon.addPixmap(QPixmap((img_path)), QIcon.Mode.Normal, QIcon.State.Off)
                 elif page_name == self.tr('Postprocessing'):
                     img_path = os.path.join(icons_path, 'postprocessing.png')
-                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
+                    icon.addPixmap(QPixmap((img_path)), QIcon.Mode.Normal, QIcon.State.Off)
                 elif page_name == 'Closure modeling':
                     img_path = os.path.join(icons_path, 'closure_modeling.png')
-                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
+                    icon.addPixmap(QPixmap((img_path)), QIcon.Mode.Normal, QIcon.State.Off)
                 elif page_name == self.tr('Performance settings'):
                     img_path = os.path.join(icons_path, 'run_parameters.png')
-                    icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Mode.Normal, QIcon.State.Off)
+                    icon.addPixmap(QPixmap((img_path)), QIcon.Mode.Normal, QIcon.State.Off)
 
                 elif item.itemType == "folder-new":
                     icon = style.standardIcon(QStyle.StandardPixmap.SP_FileLinkIcon)
@@ -1110,7 +1103,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     BrowserView = BrowserView()
     BrowserView.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 #-------------------------------------------------------------------------------
 # End

@@ -92,7 +92,7 @@ class LabelDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
         self.old_plabel = str(value)
         editor.setText(value)
 
@@ -120,7 +120,7 @@ class LabelDelegate(QItemDelegate):
                 else:
                     new_plabel = self.old_plabel
 
-            model.setData(index, new_plabel, Qt.DisplayRole)
+            model.setData(index, new_plabel, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -162,7 +162,7 @@ class FieldDelegate(QItemDelegate):
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
-                model.setData(idx, value, Qt.DisplayRole)
+                model.setData(idx, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -192,17 +192,17 @@ class StandardItemModelUserScalar(QStandardItemModel):
         if not index.isValid():
             return None
 
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return None
 
-        elif role == Qt.DisplayRole:
+        elif role == Qt.ItemDataRole.DisplayRole:
             data = self._data[index.row()][index.column()]
             if data:
                 return data
             else:
                 return None
 
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             return Qt.AlignCenter
 
         return None
@@ -210,19 +210,19 @@ class StandardItemModelUserScalar(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemFlag.ItemIsEnabled
+        return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
 
     def setData(self, index, value, role):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         # Update the row in the table
         row = index.row()
@@ -412,7 +412,7 @@ class SpeciesView(QWidget, Ui_Species):
         self.groupBoxScalarProperties.hide()
 
 
-    @Slot(str)
+    @Slot()
     def slotDiffusionCoef(self, text):
         """
         Update the diffusion coefficient
@@ -422,7 +422,7 @@ class SpeciesView(QWidget, Ui_Species):
             self.mdl.setDiffusionCoef(self.currentid, value)
 
 
-    @Slot(str)
+    @Slot()
     def slotSchmidt(self, text):
         """
         Update the schmidt
@@ -432,7 +432,7 @@ class SpeciesView(QWidget, Ui_Species):
             self.mdl.setSchmidt(self.currentid, value)
 
 
-    @Slot(str)
+    @Slot()
     def slotMinValue(self, text):
         """
         Update the minimum value
@@ -442,7 +442,7 @@ class SpeciesView(QWidget, Ui_Species):
             self.mdl.setMinValue(self.currentid, value)
 
 
-    @Slot(str)
+    @Slot()
     def slotMaxValue(self, text):
         """
         Update the maximum value
@@ -452,7 +452,7 @@ class SpeciesView(QWidget, Ui_Species):
             self.mdl.setMaxValue(self.currentid, value)
 
 
-    @Slot(bool)
+    @Slot()
     def slotTimeDepend(self, checked):
         """
         check box for time depend
@@ -463,7 +463,7 @@ class SpeciesView(QWidget, Ui_Species):
         self.mdl.setTimeDependStatus(self.currentid, status)
 
 
-    @Slot(bool)
+    @Slot()
     def slotDiffusion(self, checked):
         """
         check box for diffusion

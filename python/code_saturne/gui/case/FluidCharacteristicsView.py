@@ -384,17 +384,17 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.lineEditFuel.textChanged[str].connect(self.slotTempFuel)
         self.lineEditMassMolar.textChanged[str].connect(self.slotMassemol)
 
-        self.comboBoxRho.currentIndexChanged[str].connect(self.slotStateRho)
-        self.comboBoxMu.currentIndexChanged[str].connect(self.slotStateMu)
-        self.comboBoxSigma.currentIndexChanged[str].connect(self.slotStateSigma)
-        self.comboBoxCp.currentIndexChanged[str].connect(self.slotStateCp)
-        self.comboBoxAl.currentIndexChanged[str].connect(self.slotStateAl)
-        self.comboBoxDiff.currentIndexChanged[str].connect(self.slotStateDiff)
-        self.comboBoxNameDiff.activated[str].connect(self.slotNameDiff)
-        self.comboBoxViscv0.currentIndexChanged[str].connect(self.slotStateViscv0)
-        self.comboBoxMaterial.activated[str].connect(self.slotMaterial)
-        self.comboBoxMethod.activated[str].connect(self.slotMethod)
-        self.comboBoxReference.activated[str].connect(self.slotReference)
+        self.comboBoxRho.currentIndexChanged[int].connect(self.slotStateRho)
+        self.comboBoxMu.currentIndexChanged[int].connect(self.slotStateMu)
+        self.comboBoxSigma.currentIndexChanged[int].connect(self.slotStateSigma)
+        self.comboBoxCp.currentIndexChanged[int].connect(self.slotStateCp)
+        self.comboBoxAl.currentIndexChanged[int].connect(self.slotStateAl)
+        self.comboBoxDiff.currentIndexChanged[int].connect(self.slotStateDiff)
+        self.comboBoxNameDiff.activated[int].connect(self.slotNameDiff)
+        self.comboBoxViscv0.currentIndexChanged[int].connect(self.slotStateViscv0)
+        self.comboBoxMaterial.activated[int].connect(self.slotMaterial)
+        self.comboBoxMethod.activated[int].connect(self.slotMethod)
+        self.comboBoxReference.activated[int].connect(self.slotReference)
         self.lineEditRho.textChanged[str].connect(self.slotRho)
         self.lineEditRho1.textChanged[str].connect(self.slotRho1)
         self.lineEditRho2.textChanged[str].connect(self.slotRho2)
@@ -828,7 +828,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         if self.lineEditP0.validator().state == QValidator.State.Acceptable:
             p = from_qvariant(text, float)
-            self.mdl.setPressure(p)
+            self.mdl.setPressure(float(p))
 
 
     @Slot(str)
@@ -838,7 +838,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         if self.lineEditT0.validator().state == QValidator.State.Acceptable:
             t = from_qvariant(text, float)
-            self.mdl.setTemperature(t)
+            self.mdl.setTemperature(float(t))
 
 
     @Slot(str)
@@ -848,7 +848,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         if self.lineEditOxydant.validator().state == QValidator.State.Acceptable:
             t = from_qvariant(text, float)
-            self.mdl.setTempOxydant(t)
+            self.mdl.setTempOxydant(float(t))
 
 
     @Slot(str)
@@ -858,7 +858,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         if self.lineEditFuel.validator().state == QValidator.State.Acceptable:
             t = from_qvariant(text, float)
-            self.mdl.setTempFuel(t)
+            self.mdl.setTempFuel(float(t))
 
 
     @Slot(str)
@@ -868,94 +868,104 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         if self.lineEditMassMolar.validator().state == QValidator.State.Acceptable:
             m = from_qvariant(text, float)
-            self.mdl.setMassemol(m)
+            self.mdl.setMassemol(float(m))
 
 
-    @Slot(str)
-    def slotMaterial(self, text):
+    @Slot(int)
+    def slotMaterial(self, idx):
         """
         Method to call 'setMaterial'
         """
-        choice = self.modelMaterial.dicoV2M[str(text)]
+        text = self.comboBoxMaterial.currentText()
+        choice = self.modelMaterial.dicoV2M[str(self.comboBoxMaterial.currentText())]
         old_choice = self.mdl.getMaterials()
         self.mdl.setMaterials(choice)
         self.updateMethod()
         self.updateTypeChoice(old_choice)
 
 
-    @Slot(str)
-    def slotMethod(self, text):
+    @Slot(int)
+    def slotMethod(self, idx):
         """
         Method to call 'setMethod'
         """
+        text = self.comboBoxMethod.currentText()
         choice = self.modelMethod.dicoV2M[str(text)]
         self.mdl.setMethod(choice)
         self.updateReference(self.mdl.getMaterials(), choice)
 
 
-    @Slot(str)
-    def slotReference(self, text):
+    @Slot(int)
+    def slotReference(self, idx):
         """
         Method to call 'setReference'
         """
+        text = self.comboBoxReference.currentText()
         choice = self.modelReference.dicoV2M[str(text)]
         self.mdl.setReference(choice)
 
 
-    @Slot(str)
-    def slotStateRho(self, text):
+    @Slot(int)
+    def slotStateRho(self, idx):
         """
         Method to call 'getState' with correct arguements for 'rho'
         """
-        self.__changeChoice(str(text), 'Rho', 'density')
+        text = self.comboBoxRho.currentText()
+        self.__changeChoice(str(self.comboBoxRho.currentText()), 'Rho', 'density')
 
 
-    @Slot(str)
-    def slotStateMu(self, text):
+    @Slot(int)
+    def slotStateMu(self, idx):
         """
         Method to call 'getState' with correct arguements for 'Mu'
         """
-        self.__changeChoice(str(text), 'Mu', 'molecular_viscosity')
+        text = self.comboBoxMu.currentText()
+        self.__changeChoice(str(self.comboBoxMu.currentText()), 'Mu', 'molecular_viscosity')
 
 
-    @Slot(str)
-    def slotStateSigma(self, text):
+    @Slot(int)
+    def slotStateSigma(self, idx):
         """
         Method to call 'getState' with correct arguments for 'Sigma'
         """
+        text = self.comboBoxSigma.currentText()
         self.__changeChoice(str(text), 'Sigma', 'surface_tension')
 
 
-    @Slot(str)
-    def slotStateCp(self, text):
+    @Slot(int)
+    def slotStateCp(self, idx):
         """
         Method to call 'getState' with correct arguements for 'Cp'
         """
-        self.__changeChoice(str(text), 'Cp', 'specific_heat')
+        text = self.comboBoxCp.currentText()
+        self.__changeChoice(str(self.comboBoxCp.currentText()), 'Cp', 'specific_heat')
 
 
-    @Slot(str)
-    def slotStateViscv0(self, text):
+    @Slot(int)
+    def slotStateViscv0(self, idx):
         """
         Method to call 'getState' with correct arguements for 'Viscv0'
         """
+        text = self.comboBoxViscv0.currentText()
         self.__changeChoice(str(text), 'Viscv0', 'volume_viscosity')
 
 
-    @Slot(str)
-    def slotStateAl(self, text):
+    @Slot(int)
+    def slotStateAl(self, idx):
         """
         Method to call 'getState' with correct arguements for 'Al'
         """
-        self.__changeChoice(str(text), 'Al', 'thermal_conductivity')
+        text = self.comboBoxAl.currentText()
+        self.__changeChoice(str(self.comboBoxAl.currentText()), 'Al', 'thermal_conductivity')
 
 
-    @Slot(str)
-    def slotStateDiff(self, text):
+    @Slot(int)
+    def slotStateDiff(self, idx):
         """
         Method to set diffusion choice for the coefficient
         """
-        choice = self.modelDiff.dicoV2M[str(text)]
+        text = self.comboBoxDiff.currentText()
+        choice = self.modelDiff.dicoV2M[text]
         log.debug("slotStateDiff -> %s" % (text))
 
         if choice != 'user_law':
@@ -976,12 +986,13 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         self.mdl.m_sca.setScalarDiffusivityChoice(self.scalar, choice)
 
 
-    @Slot(str)
-    def slotNameDiff(self, text):
+    @Slot(int)
+    def slotNameDiff(self, idx):
         """
         Method to set the variance scalar choosed
         """
-        choice = self.modelNameDiff.dicoV2M[str(text)]
+        text = self.comboBoxNameDiff.currentText()
+        choice = self.modelNameDiff.dicoV2M[str(self.comboBoxNameDiff.currentText())]
         log.debug("slotStateDiff -> %s" % (text))
         self.scalar = str(text)
         self.lineEditDiff.setText(str(self.mdl.m_sca.getScalarDiffusivityInitialValue(self.scalar)))
@@ -1070,7 +1081,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         if self.lineEditRho.validator().state == QValidator.State.Acceptable:
             rho = from_qvariant(text, float)
-            self.mdl.setInitialValueDensity(rho)
+            self.mdl.setInitialValueDensity(float(rho))
 
     @Slot(str)
     def slotRho1(self, text):
@@ -1097,7 +1108,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         if self.lineEditMu.validator().state == QValidator.State.Acceptable:
             mu = from_qvariant(text, float)
-            self.mdl.setInitialValueViscosity(mu)
+            self.mdl.setInitialValueViscosity(float(mu))
 
 
     @Slot(str)
@@ -1127,7 +1138,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         if self.lineEditSigma.validator().state == QValidator.State.Acceptable:
             sigma = from_qvariant(text, float)
-            self.mdl.setInitialValueSurfaceTension(sigma)
+            self.mdl.setInitialValueSurfaceTension(float(sigma))
 
 
     @Slot(str)
@@ -1137,7 +1148,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         if self.lineEditCp.validator().state == QValidator.State.Acceptable:
             cp = from_qvariant(text, float)
-            self.mdl.setInitialValueHeat(cp)
+            self.mdl.setInitialValueHeat(float(cp))
 
 
     @Slot(str)
@@ -1147,7 +1158,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         if self.lineEditViscv0.validator().state == QValidator.State.Acceptable:
             viscv0 = from_qvariant(text, float)
-            self.mdl.setInitialValueVolumeViscosity(viscv0)
+            self.mdl.setInitialValueVolumeViscosity(float(viscv0))
 
 
     @Slot(str)
@@ -1157,7 +1168,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         if self.lineEditAl.validator().state == QValidator.State.Acceptable:
             al = from_qvariant(text, float)
-            self.mdl.setInitialValueCond(al)
+            self.mdl.setInitialValueCond(float(al))
 
 
     @Slot(str)
@@ -1167,7 +1178,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         if self.lineEditDiftl0.validator().state == QValidator.State.Acceptable:
             diftl0 = from_qvariant(text, float)
-            self.mdl.setInitialValueDyn(diftl0)
+            self.mdl.setInitialValueDyn(float(diftl0))
 
 
     @Slot(str)
@@ -1177,7 +1188,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
         """
         if self.lineEditDiff.validator().state == QValidator.State.Acceptable:
             diff = from_qvariant(text, float)
-            self.mdl.m_sca.setScalarDiffusivityInitialValue(self.scalar, diff)
+            self.mdl.m_sca.setScalarDiffusivityInitialValue(self.scalar, float(diff))
 
 
     @Slot()

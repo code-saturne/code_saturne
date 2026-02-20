@@ -79,7 +79,7 @@ class ObjectNameDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        self.value = from_qvariant(index.model().data(index, Qt.DisplayRole),
+        self.value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole),
                                    to_text_string)
         editor.setText(self.value)
 
@@ -88,7 +88,7 @@ class ObjectNameDelegate(QItemDelegate):
         value = editor.text()
 
         if str(value) != "":
-            model.setData(index, value, Qt.DisplayRole)
+            model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -127,7 +127,7 @@ class MethodDelegate(QItemDelegate):
 
     def setModelData(self, comboBox, model, index):
         value = comboBox.currentText()
-        model.setData(index, value, Qt.DisplayRole)
+        model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -166,24 +166,24 @@ class StandardItemModel(QStandardItemModel):
             return None
 
         # Tooltips
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return self.tooltip[index.column()]
 
-        elif role == Qt.CheckStateRole:
+        elif role == Qt.ItemDataRole.CheckStateRole:
 
             if (index.column() == 2):
                 data_ibm = self.dataObject[index.row()][index.column()]
 
                 if data_ibm == 'on':
-                    return Qt.Checked
+                    return Qt.CheckState.Checked
                 else:
-                    return Qt.Unchecked
+                    return Qt.CheckState.Unchecked
 
         # Display
-        elif role == Qt.DisplayRole:
+        elif role == Qt.ItemDataRole.DisplayRole:
             return self.dataObject[index.row()][index.column()]
 
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             return Qt.AlignCenter
 
         return None
@@ -191,30 +191,30 @@ class StandardItemModel(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         row = index.row()
         col = index.column()
 
         taille = len(self.dataObject)-1
         if row > taille:
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         if (col == 2): #solve fsi:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsUserCheckable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
 
     def setData(self, index, value, role):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         row = index.row()
         col = index.column()
@@ -281,7 +281,7 @@ class StandardItemModelSTLPoints(QStandardItemModel):
         if not index.isValid():
             return None
 
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
 
             row = index.row()
             dico = self.data_points[row]
@@ -297,7 +297,7 @@ class StandardItemModelSTLPoints(QStandardItemModel):
             else:
                 return None
 
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.ItemDataRole.TextAlignmentRole:
             return Qt.AlignCenter
 
         return None
@@ -305,15 +305,15 @@ class StandardItemModelSTLPoints(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         if index.column() == 0:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             if section == 0:
                 return self.tr("n")
             elif section == 1:
@@ -425,7 +425,7 @@ class STLPointDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        self.value = from_qvariant(index.model().data(index, Qt.DisplayRole),
+        self.value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole),
                                    to_text_string)
         editor.setText(self.value)
 
@@ -434,7 +434,7 @@ class STLPointDelegate(QItemDelegate):
         value = editor.text()
 
         if str(value) != "":
-            model.setData(index, value, Qt.DisplayRole)
+            model.setData(index, value, Qt.ItemDataRole.DisplayRole)
             dico = model.data_points[index.row()]
             x = float(dico['X'])
             y = float(dico['Y'])
@@ -479,7 +479,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         self.dim.addItem("2D computation with symmetry in X-direction")
         self.dim.addItem("2D computation with symmetry in Y-direction")
         self.dim.addItem("2D computation with symmetry in Z-direction")
-        self.comboBoxDim.activated[str].connect(self.slotIBMDim)
+        self.comboBoxDim.activated[int].connect(self.slotIBMDim)
 
         self.lineEditSTLFile.setEnabled(False)
         self.lineEditMEDFile.setEnabled(False)
@@ -599,7 +599,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         return mesh_files
 
 
-    @Slot("QModelIndex")
+    @Slot()
     def slotChangedSelection(self, index):
         """
         detect change in selection and update view
@@ -610,7 +610,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         self.updatePageView()
 
 
-    @Slot(int)
+    @Slot()
     def slotCheckActivate(self, val):
 
         # Set the method state
@@ -808,7 +808,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
                 self.lineEditSTLFile.setText(os.path.basename(file_name[0]))
 
 
-    @Slot(str)
+    @Slot()
     def slotIBMDim(self):
         """
         """

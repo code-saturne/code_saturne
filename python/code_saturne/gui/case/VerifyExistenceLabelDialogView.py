@@ -65,7 +65,7 @@ class VerifyExistenceLabelDialogView(QDialog, Ui_VerifyExistenceLabelDialogForm)
         self.lineEdit.textChanged[str].connect(self.slotLabel)
 
 
-    @Slot(str)
+    @Slot()
     def slotLabel(self, text):
         """
         Get label.
