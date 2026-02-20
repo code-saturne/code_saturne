@@ -1615,7 +1615,7 @@ _boundary_insert(cs_mesh_t           *mesh,
   CS_REALLOC(mesh->b_face_cells, n_b_faces + count[0], cs_lnum_t);
   CS_REALLOC(mesh->b_face_vtx_lst,
              b_face_vtx_connect_size + count[1],
-              cs_lnum_t);
+             cs_lnum_t);
   CS_REALLOC(mesh->b_face_family, n_b_faces + count[0], int);
 
   _add_b_faces(mesh,
@@ -1634,7 +1634,7 @@ _boundary_insert(cs_mesh_t           *mesh,
   mesh->n_b_faces = n_b_faces + count[0];
   mesh->b_face_vtx_connect_size =  b_face_vtx_connect_size + count[1];
 
-  cs_gnum_t _n_g_b_faces = mesh->n_g_b_faces;
+  cs_gnum_t _n_g_b_faces = mesh->n_b_faces;
 
 #if defined(HAVE_MPI)
 
