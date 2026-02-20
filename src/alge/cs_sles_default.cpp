@@ -1079,8 +1079,9 @@ cs_sles_solve_ccc_fv(cs_sles_t           *sc,
     ctx.parallel_for(_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
       vx[i] = _vx[i];
     });
-    CS_FREE(_vx);
 
+    ctx.wait();
+    CS_FREE(_vx);
   }
 
   return cvg;
