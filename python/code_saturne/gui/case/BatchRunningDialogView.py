@@ -393,7 +393,10 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         else:
             self.job_header_lines = None
 
-        self.run_dict = {}
+        self.run_dict = {'stage': None,
+                         'initialize': None,
+                         'compute': None,
+                         'finalize': None}
         for k in self.jmdl.run_dict:
             self.run_dict[k] = self.jmdl.run_dict[k]
         self.job_dict = {}
@@ -451,6 +454,8 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
                                          QRegExp("[_A-Za-z0-9]*"))
         self.lineEditRunId.setValidator(validatorRunId)
 
+        self.checkBoxForce.stateChanged.connect(self.slotForce)
+
         # Connections
 
         if self.jmdl.batch.rm_type != None:
@@ -479,7 +484,10 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         self.lineEdit_tool.textChanged[str].connect(self.slotDebug)
         self.toolButton_2.clicked.connect(self.slotDebugHelp)
 
-        self.checkBoxInitOnly.stateChanged.connect(self.slotInitOnly)
+        self.checkBoxStage.stateChanged.connect(self.slotStage)
+        self.checkBoxInitialize.stateChanged.connect(self.slotInitialize)
+        self.checkBoxCompute.stateChanged.connect(self.slotCompute)
+        self.checkBoxFinalize.stateChanged.connect(self.slotFinalize)
 
         self.checkBoxTrace.stateChanged.connect(self.slotTrace)
         self.checkBoxLogParallel.stateChanged.connect(self.slotLogParallel)
@@ -499,11 +507,16 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
             self.displayBatchInfo()
 
         run_id = str(self.run_dict['id'])
+        force = str(self.run_dict['force'])
 
         if run_id != 'None':
             self.lineEditRunId.setText(run_id)
         else:
             self.lineEditRunId.setText("")
+
+        if self.lineEditRunId.text() == '':
+            self.checkBoxForce.hide()
+        self.checkBoxForce.setChecked(self.run_dict.get('force') == True)
 
         # Advanced options
 
@@ -519,7 +532,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         if self.log_parallel:
             self.checkBoxLogParallel.setChecked(True)
 
-        self.checkBoxInitOnly.setChecked(self.run_dict['initialize'] == True)
+        self.__update_stages__()
 
         # Script info is based on the XML model
 
@@ -528,6 +541,25 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         # self.resize(self.minimumSizeHint())
 
         self.case.undoStartGlobal()
+
+
+    def __update_stages__(self):
+        """
+        Complete compute stages
+        """
+        self.jmdl.updateRunStageInfo(self.run_dict)
+
+        self.checkBoxStage.setChecked(self.run_dict.get('stage') == True)
+        self.checkBoxInitialize.setChecked(self.run_dict.get('initialize') == True)
+        self.checkBoxCompute.setChecked(self.run_dict.get('compute') == True)
+        self.checkBoxFinalize.setChecked(self.run_dict.get('finalize') == True)
+
+        need_initialize = self.run_dict.get('stage') == True \
+            and self.run_dict.get('compute') == True
+        need_compute = self.run_dict.get('initialize') == True \
+            and self.run_dict.get('finalize') == True
+        self.checkBoxInitialize.setEnabled(need_initialize == False)
+        self.checkBoxCompute.setEnabled(need_compute == False)
 
 
     def __updateRunButton__(self, case_is_saved):
@@ -697,7 +729,22 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         """
         """
         if self.lineEditRunId.validator().state == QValidator.State.Acceptable:
-            self.run_dict['id'] = str(v)
+            s = str(v)
+            self.run_dict['id'] = s
+            if s == '':
+                self.checkBoxForce.hide()
+            else:
+                self.checkBoxForce.show()
+
+    @pyqtSlot()
+    def slotForce(self):
+        """
+        Set force option
+        """
+        c = self.checkBoxForce.isChecked()
+        if self.run_dict['force'] == c:
+            return
+        self.run_dict['force'] = c
 
 
     @pyqtSlot()
@@ -763,6 +810,11 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
 
         for k in self.jmdl.run_dict:
             self.jmdl.run_dict[k] = self.run_dict[k]
+        self.jmdl.updateRunStageInfo(simplify=True)
+        for k in ['id', 'force']:
+            if self.jmdl.run_dict[k] in (False, ''):
+                self.jmdl.run_dict[k] = None   # So unneeded line is removed
+
         for k in self.jmdl.job_dict:
             self.jmdl.job_dict[k] = self.job_dict[k]
 
@@ -847,11 +899,51 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
 
 
     @pyqtSlot()
-    def slotInitOnly(self):
+    def slotStage(self):
         """
-        Set initialization only option
+        Set staging option
         """
-        self.run_dict['initialize'] = self.checkBoxInitOnly.isChecked()
+        c = self.checkBoxStage.isChecked()
+        if self.run_dict['stage'] == c:
+            return
+        self.run_dict['stage'] = c
+        self.__update_stages__()
+
+
+    @pyqtSlot()
+    def slotInitialize(self):
+        """
+        Set initialization option
+        """
+        c = self.checkBoxInitialize.isChecked()
+        if self.run_dict['initialize'] == c:
+            return
+        self.run_dict['initialize'] = c
+        self.__update_stages__()
+
+
+    @pyqtSlot()
+    def slotCompute(self):
+        """
+        Set compute option
+        """
+        c = self.checkBoxCompute.isChecked()
+        if self.run_dict['compute'] == c:
+            return
+        self.run_dict['compute'] = c
+        self.__update_stages__()
+
+
+    @pyqtSlot()
+    def slotFinalize(self):
+        """
+        Set compute option
+        """
+        c = self.checkBoxFinalize.isChecked()
+        if self.run_dict['finalize'] == c:
+            return
+        self.run_dict['finalize'] = c
+        self.__update_stages__()
 
 
     @pyqtSlot()

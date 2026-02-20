@@ -650,20 +650,13 @@
            <layout class="QHBoxLayout" name="horizontalLayout_3">
             <item>
              <layout class="QGridLayout" name="gridLayout">
-              <item row="0" column="1">
-               <widget class="QLineEdit" name="lineEditRunId">
+              <item row="2" column="0">
+               <widget class="QLabel" name="labelNThreads">
                 <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Name of the computation directory that will be created.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the number of OpenMP threads per MPI task.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
-               </widget>
-              </item>
-              <item row="1" column="1">
-               <widget class="QSpinBox" name="spinBoxNProcs">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the number of MPI processes for the computation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-                <property name="maximum">
-                 <number>524288</number>
+                <property name="text">
+                 <string>Threads per process</string>
                 </property>
                </widget>
               </item>
@@ -671,6 +664,13 @@
                <widget class="QLabel" name="labelBuildType">
                 <property name="text">
                  <string>Build type</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QLineEdit" name="lineEditRunId">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Name of the computation directory that will be created.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;If left empty, a name is generated based on a YYYYMMDD-HHMM scheme.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                </widget>
               </item>
@@ -684,30 +684,23 @@
                 </property>
                </widget>
               </item>
-              <item row="3" column="1">
-               <widget class="QComboBox" name="comboBoxBuildType">
-                <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Type of compute build to use for this run.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-               </widget>
-              </item>
               <item row="0" column="0">
                <widget class="QLabel" name="labelRunId">
                 <property name="toolTip">
                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Name of the computation directory that will be created.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="text">
-                 <string>Result subdirectory name</string>
+                 <string>Result subdirectory name (run_id)</string>
                 </property>
                </widget>
               </item>
-              <item row="2" column="0">
-               <widget class="QLabel" name="labelNThreads">
+              <item row="1" column="1">
+               <widget class="QSpinBox" name="spinBoxNProcs">
                 <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the number of OpenMP threads per MPI task.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the number of MPI processes for the computation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
-                <property name="text">
-                 <string>Threads per process</string>
+                <property name="maximum">
+                 <number>524288</number>
                 </property>
                </widget>
               </item>
@@ -721,6 +714,23 @@
                 </property>
                 <property name="maximum">
                  <number>128</number>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QComboBox" name="comboBoxBuildType">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Type of compute build to use for this run.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="2">
+               <widget class="QCheckBox" name="checkBoxForce">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If forced overwrite is allowed (&lt;span style=&quot; font-style:italic;&quot;&gt;--force&lt;/span&gt; run parameter), a new execution in an existing run id directory will not result in an error, but overwrite older results.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>Force</string>
                 </property>
                </widget>
               </item>
@@ -851,13 +861,56 @@
           <string>Execution stages</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_5">
-          <item row="0" column="0">
-           <widget class="QCheckBox" name="checkBoxInitOnly">
+          <item row="0" column="2">
+           <widget class="QCheckBox" name="checkBoxCompute">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Prepare for execution, but do not start computation.&lt;/p&gt;&lt;p&gt;This is useful so as to manually run the code and debug from the prepare run directory.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Run the computation step.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
-             <string>Initialize only</string>
+             <string>Compute</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="4">
+           <spacer name="horizontalSpacer_7">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="checkBoxStage">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Stage data for execution and compile user-defined code, but do not start execution.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Stage</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QCheckBox" name="checkBoxInitialize">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Import mesh and initialize data for execution, but do not start computation.&lt;/p&gt;&lt;p&gt;This is useful so as to manually run the code and debug from the prepare run directory.&lt;/p&gt;&lt;p&gt;For couplings with codes requiring offline partitioning, initialiation may include this step.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Initialize</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3">
+           <widget class="QCheckBox" name="checkBoxFinalize">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Clean up run directory, removing compiled code and temporary files.&lt;/p&gt;&lt;p&gt;If running on a separate directory than the results target (i.e. when a scratch directory is defined, which is useful only when storage and execution are done on separate filesystems), this step also includes the migration of results from the compute directory to the final results directory.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Finalize</string>
             </property>
            </widget>
           </item>
@@ -926,7 +979,7 @@
      </property>
      <property name="sizeHint" stdset="0">
       <size>
-       <width>352</width>
+       <width>351</width>
        <height>73</height>
       </size>
      </property>

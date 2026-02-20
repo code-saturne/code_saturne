@@ -206,9 +206,12 @@ class BatchRunningModel(object):
         self.run_dict['id'] = self.run_conf.get('run', 'id')
         self.run_dict['compute_build'] = self.run_conf.get('run', 'compute_build')
 
+        self.run_dict['stage'] = self.run_conf.get_bool('run', 'stage')
         self.run_dict['initialize'] = self.run_conf.get_bool('run', 'initialize')
-        self.run_dict['compute'] = None
-        self.run_dict['finalize'] = None
+        self.run_dict['compute'] = self.run_conf.get_bool('run', 'compute')
+        self.run_dict['finalize'] = self.run_conf.get_bool('run', 'finalize')
+
+        self.run_dict['force'] = self.run_conf.get_bool('run', 'force')
 
         # Resource-specific info (subset of resource-based info, and batch)
 
@@ -293,6 +296,66 @@ class BatchRunningModel(object):
             self.job_dict['n_procs'] = None
         if not self.have_openmp:
             self.job_dict['n_threads'] = None
+
+    #---------------------------------------------------------------------------
+
+    def updateRunStageInfo(self, run_dict=None, simplify=False):
+        """
+        Update relative to run stages
+        """
+
+        stages = ('stage', 'initialize', 'compute', 'finalize')
+
+        if run_dict is None:
+            run_dict = self.run_dict
+
+        s_id = -1
+        e_id = -1
+        for i, s in enumerate(stages):
+            if run_dict.get(s) == True:
+                if s_id == -1:
+                    s_id = i
+                if e_id <= i:
+                    e_id = i+1
+
+        if e_id < 0:
+            s_id = 0
+            e_id = 4
+
+        else:
+            # Special case for "stage", which is always associated with
+            # "initialize" unless explicitely disabled.
+            if s_id == 1 and run_dict.get('stage') != False:
+                s_id = 0
+
+        for i, s in enumerate(stages):
+            if i >= s_id and i < e_id:
+                run_dict[s] = True
+            else:
+                run_dict[s] = False
+
+        if simplify:
+            if s_id == 0 and e_id == 4:   # All active, no info needed
+                for s in stages:
+                    run_dict[s] = None
+                return
+
+            del_stage = True
+            if s_id == 0 and e_id == 4:
+                e_id = 0
+            if e_id > 0:
+                if s_id == 1:
+                    run_dict['stage'] = False
+                    del_stage = False
+                    s_id = 0
+            if del_stage:
+                run_dict['stage'] = None
+
+            for i in range(1, 4):
+                if i < s_id or i >= e_id:
+                    s = stages[i]
+                    if run_dict[s] == False:
+                        run_dict[s] = None
 
     #---------------------------------------------------------------------------
 
