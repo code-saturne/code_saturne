@@ -84,9 +84,9 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 static void
-_diverv(cs_real_t                   *diverg,
-        cs_real_3_t                 *u,
-        const cs_field_bc_coeffs_t  *bc_coeffs_v)
+_diverv(cs_real_t             *diverg,
+        cs_real_3_t           *u,
+        cs_field_bc_coeffs_t  *bc_coeffs)
 {
   /* Initialization
      -------------- */
@@ -117,7 +117,7 @@ _diverv(cs_real_t                   *diverg,
                      CS_GRADIENT_LIMIT_NONE, /* imligp */
                      1e-8,                   /* epsrgp */
                      1.5,                    /* climgp */
-                     bc_coeffs_v,
+                     bc_coeffs,
                      u,
                      nullptr,                /* weighted gradient */
                      nullptr,                /* cpl */

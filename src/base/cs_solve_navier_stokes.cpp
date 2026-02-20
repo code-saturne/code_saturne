@@ -365,16 +365,6 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
 
   cs_sles_t *sc = cs_sles_find_or_add(-1, name);
 
-  cs_bc_coeffs_solve_t bc_coeffs_solve_pot;
-  cs_init_bc_coeffs_solve(bc_coeffs_solve_pot,
-                          n_b_faces,
-                          1, // stride
-                          cs_alloc_mode,
-                          false);
-
-  cs_real_t *val_f_pot = bc_coeffs_solve_pot.val_f;
-  cs_real_t *flux_pot = bc_coeffs_solve_pot.flux;
-
   while (isweep <= eqp->nswrsm && residual > tcrite) {
 
     /* Solving on the increment dpot */
@@ -434,9 +424,7 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
          dt,
          nullptr, // vitenp
          nullptr, // weighb
-         pot,
-         val_f_pot,
-         flux_pot);
+         pot);
 
       cs_diffusion_potential(nullptr, /* field */
                              eqp,
@@ -448,8 +436,6 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
                              nullptr, /* f_ext */
                              pot,
                              &bc_coeffs_pot,
-                             val_f_pot,
-                             flux_pot,
                              i_visc, b_visc,
                              dt,
                              rhs);
@@ -515,9 +501,7 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
      dt,
      nullptr, // vitenp
      nullptr, // weighb
-     pota,
-     val_f_pot,
-     flux_pot);
+     pota);
 
   cs_face_diffusion_potential(nullptr,
                               &eqp_loc,
@@ -529,8 +513,6 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
                               nullptr, /* f_ext */
                               pota,
                               &bc_coeffs_pot,
-                              val_f_pot,
-                              flux_pot,
                               i_visc,
                               b_visc,
                               dt,
@@ -556,9 +538,7 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
      dt,
      nullptr, // vitenp
      nullptr, // weighb
-     pota,
-     val_f_pot,
-     flux_pot);
+     pota);
 
   cs_face_diffusion_potential(nullptr,
                               &eqp_loc_last,
@@ -570,8 +550,6 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
                               nullptr, /* f_ext */
                               pota,
                               &bc_coeffs_pot,
-                              val_f_pot,
-                              flux_pot,
                               i_visc,
                               b_visc,
                               dt,
@@ -620,8 +598,6 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
 
   CS_FREE(i_visc);
   CS_FREE(b_visc);
-
-  cs_clear_bc_coeffs_solve(bc_coeffs_solve_pot);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -936,6 +912,7 @@ _div_rij(const cs_mesh_t     *m,
     const cs_field_t *f_rij = CS_F_(rij);
     eqp = cs_field_get_equation_param_const(f_rij);
 
+    // FIXME we should pass bc_coeffs and use it...
     cs_field_bc_coeffs_t bc_coeffs_ts_loc;
     cs_field_bc_coeffs_shallow_copy(f_rij->bc_coeffs, &bc_coeffs_ts_loc);
 
@@ -944,10 +921,7 @@ _div_rij(const cs_mesh_t     *m,
 
     cs_tensor_face_flux(m, mq,
                         -1, 1, 0, 1, 1,
-                        eqp->imrgra, eqp->nswrgr,
-                        static_cast<cs_gradient_limit_t>(eqp->imligr),
-                        eqp->verbosity,
-                        eqp->epsrgr, eqp->climgr,
+                        eqp,
                         crom, brom,
                         (const cs_real_6_t *)f_rij->val,
                         &bc_coeffs_ts_loc,
@@ -990,10 +964,7 @@ _div_rij(const cs_mesh_t     *m,
 
     cs_tensor_face_flux(m, mq,
                         -1, 1, 0, 1, 1,
-                        eqp->imrgra, eqp->nswrgr,
-                        static_cast<cs_gradient_limit_t>(eqp->imligr),
-                        eqp->verbosity,
-                        eqp->epsrgr, eqp->climgr,
+                        eqp,
                         crom, brom,
                         rij,
                         &bc_coeffs_loc,
@@ -1439,7 +1410,8 @@ _update_fluid_vel(const cs_mesh_t             *m,
         iautom = cs_glob_bc_pm_info->iautom;
       }
 
-      cs_real_t *coefa_p = CS_F_(p)->bc_coeffs->a;
+      cs_field_t *f_p = CS_F_(p);
+      cs_real_t *coefa_p = f_p->bc_coeffs->a;
 
       ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
         /*  automatic inlet/outlet face for atmospheric flow */
@@ -1451,6 +1423,16 @@ _update_fluid_vel(const cs_mesh_t             *m,
           coefa_p[face_id] += coefa_dp[face_id];
       });
 
+      cs_boundary_conditions_update_bc_coeff_face_values
+        (ctx,
+         f_p,
+         eqp_p,
+         true, true,
+         vp_param->iphydr,
+         frcxt,
+         nullptr,
+         nullptr,
+         f_p->val);
     }
 
     /* Standard handling of hydrostatic pressure */
@@ -3240,6 +3222,8 @@ _velocity_prediction(const cs_mesh_t             *m,
       /* We do not take into account transpose of grad */
       int ivisep = 0;
 
+      //TODO this should be simplified by declaring an additional vector
+      //variable for ipucou
       eqp_loc.nswrsm = -1;
 
       ctx.wait();
@@ -3331,8 +3315,6 @@ _velocity_prediction(const cs_mesh_t             *m,
                       vel,
                       vel,
                       bc_coeffs_v,
-                      (const cs_real_3_t *)bc_coeffs_v->val_f,
-                      (const cs_real_3_t *)bc_coeffs_v->flux,
                       imasfl,
                       bmasfl,
                       viscf,
@@ -3363,7 +3345,7 @@ _velocity_prediction(const cs_mesh_t             *m,
   CS_FREE(smbr);
   CS_FREE(eswork);
 
-  /* Finalaze estimators + logging */
+  /* Finalize estimators + logging */
 
   f = cs_field_by_name_try("algo:predicted_velocity");
   if (f != nullptr) {
@@ -3629,7 +3611,7 @@ _hydrostatic_pressure_prediction(cs_real_t        grdphd[][3],
   CS_FREE(bc_coeffs_dp.b);
   CS_FREE(bc_coeffs_dp.bf);
   CS_FREE(bc_coeffs_dp.val_f);
-  CS_FREE(bc_coeffs_dp.flux);
+  CS_FREE(bc_coeffs_dp.flux_diff);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

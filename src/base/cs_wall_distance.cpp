@@ -855,23 +855,13 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
   cs_equation_param_t eqp_loc_div = *eqp_yp;
   eqp_loc_div.iwgrec = 0;
 
-  cs_bc_coeffs_solve_t bc_coeffs_solve;
-  cs_init_bc_coeffs_solve(bc_coeffs_solve,
-                          n_b_faces,
-                          1, // stride
-                          cs_alloc_mode,
-                          false);
-
-  cs_real_t *val_f = bc_coeffs_solve.val_f;
-  cs_real_t *flux = bc_coeffs_solve.flux;
-
   const bool need_compute_bc_flux = true;
   const bool need_compute_bc_grad = (eqp_loc_div.ircflu) ? true : false;
 
   cs_boundary_conditions_update_bc_coeff_face_values
     (ctx,
-     nullptr, // field
-     f_wall_dist->bc_coeffs,
+     f_wall_dist, // field
+     bc_coeffs_wd,
      inc,
      &eqp_loc_div,
      need_compute_bc_grad,
@@ -881,9 +871,7 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
      viscap.data(),
      nullptr, // vitenp
      nullptr, // weighb
-     w_dist,
-     val_f,
-     flux);
+     w_dist);
 
   cs_face_diffusion_potential(f_wall_dist,
                               &eqp_loc_div,
@@ -894,14 +882,10 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
                               0, /* iphydp */
                               nullptr, /* f_ext */
                               w_dist,
-                              f_wall_dist->bc_coeffs,
-                              val_f,
-                              flux,
+                              bc_coeffs_wd,
                               i_visc.data(), b_visc.data(),
                               viscap.data(),
                               i_mass_flux, b_mass_flux);
-
-  cs_clear_bc_coeffs_solve(bc_coeffs_solve);
 
   /* Diagonal part of the matrix
      --------------------------- */

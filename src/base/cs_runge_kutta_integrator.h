@@ -391,30 +391,11 @@ cs_runge_kutta_stage_complete_rhs(cs_dispatch_context         &ctx,
 
   /* Allocate non reconstructed face value only if presence of limiter */
 
-  int df_limiter_id = -1;
   cs_field_t *f = nullptr;
-  if (f_id > -1) {
+  if (f_id > -1)
     f = cs_field_by_id(f_id);
-    df_limiter_id
-      = cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
-  }
-
-  const int ircflp = eqp->ircflu;
-  const int ircflb = (ircflp > 0) ? eqp->b_diff_flux_rc : 0;
-
-  cs_bc_coeffs_solve_t bc_coeffs_solve;
-  cs_init_bc_coeffs_solve(bc_coeffs_solve,
-                          n_b_faces,
-                          stride,
-                          amode,
-                          (df_limiter_id > -1 || ircflb != 1));
 
   using var_t = cs_real_t[stride];
-
-  var_t *val_ip = (var_t *)bc_coeffs_solve.val_ip;
-  var_t *val_f = (var_t *)bc_coeffs_solve.val_f;
-  var_t *flux =  (var_t *)bc_coeffs_solve.flux;
-  var_t *flux_lim =  (var_t *)bc_coeffs_solve.flux_lim;
 
   /* We compute the total explicit balance. */
 
@@ -429,8 +410,7 @@ cs_runge_kutta_stage_complete_rhs(cs_dispatch_context         &ctx,
   eqp->theta = 1;
 
   cs_boundary_conditions_update_bc_coeff_face_values_strided<stride>
-    (ctx, f, bc_coeffs, inc, eqp, pvar,
-     val_ip, val_f, flux, flux_lim);
+    (ctx, f, bc_coeffs, inc, eqp, pvar);
 
   if (stride == 3)
     cs_balance_vector(idtvar,
@@ -442,8 +422,6 @@ cs_runge_kutta_stage_complete_rhs(cs_dispatch_context         &ctx,
                       nullptr, /* pvar == pvara */
                       (const cs_real_3_t *)pvar,
                       bc_coeffs,
-                      (const cs_real_3_t *)val_f,
-                      (const cs_real_3_t *)flux_lim,
                       i_massflux,
                       b_massflux,
                       i_visc,
@@ -468,8 +446,6 @@ cs_runge_kutta_stage_complete_rhs(cs_dispatch_context         &ctx,
                       nullptr, /* pvar == pvara */
                       (const cs_real_6_t *)pvar,
                       bc_coeffs,
-                      (const cs_real_6_t *)val_f,
-                      (const cs_real_6_t *)flux_lim,
                       i_massflux,
                       b_massflux,
                       i_visc,
@@ -483,7 +459,6 @@ cs_runge_kutta_stage_complete_rhs(cs_dispatch_context         &ctx,
 
   eqp->theta = 0;
 
-  cs_clear_bc_coeffs_solve(bc_coeffs_solve);
   ctx.wait();
 }
 

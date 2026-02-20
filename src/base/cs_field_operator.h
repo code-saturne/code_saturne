@@ -95,7 +95,7 @@ cs_field_gradient_scalar(const cs_field_t  *f,
 void
 cs_field_gradient_scalar_array(int                         f_id,
                                int                         inc,
-                               const cs_field_bc_coeffs_t *bc_coeffs,
+                               cs_field_bc_coeffs_t       *bc_coeffs,
                                cs_real_t                   var[],
                                cs_real_3_t                 grad[]);
 

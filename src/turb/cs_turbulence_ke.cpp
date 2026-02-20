@@ -319,26 +319,6 @@ cs_turbulence_ke(int              phase_id,
   cs_field_t *f_phi = CS_F_(phi);
   cs_field_t *f_alpbl = CS_F_(alp_bl);
 
-  cs_bc_coeffs_solve_t bc_coeffs_solve_k;
-  cs_init_bc_coeffs_solve(bc_coeffs_solve_k,
-                          n_b_faces,
-                          1, // stride
-                          cs_alloc_mode,
-                          false);
-
-  cs_real_t *val_f_k = bc_coeffs_solve_k.val_f;
-  cs_real_t *flux_k = bc_coeffs_solve_k.flux;
-
-  cs_bc_coeffs_solve_t bc_coeffs_solve_ep;
-  cs_init_bc_coeffs_solve(bc_coeffs_solve_ep,
-                          n_b_faces,
-                          1, // stride
-                          cs_alloc_mode,
-                          false);
-
-  cs_real_t *val_f_ep = bc_coeffs_solve_ep.val_f;
-  cs_real_t *flux_ep = bc_coeffs_solve_ep.flux;
-
   const cs_real_t *dt = CS_F_(dt)->val;
 
   if (phase_id >= 0) {
@@ -976,9 +956,7 @@ cs_turbulence_ke(int              phase_id,
        w3.data(),
        nullptr, // vitenp
        nullptr, // weighb
-       cvara_k,
-       val_f_k,
-       flux_k);
+       cvara_k);
 
     cs_diffusion_potential(f_k,
                            eqp_k,
@@ -990,8 +968,6 @@ cs_turbulence_ke(int              phase_id,
                            nullptr,
                            cvara_k,
                            f_k->bc_coeffs,
-                           val_f_k,
-                           flux_k,
                            viscf.data(),
                            viscb.data(),
                            w3.data(),
@@ -1106,6 +1082,8 @@ cs_turbulence_ke(int              phase_id,
                          nullptr,
                          nullptr, /* internal coupling */
                          grad.data<cs_real_3_t>());
+
+      CS_FREE(bc_coeffs_loc.val_f);
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         grad_dot_g[c_id] =   cs_math_3_dot_product(grad.sub_array(c_id), grav)
@@ -1762,9 +1740,7 @@ cs_turbulence_ke(int              phase_id,
        nullptr, // visel
        nullptr, // vitenp
        nullptr, // weighb
-       cvara_k,
-       val_f_k,
-       flux_k);
+       cvara_k);
 
     cs_balance_scalar(cs_glob_time_step_options->idtvar,
                       f_k->id,
@@ -1775,8 +1751,6 @@ cs_turbulence_ke(int              phase_id,
                       cvara_k,
                       cvara_k,
                       f_k->bc_coeffs,
-                      val_f_k,
-                      flux_k,
                       imasfl,
                       bmasfl,
                       viscf.data(),
@@ -1848,9 +1822,7 @@ cs_turbulence_ke(int              phase_id,
        nullptr, // visel
        nullptr, // vitenp
        nullptr, // weighb
-       cvara_ep,
-       val_f_ep,
-       flux_ep);
+       cvara_ep);
 
     cs_balance_scalar(cs_glob_time_step_options->idtvar,
                       f_eps->id,
@@ -1861,8 +1833,6 @@ cs_turbulence_ke(int              phase_id,
                       cvara_ep,
                       cvara_ep,
                       f_eps->bc_coeffs,
-                      val_f_ep,
-                      flux_ep,
                       imasfl,
                       bmasfl,
                       viscf.data(),
@@ -2143,9 +2113,6 @@ cs_turbulence_ke(int              phase_id,
                         n_cells,
                         1);
 
-  /* Free memory */
-  cs_clear_bc_coeffs_solve(bc_coeffs_solve_ep);
-  cs_clear_bc_coeffs_solve(bc_coeffs_solve_k);
 }
 
 /*----------------------------------------------------------------------------*/

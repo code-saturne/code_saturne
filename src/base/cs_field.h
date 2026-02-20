@@ -107,21 +107,6 @@ typedef enum {
 
 } cs_field_error_type_t;
 
-/*! boundary condition descriptor when solving in increment */
-/*----------------------------------------------------------*/
-
-typedef struct {
-
-  cs_real_t          *val_ip;      /* variable computed at I' position */
-
-  cs_real_t          *val_f;       /* face value for gradient */
-
-  cs_real_t          *flux;     /* face value for diffusion */
-  cs_real_t          *flux_lim; /* face value for diffusion
-                                      (limited) */
-
-} cs_bc_coeffs_solve_t;
-
 /*! Field boundary condition descriptor (for variables) */
 /*------------------------------------------------------*/
 
@@ -135,6 +120,21 @@ typedef struct {
                                     (a.k.a. hext Exterior exchange coefficient */
   cs_real_t         *rcodcl3;      /* 3rd component of low-level BC */
 
+  cs_real_t         *h_int_tot;    /* Total internal exchange coefficient
+                                      (used for internal coupling and
+                                      coupling) */
+
+  cs_real_t         *val_f;       /* face value for gradient */
+  cs_real_t         *val_f_pre;   /* previous face value for gradient */
+  cs_real_t         *val_f_lim;   /* face value for gradient
+                                     (limited) */
+
+  cs_real_t         *flux_diff;    /* face value for diffusion */
+  /* TODO: This should be removed */
+  cs_real_t         *flux_diff_lim;/* face value for diffusion
+                                        (limited) */
+
+  /* Private members */
   cs_real_t         *a;            /* Explicit coefficient */
   cs_real_t         *b;            /* Implicit coefficient */
   cs_real_t         *af;           /* Explicit coefficient for flux */
@@ -143,18 +143,6 @@ typedef struct {
   cs_real_t         *bd;           /* Implicit coefficient for divergence */
   cs_real_t         *ac;           /* Explicit coefficient for convection */
   cs_real_t         *bc;           /* Implicit coefficient for convection */
-
-  cs_real_t         *hint;         /* coefficient for internal coupling */
-
-  cs_real_t          *val_f;       /* face value for gradient */
-  cs_real_t          *val_f_lim;   /* face value for gradient
-                                      (limited) */
-
-  cs_real_t          *flux;     /* face value for diffusion */
-  cs_real_t          *flux_lim; /* face value for diffusion
-                                      (limited) */
-
-  cs_real_t          *val_f_pre;   /* previous face value for gradient */
 
 } cs_field_bc_coeffs_t;
 

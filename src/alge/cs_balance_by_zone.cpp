@@ -121,7 +121,7 @@ BEGIN_C_DECLS
  *   ac_F          -->  explicit imposed convective flux value (0 otherwise).
  *   bc_F          -->  implicit part of imp. conv. flux value
  *   val_f         -->  boundary face value for gradient (only for the unsteady case).
- *   flux          -->  boundary flux (only for the unsteady case).
+ *   flux_diff     -->  boundary flux (only for the unsteady case).
  *   b_mass_flux   -->  boundary mass flux
  *   xcppi         -->  specific heat value if the scalar is the temperature,
  *                      1 otherwise at cell i
@@ -148,7 +148,7 @@ _balance_boundary_faces(const int           icvflf,
                         const cs_real_t     ac_F,
                         const cs_real_t     bc_F,
                         const cs_real_t     val_f,
-                        const cs_real_t     flux,
+                        const cs_real_t     flux_diff,
                         const cs_real_t     b_mass_flux,
                         const cs_real_t     xcppi,
                         cs_real_t          *term_balance)
@@ -225,7 +225,7 @@ _balance_boundary_faces(const int           icvflf,
 
     cs_b_diff_flux(idiffp,
                    1., /* thetap */
-                   flux,
+                   flux_diff,
                    b_visc,
                    term_balance);
   }
@@ -820,16 +820,6 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   /* Get the calculation option from the field */
   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
 
-  cs_real_t *pvar_local = nullptr;
-  cs_real_t *pvar_distant = nullptr;
-  cs_real_t  hint, rcodcl2, heq;
-
-  const cs_lnum_t *faces_local = nullptr;
-  cs_lnum_t  n_local = 0;
-  cs_lnum_t  n_distant = 0;
-  const cs_lnum_t *faces_distant = nullptr;
-  cs_internal_coupling_t *cpl = nullptr;
-
   /* Temperature indicator.
      Will multiply by CP in order to have energy. */
   const int itemperature
@@ -854,18 +844,6 @@ cs_balance_by_zone_compute(const char      *scalar_name,
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       cpro_cp[c_id] = 1.;
     }
-  }
-
-  /* Internal coupling initialization*/
-  if (eqp->icoupl > 0) {
-    const int coupling_key_id = cs_field_key_id("coupling_entity");
-    const int coupling_id = cs_field_get_key_int(f, coupling_key_id);
-    cpl = cs_internal_coupling_by_id(coupling_id);
-    cs_internal_coupling_coupled_faces(cpl,
-                                       &n_local,
-                                       &faces_local,
-                                       &n_distant,
-                                       &faces_distant);
   }
 
   /* Zone cells selection variables*/
@@ -951,6 +929,14 @@ cs_balance_by_zone_compute(const char      *scalar_name,
 
   int limiter_choice = -1;
   int ischcp = eqp->ischcv;
+  int cv_limiter_id = eqp->convection_limiter_id;
+  if (cv_limiter_id > -1)
+    cv_limiter = cs_field_by_id(cv_limiter_id)->val;
+
+  int df_limiter_id = eqp->diffusion_limiter_id;
+  if (df_limiter_id > -1)
+    df_limiter = cs_field_by_id(df_limiter_id)->val;
+
   if (field_id != -1) {
     f = cs_field_by_id(field_id);
 
@@ -969,21 +955,11 @@ cs_balance_by_zone_compute(const char      *scalar_name,
       }
     }
 
-    int cv_limiter_id =
-      cs_field_get_key_int(f, cs_field_key_id("convection_limiter_id"));
-    if (cv_limiter_id > -1)
-      cv_limiter = cs_field_by_id(cv_limiter_id)->val;
-
-    int df_limiter_id =
-      cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
-    if (df_limiter_id > -1)
-      df_limiter = cs_field_by_id(df_limiter_id)->val;
-
-    /* Update bc_coeffs val_f and flux if nullptr.
+    /* Update bc_coeffs val_f and flux_diff if nullptr.
        (It may occur when scalars are not computed,
        for example when nt_max = 0) */
 
-    if (f->bc_coeffs->val_f == nullptr || f->bc_coeffs->flux == nullptr)
+    if (f->bc_coeffs->val_f == nullptr || f->bc_coeffs->flux_diff == nullptr)
       cs_boundary_conditions_update_bc_coeff_face_values
         (ctx, f, eqp,
          true, true,
@@ -1341,7 +1317,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
      analyze the information, but this is not mandatory. */
 
   cs_real_t *val_f_g = f->bc_coeffs->val_f;
-  cs_real_t *flux_d = f->bc_coeffs->flux;
+  cs_real_t *flux_d = f->bc_coeffs->flux_diff;
 
   for (cs_lnum_t f_id = 0; f_id < n_bb_faces_sel; f_id++) {
 
@@ -1408,74 +1384,8 @@ cs_balance_by_zone_compute(const char      *scalar_name,
 
   }
 
-  /* Balance on coupled faces
-     ------------------------
-
-     We handle different types of boundary faces separately to better
-     analyze the information, but this is not mandatory. */
-
-  if (eqp->icoupl > 0) {
-
-    /* Prepare data for sending from distant */
-    CS_MALLOC(pvar_distant, n_distant, cs_real_t);
-
-    for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
-      cs_lnum_t f_id = faces_distant[ii];
-      cs_lnum_t c_id = b_face_cells[f_id];
-      cs_real_t pip;
-      cs_b_cd_unsteady(ircflp,
-                       diipb[f_id],
-                       grad[c_id],
-                       f->val[c_id],
-                       &pip);
-      pvar_distant[ii] = pip;
-    }
-
-    /* Receive data */
-    CS_MALLOC(pvar_local, n_local, cs_real_t);
-    cs_internal_coupling_exchange_var(cpl,
-                                      1, /* Dimension */
-                                      pvar_distant,
-                                      pvar_local);
-
-    /* flux contribution */
-    for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-      cs_lnum_t f_id = faces_local[ii];
-      cs_lnum_t c_id = b_face_cells[f_id];
-      cs_real_t surf = b_face_surf[f_id];
-
-      if (cells_tag_ids[c_id] == 1) {
-        cs_real_t pip, pjp;
-        cs_real_t term_balance = 0.;
-
-        cs_b_cd_unsteady(ircflp,
-                         diipb[f_id],
-                         grad[c_id],
-                         f->val[c_id],
-                         &pip);
-
-        pjp = pvar_local[ii];
-
-        hint = f->bc_coeffs->hint[f_id];
-        rcodcl2 = f->bc_coeffs->rcodcl2[f_id];
-        heq = surf * hint * rcodcl2 / (hint + rcodcl2);
-
-        cs_b_diff_flux_coupling(idiffp,
-                                pip,
-                                pjp,
-                                heq,
-                                &term_balance);
-
-        i_cpl_balance -= term_balance*dt[c_id];
-      }
-    }
-
-    CS_FREE(pvar_local);
-    CS_FREE(pvar_distant);
-
-  }
-
-  ctx.wait();
+  /* Note: Balance on coupled faces (internal coupling) is treated by
+   * standard BCs */
 
   /* Balance on boundary faces of the selected zone
      that are interior to the total mesh
@@ -2591,15 +2501,6 @@ cs_flux_through_surface(const char         *scalar_name,
   int icvflb = 0; // TODO handle total energy balance
   int icvflf = 0;
 
-  /* Internal cuplin varibale initialization*/
-  cs_real_t *pvar_local = nullptr;
-  cs_real_t *pvar_distant = nullptr;
-  const cs_lnum_t *faces_local = nullptr;
-  cs_lnum_t n_local = 0;
-  cs_lnum_t n_distant = 0;
-  const cs_lnum_t *faces_distant = nullptr;
-  cs_internal_coupling_t *cpl = nullptr;
-
  /* Physical properties
     ------------------- */
 
@@ -2681,19 +2582,6 @@ cs_flux_through_surface(const char         *scalar_name,
 
   cs_face_viscosity(m, fvq, imvisf, c_visc, i_visc, b_visc);
 
-  /* Internal coupling*/
-
-  if (eqp->icoupl > 0) {
-    const int coupling_key_id = cs_field_key_id("coupling_entity");
-    const int coupling_id = cs_field_get_key_int(f, coupling_key_id);
-    cpl = cs_internal_coupling_by_id(coupling_id);
-    cs_internal_coupling_coupled_faces(cpl,
-                                       &n_local,
-                                       &faces_local,
-                                       &n_distant,
-                                       &faces_distant);
-  }
-
   /* Choose gradient type */
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
@@ -2726,16 +2614,14 @@ cs_flux_through_surface(const char         *scalar_name,
       }
     }
 
-    int cv_limiter_id =
-      cs_field_get_key_int(f, cs_field_key_id("convection_limiter_id"));
-    if (cv_limiter_id > -1)
-      cv_limiter = cs_field_by_id(cv_limiter_id)->val;
-
-    int df_limiter_id =
-      cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
-    if (df_limiter_id > -1)
-      df_limiter = cs_field_by_id(df_limiter_id)->val;
   }
+  int cv_limiter_id = eqp->convection_limiter_id;
+  if (cv_limiter_id > -1)
+    cv_limiter = cs_field_by_id(cv_limiter_id)->val;
+
+  int df_limiter_id = eqp->diffusion_limiter_id;
+  if (df_limiter_id > -1)
+    df_limiter = cs_field_by_id(df_limiter_id)->val;
 
   /* Gradient calculation
      -------------------- */
@@ -2748,28 +2634,29 @@ cs_flux_through_surface(const char         *scalar_name,
                            1, /* inc */
                            grad);
 
-  cs_real_t *val_f_g = f->bc_coeffs->val_f;
-  cs_real_t *flux_d = f->bc_coeffs->flux;
   cs_real_t *val_f_g_nr = nullptr;
   cs_real_t *flux_d_nr = nullptr;
 
-  // for the fisrt iteration before the time loop
-  if (f->bc_coeffs->val_f == nullptr || f->bc_coeffs->flux == nullptr) {
+  // for the first iteration before the time loop
+  // FIXME useful
+  if (f->bc_coeffs->val_f == nullptr || f->bc_coeffs->flux_diff == nullptr) {
     cs_equation_param_t eqp_loc = *eqp;
     eqp_loc.b_diff_flux_rc = 0; // no reconstruction
 
     CS_MALLOC_HD(val_f_g_nr, n_b_faces, cs_real_t, cs_alloc_mode);
     CS_MALLOC_HD(flux_d_nr, n_b_faces, cs_real_t, cs_alloc_mode);
 
+    f->bc_coeffs->val_f = val_f_g_nr;
+    f->bc_coeffs->flux_diff = flux_d_nr;
+
     cs_boundary_conditions_update_bc_coeff_face_values
-      (ctx, f, f->bc_coeffs, 1, &eqp_loc,
+      (ctx, f, f->bc_coeffs, 1, // inc
+       &eqp_loc,
        true, true,
        false, nullptr, // hyp_p_flag, f_ext
        nullptr, nullptr, nullptr,
-       f->val, val_f_g_nr, flux_d_nr);
+       f->val);
 
-    val_f_g = val_f_g_nr;
-    flux_d = flux_d_nr;
   }
 
   /* Compute the gradient for convective scheme
@@ -2790,7 +2677,7 @@ cs_flux_through_surface(const char         *scalar_name,
                              (const cs_real_3_t *)grad,
                              gradst,
                              f->val,
-                             val_f_g,
+                             f->bc_coeffs->val_f,
                              i_mass_flux);
   }
 
@@ -2863,6 +2750,9 @@ cs_flux_through_surface(const char         *scalar_name,
   int ircflp = eqp->ircflu;
   double relaxp = eqp->relaxv;
 
+  cs_real_t *val_f_g = f->bc_coeffs->val_f;
+  cs_real_t *flux_d = f->bc_coeffs->flux_diff;
+
   for (cs_lnum_t f_id = 0; f_id < n_b_faces_sel; f_id++) {
 
     cs_lnum_t f_id_sel = (b_face_sel_ids != nullptr) ? b_face_sel_ids[f_id] : f_id;
@@ -2932,103 +2822,8 @@ cs_flux_through_surface(const char         *scalar_name,
 
   }
 
-  /* Balance on coupled faces
-     ------------------------
-
-    We handle different types of boundary faces separately to better
-    analyze the information, but this is not mandatory. */
-
-  if (eqp->icoupl > 0) {
-
-    cs_lnum_t *inv_b_face_sel_ids = nullptr;
-
-    CS_MALLOC(inv_b_face_sel_ids, n_b_faces, cs_lnum_t);
-    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++)
-      inv_b_face_sel_ids[f_id] = -1;
-
-    if (b_face_sel_ids != nullptr) {
-      for (cs_lnum_t f_id = 0; f_id < n_b_faces_sel; f_id++) {
-        cs_lnum_t f_id_sel = b_face_sel_ids[f_id];
-        inv_b_face_sel_ids[f_id_sel] = f_id;
-      }
-    }
-    else {
-      for (cs_lnum_t f_id_sel = 0; f_id_sel < n_b_faces_sel; f_id_sel++)
-        inv_b_face_sel_ids[f_id_sel] = f_id_sel;
-    }
-
-    /* Prepare data for sending from distant */
-    CS_MALLOC(pvar_distant, n_distant, cs_real_t);
-
-    for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
-      cs_lnum_t f_id = faces_distant[ii];
-      cs_lnum_t c_id = b_face_cells[f_id];
-      cs_real_t pip;
-      cs_b_cd_unsteady(ircflp,
-                       diipb[f_id],
-                       grad[c_id],
-                       f->val[c_id],
-                       &pip);
-      pvar_distant[ii] = pip;
-    }
-
-    /* Receive data */
-    CS_MALLOC(pvar_local, n_local, cs_real_t);
-    cs_internal_coupling_exchange_var(cpl,
-                                      1, /* Dimension */
-                                      pvar_distant,
-                                      pvar_local);
-
-    /* Flux contribution */
-
-    for (cs_lnum_t ii = 0; ii < n_local; ii++) {
-
-      cs_lnum_t f_id = faces_local[ii];
-      cs_lnum_t sel_f_id = inv_b_face_sel_ids[f_id];
-
-      if (sel_f_id < 0)
-        continue;
-
-      cs_lnum_t c_id = b_face_cells[f_id];
-      cs_real_t surf = b_face_surf[f_id];
-
-      cs_real_t pip, pjp;
-      cs_real_t term_balance = 0.;
-
-      cs_b_cd_unsteady(ircflp,
-                       diipb[f_id],
-                       grad[c_id],
-                       f->val[c_id],
-                       &pip);
-
-      pjp = pvar_local[ii];
-
-      cs_real_t hint = f->bc_coeffs->hint[f_id];
-      cs_real_t rcodcl2 = f->bc_coeffs->rcodcl2[f_id];
-      cs_real_t heq = 0;
-      if (fabs(hint + rcodcl2) > 0)
-        heq = surf * hint * rcodcl2 / (hint + rcodcl2);
-
-      cs_b_diff_flux_coupling(idiffp,
-                              pip,
-                              pjp,
-                              heq,
-                              &term_balance);
-
-      if (flux_b_faces != nullptr)
-        flux_b_faces[inv_b_face_sel_ids[f_id]] = term_balance;
-
-      _balance[CS_BALANCE_BOUNDARY_COUPLED_I] -= term_balance;
-
-    }
-
-    CS_FREE(pvar_local);
-    CS_FREE(pvar_distant);
-
-    CS_FREE(inv_b_face_sel_ids);
-  }
-
-  /* Balance on selected interior faces */
+  /* Note: balance on coupled faces are trated through std BCs */
+    /* Balance on selected interior faces */
 
   int isstpp = eqp->isstpc;
   double blencp = eqp->blencv;
@@ -3188,8 +2983,6 @@ cs_flux_through_surface(const char         *scalar_name,
   CS_FREE(i_visc);
   CS_FREE(b_visc);
 
-  CS_FREE(val_f_g_nr);
-  CS_FREE(flux_d_nr);
 }
 
 /*----------------------------------------------------------------------------*/

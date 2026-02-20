@@ -333,8 +333,6 @@ _compressible_pressure_mass_flux(cs_dispatch_context &ctx,
                       vela,
                       (const cs_real_3_t *)vela,
                       bc_coeffs_vel,
-                      (cs_real_3_t *)bc_coeffs_vel->val_f,
-                      (cs_real_3_t *)bc_coeffs_vel->flux,
                       i_mass_flux,
                       b_mass_flux,
                       i_visc.data(),
@@ -793,8 +791,6 @@ cs_cf_convective_mass_flux(int  iterns)
                               nullptr, /* frcxt */
                               cvar_pr,
                               &bc_coeffs_loc,
-                              bc_coeffs_loc.val_f,
-                              bc_coeffs_loc.flux,
                               i_visc.data(), b_visc.data(),
                               dt,
                               i_mass_flux_e, b_mass_flux_e);

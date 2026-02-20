@@ -774,8 +774,6 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
                         cvar_vel,
                         cvar_vela,
                         f_vel->bc_coeffs,
-                        (cs_real_3_t *)f_vel->bc_coeffs->val_f,
-                        (cs_real_3_t *)f_vel->bc_coeffs->flux,
                         i_massflux.data(),
                         b_massflux.data(),
                         i_visc.data(),

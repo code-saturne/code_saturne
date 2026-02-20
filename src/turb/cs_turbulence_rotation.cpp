@@ -310,6 +310,7 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
                      climgp,
                      nullptr,   /* Use default Neumann BC */
                      strain.data<cs_real_6_t>(),
+                     nullptr, //cpl
                      grdsij.data<cs_real_63_t>());
 
   cs_real_t dsijdt, trrota, wiksjk;

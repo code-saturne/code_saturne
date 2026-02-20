@@ -149,7 +149,6 @@ cs_initialize_fields_stage_0(void)
 
   const int keysca = cs_field_key_id("scalar_id");
   const int kscavr = cs_field_key_id("first_moment_id");
-  const int kdflim = cs_field_key_id("diffusion_limiter_id");
   const int kivisl = cs_field_key_id("diffusivity_id");
   const int kvisl0 = cs_field_key_id("diffusivity_ref");
 
@@ -397,7 +396,9 @@ cs_initialize_fields_stage_0(void)
        Note that allowing a default value initialization for 1D-fields
        would allow handling this upon field definition */
 
-    const int dl_id = cs_field_get_key_int(f, kdflim);
+    const cs_equation_param_t *eqp
+      = cs_field_get_equation_param_const(f);
+    const int dl_id = eqp->diffusion_limiter_id;
     if (dl_id > -1) {
       cs_field_t *f_dl = cs_field_by_id(dl_id);
       f_dl->get_vals_s().set_to_val(ctx, 1.0);

@@ -388,7 +388,7 @@ cs_internal_coupling_dump(void);
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_preprocess(cs_mesh_t   *mesh);
+cs_internal_coupling_preprocess(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------
  * Define face to face mappings for internal couplings.
@@ -415,14 +415,14 @@ cs_internal_coupling_add_entity(int        f_id);
  * \brief  Update internal coupling coefficients of the field of the
  * given id using given boundary exchange coefficients passed by face id.
  *
- * \param[in] f     pointer to field
- * \param[in] hbnd  boundary exchange coefficients passed by face id
+ * \param[in] f          pointer to field
+ * \param[in] h_int_tot  boundary exchange coefficients passed by face id
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_ic_field_set_exchcoeff(const cs_field_t  *f,
-                          const cs_real_t   *hbnd);
+                          const cs_real_t   *h_int_tot);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -454,7 +454,7 @@ END_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute scalar boundary condition coefficients for internal coupling.
+ * \brief  Update scalar boundary condition coefficients for internal coupling.
  *
  * \param[in]     ctx              reference to dispatch context
  * \param[in]     bc_coeffs        associated BC coefficients structure
@@ -469,11 +469,10 @@ END_C_DECLS
                                    or nullptr
  * \param[in]     weighb           boundary face weight for cells i in case
  *                                 of tensor diffusion, or nullptr
- * \param[out]    bc_coeffs        boundary condition structure
  * \param[in]     df_limiter       diffusion limiter array
  * \param[in]     var              gradient's base variable
  * \param[in]     c_weight         weighted gradient coefficient variable,
- *                                 or null
+ *                                 or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -500,15 +499,15 @@ cs_internal_coupling_update_bc_coeffs_s
 /*!
  * \brief  Update vector boundary condition coefficients for internal coupling.
  *
- * \param[in]      ctx              reference to dispatch context
- * \param[in]      bc_coeffs_v      boundary condition structure
- * \param[in]      cpl              structure associated with internal coupling
- * \param[in]      halo_type        halo type
- * \param[in]      clip_coeff       clipping coefficient
- * \param[in]      df_limiter       diffusion limiter array
- * \param[in]      var              gradient's base variable
- * \param[in]      c_weight         weighted gradient coefficient variable,
- *                                  or nullptr
+ * \param[in]     ctx              reference to dispatch context
+ * \param[in]     bc_coeffs        boundary condition structure
+ * \param[in]     cpl              structure associated with internal coupling
+ * \param[in]     halo_type        halo type
+ * \param[in]     clip_coeff       clipping coefficient
+ * \param[in]     df_limiter       diffusion limiter array
+ * \param[in]     var              gradient's base variable
+ * \param[in]     c_weight         weighted gradient coefficient variable,
+ *                                 or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -517,7 +516,7 @@ void
 cs_internal_coupling_update_bc_coeffs_strided
 (
  cs_dispatch_context           &ctx,
- const cs_field_bc_coeffs_t    *bc_coeffs_v,
+ const cs_field_bc_coeffs_t    *bc_coeffs,
  const cs_internal_coupling_t  *cpl,
  cs_halo_type_t                 halo_type,
  double                         clip_coeff,

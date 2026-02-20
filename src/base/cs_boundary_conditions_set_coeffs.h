@@ -1277,7 +1277,7 @@ void
 cs_boundary_conditions_update_bc_coeff_face_values
   (cs_dispatch_context        &ctx,
    const cs_field_t           *f,
-   const cs_field_bc_coeffs_t *bc_coeffs,
+   cs_field_bc_coeffs_t       *bc_coeffs,
    const int                   inc,
    const cs_equation_param_t  *eqp,
    const bool                  need_compute_bc_grad,
@@ -1287,9 +1287,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
    cs_real_t                   visel[],
    cs_real_t                   viscel[][6],
    const cs_real_t             weighb[],
-   const cs_real_t             pvar[],
-   cs_real_t                   val_f[],
-   cs_real_t                   flux[]);
+   const cs_real_t             pvar[]);
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -1349,14 +1347,10 @@ void
 cs_boundary_conditions_update_bc_coeff_face_values_strided
   (cs_dispatch_context        &ctx,
    cs_field_t                 *f,
-   const cs_field_bc_coeffs_t *bc_coeffs,
+   cs_field_bc_coeffs_t       *bc_coeffs,
    const int                   inc,
    const cs_equation_param_t  *eqp,
-   const cs_real_t             pvar[][stride],
-   cs_real_t                   val_ip[][stride],
-   cs_real_t                   val_f[][stride],
-   cs_real_t                   flux[][stride],
-   cs_real_t                   flux_lim[][stride]);
+   const cs_real_t             pvar[][stride]);
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -1395,36 +1389,6 @@ cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
    cs_lnum_t              dim,
    cs_alloc_mode_t        amode,
    bool                   limiter);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Initialize boundary condition coefficients solve arrays.
- *
- * \param[in, out]  c          reference to structure to initialize.
- * \param[in]       n_b_faces  number of boundary faces
- * \param[in]       stride     variable dimension
- * \param[in]       amode      allocation mode
- * \param[in]       limiter    is a limiter active ?
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_init_bc_coeffs_solve(cs_bc_coeffs_solve_t  &c,
-                        cs_lnum_t              n_b_faces,
-                        cs_lnum_t              stride,
-                        cs_alloc_mode_t        amode,
-                        bool                   limiter);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free boundary condition coefficients solve arrays.
- *
- * \param[in, out]  c          reference to structure to initialize.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_clear_bc_coeffs_solve(cs_bc_coeffs_solve_t  &c);
 
 #endif /* cplusplus */
 

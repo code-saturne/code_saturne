@@ -165,7 +165,7 @@
  *                               If you sub-iter on Navier-Stokes, then
  *                               it allows to initialize by something else than
  *                               \c pvara (usually \c pvar= \c pvara)
- * \param[in]      bc_coeffs_v   boundary condition structure for the variable
+ * \param[in]      bc_coeffs     boundary condition structure for the variable
  * \param[in]      i_massflux    mass flux at interior faces
  * \param[in]      b_massflux    mass flux at boundary faces
  * \param[in]      i_viscm       \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -363,6 +363,18 @@ _equation_iterative_solve_strided(int                   idtvar,
 
     df_limiter_id
       = cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
+
+    /* Ensure BC coefficient arrays are allocated
+       we use a delayed allocation the default to Neumann more easily
+       when some arrays are not defined (and want to avoid cases where
+       the array is defined but not up to date). */
+
+    cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
+      (f->bc_coeffs,
+       n_b_faces,
+       f->dim,
+       cs_alloc_mode,
+       false);
   }
 
   /* Symmetric matrix, except if advection */
@@ -381,72 +393,10 @@ _equation_iterative_solve_strided(int                   idtvar,
       conv_diff_mg = true;
   }
 
-  /*==========================================================================
-   * Building of the "simplified" matrix
-   *==========================================================================*/
-
-  cs_matrix_t *a = cs_sles_default_get_matrix
-                     (f_id, var_name, stride, eb_size, symmetric);
-
-#if defined(HAVE_ACCEL)
-  {
-    /* For non-symmetric matrices, the current MG coarsening
-       algorithm needs to be able to access some matrix values on CPU. */
-    cs_alloc_mode_t amode = ctx.alloc_mode();
-    if (symmetric == false && conv_diff_mg && amode == CS_ALLOC_DEVICE)
-      amode = CS_ALLOC_HOST_DEVICE_SHARED;
-
-    cs_matrix_set_alloc_mode(a, amode);
-  }
-#endif
-
-  int tensorial_diffusion = 1;
-
-  if (idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION)
-    tensorial_diffusion = 2;
-
-  /* For steady computations, the diagonal is relaxed */
-  cs_real_t relaxp = (idtvar < 0) ? eqp->relaxv : 1.;
-  CS_PROFILE_MARK_LINE();
-
-  cs_matrix_compute_coeffs<stride>(a,
-                                   f,
-                                   iconvp,
-                                   idiffp,
-                                   tensorial_diffusion,
-                                   ndircp,
-                                   eb_size,
-                                   thetap,
-                                   relaxp,
-                                   bc_coeffs,
-                                   fimp,
-                                   i_massflux,
-                                   b_massflux,
-                                   i_viscm,
-                                   b_viscm);
-
   /*===========================================================================
    * Iterative process to handle non orthogonalities (starting from the
    * second iteration).
    *===========================================================================*/
-
-  /* Allocate non reconstructed face value only if presence of limiter */
-
-  const int ircflp = eqp->ircflu;
-  const int ircflb = (ircflp > 0) ? eqp->b_diff_flux_rc : 0;
-  CS_PROFILE_MARK_LINE();
-
-  cs_bc_coeffs_solve_t bc_coeffs_solve;
-  cs_init_bc_coeffs_solve(bc_coeffs_solve,
-                          n_b_faces,
-                          stride,
-                          amode,
-                          (df_limiter_id > -1 || ircflb != 1));
-
-  var_t *val_ip = (var_t *)bc_coeffs_solve.val_ip;
-  var_t *val_f = (var_t *)bc_coeffs_solve.val_f;
-  var_t *flux =  (var_t *)bc_coeffs_solve.flux;
-  var_t *flux_lim =  (var_t *)bc_coeffs_solve.flux_lim;
 
   /* Application of the theta-scheme */
 
@@ -466,8 +416,7 @@ _equation_iterative_solve_strided(int                   idtvar,
     eqp->theta = thetex;
 
     cs_boundary_conditions_update_bc_coeff_face_values_strided<stride>
-      (ctx, f, bc_coeffs, inc, eqp, pvara,
-       val_ip, val_f, flux, flux_lim);
+      (ctx, f, bc_coeffs, inc, eqp, pvara);
     CS_PROFILE_MARK_LINE();
 
     if (stride == 3)
@@ -480,8 +429,6 @@ _equation_iterative_solve_strided(int                   idtvar,
                         nullptr, /* pvar == pvara */
                         (const cs_real_3_t *)pvara,
                         bc_coeffs,
-                        (const cs_real_3_t *)val_f,
-                        (const cs_real_3_t *)flux_lim,
                         i_massflux,
                         b_massflux,
                         i_visc,
@@ -505,8 +452,6 @@ _equation_iterative_solve_strided(int                   idtvar,
                         nullptr, /* pvar == pvara */
                         (const cs_real_6_t *)pvara,
                         bc_coeffs,
-                        (const cs_real_6_t *)val_f,
-                        (const cs_real_6_t *)flux_lim,
                         i_massflux,
                         b_massflux,
                         i_visc,
@@ -555,18 +500,20 @@ _equation_iterative_solve_strided(int                   idtvar,
   CS_PROFILE_MARK_LINE();
 
   /* In the following, cs_balance is called with inc=1,
-   * except for Weight Matrix (nswrsp=-1) */
+   * except for Weight Matrix (nswrsm=-1) */
   inc = 1;
 
+  //FIXME correct this trick by declaring a specific variable with homogeneous
+  // Neumann
   if (eqp->nswrsm == -1) {
     eqp->nswrsm = 1;
     inc = 0;
   }
   CS_PROFILE_MARK_LINE();
 
+  //TODO FIXME use the simplified function
   cs_boundary_conditions_update_bc_coeff_face_values_strided<stride>
-    (ctx, f, bc_coeffs, inc, eqp, pvar,
-     val_ip, val_f, flux, flux_lim);
+    (ctx, f, bc_coeffs, inc, eqp, pvar);
 
   CS_PROFILE_MARK_LINE();
 
@@ -593,8 +540,6 @@ _equation_iterative_solve_strided(int                   idtvar,
                       (cs_real_3_t *)pvar,
                       (const cs_real_3_t *)pvara,
                       bc_coeffs,
-                      (const cs_real_3_t *)val_f,
-                      (const cs_real_3_t *)flux_lim,
                       i_massflux,
                       b_massflux,
                       i_visc,
@@ -618,8 +563,6 @@ _equation_iterative_solve_strided(int                   idtvar,
                       (cs_real_6_t *)pvar,
                       (const cs_real_6_t *)pvara,
                       bc_coeffs,
-                      (const cs_real_6_t *)val_f,
-                      (const cs_real_6_t *)flux_lim,
                       i_massflux,
                       b_massflux,
                       i_visc,
@@ -689,6 +632,63 @@ _equation_iterative_solve_strided(int                   idtvar,
     });
   }
 
+  ctx.wait();
+
+  CS_PROFILE_MARK_LINE();
+  cs_parall_sum(1, CS_DOUBLE, &residu);
+
+  /* --- Right hand side residual */
+  residu = sqrt(residu);
+
+  /*==========================================================================
+   * Building of the "simplified" matrix
+   * WARNING:
+   * For internal coupling, matrix should be built AFTER BC coeffs are updated
+   * (in balance routines).
+   *==========================================================================*/
+
+  cs_matrix_t *a = cs_sles_default_get_matrix
+                     (f_id, var_name, stride, eb_size, symmetric);
+
+#if defined(HAVE_ACCEL)
+  {
+    /* For non-symmetric matrices, the current MG coarsening
+       algorithm needs to be able to access some matrix values on CPU. */
+    cs_alloc_mode_t amode = ctx.alloc_mode();
+    if (symmetric == false && conv_diff_mg && amode == CS_ALLOC_DEVICE)
+      amode = CS_ALLOC_HOST_DEVICE_SHARED;
+
+    cs_matrix_set_alloc_mode(a, amode);
+  }
+#endif
+
+  int tensorial_diffusion = 1;
+
+  if (idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION)
+    tensorial_diffusion = 2;
+
+  /* For steady computations, the diagonal is relaxed */
+  cs_real_t relaxp = (idtvar < 0) ? eqp->relaxv : 1.;
+  CS_PROFILE_MARK_LINE();
+
+  cs_matrix_compute_coeffs<stride>(a,
+                                   f,
+                                   iconvp,
+                                   idiffp,
+                                   tensorial_diffusion,
+                                   ndircp,
+                                   eb_size,
+                                   thetap,
+                                   relaxp,
+                                   bc_coeffs,
+                                   fimp,
+                                   i_massflux,
+                                   b_massflux,
+                                   i_viscm,
+                                   b_viscm);
+
+  /*=========================================================================*/
+
   // Number of local ghost cells may be different from that of mesh
   // in case of internal coupling.
   CS_PROFILE_MARK_LINE();
@@ -700,12 +700,6 @@ _equation_iterative_solve_strided(int                   idtvar,
 
   ctx.wait();
   CS_PROFILE_MARK_LINE();
-
-  cs_parall_sum(1, CS_DOUBLE, &residu);
-  CS_PROFILE_MARK_LINE();
-
-  /* --- Right hand side residual */
-  residu = sqrt(residu);
 
   /* Normalization residual
      (L2-norm of B.C. + source terms + non-orthogonality terms)
@@ -884,8 +878,7 @@ _equation_iterative_solve_strided(int                   idtvar,
 
       /* update with dpvar */
       cs_boundary_conditions_update_bc_coeff_face_values_strided<stride>
-        (ctx, nullptr, bc_coeffs, inc, eqp, dpvar,
-         val_ip, val_f, flux, flux_lim);
+        (ctx, nullptr, bc_coeffs, inc, eqp, dpvar);
       CS_PROFILE_MARK_LINE();
 
       if (stride == 3)
@@ -898,8 +891,6 @@ _equation_iterative_solve_strided(int                   idtvar,
                           (cs_real_3_t *)dpvar,
                           nullptr, /* dpvar */
                           bc_coeffs,
-                          (const cs_real_3_t *)val_f,
-                          (const cs_real_3_t *)flux_lim,
                           i_massflux,
                           b_massflux,
                           i_visc,
@@ -923,8 +914,6 @@ _equation_iterative_solve_strided(int                   idtvar,
                           (cs_real_6_t *)dpvar,
                           nullptr, /* dpvar */
                           bc_coeffs,
-                          (const cs_real_6_t *)val_f,
-                          (const cs_real_6_t *)flux_lim,
                           i_massflux,
                           b_massflux,
                           i_visc,
@@ -1102,8 +1091,7 @@ _equation_iterative_solve_strided(int                   idtvar,
 
     /* Update face value for gradient and convection-diffusion */
     cs_boundary_conditions_update_bc_coeff_face_values_strided<stride>
-      (ctx, f, bc_coeffs, inc, eqp, pvar,
-       val_ip, val_f, flux, flux_lim);
+      (ctx, f, bc_coeffs, inc, eqp, pvar);
 
     CS_PROFILE_MARK_LINE();
 
@@ -1117,8 +1105,6 @@ _equation_iterative_solve_strided(int                   idtvar,
                         (cs_real_3_t *)pvar,
                         (const cs_real_3_t *)pvara,
                         bc_coeffs,
-                        (const cs_real_3_t *)val_f,
-                        (const cs_real_3_t *)flux_lim,
                         i_massflux,
                         b_massflux,
                         i_visc,
@@ -1142,8 +1128,6 @@ _equation_iterative_solve_strided(int                   idtvar,
                         (cs_real_6_t *)pvar,
                         (const cs_real_6_t *)pvara,
                         bc_coeffs,
-                        (const cs_real_6_t *)val_f,
-                        (const cs_real_6_t *)flux_lim,
                         i_massflux,
                         b_massflux,
                         i_visc,
@@ -1242,7 +1226,7 @@ _equation_iterative_solve_strided(int                   idtvar,
       cs_boundary_conditions_update_bc_coeff_face_values_strided<stride>
         (ctx, f, bc_coeffs,
          1, // inc
-         eqp, pvar, val_ip, val_f, flux, flux_lim);
+         eqp, pvar);
     }
     inc = 1;
     CS_PROFILE_MARK_LINE();
@@ -1258,8 +1242,6 @@ _equation_iterative_solve_strided(int                   idtvar,
                       (cs_real_3_t *)pvar,
                       (const cs_real_3_t *)pvara,
                       bc_coeffs,
-                      (const cs_real_3_t *)val_f,
-                      (const cs_real_3_t *)flux_lim,
                       i_massflux,
                       b_massflux,
                       i_visc,
@@ -1286,25 +1268,15 @@ _equation_iterative_solve_strided(int                   idtvar,
   }
 
   /*==========================================================================
-   * Store face value for gradient and diffusion
+   * Update face values for gradient and diffusion
+   * Note: this is not exactly consistent with the scheme,
+   * as the last increment has not been recontructed
    *==========================================================================*/
 
   CS_PROFILE_MARK_LINE();
 
-  cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
-    (bc_coeffs,
-     n_b_faces,
-     stride,
-     cs_alloc_mode,
-     (df_limiter_id > -1 || ircflb != 1));
-
-  var_t *val_f_updated = (var_t *)bc_coeffs->val_f;
-  var_t *flux_updated = (var_t *)bc_coeffs->flux;
-  var_t *flux_lim_updated = (var_t *)bc_coeffs->flux_lim;
-
   cs_boundary_conditions_update_bc_coeff_face_values_strided<stride>
-    (ctx, f, bc_coeffs, 1, eqp, pvar, val_ip,
-     val_f_updated, flux_updated, flux_lim_updated);
+    (ctx, f, bc_coeffs, 1, eqp, pvar);
 
   /* Save diagonal in case we want to use it */
 
@@ -1339,7 +1311,6 @@ _equation_iterative_solve_strided(int                   idtvar,
     CS_FREE(rhs0);
   }
 
-  cs_clear_bc_coeffs_solve(bc_coeffs_solve);
   CS_PROFILE_MARK_LINE();
 }
 
@@ -1592,59 +1563,10 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   /* Initialization for test before matrix vector product
      for computation of initial residual */
 
-  /*============================================================================
-   * 1.  Building of the "simplified" matrix
-   *==========================================================================*/
-
-  cs_matrix_t *a = cs_sles_default_get_matrix(f_id, var_name, 1, 1, symmetric);
-
-#if defined(HAVE_ACCEL)
-  {
-    /* For non-symmetric matrices, the current MG coarsening
-       algorithm needs to be able to access some matrix values on CPU. */
-    cs_alloc_mode_t amode = ctx.alloc_mode();
-    if (symmetric == false && conv_diff_mg && amode == CS_ALLOC_DEVICE)
-      amode = CS_ALLOC_HOST_DEVICE_SHARED;
-
-    cs_matrix_set_alloc_mode(a, amode);
-  }
-#endif
-
-  /* For steady computations, the diagonal is relaxed */
-  cs_real_t relaxp = (idtvar < 0) ? eqp->relaxv : 1.;
-
-  cs_matrix_compute_coeffs(a,
-                           f,
-                           iconvp,
-                           idiffp,
-                           ndircp,
-                           thetap,
-                           relaxp,
-                           imucpp,
-                           bc_coeffs,
-                           rovsdt,
-                           i_massflux,
-                           b_massflux,
-                           i_viscm,
-                           b_viscm,
-                           xcpp);
-
   /*==========================================================================
-   * 2. Iterative process to handle non orthogonalities (starting from the
-   *    second iteration).
+   * Iterative process to handle non orthogonalities (starting from the
+   * second iteration).
    *==========================================================================*/
-
-  /* Allocate non reconstructed face value only if presence of limiter */
-
-  cs_bc_coeffs_solve_t bc_coeffs_solve;
-  cs_init_bc_coeffs_solve(bc_coeffs_solve,
-                          n_b_faces,
-                          1,
-                          amode,
-                          false);
-
-  cs_real_t *val_f = bc_coeffs_solve.val_f;
-  cs_real_t *flux = bc_coeffs_solve.flux;
 
   /* Prepare the computation of fluxes at faces if needed */
 
@@ -1686,6 +1608,13 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
       ctx_c.wait();
     }
+
+    cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
+      (f->bc_coeffs,
+       n_b_faces,
+       f->dim,
+       cs_alloc_mode,
+       false);
   }
 
   /* Application of the theta-scheme */
@@ -1718,8 +1647,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
        true, true,
        0, nullptr, // hyd_p_flag, f_ext
        nullptr, viscel, weighb,
-       pvara,
-       val_f, flux);
+       pvara);
 
     /* Compute - Con-Diff((1-theta) Y^n )
      * where Y^n is pvara
@@ -1734,8 +1662,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                       nullptr, /* pvar == pvara */
                       pvara,
                       bc_coeffs,
-                      val_f,
-                      flux,
                       i_massflux,
                       b_massflux,
                       i_visc,
@@ -1773,6 +1699,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
      except for Weight Matrix (nswrsp=-1) */
   inc = 1;
 
+  //FIXME rm do it in a different manner
   if (eqp->nswrsm == -1) {
     eqp->nswrsm = 1;
     inc = 0;
@@ -1796,8 +1723,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
      true, true,
      false, nullptr, // hyd_p_flag, f_ext
      nullptr, viscel, weighb,
-     pvar,
-     val_f, flux);
+     pvar);
 
   /* Compute - Con-Diff(theta Y^k )
    * where Y^k is pvar (possible over iteration for
@@ -1811,8 +1737,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                     pvar,
                     pvara,
                     bc_coeffs,
-                    val_f,
-                    flux,
                     i_massflux,
                     b_massflux,
                     i_visc,
@@ -1858,6 +1782,48 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   /* --- Right hand side residual */
   residu = sqrt(residu);
+
+  /*============================================================================
+   *  Building of the "simplified" matrix
+   * WARNING:
+   * For internal coupling, matrix should be built AFTER BC coeffs are updated
+   * (in balance routines).
+   *==========================================================================*/
+
+  cs_matrix_t *a = cs_sles_default_get_matrix(f_id, var_name, 1, 1, symmetric);
+
+#if defined(HAVE_ACCEL)
+  {
+    /* For non-symmetric matrices, the current MG coarsening
+       algorithm needs to be able to access some matrix values on CPU. */
+    cs_alloc_mode_t amode = ctx.alloc_mode();
+    if (symmetric == false && conv_diff_mg && amode == CS_ALLOC_DEVICE)
+      amode = CS_ALLOC_HOST_DEVICE_SHARED;
+
+    cs_matrix_set_alloc_mode(a, amode);
+  }
+#endif
+
+  /* For steady computations, the diagonal is relaxed */
+  cs_real_t relaxp = (idtvar < 0) ? eqp->relaxv : 1.;
+
+  cs_matrix_compute_coeffs(a,
+                           f,
+                           iconvp,
+                           idiffp,
+                           ndircp,
+                           thetap,
+                           relaxp,
+                           imucpp,
+                           bc_coeffs,
+                           rovsdt,
+                           i_massflux,
+                           b_massflux,
+                           i_viscm,
+                           b_viscm,
+                           xcpp);
+
+
 
   if (normp > 0.)
     rnorm = normp;
@@ -2015,8 +1981,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
          true, true,
          false, nullptr, // hyd_p_flag, f_ext
          nullptr, viscel, weighb,
-         dpvar,
-         val_f, flux);
+         dpvar);
 
       cs_balance_scalar(idtvar,
                         lvar,
@@ -2027,8 +1992,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                         dpvar,
                         nullptr, /* dpvara == dpvar */
                         bc_coeffs,
-                        val_f,
-                        flux,
                         i_massflux,
                         b_massflux,
                         i_visc,
@@ -2176,8 +2139,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
        true, true,
        false, nullptr, // hyd_p_flag, f_ext
        nullptr, viscel, weighb,
-       pvar,
-       val_f, flux);
+       pvar);
 
     cs_balance_scalar(idtvar,
                       f_id,
@@ -2188,8 +2150,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                       pvar,
                       pvara,
                       bc_coeffs,
-                      val_f,
-                      flux,
                       i_massflux,
                       b_massflux,
                       i_visc,
@@ -2258,9 +2218,9 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
      balance equation */
 
   if (i_flux != nullptr) {
-    inc  = 1;
     imasac = 0; /* mass accumulation not taken into account */
 
+    /* Last increment */
     inc = 0;
     cs_equation_param_t eqp_loc;
     int k_id = cs_field_key_id("var_cal_opt");
@@ -2279,8 +2239,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
        true, true,
        false, nullptr, // hyd_p_flag, f_ext
        nullptr, viscel, weighb,
-       dpvar,
-       val_f, flux);
+       dpvar);
 
     cs_face_convection_scalar(idtvar,
                               f_id,
@@ -2292,7 +2251,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                               pvara,
                               icvfli,
                               bc_coeffs,
-                              val_f,
                               i_massflux,
                               b_massflux,
                               i_flux_0,
@@ -2347,8 +2305,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
        true, true,
        false, nullptr, // hyd_p_flag, f_ext
        nullptr, viscel, weighb,
-       pvar,
-       val_f, flux);
+       pvar);
 
     cs_balance_scalar(idtvar,
                       f_id,
@@ -2359,8 +2316,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
                       pvar,
                       pvara,
                       bc_coeffs,
-                      val_f,
-                      flux,
                       i_massflux,
                       b_massflux,
                       i_visc,
@@ -2385,18 +2340,10 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   }
 
   /*==========================================================================
-   * Store face value for gradient and diffusion
+   * Update face values for gradient and diffusion
+   * Note: this is not exactly consistent with the scheme,
+   * as the last increment has not been recontructed
    *==========================================================================*/
-
-  cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
-    (bc_coeffs,
-     n_b_faces,
-     1,
-     cs_alloc_mode,
-     false);
-
-  cs_real_t *val_f_updated = bc_coeffs->val_f;
-  cs_real_t *flux_updated = bc_coeffs->flux;
 
   cs_boundary_conditions_update_bc_coeff_face_values
     (ctx, f, bc_coeffs, 1,
@@ -2404,8 +2351,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
      true, true,
      false, nullptr, // hyd_p_flag, f_ext
      nullptr, viscel, weighb,
-     pvar,
-     val_f_updated, flux_updated);
+     pvar);
 
   /*==========================================================================
    * 4. Free solver setup
@@ -2425,7 +2371,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     CS_FREE(dpvarm1);
     CS_FREE(rhs0);
   }
-  cs_clear_bc_coeffs_solve(bc_coeffs_solve);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2492,7 +2437,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  *                               If you sub-iter on Navier-Stokes, then
  *                               it allows to initialize by something else than
  *                               \c pvara (usually \c pvar= \c pvara)
- * \param[in, out] bc_coeffs_v   boundary condition structure for the variable
+ * \param[in, out] bc_coeffs     boundary condition structure for the variable
  * \param[in]      i_massflux    mass flux at interior faces
  * \param[in]      b_massflux    mass flux at boundary faces
  * \param[in]      i_viscm       \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -2534,7 +2479,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                    cs_equation_param_t  *eqp,
                                    const cs_real_t       pvara[][3],
                                    const cs_real_t       pvark[][3],
-                                   cs_field_bc_coeffs_t *bc_coeffs_v,
+                                   cs_field_bc_coeffs_t *bc_coeffs,
                                    const cs_real_t       i_massflux[],
                                    const cs_real_t       b_massflux[],
                                    const cs_real_t       i_viscm[],
@@ -2562,7 +2507,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
                                        eqp,
                                        pvara,
                                        pvark,
-                                       bc_coeffs_v,
+                                       bc_coeffs,
                                        i_massflux,
                                        b_massflux,
                                        i_viscm,
@@ -2640,7 +2585,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
  *                               If you sub-iter on Navier-Stokes, then
  *                               it allows to initialize by something else than
  *                               pvara (usually pvar=pvara)
- * \param[in,out] bc_coeffs_ts  boundary condition structure for the variable
+ * \param[in,out] bc_coeffs     boundary condition structure for the variable
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_viscm       \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -2675,7 +2620,7 @@ cs_equation_iterative_solve_tensor(int                         idtvar,
                                    cs_equation_param_t        *eqp,
                                    const cs_real_t             pvara[][6],
                                    const cs_real_t             pvark[][6],
-                                   cs_field_bc_coeffs_t       *bc_coeffs_ts,
+                                   cs_field_bc_coeffs_t       *bc_coeffs,
                                    const cs_real_t             i_massflux[],
                                    const cs_real_t             b_massflux[],
                                    const cs_real_t             i_viscm[],
@@ -2700,7 +2645,7 @@ cs_equation_iterative_solve_tensor(int                         idtvar,
                                        eqp,
                                        pvara,
                                        pvark,
-                                       bc_coeffs_ts,
+                                       bc_coeffs,
                                        i_massflux,
                                        b_massflux,
                                        i_viscm,

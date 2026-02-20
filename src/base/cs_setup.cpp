@@ -3423,10 +3423,6 @@ _additional_fields_stage_4(void)
   // Key id for gradient weighting
   const int k_wgrec = cs_field_key_id("gradient_weighting_id");
 
-  // Key id for limiter
-  const int k_cvlim = cs_field_key_id("convection_limiter_id");
-  const int k_dflim = cs_field_key_id("diffusion_limiter_id");
-
   // Key id for slope test
   const int k_slts = cs_field_key_id("slope_test_upwind_id");
 
@@ -3440,7 +3436,7 @@ _additional_fields_stage_4(void)
     if (!(f->type & CS_FIELD_VARIABLE) || f->type & CS_FIELD_CDO)
       continue;
 
-    const cs_equation_param_t *eqp_f = cs_field_get_equation_param_const(f);
+    cs_equation_param_t *eqp_f = cs_field_get_equation_param(f);
 
     /* Add weight fields for variables to compute gradient */
 
@@ -3503,7 +3499,7 @@ _additional_fields_stage_4(void)
 
     /* Diffusion limiter */
 
-    const int ikdf = cs_field_get_key_int(f, k_dflim);
+    const int ikdf = eqp_f->diffusion_limiter_id;
     if (ikdf != -1) {
       char f_name[128];
       snprintf(f_name, 60, "%s_diff_lim", f->name);
@@ -3517,12 +3513,12 @@ _additional_fields_stage_4(void)
 
       cs_field_set_key_int(f_dflim, k_log, 1);
       cs_field_set_key_int(f_dflim, k_vis, CS_POST_ON_LOCATION);
-      cs_field_set_key_int(f, k_dflim, f_dflim->id);
+      eqp_f->diffusion_limiter_id = f_dflim->id;
     }
 
     /* Convection limiter */
 
-    const int icv = cs_field_get_key_int(f, k_cvlim);
+    const int icv = eqp_f->convection_limiter_id;
     if (eqp_f->isstpc == 2 || icv != -1) {
       char f_name[128];
       snprintf(f_name, 127, "%s_conv_lim", f->name);
@@ -3535,7 +3531,7 @@ _additional_fields_stage_4(void)
                                             false);
 
       cs_field_set_key_int(f_cvlim, k_log, 1);
-      cs_field_set_key_int(f, k_cvlim, f_cvlim->id);
+      eqp_f->convection_limiter_id = f_cvlim->id;
     }
 
   } /* End of loop on fields */

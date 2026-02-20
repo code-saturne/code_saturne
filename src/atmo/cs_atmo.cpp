@@ -380,16 +380,6 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   cs_real_t *cofaf = f->bc_coeffs->af;
   cs_real_t *cofbf = f->bc_coeffs->bf;
 
-  cs_bc_coeffs_solve_t bc_coeffs_solve;
-  cs_init_bc_coeffs_solve(bc_coeffs_solve,
-                          m->n_b_faces,
-                          1, // stride
-                          cs_alloc_mode,
-                          false);
-
-  cs_real_t *val_f = bc_coeffs_solve.val_f;
-  cs_real_t *flux = bc_coeffs_solve.flux;
-
   /*==========================================================================
    * 0.  Initialization
    *==========================================================================*/
@@ -520,6 +510,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   const bool need_compute_bc_grad_p = (eqp_p->ircflu) ? true : false;
 
   /* Update pvar BC */
+  //TODO MF use standar one!
   cs_boundary_conditions_update_bc_coeff_face_values
     (ctx,
      f,
@@ -533,9 +524,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
      c_visc,
      nullptr, // vitenp
      nullptr, // weighb
-     pvar,
-     val_f,
-     flux);
+     pvar);
 
   /* Initial Right-Hand-Side */
   cs_diffusion_potential(f,
@@ -548,8 +537,6 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
                          next_fext,
                          pvar,
                          f->bc_coeffs,
-                         val_f,
-                         flux,
                          i_viscm,
                          b_viscm,
                          c_visc,
@@ -604,9 +591,7 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
        c_visc,
        nullptr, // vitenp
        nullptr, // weighb
-       pvar,
-       val_f,
-       flux);
+       pvar);
 
     cs_diffusion_potential(f,
                            eqp_p,
@@ -618,8 +603,6 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
                            next_fext,
                            pvar,
                            f->bc_coeffs,
-                           val_f,
-                           flux,
                            i_viscm,
                            b_viscm,
                            c_visc,
@@ -656,7 +639,6 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   CS_FREE(rovsdt);
   CS_FREE(c_visc);
 
-  cs_clear_bc_coeffs_solve(bc_coeffs_solve);
 }
 
 /*----------------------------------------------------------------------------*/

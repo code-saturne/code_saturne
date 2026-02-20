@@ -969,6 +969,8 @@ cs_equation_param_create(const char         *name,
   eqp->d_gradient_r = 2;
   eqp->b_rc_gradient = 2;
   eqp->b_diff_flux_rc = 1;
+  eqp->diffusion_limiter_id = -1;
+  eqp->convection_limiter_id = -1;
 
   /* Boundary conditions structure.
      One assigns a boundary condition by default */
@@ -1158,6 +1160,8 @@ cs_equation_param_copy_from(const cs_equation_param_t *ref,
   dst->rc_clip_factor = ref->rc_clip_factor;
   dst->b_rc_clip_factor = ref->b_rc_clip_factor;
   dst->relaxv = ref->relaxv;
+  dst->diffusion_limiter_id  = ref->diffusion_limiter_id ;
+  dst->convection_limiter_id = ref->convection_limiter_id;
 
   /* Boundary conditions structure */
 

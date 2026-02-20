@@ -1619,7 +1619,7 @@ cs_function_boundary_nusselt(int               location_id,
     /* Boundary condition pointers for diffusion with coupling */
 
     cs_real_t *rcodcl2 = f_t->bc_coeffs->rcodcl2;
-    cs_real_t *hint = f_t->bc_coeffs->hint;
+    cs_real_t *hint = f_t->bc_coeffs->h_int_tot;
 
     /* Compute variable values at boundary faces */
 

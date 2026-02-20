@@ -496,7 +496,7 @@ _distribute_fields(cs_all_to_all_t  *cd,
     _distribute_bc_coeff(bfd, n_b_faces_ini, b_mult, b_copy, &fc->bc,
                          b_face_order, b_face_n2o);
 
-    _distribute_bc_coeff(bfd, n_b_faces_ini, 1, a_copy, &fc->hint,
+    _distribute_bc_coeff(bfd, n_b_faces_ini, 1, a_copy, &fc->h_int_tot,
                          b_face_order, b_face_n2o);
 
     bool limited_val_f = fc->val_f == fc->val_f_lim;
@@ -510,15 +510,15 @@ _distribute_fields(cs_all_to_all_t  *cd,
                            &fc->val_f_lim, b_face_order, b_face_n2o);
     }
 
-    bool limited_flux = fc->flux == fc->flux_lim;
-    _distribute_bc_coeff(bfd, n_b_faces_ini, field->dim, a_copy, &fc->flux,
+    bool limited_flux = fc->flux_diff == fc->flux_diff_lim;
+    _distribute_bc_coeff(bfd, n_b_faces_ini, field->dim, a_copy, &fc->flux_diff,
                          b_face_order, b_face_n2o);
     if (limited_flux) {
-      fc->flux_lim = fc->flux;
+      fc->flux_diff_lim = fc->flux_diff;
     }
     else {
       _distribute_bc_coeff(bfd, n_b_faces_ini, field->dim, a_copy,
-                           &fc->flux_lim, b_face_order, b_face_n2o);
+                           &fc->flux_diff_lim, b_face_order, b_face_n2o);
     }
 
     _distribute_bc_coeff(bfd, n_b_faces_ini, field->dim, a_copy,

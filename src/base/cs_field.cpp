@@ -103,9 +103,9 @@ BEGIN_C_DECLS
   \var cs_field_bc_coeffs_t::b
        Implicit coefficient
   \var cs_field_bc_coeffs_t::af
-       Explicit coefficient for flux
+       Explicit coefficient for diffusive flux
   \var cs_field_bc_coeffs_t::bf
-       Implicit coefficient for flux
+       Implicit coefficient for diffusive flux
   \var cs_field_bc_coeffs_t::ad
        Explicit coefficient for divergence
   \var cs_field_bc_coeffs_t::bd
@@ -1417,6 +1417,17 @@ cs_field_bc_coeffs_init(cs_field_bc_coeffs_t  *bc_coeffs)
   bc_coeffs->rcodcl2 = nullptr;
   bc_coeffs->rcodcl3 = nullptr;
 
+  bc_coeffs->h_int_tot = nullptr;
+
+  bc_coeffs->val_f = nullptr;
+  //TODO lim values should be removed
+  bc_coeffs->val_f_lim = nullptr;
+  bc_coeffs->flux_diff = nullptr;
+  //TODO lim values should be removed
+  bc_coeffs->flux_diff_lim = nullptr;
+
+  bc_coeffs->val_f_pre = nullptr;
+
   bc_coeffs->a = nullptr;
   bc_coeffs->b = nullptr;
   bc_coeffs->af = nullptr;
@@ -1425,15 +1436,6 @@ cs_field_bc_coeffs_init(cs_field_bc_coeffs_t  *bc_coeffs)
   bc_coeffs->bd = nullptr;
   bc_coeffs->ac = nullptr;
   bc_coeffs->bc = nullptr;
-
-  bc_coeffs->val_f = nullptr;
-  bc_coeffs->val_f_lim = nullptr;
-  bc_coeffs->flux = nullptr;
-  bc_coeffs->flux_lim = nullptr;
-
-  bc_coeffs->val_f_pre = nullptr;
-
-  bc_coeffs->hint = nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1452,9 +1454,9 @@ cs_field_bc_coeffs_shallow_copy(const cs_field_bc_coeffs_t  *ref,
   memcpy(copy, ref, sizeof(cs_field_bc_coeffs_t));
 
   copy->val_f = nullptr;
-  copy->flux = nullptr;
+  copy->flux_diff = nullptr;
   copy->val_f_lim = nullptr;
-  copy->flux_lim = nullptr;
+  copy->flux_diff_lim = nullptr;
   copy->val_f_pre = nullptr;
 }
 
@@ -1507,17 +1509,17 @@ cs_field_bc_coeffs_free_copy(const cs_field_bc_coeffs_t  *ref,
   if (copy->val_f != ref->val_f)
     CS_FREE(copy->val_f);
 
-  if (   copy->flux_lim != ref->flux_lim
-      && copy->flux_lim != copy->flux)
-    CS_FREE(copy->flux_lim);
-  if (copy->flux != ref->flux)
-    CS_FREE(copy->flux);
+  if (   copy->flux_diff_lim != ref->flux_diff_lim
+      && copy->flux_diff_lim != copy->flux_diff)
+    CS_FREE(copy->flux_diff_lim);
+  if (copy->flux_diff != ref->flux_diff)
+    CS_FREE(copy->flux_diff);
 
   if (copy->val_f_pre != ref->val_f_pre)
     CS_FREE(copy->val_f_pre);
 
-  if (copy->hint != ref->hint)
-    CS_FREE(copy->hint);
+  if (copy->h_int_tot != ref->h_int_tot)
+    CS_FREE(copy->h_int_tot);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1893,8 +1895,8 @@ cs_field_map_values(cs_field_t   *f,
  * \param[in]       have_conv_bc  if true, convection BC coefficients
  *                                (ac and bc)
  *                                are added
- * \param[in]       have_exch_bc  if true, exchange boundary coefficients (hint
- *                                and hext) are added
+ * \param[in]       have_exch_bc  if true, exchange boundary coefficients
+ *                               (h_int_tot and hext) are added
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1934,8 +1936,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
 
       f->bc_coeffs->val_f = nullptr;
       f->bc_coeffs->val_f_lim = nullptr;
-      f->bc_coeffs->flux = nullptr;
-      f->bc_coeffs->flux_lim = nullptr;
+      f->bc_coeffs->flux_diff = nullptr;
+      f->bc_coeffs->flux_diff_lim = nullptr;
 
       f->bc_coeffs->val_f_pre = nullptr;
 
@@ -1981,10 +1983,10 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_exch_bc) {
-        CS_MALLOC(f->bc_coeffs->hint, n_elts[0], cs_real_t);
+        CS_MALLOC(f->bc_coeffs->h_int_tot, n_elts[0], cs_real_t);
       }
       else {
-        f->bc_coeffs->hint = nullptr;
+        f->bc_coeffs->h_int_tot = nullptr;
       }
 
     }
@@ -2027,10 +2029,10 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_exch_bc) {
-        CS_MALLOC_HD(f->bc_coeffs->hint, n_elts[0], cs_real_t, amode);
+        CS_MALLOC_HD(f->bc_coeffs->h_int_tot, n_elts[0], cs_real_t, amode);
       }
       else {
-        CS_FREE(f->bc_coeffs->hint);
+        CS_FREE(f->bc_coeffs->h_int_tot);
       }
 
     }
@@ -2175,10 +2177,10 @@ cs_field_init_bc_coeffs(cs_field_t  *f)
       }
     }
 
-    if (f->bc_coeffs->hint != nullptr) {
-      cs_real_t *hint = f->bc_coeffs->hint;
+    if (f->bc_coeffs->h_int_tot != nullptr) {
+      cs_real_t *h_int_tot = f->bc_coeffs->h_int_tot;
       ctx.parallel_for(n_elts[0], [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
-        hint[i] = 0.;
+        h_int_tot[i] = 0.;
       });
     }
 
@@ -2325,14 +2327,14 @@ cs_field_destroy_all(void)
       CS_FREE(f->bc_coeffs->bd);
       CS_FREE(f->bc_coeffs->ac);
       CS_FREE(f->bc_coeffs->bc);
-      CS_FREE(f->bc_coeffs->hint);
+      CS_FREE(f->bc_coeffs->h_int_tot);
 
       if (f->bc_coeffs->val_f_lim != f->bc_coeffs->val_f) {
         CS_FREE(f->bc_coeffs->val_f_lim);
-        CS_FREE(f->bc_coeffs->flux_lim);
+        CS_FREE(f->bc_coeffs->flux_diff_lim);
       }
       CS_FREE(f->bc_coeffs->val_f);
-      CS_FREE(f->bc_coeffs->flux);
+      CS_FREE(f->bc_coeffs->flux_diff);
       CS_FREE(f->bc_coeffs->val_f_pre);
 
       CS_FREE(f->bc_coeffs);

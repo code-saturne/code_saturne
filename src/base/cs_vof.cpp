@@ -311,7 +311,7 @@ cs_f_vof_deshpande_drift_flux(void)
 static void
 _smoothe(const cs_mesh_t              *m,
          const cs_mesh_quantities_t   *mq,
-         const cs_field_bc_coeffs_t   *bc_coeffs,
+         cs_field_bc_coeffs_t         *bc_coeffs,
          cs_real_t                    *restrict pvar)
 {
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;

@@ -375,7 +375,7 @@ cs_field_map_and_init_bcs(void)
   }
 
   /* BC coeffs also used for some fields which are not directly
-     saved variables (to shave values between various computation
+     saved variables (to save values between various computation
      stages). */
 
   const char *sp_names[] = {"pressure_increment", "lagr_time"};
@@ -414,8 +414,8 @@ cs_field_map_and_init_bcs(void)
 
     cs_equation_param_t *eqp = cs_field_get_equation_param(f);
 
-    if (eqp->icoupl > 0)
-      bc_flags[f_id*4 + 3] = true;
+    /* Internal exchange coefficient are always needed */
+    bc_flags[f_id*4 + 3] = true;
 
     if (f->dim == 6) {
       if (strcmp(f->name, "rij") == 0)

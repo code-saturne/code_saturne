@@ -271,6 +271,8 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
     if (itstar != nullptr)
       tstarp = itstar->val;
 
+    //TODO: why only for temperature? That should be exchanged for all
+    // coupled scalars
     if (eqp_sc->icoupl > 0) {
       CS_MALLOC(dist_theipb, n_b_faces, cs_real_t);
       cs_ic_field_dist_data_by_face_id(f_sc->id, 1, theipb, dist_theipb);
@@ -358,8 +360,8 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
   cs_real_t ypth = 0.0;
 
-  cs_real_t *hbnd, *hint, *yptp;
-  CS_MALLOC(hbnd, n_b_faces, cs_real_t);
+  cs_real_t *hint, *yptp;
+  cs_real_t *h_int_tot = f_sc->bc_coeffs->h_int_tot;
   CS_MALLOC(hint, n_b_faces, cs_real_t);
   CS_MALLOC(yptp, n_b_faces, cs_real_t);
 
@@ -467,7 +469,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
     /* User exchange coefficient */
     if (icodcl_sc[f_id] == CS_BC_IMPOSED_EXCHANGE_COEF) {
-      hflui = rcodcl2_sc[f_id];
+      hflui = h_int_tot[f_id];
       yptp[f_id] = hflui / prdtl * distbf / rkl / turb_schmidt;
     }
     /* Wall function and Dirichlet or Neumann on the scalar */
@@ -511,14 +513,14 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       hflui = hint[f_id];
     }
 
-    hbnd[f_id] = hflui; // = exchange_coeff, to save un new bc_coeffs structure.
+    h_int_tot[f_id] = hflui;
 
   } /* End loop en boundary faces */
 
   /* internal coupling */
   if (eqp_sc->icoupl > 0) {
     /* Update exchange coef. in coupling entity of current scalar */
-    cs_ic_field_set_exchcoeff(f_sc, hbnd);
+    cs_ic_field_set_exchcoeff(f_sc, h_int_tot);
   }
 
   /* Model-dependent fields */
@@ -562,9 +564,19 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
     const cs_real_t rkl = (ifcvsl < 0) ? visls_0 : viscls[c_id];
 
-    const cs_real_t pimp = rcodcl1_sc[f_id];
+    cs_real_t pimp = rcodcl1_sc[f_id];
+
+    //FIXME not only temperature!
+    /* Set correct val_ext for for coupled face
+     * Note: it could be passed directly through rcodcl1 */
+    if (dist_theipb != nullptr) {
+      if (cpl_faces[f_id]) {
+        pimp = dist_theipb[f_id];
+      }
+    }
+
     const cs_real_t hext = rcodcl2_sc[f_id];
-    cs_real_t heq = 0.0, cofimp = 0.0, hflui = hbnd[f_id], tplus = 0.0;
+    cs_real_t heq = 0.0, cofimp = 0.0, hflui = h_int_tot[f_id], tplus = 0.0;
 
     if (icodcl_vel[f_id] == CS_BC_WALL_MODELLED) {
 
@@ -613,15 +625,8 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
     } /* End hflui computation */
 
     /* Compute heq for smooth and rough wall */
-    if (   cs::abs(hext) > 0.5*cs_math_infinite_r
-        || icodcl_sc[f_id] == CS_BC_IMPOSED_EXCHANGE_COEF) {
+    if (cs::abs(hext) > 0.5*cs_math_infinite_r)
       heq = hflui;
-      if (eqp_sc->icoupl > 0 && icodcl_vel[f_id] == 5) {
-        /* ensure correct saving of flux in case of rad coupling */
-        if (cpl_faces[f_id])
-          heq = hflui * hext / (hflui + hext);
-      }
-    }
     else
       heq = hflui * hext / (hflui + hext);
 
@@ -714,21 +719,16 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       cofaf_sc[f_id] = - heq * pimp;
       cofbf_sc[f_id] =   heq;
 
-      /* Set coef for coupled face just to ensure relevant saving
-         of bfconv if rad transfer activated */
-      if (dist_theipb != nullptr && icodcl_vel[f_id] == CS_BC_WALL_MODELLED) {
-        if (cpl_faces[f_id]) {
-          /* Flux BCs */
-          cofaf_sc[f_id] = - heq * dist_theipb[f_id];
-          cofbf_sc[f_id] =   heq;
-        }
-      }
-
       /* Storage of the thermal exchange coefficient
          (conversion in case of energy or enthalpy)
          the exchange coefficient is in W/(m2 K)
          Useful for thermal coupling or radiative transfer */
 
+      // TODO this multiplication/ transformation by
+      // cp or cv should be done WHERE hbodr is used.
+      // Note that this can be simplified because h_int_tot
+      // is now stored.
+      // So hbord and bhconv can be replaced by the standard array
       cs_real_t exchange_coef = 0.0;
       if (   (cs_glob_rad_transfer_params->type >= 1 && f_sc == f_th)
           || isvhbl > -1) {
@@ -763,18 +763,6 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
         bfconv[f_id] = cofaf_sc[f_id] + cofbf_sc[f_id] * theipb[f_id];
       }
 
-      /* For the coupled faces with h_user
-       * (ie icodcl_sc[f_id] = CS_BC_IMPOSED_EXCHANGE_COEF)
-         reset to zero af/bf coeff.
-         By default icodcl(f_id,ivar)=3) for coupled faces */
-      if (eqp_sc->icoupl > 0 && icodcl_vel[f_id] == CS_BC_WALL_MODELLED) {
-        if (cpl_faces[f_id]) {
-          /* Flux BCs */
-          cofaf_sc[f_id] = 0.0;
-          cofbf_sc[f_id] = 0.0;
-        }
-      }
-
     } /* End if icodcl == CS_BC_WALL_MODELLED or CS_BC_ROUGH_WALL_MODELLED
          or CS_BC_IMPOSED_EXCHANGE_COEF */
 
@@ -796,6 +784,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
       cs_real_t phit = 0.0, hintt[6];
 
       if (icodcl_vel[f_id] == CS_BC_WALL_MODELLED) {
+        // TODO the next 3 conditions should give the same answer!
         if (   icodcl_sc[f_id] == CS_BC_WALL_MODELLED
             || icodcl_sc[f_id] == CS_BC_ROUGH_WALL_MODELLED
             || icodcl_sc[f_id] == CS_BC_IMPOSED_EXCHANGE_COEF)
@@ -892,7 +881,7 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
              || icodcl_sc[f_id] == CS_BC_IMPOSED_EXCHANGE_COEF)
          || ( icodcl_vel[f_id] == CS_BC_ROUGH_WALL_MODELLED
            && icodcl_sc[f_id] == CS_BC_ROUGH_WALL_MODELLED)) {
-
+        //FIXME this should always be the good formula.
         phit = cofaf_sc[f_id] + cofbf_sc[f_id] * var_ip[f_id];
       }
       else if (icodcl_sc[f_id] == CS_BC_DIRICHLET
@@ -904,12 +893,6 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
         phit = rcodcl3_sc[f_id]; /* = 0 if current face is coupled */
       else
         phit = 0.0;
-
-      /* if face is coupled */
-      if (eqp_sc->icoupl > 0 && icodcl_vel[f_id] == CS_BC_WALL_MODELLED) {
-        if (cpl_faces[f_id])
-          phit = heq * (theipb[f_id] - dist_theipb[f_id]);
-      }
 
       /* Note: past version was uet instead of uk for rough wall functions */
       const cs_real_t tet
@@ -935,7 +918,6 @@ _cs_boundary_conditions_set_coeffs_turb_scalar(cs_field_t  *f_sc,
 
   } /* End loop on faces */
 
-  CS_FREE(hbnd);
   CS_FREE(hint);
   CS_FREE(yptp);
   CS_FREE(dist_theipb);
@@ -1028,8 +1010,7 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
   if (f_rough_t != nullptr)
     bpro_rough_t = f_rough_t->val;
 
-  cs_real_t *hbnd;
-  CS_MALLOC(hbnd, n_b_faces, cs_real_t);
+  cs_real_t *h_int_tot = f_v->bc_coeffs->h_int_tot;
 
   cs_real_t *hint;
   CS_MALLOC(hint, n_b_faces, cs_real_t);
@@ -1110,7 +1091,7 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
     }
     /* User exchange coefficient */
     else if (icodcl_v[f_id] == CS_BC_IMPOSED_EXCHANGE_COEF)
-      hflui = rcodcl2_v[f_id];
+      hflui = h_int_tot[f_id];
 
     else {
       /* y+/T+ *PrT */
@@ -1118,14 +1099,14 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
       hflui = hint[f_id];
     }
 
-    hbnd[f_id] = hflui;
+    h_int_tot[f_id] = hflui;
 
   } /* End loop on boundary faces */
 
   /* internal coupling */
   if (eqp_v->icoupl > 0)
     /* Update exchange coef. in coupling entity of current scalar */
-    cs_ic_field_set_exchcoeff(f_v, hbnd);
+    cs_ic_field_set_exchcoeff(f_v, h_int_tot);
 
   /* Loop on boundary faces */
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
@@ -1144,8 +1125,9 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
     /* Physical quantities */
     const cs_real_t visclc = viscl[c_id];
     const cs_real_t visctc = visct[c_id];
+    // FIXME this works only because rcodcl2_v is not interleaved!
     const cs_real_t hext = rcodcl2_v[f_id];
-    const cs_real_t hflui = hbnd[f_id];
+    const cs_real_t hflui = h_int_tot[f_id];
 
     /* Local framework
        --------------- */
@@ -1267,7 +1249,6 @@ _cs_boundary_conditions_set_coeffs_turb_vector(cs_field_t  *f_v,
 
   } /* End loop on boudary faces */
 
-  CS_FREE(hbnd);
   CS_FREE(hint);
 }
 
@@ -1357,7 +1338,6 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   const int keysca  = cs_field_key_id("scalar_id");
   const int kscavr = cs_field_key_id("first_moment_id");
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
-  const int kdflim = cs_field_key_id("diffusion_limiter_id");
 
   const cs_real_t *rcodcl1_th = nullptr;
   const cs_real_t *rcodcl3_th = nullptr;
@@ -1490,6 +1470,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   cs_field_t *f_k = nullptr, *f_eps = nullptr, *f_rij = nullptr;
   cs_field_t *f_alpha = nullptr, *f_phi = nullptr, *f_f_bar = nullptr;
   cs_field_t *f_omg = nullptr, *f_nusa = nullptr;
+  cs_equation_param_t *eqp_k;
   cs_equation_param_t *eqp_rij = nullptr, *eqp_eps = nullptr, *eqp_nusa = nullptr;
 
   /* Turbulence variables */
@@ -1497,6 +1478,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   if (itytur == 2 || itytur == 5) {
     f_eps = CS_F_(eps);
     f_k = CS_F_(k);
+    if (f_k->type & CS_FIELD_VARIABLE)
+      eqp_k = cs_field_get_equation_param(f_k);
     if (model == CS_TURB_V2F_PHI) {
       f_phi = CS_F_(phi);
       f_f_bar = CS_F_(f_bar);
@@ -1533,9 +1516,9 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   if (f_eps != nullptr) {
     if (    (f_eps->type & CS_FIELD_VARIABLE)
         && !(f_eps->type & CS_FIELD_CDO)) {
-      int df_limiter_id = cs_field_get_key_int(f_eps, kdflim);
+      int df_limiter_id = eqp_eps->diffusion_limiter_id;
       if (df_limiter_id > -1)
-        df_limiter_k = cs_field_by_id(df_limiter_id)->val;
+        df_limiter_eps = cs_field_by_id(df_limiter_id)->val;
     }
   }
 
@@ -1543,7 +1526,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   if (f_k != nullptr) {
     if (    (f_k->type & CS_FIELD_VARIABLE)
         && !(f_k->type & CS_FIELD_CDO)) {
-      int df_limiter_id = cs_field_get_key_int(f_k, kdflim);
+      int df_limiter_id = eqp_k->diffusion_limiter_id;
       if (df_limiter_id > -1)
         df_limiter_k = cs_field_by_id(df_limiter_id)->val;
     }
@@ -1554,7 +1537,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   if (f_rij != nullptr) {
     if (    (f_rij->type & CS_FIELD_VARIABLE)
         && !(f_rij->type & CS_FIELD_CDO)) {
-      int df_limiter_id = cs_field_get_key_int(f_rij, kdflim);
+      int df_limiter_id = eqp_rij->diffusion_limiter_id;
       if (df_limiter_id > -1)
         df_limiter_rij = cs_field_by_id(df_limiter_id)->val;
     }
@@ -1647,6 +1630,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
   const int *icodcl_vel = vel->bc_coeffs->icodcl;
   cs_real_t *rcodcl1_vel = vel->bc_coeffs->rcodcl1;
+  cs_real_t *h_int_tot = vel->bc_coeffs->h_int_tot;
+  cs_equation_param_t *eqp_vel = cs_field_get_equation_param(vel);
 
   cs_real_t *coftur = nullptr, *hfltur = nullptr;
   if (cs_turbomachinery_get_model() == CS_TURBOMACHINERY_TRANSIENT) {
@@ -1955,6 +1940,9 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       hflui = romc * uk * duplus; // could be visclc / distbf * ypup;
     }
 
+    /* Save fluid exchange coefficient */
+    h_int_tot[f_id] = hflui;
+
     const cs_real_t hintv = (order == CS_TURB_SECOND_ORDER) ?
                             visclc / distbf:
                             (visclc + visctc) / distbf;
@@ -2021,6 +2009,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
        velocity after the geometry update
        (between prediction and correction step) */
 
+    // TODO hfltur can be removed using h_int_tot
     if (cs_turbomachinery_get_model() == CS_TURBOMACHINERY_TRANSIENT) {
       const int *irotce = cs_turbomachinery_get_cell_rotor_num();
       if (irotce[c_id] != 0) {
@@ -3299,6 +3288,11 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
 
   } /* End of loop over faces */
 
+  /* internal coupling */
+  /* Update exchange coef. in coupling entity of current field */
+  if (eqp_vel->icoupl > 0)
+    cs_ic_field_set_exchcoeff(vel, h_int_tot);
+
   /* Boundary conditions on the other scalars
      (Specific treatment for the variances of the scalars next to walls:
      see cs_boundary_condition_set_coeffs)
@@ -3372,8 +3366,6 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
      admissible bounds was encountered. */
 
   cs_real_t ypluli = cs_glob_wall_functions->ypluli;
-
-  cs_equation_param_t *eqp_vel = cs_field_get_equation_param(vel);
 
   if (eqp_vel->verbosity >= 0) {
 

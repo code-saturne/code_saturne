@@ -566,7 +566,7 @@ cs_les_mu_t_smago_dyn(void)
       cs_array_2d<cs_real_t> grads(n_cells_ext, 3, cs_alloc_mode);
       cs_array_2d<cs_real_t> gradsf(n_cells_ext, 3, cs_alloc_mode);
 
-      const cs_field_bc_coeffs_t *bc_coeffs = fld->bc_coeffs;
+      cs_field_bc_coeffs_t *bc_coeffs = fld->bc_coeffs;
 
       cs_real_t *cvar_sca = fld->val;
       cs_field_gradient_scalar(fld,

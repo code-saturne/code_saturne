@@ -6391,7 +6391,7 @@ _iterative_strided_gradient(const cs_mesh_t               *m,
                             int                            n_r_sweeps,
                             int                            verbosity,
                             cs_real_t                      epsrgp,
-                            const cs_field_bc_coeffs_t    *bc_coeffs_v,
+                            const cs_field_bc_coeffs_t    *bc_coeffs,
                             const cs_real_t     (*restrict pvar)[stride],
                             const cs_real_t               *c_weight,
                             cs_real_t          (*restrict grad)[stride][3])
@@ -6404,8 +6404,8 @@ _iterative_strided_gradient(const cs_mesh_t               *m,
   using a_t = cs_real_t[stride];
   using b_t = cs_real_t[stride][stride];
 
-  const a_t *restrict coefav = (const a_t *)bc_coeffs_v->a;
-  const b_t *restrict coefbv = (const b_t *)bc_coeffs_v->b;
+  const a_t *restrict coefav = (const a_t *)bc_coeffs->a;
+  const b_t *restrict coefbv = (const b_t *)bc_coeffs->b;
 
   int isweep = 0;
 
@@ -7592,12 +7592,14 @@ _gradient_scalar(cs_dispatch_context           &ctx,
                  const cs_real_3_t             *f_ext,
                  const cs_field_bc_coeffs_t    *bc_coeffs,
                  const cs_real_t                var[],
-                 const cs_real_t                val_f[],
                  const cs_real_t                c_weight[],
                  cs_real_t                    (*grad)[3],
                  cs_real_t                    (*bounds)[2])
 {
   CS_PROFILE_FUNC_RANGE();
+
+  /* get precomputed face value */
+  const cs_real_t *val_f = bc_coeffs->val_f;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -7843,9 +7845,8 @@ _gradient_scalar(cs_dispatch_context           &ctx,
  * \param[in]       clip_mode       clipping mode
  * \param[in]       epsilon         precision for iterative gradient calculation
  * \param[in]       clip_coeff      clipping coefficient
- * \param[in]       bc_coeffs_v     boundary condition structure
+ * \param[in]       bc_coeffs       boundary condition structure
  * \param[in]       var             gradient's base variable
- * \param[in]       val_f           face value for gradient computation
  * \param[in]       c_weight        weighted gradient coefficient variable,
  *                                  or nullptr
  * \param[out]      grad            gradient
@@ -7866,14 +7867,17 @@ _gradient_vector(const char                     *var_name,
                  int                             clip_mode,
                  double                          epsilon,
                  double                          clip_coeff,
-                 const cs_field_bc_coeffs_t     *bc_coeffs_v,
+                 const cs_field_bc_coeffs_t     *bc_coeffs,
                  const cs_real_3_t     *restrict var,
-                 const cs_real_t                 val_f[][3],
                  const cs_real_t       *restrict c_weight,
                  cs_real_33_t          *restrict grad,
                  cs_real_t                      *bounds)
 {
   CS_PROFILE_FUNC_RANGE();
+  using var_t = cs_real_t[3];
+
+  /* get precomputed face value */
+  const var_t *val_f = (var_t *)bc_coeffs->val_f;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_adjacencies_t *madj = cs_glob_mesh_adjacencies;
@@ -7891,7 +7895,7 @@ _gradient_vector(const char                     *var_name,
                                  fvq,
                                  halo_type,
                                  inc,
-                                 bc_coeffs_v,
+                                 bc_coeffs,
                                  var,
                                  c_weight,
                                  grad);
@@ -7908,7 +7912,7 @@ _gradient_vector(const char                     *var_name,
                                   n_r_sweeps,
                                   verbosity,
                                   epsilon,
-                                  bc_coeffs_v,
+                                  bc_coeffs,
                                   var,
                                   c_weight,
                                   grad);
@@ -8024,9 +8028,8 @@ _gradient_vector(const char                     *var_name,
  * \param[in]       clip_mode       clipping mode
  * \param[in]       epsilon         precision for iterative gradient calculation
  * \param[in]       clip_coeff      clipping coefficient
- * \param[in]       bc_coeffs_ts    boundary condition structure
+ * \param[in]       bc_coeffs    boundary condition structure
  * \param[in]       var             gradient's base variable
- * \param[in]       val_f           face value for gradient
  * \param[out]      grad            gradient
                                       (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
  * \param[out]      bounds          optional bounds (square distance) of values
@@ -8045,13 +8048,15 @@ _gradient_tensor(const char                 *var_name,
                  int                         clip_mode,
                  double                      epsilon,
                  double                      clip_coeff,
-                 const cs_field_bc_coeffs_t *bc_coeffs_ts,
+                 const cs_field_bc_coeffs_t *bc_coeffs,
                  const cs_real_6_t          *restrict var,
-                 const cs_real_6_t          *restrict val_f,
                  cs_real_63_t               *restrict grad,
                  cs_real_t                  *bounds)
 {
   CS_PROFILE_FUNC_RANGE();
+  using var_t = cs_real_t[6];
+  /* get precomputed face value */
+  const var_t *val_f = (var_t *)bc_coeffs->val_f;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_adjacencies_t *madj = cs_glob_mesh_adjacencies;
@@ -8067,7 +8072,7 @@ _gradient_tensor(const char                 *var_name,
                                  fvq,
                                  halo_type,
                                  inc,
-                                 bc_coeffs_ts,
+                                 bc_coeffs,
                                  var,
                                  nullptr,
                                  grad);
@@ -8084,7 +8089,7 @@ _gradient_tensor(const char                 *var_name,
                                   n_r_sweeps,
                                   verbosity,
                                   epsilon,
-                                  bc_coeffs_ts,
+                                  bc_coeffs,
                                   var,
                                   nullptr,
                                   grad);
@@ -8205,7 +8210,7 @@ _gradient_tensor(const char                 *var_name,
  * \param[in]   fvq             pointer to associated finite volume quantities
  * \param[in]   c_id            cell id
  * \param[in]   halo_type       halo type
- * \param[in]   bc_coeffs_v     boundary condition structure, or nullptr
+ * \param[in]   bc_coeffs       boundary condition structure, or nullptr
  * \param[in]   var             gradient's base variable
  * \param[in]   c_weight        cell variable weight, or nullptr
  * \param[out]  c_grad          cell gradient
@@ -8218,7 +8223,7 @@ _gradient_strided_cell(const cs_mesh_t             *m,
                        const cs_mesh_quantities_t  *fvq,
                        cs_lnum_t                    c_id,
                        cs_halo_type_t               halo_type,
-                       const cs_field_bc_coeffs_t  *bc_coeffs_v,
+                       const cs_field_bc_coeffs_t  *bc_coeffs,
                        const cs_real_t              var[][stride],
                        const cs_real_t              c_weight[],
                        cs_real_t                    c_grad[stride][3])
@@ -8363,9 +8368,9 @@ _gradient_strided_cell(const cs_mesh_t             *m,
   const a_t *bc_coeff_a = nullptr;
   const b_t *bc_coeff_b = nullptr;
 
-  if (bc_coeffs_v != nullptr) {
-    bc_coeff_a = (const a_t *)bc_coeffs_v->a;
-    bc_coeff_b = (const b_t *)bc_coeffs_v->b;
+  if (bc_coeffs != nullptr) {
+    bc_coeff_a = (const a_t *)bc_coeffs->a;
+    bc_coeff_b = (const b_t *)bc_coeffs->b;
   }
 
   if (e_id > s_id) {
@@ -8739,7 +8744,7 @@ cs_gradient_scalar(const char                    *var_name,
                    double                         epsilon,
                    double                         clip_coeff,
                    cs_real_3_t                    f_ext[],
-                   const cs_field_bc_coeffs_t    *bc_coeffs,
+                   cs_field_bc_coeffs_t          *bc_coeffs,
                    cs_real_t                      var[],
                    cs_real_t                     *c_weight,
                    const cs_internal_coupling_t  *cpl,
@@ -8789,7 +8794,7 @@ cs_gradient_scalar(const char                    *var_name,
 
   }
 
-  cs_real_t *val_ip = nullptr, *val_f = nullptr;
+  cs_real_t *val_ip = nullptr;
   cs_real_t *val_f_hmg = nullptr, *val_f_wrk = nullptr;
 
   /* For internal coupling, find field BC Coefficients
@@ -8799,27 +8804,15 @@ cs_gradient_scalar(const char                    *var_name,
 
   /* Update of local BC. coefficients for internal coupling */
 
-  cs_real_t *bc_coeff_loc_cpl_a = nullptr;
-  cs_field_bc_coeffs_t bc_coeffs_loc_cpl;
-
   if (cpl != nullptr) {
 
     if (bc_coeffs != nullptr) {
 
-      cs_real_t *bc_coeff_a = bc_coeffs->a;
-      cs_field_bc_coeffs_shallow_copy(bc_coeffs, &bc_coeffs_loc_cpl);
-      CS_MALLOC_HD(bc_coeffs_loc_cpl.a, n_b_faces, cs_real_t, amode);
+      /* Internal coupling is overwritting coeff "a" to pass the
+       * target flux, this assumes inc=1, which is always the cas for
+       * coupled variables */
+      assert(inc == 1);
 
-      bc_coeff_loc_cpl_a = bc_coeffs_loc_cpl.a;
-
-      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-        bc_coeff_loc_cpl_a[face_id] = inc * bc_coeff_a[face_id];
-      });
-
-      bc_coeffs = &bc_coeffs_loc_cpl;
-
-      inc = 1;  /* Local _bc_coeff_a already multiplied by inc = 0 above for
-                   uncoupled faces, and bc_coeff_a used for coupled faces. */
 
       cs_real_t _clip_coeff = (clip_mode >= 0) ? clip_coeff : -1;
       cs_internal_coupling_update_bc_coeffs_s(ctx,
@@ -8888,24 +8881,16 @@ cs_gradient_scalar(const char                    *var_name,
                                         val_f_hmg,
                                         nullptr);
 
-      val_f = val_f_hmg;
+      /* Pre computed boundary face value */
+      bc_coeffs->val_f = val_f_hmg;
     }
 
     ctx.wait();
 
   }
-  else { // bc_coeffs_v != nullptr, enter here for cpl
+  else { // bc_coeffs != nullptr, enter here for cpl
 
-    if (bc_coeffs->val_f != nullptr) {
-      val_f = bc_coeffs->val_f;
-    }
-    else { // work array (momemtum, ...)
-
-      if (bc_coeffs->b == nullptr) {
-        ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
-          bc_coeffs->b[i] = 1.;
-        });
-      }
+    if (bc_coeffs->val_f == nullptr) { // work array (momemtum, ...)
 
       /* Compute face value for gradient exept for iterative_gradient
          which compute val_f with iterative process via coeffa&b
@@ -8942,6 +8927,7 @@ cs_gradient_scalar(const char                    *var_name,
         cs_real_t *coefa = bc_coeffs->a;
         cs_real_t *coefb = bc_coeffs->b;
 
+        //TODO do a specific formula for Internal coupling
         if (hyd_p_flag) {
           const cs_lnum_t *b_face_cells = mesh->b_face_cells;
           const cs_real_3_t *restrict b_face_cog = fvq->b_face_cog;
@@ -8971,7 +8957,8 @@ cs_gradient_scalar(const char                    *var_name,
 
         ctx.wait();
 
-        val_f = val_f_wrk;
+        /* pre computed boundary face value */
+        bc_coeffs->val_f = val_f_wrk;
       }
     }
   }
@@ -8992,17 +8979,13 @@ cs_gradient_scalar(const char                    *var_name,
                    f_ext,
                    bc_coeffs,
                    var,
-                   val_f,
                    c_weight,
                    grad,
                    nullptr);
 
   CS_FREE(val_ip);
-  CS_FREE(val_f_hmg);
-  CS_FREE(val_f_wrk);
   CS_FREE(bc_coeff_loc_a);
   CS_FREE(bc_coeff_loc_b);
-  CS_FREE(bc_coeff_loc_cpl_a);
 
   t1 = cs_timer_time();
 
@@ -9031,7 +9014,7 @@ cs_gradient_scalar(const char                    *var_name,
  * \param[in]       clip_mode       clipping mode
  * \param[in]       epsilon         precision for iterative gradient calculation
  * \param[in]       clip_coeff      clipping coefficient
- * \param[in]       bc_coeffs_v     boundary condition structure
+ * \param[in]       bc_coeffs       boundary condition structure
  * \param[in, out]  var             gradient's base variable
  * \param[in, out]  c_weight        cell variable weight, or nullptr
  * \param[in]       cpl             associated internal coupling, or nullptr
@@ -9050,13 +9033,15 @@ cs_gradient_vector(const char                    *var_name,
                    cs_gradient_limit_t            clip_mode,
                    double                         epsilon,
                    double                         clip_coeff,
-                   const cs_field_bc_coeffs_t    *bc_coeffs_v,
+                   cs_field_bc_coeffs_t          *bc_coeffs,
                    cs_real_t                      var[][3],
                    cs_real_t        *restrict     c_weight,
                    const cs_internal_coupling_t  *cpl,
                    cs_real_t                      gradv[][3][3])
 {
   CS_PROFILE_FUNC_RANGE();
+  using var_t = cs_real_t[3];
+  cs_lnum_t stride = 3;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
@@ -9096,8 +9081,8 @@ cs_gradient_vector(const char                    *var_name,
   if (cs_glob_timer_kernels_flag > 0)
     t_start = std::chrono::high_resolution_clock::now();
 
-  cs_real_3_t *val_ip = nullptr, *val_f = nullptr;
-  cs_real_3_t *val_f_hmg = nullptr, *val_f_wrk = nullptr;
+  var_t *val_ip = nullptr;
+  var_t *val_f_hmg = nullptr, *val_f_wrk = nullptr;
 
   /* For internal coupling, find field BC Coefficients
      matching the current variable.
@@ -9106,33 +9091,18 @@ cs_gradient_vector(const char                    *var_name,
 
   /* Update of local BC. coefficients for internal coupling */
 
-  cs_real_3_t *bc_coeff_loc_cpl_a = nullptr;
-  cs_field_bc_coeffs_t bc_coeffs_loc_cpl;
-
   if (cpl != nullptr) {
 
-    if (bc_coeffs_v != nullptr) {
+    if (bc_coeffs != nullptr) {
 
-      cs_real_3_t *bc_coeff_a = (cs_real_3_t *)bc_coeffs_v->a;
-      cs_field_bc_coeffs_shallow_copy(bc_coeffs_v, &bc_coeffs_loc_cpl);
-      CS_MALLOC_HD(bc_coeffs_loc_cpl.a, 3*n_b_faces, cs_real_t, amode);
-
-      bc_coeff_loc_cpl_a = (cs_real_3_t *)bc_coeffs_loc_cpl.a;
-
-      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-        for (cs_lnum_t i = 0; i < 3; i++) {
-          bc_coeff_loc_cpl_a[face_id][i] = inc * bc_coeff_a[face_id][i];
-        }
-      });
-
-      bc_coeffs_v = &bc_coeffs_loc_cpl;
-
-      inc = 1;  /* Local _bc_coeff_a already multiplied by inc = 0 above for
-                   uncoupled faces, and bc_coeff_a used for coupled faces. */
+      /* Internal coupling is overwritting coeff "a" to pass the
+       * target flux, this assumes inc=1, which is always the cas for
+       * coupled variables */
+      assert(inc == 1);
 
       cs_real_t _clip_coeff = (clip_mode >= 0) ? clip_coeff : -1;
       cs_internal_coupling_update_bc_coeffs_strided<3>(ctx,
-                                                       bc_coeffs_v,
+                                                       bc_coeffs,
                                                        cpl,
                                                        halo_type,
                                                        _clip_coeff,
@@ -9147,20 +9117,20 @@ cs_gradient_vector(const char                    *var_name,
     }
   }
 
-  cs_real_3_t  *bc_coeff_loc_a = nullptr;
+  var_t  *bc_coeff_loc_a = nullptr;
   cs_real_33_t *bc_coeff_loc_b = nullptr;
 
   // Use Neumann BC's as default if not provided
-  if (bc_coeffs_v == nullptr) {
+  if (bc_coeffs == nullptr) {
 
-    cs_field_bc_coeffs_t bc_coeffs_v_loc;
-    cs_field_bc_coeffs_init(&bc_coeffs_v_loc);
+    cs_field_bc_coeffs_t bc_coeffs_loc;
+    cs_field_bc_coeffs_init(&bc_coeffs_loc);
 
-    CS_MALLOC_HD(bc_coeffs_v_loc.a, 3*n_b_faces, cs_real_t, amode);
-    CS_MALLOC_HD(bc_coeffs_v_loc.b, 9*n_b_faces, cs_real_t, amode);
+    CS_MALLOC_HD(bc_coeffs_loc.a, stride*n_b_faces, cs_real_t, amode);
+    CS_MALLOC_HD(bc_coeffs_loc.b, stride*stride*n_b_faces, cs_real_t, amode);
 
-    bc_coeff_loc_a = (cs_real_3_t  *)bc_coeffs_v_loc.a;
-    bc_coeff_loc_b = (cs_real_33_t *)bc_coeffs_v_loc.b;
+    bc_coeff_loc_a = (var_t  *)bc_coeffs_loc.a;
+    bc_coeff_loc_b = (cs_real_33_t *)bc_coeffs_loc.b;
 
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
       for (cs_lnum_t j = 0; j < 3; j++) {
@@ -9172,12 +9142,13 @@ cs_gradient_vector(const char                    *var_name,
       }
     });
 
-    bc_coeffs_v = &bc_coeffs_v_loc;
+    bc_coeffs = &bc_coeffs_loc;
 
     if (gradient_type != CS_GRADIENT_GREEN_ITER) {
       // else only above standard coefa&b are used
 
-      CS_MALLOC_HD(val_f_hmg, n_b_faces, cs_real_3_t, cs_alloc_mode);
+      CS_MALLOC_HD(val_f_hmg, n_b_faces, var_t, cs_alloc_mode);
+      bc_coeffs->val_f = (cs_real_t *)val_f_hmg;
 
       /* Compute var_iprime (val_f = var_iprime for hmg Neumann) */
       cs_gradient_boundary_iprime_lsq_strided<3>(ctx,
@@ -9188,24 +9159,20 @@ cs_gradient_vector(const char                    *var_name,
                                                  halo_type,
                                                  -1,
                                                  nullptr,
-                                                 bc_coeffs_v,
+                                                 bc_coeffs,
                                                  c_weight,
                                                  var,
                                                  val_f_hmg,
                                                  nullptr);
 
-      val_f = val_f_hmg;
     }
 
     ctx.wait();
 
   }
-  else { // bc_coeffs_v != nullptr, enter here for cpl
+  else { // bc_coeffs != nullptr, enter here for cpl
 
-    if (bc_coeffs_v->val_f != nullptr) {
-      val_f = (cs_real_3_t *)bc_coeffs_v->val_f;
-    }
-    else { // work array (momemtum, ...)
+    if (bc_coeffs->val_f == nullptr) { // work array (momemtum, ...)
 
       /* Compute face value for gradient exept for iterative_gradient
          which compute val_f with iterative process via coeffa&b
@@ -9220,8 +9187,8 @@ cs_gradient_vector(const char                    *var_name,
       if (gradient_type != CS_GRADIENT_GREEN_ITER) {
         // else standard coefa&b are used
 
-        CS_MALLOC_HD(val_ip, n_b_faces, cs_real_3_t, amode);
-        CS_MALLOC_HD(val_f_wrk, n_b_faces, cs_real_3_t, amode);
+        CS_MALLOC_HD(val_ip, n_b_faces, var_t, amode);
+        CS_MALLOC_HD(val_f_wrk, n_b_faces, var_t, amode);
 
         cs_gradient_boundary_iprime_lsq_strided<3>(ctx,
                                                    mesh,
@@ -9231,14 +9198,14 @@ cs_gradient_vector(const char                    *var_name,
                                                    halo_type,
                                                    -1,
                                                    nullptr,
-                                                   bc_coeffs_v,
+                                                   bc_coeffs,
                                                    c_weight,
                                                    var,
                                                    val_ip,
                                                    nullptr);
 
-        cs_real_3_t  *coefa = (cs_real_3_t  *)bc_coeffs_v->a;
-        cs_real_33_t *coefb = (cs_real_33_t *)bc_coeffs_v->b;
+        var_t  *coefa = (var_t  *)bc_coeffs->a;
+        cs_real_33_t *coefb = (cs_real_33_t *)bc_coeffs->b;
 
         ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
           for (cs_lnum_t i = 0; i < 3; i++) {
@@ -9251,7 +9218,8 @@ cs_gradient_vector(const char                    *var_name,
 
         ctx.wait();
 
-        val_f = val_f_wrk;
+        /* Set work boundary value */
+        bc_coeffs->val_f = (cs_real_t *)val_f_wrk;
       }
     }
   }
@@ -9278,19 +9246,15 @@ cs_gradient_vector(const char                    *var_name,
                    clip_mode,
                    epsilon,
                    clip_coeff,
-                   bc_coeffs_v,
-                   (const cs_real_3_t *)var,
-                   (const cs_real_3_t *)val_f,
+                   bc_coeffs,
+                   (const var_t *)var,
                    (const cs_real_t *)c_weight,
                    gradv,
                    nullptr);
 
   CS_FREE(val_ip);
-  CS_FREE(val_f_hmg);
-  CS_FREE(val_f_wrk);
   CS_FREE(bc_coeff_loc_a);
   CS_FREE(bc_coeff_loc_b);
-  CS_FREE(bc_coeff_loc_cpl_a);
 
   t1 = cs_timer_time();
 
@@ -9319,8 +9283,9 @@ cs_gradient_vector(const char                    *var_name,
  * \param[in]       clip_mode       clipping mode
  * \param[in]       epsilon         precision for iterative gradient calculation
  * \param[in]       clip_coeff      clipping coefficient
- * \param[in]       bc_coeffs_ts    boundary condition structure
+ * \param[in]       bc_coeffs       boundary condition structure
  * \param[in, out]  var             gradient's base variable
+ * \param[in]       cpl             associated internal coupling, or nullptr
  * \param[out]      grad            gradient
                                     (\f$ \der{t_ij}{x_k} \f$ is grad[][ij][k])
  */
@@ -9336,11 +9301,14 @@ cs_gradient_tensor(const char                  *var_name,
                    cs_gradient_limit_t          clip_mode,
                    double                       epsilon,
                    double                       clip_coeff,
-                   const cs_field_bc_coeffs_t  *bc_coeffs_ts,
+                   cs_field_bc_coeffs_t        *bc_coeffs,
                    cs_real_6_t        *restrict var,
+                   const cs_internal_coupling_t *cpl,
                    cs_real_63_t       *restrict grad)
 {
   CS_PROFILE_FUNC_RANGE();
+  using var_t = cs_real_t[6];
+  cs_lnum_t stride = 6;
 
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
@@ -9372,26 +9340,60 @@ cs_gradient_tensor(const char                  *var_name,
 
   /* Use Neumann BC's as default if not provided */
 
-  cs_field_bc_coeffs_t bc_coeffs_ts_loc;
-  cs_real_6_t  *bc_coeff_loc_a = nullptr;
+  cs_field_bc_coeffs_t bc_coeffs_loc;
+  var_t  *bc_coeff_loc_a = nullptr;
   cs_real_66_t *bc_coeff_loc_b = nullptr;
-  cs_real_6_t *val_f = nullptr, *val_ip = nullptr;
-  cs_real_6_t *val_f_hmg = nullptr, *val_f_wrk = nullptr;
+  var_t *val_ip = nullptr;
+  var_t *val_f_hmg = nullptr, *val_f_wrk = nullptr;
 
-  if (bc_coeffs_ts == nullptr) {
+  /* For internal coupling, find field BC Coefficients
+     matching the current variable.
+     FIXME: this should also work with the iterative gradient,
+     but needs extra checking. */
 
-    cs_field_bc_coeffs_init(&bc_coeffs_ts_loc);
+  /* Update of local BC. coefficients for internal coupling */
 
-    CS_MALLOC_HD(bc_coeffs_ts_loc.a, 6*n_b_faces, cs_real_t, amode);
-    CS_MALLOC_HD(bc_coeffs_ts_loc.b, 36*n_b_faces, cs_real_t, amode);
+  if (cpl != nullptr) {
 
-    bc_coeff_loc_a = (cs_real_6_t  *)bc_coeffs_ts_loc.a;
-    bc_coeff_loc_b = (cs_real_66_t *)bc_coeffs_ts_loc.b;
+    if (bc_coeffs != nullptr) {
+
+      /* Internal coupling is overwritting coeff "a" to pass the
+       * target flux, this assumes inc=1, which is always the cas for
+       * coupled variables */
+      assert(inc == 1);
+
+      cs_real_t _clip_coeff = (clip_mode >= 0) ? clip_coeff : -1;
+      cs_internal_coupling_update_bc_coeffs_strided<6>(ctx,
+                                                       bc_coeffs,
+                                                       cpl,
+                                                       halo_type,
+                                                       _clip_coeff,
+                                                       nullptr,
+                                                       var,
+                                                       nullptr);//c_weight
+
+
+      ctx.wait();
+
+      cpl = nullptr;  /* Coupling not needed in lower functions in this case. */
+    }
+  }
+
+
+  if (bc_coeffs == nullptr) {
+
+    cs_field_bc_coeffs_init(&bc_coeffs_loc);
+
+    CS_MALLOC_HD(bc_coeffs_loc.a, stride*n_b_faces, cs_real_t, amode);
+    CS_MALLOC_HD(bc_coeffs_loc.b, stride*stride*n_b_faces, cs_real_t, amode);
+
+    bc_coeff_loc_a = (var_t  *)bc_coeffs_loc.a;
+    bc_coeff_loc_b = (cs_real_66_t *)bc_coeffs_loc.b;
 
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-      for (cs_lnum_t j = 0; j < 6; j++) {
+      for (cs_lnum_t j = 0; j < stride; j++) {
         bc_coeff_loc_a[face_id][j] = 0;
-        for (cs_lnum_t k = 0; k < 6; k++)
+        for (cs_lnum_t k = 0; k < stride; k++)
           bc_coeff_loc_b[face_id][j][k] = 0;
 
         bc_coeff_loc_b[face_id][j][j] = 1;
@@ -9399,12 +9401,13 @@ cs_gradient_tensor(const char                  *var_name,
     });
     ctx.wait();
 
-    bc_coeffs_ts = &bc_coeffs_ts_loc;
+    bc_coeffs = &bc_coeffs_loc;
 
     if (gradient_type != CS_GRADIENT_GREEN_ITER) {
       // else only above standard coefa&b are used
 
-      CS_MALLOC_HD(val_f_hmg, n_b_faces, cs_real_6_t, amode);
+      CS_MALLOC_HD(val_f_hmg, n_b_faces, var_t, amode);
+      bc_coeffs->val_f = (cs_real_t *)val_f_hmg;
 
       /* Compute var_iprime (val_f = var_iprime for hmg Neumann) */
       cs_gradient_boundary_iprime_lsq_strided<6>(ctx,
@@ -9415,20 +9418,16 @@ cs_gradient_tensor(const char                  *var_name,
                                                  halo_type,
                                                  -1,
                                                  nullptr,
-                                                 bc_coeffs_ts,
+                                                 bc_coeffs,
                                                  nullptr, // c_weight,
                                                  var,
                                                  val_f_hmg,
                                                  nullptr);
-
-      val_f = val_f_hmg;
     }
   }
   else {
 
-    if (bc_coeffs_ts->val_f != nullptr)
-      val_f = (cs_real_6_t *)bc_coeffs_ts->val_f;
-    else { // work array
+    if (bc_coeffs->val_f == nullptr) { // work array
 
     /* Compute face value for gradient exept for iterative_gradient
        which compute val_f with iterative process */
@@ -9436,11 +9435,11 @@ cs_gradient_tensor(const char                  *var_name,
       if (gradient_type != CS_GRADIENT_GREEN_ITER) {
         // else standard coefa&b are used
 
-        CS_MALLOC_HD(val_ip, n_b_faces, cs_real_6_t, amode);
-        CS_MALLOC_HD(val_f_wrk, n_b_faces, cs_real_6_t, amode);
+        CS_MALLOC_HD(val_ip, n_b_faces, var_t, amode);
+        CS_MALLOC_HD(val_f_wrk, n_b_faces, var_t, amode);
 
-        cs_real_6_t  *coefav = (cs_real_6_t  *)bc_coeffs_ts->a;
-        cs_real_66_t *coefbv = (cs_real_66_t *)bc_coeffs_ts->b;
+        var_t *coefav = (var_t *)bc_coeffs->a;
+        cs_real_66_t *coefbv = (cs_real_66_t *)bc_coeffs->b;
 
         /* Compute var_iprime */
         cs_gradient_boundary_iprime_lsq_strided<6>(ctx,
@@ -9451,7 +9450,7 @@ cs_gradient_tensor(const char                  *var_name,
                                                    halo_type,
                                                    -1,
                                                    nullptr,
-                                                   bc_coeffs_ts,
+                                                   bc_coeffs,
                                                    nullptr, // c_weight
                                                    var,
                                                    val_ip,
@@ -9468,8 +9467,8 @@ cs_gradient_tensor(const char                  *var_name,
 
         ctx.wait();
 
-        val_f = val_f_wrk;
-
+        /* Set work boundary value */
+        bc_coeffs->val_f = (cs_real_t *)val_f_wrk;
       }
     }
   }
@@ -9486,15 +9485,12 @@ cs_gradient_tensor(const char                  *var_name,
                    clip_mode,
                    epsilon,
                    clip_coeff,
-                   bc_coeffs_ts,
-                   (const cs_real_6_t *)var,
-                   (const cs_real_6_t *)val_f,
+                   bc_coeffs,
+                   (const var_t *)var,
                    grad,
                    nullptr);
 
   CS_FREE(val_ip);
-  CS_FREE(val_f_hmg);
-  CS_FREE(val_f_wrk);
   CS_FREE(bc_coeff_loc_a);
   CS_FREE(bc_coeff_loc_b);
 
@@ -9536,7 +9532,6 @@ cs_gradient_tensor(const char                  *var_name,
  *                              hydrostatic pressure
  * \param[in]   bc_coeffs       boundary condition structure
  * \param[in]   var             gradient's base variable
- * \param[in]   val_f           boundary face value
  * \param[in]   c_weight        cell variable weight, or nullptr
  * \param[out]  grad            gradient
  * \param[out]  bounds          optional minima and maxima of values in
@@ -9559,7 +9554,6 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
                                 cs_real_t                   f_ext[][3],
                                 const cs_field_bc_coeffs_t *bc_coeffs,
                                 const cs_real_t             var[],
-                                const cs_real_t             val_f[],
                                 const cs_real_t             c_weight[],
                                 cs_real_t                   grad[][3],
                                 cs_real_t                 (*bounds)[2])
@@ -9602,7 +9596,6 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
                    f_ext,
                    bc_coeffs,
                    var,
-                   val_f,
                    c_weight,
                    grad,
                    bounds);
@@ -9638,9 +9631,8 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
  * \param[in]   clip_mode       clipping mode
  * \param[in]   epsilon         precision for iterative gradient calculation
  * \param[in]   clip_coeff      clipping coefficient
- * \param[in]   bc_coeffs_v     boundary condition structure
+ * \param[in]   bc_coeffs       boundary condition structure
  * \param[in]   var             gradient's base variable
- * \param[in]   val_f           boundary face value
  * \param[in]   c_weight        cell variable weight, or nullptr
  * \param[out]  grad            gradient
  *                              (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
@@ -9659,9 +9651,8 @@ cs_gradient_vector_synced_input(const char                  *var_name,
                                 cs_gradient_limit_t          clip_mode,
                                 double                       epsilon,
                                 double                       clip_coeff,
-                                const cs_field_bc_coeffs_t  *bc_coeffs_v,
+                                const cs_field_bc_coeffs_t  *bc_coeffs,
                                 const cs_real_t              var[][3],
-                                const cs_real_t              val_f[][3],
                                 const cs_real_t              c_weight[],
                                 cs_real_t                    grad[][3][3],
                                 cs_real_t                   *bounds)
@@ -9690,9 +9681,8 @@ cs_gradient_vector_synced_input(const char                  *var_name,
                    clip_mode,
                    epsilon,
                    clip_coeff,
-                   bc_coeffs_v,
+                   bc_coeffs,
                    var,
-                   val_f,
                    c_weight,
                    grad,
                    bounds);
@@ -9728,9 +9718,8 @@ cs_gradient_vector_synced_input(const char                  *var_name,
  * \param[in]       clip_mode       clipping mode
  * \param[in]       epsilon         precision for iterative gradient calculation
  * \param[in]       clip_coeff      clipping coefficient
- * \param[in]       bc_coeffs_ts    boundary condition structure
+ * \param[in]       bc_coeffs       boundary condition structure
  * \param[in, out]  var             gradient's base variable
- * \param[in]       val_f           boundary face value
  * \param[out]      grad            gradient
                                     (\f$ \der{t_ij}{x_k} \f$ is grad[][ij][k])
  * \param[out]      bounds          optional bounds (square distance)
@@ -9748,9 +9737,8 @@ cs_gradient_tensor_synced_input(const char                  *var_name,
                                 cs_gradient_limit_t          clip_mode,
                                 double                       epsilon,
                                 double                       clip_coeff,
-                                const cs_field_bc_coeffs_t  *bc_coeffs_ts,
+                                const cs_field_bc_coeffs_t  *bc_coeffs,
                                 const cs_real_t              var[][6],
-                                const cs_real_t              val_f[][6],
                                 cs_real_63_t                *grad,
                                 cs_real_t                   *bounds)
 {
@@ -9778,9 +9766,8 @@ cs_gradient_tensor_synced_input(const char                  *var_name,
                    clip_mode,
                    epsilon,
                    clip_coeff,
-                   bc_coeffs_ts,
+                   bc_coeffs,
                    var,
-                   val_f,
                    grad,
                    bounds);
 
@@ -9826,7 +9813,7 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
                         const cs_mesh_quantities_t  *fvq,
                         cs_lnum_t                    c_id,
                         cs_halo_type_t               halo_type,
-                        const cs_field_bc_coeffs_t  *bc_coeffs,
+                        cs_field_bc_coeffs_t        *bc_coeffs,
                         const cs_real_t              var[],
                         const cs_real_t              c_weight[],
                         cs_real_t                    grad[3])
@@ -10066,7 +10053,7 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
  * \param[in]   fvq             pointer to associated finite volume quantities
  * \param[in]   c_id            cell id
  * \param[in]   halo_type       halo type
- * \param[in]   bc_coeffs_v     boundary condition structure
+ * \param[in]   bc_coeffs       boundary condition structure
  * \param[in]   var             gradient's base variable
  * \param[in]   c_weight        cell variable weight, or nullptr
  * \param[out]  grad            gradient
@@ -10078,7 +10065,7 @@ cs_gradient_vector_cell(const cs_mesh_t             *m,
                         const cs_mesh_quantities_t  *fvq,
                         cs_lnum_t                    c_id,
                         cs_halo_type_t               halo_type,
-                        const cs_field_bc_coeffs_t  *bc_coeffs_v,
+                        cs_field_bc_coeffs_t        *bc_coeffs,
                         const cs_real_t              var[][3],
                         const cs_real_t              c_weight[],
                         cs_real_t                    grad[3][3])
@@ -10087,7 +10074,7 @@ cs_gradient_vector_cell(const cs_mesh_t             *m,
                             fvq,
                             c_id,
                             halo_type,
-                            bc_coeffs_v,
+                            bc_coeffs,
                             var,
                             c_weight,
                             grad);
@@ -10110,7 +10097,7 @@ cs_gradient_vector_cell(const cs_mesh_t             *m,
  * \param[in]   fvq             pointer to associated finite volume quantities
  * \param[in]   c_id            cell id
  * \param[in]   halo_type       halo type
- * \param[in]   bc_coeffs_ts    boundary condition structure
+ * \param[in]   bc_coeffs       boundary condition structure
  * \param[in]   var             gradient's base variable
  * \param[in]   c_weight        cell variable weight, or nullptr
  * \param[out]  grad            gradient
@@ -10122,7 +10109,7 @@ cs_gradient_tensor_cell(const cs_mesh_t             *m,
                         const cs_mesh_quantities_t  *fvq,
                         cs_lnum_t                    c_id,
                         cs_halo_type_t               halo_type,
-                        const cs_field_bc_coeffs_t  *bc_coeffs_ts,
+                        cs_field_bc_coeffs_t        *bc_coeffs,
                         const cs_real_t              var[][6],
                         const cs_real_t              c_weight[],
                         cs_real_t                    grad[6][3])
@@ -10131,7 +10118,7 @@ cs_gradient_tensor_cell(const cs_mesh_t             *m,
                             fvq,
                             c_id,
                             halo_type,
-                            bc_coeffs_ts,
+                            bc_coeffs,
                             var,
                             c_weight,
                             grad);

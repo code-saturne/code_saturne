@@ -604,7 +604,7 @@ cs_gradient_boundary_iprime_lsq_s
 
     if (var_iprime_flux != nullptr) {
 
-      /* var_iprime_flux is the same as var_iprime for gradient exept
+      /* var_iprime_flux is the same as var_iprime for gradient except
          if we applied a diffusion limiter, or for anisotropic case
          where viscel array goes to the flux definition */
       assert(df_limiter != nullptr);
@@ -1591,7 +1591,7 @@ cs_gradient_boundary_iprime_lsq_strided
       } /* End of loop on iterations */
 
       /* If the last correction was too large, we suspect
-         the the algorithm did not converge at all/diverged,
+         the algorithm did not converge at all/diverged,
          so we simply restore the non-reconstructed value
          (additional precaution, not encountered in testing). */
 

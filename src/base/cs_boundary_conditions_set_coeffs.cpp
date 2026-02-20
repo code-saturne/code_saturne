@@ -264,7 +264,7 @@ _compute_bc_grad
 }
 
 static void
-_compute_bc_flux
+_compute_bc_diff_flux
   (
    cs_dispatch_context         &ctx,
    const cs_field_bc_coeffs_t  *bc_coeffs,
@@ -4282,7 +4282,7 @@ END_C_DECLS
  *
  * \param[in]      ctx                   reference to dispatch context
  * \param[in]      f                     pointer to field
- * \param[in]      bc_coeffs             boundary condition structure
+ * \param[in,out]  bc_coeffs             boundary condition structure
  * \param[in]      inc                   0 if an increment, 1 otherwise
  * \param[in]      eqp                   equation parameters
  * \param[in]      need_compute_bc_grad  val_f must be computed
@@ -4296,8 +4296,6 @@ END_C_DECLS
  * \param[in]      weighb                boundary face weight for cells i in
  *                                       case of tensor diffusion, or nullptr
  * \param[in]      var                   variable values at cell centers
- * \param[in,out]  var_f                 face values for the gradient computation
- * \param[in,out]  flux                  face values for the diffusion computation
  *
  */
 /*----------------------------------------------------------------------------*/
@@ -4306,7 +4304,7 @@ void
 cs_boundary_conditions_update_bc_coeff_face_values
   (cs_dispatch_context        &ctx,
    const cs_field_t           *f,
-   const cs_field_bc_coeffs_t *bc_coeffs,
+   cs_field_bc_coeffs_t       *bc_coeffs,
    const int                   inc,
    const cs_equation_param_t  *eqp,
    const bool                  need_compute_bc_grad,
@@ -4316,9 +4314,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
    cs_real_t                   visel[],
    cs_real_t                   viscel[][6],
    const cs_real_t             weighb[],
-   const cs_real_t             pvar[],
-   cs_real_t                   val_f[],
-   cs_real_t                   flux[])
+   const cs_real_t             pvar[])
 {
   cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -4364,6 +4360,18 @@ cs_boundary_conditions_update_bc_coeff_face_values
   if (need_compute_bc_grad || need_compute_grad_for_flux)
     CS_MALLOC_HD(val_ip_grad, n_b_faces, cs_real_t, amode);
 
+  cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
+    (bc_coeffs,
+     m->n_b_faces,
+     1, // dim
+     cs_alloc_mode,
+     false);
+
+  /* diffusion limiter */
+  int df_limiter_id = eqp->diffusion_limiter_id;
+  if (df_limiter_id > -1)
+    df_limiter = cs_field_by_id(df_limiter_id)->val;
+
   if (f != nullptr) {
 
     /* internal coupling */
@@ -4373,13 +4381,10 @@ cs_boundary_conditions_update_bc_coeff_face_values
       cpl = cs_internal_coupling_by_id(coupling_id);
     }
 
-    /* diffusion limiter */
-    int df_limiter_id
-      = cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
-    if (df_limiter_id > -1)
-      df_limiter = cs_field_by_id(df_limiter_id)->val;
-  }
+ }
 
+  // TODO: this should be replace in cs_convection_diffusion brick
+  // to remove duplicated codes...
   /* gradient weighting */
   if (eqp->iwgrec > 0 && (visel != nullptr || viscel != nullptr)) {
 
@@ -4468,48 +4473,14 @@ cs_boundary_conditions_update_bc_coeff_face_values
   /* gradient clipping on boundary */
   cs_real_t b_rc_clip_factor = (eqp->imligr < 0) ? -1.0 : eqp->b_rc_clip_factor;
 
-  cs_field_bc_coeffs_t *bc_coeffs_loc = nullptr;
-
-  /* Mute coefa when inc = 0 */
-  if (inc == 0 && cpl == nullptr) {
-
-    CS_MALLOC(bc_coeffs_loc, 1, cs_field_bc_coeffs_t);
-    cs_field_bc_coeffs_shallow_copy(bc_coeffs, bc_coeffs_loc);
-
-    CS_MALLOC_HD(bc_coeffs_loc->a, n_b_faces, cs_real_t, amode);
-    bc_coeffs_loc->af = bc_coeffs_loc->a; // Also muted, can be shared.
-
-    cs_real_t *bc_coeffs_a_loc = bc_coeffs_loc->a;
-
-    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-      bc_coeffs_a_loc[face_id] = 0;
-    });
-
-    bc_coeffs = bc_coeffs_loc;
-  }
-
   /* Update of local BC. coefficients for internal coupling */
 
+  /* Note this is still using coefa/b */
+
   if (cpl != nullptr) {
-
-    CS_MALLOC(bc_coeffs_loc, 1, cs_field_bc_coeffs_t);
-    cs_field_bc_coeffs_shallow_copy(bc_coeffs, bc_coeffs_loc);
-
-    CS_MALLOC(bc_coeffs_loc->a, n_b_faces, cs_real_t);
-    CS_MALLOC(bc_coeffs_loc->af, n_b_faces, cs_real_t);
-
-    cs_real_t *bc_coeff_a = bc_coeffs->a;
-    cs_real_t *bc_coeffs_cpl_a = bc_coeffs_loc->a;
-    cs_real_t *bc_coeff_af = bc_coeffs->af;
-    cs_real_t *bc_coeffs_cpl_af = bc_coeffs_loc->af;
-
-    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-      bc_coeffs_cpl_a[face_id] = inc * bc_coeff_a[face_id];
-      bc_coeffs_cpl_af[face_id] = inc * bc_coeff_af[face_id];
-    });
-
-    bc_coeffs = bc_coeffs_loc;
-
+    // Internal coupling overwrites coeff "a" so that we get the
+    // correct flux, so it should not be mute by inc
+    assert(inc == 1);
     cs_internal_coupling_update_bc_coeffs_s
       (ctx,
        bc_coeffs,
@@ -4526,6 +4497,10 @@ cs_boundary_conditions_update_bc_coeff_face_values
        pvar,
        gweight);
   }
+
+  /* Compute boundary face and diffusive flux values */
+  cs_real_t *val_f = bc_coeffs->val_f;
+  cs_real_t *flux = bc_coeffs->flux_diff;
 
   /* Compute variable at position I' from bc_coeffs */
 
@@ -4617,13 +4592,13 @@ cs_boundary_conditions_update_bc_coeff_face_values
 
   else if (need_compute_bc_flux) {
     if (need_flux_reconstruction)
-      _compute_bc_flux(ctx, bc_coeffs,
-                       need_flux_reconstruction,
-                       val_ip_flux, flux);
+      _compute_bc_diff_flux(ctx, bc_coeffs,
+                            need_flux_reconstruction,
+                            val_ip_flux, flux);
     else
-      _compute_bc_flux(ctx, bc_coeffs,
-                       need_flux_reconstruction,
-                       pvar, flux);
+      _compute_bc_diff_flux(ctx, bc_coeffs,
+                            need_flux_reconstruction,
+                            pvar, flux);
   }
   else{
     bft_error(__FILE__, __LINE__, 0,
@@ -4632,12 +4607,6 @@ cs_boundary_conditions_update_bc_coeff_face_values
 
   ctx.wait();
 
-  if (bc_coeffs_loc != nullptr) {
-    CS_FREE(bc_coeffs_loc->a);
-    if (cpl != nullptr)
-      CS_FREE(bc_coeffs_loc->af);
-    CS_FREE(bc_coeffs_loc);
-  }
   CS_FREE(val_ip_flux);
   CS_FREE(val_ip_grad);
 }
@@ -4673,6 +4642,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
   const bool                  need_compute_bc_flux,
   int                         hyd_p_flag,
   cs_real_t                   f_ext[][3],
+  //FIXME add diffusivity scalar
   cs_real_t                   viscel[][6],
   const cs_real_t             weighb[],
   const cs_real_t             pvar[]
@@ -4694,9 +4664,6 @@ cs_boundary_conditions_update_bc_coeff_face_values
        false);
   }
 
-  cs_real_t *val_f = f->bc_coeffs->val_f;
-  cs_real_t *flux = f->bc_coeffs->flux;
-
   cs_boundary_conditions_update_bc_coeff_face_values
     (ctx,
      f, f->bc_coeffs,
@@ -4709,9 +4676,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
      nullptr, // visel
      viscel,
      weighb,
-     pvar,
-     val_f,
-     flux);
+     pvar);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4721,15 +4686,10 @@ cs_boundary_conditions_update_bc_coeff_face_values
  *
  * \param[in]      ctx          reference to dispatch context
  * \param[in]      f            pointer to field
- * \param[in]      bc_coeffs    boundary condition structure for the variable
+ * \param[in,out]  bc_coeffs    boundary condition structure for the variable
  * \param[in]      inc          0 if an increment, 1 otherwise
  * \param[in]      eqp          equation parameters
  * \param[in]      pvar         variable values at cell centers
- * \param[in,out]  var_ip       boundary variable values at I' position
- * \param[in,out]  var_f        face values for the gradient computation
- * \param[in,out]  var_f_d      face values for the diffusion computation
- * \param[in,out]  var_f_d_lim  face values for the diffusion computation
- *                              (with limiter)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -4739,14 +4699,10 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
 (
   cs_dispatch_context        &ctx,
   cs_field_t                 *f,
-  const cs_field_bc_coeffs_t *bc_coeffs,
+  cs_field_bc_coeffs_t       *bc_coeffs,
   const int                   inc,
   const cs_equation_param_t  *eqp,
-  const cs_real_t             pvar[][stride],
-  cs_real_t                   val_ip[][stride],
-  cs_real_t                   val_f[][stride],
-  cs_real_t                   flux[][stride],
-  cs_real_t                   flux_lim[][stride]
+  const cs_real_t             pvar[][stride]
 )
 {
   CS_PROFILE_FUNC_RANGE();
@@ -4777,6 +4733,20 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
   cs_internal_coupling_t *cpl = nullptr;
   var_t *val_ip_lim = nullptr;
 
+  /* Ensure BC coefficient arrays are allocated
+     we use a delayed allocation the default to Neumann more easily
+     when some arrays are not defined (and want to avoid cases where
+     the array is defined but not up to date). */
+
+  if (m->n_b_faces > 0) {
+    cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
+      (bc_coeffs,
+       m->n_b_faces,
+       stride,
+       cs_alloc_mode,
+       false);
+  }
+
   /* Get the calculation option from the field */
   if (f != nullptr) {
 
@@ -4805,8 +4775,7 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
     CS_PROFILE_MARK_LINE();
 
     /* diffusion limiter */
-    int df_limiter_id
-      = cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
+    int df_limiter_id = eqp->diffusion_limiter_id;
     if (df_limiter_id > -1)
       df_limiter = cs_field_by_id(df_limiter_id)->val;
     CS_PROFILE_MARK_LINE();
@@ -4819,50 +4788,13 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
   /* gradient clipping on boundary */
   cs_real_t b_rc_clip_factor = (eqp->imligr < 0) ? -1.0 : eqp->b_rc_clip_factor;
 
-  cs_field_bc_coeffs_t *bc_coeffs_loc = nullptr;
-
-  /* Mute coefa when inc = 0 */
-  if (inc == 0 && cpl == nullptr) {
-    CS_PROFILE_MARK_LINE();
-    CS_MALLOC(bc_coeffs_loc, 1, cs_field_bc_coeffs_t);
-    cs_field_bc_coeffs_shallow_copy(bc_coeffs, bc_coeffs_loc);
-
-    CS_MALLOC_HD(bc_coeffs_loc->a, stride*m->n_b_faces,
-                 cs_real_t, amode);
-
-    var_t *bc_coeffs_a_loc = (var_t *)bc_coeffs_loc->a;
-
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-      for (cs_lnum_t i = 0; i < stride; i++)
-        bc_coeffs_a_loc[face_id][i] = 0;
-
-    bc_coeffs = bc_coeffs_loc;
-  }
-
   /* Update of local BC. coefficients for internal coupling */
 
   if (cpl != nullptr) {
-    CS_PROFILE_MARK_LINE();
-    CS_MALLOC_HD(bc_coeffs_loc, 1, cs_field_bc_coeffs_t, amode);
-    cs_field_bc_coeffs_shallow_copy(bc_coeffs, bc_coeffs_loc);
+    // Internal coupling overwrites coeff "a" so that we get the
+    // correct flux, so it should not be mute by inc
+    assert(inc == 1);
 
-    CS_MALLOC_HD(bc_coeffs_loc->a, stride*n_b_faces, cs_real_t, amode);
-    CS_MALLOC_HD(bc_coeffs_loc->af, stride*n_b_faces, cs_real_t, amode);
-
-    var_t *bc_coeff_a = (var_t *)bc_coeffs->a;
-    var_t *bc_coeffs_cpl_a = (var_t *)bc_coeffs_loc->a;
-    var_t *bc_coeff_af = (var_t *)bc_coeffs->af;
-    var_t *bc_coeffs_cpl_af = (var_t *)bc_coeffs_loc->af;
-
-    ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-      for (cs_lnum_t i = 0; i < stride; i++) {
-        bc_coeffs_cpl_a[face_id][i] = inc * bc_coeff_a[face_id][i];
-        bc_coeffs_cpl_af[face_id][i] = inc * bc_coeff_af[face_id][i];
-      }
-    });
-    ctx.wait();
-
-    bc_coeffs = bc_coeffs_loc;
     CS_PROFILE_MARK_LINE();
     cs_internal_coupling_update_bc_coeffs_strided<stride>(ctx,
                                                           bc_coeffs,
@@ -4876,6 +4808,18 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
   CS_PROFILE_MARK_LINE();
 
   /* Compute variable at position I' from bc_coeffs */
+  var_t *coefa = (var_t *)bc_coeffs->a;
+  var_t *cofaf = (var_t *)bc_coeffs->af;
+  m_t *coefb = (m_t *)bc_coeffs->b;
+  m_t *cofbf = (m_t *)bc_coeffs->bf;
+
+  var_t *val_ip = nullptr;
+  CS_MALLOC_HD(val_ip, n_b_faces, var_t, amode);
+
+  /* Build face values and diffusive fluxes */
+  var_t *val_f = (var_t *)bc_coeffs->val_f;
+  var_t *flux = (var_t *)bc_coeffs->flux_diff;
+  var_t *flux_lim = (var_t *)bc_coeffs->flux_diff_lim;
 
   cs_gradient_boundary_iprime_lsq_strided<stride>(ctx,
                                                   m,
@@ -4892,12 +4836,6 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
                                                   val_ip_lim);
 
   CS_PROFILE_MARK_LINE();
-  /* Boundary conditions */
-  var_t *coefa = (var_t *)bc_coeffs->a;
-  var_t *cofaf = (var_t *)bc_coeffs->af;
-  m_t *coefb = (m_t *)bc_coeffs->b;
-  m_t *cofbf = (m_t *)bc_coeffs->bf;
-
   /* Compute face value for gradient and diffusion computation */
 
   const int ircflp = eqp->ircflu;
@@ -4953,7 +4891,7 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
                      use of variable at I position)
          In this case:
          bc_coeffs_solve->val_f_lim = bc_coeffs_solve->val_f;
-         bc_coeffs_solve->flux_lim =  bc_coeffs_solve->flux; */
+         bc_coeffs_solve->flux_diff_lim =  bc_coeffs_solve->flux_diff; */
 
       if (df_limiter != nullptr) { // otherwise addresses are shared
 
@@ -4972,13 +4910,7 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
   ctx.wait();
   CS_PROFILE_MARK_LINE();
 
-  if (bc_coeffs_loc != nullptr) {
-    CS_FREE(bc_coeffs_loc->a);
-     if (cpl != nullptr)
-       CS_FREE(bc_coeffs_loc->af);
-    CS_FREE(bc_coeffs_loc);
-  }
-
+  CS_FREE(val_ip);
   CS_FREE(val_ip_lim);
   CS_PROFILE_MARK_LINE();
 }
@@ -5009,30 +4941,20 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
 
   using var_t = cs_real_t[stride];
 
-  var_t *val_ip;
-  CS_MALLOC_HD(val_ip, m->n_b_faces, var_t, cs_alloc_mode_device);
-
   /* Ensure BC coefficient arrays are allocated
      we use a delayed allocation te defauld to Neumann more easily
      when some arrays are not defined (and want to avoid cases where
      the array is defined but not up to date). */
-     CS_PROFILE_MARK_LINE();
-  if (m->n_b_faces > 0) {
-    const int df_limiter_id
-      = cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
-    const int ircflb = (eqp->ircflu > 0) ? eqp->b_diff_flux_rc : 0;
-    CS_PROFILE_MARK_LINE();
-    cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
-      (f->bc_coeffs,
-       m->n_b_faces,
-       f->dim,
-       cs_alloc_mode,
-       (df_limiter_id > -1 || ircflb != 1));
-  }
+  CS_PROFILE_MARK_LINE();
+  int df_limiter_id = eqp->diffusion_limiter_id;
+  const int ircflb = (eqp->ircflu > 0) ? eqp->b_diff_flux_rc : 0;
 
-  var_t *val_f = reinterpret_cast<var_t *>(f->bc_coeffs->val_f);
-  var_t *flux = reinterpret_cast<var_t *>(f->bc_coeffs->flux);
-  var_t *flux_lim = reinterpret_cast<var_t *>(f->bc_coeffs->flux_lim);
+  cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
+    (f->bc_coeffs,
+     m->n_b_faces,
+     f->dim,
+     cs_alloc_mode,
+     (df_limiter_id > -1 || ircflb != 1));
 
   CS_PROFILE_MARK_LINE();
 
@@ -5041,14 +4963,9 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
      f, f->bc_coeffs,
      1,  // inc,
      eqp,
-     pvar,
-     val_ip,
-     val_f,
-     flux, flux_lim);
+     pvar);
 
   CS_PROFILE_MARK_LINE();
-
-  CS_FREE(val_ip);
 }
 
 // Force instanciation
@@ -5058,14 +4975,10 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
 (
   cs_dispatch_context        &ctx,
   cs_field_t                 *f,
-  const cs_field_bc_coeffs_t *bc_coeffs,
+  cs_field_bc_coeffs_t       *bc_coeffs,
   const int                   inc,
   const cs_equation_param_t  *eqp,
-  const cs_real_t             pvar[][3],
-  cs_real_t                   val_ip[][3],
-  cs_real_t                   val_f[][3],
-  cs_real_t                   flux[][3],
-  cs_real_t                   flux_lim[][3]
+  const cs_real_t             pvar[][3]
 );
 
 template void
@@ -5073,14 +4986,10 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
 (
   cs_dispatch_context        &ctx,
   cs_field_t                 *f,
-  const cs_field_bc_coeffs_t *bc_coeffs,
+  cs_field_bc_coeffs_t       *bc_coeffs,
   const int                   inc,
   const cs_equation_param_t  *eqp,
-  const cs_real_t             pvar[][6],
-  cs_real_t                   val_ip[][6],
-  cs_real_t                   val_f[][6],
-  cs_real_t                   flux[][6],
-  cs_real_t                   flux_lim[][6]
+  const cs_real_t             pvar[][6]
 );
 
 template void
@@ -5106,6 +5015,7 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
  * \param[in, out]  bc_coeffs  pointer to boundary conditions coefficients.
  * \param[in]       n_b_faces  number of boundary faces
  * \param[in]       dim        associated field dimension
+ *
  * \param[in]       amode      allocation mode
  * \param[in]       limiter    is a limiter active ?
  */
@@ -5126,81 +5036,26 @@ cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
 
   // bc_coeffs->val_f may have been allocated separately
   // (i.e. upon initialization or restart).
-  if (bc_coeffs->val_f == nullptr)
+  if (bc_coeffs->val_f == nullptr) {
     CS_MALLOC_HD(bc_coeffs->val_f, dim*n_b_faces, cs_real_t, amode);
+    cs_array_real_fill_zero(dim*n_b_faces, bc_coeffs->val_f);
+  }
 
-  if (bc_coeffs->flux == nullptr)
-    CS_MALLOC_HD(bc_coeffs->flux, dim*n_b_faces, cs_real_t, amode);
+  if (bc_coeffs->flux_diff == nullptr) {
+    CS_MALLOC_HD(bc_coeffs->flux_diff, dim*n_b_faces, cs_real_t, amode);
+    cs_array_real_fill_zero(dim*n_b_faces, bc_coeffs->flux_diff);
+  }
 
   if (limiter == false) {
     bc_coeffs->val_f_lim = bc_coeffs->val_f;
-    bc_coeffs->flux_lim = bc_coeffs->flux;
+    bc_coeffs->flux_diff_lim = bc_coeffs->flux_diff;
   }
   else {
     if (bc_coeffs->val_f_lim == nullptr)
       CS_MALLOC_HD(bc_coeffs->val_f_lim, dim*n_b_faces, cs_real_t, amode);
-    if (bc_coeffs->flux_lim == nullptr)
-      CS_MALLOC_HD(bc_coeffs->flux_lim, dim*n_b_faces, cs_real_t, amode);
+    if (bc_coeffs->flux_diff_lim == nullptr)
+      CS_MALLOC_HD(bc_coeffs->flux_diff_lim, dim*n_b_faces, cs_real_t, amode);
   }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Initialize boundary condition coefficients solve arrays.
- *
- * \param[in, out]  c          reference to structure to initialize.
- * \param[in]       n_b_faces  number of boundary faces
- * \param[in]       stride     variable dimension
- * \param[in]       amode      allocation mode
- * \param[in]       limiter    is a limiter active ?
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_init_bc_coeffs_solve(cs_bc_coeffs_solve_t  &c,
-                        cs_lnum_t              n_b_faces,
-                        cs_lnum_t              stride,
-                        cs_alloc_mode_t        amode,
-                        bool                   limiter)
-{
-  c.val_ip = nullptr;
-  c.val_f = nullptr;
-  c.flux = nullptr;
-  c.flux_lim = nullptr;
-
-  CS_MALLOC_HD(c.val_ip, stride*n_b_faces, cs_real_t, amode);
-  CS_MALLOC_HD(c.val_f, stride*n_b_faces, cs_real_t, amode);
-  CS_MALLOC_HD(c.flux, stride*n_b_faces, cs_real_t, amode);
-
-  if (limiter == false) {
-    c.flux_lim = c.flux;
-  }
-  else {
-    CS_MALLOC_HD(c.flux_lim, stride*n_b_faces, cs_real_t, amode);
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free boundary condition coefficients solve arrays.
- *
- * \param[in, out]  c          reference to structure to initialize.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_clear_bc_coeffs_solve(cs_bc_coeffs_solve_t  &c)
-{
-  if (c.flux_lim != c.flux) {
-    CS_FREE(c.flux_lim);
-  }
-  else {
-    c.flux_lim = nullptr;
-  }
-
-  CS_FREE(c.val_ip);
-  CS_FREE(c.val_f);
-  CS_FREE(c.flux);
 }
 
 /*----------------------------------------------------------------------------*/

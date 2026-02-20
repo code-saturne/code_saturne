@@ -483,8 +483,8 @@ _realloc_and_update_bc_coeffs_refinement(const cs_field_t  *f,
   int n_array = 5;
   cs_real_t *array_list[5] = {f->bc_coeffs->val_f,
                               f->bc_coeffs->val_f_lim,
-                              f->bc_coeffs->flux,
-                              f->bc_coeffs->flux_lim,
+                              f->bc_coeffs->flux_diff,
+                              f->bc_coeffs->flux_diff_lim,
                               f->bc_coeffs->val_f_pre};
   cs_real_t *array_out[5] = {nullptr};
 
@@ -493,9 +493,9 @@ _realloc_and_update_bc_coeffs_refinement(const cs_field_t  *f,
     cs_real_t *bc_val   = array_list[k];
     cs_real_t *prev_ptr = nullptr;
 
-    /* In case val_f = val_f_lim or flux_lim = flux, we do not
+    /* In case val_f = val_f_lim or flux_diff_lim = flux_diff, we do not
      * treat those arrays. Simply make them point towards val_f
-     * or flux, resp. */
+     * or flux_diff, resp. */
     if (k>0)
       prev_ptr = array_list[k-1];
 
@@ -528,12 +528,12 @@ _realloc_and_update_bc_coeffs_refinement(const cs_field_t  *f,
   else
     f->bc_coeffs->val_f_lim = array_out[1];
 
-  f->bc_coeffs->flux = array_out[2];
+  f->bc_coeffs->flux_diff = array_out[2];
 
   if (array_list[3] == array_list[2])
-    f->bc_coeffs->flux_lim = array_out[2];
+    f->bc_coeffs->flux_diff_lim = array_out[2];
   else
-    f->bc_coeffs->flux_lim = array_out[3];
+    f->bc_coeffs->flux_diff_lim = array_out[3];
 
   f->bc_coeffs->val_f_pre = array_out[4];
 }
@@ -685,8 +685,8 @@ _realloc_and_update_bc_coeffs_coarsening(cs_field_t      *f,
   int n_array = 5;
   cs_real_t *array_list[5] = {f->bc_coeffs->val_f,
                               f->bc_coeffs->val_f_lim,
-                              f->bc_coeffs->flux,
-                              f->bc_coeffs->flux_lim,
+                              f->bc_coeffs->flux_diff,
+                              f->bc_coeffs->flux_diff_lim,
                               f->bc_coeffs->val_f_pre};
   cs_real_t *array_out[5] = {nullptr};
 
@@ -694,9 +694,9 @@ _realloc_and_update_bc_coeffs_coarsening(cs_field_t      *f,
 
     cs_real_t *bc_val     = array_list[k];
     cs_real_t *prev_ptr   = nullptr;
-    /*In case val_f = val_f_lim or flux_lim = flux, we do not
+    /*In case val_f = val_f_lim or flux_diff_lim = flux_diff, we do not
      * treat those arrays. Simply make them point towards val_f
-     * or flux, resp. */
+     * or flux_diff, resp. */
     if (k>0)
       prev_ptr = array_list[k-1];
 
@@ -745,12 +745,12 @@ _realloc_and_update_bc_coeffs_coarsening(cs_field_t      *f,
   else
     f->bc_coeffs->val_f_lim = array_out[1];
 
-  f->bc_coeffs->flux = array_out[2];
+  f->bc_coeffs->flux_diff = array_out[2];
 
   if (array_list[3] == array_list[2])
-    f->bc_coeffs->flux_lim = array_out[2];
+    f->bc_coeffs->flux_diff_lim = array_out[2];
   else
-    f->bc_coeffs->flux_lim = array_out[3];
+    f->bc_coeffs->flux_diff_lim = array_out[3];
 
   f->bc_coeffs->val_f_pre = array_out[4];
 }

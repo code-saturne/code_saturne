@@ -317,16 +317,6 @@ _solve_eq_fbr_al(const int         istprv,
 
   cs_dispatch_context ctx;
 
-  cs_bc_coeffs_solve_t bc_coeffs_solve_phi;
-  cs_init_bc_coeffs_solve(bc_coeffs_solve_phi,
-                          n_b_faces,
-                          1, // stride
-                          cs_alloc_mode,
-                          false);
-
-  cs_real_t *val_f_phi = bc_coeffs_solve_phi.val_f;
-  cs_real_t *flux_phi = bc_coeffs_solve_phi.flux;
-
   /* Allocate temporary arrays */
   cs_array<cs_real_t> visel(n_cells_ext, cs_alloc_mode);
   cs_array<cs_real_t> w2(n_cells_ext, cs_alloc_mode);
@@ -459,8 +449,8 @@ _solve_eq_fbr_al(const int         istprv,
 
   cs_boundary_conditions_update_bc_coeff_face_values
     (ctx,
-     f,
-     f->bc_coeffs,
+     CS_F_(phi),
+     CS_F_(phi)->bc_coeffs,
      1, //inc
      eqp_phi,
      need_compute_bc_grad,
@@ -470,11 +460,9 @@ _solve_eq_fbr_al(const int         istprv,
      visel.data(),
      nullptr, // vitenp
      nullptr, // weighb
-     CS_F_(phi)->val_pre,
-     val_f_phi,
-     flux_phi);
+     CS_F_(phi)->val_pre);
 
-  cs_diffusion_potential(f,
+  cs_diffusion_potential(CS_F_(phi),
                          eqp_phi,
                          m,
                          fvq,
@@ -484,8 +472,6 @@ _solve_eq_fbr_al(const int         istprv,
                          nullptr, /* f_ext */
                          CS_F_(phi)->val_pre,
                          CS_F_(phi)->bc_coeffs,
-                         val_f_phi,
-                         flux_phi,
                          viscf.data(),
                          viscb.data(),
                          visel.data(),
@@ -645,8 +631,6 @@ _solve_eq_fbr_al(const int         istprv,
                                      nullptr,
                                      nullptr);
 
-  /* Free memory */
-  cs_clear_bc_coeffs_solve(bc_coeffs_solve_phi);
 }
 
 /*----------------------------------------------------------------------------*/

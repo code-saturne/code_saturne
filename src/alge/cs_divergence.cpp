@@ -44,11 +44,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "alge/cs_gradient_boundary.h"
+
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
 #include "base/cs_dispatch.h"
-#include "alge/cs_gradient_boundary.h"
 #include "base/cs_mem.h"
 #include "base/cs_porous_model.h"
 #include "base/cs_profiling.h"
@@ -690,12 +691,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
                     int                          iflmb0,
                     int                          init,
                     int                          inc,
-                    int                          imrgra,
-                    int                          nswrgu,
-                    cs_gradient_limit_t          imligu,
-                    int                          iwarnu,
-                    double                       epsrgu,
-                    double                       climgu,
+                    const cs_equation_param_t   *eqp,
                     const cs_real_t              c_rho[],
                     const cs_real_t              b_rho[],
                     const cs_real_6_t            c_var[],
@@ -704,6 +700,14 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
                     cs_real_3_t        *restrict b_massflux)
 {
   CS_PROFILE_FUNC_RANGE();
+
+  int imrgra = eqp->imrgra;
+  int nswrgu = eqp->nswrgr;
+  cs_gradient_limit_t imligu
+    = static_cast<cs_gradient_limit_t>(eqp->imligr);
+  int iwarnu = eqp->verbosity;
+  double epsrgu = eqp->epsrgr;
+  double climgu = eqp->climgr;
 
   cs_real_6_t  *coefav = (cs_real_6_t  *)bc_coeffs_ts->a;
   cs_real_66_t *coefbv = (cs_real_66_t *)bc_coeffs_ts->b;
@@ -749,11 +753,11 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
   CS_MALLOC_HD(c_mass_var, n_cells_ext, cs_real_6_t, amode);
   CS_MALLOC_HD(b_mass_var, m->n_b_faces, cs_real_6_t, amode);
 
-  cs_field_bc_coeffs_t bc_coeffs_ts_loc;
-  cs_field_bc_coeffs_shallow_copy(bc_coeffs_ts, &bc_coeffs_ts_loc);
+  cs_field_bc_coeffs_t bc_coeffs_loc;
+  cs_field_bc_coeffs_shallow_copy(bc_coeffs_ts, &bc_coeffs_loc);
 
-  CS_MALLOC_HD(bc_coeffs_ts_loc.a, 6*m->n_b_faces, cs_real_t, amode);
-  cs_real_6_t *coefaq = (cs_real_6_t *)bc_coeffs_ts_loc.a;
+  CS_MALLOC_HD(bc_coeffs_loc.a, 6*m->n_b_faces, cs_real_t, amode);
+  cs_real_6_t *coefaq = (cs_real_6_t *)bc_coeffs_loc.a;
 
   /*==========================================================================
     1.  Initialization
@@ -1042,6 +1046,8 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
     CS_MALLOC_HD(val_f, n_b_faces, cs_real_6_t, amode);
     CS_MALLOC_HD(val_ip_g, n_b_faces, cs_real_6_t, amode);
 
+    bc_coeffs_loc.val_f = (cs_real_t *)val_f;
+
     cs_gradient_boundary_iprime_lsq_strided<6>(ctx,
                                                m,
                                                fvq,
@@ -1050,7 +1056,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
                                                halo_type,
                                                -1,
                                                nullptr,
-                                               &bc_coeffs_ts_loc,
+                                               &bc_coeffs_loc,
                                                nullptr, // gweight,
                                                (const cs_real_6_t *)c_mass_var,
                                                (cs_real_6_t *)val_ip_g,
@@ -1081,13 +1087,10 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
                                     imligu,
                                     epsrgu,
                                     climgu,
-                                    &bc_coeffs_ts_loc,
+                                    &bc_coeffs_loc,
                                     (const cs_real_6_t *)c_mass_var,
-                                    val_f,
                                     c_grad_mvar,
                                     nullptr);
-
-    CS_FREE(val_f);
 
     /* Mass flow through interior faces */
 
@@ -1178,7 +1181,7 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
   CS_FREE(b_mass_var);
 
   coefaq = nullptr;
-  cs_field_bc_coeffs_free_copy(bc_coeffs_ts, &bc_coeffs_ts_loc);
+  cs_field_bc_coeffs_free_copy(bc_coeffs_ts, &bc_coeffs_loc);
 }
 
 /*----------------------------------------------------------------------------*/

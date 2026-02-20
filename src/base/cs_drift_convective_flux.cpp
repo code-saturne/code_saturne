@@ -282,11 +282,6 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
   CS_MALLOC_HD(bc_coeffs_loc.af, n_b_faces, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(bc_coeffs_loc.bf, n_b_faces, cs_real_t, cs_alloc_mode);
 
-  cs_real_t *coefap = bc_coeffs_loc.a;
-  cs_real_t *coefbp = bc_coeffs_loc.b;
-  cs_real_t *cofafp = bc_coeffs_loc.af;
-  cs_real_t *cofbfp = bc_coeffs_loc.bf;
-
   cs_field_bc_coeffs_t bc_coeffs1_loc;
   cs_field_bc_coeffs_init(&bc_coeffs1_loc);
   CS_MALLOC_HD(bc_coeffs1_loc.a, 3*n_b_faces, cs_real_t, cs_alloc_mode);
@@ -500,16 +495,6 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
       cs_equation_param_t eqp_loc = *eqp_sc;
       eqp_loc.iwgrec = 0;
 
-      cs_bc_coeffs_solve_t bc_coeffs_solve;
-      cs_init_bc_coeffs_solve(bc_coeffs_solve,
-                              n_b_faces,
-                              1, // stride
-                              cs_alloc_mode,
-                              false);
-
-      cs_real_t *val_f = bc_coeffs_solve.val_f;
-      cs_real_t *flux = bc_coeffs_solve.flux;
-
       const bool need_compute_bc_flux = true;
       const bool need_compute_bc_grad = (eqp_loc.ircflu) ? true : false;
 
@@ -526,9 +511,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
          w1.data(),
          nullptr, // vitenp
          nullptr, // weighb
-         viscce.data(),
-         val_f,
-         flux);
+         viscce.data());
 
       cs_face_diffusion_potential(nullptr, // field
                                   &eqp_loc,
@@ -540,13 +523,9 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
                                   nullptr, /* frcxt */
                                   viscce.data(),
                                   &bc_coeffs_loc,
-                                  val_f,
-                                  flux,
                                   i_visc.data(), b_visc.data(),
                                   w1.data(),
                                   flumas.data(), flumab.data());
-
-      cs_clear_bc_coeffs_solve(bc_coeffs_solve);
 
       /* TODO add extradiagonal part */
 
@@ -603,8 +582,6 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
                         &eqp_loc,
                         vel, vel,
                         bc_coeffs_vel,
-                        (cs_real_3_t *)bc_coeffs_vel->val_f,
-                        (cs_real_3_t *)bc_coeffs_vel->flux,
                         i_mass_flux_mix, b_mass_flux_mix,
                         i_visc.data(), b_visc.data(),
                         nullptr, nullptr, /* secvif, secvib */
@@ -875,10 +852,10 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
     /* Free memory */
   }
 
-  CS_FREE(coefap);
-  CS_FREE(coefbp);
-  CS_FREE(cofafp);
-  CS_FREE(cofbfp);
+  CS_FREE(bc_coeffs_loc.a);
+  CS_FREE(bc_coeffs_loc.b);
+  CS_FREE(bc_coeffs_loc.af);
+  CS_FREE(bc_coeffs_loc.bf);
 
   CS_FREE(coefa1);
   CS_FREE(coefb1);

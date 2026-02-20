@@ -289,8 +289,6 @@ cs_dilatable_scalar_diff_st(int iterns)
                       &eqp_loc,
                       cvar_scal, cvar_scal,
                       bc_coeffs_sc,
-                      bc_coeffs_sc->val_f,
-                      bc_coeffs_sc->flux,
                       i_mass_flux, b_mass_flux,
                       i_visc.data(), b_visc.data(),
                       nullptr,  /* viscel */

@@ -413,18 +413,6 @@ cs_runge_kutta_stage_complete_scalar_rhs
 
   cs_alloc_mode_t amode = ctx.alloc_mode(false);
 
-  /* Allocate non reconstructed face value only if presence of limiter */
-
-  cs_bc_coeffs_solve_t bc_coeffs_solve;
-  cs_init_bc_coeffs_solve(bc_coeffs_solve,
-                          n_b_faces,
-                          1,
-                          amode,
-                          false);
-
-  cs_real_t *val_f = bc_coeffs_solve.val_f;
-  cs_real_t *flux = bc_coeffs_solve.flux;
-
   /* We compute the total explicit balance. */
 
   int  inc = 1;
@@ -449,8 +437,7 @@ cs_runge_kutta_stage_complete_scalar_rhs
        true, true,
        0, nullptr, // hyd_p_flag, f_ext
        nullptr, viscel, weighb,
-       pvar,
-       val_f, flux);
+       pvar);
 
   cs_balance_scalar(idtvar,
                     f_id,
@@ -461,8 +448,6 @@ cs_runge_kutta_stage_complete_scalar_rhs
                     nullptr,
                     pvar,
                     bc_coeffs,
-                    val_f,
-                    flux,
                     i_massflux,
                     b_massflux,
                     i_visc,
@@ -479,7 +464,6 @@ cs_runge_kutta_stage_complete_scalar_rhs
 
   eqp->theta = 0;
 
-  cs_clear_bc_coeffs_solve(bc_coeffs_solve);
   ctx.wait();
 }
 

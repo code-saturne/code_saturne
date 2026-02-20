@@ -438,7 +438,7 @@ cs_field_gradient_scalar(const cs_field_t          *f,
 void
 cs_field_gradient_scalar_array(int                         f_id,
                                int                         inc,
-                               const cs_field_bc_coeffs_t *bc_coeffs,
+                               cs_field_bc_coeffs_t       *bc_coeffs,
                                cs_real_t                   var[],
                                cs_real_3_t                 grad[])
 {
@@ -573,7 +573,7 @@ cs_field_gradient_potential(const cs_field_t          *f,
 
   }
 
-  const cs_field_bc_coeffs_t *bc_coeffs = nullptr;
+  cs_field_bc_coeffs_t *bc_coeffs = nullptr;
   if (f->bc_coeffs != nullptr) {
     bc_coeffs = f->bc_coeffs;
   }
@@ -670,7 +670,8 @@ cs_field_gradient_vector(const cs_field_t          *f,
                                       : (cs_real_3_t *)(f->val);
 
   cs_field_bc_coeffs_t bc_coeffs_loc;
-  const cs_field_bc_coeffs_t *bc_coeffs = nullptr;
+  cs_field_bc_coeffs_t *bc_coeffs = nullptr;
+  bool need_free_copy = false;
 
   if (f->bc_coeffs != nullptr) {
     /* coupled components */
@@ -681,6 +682,8 @@ cs_field_gradient_vector(const cs_field_t          *f,
         if (use_previous_t) {
           cs_field_bc_coeffs_shallow_copy(bc_coeffs, &bc_coeffs_loc);
           bc_coeffs_loc.val_f = f->bc_coeffs->val_f_pre;
+          if (bc_coeffs_loc.val_f == nullptr)
+            need_free_copy = true;
           bc_coeffs = &bc_coeffs_loc;
         }
       }
@@ -701,6 +704,9 @@ cs_field_gradient_vector(const cs_field_t          *f,
                      c_weight,
                      cpl,
                      grad);
+
+  if (need_free_copy)
+    cs_field_bc_coeffs_free_copy(f->bc_coeffs, &bc_coeffs_loc);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -739,6 +745,17 @@ cs_field_gradient_tensor(const cs_field_t          *f,
                              &gradient_type,
                              &halo_type);
 
+  /* Internal coupling structure */
+  cs_internal_coupling_t  *cpl = nullptr;
+  if (f->type & CS_FIELD_VARIABLE && eqp->idiff > 0) {
+    int key_id = cs_field_key_id_try("coupling_entity");
+    if (key_id > -1) {
+      int coupl_id = cs_field_get_key_int(f, key_id);
+      if (coupl_id > -1)
+        cpl = cs_internal_coupling_by_id(coupl_id);
+    }
+  }
+
   if (f->n_time_vals < 2 && use_previous_t)
     bft_error(__FILE__, __LINE__, 0,
               _("%s: field %s does not maintain previous time step values\n"
@@ -749,7 +766,9 @@ cs_field_gradient_tensor(const cs_field_t          *f,
                                       : (cs_real_6_t *)(f->val);
 
   cs_field_bc_coeffs_t bc_coeffs_loc;
-  const cs_field_bc_coeffs_t *bc_coeffs = nullptr;
+  cs_field_bc_coeffs_t *bc_coeffs = nullptr;
+  bool need_free_copy = false;
+
   if (f->bc_coeffs != nullptr) {
     int coupled_key_id = cs_field_key_id_try("coupled");
     if (coupled_key_id > 1) {
@@ -758,6 +777,8 @@ cs_field_gradient_tensor(const cs_field_t          *f,
         if (use_previous_t) {
           cs_field_bc_coeffs_shallow_copy(bc_coeffs, &bc_coeffs_loc);
           bc_coeffs_loc.val_f = f->bc_coeffs->val_f_pre;
+          if (bc_coeffs_loc.val_f == nullptr)
+            need_free_copy = true;
           bc_coeffs = &bc_coeffs_loc;
         }
       }
@@ -775,7 +796,11 @@ cs_field_gradient_tensor(const cs_field_t          *f,
                      eqp->climgr,
                      bc_coeffs,
                      var,
+                     cpl, /* internal coupling */
                      grad);
+
+  if (need_free_copy)
+    cs_field_bc_coeffs_free_copy(f->bc_coeffs, &bc_coeffs_loc);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -864,7 +889,7 @@ cs_field_gradient_boundary_iprime_scalar(const cs_field_t  *f,
 
   cs_real_t *var = (use_previous_t) ? f->val_pre : f->val;
 
-  const cs_field_bc_coeffs_t *bc_coeffs = nullptr;
+  cs_field_bc_coeffs_t *bc_coeffs = nullptr;
   if (f->bc_coeffs != nullptr) {
     bc_coeffs = f->bc_coeffs;
   }
@@ -1027,14 +1052,14 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
                 "so \"use_previous_t\" can not be handled."),
               __func__, f->name);
 
-  const cs_field_bc_coeffs_t *bc_coeffs_v = nullptr;
+  cs_field_bc_coeffs_t *bc_coeffs = nullptr;
 
   if (f->bc_coeffs != nullptr) {
     /* coupled components */
     int coupled_key_id = cs_field_key_id_try("coupled");
     if (coupled_key_id > 1) {
       if (cs_field_get_key_int(f, coupled_key_id) > 0) {
-        bc_coeffs_v = f->bc_coeffs;
+        bc_coeffs = f->bc_coeffs;
       }
     }
   }
@@ -1060,7 +1085,7 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
                                                halo_type,
                                                climgr,
                                                nullptr,
-                                               bc_coeffs_v,
+                                               bc_coeffs,
                                                c_weight,
                                                var,
                                                var_iprime,
@@ -1090,7 +1115,7 @@ cs_field_gradient_boundary_iprime_vector(const cs_field_t  *f,
                        static_cast<cs_gradient_limit_t>(eqp->imligr),
                        eqp->epsrgr,
                        eqp->climgr,
-                       bc_coeffs_v,
+                       bc_coeffs,
                        var,
                        c_weight,
                        cpl, /* internal coupling */
@@ -1168,20 +1193,33 @@ cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
                              &gradient_type,
                              &halo_type);
 
+  cs_internal_coupling_t  *cpl = nullptr;
+
+  if (parent_f->type & CS_FIELD_VARIABLE && eqp->idiff > 0) {
+
+    /* Internal coupling structure */
+    int key_id = cs_field_key_id_try("coupling_entity");
+    if (key_id > -1) {
+      int coupl_id = cs_field_get_key_int(parent_f, key_id);
+      if (coupl_id > -1)
+        cpl = cs_internal_coupling_by_id(coupl_id);
+    }
+  }
+
   if (f->n_time_vals < 2 && use_previous_t)
     bft_error(__FILE__, __LINE__, 0,
               _("%s: field %s does not maintain previous time step values\n"
                 "so \"use_previous_t\" can not be handled."),
               __func__, f->name);
 
-  const cs_field_bc_coeffs_t *bc_coeffs_ts = nullptr;
+  cs_field_bc_coeffs_t *bc_coeffs = nullptr;
 
   if (f->bc_coeffs != nullptr) {
     /* coupled components */
     int coupled_key_id = cs_field_key_id_try("coupled");
     if (coupled_key_id > 1) {
       if (cs_field_get_key_int(f, coupled_key_id) > 0) {
-        bc_coeffs_ts = f->bc_coeffs;
+        bc_coeffs = f->bc_coeffs;
       }
     }
   }
@@ -1207,7 +1245,7 @@ cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
                                                halo_type,
                                                climgr,
                                                nullptr,
-                                               bc_coeffs_ts,
+                                               bc_coeffs,
                                                nullptr,
                                                var,
                                                var_iprime,
@@ -1237,8 +1275,9 @@ cs_field_gradient_boundary_iprime_tensor(const cs_field_t  *f,
                        static_cast<cs_gradient_limit_t>(eqp->imligr),
                        eqp->epsrgr,
                        eqp->climgr,
-                       bc_coeffs_ts,
+                       bc_coeffs,
                        var,
+                       cpl, /* internal coupling */
                        grad);
 
     /* Finally, reconstruct value at I' */

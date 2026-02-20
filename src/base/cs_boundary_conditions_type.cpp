@@ -457,6 +457,7 @@ cs_boundary_conditions_type(bool  init,
             icodcl[f_id] = CS_BC_NEUMANN;
           }
           else {
+            //FIXME not correct for vectors
             if (rcodcl1[f_id] < 0.5*cs_math_infinite_r)
               icodcl[f_id] = CS_BC_DIRICHLET;
             else

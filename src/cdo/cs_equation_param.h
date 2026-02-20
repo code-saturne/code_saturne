@@ -487,6 +487,10 @@ typedef struct {
    * \var rk_def
    * Containing info of RK integrator id in the global Runge-Kutta
    * structure list, and RK scheme.
+   * \var diffusion_limiter_id
+   * Diffusion limiter field id (-1 if not used)
+   * \var convection_limiter_id
+   * Convection limiter field id (-1 if not used)
   */
 
   int iconv;
@@ -524,6 +528,9 @@ typedef struct {
   int  d_gradient_r;
   int  b_rc_gradient;
   int  b_diff_flux_rc;
+
+  int  diffusion_limiter_id;
+  int  convection_limiter_id;
 
   cs_runge_kutta_def_t rk_def;
 

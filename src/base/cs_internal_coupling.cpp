@@ -1124,7 +1124,7 @@ cs_internal_coupling_spmv_contribution(bool               exclude_diag,
 
   /* Compute heq and update y */
 
-  cs_real_t *hintp = f->bc_coeffs->hint;
+  cs_real_t *hintp = f->bc_coeffs->h_int_tot;
   cs_real_t *hextp = f->bc_coeffs->rcodcl2;
 
   if (f->dim == 1) {
@@ -1282,13 +1282,15 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
   int idiffp = 0;
 
   if (eqp->icoupl > 0) {
+    bft_printf("INTERNAL COUPLING of %s, add contribution to the matrix.\n",
+        f->name);
     thetap = eqp->theta;
     idiffp = eqp->idiff;
   }
 
   /* Compute global ids and exchange coefficient */
 
-  cs_real_t *hintp = f->bc_coeffs->hint;
+  cs_real_t *hintp = f->bc_coeffs->h_int_tot;
   cs_real_t *hextp = f->bc_coeffs->rcodcl2;
 
   /* local to global preparation and exchange */
@@ -1340,7 +1342,7 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
     cs_real_t surf = b_face_surf[face_id];
     cs_real_t hint = hintp[face_id];
     cs_real_t hext = hextp[face_id];
-    cs_real_t heq = _calc_heq(hint, hext) * surf;
+    cs_real_t heq = _calc_heq(hint, hext) * surf;//TODO simply it with new BC coeffs
     cs_real_t c = thetap * idiffp * heq;
 
     d_g_row_id[jj] = g_id_l[ii];
@@ -1348,8 +1350,9 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
 
     for (cs_lnum_t ib = 0; ib < db_stride; ib++)
       d_aij[db_fill + ib] = 0;
+    /* Note that the diagonal part is taken into account by standard BC coefs */
     for (cs_lnum_t ib = 0; ib < db_size; ib++)
-      d_aij[db_fill + ib*(db_size + 1)] = c;
+      d_aij[db_fill + ib*(db_size + 1)] = 0;
 
     for (cs_lnum_t ib = 0; ib < eb_stride; ib++)
       e_aij[eb_fill + ib] = 0;
@@ -1590,14 +1593,14 @@ cs_internal_coupling_add_entity(int        f_id)
  * \brief  Update internal coupling coefficients of the field of the
  * given id using given boundary exchange coefficients passed by face id.
  *
- * \param[in] f     pointer to field
- * \param[in] hbnd  boundary exchange coefficients passed by face id
+ * \param[in] f          pointer to field
+ * \param[in] h_int_tot  boundary exchange coefficients passed by face id
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_ic_field_set_exchcoeff(const cs_field_t *f,
-                          const cs_real_t  *hbnd)
+                          const cs_real_t  *h_int_tot)
 {
   const int coupling_key_id = cs_field_key_id("coupling_entity");
   int coupling_id = cs_field_get_key_int(f,
@@ -1607,22 +1610,20 @@ cs_ic_field_set_exchcoeff(const cs_field_t *f,
 
   const cs_lnum_t n_local = cpl->n_local;
   const cs_lnum_t *faces_local = cpl->faces_local;
-  cs_real_t *hint = f->bc_coeffs->hint;
   cs_real_t *hext = f->bc_coeffs->rcodcl2;
 
   cs_real_t *hextloc = nullptr;
   CS_MALLOC(hextloc, n_local, cs_real_t);
 
-  /* Exchange hbnd */
+  /* Exchange h_int_tot */
   cs_internal_coupling_exchange_by_face_id(cpl,
                                            1, /* Dimension */
-                                           hbnd,
+                                           h_int_tot,
                                            hextloc);
 
   /* Compute hint and hext */
   for (cs_lnum_t ii = 0; ii < n_local; ii++) {
     cs_lnum_t face_id = faces_local[ii];
-    hint[face_id] = hbnd[face_id];
     hext[face_id] = hextloc[ii];
   }
 
@@ -1693,6 +1694,7 @@ END_C_DECLS
  * \param[in]     cpl              structure associated with internal coupling
  * \param[in]     compute_diffusion_coeffs compute diffusion coefficients or not
  * \param[in]     halo_type        halo type
+ * \param[in]     inc              if 0, solve on increment; 1 otherwise
  * \param[in]     w_stride         stride for weighting coefficient
  * \param[in]     clip_coeff       clipping coefficient
  * \param[in]     hyd_p_flag       flag for hydrostatic pressure
@@ -1732,7 +1734,7 @@ cs_internal_coupling_update_bc_coeffs_s
   /* For internal coupling, exchange local variable
      with its associated distant value */
 
-  cs_real_t *hintp = bc_coeffs->hint;
+  cs_real_t *hintp = bc_coeffs->h_int_tot;
   cs_real_t *hextp = bc_coeffs->rcodcl2;
 
   const cs_lnum_t n_local = cpl->n_local;
@@ -1755,7 +1757,7 @@ cs_internal_coupling_update_bc_coeffs_s
   cs_real_t *bc_coeff_b = bc_coeffs->b;
 
   /* For cases with a stronger gradient normal to the coupling than tangential
-     to the coupling, assuming a homogeneous Neuman boundary condition at the
+     to the coupling, assuming a homogeneous Neumann boundary condition at the
      coupled faces for the reconstruction at I' rather than the value at I on
      non-orthogonal meshes (such as tetrahedral meshes) can actually degrade
      performance, because the only adjacent mesh locations contributing
@@ -1848,9 +1850,12 @@ cs_internal_coupling_update_bc_coeffs_s
 
       cs_real_t heq = hext * m_b;
 
+      // FIXME: this should be var_ip limited instead of var[cell_id].
       bc_coeff_a[face_id] =   m_a * var_ext[ii]
                             + m_b * var[cell_id];
 
+      //TODO: it is not correct with wall functions.
+      // cofimp should be used.
       bc_coeff_b[face_id] = 0.;
 
       if (compute_diffusion_coeffs) {
@@ -1926,7 +1931,7 @@ cs_internal_coupling_update_bc_coeffs_strided
   /* For internal coupling, exchange local variable
      with its associated distant value */
 
-  cs_real_t *hintp = bc_coeffs->hint;
+  cs_real_t *hintp = bc_coeffs->h_int_tot;
   cs_real_t *hextp = bc_coeffs->rcodcl2;
 
   var_t *coefa = (var_t *)bc_coeffs->a;
@@ -2029,12 +2034,14 @@ cs_internal_coupling_update_bc_coeffs_strided
         else
           cofaf[face_id][k] = - heq * var_ext[ii][k];
 
+        //FIXME not correct with wall functions
         for (cs_lnum_t ll = 0; ll < stride; ll++) {
           coefb[face_id][k][ll] = 0.;
           cofbf[face_id][k][ll] = 0.;
         }
 
         /* diagonal */
+        // TODO is should be adapted for wall functions.
         cofbf[face_id][k][k] = heq;
       }
     }
@@ -2058,6 +2065,7 @@ cs_internal_coupling_update_bc_coeffs_strided
     cs_lnum_t face_id = faces_local[ii];
     for (cs_lnum_t k = 0; k < stride; k++) {
       coefa[face_id][k] = 0.5*(coefa[face_id][k] + var_ext[ii][k]);
+      //TODO use val_f directly!
     }
   }
 

@@ -232,7 +232,7 @@ cs_lagr_coupling_initialize(void)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Increment the source terms for Lagrangian 2-way coupling with
- *         quantites attached to a given particle.
+ *         quantities attached to a given particle.
  *
  * \remark  Source terms are computed for the starting cell of a particle
  *          during a given iteration. Even if particle exits the domain,

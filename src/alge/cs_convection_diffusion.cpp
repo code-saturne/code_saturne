@@ -260,8 +260,7 @@ _beta_limiter_denom(cs_field_t                 *f,
   }
 
   cs_real_t *df_limiter = nullptr;
-  int df_limiter_id =
-    cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
+  int df_limiter_id = eqp->diffusion_limiter_id;
   if (df_limiter_id > -1)
     df_limiter = cs_field_by_id(df_limiter_id)->val;
 
@@ -1750,8 +1749,6 @@ _adjust_and_check_bounds_strided
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     val_f_g       boundary face value for gradient
- * \param[in]     flux_d        boundary flux
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -1777,8 +1774,6 @@ _convection_diffusion_scalar_unsteady
    const cs_real_t   *restrict pvara,
    const int                   icvfli[],
    const cs_field_bc_coeffs_t *bc_coeffs,
-   const cs_real_t             val_f_g[],
-   const cs_real_t             flux_d[],
    const cs_real_t             i_massflux[],
    const cs_real_t             b_massflux[],
    const cs_real_t             i_visc[],
@@ -1911,13 +1906,11 @@ _convection_diffusion_scalar_unsteady
       }
     }
 
-    int cv_limiter_id =
-      cs_field_get_key_int(f, cs_field_key_id("convection_limiter_id"));
+    int cv_limiter_id = eqp.convection_limiter_id;
     if (cv_limiter_id > -1)
       cv_limiter = cs_field_by_id(cv_limiter_id)->val;
 
-    int df_limiter_id =
-      cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
+    int df_limiter_id = eqp.diffusion_limiter_id;
     if (df_limiter_id > -1)
       df_limiter = cs_field_by_id(df_limiter_id)->val;
 
@@ -1998,7 +1991,6 @@ _convection_diffusion_scalar_unsteady
                                     nullptr, /* f_ext exterior force */
                                     bc_coeffs,
                                     _pvar,
-                                    val_f_g,
                                     gweight, /* Weighted gradient */
                                     grad,
                                     bounds);
@@ -2036,12 +2028,15 @@ _convection_diffusion_scalar_unsteady
 
       CS_MALLOC_HD(gradst, n_cells_ext, cs_real_3_t, cs_alloc_mode);
 
+      /* Precomputed boundary face value */
+      const cs_real_t *val_f = bc_coeffs->val_f;
+
       cs_slope_test_gradient(f_id,
                              ctx,
                              (const cs_real_3_t *)grad,
                              gradst,
                              _pvar,
-                             val_f_g,
+                             val_f,
                              i_massflux);
 
     }
@@ -2633,7 +2628,10 @@ _convection_diffusion_scalar_unsteady
      ---> Contribution from boundary faces
      ======================================================================*/
 
-  /* Boundary convective flux are all computed with an upwind scheme */
+   const cs_real_t *val_f_g = bc_coeffs->val_f;
+   const cs_real_t *flux_d = bc_coeffs->flux_diff;
+
+   /* Boundary convective flux are all computed with an upwind scheme */
   if (icvflb == false || is_thermal) {
 
     ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
@@ -2823,7 +2821,6 @@ _convection_diffusion_scalar_unsteady
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     val_f         boundary face value for gradient
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in,out] i_conv_flux   scalar convection flux at interior faces
@@ -2841,7 +2838,6 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
                                  const cs_real_t   *restrict pvara,
                                  const int                   icvfli[],
                                  const cs_field_bc_coeffs_t *bc_coeffs,
-                                 const cs_real_t             val_f[],
                                  const cs_real_t             i_massflux[],
                                  const cs_real_t             b_massflux[],
                                  cs_real_t                   i_conv_flux[][2],
@@ -2963,13 +2959,11 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
       }
     }
 
-    int cv_limiter_id =
-      cs_field_get_key_int(f, cs_field_key_id("convection_limiter_id"));
+    int cv_limiter_id = eqp.convection_limiter_id;
     if (cv_limiter_id > -1)
       cv_limiter = cs_field_by_id(cv_limiter_id)->val;
 
-    int df_limiter_id =
-      cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
+    int df_limiter_id = eqp.diffusion_limiter_id;
     if (df_limiter_id > -1)
       df_limiter = cs_field_by_id(df_limiter_id)->val;
 
@@ -3046,7 +3040,6 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
                                     nullptr, /* f_ext exterior force */
                                     bc_coeffs,
                                     _pvar,
-                                    val_f,
                                     gweight, /* Weighted gradient */
                                     grad,
                                     bounds);
@@ -3085,6 +3078,8 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
     if (isstpp == 0) {
 
       CS_MALLOC_HD(gradst, n_cells_ext, cs_real_3_t, cs_alloc_mode);
+      /* precomputed boundary face value */
+      const cs_real_t *val_f = bc_coeffs->val_f;
 
       cs_slope_test_gradient(f_id,
                              ctx,
@@ -3581,6 +3576,9 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
     ---> Contribution from boundary faces
     ======================================================================*/
 
+  /* working (precomputed) boundary face value */
+  const cs_real_t *val_f = bc_coeffs->val_f;
+
   /* Boundary convective flux are all computed with an upwind scheme */
   if (icvflb == false) {
 
@@ -3707,8 +3705,6 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in]     bc_coeffs     boundary conditions structure for the variable
- * \param[in]     val_f_g       boundary face value for gradient
- * \param[in]     flux_d        boundary flux
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -3737,8 +3733,7 @@ _convection_diffusion_unsteady_strided
    cs_real_t                  (*pvar)[stride],
    const cs_real_t            (*pvara)[stride],
    const int                    icvfli[],
-   const cs_real_t              val_f[][stride],
-   const cs_real_t              flux[][stride],
+   const cs_field_bc_coeffs_t  *bc_coeffs,
    const cs_real_t              i_massflux[],
    const cs_real_t              b_massflux[],
    const cs_real_t              i_visc[],
@@ -3752,6 +3747,10 @@ _convection_diffusion_unsteady_strided
   using grad_t = cs_real_t[stride][3];
   using var_t = cs_real_t[stride];
   using b_t = cs_real_t[stride][stride];
+
+  /* Precomputed boundary face value */
+  const var_t *val_f = (var_t *)bc_coeffs->val_f;
+  const var_t *flux = (var_t *)bc_coeffs->flux_diff;
 
   std::chrono::high_resolution_clock::time_point t_start;
   if (cs_glob_timer_kernels_flag > 0)
@@ -3801,12 +3800,9 @@ _convection_diffusion_unsteady_strided
 
   cs_real_t *df_limiter = nullptr;
 
-  if (f != nullptr) {
-    int df_limiter_id
-      = cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
-    if (df_limiter_id > -1)
-      df_limiter = cs_field_by_id(df_limiter_id)->val;
-  }
+  int df_limiter_id = eqp.diffusion_limiter_id;
+  if (df_limiter_id > -1)
+    df_limiter = cs_field_by_id(df_limiter_id)->val;
 
   /* Discontinuous porous treatment */
   if (porous_vel) {
@@ -4720,8 +4716,7 @@ cs_beta_limiter_building(int                   f_id,
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
-  cs_real_t* cv_limiter = cs_field_by_id(
-      cs_field_get_key_int(f, cs_field_key_id("convection_limiter_id")))->val;
+  cs_real_t* cv_limiter = cs_field_by_id(eqp->convection_limiter_id)->val;
 
   cs_real_t *denom_inf, *num_inf, *denom_sup, *num_sup;
   CS_MALLOC_HD(denom_inf, n_cells_ext, cs_real_t, cs_alloc_mode);
@@ -4828,8 +4823,6 @@ cs_beta_limiter_building(int                   f_id,
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     val_f         boundary face value for gradient
- * \param[in]     flux          boundary flux
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -4853,8 +4846,6 @@ cs_convection_diffusion_scalar(int                         idtvar,
                                const cs_real_t   *restrict pvara,
                                const int                   icvfli[],
                                const cs_field_bc_coeffs_t *bc_coeffs,
-                               const cs_real_t             val_f[],
-                               const cs_real_t             flux[],
                                const cs_real_t             i_massflux[],
                                const cs_real_t             b_massflux[],
                                const cs_real_t             i_visc[],
@@ -4879,7 +4870,7 @@ cs_convection_diffusion_scalar(int                         idtvar,
         (f, eqp, icvflb, inc, imasac,
          pvar, pvara,
          icvfli,
-         bc_coeffs, val_f, flux,
+         bc_coeffs,
          i_massflux, b_massflux,
          i_visc, b_visc,
          nullptr, rhs, i_flux, b_flux);
@@ -4888,7 +4879,7 @@ cs_convection_diffusion_scalar(int                         idtvar,
         (f, eqp, icvflb, inc, imasac,
          pvar, pvara,
          icvfli,
-         bc_coeffs, val_f, flux,
+         bc_coeffs,
          i_massflux, b_massflux,
          i_visc, b_visc,
          nullptr, rhs, i_flux, b_flux);
@@ -4902,7 +4893,7 @@ cs_convection_diffusion_scalar(int                         idtvar,
       (f, eqp, icvflb, inc,
        pvar, pvara,
        icvfli,
-       bc_coeffs, val_f,
+       bc_coeffs,
        i_massflux, b_massflux,
        i_visc, b_visc,
        nullptr, rhs);
@@ -4948,7 +4939,6 @@ cs_convection_diffusion_scalar(int                         idtvar,
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
  * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     val_f         boundary face value for gradient
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in,out] i_conv_flux   scalar convection flux at interior faces
@@ -4967,7 +4957,6 @@ cs_face_convection_scalar(int                         idtvar,
                           const cs_real_t   *restrict pvara,
                           const int                   icvfli[],
                           const cs_field_bc_coeffs_t *bc_coeffs,
-                          const cs_real_t             val_f[],
                           const cs_real_t             i_massflux[],
                           const cs_real_t             b_massflux[],
                           cs_real_t                   i_conv_flux[][2],
@@ -4988,7 +4977,7 @@ cs_face_convection_scalar(int                         idtvar,
       (f, eqp, icvflb, inc, imasac,
        pvar, pvara,
        icvfli,
-       bc_coeffs, val_f,
+       bc_coeffs,
        i_massflux, b_massflux,
        i_conv_flux, b_conv_flux);
   }
@@ -5001,7 +4990,7 @@ cs_face_convection_scalar(int                         idtvar,
       (f, eqp, icvflb, inc,
        pvar, pvara,
        icvfli,
-       bc_coeffs, val_f,
+       bc_coeffs,
        i_massflux, b_massflux,
        i_conv_flux, b_conv_flux);
   }
@@ -5061,9 +5050,7 @@ cs_face_convection_scalar(int                         idtvar,
  * \param[in]     icvfli        boundary face indicator array of convection flux
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
- * \param[in]     bc_coeffs_v   boundary conditions structure for the variable
- * \param[in]     val_f         boundary face value for gradient
- * \param[in]     flux_d        boundary flux
+ * \param[in]     bc_coeffs     boundary conditions structure for the variable
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -5089,9 +5076,7 @@ cs_convection_diffusion_vector(int                         idtvar,
                                cs_real_3_t       *restrict pvar,
                                const cs_real_3_t *restrict pvara,
                                const int                   icvfli[],
-                               const cs_field_bc_coeffs_t *bc_coeffs_v,
-                               const cs_real_t             val_f[][3],
-                               const cs_real_t             flux_d[][3],
+                               const cs_field_bc_coeffs_t *bc_coeffs,
                                const cs_real_t             i_massflux[],
                                const cs_real_t             b_massflux[],
                                const cs_real_t             i_visc[],
@@ -5247,9 +5232,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                     (cs_gradient_limit_t)(eqp.d_imligr),
                                     eqp.epsrgr,
                                     eqp.d_climgr,
-                                    bc_coeffs_v,
+                                    bc_coeffs,
                                     (const cs_real_3_t *)_pvar,
-                                    val_f,
                                     gweight, /* weighted gradient */
                                     (cs_real_33_t *)grad,
                                     bounds);
@@ -5277,7 +5261,7 @@ cs_convection_diffusion_vector(int                         idtvar,
         (ctx, f, var_name, eqp, icvflb, inc, imasac,
          pvar, pvara,
          icvfli,
-         val_f, flux_d,
+         bc_coeffs,
          i_massflux, b_massflux,
          i_visc, b_visc,
          i_pvar, b_pvar, grad, bounds, rhs);
@@ -5286,7 +5270,7 @@ cs_convection_diffusion_vector(int                         idtvar,
         (ctx, f, var_name, eqp, icvflb, inc, imasac,
          pvar, pvara,
          icvfli,
-         val_f, flux_d,
+         bc_coeffs,
          i_massflux, b_massflux,
          i_visc, b_visc,
          i_pvar, b_pvar, grad, bounds, rhs);
@@ -5297,7 +5281,7 @@ cs_convection_diffusion_vector(int                         idtvar,
       (f, var_name, eqp, icvflb, inc,
        pvar, pvara,
        icvfli,
-       bc_coeffs_v, val_f,
+       bc_coeffs,
        i_massflux, b_massflux,
        i_visc, b_visc,
        grad, rhs);
@@ -5457,9 +5441,7 @@ cs_convection_diffusion_vector(int                         idtvar,
  * \param[in]     imasac        take mass accumulation into account?
  * \param[in]     pvar          solved velocity (current time step)
  * \param[in]     pvara         solved velocity (previous time step)
- * \param[in]     bc_coeffs_ts  boundary condition structure for the variable
- * \param[in]     val_f         boundary face value
- * \param[in]     flux          boundary flux
+ * \param[in]     bc_coeffs     boundary condition structure for the variable
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -5479,9 +5461,7 @@ cs_convection_diffusion_tensor(int                          idtvar,
                                int                          imasac,
                                cs_real_6_t        *restrict pvar,
                                const cs_real_6_t  *restrict pvara,
-                               const cs_field_bc_coeffs_t  *bc_coeffs_ts,
-                               const cs_real_t              val_f[][6],
-                               const cs_real_t              flux[][6],
+                               const cs_field_bc_coeffs_t  *bc_coeffs,
                                const cs_real_t              i_massflux[],
                                const cs_real_t              b_massflux[],
                                const cs_real_t              i_visc[],
@@ -5570,9 +5550,8 @@ cs_convection_diffusion_tensor(int                          idtvar,
                                     (cs_gradient_limit_t)(eqp.d_imligr),
                                     eqp.epsrgr,
                                     eqp.d_climgr,
-                                    bc_coeffs_ts,
+                                    bc_coeffs,
                                     _pvar,
-                                    val_f,
                                     (cs_real_63_t *)grad,
                                     bounds);
 
@@ -5596,7 +5575,7 @@ cs_convection_diffusion_tensor(int                          idtvar,
       (ctx, f, var_name, eqp, 0, inc, imasac,
        pvar, pvara,
        nullptr, // icvfli,
-       val_f, flux,
+       bc_coeffs,
        i_massflux, b_massflux,
        i_visc, b_visc,
        nullptr, nullptr, grad, bounds, rhs);
@@ -5605,7 +5584,7 @@ cs_convection_diffusion_tensor(int                          idtvar,
     cs_convection_diffusion_steady_strided<6>
       (f, var_name, eqp, icvflb, inc,
        pvar, pvara, nullptr,
-       bc_coeffs_ts, val_f,
+       bc_coeffs,
        i_massflux, b_massflux,
        i_visc, b_visc,
        grad, rhs);
@@ -5654,8 +5633,6 @@ cs_convection_diffusion_tensor(int                          idtvar,
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     val_f         boundary face value for gradient
- * \param[in]     flux          boundary flux
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -5676,8 +5653,6 @@ cs_convection_diffusion_thermal(int                         idtvar,
                                 cs_real_t        *restrict  pvar,
                                 const cs_real_t  *restrict  pvara,
                                 const cs_field_bc_coeffs_t *bc_coeffs,
-                                const cs_real_t             val_f[],
-                                const cs_real_t             flux[],
                                 const cs_real_t             i_massflux[],
                                 const cs_real_t             b_massflux[],
                                 const cs_real_t             i_visc[],
@@ -5698,7 +5673,7 @@ cs_convection_diffusion_thermal(int                         idtvar,
        inc, imasac,
        pvar, pvara,
        nullptr, /* icvfli */
-       bc_coeffs, val_f, flux,
+       bc_coeffs,
        i_massflux, b_massflux,
        i_visc, b_visc,
        xcpp, rhs, nullptr, nullptr);
@@ -5714,7 +5689,7 @@ cs_convection_diffusion_thermal(int                         idtvar,
      inc,
      pvar, pvara,
      nullptr, /* icvfli */
-     bc_coeffs, val_f,
+     bc_coeffs,
      i_massflux, b_massflux,
      i_visc, b_visc,
      xcpp, rhs);
@@ -5746,8 +5721,6 @@ cs_convection_diffusion_thermal(int                         idtvar,
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
  * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     val_f         boundary face value
- * \param[in]     flux_d        boundary flux
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -5769,8 +5742,6 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
                                 cs_real_t        *restrict  pvar,
                                 const cs_real_t  *restrict  pvara,
                                 const cs_field_bc_coeffs_t *bc_coeffs,
-                                const cs_real_t             val_f[],
-                                const cs_real_t             flux_d[],
                                 const cs_real_t             i_visc[],
                                 const cs_real_t             b_visc[],
                                 cs_real_6_t      *restrict  viscel,
@@ -5862,16 +5833,14 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
 
   const cs_real_t  *restrict _pvar = (pvar != nullptr) ? pvar : pvara;
 
+  int df_limiter_id = eqp.diffusion_limiter_id;
+  if (df_limiter_id > -1)
+    df_limiter = cs_field_by_id(df_limiter_id)->val;
+
   /* Logging */
 
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
-
-    int df_limiter_id =
-      cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
-    if (df_limiter_id > -1)
-      df_limiter = cs_field_by_id(df_limiter_id)->val;
-
     snprintf(var_name, 63, "%s", f->name);
   }
   else
@@ -5924,6 +5893,8 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
   /* ---> Periodicity and parallelism treatment of symmetric tensors */
   cs_halo_sync_r(halo, halo_type, false, viscce);
 
+  // TODO update Bcs
+
   /* 2. Compute the diffusive part with reconstruction technics */
 
   /* ======================================================================
@@ -5962,7 +5933,6 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
                                     nullptr, /* f_ext exterior force */
                                     bc_coeffs,
                                     _pvar,
-                                    val_f,
                                     gweight, /* Weighted gradient */
                                     grad,
                                     bounds);
@@ -6260,6 +6230,8 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
   }
   else {
 
+    const cs_real_t *flux_d = bc_coeffs->flux_diff;
+
     ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       cs_lnum_t ii = b_face_cells[face_id];
 
@@ -6312,9 +6284,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
  *                               - 1 take into account,
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
- * \param[in]     bc_coeffs_v   boundary condition structure for the variable
- * \param[in]     val_f         boundary face value
- * \param[in]     flux_d        boundary flux
+ * \param[in]     bc_coeffs     boundary condition structure for the variable
  * \param[in]     i_visc        \f$ \tens{\mu}_\fij \dfrac{S_\fij}{\ipf\jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \dfrac{S_\fib}{\ipf \centf} \f$
@@ -6334,9 +6304,7 @@ cs_anisotropic_left_diffusion_vector
    int                         ivisep,
    cs_real_3_t       *restrict pvar,
    const cs_real_3_t *restrict pvara,
-   const cs_field_bc_coeffs_t *bc_coeffs_v,
-   const cs_real_t             val_f[][3],
-   const cs_real_t             flux_d[][3],
+   const cs_field_bc_coeffs_t *bc_coeffs,
    const cs_real_33_t          i_visc[],
    const cs_real_t             b_visc[],
    const cs_real_t             i_secvis[],
@@ -6344,6 +6312,7 @@ cs_anisotropic_left_diffusion_vector
 )
 {
   CS_PROFILE_FUNC_RANGE();
+  using var_t = cs_real_t[3];
 
   const int idiffp = eqp.idiff;
   const int ircflp = eqp.ircflu;
@@ -6415,16 +6384,14 @@ cs_anisotropic_left_diffusion_vector
   const cs_real_3_t  *restrict _pvar
     = (pvar != nullptr) ? (const cs_real_3_t  *)pvar : pvara;
 
+  int df_limiter_id = eqp.diffusion_limiter_id;
+  if (df_limiter_id > -1)
+    df_limiter = cs_field_by_id(df_limiter_id)->val;
+
   /* logging info */
 
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
-
-    int df_limiter_id =
-      cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
-    if (df_limiter_id > -1)
-      df_limiter = cs_field_by_id(df_limiter_id)->val;
-
     snprintf(var_name, 63, "%s", f->name);
   }
   else
@@ -6451,9 +6418,8 @@ cs_anisotropic_left_diffusion_vector
                                     (cs_gradient_limit_t)(eqp.d_imligr),
                                     eqp.epsrgr,
                                     eqp.d_climgr,
-                                    bc_coeffs_v,
+                                    bc_coeffs,
                                     _pvar,
-                                    val_f,
                                     nullptr, /* weighted gradient */
                                     gradv,
                                     bounds);
@@ -6614,8 +6580,8 @@ cs_anisotropic_left_diffusion_vector
   /* Steady */
   if (idtvar < 0) {
 
-    const cs_real_3_t  *cofafv = (const cs_real_3_t  *)bc_coeffs_v->af;
-    const cs_real_33_t *cofbfv = (const cs_real_33_t *)bc_coeffs_v->bf;
+    const cs_real_3_t  *cofafv = (const cs_real_3_t  *)bc_coeffs->af;
+    const cs_real_33_t *cofbfv = (const cs_real_33_t *)bc_coeffs->bf;
 
 #   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
     for (int t_id = 0; t_id < n_b_threads; t_id++) {
@@ -6663,6 +6629,8 @@ cs_anisotropic_left_diffusion_vector
     /* Unsteady */
   }
   else {
+
+    const var_t *flux_d = (var_t *)bc_coeffs->flux_diff;
 
     ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
       cs_lnum_t cell_id = b_face_cells[face_id];
@@ -6792,9 +6760,7 @@ cs_anisotropic_left_diffusion_vector
  *                               - 1 otherwise
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
- * \param[in]     bc_coeffs_v   boundary condition structure for the variable
- * \param[in]     val_f         boundary face value for gradient
- * \param[in]     flux_d        boundary flux
+ * \param[in]     bc_coeffs     boundary condition structure for the variable
  * \param[in]     i_visc        \f$ \tens{\mu}_\fij \dfrac{S_\fij}{\ipf\jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \dfrac{S_\fib}{\ipf \centf} \f$
@@ -6817,9 +6783,7 @@ cs_anisotropic_right_diffusion_vector
   int                           inc,
   cs_real_3_t         *restrict pvar,
   const cs_real_3_t   *restrict pvara,
-  const cs_field_bc_coeffs_t   *bc_coeffs_v,
-  const cs_real_t               val_f[][3],
-  const cs_real_t               flux_d[][3],
+  const cs_field_bc_coeffs_t   *bc_coeffs,
   const cs_real_t               i_visc[],
   const cs_real_t               b_visc[],
   cs_real_6_t         *restrict viscel,
@@ -6829,6 +6793,7 @@ cs_anisotropic_right_diffusion_vector
 )
 {
   CS_PROFILE_FUNC_RANGE();
+  using var_t = cs_real_t[3];
 
   const int ircflp = eqp.ircflu;
   const int ircflb = (ircflp > 0) ? eqp.b_diff_flux_rc : 0;
@@ -6901,15 +6866,14 @@ cs_anisotropic_right_diffusion_vector
   const cs_real_3_t  *restrict _pvar
     = (pvar != nullptr) ? (const cs_real_3_t  *)pvar : pvara;
 
+  int df_limiter_id = eqp.diffusion_limiter_id;
+  if (df_limiter_id > -1)
+    df_limiter = cs_field_by_id(df_limiter_id)->val;
+
   /* logging info */
 
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
-
-    int df_limiter_id =
-      cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
-    if (df_limiter_id > -1)
-      df_limiter = cs_field_by_id(df_limiter_id)->val;
 
     snprintf(var_name, 63, "%s", f->name);
   }
@@ -6939,9 +6903,8 @@ cs_anisotropic_right_diffusion_vector
                                     (cs_gradient_limit_t)(eqp.d_imligr),
                                     eqp.epsrgr,
                                     eqp.d_climgr,
-                                    bc_coeffs_v,
+                                    bc_coeffs,
                                     _pvar,
-                                    val_f,
                                     nullptr, /* weighted gradient */
                                     grad,
                                     bounds);
@@ -7184,8 +7147,8 @@ cs_anisotropic_right_diffusion_vector
   /* Steady */
   if (idtvar < 0) {
 
-    const cs_real_3_t  *cofafv = (const cs_real_3_t  *)bc_coeffs_v->af;
-    const cs_real_33_t *cofbfv = (const cs_real_33_t *)bc_coeffs_v->bf;
+    const cs_real_3_t  *cofafv = (const cs_real_3_t  *)bc_coeffs->af;
+    const cs_real_33_t *cofbfv = (const cs_real_33_t *)bc_coeffs->bf;
 
 #   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
     for (int t_id = 0; t_id < n_b_threads; t_id++) {
@@ -7256,14 +7219,17 @@ cs_anisotropic_right_diffusion_vector
   }
   else {
 
+    /* Working diffusive flux value */
+    const var_t *flux_d = (var_t *)bc_coeffs->flux_diff;
+
     ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
       cs_lnum_t ii = b_face_cells[face_id];
 
       cs_real_t fluxi[3];
-      for (cs_lnum_t isou = 0; isou < 3; isou++) {
-        cs_real_t flux = b_visc[face_id]*flux_d[face_id][isou];
-        fluxi[isou] = -thetap * flux;
-      } /* isou */
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        cs_real_t flux = b_visc[face_id]*flux_d[face_id][i];
+        fluxi[i] = -thetap * flux;
+      }
 
       cs_dispatch_sum<3>(rhs[ii], fluxi, b_sum_type);
     });
@@ -7302,9 +7268,7 @@ cs_anisotropic_right_diffusion_vector
  *                               - 1 otherwise
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     pvara         solved variable (previous time step)
- * \param[in]     bc_coeffs_ts  boundary condition structure for the variable
- * \param[in]     val_f         boundary face value for gradient
- * \param[in]     flux_d        boundary flux
+ * \param[in]     bc_coeffs     boundary condition structure for the variable
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -7325,9 +7289,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
                                 int                          inc,
                                 cs_real_6_t        *restrict pvar,
                                 const cs_real_6_t  *restrict pvara,
-                                const cs_field_bc_coeffs_t  *bc_coeffs_ts,
-                                const cs_real_t              val_f[][6],
-                                const cs_real_t              flux_d[][6],
+                                const cs_field_bc_coeffs_t  *bc_coeffs,
                                 const cs_real_t              i_visc[],
                                 const cs_real_t              b_visc[],
                                 cs_real_6_t        *restrict viscel,
@@ -7336,6 +7298,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
                                 cs_real_6_t        *restrict rhs)
 {
   CS_PROFILE_FUNC_RANGE();
+  using var_t = cs_real_t[6];
 
   const int ircflp = eqp.ircflu;
   const int ircflb = (ircflp > 0) ? eqp.b_diff_flux_rc : 0;
@@ -7399,15 +7362,14 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
   const cs_real_6_t  *restrict _pvar
     = (pvar != nullptr) ? (const cs_real_6_t  *)pvar : pvara;
 
+  int df_limiter_id = eqp.diffusion_limiter_id;
+  if (df_limiter_id > -1)
+    df_limiter = cs_field_by_id(df_limiter_id)->val;
+
   /* Logging info */
 
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
-
-    int df_limiter_id
-      = cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
-    if (df_limiter_id > -1)
-      df_limiter = cs_field_by_id(df_limiter_id)->val;
 
     snprintf(var_name, 63, "%s", f->name);
   }
@@ -7484,9 +7446,8 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
                                     (cs_gradient_limit_t)(eqp.d_imligr),
                                     eqp.epsrgr,
                                     eqp.d_climgr,
-                                    bc_coeffs_ts,
+                                    bc_coeffs,
                                     _pvar,
-                                    val_f,
                                     grad,
                                     bounds);
 
@@ -7710,8 +7671,8 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
   /* Steady */
   if (idtvar < 0) {
 
-    const cs_real_6_t  *cofaf = (const cs_real_6_t  *)bc_coeffs_ts->af;
-    const cs_real_66_t *cofbf = (const cs_real_66_t *)bc_coeffs_ts->bf;
+    const cs_real_6_t  *cofaf = (const cs_real_6_t  *)bc_coeffs->af;
+    const cs_real_66_t *cofbf = (const cs_real_66_t *)bc_coeffs->bf;
 
     cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
     b_sum_type = CS_DISPATCH_SUM_SIMPLE;
@@ -7783,15 +7744,17 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
   /* Unsteady */
 
   else {
+    /* Working diffusive flux value */
+    const var_t *flux_d = (var_t *)bc_coeffs->flux_diff;
 
     ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
       cs_lnum_t ii = b_face_cells[face_id];
       cs_real_t fluxi[6];
 
-      for (cs_lnum_t isou = 0; isou < 6; isou++) {
-        cs_real_t flux = b_visc[face_id]*flux_d[face_id][isou];
-        fluxi[isou] = -thetap * flux;
+      for (cs_lnum_t ij = 0; ij < 6; ij++) {
+        cs_real_t flux = b_visc[face_id]*flux_d[face_id][ij];
+        fluxi[ij] = -thetap * flux;
       }
 
       cs_dispatch_sum<6>(rhs[ii], fluxi, b_sum_type);
@@ -7834,8 +7797,6 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     val_f_g       boundary face value for gradient
- * \param[in]     flux_d        boundary flux
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -7857,8 +7818,6 @@ cs_face_diffusion_potential(const cs_field_t           *f,
                             cs_real_3_t       *restrict frcxt,
                             cs_real_t         *restrict pvar,
                             const cs_field_bc_coeffs_t *bc_coeffs,
-                            const cs_real_t             val_f_g[],
-                            const cs_real_t             flux_d[],
                             const cs_real_t             i_visc[],
                             const cs_real_t             b_visc[],
                             cs_real_t         *restrict visel,
@@ -8006,7 +7965,6 @@ cs_face_diffusion_potential(const cs_field_t           *f,
                                     frcxt,
                                     bc_coeffs,
                                     (const cs_real_t *)pvar,
-                                    val_f_g,
                                     gweight, /* Weighted gradient */
                                     grad,
                                     nullptr);
@@ -8043,6 +8001,7 @@ cs_face_diffusion_potential(const cs_field_t           *f,
   }
 
   /* Mass flow through boundary faces */
+  const cs_real_t *flux_d = bc_coeffs->flux_diff;
 
   ctx_b.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
     b_massflux[face_id] += b_visc[face_id] * flux_d[face_id];
@@ -8083,8 +8042,6 @@ cs_face_diffusion_potential(const cs_field_t           *f,
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (pressure)
  * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     val_f_g       boundary face value for gradient
- * \param[in]     flux_d        boundary flux
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -8109,8 +8066,6 @@ cs_face_anisotropic_diffusion_potential
    cs_real_3_t       *restrict frcxt,
    cs_real_t         *restrict pvar,
    const cs_field_bc_coeffs_t *bc_coeffs,
-   const cs_real_t             val_f_g[],
-   const cs_real_t             flux_d[],
    const cs_real_t             i_visc[],
    const cs_real_t             b_visc[],
    cs_real_6_t       *restrict viscel,
@@ -8178,14 +8133,12 @@ cs_face_anisotropic_diffusion_potential
                                &gradient_type,
                                &halo_type);
 
-  if (f != nullptr) {
-    int df_limiter_id =
-      cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
-    if (df_limiter_id > -1)
-      df_limiter = cs_field_by_id(df_limiter_id)->val;
+  int df_limiter_id = eqp->diffusion_limiter_id;
+  if (df_limiter_id > -1)
+    df_limiter = cs_field_by_id(df_limiter_id)->val;
 
+  if (f != nullptr)
     snprintf(var_name, 63, "%s", f->name);
-  }
   else
     strncpy(var_name, "[face mass flux update]", 63);
   var_name[63] = '\0';
@@ -8312,7 +8265,6 @@ cs_face_anisotropic_diffusion_potential
                                     frcxt,
                                     bc_coeffs,
                                     pvar,
-                                    val_f_g,
                                     gweight, /* Weighted gradient */
                                     grad,
                                     bounds);
@@ -8407,6 +8359,7 @@ cs_face_anisotropic_diffusion_potential
   }
 
   /* Contribution from boundary faces */
+  const cs_real_t *flux_d = bc_coeffs->flux_diff;
 
   ctx_b.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
     b_massflux[face_id] += b_visc[face_id] * flux_d[face_id];
@@ -8444,8 +8397,6 @@ cs_face_anisotropic_diffusion_potential
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (current time step)
  * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     val_f_g       boundary face value for gradient
- * \param[in]     flux_d        boundary flux
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -8466,8 +8417,6 @@ cs_diffusion_potential(const cs_field_t           *f,
                        cs_real_3_t       *restrict frcxt,
                        cs_real_t         *restrict pvar,
                        const cs_field_bc_coeffs_t *bc_coeffs,
-                       const cs_real_t             val_f_g[],
-                       const cs_real_t             flux_d[],
                        const cs_real_t             i_visc[],
                        const cs_real_t             b_visc[],
                        cs_real_t                   visel[],
@@ -8618,7 +8567,6 @@ cs_diffusion_potential(const cs_field_t           *f,
                                     frcxt,
                                     bc_coeffs,
                                     _pvar,
-                                    val_f_g,
                                     gweight, /* Weighted gradient */
                                     grad,
                                     nullptr);
@@ -8671,6 +8619,7 @@ cs_diffusion_potential(const cs_field_t           *f,
   }
 
   /* Mass flow through boundary faces */
+  const cs_real_t *flux_d = bc_coeffs->flux_diff;
 
   ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
     cs_lnum_t ii = b_face_cells[face_id];
@@ -8714,8 +8663,6 @@ cs_diffusion_potential(const cs_field_t           *f,
  * \param[in]     frcxt         body force creating the hydrostatic pressure
  * \param[in]     pvar          solved variable (pressure)
  * \param[in]     bc_coeffs     boundary condition structure for the variable
- * \param[in]     val_f_g       boundary face value for gradient
- * \param[in]     flux_d        boundary flux
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
@@ -8738,8 +8685,6 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
                                    cs_real_3_t       *restrict frcxt,
                                    cs_real_t         *restrict pvar,
                                    const cs_field_bc_coeffs_t *bc_coeffs,
-                                   const cs_real_t             val_f_g[],
-                                   const cs_real_t             flux_d[],
                                    const cs_real_t             i_visc[],
                                    const cs_real_t             b_visc[],
                                    cs_real_6_t       *restrict viscel,
@@ -8806,14 +8751,11 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
                              &gradient_type,
                              &halo_type);
 
-  if (f != nullptr) {
-    int df_limiter_id
-      = cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
-    if (df_limiter_id > -1)
-      df_limiter = cs_field_by_id(df_limiter_id)->val;
-
+  int df_limiter_id = eqp->diffusion_limiter_id;
+  if (df_limiter_id > -1)
+    df_limiter = cs_field_by_id(df_limiter_id)->val;
+  if (f != nullptr)
     snprintf(var_name, 63, "%s", f->name);
-  }
   else
     strncpy(var_name, "[cell mass flux divergence update]", 63);
   var_name[63] = '\0';
@@ -8947,7 +8889,6 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
                                     frcxt,
                                     bc_coeffs,
                                     pvar,
-                                    val_f_g,
                                     gweight, /* Weighted gradient */
                                     grad,
                                     bounds);
@@ -9056,6 +8997,7 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
   }
 
   /* Mass flow though boundary faces */
+  const cs_real_t *flux_d = bc_coeffs->flux_diff;
 
   ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
     cs_lnum_t ii = b_face_cells[face_id];
