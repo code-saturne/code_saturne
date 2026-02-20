@@ -940,7 +940,7 @@ sys.stdout.write(path)]"
     fi
     if test "x$PYRCC5" = "x" ; then
       AC_PATH_PROG([PYRCC5], [pyrcc5], [], [${PYPATH}:$PATH])
-      cs_have_pyrcc="pyrc5"
+      cs_have_pyrcc="pyrcc5"
     fi
 
     if test "x$PYUIC5" = "x" -o "x$PYRCC5" = "x" ; then
