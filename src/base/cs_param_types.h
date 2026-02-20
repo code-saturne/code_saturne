@@ -360,6 +360,9 @@ typedef enum {
  *
  * \var CS_PARAM_ADVECTION_SCHEME_UPWIND_V8
  * upwind discretization of v8 version
+ *
+ * \var CS_PARAM_ADVECTION_SCHEME_SOLU
+ * centred scheme with consistent stabilization
  */
 
 typedef enum {
@@ -374,6 +377,7 @@ typedef enum {
   CS_PARAM_ADVECTION_SCHEME_L0,
   CS_PARAM_ADVECTION_SCHEME_CENTERED_V8,
   CS_PARAM_ADVECTION_SCHEME_UPWIND_V8,
+  CS_PARAM_ADVECTION_SCHEME_SOLU,
 
   CS_PARAM_N_ADVECTION_SCHEMES
 

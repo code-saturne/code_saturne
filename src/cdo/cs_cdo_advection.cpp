@@ -269,11 +269,15 @@ _cdofb_stab_func(const cs_param_advection_scheme_t scheme,
         upwind_ratio * 0.5 * cs::abs(beta);
     } break;
 
+    case CS_PARAM_ADVECTION_SCHEME_SOLU: {
+      return 0.0;
+    } break;
+
     case CS_PARAM_ADVECTION_SCHEME_SG: /* Sharfetter-Gummel */
     {
-      const cs_real_t beta_mean = beta / f_meas;
-      const cs_real_t pe        = coeff * beta_mean;
-      const cs_real_t pe_2_abs  = 0.5 * cs::abs(pe);
+      const cs_real_t beta_mean       = beta / f_meas;
+      const cs_real_t pe              = coeff * beta_mean;
+      const cs_real_t pe_2_abs        = 0.5 * cs::abs(pe);
       cs_real_t       upwind_ratio_pe = 1.0;
 
       /* Sharfetter-Gummel function: 1-exp(-x/2) = 1 for x > 10 */
@@ -287,13 +291,56 @@ _cdofb_stab_func(const cs_param_advection_scheme_t scheme,
     } break;
 
     default:
-      bft_error(__FILE__, __LINE__, 0,
+      bft_error(__FILE__,
+                __LINE__,
+                0,
                 " %s: Incompatible type of algorithm to compute the weight of"
-                " upwind.", __func__);
+                " upwind.",
+                __func__);
 
   } /* Switch on the type of function to return */
 
   return 0.0; /* Avoid warning */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute stabilization matrix for SOLU scheme
+ *
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      cb      pointer to a cs_cell_builder_t structure
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_cdofb_stab_cost(const cs_cell_mesh_t *cm, cs_cell_builder_t *cb)
+{
+  /* Create hodge operator */
+  cs_hodge_param_t hp;
+  hp.type           = CS_HODGE_TYPE_EDFP;
+  hp.algo           = CS_HODGE_ALGO_COST;
+  cs_hodge_t *hodge = cs_hodge_create_from_cm(cm, nullptr, &hp, false, false);
+
+  const cs_real_t *fluxes = cb->adv_fluxes;
+
+  cs_real_t *coeff_stab = nullptr;
+  CS_MALLOC(coeff_stab, cm->n_fc, cs_real_t);
+
+  for (cs_lnum_t f = 0; f < cm->n_fc; f++) {
+    const cs_real_t f_meas  = cm->face[f].meas;
+    const cs_real_t hf      = cm->hfc[f];
+    const cs_real_t flux_fc = cm->f_sgn[f] * fluxes[f];
+    const cs_real_t beta_fc = flux_fc / f_meas;
+    /* Need a scaling by a length */
+    coeff_stab[f] = hf * cs::abs(beta_fc);
+  }
+
+  bool cmp = cs_hodge_fb_cost_get_stab(cm, hodge, cb, coeff_stab);
+  assert(cmp);
+
+  CS_FREE(coeff_stab);
+  cs_hodge_free(&hodge);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2421,6 +2468,87 @@ cs_cdofb_advection_mixnoc(int                   dim,
                           cs_sdm_t             *adv)
 {
   _build_cdofb_scheme_noc(CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND,
+                          dim,
+                          cm,
+                          csys,
+                          cb,
+                          adv);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the convection operator attached to a cell with a CDO
+ *         face-based scheme
+ *         - conservative formulation \f$ \nabla\cdot(\beta ) \f$
+ *         - SOLU scheme
+ *
+ *         A scalar-valued version is built. Only the enforcement of the
+ *         boundary condition depends on the variable dimension.
+ *         Remark: Usually the local matrix called hereafter adv is stored
+ *         in cb->loc
+ *
+ * \param[in]      dim     dimension of the variable (1 or 3)
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      csys    pointer to a cs_cell_sys_t structure
+ * \param[in]      cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv     pointer to a local matrix to build
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_advection_solucsv(int                   dim,
+                           const cs_cell_mesh_t *cm,
+                           const cs_cell_sys_t  *csys,
+                           cs_cell_builder_t    *cb,
+                           cs_sdm_t             *adv)
+{
+  /* Compute COST stabilization - first because reset adv matrix */
+
+  _cdofb_stab_cost(cm, cb);
+
+  /* Add centered part */
+  _build_cdofb_scheme_csv(CS_PARAM_ADVECTION_SCHEME_SOLU,
+                          dim,
+                          cm,
+                          csys,
+                          cb,
+                          adv);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the convection operator attached to a cell with a CDO
+ *         face-based scheme
+ *         - non-conservative formulation \f$ \nabla\cdot(\beta ) \f$
+ *         - SOLU scheme
+ *
+ *         A scalar-valued version is built. Only the enforcement of the
+ *         boundary condition depends on the variable dimension.
+ *         Remark: Usually the local matrix called hereafter adv is stored
+ *         in cb->loc
+ *
+ * \param[in]      dim     dimension of the variable (1 or 3)
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      csys    pointer to a cs_cell_sys_t structure
+ * \param[in]      cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv     pointer to a local matrix to build
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_advection_solunoc(int                   dim,
+                           const cs_cell_mesh_t *cm,
+                           const cs_cell_sys_t  *csys,
+                           cs_cell_builder_t    *cb,
+                           cs_sdm_t             *adv)
+{
+  /* Compute COST stabilization - first because reset adv matrix */
+
+  _cdofb_stab_cost(cm, cb);
+
+  /* Add centered part */
+
+  _build_cdofb_scheme_noc(CS_PARAM_ADVECTION_SCHEME_SOLU,
                           dim,
                           cm,
                           csys,

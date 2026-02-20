@@ -152,6 +152,11 @@ cs_cdofb_set_advection_function(const cs_equation_param_t   *eqp,
       eqc->advection_scheme = cs_cdofb_advection_mixcsv;
       break;
 
+    case CS_PARAM_ADVECTION_SCHEME_SOLU: {
+      eqc->advection_scheme = cs_cdofb_advection_solucsv;
+      eqb->msh_flag |= CS_FLAG_COMP_HFQ;
+    } break;
+
     case CS_PARAM_ADVECTION_SCHEME_SG:
       {
         eqc->advection_scheme = cs_cdofb_advection_sgcsv;
@@ -193,6 +198,11 @@ cs_cdofb_set_advection_function(const cs_equation_param_t   *eqp,
     case CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND:
       eqc->advection_scheme = cs_cdofb_advection_mixnoc;
       break;
+
+    case CS_PARAM_ADVECTION_SCHEME_SOLU: {
+      eqc->advection_scheme = cs_cdofb_advection_solunoc;
+      eqb->msh_flag |= CS_FLAG_COMP_HFQ;
+    } break;
 
     case CS_PARAM_ADVECTION_SCHEME_SG:
       {

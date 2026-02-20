@@ -281,6 +281,27 @@ cs_hodge_create(const cs_cdo_connect_t   *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Create and initialize a pointer to a cs_hodge_t structure
+ *
+ * \param[in] cm             pointer to cs_cell_mesh_t structure
+ * \param[in] property       pointer to a property structure
+ * \param[in] hp             pointer to a cs_hodge_param_t structure
+ * \param[in] need_tensor    true if one needs a tensor otherwise false
+ * \param[in] need_eigen     true if one needs to compute eigen valuese
+ *
+ * \return a pointer to the new allocated cs_hodge_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_hodge_t *
+cs_hodge_create_from_cm(const cs_cell_mesh_t   *cm,
+                        const cs_property_t    *property,
+                        const cs_hodge_param_t *hp,
+                        bool                    need_tensor,
+                        bool                    need_eigen);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Create and initialize an array of pointers to a cs_hodge_t
  *         structures. This array is of size the number of OpenMP threads.
  *         Only the one associated to the current thread is set.
@@ -446,6 +467,28 @@ bool
 cs_hodge_fb_cost_get_stiffness(const cs_cell_mesh_t     *cm,
                                cs_hodge_t               *hodge,
                                cs_cell_builder_t        *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build a local stabilization matrix using the generic COST algo.
+ *         The computed matrix is stored in cb->loc and the related discrete
+ *         hodge operator in hodge->matrix
+ *         Case of CDO face-based schemes
+ *
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ * \param[in] coeff_stab   value of stabilization for each face
+ *
+ * \return true if something has been computed or false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_hodge_fb_cost_get_stab(const cs_cell_mesh_t *cm,
+                          cs_hodge_t           *hodge,
+                          cs_cell_builder_t    *cb,
+                          const cs_real_t      *coeff_stab);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -943,6 +986,27 @@ bool
 cs_hodge_edfp_cost_get_opt(const cs_cell_mesh_t     *cm,
                            cs_hodge_t               *hodge,
                            cs_cell_builder_t        *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build a local Hodge operator for a given cell using the COST algo.
+ *         Hodge op. from dual edges to primal faces.
+ *         This function is related to face-based schemes
+ *
+ * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
+ * \param[in, out] hodge     pointer to a cs_hodge_t structure
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in] coeff_stab   value of stabilization for each face
+ *
+ * \return true if something has been computed or false otherwise
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_hodge_edfp_stab_get_opt(const cs_cell_mesh_t *cm,
+                           cs_hodge_t           *hodge,
+                           cs_cell_builder_t    *cb,
+                           const cs_real_t      *coeff_stab);
 
 /*----------------------------------------------------------------------------*/
 /*!
