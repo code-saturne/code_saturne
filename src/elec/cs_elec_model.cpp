@@ -524,8 +524,7 @@ _current_im_f(int               location_id,
 
   cs_field_gradient_scalar(f, false, 1, grad.data<cs_real_3_t>());
 
-  const int kivisl = cs_field_key_id("diffusivity_id");
-  const int diff_id = cs_field_get_key_int(f, kivisl);
+  const int diff_id = f->get_key_int("diffusivity_id");
 
   if (diff_id > -1) {
     const cs_real_t *cvisii = cs_field_by_id(diff_id)->val;
@@ -547,8 +546,7 @@ _current_im_f(int               location_id,
   }
 
   else {
-    const int kvisls0 = cs_field_key_id("diffusivity_ref");
-    const double visls_0 = cs_field_get_key_double(f, kvisls0);
+    const double visls_0 = f->get_key_double("diffusivity_ref");
 
     if (elt_ids != nullptr) {
       for (cs_lnum_t idx = 0; idx <  n_elts; idx++) {
@@ -813,7 +811,8 @@ cs_electrical_model_specific_initialization(void)
     eqp->istat  = 0;
     eqp->idiff  = 1;
     eqp->idifft = 0;
-    cs_field_set_key_double(f, kvisls0, 1.0);
+    if (f != nullptr)
+      f->set_key_double(kvisls0, 1.0);
   }
 
   /* for all specific field */
@@ -821,26 +820,30 @@ cs_electrical_model_specific_initialization(void)
     f = CS_F_(h);
     cs_equation_param_t *eqp = cs_field_get_equation_param(f);
     eqp->blencv = 1.;
-    cs_field_set_key_double(f, ksigmas, 0.7);
+    if (f != nullptr)
+      f->set_key_double(ksigmas, 0.7);
   }
   {
     f = CS_F_(potr);
     cs_equation_param_t *eqp = cs_field_get_equation_param(f);
     eqp->blencv = 1.;
-    cs_field_set_key_double(f, ksigmas, 0.7);
+    if (f != nullptr)
+      f->set_key_double(ksigmas, 0.7);
   }
   if (ieljou == 2 || ieljou == 4) {
     f = CS_F_(poti);
     cs_equation_param_t *eqp = cs_field_get_equation_param(f);
     eqp->blencv = 1.;
-    cs_field_set_key_double(f, ksigmas, 0.7);
+    if (f != nullptr)
+      f->set_key_double(ksigmas, 0.7);
   }
 
   if (ielarc > 1) {
     f = cs_field_by_name_try("vec_potential");
     cs_equation_param_t *eqp = cs_field_get_equation_param(f);
     eqp->blencv = 1.;
-    cs_field_set_key_double(f, ksigmas, 0.7);
+    if (f != nullptr)
+      f->set_key_double(ksigmas, 0.7);
   }
 
   if (cs_glob_elec_properties->n_gas > 1) {
@@ -848,7 +851,8 @@ cs_electrical_model_specific_initialization(void)
       f = CS_FI_(ycoel, gas_id);
       cs_equation_param_t *eqp = cs_field_get_equation_param(f);
       eqp->blencv = 1.;
-      cs_field_set_key_double(f, ksigmas, 0.7);
+      if (f != nullptr)
+        f->set_key_double(ksigmas, 0.7);
     }
   }
 
@@ -1753,8 +1757,8 @@ cs_elec_add_variable_fields(void)
     int f_id = cs_variable_field_create("enthalpy", "Enthalpy",
                                         CS_MESH_LOCATION_CELLS, 1);
     f = cs_field_by_id(f_id);
-    cs_field_set_key_double(f, kscmin, -cs_math_big_r);
-    cs_field_set_key_int(f, kivisl, 0);
+    f->set_key_double(kscmin, -cs_math_big_r);
+    f->set_key_int(kivisl, 0);
     cs_add_model_field_indexes(f);
 
     /* set thermal model */
@@ -1766,9 +1770,9 @@ cs_elec_add_variable_fields(void)
     int f_id = cs_variable_field_create("elec_pot_r", "POT_EL_R",
                                         CS_MESH_LOCATION_CELLS, 1);
     f = cs_field_by_id(f_id);
-    cs_field_set_key_double(f, kscmin, -cs_math_big_r);
-    cs_field_set_key_double(f, kscmax,  cs_math_big_r);
-    cs_field_set_key_int(f, kivisl, 0);
+    f->set_key_double(kscmin, -cs_math_big_r);
+    f->set_key_double(kscmax,  cs_math_big_r);
+    f->set_key_int(kivisl, 0);
     cs_add_model_field_indexes(f);
   }
 
@@ -1776,9 +1780,9 @@ cs_elec_add_variable_fields(void)
     int f_id = cs_variable_field_create("elec_pot_i", "POT_EL_I",
                                         CS_MESH_LOCATION_CELLS, 1);
     f = cs_field_by_id(f_id);
-    cs_field_set_key_double(f, kscmin, -cs_math_big_r);
-    cs_field_set_key_double(f, kscmax,  cs_math_big_r);
-    cs_field_set_key_int(f, kivisl, 0);
+    f->set_key_double(kscmin, -cs_math_big_r);
+    f->set_key_double(kscmax,  cs_math_big_r);
+    f->set_key_int(kivisl, 0);
     cs_add_model_field_indexes(f);
   }
 
@@ -1788,7 +1792,7 @@ cs_elec_add_variable_fields(void)
     f = cs_field_by_id(f_id);
     //cs_field_set_key_double(f, kscmin, -cs_math_big_r);
     //cs_field_set_key_double(f, kscmax,  cs_math_big_r);
-    cs_field_set_key_int(f, kivisl, -1);
+    f->set_key_int(kivisl, -1);
     cs_add_model_field_indexes(f);
   }
 
@@ -1810,9 +1814,9 @@ cs_elec_add_variable_fields(void)
                                           CS_MESH_LOCATION_CELLS, 1);
       f = cs_field_by_id(f_id);
 
-      cs_field_set_key_double(f, kscmin, 0.);
-      cs_field_set_key_double(f, kscmax, 1.);
-      cs_field_set_key_int(f, kivisl, 0);
+      f->set_key_double(kscmin, 0.);
+      f->set_key_double(kscmax, 1.);
+      f->set_key_int(kivisl, 0);
       cs_add_model_field_indexes(f);
       CS_FREE(name);
       CS_FREE(label);
@@ -1847,9 +1851,9 @@ cs_elec_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         1, /* dim */
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
-    cs_field_set_key_str(f, klbl, "Temperature");
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
+    f->set_key_str(klbl, "Temperature");
   }
 
   {
@@ -1858,10 +1862,10 @@ cs_elec_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         1, /* dim */
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
-    cs_field_set_key_str(f, klbl, "PowJoul");
-    cs_field_set_key_int(f, key_restart_id, (int)CS_RESTART_AUXILIARY);
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
+    f->set_key_str(klbl, "PowJoul");
+    f->set_key_int(key_restart_id, (int)CS_RESTART_AUXILIARY);
   }
 
   {
@@ -1870,9 +1874,9 @@ cs_elec_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         3, /* dim */
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
-    cs_field_set_key_str(f, klbl, "Current_Real");
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
+    f->set_key_str(klbl, "Current_Real");
   }
 
   {
@@ -1881,9 +1885,9 @@ cs_elec_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         3,    /* dim */
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
-    cs_field_set_key_str(f, klbl, "Elec_Field");
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
+    f->set_key_str(klbl, "Elec_Field");
   }
 
   /* specific for joule effect */
@@ -1893,9 +1897,9 @@ cs_elec_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         3, /* dim */
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
-    cs_field_set_key_str(f, klbl, "Current_Imag");
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
+    f->set_key_str(klbl, "Current_Imag");
   }
 
   /* specific for electric arcs */
@@ -1905,21 +1909,21 @@ cs_elec_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         3,    /* dim */
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
-    cs_field_set_key_str(f, klbl, "For_Lap");
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
+    f->set_key_str(klbl, "For_Lap");
 
     if (cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > 0)
-      cs_field_set_key_int(f, key_restart_id, (int)CS_RESTART_AUXILIARY);
+      f->set_key_int(key_restart_id, (int)CS_RESTART_AUXILIARY);
 
     f = cs_field_create("magnetic_field",
                         field_type,
                         CS_MESH_LOCATION_CELLS,
                         3,    /* dim */
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
-    cs_field_set_key_str(f, klbl, "Mag_Field");
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
+    f->set_key_str(klbl, "Mag_Field");
   }
 
   if (cs_glob_elec_option->ixkabe == 1) {
@@ -1928,9 +1932,9 @@ cs_elec_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         1, /* dim */
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
-    cs_field_set_key_str(f, klbl, "Coef_Abso");
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
+    f->set_key_str(klbl, "Coef_Abso");
   }
   else if (cs_glob_elec_option->ixkabe == 2) {
     f = cs_field_create("radiation_source",
@@ -1938,9 +1942,9 @@ cs_elec_add_property_fields(void)
                         CS_MESH_LOCATION_CELLS,
                         1, /* dim */
                         has_previous);
-    cs_field_set_key_int(f, keyvis, post_flag);
-    cs_field_set_key_int(f, keylog, 1);
-    cs_field_set_key_str(f, klbl, "ST_radia");
+    f->set_key_int(keyvis, post_flag);
+    f->set_key_int(keylog, 1);
+    f->set_key_str(klbl, "ST_radia");
   }
 
 
