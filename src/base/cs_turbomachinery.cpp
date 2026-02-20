@@ -1743,8 +1743,6 @@ cs_turbomachinery_reinit_i_face_fields(void)
         cs_field_remap_sub_fields_data(f->id);
     }
   }
-
-
 }
 
 /*----------------------------------------------------------------------------*/
