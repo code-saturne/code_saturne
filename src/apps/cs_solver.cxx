@@ -488,11 +488,13 @@ _run(void)
 
           cs_turbomachinery_restart_mesh();
 
+          cs_restart_update_mesh_checkpoint();
+
           /*----------------------------------------------
            * Call main calculation function (code Kernel)
            *----------------------------------------------*/
 
-          /* Maybe should be allocate in cs_time_stepping.c */
+          /* Maybe should be allocated in cs_time_stepping.c */
           cs_ale_allocate();
 
           cs_time_stepping();

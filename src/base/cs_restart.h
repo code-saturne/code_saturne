@@ -255,6 +255,19 @@ cs_restart_checkpoint_set_mesh_mode(int  mode);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Update checkpoint directory with mesh.
+ *
+ * The mesh_output file is moved to restart/mesh_input if present.
+ * Otherwise, if mesh_input is present and a file (not a directory),
+ * is linked to restart/mesh_input (using a hard link if possible)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_update_mesh_checkpoint(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define last forced checkpoint time step.
  *
  * \param[in]  nt_last  last time step for forced checkpoint

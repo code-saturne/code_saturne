@@ -1555,78 +1555,6 @@ _add_location_check_ref(cs_restart_t     *restart,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Update checkpoint directory with mesh.
- *
- * The mesh_output file is moved to restart/mesh_input if present.
- * Otherwise, if mesh_input is present and a file (not a directory),
- * is linked to restart/mesh_input (using a hard link if possible)
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_update_mesh_checkpoint(void)
-{
-  if (cs_glob_rank_id < 1 && _checkpoint_mesh > 0) {
-
-    if (cs_glob_rank_id < 1) {
-      const char _checkpoint[] = "checkpoint";
-      if (cs_file_mkdir_default(_checkpoint) != 0)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("The %s directory cannot be created"), _checkpoint);
-    }
-
-    /* Move mesh_output if present */
-
-    const char *opath_i[2] = {"mesh_input.csm",
-                              "restart/mesh_input.csm"};
-    const char opath_o[] = "mesh_output.csm";
-    const char npath[] = "checkpoint/mesh_input.csm";
-
-    if (cs_file_isreg(opath_o)) {
-      int retval = rename(opath_o, npath);
-      if (retval != 0) {
-        cs_base_warn(__FILE__, __LINE__);
-        bft_printf(_("Failure moving %s to %s:\n"
-                     "%s\n"),
-                   opath_o, npath, strerror(errno));
-      }
-    }
-
-    /* Otherwise link mesh_input if it is a regular file
-       (in case of a mesh_input directory, do nothing, since a
-       directory should be created only in case of multiple meshes,
-       and concatenation leads to a mesh_output being created,
-       unless the (advanced) user has explicitely deactivated that
-       output, in which case we abide by that choice) */
-
-    else if (cs_glob_mesh->modified < 1) {
-
-#if defined(HAVE_LINKAT) && defined(HAVE_FCNTL_H)
-
-      for (int i = 0; i < 2; i++) {
-        if (cs_file_isreg(opath_i[i])) {
-          int retval = linkat(AT_FDCWD, opath_i[i],
-                              AT_FDCWD, npath, AT_SYMLINK_FOLLOW);
-
-          if (retval != 0) {
-            cs_base_warn(__FILE__, __LINE__);
-            bft_printf(_("Failure hard-linking %s to %s:\n"
-                         "%s\n"),
-                       opath_i[i], npath, strerror(errno));
-
-          }
-          break;
-        }
-      }
-
-#endif
-
-    }
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Create and allocate a new multiwriter structure.
  *
  * \return  pointer to the allocated object.
@@ -1857,6 +1785,84 @@ void
 cs_restart_checkpoint_set_mesh_mode(int  mode)
 {
   _checkpoint_mesh = mode;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update checkpoint directory with mesh.
+ *
+ * The mesh_output file is moved to restart/mesh_input if present.
+ * Otherwise, if mesh_input is present and a file (not a directory),
+ * is linked to restart/mesh_input (using a hard link if possible)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_update_mesh_checkpoint(void)
+{
+  if (cs_glob_rank_id < 1 && _checkpoint_mesh > 0) {
+
+    const char npath[] = "checkpoint/mesh_input.csm";
+
+    /* If file is already present in final location, nothing to do */
+    if (cs_file_isreg(npath)) {
+      return;
+    }
+
+    if (cs_glob_rank_id < 1) {
+      const char _checkpoint[] = "checkpoint";
+      if (cs_file_mkdir_default(_checkpoint) != 0)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("The %s directory cannot be created"), _checkpoint);
+    }
+
+    /* Move mesh_output if present */
+
+    const char *opath_i[2] = {"mesh_input.csm",
+                              "restart/mesh_input.csm"};
+    const char opath_o[] = "mesh_output.csm";
+
+    if (cs_file_isreg(opath_o)) {
+      int retval = rename(opath_o, npath);
+      if (retval != 0) {
+        cs_base_warn(__FILE__, __LINE__);
+        bft_printf(_("Failure moving %s to %s:\n"
+                     "%s\n"),
+                   opath_o, npath, strerror(errno));
+      }
+    }
+
+    /* Otherwise link mesh_input if it is a regular file
+       (in case of a mesh_input directory, do nothing, since a
+       directory should be created only in case of multiple meshes,
+       and concatenation leads to a mesh_output being created,
+       unless the (advanced) user has explicitely deactivated that
+       output, in which case we abide by that choice) */
+
+    else if (cs_glob_mesh->modified < 1) {
+
+#if defined(HAVE_LINKAT) && defined(HAVE_FCNTL_H)
+
+      for (int i = 0; i < 2; i++) {
+        if (cs_file_isreg(opath_i[i])) {
+          int retval = linkat(AT_FDCWD, opath_i[i],
+                              AT_FDCWD, npath, AT_SYMLINK_FOLLOW);
+
+          if (retval != 0) {
+            cs_base_warn(__FILE__, __LINE__);
+            bft_printf(_("Failure hard-linking %s to %s:\n"
+                         "%s\n"),
+                       opath_i[i], npath, strerror(errno));
+
+          }
+          break;
+        }
+      }
+
+#endif
+
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2212,13 +2218,6 @@ cs_restart_create(const char         *name,
   const char _extension[]  = ".csc";
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
-
-  /* Ensure mesh checkpoint is updated on first call */
-
-  if (    mode == CS_RESTART_MODE_WRITE
-      && _restart_n_opens[mode] == 0) {
-    _update_mesh_checkpoint();
-  }
 
   /* Initializations */
 
