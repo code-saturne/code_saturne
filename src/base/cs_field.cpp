@@ -1746,16 +1746,31 @@ cs_field_set_n_time_vals(cs_field_t  *f,
 
   // Avoid memory leak if new number of values is smaller
   // Since Realloc change size of "_vals", we call destructors here
-  if (n_time_vals_ini > _n_time_vals && f->_vals != nullptr) {
-    for (int i = _n_time_vals; i < n_time_vals_ini; i++) {
-      delete f->_vals[i];
-      f->_vals[i] = nullptr;
+  if (n_time_vals_ini > _n_time_vals) {
+    if (f->_vals != nullptr) {
+      for (int i = _n_time_vals; i < n_time_vals_ini; i++) {
+        delete f->_vals[i];
+        f->_vals[i] = nullptr;
+      }
+    }
+    if (f->_ns_vals != nullptr) {
+      for (int i = _n_time_vals; i < n_time_vals_ini; i++) {
+        delete f->_ns_vals[i];
+        f->_ns_vals[i] = nullptr;
+      }
     }
   }
 
   CS_REALLOC(f->_vals, f->n_time_vals, cs_array_2d<cs_real_t> *);
   for (int i = n_time_vals_ini; i < f->n_time_vals; i++)
     f->_vals[i] = new cs_array_2d<cs_real_t>(); // empty container;
+
+  /* Update for series owner */
+  if (f->is_series_owner()) {
+    CS_REALLOC(f->_ns_vals, f->n_time_vals, cs_array_3d<cs_real_t> *);
+    for (int i = n_time_vals_ini; i < f->n_time_vals; i++)
+      f->_ns_vals[i] = new cs_array_3d<cs_real_t>(); // empty container;
+  }
 
   /* If allocation or mapping has already been done */
 
@@ -1770,6 +1785,9 @@ cs_field_set_n_time_vals(cs_field_t  *f,
     else { /* if (n_time_vals_ini < _n_time_vals) */
       if (f->is_owner) {
         f->update_size(1); /* Update size of vals[1] or ns_vals[1] */
+
+        if (f->is_sub_field())
+          f->map_to_ns_data();
 
         /* Initialize to 0. Public pointers are updated in "update_size" */
         cs_dispatch_context ctx;

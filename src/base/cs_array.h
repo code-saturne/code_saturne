@@ -1809,7 +1809,7 @@ public:
       /* check that size_to_keep is either >0 or == -1 (keep all) */
       if (size_to_keep != 0) {
         /* Temporary copy */
-        array<T,N,L> tmp(*this, true);
+        array<T,N,L> tmp = this->get_deep_copy();
 
         /* Update instance size */
         _span::set_size_(dims);
