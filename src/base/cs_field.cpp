@@ -5420,6 +5420,10 @@ cs_field_t::initialize_sub_fields
   if (!(this->is_series_owner()))
     return;
 
+  /* If allready initialized exit */
+  if (this->_ns_vals != nullptr)
+    return;
+
   cs_array<int> sub_fields_idx(_n_fields);
   int n_sub_fields = 0;
 
