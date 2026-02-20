@@ -1263,23 +1263,23 @@ cs_turb_compute_constants(int phase_id)
   }
 
   if (f_k != nullptr)
-    cs_field_set_key_double(f_k, k_turb_schmidt, 1.);
+    f_k->set_key_double(k_turb_schmidt, 1.);
 
   if (f_phi != nullptr)
-    cs_field_set_key_double(f_phi, k_turb_schmidt, 1.);
+    f_phi->set_key_double(k_turb_schmidt, 1.);
 
   if (   cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_LRR
       || cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_SSG
       || cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_BFH)
-    cs_field_set_key_double(f_eps, k_turb_schmidt, 1.22);
+    f_eps->set_key_double(k_turb_schmidt, 1.22);
   else if (cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) {
-    cs_field_set_key_double(f_eps, k_turb_schmidt, 1.15);
+    f_eps->set_key_double(k_turb_schmidt, 1.15);
     cs_turb_crij3 = 0.6;
   }
   else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K)
-    cs_field_set_key_double(f_eps, k_turb_schmidt, 1.5);
+    f_eps->set_key_double(k_turb_schmidt, 1.5);
   else
-    cs_field_set_key_double(f_eps, k_turb_schmidt, 1.30);
+    f_eps->set_key_double(k_turb_schmidt, 1.30);
 
   if (cs_glob_turb_rans_model->idirsm == 0)
     cs_turb_csrij = 0.11;
@@ -2090,7 +2090,7 @@ cs_turb_constants_log_setup(void)
     if (!(f->type & CS_FIELD_VARIABLE))
       continue;
 
-    const int turb_flux_model = cs_field_get_key_int(f, kturt);
+    const int turb_flux_model = f->get_key_int(kturt);
     const int turb_flux_model_type = turb_flux_model / 10;
     has_dfm = has_dfm || (turb_flux_model_type == 3);
   }
@@ -2169,7 +2169,7 @@ cs_clip_turbulent_fluxes(int  flux_id,
   /* Get clippings field for DFM */
   cs_lnum_t kclipp, clip_rit_id;
   kclipp = cs_field_key_id("clipping_id");
-  clip_rit_id = cs_field_get_key_int(field_rit, kclipp);
+  clip_rit_id = field_rit->get_key_int(kclipp);
   if (clip_rit_id >= 0) {
     cvar_clip_rit = (cs_real_3_t *) cs_field_by_id(clip_rit_id)->val;
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {

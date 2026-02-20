@@ -340,8 +340,7 @@ _compute_up_rhop(int                 phase_id,
 
   const cs_field_t *thf = cs_thermal_model_field();
   if (thf != nullptr) {
-    const int ksigmas = cs_field_key_id("turbulent_schmidt");
-    const cs_real_t turb_schmidt = cs_field_get_key_double(thf, ksigmas);
+    const cs_real_t turb_schmidt = thf->get_key_double("turbulent_schmidt");
     cons = -1.5 * cs_turb_cmu / turb_schmidt;
   }
   const cs_velocity_pressure_model_t  *vp_model
@@ -934,17 +933,15 @@ _gravity_st_epsilon(int              phase_id,
 
     cs_field_t *f_t_var = cs_field_get_variance(f_t);
     if (f_t_var != nullptr)
-      rvarfl = cs_field_get_key_double(f_t_var, krvarfl);
+      rvarfl = f_t_var->get_key_double(krvarfl);
 
-    const int kivisl = cs_field_key_id("diffusivity_id");
-    int ifcvsl = f_t->get_key_int(kivisl);
+    int ifcvsl = f_t->get_key_int("diffusivity_id");
     if (ifcvsl > -1) {
       viscls = cs_field(ifcvsl)->val;
       l_viscls = 1;
     }
     else {
-      const int kvisls0 = cs_field_key_id("diffusivity_ref");
-      _visls_0 = cs_field_get_key_double(f_t, kvisls0);
+      _visls_0 = f_t->get_key_double("diffusivity_ref");
       viscls = &_visls_0;
       l_viscls = 0;
     }
@@ -2517,8 +2514,7 @@ _solve_epsilon(int              phase_id,
   const cs_real_t *imasfl = cs_field(iflmas)->val;
   const cs_real_t *bmasfl = cs_field(iflmab)->val;
 
-  const int ksigmas = cs_field_key_id("turbulent_schmidt");
-  const cs_real_t sigmae = cs_field_get_key_double(f_eps, ksigmas);
+  const cs_real_t sigmae = f_eps->get_key_double("turbulent_schmidt");
 
   const cs_equation_param_t *eqp
     = cs_field_get_equation_param(f_eps);

@@ -706,7 +706,7 @@ _les_balance_compute_gradients(void)
 
     for (int f_id = 0; f_id < cs_field_n_fields(); f_id ++) {
       cs_field_t *f = cs_field_by_id(f_id);
-      int isca = cs_field_get_key_int(f, keysca);
+      int isca = f->get_key_int(keysca);
       if (isca > 0) {
         const cs_equation_param_t *eqps
           = cs_field_get_equation_param_const(f);
@@ -1080,8 +1080,7 @@ _les_balance_compute_djtdjui(const void   *input,
   const cs_field_t *sca = (const cs_field_t *)input;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
-  const int keysca = cs_field_key_id("scalar_id");
-  int isca = cs_field_get_key_int(sca, keysca) - 1;
+  int isca = sca->get_key_int("scalar_id") - 1;
   assert(isca > -1);
 
   cs_dispatch_context ctx;
@@ -1157,8 +1156,7 @@ _les_balance_compute_uidjt(const void   *input,
 
   cs_dispatch_context ctx;
 
-  const int keysca = cs_field_key_id("scalar_id");
-  int isca = cs_field_get_key_int(sca, keysca) - 1;
+  int isca = sca->get_key_int("scalar_id") - 1;
   assert(isca > -1);
 
   cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
@@ -1187,8 +1185,7 @@ _les_balance_compute_ditdit(const void   *input,
   const cs_field_t *sca = (const cs_field_t *)input;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
-  const int keysca = cs_field_key_id("scalar_id");
-  int isca = cs_field_get_key_int(sca, keysca) - 1;
+  int isca = sca->get_key_int("scalar_id") - 1;
   assert(isca > -1);
 
   cs_dispatch_context ctx;
@@ -1228,7 +1225,7 @@ _les_balance_compute_tdjtauij(const void   *input,
 
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
-    if (cs_field_get_key_int(f, keysca) > 0) {
+    if (f->get_key_int(keysca) > 0) {
       if (f_id == sca->id)
         break;
     }
@@ -1277,13 +1274,12 @@ _les_balance_compute_uidivturflux(const void   *input,
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   const int keysca = cs_field_key_id("scalar_id");
-  const int ksigmas = cs_field_key_id("turbulent_schmidt");
 
   cs_dispatch_context ctx;
 
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
-    if (cs_field_get_key_int(f, keysca) > 0) {
+    if (f->get_key_int(keysca) > 0) {
       if (f_id == sca->id)
         break;
     }
@@ -1293,7 +1289,7 @@ _les_balance_compute_uidivturflux(const void   *input,
 
   auto vel = CS_F_(vel)->get_vals_v();
 
-  sigmas = cs_field_get_key_double(sca, ksigmas);
+  sigmas = sca->get_key_double("turbulent_schmidt");
 
   cs_array<cs_real_t> diverg(n_cells_ext, cs_alloc_mode);
   cs_array_2d<cs_real_t> w1(n_cells, 3, cs_alloc_mode);
@@ -1339,16 +1335,14 @@ _les_balance_compute_tdivturflux(const void   *input,
   const cs_field_t *sca = (const cs_field_t *)input;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-  const int keysca = cs_field_key_id("scalar_id");
-  const int ksigmas = cs_field_key_id("turbulent_schmidt");
-  int isca = cs_field_get_key_int(sca, keysca) - 1;
+  int isca = sca->get_key_int("scalar_id") - 1;
   assert(isca > -1);
 
   cs_dispatch_context ctx;
 
   cs_real_t sigmas;
 
-  sigmas = cs_field_get_key_double(sca, ksigmas);
+  sigmas = sca->get_key_double("turbulent_schmidt");
 
   cs_array<cs_real_t> diverg(n_cells_ext, cs_alloc_mode);
   cs_array_2d<cs_real_t> w1(n_cells, 3, cs_alloc_mode);
@@ -1392,8 +1386,7 @@ _les_balance_compute_nutditdit(const void   *input,
 
   cs_dispatch_context ctx;
 
-  const int keysca = cs_field_key_id("scalar_id");
-  int isca = cs_field_get_key_int(sca, keysca) - 1;
+  int isca = sca->get_key_int("scalar_id") - 1;
   assert(isca > -1);
 
   cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
@@ -1429,8 +1422,7 @@ _les_balance_compute_nutuidjt(const void   *input,
 
   cs_dispatch_context ctx;
 
-  const int keysca = cs_field_key_id("scalar_id");
-  int isca = cs_field_get_key_int(sca, keysca) - 1;
+  int isca = sca->get_key_int("scalar_id") - 1;
   assert(isca > -1);
 
   cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
@@ -1462,8 +1454,7 @@ _les_balance_compute_nutdjuidjt(const void   *input,
 
   cs_dispatch_context ctx;
 
-  const int keysca = cs_field_key_id("scalar_id");
-  int isca = cs_field_get_key_int(sca, keysca) - 1;
+  int isca = sca->get_key_int("scalar_id") - 1;
   assert(isca > -1);
 
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
@@ -2017,7 +2008,7 @@ _les_balance_time_moment_tui(void)
   /* Define time moments for T.ui balance */
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id ++) {
     cs_field_t *f = cs_field_by_id(f_id);
-    int iscal = cs_field_get_key_int(f, keysca)-1;
+    int iscal = f->get_key_int(keysca)-1;
     if (iscal > -1) {
       {
         /* t mean */
@@ -2672,7 +2663,7 @@ _les_balance_initialize_tui(void)
 
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id ++) {
     cs_field_t *f = cs_field_by_id(f_id);
-    if (cs_field_get_key_int(f, keysca) > 0) {
+    if (f->get_key_int(keysca) > 0) {
       _les_balance.btui[iscal]->f_id = f_id;
       iscal++;
     }
@@ -2918,7 +2909,7 @@ cs_les_balance_create_fields(void)
 
     for (int f_id = 0; f_id < cs_field_n_fields(); f_id ++) {
       cs_field_t *f_sca = cs_field_by_id(f_id);
-      int i_sca = cs_field_get_key_int(f_sca, k_sca);
+      int i_sca = f_sca->get_key_int(k_sca);
       if (i_sca > 0) n_scal ++;
     }
 
@@ -2927,7 +2918,7 @@ cs_les_balance_create_fields(void)
     for (int f_id = 0; f_id < cs_field_n_fields(); f_id ++) {
       cs_field_t *f_sca = cs_field_by_id(f_id);
 
-      int i_sca = cs_field_get_key_int(f_sca, k_sca)-1;
+      int i_sca = f_sca->get_key_int(k_sca)-1;
       if (i_sca > -1) {
         char *name;
         int len = strlen(f_sca->name)+6;
@@ -2984,7 +2975,7 @@ cs_les_balance_create(void)
 
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id ++) {
     cs_field_t *f = cs_field_by_id(f_id);
-    int isca = cs_field_get_key_int(f, keysca);
+    int isca = f->get_key_int(keysca);
     if (isca > 0) nscal++;
   }
 
@@ -3023,7 +3014,7 @@ cs_les_balance_create(void)
   for (int m_id = 0; m_id < n_moments; m_id++) {
     cs_field_t *f = cs_time_moment_get_field(m_id);
     if (f != nullptr && !cs_field_is_key_set(f, log_key_id))
-      cs_field_set_key_int(f, log_key_id, 1);
+      f->set_key_int(log_key_id, 1);
   }
 #endif
 }
@@ -3580,8 +3571,8 @@ cs_les_balance_compute_tui(void)
     cs_les_balance_tui_t *b_sca = _les_balance.btui[isca];
 
     cs_field_t *sca = cs_field_by_id(b_sca->f_id);
-    cs_real_t sigmas = cs_field_get_key_double(sca, ksigmas);
-    cs_real_t visls0 = cs_field_get_key_double(sca, kvisls0);
+    cs_real_t sigmas = sca->get_key_double(ksigmas);
+    cs_real_t visls0 = sca->get_key_double(kvisls0);
     cs_real_t xvistot = visls0 + viscl0;
 
     /* Time moments retrieved by name */

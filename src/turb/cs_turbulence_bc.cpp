@@ -590,9 +590,9 @@ cs_turbulence_bc_init_pointers(void)
   for (int f_id = 0; f_id < n_fields; f_id++) {
     const cs_field_t *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) {
-      int s_num = cs_field_get_key_int(f, k_sca);
+      int s_num = f->get_key_int(k_sca);
       if (s_num > 0) {
-        int f_turbt = cs_field_get_key_int(f, k_turbt) ;
+        int f_turbt = f->get_key_int(k_turbt) ;
         if (f_turbt / 10 == 3)
           n_sca_ut ++;
         if (f_turbt == 11 || f_turbt == 21 || f_turbt == 31)
@@ -615,16 +615,16 @@ cs_turbulence_bc_init_pointers(void)
   for (int f_id = 0; f_id < n_fields; f_id++) {
     const cs_field_t *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE) {
-      int s_num = cs_field_get_key_int(f, k_sca);
+      int s_num = f->get_key_int(k_sca);
       if (s_num > 0) {
-        int f_turbt = cs_field_get_key_int(f, k_turbt) ;
+        int f_turbt = f->get_key_int(k_turbt) ;
         if (f_turbt / 10 == 3) {
-          int fid_turbt = cs_field_get_key_int(f, k_f_turbt);
+          int fid_turbt = f->get_key_int(k_f_turbt);
           _turb_bc_id.f_ut[n_sca_ut] = cs_field_by_id(fid_turbt);
           n_sca_ut ++;
         }
         if (f_turbt == 11 || f_turbt == 21 || f_turbt == 31) {
-          int fid_turbt = cs_field_get_key_int(f, k_f_turbt_alp_bl);
+          int fid_turbt = f->get_key_int(k_f_turbt_alp_bl);
           _turb_bc_id.f_alp_bl_t[n_sca_alp_bl] = cs_field_by_id(fid_turbt);
           n_sca_alp_bl ++;
         }
