@@ -163,7 +163,7 @@ cs_rad_transfer_add_variable_fields(void)
 
               cs_field_pointer_map_indexed(CS_ENUMF_(radiance), rad_id, f);
 
-              cs_field_set_key_int(f, keyvis, 0);
+              f->set_key_int(keyvis, 0);
 
               /* Equation parameters */
               cs_equation_param_t *eqp = cs_field_get_equation_param(f);
@@ -207,7 +207,7 @@ cs_rad_transfer_add_variable_fields(void)
 
       cs_field_pointer_map_indexed(CS_ENUMF_(radiance), gg_id, f);
 
-      cs_field_set_key_int(f, keyvis, 0);
+      f->set_key_int(keyvis, 0);
 
       /* Equation parameters */
       cs_equation_param_t *eqp = cs_field_get_equation_param(f);
@@ -263,11 +263,11 @@ cs_rad_transfer_add_property_fields(void)
                         false);
 
     /* hide property */
-    cs_field_set_key_int(f, keyvis, 0);
-    cs_field_set_key_int(f, keylog, 0);
+    f->set_key_int(keyvis, 0);
+    f->set_key_int(keylog, 0);
 
     /* set label */
-    cs_field_set_key_str(f, keylbl, "Rad energy");
+    f->set_key_str(keylbl, "Rad energy");
 
     cs_field_pointer_map(CS_ENUMF_(rad_energy), f);
   }
@@ -280,11 +280,11 @@ cs_rad_transfer_add_property_fields(void)
                         false);
 
     /* hide property */
-    cs_field_set_key_int(f, keyvis, 0);
-    cs_field_set_key_int(f, keylog, 0);
+    f->set_key_int(keyvis, 0);
+    f->set_key_int(keylog, 0);
 
     /* set label */
-    cs_field_set_key_str(f, keylbl, "Qrad");
+    f->set_key_str(keylbl, "Qrad");
 
     cs_field_pointer_map(CS_ENUMF_(rad_q), f);
   }
@@ -311,11 +311,11 @@ cs_rad_transfer_add_property_fields(void)
                           false);
 
       /* hide property */
-      cs_field_set_key_int(f, keyvis, 0);
-      cs_field_set_key_int(f, keylog, 0);
+      f->set_key_int(keyvis, 0);
+      f->set_key_int(keylog, 0);
 
       /* set label */
-      cs_field_set_key_str(f, keylbl, f_label);
+      f->set_key_str(keylbl, f_label);
 
       cs_field_pointer_map_indexed(CS_ENUMF_(rad_est), irphas, f);
     }
@@ -330,11 +330,11 @@ cs_rad_transfer_add_property_fields(void)
                           false);
 
       /* hide property */
-      cs_field_set_key_int(f, keyvis, 0);
-      cs_field_set_key_int(f, keylog, 0);
+      f->set_key_int(keyvis, 0);
+      f->set_key_int(keylog, 0);
 
       /* set label */
-      cs_field_set_key_str(f, keylbl, f_label);
+      f->set_key_str(keylbl, f_label);
 
       cs_field_pointer_map_indexed(CS_ENUMF_(rad_ist), irphas, f);
     }
@@ -349,11 +349,11 @@ cs_rad_transfer_add_property_fields(void)
                           false);
 
       /* hide property */
-      cs_field_set_key_int(f, keyvis, 0);
-      cs_field_set_key_int(f, keylog, 0);
+      f->set_key_int(keyvis, 0);
+      f->set_key_int(keylog, 0);
 
       /* set label */
-      cs_field_set_key_str(f, keylbl, f_label);
+      f->set_key_str(keylbl, f_label);
 
       cs_field_pointer_map_indexed(CS_ENUMF_(rad_abs), irphas, f);
     }
@@ -368,11 +368,11 @@ cs_rad_transfer_add_property_fields(void)
                           false);
 
       /* hide property */
-      cs_field_set_key_int(f, keyvis, 0);
-      cs_field_set_key_int(f, keylog, 0);
+      f->set_key_int(keyvis, 0);
+      f->set_key_int(keylog, 0);
 
       /* set label */
-      cs_field_set_key_str(f, keylbl, f_label);
+      f->set_key_str(keylbl, f_label);
 
       cs_field_pointer_map_indexed(CS_ENUMF_(rad_emi), irphas, f);
     }
@@ -386,11 +386,11 @@ cs_rad_transfer_add_property_fields(void)
                           1,
                           false);
       /* hide property */
-      cs_field_set_key_int(f, keyvis, 0);
-      cs_field_set_key_int(f, keylog, 0);
+      f->set_key_int(keyvis, 0);
+      f->set_key_int(keylog, 0);
 
       /* set label */
-      cs_field_set_key_str(f, keylbl, f_label);
+      f->set_key_str(keylbl, f_label);
 
       cs_field_pointer_map_indexed(CS_ENUMF_(rad_cak), irphas, f);
     }
@@ -420,10 +420,10 @@ cs_rad_transfer_add_property_fields(void)
                           location_id,
                           1,
                           false);
-      cs_field_set_key_str(f, keylbl, f_label);
 
-      cs_field_set_key_int(f, keyvis, 0);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_str(keylbl, f_label);
+      f->set_key_int(keyvis, 0);
+      f->set_key_int(keylog, 1);
 
       //TODO map it as
       // cs_field_pointer_map_indexed(CS_ENUMF_(rad_abs), gg_id, f);
@@ -438,10 +438,10 @@ cs_rad_transfer_add_property_fields(void)
                           location_id,
                           1,
                           false);
-      cs_field_set_key_str(f, keylbl, f_label);
 
-      cs_field_set_key_int(f, keyvis, 0);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_str(keylbl, f_label);
+      f->set_key_int(keyvis, 0);
+      f->set_key_int(keylog, 1);
 
 
       snprintf(f_name, 63, "spectral_emission%s", suffix); f_name[63] ='\0';
@@ -452,10 +452,10 @@ cs_rad_transfer_add_property_fields(void)
                           location_id,
                           1,
                           false);
-      cs_field_set_key_str(f, keylbl, f_label);
 
-      cs_field_set_key_int(f, keyvis, 0);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_str(keylbl, f_label);
+      f->set_key_int(keyvis, 0);
+      f->set_key_int(keylog, 1);
       //TODO map it as
       //cs_field_pointer_map_indexed(CS_ENUMF_(rad_emi), gg_id, f);
       // Note: would be in conflict with rad_abs
@@ -473,11 +473,11 @@ cs_rad_transfer_add_property_fields(void)
                         location_id,
                         rt_params->nwsgg,
                         false);
-    cs_field_set_key_str(f, keylbl, "Upward radiative flux");
+    f->set_key_str(keylbl, "Upward radiative flux");
     cs_field_pointer_map(CS_ENUMF_(fup), f);
 
-    cs_field_set_key_int(f, keyvis, vis_gg);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, vis_gg);
+    f->set_key_int(keylog, 1);
 
     /* Downward rad flux by band */
     // TODO sould be "class" fields as
@@ -487,11 +487,11 @@ cs_rad_transfer_add_property_fields(void)
                         location_id,
                         rt_params->nwsgg,
                         false);
-    cs_field_set_key_str(f, keylbl, "Downward radiative flux");
+    f->set_key_str(keylbl, "Downward radiative flux");
     cs_field_pointer_map(CS_ENUMF_(fdown), f);
 
-    cs_field_set_key_int(f, keyvis, vis_gg);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, vis_gg);
+    f->set_key_int(keylog, 1);
 
     /* Upward absorption coefficient by band */
     f = cs_field_create("rad_absorption_coeff_up",
@@ -501,8 +501,8 @@ cs_rad_transfer_add_property_fields(void)
                         false);
     cs_field_pointer_map(CS_ENUMF_(rad_ck_up), f);
 
-    cs_field_set_key_int(f, keyvis, vis_gg);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, vis_gg);
+    f->set_key_int(keylog, 1);
 
     /* Asymmetry factor (for solar only...)  per band */
     f = cs_field_create("asymmetry_factor",
@@ -511,8 +511,8 @@ cs_rad_transfer_add_property_fields(void)
                         rt_params->nwsgg,
                         false);
 
-    cs_field_set_key_int(f, keyvis, vis_gg);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, vis_gg);
+    f->set_key_int(keylog, 1);
 
     /* Simple diffusion albedo (for solar only...)  per band */
     f = cs_field_create("simple_diffusion_albedo",
@@ -521,8 +521,8 @@ cs_rad_transfer_add_property_fields(void)
                         rt_params->nwsgg,
                         false);
 
-    cs_field_set_key_int(f, keyvis, vis_gg);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, vis_gg);
+    f->set_key_int(keylog, 1);
 
     /* Upward absorption coefficient by band */
     f = cs_field_create("rad_absorption_coeff_down",
@@ -532,8 +532,8 @@ cs_rad_transfer_add_property_fields(void)
                         false);
     cs_field_pointer_map(CS_ENUMF_(rad_ck_down), f);
 
-    cs_field_set_key_int(f, keyvis, vis_gg);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, vis_gg);
+    f->set_key_int(keylog, 1);
   }
 
   /* Boundary face fields */
@@ -548,10 +548,10 @@ cs_rad_transfer_add_property_fields(void)
                           location_id,
                           1,
                           false);
-      cs_field_set_key_str(f, keylbl, "Albedo");
 
-      cs_field_set_key_int(f, keyvis, 1);
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_str(keylbl, "Albedo");
+      f->set_key_int(keyvis, 1);
+      f->set_key_int(keylog, 1);
     }
   }
 
@@ -561,9 +561,9 @@ cs_rad_transfer_add_property_fields(void)
       f = cs_parameters_add_boundary_temperature();
 
     if (!cs_field_is_key_set(f, keylog))
-      cs_field_set_key_int(f, keylog, 1);
+      f->set_key_int(keylog, 1);
     if (!cs_field_is_key_set(f, keyvis))
-      cs_field_set_key_int(f, keyvis, CS_POST_ON_LOCATION);
+      f->set_key_int(keyvis, CS_POST_ON_LOCATION);
   }
 
   {
@@ -572,7 +572,7 @@ cs_rad_transfer_add_property_fields(void)
                         location_id,
                         1,
                         false);
-    cs_field_set_key_str(f, keylbl, "Incident_flux");
+    f->set_key_str(keylbl, "Incident_flux");
     cs_field_pointer_map(CS_ENUMF_(qinci), f);
   }
 
@@ -585,11 +585,11 @@ cs_rad_transfer_add_property_fields(void)
                         location_id,
                         rt_params->nwsgg,
                         false);
-    cs_field_set_key_str(f, keylbl, "Spectral_incident_flux");
+    f->set_key_str(keylbl, "Spectral_incident_flux");
     cs_field_pointer_map(CS_ENUMF_(qinsp), f);
 
-    cs_field_set_key_int(f, keyvis, vis_gg);
-    cs_field_set_key_int(f, keylog, 1);
+    f->set_key_int(keyvis, vis_gg);
+    f->set_key_int(keylog, 1);
   }
 
   {
@@ -598,7 +598,7 @@ cs_rad_transfer_add_property_fields(void)
                         location_id,
                         1,
                         false);
-    cs_field_set_key_str(f, keylbl, "Th_conductivity");
+    f->set_key_str(keylbl, "Th_conductivity");
     cs_field_pointer_map(CS_ENUMF_(xlam), f);
   }
 
@@ -608,7 +608,7 @@ cs_rad_transfer_add_property_fields(void)
                         location_id,
                         1,
                         false);
-    cs_field_set_key_str(f, keylbl, "Thickness");
+    f->set_key_str(keylbl, "Thickness");
     cs_field_pointer_map(CS_ENUMF_(epa), f);
   }
 
@@ -620,7 +620,7 @@ cs_rad_transfer_add_property_fields(void)
                           location_id,
                           1,
                           false);
-    cs_field_set_key_str(f, keylbl, "Emissivity");
+    f->set_key_str(keylbl, "Emissivity");
     cs_field_pointer_map(CS_ENUMF_(emissivity), f);
   }
 
@@ -630,7 +630,7 @@ cs_rad_transfer_add_property_fields(void)
                         location_id,
                         1,
                         false);
-    cs_field_set_key_str(f, keylbl, "Net_flux");
+    f->set_key_str(keylbl, "Net_flux");
     cs_field_pointer_map(CS_ENUMF_(fnet), f);
   }
 
@@ -640,7 +640,7 @@ cs_rad_transfer_add_property_fields(void)
                         location_id,
                         1,
                         false);
-    cs_field_set_key_str(f, keylbl, "Convective_flux");
+    f->set_key_str(keylbl, "Convective_flux");
     cs_field_pointer_map(CS_ENUMF_(fconv), f);
   }
 
@@ -650,7 +650,7 @@ cs_rad_transfer_add_property_fields(void)
                         location_id,
                         1,
                         false);
-    cs_field_set_key_str(f, keylbl, "Convective_exch_coef");
+    f->set_key_str(keylbl, "Convective_exch_coef");
     cs_field_pointer_map(CS_ENUMF_(hconv), f);
   }
 
