@@ -463,7 +463,9 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
   if (cs_glob_lagr_specific_physics->solve_temperature == 1
       || cs_glob_lagr_specific_physics->solve_temperature_seen == 1) {
     cs_real_t tkelvn = -cs_physical_constants_celsius_to_kelvin;
-    if (zis->cp < 0.0 && cs_glob_lagr_specific_physics->solve_temperature == 1)
+    if (   cs_glob_lagr_specific_physics->solve_temperature == 1
+        && cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_COAL
+        && zis->cp < 0.0)
       bft_error(__FILE__, __LINE__, 0,
                 _("Lagrangian %s zone %d, set %d:\n"
                   "  specific heat capacity (%g) is negative."),
