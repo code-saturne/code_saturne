@@ -198,7 +198,7 @@ BEGIN_C_DECLS
         - 0: false\n
         If \ref ikecou = 0 in \f$k-\epsilon\f$ model, the term
         in \f$\epsilon\f$ in the equation of \f$k\f$ is made implicit.\n
-        \ref ikecou is initialised to 0.\n
+        \ref ikecou is initialized to 0.\n
         \ref ikecou = 1 is forbidden when using the v2f model (\ref model = 50).\n
         Useful if and only if eddy viscosity models are chosen.
   \var  cs_turb_rans_model_t::reinit_turb

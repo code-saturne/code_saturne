@@ -1303,7 +1303,7 @@ cs_at_opt_interp_map_values(cs_at_opt_interp_t *oi,
     for (int kk = 0; kk < ms->dim; kk++)
       oi->active_time[ms->dim*ii+kk] = oi->measures_idx[ms->dim*ii+kk];
 
-  /* Initialising time weighting coefficients */
+  /* Initializing time weighting coefficients */
   if (oi->steady <= 0) {
     CS_MALLOC(oi->time_weights, ms->dim*n_obs, cs_real_t);
     for (int ii = 0; ii < n_obs; ii++)

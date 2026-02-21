@@ -86,7 +86,8 @@ cs_user_initialization([[maybe_unused]] cs_domain_t  *domain)
       fld->val[cell_id] = 25;
   }
 
-  /* In the case of the EBU pre-mixed flame module the user can initialise (by example 25):
+  /* In the case of the EBU pre-mixed flame module the user can initialize
+   * (by example 25):
    * the mixing rate
    * the fresh gas mass fraction
    * the mixture enthalpy */

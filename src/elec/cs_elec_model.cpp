@@ -147,7 +147,7 @@ BEGIN_C_DECLS
         Potential difference.\n
         \ref pot_diff is the potential difference (\f$V\f$) which generates
         the current (and the Joule effect) for the calculations with boundary
-        conditions tuning for the potential. This value is initialised set by
+        conditions tuning for the potential. This value is initialized set by
         the user (\ref cs_user_parameters). It is then automatically tuned
         depending on the value of dissipated power (Joule effect module) or the
         intensity of current (electric arcs module). In order for the correct

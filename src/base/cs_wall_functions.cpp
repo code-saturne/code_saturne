@@ -104,12 +104,12 @@ BEGIN_C_DECLS
         - CS_WALL_F_2SCALES_SMOOTH_ROUGH: wall function unifying rough and smooth
           friction regimes
         - CS_WALL_F_2SCALES_CONTINUOUS: All \f$ y^+ \f$  for low Reynolds models\n
-        \ref iwallf is initialised to CS_WALL_F_1SCALE_LOG for \ref model = 10,
+        \ref iwallf is initialized to CS_WALL_F_1SCALE_LOG for \ref model = 10,
           40, 41 or 70
         (mixing length, LES and Spalart Allmaras).\n
-        \ref iwallf is initialised to CS_WALL_F_DISABLED for \ref model = 0, 32,
+        \ref iwallf is initialized to CS_WALL_F_DISABLED for \ref model = 0, 32,
           50 or 51\n
-        \ref iwallf is initialised to CS_WALL_F_2SCALES_LOG for \ref model = 20,
+        \ref iwallf is initialized to CS_WALL_F_2SCALES_LOG for \ref model = 20,
           21, 30, 31 or 60
         (\f$k-\epsilon\f$, \f$R_{ij}-\epsilon\f$ LRR, \f$R_{ij}-\epsilon\f$ SSG
           and \f$k-\omega\f$ SST models).\n

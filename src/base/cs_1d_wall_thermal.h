@@ -118,7 +118,7 @@ typedef struct {
                       * the nfpt1d boundary faces which are coupled with
                       * a 1D wall. */
 
-  cs_real_t *tppt1d; /* Initialisation temperature of the wall (uniform in
+  cs_real_t *tppt1d; /* Initialization temperature of the wall (uniform in
                       * thickness). During the calculation, the array stores
                       * the temperature of the solid at the fluid/solid
                       * interface. */

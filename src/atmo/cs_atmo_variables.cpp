@@ -192,8 +192,8 @@ _gaussian(const cs_mesh_t             *m,
       /* using cvar_nusa[c_id] = cmu*xkent^2/xeent
        * FIXME: There is no good way to calculate tke and eps from nusa.
        * For the moment we use tke^4/eps^2 instead of tk^3/eps^2
-       * Need to return WARNING that in case of Spalart-Allmaras we use bad assumpltion
-       * or RETURN error for this case. */
+       * Need to return WARNING that in case of Spalart-Allmaras we use
+       * bad assumpltion or RETURN error for this case. */
       a_coeff = a_const*cs_math_pow2(cvar_nusa[c_id])/cs_math_pow2(cs_turb_cmu);
 
     cs_real_t pp = 0.0, dum = 0.0;
@@ -232,8 +232,9 @@ _gaussian(const cs_mesh_t             *m,
      nebdia[c_id] = 0.5*(1.0 + erf(q1/sqrt(2.0)));
 
      // FIXME MF : put in input of the global function...
-     cs_real_t yw_liq = (sig_flu /(1.0 + qsl*pow(clatev, 2)/(rvap*cp0*pow(tliq, 2))))
-                      * (nebdia[c_id]*q1 + exp(-pow(q1, 2)/2.0)/sqrt(2.0*cs_math_pi));
+     cs_real_t yw_liq
+       =   (sig_flu /(1.0 + qsl*pow(clatev, 2)/(rvap*cp0*pow(tliq, 2))))
+         * (nebdia[c_id]*q1 + exp(-pow(q1, 2)/2.0)/sqrt(2.0*cs_math_pi));
      yw_liq   = fmax(yw_liq, 0.0);
      nn[c_id] = nebdia[c_id] - (  nebdia[c_id]*q1
                                 + exp(-pow(q1, 2)/2.0)/sqrt(2.0*cs_math_pi))
@@ -303,7 +304,7 @@ _init_meteo_data_interpolation(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * Add atmospheric variables fields
+ * Add atmospheric variable fields
  */
 /*----------------------------------------------------------------------------*/
 
@@ -457,7 +458,7 @@ cs_atmo_add_variable_fields(void)
                 "  or cs_user_parameters.c\n");
 
     /* Load shared library
-     * Initialise external aerosol code
+     * Initialize external aerosol code
      * Create variables */
     cs_atmo_aerosol_initialize();
   }
@@ -498,7 +499,7 @@ cs_atmo_add_variable_fields(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add variable fields if needed.
+ * \brief  Add atmospheric property fields.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1279,7 +1280,8 @@ cs_atmo_add_property_fields(void)
 /*!
  * \brief Update the thermo physical properties fields for the humid air and
  *        the liquid.
- * \remark: This function  is called at the beginning of each time step.
+ *
+ * \remark This function  is called at the beginning of each time step.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1307,23 +1309,24 @@ cs_atmo_physical_properties_update(void)
     cpro_met_rho = cs_field("meteo_density")->val;
   }
 
-  /* This routine computes the density and the thermodynamic temperature.
+  /* This function computes the density and the thermodynamic temperature.
      The computations may require the pressure profile which is here taken from
      the meteo file. If no meteo file is used, the user can
      give the laws for RHO and T in cs_user_physical_properties */
 
   if (cs_thermal_model_field() == nullptr)
-    bft_error(__FILE__, __LINE__, 0,
-              "@                                                            \n"
-              "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-              "@                                                            \n"
-              "@ @@ WARNING : STOP WHEN CALCULATING PHYSICAL QUANTITIES     \n"
-              "@    =========                                               \n"
-              "@    The thermal field is not defined check its definition in"
-              "@    the GUI, cs_user_parameters or cs_user_physical_properties"
-              "@                                                            \n"
-              "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-              "@                                                            \n");
+    bft_error
+      (__FILE__, __LINE__, 0,
+       "@ \n"
+       "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+       "@\n"
+       "@ @@ ERROR: STOP WHEN CALCULATING PHYSICAL QUANTITIES\n"
+       "@    ======\n"
+       "@    The thermal field is not defined.\n"
+       "@    check its definition in user settings.\n"
+       "@\n"
+       "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+       "@\n");
 
   cs_real_t *cvar_totwt = nullptr, *cpro_liqwt = nullptr;
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_HUMID) {
@@ -1459,7 +1462,7 @@ cs_atmo_physical_properties_update(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initialisation of variable options for the atmospheric module
+ * \brief Initialization of variable options for the atmospheric module
  *        before what is done in cs_user_parameters functions
  */
 /*----------------------------------------------------------------------------*/
@@ -1478,22 +1481,22 @@ cs_atmo_init_variables_1(void)
   if (   cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_DRY
       || cs_glob_physical_model_flag[CS_ATMOSPHERIC] == CS_ATMO_CONSTANT_DENSITY  )
     if (at_1d_rad->radiative_model_1d == 1 || at_opt->ground_model >= 1)
-      bft_error(__FILE__, __LINE__, 0,
-              "@                                                            \n"
-              "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-              "@                                                            \n"
-              "@ @@ WARNING : STOP WHILE READING INPUT DATA                 \n"
-              "@    =========                                               \n"
-              "@              ATMOSPHERIC  MODULE                           \n"
-              "@ Ground model (ground_model) and radiative model              \n"
-              "@  (radiative_model_1d) are only available with              \n"
-              "@  humid atmosphere model or dry atmosphere model.           \n"
-              "@                                                            \n"
-              "@ Check the input data given through the User Interface      \n"
-              "@      or in cs_user_model.                                  \n"
-              "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-              "@                                                            \n");
-
+      bft_error
+        (__FILE__, __LINE__, 0,
+         "@\n"
+         "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+         "@\n"
+         "@ @@ ERROR: STOP WHILE READING INPUT DATA\n"
+         "@    =====\n"
+         "@              ATMOSPHERIC  MODULE\n"
+         "@ Ground model (ground_model) and radiative model\n"
+         "@  (radiative_model_1d) are only available with\n"
+         "@  humid atmosphere model or dry atmosphere model.\n"
+         "@\n"
+         "@ Check the input data given through the User Interface\n"
+         "@      or in cs_user_model.\n"
+         "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
+         "@\n");
 
   /* Transported variables for cs_glob_physical_model_flag[CS_ATMOSPHERIC]
      =  CS_ATMO_CONSTANT_DENSITY, CS_ATMO_DRY, CS_ATMO_HUMID
@@ -1546,7 +1549,7 @@ cs_atmo_init_variables_1(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initialisation of variable options for the atmospheric module
+ * \brief Initialization of variable options for the atmospheric module
  *        after what is done in cs_user_parameters functions
  */
 /*----------------------------------------------------------------------------*/

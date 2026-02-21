@@ -2332,7 +2332,7 @@ cs_restart_read_notebook_variables(cs_restart_t  *r)
 
       snprintf(buf, l, "%s%s", _ntb_prefix, name);
 
-      /* Initialisation to the actual value */
+      /* Initialization to the actual value */
       cs_real_t val_notebook_var = cs_notebook_parameter_value_by_name(name);
 
       int retcode = cs_restart_read_section(r,

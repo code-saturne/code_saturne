@@ -214,7 +214,7 @@ BEGIN_C_DECLS
   \var  cs_fluid_properties_t::pred0
         reference value for the reduced pressure \f$P^*\f$ (see \ref ro0)
 
-        It is especially used to initialise the reduced pressure and as a
+        It is especially used to initialize the reduced pressure and as a
         reference value for the outlet boundary conditions.
         For an optimised precision in the resolution of \f$P^*\f$, it is wiser
         to keep \ref pred0 to 0.

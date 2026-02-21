@@ -919,7 +919,7 @@ _6_6_zero_range(cs_real_t  *restrict y,
  *   x             <-> multipliying vector values (ghost values updated)
  *
  * returns:
- *   halo state to use for synchronisation finalisation.
+ *   halo state to use for synchronisation finalization.
  *----------------------------------------------------------------------------*/
 
 static cs_halo_state_t *

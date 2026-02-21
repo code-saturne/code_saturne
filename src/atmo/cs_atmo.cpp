@@ -1908,7 +1908,7 @@ cs_mo_compute_from_thermal_diff(cs_real_t   z,
   cs_real_t coef_moh_old = 0.;
   cs_real_t dlmoclip = 1.0;
 
-  /* Precision initialisation */
+  /* Precision initialization */
   cs_real_t prec_ustar = 1.e-2;
   cs_real_t prec_tstar = 1.e-2;
 
@@ -1993,7 +1993,7 @@ cs_mo_compute_from_thermal_flux(cs_real_t   z,
   cs_real_t coef_mom_old = 0.;
   cs_real_t dlmoclip = 1.0;
 
-  /* Precision initialisation */
+  /* Precision initialization */
   cs_real_t prec_ustar = 1.e-2;
 
   /* Initial LMO */

@@ -1069,8 +1069,8 @@ _additional_fields_stage_1(void)
    Additional properties for time schemes
    --------------------------------------
 
-   Default initialisations and verification of options
-   used thereafter to decide wether one set additionnal
+   Default initializations and verification of options
+   used thereafter to decide wether one set additional
    tables for the quantities from the previous time step.
    ------------------------------------------------------*/
 

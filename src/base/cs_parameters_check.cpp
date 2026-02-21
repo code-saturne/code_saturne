@@ -1222,17 +1222,15 @@ cs_parameters_check(void)
   /*-------------------------------------------------------------------------
    * Check radiative module latitude / longitude
    *-------------------------------------------------------------------------*/
+
   if (   cs_glob_atmo_1d_rad->radiative_model_1d == 1
       && (   at_opt->latitude >= cs_math_infinite_r*0.5
           || at_opt->longitude >= cs_math_infinite_r*0.5) )
     cs_parameters_error
       (CS_ABORT_DELAYED,
-       _("WARNING:   STOP WHILE READING INPUT DATA\n"),
-       _("    =========\n"
-         "               ATMOSPHERIC  MODULE RADITIVE MODEL\n"
-         "    Wrong longitude or latitude coordinates\n"
-         "    Check your data and parameters (GUI and user functions)\n"));
-
+       _("in the atmospheric radiative model"),
+       _("Wrong longitude or latitude coordinates\n"
+         "Check your data and parameters (GUI and user functions)."));
 
   /*--------------------------------------------------------------------------
    * Verification in the turbulent flux model for scalars
@@ -1912,21 +1910,22 @@ cs_parameters_check(void)
 
         CS_FREE(f_desc);
 
-        f_desc = _field_section_desc(f, "in LES, while reading "
-                                        "convection scheme "
-                                        "parameters for variable");
+        f_desc = _field_section_desc(f,
+                                     "in LES, while reading "
+                                     "convection scheme "
+                                     "parameters for variable");
 
         cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
                                          _(f_desc),
                                          "equation param blencv (2nd order "
-                                           "scheme share for convection)",
+                                         "scheme share for convection)",
                                          eqp->blencv,
                                          0.95, 1.);
 
         cs_parameters_is_equal_double(CS_WARNING,
                                       _(f_desc),
                                       "equation param blencv (2nd order scheme "
-                                                      "share for convection)",
+                                      "share for convection)",
                                       eqp->blencv,
                                       1.);
 
@@ -2938,14 +2937,14 @@ cs_parameters_check(void)
 
   /* Turbulence */
 
-  /* uref is needed for automatic initialisation and boundary conditions
+  /* uref is needed for automatic initialization and boundary conditions
      of turbulence variables check that it is positive
      and warn the user if not */
   if (   turb_model->type == CS_TURB_RANS
       && turb_model->order == CS_TURB_FIRST_ORDER) {
     cs_parameters_is_greater_double(CS_WARNING,
                                     _("Reference velocity is used for the "
-                                      "automatic initialisation and boundary "
+                                      "automatic initialization and boundary "
                                       "conditions of the turbulence "
                                       "variables\n(if not overridden by "
                                       "user or via a restart file)"),

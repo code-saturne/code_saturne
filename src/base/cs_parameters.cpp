@@ -225,7 +225,7 @@ BEGIN_C_DECLS
              Due to certain specific couplings between the turbulence equations,
              \ref isto2t is allowed the value 1 or 2 only for the
              \f$R_{ij}\f$ models (\ref model = 30 or 31);
-             hence, it is always initialised to 0.
+             hence, it is always initialized to 0.
 
   \var  cs_time_scheme_t::thetsn
         \anchor thetsn

@@ -54,23 +54,18 @@
 #include "atmo/cs_atmo.h"
 #include "base/cs_base.h"
 #include "comb/cs_coal.h"
-#include "base/cs_halo.h"
 #include "base/cs_ht_convert.h"
 #include "base/cs_log.h"
-#include "base/cs_interface.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
 #include "mesh/cs_mesh_quantities.h"
-#include "base/cs_order.h"
 #include "base/cs_parall.h"
 #include "pprt/cs_physical_model.h"
 #include "base/cs_physical_constants.h"
 #include "base/cs_random.h"
-#include "base/cs_search.h"
 #include "base/cs_thermal_model.h"
-#include "base/cs_timer_stats.h"
 
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
@@ -284,6 +279,7 @@ _random_point_in_face(cs_lnum_t        n_vertices,
 }
 
 END_C_DECLS
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -798,7 +794,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
       if (    cs_glob_lagr_model->physical_model > CS_LAGR_PHYS_OFF
           && (extra->temperature_turbulent_flux != nullptr
-            || extra->temperature_variance != nullptr)
+              || extra->temperature_variance != nullptr)
           &&  extra->temperature != nullptr) {
         if (extra->temperature_turbulent_flux != nullptr)
           temp_vel_fluc_coef.reshape(n_cells, 3);
@@ -829,7 +825,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
   }
 
   /* First stage: compute cell values
-   * Initialisation from the mean Eulerian fluid
+   * Initialization from the mean Eulerian fluid
      ------------------------------------------- */
 
   if (cs_glob_lagr_model->idistu == 1) {
@@ -1233,9 +1229,10 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
     if (   cs_glob_lagr_model->agglomeration == 1
         || cs_glob_lagr_model->fragmentation == 1) {
-      p_set.attr_lnum(p_id, CS_LAGR_AGGLO_CLASS_ID) =
-        zis->aggregat_class_id;
-      p_set.attr_real(p_id, CS_LAGR_AGGLO_FRACTAL_DIM) = zis->aggregat_fractal_dim;
+      p_set.attr_lnum(p_id, CS_LAGR_AGGLO_CLASS_ID)
+        = zis->aggregat_class_id;
+      p_set.attr_real(p_id, CS_LAGR_AGGLO_FRACTAL_DIM)
+        = zis->aggregat_fractal_dim;
     }
 
      /* used for 2nd order only */
@@ -1295,7 +1292,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       p_set.attr_lnum(p_id, CS_LAGR_COAL_ID) = coal_id;
       cs_real_t loc_fluid_temp = cval_t[c_id] + tscl_shift;
       if (   cs_glob_lagr_time_scheme->interpol_field > 0
-          && extra->grad_tempf != nullptr) { /* gradient have been computed */
+          && extra->grad_tempf != nullptr) { /* gradients have been computed */
         cs_real_t *part_coord
           = p_set.attr_real_ptr(p_id, CS_LAGR_COORDS);
         for (int i = 0; i < 3; i++)
@@ -1354,14 +1351,11 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     /* Cooling tower model*/
     if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_CTWR) {
 
-      p_set.attr_real(p_id, CS_LAGR_MASS) =
-        zis->density * pis6 * d3;
+      p_set.attr_real(p_id, CS_LAGR_MASS) = zis->density * pis6 * d3;
 
-      p_set.attr_real(p_id, CS_LAGR_CP) =
-        zis->cp;
+      p_set.attr_real(p_id, CS_LAGR_CP) = zis->cp;
 
-      p_set.attr_real(p_id, CS_LAGR_TEMPERATURE) =
-        cval_t_l[c_id];
+      p_set.attr_real(p_id, CS_LAGR_TEMPERATURE) = cval_t_l[c_id];
 
       cs_real_t loc_fluid_temp = cval_t[c_id] + tscl_shift;
       if (   cs_glob_lagr_time_scheme->interpol_field > 0
@@ -1388,8 +1382,8 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       /* Fluctuations to obtain proper thermal turbulent fluxes */
       /* TODO adapt the value of the draws based not only on the first phase */
       if (extra->temperature_turbulent_flux != nullptr)
-        temp_seen +=
-          cs_math_3_dot_product(temp_vel_fluc_coef.sub_array(c_id), vagaus[0][l_id]);
+        temp_seen += cs_math_3_dot_product(temp_vel_fluc_coef.sub_array(c_id),
+                                           vagaus[0][l_id]);
 
       /* Fluctuations to obtain the proper temperature variance */
       if (extra->temperature_variance != nullptr )

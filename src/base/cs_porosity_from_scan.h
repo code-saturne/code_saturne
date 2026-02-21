@@ -198,7 +198,7 @@ cs_ibm_add_sources_by_file_name(const char *file_name);
  *  is the radial direction from the source \f$\vect{x}_0 \f$.
  *
  *  The boundary conditions on \f$ \varia \f$ is an homogeneous Neumann, and
- *  a penalisation term is impose in the cell of center \f$ \vect{x}_0\f$.
+ *  a penalization term is impose in the cell of center \f$ \vect{x}_0\f$.
  *  \f[
  *   \dfrac{\partial \varia}{\partial n} = 0 \textrm{everywhere}
  *  \f]

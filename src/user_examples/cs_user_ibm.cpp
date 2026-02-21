@@ -166,7 +166,7 @@ cs_user_ibm_define_objects(void)
                               true);             /* Used in FSI resolution ? */
   /*!< [add_med_object] */
 
-  /* Eventually move the object at initialisation */
+  /* Eventually move the object at initialization */
 
   /* Rotation */
   cs_real_t theta     = cs_math_pi / 2.0;  // Angle of rotation

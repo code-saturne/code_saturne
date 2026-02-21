@@ -1207,7 +1207,7 @@ cs_ibm_add_sources_by_file_name(const char *file_name)
  *  is the radial direction from the source \f$\vect{x}_0 \f$.
  *
  *  The boundary conditions on \f$ \varia \f$ is an homogeneous Neumann, and
- *  a penalisation term is impose in the cell of center \f$ \vect{x}_0\f$.
+ *  a penalization term is impose in the cell of center \f$ \vect{x}_0\f$.
  *  \f[
  *   \dfrac{\partial \varia}{\partial n} = 0 \textrm{everywhere}
  *  \f]
@@ -1513,7 +1513,7 @@ cs_compute_porosity_from_scan(void)
       for (cs_lnum_t c_id = 0; c_id < m->n_cells_with_ghosts; c_id++)
         rovsdt[c_id] = 0.;
 
-      /* Penalisation term for the source
+      /* Penalization term for the source
        * in parallel, only one rank takes that
        * */
       if (source_c_ids[s_id] > -1)

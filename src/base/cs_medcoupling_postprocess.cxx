@@ -137,7 +137,7 @@ static inline cs_medcoupling_slice_t * _get_slice_try
 /*!
  * \brief Allocate a new pointer for a slice.
  *
- * \return A newly allocated and initialised pointer.
+ * \return A newly allocated and initialized pointer.
  */
 /*----------------------------------------------------------------------------*/
 

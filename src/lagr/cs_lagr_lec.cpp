@@ -882,7 +882,7 @@ cs_lagr_restart_read_p(void)
        "@\n"
        "@    Une equation sur la temperature des particules est\n"
        "@      enclenchee en cours de calcul.\n"
-       "@    Initialisation par defaut :\n"
+       "@    Initialization par defaut :\n"
        "@       Temperature TPART = %14.5E\n"
        "@       Chaleur massique CPPART = %14.5E\n"
        "@\n"

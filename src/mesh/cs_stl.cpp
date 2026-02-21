@@ -2396,7 +2396,7 @@ cs_stl_refine(cs_stl_mesh_t *stl_mesh,
 {
   cs_mesh_t *m = cs_glob_mesh;
 
-  /* Initialisation of the selection criteria (first level) */
+  /* Initialization of the selection criteria (first level) */
   cs_lnum_t n_input_cells = m->n_cells;
   cs_lnum_t *input_cells = nullptr;
   CS_MALLOC(input_cells, m->n_cells, cs_lnum_t);
@@ -2584,7 +2584,7 @@ cs_stl_compute_porosity(cs_stl_mesh_t *stl_mesh,
   CS_MALLOC(stl_normals      , stl->n_faces*3  , cs_real_t);
   CS_MALLOC(mean_plane_def   , m->n_cells*6    , cs_real_t);
 
-  /* Input cells are all[] cells and initialisation */
+  /* Input cells are all[] cells and initialization */
   for (cs_lnum_t i = 0; i < m->n_cells; i++) {
     input_cells[i] = i;
     cell_selected_idx[i] = -1;

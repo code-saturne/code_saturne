@@ -1042,7 +1042,7 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
     int its;
     for (its = 0; its < maxit; its++) {
 
-      /* initialisation */
+      /* Initialization */
 
       for (int j = 0; j < m; j++) {
         if (unfinished[j]) {

@@ -1337,7 +1337,7 @@ cs_field_local_extrema_scalar(int              f_id,
                         local_max,
                         local_min);
 
-  /* Initialisation of local extrema */
+  /* Initialization of local extrema */
 
   int key_scamax_id = cs_field_key_id("max_scalar");
   int key_scamin_id = cs_field_key_id("min_scalar");

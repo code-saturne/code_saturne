@@ -386,11 +386,12 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
   /* velocity */
   if (   zis->location_id != CS_MESH_LOCATION_BOUNDARY_FACES
       && zis->velocity_profile == CS_LAGR_IN_IMPOSED_NORM)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Lagrangian %s zone %d, set %d:\n"
-                " velocity profile type CS_LAGR_IN_IMPOSED_NORM may not be used\n"
-                " for volume zones, as it requires surface normals."),
-              z_type_name, z_id, set_id);
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("Lagrangian %s zone %d, set %d:\n"
+         " velocity profile type CS_LAGR_IN_IMPOSED_NORM may not be used\n"
+         " for volume zones, as it requires surface normals."),
+       z_type_name, z_id, set_id);
   else if (zis->velocity_profile < CS_LAGR_IN_IMPOSED_FLUID_VALUE
       ||   zis->velocity_profile > CS_LAGR_IN_IMPOSED_COMPONENTS)
     bft_error(__FILE__, __LINE__, 0, _profile_err_fmt_i,

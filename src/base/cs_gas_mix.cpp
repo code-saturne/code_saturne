@@ -1460,7 +1460,7 @@ cs_gas_mix_initialization(void)
     /* Gas deduced and Total gas volumes injected */
     vol_d += cell_vol[c_id]*(y_d[c_id]/s_d.mol_mas)*mix_mol_mas[c_id];
 
-    /* Initialise Cv */
+    /* Initialize Cv */
    if (cpro_cv != nullptr)
      cpro_cv[c_id] = cpro_cp[c_id]
        - cs_physical_constants_r / mix_mol_mas[c_id];

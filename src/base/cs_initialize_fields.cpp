@@ -209,7 +209,7 @@ cs_initialize_fields_stage_0(void)
     f->get_vals_s().set_to_val(ctx, fluid_props->xmasmr);
   }
 
-  /* Default initialisations for the compressible model */
+  /* Default initializations for the compressible model */
 
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0) {
     /* In compressible, for now, the temperature is not solved but is a field of

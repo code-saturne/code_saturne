@@ -495,7 +495,7 @@ cs_math_33_eig_val_vec(const cs_real_t   m_in[3][3],
   }
 
   /* The strategy here is to adopt a cyclic Jacobi method
-   * where the diagonalisation is carried out by several sweeps
+   * where the diagonalization is carried out by several sweeps
    * (each sweep to increase the precision of the result)
    * Here, we perform up to 50 sweeps (the algorithm stops when
    * reaching the given tolerance) */

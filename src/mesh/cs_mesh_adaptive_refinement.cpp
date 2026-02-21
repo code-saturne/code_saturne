@@ -400,7 +400,7 @@ _realloc_and_update_field_refinement(cs_field_t        *f,
         if (f->is_series_owner()) {
           auto f_view_i = f->ns_view(i);
 
-          // Initialisation
+          // Initialization
           for (cs_lnum_t sf_id = 0; sf_id < f->series_size(); sf_id++) {
             for (cs_lnum_t n_id = new_idx[0]; n_id < n_new; n_id++)
               f_view_i(sf_id, n_id, 0) = 0;
@@ -428,7 +428,7 @@ _realloc_and_update_field_refinement(cs_field_t        *f,
         else {
           auto f_view_i = f->view(i);
 
-          // Initialisation
+          // Initialization
           for (cs_lnum_t n_id = new_idx[0]; n_id < n_new; n_id++)
             f_view_i(n_id, 0) = 0;
 

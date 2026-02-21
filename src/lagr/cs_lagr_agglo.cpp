@@ -389,7 +389,7 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
                       cs_lnum_t  start_particle,
                       cs_lnum_t  end_particle)
 {
-  /* Initialisation */
+  /* Initialization */
   cs_lnum_t ret_val = 0;
 
   // FIXME: call DLVO routine

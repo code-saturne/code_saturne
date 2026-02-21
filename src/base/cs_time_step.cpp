@@ -97,7 +97,7 @@ BEGIN_C_DECLS
         Absolute time step number for previous calculation.
         In the case of a restart calculation, \ref nt_prev
         is read from the restart file. Otherwise, it is
-        initialised to 0 \ref nt_prev is initialised
+        initialized to 0 \ref nt_prev is initialized
         automatically by the code, its value is not to be
         modified by the user.
   \var  cs_time_step_t::nt_cur
@@ -116,8 +116,8 @@ BEGIN_C_DECLS
   \var  cs_time_step_t::t_prev
         Absolute time value for previous calculation.
         In the case of a restart calculation, \ref t_prev is read from
-        the restart file. Otherwise it is initialised to 0.\n
-        \ref t_prev is initialised automatically by the code,
+        the restart file. Otherwise it is initialized to 0.\n
+        \ref t_prev is initialized automatically by the code,
         its value is not to be modified by the user.
   \var  cs_time_step_t::t_cur
         Current absolute time.
@@ -131,7 +131,7 @@ BEGIN_C_DECLS
         "idtvar"=CS_TIME_STEP_LOCAL),
         \ref t_cur increases of \ref cs_time_step_t::dt_ref "dt_ref" at each
         time step.\n
-        \ref t_cur is initialised and updated automatically by the code,
+        \ref t_cur is initialized and updated automatically by the code,
         its value is not to be modified by the user.
   \var  cs_time_step_t::t_max
         maximum absolute time
@@ -176,7 +176,7 @@ BEGIN_C_DECLS
         (restart calculation or not). It is the value used to initialize the
         time step in the case of an initial calculation run with a non-constant
         time step (\ref idtvar=CS_TIME_STEP_ADAPTATIVE or CS_TIME_STEP_LOCAL).
-        It is also the value used to initialise the time step in the case of
+        It is also the value used to initialize the time step in the case of
         a restart calculation in which the type of time step has been changed
         (for instance, \ref idtvar=CS_TIME_STEP_ADAPTATIVE in the new calculation
         and \ref idtvar = CS_TIME_STEP_CONSTANT or CS_STEP_LOCAL_TIME in the

@@ -52,11 +52,11 @@ void
 cs_atmo_add_property_fields(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Update the thermo physical properties fields for the humid air and
- *        the liquid \n
- *        Remarques :
- *        This function  is called at the beginning of each time step
+ *        the liquid.
+ *
+ * \remark This function  is called at the beginning of each time step.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -64,8 +64,8 @@ void
 cs_atmo_physical_properties_update(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Initialisation of variable options for the atmospheric module
+/*
+ * \brief Initialization of variable options for the atmospheric module
  *        before what is done in cs_user_parameters functions
  */
 /*----------------------------------------------------------------------------*/
@@ -74,8 +74,8 @@ void
 cs_atmo_init_variables_1(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Initialisation of variable options for the atmospheric module
+/*
+ * \brief Initialization of variable options for the atmospheric module
  *        after what is done in cs_user_parameters functions
  */
 /*----------------------------------------------------------------------------*/

@@ -266,7 +266,7 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
   cs_lagr_extra_module_t *extra = extra_i;
   int n_phases = extra->n_phases;
 
-  /* Initialisations*/
+  /* Initializations*/
 
   cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
 
@@ -1017,7 +1017,7 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
   int phase_id = 0;
   int n_phases = 1;
 
-  /* Initialisations*/
+  /* Initializations*/
 
   cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
 
@@ -1944,7 +1944,7 @@ _lagesd(cs_lagr_particle_set_t         &p_set,
     = (const cs_real_3_t *)(extra->vel->vals[_prev_id]);
 
   /* ===========================================================================
-   * 1. INITIALISATIONS
+   * 1. INITIALIZATIONS
    * ======================================================================== */
 
   const cs_real_t  *grav  = cs_glob_physical_constants->gravity;
@@ -3219,7 +3219,7 @@ cs_sde_vels_pos_time_integ_depot(cs_lagr_particle_set_t         &p_set,
 {
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
 
-  /* Initialisations*/
+  /* Initializations*/
 
   cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
 

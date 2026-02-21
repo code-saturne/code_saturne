@@ -709,7 +709,7 @@ _b_mat_vect_p_l_msr_exdiag(cs_lnum_t        n_rows,
  *   d_x      <-> multipliying vector values (ghost values updated)
  *
  * returns:
- *   halo state to use for synchronisation finalisation.
+ *   halo state to use for synchronisation finalization.
  *----------------------------------------------------------------------------*/
 
 static cs_halo_state_t *
