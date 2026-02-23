@@ -1284,9 +1284,6 @@ cs_ground_model(void)
       f_fos[ground_id] = fos;
       f_foir[ground_id] = foir;
 
-      f_fos[ground_id] = 400.;
-      f_foir[ground_id] = 300.;
-
       if (at_opt->meteo_profile == 0) {
         cs_atmo_profile_std(0., /* z_ref */
                             phys_pro->p0,
