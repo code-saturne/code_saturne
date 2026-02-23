@@ -3168,9 +3168,11 @@ cs_les_balance_compute_rij(void)
   cs_real_6_t *unstij = brij->unstij;
   assert(unstij != nullptr);
   cs_real_6_t *budsgsij = brij->budsgsij;
-  assert(budsgsij != nullptr);
+  if (_les_balance.type & CS_LES_BALANCE_RIJ_BASE)
+    assert(budsgsij != nullptr);
   cs_real_69_t *budsgsfullij = brij->budsgsfullij;
-  assert(budsgsfullij != nullptr);
+  if (_les_balance.type & CS_LES_BALANCE_RIJ_FULL)
+    assert(budsgsfullij != nullptr);
 
   const int idirtens[6][2] = _IJV2T;
   const int ipdirtens[3][3] = _PIJV2T;
