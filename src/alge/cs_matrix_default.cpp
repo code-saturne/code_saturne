@@ -125,10 +125,12 @@ static cs_matrix_variant_t
 
 static cs_matrix_structure_t  *_matrix_struct[CS_MATRIX_N_TYPES];
 static cs_matrix_t            *_matrix[CS_MATRIX_N_TYPES];
+static bool                    _matrix_in_use[CS_MATRIX_N_TYPES];
 
 static int                     _n_ext_matrices = 0;
 static cs_matrix_t           **_ext_matrix = nullptr;
 static cs_matrix_fill_type_t  *_ext_fill_type = nullptr;
+static bool                   *_ext_in_use = nullptr;
 
 /* Tuning options */
 
@@ -169,6 +171,7 @@ _initialize_api(void)
         _matrix_variant_tuned[t][mft] = nullptr;
       _matrix_struct[t] = nullptr;
       _matrix[t] = nullptr;
+      _matrix_in_use[t] = false;
     }
     _initialized = true;
   }
@@ -292,17 +295,26 @@ _update_matrix_struct(cs_matrix_type_t  t)
 static cs_matrix_t *
 _get_matrix(cs_matrix_type_t  t)
 {
-  if (_matrix[t] != nullptr)
+  if (_matrix[t] != nullptr && _matrix_in_use[t] == false) {
+    _matrix_in_use[t] = true;
     return _matrix[t];
+  }
 
   /* If structure has not been built yet, build it */
 
   if (_matrix_struct[t] == nullptr)
     _update_matrix_struct(t);
 
-  _matrix[t] = cs_matrix_create(_matrix_struct[t]);
+  cs_matrix_t *m = cs_matrix_create(_matrix_struct[t]);
+  if (_matrix[t] == nullptr) {
+    _matrix[t] = m;
+    _matrix_in_use[t] = true;
+  }
+  else {
+    assert(_matrix_in_use[t] == true); // Otherwise should have returned before.
+  }
 
-  return _matrix[t];
+  return m;
 }
 
 /*----------------------------------------------------------------------------
@@ -496,6 +508,7 @@ cs_matrix_finalize(void)
     }
     if (_matrix[t] != nullptr)
       cs_matrix_destroy(&(_matrix[t]));
+    _matrix_in_use[t] = false;
     if (_matrix_struct[t] != nullptr)
       cs_matrix_structure_destroy(&(_matrix_struct[t]));
   }
@@ -508,6 +521,7 @@ cs_matrix_finalize(void)
   _n_ext_matrices = 0;
   CS_FREE(_ext_matrix);
   CS_FREE(_ext_fill_type);
+  CS_FREE(_ext_in_use);
 
   cs_matrix_assembler_destroy(&_matrix_assembler);
 
@@ -542,6 +556,7 @@ cs_matrix_update_mesh(void)
     if (_matrix[t] == nullptr)
       continue;
 
+    assert(_matrix_in_use[t] == false); // Should not be in use here
     cs_matrix_destroy(&(_matrix[t]));
 
     if (_matrix_struct[t] != nullptr)
@@ -657,8 +672,11 @@ cs_matrix_external(const char  *type_name,
   for (int i = 0; i < _n_ext_matrices; i++) {
     cs_matrix_t  *m = _ext_matrix[i];
     if (m != nullptr && _ext_fill_type[i] == mft) {
-      if (strcmp(type_name, cs_matrix_get_type_name(m)) == 0)
+      if (   strcmp(type_name, cs_matrix_get_type_name(m)) == 0
+          && _ext_in_use[i] == false) {
+        _ext_in_use[i] = true;
         return m;
+      }
     }
   }
 
@@ -756,6 +774,7 @@ cs_matrix_copy_to_external(cs_matrix_t  *src,
   _n_ext_matrices += 1;
   CS_REALLOC(_ext_matrix, _n_ext_matrices, cs_matrix_t *);
   CS_REALLOC(_ext_fill_type, _n_ext_matrices, cs_matrix_fill_type_t);
+  CS_REALLOC(_ext_in_use, _n_ext_matrices, bool);
 
   _ext_fill_type[m_id] = cs_matrix_get_fill_type(symmetric,
                                                  diag_block_size,
@@ -768,6 +787,7 @@ cs_matrix_copy_to_external(cs_matrix_t  *src,
   m->coeffs = nullptr;
 
   _ext_matrix[m_id] = m;
+  _ext_in_use[m_id] = true;
 
   return m;
 }
@@ -806,6 +826,7 @@ cs_matrix_default_set_tuned(cs_matrix_t  *m)
                                 _n_min_products);
 
     *m_t = m_t_save;
+    cs_matrix_release(&m_t);
 
   }
 
@@ -1138,13 +1159,17 @@ cs_matrix_release(cs_matrix_t  **m)
 
   cs_matrix_release_coefficients(_m);
 
+  cs_matrix_type_t t = cs_matrix_get_type(_m);
   bool keep_matrix = false;
-  if (_m == _matrix[cs_matrix_get_type(_m)])
+  if (_m == _matrix[t]) {
+    _matrix_in_use[t] = false;
     keep_matrix = true;
+  }
   else {
     for (int i = 0; i < _n_ext_matrices; i++) {
       if (_m == _ext_matrix[i]) {
         keep_matrix = true;
+        _ext_in_use[i] = false;
         break;
       }
     }
