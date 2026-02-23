@@ -229,19 +229,11 @@ _distribute_bc_coeff(cs_all_to_all_t  *bfd,
                      const cs_lnum_t   b_face_order[],
                      const cs_lnum_t   b_face_n2o[])
 {
-  int coeff_exists_l = *coeff != NULL;
-  int coeff_exists_g;
-  MPI_Allreduce(&coeff_exists_l,
-                &coeff_exists_g,
-                1,
-                MPI_INT,
-                MPI_MAX,
-                MPI_COMM_WORLD);
+  int coeff_exists = *coeff != nullptr;
+  cs_parall_max(1, CS_INT_TYPE, &coeff_exists);
 
-  if (!coeff_exists_g) {
-    assert(!coeff_exists_l);
+  if (!coeff_exists)
     return;
-  }
 
   assert(*coeff);
 
