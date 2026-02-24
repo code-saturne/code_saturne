@@ -160,8 +160,8 @@ _set_key(cs_equation_param_t *eqp,
 
   switch(key) {
 
-  case CS_EQKEY_ADV_CIP_COEF:
-    eqp->cip_scaling_coef = atof(keyval);
+  case CS_EQKEY_ADV_STAB_COEF:
+    eqp->stab_scaling_coef = atof(keyval);
 
     break;
 
@@ -213,6 +213,9 @@ _set_key(cs_equation_param_t *eqp,
     }
     else if (strcmp(keyval, "solu") == 0) {
       eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_SOLU;
+    }
+    else if (strcmp(keyval, "solu_sym") == 0) {
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_SOLU_SYM;
     }
     else if (strcmp(keyval, "mix_centered_upwind") == 0 ||
              strcmp(keyval, "hybrid_centered_upwind") == 0)
@@ -1037,7 +1040,7 @@ cs_equation_param_create(const char         *name,
   eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
   eqp->adv_strategy = CS_PARAM_ADVECTION_IMPLICIT_FULL;
   eqp->upwind_portion = 0.15;
-  eqp->cip_scaling_coef = -1.0;  // Automatic settings
+  eqp->stab_scaling_coef = -1.0;  // Automatic settings
 
 
   /* Description of the discretization of the reaction term.
@@ -1984,7 +1987,7 @@ cs_equation_param_log(const cs_equation_param_t *eqp)
     else if (eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP ||
              eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP_CW)
       cs_log_printf(CS_LOG_SETUP, "  * %s | CIP.coef: %.2e\n",
-                    eqname, eqp->cip_scaling_coef);
+                    eqname, eqp->stab_scaling_coef);
 
     cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Strategy: %s\n",
                   eqname,

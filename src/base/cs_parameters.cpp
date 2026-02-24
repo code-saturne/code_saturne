@@ -433,7 +433,7 @@ static cs_equation_param_t _equation_param_default
    .adv_strategy = CS_PARAM_N_ADVECTION_STRATEGIES,
    .adv_extrapol = CS_PARAM_N_ADVECTION_EXTRAPOLATIONS,
    .upwind_portion = 0.,
-   .cip_scaling_coef = -1.0,
+   .stab_scaling_coef = -1.0,
    .adv_field = nullptr,
    .adv_scaling_property = nullptr,
 

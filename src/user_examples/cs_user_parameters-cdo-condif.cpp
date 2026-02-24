@@ -520,7 +520,7 @@ cs_user_parameters([[maybe_unused]] cs_domain_t  *domain)
 
     cs_equation_param_set(eqp_vcb, CS_EQKEY_ADV_SCHEME, "cip");
 
-    cs_equation_param_set(eqp_vcb, CS_EQKEY_ADV_CIP_COEF, "1");
+    cs_equation_param_set(eqp_vcb, CS_EQKEY_ADV_STAB_COEF, "1");
   }
   /*! [param_cdo_conv_schemes] */
 

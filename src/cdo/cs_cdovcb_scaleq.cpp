@@ -826,7 +826,7 @@ _update_cell_fields(cs_timer_counter_t      *tce,
 static void
 _set_cip_coef(cs_equation_param_t  *eqp)
 {
-  if (eqp->cip_scaling_coef > 0)
+  if (eqp->stab_scaling_coef > 0)
     return; /* user-defined */
 
   const double  gseed = 1e-1;  /* Default value to multiply according to the
@@ -850,7 +850,7 @@ _set_cip_coef(cs_equation_param_t  *eqp)
       cs_equation_param_has_time(eqp))
     gamma *= 0.1;
 
-  eqp->cip_scaling_coef = gamma;
+  eqp->stab_scaling_coef = gamma;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
