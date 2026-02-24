@@ -305,46 +305,144 @@ _cdofb_stab_func(const cs_param_advection_scheme_t scheme,
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] stab    pointer to a local matrix to build
  *
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_cdofb_stab_cost(const cs_cell_mesh_t *cm, cs_cell_builder_t *cb)
+_cdofb_stab_solu(const cs_cell_mesh_t *cm,
+                 cs_cell_builder_t    *cb,
+                 cs_sdm_t             *stab)
 {
-  /* Create hodge operator */
-  cs_hodge_param_t hp;
-  hp.type           = CS_HODGE_TYPE_EDFP;
-  hp.algo           = CS_HODGE_ALGO_COST;
-  cs_hodge_t *hodge = cs_hodge_create_from_cm(cm, nullptr, &hp, false, false);
+  assert(cm != nullptr && cb != nullptr);
+  assert(stab != nullptr);
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_HFQ));
+
+  const short int c = cm->n_fc; /* current cell's location in the matrix */
+
+  const cs_lnum_t n_cols = cm->n_fc + 1;
+  cs_sdm_square_init(n_cols, stab);
 
   const cs_real_t *fluxes = cb->adv_fluxes;
 
-  cs_real_t *coeff_stab = nullptr;
-  CS_MALLOC(coeff_stab, cm->n_fc, cs_real_t);
+  /* Compute stabilization */
+  cs_real_t *coeff        = cb->values;                /* size = n_fc */
+  cs_real_t *coeff_pqi_dq = cb->values + cm->n_fc;     /* size = n_fc */
+  cs_real_t *grad_grad_i  = cb->values + 2 * cm->n_fc; /* size = n_fc */
 
-  for (cs_lnum_t f = 0; f < cm->n_fc; f++) {
-    const cs_real_t f_meas  = cm->face[f].meas;
-    const cs_real_t hf      = cm->hfc[f];
-    const cs_real_t flux_fc = cm->f_sgn[f] * fluxes[f];
+  /* here: pq = meas_f * n_fc; dq = (x_f-x_c) */
+
+  const cs_real_t ovc  = 1.0 / cm->vol_c;
+  const cs_real_t ovc2 = ovc * ovc;
+
+  /* Initialize the geometrical quantities related to this Hodge operator */
+
+  cs_real_3_t *pq = cb->vectors;
+  cs_real_3_t *dq = cb->vectors + cm->n_fc;
+
+  for (short int f = 0; f < cm->n_fc; f++) {
+    const cs_nvec3_t deq = cm->dedge[f];
+    const cs_quant_t pfq = cm->face[f];
+
+    /* Quantities are not signed by default */
+    for (int k = 0; k < 3; k++) {
+      dq[f][k] = cm->f_sgn[f] * deq.meas * deq.unitv[k];
+      pq[f][k] = cm->f_sgn[f] * pfq.meas * pfq.unitv[k];
+    }
+
+  } /* Loop on cell faces */
+
+  /* Initialize the upper right part of the discrete Hodge op and store useful
+     quantities */
+
+  for (short int fi = 0; fi < cm->n_fc; fi++) {
+    const cs_real_t pqi[3] = { pq[fi][0], pq[fi][1], pq[fi][2] };
+    const cs_real_t dqi[3] = { dq[fi][0], dq[fi][1], dq[fi][2] };
+
+    const cs_real_t pqi_pqi = _dp3(pqi, pqi);
+    const cs_real_t pqi_dqi = _dp3(pqi, dqi);
+
+    /* Compute beta */
+    const cs_real_t f_meas  = cm->face[fi].meas;
+    const cs_real_t hf      = cm->hfc[fi];
+    const cs_real_t flux_fc = cm->f_sgn[fi] * fluxes[fi];
     const cs_real_t beta_fc = flux_fc / f_meas;
+
     /* Need a scaling by a length */
-    coeff_stab[f] = hf * cs::abs(beta_fc);
+    const cs_real_t beta = hf * cs::abs(beta_fc);
+
+    /* coeff_i = 3 * beta_i * (pq_i * pq_i) / (pq_i * dq_i) */
+    coeff[fi] = 3. * beta * pqi_pqi / pqi_dqi;
+
+    cs_real_t *si = stab->val + fi * n_cols;
+
+    /* diagonal term: coeff_i * (1 - 2* (pq_i*dq_i / c) ) */
+    si[fi] = coeff[fi] * (1.0 - 2. * pqi_dqi * ovc);
   }
 
-  bool cmp = cs_hodge_fb_cost_get_stab(cm, hodge, cb, coeff_stab);
-  assert(cmp);
+  /* Build the upper right part of the discrete operator */
 
-  CS_FREE(coeff_stab);
-  cs_hodge_free(&hodge);
+  for (short int fi = 0; fi < cm->n_fc; fi++) {
+    /* Compute coeff_pqi_dq =  coeff_k * (pq_i*dq_k) */
+    for (short int fk = 0; fk < cm->n_fc; fk++) {
+      coeff_pqi_dq[fk] = coeff[fk] * _dp3(pq[fi], dq[fk]);
+    }
+
+    for (short int fj = 0; fj < cm->n_fc; fj++) {
+      grad_grad_i[fj] = 0.;
+      for (short int fk = 0; fk < cm->n_fc; fk++) {
+        /* grad_grad_ij = (coeff_k * (pq_i*dq_k)) * (pq_j*dq_k) */
+        grad_grad_i[fj] += coeff_pqi_dq[fk] * _dp3(pq[fj], dq[fk]);
+      }
+    }
+
+    cs_real_t *si = stab->val + fi * n_cols;
+
+    /* diagonal term : grad_grad_ii / (c*c) */
+    si[fi] += grad_grad_i[fi] * ovc2;
+
+    /* Compute the extra-diagonal terms
+     *  - coeff_i* (pq_j*dq_i / c) - coeff_j * (pq_i*dq_j / c) + stab_ij/(c*c)
+     */
+
+    for (short int fj = fi + 1; fj < cm->n_fc; fj++) {
+      si[fj] += grad_grad_i[fj] * ovc2;
+      si[fj] -=
+        (coeff[fi] * _dp3(pq[fj], dq[fi]) + coeff[fj] * _dp3(pq[fi], dq[fj])) *
+        ovc;
+    }
+
+    /* Compute fi-c term: - sum_k coeff_k * (kro_ik - (pq_i*dq_k / c) ) */
+    si[c] = -coeff[fi];
+    for (short int fk = 0; fk < cm->n_fc; fk++) {
+      si[c] += coeff_pqi_dq[fk] * ovc;
+    }
+
+  } /* Loop on rows (entities i) */
+
+  /* C-C term: sum_i  3 * beta_i * (pq_i * pq_i) / (pq_i * dq_i)
+   *         = sum_i coeff_i */
+  cs_real_t *sc = stab->val + c * n_cols;
+
+  for (short int fi = 0; fi < cm->n_fc; fi++) {
+    sc[c] += coeff[fi];
+  }
+
+  /* Stabilization operator is symmetric */
+
+  cs_sdm_symm_ur(stab);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute stabilization matrix for SOLU scheme
+ * \brief   Compute stabilization matrix for advection
  *
+ * \param[in]  scheme      scheme used for discretizing the advection term
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv     pointer to a local matrix to build
  *
  */
 /*----------------------------------------------------------------------------*/
@@ -352,20 +450,20 @@ _cdofb_stab_cost(const cs_cell_mesh_t *cm, cs_cell_builder_t *cb)
 static void
 _build_cdofb_stab_adv(const cs_param_advection_scheme_t scheme,
                       const cs_cell_mesh_t             *cm,
-                      cs_cell_builder_t                *cb)
+                      cs_cell_builder_t                *cb,
+                      cs_sdm_t                         *stab)
 {
   assert(cm != nullptr && cb != nullptr);
-  const short int c = cm->n_fc; /* current cell's location in the matrix */
+  assert(stab != nullptr);
 
   /* Dedicated function for SOLU */
   if (scheme == CS_PARAM_ADVECTION_SCHEME_SOLU) {
-    _cdofb_stab_cost(cm, cb);
-    cs_sdm_copy(cb->aux, cb->loc);
-    return;
+    return _cdofb_stab_solu(cm, cb, stab);
   }
 
-  cs_sdm_t *stab = cb->aux;
   cs_sdm_square_init(cm->n_fc + 1, stab);
+
+  const short int c = cm->n_fc; /* current cell's location in the matrix */
 
   /* Acces coefficient for Peclet robustness */
 
@@ -1455,59 +1553,6 @@ _build_cdofb_centered_noc(int                   dim,
 /*!
  * \brief  Compute the convection operator attached to a cell with a CDO
  *         face-based scheme
- *         - conservative formulation div(beta.u)
- *
- *         A scalar-valued version is built. Only the enforcement of the
- *         boundary condition depends on the variable dimension.
- *         Remark: Usually the local matrix called hereafter adv is stored
- *         in cb->loc
- *
- * \param[in]      dim     dimension of the variable (1 or 3)
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in]      csys    pointer to a cs_cell_sys_t structure
- * \param[in]      cb      pointer to a cs_cell_builder_t structure
- * \param[in, out] adv     pointer to a local matrix to build
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_build_cdofb_scheme_csv(const cs_param_advection_scheme_t scheme,
-                        int                               dim,
-                        const cs_cell_mesh_t             *cm,
-                        const cs_cell_sys_t              *csys,
-                        cs_cell_builder_t                *cb,
-                        cs_sdm_t                         *adv)
-{
-  _build_cdofb_centered_noc(dim, cm, csys, cb, adv);
-
-  _build_cdofb_stab_adv(scheme, cm, cb);
-
-  cs_sdm_add(adv, cb->aux);
-
-  /* Add div(beta).u contribution  */
-
-  const short int  c = cm->n_fc; /* current cell's location in the matrix */
-  const cs_real_t *fluxes = cb->adv_fluxes;
-
-  cs_real_t div_beta = 0.;
-
-  /* Access the row containing current cell */
-
-  cs_real_t *c_row = adv->val + c * adv->n_rows;
-
-  /* Loop on cell faces */
-
-  for (short int f = 0; f < cm->n_fc; f++) {
-    div_beta += cm->f_sgn[f] * fluxes[f];
-  }
-
-  c_row[c] += div_beta;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute the convection operator attached to a cell with a CDO
- *         face-based scheme
  *         - non-conservative formulation
  *
  *         A scalar-valued version is built. Only the enforcement of the
@@ -1533,9 +1578,58 @@ _build_cdofb_scheme_noc(const cs_param_advection_scheme_t scheme,
 {
   _build_cdofb_centered_noc(dim, cm, csys, cb, adv);
 
-  _build_cdofb_stab_adv(scheme, cm, cb);
+  _build_cdofb_stab_adv(scheme, cm, cb, cb->aux);
 
   cs_sdm_add(adv, cb->aux);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the convection operator attached to a cell with a CDO
+ *         face-based scheme
+ *         - conservative formulation div(beta.u)
+ *
+ *         A scalar-valued version is built. Only the enforcement of the
+ *         boundary condition depends on the variable dimension.
+ *         Remark: Usually the local matrix called hereafter adv is stored
+ *         in cb->loc
+ *
+ * \param[in]      dim     dimension of the variable (1 or 3)
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      csys    pointer to a cs_cell_sys_t structure
+ * \param[in]      cb      pointer to a cs_cell_builder_t structure
+ * \param[in, out] adv     pointer to a local matrix to build
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_build_cdofb_scheme_csv(const cs_param_advection_scheme_t scheme,
+                        int                               dim,
+                        const cs_cell_mesh_t             *cm,
+                        const cs_cell_sys_t              *csys,
+                        cs_cell_builder_t                *cb,
+                        cs_sdm_t                         *adv)
+{
+  _build_cdofb_scheme_noc(scheme, dim, cm, csys, cb, adv);
+
+  /* Add div(beta).u contribution  */
+
+  const short int  c = cm->n_fc; /* current cell's location in the matrix */
+  const cs_real_t *fluxes = cb->adv_fluxes;
+
+  cs_real_t div_beta = 0.;
+
+  /* Access the row containing current cell */
+
+  cs_real_t *c_row = adv->val + c * adv->n_rows;
+
+  /* Loop on cell faces */
+
+  for (short int f = 0; f < cm->n_fc; f++) {
+    div_beta += cm->f_sgn[f] * fluxes[f];
+  }
+
+  c_row[c] += div_beta;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -2585,11 +2679,6 @@ cs_cdofb_advection_solucsv(int                   dim,
                            cs_cell_builder_t    *cb,
                            cs_sdm_t             *adv)
 {
-  /* Compute COST stabilization - first because reset adv matrix */
-
-  _cdofb_stab_cost(cm, cb);
-
-  /* Add centered part */
   _build_cdofb_scheme_csv(CS_PARAM_ADVECTION_SCHEME_SOLU,
                           dim,
                           cm,
@@ -2625,13 +2714,12 @@ cs_cdofb_advection_solunoc(int                   dim,
                            cs_cell_builder_t    *cb,
                            cs_sdm_t             *adv)
 {
-  /* Compute COST stabilization - first because reset adv matrix */
-
-  _cdofb_stab_cost(cm, cb);
-
-  /* Add centered part */
-
-  _build_cdofb_centered_noc(dim, cm, csys, cb, adv);
+  _build_cdofb_scheme_noc(CS_PARAM_ADVECTION_SCHEME_SOLU,
+                          dim,
+                          cm,
+                          csys,
+                          cb,
+                          adv);
 }
 
 /*----------------------------------------------------------------------------*/
