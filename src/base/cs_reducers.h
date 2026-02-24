@@ -157,6 +157,21 @@ struct cs_reduce_sum1i_min1float {
   }
 };
 
+// Max (1 cs_gnum_t)
+
+struct cs_reduce_max_1gnum {
+
+  CS_F_HOST_DEVICE void
+  identity(cs_gnum_t &a) const {
+    a = 0;
+  }
+
+  CS_F_HOST_DEVICE void
+  combine(volatile cs_gnum_t &a, volatile const cs_gnum_t &b) const {
+    a = cs::max(a, b);
+  }
+};
+
 // Max (1 real)
 
 struct cs_reduce_max1r {

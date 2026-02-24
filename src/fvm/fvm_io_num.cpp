@@ -59,10 +59,12 @@
 #include "fvm/fvm_morton.h"
 
 #include "base/cs_all_to_all.h"
+#include "base/cs_dispatch.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_order.h"
 #include "base/cs_parall.h"
+#include "base/cs_reducers.h"
 #include "base/cs_sort_partition.h"
 
 /*----------------------------------------------------------------------------
@@ -832,29 +834,33 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
 static void
 _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
                            size_t              stride,
-                           cs_gnum_t           global_num[],
+                           const cs_gnum_t     global_num[],
                            MPI_Comm            comm)
 {
-  int  local_rank, size;
   cs_gnum_t current_gnum = 0, gnum_shift = 0;
-
   cs_gnum_t *r_gnum = nullptr;
 
   /* Initialization */
 
+  int  local_rank, size;
   MPI_Comm_rank(comm, &local_rank);
   MPI_Comm_size(comm, &size);
 
+  cs_host_context ctx;
+
   /* Get maximum global number value for first value of each series
-     (does not need to be exact, simply used to define blocks) */
-
+     (used to define blocks) */
   {
-    cs_gnum_t   local_max = 0, global_max = 0;
-    size_t      n_ent = this_io_num->global_num_size;
+    cs_gnum_t global_max = 0;
+    struct cs_reduce_max_1gnum reducer;
 
-    if (n_ent > 0)
-      local_max = global_num[(n_ent-1)*stride];
-    MPI_Allreduce(&local_max, &global_max, 1, CS_MPI_GNUM, MPI_MAX, comm);
+    ctx.parallel_for_reduce
+      (this_io_num->global_num_size, global_max, reducer,
+       [=] CS_F_HOST_DEVICE (size_t i, cs_gnum_t &num) {
+         num = global_num[i*stride];
+       });
+    ctx.wait();
+    MPI_Allreduce(MPI_IN_PLACE, &global_max, 1, CS_MPI_GNUM, MPI_MAX, comm);
     this_io_num->global_count = global_max;
   }
 
@@ -872,10 +878,12 @@ _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
   int *dest_rank;
   CS_MALLOC(dest_rank, this_io_num->global_num_size, int);
 
-  for (cs_lnum_t i = 0; i < this_io_num->global_num_size; i++) {
-    cs_gnum_t g_elt_id = global_num[stride*i] - 1;
-    dest_rank[i] = (g_elt_id / block_size)*bi.rank_step;
-  }
+  ctx.parallel_for
+    (this_io_num->global_num_size, [=] CS_F_HOST_DEVICE (size_t i) {
+      cs_gnum_t g_elt_id = global_num[stride*i] - 1;
+      dest_rank[i] = (g_elt_id / block_size)*bi.rank_step;
+    });
+  ctx.wait();
 
   cs_all_to_all_t
     *d = cs_all_to_all_create(this_io_num->global_num_size,
@@ -948,8 +956,10 @@ _fvm_io_num_global_order_s(fvm_io_num_t       *this_io_num,
            MPI_SUM, comm);
   gnum_shift -= current_gnum;
 
-  for (cs_lnum_t i = 0; i < b_size; i++)
+  ctx.parallel_for(b_size, [=] CS_F_HOST_DEVICE (size_t i) {
     r_gnum[i] += gnum_shift;
+  });
+  ctx.wait();
 
   /* Return global order to all ranks */
 
@@ -1103,11 +1113,7 @@ _fvm_io_num_global_order_index(fvm_io_num_t       *this_io_num,
 
   cs_lnum_t n_ent_recv = cs_all_to_all_n_elts_dest(d);
 
-  /* Send indexed list to the destination ranks;
-     TODO future optimization: when data is sorted by increasing base global
-     numbering, such as here, indicating it to the cs_all_to_all distributor
-     for possible optimisation (using a flag or a varianf function) could
-     avoid an extra copy to an internal buffer. */
+  /* Send indexed list to the destination ranks. */
 
   recv_global_num = cs_all_to_all_copy_indexed(d,
                                                false, /* reverse */
@@ -2128,8 +2134,6 @@ fvm_io_num_create_from_sub(const fvm_io_num_t  *base_io_num,
 /*----------------------------------------------------------------------------
  * Creation of an I/O numbering structure based on a strided adjacency.
  *
- * The corresponding entities must be locally ordered.
- *
  * parameters:
  *   parent_entity_id <-- pointer to list of selected entitie's parent's ids,
  *                        or nullptr if all first n_ent entities are used
@@ -2154,14 +2158,10 @@ fvm_io_num_create_from_adj_s(const cs_lnum_t   parent_entity_id[],
   if (cs_glob_n_ranks < 2)
     return nullptr;
 
-  assert(_is_gnum_ordered_s(parent_entity_id,
-                            adjacency,
-                            stride,
-                            n_entities) == true);
-
 #if defined(HAVE_MPI)
   {
     cs_gnum_t *_adjacency = nullptr;
+    const cs_gnum_t *adjacency_e = adjacency;
 
     /* Create structure */
 
@@ -2174,21 +2174,17 @@ fvm_io_num_create_from_adj_s(const cs_lnum_t   parent_entity_id[],
 
     if (n_entities > 0) {
 
-      size_t  i, j;
-
-      /* Assign initial global numbers */
-
-      CS_MALLOC(_adjacency, n_entities*stride, cs_gnum_t);
+      /* Filter initial global numbers */
 
       if (parent_entity_id != nullptr) {
-        for (i = 0 ; i < n_entities ; i++) {
-          for (j = 0; j < stride; j++)
+        CS_MALLOC(_adjacency, n_entities*stride, cs_gnum_t);
+        for (size_t i = 0 ; i < n_entities ; i++) {
+          for (size_t j = 0; j < stride; j++)
             _adjacency[i*stride + j]
               = adjacency[parent_entity_id[i]*stride + j];
         }
+        adjacency_e = _adjacency;
       }
-      else
-        memcpy(_adjacency, adjacency, n_entities*stride*sizeof(cs_gnum_t));
 
     }
 
@@ -2198,7 +2194,7 @@ fvm_io_num_create_from_adj_s(const cs_lnum_t   parent_entity_id[],
 
     _fvm_io_num_global_order_s(this_io_num,
                                stride,
-                               _adjacency,
+                               adjacency_e,
                                cs_glob_mpi_comm);
 
     CS_FREE(_adjacency);

@@ -184,8 +184,6 @@ fvm_io_num_create_from_sub(const fvm_io_num_t  *base_io_num,
 /*----------------------------------------------------------------------------
  * Creation of an I/O numbering structure based on a strided adjacency.
  *
- * The corresponding entities must be locally ordered.
- *
  * parameters:
  *   parent_entity_id <-- pointer to list of selected entitie's parent's ids,
  *                        or NULL if all first n_ent entities are used
