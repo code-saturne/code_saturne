@@ -57,6 +57,7 @@
 #include "alge/cs_matrix_default.h"
 
 #include "base/cs_array.h"
+#include "base/cs_ext_neighborhood.h"
 #include "base/cs_field.h"
 #include "base/cs_field_operator.h"
 #include "base/cs_field_pointer.h"
@@ -65,6 +66,7 @@
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
 #include "mesh/cs_mesh_coarsen.h"
+#include "mesh/cs_mesh_coherency.h"
 #include "mesh/cs_mesh_location.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "mesh/cs_mesh_refine.h"
@@ -1179,26 +1181,66 @@ _load_balance(bool write_stats)
 #endif // defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
- * Update mesh data after refinement / coarsening steps.
+ * Update mesh data after first refinement / coarsening steps.
+ *
+ * Most mesh data should not be needed between stages, but interpolation
+ * may require that at least some elements are available.
+ *
+ * parameters:
+ *   mesh         <-- pointer to the mesh
  *----------------------------------------------------------------------------*/
 
 static void
-_update_post_adaptation_mesh_data(void)
+_update_intermediate_mesh_data(cs_mesh_t  *mesh)
 {
-  cs_mesh_t *mesh = cs_glob_mesh;
-
-  /* Renumber mesh based on code options */
-
-  cs_renumber_mesh(mesh, nullptr, nullptr, nullptr, nullptr);
-
-  /* Free and re-compute mesh related quantities */
+  /* Free quantities that will become invalid and can be recomputed */
 
   cs_mesh_quantities_free_all(cs_glob_mesh_quantities);
+  cs_gradient_free_quantities();
+  cs_adaptive_refinement_free_gradients();
+
+  /* Re-compute mesh related quantities */
+
   cs_mesh_quantities_compute(mesh, cs_glob_mesh_quantities);
+  cs_ext_neighborhood_reduce(mesh, cs_glob_mesh_quantities);
 
   /* Update mesh adjacencies */
 
   cs_mesh_adjacencies_update_mesh();
+
+  /* Reset boundary conditions (may be needed for gradients used
+     in interpolation of refined fields) */
+
+  cs_boundary_conditions_realloc();
+  cs_field_map_and_init_bcs();
+}
+
+/*----------------------------------------------------------------------------
+ * Update mesh data after refinement / coarsening steps.
+ *
+ * parameters:
+ *   mesh   <-- pointer to the mesh
+ *----------------------------------------------------------------------------*/
+
+static void
+_update_post_adaptation_mesh_data(cs_mesh_t  *mesh)
+{
+  /* Free quantities that will become invalid and can be recomputed */
+
+  cs_mesh_quantities_free_all(cs_glob_mesh_quantities);
+  cs_gradient_free_quantities();
+  cs_adaptive_refinement_free_gradients();
+
+  /* Renumber mesh based on code options. Only do it if no load balancing
+     is to be done, as it would otherwise be redundant. */
+
+  cs_renumber_mesh(mesh, nullptr, nullptr, nullptr, nullptr);
+
+  /* Re-compute mesh related quantities */
+
+  cs_mesh_update_auxiliary(mesh);
+  cs_mesh_quantities_compute(mesh, cs_glob_mesh_quantities);
+  cs_ext_neighborhood_reduce(mesh, cs_glob_mesh_quantities);
 
   /* Initialize selectors and locations for the mesh */
 
@@ -1207,16 +1249,17 @@ _update_post_adaptation_mesh_data(void)
   cs_volume_zone_build_all(true);
   cs_boundary_zone_build_all(true);
 
+#if defined(DEBUG)
+  cs_mesh_coherency_check();
+#endif
+
+  cs_mesh_adjacencies_update_mesh();
+  cs_matrix_update_mesh();
+
   /* Reset boundary conditions */
 
   cs_boundary_conditions_realloc();
   cs_field_map_and_init_bcs();
-
-  /* Free gradients and related quantities since they can be recomputed
-   * on-the-fly */
-
-  cs_gradient_free_quantities();
-  cs_adaptive_refinement_free_gradients();
 }
 
 /*----------------------------------------------------------------------------
@@ -1251,8 +1294,6 @@ _refine_step(const int indic[])
                                  selected_cells);
 
   CS_FREE(selected_cells);
-
-  _update_post_adaptation_mesh_data();
 }
 
 /*----------------------------------------------------------------------------
@@ -1279,8 +1320,6 @@ _coarsen_step(const int indic[])
                                   selected_cells);
 
   CS_FREE(selected_cells);
-
-  _update_post_adaptation_mesh_data();
 }
 
 /*============================================================================
@@ -1438,25 +1477,25 @@ cs_adaptive_refinement_step(void)
 
   _coarsen_step(indic);
 
+  _update_intermediate_mesh_data(mesh);
+
   _refine_step(indic);
 
   CS_FREE(indic);
 
-  /* Post-adaptation updates */
+  /* We could use a more advanced test to perform load balancing only
+     if imbalance reaches a certain threshold. */
+  bool load_balance = (cs_glob_n_ranks > 1) ? true : false;
 
-  cs_gradient_free_quantities();
+  if (load_balance == false)
+    _update_post_adaptation_mesh_data(mesh);
 
   /* Perform load balancing */
 
 #if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1) {
-    bool write_stats = true;
-    _load_balance(write_stats);
-  }
+  if (load_balance)
+    _load_balance(true);
 #endif
-
-  cs_mesh_adjacencies_update_mesh();
-  cs_matrix_update_mesh();
 
   if (cs_log_default_is_active())
     cs_log_printf(CS_LOG_DEFAULT,

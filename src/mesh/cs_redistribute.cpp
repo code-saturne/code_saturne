@@ -762,8 +762,17 @@ cs_redistribute(const int                cell_dest_rank[],
 {
 #if defined(HAVE_MPI)
 
-  if (cs_glob_rank_id < 0)
+  if (cs_glob_n_ranks == 1)
     return;
+
+  /* Free some elements which will need to be rebuilt when/if used. */
+
+  cs_mesh_free_rebuildable(cs_glob_mesh, true);
+  cs_mesh_quantities_free_all(cs_glob_mesh_quantities);
+
+  _free_field_gradients();
+  cs_gradient_free_quantities();
+  cs_cell_to_vertex_free();
 
   static int iter = 0;
   iter++;
@@ -795,7 +804,7 @@ cs_redistribute(const int                cell_dest_rank[],
   cs_all_to_all_t *cd = nullptr;
   int cd_flags = 0;
 
-  // build the cell part-to-part distributor
+  // Build the cell part-to-part distributor.
 
   cs_lnum_t n_cells = 0;
 
@@ -860,7 +869,7 @@ cs_redistribute(const int                cell_dest_rank[],
                                                   false,
                                                   mesh->global_cell_num);
 
-  // Sort global cell numbers in increasing order
+  // Sort global cell numbers in increasing order;
   // this order will be used for the exchange of any cell-centered data.
 
   cs_lnum_t *cell_order = cs_order_gnum(nullptr, cell_gnum, n_cells);
@@ -1030,17 +1039,17 @@ cs_redistribute(const int                cell_dest_rank[],
   /* Interior faces
      -------------- */
 
-  // We need the destination of the halo cells.
+  // We need the destination and current ranks of the halo cells.
+
   cs_halo_sync_untyped(mesh->halo,
-                       mesh->halo_type,
+                       CS_HALO_STANDARD,
                        sizeof(int),
                        _dest_rank);
 
-  // We need the ranks of the halo cells.
   int *cell_rank;
   CS_MALLOC(cell_rank, mesh->n_cells_with_ghosts, int);
   for (int i = 0; i < mesh->n_cells; i++) cell_rank[i] = cs_glob_rank_id;
-  cs_halo_sync_untyped(mesh->halo, mesh->halo_type, sizeof(int), cell_rank);
+  cs_halo_sync_untyped(mesh->halo, CS_HALO_STANDARD, sizeof(int), cell_rank);
 
   // List of internal faces to distribute, and their destination.
   // one internal face can appear twice in the list.
@@ -1289,7 +1298,7 @@ cs_redistribute(const int                cell_dest_rank[],
   // for example by splitting the vertices into two parts: inner vertices
   // (shared by pure internal/boundary faces only), and outer vertices
   // (those that are connected to faces shared by neighbouring procs).
-  // TODO(Imad): distribute vertex-centered fields.
+  // TODO: distribute vertex-based fields.
 
   cs_all_to_all_t *vd
     = cs_all_to_all_create_from_block(n_vertices,
@@ -1398,31 +1407,36 @@ cs_redistribute(const int                cell_dest_rank[],
   // - periodicity features
   // - face status flags
 
-  // update the halo
-  cs_mesh_builder_destroy(&builder);
-  cs_mesh_free_rebuildable(mesh, true);
-  mesh->n_cells_with_ghosts = mesh->n_cells;
-  cs_mesh_init_halo(mesh, nullptr, mesh->halo_type, -1, true);
-  cs_mesh_update_auxiliary(mesh);
+  // Update the halo
 
-  cs_lnum_t *cell_n2o, *i_face_n2o, *b_face_n2o, *vtx_n2o;
-  cell_n2o = i_face_n2o = b_face_n2o = vtx_n2o = nullptr;
+  cs_mesh_builder_destroy(&builder);
+
+  mesh->n_cells_with_ghosts = mesh->n_cells;
+
+  cs_mesh_init_halo(mesh, nullptr, mesh->halo_type, -1, true);
+
+  cs_lnum_t *cell_n2o = nullptr, *vtx_n2o= nullptr;
+  cs_lnum_t *i_face_n2o = nullptr, *b_face_n2o = nullptr;
+
   cs_renumber_mesh(mesh, &cell_n2o, &i_face_n2o, &b_face_n2o, &vtx_n2o);
+
+  cs_mesh_update_auxiliary(mesh);
+  cs_mesh_quantities_compute(cs_glob_mesh,cs_glob_mesh_quantities);
+  cs_ext_neighborhood_reduce(mesh, cs_glob_mesh_quantities);
 
   cs_mesh_init_group_classes(mesh);
 
-  cs_mesh_quantities_free_all(cs_glob_mesh_quantities);
-  cs_mesh_quantities_compute(cs_glob_mesh,cs_glob_mesh_quantities);
-
   cs_mesh_update_selectors(mesh);
   cs_mesh_location_build(mesh, -1);
-  bool mesh_modified = true;
-  cs_volume_zone_build_all(mesh_modified);
-  cs_boundary_zone_build_all(mesh_modified);
+  cs_volume_zone_build_all(true);
+  cs_boundary_zone_build_all(true);
 
-  cs_ext_neighborhood_reduce(mesh, cs_glob_mesh_quantities);
-
+#if defined(DEBUG)
   cs_mesh_coherency_check();
+#endif
+
+  cs_mesh_adjacencies_update_mesh();
+  cs_matrix_update_mesh();
 
   /* Field distribution
      ------------------ */
@@ -1442,12 +1456,6 @@ cs_redistribute(const int                cell_dest_rank[],
                      i_face_n2o);
 
   _distribute_data(cd, cell_order, cell_n2o, data);
-
-  _free_field_gradients();
-  cs_gradient_free_quantities();
-  cs_cell_to_vertex_free();
-  cs_mesh_adjacencies_update_mesh();
-  cs_matrix_update_mesh();
 
   CS_FREE(vtx_n2o);
   CS_FREE(cell_n2o);

@@ -6454,7 +6454,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
 
   m->verbosity = mv_save;
 
-  /* Update fields : memory reallocation and interpolation */
+  /* Update fields: memory reallocation and interpolation */
 
   if (cs_glob_amr_info->is_set) {
 
@@ -6463,9 +6463,9 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
     cs_mesh_quantities_compute(cs_glob_mesh,cs_glob_mesh_quantities);
     cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
-    /* We need to rebuilt mesh locations, in order to
+    /* We need to rebuild mesh locations, in order to
        properly reallocate fields (espacially bc_coeffs) */
-    cs_mesh_init_selectors();
+    cs_mesh_update_selectors(m);
     cs_mesh_location_build(m, -1);
 
     cs_amr_refinement_interpolation_t *_realloc_and_interp_fields =

@@ -1999,16 +1999,16 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
 
   /* Now merge interior faces */
 
-  cs_lnum_t  *i_f_o2n = nullptr;
-  cs_lnum_t  n_i_f_new = _i_faces_equiv(m, &i_f_o2n);
+  cs_lnum_t *i_f_o2n = nullptr;
+  cs_lnum_t n_i_f_new = _i_faces_equiv(m, &i_f_o2n);
   cs_lnum_t n_i_old = m->n_i_faces;
 
   _merge_i_faces(m, n_i_f_new, i_f_o2n);
 
   /* Then merge boundary faces */
 
-  cs_lnum_t  *b_f_o2n = nullptr;
-  cs_lnum_t  n_b_f_new = _b_faces_equiv(m, c_flag_n, &b_f_o2n);
+  cs_lnum_t *b_f_o2n = nullptr;
+  cs_lnum_t n_b_f_new = _b_faces_equiv(m, c_flag_n, &b_f_o2n);
   cs_lnum_t n_b_old = m->n_b_faces;
 
   _merge_b_faces(m, n_b_f_new, b_f_o2n);
@@ -2028,7 +2028,7 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
   m->n_b_faces_all = m->n_b_faces;
   m->modified |= (CS_MESH_MODIFIED | CS_MESH_MODIFIED_BALANCE);
 
-  /* Rebuild auxiliary information  */
+  /* Rebuild auxiliary information */
 
   mv_save = m->verbosity;
   m->verbosity = -1;
@@ -2037,11 +2037,11 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
 
   m->verbosity = mv_save;
 
-  /* Update fields : memory reallocation and interpolation */
+  /* Update fields: memory reallocation and interpolation */
 
   if (cs_glob_amr_info->is_set) {
 
-    cs_mesh_init_selectors();
+    cs_mesh_update_selectors(m);
     cs_mesh_location_build(m, -1);
 
     cs_amr_coarsening_interpolation_t *_realloc_and_interp_fields =
