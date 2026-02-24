@@ -105,7 +105,7 @@ BEGIN_C_DECLS
 
 static int           _n_setups = 0;
 static cs_sles_t    *_sles_setup[CS_SLES_DEFAULT_N_SETUPS];
-static cs_matrix_t  *_matrix_setup[CS_SLES_DEFAULT_N_SETUPS][2];
+static cs_matrix_t  *_matrix_setup[CS_SLES_DEFAULT_N_SETUPS];
 
 static const int _poly_degree_default = 0;
 static const int _n_max_iter_default = 10000;
@@ -332,7 +332,7 @@ _sles_setup_matrix_native(int                  f_id,
 
     cs_sles_define_t  *sles_default_func = cs_sles_get_default_define();
     sles_default_func(f_id, name, a);
-    cs_matrix_release_coefficients(a);
+    cs_matrix_release(&a);
   }
 
   assert(cs_sles_get_context(sc) != nullptr);
@@ -446,8 +446,7 @@ _sles_setup_matrix_native(int                  f_id,
 
   cs_matrix_default_set_tuned(a);
 
-  _matrix_setup[setup_id][0] = a;
-  _matrix_setup[setup_id][1] = nullptr;
+  _matrix_setup[setup_id] = a;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -512,8 +511,7 @@ _sles_setup_matrix_by_assembler(int               f_id,
 
   cs_matrix_default_set_tuned(a);
 
-  _matrix_setup[setup_id][0] = a;
-  _matrix_setup[setup_id][1] = a; /* so it is freed later */
+  _matrix_setup[setup_id] = a;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -955,11 +953,11 @@ cs_sles_setup_native_conv_diff(int                  f_id,
     }
 
     _sles_setup[setup_id] = sc;
-    _matrix_setup[setup_id][0] = a;
+    _matrix_setup[setup_id] = a;
 
   }
   else {
-    a = _matrix_setup[setup_id][0];
+    a = _matrix_setup[setup_id];
   }
 
   cs_matrix_default_set_tuned(a);
@@ -1194,7 +1192,7 @@ cs_sles_solve_native(int                  f_id,
     _sles_setup[setup_id] = sc;
   }
 
-  a = _matrix_setup[setup_id][0];
+  a = _matrix_setup[setup_id];
 
   /* If system uses specific halo (i.e. when matrix contains more than
      face->cell nonzeroes), allocate specific buffers and synchronize
@@ -1277,18 +1275,13 @@ cs_sles_free_native(int          f_id,
   if (setup_id < _n_setups) {
 
     cs_sles_free(sc);
-    if (_matrix_setup[setup_id][0] != nullptr)
-      cs_matrix_release_coefficients(_matrix_setup[setup_id][0]);
-    /* Remove "copied" matrices */
-    if (_matrix_setup[setup_id][1] != nullptr)
-      cs_matrix_destroy(&(_matrix_setup[setup_id][1]));
+    if (_matrix_setup[setup_id] != nullptr)
+      cs_matrix_release(&_matrix_setup[setup_id]);
 
     _n_setups -= 1;
 
     if (setup_id < _n_setups) {
-      for (int i = 0; i < 2; i++) {
-        _matrix_setup[setup_id][i] = _matrix_setup[_n_setups][i];
-      }
+      _matrix_setup[setup_id] = _matrix_setup[_n_setups];
       _sles_setup[setup_id] = _sles_setup[_n_setups];
     }
   }
