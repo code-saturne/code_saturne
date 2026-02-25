@@ -484,9 +484,9 @@ _clip_rho_mu_cp(cs_dispatch_context         &ctx,
     bft_error(__FILE__, __LINE__, 0,
               _("Abort in the physical quantities computation.\n\n"
                 "The physical property %s is variable and the"
-                "minimum reached is %10.12e\n"
+                " minimum reached is %10.12e\n"
                 "Verify that this property has been defined and"
-                "that the chosen law leads to correct values.\n\n"
+                " that the chosen law leads to correct values.\n\n"
                 "For turbulent viscosity you can modify"
                 " cs_user_physical_properties_turb_viscosity\n"),
               fields[ii]->name, varminmax[ii]);
@@ -649,9 +649,9 @@ _check_log_scalar_diff(cs_dispatch_context &ctx,
       bft_error(__FILE__, __LINE__, 0,
                 _("Abort in the physical quantities computation\n\n"
                   "The physical property %s is variable and the"
-                  "minimum reached is %g, which is incorrect.\n"
+                  " minimum reached is %g, which is incorrect.\n"
                   "Verify that this property has been defined and"
-                  "that the chosen law leads to correct values."),
+                  " that the chosen law leads to correct values."),
                 th_f->name, varmn);
     }
   }
@@ -750,7 +750,7 @@ _check_log_mesh_diff(bool       first_pass,
                   "The mesh viscosity has not been correctly defined.\n"
                   "The calculation will not be run.\n"
                   "The minimum reached is %10.12e\n"
-                  "Verify he definition of this property"), varmn);
+                  "Verify the definition of this property"), varmn);
   }
 }
 
