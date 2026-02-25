@@ -51,13 +51,9 @@ BEGIN_C_DECLS
 
 typedef enum {
 
-  CS_E2N_SUM_SCATTER,           /*!< Iterate on edges and scatter values to
-                                  nodes, assuming no data races
-                                  (serial / single thread mode). */
-  CS_E2N_SUM_SCATTER_ATOMIC,    /*!< Iterate on edges and scatter values to
-                                  nodes, using atomic sums. */
-  CS_E2N_SUM_GATHER             /*!< Iterate on nodes and gather (indexed)
-                                  edge values */
+  CS_E2N_SUM_SCATTER,  /*!< Iterate on edges and scatter values to nodes,
+                            with data race avoinding numbering or atomics. */
+  CS_E2N_SUM_GATHER    /*!< Iterate on nodes and gather (indexed) edge values */
 
 } cs_e2n_sum_t;
 
