@@ -2141,21 +2141,6 @@ cs_parameters_check(void)
                                     0, 2);
 
       CS_FREE(f_desc);
-
-      if (   eqp->ischcv == 0
-          && cs::abs(eqp->blencv) > cs_math_epzero) {
-        f_desc = _field_section_desc(f, "Second order linear upwind "
-                                        "enabled for variable");
-
-        cs_parameters_is_equal_int
-          (CS_ABORT_DELAYED,
-           _(f_desc),
-           "equation param ircflu (fluxes reconstruction)",
-           eqp->ircflu,
-           1);
-
-        CS_FREE(f_desc);
-      }
     }
   }
 
