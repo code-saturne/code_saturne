@@ -1278,8 +1278,10 @@ cs_turb_compute_constants(int phase_id)
   }
   else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K)
     f_eps->set_key_double(k_turb_schmidt, 1.5);
-  else
-    f_eps->set_key_double(k_turb_schmidt, 1.30);
+  else {
+    if (f_eps != nullptr)
+      f_eps->set_key_double(k_turb_schmidt, 1.30);
+  }
 
   if (cs_glob_turb_rans_model->idirsm == 0)
     cs_turb_csrij = 0.11;
