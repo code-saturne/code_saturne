@@ -280,10 +280,9 @@ cs_lagr_options_definition(int         is_restart,
 
   if (   lagr_time_scheme->iilagr == CS_LAGR_FROZEN_CONTINUOUS_PHASE
       && is_restart != 1)
-    cs_parameters_error
-      (CS_ABORT_DELAYED,
-       _("in Lagrangian module"),
-       _("The specified Lagrangian time scheme requires frozen fields\n"
+    cs_log_warning
+      (_("in Lagrangian module\n"
+         "The specified Lagrangian time scheme requires frozen fields\n"
          "(cs_glob_lagr_time_scheme->iilagr == %d)\n"
          "but the background Eulerian computation is not a restart.\n"),
        lagr_time_scheme->iilagr);
