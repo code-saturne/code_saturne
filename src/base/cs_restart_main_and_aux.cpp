@@ -478,7 +478,7 @@ _write_auxiliary_checkpoint(void)
 
   cs_fluid_properties_t *cgfp = cs_get_glob_fluid_properties();
   dummy_int = cgfp->ixyzp0;
-  if (cgfp->ixyzp0== 1) {
+  if (cgfp->ixyzp0 == 1) {
     cs_restart_write_section(r, "ref_presstot01", 0 , 3,
                              CS_TYPE_cs_real_t,
                              cgfp->xyzp0);

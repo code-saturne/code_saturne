@@ -211,7 +211,7 @@ public:
 
 /*----------------------------------------------------------------------------*/
 /*!
- * A cs_task_t object represents a task that can be syncronized to and with.
+ * A cs_task_t object represents a task that can be synchronized to and with.
  * It holds a cs_dispatch_context with a unique CUDA stream and CUDA events can
  * be recorded from the task to synchronize other tasks with it.
  *
