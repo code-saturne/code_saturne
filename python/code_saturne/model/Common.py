@@ -39,10 +39,10 @@ import os, logging
 # Global Parameters
 #-------------------------------------------------------------------------------
 
-# xml_doc_version modifie le 10/12/07
+# xml_doc_version modified 2007-12-10.
 XML_DOC_VERSION = "2.0"
 
-LABEL_LENGTH_MAX = 32
+LABEL_LENGTH_MAX = 64
 
 #-------------------------------------------------------------------------------
 # Global GUI parameters
