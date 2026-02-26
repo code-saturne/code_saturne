@@ -3,6 +3,9 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Remove spurious error message for Lagrangian module so than
+  we can impose a frozen field even when no restart.
+
 - Fix usage of `cs_user_scripts.py` with Python 3.13 and above.
 
 - Fix wall distance fallback computation for highly warped meshes,
