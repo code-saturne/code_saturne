@@ -89,8 +89,11 @@
   - <tt> algo:turbulent_flux_divergence </tt>
     Divergence of the turbulent flux in the energy equation, cell-based field of dimension 1.
 
+  - <tt> algo:reconstruction_clip_ratio_<variable_name> </tt>
+    Two-point reconstruction clip pre-clip/post-clip ratio when flux reconstruction
+    is bounded (scalar field on cells).
   - <tt> algo:grad_clip_factor_<variable_name> </tt>
-    Least-squares gradient clip factor if gradient clipping is activated
+    Gradient clip factor if gradient clipping is activated
     (scalar field on cells).
   - <tt> algo:grad_b_iter_<variable_name> </tt>
     Number of iterations for convergence of fixed-point algorithm for
