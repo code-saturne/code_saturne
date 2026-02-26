@@ -1143,6 +1143,7 @@ cs_equation_param_copy_from(const cs_equation_param_t *ref,
   dst->imvisf = ref->imvisf;
   dst->imrgra = ref->imrgra;
   dst->imligr = ref->imligr;
+  dst->d_imligr = ref->d_imligr;
   dst->ircflu = ref->ircflu;
   dst->iwgrec = ref->iwgrec;
   dst->icoupl = ref->icoupl;
@@ -1153,6 +1154,9 @@ cs_equation_param_copy_from(const cs_equation_param_t *ref,
   dst->epsrsm = ref->epsrsm;
   dst->epsrgr = ref->epsrgr;
   dst->climgr = ref->climgr;
+  dst->d_climgr = ref->d_climgr;
+  dst->rc_clip_factor = ref->rc_clip_factor;
+  dst->b_rc_clip_factor = ref->b_rc_clip_factor;
   dst->relaxv = ref->relaxv;
 
   /* Boundary conditions structure */
