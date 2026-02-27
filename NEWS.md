@@ -3,6 +3,10 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Fix incorrect theta behavior after restart, which could degrade schemes
+  requiring 2 time values of the density, such as second order in time
+  variable density and VoF.
+
 - FMI coupling: various fixes.
   * Fixes in FMU checkpoint/restart.
     - When reading a snapshot from memory, the received data was not used.
