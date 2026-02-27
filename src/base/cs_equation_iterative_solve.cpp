@@ -355,14 +355,10 @@ _equation_iterative_solve_strided(int                   idtvar,
   }
 
   /* solving info */
-  int df_limiter_id = -1;
   int key_sinfo_id = cs_field_key_id("solving_info");
   if (f_id > -1) {
     f = cs_field_by_id(f_id);
     cs_field_get_key_struct(f, key_sinfo_id, &sinfo);
-
-    df_limiter_id
-      = cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
 
     /* Ensure BC coefficient arrays are allocated
        we use a delayed allocation the default to Neumann more easily
