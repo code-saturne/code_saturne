@@ -943,6 +943,63 @@ _physical_properties_update_models_stage_2(void)
     cs_eos_predicted_rho();
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Backup property values from restart
+ *
+ * \param[in, out]  prop_backup  Pointer to arrays of propery value backups.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_backup_restarted_values(cs_real_t  **prop_backup)
+{
+  int n_fields = cs_field_n_fields();
+
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    prop_backup[f_id] = nullptr;
+
+    const cs_field_t *f = cs_field_by_id(f_id);
+    if (! (f->type & CS_FIELD_PROPERTY))
+      continue;
+
+    /* If only one time value is used, recomputing is is not an issue;
+       if more values are used, save the current one, as time value rotation
+       (e.g. "current_to_previous") operations before use could  overwrite
+       the values we "should" use with the recomputed value). */
+    if (cs_restart_get_field_read_status(f_id) < 2)
+      continue;
+
+    cs_lnum_t n_vals =   cs_mesh_location_get_n_elts(f->location_id)[2]
+                       * (cs_lnum_t)(f->dim);
+    CS_MALLOC(prop_backup[f_id], n_vals, cs_real_t);
+    cs_array_copy(n_vals, f->vals[0], prop_backup[f_id]);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Restore property values from restart
+ *
+ * \param[in, out]  prop_backup  Pointer to arrays of propery value backups.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_restore_restarted_values(cs_real_t  **prop_backup)
+{
+  int n_fields = cs_field_n_fields();
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    if (prop_backup[f_id] == nullptr)
+      continue;
+    const cs_field_t *f = cs_field_by_id(f_id);
+    cs_lnum_t n_vals =   cs_mesh_location_get_n_elts(f->location_id)[2]
+                       * (cs_lnum_t)(f->dim);
+    cs_array_copy(n_vals, prop_backup[f_id], f->vals[0]);
+    CS_FREE(prop_backup[f_id]);
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -973,6 +1030,20 @@ cs_physical_properties_update(int   iterns)
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
   cs_field_t *rho_b_f = CS_F_(rho_b);
+  cs_real_t **prop_backup = nullptr;
+
+  /* In case of restart, some physical properties may have been read correctly,
+     others not. to avoid require fragile tests in the physical properties
+     update function, save values which should not be overriden, compute
+     updates, then restor saved values. */
+
+  if (iterns == -1) {
+    const cs_time_step_t *ts = cs_glob_time_step;
+    if (ts->nt_prev > 0 && ts->nt_cur == ts->nt_prev) {
+      CS_MALLOC_HD(prop_backup, cs_field_n_fields(), cs_real_t *, cs_alloc_mode);
+      _backup_restarted_values(prop_backup);
+    }
+  }
 
   cs_dispatch_context ctx;
 
@@ -1046,6 +1117,12 @@ cs_physical_properties_update(int   iterns)
       brom[face_id] = crom[b_face_cells[face_id]];
     });
     ctx.wait();
+  }
+
+  /* Restore field values if needed */
+  if (prop_backup != nullptr) {
+    _restore_restarted_values(prop_backup);
+    CS_FREE(prop_backup);
   }
 
   // Only density may be updated in Navier-Stokes loop

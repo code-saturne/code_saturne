@@ -541,15 +541,21 @@ cs_initialize_fields_stage_1(void)
   if (pm_flag[CS_COMPRESSIBLE] >= 0)
     cs_cf_initialize();
 
-  /* VoF model
-   ----------- */
+  /* Variable density and VoF models
+   --------------------------------- */
 
   if (cs_glob_vof_parameters->vof_model > 0) {
     cs_vof_compute_linear_rho_mu(m);
-    // density is stored at the two previous time steps
-    for (int t_i = 0; t_i < 2; t_i++) {
-      cs_field_current_to_previous(CS_F_(rho));
-      cs_field_current_to_previous(CS_F_(rho_b));
+
+    // Density is stored at the two previous time steps for Vof ansd idilat 2;
+    {
+      cs_field_t *f_rho[] = {CS_F_(rho), CS_F_(rho_b)};
+      for (int i = 0; i < 2; i++) {
+        if (f_rho[i] == nullptr)
+          continue;
+        if (f_rho[i]->n_time_vals > 1)
+          cs_field_current_to_previous(f_rho[i]);
+      }
     }
   }
 

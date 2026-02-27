@@ -121,7 +121,7 @@ const char _ntb_prefix[] = "notebook::";
 
 /* Array to keep fields read status during checkpoing import */
 
-static cs_restart_file_t *_fields_read_status = nullptr;
+static int *_fields_read_status = nullptr;
 
 /*============================================================================
  * Private function definitions
@@ -1719,26 +1719,18 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
  *
  * parameters:
  *   f       <-- pointer to given field
- *   status  <-- status indicator (int)
- *
+ *   status  <-- status indicator: < 0 if failed, 0 otherwise
+ *   t_id    <-- associated time id
  *----------------------------------------------------------------------------*/
 
 static void
 _restart_set_field_read_status(const cs_field_t *f,
-                               const int         status)
+                               int               status,
+                               int               t_id)
 {
-  if (status != CS_RESTART_SUCCESS) {
-    // Mark failures with invalid id
-    _fields_read_status[f->id] = CS_RESTART_N_RESTART_FILES;
-  }
-  else if (_fields_read_status[f->id] < CS_RESTART_N_RESTART_FILES) {
-    /* We update the status only if the field is not already marked
-     * as failed, which could happen if multiple time values are needed for
-     * example...
-     */
-    const int rfile_kid = cs_field_key_id("restart_file");
-    _fields_read_status[f->id]
-      = (cs_restart_file_t)cs_field_get_key_int(f, rfile_kid);
+  if (status == CS_RESTART_SUCCESS) {
+    int t_bit = 1 << t_id;
+    _fields_read_status[f->id] |= t_bit;
   }
 }
 
@@ -3113,7 +3105,7 @@ cs_restart_read_field_vals(cs_restart_t  *r,
   }
 
   /* Store retcode in read status */
-  _restart_set_field_read_status(f, retcode);
+  _restart_set_field_read_status(f, retcode, t_id);
 
   return retcode;
 }
@@ -3332,7 +3324,6 @@ cs_restart_set_auxiliary_field_options(void)
   /* Useful pointer to global variables */
   cs_fluid_properties_t *f_p = cs_get_glob_fluid_properties();
   cs_vof_parameters_t *vof_p = cs_get_glob_vof_parameters();
-  cs_velocity_pressure_model_t *vp_p = cs_get_glob_velocity_pressure_model();
   cs_time_step_options_t *ts_opts = cs_get_glob_time_step_options();
 
   /* Density when variable of for vof models */
@@ -3384,9 +3375,9 @@ cs_restart_initialize_fields_read_status(void)
 
   const int n_fields = cs_field_n_fields();
 
-  CS_REALLOC(_fields_read_status, n_fields, cs_restart_file_t);
+  CS_REALLOC(_fields_read_status, n_fields, int);
   for (int i = 0; i < n_fields; i++)
-    _fields_read_status[i] = CS_RESTART_DISABLED;
+    _fields_read_status[i] = 0;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3403,23 +3394,31 @@ cs_restart_finalize_fields_read_status(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Get checkpoint read status for a field based on its id
+ * \brief Get checkpoint read status for a field based on its id.
+ *
+ * If some time values were read and others not available, the returned
+ * value is that of the contiguous number of time values successfully read
+ * (i.e. if time values 0 and 2 were read, but not 1, only the firs value,
+ * 0 is considered usable, so the returned value would be 1).
  *
  * \param[in] f_id  field id
  *
- * \returns 0 if field was not read, 1 otherwise
+ * \returns number of time values read for field.
  */
 /*----------------------------------------------------------------------------*/
 
 int
-cs_restart_get_field_read_status(const int f_id)
+cs_restart_get_field_read_status(int  f_id)
 {
   int retval = 0;
+  int n_max = sizeof(int)*8;
 
-  if (_fields_read_status != nullptr) {
-    if (   _fields_read_status[f_id] > CS_RESTART_DISABLED
-        && _fields_read_status[f_id] < CS_RESTART_N_RESTART_FILES)
-      retval = 1;
+  for (int t_id = 0; t_id < n_max; t_id++) {
+    int t_bit = 1 << t_id;
+    if (t_bit & _fields_read_status[f_id])
+      retval = t_id + 1;
+    else
+      break;
   }
 
   return retval;

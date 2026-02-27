@@ -324,11 +324,16 @@ cs_restart_finalize_fields_read_status(void);
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Get checkpoint read status for a field based on its id
+ * \brief Get checkpoint read status for a field based on its id.
+ *
+ * If some time values were read and others not available, the returned
+ * value is that of the contiguous number of time values successfully read
+ * (i.e. if time values 0 and 2 were read, but not 1, only the firs value,
+ * 0 is considered usable, so the returned value would be 1).
  *
  * \param[in] f_id  field id
  *
- * \returns 0 if field was not read, 1 otherwise
+ * \returns number of time values read for field.
  */
 /*----------------------------------------------------------------------------*/
 
