@@ -3,6 +3,8 @@ Release 9.1.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix incomplete density restart information for idilat=2.
+
 - Fix incorrect theta behavior after restart, which could degrade schemes
   requiring 2 time values of the density, such as second order in time
   variable density and VoF.
