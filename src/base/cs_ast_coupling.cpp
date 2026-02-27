@@ -849,6 +849,7 @@ cs_ast_coupling_geometry(cs_lnum_t        n_faces,
                                  0,     /* dim_shift */
                                  false, /* transfer */
                                  false, /* auto variables */
+                                 true,  /* subset of compute mesh */
                                  1,     /* number of associated writers */
                                  writer_ids);
 

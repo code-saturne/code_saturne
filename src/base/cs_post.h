@@ -543,6 +543,10 @@ cs_post_define_particles_mesh_by_func(int                    mesh_id,
                                       int                    n_writers,
                                       const int              writer_ids[]);
 
+END_C_DECLS
+
+#if defined(__cplusplus)
+
 /*----------------------------------------------------------------------------*/
 /*
  * \brief Create a post-processing mesh associated with an existing exportable
@@ -562,18 +566,34 @@ cs_post_define_particles_mesh_by_func(int                    mesh_id,
  * would indicate that parent cells are mapped to edges.
  * This is important when variables values are exported.
  *
- * \param[in]  mesh_id         id of mesh to define
- *                             (< 0 reserved, > 0 for user)
- * \param[in]  exp_mesh        mesh in exportable representation
- *                             (i.e. fvm_nodal_t)
- * \param[in]  dim_shift       nonzero if exp_mesh has been projected
- * \param[in]  transfer        if true, ownership of exp_mesh is transferred
- *                             to the post-processing mesh
- * \param[in]  auto_variables  if true, automatic output of main variables
- * \param[in]  n_writers       number of associated writers
- * \param[in]  writer_ids      ids of associated writers
+ * \param[in]  mesh_id           id of mesh to define
+ *                               (< 0 reserved, > 0 for user)
+ * \param[in]  exp_mesh          mesh in exportable representation
+ *                               (i.e. fvm_nodal_t)
+ * \param[in]  dim_shift         nonzero if exp_mesh has been projected
+ * \param[in]  transfer          if true, ownership of exp_mesh is transferred
+ *                               to the post-processing mesh
+ * \param[in]  auto_variables    if true, automatic output of main variables
+ * \param[in]  child_of_global   if true, mesh is a child/subset of the compute
+ *                               mesh (so may have parent element ids)
+ * \param[in]  n_writers         number of associated writers
+ * \param[in]  writer_ids        ids of associated writers
  */
 /*----------------------------------------------------------------------------*/
+
+void
+cs_post_define_existing_mesh(int           mesh_id,
+                             fvm_nodal_t  *exp_mesh,
+                             int           dim_shift,
+                             bool          transfer,
+                             bool          auto_variables,
+                             bool          child_of_global,
+                             int           n_writers,
+                             const int     writer_ids[]);
+
+#endif // defined(__cplusplus)
+
+BEGIN_C_DECLS
 
 void
 cs_post_define_existing_mesh(int           mesh_id,

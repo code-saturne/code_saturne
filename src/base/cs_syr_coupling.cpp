@@ -459,6 +459,7 @@ _post_init(cs_syr_coupling_t      *syr_coupling,
                                dim_shift,
                                false,
                                false,
+                               true,
                                1,
                                writer_ids);
 
