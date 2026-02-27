@@ -417,8 +417,7 @@ cs_time_stepping(void)
     cs_domain_setup_init_state(cs_glob_domain);
   }
 
-  int iterns = -1;
-  cs_physical_properties_update(iterns);
+  cs_physical_properties_update(-1);
 
   /* Initialization for the atmospheric ground model
      --------------------------------------------- */

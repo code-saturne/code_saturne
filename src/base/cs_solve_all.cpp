@@ -723,7 +723,7 @@ _solve_most(int              n_var,
     if (inslst == 1)
       break;
 
-    iterns ++;
+    iterns++;
 
   }  // end while
 
