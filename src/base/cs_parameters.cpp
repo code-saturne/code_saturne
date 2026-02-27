@@ -404,6 +404,8 @@ static cs_equation_param_t _equation_param_default
    .d_gradient_r = 2,
    .b_rc_gradient = 2,
    .b_diff_flux_rc = 1,
+   .diffusion_limiter_id = -1,
+   .convection_limiter_id = -1,
    .rk_def = {.rk_id = -1,
               .scheme = CS_RK_NONE},
 
@@ -598,6 +600,10 @@ _log_func_var_cal_opt(const void *t)
   cs_log_printf(CS_LOG_SETUP, fmt_i, "d_gradient_r", _t->d_gradient_r);
   cs_log_printf(CS_LOG_SETUP, fmt_i, "b_rc_gradient", _t->b_rc_gradient);
   cs_log_printf(CS_LOG_SETUP, fmt_i, "b_diff_flux_rc", _t->b_diff_flux_rc);
+  cs_log_printf(CS_LOG_SETUP, fmt_i,
+                "diffusion_limiter_id", _t->diffusion_limiter_id);
+  cs_log_printf(CS_LOG_SETUP, fmt_i,
+                "convection_limiter_id", _t->convection_limiter_id);
 }
 
 /* Log default values of the structure */

@@ -1488,6 +1488,8 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
       f_phi = CS_F_(phi);
       f_alpha = CS_F_(alp_bl);
     }
+    if (f_eps->type & CS_FIELD_VARIABLE)
+      eqp_eps = cs_field_get_equation_param(f_eps);
   }
   else if (order == CS_TURB_SECOND_ORDER) {
     f_eps = CS_F_(eps);
@@ -1514,8 +1516,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
     if(f_eps->type & CS_FIELD_VARIABLE)
       sigmae = cs_field_get_key_double(f_eps, ksigmas);
   if (f_eps != nullptr) {
-    if (    (f_eps->type & CS_FIELD_VARIABLE)
-        && !(f_eps->type & CS_FIELD_CDO)) {
+    if (eqp_eps != nullptr) {
       int df_limiter_id = eqp_eps->diffusion_limiter_id;
       if (df_limiter_id > -1)
         df_limiter_eps = cs_field_by_id(df_limiter_id)->val;
