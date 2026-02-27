@@ -206,8 +206,10 @@ we solve the following system:
 \begin{equation}
 \displaystyle
 \rho\,\left(\dfrac{\vect{\widetilde{u}}^{n+1}-\vect {u}^{n}}{\Delta t}\right) +
-\divv \left(\vect{\widetilde{u}}^{n+\theta} \otimes (\rho\vect{u}) \right) =
-\divv \left(\tens{\sigma}^{n+\theta}\right) + \vect{TS}^{n+\theta_{S}}-\tens{K}^{n}\,\vect{u}^{n+\theta} +\vect{\widetilde{u}}^{n+\theta}\,\dive{(\rho\vect{u})} ,
+\divv \left(\vect{\widetilde{u}}^{n+\theta} \otimes (\rho\vect{u}) \right)
+-\vect{\widetilde{u}}^{n+1}\,\dive{(\rho\vect{u})}
+  =
+  \divv \left(\tens{\sigma}^{n+\theta}\right) + \vect{TS}^{n+\theta_{S}}-\tens{K}^{n}\,\vect{\widetilde{u}}^{n+\theta} ,
 \label{eq:navstv:c0_prediction_step}
 \end{equation}
 with:
@@ -216,7 +218,7 @@ with:
 \tens{\sigma}^{n+\theta}=\mu\,\,\gradt\vect{\widetilde{u}}^{n+\theta}\underbrace{-P^{n-1+\theta}\tens{Id}+ (\mu \transpose{ \left(\gradt\vect{u})^{n+\theta_{S}}\right)}- \frac{2}{3} ( \mu\, \dive \vect{u})^{n+\theta_{S}}\tens{Id}}_{\text{explicit source terms}}.
 \end{equation}
 
-\subsubsection*{\bf Pressure correction step (or projection of velocities)}
+\subsubsection*{Pressure correction step (or projection of velocities)}
 The predicted velocity has \emph{a priori} non-zero divergence. The second step
 corrects the pressure by imposing the nullity of the steady constraint for
 the velocity computed at time instant ${t^{n+1}}$.
@@ -241,7 +243,7 @@ steps. If there has been any variation in the interval, their values will be mod
 \end{remark}
 
 \subsection*{Spatial discretization}
-Following the classical approach, the time-discretized equations are then integrated over the control volumes ${\Omega_i}$ (or cells).
+Following the classical approach, the time-discretized equations are then integrated over the control volumes ${\Omega_\celli}$ (or cells).
 \subsubsection*{Velocity prediction step}
 \paragraph{Second member\\ }
 If we do not take account of the $\theta$-scheme convection and diffusion
@@ -264,11 +266,11 @@ parts of the velocity field $\theta\,{\dive\left(\vect{\widetilde{u}}^{n+1}\otim
 \vect{u}^{n}\otimes (\rho \vect{u})\right)}$ yields a sum of the numerical
 fluxes ${\vect{F}\,_{\,ij}}$ calculated at the faces of the internal cells and ${\vect{F}_{\,b_{ik}}}$ calculated at the boundary faces of the domain $\Omega$.
 Taking $Neigh(i)$ as the set of the centers of the neighbouring cells of
-${\Omega_i}$ and $\gamma_b(i)$ the set of the centers of the boundary faces of
-${\Omega_i}$, we obtain:
+${\Omega_\celli}$ and $\gamma_b(i)$ the set of the centers of the boundary faces of
+${\Omega_\celli}$, we obtain:
 
 \begin{equation*}
-\int_{\Omega_i}{\dive\left(\vect{u}\otimes (\rho \vect{u})\right)\, d\Omega} =
+\int_{\Omega_\celli}{\dive\left(\vect{u}\otimes (\rho \vect{u})\right)\, d\Omega} =
 \sum_{j\in Neigh(i)}{\vect{F}_{\,ij}((\rho \vect{u}), \vect{u})} \\
 +\sum_{k\in {\gamma_b(i)}} {\vect{F}_{\,{b}_{ik}}((\rho \vect{u}),\vect{u})} ,
 \end{equation*}
@@ -360,7 +362,7 @@ value and the second-order value (blending, specified by the user).
 \paragraph{Diffusion\\}
 Likewise, the diffusive components $\theta\,\,\dive(\mu\,\ggrad{\vect{\widetilde{u}}}^{n+1})$ and $(1-\theta)\,\,\dive(\mu \ggrad{\vect{u}}^{n})$ are written:
 \begin{equation*}
-\int_{\vol{\celli}}{\divv(\mu \gradt{\vect{u}}) d\Omega} =
+\int_{\vol{\celli}}{\divv(\mu \gradt{\vect{u}}) \dd \Omega} =
 \sum_{j\in Neigh(i)}{\vect{D}_{\ij}(\mu, \vect{u})}
 +\sum_{k\in {\gamma_b(i)}} {\vect{D}_{\ib}}(\mu,\vect{u})
 \end{equation*}
@@ -429,7 +431,7 @@ The two operators $\mathcal{E}$ and $\mathcal{EM}$ have the respective
 expressions:
 \begin{equation}\label{eq:navstv:exact_prediction_step}
 \begin{array}{ll}
-\mathcal{E}(\vect{\widetilde{u}}, \celli) &= \theta\, \mathcal{J}(\vect{\widetilde{u}}, \celli)\,+\,(1-\theta)\,\mathcal{J}(\vect{u}^{n}, \celli)\,+ |{\Omega_I}|\displaystyle\frac{\rho_\celli}{\Delta t}\,(\vect{\widetilde{u}}_{\celli}-\vect{u}^n_{\celli}) \\
+\mathcal{E}(\vect{\widetilde{u}}, \celli) &= \theta\, \mathcal{J}(\vect{\widetilde{u}}, \celli)\,+\,(1-\theta)\,\mathcal{J}(\vect{u}^{n}, \celli)\,+ |{\Omega_\celli}|\displaystyle\frac{\rho_\celli}{\Delta t}\,(\vect{\widetilde{u}}_{\celli}-\vect{u}^n_{\celli}) \\
 & +\,|{\vol{\celli}}|\left[(\vect{TS})^{n+\theta_{S}}_\celli-(\grad{P})^{n-1+\theta}_\celli \, \right]\\
 %-\theta\,(\tens{K}^{n})_{I}\,-\theta\,(\dive(\rho \vect{u}))_{I}\right)\,(\vect{\widetilde{u}_{I}}-\vect{u}^n)_I \\
 &+\sum\limits_{\cellj \in Neigh(\celli)}{ \underbrace{\left(( \mu \transpose{\left(\gradt\vect{u}\right)})^{n+\theta_{S}}- \frac{2}{3} ( \mu \dive\,\vect{u})^{n+\theta_{S}}\tens{Id}\right)_{\fij}}_{\text{average or linear interpolation between $\centip$ and $\centjp$}} \cdot \vect{S}_{\ij}}\\
@@ -450,7 +452,7 @@ with:
 \begin{equation*}
 \begin{array}{ll}
 \mathcal{EM}(\delta\vect{u}, \celli) & =
-|{\vol{\celli}}| \left( \displaystyle\frac{\rho_\celli}{\Delta t} +\theta\,[\tens{K}^{n}-\dive(\rho \vect{u})\,]_{\celli}\,\right)\,\delta\vect{u}_{\celli}\\
+|{\vol{\celli}}| \left( \displaystyle\frac{\rho_\celli}{\Delta t} +[\theta\,\tens{K}^{n}-\dive(\rho \vect{u})\,]_{\celli}\,\right)\,\delta\vect{u}_{\celli}\\
 &+\theta\,\left(\,\sum\limits_{\cellj \in Neigh(\celli)}{\vect{F}^{\,upwind}_{\ij}((\rho\vect{u}),\delta\vect{u})}
 + \sum\limits_{k\in {\gamma_b(\celli)}} {\vect{F}^{\,upwind}_{\ib}((\rho \vect{u}),\delta\vect{u})}\right)\\
 &-\theta\,\left(\,\sum\limits_{\cellj \in Neigh(\celli)}{\vect{D}^{NRec}_{\ij}(\mu,\delta\vect{u})}
@@ -471,7 +473,7 @@ $\mathcal{EM}$ of the system \eqref{eq:navstv:exact_prediction_step} are those r
 
 \begin{remark}
 The first two summations of the type $(\sum\limits_{k\in {\gamma_b(\celli)}})$,
-\emph{i.e.} comprising the $\vect{F}_{\ib}((\rho \vect{u}),\vect{u})$ and
+{i.e.} comprising the $\vect{F}_{\ib}((\rho \vect{u}),\vect{u})$ and
 $\vect{D}_{\ib}(\mu,\vect{u})$ terms, use the velocity boundary conditions.\\
 The volume term:
 \begin{equation*}
@@ -525,14 +527,14 @@ P^{n+\theta}
 
 Integrating over a cell gives the discrete equation:
 \begin{equation}
-\int_{\vol{\celli}}{\dive(\Delta t \grad\ \delta P^{n+\theta})\, d\Omega} =
+\int_{\vol{\celli}}{\dive(\Delta t \grad\ \delta P^{n+\theta})\, \dd\Omega} =
 \sum\limits_{\cellj \in Neigh(\celli)}{\vect{D}_{\ij}(\Delta t, \delta P^{n+\theta})}
 +\sum_{k\in {\gamma_b(\celli)}} {\vect{D}_{\ib}(\Delta t, \delta P^{n+\theta})}
 \label{eq:navstv:discrete_correction_step}
 \end{equation}
 and:
 \begin{equation}
-\int_{\Omega_i}{\dive(\rho \vect{\widetilde{u}})^{n+1}  d\Omega} =
+\int_{\Omega_\celli}{\dive(\rho \vect{\widetilde{u}})^{n+1}  \dd \Omega} =
 \sum_{j\in Neigh{(i)}}{\left[ (\rho
 \vect{\widetilde{u}})^{n+1}_{\fij} \cdot \vect{S}_{\ij}\right]}
 +\sum_{k\in {\gamma_b(\celli)}} \left[{(\rho \vect{\widetilde{u}})^{n+1}_{\fib}} \cdot \vect{S}_{\ib}\right]
@@ -643,9 +645,9 @@ The operators $\mathcal{F}$ and $\mathcal{FM}$ are expressed by:
 \begin{array}{ll}
 \mathcal{F}(\delta P, \celli) &=
  \sum\limits_{\cellj\in Neigh(\celli)}{\left[D_{\ij}(\Delta t,\delta
-P)-\left[(\rho \vect{\widetilde{u}})^{n+1}_{\ij}\right]^{Corr}\right]}\\
+  P)-\left[(\rho \vect{\widetilde{u}})^{n+1}_{\fij} \cdot \vect{S}_\ij \right]^{Corr}\right]}\\
 &+\sum\limits_{k\in {\gamma_b(\celli)}} {\left[D_{\ib}(\Delta
-t^n,\delta P)-\left[(\rho \vect{\widetilde{u}})^{n+1}_{\fib}\right]^{Corr}\right]\,+\,\Gamma}
+  t^n,\delta P)-\left[(\rho \vect{\widetilde{u}} \cdot \vect{S}_\ij )^{n+1}_{\fib}\right]^{Corr}\right]\,+\,\Gamma \vol{\celli}}
 \end{array}
 \end{equation}
 %
@@ -749,7 +751,7 @@ P^{n+\theta,k_{end}}, \celli)+\mathcal{FM}(\delta(\delta P)^{n+\theta,k_{end}+1}
 
 and thus:
 \begin{equation}\notag
-\int_{\vol{\celli}}{\dive(\rho \vect{u})^{n+1}  d\Omega} = \Gamma
+\int_{\vol{\celli}}{\dive(\rho \vect{u})^{n+1}  \dd \Omega} = \Gamma
 \end{equation}
 \end{remark}
 
