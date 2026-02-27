@@ -3,6 +3,10 @@ Release 9.1.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix incorrect theta behavior after restart, which could degrade schemes
+  requiring 2 time values of the density, such as second order in time
+  variable density and VoF.
+
 - CDO: Ensure that post-processing is done for final iteration when coupled.
   The final iteration post-processing could, potentially, not be done when
   the computation stop is imposed by either another instance (coupling) or
