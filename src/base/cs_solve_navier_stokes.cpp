@@ -1423,6 +1423,7 @@ _update_fluid_vel(const cs_mesh_t             *m,
           coefa_p[face_id] += coefa_dp[face_id];
       });
 
+#if 0 // FIXME: check c0a96bd9db
       cs_boundary_conditions_update_bc_coeff_face_values
         (ctx,
          f_p,
@@ -1433,6 +1434,7 @@ _update_fluid_vel(const cs_mesh_t             *m,
          nullptr,
          nullptr,
          f_p->val);
+#endif
     }
 
     /* Standard handling of hydrostatic pressure */
