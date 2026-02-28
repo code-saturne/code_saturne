@@ -37,7 +37,8 @@
  * Static global variables
  *============================================================================*/
 
-static cs_execution_context *_glob_context = nullptr;
+
+static cs::execution::environment *_default_env = nullptr;
 
 /*============================================================================
  * Public function definitions
@@ -47,20 +48,10 @@ static cs_execution_context *_glob_context = nullptr;
 /* Get the current execution context, for the moment global is returned */
 /*----------------------------------------------------------------------------*/
 
-const cs_execution_context *
-cs_execution_context_get(void)
+const cs::execution::environment *
+cs::execution::default_env(void)
 {
-  return _glob_context;
-}
-
-/*----------------------------------------------------------------------------*/
-/* Get the global execution context. */
-/*----------------------------------------------------------------------------*/
-
-const cs_execution_context *
-cs_execution_context_glob_get(void)
-{
-  return _glob_context;
+  return _default_env;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -68,9 +59,9 @@ cs_execution_context_glob_get(void)
 /*----------------------------------------------------------------------------*/
 
 cs_dispatch_context&
-cs_execution_context_glob_get_ctx(void)
+cs::execution::default_context(void)
 {
-  return _glob_context->g_ctx;
+  return _default_env->g_ctx;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -78,59 +69,26 @@ cs_execution_context_glob_get_ctx(void)
 /*----------------------------------------------------------------------------*/
 
 cs_host_context&
-cs_execution_context_glob_get_h_ctx(void)
+cs::execution::default_h_context(void)
 {
-  return _glob_context->h_ctx;
+  return _default_env->h_ctx;
 }
 
-/*--------------------------------------------------------------------------*/
-/*!
- * \brief Call MPI_Barrier over the MPI communicator, do nothing if no MPI.
- */
-/*--------------------------------------------------------------------------*/
-
-int
-cs_execution_context::barrier
-(
-  const bool verbosity,
-  const char *file_name,
-  const int   line_number
-) const
+cs::execution::mpi_wrapper&
+cs::execution::default_mpi(void)
 {
-  int retval = 0;
-  if (verbosity) {
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "%s[L%d] Entering MPI_Barrier.\n",
-                  file_name, line_number);
-    cs_log_printf_flush(CS_LOG_DEFAULT);
-  }
-#if defined(HAVE_MPI)
-  if (_comm != MPI_COMM_NULL)
-    retval = MPI_Barrier(this->_comm);
-#endif
-  if (verbosity) {
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "%s[L%d] Exited MPI_Barrier.\n",
-                  file_name, line_number);
-    cs_log_printf_flush(CS_LOG_DEFAULT);
-  }
-  return retval;
+  return _default_env->mpi;
 }
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*----------------------------------------------------------------------------*/
 /* Initialize the global execution context. */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_execution_context_glob_init(void)
+cs_execution_default_env_init(void)
 {
-  _glob_context = new cs_execution_context();
+  _default_env = new cs::execution::environment();
 #if defined(HAVE_MPI)
-  _glob_context->set_comm(cs_glob_mpi_comm);
+  _default_env->mpi.set_comm(cs_glob_mpi_comm);
 #endif
 }
 
@@ -139,12 +97,10 @@ cs_execution_context_glob_init(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_execution_context_glob_finalize(void)
+cs_execution_default_env_finalize(void)
 {
-  if (_glob_context != nullptr)
-    delete _glob_context;
+  if (_default_env != nullptr)
+    delete _default_env;
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

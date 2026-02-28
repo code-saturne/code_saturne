@@ -47,6 +47,139 @@
  * Type definitions
  *============================================================================*/
 
+namespace cs {
+namespace execution {
+class mpi_wrapper {
+
+public:
+
+CS_F_HOST
+mpi_wrapper()
+{};
+
+CS_F_HOST
+~mpi_wrapper()
+{};
+
+CS_F_HOST_DEVICE
+inline
+int
+rank() const
+{
+  return _comm_rank;
+};
+
+CS_F_HOST_DEVICE
+inline
+int
+n_ranks() const
+{
+  return _comm_n_ranks;
+}
+
+CS_F_HOST_DEVICE
+inline
+bool
+active() const
+{
+  bool retval = (_comm_n_ranks > 1) ? true : false;
+  return retval;
+}
+
+CS_F_HOST_DEVICE
+inline
+bool
+is_root() const
+{
+  bool retval = (_comm_rank < 1) ? true : false;
+  return retval;
+}
+
+CS_F_HOST
+void
+free()
+{
+#if defined(HAVE_MPI)
+  if (_comm != MPI_COMM_NULL)
+    MPI_Comm_free(&(this->_comm));
+  this->_comm = MPI_COMM_NULL;
+#endif
+}
+
+#if defined(HAVE_MPI)
+CS_F_HOST
+void
+set_comm
+(
+  MPI_Comm comm
+)
+{
+  int _initialized;
+  MPI_Initialized(&_initialized);
+  if (_initialized) {
+    this->_comm = comm;
+    MPI_Comm_rank(this->_comm, &(this->_comm_rank));
+    MPI_Comm_size(this->_comm, &(this->_comm_n_ranks));
+  }
+}
+
+CS_F_HOST
+inline
+MPI_Comm
+comm() const
+{
+  return _comm;
+}
+
+#endif
+
+private:
+
+#if defined(HAVE_MPI)
+  MPI_Comm _comm = MPI_COMM_NULL; /*!< MPI Communicator */
+#endif
+
+  int _comm_rank = -1;    /*!< Rank id inside the MPI communicator */
+  int _comm_n_ranks = 0; /*!< Number of ranks inside the MPI communicator */
+};
+
+class environment {
+
+public:
+  environment()
+  {
+  }
+
+  ~environment()
+  {
+  }
+
+  mpi_wrapper         mpi;
+  cs_host_context     h_ctx;
+  cs_dispatch_context g_ctx;
+};
+
+const environment *
+default_env(void);
+
+cs_dispatch_context&
+default_context(void);
+
+cs_host_context&
+default_h_context(void);
+
+mpi_wrapper&
+default_mpi(void);
+
+}; // namespace execution
+}; // namespace cs
+
+void
+cs_execution_default_env_init(void);
+
+void
+cs_execution_default_env_finalize();
+
 /*----------------------------------------------------------------------------*/
 /*!
  * Class used to define execution context for different methods and algorithms.
@@ -310,8 +443,6 @@ cs_execution_context_glob_get_h_ctx(void);
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Initialize the global execution context.
@@ -319,7 +450,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_execution_context_glob_init(void);
+cs_execution_default_env_init(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -328,11 +459,9 @@ cs_execution_context_glob_init(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_execution_context_glob_finalize(void);
+cs_execution_default_env_finalize(void);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 
 #if defined(__cplusplus)
@@ -356,8 +485,8 @@ enum class exec_type {
 template<exec_type _EXEC_, class F, class... Args>
 bool
 parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
-  auto _ctx = (_EXEC_ != exec_type::host) ?
-    cs_execution_context_glob_get_ctx() : cs_execution_context_glob_get_h_ctx();
+  auto& _ctx = (_EXEC_ != exec_type::host) ?
+    cs::execution::default_context() : cs::execution::default_h_context();
   return _ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
 }
 
@@ -370,7 +499,7 @@ parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
 template <class F, class... Args>
 bool
 parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
-  auto _ctx = cs_execution_context_glob_get_ctx();
+  auto& _ctx = cs::execution::default_context();
   return _ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
 }
 
@@ -410,8 +539,8 @@ template <exec_type _EXEC_, class M, class F, class... Args>
 bool
 parallel_for_i_faces(const M* m, F&& f, Args&&... args) {
   const cs_lnum_t n = m->n_i_faces;
-  auto _ctx = (_EXEC_ != exec_type::host) ?
-    cs_execution_context_glob_get_ctx() : cs_execution_context_glob_get_h_ctx();
+  auto& _ctx = (_EXEC_ != exec_type::host) ?
+    cs::execution::default_context() : cs::execution::default_h_context();
   return _ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
 }
 
@@ -426,7 +555,7 @@ template <class M, class F, class... Args>
 bool
 parallel_for_i_faces(const M* m, F&& f, Args&&... args) {
   const cs_lnum_t n = m->n_i_faces;
-  auto _ctx = cs_execution_context_glob_get_ctx();
+  auto& _ctx = cs::execution::default_context();
   return _ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
 }
 
@@ -471,8 +600,8 @@ parallel_for_reduce_sum(
   F&&       f,
   Args&&... args)
 {
-  auto _ctx = (_EXEC_ != exec_type::host) ?
-    cs_execution_context_glob_get_ctx() : cs_execution_context_glob_get_h_ctx();
+  auto& _ctx = (_EXEC_ != exec_type::host) ?
+    cs::execution::default_context() : cs::execution::default_h_context();
   return _ctx.parallel_for_reduce_sum(n,
                                       sum,
                                       static_cast<F&&>(f),
@@ -494,7 +623,7 @@ parallel_for_reduce_sum(
   F&&       f,
   Args&&... args)
 {
-  auto _ctx = cs_execution_context_glob_get_ctx();
+  auto& _ctx = cs::execution::default_context();
   return _ctx.parallel_for_reduce_sum(n,
                                       sum,
                                       static_cast<F&&>(f),
@@ -562,8 +691,8 @@ parallel_for_reduce (
   F&&       f,
   Args&&... args)
 {
-  auto _ctx = (_EXEC_ != exec_type::host) ?
-    cs_execution_context_glob_get_ctx() : cs_execution_context_glob_get_h_ctx();
+  auto& _ctx = (_EXEC_ != exec_type::host) ?
+    cs::execution::default_context() : cs::execution::default_h_context();
   return _ctx.parallel_for_reduce(n,
                                   result,
                                   reducer,
@@ -587,7 +716,7 @@ parallel_for_reduce (
   F&&       f,
   Args&&... args)
 {
-  auto _ctx = cs_execution_context_glob_get_ctx();
+  auto& _ctx = cs::execution::default_context();
   return _ctx.parallel_for_reduce(n,
                                   result,
                                   reducer,
@@ -654,8 +783,8 @@ template<exec_type _EXEC_, class... Args>
 bool
 wait(void)
 {
-  auto _ctx = (_EXEC_ != exec_type::host) ?
-    cs_execution_context_glob_get_ctx() : cs_execution_context_glob_get_h_ctx();
+  auto& _ctx = (_EXEC_ != exec_type::host) ?
+    cs::execution::default_context() : cs::execution::default_h_context();
   return _ctx.wait();
 }
 
@@ -667,10 +796,12 @@ wait(void)
 
 template<class... Args>
 bool
-wait(void)
+wait
+(void)
 {
-  auto _ctx = cs_execution_context_glob_get_ctx();
-  return _ctx.wait();
+  auto& _ctx = cs::execution::default_context();
+  _ctx.wait();
+  return true;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -686,7 +817,8 @@ wait
   cs_dispatch_context& ctx
 )
 {
-  return ctx.wait();
+  ctx.wait();
+  return true;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -706,5 +838,7 @@ wait
 }
 
 }
+
+using cs_mpi_wrapper = cs::execution::mpi_wrapper;
 #endif
 #endif /* __CS_EXECUTION_CONTEXT_H__ */

@@ -695,15 +695,17 @@ END_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_parall_counter([[maybe_unused]] const cs_execution_context  *ec,
-                  [[maybe_unused]] cs_gnum_t                    cpt[],
-                  [[maybe_unused]] const int                    n)
+cs_parall_counter
+(
+  [[maybe_unused]] const cs_mpi_wrapper& mpi_w,
+  [[maybe_unused]] cs_gnum_t             cpt[],
+  [[maybe_unused]] const int             n)
 {
 #if defined(HAVE_MPI)
 
-  if (ec->use_mpi()) {
+  if (mpi_w.active()) {
     MPI_Allreduce(MPI_IN_PLACE, cpt, n, CS_MPI_GNUM, MPI_SUM,
-                  ec->comm());
+                  mpi_w.comm());
   }
 
 #endif
@@ -720,15 +722,18 @@ cs_parall_counter([[maybe_unused]] const cs_execution_context  *ec,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_parall_counter_max([[maybe_unused]] const cs_execution_context  *ec,
-                      [[maybe_unused]] cs_lnum_t                    cpt[],
-                      [[maybe_unused]] const int                    n)
+cs_parall_counter_max
+(
+  [[maybe_unused]] const cs_mpi_wrapper& mpi_w,
+  [[maybe_unused]] cs_lnum_t             cpt[],
+  [[maybe_unused]] const int             n
+)
 {
 #if defined(HAVE_MPI)
 
-  if (ec->use_mpi()) {
+  if (mpi_w.active()) {
     MPI_Allreduce(MPI_IN_PLACE, cpt, n, CS_MPI_LNUM, MPI_MAX,
-                  ec->comm());
+                  mpi_w.comm());
   }
 
 #endif
@@ -746,17 +751,20 @@ cs_parall_counter_max([[maybe_unused]] const cs_execution_context  *ec,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_parall_sum([[maybe_unused]] const cs_execution_context  *ec,
-              [[maybe_unused]] int                          n,
-              [[maybe_unused]] cs_datatype_t                datatype,
-              [[maybe_unused]] void                        *val)
+cs_parall_sum
+(
+  [[maybe_unused]] const cs_mpi_wrapper&  mpi_w,
+  [[maybe_unused]] int                    n,
+  [[maybe_unused]] cs_datatype_t          datatype,
+  [[maybe_unused]] void                  *val
+)
 {
 #if defined(HAVE_MPI)
 
-  if (ec->use_mpi()) {
+  if (mpi_w.active()) {
     MPI_Allreduce(MPI_IN_PLACE, val, n,
                   cs_datatype_to_mpi[datatype], MPI_SUM,
-                  ec->comm());
+                  mpi_w.comm());
   }
 
 #endif
@@ -775,17 +783,20 @@ cs_parall_sum([[maybe_unused]] const cs_execution_context  *ec,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_parall_max([[maybe_unused]] const cs_execution_context  *ec,
-              [[maybe_unused]] int                          n,
-              [[maybe_unused]] cs_datatype_t                datatype,
-              [[maybe_unused]] void                        *val)
+cs_parall_max
+(
+  [[maybe_unused]] const cs_mpi_wrapper&  mpi_w,
+  [[maybe_unused]] int                    n,
+  [[maybe_unused]] cs_datatype_t          datatype,
+  [[maybe_unused]] void                  *val
+)
 {
 #if defined(HAVE_MPI)
 
-  if (ec->use_mpi()) {
+  if (mpi_w.active()) {
     MPI_Allreduce(MPI_IN_PLACE, val, n,
                   cs_datatype_to_mpi[datatype], MPI_MAX,
-                  ec->comm());
+                  mpi_w.comm());
   }
 
 #endif
@@ -804,17 +815,20 @@ cs_parall_max([[maybe_unused]] const cs_execution_context  *ec,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_parall_min([[maybe_unused]] const cs_execution_context  *ec,
-              [[maybe_unused]] int                          n,
-              [[maybe_unused]] cs_datatype_t                datatype,
-              [[maybe_unused]] void                        *val)
+cs_parall_min
+(
+  [[maybe_unused]] const cs_mpi_wrapper&  mpi_w,
+  [[maybe_unused]] int                    n,
+  [[maybe_unused]] cs_datatype_t          datatype,
+  [[maybe_unused]] void                  *val
+)
 {
 #if defined(HAVE_MPI)
 
-  if (ec->use_mpi()) {
+  if (mpi_w.active()) {
     MPI_Allreduce(MPI_IN_PLACE, val, n,
                   cs_datatype_to_mpi[datatype], MPI_MIN,
-                  ec->comm());
+                  mpi_w.comm());
   }
 
 #endif
@@ -875,14 +889,14 @@ template <typename T, typename... Vals>
 static void
 sum
 (
-  const cs_execution_context *ec,    /*!<[in] Parallel execution context */
-  T&                          first, /*!< [in, out] First scalar to update */
-  Vals&...                    values /*!< [in, out] Scalar values to update */
+  const cs_mpi_wrapper& mpi_w,    /*!<[in] Parallel execution context */
+  T&                    first, /*!< [in, out] First scalar to update */
+  Vals&...              values /*!< [in, out] Scalar values to update */
 )
 {
 #if defined(HAVE_MPI)
   /* If no parallel ranks exit the function */
-  if (!ec->use_mpi())
+  if (!mpi_w.active())
     return;
 
   /* Count number of values */
@@ -893,7 +907,7 @@ sum
 
   /* Temporary work array and parallel sum */
   if (n_vals == 0)
-    cs_parall_sum(ec, 1, datatype, &first);
+    cs_parall_sum(mpi_w, 1, datatype, &first);
   else {
     /* Unpack values */
     T *_values[] = {&values ...};
@@ -903,7 +917,7 @@ sum
     for (int i = 0; i < n_vals; i++)
       w[i+1] = *(_values[i]);
 
-    cs_parall_sum(ec, n_vals + 1, datatype, w);
+    cs_parall_sum(mpi_w, n_vals + 1, datatype, w);
 
     first = w[0];
     for (int i = 0; i < n_vals; i++)
@@ -931,8 +945,8 @@ sum
 )
 {
 #if defined(HAVE_MPI)
-  auto *ec = cs_execution_context_glob_get();
-  sum(ec, first, values...);
+  auto& mpi_w = cs::execution::default_mpi();
+  sum<T>(mpi_w, first, values...);
 #else
   return;
 #endif
@@ -951,14 +965,14 @@ template <int Stride, typename T, typename... Vals>
 static void
 sum
 (
-  const cs_execution_context  *ec,      /*!<[in] Parallel execution context */
-  T                            first[], /*!< [in, out]  First scalar to update */
-  Vals&&...                    values   /*!<[in,out] Values to update */
+  const cs_mpi_wrapper& mpi_w,      /*!<[in] Parallel execution context */
+  T                     first[], /*!< [in, out]  First scalar to update */
+  Vals&&...             values   /*!<[in,out] Values to update */
 )
 {
 #if defined(HAVE_MPI)
 
-  if (!ec->use_mpi())
+  if (!mpi_w.active())
     return;
 
   /* Count number of values */
@@ -969,7 +983,7 @@ sum
 
   /* Temporary work array and parallel sum */
   if (n_vals == 0)
-    cs_parall_sum(ec, Stride, datatype, first);
+    cs_parall_sum(mpi_w, Stride, datatype, first);
   else {
     /* Unpack values */
     T *_values[] = {values ...};
@@ -985,7 +999,7 @@ sum
         w[(i+1)*Stride + j] = _values[i][j];
     }
 
-    cs_parall_sum(ec, work_size, datatype, w);
+    cs_parall_sum(mpi_w, work_size, datatype, w);
 
     for (int i = 0; i < Stride; i++)
       first[i] = w[i];
@@ -1018,8 +1032,8 @@ sum
 )
 {
 #if defined(HAVE_MPI)
-  auto *ec = cs_execution_context_glob_get();
-  sum<Stride>(ec, first, values...);
+  auto& mpi_w = cs::execution::default_mpi();
+  sum<Stride, T>(mpi_w, first, values...);
 #else
   return;
 #endif
@@ -1038,9 +1052,9 @@ template <typename T, typename... Vals>
 static void
 max
 (
-  const cs_execution_context  *ec,    /*!< [in] Parallel execution context */
-  T&                           first, /*!< [in, out] First scalar to update */
-  Vals&...                     values /*!< [in, out] Additional scalars to update */
+  const cs_mpi_wrapper& mpi_w,    /*!< [in] Parallel execution context */
+  T&                    first, /*!< [in, out] First scalar to update */
+  Vals&...              values /*!< [in, out] Additional scalars to update */
 )
 {
 #if defined(HAVE_MPI)
@@ -1053,7 +1067,7 @@ max
 
   /* Temporary work array and parallel sum */
   if (n_vals == 0)
-    cs_parall_max(ec, 1, datatype, &first);
+    cs_parall_max(mpi_w, 1, datatype, &first);
   else {
 
     /* Unpack values */
@@ -1064,7 +1078,7 @@ max
     for (int i = 0; i < n_vals; i++)
       w[i+1] = *(_values[i]);
 
-    cs_parall_max(ec, n_vals + 1, datatype, w);
+    cs_parall_max(mpi_w, n_vals + 1, datatype, w);
 
     first = w[0];
     for (int i = 0; i < n_vals; i++)
@@ -1092,8 +1106,8 @@ max
 )
 {
 #if defined(HAVE_MPI)
-  auto *ec = cs_execution_context_glob_get();
-  max(ec, first, values...);
+  auto& mpi_w = cs::execution::default_mpi();
+  max(mpi_w, first, values...);
 #else
   return;
 #endif
@@ -1113,14 +1127,14 @@ template <int Stride, typename T, typename... Vals>
 static void
 max
 (
-  const cs_execution_context *ec,      /*!< [in] Parallel execution context */
-  T                           first[], /*!< [in, out] First scalar to update */
-  Vals&&...                   values   /*!< [in, out] Additional scalars to update */
+  const cs_mpi_wrapper& mpi_w,      /*!< [in] Parallel execution context */
+  T                     first[], /*!< [in, out] First scalar to update */
+  Vals&&...             values   /*!< [in, out] Additional scalars to update */
 )
 {
 #if defined(HAVE_MPI)
 
-  if (!ec->use_mpi())
+  if (!mpi_w.active())
     return;
 
   /* Count number of values */
@@ -1131,7 +1145,7 @@ max
 
   /* Temporary work array and parallel sum */
   if (n_vals == 0)
-    cs_parall_max(ec, Stride, datatype, first);
+    cs_parall_max(mpi_w, Stride, datatype, first);
   else {
     /* Unpack values */
     T *_values[] = {values ...};
@@ -1146,7 +1160,7 @@ max
       for (int j = 0; j < Stride; j++)
         w[(i+1)*Stride + j] = _values[i][j];
 
-    cs_parall_max(ec, work_size, datatype, w);
+    cs_parall_max(mpi_w, work_size, datatype, w);
 
     for (int i = 0; i < Stride; i++)
       first[i] = w[i];
@@ -1177,8 +1191,8 @@ max
 )
 {
 #if defined(HAVE_MPI)
-  auto *ec = cs_execution_context_glob_get();
-  max<Stride>(ec, first, values...);
+  auto& mpi_w = cs::execution::default_mpi();
+  max<Stride>(mpi_w, first, values...);
 #else
   return;
 #endif
@@ -1197,14 +1211,14 @@ template <typename T, typename... Vals>
 static void
 min
 (
-  const cs_execution_context  *ec,    /*!< [in] Parallel execution context */
-  T&                           first, /*!< [in, out] First scalar to update */
-  Vals&...                     values /*!< [in, out] Additional scalars to update */
+  const cs_mpi_wrapper& mpi_w,    /*!< [in] Parallel execution context */
+  T&                    first, /*!< [in, out] First scalar to update */
+  Vals&...              values /*!< [in, out] Additional scalars to update */
 )
 {
 #if defined(HAVE_MPI)
 
-  if (!ec->use_mpi())
+  if (!mpi_w.active())
     return;
 
   /* Count number of values */
@@ -1214,7 +1228,7 @@ min
   cs_datatype_t datatype = cs_datatype_from_type<T>();
 
   if (n_vals == 0)
-    cs_parall_min(ec, 1, datatype, &first);
+    cs_parall_min(mpi_w, 1, datatype, &first);
 
   else {
     /* Temporary work array and parallel sum */
@@ -1227,7 +1241,7 @@ min
     for (int i = 0; i < n_vals; i++)
       w[i + 1] = *(_values[i]);
 
-    cs_parall_min(ec, n_vals + 1, datatype, w);
+    cs_parall_min(mpi_w, n_vals + 1, datatype, w);
 
     first = w[0];
     for (int i = 0; i < n_vals; i++)
@@ -1255,8 +1269,8 @@ min
 )
 {
 #if defined(HAVE_MPI)
-  auto *ec = cs_execution_context_glob_get();
-  min(ec, first, values...);
+  auto& mpi_w = cs::execution::default_mpi();
+  min(mpi_w, first, values...);
 #else
   return;
 #endif
@@ -1276,14 +1290,14 @@ template <int Stride, typename T, typename... Vals>
 static void
 min
 (
-  const cs_execution_context  *ec,      /*!< [in] Parallel execution context */
-  T                            first[], /*!< [in, out] First value to update */
-  Vals&&...                    values   /*!< [in, out] Additional values to update */
+  const cs_mpi_wrapper& mpi_w,      /*!< [in] Parallel execution context */
+  T                     first[], /*!< [in, out] First value to update */
+  Vals&&...             values   /*!< [in, out] Additional values to update */
 )
 {
 #if defined(HAVE_MPI)
 
-  if (!ec->use_mpi())
+  if (!mpi_w.active())
     return;
 
   /* Count number of values */
@@ -1294,7 +1308,7 @@ min
 
   /* Temporary work array and parallel sum */
   if (n_vals == 0)
-    cs_parall_min(ec, Stride, datatype, first);
+    cs_parall_min(mpi_w, Stride, datatype, first);
   else {
     /* Unpack values */
     T *_values[] = {values ...};
@@ -1309,7 +1323,7 @@ min
       for (int j = 0; j < Stride; j++)
         w[(i+1)*Stride + j] = _values[i][j];
 
-    cs_parall_min(ec, work_size, datatype, w);
+    cs_parall_min(mpi_w, work_size, datatype, w);
 
     for (int i = 0; i < Stride; i++)
       first[i] = w[i];
@@ -1341,8 +1355,8 @@ min
 )
 {
 #if defined(HAVE_MPI)
-  auto *ec = cs_execution_context_glob_get();
-  min<Stride>(ec, first, values...);
+  auto& mpi_w = cs::execution::default_mpi();
+  min<Stride>(mpi_w, first, values...);
 #else
   return;
 #endif
@@ -1412,9 +1426,9 @@ template <typename T, typename... Vals>
 static void
 cs_parall_sum_scalars
 (
-  const cs_execution_context  *ec,    /*!<[in] Parallel execution context */
-  T&                           first, /*!<[in, out] First scalar to update */
-  Vals&...                     values /*!<[in, out] Additional scalars to update */
+  const cs_mpi_wrapper& mpi_w,    /*!<[in] Parallel execution context */
+  T&                    first, /*!<[in, out] First scalar to update */
+  Vals&...              values /*!<[in, out] Additional scalars to update */
 )
 {
 #if defined(HAVE_MPI)
@@ -1427,7 +1441,7 @@ cs_parall_sum_scalars
 
   /* Temporary work array and parallel sum */
   if (n_vals == 0)
-    cs_parall_sum(ec, 1, datatype, &first);
+    cs_parall_sum(mpi_w, 1, datatype, &first);
   else {
     /* Unpack values */
     T *_values[] = {&values ...};
@@ -1437,7 +1451,7 @@ cs_parall_sum_scalars
     for (size_t i = 0; i < n_vals; i++)
       w[i+1] = *(_values[i]);
 
-    cs_parall_sum(ec, n_vals + 1, datatype, w);
+    cs_parall_sum(mpi_w, n_vals + 1, datatype, w);
 
     first = w[0];
     for (size_t i = 0; i < n_vals; i++)
@@ -1460,13 +1474,13 @@ template <int Stride, typename T, typename... Vals>
 static void
 cs_parall_sum_strided
 (
-  const cs_execution_context  *ec,      /*!< [in] Parallel execution context */
-  T                            first[], /*!< [in, out] First scalar to update */
-  Vals&&...                    values   /*!< [in, out] Additional values to update */
+  const cs_mpi_wrapper& mpi_w,      /*!< [in] Parallel execution context */
+  T                     first[], /*!< [in, out] First scalar to update */
+  Vals&&...             values   /*!< [in, out] Additional values to update */
 )
 {
 #if defined(HAVE_MPI)
-  if (!ec->use_mpi())
+  if (!mpi_w.active())
     return;
 
   /* Count number of values */
@@ -1477,7 +1491,7 @@ cs_parall_sum_strided
 
   /* Temporary work array and parallel sum */
   if (n_vals == 0)
-    cs_parall_sum(ec, Stride, datatype, first);
+    cs_parall_sum(mpi_w, Stride, datatype, first);
   else {
     /* Unpack values */
     T *_values[] = {values ...};
@@ -1492,7 +1506,7 @@ cs_parall_sum_strided
       for (int j = 0; j < Stride; j++)
         w[(i+1)*Stride + j] = _values[i][j];
 
-    cs_parall_sum(ec, work_size, datatype, w);
+    cs_parall_sum(mpi_w, work_size, datatype, w);
 
     for (int i = 0; i < Stride; i++)
       first[i] = w[i];
@@ -1630,9 +1644,9 @@ template <typename T, typename... Vals>
 static void
 cs_parall_max_scalars
 (
-  const cs_execution_context  *ec,    /*!< [in] Parallel execution context */
-  T&                           first, /*!< [in, out] First scalar to update */
-  Vals&...                     values /*!< [in, out] Additional scalars to update */
+  const cs_mpi_wrapper& mpi_w,    /*!< [in] Parallel execution context */
+  T&                    first, /*!< [in, out] First scalar to update */
+  Vals&...              values /*!< [in, out] Additional scalars to update */
 )
 {
 #if defined(HAVE_MPI)
@@ -1645,7 +1659,7 @@ cs_parall_max_scalars
 
   /* Temporary work array and parallel sum */
   if (n_vals == 0)
-    cs_parall_max(ec, 1, datatype, &first);
+    cs_parall_max(mpi_w, 1, datatype, &first);
   else {
 
     /* Unpack values */
@@ -1656,7 +1670,7 @@ cs_parall_max_scalars
     for (size_t i = 0; i < n_vals; i++)
       w[i+1] = *(_values[i]);
 
-    cs_parall_max(ec, n_vals + 1, datatype, w);
+    cs_parall_max(mpi_w, n_vals + 1, datatype, w);
 
     first = w[0];
     for (size_t i = 0; i < n_vals; i++)
@@ -1738,9 +1752,9 @@ template <int Stride, typename T, typename... Vals>
 static void
 cs_parall_max_strided
 (
-  const cs_execution_context  *ec,      /*!< [in] Parallel execution context */
-  T                            first[], /*!< [in, out] First scalar to update */
-  Vals&&...                    values   /*!< [in, out] Additional values to update */
+  const cs_mpi_wrapper& mpi_w,      /*!< [in] Parallel execution context */
+  T                     first[], /*!< [in, out] First scalar to update */
+  Vals&&...             values   /*!< [in, out] Additional values to update */
 )
 {
 #if defined(HAVE_MPI)
@@ -1753,7 +1767,7 @@ cs_parall_max_strided
 
   /* Temporary work array and parallel sum */
   if (n_vals == 0)
-    cs_parall_max(ec, Stride, datatype, first);
+    cs_parall_max(mpi_w, Stride, datatype, first);
   else {
     /* Unpack values */
     T *_values[] = {values ...};
@@ -1768,7 +1782,7 @@ cs_parall_max_strided
       for (int j = 0; j < Stride; j++)
         w[(i+1)*Stride + j] = _values[i][j];
 
-    cs_parall_max(ec, work_size, datatype, w);
+    cs_parall_max(mpi_w, work_size, datatype, w);
 
     for (int i = 0; i < Stride; i++)
       first[i] = w[i];
@@ -1845,9 +1859,9 @@ template <typename T, typename... Vals>
 static void
 cs_parall_min_scalars
 (
-  const cs_execution_context  *ec,     /*!< [in] Parallel execution context */
-  T&                           first,  /*!< [in, out] First scalar to update */
-  Vals&...                     values  /*!< [in, out] Additional scalar to update */
+  const cs_mpi_wrapper& mpi_w,     /*!< [in] Parallel execution context */
+  T&                    first,  /*!< [in, out] First scalar to update */
+  Vals&...              values  /*!< [in, out] Additional scalar to update */
 )
 {
 #if defined(HAVE_MPI)
@@ -1859,7 +1873,7 @@ cs_parall_min_scalars
   cs_datatype_t datatype = cs_datatype_from_type<T>();
 
   if (n_vals == 0)
-    cs_parall_min(ec, 1, datatype, &first);
+    cs_parall_min(mpi_w, 1, datatype, &first);
 
   else {
     /* Temporary work array and parallel sum */
@@ -1872,7 +1886,7 @@ cs_parall_min_scalars
     for (size_t i = 0; i < n_vals; i++)
       w[i + 1] = *(_values[i]);
 
-    cs_parall_min(ec, n_vals + 1, datatype, w);
+    cs_parall_min(mpi_w, n_vals + 1, datatype, w);
 
     first = w[0];
     for (size_t i = 0; i < n_vals; i++)
@@ -1954,9 +1968,9 @@ template <int Stride, typename T, typename... Vals>
 static void
 cs_parall_min_strided
 (
-  const cs_execution_context  *ec,      /*!< [in] Parallel execution context */
-  T                            first[], /*!< [in, out] First value to update */
-  Vals&&...                    values   /*!< [in, out] Additional values to update */
+  const cs_mpi_wrapper& mpi_w,      /*!< [in] Parallel execution context */
+  T                     first[], /*!< [in, out] First value to update */
+  Vals&&...             values   /*!< [in, out] Additional values to update */
 )
 {
 #if defined(HAVE_MPI)
@@ -1969,7 +1983,7 @@ cs_parall_min_strided
 
   /* Temporary work array and parallel sum */
   if (n_vals == 0)
-    cs_parall_min(ec, Stride, datatype, first);
+    cs_parall_min(mpi_w, Stride, datatype, first);
 
   else {
     /* Unpack values */
@@ -1985,7 +1999,7 @@ cs_parall_min_strided
       for (int j = 0; j < Stride; j++)
         w[(i+1)*Stride + j] = _values[i][j];
 
-    cs_parall_min(ec, work_size, datatype, w);
+    cs_parall_min(mpi_w, work_size, datatype, w);
 
     for (int i = 0; i < Stride; i++)
       first[i] = w[i];
