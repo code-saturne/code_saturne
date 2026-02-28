@@ -2244,7 +2244,7 @@ private:
 } /* namespace cs */
 
 /*--------------------------------------------------------------------------*/
-/* Usefull aliases without namespace */
+/* Useful aliases without namespace */
 /*--------------------------------------------------------------------------*/
 
 template<class T>
