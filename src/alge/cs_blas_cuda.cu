@@ -326,6 +326,20 @@ cs_blas_cuda_finalize(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return CUDA stream for next CUDA-based blas operations.
+ *
+ * This function is callable only from CUDA code.
+ */
+/*----------------------------------------------------------------------------*/
+
+cudaStream_t
+cs_blas_cuda_get_stream(void)
+{
+  return _stream;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Assign CUDA stream for next CUDA-based blas operations.
  *
  * If a stream other than the default stream (0) is used, it will not be

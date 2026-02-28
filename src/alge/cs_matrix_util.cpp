@@ -63,6 +63,10 @@
 #include "base/cs_part_to_block.h"
 #include "base/cs_timer.h"
 
+#if defined(HAVE_CUDA) && defined(__CUDACC__)
+#include "alge/cs_blas_cuda.h"
+#endif
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -92,6 +96,44 @@ BEGIN_C_DECLS
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Compute dot product, summing result over all ranks.
+ *
+ * parameters:
+ *   a  <-- pointer to matrix
+ *   n  <-- local number of elements
+ *   x  <-- vector in s = x.x
+ *
+ * returns:
+ *   result of s = x.x
+ *----------------------------------------------------------------------------*/
+
+inline static double
+_dot_xx(const cs_matrix_t  *a,
+        cs_lnum_t           n,
+        const cs_real_t    *x)
+{
+  double s = -1;
+
+#if defined(__CUDACC__)
+
+  bool use_gpu = false;
+  if (cs_matrix_get_alloc_mode(a) > CS_ALLOC_HOST)
+    use_gpu = true;
+
+  if (use_gpu) {
+    cudaStream_t stream = cs_blas_cuda_get_stream();
+    s = cs_blas_cuda_dot(n, x, x);
+    CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+
+    return s;
+  }
+
+#endif
+
+  return cs_dot_xx(n, x);
+}
 
 /*----------------------------------------------------------------------------
  * y[i] = abs(da[i]), with da possibly nullptr.
@@ -1676,7 +1718,7 @@ _frobenius_norm(const cs_matrix_t  *m)
       else
         e_stride *= 2;
 
-      retval = cs_dot_xx(d_stride*m->n_rows, mc->d_val);
+      retval = _dot_xx(m, d_stride*m->n_rows, mc->d_val);
 
       double ed_contrib = 0.;
       const cs_real_t  *restrict xa = mc->e_val;
@@ -1716,7 +1758,7 @@ _frobenius_norm(const cs_matrix_t  *m)
       const auto ms = static_cast<const cs_matrix_struct_csr_t *>(m->structure);
       const auto *mc = static_cast<const cs_matrix_coeff_t *>(m->coeffs);
       cs_lnum_t n_vals = ms->row_index[m->n_rows];
-      retval = cs_dot_xx(stride*n_vals, mc->val);
+      retval = _dot_xx(m, stride*n_vals, mc->val);
       cs_parall_sum(1, CS_DOUBLE, &retval);
     }
     break;
@@ -1731,8 +1773,8 @@ _frobenius_norm(const cs_matrix_t  *m)
       const auto mc = static_cast<const cs_matrix_coeff_t  *>(m->coeffs);
       cs_lnum_t n_vals = ms_e->row_index[m->n_rows];
       double d_mult = (m->eb_size == 1) ? m->db_size : 1;
-      retval = cs_dot_xx(d_stride*m->n_rows, mc->d_val);
-      retval += d_mult * cs_dot_xx(e_stride*n_vals, mc->e_val);
+      retval = _dot_xx(m, d_stride*m->n_rows, mc->d_val);
+      retval += d_mult * _dot_xx(m, e_stride*n_vals, mc->e_val);
       cs_parall_sum(1, CS_DOUBLE, &retval);
     }
     break;
@@ -1749,9 +1791,9 @@ _frobenius_norm(const cs_matrix_t  *m)
       cs_lnum_t n_e_vals = ms_e->row_index[m->n_rows];
       cs_lnum_t n_h_vals = ms_h->row_index[m->n_rows];
       double d_mult = (m->eb_size == 1) ? m->db_size : 1;
-      retval = cs_dot_xx(d_stride*m->n_rows, mc->d_val);
-      retval += d_mult * cs_dot_xx(e_stride*n_e_vals, mc->e_val);
-      retval += d_mult * cs_dot_xx(e_stride*n_h_vals, mc->h_val);
+      retval = _dot_xx(m, d_stride*m->n_rows, mc->d_val);
+      retval += d_mult * _dot_xx(m, e_stride*n_e_vals, mc->e_val);
+      retval += d_mult * _dot_xx(m, e_stride*n_h_vals, mc->h_val);
       cs_parall_sum(1, CS_DOUBLE, &retval);
     }
     break;

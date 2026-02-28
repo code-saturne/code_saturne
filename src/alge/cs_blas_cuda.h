@@ -328,7 +328,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Finalize CUDA BLAS API.
  *
  * This frees resources such as the cuBLAS handle, if used.
@@ -341,7 +341,18 @@ cs_blas_cuda_finalize(void);
 #if defined(__CUDACC__)
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
+ * \brief Return CUDA stream for next CUDA-based blas operations.
+ *
+ * This function is callable only from CUDA code.
+ */
+/*----------------------------------------------------------------------------*/
+
+cudaStream_t
+cs_blas_cuda_get_stream(void);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Assign CUDA stream for next CUDA-based blas operations.
  *
  * If a stream other than the default stream (0) is used, it will not be
@@ -357,7 +368,7 @@ void
 cs_blas_cuda_set_stream(cudaStream_t  stream);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return pointers to reduction buffers needed for 2-stage reductions.
  *
  * These buffers are used internally by all cs_blas_cuda 2-stage operations,
@@ -385,7 +396,7 @@ cs_blas_cuda_get_2_stage_reduce_buffers(cs_lnum_t      n,
 #endif /* defined(__CUDACC__) */
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return the absolute sum of vector values using CUDA.
  *
  * \param[in]  n  size of array x
@@ -400,7 +411,7 @@ cs_blas_cuda_asum(cs_lnum_t        n,
                  const cs_real_t  x[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return the dot product of 2 vectors: x.y using CUDA.
  *
  * \param[in]  n  size of arrays x and y
@@ -419,7 +430,7 @@ cs_blas_cuda_dot(cs_lnum_t        n,
 #if defined(HAVE_CUBLAS)
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return the absolute sum of vector values using cuBLAS.
  *
  * \param[in]  n  size of arrays x and y
@@ -434,7 +445,7 @@ cs_blas_cublas_asum(cs_lnum_t        n,
                     const cs_real_t  x[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return the dot product of 2 vectors: x.y using cuBLAS.
  *
  * \param[in]  n  size of arrays x and y
