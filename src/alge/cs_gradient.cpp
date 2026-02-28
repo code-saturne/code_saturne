@@ -8906,7 +8906,7 @@ cs_gradient_scalar(const char                    *var_name,
         // else standard coefa&b are used
 
         CS_MALLOC_HD(val_ip, n_b_faces, cs_real_t, amode);
-        CS_MALLOC_HD(val_f_wrk, n_b_faces, cs_real_t, amode);
+        CS_MALLOC_HD(val_f_wrk, n_b_faces, cs_real_t, cs_alloc_mode);
 
         cs_gradient_boundary_iprime_lsq_s(ctx,
                                           mesh,

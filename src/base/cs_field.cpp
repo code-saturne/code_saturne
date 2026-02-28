@@ -1983,7 +1983,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_exch_bc) {
-        CS_MALLOC(f->bc_coeffs->h_int_tot, n_elts[0], cs_real_t);
+        CS_MALLOC_HD(f->bc_coeffs->h_int_tot, n_elts[0], cs_real_t,
+                     cs_alloc_mode);
       }
       else {
         f->bc_coeffs->h_int_tot = nullptr;
