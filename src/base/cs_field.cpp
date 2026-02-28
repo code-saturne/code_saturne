@@ -1961,10 +1961,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_mom_bc) {
-        CS_MALLOC_HD(f->bc_coeffs->ad, n_elts[0]*a_mult, cs_real_t,
-                     cs_alloc_mode);
-        CS_MALLOC_HD(f->bc_coeffs->bd, n_elts[0]*b_mult, cs_real_t,
-                     cs_alloc_mode);
+        CS_MALLOC_HD(f->bc_coeffs->ad, n_elts[0]*a_mult, cs_real_t, amode);
+        CS_MALLOC_HD(f->bc_coeffs->bd, n_elts[0]*b_mult, cs_real_t, amode);
       }
       else {
         f->bc_coeffs->ad = nullptr;
@@ -1972,10 +1970,8 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_conv_bc) {
-        CS_MALLOC_HD(f->bc_coeffs->ac, n_elts[0]*a_mult, cs_real_t,
-                     cs_alloc_mode);
-        CS_MALLOC_HD(f->bc_coeffs->bc, n_elts[0]*b_mult, cs_real_t,
-                     cs_alloc_mode);
+        CS_MALLOC_HD(f->bc_coeffs->ac, n_elts[0]*a_mult, cs_real_t, amode);
+        CS_MALLOC_HD(f->bc_coeffs->bc, n_elts[0]*b_mult, cs_real_t, amode);
       }
       else {
         f->bc_coeffs->ac = nullptr;
@@ -1983,8 +1979,7 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       }
 
       if (have_exch_bc) {
-        CS_MALLOC_HD(f->bc_coeffs->h_int_tot, n_elts[0], cs_real_t,
-                     cs_alloc_mode);
+        CS_MALLOC_HD(f->bc_coeffs->h_int_tot, n_elts[0], cs_real_t, amode);
       }
       else {
         f->bc_coeffs->h_int_tot = nullptr;
