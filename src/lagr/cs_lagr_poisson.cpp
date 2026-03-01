@@ -361,10 +361,8 @@ _lageqp(cs_real_t   *velocityl,
   CS_FREE(w);
   CS_FREE(dpvar);
 
-  CS_FREE(coefap);
-  CS_FREE(coefbp);
-  CS_FREE(cofafp);
-  CS_FREE(cofbfp);
+  cs_field_bc_coeffs_clear(&bc_coeffs_v_loc);
+  cs_field_bc_coeffs_clear(&bc_coeffs_phi_loc);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -463,8 +461,9 @@ cs_lagr_poisson(const int  itypfb[])
                      nullptr, /* internal coupling */
                      grad);
 
-  CS_FREE(coefap);
-  CS_FREE(coefbp);
+  coefap = nullptr;
+  coefbp = nullptr;
+  cs_field_bc_coeffs_clear(&bc_coeffs_loc);
   CS_FREE(phil);
 
   /* Correct mean velocities */

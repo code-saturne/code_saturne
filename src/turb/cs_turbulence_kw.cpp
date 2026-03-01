@@ -929,6 +929,11 @@ cs_turbulence_kw(int phase_id)
         cs_real_t rho = cromo[c_id];
         grad_dot_g[c_id] = cs_math_3_dot_product(grad.sub_array(c_id), grav)/(rho*prdtur);
       });
+      ctx.wait();
+
+      bc_coeffs_loc.a = nullptr;
+      bc_coeffs_loc.b = nullptr;
+      cs_field_bc_coeffs_clear(&bc_coeffs_loc);
     }
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {

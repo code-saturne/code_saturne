@@ -2245,8 +2245,8 @@ _rad_transfer_solve(int bc_type[])
 
     /* Free memory */
     CS_FREE(grad);
-    CS_FREE(bc_coeffs_loc.val_f);
-    CS_FREE(bc_coeffs_loc.b);
+    bc_coeffs_loc.a = nullptr;
+    cs_field_bc_coeffs_clear(&bc_coeffs_loc);
 
   } /* End of computation of divergence */
 

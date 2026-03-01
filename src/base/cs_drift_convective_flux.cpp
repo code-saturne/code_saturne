@@ -852,13 +852,8 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
     /* Free memory */
   }
 
-  CS_FREE(bc_coeffs_loc.a);
-  CS_FREE(bc_coeffs_loc.b);
-  CS_FREE(bc_coeffs_loc.af);
-  CS_FREE(bc_coeffs_loc.bf);
-
-  CS_FREE(coefa1);
-  CS_FREE(coefb1);
+  cs_field_bc_coeffs_clear(&bc_coeffs_loc);
+  cs_field_bc_coeffs_clear(&bc_coeffs1_loc);
 }
 
 /*----------------------------------------------------------------------------*/

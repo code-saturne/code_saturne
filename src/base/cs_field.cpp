@@ -1462,7 +1462,7 @@ cs_field_bc_coeffs_shallow_copy(const cs_field_bc_coeffs_t  *ref,
 /*!
  * \brief  Free copy of boundary condition coefficients.
  *
- * \param[in]     ref   reference bc coefficients, or null
+ * \param[in]     ref   reference bc coefficients
  * \param[inout]  copy  shallow copy of bc coefficients
  */
 /*----------------------------------------------------------------------------*/
@@ -1471,12 +1471,6 @@ void
 cs_field_bc_coeffs_free_copy(const cs_field_bc_coeffs_t  *ref,
                              cs_field_bc_coeffs_t        *copy)
 {
-  cs_field_bc_coeffs_t ref_default;
-  if (ref == nullptr) {
-    cs_field_bc_coeffs_init(&ref_default);
-    ref = &ref_default;
-  }
-
   if (copy->icodcl != ref->icodcl)
     CS_FREE(copy->icodcl);
 
@@ -1524,6 +1518,42 @@ cs_field_bc_coeffs_free_copy(const cs_field_bc_coeffs_t  *ref,
 
   if (copy->h_int_tot != ref->h_int_tot)
     CS_FREE(copy->h_int_tot);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free contents of local boundary condition coefficients.
+ *
+ * \param[inout]  bc_coeffs  bc coefficients
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_bc_coeffs_clear(cs_field_bc_coeffs_t  *bc_coeffs)
+{
+  CS_FREE(bc_coeffs->icodcl);
+  CS_FREE(bc_coeffs->rcodcl1);
+  CS_FREE(bc_coeffs->rcodcl2);
+  CS_FREE(bc_coeffs->rcodcl3);
+
+  CS_FREE(bc_coeffs->h_int_tot);
+
+  CS_FREE(bc_coeffs->val_f);
+  CS_FREE(bc_coeffs->val_f_pre);
+  CS_FREE(bc_coeffs->val_f_lim);
+
+  CS_FREE(bc_coeffs->flux_diff);
+  CS_FREE(bc_coeffs->flux_diff_lim);
+
+  CS_FREE(bc_coeffs->a);
+  CS_FREE(bc_coeffs->b);
+  CS_FREE(bc_coeffs->af);
+  CS_FREE(bc_coeffs->bf);
+
+  CS_FREE(bc_coeffs->ad);
+  CS_FREE(bc_coeffs->bd);
+  CS_FREE(bc_coeffs->ac);
+  CS_FREE(bc_coeffs->bc);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -1384,10 +1384,8 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
 
   ctx.wait();
 
-  CS_FREE(coefa);
-  CS_FREE(coefb);
-  CS_FREE(coefa_vec);
-  CS_FREE(coefb_vec);
+  cs_field_bc_coeffs_clear(&bc_coeffs_loc);
+  cs_field_bc_coeffs_clear(&bc_coeffs_v_loc);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1601,7 +1599,8 @@ cs_vof_drift_term(int                        imrgra,
     // FIXME Handle boundary terms bdriftflux
     cs_vof_deshpande_drift_flux(cs_glob_mesh, cs_glob_mesh_quantities);
 
-  } else {
+  }
+  else {
 
     const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
@@ -1660,8 +1659,7 @@ cs_vof_drift_term(int                        imrgra,
                  ipro_idriftf,
                  cpro_bdriftf);
 
-    CS_FREE(coefav);
-    CS_FREE(coefbv);
+    cs_field_bc_coeffs_clear(&bc_coeffs_v_loc);
   }
 
   /*======================================================================

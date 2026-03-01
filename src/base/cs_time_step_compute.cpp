@@ -369,8 +369,9 @@ cs_local_time_step_compute(int  itrale)
       ctx.wait();
 
       /* Free memory */
+      bc_coeffs_rho.a = nullptr;
       CS_FREE(grad);
-      CS_FREE(coefbr);
+      cs_field_bc_coeffs_clear(&bc_coeffs_rho);
 
     }
 
@@ -933,8 +934,7 @@ cs_local_time_step_compute(int  itrale)
   ctx.wait();
 
   /* Free memory */
-  CS_FREE(bc_coeffs_loc.b);
-  CS_FREE(bc_coeffs_loc.bf);
+  cs_field_bc_coeffs_clear(&bc_coeffs_loc);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1273,8 +1273,7 @@ cs_courant_fourier_compute(void)
   }
 
   /* Free memory */
-  CS_FREE(bc_coeffs_loc.b);
-  CS_FREE(bc_coeffs_loc.bf);
+  cs_field_bc_coeffs_clear(&bc_coeffs_loc);
 }
 
 /*----------------------------------------------------------------------------*/

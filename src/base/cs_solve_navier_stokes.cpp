@@ -591,7 +591,7 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
   CS_FREE(pota);
   CS_FREE(dpot);
 
-  cs_field_bc_coeffs_free_copy(nullptr, &bc_coeffs_pot);
+  cs_field_bc_coeffs_clear(&bc_coeffs_pot);
 
   CS_FREE(i_visc);
   CS_FREE(b_visc);
@@ -967,8 +967,7 @@ _div_rij(const cs_mesh_t     *m,
                         &bc_coeffs_loc,
                         tflmas, tflmab);
     CS_FREE(rij);
-    CS_FREE(bc_coeffs_loc.a);
-    CS_FREE(bc_coeffs_loc.b);
+    cs_field_bc_coeffs_clear(&bc_coeffs_loc);
 
   }
 
@@ -3605,12 +3604,7 @@ _hydrostatic_pressure_prediction(cs_real_t        grdphd[][3],
   CS_FREE(rovsdt);
   CS_FREE(rhs);
 
-  CS_FREE(bc_coeffs_dp.a);
-  CS_FREE(bc_coeffs_dp.af);
-  CS_FREE(bc_coeffs_dp.b);
-  CS_FREE(bc_coeffs_dp.bf);
-  CS_FREE(bc_coeffs_dp.val_f);
-  CS_FREE(bc_coeffs_dp.flux_diff);
+  cs_field_bc_coeffs_clear(&bc_coeffs_dp);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

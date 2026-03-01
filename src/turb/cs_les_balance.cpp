@@ -494,11 +494,7 @@ _les_balance_laplacian(cs_real_t   *wa,
 
   ctx.wait();
 
-  CS_FREE(coefa);
-  CS_FREE(coefb);
-  CS_FREE(coefaf);
-  CS_FREE(coefbf);
-
+  cs_field_bc_coeffs_clear(&bc_coeffs_loc);
 }
 
 /*----------------------------------------------------------------------------
@@ -601,10 +597,7 @@ _les_balance_laplacian(cs_real_t   *wa,
     res[c_id] *= dvol;
   });
 
-
-  CS_FREE(coefav);
-  CS_FREE(coefbv);
-
+  cs_field_bc_coeffs_clear(&bc_coeffs_v_loc);
 }
 
 /*----------------------------------------------------------------------------
@@ -3476,8 +3469,7 @@ cs_les_balance_compute_rij(void)
   CS_FREE(nutdkuiuj);
   CS_FREE(uidujdxk);
 
-  CS_FREE(coefas);
-  CS_FREE(coefbs);
+  cs_field_bc_coeffs_clear(&bc_coeffs);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4045,8 +4037,7 @@ cs_les_balance_compute_tui(void)
 
   ctx.wait();
 
-  CS_FREE(coefas);
-  CS_FREE(coefbs);
+  cs_field_bc_coeffs_clear(&bc_coeffs);
 }
 
 /*----------------------------------------------------------------------------*/

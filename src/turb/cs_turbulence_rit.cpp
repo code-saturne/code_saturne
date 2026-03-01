@@ -813,8 +813,7 @@ _thermal_flux_and_diff(cs_field_t         *f,
                thflxf,
                thflxb);
 
-  CS_FREE(coefat);
-  CS_FREE(coefbt);
+  cs_field_bc_coeffs_clear(&bc_coeffs_v_loc);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1338,6 +1337,10 @@ cs_turbulence_rit_div(const int        field_id,
                  &bc_coeffs,
                  thflxf.data(),
                  thflxb.data());
+
+    bc_coeffs.a = nullptr;
+    bc_coeffs.b = nullptr;
+    cs_field_bc_coeffs_clear(&bc_coeffs);
 
   }
 

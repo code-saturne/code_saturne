@@ -1083,7 +1083,9 @@ cs_turbulence_ke(int              phase_id,
                          nullptr, /* internal coupling */
                          grad.data<cs_real_3_t>());
 
-      CS_FREE(bc_coeffs_loc.val_f);
+      bc_coeffs_loc.a = nullptr;
+      bc_coeffs_loc.b = nullptr;
+      cs_field_bc_coeffs_clear(&bc_coeffs_loc);
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         grad_dot_g[c_id] =   cs_math_3_dot_product(grad.sub_array(c_id), grav)
@@ -1249,8 +1251,7 @@ cs_turbulence_ke(int              phase_id,
                        nullptr, /* internal coupling */
                        grad_s.data<cs_real_3_t>());
 
-    CS_FREE(bc_coeffs_sqs_loc.a);
-    CS_FREE(bc_coeffs_sqs_loc.b);
+    cs_field_bc_coeffs_clear(&bc_coeffs_sqs_loc);
 
   }
 

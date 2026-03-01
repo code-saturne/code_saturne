@@ -410,8 +410,7 @@ cs_interpolate_from_location_p1(void                *input,
   }
 
   if (bc_coeffs != nullptr && bc_coeffs != f->bc_coeffs) {
-    CS_FREE(bc_coeffs->a);
-    CS_FREE(bc_coeffs->b);
+    cs_field_bc_coeffs_clear(bc_coeffs);
     CS_FREE(bc_coeffs);
   }
 }

@@ -971,8 +971,7 @@ cs_cf_cfl_compute(cs_real_t wcf[]) // before : cfdttv
   }
 
   /* Free memory */
-  CS_FREE(coefbt);
-  CS_FREE(cofbft);
+  cs_field_bc_coeffs_clear(&bc_coeffs_loc);
 }
 
 /*---------------------------------------------------------------------------- */

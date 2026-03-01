@@ -503,13 +503,24 @@ cs_field_bc_coeffs_shallow_copy(const cs_field_bc_coeffs_t  *ref,
 /*----------------------------------------------------------------------------
  * \brief  Free copy of boundary condition coefficients.
  *
- * \param[in]     ref   reference bc coefficients, or null
+ * \param[in]     ref   reference bc coefficients
  * \param[inout]  copy  shallow copy of bc coefficients
  *----------------------------------------------------------------------------*/
 
 void
 cs_field_bc_coeffs_free_copy(const cs_field_bc_coeffs_t  *ref,
                              cs_field_bc_coeffs_t        *copy);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief  Free contents of local boundary condition coefficients.
+ *
+ * \param[inout]  bc_coeffs  bc coefficients
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_field_bc_coeffs_clear(cs_field_bc_coeffs_t  *bc_coeffs);
 
 /*----------------------------------------------------------------------------
  * Return the number of defined fields.

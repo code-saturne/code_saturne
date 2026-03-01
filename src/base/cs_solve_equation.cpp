@@ -321,8 +321,9 @@ _production_and_dissipation_terms(const cs_field_t  *f,
                                  cvara_var_fm,
                                  grad);
 
-  CS_FREE(coefa_p);
-  CS_FREE(coefb_p);
+  coefa_p = nullptr;
+  coefb_p = nullptr;
+  cs_field_bc_coeffs_clear(&bc_coeffs_loc);;
 
   /* Production Term
      --------------- */

@@ -500,8 +500,7 @@ _compute_up_rhop(int                 phase_id,
 
       bc_coeffs_loc.a = nullptr;
       bc_coeffs_loc.b = nullptr;
-      // Free other potential locally allocated members
-      cs_field_bc_coeffs_free_copy(nullptr, &bc_coeffs_loc);
+      cs_field_bc_coeffs_clear(&bc_coeffs_loc);
 
       /* finalize rho'u' */
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
