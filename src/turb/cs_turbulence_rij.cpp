@@ -465,13 +465,13 @@ _compute_up_rhop(int                 phase_id,
        * We impose in Dirichlet (coefa) the value romb */
       cs_array<cs_real_t> coefb(n_b_faces, cs_alloc_mode);
 
-      cs_arrays_set_zero(ctx, n_b_faces, coefb);
-      ctx.wait();
-
       cs_field_bc_coeffs_t bc_coeffs_loc;
       cs_field_bc_coeffs_init(&bc_coeffs_loc);
       bc_coeffs_loc.a = rho_b;
       bc_coeffs_loc.b = coefb.data();
+
+      cs_arrays_set_zero<cs_real_t, 1>(ctx, n_b_faces, bc_coeffs_loc.b);
+      ctx.wait();
 
       /* Compute gradient */
       cs_halo_type_t halo_type = CS_HALO_STANDARD;
