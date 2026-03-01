@@ -3348,12 +3348,15 @@ cs_restart_set_auxiliary_field_options(void)
 
   /* Density when variable of for vof models */
   if (f_p->irovar == 1 || vof_p->vof_model > 0) {
-    cs_field_set_key_int(CS_F_(rho), k_r_id, i_restart_aux);
-
-    if (vof_p->vof_model > 0 || vp_p->idilat > 3)
-      cs_field_set_key_int(CS_F_(rho), k_n_id, 2);
-
-    cs_field_set_key_int(CS_F_(rho_b), k_r_id, i_restart_aux);
+    int n_time_vals = CS_F_(rho)->n_time_vals;
+    if (n_time_vals > 1) {
+      cs_field_set_key_int(CS_F_(rho), k_r_id, i_restart_aux);
+      cs_field_set_key_int(CS_F_(rho_b), k_r_id, i_restart_aux);
+      if (n_time_vals > 2) {
+        cs_field_set_key_int(CS_F_(rho), k_n_id, n_time_vals-1);
+        cs_field_set_key_int(CS_F_(rho_b), k_n_id, n_time_vals-1);
+      }
+    }
   }
 
   /* Molecular viscosity */
@@ -3392,7 +3395,7 @@ cs_restart_initialize_fields_read_status(void)
 
   const int n_fields = cs_field_n_fields();
 
-  CS_MALLOC(_fields_read_status, n_fields, cs_restart_file_t);
+  CS_REALLOC(_fields_read_status, n_fields, cs_restart_file_t);
   for (int i = 0; i < n_fields; i++)
     _fields_read_status[i] = CS_RESTART_DISABLED;
 }

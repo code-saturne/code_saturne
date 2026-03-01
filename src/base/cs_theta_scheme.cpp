@@ -6,7 +6,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -55,6 +55,60 @@
  *---------------------------------------------------------------------------*/
 
 #include "base/cs_theta_scheme.h"
+
+/*============================================================================
+ * Private function definitions
+ *===========================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief theta scheme update after restart for unread arrays.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_theta_scheme_update_after_restart(void)
+{
+  int n_fields = cs_field_n_fields();
+  int *updated;
+  CS_MALLOC(updated, n_fields, int);
+  for (int f_id = 0; f_id < n_fields; f_id ++)
+    updated[f_id] = 0;
+
+  /* Update densities, viscosities and heat capacity if required */
+  if (cs_glob_fluid_properties->irovar > 0) {
+    if (cs_restart_get_field_read_status(CS_F_(rho)->id) == 0)
+      cs_field_current_to_previous(CS_F_(rho));
+    if (cs_restart_get_field_read_status(CS_F_(rho_b)->id) == 0)
+      cs_field_current_to_previous(CS_F_(rho_b));
+  }
+  if (cs_restart_get_field_read_status(CS_F_(mu)->id) == 0)
+    cs_field_current_to_previous(CS_F_(mu));
+  if (cs_restart_get_field_read_status(CS_F_(mu_t)->id) == 0)
+    cs_field_current_to_previous(CS_F_(mu_t));
+  cs_field_t *f_cp = CS_F_(cp);
+  if (f_cp != nullptr) {
+    if (cs_restart_get_field_read_status(f_cp->id) == 0)
+      cs_field_current_to_previous(f_cp);
+  }
+
+  /* Update scalar diffusivities if required */
+  for (int f_id = 0; f_id < n_fields; f_id ++) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    if (!(f->type & CS_FIELD_VARIABLE) || (f->type & CS_FIELD_CDO))
+      continue;
+    int k_f_id = cs_field_get_key_int(f, cs_field_key_id("diffusivity_id"));
+    if (k_f_id < 0)
+      continue;
+    if (    updated[k_f_id] == 0
+            && cs_restart_get_field_read_status(k_f_id) == 0) {
+      cs_field_current_to_previous(cs_field_by_id(k_f_id));
+      updated[k_f_id] = 1;
+    }
+  }
+
+  CS_FREE(updated);
+}
 
 /*---------------------------------------------------------------------------*/
 
@@ -231,33 +285,9 @@ cs_theta_scheme_update_var(const cs_lnum_t  iappel)
      * first time step or when reading the restart file
      *----------------------------------------------------------------------*/
 
-    if (cs_restart_present() == 1) {
-      /* Update densities, viscosities and heat capacity if required */
-      if (cs_glob_fluid_properties->irovar > 0) {
-        if (cs_restart_get_field_read_status(CS_F_(rho)->id) == 0)
-          cs_field_current_to_previous(CS_F_(rho));
-        if (cs_restart_get_field_read_status(CS_F_(rho_b)->id) == 0)
-          cs_field_current_to_previous(CS_F_(rho_b));
-      }
-      if (cs_restart_get_field_read_status(CS_F_(mu)->id) == 0)
-        cs_field_current_to_previous(CS_F_(mu));
-      if (cs_restart_get_field_read_status(CS_F_(mu_t)->id) == 0)
-        cs_field_current_to_previous(CS_F_(mu_t));
-      if (f_cp != nullptr) {
-        if (cs_restart_get_field_read_status(f_cp->id) == 0)
-          cs_field_current_to_previous(f_cp);
-      }
-
-      /* Update scalars diffusivity if required */
-      for (int f_id = 0; f_id < cs_field_n_fields(); f_id ++) {
-        cs_field_t *f = cs_field_by_id(f_id);
-        if (!(f->type & CS_FIELD_VARIABLE) || (f->type & CS_FIELD_CDO))
-          continue;
-        int k_f_id = cs_field_get_key_int(f, cs_field_key_id("diffusivity_id"));
-        if ((k_f_id > 0) && (cs_restart_get_field_read_status(k_f_id) == 0))
-          cs_field_current_to_previous(cs_field_by_id(k_f_id));
-      }
-    }
+    const cs_time_step_t *ts = cs_glob_time_step;
+    if (ts->nt_prev > 0 && ts->nt_cur == ts->nt_prev + 1)
+      _theta_scheme_update_after_restart();
 
     /*----------------------------------------------------------------------
      * Extrapolation of viscosities, heat capacity and scalars diffusivity
