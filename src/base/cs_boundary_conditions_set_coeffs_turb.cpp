@@ -1470,7 +1470,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   cs_field_t *f_k = nullptr, *f_eps = nullptr, *f_rij = nullptr;
   cs_field_t *f_alpha = nullptr, *f_phi = nullptr, *f_f_bar = nullptr;
   cs_field_t *f_omg = nullptr, *f_nusa = nullptr;
-  cs_equation_param_t *eqp_k;
+  cs_equation_param_t *eqp_k = nullptr;
   cs_equation_param_t *eqp_rij = nullptr, *eqp_eps = nullptr, *eqp_nusa = nullptr;
 
   /* Turbulence variables */
@@ -1503,6 +1503,7 @@ cs_boundary_conditions_set_coeffs_turb(int        isvhb,
   else if (model == CS_TURB_K_OMEGA) {
     f_k = CS_F_(k);
     f_omg = CS_F_(omg);
+    eqp_k = cs_field_get_equation_param(f_k);
   }
   else if (model == CS_TURB_SPALART_ALLMARAS) {
     f_nusa = CS_F_(nusa);
