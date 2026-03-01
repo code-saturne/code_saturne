@@ -465,9 +465,7 @@ _compute_up_rhop(int                 phase_id,
        * We impose in Dirichlet (coefa) the value romb */
       cs_array<cs_real_t> coefb(n_b_faces, cs_alloc_mode);
 
-      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-        coefb[face_id] = 0.;
-      });
+      cs_arrays_set_zero(ctx, n_b_faces, coefb);
       ctx.wait();
 
       cs_field_bc_coeffs_t bc_coeffs_loc;
@@ -499,6 +497,11 @@ _compute_up_rhop(int                 phase_id,
                          nullptr,         /* c_weight */
                          nullptr,         /* cpl */
                          gradro.data<cs_real_3_t>());
+
+      bc_coeffs_loc.a = nullptr;
+      bc_coeffs_loc.b = nullptr;
+      // Free other potential locally allocated members
+      cs_field_bc_coeffs_free_copy(nullptr, &bc_coeffs_loc);
 
       /* finalize rho'u' */
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {

@@ -112,8 +112,6 @@ typedef enum {
 
 typedef struct {
 
-  int                location_id;  /* Id of matching location */
-
   int               *icodcl;       /* low-level BC type code */
   cs_real_t         *rcodcl1;      /* 1st component of low-level BC */
   cs_real_t         *rcodcl2;      /* 2nd component of low-level BC
@@ -505,7 +503,7 @@ cs_field_bc_coeffs_shallow_copy(const cs_field_bc_coeffs_t  *ref,
 /*----------------------------------------------------------------------------
  * \brief  Free copy of boundary condition coefficients.
  *
- * \param[in]     ref   reference bc coefficients
+ * \param[in]     ref   reference bc coefficients, or null
  * \param[inout]  copy  shallow copy of bc coefficients
  *----------------------------------------------------------------------------*/
 

@@ -1410,8 +1410,6 @@ cs_field_get_bc_coeff_mult(const cs_field_t  *f,
 void
 cs_field_bc_coeffs_init(cs_field_bc_coeffs_t  *bc_coeffs)
 {
-  bc_coeffs->location_id = 0;
-
   bc_coeffs->icodcl = nullptr;
   bc_coeffs->rcodcl1 = nullptr;
   bc_coeffs->rcodcl2 = nullptr;
@@ -1420,13 +1418,13 @@ cs_field_bc_coeffs_init(cs_field_bc_coeffs_t  *bc_coeffs)
   bc_coeffs->h_int_tot = nullptr;
 
   bc_coeffs->val_f = nullptr;
+  bc_coeffs->val_f_pre = nullptr;
   //TODO lim values should be removed
   bc_coeffs->val_f_lim = nullptr;
+
   bc_coeffs->flux_diff = nullptr;
   //TODO lim values should be removed
   bc_coeffs->flux_diff_lim = nullptr;
-
-  bc_coeffs->val_f_pre = nullptr;
 
   bc_coeffs->a = nullptr;
   bc_coeffs->b = nullptr;
@@ -1464,7 +1462,7 @@ cs_field_bc_coeffs_shallow_copy(const cs_field_bc_coeffs_t  *ref,
 /*!
  * \brief  Free copy of boundary condition coefficients.
  *
- * \param[in]     ref   reference bc coefficients
+ * \param[in]     ref   reference bc coefficients, or null
  * \param[inout]  copy  shallow copy of bc coefficients
  */
 /*----------------------------------------------------------------------------*/
@@ -1473,6 +1471,12 @@ void
 cs_field_bc_coeffs_free_copy(const cs_field_bc_coeffs_t  *ref,
                              cs_field_bc_coeffs_t        *copy)
 {
+  cs_field_bc_coeffs_t ref_default;
+  if (ref == nullptr) {
+    cs_field_bc_coeffs_init(&ref_default);
+    ref = &ref_default;
+  }
+
   if (copy->icodcl != ref->icodcl)
     CS_FREE(copy->icodcl);
 
@@ -1926,8 +1930,6 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
     if (f->bc_coeffs == nullptr) {
 
       CS_MALLOC(f->bc_coeffs, 1, cs_field_bc_coeffs_t);
-
-      f->bc_coeffs->location_id = location_id;
 
       f->bc_coeffs->icodcl = nullptr;
       f->bc_coeffs->rcodcl1 = nullptr;

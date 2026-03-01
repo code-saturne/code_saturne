@@ -591,10 +591,7 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
   CS_FREE(pota);
   CS_FREE(dpot);
 
-  CS_FREE(clapot);
-  CS_FREE(clbpot);
-  CS_FREE(cfapot);
-  CS_FREE(cfbpot);
+  cs_field_bc_coeffs_free_copy(nullptr, &bc_coeffs_pot);
 
   CS_FREE(i_visc);
   CS_FREE(b_visc);

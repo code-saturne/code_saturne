@@ -8813,7 +8813,6 @@ cs_gradient_scalar(const char                    *var_name,
        * coupled variables */
       assert(inc == 1);
 
-
       cs_real_t _clip_coeff = (clip_mode >= 0) ? clip_coeff : -1;
       cs_internal_coupling_update_bc_coeffs_s(ctx,
                                               bc_coeffs,
@@ -8958,6 +8957,7 @@ cs_gradient_scalar(const char                    *var_name,
         ctx.wait();
 
         /* pre computed boundary face value */
+        assert(bc_coeffs->val_f == nullptr);
         bc_coeffs->val_f = val_f_wrk;
       }
     }

@@ -412,8 +412,6 @@ cs_field_map_and_init_bcs(void)
 
     bc_flags[f->id * 4] = true;
 
-    cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-
     /* Internal exchange coefficient are always needed */
     bc_flags[f_id*4 + 3] = true;
 
