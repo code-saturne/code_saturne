@@ -1538,10 +1538,14 @@ cs_field_bc_coeffs_clear(cs_field_bc_coeffs_t  *bc_coeffs)
 
   CS_FREE(bc_coeffs->h_int_tot);
 
+  if (bc_coeffs->val_f_lim == bc_coeffs->val_f)
+    bc_coeffs->val_f_lim = nullptr;
   CS_FREE(bc_coeffs->val_f);
   CS_FREE(bc_coeffs->val_f_pre);
   CS_FREE(bc_coeffs->val_f_lim);
 
+  if (bc_coeffs->flux_diff_lim == bc_coeffs->flux_diff)
+    bc_coeffs->flux_diff_lim = nullptr;
   CS_FREE(bc_coeffs->flux_diff);
   CS_FREE(bc_coeffs->flux_diff_lim);
 
