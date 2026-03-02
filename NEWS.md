@@ -3,7 +3,8 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
-- Fix incomplete density restart information for idilat=2.
+- Fix restart with variable density "idilat=2" option.
+  * Includes fix for incomplete density restart information.
 
 - Fix incorrect theta behavior after restart, which could degrade schemes
   requiring 2 time values of the density, such as second order in time
