@@ -4648,22 +4648,6 @@ cs_boundary_conditions_update_bc_coeff_face_values
   const cs_real_t             pvar[]
 )
 {
-  const cs_mesh_t *m = cs_glob_mesh;
-
-  /* Ensure BC coefficient arrays are allocated
-     we use a delayed allocation the default to Neumann more easily
-     when some arrays are not defined (and want to avoid cases where
-     the array is defined but not up to date). */
-
-  if (m->n_b_faces > 0) {
-    cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
-      (f->bc_coeffs,
-       m->n_b_faces,
-       f->dim,
-       cs_alloc_mode,
-       false);
-  }
-
   cs_boundary_conditions_update_bc_coeff_face_values
     (ctx,
      f, f->bc_coeffs,
@@ -4935,37 +4919,12 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
   const cs_real_t       pvar[][stride]
 )
 {
-  const cs_mesh_t *m = cs_glob_mesh;
-
-  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
-
-  using var_t = cs_real_t[stride];
-
-  /* Ensure BC coefficient arrays are allocated
-     we use a delayed allocation te defauld to Neumann more easily
-     when some arrays are not defined (and want to avoid cases where
-     the array is defined but not up to date). */
-  CS_PROFILE_MARK_LINE();
-  int df_limiter_id = eqp->diffusion_limiter_id;
-  const int ircflb = (eqp->ircflu > 0) ? eqp->b_diff_flux_rc : 0;
-
-  cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
-    (f->bc_coeffs,
-     m->n_b_faces,
-     f->dim,
-     cs_alloc_mode,
-     (df_limiter_id > -1 || ircflb != 1));
-
-  CS_PROFILE_MARK_LINE();
-
   cs_boundary_conditions_update_bc_coeff_face_values_strided<stride>
     (ctx,
      f, f->bc_coeffs,
      1,  // inc,
-     eqp,
+     cs_field_get_equation_param_const(f),
      pvar);
-
-  CS_PROFILE_MARK_LINE();
 }
 
 // Force instanciation
@@ -5047,6 +5006,12 @@ cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
   }
 
   if (limiter == false) {
+    if (   bc_coeffs->val_f_lim != nullptr
+        && bc_coeffs->val_f_lim != bc_coeffs->val_f)
+      CS_FREE(bc_coeffs->val_f_lim);
+    if (   bc_coeffs->flux_diff_lim != nullptr
+        && bc_coeffs->flux_diff_lim != bc_coeffs->flux_diff)
+      CS_FREE(bc_coeffs->flux_diff_lim);
     bc_coeffs->val_f_lim = bc_coeffs->val_f;
     bc_coeffs->flux_diff_lim = bc_coeffs->flux_diff;
   }
