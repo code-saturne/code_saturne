@@ -3411,14 +3411,16 @@ int
 cs_restart_get_field_read_status(int  f_id)
 {
   int retval = 0;
-  int n_max = sizeof(int)*8;
+  if (_fields_read_status != nullptr) {
+    int n_max = sizeof(int)*8;
 
-  for (int t_id = 0; t_id < n_max; t_id++) {
-    int t_bit = 1 << t_id;
-    if (t_bit & _fields_read_status[f_id])
-      retval = t_id + 1;
-    else
-      break;
+    for (int t_id = 0; t_id < n_max; t_id++) {
+      int t_bit = 1 << t_id;
+      if (t_bit & _fields_read_status[f_id])
+        retval = t_id + 1;
+      else
+        break;
+    }
   }
 
   return retval;
