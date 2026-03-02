@@ -1596,7 +1596,7 @@ cs_user_parameters([[maybe_unused]] cs_domain_t   *domain)
 
   /* Example: enforce existence of 'yplus', 'tplus' and 'tstar' fields, so that
               yplus may be saved, or a local Nusselt number may be computed using
-              the post_boundary_nusselt subroutine.
+              the post_boundary_nusselt function.
               When postprocessing of these quantities is activated, those fields
               are present, but if we need to compute them in the
               cs_user_extra_operations user subroutine without postprocessing

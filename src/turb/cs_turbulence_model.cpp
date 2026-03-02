@@ -2266,14 +2266,12 @@ cs_clip_turbulent_fluxes(int  flux_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_function_k(int              location_id,
-                         cs_lnum_t         n_elts,
-                         const cs_lnum_t  *elt_ids,
-                         void             *input,
-                         void             *vals)
+cs_turbulence_function_k(int                     location_id,
+                         cs_lnum_t               n_elts,
+                         const cs_lnum_t        *elt_ids,
+                         [[maybe_unused]] void  *input,
+                         void                   *vals)
 {
-  CS_UNUSED(input);
-
   cs_real_t *k = static_cast<cs_real_t *>(vals);
 
   cs_assert(location_id == CS_MESH_LOCATION_CELLS);
@@ -2343,14 +2341,12 @@ cs_turbulence_function_k(int              location_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_function_eps(int              location_id,
-                           cs_lnum_t         n_elts,
-                           const cs_lnum_t  *elt_ids,
-                           void             *input,
-                           void             *vals)
+cs_turbulence_function_eps(int                     location_id,
+                           cs_lnum_t               n_elts,
+                           const cs_lnum_t        *elt_ids,
+                           [[maybe_unused]] void  *input,
+                           void                   *vals)
 {
-  CS_UNUSED(input);
-
   cs_real_t *eps = static_cast<cs_real_t *>(vals);
 
   cs_assert(location_id == CS_MESH_LOCATION_CELLS);
@@ -2421,14 +2417,12 @@ cs_turbulence_function_eps(int              location_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_function_rij(int               location_id,
-                           cs_lnum_t         n_elts,
-                           const cs_lnum_t  *elt_ids,
-                           void             *input,
-                           void             *vals)
+cs_turbulence_function_rij(int                     location_id,
+                           cs_lnum_t               n_elts,
+                           const cs_lnum_t        *elt_ids,
+                           [[maybe_unused]] void  *input,
+                           void                   *vals)
 {
-  CS_UNUSED(input);
-
   cs_real_6_t *rij = static_cast<cs_real_6_t *>(vals);
 
   cs_assert(location_id == CS_MESH_LOCATION_CELLS);
