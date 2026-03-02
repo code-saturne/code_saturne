@@ -71,7 +71,6 @@ cs_intprf.h
 
 noinst_LIBRARIES = libcsatmo.a
 libcsatmo_a_SOURCES = \
-atr1vf.f90 \
 cs_air_props.cpp \
 cs_at_opt_interp.cpp \
 cs_at_data_assim.cpp \
@@ -86,11 +85,15 @@ cs_atmo_source_terms.cpp \
 cs_atmo_variables.cpp \
 cs_atmo_ground_model.cpp \
 cs_atprke.cpp \
-cs_intprf.cpp \
+cs_intprf.cpp
+
+if HAVE_FORTRAN
+libcsatmo_a_SOURCES += atr1vf.f90 \
 rayigc.f90 \
 rayir.f90 \
 rayive.f90 \
 rayso.f90
+endif
 
 clean-local:
 	-rm -f *__genmod.f90 *__genmod.mod

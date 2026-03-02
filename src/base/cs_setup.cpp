@@ -125,11 +125,13 @@ BEGIN_C_DECLS
 
 /* Bindings to Fortran routines */
 
+#if defined(HAVE_FORTRAN)
 void
 cs_f_iniini(void);
 
 void
 cs_f_pp_models_init(void);
+#endif
 
 /*============================================================================
  * Private function definitions
@@ -165,8 +167,10 @@ _init_setup(void)
      At this stage, physical model flags may not be set yet, so only default
      initializations and C/Fortran global model pointer mapping is done here. */
 
+#if defined(HAVE_FORTRAN)
   cs_f_iniini();
   cs_f_pp_models_init();
+#endif
 }
 
 /*----------------------------------------------------------------------------*/

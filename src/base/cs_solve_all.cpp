@@ -142,8 +142,10 @@ extern cs_real_t *cs_glob_ckupdc;
  * (descriptions follow, with function bodies).
  *============================================================================*/
 
+#if defined(HAVE_FORTRAN)
 void
 cs_f_atr1vf(void);
+#endif
 
 /*============================================================================
  * Private function definitions
@@ -1353,7 +1355,13 @@ cs_solve_all()
     if (   cs_glob_atmo_1d_rad->radiative_model_1d == 1
         && ( cs_glob_physical_model_flag[CS_ATMOSPHERIC]
             > CS_ATMO_CONSTANT_DENSITY))
+#if defined(HAVE_FORTRAN)
       cs_f_atr1vf();
+#else
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: code_saturne compiled without Fortran support.\n",
+                __func__);
+#endif
 
     cs_rad_transfer_solve(cs_boundary_conditions_get_bc_type());
   }

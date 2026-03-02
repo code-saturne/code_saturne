@@ -154,8 +154,10 @@ BEGIN_C_DECLS
 
 /* Initialize Fortran base common block values */
 
+#if defined(HAVE_FORTRAN)
 extern void
 cs_f_init(int  irgpar);  /* MPI Rank in parallel, -1 otherwise */
+#endif
 
 /*============================================================================
  * Static global variables
@@ -305,7 +307,9 @@ _run(void)
 
   if ((opts.preprocess | opts.verif) == false && opts.benchmark <= 0) {
 
+#if defined(HAVE_FORTRAN)
     cs_f_init(cs_glob_rank_id);
+#endif
 
     cs_setup();
 

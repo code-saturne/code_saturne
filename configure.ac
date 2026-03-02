@@ -117,7 +117,27 @@ user_CS_LD=$CS_LD
 
 AC_PROG_CC
 AC_PROG_CXX
-AC_PROG_FC
+
+# For Fortran check if it is disabled first
+AC_ARG_ENABLE(fortran,
+  [AS_HELP_STRING([--disable-fortran], [disable optional fortran compilation])],
+  [
+    case "${enableval}" in
+      yes) cs_have_fortran=yes ;;
+      no)  cs_have_fortran=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-fortran]) ;;
+    esac
+  ],
+  [ cs_have_fortran=yes ]
+)
+
+AC_SUBST(cs_have_fortran)
+
+if test "x$cs_have_fortran" = "xyes" ; then
+  AC_PROG_FC
+  AC_DEFINE([HAVE_FORTRAN], 1, [Fortran compiler present])
+fi
+AM_CONDITIONAL(HAVE_FORTRAN, test x$cs_have_fortran = xyes)
 
 AC_PROG_INSTALL
 AC_PROG_LN_S
@@ -128,7 +148,7 @@ AC_PROG_SED
 if test "x$CC" = "x" ; then
   AC_MSG_FAILURE([cannot find C compiler])
 fi
-if test "x$FC" = "x" ; then
+if test "x$FC" = "x" && test "x$cs_have_fortran" = "xyes"; then
   AC_MSG_FAILURE([cannot find Fortran compiler])
 fi
 
@@ -453,10 +473,14 @@ fi
 AC_SUBST(cs_have_long_lnum)
 
 # Check for Fortran module generation
-CS_AC_TEST_FC_MOD
+if test "x$cs_have_fortran" = "xyes" ; then
+  CS_AC_TEST_FC_MOD
+fi
 
 # First determination of Fortran libraries (before OpenMP test)
-AC_FC_LIBRARY_LDFLAGS
+if test "x$cs_have_fortran" = "xyes" ; then
+  AC_FC_LIBRARY_LDFLAGS
+fi
 
 #------------------------------------------------------------------------------
 # Determine SYCL support
@@ -587,7 +611,7 @@ AC_SUBST(cs_have_openmp_target)
 # Now that compiler options are determined (relative notably to OpenMP),
 # update Fortran libraries necessary to link.
 
-if test "x$cs_have_openmp_f" = "xyes" ; then
+if test "x$cs_have_openmp_f" = "xyes" && test "x$cs_have_fortran" = "xyes" ; then
   AC_FC_LIBRARY_LDFLAGS
 fi
 

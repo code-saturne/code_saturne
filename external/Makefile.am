@@ -25,5 +25,7 @@
 SUBDIRS = .
 
 if HAVE_BACKEND
+if HAVE_FORTRAN
 SUBDIRS += atmo
+endif
 endif

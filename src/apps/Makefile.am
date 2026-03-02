@@ -75,8 +75,12 @@ noinst_LIBRARIES =
 local_libraries_add = libsaturne.${LIB_EXT} libcs_solver.${LIB_EXT}
 local_libraries_v_add =
 
-libsaturne_a_libs = \
-$(top_builddir)/external/atmo/libextatmo.a \
+if HAVE_FORTRAN
+libsaturne_a_libs = $(top_builddir)/external/atmo/libextatmo.a
+else
+libsaturne_a_libs =
+endif
+libsaturne_a_libs += \
 $(top_builddir)/src/fvm/libfvm_filters.a \
 $(top_builddir)/src/base/libcsbase.a \
 $(top_builddir)/src/base/libcscore.a \

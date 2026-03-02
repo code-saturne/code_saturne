@@ -99,8 +99,10 @@ BEGIN_C_DECLS
  * Private function definitions
  *============================================================================*/
 
+#if defined(HAVE_FORTRAN)
 void
 cs_f_allocate_map_atmo(void);
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1537,7 +1539,9 @@ cs_atmo_init_variables_1(void)
     if (cs_glob_atmo_option->meteo_profile == 1)
       cs_atmo_read_meteo_profile(0);
 
+#if defined(HAVE_FORTRAN)
     cs_f_allocate_map_atmo();
+#endif
 
     if (cs_glob_atmo_chemistry->model > 0) {
       cs_atmo_read_chemistry_profile(0);

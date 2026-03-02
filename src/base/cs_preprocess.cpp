@@ -114,6 +114,7 @@ BEGIN_C_DECLS
 
 /* majgeo */
 
+#if defined(HAVE_FORTRAN)
 extern void cs_f_majgeo(const cs_lnum_t    *ncel,
                         const cs_lnum_t    *ncelet,
                         const cs_lnum_t    *nfabor,
@@ -121,6 +122,7 @@ extern void cs_f_majgeo(const cs_lnum_t    *ncel,
                         const cs_real_t     xyzcen[],
                         const cs_real_t     cdgfbo[],
                         const cs_real_t     surfbn[]);
+#endif
 
 /*============================================================================
  * Private function definitions
@@ -531,6 +533,7 @@ cs_preprocess_mesh_update_fortran(void)
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq_g = cs_glob_mesh_quantities_g;
 
+#if defined(HAVE_FORTRAN)
   cs_f_majgeo(&(m->n_cells),
               &(m->n_cells_with_ghosts),
               &(m->n_b_faces),
@@ -538,6 +541,7 @@ cs_preprocess_mesh_update_fortran(void)
               (cs_real_t *)mq_g->cell_cen,
               (cs_real_t *)mq_g->b_face_cog,
               mq_g->b_face_surf);
+#endif
 }
 
 /*----------------------------------------------------------------------------*/

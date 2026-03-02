@@ -30,10 +30,6 @@ user user_examples meg apps
 
 # General flags
 
-AM_FCFLAGS = \
-$(FCMODINCLUDE)$(top_builddir)/src \
-$(FCFLAGS_DBG) $(FCFLAGS_OPT) $(FCFLAGS_SHARED)
-
 AM_LDFLAGS = -no-undefined
 
 # Library source files
@@ -44,6 +40,11 @@ noinst_LIBRARIES = libcsmodules.a
 
 pkginclude_HEADERS = \
 cs_headers.h
+
+if HAVE_FORTRAN
+AM_FCFLAGS = \
+$(FCMODINCLUDE)$(top_builddir)/src \
+$(FCFLAGS_DBG) $(FCFLAGS_OPT) $(FCFLAGS_SHARED)
 
 libcsmodules_a_SOURCES = \
 base/mesh.f90 \
@@ -65,6 +66,8 @@ base/optcal.$(OBJEXT): base/cs_c_bindings.$(OBJEXT)
 
 atmo/atincl.$(OBJEXT): pprt/ppincl.$(OBJEXT) \
  base/mesh.$(OBJEXT) base/cs_c_bindings.$(OBJEXT)
+
+endif
 
 # Additional local targets
 
