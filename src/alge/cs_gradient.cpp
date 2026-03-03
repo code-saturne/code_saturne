@@ -9098,9 +9098,9 @@ cs_gradient_vector(const char                    *var_name,
 
     if (bc_coeffs != nullptr) {
 
-      /* Internal coupling is overwritting coeff "a" to pass the
-       * target flux, this assumes inc=1, which is always the cas for
-       * coupled variables */
+      /* Internal coupling overwrites coeff "a" to pass the target flux;
+         this assumes inc=1, which is always the case for
+         coupled variables */
       assert(inc == 1);
 
       cs_real_t _clip_coeff = (clip_mode >= 0) ? clip_coeff : -1;
@@ -9145,7 +9145,7 @@ cs_gradient_vector(const char                    *var_name,
     bc_coeffs = &bc_coeffs_loc;
 
     if (gradient_type != CS_GRADIENT_GREEN_ITER) {
-      // else only above standard coefa&b are used
+      // Else only above base coefa&b are used
 
       CS_MALLOC_HD(val_f_hmg, n_b_faces, var_t, cs_alloc_mode);
       bc_coeffs->val_f = (cs_real_t *)val_f_hmg;

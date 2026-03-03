@@ -467,6 +467,10 @@ _cs_mem_error_handler_default(const char  *file_name,
  * Local static variable definitions
  *-----------------------------------------------------------------------------*/
 
+static int  _cs_mem_global_init_mode = 0;
+
+#if defined(HAVE_ACCEL)
+
 static const int64_t _alloc_size_mask[CS_ALLOC_DEVICE+1][CS_ALLOC_TRACE_N] =
   {{1, 0, 0, 0},  // mask for CS_ALLOC_HOST
    {1, 0, 0, 1},  // mask for CS_ALLOC_HOST_DEVICE
@@ -474,9 +478,8 @@ static const int64_t _alloc_size_mask[CS_ALLOC_DEVICE+1][CS_ALLOC_TRACE_N] =
    {1, 0, 1, 1},  // mask for CS_ALLOC_HOST_DEVICE_SHARED
    {0, 0, 0, 1}}; // mask for CS_ALLOC_DEVICE
 
-static int  _cs_mem_global_init_mode = 0;
-#if defined(HAVE_ACCEL)
 static int  _n_async_copies_in_progress = 0;
+
 #endif
 
 static FILE *_cs_mem_global_file = nullptr;

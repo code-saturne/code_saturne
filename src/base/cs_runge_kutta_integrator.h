@@ -383,19 +383,13 @@ cs_runge_kutta_stage_complete_rhs(cs_dispatch_context         &ctx,
   // get the current stage index
   const int i_stg = rk->i_stage;
 
-  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-
   cs_real_t *rhs = rk->rhs_stages + i_stg*stride*n_elts;
-
-  cs_alloc_mode_t amode = ctx.alloc_mode(false);
 
   /* Allocate non reconstructed face value only if presence of limiter */
 
   cs_field_t *f = nullptr;
   if (f_id > -1)
     f = cs_field_by_id(f_id);
-
-  using var_t = cs_real_t[stride];
 
   /* We compute the total explicit balance. */
 

@@ -3047,7 +3047,7 @@ _export_field_e(const fvm_writer_section_t      *export_list,
   c.field_label = fieldlabel;
   c.solution_index = solution_index;
 
-  const fvm_writer_section_t  *next_section
+  [[maybe_unused]] const fvm_writer_section_t  *next_section
     = fvm_writer_field_helper_output_e(helper,
                                        &c,
                                        export_list,
@@ -4192,7 +4192,7 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
                               time_value,
                               cgns_location);
 
-  fvm_to_cgns_solution_t *solution
+  [[maybe_unused]] fvm_to_cgns_solution_t *solution
     = writer->bases[base_index - 1]->solutions[sol_index - 1];
   assert(solution->location == cgns_location);
 

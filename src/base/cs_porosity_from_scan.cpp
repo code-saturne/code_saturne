@@ -1876,7 +1876,6 @@ cs_porous_model_restart_read_stage_1(void)
 
   cs_mesh_t *m = cs_glob_mesh;
   char error_name[128];
-  int errcount = 0;
 
   cs_restart_t *porous_restart
     = cs_restart_create("ibm.csc", nullptr, CS_RESTART_MODE_READ);
@@ -1916,7 +1915,6 @@ cs_porous_model_restart_read_stage_1(void)
   m->modified |= CS_MESH_MODIFIED_BALANCE;
 
   if (ierr != CS_RESTART_SUCCESS) {
-    errcount += 1;
     snprintf(error_name, 127, "%s", "c_disable_flag");
   }
   else {

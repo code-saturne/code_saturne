@@ -1121,7 +1121,8 @@ _create_cell_cells_connect(cs_mesh_t  *mesh,
 
   /* Sort line elements by column id (for better access patterns) */
 
-  bool unique = cs_sort_indexed(n_cells, cell_cells_idx, cell_cells_lst);
+  [[maybe_unused]] bool unique
+                     = cs_sort_indexed(n_cells, cell_cells_idx, cell_cells_lst);
 
   assert(unique == true);
 

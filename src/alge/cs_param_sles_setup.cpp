@@ -2570,7 +2570,8 @@ _set_mumps_sles(bool                 use_field_id,
 {
   assert(slesp != nullptr);  /* Sanity checks */
 
-  const  char  *sles_name = use_field_id ? nullptr : slesp->name;
+  [[maybe_unused]] const  char
+                     *sles_name = use_field_id ? nullptr : slesp->name;
   assert(slesp->field_id > -1 || sles_name != nullptr);
 
   if (slesp->context_param == nullptr) /* Define the context by default */
@@ -2608,7 +2609,8 @@ _set_petsc_hypre_sles(bool             use_field_id,
 {
   assert(slesp != nullptr);  /* Sanity checks */
 
-  const  char  *sles_name = use_field_id ? nullptr : slesp->name;
+  [[maybe_unused]] const  char  *sles_name
+                     = use_field_id ? nullptr : slesp->name;
   assert(slesp->field_id > -1 || sles_name != nullptr);
 
 #if defined(HAVE_PETSC)

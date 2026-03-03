@@ -1121,7 +1121,7 @@ _dof_dirichlet_implicit_elec_pot(cs_lnum_t         n_elts,
                                  void             *input,
                                  cs_real_t        *retval)
 {
-  const cs_field_t  *f = (const cs_field_t *)input;
+  [[maybe_unused]] const cs_field_t  *f = (const cs_field_t *)input;
 
   assert (cs_glob_physical_model_flag[CS_ELECTRIC_ARCS] > -1);
   assert(f == CS_F_(potr) || f == CS_F_(poti));
@@ -2409,7 +2409,7 @@ _init_boundaries(void)
        first, before GUI-based definitions (and non-GUI-based
        user definitions come last). */
 
-    const char *label = cs_tree_node_get_tag(tn, "label");
+    [[maybe_unused]] const char *label = cs_tree_node_get_tag(tn, "label");
     const char *nature = cs_tree_node_get_tag(tn, "nature");
 
     int bc_num = izone+1;

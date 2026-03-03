@@ -264,7 +264,7 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
     return;
   cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
   cs_lagr_extra_module_t *extra = extra_i;
-  int n_phases = extra->n_phases;
+  const int n_phases = extra->n_phases;
 
   /* Initializations*/
 
@@ -1015,7 +1015,6 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
   cs_lagr_extra_module_t *extra = extra_i;
 
   int phase_id = 0;
-  int n_phases = 1;
 
   /* Initializations*/
 

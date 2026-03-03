@@ -248,7 +248,7 @@ _order_by_direction(void)
                             jj*cs_glob_rad_transfer_params->vect_s[dir_id][1],
                             kk*cs_glob_rad_transfer_params->vect_s[dir_id][2]};
 
-          char name[32];
+          char name[80];
           snprintf(name, 79, "%s%03d", "radiation_", kdir+1);
 
           cs_sles_t *sles = cs_sles_find(-1, name);

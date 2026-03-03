@@ -407,11 +407,7 @@ cs_runge_kutta_stage_complete_scalar_rhs
   // get the current stage index
   const int i_stg = rk->i_stage;
 
-  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-
   cs_real_t *rhs = rk->rhs_stages + i_stg*n_elts;
-
-  cs_alloc_mode_t amode = ctx.alloc_mode(false);
 
   /* We compute the total explicit balance. */
 

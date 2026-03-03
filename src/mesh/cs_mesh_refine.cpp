@@ -729,9 +729,9 @@ public:
                                  int16_t                 i_f2c_pre[][2],
                                  cs_lnum_t               i_f2v_pre[])
   {
-    cs_lnum_t c_n_s_cells_max = c_n_s_cells;
-    cs_lnum_t c_n_i_faces_max = c_n_i_faces;
-    cs_lnum_t c_i_faces_size_max = c_i_faces_size;
+    [[maybe_unused]] cs_lnum_t c_n_s_cells_max = c_n_s_cells;
+    [[maybe_unused]] cs_lnum_t c_n_i_faces_max = c_n_i_faces;
+    [[maybe_unused]] cs_lnum_t c_i_faces_size_max = c_i_faces_size;
 
     c_n_s_cells = 0;
     c_n_i_faces = 0;
@@ -4044,7 +4044,8 @@ _subdivide_cell_tria_faces(const cs_mesh_t    *m,
 
   for (cs_lnum_t i = c_f_id_s; i < c_f_id_e; i++) {
 
-    cs_lnum_t s_id, e_id;
+    cs_lnum_t s_id;
+    [[maybe_unused]] cs_lnum_t e_id;
     cs_lnum_t f_id_o = c2f->ids[s_id_c + i];
     cs_lnum_t sgn = c2f->sgn[s_id_c + i];
 
@@ -4153,7 +4154,8 @@ _subdivide_cell_tria_q_faces(const cs_mesh_t  *m,
 
   for (cs_lnum_t i = c_f_id_s; i < c_f_id_e; i++) {
 
-    cs_lnum_t s_id, e_id;
+    cs_lnum_t s_id;
+    [[maybe_unused]] cs_lnum_t e_id;
     cs_lnum_t f_id_o = c2f->ids[s_id_c + i];
     cs_lnum_t sgn = c2f->sgn[s_id_c + i];
 
@@ -4262,7 +4264,8 @@ _subdivide_cell_quad_faces(const cs_mesh_t    *m,
 
   for (cs_lnum_t i = c_f_id_s; i < c_f_id_e; i++) {
 
-    cs_lnum_t s_id, e_id;
+    cs_lnum_t s_id;
+    [[maybe_unused]] cs_lnum_t e_id;
     cs_lnum_t f_id_o = c2f->ids[s_id_c + i];
     cs_lnum_t sgn = c2f->sgn[s_id_c + i];
 
@@ -5103,7 +5106,8 @@ _pre_refine_poly_cell(const cs_mesh_t            *m,
 
   const cs_lnum_t n_cell_faces = e_id_c - s_id_c;
 
-  cs_lnum_t e_f2c_count = 0;  // counter for number of exterior faces
+  [[maybe_unused]] cs_lnum_t e_f2c_count
+                     = 0;  // counter for number of exterior faces
 
   for (cs_lnum_t i = 0; i < n_cell_faces; i++) {
     cs_lnum_t f_id_o = c2f->ids[s_id_c + i];

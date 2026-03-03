@@ -3097,7 +3097,7 @@ _pairwise_msr(cs_lnum_t                  f_n_rows,
      * is only on the negative coefficient. */
 
     cs_lnum_t m_max = -1;
-    cs_lnum_t n_remain = t_f_n_rows;
+    [[maybe_unused]] cs_lnum_t n_remain = t_f_n_rows;
 
     if (dd_threshold > 0) {
 
@@ -8388,9 +8388,11 @@ cs_grid_coarsen(const cs_grid_t      *f,
   /* Since some coarsening steps are done on CPU in all cases,
      relax allocation mode requirements. */
 
+#if defined(HAVE_ACCEL)
   cs_alloc_mode_t alloc_mode_ref = alloc_mode;
   if (alloc_mode == CS_ALLOC_DEVICE)
     alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
+#endif
 
   /* Initialization */
 

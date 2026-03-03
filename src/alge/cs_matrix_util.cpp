@@ -114,8 +114,6 @@ _dot_xx(const cs_matrix_t  *a,
         cs_lnum_t           n,
         const cs_real_t    *x)
 {
-  double s = -1;
-
 #if defined(__CUDACC__)
 
   bool use_gpu = false;
@@ -124,7 +122,7 @@ _dot_xx(const cs_matrix_t  *a,
 
   if (use_gpu) {
     cudaStream_t stream = cs_blas_cuda_get_stream();
-    s = cs_blas_cuda_dot(n, x, x);
+    double s = cs_blas_cuda_dot(n, x, x);
     CS_CUDA_CHECK(cudaStreamSynchronize(stream));
 
     return s;
@@ -1701,7 +1699,7 @@ _frobenius_norm(const cs_matrix_t  *m)
   if (m == nullptr)
     return retval;
 
-  cs_matrix_fill_type_t ft = m->fill_type;
+  [[maybe_unused]] cs_matrix_fill_type_t ft = m->fill_type;
 
   switch(m->type) {
 

@@ -2203,7 +2203,8 @@ _exchange_cell_gnum_and_family(const cs_join_gset_t     *n2o_hist,
   const int  loc_rank = cs::max(cs_glob_rank_id, 0);
   const cs_gnum_t  *gnum_rank_index = join_select->compact_rank_index;
   const cs_gnum_t  loc_rank_s = join_select->compact_rank_index[loc_rank];
-  const cs_gnum_t  loc_rank_e = join_select->compact_rank_index[loc_rank+1];
+  [[maybe_unused]] const cs_gnum_t  loc_rank_e
+                     = join_select->compact_rank_index[loc_rank+1];
 
   /* Sanity checks */
 

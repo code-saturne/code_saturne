@@ -864,7 +864,7 @@ _assumed_to_true_rank(cs_rank_neighbors_t  *arn,
   cs_lnum_t n_range_match = 0;
   cs_lnum_t n_range_dist = 0;
 
-  int a_rank_prev = -1;
+  [[maybe_unused]] int a_rank_prev = -1;
   for (cs_lnum_t i = 0; i < n; i++) {
     int r = _assumed_rank(n_ranks, n_g, g_id[i]);
     if (r == local_rank) {
@@ -1823,7 +1823,7 @@ _matrix_assembler_compute_local(cs_matrix_assembler_t  *ma)
 
     for (cs_lnum_t i = 0; i < ma->size; i++) {
       cs_gnum_t g_r_id = ma->g_rc_id[i*2];
-      cs_gnum_t g_c_id = ma->g_rc_id[i*2 + 1];
+      [[maybe_unused]] cs_gnum_t g_c_id = ma->g_rc_id[i*2 + 1];
       assert(g_r_id >= ma->l_range[0] && g_r_id < ma->l_range[1]);
       cs_lnum_t l_r_id = g_r_id - ma->l_range[0];
       assert(g_c_id >= ma->l_range[0] && g_c_id < ma->l_range[1]);
@@ -3204,7 +3204,7 @@ cs_matrix_assembler_values_add(cs_matrix_assembler_values_t  *mav,
         cs_lnum_t k = i+j;
 
         cs_lnum_t l_r_id = row_id[k];
-        cs_lnum_t l_c_id = col_id[k];
+        [[maybe_unused]] cs_lnum_t l_c_id = col_id[k];
 
         cs_lnum_t n_cols = ma->r_idx[l_r_id+1] - ma->r_idx[l_r_id];
 

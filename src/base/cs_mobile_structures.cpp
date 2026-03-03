@@ -762,7 +762,8 @@ cs_mobile_structures_initialize(void)
      structures. */
 
   int       m_vals[3]   = { 0, 0, 0 };
-  cs_lnum_t n_ast_faces = 0, n_ext_faces = 0;
+  cs_lnum_t n_ast_faces = 0;
+  [[maybe_unused]] cs_lnum_t n_ext_faces = 0;
 
   for (cs_lnum_t i = 0; i < n_b_faces; i++) {
     int str_num = idfstr[i];

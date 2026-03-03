@@ -2345,7 +2345,7 @@ _update_inter_edges_after_merge(cs_join_param_t          param,
   cs_join_inter_edges_t  *inter_edges = *p_inter_edges;
   cs_join_inter_edges_t  *new_inter_edges = nullptr;
   cs_lnum_t  n_edges = inter_edges->n_edges;
-  cs_lnum_t  init_list_size = inter_edges->index[n_edges];
+  [[maybe_unused]] cs_lnum_t  init_list_size = inter_edges->index[n_edges];
   FILE  *logfile = cs_glob_join_log;
 
   assert(n_edges == edges->n_edges);

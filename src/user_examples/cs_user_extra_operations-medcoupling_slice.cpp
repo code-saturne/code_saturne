@@ -156,7 +156,8 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
     /* Compute mean of a scalar over the slice "slice_OZ" */
     cs_real_t *cpro_scal = cs_field("my_scalar")->val;
 
-    cs_real_t mean_val = cs_medcoupling_slice_scalar_mean("slice_OZ", cpro_scal);
+    [[maybe_unused]] cs_real_t mean_val
+      = cs_medcoupling_slice_scalar_mean("slice_OZ", cpro_scal);
     /*![medcpl_slice_mean]*/
   }
 
@@ -165,9 +166,9 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
     /* Compute an integral of a given scalar over the slice "annulus_slice" */
     cs_real_t *cpro_scal = cs_field("my_scalar")->val;
 
-    cs_real_t int_val =
-      cs_medcoupling_slice_scalar_integral("annulus_slice", /* Name of the slice */
-                                           cpro_scal);      /* Pointer to scalar values */
+    [[maybe_unused]] cs_real_t int_val
+      = cs_medcoupling_slice_scalar_integral("annulus_slice", /* Name of the slice */
+                                             cpro_scal);      /* Pointer to scalar values */
     /*![medcpl_slice_integral]*/
   }
 

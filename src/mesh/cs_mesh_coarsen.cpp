@@ -208,7 +208,7 @@ _cell_equiv(cs_mesh_t  *mesh,
 
   int reloop;
 
-  int pass = 0;
+  [[maybe_unused]] int pass = 0;   // Could be used for statitics.
 
   do {
     reloop = 0;
@@ -868,32 +868,6 @@ _face_merge_state_remove_edge(cs_mesh_face_merge_state_t  *s,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Remove edge from face merge state structure with edge to face info.
- *
- * \param[in, out]  s        face merge state structure
- * \param[in, out]  edge_id  if of edge to remove
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-_face_merge_state_remove_edge_e2f(cs_mesh_face_merge_state_t  *s,
-                                  cs_lnum_t                    edge_id)
-{
-  assert(edge_id < s->n_edges);
-
-  /* Swap with last */
-
-  cs_lnum_t i = s->n_edges - 1;
-
-  s->e2v[edge_id][0] = s->e2v[i][0];
-  s->e2v[edge_id][1] = s->e2v[i][1];
-  s->e2f[edge_id] = s->e2f[i];
-
-  s->n_edges -= 1;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Merge existing faces into a new face
  *
  * This function also transforms some counts to indexes
@@ -1321,7 +1295,7 @@ _filter_b_face_equiv(cs_lnum_t        n_faces,
                      cs_lnum_t        face_equiv[],
                      char             b_face_r_c_idx[])
 {
-  cs_lnum_t n_b_loc_face = 0;
+  [[maybe_unused]] cs_lnum_t n_b_loc_face = 0;
 
   for (cs_lnum_t f_i = 0; f_i < n_faces; f_i++) {
 

@@ -1058,12 +1058,12 @@ cs_gas_mix_physical_properties(void)
   // But we enter this function in idilat 2 only when 1/C2 != 0
   /* If idilat = 2, the pressure is a field
      (not used here, as indicated by compiler warning) */
-  cs_real_t *cvar_pr = nullptr;
+  // cs_real_t *cvar_pr = nullptr;
 
   if (cs_glob_velocity_pressure_model->idilat == 3)
     pressure = cs_glob_fluid_properties->pther;
-  else if (cs_glob_velocity_pressure_model->idilat == 2)
-    cvar_pr = CS_F_(p)->val;
+  // else if (cs_glob_velocity_pressure_model->idilat == 2)
+  //  cvar_pr = CS_F_(p)->val;
 
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id ++) {

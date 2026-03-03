@@ -2364,7 +2364,7 @@ _export_connect_g(const fvm_writer_section_t  *export_sections,
   do {   /* Loop on sections with equivalent MED element type */
 
     const fvm_nodal_section_t *section = current_section->section;
-    const cs_lnum_t  n_elts_section = section->n_elements;
+    [[maybe_unused]] const cs_lnum_t  n_elts_section = section->n_elements;
 
     if (section->type == current_section->type) {
 
@@ -2387,7 +2387,7 @@ _export_connect_g(const fvm_writer_section_t  *export_sections,
       const cs_lnum_t n_sub_elts
         = fvm_tesselation_n_sub_elements(section->tesselation,
                                          current_section->type);
-      const cs_lnum_t *sub_elt_index
+      [[maybe_unused]] const cs_lnum_t *sub_elt_index
         = fvm_tesselation_sub_elt_index(section->tesselation,
                                         current_section->type);
       fvm_tesselation_get_global_size(section->tesselation,
