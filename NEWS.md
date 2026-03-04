@@ -36,6 +36,16 @@ Master (not on release branches yet)
 
 ### Architectural changes:
 
+- Make Fortran compiler an optional prerequisite
+  * Fortran dependency is now only required for Atmo module, and more
+    specifically for the Polyphemus chemistry functions.
+  * Disabling fortran at configure step is done using the "--disable-fortran"
+    configure flag
+  * If fortran is disable in configure step, the corresponding code is not
+    compiled, and if any Fortran functions are needed from the atmospherical
+    flows module, based on the user defined parameters, then the code exits
+    with a specific error message.
+
 - Add multi-dimensional arrays for "linked" fields.
   * It is now possible to define, for a cs_field_t object, that it is a part of
     a series. By doing so, one of the linked fields is defined as the owner of
