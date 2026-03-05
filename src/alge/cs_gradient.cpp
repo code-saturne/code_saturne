@@ -7155,7 +7155,7 @@ _lsq_strided_gradient_gather(const cs_mesh_t             *m,
           cs_real_t pfac = (pvar[jj][kk] - pvar_ii[kk]) * ddc;
 
           for (cs_lnum_t ll = 0; ll < 3; ll++) {
-            rhs[ii][kk][ll] += dc[ll] * pfac;
+            _rhs[kk][ll] += dc[ll] * pfac;
           }
         }
       }
