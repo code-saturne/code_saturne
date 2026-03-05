@@ -2837,8 +2837,8 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
       cs_real_t pfac_jj = pfac * cw_jj;
       cs_real_t fctb_ii[3], fctb_jj[3];
       for (cs_lnum_t ll = 0; ll < 3; ll++) {
-        fctb_ii[ll] = dc[ll] * pfac_ii;
-        fctb_jj[ll] = dc[ll] * pfac_jj;
+        fctb_ii[ll] = dc[ll] * pfac_jj;
+        fctb_jj[ll] = dc[ll] * pfac_ii;
       }
 
       if (ii < n_cells)
@@ -3045,6 +3045,7 @@ _lsq_scalar_gradient_gather
     cs_real_t rhsv[3] = {0, 0, 0};
     cs_real_t v_ii = pvar[ii];
     cs_real_t v_min = v_ii, v_max = v_ii;
+    auto cell_cen_ii = cell_cen[ii];
 
     /* Contribution from interior faces
        -------------------------------- */
@@ -3064,18 +3065,18 @@ _lsq_scalar_gradient_gather
 
         cs_real_t dc[3];
         for (cs_lnum_t ll = 0; ll < 3; ll++)
-          dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
+          dc[ll] = cell_cen[jj][ll] - cell_cen_ii[ll];
+        cs_real_t ddc_w = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
         if (compute_bounds) {
           v_min = cs::min(v_min, v_jj);
           v_max = cs::max(v_max, v_jj);
         }
 
-        cs_real_t pfac = (v_jj - v_ii) / cs_math_3_square_norm(dc);
+        cs_real_t pfac = (v_jj - v_ii) * ddc_w;
 
         cs_real_t pond = (c2f_sgn[i] > 0) ? weight[f_id] : 1. - weight[f_id];
-        pfac *= w_jj / (  pond       *w_ii
-                        + (1. - pond)*w_jj);
+        pfac *= w_jj / (pond *w_ii + (1. - pond)*w_jj);
 
         for (cs_lnum_t ll = 0; ll < 3; ll++)
           rhsv[ll] += dc[ll] * pfac;
@@ -3090,9 +3091,10 @@ _lsq_scalar_gradient_gather
 
         cs_real_t dc[3];
         for (cs_lnum_t ll = 0; ll < 3; ll++)
-          dc[ll] = cell_cen[jj][ll] - cell_cen[ii][ll];
+          dc[ll] = cell_cen[jj][ll] - cell_cen_ii[ll];
+        cs_real_t ddc_w = 1./(dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
-        cs_real_t pfac = (v_jj - v_ii) / cs_math_3_square_norm(dc);
+        cs_real_t pfac = (v_jj - v_ii) * ddc_w;
         if (compute_bounds) {
           v_min = cs::min(v_min, v_jj);
           v_max = cs::max(v_max, v_jj);
@@ -6819,8 +6821,8 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
         cs_real_t pfac_jj = pfac * cw_jj;
         cs_real_t fctb_ii[3], fctb_jj[3];
         for (cs_lnum_t ll = 0; ll < 3; ll++) {
-          fctb_ii[ll] = dc[ll] * pfac_ii;
-          fctb_jj[ll] = dc[ll] * pfac_jj;
+          fctb_ii[ll] = dc[ll] * pfac_jj;
+          fctb_jj[ll] = dc[ll] * pfac_ii;
         }
         if (ii < n_cells)
           cs_dispatch_sum<3>(rhs[ii][kk], fctb_ii, i_sum_type);
