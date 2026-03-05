@@ -88,10 +88,6 @@
 #include "alge/cs_matrix_priv.h"
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
-/*----------------------------------------------------------------------------*/
 /*! \file cs_matrix_hypre.cpp
  *
  * \brief Sparse Matrix Representation and Operations using HYPRE.
@@ -1999,5 +1995,3 @@ cs_matrix_set_type_hypre(cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

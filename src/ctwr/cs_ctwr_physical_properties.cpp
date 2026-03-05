@@ -84,8 +84,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -860,5 +858,3 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

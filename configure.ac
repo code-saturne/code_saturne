@@ -120,7 +120,7 @@ AC_PROG_CXX
 
 # For Fortran check if it is disabled first
 AC_ARG_ENABLE(fortran,
-  [AS_HELP_STRING([--disable-fortran], [disable optional fortran compilation])],
+  [AS_HELP_STRING([--disable-fortran], [disable optional Fortran compilation])],
   [
     case "${enableval}" in
       yes) cs_have_fortran=yes ;;

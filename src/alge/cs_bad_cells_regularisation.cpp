@@ -62,8 +62,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -739,5 +737,3 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t  *var,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

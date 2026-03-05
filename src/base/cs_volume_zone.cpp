@@ -65,10 +65,6 @@
 
 #include "base/cs_volume_zone.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -133,11 +129,6 @@ static const char *_type_flag_name[] = {N_("initialization"),
                                         N_("mass source term"),
                                         N_("groundwater soil"),
                                         N_("solid")};
-
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
 
 /*============================================================================
  * Private function definitions
@@ -354,10 +345,6 @@ _volume_zone_compute_metadata(bool       mesh_modified,
   } /* Need to compute metadata */
 
 }
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -1111,5 +1098,3 @@ cs_volume_zone_print_info(void)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

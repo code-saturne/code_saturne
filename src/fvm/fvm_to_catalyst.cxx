@@ -1401,8 +1401,6 @@ _export_field_values_e(const fvm_nodal_t         *mesh,
  * Public function definitions
  *============================================================================*/
 
-BEGIN_C_DECLS
-
 /*----------------------------------------------------------------------------
  * Initialize FVM to Catalyst object writer.
  *
@@ -1423,22 +1421,20 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI)
-void *
-fvm_to_catalyst_init_writer(const char             *name,
-                            const char             *path,
-                            const char             *options,
-                            fvm_writer_time_dep_t   time_dependency,
-                            MPI_Comm                comm)
+extern "C" void *
+fvm_to_catalyst_init_writer(const char                   *name,
+                            [[maybe_unused]] const char  *path,
+                            const char                   *options,
+                            fvm_writer_time_dep_t         time_dependency,
+                            MPI_Comm                      comm)
 #else
-void *
-fvm_to_catalyst_init_writer(const char             *name,
-                            const char             *path,
-                            const char             *options,
-                            fvm_writer_time_dep_t   time_dependency)
+extern "C" void *
+fvm_to_catalyst_init_writer(const char                   *name,
+                            [[maybe_unused]] const char  *path,
+                            const char                   *options,
+                            fvm_writer_time_dep_t         time_dependency)
 #endif
 {
-  CS_UNUSED(path);
-
   fvm_to_catalyst_t  *w = nullptr;
 
   bool private_comm = false;
@@ -1554,7 +1550,7 @@ fvm_to_catalyst_init_writer(const char             *name,
  *   null pointer
  *----------------------------------------------------------------------------*/
 
-void *
+extern "C" void *
 fvm_to_catalyst_finalize_writer(void  *this_writer_p)
 {
   int i;
@@ -1603,7 +1599,7 @@ fvm_to_catalyst_finalize_writer(void  *this_writer_p)
  *   time_value    <-- time_value number
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 fvm_to_catalyst_set_mesh_time(void    *this_writer_p,
                               int      time_step,
                               double   time_value)
@@ -1639,7 +1635,7 @@ fvm_to_catalyst_set_mesh_time(void    *this_writer_p,
  *   mesh          <-- pointer to nodal mesh structure that should be written
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 fvm_to_catalyst_export_nodal(void               *this_writer_p,
                              const fvm_nodal_t  *mesh)
 {
@@ -1739,7 +1735,7 @@ fvm_to_catalyst_export_nodal(void               *this_writer_p,
  *   field_values     <-- array of associated field value arrays
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 fvm_to_catalyst_export_field(void                  *this_writer_p,
                              const fvm_nodal_t     *mesh,
                              const char            *name,
@@ -1871,7 +1867,7 @@ fvm_to_catalyst_export_field(void                  *this_writer_p,
  *   this_writer_p    <-- pointer to associated writer
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 fvm_to_catalyst_flush(void  *this_writer_p)
 {
   fvm_to_catalyst_t *w = (fvm_to_catalyst_t *)this_writer_p;
@@ -1900,7 +1896,5 @@ fvm_to_catalyst_flush(void  *this_writer_p)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* HAVE_CATALYST */

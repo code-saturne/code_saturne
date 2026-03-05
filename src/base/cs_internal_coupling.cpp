@@ -81,8 +81,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -1342,7 +1340,8 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
     cs_real_t surf = b_face_surf[face_id];
     cs_real_t hint = hintp[face_id];
     cs_real_t hext = hextp[face_id];
-    cs_real_t heq = _calc_heq(hint, hext) * surf;//TODO simply it with new BC coeffs
+    //TODO simply this with new BC coeffs
+    cs_real_t heq = _calc_heq(hint, hext) * surf;
     cs_real_t c = thetap * idiffp * heq;
 
     d_g_row_id[jj] = g_id_l[ii];
@@ -1678,14 +1677,6 @@ cs_ic_field_dist_data_by_face_id(const int         field_id,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
-
-/*============================================================================
- * Public C++ function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
 /*!
  * \brief  Update scalar boundary condition coefficients for internal coupling.
  *
@@ -1699,8 +1690,8 @@ END_C_DECLS
  * \param[in]     clip_coeff       clipping coefficient
  * \param[in]     hyd_p_flag       flag for hydrostatic pressure
  * \param[in]     f_ext            exterior force generating pressure
- * \param[in]     viscel           symmetric cell tensor \f$ \tens{\mu}_\celli \f$,
-                                   or nullptr
+ * \param[in]     viscel           symmetric cell tensor
+ *                                 \f$ \tens{\mu}_\celli \f$, or nullptr
  * \param[in]     weighb           boundary face weight for cells i in case
  *                                 of tensor diffusion, or nullptr
  * \param[in]     df_limiter       diffusion limiter array

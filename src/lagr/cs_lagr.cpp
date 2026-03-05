@@ -115,8 +115,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -1976,18 +1974,18 @@ cs_lagr_solve_time_step(const int         itypfb[],
      ------------------------------------- */
 
   if (lagr_model->clogging == 1)
-    cloginit(&cs_glob_lagr_physico_chemical->epseau,
-             &cs_glob_lagr_physico_chemical->fion,
-             &cs_glob_lagr_clogging_model->jamlim,
-             &cs_glob_lagr_clogging_model->mporos,
-             &cs_glob_lagr_clogging_model->diam_mean,
-             tempp,
-             &cs_glob_lagr_physico_chemical->valen,
-             &cs_glob_lagr_physico_chemical->phi_p,
-             &cs_glob_lagr_physico_chemical->phi_s,
-             &cs_glob_lagr_physico_chemical->cstham,
-             &cs_glob_lagr_clogging_model->csthpp,
-             &cs_glob_lagr_physico_chemical->lambda_vdw);
+    cs_lagr_clogging_initialize(&cs_glob_lagr_physico_chemical->epseau,
+                                &cs_glob_lagr_physico_chemical->fion,
+                                &cs_glob_lagr_clogging_model->jamlim,
+                                &cs_glob_lagr_clogging_model->mporos,
+                                &cs_glob_lagr_clogging_model->diam_mean,
+                                tempp,
+                                &cs_glob_lagr_physico_chemical->valen,
+                                &cs_glob_lagr_physico_chemical->phi_p,
+                                &cs_glob_lagr_physico_chemical->phi_s,
+                                &cs_glob_lagr_physico_chemical->cstham,
+                                &cs_glob_lagr_clogging_model->csthpp,
+                                &cs_glob_lagr_physico_chemical->lambda_vdw);
 
   /* Initialization for the nonsphere model
      ------------------------------------- */
@@ -2597,5 +2595,3 @@ cs_lagr_solve_time_step(const int         itypfb[],
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

@@ -66,7 +66,6 @@ cs_version.h.in
 csbase_includedir=$(pkgincludedir)/base
 csbase_include_HEADERS = \
 cs_1d_wall_thermal.h \
-cs_1d_wall_thermal_check.h \
 cs_ale.h \
 cs_all_to_all.h \
 cs_array.h \
@@ -291,7 +290,6 @@ endif
 
 libcsbase_a_SOURCES = \
 cs_1d_wall_thermal.cpp \
-cs_1d_wall_thermal_check.cpp \
 cs_ale.cpp \
 cs_array.cpp \
 cs_array_reduce.cpp \

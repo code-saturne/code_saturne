@@ -42,10 +42,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
@@ -72,18 +68,17 @@ cs_user_cathare_coupling(void)
     cs_sys_cpl_t *catcpl = cs_sys_coupling_by_name("CAT-PIPE");
     cs_zone_t *zone = cs_boundary_zone_by_name("inlet");
 
-    cs_sys_coupling_add_cplbc(catcpl,               // pointer to coupling structure
-                              CS_SYS_CPL_BC_INLET,  // Type of BC
-                              zone,                 // coupled zone
-                              "z < 0.1",            // homogenized 1D volume selection criteria
-                              "TUBE1",              // name of cathare element
-                              3,                    // Scalar cell just outside boundary
-                              4,                    // Scalar cell just after the boundary
-                              1);                   // Number of elements, 1 for inlet/outlet
+    cs_sys_coupling_add_cplbc
+      (catcpl,               // pointer to coupling structure
+       CS_SYS_CPL_BC_INLET,  // Type of BC
+       zone,                 // coupled zone
+       "z < 0.1",            // homogenized 1D volume selection criteria
+       "TUBE1",              // name of cathare element
+       3,                    // Scalar cell just outside boundary
+       4,                    // Scalar cell just after the boundary
+       1);                   // Number of elements, 1 for inlet/outlet
   }
   /*! [coupling_cathare_1] */
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

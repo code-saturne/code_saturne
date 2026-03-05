@@ -2,8 +2,7 @@
 #define __CS_EXT_NEIGHBOR_H__
 
 /*============================================================================
- * Fortran interfaces of functions needing a synchronization of the extended
- * neighborhood.
+ * Extendend neighborhood hnalding and filtering.
  *============================================================================*/
 
 /*

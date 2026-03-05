@@ -1689,8 +1689,6 @@ cs_mem_set_omp_target_device_id(int  device_id)
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
-BEGIN_C_DECLS
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -2542,8 +2540,6 @@ cs_mem_realloc_hd(void            *ptr,
 #endif /* defined(HAVE_ACCEL) */
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #if defined(HAVE_ACCEL)
 

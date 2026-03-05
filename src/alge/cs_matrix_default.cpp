@@ -87,8 +87,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -905,9 +903,6 @@ cs_matrix_get_block_row_g_id(const cs_matrix_t  *m)
   return cs_matrix_get_block_row_g_id(m, m->halo);
 }
 
-END_C_DECLS
-#ifdef __cplusplus
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return a (0-based) global block row numbering for a given matrix.
@@ -944,9 +939,6 @@ cs_matrix_get_block_row_g_id(const cs_matrix_t  *m,
 
   return g_row_num;
 }
-
-#endif /* cplusplus */
-BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1176,5 +1168,3 @@ cs_matrix_release(cs_matrix_t  **m)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

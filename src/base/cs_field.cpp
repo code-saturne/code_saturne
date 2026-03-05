@@ -69,10 +69,6 @@
 
 #include "base/cs_field.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -283,89 +279,93 @@ const char *cs_glob_field_comp_name_9[] = {"[XX]", "[XY]", "[XZ]",
  * (descriptions follow, with function bodies).
  *============================================================================*/
 
-int
+#if defined(HAVE_FORTRAN)
+
+extern "C" int
 cs_f_field_n_fields(void);
 
-int
+extern "C" int
 cs_f_field_id_by_name(const char *name);
 
-int
+extern "C" int
 cs_f_field_location(const cs_field_t *f);
 
-int
+extern "C" int
 cs_f_field_id_by_name_try(const char *name);
 
-void
+extern "C" void
 cs_f_field_get_name(int           id,
                     int           name_max,
                     const char  **name,
                     int          *name_len);
 
-void
+extern "C" void
 cs_f_field_get_dimension(int           id,
                          int           dim[1]);
 
-void
+extern "C" void
 cs_f_field_get_type(int           id,
                     int          *type);
 
-int
+extern "C" int
 cs_f_field_have_previous(int   id);
 
-void
+extern "C" void
 cs_f_field_set_n_previous(int  id,
                           int  n_previous);
 
-void
+extern "C" void
 cs_f_field_get_n_previous(int  id,
                           int  n_previous[1]);
 
-void
+extern "C" void
 cs_f_field_var_ptr_by_id(int          id,
                          int          pointer_type,
                          int          pointer_rank,
                          int          dim[2],
                          cs_real_t  **p);
 
-void
+extern "C" void
 cs_f_field_var_ptr_by_id_try(int          id,
                              int          pointer_type,
                              int          pointer_rank,
                              int          dim[2],
                              cs_real_t  **p);
 
-void
+extern "C" void
 cs_f_field_bc_coeffs_ptr_by_id(int          id,
                                int          pointer_type,
                                int          pointer_rank,
                                int          dim[3],
                                cs_real_t  **p);
 
-void
+extern "C" void
 cs_f_field_set_key_int(int  f_id,
                        int  k_id,
                        int  value);
 
-void
+extern "C" void
 cs_f_field_set_key_int_bits(int  f_id,
                             int  k_id,
                             int  mask);
 
-void
+extern "C" void
 cs_f_field_clear_key_int_bits(int  f_id,
                               int  k_id,
                               int  mask);
 
-void
+extern "C" void
 cs_f_field_set_key_double(int     f_id,
                           int     k_id,
                           double  value);
 
-void
+extern "C" void
 cs_f_field_get_label(int           f_id,
                      int           str_max,
                      const char  **str,
                      int          *str_len);
+
+#endif // defined(HAVE_FORTRAN)
 
 /*============================================================================
  * Private function definitions
@@ -1404,7 +1404,7 @@ cs_field_get_bc_coeff_mult(const cs_field_t  *f,
  * Create bc_coeffs structure.
  *
  * \param[inout]  bc_coeffs   bc coefficients
-*/
+ */
 /*----------------------------------------------------------------------------*/
 
 void
@@ -4567,10 +4567,6 @@ cs_field_get_label(const cs_field_t  *f)
 
   return label;
 }
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 /*=============================================================================
  * C++ functions

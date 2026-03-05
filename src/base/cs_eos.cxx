@@ -131,10 +131,7 @@ _eos_error_code(const char          *function_name,
  *   EOSRef     <-- reference table for EOS thermo properties
  *----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C"
-#endif
-void
+extern "C" void
 cs_eos_create(const char *EOSMethod,
               char       *EOSRef)
 {
@@ -145,10 +142,7 @@ cs_eos_create(const char *EOSMethod,
  * Delete EOS instances
  *----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C"
-#endif
-void
+extern "C" void
 cs_eos_destroy(void)
 {
   delete eos;
@@ -167,11 +161,7 @@ cs_eos_destroy(void)
  */
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C"
-#endif
-
-void
+extern "C" void
 cs_phys_prop_eos(cs_phys_prop_thermo_plane_type_t   thermo_plane,
                  cs_phys_prop_type_t                property,
                  const cs_lnum_t                    n_vals,

@@ -70,13 +70,11 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*!
   \file cs_gwf.cpp
 
   \brief Main high-level functions dedicated to groundwater flows when using
-         CDO schemes
+         CDO schemes.
 */
 
 /*============================================================================
@@ -1731,5 +1729,3 @@ cs_gwf_extra_post(void                   *input,
 /*----------------------------------------------------------------------------*/
 
 #undef _dp3
-
-END_C_DECLS

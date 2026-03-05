@@ -45,8 +45,6 @@
 #include "mesh/cs_mesh_builder.h"
 #include "mesh/cs_mesh_cartesian.h"
 
-BEGIN_C_DECLS
-
 /*============================================================================
  * Structure definitions
  *============================================================================*/
@@ -1480,5 +1478,3 @@ cs_mesh_cartesian_set_max_number_of_blocks(int  n_blocks)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

@@ -56,10 +56,6 @@
 
 #include "base/cs_physical_constants.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -414,8 +410,6 @@ static cs_fluid_properties_t  _fluid_properties = {
  * Global variables
  *============================================================================*/
 
-BEGIN_C_DECLS
-
 /* Ensure a local C version is always available */
 
 #if  (defined(__NVCC__) && defined(__CUDA_ARCH__)) \
@@ -464,8 +458,6 @@ const cs_physical_constants_t  *cs_glob_physical_constants =
 
 const cs_fluid_properties_t  *cs_glob_fluid_properties = &_fluid_properties;
 
-END_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -473,10 +465,10 @@ END_C_DECLS
  * (descriptions follow, with function bodies).
  *============================================================================*/
 
-void
+extern "C" void
 cs_f_physical_constants_get_pointers(double  **gz);
 
-void
+extern "C" void
 cs_f_fluid_properties_get_pointers(double  **p0,
                                    double  **t0,
                                    double  **cp0,
@@ -485,10 +477,6 @@ cs_f_fluid_properties_get_pointers(double  **p0,
 
 /*============================================================================
  * Private function definitions
- *============================================================================*/
-
-/*============================================================================
- * Fortran wrapper function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -652,5 +640,3 @@ cs_fluid_properties_log_setup(void)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

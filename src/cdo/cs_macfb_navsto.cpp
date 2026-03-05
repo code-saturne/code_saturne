@@ -73,10 +73,6 @@
 
 #include "cdo/cs_macfb_navsto.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -85,8 +81,7 @@ BEGIN_C_DECLS
  * \file cs_macfb_navsto.cpp
  *
  * \brief Shared functions among all face-based schemes for building and
- *        solving Stokes and Navier-Stokes problem
- *
+ *        solving Stokes and Navier-Stokes problem.
  */
 
 /*=============================================================================
@@ -1365,4 +1360,3 @@ cs_macfb_navsto_stream_source_term(cs_lnum_t        n_elts,
 /*----------------------------------------------------------------------------*/
 
 #undef _dp3
-END_C_DECLS

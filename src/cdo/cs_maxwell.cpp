@@ -48,9 +48,6 @@
 
 #include "cdo/cs_maxwell.h"
 
-/*----------------------------------------------------------------------------*/
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -59,7 +56,7 @@ BEGIN_C_DECLS
   \file cs_maxwell.h
 
   \brief Structure and functions handling the Maxwell module dedicated to
-         the resolution of electro-magnetic equations
+         the resolution of electro-magnetic equations.
 */
 
 /*=============================================================================
@@ -923,4 +920,3 @@ cs_maxwell_extra_post(void                      *input,
 }
 
 /*----------------------------------------------------------------------------*/
-END_C_DECLS

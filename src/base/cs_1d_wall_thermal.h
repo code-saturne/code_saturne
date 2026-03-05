@@ -139,8 +139,8 @@ extern const cs_1d_wall_thermal_t  *cs_glob_1d_wall_thermal;
  * Public function prototypes
  *============================================================================*/
 
- /*----------------------------------------------------------------------------*/
-/*!
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Initialize the cs_glob_1d_wall_thermal structure.
  */
 /*----------------------------------------------------------------------------*/
@@ -149,7 +149,7 @@ void
 cs_1d_wall_thermal_create(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Allocate the array of structures local_models.
  */
 /*----------------------------------------------------------------------------*/
@@ -158,7 +158,7 @@ void
 cs_1d_wall_thermal_local_models_create(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Create the 1D mesh for each face and initialize the temperature.
  */
 /*----------------------------------------------------------------------------*/
@@ -167,7 +167,7 @@ void
 cs_1d_wall_thermal_mesh_create(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Solve the 1D equation for a given face
  *
  * parameters:
@@ -183,7 +183,7 @@ cs_1d_wall_thermal_solve(cs_lnum_t ii,
                          cs_real_t hf);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Read the restart file of the 1D-wall thermal module.
  */
 /*----------------------------------------------------------------------------*/
@@ -192,7 +192,7 @@ void
 cs_1d_wall_thermal_read(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Write the restart file of the 1D-wall thermal module.
  */
 /*----------------------------------------------------------------------------*/
@@ -201,7 +201,7 @@ void
 cs_1d_wall_thermal_write(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Free the array of structures local_models.
  */
 /*----------------------------------------------------------------------------*/
@@ -210,7 +210,7 @@ void
 cs_1d_wall_thermal_free(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Destroy the global 1d wall thermal structure.
  */
 /*----------------------------------------------------------------------------*/
@@ -228,13 +228,30 @@ cs_1d_wall_thermal_t *
 cs_get_glob_1d_wall_thermal(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Print information about the 1d wall thermal computation
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_1d_wall_thermal_log(void);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Data checking for the 1D thermal wall module.
+ *
+ * \param[in]   iappel   Call number:
+ *                       - 1: first call during the initialization (called once)
+ *                       Checking the number of cells nfpt1d.
+ *                       - 2: second call during the initialization (called once)
+ *                       Checking ifpt1d, nppt1d, eppt1d and rgpt1d arrays.
+ *                       - 3: called at each time step
+ *                       Checking iclt1d, xlmbt1, rcpt1d and dtpt1d arrays.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_thermal_check(int  iappel);
 
 /*----------------------------------------------------------------------------*/
 

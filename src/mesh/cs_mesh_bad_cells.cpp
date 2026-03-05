@@ -59,10 +59,6 @@
 #include "mesh/cs_mesh_bad_cells.h"
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
-/*----------------------------------------------------------------------------*/
 /*! \file cs_mesh_bad_cells.cpp
  *
  * \brief Detect bad cells within meshes.
@@ -1143,5 +1139,3 @@ cs_mesh_bad_cells_postprocess(const cs_mesh_t             *mesh,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

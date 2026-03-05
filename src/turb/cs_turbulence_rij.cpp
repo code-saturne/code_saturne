@@ -93,8 +93,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -2191,7 +2189,7 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
     cs_real_t matrot[3][3] = {{0., 0., 0.}, {0., 0., 0.}, {0., 0., 0.}};
     cs_real_t impl_drsm[6][6];
 
-    /* Coiriolis term stored as a symmetric tensor */
+    /* Coriolis term stored as a symmetric tensor */
     cs_real_6_t st_corio = {0., 0., 0., 0., 0., 0.};
     cs_real_t m_rij[3][3];
     cs_real_t m_sij[3][3], m_omij[3][3];
@@ -4484,5 +4482,3 @@ cs_turbulence_rij_compute_rusanov(void)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

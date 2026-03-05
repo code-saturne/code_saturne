@@ -122,10 +122,6 @@
 #include "alge/cs_matrix_spmv_cuda.h"
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
-/*----------------------------------------------------------------------------*/
 /*! \file cs_matrix.cpp
  *
  * \brief Sparse Matrix Representation and Operations.
@@ -4127,8 +4123,6 @@ _matrix_create(cs_matrix_type_t  type,
  * Public C++ function definitions
  *============================================================================*/
 
-END_C_DECLS
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Matrix.vector product y = A.x
@@ -4282,8 +4276,6 @@ cs_matrix_vector_multiply_partial
                 __func__, cs_matrix_get_type_name(matrix),
                 cs_matrix_fill_type_name[matrix->fill_type]);
 }
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Public function definitions
@@ -7167,5 +7159,3 @@ cs_matrix_variant_type(const cs_matrix_variant_t  *mv)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

@@ -79,8 +79,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -4024,7 +4022,7 @@ _export_field_values_n(const fvm_nodal_t               *mesh,
  *   number of library version strings associated with the MED format.
  *----------------------------------------------------------------------------*/
 
-int
+extern "C" int
 fvm_to_med_n_version_strings(void)
 {
   return 2;
@@ -4055,7 +4053,7 @@ fvm_to_med_n_version_strings(void)
  *   pointer to constant string containing the library's version.
  *----------------------------------------------------------------------------*/
 
-const char *
+extern "C" const char *
 fvm_to_med_version_string(int string_index,
                           int compile_time_version)
 {
@@ -4127,14 +4125,14 @@ fvm_to_med_version_string(int string_index,
  *----------------------------------------------------------------------------*/
 
 #if defined(HAVE_MPI)
-void *
+extern "C" void *
 fvm_to_med_init_writer(const char                   *name,
                        const char                   *path,
                        const char                   *options,
                        const fvm_writer_time_dep_t   time_dependency,
                        const MPI_Comm                comm)
 #else
-void *
+extern "C" void *
 fvm_to_med_init_writer(const char                   *name,
                        const char                   *path,
                        const char                   *options,
@@ -4316,7 +4314,7 @@ fvm_to_med_init_writer(const char                   *name,
  *   null pointer.
  *----------------------------------------------------------------------------*/
 
-void *
+extern "C" void *
 fvm_to_med_finalize_writer(void  *this_writer_p)
 {
   int i;
@@ -4369,7 +4367,7 @@ fvm_to_med_finalize_writer(void  *this_writer_p)
  *   time_value  <-- time_value number
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 fvm_to_med_set_mesh_time(void          *this_writer,
                          int            time_step,
                          double         time_value)
@@ -4450,7 +4448,7 @@ fvm_to_med_set_mesh_time(void          *this_writer,
  *   1 if tesselation of the given element type is needed, 0 otherwise
  *----------------------------------------------------------------------------*/
 
-int
+extern "C" int
 fvm_to_med_needs_tesselation(void               *this_writer,
                              const fvm_nodal_t  *mesh,
                              fvm_element_t       element_type)
@@ -4491,7 +4489,7 @@ fvm_to_med_needs_tesselation(void               *this_writer,
  *   mesh         <-- pointer to nodal mesh structure that should be written.
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 fvm_to_med_map_nodal(void               *this_writer,
                      const fvm_nodal_t  *mesh)
 {
@@ -4533,7 +4531,7 @@ fvm_to_med_map_nodal(void               *this_writer,
  *   mesh         <-- pointer to nodal mesh structure that should be written.
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 fvm_to_med_export_nodal(void               *this_writer,
                         const fvm_nodal_t  *mesh)
 {
@@ -4757,7 +4755,7 @@ fvm_to_med_export_nodal(void               *this_writer,
  *   field_values     <-- array of associated field value arrays
  *----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 fvm_to_med_export_field(void                            *this_writer,
                         const fvm_nodal_t               *mesh,
                         const char                      *name,
@@ -4944,7 +4942,5 @@ fvm_to_med_export_field(void                            *this_writer,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* HAVE_MED */

@@ -88,8 +88,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -941,7 +939,6 @@ fvm_writer_get_format_id(const char  *format_name)
     strcpy(closest_name, "Catalyst2");
     const char *s = getenv("CATALYST_IMPLEMENTATION_NAME");
     if (s == nullptr) {
-      const char *implementation = nullptr;
       const char path_c[] = "analysis_control/output/catalyst";
       cs_tree_node_t *tn_c = cs_tree_get_node(cs_glob_tree, path_c);
       if (tn_c != nullptr)
@@ -1713,5 +1710,3 @@ fvm_writer_get_times(fvm_writer_t        *this_writer,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

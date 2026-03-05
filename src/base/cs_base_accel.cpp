@@ -90,8 +90,6 @@ sycl::queue   cs_glob_sycl_queue;
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
-BEGIN_C_DECLS
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -234,5 +232,3 @@ cs_omp_target_select_default_device(void)
 #endif /* defined(HAVE_OPENMP_TARGET) */
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

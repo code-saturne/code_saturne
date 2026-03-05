@@ -78,10 +78,6 @@
 
 #include "base/cs_log_iteration.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -183,11 +179,6 @@ static cs_time_control_t  _log_time_control
      .last_t = -1};
 
 cs_time_control_t  *cs_glob_log_iteration_time_control = &_log_time_control;
-
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
 
 /*============================================================================
  * Private function definitions
@@ -2367,5 +2358,3 @@ cs_log_iteration_log_setup(void)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

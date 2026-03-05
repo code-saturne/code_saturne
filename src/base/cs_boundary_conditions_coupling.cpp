@@ -38,7 +38,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_1d_wall_thermal.h"
-#include "base/cs_1d_wall_thermal_check.h"
 #include "base/cs_boundary_conditions.h"
 #include "cfbl/cs_cf_thermo.h"
 #include "base/cs_field_default.h"
@@ -56,10 +55,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_boundary_conditions_coupling.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Additional doxygen documentation
@@ -249,5 +244,3 @@ cs_boundary_conditions_coupling_t_out(cs_real_t  hbord[],
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

@@ -57,8 +57,6 @@
 
 #include "base/cs_notebook.h"
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -828,5 +826,3 @@ cs_notebook_uncertain_output(void)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

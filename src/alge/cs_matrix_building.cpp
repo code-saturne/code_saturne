@@ -99,8 +99,6 @@
  * Private function definitions
  *============================================================================*/
 
-#ifdef __cplusplus
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Build the diffusion matrix for a scalar field.
@@ -1912,8 +1910,6 @@ _matrix_anisotropic_diffusion_strided
   CS_FREE(_b_f_face_factor);
 }
 
-#endif /* cplusplus */
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -3028,10 +3024,6 @@ cs_matrix_wrapper(int                          iconvp,
                   cs_real_t                    xa[]);
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
-/*----------------------------------------------------------------------------*/
 /*!
  * \brief Build the diagonal of the advection/diffusion matrix
  * for determining the variable time step, flow, Fourier.
@@ -3199,5 +3191,3 @@ cs_matrix_time_step(const cs_mesh_t            *m,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

@@ -56,7 +56,6 @@
 #include "atmo/cs_at_data_assim.h"
 #include "atmo/cs_atmo_ground_model.h"
 #include "base/cs_1d_wall_thermal.h"
-#include "base/cs_1d_wall_thermal_check.h"
 #include "base/cs_ale.h"
 #include "base/cs_array.h"
 #include "base/cs_boundary_conditions.h"
@@ -122,10 +121,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_time_stepping.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * External function prototypes
@@ -1010,5 +1005,3 @@ cs_time_stepping_write_checkpoint(bool  checkpoint_mesh)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

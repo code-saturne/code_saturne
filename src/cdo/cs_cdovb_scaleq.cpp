@@ -82,15 +82,12 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*!
   \file cs_cdovb_scaleq.cpp
 
   \brief Build an algebraic CDO vertex-based system for unsteady
          convection-diffusion-reaction of scalar-valued equations with
-         source terms
-
+         source terms.
 */
 
 /*=============================================================================
@@ -5592,4 +5589,3 @@ cs_cdovb_scaleq_extra_post(const cs_equation_param_t *eqp,
 /*----------------------------------------------------------------------------*/
 
 #undef _dp3
-END_C_DECLS

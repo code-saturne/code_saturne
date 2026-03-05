@@ -87,10 +87,6 @@
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_boundary_conditions_priv.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -154,8 +150,7 @@ cs_boundary_condition_pm_info_t  *cs_glob_bc_pm_info = nullptr;
  * (descriptions follow, with function bodies).
  *============================================================================*/
 
-
-void
+extern "C" void
 cs_f_boundary_conditions_get_pointers(int  **itypfb);
 
 /*============================================================================
@@ -1433,7 +1428,6 @@ _update_inlet_outlet(cs_boundary_conditions_open_t  *c)
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
-
 
 /*----------------------------------------------------------------------------
  * Get pointers for Fortran bindings
@@ -3413,5 +3407,3 @@ cs_boundary_conditions_get_bc_type_addr(int **bc_type[])
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

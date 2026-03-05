@@ -81,8 +81,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*!
   \file cs_cdovcb_scaleq.cpp
 
@@ -3696,4 +3694,3 @@ cs_cdovcb_scaleq_extra_post(const cs_equation_param_t  *eqp,
 /*----------------------------------------------------------------------------*/
 
 #undef _dp3
-END_C_DECLS

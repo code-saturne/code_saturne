@@ -69,9 +69,6 @@
 
 #include "rayt/cs_rad_transfer_fields.h"
 #include "pprt/cs_physical_model.h"
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Additional Doxygen documentation
@@ -660,5 +657,3 @@ cs_rad_transfer_add_property_fields(void)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

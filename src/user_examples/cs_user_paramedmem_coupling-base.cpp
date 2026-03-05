@@ -46,10 +46,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
@@ -79,7 +75,7 @@ cs_user_paramedmem_define_couplings(void)
   /* Define a coupling using ParaMEDMEM.
    * First parameter is set to nullptr, hence app #1 is this instance.
    * Second instance is the app named "PARTNER".
-   * Third parameter is nullptr, hence the coupling name will be set automatically
+   * Third parameter is nullptr, so coupling name will be set automatically
    * to '<app1_name>_<app2_name>_cpl'
    */
   /*! [paramedmem_coupling_define2] */
@@ -176,12 +172,13 @@ cs_user_paramedmem_define_fields(void)
      *
      * function returns the index for the field array.
      */
-    int f_id1 = cs_paramedmem_def_coupled_field(c,
-                                                "f1",
-                                                1,
-                                                CS_MEDCPL_FIELD_INT_CONSERVATION,
-                                                CS_MEDCPL_ON_CELLS,
-                                                CS_MEDCPL_NO_TIME);
+    int f_id1 = cs_paramedmem_def_coupled_field
+                  (c,
+                   "f1",
+                   1,
+                   CS_MEDCPL_FIELD_INT_CONSERVATION,
+                   CS_MEDCPL_ON_CELLS,
+                   CS_MEDCPL_NO_TIME);
 
     /* Define a coupled array based on a cs_field_t pointer.
      *
@@ -206,14 +203,12 @@ cs_user_paramedmem_define_fields(void)
      *        CS_MEDCPL_LINEAR_TIME
      */
     cs_field_t *f = cs_field_by_name("coupling_field1");
-    int f_id2 =
-      cs_paramedmem_def_coupled_field_from_cs_field(c, f,
-                                                    CS_MEDCPL_FIELD_INT_CONSERVATION,
-                                                    CS_MEDCPL_NO_TIME);
+    int f_id2 = cs_paramedmem_def_coupled_field_from_cs_field
+                 (c, f,
+                  CS_MEDCPL_FIELD_INT_CONSERVATION,
+                  CS_MEDCPL_NO_TIME);
   }
   /*! [paramedmem_coupling_define_field1] */
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

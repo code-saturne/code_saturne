@@ -58,10 +58,6 @@
 #include "turb/cs_turbulence_ml.h"
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
-/*----------------------------------------------------------------------------*/
 /*! \brief Calculation of turbulent viscosity for
  *         a model of length of simple mixture
  *
@@ -128,5 +124,3 @@ cs_turbulence_ml_mu_t(void)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

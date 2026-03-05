@@ -79,8 +79,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -147,12 +145,12 @@ static int _init_atmo_chemistry = 1;
  *============================================================================*/
 
 #if defined(HAVE_FORTRAN)
-void
+extern "C" void
 cs_ext_polyphemus_ssh_dimensions(int  *spack_n_species,
                                  int  *n_reactions,
                                  int  *n_photolysis);
 
-void
+extern "C" void
 cs_ext_polyphemus_fexchem_1(int       nespg,
                             int       nrg,
                             double    dlconc[],
@@ -161,7 +159,7 @@ cs_ext_polyphemus_fexchem_1(int       nespg,
                             double    conv_factor[],
                             double    dchema[]);
 
-void
+extern "C" void
 cs_ext_polyphemus_fexchem_2(int       nespg,
                             int       nrg,
                             double    dlconc[],
@@ -170,7 +168,7 @@ cs_ext_polyphemus_fexchem_2(int       nespg,
                             double    conv_factor[],
                             double    dchema[]);
 
-void
+extern "C" void
 cs_ext_polyphemus_fexchem_3(int       nespg,
                             int       nrg,
                             double    dlconc[],
@@ -179,7 +177,7 @@ cs_ext_polyphemus_fexchem_3(int       nespg,
                             double    conv_factor[],
                             double    dchema[]);
 
-void
+extern "C" void
 cs_ext_polyphemus_fexchem_4(int       nespg,
                             int       nrg,
                             double    dlconc[],
@@ -187,7 +185,7 @@ cs_ext_polyphemus_fexchem_4(int       nespg,
                             double    source[],
                             double    conv_factor[],
                             double    dchema[]);
-void
+extern "C" void
 cs_ext_polyphemus_jacdchemdc_1(int        nespg,
                                int        nrg,
                                double     dlconc[],
@@ -196,7 +194,7 @@ cs_ext_polyphemus_jacdchemdc_1(int        nespg,
                                double     dlrki[],
                                double     dldrdc[]);
 
-void
+extern "C" void
 cs_ext_polyphemus_jacdchemdc_2(int        nespg,
                                int        nrg,
                                double     dlconc[],
@@ -204,7 +202,7 @@ cs_ext_polyphemus_jacdchemdc_2(int        nespg,
                                double     conv_factor_jac[],
                                double     dlrki[],
                                double     dldrdc[]);
-void
+extern "C" void
 cs_ext_polyphemus_jacdchemdc_3(int        nespg,
                                int        nrg,
                                double     dlconc[],
@@ -213,7 +211,7 @@ cs_ext_polyphemus_jacdchemdc_3(int        nespg,
                                double     dlrki[],
                                double     dldrdc[]);
 
-void
+extern "C" void
 cs_ext_polyphemus_ssh_jacdchemdc(int        nespg,
                                  int        nrg,
                                  double     dlconc[],
@@ -222,38 +220,38 @@ cs_ext_polyphemus_ssh_jacdchemdc(int        nespg,
                                  double     dlrki[],
                                  double     dldrdc[]);
 
-void
+extern "C" void
 cs_ext_polyphemus_lu_decompose_1(int      n_species_g,
                                  double   dlalu[]);
 
-void
+extern "C" void
 cs_ext_polyphemus_lu_solve_1(int       n_species_g,
                              double    dlalu[],
                              double    dlx[]);
 
-void
+extern "C" void
 cs_ext_polyphemus_lu_decompose_2(int      n_species_g,
                                  double   dlalu[]);
 
-void
+extern "C" void
 cs_ext_polyphemus_lu_solve_2(int       n_species_g,
                              double    dlalu[],
                              double    dlx[]);
 
-void
+extern "C" void
 cs_ext_polyphemus_lu_decompose_3(int      n_species_g,
                                  double   dlalu[]);
 
-void
+extern "C" void
 cs_ext_polyphemus_lu_solve_3(int       n_species_g,
                              double    dlalu[],
                              double    dlx[]);
 
-void
+extern "C" void
 cs_ext_polyphemus_ssh_lu_decompose(int       n_species_g,
                                    double    dlalu[]);
 
-void
+extern "C" void
 cs_ext_polyphemus_ssh_lu_solve(int       n_species_g,
                                double    dlalu[],
                                double    dlx[]);
@@ -2305,5 +2303,3 @@ cs_atmo_compute_gaseous_chemistry(void)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

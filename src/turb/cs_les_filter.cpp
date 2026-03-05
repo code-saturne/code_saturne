@@ -83,8 +83,6 @@
  * Private function definitions
  *============================================================================*/
 
-BEGIN_C_DECLS
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute filters for dynamic models.
@@ -166,13 +164,9 @@ _les_filter_ext_neighborhood_scalar(cs_dispatch_context  &ctx,
   cs_halo_sync(mesh->halo, CS_HALO_EXTENDED, ctx.use_gpu(), f_val);
 }
 
-END_C_DECLS
-
 /*============================================================================
  * Private C++ function definitions
  *============================================================================*/
-
-#ifdef __cplusplus
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -269,11 +263,7 @@ _les_filter_ext_neighborhood_strided(cs_dispatch_context  &ctx,
   cs_halo_sync_r(mesh->halo, CS_HALO_EXTENDED, ctx.use_gpu(), f_val);
 }
 
-#endif /* cplusplus */
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Public function definitions
@@ -358,13 +348,9 @@ cs_les_filter_scalar(const cs_real_t  val[],
   cs_halo_sync(mesh->halo, CS_HALO_STANDARD, ctx.use_gpu(), f_val);
 }
 
-END_C_DECLS
-
 /*=============================================================================
  * Public C++ function definitions
  *============================================================================*/
-
-#ifdef __cplusplus
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -467,5 +453,3 @@ cs_les_filter_strided(const cs_real_t  val[][6],
                       cs_real_t        f_val[][6]);
 
 /*----------------------------------------------------------------------------*/
-
-#endif /* cplusplus */

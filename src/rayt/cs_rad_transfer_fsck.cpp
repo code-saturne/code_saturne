@@ -68,10 +68,6 @@
 
 #include "rayt/cs_rad_transfer_fsck.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional Doxygen documentation
  *============================================================================*/
@@ -722,7 +718,7 @@ _interpolation4d(cs_real_t trad,
             kg_x2[1] = x_kg[ih2oa[1]];
             kg_x2[2] = x_kg[ih2oa[2]];
             kg_x2[3] = x_kg[ih2oa[3]];
-            int ih2o = 0;
+            // int ih2o = 0;
             int nargs = 4;
             _splmi(nargs,
                    kg_x2,
@@ -770,7 +766,7 @@ _interpolation4d(cs_real_t trad,
           kg_x2[2] = x_kg[ico2a[2]];
           kg_x2[3] = x_kg[ico2a[3]];
 
-          int ico2 = 0;
+          // int ico2 = 0;
           int nargs = 4;
           _splmi(nargs,
                  kg_x2,
@@ -1274,5 +1270,3 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

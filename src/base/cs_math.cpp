@@ -54,10 +54,6 @@
 
 #include "base/cs_math.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional Doxygen documentation
  *============================================================================*/
@@ -104,7 +100,7 @@ extern const cs_real_t cs_math_pi;
 
 #if !(defined(__NVCC__) && defined(__CUDA_ARCH__))
 
-BEGIN_C_DECLS
+extern "C" {
 
 const cs_real_t cs_math_zero_threshold = FLT_MIN;
 const cs_real_t cs_math_1ov3 = 1./3.;
@@ -127,7 +123,7 @@ const cs_real_t cs_math_big_r = 1.e12;
 /*! \f$ \pi \f$ value with 20 digits */
 const cs_real_t cs_math_pi = 3.14159265358979323846;
 
-END_C_DECLS
+}  // extern "C"
 
 #endif
 
@@ -681,5 +677,3 @@ cs_math_fw_and_bw_lu(const cs_real_t  a_lu[],
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

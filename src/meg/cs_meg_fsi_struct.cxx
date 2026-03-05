@@ -45,13 +45,9 @@
 
 #include "cs_headers.h"
 
-/*----------------------------------------------------------------------------
- *  Header for the current file
- *----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
+/*============================================================================
+ * Public function definitions.
+ *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -67,17 +63,11 @@ BEGIN_C_DECLS
 
 #pragma weak cs_meg_fsi_struct
 void
-cs_meg_fsi_struct(const char       *object_type,
-                  const char       *name,
-                  const cs_real_t   fluid_f[],
-                  cs_real_t         val[])
+cs_meg_fsi_struct([[maybe_unused]] const char       *object_type,
+                  [[maybe_unused]] const char       *name,
+                  [[maybe_unused]] const cs_real_t   fluid_f[],
+                  [[maybe_unused]] cs_real_t         val[])
 {
-  CS_NO_WARN_IF_UNUSED(object_type);
-  CS_NO_WARN_IF_UNUSED(name);
-  CS_NO_WARN_IF_UNUSED(fluid_f);
-  CS_NO_WARN_IF_UNUSED(val);
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

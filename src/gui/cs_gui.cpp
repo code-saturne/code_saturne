@@ -117,8 +117,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -713,11 +711,6 @@ _scalar_diffusion_value(const cs_field_t  *f,
 
 /*----------------------------------------------------------------------------
  * Check if at least one user property is based on a thermal law.
- *
- * Fortran Interface:
- *
- * subroutine uiphyv
- * *****************
  *
  * integer          iviscv   <--  pointer for volumic viscosity viscv
  *----------------------------------------------------------------------------*/
@@ -6069,5 +6062,3 @@ cs_gui_physical_properties_ht_lambda_is_anisotropic(void)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

@@ -74,19 +74,14 @@
 
 #include "base/cs_compute_thermo_pressure_density.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
- * Additional doxygen documentation
+ * Additional Doxygen documentation
  *============================================================================*/
 
 /*!
   \file cs_compute_thermo_pressure_density.cpp
 
-  Compute the thermodynamic pressure and dansity
-
+  Compute the thermodynamic pressure and density.
 */
 
 /*----------------------------------------------------------------------------*/
@@ -259,13 +254,14 @@ _compute_thermodynamic_pressure_perfect_gas(const cs_lnum_t n_cells,
   if (   (verbosity >= 1)
       && (cs_glob_velocity_pressure_model->idilat == 3)   )
     if (cs_log_default_is_active())
-      bft_printf("** Perfect gas computation of average td_pressure:\n"
-                 "   -----------------------------------------------\n"
-                 "-------------------------------------------------------\n"
-                 "time       rho(n-1)/rho(n)     dt.debtot/ro(n)"
-                 "-------------------------------------------------------\n"
-                 "%10.16lf       %10.16lf     %10.16lf\n",cs_glob_time_step->t_cur,
-                 roamoy/romoy, (dt*debtot)/romoy);
+      bft_printf
+        ("** Perfect gas computation of average td_pressure:\n"
+         "   -----------------------------------------------\n"
+         "-------------------------------------------------------\n"
+         "time       rho(n-1)/rho(n)     dt.debtot/ro(n)"
+         "-------------------------------------------------------\n"
+         "%10.16lf       %10.16lf     %10.16lf\n",cs_glob_time_step->t_cur,
+         roamoy/romoy, (dt*debtot)/romoy);
 
   *new_pther = _new_pther;
 }
@@ -366,16 +362,15 @@ cs_compute_thermo_pressure_density(void)
 
   if (eqp->verbosity >= 1)
     if (cs_log_default_is_active())
-      bft_printf("** Thermodynamic pressure computation:\n"
-                 "   -----------------------------------------------\n"
-                 "-------------------------------------------------------\n"
-                 "time       pther(n+1)     pther(n)     Dpther/Dt     ro0"
-                 "-------------------------------------------------------\n"
-                 "%10.16lf       %10.16lf     %10.16lf     %10.16lf     %10.16lf\n",
-                 cs_glob_time_step->t_cur, fp->pther, fp->pthera,
-                 (fp->pther-fp->pthera)/CS_F_(dt)->val[0], fp->ro0);
+      bft_printf
+        ("** Thermodynamic pressure computation:\n"
+         "   -----------------------------------------------\n"
+         "-------------------------------------------------------\n"
+         "time       pther(n+1)     pther(n)     Dpther/Dt     ro0"
+         "-------------------------------------------------------\n"
+         "%10.16lf       %10.16lf     %10.16lf     %10.16lf     %10.16lf\n",
+         cs_glob_time_step->t_cur, fp->pther, fp->pthera,
+         (fp->pther-fp->pthera)/CS_F_(dt)->val[0], fp->ro0);
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

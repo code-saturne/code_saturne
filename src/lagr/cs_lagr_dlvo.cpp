@@ -69,8 +69,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -104,10 +102,6 @@ static const cs_real_t _free_space_permit = 8.854e-12;
 static const cs_real_t _faraday_cst = 9.648e4;
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Public function prototypes for Fortran API
- *============================================================================*/
 
 /*----------------------------------------------------------------------------
  * DLVO initialization:
@@ -192,8 +186,6 @@ cs_lagr_dlvo_finalize()
   CS_FREE(cs_lagr_dlvo_param.temperature);
   CS_FREE(cs_lagr_dlvo_param.debye_length);
 }
-
-END_C_DECLS
 
 /*============================================================================
  * Public C++ function prototypes

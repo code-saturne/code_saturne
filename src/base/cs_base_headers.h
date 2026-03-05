@@ -30,7 +30,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_1d_wall_thermal.h"
-#include "base/cs_1d_wall_thermal_check.h"
 #include "base/cs_ale.h"
 #include "base/cs_all_to_all.h"
 #include "base/cs_array.h"

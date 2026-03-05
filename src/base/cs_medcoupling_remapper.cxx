@@ -600,8 +600,6 @@ _cs_medcoupling_remapper_destroy(cs_medcoupling_remapper_t *r)
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
@@ -1113,5 +1111,3 @@ cs_medcoupling_remapper_update_time_value
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

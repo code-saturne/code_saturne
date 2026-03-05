@@ -70,10 +70,6 @@
 
 #include "base/cs_vof.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -260,37 +256,6 @@ static cs_vof_contact_angle_t _contact_angle_choice = CS_VOF_CONTACT_ANGLE_OFF;
 const cs_vof_parameters_t *cs_glob_vof_parameters = &_vof_parameters;
 const cs_cavitation_parameters_t *cs_glob_cavitation_parameters
   = &_cavit_parameters;
-
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_vof_compute_linear_rho_mu(void);
-
-void
-cs_f_vof_deshpande_drift_flux(void);
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * wrapper vof functions, intended for use by Fortran wrapper only.
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_vof_compute_linear_rho_mu(void)
-{
-  cs_vof_compute_linear_rho_mu(cs_glob_mesh);
-}
-
-void
-cs_f_vof_deshpande_drift_flux(void)
-{
-  cs_vof_deshpande_drift_flux(cs_glob_mesh, cs_glob_mesh_quantities);
-}
 
 /*============================================================================
  * Private function definitions
@@ -525,8 +490,6 @@ _smoothe(const cs_mesh_t              *m,
 
 }
 
-END_C_DECLS // Temporary used here for the templated function
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Contact angle based correction for the boundary condition.
@@ -629,8 +592,6 @@ _contact_angle_correction
 
   ctx.wait();
 }
-
-BEGIN_C_DECLS
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -2236,5 +2197,3 @@ cs_vof_contact_angle_set
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

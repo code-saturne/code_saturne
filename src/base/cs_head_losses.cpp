@@ -59,10 +59,6 @@
 
 #include "base/cs_head_losses.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -94,10 +90,6 @@ BEGIN_C_DECLS
  * Private function definitions
  *============================================================================*/
 
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -119,9 +111,6 @@ cs_head_losses_compute(cs_real_6_t cku[])
 
   if (n_zones == 0)
     return;
-
-  /* We first use an interleaved definition, then switch to the
-     non-interleaved variant still used in Fortran */
 
   cs_lnum_t n_loc_cells = 0;
 
@@ -169,5 +158,3 @@ cs_head_losses_compute(cs_real_6_t cku[])
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

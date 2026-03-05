@@ -79,10 +79,6 @@
 #include "alge/cs_balance.h"
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
-/*----------------------------------------------------------------------------*/
 /*! \file cs_balance.cpp
  *
  * \brief Wrapper to the function which adds the explicit part of the
@@ -123,8 +119,6 @@ cs_balance_initialize(void)
                                              "balances");
   }
 }
-
-END_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -449,8 +443,6 @@ cs_balance_scalar(int                         idtvar,
   if (_balance_stat_id > -1)
     cs_timer_stats_add_diff(_balance_stat_id, &t0, &t1);
 }
-
-BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -829,5 +821,3 @@ cs_balance_tensor(int                         idtvar,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

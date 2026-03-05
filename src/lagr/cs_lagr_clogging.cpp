@@ -69,10 +69,6 @@
 
 #include "lagr/cs_lagr_clogging.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -98,8 +94,8 @@ static const cs_real_t _faraday_cst = 9.648e4;
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
-/*============================================================================
- * Public function for Fortran API
+/*=============================================================================
+ * Public function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
@@ -110,19 +106,18 @@ static const cs_real_t _faraday_cst = 9.648e4;
  *----------------------------------------------------------------------------*/
 
 void
-cloginit (const cs_real_t   *water_permit,
-          const cs_real_t   *ionic_strength,
-          const cs_real_t   *jamming_limit,
-          const cs_real_t   *min_porosity,
-          const cs_real_t   *diam_mean,
-          const cs_real_t    temperature[],
-          const cs_real_t   *valen,
-          const cs_real_t   *phi_p,
-          const cs_real_t   *phi_s,
-          const cs_real_t   *cstham,
-          const cs_real_t   *csthpp,
-          const cs_real_t   *lambda_vdw
-          )
+cs_lagr_clogging_initialize(const cs_real_t   *water_permit,
+                            const cs_real_t   *ionic_strength,
+                            const cs_real_t   *jamming_limit,
+                            const cs_real_t   *min_porosity,
+                            const cs_real_t   *diam_mean,
+                            const cs_real_t    temperature[],
+                            const cs_real_t   *valen,
+                            const cs_real_t   *phi_p,
+                            const cs_real_t   *phi_s,
+                            const cs_real_t   *cstham,
+                            const cs_real_t   *csthpp,
+                            const cs_real_t   *lambda_vdw)
 {
 #define PG_CST 8.314  /* Ideal gas constant */
 
@@ -180,10 +175,6 @@ cloginit (const cs_real_t   *water_permit,
 #endif
 }
 
-/*=============================================================================
- * Public function definitions
- *============================================================================*/
-
 /*----------------------------------------------------------------------------
  * Clogging finalization.
  *
@@ -196,8 +187,6 @@ cs_lagr_clogging_finalize(void)
   CS_FREE(cs_lagr_clogging_param.temperature);
   CS_FREE(cs_lagr_clogging_param.debye_length);
 }
-
-END_C_DECLS
 
 /*----------------------------------------------------------------------------
  * Clogging:

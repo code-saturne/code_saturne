@@ -69,14 +69,6 @@
 
 #include "base/cs_ibm.h"
 
-/*----------------------------------------------------------------------------*/
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-
-BEGIN_C_DECLS
-
-#endif /* DOXYGEN_SHOULD_SKIP_THIS */
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -4689,5 +4681,3 @@ void cs_ibm_volumic_zone(const cs_mesh_quantities_t *mesh_quantities)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

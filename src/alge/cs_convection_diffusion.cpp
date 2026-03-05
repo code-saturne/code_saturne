@@ -4629,8 +4629,6 @@ _convection_diffusion_unsteady_strided
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
-BEGIN_C_DECLS
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -9012,10 +9010,6 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
   CS_FREE(grad);
   CS_FREE(w2);
 }
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 /*----------------------------------------------------------------------------
  * Compute the local cell Courant number as the maximum of all cell face based

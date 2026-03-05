@@ -80,8 +80,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -793,5 +791,3 @@ cs_ctwr_init_flow_vars(cs_real_t  liq_mass_flow[])
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

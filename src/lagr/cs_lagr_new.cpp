@@ -84,10 +84,6 @@
 
 #include "lagr/cs_lagr_new.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
@@ -277,8 +273,6 @@ _random_point_in_face(cs_lnum_t        n_vertices,
 
   }
 }
-
-END_C_DECLS
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -644,8 +638,6 @@ cs_lagr_new_v(cs_lagr_particle_set_t  &p_set,
   CS_FREE(acc_vol_r);
   CS_FREE(cell_subface_index);
 }
-
-BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1583,5 +1575,3 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

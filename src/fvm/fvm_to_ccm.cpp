@@ -90,8 +90,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -218,11 +216,12 @@ static char _ccm_version_string[32] = {"CCM"};
 
 /* prototype for use by following function */
 
-void ADF_Database_Version(const double Root_ID,
-                          char *version,
-                          char *creation_date,
-                          char *modification_date,
-                          int *error_return);
+extern "C" void
+ADF_Database_Version(const double Root_ID,
+                     char *version,
+                     char *creation_date,
+                     char *modification_date,
+                     int *error_return);
 
 /*----------------------------------------------------------------------------
  * Function used only to ensure link with adf library.
@@ -4197,5 +4196,3 @@ fvm_to_ccm_export_field(void                   *this_writer_p,
 /*----------------------------------------------------------------------------*/
 
 #endif /* defined(HAVE_CCM) */
-
-END_C_DECLS

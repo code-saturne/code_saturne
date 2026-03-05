@@ -73,8 +73,6 @@
 
 #include "atmo/cs_atmo_source_terms.h"
 
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -120,7 +118,7 @@ static cs_real_3_t *grad1 = nullptr, *grad2 = nullptr;
  *============================================================================*/
 
 #if defined(HAVE_FORTRAN)
-void
+extern "C" void
 cs_f_atr1vf(void);
 #endif
 
@@ -1096,5 +1094,3 @@ cs_atmo_source_term_for_inlet(cs_real_3_t        exp_st[])
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

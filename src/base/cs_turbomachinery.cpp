@@ -86,8 +86,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -142,13 +140,6 @@ typedef struct {
  *============================================================================*/
 
 cs_turbomachinery_t  *_turbomachinery = nullptr;
-
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void cs_f_map_turbomachinery_model(int  *iturbo);
 
 /*============================================================================
  * Private function definitions
@@ -1333,30 +1324,6 @@ _relative_velocity_f(int               location_id,
   }
 }
 
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Assist map turbomachinery to fortran module
- *
- * parameters:
- *   iturbo <-- turbomachinery type flag
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_map_turbomachinery_model(int  *iturbo)
-{
-  if (_turbomachinery != nullptr)
-    *iturbo = _turbomachinery->model;
-  else
-    *iturbo = CS_TURBOMACHINERY_NONE;
-}
-
-/*----------------------------------------------------------------------------
- * Map turbomachinery arrays associated to wall BC update
- *----------------------------------------------------------------------------*/
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -2255,5 +2222,3 @@ cs_turbomachinery_define_functions(void)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

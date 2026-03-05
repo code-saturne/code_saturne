@@ -60,10 +60,6 @@
 
 #include "base/cs_volume_mass_injection.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -71,7 +67,6 @@ BEGIN_C_DECLS
 /*!
   \file cs_volume_mass_injection.cpp
         Volume mass injection and associated source terms computation.
-
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -749,5 +744,3 @@ cs_volume_mass_injection_get_arrays(const cs_field_t *f,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

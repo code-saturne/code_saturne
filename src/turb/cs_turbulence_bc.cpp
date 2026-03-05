@@ -63,10 +63,6 @@
 
 #include "turb/cs_turbulence_bc.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -512,30 +508,6 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
   }
 }
 
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Equivalent of cs_turbulence_bc_set_uninit_inlet_ke for Fortran calls
- * (using 1-based face number instead of id).
- *
- * parameters:
- *   face_id     <-- face id
- *   k           <-- turbulent kinetic energy
- *   rij         <-- reynolds stress components
- *   eps         <-- turbulent dissipation
- *----------------------------------------------------------------------------*/
-
-void
-cs_turbulence_bc_set_uninit_inlet(cs_lnum_t   face_id,
-                                  double      k,
-                                  double      rij[],
-                                  double      eps)
-{
-  _set_uninit_inlet_bc(face_id, k, rij, eps, nullptr, nullptr);
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -965,6 +937,26 @@ cs_turbulence_bc_set_uninit_inlet_hyd_diam(cs_lnum_t   face_id,
   _set_uninit_inlet_bc(face_id, k, nullptr, eps, vel_dir, shear_dir);
 }
 
+/*----------------------------------------------------------------------------
+ * Equivalent of cs_turbulence_bc_set_uninit_inlet_ke for Fortran calls
+ * (using 1-based face number instead of id).
+ *
+ * parameters:
+ *   face_id     <-- face id
+ *   k           <-- turbulent kinetic energy
+ *   rij         <-- reynolds stress components
+ *   eps         <-- turbulent dissipation
+ *----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_bc_set_uninit_inlet(cs_lnum_t   face_id,
+                                  double      k,
+                                  double      rij[],
+                                  double      eps)
+{
+  _set_uninit_inlet_bc(face_id, k, rij, eps, nullptr, nullptr);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Set inlet boundary condition values for turbulence variables based
@@ -1020,5 +1012,3 @@ cs_turbulence_bc_set_uninit_inlet_k_eps(cs_lnum_t   face_id,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

@@ -39,10 +39,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Local (user defined) function definitions
  *============================================================================*/
@@ -385,21 +381,19 @@ cs_user_postprocess_meshes(void)
     const int n_writers = 1;
     const int writer_ids[] = {CS_POST_WRITER_DEFAULT};
 
-    cs_post_define_volume_mesh_by_func(1,               /* mesh id */
-                                       "SFC",
-                                       _sfc_cell_select,
-                                       nullptr,            /* _sfc_cell_select_input */
-                                       false,           /* time varying */
-                                       false,           /* add_groups */
-                                       false,           /* auto_variables */
-                                       n_writers,
-                                       writer_ids);
+    cs_post_define_volume_mesh_by_func
+      (1,               /* mesh id */
+       "SFC",
+       _sfc_cell_select,
+       nullptr,         /* _sfc_cell_select_input */
+       false,           /* time varying */
+       false,           /* add_groups */
+       false,           /* auto_variables */
+       n_writers,
+       writer_ids);
 
-  /*! [sfc_def] */
-
+    /*! [sfc_def] */
   }
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

@@ -73,8 +73,6 @@
 
 /*---------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -2188,5 +2186,3 @@ cs_join_mark_selected_faces(const cs_mesh_t  *mesh,
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
 cs_debug_glob_mesh_dump("FinalGlobalVertices", mesh);
 #endif
-
-END_C_DECLS

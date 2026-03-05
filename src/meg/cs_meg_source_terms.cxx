@@ -43,18 +43,12 @@
 
 #include "cs_headers.h"
 
-/*----------------------------------------------------------------------------
- *  Header for the current file
- *----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
- * \file cs_meg_source_terms.cxx
- *
  * \brief This function is used to compute source terms over a volume zone. The
  *        mathematical expression is defined in the GUI.
  *
@@ -80,11 +74,7 @@ cs_meg_source_terms([[maybe_unused]] const char       *zone_name,
                     [[maybe_unused]] const char       *field_name,
                     [[maybe_unused]] const char       *source_type,
                     [[maybe_unused]] cs_real_t        *retvals)
-
-
 {
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

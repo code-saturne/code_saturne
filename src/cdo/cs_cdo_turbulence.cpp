@@ -57,8 +57,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*!
  *  \file cs_cdo_turbulence.cpp
  *
@@ -1074,4 +1072,3 @@ cs_turb_wall_functions_is_activated(const cs_turbulence_param_t *turbulence)
 }
 
 /*----------------------------------------------------------------------------*/
-END_C_DECLS

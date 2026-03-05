@@ -71,10 +71,6 @@
 
 #include "base/cs_field_operator.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -188,7 +184,7 @@ _field_interpolate_by_gradient(const cs_field_t   *f,
   else
     bft_error(__FILE__, __LINE__, 0,
               _("Field gradient interpolation for field %s of dimension %d:\n"
-                " not implemented or callable from Fortran code."),
+                " not implemented."),
               f->name, (int)dim);
 
   /* Now interpolated values */
@@ -1456,10 +1452,6 @@ cs_field_synchronize(cs_field_t      *f,
 
   cs_field_synchronize(f, halo_type, on_device);
 }
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!

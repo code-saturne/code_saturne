@@ -61,10 +61,6 @@
 
 #include "atmo/cs_at_opt_interp.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -496,10 +492,6 @@ _assembly_adding_obs_covariance(cs_measures_set_t  *ms,
   return a;
 }
 
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*=============================================================================
@@ -511,7 +503,6 @@ _assembly_adding_obs_covariance(cs_measures_set_t  *ms,
  * \brief Create an optimal interpolation descriptor.
  *
  * \param[in]  name   optimal interpolation name
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1728,5 +1719,3 @@ cs_at_opt_interp_compute_analysis(cs_field_t         *f,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

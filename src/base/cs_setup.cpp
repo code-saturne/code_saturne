@@ -111,8 +111,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*----------------------------------------------------------------------------
@@ -126,10 +124,10 @@ BEGIN_C_DECLS
 /* Bindings to Fortran routines */
 
 #if defined(HAVE_FORTRAN)
-void
+extern "C" void
 cs_f_iniini(void);
 
-void
+extern "C" void
 cs_f_pp_models_init(void);
 #endif
 
@@ -3695,5 +3693,3 @@ cs_setup(void)
 }
 
 /*-----------------------------------------------------------------------------*/
-
-END_C_DECLS

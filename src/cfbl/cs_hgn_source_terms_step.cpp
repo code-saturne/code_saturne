@@ -60,10 +60,6 @@
 
 #include "cfbl/cs_hgn_source_terms_step.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional Doxygen documentation
  *============================================================================*/
@@ -88,30 +84,6 @@ BEGIN_C_DECLS
  *  fractions and thus evolve. They are updated at the end of the step
  *  using the thermodynamic relation defined in \ref cs_hgn_thermo.c.
 */
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_hgn_source_terms_step(void);
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-void
-cs_f_hgn_source_terms_step(void)
-{
-  const cs_mesh_t  *m = cs_glob_mesh;
-
-  cs_hgn_source_terms_step(m);
-}
-
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions
@@ -225,5 +197,3 @@ cs_hgn_source_terms_step(const cs_mesh_t *m)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

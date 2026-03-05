@@ -41,10 +41,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -118,11 +114,9 @@ cs_user_boundary_conditions_setup([[maybe_unused]] cs_domain_t  *domain)
                                    "inlet",                // zone name
                                    cs_flag_boundary_face,  // location flag
                                    _notebook_t_inlet,      // callback function
-                                   nullptr);                  // input structure
+                                   nullptr);               // input structure
     /*! [notebook_dof_inlet] */
   }
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

@@ -69,8 +69,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -92,7 +90,7 @@ BEGIN_C_DECLS
  * Prototypes of local functions used only for Fortran API
  *============================================================================*/
 
-void CS_PROCF(mesmap, MESMAP)
+extern "C" void CS_PROCF(mesmap, MESMAP)
 (
  const int         *imeset,
  const int         *inbmes,
@@ -103,14 +101,14 @@ void CS_PROCF(mesmap, MESMAP)
  const cs_real_t   *infrad
 );
 
-void CS_PROCF(grimap, GRIMAP)
+extern "C" void CS_PROCF(grimap, GRIMAP)
 (
  const int         *igrid,
  const int         *inpts,
  const cs_real_t   *coords
 );
 
-void CS_PROCF(gripol, GRIPOL)
+extern "C" void CS_PROCF(gripol, GRIPOL)
 (
  const int         *igrid,
  const cs_real_t   *inval,
@@ -1019,5 +1017,3 @@ void CS_PROCF(gripol, GRIPOL)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

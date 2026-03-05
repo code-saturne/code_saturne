@@ -43,13 +43,9 @@
 
 #include "cs_headers.h"
 
-/*----------------------------------------------------------------------------
- *  Header for the current file
- *----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
+/*============================================================================
+ * Public function definitions.
+ *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -67,21 +63,13 @@ BEGIN_C_DECLS
 
 #pragma weak cs_meg_volume_function
 void
-cs_meg_volume_function(const char        *zone_name,
-                       const cs_lnum_t    n_elts,
-                       const cs_lnum_t   *elt_ids,
-                       const cs_real_t    xyz[][3],
-                       const char        *fields_names,
-                       cs_real_t         *fvals[])
+cs_meg_volume_function([[maybe_unused]] const char        *zone_name,
+                       [[maybe_unused]] const cs_lnum_t    n_elts,
+                       [[maybe_unused]] const cs_lnum_t   *elt_ids,
+                       [[maybe_unused]] const cs_real_t    xyz[][3],
+                       [[maybe_unused]] const char        *fields_names,
+                       [[maybe_unused]] cs_real_t         *fvals[])
 {
-  CS_NO_WARN_IF_UNUSED(zone_name);
-  CS_NO_WARN_IF_UNUSED(n_elts);
-  CS_NO_WARN_IF_UNUSED(elt_ids);
-  CS_NO_WARN_IF_UNUSED(xyz);
-  CS_NO_WARN_IF_UNUSED(fields_names);
-  CS_NO_WARN_IF_UNUSED(fvals);
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

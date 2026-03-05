@@ -55,8 +55,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -825,8 +823,6 @@ _bucket_sampling(int                      dim,
 
 #endif /* FM_HAVE_MPI */
 
-END_C_DECLS
-
 /*----------------------------------------------------------------------------
  * Determine the global extents associated with a set of coordinates
  *
@@ -906,8 +902,6 @@ _get_global_extents(cs_lnum_t         n_extents,
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Public function definitions
@@ -1623,4 +1617,3 @@ fvm_morton_dump(int                dim,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS

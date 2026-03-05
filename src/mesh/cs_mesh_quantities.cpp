@@ -63,10 +63,6 @@
 #include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
-/*----------------------------------------------------------------------------*/
 /*! \file cs_mesh_quantities.cpp
  *
  * \brief Management of mesh quantities.
@@ -117,16 +113,9 @@ unsigned cs_glob_mesh_quantities_flag =
 
 static int _n_computations = 0;
 
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
-
-END_C_DECLS
 
 /*----------------------------------------------------------------------------
  * Project solid vertices to a plane
@@ -2609,8 +2598,6 @@ _compute_unit_normals(const cs_mesh_t       *m,
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Public function definitions
@@ -5617,5 +5604,3 @@ cs_mesh_quantities_dump(const cs_mesh_t             *mesh,
 #endif
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

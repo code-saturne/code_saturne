@@ -112,8 +112,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -265,7 +263,7 @@ cs_atmo_constants_t *cs_glob_atmo_constants = &_atmo_constants;
  * (descriptions follow, with function bodies).
  *============================================================================*/
 
-void
+extern "C" void
 cs_f_atmo_get_pointers(cs_real_t              **ps,
                        int                    **syear,
                        int                    **squant,
@@ -296,7 +294,7 @@ cs_f_atmo_get_pointers(cs_real_t              **ps,
                        cs_real_t              **aod_o3_tot,
                        cs_real_t              **aod_h2o_tot);
 
-void
+extern "C" void
 cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
                               cs_real_t **xyp_met,
                               cs_real_t **u_met,
@@ -316,7 +314,7 @@ cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
                               int         dim_nd_3[2],
                               int         dim_nt_3[2]);
 
-void
+extern "C" void
 cs_atmo_get_ground_zone(cs_lnum_t         *n_elts,
                         int               *n_ground_cat,
                         const cs_lnum_t  **elt_ids);
@@ -5451,5 +5449,3 @@ cs_atmo_projection(cs_atmo_projection_t origin_projection,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

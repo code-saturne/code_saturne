@@ -88,8 +88,6 @@ static cs_coolprop_state_t *_states = nullptr;
  * Public function definitions
  *============================================================================*/
 
-BEGIN_C_DECLS
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Computes physical properties in (P,h,Yi) for compressible flow.
@@ -370,8 +368,6 @@ cs_coolprop_finalize(void)
   CS_FREE(_states);
   _n_states = 0;
 }
-
-END_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 

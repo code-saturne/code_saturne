@@ -87,14 +87,9 @@
 
 #include "base/cs_parameters_check.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
-
 
 /*!
   \file cs_parameters_check.cpp
@@ -2947,7 +2942,7 @@ cs_parameters_check(void)
                                     0.);
   }
 
-  /* LES (check also in Fortran for now because constants are duplicated) */
+  /* LES */
   if (turb_model->type == CS_TURB_LES) {
     cs_parameters_is_greater_double(CS_ABORT_DELAYED,
                                     _("LES dynamic model constant"),
@@ -3128,5 +3123,3 @@ cs_parameters_check(void)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

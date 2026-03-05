@@ -75,8 +75,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -755,7 +753,6 @@ int
 cs_sys_coupling_add(const char *sys_name,
                     const int   n_cpl_phases)
 {
-
   // Check that coupling doesn't allready exist
   cs_sys_cpl_t *cpl = cs_sys_coupling_by_name_try(sys_name);
   if (cpl != nullptr)
@@ -774,7 +771,6 @@ cs_sys_coupling_add(const char *sys_name,
   _sys_couplings[new_id] = cpl;
 
   return new_id;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -788,7 +784,6 @@ cs_sys_coupling_add(const char *sys_name,
 void
 cs_sys_coupling_send_data(cs_sys_cpl_t *cpl)
 {
-
 #if defined(HAVE_MPI)
   if (cs_glob_rank_id <= 0)
     MPI_Send(cpl->send_vals,
@@ -798,7 +793,6 @@ cs_sys_coupling_send_data(cs_sys_cpl_t *cpl)
              cs_sys_coupling_tag,
              cpl->comm);
 #endif
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -812,10 +806,9 @@ cs_sys_coupling_send_data(cs_sys_cpl_t *cpl)
 void
 cs_sys_coupling_recv_data(cs_sys_cpl_t *cpl)
 {
-
 #if defined(HAVE_MPI)
-
   MPI_Status status;
+
   if (cs_glob_rank_id <= 0)
     MPI_Recv(cpl->recv_vals,
              cpl->n_recv_vals,
@@ -833,7 +826,6 @@ cs_sys_coupling_recv_data(cs_sys_cpl_t *cpl)
               0,
               cs_glob_mpi_comm);
 #endif
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -845,7 +837,6 @@ cs_sys_coupling_recv_data(cs_sys_cpl_t *cpl)
 void
 cs_sys_coupling_all_init(void)
 {
-
   // For the moment only user definition.
   // TODO: Add GUI definition
   cs_user_cathare_coupling();
@@ -878,7 +869,6 @@ cs_sys_coupling_all_init(void)
               _("At least 1 SYSTEM coupling was defined for which\n"
                 "no communication with a SYSTEM scale instance is possible.\n"));
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -890,8 +880,7 @@ cs_sys_coupling_all_init(void)
 void
 cs_sys_coupling_all_finalize(void)
 {
-
   return;
 }
 
-END_C_DECLS
+/*----------------------------------------------------------------------------*/

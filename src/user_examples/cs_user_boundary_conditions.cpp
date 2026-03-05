@@ -41,10 +41,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
@@ -414,16 +410,15 @@ cs_user_boundary_conditions_setup([[maybe_unused]] cs_domain_t  *domain)
     const cs_zone_t *z = cs_boundary_zone_by_name("wall_side");
     cs_equation_param_t  *eqp = cs_equation_param_by_name("scalar_1");
 
-    cs_equation_add_bc_by_dof_func(eqp,
-                                   CS_BC_NEUMANN,
-                                   z->name,                // zone name
-                                   cs_flag_boundary_face,  // location flag
-                                   _w_flux_side,           // callback function
-                                   (void *)z);             // input structure
+    cs_equation_add_bc_by_dof_func
+      (eqp,
+       CS_BC_NEUMANN,
+       z->name,                      // zone name
+       cs_flag_boundary_face,        // location flag
+       _w_flux_side,                 // callback function
+       const_cast<cs_zone_t *>(z));  // input structure
     /*! [wall_side_flux_dof] */
   }
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

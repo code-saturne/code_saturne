@@ -74,10 +74,6 @@
 
 #include "elec/cs_elec_model.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -279,37 +275,6 @@ const cs_real_t cs_elec_permvi = 1.2566e-6;
 const cs_real_t cs_elec_epszer = 8.854e-12;
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
-void
-cs_f_elec_model_get_pointers(int     **ielcor,
-                             double  **pot_diff,
-                             double  **coejou,
-                             double  **elcou);
-
-/*----------------------------------------------------------------------------
- * Get pointers to members of the global electric model structure.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   ielcor         --> pointer to cs_glob_elec_option->ielcor
- *   pot_diff       --> pointer to cs_glob_elec_option->pot_diff
- *   coejou         --> pointer to cs_glob_elec_option->coejou
- *   elcou          --> pointer to cs_glob_elec_option->elcou
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_elec_model_get_pointers(int     **ielcor,
-                             double  **pot_diff,
-                             double  **coejou,
-                             double  **elcou)
-{
-  *ielcor           = &(_elec_option.ielcor);
-  *pot_diff         = &(_elec_option.pot_diff);
-  *coejou           = &(_elec_option.coejou);
-  *elcou            = &(_elec_option.elcou);
-}
 
 /*============================================================================
  * Private function definitions
@@ -2541,5 +2506,3 @@ cs_elec_define_functions(void)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

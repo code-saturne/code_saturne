@@ -54,14 +54,11 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*!
   \file cs_cdo_local.cpp
 
   \brief  Functions to handle low-level actions related to CDO local
           quantities such as cell mesh structures or cellwise systems.
-
 */
 
 /*=============================================================================
@@ -1995,5 +1992,3 @@ cs_face_mesh_light_build(const cs_cell_mesh_t    *cm,
 /*----------------------------------------------------------------------------*/
 
 #undef _dp3
-
-END_C_DECLS

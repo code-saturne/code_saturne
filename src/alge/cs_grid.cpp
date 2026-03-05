@@ -7760,8 +7760,6 @@ _prolong_row_int(const cs_grid_t  *c,
  * documented than private static functions)
  *============================================================================*/
 
-BEGIN_C_DECLS
-
 /*----------------------------------------------------------------------------
  * Create base grid by mapping from shared mesh values.
  *
@@ -9358,10 +9356,6 @@ cs_grid_set_matrix_tuning(cs_matrix_fill_type_t  fill_type,
 
   _grid_tune_max_fill_level[fill_type] = max_level;
 }
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 /*----------------------------------------------------------------------------
  * Compute coarse row variable values from fine row values

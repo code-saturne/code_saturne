@@ -81,10 +81,6 @@
 
 #include "base/cs_preprocess.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -115,13 +111,14 @@ BEGIN_C_DECLS
 /* majgeo */
 
 #if defined(HAVE_FORTRAN)
-extern void cs_f_majgeo(const cs_lnum_t    *ncel,
-                        const cs_lnum_t    *ncelet,
-                        const cs_lnum_t    *nfabor,
-                        const cs_lnum_t     ifabor[],
-                        const cs_real_t     xyzcen[],
-                        const cs_real_t     cdgfbo[],
-                        const cs_real_t     surfbn[]);
+extern "C" void
+cs_f_majgeo(const cs_lnum_t    *ncel,
+            const cs_lnum_t    *ncelet,
+            const cs_lnum_t    *nfabor,
+            const cs_lnum_t     ifabor[],
+            const cs_real_t     xyzcen[],
+            const cs_real_t     cdgfbo[],
+            const cs_real_t     surfbn[]);
 #endif
 
 /*============================================================================
@@ -161,10 +158,6 @@ _preprocess_log_performance(double  wt)
   cs_log_printf(CS_LOG_PERFORMANCE, "\n");
   cs_log_separator(CS_LOG_PERFORMANCE);
 }
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -630,5 +623,3 @@ cs_preprocess_mesh_update_device()
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

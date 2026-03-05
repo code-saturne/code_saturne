@@ -43,18 +43,12 @@
 
 #include "cs_headers.h"
 
-/*----------------------------------------------------------------------------
- *  Header for the current file
- *----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
- * \file cs_meg_post_calculator.cxx
- *
  * \brief This function is used to compute user defined calculator formulae.
  *        The mathematical expression is defined in the GUI.
  *
@@ -69,19 +63,12 @@ BEGIN_C_DECLS
 
 #pragma weak cs_meg_source_terms
 void
-cs_meg_post_calculator(const char       *name,
-                       const cs_lnum_t   n_elts,
-                       const cs_lnum_t  *elt_ids,
-                       const cs_real_t   xyz[][3],
-                       cs_real_t        *retvals)
+cs_meg_post_calculator([[maybe_unused]] const char       *name,
+                       [[maybe_unused]] const cs_lnum_t   n_elts,
+                       [[maybe_unused]] const cs_lnum_t  *elt_ids,
+                       [[maybe_unused]] const cs_real_t   xyz[][3],
+                       [[maybe_unused]] cs_real_t        *retvals)
 {
-  CS_NO_WARN_IF_UNUSED(name);
-  CS_NO_WARN_IF_UNUSED(n_elts);
-  CS_NO_WARN_IF_UNUSED(elt_ids);
-  CS_NO_WARN_IF_UNUSED(xyz);
-  CS_NO_WARN_IF_UNUSED(retvals);
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

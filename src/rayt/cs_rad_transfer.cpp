@@ -64,10 +64,6 @@
 
 #include "rayt/cs_rad_transfer.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional Doxygen documentation
  *============================================================================*/
@@ -285,14 +281,14 @@ cs_rad_transfer_params_t *cs_glob_rad_transfer_params = &_rt_params;
  * (descriptions follow, with function bodies).
  *============================================================================*/
 
-void
+extern "C" void
 cs_rad_transfer_get_pointers(int  **p_rad_atmo_model);
 
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
 
-void
+extern "C" void
 cs_rad_transfer_get_pointers(int  **p_rad_atmo_model)
 {
   *p_rad_atmo_model = &_rt_params.atmo_model;
@@ -303,10 +299,6 @@ cs_rad_transfer_get_pointers(int  **p_rad_atmo_model)
  *============================================================================*/
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Public function definitions for Fortran API
- *============================================================================*/
 
 /*=============================================================================
  * Public function definitions
@@ -335,12 +327,11 @@ cs_rad_transfer_finalize(void)
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_rad_time_is_active(void) {
+cs_rad_time_is_active(void)
+{
   cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
   const cs_time_step_t *ts = cs_glob_time_step;
   return cs_time_control_is_active(&(rt_params->time_control), ts);
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

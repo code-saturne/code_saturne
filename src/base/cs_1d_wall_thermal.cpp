@@ -50,6 +50,7 @@
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_parall.h"
+#include "base/cs_parameters_check.h"
 #include "base/cs_physical_constants.h"
 #include "base/cs_restart.h"
 #include "base/cs_restart_default.h"
@@ -61,10 +62,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_1d_wall_thermal.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Additional doxygen documentation
@@ -1203,11 +1200,108 @@ cs_1d_wall_thermal_log(void)
   bft_printf("    1-D wall thermal resolution\n");
   bft_printf("   ================================\n");
   bft_printf("   Minmax temperature at fluid side    : %15.12e    %15.12e\n",
-      Tp_f_min, Tp_f_max);
+             Tp_f_min, Tp_f_max);
   bft_printf("   Minmax temperature at external side : %15.12e    %15.12e\n",
-      Tp_ext_min, Tp_ext_max);
+             Tp_ext_min, Tp_ext_max);
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Data checking for the 1D thermal wall module.
+ *
+ * \param[in]   iappel   Call number:
+ *                       - 1: first call during the initialization (called once)
+ *                       Checking the number of cells nfpt1d.
+ *                       - 2: second call during the initialization (called once)
+ *                       Checking ifpt1d, nppt1d, eppt1d and rgpt1d arrays.
+ *                       - 3: called at each time step
+ *                       Checking iclt1d, xlmbt1, rcpt1d and dtpt1d arrays.
+ */
+/*----------------------------------------------------------------------------*/
 
-END_C_DECLS
+void
+cs_1d_wall_thermal_check(int  iappel)
+{
+  const cs_lnum_t nfpt1d = cs_glob_1d_wall_thermal->nfpt1d;
+  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+  const cs_1d_wall_thermal_t *wtm = cs_glob_1d_wall_thermal;
+
+  cs_gnum_t error_count[] = {0, 0, 0, 0};
+
+  if (iappel == 1) {
+    if (nfpt1d < 0)
+      error_count[0] += 1;
+    if (nfpt1d >= n_b_faces)
+      error_count[1] += 1;
+    cs_parall_counter(error_count, 2);
+
+    if (error_count[0] + error_count[1] > 0)  {
+      cs_parameters_error
+        (CS_ABORT_IMMEDIATE,
+         _("1D-wall thermal module"),
+         _("nfpt1d must be non-negative and lower than mesh->n_b_faces, but\n"
+           "nfpt1d < 0 or > n_b_faces on %d and %d ranks respectively."),
+         (int)error_count[0], (int)error_count[1]);
+    }
+  }
+
+  else if (iappel == 2) {
+    for (cs_lnum_t ii = 0; ii < nfpt1d; ii++) {
+      cs_lnum_t face_id = wtm->ifpt1d[ii] - 1;
+      if (face_id < 0 || face_id > n_b_faces)
+        error_count[0] += 1;
+      if (wtm->local_models[ii].nppt1d <= 0)
+        error_count[1] += 1;
+      if (wtm->local_models[ii].eppt1d <= 0)
+        error_count[2] += 1;
+      if (wtm->local_models[ii].rgpt1d <= 0)
+        error_count[3] += 1;
+    }
+    cs_parall_counter(error_count, 4);
+
+    if (  error_count[0] + error_count[1]
+        + error_count[2] + error_count[3] > 0)  {
+      cs_parameters_error
+        (CS_ABORT_IMMEDIATE,
+         _("1D-wall thermal module"),
+         _("Setup errors:\n"
+           "ifpt1d < 0 or > n_b_faces on %ld faces\n"
+           "nppt1d <= 0               on %ld faces\n"
+           "eppt1d <= 0               on %ld faces\n"
+           "rgpt1d <= 0               on %ld faces\n"),
+         (long)error_count[0], (long)error_count[1],
+         (long)error_count[2], (long)error_count[3]);
+    }
+  }
+
+  else if (iappel == 3) {
+    for (cs_lnum_t ii = 0; ii < nfpt1d; ii++) {
+      int iclt1d = wtm->local_models[ii].iclt1d;
+      if (iclt1d != 1 && iclt1d != 3)
+        error_count[0] += 1;
+      if (wtm->local_models[ii].xlmbt1 <= 0.)
+        error_count[1] += 1;
+      if (wtm->local_models[ii].rcpt1d <= 0.)
+        error_count[2] += 1;
+      if (wtm->local_models[ii].dtpt1d <= 0.)
+        error_count[3] += 1;
+    }
+    cs_parall_counter(error_count, 4);
+
+    if (  error_count[0] + error_count[1]
+        + error_count[2] + error_count[3] > 0)  {
+      cs_parameters_error
+        (CS_ABORT_IMMEDIATE,
+         _("1D-wall thermal module"),
+         _("Setup errors:\n"
+           "  iclt1d != 1 and != 3 on %ld faces\n"
+           "  xmlbt1 <= 0          on %ld faces\n"
+           "  rcpt1d <= 0          on %ld faces\n"
+           "  dtpt1d <= 0          on %ld faces\n"),
+         (long)error_count[0], (long)error_count[1],
+         (long)error_count[2], (long)error_count[3]);
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/

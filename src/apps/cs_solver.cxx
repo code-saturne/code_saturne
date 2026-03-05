@@ -140,8 +140,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -155,7 +153,7 @@ BEGIN_C_DECLS
 /* Initialize Fortran base common block values */
 
 #if defined(HAVE_FORTRAN)
-extern void
+extern "C" void
 cs_f_init(int  irgpar);  /* MPI Rank in parallel, -1 otherwise */
 #endif
 
@@ -782,5 +780,3 @@ main(int    argc,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

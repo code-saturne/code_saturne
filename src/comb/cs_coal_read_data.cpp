@@ -61,10 +61,6 @@
 
 #include "comb/cs_coal_read_data.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -486,8 +482,8 @@ cs_coal_read_data(void)
      Remark: these indexes will also be used for the IYMI pointers
      array (property indices).
 
-     For now, these indexes are 1-based, but can be converted to
-     0-based when the Fortran-C conversion is finished. */
+     For now, these indexes are 1-based, but should be converted to
+     0-based now that the Fortran-C conversion is finished. */
 
   int s_id  = 0;
   int ichx1 = s_id++;
@@ -572,7 +568,7 @@ cs_coal_read_data(void)
 
   cm->nsolid = 4*n_coals;
 
-  /* Definition of ich, ick et iash pointers (1-based for Fortran) */
+  /* Definition of ich, ick et iash pointers (1-based from Fortran legacy) */
 
   s_id = 1;
   for (int icha = 0; icha < n_coals; icha++) {
@@ -2373,5 +2369,3 @@ cs_coal_read_data(void)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

@@ -43,13 +43,9 @@
 
 #include "cs_headers.h"
 
-/*----------------------------------------------------------------------------
- *  Header for the current file
- *----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
+/*============================================================================
+ * Public function definitions.
+ *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -63,18 +59,11 @@ BEGIN_C_DECLS
 cs_ibm_fsi_func_t *
 cs_meg_ibm_fsi_func_by_name
 (
-  const char *object_name,
-  const char *gui_var_name
+  [[maybe_unused]] const char *object_name,
+  [[maybe_unused]] const char *gui_var_name
 )
 {
-  cs_ibm_fsi_func_t *f = nullptr;
-
-  CS_NO_WARN_IF_UNUSED(object_name);
-  CS_NO_WARN_IF_UNUSED(gui_var_name);
-
-  return f;
+  return nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

@@ -55,8 +55,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -93,7 +91,7 @@ cs_air_fluid_props_t *cs_glob_air_props = &_props;
  * (descriptions follow, with function bodies).
  *============================================================================*/
 
-void
+extern "C" void
 cs_air_glob_properties_get_pointers(double  **cp_a,
                                     double  **cp_v);
 
@@ -101,7 +99,7 @@ cs_air_glob_properties_get_pointers(double  **cp_a,
  *  Public functions for Fortran API
  *============================================================================*/
 
-void
+extern "C" void
 cs_air_glob_properties_get_pointers(double  **cp_a,
                                     double  **cp_v)
 {
@@ -585,5 +583,3 @@ cs_air_rho_humidair(cs_real_t  x,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

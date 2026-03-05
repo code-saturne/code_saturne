@@ -45,13 +45,9 @@
 
 #include "cs_headers.h"
 
-/*----------------------------------------------------------------------------
- *  Header for the current file
- *----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -65,15 +61,10 @@ BEGIN_C_DECLS
 
 #pragma weak cs_meg_post_profiles
 void
-cs_meg_post_profiles(const char       *name,
-                     int               n_coords,
-                     cs_real_t         coords[][3])
+cs_meg_post_profiles([[maybe_unused]] const char  *name,
+                     [[maybe_unused]] int          n_coords,
+                     [[maybe_unused]] cs_real_t    coords[][3])
 {
-  CS_NO_WARN_IF_UNUSED(name);
-  CS_NO_WARN_IF_UNUSED(n_coords);
-  CS_NO_WARN_IF_UNUSED(coords);   /* Avoid compiler warnings */
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

@@ -48,9 +48,7 @@
 
 #if defined(HAVE_METIS) || defined(HAVE_PARMETIS)
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #if defined(HAVE_PARMETIS)
 #include <parmetis.h>
@@ -60,9 +58,7 @@ extern "C" {
 #include <metis.h>
 #endif
 
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* defined(HAVE_METIS) || defined(HAVE_PARMETIS) */
 
@@ -106,10 +102,6 @@ extern "C" {
  *----------------------------------------------------------------------------*/
 
 #include "mesh/cs_partition.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Public Type documentation
@@ -3552,5 +3544,3 @@ cs_partition(cs_mesh_t             *mesh,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

@@ -73,19 +73,18 @@ typedef struct {
  *----------------------------------------------------------------------------*/
 
 void
-cloginit(const cs_real_t   *water_permit,
-         const cs_real_t   *ionic_strength,
-         const cs_real_t   *jamming_limit,
-         const cs_real_t   *min_porosity,
-         const cs_real_t   *diam_mean,
-         const cs_real_t    temperature[],
-         const cs_real_t   *valen,
-         const cs_real_t   *phi_p,
-         const cs_real_t   *phi_s,
-         const cs_real_t   *cstham,
-         const cs_real_t   *csthpp,
-         const cs_real_t   *lambda_vdw
-         );
+cs_lagr_clogging_initialize(const cs_real_t   *water_permit,
+                            const cs_real_t   *ionic_strength,
+                            const cs_real_t   *jamming_limit,
+                            const cs_real_t   *min_porosity,
+                            const cs_real_t   *diam_mean,
+                            const cs_real_t    temperature[],
+                            const cs_real_t   *valen,
+                            const cs_real_t   *phi_p,
+                            const cs_real_t   *phi_s,
+                            const cs_real_t   *cstham,
+                            const cs_real_t   *csthpp,
+                            const cs_real_t   *lambda_vdw);
 
 /*----------------------------------------------------------------------------
  * Clogging finalization.

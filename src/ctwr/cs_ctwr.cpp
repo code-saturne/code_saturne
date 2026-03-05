@@ -76,8 +76,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -159,11 +157,10 @@ _write_liquid_vars(void                  *input,
 
     const cs_mesh_t *mesh = cs_glob_mesh;
 
-    /* Liquid fraction enthalpy */
-
-    cs_real_t *yh_l_p = (cs_real_t *)CS_F_(yh_l_pack)->val;   /* Liquid enthalpy */
-    cs_real_t *y_l_p = (cs_real_t *)CS_F_(y_l_pack)->val;  /* Liquid mass per unit
-                                                            cell volume */
+    // Liquid fraction enthalpy
+    cs_real_t *yh_l_p = (cs_real_t *)CS_F_(yh_l_pack)->val;
+    // Liquid mass per unit cell volume
+    cs_real_t *y_l_p = (cs_real_t *)CS_F_(y_l_pack)->val;
 
     cs_real_t *val;
     CS_MALLOC(val, mesh->n_cells, cs_real_t);
@@ -226,20 +223,18 @@ _write_liquid_vars(void                  *input,
 /*----------------------------------------------------------------------------*/
 
 static void
-_packing_selection(void              *input,
-                   const cs_mesh_t   *m,
-                   int                location_id,
-                   cs_lnum_t         *n_elts,
-                   cs_lnum_t        **elt_ids)
+_packing_selection(void                   *input,
+                   const cs_mesh_t        *m,
+                   [[maybe_unused]]  int   location_id,
+                   cs_lnum_t               *n_elts,
+                   cs_lnum_t              **elt_ids)
 {
-  CS_UNUSED(location_id);
-
   const cs_ctwr_zone_t **cts = (const cs_ctwr_zone_t **)input;
 
   bool  *is_packing = nullptr;
   CS_MALLOC(is_packing, m->n_cells, bool);
 
-#   pragma omp parallel for if (m->n_cells> CS_THR_MIN)
+# pragma omp parallel for if (m->n_cells> CS_THR_MIN)
   for (cs_lnum_t i = 0; i < m->n_cells; i++)
     is_packing[i] = false;
 
@@ -1050,5 +1045,3 @@ cs_ctwr_log_balance(void)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

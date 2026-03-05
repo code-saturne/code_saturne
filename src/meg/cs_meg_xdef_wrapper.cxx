@@ -40,8 +40,6 @@
 
 #include "meg/cs_meg_xdef_wrapper.h"
 
-BEGIN_C_DECLS
-
 /*============================================================================
  * Local variables
  *============================================================================*/
@@ -185,17 +183,15 @@ cs_meg_xdef_wrapper_add_input
 void
 cs_meg_xdef_wrapper
 (
-  cs_real_t         time,
-  cs_lnum_t         n_elts,
-  const cs_lnum_t  *elt_ids,
-  const cs_real_t  *coords,
-  bool              dense_output,
-  void             *input,
-  cs_real_t        *retval
+  [[maybe_unused]] cs_real_t   time,
+  cs_lnum_t                    n_elts,
+  const cs_lnum_t             *elt_ids,
+  const cs_real_t             *coords,
+  bool                         dense_output,
+  void                        *input,
+  cs_real_t                   *retval
 )
 {
-  CS_UNUSED(time);
-
   const cs_meg_xdef_input_t *_input
     = reinterpret_cast<const cs_meg_xdef_input_t *>(input);
 
@@ -363,21 +359,21 @@ cs_meg_xdef_eval_func_wrapper
   void            *retval
 )
 {
-    const cs_mesh_location_type_t loc_type
-      = cs_mesh_location_get_type(location_id);
+  const cs_mesh_location_type_t loc_type
+    = cs_mesh_location_get_type(location_id);
 
-    const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
-    const cs_real_3_t *base_coords = nullptr;
+  const cs_real_3_t *base_coords = nullptr;
 
-    if (loc_type == CS_MESH_LOCATION_CELLS)
-      base_coords = mq->cell_cen;
-    else if (loc_type == CS_MESH_LOCATION_INTERIOR_FACES)
-      base_coords = mq->i_face_cog;
-    else if (loc_type == CS_MESH_LOCATION_BOUNDARY_FACES)
-      base_coords = mq->b_face_cog;
-    else if (loc_type == CS_MESH_LOCATION_VERTICES)
-      base_coords = reinterpret_cast<const cs_real_3_t *>(cs_glob_mesh->vtx_coord);
+  if (loc_type == CS_MESH_LOCATION_CELLS)
+    base_coords = mq->cell_cen;
+  else if (loc_type == CS_MESH_LOCATION_INTERIOR_FACES)
+    base_coords = mq->i_face_cog;
+  else if (loc_type == CS_MESH_LOCATION_BOUNDARY_FACES)
+    base_coords = mq->b_face_cog;
+  else if (loc_type == CS_MESH_LOCATION_VERTICES)
+    base_coords = reinterpret_cast<const cs_real_3_t *>(cs_glob_mesh->vtx_coord);
 
   const cs_meg_xdef_input_t *_input
     = reinterpret_cast<const cs_meg_xdef_input_t *>(input);
@@ -396,5 +392,3 @@ cs_meg_xdef_eval_func_wrapper
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

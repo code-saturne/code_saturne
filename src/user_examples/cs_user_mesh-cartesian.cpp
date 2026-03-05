@@ -51,10 +51,6 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * User function definitions
  *============================================================================*/
@@ -155,12 +151,10 @@ cs_user_mesh_cartesian_define(void)
      *
      */
 
-    cs_mesh_cartesian_define_from_csv("nullptr", /* No defined name for this mesh */
+    cs_mesh_cartesian_define_from_csv("nullptr", // No name defined
                                       "cartesian_vertex_coordinates.csv");
   }
   /*! [mesh_cartesian_3] */
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

@@ -84,10 +84,6 @@
 #include "alge/cs_matrix_priv.h"
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
-/*----------------------------------------------------------------------------*/
 /*! \file cs_matrix_petsc.cpp
  *
  * \brief Sparse Matrix Representation and Operations using PETSc.
@@ -1630,5 +1626,3 @@ cs_matrix_set_type_petsc(cs_matrix_t  *matrix,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

@@ -88,6 +88,7 @@
 
 #include "pprt/cs_physical_model.h"
 #include "cogz/cs_combustion_ebu.h"
+#include "cogz/cs_combustion_lw.h"
 #include "cogz/cs_combustion_slfm.h"
 #include "cogz/cs_combustion_physical_properties.h"
 #include "comb/cs_coal_physical_properties.h"
@@ -98,10 +99,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_physical_properties_default.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Additional doxygen documentation
@@ -133,16 +130,8 @@ BEGIN_C_DECLS
  * Fortran function prototypes.
  *============================================================================*/
 
-void
+extern "C" void
 cs_f_physical_properties2(void);
-
-void
-cs_combustion_lw_physical_prop(void);
-
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
 
 /*============================================================================
  * Private function definitions
@@ -1233,5 +1222,3 @@ cs_physical_properties_update(int   iterns)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

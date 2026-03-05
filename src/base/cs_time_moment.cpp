@@ -68,10 +68,6 @@
 
 #include "base/cs_time_moment.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -221,14 +217,6 @@ const char  *cs_time_moment_type_name[] = {N_("mean"),
                                            N_("variance")};
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-int
-cs_f_time_moment_field_id(int  m_num);
 
 /*============================================================================
  * Private function definitions
@@ -1625,33 +1613,6 @@ _time_moment_set_start_time(int     moment_id,
   CS_FREE(nt_start_prev);
 }
 
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Return field id associated with a given moment
- *
- * parameters:
- *   m_num <-- moment number (1 to n)
- *
- * returns:
- *   field id, or -1
- *----------------------------------------------------------------------------*/
-
-int
-cs_f_time_moment_field_id(int m_num)
-
-{
-  int retval = -1;
-
-  const cs_field_t *f = cs_time_moment_get_field(m_num - 1);
-  if (f != nullptr)
-    retval = f->id;
-
-  return retval;
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -2029,8 +1990,6 @@ cs_time_moment_get_field(int  moment_id)
   return nullptr;
 }
 
-END_C_DECLS
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Reset selected time step for starting time step of selected moment.
@@ -2068,8 +2027,6 @@ cs_time_moment_set_start_time(int     moment_id,
 {
   _time_moment_set_start_time(moment_id, -1, t_start);
 }
-
-BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -3171,5 +3128,3 @@ cs_time_moment_restart_write(cs_restart_t  *restart)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

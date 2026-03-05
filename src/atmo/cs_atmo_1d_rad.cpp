@@ -39,8 +39,6 @@
 
 #include "atmo/cs_atmo_1d_rad.h"
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -105,14 +103,14 @@ cs_atmo_1d_rad_t *cs_glob_atmo_1d_rad = &_atmo_1d_rad;
  * (descriptions follow, with function bodies).
  *============================================================================*/
 
-void
+extern "C" void
 cs_f_atmo_get_radiative_model_1d(int  **radiative_model_1d,
                                  int  **nvertint,
                                  int  **kvert,
                                  int  **kmx,
                                  int  **nfatr1);
 
-void
+extern "C" void
 cs_f_atmo_arrays_get_radiative_model_1d(cs_real_t **xyvert,
                                         cs_real_t **zray,
                                         cs_real_t **acinfe,
@@ -145,7 +143,7 @@ cs_f_atmo_arrays_get_radiative_model_1d(cs_real_t **xyvert,
                                         int         dim_kmx2[2],
                                         int         dim_kmx_nvert[2]);
 
-void
+extern "C" void
 cs_f_atmo_rad_1d_arrays_get_pointers(cs_real_t **qwvert,
                                      cs_real_t **qlvert,
                                      cs_real_t **qvvert,
@@ -423,5 +421,3 @@ cs_atmo_1d_rad_finalize(void)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

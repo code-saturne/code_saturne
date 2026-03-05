@@ -59,8 +59,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -3602,5 +3600,3 @@ fvm_point_location_closest_vertex(const fvm_nodal_t  *this_nodal,
 #undef _DOT_PRODUCT
 #undef _MODULE
 #undef _CROSS_PRODUCT
-
-END_C_DECLS

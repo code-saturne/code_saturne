@@ -62,8 +62,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -1082,9 +1080,7 @@ _update_subdiv_cell_quantities(const cs_mesh_t            *mesh,
 
   double vol_tot = 0;
 
-#ifdef __cplusplus
   constexpr cs_real_t c_1ov3 = 1. / 3.;
-#endif
 
   for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
@@ -1127,11 +1123,7 @@ _update_subdiv_cell_quantities(const cs_mesh_t            *mesh,
           for (int k = 0; k < 3; k++)
             xfc[k] = ref_xc[k] - xf[k];
 
-#ifdef __cplusplus
           const double voltet = c_1ov3 * fabs(_dp3(nf, xfc));
-#else
-          const double voltet = cs_math_1ov3 * fabs(_dp3(nf, xfc));
-#endif
 
           volc += voltet;
 
@@ -1224,9 +1216,7 @@ _subdiv_face_from_ref(int              n_face_vertices,
   new_normal[0] = new_normal[1] = new_normal[2] = 0;
   new_xf[0] = new_xf[1] = new_xf[2] = 0.;
 
-#ifdef __cplusplus
   constexpr cs_real_t c_1ov3 = 1. / 3.;
-#endif
 
   for (int t = 0; t < n_face_vertices; t++) {
     const cs_real_t *xv0 = xyz + 3 * f2v_ids[t];
@@ -1247,11 +1237,7 @@ _subdiv_face_from_ref(int              n_face_vertices,
 
     *new_surf += tef_surf;
     for (int k = 0; k < 3; k++)
-#ifdef __cplusplus
       new_xf[k] += tef_surf * c_1ov3 * (xv0[k] + xv1[k] + ref_xf[k]);
-#else
-      new_xf[k] += tef_surf * cs_math_1ov3 * (xv0[k] + xv1[k] + ref_xf[k]);
-#endif
   }
 
   cs_nvec3(new_normal, &nfq);
@@ -2754,5 +2740,3 @@ cs_quant_dump(FILE             *f,
 
 #undef _dp3
 #undef _n3
-
-END_C_DECLS

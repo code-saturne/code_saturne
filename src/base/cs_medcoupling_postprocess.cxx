@@ -549,8 +549,6 @@ static void _activate_slice_postprocessing
   }
 }
 
-BEGIN_C_DECLS
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1074,5 +1072,3 @@ void cs_medcoupling_slice_destroy_all
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

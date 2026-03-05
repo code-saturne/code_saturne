@@ -2671,8 +2671,6 @@ _init_zones(const cs_lnum_t   n_b_faces,
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
-BEGIN_C_DECLS
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -3646,5 +3644,3 @@ cs_gui_boundary_conditions_dof_func_meg(cs_lnum_t         n_elts,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

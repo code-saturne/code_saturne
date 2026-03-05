@@ -74,10 +74,6 @@
 #include "base/cs_porous_model.h"
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
-/*----------------------------------------------------------------------------*/
 /*! \file cs_porous_model.cpp
  *
  * \brief Porous model management
@@ -116,14 +112,6 @@ cs_mesh_quantities_t  *cs_glob_mesh_quantities_f = nullptr;
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
-
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -1142,5 +1130,3 @@ cs_porous_model_post_immmersed_plane(const cs_lnum_t      n_ib_cells,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

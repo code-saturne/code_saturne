@@ -77,10 +77,6 @@
 
 #include "base/cs_post.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -100,7 +96,7 @@ BEGIN_C_DECLS
   \brief Postprocessing input variable type
 
   \var CS_POST_TYPE_cs_real_t
-       Fortran double precision
+       double precision
   \var CS_POST_TYPE_int
        integer
   \var CS_POST_TYPE_float
@@ -396,26 +392,6 @@ static char *_field_sync = nullptr;
 /* Timer statistics */
 
 static int  _post_out_stat_id = -1;
-
-/*============================================================================
- * Prototypes for functions intended for use only by Fortran wrappers.
- * (descriptions follow, with function bodies).
- *============================================================================*/
-
-void
-cs_f_post_activate_by_time_step(void);
-
-void
-cs_f_post_write_var(int               mesh_id,
-                    const char       *var_name,
-                    int               var_dim,
-                    bool              interlace,
-                    bool              use_parent,
-                    int               nt_cur_abs,
-                    double            t_cur_abs,
-                    const cs_real_t  *cel_vals,
-                    const cs_real_t  *i_face_vals,
-                    const cs_real_t  *b_face_vals);
 
 /*============================================================================
  * Prototypes for user functions called only by functions from this module.
@@ -4015,77 +3991,6 @@ _cs_post_define_probe_mesh(int                    mesh_id,
   }
 }
 
-/*============================================================================
- * Fortran wrapper function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Update "active" or "inactive" flag of writers based on the time step.
- *
- * Writers are activated if their output interval is a divisor of the
- * current time step, or if their optional time step and value output lists
- * contain matches for the current time step.
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_post_activate_by_time_step(void)
-{
-  cs_post_activate_by_time_step(cs_glob_time_step);
-}
-
-/*----------------------------------------------------------------------------
- * Output a floating point variable defined at cells or faces of a
- * post-processing mesh using associated writers.
- *
- * parameters:
- *   mesh_id     <-- id of associated mesh
- *   var_name    <-- name of variable to output
- *   var_dim     <-- 1 for scalar, 3 for vector
- *   interlace   <-- if a vector, true for interlaced values, false otherwise
- *   use_parent  <-- true if values are defined on "parent" mesh,
- *                   false if values are defined on post-processing mesh
- *   nt_cur_abs  <-- current time step number
- *   t_cur_abs   <-- current physical time
- *   cel_vals    <-- cell values
- *   i_face_vals <-- interior face values
- *   b_face_vals <-- boundary face values
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_post_write_var(int               mesh_id,
-                    const char       *var_name,
-                    int               var_dim,
-                    bool              interlace,
-                    bool              use_parent,
-                    int               nt_cur_abs,
-                    double            t_cur_abs,
-                    const cs_real_t  *cel_vals,
-                    const cs_real_t  *i_face_vals,
-                    const cs_real_t  *b_face_vals)
-{
-  CS_UNUSED(t_cur_abs);
-
-  cs_post_type_t var_type
-    = (sizeof(cs_real_t) == 8) ? CS_POST_TYPE_double : CS_POST_TYPE_float;
-
-  const cs_time_step_t  *ts = cs_glob_time_step;
-
-  if (nt_cur_abs < 0) /* Allow forcing of time-independent output */
-    ts = nullptr;
-
-  cs_post_write_var(mesh_id,
-                    CS_POST_WRITER_ALL_ASSOCIATED,
-                    var_name,
-                    var_dim,
-                    interlace,
-                    use_parent,
-                    var_type,
-                    cel_vals,
-                    i_face_vals,
-                    b_face_vals,
-                    ts);
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -4761,8 +4666,6 @@ cs_post_define_particles_mesh_by_func(int                    mesh_id,
     post_mesh->cat_id = CS_POST_MESH_PARTICLES;
 }
 
-END_C_DECLS
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Create a post-processing mesh associated with an existing exportable
@@ -4905,8 +4808,6 @@ cs_post_define_existing_mesh(int           mesh_id,
     _check_mesh_cat_id(post_mesh);
   }
 }
-
-BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -8793,5 +8694,3 @@ cs_post_add_time_mesh_dep_output(cs_post_time_mesh_dep_output_t  *function,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

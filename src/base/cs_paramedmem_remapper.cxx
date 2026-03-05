@@ -476,8 +476,6 @@ _cs_paramedmem_remapper_destroy(cs_paramedmem_remapper_t *r)
  * Public C functions
  *============================================================================*/
 
-BEGIN_C_DECLS
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Creates a new cs_paramedmem_remapper_t instance
@@ -879,5 +877,3 @@ cs_paramedmem_remapper_destroy_all(void)
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS

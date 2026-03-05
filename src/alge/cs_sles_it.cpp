@@ -70,10 +70,6 @@
 #include "alge/cs_sles_it_cuda.h"
 #endif
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -185,8 +181,6 @@ const char *cs_sles_it_type_name[]
      N_("Truncated forward Gauss-Seidel"),
      N_("Truncated backwards Gauss-Seidel"),
 };
-
-END_C_DECLS
 
 /*=============================================================================
  * Local Structure Definitions
@@ -4365,8 +4359,6 @@ cs_user_sles_it_solver(cs_sles_it_t              *c,
   return cvg;
 }
 
-BEGIN_C_DECLS
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -5059,9 +5051,9 @@ cs_sles_it_solve(void                *context,
 #if defined(HAVE_ACCEL)
 
     /* When using accelerators, ideally, the arrays passed here should
-       already be usable on the device, but in case they are allocated with
-       Fortran intrinsics, we copy them here. When using unified shared
-       memory, we let the called solver handle prefetching rather than
+       already be usable on the device, but if this is not the case,
+       we copy them here. When using unified shared memory, we let the
+       called solver handle prefetching rather than
        doing it here, as it is not strictly needed, and the solver may
        exploit additional asynchronicity */
 
@@ -5729,5 +5721,3 @@ cs_sles_it_convergence_test(cs_sles_it_t              *c,
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
