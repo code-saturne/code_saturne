@@ -1463,9 +1463,9 @@ cs_gwf_soil_update_soil_state(cs_lnum_t            n_cells,
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-    if (sliq[c_id] < FLT_MIN)
+    if (sliq[c_id] < cs_math_zero_threshold)
       _soil_state_array[c_id] = CS_GWF_SOIL_STATE_DRY;
-    else if (sliq[c_id] > 1 - FLT_MIN)
+    else if (sliq[c_id] > 1 - cs_math_zero_threshold)
       _soil_state_array[c_id] = CS_GWF_SOIL_STATE_SATURATED;
     else
       _soil_state_array[c_id] = CS_GWF_SOIL_STATE_UNSATURATED;
@@ -1791,7 +1791,7 @@ cs_gwf_soil_set_vgm_spf_param(cs_gwf_soil_t         *soil,
   if (soilp == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               "%s: soil context not allocated\n", __func__);
-  if (n <= FLT_MIN)
+  if (n <= cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid value for n = %6.4e (the shape parameter).\n"
               "This value should be > 0.\n", __func__, n);
@@ -1849,12 +1849,12 @@ cs_gwf_soil_set_vgm_tpf_param(cs_gwf_soil_t         *soil,
   if (soilp == nullptr)
     bft_error(__FILE__, __LINE__, 0,
               "%s: soil context not allocated\n", __func__);
-  if (n - 1 <= FLT_MIN)
+  if (n - 1 <= cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid value for n = %6.4e (the shape parameter).\n"
               "This value should be > 1.\n", __func__, n);
 
-  assert(pr_r > FLT_MIN);
+  assert(pr_r > cs_math_zero_threshold);
 
   /* Main parameters */
 
@@ -1925,7 +1925,7 @@ cs_gwf_soil_set_vgm_tpf_advanced_param(cs_gwf_soil_t             *soil,
   case 1:
     /* Isotropic permeability */
     /* ====================== */
-    if (sle_thres > 1 - FLT_MIN) /* No joining function */
+    if (sle_thres > 1 - cs_math_zero_threshold) /* No joining function */
       soilp->sle_jtype = CS_GWF_SOIL_JOIN_NOTHING;
 
     else {

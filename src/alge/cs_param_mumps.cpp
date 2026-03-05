@@ -257,7 +257,7 @@ cs_param_mumps_log(const char              *name,
     cs_log_printf(CS_LOG_SETUP, "  * %s | Iterative_Refinement:      %d\n",
                   name, cs::abs(mumpsp->ir_steps));
 
-  if (fabs(mumpsp->blr_threshold) > FLT_MIN)
+  if (fabs(mumpsp->blr_threshold) > cs_math_zero_threshold)
     cs_log_printf(CS_LOG_SETUP, "  * %s | BLR_threshold:             %e\n",
                   name, mumpsp->blr_threshold);
 

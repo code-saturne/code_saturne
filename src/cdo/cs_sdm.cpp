@@ -1113,7 +1113,7 @@ cs_sdm_add_mult(cs_sdm_t        *mat,
   assert(mat->n_rows == add->n_rows);
   assert(mat->n_cols == add->n_cols);
 
-  if (fabs(alpha) < FLT_MIN)
+  if (fabs(alpha) < cs_math_zero_threshold)
     return;
 
   for (int i = 0; i < mat->n_rows*mat->n_cols; i++)

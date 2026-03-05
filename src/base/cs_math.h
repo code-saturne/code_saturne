@@ -42,6 +42,10 @@
 #include <float.h>
 #endif
 
+#if defined(__cplusplus)
+#include <limits>
+#endif
+
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
@@ -87,7 +91,7 @@ typedef enum {
 
 /* On GPU, global variables are usually not accessible. */
 
-#define cs_math_zero_threshold FLT_MIN
+#define cs_math_zero_threshold std::numeric_limits<float>::min()
 #define cs_math_epzero 1e-12
 #define cs_math_infinite_r 1.e30
 #define cs_math_big_r 1.e12

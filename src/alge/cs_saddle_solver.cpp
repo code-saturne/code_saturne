@@ -1741,7 +1741,7 @@ _gkb_transform_system(cs_saddle_solver_t             *solver,
   /* Compute w = M11^-1.(rhs1) */
 
   cs_real_t  normalization = ctx->square_norm_b11(ctx->rhs_tilda);
-  normalization = (fabs(normalization) > FLT_MIN) ? sqrt(normalization) : 1.0;
+  normalization = (fabs(normalization) > cs_math_zero_threshold) ? sqrt(normalization) : 1.0;
 
   cs_array_real_fill_zero(n1_dofs, ctx->v);
 
@@ -1811,7 +1811,7 @@ _gkb_init_solution(cs_saddle_solver_t             *solver,
 
   /* Store v in rhs_tilda which is not useful anymore */
 
-  if (fabs(ctx->beta) < FLT_MIN) {
+  if (fabs(ctx->beta) < cs_math_zero_threshold) {
 
     cs_array_real_copy(n1_dofs, ctx->v, ctx->rhs_tilda);
     cs_iter_algo_set_cvg_status(algo, CS_SLES_CONVERGED);
@@ -1843,7 +1843,7 @@ _gkb_init_solution(cs_saddle_solver_t             *solver,
                          ctx->w);
 
   cs_real_t  normalization = ctx->square_norm_b11(ctx->w);
-  normalization = (fabs(normalization) > FLT_MIN) ? sqrt(normalization) : 1.0;
+  normalization = (fabs(normalization) > cs_math_zero_threshold) ? sqrt(normalization) : 1.0;
 
   cs_array_real_fill_zero(n1_dofs, ctx->v);
 
@@ -3492,7 +3492,7 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
 
   cs_real_t  normalization = ctx->square_norm_b11(ctx->rhs);
 
-  normalization = (fabs(normalization) > FLT_MIN) ? sqrt(normalization) : 1.0;
+  normalization = (fabs(normalization) > cs_math_zero_threshold) ? sqrt(normalization) : 1.0;
 
   int  n_iter = cs_cdo_solve_scalar_system(n1_dofs,
                                            init_slesp,
@@ -3577,7 +3577,7 @@ cs_saddle_solver_alu_incr(cs_saddle_solver_t  *solver,
     cs_iter_algo_update_inner_iters(algo, n_iter);
 
     l2norm_x1_incr = ctx->square_norm_b11(x1_incr);
-    l2norm_x1_incr = (fabs(l2norm_x1_incr) > FLT_MIN) ?
+    l2norm_x1_incr = (fabs(l2norm_x1_incr) > cs_math_zero_threshold) ?
       sqrt(l2norm_x1_incr) : 1.0;
 
     /* Update the x1 array */
@@ -4359,7 +4359,7 @@ cs_saddle_solver_gkb_inhouse(cs_saddle_solver_t  *solver,
     for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++)
       ctx->q[i2] = scaling * ctx->m21v[i2];
 
-    if (fabs(ctx->beta) < FLT_MIN) {
+    if (fabs(ctx->beta) < cs_math_zero_threshold) {
       cs_iter_algo_set_cvg_status(algo, CS_SLES_CONVERGED);
       break;
     }
@@ -4665,7 +4665,7 @@ cs_saddle_solver_uzawa_cg(cs_saddle_solver_t  *solver,
 
   double  normalization = ctx->square_norm_b11(ctx->rhs);
 
-  normalization = (fabs(normalization) > FLT_MIN) ? sqrt(normalization) : 1.0;
+  normalization = (fabs(normalization) > cs_math_zero_threshold) ? sqrt(normalization) : 1.0;
 
   /* Compute the first velocity guess
    * Modify the tolerance in order to be more accurate on this step */
@@ -4754,7 +4754,7 @@ cs_saddle_solver_uzawa_cg(cs_saddle_solver_t  *solver,
                            ctx->rhs);
 
     normalization = ctx->square_norm_b11(ctx->rhs);
-    normalization = (fabs(normalization) > FLT_MIN) ? sqrt(normalization) : 1.0;
+    normalization = (fabs(normalization) > cs_math_zero_threshold) ? sqrt(normalization) : 1.0;
 
     /* Solve M11.wk = M12.dk (In our context, M12 should be -B^t (and M21 = -B
      * which is the divergence operator) This implies a sign modification
@@ -4928,7 +4928,7 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
 
   double  normalization = ctx->square_norm_b11(ctx->rhs);
 
-  normalization = (fabs(normalization) > FLT_MIN) ? sqrt(normalization) : 1.0;
+  normalization = (fabs(normalization) > cs_math_zero_threshold) ? sqrt(normalization) : 1.0;
 
   /* Compute the first velocity guess
    * Modify the tolerance in order to be more accurate on this step */
@@ -5059,7 +5059,7 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
     /* Initial normalization from the newly computed rhs */
 
     normalization = ctx->square_norm_b11(ctx->rhs);
-    normalization = (fabs(normalization) > FLT_MIN) ? sqrt(normalization) : 1.0;
+    normalization = (fabs(normalization) > cs_math_zero_threshold) ? sqrt(normalization) : 1.0;
 
     /* Compute the first velocity guess
      * Modify the tolerance in order to be more accurate on this step */

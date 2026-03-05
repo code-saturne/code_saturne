@@ -1587,7 +1587,7 @@ cs_hodge_evaluate_property(const cs_lnum_t       c_id,
                                                ptyd->property);
 
       if (hodge->param->inv_pty) {
-        assert(fabs(ptyd->value) > FLT_MIN);
+        assert(fabs(ptyd->value) > cs_math_zero_threshold);
         ptyd->value = 1/ptyd->value;
       }
 
@@ -1667,7 +1667,7 @@ cs_hodge_evaluate_property_cw(const cs_cell_mesh_t   *cm,
       ptyd->value = cs_property_value_in_cell(cm, ptyd->property, t_eval);
 
       if (hodge->param->inv_pty) {
-        assert(fabs(ptyd->value) > FLT_MIN);
+        assert(fabs(ptyd->value) > cs_math_zero_threshold);
         ptyd->value = 1/ptyd->value;
       }
 

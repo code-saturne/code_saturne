@@ -1732,7 +1732,7 @@ _cs_mesh_extrude_vectors_by_face_info(cs_mesh_extrude_vectors_t          *e,
       _thickness_se[i][0] /= w[i][0];
       _thickness_se[i][1] /= w[i][0];
       cs_real_t nn = cs_math_3_square_norm(_coord_shift[i]);
-      if (nn > FLT_MIN) {
+      if (nn > cs_math_zero_threshold) {
         for (cs_lnum_t l = 0; l < 3; l++)
           _coord_shift[i][l] *= (w[i][1] / nn);
       }

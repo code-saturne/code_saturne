@@ -1743,7 +1743,7 @@ _compute_plpc_picard(const cs_mesh_t           *mesh,
     const double  alpha
       = cs_property_get_cell_value(0, time_eval, eqsysp->relax_pty);
 
-    if (fabs(1 - alpha) > FLT_MIN) { // Apply a relaxation
+    if (fabs(1 - alpha) > cs_math_zero_threshold) { // Apply a relaxation
 
       const double alpha_conj = 1 - alpha;
       for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
@@ -2874,7 +2874,7 @@ cs_gwf_tpf_init_setup(cs_flag_t     post_flag,
     break;
 
   default:
-    if (fabs(tpf->upwind_weight) < FLT_MIN) { /* = 0 */
+    if (fabs(tpf->upwind_weight) < cs_math_zero_threshold) { /* = 0 */
       compute_rhog_h = _rhog_h_cell_mean;
       compute_rhogl_h = _rhogl_h_cell_mean;
     }

@@ -192,7 +192,7 @@ struct _cs_sles_mumps_t {
 
 static int  _n_mumps_systems = 0;
 static double  cs_sles_mumps_zero_dthreshold = 64*DBL_MIN;
-static double  cs_sles_mumps_zero_fthreshold = 128*FLT_MIN;
+static double  cs_sles_mumps_zero_fthreshold = 128*cs_math_zero_threshold;
 
 /*============================================================================
  * Static inline private function definitions
@@ -2256,7 +2256,7 @@ _automatic_dmumps_settings_before_analysis(cs_sles_mumps_type_t     type,
 
   /* BLR compression */
 
-  if (fabs(mumpsp->blr_threshold) > FLT_MIN) {
+  if (fabs(mumpsp->blr_threshold) > cs_math_zero_threshold) {
 
     mumps->ICNTL(35) = 2; /* Activate BLR algo (facto + solve) */
     mumps->CNTL(7) = fabs(mumpsp->blr_threshold); /* Compression rate */
@@ -2540,7 +2540,7 @@ _automatic_smumps_settings_before_analysis(cs_sles_mumps_type_t     type,
 
   /* BLR compression */
 
-  if (fabs(mumpsp->blr_threshold) > FLT_MIN) {
+  if (fabs(mumpsp->blr_threshold) > cs_math_zero_threshold) {
 
     mumps->ICNTL(35) = 2; /* Activate BLR algo (facto + solve) */
     mumps->CNTL(7) = fabs(mumpsp->blr_threshold); /* Compression rate */

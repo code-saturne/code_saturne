@@ -1375,17 +1375,17 @@ cs_param_sles_set_cvg_param(cs_param_sles_t  *slesp,
 
   /* Absolute tolerance */
 
-  if (fabs(atol - CS_CDO_KEEP_DEFAULT) > FLT_MIN)
+  if (fabs(atol - CS_CDO_KEEP_DEFAULT) > cs_math_zero_threshold)
     slesp->cvg_param.atol = atol;
 
   /* Relative tolerance */
 
-  if (fabs(rtol - CS_CDO_KEEP_DEFAULT) > FLT_MIN)
+  if (fabs(rtol - CS_CDO_KEEP_DEFAULT) > cs_math_zero_threshold)
     slesp->cvg_param.rtol = rtol;
 
   /* Divergence tolerance */
 
-  if (fabs(dtol - CS_CDO_KEEP_DEFAULT) > FLT_MIN)
+  if (fabs(dtol - CS_CDO_KEEP_DEFAULT) > cs_math_zero_threshold)
     slesp->cvg_param.dtol = dtol;
 
   /* Max. number of iterations */
@@ -1535,13 +1535,13 @@ cs_param_sles_amg_inhouse_advanced(cs_param_sles_t  *slesp,
   if (min_n_g_rows - CS_CDO_KEEP_DEFAULT == 0)
     amgp->min_n_g_rows = min_n_g_rows;
 
-  if (fabs(p0p1_relax - CS_CDO_KEEP_DEFAULT) > FLT_MIN)
+  if (fabs(p0p1_relax - CS_CDO_KEEP_DEFAULT) > cs_math_zero_threshold)
     amgp->p0p1_relax = p0p1_relax;
 
   if (coarse_max_iter - CS_CDO_KEEP_DEFAULT)
     amgp->coarse_max_iter = coarse_max_iter;
 
-  if (fabs(coarse_rtol_mult - CS_CDO_KEEP_DEFAULT) > FLT_MIN)
+  if (fabs(coarse_rtol_mult - CS_CDO_KEEP_DEFAULT) > cs_math_zero_threshold)
     amgp->coarse_rtol_mult = coarse_rtol_mult;
 }
 

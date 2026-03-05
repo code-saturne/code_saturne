@@ -102,7 +102,7 @@ extern const cs_real_t cs_math_pi;
 
 extern "C" {
 
-const cs_real_t cs_math_zero_threshold = FLT_MIN;
+const cs_real_t cs_math_zero_threshold = std::numeric_limits<float>::min();
 const cs_real_t cs_math_1ov3 = 1./3.;
 const cs_real_t cs_math_2ov3 = 2./3.;
 const cs_real_t cs_math_4ov3 = 4./3.;

@@ -3669,7 +3669,7 @@ cs_solidification_check_stefan_model(void)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid value for n_iter_max (= %d)\n",
               __func__, s_model->n_iter_max);
-  if (s_model->max_delta_h < FLT_MIN)
+  if (s_model->max_delta_h < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid value for max_delta_h (= %5.3e)\n",
               __func__, s_model->max_delta_h);
@@ -3751,7 +3751,7 @@ cs_solidification_check_voller_model(void)
               " consistent.\n"
               " Please check your settings.", __func__);
 
-  if (solid->forcing_coef < FLT_MIN)
+  if (solid->forcing_coef < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid value for the Kozeny-Carman parameters:\n"
               " Forcing coef: %6.4e\n",
@@ -3880,17 +3880,17 @@ cs_solidification_check_binary_alloy_model(void)
   cs_solidification_binary_alloy_t
     *b_model = cs_solidification_get_binary_alloy_struct();
 
-  if (solid->forcing_coef < FLT_MIN)
+  if (solid->forcing_coef < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid value for the Kozeny-Carman parameters:\n"
               " Forcing coef: %6.4e\n",
               __func__, solid->forcing_coef);
 
-  if (b_model->kp < FLT_MIN || b_model->kp > 1 - FLT_MIN)
+  if (b_model->kp < cs_math_zero_threshold || b_model->kp > 1 - cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid value %g for partition coefficient",
               __func__, b_model->kp);
-  if (fabs(b_model->ml) < FLT_MIN)
+  if (fabs(b_model->ml) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid value %g for the liquidus slope",
               __func__, b_model->ml);
@@ -3899,7 +3899,7 @@ cs_solidification_check_binary_alloy_model(void)
               "%s: Invalid value for n_iter_max (current: %d).\n"
               " Should be strictly greater than 0.\n",
               __func__, b_model->n_iter_max);
-  if (b_model->delta_tolerance < FLT_MIN)
+  if (b_model->delta_tolerance < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid value for \"tolerance\" (current: %6.4e).\n",
               __func__, b_model->delta_tolerance);
@@ -3948,10 +3948,10 @@ cs_solidification_set_binary_alloy_model(const char *name,
 
   /* Check the validity of some parameters */
 
-  if (kp < FLT_MIN || kp > 1 - FLT_MIN)
+  if (kp < cs_math_zero_threshold || kp > 1 - cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid value %g for partition coefficient", __func__, kp);
-  if (fabs(mliq) < FLT_MIN)
+  if (fabs(mliq) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid value %g for the liquidus slope", __func__, mliq);
 
@@ -3981,7 +3981,7 @@ cs_solidification_set_binary_alloy_model(const char *name,
   alloy->c_eut = (t_eutec - t_melt)*alloy->inv_ml;
   alloy->cs1 = alloy->c_eut * kp; /* Apply the lever rule */
 
-  assert(fabs(alloy->c_eut - alloy->cs1) > FLT_MIN);
+  assert(fabs(alloy->c_eut - alloy->cs1) > cs_math_zero_threshold);
   alloy->dgldC_eut = 1./(alloy->c_eut - alloy->cs1);
 
   /* Define a small range of temperature around the eutectic temperature in
@@ -4926,7 +4926,7 @@ cs_solidification_init_values(const cs_mesh_t              *mesh,
                                                     time_step->t_cur,
                                                     solid->mass_density);
 
-        if (fabs(rho - rho0) > FLT_MIN)
+        if (fabs(rho - rho0) > cs_math_zero_threshold)
           bft_error(__FILE__, __LINE__, 0,
                     "%s: A uniform value of the mass density in the"
                     " solidification/melting area is assumed.\n"
@@ -4938,7 +4938,7 @@ cs_solidification_init_values(const cs_mesh_t              *mesh,
                                                    time_step->t_cur,
                                                    solid->cp);
 
-        if (fabs(cp - cp0) > FLT_MIN)
+        if (fabs(cp - cp0) > cs_math_zero_threshold)
           bft_error(__FILE__, __LINE__, 0,
                     "%s: A uniform value of the Cp property in the"
                     " solidification/melting area is assumed.\n"

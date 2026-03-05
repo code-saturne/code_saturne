@@ -465,7 +465,7 @@ _set_pty_state_flag(cs_property_t *pty)
     bool is_uniform = true;
     bool is_steady = true;
     bool unset = true;
-    double _value = FLT_MAX, eps = 100*FLT_MIN;
+    double _value = FLT_MAX, eps = 100*cs_math_zero_threshold;
 
     for (int id = 0; id < pty->n_definitions; id++) {
 
@@ -1775,7 +1775,7 @@ cs_property_data_define(bool                 need_tensor,
         cs_xdef_t  *d = property->defs[0];
         if (d->type == CS_XDEF_BY_VALUE) {
           double  *dval = (double *)d->context;
-          if (fabs(dval[0] - 1) < FLT_MIN)
+          if (fabs(dval[0] - 1) < cs_math_zero_threshold)
             data.is_unity = true;
         }
       }
@@ -1834,7 +1834,7 @@ cs_property_data_init(bool                     need_tensor,
         cs_xdef_t  *d = property->defs[0];
         if (d->type == CS_XDEF_BY_VALUE) {
           double  *dval = (double *)d->context;
-          if (fabs(dval[0] - 1) < FLT_MIN)
+          if (fabs(dval[0] - 1) < cs_math_zero_threshold)
             data->is_unity = true;
         }
       }
@@ -3415,7 +3415,7 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
 
   /* Apply a scaling factor is requested */
 
-  if (fabs(scaling_factor - 1.0) > 10 * FLT_MIN)
+  if (fabs(scaling_factor - 1.0) > 10 * cs_math_zero_threshold)
     cs_array_real_scale(n_cells,
                         cs_property_get_dim(pty),
                         nullptr,
@@ -3704,7 +3704,7 @@ cs_property_eval_at_boundary_faces(cs_real_t            t_eval,
 
   /* Apply a scaling factor is requested */
 
-  if (fabs(scaling_factor - 1.0) > 10*FLT_MIN)
+  if (fabs(scaling_factor - 1.0) > 10*cs_math_zero_threshold)
     cs_array_real_scale(
       n_b_faces, cs_property_get_dim(pty), nullptr, scaling_factor, array);
 }
