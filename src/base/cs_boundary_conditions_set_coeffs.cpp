@@ -4080,6 +4080,7 @@ cs_boundary_conditions_set_coeffs_init(void)
  */
 /*----------------------------------------------------------------------------*/
 
+CS_F_HOST_DEVICE
 void
 cs_boundary_conditions_set_convective_outlet_scalar
   (cs_real_t  &a,
@@ -4197,6 +4198,7 @@ cs_boundary_conditions_set_generalized_sym_vector_aniso
  */
 /*----------------------------------------------------------------------------*/
 
+CS_F_HOST_DEVICE
 void
 cs_boundary_conditions_set_generalized_dirichlet_vector_aniso
   (cs_real_t              a[3],
