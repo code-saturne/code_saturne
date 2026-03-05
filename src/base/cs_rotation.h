@@ -123,6 +123,7 @@ cs_rotation_update_coords(cs_lnum_t    n_coords,
  *   vr     --> relative velocity
  *---------------------------------------------------------------------------*/
 
+CS_F_HOST_DEVICE
 static inline void
 cs_rotation_velocity(const cs_rotation_t  *r,
                      const cs_real_t       coords[3],
