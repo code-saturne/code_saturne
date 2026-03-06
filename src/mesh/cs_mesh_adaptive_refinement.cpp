@@ -480,24 +480,17 @@ _realloc_and_update_bc_coeffs_refinement(const cs_field_t  *f,
 {
   cs_lnum_t n_new = cs_glob_mesh->n_b_faces;
 
-  int n_arrays = 4;
-  cs_real_t *array_list[4] = {f->bc_coeffs->val_f,
+  int n_arrays = 3;
+  cs_real_t *array_list[3] = {f->bc_coeffs->val_f,
                               f->bc_coeffs->flux_diff,
-                              f->bc_coeffs->flux_diff_lim,
                               f->bc_coeffs->val_f_pre};
-  cs_real_t *array_out[4] = {nullptr};
+  cs_real_t *array_out[3] = {nullptr};
 
   for (int k = 0; k < n_arrays; k++) {
 
-    cs_real_t *bc_val   = array_list[k];
-    cs_real_t *prev_ptr = nullptr;
+    cs_real_t *bc_val = array_list[k];
 
-    /* In case flux_diff_lim = flux_diff, we do not treat this array.
-       Simply make it point towards flux_diff. */
-    if (k > 1)
-      prev_ptr = array_list[k-1];
-
-    if (bc_val != nullptr && bc_val != prev_ptr) {
+    if (bc_val != nullptr) {
       cs_real_t *i_vals = nullptr;
       CS_MALLOC(i_vals, n_new * f->dim, cs_real_t);
 
@@ -519,15 +512,9 @@ _realloc_and_update_bc_coeffs_refinement(const cs_field_t  *f,
 
   /* Make vals member of the current field
      point toward the newly allocated one */
+
   f->bc_coeffs->val_f = array_out[0];
-
   f->bc_coeffs->flux_diff = array_out[1];
-
-  if (array_list[2] == array_list[1])
-    f->bc_coeffs->flux_diff_lim = array_out[1];
-  else
-    f->bc_coeffs->flux_diff_lim = array_out[2];
-
   f->bc_coeffs->val_f_pre = array_out[3];
 }
 
@@ -675,23 +662,17 @@ _realloc_and_update_bc_coeffs_coarsening(cs_field_t      *f,
 {
   cs_lnum_t n_new = cs_glob_mesh->n_b_faces;
 
-  int n_arrays = 4;
-  cs_real_t *array_list[5] = {f->bc_coeffs->val_f,
+  int n_arrays = 3;
+  cs_real_t *array_list[3] = {f->bc_coeffs->val_f,
                               f->bc_coeffs->flux_diff,
-                              f->bc_coeffs->flux_diff_lim,
                               f->bc_coeffs->val_f_pre};
-  cs_real_t *array_out[5] = {nullptr};
+  cs_real_t *array_out[3] = {nullptr};
 
   for (int k = 0; k < n_arrays; k++) {
 
-    cs_real_t *bc_val     = array_list[k];
-    cs_real_t *prev_ptr   = nullptr;
-    /* In case flux_diff_lim = flux_diff, we do not treat this array.
-       Simply make it point towards flux_diff. */
-    if (k > 1)
-      prev_ptr = array_list[k-1];
+    cs_real_t *bc_val = array_list[k];
 
-    if (bc_val != nullptr && bc_val != prev_ptr) {
+    if (bc_val != nullptr) {
 
       cs_real_t *i_vals = nullptr;
       cs_real_t *val_mean = nullptr;
@@ -729,15 +710,9 @@ _realloc_and_update_bc_coeffs_coarsening(cs_field_t      *f,
 
   /* Make vals member of the current field
      point toward the newly allocated one*/
+
   f->bc_coeffs->val_f = array_out[0];
-
   f->bc_coeffs->flux_diff = array_out[1];
-
-  if (array_list[2] == array_list[1])
-    f->bc_coeffs->flux_diff_lim = array_out[1];
-  else
-    f->bc_coeffs->flux_diff_lim = array_out[2];
-
   f->bc_coeffs->val_f_pre = array_out[3];
 }
 

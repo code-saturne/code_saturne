@@ -501,20 +501,11 @@ _distribute_fields(cs_all_to_all_t  *cd,
 
     _distribute_bc_coeff(bfd, n_b_faces_ini, field->dim, a_copy, &fc->val_f,
                          b_face_order, b_face_n2o);
-
-    bool limited_flux = fc->flux_diff == fc->flux_diff_lim;
-    _distribute_bc_coeff(bfd, n_b_faces_ini, field->dim, a_copy, &fc->flux_diff,
-                         b_face_order, b_face_n2o);
-    if (limited_flux) {
-      fc->flux_diff_lim = fc->flux_diff;
-    }
-    else {
-      _distribute_bc_coeff(bfd, n_b_faces_ini, field->dim, a_copy,
-                           &fc->flux_diff_lim, b_face_order, b_face_n2o);
-    }
-
     _distribute_bc_coeff(bfd, n_b_faces_ini, field->dim, a_copy,
                          &fc->val_f_pre, b_face_order, b_face_n2o);
+
+    _distribute_bc_coeff(bfd, n_b_faces_ini, field->dim, a_copy, &fc->flux_diff,
+                         b_face_order, b_face_n2o);
 
     CS_FREE(a_copy);
     CS_FREE(b_copy);

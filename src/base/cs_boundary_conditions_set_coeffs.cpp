@@ -4360,8 +4360,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
     (bc_coeffs,
      m->n_b_faces,
      1, // dim
-     cs_alloc_mode,
-     false);
+     cs_alloc_mode);
 
   /* diffusion limiter */
   int df_limiter_id = eqp->diffusion_limiter_id;
@@ -4723,8 +4722,7 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
       (bc_coeffs,
        m->n_b_faces,
        stride,
-       cs_alloc_mode,
-       false);
+       cs_alloc_mode);
   }
 
   /* Get the calculation option from the field */
@@ -4799,7 +4797,6 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
   /* Build face values and diffusive fluxes */
   var_t *val_f = (var_t *)bc_coeffs->val_f;
   var_t *flux = (var_t *)bc_coeffs->flux_diff;
-  var_t *flux_lim = (var_t *)bc_coeffs->flux_diff_lim;
 
   cs_gradient_boundary_iprime_lsq_strided<stride>(ctx,
                                                   m,
@@ -4827,7 +4824,7 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       const cs_lnum_t c_id = b_face_cells[face_id];
 
-      // reconstruction for gradient (use of variable at I' position)
+      // Reconstruction for gradient (use of variable at I' position)
       for (cs_lnum_t i = 0; i < stride; i++) {
         val_f[face_id][i] = coefa[face_id][i];
         flux[face_id][i] = cofaf[face_id][i];
@@ -4838,20 +4835,12 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
         }
       }
 
-      /* ircflb = 0 (no reconstruction for flux,
-                     use of variable at I position) */
-
-      for (cs_lnum_t i = 0; i < stride; i++) {
-        flux_lim[face_id][i] = cofaf[face_id][i];
-
-        for (cs_lnum_t j = 0; j < stride; j++) {
-          flux_lim[face_id][i] += cofbf[face_id][j][i]*pvar[c_id][j];
-        }
-      }
     });
   }
 
   else if (ircflb > 0) {
+    const var_t *val_ip_rc = (val_ip_lim != nullptr) ? val_ip_lim : val_ip;
+
     CS_PROFILE_MARK_LINE();
 
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
@@ -4863,35 +4852,18 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
 
         for (cs_lnum_t j = 0; j < stride; j++) {
           val_f[face_id][i] += coefb[face_id][j][i]*val_ip[face_id][j];
-          flux[face_id][i] += cofbf[face_id][j][i]*val_ip[face_id][j];
+          flux[face_id][i] += cofbf[face_id][j][i]*val_ip_rc[face_id][j];
         }
       }
 
-      /* ircflb = 1 (reconstruction for flux,
-                     use of variable at I position)
-         In this case:
-         bc_coeffs_solve->val_f_lim = bc_coeffs_solve->val_f;
-         bc_coeffs_solve->flux_diff_lim =  bc_coeffs_solve->flux_diff; */
-
-      if (df_limiter != nullptr) { // otherwise addresses are shared
-
-        for (cs_lnum_t i = 0; i < stride; i++) {
-          // limiter (variable at I' position)
-          flux_lim[face_id][i] = cofaf[face_id][i];
-
-          for (cs_lnum_t j = 0; j < stride; j++) {
-            flux_lim[face_id][i] += cofbf[face_id][j][i]*val_ip_lim[face_id][j];
-          }
-        }
-      }
     });
   }
 
   ctx.wait();
   CS_PROFILE_MARK_LINE();
 
-  CS_FREE(val_ip);
   CS_FREE(val_ip_lim);
+  CS_FREE(val_ip);
   CS_PROFILE_MARK_LINE();
 }
 
@@ -4972,7 +4944,6 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
  * \param[in]       dim        associated field dimension
  *
  * \param[in]       amode      allocation mode
- * \param[in]       limiter    is a limiter active ?
  */
 /*----------------------------------------------------------------------------*/
 
@@ -4982,8 +4953,7 @@ cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
   cs_field_bc_coeffs_t  *bc_coeffs,
   cs_lnum_t              n_b_faces,
   cs_lnum_t              dim,
-  cs_alloc_mode_t        amode,
-  bool                   limiter
+  cs_alloc_mode_t        amode
 )
 {
   if (n_b_faces == 0)
@@ -4999,17 +4969,6 @@ cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
   if (bc_coeffs->flux_diff == nullptr) {
     CS_MALLOC_HD(bc_coeffs->flux_diff, dim*n_b_faces, cs_real_t, amode);
     cs_array_real_fill_zero(dim*n_b_faces, bc_coeffs->flux_diff);
-  }
-
-  if (limiter == false) {
-    if (   bc_coeffs->flux_diff_lim != nullptr
-        && bc_coeffs->flux_diff_lim != bc_coeffs->flux_diff)
-      CS_FREE(bc_coeffs->flux_diff_lim);
-    bc_coeffs->flux_diff_lim = bc_coeffs->flux_diff;
-  }
-  else {
-    if (bc_coeffs->flux_diff_lim == nullptr)
-      CS_MALLOC_HD(bc_coeffs->flux_diff_lim, dim*n_b_faces, cs_real_t, amode);
   }
 }
 

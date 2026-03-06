@@ -1378,7 +1378,6 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
  * \param[in]       n_b_faces  number of boundary faces
  * \param[in]       dim        associated field dimension
  * \param[in]       amode      allocation mode
- * \param[in]       limiter    is a limiter active ?
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1387,8 +1386,7 @@ cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
   (cs_field_bc_coeffs_t  *bc_coeffs,
    cs_lnum_t              n_b_faces,
    cs_lnum_t              dim,
-   cs_alloc_mode_t        amode,
-   bool                   limiter);
+   cs_alloc_mode_t        amode);
 
 #endif /* cplusplus */
 

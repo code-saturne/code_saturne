@@ -377,8 +377,7 @@ _equation_iterative_solve_strided(int                   idtvar,
       (f->bc_coeffs,
        n_b_faces,
        f->dim,
-       cs_alloc_mode,
-       false);
+       cs_alloc_mode);
   }
 
   /* Symmetric matrix, except if advection */
@@ -1607,8 +1606,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       (f->bc_coeffs,
        n_b_faces,
        f->dim,
-       cs_alloc_mode,
-       false);
+       cs_alloc_mode);
   }
 
   /* Application of the theta-scheme */
