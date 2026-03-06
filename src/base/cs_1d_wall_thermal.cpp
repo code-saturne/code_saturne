@@ -1231,7 +1231,7 @@ cs_1d_wall_thermal_check(int  iappel)
   if (iappel == 1) {
     if (nfpt1d < 0)
       error_count[0] += 1;
-    if (nfpt1d >= n_b_faces)
+    if (nfpt1d > n_b_faces)
       error_count[1] += 1;
     cs_parall_counter(error_count, 2);
 
@@ -1248,7 +1248,7 @@ cs_1d_wall_thermal_check(int  iappel)
   else if (iappel == 2) {
     for (cs_lnum_t ii = 0; ii < nfpt1d; ii++) {
       cs_lnum_t face_id = wtm->ifpt1d[ii] - 1;
-      if (face_id < 0 || face_id > n_b_faces)
+      if (face_id < 0 || face_id >= n_b_faces)
         error_count[0] += 1;
       if (wtm->local_models[ii].nppt1d <= 0)
         error_count[1] += 1;
