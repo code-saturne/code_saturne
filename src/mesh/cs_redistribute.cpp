@@ -499,16 +499,8 @@ _distribute_fields(cs_all_to_all_t  *cd,
     _distribute_bc_coeff(bfd, n_b_faces_ini, 1, a_copy, &fc->h_int_tot,
                          b_face_order, b_face_n2o);
 
-    bool limited_val_f = fc->val_f == fc->val_f_lim;
     _distribute_bc_coeff(bfd, n_b_faces_ini, field->dim, a_copy, &fc->val_f,
                          b_face_order, b_face_n2o);
-    if (limited_val_f) {
-      fc->val_f_lim = fc->val_f;
-    }
-    else {
-      _distribute_bc_coeff(bfd, n_b_faces_ini, field->dim, a_copy,
-                           &fc->val_f_lim, b_face_order, b_face_n2o);
-    }
 
     bool limited_flux = fc->flux_diff == fc->flux_diff_lim;
     _distribute_bc_coeff(bfd, n_b_faces_ini, field->dim, a_copy, &fc->flux_diff,

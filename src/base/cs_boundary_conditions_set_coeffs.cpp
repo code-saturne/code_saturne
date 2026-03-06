@@ -5002,18 +5002,12 @@ cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
   }
 
   if (limiter == false) {
-    if (   bc_coeffs->val_f_lim != nullptr
-        && bc_coeffs->val_f_lim != bc_coeffs->val_f)
-      CS_FREE(bc_coeffs->val_f_lim);
     if (   bc_coeffs->flux_diff_lim != nullptr
         && bc_coeffs->flux_diff_lim != bc_coeffs->flux_diff)
       CS_FREE(bc_coeffs->flux_diff_lim);
-    bc_coeffs->val_f_lim = bc_coeffs->val_f;
     bc_coeffs->flux_diff_lim = bc_coeffs->flux_diff;
   }
   else {
-    if (bc_coeffs->val_f_lim == nullptr)
-      CS_MALLOC_HD(bc_coeffs->val_f_lim, dim*n_b_faces, cs_real_t, amode);
     if (bc_coeffs->flux_diff_lim == nullptr)
       CS_MALLOC_HD(bc_coeffs->flux_diff_lim, dim*n_b_faces, cs_real_t, amode);
   }

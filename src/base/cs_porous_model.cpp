@@ -195,16 +195,12 @@ _field_ibm_reallocate(cs_lnum_t  n_ib_cells)
           /* Realloc val_f for fields already computed (porosity) */
 
           bool has_limiter = false;
-          if (f->bc_coeffs->val_f_lim != f->bc_coeffs->val_f) {
-            CS_REALLOC_HD(f->bc_coeffs->val_f_lim, n_i_end,
-                          cs_real_t, cs_alloc_mode);
+          if (f->bc_coeffs->flux_diff_lim != f->bc_coeffs->flux_diff) {
             CS_REALLOC_HD(f->bc_coeffs->flux_diff_lim, n_i_end,
                           cs_real_t, cs_alloc_mode);
 
-            cs_real_t *val_f_lim = f->bc_coeffs->val_f_lim;
             cs_real_t *flux_diff_lim = f->bc_coeffs->flux_diff_lim;
             ctx.parallel_for(n_i_new, [=] CS_F_HOST_DEVICE (cs_lnum_t e_id) {
-              val_f_lim[n_i_start + e_id] = 0.;
               flux_diff_lim[n_i_start + e_id] = 0.;
             });
             has_limiter = true;
@@ -224,7 +220,6 @@ _field_ibm_reallocate(cs_lnum_t  n_ib_cells)
             ctx.wait();
 
             if (!(has_limiter)) {
-              f->bc_coeffs->val_f_lim = f->bc_coeffs->val_f;
               f->bc_coeffs->flux_diff_lim = f->bc_coeffs->flux_diff;
             }
 

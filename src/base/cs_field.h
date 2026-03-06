@@ -124,13 +124,11 @@ typedef struct {
 
   cs_real_t         *val_f;       /* face value for gradient */
   cs_real_t         *val_f_pre;   /* previous face value for gradient */
-  cs_real_t         *val_f_lim;   /* face value for gradient
-                                     (limited) */
 
   cs_real_t         *flux_diff;    /* face value for diffusion */
   /* TODO: This should be removed */
   cs_real_t         *flux_diff_lim;/* face value for diffusion
-                                        (limited) */
+                                      (limited) */
 
   /* Private members */
   cs_real_t         *a;            /* Explicit coefficient */

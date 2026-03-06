@@ -1419,8 +1419,6 @@ cs_field_bc_coeffs_init(cs_field_bc_coeffs_t  *bc_coeffs)
 
   bc_coeffs->val_f = nullptr;
   bc_coeffs->val_f_pre = nullptr;
-  //TODO lim values should be removed
-  bc_coeffs->val_f_lim = nullptr;
 
   bc_coeffs->flux_diff = nullptr;
   //TODO lim values should be removed
@@ -1453,7 +1451,6 @@ cs_field_bc_coeffs_shallow_copy(const cs_field_bc_coeffs_t  *ref,
 
   copy->val_f = nullptr;
   copy->flux_diff = nullptr;
-  copy->val_f_lim = nullptr;
   copy->flux_diff_lim = nullptr;
   copy->val_f_pre = nullptr;
 }
@@ -1499,14 +1496,12 @@ cs_field_bc_coeffs_free_copy(const cs_field_bc_coeffs_t  *ref,
   if (copy->bc != ref->bc)
     CS_FREE(copy->bc);
 
-  /* When limiter = false, val_f_lim shares the same address as val_f.
-     We must check that val_f_lim != val_f before freeing,
-     to avoid freeing the same adress twice. */
-  if (copy->val_f_lim != ref->val_f_lim && copy->val_f_lim != copy->val_f)
-    CS_FREE(copy->val_f_lim);
   if (copy->val_f != ref->val_f)
     CS_FREE(copy->val_f);
 
+  /* When limiter = false, val_f_lim shares the same address as val_f.
+     We must check that val_f_lim != val_f before freeing,
+     to avoid freeing the same adress twice. */
   if (   copy->flux_diff_lim != ref->flux_diff_lim
       && copy->flux_diff_lim != copy->flux_diff)
     CS_FREE(copy->flux_diff_lim);
@@ -1538,11 +1533,8 @@ cs_field_bc_coeffs_clear(cs_field_bc_coeffs_t  *bc_coeffs)
 
   CS_FREE(bc_coeffs->h_int_tot);
 
-  if (bc_coeffs->val_f_lim == bc_coeffs->val_f)
-    bc_coeffs->val_f_lim = nullptr;
   CS_FREE(bc_coeffs->val_f);
   CS_FREE(bc_coeffs->val_f_pre);
-  CS_FREE(bc_coeffs->val_f_lim);
 
   if (bc_coeffs->flux_diff_lim == bc_coeffs->flux_diff)
     bc_coeffs->flux_diff_lim = nullptr;
@@ -1971,7 +1963,6 @@ cs_field_allocate_bc_coeffs(cs_field_t  *f,
       f->bc_coeffs->rcodcl3 = nullptr;
 
       f->bc_coeffs->val_f = nullptr;
-      f->bc_coeffs->val_f_lim = nullptr;
       f->bc_coeffs->flux_diff = nullptr;
       f->bc_coeffs->flux_diff_lim = nullptr;
 
@@ -2361,10 +2352,8 @@ cs_field_destroy_all(void)
       CS_FREE(f->bc_coeffs->bc);
       CS_FREE(f->bc_coeffs->h_int_tot);
 
-      if (f->bc_coeffs->val_f_lim != f->bc_coeffs->val_f) {
-        CS_FREE(f->bc_coeffs->val_f_lim);
+      if (f->bc_coeffs->flux_diff_lim != f->bc_coeffs->flux_diff)
         CS_FREE(f->bc_coeffs->flux_diff_lim);
-      }
       CS_FREE(f->bc_coeffs->val_f);
       CS_FREE(f->bc_coeffs->flux_diff);
       CS_FREE(f->bc_coeffs->val_f_pre);
