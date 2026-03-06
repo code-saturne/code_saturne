@@ -47,7 +47,6 @@
 #include "base/cs_array.h"
 #include "base/cs_base_accel.h"
 #include "base/cs_boundary_conditions.h"
-#include "base/cs_boundary_conditions_set_coeffs.h"
 #include "base/cs_equation_iterative_solve.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"

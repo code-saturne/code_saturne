@@ -54,7 +54,6 @@
 #include "alge/cs_balance.h"
 #include "alge/cs_blas.h"
 #include "base/cs_boundary_conditions.h"
-#include "base/cs_boundary_conditions_set_coeffs.h"
 #include "alge/cs_bw_time_diff.h"
 #include "cfbl/cs_cf_boundary_conditions.h"
 #include "cfbl/cs_cf_compute.h"

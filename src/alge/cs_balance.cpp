@@ -52,7 +52,6 @@
 #include "bft/bft_printf.h"
 
 #include "alge/cs_blas.h"
-#include "base/cs_boundary_conditions_set_coeffs.h"
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
 #include "base/cs_log.h"
