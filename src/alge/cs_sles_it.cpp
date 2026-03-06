@@ -59,6 +59,13 @@
 #include "alge/cs_matrix_spmv_cuda.h"
 #endif
 
+#if defined(HAVE_HIP) && defined(__HIPCC__)
+#include "base/cs_base_hip.h"
+#include "alge/cs_blas_hip.h"
+#include "alge/cs_matrix_spmv.h"
+#include "alge/cs_matrix_spmv_hip.h"
+#endif
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -68,6 +75,10 @@
 
 #if defined(HAVE_CUDA)
 #include "alge/cs_sles_it_cuda.h"
+#endif
+
+#if defined(HAVE_HIP)
+#include "alge/cs_sles_it_hip.h"
 #endif
 
 /*=============================================================================
@@ -4804,7 +4815,7 @@ cs_sles_it_setup(void               *context,
         else {
           c->solve = _conjugate_gradient_sr;
         }
-#if defined(HAVE_CUDA)
+#if defined(HAVE_CUDA) || defined(HAVE_HIP)
         if (on_device) {
           c->on_device = true;
         }
@@ -4822,6 +4833,11 @@ cs_sles_it_setup(void               *context,
       c->on_device = true;
       c->solve = cs_sles_it_cuda_fcg;
     }
+#elif defined(HAVE_HIP)
+    if (on_device) {
+      c->on_device = true;
+      c->solve = cs_sles_it_hip_fcg;
+    }
 #endif
     break;
 
@@ -4831,6 +4847,11 @@ cs_sles_it_setup(void               *context,
     if (on_device) {
       c->on_device = true;
       c->solve = cs_sles_it_cuda_fcg;
+    }
+#elif defined(HAVE_HIP)
+    if (on_device) {
+      c->on_device = true;
+      c->solve = cs_sles_it_hip_fcg;
     }
 #endif
     break;
@@ -4850,6 +4871,14 @@ cs_sles_it_setup(void               *context,
         c->solve = cs_sles_it_cuda_jacobi;
       else
         c->solve = cs_sles_it_cuda_block_jacobi;
+    }
+#elif defined(HAVE_HIP)
+    if (on_device) {
+      c->on_device = true;
+      if (diag_block_size == 1)
+        c->solve = cs_sles_it_hip_jacobi;
+      else
+        c->solve = cs_sles_it_hip_block_jacobi;
     }
 #endif
 
@@ -4878,6 +4907,11 @@ cs_sles_it_setup(void               *context,
     if (on_device) {
       c->on_device = true;
       c->solve = cs_sles_it_cuda_gcr;
+    }
+#elif defined(HAVE_HIP)
+    if (on_device) {
+      c->on_device = true;
+      c->solve = cs_sles_it_hip_gcr;
     }
 #endif
 

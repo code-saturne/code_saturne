@@ -194,6 +194,10 @@ cs_mass_flux(const cs_mesh_t             *m,
   if (ctx_c.use_gpu())
     ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
 #endif
+#if defined(HAVE_HIP)
+  if (ctx_c.use_gpu())
+    ctx_c.set_hip_stream(cs_hip_get_stream(1));
+#endif
 
   const bool on_device = ctx.use_gpu();
 
@@ -733,6 +737,10 @@ cs_tensor_face_flux(const cs_mesh_t             *m,
 #if defined(HAVE_CUDA)
   if (ctx_c.use_gpu())
     ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
+#endif
+#if defined(HAVE_HIP)
+  if (ctx_c.use_gpu())
+    ctx_c.set_hip_stream(cs_hip_get_stream(1));
 #endif
 
   const bool on_device = ctx.use_gpu();
@@ -1404,6 +1412,10 @@ cs_ext_force_flux(const cs_mesh_t          *m,
   if (ctx_c.use_gpu())
     ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
 #endif
+#if defined(HAVE_HIP)
+  if (ctx_c.use_gpu())
+    ctx_c.set_hip_stream(cs_hip_get_stream(1));
+#endif
 
   /*Additional terms due to porosity */
 
@@ -1639,6 +1651,10 @@ cs_ext_force_anisotropic_flux(const cs_mesh_t          *m,
 #if defined(HAVE_CUDA)
   if (ctx_c.use_gpu())
     ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
+#endif
+#if defined(HAVE_HIP)
+  if (ctx_c.use_gpu())
+    ctx_c.set_hip_stream(cs_hip_get_stream(1));
 #endif
 
   const bool on_device = ctx.use_gpu();

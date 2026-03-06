@@ -127,6 +127,8 @@ extern "C" {
 
 #if defined(HAVE_CUDA)
 #define HAVE_ACCEL 1
+#elif defined(HAVE_HIP)
+#define HAVE_ACCEL 1
 #elif defined(HAVE_SYCL)
 #define HAVE_ACCEL 1
 #elif defined(HAVE_OPENMP_TARGET)
@@ -586,7 +588,7 @@ typedef enum {
  * Macros for function type qualifiers
  *----------------------------------------------------------------------------*/
 
-#ifdef __CUDACC__
+#if defined(__CUDACC__) || defined (__HIP_DEVICE_COMPILE__)
 
 #define CS_F_HOST __host__
 #define CS_F_DEVICE __device__

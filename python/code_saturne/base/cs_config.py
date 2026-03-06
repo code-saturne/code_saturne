@@ -136,6 +136,7 @@ class config:
                         'metis', 'scotch',              # Partionning libraries
                         'mpi',                          # MPI
                         'cuda',                         # CUDA
+                        'hip',                          # HIP
                         'blas',                         # BLAS (benchmark use)
                         'system']                       # User & system libraries
 
@@ -222,6 +223,7 @@ class config:
         self.features['mpi'] = d.get('mpi', 'yes')
         self.features['openmp'] = d.get('openmp', 'yes')
         self.features['cuda'] = d.get('cuda', 'no')
+        self.features['hip'] = d.get('hip', 'no')
         self.features['long-gnum'] = d.get('long-gnum', 'yes')
         self.features['build_os'] = d.get('build_os', '')
 
@@ -278,6 +280,7 @@ class config:
         self.libs['metis']  = prerequisite('METIS', 'metis', config_dict)
 
         self.libs['cuda'] =  prerequisite('CUDA', 'cuda', config_dict)
+        self.libs['hip'] =  prerequisite('HIP', 'hip', config_dict)
 
         self.libs['petsc'] = prerequisite('PETSc', 'petsc', config_dict)
         self.libs['amgx']  = prerequisite('Amgx', 'amgx', config_dict)

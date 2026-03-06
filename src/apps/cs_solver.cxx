@@ -136,6 +136,8 @@
 #if defined(HAVE_CUDA)
 #include "base/cs_base_cuda.h"
 #include "alge/cs_blas_cuda.h"
+#elif defined(HAVE_HIP)
+#include "base/cs_base_hip.h"
 #endif
 
 /*----------------------------------------------------------------------------*/
@@ -221,6 +223,9 @@ _run(void)
 
 #if defined(HAVE_CUDA)
   cs_base_cuda_select_default_device();
+#endif
+#if defined(HAVE_HIP)
+  cs_base_hip_select_default_device();
 #endif
 #if defined(HAVE_SYCL)
   cs_sycl_select_default_device();

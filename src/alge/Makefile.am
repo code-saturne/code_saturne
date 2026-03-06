@@ -129,6 +129,14 @@ cs_matrix_spmv_cuda.h \
 cs_sles_it_cuda.h
 endif
 
+if HAVE_HIP
+csalge_include_HEADERS += \
+cs_benchmark_hip.h \
+cs_blas_hip.h \
+cs_matrix_spmv_hip.h \
+cs_sles_it_hip.h
+endif
+
 if HAVE_PETSC
 csalge_include_HEADERS += \
 cs_matrix_petsc.h \
@@ -206,6 +214,15 @@ cs_matrix_spmv_cuda.cu \
 cs_sles_it_cuda.cu
 endif
 
+if HAVE_HIP
+libcsalge_a_SOURCES += \
+cs_benchmark_hip.cpp \
+cs_blas_hip.cpp \
+cs_gradient_hip.cpp \
+cs_matrix_spmv_hip.cpp \
+cs_sles_it_hip.cpp
+endif
+
 noinst_LIBRARIES += libcsalge_extension.a
 libcsalge_extension_a_SOURCES = \
 cs_param_sles.cpp \
@@ -233,6 +250,15 @@ libcsalge_petsc_a-cs_matrix_petsc.$(OBJEXT): $(cs_matrix_petsc)
 libcsalge_petsc_a-cs_sles_petsc.$(OBJEXT): $(cs_sles_petsc)
 	$(NVCC) -c $(DEFS) $(AM_CPPFLAGS) $(PETSC_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c  $(cs_sles_petsc) -o libcsalge_petsc_a-cs_sles_petsc.$(OBJEXT)
 endif
+
+if HAVE_HIP_CPP
+cs_matrix_petsc = $(top_srcdir)/src/alge/cs_matrix_petsc.cpp
+cs_sles_petsc = $(top_srcdir)/src/alge/cs_sles_petsc.cpp
+libcsalge_petsc_a-cs_matrix_petsc.$(OBJEXT): $(cs_matrix_petsc)
+	$(HIPCC) -c $(DEFS) $(AM_CPPFLAGS) $(PETSC_CPPFLAGS) $(HIPCCFLAGS) $(HIPCCFLAGS_DBG) $(HIPCCFLAGS_OPT) $(HIPCCFLAGS_CPP) -c  $(cs_matrix_petsc) -o libcsalge_petsc_a-cs_matrix_petsc.$(OBJEXT)
+libcsalge_petsc_a-cs_sles_petsc.$(OBJEXT): $(cs_sles_petsc)
+	$(HIPCC) -c $(DEFS) $(AM_CPPFLAGS) $(PETSC_CPPFLAGS) $(HIPCCFLAGS) $(HIPCCFLAGS_DBG) $(HIPCCFLAGS_OPT) $(HIPCCFLAGS_CPP) -c  $(cs_sles_petsc) -o libcsalge_petsc_a-cs_sles_petsc.$(OBJEXT)
+endif
 endif
 
 if HAVE_MUMPS
@@ -246,6 +272,13 @@ cs_sles_mumps = $(top_srcdir)/src/alge/cs_sles_mumps.cpp
 libcsalge_mumps_a-cs_sles_mumps.$(OBJEXT): $(cs_sles_mumps)
 	$(NVCC) -c $(DEFS) $(AM_CPPFLAGS) $(MUMPS_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c  $(cs_sles_mumps) -o libcsalge_mumps_a-cs_sles_mumps.$(OBJEXT)
 endif
+
+if HAVE_HIP_CPP
+cs_sles_mumps = $(top_srcdir)/src/alge/cs_sles_mumps.cpp
+libcsalge_mumps_a-cs_sles_mumps.$(OBJEXT): $(cs_sles_mumps)
+	$(HIPCC) -c $(DEFS) $(AM_CPPFLAGS) $(MUMPS_CPPFLAGS) $(HIPCCFLAGS) $(HIPCCFLAGS_DBG) $(HIPCCFLAGS_OPT) $(HIPCCFLAGS_CPP) -c  $(cs_sles_mumps) -o libcsalge_mumps_a-cs_sles_mumps.$(OBJEXT)
+endif
+
 endif
 
 if HAVE_HYPRE
@@ -265,6 +298,16 @@ libcsalge_hypre_a-cs_matrix_hypre.$(OBJEXT): $(cs_matrix_hypre)
 libcsalge_hypre_a-cs_sles_hypre.$(OBJEXT): $(cs_sles_hypre)
 	$(NVCC) -c $(DEFS) $(AM_CPPFLAGS) $(HYPRE_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c  $(cs_sles_hypre) -o libcsalge_hypre_a-cs_sles_hypre.$(OBJEXT)
 endif
+
+if HAVE_HIP_CPP
+cs_matrix_hypre = $(top_srcdir)/src/alge/cs_matrix_hypre.cpp
+cs_sles_hypre = $(top_srcdir)/src/alge/cs_sles_hypre.cpp
+libcsalge_hypre_a-cs_matrix_hypre.$(OBJEXT): $(cs_matrix_hypre)
+	$(HIPCC) -c $(DEFS) $(AM_CPPFLAGS) $(HYPRE_CPPFLAGS) $(HIPCCFLAGS) $(HIPCCFLAGS_DBG) $(HIPCCFLAGS_OPT) $(HIPCCFLAGS_CPP) -c  $(cs_matrix_hypre) -o libcsalge_hypre_a-cs_matrix_hypre.$(OBJEXT)
+libcsalge_hypre_a-cs_sles_hypre.$(OBJEXT): $(cs_sles_hypre)
+	$(HIPCC) -c $(DEFS) $(AM_CPPFLAGS) $(HYPRE_CPPFLAGS) $(HIPCCFLAGS) $(HIPCCFLAGS_DBG) $(HIPCCFLAGS_OPT) $(HIPCCFLAGS_CPP) -c  $(cs_sles_hypre) -o libcsalge_hypre_a-cs_sles_hypre.$(OBJEXT)
+endif
+
 endif
 
 if HAVE_AMGX
@@ -297,6 +340,11 @@ clean-local:
 if HAVE_CUDA_CPP
 .cpp.$(OBJEXT):
 	$(NVCC) $(DEFS) $(AM_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) -c -o $@ $<
+else
+if HAVE_HIP_CPP
+.cpp.$(OBJEXT):
+	$(HIPCC) $(DEFS) $(AM_CPPFLAGS) $(HIPCCFLAGS) $(HIPCCFLAGS_DBG) $(HIPCCFLAGS_OPT) $(HIPCCFLAGS_CPP) -c -o $@ $<
+endif
 endif
 
 .cu.$(OBJEXT):

@@ -79,6 +79,11 @@
 #include "alge/cs_matrix_spmv_cuda.h"
 #endif
 
+#if defined(HAVE_HIP) && defined(__HIPCC__)
+#include "alge/cs_blas_hip.h"
+#include "alge/cs_matrix_spmv_hip.h"
+#endif
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -3319,6 +3324,10 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
       cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
       if (stream != 0)
         ctx.set_cuda_stream(stream);
+#elif defined(HAVE_HIP)
+      hipStream_t stream = cs_matrix_spmv_hip_get_stream();
+      if (stream != 0)
+        ctx.set_hip_stream(stream);
 #endif
       cs_matrix_vector_multiply_d(_matrix, vx_lv, wr);
     }
@@ -3780,6 +3789,10 @@ _multigrid_v_cycle_pc(cs_multigrid_t        *mg,
       cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
       if (stream != 0)
         ctx.set_cuda_stream(stream);
+#elif defined(HAVE_HIP)
+      hipStream_t stream = cs_matrix_spmv_hip_get_stream();
+      if (stream != 0)
+        ctx.set_hip_stream(stream);
 #endif
       cs_matrix_vector_multiply_d(_matrix, vx_lv, wr);
     }
@@ -3947,6 +3960,10 @@ _multigrid_v_cycle_pc(cs_multigrid_t        *mg,
         cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
         if (stream != 0)
           ctx.set_cuda_stream(stream);
+#elif defined(HAVE_HIP)
+        hipStream_t stream = cs_matrix_spmv_hip_get_stream();
+        if (stream != 0)
+          ctx.set_hip_stream(stream);
 #endif
         if (amode_p == CS_ALLOC_HOST)
           cs_prefetch_h2d(vx_lv1, _n_rows*sizeof(cs_real_t));
@@ -4163,6 +4180,12 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
   if (stream != 0) {
     ctx_f.set_cuda_stream(stream);
     ctx_c.set_cuda_stream(stream);
+  }
+#elif defined(HAVE_HIP)
+  hipStream_t stream = cs_matrix_spmv_hip_get_stream();
+  if (stream != 0) {
+    ctx_f.set_hip_stream(stream);
+    ctx_c.set_hip_stream(stream);
   }
 # endif
 #endif

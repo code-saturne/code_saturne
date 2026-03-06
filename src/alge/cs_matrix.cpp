@@ -120,6 +120,7 @@
 #include "alge/cs_matrix_priv.h"
 #include "alge/cs_matrix_spmv.h"
 #include "alge/cs_matrix_spmv_cuda.h"
+#include "alge/cs_matrix_spmv_hip.h"
 
 /*----------------------------------------------------------------------------*/
 /*! \file cs_matrix.cpp
@@ -4161,6 +4162,10 @@ cs_matrix_vector_multiply([[maybe_unused]] cs_dispatch_context  &ctx,
     cudaStream_t prev_stream = cs_matrix_spmv_cuda_get_stream();
     cs_matrix_spmv_cuda_set_stream(ctx.cuda_stream());
 #endif
+#if defined(HAVE_HIP)
+    hipStream_t prev_stream = cs_matrix_spmv_hip_get_stream();
+    cs_matrix_spmv_hip_set_stream(ctx.hip_stream());
+#endif
 
     if (matrix->halo != nullptr)
       ctx.wait();
@@ -4174,6 +4179,9 @@ cs_matrix_vector_multiply([[maybe_unused]] cs_dispatch_context  &ctx,
 
 #if defined(HAVE_CUDA)
     cs_matrix_spmv_cuda_set_stream(prev_stream);
+#endif
+#if defined(HAVE_HIP)
+    cs_matrix_spmv_hip_set_stream(prev_stream);
 #endif
 
     return;
@@ -4241,6 +4249,10 @@ cs_matrix_vector_multiply_partial
     cudaStream_t prev_stream = cs_matrix_spmv_cuda_get_stream();
     cs_matrix_spmv_cuda_set_stream(ctx.cuda_stream());
 #endif
+#if defined(HAVE_HIP)
+    hipStream_t prev_stream = cs_matrix_spmv_hip_get_stream();
+    cs_matrix_spmv_hip_set_stream(ctx.hip_stream());
+#endif
 
     if (matrix->halo != nullptr)
       ctx.wait();
@@ -4254,6 +4266,9 @@ cs_matrix_vector_multiply_partial
 
 #if defined(HAVE_CUDA)
     cs_matrix_spmv_cuda_set_stream(prev_stream);
+#endif
+#if defined(HAVE_HIP)
+    cs_matrix_spmv_hip_set_stream(prev_stream);
 #endif
 
     return;
@@ -6821,6 +6836,21 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
 
 #endif /* defined(HAVE_CUDA) */
 
+#if defined(HAVE_HIP)
+
+      if (cs_get_device_id() > -1) {
+        _variant_add(_("native, HIP"),
+                     m->type,
+                     m->fill_type,
+                     m->numbering,
+                     "hip",
+                     n_variants,
+                     &n_variants_max,
+                     m_variant);
+      }
+
+#endif /* defined(HAVE_HIP) */
+
     }
 
   }
@@ -6887,6 +6917,21 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
     }
 
 #endif /* defined(HAVE_CUDA) */
+
+#if defined(HAVE_HIP)
+
+    if (cs_get_device_id() > -1) {
+      _variant_add(_("CSR, HIP"),
+                   m->type,
+                   m->fill_type,
+                   m->numbering,
+                   "hip",
+                   n_variants,
+                   &n_variants_max,
+                   m_variant);
+    }
+
+#endif /* defined(HAVE_HIP) */
 
   }
 
@@ -6957,6 +7002,20 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
     }
 
 #endif /* defined(HAVE_CUDA) */
+
+#if defined(HAVE_HIP)
+
+    if (cs_get_device_id() > -1) {
+      _variant_add(_("MSR, HIP"),
+                   m->type,
+                   m->fill_type,
+                   m->numbering,
+                   "hip",
+                   n_variants,
+                   &n_variants_max,
+                   m_variant);
+    }
+#endif /* defined(HAVE_HIP) */
 
 #if defined(HAVE_OPENMP)
 

@@ -244,6 +244,12 @@ cppflags: @CUDA_CPPFLAGS@
 ldflags: @CUDA_LDFLAGS@
 libs: @CUDA_LIBS@
 
+[hip]
+have: @cs_have_hip@
+cppflags: @HIP_CPPFLAGS@
+ldflags: @HIP_LDFLAGS@
+libs: @HIP_LIBS@
+
 [petsc]
 have: @cs_have_petsc@
 cppflags: @PETSC_CPPFLAGS@

@@ -50,6 +50,8 @@
 #include "base/cs_base_accel.h"
 #if defined(HAVE_CUDA)
 #include "base/cs_base_cuda.h"
+#elif defined(HAVE_HIP)
+#include "base/cs_base_hip.h"
 #endif
 #include "base/cs_interface.h"
 #include "base/cs_mem.h"
@@ -68,6 +70,8 @@
 
 #if defined(HAVE_CUDA)
 #include "base/cs_halo_cuda.h"
+#elif defined(HAVE_HIP)
+#include "base/cs_halo_hip.h"
 #endif
 
 /*----------------------------------------------------------------------------*/
@@ -143,6 +147,10 @@ struct _cs_halo_state_t {
 #if defined(HAVE_CUDA)
 
   cudaStream_t  stream;           /* Associated CUDA stream */
+
+#elif defined(HAVE_HIP)
+
+  hipStream_t   stream;           /* Associated HIP stream */
 
 #endif
 };
@@ -1373,6 +1381,10 @@ cs_halo_state_create(void)
     ,
     .stream = cs_cuda_get_stream(0)
 
+#elif defined(HAVE_HIP)
+    ,
+    .stream = cs_hip_get_stream(0)
+
 #endif
   };
 
@@ -1695,6 +1707,8 @@ cs_halo_sync_pack_init_state(const cs_halo_t  *halo,
 
 #if defined(HAVE_CUDA)
   _hs->stream = cs_cuda_get_stream(0);
+#elif defined(HAVE_HIP)
+  _hs->stream = cs_hip_get_stream(0);
 #endif
 
   return _send_buffer;

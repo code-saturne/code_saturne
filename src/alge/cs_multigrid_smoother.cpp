@@ -66,6 +66,10 @@
 #include "alge/cs_sles_it_cuda.h"
 #endif
 
+#if (HAVE_HIP)
+#include "alge/cs_sles_it_hip.h"
+#endif
+
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -2836,6 +2840,11 @@ cs_multigrid_smoother_setup(void               *context,
       c->on_device = true;
       c->solve = cs_sles_it_cuda_fcg;
     }
+#elif defined(HAVE_HIP)
+    if (on_device) {
+      c->on_device = true;
+      c->solve = cs_sles_it_hip_fcg;
+    }
 #endif
     break;
 
@@ -2885,6 +2894,10 @@ cs_multigrid_smoother_setup(void               *context,
       if (on_device) {
         c->solve = cs_sles_it_cuda_jacobi;
       }
+#elif defined(HAVE_HIP)
+      if (on_device) {
+        c->solve = cs_sles_it_hip_jacobi;
+      }
 #endif
     }
     else if (diag_block_size == 3) {
@@ -2893,6 +2906,10 @@ cs_multigrid_smoother_setup(void               *context,
       if (on_device) {
         c->solve = cs_sles_it_cuda_block_jacobi;
       }
+#elif defined(HAVE_HIP)
+      if (on_device) {
+        c->solve = cs_sles_it_hip_block_jacobi;
+      }
 #endif
     }
     else {
@@ -2900,6 +2917,10 @@ cs_multigrid_smoother_setup(void               *context,
 #if defined(HAVE_CUDA)
       if (on_device) {
         c->solve = cs_sles_it_cuda_block_jacobi;
+      }
+#elif defined(HAVE_HIP)
+      if (on_device) {
+        c->solve = cs_sles_it_hip_block_jacobi;
       }
 #endif
     }

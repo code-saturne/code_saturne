@@ -43,6 +43,10 @@
 #include "base/cs_array_cuda.h"
 #include "base/cs_base_cuda.h"
 #endif
+#if defined (__HIPCC__)
+#include "base/cs_array_hip.h"
+#include "base/cs_base_hip.h"
+#endif
 
 #include "base/cs_dispatch.h"
 #include "base/cs_mdspan.h"
@@ -107,7 +111,7 @@ cs_arrays_set_value(const cs_lnum_t  n_elts,
   /* Expand the parameter pack */
   T* array_ptrs[] = {arrays ... };
 
-#if defined (__CUDACC__)
+#if defined (__CUDACC__) || defined(__HIPCC__)
   bool is_available_on_device = cs_check_device_ptr(ref_val);
   for (T* array : array_ptrs)
     is_available_on_device =  is_available_on_device
@@ -115,7 +119,11 @@ cs_arrays_set_value(const cs_lnum_t  n_elts,
                                == CS_ALLOC_HOST_DEVICE_SHARED);
 
   if (is_available_on_device) {
+#if defined (__CUDACC__)
     cudaStream_t stream_ = cs_cuda_get_stream(0);
+#else
+    hipStream_t stream_ = cs_hip_get_stream(0);
+#endif
     cs_arrays_set_value<T, stride>(stream_,
                                    false,
                                    n_elts,
@@ -165,7 +173,7 @@ cs_arrays_set_value(const cs_lnum_t  n_elts,
   /* Expand the parameter pack */
   T* array_ptrs[] = {arrays ... };
 
-#if defined (__CUDACC__)
+#if defined (__CUDACC__) || defined (__HIPCC__)
   bool is_available_on_device = true;
   for (T* array : array_ptrs)
     is_available_on_device =  is_available_on_device
@@ -173,7 +181,11 @@ cs_arrays_set_value(const cs_lnum_t  n_elts,
                                == CS_ALLOC_HOST_DEVICE_SHARED);
 
   if (is_available_on_device) {
+#if defined (__CUDACC__)
     cudaStream_t stream_ = cs_cuda_get_stream(0);
+#else
+    hipStream_t stream_ = cs_hip_get_stream(0);
+#endif
     cs_arrays_set_value<T, stride>(stream_,
                                    false,
                                    n_elts,
@@ -230,9 +242,13 @@ cs_arrays_set_value(cs_dispatch_context  &ctx,
   /* Expand the parameter pack */
   T* array_ptrs[] = {arrays ... };
 
-#if defined (__CUDACC__)
+#if defined (__CUDACC__) || defined (__HIPCC__)
   if (ctx.use_gpu()) {
+#if defined (__CUDACC__)
     cudaStream_t stream_ = ctx.cuda_stream();
+#else
+    hipStream_t stream_ = ctx.hip_stream();
+#endif
     cs_arrays_set_value<T, stride>(stream_,
                                    true,
                                    n_elts,
@@ -289,9 +305,13 @@ cs_arrays_set_value(cs_dispatch_context  &ctx,
   /* Expand the parameter pack */
   T* array_ptrs[] = {arrays ... };
 
-#if defined (__CUDACC__)
+#if defined (__CUDACC__) || defined (__HIPCC__)
   if (ctx.use_gpu()) {
+#if defined (__CUDACC__)
     cudaStream_t stream_ = ctx.cuda_stream();
+#else
+    hipStream_t stream_ = ctx.hip_stream();
+#endif
     cs_arrays_set_value<T, stride>(stream_,
                                    true,
                                    n_elts,
@@ -347,9 +367,13 @@ cs_arrays_set_zero(cs_dispatch_context  &ctx,
   /* Expand the parameter pack */
   T* array_ptrs[] = {arrays ... };
 
-#if defined (__CUDACC__)
+#if defined (__CUDACC__) || defined (__HIPCC__)
   if (ctx.use_gpu()) {
+#if defined (__CUDACC__)
     cudaStream_t stream_ = ctx.cuda_stream();
+#else
+    hipStream_t stream_ = ctx.hip_stream();
+#endif
     cs_arrays_set_zero<T, stride>(stream_,
                                   true,
                                   n_elts,
@@ -499,12 +523,16 @@ cs_array_copy(const cs_lnum_t  size,
               const T*         src,
               T*               dest)
 {
-#if defined (__CUDACC__)
+#if defined (__CUDACC__) || defined (__HIPCC__)
   bool is_available_on_device =  cs_check_device_ptr(src)
                               && cs_check_device_ptr(dest);
 
   if (is_available_on_device) {
+#if defined (__CUDACC__)
     cudaStream_t stream_ = cs_cuda_get_stream(0);
+#else
+    hipStream_t stream_ = cs_hip_get_stream(0);
+#endif
     cs_array_copy<T>(stream_, size, src, dest);
     return;
   }

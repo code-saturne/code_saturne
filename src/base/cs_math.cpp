@@ -79,6 +79,7 @@
    C compatibility). */
 
 #if  (defined(__NVCC__) && defined(__CUDA_ARCH__)) \
+  || (defined(__HIPCC__) && defined(__HIP_DEVICE_COMPILE__)) \
   || defined(SYCL_LANGUAGE_VERSION) \
   || defined(HAVE_OPENMP_TARGET)
 
@@ -98,7 +99,8 @@ extern const cs_real_t cs_math_pi;
 
 /* Numerical constants */
 
-#if !(defined(__NVCC__) && defined(__CUDA_ARCH__))
+#if !(defined(__NVCC__) && defined(__CUDA_ARCH__)) \
+ && !(defined(__HIPCC__) && defined(__HIP_DEVICE_COMPILE__))
 
 extern "C" {
 

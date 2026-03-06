@@ -188,6 +188,8 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
   cs_dispatch_context ctx, ctx_c;
 #if defined(HAVE_CUDA)
   ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
+#elif defined(HAVE_HIP)
+  ctx_c.set_hip_stream(cs_hip_get_stream(1));
 #endif
   cs_alloc_mode_t amode = ctx.alloc_mode();
 
@@ -574,6 +576,8 @@ _pressure_correction_fv(int                   iterns,
   cs_dispatch_context ctx, ctx_c;
 #if defined(HAVE_CUDA)
   ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
+#elif defined(HAVE_HIP)
+  ctx_c.set_hip_stream(cs_hip_get_stream(1));
 #endif
   cs_alloc_mode_t amode = ctx.alloc_mode();
 

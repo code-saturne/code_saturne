@@ -75,6 +75,9 @@
 #if defined(HAVE_CUDA)
 #include "base/cs_base_cuda.h"
 #include "base/cs_mem_cuda_priv.h"
+#elif defined(HAVE_HIP)
+#include "base/cs_base_hip.h"
+#include "base/cs_mem_hip_priv.h"
 #endif
 
 #include "base/cs_mem.h"
@@ -1338,6 +1341,10 @@ _malloc_host_pinned(size_t            me_size,
 
   return cs_mem_cuda_malloc_host(me_size, var_name, file_name, line_num);
 
+#elif defined(HAVE_HIP)
+
+  return cs_mem_hip_malloc_host(me_size, var_name, file_name, line_num);
+
 #elif defined(SYCL_LANGUAGE_VERSION)
 
   return _sycl_mem_malloc_host(me_size, var_name, file_name, line_num);
@@ -1390,6 +1397,13 @@ _malloc_shared(size_t            me_size,
                                     var_name,
                                     file_name,
                                     line_num);
+
+#elif defined(HAVE_HIP)
+
+  return cs_mem_hip_malloc_managed(me_size,
+                                   var_name,
+                                   file_name,
+                                   line_num);
 
 #elif defined(SYCL_LANGUAGE_VERSION)
 
@@ -1450,6 +1464,13 @@ _malloc_device(size_t            me_size,
                                    file_name,
                                    line_num);
 
+#elif defined(HAVE_HIP)
+
+  return cs_mem_hip_malloc_device(me_size,
+                                  var_name,
+                                  file_name,
+                                  line_num);
+
 #elif defined(SYCL_LANGUAGE_VERSION)
 
   return _sycl_mem_malloc_device(me_size,
@@ -1502,6 +1523,10 @@ _free_hd_host(cs_mem_block_t  &me,
 
       cs_mem_cuda_free_host(me.host_ptr, var_name, file_name, line_num);
 
+#elif defined(HAVE_HIP)
+
+      cs_mem_hip_free_host(me.host_ptr, var_name, file_name, line_num);
+
 #elif defined(SYCL_LANGUAGE_VERSION)
 
       sycl::free(me.host_ptr, cs_glob_sycl_queue);
@@ -1540,6 +1565,10 @@ _free_hd_device(void        *ptr,
 #if defined(HAVE_CUDA)
 
     cs_mem_cuda_free(ptr, var_name, file_name, line_num);
+
+#elif defined(HAVE_HIP)
+
+    cs_mem_hip_free(ptr, var_name, file_name, line_num);
 
 #elif defined(SYCL_LANGUAGE_VERSION)
 
@@ -1580,6 +1609,10 @@ _sync_d2h(cs_mem_block_t &me)
     #if defined(HAVE_CUDA)
     {
       cs_mem_cuda_copy_d2h(me.host_ptr, me.device_ptr, me.size);
+    }
+    #elif defined(HAVE_HIP)
+    {
+      cs_mem_hip_copy_d2h(me.host_ptr, me.device_ptr, me.size);
     }
     #elif defined(SYCL_LANGUAGE_VERSION)
     {
@@ -1625,6 +1658,10 @@ _sync_d2h_start(cs_mem_block_t &me)
     {
       cs_mem_cuda_copy_d2h(me.host_ptr, me.device_ptr, me.size);
     }
+    #elif defined(HAVE_HIP)
+    {
+      cs_mem_hip_copy_d2h(me.host_ptr, me.device_ptr, me.size);
+    }
     #elif defined(SYCL_LANGUAGE_VERSION)
     {
       cs_glob_sycl_queue.memcpy(me.host_ptr, me.device_ptr, me.size);
@@ -1641,6 +1678,11 @@ _sync_d2h_start(cs_mem_block_t &me)
     #if defined(HAVE_CUDA)
     {
       cs_mem_cuda_copy_d2h_async(me.host_ptr, me.device_ptr, me.size);
+      _n_async_copies_in_progress += 1;
+    }
+    #elif defined(HAVE_HIP)
+    {
+      cs_mem_hip_copy_d2h_async(me.host_ptr, me.device_ptr, me.size);
       _n_async_copies_in_progress += 1;
     }
     #elif defined(SYCL_LANGUAGE_VERSION)
@@ -2702,6 +2744,10 @@ cs_mem_is_device_ptr(const void  *ptr)
 
   return cs_mem_cuda_is_device_ptr(ptr);
 
+#elif defined(HAVE_HIP)
+
+  return cs_mem_hip_is_device_ptr(ptr);
+
 #elif defined(SYCL_LANGUAGE_VERSION)
 
   // Note: the current test only works with USM-allocated memory
@@ -2971,6 +3017,10 @@ cs_mem_advise_set_read_mostly(void  *ptr)
 
     cs_mem_cuda_set_advise_read_mostly(me.device_ptr, me.size);
 
+#elif defined(HAVE_HIP)
+
+    cs_mem_hip_set_advise_read_mostly(me.device_ptr, me.size);
+
 #endif
 
   }
@@ -2997,6 +3047,10 @@ cs_mem_advise_unset_read_mostly(void  *ptr)
 #if defined(HAVE_CUDA)
 
     cs_mem_cuda_unset_advise_read_mostly(me.device_ptr, me.size);
+
+#elif defined(HAVE_HIP)
+
+    cs_mem_hip_unset_advise_read_mostly(me.device_ptr, me.size);
 
 #endif
 
@@ -3047,6 +3101,10 @@ cs_sync_h2d(const void  *ptr)
     {
       cs_mem_cuda_copy_h2d(me.device_ptr, me.host_ptr, me.size);
     }
+    #elif defined(HAVE_HIP)
+    {
+      cs_mem_hip_copy_h2d(me.device_ptr, me.host_ptr, me.size);
+    }
     #elif defined(SYCL_LANGUAGE_VERSION)
     {
       cs_glob_sycl_queue.memcpy(me.device_ptr, me.host_ptr, me.size);
@@ -3066,6 +3124,10 @@ cs_sync_h2d(const void  *ptr)
     #if defined(HAVE_CUDA)
     {
       cs_mem_cuda_prefetch_h2d(me.device_ptr, me.size);
+    }
+    #elif defined(HAVE_HIP)
+    {
+      cs_mem_hip_prefetch_h2d(me.device_ptr, me.size);
     }
     #elif defined(SYCL_LANGUAGE_VERSION)
     {
@@ -3131,6 +3193,10 @@ cs_sync_h2d_start(const void  *ptr)
     {
       cs_mem_cuda_copy_h2d(me.device_ptr, me.host_ptr, me.size);
     }
+    #elif defined(HAVE_HIP)
+    {
+      cs_mem_hip_copy_h2d(me.device_ptr, me.host_ptr, me.size);
+    }
     #elif defined(SYCL_LANGUAGE_VERSION)
     {
       cs_glob_sycl_queue.memcpy(me.device_ptr, me.host_ptr, me.size);
@@ -3147,6 +3213,11 @@ cs_sync_h2d_start(const void  *ptr)
     #if defined(HAVE_CUDA)
     {
       cs_mem_cuda_copy_h2d_async(me.device_ptr, me.host_ptr, me.size);
+      _n_async_copies_in_progress += 1;
+    }
+    #elif defined(HAVE_HIP)
+    {
+      cs_mem_hip_copy_h2d_async(me.device_ptr, me.host_ptr, me.size);
       _n_async_copies_in_progress += 1;
     }
     #elif defined(SYCL_LANGUAGE_VERSION)
@@ -3170,6 +3241,10 @@ cs_sync_h2d_start(const void  *ptr)
     #if defined(HAVE_CUDA)
     {
       cs_mem_cuda_prefetch_h2d(me.device_ptr, me.size);
+    }
+    #elif defined(HAVE_HIP)
+    {
+      cs_mem_hip_prefetch_h2d(me.device_ptr, me.size);
     }
     #elif defined(SYCL_LANGUAGE_VERSION)
     {
@@ -3340,6 +3415,10 @@ cs_prefetch_h2d(const void  *ptr,
 
   cs_mem_cuda_prefetch_h2d(ptr, size);
 
+#elif defined(HAVE_HIP)
+
+  cs_mem_hip_prefetch_h2d(ptr, size);
+
 #elif defined(SYCL_LANGUAGE_VERSION)
 
   cs_glob_sycl_queue.prefetch(ptr, size);
@@ -3376,6 +3455,10 @@ cs_prefetch_d2h(void    *ptr,
 #if defined(HAVE_CUDA)
 
   cs_mem_cuda_prefetch_d2h(ptr, size);
+
+#elif defined(HAVE_HIP)
+
+  cs_mem_hip_prefetch_d2h(ptr, size);
 
 #elif defined(SYCL_LANGUAGE_VERSION)
 
@@ -3415,6 +3498,10 @@ cs_copy_h2d(void        *dest,
 
   cs_mem_cuda_copy_h2d(dest, src, size);
 
+#elif defined(HAVE_HIP)
+
+  cs_mem_hip_copy_h2d(dest, src, size);
+
 #elif defined(SYCL_LANGUAGE_VERSION)
 
   cs_glob_sycl_queue.memcpy(dest, src, size);
@@ -3451,6 +3538,10 @@ cs_copy_d2h(void        *dest,
 #if defined(HAVE_CUDA)
 
   cs_mem_cuda_copy_d2h(dest, src, size);
+
+#elif defined(HAVE_HIP)
+
+  cs_mem_hip_copy_d2h(dest, src, size);
 
 #elif defined(SYCL_LANGUAGE_VERSION)
 
@@ -3489,6 +3580,10 @@ cs_copy_d2d(void        *dest,
 
   cs_mem_cuda_copy_d2d(dest, src, size);
 
+#elif defined(HAVE_HIP)
+
+  cs_mem_hip_copy_d2d(dest, src, size);
+
 #elif defined(SYCL_LANGUAGE_VERSION)
 
   cs_glob_sycl_queue.memcpy(dest, src, size);
@@ -3516,6 +3611,10 @@ cs_mem_hd_async_wait(void)
 #if defined(HAVE_CUDA)
 
     CS_CUDA_CHECK(cudaStreamSynchronize(cs_cuda_get_stream_prefetch()));
+
+#elif defined(HAVE_HIP)
+
+    CS_HIP_CHECK(hipStreamSynchronize(cs_hip_get_stream_prefetch()));
 
 #elif defined(SYCL_LANGUAGE_VERSION)
 

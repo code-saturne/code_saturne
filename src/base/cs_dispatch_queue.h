@@ -46,6 +46,9 @@
 #if defined(__CUDACC__)
 #include <cuda.h>
 #include <cuda_runtime.h>
+#elif defined(__HIPCC__)
+#include <hip/hip_runtime.h>
+#include <hip/hip_runtime.h>
 #else
 #endif
 
@@ -84,6 +87,8 @@ struct cs_event {
   using underlying_type =
 #if defined(__CUDACC__)
     cudaEvent_t;
+#elif defined(__HIPCC__)
+    hipEvent_t;
 #else
     std::chrono::steady_clock::time_point;
 #endif
@@ -96,6 +101,8 @@ struct cs_event {
   {
 #if defined(__CUDACC__)
     cudaEventCreate(&event_impl);
+#elif defined(__HIPCC__)
+    hipEventCreate(&event_impl);
 #endif
   }
 
@@ -106,7 +113,7 @@ struct cs_event {
   operator=(cs_event const &) = delete;
 
   cs_event(cs_event &&other)
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
   {
     event_impl       = other.event_impl;
     other.event_impl = nullptr;
@@ -117,10 +124,14 @@ struct cs_event {
 
   cs_event &
   operator=(cs_event &&other)
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
   {
     if (event_impl != nullptr) {
+#if defined(__CUDACC__)
       cudaEventDestroy(event_impl);
+#elif defined(__HIPCC__)
+      hipEventDestroy(event_impl);
+#endif
     }
 
     event_impl       = other.event_impl;
@@ -146,6 +157,12 @@ struct cs_event {
       cudaEventDestroy(event_impl);
     }
   }
+#elif defined(__HIPCC__)
+  {
+    if (event_impl != nullptr) {
+      hipEventDestroy(event_impl);
+    }
+  }
 #else
     = default;
 #endif
@@ -159,6 +176,8 @@ struct cs_event {
   {
 #if defined(__CUDACC__)
     cudaEventSynchronize(event_impl);
+#elif defined(__HIPCC__)
+    hipEventSynchronize(event_impl);
 #endif
   }
 };
@@ -245,6 +264,11 @@ public:
     cudaStreamCreate(&new_stream);
     context_.set_cuda_stream(new_stream);
     cudaEventRecord(~start_event, context_.cuda_stream());
+#elif defined(__HIPCC__)
+    hipStream_t new_stream;
+    hipStreamCreate(&new_stream);
+    context_.set_cuda_stream(new_stream);
+    hipEventRecord(~start_event, context_.hip_stream());
 #else
     ~start_event = std::chrono::steady_clock::now();
 #endif
@@ -256,6 +280,8 @@ public:
   {
 #if defined(__CUDACC__)
     cudaStreamWaitEvent(context_.cuda_stream(), ~event);
+#elif defined(__HIPCC__)
+    hipStreamWaitEvent(context_.hip_stream(), ~event);
 #endif
   }
 
@@ -264,7 +290,7 @@ public:
   void
   add_dependency(std::initializer_list<cs_event_ref> const &sync_events)
   {
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
     for (auto const &event : sync_events) {
       add_dependency(event);
     }
@@ -284,6 +310,8 @@ public:
   {
 #if defined(__CUDACC__)
     cudaEventRecord(~end_event, context_.cuda_stream());
+#elif defined(__HIPCC__)
+    hipEventRecord(~end_event, context_.hip_stream());
 #else
     ~end_event = std::chrono::steady_clock::now();
 #endif
@@ -320,6 +348,8 @@ public:
     context_.wait();
 #if defined(__CUDACC__)
     cudaStreamDestroy(context_.cuda_stream());
+#elif defined(__HIPCC__)
+    hipStreamDestroy(context_.hip_stream());
 #endif
   }
 };
@@ -342,7 +372,7 @@ public:
   //! Tuple type for function (possibly a lambda with captures)
   //! and argument storage.
   using data_tuple_t =
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
     std::tuple<FunctionType, args_tuple_t>;
 #else
     std::tuple<FunctionType>;
@@ -359,7 +389,7 @@ public:
   cs_host_task(FunctionType &&function, cs_dispatch_context context)
     : cs_task(std::move(context)),
 
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
       data_tuple_(std::move(function), args_tuple_t{})
 #else
       data_tuple_(std::move(function))
@@ -371,6 +401,8 @@ public:
   //! with cudaLaunchHostFunc.
 #if defined(__CUDACC__)
   cudaError_t
+#elif defined(__HIPCC__)
+  hipError_t
 #else
   void
 #endif
@@ -397,6 +429,28 @@ public:
       this->wait();
       std::get<0>(data_tuple_)(args...);
       return cudaSuccess;
+    }
+#elif defined(__HIPCC__)
+    if (this->get_context().use_gpu()) {
+      // Setting the arguments
+      std::get<1>(data_tuple_) = args_tuple_t{ std::move(args)... };
+
+      // Async launch on the task's own stream
+      return hipLaunchHostFunc
+        (get_context().hip_stream(),
+         // Wrapper lambda: unwraps the parameter passed as a void* pointer
+         // to invoke the host function
+         [](void *data_tuple_ptr) -> void {
+           auto &[f, args_tuple] = *(data_tuple_t *)(data_tuple_ptr);
+           std::apply(f, args_tuple);
+         },
+         &data_tuple_);
+    }
+    else {
+      this->record_end_event();
+      this->wait();
+      std::get<0>(data_tuple_)(args...);
+      return hipSuccess;
     }
 #else
     std::get<0>(data_tuple_)(args...);
@@ -616,7 +670,7 @@ public:
 
 //! Duration type for elapsed time between two events
 using cs_event_duration =
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
   // cudaEventElapsedTime gives a time in milliseconds
   // with a resolution of around 0.5 microseconds
   std::chrono::microseconds;
@@ -647,6 +701,12 @@ cs_elapsed_time(cs_event_ref  start,
   // with a resolution of around 0.5 microseconds
   float result_ms;
   cudaEventElapsedTime(&result_ms, ~start, ~end);
+  return cs_event_duration{ long(result_ms * 1000.f) };
+#elif defined(__HIPCC__)
+  // hipEventElapsedTime gives a time in milliseconds
+  // with a resolution of around 0.5 microseconds
+  float result_ms;
+  hipEventElapsedTime(&result_ms, ~start, ~end);
   return cs_event_duration{ long(result_ms * 1000.f) };
 #else
   return ~end - ~start;

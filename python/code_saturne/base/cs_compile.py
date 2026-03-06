@@ -54,6 +54,7 @@ def process_cmd_line(argv, pkg):
         usage = "usage: %prog compile [options]"
 
     have_cuda = False
+    have_hip = False
 
     parser = OptionParser(usage=usage)
 
@@ -101,6 +102,13 @@ def process_cmd_line(argv, pkg):
                               help="additional CUDA compiler flags")
             parser.set_defaults(nvccflags=None)
 
+        if pkg.config.features['hip'] == 'yes':
+            have_hip = True
+            parser.add_option("--hipccflags", dest="hipccflags", type="string",
+                              metavar="<hipccflags>",
+                              help="additional HIP compiler flags")
+            parser.set_defaults(nvccflags=None)
+
     parser.add_option("--libs", dest="libs", type="string",
                       metavar="<libs>",
                       help="additional libraries")
@@ -140,6 +148,10 @@ def process_cmd_line(argv, pkg):
     nvccflags = None
     if have_cuda:
         nvccflags = options.nvccflags
+
+    hipccflags = None
+    if have_hip:
+        hipccflags = options.hipccflags
 
     return options.test_mode, options.force_link, options.keep_going, \
            src_dir, dest_dir, options.version, options.cflags, \
@@ -396,8 +408,11 @@ class cs_compile(object):
         h_files = fnmatch.filter(src_list, '*.h')
         cxx_files = fnmatch.filter(src_list, '*.cxx')
         cu_files = fnmatch.filter(src_list, '*.cu')
+        hip_files = []
         if pkg.config.features['cuda'] == 'yes':
             cu_files += fnmatch.filter(src_list, '*.cpp')
+        elif pkg.config.features['hip'] == 'yes':
+            hip_files += fnmatch.filter(src_list, '*.cpp')
         else:
             cxx_files += fnmatch.filter(src_list, '*.cpp')
         hxx_files = fnmatch.filter(src_list, '*.hxx') + fnmatch.filter(src_list, '*.hpp')
@@ -462,6 +477,7 @@ class cs_compile(object):
                 retval = 1
             o_files.append(self.obj_name(f))
 
+        # CUDA
         for f in cu_files:
             if (retval != 0 and not keep_going):
                 break
@@ -477,6 +493,27 @@ class cs_compile(object):
             cmd += separate_args(pkg.config.flags['nvccflags'])
             if f[-3:] != '.cu':
                 cmd += separate_args(pkg.config.flags['nvccflags_cpp'])
+            cmd += ["-c", f]
+            if run_command(cmd, pkg=pkg, echo=True,
+                           stdout=stdout, stderr=stderr) != 0:
+                retval = 1
+            o_files.append(self.obj_name(f))
+
+        # HIP
+        for f in hip_files:
+            if (retval != 0 and not keep_going):
+                break
+            cmd = separate_compiler_args(self.get_compiler('hipcc'))
+            if opt_hipccflags != None:
+                cmd += separate_args(opt_hipccflags)
+            for d in cxx_include_dirs:
+                cmd += ["-I", d]
+            for d in c_include_dirs:
+                cmd += ["-I", d]
+            cmd.append('-DHAVE_CONFIG_H')
+            cmd += self.get_flags('cppflags', base_name=base_name)
+            cmd += separate_args(pkg.config.flags['hipccflags'])
+            cmd += separate_args(pkg.config.flags['hipccflags_cpp'])
             cmd += ["-c", f]
             if run_command(cmd, pkg=pkg, echo=True,
                            stdout=stdout, stderr=stderr) != 0:

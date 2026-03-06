@@ -155,6 +155,9 @@ fi
 # Check for CUDA compiler
 CS_AC_TEST_CUDA
 
+# Check for HIP compiler
+CS_AC_TEST_HIP
+
 # Needed to use Microsoft archiver lib.exe
 # It copies the ar-lib script, similar to the compile script
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
@@ -639,6 +642,25 @@ if test "x$auto_flags" = "xyes" ; then
     AC_SUBST(NVCCFLAGS_DBG)
     AC_SUBST(NVCCFLAGS_OPT)
     AC_SUBST(NVCCCFLAGS_HOT)
+  fi
+
+  if test "$cs_have_hip" = "yes" ; then
+    cs_have_accel=yes
+    HIPCCFLAGS="$HIPCCFLAGS $hipccflags_default"
+    if test "x$enable_shared" = "xyes" ; then
+      HIPCCFLAGS="${HIPCCFLAGS} -fPIC"
+    fi
+    if test "x$debug" = xyes; then
+      HIPCCFLAGS_DBG="$hipccflags_default_dbg"
+    else
+      HIPCCFLAGS="$HIPCCFLAGS $hipccflags_default_opt"
+      if test "x$profile" = xyes; then
+        HIPCCFLAGS="$HIPCCFLAGS $hipccflags_default_prf"
+      fi
+    fi
+    AC_SUBST(HIPCCFLAGS_DBG)
+    AC_SUBST(HIPCCFLAGS_OPT)
+    AC_SUBST(HIPCCCFLAGS_HOT)
   fi
 
   if test "$cs_have_sycl" = "yes"; then

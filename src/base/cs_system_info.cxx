@@ -71,6 +71,8 @@
 
 #if defined(HAVE_CUDA)
 #include "base/cs_base_cuda.h"
+#elif defined(HAVE_HIP)
+#include "base/cs_base_hip.h"
 #endif
 
 #if defined(HAVE_PETSC)
@@ -625,6 +627,11 @@ _system_info(bool  log)
   for (int log_id = 0; log_id < n_logs; log_id++) {
     cs_base_cuda_device_info(logs[log_id]);
     cs_base_cuda_version_info(logs[log_id]);
+  }
+#elif defined(HAVE_HIP)
+  for (int log_id = 0; log_id < n_logs; log_id++) {
+    cs_base_hip_device_info(logs[log_id]);
+    cs_base_hip_version_info(logs[log_id]);
   }
 #elif defined(SYCL_LANGUAGE_VERSION)
   for (int log_id = 0; log_id < n_logs; log_id++) {

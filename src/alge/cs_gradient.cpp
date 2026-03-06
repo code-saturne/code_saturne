@@ -2793,6 +2793,25 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
 #endif
 
+// HIP computation if available instead of CUDA
+#if defined(HAVE_HIP)
+
+  if (on_device) {
+    cs_gradient_scalar_lsq_hip(m,
+                               fvq,
+                               halo_type,
+                               val_f,
+                               pvar,
+                               c_weight,
+                               cocg,
+                               grad);
+
+    return;
+  }
+
+#endif
+
+
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
@@ -3295,6 +3314,11 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
 #if defined(HAVE_CUDA)
   if (ctx_b.use_gpu())
     ctx_b.set_cuda_stream(cs_cuda_get_stream(1));
+#endif
+
+#if defined(HAVE_HIP)
+  if (ctx_b.use_gpu())
+    ctx_b.set_hip_stream(cs_hip_get_stream(1));
 #endif
 
   const cs_alloc_mode_t amode = (ctx.use_gpu()) ?
@@ -4273,6 +4297,26 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
     return;
   }
 #endif
+#if defined(HAVE_HIP)
+  bool accel = (cs_get_device_id() > -1 && hyd_p_flag == 0
+                && t_f_weight == nullptr) ? true : false;
+
+  if (accel) {
+    const cs_mesh_adjacencies_t *madj = cs_glob_mesh_adjacencies;
+
+    cs_gradient_strided_gg_r_hip(m,
+                                 madj,
+                                 fvq,
+                                 CS_HALO_EXTENDED,
+                                 warped_correction,
+                                 (const cs_real_t (*)[1])val_f,
+                                 (const cs_real_t (*)[1])c_var,
+                                 c_weight_s,
+                                 (const cs_real_t (*)[1][3])r_grad,
+                                 (cs_real_t (*)[1][3])grad);
+    return;
+  }
+#endif
 
   std::chrono::high_resolution_clock::time_point t_start, t_init, t_i_faces, \
     t_b_faces, t_rescale, t_stop;
@@ -4289,6 +4333,11 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
 #if defined(HAVE_CUDA)
   if (ctx_b.use_gpu())
     ctx_b.set_cuda_stream(cs_cuda_get_stream(1));
+#endif
+
+#if defined(HAVE_HIP)
+  if (ctx_b.use_gpu())
+    ctx_b.set_hip_stream(cs_hip_get_stream(1));
 #endif
 
   /* Initialize gradient */
@@ -6152,6 +6201,22 @@ _reconstruct_strided_gradient
     return;
   }
 #endif
+#if defined(HAVE_HIP)
+  if (cs_get_device_id() > -1) {
+    cs_gradient_strided_gg_r_hip(m,
+                                 madj,
+                                 fvq,
+                                 halo_type,
+                                 warped_correction,
+                                 val_f,
+                                 pvar,
+                                 c_weight,
+                                 r_grad,
+                                 grad);
+
+    return;
+  }
+#endif
 
   cs_dispatch_context ctx;
   cs_dispatch_context ctx_b;
@@ -6163,6 +6228,11 @@ _reconstruct_strided_gradient
 #if defined(HAVE_CUDA)
   if (on_device)
     ctx_b.set_cuda_stream(cs_cuda_get_stream(1));
+#endif
+
+#if defined(HAVE_HIP)
+  if (on_device)
+    ctx_b.set_hip_stream(cs_hip_get_stream(1));
 #endif
 
   /* Initialize gradient */
@@ -6775,6 +6845,23 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
                                  c_weight,
                                  cocg,
                                  grad);
+
+    return;
+  }
+
+#endif
+#if defined(HAVE_HIP)
+
+  if (accel) {
+    cs_gradient_strided_lsq_hip(m,
+                                madj,
+                                fvq,
+                                halo_type,
+                                val_f,
+                                pvar,
+                                c_weight,
+                                cocg,
+                                grad);
 
     return;
   }
@@ -7927,7 +8014,7 @@ _gradient_vector(const char                     *var_name,
       cs_real_33_t *restrict r_grad;
       if (gradient_type == CS_GRADIENT_GREEN_LSQ) {
         cs_alloc_mode_t amode = CS_ALLOC_HOST;
-#if defined(HAVE_CUDA)
+#if defined(HAVE_CUDA) || defined(HAVE_HIP)
         if (cs_get_device_id() > -1)
           amode = CS_ALLOC_DEVICE;
 #endif
@@ -8112,7 +8199,7 @@ _gradient_tensor(const char                 *var_name,
       cs_real_63_t *restrict r_grad;
       if (gradient_type == CS_GRADIENT_GREEN_LSQ) {
         cs_alloc_mode_t amode = CS_ALLOC_HOST;
-#if defined(HAVE_CUDA)
+#if defined(HAVE_CUDA) || defined(HAVE_HIP)
         if (cs_get_device_id() > -1)
           amode = CS_ALLOC_DEVICE;
 #endif

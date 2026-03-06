@@ -36,6 +36,8 @@ Master (not on release branches yet)
 
 ### Architectural changes:
 
+- Add a HIP, AMD GPUs, backend to code_saturne
+
 - Make Fortran compiler an optional prerequisite
   * Fortran dependency is now only required for Atmo module, and more
     specifically for the Polyphemus chemistry functions.

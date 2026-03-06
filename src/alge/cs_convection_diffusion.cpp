@@ -5147,6 +5147,10 @@ cs_convection_diffusion_vector(int                         idtvar,
   if (ctx_c.use_gpu())
     ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
 #endif
+#if defined(HAVE_HIP)
+  if (ctx_c.use_gpu())
+    ctx_c.set_hip_stream(cs_hip_get_stream(1));
+#endif
 
   if (ivisep == 1 && eqp.idiff == 1) {
     const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
@@ -7841,6 +7845,10 @@ cs_face_diffusion_potential(const cs_field_t           *f,
   if (ctx_b.use_gpu())
     ctx_b.set_cuda_stream(cs_cuda_get_stream(1));
 #endif
+#if defined(HAVE_HIP)
+  if (ctx_b.use_gpu())
+    ctx_b.set_hip_stream(cs_hip_get_stream(1));
+#endif
 
   const bool on_device = ctx_i.use_gpu();
   const cs_alloc_mode_t amode = ctx_i.alloc_mode();
@@ -8101,6 +8109,10 @@ cs_face_anisotropic_diffusion_potential
 #if defined(HAVE_CUDA)
   if (ctx_b.use_gpu())
     ctx_b.set_cuda_stream(cs_cuda_get_stream(1));
+#endif
+#if defined(HAVE_HIP)
+  if (ctx_b.use_gpu())
+    ctx_b.set_hip_stream(cs_hip_get_stream(1));
 #endif
 
   const bool on_device = ctx.use_gpu();

@@ -62,6 +62,14 @@ BEGIN_C_DECLS
 
 #  define CS_NUMBERING_SIMD_SIZE 32
 
+#elif defined(HAVE_HIP)                 /* For HIP devices (use warp size) */
+
+#if defined(__GFX8__) || defined(__GFX9__)
+#  define CS_NUMBERING_SIMD_SIZE 64
+#else
+#  define CS_NUMBERING_SIMD_SIZE 32
+#endif
+
 #else
 
 #  define CS_NUMBERING_SIMD_SIZE 4       /* Most current platforms */

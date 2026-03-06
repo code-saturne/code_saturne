@@ -55,6 +55,10 @@
 #include "base/cs_base_cuda.h"
 #endif
 
+#if defined(HAVE_HIP)
+#include "base/cs_base_hip.h"
+#endif
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -110,6 +114,10 @@ cs_get_device_id(void)
 #if defined(HAVE_CUDA)
 
   retval = cs_base_cuda_get_device();
+
+#elif defined(HAVE_HIP)
+
+  retval = cs_base_hip_get_device();
 
 #elif defined(SYCL_LANGUAGE_VERSION)
 

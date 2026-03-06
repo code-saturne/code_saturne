@@ -1787,7 +1787,7 @@ _matrix_assembler_compute_local(cs_matrix_assembler_t  *ma)
 
   cs_lnum_t  *c_count;
 
-#if defined(HAVE_CUDA)
+#if defined(HAVE_CUDA) || defined(HAVE_HIP)
   cs_alloc_mode_t alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
 #else
   cs_alloc_mode_t alloc_mode = CS_ALLOC_HOST;

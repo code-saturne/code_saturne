@@ -44,6 +44,9 @@
 #include <sycl/sycl.hpp>
 #endif
 
+#if defined(__HIP_DEVICE_COMPILE__)
+#include "hip/hip_runtime.h"
+#endif
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
@@ -55,6 +58,12 @@
 #include "base/cs_base_cuda.h"
 #include "base/cs_cuda_reduce.h"
 #include "cs_math_cuda.cuh"
+#endif
+
+#ifdef __HIPCC__
+#include "base/cs_base_hip.h"
+#include "base/cs_hip_reduce.h"
+#include "cs_math_hip.h"
 #endif
 
 /*=============================================================================
@@ -1052,6 +1061,554 @@ public:
 
 };
 
+#elif defined(__HIPCC__)
+
+/* Default kernel that loops over an integer range and calls a device functor.
+   This kernel uses a grid_size-stride loop and thus guarantees that all
+   integers are processed, even if the grid is smaller.
+   All arguments *must* be passed by value to avoid passing CPU references
+   to the GPU. */
+
+template <class F, class... Args>
+__global__ void cs_hip_kernel_parallel_for(cs_lnum_t n, F f, Args... args) {
+  // grid_size-stride loop
+  for (cs_lnum_t id = blockIdx.x * blockDim.x + threadIdx.x; id < n;
+       id += blockDim.x * gridDim.x) {
+    f(id, args...);
+  }
+}
+
+/* Default kernel that loops over an integer range and calls a device functor,
+   also reducing a sum over all elements.
+   This kernel uses a grid_size-stride loop and thus guarantees that all
+   integers are processed, even if the grid is smaller.
+   All arguments *must* be passed by value to avoid passing CPU references
+   to the GPU. */
+
+template <class T, class F, class... Args>
+__global__ void
+cs_hip_kernel_parallel_for_reduce_sum(cs_lnum_t   n,
+                                       T          *b_res,
+                                       F           f,
+                                       Args...     args) {
+  // grid_size-stride loop
+  extern __shared__  int p_stmp[];
+  T *stmp = reinterpret_cast<T *>(p_stmp);
+  const cs_lnum_t tid = threadIdx.x;
+
+  stmp[tid] = 0;
+
+  for (cs_lnum_t id = blockIdx.x * blockDim.x + threadIdx.x; id < n;
+       id += blockDim.x * gridDim.x) {
+     f(id, stmp[tid], args...);
+  }
+
+  switch (blockDim.x) {
+  case 1024:
+    cs_hip_reduce_block_reduce_sum<1024, 1>(stmp, tid, b_res);
+    break;
+  case 512:
+    cs_hip_reduce_block_reduce_sum<512, 1>(stmp, tid, b_res);
+    break;
+  case 256:
+    cs_hip_reduce_block_reduce_sum<256, 1>(stmp, tid, b_res);
+    break;
+  case 128:
+    cs_hip_reduce_block_reduce_sum<128, 1>(stmp, tid, b_res);
+    break;
+  default:
+    assert(0);
+  }
+}
+
+/* Default kernel that loops over an integer range and calls a device functor.
+   also computing a reduction over all elements.
+   This kernel uses a grid_size-stride loop and thus guarantees that all
+   integers are processed, even if the grid is smaller.
+   All arguments *must* be passed by value to avoid passing CPU references
+   to the GPU. */
+
+template <class T, class R, class F, class... Args>
+__global__ void
+cs_hip_kernel_parallel_for_reduce(cs_lnum_t   n,
+                                   T          *b_res,
+                                   R          &reducer,
+                                   F           f,
+                                   Args...     args) {
+  // grid_size-stride loop
+  extern __shared__  int p_stmp[];
+  T *stmp = reinterpret_cast<T *>(p_stmp);
+  const cs_lnum_t tid = threadIdx.x;
+
+  reducer.identity(stmp[tid]);
+
+  for (cs_lnum_t id = blockIdx.x * blockDim.x + threadIdx.x; id < n;
+       id += blockDim.x * gridDim.x) {
+    T rd;
+    /* It would be safer to call reducer.identyity() here in case all
+       values of rd are not set for each thread, but this might incurr
+       a small performance penalty, and is redundant in most cases,
+       so we consider all values of rd must be set by the caller. */
+    // reducer.identity(rd);
+    f(id, rd, args...);
+    stmp[tid] = rd;
+  }
+
+  switch (blockDim.x) {
+  case 1024:
+    cs_hip_reduce_block_reduce<1024, R>(stmp, tid, b_res);
+    break;
+  case 512:
+    cs_hip_reduce_block_reduce<512, R>(stmp, tid, b_res);
+    break;
+  case 256:
+    cs_hip_reduce_block_reduce<256, R>(stmp, tid, b_res);
+    break;
+  case 128:
+    cs_hip_reduce_block_reduce<128, R>(stmp, tid, b_res);
+    break;
+  default:
+    assert(0);
+  }
+}
+
+/*!
+ * Context to execute loops with HIP on the device
+ */
+
+class cs_device_context : public cs_dispatch_context_mixin<cs_device_context> {
+
+private:
+
+  long          grid_size_;   /*!< Associated grid size; if <= 0, each kernel
+                                launch will use a grid size based on
+                                the number of elements. */
+  long          block_size_;  /*!< Associated block size */
+  hipStream_t  stream_;      /*!< Associated HIP stream */
+  int           device_;      /*!< Associated HIP device id */
+
+  bool          use_gpu_;     /*!< Run on GPU if available */
+
+public:
+
+  //! Constructor
+
+  cs_device_context(void)
+    : grid_size_(0), block_size_(256), stream_(cs_hip_get_stream(0)),
+      device_(0), use_gpu_(true)
+  {
+    device_ = cs_glob_hip_device_id;
+  }
+
+  cs_device_context(long          grid_size,
+                    long          block_size,
+                    hipStream_t  stream,
+                    int           device)
+    : grid_size_(grid_size), block_size_(block_size), stream_(stream),
+      device_(device), use_gpu_(true)
+  {}
+
+  cs_device_context(long          grid_size,
+                    long          block_size,
+                    hipStream_t  stream)
+    : grid_size_(grid_size), block_size_(block_size), stream_(stream),
+      device_(0), use_gpu_(true)
+  {
+    device_ = cs_base_hip_get_device();
+  }
+
+  cs_device_context(long  grid_size,
+                    long  block_size)
+    : grid_size_(grid_size), block_size_(block_size),
+       stream_(cs_hip_get_stream(0)), device_(0), use_gpu_(true)
+  {
+    device_ = cs_base_hip_get_device();
+  }
+
+  cs_device_context(hipStream_t  stream)
+    : grid_size_(0), block_size_(256), stream_(stream), device_(0),
+      use_gpu_(true)
+  {
+    device_ = cs_base_hip_get_device();
+  }
+
+#if 0    // Operators adding in process of cs_dispatch_queue addition,
+         // then marked as useless and removed.
+         // Not totally removed for now, but "quarantined", to be removed
+         // once we are sure they are not missed.
+
+  //! Copy/move and assignment operators.
+
+  cs_device_context(cs_device_context const &) = default;
+
+  cs_device_context(cs_device_context &&) = default;
+
+  cs_device_context &
+  operator = (cs_device_context const &) = default;
+
+  cs_device_context &
+  operator = (cs_device_context &&) = default;
+
+#endif
+
+  //! Change grid_size configuration, but keep the stream and device
+  //
+  // \param[in]  grid_size   HIP grid size, or -1 for automatic choice
+  // \param[in]  block_size  HIP block size (power of 2 if reduction is used)
+
+  void
+  set_hip_grid(long  grid_size,
+                long  block_size) {
+    this->grid_size_ = (grid_size > 0) ? grid_size : -1;
+    this->block_size_ = block_size;
+  }
+
+  //! Change stream, but keep the grid and device configuration
+
+  void
+  set_hip_stream(hipStream_t stream) {
+    this->stream_ = stream;
+  }
+
+  //! Change stream, but keep the grid and device configuration
+
+  void
+  set_hip_stream(int  stream_id) {
+    this->stream_ = cs_hip_get_stream(stream_id);
+  }
+
+  //! Get associated stream
+
+  hipStream_t
+  hip_stream(void) {
+    return this->stream_;
+  }
+
+  //! Change HIP device
+
+  void
+  set_hip_device(int  device) {
+    this->device_ = device;
+  }
+
+  //! Set or unset execution on GPU
+
+  void
+  set_use_gpu(bool  use_gpu) {
+    this->use_gpu_ = use_gpu;
+  }
+
+  //! Check whether we are trying to run on GPU
+
+  bool
+  use_gpu(void) {
+    return (device_ >= 0 && use_gpu_);
+  }
+
+  //! Check preferred allocation mode depending on execution policy
+
+  cs_alloc_mode_t
+  alloc_mode(void) {
+    cs_alloc_mode_t amode
+      = (device_ >= 0 && use_gpu_) ? cs_alloc_mode_device : CS_ALLOC_HOST;
+    return (amode);
+  }
+
+  cs_alloc_mode_t
+  alloc_mode(bool readable_on_cpu) {
+    cs_alloc_mode_t amode = CS_ALLOC_HOST;
+    if (device_ >= 0 && use_gpu_) {
+      if (readable_on_cpu)
+        amode = CS_ALLOC_HOST_DEVICE_SHARED;
+      else
+        amode = cs_alloc_mode_device;
+    }
+    return (amode);
+  }
+
+public:
+
+  //! Try to launch on the GPU and return false if not available
+  template <class F, class... Args>
+  bool
+  parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
+    if (device_ < 0 || use_gpu_ == false) {
+      return false;
+    }
+
+    long l_grid_size = grid_size_;
+    if (l_grid_size < 1) {
+      l_grid_size = (n % block_size_) ? n/block_size_ + 1 : n/block_size_;
+    }
+
+    if (n > 0)
+      cs_hip_kernel_parallel_for<<<l_grid_size, block_size_, 0, stream_>>>
+        (n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+
+    return true;
+  }
+
+  //! Try to launch on the GPU and return false if not available
+  template <class M, class F, class... Args>
+  bool
+  parallel_for_i_faces(const M* m, F&& f, Args&&... args) {
+    const cs_lnum_t n = m->n_i_faces;
+    if (device_ < 0 || use_gpu_ == false) {
+      return false;
+    }
+
+    long l_grid_size = grid_size_;
+    if (l_grid_size < 1) {
+      l_grid_size = (n % block_size_) ? n/block_size_ + 1 : n/block_size_;
+    }
+
+    if (n > 0)
+      cs_hip_kernel_parallel_for<<<l_grid_size, block_size_, 0, stream_>>>
+        (n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+
+    return true;
+  }
+
+  //! Launch kernel on the GPU with simple sum reduction
+  //! The reduction involves an implicit wait().
+  template <class T, class F, class... Args>
+  bool
+  parallel_for_reduce_sum(cs_lnum_t n,
+                          T&        sum,
+                          F&&       f,
+                          Args&&... args) {
+    if (device_ < 0 || use_gpu_ == false) {
+      return false;
+    }
+
+    sum = 0;
+
+    long l_grid_size = grid_size_;
+    if (l_grid_size < 1) {
+      l_grid_size = (n % block_size_) ? n/block_size_ + 1 : n/block_size_;
+    }
+    if (n == 0) {
+      return true;
+    }
+
+    int stream_id = cs_hip_get_stream_id(stream_);
+    if (stream_id < 0)
+      stream_id = 0;
+
+    T *r_grid_, *r_reduce_, *r_host_;
+    cs_hip_get_2_stage_reduce_buffers
+      (stream_id, n, sizeof(sum), l_grid_size,
+       (void *&)r_grid_, (void *&)r_reduce_, (void *&)r_host_);
+
+    int smem_size = block_size_ * sizeof(T);
+    cs_hip_kernel_parallel_for_reduce_sum
+      <<<l_grid_size, block_size_, smem_size, stream_>>>
+      (n, r_grid_, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+
+#if defined(DEBUG) || !defined(NDEBUG)
+    hipError_t retcode = hipGetLastError();
+    if (retcode != hipSuccess)
+      bft_error(__FILE__, __LINE__, 0,
+                "[HIP error] %d: %s\n"
+                "with grid size %ld, block size %ld, shared memory size %d.",
+                retcode, ::hipGetErrorString(retcode),
+                l_grid_size, block_size_, smem_size);
+#endif
+
+    switch (block_size_) {
+    case 1024:
+      cs_hip_reduce_sum_single_block<1024, 1>
+        <<<1, block_size_, 0, stream_>>>
+        (l_grid_size, r_grid_, r_reduce_);
+      break;
+    case 512:
+      cs_hip_reduce_sum_single_block<512, 1>
+        <<<1, block_size_, 0, stream_>>>
+        (l_grid_size, r_grid_, r_reduce_);
+      break;
+    case 256:
+      cs_hip_reduce_sum_single_block<256, 1>
+        <<<1, block_size_, 0, stream_>>>
+        (l_grid_size, r_grid_, r_reduce_);
+      break;
+    case 128:
+      cs_hip_reduce_sum_single_block<128, 1>
+        <<<1, block_size_, 0, stream_>>>
+        (l_grid_size, r_grid_, r_reduce_);
+      break;
+    default:
+      cs_assert(0);
+    }
+
+    CS_HIP_CHECK(hipMemcpyAsync(r_host_, r_reduce_, sizeof(sum),
+                                  hipMemcpyDeviceToHost, stream_));
+
+#if defined(DEBUG) || !defined(NDEBUG)
+    retcode = hipGetLastError();
+    if (retcode != hipSuccess)
+      bft_error(__FILE__, __LINE__, 0,
+                "[HIP error] %d: %s\n"
+                "with grid size %ld, block size %ld, shared memory size %d.",
+                retcode, ::hipGetErrorString(retcode),
+                l_grid_size, block_size_, (int)smem_size);
+#endif
+
+    CS_HIP_CHECK(hipStreamSynchronize(stream_));
+    CS_HIP_CHECK(hipGetLastError());
+    sum = r_host_[0];
+
+    return true;
+  }
+
+  //! Parallel reduction with general reducer.
+  template <class T, class R, class F, class... Args>
+  bool
+  parallel_for_reduce(cs_lnum_t n,
+                      T&        result,
+                      R&        reducer,
+                      F&&       f,
+                      Args&&... args) {
+    if (device_ < 0 || use_gpu_ == false) {
+      return false;
+    }
+
+    reducer.identity(result);
+
+    long l_grid_size = grid_size_;
+    if (l_grid_size < 1) {
+      l_grid_size = (n % block_size_) ? n/block_size_ + 1 : n/block_size_;
+    }
+    if (n == 0) {
+      return true;
+    }
+
+    int stream_id = cs_hip_get_stream_id(stream_);
+    if (stream_id < 0)
+      stream_id = 0;
+
+    T *r_grid_, *r_reduce_, *r_host_;
+    cs_hip_get_2_stage_reduce_buffers
+      (stream_id, n, sizeof(result), l_grid_size,
+       (void *&)r_grid_, (void *&)r_reduce_, (void *&)r_host_);
+
+    int l_block_size = block_size_;
+    int smem_size = l_block_size * sizeof(T);
+    while (smem_size > cs_glob_hip_shared_mem_per_block) {
+      // We should have a runtime failure if even blocks of size 64
+      // are too large relative to the available shared memory.
+      if (l_block_size < 2)
+        bft_error(__FILE__, __LINE__, 0,
+                  "Type of size %d exceeds capacity of "
+                  "HIP shared memory (%d).",
+                  (int)sizeof(T), cs_glob_hip_shared_mem_per_block);
+      l_block_size /= 2;
+      smem_size = l_block_size * sizeof(T);
+    }
+
+#if defined(DEBUG) || !defined(NDEBUG)
+    hipError_t retcode = hipSuccess;
+#endif
+
+    cs_hip_kernel_parallel_for_reduce<T, R>
+      <<<l_grid_size, l_block_size, smem_size, stream_>>>
+      (n, r_grid_, reducer, static_cast<F&&>(f),
+       static_cast<Args&&>(args)...);
+
+#if defined(DEBUG) || !defined(NDEBUG)
+    retcode = hipGetLastError();
+    if (retcode != hipSuccess)
+      bft_error(__FILE__, __LINE__, 0,
+                "[HIP error] %d: %s\n"
+                "with grid size %ld, block size %d, shared memory size %d.",
+                retcode, ::hipGetErrorString(retcode),
+                l_grid_size, l_block_size, smem_size);
+#endif
+
+    switch (l_block_size) {
+    case 1024:
+      cs_hip_reduce_single_block<1024, R>
+        <<<1, l_block_size, smem_size, stream_>>>
+        (l_grid_size, r_grid_, r_reduce_);
+      break;
+    case 512:
+      cs_hip_reduce_single_block<512, R>
+        <<<1, l_block_size, smem_size, stream_>>>
+        (l_grid_size, r_grid_, r_reduce_);
+      break;
+    case 256:
+      cs_hip_reduce_single_block<256, R>
+        <<<1, l_block_size, smem_size, stream_>>>
+        (l_grid_size, r_grid_, r_reduce_);
+      break;
+    case 128:
+      cs_hip_reduce_single_block<128, R>
+        <<<1, l_block_size, smem_size, stream_>>>
+        (l_grid_size, r_grid_, r_reduce_);
+      break;
+    default:
+      cs_assert(0);
+    }
+
+#if defined(DEBUG) || !defined(NDEBUG)
+    retcode = hipGetLastError();
+    if (retcode != hipSuccess)
+      bft_error(__FILE__, __LINE__, 0,
+                "[HIP error] %d: %s\n"
+                "with grid size %ld, block size %d, shared memory size %d.",
+                retcode, ::hipGetErrorString(retcode),
+                l_grid_size, l_block_size, (int)smem_size);
+#endif
+
+    CS_HIP_CHECK(hipMemcpyAsync(r_host_, r_reduce_, sizeof(result),
+                                  hipMemcpyDeviceToHost, stream_));
+
+    CS_HIP_CHECK(hipStreamSynchronize(stream_));
+    CS_HIP_CHECK(hipGetLastError());
+    result = r_host_[0];
+
+    return true;
+  }
+
+  //! Synchronize associated stream
+  template <class... Args>
+  bool
+  wait(void) {
+    if (device_ > -1 && use_gpu_) {
+      CS_HIP_CHECK(hipStreamSynchronize(stream_));
+      CS_HIP_CHECK(hipGetLastError());
+      return true;
+    }
+    return false;
+  }
+
+  // Get interior faces sum type associated with this context
+  template <class M>
+  bool
+  try_get_parallel_for_i_faces_sum_type(const M                 *m,
+                                        cs_dispatch_sum_type_t  &st) {
+    if (device_ < 0 || use_gpu_ == false) {
+      return false;
+    }
+
+    st = CS_DISPATCH_SUM_ATOMIC;
+    return true;
+  }
+
+  // Get boundary faces sum type associated with this context
+  template <class M>
+  bool
+  try_get_parallel_for_b_faces_sum_type(const M                 *m,
+                                        cs_dispatch_sum_type_t  &st) {
+    if (device_ < 0 || use_gpu_ == false) {
+      return false;
+    }
+
+    st = CS_DISPATCH_SUM_ATOMIC;
+    return true;
+  }
+
+};
+
 #elif defined(SYCL_LANGUAGE_VERSION)
 
 /*! Default queue for SYCL */
@@ -1367,7 +1924,7 @@ public:
 
 };
 
-#endif  // __CUDACC__ or SYCL or defined(HAVE_OPENMP_TARGET)
+#endif  // __CUDACC__ or __HIPCC__ or SYCL or defined(HAVE_OPENMP_TARGET)
 
 /*!
  * Context to group unused options and catch missing execution paths.
@@ -1406,7 +1963,32 @@ public:
 
 #endif  // !defined(__CUDACC__)
 
+#if !defined(__HIPCC__)
+
+  /* Fill-in for HIP methods, so as to allow using these methods
+     in final cs_dispatch_context even when HIP is not available,
+     and without requiring a static cast of the form
+
+     static_cast<cs_device_context&>(ctx).set_use_gpu(true);
+  */
+
+  void
+  set_hip_grid([[maybe_unused]] long  grid_size,
+                [[maybe_unused]] long  block_size) {
+  }
+
+  void
+  set_hip_stream([[maybe_unused]] int  stream_id) {
+  }
+
+  void
+  set_hip_device([[maybe_unused]] int  device_id) {
+  }
+
+#endif  // !defined(__HIPCC__)
+
 #if    !defined(__CUDACC__) \
+    && !defined(__HIPCC__) \
     && !defined(SYCL_LANGUAGE_VERSION) \
     && !defined(HAVE_OPENMP_TARGET)
 
@@ -1435,7 +2017,7 @@ public:
     return CS_ALLOC_HOST;
   }
 
-#endif  // ! __CUDACC__ && ! SYCL_LANGUAGE_VERSION && ! defined(HAVE_OPENMP_TARGET)
+#endif  // ! __CUDACC__ && ! __HIPCC__ && ! SYCL_LANGUAGE_VERSION && ! defined(HAVE_OPENMP_TARGET)
 
 public:
 
@@ -1701,6 +2283,7 @@ public:
 
 class cs_dispatch_context : public cs_combined_context<
 #if   defined(__CUDACC__) \
+  || defined(__HIPCC__) \
   || defined(SYCL_LANGUAGE_VERSION) \
   || defined(HAVE_OPENMP_TARGET)
   cs_device_context,
@@ -1713,6 +2296,7 @@ class cs_dispatch_context : public cs_combined_context<
 private:
   using base_t = cs_combined_context<
 #if   defined(__CUDACC__) \
+   || defined(__HIPCC__) \
    || defined(SYCL_LANGUAGE_VERSION) \
    || defined(HAVE_OPENMP_TARGET)
   cs_device_context,
@@ -1792,6 +2376,22 @@ cs_dispatch_sum(T                       *dest,
   }
 }
 
+#elif defined(__HIP_DEVICE_COMPILE__)
+
+template <typename T>
+__device__ static void __forceinline__
+cs_dispatch_sum(T                       *dest,
+                const T                  src,
+                cs_dispatch_sum_type_t   sum_type)
+{
+  if (sum_type == CS_DISPATCH_SUM_ATOMIC) {
+    atomicAdd(dest, src);
+  }
+  else if (sum_type == CS_DISPATCH_SUM_SIMPLE) {
+    *dest += src;
+  }
+}
+
 #elif defined(SYCL_LANGUAGE_VERSION)
 
 template <typename T>
@@ -1811,7 +2411,7 @@ cs_dispatch_sum(T                       *dest,
   }
 }
 
-#else  // ! CUDA or SYCL
+#else  // ! CUDA or HIP or SYCL
 
 template <typename T>
 inline void
@@ -1879,6 +2479,26 @@ cs_dispatch_sum(T                       *dest,
       atomicAdd(&dest[i], src[i]);
     }
 #endif
+  }
+}
+
+#elif defined(__HIP_DEVICE_COMPILE__)
+
+template <size_t dim, typename T>
+__device__ static void __forceinline__
+cs_dispatch_sum(T                       *dest,
+                const T                 *src,
+                cs_dispatch_sum_type_t   sum_type)
+{
+  if (sum_type == CS_DISPATCH_SUM_SIMPLE) {
+    for (cs_lnum_t i = 0; i < dim; i++) {
+      dest[i] += src[i];
+    }
+  }
+  else if (sum_type == CS_DISPATCH_SUM_ATOMIC) {
+    for (size_t i = 0; i < dim; i++) {
+      atomicAdd(&dest[i], src[i]);
+    }
   }
 }
 

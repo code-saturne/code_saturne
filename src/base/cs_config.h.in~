@@ -1,0 +1,465 @@
+/* src/base/cs_config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* C compiler version string */
+#undef CS_CC_VERSION_STRING
+
+/* C++ compiler version string */
+#undef CS_CXX_VERSION_STRING
+
+/* use RTLD_GLOBAL in dlopen flags. */
+#undef CS_DLOPEN_USE_RTLD_GLOBAL
+
+/* Fortran compiler version string */
+#undef CS_FC_VERSION_STRING
+
+/* CUDA host compiler version */
+#undef CS_NVCC_HC_VERSION_STRING
+
+/* CUDA compiler version string */
+#undef CS_NVCC_VERSION_STRING
+
+/* Define to 1 if you have the `access' function. */
+#undef HAVE_ACCESS
+
+/* AMGX library support */
+#undef HAVE_AMGX
+
+/* ArmPL BLAS support */
+#undef HAVE_ARMPL
+
+/* ATLAS BLAS support */
+#undef HAVE_ATLAS
+
+/* Catalyst co-processing support */
+#undef HAVE_CATALYST
+
+/* Catalyst2 co-processing support */
+#undef HAVE_CATALYST2
+
+/* C BLAS support */
+#undef HAVE_CBLAS
+
+/* CCM file support */
+#undef HAVE_CCM
+
+/* CGNS file support */
+#undef HAVE_CGNS
+
+/* Define to 1 if you have the `chdir' function. */
+#undef HAVE_CHDIR
+
+/* Define to 1 if you have the `clock_getcpuclockid' function. */
+#undef HAVE_CLOCK_GETCPUCLOCKID
+
+/* Define to 1 if you have the `clock_gettime' function. */
+#undef HAVE_CLOCK_GETTIME
+
+/* Conduit library support */
+#undef HAVE_CONDUIT
+
+/* CoolProp support */
+#undef HAVE_COOLPROP
+
+/* HAVE_CPLUS_DEMANGLE */
+#undef HAVE_CPLUS_DEMANGLE
+
+/* cuBLAS support */
+#undef HAVE_CUBLAS
+
+/* CUDA offload support */
+#undef HAVE_CUDA
+
+/* CUDSS library support */
+#undef HAVE_CUDSS
+
+/* cuSPARSE support */
+#undef HAVE_CUSPARSE
+
+/* Define to 1 if you have the <dirent.h> header file. */
+#undef HAVE_DIRENT_H
+
+/* dlopen support */
+#undef HAVE_DLOPEN
+
+/* Define to 1 if you have the `dup2' function. */
+#undef HAVE_DUP2
+
+/* EOS support */
+#undef HAVE_EOS
+
+/* Define to 1 if you have the `erf' function. */
+#undef HAVE_ERF
+
+/* Define to 1 if you have the <fcntl.h> header file. */
+#undef HAVE_FCNTL_H
+
+/* Define to 1 if you have the <float.h> header file. */
+#undef HAVE_FLOAT_H
+
+/* Fortran compiler present */
+#undef HAVE_FORTRAN
+
+/* Define to 1 if fseeko (and presumably ftello) exists and is declared. */
+#undef HAVE_FSEEKO
+
+/* Define to 1 if you have the `getcwd' function. */
+#undef HAVE_GETCWD
+
+/* Define to 1 if you have the `geteuid' function. */
+#undef HAVE_GETEUID
+
+/* Define to 1 if you have the `getpwuid' function. */
+#undef HAVE_GETPWUID
+
+/* Define to 1 if you have the `getrusage' function. */
+#undef HAVE_GETRUSAGE
+
+/* Define to 1 if you have the `gettimeofday' function. */
+#undef HAVE_GETTIMEOFDAY
+
+/* HAVE_GLIBC_BACKTRACE */
+#undef HAVE_GLIBC_BACKTRACE
+
+/* HDF5 file support */
+#undef HAVE_HDF5
+
+/* Define to 1 if you have the <hdf5.h> header file. */
+#undef HAVE_HDF5_H
+
+/* HIP offload support */
+#undef HAVE_HIP
+
+/* hipBLAS support */
+#undef HAVE_HIPBLAS
+
+/* hipSPARSE support */
+#undef HAVE_HIPSPARSE
+
+/* HYPRE library support */
+#undef HAVE_HYPRE
+
+/* Define to 1 if the system has the type `int32_t'. */
+#undef HAVE_INT32_T
+
+/* Define to 1 if the system has the type `int64_t'. */
+#undef HAVE_INT64_T
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the `linkat' function. */
+#undef HAVE_LINKAT
+
+/* Use 64-bit type for cs_gnum_t. */
+#undef HAVE_LONG_GNUM
+
+/* Use 64-bit type for cs_lnum_t. */
+#undef HAVE_LONG_LNUM
+
+/* Define to 1 if the system has the type `long long'. */
+#undef HAVE_LONG_LONG
+
+/* HAVE_MALLOC_HOOKS */
+#undef HAVE_MALLOC_HOOKS
+
+/* MED file support */
+#undef HAVE_MED
+
+/* MEDCoupling support */
+#undef HAVE_MEDCOUPLING
+
+/* MEDCoupling with loader support */
+#undef HAVE_MEDCOUPLING_LOADER
+
+/* MED file MPI support */
+#undef HAVE_MED_MPI
+
+/* Melissa co-processing support */
+#undef HAVE_MELISSA
+
+/* Melissa co-processing support with MPI */
+#undef HAVE_MELISSA_MPI
+
+/* Melissa 0.7 co-processing support with MPI */
+#undef HAVE_MELISSA_MPI_07
+
+/* Melissa co-processing support without MPI */
+#undef HAVE_MELISSA_NO_MPI
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the `memset' function. */
+#undef HAVE_MEMSET
+
+/* use METIS */
+#undef HAVE_METIS
+
+/* Define to 1 if you have the `mkdir' function. */
+#undef HAVE_MKDIR
+
+/* MKL libraries support */
+#undef HAVE_MKL
+
+/* MKL sparse BLAS inspector/executor API */
+#undef HAVE_MKL_SPARSE_IE
+
+/* Define to 1 if you have the `modf' function. */
+#undef HAVE_MODF
+
+/* MPI support */
+#undef HAVE_MPI
+
+/* Define to 1 if you have the <mpi.h> header file. */
+#undef HAVE_MPI_H
+
+/* MPI nonblocking barrier */
+#undef HAVE_MPI_IBARRIER
+
+/* MPI-IO support */
+#undef HAVE_MPI_IO
+
+/* Mumps single-precision support */
+#undef HAVE_MUMPS
+
+/* NCCL support */
+#undef HAVE_NCCL
+
+/* openmp support */
+#undef HAVE_OPENMP
+
+/* openmp accelerator support */
+#undef HAVE_OPENMP_TARGET
+
+/* openmp target unified shared memory support */
+#undef HAVE_OPENMP_TARGET_USM
+
+/* ParaMEDMEM support */
+#undef HAVE_PARAMEDMEM
+
+/* use ParMetis */
+#undef HAVE_PARMETIS
+
+/* PETSc support */
+#undef HAVE_PETSC
+
+/* plugins support */
+#undef HAVE_PLUGINS
+
+/* Catalyst co-processing support as plugin */
+#undef HAVE_PLUGIN_CATALYST
+
+/* Catalyst2 co-processing support as plugin */
+#undef HAVE_PLUGIN_CATALYST2
+
+/* MEDCoupling support as plugin */
+#undef HAVE_PLUGIN_MEDCOUPLING
+
+/* Melissa co-processing support as plugin */
+#undef HAVE_PLUGIN_MELISSA
+
+/* Define to 1 if you have the `posix_memalign' function. */
+#undef HAVE_POSIX_MEMALIGN
+
+/* Define to 1 if you have the `pow' function. */
+#undef HAVE_POW
+
+/* Define to 1 if the system has the type `ptrdiff_t'. */
+#undef HAVE_PTRDIFF_T
+
+/* use SCOTCH */
+#undef HAVE_PTSCOTCH
+
+/* Define to 1 if you have the <ptscotch.h> header file. */
+#undef HAVE_PTSCOTCH_H
+
+/* Relocatable installation */
+#undef HAVE_RELOCATABLE
+
+/* Define to 1 if you have the `sbrk' function. */
+#undef HAVE_SBRK
+
+/* use SCOTCH */
+#undef HAVE_SCOTCH
+
+/* Define to 1 if you have the <scotch.h> header file. */
+#undef HAVE_SCOTCH_H
+
+/* Define to 1 if you have the `sigaction' function. */
+#undef HAVE_SIGACTION
+
+/* Define to 1 if you have the `sleep' function. */
+#undef HAVE_SLEEP
+
+/* Define to 1 if you have the `snprintf' function. */
+#undef HAVE_SNPRINTF
+
+/* sockets support */
+#undef HAVE_SOCKET
+
+/* Define to 1 if you have the `stat' function. */
+#undef HAVE_STAT
+
+/* Define to 1 if stdbool.h conforms to C99. */
+#undef HAVE_STDBOOL_H
+
+/* Define to 1 if you have the <stddef.h> header file. */
+#undef HAVE_STDDEF_H
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the `strtok_r' function. */
+#undef HAVE_STRTOK_R
+
+/* SYCL support */
+#undef HAVE_SYCL
+
+/* Define to 1 if you have the `sysinfo' function. */
+#undef HAVE_SYSINFO
+
+/* Define to 1 if you have the <sys/procfs.h> header file. */
+#undef HAVE_SYS_PROCFS_H
+
+/* Define to 1 if you have the <sys/resource.h> header file. */
+#undef HAVE_SYS_RESOURCE_H
+
+/* Define to 1 if you have the <sys/signal.h> header file. */
+#undef HAVE_SYS_SIGNAL_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/sysinfo.h> header file. */
+#undef HAVE_SYS_SYSINFO_H
+
+/* Define to 1 if you have the <sys/time.h> header file. */
+#undef HAVE_SYS_TIME_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <sys/utsname.h> header file. */
+#undef HAVE_SYS_UTSNAME_H
+
+/* Define to 1 if you have the `tgamma' function. */
+#undef HAVE_TGAMMA
+
+/* Define to 1 if the system has the type `uint32_t'. */
+#undef HAVE_UINT32_T
+
+/* Define to 1 if the system has the type `uint64_t'. */
+#undef HAVE_UINT64_T
+
+/* Define to 1 if you have the `uname' function. */
+#undef HAVE_UNAME
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to 1 if the system has the type `unsigned long long'. */
+#undef HAVE_UNSIGNED_LONG_LONG
+
+/* Define to 1 if you have the <vtkCPPythonScriptV2Pipeline.h> header file. */
+#undef HAVE_VTKCPPYTHONSCRIPTV2PIPELINE_H
+
+/* Define to 1 if you have the <vtkPVVersion.h> header file. */
+#undef HAVE_VTKPVVERSION_H
+
+/* gzipped file support */
+#undef HAVE_ZLIB
+
+/* Define to 1 if the system has the type `_Bool'. */
+#undef HAVE__BOOL
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* The size of `double', as computed by sizeof. */
+#undef SIZEOF_DOUBLE
+
+/* The size of `float', as computed by sizeof. */
+#undef SIZEOF_FLOAT
+
+/* The size of `int', as computed by sizeof. */
+#undef SIZEOF_INT
+
+/* The size of `long', as computed by sizeof. */
+#undef SIZEOF_LONG
+
+/* The size of `long long', as computed by sizeof. */
+#undef SIZEOF_LONG_LONG
+
+/* The size of `off_t', as computed by sizeof. */
+#undef SIZEOF_OFF_T
+
+/* The size of `short', as computed by sizeof. */
+#undef SIZEOF_SHORT
+
+/* The size of `void *', as computed by sizeof. */
+#undef SIZEOF_VOID_P
+
+/* The size of z_off_t, as returned by zlibCompileFlags. */
+#undef SIZEOF_Z_OFF_T
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Version number of package */
+#undef VERSION
+
+/* Enable large inode numbers on Mac OS X 10.5.  */
+#ifndef _DARWIN_USE_64_BIT_INODE
+# define _DARWIN_USE_64_BIT_INODE 1
+#endif
+
+/* Number of bits in a file offset, on hosts where this is settable. */
+#undef _FILE_OFFSET_BITS
+
+/* Define to 1 to make fseeko visible on some hosts (e.g. glibc 2.2). */
+#undef _LARGEFILE_SOURCE
+
+/* Define for large files, on AIX-style hosts. */
+#undef _LARGE_FILES
+
+/* Define to empty if `const' does not conform to ANSI C. */
+#undef const
+
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
+#undef inline
+#endif
+
+/* Define to `int' if <sys/types.h> does not define. */
+#undef pid_t
+
+/* Define to `unsigned int' if <sys/types.h> does not define. */
+#undef size_t

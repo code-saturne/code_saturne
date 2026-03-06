@@ -211,7 +211,8 @@ cs_base_headers.h
 
 noinst_HEADERS = \
 cs_boundary_conditions_priv.h \
-cs_mem_cuda_priv.h
+cs_mem_cuda_priv.h \
+cs_mem_hip_priv.h
 
 if HAVE_CUDA
 csbase_include_HEADERS += \
@@ -223,6 +224,17 @@ cs_cuda_reduce.h
 
 noinst_HEADERS += \
 cs_halo_cuda.h
+endif
+
+if HAVE_HIP
+csbase_include_HEADERS += \
+cs_base_hip.h \
+cs_math_hip.h \
+cs_array_hip.h \
+cs_hip_reduce.h
+
+noinst_HEADERS += \
+cs_halo_hip.h
 endif
 
 # Library source files
@@ -246,8 +258,13 @@ if HAVE_CUDA_CPP
 cs_base.$(OBJEXT): $(cs_base)
 	$(NVCC) -c $(DEFS) $(DEFAULT_INCLUDES) $(cs_base_CPPFLAGS) $(NVCCFLAGS) $(NVCFLAGS_DBG) $(NVCCFLAGS_OPT) $(NVCCFLAGS_CPP) $(cs_base)
 else
+if HAVE_HIP_CPP
+cs_base.$(OBJEXT): $(cs_base)
+	$(HIPCC) -c $(DEFS) $(DEFAULT_INCLUDES) $(cs_base_CPPFLAGS) $(HIPCCFLAGS) $(HIPCFLAGS_DBG) $(HIPCCFLAGS_OPT) $(HIPCCFLAGS_CPP) $(cs_base)
+else
 cs_base.$(OBJEXT): $(cs_base)
 	$(CXX) -c $(DEFS) $(DEFAULT_INCLUDES) $(cs_base_CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) $(cs_base)
+endif
 endif
 
 libcscore_a_LIBADD = cs_base.$(OBJEXT)
@@ -286,6 +303,13 @@ libcscore_a_SOURCES += \
 cs_base_cuda.cu \
 cs_halo_cuda.cu \
 cs_mem_cuda_priv.cu
+endif
+
+if HAVE_HIP
+libcscore_a_SOURCES += \
+cs_base_hip.cpp \
+cs_halo_hip.cpp \
+cs_mem_hip_priv.cpp
 endif
 
 libcsbase_a_SOURCES = \
@@ -548,6 +572,11 @@ endif
 
 .cu.$(OBJEXT):
 	$(NVCC) $(DEFS) $(AM_CPPFLAGS) $(NVCCFLAGS) $(NVCCFLAGS_DBG) $(NVCCFLAGS_OPT) -c -o $@ $<
+
+if HAVE_HIP_CPP
+.cpp.$(OBJEXT):
+	$(HIPCC) $(DEFS) $(AM_CPPFLAGS) $(HIPCCFLAGS) $(HIPCCFLAGS_DBG) $(HIPCCFLAGS_OPT) $(HIPCCFLAGS_CPP) -c -o $@ $<
+endif
 
 # Additional rules
 

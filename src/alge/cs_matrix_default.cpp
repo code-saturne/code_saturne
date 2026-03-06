@@ -80,6 +80,10 @@
 #include "alge/cs_matrix_spmv_cuda.h"
 #endif
 
+#if defined(HAVE_HIP)
+#include "alge/cs_matrix_spmv_hip.h"
+#endif
+
 #include "alge/cs_matrix_priv.h"
 #include "alge/cs_matrix_tuning.h"
 
@@ -495,6 +499,9 @@ cs_matrix_finalize(void)
 {
 #if defined(HAVE_CUDA)
   cs_matrix_spmv_cuda_finalize();
+#endif
+#if defined(HAVE_HIP)
+  cs_matrix_spmv_hip_finalize();
 #endif
 
   CS_FREE(_global_row_id);

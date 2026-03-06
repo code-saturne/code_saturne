@@ -81,6 +81,10 @@
 #include "alge/cs_matrix_spmv_cuda.h"
 #endif
 
+#if defined (HAVE_HIP)
+#include "alge/cs_matrix_spmv_hip.h"
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*! \file cs_matrix_spmv.cpp
  *
@@ -3818,6 +3822,12 @@ const char *default_name = s_cuda;
 
 const char *default_name_native = s_cuda;
 
+#elif defined(HAVE_HIP)
+
+const char s_hip[] = "hip";
+const char *default_name = s_hip;
+const char *default_name_native = s_hip;
+
 #else  /* defined(HAVE_CUDA) */
 
 const char s_not_impl[] = "not_implemented";
@@ -4136,6 +4146,28 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
 #endif
     }
 
+    else if (!strcmp(func_name, "hip")) {
+#if defined(HAVE_HIP)
+      switch(fill_type) {
+      case CS_MATRIX_SCALAR:
+        [[fallthrough]];
+      case CS_MATRIX_SCALAR_SYM:
+        _spmv[0] = cs_matrix_spmv_hip_native;
+        _spmv[1] = cs_matrix_spmv_hip_native;
+        break;
+      case CS_MATRIX_BLOCK_D:
+        [[fallthrough]];
+      case CS_MATRIX_BLOCK_D_66:
+        [[fallthrough]];
+      case CS_MATRIX_BLOCK_D_SYM:
+      default:
+        break;
+      }
+#else
+      retcode = 2;
+#endif
+    }
+
     break;
 
   /* CSR
@@ -4185,6 +4217,16 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
                      cs_matrix_spmv_cuda_csr_cusparse;
         _spmv[1] = (cs_matrix_vector_product_t *)
                      cs_matrix_spmv_cuda_csr_cusparse;
+        _spmv_xy_hd[0] = 'd';
+        _spmv_xy_hd[1] = 'd';
+#else
+        retcode = 2;
+#endif
+      }
+      else if (!strcmp(func_name, "hip")) {
+#if defined(HAVE_HIP)
+        _spmv[0] = cs_matrix_spmv_hip_csr;
+        _spmv[1] = cs_matrix_spmv_hip_csr;
         _spmv_xy_hd[0] = 'd';
         _spmv_xy_hd[1] = 'd';
 #else
@@ -4277,6 +4319,32 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
       case CS_MATRIX_BLOCK_D_SYM:
         _spmv[0] = cs_matrix_spmv_cuda_msr_b;
         _spmv[1] = cs_matrix_spmv_cuda_msr_b;
+        _spmv_xy_hd[0] = 'd';
+        _spmv_xy_hd[1] = 'd';
+        break;
+      default:
+        break;
+      }
+#else
+      retcode = 2;
+#endif
+    }
+
+    else if (!strcmp(func_name, "hip")) {
+#if defined(HAVE_HIP)
+      switch(fill_type) {
+      case CS_MATRIX_SCALAR:
+      case CS_MATRIX_SCALAR_SYM:
+        _spmv[0] = cs_matrix_spmv_hip_msr;
+        _spmv[1] = cs_matrix_spmv_hip_msr;
+        _spmv_xy_hd[0] = 'd';
+        _spmv_xy_hd[1] = 'd';
+        break;
+      case CS_MATRIX_BLOCK_D:
+      case CS_MATRIX_BLOCK_D_66:
+      case CS_MATRIX_BLOCK_D_SYM:
+        _spmv[0] = cs_matrix_spmv_hip_msr_b;
+        _spmv[1] = cs_matrix_spmv_hip_msr_b;
         _spmv_xy_hd[0] = 'd';
         _spmv_xy_hd[1] = 'd';
         break;
