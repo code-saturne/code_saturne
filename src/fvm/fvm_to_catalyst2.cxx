@@ -102,7 +102,6 @@ typedef struct {
 
   char                      *name;           /* Writer name */
 
-  int                        n_meshes;       /* Number of associated meshes */
   fvm_writer_time_dep_t      time_dependency; /* Mesh time dependency */
 
   bool                       ensight_names;  /* Use EnSight naming scheme */
