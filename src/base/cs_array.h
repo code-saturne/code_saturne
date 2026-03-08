@@ -1144,6 +1144,94 @@ private:
 public:
 
   using mdspan<T,N,L>::copy_data;
+
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Custom new operator
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST
+  void *
+  operator new
+  (
+    std::size_t count,   /*!<[in] Size to allocate */
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+ __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
+#endif
+  )
+  {
+    return cs_mem_malloc_hd(CS_ALLOC_HOST,
+                            1,
+                            count,
+                            "cs::array",
+                            file_name,
+                            line_number);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Custom new[] operator
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST
+  void *
+  operator new[]
+  (
+    std::size_t count,   /*!<[in] Size to allocate */
+#if (defined(__GNUC__) || defined(__clang__)) && \
+  __has_builtin(__builtin_LINE) && \
+ __has_builtin(__builtin_FILE)
+    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
+    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
+#else
+    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
+    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
+#endif
+  )
+  {
+    return cs_mem_malloc_hd(CS_ALLOC_HOST,
+                            1,
+                            count,
+                            "cs::array",
+                            file_name,
+                            line_number);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Custom delete operator
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST
+  void
+  operator delete(void *ptr)
+  {
+    CS_FREE(ptr);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Custom delete[] operator
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST
+  void
+  operator delete[](void *ptr)
+  {
+    CS_FREE(ptr);
+  }
+
   /*--------------------------------------------------------------------------*/
   /*!
    * \brief Default constructor method leading to "empty container".
