@@ -2294,9 +2294,11 @@ _flag_faces_and_edges(cs_lnum_t               f_id,
     for (cs_lnum_t i = 0; i < n_fv; i++) {
       cs_lnum_t j = f2v_lst_o[(i+last_corner_idx)%n_fv];
       f2v_lst[i] = j;
+      vtx_r_gen_f[i] = vtx_r_gen[j];
     }
     if (f2v_lst_o != _f2v_lst_o)
       CS_FREE(f2v_lst_o);
+    r_lv0 = vtx_r_gen_f[0];
   }
 
   /* Flag edges */
