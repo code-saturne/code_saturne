@@ -458,6 +458,8 @@ _run(void)
 
       cs_matrix_initialize();
 
+      cs_restart_update_mesh_checkpoint();
+
       /* Update Fortran mesh sizes and quantities */
 
       cs_preprocess_mesh_update_fortran();
@@ -494,8 +496,6 @@ _run(void)
           cs_post_default_write_meshes();
 
           cs_turbomachinery_restart_mesh();
-
-          cs_restart_update_mesh_checkpoint();
 
           /*----------------------------------------------
            * Call main calculation function (code Kernel)
