@@ -189,6 +189,53 @@ cs_runge_kutta_staging(cs_dispatch_context          &ctx,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Perform one Runge-Kutta staging for the potential in the NS system.
+ *
+ * \param[in]      ctx         Reference to dispatch context
+ * \param[in,out]  rk          pointer to a Runge-Kutta integrator
+ * \param[in,out]  phi_stage   high level variable array along stages
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_runge_kutta_staging_potential(cs_dispatch_context          &ctx,
+                                 cs_runge_kutta_integrator_t  *rk,
+                                 cs_real_t                    *phi_stage);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Perform one Runge-Kutta staging for the potential in the NS system.
+ *
+ * \param[in]      ctx         Reference to dispatch context
+ * \param[in,out]  rk          pointer to a Runge-Kutta integrator
+ * \param[in,out]  grad_dp     pressure increment gradient
+ */
+/*----------------------------------------------------------------------------*/
+
+template<int stride>
+void
+cs_runge_kutta_stage_projection_rhs(cs_dispatch_context          &ctx,
+                                    cs_runge_kutta_integrator_t  *rk,
+                                    cs_real_t                    *grad_dp)
+{
+  assert(rk != nullptr);
+  const int n_elts = rk->n_elts;
+  // get the last stage index
+  const int i_stg = rk->i_stage - 1;
+  const cs_real_t *a = rk->rk_coeff.a + RK_HIGHEST_ORDER*i_stg;
+  const cs_real_t *mass = rk->mass;
+
+  cs_real_t *rhs  = rk->rhs_stages + i_stg*stride*n_elts;
+  ctx.parallel_for (n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t i_elt) {
+    for (cs_lnum_t k = 0; k < stride; k++) {
+      rhs[stride*i_elt + k] -= grad_dp[stride*i_elt + k]*mass[i_elt];
+      grad_dp[stride*i_elt + k] *= a[i_stg];
+    }
+  });
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set initial rhs per stage for Runge-Kutta integrator.
  *        Align with legacy equations' building sequence.
  *        1) Collect initial rhs done in
@@ -470,40 +517,6 @@ cs_runge_kutta_is_active(cs_runge_kutta_integrator_t  *rk)
     return false;
   else
     return (rk->scheme > CS_RK_NONE);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Get the scaling factor when conducting a projection per stage
- *
- * \param[in]  rk   pointer to a Runge-Kutta integrator
- */
-/*----------------------------------------------------------------------------*/
-
-inline cs_real_t *
-cs_runge_kutta_get_projection_time_scale_by_stage
-(
-  cs_dispatch_context           &ctx,
-  cs_runge_kutta_integrator_t  *rk
-)
-{
-  assert(rk != nullptr);
-  assert(rk->i_stage > 0);
-
-  const cs_lnum_t n_elts = rk->n_elts;
-  // get the current stage index
-  const int i_stg = rk->i_stage;
-  const cs_real_t *dt = rk->dt;
-
-  const cs_real_t scaling_factor = rk->rk_coeff.c[i_stg - 1];
-  cs_real_t *scaled_dt = rk->scaled_dt;
-
-  ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
-    scaled_dt[i] = dt[i] * scaling_factor;
-  });
-  ctx.wait();
-
-  return rk->scaled_dt;
 }
 
 /*----------------------------------------------------------------------------*/

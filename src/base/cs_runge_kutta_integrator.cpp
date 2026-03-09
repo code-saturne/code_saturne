@@ -83,6 +83,7 @@ _runge_kutta_integrator_init_scheme(cs_runge_kutta_integrator_t   *rk,
 {
   double *a = rk->rk_coeff.a;
   double *c = rk->rk_coeff.c;
+
   memset(a, 0., RK_HIGHEST_ORDER*RK_HIGHEST_ORDER*sizeof(double));
   memset(c, 0., RK_HIGHEST_ORDER*sizeof(double));
 
@@ -95,28 +96,33 @@ _runge_kutta_integrator_init_scheme(cs_runge_kutta_integrator_t   *rk,
     rk->n_stages = 1;
     a[0] = 1.;
     c[0] = 1.;
+
     break;
 
   case CS_RK2:
+    [[fallthrough]];
+  case CS_RK2_HEUN:
     rk->n_stages = 2;
 
     a[0] = 1.;
     a[4] = 0.5, a[5] = 0.5;
 
     c[0] = 1., c[1] = 1.;
+
+    break;
+
+  case CS_RK2_MP:
+    rk->n_stages = 2;
+
+    a[0] = 0.5;
+    a[4] = 0., a[5] = 1;
+
+    c[0] = 0.5, c[1] = 1.;
+
     break;
 
   case CS_RK3:
-    rk->n_stages = 3;
-
-    a[0] = 1.0/3.0;
-    a[4] = -1.0,    a[5] = 2.0;
-    a[8] = 0.0,     a[9] = 3./4.,  a[10] = 1./4.;
-
-    c[0] = 1.0/3.0, c[1] = 1.0, c[2] = 1.0;
-
-    break;
-
+    [[fallthrough]];
   case CS_RK3_WRAY:
     rk->n_stages = 3;
 
@@ -127,6 +133,7 @@ _runge_kutta_integrator_init_scheme(cs_runge_kutta_integrator_t   *rk,
     c[0] = 8.0/15.0, c[1] = 2./3., c[2] = 1.0;
 
     break;
+
   case CS_RK3_SSP:
 
     rk->n_stages = 3;
@@ -138,6 +145,7 @@ _runge_kutta_integrator_init_scheme(cs_runge_kutta_integrator_t   *rk,
     c[0] = 1.0, c[1] = 1./2., c[2] = 1.0;
 
     break;
+
   case CS_RK4:
     rk->n_stages = 4;
 
@@ -145,6 +153,7 @@ _runge_kutta_integrator_init_scheme(cs_runge_kutta_integrator_t   *rk,
     a[4] = 3.0/8.0,  a[5] = 1.0/8.0;
     a[8] = -1.0/8.0, a[9] = -3.0/8.0,   a[10] = 3.0/2.0;
     a[12] = 1.0/6.0, a[13] = -1.0/18.0, a[14] = 2.0/3.0, a[15] = 2.0/9.0;
+
     c[0] = 1.0, c[1] = 1.0/2.0, c[2] = 1.0, c[3] = 1.0;
 
     break;
@@ -179,7 +188,6 @@ _runge_kutta_integrator_free(cs_runge_kutta_integrator_t  **rk)
 
   CS_FREE(_rk->name);
 
-  CS_FREE_HD(_rk->scaled_dt);
   CS_FREE_HD(_rk->mass);
 
   CS_FREE_HD(_rk->u_old);
@@ -242,7 +250,6 @@ cs_runge_kutta_integrator_create(cs_runge_kutta_scheme_t      scheme,
 
   CS_MALLOC_HD(rk->u_old, stride*n_elts, cs_real_t, cs_alloc_mode);
 
-  CS_MALLOC_HD(rk->scaled_dt, n_elts, cs_real_t, cs_alloc_mode);
   CS_MALLOC_HD(rk->mass, n_elts, cs_real_t, cs_alloc_mode);
 
   CS_MALLOC_HD(rk->u_new, stride*n_elts, cs_real_t, cs_alloc_mode);
@@ -326,6 +333,37 @@ cs_runge_kutta_integrators_destroy()
 
   CS_FREE(_rk_lst);
   _n_rk_integrators = 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Perform one Runge-Kutta staging for the potential in the NS system.
+ *
+ * \param[in]      ctx         Reference to dispatch context
+ * \param[in,out]  rk          pointer to a Runge-Kutta integrator
+ * \param[in,out]  phi_stage   high level variable array along stages
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_runge_kutta_staging_potential(cs_dispatch_context          &ctx,
+                                 cs_runge_kutta_integrator_t  *rk,
+                                 cs_real_t                    *phi_stage)
+{
+  assert(rk != nullptr);
+
+  const int n_elts = rk->n_elts;
+
+  // get the last stage index
+  const int i_stg = rk->i_stage - 1;
+
+  const cs_real_t *a = rk->rk_coeff.a + RK_HIGHEST_ORDER*i_stg;
+
+  ctx.parallel_for (n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t i_elt) {
+     phi_stage[i_elt] /= a[i_stg];
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/

@@ -72,6 +72,8 @@ typedef enum {
   CS_RK_NONE,
   CS_RK1,
   CS_RK2,
+  CS_RK2_HEUN,
+  CS_RK2_MP,
   CS_RK3,
   CS_RK3_WRAY,
   CS_RK3_SSP,
@@ -109,8 +111,7 @@ typedef struct {
   int                     i_stage;    // Current stage index
 
   const cs_real_t        *dt;         // time step array
-  cs_real_t              *scaled_dt;  // scaled time step used in projection
-                                      // step per stage
+
   cs_lnum_t               n_elts;     // number of computational elements
 
   /* variable storage */

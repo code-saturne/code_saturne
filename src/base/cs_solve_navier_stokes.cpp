@@ -1345,6 +1345,17 @@ _update_fluid_vel(const cs_mesh_t             *m,
                                   cpro_gradp);
     }
 
+
+
+    cs_equation_param_t *eqp_u = cs_field_get_equation_param(CS_F_(vel));
+
+    if (eqp_u->rk_def.rk_id > -1) {
+      cs_runge_kutta_integrator_t *rk_u =
+        cs_runge_kutta_integrator_by_id(eqp_u->rk_def.rk_id);
+      if (rk_u != nullptr)
+        cs_runge_kutta_stage_projection_rhs<3>(ctx, rk_u, (cs_real_t*) cpro_gradp);
+    }
+
     /*  Update the velocity field */
 
     const cs_real_t thetap = eqp_p->theta;

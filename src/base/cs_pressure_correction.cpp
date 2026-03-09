@@ -673,11 +673,6 @@ _pressure_correction_fv(int                   iterns,
   /* Associate pointers to pressure diffusion coefficients */
 
   c_visc = dt;
-  if (eqp_u->rk_def.rk_id > -1) {
-    cs_runge_kutta_integrator_t *rk_u =
-      cs_runge_kutta_integrator_by_id(eqp_u->rk_def.rk_id);
-    c_visc = cs_runge_kutta_get_projection_time_scale_by_stage(ctx, rk_u);
-  }
 
   if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION)
     vitenp = (cs_real_6_t *)(cs_field_by_name("dttens")->val);
@@ -2710,6 +2705,12 @@ _pressure_correction_fv(int                   iterns,
      ========================= */
 
   // Pressure at the last sub-iteration
+
+  cs_runge_kutta_integrator_t *rk_u = nullptr;
+  if (eqp_u->rk_def.rk_id > -1) {
+    rk_u = cs_runge_kutta_integrator_by_id(eqp_u->rk_def.rk_id);
+    cs_runge_kutta_staging_potential(ctx, rk_u, phi);
+  }
 
   cs_real_t *pk1;
   CS_MALLOC_HD(pk1, n_cells_ext, cs_real_t, amode);
