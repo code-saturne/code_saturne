@@ -943,8 +943,8 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
   if (thermal_variable == CS_THERMAL_MODEL_ENTHALPY) {
 
-    CS_MALLOC_HD(lbt2h, n_b_faces, cs_lnum_t, CS_ALLOC_HOST);
-    CS_MALLOC_HD(vbt2h, n_b_faces, cs_real_t, CS_ALLOC_HOST);
+    CS_MALLOC_HD(lbt2h, n_b_faces, cs_lnum_t, cs_alloc_mode);
+    CS_MALLOC_HD(vbt2h, n_b_faces, cs_real_t, cs_alloc_mode);
 
     cs_field_t *f_h = CS_F_(h);
     cs_real_t *rcodcl1_h = f_h->bc_coeffs->rcodcl1;
@@ -994,16 +994,10 @@ cs_boundary_conditions_set_coeffs(int         nvar,
   const cs_real_3_t *var_vela = (const cs_real_3_t *)vel->val_pre;
   cs_equation_param_t *eqp_vel = cs_field_get_equation_param(vel);
 
-  cs_real_t   *bfconv  = nullptr, *bhconv = nullptr;
   cs_real_3_t *b_stress   = nullptr;
   const cs_real_6_t *dttens = nullptr;
 
   /* Pointers to specific fields */
-
-  if (rt_params_type >= 1) {
-    bfconv = cs_field_by_name("rad_convective_flux")->val;
-    bhconv = cs_field_by_name("rad_exchange_coefficient")->val;
-  }
 
   cs_field_t *f_dttens  = cs_field_by_name_try("dttens");
   if (f_dttens != nullptr)
@@ -2843,9 +2837,19 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
   CS_PROFILE_MARK_LINE();
   {
+    const int icp = fluid_props->icp;
+
+    cs_real_t *bfconv = nullptr, *bhconv =nullptr;
     const cs_real_t *cpro_cv = nullptr, *cpro_cp = nullptr;
 
-    if (fluid_props->icp >= 0)
+    cs_field_t *f_f = cs_field_by_name_try("rad_convective_flux");
+    cs_field_t *f_h = cs_field_by_name_try("rad_exchange_coefficient");
+    if (rt_params_type > 0) {
+      bfconv = f_f->val;
+      bhconv = f_h->val;
+    }
+
+    if (icp > -1)
       cpro_cp = CS_F_(cp)->val;
 
     cs_field_t *f_id_cv = cs_field_by_name_try("isobaric_heat_capacity");
@@ -2903,13 +2907,13 @@ cs_boundary_conditions_set_coeffs(int         nvar,
       }
 
       if (iscacp == 1) {
-        if (fluid_props->icp >= 0)
+        if (icp > -1)
           ihcp = 2;
         else
           ihcp = 1;
       }
       else if (iscacp == 2) {
-        if (fluid_props->icp >= 0)
+        if (icp > -1)
           ihcp = 4;
         else
           ihcp = 3;
@@ -2941,10 +2945,9 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
       /* Get boundary value (for post-processing) */
       int b_f_id = cs_field_get_key_int(f_scal, kbfid);
-      cs_lnum_t f_dim = f->dim;
 
       /* Scalar transported quantity */
-      if (f_dim == 1) {
+      if (f->dim == 1) {
 
         cs_real_t *coefa_sc = f_scal->bc_coeffs->a;
         cs_real_t *coefb_sc = f_scal->bc_coeffs->b;
@@ -3146,7 +3149,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           /* Set total flux as a Robin condition
              ----------------------------------- */
 
-          else if (icodcl_sc[f_id] == 12) {//TODO add an enum
+          else if (icodcl_sc[f_id] == 12) { //TODO add an enum
 
             const cs_real_t hext = rcodcl2_sc[f_id];
             const cs_real_t dimp = rcodcl3_sc[f_id];
@@ -3190,16 +3193,15 @@ cs_boundary_conditions_set_coeffs(int         nvar,
           if (   icodcl_sc[f_id] == CS_BC_DIRICHLET
               || icodcl_sc[f_id] == CS_BC_NEUMANN) {
             cs_real_t exchange_coef = 0.;
-            if (   (rt_params_type >= 1 && f_th == f_scal)
-                || isvhbl > -1) {
+            if ((rt_params_type > 0 && f_th == f_scal) || isvhbl > -1) {
 
               /* Enthalpy */
               if (thermal_variable == CS_THERMAL_MODEL_ENTHALPY) {
                 /* If Cp is variable */
-                if (fluid_props->icp >= 0)
-                  exchange_coef = hint*cpro_cp[c_id];
+                if (icp > -1)
+                  exchange_coef = hint * cpro_cp[c_id];
                 else
-                  exchange_coef = hint*cp0;
+                  exchange_coef = hint * cp0;
               }
 
               /* Total energy (compressible module) */
@@ -3221,7 +3223,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
               hbord[f_id] = exchange_coef;
 
             /* ---> Radiative transfer */
-            if (rt_params_type >= 1 && f_th == f_scal) {
+            if (rt_params_type > 0 && f_th == f_scal) {
               bhconv[f_id] = exchange_coef;
 
               /* The outgoing flux is stored (Q = h(Ti'-Tp): negative if

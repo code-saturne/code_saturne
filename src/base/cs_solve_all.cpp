@@ -494,7 +494,7 @@ _solve_most(int              n_var,
       *itrfup = 0;
 
   if (isvhb > -1)
-    CS_MALLOC(hbord, n_b_faces, cs_real_t);
+    CS_MALLOC_HD(hbord, n_b_faces, cs_real_t, cs_alloc_mode);
 
   if (th_f != nullptr)
     CS_MALLOC_HD(theipb, n_b_faces, cs_real_t, cs_alloc_mode);
