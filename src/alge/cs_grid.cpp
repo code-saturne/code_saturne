@@ -86,6 +86,27 @@
 
 #include "alge/cs_grid.h"
 
+/*=============================================================================
+ * Additional Doxygen documentation
+ *============================================================================*/
+
+/*!
+  \file cs_grid.cpp
+        Coarse grid construction for multigrid solveru.
+
+  The multigrid solver is based on an aggregation approach, with optional
+  relaxation parameter.
+  
+  The idea behind the relaxation is that for an unstructured finite volume
+  approach on arbitrary shaped cells, it is possible to improve the scaled
+  Galerkin approach based on piecewise constant interpolation for the R0
+  restriction and P0 prolongation operators. The off-diagonal entries of the
+  P0 Galerkin coarse mesh matrix are rescaled by a parameter, which takes
+  into account the mesh spacing ratio between the fine and coarse mesh in
+  the vicinity of the coarse mesh cell boundaries.
+  THis is detailed in \cite MeFoH09 .
+*/
+
 /*----------------------------------------------------------------------------*/
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
