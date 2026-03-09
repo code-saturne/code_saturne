@@ -83,13 +83,11 @@
   || defined(SYCL_LANGUAGE_VERSION) \
   || defined(HAVE_OPENMP_TARGET)
 
-#undef cs_math_zero_threshold
 #undef cs_math_epzero
 #undef cs_math_infinite_r
 #undef cs_math_big_r
 #undef cs_math_pi
 
-extern const cs_real_t cs_math_zero_threshold;
 extern const cs_real_t cs_math_epzero;
 extern const cs_real_t cs_math_infinite_r;
 extern const cs_real_t cs_math_big_r;

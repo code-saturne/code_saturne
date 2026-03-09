@@ -1630,7 +1630,7 @@ public:
     }
   }
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   array<T, N, L>
   get_deep_copy
   (
@@ -2097,7 +2097,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   void
   reshape_and_copy
   (
@@ -2130,7 +2130,7 @@ public:
    */
   /*--------------------------------------------------------------------------*/
 
-  CS_F_HOST_DEVICE
+  CS_F_HOST
   void
   reshape_and_copy
   (

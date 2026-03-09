@@ -92,7 +92,7 @@ typedef enum {
 
 /* On GPU, global variables are usually not accessible. */
 
-#define cs_math_zero_threshold std::numeric_limits<float>::min()
+constexpr cs_real_t cs_math_zero_threshold = std::numeric_limits<float>::min();
 #define cs_math_epzero 1e-12
 #define cs_math_infinite_r 1.e30
 #define cs_math_big_r 1.e12
