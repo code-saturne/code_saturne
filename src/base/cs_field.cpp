@@ -1839,8 +1839,15 @@ cs_field_allocate_values(cs_field_t  *f)
     /* Initialization */
 
     cs_dispatch_context ctx;
-    for (int ii = 0; ii < f->n_time_vals; ii++) {
-      f->_vals[ii]->zero(ctx);
+    if (f->is_series_owner()) {
+      for (int ii = 0; ii < f->n_time_vals; ii++) {
+        f->_ns_vals[ii]->zero(ctx);
+      }
+    }
+    else {
+      for (int ii = 0; ii < f->n_time_vals; ii++) {
+        f->_vals[ii]->zero(ctx);
+      }
     }
     ctx.wait();
 
