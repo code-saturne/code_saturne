@@ -3141,6 +3141,11 @@ _velocity_prediction(const cs_mesh_t             *m,
                                              icvfli,
                                              vel);
         cs_runge_kutta_staging<3>(ctx, rk_u, (cs_real_t*) vel);
+
+        CS_FREE(smbr);
+        CS_FREE(fimp);
+        CS_FREE(fimpcp);
+
         return;
       }
     }

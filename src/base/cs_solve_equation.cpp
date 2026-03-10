@@ -1789,6 +1789,11 @@ cs_solve_equation_scalar(cs_field_t        *f,
       printf(", total  = %ld\n", elapsed.count());
     }
     /* After the Explicit Runge-Kutta scheme, finish here */
+
+    CS_FREE(rhs);
+    CS_FREE(fimp);
+    CS_FREE(xcpp);
+
     return;
   }
 
