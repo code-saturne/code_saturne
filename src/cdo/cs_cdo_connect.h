@@ -40,9 +40,6 @@
 #include "mesh/cs_mesh_adjacencies.h"
 #include "base/cs_range_set.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -381,9 +378,5 @@ cs_cdo_connect_discrete_curl(const cs_cdo_connect_t    *connect,
 
 void
 cs_cdo_connect_dump(const cs_cdo_connect_t  *connect);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_CDO_CONNECT_H__ */

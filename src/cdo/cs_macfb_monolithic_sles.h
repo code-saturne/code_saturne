@@ -40,9 +40,6 @@
 
 #include "cdo/cs_macfb_monolithic_priv.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -189,9 +186,5 @@ int cs_macfb_monolithic_sles_uzawa_cg(const cs_navsto_param_t *nsp,
                                       cs_saddle_solver_t      *solver,
                                       cs_real_t               *u_f,
                                       cs_real_t               *p_c);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_MACFB_MONOLITHIC_SLES_H__ */

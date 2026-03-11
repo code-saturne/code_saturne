@@ -52,9 +52,6 @@
 #include "base/cs_time_plot.h"
 #include "base/cs_time_step.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -641,9 +638,5 @@ void cs_macfb_navsto_stream_source_term(cs_lnum_t        n_elts,
                                         bool             dense_output,
                                         void            *input,
                                         cs_real_t       *retval);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_MACFB_NAVSTO_H__ */

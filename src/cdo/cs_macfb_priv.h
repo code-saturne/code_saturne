@@ -34,9 +34,6 @@
 #include "cdo/cs_hodge.h"
 #include "cdo/cs_macfb_advection.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -115,9 +112,5 @@ typedef struct _cs_macfb_t cs_macfb_priv_t;
 void cs_macfb_set_advection_function(const cs_equation_param_t *eqp,
                                      cs_equation_builder_t     *eqb,
                                      cs_macfb_priv_t           *eqc);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_MACFB_PRIV_H__ */

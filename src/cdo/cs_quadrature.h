@@ -37,10 +37,6 @@
 #include "base/cs_math.h"
 #include "base/cs_param_types.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -2196,9 +2192,5 @@ cs_quadrature_get_hexa_integral(int dim, cs_quadrature_type_t qtype)
 cs_eflag_t
 cs_quadrature_get_flag(const cs_quadrature_type_t  qtype,
                        const cs_flag_t             loc);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_QUADRATURE_H__ */

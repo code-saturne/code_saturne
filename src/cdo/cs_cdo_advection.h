@@ -38,9 +38,6 @@
 #include "cdo/cs_equation_param.h"
 #include "cdo/cs_property.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -1153,9 +1150,5 @@ void
 cs_cdo_advection_cell_upwind_coef(const cs_cdo_quantities_t    *cdoq,
                                   cs_param_advection_scheme_t   scheme,
                                   cs_real_t                     coefval[]);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_CDO_ADVECTION_H__ */

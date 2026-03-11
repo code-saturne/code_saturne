@@ -37,9 +37,6 @@
 #include "cdo/cs_param_cdo.h"
 #include "cdo/cs_sdm.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -849,9 +846,5 @@ void
 cs_face_mesh_light_build(const cs_cell_mesh_t    *cm,
                          short int                f,
                          cs_face_mesh_light_t    *fm);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_CDO_LOCAL_H__ */

@@ -37,9 +37,6 @@
 #include "base/cs_range_set.h"
 #include "cdo/cs_sdm.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -664,9 +661,5 @@ cs_cdo_assembly_eblock_matrix_mpit(const cs_sdm_t                *m,
                                    cs_cdo_assembly_t             *asb,
                                    cs_matrix_assembler_values_t  *mav);
 #endif /* defined(HAVE_MPI) */
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_CDO_ASSEMBLY_H__ */

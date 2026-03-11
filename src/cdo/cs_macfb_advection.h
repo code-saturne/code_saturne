@@ -39,9 +39,6 @@
 #include "cdo/cs_macfb_builder.h"
 #include "cdo/cs_property.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -348,7 +345,5 @@ void cs_macfb_advection_cencsv(const cs_cell_mesh_t     *cm,
                                cs_cell_builder_t        *cb,
                                cs_sdm_t                 *adv,
                                cs_real_t                *rhs);
-
-END_C_DECLS
 
 #endif /* __CS_MACFB_ADVECTION_H__ */

@@ -38,9 +38,6 @@
 #include "cdo/cs_sdm.h"
 #include "cdo/cs_xdef.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -205,9 +202,5 @@ cs_macfb_builder_cellwise_setup(const cs_cell_mesh_t      *cm,
 
 void
 cs_macfb_builder_dump(const cs_macfb_builder_t *macb);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_MACFB_BUILDER_H__ */

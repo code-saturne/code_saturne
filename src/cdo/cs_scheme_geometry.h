@@ -37,9 +37,6 @@
 #include "cdo/cs_cdo_local.h"
 #include "base/cs_math.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -288,9 +285,5 @@ cs_compute_wef_wvf(short int                 f,
                    const cs_cell_mesh_t     *cm,
                    cs_real_t                *wvf,
                    cs_real_t                *wef);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_CDO_SCHEME_GEOMETRY_H__ */

@@ -32,9 +32,6 @@
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_local.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -137,9 +134,5 @@ cs_static_condensation_recover_vector(const cs_adjacency_t    *c2x,
                                       const cs_real_t         *acx_tilda,
                                       const cs_real_t         *px,
                                       cs_real_t               *pc);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_STATIC_CONDENSATION_H__ */

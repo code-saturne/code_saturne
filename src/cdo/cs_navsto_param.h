@@ -38,9 +38,6 @@
 #include "alge/cs_param_sles.h"
 #include "base/cs_physical_constants.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -1178,9 +1175,5 @@ cs_navsto_add_source_term_by_array(cs_navsto_param_t    *nsp,
 void
 cs_navsto_add_oseen_field(cs_navsto_param_t   *nsp,
                           cs_adv_field_t      *adv_fld);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_NAVSTO_PARAM_H__ */
