@@ -393,7 +393,7 @@ _vb_ocs_normal_flux_op(const short int           f,
   cs_log_printf(CS_LOG_DEFAULT,
                 ">> Flux.Op (NTRGRD) matrix (c_id: %d,f_id: %d)",
                 cm->c_id, cm->f_ids[f]);
-  cs_sdm_dump(cm->c_id, nullptr, nullptr, ntrgrd);
+  ntrgrd->dump(cm->c_id);
 #endif
 }
 
@@ -428,7 +428,7 @@ _vb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
 
   /* Initialize the local operator */
 
-  cs_sdm_square_init(cm->n_vc, ntrgrd);
+  ntrgrd->init(cm->n_vc);
 
   /* Compute the gradient of the Lagrange function related to xc which is
      constant inside p_{f,c} */
@@ -534,7 +534,7 @@ _vb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
   cs_log_printf(CS_LOG_DEFAULT,
                 ">> Flux.Op (NTRGRD) matrix (c_id: %d,f_id: %d)",
                 cm->c_id,cm->f_ids[fm->f_id]);
-  cs_sdm_dump(cm->c_id, nullptr, nullptr, ntrgrd);
+  ntrgrd->dump(cm->c_id);
 #endif
 }
 
@@ -572,7 +572,7 @@ _vcb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
 
   /* Initialize the local operator */
 
-  cs_sdm_square_init(cm->n_vc + 1, ntrgrd);
+  ntrgrd->init(cm->n_vc + 1);
 
   /* Compute the gradient of the Lagrange function related to xc which is
      constant inside p_{f,c} */
@@ -665,7 +665,7 @@ _vcb_wbs_normal_flux_op(const cs_face_mesh_t     *fm,
   cs_log_printf(CS_LOG_DEFAULT,
                 ">> Flux.Op (NTRGRD) matrix (c_id: %d,f_id: %d)",
                 cm->c_id,cm->f_ids[fm->f_id]);
-  cs_sdm_dump(cm->c_id, nullptr, nullptr, ntrgrd);
+  ntrgrd->dump(cm->c_id);
 #endif
 }
 
@@ -884,7 +884,7 @@ cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
 
   /* Contribution of the Dirichlet conditions */
 
-  cs_sdm_matvec(csys->mat, x_dir, ax_dir);
+  csys->mat->dot(x_dir, ax_dir);
 
   /* Second pass: Replace the Dirichlet block by a diagonal block */
 
@@ -974,7 +974,7 @@ cs_cdo_diffusion_alge_dirichlet_extra_block(const cs_equation_param_t   *eqp,
 
   /* Contribution of the Dirichlet conditions */
 
-  cs_sdm_matvec(csys->mat, x_dir, ax_dir);
+  csys->mat->dot(x_dir, ax_dir);
 
   /* Second pass: Replace the Dirichlet block by a diagonal block */
 
@@ -1063,7 +1063,7 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
 
   /* Contribution of the Dirichlet conditions */
 
-  cs_sdm_block_matvec(csys->mat, x_dir, ax_dir);
+  csys->mat->dot(x_dir, ax_dir);
 
   /* Second pass: Replace the Dirichlet block by a diagonal block */
 
@@ -1177,7 +1177,7 @@ cs_cdo_diffusion_sfb_weak_dirichlet(const cs_equation_param_t      *eqp,
 
   const short int n_dofs = cm->n_fc + 1;
   cs_sdm_t  *bc_op = cb->loc;
-  cs_sdm_square_init(n_dofs, bc_op);
+  bc_op->init(n_dofs);
 
   /* First pass: build the bc_op matrix */
 
@@ -1229,7 +1229,7 @@ cs_cdo_diffusion_sfb_weak_dirichlet(const cs_equation_param_t      *eqp,
 
   /* Update the local system matrix */
 
-  cs_sdm_add(csys->mat, bc_op);
+  *csys->mat += *bc_op;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1283,7 +1283,7 @@ cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
 
   const short int  n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
   cs_sdm_t *bc_op = cb->loc;
-  cs_sdm_square_init(n_dofs, bc_op);
+  bc_op->init(n_dofs);
 
   /* First pass: build the bc_op matrix */
 
@@ -1406,7 +1406,7 @@ cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
   const short int n_dofs = cm->n_fc + 1, n_f = cm->n_fc;
   cs_sdm_t  *bc_op = cb->loc, *bc_op_t = cb->aux;
-  cs_sdm_square_init(n_dofs, bc_op);
+  bc_op->init(n_dofs);
 
   /* First pass: build the bc_op matrix */
 
@@ -1441,7 +1441,7 @@ cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
      plays the role of the flux operator */
 
   cs_sdm_square_add_transpose(bc_op, bc_op_t);
-  cs_sdm_square_matvec(bc_op_t, dir_val, u0_trgradv);
+  bc_op_t->dot(dir_val, u0_trgradv);
 
   /* Second pass: Update the cell system with the bc_op matrix and the
    * Dirichlet values. Avoid a truncation error if the arbitrary coefficient of
@@ -1476,7 +1476,7 @@ cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
   /* Update the local system matrix */
 
-  cs_sdm_add(csys->mat, bc_op);
+  *csys->mat += *bc_op;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1530,7 +1530,7 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
   const short int  n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
   cs_sdm_t *bc_op = cb->loc, *bc_op_t = cb->aux;
-  cs_sdm_square_init(n_dofs, bc_op);
+  bc_op->init(n_dofs);
 
   /* First pass: build the bc_op matrix */
 
@@ -1574,7 +1574,7 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
     for (short int f = 0; f < cm->n_fc; f++)
       dir_val[f] = csys->dir_values[3*f+k];
 
-    cs_sdm_square_matvec(bc_op_t, dir_val, u0_trgradv);
+    bc_op_t->dot(dir_val, u0_trgradv);
 
     for (short int i = 0; i < n_dofs; i++) /* Cell too! */
       csys->rhs[3*i+k] += u0_trgradv[i];
@@ -1686,7 +1686,7 @@ cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
   /* Initialize the matrix related this flux reconstruction operator */
 
   cs_sdm_t *bc_op = cb->loc;
-  cs_sdm_square_init(n_dofs, bc_op);
+  bc_op->init(n_dofs);
 
   /* First pass: build the bc_op matrix */
 
@@ -1881,7 +1881,7 @@ cs_cdo_diffusion_svb_cost_robin(const cs_equation_param_t      *eqp,
 
   /* Reset local operator */
 
-  cs_sdm_square_init(cm->n_vc, bc_op);
+  bc_op->init(cm->n_vc);
 
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
@@ -1920,13 +1920,13 @@ cs_cdo_diffusion_svb_cost_robin(const cs_equation_param_t      *eqp,
   if (cs_dbg_cw_test(eqp, cm, csys)) {
     cs_log_printf(CS_LOG_DEFAULT, ">> Cell %d Vb COST Robin bc matrix",
                   cm->c_id);
-    cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, bc_op);
+    bc_op->dump(csys->c_id, csys->dof_ids, csys->dof_ids);
   }
 #endif
 
   /* Add contribution to the linear system */
 
-  cs_sdm_add(csys->mat, bc_op);
+  *csys->mat += *bc_op;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1976,7 +1976,7 @@ cs_cdo_diffusion_svb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
 
   /* Initialize the local operator */
 
-  cs_sdm_square_init(cm->n_vc, ntrgrd);
+  ntrgrd->init(cm->n_vc);
 
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
@@ -2010,13 +2010,13 @@ cs_cdo_diffusion_svb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, csys)) {
     cs_log_printf(CS_LOG_DEFAULT, ">> Cell Vb.COST Weak bc matrix");
-    cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
+    ntrgrd->dump(csys->c_id, csys->dof_ids, csys->dof_ids);
   }
 #endif
 
   /* Add contribution to the linear system */
 
-  cs_sdm_add(csys->mat, ntrgrd);
+  *csys->mat += *ntrgrd;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2066,7 +2066,7 @@ cs_cdo_diffusion_vvb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
 
   /* Initialize the local operator */
 
-  cs_sdm_square_init(cm->n_vc, ntrgrd);
+  ntrgrd->init(cm->n_vc);
 
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
@@ -2116,7 +2116,7 @@ cs_cdo_diffusion_vvb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, csys)) {
     cs_log_printf(CS_LOG_DEFAULT, ">> Cell Vb.COST Weak bc matrix");
-    cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
+    ntrgrd->dump(csys->c_id, csys->dof_ids, csys->dof_ids);
   }
 #endif
 
@@ -2185,7 +2185,7 @@ cs_cdo_diffusion_vvb_ocs_sliding(const cs_equation_param_t      *eqp,
 
   /* Initialize the local operator (same as the scalar-valued one) */
 
-  cs_sdm_square_init(cm->n_vc, ntrgrd);
+  ntrgrd->init(cm->n_vc);
 
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
@@ -2218,7 +2218,7 @@ cs_cdo_diffusion_vvb_ocs_sliding(const cs_equation_param_t      *eqp,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys)) {
         cs_log_printf(CS_LOG_DEFAULT, ">> Cell Vb.COST Sliding bc matrix");
-        cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
+        ntrgrd->dump(csys->c_id, csys->dof_ids, csys->dof_ids);
       }
 #endif
 
@@ -2340,7 +2340,7 @@ cs_cdo_diffusion_svb_ocs_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Initialize the local operator */
 
-      cs_sdm_square_init(cm->n_vc, ntrgrd);
+      ntrgrd->init(cm->n_vc);
 
       /* Compute the flux operator related to the trace on the current face
          of the normal gradient */
@@ -2354,7 +2354,7 @@ cs_cdo_diffusion_svb_ocs_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
      /* Update RHS according to the add of ntrgrd_tr (cb->aux) */
 
-      cs_sdm_square_matvec(ntrgrd_tr, csys->dir_values, cb->values);
+      ntrgrd_tr->dot(csys->dir_values, cb->values);
       for (short int v = 0; v < csys->n_dofs; v++)
         csys->rhs[v] += cb->values[v];
 
@@ -2364,13 +2364,13 @@ cs_cdo_diffusion_svb_ocs_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Add contribution to the linear system */
 
-      cs_sdm_add(csys->mat, ntrgrd);
+      *csys->mat += *ntrgrd;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys)) {
         cs_log_printf(CS_LOG_DEFAULT,
                       ">> Cell Vb COST WeakSym bc matrix (f_id: %d)", fm->f_id);
-        cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
+        ntrgrd->dump(csys->c_id, csys->dof_ids, csys->dof_ids);
       }
 #endif
     }  /* Dirichlet face */
@@ -2430,7 +2430,7 @@ cs_cdo_diffusion_svb_wbs_robin(const cs_equation_param_t      *eqp,
 
       /* Reset local operator */
 
-      cs_sdm_square_init(csys->n_dofs, bc_op);
+      bc_op->init(csys->n_dofs);
 
       /* Compute the face-view of the mesh */
 
@@ -2470,13 +2470,13 @@ cs_cdo_diffusion_svb_wbs_robin(const cs_equation_param_t      *eqp,
       if (cs_dbg_cw_test(eqp, cm, csys)) {
         cs_log_printf(CS_LOG_DEFAULT,
                       ">> Cell Vb WBS Robin bc matrix (f_id: %d)", fm->f_id);
-        cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, bc_op);
+        bc_op->dump(csys->c_id, csys->dof_ids, csys->dof_ids);
       }
 #endif
 
       /* Add contribution to the linear system */
 
-      cs_sdm_add(csys->mat, bc_op);
+      *csys->mat += *bc_op;
 
     }  /* Robin face */
   } /* Loop on boundary faces */
@@ -2555,13 +2555,13 @@ cs_cdo_diffusion_svb_wbs_weak_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Add contribution to the linear system */
 
-      cs_sdm_add(csys->mat, ntrgrd);
+      *csys->mat += *ntrgrd;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys)) {
         cs_log_printf(CS_LOG_DEFAULT,
                       ">> Cell Vb WBS Weak bc matrix (f_id: %d)", fm->f_id);
-        cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
+        ntrgrd->dump(csys->c_id, csys->dof_ids, csys->dof_ids);
       }
 #endif
     }  /* Dirichlet face */
@@ -2629,7 +2629,7 @@ cs_cdo_diffusion_svb_wbs_wsym_dirichlet(const cs_equation_param_t     *eqp,
 
       /* Initialize the local operator */
 
-      cs_sdm_square_init(cm->n_vc, ntrgrd);
+      ntrgrd->init(cm->n_vc);
 
       /* Compute the flux operator related to the trace on the current face
          of the normal gradient */
@@ -2644,7 +2644,7 @@ cs_cdo_diffusion_svb_wbs_wsym_dirichlet(const cs_equation_param_t     *eqp,
 
       /* Update RHS according to the add of ntrgrd_tr (cb->aux) */
 
-      cs_sdm_square_matvec(ntrgrd_tr, csys->dir_values, cb->values);
+      ntrgrd_tr->dot(csys->dir_values, cb->values);
       for (short int v = 0; v < csys->n_dofs; v++)
         csys->rhs[v] += cb->values[v];
 
@@ -2658,13 +2658,13 @@ cs_cdo_diffusion_svb_wbs_wsym_dirichlet(const cs_equation_param_t     *eqp,
 
       /* Add contribution to the linear system */
 
-      cs_sdm_add(csys->mat, ntrgrd);
+      *csys->mat += *ntrgrd;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys)) {
         cs_log_printf(CS_LOG_DEFAULT,
                       ">> Cell Vb WBS WeakSym bc matrix (f_id: %d)", fm->f_id);
-        cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
+        ntrgrd->dump(csys->c_id, csys->dof_ids, csys->dof_ids);
       }
 #endif
     }  /* Dirichlet face */
@@ -2744,13 +2744,13 @@ cs_cdo_diffusion_vcb_weak_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Add contribution to the linear system */
 
-      cs_sdm_add(csys->mat, ntrgrd);
+      *csys->mat += *ntrgrd;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys)) {
         cs_log_printf(CS_LOG_DEFAULT,
                       ">> Cell VCb Weak bc matrix (f_id: %d)", fm->f_id);
-        cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
+        ntrgrd->dump(csys->c_id, csys->dof_ids, csys->dof_ids);
       }
 #endif
     }  /* Dirichlet face */
@@ -2829,7 +2829,7 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Update RHS according to the add of ntrgrd_tr (cb->aux) */
 
-      cs_sdm_square_matvec(ntrgrd_tr, csys->dir_values, cb->values);
+      ntrgrd_tr->dot(csys->dir_values, cb->values);
       for (short int v = 0; v < csys->n_dofs; v++)
         csys->rhs[v] += cb->values[v];
 
@@ -2843,13 +2843,13 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Add contribution to the linear system */
 
-      cs_sdm_add(csys->mat, ntrgrd);
+      *csys->mat += *ntrgrd;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys)) {
         cs_log_printf(CS_LOG_DEFAULT,
                       ">> Cell VCb WeakSym bc matrix (f_id: %d)", fm->f_id);
-        cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, ntrgrd);
+        ntrgrd->dump(csys->c_id, csys->dof_ids, csys->dof_ids);
       }
 #endif
     }  /* Dirichlet face */
@@ -2894,7 +2894,7 @@ cs_cdo_diffusion_sfb_get_face_flux(const cs_cell_mesh_t      *cm,
   /* Store the local fluxes. flux = -Hdg * gradient (grd_f = -gradient)
    * hodge->matrix has been computed just before the call to this function */
 
-  cs_sdm_square_matvec(hodge->matrix, grd_f, flx);
+  hodge->matrix->dot(grd_f, flx);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2943,7 +2943,7 @@ cs_cdo_diffusion_svb_get_dfbyc_flux(const cs_cell_mesh_t      *cm,
   /* Store the local fluxes. flux = -Hdg * grd_c(pdi_c)
    * hodge->matrix has been computed just before the call to this function */
 
-  cs_sdm_square_matvec(hodge->matrix, gec, flx);
+  hodge->matrix->dot(gec, flx);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3586,7 +3586,7 @@ cs_macfb_diffusion(const cs_cell_mesh_t     *cm,
   assert(cm != nullptr && diff_pty != nullptr && macb != nullptr);
 
   /* Initialize objects */
-  cs_sdm_init(cm->n_fc, macb->n_dofs, mat);
+  mat->init(cm->n_fc, macb->n_dofs);
 
   /* Loop on inner faces */
   for (short int fi = 0; fi < cm->n_fc; fi++) {
@@ -3637,7 +3637,7 @@ cs_macfb_diffusion(const cs_cell_mesh_t     *cm,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 1
   if (cm->c_id == 0) {
     cs_log_printf(CS_LOG_DEFAULT, "Local MAC-fb diffusion matrix: \n");
-    cs_sdm_simple_dump(mat);
+    mat->dump();
   }
 #endif
 }

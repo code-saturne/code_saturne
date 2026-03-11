@@ -1452,7 +1452,7 @@ cs_cdofb_block_dirichlet_alge(short int                  f,
       cs_real_t *_rhs = csys->rhs + 3 * bi;
       cs_sdm_t  *mIF  = cs_sdm_get_block(m, bi, f);
 
-      cs_sdm_square_matvec(mIF, x_dir, ax_dir);
+      mIF->dot(x_dir, ax_dir);
       for (int k = 0; k < 3; k++)
         _rhs[k] -= ax_dir[k];
     }
@@ -1608,7 +1608,7 @@ cs_cdofb_block_dirichlet_weak(short int                  fb,
 
   const short int n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
   cs_sdm_t       *bc_op  = cb->loc;
-  cs_sdm_square_init(n_dofs, bc_op);
+  bc_op->init(n_dofs);
 
   /* Compute \int_f du/dn v and update the matrix */
 
@@ -1697,7 +1697,7 @@ cs_cdofb_block_dirichlet_wsym(short int                  fb,
 
   const short int n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
   cs_sdm_t       *bc_op = cb->loc, *bc_op_t = cb->aux;
-  cs_sdm_square_init(n_dofs, bc_op);
+  bc_op->init(n_dofs);
 
   /* Compute \int_f du/dn v and update the matrix. Only the line associated to
      fb has non-zero values */
@@ -1806,7 +1806,7 @@ cs_cdofb_symmetry(short int                  fb,
   const short int n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
 
   cs_sdm_t *bc_op = cb->aux;
-  cs_sdm_square_init(n_dofs, bc_op);
+  bc_op->init(n_dofs);
 
   /* Compute \int_f du/dn v and update the matrix. Only the line associated to
      fb has non-zero values */

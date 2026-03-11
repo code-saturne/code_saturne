@@ -310,7 +310,7 @@ _svcb_init_cell_system(const cs_cell_mesh_t           *cm,
 
   cs_cell_sys_reset(cm->n_fc, csys);
 
-  cs_sdm_square_init(n_dofs, csys->mat);
+  csys->mat->init(n_dofs);
 
   for (short int v = 0; v < cm->n_vc; v++) {
     csys->dof_ids[v] = cm->v_ids[v];
@@ -408,7 +408,7 @@ _svcb_conv_diff_reac(const cs_equation_param_t     *eqp,
 
     /* Add the local diffusion operator to the local system */
 
-    cs_sdm_add(csys->mat, cb->loc);
+    *csys->mat += *cb->loc;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -430,7 +430,7 @@ _svcb_conv_diff_reac(const cs_equation_param_t     *eqp,
     /* Add it to the local system */
 
     if (eqp->adv_scaling_property == nullptr)
-      cs_sdm_add(csys->mat, cb->loc);
+      *csys->mat += *cb->loc;
 
     else {
 
@@ -463,7 +463,7 @@ _svcb_conv_diff_reac(const cs_equation_param_t     *eqp,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys)) {
       cs_log_printf(CS_LOG_DEFAULT, ">> Cell mass matrix");
-      cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, mass_hodge->matrix);
+      mass_hodge->matrix->dump(csys->c_id, csys->dof_ids, csys->dof_ids);
     }
 #endif
   }
@@ -2150,7 +2150,7 @@ cs_cdovcb_scaleq_solve_implicit(bool                        cur2prev,
         /* Update rhs with csys->mat*p^n */
 
         double  *time_pn = cb->values;
-        cs_sdm_square_matvec(mass_mat, csys->val_n, time_pn);
+        mass_mat->dot(csys->val_n, time_pn);
         for (short int i = 0; i < csys->n_dofs; i++)
           csys->rhs[i] += tpty_coef*time_pn[i];
 
@@ -2483,7 +2483,7 @@ cs_cdovcb_scaleq_solve_theta(bool                        cur2prev,
        *           tcoef*adr_pn where adr_pn = csys->mat * p_n */
 
       double  *adr_pn = cb->values;
-      cs_sdm_square_matvec(csys->mat, csys->val_n, adr_pn);
+      csys->mat->dot(csys->val_n, adr_pn);
       for (short int i = 0; i < csys->n_dofs; i++)
         csys->rhs[i] -= tcoef*adr_pn[i];
 
@@ -2545,7 +2545,7 @@ cs_cdovcb_scaleq_solve_theta(bool                        cur2prev,
          /* Update rhs with mass_mat*p^n */
 
         double  *time_pn = cb->values;
-        cs_sdm_square_matvec(mass_mat, csys->val_n, time_pn);
+        mass_mat->dot(csys->val_n, time_pn);
         for (short int i = 0; i < csys->n_dofs; i++)
           csys->rhs[i] += tpty_coef*time_pn[i];
 

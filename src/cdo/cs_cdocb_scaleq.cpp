@@ -605,7 +605,7 @@ _scb_init_cell_system(const cs_cell_mesh_t         *cm,
    */
 
   cs_cell_sys_reset(cm->n_fc, csys);
-  cs_sdm_square_init(cm->n_fc, csys->mat);
+  csys->mat->init(cm->n_fc);
 
   memset(csys->rhs, 0, (cm->n_fc + 1)*sizeof(cs_real_t));
 
@@ -1503,7 +1503,7 @@ cs_cdocb_scaleq_diffusion(const cs_equation_param_t     *eqp,
     /* Add the local diffusion operator to the local system */
 
     if(computed)
-      cs_sdm_add(csys->mat, diff_hodge->matrix);
+      *csys->mat += *diff_hodge->matrix;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOCB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))

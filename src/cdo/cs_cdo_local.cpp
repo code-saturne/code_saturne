@@ -461,7 +461,7 @@ cs_cell_sys_dump(const char msg[], const cs_cell_sys_t *csys)
     if (csys->mat->flag & CS_SDM_BY_BLOCK)
       cs_sdm_block_dump(csys->c_id, csys->mat);
     else
-      cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, csys->mat);
+      csys->mat->dump(csys->c_id, csys->dof_ids, csys->dof_ids);
 
     bft_printf(">> %-8s | %-6s | %-10s | %-10s | %-10s | %-8s |"
                " %-10s |  %-10s\n",

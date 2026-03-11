@@ -809,83 +809,6 @@ cs_sdm_block_multiply_rowrow_sym(const cs_sdm_t   *a,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute a dense matrix-vector product for a small square matrix
- *          mv has been previously allocated
- *
- * \param[in]      mat    local matrix to use
- * \param[in]      vec    local vector to use
- * \param[in, out] mv result of the local matrix-vector product
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sdm_square_matvec(const cs_sdm_t    *mat,
-                     const cs_real_t   *vec,
-                     cs_real_t         *mv)
-{
-  assert(mat != nullptr && vec != nullptr && mv != nullptr);
-  assert(mat->n_rows == mat->n_cols);
-
-  const int  n = mat->n_rows;
-
-  /* Initialize mv */
-
-  const cs_real_t  v = vec[0];
-  for (short int i = 0; i < n; i++)
-    mv[i] = v*mat->val[i*n];
-
-  /* Increment mv */
-
-  for (short int i = 0; i < n; i++) {
-    const cs_real_t *m_i = mat->val + i*n;
-    for (short int j = 1; j < n; j++)
-      mv[i] += m_i[j] * vec[j];
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute a dense matrix-vector product for a rectangular matrix
- *          mv has been previously allocated
- *
- * \param[in]      mat    local matrix to use
- * \param[in]      vec    local vector to use (size = mat->n_cols)
- * \param[in, out] mv     result of the operation (size = mat->n_rows)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sdm_matvec(const cs_sdm_t    *mat,
-              const cs_real_t   *vec,
-              cs_real_t         *mv)
-{
-  assert(mat != nullptr && vec != nullptr && mv != nullptr);
-
-  if (mat->n_rows == mat->n_cols) {
-    cs_sdm_square_matvec(mat, vec, mv);
-    return;
-  }
-
-  const short int  nr = mat->n_rows;
-  const short int  nc = mat->n_cols;
-
-  /* Initialize mv with the first column */
-
-  const cs_real_t  v = vec[0];
-  for (short int i = 0; i < nr; i++)
-    mv[i] = v*mat->val[i*nc];
-
-  /* Increment mv */
-
-  for (short int i = 0; i < nr; i++) {
-    cs_real_t *m_i = mat->val + i*nc;
-    for (short int j = 1; j < nc; j++)
-      mv[i] +=  m_i[j] * vec[j];
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Compute a dense matrix-vector product for a rectangular matrix
  *          mv has been previously allocated and initialized
  *          Thus mv is updated inside this function
@@ -897,21 +820,19 @@ cs_sdm_matvec(const cs_sdm_t    *mat,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_update_matvec(const cs_sdm_t    *mat,
-                     const cs_real_t   *vec,
-                     cs_real_t         *mv)
+cs_sdm_update_matvec(const cs_sdm_t *mat, const cs_real_t *vec, cs_real_t *mv)
 {
   assert(mat != nullptr && vec != nullptr && mv != nullptr);
 
-  const short int  nr = mat->n_rows;
-  const short int  nc = mat->n_cols;
+  const short int nr = mat->n_rows;
+  const short int nc = mat->n_cols;
 
   /* Update mv */
 
   for (short int i = 0; i < nr; i++) {
-    cs_real_t *m_i = mat->val + i*nc;
+    cs_real_t *m_i = mat->val + i * nc;
     for (short int j = 0; j < nc; j++)
-      mv[i] +=  m_i[j] * vec[j];
+      mv[i] += m_i[j] * vec[j];
   }
 }
 
@@ -929,22 +850,22 @@ cs_sdm_update_matvec(const cs_sdm_t    *mat,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_matvec_transposed(const cs_sdm_t    *mat,
-                         const cs_real_t   *vec,
-                         cs_real_t         *mv)
+cs_sdm_matvec_transposed(const cs_sdm_t  *mat,
+                         const cs_real_t *vec,
+                         cs_real_t       *mv)
 {
   assert(mat != nullptr && vec != nullptr && mv != nullptr);
 
-  const short int  nr = mat->n_rows;
-  const short int  nc = mat->n_cols;
+  const short int nr = mat->n_rows;
+  const short int nc = mat->n_cols;
 
   /* Update mv */
 
   for (short int i = 0; i < nr; i++) {
-    const cs_real_t *m_i = mat->val + i*nc;
-    const cs_real_t v = vec[i];
+    const cs_real_t *m_i = mat->val + i * nc;
+    const cs_real_t  v   = vec[i];
     for (short int j = 0; j < nc; j++)
-      mv[j] +=  m_i[j] * v;
+      mv[j] += m_i[j] * v;
   }
 }
 
@@ -958,13 +879,12 @@ cs_sdm_matvec_transposed(const cs_sdm_t    *mat,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_block_add(cs_sdm_t        *mat,
-                 const cs_sdm_t  *add)
+cs_sdm_block_add(cs_sdm_t *mat, const cs_sdm_t *add)
 {
   if (mat == nullptr || add == nullptr)
     return;
 
-  const cs_sdm_block_t  *mat_desc = mat->block_desc;
+  const cs_sdm_block_t *mat_desc = mat->block_desc;
 
   assert(add->block_desc != nullptr && mat_desc != nullptr);
   assert(add->block_desc->n_row_blocks == mat_desc->n_row_blocks);
@@ -972,11 +892,10 @@ cs_sdm_block_add(cs_sdm_t        *mat,
 
   for (short int bi = 0; bi < mat_desc->n_row_blocks; bi++) {
     for (short int bj = 0; bj < mat_desc->n_col_blocks; bj++) {
+      cs_sdm_t       *mat_ij = cs_sdm_get_block(mat, bi, bj);
+      const cs_sdm_t *add_ij = cs_sdm_get_block(add, bi, bj);
 
-      cs_sdm_t  *mat_ij = cs_sdm_get_block(mat, bi, bj);
-      const cs_sdm_t  *add_ij = cs_sdm_get_block(add, bi, bj);
-
-      cs_sdm_add(mat_ij, add_ij);
+      *mat_ij += *add_ij;
 
     } /* Loop on column blocks */
   } /* Loop on row blocks */
@@ -993,26 +912,23 @@ cs_sdm_block_add(cs_sdm_t        *mat,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_block_add_mult(cs_sdm_t        *mat,
-                      cs_real_t        mult_coef,
-                      const cs_sdm_t  *add)
+cs_sdm_block_add_mult(cs_sdm_t *mat, cs_real_t mult_coef, const cs_sdm_t *add)
 {
   if (mat == nullptr || add == nullptr)
     return;
 
-  const cs_sdm_block_t  *add_desc = add->block_desc;
-  const cs_sdm_block_t  *mat_desc = mat->block_desc;
+  const cs_sdm_block_t *add_desc = add->block_desc;
+  const cs_sdm_block_t *mat_desc = mat->block_desc;
 
-  CS_UNUSED(add_desc);          /* Only in debug mode */
+  CS_UNUSED(add_desc); /* Only in debug mode */
   assert(add_desc != nullptr && mat_desc != nullptr);
   assert(add_desc->n_row_blocks == mat_desc->n_row_blocks);
   assert(add_desc->n_col_blocks == mat_desc->n_col_blocks);
 
   for (short int bi = 0; bi < mat_desc->n_row_blocks; bi++) {
     for (short int bj = 0; bj < mat_desc->n_col_blocks; bj++) {
-
-      cs_sdm_t  *mat_ij = cs_sdm_get_block(mat, bi, bj);
-      const cs_sdm_t  *add_ij = cs_sdm_get_block(add, bi, bj);
+      cs_sdm_t       *mat_ij = cs_sdm_get_block(mat, bi, bj);
+      const cs_sdm_t *add_ij = cs_sdm_get_block(add, bi, bj);
 
       cs_sdm_add_mult(mat_ij, mult_coef, add_ij);
 
@@ -1033,31 +949,27 @@ cs_sdm_block_add_mult(cs_sdm_t        *mat,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_block_matvec(const cs_sdm_t    *mat,
-                    const cs_real_t   *vec,
-                    cs_real_t         *mv)
+cs_sdm_block_matvec(const cs_sdm_t *mat, const cs_real_t *vec, cs_real_t *mv)
 {
   assert(mat != nullptr && vec != nullptr && mv != nullptr);
 
   if (mat == nullptr)
     return;
 
-  const cs_sdm_block_t  *mat_desc = mat->block_desc;
+  const cs_sdm_block_t *mat_desc = mat->block_desc;
 
   assert(mat_desc != nullptr);
   memset(mv, 0, mat->n_rows * sizeof(cs_real_t));
 
-  int  c_shift = 0, r_shift = 0;
+  int c_shift = 0, r_shift = 0;
 
   for (short int bi = 0; bi < mat_desc->n_row_blocks; bi++) {
-
-    cs_real_t  *_mv = mv + r_shift;
-    int  n_rows = 0;
+    cs_real_t *_mv    = mv + r_shift;
+    int        n_rows = 0;
 
     c_shift = 0;
     for (short int bj = 0; bj < mat_desc->n_col_blocks; bj++) {
-
-      cs_sdm_t  *mat_ij = cs_sdm_get_block(mat, bi, bj);
+      cs_sdm_t *mat_ij = cs_sdm_get_block(mat, bi, bj);
 
       cs_sdm_update_matvec(mat_ij, vec + c_shift, _mv);
       c_shift += mat_ij->n_cols;
@@ -1071,27 +983,6 @@ cs_sdm_block_matvec(const cs_sdm_t    *mat,
 
   assert(r_shift == mat->n_rows);
   assert(c_shift == mat->n_cols);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Add two small dense matrices: loc += add
- *
- * \param[in, out] mat   local matrix storing the result
- * \param[in]      add   values to add to mat
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sdm_add(cs_sdm_t        *mat,
-           const cs_sdm_t  *add)
-{
-  assert(mat != nullptr && add != nullptr);
-  assert(mat->n_rows == add->n_rows);
-  assert(mat->n_cols == add->n_cols);
-
-  for (int i = 0; i < mat->n_rows*mat->n_cols; i++)
-    mat->val[i] += add->val[i];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2147,139 +2038,6 @@ cs_sdm_test_symmetry(const cs_sdm_t     *mat)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Dump a small dense matrix
- *
- * \param[in]  mat         pointer to the cs_sdm_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sdm_simple_dump(const cs_sdm_t     *mat)
-{
-  if (mat == nullptr)
-    return;
-
-  if (mat->n_rows < 1 || mat->n_cols < 1) {
-    cs_log_printf(CS_LOG_DEFAULT, " No value.\n");
-    return;
-  }
-
-  for (short int i = 0; i < mat->n_rows; i++) {
-    for (short int j = 0; j < mat->n_cols; j++)
-      cs_log_printf(CS_LOG_DEFAULT, " % .4e", mat->val[i*mat->n_cols+j]);
-    cs_log_printf(CS_LOG_DEFAULT, "\n");
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Dump a small dense matrix
- *
- * \param[in]  parent_id   id of the related parent entity
- * \param[in]  row_ids     list of ids related to associated entities (or
- * nullptr) \param[in]  col_ids     list of ids related to associated entities
- * (or nullptr) \param[in]  mat         pointer to the cs_sdm_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sdm_dump(cs_lnum_t           parent_id,
-            const cs_lnum_t    *row_ids,
-            const cs_lnum_t    *col_ids,
-            const cs_sdm_t     *mat)
-{
-  if (mat == nullptr) {
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "<< MATRIX is set to null (parent id: %ld)>>\n",
-                  (long)parent_id);
-    return;
-  }
-
-  cs_log_printf(CS_LOG_DEFAULT, "<< MATRIX parent id: %ld >>\n",
-                (long)parent_id);
-
-  if (mat->n_rows < 1 || mat->n_cols < 1) {
-    cs_log_printf(CS_LOG_DEFAULT, " No value.\n");
-    return;
-  }
-
-  if (row_ids == nullptr || col_ids == nullptr)
-    cs_sdm_simple_dump(mat);
-
-  else {
-
-    cs_log_printf(CS_LOG_DEFAULT, " %8s %11ld", " ", (long)col_ids[0]);
-    for (short int i = 1; i < mat->n_cols; i++)
-      cs_log_printf(CS_LOG_DEFAULT, " %11ld", (long)col_ids[i]);
-    cs_log_printf(CS_LOG_DEFAULT, "\n");
-
-    for (short int i = 0; i < mat->n_rows; i++) {
-      cs_log_printf(CS_LOG_DEFAULT, " %8ld ", (long)row_ids[i]);
-      for (short int j = 0; j < mat->n_cols; j++)
-        cs_log_printf(CS_LOG_DEFAULT, " % .4e", mat->val[i*mat->n_cols+j]);
-      cs_log_printf(CS_LOG_DEFAULT, "\n");
-    }
-
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Print a cs_sdm_t structure not defined by block
- *          Print into the file f if given otherwise open a new file named
- *          fname if given otherwise print into the standard output
- *          The usage of threshold allows one to compare more easier matrices
- *          without taking into account numerical roundoff.
- *
- * \param[in]  fp         pointer to a file structure or nullptr
- * \param[in]  fname      filename or nullptr
- * \param[in]  thd        threshold (below this value --> set 0)
- * \param[in]  m          pointer to the cs_sdm_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sdm_fprintf(FILE             *fp,
-               const char       *fname,
-               cs_real_t         thd,
-               const cs_sdm_t   *m)
-{
-  FILE  *fout = stdout;
-  if (fp != nullptr)
-    fout = fp;
-  else if (fname != nullptr) {
-    fout = fopen(fname, "w");
-  }
-
-  fprintf(fout, "cs_sdm_t %p\n", (const void *)m);
-
-  if (m == nullptr)
-    return;
-
-  if (m->n_rows < 1 || m->n_cols < 1) {
-    fprintf(fout, " No value.\n");
-    return;
-  }
-
-  for (int i = 0; i < m->n_rows; i++) {
-
-    const cs_real_t  *mval_i = m->val + i*m->n_cols;
-    for (int j = 0; j < m->n_cols; j++) {
-      if (fabs(mval_i[j]) > thd)
-        fprintf(fout, " % -9.5e", mval_i[j]);
-      else
-        fprintf(fout, " % -9.5e", 0.);
-    }
-    fprintf(fout, "\n");
-
-  }
-
-  if (fout != stdout && fout != fp)
-    fclose(fout);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Dump a small dense matrix defined by blocks
  *
  * \param[in]  parent_id   id of the related parent entity
@@ -2288,45 +2046,44 @@ cs_sdm_fprintf(FILE             *fp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_block_dump(cs_lnum_t           parent_id,
-                  const cs_sdm_t     *mat)
+cs_sdm_block_dump(cs_lnum_t parent_id, const cs_sdm_t *mat)
 {
   if (mat == nullptr)
     return;
 
   if ((mat->flag & CS_SDM_BY_BLOCK) == 0) {
-    cs_sdm_simple_dump(mat);
+    mat->dump();
     return;
   }
   assert(mat->block_desc != nullptr);
 
-  cs_log_printf(CS_LOG_DEFAULT, "\n << BLOCK MATRIX parent id: %ld >>\n",
+  cs_log_printf(CS_LOG_DEFAULT,
+                "\n << BLOCK MATRIX parent id: %ld >>\n",
                 (long)parent_id);
 
-  const int  n_b_rows = mat->block_desc->n_row_blocks;
-  const int  n_b_cols = mat->block_desc->n_col_blocks;
-  const cs_sdm_t  *blocks = mat->block_desc->blocks;
+  const int       n_b_rows = mat->block_desc->n_row_blocks;
+  const int       n_b_cols = mat->block_desc->n_col_blocks;
+  const cs_sdm_t *blocks   = mat->block_desc->blocks;
 
   if (n_b_rows < 1 || n_b_cols < 1) {
     cs_log_printf(CS_LOG_DEFAULT, " No block\n");
     return;
   }
-  cs_log_printf(CS_LOG_DEFAULT, " n_row_blocks: %d; n_col_blocks: %d\n",
-                n_b_rows, n_b_cols);
+  cs_log_printf(CS_LOG_DEFAULT,
+                " n_row_blocks: %d; n_col_blocks: %d\n",
+                n_b_rows,
+                n_b_cols);
 
   const char _sep[] = "------------------------------------------------------";
   for (short int bi = 0; bi < n_b_rows; bi++) {
-
-    const cs_sdm_t  *bi0 = blocks + bi*n_b_cols;
-    const int n_rows = bi0->n_rows;
+    const cs_sdm_t *bi0    = blocks + bi * n_b_cols;
+    const int       n_rows = bi0->n_rows;
 
     for (int i = 0; i < n_rows; i++) {
-
       for (short int bj = 0; bj < n_b_cols; bj++) {
-
-        const cs_sdm_t  *bij = blocks + bi*n_b_cols + bj;
-        const int  n_cols = bij->n_cols;
-        const cs_real_t  *mval_i = bij->val + i*n_cols;
+        const cs_sdm_t  *bij    = blocks + bi * n_b_cols + bj;
+        const int        n_cols = bij->n_cols;
+        const cs_real_t *mval_i = bij->val + i * n_cols;
 
         for (int j = 0; j < n_cols; j++)
           cs_log_printf(CS_LOG_DEFAULT, " % -6.3e", mval_i[j]);
@@ -2359,12 +2116,12 @@ cs_sdm_block_dump(cs_lnum_t           parent_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_sdm_block_fprintf(FILE             *fp,
-                     const char       *fname,
-                     cs_real_t         thd,
-                     const cs_sdm_t   *m)
+cs_sdm_block_fprintf(FILE           *fp,
+                     const char     *fname,
+                     cs_real_t       thd,
+                     const cs_sdm_t *m)
 {
-  FILE  *fout = stdout;
+  FILE *fout = stdout;
   if (fp != nullptr)
     fout = fp;
   else if (fname != nullptr) {
@@ -2377,22 +2134,19 @@ cs_sdm_block_fprintf(FILE             *fp,
     return;
 
   assert(m->block_desc != nullptr);
-  const int  n_b_rows = m->block_desc->n_row_blocks;
-  const int  n_b_cols = m->block_desc->n_col_blocks;
-  const cs_sdm_t  *blocks = m->block_desc->blocks;
+  const int       n_b_rows = m->block_desc->n_row_blocks;
+  const int       n_b_cols = m->block_desc->n_col_blocks;
+  const cs_sdm_t *blocks   = m->block_desc->blocks;
 
   for (short int bi = 0; bi < n_b_rows; bi++) {
-
-    const cs_sdm_t  *bi0 = blocks + bi*n_b_cols;
-    const int n_rows = bi0->n_rows;
+    const cs_sdm_t *bi0    = blocks + bi * n_b_cols;
+    const int       n_rows = bi0->n_rows;
 
     for (int i = 0; i < n_rows; i++) {
-
       for (short int bj = 0; bj < n_b_cols; bj++) {
-
-        const cs_sdm_t  *bij = blocks + bi*n_b_cols + bj;
-        const int  n_cols = bij->n_cols;
-        const cs_real_t  *mval_i = bij->val + i*n_cols;
+        const cs_sdm_t  *bij    = blocks + bi * n_b_cols + bj;
+        const int        n_cols = bij->n_cols;
+        const cs_real_t *mval_i = bij->val + i * n_cols;
 
         for (int j = 0; j < n_cols; j++) {
           if (fabs(mval_i[j]) > thd)
@@ -2411,5 +2165,391 @@ cs_sdm_block_fprintf(FILE             *fp,
   if (fout != stdout && fout != fp)
     fclose(fout);
 }
+
+#ifdef __cplusplus
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Destructor
+ *
+ */
+/*----------------------------------------------------------------------------*/
+_cs_sdm_t::~_cs_sdm_t()
+{
+  if ((flag & CS_SDM_SHARED_VAL) == 0) {
+    CS_FREE(val);
+  }
+
+  if (flag & CS_SDM_BY_BLOCK) {
+    CS_FREE(block_desc->blocks);
+    CS_FREE(block_desc);
+  }
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Constructor for a square matrix.
+ *
+ * \param[in]  n_max_rows   max number of rows
+ *
+ */
+/*----------------------------------------------------------------------------*/
+_cs_sdm_t::_cs_sdm_t(const int n_max_rows_)
+  : _cs_sdm_t(0, n_max_rows_, n_max_rows_) {};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Constructor for a square matrix.
+ *
+ * \param[in]  flag         metadata related to a cs_sdm_t structure
+ * \param[in]  n_max_rows   max number of rows
+ * \param[in]  n_max_cols   max number of columns
+ *
+ */
+/*----------------------------------------------------------------------------*/
+_cs_sdm_t::_cs_sdm_t(const cs_flag_t flag_,
+                     const int       n_max_rows_,
+                     const int       n_max_cols_)
+  : flag(flag_), n_max_rows(n_max_rows_), n_rows(n_max_rows_),
+    n_max_cols(n_max_cols_), n_cols(n_max_cols_)
+{
+  CS_MALLOC(val, n_max_rows * n_max_cols, cs_real_t);
+  memset(val, 0, sizeof(cs_real_t) * n_max_rows * n_max_cols);
+
+  if (flag & CS_SDM_BY_BLOCK) {
+    cs_sdm_block_t *bd = nullptr;
+
+    CS_MALLOC(bd, 1, cs_sdm_block_t);
+    bd->blocks              = nullptr;
+    bd->n_max_blocks_by_row = bd->n_max_blocks_by_col = 0;
+    bd->n_row_blocks = bd->n_col_blocks = 0;
+    block_desc                          = bd;
+  }
+  else {
+    block_desc = nullptr;
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Modifiy the value (i,j) of the matric
+ *
+ * \param[in]  i        index of the row
+ * \param[in]  j        index of the column
+ *
+ * \return value
+ */
+/*----------------------------------------------------------------------------*/
+cs_real_t &
+_cs_sdm_t::operator()(const int i, const int j)
+{
+  assert(0 <= i && i < n_rows);
+  assert(0 <= j && j < n_cols);
+
+  return val[i * n_cols + j];
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get the value (i,j) of the matric
+ *
+ * \param[in]  i        index of the row
+ * \param[in]  j        index of the column
+ *
+ * \return value
+ */
+/*----------------------------------------------------------------------------*/
+const cs_real_t &
+_cs_sdm_t::operator()(const int i, const int j) const
+{
+  assert(0 <= i && i < n_rows);
+  assert(0 <= j && j < n_cols);
+
+  return val[i * n_cols + j];
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Initialize matrix.
+ *
+ * \param[in]  nrows   number of rows
+ * \param[in]  ncols   number of columns
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_cs_sdm_t::init(const int nrows, const int ncols)
+{
+  assert(nrows <= n_max_rows);
+  assert(ncols <= n_max_cols);
+
+  n_rows = nrows;
+  n_cols = ncols;
+
+  memset(val, 0, n_rows * n_cols * sizeof(cs_real_t));
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Initialize square matrix.
+ *
+ * \param[in]  nrows   number of rows
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_cs_sdm_t::init(const int nrows)
+{
+  init(nrows, nrows);
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Transpose a matrix.
+ *
+ * \return the transposed matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+_cs_sdm_t
+_cs_sdm_t::transpose() const
+{
+  _cs_sdm_t tr(flag, n_max_rows, n_max_cols);
+
+  for (short int i = 0; i < n_rows; i++) {
+    const cs_real_t *mval_i = this->row(i);
+    for (short int j = 0; j < n_cols; j++)
+      tr(j, i) = mval_i[j];
+  }
+
+  return tr;
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get a specific block in a cs_sdm_t structure defined by block
+ *
+ * \param[in] row_block_id  id of the block row, zero-based.
+ * \param[in] col_block_id  id of the block column, zero-based.
+ *
+ * \return a pointer to a cs_sdm_t structure corresponfing to a block
+ */
+/*----------------------------------------------------------------------------*/
+
+inline cs_sdm_t *
+_cs_sdm_t::get_block(const int row_block_id, const int col_block_id) const
+{
+  /* Sanity checks */
+  assert(flag & CS_SDM_BY_BLOCK && block_desc != nullptr);
+  assert(col_block_id < block_desc->n_col_blocks);
+  assert(row_block_id < block_desc->n_row_blocks);
+
+  return block_desc->blocks + row_block_id * block_desc->n_col_blocks +
+         col_block_id;
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Multiply a matrix with the scaling factor given as parameter
+ *
+ * \param[in]      scaling
+ */
+/*----------------------------------------------------------------------------*/
+
+_cs_sdm_t
+_cs_sdm_t::operator*=(const cs_real_t &scaling)
+{
+  const int nb_val = this->size();
+  for (short int i = 0; i < nb_val; i++) {
+    val[i] *= scaling;
+  }
+
+  return *this;
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Add two small dense matrices: loc += add
+ *
+ * \param[in]      add   values to add to mat
+ */
+/*----------------------------------------------------------------------------*/
+
+_cs_sdm_t
+_cs_sdm_t::operator+=(const _cs_sdm_t &add)
+{
+  assert(n_rows == add.n_rows);
+  assert(n_cols == add.n_cols);
+
+  const int nb_val = this->size();
+  for (short int i = 0; i < nb_val; i++) {
+    val[i] += add.val[i];
+  }
+
+  return *this;
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute a dense matrix-vector product for a small square matrix
+ *          mv has been previously allocated
+ *
+ * \param[in]      vec    local vector to use
+ * \param[in, out] mv     result of the local matrix-vector product
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_cs_sdm_t::dot(const cs_real_t vec[], cs_real_t mv[]) const
+{
+  assert(vec != nullptr && mv != nullptr);
+
+  /* Initialize mv with the first column */
+
+  const cs_real_t v = vec[0];
+  for (short int i = 0; i < n_rows; i++) {
+    mv[i] = v * val[i * n_cols];
+  }
+
+  /* Increment mv */
+
+  for (short int i = 0; i < n_rows; i++) {
+    const cs_real_t *m_i = this->row(i);
+    for (short int j = 1; j < n_cols; j++) {
+      mv[i] += m_i[j] * vec[j];
+    }
+  }
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Dump a small dense matrix
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_cs_sdm_t::dump() const
+{
+  if (n_rows < 1 || n_cols < 1) {
+    cs_log_printf(CS_LOG_DEFAULT, " No value.\n");
+    return;
+  }
+
+  for (short int i = 0; i < n_rows; i++) {
+    for (short int j = 0; j < n_cols; j++) {
+      cs_log_printf(CS_LOG_DEFAULT, " % .4e", this->operator()(i, j));
+    }
+    cs_log_printf(CS_LOG_DEFAULT, "\n");
+  }
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Dump a small dense matrix
+ *
+ * \param[in]  parent_id   id of the related parent entity
+ * \param[in]  row_ids     list of ids related to associated entities (or
+ *                         nullptr)
+ * \param[in]  col_ids     list of ids related to associated entities
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_cs_sdm_t::dump(cs_lnum_t        parent_id,
+                const cs_lnum_t *row_ids,
+                const cs_lnum_t *col_ids) const
+{
+  cs_log_printf(CS_LOG_DEFAULT,
+                "<< MATRIX parent id: %ld >>\n",
+                (long)parent_id);
+
+  if (n_rows < 1 || n_cols < 1) {
+    cs_log_printf(CS_LOG_DEFAULT, " No value.\n");
+    return;
+  }
+
+  if (row_ids == nullptr || col_ids == nullptr) {
+    this->dump();
+  }
+  else {
+    cs_log_printf(CS_LOG_DEFAULT, " %8s %11ld", " ", (long)col_ids[0]);
+    for (short int i = 1; i < n_cols; i++) {
+      cs_log_printf(CS_LOG_DEFAULT, " %11ld", (long)col_ids[i]);
+    }
+    cs_log_printf(CS_LOG_DEFAULT, "\n");
+
+    for (short int i = 0; i < n_rows; i++) {
+      cs_log_printf(CS_LOG_DEFAULT, " %8ld ", (long)row_ids[i]);
+      for (short int j = 0; j < n_cols; j++) {
+        cs_log_printf(CS_LOG_DEFAULT, " % .4e", this->operator()(i, j));
+      }
+      cs_log_printf(CS_LOG_DEFAULT, "\n");
+    }
+  }
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Dump a small dense matrix
+ *
+ * \param[in]  parent_id   id of the related parent entity
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_cs_sdm_t::dump(cs_lnum_t parent_id) const
+{
+  this->dump(parent_id, nullptr, nullptr);
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Print a cs_sdm_t structure not defined by block
+ *          Print into the file f if given otherwise open a new file named
+ *          fname if given otherwise print into the standard output
+ *          The usage of threshold allows one to compare more easier matrices
+ *          without taking into account numerical roundoff.
+ *
+ * \param[in]  fp         pointer to a file structure or null
+ * \param[in]  fname      filename or null
+ * \param[in]  thd        threshold (below this value --> set 0)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_cs_sdm_t::dump(FILE *fp, const char *fname, cs_real_t thd) const
+{
+  FILE *fout = stdout;
+  if (fp != nullptr)
+    fout = fp;
+  else if (fname != nullptr) {
+    fout = fopen(fname, "w");
+  }
+
+  fprintf(fout, "cs_sdm_t %p\n", (const void *)this);
+
+  if (n_rows < 1 || n_cols < 1) {
+    fprintf(fout, " No value.\n");
+    return;
+  }
+
+  for (int i = 0; i < n_rows; i++) {
+    const cs_real_t *mval_i = this->row(i);
+    for (int j = 0; j < n_cols; j++) {
+      if (fabs(mval_i[j]) > thd)
+        fprintf(fout, " % -9.5e", mval_i[j]);
+      else
+        fprintf(fout, " % -9.5e", 0.);
+    }
+    fprintf(fout, "\n");
+  }
+
+  if (fout != stdout && fout != fp)
+    fclose(fout);
+};
+
+#endif
 
 /*----------------------------------------------------------------------------*/

@@ -528,7 +528,7 @@ _condense_and_store(const cs_adjacency_t    *c2f,
     /* Initial block to update */
     cs_sdm_t  *m_fc = cs_sdm_get_block(m, fi, n_fc);
 
-    cs_sdm_matvec(m_fc, eqc->rc_tilda + c_offset, bf_tilda);
+    m_fc->dot(eqc->rc_tilda + c_offset, bf_tilda);
 
     /* Update RHS: RHS_f = RHS_f - Afc*Acc^-1*s_c */
     for (int k = 0; k < eqc->n_face_dofs; k++)
@@ -539,7 +539,7 @@ _condense_and_store(const cs_adjacency_t    *c2f,
       cs_sdm_t  *mFF = cs_sdm_get_block(m, fi, fj);
       cs_sdm_t  *_acf = cs_sdm_get_block(eqc->acf_tilda, c2f_shift + fj, 0);
 
-      cs_sdm_init(eqc->n_face_dofs, eqc->n_face_dofs, _aff);
+      _aff->init(eqc->n_face_dofs, eqc->n_face_dofs);
       cs_sdm_multiply_rowrow(m_fc, _acf, _aff);
       cs_sdm_add_mult(mFF, -1, _aff);
 

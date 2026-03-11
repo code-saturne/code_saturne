@@ -1017,7 +1017,7 @@ _test_hodge_fb(FILE               *out,
   assert(cm->n_fc + 1 <= 7);
   cs_real_t  a[7], res[7];
   for (int i = 0; i < 7; i++) a[i] = 1.;
-  cs_sdm_matvec(hdg, a, res);
+  hdg->dot(a, res);
   for (int i = 0; i < cm->n_fc + 1; i++)
     fprintf(out, "a[%d] = % -8.5e --> res[%d] = % -8.5e\n",
             i, a[i], i, res[i]);
@@ -1092,7 +1092,7 @@ _test_cdovb_schemes(FILE                *out,
   /* Initialize a cell view of the algebraic system */
 
   csys->n_dofs = cm->n_vc;
-  cs_sdm_square_init(csys->n_dofs, csys->mat);
+  csys->mat->init(csys->n_dofs);
   for (short int v = 0; v < cm->n_vc; v++)
     csys->dof_ids[v] = cm->v_ids[v];
 
@@ -1211,7 +1211,7 @@ _test_cdovb_schemes(FILE                *out,
     _locsys_dump(out, "\nCDO.VB; WSYM.DGA.FLX.COST; PERMEABILITY.ANISO",
                  csys);
     for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
-    cs_sdm_square_init(cm->n_vc, csys->mat);
+    csys->mat->init(cm->n_vc);
 
     cs_hodge_free(&hodge);
   }
@@ -1240,7 +1240,7 @@ _test_cdovb_schemes(FILE                *out,
     _locsys_dump(out,
                  "\nCDO.VB; PENA.VORO.FLX.COST; PERMEABILITY.ISO", csys);
     for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
-    cs_sdm_square_init(cm->n_vc, csys->mat);
+    csys->mat->init(cm->n_vc);
 
     cs_hodge_free(&hodge);
   }
@@ -1279,7 +1279,7 @@ _test_cdovb_schemes(FILE                *out,
     cs_cdo_diffusion_pena_dirichlet(eqp, cm, fm, hodge, cb, csys);
     _locsys_dump(out, "\nCDO.VB; PENA.WBS.FLX.WBS; PERMEABILITY.ANISO", csys);
     for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
-    cs_sdm_square_init(cm->n_vc, csys->mat);
+    csys->mat->init(cm->n_vc);
 
     /* Enforce Dirichlet BC */
 
@@ -1287,7 +1287,7 @@ _test_cdovb_schemes(FILE                *out,
     cs_cdo_diffusion_svb_wbs_weak_dirichlet(eqp, cm, fm, hodge, cb, csys);
     _locsys_dump(out, "\nCDO.VB; WEAK.WBS.FLX.WBS; PERMEABILITY.ANISO", csys);
     for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
-    cs_sdm_square_init(cm->n_vc, csys->mat);
+    csys->mat->init(cm->n_vc);
 
     /* Enforce Dirichlet BC */
 
@@ -1295,7 +1295,7 @@ _test_cdovb_schemes(FILE                *out,
     cs_cdo_diffusion_svb_wbs_wsym_dirichlet(eqp, cm, fm, hodge, cb, csys);
     _locsys_dump(out, "\nCDO.VB; WSYM.WBS.FLX.WBS; PERMEABILITY.ANISO", csys);
     for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
-    cs_sdm_square_init(cm->n_vc, csys->mat);
+    csys->mat->init(cm->n_vc);
 
     cs_hodge_free(&hodge);
   }
@@ -1419,7 +1419,7 @@ _test_basis_functions(FILE               *out,
   cbf->dump_projector(cbf);
   fprintf(out, "\n >> Inertial cell basis functions\n");
   cs_basis_func_fprintf(out, nullptr, cbf);
-  cs_sdm_fprintf(out, nullptr, 1e-15, cbf->projector);
+  cbf->projector->dump(out, nullptr, 1e-15);
 
   /* Define the related gradient basis */
 
@@ -1465,7 +1465,7 @@ _test_basis_functions(FILE               *out,
   cbf_mono->dump_projector(cbf_mono);
   fprintf(out, "\n >> Monomial cell basis functions\n");
   cs_basis_func_fprintf(out, nullptr, cbf_mono);
-  cs_sdm_fprintf(out, nullptr, 1e-15, cbf_mono->projector);
+  cbf_mono->projector->dump(out, nullptr, 1e-15);
 
   /* Define the related gradient basis */
 
@@ -1700,20 +1700,20 @@ _test_hho_schemes(FILE                *out,
 
     fprintf(out, "\n >> Inertial cell basis functions\n");
     cs_basis_func_fprintf(out, nullptr, hhob->cell_basis);
-    cs_sdm_fprintf(out, nullptr, 1e-15, hhob->cell_basis->projector);
+    hhob->cell_basis->projector->dump(out, nullptr, 1e-15);
     for (short int f = 0; f < cm->n_fc; f++) {
       fprintf(out, "\n >> Inertial face basis functions (f = %d)\n", f);
       cs_basis_func_fprintf(out, nullptr, hhob->face_basis[f]);
-      cs_sdm_fprintf(out, nullptr, 1e-15, hhob->face_basis[f]->projector);
+      hhob->face_basis[f]->projector->dump(out, nullptr, 1e-15);
     }
 
     cs_hho_builder_compute_grad_reco(cm, diff_pty, cb, hhob);
 
     fprintf(out,  "\n RHS matrix\n");
-    cs_sdm_block_fprintf(out, nullptr, 1e-15, cb->aux);
+    cb->aux->dump(out, nullptr, 1e-15);
 
     fprintf(out, "\n Stiffness matrix\n");
-    cs_sdm_fprintf(out, nullptr, 1e-15, hhob->hdg);
+    hhob->hdg->dump(out, nullptr, 1e-15);
 
     fprintf(out, "\n Gradient Reconstruction matrix\n");
     cs_sdm_block_fprintf(out, nullptr, 1e-15, hhob->grad_reco_op);
@@ -2167,7 +2167,7 @@ _main_cdofb_schemes(FILE             *out,
   /* Initialize a cell view of the algebraic system */
 
   csys->n_dofs = cm->n_fc + 1;
-  cs_sdm_square_init(csys->n_dofs, csys->mat);
+  csys->mat->init(csys->n_dofs);
   for (short int f = 0; f < cm->n_fc; f++)
     csys->dof_ids[f] = cm->f_ids[f];
   csys->dof_ids[cm->n_fc] = cm->c_id;

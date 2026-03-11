@@ -84,7 +84,7 @@ _test_sdm(FILE  *out)
 
     /* 3 x 3 matrix */
 
-    cs_sdm_square_init(3, m);
+    m->init(3);
     m->val[0] = 2, m->val[1] = -1, m->val[2] = 0;
     m->val[3] =-1, m->val[4] =  2, m->val[5] =-1;
     m->val[6] = 0, m->val[7] = -1, m->val[8] = 1;
@@ -100,7 +100,7 @@ _test_sdm(FILE  *out)
     cs_sdm_33_ldlt_solve(facto, b, sol);
 
     fprintf(out, "\n3x3 matrix\n");
-    cs_sdm_fprintf(out, nullptr, cs_math_zero_threshold, m);
+    m->dump(out, nullptr, cs_math_zero_threshold);
 
     fprintf(out, " Solution l.d.l^T 33: % .4e % .4e % .4e\n",
             sol[0], sol[1], sol[2]);
@@ -125,7 +125,7 @@ _test_sdm(FILE  *out)
 
     /* 4 x 4 matrix */
 
-    cs_sdm_square_init(4, m);
+    m->init(4);
     m->val[ 0] = 2, m->val[ 1] = -1, m->val[ 2] = 0, m->val[ 3] = 0;
     m->val[ 4] =-1, m->val[ 5] =  2, m->val[ 6] =-1, m->val[ 7] = 0;
     m->val[ 8] = 0, m->val[ 9] = -1, m->val[10] = 2, m->val[11] =-1;
@@ -135,7 +135,7 @@ _test_sdm(FILE  *out)
     cs_sdm_44_ldlt_solve(facto, b, sol);
 
     fprintf(out, "\n4x4 matrix\n");
-    cs_sdm_fprintf(out, nullptr, cs_math_zero_threshold, m);
+    m->dump(out, nullptr, cs_math_zero_threshold);
 
     fprintf(out, " Solution l.d.l^T 44: % .4e % .4e % .4e % .4e\n",
             sol[0], sol[1], sol[2], sol[3]);
@@ -154,7 +154,7 @@ _test_sdm(FILE  *out)
 
     /* 6 x 6 matrix */
 
-    cs_sdm_square_init(6, m);
+    m->init(6);
     cs_real_t *a = m->val;
     a[ 0] = 2, a[ 1] = -1, a[ 2] = 0, a[ 3] = 0, a[ 4] =  0, a[ 5] =  0;
     a[ 6] =-1, a[ 7] =  2, a[ 8] =-1, a[ 9] = 0, a[10] =  0, a[11] =  0;
@@ -167,7 +167,7 @@ _test_sdm(FILE  *out)
     cs_sdm_66_ldlt_solve(facto, b, sol);
 
     fprintf(out, "\n6x6 matrix\n");
-    cs_sdm_fprintf(out, nullptr, cs_math_zero_threshold, m);
+    m->dump(out, nullptr, cs_math_zero_threshold);
 
     fprintf(out, " Solution l.d.l^T 66: % .4e % .4e % .4e % .4e % .4e % .4e\n",
             sol[0], sol[1], sol[2], sol[3], sol[4], sol[5]);
@@ -193,22 +193,22 @@ _test_sdm(FILE  *out)
     cs_sdm_t  *m = cs_sdm_square_create(max_size);
 
     fprintf(out, "\n Test symmetry (non-block version)\n");
-    cs_sdm_square_init(3, m);
+    m->init(3);
     m->val[0] = 2, m->val[1] = -1, m->val[2] = 0;
     m->val[3] =-1, m->val[4] =  2, m->val[5] =-1;
     m->val[6] = 0, m->val[7] = -1, m->val[8] = 1;
 
-    cs_sdm_fprintf(out, nullptr, cs_math_zero_threshold, m);
+    m->dump(out, nullptr, cs_math_zero_threshold);
 
     double  eval_sym = cs_sdm_test_symmetry(m);
     fprintf(out, " symmetry evaluation = %g\n", eval_sym);
 
-    cs_sdm_square_init(3, m);
+    m->init(3);
     m->val[0] = 2, m->val[1] = -1, m->val[2] = 0.25;
     m->val[3] =-3, m->val[4] =  2, m->val[5] =-1;
     m->val[6] = 0, m->val[7] = -0.5, m->val[8] = 1;
 
-    cs_sdm_fprintf(out, nullptr, cs_math_zero_threshold, m);
+    m->dump(out, nullptr, cs_math_zero_threshold);
 
     double  eval_sym2 = cs_sdm_test_symmetry(m);
     fprintf(out, " symmetry evaluation = %g\n", eval_sym2);
@@ -246,7 +246,7 @@ _test_sdm(FILE  *out)
     b12->val[0] = 0.5, b12->val[1] = 0.25, b12->val[2] = 1;
     b12->val[3] = 0.75, b12->val[4] = 2, b12->val[5] = 0.1;
 
-    /* cs_sdm_block_dump(0, mb); */
+    /* mb->dump(); */
 
     fprintf(out, " Reference matrix\n");
     cs_sdm_block_fprintf(out, nullptr, cs_math_zero_threshold, mb);

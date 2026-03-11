@@ -918,7 +918,7 @@ _ck1_compute_projector(void                    *pbf,
     bf->projector = cs_sdm_square_create(bf->size);
 
   /* Reset values */
-  cs_sdm_square_init(n_rows, bf->projector);
+  bf->projector->init(n_rows);
 
   cs_real_t  *pval = bf->projector->val;
 
@@ -1093,7 +1093,7 @@ _ck2_compute_projector(void                    *pbf,
     bf->projector = cs_sdm_square_create(bf->size);
 
   /* Reset values */
-  cs_sdm_square_init(n_rows, bf->projector);
+  bf->projector->init(n_rows);
 
   cs_real_t  *pval = bf->projector->val;
 
@@ -1309,7 +1309,7 @@ _cka_compute_projector(void                    *pbf,
     bf->projector = cs_sdm_square_create(n_rows);
 
   /* Reset values */
-  cs_sdm_square_init(n_rows, bf->projector);
+  bf->projector->init(n_rows);
 
   cs_real_t  *pval = bf->projector->val;
 
@@ -1856,7 +1856,7 @@ _fk1_compute_projector(void                    *pbf,
     bf->projector = cs_sdm_square_create(n_rows);
 
   /* Reset values */
-  cs_sdm_square_init(n_rows, bf->projector);
+  bf->projector->init(n_rows);
 
   cs_real_t  *pval = bf->projector->val;
 
@@ -2002,7 +2002,7 @@ _fk2_compute_projector(void                    *pbf,
     bf->projector = cs_sdm_square_create(n_rows);
 
   /* Reset values */
-  cs_sdm_square_init(n_rows, bf->projector);
+  bf->projector->init(n_rows);
 
   cs_real_t  *pval = bf->projector->val;
 
@@ -2235,7 +2235,7 @@ _fka_compute_projector(void                    *pbf,
     bf->projector = cs_sdm_square_create(n_rows);
 
   /* Reset values */
-  cs_sdm_square_init(n_rows, bf->projector);
+  bf->projector->init(n_rows);
 
   cs_real_t  *pval = bf->projector->val;
 

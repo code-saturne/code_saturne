@@ -342,7 +342,7 @@ _cdofb_stab_solu_sym(const cs_cell_mesh_t *cm,
   const short int c = cm->n_fc; /* current cell's location in the matrix */
 
   const cs_lnum_t n_cols = cm->n_fc + 1;
-  cs_sdm_square_init(n_cols, stab);
+  stab->init(n_cols);
 
   const cs_real_t *fluxes = cb->adv_fluxes;
 
@@ -455,7 +455,7 @@ _cdofb_stab_solu_sym(const cs_cell_mesh_t *cm,
   cs_sdm_symm_ur(stab);
 
   /* Scale with the stabilization user coefficient */
-  cs_sdm_scale(stab_scaling_coef, stab);
+  *stab *= stab_scaling_coef;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -480,7 +480,7 @@ _cdofb_stab_solu_nsym(const cs_cell_mesh_t *cm,
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
 
   const cs_lnum_t n_cols = cm->n_fc + 1;
-  cs_sdm_square_init(n_cols, stab);
+  stab->init(n_cols);
 
   const cs_real_t *fluxes = cb->adv_fluxes;
 
@@ -563,7 +563,7 @@ _cdofb_stab_solu_nsym(const cs_cell_mesh_t *cm,
   } /* Loop on rows (entities i) */
 
   /* Scale with the stabilization user coefficient */
-  cs_sdm_scale(stab_scaling_coef, stab);
+  *stab *= stab_scaling_coef;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -595,7 +595,7 @@ _build_cdofb_stab_adv(const cs_param_advection_scheme_t scheme,
     return _cdofb_stab_solu_sym(cm, cb, stab);
   }
 
-  cs_sdm_square_init(cm->n_fc + 1, stab);
+  stab->init(cm->n_fc + 1);
 
   const short int c = cm->n_fc; /* current cell's location in the matrix */
 
@@ -1097,7 +1097,7 @@ _update_vcb_system_with_bc(const cs_real_t              beta_nf,
 
     for (short int vfi = 0; vfi < fm->n_vf; vfi++)
       dirf[vfi] = beta_nf * csys->dir_values[fm->v_ids[vfi]];
-    cs_sdm_square_matvec(matf, dirf, rhsf);
+    matf->dot(dirf, rhsf);
 
     /* Update RHS */
 
@@ -1714,7 +1714,7 @@ _build_cdofb_scheme_noc(const cs_param_advection_scheme_t scheme,
 
   _build_cdofb_stab_adv(scheme, cm, cb, cb->aux);
 
-  cs_sdm_add(adv, cb->aux);
+  *adv += *cb->aux;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1844,7 +1844,7 @@ cs_cdofb_advection_close_default_scal(const cs_equation_param_t   *eqp,
   CS_NO_WARN_IF_UNUSED(cm);
   CS_NO_WARN_IF_UNUSED(cb);
 
-  cs_sdm_add(csys->mat, adv);
+  *csys->mat += *adv;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1922,7 +1922,7 @@ cs_cdofb_advection_close_exp_none_scal(const cs_equation_param_t   *eqp,
 
   double  *adv_u_n = cb->values;
 
-  cs_sdm_matvec(adv, csys->val_n, adv_u_n);
+  adv->dot(csys->val_n, adv_u_n);
 
   /* Update the RHS (interlaced values) */
 
@@ -1970,7 +1970,7 @@ cs_cdofb_advection_close_exp_none_vect(const cs_equation_param_t   *eqp,
     for (int i = 0; i < cm->n_fc + 1; i++)
       u_n[i] = csys->val_n[3*i+k];
 
-    cs_sdm_matvec(adv, u_n, adv_u_n);
+    adv->dot(u_n, adv_u_n);
 
     /* Update the RHS (interlaced values) */
 
@@ -2014,7 +2014,7 @@ cs_cdofb_advection_no_diffusion(const cs_equation_param_t *eqp,
   /* Initialize the local matrix structure */
 
   cs_sdm_t  *adv = cb->loc;
-  cs_sdm_square_init(cm->n_fc + 1, adv);
+  adv->init(cm->n_fc + 1);
 
   if (cb->cell_flag & CS_FLAG_SOLID_CELL)
     return;         /* Nothing to do. No advection in the current cell volume */
@@ -2076,7 +2076,7 @@ cs_cdofb_advection_no_diffusion(const cs_equation_param_t *eqp,
                     cm->f_ids[f],
                     cb->adv_fluxes[f]);
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix befor modif");
-    cs_sdm_dump(cm->c_id, nullptr, nullptr, adv);
+    adv->dump(cm->c_id);
   }
 #endif
 }
@@ -2114,7 +2114,7 @@ cs_cdofb_advection(const cs_equation_param_t *eqp,
   /* Initialize the local matrix structure */
 
   cs_sdm_t  *adv = cb->loc;
-  cs_sdm_square_init(cm->n_fc + 1, adv);
+  adv->init(cm->n_fc + 1);
 
   if (cb->cell_flag & CS_FLAG_SOLID_CELL)
     return; /* Nothing to do. No advection in the current cell volume */
@@ -2176,7 +2176,7 @@ cs_cdofb_advection(const cs_equation_param_t *eqp,
       cs_log_printf(CS_LOG_DEFAULT, "f%d;% -5.3e|",
                     cm->f_ids[f], cb->adv_fluxes[f]);
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix");
-    cs_sdm_dump(cm->c_id, nullptr, nullptr, adv);
+    adv->dump(cm->c_id);
   }
 #endif
 }
@@ -3037,7 +3037,7 @@ cs_cdo_advection_vb_upwcsv_wpty(const cs_equation_param_t   *eqp,
   /* Initialize the local matrix structure */
 
   cs_sdm_t  *adv = cb->loc;
-  cs_sdm_square_init(cm->n_vc, adv);
+  adv->init(cm->n_vc);
 
   /* Compute the flux across the dual face attached to each edge of the cell */
 
@@ -3087,7 +3087,7 @@ cs_cdo_advection_vb_upwcsv_wpty(const cs_equation_param_t   *eqp,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, nullptr)) {
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix");
-    cs_sdm_dump(cm->c_id, nullptr, nullptr, cb->loc);
+    cb->loc->dump(cm->c_id);
   }
 #endif
 }
@@ -3127,7 +3127,7 @@ cs_cdo_advection_vb_upwcsv(const cs_equation_param_t   *eqp,
   /* Initialize the local matrix structure */
 
   cs_sdm_t  *adv = cb->loc;
-  cs_sdm_square_init(cm->n_vc, adv);
+  adv->init(cm->n_vc);
 
   /* Compute the flux across the dual face attached to each edge of the cell */
 
@@ -3152,7 +3152,7 @@ cs_cdo_advection_vb_upwcsv(const cs_equation_param_t   *eqp,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, nullptr)) {
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix");
-    cs_sdm_dump(cm->c_id, nullptr, nullptr, cb->loc);
+    cb->loc->dump(cm->c_id);
   }
 #endif
 }
@@ -3189,7 +3189,7 @@ cs_cdo_advection_vb_cencsv(const cs_equation_param_t   *eqp,
   /* Initialize the local matrix structure */
 
   cs_sdm_t  *adv = cb->loc;
-  cs_sdm_square_init(cm->n_vc, adv);
+  adv->init(cm->n_vc);
 
   /* Compute the flux across the dual face attached to each edge of the cell */
 
@@ -3203,7 +3203,7 @@ cs_cdo_advection_vb_cencsv(const cs_equation_param_t   *eqp,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, nullptr)) {
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix");
-    cs_sdm_dump(cm->c_id, nullptr, nullptr, cb->loc);
+    cb->loc->dump(cm->c_id);
   }
 #endif
 }
@@ -3240,7 +3240,7 @@ cs_cdo_advection_vb_mcucsv(const cs_equation_param_t   *eqp,
   /* Initialize the local matrix structure */
 
   cs_sdm_t  *adv = cb->loc;
-  cs_sdm_square_init(cm->n_vc, adv);
+  adv->init(cm->n_vc);
 
   /* Compute the flux across the dual face attached to each edge of the cell */
 
@@ -3254,7 +3254,7 @@ cs_cdo_advection_vb_mcucsv(const cs_equation_param_t   *eqp,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, nullptr)) {
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix");
-    cs_sdm_dump(cm->c_id, nullptr, nullptr, cb->loc);
+    cb->loc->dump(cm->c_id);
   }
 #endif
 }
@@ -3291,7 +3291,7 @@ cs_cdo_advection_vb_mcunoc(const cs_equation_param_t   *eqp,
   /* Initialize the local matrix structure */
 
   cs_sdm_t  *adv = cb->loc;
-  cs_sdm_square_init(cm->n_vc, adv);
+  adv->init(cm->n_vc);
 
   /* Compute the flux across the dual face attached to each edge of the cell */
 
@@ -3305,7 +3305,7 @@ cs_cdo_advection_vb_mcunoc(const cs_equation_param_t   *eqp,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, nullptr)) {
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix");
-    cs_sdm_dump(cm->c_id, nullptr, nullptr, adv);
+    adv->dump(cm->c_id);
   }
 #endif
 }
@@ -3345,7 +3345,7 @@ cs_cdo_advection_vb_upwnoc_wpty(const cs_equation_param_t   *eqp,
   /* Initialize the local matrix structure */
 
   cs_sdm_t  *adv = cb->loc;
-  cs_sdm_square_init(cm->n_vc, adv);
+  adv->init(cm->n_vc);
 
   /* Compute the flux across the dual face attached to each edge of the cell */
 
@@ -3395,7 +3395,7 @@ cs_cdo_advection_vb_upwnoc_wpty(const cs_equation_param_t   *eqp,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, nullptr)) {
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix");
-    cs_sdm_dump(cm->c_id, nullptr, nullptr, cb->loc);
+    cb->loc->dump(cm->c_id);
   }
 #endif
 }
@@ -3435,7 +3435,7 @@ cs_cdo_advection_vb_upwnoc(const cs_equation_param_t   *eqp,
   /* Initialize the local matrix structure */
 
   cs_sdm_t  *adv = cb->loc;
-  cs_sdm_square_init(cm->n_vc, adv);
+  adv->init(cm->n_vc);
 
   /* Compute the flux across the dual face attached to each edge of the cell */
 
@@ -3459,7 +3459,7 @@ cs_cdo_advection_vb_upwnoc(const cs_equation_param_t   *eqp,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, nullptr)) {
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix");
-    cs_sdm_dump(cm->c_id, nullptr, nullptr, cb->loc);
+    cb->loc->dump(cm->c_id);
   }
 #endif
 }
@@ -3496,7 +3496,7 @@ cs_cdo_advection_vb_cennoc(const cs_equation_param_t    *eqp,
   /* Initialize the local matrix structure */
 
   cs_sdm_t  *adv = cb->loc;
-  cs_sdm_square_init(cm->n_vc, adv);
+  adv->init(cm->n_vc);
 
   /* Compute the flux across the dual face attached to each edge of the cell */
 
@@ -3510,7 +3510,7 @@ cs_cdo_advection_vb_cennoc(const cs_equation_param_t    *eqp,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, nullptr)) {
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix");
-    cs_sdm_dump(cm->c_id, nullptr, nullptr, cb->loc);
+    cb->loc->dump(cm->c_id);
   }
 #endif
 }
@@ -3552,7 +3552,7 @@ cs_cdo_advection_vcb_cw_cst(const cs_equation_param_t   *eqp,
   /* Initialize local matrix structure */
 
   cs_sdm_t  *a = cb->loc;
-  cs_sdm_square_init(n_sysc, a);
+  a->init(n_sysc);
 
   /* Use a cellwise constant approximation of the advection field */
 
@@ -3650,7 +3650,7 @@ cs_cdo_advection_vcb_cw_cst(const cs_equation_param_t   *eqp,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, nullptr)) {
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix (CW version)");
-    cs_sdm_dump(cm->c_id, nullptr, nullptr, cb->loc);
+    cb->loc->dump(cm->c_id);
   }
 #if CS_CDO_ADVECTION_DBG > 2
   cons = cs_sdm_free(cons);
@@ -3692,7 +3692,7 @@ cs_cdo_advection_vcb(const cs_equation_param_t   *eqp,
   /* Initialize local matrix structure */
 
   cs_sdm_t  *a = cb->loc;
-  cs_sdm_square_init(n_sysc, a);
+  a->init(n_sysc);
 
   /* Use a cellwise constant approximation of the advection field */
 
@@ -3734,7 +3734,7 @@ cs_cdo_advection_vcb(const cs_equation_param_t   *eqp,
 
     /* Initialize the local face matrix */
 
-    cs_sdm_square_init(n_sysf, af);
+    af->init(n_sysf);
 
     /* Store tef areas for a future usage (Second part of the stabilization) */
 
@@ -3779,10 +3779,10 @@ cs_cdo_advection_vcb(const cs_equation_param_t   *eqp,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, nullptr)) {
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix");
-    cs_sdm_dump(cm->c_id, nullptr, nullptr, cb->loc);
+    cb->loc->dump(cm->c_id);
 #if CS_CDO_ADVECTION_DBG > 2
   cs_log_printf(CS_LOG_DEFAULT, "\n>> Advection matrix (CONSISTENCY PART)");
-  cs_sdm_dump(cm->c_id, nullptr, nullptr, cons);
+  cons->dump(cm->c_id);
   cons = cs_sdm_free(cons);
 #endif
   }

@@ -90,7 +90,257 @@ struct _cs_sdm_t {
   /* Structure describing the matrix in terms of blocks */
   cs_sdm_block_t   *block_desc;
 
+#ifdef __cplusplus
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief   Destructor
+   *
+   */
+  /*----------------------------------------------------------------------------*/
+  ~_cs_sdm_t();
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief   Constructor for a square matrix.
+   *
+   * \param[in]  n_max_rows   max number of rows
+   *
+   */
+  /*----------------------------------------------------------------------------*/
+  _cs_sdm_t(const int n_max_rows_);
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief   Constructor for a square matrix.
+   *
+   * \param[in]  flag         metadata related to a cs_sdm_t structure
+   * \param[in]  n_max_rows   max number of rows
+   * \param[in]  n_max_cols   max number of columns
+   *
+   */
+  /*----------------------------------------------------------------------------*/
+  _cs_sdm_t(const cs_flag_t flag_,
+            const int       n_max_rows_,
+            const int       n_max_cols_);
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief   Return the size of the matrix
+   *
+   */
+  /*----------------------------------------------------------------------------*/
+
+  inline int
+  size() const
+  {
+    return n_rows * n_cols;
+  };
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief   Return a pointer on row
+   *
+   * \param[in]  row_i        index of the row
+   *
+   * \return pointer on row_i
+   */
+  /*----------------------------------------------------------------------------*/
+
+  inline cs_real_t *
+  row(const int row_i) const
+  {
+    assert(0 <= row_i && row_i < n_rows);
+    return val + row_i * n_cols;
+  }
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief   Modifiy the value (i,j) of the matric
+   *
+   * \param[in]  i        index of the row
+   * \param[in]  j        index of the column
+   *
+   * \return value
+   */
+  /*----------------------------------------------------------------------------*/
+  cs_real_t &
+  operator()(const int i, const int j);
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief   Get the value (i,j) of the matric
+   *
+   * \param[in]  i        index of the row
+   * \param[in]  j        index of the column
+   *
+   * \return value
+   */
+  /*----------------------------------------------------------------------------*/
+  const cs_real_t &
+  operator()(const int i, const int j) const;
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief   Initialize matrix.
+   *
+   * \param[in]  nrows   number of rows
+   * \param[in]  ncols   number of columns
+   *
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  init(const int nrows, const int ncols);
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief   Initialize square matrix.
+   *
+   * \param[in]  nrows   number of rows
+   *
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  init(const int nrows);
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief  Return a pointer on the values
+   *
+   */
+  /*----------------------------------------------------------------------------*/
+
+  inline cs_real_t *
+  data() const
+  {
+    return val;
+  };
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief   Transpose a matrix.
+   *
+   * \return the transposed matrix
+   */
+  /*----------------------------------------------------------------------------*/
+
+  _cs_sdm_t
+  transpose() const;
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief Get a specific block in a cs_sdm_t structure defined by block
+   *
+   * \param[in] row_block_id  id of the block row, zero-based.
+   * \param[in] col_block_id  id of the block column, zero-based.
+   *
+   * \return a pointer to a cs_sdm_t structure corresponfing to a block
+   */
+  /*----------------------------------------------------------------------------*/
+
+  inline cs_sdm_t *
+  get_block(const int row_block_id, const int col_block_id) const;
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief  Multiply a matrix with the scaling factor given as parameter
+   *
+   * \param[in]      scaling
+   */
+  /*----------------------------------------------------------------------------*/
+
+  _cs_sdm_t
+  operator*=(const cs_real_t &scaling);
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief   Add two small dense matrices: loc += add
+   *
+   * \param[in]      add   values to add to mat
+   */
+  /*----------------------------------------------------------------------------*/
+
+  _cs_sdm_t
+  operator+=(const _cs_sdm_t &add);
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief   Compute a dense matrix-vector product for a small square matrix
+   *          mv has been previously allocated
+   *
+   * \param[in]      vec    local vector to use
+   * \param[in, out] mv     result of the local matrix-vector product
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  dot(const cs_real_t vec[], cs_real_t mv[]) const;
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief   Dump a small dense matrix
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  dump() const;
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief   Dump a small dense matrix
+   *
+   * \param[in]  parent_id   id of the related parent entity
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  dump(cs_lnum_t parent_id) const;
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief   Dump a small dense matrix
+   *
+   * \param[in]  parent_id   id of the related parent entity
+   * \param[in]  row_ids     list of ids related to associated entities (or
+   * nullptr)
+   * \param[in]  col_ids     list of ids related to associated entities
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  dump(cs_lnum_t        parent_id,
+       const cs_lnum_t *row_ids,
+       const cs_lnum_t *col_ids) const;
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief   Print a cs_sdm_t structure not defined by block
+   *          Print into the file f if given otherwise open a new file named
+   *          fname if given otherwise print into the standard output
+   *          The usage of threshold allows one to compare more easier matrices
+   *          without taking into account numerical roundoff.
+   *
+   * \param[in]  fp         pointer to a file structure or null
+   * \param[in]  fname      filename or null
+   * \param[in]  thd        threshold (below this value --> set 0)
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  dump(FILE *fp, const char *fname, cs_real_t thd) const;
+
+#endif
 };
+
+#ifdef __cplusplus
+
+namespace cs {
+using sdm_t = cs_sdm_t;
+}
+
+#endif
 
 /*============================================================================
  * Prototypes for pointer of functions
@@ -372,48 +622,6 @@ cs_sdm_free(cs_sdm_t  *mat);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Initialize a cs_sdm_t structure
- *          Case of a square matrix
- *
- * \param[in]      n_rows   current number of rows
- * \param[in]      n_cols   current number of columns
- * \param[in, out] mat      pointer to the cs_sdm_t structure to initialize
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_sdm_init(int         n_rows,
-            int         n_cols,
-            cs_sdm_t   *mat)
-{
-  assert(mat != NULL);
-  assert(n_rows <= mat->n_max_rows);
-  assert(n_cols <= mat->n_max_cols);
-
-  mat->n_rows = n_rows;
-  mat->n_cols = n_cols;
-  memset(mat->val, 0, n_rows*n_cols*sizeof(cs_real_t));
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Initialize a cs_sdm_t structure
- *          Case of a square matrix
- *
- * \param[in]      n_rows   current number of rows
- * \param[in, out] mat      pointer to the cs_sdm_t structure to initialize
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_sdm_square_init(int         n_rows,
-                   cs_sdm_t   *mat)
-{
-  cs_sdm_init(n_rows, n_rows, mat);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Initialize the pattern of cs_sdm_t structure defined by block
  *          The matrix should have been allocated before calling this function
  *
@@ -586,26 +794,6 @@ cs_sdm_copy_block(const cs_sdm_t       *m,
   const cs_real_t *_start = m->val + c_id + r_id*m->n_cols;
   for (short int i = 0; i < nr; i++, _start += m->n_cols)
     memcpy(b->val + i*nc, _start, sizeof(cs_real_t)*nc);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Multiply a matrix with the scaling factor given as parameter
- *
- * \param[in]      scaling
- * \param[in, out] m      pointer to cs_sdm_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_sdm_scale(cs_real_t       scaling,
-             cs_sdm_t       *m)
-{
-  /* Sanity checks */
-  assert(m != NULL);
-
-  for (int i = 0; i < m->n_rows*m->n_cols; i++)
-    m->val[i] *= scaling;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -783,38 +971,6 @@ cs_sdm_block_multiply_rowrow_sym(const cs_sdm_t   *a,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute a dense matrix-vector product for a small square matrix
- *          mv has been previously allocated
- *
- * \param[in]      mat    local matrix to use
- * \param[in]      vec    local vector to use
- * \param[in, out] mv     result of the local matrix-vector product
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sdm_square_matvec(const cs_sdm_t    *mat,
-                     const cs_real_t   *vec,
-                     cs_real_t         *mv);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute a dense matrix-vector product for a rectangular matrix
- *          mv has been previously allocated
- *
- * \param[in]      mat    local matrix to use
- * \param[in]      vec    local vector to use (size = mat->n_cols)
- * \param[in, out] mv     result of the operation (size = mat->n_rows)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sdm_matvec(const cs_sdm_t    *mat,
-              const cs_real_t   *vec,
-              cs_real_t         *mv);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief   Compute a dense matrix-vector product for a rectangular matrix
  *          mv has been previously allocated and initialized
  *          Thus mv is updated inside this function
@@ -892,19 +1048,6 @@ void
 cs_sdm_block_matvec(const cs_sdm_t    *mat,
                     const cs_real_t   *vec,
                     cs_real_t         *mv);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Add two small dense matrices: loc += add
- *
- * \param[in, out] mat   local matrix storing the result
- * \param[in]      add   values to add to mat
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sdm_add(cs_sdm_t        *mat,
-           const cs_sdm_t  *add);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1278,55 +1421,6 @@ cs_sdm_ldlt_solve(int                n_rows,
 
 double
 cs_sdm_test_symmetry(const cs_sdm_t     *mat);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Dump a small dense matrix
- *
- * \param[in]  mat         pointer to the cs_sdm_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sdm_simple_dump(const cs_sdm_t     *mat);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Dump a small dense matrix
- *
- * \param[in]  parent_id   id of the related parent entity
- * \param[in]  row_ids     list of ids related to associated entities (or null)
- * \param[in]  col_ids     list of ids related to associated entities (or null)
- * \param[in]  mat         pointer to the cs_sdm_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sdm_dump(cs_lnum_t           parent_id,
-            const cs_lnum_t    *row_ids,
-            const cs_lnum_t    *col_ids,
-            const cs_sdm_t     *mat);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Print a cs_sdm_t structure not defined by block
- *          Print into the file f if given otherwise open a new file named
- *          fname if given otherwise print into the standard output
- *          The usage of threshold allows one to compare more easier matrices
- *          without taking into account numerical roundoff.
- *
- * \param[in]  fp         pointer to a file structure or null
- * \param[in]  fname      filename or null
- * \param[in]  thd        threshold (below this value --> set 0)
- * \param[in]  m          pointer to the cs_sdm_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_sdm_fprintf(FILE             *fp,
-               const char       *fname,
-               cs_real_t         thd,
-               const cs_sdm_t   *m);
 
 /*----------------------------------------------------------------------------*/
 /*!

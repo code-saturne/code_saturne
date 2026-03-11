@@ -202,7 +202,7 @@ _svb_init_cell_system(const cs_cell_mesh_t          *cm,
 
   cs_cell_sys_reset(cm->n_fc, csys); /* Generic part */
 
-  cs_sdm_square_init(cm->n_vc, csys->mat);
+  csys->mat->init(cm->n_vc);
 
   if (field_tnm1 == nullptr) {
 
@@ -431,8 +431,7 @@ _svb_conv_diff_reac(const cs_equation_param_t   *eqp,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys)) {
       cs_log_printf(CS_LOG_DEFAULT, ">> Cell mass matrix");
-      cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids,
-                  mass_hodge->matrix);
+      mass_hodge->matrix->dump(csys->c_id, csys->dof_ids, csys->dof_ids);
     }
 #endif
   }
@@ -455,7 +454,7 @@ _svb_conv_diff_reac(const cs_equation_param_t   *eqp,
     /* Add the local diffusion operator to the local system */
 
     if (computed)
-      cs_sdm_add(csys->mat, cb->loc);
+      *csys->mat += *cb->loc;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -479,7 +478,7 @@ _svb_conv_diff_reac(const cs_equation_param_t   *eqp,
     /* Add it to the local system */
 
     if (eqp->adv_scaling_property == nullptr)
-      cs_sdm_add(csys->mat, cb->loc);
+      *csys->mat += *cb->loc;
 
     else {
 
@@ -653,7 +652,7 @@ _svb_imp_euler(const cs_equation_param_t   *eqp,
 
   double  *time_pn = cb->values;
 
-  cs_sdm_square_matvec(mass_mat, csys->val_n, time_pn);
+  mass_mat->dot(csys->val_n, time_pn);
 
   for (short int i = 0; i < csys->n_dofs; i++)
     csys->rhs[i] += tpty_coef*time_pn[i];
@@ -702,7 +701,7 @@ _svb_imp_euler_incr(const cs_equation_param_t   *eqp,
   for (short int i = 0; i < csys->n_dofs; i++)
     vec[i] = csys->val_nm1[i] - csys->val_n[i];
 
-  cs_sdm_square_matvec(mass_mat, vec, matvec);
+  mass_mat->dot(vec, matvec);
 
   for (short int i = 0; i < csys->n_dofs; i++)
     csys->rhs[i] += tpty_coef*matvec[i];
@@ -1022,7 +1021,7 @@ _svb_theta_scheme_begin(const cs_equation_param_t   *eqp,
   const double  tcoef = 1 - eqp->theta;
 
   double  *adr_pn = cb->values;
-  cs_sdm_square_matvec(csys->mat, csys->val_n, adr_pn);
+  csys->mat->dot(csys->val_n, adr_pn);
   for (short int i = 0; i < csys->n_dofs; i++) /* n_dofs = n_vc */
     csys->rhs[i] -= tcoef * adr_pn[i];
 
@@ -2518,7 +2517,7 @@ cs_cdovb_scaleq_build_block_implicit_incr(int                        t_id,
    */
 
   double *mat_pk = cb->values;
-  cs_sdm_square_matvec(csys->mat, csys->val_n, mat_pk);
+  csys->mat->dot(csys->val_n, mat_pk);
   for (short int i = 0; i < csys->n_dofs; i++) /* n_dofs = n_vc */
     csys->rhs[i] -= mat_pk[i];
 
@@ -3114,7 +3113,7 @@ cs_cdovb_scaleq_solve_steady_state_incr(bool                       cur2prev,
        */
 
       double *mat_pk = cb->values;
-      cs_sdm_square_matvec(csys->mat, csys->val_n, mat_pk);
+      csys->mat->dot(csys->val_n, mat_pk);
       for (short int i = 0; i < csys->n_dofs; i++) /* n_dofs = n_vc */
         csys->rhs[i] -= mat_pk[i];
 
@@ -3660,7 +3659,7 @@ cs_cdovb_scaleq_solve_implicit_incr(bool                       cur2prev,
        */
 
       double *mat_pk = cb->values;
-      cs_sdm_square_matvec(csys->mat, csys->val_n, mat_pk);
+      csys->mat->dot(csys->val_n, mat_pk);
       for (short int i = 0; i < csys->n_dofs; i++) /* n_dofs = n_vc */
         csys->rhs[i] -= mat_pk[i];
 
@@ -4398,7 +4397,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t *eqp,
             res[v] = 0.;
             dp[v]  = p_cur[v] - p_prev[v];
           }
-          cs_sdm_square_matvec(mass_hodge->matrix, dp, res);
+          mass_hodge->matrix->dot(dp, res);
 
           for (short int v = 0; v < cm->n_vc; v++) {
 #pragma omp atomic
@@ -4445,7 +4444,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t *eqp,
 
         cs_real_t *res = cb->values;
         memset(res, 0, cm->n_vc * sizeof(cs_real_t));
-        cs_sdm_square_matvec(mass_hodge->matrix, p_theta, res);
+        mass_hodge->matrix->dot(p_theta, res);
 
         for (short int v = 0; v < cm->n_vc; v++) {
 #pragma omp atomic
@@ -4472,7 +4471,8 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t *eqp,
 
         cs_real_t *res = cb->values;
         memset(res, 0, cm->n_vc * sizeof(cs_real_t));
-        cs_sdm_square_matvec(cb->loc, p_theta, res);
+
+        cb->loc->dot(p_theta, res);
 
         for (short int v = 0; v < cm->n_vc; v++) {
 #pragma omp atomic
@@ -4492,7 +4492,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t *eqp,
 
         cs_real_t *res = cb->values;
         memset(res, 0, cm->n_vc * sizeof(cs_real_t));
-        cs_sdm_square_matvec(cb->loc, p_theta, res);
+        cb->loc->dot(p_theta, res);
 
         for (short int v = 0; v < cm->n_vc; v++) {
 #pragma omp atomic
@@ -4722,7 +4722,7 @@ cs_cdovb_scaleq_apply_stiffness(const cs_equation_param_t *eqp,
 
       cs_real_t *cell_res = cb->values;
       memset(res, 0, cm->n_vc * sizeof(cs_real_t));
-      cs_sdm_square_matvec(cb->loc, p_cur, cell_res);
+      cb->loc->dot(p_cur, cell_res);
 
       if (cs_flag_test(res_loc, cs_flag_primal_vtx)) {
         for (short int v = 0; v < cm->n_vc; v++) {

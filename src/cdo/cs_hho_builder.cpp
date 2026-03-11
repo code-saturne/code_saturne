@@ -652,7 +652,7 @@ _compute_mcg(const cs_cell_mesh_t    *cm,
   cs_sdm_t  *mcg = hhob->hdg;
 
   /* Set values to zero */
-  cs_sdm_init(cs, gs, mcg);
+  mcg->init(cs, gs);
 
   /* First copy the square block cs x cs from Mcc (projector)
      Skip the first column */
@@ -926,7 +926,7 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t      *cm,
 
   const int  gs = hhob->grad_basis->size - 1;
   cs_sdm_t  *stiffness = hhob->hdg, *rhs_t = cb->aux;
-  cs_sdm_square_init(gs, stiffness);
+  stiffness->init(gs);
 
   /* Initialize the matrix related to the gradient reconstruction operator.
      The right-hand side is a matrix since we are building an operator

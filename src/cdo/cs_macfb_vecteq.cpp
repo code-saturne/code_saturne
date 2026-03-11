@@ -376,7 +376,7 @@ cs_macfb_vecteq_init_cell_system(const cs_cell_mesh_t        *cm,
 
   cs_cell_sys_reset(n_dofs, csys);
 
-  cs_sdm_init(cm->n_fc, n_dofs, csys->mat);
+  csys->mat->init(cm->n_fc, n_dofs);
 
   /* One has to keep the same numbering for faces between cell mesh and cell
      system */

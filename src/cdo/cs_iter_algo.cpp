@@ -381,7 +381,7 @@ _allocate_anderson_arrays(cs_iter_algo_aac_t     *c)
   cs_array_real_fill_zero(c->n_elts*n_max_dir, c->Q);
 
   c->R = cs_sdm_square_create(n_max_dir);
-  cs_sdm_square_init(n_max_dir, c->R);
+  c->R->init(n_max_dir);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

@@ -607,7 +607,7 @@ cs_equation_builder_enforce_dofs(const cs_equation_builder_t     *eqb,
 
   /* Contribution of the DoFs which are enforced */
 
-  cs_sdm_matvec(csys->mat, x_vals, ax);
+  csys->mat->dot(x_vals, ax);
 
   /* Second pass: Replace the block of enforced DoFs by a diagonal block */
 
@@ -678,7 +678,7 @@ cs_equation_builder_enforce_block_dofs(const cs_equation_builder_t   *eqb,
 
   /* Contribution of the DoFs which are enforced */
 
-  cs_sdm_block_matvec(csys->mat, x_vals, ax);
+  csys->mat->dot(x_vals, ax);
 
   /* Define the new right-hand side (rhs) */
 

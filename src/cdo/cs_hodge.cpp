@@ -135,7 +135,7 @@ _check_stiffness(cs_lnum_t             c_id,
     return;
 
   cs_log_printf(CS_LOG_DEFAULT, ">> Local stiffness matrix");
-  cs_sdm_dump(c_id, nullptr, nullptr, sloc);
+  sloc->dump(c_id);
 
   double  print_val = 0.;
 
@@ -182,7 +182,7 @@ _check_vector_hodge(cs_lnum_t                c_id,
     return;
 
   cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-  cs_sdm_dump(c_id, nullptr, nullptr, hodge->matrix);
+  hodge->matrix->dump(c_id);
 
   const cs_hodge_param_t  *hodgep = hodge->param;
   const cs_property_data_t  *ptyd = hodge->pty_data;
@@ -217,7 +217,7 @@ _check_vector_hodge(cs_lnum_t                c_id,
       ref[i] = _dp3(pty_a, res[i]);
     }
 
-    cs_sdm_square_matvec(hmat, in, h_in);
+    hmat->dot(in, h_in);
 
     double  err = 0.;
     for (int i = 0; i < hmat->n_rows; i++)
@@ -442,7 +442,7 @@ _define_vb_stiffness(const cs_cell_mesh_t   *cm,
 {
   /* Initialize the local stiffness matrix */
 
-  cs_sdm_square_init(cm->n_vc, sloc);
+  sloc->init(cm->n_vc);
 
   for (int ei = 0; ei < cm->n_ec; ei++) { /* Loop on cell edges I */
 
@@ -721,7 +721,7 @@ _compute_iso_hodge_ur(const int               n_ent,
   double  *stab = cb->values + 2*n_ent;       /* size = n_ent */
   double  *dq_pq = cb->aux->val;              /* size = n_ent*n_ent */
 
-  cs_sdm_square_init(n_ent, cb->aux);
+  cb->aux->init(n_ent);
 
   const double  dbetac = dbeta2*ovc;
   const double  dbetac2 = dbetac*ovc;
@@ -808,7 +808,7 @@ _compute_aniso_hodge_ur(const int               n_ent,
   double  *stab = cb->values + 2*n_ent;       /* size = n_ent */
   double  *dq_pq = cb->aux->val;              /* size = n_ent*n_ent */
 
-  cs_sdm_square_init(n_ent, cb->aux);
+  cb->aux->init(n_ent);
 
   const double  dbetac = dbeta2*ovc;
   const double  dbetac2 = dbetac*ovc;
@@ -1727,7 +1727,7 @@ cs_hodge_fb_cost_get_stiffness(const cs_cell_mesh_t     *cm,
   /* Initialize the local stiffness matrix */
 
   cs_sdm_t  *sloc = cb->loc;
-  cs_sdm_square_init(cm->n_fc + 1, sloc);
+  sloc->init(cm->n_fc + 1);
 
   /* Compute the local discrete Hodge operator */
 
@@ -1794,7 +1794,7 @@ cs_hodge_fb_bubble_get_stiffness(const cs_cell_mesh_t    *cm,
   /* Initialize the local stiffness matrix */
 
   cs_sdm_t  *sloc = cb->loc;
-  cs_sdm_square_init(cm->n_fc + 1, sloc);
+  sloc->init(cm->n_fc + 1);
 
   /* Compute the local discrete Hodge operator */
 
@@ -1866,7 +1866,7 @@ cs_hodge_fb_voro_get_stiffness(const cs_cell_mesh_t     *cm,
   /* Initialize the local stiffness matrix */
 
   cs_sdm_t  *sloc = cb->loc;
-  cs_sdm_square_init(cm->n_fc + 1, sloc);
+  sloc->init(cm->n_fc + 1);
 
   /* Compute the local discrete Hodge operator */
 
@@ -1951,7 +1951,7 @@ cs_hodge_vb_cost_get_iso_stiffness(const cs_cell_mesh_t   *cm,
    *  Rk: Switch arguments between discrete Hodge operator from PRIMAL->DUAL
    *  or DUAL->PRIMAL space */
 
-  cs_sdm_square_init(cm->n_ec, hodge->matrix);
+  hodge->matrix->init(cm->n_ec);
 
   _compute_iso_hodge_ur(cm->n_ec,
                         3*hodgep->coef*hodgep->coef,
@@ -2010,7 +2010,7 @@ cs_hodge_vb_cost_get_aniso_stiffness(const cs_cell_mesh_t    *cm,
    * Remark: Switch arguments between discrete Hodge operator from PRIMAL->DUAL
    * or DUAL->PRIMAL space */
 
-  cs_sdm_square_init(cm->n_ec, hodge->matrix);
+  hodge->matrix->init(cm->n_ec);
 
   if (_tensor_norm_l1(ptyd->tensor) > 0)
     _compute_aniso_hodge_ur(cm->n_ec,
@@ -2075,7 +2075,7 @@ cs_hodge_vb_bubble_get_iso_stiffness(const cs_cell_mesh_t    *cm,
    *  Rk: Switch arguments between discrete Hodge operator from PRIMAL->DUAL
    *  or DUAL->PRIMAL space */
 
-  cs_sdm_square_init(cm->n_ec, hodge->matrix);
+  hodge->matrix->init(cm->n_ec);
 
   _compute_iso_bubble_hodge_ur(cm->n_ec,
                                hodgep->coef,
@@ -2137,7 +2137,7 @@ cs_hodge_vb_bubble_get_aniso_stiffness(const cs_cell_mesh_t    *cm,
    *  Rk: Switch arguments between discrete Hodge operator from PRIMAL->DUAL
    *  or DUAL->PRIMAL space */
 
-  cs_sdm_square_init(cm->n_ec, hodge->matrix);
+  hodge->matrix->init(cm->n_ec);
 
   _compute_aniso_bubble_hodge_ur(cm->n_ec,
                                  hodgep->coef,
@@ -2204,7 +2204,7 @@ cs_hodge_vb_cost_get_stiffness(const cs_cell_mesh_t     *cm,
   /* Initialize the hodge matrix */
 
   cs_sdm_t  *hmat = hodge->matrix;
-  cs_sdm_square_init(cm->n_ec, hmat);
+  hmat->init(cm->n_ec);
 
   const double  invcvol = 1/cm->vol_c;
   const double  beta2 = hodgep->coef*hodgep->coef;
@@ -2235,7 +2235,7 @@ cs_hodge_vb_cost_get_stiffness(const cs_cell_mesh_t     *cm,
   /* Initialize the local stiffness matrix */
 
   cs_sdm_t  *sloc = cb->loc;
-  cs_sdm_square_init(cm->n_vc, sloc);
+  sloc->init(cm->n_vc);
 
   for (int ei = 0; ei < cm->n_ec; ei++) { /* Loop on cell edges I */
 
@@ -2412,7 +2412,7 @@ cs_hodge_vb_voro_get_stiffness(const cs_cell_mesh_t     *cm,
   /* Initialize the local stiffness matrix */
 
   cs_sdm_t  *sloc = cb->loc;
-  cs_sdm_square_init(cm->n_vc, sloc);
+  sloc->init(cm->n_vc);
 
   if (ptyd->is_iso || ptyd->is_unity) {
 
@@ -2527,7 +2527,7 @@ cs_hodge_vb_wbs_get_stiffness(const cs_cell_mesh_t     *cm,
   /* Initialize the local stiffness matrix */
 
   cs_sdm_t  *sloc = cb->loc;
-  cs_sdm_square_init(cm->n_vc, sloc);
+  sloc->init(cm->n_vc);
 
   if (!(_tensor_norm_l1(ptyd->tensor) > 0))
     return false; /* One avoids to compute the Hodge op. for nothing */
@@ -2666,7 +2666,7 @@ cs_hodge_vcb_get_stiffness(const cs_cell_mesh_t     *cm,
   const int  cc = nc_dofs*cm->n_vc + cm->n_vc;
 
   cs_sdm_t  *sloc = cb->loc;
-  cs_sdm_square_init(nc_dofs, sloc);
+  sloc->init(nc_dofs);
 
   if (!(_tensor_norm_l1(ptyd->tensor) > 0))
     return false; /* One avoids to compute the Hodge op. for nothing */
@@ -2810,7 +2810,7 @@ cs_hodge_fb_get(const cs_cell_mesh_t     *cm,
   /* Initialize the local matrix related to this discrete Hodge operator */
 
   cs_sdm_t  *hmat = hodge->matrix;
-  cs_sdm_square_init(n_cols, hmat);
+  hmat->init(n_cols);
 
   /* cell-cell entry (cell-face and face-cell block are nullptr) */
 
@@ -2896,7 +2896,7 @@ cs_hodge_vcb_voro_get(const cs_cell_mesh_t     *cm,
 
   /* Initialize the local matrix related to this discrete Hodge operator */
 
-  cs_sdm_square_init(cm->n_vc + 1, hmat);
+  hmat->init(cm->n_vc + 1);
 
   const int  msize = cm->n_vc + 1;
 
@@ -2936,7 +2936,7 @@ cs_hodge_vcb_voro_get(const cs_cell_mesh_t     *cm,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-    cs_sdm_dump(cm->c_id, nullptr, nullptr, hmat);
+    hmat->dump(cm->c_id);
   }
 #endif
 
@@ -2976,7 +2976,7 @@ cs_hodge_vcb_wbs_get(const cs_cell_mesh_t     *cm,
 
   /* Initialize the local matrix related to this discrete Hodge operator */
 
-  cs_sdm_square_init(cm->n_vc + 1, hmat);
+  hmat->init(cm->n_vc + 1);
 
   if (!(fabs(ptyd->value) > 0))
     return false; /* One avoids to compute the Hodge op. for nothing */
@@ -3074,7 +3074,7 @@ cs_hodge_vcb_wbs_get(const cs_cell_mesh_t     *cm,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-    cs_sdm_dump(cm->c_id, nullptr, nullptr, hmat);
+    hmat->dump(cm->c_id);
   }
 #endif
 
@@ -3115,7 +3115,7 @@ cs_hodge_vpcd_wbs_get(const cs_cell_mesh_t    *cm,
   double  *wef = cb->values + cm->n_vc;
 
   cs_sdm_t  *hmat = hodge->matrix;
-  cs_sdm_square_init(cm->n_vc, hmat);
+  hmat->init(cm->n_vc);
 
   if (!(fabs(ptyd->value) > 0))
     return false; /* One avoids to compute the Hodge op. for nothing */
@@ -3203,7 +3203,7 @@ cs_hodge_vpcd_wbs_get(const cs_cell_mesh_t    *cm,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-    cs_sdm_dump(cm->c_id, nullptr, nullptr, hmat);
+    hmat->dump(cm->c_id);
   }
 #endif
 
@@ -3239,7 +3239,7 @@ cs_hodge_vpcd_voro_get(const cs_cell_mesh_t     *cm,
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
 
   cs_sdm_t  *hmat = hodge->matrix;
-  cs_sdm_square_init(cm->n_vc, hmat);
+  hmat->init(cm->n_vc);
 
   const int stride = cm->n_vc + 1;
   if (ptyd->is_unity) {
@@ -3265,7 +3265,7 @@ cs_hodge_vpcd_voro_get(const cs_cell_mesh_t     *cm,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-    cs_sdm_dump(cm->c_id, nullptr, nullptr, hmat);
+    hmat->dump(cm->c_id);
   }
 #endif
 
@@ -3304,7 +3304,7 @@ cs_hodge_epfd_voro_get(const cs_cell_mesh_t     *cm,
   /* Initialize the local matrix related to this discrete Hodge operator */
 
   cs_sdm_t  *hmat = hodge->matrix;
-  cs_sdm_square_init(cm->n_ec, hmat);
+  hmat->init(cm->n_ec);
 
   /* Set the diagonal entries */
 
@@ -3347,7 +3347,7 @@ cs_hodge_epfd_voro_get(const cs_cell_mesh_t     *cm,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-    cs_sdm_dump(cm->c_id, nullptr, nullptr, hmat);
+    hmat->dump(cm->c_id);
   }
 #endif
 
@@ -3385,7 +3385,7 @@ cs_hodge_epfd_cost_get(const cs_cell_mesh_t     *cm,
   /* Initialize the local matrix related to this discrete Hodge operator */
 
   cs_sdm_t  *hmat = hodge->matrix;
-  cs_sdm_square_init(cm->n_ec, hmat);
+  hmat->init(cm->n_ec);
 
   /* Set numbering and geometrical quantities Hodge builder */
 
@@ -3486,7 +3486,7 @@ cs_hodge_epfd_bubble_get(const cs_cell_mesh_t     *cm,
    *  or DUAL->PRIMAL space */
 
   cs_sdm_t  *hmat = hodge->matrix;
-  cs_sdm_square_init(cm->n_ec, hmat);
+  hmat->init(cm->n_ec);
 
   if (ptyd->is_iso || ptyd->is_unity) {
 
@@ -3562,7 +3562,7 @@ cs_hodge_fped_voro_get(const cs_cell_mesh_t     *cm,
   /* Initialize the local matrix related to this discrete Hodge operator */
 
   cs_sdm_t  *hmat = hodge->matrix;
-  cs_sdm_square_init(cm->n_fc, hmat);
+  hmat->init(cm->n_fc);
 
   if (ptyd->is_iso) {
 
@@ -3599,7 +3599,7 @@ cs_hodge_fped_voro_get(const cs_cell_mesh_t     *cm,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-    cs_sdm_dump(cm->c_id, nullptr, nullptr, hodge->matrix);
+    hodge->matrix->dump(cm->c_id);
   }
 #endif
 
@@ -3653,7 +3653,7 @@ cs_hodge_fped_cost_get(const cs_cell_mesh_t     *cm,
   /* Initialize the local matrix related to this discrete Hodge operator */
 
   cs_sdm_t  *hmat = hodge->matrix;
-  cs_sdm_square_init(cm->n_fc, hmat);
+  hmat->init(cm->n_fc);
 
   if (ptyd->is_unity)
     _compute_cost_quant_iso(cm->n_fc, 1/cm->vol_c, 1.0,
@@ -3739,7 +3739,7 @@ cs_hodge_fped_bubble_get(const cs_cell_mesh_t     *cm,
      and discrete Hodge operator from DUAL->PRIMAL space */
 
   cs_sdm_t  *hmat = hodge->matrix;
-  cs_sdm_square_init(cm->n_fc, hmat);
+  hmat->init(cm->n_fc);
 
   if (ptyd->is_iso || ptyd->is_unity) {
 
@@ -3815,7 +3815,7 @@ cs_hodge_edfp_voro_get(const cs_cell_mesh_t     *cm,
   /* Initialize the local matrix related to this discrete Hodge operator */
 
   cs_sdm_t  *hmat = hodge->matrix;
-  cs_sdm_square_init(cm->n_fc, hmat);
+  hmat->init(cm->n_fc);
 
   if (ptyd->is_iso) {
 
@@ -3853,7 +3853,7 @@ cs_hodge_edfp_voro_get(const cs_cell_mesh_t     *cm,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-    cs_sdm_dump(cm->c_id, nullptr, nullptr, hdg);
+    hdg->dump(cm->c_id);
   }
 #endif
 
@@ -3907,7 +3907,7 @@ cs_hodge_edfp_cost_get(const cs_cell_mesh_t     *cm,
   /* Initialize the local matrix related to this discrete Hodge operator */
 
   cs_sdm_t  *hmat = hodge->matrix;
-  cs_sdm_square_init(cm->n_fc, hmat);
+  hmat->init(cm->n_fc);
 
   if (ptyd->is_unity)
     _compute_cost_quant_iso(cm->n_fc, 1/cm->vol_c, 1.0,
@@ -3991,7 +3991,7 @@ cs_hodge_edfp_cost_get_opt(const cs_cell_mesh_t     *cm,
      and discrete Hodge operator from DUAL->PRIMAL space */
 
   cs_sdm_t  *hmat = hodge->matrix;
-  cs_sdm_square_init(cm->n_fc, hmat);
+  hmat->init(cm->n_fc);
 
   if (ptyd->is_iso || ptyd->is_unity) {
 
@@ -4077,7 +4077,7 @@ cs_hodge_edfp_bubble_get(const cs_cell_mesh_t     *cm,
      and discrete Hodge operator from DUAL->PRIMAL space */
 
   cs_sdm_t  *hmat = hodge->matrix;
-  cs_sdm_square_init(cm->n_fc, hmat);
+  hmat->init(cm->n_fc);
 
   if (ptyd->is_iso || ptyd->is_unity) {
 
@@ -4288,7 +4288,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
         /* Local matrix-vector operation */
 
-        cs_sdm_square_matvec(hodge->matrix, _in, cb->values);
+        hodge->matrix->dot(_in, cb->values);
 
         /* Assemble the resulting vector */
 
@@ -4303,7 +4303,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
         /* Local matrix-vector operation */
 
-        cs_sdm_square_matvec(hodge->matrix, _in, cb->values);
+        hodge->matrix->dot(_in, cb->values);
 
         /* Assemble the resulting vector */
 
@@ -4318,7 +4318,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
         /* Local matrix-vector operation */
 
-        cs_sdm_square_matvec(hodge->matrix, _in, cb->values);
+        hodge->matrix->dot(_in, cb->values);
 
         /* Assemble the resulting vector */
 
@@ -4440,7 +4440,7 @@ cs_hodge_circulation_from_flux(const cs_cdo_connect_t       *connect,
 
       /* Local matrix-vector operation */
 
-      cs_sdm_square_matvec(hodge->matrix, _fluxes, _circ);
+      hodge->matrix->dot(_fluxes, _circ);
 
     } /* Main loop on cells */
 
@@ -4473,7 +4473,7 @@ cs_hodge_compute_wbs_surfacic(const cs_face_mesh_t    *fm,
 
   /* Reset values */
 
-  cs_sdm_square_init(fm->n_vf, hf);
+  hf->init(fm->n_vf);
 
   for (short int vfi = 0; vfi < fm->n_vf; vfi++) {
 
@@ -4507,7 +4507,7 @@ cs_hodge_compute_wbs_surfacic(const cs_face_mesh_t    *fm,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (fm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Surfacic Hodge op.   ");
-    cs_sdm_dump(fm->f_id, nullptr, nullptr, hf);
+    hf->dump(fm->f_id);
   }
 #endif
 }

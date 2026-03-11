@@ -260,7 +260,7 @@ cs_macfb_advection_no_diffusion(const cs_equation_param_t *eqp,
   if (cb->cell_flag & CS_FLAG_SOLID_CELL) {
     /* Nothing to do. No advection in the current cell volume */
 
-    cs_sdm_init(cm->n_fc, macb->n_fc, adv);
+    adv->init(cm->n_fc, macb->n_fc);
 
     return;
   }
@@ -288,7 +288,7 @@ cs_macfb_advection_no_diffusion(const cs_equation_param_t *eqp,
       cs_log_printf(
         CS_LOG_DEFAULT, "f%d;% -5.3e|", cm->f_ids[f], cb->adv_fluxes[f]);
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix");
-    cs_sdm_dump(cm->c_id, nullptr, nullptr, adv);
+    adv->dump(cm->c_id);
   }
 #endif
 }
@@ -330,7 +330,7 @@ cs_macfb_advection(const cs_equation_param_t *eqp,
   if (cb->cell_flag & CS_FLAG_SOLID_CELL) {
     /* Nothing to do. No advection in the current cell volume */
 
-    cs_sdm_init(cm->n_fc, macb->n_fc, adv);
+    adv->init(cm->n_fc, macb->n_fc);
 
     return;
   }
@@ -352,7 +352,7 @@ cs_macfb_advection(const cs_equation_param_t *eqp,
       cs_log_printf(
         CS_LOG_DEFAULT, "f%d;% -5.3e|", macb->f_ids[f], cb->adv_fluxes[f]);
     cs_log_printf(CS_LOG_DEFAULT, "\n>> Cell advection matrix");
-    cs_sdm_dump(cm->c_id, nullptr, nullptr, adv);
+    adv->dump(cm->c_id);
   }
 #endif
 }
@@ -392,7 +392,7 @@ cs_macfb_advection_upwnoc(const cs_cell_mesh_t     *cm,
 
   /* Initialize objects */
   const cs_lnum_t n_cols = macb->n_dofs;
-  cs_sdm_init(cm->n_fc, n_cols, adv);
+  adv->init(cm->n_fc, n_cols);
 
   /* Loop on inner faces */
   for (short int fi = 0; fi < cm->n_fc; fi++) {
@@ -475,7 +475,7 @@ cs_macfb_advection_upwcsv(const cs_cell_mesh_t     *cm,
 
   /* Initialize objects */
   const cs_lnum_t n_cols = macb->n_dofs;
-  cs_sdm_init(cm->n_fc, n_cols, adv);
+  adv->init(cm->n_fc, n_cols);
 
   /* Loop on inner faces */
   for (short int fi = 0; fi < cm->n_fc; fi++) {
@@ -554,7 +554,7 @@ cs_macfb_advection_cennoc(const cs_cell_mesh_t     *cm,
 
   /* Initialize objects */
   const cs_lnum_t n_cols = macb->n_dofs;
-  cs_sdm_init(cm->n_fc, n_cols, adv);
+  adv->init(cm->n_fc, n_cols);
 
   /* Loop on inner faces */
   for (short int fi = 0; fi < cm->n_fc; fi++) {
@@ -635,7 +635,7 @@ cs_macfb_advection_cencsv(const cs_cell_mesh_t     *cm,
 
   /* Initialize objects */
   const cs_lnum_t n_cols = macb->n_dofs;
-  cs_sdm_init(cm->n_fc, n_cols, adv);
+  adv->init(cm->n_fc, n_cols);
 
   /* Loop on inner faces */
   for (short int fi = 0; fi < cm->n_fc; fi++) {

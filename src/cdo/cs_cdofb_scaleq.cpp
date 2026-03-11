@@ -225,7 +225,7 @@ _sfb_init_cell_system(const cs_cell_mesh_t         *cm,
 
   cs_cell_sys_reset(cm->n_fc, csys);
 
-  cs_sdm_square_init(n_dofs, csys->mat);
+  csys->mat->init(n_dofs);
 
   for (short int f = 0; f < cm->n_fc; f++) {
     csys->dof_ids[f] = cm->f_ids[f];
@@ -302,8 +302,7 @@ _sfb_conv_diff_reac(const cs_equation_param_t     *eqp,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys)) {
       cs_log_printf(CS_LOG_DEFAULT, ">> Local mass matrix");
-      cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids,
-                  mass_hodge->matrix);
+      mass_hodge->matrix->dump(csys->c_id, csys->dof_ids, csys->dof_ids);
     }
 #endif
   }
@@ -325,7 +324,7 @@ _sfb_conv_diff_reac(const cs_equation_param_t     *eqp,
 
     /* Add the local diffusion operator to the local system */
 
-    cs_sdm_add(csys->mat, cb->loc);
+    *csys->mat += *cb->loc;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
@@ -1918,7 +1917,7 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
         /* Update rhs with csys->mat*p^n */
 
         double  *time_pn = cb->values;
-        cs_sdm_square_matvec(mass_mat, csys->val_n, time_pn);
+        mass_mat->dot(csys->val_n, time_pn);
         for (short int i = 0; i < csys->n_dofs; i++)
           csys->rhs[i] += tpty_coef*time_pn[i];
 
@@ -2223,7 +2222,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
        *           tcoef*adr_pn where adr_pn = csys->mat * p_n */
 
       double  *adr_pn = cb->values;
-      cs_sdm_square_matvec(csys->mat, csys->val_n, adr_pn);
+      csys->mat->dot(csys->val_n, adr_pn);
       for (short int i = 0; i < csys->n_dofs; i++) /* n_dofs = n_vc */
         csys->rhs[i] -= tcoef * adr_pn[i];
 
@@ -2266,7 +2265,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
         /* Update rhs with mass_mat*p^n */
 
         double  *time_pn = cb->values;
-        cs_sdm_square_matvec(mass_mat, csys->val_n, time_pn);
+        mass_mat->dot(csys->val_n, time_pn);
         for (short int i = 0; i < csys->n_dofs; i++)
           csys->rhs[i] += tpty_coef*time_pn[i];
 
@@ -2597,7 +2596,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
 
         cs_real_t  *res = cb->values;
         memset(res, 0, (cm->n_fc + 1)*sizeof(cs_real_t));
-        cs_sdm_square_matvec(cb->loc, p_theta, res);
+        cb->loc->dot(p_theta, res);
 
         eb->diffusion_term[cm->c_id] += res[cm->n_fc];
 
@@ -2625,7 +2624,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
 
         cs_real_t  *res = cb->values;
         memset(res, 0, (cm->n_fc + 1)*sizeof(cs_real_t));
-        cs_sdm_square_matvec(cb->loc, p_theta, res);
+        cb->loc->dot(p_theta, res);
 
         eb->advection_term[cm->c_id] += res[cm->n_fc];
 

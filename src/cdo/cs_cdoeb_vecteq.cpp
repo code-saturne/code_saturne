@@ -161,7 +161,7 @@ _eb_init_cell_system(const cs_cell_mesh_t                *cm,
 
   cs_cell_sys_reset(cm->n_fc, csys); /* Generic part */
 
-  cs_sdm_square_init(csys->n_dofs, csys->mat);
+  csys->mat->init(csys->n_dofs);
 
   for (short int e = 0; e < cm->n_ec; e++) {
     csys->dof_ids[e] = cm->e_ids[e];
@@ -247,7 +247,7 @@ _eb_curlcurl(const cs_equation_param_t     *eqp,
 
   /* Build the curl-curl operator in cb->loc */
 
-  cs_sdm_square_init(cm->n_ec, cb->loc);
+  cb->loc->init(cm->n_ec);
 
   for (int fk = 0; fk < cm->n_fc; fk++) {
 
@@ -275,7 +275,7 @@ _eb_curlcurl(const cs_equation_param_t     *eqp,
 
   /* Add the local curl-curl operator to the local system */
 
-  cs_sdm_add(csys->mat, cb->loc);
+  *csys->mat += *cb->loc;
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOEB_VECTEQ_DBG > 1
   if (cs_dbg_cw_test(eqp, cm, csys))
