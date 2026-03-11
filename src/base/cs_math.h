@@ -87,6 +87,7 @@ typedef enum {
 /* Numerical constants */
 
 #if  (defined(__NVCC__) && defined(__CUDA_ARCH__)) \
+  || (defined(__HIPCC__)) \
   || defined(SYCL_LANGUAGE_VERSION) \
   || defined(HAVE_OPENMP_TARGET)
 
@@ -110,7 +111,8 @@ extern const cs_real_t cs_math_pi;
 
 #endif
 
-#if !(defined(__NVCC__) && defined(__CUDA_ARCH__))
+#if !(defined(__NVCC__) && defined(__CUDA_ARCH__)) \
+  && !(defined(__HIPCC__))
 
 extern const cs_real_t cs_math_1ov3;
 extern const cs_real_t cs_math_2ov3;

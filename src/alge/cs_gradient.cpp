@@ -6852,7 +6852,7 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
 #endif
 #if defined(HAVE_HIP)
 
-  if (accel) {
+  if (on_device) {
     cs_gradient_strided_lsq_hip(m,
                                 madj,
                                 fvq,

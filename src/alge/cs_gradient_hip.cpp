@@ -1455,7 +1455,7 @@ cs_gradient_strided_gg_r_hip
   const cs_lnum_t *restrict cell_i_faces = nullptr;
   const short int *restrict cell_i_faces_sgn = nullptr;
 
-  if (e2n_sum_type == CS_E2N_SUM_SCATTER_ATOMIC) {
+  if (e2n_sum_type == CS_E2N_SUM_SCATTER) {
     i_face_cells = cs_get_device_ptr_const(m->i_face_cells);
   }
   else if (e2n_sum_type == CS_E2N_SUM_GATHER) {
@@ -1494,7 +1494,7 @@ cs_gradient_strided_gg_r_hip
 
   /* Initialization */
 
-  if (e2n_sum_type == CS_E2N_SUM_SCATTER_ATOMIC) {
+  if (e2n_sum_type == CS_E2N_SUM_SCATTER) {
     hipMemsetAsync(grad_d, 0, n_cells_ext * sizeof(cs_real_t)*stride*3, stream);
   }
 
@@ -1506,7 +1506,7 @@ cs_gradient_strided_gg_r_hip
   const unsigned int blocksize = 256;
   int gridsize;
 
-  if (e2n_sum_type == CS_E2N_SUM_SCATTER_ATOMIC) {
+  if (e2n_sum_type == CS_E2N_SUM_SCATTER) {
     gridsize = cs_hip_grid_size(m->n_i_faces * stride, blocksize);
     _gg_with_r_gradient_i_faces<<<gridsize, blocksize, 0, stream>>>
       (m->n_i_faces,
