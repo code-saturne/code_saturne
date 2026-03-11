@@ -2180,7 +2180,13 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
 
   const cs_rotation_t *rotation = cs_glob_rotation;
 
-  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+  /* cs_math_33_eig_val_vec is not ported to device, and it is not sure
+   * that it can be simply done. Hence we use a host context here.
+   * Not doing so leads to compiling errors (AMD) or crashes during runtime
+   * when combining both (NVIDIA).
+   */
+  cs_host_context h_ctx;
+  h_ctx.parallel_for(n_cells, [=] CS_F_HOST (cs_lnum_t c_id) {
 
     const cs_lnum_t ind = solid_stride*c_id;
     if (c_is_solid[ind])
@@ -2372,7 +2378,7 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
     } /* end of loop on ij */
 
   }); /* end loop on cells */
-  ctx.wait();
+  h_ctx.wait();
 
   /* buoyancy source term
    * -------------------- */
