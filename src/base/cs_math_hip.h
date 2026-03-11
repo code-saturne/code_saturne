@@ -67,7 +67,11 @@ __device__ cs_hip_mask_t
 _conflict_mask(cs_hip_mask_t mask,
                V             v) noexcept
 {
-#if HIP_VERSION >= 60200000
+// It seems that although the dunder warp functions are available for
+// ROCm 6.2, they may be disabled...
+// Documentation indicates that it is activated by default on ROCm 7.0
+#if (HIP_VERSION >= 60200000 && defined(HIP_ENABLE_WARP_SYNC_BUILTINS)) \
+  || (HIP_VERSION >= 70000000 && !defined(HIP_DISABLE_WAR_SYNC_BUILTINS))
   return __match_any_sync(mask, v);
 #else
   cs_hip_mask_t lanemask_eq = 1u << (threadIdx.x % CS_HIP_WARP_SIZE);
@@ -86,7 +90,10 @@ loop:
 entry:
   // Handle different warp sizes
 #if CS_HIP_WARP_SIZE == 64
-  leader = __ffsll(mask) - 1;
+// ffsll seems to have problems distinguishing between long long int and
+// long long unsigned...
+//  leader = __ffsll(mask) - 1;
+  leader = ( mask == 0 ? -1 : __builtin_ctzll(mask) );
 #else
   leader = __ffs(mask) - 1;
 #endif
@@ -134,7 +141,10 @@ _reduce_add(cs_hip_mask_t  mask,
 
   while (__ballot(peers != 0)) {
 #if CS_HIP_WARP_SIZE == 64
-    int next = __ffsll(peers);   // 1-based index
+    int next = ( peers == 0 ? -1 : __builtin_ctzll(peers) ) + 1;
+// ffsll seems to have problems distinguishing between long long int and
+// long long unsigned...
+//    int next = __ffsll(peers);   // 1-based index
 #else
     int next = __ffs(peers);   // 1-based index
 #endif
