@@ -1627,7 +1627,12 @@ cs_turbomachinery_initialize(void)
 
   if (cs_glob_n_joinings > 0) {
     cs_real_t t_elapsed;
-    cs_turbomachinery_update_mesh(&t_elapsed);
+    // Save modification status, as modification by an update
+    // here should not count as a mesh modification as regards
+    // mesh saving/checkpointing.
+    int m_modified = cs_glob_mesh->modified;
+    _update_mesh(false, &t_elapsed);
+    cs_glob_mesh->modified = m_modified;
   }
 
   /* Adapt postprocessing options if required;
