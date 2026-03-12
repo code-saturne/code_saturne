@@ -441,7 +441,7 @@ cs_boundary_conditions_check(int  bc_type[],
   const char *sc_name = nullptr, *sc_vf_name = nullptr;
   int icodcl_scal = -1, icodcl_vf_sc = -1;
   cs_gnum_t n_scal_error = 0, n_scal_vf_error = 0;
-  bool iok_rough_sc = false;
+  bool ierr_rough_sc = false;
 
   for (int ii = 0; ii < n_fields; ii++) {
 
@@ -497,7 +497,6 @@ cs_boundary_conditions_check(int  bc_type[],
 
       /* Check roughness if rough wall function */
       if (icodcl_sc[f_id] == CS_BC_ROUGH_WALL_MODELLED) {
-        bool ierr_rough_sc = false;
 
         if (f_rough_t == nullptr)
           ierr_rough_sc = true;
@@ -505,6 +504,7 @@ cs_boundary_conditions_check(int  bc_type[],
           ierr_rough_sc = true;
 
         if (ierr_rough_sc) {
+          sc_name = f_sc->name;
           if (bc_type[f_id] > 0)
             bc_type[f_id] = - bc_type[f_id];
 
@@ -813,21 +813,29 @@ cs_boundary_conditions_check(int  bc_type[],
     _synchronize_boundary_conditions_error(&n_scal_error, 1, &icodcl_scal);
 
     if (n_scal_error != 0) {
-      char string[20];
 
-      if (iok_rough_sc)
-        strncpy(string, "roughness", 10);
-      else
-        strncpy(string, sc_name, 20-1);
+      if (ierr_rough_sc) {
+        cs_log_printf
+          (CS_LOG_DEFAULT,
+           _("@\n"
+             "@ Unexpected boundary conditions\n"
+             "@   Number of boundary faces: %llu\n"
+             "@     boundary roughness of variable: %s\n"
+             "@     either does not exist, or is negative\n"
+             "@\n"), (unsigned long long)n_scal_error, sc_name);
 
-      cs_log_printf
-        (CS_LOG_DEFAULT,
-         _("@\n"
-           "@ Unexpected boundary conditions\n"
-           "@   Number of boundary faces: %llu\n"
-           "@     variable: %s\n"
-           "@     icodcl for last face: %d\n"
-           "@\n"), (unsigned long long)n_scal_error, string, icodcl_scal);
+      }
+      else {
+
+        cs_log_printf
+          (CS_LOG_DEFAULT,
+           _("@\n"
+             "@ Unexpected boundary conditions\n"
+             "@   Number of boundary faces: %llu\n"
+             "@     variable: %s\n"
+             "@     icodcl for last face: %d\n"
+             "@\n"), (unsigned long long)n_scal_error, sc_name, icodcl_scal);
+      }
     }
 
     _synchronize_boundary_conditions_error(&n_scal_vf_error, 1, &icodcl_vf_sc);
