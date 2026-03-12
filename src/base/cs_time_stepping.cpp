@@ -816,6 +816,8 @@ cs_time_stepping(void)
 
     }
 
+    cs_control_send_state();
+
     /* Write to "run_solver.log" periodically
        -------------------------------------- */
 

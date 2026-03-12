@@ -1446,16 +1446,6 @@ public:
     if (n < 1)
       return;
 
-    /* Get output notebook values */
-
-    if (v->n_output > 0) {
-      string s = "Get " + to_string(v->n_output) + " output variables";
-      _log(fmi2OK, CS_LOG_TRACE, s);
-      _recv_sock(_cs_socket, (char *)_cs_variables->output_vals,
-                 _control_queue,
-                 sizeof(double), v->n_output);
-    }
-
     /* Send input notebook values */
 
     if (v->n_input > 0) {
@@ -1472,8 +1462,20 @@ public:
             + string(buf_rcv);
         _log(fmi2Warning, CS_LOG_WARNING, s);
       }
+    }
+
+    /* Get output notebook values */
+
+    if (v->n_output > 0) {
+      string s = "Get " + to_string(v->n_output) + " output variables";
+      _log(fmi2OK, CS_LOG_TRACE, s);
+      _recv_sock(_cs_socket, (char *)_cs_variables->output_vals,
+                 _control_queue,
+                 sizeof(double), v->n_output);
+    }
 
 #if CS_TIMING == 1
+    {
       (void)gettimeofday(&tv_time_1, nullptr);
 
       long usec =   (tv_time_1.tv_sec - tv_time_0.tv_sec) * (long)1000000
@@ -1481,9 +1483,9 @@ public:
       double sec = (double)usec / 1000000.;
 
       cout << "Time to advance " << _instance_name << ": " << sec << endl;
+    }
 #endif
 
-    }
   }
 
   /*--------------------------------------------------------------------------*/

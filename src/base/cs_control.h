@@ -68,6 +68,16 @@ void
 cs_control_check_file(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check the presence of a control file and deal with the interactive
+ *        control.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_control_send_state(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
