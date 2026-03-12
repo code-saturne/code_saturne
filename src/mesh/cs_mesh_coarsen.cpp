@@ -1226,10 +1226,41 @@ _merge_i_faces(cs_mesh_t       *m,
 
   /* Transform indexed new->old array to simple array */
 
-  for (cs_lnum_t i = 0; i < n_new; i++) {
-    cs_lnum_t j = n2o_idx[i];
-    assert(j >= i);
-    n2o[i] = n2o[j];
+  // Set n2o[i] to the local index corresponding to the biggest global id,
+  // so that this info is synchronized between domains.
+
+  const cs_gnum_t *i_face_gnum = m->global_i_face_num;
+
+  if (i_face_gnum) {
+    cs_lnum_t *n2o_flat;
+    CS_MALLOC(n2o_flat, n_new, cs_lnum_t);
+
+    for (cs_lnum_t i = 0; i < n_new; i++) {
+      cs_lnum_t index = -1;
+      cs_gnum_t biggest = 0;
+
+      for (cs_lnum_t j = n2o_idx[i]; j < n2o_idx[i+1]; j++) {
+        cs_lnum_t lid = n2o[j];
+        cs_gnum_t gid = i_face_gnum[lid];
+
+        if (gid > biggest) {
+          biggest = gid;
+          index = j;
+        }
+      }
+
+      n2o_flat[i] = index;
+    }
+
+    memcpy(n2o, n2o_flat, n_new*sizeof(cs_lnum_t));
+    CS_FREE(n2o_flat);
+  }
+  else {
+    for (cs_lnum_t i = 0; i < n_new; i++) {
+      cs_lnum_t j = n2o_idx[i];
+      assert(j >= i);
+      n2o[i] = n2o[j];
+    }
   }
 
   CS_FREE(n2o_idx);
