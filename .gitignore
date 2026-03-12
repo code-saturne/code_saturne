@@ -36,6 +36,7 @@ Makefile.in
 /aclocal.m4
 /autom4te.cache
 /src/base/cs_config.h.in
+/src/base/cs_config.h.in~
 /configure
 /stamp-h.in
 .vscode/*
