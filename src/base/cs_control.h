@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -66,6 +66,16 @@ cs_control_finalize(void);
 
 void
 cs_control_check_file(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check the presence of a control file and deal with the interactive
+ *        control.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_control_send_state(void);
 
 /*----------------------------------------------------------------------------*/
 
