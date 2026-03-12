@@ -1157,9 +1157,9 @@ public:
   operator new
   (
     std::size_t count,   /*!<[in] Size to allocate */
-#if (defined(__GNUC__) || defined(__clang__)) && \
-  __has_builtin(__builtin_LINE) && \
- __has_builtin(__builtin_FILE)
+#if (defined(__GNUC__) || defined(__clang__)) \
+    && !defined(CS_AOCC_BUILTIN_WORKAROUND) \
+    && __has_builtin(__builtin_LINE) && __has_builtin(__builtin_FILE)
     const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
     const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
 #else
