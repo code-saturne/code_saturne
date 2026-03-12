@@ -617,7 +617,7 @@ cs_cdofb_navsto_add_grad_div(short int          n_fc,
 
     /* Begin with the diagonal block */
 
-    b = cs_sdm_get_block(mat, bi, bi);
+    b = mat->get_block(bi, bi);
     assert(b->n_rows == b->n_cols && b->n_rows == 3);
     for (short int l = 0; l < 3; l++) {
       cs_real_t *m_l = b->val + 3*l;
@@ -628,11 +628,10 @@ cs_cdofb_navsto_add_grad_div(short int          n_fc,
     /* Continue with the extra-diag. blocks */
 
     for (short int bj = bi+1; bj < n_fc; bj++) {
-
-      b = cs_sdm_get_block(mat, bi, bj);
+      b = mat->get_block(bi, bj);
       assert(b->n_rows == b->n_cols && b->n_rows == 3);
       cs_real_t *mij  = b->val;
-      b = cs_sdm_get_block(mat, bj, bi);
+      b               = mat->get_block(bj, bi);
       assert(b->n_rows == b->n_cols && b->n_rows == 3);
       cs_real_t *mji  = b->val;
 
@@ -1450,7 +1449,7 @@ cs_cdofb_block_dirichlet_alge(short int                  f,
         continue;
 
       cs_real_t *_rhs = csys->rhs + 3 * bi;
-      cs_sdm_t  *mIF  = cs_sdm_get_block(m, bi, f);
+      cs_sdm_t  *mIF  = m->get_block(bi, f);
 
       mIF->dot(x_dir, ax_dir);
       for (int k = 0; k < 3; k++)
@@ -1473,7 +1472,7 @@ cs_cdofb_block_dirichlet_alge(short int                  f,
 
       /* Reset block (I,F) which is a 3x3 block */
 
-      cs_sdm_t *mIF = cs_sdm_get_block(m, bi, f);
+      cs_sdm_t *mIF = m->get_block(bi, f);
       memset(mIF->val, 0, 9 * sizeof(double));
     }
     else { /* bi == f */
@@ -1481,11 +1480,11 @@ cs_cdofb_block_dirichlet_alge(short int                  f,
       /* Reset block (I==F,J) which is a 3x3 block */
 
       for (int bj = 0; bj < bd->n_col_blocks; bj++) {
-        cs_sdm_t *mFJ = cs_sdm_get_block(m, f, bj);
+        cs_sdm_t *mFJ = m->get_block(f, bj);
         memset(mFJ->val, 0, 9 * sizeof(double));
       }
 
-      cs_sdm_t *mFF = cs_sdm_get_block(m, f, f);
+      cs_sdm_t *mFF = m->get_block(f, f);
       assert((mFF->n_cols == 3) && (mFF->n_rows == 3));
       for (int k = 0; k < 3; k++)
         mFF->val[4 * k] = 1; /* 4 == mFF->n_rows + 1 */
@@ -1541,7 +1540,7 @@ cs_cdofb_block_dirichlet_pena(short int                  f,
 
   /* Penalize diagonal entry (and its rhs if needed) */
 
-  cs_sdm_t *mFF = cs_sdm_get_block(m, f, f);
+  cs_sdm_t *mFF = m->get_block(f, f);
   assert((mFF->n_rows == 3) && (mFF->n_cols == 3));
 
   if (is_non_homogeneous) {
@@ -1635,7 +1634,7 @@ cs_cdofb_block_dirichlet_weak(short int                  fb,
 
       /* Retrieve the 3x3 matrix */
 
-      cs_sdm_t *bij = cs_sdm_get_block(csys->mat, bi, bj);
+      cs_sdm_t *bij = csys->mat->get_block(bi, bj);
       assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
 
       const cs_real_t _val = bc_op->val[n_dofs * bi + bj];
@@ -1743,7 +1742,7 @@ cs_cdofb_block_dirichlet_wsym(short int                  fb,
 
       /* Retrieve the 3x3 matrix */
 
-      cs_sdm_t *bij = cs_sdm_get_block(csys->mat, bi, bj);
+      cs_sdm_t *bij = csys->mat->get_block(bi, bj);
       assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
 
       const cs_real_t _val = bc_op->val[n_dofs * bi + bj];
@@ -1832,7 +1831,7 @@ cs_cdofb_symmetry(short int                  fb,
 
   /* Handle the diagonal block: Retrieve the 3x3 matrix */
 
-  cs_sdm_t *bFF = cs_sdm_get_block(csys->mat, fb, fb);
+  cs_sdm_t *bFF = csys->mat->get_block(fb, fb);
   assert(bFF->n_rows == bFF->n_cols && bFF->n_rows == 3);
 
   const cs_real_t _val = pcoef + 2 * bc_op->val[fb * (n_dofs + 1)];
@@ -1850,9 +1849,9 @@ cs_cdofb_symmetry(short int                  fb,
     /* It should be done both for face- and cell-defined DoFs */
     /* Retrieve the 3x3 matrix */
 
-    cs_sdm_t *bFJ = cs_sdm_get_block(csys->mat, fb, xj);
+    cs_sdm_t *bFJ = csys->mat->get_block(fb, xj);
     assert(bFJ->n_rows == bFJ->n_cols && bFJ->n_rows == 3);
-    cs_sdm_t *bJF = cs_sdm_get_block(csys->mat, xj, fb);
+    cs_sdm_t *bJF = csys->mat->get_block(xj, fb);
     assert(bJF->n_rows == bJF->n_cols && bJF->n_rows == 3);
 
     const cs_real_t op_fj      = bc_op->val[n_dofs * fb + xj];
@@ -1941,7 +1940,7 @@ cs_cdofb_prescribed_smooth_wall(short int                  fb,
 
     /* Update the local system matrix */
 
-    cs_sdm_t  *bff = cs_sdm_get_block(csys->mat, fb, fb);
+    cs_sdm_t *bff = csys->mat->get_block(fb, fb);
     assert(bff->n_rows == bff->n_cols && bff->n_rows == 3);
 
     bff->val[0] += (h_t + (-h_t + h_n)*ni_ni[0])*f_meas;

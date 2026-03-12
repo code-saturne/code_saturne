@@ -821,7 +821,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
         /* Get cell-cell block */
 
-        cs_sdm_t *acc = cs_sdm_get_block(csys->mat, n_fc, n_fc);
+        cs_sdm_t *acc = csys->mat->get_block(n_fc, n_fc);
 
         for (short int k = 0; k < 3; k++) {
           csys->rhs[3*n_fc + k] += ptyc * csys->val_n[3*n_fc+k];

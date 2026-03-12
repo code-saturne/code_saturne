@@ -354,7 +354,7 @@ _vvb_conv_diff_reac(const cs_equation_param_t     *eqp,
 
         /* Retrieve the 3x3 matrix */
 
-        cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, bi, bj);
+        cs_sdm_t *bij = csys->mat->get_block(bi, bj);
         assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
 
         const cs_real_t  _val = sval[cm->n_vc*bi+bj];
@@ -409,7 +409,7 @@ _vvb_conv_diff_reac(const cs_equation_param_t     *eqp,
 
         /* Retrieve the 3x3 matrix */
 
-        cs_sdm_t  *bii = cs_sdm_get_block(csys->mat, bi, bi);
+        cs_sdm_t *bii = csys->mat->get_block(bi, bi);
         assert(bii->n_rows == 3 && bii->n_cols == 3);
 
         bii->val[0] += vpty;
@@ -431,7 +431,7 @@ _vvb_conv_diff_reac(const cs_equation_param_t     *eqp,
 
           /* Retrieve the 3x3 matrix */
 
-          cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, bi, bj);
+          cs_sdm_t *bij = csys->mat->get_block(bi, bj);
           assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
 
           const cs_real_t  _val = cb->rpty_val * mval[cm->n_vc*bi+bj];

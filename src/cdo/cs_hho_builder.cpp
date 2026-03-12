@@ -592,16 +592,16 @@ _add_contrib_mf_cg(const cs_real_3_t         xv1,
     const cs_real_t  w = gw[gp];
 
     /* First block (column) c_phi0 */
-    cs_sdm_t  *m0 = cs_sdm_get_block(mf_cg, 0, 0);
+    cs_sdm_t        *m0    = mf_cg->get_block(0, 0);
     const cs_real_t  coef0 = w * c_phi[0];
     for (short int j = 0; j < fs; j++)
       m0->val[j] += coef0 * f_phi[j];
 
     /* Second block (c_phi_k \ 0) */
-    cs_sdm_t  *mk = cs_sdm_get_block(mf_cg, 0, 1);
+    cs_sdm_t *mk = mf_cg->get_block(0, 1);
 
     /* Third block (c_phi_k+1 \ k) */
-    cs_sdm_t  *mkp1 = cs_sdm_get_block(mf_cg, 0, 2);
+    cs_sdm_t *mkp1 = mf_cg->get_block(0, 2);
 
     for (short int i = 0; i < fs; i++) {
       const cs_real_t  coef_i = w * f_phi[i];
@@ -942,7 +942,7 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t      *cm,
 
   /* Retrieve the rhs block related to "cell" and to this face.
      rhs is a matrix. We store its transposed. */
-  cs_sdm_t  *rc = cs_sdm_get_block(rhs_t, cm->n_fc, 0);
+  cs_sdm_t *rc = rhs_t->get_block(cm->n_fc, 0);
 
   /* Pre-compute tensor x outward normal */
   cs_real_3_t  *kappa_nfc = cb->vectors;
@@ -975,7 +975,7 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t      *cm,
 
         /* Retrieve the rhs block related to this face.
            rhs is a matrix. We store its transposed. */
-        cs_sdm_t  *rf = cs_sdm_get_block(rhs_t, f, 0);
+        cs_sdm_t *rf = rhs_t->get_block(f, 0);
 
         cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
 
@@ -1004,7 +1004,7 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t      *cm,
 
       /* Retrieve the rhs block related to this face.
          rhs is a matrix. We store its transposed. */
-      cs_sdm_t  *rf = cs_sdm_get_block(rhs_t, f, 0);
+      cs_sdm_t *rf = rhs_t->get_block(f, 0);
 
       assert(n_vf > 2);
       switch(n_vf){
@@ -1078,16 +1078,16 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t      *cm,
     /* Retrieve the rhs block related to "cell" and to this face.
        rhs is a matrix. We store its transposed. */
     for (short int f = 0; f < cm->n_fc; f++) {
-      rhs = cs_sdm_get_block(rhs_t, f, 0);
-      gop = cs_sdm_get_block(hhob->grad_reco_op, f, 0);
+      rhs = rhs_t->get_block(f, 0);
+      gop = hhob->grad_reco_op->get_block(f, 0);
       assert(rhs->n_cols == 3 && rhs->n_rows == 1);
       assert(gop->n_cols == 3 && gop->n_rows == 1);
       cs_sdm_33_ldlt_solve(facto, rhs->val, gop->val);
     }
 
     /* Cell contributions */
-    rhs = cs_sdm_get_block(rhs_t, cm->n_fc, 0);
-    gop = cs_sdm_get_block(hhob->grad_reco_op, cm->n_fc, 0);
+    rhs = rhs_t->get_block(cm->n_fc, 0);
+    gop = hhob->grad_reco_op->get_block(cm->n_fc, 0);
     cs_sdm_33_ldlt_solve(facto, rhs->val, gop->val);
 
   }
@@ -1116,8 +1116,8 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t      *cm,
     /* Retrieve the rhs block related to "cell" and to this face.
        rhs is a matrix. We store its transposed. */
     for (short int f = 0; f < cm->n_fc; f++) {
-      rhs = cs_sdm_get_block(rhs_t, f, 0);
-      gop = cs_sdm_get_block(hhob->grad_reco_op, f, 0);
+      rhs = rhs_t->get_block(f, 0);
+      gop = hhob->grad_reco_op->get_block(f, 0);
       assert(rhs->n_cols == gs && rhs->n_rows == fs);
       assert(gop->n_cols == gs && gop->n_rows == fs);
       for (int i = 0; i < fs; i++)
@@ -1125,8 +1125,8 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t      *cm,
     }
 
     /* Cell contributions */
-    rhs = cs_sdm_get_block(rhs_t, cm->n_fc, 0);
-    gop = cs_sdm_get_block(hhob->grad_reco_op, cm->n_fc, 0);
+    rhs = rhs_t->get_block(cm->n_fc, 0);
+    gop = hhob->grad_reco_op->get_block(cm->n_fc, 0);
     assert(rhs->n_cols == gs && rhs->n_rows == cs);
     assert(gop->n_cols == gs && gop->n_rows == cs);
     for (int i = 0; i < cs; i++)
@@ -1238,11 +1238,10 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t      *cm,
 
   /* Blocks related to faces (b < n_fc) or cell (b == n_fc) */
   for (int b = 0; b < cm->n_fc + 1; b++) {
-
-    const cs_sdm_t  *gb = cs_sdm_get_block(hhob->grad_reco_op, b, 0);
+    const cs_sdm_t *gb = hhob->grad_reco_op->get_block(b, 0);
 
     /* Block mb = fs (or cs) * cs to compute */
-    cs_sdm_t  *mb = cs_sdm_get_block(m_ccgg, b, 0);
+    cs_sdm_t *mb = m_ccgg->get_block(b, 0);
 
     assert(mb->n_rows == gb->n_rows); /* sanity check */
 
@@ -1333,9 +1332,9 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t      *cm,
     } /* End of switch */
 
     /* Blocks of Mf_cg: c_phi0, (c_phi_k\0) and (c_phi_k+1\k) respectively */
-    const cs_sdm_t  *const m0 = cs_sdm_get_block(mf_cg, 0, 0);
-    const cs_sdm_t  *const mk = cs_sdm_get_block(mf_cg, 0, 1);
-    const cs_sdm_t  *const mkp1 = cs_sdm_get_block(mf_cg, 0, 2);
+    const cs_sdm_t *const m0   = mf_cg->get_block(0, 0);
+    const cs_sdm_t *const mk   = mf_cg->get_block(0, 1);
+    const cs_sdm_t *const mkp1 = mf_cg->get_block(0, 2);
 
     /* Reset transposed of Bf and temporary matrix */
     cs_sdm_block_init(hhob->bf_t, cm->n_fc + 1, 1, cb->ids, &fs);
@@ -1343,12 +1342,11 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t      *cm,
 
     /* --2-- Compute blocks related to faces (b < n_fc) or cell (b == n_fc) */
     for (int b = 0; b < cm->n_fc + 1; b++) {
-
-      const cs_sdm_t  *mb = cs_sdm_get_block(m_ccgg, b, 0);
-      const cs_sdm_t  *gb = cs_sdm_get_block(hhob->grad_reco_op, b, 0);
+      const cs_sdm_t *mb = m_ccgg->get_block(b, 0);
+      const cs_sdm_t *gb = hhob->grad_reco_op->get_block(b, 0);
 
       /* Block bf_f = fs (or cs) * fs to compute */
-      cs_sdm_t  *bfb = cs_sdm_get_block(hhob->bf_t, b, 0);
+      cs_sdm_t *bfb = hhob->bf_t->get_block(b, 0);
 
       assert(bfb->n_rows == gb->n_rows); /* sanity check */
       assert(mb->n_rows == gb->n_rows); /* sanity check */
@@ -1386,7 +1384,7 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t      *cm,
       /* --3-- The current block of Bf_t is now defined. Perform Bf_t * Mff.
                Mff is symmetric by construction --> use the rowrow version
       */
-      cs_sdm_t  *tmp = cs_sdm_get_block(bf_t_mff, b, 0);
+      cs_sdm_t *tmp = bf_t_mff->get_block(b, 0);
 
       cs_sdm_multiply_rowrow(bfb, fbf->projector, tmp);
 
@@ -1399,16 +1397,16 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t      *cm,
        The lower left part is set by symmetry */
     assert(bf_t_mff->block_desc->n_col_blocks == 1);
     for (int bi = 0; bi < cm->n_fc + 1; bi++) {
-      const cs_sdm_t  *bmff_i0 = cs_sdm_get_block(bf_t_mff, bi, 0);
+      const cs_sdm_t *bmff_i0 = bf_t_mff->get_block(bi, 0);
 
       for (int bj = bi; bj < cm->n_fc + 1; bj++) {
-        const cs_sdm_t  *bf_j0 = cs_sdm_get_block(hhob->bf_t, bj, 0);
+        const cs_sdm_t *bf_j0 = hhob->bf_t->get_block(bj, 0);
 
-        cs_sdm_t  *js_ij = cs_sdm_get_block(hhob->jstab, bi, bj);
+        cs_sdm_t *js_ij = hhob->jstab->get_block(bi, bj);
         cs_sdm_multiply_rowrow(bmff_i0, bf_j0, js_ij);
 
         if (bj > bi) {  /* The stabilization part is symmetric */
-          cs_sdm_t  *js_ji = cs_sdm_get_block(hhob->jstab, bj, bi);
+          cs_sdm_t *js_ji = hhob->jstab->get_block(bj, bi);
           cs_sdm_transpose_and_update(js_ij, js_ji);
         }
 

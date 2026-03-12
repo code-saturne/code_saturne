@@ -553,7 +553,7 @@ _define_vb_stiffness(const cs_cell_mesh_t   *cm,
 
   /* Stiffness matrix is symmetric by construction */
 
-  cs_sdm_symm_ur(sloc);
+  sloc->symmetrize_ur();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2616,7 +2616,7 @@ cs_hodge_vb_wbs_get_stiffness(const cs_cell_mesh_t     *cm,
 
   /* Matrix is symmetric by construction */
 
-  cs_sdm_symm_ur(sloc);
+  sloc->symmetrize_ur();
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_stiffness(cm->c_id, sloc);
@@ -2767,7 +2767,7 @@ cs_hodge_vcb_get_stiffness(const cs_cell_mesh_t     *cm,
 
   /* Matrix is symmetric by construction */
 
-  cs_sdm_symm_ur(sloc);
+  sloc->symmetrize_ur();
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_stiffness(cm->c_id, sloc);
@@ -3519,7 +3519,7 @@ cs_hodge_epfd_bubble_get(const cs_cell_mesh_t     *cm,
 
   /* Hodge matrix is symmetric by construction */
 
-  cs_sdm_symm_ur(hmat);
+  hmat->symmetrize_ur();
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_vector_hodge(cm->c_id,
@@ -3772,7 +3772,7 @@ cs_hodge_fped_bubble_get(const cs_cell_mesh_t     *cm,
 
   /* Hodge operator is symmetric */
 
-  cs_sdm_symm_ur(hmat);
+  hmat->symmetrize_ur();
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_vector_hodge(cm->c_id,
@@ -4024,7 +4024,7 @@ cs_hodge_edfp_cost_get_opt(const cs_cell_mesh_t     *cm,
 
   /* Hodge operator is symmetric */
 
-  cs_sdm_symm_ur(hmat);
+  hmat->symmetrize_ur();
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_vector_hodge(cm->c_id,
@@ -4110,7 +4110,7 @@ cs_hodge_edfp_bubble_get(const cs_cell_mesh_t     *cm,
 
   /* Hodge operator is symmetric */
 
-  cs_sdm_symm_ur(hmat);
+  hmat->symmetrize_ur();
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_vector_hodge(cm->c_id,

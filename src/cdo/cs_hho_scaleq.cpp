@@ -458,7 +458,7 @@ _condense_and_store(const cs_adjacency_t    *c2f,
 
   /* mCC is a small square matrix:
      Compute its modified Cholesky factorization */
-  const cs_sdm_t  *mCC = cs_sdm_get_block(m, n_fc, n_fc);
+  const cs_sdm_t *mCC = m->get_block(n_fc, n_fc);
 
   /* Store the transposed of m_CF to speed-up the computation of aCF_tilda */
   cs_real_t  *acc_facto = cb->values;
@@ -469,8 +469,8 @@ _condense_and_store(const cs_adjacency_t    *c2f,
     acc_facto[0] = 1./mCC->val[0];
     eqc->rc_tilda[c_offset] = acc_facto[0] * _cell_rhs[0];
     for (int f = 0; f < n_fc; f++) {
-      const cs_sdm_t  *mCF = cs_sdm_get_block(m, n_fc, f);
-      cs_sdm_t  *_acf = cs_sdm_get_block(eqc->acf_tilda, c2f_shift + f, 0);
+      const cs_sdm_t *mCF  = m->get_block(n_fc, f);
+      cs_sdm_t       *_acf = eqc->acf_tilda->get_block(c2f_shift + f, 0);
       _acf->val[0] = mCF->val[0] * acc_facto[0];
     }
     break;
@@ -484,8 +484,8 @@ _condense_and_store(const cs_adjacency_t    *c2f,
       cs_sdm_44_ldlt_solve(acc_facto, _cell_rhs, eqc->rc_tilda + c_offset);
 
       for (int f = 0; f < n_fc; f++) {
-        const cs_sdm_t  *mCF = cs_sdm_get_block(m, n_fc, f);
-        cs_sdm_t  *_acf = cs_sdm_get_block(eqc->acf_tilda, c2f_shift + f, 0);
+        const cs_sdm_t *mCF  = m->get_block(n_fc, f);
+        cs_sdm_t       *_acf = eqc->acf_tilda->get_block(c2f_shift + f, 0);
         for (int f_dof = 0; f_dof < 3; f_dof++) {
           for (int c_dof = 0; c_dof < 4; c_dof++)
             _rhs[c_dof] = mCF->val[3*c_dof + f_dof];
@@ -504,8 +504,8 @@ _condense_and_store(const cs_adjacency_t    *c2f,
       cs_sdm_ldlt_solve(10, acc_facto, _cell_rhs, eqc->rc_tilda + c_offset);
 
       for (int f = 0; f < n_fc; f++) {
-        const cs_sdm_t  *mCF = cs_sdm_get_block(m, n_fc, f);
-        cs_sdm_t  *_acf = cs_sdm_get_block(eqc->acf_tilda, c2f_shift + f, 0);
+        const cs_sdm_t *mCF  = m->get_block(n_fc, f);
+        cs_sdm_t       *_acf = eqc->acf_tilda->get_block(c2f_shift + f, 0);
         for (int f_dof = 0; f_dof < 6; f_dof++) {
           for (int c_dof = 0; c_dof < 10; c_dof++)
             _rhs[c_dof] = mCF->val[6*c_dof + f_dof];
@@ -528,7 +528,7 @@ _condense_and_store(const cs_adjacency_t    *c2f,
   for (int fi = 0; fi < n_fc; fi++) {
 
     /* Initial block to update */
-    cs_sdm_t  *m_fc = cs_sdm_get_block(m, fi, n_fc);
+    cs_sdm_t *m_fc = m->get_block(fi, n_fc);
 
     m_fc->dot(eqc->rc_tilda + c_offset, bf_tilda);
 
@@ -537,9 +537,8 @@ _condense_and_store(const cs_adjacency_t    *c2f,
       csys->rhs[eqc->n_face_dofs*fi + k] -= bf_tilda[k];
 
     for (int fj = 0; fj < n_fc; fj++) {
-
-      cs_sdm_t  *mFF = cs_sdm_get_block(m, fi, fj);
-      cs_sdm_t  *_acf = cs_sdm_get_block(eqc->acf_tilda, c2f_shift + fj, 0);
+      cs_sdm_t *mFF  = m->get_block(fi, fj);
+      cs_sdm_t *_acf = eqc->acf_tilda->get_block(c2f_shift + fj, 0);
 
       _aff->init(eqc->n_face_dofs, eqc->n_face_dofs);
       cs_sdm_multiply_rowrow(m_fc, _acf, _aff);
@@ -552,12 +551,11 @@ _condense_and_store(const cs_adjacency_t    *c2f,
   int  shift = n_fc;
   for (short int bfi = 1; bfi < n_fc; bfi++) {
     for (short int bfj = 0; bfj < n_fc; bfj++) {
-
-      cs_sdm_t  *mFF_old = cs_sdm_get_block(m, bfi, bfj);
+      cs_sdm_t *mFF_old = m->get_block(bfi, bfj);
 
       /* Set the block (i,j) */
       cs_sdm_t  *mFF = bd->blocks + shift;
-      cs_sdm_map_array(eqc->n_face_dofs, eqc->n_face_dofs, mFF, mFF_old->val);
+      mFF->map_array(eqc->n_face_dofs, eqc->n_face_dofs, mFF_old->val);
       shift++;
 
     }
@@ -1407,8 +1405,7 @@ cs_hho_scaleq_update_field(const cs_real_t            *solu,
       /* Recover the cell DoFs
          x_C = A_CC^-1 b_C (--> rc_tilda) - acf_tilda * x_F  */
       for (short int f = 0; f < cm->n_fc; f++) {
-
-        cs_sdm_t  *_acf = cs_sdm_get_block(eqc->acf_tilda, c2f_shift + f, 0);
+        cs_sdm_t         *_acf   = eqc->acf_tilda->get_block(c2f_shift + f, 0);
         const cs_real_t  *f_vals = solu + cm->f_ids[f] * eqc->n_face_dofs;
 
         /* Update c_vals c_vals += _acf * f_vals */

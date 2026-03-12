@@ -121,7 +121,7 @@ _fill_e33_rows(int                 bi,
 {
   /* m(bi,bj) is a small square matrices of size 3 */
 
-  const cs_sdm_t *const  mIJ = cs_sdm_get_block(m, bi, bj);
+  const cs_sdm_t *const   mIJ      = m->get_block(bi, bj);
   const cs_real_t *const  mIJ_vals = mIJ->val;
   const int  s = 3*bj;
 
@@ -2655,7 +2655,7 @@ cs_cdo_assembly_block33_matrix_seqs(const cs_sdm_t                *m,
 
       /* mIJ matrices are small square matrices of size 3 */
 
-      const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
+      const cs_sdm_t *const   mIJ      = m->get_block(bi, bj);
       const cs_real_t  *const mIJ_vals = mIJ->val;
 
       for (int k = 0; k < 9; k++)
@@ -2731,7 +2731,7 @@ cs_cdo_assembly_block33_matrix_seqt(const cs_sdm_t                *m,
 
       /* mIJ matrices are small square matrices of size 3 */
 
-      const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
+      const cs_sdm_t *const   mIJ      = m->get_block(bi, bj);
       const cs_real_t  *const mIJ_vals = mIJ->val;
 
       for (int k = 0; k < 9; k++)
@@ -2813,7 +2813,7 @@ cs_cdo_assembly_block33_matrix_mpis(const cs_sdm_t                *m,
 
       /* mIJ matrices are small square matrices of size 3 */
 
-      const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
+      const cs_sdm_t *const   mIJ      = m->get_block(bi, bj);
       const cs_real_t  *const mIJ_vals = mIJ->val;
 
       for (int k = 0; k < 9; k++)
@@ -2896,7 +2896,7 @@ cs_cdo_assembly_block33_matrix_mpit(const cs_sdm_t                *m,
 
       /* mIJ matrices are small square matrices of size 3 */
 
-      const cs_sdm_t *const  mIJ = cs_sdm_get_block(m, bi, bj);
+      const cs_sdm_t *const   mIJ      = m->get_block(bi, bj);
       const cs_real_t *const  mIJ_vals = mIJ->val;
 
       for (int k = 0; k < 9; k++)
@@ -2987,7 +2987,7 @@ cs_cdo_assembly_eblock_matrix_seqs(const cs_sdm_t                *m,
 
       /* mIJ matrices are small square matrices of size "dim" */
 
-      const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
+      const cs_sdm_t *const mIJ = m->get_block(bi, bj);
 
       for (int ki = 0; ki < dim; ki++) {
         const cs_real_t  *const mIJ_vals = mIJ->val + ki*dim;
@@ -3070,7 +3070,7 @@ cs_cdo_assembly_eblock_matrix_seqt(const cs_sdm_t                *m,
 
       /* mIJ matrices are small square matrices of size "dim" */
 
-      const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
+      const cs_sdm_t *const mIJ = m->get_block(bi, bj);
 
       for (int ki = 0; ki < dim; ki++) {
         const cs_real_t  *const mIJ_vals = mIJ->val + ki*dim;
@@ -3159,7 +3159,7 @@ cs_cdo_assembly_eblock_matrix_mpis(const cs_sdm_t                *m,
 
       /* mIJ matrices are small square matrices of size "dim" */
 
-      const cs_sdm_t  *const mIJ = cs_sdm_get_block(m, bi, bj);
+      const cs_sdm_t *const mIJ = m->get_block(bi, bj);
 
       for (int ki = 0; ki < dim; ki++) {
         const cs_real_t  *const mIJ_vals = mIJ->val + ki*dim;
@@ -3251,7 +3251,7 @@ cs_cdo_assembly_eblock_matrix_mpit(const cs_sdm_t                *m,
 
       /* mIJ matrices are small square matrices of size "dim" */
 
-      const cs_sdm_t *const  mIJ = cs_sdm_get_block(m, bi, bj);
+      const cs_sdm_t *const mIJ = m->get_block(bi, bj);
 
       for (int ki = 0; ki < dim; ki++) {
         const cs_real_t  *const mIJ_vals = mIJ->val + ki*dim;

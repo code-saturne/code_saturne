@@ -541,7 +541,7 @@ cs_cdofb_vecteq_diffusion(const cs_equation_param_t   *eqp,
 
         /* Retrieve the 3x3 matrix */
 
-        cs_sdm_t *bij = cs_sdm_get_block(csys->mat, bi, bj);
+        cs_sdm_t *bij = csys->mat->get_block(bi, bj);
         assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
 
         const cs_real_t _val = sval[(cm->n_fc + 1) * bi + bj];
@@ -625,7 +625,7 @@ cs_cdofb_vecteq_conv_diff_reac(const cs_equation_param_t   *eqp,
 
         /* Retrieve the 3x3 matrix */
 
-        cs_sdm_t *bij = cs_sdm_get_block(csys->mat, bi, bj);
+        cs_sdm_t *bij = csys->mat->get_block(bi, bj);
         assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
 
         const cs_real_t _val = sval[(cm->n_fc + 1) * bi + bj];
@@ -682,7 +682,7 @@ cs_cdofb_vecteq_conv_diff_reac(const cs_equation_param_t   *eqp,
        * Update the local system with reaction term. Only the block attached to
        * the current cell is involved */
 
-      cs_sdm_t *bcc = cs_sdm_get_block(csys->mat, cm->n_fc, cm->n_fc);
+      cs_sdm_t *bcc = csys->mat->get_block(cm->n_fc, cm->n_fc);
 
       const double r_val = cb->rpty_val * cm->vol_c;
       bcc->val[0] += r_val;
@@ -702,7 +702,7 @@ cs_cdofb_vecteq_conv_diff_reac(const cs_equation_param_t   *eqp,
 
           /* Retrieve the 3x3 matrix */
 
-          cs_sdm_t *bij = cs_sdm_get_block(csys->mat, bi, bj);
+          cs_sdm_t *bij = csys->mat->get_block(bi, bj);
           assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
 
           const cs_real_t r_val = cb->rpty_val * mval[(cm->n_fc + 1) * bi + bj];
@@ -1158,7 +1158,7 @@ cs_cdofb_vecteq_solve_implicit(bool                        cur2prev,
 
         /* Get cell-cell block */
 
-        cs_sdm_t *acc = cs_sdm_get_block(csys->mat, n_f, n_f);
+        cs_sdm_t *acc = csys->mat->get_block(n_f, n_f);
 
         for (short int k = 0; k < 3; k++) {
 
@@ -1446,7 +1446,7 @@ cs_cdofb_vecteq_solve_theta(bool                        cur2prev,
         const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
 
         /* Get cell-cell block */
-        cs_sdm_t *acc = cs_sdm_get_block(csys->mat, n_f, n_f);
+        cs_sdm_t *acc = csys->mat->get_block(n_f, n_f);
 
         for (short int k = 0; k < 3; k++) {
 

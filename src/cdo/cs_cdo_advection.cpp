@@ -452,7 +452,7 @@ _cdofb_stab_solu_sym(const cs_cell_mesh_t *cm,
 
   /* Stabilization operator is symmetric */
 
-  cs_sdm_symm_ur(stab);
+  stab->symmetrize_ur();
 
   /* Scale with the stabilization user coefficient */
   *stab *= stab_scaling_coef;
@@ -1880,7 +1880,7 @@ cs_cdofb_advection_close_default_vect(const cs_equation_param_t   *eqp,
     for (int bj = 0; bj < cm->n_fc + 1; bj++) {
 
       /* Retrieve the 3x3 matrix */
-      cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, bi, bj);
+      cs_sdm_t *bij = csys->mat->get_block(bi, bj);
       assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
 
       const cs_real_t  _val = sval[(cm->n_fc+1)*bi+bj];

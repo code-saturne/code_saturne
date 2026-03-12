@@ -803,8 +803,7 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_equation_param_t       *eqp,
 
   int  shift = 0;
   for (short int bi = 0; bi < bd->n_row_blocks; bi++) {
-
-    cs_sdm_t  *mII = cs_sdm_get_block(m, bi, bi);
+    cs_sdm_t *mII = m->get_block(bi, bi);
     assert(mII->n_rows == mII->n_cols);
     cs_real_t  *_rhs = csys->rhs + shift;
     const cs_flag_t  *_flag = csys->dof_flag + shift;
@@ -1073,7 +1072,7 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
     cs_real_t  *_rhs = csys->rhs + s;
     cs_real_t  *_dir = csys->dir_values + s;
     cs_flag_t  *_flg = csys->dof_flag + s;
-    cs_sdm_t  *mII = cs_sdm_get_block(m, bi, bi);
+    cs_sdm_t   *mII  = m->get_block(bi, bi);
     assert(mII->n_rows == mII->n_cols);
 
     /* Is the current block associated to a Dirichlet BC ? */
@@ -1094,9 +1093,8 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
       for (int bj = 0; bj < bd->n_col_blocks; bj++) {
 
         if (bj != bi) {
-
-          cs_sdm_t  *mIJ = cs_sdm_get_block(m, bi, bj);
-          cs_sdm_t  *mJI = cs_sdm_get_block(m, bj, bi);
+          cs_sdm_t *mIJ = m->get_block(bi, bj);
+          cs_sdm_t *mJI = m->get_block(bj, bi);
 
           memset(mIJ->val, 0, mIJ->n_rows*mIJ->n_cols*sizeof(double));
           memset(mJI->val, 0, mJI->n_rows*mJI->n_cols*sizeof(double));
@@ -1344,7 +1342,7 @@ cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Retrieve the 3x3 matrix */
 
-      cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, bi, bj);
+      cs_sdm_t *bij = csys->mat->get_block(bi, bj);
       assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
 
       const cs_real_t  _val = bc_op->val[n_dofs*bi + bj];
@@ -1619,7 +1617,7 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Retrieve the 3x3 matrix */
 
-      cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, bi, bj);
+      cs_sdm_t *bij = csys->mat->get_block(bi, bj);
       assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
 
       const cs_real_t  _val = bc_op->val[n_dofs*bi + bj];
@@ -1737,7 +1735,7 @@ cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
 
           /* Retrieve the 3x3 matrix */
 
-          cs_sdm_t  *bii = cs_sdm_get_block(csys->mat, fi, fi);
+          cs_sdm_t *bii = csys->mat->get_block(fi, fi);
           assert(bii->n_rows == bii->n_cols && bii->n_rows == 3);
 
           const cs_real_t  _val = pcoef + 2 * bc_op->val[n_dofs*fi + fi];
@@ -1750,9 +1748,9 @@ cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
 
           /* Retrieve the 3x3 matrix */
 
-          cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, fi, xj);
+          cs_sdm_t *bij = csys->mat->get_block(fi, xj);
           assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
-          cs_sdm_t  *bji = cs_sdm_get_block(csys->mat, xj, fi);
+          cs_sdm_t *bji = csys->mat->get_block(xj, fi);
           assert(bji->n_rows == bji->n_cols && bji->n_rows == 3);
 
           const cs_real_t  _val = bc_op->val[n_dofs*fi + xj];
@@ -2129,7 +2127,7 @@ cs_cdo_diffusion_vvb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Retrieve the 3x3 matrix */
 
-      cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, bvi, bvj);
+      cs_sdm_t *bij = csys->mat->get_block(bvi, bvj);
       assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
 
       const cs_real_t  _val = ntrgrd->val[cm->n_vc*bvi + bvj];
@@ -2232,7 +2230,7 @@ cs_cdo_diffusion_vvb_ocs_sliding(const cs_equation_param_t      *eqp,
 
         /* Retrieve the diagonal 3x3 block matrix */
 
-        cs_sdm_t  *bii = cs_sdm_get_block(csys->mat, bvi, bvi);
+        cs_sdm_t *bii = csys->mat->get_block(bvi, bvi);
 
         /* Penalized part (u.n)(v.n) and tangential flux part */
 
@@ -2258,7 +2256,7 @@ cs_cdo_diffusion_vvb_ocs_sliding(const cs_equation_param_t      *eqp,
 
           /* Retrieve the 3x3 matrix */
 
-          cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, bvi, bvj);
+          cs_sdm_t *bij = csys->mat->get_block(bvi, bvj);
           assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
 
           const cs_real_t  nij = ntrgrd->val[cm->n_vc*bvi + bvj];

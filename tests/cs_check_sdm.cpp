@@ -228,18 +228,18 @@ _test_sdm(FILE  *out)
 
     cs_sdm_block_init(mb, 3, 3, bsize, bsize);
 
-    cs_sdm_t  *b11 = cs_sdm_get_block(mb, 1, 1);
+    cs_sdm_t *b11 = mb->get_block(1, 1);
     b11->val[0] = b11->val[1] = b11->val[2] = 1;
     b11->val[3] = 2;
 
     /* 3 rows and 2 columns */
 
-    cs_sdm_t  *b21 = cs_sdm_get_block(mb, 2, 1);
+    cs_sdm_t *b21 = mb->get_block(2, 1);
     b21->val[0] = 0.5, b21->val[1] = 0.25;
     b21->val[2] = 1, b21->val[3] = 0.75;
     b21->val[4] = 2, b21->val[5] = 0.1;
 
-    cs_sdm_t  *b12 = cs_sdm_get_block(mb, 1, 2);
+    cs_sdm_t *b12 = mb->get_block(1, 2);
 
     /* 2 rows and 3 columns */
 
@@ -260,7 +260,7 @@ _test_sdm(FILE  *out)
     fprintf(out, " Symmetry evaluation for the reference = %g\n",
             cs_sdm_test_symmetry(mb));
 
-    b12 = cs_sdm_get_block(cpy, 1, 2);    /* 2 rows and 3 columns */
+    b12         = cpy->get_block(1, 2); /* 2 rows and 3 columns */
     b12->val[0] = 0.5, b12->val[1] = 1, b12->val[2] = 2;
     b12->val[3] = 0.25, b12->val[4] = 0.75, b12->val[5] = 0.1;
 

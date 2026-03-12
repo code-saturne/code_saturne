@@ -695,8 +695,7 @@ cs_equation_builder_enforce_block_dofs(const cs_equation_builder_t   *eqb,
 
   int s = 0;
   for (int ii = 0; ii < bd->n_row_blocks; ii++) {
-
-    cs_sdm_t  *db = cs_sdm_get_block(csys->mat, ii, ii);
+    cs_sdm_t  *db    = csys->mat->get_block(ii, ii);
     const int  bsize = db->n_rows*db->n_cols;
 
     if (csys->dof_is_forced[s]) {
@@ -712,11 +711,10 @@ cs_equation_builder_enforce_block_dofs(const cs_equation_builder_t   *eqb,
       /* Reset column and row block jj < ii */
 
       for (int jj = 0; jj < ii; jj++) {
-
-        cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, ii, jj);
+        cs_sdm_t *bij = csys->mat->get_block(ii, jj);
         memset(bij->val, 0, sizeof(cs_real_t)*bsize);
 
-        cs_sdm_t  *bji = cs_sdm_get_block(csys->mat, jj, ii);
+        cs_sdm_t *bji = csys->mat->get_block(jj, ii);
         memset(bji->val, 0, sizeof(cs_real_t)*bsize);
 
       }
@@ -724,11 +722,10 @@ cs_equation_builder_enforce_block_dofs(const cs_equation_builder_t   *eqb,
       /* Reset column and row block jj < ii */
 
       for (int jj = ii+1; jj < db->n_rows; jj++) {
-
-        cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, ii, jj);
+        cs_sdm_t *bij = csys->mat->get_block(ii, jj);
         memset(bij->val, 0, sizeof(cs_real_t)*bsize);
 
-        cs_sdm_t  *bji = cs_sdm_get_block(csys->mat, jj, ii);
+        cs_sdm_t *bji = csys->mat->get_block(jj, ii);
         memset(bji->val, 0, sizeof(cs_real_t)*bsize);
 
       }

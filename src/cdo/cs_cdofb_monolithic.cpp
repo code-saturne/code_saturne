@@ -700,7 +700,7 @@ _full_system_assembly(const cs_cell_sys_t             *csys,
 
       /* mIJ is a small square matrix of size 3 */
 
-      cs_sdm_t  *mIJ = cs_sdm_get_block(m, bi, bj);
+      cs_sdm_t *mIJ = m->get_block(bi, bj);
 
       for (short int ii = 0; ii < 3; ii++) {
 
@@ -1369,7 +1369,7 @@ _implicit_euler_build(const cs_navsto_param_t *nsp,
 
         /* Get cell-cell block */
 
-        cs_sdm_t *acc = cs_sdm_get_block(csys->mat, cm->n_fc, cm->n_fc);
+        cs_sdm_t *acc = csys->mat->get_block(cm->n_fc, cm->n_fc);
 
         for (short int k = 0; k < 3; k++) {
           // (1) add contrib. to rhs => mass_mat * p_n
@@ -1689,7 +1689,7 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
 
         /* Get cell-cell block */
 
-        cs_sdm_t *acc = cs_sdm_get_block(csys->mat, cm->n_fc, cm->n_fc);
+        cs_sdm_t *acc = csys->mat->get_block(cm->n_fc, cm->n_fc);
 
         for (short int k = 0; k < 3; k++) {
           // (1) add contrib. to rhs => mass_mat * p_n
@@ -1961,7 +1961,7 @@ _bdf2_scheme_build(const cs_navsto_param_t  *nsp,
 
         /* Get cell-cell block */
 
-        cs_sdm_t *acc = cs_sdm_get_block(csys->mat, cm->n_fc, cm->n_fc);
+        cs_sdm_t *acc = csys->mat->get_block(cm->n_fc, cm->n_fc);
 
         for (short int k = 0; k < 3; k++) {
           // (1) add contrib. to rhs => mass_mat * (2*p_n - 0.5*p_(n-1)

@@ -263,7 +263,7 @@ cs_sdm_block_create(int          n_max_blocks_by_row,
       cs_sdm_t  *b_ij = m->block_desc->blocks + shift;
       int  _size = n_rows_i*n_cols_j;
 
-      cs_sdm_map_array(n_rows_i, n_cols_j, b_ij, p_val);
+      b_ij->map_array(n_rows_i, n_cols_j, p_val);
       shift++;
       p_val += _size;
 
@@ -310,8 +310,9 @@ cs_sdm_block33_create(int      n_max_blocks_by_row,
 
   cs_real_t  *p_val = m->val;
   for (int i = 0; i < n_max_blocks_by_row*n_max_blocks_by_col; i++) {
-    cs_sdm_map_array(3, 3, m->block_desc->blocks + i, p_val);
-      p_val += 9;
+    cs_sdm_t *bi = m->block_desc->blocks + i;
+    bi->map_array(3, 3, p_val);
+    p_val += 9;
   }
 
   return m;
@@ -397,7 +398,7 @@ cs_sdm_block_init(cs_sdm_t      *m,
 
       cs_sdm_t  *b_ij = bd->blocks + shift;
 
-      cs_sdm_map_array(n_rows_i, n_cols_j, b_ij, p_val);
+      b_ij->map_array(n_rows_i, n_cols_j, p_val);
       p_val += n_rows_i*n_cols_j;
       shift++;
 
@@ -438,7 +439,8 @@ cs_sdm_block33_init(cs_sdm_t     *m,
 
   cs_real_t  *p_val = m->val;
   for (int i = 0; i < bd->n_row_blocks*bd->n_col_blocks; i++) {
-    cs_sdm_map_array(3, 3, bd->blocks + i, p_val);
+    cs_sdm_t *bi = bd->blocks + i;
+    bi->map_array(3, 3, p_val);
     p_val += 9; /* Each 3x3 block has 9 entries */
   }
 }
@@ -476,12 +478,11 @@ cs_sdm_block_33_to_xyz(const cs_sdm_t   *mb33,
   cs_sdm_t  *mxyz[3][3];
   for (int i = 0; i < 3; i++)
     for (int j = 0; j < 3; j++)
-      mxyz[i][j] = cs_sdm_get_block(mbxyz, i, j);
+      mxyz[i][j] = mbxyz->get_block(i, j);
 
   for (int bi = 0; bi < n_cols; bi++) {
     for (int bj = 0; bj < n_cols; bj++) {
-
-      cs_sdm_t  *m33_ij = cs_sdm_get_block(mb33, bi, bj);
+      cs_sdm_t *m33_ij = mb33->get_block(bi, bj);
 
       for (int _i = 0; _i < 3; _i++)
         for (int _j = 0; _j < 3; _j++)
@@ -517,11 +518,11 @@ cs_sdm_block_create_copy(const cs_sdm_t  *mref)
 
   int  row_size = 0, col_size = 0;
   for (int bi = 0; bi < bd_ref->n_row_blocks; bi++) {
-    const cs_sdm_t  *bI0 = cs_sdm_get_block(mref, bi, 0);
+    const cs_sdm_t *bI0 = mref->get_block(bi, 0);
     row_size += bI0->n_max_rows;
   }
   for (int bj = 0; bj < bd_ref->n_col_blocks; bj++) {
-    const cs_sdm_t  *b0J = cs_sdm_get_block(mref, 0, bj);
+    const cs_sdm_t *b0J = mref->get_block(0, bj);
     col_size += b0J->n_max_cols;
   }
 
@@ -548,15 +549,14 @@ cs_sdm_block_create_copy(const cs_sdm_t  *mref)
   int  shift = 0;
   for (int bi = 0; bi < bd_ref->n_row_blocks; bi++) {
     for (int bj = 0; bj < bd_ref->n_col_blocks; bj++) {
-
-      const cs_sdm_t  *ref_IJ = cs_sdm_get_block(mref, bi, bj);
+      const cs_sdm_t *ref_IJ = mref->get_block(bi, bj);
 
       /* Set the block (i,j) */
 
       cs_sdm_t  *b_ij = bd->blocks + shift;
       int  _size = ref_IJ->n_rows*ref_IJ->n_cols;
 
-      cs_sdm_map_array(ref_IJ->n_rows, ref_IJ->n_cols, b_ij, p_val);
+      b_ij->map_array(ref_IJ->n_rows, ref_IJ->n_cols, p_val);
       shift++;
       p_val += _size;
 
@@ -733,13 +733,11 @@ cs_sdm_block_multiply_rowrow(const cs_sdm_t   *a,
 
   for (short int i = 0; i < a_desc->n_row_blocks; i++) {
     for (short int j = 0; j < b_desc->n_row_blocks; j++) {
-
-      cs_sdm_t  *cIJ = cs_sdm_get_block(c, i, j);
+      cs_sdm_t *cIJ = c->get_block(i, j);
 
       for (short int k = 0; k < a_desc->n_col_blocks; k++) {
-
-        cs_sdm_t  *aIK = cs_sdm_get_block(a, i, k);
-        cs_sdm_t  *bJK = cs_sdm_get_block(b, j, k);
+        cs_sdm_t *aIK = a->get_block(i, k);
+        cs_sdm_t *bJK = b->get_block(j, k);
 
         cs_sdm_multiply_rowrow(aIK, bJK, cIJ);
 
@@ -786,13 +784,11 @@ cs_sdm_block_multiply_rowrow_sym(const cs_sdm_t   *a,
   for (short int i = 0; i < a_desc->n_row_blocks; i++) {
 
     for (short int j = i; j < b_desc->n_row_blocks; j++) {
-
-      cs_sdm_t  *cIJ = cs_sdm_get_block(c, i, j);
+      cs_sdm_t *cIJ = c->get_block(i, j);
 
       for (short int k = 0; k < a_desc->n_col_blocks; k++) {
-
-        cs_sdm_t  *aIK = cs_sdm_get_block(a, i, k);
-        cs_sdm_t  *bJK = cs_sdm_get_block(b, j, k);
+        cs_sdm_t *aIK = a->get_block(i, k);
+        cs_sdm_t *bJK = b->get_block(j, k);
 
         cs_sdm_multiply_rowrow(aIK, bJK, cIJ);
 
@@ -803,8 +799,7 @@ cs_sdm_block_multiply_rowrow_sym(const cs_sdm_t   *a,
 
   for (short int i = 0; i < a_desc->n_row_blocks; i++)
     for (short int j = i + 1; j < b_desc->n_row_blocks; j++)
-      cs_sdm_transpose_and_update(cs_sdm_get_block(c, i, j),
-                                  cs_sdm_get_block(c, j, i));
+      cs_sdm_transpose_and_update(c->get_block(i, j), c->get_block(j, i));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -892,8 +887,8 @@ cs_sdm_block_add(cs_sdm_t *mat, const cs_sdm_t *add)
 
   for (short int bi = 0; bi < mat_desc->n_row_blocks; bi++) {
     for (short int bj = 0; bj < mat_desc->n_col_blocks; bj++) {
-      cs_sdm_t       *mat_ij = cs_sdm_get_block(mat, bi, bj);
-      const cs_sdm_t *add_ij = cs_sdm_get_block(add, bi, bj);
+      cs_sdm_t       *mat_ij = mat->get_block(bi, bj);
+      const cs_sdm_t *add_ij = add->get_block(bi, bj);
 
       *mat_ij += *add_ij;
 
@@ -927,8 +922,8 @@ cs_sdm_block_add_mult(cs_sdm_t *mat, cs_real_t mult_coef, const cs_sdm_t *add)
 
   for (short int bi = 0; bi < mat_desc->n_row_blocks; bi++) {
     for (short int bj = 0; bj < mat_desc->n_col_blocks; bj++) {
-      cs_sdm_t       *mat_ij = cs_sdm_get_block(mat, bi, bj);
-      const cs_sdm_t *add_ij = cs_sdm_get_block(add, bi, bj);
+      cs_sdm_t       *mat_ij = mat->get_block(bi, bj);
+      const cs_sdm_t *add_ij = add->get_block(bi, bj);
 
       cs_sdm_add_mult(mat_ij, mult_coef, add_ij);
 
@@ -969,7 +964,7 @@ cs_sdm_block_matvec(const cs_sdm_t *mat, const cs_real_t *vec, cs_real_t *mv)
 
     c_shift = 0;
     for (short int bj = 0; bj < mat_desc->n_col_blocks; bj++) {
-      cs_sdm_t *mat_ij = cs_sdm_get_block(mat, bi, bj);
+      cs_sdm_t *mat_ij = mat->get_block(bi, bj);
 
       cs_sdm_update_matvec(mat_ij, vec + c_shift, _mv);
       c_shift += mat_ij->n_cols;
@@ -1208,14 +1203,13 @@ cs_sdm_block_square_asymm(cs_sdm_t   *mat)
 
     /* Diagonal block */
 
-    cs_sdm_t  *bII = cs_sdm_get_block(mat, bi, bi);
+    cs_sdm_t *bII = mat->get_block(bi, bi);
 
     cs_sdm_square_asymm(bII);
 
     for (int bj = bi+1; bj < matb->n_col_blocks; bj++) {
-
-      cs_sdm_t  *bIJ = cs_sdm_get_block(mat, bi, bj);
-      cs_sdm_t  *bJI = cs_sdm_get_block(mat, bj, bi);
+      cs_sdm_t *bIJ = mat->get_block(bi, bj);
+      cs_sdm_t *bJI = mat->get_block(bj, bi);
 
       assert(bIJ->n_rows == bJI->n_cols);
       assert(bIJ->n_cols == bJI->n_rows);
@@ -2005,8 +1999,7 @@ cs_sdm_test_symmetry(const cs_sdm_t     *mat)
     const cs_sdm_block_t  *bd = copy->block_desc;
     for (int bi = 0; bi < bd->n_row_blocks; bi++) {
       for (int bj = bi; bj < bd->n_col_blocks; bj++) {
-
-        cs_sdm_t  *bIJ = cs_sdm_get_block(copy, bi, bj);
+        cs_sdm_t *bIJ = copy->get_block(bi, bj);
 
         for (int i = 0; i < bIJ->n_rows*bIJ->n_cols; i++)
           if (fabs(bIJ->val[i]) > sym_eval)
@@ -2232,6 +2225,23 @@ _cs_sdm_t::_cs_sdm_t(const cs_flag_t flag_,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Constructor by copy.
+ *
+ * \param[in]  other       a cs_sdm_t structure
+ *
+ */
+/*----------------------------------------------------------------------------*/
+_cs_sdm_t::_cs_sdm_t(const _cs_sdm_t &other)
+  : _cs_sdm_t(other.flag, other.n_max_rows, other.n_max_cols)
+{
+  n_rows = other.n_rows;
+  n_cols = other.n_cols;
+
+  memcpy(val, other.data(), sizeof(cs_real_t) * this->size());
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Modifiy the value (i,j) of the matric
  *
  * \param[in]  i        index of the row
@@ -2329,25 +2339,21 @@ _cs_sdm_t::transpose() const
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Get a specific block in a cs_sdm_t structure defined by block
+ * \brief Set the lower left according to the upper right part in order to get
+ *        a symmetric matrix.
  *
- * \param[in] row_block_id  id of the block row, zero-based.
- * \param[in] col_block_id  id of the block column, zero-based.
- *
- * \return a pointer to a cs_sdm_t structure corresponfing to a block
  */
 /*----------------------------------------------------------------------------*/
 
-inline cs_sdm_t *
-_cs_sdm_t::get_block(const int row_block_id, const int col_block_id) const
+void
+_cs_sdm_t::symmetrize_ur()
 {
-  /* Sanity checks */
-  assert(flag & CS_SDM_BY_BLOCK && block_desc != nullptr);
-  assert(col_block_id < block_desc->n_col_blocks);
-  assert(row_block_id < block_desc->n_row_blocks);
-
-  return block_desc->blocks + row_block_id * block_desc->n_col_blocks +
-         col_block_id;
+  for (short int i = 1; i < n_rows; i++) {
+    cs_real_t *m_i = this->row(i);
+    for (short int j = 0; j < i; j++) {
+      m_i[j] = this->operator()(j, i);
+    }
+  }
 };
 
 /*----------------------------------------------------------------------------*/
@@ -2358,7 +2364,7 @@ _cs_sdm_t::get_block(const int row_block_id, const int col_block_id) const
  */
 /*----------------------------------------------------------------------------*/
 
-_cs_sdm_t
+_cs_sdm_t &
 _cs_sdm_t::operator*=(const cs_real_t &scaling)
 {
   const int nb_val = this->size();
@@ -2377,7 +2383,7 @@ _cs_sdm_t::operator*=(const cs_real_t &scaling)
  */
 /*----------------------------------------------------------------------------*/
 
-_cs_sdm_t
+_cs_sdm_t &
 _cs_sdm_t::operator+=(const _cs_sdm_t &add)
 {
   assert(n_rows == add.n_rows);
@@ -2549,6 +2555,31 @@ _cs_sdm_t::dump(FILE *fp, const char *fname, cs_real_t thd) const
   if (fout != stdout && fout != fp)
     fclose(fout);
 };
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Map an array into a predefined cs_sdm_t structure. This array is
+ *        shared and the lifecycle of this array is not managed by the
+ *        cs_sdm_t structure
+ *
+ * \param[in]      n_max_rows_  max. number of rows
+ * \param[in]      n_max_cols_  max. number of columns
+ * \param[in, out] array        pointer to an array of values of size equal to
+ *                              n_max_rows x n_max_cols
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_cs_sdm_t::map_array(int n_max_rows_, int n_max_cols_, cs_real_t *array)
+{
+  assert(array != nullptr); /* Sanity check */
+
+  flag   = CS_SDM_SHARED_VAL;
+  n_rows = n_max_rows = n_max_rows_;
+  n_cols = n_max_cols = n_max_cols_;
+  val                 = array;
+  block_desc          = nullptr;
+}
 
 #endif
 

@@ -1115,7 +1115,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
         /* Get the cell-cell block */
 
-        cs_sdm_t *acc = cs_sdm_get_block(csys->mat, n_fc, n_fc);
+        cs_sdm_t *acc = csys->mat->get_block(n_fc, n_fc);
 
         for (short int k = 0; k < 3; k++) {
           csys->rhs[3*n_fc + k] += ptyc * csys->val_n[3*n_fc+k];

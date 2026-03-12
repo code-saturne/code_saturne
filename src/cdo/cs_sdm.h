@@ -112,7 +112,7 @@ struct _cs_sdm_t {
 
   /*----------------------------------------------------------------------------*/
   /*!
-   * \brief   Constructor for a square matrix.
+   * \brief   Constructor for a matrix.
    *
    * \param[in]  flag         metadata related to a cs_sdm_t structure
    * \param[in]  n_max_rows   max number of rows
@@ -123,6 +123,26 @@ struct _cs_sdm_t {
   _cs_sdm_t(const cs_flag_t flag_,
             const int       n_max_rows_,
             const int       n_max_cols_);
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief   Constructor by copy.
+   *
+   * \param[in]  other       a cs_sdm_t structure
+   *
+   */
+  /*----------------------------------------------------------------------------*/
+  _cs_sdm_t(const _cs_sdm_t &other);
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief   Constructor by move.
+   *
+   * \param[in]  other       a cs_sdm_t structure
+   *
+   */
+  /*----------------------------------------------------------------------------*/
+  _cs_sdm_t(const _cs_sdm_t &&other);
 
   /*----------------------------------------------------------------------------*/
   /*!
@@ -153,6 +173,10 @@ struct _cs_sdm_t {
     assert(0 <= row_i && row_i < n_rows);
     return val + row_i * n_cols;
   }
+
+  /* Deleted for the moment */
+  _cs_sdm_t &
+  operator=(const _cs_sdm_t &) = delete;
 
   /*----------------------------------------------------------------------------*/
   /*!
@@ -231,6 +255,17 @@ struct _cs_sdm_t {
 
   /*----------------------------------------------------------------------------*/
   /*!
+   * \brief Set the lower left according to the upper right part in order to get
+   *        a symmetric matrix.
+   *
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  symmetrize_ur();
+
+  /*----------------------------------------------------------------------------*/
+  /*!
    * \brief Get a specific block in a cs_sdm_t structure defined by block
    *
    * \param[in] row_block_id  id of the block row, zero-based.
@@ -241,7 +276,16 @@ struct _cs_sdm_t {
   /*----------------------------------------------------------------------------*/
 
   inline cs_sdm_t *
-  get_block(const int row_block_id, const int col_block_id) const;
+  get_block(const int row_block_id, const int col_block_id) const
+  {
+    /* Sanity checks */
+    assert(flag & CS_SDM_BY_BLOCK && block_desc != nullptr);
+    assert(col_block_id < block_desc->n_col_blocks);
+    assert(row_block_id < block_desc->n_row_blocks);
+
+    return block_desc->blocks + row_block_id * block_desc->n_col_blocks +
+           col_block_id;
+  };
 
   /*----------------------------------------------------------------------------*/
   /*!
@@ -251,7 +295,7 @@ struct _cs_sdm_t {
    */
   /*----------------------------------------------------------------------------*/
 
-  _cs_sdm_t
+  _cs_sdm_t &
   operator*=(const cs_real_t &scaling);
 
   /*----------------------------------------------------------------------------*/
@@ -262,7 +306,7 @@ struct _cs_sdm_t {
    */
   /*----------------------------------------------------------------------------*/
 
-  _cs_sdm_t
+  _cs_sdm_t &
   operator+=(const _cs_sdm_t &add);
 
   /*----------------------------------------------------------------------------*/
@@ -331,6 +375,22 @@ struct _cs_sdm_t {
   void
   dump(FILE *fp, const char *fname, cs_real_t thd) const;
 
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief Map an array into a predefined cs_sdm_t structure. This array is
+   *        shared and the lifecycle of this array is not managed by the
+   *        cs_sdm_t structure
+   *
+   * \param[in]      n_max_rows_  max. number of rows
+   * \param[in]      n_max_cols_  max. number of columns
+   * \param[in, out] array        pointer to an array of values of size equal to
+   *                              n_max_rows x n_max_cols
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  map_array(int n_max_rows_, int n_max_cols_, cs_real_t *array);
+
 #endif
 };
 
@@ -341,42 +401,6 @@ using sdm_t = cs_sdm_t;
 }
 
 #endif
-
-/*============================================================================
- * Prototypes for pointer of functions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Generic prototype for computing a local dense matrix-product
- *        c = a*b where c has been previously allocated
- *
- * \param[in]      a  local dense matrix to use
- * \param[in]      b  local dense matrix to use
- * \param[in, out] c  result of the local matrix-product
- */
-/*----------------------------------------------------------------------------*/
-
-typedef void
-(cs_sdm_product_t)(const cs_sdm_t   *a,
-                   const cs_sdm_t   *b,
-                   cs_sdm_t         *c);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Generic prototype for computing a dense matrix-vector product
- *        mv has been previously allocated
- *
- * \param[in]      mat  local matrix to use
- * \param[in]      vec  local vector to use
- * \param[in, out] mv   result of the local matrix-vector product
- */
-/*----------------------------------------------------------------------------*/
-
-typedef void
-(cs_sdm_matvec_t)(const cs_sdm_t    *mat,
-                  const cs_real_t   *vec,
-                  cs_real_t         *mv);
 
 /*============================================================================
  * Public function prototypes
@@ -462,26 +486,6 @@ cs_sdm_add_scalvect(int              n,
 
   for (int i = 0; i < n; i++)
     y[i] += s * x[i];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the lower left according to the upper right part in order to get
- *        a symmetric matrix.
- *
- * \param[in, out] mat  pointer to a cs_sdm_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_sdm_symm_ur(cs_sdm_t  *mat)
-{
-  assert(mat != NULL);
-  for (int i = 1; i < mat->n_rows; i++) {
-    cs_real_t  *m_i = mat->val + i*mat->n_rows;
-    for (int j = 0; j < i; j++)
-      m_i[j] = mat->val[j*mat->n_rows + i];
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -577,35 +581,6 @@ cs_sdm_block_create(int          n_max_blocks_by_row,
 cs_sdm_t *
 cs_sdm_block33_create(int      n_max_blocks_by_row,
                       int      n_max_blocks_by_col);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Map an array into a predefined cs_sdm_t structure. This array is
- *        shared and the lifecycle of this array is not managed by the
- *        cs_sdm_t structure
- *
- * \param[in]      n_max_rows  max. number of rows
- * \param[in]      n_max_cols  max. number of columns
- * \param[in, out] m           pointer to a cs_sdm_t structure to set
- * \param[in, out] array       pointer to an array of values of size equal to
- *                             n_max_rows x n_max_cols
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_sdm_map_array(int         n_max_rows,
-                 int         n_max_cols,
-                 cs_sdm_t   *m,
-                 cs_real_t  *array)
-{
-  assert(array != NULL && m != NULL);  /* Sanity check */
-
-  m->flag = CS_SDM_SHARED_VAL;
-  m->n_rows = m->n_max_rows = n_max_rows;
-  m->n_cols = m->n_max_cols = n_max_cols;
-  m->val = array;
-  m->block_desc = NULL;
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -713,57 +688,6 @@ cs_sdm_block_create_copy(const cs_sdm_t  *mref);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Get a specific block in a cs_sdm_t structure defined by block
- *
- * \param[in] m             pointer to a cs_sdm_t struct.
- * \param[in] row_block_id  id of the block row, zero-based.
- * \param[in] col_block_id  id of the block column, zero-based.
- *
- * \return a pointer to a cs_sdm_t structure corresponfing to a block
- */
-/*----------------------------------------------------------------------------*/
-
-static inline cs_sdm_t *
-cs_sdm_get_block(const cs_sdm_t  *const m,
-                 int                    row_block_id,
-                 int                    col_block_id)
-{
-  /* Sanity checks */
-  assert(m != NULL);
-  assert(m->flag & CS_SDM_BY_BLOCK && m->block_desc != NULL);
-  assert(col_block_id < m->block_desc->n_col_blocks);
-  assert(row_block_id < m->block_desc->n_row_blocks);
-
-  return  m->block_desc->blocks
-    + row_block_id*m->block_desc->n_col_blocks + col_block_id;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Get a copy of a column in a preallocated vector
- *
- * \param[in]      m         pointer to a cs_sdm_t struct.
- * \param[in]      col_id    id of the column, zero-based.
- * \param[in, out] col_vals  extracted values
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_sdm_get_col(const cs_sdm_t  *m,
-               int              col_id,
-               cs_real_t       *col_vals)
-{
-  /* Sanity checks */
-  assert(m != NULL && col_vals != NULL);
-  assert(col_id < m->n_cols);
-
-  const cs_real_t  *_col = m->val + col_id;
-  for(int i = 0; i < m->n_rows; i++, _col += m->n_cols)
-    col_vals[i] = *_col;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Copy a block of a matrix into a sub-matrix starting from (r_id, c_id)
  *        with a size of nr rows and nc cols
  *
@@ -837,31 +761,6 @@ void
 cs_sdm_multiply(const cs_sdm_t   *a,
                 const cs_sdm_t   *b,
                 cs_sdm_t         *c);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Compute a dense 3x3 matrix-vector product
- *          mv has been previously allocated
- *
- * \param[in]      mat    local matrix to use
- * \param[in]      vec    local vector to use
- * \param[in, out] mv result of the local matrix-vector product
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_sdm_33_matvec(const cs_sdm_t    *mat,
-                 const cs_real_t   *vec,
-                 cs_real_t         *mv)
-{
-  /* Sanity checks */
-  assert(mat != NULL && vec != NULL && mv != NULL);
-  assert(mat->n_rows == 3 && mat->n_cols == 3);
-
-  mv[0] = vec[0]*mat->val[0] + vec[1]*mat->val[1] + vec[2]*mat->val[2];
-  mv[1] = vec[0]*mat->val[3] + vec[1]*mat->val[4] + vec[2]*mat->val[5];
-  mv[2] = vec[0]*mat->val[6] + vec[1]*mat->val[7] + vec[2]*mat->val[8];
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
