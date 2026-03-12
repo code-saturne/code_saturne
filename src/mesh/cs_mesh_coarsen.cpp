@@ -1226,8 +1226,8 @@ _merge_i_faces(cs_mesh_t       *m,
 
   /* Transform indexed new->old array to simple array */
 
-  // Set n2o[i] to the local index corresponding to the biggest global id,
-  // so that this info is synchronized between domains.
+  // Set n2o[i] to the local index corresponding to the lowest global id
+  // of a set, so that the same value is used across domains.
 
   const cs_gnum_t *i_face_gnum = m->global_i_face_num;
 
@@ -1236,20 +1236,21 @@ _merge_i_faces(cs_mesh_t       *m,
     CS_MALLOC(n2o_flat, n_new, cs_lnum_t);
 
     for (cs_lnum_t i = 0; i < n_new; i++) {
-      cs_lnum_t index = -1;
-      cs_gnum_t biggest = 0;
+      cs_lnum_t s_id = n2o_idx[i];
+      cs_lnum_t k_min = s_id;
+      cs_gnum_t gnum_min = i_face_gnum[s_id];
 
-      for (cs_lnum_t j = n2o_idx[i]; j < n2o_idx[i+1]; j++) {
-        cs_lnum_t lid = n2o[j];
-        cs_gnum_t gid = i_face_gnum[lid];
+      for (cs_lnum_t j = s_id+1; j < n2o_idx[i+1]; j++) {
+        cs_lnum_t k = n2o[j];
+        cs_gnum_t gnum = i_face_gnum[k];
 
-        if (gid > biggest) {
-          biggest = gid;
-          index = j;
+        if (gnum < gnum_min) {
+          gnum_min = gnum;
+          k_min = k;
         }
       }
 
-      n2o_flat[i] = index;
+      n2o_flat[i] = k_min;
     }
 
     memcpy(n2o, n2o_flat, n_new*sizeof(cs_lnum_t));
