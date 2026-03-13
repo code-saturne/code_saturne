@@ -6,7 +6,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -814,6 +814,8 @@ cs_time_stepping(void)
     if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_WITH_FV)
       /* FV and CDO activated */
       cs_domain_post(cs_glob_domain);
+
+    cs_control_send_state();
 
     /* Write to "run_solver.log" periodically
        -------------------------------------- */

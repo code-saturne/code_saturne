@@ -3,6 +3,9 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- FMI: send return output values from solver to controller at end
+  of time step, rather than beginning of next one.
+
 - Fix restart with variable density "idilat=2" option.
   * Includes fix for incomplete density restart information.
 

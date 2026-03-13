@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1913,29 +1913,17 @@ _parse_control_buffer(const char          *name,
       /* Use binary exchanges for multiple variables here,
          to minimize number of messages */
 
-      int n_notebook_vals = CS_MAX(_n_input_notebook_vars,
-                                   _n_output_notebook_vars);
-
-      if (n_notebook_vals > 0) {
+      if (_n_input_notebook_vars > 0) {
         double *notebook_vals = nullptr;
 
-        CS_MALLOC(notebook_vals, n_notebook_vals, double);
+        CS_MALLOC(notebook_vals, _n_input_notebook_vars, double);
 
-        /* Send output variables from previous time step,
-           get input variables for new time step. */
-
-        cs_notebook_get_values(_n_output_notebook_vars,
-                               _output_notebook_vars,
-                               notebook_vals);
+        /* Get input variables for new time step. */
 
 #if defined(HAVE_SOCKET)
         if (control_comm != nullptr) {
-          if (_n_output_notebook_vars > 0)
-            _comm_write_sock(control_comm, notebook_vals,
-                             sizeof(double), _n_output_notebook_vars);
-          if (_n_input_notebook_vars > 0)
-            _comm_read_sock(control_comm, queue, notebook_vals,
-                            sizeof(double), _n_input_notebook_vars);
+          _comm_read_sock(control_comm, queue, notebook_vals,
+                          sizeof(double), _n_input_notebook_vars);
         }
 #endif
 
@@ -2154,17 +2142,6 @@ cs_control_check_file(void)
 
   /* Test control queue and connection second */
 
-  if (_control_advance_steps > 0) {
-
-    _control_advance_steps -= 1;
-
-#if defined(HAVE_SOCKET)
-    char reply[13] = "Iteration OK";
-    if (_cs_glob_control_comm != nullptr)
-      _comm_write_sock(_cs_glob_control_comm, reply, 1, strlen(reply)+1);
-#endif
-  }
-
   if (_cs_glob_control_queue != nullptr) {
 
     while (_control_advance_steps < 1) {
@@ -2211,6 +2188,61 @@ cs_control_check_file(void)
     cs_log_printf_flush(CS_LOG_N_TYPES);
     bft_printf_flush();
     cs_time_plot_flush_all();
+  }
+
+  cs_timer_t t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&_control_t_tot, &t0, &t1);
+
+  if (time_comm)
+    cs_timer_counter_add_diff(&_control_comm_t_tot, &t0, &t1);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check the presence of a control file and deal with the interactive
+ *        control.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_control_send_state(void)
+{
+  if (_control_advance_steps < 1)
+    return;
+
+  _control_advance_steps -= 1;
+  if (_control_advance_steps > 0) // Additional time steps before sending state.
+    return;
+
+  bool time_comm = true;
+  cs_timer_t t0 = cs_timer_time();
+
+#if defined(HAVE_SOCKET)
+  char reply[13] = "Iteration OK";
+  if (_cs_glob_control_comm != nullptr)
+    _comm_write_sock(_cs_glob_control_comm, reply, 1, strlen(reply)+1);
+#endif
+
+  if (_n_output_notebook_vars > 0) {
+    double *notebook_vals = nullptr;
+
+    CS_MALLOC(notebook_vals, _n_output_notebook_vars, double);
+
+    /* Send output variables from this time step. */
+
+    cs_notebook_get_values(_n_output_notebook_vars,
+                           _output_notebook_vars,
+                           notebook_vals);
+
+#if defined(HAVE_SOCKET)
+    if (_cs_glob_control_comm != nullptr) {
+      if (_n_output_notebook_vars > 0)
+        _comm_write_sock(_cs_glob_control_comm, notebook_vals,
+                         sizeof(double), _n_output_notebook_vars);
+    }
+#endif
+
+    CS_FREE(notebook_vals);
   }
 
   cs_timer_t t1 = cs_timer_time();
