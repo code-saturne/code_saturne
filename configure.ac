@@ -1401,6 +1401,13 @@ if test x$cs_have_cuda = xyes ; then
   echo "   use CUDA in .cpp files: "$cs_enable_cuda_cpp""
   echo "   NCCL support: "$cs_have_nccl""
 fi
+echo " HIP support : "$cs_have_hip""
+if test x$cs_have_hip = xyes ; then
+  echo "   hipBLAS support: "$cs_have_hipblas""
+  echo "   hipSPARSE support: "$cs_have_hipsparse""
+  echo "   use HIP in .cpp files: "$cs_enable_hip_cpp""
+  echo "   RCCL support: "$cs_have_rccl""
+fi
 echo " SYCL support: "$cs_have_sycl""
 echo " BLAS (Basic Linear Algebra Subprograms) support: "$with_blas_type""
 
