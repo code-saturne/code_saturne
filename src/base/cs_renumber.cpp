@@ -5937,14 +5937,13 @@ cs_renumber_get_algorithm(bool                        *halo_adjacent_cells_last,
  * be passed to this pointer. The caller then takes ownership and is
  * responsible for freeing them
  *
- * parameters:
- *   mesh       <->  pointer to global mesh structure
- *   cell_n2o   <-> pointer to new to old cells array, or nullptr
- *   i_face_n2o <-> pointer to new to old interior faces array, or nullptr
- *   b_face_n2o <-> pointer to new to old boundary faces array, or nullptr
- *   vtx_n2o    <-> pointer to new to old vertices array, or nullptr
- *
- * \param[in, out]  mesh  pointer to global mesh structure
+ * \param[in, out]  mesh        pointer to global mesh structure
+ * \param[in, out]  cell_n2o    pointer to new to old cells array, or null
+ * \param[in, out]  i_face_n2o  pointer to new to old interior faces array,
+ *                              or null
+ * \param[in, out]  b_face_n2o  pointer to new to old boundary faces array,
+ *                              or null
+ * \param[in, out]  vtx_n2o     pointer to new to old vertices array, or null
  */
 /*----------------------------------------------------------------------------*/
 
@@ -5960,14 +5959,7 @@ cs_renumber_mesh(cs_mesh_t   *mesh,
 
   _renumber_mesh(mesh, cell_n2o, i_face_n2o, b_face_n2o, vtx_n2o);
 
-  if (mesh->cell_numbering == nullptr)
-    mesh->cell_numbering = cs_numbering_create_default(mesh->n_cells);
-  if (mesh->i_face_numbering == nullptr)
-    mesh->i_face_numbering = cs_numbering_create_default(mesh->n_i_faces);
-  if (mesh->b_face_numbering == nullptr)
-    mesh->b_face_numbering = cs_numbering_create_default(mesh->n_b_faces);
-  if (mesh->vtx_numbering == nullptr)
-    mesh->vtx_numbering = cs_numbering_create_default(mesh->n_vertices);
+  cs_mesh_complete_numbering(mesh);
 
   _renumber_i_test(mesh);
   _renumber_b_test(mesh);

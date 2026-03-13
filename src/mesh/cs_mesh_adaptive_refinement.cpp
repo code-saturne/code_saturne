@@ -1329,6 +1329,8 @@ cs_adaptive_refinement_define(int                  n_layers,
 void
 cs_adaptive_refinement_update_gradients(void)
 {
+  cs_mesh_complete_numbering(cs_glob_mesh);
+
   const int n_fields = cs_field_n_fields();
   int interpolation_type = _amr_info.interpolation;
   cs_field_t *fv = cs_field_by_name("velocity");

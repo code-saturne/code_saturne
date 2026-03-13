@@ -3305,6 +3305,30 @@ cs_mesh_sync_var_scal(cs_real_t  *var)
     cs_halo_sync_var(halo, CS_HALO_STANDARD, var);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Complete mesh numbering substructures.
+ *
+ * If mesh numbering structures from upstream renumbering operations have
+ * not been defined yet for some mesh entities, assign defaults.
+ *
+ * \param[in, out]  mesh  pointer to global mesh structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_complete_numbering(cs_mesh_t  *mesh)
+{
+  if (mesh->cell_numbering == nullptr)
+    mesh->cell_numbering = cs_numbering_create_default(mesh->n_cells);
+  if (mesh->i_face_numbering == nullptr)
+    mesh->i_face_numbering = cs_numbering_create_default(mesh->n_i_faces);
+  if (mesh->b_face_numbering == nullptr)
+    mesh->b_face_numbering = cs_numbering_create_default(mesh->n_b_faces);
+  if (mesh->vtx_numbering == nullptr)
+    mesh->vtx_numbering = cs_numbering_create_default(mesh->n_vertices);
+}
+
 /*----------------------------------------------------------------------------
  * Get global lists of periodic face couples.
  *

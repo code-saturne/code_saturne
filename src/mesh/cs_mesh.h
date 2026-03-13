@@ -506,6 +506,20 @@ cs_mesh_init_i_selector(void);
 void
 cs_mesh_update_selectors(cs_mesh_t  *mesh);
 
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Complete mesh numbering substructures.
+ *
+ * If mesh numbering structures from upstream renumbering operations have
+ * not been defined yet for some mesh entities, assign defaults.
+ *
+ * \param[in, out]  mesh  pointer to global mesh structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_complete_numbering(cs_mesh_t  *mesh);
+
 /*----------------------------------------------------------------------------
  * Get global lists of periodic face couples.
  *
