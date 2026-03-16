@@ -5361,6 +5361,7 @@ _tensor_norm_2(const cs_real_t  t[6])
  *   stride        3 for vectors, 6 for symmetric tensors
  *
  * parameters:
+ *   ctx            <-- reference to dispatch context
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
  *   ma             <-- mesh adjacencies
@@ -5376,7 +5377,8 @@ _tensor_norm_2(const cs_real_t  t[6])
 
 template <cs_lnum_t stride>
 static void
-_strided_gradient_clipping(const cs_mesh_t              *m,
+_strided_gradient_clipping(cs_dispatch_context          &ctx,
+                           const cs_mesh_t              *m,
                            const cs_mesh_quantities_t   *fvq,
                            const cs_mesh_adjacencies_t  *ma,
                            cs_halo_type_t                halo_type,
@@ -5400,7 +5402,6 @@ _strided_gradient_clipping(const cs_mesh_t              *m,
 
   const cs_real_3_t *restrict cell_cen = fvq->cell_cen;
 
-  cs_dispatch_context ctx;
   bool use_gpu = ctx.use_gpu();
   const cs_alloc_mode_t amode = (use_gpu) ?
     cs_alloc_mode_device : cs_alloc_mode;
@@ -5963,21 +5964,23 @@ _strided_bounds(cs_dispatch_context          &ctx,
  * A non-reconstructed gradient is computed at this stage.
  *
  * parameters:
- *   m              <-- pointer to associated mesh structure
- *   fvq            <-- pointer to associated finite volume quantities
- *   halo_type      <-- halo type (extended or not)
- *   inc            <-- if 0, solve on increment; 1 otherwise
- *   coefav         <-- boundary face coefficient a
- *   coefbv         <-- boundary face coefficient b
- *   pvar           <-- variable
- *   c_weight       <-- weighted gradient coefficient variable
- *   grad           --> gradient of pvar (du_i/dx_j : grad[][i][j])
+ *   ctx         <-- Reference to dispatch context
+ *   m           <-- pointer to associated mesh structure
+ *   fvq         <-- pointer to associated finite volume quantities
+ *   halo_type   <-- halo type (extended or not)
+ *   inc         <-- if 0, solve on increment; 1 otherwise
+ *   coefav      <-- boundary face coefficient a
+ *   coefbv      <-- boundary face coefficient b
+ *   pvar        <-- variable
+ *   c_weight    <-- weighted gradient coefficient variable
+ *   grad        --> gradient of pvar (du_i/dx_j : grad[][i][j])
  *----------------------------------------------------------------------------*/
 
 template <cs_lnum_t stride>
 static void
 _initialize_strided_gradient
 (
+  cs_dispatch_context          &ctx,
   const cs_mesh_t              *m,
   const cs_mesh_quantities_t   *fvq,
   cs_halo_type_t                halo_type,
@@ -6010,8 +6013,6 @@ _initialize_strided_gradient
   const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
   const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
   const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
-
-  cs_dispatch_context ctx;
 
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
@@ -6131,6 +6132,7 @@ _initialize_strided_gradient
  *   stride        3 for vectors, 6 for symmetric tensors
  *
  * parameters:
+ *   ctx            <-- reference to dispatch context
  *   m              <-- pointer to associated mesh structure
  *   madj           <-- pointer to mesh adjacencies structure
  *   fvq            <-- pointer to associated finite volume quantities
@@ -6146,6 +6148,7 @@ template <cs_lnum_t stride>
 static void
 _reconstruct_strided_gradient
 (
+  cs_dispatch_context                           &ctx,
   const cs_mesh_t                               *m,
   [[maybe_unused]] const cs_mesh_adjacencies_t  *madj,
   const cs_mesh_quantities_t                    *fvq,
@@ -6218,7 +6221,6 @@ _reconstruct_strided_gradient
   }
 #endif
 
-  cs_dispatch_context ctx;
   cs_dispatch_context ctx_b;
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
@@ -6426,6 +6428,7 @@ _reconstruct_strided_gradient
  *   stride        3 for vectors, 6 for symmetric tensors
  *
  * parameters:
+ *   ctx            <-- Reference to dispatch context
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-> pointer to associated finite volume quantities
  *   var_name       <-- variable's name
@@ -6446,6 +6449,7 @@ template <cs_lnum_t stride>
 void
 _iterative_strided_gradient
 (
+  cs_dispatch_context          &ctx,
   const cs_mesh_t              *m,
   const cs_mesh_quantities_t   *fvq,
   const char                   *var_name,
@@ -6490,7 +6494,6 @@ _iterative_strided_gradient
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
   const cs_real_3_t *restrict dofij = fvq->dofij;
 
-  cs_dispatch_context ctx;
   const cs_alloc_mode_t amode = (ctx.use_gpu()) ?
     cs_alloc_mode_device : cs_alloc_mode;
 
@@ -6776,6 +6779,7 @@ _compute_gradient_lsq(cs_dispatch_context    &ctx,
  *   stride        3 for vectors, 6 for symmetric tensors
  *
  * parameters:
+ *   ctx            <-- Reference to dispatch context
  *   m              <-- pointer to associated mesh structure
  *   madj           <-- pointer to mesh adjacencies structure
  *   fvq            <-- pointer to associated finite volume quantities
@@ -6788,7 +6792,8 @@ _compute_gradient_lsq(cs_dispatch_context    &ctx,
 
 template <cs_lnum_t stride>
 static void
-_lsq_strided_gradient(const cs_mesh_t             *m,
+_lsq_strided_gradient(cs_dispatch_context         &ctx,
+                      const cs_mesh_t             *m,
                       const cs_mesh_adjacencies_t *madj,
                       const cs_mesh_quantities_t  *fvq,
                       cs_halo_type_t               halo_type,
@@ -6826,7 +6831,6 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
   if (cs_glob_timer_kernels_flag > 0)
     t_start = std::chrono::high_resolution_clock::now();
 
-  cs_dispatch_context ctx;
   bool on_device = ctx.use_gpu();
 
   //_gradient_quantities_destroy();
@@ -7079,6 +7083,7 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
  *   stride        3 for vectors, 6 for symmetric tensors
  *
  * parameters:
+ *   ctx            <-- Reference to dispatch context
  *   m              <-- pointer to associated mesh structure
  *   ma             <-- pointer to mesh adjacencies structure
  *   fvq            <-- pointer to associated finite volume quantities
@@ -7091,7 +7096,8 @@ _lsq_strided_gradient(const cs_mesh_t             *m,
 
 template <cs_lnum_t stride>
 static void
-_lsq_strided_gradient_gather(const cs_mesh_t             *m,
+_lsq_strided_gradient_gather(cs_dispatch_context         &ctx,
+                             const cs_mesh_t             *m,
                              const cs_mesh_adjacencies_t *ma,
                              const cs_mesh_quantities_t  *fvq,
                              cs_halo_type_t               halo_type,
@@ -7126,7 +7132,6 @@ _lsq_strided_gradient_gather(const cs_mesh_t             *m,
   if (cs_glob_timer_kernels_flag > 0)
     t_start = std::chrono::high_resolution_clock::now();
 
-  cs_dispatch_context ctx;
   bool on_device = ctx.use_gpu();
 
   //_gradient_quantities_destroy();
@@ -7364,58 +7369,6 @@ _lsq_strided_gradient_gather(const cs_mesh_t             *m,
     printf(", total = %ld\n", elapsed.count());
   }
 }
-
-/*----------------------------------------------------------------------------
- * Compute cell gradient of a scalar using least-squares reconstruction for
- * non-orthogonal meshes (n_r_sweeps > 1).
- * Calls the strided version with the correct types.
- *
- * template parameters:
- *   e2n           type of assembly algorithm used
- *
- * parameters:
- *   m              <-- pointer to associated mesh structure
- *   madj           <-- pointer to mesh adjacencies structure
- *   fvq            <-- pointer to associated finite volume quantities
- *   halo_type      <-- halo type (extended or not)
- *   pvar           <-- variable
- *   val_f          <-- face value for gradient
- *   c_weight       <-- weighted gradient coefficient variable, or nullptr
- *   gradv          --> gradient of pvar (du_i/dx_j : gradv[][j])
- *----------------------------------------------------------------------------*/
-
-template <const cs_e2n_sum_t e2n>
-static void
-_lsq_strided_gradient(const cs_mesh_t             *m,
-                      const cs_mesh_adjacencies_t *madj,
-                      const cs_mesh_quantities_t  *fvq,
-                      cs_halo_type_t               halo_type,
-                      const cs_real_t    *restrict pvar,
-                      const cs_real_t    *restrict val_f,
-                      const cs_real_t    *restrict c_weight,
-                      cs_real_3_t        *restrict gradv)
-{
-  _lsq_strided_gradient<e2n>(
-    m,
-    madj,
-    fvq,
-    halo_type,
-    reinterpret_cast<const cs_real_t(*)[1]>(pvar),
-    reinterpret_cast<const cs_real_t(*)[1]>(val_f),
-    c_weight,
-    reinterpret_cast<const cs_real_t(*)[1][3]>(gradv)
-  );
-}
-
-template <size_t stride>
-using lsq_strided_gradient_t = void(const cs_mesh_t *,
-                                    const cs_mesh_adjacencies_t *,
-                                    const cs_mesh_quantities_t *,
-                                    cs_halo_type_t,
-                                    const cs_real_t (*)[stride],
-                                    const cs_real_t (*)[stride],
-                                    const cs_real_t *restrict,
-                                    cs_real_t (*)[stride][3]);
 
 /*----------------------------------------------------------------------------
  * Compute gradient using vertex-based face values for scalar gradient
@@ -7694,6 +7647,11 @@ _gradient_scalar(cs_dispatch_context           &ctx,
     cs_alloc_mode_device : cs_alloc_mode;
   bool compute_bounds = (bounds != nullptr) ? true : false;
 
+  cs_e2n_sum_t e2n_sum_type_base = cs_glob_e2n_sum_type;
+  if (   mesh->i_face_numbering->type == CS_NUMBERING_DEFAULT
+      && ctx.use_gpu() == false && ctx.n_cpu_threads() > 1)
+    e2n_sum_type_base = CS_E2N_SUM_GATHER;
+
   /* Allocate work arrays */
 
   cs_real_t *tensor_f_weight = nullptr;
@@ -7780,7 +7738,7 @@ _gradient_scalar(cs_dispatch_context           &ctx,
                                  r_grad);
 
       else if (hyd_p_flag) {
-        cs_e2n_sum_t e2n_sum_type = cs_glob_e2n_sum_type;
+        cs_e2n_sum_t e2n_sum_type = e2n_sum_type_base;
 #if defined(HAVE_ACCEL)
         if (ctx.use_gpu())
           e2n_sum_type = CS_E2N_SUM_GATHER;
@@ -7830,7 +7788,7 @@ _gradient_scalar(cs_dispatch_context           &ctx,
       }
 
       if (gradient_type == CS_GRADIENT_GREEN_LSQ) {
-        cs_e2n_sum_t e2n_sum_type = cs_glob_e2n_sum_type;
+        cs_e2n_sum_t e2n_sum_type = e2n_sum_type_base;
 #if defined(HAVE_ACCEL)
         // Scatter-based reconstruction seems very slightly
         // faster than gather-based one on laptop.
@@ -7965,6 +7923,13 @@ _gradient_vector(const char                     *var_name,
 
   const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
 
+  cs_dispatch_context ctx;
+
+  cs_e2n_sum_t e2n_sum_type_base = cs_glob_e2n_sum_type;
+  if (   mesh->i_face_numbering->type == CS_NUMBERING_DEFAULT
+      && ctx.use_gpu() == false && ctx.n_cpu_threads() > 1)
+    e2n_sum_type_base = CS_E2N_SUM_GATHER;
+
   /* Compute gradient */
 
   switch (gradient_type) {
@@ -7977,7 +7942,8 @@ _gradient_vector(const char                     *var_name,
       const a_t *coefa = (const a_t *)bc_coeffs->a;
       const b_t *coefb = (const b_t *)bc_coeffs->b;
 
-      _initialize_strided_gradient(mesh,
+      _initialize_strided_gradient(ctx,
+                                   mesh,
                                    fvq,
                                    halo_type,
                                    inc,
@@ -7990,7 +7956,8 @@ _gradient_vector(const char                     *var_name,
       /* If reconstructions are required */
 
       if (n_r_sweeps > 1)
-        _iterative_strided_gradient(mesh,
+        _iterative_strided_gradient(ctx,
+                                    mesh,
                                     fvq,
                                     var_name,
                                     gradient_info,
@@ -8023,8 +7990,9 @@ _gradient_vector(const char                     *var_name,
       else
         r_grad = grad;
 
-      if (cs_glob_e2n_sum_type == CS_E2N_SUM_GATHER)
-        _lsq_strided_gradient_gather<3>(mesh,
+      if (e2n_sum_type_base == CS_E2N_SUM_GATHER)
+        _lsq_strided_gradient_gather<3>(ctx,
+                                        mesh,
                                         madj,
                                         fvq,
                                         halo_type,
@@ -8033,7 +8001,8 @@ _gradient_vector(const char                     *var_name,
                                         c_weight,
                                         r_grad);
       else
-        _lsq_strided_gradient<3>(mesh,
+        _lsq_strided_gradient<3>(ctx,
+                                 mesh,
                                  madj,
                                  fvq,
                                  halo_type,
@@ -8043,7 +8012,8 @@ _gradient_vector(const char                     *var_name,
                                  r_grad);
 
       if (gradient_type == CS_GRADIENT_GREEN_LSQ) {
-        _reconstruct_strided_gradient<3>(mesh,
+        _reconstruct_strided_gradient<3>(ctx,
+                                         mesh,
                                          madj,
                                          fvq,
                                          halo_type,
@@ -8073,7 +8043,8 @@ _gradient_vector(const char                     *var_name,
               __func__, cs_gradient_type_name[gradient_type]);
   }
 
-  _strided_gradient_clipping(mesh,
+  _strided_gradient_clipping(ctx,
+                             mesh,
                              fvq,
                              madj,
                              halo_type,
@@ -8086,7 +8057,6 @@ _gradient_vector(const char                     *var_name,
                              grad);
 
   if (bounds != nullptr) {
-    cs_dispatch_context ctx;
     _strided_bounds<3>(ctx,
                        mesh,
                        madj,
@@ -8150,6 +8120,13 @@ _gradient_tensor(const char                 *var_name,
   const cs_mesh_adjacencies_t *madj = cs_glob_mesh_adjacencies;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
+  cs_dispatch_context ctx;
+
+  cs_e2n_sum_t e2n_sum_type_base = cs_glob_e2n_sum_type;
+  if (   mesh->i_face_numbering->type == CS_NUMBERING_DEFAULT
+      && ctx.use_gpu() == false && ctx.n_cpu_threads() > 1)
+    e2n_sum_type_base = CS_E2N_SUM_GATHER;
+
   /* Compute gradient */
 
   switch (gradient_type) {
@@ -8162,7 +8139,8 @@ _gradient_tensor(const char                 *var_name,
       const a_t *coefa = (const a_t *)bc_coeffs->a;
       const b_t *coefb = (const b_t *)bc_coeffs->b;
 
-      _initialize_strided_gradient(mesh,
+      _initialize_strided_gradient(ctx,
+                                   mesh,
                                    fvq,
                                    halo_type,
                                    inc,
@@ -8175,7 +8153,8 @@ _gradient_tensor(const char                 *var_name,
       /* If reconstructions are required */
 
       if (n_r_sweeps > 1)
-        _iterative_strided_gradient(mesh,
+        _iterative_strided_gradient(ctx,
+                                    mesh,
                                     fvq,
                                     var_name,
                                     gradient_info,
@@ -8210,8 +8189,9 @@ _gradient_tensor(const char                 *var_name,
 
       const cs_real_t *c_weight = nullptr;
 
-      if (cs_glob_e2n_sum_type == CS_E2N_SUM_GATHER)
-        _lsq_strided_gradient_gather<6>(mesh,
+      if (e2n_sum_type_base == CS_E2N_SUM_GATHER)
+        _lsq_strided_gradient_gather<6>(ctx,
+                                        mesh,
                                         madj,
                                         fvq,
                                         halo_type,
@@ -8220,7 +8200,8 @@ _gradient_tensor(const char                 *var_name,
                                         c_weight,
                                         r_grad);
       else
-        _lsq_strided_gradient<6>(mesh,
+        _lsq_strided_gradient<6>(ctx,
+                                 mesh,
                                  madj,
                                  fvq,
                                  halo_type,
@@ -8230,7 +8211,8 @@ _gradient_tensor(const char                 *var_name,
                                  r_grad);
 
       if (gradient_type == CS_GRADIENT_GREEN_LSQ) {
-        _reconstruct_strided_gradient<6>(mesh,
+        _reconstruct_strided_gradient<6>(ctx,
+                                         mesh,
                                          madj,
                                          fvq,
                                          halo_type,
@@ -8260,7 +8242,8 @@ _gradient_tensor(const char                 *var_name,
               __func__, cs_gradient_type_name[gradient_type]);
   }
 
-  _strided_gradient_clipping(mesh,
+  _strided_gradient_clipping(ctx,
+                             mesh,
                              fvq,
                              madj,
                              halo_type,
@@ -8273,7 +8256,6 @@ _gradient_tensor(const char                 *var_name,
                              grad);
 
   if (bounds != nullptr) {
-    cs_dispatch_context ctx;
     _strided_bounds<6>(ctx,
                        mesh,
                        madj,
