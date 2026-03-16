@@ -79,9 +79,11 @@ typedef struct {
  * Boundary condition types
  *----------------------------------------------------------------------------*/
 
+#define CS_INDEF CS_UNDEF /* For backward compatibility with 9.0 */
+
 enum {
 
-  CS_INDEF = 1,              /*!< undefined */
+  CS_UNDEF = 1,              /*!< undefined */
   CS_INLET = 2,              /*!< standard inlet */
   CS_OUTLET = 3,             /*!< standard outlet */
   CS_SYMMETRY = 4,

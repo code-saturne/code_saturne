@@ -2646,7 +2646,7 @@ cs_syr_coupling_recv_boundary(const int  nvar,
 
         cs_lnum_t face_id = f_ids[i];
 
-        if (   _icodcl[face_id] != CS_INDEF
+        if (   _icodcl[face_id] != CS_UNDEF
             && _icodcl[face_id] != CS_SMOOTHWALL
             && _icodcl[face_id] != CS_ROUGHWALL) {
           if (bc_type[face_id] == CS_SMOOTHWALL)

@@ -107,7 +107,7 @@ Coding of standard boundary conditions {#sec_prg_bc_standard}
 The standard keywords used by the indicator `bc_type` are, in C:
 \ref CS_INLET, \ref CS_SMOOTHWALL, \ref CS_ROUGHWALL, \ref CS_SYMMETRY,
 \ref CS_OUTLET, \ref CS_FREE_INLET, \ref CS_FREE_SURFACE,
-\ref CS_CONVECTIVE_INLET and \ref CS_INDEF.
+\ref CS_CONVECTIVE_INLET and \ref CS_UNDEF.
 
 - If `bc_type[face_id] == CS_INLET`: inlet face.
 
@@ -202,7 +202,7 @@ The standard keywords used by the indicator `bc_type` are, in C:
   * This allows to exactly impose the ingoing flux, without adding a
     diffusive term.<br><br>
 
-- If `bc_type[face_id] == CS_INDEF`: undefined type face (non-standard case).
+- If `bc_type[face_id] == CS_UNDEF`: undefined type face (non-standard case).
 
   * Coding is done in a non-standard way by filling `icodcl`, `rcodcl1`,
     `rcodcl2`, and `rcodcl3` entries associated to that face (see
@@ -302,7 +302,7 @@ Coding of non-standard boundary conditions {#sec_prg_bc_nonstandard}
 If a face does not correspond to a standard type, the user must
 completely fill the arrays `bc_type`, `icodcl`, `rcodcl1`, `rcodcl2`,
 and `rcodcl3` fr each variable field. `bc_type[face_id]` is then equal
-to `CS_INDEF` or another value defined by the user (see note at the end
+to `CS_UNDEF` or another value defined by the user (see note at the end
 of \ref sec_prg_bc_standard). The `icodcl` and `rcodcl` arrays must be
 filled as follows:
 

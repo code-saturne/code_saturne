@@ -161,7 +161,7 @@ cs_boundary_conditions_type(bool  init,
                            CS_SYMMETRY, CS_OUTLET, CS_FREE_INLET,
                            CS_CONVECTIVE_INLET,
                            CS_COUPLED, CS_COUPLED_FD,
-                           CS_FREE_SURFACE, CS_INDEF};
+                           CS_FREE_SURFACE, CS_UNDEF};
 
   const char *info[11] = {"Inlet", "Smooth wall", "Rough wall",
                           "Symmetry", "Free outlet", "Free inlet",
@@ -174,7 +174,7 @@ cs_boundary_conditions_type(bool  init,
   const int type_id_c[9] = {CS_EQHCF, CS_EPHCF, CS_ESICF,
                             CS_SOPCF, CS_SSPCF,
                             CS_SMOOTHWALL, CS_ROUGHWALL,
-                            CS_SYMMETRY, CS_INDEF};
+                            CS_SYMMETRY, CS_UNDEF};
 
   const char *info_c[9] = {"Sub. enth. inlet", "Ptot, Htot",
                            "Imp inlet/outlet", "Subsonic outlet",

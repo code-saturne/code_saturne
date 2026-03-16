@@ -3162,7 +3162,7 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
       for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
         cs_lnum_t face_id = bz->elt_ids[elt_id];
         bc_pm_info->izfppp[face_id] = zone_nbr;
-        itypfb[face_id] = CS_INDEF;
+        itypfb[face_id] = CS_UNDEF;
       }
 
       /* set velocity to 0 */
@@ -3188,7 +3188,7 @@ cs_gui_boundary_conditions_processing(int  *itypfb)
       for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
         cs_lnum_t face_id = bz->elt_ids[elt_id];
         bc_pm_info->izfppp[face_id] = zone_nbr;
-        itypfb[face_id] = CS_INDEF;
+        itypfb[face_id] = CS_UNDEF;
       }
 
     }
@@ -3261,10 +3261,10 @@ cs_gui_boundary_conditions_verify(void)
       inature = CS_FREE_SURFACE;
     }
     else if (cs_gui_strcmp(boundaries->nature[izone], "undefined")) {
-      inature = CS_INDEF;
+      inature = CS_UNDEF;
     }
     else if (cs_gui_strcmp(boundaries->nature[izone], "groundwater")) {
-      inature = CS_INDEF;
+      inature = CS_UNDEF;
     }
 
     if (inature < 0)

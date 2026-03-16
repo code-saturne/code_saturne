@@ -138,8 +138,8 @@ cs_user_boundary_conditions([[maybe_unused]] cs_domain_t  *domain,
 
     const cs_lnum_t face_id = zn->elt_ids[ilelt];
 
-    /* CAUTION: the value of bc_type must be assigned to CS_INDEF */
-    bc_type[face_id] = CS_INDEF;
+    /* CAUTION: the value of bc_type must be assigned to CS_UNDEF */
+    bc_type[face_id] = CS_UNDEF;
 
     for (int f_id = 0; f_id < n_fields; f_id++) {
 
