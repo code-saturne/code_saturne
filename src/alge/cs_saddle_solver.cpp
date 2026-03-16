@@ -51,10 +51,10 @@
 #include "cdo/cs_cdo_solve.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "alge/cs_matrix_default.h"
 #include "base/cs_mem.h"
 #include "base/cs_parameters.h"
 #include "cdo/cs_saddle_system.h"
-
 
 #if 0  /* Set to 1 if systems have to be exported into a binary file */
 #include "cdo/cs_dbg.h"
@@ -2808,6 +2808,8 @@ cs_saddle_solver_context_block_pcd_clean(
   if (ctx == nullptr)
     return;
 
+  cs_matrix_release(&(ctx->schur_matrix));
+
   /* Remove the setup data in SLES. The pointer to the following SLES will be
      still valid */
 
@@ -3184,6 +3186,8 @@ cs_saddle_solver_context_uzawa_cg_clean(
   CS_FREE(ctx->dzk);
   CS_FREE(ctx->rhs);
 
+  cs_matrix_release(&(ctx->schur_matrix));
+
   /* Remove the setup data in SLES. The pointer to the following SLES will be
      still valid */
 
@@ -3365,6 +3369,8 @@ cs_saddle_solver_context_simple_clean(cs_saddle_solver_context_simple_t *ctx)
   CS_FREE(ctx->m21x1);
   CS_FREE(ctx->b1_tilda);
   CS_FREE(ctx->rhs);
+
+  cs_matrix_release(&(ctx->schur_matrix));
 
   /* Remove the setup data in SLES. The pointer to the following SLES will be
      still valid */
