@@ -116,9 +116,10 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         self.modelPonderationCoefFieldb.addItem(self.tr("alp2"), "alp2")
         self.modelPonderationCoefFieldb.addItem(self.tr("alp1*alp2"), "alp1_alp2")
 
-        self.modelSolidEnergyTransfer = ComboModel(self.comboBoxSolidEnergyTransfer, 2, 1)
+        self.modelSolidEnergyTransfer = ComboModel(self.comboBoxSolidEnergyTransfer, 3, 1)
         self.modelSolidEnergyTransfer.addItem(self.tr("none"), "none")
-        self.modelSolidEnergyTransfer.addItem(self.tr("gas-particle"), "gas_particule")
+        self.modelSolidEnergyTransfer.addItem(self.tr("Ranz-Marshall correlation"), "gas_particule")
+        self.modelSolidEnergyTransfer.addItem(self.tr("Gunn correlation"), "gunn")
 
         self.modelFieldaModel = ComboModel(self.comboBoxFieldaModel, 1, 1)
         self.modelFieldaModel.addItem(self.tr("No source term"), "no_source_term")

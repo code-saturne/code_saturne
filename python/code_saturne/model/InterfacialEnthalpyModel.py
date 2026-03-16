@@ -359,7 +359,7 @@ class InterfacialEnthalpyModel(Variables, Model):
         """
         set model for solid interfacial transfer
         """
-        self.isInList(model, ('none', 'gas_particule'))
+        self.isInList(model, ('none', 'gas_particule', 'gunn'))
         n = self.XMLInterfEnthalpyNode.xmlInitNode('solid_enthalpy_transfer')
         n['model'] = model
 
@@ -388,6 +388,8 @@ class InterfacialEnthalpyModel(Variables, Model):
             model_node = n.xmlInitNode("enthalpy_model", field_id=fieldId)
             previous_model = model_node['model']
             if status == "off" and previous_model == "gas_particule":
+                model_node['model'] = "none"
+            elif status == "off" and previous_model == "gunn":
                 model_node['model'] = "none"
             if status == "on":
                 model_node["model"] = "gas_particule"
