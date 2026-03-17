@@ -400,7 +400,7 @@ class batch:
                 elif kw == '--ntasks=' or kw == '-n':
                     val = str(self.params['job_procs'])
                 elif kw == '--nodes=' or kw == '-N':
-                    val = str(self.params['job_nodes'])
+                    val = str(self.params['job_nodes']) if self.params['job_nodes'] else ''
                 elif kw == '--ntasks-per-node=':
                     val = self.params['job_ppn']
                 elif kw == '--cpus-per-task=':
