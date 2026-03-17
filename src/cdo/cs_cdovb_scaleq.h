@@ -43,10 +43,6 @@
 #include "cdo/cs_source_term.h"
 #include "base/cs_time_step.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -650,9 +646,5 @@ void
 cs_cdovb_scaleq_extra_post(const cs_equation_param_t  *eqp,
                            cs_equation_builder_t      *eqb,
                            void                       *context);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_CDOVB_SCALEQ_H__ */

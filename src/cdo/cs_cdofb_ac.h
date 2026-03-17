@@ -48,10 +48,6 @@
 #include "cdo/cs_source_term.h"
 #include "base/cs_time_step.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -170,9 +166,5 @@ void
 cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
                                 const cs_navsto_param_t      *nsp,
                                 void                         *scheme_context);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_CDOFB_AC_H__ */

@@ -51,10 +51,6 @@
 #include "base/cs_time_step.h"
 #include "cdo/cs_sdm.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -764,9 +760,5 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
                         const cs_cdo_bc_face_t      *pr_bc,
                         const cs_boundary_type_t    *bf_type,
                         const cs_real_t             *pr_c);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_CDOFB_NAVSTO_H__ */

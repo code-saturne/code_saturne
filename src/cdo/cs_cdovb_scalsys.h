@@ -40,10 +40,6 @@
 #include "mesh/cs_mesh.h"
 #include "base/cs_time_step.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -176,9 +172,5 @@ cs_cdovb_scalsys_solve_implicit_incr(bool                         cur2prev,
                                      cs_equation_core_t         **blocks,
                                      void                        *sys_context,
                                      cs_cdo_system_helper_t      *sh);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_CDOVB_SCALSYS_H__ */

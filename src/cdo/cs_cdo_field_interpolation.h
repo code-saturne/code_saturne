@@ -33,10 +33,6 @@
 
 #include "mesh/cs_mesh.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -113,9 +109,5 @@ void
 cs_cdo_field_interpolation_cell_to_faces(const cs_mesh_t    *mesh,
                                          const cs_real_t    *cell_values,
                                          cs_real_t          *face_values);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_CDO_FIELD_INTERPOLATION_H__ */

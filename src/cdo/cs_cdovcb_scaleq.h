@@ -42,10 +42,6 @@
 #include "base/cs_restart.h"
 #include "cdo/cs_source_term.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -79,9 +75,9 @@ cs_cdovcb_scaleq_is_initialized(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_init_sharing(const cs_cdo_quantities_t    *quant,
-                              const cs_cdo_connect_t       *connect,
-                              const cs_time_step_t         *time_step);
+cs_cdovcb_scaleq_init_sharing(const cs_cdo_quantities_t *quant,
+                              const cs_cdo_connect_t    *connect,
+                              const cs_time_step_t      *time_step);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -93,8 +89,7 @@ cs_cdovcb_scaleq_init_sharing(const cs_cdo_quantities_t    *quant,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_get(cs_cell_sys_t       **csys,
-                     cs_cell_builder_t   **cb);
+cs_cdovcb_scaleq_get(cs_cell_sys_t **csys, cs_cell_builder_t **cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -120,11 +115,11 @@ cs_cdovcb_scaleq_finalize_sharing(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void  *
-cs_cdovcb_scaleq_init_context(cs_equation_param_t    *eqp,
-                              int                     var_id,
-                              int                     bflux_id,
-                              cs_equation_builder_t  *eqb);
+void *
+cs_cdovcb_scaleq_init_context(cs_equation_param_t   *eqp,
+                              int                    var_id,
+                              int                    bflux_id,
+                              cs_equation_builder_t *eqb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -137,7 +132,7 @@ cs_cdovcb_scaleq_init_context(cs_equation_param_t    *eqp,
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdovcb_scaleq_free_context(void   *data);
+cs_cdovcb_scaleq_free_context(void *data);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -155,12 +150,12 @@ cs_cdovcb_scaleq_free_context(void   *data);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_init_values(cs_real_t                     t_eval,
-                             const int                     field_id,
-                             const cs_mesh_t              *mesh,
-                             const cs_equation_param_t    *eqp,
-                             cs_equation_builder_t        *eqb,
-                             void                         *context);
+cs_cdovcb_scaleq_init_values(cs_real_t                  t_eval,
+                             const int                  field_id,
+                             const cs_mesh_t           *mesh,
+                             const cs_equation_param_t *eqp,
+                             cs_equation_builder_t     *eqb,
+                             void                      *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -179,12 +174,12 @@ cs_cdovcb_scaleq_init_values(cs_real_t                     t_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_interpolate(const cs_mesh_t            *mesh,
-                             const cs_real_t            *cell_values,
-                             const int                   field_id,
-                             const cs_equation_param_t  *eqp,
-                             cs_equation_builder_t      *eqb,
-                             void                       *context);
+cs_cdovcb_scaleq_interpolate(const cs_mesh_t           *mesh,
+                             const cs_real_t           *cell_values,
+                             const int                  field_id,
+                             const cs_equation_param_t *eqp,
+                             cs_equation_builder_t     *eqb,
+                             void                      *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -202,12 +197,12 @@ cs_cdovcb_scaleq_interpolate(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_solve_steady_state(bool                        cur2prev,
-                                    const cs_mesh_t            *mesh,
-                                    const int                   field_id,
-                                    const cs_equation_param_t  *eqp,
-                                    cs_equation_builder_t      *eqb,
-                                    void                       *context);
+cs_cdovcb_scaleq_solve_steady_state(bool                       cur2prev,
+                                    const cs_mesh_t           *mesh,
+                                    const int                  field_id,
+                                    const cs_equation_param_t *eqp,
+                                    cs_equation_builder_t     *eqb,
+                                    void                      *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -226,12 +221,12 @@ cs_cdovcb_scaleq_solve_steady_state(bool                        cur2prev,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_solve_implicit(bool                        cur2prev,
-                                const cs_mesh_t            *mesh,
-                                const int                   field_id,
-                                const cs_equation_param_t  *eqp,
-                                cs_equation_builder_t      *eqb,
-                                void                       *context);
+cs_cdovcb_scaleq_solve_implicit(bool                       cur2prev,
+                                const cs_mesh_t           *mesh,
+                                const int                  field_id,
+                                const cs_equation_param_t *eqp,
+                                cs_equation_builder_t     *eqb,
+                                void                      *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -250,12 +245,12 @@ cs_cdovcb_scaleq_solve_implicit(bool                        cur2prev,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_solve_theta(bool                        cur2prev,
-                             const cs_mesh_t            *mesh,
-                             const int                   field_id,
-                             const cs_equation_param_t  *eqp,
-                             cs_equation_builder_t      *eqb,
-                             void                       *context);
+cs_cdovcb_scaleq_solve_theta(bool                       cur2prev,
+                             const cs_mesh_t           *mesh,
+                             const int                  field_id,
+                             const cs_equation_param_t *eqp,
+                             cs_equation_builder_t     *eqb,
+                             void                      *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -272,8 +267,7 @@ cs_cdovcb_scaleq_solve_theta(bool                        cur2prev,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdovcb_scaleq_get_vertex_values(void      *context,
-                                   bool       previous);
+cs_cdovcb_scaleq_get_vertex_values(void *context, bool previous);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -292,8 +286,7 @@ cs_cdovcb_scaleq_get_vertex_values(void      *context,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdovcb_scaleq_get_cell_values(void     *context,
-                                 bool      previous);
+cs_cdovcb_scaleq_get_cell_values(void *context, bool previous);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -308,7 +301,7 @@ cs_cdovcb_scaleq_get_cell_values(void     *context,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdovcb_scaleq_get_source_term_values(void    *context);
+cs_cdovcb_scaleq_get_source_term_values(void *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -356,14 +349,14 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t           *pot_v,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_flux_across_plane(const cs_real_t             normal[],
-                                   const cs_real_t            *pdi,
-                                   const cs_equation_param_t  *eqp,
-                                   int                         ml_id,
-                                   cs_equation_builder_t      *eqb,
-                                   void                       *context,
-                                   double                     *d_flux,
-                                   double                     *c_flux);
+cs_cdovcb_scaleq_flux_across_plane(const cs_real_t            normal[],
+                                   const cs_real_t           *pdi,
+                                   const cs_equation_param_t *eqp,
+                                   int                        ml_id,
+                                   cs_equation_builder_t     *eqb,
+                                   void                      *context,
+                                   double                    *d_flux,
+                                   double                    *c_flux);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -378,18 +371,18 @@ cs_cdovcb_scaleq_flux_across_plane(const cs_real_t             normal[],
  * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
  * \param[in, out] context     pointer to data structure cast on-the-fly
  * \param[in, out] diff_flux   value of the diffusive flux
-  */
+ */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_diff_flux_in_cells(const cs_real_t             *v_values,
-                                    const cs_real_t             *c_values,
-                                    const cs_equation_param_t   *eqp,
-                                    const cs_property_t         *diff_pty,
-                                    cs_real_t                    t_eval,
-                                    cs_equation_builder_t       *eqb,
-                                    void                        *context,
-                                    cs_real_t                   *diff_flux);
+cs_cdovcb_scaleq_diff_flux_in_cells(const cs_real_t           *v_values,
+                                    const cs_real_t           *c_values,
+                                    const cs_equation_param_t *eqp,
+                                    const cs_property_t       *diff_pty,
+                                    cs_real_t                  t_eval,
+                                    cs_equation_builder_t     *eqb,
+                                    void                      *context,
+                                    cs_real_t                 *diff_flux);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -406,18 +399,18 @@ cs_cdovcb_scaleq_diff_flux_in_cells(const cs_real_t             *v_values,
  * \param[in, out] eqb         pointer to a cs_equation_builder_t structure
  * \param[in, out] context     pointer to data structure cast on-the-fly
  * \param[in, out] diff_flux   value of the diffusive flux
-  */
+ */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_diff_flux_dfaces(const cs_real_t             *v_values,
-                                  const cs_real_t             *c_values,
-                                  const cs_equation_param_t   *eqp,
-                                  const cs_property_t         *diff_pty,
-                                  cs_real_t                    t_eval,
-                                  cs_equation_builder_t       *eqb,
-                                  void                        *context,
-                                  cs_real_t                   *diff_flux);
+cs_cdovcb_scaleq_diff_flux_dfaces(const cs_real_t           *v_values,
+                                  const cs_real_t           *c_values,
+                                  const cs_equation_param_t *eqp,
+                                  const cs_property_t       *diff_pty,
+                                  cs_real_t                  t_eval,
+                                  cs_equation_builder_t     *eqb,
+                                  void                      *context,
+                                  cs_real_t                 *diff_flux);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -427,14 +420,14 @@ cs_cdovcb_scaleq_diff_flux_dfaces(const cs_real_t             *v_values,
  * \param[in, out]  eqb         pointer to a cs_equation_builder_t structure
  * \param[in, out]  context     pointer to data structure cast on-the-fly
  * \param[in, out]  v_gradient  gradient at vertices
-  */
+ */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
-                              cs_equation_builder_t   *eqb,
-                              void                    *context,
-                              cs_real_t               *v_gradient);
+cs_cdovcb_scaleq_vtx_gradient(const cs_real_t       *v_values,
+                              cs_equation_builder_t *eqb,
+                              void                  *context,
+                              cs_real_t             *v_gradient);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -448,9 +441,9 @@ cs_cdovcb_scaleq_vtx_gradient(const cs_real_t         *v_values,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_read_restart(cs_restart_t    *restart,
-                              const char      *eqname,
-                              void            *scheme_context);
+cs_cdovcb_scaleq_read_restart(cs_restart_t *restart,
+                              const char   *eqname,
+                              void         *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -464,9 +457,9 @@ cs_cdovcb_scaleq_read_restart(cs_restart_t    *restart,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_write_restart(cs_restart_t    *restart,
-                               const char      *eqname,
-                               void            *scheme_context);
+cs_cdovcb_scaleq_write_restart(cs_restart_t *restart,
+                               const char   *eqname,
+                               void         *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -480,9 +473,9 @@ cs_cdovcb_scaleq_write_restart(cs_restart_t    *restart,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_current_to_previous(const cs_equation_param_t  *eqp,
-                                     cs_equation_builder_t      *eqb,
-                                     void                       *context);
+cs_cdovcb_scaleq_current_to_previous(const cs_equation_param_t *eqp,
+                                     cs_equation_builder_t     *eqb,
+                                     void                      *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -495,12 +488,8 @@ cs_cdovcb_scaleq_current_to_previous(const cs_equation_param_t  *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_extra_post(const cs_equation_param_t  *eqp,
-                            cs_equation_builder_t      *eqb,
-                            void                       *context);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
+cs_cdovcb_scaleq_extra_post(const cs_equation_param_t *eqp,
+                            cs_equation_builder_t     *eqb,
+                            void                      *context);
 
 #endif /* __CS_CDOVCB_SCALEQ_H__ */

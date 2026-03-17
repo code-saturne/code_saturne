@@ -38,10 +38,6 @@
 #include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_flag.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -764,9 +760,5 @@ cs_reco_scalar_ebyc2c_full(const cs_adjacency_t        *c2e,
 {
   cs_reco_scalar_ebyc2c(cdoq->n_cells, NULL, c2e, cdoq, array, false, reco);
 }
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_RECO_H__ */

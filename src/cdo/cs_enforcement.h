@@ -33,10 +33,6 @@
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_local.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -252,9 +248,5 @@ bool
 cs_enforcement_dofs_cw(const cs_real_t      *forced_values,
                        cs_cell_sys_t        *csys,
                        cs_real_t            *cw_forced_values);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_ENFORCEMENT_H__ */

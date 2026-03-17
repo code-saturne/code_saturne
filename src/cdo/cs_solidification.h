@@ -37,10 +37,6 @@
 #include "base/cs_time_plot.h"
 #include "base/cs_time_step.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -1053,9 +1049,5 @@ cs_solidification_extra_post(void                      *input,
                              const cs_lnum_t            i_face_ids[],
                              const cs_lnum_t            b_face_ids[],
                              const cs_time_step_t      *time_step);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_SOLIDIFICATION_H__ */

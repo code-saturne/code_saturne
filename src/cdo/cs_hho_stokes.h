@@ -43,10 +43,6 @@
 #include "alge/cs_matrix_assembler.h"
 #include "cdo/cs_source_term.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -273,9 +269,5 @@ cs_hho_stokes_extra_op(const char                 *eqname,
                        const cs_equation_param_t  *eqp,
                        cs_equation_builder_t      *eqb,
                        void                       *data);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_HHO_STOKES_H__ */

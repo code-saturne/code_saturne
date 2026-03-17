@@ -40,10 +40,6 @@
 #include "cdo/cs_property.h"
 #include "cdo/cs_sdm.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro and type definitions
  *============================================================================*/
@@ -1026,9 +1022,5 @@ cs_hodge_circulation_from_flux(const cs_cdo_connect_t       *connect,
 void
 cs_hodge_compute_wbs_surfacic(const cs_face_mesh_t    *fm,
                               cs_sdm_t                *hf);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_HODGE_H__ */

@@ -47,10 +47,6 @@
 #include "cdo/cs_navsto_param.h"
 #include "base/cs_time_step.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -218,9 +214,5 @@ void
 cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
                        const cs_navsto_param_t   *nsp,
                        void                      *scheme_context);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_CDOFB_MONOLITHIC_H__ */

@@ -42,10 +42,6 @@
 #include "cdo/cs_xdef.h"
 #include "cdo/cs_xdef_eval.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -938,9 +934,5 @@ cs_advection_get_courant(const cs_adv_field_t     *adv,
 cs_real_t *
 cs_advection_field_divergence_at_vertices(const cs_adv_field_t     *adv,
                                           cs_real_t                 t_eval);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_ADVECTION_FIELD_H__ */

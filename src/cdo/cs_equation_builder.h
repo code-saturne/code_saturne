@@ -40,10 +40,6 @@
 #include "alge/cs_matrix.h"
 #include "cdo/cs_source_term.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -489,9 +485,5 @@ void
 cs_equation_builder_enforce_block_dofs(const cs_equation_builder_t   *eqb,
                                        cs_cell_builder_t             *cb,
                                        cs_cell_sys_t                 *csys);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_EQUATION_BUILDER_H__ */

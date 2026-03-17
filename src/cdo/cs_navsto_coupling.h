@@ -37,10 +37,6 @@
 #include "base/cs_field.h"
 #include "cdo/cs_navsto_param.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -380,9 +376,5 @@ cs_navsto_projection_last_setup(const cs_cdo_quantities_t  *quant,
 
 cs_equation_t *
 cs_navsto_projection_get_momentum_eq(void       *context);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_NAVSTO_COUPLING_H__ */

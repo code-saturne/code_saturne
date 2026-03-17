@@ -37,10 +37,6 @@
 #include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_xdef.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -529,9 +525,5 @@ cs_evaluate_average_on_cells(const cs_xdef_t   *def,
 cs_real_t
 cs_evaluate_scal_domain_integral_by_array(cs_flag_t         array_loc,
                                           const cs_real_t  *array_val);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_EVALUATE_H__ */

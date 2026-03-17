@@ -40,10 +40,6 @@
 
 #include "cdo/cs_cdofb_monolithic_priv.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -263,9 +259,5 @@ cs_cdofb_monolithic_sles_simple(const cs_navsto_param_t  *nsp,
                                 cs_saddle_solver_t       *solver,
                                 cs_real_t                *u_f,
                                 cs_real_t                *p_c);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_CDOFB_MONOLITHIC_SLES_H__ */

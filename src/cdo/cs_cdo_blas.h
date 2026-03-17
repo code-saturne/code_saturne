@@ -36,10 +36,6 @@
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_quantities.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -60,9 +56,8 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-typedef cs_real_t
-(cs_cdo_blas_dotprod_t) (const cs_real_t *a,
-                         const cs_real_t *b);
+typedef cs_real_t(cs_cdo_blas_dotprod_t)(const cs_real_t *a,
+                                         const cs_real_t *b);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -75,8 +70,7 @@ typedef cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
-typedef cs_real_t
-(cs_cdo_blas_square_norm_t) (const cs_real_t *array);
+typedef cs_real_t(cs_cdo_blas_square_norm_t)(const cs_real_t *array);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -93,9 +87,8 @@ typedef cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
-typedef cs_real_t
-(cs_cdo_blas_square_norm_diff_t) (const cs_real_t *a,
-                                  const cs_real_t *b);
+typedef cs_real_t(cs_cdo_blas_square_norm_diff_t)(const cs_real_t *a,
+                                                  const cs_real_t *b);
 
 /*============================================================================
  * Public function prototypes
@@ -145,8 +138,7 @@ cs_cdo_blas_square_norm_pcsp(const cs_real_t *array);
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_pcsp_diff(const cs_real_t *a,
-                                  const cs_real_t *b);
+cs_cdo_blas_square_norm_pcsp_diff(const cs_real_t *a, const cs_real_t *b);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -165,8 +157,7 @@ cs_cdo_blas_square_norm_pcsp_diff(const cs_real_t *a,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_pcsp_ndiff(const cs_real_t *a,
-                                   const cs_real_t *ref);
+cs_cdo_blas_square_norm_pcsp_ndiff(const cs_real_t *a, const cs_real_t *ref);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -183,8 +174,7 @@ cs_cdo_blas_square_norm_pcsp_ndiff(const cs_real_t *a,
 /*----------------------------------------------------------------------------*/
 
 double
-cs_cdo_blas_dotprod_vertex(const cs_real_t *a,
-                           const cs_real_t *b);
+cs_cdo_blas_dotprod_vertex(const cs_real_t *a, const cs_real_t *b);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -218,8 +208,7 @@ cs_cdo_blas_square_norm_vertex(const cs_real_t *array);
 /*----------------------------------------------------------------------------*/
 
 double
-cs_cdo_blas_dotprod_pvsp(const cs_real_t        *a,
-                         const cs_real_t        *b);
+cs_cdo_blas_dotprod_pvsp(const cs_real_t *a, const cs_real_t *b);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -235,7 +224,7 @@ cs_cdo_blas_dotprod_pvsp(const cs_real_t        *a,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_pvsp(const cs_real_t        *array);
+cs_cdo_blas_square_norm_pvsp(const cs_real_t *array);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -252,8 +241,7 @@ cs_cdo_blas_square_norm_pvsp(const cs_real_t        *array);
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_pvsp_diff(const cs_real_t *a,
-                                  const cs_real_t *b);
+cs_cdo_blas_square_norm_pvsp_diff(const cs_real_t *a, const cs_real_t *b);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -289,8 +277,7 @@ cs_cdo_blas_square_norm_2pvsp(const cs_real_t *array);
 /*----------------------------------------------------------------------------*/
 
 double
-cs_cdo_blas_dotprod_2pvsp(const cs_real_t *a,
-                          const cs_real_t *b);
+cs_cdo_blas_dotprod_2pvsp(const cs_real_t *a, const cs_real_t *b);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -341,8 +328,7 @@ cs_cdo_blas_square_norm_pfvp(const cs_real_t *array);
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_dotprod_pfsf(const cs_real_t *a,
-                         const cs_real_t *b);
+cs_cdo_blas_dotprod_pfsf(const cs_real_t *a, const cs_real_t *b);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -377,8 +363,7 @@ cs_cdo_blas_square_norm_pfsf(const cs_real_t *array);
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_pfsf_diff(const cs_real_t *a,
-                                  const cs_real_t *b);
+cs_cdo_blas_square_norm_pfsf_diff(const cs_real_t *a, const cs_real_t *b);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -411,8 +396,7 @@ cs_cdo_blas_square_norm_pfsf_trace(const cs_real_t *array);
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_pfsf_trace_diff(const cs_real_t *a,
-                                        const cs_real_t *b);
+cs_cdo_blas_square_norm_pfsf_trace_diff(const cs_real_t *a, const cs_real_t *b);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -432,8 +416,7 @@ cs_cdo_blas_square_norm_pfsf_trace_diff(const cs_real_t *a,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_dotprod_pfsf_trace(const cs_real_t *a,
-                               const cs_real_t *b);
+cs_cdo_blas_dotprod_pfsf_trace(const cs_real_t *a, const cs_real_t *b);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -466,8 +449,7 @@ cs_cdo_blas_square_norm_pfsf_hdiv(const cs_real_t *array);
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_square_norm_pfsf_hdiv_diff(const cs_real_t *a,
-                                       const cs_real_t *b);
+cs_cdo_blas_square_norm_pfsf_hdiv_diff(const cs_real_t *a, const cs_real_t *b);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -487,11 +469,6 @@ cs_cdo_blas_square_norm_pfsf_hdiv_diff(const cs_real_t *a,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_cdo_blas_dotprod_pfsf_hdiv(const cs_real_t *a,
-                              const cs_real_t *b);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
+cs_cdo_blas_dotprod_pfsf_hdiv(const cs_real_t *a, const cs_real_t *b);
 
 #endif /* __CS_CDO_BLAS_H__ */

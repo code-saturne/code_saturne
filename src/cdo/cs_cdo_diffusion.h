@@ -38,10 +38,6 @@
 #include "cdo/cs_hodge.h"
 #include "cdo/cs_macfb_builder.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -888,9 +884,5 @@ void cs_macfb_diffusion(const cs_cell_mesh_t     *cm,
                         const cs_property_t      *diff_pty,
                         cs_sdm_t                 *mat,
                         cs_real_t                *rhs);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_CDO_DIFFUSION_H__ */
