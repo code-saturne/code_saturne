@@ -42,7 +42,9 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_array.h"
+#include "base/cs_boundary_conditions.h"
 #include "base/cs_boundary_zone.h"
+#include "base/cs_field_operator.h"
 #include "cdo/cs_cdo_toolbox.h"
 #include "cdo/cs_cdo_turbulence.h"
 #include "cdo/cs_evaluate.h"
@@ -225,6 +227,142 @@ _assign_vb_dirichlet_values(int                dim,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute mapped boundary conditions for a given field and mapping
+ * locator. Hybrid field for cdofb
+ *
+ * \param[in]      bc_map      pointer to a cs_bc_map_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      val_c      pointer to a cs_field_t structure
+ * \param[in]      val_f      pointer to a cs_real_t structure
+ * \param[in]      normalize  normalize values to conserve the initial norm
+ * \param[in, out] values     pointer to the array of values to set
+ *                            size = 3*n_b_faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_compute_mapped_cdofb(cs_bc_map_t               *bc_map,
+                      const cs_cdo_quantities_t *cdoq,
+                      const cs_field_t          *val_c,
+                      const cs_real_t           *val_f,
+                      bool                       normalize,
+                      cs_real_t                 *values)
+{
+  /* Check */
+  assert(bc_map != nullptr);
+  assert(val_c != nullptr);
+  assert(val_f != nullptr);
+  assert(values != nullptr);
+
+  /* Update */
+  bc_map->update();
+
+  ple_locator_t *locator = bc_map->locator;
+
+  if (locator == nullptr)
+    return;
+
+  const cs_mesh_location_type_t location_type =
+    cs_mesh_location_get_type(bc_map->source_location_id);
+  const cs_lnum_t n_bfaces =
+    cs_mesh_location_get_n_elts(bc_map->bc_location_id)[0];
+  const cs_lnum_t *bfaces =
+    cs_mesh_location_get_elt_ids_try(bc_map->bc_location_id);
+  assert(bfaces != nullptr);
+  const cs_lnum_t n_i_faces = cdoq->n_i_faces;
+
+  const int          dim         = val_c->dim;
+  const ple_lnum_t   n_dist      = ple_locator_get_n_dist_points(locator);
+  const ple_lnum_t  *dist_loc    = ple_locator_get_dist_locations(locator);
+  const ple_coord_t *dist_coords = ple_locator_get_dist_coords(locator);
+
+  /* Get field's variable id */
+
+  assert(val_c->location_id == CS_MESH_LOCATION_CELLS);
+
+  /* Allocate working array */
+  cs_real_t *distant_var = nullptr, *local_var = nullptr;
+
+  CS_MALLOC(distant_var, n_dist * dim, cs_real_t);
+  CS_MALLOC(local_var, n_bfaces * dim, cs_real_t);
+
+  /* Prepare values to send */
+  /*------------------------*/
+
+  assert(sizeof(ple_coord_t) == sizeof(cs_real_t));
+
+  if (location_type == CS_MESH_LOCATION_CELLS) {
+    /* FIXME: we cheat here with the constedness of the field
+       for a possible ghost values update, but having a finer control
+       of when syncing is required would be preferable */
+    cs_field_t *_f = cs_field_by_id(val_c->id);
+    cs_field_interpolate(_f,
+                         CS_FIELD_INTERPOLATE_MEAN,
+                         n_dist,
+                         dist_loc,
+                         (const cs_real_3_t *)dist_coords,
+                         distant_var);
+  }
+  else {
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              _("\nIn function %s: unexpected location_type.\n"),
+              __func__);
+  }
+
+  ple_locator_exchange_point_var(locator,
+                                 distant_var,
+                                 local_var,
+                                 nullptr, /* faces indirection */
+                                 sizeof(cs_real_t),
+                                 dim,
+                                 0);
+
+  /* Compute normalization if applicable */
+
+  cs_real_t scaling = 1.0;
+  if (normalize) {
+    /* Initialization */
+    cs_real_t inlet_norm2_0 = 0., inlet_norm2_1 = 0.0;
+
+    /* Compute integral on boundary faces */
+    for (cs_lnum_t bf_i = 0; bf_i < n_bfaces; bf_i++) {
+      const cs_lnum_t  bf_id  = bfaces[bf_i];
+      const cs_lnum_t  f_id   = n_i_faces + bf_id;
+      const cs_real_t  f_meas = cdoq->get_face_surf(f_id);
+      const cs_real_t *_val_f = val_f + f_id * dim;
+      const cs_real_t *_local = local_var + bf_i * dim;
+      for (cs_lnum_t j = 0; j < dim; j++) {
+        inlet_norm2_0 += f_meas * _val_f[j] * _val_f[j];
+        inlet_norm2_1 += f_meas * _local[j] * _local[j];
+      }
+    }
+
+    cs::parall::sum(inlet_norm2_0, inlet_norm2_1);
+
+    scaling = (cs::abs(inlet_norm2_1) > cs_math_epzero)
+                ? inlet_norm2_0 / inlet_norm2_1
+                : 1.;
+  }
+
+  /* Copy values with scaling */
+  for (cs_lnum_t bf_i = 0; bf_i < n_bfaces; bf_i++) {
+    const cs_lnum_t  bf_id  = bfaces[bf_i];
+    cs_real_t       *_val   = values + bf_id * dim;
+    const cs_real_t *_local = local_var + bf_i * dim;
+
+    for (cs_lnum_t j = 0; j < dim; j++) {
+      _val[j] = scaling * _local[j];
+    }
+  }
+
+  CS_FREE(local_var);
+  CS_FREE(distant_var);
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Synchronize the boundary definitions related to the enforcement of
  *        a circulation along a boundary edge
  *
@@ -237,17 +375,17 @@ _assign_vb_dirichlet_values(int                dim,
 /*----------------------------------------------------------------------------*/
 
 static void
-_sync_circulation_def_at_edges(const cs_cdo_connect_t    *connect,
-                               int                        n_defs,
-                               cs_xdef_t                **defs,
-                               cs_lnum_t                  def2e_idx[],
-                               cs_lnum_t                  def2e_ids[])
+_sync_circulation_def_at_edges(const cs_cdo_connect_t *connect,
+                               int                     n_defs,
+                               cs_xdef_t             **defs,
+                               cs_lnum_t               def2e_idx[],
+                               cs_lnum_t               def2e_ids[])
 {
   if (n_defs == 0)
     return;
 
-  const cs_lnum_t  n_edges = connect->n_edges;
-  const cs_adjacency_t  *f2e = connect->f2e;
+  const cs_lnum_t       n_edges = connect->n_edges;
+  const cs_adjacency_t *f2e     = connect->f2e;
 
   int *e2def_ids = nullptr;
   CS_MALLOC(e2def_ids, n_edges, int);
@@ -1951,6 +2089,47 @@ cs_equation_compute_full_neumann_sfb(cs_real_t                  t_eval,
 
   } /* switch def_type */
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the values of the Dirichlet BCs at boundary faces
+ *        for mapped inlet only. Be careful, its overwrites BC inlet.
+ *        This can be applied to CDO face-based schemes (DoFs are attached to
+ *        primal faces)
+ *
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      val_c      pointer to a cs_field_t structure
+ * \param[in]      val_f      pointer to a cs_real_t structure
+ * \param[in]      ts         pointer to a cs_time_step_t structure
+ * \param[in, out] values     pointer to the array of values to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_bc_mapped_inlet_at_faces(const cs_cdo_quantities_t *quant,
+                                     const cs_field_t          *val_c,
+                                     const cs_real_t           *val_f,
+                                     const cs_time_step_t      *ts,
+                                     cs_real_t                 *values)
+{
+  /* Work on mapped inlet */
+  const int nb_maps = cs_boundary_conditions_get_number_of_maps();
+
+  if (nb_maps <= 0 || ts->nt_cur <= 1) {
+    return;
+  }
+
+  cs_bc_map_t *bc_maps = cs_boundary_conditions_get_maps();
+  assert(bc_maps != nullptr);
+
+  const bool normalize = true;
+
+  for (int map_id = 0; map_id < nb_maps; map_id++) {
+    cs_bc_map_t *bc_map = bc_maps + map_id;
+
+    _compute_mapped_cdofb(bc_map, quant, val_c, val_f, normalize, values);
+  }
+};
 
 /*----------------------------------------------------------------------------*/
 /*!

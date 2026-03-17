@@ -285,10 +285,11 @@ _vfb_apply_remaining_bc(const cs_equation_param_t     *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_vecteq_setup(cs_real_t                     t_eval,
-                      const cs_mesh_t              *mesh,
-                      const cs_equation_param_t    *eqp,
-                      cs_equation_builder_t        *eqb)
+cs_cdofb_vecteq_setup(cs_real_t                  t_eval,
+                      const cs_mesh_t           *mesh,
+                      const cs_equation_param_t *eqp,
+                      cs_equation_builder_t     *eqb,
+                      const cs_cdofb_vecteq_t   *eqc)
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
@@ -310,6 +311,15 @@ cs_cdofb_vecteq_setup(cs_real_t                     t_eval,
       cs_enforcement_define_at_faces(connect,
                                      eqp->n_enforcements,
                                      eqp->enforcement_params);
+
+  /* Mapped inlet */
+  const cs_time_step_t *ts = cs_shared_time_step;
+  const cs_field_t     *vel_c = cs_field_by_id(eqc->var_field_id);
+  cs_equation_bc_mapped_inlet_at_faces(quant,
+                                       vel_c,
+                                       eqc->face_values,
+                                       ts,
+                                       eqb->dir_values);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -847,7 +857,7 @@ cs_cdofb_vecteq_solve_steady_state(bool                       cur2prev,
    * one can call this function to compute a steady-state solution at each time
    * step of an unsteady computation. */
 
-  cs_cdofb_vecteq_setup(time_eval, mesh, eqp, eqb);
+  cs_cdofb_vecteq_setup(time_eval, mesh, eqp, eqb, eqc);
 
   /* Initialize the local system: rhs, matrix and assembler values */
 
@@ -1055,7 +1065,7 @@ cs_cdofb_vecteq_solve_implicit(bool                        cur2prev,
 
   /* Build an array storing the Dirichlet values at faces */
 
-  cs_cdofb_vecteq_setup(t_cur + dt_cur, mesh, eqp, eqb);
+  cs_cdofb_vecteq_setup(t_cur + dt_cur, mesh, eqp, eqb, eqc);
 
   /* Initialize the local system: rhs, matrix and assembler values */
 
@@ -1303,7 +1313,7 @@ cs_cdofb_vecteq_solve_theta(bool                        cur2prev,
    * Should be t_cur + dt_cur since one sets the Dirichlet values
    */
 
-  cs_cdofb_vecteq_setup(ts->t_cur + ts->dt[0], mesh, eqp, eqb);
+  cs_cdofb_vecteq_setup(ts->t_cur + ts->dt[0], mesh, eqp, eqb, eqc);
 
   /* Initialize the local system: rhs, matrix and assembler values */
 

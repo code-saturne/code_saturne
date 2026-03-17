@@ -304,10 +304,11 @@ cs_cdofb_vecteq_init_turb_bc(const cs_cell_mesh_t         *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_vecteq_setup(cs_real_t                     t_eval,
-                      const cs_mesh_t              *mesh,
-                      const cs_equation_param_t    *eqp,
-                      cs_equation_builder_t        *eqb);
+cs_cdofb_vecteq_setup(cs_real_t                  t_eval,
+                      const cs_mesh_t           *mesh,
+                      const cs_equation_param_t *eqp,
+                      cs_equation_builder_t     *eqb,
+                      const cs_cdofb_vecteq_t   *eqc);
 
 /*----------------------------------------------------------------------------*/
 /*!

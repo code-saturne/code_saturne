@@ -2515,7 +2515,7 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
 
   /* Build an array storing the Dirichlet values at faces and DoF enforcement */
 
-  cs_cdofb_vecteq_setup(t_cur, mesh, mom_eqp, mom_eqb);
+  cs_cdofb_vecteq_setup(t_cur, mesh, mom_eqp, mom_eqb, mom_eqc);
 
   /* Initialize the matrix and all its related structures needed during
    * the assembly step as well as the rhs */
@@ -2633,7 +2633,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 
   /* Build an array storing the Dirichlet values at faces and DoF enforcement */
 
-  cs_cdofb_vecteq_setup(t_cur, mesh, mom_eqp, mom_eqb);
+  cs_cdofb_vecteq_setup(t_cur, mesh, mom_eqp, mom_eqb, mom_eqc);
 
   /* Initialize the matrix and all its related structures needed during
    * the assembly step as well as the rhs */
@@ -2829,7 +2829,7 @@ cs_cdofb_monolithic(const cs_mesh_t           *mesh,
 
   /* Build an array storing the Dirichlet values at faces and DoF enforcement */
 
-  cs_cdofb_vecteq_setup(t_eval, mesh, mom_eqp, mom_eqb);
+  cs_cdofb_vecteq_setup(t_eval, mesh, mom_eqp, mom_eqb, mom_eqc);
 
   /* Initialize the matrix and all its related structures needed during
    * the assembly step as well as the rhs */
@@ -2945,7 +2945,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
   /* Build an array storing the Dirichlet values at faces and DoF enforcement */
 
-  cs_cdofb_vecteq_setup(t_eval, mesh, mom_eqp, mom_eqb);
+  cs_cdofb_vecteq_setup(t_eval, mesh, mom_eqp, mom_eqb, mom_eqc);
 
   /* Initialize the rhs */
 

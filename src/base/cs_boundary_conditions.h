@@ -100,6 +100,33 @@ typedef struct {
 
 extern cs_boundary_condition_pm_info_t  *cs_glob_bc_pm_info;
 
+/* Mapped inlet */
+/*--------------*/
+
+typedef struct {
+  int       bc_location_id;     /* location id of boundary zone */
+  int       source_location_id; /* location id of source elements */
+  cs_real_t coord_shift[3];     /* coordinates shift relative to
+                                   selected boundary faces */
+  double tolerance;             /* search tolerance */
+
+  ple_locator_t *locator; /* associated locator */
+
+#ifdef __cplusplus
+
+  /*----------------------------------------------------------------------------*/
+  /*
+   * \brief Update mapping.
+   *
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  update();
+#endif
+
+} cs_bc_map_t;
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -242,6 +269,30 @@ cs_boundary_conditions_add_map(int         bc_location_id,
                                int         source_location_id,
                                cs_real_t   coord_shift[3],
                                double      tolerance);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the number of maps to mapping of boundary face
+ * locations (usually from boundary zones).
+ *
+ * \return number of map
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_boundary_conditions_get_number_of_maps();
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return maps to mapping of boundary face
+ * locations (usually from boundary zones).
+ *
+ * \return number a pointer on maps
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_bc_map_t *
+cs_boundary_conditions_get_maps();
 
 /*----------------------------------------------------------------------------*/
 /*!

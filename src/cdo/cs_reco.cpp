@@ -184,7 +184,7 @@ _scalar_v2f(cs_lnum_t                    f_id,
 
   } /* Loop on face edges */
 
-  return 0.5*reco_sum/cs_quant_get_face_surf(f_id, cdoq);
+  return 0.5 * reco_sum / cdoq->get_face_surf(f_id);
 }
 
 /*----------------------------------------------------------------------------*/

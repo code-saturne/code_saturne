@@ -106,21 +106,6 @@
  * Local Type Definitions
  *============================================================================*/
 
-/* Mapped inlet */
-/*--------------*/
-
-typedef struct {
-
-  int             bc_location_id;      /* location id of boundary zone */
-  int             source_location_id;  /* location id of source elements */
-  cs_real_t       coord_shift[3];      /* coordinates shift relative to
-                                          selected boundary faces */
-  double          tolerance;           /* search tolerance */
-
-  ple_locator_t  *locator;             /* associated locator */
-
-} cs_bc_map_t;
-
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -223,30 +208,7 @@ _update_bc_map(int  map_id)
 
   cs_bc_map_t *bc_map = _bc_maps + map_id;
 
-  if (bc_map->locator != nullptr)
-    return;
-
-  cs_mesh_location_type_t location_type
-    = cs_mesh_location_get_type(bc_map->source_location_id);
-
-  cs_lnum_t n_location_elts
-    = cs_mesh_location_get_n_elts(bc_map->source_location_id)[0];
-  cs_lnum_t n_faces
-    = cs_mesh_location_get_n_elts(bc_map->bc_location_id)[0];
-
-  const cs_lnum_t *location_elts
-    = cs_mesh_location_get_elt_ids_try(bc_map->source_location_id);
-  const cs_lnum_t *faces
-    = cs_mesh_location_get_elt_ids_try(bc_map->bc_location_id);
-
-  bc_map->locator = cs_boundary_conditions_map(location_type,
-                                               n_location_elts,
-                                               n_faces,
-                                               location_elts,
-                                               faces,
-                                               &(bc_map->coord_shift),
-                                               0,
-                                               bc_map->tolerance);
+  bc_map->update();
 }
 
 /*----------------------------------------------------------------------------
@@ -2149,6 +2111,36 @@ cs_boundary_conditions_add_map(int         bc_location_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return the number of maps to mapping of boundary face
+ * locations (usually from boundary zones).
+ *
+ * \return number of map
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_boundary_conditions_get_number_of_maps()
+{
+  return _n_bc_maps;
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return maps to mapping of boundary face
+ * locations (usually from boundary zones).
+ *
+ * \return number a pointer on maps
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_bc_map_t *
+cs_boundary_conditions_get_maps()
+{
+  return _bc_maps;
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Create the legacy boundary conditions zone data arrays
  */
 /*----------------------------------------------------------------------------*/
@@ -2222,7 +2214,7 @@ cs_boundary_conditions_create(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Reallocate the legacy boundary conditions face type and face 
+ * \brief Reallocate the legacy boundary conditions face type and face
  *        zone arrays.
  */
 /*----------------------------------------------------------------------------*/
@@ -3405,5 +3397,43 @@ cs_boundary_conditions_get_bc_type_addr(int **bc_type[])
 {
   *bc_type = &_bc_type;
 }
+
+#ifdef __cplusplus
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Update mapping.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_bc_map_t::update()
+{
+  if (locator != nullptr)
+    return;
+
+  cs_mesh_location_type_t location_type =
+    cs_mesh_location_get_type(source_location_id);
+
+  cs_lnum_t n_location_elts =
+    cs_mesh_location_get_n_elts(source_location_id)[0];
+  cs_lnum_t n_faces = cs_mesh_location_get_n_elts(bc_location_id)[0];
+
+  const cs_lnum_t *location_elts =
+    cs_mesh_location_get_elt_ids_try(source_location_id);
+  const cs_lnum_t *faces = cs_mesh_location_get_elt_ids_try(bc_location_id);
+
+  locator = cs_boundary_conditions_map(location_type,
+                                       n_location_elts,
+                                       n_faces,
+                                       location_elts,
+                                       faces,
+                                       &(coord_shift),
+                                       0,
+                                       tolerance);
+};
+
+#endif
 
 /*----------------------------------------------------------------------------*/

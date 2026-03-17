@@ -268,6 +268,27 @@ typedef struct { /* Specific mesh quantities */
 
   cs_real_t        *dual_vol;
 
+#ifdef __cplusplus
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief Get the face surface for a primal face (interior or border)
+   *
+   * \param[in]  f_id    id related to the face (f_id > n_i_face -> border face)
+   *
+   * \return the value of the face surface
+   */
+  /*----------------------------------------------------------------------------*/
+
+  inline cs_real_t
+  get_face_surf(const cs_lnum_t f_id) const
+  {
+    return (f_id < this->n_i_faces) ? this->i_face_surf[f_id]
+                                    : this->b_face_surf[f_id - this->n_i_faces];
+  };
+
+#endif
+
 } cs_cdo_quantities_t;
 
 /*============================================================================
@@ -654,25 +675,6 @@ cs_quant_get_face_center(cs_lnum_t f_id, const cs_cdo_quantities_t *cdoq)
     return cdoq->i_face_center[f_id];
   else                          /* Border face */
     return cdoq->b_face_center[f_id - cdoq->n_i_faces];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Retrieve the face surface for a primal face (interior or border)
- *
- * \param[in]  f_id    id related to the face (f_id > n_i_face -> border face)
- * \param[in]  cdoq    pointer to a cs_cdo_quantities_t structure
- *
- * \return the value of the face surface
- */
-/*----------------------------------------------------------------------------*/
-
-inline static cs_real_t
-cs_quant_get_face_surf(cs_lnum_t                    f_id,
-                       const cs_cdo_quantities_t   *cdoq)
-{
-  return (f_id < cdoq->n_i_faces) ?
-    cdoq->i_face_surf[f_id] : cdoq->b_face_surf[f_id - cdoq->n_i_faces];
 }
 
 /*----------------------------------------------------------------------------*/

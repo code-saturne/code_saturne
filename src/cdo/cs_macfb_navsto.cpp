@@ -372,8 +372,7 @@ cs_macfb_navsto_mass_flux(const cs_navsto_param_t   *nsp,
 
 #pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
   for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++) {
-    mass_flux[f_id]
-      = rho_val * cs_quant_get_face_surf(f_id, quant) * face_vel[f_id];
+    mass_flux[f_id] = rho_val * quant->get_face_surf(f_id) * face_vel[f_id];
   }
 }
 

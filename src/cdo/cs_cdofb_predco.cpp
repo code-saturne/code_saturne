@@ -957,7 +957,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
    * dt_cur
    */
 
-  cs_cdofb_vecteq_setup(ts->t_cur + ts->dt[0], mesh, mom_eqp, mom_eqb);
+  cs_cdofb_vecteq_setup(ts->t_cur + ts->dt[0], mesh, mom_eqp, mom_eqb, mom_eqc);
 
   /* Initialize the matrix and all its related structures needed during
    * the assembly step as well as the rhs */

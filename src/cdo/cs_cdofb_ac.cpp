@@ -1148,7 +1148,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
   /* Build an array storing the Dirichlet values at faces.
      Evaluation should be performed at t_cur + dt_cur */
 
-  cs_cdofb_vecteq_setup(ts->t_cur + ts->dt[0], mesh, mom_eqp, mom_eqb);
+  cs_cdofb_vecteq_setup(ts->t_cur + ts->dt[0], mesh, mom_eqp, mom_eqb, mom_eqc);
 
   /* Initialize the matrix and all its related structures needed during
    * the assembly step as well as the rhs */
@@ -1314,7 +1314,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   /* Build an array storing the Dirichlet values at faces.
      Evaluation should be performed at t_cur + dt_cur */
 
-  cs_cdofb_vecteq_setup(ts->t_cur + ts->dt[0], mesh, mom_eqp, mom_eqb);
+  cs_cdofb_vecteq_setup(ts->t_cur + ts->dt[0], mesh, mom_eqp, mom_eqb, mom_eqc);
 
   /* Initialize the matrix and all its related structures needed during
    * the assembly step as well as the rhs */

@@ -318,6 +318,28 @@ cs_equation_bc_dirichlet_at_faces(const cs_mesh_t            *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the values of the Dirichlet BCs at boundary faces
+ *        for mapped inlet only. Be careful, its overwrites BC inlet.
+ *        This can be applied to CDO face-based schemes (DoFs are attached to
+ *        primal faces)
+ *
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      val_c      pointer to a cs_field_t structure
+ * \param[in]      val_f      pointer to a cs_real_t structure
+ * \param[in]      ts         pointer to a cs_time_step_t structure
+ * \param[in, out] values     pointer to the array of values to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_bc_mapped_inlet_at_faces(const cs_cdo_quantities_t *quant,
+                                     const cs_field_t          *val_c,
+                                     const cs_real_t           *val_f,
+                                     const cs_time_step_t      *ts,
+                                     cs_real_t                 *values);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the values of the Neumann BCs when DoFs are scalar-valued
  *         and attached to a vertex-based schemes (Vb or VCb)
  *         Case of the Neumann BCs i.e. Neumann is defined by a scalar
