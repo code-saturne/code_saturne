@@ -660,7 +660,46 @@ public:
    * Remove edges connecting only vertices of higher refinement level
    * than local cells.
    *
-   * \param[in]  vtx_r_gen  refinedment level associated to each vertex.
+   * \param[in]  c0  first cell.
+   * \param[in]  c1  second cell.
+   *--------------------------------------------------------------------------*/
+
+  void
+  set_equiv(cs_lnum_t  c0,
+            cs_lnum_t  c1)
+  {
+    cs_lnum_t c[] = {c0, c1};
+    cs_lnum_t cm[] = {c0, c1};
+
+    for (int i = 0; i < 2; i++) {
+      cs_lnum_t j = cm[i];
+      cs_lnum_t k = sc_equiv[j];
+      while (j != k) {
+        j = k;
+        k = sc_equiv[j];
+      }
+      cm[i] = k;
+    }
+
+    cs_lnum_t ce = cs::min(cm[0], cm[1]);
+
+    for (int i = 0; i < 2; i++) {
+      cs_lnum_t j = c[i];
+      cs_lnum_t k = sc_equiv[j];
+      while (j != k) {
+        sc_equiv[j] = ce;
+        j = k;
+        k = sc_equiv[k];
+      }
+      sc_equiv[j] = ce;
+    }
+  }
+
+  /*--------------------------------------------------------------------------
+   * Remove edges connecting only vertices of higher refinement level
+   * than local cells.
+   *
+   * \param[in]  vtx_r_gen  refinement level associated to each vertex.
    *--------------------------------------------------------------------------*/
 
   void
@@ -671,12 +710,8 @@ public:
     for (cs_lnum_t i = 0; i < n_edges; i++) {
       _mrh_edge_t *e = edges + i;
       if (   vtx_r_gen[e->v0] > r_threshold
-          && vtx_r_gen[e->v1] > r_threshold) {
-        if (e->c0 > e->c1)
-          sc_equiv[e->c0] = sc_equiv[e->c1];
-        else
-          sc_equiv[e->c1] = sc_equiv[e->c0];
-      }
+          && vtx_r_gen[e->v1] > r_threshold)
+        set_equiv(e->c0, e->c1);
     }
   }
 
@@ -695,12 +730,8 @@ public:
     for (cs_lnum_t i = 0; i < n_edges; i++) {
       _mrh_edge_t *e = edges + i;
       if (   vtx_r_gen[e->v0] < r_threshold
-          || vtx_r_gen[e->v1] < r_threshold) {
-        if (e->c0 > e->c1)
-          sc_equiv[e->c0] = sc_equiv[e->c1];
-        else
-          sc_equiv[e->c1] = sc_equiv[e->c0];
-      }
+          || vtx_r_gen[e->v1] < r_threshold)
+        set_equiv(e->c0, e->c1);
     }
   }
 
@@ -787,7 +818,7 @@ public:
 
     qsort(edges, n_edges, sizeof(_mrh_edge_t), &_rh_edge_compare_s_cells);
 
-    // Now buid faces
+    // Now build faces
 
     c_i_faces_size = 0;
 
@@ -1848,7 +1879,7 @@ _cell_r_types(const cs_mesh_t              *m,
  *
  * For polyhedral refinement schemes, the computation of these sizes is more
  * complex, so an overestimate is used here, and a separate pass will be
- * done do subdivide those cells. To mark such cells, the maximum estimation
+ * done to subdivide those cells. To mark such cells, the maximum estimation
  * of the number of sub-cells is multiplied by -1.
  *
  * \param[in]       m               pointer to mesh structure
@@ -1860,8 +1891,6 @@ _cell_r_types(const cs_mesh_t              *m,
  * \param[in]       i_face_o2n_idx  interior subface index
  * \param[out]      c_poly_s_idx    index in polyhedral division
  *                                  (0 for simple cells, 1 for poly)
- * \param[out]      c_poly_f_idx    index in polyhedral division
- *                                  (0 for simple cells, n_faces for poly)
  * \param[out]      c_n_s_cells     number of sub-cells
  * \param[out]      c_n_i_faces     number of added interior faces
  * \param[out]      c_i_faces_size  size of added interior faces connectivity
@@ -5540,10 +5569,8 @@ _o2n_idx_update_global_num(cs_lnum_t          n_old,
 
   cs_lnum_t *n_sub;
   CS_MALLOC(n_sub, n_old, cs_lnum_t);
-  cs_lnum_t *restrict _n_sub = n_sub;
   for (cs_lnum_t i = 0; i < n_old; i++)
-    _n_sub[i] = o2n_idx[i+1] - o2n_idx[i];
-  _n_sub = nullptr;
+    n_sub[i] = o2n_idx[i+1] - o2n_idx[i];
 
   fvm_io_num_t *n_io_num
     = fvm_io_num_create_from_sub(o_io_num, n_sub);
@@ -5603,10 +5630,8 @@ _o2n_idx_complete_global_num(cs_lnum_t          n_old,
 
   cs_lnum_t *n_sub;
   CS_MALLOC(n_sub, n_old, cs_lnum_t);
-  cs_lnum_t *restrict _n_sub = n_sub;
   for (cs_lnum_t i = 0; i < n_old; i++)
-    _n_sub[i] = o2n_idx[i+1] - o2n_idx[i];
-  _n_sub = nullptr;
+    n_sub[i] = o2n_idx[i+1] - o2n_idx[i];
 
   fvm_io_num_t *n_io_num
     = fvm_io_num_create_from_sub(o_io_num, n_sub);

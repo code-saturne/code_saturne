@@ -41,6 +41,7 @@
 #include "mesh/cs_join_update.h"
 #include "mesh/cs_join_util.h"
 #include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_adaptive_refinement.h"
 #include "mesh/cs_mesh_adjacencies.h"
 #include "mesh/cs_mesh_bad_cells.h"
 #include "mesh/cs_mesh_boundary.h"
