@@ -40,7 +40,7 @@
 #include "base/cs_boundary_conditions.h"
 #include "alge/cs_convection_diffusion.h"
 #include "alge/cs_convection_diffusion_priv.h"
-#include "cs_dispatch.h"
+#include "base/cs_dispatch.h"
 #include "alge/cs_divergence.h"
 #include "cdo/cs_equation.h"
 #include "base/cs_equation_iterative_solve.h"
