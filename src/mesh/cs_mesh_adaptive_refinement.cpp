@@ -515,7 +515,7 @@ _realloc_and_update_bc_coeffs_refinement(const cs_field_t  *f,
 
   f->bc_coeffs->val_f = array_out[0];
   f->bc_coeffs->flux_diff = array_out[1];
-  f->bc_coeffs->val_f_pre = array_out[3];
+  f->bc_coeffs->val_f_pre = array_out[2];
 }
 
 /*----------------------------------------------------------------------------
@@ -713,7 +713,7 @@ _realloc_and_update_bc_coeffs_coarsening(cs_field_t      *f,
 
   f->bc_coeffs->val_f = array_out[0];
   f->bc_coeffs->flux_diff = array_out[1];
-  f->bc_coeffs->val_f_pre = array_out[3];
+  f->bc_coeffs->val_f_pre = array_out[2];
 }
 
 /*--------------------------------------------------------------------------*/
