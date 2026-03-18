@@ -78,7 +78,7 @@ static cs_stl_mesh_info_t _stl_meshes = {nullptr, 0, 0};
 
 cs_stl_mesh_info_t *cs_glob_stl_meshes = &_stl_meshes;
 
-static int _stl_read_mode = 0;
+static int _stl_read_mode = 2;
 
 /*----------------------------------------------------------------------------*/
 /*!
