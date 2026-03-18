@@ -242,7 +242,7 @@ _build_face_based_vector_fields(const cs_cdo_quantities_t   *quant,
     for (cs_lnum_t j = c2f->idx[c_id]; j <c2f->idx[c_id+1]; j++) {
 
       const cs_lnum_t  f_id = c2f->ids[j];
-      const cs_nvec3_t  pfq = cs_quant_set_face_nvec(f_id, quant);
+      const cs_nvec3_t  pfq     = quant->get_face_nvec(f_id);
       const cs_real_t  ed_coef = ed_values[j] * pfq.meas;
       const cs_real_t  *ed_vect = quant->dedge_vector + 3*j;
       const cs_real_t  f_val = fp_values[f_id];

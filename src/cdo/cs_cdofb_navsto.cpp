@@ -458,8 +458,7 @@ cs_cdofb_navsto_mass_flux(const cs_navsto_param_t   *nsp,
 
 #     pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
       for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++) {
-
-        const cs_real_t  *fq = cs_quant_get_face_vector_area(f_id, quant);
+        const cs_real_t *fq = quant->get_face_vector_area(f_id);
         mass_flux[f_id] = rho_val*cs_math_3_dot_product(face_vel + 3*f_id, fq);
 
       }

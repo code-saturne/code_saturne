@@ -513,7 +513,7 @@ _compute_face_based_quantities(const cs_cdo_connect_t  *topo,
 
       const cs_lnum_t  f_id = c2f->ids[i];
       const short int  sgn  = c2f->sgn[i];
-      const cs_real_t *xf   = cs_quant_get_face_center(f_id, cdoq);
+      const cs_real_t *xf   = cdoq->get_face_center(f_id);
 
       for (int k = 0; k < 3; k++)
         cdoq->dedge_vector[3*i+k] = sgn * (xf[k] - xc[k]);
@@ -680,7 +680,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t *topo,
 
         /* Compute xf -> xc */
 
-        const cs_real_t  *xf   = cs_quant_get_face_center(f_id, quant);
+        const cs_real_t  *xf   = quant->get_face_center(f_id);
         const cs_real_3_t xfxc = { xf[0] - xc[0],
                                    xf[1] - xc[1],
                                    xf[2] - xc[2] };
@@ -709,7 +709,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t *topo,
 
           /* One should have (tria.unitv, edge.unitv) > 0 */
 
-          cs_nvec3_t edge = cs_quant_set_edge_nvec(e_id, quant);
+          cs_nvec3_t edge = quant->get_edge_nvec(e_id);
           cs_nvec3_t tria;
           cs_nvec3(tria_vect, &tria);
           const double orient = _dp3(tria.unitv, edge.unitv);
@@ -898,7 +898,7 @@ _compute_quant_info(cs_cdo_quantities_t *quant)
 
   if (quant->edge_vector != nullptr) {
     for (cs_lnum_t e_id = 0; e_id < quant->n_edges; e_id++) {
-      cs_nvec3_t edge = cs_quant_set_edge_nvec(e_id, quant);
+      cs_nvec3_t edge = quant->get_edge_nvec(e_id);
 
       if (edge.meas > quant->edge_info.meas_max) {
         quant->edge_info.meas_max = edge.meas;
@@ -1112,12 +1112,12 @@ _update_subdiv_cell_quantities(const cs_mesh_t            *mesh,
       for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id + 1]; i++) {
         const cs_lnum_t  f_id            = c2f->ids[i];
         const int        n_face_vertices = f2e->idx[f_id + 1] - f2e->idx[f_id];
-        const cs_real_t *xf              = cs_quant_get_face_center(f_id, cdoq);
+        const cs_real_t *xf              = cdoq->get_face_center(f_id);
 
         if (n_face_vertices == 3) {
           // Volume of the tetrathedron: 1/3 * base * height
 
-          const cs_real_t *nf = cs_quant_get_face_vector_area(f_id, cdoq);
+          const cs_real_t *nf = cdoq->get_face_vector_area(f_id);
 
           cs_real_t xfc[3];
           for (int k = 0; k < 3; k++)
@@ -1689,34 +1689,29 @@ cs_cdo_quantities_build(const cs_mesh_t            *m,
   return cdoq;
 }
 
+#ifdef __cplusplus
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Check that global quantities are consistently computed
  *
  * \param[in] verb  level of verbosity
- * \param[in] m     pointer to a cs_mesh_t structure
  * \param[in] mq    pointer to a cs_mesh_quantities_t structure
  * \param[in] topo  pointer to a cs_cdo_connect_t structure
- * \param[in] cdoq  pointer to a cs_cdo_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_quantities_check(int                         verb,
-                        const cs_mesh_t            *m,
-                        const cs_mesh_quantities_t *mq,
-                        const cs_cdo_connect_t     *topo,
-                        const cs_cdo_quantities_t  *cdoq)
+cs_cdo_quantities_t::check(int                         verb,
+                           const cs_mesh_quantities_t *mq,
+                           const cs_cdo_connect_t     *topo) const
 {
   cs_timer_t t0 = cs_timer_time();
 
   const double threshold = 0.001; // Detect ratio above 0.1%
 
   // Sanity checks
-
-  assert(m != nullptr);
   assert(mq != nullptr);
-  assert(cdoq != nullptr);
   assert(topo != nullptr && topo->c2f != nullptr);
 
   // Check the total volume
@@ -1727,11 +1722,10 @@ cs_cdo_quantities_check(int                         verb,
 
   // Primal quantities
 
-  for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
-
+  for (cs_lnum_t i = 0; i < this->n_cells; i++) {
     if (mq->cell_vol[i] > 0) {
-      pct = fabs(mq->cell_vol[i] - cdoq->cell_vol[i])/mq->cell_vol[i];
-      max_c_pct = fmax(pct, max_c_pct);
+      pct = cs::abs(mq->cell_vol[i] - this->cell_vol[i]) / mq->cell_vol[i];
+      max_c_pct = cs::max(pct, max_c_pct);
       if (pct > threshold) {
         n_c_issues++;
         if (verb > 2)
@@ -1741,7 +1735,7 @@ cs_cdo_quantities_check(int                         verb,
     }
     else {
       n_neg_volumes++;
-      min_vol = fmin(mq->cell_vol[i], min_vol);
+      min_vol = cs::min(mq->cell_vol[i], min_vol);
       if (verb > 2)
         bft_printf(" %s: cell %d --> Negative volume: %6.3e\n",
                    __func__, i, mq->cell_vol[i]);
@@ -1751,21 +1745,19 @@ cs_cdo_quantities_check(int                         verb,
 
   // Face quantities
 
-  if (cdoq->pvol_fc != nullptr) {
-
+  if (this->pvol_fc != nullptr) {
     const cs_adjacency_t *c2f = topo->c2f;
 
-    for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
-
+    for (cs_lnum_t i = 0; i < this->n_cells; i++) {
       const double volc = cs::abs(mq->cell_vol[i]);
 
       double vol_fc = 0;
-      for (cs_lnum_t j = c2f->idx[i]; j < c2f->idx[i+1]; j++)
-        vol_fc += cdoq->pvol_fc[j];
+      for (cs_lnum_t j = c2f->idx[i]; j < c2f->idx[i + 1]; j++)
+        vol_fc += this->pvol_fc[j];
 
       if (volc > 0) {
-        pct = fabs(volc - vol_fc)/volc;
-        max_fc_pct = fmax(pct, max_fc_pct);
+        pct        = cs::abs(volc - vol_fc) / volc;
+        max_fc_pct = cs::max(pct, max_fc_pct);
         if (pct > threshold) {
           n_fc_issues++;
           if (verb > 2)
@@ -1775,26 +1767,23 @@ cs_cdo_quantities_check(int                         verb,
       }
 
     } // Loop on primal cells
-
   }
 
   // Dual quantities
 
-  if (cdoq->pvol_vc != nullptr) {
-
+  if (this->pvol_vc != nullptr) {
     const cs_adjacency_t *c2v = topo->c2v;
 
-    for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
-
+    for (cs_lnum_t i = 0; i < this->n_cells; i++) {
       const double volc = cs::abs(mq->cell_vol[i]);
 
       double vol_vc = 0;
-      for (cs_lnum_t j = c2v->idx[i]; j < c2v->idx[i+1]; j++)
-        vol_vc += cdoq->pvol_vc[j];
+      for (cs_lnum_t j = c2v->idx[i]; j < c2v->idx[i + 1]; j++)
+        vol_vc += this->pvol_vc[j];
 
       if (volc > 0) {
-        pct = fabs(volc - vol_vc)/volc;
-        max_vc_pct = fmax(pct, max_vc_pct);
+        pct        = cs::abs(volc - vol_vc) / volc;
+        max_vc_pct = cs::max(pct, max_vc_pct);
         if (pct > threshold) {
           n_vc_issues++;
           if (verb > 2)
@@ -1804,7 +1793,6 @@ cs_cdo_quantities_check(int                         verb,
       }
 
     } // Loop on primal cells
-
   }
 
   // Parallel synchronizations
@@ -1868,6 +1856,8 @@ cs_cdo_quantities_check(int                         verb,
 
   cs_cdo_quantities_time += time_count.nsec;
 }
+
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1946,16 +1936,16 @@ cs_cdo_quantities_free_cell_vol(cs_cdo_quantities_t *cdoq)
     CS_FREE(cdoq->cell_vol);
 }
 
+#ifdef __cplusplus
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Summarize generic information about the cdo mesh quantities
- *
- * \param[in] cdoq     pointer to cs_cdo_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_quantities_log_summary(const cs_cdo_quantities_t *cdoq)
+cs_cdo_quantities_t::log_summary() const
 {
   cs_log_printf(CS_LOG_SETUP, "\n## CDO quantities settings\n");
 
@@ -1986,34 +1976,32 @@ cs_cdo_quantities_log_summary(const cs_cdo_quantities_t *cdoq)
   cs_log_printf(CS_LOG_DEFAULT,
                 " --cdo-- h_cell  %6.4e %6.4e (min/max)\n"
                 " --cdo-- h_face  %6.4e %6.4e (min/max)\n",
-                cdoq->cell_info.h_min,
-                cdoq->cell_info.h_max,
-                cdoq->face_info.h_min,
-                cdoq->face_info.h_max);
+                this->cell_info.h_min,
+                this->cell_info.h_max,
+                this->face_info.h_min,
+                this->face_info.h_max);
 
-  if (cdoq->edge_vector != nullptr)
+  if (this->edge_vector != nullptr)
     cs_log_printf(CS_LOG_DEFAULT,
                   " --cdo-- h_edge  %6.4e %6.4e (min/max)\n",
-                  cdoq->edge_info.h_min,
-                  cdoq->edge_info.h_max);
+                  this->edge_info.h_min,
+                  this->edge_info.h_max);
   else
     cs_log_printf(CS_LOG_DEFAULT, "\n");
 
 #if CS_CDO_QUANTITIES_DBG > 0 && defined(DEBUG) && !defined(NDEBUG)
-  cs_cdo_quantities_dump(cdoq);
+  this->dump();
 #endif
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Dump a cs_cdo_quantities_t structure (for debuggingpurpose)
- *
- * \param[in] cdoq     pointer to cs_cdo_quantities_t structure
+ * \brief Dump a cs_cdo_quantities_t structure (for debugging purpose)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_quantities_dump(const cs_cdo_quantities_t *cdoq)
+cs_cdo_quantities_t::dump() const
 {
   int lname = strlen("DumpQuantities.dat") + 1;
 
@@ -2031,50 +2019,50 @@ cs_cdo_quantities_dump(const cs_cdo_quantities_t *cdoq)
   }
   FILE *fdump = fopen(fname, "w");
 
-  if (cdoq == nullptr) {
+  if (cell_vol == nullptr) {
     fprintf(fdump, "Empty structure.\n");
     fclose(fdump);
     return;
   }
 
-  fprintf(fdump, "\n Quantities structure: %p\n\n", (const void *)cdoq);
+  fprintf(fdump, "\n Quantities structure: %p\n\n", (const void *)this);
 
-  fprintf(fdump, " -cdoq- n_cells =    %ld\n", (long)cdoq->n_cells);
-  fprintf(fdump, " -cdoq- n_faces =    %ld\n", (long)cdoq->n_faces);
-  fprintf(fdump, " -cdoq- n_edges =    %ld\n", (long)cdoq->n_edges);
-  fprintf(fdump, " -cdoq- n_vertices = %ld\n", (long)cdoq->n_vertices);
-  fprintf(fdump, " -cdoq- Total volume = %.6e\n\n", cdoq->vol_tot);
+  fprintf(fdump, " -cdoq- n_cells =    %ld\n", (long)this->n_cells);
+  fprintf(fdump, " -cdoq- n_faces =    %ld\n", (long)this->n_faces);
+  fprintf(fdump, " -cdoq- n_edges =    %ld\n", (long)this->n_edges);
+  fprintf(fdump, " -cdoq- n_vertices = %ld\n", (long)this->n_vertices);
+  fprintf(fdump, " -cdoq- Total volume = %.6e\n\n", this->vol_tot);
 
   fprintf(fdump, "\n *** Cell Quantities ***\n");
   fprintf(fdump, "-msg- num.; volume ; center (3)\n");
-  for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
+  for (cs_lnum_t i = 0; i < this->n_cells; i++) {
     fprintf(fdump,
             " [%6ld] | %12.8e | % -12.8e | % -12.8e |% -12.8e\n",
             (long)i + 1,
-            cdoq->cell_vol[i],
-            cdoq->cell_centers[i][0],
-            cdoq->cell_centers[i][1],
-            cdoq->cell_centers[i][2]);
+            this->cell_vol[i],
+            this->cell_centers[i][0],
+            this->cell_centers[i][1],
+            this->cell_centers[i][2]);
   }
 
   fprintf(fdump, "\n\n *** Interior Face Quantities ***\n");
   fprintf(fdump, "-msg- num. ; measure ; unitary vector (3) ; center (3)\n");
-  for (cs_lnum_t f_id = 0; f_id < cdoq->n_i_faces; f_id++) {
-    cs_quant_t q = cs_quant_set_face(f_id, cdoq);
+  for (cs_lnum_t f_id = 0; f_id < this->n_i_faces; f_id++) {
+    cs_quant_t q = this->get_face(f_id);
     cs_quant_dump(fdump, f_id + 1, q);
   }
 
   fprintf(fdump, "\n\n *** Border   Face Quantities ***\n");
   fprintf(fdump, "-msg- num. ; measure ; unitary vector (3) ; center (3)\n");
-  for (cs_lnum_t f_id = cdoq->n_i_faces; f_id < cdoq->n_faces; f_id++) {
-    cs_quant_t q = cs_quant_set_face(f_id, cdoq);
-    cs_quant_dump(fdump, f_id - cdoq->n_i_faces + 1, q);
+  for (cs_lnum_t f_id = this->n_i_faces; f_id < this->n_faces; f_id++) {
+    cs_quant_t q = this->get_face(f_id);
+    cs_quant_dump(fdump, f_id - this->n_i_faces + 1, q);
   }
 
   fprintf(fdump, "\n\n *** Edge Quantities ***\n");
   fprintf(fdump, "-msg- num. ; measure ; unitary vector (3) ; center (3)\n");
-  for (cs_lnum_t i = 0; i < cdoq->n_edges; i++) {
-    const cs_nvec3_t e_vect = cs_quant_set_edge_nvec(i, cdoq);
+  for (cs_lnum_t i = 0; i < this->n_edges; i++) {
+    const cs_nvec3_t e_vect = this->get_edge_nvec(i);
     fprintf(fdump,
             " -cdoq-  [%8ld] | % -10.6e | % -10.6e | % -10.6e |"
             " % -10.6e |\n",
@@ -2088,6 +2076,8 @@ cs_cdo_quantities_dump(const cs_cdo_quantities_t *cdoq)
   fclose(fdump);
   CS_FREE(fname);
 }
+
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2164,8 +2154,8 @@ cs_cdo_quantities_compute_pvol_fc(const cs_cdo_quantities_t *cdoq,
     for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id + 1]; j++) {
 
       const cs_lnum_t  f_id    = c2f->ids[j];
-      const cs_nvec3_t fp_nvec = cs_quant_set_face_nvec(f_id, cdoq);
-      const cs_nvec3_t ed_nvec = cs_quant_set_dedge_nvec(j, cdoq);
+      const cs_nvec3_t fp_nvec = cdoq->get_face_nvec(f_id);
+      const cs_nvec3_t ed_nvec = cdoq->get_dedge_nvec(j);
 
       cs_real_t p_fc = _dp3(fp_nvec.unitv, ed_nvec.unitv);
       p_fc *= c_1ov3 * fp_nvec.meas * ed_nvec.meas;
@@ -2549,48 +2539,46 @@ cs_cdo_quantities_compute_b_wvf(const cs_cdo_connect_t       *connect,
   for (cs_lnum_t  v = 0; v < n_vf; v++) wvf[v] *= coef;
 }
 
+#ifdef __cplusplus
+
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define a cs_quant_t structure for a primal face (interior or border)
+ * \brief Get a cs_quant_t structure for a primal face (interior or border)
  *
  * \param[in]  f_id     id related to the face (f_id > n_i_face -> border face)
- * \param[in]  cdoq     pointer to a cs_cdo_quantities_t structure
  *
  * \return a initialize structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_quant_t
-cs_quant_set_face(cs_lnum_t                    f_id,
-                  const cs_cdo_quantities_t   *cdoq)
+cs_cdo_quantities_t::get_face(cs_lnum_t f_id) const
 {
   cs_quant_t q;
 
-  if (f_id < cdoq->n_i_faces) { /* Interior face */
+  if (f_id < this->n_i_faces) { /* Interior face */
 
-    q.meas = cdoq->i_face_surf[f_id];
-    q.unitv[0] = cdoq->i_face_u_normal[f_id][0];
-    q.unitv[1] = cdoq->i_face_u_normal[f_id][1];
-    q.unitv[2] = cdoq->i_face_u_normal[f_id][2];
+    q.meas     = this->i_face_surf[f_id];
+    q.unitv[0] = this->i_face_u_normal[f_id][0];
+    q.unitv[1] = this->i_face_u_normal[f_id][1];
+    q.unitv[2] = this->i_face_u_normal[f_id][2];
 
-    const cs_real_t *xf = cdoq->i_face_center[f_id];
+    const cs_real_t *xf = this->i_face_center[f_id];
     for (int k = 0; k < 3; k++)
       q.center[k] = xf[k];
-
   }
   else { /* Border face */
 
-    const cs_lnum_t  bf_id = f_id - cdoq->n_i_faces;
+    const cs_lnum_t bf_id = f_id - this->n_i_faces;
 
-    q.meas = cdoq->b_face_surf[bf_id];
-    q.unitv[0] = cdoq->b_face_u_normal[bf_id][0];
-    q.unitv[1] = cdoq->b_face_u_normal[bf_id][1];
-    q.unitv[2] = cdoq->b_face_u_normal[bf_id][2];
+    q.meas     = this->b_face_surf[bf_id];
+    q.unitv[0] = this->b_face_u_normal[bf_id][0];
+    q.unitv[1] = this->b_face_u_normal[bf_id][1];
+    q.unitv[2] = this->b_face_u_normal[bf_id][2];
 
-    const cs_real_t *xf = cdoq->b_face_center[bf_id];
+    const cs_real_t *xf = this->b_face_center[bf_id];
     for (int k = 0; k < 3; k++)
       q.center[k] = xf[k];
-
   }
 
   return q;
@@ -2598,39 +2586,35 @@ cs_quant_set_face(cs_lnum_t                    f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Retrieve the face surface and its unit normal vector for a primal
+ * \brief Get the face surface and its unit normal vector for a primal
  *        face (interior or border)
  *
  * \param[in]  f_id     id related to the face (f_id > n_i_face -> border face)
- * \param[in]  cdoq     pointer to a cs_cdo_quantities_t structure
  *
  * \return a pointer to the face normalized vector
  */
 /*----------------------------------------------------------------------------*/
 
 cs_nvec3_t
-cs_quant_set_face_nvec(cs_lnum_t                    f_id,
-                       const cs_cdo_quantities_t   *cdoq)
+cs_cdo_quantities_t::get_face_nvec(cs_lnum_t f_id) const
 {
   cs_nvec3_t  nv;
 
-  if (f_id < cdoq->n_i_faces) { /* This is an interior face */
+  if (f_id < this->n_i_faces) { /* This is an interior face */
 
-    nv.meas = cdoq->i_face_surf[f_id];
-    nv.unitv[0] = cdoq->i_face_u_normal[f_id][0];
-    nv.unitv[1] = cdoq->i_face_u_normal[f_id][1];
-    nv.unitv[2] = cdoq->i_face_u_normal[f_id][2];
-
+    nv.meas     = this->i_face_surf[f_id];
+    nv.unitv[0] = this->i_face_u_normal[f_id][0];
+    nv.unitv[1] = this->i_face_u_normal[f_id][1];
+    nv.unitv[2] = this->i_face_u_normal[f_id][2];
   }
   else  { /* This is a border face */
 
-    const cs_lnum_t  bf_id = f_id - cdoq->n_i_faces;
+    const cs_lnum_t bf_id = f_id - this->n_i_faces;
 
-    nv.meas = cdoq->b_face_surf[bf_id];
-    nv.unitv[0] = cdoq->b_face_u_normal[bf_id][0];
-    nv.unitv[1] = cdoq->b_face_u_normal[bf_id][1];
-    nv.unitv[2] = cdoq->b_face_u_normal[bf_id][2];
-
+    nv.meas     = this->b_face_surf[bf_id];
+    nv.unitv[0] = this->b_face_u_normal[bf_id][0];
+    nv.unitv[1] = this->b_face_u_normal[bf_id][1];
+    nv.unitv[2] = this->b_face_u_normal[bf_id][2];
   }
 
   return nv;
@@ -2638,27 +2622,25 @@ cs_quant_set_face_nvec(cs_lnum_t                    f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Retrieve the edge center for a primal edge (interior or border)
+ * \brief Get the edge center for a primal edge (interior or border)
  *
  * \param[in]  e_id     id related to the edfe
  * \param[in]  topo     pointer to a cs_cdo_connect_t structure
- * \param[in]  cdoq     pointer to a cs_cdo_quantities_t structure
  *
  * \return a pointer to the edge center coordinates
  */
 /*----------------------------------------------------------------------------*/
 
 cs_quant_t
-cs_quant_get_edge_center(cs_lnum_t                  e_id,
-                         const cs_cdo_connect_t    *topo,
-                         const cs_cdo_quantities_t *cdoq)
+cs_cdo_quantities_t::get_edge_center(cs_lnum_t               e_id,
+                                     const cs_cdo_connect_t *topo) const
 {
 
   /* Get the two vertex ids related to the current edge */
 
   const cs_lnum_t *v_ids = topo->e2v->ids + 2 * e_id;
-  const cs_real_t *xa    = cdoq->vtx_coord + 3 * v_ids[0];
-  const cs_real_t *xb    = cdoq->vtx_coord + 3 * v_ids[1];
+  const cs_real_t *xa    = this->vtx_coord + 3 * v_ids[0];
+  const cs_real_t *xb    = this->vtx_coord + 3 * v_ids[1];
 
   cs_quant_t xe;
   for (int k = 0; k < 3; k++) {
@@ -2673,18 +2655,16 @@ cs_quant_get_edge_center(cs_lnum_t                  e_id,
  * \brief  Get the normalized vector associated to a primal edge
  *
  * \param[in]  e_id     id related to an edge
- * \param[in]  cdoq     pointer to a cs_cdo_quantities_t structure
  *
  * \return  a pointer to the edge normalized vector
  */
-/*-------------------------------------------------cdoq---------------------------*/
+/*----------------------------------------------------------------------------*/
 
 cs_nvec3_t
-cs_quant_set_edge_nvec(cs_lnum_t                    e_id,
-                       const cs_cdo_quantities_t   *cdoq)
+cs_cdo_quantities_t::get_edge_nvec(cs_lnum_t e_id) const
 {
   cs_nvec3_t  nv;
-  cs_nvec3(cdoq->edge_vector + 3*e_id, &nv);
+  cs_nvec3(this->edge_vector + 3 * e_id, &nv);
 
   return nv;
 }
@@ -2694,21 +2674,21 @@ cs_quant_set_edge_nvec(cs_lnum_t                    e_id,
  * \brief  Get the two normalized vector associated to a dual edge
  *
  * \param[in]  shift    position in c2f_idx
- * \param[in]  cdoq     pointer to a cs_cdo_quantities_t structure
  *
  * \return  a pointer to the dual edge normalized vector
  */
 /*----------------------------------------------------------------------------*/
 
 cs_nvec3_t
-cs_quant_set_dedge_nvec(cs_lnum_t                     shift,
-                        const cs_cdo_quantities_t    *cdoq)
+cs_cdo_quantities_t::get_dedge_nvec(cs_lnum_t shift) const
 {
   cs_nvec3_t  nv;
-  cs_nvec3(cdoq->dedge_vector + 3*shift, &nv);
+  cs_nvec3(this->dedge_vector + 3 * shift, &nv);
 
   return nv;
 }
+
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2721,18 +2701,23 @@ cs_quant_set_dedge_nvec(cs_lnum_t                     shift,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_quant_dump(FILE             *f,
-              cs_lnum_t         num,
-              const cs_quant_t  q)
+cs_quant_dump(FILE *f, cs_lnum_t num, const cs_quant_t q)
 {
-  FILE  *_f = f;
+  FILE *_f = f;
 
   if (_f == nullptr)
     _f = stdout;
 
-  fprintf(_f, " -cdoq-  [%8ld] | % -10.6e | % -10.6e | % -10.6e | % -10.6e |"
-          " % -10.6e | % -10.6e | % -10.6e\n", (long)num, q.meas,
-          q.unitv[0], q.unitv[1], q.unitv[2], q.center[0], q.center[1],
+  fprintf(_f,
+          " -cdoq-  [%8ld] | % -10.6e | % -10.6e | % -10.6e | % -10.6e |"
+          " % -10.6e | % -10.6e | % -10.6e\n",
+          (long)num,
+          q.meas,
+          q.unitv[0],
+          q.unitv[1],
+          q.unitv[2],
+          q.center[0],
+          q.center[1],
           q.center[2]);
 }
 

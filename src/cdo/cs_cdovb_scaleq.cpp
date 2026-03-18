@@ -5086,7 +5086,7 @@ cs_cdovb_scaleq_flux_across_plane(const cs_real_t            normal[],
       const cs_lnum_t  bf_id = (elt_ids != nullptr) ? elt_ids[i] : i;
       const cs_lnum_t  f_id  = n_i_faces + bf_id;
       const cs_lnum_t  c_id  = cell_ids[bf_id];
-      const cs_quant_t f     = cs_quant_set_face(f_id, quant);
+      const cs_quant_t f     = quant->get_face(f_id);
       const short int  sgn   = (_dp3(f.unitv, normal) < 0) ? -1 : 1;
       const double     coef  = sgn * f.meas;
 
@@ -5131,7 +5131,7 @@ cs_cdovb_scaleq_flux_across_plane(const cs_real_t            normal[],
 
     for (cs_lnum_t i = 0; i < n_elts[0]; i++) {
       const cs_lnum_t  f_id = elt_ids[i];
-      const cs_quant_t f    = cs_quant_set_face(f_id, quant);
+      const cs_quant_t f    = quant->get_face(f_id);
       const short int  sgn  = (_dp3(f.unitv, normal) < 0) ? -1 : 1;
 
       for (cs_lnum_t j = f2c->idx[f_id]; j < f2c->idx[f_id + 1]; j++) {

@@ -343,11 +343,9 @@ cs_macfb_builder_cellwise_setup(const cs_cell_mesh_t      *cm,
     macb->f_ids[f]  = f_id;
     macb->f_axis[f] = quant->face_axis[f_id];
 
-    const cs_real_t *f_c = cs_quant_get_face_center(f_id, quant);
+    const cs_real_t *f_c = quant->get_face_center(f_id);
 
-    if (cm->f_sgn[f]
-          * cs_quant_get_face_vector_area(f_id, quant)[macb->f_axis[f]]
-        > 0) {
+    if (cm->f_sgn[f] * quant->get_face_vector_area(f_id)[macb->f_axis[f]] > 0) {
       macb->f_sgn_axis[f] = 1;
     }
     else {
@@ -375,7 +373,7 @@ cs_macfb_builder_cellwise_setup(const cs_cell_mesh_t      *cm,
     /* Physical face */
     for (short int fj = 0; fj < nb_f_outer; fj++) {
       const cs_lnum_t  fj_id = f2f_ed->ids[f2f_ed->idx[f_id] + fj];
-      const cs_real_t *fj_c  = cs_quant_get_face_center(fj_id, quant);
+      const cs_real_t *fj_c  = quant->get_face_center(fj_id);
 
       macb->f_ids[macb->n_fc]     = fj_id;
       macb->f_axis[macb->n_fc]    = quant->face_axis[fj_id];
@@ -390,7 +388,7 @@ cs_macfb_builder_cellwise_setup(const cs_cell_mesh_t      *cm,
       assert(macb->f2e_ids[f][fj] >= 0);
 
       const cs_quant_t ei_q =
-        cs_quant_get_edge_center(macb->f2e_ids[f][fj], connect, quant);
+        quant->get_edge_center(macb->f2e_ids[f][fj], connect);
       const cs_real_t length       = 2.0 * cs_math_3_distance(f_c, ei_q.center);
       macb->f2f_surf_cv_c[f][fj]   = f_vol_cv_c / length;
 
@@ -435,8 +433,7 @@ cs_macfb_builder_cellwise_setup(const cs_cell_mesh_t      *cm,
 
           const short int fj = nb_f_outer + n_ed_find;
 
-          const cs_quant_t ei_q
-            = cs_quant_get_edge_center(ei_id, connect, quant);
+          const cs_quant_t ei_q = quant->get_edge_center(ei_id, connect);
 
           macb->f2f_idx[f][fj] = -1;
           macb->f2f_ids[f][fj] = -(ei_id + 1);

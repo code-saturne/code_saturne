@@ -170,7 +170,7 @@ _scalar_v2f(cs_lnum_t                    f_id,
             const cs_cdo_quantities_t   *cdoq,
             const double                *array)
 {
-  const cs_real_t  *xf = cs_quant_get_face_center(f_id, cdoq);
+  const cs_real_t *xf = cdoq->get_face_center(f_id);
 
   double reco_sum = 0;
   for (cs_lnum_t i = f2e->idx[f_id]; i < f2e->idx[f_id+1]; i++) {
@@ -1296,7 +1296,7 @@ cs_reco_grad_cell_from_fb_dofs(cs_lnum_t                    c_id,
   for (cs_lnum_t  i = 0; i < e-s; i++) {
 
     const cs_lnum_t  f_id = c2f_ids[i];
-    const cs_real_t  *fq = cs_quant_get_face_vector_area(f_id, quant);
+    const cs_real_t *fq   = quant->get_face_vector_area(f_id);
     for (int k = 0; k < 3; k++)
       grd_c[k] += c2f_sgn[i] * (p_f[f_id] - _p_c) * fq[k];
 
@@ -1349,7 +1349,7 @@ cs_reco_grad_33_cell_from_fb_dofs(cs_lnum_t                    c_id,
   for (cs_lnum_t  i = 0; i < e-s; i++) {
 
     const cs_lnum_t  f_id = c2f_ids[i];
-    const cs_real_t  *fq = cs_quant_get_face_vector_area(f_id, quant);
+    const cs_real_t  *fq   = quant->get_face_vector_area(f_id);
     const cs_real_t  *_u_f = u_f + 3*f_id;
 
     for (int ki = 0; ki < 3; ki++) {

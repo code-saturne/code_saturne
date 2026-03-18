@@ -1918,7 +1918,7 @@ cs_advection_field_across_boundary(const cs_adv_field_t  *adv,
         for (cs_lnum_t i = 0; i < n_b_faces; i++) {
 
           const cs_lnum_t  f_id = n_i_faces + i;
-          const cs_quant_t  pfq = cs_quant_set_face(f_id, cdoq);
+          const cs_quant_t pfq       = cdoq->get_face(f_id);
           const cs_lnum_t  start_idx = f2e->idx[f_id];
           const cs_lnum_t  end_idx = f2e->idx[f_id+1];
 
@@ -3312,9 +3312,7 @@ cs_advection_get_courant(const cs_adv_field_t *adv,
 
     cs_real_t _courant = 0.;
     for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id + 1]; i++) {
-
-      const cs_real_t *f_area
-        = cs_quant_get_face_vector_area(c2f->ids[i], cdoq);
+      const cs_real_t *f_area = cdoq->get_face_vector_area(c2f->ids[i]);
       _courant = fmax(_courant, fabs(_dp3(f_area, vel_c)) * ovol_c);
     }
     courant[c_id] = _courant * dt_cur;

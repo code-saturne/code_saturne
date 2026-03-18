@@ -531,11 +531,9 @@ cs_domain_setup_init_cdo_structures(cs_domain_t *domain)
                                                    domain->connect);
 
 #if defined(DEBUG) && !defined(NDEBUG)
-  cs_cdo_quantities_check(domain->verbosity,
-                          domain->mesh,
-                          domain->mesh_quantities,
-                          domain->connect,
-                          domain->cdo_quantities);
+  domain->cdo_quantities->check(domain->verbosity,
+                                domain->mesh_quantities,
+                                domain->connect);
 #endif
 
   /* Main generic structures are shared with low-level files.
@@ -927,7 +925,7 @@ cs_domain_setup_log(const cs_domain_t   *domain)
                              cc->vb_scheme_flag,
                              cc->vcb_scheme_flag);
 
-  cs_cdo_quantities_log_summary(domain->cdo_quantities);
+  domain->cdo_quantities->log_summary();
 
   /* Time step summary */
 

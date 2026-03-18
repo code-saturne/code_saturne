@@ -257,7 +257,7 @@ _get_face_value_analytic(cs_lnum_t f_id, cs_real_t t_eval, const cs_xdef_t *def)
 
   /* Evaluate the function for this time at face barycenter */
 
-  const cs_real_t *f_xc = cs_quant_get_face_center(f_id, cs_cdo_quant);
+  const cs_real_t *f_xc = cs_cdo_quant->get_face_center(f_id);
 
   cs_real_t result;
 

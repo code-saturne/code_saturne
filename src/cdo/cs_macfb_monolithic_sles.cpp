@@ -451,7 +451,7 @@ _schur_approx_diag_inv_m11(cs_param_solver_class_t mat_class,
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
 
     const cs_real_t *m11_inv_ff = m11_inv_approx + f_id;
-    const cs_nvec3_t nvf        = cs_quant_set_face_nvec(f_id, quant);
+    const cs_nvec3_t nvf        = quant->get_face_nvec(f_id);
 
     double contrib = -m11_inv_ff[0] * nvf.meas * nvf.meas;
 

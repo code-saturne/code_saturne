@@ -1025,7 +1025,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
       for (short int e = 0; e < cm->n_ec; e++) {
 
         const cs_lnum_t  e_id = cm->e_ids[e];
-        const cs_nvec3_t  nv = cs_quant_set_edge_nvec(e_id, quant);
+        const cs_nvec3_t  nv   = quant->get_edge_nvec(e_id);
         const cs_lnum_t  *v_id = connect->e2v->ids + 2*e_id;
         const cs_real_t  *xv1 = quant->vtx_coord + 3*v_id[0];
         const cs_real_t  *xv2 = quant->vtx_coord + 3*v_id[1];
@@ -1086,8 +1086,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     if (build_flag & cs_flag_need_pfq) {
 
       for (short int f = 0; f < cm->n_fc; f++) {
-
-        const cs_quant_t  pfq = cs_quant_set_face(cm->f_ids[f], quant);
+        const cs_quant_t pfq = quant->get_face(cm->f_ids[f]);
 
         cm->face[f].meas = pfq.meas;
         for (int k = 0; k < 3; k++) {
@@ -1102,9 +1101,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     if (build_flag & cs_flag_need_deq) {
 
       for (short int f = 0; f < cm->n_fc; f++) {
-
-        const cs_nvec3_t  de_nvect = cs_quant_set_dedge_nvec(c2f_idx[0]+f,
-                                                             quant);
+        const cs_nvec3_t de_nvect = quant->get_dedge_nvec(c2f_idx[0] + f);
 
         /* Copy cs_nvec3_t structure */
 
@@ -1582,7 +1579,7 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
 
   /* Face-related quantities */
 
-  const cs_quant_t  pfq = cs_quant_set_face(f_id, quant);
+  const cs_quant_t pfq = quant->get_face(f_id);
 
   fm->f_id = f_id;
   fm->face.meas = pfq.meas;
@@ -1602,7 +1599,7 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
     if (c2f_ids[f] == f_id) {
 
       const cs_lnum_t  f_shift = c2f_idx[0]+f;
-      const cs_nvec3_t  de_nvect = cs_quant_set_dedge_nvec(f_shift, quant);
+      const cs_nvec3_t de_nvect = quant->get_dedge_nvec(f_shift);
 
       for (int k = 0; k < 3; k++) fm->dedge.unitv[k] = de_nvect.unitv[k];
       fm->dedge.meas = de_nvect.meas;
@@ -1630,7 +1627,7 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
   for (short int e = 0; e < fm->n_ef; e++) {
 
     const cs_lnum_t  e_id = f2e_lst[e];
-    const cs_nvec3_t  e_nvect = cs_quant_set_edge_nvec(e_id, quant);
+    const cs_nvec3_t e_nvect = quant->get_edge_nvec(e_id);
 
     fm->e_ids[e] = e_id;
     fm->edge[e].meas = e_nvect.meas;

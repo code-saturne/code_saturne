@@ -352,7 +352,7 @@ _compute_poisson_cdofb(const cs_cdo_connect_t    *connect,
 
     for (i = connect->c2f->idx[c_id]; i < connect->c2f->idx[c_id + 1]; i++) {
       cs_lnum_t  f_id             = connect->c2f->ids[i];
-      cs_nvec3_t fq               = cs_quant_set_face_nvec(f_id, cdoq);
+      cs_nvec3_t fq               = cdoq->get_face_nvec(f_id);
       int        sgn              = connect->c2f->sgn[i];
       cs_real_t  dualedge_contrib = fq.meas * sgn * (f_var[f_id] - c_var[c_id]);
 

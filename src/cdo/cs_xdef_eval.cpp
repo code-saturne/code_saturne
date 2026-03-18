@@ -1266,7 +1266,7 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
     for (cs_lnum_t bf_id = 0; bf_id < quant->n_b_faces; bf_id++) {
 
       const cs_lnum_t f_id = quant->n_i_faces + bf_id;
-      const cs_quant_t pfq = cs_quant_set_face(f_id, quant);
+      const cs_quant_t pfq   = quant->get_face(f_id);
       const cs_lnum_t  start = f2e->idx[f_id], end = f2e->idx[f_id+1];
       double *val_i = eval + dim*bf_id;
 
@@ -1316,7 +1316,7 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
 
       const cs_lnum_t  bf_id = elt_ids[i];
       const cs_lnum_t  f_id = quant->n_i_faces + bf_id;
-      const cs_quant_t  pfq = cs_quant_set_face(f_id, quant);
+      const cs_quant_t pfq   = quant->get_face(f_id);
       const cs_lnum_t  start = f2e->idx[f_id], end = f2e->idx[f_id+1];
 
       double  *val_i = dense_output ? eval + dim*i : eval + dim*bf_id;

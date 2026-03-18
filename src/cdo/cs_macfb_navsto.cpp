@@ -403,7 +403,7 @@ cs_macfb_navsto_cell_divergence(const cs_lnum_t            c_id,
   for (cs_lnum_t f = c2f->idx[c_id]; f < c2f->idx[c_id + 1]; f++) {
 
     const cs_lnum_t  f_id = c2f->ids[f];
-    const cs_real_t *fq   = cs_quant_get_face_vector_area(f_id, quant);
+    const cs_real_t *fq   = quant->get_face_vector_area(f_id);
 
     div += c2f->sgn[f] * f_vals[f_id] * fq[quant->face_axis[f_id]];
 

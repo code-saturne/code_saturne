@@ -607,7 +607,7 @@ _update_variables(const cs_navsto_param_t           *nsp,
 
           cs_lnum_t ff = c2f_ids[f_id];
 
-          const cs_real_t *face_center = cs_quant_get_face_center(ff, quant);
+          const cs_real_t *face_center = quant->get_face_center(ff);
 
           for (short int k = 0; k < 3; k++)
             grddp_reco[k] += - c2f_sgn[f_id]/vol_c
