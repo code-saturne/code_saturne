@@ -120,6 +120,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         self.modelSolidEnergyTransfer.addItem(self.tr("none"), "none")
         self.modelSolidEnergyTransfer.addItem(self.tr("Ranz-Marshall correlation"), "gas_particule")
         self.modelSolidEnergyTransfer.addItem(self.tr("Gunn correlation"), "gunn")
+        self.modelSolidEnergyTransfer.addItem(self.tr("User-defined correlation"), "user")
 
         self.modelFieldaModel = ComboModel(self.comboBoxFieldaModel, 1, 1)
         self.modelFieldaModel.addItem(self.tr("No source term"), "no_source_term")
