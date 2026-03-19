@@ -1108,7 +1108,7 @@ _load_balance(bool write_stats)
   int n_ranks = cs_glob_n_ranks;
 
   int *cell_rank = nullptr;
-  CS_MALLOC(cell_rank, mesh->n_cells, int);
+  CS_MALLOC(cell_rank, mesh->n_cells_with_ghosts, int);
 
   // Non-uniform block size.
 
@@ -1128,6 +1128,9 @@ _load_balance(bool write_stats)
         cell_rank[i] = (cell_num[i] + n_ranks_rmdr - 1) / (cells_per_rank + 1);
     }
   }
+
+  if (mesh->halo != nullptr)
+    cs_halo_sync_untyped(mesh->halo, CS_HALO_STANDARD, sizeof(int), cell_rank);
 
   fvm_io_num_destroy(cell_io_num);
 

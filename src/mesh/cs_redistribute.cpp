@@ -300,23 +300,6 @@ _distribute_bc_type(cs_all_to_all_t  *bfd,
 }
 
 /*----------------------------------------------------------------------------
- * Compute random destination ranks for cells.
- *
- * parameters:
- *   mesh           <-- pointer to mesh
- *   cell_dest      --> cells destination rank
- *----------------------------------------------------------------------------*/
-
-static void
-_compute_cell_dest_rank(cs_mesh_t  *mesh,
-                        int         cell_dest[])
-{
-  for (int c_id = 0; c_id < mesh->n_cells; c_id++) {
-    cell_dest[c_id] = rand() % cs_glob_n_ranks;
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Redistribute fields and bc_coeffs based on the mesh distributors.
  *
  * parameters:
@@ -716,6 +699,73 @@ _distribute_data(cs_all_to_all_t *cd,
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Generate random cell destination rank (useful for stress testing).
+ *
+ * \param[in]  mesh  pointer to mesh
+ *
+ * \return  random destination rank id
+ */
+/*----------------------------------------------------------------------------*/
+
+static int *
+_random_dest_rank(const cs_mesh_t  *mesh)
+{
+  MPI_Comm comm = cs_glob_mpi_comm;
+
+  /* Generate and sync random seed. */
+
+  static bool rng_on = false;
+  if (!rng_on) {
+    rng_on = true;
+
+    unsigned int seed;
+
+    if (cs_glob_rank_id <= 0) {
+      seed = time(nullptr);
+      //seed = 123456; // Fix the seed for debugging.
+    }
+
+    MPI_Bcast(&seed, 1, MPI_UINT32_T, 0, comm);
+
+    srand(seed);
+  }
+
+  /* Allocate destination rank. */
+
+  int *dest_rank = nullptr;
+  CS_MALLOC(dest_rank, mesh->n_cells_with_ghosts, int);
+
+  // Build the cell part-to-part distributor.
+
+  const int n_max_tries = 50;
+  cs_lnum_t g_min_n_cells = 0;
+
+  for (int i = 0; i < n_max_tries && g_min_n_cells == 0; i++) {
+
+    for (cs_lnum_t c_id = 0; c_id < mesh->n_cells; c_id++) {
+      dest_rank[c_id] = rand() % cs_glob_n_ranks;
+    }
+
+    cs_all_to_all_t *cd = cs_all_to_all_create(mesh->n_cells,
+                                               0, // cd_flags,
+                                               nullptr,
+                                               dest_rank,
+                                               comm);
+    g_min_n_cells = cs_all_to_all_n_elts_dest(cd);
+    cs_all_to_all_destroy(&cd);
+
+    MPI_Allreduce(MPI_IN_PLACE, &g_min_n_cells, 1, CS_MPI_LNUM, MPI_MIN, comm);
+
+  }
+  cs_assert(g_min_n_cells > 0);
+
+  cs_halo_sync_untyped(mesh->halo, CS_HALO_STANDARD, sizeof(int), dest_rank);
+
+  return dest_rank;
+}
+
 #endif // defined(HAVE_MPI)
 
 /*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
@@ -745,12 +795,31 @@ cs_redistribute(const int                cell_dest_rank[],
 {
 #if defined(HAVE_MPI)
 
+  cs_mesh_t *mesh = cs_glob_mesh;
+
   if (cs_glob_n_ranks == 1)
     return;
 
-  /* Free some elements which will need to be rebuilt when/if used. */
+  /* Generate random destination rank if none is provided. */
 
-  cs_mesh_free_rebuildable(cs_glob_mesh, true);
+  int *_dest_rank = nullptr;
+  if (cell_dest_rank == nullptr) {
+    _dest_rank = _random_dest_rank(mesh);
+    cell_dest_rank = _dest_rank;
+  }
+
+  // We will need the destination and current ranks of the halo cells.
+
+  int *cell_rank;
+  CS_MALLOC(cell_rank, mesh->n_cells_with_ghosts, int);
+  for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
+    cell_rank[i] = cs_glob_rank_id;
+  cs_halo_sync_untyped(mesh->halo, CS_HALO_STANDARD, sizeof(int), cell_rank);
+
+  /* Free some elements which will need to be rebuilt when/if used.
+     Halos are needed at some interior steps so destroyed later. */
+
+  cs_mesh_free_rebuildable(cs_glob_mesh, false);
   cs_mesh_quantities_free_all(cs_glob_mesh_quantities);
 
   _free_field_gradients();
@@ -759,8 +828,6 @@ cs_redistribute(const int                cell_dest_rank[],
 
   static int iter = 0;
   iter++;
-
-  cs_mesh_t *mesh = cs_glob_mesh;
 
   MPI_Comm comm = cs_glob_mpi_comm;
 
@@ -784,86 +851,39 @@ cs_redistribute(const int                cell_dest_rank[],
   /* Cells
      ----- */
 
-  cs_all_to_all_t *cd = nullptr;
-  int cd_flags = 0;
-
   // Build the cell part-to-part distributor.
 
-  cs_lnum_t n_cells = 0;
+  cs_all_to_all_t *cd = cs_all_to_all_create(mesh->n_cells,
+                                             0, // cd_flags,
+                                             nullptr,
+                                             cell_dest_rank,
+                                             comm);
 
-  // Random cell destinations if cell_dest_rank is not prescribed.
-
-  int *_dest_rank = nullptr;
-  CS_MALLOC(_dest_rank, mesh->n_cells_with_ghosts, int);
-
-  if (cell_dest_rank == nullptr) {
-
-    // RNG
-    static bool rng_on = false;
-    if (!rng_on) {
-      rng_on = true;
-
-      unsigned int seed;
-
-      if (cs_glob_rank_id <= 0) {
-        seed = time(NULL);
-        //seed = 123456; // Fix the seed for debugging.
-      }
-
-      MPI_Bcast(&seed, 1, MPI_UINT32_T, 0, comm);
-
-      srand(seed);
-    }
-
-    cs_lnum_t g_min_n_cells;
-
-    do {
-      if (cd) cs_all_to_all_destroy(&cd);
-
-      _compute_cell_dest_rank(mesh, _dest_rank);
-
-      cd = cs_all_to_all_create(mesh->n_cells,
-                                cd_flags,
-                                nullptr,
-                                _dest_rank,
-                                comm);
-      n_cells = cs_all_to_all_n_elts_dest(cd);
-
-      MPI_Allreduce(&n_cells, &g_min_n_cells, 1, MPI_INT, MPI_MIN, comm);
-
-    } while (g_min_n_cells == 0);
-  }
-  else {
-    memcpy(_dest_rank, cell_dest_rank, mesh->n_cells*sizeof(int));
-
-    cd = cs_all_to_all_create(mesh->n_cells,
-                              cd_flags,
-                              nullptr,
-                              _dest_rank,
-                              comm);
-
-    n_cells = cs_all_to_all_n_elts_dest(cd);
-  }
+  cs_lnum_t n_cells = cs_all_to_all_n_elts_dest(cd);
 
   // Distribute global cell numbers
 
-  cs_gnum_t *cell_gnum = cs_all_to_all_copy_array(cd,
-                                                  1,
-                                                  false,
-                                                  mesh->global_cell_num);
-
-  // Sort global cell numbers in increasing order;
-  // this order will be used for the exchange of any cell-centered data.
-
-  cs_lnum_t *cell_order = cs_order_gnum(nullptr, cell_gnum, n_cells);
-
+  cs_lnum_t *cell_order = nullptr;
   cs_gnum_t *global_cell_num;
   CS_MALLOC(global_cell_num, n_cells, cs_gnum_t);
-  for (cs_lnum_t i = 0; i < n_cells; i++) {
-    global_cell_num[i] = cell_gnum[cell_order[i]];
-  }
 
-  CS_FREE(cell_gnum);
+  {
+    cs_gnum_t *cd_cell_gnum = cs_all_to_all_copy_array(cd,
+                                                       1,
+                                                       false,
+                                                       mesh->global_cell_num);
+
+    // Sort global cell numbers in increasing order;
+    // this order will be used for the exchange of any cell-centered data.
+
+    cell_order = cs_order_gnum(nullptr, cd_cell_gnum, n_cells);
+
+    for (cs_lnum_t i = 0; i < n_cells; i++) {
+      global_cell_num[i] = cd_cell_gnum[cell_order[i]];
+    }
+
+    CS_FREE(cd_cell_gnum);
+  }
 
   // Distribute cell family.
 
@@ -880,7 +900,7 @@ cs_redistribute(const int                cell_dest_rank[],
   int *b_face_dest;
   CS_MALLOC(b_face_dest, mesh->n_b_faces, int);
   for (cs_lnum_t f_id = 0; f_id < mesh->n_b_faces; f_id++)
-    b_face_dest[f_id] = _dest_rank[mesh->b_face_cells[f_id]];
+    b_face_dest[f_id] = cell_dest_rank[mesh->b_face_cells[f_id]];
 
   // Boundary face distributor.
   int bfd_flags = 0;
@@ -1022,18 +1042,6 @@ cs_redistribute(const int                cell_dest_rank[],
   /* Interior faces
      -------------- */
 
-  // We need the destination and current ranks of the halo cells.
-
-  cs_halo_sync_untyped(mesh->halo,
-                       CS_HALO_STANDARD,
-                       sizeof(int),
-                       _dest_rank);
-
-  int *cell_rank;
-  CS_MALLOC(cell_rank, mesh->n_cells_with_ghosts, int);
-  for (int i = 0; i < mesh->n_cells; i++) cell_rank[i] = cs_glob_rank_id;
-  cs_halo_sync_untyped(mesh->halo, CS_HALO_STANDARD, sizeof(int), cell_rank);
-
   // List of internal faces to distribute, and their destination.
   // one internal face can appear twice in the list.
   cs_lnum_t *i_face_lst;
@@ -1055,7 +1063,7 @@ cs_redistribute(const int                cell_dest_rank[],
     int prev_rank = -1;
 
     for (int j = 0; j < 2; j++) {
-      dest_rank = _dest_rank[mesh->i_face_cells[f_id][j]];
+      dest_rank = cell_dest_rank[mesh->i_face_cells[f_id][j]];
       if (dest_rank != prev_rank) {
         i_face_lst[n_i_faces_ini] = f_id;
         i_face_dest[n_i_faces_ini] = dest_rank;
@@ -1143,8 +1151,8 @@ cs_redistribute(const int                cell_dest_rank[],
   }
 
   // Distribute the (global) internal face-cell connectivity.
-  int blank_perio = 1;
-  cell_gnum = cs_mesh_get_cell_gnum(mesh, blank_perio);
+
+  cs_gnum_t *cell_gnum = cs_mesh_get_cell_gnum(mesh, 1);
 
   cs_gnum_t *g_i_face_cells_s;
   CS_MALLOC(g_i_face_cells_s, 2*n_i_faces_ini, cs_gnum_t);
@@ -1394,6 +1402,7 @@ cs_redistribute(const int                cell_dest_rank[],
 
   cs_mesh_builder_destroy(&builder);
 
+  cs_mesh_free_rebuildable(mesh, true);
   mesh->n_cells_with_ghosts = mesh->n_cells;
 
   cs_mesh_init_halo(mesh, nullptr, mesh->halo_type, -1, true);
