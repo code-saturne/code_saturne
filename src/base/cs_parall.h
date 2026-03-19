@@ -871,13 +871,13 @@ namespace parall {
  */
 /*----------------------------------------------------------------------------*/
 
-template <typename T, typename... Vals>
+template <typename T,
+          typename... Vals,
+          typename std::enable_if<!std::is_array<T>::value, int>::type = 0>
 static void
-sum
-(
-  const cs_execution_context *ec,    /*!<[in] Parallel execution context */
-  T&                          first, /*!< [in, out] First scalar to update */
-  Vals&...                    values /*!< [in, out] Scalar values to update */
+sum(const cs_execution_context *ec,    /*!<[in] Parallel execution context */
+    T                          &first, /*!< [in, out] First scalar to update */
+    Vals &...values                    /*!< [in, out] Scalar values to update */
 )
 {
 #if defined(HAVE_MPI)
@@ -922,12 +922,12 @@ sum
  */
 /*----------------------------------------------------------------------------*/
 
-template <typename T, typename... Vals>
+template <typename T,
+          typename... Vals,
+          typename std::enable_if<!std::is_array<T>::value, int>::type = 0>
 static void
-sum
-(
-  T&       first, /*!< [in, out] First scalar to update */
-  Vals&... values /*!< [in, out] Scalar values to update */
+sum(T &first,       /*!< [in, out] First scalar to update */
+    Vals &...values /*!< [in, out] Scalar values to update */
 )
 {
 #if defined(HAVE_MPI)
@@ -1023,6 +1023,43 @@ sum
 #else
   return;
 #endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Sum values of a fixed-size C array over the default communicator.
+ *
+ * This overload detects the size of fixed-array.
+ *
+ * \tparam T : datatype
+ * \tparam N : dimension of the array
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T, int N, typename... Vals>
+static void
+sum(T (&first)[N], Vals &&...values)
+{
+  // Appel à la version existante avec Stride = N
+  sum<N>(first, std::forward<Vals>(values)...);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Sum values of a fixed-size C array over the default communicator.
+ *
+ * This overload detects the size of fixed-array.
+ *
+ * \tparam T : datatype
+ * \tparam N : dimension of the array
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T, int N, typename... Vals>
+static void
+sum(const cs_execution_context *ec, T (&first)[N], Vals &&...values)
+{
+  sum<N>(ec, first, std::forward<Vals>(values)...);
 }
 
 /*----------------------------------------------------------------------------*/

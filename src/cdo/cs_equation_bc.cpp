@@ -321,10 +321,14 @@ _compute_mapped_cdofb(cs_bc_map_t               *bc_map,
 
   /* Compute normalization if applicable */
 
-  cs_real_t scaling = 1.0;
+  cs_real_t scaling[3] = { 1.0, 1.0, 1.0 };
+  assert(dim <= 3);
+
   if (normalize) {
     /* Initialization */
-    cs_real_t inlet_norm2_0 = 0., inlet_norm2_1 = 0.0;
+    cs_real_t inlet_sum_0[3] = { 0., 0., 0. }, inlet_sum_1[3] = { 0., 0., 0. };
+    cs_real_t inlet_norm2_0[3] = { 0., 0., 0. },
+              inlet_norm2_1[3] = { 0., 0., 0. };
 
     /* Compute integral on boundary faces */
     for (cs_lnum_t bf_i = 0; bf_i < n_bfaces; bf_i++) {
@@ -334,16 +338,32 @@ _compute_mapped_cdofb(cs_bc_map_t               *bc_map,
       const cs_real_t *_val_f = val_f + f_id * dim;
       const cs_real_t *_local = local_var + bf_i * dim;
       for (cs_lnum_t j = 0; j < dim; j++) {
-        inlet_norm2_0 += f_meas * _val_f[j] * _val_f[j];
-        inlet_norm2_1 += f_meas * _local[j] * _local[j];
+        inlet_sum_0[j] += f_meas * _val_f[j];
+        inlet_sum_1[j] += f_meas * _local[j];
+        inlet_norm2_0[j] += f_meas * _val_f[j] * _val_f[j];
+        inlet_norm2_1[j] += f_meas * _local[j] * _local[j];
       }
     }
 
-    cs::parall::sum(inlet_norm2_0, inlet_norm2_1);
+    cs::parall::sum(inlet_sum_0, inlet_sum_1, inlet_norm2_0, inlet_norm2_1);
 
-    scaling = (cs::abs(inlet_norm2_1) > cs_math_epzero)
-                ? inlet_norm2_0 / inlet_norm2_1
-                : 1.;
+    for (cs_lnum_t j = 0; j < dim; j++) {
+      if (cs::abs(inlet_norm2_0[j]) < cs_math_zero_threshold) {
+        // Zero values in this direction
+        scaling[j] = 0.0;
+      }
+      else if (cs::abs(inlet_sum_1[j]) < cs_math_zero_threshold) {
+        if (cs::abs(inlet_norm2_1[j]) < cs_math_zero_threshold) {
+          scaling[j] = 1.0;
+        }
+        else {
+          scaling[j] = inlet_norm2_0[j] / inlet_norm2_1[j];
+        }
+      }
+      else {
+        scaling[j] = inlet_sum_0[j] / inlet_sum_1[j];
+      }
+    }
   }
 
   /* Copy values with scaling */
@@ -353,7 +373,7 @@ _compute_mapped_cdofb(cs_bc_map_t               *bc_map,
     const cs_real_t *_local = local_var + bf_i * dim;
 
     for (cs_lnum_t j = 0; j < dim; j++) {
-      _val[j] = scaling * _local[j];
+      _val[j] = scaling[j] * _local[j];
     }
   }
 

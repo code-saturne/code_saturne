@@ -20,6 +20,8 @@ Master (not on release branches yet)
   augmentation of the system, the static condensation and the way to
   enforce Dirichlet boundary conditions.
 
+- CDO: Add mapped inlet option for Dirichlet boundary conditions.
+
 ### User changes:
 
 - Restart: selection of further mesh preprocessing behavior and/or
