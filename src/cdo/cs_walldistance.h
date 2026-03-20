@@ -34,10 +34,6 @@
 #include "base/cs_base.h"
 #include "cdo/cs_equation.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -93,9 +89,5 @@ cs_walldistance_compute(const cs_mesh_t              *mesh,
                         const cs_time_step_t         *time_step,
                         const cs_cdo_connect_t       *connect,
                         const cs_cdo_quantities_t    *cdoq);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_WALLDISTANCE_H__ */

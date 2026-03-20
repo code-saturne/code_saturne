@@ -38,10 +38,6 @@
 #include "base/cs_time_step.h"
 #include "turb/cs_turbulence_model.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -537,9 +533,5 @@ cs_turb_compute_wall_bc_coeffs(const cs_equation_param_t  *eqp,
 
 bool
 cs_turb_wall_functions_is_activated(const cs_turbulence_param_t *turbulence);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_CDO_TURBULENCE_H__ */

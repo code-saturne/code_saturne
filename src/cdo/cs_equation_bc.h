@@ -39,10 +39,6 @@
 #include "base/cs_time_step.h"
 #include "cdo/cs_xdef_eval.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -542,9 +538,5 @@ cs_equation_bc_circulation_at_edges(cs_real_t                    t_eval,
 
 void
 cs_equation_bc_update_for_increment(cs_cell_sys_t  *csys);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_EQUATION_BC_H__ */

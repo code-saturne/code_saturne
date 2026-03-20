@@ -36,10 +36,6 @@
 #include "cdo/cs_domain.h"
 #include "base/cs_param_types.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -186,9 +182,5 @@ cs_domain_setup_init_state(cs_domain_t *domain);
 
 void
 cs_domain_setup_log(const cs_domain_t   *domain);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_DOMAIN_SETUP_H__ */

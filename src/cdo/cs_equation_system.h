@@ -35,10 +35,6 @@
 #include "cdo/cs_equation_system_param.h"
 #include "base/cs_param_types.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -416,9 +412,5 @@ cs_equation_system_assign_param(int                       row_id,
                                 int                       col_id,
                                 cs_equation_param_t      *eqp,
                                 cs_equation_system_t     *eqsys);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_EQUATION_SYSTEM_H__ */

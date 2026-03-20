@@ -33,10 +33,6 @@
 #include "cdo/cs_equation.h"
 #include "cdo/cs_equation_system_param.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -63,9 +59,5 @@ void
 cs_equation_system_sles_init(int                            n_eqs,
                              cs_equation_system_param_t    *sysp,
                              cs_equation_core_t           **blocks);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_EQUATION_SYSTEM_SLES_H__ */
