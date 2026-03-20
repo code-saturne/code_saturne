@@ -341,15 +341,14 @@ _check_morton_ordering(int                      dim,
 static cs_gnum_t
 _fvm_io_num_local_max(const fvm_io_num_t  *this_io_num)
 {
-  cs_gnum_t   local_max;
-
-  /* Get maximum global number value */
+  cs_gnum_t   local_max = 0;
 
   size_t n_ent = this_io_num->global_num_size;
-  if (n_ent > 0)
-    local_max = this_io_num->global_num[n_ent - 1];
-  else
-    local_max = 0;
+  for (size_t i = 0; i < n_ent; i++) {
+    cs_gnum_t local_val = this_io_num->global_num[i];
+    if (local_val > local_max)
+      local_max = local_val;
+  }
 
   return local_max;
 }
@@ -576,7 +575,7 @@ _fvm_io_num_try_to_set_shared(fvm_io_num_t      *const this_io_num,
 /*----------------------------------------------------------------------------
  * Maximum global number associated with an I/O numbering structure.
  *
- * This function is to be used for ordered global numberings.
+ * This function may be used for ordered global numberings.
  *
  * parameters:
  *   this_io_num <-- pointer to partially initialized I/O numbering structure.
@@ -590,43 +589,9 @@ static cs_gnum_t
 _fvm_io_num_global_max(const fvm_io_num_t  *const this_io_num,
                        const MPI_Comm             comm)
 {
-  cs_gnum_t  local_max = _fvm_io_num_local_max(this_io_num);
-  cs_gnum_t  global_max = 0;
+  cs_gnum_t local_max = _fvm_io_num_local_max(this_io_num);
 
-  MPI_Allreduce(&local_max, &global_max, 1, CS_MPI_GNUM, MPI_MAX, comm);
-
-  return global_max;
-}
-
-/*----------------------------------------------------------------------------
- * Maximum global number associated with an I/O numbering structure.
- *
- * This function may be used for ordered global numberings.
- *
- * parameters:
- *   this_io_num <-- pointer to partially initialized I/O numbering structure.
- *   comm        <-- associated MPI communicator
- *
- * returns:
- *   maximum global number associated with the I/O numbering
- *----------------------------------------------------------------------------*/
-
-static cs_gnum_t
-_fvm_io_num_global_max_unordered(const fvm_io_num_t  *const this_io_num,
-                                 const MPI_Comm             comm)
-{
-  size_t     i, n_ent;
-  cs_gnum_t  local_max = 0, global_max = 0;;
-
-  /* Get maximum global number value */
-
-  n_ent = this_io_num->global_num_size;
-  for (i = 0; i < n_ent; i++) {
-    cs_gnum_t local_val = this_io_num->global_num[i];
-    if (local_val > local_max)
-      local_max = local_val;
-  }
-
+  cs_gnum_t global_max = 0;
   MPI_Allreduce(&local_max, &global_max, 1, CS_MPI_GNUM, MPI_MAX, comm);
 
   return global_max;
@@ -812,8 +777,7 @@ _fvm_io_num_global_order(fvm_io_num_t       *this_io_num,
 
   /* Get final maximum global number value */
 
-  this_io_num->global_count
-    = _fvm_io_num_global_max_unordered(this_io_num, comm);
+  this_io_num->global_count = _fvm_io_num_global_max(this_io_num, comm);
 }
 
 /*----------------------------------------------------------------------------
@@ -1572,8 +1536,7 @@ _create_from_coords_morton(const cs_coord_t  coords[],
 
     /* Get final maximum global number value */
 
-    this_io_num->global_count =
-      _fvm_io_num_global_max_unordered(this_io_num, comm);
+    this_io_num->global_count = _fvm_io_num_global_max(this_io_num, comm);
   }
 
 #endif /* HAVE_MPI */
@@ -1762,8 +1725,7 @@ _create_from_coords_hilbert(const cs_coord_t coords[],
 
     /* Get final maximum global number value */
 
-    this_io_num->global_count =
-      _fvm_io_num_global_max_unordered(this_io_num, comm);
+    this_io_num->global_count = _fvm_io_num_global_max(this_io_num, comm);
   }
 
 #endif /* HAVE_MPI */
@@ -2468,8 +2430,7 @@ fvm_io_num_create_from_real(const cs_real_t  val[],
 
     /* Get final maximum global number value */
 
-    this_io_num->global_count
-      = _fvm_io_num_global_max_unordered(this_io_num, comm);
+    this_io_num->global_count = _fvm_io_num_global_max(this_io_num, comm);
 
   }
 
