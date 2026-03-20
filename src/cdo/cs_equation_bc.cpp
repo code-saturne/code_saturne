@@ -322,6 +322,7 @@ _compute_mapped_cdofb(cs_bc_map_t               *bc_map,
   /* Compute normalization if applicable */
 
   cs_real_t scaling[3] = { 1.0, 1.0, 1.0 };
+  bool      use_proj[3] = { true, true, true };
   assert(dim <= 3);
 
   if (normalize) {
@@ -354,10 +355,15 @@ _compute_mapped_cdofb(cs_bc_map_t               *bc_map,
       }
       else if (cs::abs(inlet_sum_1[j]) < cs_math_zero_threshold) {
         if (cs::abs(inlet_norm2_1[j]) < cs_math_zero_threshold) {
+          scaling[j]  = 0.0;
+          use_proj[j] = false;
+        }
+        else if (cs::abs(inlet_sum_0[j]) < cs_math_zero_threshold) {
           scaling[j] = 1.0;
         }
         else {
-          scaling[j] = inlet_norm2_0[j] / inlet_norm2_1[j];
+          scaling[j]  = 0.0;
+          use_proj[j] = false;
         }
       }
       else {
@@ -369,11 +375,18 @@ _compute_mapped_cdofb(cs_bc_map_t               *bc_map,
   /* Copy values with scaling */
   for (cs_lnum_t bf_i = 0; bf_i < n_bfaces; bf_i++) {
     const cs_lnum_t  bf_id  = bfaces[bf_i];
+    const cs_lnum_t    f_id   = n_i_faces + bf_id;
     cs_real_t       *_val   = values + bf_id * dim;
+    const cs_real_t   *_val_f = val_f + f_id * dim;
     const cs_real_t *_local = local_var + bf_i * dim;
 
     for (cs_lnum_t j = 0; j < dim; j++) {
-      _val[j] = scaling[j] * _local[j];
+      if (use_proj[j]) {
+        _val[j] = scaling[j] * _local[j];
+      }
+      else {
+        _val[j] = _val_f[j];
+      }
     }
   }
 
