@@ -2225,6 +2225,10 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     eqp_loc.ircflu = 0;
     eqp_loc.blencv = 0.;
 
+    // Ensure that dpvar is synchronized since halo values may be needed
+    // in cs_boundary_conditions_update_bc_coeff_face_values
+    cs_halo_sync(m->halo, bc_halo_type, ctx.use_gpu(), dpvar);
+
     cs_boundary_conditions_update_bc_coeff_face_values
       (ctx,
        f, bc_coeffs, inc,
