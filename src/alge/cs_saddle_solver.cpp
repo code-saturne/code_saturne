@@ -907,6 +907,7 @@ _solve_m11_approximation(cs_saddle_solver_t                   *solver,
  *        This is common to the following strategies:
  *         - Block preconditioning with a Krylov solver
  *         - Uzawa-CG algorithm
+ *         - Algebraic SIMPLE-like algorithm
  *
  * \param[in, out] solver       pointer to a saddle-point solver structure
  * \param[in, out] schur_sles   SLES related to the Schur complement (if needed)
@@ -4923,18 +4924,20 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
   for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++)
     ctx->rhs[i1] = rhs1[i1] - m12x2[i1];
 
-    /* Compute the residual in Incremental formulation */
+  /* Compute the residual in incremental formulation */
+
   _m11_vector_multiply_allocated(rset, m11, x1, r);
 
 # pragma omp parallel for if (n1_dofs > CS_THR_MIN)
   for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++)
     ctx->rhs[i1] -= r[i1];
 
-/* Initial normalization from the newly computed rhs */
+  /* Initial normalization from the newly computed rhs */
 
   double  normalization = ctx->square_norm_b11(ctx->rhs);
 
-  normalization = (fabs(normalization) > cs_math_zero_threshold) ? sqrt(normalization) : 1.0;
+  normalization = (fabs(normalization) > cs_math_zero_threshold) ?
+    sqrt(normalization) : 1.0;
 
   /* Compute the first velocity guess
    * Modify the tolerance in order to be more accurate on this step */
@@ -4959,7 +4962,7 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
   for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++)
     x1[i1] += dx1[i1];
 
-  /* Compute the residual  (in fact the negative velocity divergence) */
+  /* Compute the residual (in fact the negative velocity divergence) */
 
   ctx->m21_vector_multiply(n2_dofs, x1, ctx->m21_adj, ctx->m21_val, ctx->m21x1);
 
@@ -4980,6 +4983,7 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
   cs_iter_algo_update_inner_iters(algo, n_iter);
 
   /* Calculate Grad(dx2) */
+
   cs_array_real_fill_zero(n1_dofs, m12x2);
   ctx->m12_vector_multiply(n2_elts,
                            dx2, ctx->m21_adj, ctx->m21_val,
@@ -5013,10 +5017,10 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
                             twice */
 
     cs_range_set_gather(rset,
-                        CS_REAL_TYPE,/* type */
-                        1,           /* stride (treated as scalar up to now) */
-                        rhs1,          /* in: size = n_sles_scatter_elts */
-                        rhs1);         /* out: size = n_sles_gather_elts */
+                        CS_REAL_TYPE, /* type */
+                        1,            /* stride (treated as scalar up to now) */
+                        rhs1,         /* in: size = n_sles_scatter_elts */
+                        rhs1);        /* out: size = n_sles_gather_elts */
 
     /* n_elts[0] corresponds to the number of element in the gather view */
 
@@ -5033,7 +5037,7 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
     _nrhs1_square = cs_dot_xx(n1_dofs, rhs1);
 
   /* Norm for the x2 DoFs (not shared so that there is no need to
-       synchronize) */
+     synchronize) */
 
   double  _nrhs2_square = cs_dot_xx(n2_dofs, rhs2);
 
@@ -5045,8 +5049,7 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
 
   double residual_norm = FLT_MAX;
 
-  while (  iterup < cvg_param.n_max_iter
-        && residual_norm > cvg_param.rtol) {
+  while (iterup < cvg_param.n_max_iter && residual_norm > cvg_param.rtol) {
 
     /* Matrix splitting handled in rhs */
 
@@ -5065,13 +5068,14 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
     /* Initial normalization from the newly computed rhs */
 
     normalization = ctx->square_norm_b11(ctx->rhs);
-    normalization = (fabs(normalization) > cs_math_zero_threshold) ? sqrt(normalization) : 1.0;
+    normalization = (fabs(normalization) > cs_math_zero_threshold) ?
+      sqrt(normalization) : 1.0;
 
     /* Compute the first velocity guess
      * Modify the tolerance in order to be more accurate on this step */
 
-    init_sles =
-      (ctxp->dedicated_init_sles) ? ctx->init_sles : solver->main_sles;
+    init_sles = (ctxp->dedicated_init_sles) ?
+      ctx->init_sles : solver->main_sles;
     assert(init_sles != nullptr);
 
     n_iter = cs_cdo_solve_scalar_system(n1_dofs,
@@ -5092,7 +5096,8 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
 
     /* Compute the residual (in fact the negative velocity divergence) */
 
-    ctx->m21_vector_multiply(n2_dofs, x1, ctx->m21_adj, ctx->m21_val, ctx->m21x1);
+    ctx->m21_vector_multiply(n2_dofs, x1,
+                             ctx->m21_adj, ctx->m21_val, ctx->m21x1);
 
 #   pragma omp parallel for if (n2_dofs > CS_THR_MIN)
     for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++)
@@ -5140,7 +5145,7 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
                               r,                      /* r1 */
                               r + ctx->b11_max_size); /* r2 */
 
-  /* Norm for the r1 DoFs (those shared among processes) */
+    /* Norm for the r1 DoFs (those shared among processes) */
 
     double  _nr1_square = 0;
 

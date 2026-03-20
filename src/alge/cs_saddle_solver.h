@@ -44,10 +44,6 @@
 #include "alge/cs_param_saddle.h"
 #include "alge/cs_sles.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Macro definitions
  *============================================================================*/
@@ -90,45 +86,45 @@ typedef struct {
 
   /* Set of parameters to know how to solve the saddle-point system (shared) */
 
-  const cs_param_saddle_t       *param;
+  const cs_param_saddle_t  *param;
 
   /* Structure to handle iterative algorithms */
 
-  cs_iter_algo_t                *algo;
+  cs_iter_algo_t           *algo;
 
   /* Description of the saddle-point system to solve (shared) */
 
-  cs_cdo_system_helper_t        *system_helper;
+  cs_cdo_system_helper_t   *system_helper;
 
-  bool                           do_setup;
+  bool                      do_setup;
 
   /* Main SLES structure associated to the saddle-point problem. According to
    * the type of saddle-point solver, additional SLES can be allocated, for
    * instance to compute an approximation of the Schur complement. */
 
-  cs_sles_t                     *main_sles;
+  cs_sles_t                *main_sles;
 
   /* Scatter viewpoint */
 
-  cs_lnum_t                      n1_elts;
-  int                            n1_dofs_by_elt;
-  cs_lnum_t                      n2_elts;
-  int                            n2_dofs_by_elt;
+  cs_lnum_t                 n1_elts;
+  int                       n1_dofs_by_elt;
+  cs_lnum_t                 n2_elts;
+  int                       n2_dofs_by_elt;
 
-  cs_lnum_t                      n1_scatter_dofs;
-  cs_lnum_t                      n2_scatter_dofs;
+  cs_lnum_t                 n1_scatter_dofs; /* = n1_elts * n1_dofs_by_elt */
+  cs_lnum_t                 n2_scatter_dofs; /* = n2_elts * n2_dofs_by_elt */
 
   /* Additional members according to the type of saddle-point solver. This
    * structure is cast on-the-fly */
 
-  void                          *context;
+  void                     *context;
 
   /* Monitoring */
 
-  unsigned                       n_calls;
-  unsigned                       n_iter_min;
-  unsigned                       n_iter_max;
-  unsigned                       n_iter_tot;
+  unsigned                  n_calls;
+  unsigned                  n_iter_min;
+  unsigned                  n_iter_max;
+  unsigned                  n_iter_tot;
 
 } cs_saddle_solver_t;
 
@@ -381,7 +377,6 @@ typedef struct {
 /* ----------------------------------------------- */
 
 typedef struct {
-
 
   /* Auxiliary buffers */
 
@@ -1017,7 +1012,5 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
                         cs_real_t           *x2);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_SADDLE_SOLVER_H__ */

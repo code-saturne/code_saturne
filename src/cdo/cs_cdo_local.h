@@ -51,7 +51,7 @@
  *
  *  This set of data is useful for building the algebraic system with a
  *  cellwise process. This structure belongs to one thread and so enable to
- *  build the local systems in a multi-threaded environnement.
+ *  build the local systems in a multi-threaded environment.
  */
 
 typedef struct cs_cell_builder_t {
@@ -106,7 +106,7 @@ typedef struct cs_cell_builder_t {
   double        rpty_vals[CS_CDO_N_MAX_REACTIONS];
   double        rpty_val;
 
-  double    *adv_fluxes; /*!< Values of the advection flux */
+  double       *adv_fluxes; /*!< Values of the advection flux */
 
   /*!
    * @name Temporary buffers
@@ -135,14 +135,13 @@ typedef struct cs_cell_builder_t {
 
 #ifdef __cplusplus
 
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
   /*!
-   * \brief   Check if at least one entity of the cell belongs to the boundary
-   *
+   * \brief Check if at least one entity of the cell belongs to the boundary
    *
    * \return true or false
    */
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
 
   inline bool
   has_boundary_elements() const
@@ -159,8 +158,9 @@ typedef struct cs_cell_builder_t {
 
 } cs_cell_builder_t;
 
-/*! \struct cs_cell_sys_t
- *  \brief Set of arrays and local (small) dense matrices related to a mesh cell
+/*!
+ * \struct cs_cell_sys_t
+ * \brief Set of arrays and local (small) dense matrices related to a mesh cell
  *  This is a key structure for building the local algebraic system.
  *  This structure belongs to one thread and only.
  */
@@ -209,25 +209,25 @@ typedef struct cs_cell_sys_t {
 
 #ifdef __cplusplus
 
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
   /*!
    * \brief  Reset all members related to BC and some other ones in a
    *         \ref cs_cell_sys_t structure
    *
    * \param[in]      n_fbyc     number of faces in a cell
    */
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
 
   void
   reset(int n_fbyc);
 
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
   /*!
    * \brief   Dump a local system for debugging purpose
    *
    * \param[in]       msg     associated message to print
    */
-  /*----------------------------------------------------------------------------*/
+  /*--------------------------------------------------------------------------*/
 
   void
   dump(const char msg[]) const;

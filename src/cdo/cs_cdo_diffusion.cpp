@@ -1205,7 +1205,8 @@ cs_cdo_diffusion_sfb_weak_dirichlet(const cs_equation_param_t      *eqp,
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
     /* Get the boundary face in the cell numbering */
-    const short int  f = csys->_f_ids[i];
+
+    const short int f = csys->_f_ids[i];
 
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
