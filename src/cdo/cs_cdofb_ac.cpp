@@ -518,8 +518,7 @@ _ac_apply_bc_partly(const cs_cdofb_ac_t           *sc,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump(">> Cell system matrix after partial BC enforcement",
-                       csys);
+      csys->dump(">> Cell system matrix after partial BC enforcement");
 #endif
   } /* Boundary cell */
 }
@@ -610,8 +609,7 @@ _ac_apply_remaining_bc(const cs_cdofb_ac_t           *sc,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 2
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump("\n>> Cell system after the internal enforcement",
-                       csys);
+      csys->dump("\n>> Cell system after the internal enforcement");
 #endif
   }
 }
@@ -775,8 +773,9 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump(">> Local system after conv/diff/reac and grad-div"
-                         " terms", csys);
+        csys->dump(">> Local system after conv/diff/reac and grad-div"
+                   " terms",
+                   csys);
 #endif
 
       /* 3- SOURCE TERM COMPUTATION (for the momentum equation) */
@@ -836,7 +835,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump(">> Local system matrix before condensation", csys);
+        csys->dump(">> Local system matrix before condensation");
 #endif
 
       /* 5- STATIC CONDENSATION
@@ -852,8 +851,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump(">> Local system matrix after static condensation",
-                         csys);
+        csys->dump(">> Local system matrix after static condensation");
 #endif
 
       /* 6- Remaining part of BOUNDARY CONDITIONS
@@ -864,7 +862,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 0
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
+        csys->dump(">> (FINAL) Local system matrix");
 #endif
 
       /* ASSEMBLY PROCESS */

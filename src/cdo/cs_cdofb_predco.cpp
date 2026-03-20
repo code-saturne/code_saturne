@@ -344,8 +344,7 @@ _predco_apply_bc_partly(const cs_cdofb_predco_t       *sc,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_PREDCO_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump(">> Cell system matrix after partial BC enforcement",
-                       csys);
+      csys->dump(">> Cell system matrix after partial BC enforcement");
 #endif
   } /* Boundary cell */
 }
@@ -385,8 +384,7 @@ _predco_apply_remaining_bc(const cs_cdofb_predco_t       *sc,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_PREDCO_DBG > 2
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump("\n>> Cell system after the internal enforcement",
-                       csys);
+      csys->dump("\n>> Cell system after the internal enforcement");
 #endif
   }
 
@@ -1064,7 +1062,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_PREDCO_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump(">> Cell system after conv/diff/reac", csys);
+        csys->dump(">> Cell system after conv/diff/reac");
 #endif
 
       /* 3- SOURCE TERM COMPUTATION (for the momentum equation) */
@@ -1141,8 +1139,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_PREDCO_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump(">> Cell system matrix after static condensation",
-                         csys);
+        csys->dump(">> Cell system matrix after static condensation");
 #endif
 
       /* 6- Remaining part of BOUNDARY CONDITIONS
@@ -1153,7 +1150,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_PREDCO_DBG > 0
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
+        csys->dump(">> (FINAL) Cell system matrix");
 #endif
 
       /* ASSEMBLY PROCESS */

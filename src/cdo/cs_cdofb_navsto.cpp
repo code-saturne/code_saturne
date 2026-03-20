@@ -1957,7 +1957,7 @@ cs_cdofb_prescribed_smooth_wall(short int                  fb,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, csys))
-    cs_cell_sys_dump(">> Cell %d, scalar Fb: After smooth wall", csys);
+    csys->dump(">> Cell %d, scalar Fb: After smooth wall");
 #endif
 }
 
@@ -2577,7 +2577,7 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
         if (cs_dbg_cw_test(eqp, cm, csys))
-          cs_cell_sys_dump("\n>> Cell system after advection", csys);
+          csys->dump("\n>> Cell system after advection");
 #endif
         cs_real_t  *res = cb->values;
         memset(res, 0, 3*(cm->n_fc + 1)*sizeof(cs_real_t));

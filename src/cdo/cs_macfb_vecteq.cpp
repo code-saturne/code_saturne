@@ -217,8 +217,9 @@ _vfb_apply_bc(const cs_equation_param_t   *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_MACFB_VECTEQ_DBG > 2
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump(
-        "\n>> MAC-fb vecteq: Cell system after the internal enforcement", csys);
+      csys->dump(
+        "\n>> MAC-fb vecteq: Cell system after the internal enforcement",
+        csys);
 #endif
   }
 }
@@ -374,7 +375,7 @@ cs_macfb_vecteq_init_cell_system(const cs_cell_mesh_t        *cm,
 
   /* Initialize the local system */
 
-  cs_cell_sys_reset(n_dofs, csys);
+  csys->reset(n_dofs);
 
   csys->mat->init(cm->n_fc, n_dofs);
 
@@ -416,7 +417,7 @@ cs_macfb_vecteq_init_cell_system(const cs_cell_mesh_t        *cm,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_MACFB_VECTEQ_DBG > 2
   if (cs_dbg_cw_test(eqp, cm, csys))
-    cs_cell_mesh_dump(cm);
+    cm->dump();
 #endif
 }
 
@@ -570,7 +571,7 @@ cs_macfb_vecteq_diffusion(const cs_equation_param_t *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_MACFB_VECTEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump("\n>> MAC-fb vecteq: Cell system after diffusion", csys);
+      csys->dump("\n>> MAC-fb vecteq: Cell system after diffusion");
 #endif
   }
 }
@@ -616,8 +617,7 @@ cs_macfb_vecteq_advection(const cs_equation_param_t *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_MACFB_VECTEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump("\n>> MAC-fb vecteq: Cell system after convection",
-                       csys);
+      csys->dump("\n>> MAC-fb vecteq: Cell system after convection");
 #endif
   }
 }
@@ -671,7 +671,7 @@ cs_macfb_vecteq_conv_diff_reac(const cs_equation_param_t   *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_MACFB_VECTEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump(">> MAC-fb vecteq: Cell system after reaction", csys);
+      csys->dump(">> MAC-fb vecteq: Cell system after reaction");
 #endif
   }
 }
@@ -903,7 +903,7 @@ cs_macfb_vecteq_solve_steady_implicit(bool                       cur2prev,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_MACFB_VECTEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_cell_sys_dump(">> MAC-fb vecteq: (FINAL) Cell system matrix", csys);
+        csys->dump(">> MAC-fb vecteq: (FINAL) Cell system matrix");
 #endif
 
       /* ASSEMBLY PROCESS */

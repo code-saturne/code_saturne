@@ -1835,7 +1835,7 @@ cs_cdo_diffusion_sfb_cost_robin(const cs_equation_param_t      *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, csys))
-    cs_cell_sys_dump(">> Cell %d, scalar Fb: After Robin", csys);
+    csys->dump(">> Cell %d, scalar Fb: After Robin");
 #endif
 }
 

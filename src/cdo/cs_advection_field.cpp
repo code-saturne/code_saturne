@@ -2460,7 +2460,7 @@ cs_advection_field_cw_boundary_f2v_flux(const cs_cell_mesh_t *cm,
 
           const cs_adjacency_t *bf2v = cs_cdo_connect->bf2v;
           for (cs_lnum_t i = bf2v->idx[bf_id]; i < bf2v->idx[bf_id + 1]; i++) {
-            const short int v = cs_cell_mesh_get_v(bf2v->ids[i], cm);
+            const short int v = cm->get_vertex(bf2v->ids[i]);
             assert(v > -1 && v != cm->n_vc);
             fluxes[v] += cx->values[i];
           }

@@ -203,8 +203,7 @@ _vfb_apply_bc_partly(const cs_equation_param_t     *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
   if (cs_dbg_cw_test(eqp, cm, csys))
-    cs_cell_sys_dump(">> Cell system matrix after BC & before condensation",
-                     csys);
+    csys->dump(">> Cell system matrix after BC & before condensation");
 #endif
 }
 
@@ -260,7 +259,7 @@ _vfb_apply_remaining_bc(const cs_equation_param_t     *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 2
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump("\n>> Cell system after the internal enforcement", csys);
+      csys->dump("\n>> Cell system after the internal enforcement");
 #endif
   }
 }
@@ -363,7 +362,7 @@ cs_cdofb_vecteq_init_cell_system(const cs_cell_mesh_t         *cm,
 
   /* Initialize the local system */
 
-  cs_cell_sys_reset(cm->n_fc, csys);
+  csys->reset(cm->n_fc);
 
   cs_sdm_block33_init(csys->mat, n_blocks, n_blocks);
 
@@ -424,7 +423,7 @@ cs_cdofb_vecteq_init_cell_system(const cs_cell_mesh_t         *cm,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 2
   if (cs_dbg_cw_test(eqp, cm, csys))
-    cs_cell_mesh_dump(cm);
+    cm->dump();
 #endif
 }
 
@@ -500,7 +499,7 @@ cs_cdofb_vecteq_init_turb_bc(const cs_cell_mesh_t         *cm,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 2
   if (cs_dbg_cw_test(eqp, cm, csys))
-    cs_cell_mesh_dump(cm);
+    cm->dump();
 #endif
 }
 
@@ -563,7 +562,7 @@ cs_cdofb_vecteq_diffusion(const cs_equation_param_t   *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump("\n>> Cell system after diffusion", csys);
+      csys->dump("\n>> Cell system after diffusion");
 #endif
   }
 }
@@ -647,7 +646,7 @@ cs_cdofb_vecteq_conv_diff_reac(const cs_equation_param_t   *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump("\n>> Cell system after diffusion", csys);
+      csys->dump("\n>> Cell system after diffusion");
 #endif
   }
 
@@ -674,7 +673,7 @@ cs_cdofb_vecteq_conv_diff_reac(const cs_equation_param_t   *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump("\n>> Cell system after advection", csys);
+      csys->dump("\n>> Cell system after advection");
 #endif
   }
 
@@ -725,7 +724,7 @@ cs_cdofb_vecteq_conv_diff_reac(const cs_equation_param_t   *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump(">> Cell system after reaction", csys);
+      csys->dump(">> Cell system after reaction");
 #endif
   }
 }
@@ -956,8 +955,7 @@ cs_cdofb_vecteq_solve_steady_state(bool                       cur2prev,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_cell_sys_dump(">> Cell system matrix after static condensation",
-                         csys);
+        csys->dump(">> Cell system matrix after static condensation");
 #endif
 
       /* Remaining part of BOUNDARY CONDITIONS
@@ -967,7 +965,7 @@ cs_cdofb_vecteq_solve_steady_state(bool                       cur2prev,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
+        csys->dump(">> (FINAL) Cell system matrix");
 #endif
 
       /* ASSEMBLY PROCESS */
@@ -1197,8 +1195,7 @@ cs_cdofb_vecteq_solve_implicit(bool                        cur2prev,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_cell_sys_dump(">> Cell system matrix after static condensation",
-                         csys);
+        csys->dump(">> Cell system matrix after static condensation");
 #endif
 
       /* Remaining part of BOUNDARY CONDITIONS
@@ -1208,7 +1205,7 @@ cs_cdofb_vecteq_solve_implicit(bool                        cur2prev,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
+        csys->dump(">> (FINAL) Cell system matrix");
 #endif
 
       /* ASSEMBLY PROCESS */
@@ -1485,8 +1482,7 @@ cs_cdofb_vecteq_solve_theta(bool                        cur2prev,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_cell_sys_dump(">> Cell system matrix after static condensation",
-                         csys);
+        csys->dump(">> Cell system matrix after static condensation");
 #endif
 
       /* Remaining part of BOUNDARY CONDITIONS
@@ -1496,7 +1492,7 @@ cs_cdofb_vecteq_solve_theta(bool                        cur2prev,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
+        csys->dump(">> (FINAL) Cell system matrix");
 #endif
 
       /* ASSEMBLY PROCESS */

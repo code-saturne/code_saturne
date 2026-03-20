@@ -314,8 +314,7 @@ _scb_apply_bc(const cs_equation_param_t     *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOCB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump(">> Cell system matrix after partial BC enforcement",
-                       csys);
+      csys->dump(">> Cell system matrix after partial BC enforcement");
 #endif
   } /* Boundary cell */
 }
@@ -604,7 +603,7 @@ _scb_init_cell_system(const cs_cell_mesh_t         *cm,
    *
    */
 
-  cs_cell_sys_reset(cm->n_fc, csys);
+  csys->reset(cm->n_fc);
   csys->mat->init(cm->n_fc);
 
   memset(csys->rhs, 0, (cm->n_fc + 1)*sizeof(cs_real_t));
@@ -652,7 +651,8 @@ _scb_init_cell_system(const cs_cell_mesh_t         *cm,
   /* Build local arrays related to the boundary conditions */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOCB_SCALEQ_DBG > 2
-  if (cs_dbg_cw_test(eqp, cm, csys)) cs_cell_mesh_dump(cm);
+  if (cs_dbg_cw_test(eqp, cm, csys))
+    cm->dump();
 #endif
 }
 
@@ -786,7 +786,7 @@ _scb_steady_build(const cs_equation_param_t  *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOCB_SCALEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_cell_sys_dump("\n>> (FINAL) Cell system matrix", csys);
+        csys->dump("\n>> (FINAL) Cell system matrix");
 #endif
 
       /* ************************* ASSEMBLY PROCESS ************************* */
@@ -1507,7 +1507,7 @@ cs_cdocb_scaleq_diffusion(const cs_equation_param_t     *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOCB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump("\n>> Cell system after diffusion", csys);
+      csys->dump("\n>> Cell system after diffusion");
 #endif
   }
 }

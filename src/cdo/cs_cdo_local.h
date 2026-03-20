@@ -133,6 +133,30 @@ typedef struct {
    * @}
    */
 
+#ifdef __cplusplus
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief   Check if at least one entity of the cell belongs to the boundary
+   *
+   *
+   * \return true or false
+   */
+  /*----------------------------------------------------------------------------*/
+
+  inline bool
+  has_boundary_elements() const
+  {
+    if ((this->cell_flag &
+         (CS_FLAG_BOUNDARY_CELL_BY_FACE | CS_FLAG_BOUNDARY_CELL_BY_VERTEX |
+          CS_FLAG_BOUNDARY_CELL_BY_EDGE)) > 0)
+      return true;
+    else
+      return false;
+  };
+
+#endif
+
 } cs_cell_builder_t;
 
 /*! \struct cs_cell_sys_t
@@ -182,6 +206,33 @@ typedef struct {
   /*!
    * @}
    */
+
+#ifdef __cplusplus
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief  Reset all members related to BC and some other ones in a
+   *         \ref cs_cell_sys_t structure
+   *
+   * \param[in]      n_fbyc     number of faces in a cell
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  reset(int n_fbyc);
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief   Dump a local system for debugging purpose
+   *
+   * \param[in]       msg     associated message to print
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  dump(const char msg[]) const;
+
+#endif
 
 } cs_cell_sys_t;
 
@@ -264,6 +315,123 @@ typedef struct {
   short int   *e2f_ids;  /*!< cell-wise edge -> faces connectivity */
   cs_nvec3_t  *sefc;     /*!< portion of dual faces (2 triangles by edge) */
 
+#ifdef __cplusplus
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief   Retrieve the vertex id in the cellwise numbering associated to the
+   *          given vertex id in the mesh numbering
+   *
+   * \param[in]       v_id    vertex id in the mesh numbering
+   * \param[in]       cm      pointer to a cs_cell_mesh_t structure
+   *
+   * \return the vertex id in the cell numbering or -1 if not found
+   */
+  /*----------------------------------------------------------------------------*/
+
+  inline short int
+  get_vertex(const cs_lnum_t v_id) const
+  {
+    for (short int v = 0; v < this->n_vc; v++)
+      if (this->v_ids[v] == v_id)
+        return v;
+    return -1;
+  };
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief   Retrieve the edge id in the cellwise numbering associated to the
+   *          given edge id in the mesh numbering
+   *
+   * \param[in]       e_id    vertex id in the mesh numbering
+   *
+   * \return the edge id in the cell numbering or -1 if not found
+   */
+  /*----------------------------------------------------------------------------*/
+
+  inline short int
+  get_edge(const cs_lnum_t e_id) const
+  {
+    for (short int e = 0; e < this->n_ec; e++)
+      if (this->e_ids[e] == e_id)
+        return e;
+    return -1;
+  };
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief   Retrieve the face id in the cellwise numbering associated to the
+   *          given face id in the mesh numbering
+   *
+   * \param[in]       f_id    face id in the mesh numbering
+   *
+   * \return the face id in the cell numbering or -1 if not found
+   */
+  /*----------------------------------------------------------------------------*/
+
+  inline short int
+  get_face(const cs_lnum_t f_id) const
+  {
+    for (short int f = 0; f < this->n_fc; f++)
+      if (this->f_ids[f] == f_id)
+        return f;
+    return -1;
+  };
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief   Retrieve the list of vertices attached to a face
+   *
+   * \param[in]       f       face id in the cell numbering
+   * \param[in, out]  n_vf    pointer of pointer to a cellwise view of the mesh
+   * \param[in, out]  vids   list of vertex ids in the cell numbering
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  get_f2v(short int f, short int *n_vf, short int *vids) const;
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief  Is the face a boundary one ?
+   *
+   * \param[in]  f      id of the face in the cellwise numbering
+   *
+   * \return true if this is a boundary face otherwise false
+   */
+  /*----------------------------------------------------------------------------*/
+
+  inline bool
+  is_boundary_face(const short int f) const
+  {
+    if (this->f_ids[f] - this->bface_shift > -1)
+      return true;
+    else
+      return false;
+  };
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief  Initialize to invalid values a cs_cell_mesh_t structure
+   *
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  reset();
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief  Dump a cs_cell_mesh_t structure
+   *
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  dump() const;
+
+#endif
+
 } cs_cell_mesh_t;
 
 /*! \struct cs_face_mesh_t
@@ -275,38 +443,41 @@ typedef struct {
 */
 
 typedef struct {
+  short int n_max_vbyf; /*!< = n_max_ebyf */
 
-  short int    n_max_vbyf; /*!< = n_max_ebyf */
-
-  cs_lnum_t    c_id;    /*!< id of related cell */
-  cs_real_3_t  xc;      /*!< pointer to the coordinates of the cell center */
+  cs_lnum_t   c_id; /*!< id of related cell */
+  cs_real_3_t xc;   /*!< pointer to the coordinates of the cell center */
 
   /* Face information */
 
-  cs_lnum_t    f_id;   /*!< local mesh face id */
-  short int    f_sgn;  /*!< incidence number between f and c */
-  cs_quant_t   face;   /*!< face quantities (xf, area and unit normal) */
-  cs_nvec3_t   dedge;  /*!< its dual edge quantities (length and unit vector) */
-  double       pvol;   /*!< volume of the pyramid of base f and apex x_c */
-  double       hfc;    /*!< height of the pyramid of base f and apex x_c */
+  cs_lnum_t  f_id;  /*!< local mesh face id */
+  short int  f_sgn; /*!< incidence number between f and c */
+  cs_quant_t face;  /*!< face quantities (xf, area and unit normal) */
+  cs_nvec3_t dedge; /*!< its dual edge quantities (length and unit vector) */
+  double     pvol;  /*!< volume of the pyramid of base f and apex x_c */
+  double     hfc;   /*!< height of the pyramid of base f and apex x_c */
 
   /* Vertex information */
 
-  short int    n_vf;    /*!< local number of vertices on this face */
-  cs_lnum_t   *v_ids;   /*!< vertex ids (in the mesh or cellwise numbering) */
-  double      *xv;      /*!< local vertex coordinates (copy) */
-  double      *wvf;     /*!< weight related to each vertex */
+  short int  n_vf;  /*!< local number of vertices on this face */
+  cs_lnum_t *v_ids; /*!< vertex ids (in the mesh or cellwise numbering) */
+  double    *xv;    /*!< local vertex coordinates (copy) */
+  double    *wvf;   /*!< weight related to each vertex */
 
   /* Edge information */
 
-  short int    n_ef;    /*!< local number of edges in on this face (= n_vf) */
-  cs_lnum_t   *e_ids;   /*!< edge ids (in the mesh or cellwise numbering) */
-  cs_quant_t  *edge;    /*!< edge quantities (xe, length and unit vector) */
-  double      *tef;     /*!< area of the triangle of base e and apex xf */
+  short int   n_ef;  /*!< local number of edges in on this face (= n_vf) */
+  cs_lnum_t  *e_ids; /*!< edge ids (in the mesh or cellwise numbering) */
+  cs_quant_t *edge;  /*!< edge quantities (xe, length and unit vector) */
+  double     *tef;   /*!< area of the triangle of base e and apex xf */
 
   /* Local e2v connectivity: size 2*n_ec (allocated to 2*n_max_ebyf) */
 
-  short int   *e2v_ids;  /*!< face-wise edge -> vertices connectivity */
+  short int *e2v_ids; /*!< face-wise edge -> vertices connectivity */
+
+#ifdef __cplusplus
+
+#endif
 
 } cs_face_mesh_t;
 
@@ -317,24 +488,23 @@ typedef struct {
 */
 
 typedef struct {
+  short int n_max_vbyf; /* Max number of vertices belonging to a face
+                           (= n_max_ebyf) */
 
-  short int    n_max_vbyf;  /* Max number of vertices belonging to a face
-                               (= n_max_ebyf) */
-
-  cs_lnum_t    c_id;    /* id of related cell in the mesh numbering */
-  short int    f;       /* id of the face in the cell mesh numbering */
+  cs_lnum_t c_id; /* id of related cell in the mesh numbering */
+  short int f;    /* id of the face in the cell mesh numbering */
 
   /* Vertex information */
 
-  short int    n_vf;    /* local number of vertices on this face */
-  short int   *v_ids;   /* vertex ids in the cellwise numbering */
-  double      *wvf;     /* weights related to each vertex */
+  short int  n_vf;  /* local number of vertices on this face */
+  short int *v_ids; /* vertex ids in the cellwise numbering */
+  double    *wvf;   /* weights related to each vertex */
 
   /* Edge information */
 
-  short int    n_ef;    /* local number of edges on this face (= n_vf) */
-  short int   *e_ids;   /* edge ids in the cellwise numbering */
-  double      *tef;     /* area of the triangle of base e and apex xf */
+  short int  n_ef;  /* local number of edges on this face (= n_vf) */
+  short int *e_ids; /* edge ids in the cellwise numbering */
+  double    *tef;   /* area of the triangle of base e and apex xf */
 
 } cs_face_mesh_light_t;
 
@@ -344,9 +514,9 @@ typedef struct {
 
 /* Pointer of pointers to global structures */
 
-extern cs_cell_mesh_t        **cs_cdo_local_cell_meshes;
-extern cs_face_mesh_t        **cs_cdo_local_face_meshes;
-extern cs_face_mesh_light_t  **cs_cdo_local_face_meshes_light;
+extern cs_cell_mesh_t       **cs_cdo_local_cell_meshes;
+extern cs_face_mesh_t       **cs_cdo_local_face_meshes;
+extern cs_face_mesh_light_t **cs_cdo_local_face_meshes_light;
 
 /*============================================================================
  * Static inline function prototypes
@@ -354,139 +524,8 @@ extern cs_face_mesh_light_t  **cs_cdo_local_face_meshes_light;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Check if at least one entity of the cell belongs to the boundary
- *
- * \param[in] cb   pointer to a cs_cell_builder_t structure
- *
- * \return true or false
- */
-/*----------------------------------------------------------------------------*/
-
-static inline bool
-cs_cell_has_boundary_elements(const cs_cell_builder_t  *const cb)
-{
-  if ((cb->cell_flag & (CS_FLAG_BOUNDARY_CELL_BY_FACE   |
-                        CS_FLAG_BOUNDARY_CELL_BY_VERTEX |
-                        CS_FLAG_BOUNDARY_CELL_BY_EDGE)) > 0)
-    return true;
-  else
-    return false;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Retrieve the vertex id in the cellwise numbering associated to the
- *          given vertex id in the mesh numbering
- *
- * \param[in]       v_id    vertex id in the mesh numbering
- * \param[in]       cm      pointer to a cs_cell_mesh_t structure
- *
- * \return the vertex id in the cell numbering or -1 if not found
- */
-/*----------------------------------------------------------------------------*/
-
-static inline short int
-cs_cell_mesh_get_v(const cs_lnum_t              v_id,
-                   const cs_cell_mesh_t  *const cm)
-{
-  if (cm == NULL)
-    return -1;
-  for (short int v = 0; v < cm->n_vc; v++)
-    if (cm->v_ids[v] == v_id)
-      return v;
-  return -1;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Retrieve the edge id in the cellwise numbering associated to the
- *          given edge id in the mesh numbering
- *
- * \param[in]       e_id    vertex id in the mesh numbering
- * \param[in]       cm      pointer to a cs_cell_mesh_t structure
- *
- * \return the edge id in the cell numbering or -1 if not found
- */
-/*----------------------------------------------------------------------------*/
-
-static inline short int
-cs_cell_mesh_get_e(const cs_lnum_t              e_id,
-                   const cs_cell_mesh_t  *const cm)
-{
-  if (cm == NULL)
-    return -1;
-  for (short int e = 0; e < cm->n_ec; e++)
-    if (cm->e_ids[e] == e_id)
-      return e;
-  return -1;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Retrieve the face id in the cellwise numbering associated to the
- *          given face id in the mesh numbering
- *
- * \param[in]       f_id    face id in the mesh numbering
- * \param[in]       cm      pointer to a cs_cell_mesh_t structure
- *
- * \return the face id in the cell numbering or -1 if not found
- */
-/*----------------------------------------------------------------------------*/
-
-static inline short int
-cs_cell_mesh_get_f(const cs_lnum_t              f_id,
-                   const cs_cell_mesh_t  *const cm)
-{
-  if (cm == NULL)
-    return -1;
-  for (short int f = 0; f < cm->n_fc; f++)
-    if (cm->f_ids[f] == f_id)
-      return f;
-  return -1;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Retrieve the list of vertices attached to a face
- *
- * \param[in]       f       face id in the cell numbering
- * \param[in]       cm      pointer to a cs_cell_mesh_t structure
- * \param[in, out]  n_vf    pointer of pointer to a cellwise view of the mesh
- * \param[in, out]  v_ids   list of vertex ids in the cell numbering
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_cell_mesh_get_f2v(short int                    f,
-                     const cs_cell_mesh_t        *cm,
-                     short int                   *n_vf,
-                     short int                   *v_ids)
-{
-  /* Reset */
-
-  *n_vf = 0;
-  for (short int v = 0; v < cm->n_vc; v++) v_ids[v] = -1;
-
-  /* Tag vertices belonging to the current face f */
-
-  for (short int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
-
-    const short int  *e2v = cm->e2v_ids + 2*cm->f2e_ids[i];
-    v_ids[e2v[0]] = 1;
-    v_ids[e2v[1]] = 1;
-
-  } /* Loop on face edges */
-
-  for (short int v = 0; v < cm->n_vc; v++) {
-    if (v_ids[v] > 0)
-      v_ids[*n_vf] = v, *n_vf += 1;
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the next three vertices in a row from a face to edge connectivity
- *         and a edge to vertex connectivity
+ * \brief  Get the next three vertices in a row from a face to edge
+ * connectivity and a edge to vertex connectivity
  *
  * \param[in]       f2e_ids     face-edge connectivity
  * \param[in]       e2v_ids     edge-vertex connectivity
@@ -497,41 +536,20 @@ cs_cell_mesh_get_f2v(short int                    f,
 /*----------------------------------------------------------------------------*/
 
 static inline void
-cs_cell_mesh_get_next_3_vertices(const short int   *f2e_ids,
-                                 const short int   *e2v_ids,
-                                 short int         *v0,
-                                 short int         *v1,
-                                 short int         *v2)
+cs_cell_mesh_get_next_3_vertices(const short int *f2e_ids,
+                                 const short int *e2v_ids,
+                                 short int       *v0,
+                                 short int       *v1,
+                                 short int       *v2)
 {
   const short int e0  = f2e_ids[0];
   const short int e1  = f2e_ids[1];
-  const short int tmp = e2v_ids[2*e1];
+  const short int tmp = e2v_ids[2 * e1];
 
-  *v0 = e2v_ids[2*e0];
-  *v1 = e2v_ids[2*e0+1];
-  *v2 = ((tmp != *v0) && (tmp != *v1)) ? tmp : e2v_ids[2*e1+1];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Is the face a boundary one ?
- *
- * \param[in]  cm     pointer to a \ref cs_cell_mesh_t structure
- * \param[in]  f      id of the face in the cellwise numbering
- *
- * \return true if this is a boundary face otherwise false
- */
-/*----------------------------------------------------------------------------*/
-
-static inline bool
-cs_cell_mesh_is_boundary_face(const cs_cell_mesh_t    *cm,
-                              const short int          f)
-{
-  if (cm->f_ids[f] - cm->bface_shift > -1)
-    return true;
-  else
-    return false;
-}
+  *v0 = e2v_ids[2 * e0];
+  *v1 = e2v_ids[2 * e0 + 1];
+  *v2 = ((tmp != *v0) && (tmp != *v1)) ? tmp : e2v_ids[2 * e1 + 1];
+};
 
 /*============================================================================
  * Public function prototypes
@@ -581,20 +599,6 @@ cs_cell_sys_create(int    n_max_dofbyc,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Reset all members related to BC and some other ones in a
- *         \ref cs_cell_sys_t structure
- *
- * \param[in]      n_fbyc     number of faces in a cell
- * \param[in, out] csys       pointer to the \ref cs_cell_sys_t struct to reset
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cell_sys_reset(int              n_fbyc,
-                  cs_cell_sys_t   *csys);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Free a \ref cs_cell_sys_t structure
  *
  * \param[in, out]  p_csys   pointer of pointer to a \ref cs_cell_sys_t struct.
@@ -603,19 +607,6 @@ cs_cell_sys_reset(int              n_fbyc,
 
 void
 cs_cell_sys_free(cs_cell_sys_t     **p_csys);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Dump a local system for debugging purpose
- *
- * \param[in]       msg     associated message to print
- * \param[in]       csys    pointer to a \ref cs_cell_sys_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cell_sys_dump(const char              msg[],
-                 const cs_cell_sys_t    *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -664,28 +655,6 @@ cs_cell_mesh_create(const cs_cdo_connect_t   *connect);
 
 cs_cell_mesh_t *
 cs_cdo_local_get_cell_mesh(int    mesh_id);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Initialize to invalid values a cs_cell_mesh_t structure
- *
- * \param[in]  cm         pointer to a cs_cell_mesh_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cell_mesh_reset(cs_cell_mesh_t   *cm);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Dump a cs_cell_mesh_t structure
- *
- * \param[in]    cm    pointer to a cs_cell_mesh_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cell_mesh_dump(const cs_cell_mesh_t     *cm);
 
 /*----------------------------------------------------------------------------*/
 /*!

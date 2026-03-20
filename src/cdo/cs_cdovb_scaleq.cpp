@@ -200,7 +200,7 @@ _svb_init_cell_system(const cs_cell_mesh_t          *cm,
 
   /* Initialize the local system */
 
-  cs_cell_sys_reset(cm->n_fc, csys); /* Generic part */
+  csys->reset(cm->n_fc); /* Generic part */
 
   csys->mat->init(cm->n_vc);
 
@@ -264,7 +264,7 @@ _svb_init_cell_system(const cs_cell_mesh_t          *cm,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
   if (cs_dbg_cw_test(eqp, cm, csys))
-    cs_cell_mesh_dump(cm);
+    cm->dump();
 #endif
 }
 
@@ -458,7 +458,7 @@ _svb_conv_diff_reac(const cs_equation_param_t   *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump("\n>> Cell system after diffusion", csys);
+      csys->dump("\n>> Cell system after diffusion");
 #endif
   }
 
@@ -496,7 +496,7 @@ _svb_conv_diff_reac(const cs_equation_param_t   *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump("\n>> Cell system after advection", csys);
+      csys->dump("\n>> Cell system after advection");
 #endif
   }
 
@@ -507,7 +507,7 @@ _svb_conv_diff_reac(const cs_equation_param_t   *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump("\n>> Cell system after reaction", csys);
+      csys->dump("\n>> Cell system after reaction");
 #endif
   }
 }
@@ -575,7 +575,7 @@ _svb_apply_weak_bc(const cs_equation_param_t     *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump("\n>> Cell system after BC treatment", csys);
+      csys->dump("\n>> Cell system after BC treatment");
 #endif
   } /* Cell with at least one boundary face */
 }
@@ -1176,13 +1176,11 @@ _svb_enforce_values(const cs_equation_param_t     *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump("\n>> Cell system after the internal enforcement",
-                       csys);
+      csys->dump("\n>> Cell system after the internal enforcement");
 #endif
   }
 
-  if (cs_cell_has_boundary_elements(cb) && csys->has_dirichlet) {
-
+  if (cb->has_boundary_elements() && csys->has_dirichlet) {
     /* Boundary element (through either vertices or faces) */
 
     if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC ||
@@ -1194,7 +1192,7 @@ _svb_enforce_values(const cs_equation_param_t     *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_cell_sys_dump("\n>> Cell system after strong BC treatment", csys);
+        csys->dump("\n>> Cell system after strong BC treatment");
 #endif
     }
   }
@@ -2359,7 +2357,7 @@ cs_cdovb_scaleq_build_block_implicit(int                        t_id,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
   if (cs_dbg_cw_test(eqp, cm, csys))
-    cs_cell_sys_dump("\n>> Cell system after time", csys);
+    csys->dump("\n>> Cell system after time");
 #endif
 
   /* Apply the Neumann BCs on the diagonal block. The diagonal should have the
@@ -2386,7 +2384,7 @@ cs_cdovb_scaleq_build_block_implicit(int                        t_id,
 
   /* Algebraic enforcement of Dirichlet boundary values if needed */
 
-  if (cs_cell_has_boundary_elements(cb) && csys->has_dirichlet) {
+  if (cb->has_boundary_elements() && csys->has_dirichlet) {
     /* csys is updated inside (matrix and rhs) */
 
     if (diag_block)
@@ -2404,7 +2402,7 @@ cs_cdovb_scaleq_build_block_implicit(int                        t_id,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, csys))
-    cs_cell_sys_dump(">> (END Vb scaleq system) Cell system matrix", csys);
+    csys->dump(">> (END Vb scaleq system) Cell system matrix");
 #endif
 
   /* End build */
@@ -2554,7 +2552,7 @@ cs_cdovb_scaleq_build_block_implicit_incr(int                        t_id,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
   if (cs_dbg_cw_test(eqp, cm, csys))
-    cs_cell_sys_dump("\n>> Cell system after time", csys);
+    csys->dump("\n>> Cell system after time");
 #endif
 
   // Boundary conditions
@@ -2574,7 +2572,7 @@ cs_cdovb_scaleq_build_block_implicit_incr(int                        t_id,
     }
   }
 
-  if (cs_cell_has_boundary_elements(cb) && diag_block)
+  if (cb->has_boundary_elements() && diag_block)
     cs_equation_bc_update_for_increment(csys);
 
   /* Compute a norm of the RHS for the normalization of the residual of the
@@ -2586,7 +2584,7 @@ cs_cdovb_scaleq_build_block_implicit_incr(int                        t_id,
 
   /* Algebraic enforcement of Dirichlet boundary values if needed */
 
-  if (cs_cell_has_boundary_elements(cb) && csys->has_dirichlet) {
+  if (cb->has_boundary_elements() && csys->has_dirichlet) {
     /* csys is updated inside (matrix and rhs) */
 
     if (diag_block)
@@ -2597,7 +2595,7 @@ cs_cdovb_scaleq_build_block_implicit_incr(int                        t_id,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, csys)) {
     bft_printf("\n\n Equation <<%s>>\n", eqp->name);
-    cs_cell_sys_dump(">> (END Vb scaleq system) Cell system matrix", csys);
+    csys->dump(">> (END Vb scaleq system) Cell system matrix");
   }
 #endif
 
@@ -2891,7 +2889,7 @@ cs_cdovb_scaleq_solve_steady_state(bool                       cur2prev,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
+        csys->dump(">> (FINAL) Cell system matrix");
 #endif
 
       /* Compute a cellwise norm of the RHS for the normalization of the
@@ -3153,7 +3151,7 @@ cs_cdovb_scaleq_solve_steady_state_incr(bool                       cur2prev,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
+        csys->dump(">> (FINAL) Cell system matrix");
 #endif
 
       /* Compute a cellwise norm of the RHS for the normalization of the
@@ -3405,7 +3403,7 @@ cs_cdovb_scaleq_solve_implicit(bool                       cur2prev,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_cell_sys_dump("\n>> Cell system after time", csys);
+        csys->dump("\n>> Cell system after time");
 #endif
 
       /* Enforce values if needed (internal or Dirichlet) */
@@ -3414,7 +3412,7 @@ cs_cdovb_scaleq_solve_implicit(bool                       cur2prev,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
+        csys->dump(">> (FINAL) Cell system matrix");
 #endif
 
       /* Compute a norm of the RHS for the normalization of the residual
@@ -3665,7 +3663,7 @@ cs_cdovb_scaleq_solve_implicit_incr(bool                       cur2prev,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_cell_sys_dump("\n>> Cell system before time", csys);
+        csys->dump("\n>> Cell system before time");
 #endif
 
       /* Unsteady term + time scheme
@@ -3687,7 +3685,7 @@ cs_cdovb_scaleq_solve_implicit_incr(bool                       cur2prev,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_cell_sys_dump("\n>> Cell system after time", csys);
+        csys->dump("\n>> Cell system after time");
 #endif
 
       /* Apply boundary conditions (those which are weakly enforced) */
@@ -3700,7 +3698,7 @@ cs_cdovb_scaleq_solve_implicit_incr(bool                       cur2prev,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
+        csys->dump(">> (FINAL) Cell system matrix");
 #endif
 
       /* Compute a norm of the RHS for the normalization of the residual
@@ -4003,7 +4001,7 @@ cs_cdovb_scaleq_solve_theta(bool                       cur2prev,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_cell_sys_dump("\n>> Cell system after adding time", csys);
+        csys->dump("\n>> Cell system after adding time");
 #endif
 
       /* Enforce values if needed (internal or Dirichlet) */
@@ -4012,7 +4010,7 @@ cs_cdovb_scaleq_solve_theta(bool                       cur2prev,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
+        csys->dump(">> (FINAL) Cell system matrix");
 #endif
 
       /* Compute a norm of the RHS for the normalization of the residual
@@ -4912,7 +4910,7 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t           *values,
 
           cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
 
-          const short int f = cs_cell_mesh_get_f(f_id, cm);
+          const short int f = cm->get_face(f_id);
 
           if (face_bc->flag[bf_id] == CS_CDO_BC_NEUMANN)
             cs_equation_compute_neumann_svb(cb->t_bc_eval,
@@ -4942,7 +4940,7 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t           *values,
 
           cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
 
-          const short int f      = cs_cell_mesh_get_f(f_id, cm);
+          const short int f      = cm->get_face(f_id);
           const cs_real_t f_area = quant->b_face_surf[bf_id];
 
           /* Robin BC expression: -K du/dn = alpha*(u - u0) + beta */
@@ -4974,11 +4972,11 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t           *values,
 
           cs_cell_mesh_build(c_id, msh_flag | add_flag, connect, quant, cm);
 
-          const short int f = cs_cell_mesh_get_f(f_id, cm);
+          const short int f = cm->get_face(f_id);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
           if (cs_dbg_cw_test(eqp, cm, nullptr))
-            cs_cell_mesh_dump(cm);
+            cm->dump();
 #endif
           if (!eqb->diff_pty_uniform)
             cs_hodge_evaluate_property_cw(cm, t_eval, 0, hodge);
@@ -5309,7 +5307,7 @@ cs_cdovb_scaleq_diff_flux_in_cells(const cs_real_t           *values,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 3
       if (cs_dbg_cw_test(eqp, cm, nullptr))
-        cs_cell_mesh_dump(cm);
+        cm->dump();
 #endif
 
       if (!uniform_pty) /* cell_flag is always set to 0 */
@@ -5467,7 +5465,7 @@ cs_cdovb_scaleq_diff_flux_dfaces(const cs_real_t           *values,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 2
       if (cs_dbg_cw_test(eqp, cm, nullptr))
-        cs_cell_mesh_dump(cm);
+        cm->dump();
 #endif
 
       if (!uniform_pty) /* cell_flag is always set to 0 */

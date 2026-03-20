@@ -603,7 +603,7 @@ _cdovb_scalsys_build_implicit(bool                           cur2prev,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALSYS_DBG > 1
           if (csys->c_id == 0) {
             cs_log_printf(CS_LOG_DEFAULT, "%s: %s\n", __func__, eqp->name);
-            cs_cell_sys_dump("\n>> Cell system (Block system)", csys);
+            csys->dump("\n>> Cell system (Block system)");
           }
 #endif
 
@@ -735,7 +735,7 @@ _cdovb_scalsys_build_implicit_incr(bool                     cur2prev,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALSYS_DBG > 1
           if (csys->c_id == 0) {
             cs_log_printf(CS_LOG_DEFAULT, "%s: %s\n", __func__, eqp->name);
-            cs_cell_sys_dump("\n>> Cell system (Block system)", csys);
+            csys->dump("\n>> Cell system (Block system)");
           }
 #endif
 

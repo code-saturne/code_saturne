@@ -569,7 +569,7 @@ _mono_apply_bc(const cs_macfb_monolithic_t *sc,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_MACFB_MONOLITHIC_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump(">> Cell system matrix after BC enforcement", csys);
+      csys->dump(">> Cell system matrix after BC enforcement");
 #endif
   }
 }
@@ -782,7 +782,7 @@ _steady_build(const cs_navsto_param_t *nsp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_MACFB_MONOLITHIC_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_cell_sys_dump("\n>> MAC-fb mono: (FINAL) Cell system matrix", csys);
+        csys->dump("\n>> MAC-fb mono: (FINAL) Cell system matrix");
 #endif
 
       /* ************************* ASSEMBLY PROCESS ************************* */
@@ -913,7 +913,7 @@ _implicit_euler_build(const cs_navsto_param_t *nsp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_MACFB_MONOLITHIC_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_cell_sys_dump("\n>> MAC-fb mono: (FINAL) Cell system matrix", csys);
+        csys->dump("\n>> MAC-fb mono: (FINAL) Cell system matrix");
 #endif
 
       /* ************************* ASSEMBLY PROCESS ************************* */

@@ -159,7 +159,7 @@ _eb_init_cell_system(const cs_cell_mesh_t                *cm,
 
   /* Initialize the local system */
 
-  cs_cell_sys_reset(cm->n_fc, csys); /* Generic part */
+  csys->reset(cm->n_fc); /* Generic part */
 
   csys->mat->init(csys->n_dofs);
 
@@ -200,7 +200,8 @@ _eb_init_cell_system(const cs_cell_mesh_t                *cm,
   }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOEB_VECTEQ_DBG > 2
-  if (cs_dbg_cw_test(eqp, cm, csys)) cs_cell_mesh_dump(cm);
+  if (cs_dbg_cw_test(eqp, cm, csys))
+    cm->dump();
 #endif
 }
 
@@ -279,7 +280,7 @@ _eb_curlcurl(const cs_equation_param_t     *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOEB_VECTEQ_DBG > 1
   if (cs_dbg_cw_test(eqp, cm, csys))
-    cs_cell_sys_dump("\n>> Cell system after curlcurl", csys);
+    csys->dump("\n>> Cell system after curlcurl");
 #endif
 }
 
@@ -322,7 +323,7 @@ _eb_enforce_values(const cs_equation_param_t     *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOEB_VECTEQ_DBG > 1
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_cell_sys_dump("\n>> Cell system after strong BC treatment", csys);
+        csys->dump("\n>> Cell system after strong BC treatment");
 #endif
     }
 
@@ -336,7 +337,7 @@ _eb_enforce_values(const cs_equation_param_t     *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOEB_VECTEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump("\n>> Cell system after the internal enforcement", csys);
+      csys->dump("\n>> Cell system after the internal enforcement");
 #endif
   }
 }
@@ -1063,7 +1064,7 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOEB_VECTEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
+        csys->dump(">> (FINAL) Cell system matrix");
 #endif
 
       /* ASSEMBLY PROCESS

@@ -240,7 +240,7 @@ _vvb_init_cell_system(const cs_cell_mesh_t           *cm,
   /* Cell-wise view of the linear system to build:
      Initialize the local system */
 
-  cs_cell_sys_reset(cm->n_fc, csys); /* Generic part */
+  csys->reset(cm->n_fc); /* Generic part */
 
   cs_sdm_block33_init(csys->mat, cm->n_vc, cm->n_vc);
 
@@ -299,7 +299,8 @@ _vvb_init_cell_system(const cs_cell_mesh_t           *cm,
   }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 2
-  if (cs_dbg_cw_test(eqp, cm, csys)) cs_cell_mesh_dump(cm);
+  if (cs_dbg_cw_test(eqp, cm, csys))
+    cm->dump();
 #endif
 }
 
@@ -367,7 +368,7 @@ _vvb_conv_diff_reac(const cs_equation_param_t     *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump("\n>> Cell system after adding diffusion", csys);
+      csys->dump("\n>> Cell system after adding diffusion");
 #endif
   }
 
@@ -446,7 +447,7 @@ _vvb_conv_diff_reac(const cs_equation_param_t     *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump("\n>> Cell system after adding reaction", csys);
+      csys->dump("\n>> Cell system after adding reaction");
 #endif
   } /* Reaction term */
 }
@@ -505,7 +506,7 @@ _vvb_apply_weak_bc(const cs_equation_param_t     *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump("\n>> Cell system after BC weak treatment", csys);
+      csys->dump("\n>> Cell system after BC weak treatment");
 #endif
   } /* Cell with at least one boundary face */
 }
@@ -538,8 +539,7 @@ _vvb_enforce_values(const cs_equation_param_t     *eqp,
                     cs_cell_sys_t                 *csys,
                     cs_cell_builder_t             *cb)
 {
-  if (cs_cell_has_boundary_elements(cb) && csys->has_dirichlet) {
-
+  if (cb->has_boundary_elements() && csys->has_dirichlet) {
     /* Boundary element (through either vertices or faces) */
 
     if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC ||
@@ -551,7 +551,7 @@ _vvb_enforce_values(const cs_equation_param_t     *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 2
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_cell_sys_dump("\n>> Cell system after strong BC treatment", csys);
+        csys->dump("\n>> Cell system after strong BC treatment");
 #endif
     }
   }
@@ -564,8 +564,7 @@ _vvb_enforce_values(const cs_equation_param_t     *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 2
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump("\n>> Cell system after the internal enforcement",
-                       csys);
+      csys->dump("\n>> Cell system after the internal enforcement");
 #endif
   }
 }
@@ -1464,7 +1463,7 @@ cs_cdovb_vecteq_solve_steady_state(bool                       cur2prev,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
+        csys->dump(">> (FINAL) Cell system matrix");
 #endif
 
       /* Compute a norm of the RHS for the normalization of the residual
