@@ -540,6 +540,7 @@ class domain(base_domain):
         self.compile_cxxflags = None
         self.compile_fcflags = None
         self.compile_nvccflags = None
+        self.compile_hipccflags = None
         self.compile_libs = None
 
         # Adaptation using HOMARD
@@ -1034,6 +1035,7 @@ class domain(base_domain):
                                                  self.compile_cxxflags,
                                                  self.compile_fcflags,
                                                  self.compile_nvccflags,
+                                                 self.compile_hipccflags,
                                                  self.compile_libs,
                                                  keep_going=True,
                                                  stdout=log,

@@ -145,11 +145,12 @@ class config:
         d = config_dict.get('compilers', {})
 
         self.compilers = {}
-        for k in ('cc', 'cxx', 'fc', 'nvcc', 'ld'):
+        for k in ('cc', 'cxx', 'fc', 'nvcc', 'hipcc', 'ld'):
             self.compilers[k] = d.get(k, None)
 
         self.flags = {}
         for k in ('cflags', 'cxxflags', 'fcflags', 'nvccflags', 'nvccflags_cpp',
+                  'hipccflags', 'hipccflags_cpp',
                   'cflags_shared', 'cxxflags_shared', 'fcflags_shared'):
             self.flags[k] = d.get(k, '')
 

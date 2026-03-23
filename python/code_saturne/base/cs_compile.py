@@ -107,7 +107,7 @@ def process_cmd_line(argv, pkg):
             parser.add_option("--hipccflags", dest="hipccflags", type="string",
                               metavar="<hipccflags>",
                               help="additional HIP compiler flags")
-            parser.set_defaults(nvccflags=None)
+            parser.set_defaults(hipccflags=None)
 
     parser.add_option("--libs", dest="libs", type="string",
                       metavar="<libs>",
@@ -155,7 +155,7 @@ def process_cmd_line(argv, pkg):
 
     return options.test_mode, options.force_link, options.keep_going, \
            src_dir, dest_dir, options.version, options.cflags, \
-           options.cxxflags, options.fcflags, nvccflags, options.libs
+           options.cxxflags, options.fcflags, nvccflags, hipccflags, options.libs
 
 #-------------------------------------------------------------------------------
 
@@ -391,6 +391,7 @@ class cs_compile(object):
     def compile_src(self, base_name=None, src_list=None,
                     opt_cflags=None, opt_cxxflags=None, opt_fcflags=None,
                     opt_nvccflags=None,
+                    opt_hipccflags=None,
                     keep_going=False,
                     stdout=sys.stdout, stderr=sys.stderr):
         """
@@ -661,7 +662,8 @@ class cs_compile(object):
 
     def compile_and_link(self, base_name, srcdir, destdir=None, src_list=None,
                          opt_cflags=None, opt_cxxflags=None, opt_fcflags=None,
-                         opt_nvccflags=None, opt_libs=None, force_link=False,
+                         opt_nvccflags=None, opt_hipccflags=None,
+                         opt_libs=None, force_link=False,
                          keep_going=False,
                          stdout=sys.stdout, stderr=sys.stderr):
         """
@@ -699,6 +701,7 @@ class cs_compile(object):
         retval, obj_list = self.compile_src(base_name, src_list,
                                             opt_cflags, opt_cxxflags,
                                             opt_fcflags, opt_nvccflags,
+                                            opt_hipccflags,
                                             keep_going, stdout, stderr)
 
         if retval == 0 and (force_link or len(obj_list)) > 0:
@@ -722,7 +725,7 @@ class cs_compile(object):
 
 def compile_and_link(pkg, base_name, srcdir, destdir=None,
                      opt_cflags=None, opt_cxxflags=None, opt_fcflags=None,
-                     opt_nvccflags=None,
+                     opt_nvccflags=None, opt_hipccflags=None, 
                      opt_libs=None, force_link=False, keep_going=False,
                      stdout=sys.stdout, stderr=sys.stderr):
     """
@@ -737,6 +740,7 @@ def compile_and_link(pkg, base_name, srcdir, destdir=None,
                                  opt_cxxflags=opt_cxxflags,
                                  opt_fcflags=opt_fcflags,
                                  opt_nvccflags=opt_nvccflags,
+                                 opt_hipccflags=opt_hipccflags,
                                  opt_libs=opt_libs,
                                  force_link=force_link,
                                  keep_going=keep_going,
@@ -760,7 +764,7 @@ def main(argv, pkg):
         from cs_exec_environment import set_modules, source_rcfile
 
     test_mode, force_link, keep_going, src_dir, dest_dir, version, \
-        cflags, cxxflags, fcflags, nvccflags, libs = process_cmd_line(argv, pkg)
+        cflags, cxxflags, fcflags, nvccflags, hipccflags, libs = process_cmd_line(argv, pkg)
 
     if (version):
         pkg = pkg.get_alternate_version(version)
@@ -779,6 +783,7 @@ def main(argv, pkg):
                                opt_cxxflags=cxxflags,
                                opt_fcflags=fcflags,
                                opt_nvccflags=nvccflags,
+                               opt_hipccflags=hipccflags,
                                opt_libs=libs,
                                force_link=force_link,
                                keep_going=keep_going)
