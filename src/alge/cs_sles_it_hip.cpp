@@ -107,6 +107,7 @@ __device__ static void __forceinline__
 _warp_reduce_sum(volatile T  *stmp,
                  size_t       tid)
 {
+  if (block_size >= 128) stmp[tid] += stmp[tid + 64];
   if (block_size >= 64) stmp[tid] += stmp[tid + 32];
   if (block_size >= 32) stmp[tid] += stmp[tid + 16];
   if (block_size >= 16) stmp[tid] += stmp[tid +  8];
