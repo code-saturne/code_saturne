@@ -139,7 +139,7 @@ typedef struct {
 
 } cs_quant_t;
 
-typedef struct { /* Specific mesh quantities */
+typedef struct cs_cdo_quantities_t { /* Specific mesh quantities */
 
   /* Keep the information about the removal of boundary faces in case of 2D
      computations */

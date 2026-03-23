@@ -142,7 +142,7 @@ typedef struct {
 /* Field descriptor */
 /*------------------*/
 
-typedef struct {
+typedef struct cs_field_t {
 
   const char             *name;         /* Canonical name */
 

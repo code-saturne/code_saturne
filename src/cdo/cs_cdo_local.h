@@ -54,7 +54,7 @@
  *  build the local systems in a multi-threaded environnement.
  */
 
-typedef struct {
+typedef struct cs_cell_builder_t {
 
   /*!
    * @name Evaluation times
@@ -165,7 +165,7 @@ typedef struct {
  *  This structure belongs to one thread and only.
  */
 
-typedef struct {
+typedef struct cs_cell_sys_t {
 
   cs_lnum_t   c_id;     /*!< cell id  */
 
@@ -248,7 +248,7 @@ typedef struct {
  *  The cell-wise numbering is based on the c2v, c2e and c2f connectivity.
  */
 
-typedef struct {
+typedef struct cs_cell_mesh_t {
 
   cs_eflag_t     flag;    /*!< indicate which quantities have to be computed */
   fvm_element_t  type;    /*!< type of element related to this cell */

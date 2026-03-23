@@ -61,7 +61,7 @@ typedef enum {
 /* time step descriptor */
 /*----------------------*/
 
-typedef struct {
+typedef struct cs_time_step_t {
 
   int           is_variable;  /* 0 if time step is fixed in time,
                                  1 if the time step is variable. */
