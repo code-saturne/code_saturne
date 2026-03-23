@@ -96,6 +96,10 @@
 #include "alge/cs_benchmark_cuda.h"
 #endif
 
+#if defined(HAVE_HIP)
+#include "alge/cs_benchmark_hip.h"
+#endif
+
 /*----------------------------------------------------------------------------*/
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -526,6 +530,51 @@ _sub_matrix_vector_test(int                  n_time_runs,
   cs_log_printf(CS_LOG_PERFORMANCE,
                 "\n"
                 "Matrix.vector product, extradiagonal part, CUDA variant\n"
+                "---------------------\n");
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                "  (calls: %d;  test sum: %12.5f)\n",
+                n_time_runs, test_sum);
+
+  _print_stats(n_time_runs, n_ops, n_ops_glob, wt_r0);
+
+#endif /* (HAVE_CUDA) */
+
+  /* Matrix.vector product, HIP variant */
+
+#if (HAVE_HIP)
+
+  for (cs_lnum_t jj = 0; jj < n_cells_ext; jj++)
+    y[jj] = 0.0;
+
+  const cs_lnum_2_t *restrict d_face_cell
+    = cs_get_device_ptr_const(face_cell);
+  const cs_real_t *restrict d_xa
+    = cs_get_device_ptr_const(xa);
+  const cs_real_t *restrict d_x
+    = cs_get_device_ptr_const(x);
+  cs_real_t *restrict d_y
+    = (cs_real_t *)cs_get_device_ptr((void *)y);
+
+  //cs_sync_h2d(face_cell);
+  cs_sync_h2d(xa);
+  cs_sync_h2d(x);
+  cs_sync_h2d(y);
+
+  test_sum = 0.0;
+  wt0 = std::chrono::high_resolution_clock::now();
+  for (int run_id = 0; run_id < n_time_runs; run_id++) {
+    cs_mat_vec_exdiag_native_sym_hip(n_faces, d_face_cell, d_xa, d_x, d_y);
+    test_sum += y[n_cells-1]*test_sum_mult;
+  }
+  wt1 = std::chrono::high_resolution_clock::now();
+  wt_r0_m =  std::chrono::duration_cast
+            <std::chrono::microseconds>(wt1 - wt0);
+  wt_r0 = wt_r0_m.count() * 1.e-6 / n_time_runs;
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                "\n"
+                "Matrix.vector product, extradiagonal part, HIP variant\n"
                 "---------------------\n");
 
   cs_log_printf(CS_LOG_PERFORMANCE,

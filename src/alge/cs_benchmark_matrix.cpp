@@ -404,6 +404,24 @@ _variant_build_list(int                             n_fill_types,
                    m_variant);
 
 #endif /* defined(HAVE_CUDA) */
+
+#if defined(HAVE_HIP)
+
+    if (cs_get_device_id() > -1)
+      _variant_add("Native, HIP",
+                   nullptr,
+                   CS_MATRIX_NATIVE,
+                   n_fill_types,
+                   fill_types,
+                   op_flag_ae,
+                   "hip",
+                   nullptr,
+                   nullptr,
+                   n_variants,
+                   &n_variants_max,
+                   m_variant);
+
+#endif /* defined(HAVE_CUDA) */
   }
 
   if (type_filter[CS_MATRIX_CSR]) {
@@ -463,6 +481,24 @@ _variant_build_list(int                             n_fill_types,
                    fill_types,
                    op_flag_ae,
                    "cuda",
+                   nullptr,
+                   nullptr,
+                   n_variants,
+                   &n_variants_max,
+                   m_variant);
+
+#endif /* defined(HAVE_CUDA) */
+
+#if defined(HAVE_HIP)
+
+    if (cs_get_device_id() > -1)
+      _variant_add("CSR, HIP",
+                   nullptr,
+                   CS_MATRIX_CSR,
+                   n_fill_types,
+                   fill_types,
+                   op_flag_ae,
+                   "hip",
                    nullptr,
                    nullptr,
                    n_variants,
@@ -549,6 +585,24 @@ _variant_build_list(int                             n_fill_types,
                    op_flag_ae,
                    "cuda",
                    "cuda",
+                   nullptr,
+                   n_variants,
+                   &n_variants_max,
+                   m_variant);
+
+#endif /* defined(HAVE_CUDA) */
+
+#if defined(HAVE_HIP)
+
+    if (cs_get_device_id() > -1)
+      _variant_add("MSR, HIP",
+                   nullptr,
+                   CS_MATRIX_MSR,
+                   n_fill_types,
+                   fill_types,
+                   op_flag_ae,
+                   "hip",
+                   "hip",
                    nullptr,
                    n_variants,
                    &n_variants_max,
