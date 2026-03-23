@@ -71,6 +71,7 @@ cc: @CC@
 cxx: @CXX@
 fc: @FC@
 nvcc: @NVCC@
+hipcc: @HIPCC@
 ld: @CS_LD@
 
 cc_version: @cs_cc_version_string@
@@ -78,12 +79,16 @@ cxx_version: @cs_cxx_version_string@
 fc_version: @cs_fc_version_string@
 nvcc_version: @cs_nvcc_version_string@
 nvcc_hc_version: @cs_nvcc_hc_version_string@
+hipcc_version: @cs_nvcc_version_string@
+hipcc_hc_version: @cs_nvcc_hc_version_string@
 
 cflags: @CFLAGS@ @CFLAGS_DBG@ @CFLAGS_OPT@
 cxxflags: @CXXFLAGS@ @CXXFLAGS_SYCL@ @CXXFLAGS_DBG@ @CXXFLAGS_OPT@
 fcflags: @FCFLAGS@ @FCFLAGS_DBG@ @FCFLAGS_OPT@
 nvccflags: @NVCCFLAGS@ @NVCCFLAGS_DBG@ @NVCCFLAGS_OPT@
 nvccflags_cpp: @NVCCFLAGS_CPP@
+hipccflags: @HIPCCFLAGS@ @HIPCCFLAGS_DBG@ @HIPCCFLAGS_OPT@
+hipccflags_cpp: @HIPCCFLAGS_CPP@
 
 cflags_shared: @CFLAGS_SHARED@
 cxxflags_shared: @CXXFLAGS_SHARED@
