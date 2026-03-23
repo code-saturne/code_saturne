@@ -110,6 +110,7 @@ user_CFLAGS_HOT=$CFLAGS_HOT
 user_CXXFLAGS=$CXXFLAGS
 user_FCFLAGS=$FCFLAGS
 user_NVCCFLAGS_HC=$NVCCFLAGS_HC
+user_HIPCCFLAGS_HC=$HIPCCFLAGS_HC
 user_SYCLFLAGS=$SYCLFLAGS
 user_LDFLAGS=$LDFLAGS
 user_LIBS=$LIBS
@@ -292,6 +293,8 @@ if test "x$auto_flags" = "xyes" ; then
   AC_SUBST(cs_fc_version_string, [${cs_ac_fc_version}])
   AC_SUBST(cs_nvcc_version_string, [${cs_ac_nvcc_version}])
   AC_SUBST(cs_nvcc_hc_version_string, [${cs_nvcc_hc_version}])
+  AC_SUBST(cs_hipcc_version_string, [${cs_ac_hipcc_version}])
+  AC_SUBST(cs_hipcc_hc_version_string, [${cs_hipcc_hc_version}])
 
   if test "x$cs_ac_cc_version" != "x" -a "x$cs_ac_cc_version" != "xunknown" ; then
     AC_DEFINE_UNQUOTED([CS_CC_VERSION_STRING], ["$cs_ac_cc_version"], [C compiler version string])
@@ -307,6 +310,12 @@ if test "x$auto_flags" = "xyes" ; then
   fi
   if test "x$cs_ac_nvcc_hc_version" != "x" ; then
     AC_DEFINE_UNQUOTED([CS_NVCC_HC_VERSION_STRING], ["$cs_ac_nvcc_hc_version"], [CUDA host compiler version])
+  fi
+  if test "x$cs_ac_hipcc_version" != "x" ; then
+    AC_DEFINE_UNQUOTED([CS_HIPCC_VERSION_STRING], ["$cs_ac_hipcc_version"], [HIP compiler version string])
+  fi
+  if test "x$cs_ac_hipcc_hc_version" != "x" ; then
+    AC_DEFINE_UNQUOTED([CS_HIPCC_HC_VERSION_STRING], ["$cs_ac_hipcc_hc_version"], [HIP host compiler version])
   fi
 
 fi
@@ -698,9 +707,19 @@ if test "x$auto_flags" = "xyes" ; then
     AC_SUBST(NVCCFLAGS_CPP)
   fi
 
+  if test "$cs_enable_hip_cpp" = "yes"; then
+    if test "x$cs_have_openmp" = "xyes" ; then
+      HIPCCFLAGS_CPP="$hipccflags_default_cpp $hipccflags_default_cpp_omp $user_HIPCCFLAGS_HC"
+    else
+      HIPCCFLAGS_CPP="$hipccflags_default_cpp $user_HIPCCFLAGS_HC"
+    fi
+    AC_SUBST(HIPCCFLAGS_CPP)
+  fi
+
 fi
 
 AC_ARG_VAR([NVCCFLAGS_HC], [Additional host compiler flags for CUDA nvcc])
+AC_ARG_VAR([HIPCCFLAGS_HC], [Additional host compiler flags for HIP hipcc])
 
 AM_CONDITIONAL([HAVE_ACCEL], [test "$cs_have_accel" = "yes"])
 AM_CONDITIONAL([HAVE_OPENMP_TARGET], [test "$cs_have_openmp_target" = "yes"])
