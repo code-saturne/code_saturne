@@ -38,13 +38,15 @@ Master (not on release branches yet)
 
 ### Architectural changes:
 
-- Add a HIP, AMD GPUs, backend to code_saturne
+- Drop C language compatibility for user-defined functions.
+
+- Add a HIP, AMD GPUs, backend to code_saturne.
 
 - Make Fortran compiler an optional prerequisite
   * Fortran dependency is now only required for Atmo module, and more
     specifically for the Polyphemus chemistry functions.
   * Disabling fortran at configure step is done using the "--disable-fortran"
-    configure flag
+    configure flag.
   * If fortran is disable in configure step, the corresponding code is not
     compiled, and if any Fortran functions are needed from the atmospherical
     flows module, based on the user defined parameters, then the code exits
