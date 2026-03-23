@@ -42,9 +42,10 @@
 #endif
 
 /* Use graph capture ? */
-#if defined(__HIP_DEVICE_COMPILE__)
-#define HAVE_GRAPH_CAPTURE 1
-#endif
+//#if defined(__HIP_DEVICE_COMPILE__)
+//#define HAVE_GRAPH_CAPTURE 1
+//#endif
+#define HAVE_GRAPH_CAPTURE 0
 
 #include <cfloat>
 
