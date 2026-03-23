@@ -136,6 +136,7 @@ frontend: @cs_have_frontend@
 mpi: @cs_have_mpi@
 openmp: @cs_have_openmp@
 cuda: @cs_have_cuda@
+hip: @cs_have_hip@
 long-gnum: @cs_have_long_gnum@
 build_os: @build_os@
 
