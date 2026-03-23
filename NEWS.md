@@ -3,6 +3,8 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Remove isolated faces if present before mesh extrusion.
+
 - FMI: send return output values from solver to controller at end
   of time step, rather than beginning of next one.
 
@@ -21,10 +23,14 @@ Release 9.0.3 (unreleased)
       volume of controller communication logging.
   * Fix coupling for parallel (MPI) runs.
 
-- CDO : Ensure that post-processing is done for final iteration when coupled.
+- CDO: Ensure that post-processing is done for final iteration when coupled.
   The final iteration post-processing could, potentially, not be done when
   the computation stop is imposed by either another instance (coupling) or
   the wall time limit test.
+
+### User changes:
+
+- Increase maximum number of scalars (nscamx) to 1500.
 
 Release 9.0.2 (2026-01-30)
 --------------------------
