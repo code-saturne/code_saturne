@@ -79,7 +79,9 @@ cs_blas_hip_warp_reduce_sum(volatile T  *stmp,
                              size_t       tid)
 {
   if (stride == 1) {
-
+#if CS_HIP_WARP_SIZE == 64
+    if (blockSize >= 128) stmp[tid] += stmp[tid + 64];
+#endif
     if (blockSize >= 64) stmp[tid] += stmp[tid + 32];
     if (blockSize >= 32) stmp[tid] += stmp[tid + 16];
     if (blockSize >= 16) stmp[tid] += stmp[tid +  8];
@@ -90,6 +92,13 @@ cs_blas_hip_warp_reduce_sum(volatile T  *stmp,
   }
   else {
 
+#if CS_HIP_WARP_SIZE == 64
+    if (blockSize >= 128) {
+      #pragma unroll
+      for (size_t i = 0; i < stride; i++)
+        stmp[tid*stride + i] += stmp[(tid + 64)*stride + i];
+    }
+#endif
     if (blockSize >= 64) {
       #pragma unroll
       for (size_t i = 0; i < stride; i++)
@@ -172,6 +181,7 @@ cs_blas_hip_block_reduce_sum(T       *stmp,
         stmp[tid] += stmp[tid + 128];
       } __syncthreads();
     }
+#if CS_HIP_WARP_SIZE == 32
     if (blockSize >= 128) {
       if (tid <  64) {
         stmp[tid] += stmp[tid +  64];
@@ -181,6 +191,11 @@ cs_blas_hip_block_reduce_sum(T       *stmp,
     if (tid < 32) {
       cs_blas_hip_warp_reduce_sum<blockSize, stride>(stmp, tid);
     }
+#else
+    if (tid < 64) {
+      cs_blas_hip_warp_reduce_sum<blockSize, stride>(stmp, tid);
+    }
+#endif
 
     // Output: b_res for this block
 
@@ -213,6 +228,7 @@ cs_blas_hip_block_reduce_sum(T       *stmp,
           stmp[tid*stride + i] += stmp[(tid + 128)*stride + i];
       } __syncthreads();
     }
+#if CS_HIP_WARP_SIZE == 64
     if (blockSize >= 128) {
       if (tid <  64) {
         #pragma unroll
@@ -223,6 +239,10 @@ cs_blas_hip_block_reduce_sum(T       *stmp,
 
     if (tid < 32)
       cs_blas_hip_warp_reduce_sum<blockSize, stride>(stmp, tid);
+#else
+    if (tid < 64)
+      cs_blas_hip_warp_reduce_sum<blockSize, stride>(stmp, tid);
+#endif
 
     // Output: b_res for this block
 
@@ -276,7 +296,7 @@ cs_blas_hip_reduce_single_block(size_t   n,
       __syncthreads();
     }
 
-    if (tid < 32) cs_blas_hip_warp_reduce_sum<blockSize, stride>(sdata, tid);
+    if (tid < CS_HIP_WARP_SIZE) cs_blas_hip_warp_reduce_sum<blockSize, stride>(sdata, tid);
     if (tid == 0) *g_odata = sdata[0];
 
   }
@@ -309,7 +329,7 @@ cs_blas_hip_reduce_single_block(size_t   n,
       __syncthreads();
     }
 
-    if (tid < 32) cs_blas_hip_warp_reduce_sum<blockSize, stride>(sdata, tid);
+    if (tid < CS_HIP_WARP_SIZE) cs_blas_hip_warp_reduce_sum<blockSize, stride>(sdata, tid);
     if (tid == 0) {
       #pragma unroll
       for (size_t k = 0; k < stride; k++)

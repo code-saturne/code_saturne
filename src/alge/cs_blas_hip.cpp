@@ -470,7 +470,7 @@ cs_blas_hip_dot(cs_lnum_t        n,
 /*----------------------------------------------------------------------------*/
 
 double
-cs_blas_cublas_asum(cs_lnum_t        n,
+cs_blas_hipblas_asum(cs_lnum_t        n,
                     const cs_real_t  x[])
 {
   double dot = 0.;
@@ -509,7 +509,7 @@ cs_blas_cublas_asum(cs_lnum_t        n,
 /*----------------------------------------------------------------------------*/
 
 double
-cs_blas_cublas_dot(cs_lnum_t        n,
+cs_blas_hipblas_dot(cs_lnum_t        n,
                    const cs_real_t  x[],
                    const cs_real_t  y[])
 {
