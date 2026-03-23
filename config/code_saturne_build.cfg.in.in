@@ -79,8 +79,8 @@ cxx_version: @cs_cxx_version_string@
 fc_version: @cs_fc_version_string@
 nvcc_version: @cs_nvcc_version_string@
 nvcc_hc_version: @cs_nvcc_hc_version_string@
-hipcc_version: @cs_nvcc_version_string@
-hipcc_hc_version: @cs_nvcc_hc_version_string@
+hipcc_version: @cs_hipcc_version_string@
+hipcc_hc_version: @cs_hipcc_hc_version_string@
 
 cflags: @CFLAGS@ @CFLAGS_DBG@ @CFLAGS_OPT@
 cxxflags: @CXXFLAGS@ @CXXFLAGS_SYCL@ @CXXFLAGS_DBG@ @CXXFLAGS_OPT@
