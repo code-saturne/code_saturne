@@ -3,6 +3,9 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Fix incorrect restart handling of some variables (e.g. density) when
+  reading the auxiliary restart file is disabled.
+
 - Remove isolated faces if present before mesh extrusion.
 
 - FMI: send return output values from solver to controller at end
