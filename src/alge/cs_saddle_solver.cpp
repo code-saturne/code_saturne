@@ -346,70 +346,67 @@ _block_pcd_dot_product(cs_saddle_solver_t  *solver,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the norm of a vector in a scatter view which is split into
- *        the x1 and x2 part.
+ * \brief Compute the norm of a vector in a scatter view that is split into
+ *        two parts as the related saddle-point system.
  *        The synchronization is performed during the process.
  *
- * \param[in] solver  pointer to a saddle_point solver structure
- * \param[in] x       vector used for the norm computation
+ * \param[in] n1    number of DoFs in x1 (scatter view)
+ * \param[in] x1    array associated with the first block (scatter view)
+ * \param[in] n2    number of DoFs in x2 (scatter view)
+ * \param[in] x2    array associated with the second block (scatter view)
+ * \param[in] rset  associated range set structure
  *
- * \return the value of the euclidean norm of x
+ * \return the value of the euclidean norm of x = [x1; x2]
  */
 /*----------------------------------------------------------------------------*/
 
 static double
-_norm(cs_saddle_solver_t  *solver,
-      cs_real_t           *x)
+_norm(cs_lnum_t             n1,
+      cs_real_t            *x1,
+      cs_lnum_t             n2,
+      cs_real_t            *x2,
+      const cs_range_set_t *rset)
 {
-  double  n_square_value = 0;
+  double  square_sum = 0;
 
-  if (x == nullptr)
-    return n_square_value;
-  assert(solver != nullptr);
-
-  cs_saddle_solver_context_block_pcd_t *ctx =
-    static_cast<cs_saddle_solver_context_block_pcd_t *>(solver->context);
-  cs_real_t  *x1 = x, *x2 = x + ctx->b11_max_size;
-
-  const cs_range_set_t  *rset = ctx->b11_range_set;
+  if (x1 == nullptr || x2 == nullptr)
+    return square_sum;
 
   /* Norm for the x1 DoFs (those shared among processes) */
 
-  double  _nx1_square = 0;
+  double  sum1 = 0;
 
   if (rset != nullptr) { /* Switch to a gather view to avoid summing an element
-                         twice */
+                            twice */
 
     cs_range_set_gather(rset,
-                        CS_REAL_TYPE,/* type */
-                        1,           /* stride (treated as scalar up to now) */
-                        x1,          /* in: size = n_sles_scatter_elts */
-                        x1);         /* out: size = n_sles_gather_elts */
+                        CS_REAL_TYPE, // type
+                        1,            // stride (treated as scalar up to now)
+                        x1,           // in: size = n_sles_scatter_elts
+                        x1);          // out: size = n_sles_gather_elts
 
-    /* n_elts[0] corresponds to the number of element in the gather view */
+    // n_elts[0] corresponds to the number of element in the gather view
 
-    _nx1_square = cs_dot_xx(rset->n_elts[0], x1);
+    sum1 = cs_dot_xx(rset->n_elts[0], x1);
 
-    cs_range_set_scatter(rset,
-                         CS_REAL_TYPE,
-                         1,
-                         x1,
-                         x1);
+    // Move back to the scatter view
+
+    cs_range_set_scatter(rset, CS_REAL_TYPE, 1, x1, x1);
 
   }
   else
-    _nx1_square = cs_dot_xx(solver->n1_scatter_dofs, x1);
+    sum1 = cs_dot_xx(n1, x1);
 
   /* Norm for the x2 DoFs (not shared so that there is no need to
-     synchronize) */
+     switch into a gather view) */
 
-  double  _nx2_square = cs_dot_xx(solver->n2_scatter_dofs, x2);
+  double  sum2 = cs_dot_xx(n2, x2);
 
-  n_square_value = _nx1_square + _nx2_square;
-  cs_parall_sum(1, CS_DOUBLE, &n_square_value);
-  assert(n_square_value > -DBL_MIN);
+  square_sum = sum1 + sum2;
+  cs_parall_sum(1, CS_DOUBLE, &square_sum);
+  assert(square_sum > -DBL_MIN);
 
-  return sqrt(n_square_value);
+  return sqrt(square_sum);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -536,13 +533,13 @@ _m11_vector_multiply_allocated(const cs_range_set_t  *rset,
 
   cs_range_set_gather(rset,
                       CS_REAL_TYPE, 1, /* type and stride */
-                      x1,             /* in:  size=n1_scatter_elts */
-                      x1);            /* out: size=n1_gather_elts */
+                      x1,              /* in:  size=n1_scatter_elts */
+                      x1);             /* out: size=n1_gather_elts */
 
   cs_range_set_gather(rset,
                       CS_REAL_TYPE, 1, /* type and stride */
-                      m11x1,          /* in:  size=n1_scatter_elts */
-                      m11x1);         /* out: size=n1_gather_elts */
+                      m11x1,           /* in:  size=n1_scatter_elts */
+                      m11x1);          /* out: size=n1_gather_elts */
 
   cs_matrix_vector_multiply(m11, x1, m11x1);
 
@@ -555,249 +552,6 @@ _m11_vector_multiply_allocated(const cs_range_set_t  *rset,
   cs_range_set_scatter(rset,
                        CS_REAL_TYPE, 1, /* type and stride */
                        m11x1, m11x1);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the residual of the saddle-point system
- *        res1 = rhs1 - M11.x1 - M12.x2 (residual for the first block)
- *        res2 = rhs2 - M21.x1          (residual for the second block)
- *
- *        The matrix m11 is represented with 1 block.
- *        The stride is equal to 1 or 3 for the operator m21_unassembled
- *
- * \param[in]      solver  saddle-point solver structure
- * \param[in, out] x1      array for the first part
- * \param[in, out] x2      array for the second part
- * \param[in, out] res     resulting residual vector
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_compute_residual(cs_saddle_solver_t *solver,
-                  cs_real_t          *x1,
-                  cs_real_t          *x2,
-                  cs_real_t          *res)
-{
-  assert(res != nullptr && x1 != nullptr && x2 != nullptr && solver != nullptr);
-  assert(solver->n1_dofs_by_elt == 1 || solver->n1_dofs_by_elt == 3);
-  assert(solver->n2_dofs_by_elt == 1);
-
-  const cs_real_t *rhs1 = solver->system_helper->rhs_array[0];
-  const cs_real_t *rhs2 = solver->system_helper->rhs_array[1];
-  const cs_saddle_solver_context_block_pcd_t *ctx =
-    static_cast<const cs_saddle_solver_context_block_pcd_t *>(solver->context);
-  const cs_range_set_t                       *rset = ctx->b11_range_set;
-
-  cs_real_t *res1 = res, *res2 = res + ctx->b11_max_size;
-
-  cs_array_real_fill_zero(ctx->b11_max_size, res1);
-
-  /* Two parts:
-   * a) res1 = rhs1 - M11.x1 - M12.x2
-   * b) res2 = rhs2 - M21.x1
-   */
-
-  cs_real_t *m12x2 = nullptr;
-  CS_MALLOC(m12x2, solver->n1_scatter_dofs, cs_real_t);
-  cs_array_real_fill_zero(solver->n1_scatter_dofs, m12x2);
-
-  const cs_adjacency_t *adj = ctx->m21_adj;
-
-  assert(solver->n2_elts == adj->n_elts);
-
-  if (solver->n1_dofs_by_elt == 3) {
-#pragma omp parallel for if (solver->n2_elts > CS_THR_MIN)
-    for (cs_lnum_t i2 = 0; i2 < solver->n2_elts; i2++) {
-
-      const cs_real_t _x2    = x2[i2];
-      cs_real_t       _m21x1 = 0.;
-      for (cs_lnum_t j2 = adj->idx[i2]; j2 < adj->idx[i2 + 1]; j2++) {
-
-        const cs_real_t *m21_vals = ctx->m21_val + 3 * j2;
-        const cs_lnum_t  shift    = 3 * adj->ids[j2];
-        assert(shift < solver->n1_scatter_dofs);
-
-        _m21x1 += cs_math_3_dot_product(m21_vals, x1 + shift);
-
-        cs_real_t *_m12x2 = m12x2 + shift;
-#pragma omp critical
-        {
-          _m12x2[0] += m21_vals[0] * _x2;
-          _m12x2[1] += m21_vals[1] * _x2;
-          _m12x2[2] += m21_vals[2] * _x2;
-        }
-
-      } /* Loop on x1 elements associated to a given x2 element */
-
-      res2[i2] = rhs2[i2] - _m21x1;
-
-    } /* Loop on x2 elements */
-  }
-  else if (solver->n1_dofs_by_elt == 1) {
-#pragma omp parallel for if (solver->n2_elts > CS_THR_MIN)
-    for (cs_lnum_t i2 = 0; i2 < solver->n2_elts; i2++) {
-
-      const cs_real_t _x2    = x2[i2];
-      cs_real_t       _m21x1 = 0.;
-      for (cs_lnum_t j2 = adj->idx[i2]; j2 < adj->idx[i2 + 1]; j2++) {
-
-        assert(adj->ids[j2] < solver->n1_scatter_dofs);
-
-        _m21x1 += ctx->m21_val[j2] * x1[adj->ids[j2]];
-
-#pragma omp critical
-        {
-          m12x2[adj->ids[j2]] += ctx->m21_val[j2] * _x2;
-        }
-
-      } /* Loop on x1 elements associated to a given x2 element */
-
-      res2[i2] = rhs2[i2] - _m21x1;
-
-    } /* Loop on x2 elements */
-  }
-  else {
-    bft_error(__FILE__,
-              __LINE__,
-              0,
-              "%s: Stride %d is not supported.\n",
-              __func__,
-              solver->n1_dofs_by_elt);
-  }
-
-  if (rset->ifs != nullptr)
-    cs_interface_set_sum(rset->ifs,
-                         solver->n1_scatter_dofs,
-                         1,
-                         false,
-                         CS_REAL_TYPE, /* stride, interlaced */
-                         m12x2);
-
-  _m11_vector_multiply_allocated(rset, ctx->m11, x1, res1);
-
-#pragma omp parallel for if (solver->n1_scatter_dofs > CS_THR_MIN)
-  for (cs_lnum_t i1 = 0; i1 < solver->n1_scatter_dofs; i1++)
-    res1[i1] = rhs1[i1] - res1[i1] - m12x2[i1];
-
-  CS_FREE(m12x2);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Compute the matrix-vector operation divided into two parts
- *        matvec1 = M11.vec1 + M12.vec2
- *        matvec2 = M21.vec1
- *
- *        The stride is equal to 1 or 3 for the operator m21_unassembled
- *
- * \param[in]      solver  pointer to a saddl-point solver structure
- * \param[in, out] vec     array to multiply
- * \param[out]     matvec  resulting vector
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_matvec_product(cs_saddle_solver_t *solver, cs_real_t *vec, cs_real_t *matvec)
-{
-  assert(vec != nullptr && matvec != nullptr && solver != nullptr);
-  assert(solver->n1_dofs_by_elt == 1 || solver->n1_dofs_by_elt == 3);
-  assert(solver->n2_dofs_by_elt == 1);
-
-  cs_saddle_solver_context_block_pcd_t *ctx =
-    static_cast<cs_saddle_solver_context_block_pcd_t *>(solver->context);
-
-  cs_real_t *v1 = vec, *v2 = vec + ctx->b11_max_size;
-  cs_real_t *mv1 = matvec, *mv2 = matvec + ctx->b11_max_size;
-
-  const cs_range_set_t *rset = ctx->b11_range_set;
-  const cs_adjacency_t *adj  = ctx->m21_adj;
-
-  /* The resulting array is composed of two parts:
-   * a) mv1 = M11.v1 + M12.v2
-   * b) mv2 = M21.v1
-   */
-
-  /* 1) M12.v2 and M21.v1 */
-
-  cs_real_t *m12v2 = nullptr;
-  CS_MALLOC(m12v2, solver->n1_scatter_dofs, cs_real_t);
-  cs_array_real_fill_zero(solver->n1_scatter_dofs, m12v2);
-
-  assert(solver->n2_scatter_dofs == adj->n_elts);
-
-  if (solver->n1_dofs_by_elt == 3) {
-#pragma omp parallel for if (adj->n_elts > CS_THR_MIN)
-    for (cs_lnum_t i2 = 0; i2 < adj->n_elts; i2++) {
-
-      const cs_real_t _v2    = v2[i2];
-      cs_real_t       _m21v1 = 0.;
-      for (cs_lnum_t j2 = adj->idx[i2]; j2 < adj->idx[i2 + 1]; j2++) {
-
-        const cs_lnum_t  shift    = 3 * adj->ids[j2];
-        const cs_real_t *m21_vals = ctx->m21_val + 3 * j2;
-
-        _m21v1 += cs_math_3_dot_product(m21_vals, v1 + shift);
-
-        cs_real_t *_m12v2 = m12v2 + shift;
-#pragma omp critical
-        {
-          _m12v2[0] += m21_vals[0] * _v2;
-          _m12v2[1] += m21_vals[1] * _v2;
-          _m12v2[2] += m21_vals[2] * _v2;
-        }
-
-      } /* Loop on x1 elements associated to a given x2 element */
-
-      mv2[i2] = _m21v1;
-
-    } /* Loop on x2 elements */
-  }
-  else if (solver->n1_dofs_by_elt == 1) {
-#pragma omp parallel for if (adj->n_elts > CS_THR_MIN)
-    for (cs_lnum_t i2 = 0; i2 < adj->n_elts; i2++) {
-
-      const cs_real_t _v2    = v2[i2];
-      cs_real_t       _m21v1 = 0.;
-      for (cs_lnum_t j2 = adj->idx[i2]; j2 < adj->idx[i2 + 1]; j2++) {
-
-        _m21v1 += ctx->m21_val[j2] * v1[adj->ids[j2]];
-
-#pragma omp critical
-        {
-          m12v2[adj->ids[j2]] += ctx->m21_val[j2] * _v2;
-        }
-
-      } /* Loop on x1 elements associated to a given x2 element */
-
-      mv2[i2] = _m21v1;
-
-    } /* Loop on x2 elements */
-  }
-  else {
-    bft_error(__FILE__,
-              __LINE__,
-              0,
-              "%s: Stride %d is not supported.\n",
-              __func__,
-              solver->n1_dofs_by_elt);
-  }
-
-  if (rset->ifs != nullptr)
-    cs_interface_set_sum(rset->ifs,
-                         solver->n1_scatter_dofs,
-                         1,
-                         false,
-                         CS_REAL_TYPE, /* stride, interlaced */
-                         m12v2);
-
-  _m11_vector_multiply_allocated(rset, ctx->m11, v1, mv1);
-
-#pragma omp parallel for if (solver->n1_scatter_dofs > CS_THR_MIN)
-  for (cs_lnum_t i1 = 0; i1 < solver->n1_scatter_dofs; i1++)
-    mv1[i1] += m12v2[i1];
-
-  CS_FREE(m12v2);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3890,7 +3644,9 @@ cs_saddle_solver_minres(cs_saddle_solver_t  *solver,
 
   cs_iter_algo_update_inner_iters(algo, last_inner_iter);
 
-  double  residual_norm = _norm(solver, v); /* ||v|| */
+  double  residual_norm = _norm(n1_dofs, v,
+                                n2_dofs, v + ctx->b11_max_size,
+                                rset);
 
   cs_iter_algo_update_residual(algo, residual_norm);
   cs_iter_algo_set_normalization(algo, residual_norm);
@@ -4040,7 +3796,9 @@ cs_saddle_solver_minres(cs_saddle_solver_t  *solver,
                               v,                      /* v1 */
                               v + ctx->b11_max_size); /* v2 */
 
-    residual_norm = _norm(solver, v); /* ||v|| */
+    residual_norm = _norm(n1_dofs, v,
+                          n2_dofs, v + ctx->b11_max_size,
+                          rset);
 
     cs_log_printf(CS_LOG_DEFAULT,
                   " %s: Residual norm at exit= %6.4e in %d iterations\n",
@@ -4144,9 +3902,13 @@ cs_saddle_solver_gcr(cs_saddle_solver_t  *solver,
 
   /* Compute the first residual: r = b - M.x */
 
-  _compute_residual(solver, x1, x2, r);
+  cs_saddle_system_residual(sh, x1, x2,
+                            r,                       // res1
+                            r + ctx->b11_max_size);  // res2
 
-  double residual_norm = _norm(solver, r); /* ||r|| */
+  double residual_norm = _norm(n1_dofs, r,
+                               n2_dofs, r + ctx->b11_max_size,
+                               rset);
 
   cs_iter_algo_update_residual(algo, residual_norm);
   cs_iter_algo_set_normalization(algo, residual_norm);
@@ -4160,7 +3922,9 @@ cs_saddle_solver_gcr(cs_saddle_solver_t  *solver,
   while (cvg_status == CS_SLES_ITERATING) {
 
     if (cs_iter_algo_get_n_iter(algo) > 0)
-      _compute_residual(solver, x1, x2, r);
+      cs_saddle_system_residual(sh, x1, x2,
+                                r,                       // res1
+                                r + ctx->b11_max_size);  // res2
 
     for (int j = 0; j < _restart; j++) {
 
@@ -4178,7 +3942,9 @@ cs_saddle_solver_gcr(cs_saddle_solver_t  *solver,
        */
 
       cs_real_t *cj = csave + j*ssys_size;
-      _matvec_product(solver, zj, cj);
+      cs_saddle_system_matvec(sh,
+                              zj, zj + ctx->b11_max_size,
+                              cj, cj + ctx->b11_max_size);
 
       for (int i = 0; i < j; i++) {
 
@@ -4198,7 +3964,10 @@ cs_saddle_solver_gcr(cs_saddle_solver_t  *solver,
       /* Case i == j
        * gamma_jj = sqrt(<cj, cj>) */
 
-      const double  gamma_jj = _norm(solver, cj);
+      const double gamma_jj = _norm(n1_dofs, cj,
+                                    n2_dofs, cj + ctx->b11_max_size,
+                                    rset);
+
       gamma[_get_id(restart, j,j)] = gamma_jj;
 
       /* Compute cj = 1/gamma_jj * cj  */
@@ -4216,7 +3985,9 @@ cs_saddle_solver_gcr(cs_saddle_solver_t  *solver,
 
       /* New residual norm */
 
-      residual_norm = _norm(solver, r); /* ||r|| */
+      residual_norm = _norm(n1_dofs, r,
+                            n2_dofs, r + ctx->b11_max_size,
+                            rset);
 
       cs_iter_algo_update_residual(algo, residual_norm);
 
@@ -4270,8 +4041,12 @@ cs_saddle_solver_gcr(cs_saddle_solver_t  *solver,
 
     /* Compute the real residual norm at exit */
 
-    _compute_residual(solver, x1, x2, r);
-    residual_norm = _norm(solver, r); /* ||r|| */
+    cs_saddle_system_residual(sh, x1, x2,
+                              r,                       // res1
+                              r + ctx->b11_max_size);  // res2
+    residual_norm = _norm(n1_dofs, r,
+                          n2_dofs, r + ctx->b11_max_size,
+                          rset);
     cs_log_printf(CS_LOG_DEFAULT,
                   " %s: Residual norm at exit= %6.4e in %d iterations\n",
                   __func__, residual_norm, cs_iter_algo_get_n_iter(algo));
