@@ -47,6 +47,9 @@
 extern "C" {
   void
   main_cuda(void);
+
+  void
+  main_hip(void);
 }
 
 #if defined(HAVE_MPI)
@@ -209,6 +212,10 @@ main (int argc, char *argv[])
 
 #if defined(HAVE_CUDA)
   main_cuda();
+#endif
+
+#if defined(HAVE_HIP)
+  main_hip();
 #endif
 
   /* Finalize */

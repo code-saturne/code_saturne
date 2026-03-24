@@ -136,12 +136,12 @@ check_PROGRAMS += cs_gpu_test
 endif
 
 LDFLAGS_CS_TESTS = $(CGNS_LDFLAGS) $(MED_LDFLAGS) $(HDF5_LDFLAGS) \
-	$(LDFLAGS_PLE) $(MPI_LDFLAGS) $(CUDA_LDFLAGS)
+	$(LDFLAGS_PLE) $(MPI_LDFLAGS) $(CUDA_LDFLAGS) $(HIP_LDFLAGS)
 
 LDADD_CS_TESTS = \
 	$(top_builddir)/src/base/libcscore.a \
 	$(top_builddir)/src/bft/libbft.a \
-	$(PLE_LIBS) $(MPI_LIBS) $(CUDA_LIBS) -lm
+	$(PLE_LIBS) $(MPI_LIBS) $(CUDA_LIBS) $(HIP_LIBS) -lm
 
 cs_all_to_all_test_SOURCES  = cs_all_to_all_test.cpp
 cs_all_to_all_test_LDFLAGS  = $(LDFLAGS_CS_TESTS)
@@ -215,7 +215,11 @@ if HAVE_CUDA
   cs_gpu_test_SOURCES += cs_gpu_cuda_test.cu
 endif
 
-cs_gpu_test$(EXEEXT): cs_gpu_test.cpp cs_gpu_cuda_test.cu
+if HAVE_HIP
+  cs_gpu_test_SOURCES += cs_gpu_hip_test.cpp
+endif
+
+cs_gpu_test$(EXEEXT): cs_gpu_test.cpp cs_gpu_cuda_test.cu cs_gpu_hip_test.cpp
 	@list=; for p in ${cs_gpu_test_SOURCES}; do \
 	  list="$$list $(top_srcdir)/tests/$$p"; \
 	done; \
@@ -306,6 +310,11 @@ $(top_srcdir)/tests/graphics
 clean-local:
 	-rm -f $(BUILT_SOURCES)
 	-rm -rf .deps
+
+if HAVE_HIP_CPP
+.cpp.$(OBJEXT):
+	$(HIPCC) $(DEFS) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I$(top_builddir)/src/base $(HIPCCFLAGS) $(HIPCCFLAGS_DBG) $(HIPCCFLAGS_OPT) $(HIPCCFLAGS_CPP) -c -o $@ $<
+endif
 
 if HAVE_CUDA_CPP
 .cpp.$(OBJEXT):
