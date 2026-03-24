@@ -1210,9 +1210,10 @@ cs_cdo_diffusion_sfb_weak_dirichlet(const cs_equation_param_t      *eqp,
 
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
-      /* chi * \meas{f} / h_f  */
+      /* chi * \meas{f} / h_fc
+         where h_fc is the height of the pyramid of basis f and apex x_c */
 
-      const cs_real_t pcoef = chi * sqrt(cm->face[f].meas);
+      const cs_real_t pcoef = chi * cm->face[f].meas / cm->hfc[f];
 
       /* Diagonal term */
 
@@ -1317,9 +1318,10 @@ cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
 
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
-      /* chi * \meas{f} / h_f  */
+      /* chi * \meas{f} / h_fc
+         where h_fc is the height of the pyramid of basis f and apex x_c */
 
-      const cs_real_t pcoef = chi * sqrt(cm->face[f].meas);
+      const cs_real_t pcoef = chi * cm->face[f].meas / cm->hfc[f];
 
       /* Diagonal term */
 
@@ -1457,9 +1459,10 @@ cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
-      /* chi * \meas{f} / h_f  */
+      /* chi * \meas{f} / h_fc
+         where h_fc is the height of the pyramid of basis f and apex x_c */
 
-      const cs_real_t pcoef = chi * sqrt(cm->face[f].meas);
+      const cs_real_t pcoef = chi * cm->face[f].meas / cm->hfc[f];
 
       /* Diagonal term */
 
@@ -1592,9 +1595,10 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
-      /* chi * \meas{f} / h_f  */
+      /* chi * \meas{f} / h_fc
+         where h_fc is the height of the pyramid of basis f and apex x_c */
 
-      const cs_real_t pcoef = chi * sqrt(cm->face[f].meas);
+      const cs_real_t pcoef = chi * cm->face[f].meas / cm->hfc[f];
 
       /* Diagonal term */
 
@@ -1724,9 +1728,10 @@ cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
           ni[1]*ni[0], ni[1]*ni[1], ni[1]*ni[2],
           ni[2]*ni[0], ni[2]*ni[1], ni[2]*ni[2]};
 
-      /* chi * \meas{f} / h_f  */
+      /* chi * \meas{f} / h_fc
+         where h_fc is the height of the pyramid of basis f and apex x_c */
 
-      const cs_real_t  pcoef = chi * sqrt(pfq.meas);
+      const cs_real_t pcoef = chi * pfq.meas / cm->hfc[fi];
 
       for (short int xj = 0; xj < n_dofs; xj++) {
 
