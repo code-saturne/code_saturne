@@ -3425,7 +3425,10 @@ cs_restart_finalize_fields_read_status(void)
 int
 cs_restart_get_field_read_status(const int f_id)
 {
-  int retval = (_fields_read_status[f_id] < CS_RESTART_N_RESTART_FILES) ? 1 : 0;
+  int retval = 0;
+  if (   _fields_read_status[f_id] > CS_RESTART_DISABLED
+      && _fields_read_status[f_id] < CS_RESTART_N_RESTART_FILES)
+     retval = 1;
 
   return retval;
 }
