@@ -2232,9 +2232,22 @@ cs_lagr_solve_time_step(const int         itypfb[],
                                  extra_i[phase_id].anisotropic_euler);
 
         if (cs_glob_lagr_model->cs_used == 0)
+          cs_lagr_aux_mean_fluid_quantities(0,
+                                            phase_id,
+                                            extra_i[phase_id].lagr_time,
+                                            extra_i[phase_id].grad_pr,
+                                            extra_i[phase_id].grad_vel,
+                                            extra_i[phase_id].grad_tempf,
+                                            extra_i[phase_id].anisotropic_lagr_time,
+                                            extra_i[phase_id].anisotropic_bx,
+                                            extra_i[phase_id].grad_lagr_time_r_et,
+                                            extra_i[phase_id].grad_lagr_time,
+                                            extra_i[phase_id].anisotropic_euler);
+          /*
           compute_particle_covariance_gradient(phase_id,
                                                extra_i[phase_id].grad_cov_skp,
                                                extra_i[phase_id].grad_cov_sk);
+                                               */
       }
     }
 
