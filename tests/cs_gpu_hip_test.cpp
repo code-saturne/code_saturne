@@ -82,7 +82,7 @@ warpReduceSum
 )
 {
   for (int offset = CS_HIP_WARP_SIZE / 2; offset > 0; offset /= 2) {
-    mySum += __shfl_down_sync(mask, mySum, offset);
+    mySum += __shfl_down(mySum, offset);
   }
   return mySum;
 }
@@ -200,8 +200,8 @@ _dot_xy_stage_1_of_2_wr(cs_lnum_t    n,
 
   cs_lnum_t tid = threadIdx.x;
   size_t grid_size = blockDim.x*gridDim.x;
-  unsigned int mask_length = (blockSize & 31);  // 31 = warp_size-1
-  mask_length = (mask_length > 0) ? (32 - mask_length) : mask_length;
+  unsigned int mask_length = (blockSize & (CS_HIP_WARP_SIZE-1));  // 31 = warp_size-1
+  mask_length = (mask_length > 0) ? (CS_HIP_WARP_SIZE - mask_length) : mask_length;
   const unsigned int mask = (0xffffffff) >> mask_length;
 
   cs_real_t t_sum = 0;
@@ -224,7 +224,7 @@ _dot_xy_stage_1_of_2_wr(cs_lnum_t    n,
 
   const unsigned int shmem_extent
     = (blockSize / CS_HIP_WARP_SIZE) > 0 ? (blockSize / CS_HIP_WARP_SIZE) : 1;
-  const unsigned int ballot_result = __ballot_sync(mask, tid < shmem_extent);
+  const unsigned int ballot_result = __ballot(tid < shmem_extent);
   if (tid < shmem_extent) {
     t_sum = stmp[tid];
     // Reduce final warp using shuffle
@@ -291,7 +291,7 @@ _dot_xy_block_aa(cs_lnum_t    n,
 
   const unsigned int full_mask = 0xffffffff;
   for (int offset = CS_HIP_WARP_SIZE/2; offset > 0; offset /= 2)
-    t_xy += __shfl_down_sync(full_mask, t_xy, offset);
+    t_xy += __shfl_down(t_xy, offset);
 
   const unsigned n_warps = blockSize / CS_HIP_WARP_SIZE;
   const unsigned lane_id = threadIdx.x % CS_HIP_WARP_SIZE;
@@ -316,7 +316,7 @@ _dot_xy_block_aa(cs_lnum_t    n,
 
   // Make a reduction across the warp, but now we only need to cover n_warps.
   for (cs_lnum_t kk = 1; kk < n_warps; kk *= 2) {
-    t_xy += __shfl_down_sync(0xffffffff, t_xy, kk);
+    t_xy += __shfl_down(t_xy, kk);
   }
 
   // Write results atomically to memory.

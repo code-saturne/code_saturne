@@ -216,7 +216,7 @@ public:
   __device__ assembled_value
   shuffle(cs_hip_mask_t mask, unsigned laneid) const noexcept
   {
-#if HIP_VERSION >= 60200000
+#if HIP_VERSION >= 60200000 && defined(HIP_ENABLE_WARP_SYNC_BUILTINS)
     return assembled_value(__shfl_sync(mask, value, laneid));
 #else
     CS_UNUSED(mask);

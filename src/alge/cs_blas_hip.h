@@ -228,7 +228,7 @@ cs_blas_hip_block_reduce_sum(T       *stmp,
           stmp[tid*stride + i] += stmp[(tid + 128)*stride + i];
       } __syncthreads();
     }
-#if CS_HIP_WARP_SIZE == 64
+#if CS_HIP_WARP_SIZE == 32
     if (blockSize >= 128) {
       if (tid <  64) {
         #pragma unroll
