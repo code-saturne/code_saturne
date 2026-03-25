@@ -554,6 +554,14 @@ cs_lagr_coupling_finalize(void)
           = (t_st_p[c_id] + (lag_st->npts - 1.0) * st_p[c_id])
           / lag_st->npts;
       }
+
+      /* Save TIME AVERAGED thermal power of rain if needed for post-processing */
+      cs_field_t *f_evap_rate_rain = cs_field_by_name_try("evaporation_rate_rain");
+      if (f_evap_rate_rain != nullptr) {
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+          f_evap_rate_rain->val[c_id] = st_p[c_id];
+      }
+
     }
 
     if (f_st_vel != nullptr) {
