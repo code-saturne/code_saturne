@@ -2775,6 +2775,28 @@ _dot_xx(const cs_multigrid_t  *mg,
   else
     s = cs_dot_xx(n, x);
 
+#elif defined(__HIPCC__)
+
+  bool use_gpu = false;
+  {
+    const cs_multigrid_setup_data_t *mgd = mg->setup_data;
+    const cs_matrix_t *a = cs_grid_get_matrix(mgd->grid_hierarchy[0]);
+    if (cs_matrix_get_alloc_mode(a) > CS_ALLOC_HOST)
+      use_gpu = true;
+  }
+
+  if (use_gpu) {
+    hipStream_t stream = cs_matrix_spmv_hip_get_stream();
+    if (stream == 0) {
+      stream = cs_hip_get_stream(0);
+    }
+    cs_blas_hip_set_stream(stream);
+    s = cs_blas_hip_dot(n, x, x);
+    cs_blas_hip_set_stream(0);
+  }
+  else
+    s = cs_dot_xx(n, x);
+
 #else
 
   s = cs_dot_xx(n, x);

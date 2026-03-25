@@ -67,6 +67,10 @@
 #include "alge/cs_blas_cuda.h"
 #endif
 
+#if defined(HAVE_HIP) && defined(__HIPCC__)
+#include "alge/cs_blas_hip.h"
+#endif
+
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
@@ -121,6 +125,22 @@ _dot_xx(const cs_matrix_t  *a,
     cudaStream_t stream = cs_blas_cuda_get_stream();
     double s = cs_blas_cuda_dot(n, x, x);
     CS_CUDA_CHECK(cudaStreamSynchronize(stream));
+
+    return s;
+  }
+
+#endif
+
+#if defined(__HIPCC__)
+
+  bool use_gpu = false;
+  if (cs_matrix_get_alloc_mode(a) > CS_ALLOC_HOST)
+    use_gpu = true;
+
+  if (use_gpu) {
+    hipStream_t stream = cs_blas_hip_get_stream();
+    double s = cs_blas_hip_dot(n, x, x);
+    CS_HIP_CHECK(hipStreamSynchronize(stream));
 
     return s;
   }

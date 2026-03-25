@@ -355,6 +355,10 @@ _dot_product
     return  cs_sles_it_dot_product(c, ctx.cuda_stream(), x, y);
 #endif
 
+#if defined(__HIPCC__)
+    return  cs_sles_it_dot_product(c, ctx.hip_stream(), x, y);
+#endif
+
   }
 
 #endif
@@ -400,6 +404,10 @@ _dot_product_xx
 
 #if defined(__CUDACC__)
     return  cs_sles_it_dot_product_xx(c, ctx.cuda_stream(), x);
+#endif
+
+#if defined(__HIPCC__)
+    return  cs_sles_it_dot_product_xx(c, ctx.hip_stream(), x);
 #endif
 
   }
@@ -450,6 +458,12 @@ _dot_products_xx_xy
 
 #if defined(__CUDACC__)
     cs_sles_it_dot_products_xx_xy(c, ctx.cuda_stream(),
+                                  x, y, xx, xy);
+    return;
+#endif
+
+#if defined(__HIPCC__)
+    cs_sles_it_dot_products_xx_xy(c, ctx.hip_stream(),
                                   x, y, xx, xy);
     return;
 #endif
@@ -507,6 +521,12 @@ _dot_products_xx_xy_yz
 
 #if defined(__CUDACC__)
     cs_sles_it_dot_products_xx_xy_yz(c, ctx.cuda_stream(),
+                                     x, y, z, xx, xy, yz);
+    return;
+#endif
+
+#if defined(__HIPCC__)
+    cs_sles_it_dot_products_xx_xy_yz(c, ctx.hip_stream(),
                                      x, y, z, xx, xy, yz);
     return;
 #endif
@@ -1044,6 +1064,21 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
   }
 #endif
 
+#if defined(__HIPCC__)
+  bool local_stream = false;
+  hipStream_t stream = cs_matrix_spmv_hip_get_stream();
+  if (amode > CS_ALLOC_HOST) {
+    if (stream == 0) {
+      local_stream = true;
+      stream = cs_hip_get_stream(0);
+    }
+    cs_blas_hip_set_stream(stream);
+    if (local_stream)
+      cs_matrix_spmv_hip_set_stream(stream);
+    ctx.set_hip_stream(stream);
+  }
+#endif
+
   /* Allocate or map work arrays */
   /*-----------------------------*/
 
@@ -1190,6 +1225,13 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
   }
 #endif
 
+#if defined(__HIPCC__)
+  cs_blas_hip_set_stream(0);
+  if (local_stream) {
+    cs_matrix_spmv_hip_set_stream(0);
+  }
+#endif
+
   if (_aux_vectors != aux_vectors)
     CS_FREE(_aux_vectors);
 
@@ -1261,6 +1303,21 @@ _conjugate_gradient_sr_p0(cs_sles_it_t              *c,
     if (local_stream)
       cs_matrix_spmv_cuda_set_stream(stream);
     ctx.set_cuda_stream(stream);
+  }
+#endif
+
+#if defined(__HIPCC__)
+  bool local_stream = false;
+  hipStream_t stream = cs_matrix_spmv_hip_get_stream();
+  if (amode > CS_ALLOC_HOST) {
+    if (stream == 0) {
+      local_stream = true;
+      stream = cs_hip_get_stream(0);
+    }
+    cs_blas_hip_set_stream(stream);
+    if (local_stream)
+      cs_matrix_spmv_hip_set_stream(stream);
+    ctx.set_hip_stream(stream);
   }
 #endif
 
@@ -1419,6 +1476,13 @@ _conjugate_gradient_sr_p0(cs_sles_it_t              *c,
   }
 #endif
 
+#if defined(__HIPCC__)
+  cs_blas_hip_set_stream(0);
+  if (local_stream) {
+    cs_matrix_spmv_hip_set_stream(0);
+  }
+#endif
+
   if (_aux_vectors != aux_vectors)
     CS_FREE(_aux_vectors);
 
@@ -1489,6 +1553,21 @@ _conjugate_gradient_sr_npc(cs_sles_it_t              *c,
     if (local_stream)
       cs_matrix_spmv_cuda_set_stream(stream);
     ctx.set_cuda_stream(stream);
+  }
+#endif
+
+#if defined(__HIPCC__)
+  bool local_stream = false;
+  hipStream_t stream = cs_matrix_spmv_hip_get_stream();
+  if (amode > CS_ALLOC_HOST) {
+    if (stream == 0) {
+      local_stream = true;
+      stream = cs_hip_get_stream(0);
+    }
+    cs_blas_hip_set_stream(stream);
+    if (local_stream)
+      cs_matrix_spmv_hip_set_stream(stream);
+    ctx.set_hip_stream(stream);
   }
 #endif
 
@@ -1638,6 +1717,13 @@ _conjugate_gradient_sr_npc(cs_sles_it_t              *c,
   cs_blas_cuda_set_stream(0);
   if (local_stream) {
     cs_matrix_spmv_cuda_set_stream(0);
+  }
+#endif
+
+#if defined(__HIPCC__)
+  cs_blas_hip_set_stream(0);
+  if (local_stream) {
+    cs_matrix_spmv_hip_set_stream(0);
   }
 #endif
 
@@ -2486,6 +2572,21 @@ _bi_cgstab(cs_sles_it_t              *c,
   }
 #endif
 
+#if defined(__HIPCC__)
+  bool local_stream = false;
+  hipStream_t stream = cs_matrix_spmv_hip_get_stream();
+  if (amode > CS_ALLOC_HOST) {
+    if (stream == 0) {
+      local_stream = true;
+      stream = cs_hip_get_stream(0);
+    }
+    cs_blas_hip_set_stream(stream);
+    if (local_stream)
+      cs_matrix_spmv_hip_set_stream(stream);
+    ctx.set_hip_stream(stream);
+  }
+#endif
+
   /* Allocate or map work arrays */
   /*-----------------------------*/
 
@@ -2642,6 +2743,13 @@ _bi_cgstab(cs_sles_it_t              *c,
   }
 #endif
 
+#if defined(__HIPCC__)
+  cs_blas_hip_set_stream(0);
+  if (local_stream) {
+    cs_matrix_spmv_hip_set_stream(0);
+  }
+#endif
+
   if (_aux_vectors != aux_vectors)
     CS_FREE(_aux_vectors);
 
@@ -2717,6 +2825,21 @@ _bicgstab2(cs_sles_it_t              *c,
     if (local_stream)
       cs_matrix_spmv_cuda_set_stream(stream);
     ctx.set_cuda_stream(stream);
+  }
+#endif
+
+#if defined(__HIPCC__)
+  bool local_stream = false;
+  hipStream_t stream = cs_matrix_spmv_hip_get_stream();
+  if (amode > CS_ALLOC_HOST) {
+    if (stream == 0) {
+      local_stream = true;
+      stream = cs_hip_get_stream(0);
+    }
+    cs_blas_hip_set_stream(stream);
+    if (local_stream)
+      cs_matrix_spmv_hip_set_stream(stream);
+    ctx.set_hip_stream(stream);
   }
 #endif
 
@@ -2909,6 +3032,13 @@ _bicgstab2(cs_sles_it_t              *c,
   cs_blas_cuda_set_stream(0);
   if (local_stream) {
     cs_matrix_spmv_cuda_set_stream(0);
+  }
+#endif
+
+#if defined(__HIPCC__)
+  cs_blas_hip_set_stream(0);
+  if (local_stream) {
+    cs_matrix_spmv_hip_set_stream(0);
   }
 #endif
 
