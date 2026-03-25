@@ -319,6 +319,20 @@ cs_blas_hip_finalize(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Return HIP stream for next HIP-based blas operations.
+ *
+ * This function is callable only from HIP code.
+ */
+/*----------------------------------------------------------------------------*/
+
+hipStream_t
+cs_blas_hip_get_stream(void)
+{
+  return _stream;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Assign HIP stream for next HIP-based blas operations.
  *
  * If a stream other than the default stream (0) is used, it will not be

@@ -361,6 +361,17 @@ cs_blas_hip_finalize(void);
 #if defined(__HIPCC__)
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief Return HIP stream for next HIP-based blas operations.
+ *
+ * This function is callable only from HIP code.
+ */
+/*----------------------------------------------------------------------------*/
+
+hipStream_t
+cs_blas_hip_get_stream(void);
+
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Assign HIP stream for next HIP-based blas operations.
  *

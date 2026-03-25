@@ -80,7 +80,7 @@
 
  /* SIMD unit size to ensure SIMD alignement (based on warp size) */
 
-#define CS_SIMD_SIZE(s) (((s-1)/32+1)*32)
+#define CS_SIMD_SIZE(s) (((s-1)/CS_HIP_WARP_SIZE+1)*CS_HIP_WARP_SIZE)
 #define CS_BLOCKSIZE 256
 
 /*============================================================================
