@@ -45,18 +45,45 @@ AC_ARG_ENABLE(hip,
   [ cs_have_hip=no ]
 )
 
+AC_ARG_ENABLE(hip-amdclang,
+  [AS_HELP_STRING([--enable-hip-amdclang], [Use amdclang compiler for HIP offload])],
+  [
+    case "${enableval}" in
+      yes) cs_have_hip_amdclang=yes ;;
+      no)  cs_have_hip_amdclang=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-hip-amdclang]) ;;
+    esac
+  ],
+  [ cs_have_hip_amdclang=no ]
+)
+
 if test "x$cs_have_hip" != "xno" ; then
 
   # Check for hipcc compiler
 
-  AC_PATH_PROG(HIPCC, hipcc, "no")
-  AS_IF([test "x$HIPCC" = "xno"],
-        [AC_MSG_ERROR([HIPCC compiler not found!])])
+  # Check first if we force amdclang++
+
+  # if test "$CS_HIPCC" = ""; then
+  if test "x$cs_have_hip_amdclang" != "xno" ; then
+    AC_PATH_PROG(HIPCC, amdclang++, "no")
+    AS_IF([test "x$HIPCC" = "xno"],
+          [AC_MSG_ERROR([amdclang++ compiler not found!])])
+  else
+    AC_PATH_PROG(HIPCC, hipcc, "no")
+    AS_IF([test "x$HIPCC" = "xno"],
+          [AC_MSG_ERROR([HIPCC compiler not found!])])
+  fi
 
   # Set flags, substituting "bin/hipcc" by "include".
-  HIP_CPPFLAGS=" -I${HIPCC/'bin/hipcc'/include}"
+  if test "x$cs_have_hip_amdclang" != "xno" ; then
+    HIP_CPPFLAGS=" -I${HIPCC/'bin/amdclang++'/include}"
 
-  cs_hip_lib_path="${HIPCC/'bin/hipcc'/lib}"
+    cs_hip_lib_path="${HIPCC/'bin/amdclang++'/lib}"
+  else
+    HIP_CPPFLAGS=" -I${HIPCC/'bin/hipcc'/include}"
+
+    cs_hip_lib_path="${HIPCC/'bin/hipcc'/lib}"
+  fi
   AS_IF([echo $build_cpu | grep -q "_64"],
         [cs_hip_lib_path+="64"])
   HIP_LDFLAGS="-L${cs_hip_lib_path}"
@@ -68,24 +95,25 @@ if test "x$cs_have_hip" != "xno" ; then
   # developping/debugging on local machines using older hardware remains useful).
 
   if test "$HIP_ARCH_NUM" = ""; then
-    # HIP_ARCH_NUM="60 61 62 70 72 75 80 86"
-    HIP_ARCH_NUM="70 80"
+    HIP_ARCH_NUM="gfx90a"
   fi
 
   user_hipccflags="${HIPCCFLAGS}"
 
   if test "$HIP_ARCH_NUM" != ""; then
-    touch conftest.cpp
+    #touch conftest.cpp
     for hip_arch in $HIP_ARCH_NUM; do
-      $HIPCC --dryrun -c conftest.cpp -o conftest.o -gencode arch=compute_${hip_arch},code=sm_${hip_arch} >/dev/null 2>&1
-      if test $? -eq 0; then
-        HIPCCFLAGS="${HIPCCFLAGS} -gencode arch=compute_${hip_arch},code=sm_${hip_arch}"
-      fi
+      #$HIPCC --dryrun -c conftest.cpp -o conftest.o --offload-arch=${hip_arch} >/dev/null 2>&1
+      #if test $? -eq 0; then
+      #  HIPCCFLAGS="${HIPCCFLAGS} --offload-arch=${hip_arch}"
+      #fi
+      HIPCCFLAGS="${HIPCCFLAGS} --offload-arch=${hip_arch}"
     done
-    rm -f conftest.cpp conftest.o
+    #rm -f conftest.cpp conftest.o
   fi
 
-  HIPCCFLAGS="${HIPCCFLAGS} -v"
+  HIPCCFLAGS="${HIPCCFLAGS} -x hip"
+  #HIPCCFLAGS="${HIPCCFLAGS} -v"
 
   if test "$user_hipccflags" != ""; then
     HIPCCFLAGS="${HIPCCFLAGS} ${user_hipccflags}"

@@ -1269,14 +1269,14 @@ if test "x$HIPCC" != "x" ; then
 
   # try GCC first, then clang, then nvc
 
-  cs_hipcc_hc_version="`$HIPCC -E -x hip --compiler-options -v - \
+  cs_hipcc_hc_version="`$HIPCC -E --x hip --compiler-options -v - \
                        < /dev/null 2>&1 | grep 'gcc version' |\
                        sed 's/.*gcc version \([-a-z0-9\.]*\).*/\1/'`"
 
   if test "x" != "x$cs_hipcc_hc_version" ; then
     cs_hipcc_hc="gcc"
   else
-    cs_hipcc_hc_version="`$HIPCC -E -x hip --compiler-options -v - \
+    cs_hipcc_hc_version="`$HIPCC -E --x hip --compiler-options -v - \
                          < /dev/null 2>&1 | grep 'clang version' |\
                          sed 's/.*clang version \([-a-z0-9\.]*\).*/\1/'`"
     if test "x" != "x$cs_hipcc_hc_version" ; then
@@ -1299,16 +1299,16 @@ if test "x$HIPCC" != "x" ; then
   hipccflags_default_opt="-O2"
   hipccflags_default_prf="-O2 -g -lineinfo"
   hipccflags_default_cpp_omp=""
-  hipccflags_default_cpp=" --x hip -forward-unknown-to-host-compiler -funsigned-char"
+  hipccflags_default_cpp="-funsigned-char"
 
   case "$cs_hipcc_hc" in
     gcc)
       hipccflags_default="-Xcompiler -Wall,-Wshadow,-Wpointer-arith,-Wcast-qual,-Wcast-align,-Wwrite-strings,-Wunused,-Wfloat-equal"
-      hipccflags_default_cpp_omp="-fopenmp"
+      hipccflags_default_cpp_omp=""
       ;;
     clang)
       hipccflags_default="-Xcompiler -Wall,-Wshadow,-Wpointer-arith,-Wmissing-prototypes,-Wuninitialized -Wunused"
-      hipccflags_default_cpp_omp="-fopenmp=libomp"
+      hipccflags_default_cpp_omp=""
       ;;
     *)
       ;;
