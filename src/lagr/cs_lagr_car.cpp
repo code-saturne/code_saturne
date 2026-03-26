@@ -609,7 +609,7 @@ cs_lagr_get_force_p(const cs_real_t             dt_part,
 
   /* Finalize forces on particles:
    *
-   *  (- pressure gradient /p_rom +ext forces + g) . taup
+   *  (- pressure gradient / p_rom + ext forces + g)
    *
    * */
   if (cs_glob_lagr_time_scheme->iadded_mass == 0) {

@@ -260,7 +260,7 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
    * and current one for correction step */
   cs_lnum_t cell_id = p_set.attr_n_lnum(p_id, 2-nor, CS_LAGR_CELL_ID);
 
-  if (cell_id <0)
+  if (cell_id < 0)
     return;
   cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
   cs_lagr_extra_module_t *extra = extra_i;
@@ -324,22 +324,15 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
                                        0, -1);
   }
 
-  cs_real_t *lambda;
-  cs_real_3_t *loc_fluid_vel = nullptr;
-  cs_real_3_t *part_vel_seen_r = nullptr;
-  cs_real_3_t *old_part_vel_seen_r = nullptr;
-  cs_real_3_t *fluid_vel_r = nullptr;
-  cs_real_3_t *piil_r = nullptr;
+  cs_array<cs_real_t> lambda(n_phases);
+  cs_array_2d<cs_real_t> loc_fluid_vel(n_phases, 3);
+  cs_array_2d<cs_real_t> part_vel_seen_r(n_phases, 3);
+  cs_array_2d<cs_real_t> old_part_vel_seen_r(n_phases, 3);
+  cs_array_2d<cs_real_t> fluid_vel_r(n_phases, 3);
+  cs_array_2d<cs_real_t> piil_r(n_phases, 3);
   /* already in the local reference frame */
   const cs_real_3_t *tlag_r = tlag;
-  cs_real_3_t *taup_r = nullptr;
-  CS_MALLOC(lambda, n_phases, cs_real_t);
-  CS_MALLOC(loc_fluid_vel, n_phases, cs_real_3_t);
-  CS_MALLOC(part_vel_seen_r, n_phases, cs_real_3_t);
-  CS_MALLOC(old_part_vel_seen_r, n_phases, cs_real_3_t);
-  CS_MALLOC(fluid_vel_r, n_phases, cs_real_3_t);
-  CS_MALLOC(piil_r, n_phases, cs_real_3_t);
-  CS_MALLOC(taup_r, n_phases, cs_real_3_t);
+  cs_array_2d<cs_real_t> taup_r(n_phases, 3);
 
   /* Integrate SDE's over particles
    * Note: new particles will be integrated at the next time step, otherwise
@@ -414,28 +407,28 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
   for (int phase_id = 0; phase_id < n_phases; phase_id++) {
     if (cs_glob_lagr_time_scheme->interpol_field == 1) {
       for (int i = 0; i < 3; i++) {
-        loc_fluid_vel[phase_id][i] = cvar_vel[phase_id][cell_id][i];
+        loc_fluid_vel(phase_id, i) = cvar_vel[phase_id][cell_id][i];
         for (int j = 0; j < 3; j++)
-          loc_fluid_vel[phase_id][i] += extra_i[phase_id].grad_vel[cell_id][i][j]
+          loc_fluid_vel(phase_id, i) += extra_i[phase_id].grad_vel[cell_id][i][j]
                             * (part_coords[j] - cell_cen[j]);
       }
     }
     else {
       for (int i = 0; i < 3; i++) {
-        loc_fluid_vel[phase_id][i] = cvar_vel[phase_id][cell_id][i];
+        loc_fluid_vel(phase_id, i) = cvar_vel[phase_id][cell_id][i];
       }
     }
 
     for (int i = 0; i < 3; i++) {
-      part_vel_seen_r[phase_id][i] = part_vel_seen[phase_id * 3 + i];
-      old_part_vel_seen_r[phase_id][i] = old_part_vel_seen[phase_id * 3 + i];
-      fluid_vel_r[phase_id][i] = loc_fluid_vel[phase_id][i];
+      part_vel_seen_r(phase_id, i) = part_vel_seen[phase_id * 3 + i];
+      old_part_vel_seen_r(phase_id, i) = old_part_vel_seen[phase_id * 3 + i];
+      fluid_vel_r(phase_id, i) = loc_fluid_vel(phase_id, i);
     }
 
     for (int i = 0; i < 3; i ++) {
-      piil_r[phase_id][i] = piil[phase_id][i];
-      taup_r[phase_id][i] = taup[phase_id];
-      taup_rm[i] += lambda[phase_id] / taup_r[phase_id][i];
+      piil_r(phase_id, i) = piil[phase_id][i];
+      taup_r(phase_id, i) = taup[phase_id];
+      taup_rm[i] += lambda[phase_id] / taup_r(phase_id, i);
     }
   }
 
@@ -566,7 +559,7 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
     for (int phase_id = 0; phase_id < n_phases; phase_id++)
       cs_math_33_3_product(trans_m,
           old_part_vel_seen + 3*phase_id,
-          old_part_vel_seen_r[phase_id]);
+          old_part_vel_seen_r.sub_array(phase_id));
 
     /* 1.3 Particle force: - pressure gradient/romp + external force + g */
 
@@ -576,19 +569,19 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
       /* 1.4 - flow velocity  (current and previous) */
 
       cs_math_33_3_product(trans_m,
-                           loc_fluid_vel[phase_id],
-                           fluid_vel_r[phase_id]);
+                           loc_fluid_vel.sub_array(phase_id),
+                           fluid_vel_r.sub_array(phase_id));
 
       /* 1.5 - "piil" term    */
 
-      cs_math_33_3_product(trans_m, piil[phase_id], piil_r[phase_id]);
+      cs_math_33_3_product(trans_m, piil[phase_id], piil_r.sub_array(phase_id));
 
     }
 
     /* 1.6 - taup  */
 
     if (   cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_STOC_MODEL
-          || cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL) {
+        || cs_glob_lagr_model->shape == CS_LAGR_SHAPE_SPHEROID_JEFFERY_MODEL) {
 
         cs_real_t *radii =
           p_set.attr_real_ptr(p_id, CS_LAGR_RADII);
@@ -597,15 +590,11 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
         p_set.attr_real_ptr(p_id, CS_LAGR_SHAPE_PARAM);
 
       for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
-        taup_r[phase_id][0] = 3.0 / 8.0 * taup[phase_id]
-          * (radii[0] * radii[0] * s_p[0] + s_p[3])
-          / pow(radii[0] * radii[1] * radii[2], 2.0 / 3.0);
-        taup_r[phase_id][1] = 3.0 / 8.0 * taup[phase_id]
-          * (radii[1] * radii[1] * s_p[1] + s_p[3])
-          / pow(radii[0] * radii[1] * radii[2], 2.0 / 3.0);
-        taup_r[phase_id][2] = 3.0 / 8.0 * taup[phase_id]
-          * (radii[2] * radii[2] * s_p[2] + s_p[3])
-          / pow(radii[0] * radii[1] * radii[2], 2.0 / 3.0);
+        for (int i = 0; i < 3; i++) {
+          taup_r(phase_id, i) = 3.0 / 8.0 * taup[phase_id]
+            * (radii[i] * radii[i] * s_p[i] + s_p[3])
+            / pow(radii[0] * radii[1] * radii[2], 2.0 / 3.0);
+        }
       }
     }
   }
@@ -646,38 +635,38 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
     aux10 = 0.5 * taup_rm[id] * (1.0 - aux1m * aux1m);
 
     for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
-      tci = piil_r[phase_id][id] * tlag_r[phase_id][id];
+      tci = piil_r(phase_id, id) * tlag_r[phase_id][id];
       if (cs_glob_lagr_model->cs_used == 1)
-        tci += fluid_vel_r[phase_id][id];
+        tci += fluid_vel_r(phase_id, id);
 
-      cs_real_t multiphase_coef = lambda[phase_id] * taup_rm[id] / taup_r[phase_id][id];
+      cs_real_t multiphase_coef = lambda[phase_id] * taup_rm[id] / taup_r(phase_id, id);
       cs_real_t multiphase_coef2 = cs_math_pow2(multiphase_coef);
 
       /* Compute deterministic coefficients/terms
       ---------------------------------------- */
 
-      cs_real_t taup_ddt = taup_r[phase_id][id] / dt_part;
+      cs_real_t taup_ddt = taup_r(phase_id, id) / dt_part;
       cs_real_t tlag_ddt = tlag_r[phase_id][id] / dt_part;
-      aux1 = exp(-dt_part / taup_r[phase_id][id]);
+      aux1 = exp(-dt_part / taup_r(phase_id, id));
       aux2 = exp(-dt_part / tlag_r[phase_id][id]);
       aux3 = tlag_r[phase_id][id]
-        / (tlag_r[phase_id][id] - taup_r[phase_id][id]);
+        / (tlag_r[phase_id][id] - taup_r(phase_id, id));
       aux3m = tlag_r[phase_id][id]
         / (tlag_r[phase_id][id] - taup_rm[id]);
       aux4 = tlag_r[phase_id][id]
-        / (tlag_r[phase_id][id] + taup_r[phase_id][id]);
+        / (tlag_r[phase_id][id] + taup_r(phase_id, id));
       aux44 = taup_rm[id] / (tlag_r[phase_id][id] + taup_rm[id]);
 
       aux5 = tlag_r[phase_id][id] * (1.0 - aux2);
       aux6 = cs_math_pow2(bx[phase_id][id][nor-1])
         * tlag_r[phase_id][id];
-      aux7 = tlag_r[phase_id][id] - taup_r[phase_id][id];
+      aux7 = tlag_r[phase_id][id] - taup_r(phase_id, id);
       aux8 = cs_math_pow2(bx[phase_id][id][nor-1])
         * cs_math_pow2(aux3m);
       /* --> trajectory terms */
       bb = tlag_r[phase_id][id] * _secant_ter2x(taup_ddt, tlag_ddt);
       cc = dt_part - aa - bb;
-      ff = lambda[phase_id] / taup_r[phase_id][id] * taup_rm[id];
+      ff = lambda[phase_id] / taup_r(phase_id, id) * taup_rm[id];
 
       ter2f[phase_id] = tci * (1.0 - aux2);
 
@@ -697,66 +686,66 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
               * (1.0 - aux1m * aux2)
               / (taup_rm[id] + tlag_r[phase_id][id]);
 
-      ter6p[phase_id] = lambda[phase_id] / taup_r[phase_id][id]
-        * aa * fluid_vel_r[phase_id][id];
+      ter6p[phase_id] = lambda[phase_id] / taup_r(phase_id, id)
+        * aa * fluid_vel_r(phase_id, id);
 
-      ter6x[phase_id] = ff * (dt_part - aa) * fluid_vel_r[phase_id][id];
+      ter6x[phase_id] = ff * (dt_part - aa) * fluid_vel_r(phase_id, id);
 
       ter3x[phase_id] = ff * cc * tci;
 
       if (cs_glob_lagr_model->cs_used == 1) {
         /* Flow-seen velocity terms */
-        ter1f[phase_id] = old_part_vel_seen_r[phase_id][id] * aux2;
+        ter1f[phase_id] = old_part_vel_seen_r(phase_id, id) * aux2;
 
         /* Terms for particle velocity */
-        ter2p[phase_id] = old_part_vel_seen_r[phase_id][id] * dd;
+        ter2p[phase_id] = old_part_vel_seen_r(phase_id, id) * dd;
         ter6p[phase_id] = 0.0;
         ter6x[phase_id] = 0.0;
 
         /* Terms for particle position */
-        ter2x[phase_id] = bb * old_part_vel_seen_r[phase_id][id] ;
+        ter2x[phase_id] = bb * old_part_vel_seen_r(phase_id, id);
 
         /* Compute the other terms for the covariance matrix of the Gauss vector */
         gam_gagam[phase_id] = (aux9 - aux11) * (aux8 / aux3);
 
         gagam2 = (aux9 - 2.0 * aux11 + aux10) * aux8;
 
-        gam_ome[phase_id] = ( (tlag_r[phase_id][id] - taup_r[phase_id][id])
+        gam_ome[phase_id] = ( (tlag_r[phase_id][id] - taup_r(phase_id, id))
             * (aux5 - aa)
               - tlag_r[phase_id][id] * aux9
-              - taup_r[phase_id][id] * aux10
-              + (tlag_r[phase_id][id] + taup_r[phase_id][id]) * aux11)
+              - taup_r(phase_id, id) * aux10
+              + (tlag_r[phase_id][id] + taup_r(phase_id, id)) * aux11)
               * aux8;
 
-        gagam_ome = aux3 * (  (tlag_r[phase_id][id] - taup_r[phase_id][id])
+        gagam_ome = aux3 * (  (tlag_r[phase_id][id] - taup_r(phase_id, id))
             * (1.0 - aux2)
                      - 0.5 * tlag_r[phase_id][id] * (1.0 - aux2 * aux2)
-                     + cs_math_pow2(taup_r[phase_id][id])
-                     / (tlag_r[phase_id][id] + taup_r[phase_id][id])
+                     + cs_math_pow2(taup_r(phase_id, id))
+                     / (tlag_r[phase_id][id] + taup_r(phase_id, id))
                      * (1.0 - aux1 * aux2)) * aux6;
 
         ome2 = aux7 * (aux7 * dt_part - 2.0
-              * (tlag_r[phase_id][id] * aux5 - taup_r[phase_id][id] * aa))
+              * (tlag_r[phase_id][id] * aux5 - taup_r(phase_id, id) * aa))
              + 0.5 * tlag_r[phase_id][id] * tlag_r[phase_id][id] * aux5
              * (1.0 + aux2)
-             + 0.5 * taup_r[phase_id][id] * taup_r[phase_id][id] * aa * (1.0 + aux1)
+             + 0.5 * taup_r(phase_id, id) * taup_r(phase_id, id) * aa * (1.0 + aux1)
              - 2.0 * aux4 * tlag_r[phase_id][id]
-             * taup_r[phase_id][id] * taup_r[phase_id][id]
+             * taup_r(phase_id, id) * taup_r(phase_id, id)
                    * (1.0 - aux1 * aux2);
         ome2 = ome2 * aux8;
       } else {
         /* Flow-seen velocity terms */
-        ter1f[phase_id] = (old_part_vel_seen_r[phase_id][id]
-                          - fluid_vel_r[phase_id][id]) * aux2;
+        ter1f[phase_id] = (old_part_vel_seen_r(phase_id, id)
+                          - fluid_vel_r(phase_id, id)) * aux2;
 
         /* Terms for particle velocity */
-        ter2p[phase_id] = (old_part_vel_seen_r[phase_id][id]
-            - fluid_vel_r[phase_id][id])
+        ter2p[phase_id] = (old_part_vel_seen_r(phase_id, id)
+            - fluid_vel_r(phase_id, id))
           * dd * ff;
 
         /* Terms for particle position */
         ter2x[phase_id] = ff * bb
-          * (old_part_vel_seen_r[phase_id][id] - fluid_vel_r[phase_id][id]);
+          * (old_part_vel_seen_r(phase_id, id) - fluid_vel_r(phase_id, id));
 
         /* Compute the other terms for the covariance matrix of the Gauss vector */
         gam_gagam[phase_id] = aux6 * multiphase_coef * aux3m
@@ -796,28 +785,28 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
 
     /* Additional terms when gradient of Tl is not negligible
      * */
-    cs_real_t taup_ddt = taup_r[0][id] / dt_part;
+    cs_real_t taup_ddt = taup_r(0, id) / dt_part;
     cs_real_t tlag_ddt = tlag_r[0][id] / dt_part;
     /* particle positions term */
-    cs_real_t aux5b = taup_r[0][id] * (1.0 - aux1);
+    cs_real_t aux5b = taup_r(0, id) * (1.0 - aux1);
     ter7x = beta[id] * (
-        aux4 * cs_math_pow2(taup_r[0][id]) * dt_part
+        aux4 * cs_math_pow2(taup_r(0, id)) * dt_part
       + cs_math_pow2(tlag_r[0][id]) * dt_part * aux2
       - cs_math_pow3(tlag_r[0][id])*(1. - aux2)
-      + 0.5 * tlag_r[0][id] * (tlag_r[0][id] - 2. * taup_r[0][id])
-            * (dt_part - taup_r[0][id] * (1. - aux2))
-      + aux3 * taup_r[0][id] * (2. * tlag_r[0][id] - taup_r[0][id]) * (aux5 - aux5b)
+      + 0.5 * tlag_r[0][id] * (tlag_r[0][id] - 2. * taup_r(0, id))
+            * (dt_part - taup_r(0, id) * (1. - aux2))
+      + aux3 * taup_r(0, id) * (2. * tlag_r[0][id] - taup_r(0, id)) * (aux5 - aux5b)
       - 0.25 * cs_math_pow3(tlag_r[0][id])
              * _secant_ter7x(taup_ddt, 0.5*tlag_ddt)
-      - cs_math_pow2(aux4) * cs_math_pow3(taup_r[0][id]) * (1. - aux1*aux2)
+      - cs_math_pow2(aux4) * cs_math_pow3(taup_r(0, id)) * (1. - aux1*aux2)
       );
 
     /* particle velocity term */
     ter7p = beta[id] * (
-      cs_math_pow2(taup_r[0][id]) * aux4 * (1. - aux1 * aux2)
+      cs_math_pow2(taup_r(0, id)) * aux4 * (1. - aux1 * aux2)
       - tlag_r[0][id] * dt_part * aux2
-      + 0.5 * tlag_r[0][id] * (tlag_r[0][id] - 2. * taup_r[0][id]) * (1. - aux1)
-      + taup_r[0][id] * aux3 * (2. * tlag_r[0][id] - taup_r[0][id]) * (aux2 - aux1)
+      + 0.5 * tlag_r[0][id] * (tlag_r[0][id] - 2. * taup_r(0, id)) * (1. - aux1)
+      + taup_r(0, id) * aux3 * (2. * tlag_r[0][id] - taup_r(0, id)) * (aux2 - aux1)
       - 0.25 * cs_math_pow3(tlag_r[0][id]) / dt_part
              * _secant_ter7p(taup_ddt, 0.5*tlag_ddt)
       );
@@ -826,7 +815,7 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
     ter7f = beta[id] * (
         tlag_r[0][id] * aux7 * (1. - (1. + dt_part / tlag_r[0][id]) * aux2)
         - 0.5 *cs_math_pow2(aux5)
-        + cs_math_pow2(taup_r[0][id]) / (tlag_r[0][id] + taup_r[0][id])
+        + cs_math_pow2(taup_r(0, id)) / (tlag_r[0][id] + taup_r(0, id))
           * (aux5 - aux2 * aux5b)
         );
 
@@ -891,15 +880,15 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
 
       cs_real_t p_mass = p_set.attr_real(p_id, CS_LAGR_MASS);
 
-      cs_real_t ddbr = sqrt(2.0 * _k_boltz * tempf / (p_mass * taup_r[0][id]));
+      cs_real_t ddbr = sqrt(2.0 * _k_boltz * tempf / (p_mass * taup_r(0, id)));
 
-      cs_real_t tix2 =   cs_math_pow2((taup_r[0][id] * ddbr))
-        * (dt_part - taup_r[0][id] * (1.0 - aux1) * (3.0 - aux1) / 2.0);
-      cs_real_t tiu2 =   ddbr * ddbr * taup_r[0][id]
-                       * (1.0 - exp(-2.0 * dt_part / taup_r[0][id])) / 2.0;
+      cs_real_t tix2 =   cs_math_pow2((taup_r(0, id) * ddbr))
+        * (dt_part - taup_r(0, id) * (1.0 - aux1) * (3.0 - aux1) / 2.0);
+      cs_real_t tiu2 =   ddbr * ddbr * taup_r(0, id)
+                       * (1.0 - exp(-2.0 * dt_part / taup_r(0, id))) / 2.0;
 
       cs_real_t tixiu  =
-        cs_math_pow2((ddbr * taup_r[0][id] * (1.0 - aux1))) / 2.0;
+        cs_math_pow2((ddbr * taup_r(0, id) * (1.0 - aux1))) / 2.0;
 
       tbrix2 = tix2 - (tixiu * tixiu) / tiu2;
 
@@ -946,10 +935,10 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
       displ_r[id] += ter2x[phase_id] + ter3x[phase_id] + ter6x[phase_id];
 
       /* flow-seen velocity */
-      part_vel_seen_r[phase_id][id]
+      part_vel_seen_r(phase_id, id)
         = ter1f[phase_id] + ter2f[phase_id] + ter3f[phase_id] + ter7f;
       if (cs_glob_lagr_model->cs_used == 0)
-        part_vel_seen_r[phase_id][id] += fluid_vel_r[phase_id][id];
+        part_vel_seen_r(phase_id, id) += fluid_vel_r(phase_id, id);
 
       /* particles velocity */
       part_vel_r[id] += ter2p[phase_id] + ter3p[phase_id] + ter6p[phase_id];
@@ -974,7 +963,7 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
     /* Flow-seen velocity */
     for (int phase_id = 0; phase_id < n_phases; phase_id++){
       cs_real_t part_vel_seen_p[3] = {0., 0., 0.};
-      cs_math_33t_3_product(trans_m, part_vel_seen_r[phase_id], part_vel_seen_p);
+      cs_math_33t_3_product(trans_m, part_vel_seen_r.sub_array(phase_id), part_vel_seen_p);
       for (int id = 0; id < 3; id++) {
         if (lambda[phase_id] < 1.e-8) {
           part_vel_seen[phase_id * 3 + id] = cvar_vel[phase_id][cell_id][id];
@@ -993,7 +982,7 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
         if (lambda[phase_id] < 1.0e-8){
           part_vel_seen[phase_id * 3 + id] = cvar_vel[phase_id][cell_id][id];
         } else {
-          part_vel_seen[phase_id * 3 + id] = part_vel_seen_r[phase_id][id];
+          part_vel_seen[phase_id * 3 + id] = part_vel_seen_r(phase_id, id);
         }
       }
     }
@@ -1014,13 +1003,6 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
       }
     }
   }
-  CS_FREE(lambda);
-  CS_FREE(loc_fluid_vel);
-  CS_FREE(part_vel_seen_r);
-  CS_FREE(old_part_vel_seen_r);
-  CS_FREE(fluid_vel_r);
-  CS_FREE(piil_r);
-  CS_FREE(taup_r);
   CS_FREE(cvar_vel);
 }
 
@@ -1060,7 +1042,7 @@ cs_sde_vels_pos_1_st_order_time_integ(cs_lagr_particle_set_t         &p_set,
    * and current one for correction step */
   cs_lnum_t cell_id = p_set.attr_n_lnum(p_id, 2-nor, CS_LAGR_CELL_ID);
 
-  if (cell_id <0)
+  if (cell_id < 0)
     return;
   cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
   cs_lagr_extra_module_t *extra = extra_i;

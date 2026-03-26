@@ -553,8 +553,6 @@ cs_lagr_new_v(cs_lagr_particle_set_t  &p_set,
 
       cs_lnum_t p_id = p_s_id + c_i;
 
-      cs_lnum_t test = p_set.attr_lnum(p_id, CS_LAGR_CELL_ID);
-
       p_set.attr_lnum(p_id, CS_LAGR_CELL_ID) = cell_id;
 
       cs_real_t *part_coord
@@ -770,19 +768,15 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
 
   /* Random draws and computation of particle characteristic times */
 
-  cs_real_3_t  **vagaus = nullptr;
+  cs_array_3d<cs_real_t> vagaus(n_phases, n, 3);
   cs_array<cs_real_t> temp_vagaus;
-
-  CS_MALLOC(vagaus, n_phases, cs_real_3_t *);
-  for (int phase_id = 0; phase_id < n_phases; phase_id++)
-    CS_MALLOC(vagaus[phase_id], n, cs_real_3_t);
 
   cs_array_2d<cs_real_t> temp_vel_fluc_coef;
   cs_array<cs_real_t> var_temp_corel_coef;
 
   for (int phase_id = 0; phase_id < n_phases; phase_id++) {
     if (cs_glob_lagr_model->idistu == 1 && n > 0) {
-      cs_random_normal(n*3, (cs_real_t *)vagaus[phase_id]);
+      cs_random_normal(n*3, (cs_real_t *)vagaus.sub_array(phase_id));
 
       if (    cs_glob_lagr_model->physical_model > CS_LAGR_PHYS_OFF
           && (extra->temperature_turbulent_flux != nullptr
@@ -799,22 +793,15 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     }
     else {
       for (cs_lnum_t i = 0; i < n; i++) {
-        vagaus[phase_id][i][0] = 0.0;
-        vagaus[phase_id][i][1] = 0.0;
-        vagaus[phase_id][i][2] = 0.0;
+        vagaus(phase_id, i, 0) = 0.0;
+        vagaus(phase_id, i, 1) = 0.0;
+        vagaus(phase_id, i, 2) = 0.0;
       }
     }
   }
 
-  cs_real_33_t **eig_vec = nullptr;
-  cs_real_3_t **eig_val = nullptr;
-
-  CS_MALLOC(eig_vec, n_phases, cs_real_33_t *);
-  CS_MALLOC(eig_val, n_phases, cs_real_3_t *);
-  for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
-    CS_MALLOC(eig_vec[phase_id], n_cells, cs_real_33_t);
-    CS_MALLOC(eig_val[phase_id], n_cells, cs_real_3_t);
-  }
+  cs_array_2d<cs_real_33_t> eig_vec(n_phases, n_cells);
+  cs_array_2d<cs_real_3_t> eig_val(n_phases, n_cells);
 
   /* First stage: compute cell values
    * Initialization from the mean Eulerian fluid
@@ -860,20 +847,20 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
           sym_rij[2][0] = 0.;
         }
 
-        eig_vec[phase_id][cell_id][0][0] = 1;
-        eig_vec[phase_id][cell_id][0][1] = 0;
-        eig_vec[phase_id][cell_id][0][2] = 0;
-        eig_vec[phase_id][cell_id][1][0] = 0;
-        eig_vec[phase_id][cell_id][1][1] = 1;
-        eig_vec[phase_id][cell_id][1][2] = 0;
-        eig_vec[phase_id][cell_id][2][0] = 0;
-        eig_vec[phase_id][cell_id][2][1] = 0;
-        eig_vec[phase_id][cell_id][2][2] = 1;
+        eig_vec(phase_id, cell_id)[0][0] = 1;
+        eig_vec(phase_id, cell_id)[0][1] = 0;
+        eig_vec(phase_id, cell_id)[0][2] = 0;
+        eig_vec(phase_id, cell_id)[1][0] = 0;
+        eig_vec(phase_id, cell_id)[1][1] = 1;
+        eig_vec(phase_id, cell_id)[1][2] = 0;
+        eig_vec(phase_id, cell_id)[2][0] = 0;
+        eig_vec(phase_id, cell_id)[2][1] = 0;
+        eig_vec(phase_id, cell_id)[2][2] = 1;
 
         cs_math_33_eig_val_vec(sym_rij,
                                tol_err,
-                               eig_val[phase_id][cell_id],
-                               eig_vec[phase_id][cell_id]);
+                               eig_val(phase_id, cell_id),
+                               eig_vec(phase_id, cell_id));
       }
     }
     if (    cs_glob_lagr_model->physical_model > CS_LAGR_PHYS_OFF
@@ -886,7 +873,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
           for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++)
               vel_fluct_coef[i][j] =
-                sqrt(eig_val[0][cell_id][j]) * eig_vec[0][cell_id][j][i];
+                sqrt(eig_val(0, cell_id)[j]) * eig_vec(0, cell_id)[j][i];
           }
 
           cs_real_33_t inv_vel_fluct_coef;
@@ -924,18 +911,18 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
 
-        eig_vec[phase_id][cell_id][0][0] = 1.;
-        eig_vec[phase_id][cell_id][1][1] = 1.;
-        eig_vec[phase_id][cell_id][2][2] = 1.;
-        eig_vec[phase_id][cell_id][0][1] = 0.;
-        eig_vec[phase_id][cell_id][0][2] = 0.;
-        eig_vec[phase_id][cell_id][1][0] = 0.;
-        eig_vec[phase_id][cell_id][1][2] = 0.;
-        eig_vec[phase_id][cell_id][2][0] = 0.;
-        eig_vec[phase_id][cell_id][2][1] = 0.;
-        eig_val[phase_id][cell_id][0] = 0.;
-        eig_val[phase_id][cell_id][1] = 0.;
-        eig_val[phase_id][cell_id][2] = 0.;
+        eig_vec(phase_id, cell_id)[0][0] = 1.;
+        eig_vec(phase_id, cell_id)[1][1] = 1.;
+        eig_vec(phase_id, cell_id)[2][2] = 1.;
+        eig_vec(phase_id, cell_id)[0][1] = 0.;
+        eig_vec(phase_id, cell_id)[0][2] = 0.;
+        eig_vec(phase_id, cell_id)[1][0] = 0.;
+        eig_vec(phase_id, cell_id)[1][2] = 0.;
+        eig_vec(phase_id, cell_id)[2][0] = 0.;
+        eig_vec(phase_id, cell_id)[2][1] = 0.;
+        eig_val(phase_id, cell_id)[0] = 0.;
+        eig_val(phase_id, cell_id)[1] = 0.;
+        eig_val(phase_id, cell_id)[2] = 0.;
       }
     }
   }
@@ -1011,12 +998,12 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
       for (cs_lnum_t i = 0; i < 3; i++) {
         vel_seen[phase_id*3 + i] = loc_fluid_vel[phase_id][i]
-          + vagaus[phase_id][l_id][0] * sqrt(eig_val[phase_id][c_id][0])
-            * eig_vec[phase_id][c_id][0][i]
-          + vagaus[phase_id][l_id][1] * sqrt(eig_val[phase_id][c_id][1])
-            * eig_vec[phase_id][c_id][1][i]
-          + vagaus[phase_id][l_id][2] * sqrt(eig_val[phase_id][c_id][2])
-            * eig_vec[phase_id][c_id][2][i];
+          + vagaus(phase_id, l_id, 0) * sqrt(eig_val(phase_id, c_id)[0])
+            * eig_vec(phase_id, c_id)[0][i]
+          + vagaus(phase_id, l_id, 1) * sqrt(eig_val(phase_id, c_id)[1])
+            * eig_vec(phase_id, c_id)[1][i]
+          + vagaus(phase_id, l_id, 2) * sqrt(eig_val(phase_id, c_id)[2])
+            * eig_vec(phase_id, c_id)[2][i];
       }
       for (cs_lnum_t ij = 0; ij < 9; ij++) {
         vel_seen_vel_cov[phase_id*9 + ij] = 0.;
@@ -1375,7 +1362,7 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
       /* TODO adapt the value of the draws based not only on the first phase */
       if (extra->temperature_turbulent_flux != nullptr)
         temp_seen += cs_math_3_dot_product(temp_vel_fluc_coef.sub_array(c_id),
-                                           vagaus[0][l_id]);
+                                           vagaus.sub_array(0, l_id));
 
       /* Fluctuations to obtain the proper temperature variance */
       if (extra->temperature_variance != nullptr )
@@ -1563,15 +1550,6 @@ cs_lagr_new_particle_init(const cs_lnum_t                 particle_range[2],
     }
 
   }
-  for (int phase_id = 0; phase_id < n_phases; phase_id++) {
-    CS_FREE(vagaus[phase_id]);
-    CS_FREE(eig_vec[phase_id]);
-    CS_FREE(eig_val[phase_id]);
-  }
-
-  CS_FREE(vagaus);
-  CS_FREE(eig_vec);
-  CS_FREE(eig_val);
 }
 
 /*----------------------------------------------------------------------------*/
