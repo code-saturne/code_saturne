@@ -2452,6 +2452,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t *nsp,
      way. This corresponds to the -|c|.divergence operator */
 
   switch (saddlep->solver) {
+    case CS_PARAM_SADDLE_SOLVER_AFS:
     case CS_PARAM_SADDLE_SOLVER_ALU:
     case CS_PARAM_SADDLE_SOLVER_GCR:
     case CS_PARAM_SADDLE_SOLVER_GKB:
@@ -2478,6 +2479,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t *nsp,
   /* Set the function pointer to assemble the linear system */
 
   switch (saddlep->solver) {
+    case CS_PARAM_SADDLE_SOLVER_AFS:
     case CS_PARAM_SADDLE_SOLVER_ALU:
     case CS_PARAM_SADDLE_SOLVER_GCR:
     case CS_PARAM_SADDLE_SOLVER_GKB:

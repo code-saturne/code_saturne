@@ -891,6 +891,30 @@ _setup(cs_saddle_solver_t  *solver,
 
   switch (saddlep->solver) {
 
+  case CS_PARAM_SADDLE_SOLVER_AFS:
+  case CS_PARAM_SADDLE_SOLVER_SIMPLE:
+    /* -------------------------- */
+    ierr = cs_param_sles_setup(true, block11_slesp);
+
+    if (ierr < 0)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Error %d detected during the setup of the (1,1)-block"
+                " of the \"%s\" saddle-point problem with SIMPLE.\n"
+                " Please check your settings.",
+                __func__, ierr, saddlep->name);
+
+    /* Handle additional SLES systems */
+
+    ierr = _schur_complement_setup(saddlep);
+
+    if (ierr < 0)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Error %d detected during the setup related to the Schur"
+                " complement associated to the \"%s\" saddle-point problem.\n"
+                " Please check your settings.",
+                __func__, ierr, saddlep->name);
+    break;
+
   case CS_PARAM_SADDLE_SOLVER_ALU:
     /* -------------------------- */
     {
@@ -990,29 +1014,6 @@ _setup(cs_saddle_solver_t  *solver,
       bft_error(__FILE__, __LINE__, 0,
                 "%s: Error %d detected during the setup of the (1,1)-block"
                 " of the \"%s\" saddle-point problem with Uzawa-CG.\n"
-                " Please check your settings.",
-                __func__, ierr, saddlep->name);
-
-    /* Handle additional SLES systems */
-
-    ierr = _schur_complement_setup(saddlep);
-
-    if (ierr < 0)
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: Error %d detected during the setup related to the Schur"
-                " complement associated to the \"%s\" saddle-point problem.\n"
-                " Please check your settings.",
-                __func__, ierr, saddlep->name);
-    break;
-
-  case CS_PARAM_SADDLE_SOLVER_SIMPLE:
-    /* ------------------------------- */
-    ierr = cs_param_sles_setup(true, block11_slesp);
-
-    if (ierr < 0)
-      bft_error(__FILE__, __LINE__, 0,
-                "%s: Error %d detected during the setup of the (1,1)-block"
-                " of the \"%s\" saddle-point problem with SIMPLE.\n"
                 " Please check your settings.",
                 __func__, ierr, saddlep->name);
 

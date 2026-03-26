@@ -749,6 +749,7 @@ cs_cdofb_monolithic_sles_init_system_helper(const cs_navsto_param_t  *nsp,
 
   switch (saddlep->solver) {
 
+  case CS_PARAM_SADDLE_SOLVER_AFS:
   case CS_PARAM_SADDLE_SOLVER_ALU:
   case CS_PARAM_SADDLE_SOLVER_GCR:
   case CS_PARAM_SADDLE_SOLVER_GKB:
@@ -932,6 +933,26 @@ cs_cdofb_monolithic_sles_init_solver(const cs_navsto_param_t  *nsp,
 
   switch (saddlep->solver) {
 
+  case CS_PARAM_SADDLE_SOLVER_AFS:
+    {
+      sc->solve = cs_cdofb_monolithic_sles_afs;
+
+      cs_saddle_solver_context_simple_create(m->n_cells_with_ghosts, solver);
+
+      cs_saddle_solver_context_simple_t *ctx
+        = (cs_saddle_solver_context_simple_t *)solver->context;
+
+      ctx->square_norm_b11 = cs_cdo_blas_square_norm_pfvp;
+      ctx->m12_vector_multiply = cs_saddle_solver_m12_multiply_vector;
+      ctx->m21_vector_multiply = cs_saddle_solver_m21_multiply_vector;
+
+      if (nsp->turbulence->model->model == CS_TURB_NONE)
+        ctx->pty_22 = nsp->lam_viscosity;
+      else
+        ctx->pty_22 = nsp->tot_viscosity;
+    }
+    break;
+
   case CS_PARAM_SADDLE_SOLVER_ALU:
     {
       sc->solve = cs_cdofb_monolithic_sles_alu;
@@ -1046,7 +1067,7 @@ cs_cdofb_monolithic_sles_init_solver(const cs_navsto_param_t  *nsp,
 
   case CS_PARAM_SADDLE_SOLVER_SIMPLE:
     {
-      sc->solve = cs_cdofb_monolithic_sles_simple;
+      sc->solve = cs_cdofb_monolithic_sles_afs;
 
       cs_saddle_solver_context_simple_create(m->n_cells_with_ghosts, solver);
 
@@ -1826,7 +1847,8 @@ cs_cdofb_monolithic_sles_uzawa_cg(const cs_navsto_param_t  *nsp,
  * \brief Solve a linear system arising from the discretization of the
  *        Navier-Stokes equation using a monolithic velocity-pressure coupling
  *        with a CDO face-based approach.
- *        Solve this system using the SIMPLE algorithm.
+ *        Solve this system using an Algebraic Fractional Step algorithm. An
+ *        example of an AFS algorithm is the SIMPLE algorithm.
  *
  * \param[in]      nsp     set of parameters related to the Navier-Stokes eqs.
  * \param[in, out] solver  pointer to a cs_saddle_solver_t structure
@@ -1838,19 +1860,20 @@ cs_cdofb_monolithic_sles_uzawa_cg(const cs_navsto_param_t  *nsp,
 /*----------------------------------------------------------------------------*/
 
 int
-cs_cdofb_monolithic_sles_simple(const cs_navsto_param_t  *nsp,
-                                cs_saddle_solver_t       *solver,
-                                cs_real_t                *u_f,
-                                cs_real_t                *p_c)
+cs_cdofb_monolithic_sles_afs(const cs_navsto_param_t  *nsp,
+                             cs_saddle_solver_t       *solver,
+                             cs_real_t                *u_f,
+                             cs_real_t                *p_c)
 {
   if (solver == nullptr)
     return 0;
 
   const cs_param_saddle_t  *saddlep = solver->param;
 
-  if (saddlep->solver != CS_PARAM_SADDLE_SOLVER_SIMPLE)
+  if (saddlep->solver != CS_PARAM_SADDLE_SOLVER_AFS &&
+      saddlep->solver != CS_PARAM_SADDLE_SOLVER_SIMPLE)
     bft_error(__FILE__, __LINE__, 0,
-              "%s: SINGLE algorithm is expected.\n"
+              "%s: SIMPLE or AFS algorithm is expected.\n"
               "%s: Please check your settings.\n", __func__, __func__);
 
   cs_cdo_system_helper_t  *sh = solver->system_helper;
@@ -1947,7 +1970,10 @@ cs_cdofb_monolithic_sles_simple(const cs_navsto_param_t  *nsp,
   /* 2. Solve the saddle-point system */
   /* -------------------------------- */
 
-  cs_saddle_solver_simple(solver, x1, p_c);
+  if (saddlep->solver == CS_PARAM_SADDLE_SOLVER_AFS)
+    cs_saddle_solver_afs(solver, x1, p_c);
+  else if (saddlep->solver == CS_PARAM_SADDLE_SOLVER_SIMPLE)
+    cs_saddle_solver_simple(solver, x1, p_c);
 
   /* Copy back to the original array the velocity values at faces */
 

@@ -323,6 +323,7 @@ _init_schur_slesp(cs_param_saddle_t  *saddlep)
     break;
 
   case CS_PARAM_SADDLE_SOLVER_SIMPLE:
+  case CS_PARAM_SADDLE_SOLVER_AFS:
     {
       cs_param_saddle_context_simple_t *ctxp =
         static_cast<cs_param_saddle_context_simple_t *>(saddlep->context);
@@ -359,6 +360,16 @@ _free_context(cs_param_saddle_t  *saddlep)
     return;
 
   switch (saddlep->solver) {
+
+  case CS_PARAM_SADDLE_SOLVER_AFS:
+    {
+      cs_param_saddle_context_simple_t *ctxp =
+        static_cast<cs_param_saddle_context_simple_t *>(saddlep->context);
+
+      cs_param_sles_free(&(ctxp->init_sles_param));
+      cs_param_sles_free(&(ctxp->xtra_sles_param));
+    }
+    break;
 
   case CS_PARAM_SADDLE_SOLVER_ALU:
     {
@@ -612,6 +623,9 @@ cs_param_saddle_get_type_name(cs_param_saddle_solver_t  type)
   case CS_PARAM_SADDLE_SOLVER_NONE:
     return "None";
 
+  case CS_PARAM_SADDLE_SOLVER_AFS:
+    return "Algebraic Fractional Step (AFS)";
+
   case CS_PARAM_SADDLE_SOLVER_ALU:
     return "Augmented-Lagrangian Uzawa";
 
@@ -782,6 +796,7 @@ cs_param_saddle_get_xtra_sles_param(const cs_param_saddle_t  *saddlep)
     break;
 
   case CS_PARAM_SADDLE_SOLVER_SIMPLE:
+  case CS_PARAM_SADDLE_SOLVER_AFS:
     {
       cs_param_saddle_context_simple_t *ctxp =
         static_cast<cs_param_saddle_context_simple_t *>(saddlep->context);
@@ -1108,6 +1123,39 @@ cs_param_saddle_set_solver(const char          *keyval,
   if (strcmp(keyval, "none") == 0)
     saddlep->solver = CS_PARAM_SADDLE_SOLVER_NONE;
 
+  else if (strcmp(keyval, "afs") == 0) {
+
+    saddlep->solver = CS_PARAM_SADDLE_SOLVER_AFS;
+    saddlep->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+    saddlep->precond = CS_PARAM_SADDLE_PRECOND_NONE;
+    saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE;
+
+    /* Context structure dedicated to this algorithm */
+
+    cs_param_saddle_context_simple_t *ctxp = nullptr;
+    CS_MALLOC(ctxp, 1, cs_param_saddle_context_simple_t);
+
+    ctxp->xtra_sles_param = nullptr;  /* It depends on the type of Schur
+                                         approximation used */
+
+    ctxp->dedicated_init_sles = false;
+
+    /* Initialize an additional set of SLES parameters for the initial
+       transformation of the system (this is different from defining a
+       dedicated cs_sles_t structure). The same SLES can be shared but with
+       different settings w.r.t. the stopping convergence criteria. */
+
+    ctxp->init_sles_param = _init_init_slesp(saddlep);
+
+    cs_sles_set_epzero(1e-15);  /* Avoid a too early exit */
+
+    saddlep->context = ctxp;
+
+    // Now the parameters of the Schur can be set
+
+    _init_schur_slesp(saddlep);
+
+  }
   else if (strcmp(keyval, "alu") == 0) {
 
     saddlep->solver = CS_PARAM_SADDLE_SOLVER_ALU;
@@ -1288,7 +1336,7 @@ cs_param_saddle_set_solver(const char          *keyval,
     CS_MALLOC(ctxp, 1, cs_param_saddle_context_simple_t);
 
     ctxp->xtra_sles_param = nullptr;  /* It depends on the type of Schur
-                                      approximation used */
+                                         approximation used */
 
     ctxp->dedicated_init_sles = false;
 
@@ -1485,6 +1533,18 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
   /* Solver */
 
   switch (saddlep->solver) {
+
+  case CS_PARAM_SADDLE_SOLVER_AFS:
+    {
+      cs_param_saddle_context_simple_t *ctxp =
+        static_cast<cs_param_saddle_context_simple_t *>(saddlep->context);
+
+      cs_log_printf(CS_LOG_SETUP, "%s Solver: Algebraic.Fractional.Step\n",
+                    prefix);
+      cs_log_printf(CS_LOG_SETUP, "%s AFS - dedicated_init_sles: %s\n",
+                    prefix, cs_base_strtf(ctxp->dedicated_init_sles));
+    }
+    break;
 
   case CS_PARAM_SADDLE_SOLVER_ALU:
     {

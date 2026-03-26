@@ -126,6 +126,11 @@ typedef enum {
  * acceleration. In this case, one has to specify the scaling coefficient for
  * the augmented system (in the current case, a grad-div operator)
  *
+ * \var CS_PARAM_SADDLE_SOLVER_AFS
+ * AFS means Algebraic Fractional Step. It corresponds to an algebraic
+ * reformulation of classical fractional step methods. This follows the work of
+ * Bonelle and Ma (see HAL preprint online)
+ *
  * \var CS_PARAM_SADDLE_SOLVER_FGMRES
  * Flexible variant of the GMRES Krylov iterative solver. This solver can be
  * applied to a general indefinite systems. Up to now, this solver can be
@@ -185,6 +190,7 @@ typedef enum {
   CS_PARAM_SADDLE_SOLVER_NONE,
 
   CS_PARAM_SADDLE_SOLVER_ALU,
+  CS_PARAM_SADDLE_SOLVER_AFS,
   CS_PARAM_SADDLE_SOLVER_FGMRES,
   CS_PARAM_SADDLE_SOLVER_GCR,
   CS_PARAM_SADDLE_SOLVER_GKB,

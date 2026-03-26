@@ -1012,5 +1012,22 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
                         cs_real_t           *x2);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply the AFS (Algebraic Fractional Step) algorithm to solve a saddle
+ *        point problem
+ *        cf. Bonelle & Ma (HAL preprint available online)
+ *
+ * \param[in, out] solver  pointer to a cs_saddle_solver_t structure
+ * \param[in, out] x1      array for the first part
+ * \param[in, out] x2      array for the second part
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_solver_afs(cs_saddle_solver_t  *solver,
+                     cs_real_t           *x1,
+                     cs_real_t           *x2);
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* __CS_SADDLE_SOLVER_H__ */

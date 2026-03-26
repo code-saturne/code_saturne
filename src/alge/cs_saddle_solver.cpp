@@ -1640,28 +1640,25 @@ _gkb_init_solution(cs_saddle_solver_t             *solver,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Test if one needs to do one more ALU iteration. Case of an ALU
- *        algorithm in an incremental formulation.
+ * \brief Test if one needs to do one more iteration.
  *
- * \param[in, out] algo         structure to manage an iterative algorithm
- * \param[in]      l2norm_incr  value of the weighted L2 norm on the increment
- * \param[in]      n2_dofs      number of DoFs for the second block
- * \param[in]      weights      weights to apply in the computation of the norm
- * \param[in]      res2         array of residual values for the second block
+ * \param[in]      algo_label  label of the algorithm
+ * \param[in, out] algo        structure used to manage an iterative algorithm
  *
  * \return the convergence state
  */
 /*----------------------------------------------------------------------------*/
 
 static cs_sles_convergence_state_t
-_uzawa_cg_cvg_test(cs_iter_algo_t  *algo)
+_standard_cvg_test(const char      *algo_label,
+                   cs_iter_algo_t  *algo)
 {
   /* Update the convergence status */
 
   cs_sles_convergence_state_t
     cvg_status = cs_iter_algo_update_cvg_tol_auto(algo);
 
-  cs_iter_algo_log_cvg(algo, "# UZACG");
+  cs_iter_algo_log_cvg(algo, algo_label);
 
   return cvg_status;
 }
@@ -4520,7 +4517,7 @@ cs_saddle_solver_uzawa_cg(cs_saddle_solver_t  *solver,
   /* Main loop knowing g0, r0, d0, u0, p0 */
   /* ------------------------------------ */
 
-  while (_uzawa_cg_cvg_test(algo) == CS_SLES_ITERATING) {
+  while (_standard_cvg_test("# UZACG", algo) == CS_SLES_ITERATING) {
 
     /* Sensitivity step: Compute wk as the solution of M11.wk = M12.dk */
 
@@ -4536,7 +4533,8 @@ cs_saddle_solver_uzawa_cg(cs_saddle_solver_t  *solver,
                            ctx->rhs);
 
     normalization = ctx->square_norm_b11(ctx->rhs);
-    normalization = (fabs(normalization) > cs_math_zero_threshold) ? sqrt(normalization) : 1.0;
+    normalization = (fabs(normalization) > cs_math_zero_threshold) ?
+      sqrt(normalization) : 1.0;
 
     /* Solve M11.wk = M12.dk (In our context, M12 should be -B^t (and M21 = -B
      * which is the divergence operator) This implies a sign modification
@@ -4972,6 +4970,171 @@ cs_saddle_solver_simple(cs_saddle_solver_t  *solver,
   CS_FREE(dx);
   CS_FREE(r);
   CS_FREE(m12x2);
+
+  /* --- ALGO END --- */
+  /* ---------------- */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply the AFS (Algebraic Fractional Step) algorithm to solve a saddle
+ *        point problem
+ *        cf. Bonelle & Ma (HAL preprint available online)
+ *
+ * \param[in, out] solver  pointer to a cs_saddle_solver_t structure
+ * \param[in, out] x1      array for the first part
+ * \param[in, out] x2      array for the second part
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_saddle_solver_afs(cs_saddle_solver_t  *solver,
+                     cs_real_t           *x1,
+                     cs_real_t           *x2)
+{
+  assert(solver != nullptr);
+
+  const cs_param_saddle_t  *saddlep = solver->param;
+  const cs_param_sles_t *b11_slesp = saddlep->block11_sles_param;
+
+  cs_iter_algo_t  *algo = solver->algo;
+  cs_cdo_system_helper_t  *sh = solver->system_helper;
+  cs_saddle_solver_context_simple_t *ctx =
+    static_cast<cs_saddle_solver_context_simple_t *>(solver->context);
+
+  assert(saddlep->solver == CS_PARAM_SADDLE_SOLVER_AFS);
+  assert(ctx != nullptr);
+
+  /* ------------------ */
+  /* --- ALGO BEGIN --- */
+
+  const cs_lnum_t  n1_dofs = solver->n1_scatter_dofs;
+  const cs_lnum_t  n2_dofs = solver->n2_scatter_dofs;
+  const cs_lnum_t  n2_elts = solver->n2_elts;
+  const cs_lnum_t  n_max_dofs = ctx->b11_max_size + ctx->b22_max_size;
+  const cs_range_set_t  *rset = ctx->b11_range_set;
+  const cs_matrix_t  *m11 = ctx->m11;
+
+  cs_real_t *dx = nullptr, *dx1 = nullptr, *dx2 = nullptr;
+  cs_real_t *res = nullptr, *res1 = nullptr, *res2 = nullptr;
+  cs_real_t *m12x2 = nullptr, *m11x1 = nullptr;
+
+  // Allocate and set the main pointers used in this algorithm
+
+  CS_MALLOC(dx, n_max_dofs, cs_real_t);
+  cs_array_real_fill_zero(n_max_dofs, dx);
+  dx1 = dx;
+  dx2 = dx + ctx->b11_max_size;
+
+  CS_MALLOC(m12x2, n1_dofs, cs_real_t);
+  CS_MALLOC(m11x1, n1_dofs, cs_real_t);
+
+  // The momentum RHS is not reduced by default
+
+  cs_real_t *rhs1 = sh->rhs_array[0];
+  if (rset->ifs != nullptr)
+    cs_interface_set_sum(rset->ifs,
+                         /* n_elts, stride, interlaced */
+                         n1_dofs, 1, false, CS_REAL_TYPE,
+                         rhs1);
+
+  // Compute the first residual and its norm
+
+  CS_MALLOC(res, n_max_dofs, cs_real_t);
+  res1 = res;
+  res2 = res + ctx->b11_max_size;
+
+  cs_saddle_system_residual(sh, x1, x2, res1, res2);
+
+  double init_res_norm = _norm(n1_dofs, res1, n2_dofs, res2, rset);
+  double res_norm = init_res_norm;
+
+  cs_iter_algo_set_normalization(algo, res_norm);
+  cs_iter_algo_update_residual(algo, res_norm);
+
+  do {
+
+    double normalization = ctx->square_norm_b11(res1);
+    normalization = (fabs(normalization) > cs_math_zero_threshold) ?
+      sqrt(normalization) : 1.0;
+
+    // Compute the predicted velocity
+
+    int n_iter = cs_cdo_solve_scalar_system(n1_dofs,
+                                            b11_slesp,
+                                            m11,
+                                            rset,
+                                            normalization,
+                                            false, /* rhs_redux */
+                                            solver->main_sles,
+                                            dx1,   // sol
+                                            res1); // rhs
+
+    cs_iter_algo_update_inner_iters(algo, n_iter);
+
+    // Compute the RHS for the Schur system
+
+    ctx->m21_vector_multiply(n2_dofs, dx1,
+                             ctx->m21_adj, ctx->m21_val, ctx->m21x1);
+
+#   pragma omp parallel for if (n2_dofs > CS_THR_MIN)
+    for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++)
+      ctx->m21x1[i2] -= res2[i2];
+
+    // Solve the Schur system S.dx2 = m21x1
+
+    n_iter = _solve_schur_approximation(solver,
+                                        ctx->schur_sles,
+                                        ctx->schur_matrix,
+                                        ctx->inv_m22,
+                                        1.0,
+                                        ctx->m21x1, // rhs
+                                        dx2);       // sol
+
+    cs_iter_algo_update_inner_iters(algo, n_iter);
+
+    // Update the second variable x2
+
+#   pragma omp parallel for if (n2_dofs > CS_THR_MIN)
+    for (cs_lnum_t i2 = 0; i2 < n2_dofs; i2++)
+      x2[i2] += dx2[i2];
+
+    // Update the first increment dx1 and then the first variable x1
+
+    cs_array_real_fill_zero(n1_dofs, m12x2);
+    ctx->m12_vector_multiply(n2_elts,
+                             dx2, ctx->m21_adj, ctx->m21_val,
+                             m12x2);
+
+    if (rset->ifs != nullptr)
+      cs_interface_set_sum(rset->ifs,
+                           /* n_elts, stride, interlaced */
+                           n1_dofs, 1, false, CS_REAL_TYPE,
+                           m12x2);
+
+    cs_real_t *m11_inv = ctx->m11_inv_diag; // Q_{A^-1}
+
+#   pragma omp parallel for if (n1_dofs > CS_THR_MIN)
+    for (cs_lnum_t i1 = 0; i1 < n1_dofs; i1++) {
+      dx1[i1] += - m11_inv[i1]*m12x2[i1];
+      x1[i1] += dx1[i1];
+    }
+
+    // Update the residuals
+
+    cs_saddle_system_residual(sh, x1, x2, res1, res2);
+
+    // New residual norm of the full system
+
+    res_norm = _norm(n1_dofs, res1, n2_dofs, res2, rset);
+    cs_iter_algo_update_residual(algo, res_norm);
+
+  } while (_standard_cvg_test("# AFS", algo) == CS_SLES_ITERATING);
+
+  CS_FREE(m11x1);
+  CS_FREE(m12x2);
+  CS_FREE(res);
+  CS_FREE(dx);
 
   /* --- ALGO END --- */
   /* ---------------- */

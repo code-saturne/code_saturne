@@ -243,7 +243,8 @@ cs_cdofb_monolithic_sles_uzawa_cg(const cs_navsto_param_t  *nsp,
  * \brief Solve a linear system arising from the discretization of the
  *        Navier-Stokes equation using a monolithic velocity-pressure coupling
  *        with a CDO face-based approach.
- *        Solve this system using the SIMPLE algorithm.
+ *        Solve this system using an Algebraic Fractional Step algorithm. An
+ *        example of an AFS algorithm is the SIMPLE algorithm.
  *
  * \param[in]      nsp     set of parameters related to the Navier-Stokes eqs.
  * \param[in, out] solver  pointer to a cs_saddle_solver_t structure
@@ -255,9 +256,11 @@ cs_cdofb_monolithic_sles_uzawa_cg(const cs_navsto_param_t  *nsp,
 /*----------------------------------------------------------------------------*/
 
 int
-cs_cdofb_monolithic_sles_simple(const cs_navsto_param_t  *nsp,
-                                cs_saddle_solver_t       *solver,
-                                cs_real_t                *u_f,
-                                cs_real_t                *p_c);
+cs_cdofb_monolithic_sles_afs(const cs_navsto_param_t  *nsp,
+                             cs_saddle_solver_t       *solver,
+                             cs_real_t                *u_f,
+                             cs_real_t                *p_c);
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* __CS_CDOFB_MONOLITHIC_SLES_H__ */
