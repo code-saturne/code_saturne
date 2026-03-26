@@ -34,13 +34,17 @@
 /// Enable NVTX profiling.
 #define CS_PROFILING_NVTX 1
 
+/// Enable ROCTX profiling.
+#define CS_PROFILING_ROCTX 2
+
 // No profiling library is used by default.
 #ifndef CS_PROFILING
 #define CS_PROFILING CS_PROFILING_NONE
 #endif
 
 // Make sure NVTX profiling is used in host code only, not CUDA.
-#if defined(__CUDA_ARCH__)
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__) \
+  || defined(__SYCL_DEVICE_ONLY__)
 #undef CS_PROFILING
 #define CS_PROFILING CS_PROFILING_NONE
 #endif
@@ -66,9 +70,6 @@
 /// Annotates a whole function.
 #define CS_PROFILE_FUNC_RANGE()
 
-/// Annotates a range delimited by the lifetime of a variable.
-#define CS_PROFILE_RANGE(range_name)
-
 /// Adds a mark in a profile that corresponds to the current file and line.
 #define CS_PROFILE_MARK_LINE()
 
@@ -83,27 +84,55 @@
 #include <nvtx3/nvtx3.hpp>
 // #include <nvToolsExt.h>
 
-// Start profiling, when activated y code.
+// Start profiling, when activated by code.
 #define CS_PROFILE_START() {cudaProfilerStart();}
 
-// Stop profiling, when activated y code.
+// Stop profiling, when activated by code.
 #define CS_PROFILE_STOP() {cudaProfilerStop();}
 
 /// Annotates a whole function.
-#ifndef __CUDA_ARCH__
 #define CS_PROFILE_FUNC_RANGE() NVTX3_FUNC_RANGE()
-#else
-#define CS_PROFILE_FUNC_RANGE()
-#endif
-
-/// Annotates a range delimited by the lifetime of a variable.
-#define CS_PROFILE_RANGE(range_name)                                           \
-  nvtx3::scoped_range CS_COMBINE(__cs__profile_range_, __LINE__){              \
-    range_name " (" __FILE__ ":" CS_STRINGIFY(__LINE__) ")"                    \
-  };
 
 /// Adds a mark in a profile that corresponds to the current file and line.
 #define CS_PROFILE_MARK_LINE() nvtx3::mark(__FILE__ ":" CS_STRINGIFY(__LINE__))
+
+/*----------------------------------------------------------------------------
+ * Profiling with AMD ROCTX
+ *----------------------------------------------------------------------------*/
+
+#elif CS_PROFILING == CS_PROFILING_ROCTX
+
+#include <rocprofiler-sdk-roctx/roctx.h>
+
+/* Helper class for scoped range
+ *------------------------------*/
+
+class cs_profiling_scoped_range {
+public:
+  // Constructor
+  cs_profiling_scoped_range(const char *descr)
+  { roctxRangePushA(descr); }
+
+  // Destructor
+  ~cs_profiling_scoped_range()
+  { roctxRangePop(); }
+};
+
+// Start profiling, when activated by code.
+
+#define CS_PROFILE_START() {roctxProfilerResume();}
+
+// Stop profiling, when activated by code.
+#define CS_PROFILE_STOP() {roctxProfilerPause();}
+
+/// Annotates a whole function.
+#define CS_PROFILE_FUNC_RANGE() \
+  cs_profiling_scoped_range _cs_psr = cs_profiling_scoped_range(__func__);
+
+/// Adds a mark in a profile that corresponds to the current file and line.
+#define CS_PROFILE_MARK_LINE() roctxMarkA(__FILE__ ":" CS_STRINGIFY(__LINE__))
+
+/*----------------------------------------------------------------------------*/
 
 #endif
 
