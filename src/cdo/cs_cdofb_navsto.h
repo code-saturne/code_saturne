@@ -270,24 +270,24 @@ cs_cdofb_navsto_mass_flux(const cs_navsto_param_t   *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the divergence in a cell of a vector-valued array defined at
- *         faces (values are defined both at interior and border faces).
- *         Variant based on the usage of \ref cs_cdo_quantities_t structure.
+ * \brief Compute the divergence in a cell of a vector-valued array defined at
+ *        faces (values are defined both at interior and border faces).
+ *        Variant based on the usage of \ref cs_cdo_quantities_t structure.
  *
- * \param[in]     c_id         cell id
- * \param[in]     quant        pointer to a \ref cs_cdo_quantities_t
- * \param[in]     c2f          pointer to cell-to-face \ref cs_adjacency_t
- * \param[in]     f_vals       values of the face DoFs
+ * \param[in] c_id    cell id
+ * \param[in] quant   pointer to a \ref cs_cdo_quantities_t
+ * \param[in] c2f     pointer to cell-to-face \ref cs_adjacency_t
+ * \param[in] f_vals  values of the face DoFs
  *
  * \return the divergence for the corresponding cell
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_cdofb_navsto_cell_divergence(const cs_lnum_t               c_id,
-                                const cs_cdo_quantities_t    *quant,
-                                const cs_adjacency_t         *c2f,
-                                const cs_real_t              *f_vals);
+cs_cdofb_navsto_cell_divergence(const cs_lnum_t            c_id,
+                                const cs_cdo_quantities_t *quant,
+                                const cs_adjacency_t      *c2f,
+                                const cs_real_t           *f_vals);
 
 /*----------------------------------------------------------------------------*/
 /*!

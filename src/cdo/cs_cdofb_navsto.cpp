@@ -475,24 +475,24 @@ cs_cdofb_navsto_mass_flux(const cs_navsto_param_t   *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the divergence in a cell of a vector-valued array defined at
- *         faces (values are defined both at interior and border faces).
- *         Variant based on the usage of \ref cs_cdo_quantities_t structure.
+ * \brief Compute the divergence in a cell of a vector-valued array defined at
+ *        faces (values are defined both at interior and border faces).
+ *        Variant based on the usage of \ref cs_cdo_quantities_t structure.
  *
- * \param[in]     c_id         cell id
- * \param[in]     quant        pointer to a \ref cs_cdo_quantities_t
- * \param[in]     c2f          pointer to cell-to-face \ref cs_adjacency_t
- * \param[in]     f_vals       values of the face DoFs
+ * \param[in] c_id    cell id
+ * \param[in] quant   pointer to a \ref cs_cdo_quantities_t
+ * \param[in] c2f     pointer to cell-to-face \ref cs_adjacency_t
+ * \param[in] f_vals  values of the face DoFs
  *
  * \return the divergence for the corresponding cell
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_cdofb_navsto_cell_divergence(const cs_lnum_t               c_id,
-                                const cs_cdo_quantities_t    *quant,
-                                const cs_adjacency_t         *c2f,
-                                const cs_real_t              *f_vals)
+cs_cdofb_navsto_cell_divergence(const cs_lnum_t            c_id,
+                                const cs_cdo_quantities_t *quant,
+                                const cs_adjacency_t      *c2f,
+                                const cs_real_t           *f_vals)
 {
   const cs_lnum_t  thd = 3 * quant->n_i_faces;
 
@@ -509,6 +509,26 @@ cs_cdofb_navsto_cell_divergence(const cs_lnum_t               c_id,
   } /* Loop on cell faces */
 
   div /= quant->cell_vol[c_id];
+
+#if 0 // Advanced debug output
+  double div_threshold = 1e-6;
+  if (fabs(div) > div_threshold) {
+
+    printf("\n cell_id: %d --> DIV=% 10.8e\n", c_id, div);
+    for (cs_lnum_t f = c2f->idx[c_id]; f < c2f->idx[c_id+1]; f++) {
+
+      const cs_lnum_t  shift = 3*c2f->ids[f];
+      const cs_real_t  *_val = f_vals + shift;
+      const cs_real_t  *fnorm = (shift < thd) ?
+        quant->i_face_normal + shift : quant->b_face_normal + (shift - thd);
+
+      printf(" f_id: %5d | nf: % 8.5e; % 8.5e; % 8.5e | contrib: % 10.8e\n",
+             c2f->ids[f], fnorm[0], fnorm[1], fnorm[2],
+             c2f->sgn[f]*cs_math_3_dot_product(_val, fnorm));
+
+    }
+  }
+#endif
 
   return div;
 }
