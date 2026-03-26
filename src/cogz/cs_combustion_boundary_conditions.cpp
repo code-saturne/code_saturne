@@ -196,20 +196,17 @@ cs_combustion_boundary_conditions(int  bc_type[])
   cs_combustion_gas_model_t *cm = cs_glob_combustion_gas_model;
 
   /* Boundary conditions for H */
-  int *icodcl_h = nullptr;
   cs_real_t *rcodcl1_h = nullptr;
 
   if (   pm_flag[CS_COMBUSTION_3PT] > -1
       || pm_flag[CS_COMBUSTION_SLFM] == 1
       || pm_flag[CS_COMBUSTION_SLFM] == 3) {
     if (CS_F_(h) != nullptr) {
-      icodcl_h = CS_F_(h)->bc_coeffs->icodcl;
       rcodcl1_h = CS_F_(h)->bc_coeffs->rcodcl1;
     }
   }
 
   /* Boundary conditions mixture fraction and its variance */
-  int *icodcl_fm = nullptr;
   cs_real_t *rcodcl1_fm = nullptr, *rcodcl1_fp2m_fsqm = nullptr;
   cs_real_t *rcodcl1_pvm = nullptr;
 
@@ -220,7 +217,6 @@ cs_combustion_boundary_conditions(int  bc_type[])
 
   f = cs_field_try("mixture_fraction");
   if (f != nullptr) {
-    icodcl_fm = f->bc_coeffs->icodcl;
     rcodcl1_fm = f->bc_coeffs->rcodcl1;
   }
 
@@ -321,7 +317,6 @@ cs_combustion_boundary_conditions(int  bc_type[])
       if (   bc_type[elt_id] == CS_INLET
           || bc_type[elt_id] == CS_CONVECTIVE_INLET) {
 
-        icodcl_fm[elt_id] = 1;
         rcodcl1_fm[elt_id] = fm_in;      // mean mixture fraction
 
         // mean mixture fraction variance or 2nd moment of mixture fraction
@@ -332,7 +327,6 @@ cs_combustion_boundary_conditions(int  bc_type[])
           rcodcl1_pvm[elt_id] = pvm_in;  // progress variable
 
         if (rcodcl1_h != nullptr) {
-          icodcl_h[elt_id] = 1;
           rcodcl1_h[elt_id] = h_in;        // mixture enthalpy
         }
 
