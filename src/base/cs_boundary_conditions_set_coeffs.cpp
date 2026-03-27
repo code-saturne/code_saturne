@@ -1684,7 +1684,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
         /* Dirichlet boundary condition
            ----------------------------- */
 
-        if (icodcl_p[f_id] == 1) {
+        if (icodcl_p[f_id] == CS_BC_DIRICHLET) {
 
           const cs_real_t hext = rcodcl2_p[f_id];
           const cs_real_t pimp = rcodcl1_p[f_id];
