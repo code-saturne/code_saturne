@@ -449,18 +449,6 @@ _les_balance_laplacian(cs_real_t   *wa,
 
   /* Compute boundary face value */
 
-  cs_boundary_conditions_update_bc_coeff_face_values
-    (ctx,
-     nullptr, // field
-     &bc_coeffs_loc,
-     1, // inc
-     &_eqp,
-     true, true,
-     0, nullptr, // hyd_p_flag, f_ext
-     nullptr,
-     nullptr, nullptr, // tensor viscel and weighb
-     wa);
-
   cs_convection_diffusion_scalar(0,              /* idtvar */
                                  -1,             /* f_id */
                                  _eqp,

@@ -54,6 +54,7 @@
 
 #include "base/cs_array.h"
 #include "base/cs_boundary_conditions.h"
+#include "base/cs_boundary_conditions_set_coeffs.h"
 #include "base/cs_dispatch.h"
 #include "cdo/cs_equation_param.h"
 #include "base/cs_halo.h"
@@ -1773,7 +1774,7 @@ _convection_diffusion_scalar_unsteady
    cs_real_t         *restrict pvar,
    const cs_real_t   *restrict pvara,
    const int                   icvfli[],
-   const cs_field_bc_coeffs_t *bc_coeffs,
+   cs_field_bc_coeffs_t       *bc_coeffs,
    const cs_real_t             i_massflux[],
    const cs_real_t             b_massflux[],
    const cs_real_t             i_visc[],
@@ -1938,6 +1939,51 @@ _convection_diffusion_scalar_unsteady
     }
   }
 
+  /* Update BC coeffs */
+
+  // Update BCs
+
+  bool is_ischcp
+    = (   (is_thermal && ischcp == 0)
+       || (is_thermal == false && (ischcp == 0 || ischcp == 3 || ischcp == 4)));
+
+  bool gradient_reco
+    =    (   (idiffp != 0 && ircflp == 1)
+      || (   iconvp != 0 && pure_upwind == false
+          && (ircflp == 1 || isstpp == 0 || is_ischcp)));
+
+  const bool need_compute_bc_flux = true;
+  const bool need_compute_bc_grad = true;
+
+  if (gradient_reco && f != nullptr) {
+    /* Get the calculation option from the field */
+    if (f->type & CS_FIELD_VARIABLE && eqp.iwgrec == 1) {
+      if (eqp.idiff > 0) {
+        int key_id = cs_field_key_id("gradient_weighting_id");
+        int diff_id = cs_field_get_key_int(f, key_id);
+        if (diff_id > -1) {
+          cs_field_t *weight_f = cs_field_by_id(diff_id);
+          gweight = weight_f->val;
+          w_stride = weight_f->dim;
+          cs_field_synchronize(weight_f, halo_type);
+        }
+      }
+    }
+  }
+
+  cs_boundary_conditions_update_bc_coeff_face_values
+    (ctx,
+     (const cs_field_t *)f,
+     bc_coeffs,
+     inc,
+     &eqp,
+     need_compute_bc_grad, need_compute_bc_flux,
+     -1, nullptr, // hyd_p_flag, f_ext,
+     gweight,
+     nullptr, // viscel (aniso)
+     nullptr, // weighb (aniso)
+     _pvar);
+
   /* Compute the balance with reconstruction */
 
   /* Compute the gradient of the variable */
@@ -1953,29 +1999,7 @@ _convection_diffusion_scalar_unsteady
          - when we use NVD / TVD schemes.
   */
 
-  bool is_ischcp
-    = (   (is_thermal && ischcp == 0)
-       || (is_thermal == false && (ischcp == 0 || ischcp == 3 || ischcp == 4)));
-
-  if (   (idiffp != 0 && ircflp == 1)
-      || (   iconvp != 0 && pure_upwind == false
-          && (ircflp == 1 || isstpp == 0 || is_ischcp))) {
-
-    if (f != nullptr) {
-      /* Get the calculation option from the field */
-      if (f->type & CS_FIELD_VARIABLE && eqp.iwgrec == 1) {
-        if (eqp.idiff > 0) {
-          int key_id = cs_field_key_id("gradient_weighting_id");
-          int diff_id = cs_field_get_key_int(f, key_id);
-          if (diff_id > -1) {
-            cs_field_t *weight_f = cs_field_by_id(diff_id);
-            gweight = weight_f->val;
-            w_stride = weight_f->dim;
-            cs_field_synchronize(weight_f, halo_type);
-          }
-        }
-      }
-    }
+  if (gradient_reco) {
 
     cs_gradient_scalar_synced_input(var_name,
                                     gradient_type,
@@ -2837,7 +2861,7 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
                                  cs_real_t         *restrict pvar,
                                  const cs_real_t   *restrict pvara,
                                  const int                   icvfli[],
-                                 const cs_field_bc_coeffs_t *bc_coeffs,
+                                 cs_field_bc_coeffs_t       *bc_coeffs,
                                  const cs_real_t             i_massflux[],
                                  const cs_real_t             b_massflux[],
                                  cs_real_t                   i_conv_flux[][2],
@@ -2993,6 +3017,44 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
 
   bool pure_upwind = (blencp > 0.) ? false : true;
 
+  /* Update BC coeffs */
+
+  bool gradient_reco
+    =    iconvp != 0 && pure_upwind == false
+      && (ischcp == 0 || ircflp == 1 || isstpp == 0 || ischcp == 4);
+
+  if (gradient_reco && f != nullptr) {
+    /* Get the calculation option from the field */
+    if (f->type & CS_FIELD_VARIABLE && eqp.iwgrec == 1) {
+      if (eqp.idiff > 0) {
+        int key_id = cs_field_key_id("gradient_weighting_id");
+        int diff_id = cs_field_get_key_int(f, key_id);
+        if (diff_id > -1) {
+          cs_field_t *weight_f = cs_field_by_id(diff_id);
+          gweight = weight_f->val;
+          w_stride = weight_f->dim;
+          cs_field_synchronize(weight_f, halo_type);
+        }
+      }
+    }
+  }
+
+  const bool need_compute_bc_flux = false;
+  const bool need_compute_bc_grad = true;
+
+  cs_boundary_conditions_update_bc_coeff_face_values
+    (ctx,
+     (const cs_field_t *)f,
+     bc_coeffs,
+     inc,
+     &eqp,
+     need_compute_bc_grad, need_compute_bc_flux,
+     -1, nullptr,
+     gweight,
+     nullptr, // viscel (aniso)
+     nullptr, // weighb (aniso)
+     pvar);
+
   /* Compute the balance with reconstruction */
 
   /* Compute the gradient of the variable */
@@ -3007,24 +3069,7 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
          - when we use NVD / TVD schemes.
   */
 
-  if (   iconvp != 0 && pure_upwind == false
-      && (ischcp == 0 || ircflp == 1 || isstpp == 0 || ischcp == 4)) {
-
-    if (f != nullptr) {
-      /* Get the calculation option from the field */
-      if (f->type & CS_FIELD_VARIABLE && eqp.iwgrec == 1) {
-        if (eqp.idiff > 0) {
-          int key_id = cs_field_key_id("gradient_weighting_id");
-          int diff_id = cs_field_get_key_int(f, key_id);
-          if (diff_id > -1) {
-            cs_field_t *weight_f = cs_field_by_id(diff_id);
-            gweight = weight_f->val;
-            w_stride = weight_f->dim;
-            cs_field_synchronize(weight_f, halo_type);
-          }
-        }
-      }
-    }
+  if (gradient_reco) {
 
     cs_gradient_scalar_synced_input(var_name,
                                     gradient_type,
@@ -3755,8 +3800,6 @@ _convection_diffusion_unsteady_strided
   std::chrono::high_resolution_clock::time_point t_start;
   if (cs_glob_timer_kernels_flag > 0)
     t_start = std::chrono::high_resolution_clock::now();
-
-  //flux lim
 
   const int iconvp = eqp.iconv;
   const int idiffp = eqp.idiff;
@@ -4843,7 +4886,7 @@ cs_convection_diffusion_scalar(int                         idtvar,
                                cs_real_t         *restrict pvar,
                                const cs_real_t   *restrict pvara,
                                const int                   icvfli[],
-                               const cs_field_bc_coeffs_t *bc_coeffs,
+                               cs_field_bc_coeffs_t       *bc_coeffs,
                                const cs_real_t             i_massflux[],
                                const cs_real_t             b_massflux[],
                                const cs_real_t             i_visc[],
@@ -4954,7 +4997,7 @@ cs_face_convection_scalar(int                         idtvar,
                           cs_real_t         *restrict pvar,
                           const cs_real_t   *restrict pvara,
                           const int                   icvfli[],
-                          const cs_field_bc_coeffs_t *bc_coeffs,
+                          cs_field_bc_coeffs_t       *bc_coeffs,
                           const cs_real_t             i_massflux[],
                           const cs_real_t             b_massflux[],
                           cs_real_t                   i_conv_flux[][2],
@@ -5074,7 +5117,7 @@ cs_convection_diffusion_vector(int                         idtvar,
                                cs_real_3_t       *restrict pvar,
                                const cs_real_3_t *restrict pvara,
                                const int                   icvfli[],
-                               const cs_field_bc_coeffs_t *bc_coeffs,
+                               cs_field_bc_coeffs_t       *bc_coeffs,
                                const cs_real_t             i_massflux[],
                                const cs_real_t             b_massflux[],
                                const cs_real_t             i_visc[],
@@ -5196,6 +5239,13 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   cs_real_t *bounds = nullptr;
 
+  const cs_real_3_t  *restrict _pvar
+    = (pvar != nullptr) ? (const cs_real_3_t  *)pvar : pvara;
+
+  /* Update BC coeffs */
+  cs_boundary_conditions_update_bc_coeff_face_values_strided<3>
+    (ctx, f, bc_coeffs, inc, &eqp, _pvar);
+
   if (  (eqp.idiff != 0 && eqp.ircflu == 1)
       || ivisep == 1
       || (    eqp.iconv != 0 && eqp.blencv > 0.
@@ -5221,9 +5271,6 @@ cs_convection_diffusion_vector(int                         idtvar,
         }
       }
     }
-
-    const cs_real_3_t  *restrict _pvar
-      = (pvar != nullptr) ? (const cs_real_3_t  *)pvar : pvara;
 
     cs_gradient_vector_synced_input(var_name,
                                     gradient_type,
@@ -5463,7 +5510,7 @@ cs_convection_diffusion_tensor(int                          idtvar,
                                int                          imasac,
                                cs_real_6_t        *restrict pvar,
                                const cs_real_6_t  *restrict pvara,
-                               const cs_field_bc_coeffs_t  *bc_coeffs,
+                               cs_field_bc_coeffs_t        *bc_coeffs,
                                const cs_real_t              i_massflux[],
                                const cs_real_t              b_massflux[],
                                const cs_real_t              i_visc[],
@@ -5654,7 +5701,7 @@ cs_convection_diffusion_thermal(int                         idtvar,
                                 int                         imasac,
                                 cs_real_t        *restrict  pvar,
                                 const cs_real_t  *restrict  pvara,
-                                const cs_field_bc_coeffs_t *bc_coeffs,
+                                cs_field_bc_coeffs_t       *bc_coeffs,
                                 const cs_real_t             i_massflux[],
                                 const cs_real_t             b_massflux[],
                                 const cs_real_t             i_visc[],
@@ -5743,7 +5790,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
                                 int                         inc,
                                 cs_real_t        *restrict  pvar,
                                 const cs_real_t  *restrict  pvara,
-                                const cs_field_bc_coeffs_t *bc_coeffs,
+                                cs_field_bc_coeffs_t       *bc_coeffs,
                                 const cs_real_t             i_visc[],
                                 const cs_real_t             b_visc[],
                                 cs_real_6_t      *restrict  viscel,
@@ -5895,7 +5942,38 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
   /* ---> Periodicity and parallelism treatment of symmetric tensors */
   cs_halo_sync_r(halo, halo_type, false, viscce);
 
-  // TODO update Bcs
+  // Update Bcs
+  const bool need_compute_bc_flux = true;
+  const bool need_compute_bc_grad = true;
+
+  if (ircflp && f_id != -1) {
+    /* Get the calculation option from the field */
+    if (f->type & CS_FIELD_VARIABLE && eqp.iwgrec == 1) {
+      if (eqp.idifft > 0) {
+        int key_id = cs_field_key_id("gradient_weighting_id");
+        int diff_id = cs_field_get_key_int(f, key_id);
+        if (diff_id > -1) {
+          cs_field_t *weight_f = cs_field_by_id(diff_id);
+          gweight = weight_f->val;
+          w_stride = weight_f->dim;
+          cs_field_synchronize(weight_f, halo_type);
+        }
+      }
+    }
+  }
+
+  cs_boundary_conditions_update_bc_coeff_face_values
+    (ctx,
+     f,
+     bc_coeffs,
+     inc,
+     &eqp,
+     need_compute_bc_grad, need_compute_bc_flux,
+     -1, nullptr, // hyd_p_flag, f_ext,
+     nullptr, //visel,
+     viscce,
+     weighb,
+     _pvar);
 
   /* 2. Compute the diffusive part with reconstruction technics */
 
@@ -5904,22 +5982,6 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
      ======================================================================*/
 
   if (ircflp) {
-
-    if (f_id != -1) {
-      /* Get the calculation option from the field */
-      if (f->type & CS_FIELD_VARIABLE && eqp.iwgrec == 1) {
-        if (eqp.idifft > 0) {
-          int key_id = cs_field_key_id("gradient_weighting_id");
-          int diff_id = cs_field_get_key_int(f, key_id);
-          if (diff_id > -1) {
-            cs_field_t *weight_f = cs_field_by_id(diff_id);
-            gweight = weight_f->val;
-            w_stride = weight_f->dim;
-            cs_field_synchronize(weight_f, halo_type);
-          }
-        }
-      }
-    }
 
     cs_gradient_scalar_synced_input(var_name,
                                     gradient_type,
@@ -6306,7 +6368,7 @@ cs_anisotropic_left_diffusion_vector
    int                         ivisep,
    cs_real_3_t       *restrict pvar,
    const cs_real_3_t *restrict pvara,
-   const cs_field_bc_coeffs_t *bc_coeffs,
+   cs_field_bc_coeffs_t       *bc_coeffs,
    const cs_real_33_t          i_visc[],
    const cs_real_t             b_visc[],
    const cs_real_t             i_secvis[],
@@ -6399,6 +6461,11 @@ cs_anisotropic_left_diffusion_vector
   else
     strncpy(var_name, "[anisotropic left diffusion, vector]", 63);
   var_name[63] = '\0';
+
+ /* Update BC coeffs */
+
+  cs_boundary_conditions_update_bc_coeff_face_values_strided<3>
+    (ctx, f, bc_coeffs, inc, &eqp, _pvar);
 
   /* 2. Compute the diffusive part with reconstruction */
 
@@ -6785,7 +6852,7 @@ cs_anisotropic_right_diffusion_vector
   int                           inc,
   cs_real_3_t         *restrict pvar,
   const cs_real_3_t   *restrict pvara,
-  const cs_field_bc_coeffs_t   *bc_coeffs,
+  cs_field_bc_coeffs_t         *bc_coeffs,
   const cs_real_t               i_visc[],
   const cs_real_t               b_visc[],
   cs_real_6_t         *restrict viscel,
@@ -6884,6 +6951,11 @@ cs_anisotropic_right_diffusion_vector
   var_name[63] = '\0';
 
   viscce = viscel;
+
+  /* Update BC coeffs */
+
+  cs_boundary_conditions_update_bc_coeff_face_values_strided<3>
+    (ctx, f, bc_coeffs, inc, &eqp, _pvar);
 
   /* 2. Compute the diffusive part with reconstruction */
 
@@ -7291,7 +7363,7 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
                                 int                          inc,
                                 cs_real_6_t        *restrict pvar,
                                 const cs_real_6_t  *restrict pvara,
-                                const cs_field_bc_coeffs_t  *bc_coeffs,
+                                cs_field_bc_coeffs_t        *bc_coeffs,
                                 const cs_real_t              i_visc[],
                                 const cs_real_t              b_visc[],
                                 cs_real_6_t        *restrict viscel,
@@ -7423,6 +7495,11 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
 
   /* ---> Periodicity and parallelism treatment of symmetric tensors */
   cs_halo_sync_r(halo, halo_type, false, viscce);
+
+  /* Update BC coeffs */
+
+  cs_boundary_conditions_update_bc_coeff_face_values_strided<6>
+    (ctx, f, bc_coeffs, inc, &eqp, _pvar);
 
   /* 2. Compute the diffusive part with reconstruction */
 
@@ -7819,7 +7896,7 @@ cs_face_diffusion_potential(const cs_field_t           *f,
                             int                         iphydp,
                             cs_real_3_t       *restrict frcxt,
                             cs_real_t         *restrict pvar,
-                            const cs_field_bc_coeffs_t *bc_coeffs,
+                            cs_field_bc_coeffs_t       *bc_coeffs,
                             const cs_real_t             i_visc[],
                             const cs_real_t             b_visc[],
                             cs_real_t         *restrict visel,
@@ -7905,6 +7982,50 @@ cs_face_diffusion_potential(const cs_field_t           *f,
 
   cs_real_3_t *grad = nullptr;
 
+  /* Update BC coeffs */
+
+  if (eqp->ircflu) {
+    /* weight for gradient */
+    if (eqp->iwgrec > 0) {
+      gweight = visel;
+      if (halo != nullptr)
+        cs_halo_sync(halo, halo_type, on_device, gweight);
+    }
+    else if (f != nullptr) {
+      /* Get the calculation option from the field */
+      const cs_equation_param_t *eqp_f
+        = cs_field_get_equation_param_const(f);
+      if (f->type & CS_FIELD_VARIABLE && eqp_f->iwgrec == 1) {
+        if (eqp_f->idiff > 0) {
+          int key_id = cs_field_key_id("gradient_weighting_id");
+          int diff_id = cs_field_get_key_int(f, key_id);
+          if (diff_id > -1) {
+            cs_field_t *weight_f = cs_field_by_id(diff_id);
+            gweight = weight_f->val;
+            w_stride = weight_f->dim;
+            cs_field_synchronize(weight_f, halo_type);
+          }
+        }
+      }
+    }
+  }
+
+  const bool need_compute_bc_flux = true;
+  const bool need_compute_bc_grad = true;
+
+  cs_boundary_conditions_update_bc_coeff_face_values
+    (ctx_b,
+     (const cs_field_t *)f,
+     bc_coeffs,
+     inc,
+     eqp,
+     need_compute_bc_grad, need_compute_bc_flux,
+     iphydp, frcxt,
+     gweight,
+     nullptr, // viscel (aniso)
+     nullptr, // weighb (aniso)
+     pvar);
+
   /*==========================================================================
     2. Update mass flux without reconstruction
     ==========================================================================*/
@@ -7933,29 +8054,6 @@ cs_face_diffusion_potential(const cs_field_t           *f,
     CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, amode);
 
     /* Compute gradient */
-    if (eqp->iwgrec > 0) {
-      gweight = visel;
-      if (halo != nullptr)
-        cs_halo_sync(halo, halo_type, on_device, gweight);
-    }
-
-    else if (f != nullptr) {
-      /* Get the calculation option from the field */
-      const cs_equation_param_t *eqp_f
-        = cs_field_get_equation_param_const(f);
-      if (f->type & CS_FIELD_VARIABLE && eqp_f->iwgrec == 1) {
-        if (eqp_f->idiff > 0) {
-          int key_id = cs_field_key_id("gradient_weighting_id");
-          int diff_id = cs_field_get_key_int(f, key_id);
-          if (diff_id > -1) {
-            cs_field_t *weight_f = cs_field_by_id(diff_id);
-            gweight = weight_f->val;
-            w_stride = weight_f->dim;
-            cs_field_synchronize(weight_f, halo_type);
-          }
-        }
-      }
-    }
 
     cs_gradient_scalar_synced_input(var_name,
                                     gradient_type,
@@ -8055,6 +8153,8 @@ cs_face_diffusion_potential(const cs_field_t           *f,
  * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
  * \param[in]     weighf        internal face weight between cells i j in case
  *                               of tensor diffusion
+ * \param[in]     weighb        boundary face weight for cells i in case
+ *                               of tensor diffusion
  * \param[in,out] i_massflux    mass flux at interior faces
  * \param[in,out] b_massflux    mass flux at boundary faces
  */
@@ -8071,11 +8171,12 @@ cs_face_anisotropic_diffusion_potential
    int                         iphydp,
    cs_real_3_t       *restrict frcxt,
    cs_real_t         *restrict pvar,
-   const cs_field_bc_coeffs_t *bc_coeffs,
+   cs_field_bc_coeffs_t       *bc_coeffs,
    const cs_real_t             i_visc[],
    const cs_real_t             b_visc[],
    cs_real_6_t       *restrict viscel,
    const cs_real_2_t           weighf[],
+   const cs_real_t             weighb[],
    cs_real_t         *restrict i_massflux,
    cs_real_t         *restrict b_massflux)
 {
@@ -8175,29 +8276,12 @@ cs_face_anisotropic_diffusion_potential
 
   cs_halo_sync(halo, halo_type, on_device, pvar);
 
-  /*==========================================================================
-    2. Update mass flux without reconstruction technique
-    ==========================================================================*/
+  /* Update BC coeffs */
 
-  if (!(ircflp)) {
+  cs_real_6_t *viscce = nullptr;
 
-    /* Contribution from interior faces */
-
-    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
-      cs_lnum_t ii = i_face_cells[face_id][0];
-      cs_lnum_t jj = i_face_cells[face_id][1];
-
-      i_massflux[face_id] += i_visc[face_id]*(pvar[ii] - pvar[jj]);
-    });
-  }
-
-  /*==========================================================================
-    3. Update mass flux with reconstruction technique
-    ==========================================================================*/
-
-  else {
-
-    cs_real_6_t *viscce = nullptr;
+  // Weight for gradient
+  if (ircflp) {
 
     /* Without porosity */
     if (porosi == nullptr) {
@@ -8259,6 +8343,45 @@ cs_face_anisotropic_diffusion_potential
         }
       }
     }
+  }
+
+  const bool need_compute_bc_flux = true;
+  const bool need_compute_bc_grad = true;
+
+  cs_boundary_conditions_update_bc_coeff_face_values
+    (ctx,
+     f,
+     bc_coeffs,
+     inc,
+     eqp,
+     need_compute_bc_grad, need_compute_bc_flux,
+     iphydp, frcxt,
+     nullptr, //visel,
+     (cs_real_6_t *)gweight,
+     weighb,
+     pvar);
+
+  /*==========================================================================
+    2. Update mass flux without reconstruction technique
+    ==========================================================================*/
+
+  if (!(ircflp)) {
+
+    /* Contribution from interior faces */
+
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+      cs_lnum_t ii = i_face_cells[face_id][0];
+      cs_lnum_t jj = i_face_cells[face_id][1];
+
+      i_massflux[face_id] += i_visc[face_id]*(pvar[ii] - pvar[jj]);
+    });
+  }
+
+  /*==========================================================================
+    3. Update mass flux with reconstruction technique
+    ==========================================================================*/
+
+  else {
 
     /* Compute gradient */
     cs_gradient_scalar_synced_input(var_name,
@@ -8426,7 +8549,7 @@ cs_diffusion_potential(const cs_field_t           *f,
                        int                         iphydp,
                        cs_real_3_t       *restrict frcxt,
                        cs_real_t         *restrict pvar,
-                       const cs_field_bc_coeffs_t *bc_coeffs,
+                       cs_field_bc_coeffs_t       *bc_coeffs,
                        const cs_real_t             i_visc[],
                        const cs_real_t             b_visc[],
                        cs_real_t                   visel[],
@@ -8494,6 +8617,50 @@ cs_diffusion_potential(const cs_field_t           *f,
   if (halo != nullptr)
     cs_halo_sync(halo, halo_type, ctx.use_gpu(), pvar);
 
+  /* Update BC coeffs */
+
+  if (eqp->ircflu) {
+    if (eqp->iwgrec > 0) {
+      gweight = visel;
+      if (halo != nullptr)
+        cs_halo_sync(halo, halo_type, ctx.use_gpu(), gweight);
+    }
+
+    else if (f != nullptr) {
+      /* Get the calculation option from the field */
+      const cs_equation_param_t *eqp_f
+        = cs_field_get_equation_param_const(f);
+      if (f->type & CS_FIELD_VARIABLE && eqp_f->iwgrec == 1) {
+        if (eqp->idiff > 0) {
+          int key_id = cs_field_key_id("gradient_weighting_id");
+          int diff_id = cs_field_get_key_int(f, key_id);
+          if (diff_id > -1) {
+            cs_field_t *weight_f = cs_field_by_id(diff_id);
+            gweight = weight_f->val;
+            w_stride = weight_f->dim;
+            cs_field_synchronize(weight_f, halo_type);
+          }
+        }
+      }
+    }
+  }
+
+  const bool need_compute_bc_flux = true;
+  const bool need_compute_bc_grad = true;
+
+  cs_boundary_conditions_update_bc_coeff_face_values
+    (ctx,
+     (const cs_field_t *)f,
+     bc_coeffs,
+     inc,
+     eqp,
+     need_compute_bc_grad, need_compute_bc_flux,
+     iphydp, frcxt,
+     gweight,
+     nullptr, // viscel (aniso)
+     nullptr, // weighb (aniso)
+     pvar);
+
   /*==========================================================================
     2. Update mass flux without reconstruction techniques
     ==========================================================================*/
@@ -8530,30 +8697,6 @@ cs_diffusion_potential(const cs_field_t           *f,
     CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, amode);
 
     /* Compute gradient */
-    if (eqp->iwgrec > 0) {
-      gweight = visel;
-      if (halo != nullptr)
-        cs_halo_sync(halo, halo_type, ctx.use_gpu(), gweight);
-    }
-
-    else if (f != nullptr) {
-      /* Get the calculation option from the field */
-      const cs_equation_param_t *eqp_f
-        = cs_field_get_equation_param_const(f);
-      if (f->type & CS_FIELD_VARIABLE && eqp_f->iwgrec == 1) {
-        if (eqp->idiff > 0) {
-          int key_id = cs_field_key_id("gradient_weighting_id");
-          int diff_id = cs_field_get_key_int(f, key_id);
-          if (diff_id > -1) {
-            cs_field_t *weight_f = cs_field_by_id(diff_id);
-            gweight = weight_f->val;
-            w_stride = weight_f->dim;
-            cs_field_synchronize(weight_f, halo_type);
-          }
-        }
-      }
-    }
-
     cs_real_t *_pvar = pvar;
 
     if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION) {
@@ -8680,6 +8823,8 @@ cs_diffusion_potential(const cs_field_t           *f,
  * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
  * \param[in]     weighf        internal face weight between cells i j in case
  *                               of tensor diffusion
+ * \param[in]     weighb        boundary face weight for cells i in case
+ *                               of tensor diffusion
  * \param[in,out] diverg        divergence of the mass flux
  */
 /*----------------------------------------------------------------------------*/
@@ -8694,11 +8839,12 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
                                    int                         iphydp,
                                    cs_real_3_t       *restrict frcxt,
                                    cs_real_t         *restrict pvar,
-                                   const cs_field_bc_coeffs_t *bc_coeffs,
+                                   cs_field_bc_coeffs_t       *bc_coeffs,
                                    const cs_real_t             i_visc[],
                                    const cs_real_t             b_visc[],
                                    cs_real_6_t       *restrict viscel,
                                    const cs_real_2_t           weighf[],
+                                   const cs_real_t             weighb[],
                                    cs_real_t         *restrict diverg)
 {
   CS_PROFILE_FUNC_RANGE();
@@ -8788,35 +8934,9 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
 
   cs_halo_sync(m->halo, halo_type, on_device, pvar);
 
-  /*==========================================================================
-    2. Update mass flux without reconstruction technics
-    ==========================================================================*/
+  /* Update BC coeffs */
 
-  if (!(eqp->ircflu)) {
-
-    /* Mass flow through interior faces */
-
-    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
-
-      cs_lnum_t ii = i_face_cells[face_id][0];
-      cs_lnum_t jj = i_face_cells[face_id][1];
-
-      double flux = i_visc[face_id]*(pvar[ii] - pvar[jj]);
-
-      if (ii < n_cells)
-        cs_dispatch_sum(&diverg[ii], flux, i_sum_type);
-      if (jj < n_cells)
-        cs_dispatch_sum(&diverg[jj], -flux, i_sum_type);
-
-    });
-
-  }
-
-  /*==========================================================================
-    3. Update mass flux with reconstruction techniques
-    ==========================================================================*/
-
-  else {
+  if (eqp->ircflu) {
 
     viscce = nullptr;
     w2 = nullptr;
@@ -8883,6 +9003,53 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
         }
       }
     }
+  }
+
+  const bool need_compute_bc_flux = true;
+  const bool need_compute_bc_grad = true;
+
+  cs_boundary_conditions_update_bc_coeff_face_values
+    (ctx,
+     f,
+     bc_coeffs,
+     inc,
+     eqp,
+     need_compute_bc_grad, need_compute_bc_flux,
+     iphydp, frcxt,
+     nullptr, //visel,
+     (cs_real_6_t *)gweight,
+     weighb,
+     pvar);
+
+  /*==========================================================================
+    2. Update mass flux without reconstruction technics
+    ==========================================================================*/
+
+  if (!(eqp->ircflu)) {
+
+    /* Mass flow through interior faces */
+
+    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+
+      cs_lnum_t ii = i_face_cells[face_id][0];
+      cs_lnum_t jj = i_face_cells[face_id][1];
+
+      double flux = i_visc[face_id]*(pvar[ii] - pvar[jj]);
+
+      if (ii < n_cells)
+        cs_dispatch_sum(&diverg[ii], flux, i_sum_type);
+      if (jj < n_cells)
+        cs_dispatch_sum(&diverg[jj], -flux, i_sum_type);
+
+    });
+
+  }
+
+  /*==========================================================================
+    3. Update mass flux with reconstruction techniques
+    ==========================================================================*/
+
+  else {
 
     /* Compute gradient */
     cs_gradient_scalar_synced_input(var_name,

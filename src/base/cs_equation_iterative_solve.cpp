@@ -418,8 +418,6 @@ _equation_iterative_solve_strided(int                   idtvar,
 
     eqp->theta = thetex;
 
-    cs_boundary_conditions_update_bc_coeff_face_values_strided<stride>
-      (ctx, f, bc_coeffs, inc, eqp, pvara);
     CS_PROFILE_MARK_LINE();
 
     if (stride == 3)
@@ -512,12 +510,6 @@ _equation_iterative_solve_strided(int                   idtvar,
     eqp->nswrsm = 1;
     inc = 0;
   }
-  CS_PROFILE_MARK_LINE();
-
-  //TODO FIXME use the simplified function
-  cs_boundary_conditions_update_bc_coeff_face_values_strided<stride>
-    (ctx, f, bc_coeffs, inc, eqp, pvar);
-
   CS_PROFILE_MARK_LINE();
 
   /*  Incrementation and rebuild of right hand side */
@@ -878,10 +870,6 @@ _equation_iterative_solve_strided(int                   idtvar,
       CS_PROFILE_MARK_LINE();
 
       cs_halo_sync_r(halo, bc_halo_type, ctx.use_gpu(), dpvar);
-
-      /* update with dpvar */
-      cs_boundary_conditions_update_bc_coeff_face_values_strided<stride>
-        (ctx, nullptr, bc_coeffs, inc, eqp, dpvar);
       CS_PROFILE_MARK_LINE();
 
       if (stride == 3)
@@ -1092,10 +1080,6 @@ _equation_iterative_solve_strided(int                   idtvar,
      * has to impose 1 on mass accumulation. */
     imasac = 1;
 
-    /* Update face value for gradient and convection-diffusion */
-    cs_boundary_conditions_update_bc_coeff_face_values_strided<stride>
-      (ctx, f, bc_coeffs, inc, eqp, pvar);
-
     CS_PROFILE_MARK_LINE();
 
     if (stride == 3)
@@ -1223,16 +1207,8 @@ _equation_iterative_solve_strided(int                   idtvar,
 
     ctx.wait();
     CS_PROFILE_MARK_LINE();
-    /* need to recompute face value if below increment is zero
-       else the face value is given from the last isweep iteration */
-    if (inc == 0) {
-      cs_boundary_conditions_update_bc_coeff_face_values_strided<stride>
-        (ctx, f, bc_coeffs,
-         1, // inc
-         eqp, pvar);
-    }
+
     inc = 1;
-    CS_PROFILE_MARK_LINE();
 
     /* Without relaxation even for a stationnary computation */
 
@@ -1632,15 +1608,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
     eqp->theta = thetex;
 
-    cs_boundary_conditions_update_bc_coeff_face_values
-      (ctx,
-       f, bc_coeffs, inc,
-       eqp,
-       true, true,
-       0, nullptr, // hyd_p_flag, f_ext
-       nullptr, viscel, weighb,
-       pvara);
-
     /* Compute - Con-Diff((1-theta) Y^n )
      * where Y^n is pvara
      * Note: this part does not need any update, and will be stored in
@@ -1966,15 +1933,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
       cs_halo_sync(m->halo, bc_halo_type, ctx.use_gpu(), dpvar);
 
-      cs_boundary_conditions_update_bc_coeff_face_values
-        (ctx,
-         f, bc_coeffs, inc,
-         eqp,
-         true, true,
-         false, nullptr, // hyd_p_flag, f_ext
-         nullptr, viscel, weighb,
-         dpvar);
-
       cs_balance_scalar(idtvar,
                         lvar,
                         imucpp,
@@ -2124,15 +2082,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
     ctx.wait();
 
-    cs_boundary_conditions_update_bc_coeff_face_values
-      (ctx,
-       f, bc_coeffs, inc,
-       eqp,
-       true, true,
-       false, nullptr, // hyd_p_flag, f_ext
-       nullptr, viscel, weighb,
-       pvar);
-
     cs_balance_scalar(idtvar,
                       f_id,
                       imucpp,
@@ -2229,15 +2178,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     // in cs_boundary_conditions_update_bc_coeff_face_values
     cs_halo_sync(m->halo, bc_halo_type, ctx.use_gpu(), dpvar);
 
-    cs_boundary_conditions_update_bc_coeff_face_values
-      (ctx,
-       f, bc_coeffs, inc,
-       eqp,
-       true, true,
-       false, nullptr, // hyd_p_flag, f_ext
-       nullptr, viscel, weighb,
-       dpvar);
-
     cs_face_convection_scalar(idtvar,
                               f_id,
                               eqp_loc,
@@ -2294,15 +2234,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
     ctx.wait();
 
     /* Without relaxation even for a steady computation */
-
-    cs_boundary_conditions_update_bc_coeff_face_values
-      (ctx,
-       f, bc_coeffs, inc,
-       eqp,
-       true, true,
-       false, nullptr, // hyd_p_flag, f_ext
-       nullptr, viscel, weighb,
-       pvar);
 
     cs_balance_scalar(idtvar,
                       f_id,

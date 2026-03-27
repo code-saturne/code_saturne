@@ -434,10 +434,6 @@ cs_runge_kutta_stage_complete_rhs(cs_dispatch_context         &ctx,
 
   /* Allocate non reconstructed face value only if presence of limiter */
 
-  cs_field_t *f = nullptr;
-  if (f_id > -1)
-    f = cs_field_by_id(f_id);
-
   /* We compute the total explicit balance. */
 
   int  inc = 1;
@@ -449,9 +445,6 @@ cs_runge_kutta_stage_complete_rhs(cs_dispatch_context         &ctx,
   int  imasac = 0;
 
   eqp->theta = 1;
-
-  cs_boundary_conditions_update_bc_coeff_face_values_strided<stride>
-    (ctx, f, bc_coeffs, inc, eqp, pvar);
 
   if (stride == 3)
     cs_balance_vector(idtvar,

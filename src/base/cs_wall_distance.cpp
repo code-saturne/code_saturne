@@ -851,24 +851,6 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
   cs_equation_param_t eqp_loc_div = *eqp_yp;
   eqp_loc_div.iwgrec = 0;
 
-  const bool need_compute_bc_flux = true;
-  const bool need_compute_bc_grad = (eqp_loc_div.ircflu) ? true : false;
-
-  cs_boundary_conditions_update_bc_coeff_face_values
-    (ctx,
-     f_wall_dist, // field
-     bc_coeffs_wd,
-     inc,
-     &eqp_loc_div,
-     need_compute_bc_grad,
-     need_compute_bc_flux,
-     0, // iphydr,
-     nullptr, // f_ext
-     viscap.data(),
-     nullptr, // vitenp
-     nullptr, // weighb
-     w_dist);
-
   cs_face_diffusion_potential(f_wall_dist,
                               &eqp_loc_div,
                               mesh,

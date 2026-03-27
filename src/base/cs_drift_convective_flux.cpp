@@ -489,24 +489,6 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
       cs_equation_param_t eqp_loc = *eqp_sc;
       eqp_loc.iwgrec = 0;
 
-      const bool need_compute_bc_flux = true;
-      const bool need_compute_bc_grad = (eqp_loc.ircflu) ? true : false;
-
-      cs_boundary_conditions_update_bc_coeff_face_values
-        (ctx,
-         nullptr, // field
-         &bc_coeffs_loc,
-         1, // inc
-         &eqp_loc,
-         need_compute_bc_grad,
-         need_compute_bc_flux,
-         false,   // hyd_p_flag
-         nullptr, // f_ext
-         w1.data(),
-         nullptr, // vitenp
-         nullptr, // weighb
-         viscce.data());
-
       cs_face_diffusion_potential(nullptr, // field
                                   &eqp_loc,
                                   mesh,

@@ -935,25 +935,6 @@ cs_turbulence_ke(int              phase_id,
 
     });
 
-    const bool need_compute_bc_flux_k = true;
-    const bool need_compute_bc_grad_k = (eqp_k->ircflu) ? true : false;
-
-    /* Update cvara_k BC */
-    cs_boundary_conditions_update_bc_coeff_face_values
-      (ctx,
-       f_k,
-       f_k->bc_coeffs,
-       1, //inc
-       eqp_k,
-       need_compute_bc_grad_k,
-       need_compute_bc_flux_k,
-       false, // hyd_p_flag
-       nullptr, // f_ext
-       w3.data(),
-       nullptr, // vitenp
-       nullptr, // weighb
-       cvara_k);
-
     cs_diffusion_potential(f_k,
                            eqp_k,
                            m,
@@ -1724,21 +1705,6 @@ cs_turbulence_ke(int              phase_id,
     cs_equation_param_t eqp_k_loc = *eqp_k;
     eqp_k_loc.idften = CS_ISOTROPIC_DIFFUSION;
 
-    /* Update cvara_k BC */
-    cs_boundary_conditions_update_bc_coeff_face_values
-      (ctx,
-       f_k,
-       f_k->bc_coeffs,
-       1, //inc
-       &eqp_k_loc,
-       true, true,
-       false, // hyd_p_flag
-       nullptr, // f_ext
-       nullptr, // visel
-       nullptr, // vitenp
-       nullptr, // weighb
-       cvara_k);
-
     cs_balance_scalar(cs_glob_time_step_options->idtvar,
                       f_k->id,
                       0,     /* imucpp */
@@ -1805,21 +1771,6 @@ cs_turbulence_ke(int              phase_id,
 
     cs_equation_param_t eqp_eps_loc = *eqp_eps;
     eqp_eps_loc.idften = CS_ISOTROPIC_DIFFUSION;
-
-    /* Update cvara_ep BC */
-    cs_boundary_conditions_update_bc_coeff_face_values
-      (ctx,
-       f_eps, // field
-       f_eps->bc_coeffs,
-       1, //inc
-       &eqp_eps_loc,
-       true, true,
-       false, // hyd_p_flag
-       nullptr, // f_ext
-       nullptr, // visel
-       nullptr, // vitenp
-       nullptr, // weighb
-       cvara_ep);
 
     cs_balance_scalar(cs_glob_time_step_options->idtvar,
                       f_eps->id,

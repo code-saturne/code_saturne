@@ -255,7 +255,7 @@ cs_dilatable_scalar_diff_st(int iterns)
     cs_real_t *cpro_tsscal = cs_field_by_name(scalar_st_name)->val;
 
     /* Diffusion term calculation */
-    const cs_field_bc_coeffs_t *bc_coeffs_sc = f_scal->bc_coeffs;
+    cs_field_bc_coeffs_t *bc_coeffs_sc = f_scal->bc_coeffs;
 
     cs_equation_param_t eqp_loc = *eqp_sc;
 

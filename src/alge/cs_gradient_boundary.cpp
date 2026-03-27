@@ -188,8 +188,6 @@ _add_hb_faces_cocg_lsq_cell(cs_lnum_t         c_id,
  * \param[in]   c_weight        cell variable weight, or null
  * \param[in]   var             variable values et cell centers
  * \param[out]  var_iprime      variable values et face iprime locations
- * \param[out]  var_iprime      variable values at face iprime locations
-                                for gradient
  * \param[out]  var_iprime_flux variable values at face iprime locations
                                 for flux, or nullptr if not needed
  */

@@ -459,20 +459,6 @@ cs_runge_kutta_stage_complete_scalar_rhs
 
   eqp->theta = 1;
 
-  cs_field_t *f = nullptr;
-
-  if (f_id > -1)
-    f = cs_field_by_id(f_id);
-
-  cs_boundary_conditions_update_bc_coeff_face_values
-      (ctx,
-       f, bc_coeffs, inc,
-       eqp,
-       true, true,
-       0, nullptr, // hyd_p_flag, f_ext
-       nullptr, viscel, weighb,
-       pvar);
-
   cs_balance_scalar(idtvar,
                     f_id,
                     imucpp,

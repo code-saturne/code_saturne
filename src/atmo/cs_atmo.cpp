@@ -504,26 +504,6 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
   if (sinfo != nullptr)
     sinfo->rhs_norm = residu;
 
-  const bool need_compute_bc_flux_p = true;
-  const bool need_compute_bc_grad_p = (eqp_p->ircflu) ? true : false;
-
-  /* Update pvar BC */
-  //TODO MF use standar one!
-  cs_boundary_conditions_update_bc_coeff_face_values
-    (ctx,
-     f,
-     f->bc_coeffs,
-     1, //inc
-     eqp_p,
-     need_compute_bc_grad_p,
-     need_compute_bc_flux_p,
-     1,         // hyd_p_flag
-     next_fext, // f_ext
-     c_visc,
-     nullptr, // vitenp
-     nullptr, // weighb
-     pvar);
-
   /* Initial Right-Hand-Side */
   cs_diffusion_potential(f,
                          eqp_p,
@@ -574,22 +554,6 @@ _hydrostatic_pressure_compute(cs_real_3_t  f_ext[],
     /* Update variable and right-hand-side */
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++)
       pvar[cell_id] += dpvar[cell_id];
-
-    /* Update pvar BC */
-    cs_boundary_conditions_update_bc_coeff_face_values
-      (ctx,
-       f,
-       f->bc_coeffs,
-       1, //inc
-       eqp_p,
-       need_compute_bc_grad_p,
-       need_compute_bc_flux_p,
-       1,         // hyd_p_flag
-       next_fext, // f_ext
-       c_visc,
-       nullptr, // vitenp
-       nullptr, // weighb
-       pvar);
 
     cs_diffusion_potential(f,
                            eqp_p,

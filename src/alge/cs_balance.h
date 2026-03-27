@@ -136,7 +136,7 @@ cs_balance_scalar(int                         idtvar,
                   cs_equation_param_t        *eqp,
                   cs_real_t                   pvar[],
                   const cs_real_t             pvara[],
-                  const cs_field_bc_coeffs_t *bc_coeffs,
+                  cs_field_bc_coeffs_t       *bc_coeffs,
                   const cs_real_t             i_massflux[],
                   const cs_real_t             b_massflux[],
                   const cs_real_t             i_visc[],
@@ -228,7 +228,7 @@ cs_balance_scalar(int                         idtvar,
                   cs_equation_param_t        *eqp,
                   cs_real_t                   pvar[],
                   const cs_real_t             pvara[],
-                  const cs_field_bc_coeffs_t *bc_coeffs,
+                  cs_field_bc_coeffs_t       *bc_coeffs,
                   const cs_real_t             i_massflux[],
                   const cs_real_t             b_massflux[],
                   const cs_real_t             i_visc[],
@@ -295,7 +295,7 @@ BEGIN_C_DECLS
  *                              contains variable calculation options
  * \param[in]     pvar          solved velocity (current time step)
  * \param[in]     pvara         solved velocity (previous time step)
- * \param[in]     bc_coeffs_v   boundary condition structure for the variable
+ * \param[in]     bc_coeffs     boundary condition structure for the variable
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -328,7 +328,7 @@ cs_balance_vector(int                         idtvar,
                   cs_equation_param_t        *eqp,
                   cs_real_3_t                 pvar[],
                   const cs_real_3_t           pvara[],
-                  const cs_field_bc_coeffs_t *bc_coeffs_v,
+                  cs_field_bc_coeffs_t       *bc_coeffs,
                   const cs_real_t             i_massflux[],
                   const cs_real_t             b_massflux[],
                   const cs_real_t             i_visc[],
@@ -379,7 +379,7 @@ cs_balance_vector(int                         idtvar,
  *                              contains variable calculation options
  * \param[in]     pvar          solved velocity (current time step)
  * \param[in]     pvara         solved velocity (previous time step)
- * \param[in]     bc_coeffs_ts  boundary condition structure for the variable
+ * \param[in]     bc_coeffs     boundary condition structure for the variable
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
  * \param[in]     i_visc        \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
@@ -409,7 +409,7 @@ cs_balance_tensor(int                         idtvar,
                   cs_equation_param_t        *eqp,
                   cs_real_6_t                 pvar[],
                   const cs_real_6_t           pvara[],
-                  const cs_field_bc_coeffs_t *bc_coeffs_ts,
+                  cs_field_bc_coeffs_t       *bc_coeffs,
                   const cs_real_t             i_massflux[],
                   const cs_real_t             b_massflux[],
                   const cs_real_t             i_visc[],

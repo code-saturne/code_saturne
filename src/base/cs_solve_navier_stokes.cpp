@@ -403,24 +403,6 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
       /*  ---> Handle parallelism and periodicity */
       cs_halo_sync(m->halo, ctx.use_gpu(), pot);
 
-      const bool need_compute_bc_flux = true;
-      const bool need_compute_bc_grad = (eqp->ircflu) ? true : false;
-
-      cs_boundary_conditions_update_bc_coeff_face_values
-        (ctx,
-         nullptr, // field
-         &bc_coeffs_pot,
-         0, // inc
-         eqp,
-         need_compute_bc_grad,
-         need_compute_bc_flux,
-         false,   // hyd_p_flag
-         nullptr, // fext
-         dt,
-         nullptr, // vitenp
-         nullptr, // weighb
-         pot);
-
       cs_diffusion_potential(nullptr, /* field */
                              eqp,
                              m,
@@ -480,24 +462,6 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
   /*  ---> Handle parallelism and periodicity */
   cs_halo_sync(m->halo, ctx.use_gpu(), pota);
 
-  const bool need_compute_bc_flux = true;
-  const bool need_compute_bc_grad = (eqp_loc.ircflu) ? true : false;
-
-  cs_boundary_conditions_update_bc_coeff_face_values
-    (ctx,
-     nullptr, // field
-     &bc_coeffs_pot,
-     0, // inc
-     eqp,
-     need_compute_bc_grad,
-     need_compute_bc_flux,
-     false,   // hyd_p_flag
-     nullptr, // f_ext
-     dt,
-     nullptr, // vitenp
-     nullptr, // weighb
-     pota);
-
   cs_face_diffusion_potential(nullptr,
                               &eqp_loc,
                               m,
@@ -520,20 +484,6 @@ _cs_mass_flux_prediction(const cs_mesh_t       *m,
   cs_equation_param_t eqp_loc_last = *eqp;
   eqp_loc_last.iwgrec = 0;
   eqp_loc_last.ircflu = 0; // no reconstruction
-
-  cs_boundary_conditions_update_bc_coeff_face_values
-    (ctx,
-     nullptr, // field
-     &bc_coeffs_pot,
-     0, // inc
-     eqp,
-     false, true,
-     false,   // hyd_p_flag
-     nullptr, // f_ext
-     dt,
-     nullptr, // vitenp
-     nullptr, // weighb
-     pota);
 
   cs_face_diffusion_potential(nullptr,
                               &eqp_loc_last,

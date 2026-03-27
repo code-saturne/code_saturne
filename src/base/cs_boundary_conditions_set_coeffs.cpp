@@ -4316,9 +4316,6 @@ cs_boundary_conditions_update_bc_coeff_face_values
 {
   cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
   cs_alloc_mode_t amode = ctx.alloc_mode();
@@ -4330,7 +4327,6 @@ cs_boundary_conditions_update_bc_coeff_face_values
                              &gradient_type,
                              &halo_type);
 
-  cs_real_t *gweight = nullptr;
   cs_real_t *df_limiter = nullptr;
   cs_internal_coupling_t *cpl = nullptr;
   cs_real_t *val_ip_flux = nullptr;
@@ -4380,93 +4376,6 @@ cs_boundary_conditions_update_bc_coeff_face_values
 
  }
 
-  // TODO: this should be replace in cs_convection_diffusion brick
-  // to remove duplicated codes...
-  /* gradient weighting */
-  if (eqp->iwgrec > 0 && (visel != nullptr || viscel != nullptr)) {
-
-    if (eqp->idften & CS_ANISOTROPIC_DIFFUSION) {
-      assert(viscel != nullptr);
-
-      cs_real_6_t *viscce = nullptr;
-      cs_real_6_t *w2 = nullptr;
-
-      /* Porosity fields */
-      cs_field_t *fporo = cs_field_by_name_try("porosity");
-      cs_field_t *ftporo = cs_field_by_name_try("tensorial_porosity");
-
-      cs_real_t *porosi = nullptr;
-      cs_real_6_t *porosf = nullptr;
-
-      if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2) {
-        porosi = fporo->val;
-        if (ftporo != nullptr) {
-          porosf = (cs_real_6_t *)ftporo->val;
-        }
-      }
-
-      /* Without porosity */
-
-      if (porosi == nullptr) {
-        viscce = viscel;
-
-        /* With porosity */
-      }
-      else if (porosi != nullptr && porosf == nullptr) {
-        CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, amode);
-        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-          for (cs_lnum_t isou = 0; isou < 6; isou++) {
-            w2[cell_id][isou] = porosi[cell_id]*viscel[cell_id][isou];
-          }
-        });
-        ctx.wait();
-        viscce = w2;
-
-        /* With tensorial porosity */
-      }
-      else if (porosi != nullptr && porosf != nullptr) {
-        CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, amode);
-        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-          cs_math_sym_33_product(porosf[cell_id],
-                                 viscel[cell_id],
-                                 w2[cell_id]);
-        });
-        ctx.wait();
-        viscce = w2;
-      }
-
-      /* ---> Periodicity and parallelism process of symmetric tensors */
-      cs_halo_sync_r(m->halo, halo_type, false, viscce);
-
-      gweight = (cs_real_t *)viscce;
-    }
-    else { // isotropic case
-
-      if (visel != nullptr) {
-        gweight = visel;
-        const bool on_device = ctx.use_gpu();
-        cs_halo_sync(m->halo, halo_type, on_device, gweight);
-      }
-    }
-  }
-  else if (f != nullptr) {
-    /* Get the calculation option from the field */
-    const cs_equation_param_t *eqp_f
-      = cs_field_get_equation_param_const(f);
-    if ((f->type & CS_FIELD_VARIABLE) && eqp_f->iwgrec == 1) {
-      if (eqp_f->idiff > 0) {
-        int key_id = cs_field_key_id("gradient_weighting_id");
-        int diff_id = cs_field_get_key_int(f, key_id);
-        if (diff_id > -1) {
-          cs_field_t *weight_f = cs_field_by_id(diff_id);
-          gweight = weight_f->val;
-          w_stride = weight_f->dim;
-          cs_field_synchronize(weight_f, halo_type);
-        }
-      }
-    }
-  }
-
   /* gradient clipping on boundary */
   cs_real_t b_rc_clip_factor = (eqp->imligr < 0) ? -1.0 : eqp->b_rc_clip_factor;
 
@@ -4492,7 +4401,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
        weighb,
        df_limiter,
        pvar,
-       gweight);
+       visel);
   }
 
   /* Compute boundary face and diffusive flux values */
@@ -4519,7 +4428,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
                                         f_ext,
                                         df_limiter,
                                         bc_coeffs,
-                                        gweight,
+                                        visel,
                                         pvar,
                                         val_ip_grad,
                                         val_ip_flux);
@@ -4541,7 +4450,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
                                             bc_coeffs,
                                             viscel,
                                             weighb,
-                                            (const cs_real_6_t *)gweight,
+                                            viscel,
                                             pvar,
                                             val_ip_grad,
                                             val_ip_flux);

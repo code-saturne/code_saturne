@@ -438,26 +438,6 @@ _solve_eq_fbr_al(const int         istprv,
   const cs_equation_param_t *eqp_phi
     = cs_field_get_equation_param_const(CS_F_(phi));
 
-  /* Update cvara_k BC */
-
-  const bool need_compute_bc_flux = true;
-  const bool need_compute_bc_grad = (eqp_phi->ircflu) ? true : false;
-
-  cs_boundary_conditions_update_bc_coeff_face_values
-    (ctx,
-     CS_F_(phi),
-     CS_F_(phi)->bc_coeffs,
-     1, //inc
-     eqp_phi,
-     need_compute_bc_grad,
-     need_compute_bc_flux,
-     false, // hyd_p_flag
-     nullptr, // f_ext
-     visel.data(),
-     nullptr, // vitenp
-     nullptr, // weighb
-     CS_F_(phi)->val_pre);
-
   cs_diffusion_potential(CS_F_(phi),
                          eqp_phi,
                          m,

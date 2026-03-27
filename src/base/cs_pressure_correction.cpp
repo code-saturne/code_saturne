@@ -245,9 +245,6 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
   cs_real_t *coefa_hp = bc_coeffs_hp->a;
   cs_real_t *coefb_hp = bc_coeffs_hp->b;
 
-  const bool need_compute_bc_flux = true;
-  const bool need_compute_bc_grad = (eqp_pr->ircflu) ? true : false;
-
   cs_real_3_t *next_fext;
   CS_MALLOC_HD(next_fext, n_cells_ext, cs_real_3_t, amode);
 
@@ -366,21 +363,6 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
      *--------------------------------------------------- */
 
     cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), cvar_hydro_pres);
-
-    cs_boundary_conditions_update_bc_coeff_face_values
-      (ctx,
-       f,
-       bc_coeffs_hp,
-       1, // inc
-       eqp_pr,
-       need_compute_bc_grad,
-       need_compute_bc_flux,
-       1, // vp_param->iphydr
-       next_fext,
-       viscce,
-       nullptr, // viscel for tensor
-       nullptr, // weighb for tensor
-       cvar_hydro_pres);
 
     cs_diffusion_potential(f,         /* field */
                            eqp_pr,
@@ -1646,23 +1628,6 @@ _pressure_correction_fv(int                   iterns,
         ctx.wait();
       }
 
-      /* Update pressure BC */
-
-      cs_boundary_conditions_update_bc_coeff_face_values
-        (ctx,
-         f_p, // field
-         bc_coeffs_p,
-         1, // inc
-         eqp_p,
-         need_compute_bc_grad,
-         need_compute_bc_flux,
-         vp_param->iphydr,
-         frcxt,
-         cpro_visc,
-         nullptr, // vitenp
-         nullptr, // weighb
-         cvar_pr);
-
       /* -Lap(dt, p^n) */
       cs_face_diffusion_potential(f_p,
                                   eqp_p,
@@ -1740,22 +1705,6 @@ _pressure_correction_fv(int                   iterns,
         ctx.wait();
       }
 
-      /* Update pressure BC */
-      cs_boundary_conditions_update_bc_coeff_face_values
-        (ctx,
-         f_p, // field
-         bc_coeffs_p,
-         1, // inc
-         eqp_p,
-         need_compute_bc_grad,
-         need_compute_bc_flux,
-         vp_param->iphydr,
-         frcxt,
-         nullptr, // cpro_visc
-         cpro_vitenp,
-         weighbtp,
-         cvar_pr);
-
       cs_face_anisotropic_diffusion_potential(f_p, // field
                                               eqp_p,
                                               m,
@@ -1768,6 +1717,7 @@ _pressure_correction_fv(int                   iterns,
                                               bc_coeffs_p,
                                               ipro_visc, bpro_visc, cpro_vitenp,
                                               weighftp,
+                                              weighbtp,
                                               imasfl, bmasfl);
 
       /* Project source term to remove hydrostatic part from pressure */
@@ -2081,22 +2031,6 @@ _pressure_correction_fv(int                   iterns,
 
     cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), phi);
 
-    /* Update phi BC */
-    cs_boundary_conditions_update_bc_coeff_face_values
-      (ctx,
-       f_iddp,// field
-       bc_coeffs_dp,
-       inc,
-       eqp_p,
-       need_compute_bc_grad,
-       need_compute_bc_flux,
-       vp_param->iphydr,
-       dfrcxt,
-       c_visc,
-       vitenp,
-       weighb,
-       phi);
-
     if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION) {
       cs_diffusion_potential(f_iddp, /* field */
                              eqp_p,
@@ -2125,7 +2059,7 @@ _pressure_correction_fv(int                   iterns,
                                          bc_coeffs_dp,
                                          i_visc, b_visc,
                                          vitenp,
-                                         weighf,
+                                         weighf, weighb,
                                          rhs);
 
     }
@@ -2238,22 +2172,6 @@ _pressure_correction_fv(int                   iterns,
       /*  ---> Handle parallelism and periodicity */
       cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), dphi);
 
-      /* Update dphi BC */
-      cs_boundary_conditions_update_bc_coeff_face_values
-        (ctx,
-         f_iddp, // field
-         bc_coeffs_dp,
-         inc,
-         eqp_p,
-         need_compute_bc_grad,
-         need_compute_bc_flux,
-         vp_param->iphydr,
-         dfrcxt,
-         c_visc,
-         vitenp,
-         weighb,
-         dphi);
-
       if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION) {
         cs_diffusion_potential(f_iddp, /* field */
                                eqp_p,
@@ -2282,7 +2200,7 @@ _pressure_correction_fv(int                   iterns,
                                            bc_coeffs_dp,
                                            i_visc, b_visc,
                                            vitenp,
-                                           weighf,
+                                           weighf, weighb,
                                            adxk);
       }
 
@@ -2416,22 +2334,6 @@ _pressure_correction_fv(int                   iterns,
 
       cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), phi);
 
-      /* Update phi BC */
-      cs_boundary_conditions_update_bc_coeff_face_values
-        (ctx,
-         f_iddp, // field
-         bc_coeffs_dp,
-         inc,
-         eqp_p,
-         need_compute_bc_grad,
-         need_compute_bc_flux,
-         vp_param->iphydr,
-         dfrcxt,
-         c_visc,
-         vitenp,
-         weighb,
-         phi);
-
       if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION) {
         cs_diffusion_potential(f_iddp, /* field */
                                eqp_p,
@@ -2460,7 +2362,7 @@ _pressure_correction_fv(int                   iterns,
                                            bc_coeffs_dp,
                                            i_visc, b_visc,
                                            vitenp,
-                                           weighf,
+                                           weighf, weighb,
                                            rhs);
       }
     }
@@ -2567,21 +2469,6 @@ _pressure_correction_fv(int                   iterns,
     /*  ---> Handle parallelism and periodicity */
     cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), phia);
 
-    cs_boundary_conditions_update_bc_coeff_face_values
-      (ctx,
-       f_iddp, // field
-       bc_coeffs_dp,
-       inc,
-       eqp_p,
-       need_compute_bc_grad,
-       need_compute_bc_flux,
-       vp_param->iphydr,
-       dfrcxt,
-       c_visc,
-       vitenp,
-       weighb,
-       phia);
-
     if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION) {
       cs_face_diffusion_potential(f_iddp,
                                   eqp_p,
@@ -2609,7 +2496,7 @@ _pressure_correction_fv(int                   iterns,
                                               bc_coeffs_dp,
                                               i_visc, b_visc,
                                               vitenp,
-                                              weighf,
+                                              weighf, weighb,
                                               imasfl, bmasfl);
     }
 
@@ -2622,27 +2509,8 @@ _pressure_correction_fv(int                   iterns,
     eqp_loc.ircflu = 0; // no reconstruction
     eqp_loc.b_diff_flux_rc = 0;
 
-    // As reconstruction is cut, gradient is not computed
-    const bool need_compute_bc_grad_loc = false;
-    const bool need_compute_bc_flux_loc = true;
-
     /* Handle parallelism and periodicity */
     cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), dphi);
-
-    cs_boundary_conditions_update_bc_coeff_face_values
-      (ctx,
-       f_iddp, // field
-       bc_coeffs_dp,
-       0, // inc
-       &eqp_loc,
-       need_compute_bc_grad_loc,
-       need_compute_bc_flux_loc,
-       vp_param->iphydr,
-       dfrcxt,
-       c_visc,
-       vitenp,
-       weighb,
-       dphi);
 
     if (eqp_p->idften & CS_ISOTROPIC_DIFFUSION) {
       cs_face_diffusion_potential(f_iddp,
@@ -2671,7 +2539,7 @@ _pressure_correction_fv(int                   iterns,
                                               bc_coeffs_dp,
                                               i_visc, b_visc,
                                               vitenp,
-                                              weighf,
+                                              weighf, weighb,
                                               imasfl, bmasfl);
     }
   }
