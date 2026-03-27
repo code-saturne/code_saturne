@@ -807,6 +807,96 @@ _diag_schur_pc_apply(cs_saddle_solver_t                   *solver,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Apply an AFS block preconditioning with a potential Schur complement
+ *        approximation. Compute z such that P_{AFS} z = r
+ *
+ *        This prototype complies with the cs_saddle_solver_pc_apply_t function
+ *        pointer
+ *
+ * \param[in]      solver  pointer to a saddle-point solver structure
+ * \param[in]      ctx     context pointer for block preconditioner
+ * \param[in]      r       rhs of the preconditioning system
+ * \param[in, out] z       array to compute
+ * \param[in, out] pc_wsp  work space related to the preconditioner
+ *
+ * \return the number of iterations performed for this step of preconditioning
+ */
+/*----------------------------------------------------------------------------*/
+
+static int
+_afs_schur_pc_apply(cs_saddle_solver_t                   *solver,
+                    cs_saddle_solver_context_block_pcd_t *ctx,
+                    cs_real_t                            *r,
+                    cs_real_t                            *z,
+                    cs_real_t                            *pc_wsp)
+{
+  if (z == nullptr)
+    return 0;
+
+  assert(solver != nullptr && ctx != nullptr && r != nullptr);
+  assert(pc_wsp != nullptr);
+
+  /* 1. Solve m11 z1 = r1
+     ==================== */
+
+  int  n_iter = _solve_m11_approximation(solver, ctx,
+                                         r, true,   /* = scatter r */
+                                         z, true);  /* = scatter z */
+
+  /* 2. Build r2_tilda = r2 - m21.z1
+     ============================= */
+
+  const cs_real_t  *r2 = r + ctx->b11_max_size;
+  cs_real_t  *r2_tilda = pc_wsp;
+
+  ctx->m21_vector_multiply(solver->n2_scatter_dofs,
+                           z, ctx->m21_adj, ctx->m21_val,
+                           r2_tilda);
+
+# pragma omp parallel for if (solver->n2_scatter_dofs > CS_THR_MIN)
+  for (cs_lnum_t i2 = 0; i2 < solver->n2_scatter_dofs; i2++)
+    r2_tilda[i2] = r2_tilda[i2] - r2[i2];
+
+  /* 3. Solve S z2 = r2_tilda (S -> Schur approximation for the m22 block)
+     ===================================================================== */
+
+  cs_real_t  *z2 = z + ctx->b11_max_size;
+
+  n_iter += _solve_schur_approximation(solver,
+                                       ctx->schur_sles,
+                                       ctx->schur_matrix,
+                                       ctx->m22_mass_diag,  /* inv_m22 */
+                                       ctx->schur_scaling,
+                                       r2_tilda,
+                                       z2);
+
+  /* 4. Update z1 = z1 - inv_m11 * Bt (z2)
+     ===================================== */
+
+  const cs_range_set_t  *rset = ctx->b11_range_set;
+
+  cs_real_t  *r1_tilda = pc_wsp;
+
+  cs_array_real_fill_zero(ctx->b11_max_size, r1_tilda);
+  ctx->m12_vector_multiply(solver->n2_scatter_dofs,
+                           z2, ctx->m21_adj, ctx->m21_val,
+                           r1_tilda);
+
+  if (rset->ifs != nullptr)
+    cs_interface_set_sum(rset->ifs,
+                         solver->n1_scatter_dofs,
+                         1, false, CS_REAL_TYPE, /* stride, interlaced */
+                         r1_tilda);
+
+# pragma omp parallel for if (solver->n1_scatter_dofs > CS_THR_MIN)
+  for (cs_lnum_t i1 = 0; i1 < solver->n1_scatter_dofs; i1++)
+    z[i1] = z[i1] - ctx->m11_inv_diag[i1]*r1_tilda[i1];
+
+  return n_iter;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Apply a lower triangular block preconditioning with a potential Schur
  *        complement approximation. Compute z such that P_l z = r
  *
@@ -1268,6 +1358,13 @@ _set_pc_by_block(const cs_saddle_solver_t                   *solver,
 
   case CS_PARAM_SADDLE_PRECOND_NONE:
     return _no_pc_apply; /* No preconditioning */
+
+  case CS_PARAM_SADDLE_PRECOND_AFS:
+    *wsp_size = ctx->b11_max_size;
+    assert(ctx->b11_max_size >= ctx->b22_max_size);
+    CS_MALLOC(*p_wsp, *wsp_size, cs_real_t);
+
+    return _afs_schur_pc_apply;
 
   case CS_PARAM_SADDLE_PRECOND_DIAG:
     return _diag_schur_pc_apply;

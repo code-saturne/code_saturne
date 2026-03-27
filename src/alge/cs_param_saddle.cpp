@@ -958,6 +958,18 @@ cs_param_saddle_set_precond(const char          *keyval,
 
   if (strcmp(keyval, "none") == 0)
     saddlep->precond = CS_PARAM_SADDLE_PRECOND_NONE;
+
+  else if (strcmp(keyval, "afs") == 0) {
+
+    saddlep->precond = CS_PARAM_SADDLE_PRECOND_AFS;
+
+    /* One expects a Schur approximation in this case */
+
+    if (saddlep->schur_approx == CS_PARAM_SADDLE_SCHUR_NONE ||
+        saddlep->schur_approx == CS_PARAM_SADDLE_SCHUR_MASS_SCALED)
+      ierr = cs_param_saddle_set_schur_approx("lumped_inv", saddlep);
+
+  }
   else if (strcmp(keyval, "diag") == 0)
     saddlep->precond = CS_PARAM_SADDLE_PRECOND_DIAG;
   else if (strcmp(keyval, "lower") == 0)
@@ -1676,6 +1688,10 @@ cs_param_saddle_log(const cs_param_saddle_t  *saddlep)
 
   case CS_PARAM_SADDLE_PRECOND_NONE:
     cs_log_printf(CS_LOG_SETUP, "%s Precond: None\n", prefix);
+    break;
+
+  case CS_PARAM_SADDLE_PRECOND_AFS:
+    cs_log_printf(CS_LOG_SETUP, "%s Precond: AFS blocks\n", prefix);
     break;
 
   case CS_PARAM_SADDLE_PRECOND_DIAG:

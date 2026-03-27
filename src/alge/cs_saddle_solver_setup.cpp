@@ -547,6 +547,7 @@ _petsc_fgmres_hook(void *context,
     }
     break;
 
+  case CS_PARAM_SADDLE_PRECOND_AFS:   // Not directly available in PETSc
   case CS_PARAM_SADDLE_PRECOND_UZAWA: // Not directly available in PETSc
     // -----------------------------
   default:
