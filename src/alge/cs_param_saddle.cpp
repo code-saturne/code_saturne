@@ -1294,6 +1294,39 @@ cs_param_saddle_set_solver(const char          *keyval,
     saddlep->context = ctxp;
 
   }
+  else if (strcmp(keyval, "simple") == 0) {
+
+    saddlep->solver = CS_PARAM_SADDLE_SOLVER_SIMPLE;
+    saddlep->solver_class = CS_PARAM_SOLVER_CLASS_CS;
+    saddlep->precond = CS_PARAM_SADDLE_PRECOND_NONE;
+    saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE;
+
+    /* Context structure dedicated to this algorithm */
+
+    cs_param_saddle_context_simple_t *ctxp = nullptr;
+    CS_MALLOC(ctxp, 1, cs_param_saddle_context_simple_t);
+
+    ctxp->xtra_sles_param = nullptr;  /* It depends on the type of Schur
+                                         approximation used */
+
+    ctxp->dedicated_init_sles = false;
+
+    /* Initialize an additional set of SLES parameters for the initial
+       transformation of the system (this is different from defining a
+       dedicated cs_sles_t structure). The same SLES can be shared but with
+       different settings w.r.t. the stopping convergence criteria. */
+
+    ctxp->init_sles_param = _init_init_slesp(saddlep);
+
+    cs_sles_set_epzero(1e-15);  /* Avoid a too early exit */
+
+    saddlep->context = ctxp;
+
+    // Now the parameters of the Schur can be set
+
+    _init_schur_slesp(saddlep);
+
+  }
   else if (strcmp(keyval, "uzawa_cg") == 0) {
 
     saddlep->solver = CS_PARAM_SADDLE_SOLVER_UZAWA_CG;
@@ -1323,35 +1356,6 @@ cs_param_saddle_set_solver(const char          *keyval,
     saddlep->context = ctxp;
 
   }
-  else if (strcmp(keyval, "simple") == 0) {
-
-    saddlep->solver = CS_PARAM_SADDLE_SOLVER_SIMPLE;
-    saddlep->solver_class = CS_PARAM_SOLVER_CLASS_CS;
-    saddlep->precond = CS_PARAM_SADDLE_PRECOND_NONE;
-    saddlep->schur_approx = CS_PARAM_SADDLE_SCHUR_LUMPED_INVERSE;
-
-    /* Context structure dedicated to this algorithm */
-
-    cs_param_saddle_context_simple_t *ctxp = nullptr;
-    CS_MALLOC(ctxp, 1, cs_param_saddle_context_simple_t);
-
-    ctxp->xtra_sles_param = nullptr;  /* It depends on the type of Schur
-                                         approximation used */
-
-    ctxp->dedicated_init_sles = false;
-
-    /* Initialize an additional set of SLES parameters for the initial
-       transformation of the system (this is different from defining a
-       dedicated cs_sles_t structure). The same SLES can be shared but with
-       different settings w.r.t. the stopping convergence criteria. */
-
-    ctxp->init_sles_param = _init_init_slesp(saddlep);
-
-    cs_sles_set_epzero(1e-15);  /* Avoid a too early exit */
-
-    saddlep->context = ctxp;
-  }
-
   else
     return ierr;
 
