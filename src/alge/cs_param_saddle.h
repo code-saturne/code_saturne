@@ -378,8 +378,11 @@ typedef struct {
 /* Set of advanced settings according to the type of saddle-point solver */
 /* ===================================================================== */
 
-/* Augmented Lagrangian Uzawa algorithm */
-/* ------------------------------------ */
+/*! \struct cs_param_saddle_context_alu_t
+ *
+ * \brief Structure storing additional elements associated with the usage
+ * of the Augmented Lagrangian Uzawa (ALU) algorithm
+ */
 
 typedef struct {
 
@@ -408,15 +411,17 @@ typedef struct {
 } cs_param_saddle_context_alu_t;
 
 
-/* Block preconditioner algorithm with a Krylov solver */
-/* --------------------------------------------------- */
+/*! \struct cs_param_saddle_context_block_krylov_t
+ *
+ * \brief Structure storing additional elements associated with the usage
+ * of block preconditioners with a Krylov solver
+ */
 
 typedef struct {
 
   /*! \var augmentation_scaling
    *  Value of the scaling coefficient in front of the augmented system.
-   *  This is only useful when a GKB algorithm is used. By default, there is
-   *  no augmentation.
+   *  By default, there is no augmentation.
    */
 
   double            augmentation_scaling;
@@ -443,15 +448,17 @@ typedef struct {
 } cs_param_saddle_context_block_krylov_t;
 
 
-/* GKB algorithm */
-/* ------------- */
+/*! \struct cs_param_saddle_context_gkb_t
+ *
+ * \brief Structure storing additional elements associated with the usage
+ * of the Golub-Kahan Bidiagonalization (GKB) algorithm
+ */
 
 typedef struct {
 
   /*! \var augmentation_scaling
    *  Value of the scaling coefficient in front of the augmented system.
-   *  This is only useful when a GKB algorithm is used. By default, there is
-   *  no augmentation.
+   *  By default, there is no augmentation.
    */
 
   double            augmentation_scaling;
@@ -481,8 +488,11 @@ typedef struct {
 } cs_param_saddle_context_gkb_t;
 
 
-/* Notay's algebraic transformation */
-/* -------------------------------- */
+/*! \struct cs_param_saddle_context_notay_t
+ *
+ * \brief Structure storing additional elements associated with the usage
+ * of the Notay's algebraic transformation
+ */
 
 typedef struct {
 
@@ -495,8 +505,13 @@ typedef struct {
 
 } cs_param_saddle_context_notay_t;
 
-/* Uzawa-CG algorithm */
-/* ------------------ */
+
+/*! \struct cs_param_saddle_context_uzacg_t
+ *
+ * \brief Structure storing additional elements associated with the usage of
+ * the Uzawa-CG algorithm (an Uzawa algorithm accelerated with a Conjugate
+ * Gradient algorithm)
+ */
 
 typedef struct {
 
@@ -527,8 +542,13 @@ typedef struct {
 
 } cs_param_saddle_context_uzacg_t;
 
-/* SIMPLE-like algorithm */
-/* --------------------- */
+
+/*! \struct cs_param_saddle_context_simple_t
+ *
+ * \brief Structure storing additional elements associated with the usage of
+ * the Algebraic Fractional Step methods (AFS) including SIMPLE-like
+ * algorithm
+ */
 
 typedef struct {
 
