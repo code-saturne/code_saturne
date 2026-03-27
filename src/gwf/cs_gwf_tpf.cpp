@@ -515,7 +515,7 @@ _rhogl_h_cell_upw(cs_lnum_t                    c_id,
  */
 /*----------------------------------------------------------------------------*/
 
-static void
+[[maybe_unused]] static void
 _compute_all_rho_h(cs_lnum_t                  c_id,
                    double                     h_mh,
                    double                     mh_ov_rt,

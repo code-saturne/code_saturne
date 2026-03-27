@@ -445,14 +445,12 @@ _predco_apply_remaining_bc(const cs_cdofb_predco_t       *sc,
  * \brief  Prepare and solve the pressure correction step
  *
  * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
- * \param[in]      nsp        pointer to a \ref cs_navsto_param_t structure
  * \param[in, out] sc         pointer to a scheme context structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _solve_pressure_correction(const cs_mesh_t              *mesh,
-                           const cs_navsto_param_t      *nsp,
                            cs_cdofb_predco_t            *sc)
 {
   cs_navsto_projection_t *cc = sc->coupling_context;
@@ -1221,7 +1219,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
   /* SECOND MAJOR STEP: Solve the equation related to the correction step
    * Correction step = Solve a diffusion equation for the pressure increment */
 
-  _solve_pressure_correction(mesh, nsp, sc);
+  _solve_pressure_correction(mesh, sc);
 
   /* LAST MAJOR STEP: Update the pressure and the velocity */
 
