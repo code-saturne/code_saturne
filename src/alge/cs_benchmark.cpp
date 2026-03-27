@@ -426,7 +426,6 @@ _sub_matrix_vector_test(int                  n_time_runs,
   std::chrono::microseconds wt_r0_m;
 
   long   n_ops, n_ops_glob;
-  double *ya = nullptr;
 
   double test_sum = 0.0;
   double test_sum_mult = 1.0/n_time_runs;
@@ -525,7 +524,7 @@ _sub_matrix_vector_test(int                  n_time_runs,
   wt1 = std::chrono::high_resolution_clock::now();
   wt_r0_m =  std::chrono::duration_cast
             <std::chrono::microseconds>(wt1 - wt0);
-  wt_r0 = wt_r0_m.count() * 1.e-6 / n_time_runs;
+  wt_r0 = wt_r0_m.count() * 1.e-6;
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 "\n"
@@ -570,7 +569,7 @@ _sub_matrix_vector_test(int                  n_time_runs,
   wt1 = std::chrono::high_resolution_clock::now();
   wt_r0_m =  std::chrono::duration_cast
             <std::chrono::microseconds>(wt1 - wt0);
-  wt_r0 = wt_r0_m.count() * 1.e-6 / n_time_runs;
+  wt_r0 = wt_r0_m.count() * 1.e-6;
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 "\n"
@@ -591,6 +590,8 @@ _sub_matrix_vector_test(int                  n_time_runs,
 
   for (cs_lnum_t jj = 0; jj < n_cells_ext; jj++)
     y[jj] = 0.0;
+
+  cs_sync_h2d(y);
 
   test_sum = 0.0;
   wt0 = std::chrono::high_resolution_clock::now();
@@ -653,20 +654,23 @@ _sub_matrix_vector_test(int                  n_time_runs,
   else
     n_ops_glob = (cs_glob_mesh->n_g_i_faces*2);
 
+  cs_real_t *ya;
   CS_MALLOC_HD(ya, n_faces, cs_real_t, cs_alloc_mode);
   for (cs_lnum_t jj = 0; jj < n_faces; jj++)
     ya[jj] = 0.0;
+
+  cs_sync_h2d(ya);
 
   test_sum = 0.0;
   wt0 = std::chrono::high_resolution_clock::now();
   for (int run_id = 0; run_id < n_time_runs; run_id++) {
     _mat_vec_exdiag_part_p1(n_faces, face_cell, xa, x, ya);
-    test_sum += y[n_cells-1]*test_sum_mult;
+    test_sum += ya[n_faces-1]*test_sum_mult;
   }
   wt1 = std::chrono::high_resolution_clock::now();
   wt_r0_m =  std::chrono::duration_cast
             <std::chrono::microseconds>(wt1 - wt0);
-  wt_r0 = wt_r0_m.count() * 1.e-6 / n_time_runs;
+  wt_r0 = wt_r0_m.count() * 1.e-6;
 
   CS_FREE(ya);
 

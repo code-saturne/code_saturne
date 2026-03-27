@@ -53,15 +53,10 @@
 
 #include "base/cs_base.h"
 #include "base/cs_base_accel.h"
-
 #include "base/cs_base_cuda.h"
-// #include "base/cs_cuda_contrib.h"
 
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
-#include "alge/cs_matrix.h"
-#include "alge/cs_matrix_priv.h"
-#include "base/cs_numbering.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -72,17 +67,6 @@
 /*============================================================================
  * Local macro definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Compatibility macro for __ldg (load from generic memory) intrinsic,
- * forcing load from read-only texture cache.
- *
- * This was not available in (very old) CUDA architectures.
- *----------------------------------------------------------------------------*/
-
-#if __CUDA_ARCH__ < 350
-#define __ldg(ptr) *(ptr);
-#endif
 
 /*============================================================================
  * Private function definitions
@@ -109,14 +93,13 @@ _mat_vec_exdiag_native_sym(cs_lnum_t        n_faces,
                            const cs_real_t  *__restrict__ x,
                            cs_real_t        *__restrict__ y)
 {
-  cs_lnum_t ii, jj;
   cs_lnum_t face_id = blockIdx.x * blockDim.x + threadIdx.x;
 
   if (face_id < n_faces) {
-    ii = face_cell[2 * face_id];
-    jj = face_cell[2 * face_id + 1];
-    atomicAdd(&y[jj], xa[face_id] * x[ii]);
+    cs_lnum_t ii = face_cell[2 * face_id];
+    cs_lnum_t jj = face_cell[2 * face_id + 1];
     atomicAdd(&y[ii], xa[face_id] * x[jj]);
+    atomicAdd(&y[jj], xa[face_id] * x[ii]);
   }
 }
 
@@ -150,12 +133,13 @@ cs_mat_vec_exdiag_native_sym_cuda(cs_lnum_t           n_faces,
                                   cs_real_t          *y)
 {
   unsigned int blocksize = 512;
-  unsigned int gridsize  = (unsigned int)ceil((double)n_faces / blocksize);
+  unsigned int gridsize = cs_cuda_grid_size(n_faces, blocksize);
+  cudaStream_t stream = cs_cuda_get_stream(0);
 
-  _mat_vec_exdiag_native_sym<<<gridsize, blocksize>>>
+  _mat_vec_exdiag_native_sym<<<gridsize, blocksize, 0, stream>>>
     (n_faces, (const cs_lnum_t *)face_cell, xa, x, y);
 
-  cudaDeviceSynchronize();
+  CS_CUDA_CHECK(cudaStreamSynchronize(stream));
   CS_CUDA_CHECK(cudaGetLastError());
 }
 

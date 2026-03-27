@@ -58,14 +58,10 @@
 
 #include "base/cs_base.h"
 #include "base/cs_base_accel.h"
-
 #include "base/cs_base_hip.h"
 
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
-#include "alge/cs_matrix.h"
-#include "alge/cs_matrix_priv.h"
-#include "base/cs_numbering.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -104,8 +100,8 @@ _mat_vec_exdiag_native_sym(cs_lnum_t        n_faces,
   if (face_id < n_faces) {
     ii = face_cell[2 * face_id];
     jj = face_cell[2 * face_id + 1];
-    atomicAdd(&y[jj], xa[face_id] * x[ii]);
     atomicAdd(&y[ii], xa[face_id] * x[jj]);
+    atomicAdd(&y[jj], xa[face_id] * x[ii]);
   }
 }
 
@@ -140,11 +136,12 @@ cs_mat_vec_exdiag_native_sym_hip(cs_lnum_t           n_faces,
 {
   unsigned int blocksize = 512;
   unsigned int gridsize  = (unsigned int)ceil((double)n_faces / blocksize);
+  cudaStream_t stream = cs_hip_get_stream(0);
 
-  _mat_vec_exdiag_native_sym<<<gridsize, blocksize>>>
+  _mat_vec_exdiag_native_sym<<<gridsize, blocksize, 0, stream>>>
     (n_faces, (const cs_lnum_t *)face_cell, xa, x, y);
 
-  hipDeviceSynchronize();
+  CS_HIP_CHECK(hipStreamSynchronize(stream));
   CS_HIP_CHECK(hipGetLastError());
 }
 
