@@ -816,10 +816,7 @@ _unset_cusparse_map(cs_matrix_t   *matrix)
       cusparseDestroyDnMat(csm->matY);
   }
 
-  if (csm->dBuffer != nullptr) {
-    CS_CUDA_CHECK(cudaFree(csm->dBuffer));
-    csm->dBuffer = nullptr;
-  }
+  CS_FREE(csm->dBuffer);
 
   csm->block_diag = false;
 
@@ -843,7 +840,7 @@ _unset_cusparse_map(cs_matrix_t   *matrix)
  *----------------------------------------------------------------------------*/
 
 static cs_matrix_cusparse_map_t *
-_set_cusparse_map(cs_matrix_t   *matrix)
+_set_cusparse_map(cs_matrix_t  *matrix)
 {
   cs_matrix_cusparse_map_t *csm
     = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
@@ -1028,7 +1025,9 @@ _update_cusparse_map(cs_matrix_cusparse_map_t  *csm,
                                      spmv_alg_type,
                                      &bufferSize);
 
-    CS_CUDA_CHECK(cudaMalloc(&(csm->dBuffer), bufferSize));
+    char *buffer = nullptr;
+    CS_MALLOC_HD(buffer, bufferSize, char, CS_ALLOC_DEVICE);
+    csm->dBuffer = buffer;
   }
 
 }
@@ -1117,7 +1116,9 @@ _update_cusparse_map_block_diag(cs_matrix_cusparse_map_t  *csm,
       bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
                 __func__, cusparseGetErrorString(status));
 
-    CS_CUDA_CHECK(cudaMalloc(&(csm->dBuffer), bufferSize));
+    char *buffer = nullptr;
+    CS_MALLOC_HD(buffer, bufferSize, char, CS_ALLOC_DEVICE);
+    csm->dBuffer = buffer;
   }
 
 }
