@@ -1,5 +1,5 @@
 /*============================================================================
- * Sparse Matrix-vector multiplication kernels.
+ * Sparse Matrix-vector multiplication functions and kernels.
  *============================================================================*/
 
 /*
@@ -3808,6 +3808,7 @@ _matrix_spmv_set_func_d(cs_matrix_type_t             m_type,
 #if defined(HAVE_CUDA)
 
 const char s_cuda[] = "cuda";
+const char *default_name_native = s_cuda;
 
 #if defined(HAVE_CUSPARSE)
 
@@ -3820,15 +3821,23 @@ const char *default_name = s_cuda;
 
 #endif /* defined(HAVE_CUSPARSE) */
 
-const char *default_name_native = s_cuda;
-
 #elif defined(HAVE_HIP)
 
 const char s_hip[] = "hip";
-const char *default_name = s_hip;
 const char *default_name_native = s_hip;
 
-#else  /* defined(HAVE_CUDA) */
+#if defined(HAVE_ROCSPARSE)
+
+const char s_rocsparse[] = "rocsparse";
+const char *default_name = s_rocsparse;
+
+#else
+
+const char *default_name = s_hip;
+
+#endif /* defined(HAVE_ROCSPARSE) */
+
+#else  /* defined(HAVE_CUDA) || defined(HAVE_HIP) */
 
 const char s_not_impl[] = "not_implemented";
 const char *default_name_native = s_not_impl;
@@ -3925,6 +3934,7 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m)
  *     omp_atomic      (for OpenMP with atomic add)
  *     vector          (For vector machine with compatible numbering)
  *     cuda            (CUDA-accelerated)
+ *     hip             (HIP-accelerated)
  *
  *   CS_MATRIX_CSR     (for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
  *     default
@@ -3932,6 +3942,8 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m)
  *     mkl_sycl        (with MKL, using SYCL offload)
  *     cuda            (CUDA-accelerated)
  *     cusparse        (with cuSPARSE)
+ *     hip             (HIP-accelerated)
+ *     rocsparse       (with rocSPARSE)
  *
  *   CS_MATRIX_MSR
  *     default
@@ -3940,6 +3952,8 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m)
  *     mkl_sycl        (with MKL, using SYCL offload)
  *     cuda            (CUDA-accelerated)
  *     cusparse        (with cuSPARSE)
+ *     hip             (HIP-accelerated)
+ *     rocsparse       (with rocSPARSE)
  *
  *   CS_MATRIX_DIST
  *     default
@@ -4233,6 +4247,18 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
         retcode = 2;
 #endif
       }
+      else if (!strcmp(func_name, "rocsparse")) {
+#if defined(HAVE_ROCPARSE)
+        _spmv[0] = (cs_matrix_vector_product_t *)
+                     cs_matrix_spmv_hip_csr_rocsparse;
+        _spmv[1] = (cs_matrix_vector_product_t *)
+                     cs_matrix_spmv_hip_csr_rocsparse;
+        _spmv_xy_hd[0] = 'd';
+        _spmv_xy_hd[1] = 'd';
+#else
+        retcode = 2;
+#endif
+      }
       break;
     default:
       break;
@@ -4330,6 +4356,37 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
 #endif
     }
 
+    else if (!strcmp(func_name, "cusparse")) {
+#if defined(HAVE_CUSPARSE)
+      switch(fill_type) {
+      case CS_MATRIX_SCALAR:
+      case CS_MATRIX_SCALAR_SYM:
+        _spmv[0] = cs_matrix_spmv_cuda_msr_cusparse;
+        _spmv[1] = cs_matrix_spmv_cuda_msr_cusparse;
+        _spmv_xy_hd[0] = 'd';
+        _spmv_xy_hd[1] = 'd';
+        break;
+      case CS_MATRIX_BLOCK_D:
+      case CS_MATRIX_BLOCK_D_66:
+      case CS_MATRIX_BLOCK_D_SYM:
+        _spmv[0] = cs_matrix_spmv_cuda_msr_b_cusparse;
+        _spmv[1] = cs_matrix_spmv_cuda_msr_b_cusparse;
+        _spmv_xy_hd[0] = 'd';
+        _spmv_xy_hd[1] = 'd';
+        break;
+      case CS_MATRIX_BLOCK:
+        _spmv[0] = cs_matrix_spmv_cuda_msr_bb_cusparse;
+        _spmv[1] = cs_matrix_spmv_cuda_msr_bb_cusparse;
+        _spmv_xy_hd[0] = 'd';
+        _spmv_xy_hd[1] = 'd';
+      default:
+        break;
+      }
+#else
+      retcode = 2;
+#endif
+    }
+
     else if (!strcmp(func_name, "hip")) {
 #if defined(HAVE_HIP)
       switch(fill_type) {
@@ -4356,27 +4413,27 @@ cs_matrix_spmv_set_func(cs_matrix_type_t             m_type,
 #endif
     }
 
-    else if (!strcmp(func_name, "cusparse")) {
-#if defined(HAVE_CUSPARSE)
+    else if (!strcmp(func_name, "rocsparse")) {
+#if defined(HAVE_ROCSPARSE)
       switch(fill_type) {
       case CS_MATRIX_SCALAR:
       case CS_MATRIX_SCALAR_SYM:
-        _spmv[0] = cs_matrix_spmv_cuda_msr_cusparse;
-        _spmv[1] = cs_matrix_spmv_cuda_msr_cusparse;
+        _spmv[0] = cs_matrix_spmv_hip_msr_rocsparse;
+        _spmv[1] = cs_matrix_spmv_hip_msr_rocsparse;
         _spmv_xy_hd[0] = 'd';
         _spmv_xy_hd[1] = 'd';
         break;
       case CS_MATRIX_BLOCK_D:
       case CS_MATRIX_BLOCK_D_66:
       case CS_MATRIX_BLOCK_D_SYM:
-        _spmv[0] = cs_matrix_spmv_cuda_msr_b_cusparse;
-        _spmv[1] = cs_matrix_spmv_cuda_msr_b_cusparse;
+        _spmv[0] = cs_matrix_spmv_hip_msr_b_rocsparse;
+        _spmv[1] = cs_matrix_spmv_hip_msr_b_rocsparse;
         _spmv_xy_hd[0] = 'd';
         _spmv_xy_hd[1] = 'd';
         break;
       case CS_MATRIX_BLOCK:
-        _spmv[0] = cs_matrix_spmv_cuda_msr_bb_cusparse;
-        _spmv[1] = cs_matrix_spmv_cuda_msr_bb_cusparse;
+        _spmv[0] = cs_matrix_spmv_hip_msr_bb_rocsparse;
+        _spmv[1] = cs_matrix_spmv_hip_msr_bb_rocsparse;
         _spmv_xy_hd[0] = 'd';
         _spmv_xy_hd[1] = 'd';
       default:

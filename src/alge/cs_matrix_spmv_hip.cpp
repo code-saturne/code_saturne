@@ -5,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -41,8 +41,8 @@
 #include <mpi.h>
 #endif
 
-#if defined(HAVE_HIPSPARSE)
-#include <hipsparse.h>
+#if defined(HAVE_ROCSPARSE)
+#include <rocsparse/rocsparse.h>
 #endif
 
 /*----------------------------------------------------------------------------
@@ -81,40 +81,36 @@
  * Local Type Definitions
  *============================================================================*/
 
-#if defined(HAVE_HIPSPARSE)
+#if defined(HAVE_ROCSPARSE)
 
-/* Mapping of matrix coefficients and structure to cuSPARSE */
-/*----------------------------------------------------------*/
+/* Mapping of matrix coefficients and structure to rocSPARSE */
+/*-----------------------------------------------------------*/
 
-typedef struct _cs_matrix_cusparse_map_t {
+typedef struct _cs_matrix_rocsparse_map_t {
 
-  bool  block_diag;             /* Use identity blocks diagonal structure ? */
+  bool  block_diag;              /* Use identity blocks diagonal structure ? */
 
-  hipsparseSpMatDescr_t  matA;   /* Handle to cusparse Matrix */
+  rocsparse_spmat_descr  mat_a;  /* Handle to rocSPARSE Matrix */
 
-  hipsparseDnMatDescr_t  matX;   /* Handle to cusparse Matrix (blocked vector) */
-  hipsparseDnMatDescr_t  matY;   /* Handle to cusparse Matrix (blocked vector) */
+  rocsparse_dnmat_descr  mat_x;  /* Handle to rocSPARSE Matrix (blocked vector) */
+  rocsparse_dnmat_descr  mat_y;  /* Handle to rocSPARSE Matrix (blocked vector) */
 
-  hipsparseDnVecDescr_t  vecX;   /* Handle to cusparse Vector */
-  hipsparseDnVecDescr_t  vecY;   /* Handle to cusparse output Vector */
+  rocsparse_dnvec_descr  vec_x;  /* Handle to rocSPARSE Vector */
+  rocsparse_dnvec_descr  vec_y;  /* Handle to rocSPARSE output Vector */
 
-  void  *vecXValues;            /* Pointer to vector values */
-  void  *vecYValues;            /* Pointer to vector values */
+  void  *vec_x_values;           /* Pointer to vector values */
+  void  *vec_y_values;           /* Pointer to vector values */
 
-  void  *dBuffer;               /* Associated buffer */
+  size_t  buffer_size;           /* SpMV buffer size */
+  void   *buffer;                /* SpMV buffer */
 
-  /* When not using generic API */
+  rocsparse_spmv_descr spmv_descr;  /* SpMV descriptor */
 
-  int  nnz;                     /* Number of nonzeroes */
-  hipsparseMatDescr_t *descrA;  /* Handle to cusparse Matrix description */
+  int  nnz;                      /* Number of nonzeroes */
 
-  void  *d_row_index;         /* Pointer to row index */
-  void  *d_col_id;            /* Pointer to column ids */
-  void  *d_e_val;             /* Pointer to matrix extradiagonal values */
+} cs_matrix_rocsparse_map_t;
 
-} cs_matrix_cusparse_map_t;
-
-#endif // defined(HAVE_HIPSPARSE)
+#endif // defined(HAVE_ROCSPARSE)
 
 /*============================================================================
  *  Global variables
@@ -122,9 +118,9 @@ typedef struct _cs_matrix_cusparse_map_t {
 
 static hipStream_t _stream = 0;
 
-#if defined(HAVE_HIPSPARSE)
+#if defined(HAVE_ROCSPARSE)
 
-static hipsparseHandle_t  _handle = nullptr;
+static rocsparse_handle  _handle = nullptr;
 
 #endif
 
@@ -371,7 +367,8 @@ _mat_vect_p_l_csr_substract_diag(cs_lnum_t         n_rows,
     const cs_lnum_t *__restrict__ _col_id = col_id + row_index[ii];
     const cs_real_t *__restrict__ m_row  = val + row_index[ii];
     cs_lnum_t n_cols = row_index[ii + 1] - row_index[ii];
-#pragma unroll
+
+#pragma unroll 2
     for (cs_lnum_t jj = 0; jj < n_cols; jj++) {
       cs_lnum_t c_id = _col_id[jj];
       if (c_id == ii) {
@@ -424,7 +421,7 @@ _mat_vect_p_l_msr(cs_lnum_t         n_rows,
 /*----------------------------------------------------------------------------*/
 /* \brief Local diagonal contribution y = Da.x  + y.
  *
- * This can be combined with a cuSPARSE CSR SpMV product with the
+ * This can be combined with a rocSPARSE CSR SpMV product with the
  * extra-diagonal portion of an MSR or distributed matrix.
  *
  * \param[in]       n_rows  number of local rows
@@ -684,7 +681,7 @@ _b_mat_vect_p_l_msr_exdiag(cs_lnum_t        n_rows,
  * Start synchronization of ghost values prior to matrix.vector product.
  *
  * Values are packed on the device, so:
- * - If MPI is HIP-aware, no values need to go through the host
+ * - If MPI is ROC-aware, no values need to go through the host
  * - Otherwise, only halo values need to go through the host, not the
  *   whole array.
  *
@@ -767,79 +764,186 @@ _pre_vector_multiply_sync_x_end(const cs_matrix_t   *matrix,
   }
 }
 
-#if defined(HAVE_HIPSPARSE)
+#if defined(HAVE_ROCSPARSE)
 
 /*----------------------------------------------------------------------------
- * Unset matrix cuSPARSE mapping.
+ * Unset matrix rocSPARSE mapping.
  *
  * parameters:
  *   matrix    <-- pointer to matrix structure
  *----------------------------------------------------------------------------*/
 
 static void
-_unset_cusparse_map(cs_matrix_t   *matrix)
+_unset_rocsparse_map(cs_matrix_t   *matrix)
 {
-  cs_matrix_cusparse_map_t *csm
-    = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
+  cs_matrix_rocsparse_map_t *csm
+    = (cs_matrix_rocsparse_map_t *)matrix->ext_lib_map;
 
   if (csm == nullptr)
     return;
 
-  hipsparseDestroySpMat(csm->matA);
+  rocsparse_destroy_spmv_descr(csm->spmv_descr);
+  rocsparse_destroy_spmat_descr(csm->mat_a);
 
   if (csm->block_diag == false) {
-    if (csm->vecXValues != nullptr)
-      hipsparseDestroyDnVec(csm->vecX);
-    if (csm->vecYValues != nullptr)
-      hipsparseDestroyDnVec(csm->vecY);
+    if (csm->vec_x_values != nullptr)
+      rocsparse_destroy_dnvec_descr(csm->vec_x);
+    if (csm->vec_y_values != nullptr)
+      rocsparse_destroy_dnvec_descr(csm->vec_y);
   }
   else {
-    if (csm->vecXValues != nullptr)
-      hipsparseDestroyDnMat(csm->matX);
-    if (csm->vecYValues != nullptr)
-      hipsparseDestroyDnMat(csm->matY);
+    if (csm->vec_x_values != nullptr)
+      rocsparse_destroy_dnmat_descr(csm->mat_x);
+    if (csm->vec_y_values != nullptr)
+      rocsparse_destroy_dnmat_descr(csm->mat_y);
   }
 
-  if (csm->dBuffer != nullptr) {
-    CS_HIP_CHECK(hipFree(csm->dBuffer));
-    csm->dBuffer = nullptr;
-  }
+  CS_FREE(csm->buffer);
+  csm->buffer_size = 0;
 
   csm->block_diag = false;
 
-  csm->vecXValues = nullptr;
-  csm->vecYValues = nullptr;
+  csm->vec_x_values = nullptr;
+  csm->vec_y_values = nullptr;
 
   csm->nnz = 0;
-  csm->d_row_index = nullptr;
-  csm->d_col_id = nullptr;
-  csm->d_e_val = nullptr;
 
   CS_FREE(matrix->ext_lib_map);
   matrix->destroy_adaptor = nullptr;
 }
 
 /*----------------------------------------------------------------------------
- * Set matrix cuSPARSE mapping.
+ * Update matrix rocSPARSE mapping.
+ *
+ * parameters:
+ *   csm       <-> rocSPARSE matrix mapping
+ *   matrix    <-- pointer to matrix structure
+ *   d_x       <-- pointer to input vector (on device)
+ *   d_y       <-- pointer to output vector (on device)
+ *----------------------------------------------------------------------------*/
+
+static void
+_update_rocsparse_map(cs_matrix_rocsparse_map_t  *csm,
+                      const cs_matrix_t          *matrix,
+                      void                       *d_x,
+                      void                       *d_y)
+{
+  assert(csm != nullptr);
+
+  rocsparse_status status = rocsparse_status_success;
+  rocsparse_datatype val_dtype = (sizeof(cs_real_t) == 8) ?
+    rocsparse_datatype_f64_r : rocsparse_datatype_f32_r;
+
+  if (matrix->eb_size == matrix->db_size) {
+
+    if (d_x != csm->vec_x_values) {
+      if (csm->vec_x_values != nullptr)
+        status = rocsparse_destroy_dnvec_descr(csm->vec_x);
+
+      if (rocsparse_status_success == status)
+        status = rocsparse_create_dnvec_descr(&(csm->vec_x),
+                                              matrix->n_cols_ext*matrix->db_size,
+                                              d_x,
+                                              val_dtype);
+      if (rocsparse_status_success == status)
+        csm->vec_x_values = d_x;
+      else
+        if (rocsparse_status_success != status)
+          bft_error(__FILE__, __LINE__, 0, _("%s: rocSPARSE status %d."),
+                    __func__, status);
+    }
+
+    if (d_y != csm->vec_y_values) {
+      if (csm->vec_y_values != nullptr)
+        status = rocsparse_destroy_dnvec_descr(csm->vec_y);
+
+      if (rocsparse_status_success == status)
+        status = rocsparse_create_dnvec_descr(&(csm->vec_y),
+                                              matrix->n_rows*matrix->db_size,
+                                              d_y,
+                                              val_dtype);
+
+      if (rocsparse_status_success == status)
+        csm->vec_y_values = d_y;
+      else
+        bft_error(__FILE__, __LINE__, 0, _("%s: rocSPARSE status %d."),
+                  __func__, status);
+    }
+
+  }
+
+  else if (matrix->eb_size > 1) {
+
+    if (d_x != csm->vec_x_values) {
+      if (csm->vec_x_values != nullptr)
+        status = rocsparse_destroy_dnmat_descr(csm->mat_x);
+
+      if (rocsparse_status_success == status)
+        status = rocsparse_create_dnmat_descr(&(csm->mat_x),
+                                              matrix->n_cols_ext,
+                                              matrix->db_size,
+                                              matrix->db_size,
+                                              d_x,
+                                              val_dtype,
+                                              rocsparse_order_row);
+
+      if (rocsparse_status_success == status)
+        csm->vec_x_values = d_x;
+      else
+        bft_error(__FILE__, __LINE__, 0, _("%s: rocSPARSE status %d."),
+                  __func__, status);
+    }
+
+    if (d_y != csm->vec_y_values) {
+      if (csm->vec_y_values != nullptr)
+        status = rocsparse_destroy_dnmat_descr(csm->mat_y);
+
+      if (rocsparse_status_success == status)
+        status = rocsparse_create_dnmat_descr(&(csm->mat_y),
+                                              matrix->n_rows,
+                                              matrix->db_size,
+                                              matrix->db_size,
+                                              d_y,
+                                              val_dtype,
+                                              rocsparse_order_row);
+
+      if (rocsparse_status_success == status)
+        csm->vec_y_values = d_y;
+      else
+        bft_error(__FILE__, __LINE__, 0, _("%s: rocSPARSE status %d."),
+                  __func__, status);
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Set matrix rocSPARSE mapping.
  *
  * parameters:
  *   matrix    <-- pointer to matrix structure
  *----------------------------------------------------------------------------*/
 
-static cs_matrix_cusparse_map_t *
-_set_cusparse_map(cs_matrix_t   *matrix)
+static cs_matrix_rocsparse_map_t *
+_set_rocsparse_map(cs_matrix_t   *matrix,
+                   void          *d_x,
+                   void          *d_y)
 {
-  cs_matrix_cusparse_map_t *csm
-    = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
+  cs_matrix_rocsparse_map_t *csm
+    = (cs_matrix_rocsparse_map_t *)matrix->ext_lib_map;
 
   if (csm != nullptr) {
-    _unset_cusparse_map(matrix);
+    _unset_rocsparse_map(matrix);
   }
   else {
-    CS_MALLOC(csm, 1, cs_matrix_cusparse_map_t);
+    CS_MALLOC(csm, 1, cs_matrix_rocsparse_map_t);
     matrix->ext_lib_map = (void *)csm;
   }
-  matrix->destroy_adaptor = _unset_cusparse_map;
+  matrix->destroy_adaptor = _unset_rocsparse_map;
+
+  if (matrix->eb_size == matrix->db_size)
+    return csm;
+  // Continued in _update_rocsparse_map_block_diag if the above is false.
 
   const void *row_index, *col_id;
   const void *e_val;
@@ -872,237 +976,292 @@ _set_cusparse_map(cs_matrix_t   *matrix)
               (const_cast<cs_real_t *>(mc->e_val));
   }
 
-  hipsparseStatus_t status = HIPSPARSE_STATUS_SUCCESS;
+  rocsparse_status status = rocsparse_status_success;
+
+  /* For beta, 0 should be enough for SmPV, 1 is needed for
+     y = A.x + b.y which is useful when y is initialized by a
+     separate diagonal da.x product */
+
+  const cs_real_t alpha = 1.0;
+  const cs_real_t beta = (matrix->type == CS_MATRIX_CSR) ? 0. : 1.;
 
   if (_handle == nullptr)
-    status = hipsparseCreate(&_handle);
+    status = rocsparse_create_handle(&_handle);
 
   if (matrix->db_size > matrix->eb_size)
     csm->block_diag = true;
   else
     csm->block_diag = false;
 
-  if (HIPSPARSE_STATUS_SUCCESS != status)
-    bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
-              __func__, hipsparseGetErrorString(status));
+  if (rocsparse_status_success != status)
+    bft_error(__FILE__, __LINE__, 0, _("%s: rocSPARSE status %d."),
+              __func__, status);
 
-  csm->vecXValues = nullptr;  /* Pointer to vector values */
-  csm->vecYValues = nullptr;  /* Pointer to vector values */
-  csm->dBuffer = nullptr;
+  csm->vec_x_values = nullptr;  /* Pointer to vector values */
+  csm->vec_y_values = nullptr;  /* Pointer to vector values */
+  csm->buffer = nullptr;
 
-  csm->d_e_val = nullptr;
-  csm->d_row_index = nullptr;
-  csm->d_col_id = nullptr;
+  rocsparse_indextype index_dtype = (sizeof(cs_lnum_t) == 4) ?
+    rocsparse_indextype_i32 : rocsparse_indextype_i64;
+  rocsparse_datatype val_dtype = (sizeof(cs_real_t) == 8) ?
+    rocsparse_datatype_f64_r : rocsparse_datatype_f32_r;
 
   if (matrix->eb_size == 1) {
-
-    hipsparseIndexType_t index_dtype
-      = (sizeof(cs_lnum_t) == 4) ? HIPSPARSE_INDEX_32I : HIPSPARSE_INDEX_64I;
-    hipDataType val_dtype
-      = (sizeof(cs_real_t) == 8) ? HIP_R_64F : HIP_R_32F;
-
-    status = hipsparseCreateCsr(&(csm->matA),
-                               matrix->n_rows,
-                               matrix->n_cols_ext,
-                               nnz,
-                               const_cast<void *>(row_index),
-                               const_cast<void *>(col_id),
-                               const_cast<void *>(e_val),
-                               index_dtype,
-                               index_dtype,
-                               HIPSPARSE_INDEX_BASE_ZERO,
-                               val_dtype);
-
+    status = rocsparse_create_csr_descr(&(csm->mat_a),
+                                        matrix->n_rows,
+                                        matrix->n_cols_ext,
+                                        nnz,
+                                        const_cast<void *>(row_index),
+                                        const_cast<void *>(col_id),
+                                        const_cast<void *>(e_val),
+                                        index_dtype,
+                                        index_dtype,
+                                        rocsparse_index_base_zero,
+                                        val_dtype);
   }
   else {
-
-    csm->nnz = nnz;
-    csm->d_e_val = const_cast<void *>(e_val);
-
-    csm->d_row_index = const_cast<void *>(row_index);
-    csm->d_col_id = const_cast<void *>(col_id);
-
-    status = hipsparseCreateMatDescr(&(csm->descrA));
-
+    status = rocsparse_create_bsr_descr(&(csm->mat_a),
+                                        matrix->n_rows,
+                                        matrix->n_cols_ext,
+                                        nnz,
+                                        rocsparse_direction_row,
+                                        matrix->eb_size,
+                                        const_cast<void *>(row_index),
+                                        const_cast<void *>(col_id),
+                                        const_cast<void *>(e_val),
+                                        index_dtype,
+                                        index_dtype,
+                                        rocsparse_index_base_zero,
+                                        val_dtype);
   }
 
-  if (HIPSPARSE_STATUS_SUCCESS != status)
+
+  if (status == rocsparse_status_success)
+    status = rocsparse_create_spmv_descr(&(csm->spmv_descr));
+
+  if (rocsparse_status_success != status)
+    bft_error(__FILE__, __LINE__, 0, _("%s: rocSPARSE status %d."),
+              __func__, status);
+
+  rocsparse_error p_error[1] = {};
+
+  if (status == rocsparse_status_success) {
+    const rocsparse_spmv_alg spmv_alg = rocsparse_spmv_alg_csr_adaptive;
+    status = rocsparse_spmv_set_input(_handle,
+                                      csm->spmv_descr,
+                                      rocsparse_spmv_input_alg,
+                                      &spmv_alg,
+                                      sizeof(spmv_alg),
+                                      p_error);
+  }
+
+  if (status == rocsparse_status_success) {
+    const rocsparse_operation spmv_operation = rocsparse_operation_none;
+    status = rocsparse_spmv_set_input(_handle,
+                                      csm->spmv_descr,
+                                      rocsparse_spmv_input_operation,
+                                      &spmv_operation,
+                                      sizeof(spmv_operation),
+                                      p_error);
+  }
+
+  if (status == rocsparse_status_success) {
+    const rocsparse_datatype val_dtype = (sizeof(cs_real_t) == 8) ?
+      rocsparse_datatype_f64_r : rocsparse_datatype_f32_r;
+    status = rocsparse_spmv_set_input(_handle,
+                                      csm->spmv_descr,
+                                      rocsparse_spmv_input_compute_datatype,
+                                      &val_dtype,
+                                      sizeof(val_dtype),
+                                      p_error);
+  }
+
+  _update_rocsparse_map(csm, matrix, d_x, d_y);
+
+  if (status == rocsparse_status_success) {
+    size_t buffer_size;
+    status = rocsparse_v2_spmv_buffer_size(_handle,
+                                           csm->spmv_descr,
+                                           csm->mat_a,
+                                           csm->vec_x,
+                                           csm->vec_y,
+                                           rocsparse_v2_spmv_stage_analysis,
+                                           &buffer_size,
+                                           p_error);
+  }
+
+  char *buffer = nullptr;
+  size_t buffer_size_a = 0, buffer_size_c = 0;
+
+  if (status == rocsparse_status_success) {
+    status = rocsparse_v2_spmv_buffer_size(_handle,
+                                           csm->spmv_descr,
+                                           csm->mat_a,
+                                           csm->vec_x,
+                                           csm->vec_y,
+                                           rocsparse_v2_spmv_stage_analysis,
+                                           &buffer_size_a,
+                                           p_error);
+  }
+
+  if (status == rocsparse_status_success) {
+    CS_MALLOC_HD(buffer, buffer_size_a, char, CS_ALLOC_DEVICE);
+
+    status = rocsparse_v2_spmv(_handle,
+                               csm->spmv_descr,
+                               &alpha,
+                               csm->mat_a,
+                               csm->vec_x,
+                               &beta,
+                               csm->vec_y,
+                               rocsparse_v2_spmv_stage_analysis,
+                               buffer_size_a,
+                               buffer,
+                               p_error);
+  }
+
+  if (status == rocsparse_status_success) {
+    status = rocsparse_v2_spmv_buffer_size(_handle,
+                                           csm->spmv_descr,
+                                           csm->mat_a,
+                                           csm->vec_x,
+                                           csm->vec_y,
+                                           rocsparse_v2_spmv_stage_compute,
+                                           &buffer_size_c,
+                                           p_error);
+  }
+
+  if (status == rocsparse_status_success) {
+    if (buffer_size_a != buffer_size_c) {
+      CS_FREE(buffer);
+      CS_MALLOC_HD(buffer, buffer_size_c, char, CS_ALLOC_DEVICE);
+    }
+  }
+  else
+    CS_FREE(buffer);
+
+  csm->buffer_size = buffer_size_c;
+  csm->buffer = buffer;
+
+  if (rocsparse_status_success != status)
     bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
-              __func__, hipsparseGetErrorString(status));
+              __func__, rocsparse_error_get_message(p_error[0]));
 
   return csm;
 }
 
 /*----------------------------------------------------------------------------
- * Update matrix cuSPARSE mapping.
+ * Update matrix rocSPARSE mapping in block diagonal case.
  *
  * parameters:
- *   csm       <-> cuSPARSE matrix mapping
+ *   csm       <-> rocSPARSE matrix mapping
  *   matrix    <-- pointer to matrix structure
  *   d_x       <-- pointer to input vector (on device)
  *   d_y       <-- pointer to output vector (on device)
  *----------------------------------------------------------------------------*/
 
 static void
-_update_cusparse_map(cs_matrix_cusparse_map_t  *csm,
-                     const cs_matrix_t         *matrix,
-                     void                      *d_x,
-                     void                      *d_y)
+_update_rocsparse_map_block_diag(cs_matrix_rocsparse_map_t  *csm,
+                                 const cs_matrix_t          *matrix,
+                                 void                       *d_x,
+                                 void                       *d_y)
 {
   assert(csm != nullptr);
 
-  hipsparseSpMVAlg_t spmv_alg_type = HIPSPARSE_SPMV_ALG_DEFAULT;
+  rocsparse_status status = rocsparse_status_success;
+  rocsparse_datatype val_dtype = (sizeof(cs_real_t) == 8) ?
+    rocsparse_datatype_f64_r : rocsparse_datatype_f32_r;
 
-  hipsparseStatus_t status = HIPSPARSE_STATUS_SUCCESS;
-  hipDataType val_dtype
-    = (sizeof(cs_real_t) == 8) ? HIP_R_64F : HIP_R_32F;
+  if (d_x != csm->vec_x_values) {
+    if (csm->vec_x_values != nullptr)
+      rocsparse_destroy_dnmat_descr(csm->mat_x);
 
-  if (d_x != csm->vecXValues) {
-    if (csm->vecXValues != nullptr)
-      hipsparseDestroyDnVec(csm->vecX);
+    status = rocsparse_create_dnmat_descr(&(csm->mat_x),
+                                          matrix->n_cols_ext,
+                                          matrix->db_size,
+                                          matrix->db_size,
+                                          d_x,
+                                          val_dtype,
+                                          rocsparse_order_row);
 
-    status = hipsparseCreateDnVec(&(csm->vecX),
-                                 matrix->n_cols_ext,
-                                 d_x,
-                                 val_dtype);
+    if (rocsparse_status_success != status)
+      bft_error(__FILE__, __LINE__, 0, _("%s: rocSPARSE status %d."),
+                __func__, status);
 
-    if (HIPSPARSE_STATUS_SUCCESS != status)
-      bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
-                __func__, hipsparseGetErrorString(status));
-
-    csm->vecXValues = d_x;
+    csm->vec_x_values = d_x;
   }
 
-  if (d_y != csm->vecYValues) {
-    if (csm->vecYValues != nullptr)
-      hipsparseDestroyDnVec(csm->vecY);
+  if (d_y != csm->vec_y_values) {
+    if (csm->vec_y_values != nullptr)
+      rocsparse_destroy_dnmat_descr(csm->mat_y);
 
-    status = hipsparseCreateDnVec(&(csm->vecY),
-                                 matrix->n_rows,
-                                 d_y,
-                                 val_dtype);
+    status = rocsparse_create_dnmat_descr(&(csm->mat_y),
+                                          matrix->n_rows,
+                                          matrix->db_size,
+                                          matrix->db_size,
+                                          d_y,
+                                          val_dtype,
+                                          rocsparse_order_row);
 
-    if (HIPSPARSE_STATUS_SUCCESS != status)
-      bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
-                __func__, hipsparseGetErrorString(status));
+    if (rocsparse_status_success != status)
+      bft_error(__FILE__, __LINE__, 0, _("%s: rocSPARSE status %d."),
+                __func__, status);
 
-    csm->vecYValues = d_y;
+    csm->vec_y_values = d_y;
   }
 
-  if (csm->dBuffer == nullptr) {
-    size_t bufferSize = 0;
+  if (csm->buffer == nullptr) {
+    size_t buffer_size = 0;
     cs_real_t alpha = 1.0;
     cs_real_t beta = 1.0;  /* 0 should be enough for SmPV, 1 needed for
                               y = A.x + b.y
                               which is useful when y is initialized by
                               a separate diagonal da.x product */
 
-    status = hipsparseSpMV_bufferSize(_handle,
-                                     HIPSPARSE_OPERATION_NON_TRANSPOSE,
-                                     &alpha,
-                                     csm->matA,
-                                     csm->vecX,
-                                     &beta,
-                                     csm->vecY,
-                                     val_dtype,
-                                     spmv_alg_type,
-                                     &bufferSize);
+    status = rocsparse_spmm(_handle,
+                            rocsparse_operation_none,
+                            rocsparse_operation_none,
+                            &alpha,
+                            csm->mat_a,
+                            csm->mat_x,
+                            &beta,
+                            csm->mat_y,
+                            val_dtype,
+                            rocsparse_spmm_alg_default,
+                            rocsparse_spmm_stage_buffer_size,
+                            &buffer_size,
+                            nullptr);
 
-    CS_HIP_CHECK(hipMalloc(&(csm->dBuffer), bufferSize));
+    if (rocsparse_status_success != status)
+      bft_error(__FILE__, __LINE__, 0, _("%s: rocSPARSE status %d."),
+                __func__, status);
+
+    char *buffer;
+    CS_MALLOC_HD(buffer, buffer_size, char, CS_ALLOC_DEVICE);
+    csm->buffer_size = buffer_size;
+    csm->buffer = buffer;
+
+    status = rocsparse_spmm(_handle,
+                            rocsparse_operation_none,
+                            rocsparse_operation_none,
+                            &alpha,
+                            csm->mat_a,
+                            csm->mat_x,
+                            &beta,
+                            csm->mat_y,
+                            val_dtype,
+                            rocsparse_spmm_alg_default,
+                            rocsparse_spmm_stage_preprocess,
+                            &buffer_size,
+                            csm->buffer);
+
+    if (rocsparse_status_success != status)
+      bft_error(__FILE__, __LINE__, 0, _("%s: rocSPARSE status %d."),
+                __func__, status);
   }
-
 }
 
-/*----------------------------------------------------------------------------
- * Update matrix cuSPARSE mapping in block diagonal case.
- *
- * parameters:
- *   csm       <-> cuSPARSE matrix mapping
- *   matrix    <-- pointer to matrix structure
- *   d_x       <-- pointer to input vector (on device)
- *   d_y       <-- pointer to output vector (on device)
- *----------------------------------------------------------------------------*/
-
-static void
-_update_cusparse_map_block_diag(cs_matrix_cusparse_map_t  *csm,
-                                const cs_matrix_t         *matrix,
-                                void                      *d_x,
-                                void                      *d_y)
-{
-  assert(csm != nullptr);
-
-  hipsparseStatus_t status = HIPSPARSE_STATUS_SUCCESS;
-  hipDataType val_dtype
-    = (sizeof(cs_real_t) == 8) ? HIP_R_64F : HIP_R_32F;
-
-  if (d_x != csm->vecXValues) {
-    if (csm->vecXValues != nullptr)
-      hipsparseDestroyDnMat(csm->matX);
-
-    status = hipsparseCreateDnMat(&(csm->matX),
-                                 matrix->n_cols_ext,
-                                 matrix->db_size,
-                                 matrix->db_size,
-                                 d_x,
-                                 val_dtype,
-                                 HIPSPARSE_ORDER_ROW);
-
-    if (HIPSPARSE_STATUS_SUCCESS != status)
-      bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
-                __func__, hipsparseGetErrorString(status));
-
-    csm->vecXValues = d_x;
-  }
-
-  if (d_y != csm->vecYValues) {
-    if (csm->vecYValues != nullptr)
-      hipsparseDestroyDnMat(csm->matY);
-
-    status = hipsparseCreateDnMat(&(csm->matY),
-                                 matrix->n_rows,
-                                 matrix->db_size,
-                                 matrix->db_size,
-                                 d_y,
-                                 val_dtype,
-                                 HIPSPARSE_ORDER_ROW);
-
-    if (HIPSPARSE_STATUS_SUCCESS != status)
-      bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
-                __func__, hipsparseGetErrorString(status));
-
-    csm->vecYValues = d_y;
-  }
-
-  if (csm->dBuffer == nullptr) {
-    size_t bufferSize = 0;
-    cs_real_t alpha = 1.0;
-    cs_real_t beta = 1.0;  /* 0 should be enough for SmPV, 1 needed for
-                              y = A.x + b.y
-                              which is useful when y is initialized by
-                              a separate diagonal da.x product */
-
-    status = hipsparseSpMM_bufferSize(_handle,
-                                     HIPSPARSE_OPERATION_NON_TRANSPOSE,
-                                     HIPSPARSE_OPERATION_NON_TRANSPOSE,
-                                     &alpha,
-                                     csm->matA,
-                                     csm->matX,
-                                     &beta,
-                                     csm->matY,
-                                     val_dtype,
-                                     HIPSPARSE_SPMM_ALG_DEFAULT,
-                                     &bufferSize);
-
-    if (HIPSPARSE_STATUS_SUCCESS != status)
-      bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
-                __func__, hipsparseGetErrorString(status));
-
-    CS_HIP_CHECK(hipMalloc(&(csm->dBuffer), bufferSize));
-  }
-
-}
-
-#endif // defined(HAVE_HIPSPARSE)
+#endif // defined(HAVE_ROCSPARSE)
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -1114,9 +1273,9 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Finalize HIP matrix API.
+ * \brief Finalize ROC matrix API.
  *
- * This frees resources such as the cuSPARSE handle, if used.
+ * This frees resources such as the rocSPARSE handle, if used.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1125,10 +1284,10 @@ cs_matrix_spmv_hip_finalize(void)
 {
   _stream = 0;
 
-#if defined(HAVE_HIPSPARSE)
+#if defined(HAVE_ROCSPARSE)
 
   if (_handle != nullptr) {
-    hipsparseDestroy(_handle);
+    rocsparse_destroy_handle(_handle);
     _handle = nullptr;
   }
 
@@ -1137,14 +1296,14 @@ cs_matrix_spmv_hip_finalize(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Assign HIP stream for next HIP-based SpMV operations.
+ * \brief Assign ROC stream for next ROC-based SpMV operations.
  *
  * If a stream other than the default stream (0) is used, it will not be
  * synchronized automatically after sparse matrix-vector products (so as to
  * avoid the corresponding overhead), so the caller will need to manage
  * stream syncronization manually.
  *
- * This function is callable only from HIP code.
+ * This function is callable only from ROC code.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1156,9 +1315,9 @@ cs_matrix_spmv_hip_set_stream(hipStream_t  stream)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return stream used for HIP-based SpMV operations.
+ * \brief Return stream used for ROC-based SpMV operations.
  *
- * This function is callable only from HIP code.
+ * This function is callable only from ROC code.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1170,7 +1329,7 @@ cs_matrix_spmv_hip_get_stream(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Matrix.vector product y = A.x with MSR matrix, scalar HIP version.
+ * \brief Matrix.vector product y = A.x with MSR matrix, scalar ROC version.
  *
  * \param[in]   matrix        pointer to matrix structure
  * \param[in]   exclude_diag  exclude diagonal if true,
@@ -1182,10 +1341,10 @@ cs_matrix_spmv_hip_get_stream(void)
 
 void
 cs_matrix_spmv_hip_native(const cs_matrix_t  *matrix,
-                           bool                exclude_diag,
-                           bool                sync,
-                           cs_real_t           d_x[],
-                           cs_real_t           d_y[])
+                          bool                exclude_diag,
+                          bool                sync,
+                          cs_real_t           d_x[],
+                          cs_real_t           d_y[])
 {
   const cs_matrix_struct_native_t  *ms
     = (const cs_matrix_struct_native_t *)matrix->structure;
@@ -1275,7 +1434,7 @@ cs_matrix_spmv_hip_native(const cs_matrix_t  *matrix,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Matrix.vector product y = A.x with CSR matrix, scalar HIP version.
+ * \brief Matrix.vector product y = A.x with CSR matrix, scalar ROC version.
  *
  * \param[in]   matrix        pointer to matrix structure
  * \param[in]   exclude_diag  exclude diagonal if true,
@@ -1287,15 +1446,15 @@ cs_matrix_spmv_hip_native(const cs_matrix_t  *matrix,
 
 void
 cs_matrix_spmv_hip_csr(cs_matrix_t  *matrix,
-                        bool          exclude_diag,
-                        bool          sync,
-                        cs_real_t     d_x[],
-                        cs_real_t     d_y[])
+                       bool          exclude_diag,
+                       bool          sync,
+                       cs_real_t     d_x[],
+                       cs_real_t     d_y[])
 {
   const cs_matrix_struct_csr_t *ms
     = (const cs_matrix_struct_csr_t *)matrix->structure;
   const cs_matrix_coeff_t *mc
-    = (const cs_matrix_coeff_t  *)matrix->coeffs;
+    = (const cs_matrix_coeff_t *)matrix->coeffs;
 
   const cs_lnum_t *__restrict__ row_index
     = (const cs_lnum_t *)cs_get_device_ptr_const
@@ -1333,11 +1492,12 @@ cs_matrix_spmv_hip_csr(cs_matrix_t  *matrix,
   }
 }
 
-#if defined(HAVE_HIPSPARSE)
+#if defined(HAVE_ROCSPARSE)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Matrix.vector product y = A.x with CSR matrix, scalar cuSPARSE version.
+ * \brief Matrix.vector product y = A.x with CSR matrix,
+ *  scalar rocSPARSE version.
  *
  * \param[in]   matrix        pointer to matrix structure
  * \param[in]   exclude_diag  exclude diagonal if true,
@@ -1348,18 +1508,18 @@ cs_matrix_spmv_hip_csr(cs_matrix_t  *matrix,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_spmv_hip_csr_cusparse(cs_matrix_t  *matrix,
+cs_matrix_spmv_hip_csr_rocsparse(cs_matrix_t  *matrix,
                                  bool          exclude_diag,
                                  bool          sync,
                                  cs_real_t     d_x[],
                                  cs_real_t     d_y[])
 {
-  cs_matrix_cusparse_map_t *csm
-    = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
+  cs_matrix_rocsparse_map_t *csm
+    = (cs_matrix_rocsparse_map_t *)matrix->ext_lib_map;
 
   if (csm == nullptr) {
-    matrix->ext_lib_map = _set_cusparse_map(matrix);
-    csm = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
+    matrix->ext_lib_map = _set_rocsparse_map(matrix, d_x, d_y);
+    csm = (cs_matrix_rocsparse_map_t *)matrix->ext_lib_map;
   }
 
   /* Ghost cell communication */
@@ -1370,34 +1530,31 @@ cs_matrix_spmv_hip_csr_cusparse(cs_matrix_t  *matrix,
     cs_halo_sync_wait(matrix->halo, (cs_real_t *)d_x, hs);
   }
 
-  _update_cusparse_map(csm, matrix, d_x, d_y);
+  _update_rocsparse_map(csm, matrix, d_x, d_y);
 
   cs_real_t alpha = 1.0;
   cs_real_t beta = 0.0;
 
-  hipsparseSetStream(_handle, _stream);
+  rocsparse_set_stream(_handle, _stream);
 
-  hipsparseStatus_t status = HIPSPARSE_STATUS_SUCCESS;
+  rocsparse_status status = rocsparse_status_success;
+  rocsparse_error p_error[1] = {};
 
-  hipsparseSpMVAlg_t spmv_alg_type = HIPSPARSE_SPMV_ALG_DEFAULT;
+  status = rocsparse_v2_spmv(_handle,
+                             csm->spmv_descr,
+                             &alpha,
+                             csm->mat_a,
+                             csm->vec_x,
+                             &beta,
+                             csm->vec_y,
+                             rocsparse_v2_spmv_stage_compute,
+                             csm->buffer_size,
+                             csm->buffer,
+                             p_error);
 
-  hipDataType val_dtype
-    = (sizeof(cs_real_t) == 8) ? HIP_R_64F : HIP_R_32F;
-
-  status = hipsparseSpMV(_handle,
-                        HIPSPARSE_OPERATION_NON_TRANSPOSE,
-                        &alpha,
-                        csm->matA,
-                        csm->vecX,
-                        &beta,
-                        csm->vecY,
-                        val_dtype,
-                        spmv_alg_type,
-                        csm->dBuffer);
-
-  if (HIPSPARSE_STATUS_SUCCESS != status)
+  if (rocsparse_status_success != status)
     bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
-              __func__, hipsparseGetErrorString(status));
+              __func__, rocsparse_error_get_message(p_error[0]));
 
   if (exclude_diag) {
 
@@ -1431,11 +1588,11 @@ cs_matrix_spmv_hip_csr_cusparse(cs_matrix_t  *matrix,
   }
 }
 
-#endif /* defined(HAVE_HIPSPARSE) */
+#endif /* defined(HAVE_ROCSPARSE) */
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Matrix.vector product y = A.x with MSR matrix, scalar HIP version.
+ * \brief Matrix.vector product y = A.x with MSR matrix, scalar ROC version.
  *
  * \param[in]   matrix        pointer to matrix structure
  * \param[in]   exclude_diag  exclude diagonal if true,
@@ -1447,10 +1604,10 @@ cs_matrix_spmv_hip_csr_cusparse(cs_matrix_t  *matrix,
 
 void
 cs_matrix_spmv_hip_msr(cs_matrix_t  *matrix,
-                        bool          exclude_diag,
-                        bool          sync,
-                        cs_real_t     d_x[],
-                        cs_real_t     d_y[])
+                       bool          exclude_diag,
+                       bool          sync,
+                       cs_real_t     d_x[],
+                       cs_real_t     d_y[])
 {
   const cs_matrix_struct_dist_t *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
@@ -1497,11 +1654,11 @@ cs_matrix_spmv_hip_msr(cs_matrix_t  *matrix,
   }
 }
 
-#if defined(HAVE_HIPSPARSE)
+#if defined(HAVE_ROCSPARSE)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Matrix.vector product y = A.x with MSR matrix, scalar cuSPARSE version.
+ * \brief Matrix.vector product y = A.x with MSR matrix, scalar rocSPARSE version.
  *
  * \param[in]   matrix        pointer to matrix structure
  * \param[in]   exclude_diag  exclude diagonal if true,
@@ -1512,18 +1669,18 @@ cs_matrix_spmv_hip_msr(cs_matrix_t  *matrix,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_spmv_hip_msr_cusparse(cs_matrix_t  *matrix,
+cs_matrix_spmv_hip_msr_rocsparse(cs_matrix_t  *matrix,
                                  bool          exclude_diag,
                                  bool          sync,
                                  cs_real_t     d_x[],
                                  cs_real_t     d_y[])
 {
-  cs_matrix_cusparse_map_t *csm
-    = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
+  cs_matrix_rocsparse_map_t *csm
+    = (cs_matrix_rocsparse_map_t *)matrix->ext_lib_map;
 
   if (csm == nullptr) {
-    matrix->ext_lib_map = _set_cusparse_map(matrix);
-    csm = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
+    matrix->ext_lib_map = _set_rocsparse_map(matrix, d_x, d_y);
+    csm = (cs_matrix_rocsparse_map_t *)matrix->ext_lib_map;
   }
 
   /* Ghost cell communication */
@@ -1534,7 +1691,7 @@ cs_matrix_spmv_hip_msr_cusparse(cs_matrix_t  *matrix,
     cs_halo_sync_wait(matrix->halo, (cs_real_t *)d_x, hs);
   }
 
-  _update_cusparse_map(csm, matrix, d_x, d_y);
+  _update_rocsparse_map(csm, matrix, d_x, d_y);
 
   cs_real_t alpha = 1.;
   cs_real_t beta = 0.;
@@ -1560,29 +1717,26 @@ cs_matrix_spmv_hip_msr_cusparse(cs_matrix_t  *matrix,
 
   }
 
-  hipsparseSetStream(_handle, _stream);
+  rocsparse_set_stream(_handle, _stream);
 
-  hipsparseStatus_t status = HIPSPARSE_STATUS_SUCCESS;
+  rocsparse_status status = rocsparse_status_success;
+  rocsparse_error p_error[1] = {};
 
-  hipsparseSpMVAlg_t spmv_alg_type = HIPSPARSE_SPMV_ALG_DEFAULT;
+  status = rocsparse_v2_spmv(_handle,
+                             csm->spmv_descr,
+                             &alpha,
+                             csm->mat_a,
+                             csm->vec_x,
+                             &beta,
+                             csm->vec_y,
+                             rocsparse_v2_spmv_stage_compute,
+                             csm->buffer_size,
+                             csm->buffer,
+                             p_error);
 
-  hipDataType val_dtype
-    = (sizeof(cs_real_t) == 8) ? HIP_R_64F : HIP_R_32F;
-
-  status = hipsparseSpMV(_handle,
-                        HIPSPARSE_OPERATION_NON_TRANSPOSE,
-                        &alpha,
-                        csm->matA,
-                        csm->vecX,
-                        &beta,
-                        csm->vecY,
-                        val_dtype,
-                        spmv_alg_type,
-                        csm->dBuffer);
-
-  if (HIPSPARSE_STATUS_SUCCESS != status)
+  if (rocsparse_status_success != status)
     bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
-              __func__, hipsparseGetErrorString(status));
+              __func__, rocsparse_error_get_message(p_error[0]));
 
   if (_stream == 0) {
     CS_HIP_CHECK(hipStreamSynchronize(_stream));
@@ -1590,12 +1744,12 @@ cs_matrix_spmv_hip_msr_cusparse(cs_matrix_t  *matrix,
   }
 }
 
-#endif /* defined(HAVE_HIPSPARSE) */
+#endif /* defined(HAVE_ROCSPARSE) */
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Matrix.vector product y = A.x with MSR matrix, block diagonal
- *        HIP version.
+ *        ROC version.
  *
  * \param[in]   matrix        pointer to matrix structure
  * \param[in]   exclude_diag  exclude diagonal if true,
@@ -1607,10 +1761,10 @@ cs_matrix_spmv_hip_msr_cusparse(cs_matrix_t  *matrix,
 
 void
 cs_matrix_spmv_hip_msr_b(cs_matrix_t  *matrix,
-                          bool          exclude_diag,
-                          bool          sync,
-                          cs_real_t     d_x[],
-                          cs_real_t     d_y[])
+                         bool          exclude_diag,
+                         bool          sync,
+                         cs_real_t     d_x[],
+                         cs_real_t     d_y[])
 {
   const cs_matrix_struct_dist_t *ms
     = (const cs_matrix_struct_dist_t *)matrix->structure;
@@ -1683,14 +1837,14 @@ cs_matrix_spmv_hip_msr_b(cs_matrix_t  *matrix,
   }
 }
 
-#if defined(HAVE_HIPSPARSE)
+#if defined(HAVE_ROCSPARSE)
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Matrix.vector product y = A.x with MSR matrix, block diagonal
- *        cuSPARSE version.
+ *        rocSPARSE version.
  *
- * Remark: this functions is available with older cuSPARSE versions not
+ * Remark: this functions is available with older rocSPARSE versions not
  *         providing the generic API, because they
  *         assume dense matrixes are always in column-major order, while
  *         row-major is needed with interleaved blocks.
@@ -1704,18 +1858,18 @@ cs_matrix_spmv_hip_msr_b(cs_matrix_t  *matrix,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_spmv_hip_msr_b_cusparse(cs_matrix_t  *matrix,
+cs_matrix_spmv_hip_msr_b_rocsparse(cs_matrix_t  *matrix,
                                    bool          exclude_diag,
                                    bool          sync,
                                    cs_real_t     d_x[],
                                    cs_real_t     d_y[])
 {
-  cs_matrix_cusparse_map_t *csm
-    = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
+  cs_matrix_rocsparse_map_t *csm
+    = (cs_matrix_rocsparse_map_t *)matrix->ext_lib_map;
 
   if (csm == nullptr) {
-    matrix->ext_lib_map = _set_cusparse_map(matrix);
-    csm = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
+    matrix->ext_lib_map = _set_rocsparse_map(matrix, d_x, d_y);
+    csm = (cs_matrix_rocsparse_map_t *)matrix->ext_lib_map;
   }
 
   /* Ghost cell communication */
@@ -1726,7 +1880,7 @@ cs_matrix_spmv_hip_msr_b_cusparse(cs_matrix_t  *matrix,
     _pre_vector_multiply_sync_x_end(matrix, hs, d_x);
   }
 
-  _update_cusparse_map_block_diag(csm, matrix, d_x, d_y);
+  _update_rocsparse_map_block_diag(csm, matrix, d_x, d_y);
 
   cs_real_t alpha = 1.;
   cs_real_t beta = 0.;
@@ -1762,28 +1916,30 @@ cs_matrix_spmv_hip_msr_b_cusparse(cs_matrix_t  *matrix,
 
   }
 
-  hipsparseSetStream(_handle, _stream);
+  rocsparse_set_stream(_handle, _stream);
 
-  hipsparseStatus_t status = HIPSPARSE_STATUS_SUCCESS;
+  rocsparse_status status = rocsparse_status_success;
 
-  hipDataType val_dtype
-    = (sizeof(cs_real_t) == 8) ? HIP_R_64F : HIP_R_32F;
+  rocsparse_datatype val_dtype = (sizeof(cs_real_t) == 8) ?
+    rocsparse_datatype_f64_r : rocsparse_datatype_f32_r;
 
-  status = hipsparseSpMM(_handle,
-                        HIPSPARSE_OPERATION_NON_TRANSPOSE,
-                        HIPSPARSE_OPERATION_NON_TRANSPOSE,
-                        &alpha,
-                        csm->matA,
-                        csm->matX,
-                        &beta,
-                        csm->matY,
-                        val_dtype,
-                        HIPSPARSE_SPMM_ALG_DEFAULT,
-                        csm->dBuffer);
+  status = rocsparse_spmm(_handle,
+                          rocsparse_operation_none,
+                          rocsparse_operation_none,
+                          &alpha,
+                          csm->mat_a,
+                          csm->mat_x,
+                          &beta,
+                          csm->mat_y,
+                          val_dtype,
+                          rocsparse_spmm_alg_default,
+                          rocsparse_spmm_stage_compute,
+                          &(csm->buffer_size),
+                          csm->buffer);
 
-  if (HIPSPARSE_STATUS_SUCCESS != status)
-    bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
-              __func__, hipsparseGetErrorString(status));
+  if (rocsparse_status_success != status)
+    bft_error(__FILE__, __LINE__, 0, _("%s: rocSPARSE status %d."),
+              __func__, status);
 
   if (_stream == 0) {
     CS_HIP_CHECK(hipStreamSynchronize(_stream));
@@ -1794,9 +1950,9 @@ cs_matrix_spmv_hip_msr_b_cusparse(cs_matrix_t  *matrix,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Matrix.vector product y = A.x with MSR matrix, block
- *        cuSPARSE version.
+ *        rocSPARSE version.
  *
- * Remark: this functions is available with older cuSPARSE versions not
+ * Remark: this functions is available with older rocSPARSE versions not
  *         providing the generic API, because they
  *         assume dense matrixes are always in column-major order, while
  *         row-major is needed with interleaved blocks.
@@ -1810,18 +1966,18 @@ cs_matrix_spmv_hip_msr_b_cusparse(cs_matrix_t  *matrix,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_spmv_hip_msr_bb_cusparse(cs_matrix_t  *matrix,
+cs_matrix_spmv_hip_msr_bb_rocsparse(cs_matrix_t  *matrix,
                                     bool          exclude_diag,
                                     bool          sync,
                                     cs_real_t     d_x[],
                                     cs_real_t     d_y[])
 {
-  cs_matrix_cusparse_map_t *csm
-    = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
+  cs_matrix_rocsparse_map_t *csm
+    = (cs_matrix_rocsparse_map_t *)matrix->ext_lib_map;
 
   if (csm == nullptr) {
-    matrix->ext_lib_map = _set_cusparse_map(matrix);
-    csm = (cs_matrix_cusparse_map_t *)matrix->ext_lib_map;
+    matrix->ext_lib_map = _set_rocsparse_map(matrix, d_x, d_y);
+    csm = (cs_matrix_rocsparse_map_t *)matrix->ext_lib_map;
   }
 
   /* Ghost cell communication */
@@ -1832,7 +1988,7 @@ cs_matrix_spmv_hip_msr_bb_cusparse(cs_matrix_t  *matrix,
     _pre_vector_multiply_sync_x_end(matrix, hs, d_x);
   }
 
-  /* no update_cusparse_map type function call here as only
+  /* no update_rocsparse_map type function call here as only
      the non-generic API is available here */
 
   cs_real_t alpha = 1.;
@@ -1869,54 +2025,26 @@ cs_matrix_spmv_hip_msr_bb_cusparse(cs_matrix_t  *matrix,
 
   }
 
-  hipsparseSetStream(_handle, _stream);
+  rocsparse_set_stream(_handle, _stream);
 
-  hipsparseStatus_t status = HIPSPARSE_STATUS_SUCCESS;
+  rocsparse_status status = rocsparse_status_success;
+  rocsparse_error p_error[1] = {};
 
-  if (sizeof(cs_real_t) == 8) {
-    double _alpha = alpha;
-    double _beta = beta;
-    status = hipsparseDbsrmv(_handle,
-                            HIPSPARSE_DIRECTION_ROW,
-                            HIPSPARSE_OPERATION_NON_TRANSPOSE,
-                            matrix->n_rows,
-                            matrix->n_cols_ext,
-                            csm->nnz,
-                            &_alpha,
-                            csm->descrA,
-                            (const double *)csm->d_e_val,
-                            (const int *)csm->d_row_index,
-                            (const int *)csm->d_col_id,
-                            matrix->eb_size,
-                            (const double *)d_x,
-                            &_beta,
-                            (double *)d_y);
-  }
+  status = rocsparse_v2_spmv(_handle,
+                             csm->spmv_descr,
+                             &alpha,
+                             csm->mat_a,
+                             csm->vec_x,
+                             &beta,
+                             csm->vec_y,
+                             rocsparse_v2_spmv_stage_compute,
+                             csm->buffer_size,
+                             csm->buffer,
+                             p_error);
 
-  else if (sizeof(cs_real_t) == 4) {
-    float _alpha = alpha;
-    float _beta = beta;
-
-    status = hipsparseSbsrmv(_handle,
-                            HIPSPARSE_DIRECTION_ROW,
-                            HIPSPARSE_OPERATION_NON_TRANSPOSE,
-                            matrix->n_rows,
-                            matrix->n_cols_ext,
-                            csm->nnz,
-                            &_alpha,
-                            csm->descrA,
-                            (const float *)csm->d_e_val,
-                            (const int *)csm->d_row_index,
-                            (const int *)csm->d_col_id,
-                            matrix->eb_size,
-                            (const float *)d_x,
-                            &_beta,
-                            (float *)d_y);
-  }
-
-  if (HIPSPARSE_STATUS_SUCCESS != status)
-    bft_error(__FILE__, __LINE__, 0, _("%s: cuSPARSE error %d."),
-              __func__, (int)status);
+  if (rocsparse_status_success != status)
+    bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
+              __func__, rocsparse_error_get_message(p_error[0]));
 
   if (_stream == 0) {
     CS_HIP_CHECK(hipStreamSynchronize(_stream));
@@ -1924,7 +2052,7 @@ cs_matrix_spmv_hip_msr_bb_cusparse(cs_matrix_t  *matrix,
   }
 }
 
-#endif /* defined(HAVE_HIPSPARSE) */
+#endif /* defined(HAVE_ROCSPARSE) */
 
 /*----------------------------------------------------------------------------*/
 

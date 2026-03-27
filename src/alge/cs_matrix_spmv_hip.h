@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -60,7 +60,7 @@ BEGIN_C_DECLS
 /*!
  * \brief Finalize HIP matrix API.
  *
- * This frees resources such as the cuSPARSE handle, if used.
+ * This frees resources such as the rocSPARSE handle, if used.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -136,11 +136,11 @@ cs_matrix_spmv_hip_csr(cs_matrix_t  *matrix,
                         cs_real_t     d_x[],
                         cs_real_t     d_y[]);
 
-#if defined(HAVE_CUSPARSE)
+#if defined(HAVE_ROCSPARSE)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Matrix.vector product y = A.x with CSR matrix, scalar cuSPARSE version.
+ * \brief Matrix.vector product y = A.x with CSR matrix, scalar rocSPARSE version.
  *
  * \param[in]   matrix        pointer to matrix structure
  * \param[in]   exclude_diag  exclude diagonal if true,
@@ -151,13 +151,13 @@ cs_matrix_spmv_hip_csr(cs_matrix_t  *matrix,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_spmv_hip_csr_cusparse(cs_matrix_t  *matrix,
+cs_matrix_spmv_hip_csr_rocsparse(cs_matrix_t  *matrix,
                                  bool          exclude_diag,
                                  bool          sync,
                                  cs_real_t     d_x[],
                                  cs_real_t     d_y[]);
 
-#endif /* defined(HAVE_CUSPARSE) */
+#endif /* defined(HAVE_ROCSPARSE) */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -178,11 +178,12 @@ cs_matrix_spmv_hip_msr(cs_matrix_t  *matrix,
                         cs_real_t     d_x[],
                         cs_real_t     d_y[]);
 
-#if defined(HAVE_CUSPARSE)
+#if defined(HAVE_ROCSPARSE)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Matrix.vector product y = A.x with MSR matrix, scalar cuSPARSE version.
+ * \brief Matrix.vector product y = A.x with MSR matrix,
+ *        scalar rocSPARSE version.
  *
  * \param[in]   matrix        pointer to matrix structure
  * \param[in]   exclude_diag  exclude diagonal if true,
@@ -193,13 +194,13 @@ cs_matrix_spmv_hip_msr(cs_matrix_t  *matrix,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_spmv_hip_msr_cusparse(cs_matrix_t  *matrix,
+cs_matrix_spmv_hip_msr_rocsparse(cs_matrix_t  *matrix,
                                  bool          exclude_diag,
                                  bool          sync,
                                  cs_real_t     d_x[],
                                  cs_real_t     d_y[]);
 
-#endif /* defined(HAVE_CUSPARSE) */
+#endif /* defined(HAVE_ROCSPARSE) */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -221,14 +222,14 @@ cs_matrix_spmv_hip_msr_b(cs_matrix_t  *matrix,
                           cs_real_t     d_x[],
                           cs_real_t     d_y[]);
 
-#if defined(HAVE_CUSPARSE)
+#if defined(HAVE_ROCSPARSE)
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Matrix.vector product y = A.x with MSR matrix, block diagonal
- *        cuSPARSE version.
+ *        rocSPARSE version.
  *
- * Remark: this functions is available with older cuSPARSE versions not
+ * Remark: this functions is available with older rocSPARSE versions not
  *         providing the generic API, because they
  *         assume dense matrixes are always in column-major order, while
  *         row-major is needed with interleaved blocks.
@@ -242,20 +243,20 @@ cs_matrix_spmv_hip_msr_b(cs_matrix_t  *matrix,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_spmv_hip_msr_b_cusparse(cs_matrix_t  *matrix,
+cs_matrix_spmv_hip_msr_b_rocsparse(cs_matrix_t  *matrix,
                                    bool          exclude_diag,
                                    bool          sync,
                                    cs_real_t     d_x[],
                                    cs_real_t     d_y[]);
 
-#endif /* defined(HAVE_CUSPARSE) */
+#endif /* defined(HAVE_ROCSPARSE) */
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Matrix.vector product y = A.x with MSR matrix, block
- *        cuSPARSE version.
+ *        rocSPARSE version.
  *
- * Remmark: this functions is available with older cuSPARSE versions not
+ * Remmark: this functions is available with older rocSPARSE versions not
  *          providing the generic API, because they
  *          assume dense matrixes are always in column-major order, while
  *          row-major is needed with interleaved blocks.
@@ -269,7 +270,7 @@ cs_matrix_spmv_hip_msr_b_cusparse(cs_matrix_t  *matrix,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_spmv_hip_msr_bb_cusparse(cs_matrix_t  *matrix,
+cs_matrix_spmv_hip_msr_bb_rocsparse(cs_matrix_t  *matrix,
                                     bool          exclude_diag,
                                     bool          sync,
                                     cs_real_t     d_x[],

@@ -28,7 +28,7 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
@@ -81,6 +81,7 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m);
  *     omp_atomic      (for OpenMP with atomic add)
  *     vector          (For vector machine with compatible numbering)
  *     cuda            (CUDA-accelerated)
+ *     hip             (HIP-accelerated)
  *
  *   CS_MATRIX_CSR     (for CS_MATRIX_SCALAR or CS_MATRIX_SCALAR_SYM)
  *     default
@@ -88,6 +89,8 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m);
  *     mkl_sycl        (with MKL, using SYCL offload)
  *     cuda            (CUDA-accelerated)
  *     cusparse        (with cuSPARSE)
+ *     hip             (HIP-accelerated)
+ *     rocsparse       (with rocSPARSE)
  *
  *   CS_MATRIX_MSR
  *     default
@@ -96,6 +99,8 @@ cs_matrix_spmv_set_defaults(cs_matrix_t  *m);
  *     mkl_sycl        (with MKL, using SYCL offload)
  *     cuda            (CUDA-accelerated)
  *     cusparse        (with cuSPARSE)
+ *     hip             (HIP-accelerated)
+ *     rocsparse       (with rocSPARSE)
  *
  *   CS_MATRIX_DIST
  *     default

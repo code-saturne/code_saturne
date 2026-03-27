@@ -2,7 +2,7 @@ dnl-----------------------------------------------------------------------------
 dnl
 dnl This file is part of code_saturne, a general-purpose CFD tool.
 dnl
-dnl Copyright (C) 1998-2024 EDF S.A.
+dnl Copyright (C) 1998-2026 EDF S.A.
 dnl
 dnl This program is free software; you can redistribute it and/or modify it under
 dnl the terms of the GNU General Public License as published by the Free Software
@@ -30,7 +30,7 @@ AC_DEFUN([CS_AC_TEST_HIP], [
 
 cs_have_hip=no
 cs_have_hipblas=no
-cs_have_hipsparse=no
+cs_have_rocsparse=no
 cs_have_rccl=no
 
 AC_ARG_ENABLE(hip,
@@ -56,6 +56,8 @@ AC_ARG_ENABLE(hip-amdclang,
   ],
   [ cs_have_hip_amdclang=no ]
 )
+
+AC_LANG_PUSH(C++)
 
 if test "x$cs_have_hip" != "xno" ; then
 
@@ -130,7 +132,7 @@ fi
 
 AM_CONDITIONAL([HAVE_HIP], [test "$cs_have_hip" = "yes"])
 
-# Now check for libraries such as hipBLAS and hipSPARSE if HIP enabled.
+# Now check for libraries such as hipBLAS and rocsparse if HIP enabled.
 
 cs_enable_hip_cpp=no
 
@@ -184,75 +186,75 @@ if test "x$cs_have_hip" != "xno" ; then
                  fi
                fi])
 
-  AC_ARG_WITH(hipsparse,
-              [AS_HELP_STRING([--with-hipsparse=PATH],
-                              [specify prefix directory for hipSPARSE])],
+  AC_ARG_WITH(rocsparse,
+              [AS_HELP_STRING([--with-rocsparse=PATH],
+                              [specify prefix directory for rocsparse])],
               [if test "x$withval" = "x"; then
-                 with_hipsparse=yes
+                 with_rocsparse=yes
                fi],
-              [with_hipsparse=check])
+              [with_rocsparse=check])
 
-  AC_ARG_WITH(hipsparse-include,
-              [AS_HELP_STRING([--with-hipsparse-include=PATH],
-                              [specify directory for hipSPARSE include files])],
-              [if test "x$with_hipsparse" = "xcheck"; then
-                 with_hipsparse=yes
+  AC_ARG_WITH(rocsparse-include,
+              [AS_HELP_STRING([--with-rocsparse-include=PATH],
+                              [specify directory for rocsparse include files])],
+              [if test "x$with_rocsparse" = "xcheck"; then
+                 with_rocsparse=yes
                fi
-               HIPSPARSE_CPPFLAGS="-I$with_hipsparse_include"],
-              [if test "x$with_hipsparse" != "xno" -a "x$with_hipsparse" != "xyes" \
-  	          -a "x$with_hipsparse" != "xcheck"; then
-                 if test "${HIPCC/'bin/hipcc'/include}" != "$with_hipsparse/include" ; then
-                   HIPSPARSE_CPPFLAGS="-I$with_hipsparse/include"
+               ROCSPARSE_CPPFLAGS="-I$with_rocsparse_include"],
+              [if test "x$with_rocsparse" != "xno" -a "x$with_rocsparse" != "xyes" \
+  	          -a "x$with_rocsparse" != "xcheck"; then
+                 if test "${HIPCC/'bin/hipcc'/include}" != "$with_rocsparse/include" ; then
+                   ROCSPARSE_CPPFLAGS="-I$with_rocsparse/include"
                  fi
                fi])
 
-  AC_ARG_WITH(hipsparse-lib,
-              [AS_HELP_STRING([--with-hipsparse-lib=PATH],
-                              [specify directory for hipSPARSE library])],
-              [if test "x$with_hipsparse" = "xcheck"; then
-                 with_hipsparse=yes
+  AC_ARG_WITH(rocsparse-lib,
+              [AS_HELP_STRING([--with-rocsparse-lib=PATH],
+                              [specify directory for rocsparse library])],
+              [if test "x$with_rocsparse" = "xcheck"; then
+                 with_rocsparse=yes
                fi
-               HIPSPARSE_LDFLAGS="-L$with_hipsparse_lib"],
-              [if test "x$with_hipsparse" != "xno" -a "x$with_hipsparse" != "xyes" \
-	            -a "x$with_hipsparse" != "xcheck"; then
-                 if test "$cs_hip_lib_path" != "$with_hipsparse/lib64" ; then
-                   HIPSPARSE_LDFLAGS="-L$with_hipsparse/lib64"
+               ROCSPARSE_LDFLAGS="-L$with_rocsparse_lib"],
+              [if test "x$with_rocsparse" != "xno" -a "x$with_rocsparse" != "xyes" \
+	            -a "x$with_rocsparse" != "xcheck"; then
+                 if test "$cs_hip_lib_path" != "$with_rocsparse/lib64" ; then
+                   ROCSPARSE_LDFLAGS="-L$with_rocsparse/lib64"
                  fi
                fi])
 
-  AC_ARG_WITH(nccl,
-              [AS_HELP_STRING([--with-nccl=PATH],
-                              [specify prefix directory for NVIDIA Collective Communications Library (NCCL)])],
+  AC_ARG_WITH(rccl,
+              [AS_HELP_STRING([--with-rccl=PATH],
+                              [specify prefix directory for ROCm Collective Communications Library (RCCL)])],
               [if test "x$withval" = "x"; then
-                 with_nccl=no
+                 with_rccl=no
                fi],
-              [with_nccl=no])
+              [with_rccl=no])
 
-  AC_ARG_WITH(nccl-include,
-              [AS_HELP_STRING([--with-nccl-include=PATH],
-                              [specify directory for NCCL include files])],
-              [if test "x$with_nccl" = "xcheck"; then
-                 with_nccl=yes
+  AC_ARG_WITH(rccl-include,
+              [AS_HELP_STRING([--with-rccl-include=PATH],
+                              [specify directory for RCCL include files])],
+              [if test "x$with_rccl" = "xcheck"; then
+                 with_rccl=yes
                fi
-               NCCL_CPPFLAGS="-I$with_nccl_include"],
-              [if test "x$with_nccl" != "xno" -a "x$with_nccl" != "xyes" \
-                  -a "x$with_nccl" != "xcheck"; then
-                 if test "${HIPCC/'bin/hipcc'/include}" != "$with_nccl/include" ; then
-                   NCCL_CPPFLAGS="-I$with_nccl/include"
+               RCCL_CPPFLAGS="-I$with_rccl_include"],
+              [if test "x$with_rccl" != "xno" -a "x$with_rccl" != "xyes" \
+                  -a "x$with_rccl" != "xcheck"; then
+                 if test "${HIPCC/'bin/hipcc'/include}" != "$with_rccl/include" ; then
+                   RCCL_CPPFLAGS="-I$with_rccl/include"
                  fi
                fi])
 
-  AC_ARG_WITH(nccl-lib,
-              [AS_HELP_STRING([--with-nccl-lib=PATH],
-                              [specify directory for NCCL library])],
-              [if test "x$with_nccl" = "xcheck"; then
-                 with_nccl=yes
+  AC_ARG_WITH(rccl-lib,
+              [AS_HELP_STRING([--with-rccl-lib=PATH],
+                              [specify directory for RCCL library])],
+              [if test "x$with_rccl" = "xcheck"; then
+                 with_rccl=yes
                fi
-               NCCL_LDFLAGS="-L$with_nccl_lib"],
-              [if test "x$with_nccl" != "xno" -a "x$with_nccl" != "xyes" \
-	            -a "x$with_nccl" != "xcheck"; then
-                 if test "$cs_hip_lib_path" != "$with_nccl/lib" ; then
-                   NCCL_LDFLAGS="-L$with_nccl/lib"
+               RCCL_LDFLAGS="-L$with_rccl_lib"],
+              [if test "x$with_rccl" != "xno" -a "x$with_rccl" != "xyes" \
+	            -a "x$with_rccl" != "xcheck"; then
+                 if test "$cs_hip_lib_path" != "$with_rccl/lib" ; then
+                   RCCL_LDFLAGS="-L$with_rccl/lib"
                  fi
                fi])
 
@@ -309,9 +311,9 @@ hipblasStatus_t status = hipblasCreate(&handle);]])
 
   AC_SUBST(cs_have_hipblas)
 
-  # Check for hipSPARSE
+  # Check for rocsparse
 
-  if test "x$with_hipsparse" != "xno" ; then
+  if test "x$with_rocsparse" != "xno" ; then
 
     saved_CPPFLAGS="$CPPFLAGS"
     saved_LDFLAGS="$LDFLAGS"
@@ -321,35 +323,35 @@ hipblasStatus_t status = hipblasCreate(&handle);]])
     saved_HIP_LDFLAGS="$HIP_LDFLAGS"
     saved_HIP_LIBS="$HIP_LIBS"
 
-    if test "x$HIPSPARSE_CPPFLAGS" != "x" ; then
-      HIP_CPPFLAGS="${HIP_CPPFLAGS} ${HIPSPARSE_CPPFLAGS}"
+    if test "x$ROCSPARSE_CPPFLAGS" != "x" ; then
+      HIP_CPPFLAGS="${HIP_CPPFLAGS} ${ROCSPARSE_CPPFLAGS}"
     fi
-    if test "x$HIPSPARSE_LDFLAGS" != "x" ; then
-      HIP_LDFLAGS="${HIP_LDFLAGS} ${HIPSPARSE_LDFLAGS}"
+    if test "x$ROCSPARSE_LDFLAGS" != "x" ; then
+      HIP_LDFLAGS="${HIP_LDFLAGS} ${ROCSPARSE_LDFLAGS}"
     fi
-    HIP_LIBS="-lhipsparse ${HIP_LIBS}"
+    HIP_LIBS="-lrocsparse ${HIP_LIBS}"
 
     CPPFLAGS="${CPPFLAGS} ${HIP_CPPFLAGS}"
     LDFLAGS="${LDFLAGS} ${HIP_LDFLAGS}"
     LIBS="${HIP_LIBS} ${LIBS}"
 
-    AC_MSG_CHECKING([for hipSPARSE support])
+    AC_MSG_CHECKING([for rocsparse support])
 
     AC_LINK_IFELSE(
-[AC_LANG_PROGRAM([[#include <hipsparse.h>]],
-[[hipsparseSpMatDescr_t matA;
-hipsparseStatus_t status = hipsparseDestroySpMat(matA);]])
+[AC_LANG_PROGRAM([[#include <rocsparse/rocsparse.h>]],
+[[rocsparse_spmat_descr mat_a;
+rocsparse_status status = rocsparse_destroy_spmat_descr(mat_a);]])
                    ],
-                   [ AC_DEFINE([HAVE_HIPSPARSE], 1,
-                               [hipSPARSE support ])
-                     AC_MSG_RESULT([hipSPARSE found])
-                     cs_have_hipsparse=yes ],
-                   [cs_have_hipsparse=no])
+                   [ AC_DEFINE([HAVE_ROCSPARSE], 1,
+                               [rocsparse support ])
+                     AC_MSG_RESULT([rocsparse found])
+                     cs_have_rocsparse=yes ],
+                   [cs_have_rocsparse=no])
 
-    AC_MSG_RESULT($cs_have_hipsparse)
-    if test "x$cs_have_hipsparse" = "xno" ; then
-      if test "x$with_hipsparse" != "xcheck" ; then
-        AC_MSG_FAILURE([hipSPARSE support is requested, but test for hipSPARSE failed!])
+    AC_MSG_RESULT($cs_have_rocsparse)
+    if test "x$cs_have_rocsparse" = "xno" ; then
+      if test "x$with_rocsparse" != "xcheck" ; then
+        AC_MSG_FAILURE([rocsparse support is requested, but test for rocsparse failed!])
       else
         HIP_CPPFLAGS="$saved_HIP_CPPFLAGS"
         HIP_LDFLAGS="$saved_HIP_LDFLAGS"
@@ -363,11 +365,11 @@ hipsparseStatus_t status = hipsparseDestroySpMat(matA);]])
 
   fi
 
-  AC_SUBST(cs_have_hipsparse)
+  AC_SUBST(cs_have_rocsparse)
 
-  # Check for NCCL
+  # Check for RCCL
 
-  if test "x$with_nccl" != "xno" ; then
+  if test "x$with_rccl" != "xno" ; then
 
     saved_CPPFLAGS="$CPPFLAGS"
     saved_LDFLAGS="$LDFLAGS"
@@ -377,37 +379,37 @@ hipsparseStatus_t status = hipsparseDestroySpMat(matA);]])
     saved_HIP_LDFLAGS="$HIP_LDFLAGS"
     saved_HIP_LIBS="$HIP_LIBS"
 
-    if test "x$NCCL_CPPFLAGS" != "x" ; then
-      HIP_CPPFLAGS="${HIP_CPPFLAGS} ${NCCL_CPPFLAGS}"
+    if test "x$RCCL_CPPFLAGS" != "x" ; then
+      HIP_CPPFLAGS="${HIP_CPPFLAGS} ${RCCL_CPPFLAGS}"
     fi
-    if test "x$NCCL_LDFLAGS" != "x" ; then
-      HIP_LDFLAGS="${HIP_LDFLAGS} ${NCCL_LDFLAGS}"
+    if test "x$RCCL_LDFLAGS" != "x" ; then
+      HIP_LDFLAGS="${HIP_LDFLAGS} ${RCCL_LDFLAGS}"
     fi
-    HIP_LIBS="-lnccl ${HIP_LIBS}"
+    HIP_LIBS="-lrccl ${HIP_LIBS}"
 
     CPPFLAGS="${CPPFLAGS} ${HIP_CPPFLAGS}"
     LDFLAGS="${LDFLAGS} ${HIP_LDFLAGS}"
     LIBS="${HIP_LIBS} ${LIBS}"
 
-    AC_MSG_CHECKING([for NCCL support])
+    AC_MSG_CHECKING([for RCCL support])
 
     AC_LINK_IFELSE(
-[AC_LANG_PROGRAM([[#include <nccl.h>]],
-[[ncclComm_t* comm;
-ncclUniqueId Id;
-ncclCommInitRank(comm, 1, Id, 0);]])
+[AC_LANG_PROGRAM([[#include <rccl.h>]],
+[[rcclComm_t* comm;
+rcclUniqueId Id;
+rcclCommInitRank(comm, 1, Id, 0);]])
                  ],
-                 [ cs_have_nccl=yes ],
-                 [ cs_have_nccl=no ])
+                 [ cs_have_rccl=yes ],
+                 [ cs_have_rccl=no ])
 
-    if test "$cs_have_nccl" = "yes"; then
-      AC_DEFINE([HAVE_NCCL], 1, [NCCL support])
+    if test "$cs_have_rccl" = "yes"; then
+      AC_DEFINE([HAVE_RCCL], 1, [RCCL support])
     fi
 
-    AC_MSG_RESULT($cs_have_nccl)
-    if test "x$cs_have_nccl" = "xno" ; then
-      if test "x$with_nccl" != "xcheck" ; then
-        AC_MSG_FAILURE([NCCL support is requested, but test for NCCL failed!])
+    AC_MSG_RESULT($cs_have_rccl)
+    if test "x$cs_have_rccl" = "xno" ; then
+      if test "x$with_rccl" != "xcheck" ; then
+        AC_MSG_FAILURE([RCCL support is requested, but test for RCCL failed!])
       else
         HIP_CPPFLAGS="$saved_HIP_CPPFLAGS"
         HIP_LDFLAGS="$saved_HIP_LDFLAGS"
@@ -421,7 +423,7 @@ ncclCommInitRank(comm, 1, Id, 0);]])
 
   fi
 
-  AC_SUBST(cs_have_nccl)
+  AC_SUBST(cs_have_rccl)
 
   # Finally set flags which can be extended by libraries and paths.
 
@@ -430,6 +432,8 @@ ncclCommInitRank(comm, 1, Id, 0);]])
   AC_SUBST(HIP_LIBS)
 
 fi
+
+AC_LANG_POP(C++)
 
 AM_CONDITIONAL([HAVE_HIP_CPP], [test "$cs_enable_hip_cpp" = "yes"])
 

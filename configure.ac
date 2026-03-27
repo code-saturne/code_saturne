@@ -1423,7 +1423,7 @@ fi
 echo " HIP support : "$cs_have_hip""
 if test x$cs_have_hip = xyes ; then
   echo "   hipBLAS support: "$cs_have_hipblas""
-  echo "   hipSPARSE support: "$cs_have_hipsparse""
+  echo "   rocSPARSE support: "$cs_have_rocsparse""
   echo "   use HIP in .cpp files: "$cs_enable_hip_cpp""
   echo "   RCCL support: "$cs_have_rccl""
 fi

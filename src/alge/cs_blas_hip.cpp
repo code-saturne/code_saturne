@@ -446,8 +446,8 @@ cs_blas_hip_asum(cs_lnum_t        n,
 
 double
 cs_blas_hip_dot(cs_lnum_t        n,
-                 const cs_real_t  x[],
-                 const cs_real_t  y[])
+                const cs_real_t  x[],
+                const cs_real_t  y[])
 {
   const unsigned int block_size = 256;
   unsigned int grid_size = _grid_size(n, block_size);
@@ -458,14 +458,18 @@ cs_blas_hip_dot(cs_lnum_t        n,
   else
     _dot_xx_stage_1_of_2<block_size><<<grid_size, block_size, 0, _stream>>>
       (n, x, _r_grid);
+
+  CS_HIP_CHECK(hipGetLastError());
+
   cs_blas_hip_reduce_single_block<block_size, 1><<<1, block_size, 0, _stream>>>
     (grid_size, _r_grid, _r_reduce);
+
+  CS_HIP_CHECK(hipGetLastError());
 
   /* Need to synchronize stream in all cases so as to
      have up-to-date value in returned _r_reduce[0] */
 
   CS_HIP_CHECK(hipStreamSynchronize(_stream));
-  CS_HIP_CHECK(hipGetLastError());
 
   return _r_reduce[0];
 }
