@@ -725,7 +725,7 @@ class cs_compile(object):
 
 def compile_and_link(pkg, base_name, srcdir, destdir=None,
                      opt_cflags=None, opt_cxxflags=None, opt_fcflags=None,
-                     opt_nvccflags=None, opt_hipccflags=None, 
+                     opt_nvccflags=None, opt_hipccflags=None,
                      opt_libs=None, force_link=False, keep_going=False,
                      stdout=sys.stdout, stderr=sys.stderr):
     """

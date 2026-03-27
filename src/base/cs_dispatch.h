@@ -1184,7 +1184,7 @@ private:
                                 launch will use a grid size based on
                                 the number of elements. */
   long          block_size_;  /*!< Associated block size */
-  hipStream_t  stream_;      /*!< Associated HIP stream */
+  hipStream_t   stream_;      /*!< Associated HIP stream */
   int           device_;      /*!< Associated HIP device id */
 
   bool          use_gpu_;     /*!< Run on GPU if available */
@@ -1200,16 +1200,16 @@ public:
     device_ = cs_glob_hip_device_id;
   }
 
-  cs_device_context(long          grid_size,
-                    long          block_size,
+  cs_device_context(long         grid_size,
+                    long         block_size,
                     hipStream_t  stream,
-                    int           device)
+                    int          device)
     : grid_size_(grid_size), block_size_(block_size), stream_(stream),
       device_(device), use_gpu_(true)
   {}
 
-  cs_device_context(long          grid_size,
-                    long          block_size,
+  cs_device_context(long         grid_size,
+                    long         block_size,
                     hipStream_t  stream)
     : grid_size_(grid_size), block_size_(block_size), stream_(stream),
       device_(0), use_gpu_(true)
@@ -1258,7 +1258,7 @@ public:
 
   void
   set_hip_grid(long  grid_size,
-                long  block_size) {
+               long  block_size) {
     this->grid_size_ = (grid_size > 0) ? grid_size : -1;
     this->block_size_ = block_size;
   }
@@ -1560,7 +1560,7 @@ public:
 #endif
 
     CS_HIP_CHECK(hipMemcpyAsync(r_host_, r_reduce_, sizeof(result),
-                                  hipMemcpyDeviceToHost, stream_));
+                                hipMemcpyDeviceToHost, stream_));
 
     CS_HIP_CHECK(hipStreamSynchronize(stream_));
     CS_HIP_CHECK(hipGetLastError());
