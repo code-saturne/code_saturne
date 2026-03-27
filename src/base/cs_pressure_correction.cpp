@@ -1088,7 +1088,7 @@ _pressure_correction_fv(int                   iterns,
 
           }
 
-          /* Outher boundary face types */
+          /* Other boundary face types */
 
           else
             coefaf_dp[f_id] = - hint*coefa_dp[f_id];
