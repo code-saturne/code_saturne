@@ -1393,6 +1393,9 @@ cs_iter_algo_update_cvg_tol_given(cs_iter_algo_t         *algo,
 cs_sles_convergence_state_t
 cs_iter_algo_update_cvg_tol_auto(cs_iter_algo_t         *algo)
 {
+  if (algo == nullptr)
+    return CS_SLES_MAX_ITERATION;
+
   /* Set the tolerance criterion (computed at each call if the normalization is
      modified between two successive calls) */
 
