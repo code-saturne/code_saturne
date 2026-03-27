@@ -149,6 +149,31 @@ cs_sles_it_dot_products_xx_xy
 );
 
 /*----------------------------------------------------------------------------
+ * Compute 2 dot products, summing result over all ranks.
+ *
+ * parameters:
+ *   c      <-- pointer to solver context info
+ *   stream <-- CUDA stream
+ *   x      <-- first vector
+ *   y      <-- second vector
+ *   z      <-- second vector
+ *   xy     --> result of s1 = x.y
+ *   yz     --> result of s2 = y.z
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_dot_products_xy_yz
+(
+  const cs_sles_it_t  *c,
+  cudaStream_t         stream,
+  const cs_real_t     *x,
+  const cs_real_t     *y,
+  const cs_real_t     *z,
+  double              *xy,
+  double              *yz
+);
+
+/*----------------------------------------------------------------------------
  * Compute 3 dot products, summing result over all ranks.
  *
  * parameters:
@@ -172,6 +197,37 @@ cs_sles_it_dot_products_xx_xy_yz
   const cs_real_t     *z,
   double              *xx,
   double              *xy,
+  double              *yz
+);
+
+/*----------------------------------------------------------------------------
+ * Compute 5 dot products, summing result over all ranks.
+ *
+ * parameters:
+ *   c      <-- pointer to solver context info
+ *   stream <-- CUDA stream
+ *   x      <-- first vector
+ *   y      <-- second vector
+ *   z      <-- third vector
+ *   xx     --> result of x.x
+ *   yy     --> result of y.y
+ *   xy     --> result of x.y
+ *   xz     --> result of x.z
+ *   yz     --> result of y.z
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_dot_products_xx_yy_xy_xz_yz
+(
+  const cs_sles_it_t  *c,
+  cudaStream_t         stream,
+  const cs_real_t     *x,
+  const cs_real_t     *y,
+  const cs_real_t     *z,
+  double              *xx,
+  double              *yy,
+  double              *xy,
+  double              *xz,
   double              *yz
 );
 

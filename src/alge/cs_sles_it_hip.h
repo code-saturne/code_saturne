@@ -8,7 +8,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -77,7 +77,7 @@ double
 cs_sles_it_dot_product
 (
   const cs_sles_it_t  *c,
-  hipStream_t         stream,
+  hipStream_t          stream,
   const cs_real_t     *x,
   const cs_real_t     *y
 );
@@ -99,7 +99,7 @@ double
 cs_sles_it_dot_product_xx
 (
   const cs_sles_it_t  *c,
-  hipStream_t         stream,
+  hipStream_t          stream,
   const cs_real_t     *x,
   const cs_real_t     *y
 );
@@ -141,11 +141,36 @@ void
 cs_sles_it_dot_products_xx_xy
 (
   const cs_sles_it_t  *c,
-  hipStream_t         stream,
+  hipStream_t          stream,
   const cs_real_t     *x,
   const cs_real_t     *y,
   double              *xx,
   double              *xy
+);
+
+/*----------------------------------------------------------------------------
+ * Compute 2 dot products, summing result over all ranks.
+ *
+ * parameters:
+ *   c      <-- pointer to solver context info
+ *   stream <-- HIP stream
+ *   x      <-- first vector
+ *   y      <-- second vector
+ *   z      <-- second vector
+ *   xy     --> result of s1 = x.y
+ *   yz     --> result of s2 = y.z
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_dot_products_xy_yz
+(
+  const cs_sles_it_t  *c,
+  hipStream_t          stream,
+  const cs_real_t     *x,
+  const cs_real_t     *y,
+  const cs_real_t     *z,
+  double              *xy,
+  double              *yz
 );
 
 /*----------------------------------------------------------------------------
@@ -166,12 +191,43 @@ void
 cs_sles_it_dot_products_xx_xy_yz
 (
   const cs_sles_it_t  *c,
-  hipStream_t         stream,
+  hipStream_t          stream,
   const cs_real_t     *x,
   const cs_real_t     *y,
   const cs_real_t     *z,
   double              *xx,
   double              *xy,
+  double              *yz
+);
+
+/*----------------------------------------------------------------------------
+ * Compute 5 dot products, summing result over all ranks.
+ *
+ * parameters:
+ *   c      <-- pointer to solver context info
+ *   stream <-- HIP stream
+ *   x      <-- first vector
+ *   y      <-- second vector
+ *   z      <-- third vector
+ *   xx     --> result of x.x
+ *   yy     --> result of y.y
+ *   xy     --> result of x.y
+ *   xz     --> result of x.z
+ *   yz     --> result of y.z
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_dot_products_xx_yy_xy_xz_yz
+(
+  const cs_sles_it_t  *c,
+  hipStream_t          stream,
+  const cs_real_t     *x,
+  const cs_real_t     *y,
+  const cs_real_t     *z,
+  double              *xx,
+  double              *yy,
+  double              *xy,
+  double              *xz,
   double              *yz
 );
 

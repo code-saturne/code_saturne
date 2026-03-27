@@ -489,6 +489,69 @@ _dot_products_xx_xy
 }
 
 /*----------------------------------------------------------------------------
+ * Compute 2 dot products x.x and x.y, summing result over all ranks.
+ *
+ * parameters:
+ *   c      <-- pointer to solver context info
+ *   x      <-- vector in s1 = x.y
+ *   y      <-- vector in s1 = x.y and s2 = y.z
+ *   z      <-- vector in s2 = y.z
+ *   s1     --> result of s1 = x.y
+ *   s2     --> result of s2 = y.z
+ *----------------------------------------------------------------------------*/
+
+inline static void
+_dot_products_xy_yz
+(
+  const cs_sles_it_t                     *c,
+  [[ maybe_unused]] cs_dispatch_context  &ctx,
+  const cs_real_t                        *x,
+  const cs_real_t                        *y,
+  const cs_real_t                        *z,
+  double                                 *s1,
+  double                                 *s2
+)
+{
+#if defined(HAVE_ACCEL)
+
+  if (ctx.use_gpu()) {
+
+#if defined(__CUDACC__)
+    cs_sles_it_dot_products_xy_yz(c, ctx.cuda_stream(),
+                                  x, y, z, s1, s2);
+    return;
+#endif
+
+#if defined(__HIPCC__)
+    cs_sles_it_dot_products_xy_yz(c, ctx.hip_stream(),
+                                  x, y, z, s1, s2);
+    return;
+#endif
+
+  }
+
+#endif
+
+  double s[2];
+
+  cs_dot_xy_yz(c->setup_data->n_rows, x, y, z, s, s+1);
+
+#if defined(HAVE_MPI)
+
+  if (c->comm != MPI_COMM_NULL) {
+    double _sum[2];
+    MPI_Allreduce(s, _sum, 2, MPI_DOUBLE, MPI_SUM, c->comm);
+    s[0] = _sum[0];
+    s[1] = _sum[1];
+  }
+
+#endif /* defined(HAVE_MPI) */
+
+  *s1 = s[0];
+  *s2 = s[1];
+}
+
+/*----------------------------------------------------------------------------
  * Compute 3 dot products, summing result over all ranks.
  *
  * parameters:
@@ -550,6 +613,78 @@ _dot_products_xx_xy_yz
   *xx = s[0];
   *xy = s[1];
   *yz = s[2];
+}
+
+/*----------------------------------------------------------------------------
+ * Compute 5 dot products, summing result over all ranks.
+ *
+ * parameters:
+ *   c      <-- pointer to solver context info
+ *   ctx    <-- reference to dispatch context
+ *   x      <-- first vector
+ *   y      <-- second vector
+ *   z      <-- third vector
+ *   xx     --> result of x.x
+ *   yy     --> result of y.y
+ *   xy     --> result of x.y
+ *   xz     --> result of x.z
+ *   yz     --> result of y.z
+ *----------------------------------------------------------------------------*/
+
+inline static void
+_dot_products_xx_yy_xy_xz_yz
+(
+  const cs_sles_it_t                     *c,
+  [[ maybe_unused]] cs_dispatch_context  &ctx,
+  const cs_real_t                        *x,
+  const cs_real_t                        *y,
+  const cs_real_t                        *z,
+  double                                 *restrict xx,
+  double                                 *restrict yy,
+  double                                 *restrict xy,
+  double                                 *restrict xz,
+  double                                 *restrict yz
+)
+{
+#if defined(HAVE_ACCEL)
+
+  if (ctx.use_gpu()) {
+
+#if defined(__CUDACC__)
+    cs_sles_it_dot_products_xx_yy_xy_xz_yz(c, ctx.cuda_stream(),
+                                           x, y, z, xx, yy, xy, xz, yz);
+    return;
+#endif
+
+#if defined(__HIPCC__)
+    cs_sles_it_dot_products_xx_yy_xy_xz_yz(c, ctx.hip_stream(),
+                                           x, y, z, xx, yy, xy, xz, yz);
+    return;
+#endif
+
+  }
+
+#endif
+
+  double s[5];
+
+  cs_dot_xx_yy_xy_xz_yz(c->setup_data->n_rows, x, y, z, s, s+1, s+2, s+3, s+4);
+
+#if defined(HAVE_MPI)
+
+  if (c->comm != MPI_COMM_NULL) {
+    double _sum[5];
+    MPI_Allreduce(s, _sum, 5, MPI_DOUBLE, MPI_SUM, c->comm);
+    memcpy(s, _sum, 5*sizeof(double));
+  }
+
+#endif /* defined(HAVE_MPI) */
+
+  *xx = s[0];
+  *yy = s[1];
+  *xy = s[2];
+  *xz = s[3];
+  *yz = s[4];
 }
 
 /*----------------------------------------------------------------------------
@@ -828,6 +963,9 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
   cs_real_t  *restrict rk, *restrict rkm1, *restrict dk, *restrict gk;
   cs_real_t  *restrict zk;
 
+  cs_dispatch_context ctx;
+  ctx.set_use_gpu(false);  // Not on GPU yet
+
   unsigned n_iter = 0;
 
   /* Allocate or map work arrays */
@@ -893,7 +1031,7 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
 
 #endif
 
-  _dot_products_xx_xy(c, rk, gk, &residual, &rk_gk_m1);
+  _dot_products_xx_xy(c, ctx, rk, gk, &residual, &rk_gk_m1);
   residual = sqrt(residual);
 
   /* If no solving required, finish here */
@@ -909,7 +1047,7 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
 
     /* Descent parameter */
 
-    _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
+    _dot_products_xy_yz(c, ctx, rk, dk, zk, &ro_0, &ro_1);
 
     cs_real_t d_ro_1 = (cs::abs(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
     alpha =  - ro_0 * d_ro_1;
@@ -929,7 +1067,7 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
 
     /* Convergence test */
 
-    residual = sqrt(_dot_product_xx(c, rk));
+    residual = sqrt(_dot_product_xx(c, ctx, rk));
     cvg = _convergence_test(c, n_iter, residual, convergence);
 
     /* Current Iteration */
@@ -945,7 +1083,7 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
 
     /* Compute residual and prepare descent parameter */
 
-    _dot_products_xx_xy_yz(c, rk, gk, rkm1, &residual, &rk_gk, &rkm1_gk);
+    _dot_products_xx_xy_yz(c, ctx, rk, gk, rkm1, &residual, &rk_gk, &rkm1_gk);
 
     residual = sqrt(residual);
 
@@ -970,7 +1108,7 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
 
     cs_matrix_vector_multiply(a, dk, zk);
 
-    _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
+    _dot_products_xy_yz(c, ctx, rk, dk, zk, &ro_0, &ro_1);
 
     cs_real_t d_ro_1 = (cs::abs(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
     alpha =  - ro_0 * d_ro_1;
@@ -1161,7 +1299,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
     /* Convergence test */
 
-    residual = sqrt(_dot_product_xx(c, rk));
+    residual = sqrt(_dot_product_xx(c, ctx, rk));
 
     cvg = _convergence_test(c, n_iter, residual, convergence);
 
@@ -1774,6 +1912,9 @@ _conjugate_residual_3(cs_sles_it_t              *c,
   cs_real_t  *restrict wk, *restrict zk;
   cs_real_t  *restrict tmp;
 
+  cs_dispatch_context ctx;
+  ctx.set_use_gpu(false);  // Not on GPU yet
+
   unsigned n_iter = 0;
 
   /* Allocate or map work arrays */
@@ -1827,7 +1968,7 @@ _conjugate_residual_3(cs_sles_it_t              *c,
     }
   }
 
-  residual = _dot_product(c, rk, rk);
+  residual = _dot_product(c, ctx, rk, rk);
   residual = sqrt(residual);
 
   /* If no solving required, finish here */
@@ -1846,15 +1987,15 @@ _conjugate_residual_3(cs_sles_it_t              *c,
 
     cs_matrix_vector_multiply(a, wk, zk);
 
-    _dot_products_xy_yz(c, rk, zk, rkm1, &ak, &bk);
+    _dot_products_xy_yz(c, ctx, rk, zk, rkm1, &ak, &bk);
 
 #   pragma omp parallel for if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       tmp[ii] = rk[ii] - rkm1[ii];
 
-    _dot_products_xy_yz(c, rk, tmp, rkm1, &ck, &dk);
+    _dot_products_xy_yz(c, ctx, rk, tmp, rkm1, &ck, &dk);
 
-    ek = _dot_product_xx(c, zk);
+    ek = _dot_product_xx(c, ctx, zk);
 
     denom = (ck-dk)*ek - ((ak-bk)*(ak-bk));
 
@@ -1891,7 +2032,7 @@ _conjugate_residual_3(cs_sles_it_t              *c,
 
     /* Compute residual */
 
-    residual = sqrt(_dot_product(c, rk, rk));
+    residual = sqrt(_dot_product(c, ctx, rk, rk));
 
     /* Convergence test for end of previous iteration */
 
@@ -2916,11 +3057,11 @@ _bicgstab2(cs_sles_it_t              *c,
     double mprec = 1.0e-60;
 
     if (n_iter == 0) {
-      residual = sqrt(_dot_product_xx(c, rk)); /* rk == res0 here */
+      residual = sqrt(_dot_product_xx(c, ctx, rk)); /* rk == res0 here */
       c->setup_data->initial_residual = residual;
     }
     else
-      residual = sqrt(_dot_product_xx(c, rk));
+      residual = sqrt(_dot_product_xx(c, ctx, rk));
 
     /* Convergence test */
     cvg = _convergence_test(c, n_iter, residual, convergence);
@@ -2930,7 +3071,7 @@ _bicgstab2(cs_sles_it_t              *c,
     n_iter += 1;
 
     ro_0 = -omega_2*ro_0;
-    ro_1 = _dot_product(c, qk, rk);
+    ro_1 = _dot_product(c, ctx, qk, rk);
 
     if (_breakdown(c, convergence, "rho0", ro_0, 1.e-60,
                    residual, n_iter, &cvg))
@@ -2957,7 +3098,7 @@ _bicgstab2(cs_sles_it_t              *c,
 
     /* Compute gamma and alpha */
 
-    gamma = _dot_product(c, qk, vk);
+    gamma = _dot_product(c, ctx, qk, vk);
 
     if (_breakdown(c, convergence, "gamma", gamma, 1.e-60,
                    residual, n_iter, &cvg))
@@ -2978,7 +3119,7 @@ _bicgstab2(cs_sles_it_t              *c,
 
     c->setup_data->pc_apply(c->setup_data->pc_context, sk, zk);
 
-    ro_1 = _dot_product(c, qk, sk);
+    ro_1 = _dot_product(c, ctx, qk, sk);
     beta = alpha*ro_1/ro_0;
     ro_0 = ro_1;
 
@@ -2993,7 +3134,7 @@ _bicgstab2(cs_sles_it_t              *c,
 
     c->setup_data->pc_apply(c->setup_data->pc_context, wk, zk);
 
-    gamma = _dot_product(c, qk, wk);
+    gamma = _dot_product(c, ctx, qk, wk);
     alpha = (ro_0+mprec)/(gamma+mprec);
 
     ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
@@ -3007,7 +3148,7 @@ _bicgstab2(cs_sles_it_t              *c,
 
     c->setup_data->pc_apply(c->setup_data->pc_context, tk, zk);
 
-    _dot_products_xx_yy_xy_xz_yz(c, sk, tk, rk,
+    _dot_products_xx_yy_xy_xz_yz(c, ctx, sk, tk, rk,
                                  &mu, &tau, &nu, &omega_1, &omega_2);
 
     tau = tau - (nu*nu/mu);
@@ -3018,9 +3159,7 @@ _bicgstab2(cs_sles_it_t              *c,
     /* sol <- sol + omega_1*r + omega_2*s + alpha*u */
     ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       vx[ii] += omega_1*rk[ii] + omega_2*sk[ii] + alpha*uk[ii];
-      /* r <- r - omega_1*s - omega_2*t */
       rk[ii] += - omega_1*sk[ii] - omega_2*tk[ii];
-      /* u <- u - omega_1*v - omega_2*w */
       uk[ii] += - omega_1*vk[ii] - omega_2*wk[ii];
     });
 
@@ -3215,6 +3354,9 @@ _gcr(cs_sles_it_t              *c,
 
   size_t wa_size;
 
+  cs_dispatch_context ctx;
+  ctx.set_use_gpu(false);  // Not on GPU yet
+
   unsigned n_restart = 0;
 
   /* Allocate or map work arrays */
@@ -3272,7 +3414,7 @@ _gcr(cs_sles_it_t              *c,
       _vx = vx;
     }
 
-    double residual = sqrt(_dot_product_xx(c, rk));
+    double residual = sqrt(_dot_product_xx(c, ctx, rk));
 
     if (n_restart == 0)
       c->setup_data->initial_residual = residual;
@@ -3295,14 +3437,14 @@ _gcr(cs_sles_it_t              *c,
         cs_real_t *ck_j = ck + jj * wa_size;
 
         cs_lnum_t ii_jn = (n_c_iter + 1) * n_c_iter / 2 + jj;
-        gkj[ii_jn] = _dot_product(c, ck_j, ck_n);
+        gkj[ii_jn] = _dot_product(c, ctx, ck_j, ck_n);
 #       pragma omp parallel for if(n_rows > CS_THR_MIN)
         for (cs_lnum_t ii = 0; ii < n_rows; ii++)
           ck_n[ii] += - gkj[ii_jn] * ck_j[ii];
       }
 
       const int  iter_shift = (n_c_iter+1) * n_c_iter / 2 + n_c_iter;
-      gkj[iter_shift] = sqrt(_dot_product(c, ck_n, ck_n));
+      gkj[iter_shift] = sqrt(_dot_product(c, ctx, ck_n, ck_n));
 
       if (fabs(gkj[iter_shift]) > 0) {
 
@@ -3311,7 +3453,7 @@ _gcr(cs_sles_it_t              *c,
         for (cs_lnum_t ii = 0; ii < n_rows; ii++)
           ck_n[ii] *= scale;
 
-        alpha[n_c_iter] = _dot_product(c, ck_n, rk);
+        alpha[n_c_iter] = _dot_product(c, ctx, ck_n, rk);
 
       }
       else
@@ -3323,7 +3465,7 @@ _gcr(cs_sles_it_t              *c,
 
       /* Compute residual */
 
-      residual = sqrt(_dot_product_xx(c, rk));
+      residual = sqrt(_dot_product_xx(c, ctx, rk));
 
       n_c_iter += 1;
 
@@ -3439,6 +3581,10 @@ _gmres(cs_sles_it_t              *c,
   cs_real_t *_vx = vx_ini;
 
   cs_lnum_t krylov_size_max = c->restart_interval;
+
+  cs_dispatch_context ctx;
+  ctx.set_use_gpu(false);  // Not on GPU yet
+
   unsigned n_iter = 0;
 
   /* Allocate or map work arrays */
@@ -3526,7 +3672,7 @@ _gmres(cs_sles_it_t              *c,
     }
 
     if (n_iter == 0) {
-      residual = sqrt(_dot_product_xx(c, dk));
+      residual = sqrt(_dot_product_xx(c, ctx, dk));
       c->setup_data->initial_residual = residual;
       cvg = _convergence_test(c, n_iter, residual, convergence);
       if (cvg != CS_SLES_ITERATING)
@@ -3534,7 +3680,7 @@ _gmres(cs_sles_it_t              *c,
     }
 
     /* beta = ||r0|| */
-    beta = sqrt(_dot_product(c, dk, dk));
+    beta = sqrt(_dot_product(c, ctx, dk, dk));
     dot_prod = beta;
 
     _beta[0] = beta;
@@ -3567,7 +3713,7 @@ _gmres(cs_sles_it_t              *c,
         /* Compute h(k,i) = <w,vi> = <dk,vi> */
 
         _h_matrix[ii*krylov_size + jj]
-          = _dot_product(c, dk, (_krylov_vectors + jj*n_rows));
+          = _dot_product(c, ctx, dk, (_krylov_vectors + jj*n_rows));
 
         /* Compute w = dk <- w - h(i,k)*vi */
 
@@ -3580,7 +3726,7 @@ _gmres(cs_sles_it_t              *c,
 
       /* Compute h(i+1,i) = sqrt<w,w> */
 
-      dot_prod = sqrt(_dot_product(c, dk, dk));
+      dot_prod = sqrt(_dot_product(c, ctx, dk, dk));
       _h_matrix[ii*krylov_size + ii + 1] = dot_prod;
 
       if (dot_prod < epsi) scaltest = 1;
@@ -3625,7 +3771,7 @@ _gmres(cs_sles_it_t              *c,
         for (cs_lnum_t jj = 0; jj < n_rows; jj++)
           bk[jj] -= rhs[jj];
 
-        residual = sqrt(_dot_product_xx(c, bk));
+        residual = sqrt(_dot_product_xx(c, ctx, bk));
 
         cvg = _convergence_test(c, n_iter, residual, convergence);
 
