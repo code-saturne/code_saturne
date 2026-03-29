@@ -6462,6 +6462,14 @@ cs_anisotropic_left_diffusion_vector
     strncpy(var_name, "[anisotropic left diffusion, vector]", 63);
   var_name[63] = '\0';
 
+  if (eqp.verbosity > 2) {
+    if (f != nullptr)
+      bft_printf("Calling cs_anisotropic_left_diffusion_vector for %s.\n",
+                 f->name);
+    else
+      bft_printf("Calling cs_anisotropic_left_diffusion_vector for nullptr.\n");
+  }
+
  /* Update BC coeffs */
 
   cs_boundary_conditions_update_bc_coeff_face_values_strided<3>
@@ -6949,6 +6957,14 @@ cs_anisotropic_right_diffusion_vector
   else
     strncpy(var_name, "[anisotropic right diffusion, vector]", 63);
   var_name[63] = '\0';
+
+  if (eqp.verbosity > 2) {
+    if (f != nullptr)
+      bft_printf("Calling cs_anisotropic_right_diffusion_vector for %s.\n",
+                 f->name);
+    else
+      bft_printf("Calling cs_anisotropic_right_diffusion_vector for nullptr.\n");
+  }
 
   viscce = viscel;
 
@@ -7451,6 +7467,14 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
     strncpy(var_name, "[anisotropic diffusion, tensor]", 63);
   var_name[63] = '\0';
 
+  if (eqp.verbosity > 2) {
+    if (f != nullptr)
+      bft_printf("Calling cs_anisotropic_diffusion_tensor for %s.\n",
+                 f->name);
+    else
+      bft_printf("Calling cs_anisotropic_diffusion_tensor for nullptr.\n");
+  }
+
   /* Porosity fields */
   cs_field_t *fporo = cs_field_by_name_try("porosity");
   cs_field_t *ftporo = cs_field_by_name_try("tensorial_porosity");
@@ -7905,6 +7929,14 @@ cs_face_diffusion_potential(const cs_field_t           *f,
 {
   CS_PROFILE_FUNC_RANGE();
 
+  if (eqp->verbosity > 2) {
+    if (f != nullptr)
+      bft_printf("Calling cs_face_diffusion_potential for %s.\n",
+                 f->name);
+    else
+      bft_printf("Calling cs_face_diffusion_potential for nullptr.\n");
+  }
+
   const cs_halo_t  *halo = m->halo;
 
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
@@ -8181,6 +8213,14 @@ cs_face_anisotropic_diffusion_potential
    cs_real_t         *restrict b_massflux)
 {
   CS_PROFILE_FUNC_RANGE();
+
+  if (eqp->verbosity > 2) {
+    if (f != nullptr)
+      bft_printf("Calling cs_face_anisotropic_diffusion_potential for %s.\n",
+                 f->name);
+    else
+      bft_printf("Calling cs_face_anisotropic_diffusion_potential for nullptr.\n");
+  }
 
   const cs_halo_t  *halo = m->halo;
 
@@ -8557,6 +8597,14 @@ cs_diffusion_potential(const cs_field_t           *f,
 {
   CS_PROFILE_FUNC_RANGE();
 
+  if (eqp->verbosity > 2) {
+    if (f != nullptr)
+      bft_printf("Calling cs_diffusion_potential for %s.\n",
+                 f->name);
+    else
+      bft_printf("Calling cs_diffusion_potential for nullptr.\n");
+  }
+
   const cs_halo_t  *halo = m->halo;
 
   const cs_lnum_t n_cells = m->n_cells;
@@ -8848,6 +8896,14 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
                                    cs_real_t         *restrict diverg)
 {
   CS_PROFILE_FUNC_RANGE();
+
+  if (eqp->verbosity > 2) {
+    if (f != nullptr)
+      bft_printf("Calling cs_anisotropic_diffusion_potential for %s.\n",
+                 f->name);
+    else
+      bft_printf("Calling cs_anisotropic_diffusion_potential for nullptr.\n");
+  }
 
   const cs_halo_t  *halo = m->halo;
 

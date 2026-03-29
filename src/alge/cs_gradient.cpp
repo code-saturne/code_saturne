@@ -8835,6 +8835,8 @@ cs_gradient_scalar(const char                    *var_name,
     cs_alloc_mode_device : cs_alloc_mode;
 
   t0 = cs_timer_time();
+  if (verbosity > 2)
+    bft_printf("Compute gradient of scalar %s\n", var_name);
 
   if (update_stats == true)
     gradient_info = _find_or_add_system(var_name, gradient_type);
@@ -9108,6 +9110,9 @@ cs_gradient_vector(const char                    *var_name,
   using var_t = cs_real_t[3];
   cs_lnum_t stride = 3;
 
+  if (verbosity > 2)
+    bft_printf("Compute gradient of vector %s\n", var_name);
+
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
   const cs_lnum_t n_b_faces = mesh->n_b_faces;
@@ -9371,6 +9376,9 @@ cs_gradient_tensor(const char                  *var_name,
   CS_PROFILE_FUNC_RANGE();
   using var_t = cs_real_t[6];
   cs_lnum_t stride = 6;
+
+  if (verbosity > 2)
+    bft_printf("Compute gradient of tensor %s\n", var_name);
 
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
