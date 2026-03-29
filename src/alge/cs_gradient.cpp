@@ -3689,7 +3689,7 @@ _lsq_scalar_gradient_hyd_p_gather
     t_start = std::chrono::high_resolution_clock::now();
 
   /* Weighting requires face weights, so cannot be applied consistently
-     with an extended neighborhhood. */
+     with an extended neighborhood. */
   if (c_weight_s != nullptr)
     halo_type = CS_HALO_STANDARD;
 

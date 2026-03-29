@@ -1326,7 +1326,7 @@ _update_fluid_vel(const cs_mesh_t             *m,
         });
       }
 
-      /* Tensorial diffusion for the pressure */
+      /* Tensor diffusion for the pressure */
       else if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION) {
 
         ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {

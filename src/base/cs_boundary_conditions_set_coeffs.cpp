@@ -139,6 +139,7 @@ _compute_bc_flux_grad
    const int                    hyd_p_flag,
    const cs_real_t              f_ext[][3],
    const cs_field_bc_coeffs_t  *bc_coeffs,
+   const int                    inc,
    const cs_real_t              val_ip_g[],
    const cs_real_t              val_ip_d[],
    cs_real_t                    val_f[],
@@ -172,15 +173,15 @@ _compute_bc_flux_grad
     const cs_lnum_t c_id = b_face_cells[face_id];
 
     // reconstruction for gradient (use of variable at I' position)
-    val_f[face_id] = coefa[face_id] + coefb[face_id] * val_ip_g[face_id];
+    val_f[face_id] = inc * coefa[face_id] + coefb[face_id] * val_ip_g[face_id];
 
     /* ircflb = 0 (no reconstruction for flux,
        use of variable at I position) */
 
     if (need_flux_reconstruction)
-      flux[face_id] = cofaf[face_id] + cofbf[face_id] * val_ip_d[face_id];
+      flux[face_id] = inc * cofaf[face_id] + cofbf[face_id] * val_ip_d[face_id];
     else // use of val_ip_d = pvar
-      flux[face_id] = cofaf[face_id] + cofbf[face_id] * val_ip_d[c_id];
+      flux[face_id] = inc * cofaf[face_id] + cofbf[face_id] * val_ip_d[c_id];
 
     if (hyd_p_flag == 1) {
 
@@ -211,6 +212,7 @@ _compute_bc_grad
    const int                    hyd_p_flag,
    const cs_real_t              f_ext[][3],
    const cs_field_bc_coeffs_t  *bc_coeffs,
+   const int                    inc,
    const cs_real_t              val_ip_g[],
    cs_real_t                    val_f[])
 {
@@ -240,7 +242,7 @@ _compute_bc_grad
     const cs_lnum_t c_id = b_face_cells[face_id];
 
     // reconstruction for gradient (use of variable at I' position)
-    val_f[face_id] = coefa[face_id] + coefb[face_id] * val_ip_g[face_id];
+    val_f[face_id] = inc * coefa[face_id] + coefb[face_id] * val_ip_g[face_id];
 
     if (hyd_p_flag == 1) {
 
@@ -268,6 +270,7 @@ _compute_bc_diff_flux
   (
    cs_dispatch_context         &ctx,
    const cs_field_bc_coeffs_t  *bc_coeffs,
+   const int                    inc,
    const bool                   need_flux_reconstruction,
    const cs_real_t              val_ip_d[],
    cs_real_t                    flux[])
@@ -285,13 +288,13 @@ _compute_bc_diff_flux
 
   if (need_flux_reconstruction) {
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-      flux[face_id] = cofaf[face_id] + cofbf[face_id] * val_ip_d[face_id];
+      flux[face_id] = inc * cofaf[face_id] + cofbf[face_id] * val_ip_d[face_id];
     });
   }
   else {
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
       const cs_lnum_t c_id = b_face_cells[face_id];
-      flux[face_id] = cofaf[face_id] + cofbf[face_id] * val_ip_d[c_id];
+      flux[face_id] = inc * cofaf[face_id] + cofbf[face_id] * val_ip_d[c_id];
     });
   }
 
@@ -4471,6 +4474,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
                                     hyd_p_flag,
                                     f_ext,
                                     bc_coeffs,
+                                    inc,
                                     val_ip_grad,
                                     val_ip_grad, // = val_ip_flux
                                     val_f, flux);
@@ -4479,6 +4483,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
                                     hyd_p_flag,
                                     f_ext,
                                     bc_coeffs,
+                                    inc,
                                     val_ip_grad,
                                     val_ip_flux,
                                     val_f, flux);
@@ -4488,21 +4493,23 @@ cs_boundary_conditions_update_bc_coeff_face_values
                                    hyd_p_flag,
                                    f_ext,
                                    bc_coeffs,
+                                   inc,
                                    val_ip_grad,
                                    pvar,
                                    val_f, flux);
     }
   }
   else if (need_compute_bc_grad)
-    _compute_bc_grad(ctx, hyd_p_flag, f_ext, bc_coeffs, val_ip_grad, val_f);
+    _compute_bc_grad(ctx, hyd_p_flag, f_ext, bc_coeffs,
+                     inc, val_ip_grad, val_f);
 
   else if (need_compute_bc_flux) {
     if (need_flux_reconstruction)
-      _compute_bc_diff_flux(ctx, bc_coeffs,
+      _compute_bc_diff_flux(ctx, bc_coeffs, inc,
                             need_flux_reconstruction,
                             val_ip_flux, flux);
     else
-      _compute_bc_diff_flux(ctx, bc_coeffs,
+      _compute_bc_diff_flux(ctx, bc_coeffs, inc,
                             need_flux_reconstruction,
                             pvar, flux);
   }
@@ -4737,8 +4744,8 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
 
       // Reconstruction for gradient (use of variable at I' position)
       for (cs_lnum_t i = 0; i < stride; i++) {
-        val_f[face_id][i] = coefa[face_id][i];
-        flux[face_id][i] = cofaf[face_id][i];
+        val_f[face_id][i] = inc * coefa[face_id][i];
+        flux[face_id][i] = inc * cofaf[face_id][i];
 
         for (cs_lnum_t j = 0; j < stride; j++) {
           val_f[face_id][i] += coefb[face_id][j][i]*val_ip[face_id][j];
@@ -4758,8 +4765,8 @@ cs_boundary_conditions_update_bc_coeff_face_values_strided
 
       // reconstruction for gradient (use of variable at I' position)
       for (cs_lnum_t i = 0; i < stride; i++) {
-        val_f[face_id][i] = coefa[face_id][i];
-        flux[face_id][i] = cofaf[face_id][i];
+        val_f[face_id][i] = inc * coefa[face_id][i];
+        flux[face_id][i] = inc * cofaf[face_id][i];
 
         for (cs_lnum_t j = 0; j < stride; j++) {
           val_f[face_id][i] += coefb[face_id][j][i]*val_ip[face_id][j];
