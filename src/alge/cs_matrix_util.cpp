@@ -111,9 +111,9 @@
  *----------------------------------------------------------------------------*/
 
 inline static double
-_dot_xx(const cs_matrix_t  *a,
-        cs_lnum_t           n,
-        const cs_real_t    *x)
+_dot_xx([[maybe_unused]] const cs_matrix_t  *a,
+        cs_lnum_t                            n,
+        const cs_real_t                     *x)
 {
 #if defined(__CUDACC__)
 

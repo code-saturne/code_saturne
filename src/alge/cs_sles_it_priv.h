@@ -79,8 +79,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -326,11 +324,42 @@ _mat_c_m_b(const cs_real_t   mat[],
 }
 
 /*============================================================================
- * Public function definitions
+ * Semi-private function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
+ * \brief Set execution location (host or device) and stream if appplicable.
+ *
+ * \param[in, out]  ctx            reference to dispatch context
+ * \param[in]       a              pointer to matrix
+ * \param[out]      local_stream   do we force a local stream ?
+ * \param[out]      stream         stream associated with current solve
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_set_exec_location
+(
+  [[maybe_unused]] cs_dispatch_context  &ctx,
+  const cs_matrix_t                     *a,
+  bool                                  &local_stream,
+  [[maybe_unused]] cs_stream_t          &stream
+);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Restore stream to previous settings if appplicable.
+ *
+ * \param[in]  local_stream   do we force a local stream ?
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_restore_exec_location([[maybe_unused]] bool  &local_stream);
+
+/*----------------------------------------------------------------------------*/
+/*
  * \brief Initialize or reset convergence info structure.
  *        At this stage, the initial residual is set to HUGE_VAL, as it is
  *        unknown.
@@ -383,7 +412,5 @@ cs_sles_it_setup_priv(cs_sles_it_t       *c,
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_SLES_IT_PRIV_H__ */

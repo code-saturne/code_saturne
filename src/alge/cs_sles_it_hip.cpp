@@ -917,7 +917,7 @@ _gcr_update_vx(cs_lnum_t                      n_rows,
 
   if (ii < n_rows) {
     double sii = 0.0;
-    #pragma unroll(2)
+    #pragma unroll 2
     for (cs_lnum_t kk = 0; kk < n_c_iter; kk++){
       for (cs_lnum_t jj = 0; jj <= kk; jj++){
         const cs_real_t *zk_j = zk + jj*wa_size;
@@ -1804,7 +1804,7 @@ cs_sles_it_dot_products_xy_yz
   const unsigned int block_size = 256;
   unsigned int grid_size = cs_hip_grid_size(n, block_size);
 
-  if (_use_cublas == false) {
+  if (_use_hipblas == false) {
     double *sum_block, *s_d, *s_h;
     cs_hip_get_2_stage_reduce_buffers
       (cs_hip_get_stream_id(stream), n, 2*sizeof(double), grid_size,
@@ -1958,7 +1958,7 @@ cs_sles_it_dot_products_xx_yy_xy_xz_yz
   double              *yz
 )
 {
-  double s[3];
+  double s[5];
 
   /* Alternatives (need to set option for this) */
 
@@ -1970,7 +1970,7 @@ cs_sles_it_dot_products_xx_yy_xy_xz_yz
   const unsigned int block_size = 256;
   unsigned int grid_size = cs_hip_grid_size(n, block_size);
 
-  if (_use_cublas == false) {
+  if (_use_hipblas == false) {
     double *sum_block, *s_d, *s_h;
     cs_hip_get_2_stage_reduce_buffers
       (cs_hip_get_stream_id(stream), n, 5*sizeof(double), grid_size,
@@ -2097,7 +2097,7 @@ cs_sles_it_hip_jacobi(cs_sles_it_t              *c,
 
   double residual = -1.;
 
-  if (convergence->precision < 0);
+  if (convergence->precision < 0)
     residual = convergence->precision * convergence->r_norm * 2;
 
   /* Allocate or map work arrays
@@ -2165,8 +2165,8 @@ cs_sles_it_hip_jacobi(cs_sles_it_t              *c,
 
   }
   else
-    hipMemcpyAsync(rk, vx, n_rows*sizeof(cs_real_t),
-                    hipMemcpyDeviceToDevice, stream);
+    CS_HIP_CHECK(hipMemcpyAsync(rk, vx, n_rows*sizeof(cs_real_t),
+                                hipMemcpyDeviceToDevice, stream));
 
 #if HAVE_GRAPH_CAPTURE > 0
 
@@ -2484,8 +2484,8 @@ cs_sles_it_hip_block_jacobi(cs_sles_it_t              *c,
   }
 
   if (vx_k != vx) {
-    hipMemcpyAsync(vx, vx_k, n_rows*sizeof(cs_real_t),
-                    hipMemcpyDeviceToDevice, stream);
+    CS_HIP_CHECK(hipMemcpyAsync(vx, vx_k, n_rows*sizeof(cs_real_t),
+                                hipMemcpyDeviceToDevice, stream));
     CS_HIP_CHECK(hipStreamSynchronize(stream));
   }
 

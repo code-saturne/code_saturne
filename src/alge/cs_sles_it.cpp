@@ -51,19 +51,20 @@
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_profiling.h"
+#include "base/cs_reducers.h"
 
 #if defined(HAVE_CUDA) && defined(__CUDACC__)
 #include "base/cs_base_cuda.h"
 #include "alge/cs_blas_cuda.h"
 #include "alge/cs_matrix_spmv.h"
 #include "alge/cs_matrix_spmv_cuda.h"
-#endif
 
-#if defined(HAVE_HIP) && defined(__HIPCC__)
+#elif defined(HAVE_HIP) && defined(__HIPCC__)
 #include "base/cs_base_hip.h"
 #include "alge/cs_blas_hip.h"
 #include "alge/cs_matrix_spmv.h"
 #include "alge/cs_matrix_spmv_hip.h"
+
 #endif
 
 /*----------------------------------------------------------------------------
@@ -75,9 +76,7 @@
 
 #if defined(HAVE_CUDA)
 #include "alge/cs_sles_it_cuda.h"
-#endif
-
-#if defined(HAVE_HIP)
+#elif defined(HAVE_HIP)
 #include "alge/cs_sles_it_hip.h"
 #endif
 
@@ -737,6 +736,89 @@ _dot_products_vr_vw_vq_rr(const cs_sles_it_t  *c,
 }
 
 /*----------------------------------------------------------------------------
+ * Set execution location (host or device) and stream if appplicable.
+ *
+ * parameters:
+ *   ctx           <-- reference to dispatch context
+ *   a             <-- pointer to matrix
+ *   local_stream  --> do we force a local stream ?
+ *   stream        --> stream associated with current solve
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_set_exec_location
+(
+  [[maybe_unused]] cs_dispatch_context  &ctx,
+  const cs_matrix_t                     *a,
+  bool                                  &local_stream,
+  [[maybe_unused]] cs_stream_t          &stream
+)
+{
+  local_stream = false;
+
+#if defined(HAVE_ACCEL)
+  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
+  if (amode == CS_ALLOC_HOST) {
+    ctx.set_use_gpu(false);
+  }
+#else
+  stream = nullptr;
+#endif
+
+#if defined(__CUDACC__)
+  stream = cs_matrix_spmv_cuda_get_stream();
+  if (amode > CS_ALLOC_HOST) {
+    if (stream == 0) {
+      local_stream = true;
+      stream = cs_cuda_get_stream(0);
+    }
+    cs_blas_cuda_set_stream(stream);
+    if (local_stream)
+      cs_matrix_spmv_cuda_set_stream(stream);
+    ctx.set_cuda_stream(stream);
+  }
+
+#elif defined(__HIPCC__)
+  stream = cs_matrix_spmv_hip_get_stream();
+  if (amode > CS_ALLOC_HOST) {
+    if (stream == 0) {
+      local_stream = true;
+      stream = cs_hip_get_stream(0);
+    }
+    cs_blas_hip_set_stream(stream);
+    if (local_stream)
+      cs_matrix_spmv_hip_set_stream(stream);
+    ctx.set_hip_stream(stream);
+  }
+#endif
+}
+
+/*----------------------------------------------------------------------------
+ * Restore stream to previous settings if appplicable.
+ *
+ * parameters:
+ *   local_stream  <-- did we force a local stream ?
+ *----------------------------------------------------------------------------*/
+
+void
+cs_sles_it_restore_exec_location([[maybe_unused]] bool  &local_stream)
+{
+#if defined(__CUDACC__)
+  cs_blas_cuda_set_stream(0);
+  if (local_stream) {
+    cs_matrix_spmv_cuda_set_stream(0);
+  }
+
+#elif defined(__HIPCC__)
+  cs_blas_hip_set_stream(0);
+  if (local_stream) {
+    cs_matrix_spmv_hip_set_stream(0);
+  }
+
+#endif
+}
+
+/*----------------------------------------------------------------------------
  * Solution of A.vx = Rhs using flexible preconditioned conjugate gradient.
  *
  * Compared to standard PCG, FCG supports variable preconditioners.
@@ -1178,43 +1260,15 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
   unsigned n_iter = 0;
 
+  bool update_residual
+    = (convergence->precision > 0. || c->plot != nullptr) ? true : false;
+
   cs_dispatch_context ctx;
 
 #if defined(HAVE_ACCEL)
-  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
-  if (amode == CS_ALLOC_HOST) {
-    ctx.set_use_gpu(false);
-  }
-#endif
-
-#if defined(__CUDACC__)
-  bool local_stream = false;
-  cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
-  if (amode > CS_ALLOC_HOST) {
-    if (stream == 0) {
-      local_stream = true;
-      stream = cs_cuda_get_stream(0);
-    }
-    cs_blas_cuda_set_stream(stream);
-    if (local_stream)
-      cs_matrix_spmv_cuda_set_stream(stream);
-    ctx.set_cuda_stream(stream);
-  }
-#endif
-
-#if defined(__HIPCC__)
-  bool local_stream = false;
-  hipStream_t stream = cs_matrix_spmv_hip_get_stream();
-  if (amode > CS_ALLOC_HOST) {
-    if (stream == 0) {
-      local_stream = true;
-      stream = cs_hip_get_stream(0);
-    }
-    cs_blas_hip_set_stream(stream);
-    if (local_stream)
-      cs_matrix_spmv_hip_set_stream(stream);
-    ctx.set_hip_stream(stream);
-  }
+  bool local_stream;
+  cs_stream_t stream;
+  cs_sles_it_set_exec_location(ctx, a, local_stream, stream);
 #endif
 
   /* Allocate or map work arrays */
@@ -1274,8 +1328,12 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
   double  ro_0 = 0, ro_1 = 0;
   double  rk_gkm1 = 0, residual = -1, rk_gk = 0, gk_sk = 0;
 
-  _dot_products_xx_xy_yz(c, ctx, rk, dk, zk, &residual, &ro_0, &ro_1);
-  residual = sqrt(residual);
+  if (update_residual) {
+    _dot_products_xx_xy_yz(c, ctx, rk, dk, zk, &residual, &ro_0, &ro_1);
+    residual = sqrt(residual);
+  }
+  else
+    _dot_products_xy_yz(c, ctx, rk, dk, zk, &ro_0, &ro_1);
 
   c->setup_data->initial_residual = residual;
 
@@ -1299,7 +1357,8 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
     /* Convergence test */
 
-    residual = sqrt(_dot_product_xx(c, ctx, rk));
+    if (update_residual)
+      residual = sqrt(_dot_product_xx(c, ctx, rk));
 
     cvg = _convergence_test(c, n_iter, residual, convergence);
 
@@ -1318,10 +1377,13 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
     /* Compute residual and prepare descent parameter */
 
-    _dot_products_xx_xy_yz(c, ctx, rk, gk, sk,
-                           &residual, &rk_gk, &gk_sk);
-
-    residual = sqrt(residual);
+    if (update_residual) {
+      _dot_products_xx_xy_yz(c, ctx, rk, gk, sk,
+                             &residual, &rk_gk, &gk_sk);
+      residual = sqrt(residual);
+    }
+    else
+      _dot_products_xy_yz(c, ctx, rk, gk, sk, &rk_gk, &gk_sk);
 
     /* Convergence test for end of previous iteration */
 
@@ -1356,18 +1418,8 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
   ctx.wait();
 
-#if defined(__CUDACC__)
-  cs_blas_cuda_set_stream(0);
-  if (local_stream) {
-    cs_matrix_spmv_cuda_set_stream(0);
-  }
-#endif
-
-#if defined(__HIPCC__)
-  cs_blas_hip_set_stream(0);
-  if (local_stream) {
-    cs_matrix_spmv_hip_set_stream(0);
-  }
+#if defined(HAVE_ACCEL)
+  cs_sles_it_restore_exec_location(local_stream);
 #endif
 
   if (_aux_vectors != aux_vectors)
@@ -1420,43 +1472,15 @@ _conjugate_gradient_sr_p0(cs_sles_it_t              *c,
 
   unsigned n_iter = 0;
 
+  bool update_residual
+    = (convergence->precision > 0. || c->plot != nullptr) ? true : false;
+
   cs_dispatch_context ctx;
 
 #if defined(HAVE_ACCEL)
-  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
-  if (amode == CS_ALLOC_HOST) {
-    ctx.set_use_gpu(false);
-  }
-#endif
-
-#if defined(__CUDACC__)
-  bool local_stream = false;
-  cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
-  if (amode > CS_ALLOC_HOST) {
-    if (stream == 0) {
-      local_stream = true;
-      stream = cs_cuda_get_stream(0);
-    }
-    cs_blas_cuda_set_stream(stream);
-    if (local_stream)
-      cs_matrix_spmv_cuda_set_stream(stream);
-    ctx.set_cuda_stream(stream);
-  }
-#endif
-
-#if defined(__HIPCC__)
-  bool local_stream = false;
-  hipStream_t stream = cs_matrix_spmv_hip_get_stream();
-  if (amode > CS_ALLOC_HOST) {
-    if (stream == 0) {
-      local_stream = true;
-      stream = cs_hip_get_stream(0);
-    }
-    cs_blas_hip_set_stream(stream);
-    if (local_stream)
-      cs_matrix_spmv_hip_set_stream(stream);
-    ctx.set_hip_stream(stream);
-  }
+  bool local_stream;
+  cs_stream_t stream;
+  cs_sles_it_set_exec_location(ctx, a, local_stream, stream);
 #endif
 
   /* Allocate or map work arrays */
@@ -1517,8 +1541,12 @@ _conjugate_gradient_sr_p0(cs_sles_it_t              *c,
   double  ro_0 = 0, ro_1 = 0;
   double  rk_gkm1 = 0, residual = -1, rk_gk = 0, gk_sk = 0;
 
-  _dot_products_xx_xy_yz(c, ctx, rk, dk, zk, &residual, &ro_0, &ro_1);
-  residual = sqrt(residual);
+  if (update_residual) {
+    _dot_products_xx_xy_yz(c, ctx, rk, dk, zk, &residual, &ro_0, &ro_1);
+    residual = sqrt(residual);
+  }
+  else
+    _dot_products_xy_yz(c, ctx, rk, dk, zk, &ro_0, &ro_1);
 
   c->setup_data->initial_residual = residual;
 
@@ -1535,25 +1563,37 @@ _conjugate_gradient_sr_p0(cs_sles_it_t              *c,
 
     rk_gkm1 = ro_0;
 
-    ctx.parallel_for_reduce_sum(n_rows, residual, [=] CS_F_HOST_DEVICE
-                                (cs_lnum_t ii,
-                                 CS_DISPATCH_REDUCER_TYPE(double) &sum) {
-      vx[ii] += (alpha * dk[ii]);
-      rk[ii] += (alpha * zk[ii]);
-      gk[ii] = rk[ii] * ad_inv[ii];  // preconditioning
-      sum += rk[ii]*rk[ii];
-    });
+    if (update_residual) {
+      ctx.parallel_for_reduce_sum(n_rows, residual, [=] CS_F_HOST_DEVICE
+                                  (cs_lnum_t ii,
+                                   CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+        vx[ii] += (alpha * dk[ii]);
+        rk[ii] += (alpha * zk[ii]);
+        gk[ii] = rk[ii] * ad_inv[ii];  // preconditioning
+        sum += rk[ii]*rk[ii];
+      });
 
-    /* Convergence test */
-
-    ctx.wait();
+      ctx.wait();
 
 #if defined(HAVE_MPI)
-    if (c->comm != MPI_COMM_NULL)
-      MPI_Allreduce(MPI_IN_PLACE, &residual, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+      if (c->comm != MPI_COMM_NULL)
+        MPI_Allreduce(MPI_IN_PLACE, &residual, 1, MPI_DOUBLE, MPI_SUM, c->comm);
 #endif /* defined(HAVE_MPI) */
 
-    residual = sqrt(residual);
+      residual = sqrt(residual);
+
+    }
+    else {
+
+      ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+        vx[ii] += (alpha * dk[ii]);
+        rk[ii] += (alpha * zk[ii]);
+        gk[ii] = rk[ii] * ad_inv[ii];  // preconditioning
+      });
+
+    }
+
+    /* Convergence test */
 
     cvg = _convergence_test(c, n_iter, residual, convergence);
 
@@ -1568,9 +1608,12 @@ _conjugate_gradient_sr_p0(cs_sles_it_t              *c,
 
     /* Compute residual and prepare descent parameter */
 
-    _dot_products_xx_xy_yz(c, ctx, rk, gk, sk, &residual, &rk_gk, &gk_sk);
-
-    residual = sqrt(residual);
+    if (update_residual) {
+      _dot_products_xx_xy_yz(c, ctx, rk, gk, sk, &residual, &rk_gk, &gk_sk);
+      residual = sqrt(residual);
+    }
+    else
+      _dot_products_xy_yz(c, ctx, rk, gk, sk, &rk_gk, &gk_sk);
 
     /* Convergence test for end of previous iteration */
 
@@ -1607,18 +1650,8 @@ _conjugate_gradient_sr_p0(cs_sles_it_t              *c,
 
   ctx.wait();
 
-#if defined(__CUDACC__)
-  cs_blas_cuda_set_stream(0);
-  if (local_stream) {
-    cs_matrix_spmv_cuda_set_stream(0);
-  }
-#endif
-
-#if defined(__HIPCC__)
-  cs_blas_hip_set_stream(0);
-  if (local_stream) {
-    cs_matrix_spmv_hip_set_stream(0);
-  }
+#if defined(HAVE_ACCEL)
+  cs_sles_it_restore_exec_location(local_stream);
 #endif
 
   if (_aux_vectors != aux_vectors)
@@ -1670,43 +1703,15 @@ _conjugate_gradient_sr_npc(cs_sles_it_t              *c,
 
   unsigned n_iter = 0;
 
+  bool update_residual
+    = (convergence->precision > 0. || c->plot != nullptr) ? true : false;
+
   cs_dispatch_context ctx;
 
-  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
 #if defined(HAVE_ACCEL)
-  if (amode == CS_ALLOC_HOST) {
-    ctx.set_use_gpu(false);
-  }
-#endif
-
-#if defined(__CUDACC__)
-  bool local_stream = false;
-  cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
-  if (amode > CS_ALLOC_HOST) {
-    if (stream == 0) {
-      local_stream = true;
-      stream = cs_cuda_get_stream(0);
-    }
-    cs_blas_cuda_set_stream(stream);
-    if (local_stream)
-      cs_matrix_spmv_cuda_set_stream(stream);
-    ctx.set_cuda_stream(stream);
-  }
-#endif
-
-#if defined(__HIPCC__)
-  bool local_stream = false;
-  hipStream_t stream = cs_matrix_spmv_hip_get_stream();
-  if (amode > CS_ALLOC_HOST) {
-    if (stream == 0) {
-      local_stream = true;
-      stream = cs_hip_get_stream(0);
-    }
-    cs_blas_hip_set_stream(stream);
-    if (local_stream)
-      cs_matrix_spmv_hip_set_stream(stream);
-    ctx.set_hip_stream(stream);
-  }
+  bool local_stream;
+  cs_stream_t stream;
+  cs_sles_it_set_exec_location(ctx, a, local_stream, stream);
 #endif
 
   /* Allocate or map work arrays */
@@ -1722,7 +1727,7 @@ _conjugate_gradient_sr_npc(cs_sles_it_t              *c,
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, amode);
+      CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, ctx.alloc_mode());
     else
       _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
@@ -1763,8 +1768,12 @@ _conjugate_gradient_sr_npc(cs_sles_it_t              *c,
   double  ro_0 = 0, ro_1 = 0;
   double  rk_rkm1 = 0, residual = -1, rk_rk = 0, rk_sk = 0;
 
-  _dot_products_xx_xy_yz(c, ctx, rk, dk, zk, &residual, &ro_0, &ro_1);
-  residual = sqrt(residual);
+  if (update_residual) {
+    _dot_products_xx_xy_yz(c, ctx, rk, dk, zk, &residual, &ro_0, &ro_1);
+    residual = sqrt(residual);
+  }
+  else
+    _dot_products_xy_yz(c, ctx, rk, dk, zk, &ro_0, &ro_1);
 
   c->setup_data->initial_residual = residual;
 
@@ -1781,24 +1790,32 @@ _conjugate_gradient_sr_npc(cs_sles_it_t              *c,
 
     rk_rkm1 = ro_0;
 
-    ctx.parallel_for_reduce_sum(n_rows, residual, [=] CS_F_HOST_DEVICE
-                                (cs_lnum_t ii,
-                                 CS_DISPATCH_REDUCER_TYPE(double) &sum) {
-      vx[ii] += (alpha * dk[ii]);
-      rk[ii] += (alpha * zk[ii]);
-      sum += rk[ii]*rk[ii];
-    });
+    if (update_residual) {
+      ctx.parallel_for_reduce_sum(n_rows, residual, [=] CS_F_HOST_DEVICE
+                                  (cs_lnum_t ii,
+                                   CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+        vx[ii] += (alpha * dk[ii]);
+        rk[ii] += (alpha * zk[ii]);
+        sum += rk[ii]*rk[ii];
+      });
 
-    /* Convergence test */
-
-    ctx.wait();
+      ctx.wait();
 
 #if defined(HAVE_MPI)
-    if (c->comm != MPI_COMM_NULL)
-      MPI_Allreduce(MPI_IN_PLACE, &residual, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+      if (c->comm != MPI_COMM_NULL)
+        MPI_Allreduce(MPI_IN_PLACE, &residual, 1, MPI_DOUBLE, MPI_SUM, c->comm);
 #endif /* defined(HAVE_MPI) */
 
-    residual = sqrt(residual);
+      residual = sqrt(residual);
+    }
+    else {
+      ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+        vx[ii] += (alpha * dk[ii]);
+        rk[ii] += (alpha * zk[ii]);
+      });
+    }
+
+    /* Convergence test */
 
     cvg = _convergence_test(c, n_iter, residual, convergence);
 
@@ -1816,7 +1833,6 @@ _conjugate_gradient_sr_npc(cs_sles_it_t              *c,
     _dot_products_xx_xy(c, ctx, rk, sk, &residual, &rk_sk);
 
     rk_rk = residual;
-
     residual = sqrt(residual);
 
     /* Convergence test for end of previous iteration */
@@ -1851,18 +1867,8 @@ _conjugate_gradient_sr_npc(cs_sles_it_t              *c,
 
   ctx.wait();
 
-#if defined(__CUDACC__)
-  cs_blas_cuda_set_stream(0);
-  if (local_stream) {
-    cs_matrix_spmv_cuda_set_stream(0);
-  }
-#endif
-
-#if defined(__HIPCC__)
-  cs_blas_hip_set_stream(0);
-  if (local_stream) {
-    cs_matrix_spmv_hip_set_stream(0);
-  }
+#if defined(HAVE_ACCEL)
+  cs_sles_it_restore_exec_location(local_stream);
 #endif
 
   if (_aux_vectors != aux_vectors)
@@ -1904,18 +1910,21 @@ _conjugate_residual_3(cs_sles_it_t              *c,
                       void                      *aux_vectors)
 {
   cs_sles_convergence_state_t cvg;
-  double  residual;
-  double  ak, bk, ck, dk, ek, denom, alpha, tau;
+  double  residual = -1;
   cs_real_t *_aux_vectors;
   cs_real_t  *restrict vxm1;
   cs_real_t  *restrict rk, *restrict rkm1;
   cs_real_t  *restrict wk, *restrict zk;
-  cs_real_t  *restrict tmp;
 
   cs_dispatch_context ctx;
+  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
+
   ctx.set_use_gpu(false);  // Not on GPU yet
 
   unsigned n_iter = 0;
+
+  bool update_residual
+    = (convergence->precision > 0. || c->plot != nullptr) ? true : false;
 
   /* Allocate or map work arrays */
   /*-----------------------------*/
@@ -1926,20 +1935,19 @@ _conjugate_residual_3(cs_sles_it_t              *c,
 
   {
     const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
-    const size_t n_wa = 6;
+    const size_t n_wa = 5;
     const size_t wa_size = CS_SIMD_SIZE(n_cols);
 
     if (aux_vectors == nullptr || aux_size/sizeof(cs_real_t) < (wa_size * n_wa))
-      CS_MALLOC(_aux_vectors, wa_size * n_wa, cs_real_t);
+      CS_MALLOC_HD(_aux_vectors, wa_size * n_wa, cs_real_t, amode);
     else
       _aux_vectors = static_cast<cs_real_t *>(aux_vectors);
 
     vxm1 = _aux_vectors;
     rk = _aux_vectors + wa_size;
     rkm1 = _aux_vectors + wa_size*2;
-    tmp = _aux_vectors + wa_size*3;
-    wk = _aux_vectors + wa_size*4;
-    zk = _aux_vectors + wa_size*5;
+    wk = _aux_vectors + wa_size*3;
+    zk = _aux_vectors + wa_size*4;
 
 #   pragma omp parallel for if(n_rows > CS_THR_MIN)
     for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
@@ -1954,22 +1962,22 @@ _conjugate_residual_3(cs_sles_it_t              *c,
   /* Residual */
 
   if (vx_ini == vx) {
-    cs_matrix_vector_multiply(a, vx, rk);  /* rk = A.x0 */
+    cs_matrix_vector_multiply(ctx, a, vx, rk);  /* rk = A.x0 */
 
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       rk[ii] -= rhs[ii];
+      vx[ii] = 0.;
+    });
   }
   else {
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       rk[ii] = -rhs[ii];
       vx[ii] = 0.;
-    }
+    });
   }
 
-  residual = _dot_product(c, ctx, rk, rk);
-  residual = sqrt(residual);
+  if (update_residual)
+    residual = sqrt(_dot_product(c, ctx, rk, rk));
 
   /* If no solving required, finish here */
 
@@ -1985,19 +1993,41 @@ _conjugate_residual_3(cs_sles_it_t              *c,
 
     c->setup_data->pc_apply(c->setup_data->pc_context, rk, wk);
 
-    cs_matrix_vector_multiply(a, wk, zk);
+    cs_matrix_vector_multiply(ctx, a, wk, zk);
 
-    _dot_products_xy_yz(c, ctx, rk, zk, rkm1, &ak, &bk);
+    struct cs_double_n<5> rd;
+    struct cs_reduce_sum_nr<5> reducer;
 
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-      tmp[ii] = rk[ii] - rkm1[ii];
+    ctx.parallel_for_reduce
+      (n_rows, rd, reducer,
+       [=] CS_F_HOST_DEVICE (cs_lnum_t ii, cs_double_n<5> &res) {
 
-    _dot_products_xy_yz(c, ctx, rk, tmp, rkm1, &ck, &dk);
+      cs_real_t rm_m_rkm1 = rk[ii] - rkm1[ii];
 
-    ek = _dot_product_xx(c, ctx, zk);
+      res.r[0] = rk[ii] * zk[ii];
+      res.r[1] = zk[ii] * rkm1[ii];
+      res.r[2] = rk[ii] * rm_m_rkm1;
+      res.r[3] = rm_m_rkm1 * rkm1[ii];
+      res.r[4] = zk[ii] * zk[ii];
 
-    denom = (ck-dk)*ek - ((ak-bk)*(ak-bk));
+    }); /* End of (parallel) loop on blocks */
+    ctx.wait();
+
+#if defined(HAVE_MPI)
+    if (c->comm != MPI_COMM_NULL) {
+      MPI_Allreduce(MPI_IN_PLACE, rd.r, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+    }
+#endif /* defined(HAVE_MPI) */
+
+    double &ak = rd.r[0];
+    double &bk = rd.r[1];
+    double &ck = rd.r[2];
+    double &dk = rd.r[3];
+    double &ek = rd.r[4];
+
+    double denom = (ck-dk)*ek - ((ak-bk)*(ak-bk));
+
+    double alpha, tau;
 
     if (fabs(denom) < 1.e-30)
       alpha = 1.0;
@@ -2014,25 +2044,32 @@ _conjugate_residual_3(cs_sles_it_t              *c,
     cs_real_t c0 = (1 - alpha);
     cs_real_t c1 = -alpha*tau;
 
-#   pragma omp parallel firstprivate(alpha, tau, c0, c1) if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-        cs_real_t trk = rk[ii];
-        rk[ii] = alpha*rk[ii] + c0*rkm1[ii] + c1*zk[ii];
-        rkm1[ii] = trk;
-      }
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-        cs_real_t tvx = vx[ii];
-        vx[ii] = alpha*vx[ii] + c0*vxm1[ii] + c1*wk[ii];
-        vxm1[ii] = tvx;
-      }
-    }
+    cs_real_t res_2 = 0;
+    ctx.parallel_for_reduce_sum(n_rows, res_2, [=] CS_F_HOST_DEVICE
+                                (cs_lnum_t ii,
+                                 CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+      cs_real_t trk = rk[ii];
+      cs_real_t rk_ii = alpha*rk[ii] + c0*rkm1[ii] + c1*zk[ii];
+      rk[ii] = rk_ii;
+      rkm1[ii] = trk;
+
+      cs_real_t tvx = vx[ii];
+      vx[ii] = alpha*vx[ii] + c0*vxm1[ii] + c1*wk[ii];
+      vxm1[ii] = tvx;
+
+      sum += rk_ii * rk_ii;
+    });
 
     /* Compute residual */
 
-    residual = sqrt(_dot_product(c, ctx, rk, rk));
+    if (update_residual) {
+#if defined(HAVE_MPI)
+      if (c->comm != MPI_COMM_NULL)
+        MPI_Allreduce(MPI_IN_PLACE, &res_2, 1, MPI_DOUBLE, MPI_SUM, c->comm);
+#endif /* defined(HAVE_MPI) */
+
+      residual = sqrt(res_2);
+    }
 
     /* Convergence test for end of previous iteration */
 
@@ -2594,7 +2631,6 @@ _block_jacobi(cs_sles_it_t              *c,
   return cvg;
 }
 
-
 /*----------------------------------------------------------------------------
  * Test for (and eventually report) breakdown.
  *
@@ -2692,40 +2728,9 @@ _bi_cgstab(cs_sles_it_t              *c,
   cs_dispatch_context ctx;
 
 #if defined(HAVE_ACCEL)
-  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
-  if (amode == CS_ALLOC_HOST) {
-    ctx.set_use_gpu(false);
-  }
-#endif
-
-#if defined(__CUDACC__)
-  bool local_stream = false;
-  cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
-  if (amode > CS_ALLOC_HOST) {
-    if (stream == 0) {
-      local_stream = true;
-      stream = cs_cuda_get_stream(0);
-    }
-    cs_blas_cuda_set_stream(stream);
-    if (local_stream)
-      cs_matrix_spmv_cuda_set_stream(stream);
-    ctx.set_cuda_stream(stream);
-  }
-#endif
-
-#if defined(__HIPCC__)
-  bool local_stream = false;
-  hipStream_t stream = cs_matrix_spmv_hip_get_stream();
-  if (amode > CS_ALLOC_HOST) {
-    if (stream == 0) {
-      local_stream = true;
-      stream = cs_hip_get_stream(0);
-    }
-    cs_blas_hip_set_stream(stream);
-    if (local_stream)
-      cs_matrix_spmv_hip_set_stream(stream);
-    ctx.set_hip_stream(stream);
-  }
+  bool local_stream;
+  cs_stream_t stream;
+  cs_sles_it_set_exec_location(ctx, a, local_stream, stream);
 #endif
 
   /* Allocate or map work arrays */
@@ -2877,18 +2882,8 @@ _bi_cgstab(cs_sles_it_t              *c,
 
   ctx.wait();
 
-#if defined(__CUDACC__)
-  cs_blas_cuda_set_stream(0);
-  if (local_stream) {
-    cs_matrix_spmv_cuda_set_stream(0);
-  }
-#endif
-
-#if defined(__HIPCC__)
-  cs_blas_hip_set_stream(0);
-  if (local_stream) {
-    cs_matrix_spmv_hip_set_stream(0);
-  }
+#if defined(HAVE_ACCEL)
+  cs_sles_it_restore_exec_location(local_stream);
 #endif
 
   if (_aux_vectors != aux_vectors)
@@ -2948,40 +2943,9 @@ _bicgstab2(cs_sles_it_t              *c,
   cs_dispatch_context ctx;
 
 #if defined(HAVE_ACCEL)
-  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
-  if (amode == CS_ALLOC_HOST) {
-    ctx.set_use_gpu(false);
-  }
-#endif
-
-#if defined(__CUDACC__)
-  bool local_stream = false;
-  cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
-  if (amode > CS_ALLOC_HOST) {
-    if (stream == 0) {
-      local_stream = true;
-      stream = cs_cuda_get_stream(0);
-    }
-    cs_blas_cuda_set_stream(stream);
-    if (local_stream)
-      cs_matrix_spmv_cuda_set_stream(stream);
-    ctx.set_cuda_stream(stream);
-  }
-#endif
-
-#if defined(__HIPCC__)
-  bool local_stream = false;
-  hipStream_t stream = cs_matrix_spmv_hip_get_stream();
-  if (amode > CS_ALLOC_HOST) {
-    if (stream == 0) {
-      local_stream = true;
-      stream = cs_hip_get_stream(0);
-    }
-    cs_blas_hip_set_stream(stream);
-    if (local_stream)
-      cs_matrix_spmv_hip_set_stream(stream);
-    ctx.set_hip_stream(stream);
-  }
+  bool local_stream;
+  cs_stream_t stream;
+  cs_sles_it_set_exec_location(ctx, a, local_stream, stream);
 #endif
 
   /* Allocate or map work arrays */
@@ -3167,18 +3131,8 @@ _bicgstab2(cs_sles_it_t              *c,
 
   ctx.wait();
 
-#if defined(__CUDACC__)
-  cs_blas_cuda_set_stream(0);
-  if (local_stream) {
-    cs_matrix_spmv_cuda_set_stream(0);
-  }
-#endif
-
-#if defined(__HIPCC__)
-  cs_blas_hip_set_stream(0);
-  if (local_stream) {
-    cs_matrix_spmv_hip_set_stream(0);
-  }
+#if defined(HAVE_ACCEL)
+  cs_sles_it_restore_exec_location(local_stream);
 #endif
 
   if (_aux_vectors != aux_vectors)
@@ -4531,7 +4485,7 @@ _fallback(cs_sles_it_t                    *c,
           int                             *n_iter,
           double                          *residual,
           const cs_real_t                 *rhs,
-          cs_real_t                       *restrict vx,
+          cs_real_t                       *vx,
           size_t                           aux_size,
           void                            *aux_vectors)
 {
@@ -4562,13 +4516,7 @@ _fallback(cs_sles_it_t                    *c,
 
   c->fallback->plot_time_stamp = c->plot_time_stamp;
 
-  const cs_lnum_t n_rows = c->setup_data->n_rows;
-
-  if (prev_state < CS_SLES_BREAKDOWN) {
-#   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_rows; i++)
-      vx[i] = 0;
-  }
+  cs_real_t *vx_ini = (prev_state < CS_SLES_BREAKDOWN) ? nullptr : vx;
 
   cvg = cs_sles_it_solve(c->fallback,
                          convergence->name,
@@ -4579,7 +4527,7 @@ _fallback(cs_sles_it_t                    *c,
                          n_iter,
                          residual,
                          rhs,
-                         vx,
+                         vx_ini,
                          vx,
                          aux_size,
                          aux_vectors);
@@ -4621,29 +4569,20 @@ _fallback(cs_sles_it_t                    *c,
  *----------------------------------------------------------------------------*/
 
 cs_sles_convergence_state_t
-cs_user_sles_it_solver(cs_sles_it_t              *c,
-                       const cs_matrix_t         *a,
-                       cs_lnum_t                  diag_block_size,
-                       cs_sles_it_convergence_t  *convergence,
-                       const cs_real_t           *rhs,
-                       cs_real_t                 *restrict vx_ini,
-                       cs_real_t                 *restrict vx,
-                       size_t                     aux_size,
-                       void                      *aux_vectors)
+cs_user_sles_it_solver
+(
+  [[maybe_unused]] cs_sles_it_t              *c,
+  [[maybe_unused]] const cs_matrix_t         *a,
+  [[maybe_unused]] cs_lnum_t                  diag_block_size,
+  [[maybe_unused]] cs_sles_it_convergence_t  *convergence,
+  [[maybe_unused]] const cs_real_t           *rhs,
+  [[maybe_unused]] cs_real_t                 *restrict vx_ini,
+  [[maybe_unused]] cs_real_t                 *restrict vx,
+  [[maybe_unused]] size_t                     aux_size,
+  [[maybe_unused]] void                      *aux_vectors
+)
 {
-  cs_sles_convergence_state_t cvg = CS_SLES_CONVERGED;
-
-  CS_UNUSED(c);
-  CS_UNUSED(a);
-  CS_UNUSED(diag_block_size);
-  CS_UNUSED(convergence);
-  CS_UNUSED(rhs);
-  CS_UNUSED(vx_ini);
-  CS_UNUSED(vx);
-  CS_UNUSED(aux_size);
-  CS_UNUSED(aux_vectors);
-
-  return cvg;
+  return CS_SLES_CONVERGED;
 }
 
 /*============================================================================

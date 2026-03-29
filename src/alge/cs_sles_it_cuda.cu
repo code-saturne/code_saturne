@@ -1971,7 +1971,7 @@ cs_sles_it_dot_products_xx_yy_xy_xz_yz
   double              *yz
 )
 {
-  double s[3];
+  double s[5];
 
   /* Alternatives (need to set option for this) */
 
@@ -2110,7 +2110,7 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
 
   double residual = -1.;
 
-  if (convergence->precision < 0);
+  if (convergence->precision < 0)
     residual = convergence->precision * convergence->r_norm * 2;
 
   /* Allocate or map work arrays
