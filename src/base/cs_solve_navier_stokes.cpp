@@ -1660,7 +1660,7 @@ _log_norm(const cs_mesh_t                *m,
   cs_lnum_t imaxt = rd.i[3];
 
   cs_parall_max(1, CS_REAL_TYPE, &rnorm);
-  bft_printf("Max. pressure, %12.4e, (max. absolute value)\n", rnorm);
+  bft_printf(" Max. pressure, %12.4e, (max. absolute value)\n", rnorm);
 
   cs_real_t xyzmax[3] = {0, 0, 0};
   if (imaxt > -1) {
@@ -1670,7 +1670,7 @@ _log_norm(const cs_mesh_t                *m,
 
   cs_parall_max_loc_vals(3, &rnormt, xyzmax);
 
-  bft_printf("Max. velocity, %12.4e, in, %11.3e, %11.3e, %11.3e\n",
+  bft_printf(" Max. velocity, %12.4e, in, %11.3e, %11.3e, %11.3e\n",
              rnormt, xyzmax[0], xyzmax[1], xyzmax[2]);
 
   rnormt = rd.r[1];
@@ -1684,7 +1684,7 @@ _log_norm(const cs_mesh_t                *m,
 
   cs_parall_min_loc_vals(3, &rnormt, xyzmin);
 
-  bft_printf("Min. velocity,%12.4e, in, %11.3e, %11.3e, %11.3e\n",
+  bft_printf(" Min. velocity,%12.4e, in, %11.3e, %11.3e, %11.3e\n",
              rnormt, xyzmin[0], xyzmin[1], xyzmin[2]);
 
   const cs_real_t *ivolfl = nullptr, *bvolfl = nullptr;
@@ -1769,7 +1769,7 @@ _log_norm(const cs_mesh_t                *m,
 
   ctx.wait();
 
-  rd_f.r[1] *= -1.; // Permute sign to group min/mas as 2  times min
+  rd_f.r[1] *= -1.; // Permute sign to group min/max as 2  times min
   cs_parall_min(2, CS_DOUBLE, rd_f.r);
   rd_f.r[1] *= -1.;
 
@@ -3342,8 +3342,8 @@ _velocity_prediction(const cs_mesh_t             *m,
       cs_parall_max(1, CS_REAL_TYPE, &rnormx);
       cs_parall_min(1, CS_REAL_TYPE, &rnormn);
 
-      bft_printf(_("Maximum velocity after prediction %10.12e\n"
-                   "Minimum velocity after prediction %10.12e\n"),
+      bft_printf(_(" Maximum velocity after prediction %10.12e\n"
+                   " Minimum velocity after prediction %10.12e\n"),
                  rnormx, rnormn);
     }
 
