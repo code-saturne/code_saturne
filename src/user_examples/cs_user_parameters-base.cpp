@@ -2068,7 +2068,7 @@ cs_user_finalize_setup([[maybe_unused]] cs_domain_t   *domain)
     at_1d_rad->zq[49] = 2001.;
     /* Complete 1-D mesh to ztop in case of radiative transfer */
     if (at_1d_rad->nvert > 0) {
-      int i = at_1d_rad->nlevels;
+      int i = at_1d_rad->nlevels+1;
       cs_real_t zvmax = 2001.;/* top of the domain */
       cs_real_t ztop = 11000.;/* top of the troposphere */
       for (cs_real_t zzmax = (((int) zvmax)/1000)*1000.;
