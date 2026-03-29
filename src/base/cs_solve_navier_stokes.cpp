@@ -1762,9 +1762,9 @@ _log_norm(const cs_mesh_t                *m,
         if (b_f_face_surf[face_id] > cs_math_epzero*cs_math_epzero)
           nrm = bmasfl[face_id]/(b_f_face_surf[face_id]*brom[face_id]);
       }
-      res.r[0] = nrm;
-      res.r[1] = nrm;
     }
+    res.r[0] = nrm;
+    res.r[1] = nrm;
   });
 
   ctx.wait();
