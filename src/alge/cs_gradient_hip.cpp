@@ -535,7 +535,7 @@ _correct_gradient_b_strided(const cs_lnum_t               n_b_cells,
   cs_real_t ref_norm = 0;
   for (cs_lnum_t kk = 0; kk < stride; kk++) {
     for (cs_lnum_t ll = 0; ll < 3; ll++)
-      ref_norm += cs_math_abs_hip(c_grad[kk][ll]);
+      ref_norm += cs::abs(c_grad[kk][ll]);
   }
 
   cs_real_t c_norm = 0;
@@ -596,7 +596,7 @@ _correct_gradient_b_strided(const cs_lnum_t               n_b_cells,
     for (cs_lnum_t ii = 0; ii < stride; ii++) {
       for (cs_lnum_t jj = 0; jj < 3; jj++) {
         c_grad[ii][jj] = grad_0[ii][jj] + grad_c[ii][jj];
-        c_norm += cs_math_abs_hip(c_grad[ii][jj] - grad_i[ii][jj]);
+        c_norm += cs::abs(c_grad[ii][jj] - grad_i[ii][jj]);
         grad_i[ii][jj] = c_grad[ii][jj];
       }
     }

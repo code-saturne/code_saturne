@@ -388,7 +388,7 @@ cs_mem_hip_prefetch_h2d(const void  *dst,
                         size_t       size)
 {
  if (_cs_glob_hip_device_id < 0)
-   hipGetDevice(&_cs_glob_hip_device_id);
+   CS_HIP_CHECK(hipGetDevice(&_cs_glob_hip_device_id));
 
   CS_HIP_CHECK(hipMemPrefetchAsync(dst, size, _cs_glob_hip_device_id,
                                      _cs_glob_stream_pf));
@@ -453,7 +453,7 @@ cs_mem_hip_set_advise_read_mostly(const void  *ptr,
                                   size_t       size)
 {
  if (_cs_glob_hip_device_id < 0)
-   hipGetDevice(&_cs_glob_hip_device_id);
+   CS_HIP_CHECK(hipGetDevice(&_cs_glob_hip_device_id));
 
   CS_HIP_CHECK(hipMemAdvise(ptr,
                               size,
@@ -475,7 +475,7 @@ cs_mem_hip_unset_advise_read_mostly(const void  *ptr,
                                     size_t       size)
 {
  if (_cs_glob_hip_device_id < 0)
-   hipGetDevice(&_cs_glob_hip_device_id);
+   CS_HIP_CHECK(hipGetDevice(&_cs_glob_hip_device_id));
 
   CS_HIP_CHECK(hipMemAdvise(ptr,
                               size,

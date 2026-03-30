@@ -159,7 +159,7 @@ cs_xdef_eval_at_zone(const cs_xdef_t *def,
   const cs_lnum_t  n_elts  = z->n_elts;
   const cs_lnum_t  def_dim = def->dim;
 
-  int use_threads = (n_elts > CS_THR_MIN) ? 1 : 0;
+  [[maybe_unused]] int use_threads = (n_elts > CS_THR_MIN) ? 1 : 0;
 
   switch (def->type) {
     case CS_XDEF_BY_ANALYTIC_FUNCTION: /* Analytic function */

@@ -186,16 +186,16 @@ cs_arrays_set_value(hipStream_t     stream,
     hipGraph_t graph;
     hipGraphExec_t graph_exec = NULL;
 
-    hipStreamBeginCapture(stream, hipStreamCaptureModeGlobal);
+    CS_HIP_CHECK(hipStreamBeginCapture(stream, hipStreamCaptureModeGlobal));
     for (int j = 0; j < size_arrs; j++) {
       hip_kernel_set_value<T, stride><<<grid_size_, block_size_, 0, stream>>>
         (n_elts, ref_val, _array_ptrs[j]);
     }
-    hipStreamEndCapture(stream, &graph);
+    CS_HIP_CHECK(hipStreamEndCapture(stream, &graph));
 
-    hipError_t status = hipGraphInstantiate(&graph_exec, graph,
-                                              nullptr, nullptr, 0);
-    hipGraphLaunch(graph_exec, stream);
+    CS_HIP_CHECK(hipGraphInstantiate(&graph_exec, graph,
+                                     nullptr, nullptr, 0));
+    CS_HIP_CHECK(hipGraphLaunch(graph_exec, stream));
 
     /* For multiple arrays, sync even if async is required,
        to ensure the graph is not destroyed before all kernels
@@ -204,8 +204,8 @@ cs_arrays_set_value(hipStream_t     stream,
     CS_HIP_CHECK(hipStreamSynchronize(stream));
     CS_HIP_CHECK(hipGetLastError());
 
-    hipGraphDestroy(graph);
-    hipGraphExecDestroy(graph_exec);
+    CS_HIP_CHECK(hipGraphDestroy(graph));
+    CS_HIP_CHECK(hipGraphExecDestroy(graph_exec));
   }
 
   else {
@@ -257,17 +257,17 @@ cs_arrays_set_value(hipStream_t     stream,
     hipGraph_t graph;
     hipGraphExec_t graph_exec = NULL;
 
-    hipStreamBeginCapture(stream, hipStreamCaptureModeGlobal);
+    CS_HIP_CHECK(hipStreamBeginCapture(stream, hipStreamCaptureModeGlobal));
 
     for (int j = 0; j < size_arrs; j++) {
       hip_kernel_set_value<T, stride><<<grid_size_, block_size_, 0, stream>>>
         (n_elts, ref_val, _array_ptrs[j]);
     }
-    hipStreamEndCapture(stream, &graph);
+    CS_HIP_CHECK(hipStreamEndCapture(stream, &graph));
 
-    hipError_t status = hipGraphInstantiate(&graph_exec, graph,
-                                              nullptr, nullptr, 0);
-    hipGraphLaunch(graph_exec, stream);
+    CS_HIP_CHECK(hipGraphInstantiate(&graph_exec, graph,
+                                     nullptr, nullptr, 0));
+    CS_HIP_CHECK(hipGraphLaunch(graph_exec, stream));
 
     /* For multiple arrays, sync even if async is required,
        to ensure the graph is not destroyed before all kernels
@@ -276,8 +276,8 @@ cs_arrays_set_value(hipStream_t     stream,
     CS_HIP_CHECK(hipStreamSynchronize(stream));
     CS_HIP_CHECK(hipGetLastError());
 
-    hipGraphDestroy(graph);
-    hipGraphExecDestroy(graph_exec);
+    CS_HIP_CHECK(hipGraphDestroy(graph));
+    CS_HIP_CHECK(hipGraphExecDestroy(graph_exec));
   }
 
   else {
@@ -328,16 +328,16 @@ cs_arrays_set_zero(hipStream_t     stream,
     hipGraph_t graph;
     hipGraphExec_t graph_exec = NULL;
 
-    hipStreamBeginCapture(stream, hipStreamCaptureModeGlobal);
+    CS_HIP_CHECK(hipStreamBeginCapture(stream, hipStreamCaptureModeGlobal));
     for (int j = 0; j < size_arrs; j++) {
       cs_hip_kernel_set_zero<T, stride><<<grid_size_, block_size_, 0, stream>>>
         (n_elts, _array_ptrs[j]);
     }
-    hipStreamEndCapture(stream, &graph);
+    CS_HIP_CHECK(hipStreamEndCapture(stream, &graph));
 
-    hipError_t status = hipGraphInstantiate(&graph_exec, graph,
-                                              nullptr, nullptr, 0);
-    hipGraphLaunch(graph_exec, stream);
+    CS_HIP_CHECK(hipGraphInstantiate(&graph_exec, graph,
+                                     nullptr, nullptr, 0));
+    CS_HIP_CHECK(hipGraphLaunch(graph_exec, stream));
 
     /* For multiple arrays, sync even if async is required,
        to ensure the graph is not destroyed before all kernels
@@ -346,8 +346,8 @@ cs_arrays_set_zero(hipStream_t     stream,
     CS_HIP_CHECK(hipStreamSynchronize(stream));
     CS_HIP_CHECK(hipGetLastError());
 
-    hipGraphDestroy(graph);
-    hipGraphExecDestroy(graph_exec);
+    CS_HIP_CHECK(hipGraphDestroy(graph));
+    CS_HIP_CHECK(hipGraphExecDestroy(graph_exec));
   }
 
   else {
@@ -382,8 +382,8 @@ cs_array_copy(hipStream_t     stream,
               const T*         src,
               T*               dest)
 {
-  hipMemcpyAsync(dest, src, size*sizeof(T),
-                  hipMemcpyDeviceToDevice, stream);
+  CS_HIP_CHECK(hipMemcpyAsync(dest, src, size*sizeof(T),
+                              hipMemcpyDeviceToDevice, stream));
 }
 
 /*----------------------------------------------------------------------------*/

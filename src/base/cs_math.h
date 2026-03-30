@@ -87,7 +87,7 @@ typedef enum {
 /* Numerical constants */
 
 #if  (defined(__NVCC__) && defined(__CUDA_ARCH__)) \
-  || (defined(__HIPCC__)) \
+  || (defined(__HIPCC__) && defined(__HIP_DEVICE_COMPILE__)) \
   || defined(SYCL_LANGUAGE_VERSION) \
   || defined(HAVE_OPENMP_TARGET)
 

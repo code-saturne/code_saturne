@@ -136,7 +136,7 @@ cs_mat_vec_exdiag_native_sym_hip(cs_lnum_t           n_faces,
 {
   unsigned int blocksize = 512;
   unsigned int gridsize  = (unsigned int)ceil((double)n_faces / blocksize);
-  cudaStream_t stream = cs_hip_get_stream(0);
+  hipStream_t stream = cs_hip_get_stream(0);
 
   _mat_vec_exdiag_native_sym<<<gridsize, blocksize, 0, stream>>>
     (n_faces, (const cs_lnum_t *)face_cell, xa, x, y);

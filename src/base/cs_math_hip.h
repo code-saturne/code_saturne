@@ -67,11 +67,11 @@ __device__ cs_hip_mask_t
 _conflict_mask(cs_hip_mask_t mask,
                V             v) noexcept
 {
-// It seems that although the dunder warp functions are available for
-// ROCm 6.2, they may be disabled...
-// Documentation indicates that it is activated by default on ROCm 7.0
+  // It seems that although the dunder warp functions are available for
+  // ROCm 6.2, they may be disabled...
+  // Documentation indicates that it is activated by default on ROCm 7.0
 #if (HIP_VERSION >= 60200000 && defined(HIP_ENABLE_WARP_SYNC_BUILTINS)) \
-  || (HIP_VERSION >= 70000000 && !defined(HIP_DISABLE_WAR_SYNC_BUILTINS))
+  || (HIP_VERSION >= 70000000 && !defined(HIP_DISABLE_WARP_SYNC_BUILTINS))
   return __match_any_sync(mask, v);
 #else
   cs_hip_mask_t lanemask_eq = 1u << (threadIdx.x % CS_HIP_WARP_SIZE);
@@ -416,28 +416,6 @@ public:
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the absolute value of a real value.
- *
- * \param[in]  x  value
- *
- * \return absolute value of the given value
- */
-/*----------------------------------------------------------------------------*/
-
-__device__ static double
-cs_math_abs_hip(double  x)
-{
-  return fabs(x);
-}
-
-__device__ static float
-cs_math_abs_hip(float  x)
-{
-  return fabsf(x);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Normalise a vector of 3 real values.
  *
  * To normalize in-place, \p vin and \p vout may point to the same array.
@@ -450,7 +428,7 @@ cs_math_abs_hip(float  x)
 template <typename T>
 __device__ static void
 cs_math_3_normalize_hip(const T  in[3],
-                         T        out[3])
+                        T        out[3])
 {
   T norm = sqrt(  in[0]*in[0]
                 + in[1]*in[1]

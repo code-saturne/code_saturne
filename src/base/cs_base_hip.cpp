@@ -1,4 +1,3 @@
-#include "hip/hip_runtime.h"
 /*============================================================================
  * Definitions, global variables, and base functions for HIP
  *============================================================================*/
@@ -6,7 +5,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -31,9 +30,13 @@
  * Standard C and C++ library headers
  *----------------------------------------------------------------------------*/
 
-#if defined(HAVE_NCCL)
+#include "hip/hip_runtime.h"
+
+#if defined(HAVE_RCCL)
 #include <nccl.h>
 #endif
+
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -48,7 +51,7 @@
 #include "base/cs_mem.h"
 #include "base/cs_mem_hip_priv.h"
 
-#if defined(HAVE_NCCL)
+#if defined(HAVE_RCCL)
 #include "base/cs_fp_exception.h"
 #endif
 
@@ -630,7 +633,7 @@ cs_base_hip_device_info(cs_log_t  log_id)
        _("  HIP device %d:       %s\n"),
        i, prop.name);
 
-    if (strncmp(prop.name, buffer, 255) != 0) {
+    if (std::strncmp(prop.name, buffer, 255) != 0) {
       cs_log_printf
         (log_id,
          _("                       Compute capability: %d.%d\n"
@@ -646,7 +649,7 @@ cs_base_hip_device_info(cs_log_t  log_id)
 
     }
 
-    strncpy(buffer, prop.name, 256);
+    std::strncpy(buffer, prop.name, 256);
     buffer[255] = '\0';
   }
 }
