@@ -584,6 +584,7 @@ _simple_interpg(int        nxy,
                 cs_real_t  yi[])
 {
   int ibgn = 0;
+  int nxym1 = nxy - 1;
 
   for (int iq = 0; iq < ni; iq++) {
 
@@ -593,8 +594,8 @@ _simple_interpg(int        nxy,
         yi[iq] = yy[0] * xi[iq] / cs::max(1e-09, xx[0]);
         break;
       }
-      else if (xi[iq] > xx[nxy])
-        yi[iq] = yy[nxy];
+      else if (xi[iq] > xx[nxym1])
+        yi[iq] = yy[nxym1];
 
       /* interpolate */
       if (cs::abs(xi[iq] - xx[i]) / (xx[i] + 1e-15) < 0.001) {
@@ -612,8 +613,8 @@ _simple_interpg(int        nxy,
     }
   }
 
-  if (cs::abs(xi[ni] - xx[nxy]) / (xx[nxy] + 1e-15) < 0.001)
-    yi[ni] = yy[nxy];
+  if (cs::abs(xi[ni] - xx[nxym1]) / (xx[nxym1] + 1e-15) < 0.001)
+    yi[ni] = yy[nxym1];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1248,7 +1249,8 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
                     kfskref,
                     gfsk);
     as[0]  = (gfsk[1] - gfsk[0]) / (gfskref[1] - gfskref[0] + 1e-15);
-    as[ng] = (gfsk[ng] - gfsk[ng - 1]) / (gfskref[ng] - gfskref[ng - 1] + 1e-15);
+    as[ng-1] =   (gfsk[ng-1] - gfsk[ng-2])
+               / (gfskref[ng-1] - gfskref[ng-2] + 1e-15);
     for (int k = 1; k < ng - 1; k++)
       as[k] =   (gfsk[k + 1] - gfsk[k - 1])
               / (gfskref[k + 1] - gfskref[k - 1] + 1e-15);
