@@ -920,11 +920,11 @@ _pressure_correction_fv(int                   iterns,
       /* Use parallel reducer with a single value per rank,
          so as to be able to access device-only arrays on GPU. */
       ctx.parallel_for_reduce_sum
-        (1, phydr0, [=] CS_F_HOST_DEVICE([[maybe_unused]] cs_lnum_t i,
+        (1, phydr0, [=] CS_F_HOST_DEVICE(cs_lnum_t i,
          CS_DISPATCH_REDUCER_TYPE(double) &sum) {
 
         cs_lnum_t f_id_0 = isostd[n_b_faces];
-        if (f_id_0 > -1) {
+        if (f_id_0 > -1 && i == 0) {
           cs_lnum_t c_id_0 = b_face_cells[f_id_0];
           cs_real_t d[3] = {b_face_cog[f_id_0][0] - cell_cen[c_id_0][0],
                             b_face_cog[f_id_0][1] - cell_cen[c_id_0][1],
