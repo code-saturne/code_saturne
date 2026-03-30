@@ -1309,11 +1309,11 @@ _boundary_treatment(cs_lagr_particle_set_t    &p_set,
 
   cs_lagr_tracking_info_t *p_info = _tracking_info(p_set, p_id);
 
-  cs_real_t  *particle_coord
+  cs_real_t *particle_coord
     = p_set.attr_real_ptr(p_id, CS_LAGR_COORDS);
-  cs_real_t  *particle_velocity
+  cs_real_t *particle_velocity
     = p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY);
-  cs_real_t  *particle_velocity_seen
+  cs_real_t *particle_velocity_seen
     = p_set.attr_real_ptr(p_id, CS_LAGR_VELOCITY_SEEN);
 
   cs_real_t particle_stat_weight
@@ -3705,8 +3705,7 @@ _finalize_displacement(cs_lagr_particle_set_t &p_set)
 
   /* Cell index (count first) */
 
-  for (cs_lnum_t i = 0; i < n_cells+1; i++)
-    cell_idx[i] = 0;
+  cs_array_lnum_fill_zero(n_cells + 1, cell_idx);
 
   /* Copy unordered particle data to buffer */
 

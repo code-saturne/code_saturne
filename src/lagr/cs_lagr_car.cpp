@@ -469,8 +469,8 @@ cs_lagr_car(int                         iprev,
         for (int id = 0; id < 3; id++) {
 
           for (cs_lnum_t i = 0; i < 3; i++) {
-            cs_real_t vpm   = stat_vel->vals[cell_wise_integ][cell_id*3 + i];
-            cs_real_t vsm   = stat_vel_s->vals[cell_wise_integ][cell_id*3 + i];
+            cs_real_t vpm = stat_vel->vals[cell_wise_integ][cell_id*3 + i];
+            cs_real_t vsm = stat_vel_s->vals[cell_wise_integ][cell_id*3 + i];
             piil[id] += extra->grad_vel[cell_id][id][i] * (vpm - vsm);
           }
         }

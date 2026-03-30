@@ -2133,7 +2133,6 @@ cs_lagr_solve_time_step(const int         itypfb[],
         const cs_lnum_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
         CS_MALLOC_HD(extra_i[phase_id].grad_pr, ncelet, cs_real_3_t, cs_alloc_mode);
 
-        // TODO : check if the pressure and velocity allocs can be removed
         if (  (    cs_glob_lagr_time_scheme->interpol_field != 0
                || cs_glob_lagr_time_scheme->extended_t_scheme != 0)
             && cs_glob_lagr_model->idistu == 1)

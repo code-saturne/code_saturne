@@ -518,8 +518,7 @@ _sde_vels_pos_1_st_order_time_integ_mp(cs_lagr_particle_set_t         &p_set,
     case CS_LAGR_SHAPE_SPHEROID_STOC_MODEL:
       {
         // Use rotation matrix for stochastic model
-          cs_real_t *orient_loc  =
-            p_set.attr_real_ptr(p_id, CS_LAGR_ORIENTATION);
+        cs_real_t *orient_loc = p_set.attr_real_ptr(p_id, CS_LAGR_ORIENTATION);
         cs_real_t singularity_axis[3] = {1.0, 0.0, 0.0};
         // Get vector for rotation
         cs_real_t n_rot[3];
