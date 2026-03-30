@@ -51,6 +51,7 @@
 #include "base/cs_array.h"
 #include "alge/cs_balance.h"
 #include "alge/cs_face_viscosity.h"
+#include "base/cs_dispatch.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_operator.h"
@@ -529,10 +530,14 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
   cs_lnum_t n_cells_with_ghosts = cs_glob_mesh->n_cells_with_ghosts;
   cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
+  cs_dispatch_context ctx;
+
   cs_lagr_extra_module_t *extra_i = cs_glob_lagr_extra_module;
   cs_lagr_extra_module_t *extra = extra_i;
 
-  const cs_real_t *grav  = cs_glob_physical_constants->gravity;
+  const cs_real_t grav[3] = {cs_glob_physical_constants->gravity[0],
+                             cs_glob_physical_constants->gravity[1],
+                             cs_glob_physical_constants->gravity[2]};
 
   const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
 
@@ -546,6 +551,7 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
   if (cs_glob_lagr_model->cs_used == 0) {
     cs_real_t *cpro_pgradlagr = cs_field_by_name("lagr_pressure_gradient")->val;
 
+    /* TODO FB: init grad_pr... */
     for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++)
       for (cs_lnum_t id = 0; id < 3; id++)
         grad_pr[iel][id] = cpro_pgradlagr[3*iel + id];
@@ -560,6 +566,8 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
       CS_FREE(f_name);
 
       if (cpro_vgradlagr != nullptr && grad_vel != nullptr) {
+        /* TODO FB: init grad_vel... */
+        //grad_vel = cs_array<cs_real_33_t>(cpro_vgradlagr, n_cells);
         for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
           for (cs_lnum_t i = 0; i < 3; i++) {
             for (cs_lnum_t j = 0; j < 3; j++)
@@ -595,11 +603,12 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
 
       int time_id = (extra->cvar_k->n_time_vals > 1) ? 1 : 0;
       const cs_real_t *cvar_k = extra->cvar_k->vals[time_id];
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        wpres[c_id] =  solved_pres[c_id]
-                     -  2./3. * extra_i[phase_id].cromf->val[c_id]
-                      * cvar_k[c_id];
-      }
+      cs_real_t *romf = extra_i[phase_id].cromf->val;
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        wpres[c_id] = solved_pres[c_id]
+                    - 2./3. * romf[c_id]
+                    * cvar_k[c_id];
+      });
     }
     else {
       wpres = cs_array<cs_real_t>(solved_pres, n_cells_with_ghosts);
@@ -651,6 +660,8 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
       }
     }
 
+    ctx.wait();
+
     /* Compute pressure gradient
      * ========================= */
 
@@ -673,33 +684,36 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
                        grad_pr);
 
     if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0) {
-      if(cs_glob_velocity_pressure_model->idilat == 0) {
+      if (cs_glob_velocity_pressure_model->idilat == 0) {
         cs_real_t *romf = extra_i[phase_id].cromf->val;
-        for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++)
-        {
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           for (cs_lnum_t i = 0; i < 3; i++)
-            grad_pr[cell_id][i] += romf[cell_id] * grav[i];
-        }
+            grad_pr[c_id][i] += romf[c_id] * grav[i];
+        });
       }
       else {
         cs_real_t ro0 = cs_glob_fluid_properties->ro0;
-        for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++)
-        {
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           for (cs_lnum_t i = 0; i < 3; i++)
-            grad_pr[cell_id][i] += ro0 * grav[i];
-        }
+            grad_pr[c_id][i] += ro0 * grav[i];
+        });
       }
     }
+
+    ctx.wait();
 
     cs_field_t *f_grad_pr = cs_field_by_name_try("lagr_pressure_gradient");
 
     /* Store pressure gradient for postprocessing purpose */
     if (f_grad_pr != nullptr) {
-      for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++) {
+      cs_real_t *v_grad_pr = f_grad_pr->val;
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         for (cs_lnum_t i = 0; i < 3; i++)
-          f_grad_pr->val[3*cell_id + i] = grad_pr[cell_id][i];
-      }
+          v_grad_pr[3*c_id + i] = grad_pr[c_id][i];
+      });
     }
+
+    ctx.wait();
 
     // TODO add user momentum source terms to grad_pr
 
@@ -789,14 +803,14 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
 
       const cs_real_t  *cell_f_vol = mq->cell_vol;
 
-      for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++) {
-        cs_real_t dvol = 1. / cell_f_vol[cell_id];
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        cs_real_t dvol = 1. / cell_f_vol[c_id];
         for (cs_lnum_t i = 0; i < 3; i++) {
           /* mind that div_mu_gradvel contains -div(mu gradvel) */
-          div_mu_gradvel[cell_id][i] *= -dvol;
-          grad_pr[cell_id][i] -= div_mu_gradvel[cell_id][i];
+          div_mu_gradvel[c_id][i] *= -dvol;
+          grad_pr[c_id][i] -= div_mu_gradvel[c_id][i];
         }
-      }
+      });
 
     }
 
@@ -811,6 +825,8 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
                                grad_vel);
     }
   }
+
+  ctx.wait();
 
   /* Compute temperature gradient
      ============================ */
@@ -835,18 +851,18 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
     cs_real_t *dissip = extra_i[phase_id].cvar_ep->val;
 
     if (extra_i[phase_id].itytur == 3) {
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-        energi[cell_id] = 0.5 * (  extra_i[phase_id].cvar_rij->val[6*cell_id]
-                                 + extra_i[phase_id].cvar_rij->val[6*cell_id+1]
-                                 + extra_i[phase_id].cvar_rij->val[6*cell_id+2]);
-
+      cs_real_t *v_rij = extra_i[phase_id].cvar_rij->val;
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        energi[c_id] = 0.5 * (  v_rij[6*c_id]
+                              + v_rij[6*c_id+1]
+                              + v_rij[6*c_id+2]);
+      });
     }
     else if (extra_i[phase_id].iturb == CS_TURB_K_OMEGA) {
-
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-        dissip[cell_id] = extra_i[phase_id].cmu * energi[cell_id]
-                                     * extra_i[phase_id].cvar_omg->val[cell_id];
-
+      cs_real_t *v_omg = extra_i[phase_id].cvar_omg->val;
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        dissip[c_id] = extra_i[phase_id].cmu * energi[c_id] * v_omg[c_id];
+      });
     }
     else if (extra_i[phase_id].itytur != 2
           && extra_i[phase_id].itytur != 4
@@ -864,6 +880,8 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
          (int)extra_i[phase_id].iturb);
     }
 
+    ctx.wait();
+
     /* Initialize cell Lagrangian time
      *
      * Note: the extended time scheme should
@@ -876,19 +894,23 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
      * (taking <u_pi> from the statistic "correctly" initialized)
      */
 
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      if (dissip[cell_id] > 0.0 && energi[cell_id] > 0.0) {
+    cs_real_t *v_lagr_time = lagr_time->val;
 
-        cs_real_t tl  = cl * energi[cell_id] / dissip[cell_id];
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      if (dissip[c_id] > 0.0 && energi[c_id] > 0.0) {
+
+        cs_real_t tl  = cl * energi[c_id] / dissip[c_id];
         tl  = cs::max(tl, cs_math_epzero);
 
-        lagr_time->val[cell_id] = tl;
+        v_lagr_time[c_id] = tl;
 
       }
       else
-        lagr_time->val[cell_id] = cs_math_epzero;
+        v_lagr_time[c_id] = cs_math_epzero;
 
-    }
+    });
+
+    ctx.wait();
 
     if (grad_lagr_time != nullptr)
       cs_field_gradient_scalar(lagr_time,
@@ -907,16 +929,17 @@ cs_lagr_aux_mean_fluid_quantities(int            iprev, // FIXME compute at curr
 
 
     else if (grad_lagr_time_r_et != nullptr) {
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         for (int i = 0; i < 3; i++)
-          grad_lagr_time_r_et[cell_id][i] = grad_lagr_time[cell_id][i];
-      }
+          grad_lagr_time_r_et[c_id][i] = grad_lagr_time[c_id][i];
+      });
     }
   }
-  else { // idistu == 0
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-      lagr_time->val[cell_id] = cs_math_epzero;
-  }
+  else // idistu == 0
+    cs_array_real_set_scalar(n_cells, cs_math_epzero, lagr_time->val);
+
+  ctx.wait();
+
 }
 
 /*----------------------------------------------------------------------------*/
