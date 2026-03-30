@@ -486,7 +486,7 @@ cs_internal_coupling_update_bc_coeffs_s
  cs_halo_type_t                 halo_type,
  int                            w_stride,
  double                         clip_coeff,
- bool                           hyd_p_flag,
+ int                            hyd_p_flag,
  cs_real_t                      f_ext[][3],
  cs_real_t                      viscel[][6],
  const cs_real_t                weighb[],

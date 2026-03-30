@@ -1675,15 +1675,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   ctx_c.wait(); /* We now need pvar, computed by ctx_c */
   ctx.wait();   /* We now need rhs, computed by ctx */
 
-  cs_boundary_conditions_update_bc_coeff_face_values
-    (ctx,
-     f, bc_coeffs, inc,
-     eqp,
-     true, true,
-     false, nullptr, // hyd_p_flag, f_ext
-     nullptr, viscel, weighb,
-     pvar);
-
   /* Compute - Con-Diff(theta Y^k )
    * where Y^k is pvar (possible over iteration for
    * velocity pressure coupling) */
