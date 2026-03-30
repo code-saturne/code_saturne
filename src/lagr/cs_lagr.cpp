@@ -52,6 +52,7 @@
 
 #include "base/cs_array.h"
 #include "base/cs_base.h"
+#include "base/cs_dispatch.h"
 #include "base/cs_field.h"
 #include "base/cs_field_operator.h"
 #include "base/cs_field_pointer.h"
@@ -1739,6 +1740,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
   const cs_time_step_t *ts = cs_glob_time_step;
   const cs_mesh_t *mesh = cs_glob_mesh;
 
+  cs_dispatch_context ctx;
+
   cs_lagr_extra_module_t *extra_i = cs_glob_lagr_extra_module;
   cs_lagr_extra_module_t *extra = extra_i;
   const int n_phases = extra->n_phases;
@@ -2116,12 +2119,13 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
     for (int phase_id = 0; phase_id < n_phases; phase_id ++) {
       if (extra_i[phase_id].itytur == 3) {
-        /* save previous value dor the kinetic energy */
-        for (cs_lnum_t cell_id = 0; cell_id < cs_glob_mesh->n_cells; cell_id++)
-          extra_i[phase_id].cvar_k->val[cell_id]
-            = 0.5 * (  extra_i[phase_id].cvar_rij->vals[prev_exist][6*cell_id]
-                     + extra_i[phase_id].cvar_rij->vals[prev_exist][6*cell_id + 1]
-                     + extra_i[phase_id].cvar_rij->vals[prev_exist][6*cell_id + 2]);
+        /* save previous value for the kinetic energy */
+        cs_real_t *v_k = extra_i[phase_id].cvar_k->val;
+        cs_real_t *v_rij = extra_i[phase_id].cvar_rij->vals[prev_exist];
+        ctx.parallel_for(cs_glob_mesh->n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+          v_k[c_id] = 0.5 * (v_rij[6*c_id] + v_rij[6*c_id + 1] + v_rij[6*c_id + 2]);
+        });
+        ctx.wait();
       }
 
       /* First pass allocate and compute it */
@@ -2243,11 +2247,13 @@ cs_lagr_solve_time_step(const int         itypfb[],
                                             extra_i[phase_id].grad_lagr_time_r_et,
                                             extra_i[phase_id].grad_lagr_time,
                                             extra_i[phase_id].anisotropic_euler);
-          /*
+          /* This is not sufficient in neptun_cfd, we need to have the velocity
+           * gradient computed in the stochastic solver. This is only done in
+           * the complete function and not the part below.
           compute_particle_covariance_gradient(phase_id,
                                                extra_i[phase_id].grad_cov_skp,
                                                extra_i[phase_id].grad_cov_sk);
-                                               */
+          */
       }
     }
 
