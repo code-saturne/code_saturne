@@ -1952,9 +1952,6 @@ _convection_diffusion_scalar_unsteady
       || (   iconvp != 0 && pure_upwind == false
           && (ircflp == 1 || isstpp == 0 || is_ischcp)));
 
-  const bool need_compute_bc_flux = true;
-  const bool need_compute_bc_grad = true;
-
   if (gradient_reco && f != nullptr) {
     /* Get the calculation option from the field */
     if (f->type & CS_FIELD_VARIABLE && eqp.iwgrec == 1) {
@@ -1970,6 +1967,9 @@ _convection_diffusion_scalar_unsteady
       }
     }
   }
+
+  const bool need_compute_bc_flux = (idiffp > 0) ? true : false;
+  const bool need_compute_bc_grad = true;
 
   cs_boundary_conditions_update_bc_coeff_face_values
     (ctx,
@@ -2164,20 +2164,23 @@ _convection_diffusion_scalar_unsteady
 
         /* Fluxes without mass accumulation */
         if (store_flux) {
-          i_flux[face_id][0] +=  cpi*thetap*(flui*_pvar[ii] + fluj*_pvar[jj]);
-          i_flux[face_id][1] +=  cpj*thetap*(flui*_pvar[ii] + fluj*_pvar[jj]);
+          i_flux[face_id][0] += cpi*thetap*(flui*_pvar[ii] + fluj*_pvar[jj]);
+          i_flux[face_id][1] += cpj*thetap*(flui*_pvar[ii] + fluj*_pvar[jj]);
         }
       }
 
       /* Diffusive flux */
 
-      cs_real_t diff_contrib = idiffp*thetap*i_visc[face_id]*(pip - pjp);
-      fluxi += diff_contrib;
-      fluxj += diff_contrib;
-      /* Fluxes if needed */
-      if (store_flux) {
-        i_flux[face_id][0] += diff_contrib;
-        i_flux[face_id][1] += diff_contrib;
+      if (idiffp > 0) {
+        cs_real_t diff_contrib = thetap*i_visc[face_id]*(pip - pjp);
+        fluxi += diff_contrib;
+        fluxj += diff_contrib;
+
+        /* Fluxes if needed */
+        if (store_flux) {
+          i_flux[face_id][0] += diff_contrib;
+          i_flux[face_id][1] += diff_contrib;
+        }
       }
 
       if (ii < n_cells)
@@ -2585,14 +2588,16 @@ _convection_diffusion_scalar_unsteady
 
       // Diffusive flux (no relaxation)
 
-      cs_real_t diff_contrib = idiffp*thetap*i_visc[face_id]*(pip - pjp);
-      fluxi += diff_contrib;
-      fluxj += diff_contrib;
+      if (idiffp > 0) {
+        cs_real_t diff_contrib = thetap*i_visc[face_id]*(pip - pjp);
+        fluxi += diff_contrib;
+        fluxj += diff_contrib;
 
-      /* Fluxes if needed */
-      if (store_flux) {
-        i_flux[face_id][0] += diff_contrib;
-        i_flux[face_id][1] += diff_contrib;
+        /* Fluxes if needed */
+        if (store_flux) {
+          i_flux[face_id][0] += diff_contrib;
+          i_flux[face_id][1] += diff_contrib;
+        }
       }
 
       if (upwind_switch) {
@@ -2679,11 +2684,13 @@ _convection_diffusion_scalar_unsteady
                        cpi,
                        &fluxi);
 
-      cs_b_diff_flux(idiffp,
-                     thetap,
-                     flux_d[face_id],
-                     b_visc[face_id],
-                     &fluxi);
+      if (idiffp > 0) {
+        cs_b_diff_flux(1.0, // idiffp
+                       thetap,
+                       flux_d[face_id],
+                       b_visc[face_id],
+                       &fluxi);
+      }
 
       cs_dispatch_sum(&rhs[ii], -fluxi, b_sum_type);
 
@@ -2702,11 +2709,13 @@ _convection_diffusion_scalar_unsteady
                          cpi,
                          &fluxi);
 
-        cs_b_diff_flux(idiffp,
-                       thetap,
-                       flux_d[face_id],
-                       b_visc[face_id],
-                       &fluxi);
+        if (idiffp > 0) {
+          cs_b_diff_flux(1.0, // idiffp,
+                         thetap,
+                         flux_d[face_id],
+                         b_visc[face_id],
+                         &fluxi);
+        }
 
         b_flux[face_id] += fluxi;
       }
