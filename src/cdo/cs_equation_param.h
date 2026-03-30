@@ -698,7 +698,7 @@ typedef struct {
    * Only useful if the advection scheme is set to
    * \ref CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND
    *
-   * \var solu_scaling_coef
+   * \var stab_scaling_coef
    * Value of the scaling coefficient in front of the stabilization term when a
    * SOLU or CIP scheme is used (cf. \ref CS_PARAM_ADVECTION_SCHEME_SOLU,
    * \ref CS_PARAM_ADVECTION_SCHEME_SOLU_SYM, \ref CS_PARAM_ADVECTION_SCHEME_CIP or
@@ -724,7 +724,6 @@ typedef struct {
   cs_param_advection_extrapol_t         adv_extrapol;
   cs_real_t                             upwind_portion;
   double                                stab_scaling_coef;
-  cs_real_t                             solu_scaling_coef;
 
   cs_adv_field_t                       *adv_field;
   cs_property_t                        *adv_scaling_property;
