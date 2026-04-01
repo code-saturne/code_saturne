@@ -223,7 +223,7 @@ class SolidView(QWidget, Ui_Solid):
         """
         if self.lineEditElastCoef.validator().state == QValidator.State.Acceptable:
             value = from_qvariant(var, float)
-            self.mdl.setElastCoeff(value, self.currentid)
+            self.mdl.setElastCoeff(self.currentid, value)
 
 
     def initializeVariables(self, fieldId):
