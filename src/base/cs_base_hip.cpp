@@ -574,7 +574,7 @@ cs_hip_get_2_stage_reduce_buffers(int            stream_id,
 
   if (_r_elt_size[stream_id] < elt_size) {
     _r_elt_size[stream_id] = elt_size;
-    CS_FREE_HD(_r_host[stream_id]);
+    CS_FREE(_r_host[stream_id]);
     unsigned char *b_ptr;
     CS_MALLOC_HD(b_ptr, elt_size, unsigned char, CS_ALLOC_HOST_DEVICE_PINNED);
     _r_host[stream_id] = b_ptr;

@@ -182,16 +182,16 @@ _runge_kutta_integrator_free(cs_runge_kutta_integrator_t  **rk)
   if (_rk == nullptr)
     return;
 
-  CS_FREE_HD(_rk->rhs_stages);
-  CS_FREE_HD(_rk->rk_coeff.a);
-  CS_FREE_HD(_rk->rk_coeff.c);
+  CS_FREE(_rk->rhs_stages);
+  CS_FREE(_rk->rk_coeff.a);
+  CS_FREE(_rk->rk_coeff.c);
 
   CS_FREE(_rk->name);
 
-  CS_FREE_HD(_rk->mass);
+  CS_FREE(_rk->mass);
 
-  CS_FREE_HD(_rk->u_old);
-  CS_FREE_HD(_rk->u_new);
+  CS_FREE(_rk->u_old);
+  CS_FREE(_rk->u_new);
   CS_FREE(_rk);
 
   *rk = nullptr;

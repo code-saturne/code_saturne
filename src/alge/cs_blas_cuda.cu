@@ -310,8 +310,8 @@ BEGIN_C_DECLS
 void
 cs_blas_cuda_finalize(void)
 {
-  CS_FREE_HD(_r_reduce);
-  CS_FREE_HD(_r_grid);
+  CS_FREE(_r_reduce);
+  CS_FREE(_r_grid);
   _r_grid_size = 0;
 
 #if defined(HAVE_CUBLAS)

@@ -1341,7 +1341,7 @@ cs_gradient_strided_lsq_cuda
     CS_CUDA_CHECK(cudaEventDestroy(e_stop));
   }
 
-  CS_FREE_HD(rhs_d);
+  CS_FREE(rhs_d);
 
   if (_pvar_d != nullptr)
     CS_CUDA_CHECK(cudaFree(_pvar_d));

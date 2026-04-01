@@ -2269,7 +2269,7 @@ cs_sles_it_cuda_jacobi(cs_sles_it_t              *c,
 #endif // HAVE_GRAPH_CAPTURE > 0
 
   if (_aux_vectors != (cs_real_t *)aux_vectors)
-    CS_FREE_HD(_aux_vectors);
+    CS_FREE(_aux_vectors);
 
   if (local_stream) {
     cs_matrix_spmv_cuda_set_stream(0);
@@ -2503,7 +2503,7 @@ cs_sles_it_cuda_block_jacobi(cs_sles_it_t              *c,
   }
 
   if (_aux_vectors != (cs_real_t *)aux_vectors)
-    CS_FREE_HD(_aux_vectors);
+    CS_FREE(_aux_vectors);
 
   if (local_stream) {
     cs_matrix_spmv_cuda_set_stream(0);
@@ -2699,7 +2699,7 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
   } /* Needs iterating */
 
   if (_aux_vectors != aux_vectors)
-    CS_FREE_HD(_aux_vectors);
+    CS_FREE(_aux_vectors);
 
   cs_blas_cuda_set_stream(0);
   if (local_stream) {
@@ -2985,10 +2985,10 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
   } /* Needs iterating */
 
   if (_aux_vectors != aux_vectors)
-    CS_FREE_HD(_aux_vectors);
+    CS_FREE(_aux_vectors);
 
-  CS_FREE_HD(_aux_arrays);
-  CS_FREE_HD(gkj_inv);
+  CS_FREE(_aux_arrays);
+  CS_FREE(gkj_inv);
 
   cs_blas_cuda_set_stream(0);
   if (local_stream) {

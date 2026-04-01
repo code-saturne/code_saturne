@@ -1342,7 +1342,7 @@ cs_gradient_strided_lsq_hip
     CS_HIP_CHECK(hipEventDestroy(e_stop));
   }
 
-  CS_FREE_HD(rhs_d);
+  CS_FREE(rhs_d);
 
   if (_pvar_d != nullptr)
     CS_HIP_CHECK(hipFree(_pvar_d));
