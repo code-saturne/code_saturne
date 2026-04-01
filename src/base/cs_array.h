@@ -1643,7 +1643,7 @@ public:
     const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
     const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
 #endif
-  )
+  ) const
   {
     array<T, N, L> new_array(this->_extent,
                              this->_mode,
@@ -2222,7 +2222,7 @@ public:
   void
   copy_data
   (
-    array&          other,      /*!<[in] Reference to another array object */
+    const array&    other,      /*!<[in] Reference to another array object */
     const cs_lnum_t n_vals = -1 /*!<[in] Number of values to copy.
                                          If -1, default, we use array size */
   )
@@ -2258,7 +2258,7 @@ public:
   copy_data
   (
     cs_dispatch_context &ctx,        /*!<[in] Reference to dispatch context  */
-    array               &other,      /*!<[in] Reference to another array object */
+    const array         &other,      /*!<[in] Reference to another array object */
     const cs_lnum_t      n_vals = -1 /*!<[in] Number of values to copy.
                                               If -1, default, we use array size */
   )
