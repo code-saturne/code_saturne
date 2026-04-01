@@ -3,6 +3,9 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Fix setting of solid particles elasticity coefficient in the GUI for
+  neptune_cfd
+
 - Fix incorrect restart handling of some variables (e.g. density) when
   reading the auxiliary restart file is disabled.
 
