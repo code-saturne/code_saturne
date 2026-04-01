@@ -3,6 +3,9 @@ Release 9.1.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix setting of solid particles elasticity coefficient in the GUI for
+  neptune_cfd
+
 - Fix restart with variable density "idilat=2" option.
   * Includes fix for incomplete density restart information.
 
