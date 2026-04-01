@@ -1727,23 +1727,6 @@ cs_multigrid_smoother_create(cs_sles_it_type_t      smoother_type,
                              [[maybe_unused]] int   poly_degree,
                              int                    n_iter)
 {
-  cs_sles_it_t *c;
-
-  CS_MALLOC(c, 1, cs_sles_it_t);
-
-  c->solve = nullptr;
-  c->_pc = nullptr;
-
-  /* Predefined settings */
-  c->type = smoother_type;
-  c->on_device = false;
-  c->update_stats = false;
-  c->ignore_convergence = true;
-
-  c->fallback_cvg = CS_SLES_DIVERGED;
-  c->fallback_n_max_iter = 0;
-  c->fallback = nullptr;
-
   switch (smoother_type) {      /* Valid choices */
 
   case CS_SLES_JACOBI:
@@ -1770,6 +1753,23 @@ cs_multigrid_smoother_create(cs_sles_it_type_t      smoother_type,
     break;
 
   } /* Smoother type */
+
+  cs_sles_it_t *c;
+
+  CS_MALLOC(c, 1, cs_sles_it_t);
+
+  c->solve = nullptr;
+  c->_pc = nullptr;
+
+  /* Predefined settings */
+  c->type = smoother_type;
+  c->on_device = false;
+  c->update_stats = false;
+  c->ignore_convergence = true;
+
+  c->fallback_cvg = CS_SLES_DIVERGED;
+  c->fallback_n_max_iter = 0;
+  c->fallback = nullptr;
 
   c->pc = c->_pc;
 
