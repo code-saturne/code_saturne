@@ -135,8 +135,7 @@ cs_beta_limiter_building(int              f_id,
  * <a href="../../theory.pdf#bilsc2"><b>bilsc2</b></a> section of the
  * theory guide for more information.
  *
- * \param[in]     idtvar        indicator of the temporal scheme
- * \param[in]     f_id          field id (or -1)
+ * \param[in]     f             pointer to field, or null
  * \param[in]     eqp           equation parameters
  * \param[in]     icvflb        global indicator of boundary convection flux
  *                               - 0 upwind scheme at all boundary faces
@@ -164,8 +163,7 @@ cs_beta_limiter_building(int              f_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_convection_diffusion_scalar(int                         idtvar,
-                               int                         f_id,
+cs_convection_diffusion_scalar(const cs_field_t           *f,
                                const cs_equation_param_t   eqp,
                                int                         icvflb,
                                int                         inc,
@@ -379,10 +377,9 @@ cs_convection_diffusion_tensor(int                          idtvar,
  * \f]
  *
  * Warning:
- * \f$ Rhs \f$ has already been initialized before calling bilsct!
+ * \f$ Rhs \f$ must have been initialized before calling this function!
  *
- * \param[in]     idtvar        indicator of the temporal scheme
- * \param[in]     f_id          index of the current variable
+ * \param[in]     f             pointer to field, or null
  * \param[in]     eqp           equation parameters)
  * \param[in]     inc           indicator
  *                               - 0 when solving an increment
@@ -403,8 +400,7 @@ cs_convection_diffusion_tensor(int                          idtvar,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_convection_diffusion_thermal(int                         idtvar,
-                                int                         f_id,
+cs_convection_diffusion_thermal(const cs_field_t           *f,
                                 const cs_equation_param_t   eqp,
                                 int                         inc,
                                 int                         imasac,

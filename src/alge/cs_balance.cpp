@@ -59,7 +59,9 @@
 #include "base/cs_mem.h"
 #include "mesh/cs_mesh.h"
 #include "alge/cs_convection_diffusion.h"
+#include "alge/cs_convection_diffusion_priv.h"
 #include "base/cs_field.h"
+#include "base/cs_field_default.h"
 #include "base/cs_field_operator.h"
 #include "base/cs_field_pointer.h"
 #include "alge/cs_gradient.h"
@@ -323,118 +325,100 @@ cs_balance_scalar(int                         idtvar,
   cs_timer_t t0 = cs_timer_time();
 
   /* Local variables */
-  int iconvp = eqp->iconv;
-  int idiffp = eqp->idiff;
-  int idftnp = eqp->idften;
   cs_equation_param_t eqp_loc = *eqp;
+  cs_field_t *f = nullptr;
 
   if (f_id < 0) {
     eqp_loc.iwgrec = 0;  /* requires field id */
     eqp_loc.icoupl = -1; /* requires field id */
   }
   else {
-    cs_field_t *f = cs_field_by_id(f_id);
-    int k_id = cs_field_key_id("var_cal_opt");
-    cs_field_get_key_struct(f, k_id, &eqp_loc);
+    f = cs_field_by_id(f_id);
+    const cs_equation_param_t *eqp_f = cs_field_get_equation_param(f);
+    eqp_loc = *eqp_f;
     eqp_loc.theta = eqp->theta;
   }
 
-  /* Scalar diffusivity */
-  if (idftnp & CS_ISOTROPIC_DIFFUSION) {
-    if (imucpp == 0) {
-      cs_convection_diffusion_scalar(idtvar,
-                                     f_id,
-                                     eqp_loc,
-                                     icvflb,
-                                     inc,
-                                     imasac,
-                                     pvar,
-                                     pvara,
-                                     icvfli,
-                                     bc_coeffs,
-                                     i_massflux,
-                                     b_massflux,
-                                     i_visc,
-                                     b_visc,
-                                     rhs,
-                                     i_flux,
-                                     b_flux);
-    }
-    else {
-      /* The convective part is multiplied by Cp for the temperature */
-      cs_convection_diffusion_thermal(idtvar,
-                                      f_id,
-                                      eqp_loc,
-                                      inc,
-                                      imasac,
-                                      pvar,
-                                      pvara,
-                                      bc_coeffs,
-                                      i_massflux,
-                                      b_massflux,
-                                      i_visc,
-                                      b_visc,
-                                      xcpp,
-                                      rhs);
-    }
-  }
-  /* Symmetric tensor diffusivity */
-  else if (idftnp & CS_ANISOTROPIC_DIFFUSION) {
+  bool anisotropic_diffusion = false;
+  if (   eqp->idften & CS_ANISOTROPIC_DIFFUSION
+      && eqp->idiff == 1) {
     eqp_loc.idiff = 0;
-    /* Convective part */
-    if (imucpp == 0 && iconvp == 1) {
-      cs_convection_diffusion_scalar(idtvar,
-                                     f_id,
-                                     eqp_loc,
+    anisotropic_diffusion = true;
+  }
+
+  /* Convection + diffusion if diffusivity is scalar
+     ----------------------------------------------- */
+
+  if (imucpp == 0) {
+    if (idtvar < 1) {
+      cs_convection_diffusion_steady_scalar
+        (f, eqp_loc,
+         icvflb, inc,
+         pvar, pvara,
+         icvfli,
+         bc_coeffs,
+         i_massflux, b_massflux,
+         i_visc, b_visc,
+         nullptr, rhs);
+    }
+    else
+      cs_convection_diffusion_scalar(f,  eqp_loc,
                                      icvflb,
                                      inc,
                                      imasac,
-                                     pvar,
-                                     pvara,
+                                     pvar, pvara,
                                      icvfli,
                                      bc_coeffs,
-                                     i_massflux,
-                                     b_massflux,
-                                     i_visc,
-                                     b_visc,
+                                     i_massflux, b_massflux,
+                                     i_visc, b_visc,
                                      rhs,
-                                     i_flux,
-                                     b_flux);
-    }
+                                     i_flux, b_flux);
+  }
+  else {
     /* The convective part is multiplied by Cp for the temperature */
-    else if (imucpp == 1 && iconvp == 1) {
-      cs_convection_diffusion_thermal(idtvar,
-                                      f_id,
-                                      eqp_loc,
-                                      inc,
-                                      imasac,
-                                      pvar,
-                                      pvara,
+    if (idtvar < 1) {
+      cs_convection_diffusion_steady_scalar
+        (f, eqp_loc,
+         false, /* icvflb */
+         inc,
+         pvar, pvara,
+         nullptr, /* icvfli */
+         bc_coeffs,
+         i_massflux, b_massflux,
+         i_visc, b_visc,
+         xcpp,
+         rhs);
+    }
+    else
+      cs_convection_diffusion_thermal(f, eqp_loc,
+                                      inc, imasac,
+                                      pvar, pvara,
                                       bc_coeffs,
-                                      i_massflux,
-                                      b_massflux,
-                                      i_visc,
-                                      b_visc,
+                                      i_massflux, b_massflux,
+                                      i_visc, b_visc,
                                       xcpp,
                                       rhs);
-    }
+  }
 
-    /* Diffusive part */
-    if (idiffp == 1) {
-      cs_anisotropic_diffusion_scalar(idtvar,
-                                      f_id,
-                                      eqp_loc,
-                                      inc,
-                                      pvar,
-                                      pvara,
-                                      bc_coeffs,
-                                      i_visc,
-                                      b_visc,
-                                      viscel,
-                                      weighf,
-                                      weighb,
-                                      rhs);
-    }
+  /* Diffusion in anisotropic case
+     ----------------------------- */
+
+  if (anisotropic_diffusion) {
+
+    cs_anisotropic_diffusion_scalar(idtvar,
+                                    f_id,
+                                    eqp_loc,
+                                    inc,
+                                    pvar,
+                                    pvara,
+                                    bc_coeffs,
+                                    i_visc,
+                                    b_visc,
+                                    viscel,
+                                    weighf,
+                                    weighb,
+                                    rhs);
+
   }
 
   cs_timer_t t1 = cs_timer_time();

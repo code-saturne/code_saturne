@@ -449,8 +449,7 @@ _les_balance_laplacian(cs_real_t   *wa,
 
   /* Compute boundary face value */
 
-  cs_convection_diffusion_scalar(0,              /* idtvar */
-                                 -1,             /* f_id */
+  cs_convection_diffusion_scalar(nullptr,        /* f_id */
                                  _eqp,
                                  0,              /* icvflb (not used) */
                                  1,              /* inc */
