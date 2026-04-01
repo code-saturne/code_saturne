@@ -822,7 +822,7 @@ _lagr_compute_rv_gaussian(cs_lagr_particle_set_t     &p_set,
                           int                         nor,
                           int                         n_vagaus,
                           bool                        compute_vagaus,
-                          cs_real_3_t                *vagaus,
+                          cs_array_2d<cs_real_t>&     vagaus,
                           bool                        compute_br_gaus,
                           cs_real_6_t                 br_gaus)
 {
@@ -830,14 +830,14 @@ _lagr_compute_rv_gaussian(cs_lagr_particle_set_t     &p_set,
   if (compute_vagaus) {
     /* -> Stochastic draws are made for all phase */
     if(nor == 1) {
-      cs_random_normal(3 * (n_vagaus), (cs_real_t*)vagaus);
+      cs_random_normal(3 * (n_vagaus), vagaus.data());
       if (cs_glob_lagr_time_scheme->t_order== 2) {
         /* save vagaus */
         cs_real_t *_v_gaus =
           p_set.attr_real_ptr(p_id, CS_LAGR_V_GAUSS);
         for (cs_lnum_t i = 0; i < n_vagaus; i++) {
           for (cs_lnum_t id = 0; id < 3; id++)
-            _v_gaus[3 * i + id] = vagaus[i][id];
+            _v_gaus[3 * i + id] = vagaus(i, id);
         }
       }
     }
@@ -846,7 +846,7 @@ _lagr_compute_rv_gaussian(cs_lagr_particle_set_t     &p_set,
       cs_real_t *_v_gaus = p_set.attr_real_ptr(p_id, CS_LAGR_V_GAUSS);
       for (cs_lnum_t i = 0; i < n_vagaus; i++) {
         for (cs_lnum_t id = 0; id < 3; id++)
-          vagaus[i][id] = _v_gaus[3 * i + id];
+          vagaus(i, id) = _v_gaus[3 * i + id];
       }
     }
 
@@ -854,7 +854,7 @@ _lagr_compute_rv_gaussian(cs_lagr_particle_set_t     &p_set,
   else {
     for (cs_lnum_t i = 0; i < n_vagaus; i++) {
       for (cs_lnum_t id = 0; id < 3; id++)
-        vagaus[i][id] = 0.0;
+        vagaus(i, id) = 0.0;
     }
   }
 
@@ -918,16 +918,16 @@ _integ_particle_quantities(cs_lagr_particle_set_t          &p_set,
                            cs_lnum_t                        p_id,
                            int                              nor,
                            cs_real_t                        dt_part,
-                           const cs_real_t                 *taup,
-                           const cs_real_3_t               *tlag,
-                           const cs_real_3_t               *piil,
+                           const cs_array<cs_real_t>&       taup,
+                           const cs_array_2d<cs_real_t>&    tlag,
+                           const cs_array_2d<cs_real_t>&    piil,
                            const cs_real_3_t                force_p,
-                           const cs_real_33_t              *bx,
+                           const cs_array_3d<cs_real_t>&    bx,
                            cs_real_2_t                      tempct,
                            cs_real_t                       *tsfext,
                            const cs_real_t                  vislen[],
                            const cs_real_3_t                beta,
-                           cs_real_3_t                     *vagaus,
+                           cs_array_2d<cs_real_t>&          vagaus,
                            cs_real_6_t                      br_gaus,
                            cs_real_t                       *cpgd1,
                            cs_real_t                       *cpgd2,
@@ -1007,7 +1007,7 @@ _integ_particle_quantities(cs_lagr_particle_set_t          &p_set,
      -----------------------------------------*/
 
   if (cs_glob_lagr_model->n_user_variables > 0)
-    cs_user_lagr_sde(dt_part, p_id, taup, tlag, tempct, nor);
+    cs_user_lagr_sde(dt_part, p_id, taup.data(), tlag.data<cs_real_3_t>(), tempct, nor);
 }
 
 /*----------------------------------------------------------------------------
@@ -2228,12 +2228,12 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
                    const int                       b_face_zone_id[],
                    const cs_real_t                 visc_length[],
                    const bool                      resol_sde,
-                   cs_real_t                      *taup,
-                   cs_real_3_t                    *tlag,
-                   cs_real_3_t                    *piil,
+                   cs_array<cs_real_t>&            taup,
+                   cs_array_2d<cs_real_t>&         tlag,
+                   cs_array_2d<cs_real_t>&         piil,
                    cs_real_3_t                     force_p,
-                   cs_real_33_t                   *bx,
-                   cs_real_3_t                    *vagaus,
+                   cs_array_3d<cs_real_t>&         bx,
+                   cs_array_2d<cs_real_t>&         vagaus,
                    cs_lnum_t                      *n_new_particles)
 {
   cs_real_t fluid_vel[3] = {0, 0, 0};
@@ -2371,9 +2371,9 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
                     nor,
                     dt_part,
                     &taup[phase_id],
-                    tlag[phase_id],
-                    piil[phase_id],
-                    bx[phase_id],
+                    tlag.sub_array(phase_id),
+                    piil.sub_array(phase_id),
+                    (cs_real_3_t *)bx.sub_array(phase_id),
                     tempct,
                     beta);
 
@@ -2387,8 +2387,7 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
                                 false,
                                 br_gaus);
 
-      cs_lagr_get_force_p(dt_part, p_set, p_id, taup, tlag, piil, bx,
-                          tsfext, force_p);
+      cs_lagr_get_force_p(dt_part, p_set, p_id, taup, tlag, piil, bx, tsfext, force_p);
 
       /* save the integrated fields */
       cs_sde_vels_pos_1_st_order_time_integ(p_set,
@@ -2897,9 +2896,9 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
                         nor,
                         dt_part,
                         &taup[phase_id],
-                        tlag[phase_id],
-                        piil[phase_id],
-                        bx[phase_id],
+                        tlag.sub_array(phase_id),
+                        piil.sub_array(phase_id),
+                        (cs_real_3_t *)bx.sub_array(phase_id),
                         tempct,
                         beta);
 
@@ -2913,8 +2912,7 @@ _local_propagation(cs_lagr_particle_set_t         &p_set,
                                     (cs_glob_lagr_brownian->lamvbr == 1),
                                     br_gaus);
 
-          cs_lagr_get_force_p(dt_part, p_set, p_id, taup, tlag, piil, bx,
-                              tsfext, force_p);
+          cs_lagr_get_force_p(dt_part, p_set, p_id, taup, tlag, piil, bx, tsfext, force_p);
 
           _integ_particle_quantities(p_set,
                                      p_id,
@@ -3876,10 +3874,10 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
   cs_real_3_t force_p;
   cs_real_6_t br_gaus;
   cs_array<cs_real_t> taup(n_phases);
-  cs_array<cs_real_3_t> tlag(n_phases);
-  cs_array<cs_real_3_t> piil(n_phases);
-  cs_array<cs_real_3_t> vagaus(n_phases + 2);
-  cs_array<cs_real_33_t> bx(n_phases);
+  cs_array_2d<cs_real_t> tlag(n_phases, 3);
+  cs_array_2d<cs_real_t> piil(n_phases, 3);
+  cs_array_2d<cs_real_t> vagaus(n_phases + 2, 3);
+  cs_array_3d<cs_real_t> bx(n_phases, 3, 3);
 
   int nor = 1;
 
@@ -3913,9 +3911,9 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
                     1, // nor
                     dtp,
                     &(taup[phase_id]),
-                    tlag[phase_id],
-                    piil[phase_id],
-                    bx[phase_id],
+                    tlag.sub_array(phase_id),
+                    piil.sub_array(phase_id),
+                    (cs_real_3_t *)bx.sub_array(phase_id),
                     tempct,
                     beta);
 
@@ -3925,7 +3923,7 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
             p_set.attr_real_ptr(p_id, CS_LAGR_TURB_STATE_1);
 
           for (cs_lnum_t i = 0; i < 3; i++)
-            jbx1[9 * phase_id + i] = bx[phase_id][i][0];
+            jbx1[9 * phase_id + i] = bx(phase_id, i, 0);
         }
       }
 
@@ -3934,30 +3932,28 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
                                 n_phases + 2, /* size of vagaus */
                                 /* compute vagaus? */
                                 (cs_glob_lagr_model->idistu == 1),
-                                vagaus.data(),
+                                vagaus,
                                 /* compute vagaus? */
                                 (cs_glob_lagr_brownian->lamvbr == 1),
                                 br_gaus);
 
-      cs_lagr_get_force_p(dtp, p_set, p_id, taup.data(), tlag.data(),
-                          piil.data(), bx.data(),
-                          tsfext, force_p);
+      cs_lagr_get_force_p(dtp, p_set, p_id, taup, tlag, piil, bx, tsfext, force_p);
 
       /* Integrate the particle associated SDEs */
       _integ_particle_quantities(p_set,
                                  p_id,
                                  nor, // 1
                                  dtp,
-                                 taup.data(),
-                                 tlag.data(),
-                                 piil.data(),
+                                 taup,
+                                 tlag,
+                                 piil,
                                  force_p,
-                                 bx.data(),
+                                 bx,
                                  tempct,
                                  &tsfext,
                                  visc_length,
                                  beta,
-                                 vagaus.data(),
+                                 vagaus,
                                  br_gaus,
                                  &cpgd1,
                                  &cpgd2,
@@ -4039,12 +4035,12 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
                                             b_face_zone_id,
                                             visc_length,
                                             resol_sde,
-                                            taup.data(),
-                                            tlag.data(),
-                                            piil.data(),
+                                            taup,
+                                            tlag,
+                                            piil,
                                             force_p,
-                                            bx.data(),
-                                            vagaus.data(),
+                                            bx,
+                                            vagaus,
                                             &n_new_particles);
 
         if(displacement_step_id == max_perio_or_rank_crossed -1) {
@@ -4125,7 +4121,7 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
           p_set.attr_real_ptr(p_id, CS_LAGR_TURB_STATE_1);
 
         for (cs_lnum_t i = 0; i < 3; i++)
-          bx[phase_id][i][0] = jbx1[3 * phase_id + i];
+          bx(phase_id, i, 0) = jbx1[3 * phase_id + i];
 
         cs_lagr_car(0, /* iprev = 0: Use fields at current time step    */
                     phase_id,
@@ -4134,9 +4130,9 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
                     nor,
                     dtp,
                     &taup[phase_id],
-                    tlag[phase_id],
-                    piil[phase_id],
-                    bx[phase_id],
+                    tlag.sub_array(phase_id),
+                    piil.sub_array(phase_id),
+                    (cs_real_3_t *)bx.sub_array(phase_id),
                     tempct,
                     beta);
       }
@@ -4146,30 +4142,28 @@ cs_lagr_integ_track_particles(const cs_real_t  visc_length[],
                                 n_phases + 2, /* size of vagaus */
                                 /* compute vagaus? */
                                 (cs_glob_lagr_model->idistu == 1),
-                                vagaus.data(),
+                                vagaus,
                                 /* compute vagaus? */
                                 (cs_glob_lagr_brownian->lamvbr == 1),
                                 br_gaus);
 
-      cs_lagr_get_force_p(dtp, p_set, p_id, taup.data(), tlag.data(),
-                          piil.data(), bx.data(),
-                          tsfext, force_p);
+      cs_lagr_get_force_p(dtp, p_set, p_id, taup, tlag, piil, bx, tsfext, force_p);
 
       if (!has_rebound_occured)
         _integ_particle_quantities(p_set,
                                    p_id,
                                    nor, // 2
                                    dtp,
-                                   taup.data(),
-                                   tlag.data(),
-                                   piil.data(),
+                                   taup,
+                                   tlag,
+                                   piil,
                                    force_p,
-                                   bx.data(),
+                                   bx,
                                    tempct,
                                    &tsfext,
                                    visc_length,
                                    beta,
-                                   vagaus.data(),
+                                   vagaus,
                                    br_gaus,
                                    &cpgd1,
                                    &cpgd2,

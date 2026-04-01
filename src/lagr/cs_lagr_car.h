@@ -110,10 +110,10 @@ void
 cs_lagr_get_force_p(const cs_real_t             dt_part,
                     cs_lagr_particle_set_t     &p_set,
                     cs_lnum_t                   p_id,
-                    cs_real_t                  *taup,
-                    cs_real_3_t                *tlag,
-                    cs_real_3_t                *piil,
-                    cs_real_33_t               *bx,
+                    cs_array<cs_real_t>&        taup,
+                    cs_array_2d<cs_real_t>&     tlag,
+                    cs_array_2d<cs_real_t>&     piil,
+                    cs_array_3d<cs_real_t>&     bx,
                     cs_real_t                   tsfext,
                     cs_real_3_t                 force_p);
 
