@@ -498,7 +498,8 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
  *                                flow rate
  *                                \f$ \Gamma_{s,cond}^n \f$)
  * \param[in]       svcond        variable value associated to the condensation
- *                                source term (for ivar=ipr, svcond is the flow rate
+ *                                source term (for ivar=ipr, svcond is the
+ *                                flow rate
  *                                \f$ \Gamma_{v, cond}^n \f$)
  * \param[in]       frcxt         external forces making hydrostatic pressure
  * \param[in]       dfrcxt        variation of the external forces
@@ -583,9 +584,6 @@ _pressure_correction_fv(int                   iterns,
     = cs_field_get_equation_param_const(f_vel);
   const cs_equation_param_t *eqp_p
     = cs_field_get_equation_param_const(f_p);
-
-  const bool need_compute_bc_flux = true;
-  const bool need_compute_bc_grad = (eqp_p->ircflu) ? true : false;
 
   const cs_velocity_pressure_param_t  *vp_param
     = cs_glob_velocity_pressure_param;
