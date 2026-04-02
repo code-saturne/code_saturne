@@ -7713,7 +7713,7 @@ cs_convection_diffusion_vector(int                         idtvar,
      latency of this very light operation.
   */
 
-  short *bndcel = nullptr;
+  int *bndcel = nullptr;
   cs_dispatch_context ctx_c;
   ctx_c.set_use_gpu(ctx.use_gpu()); /* Follows behavior of main context */
 #if defined(HAVE_CUDA)
@@ -7731,7 +7731,7 @@ cs_convection_diffusion_vector(int                         idtvar,
        coupled face (velocity-wise) are ignored also. */
 
     /* Allocate a temporary array */
-    CS_MALLOC_HD(bndcel, n_cells_ext, short, amode);
+    CS_MALLOC_HD(bndcel, n_cells_ext, int, amode);
 
     ctx_c.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
       bndcel[cell_id] = 1;
@@ -7888,6 +7888,7 @@ cs_convection_diffusion_vector(int                         idtvar,
     cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
     ctx_c.wait();  /* We now need bndcel, computed by ctx_c */
+    cs_halo_sync(m->halo, ctx_c.use_gpu(), bndcel);
 
     /* Interior faces */
 
