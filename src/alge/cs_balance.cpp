@@ -350,7 +350,7 @@ cs_balance_scalar(int                         idtvar,
      ----------------------------------------------- */
 
   if (imucpp == 0) {
-    if (idtvar < 1) {
+    if (idtvar < 0) {
       cs_convection_diffusion_steady_scalar
         (f, eqp_loc,
          icvflb, inc,
@@ -376,7 +376,7 @@ cs_balance_scalar(int                         idtvar,
   }
   else {
     /* The convective part is multiplied by Cp for the temperature */
-    if (idtvar < 1) {
+    if (idtvar < 0) {
       cs_convection_diffusion_steady_scalar
         (f, eqp_loc,
          false, /* icvflb */
