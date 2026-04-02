@@ -6,6 +6,9 @@ Release 9.1.1 (unreleased)
 - Fix incomplete ghost cell synchronization for scalar least-squares
   gradient with limiter.
 
+- Fix missing ghost cell synchronization for boundary-adjacent cells
+  when computing transposed velocity gradient contribution.
+
 - [GUI] Fix bug in outlet backflow conditions using formulae for NCFD.
   Temperature backflow condition used with formulae were wrongly applied.
 
