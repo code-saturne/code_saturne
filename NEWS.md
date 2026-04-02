@@ -3,6 +3,9 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Fix missing ghost cell synchronization for boundary-adjacent cells
+  when computing transposed velocity gradient contribution.
+
 - Fix setting of solid particles elasticity coefficient in the GUI for
   neptune_cfd
 
