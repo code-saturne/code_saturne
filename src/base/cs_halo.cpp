@@ -2821,6 +2821,11 @@ cs_halo_sync(const cs_halo_t  *halo,
              bool              on_device,
              cs_real_t         val[]);
 
+template void
+cs_halo_sync(const cs_halo_t  *halo,
+             bool              on_device,
+             int               val[]);
+
 /*----------------------------------------------------------------------------*/
 
 template <int Stride, typename T>

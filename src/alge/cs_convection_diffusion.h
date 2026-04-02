@@ -970,6 +970,83 @@ cs_cell_courant_number(const cs_field_t     *f,
                        cs_real_t            *courant);
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief Compute balance contribution of the transpose grad(vel) term
+ *        and grad(-2/3 div(vel))
+ *
+ * Compute \f$ \mu \transpose{\gradt\vect{\varia}}
+ * + \lambda \trace{\gradt\vect{\varia}} \f$, where \f$ \lambda \f$ is
+ * the secondary viscosity, i.e. usually \f$ -\frac{2}{3} \mu \f$.
+ *
+ * \warning
+ * - \f$ \vect{Rhs} \f$ must already have been initialized.
+ * - mind the minus sign
+ *
+ * \param[in, out]  ctx       reference to dispatch context
+ * \param[in]       m         pointer to mesh structure
+ * \param[in]       mq        pointer to mesh quantities
+ * \param[in]       thetap    theta-scheme value
+ * \param[in]       i_visc    \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                            at interior faces for the r.h.s.
+ * \param[in]       i_secvis  secondary viscosity at interior faces
+ * \param[in]       b_secvis  secondary viscosity at boundary faces
+ * \param[in]       gradv     velocity gradient
+ * \param[in, out]  rhs       right hand side \f$ \vect{Rhs} \f$
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_convection_diffusion_secvis
+(
+  cs_dispatch_context         &ctx,
+  const cs_mesh_t             *m,
+  const cs_mesh_quantities_t  *mq,
+  cs_real_t                    thetap,
+  const cs_real_t              i_visc[],
+  const cs_real_t              i_secvis[],
+  const cs_real_t              b_secvis[],
+  const cs_real_t              gradv[][3][3],
+  cs_real_3_t        *restrict rhs
+);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Compute balance contribution of the transpose grad(vel) term
+ *        and grad(-2/3 div(vel)) with anisotropic
+ *
+ * Compute \f$ \mu \transpose{\gradt\vect{\varia}}
+ * + \lambda \trace{\gradt\vect{\varia}} \f$, where \f$ \lambda \f$ is
+ * the secondary viscosity, i.e. usually \f$ -\frac{2}{3} \mu \f$.
+ *
+ * \warning
+ * - \f$ \vect{Rhs} \f$ must already have been initialized.
+ * - mind the minus sign
+ *
+ * \param[in, out]  ctx       reference to dispatch context
+ * \param[in]       m         pointer to mesh structure
+ * \param[in]       mq        pointer to mesh quantities
+ * \param[in]       i_visc    \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                            at interior faces for the r.h.s.
+ * \param[in]       i_secvis  secondary viscosity at interior faces
+ * \param[in]       b_secvis  secondary viscosity at boundary faces
+ * \param[in]       gradv     velocity gradient
+ * \param[in, out]  rhs       right hand side \f$ \vect{Rhs} \f$
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_convection_anisotropic_leff_diffusion_secvis
+(
+  cs_dispatch_context         &ctx,
+  const cs_mesh_t             *m,
+  const cs_mesh_quantities_t  *mq,
+  const cs_real_33_t           i_visc[],
+  const cs_real_t              i_secvis[],
+  const cs_real_t              gradv[][3][3],
+  cs_real_3_t        *restrict rhs
+);
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* cplusplus */
 

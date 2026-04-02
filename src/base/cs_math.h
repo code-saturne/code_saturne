@@ -1148,27 +1148,6 @@ cs_math_3_orthogonal_projection(const cs_real_t      n[3],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Add the dot product with a normal vector to the normal direction
- *        to a vector.
- *
- * \param[in]       n       normalised face normal vector
- * \param[in]       factor  factor
- * \param[in, out]  v       vector to be scaled
- */
-/*----------------------------------------------------------------------------*/
-
-CS_F_HOST_DEVICE static inline void
-cs_math_3_normal_scaling(const cs_real_t  n[3],
-                         cs_real_t        factor,
-                         cs_real_t        v[3])
-{
-  cs_real_t v_dot_n = (factor -1.) * cs_math_3_dot_product(v, n);
-  for (int i = 0; i < 3; i++)
-    v[i] += v_dot_n * n[i];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Add the dot product with a normal vector to the normal,normal
  * component of a tensor:
  * t += factor * n.t.n n(x)n

@@ -5038,6 +5038,321 @@ cs_face_convection_scalar(int                         idtvar,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute balance contribution of the transpose grad(vel) term
+ *        and grad(-2/3 div(vel))
+ *
+ * Compute \f$ \mu \transpose{\gradt\vect{\varia}}
+ * + \lambda \trace{\gradt\vect{\varia}} \f$, where \f$ \lambda \f$ is
+ * the secondary viscosity, i.e. usually \f$ -\frac{2}{3} \mu \f$.
+ *
+ * \warning
+ * - \f$ \vect{Rhs} \f$ must already have been initialized.
+ * - mind the minus sign
+ *
+ * \param[in, out]  ctx       reference to dispatch context
+ * \param[in]       m         pointer to mesh structure
+ * \param[in]       mq        pointer to mesh quantities
+ * \param[in]       thetap    theta-scheme value
+ * \param[in]       i_visc    \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                            at interior faces for the r.h.s.
+ * \param[in]       i_secvis  secondary viscosity at interior faces
+ * \param[in]       b_secvis  secondary viscosity at boundary faces
+ * \param[in]       gradv     velocity gradient
+ * \param[in, out]  rhs       right hand side \f$ \vect{Rhs} \f$
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_convection_diffusion_secvis
+(
+  cs_dispatch_context         &ctx,
+  const cs_mesh_t             *m,
+  const cs_mesh_quantities_t  *mq,
+  cs_real_t                    thetap,
+  const cs_real_t              i_visc[],
+  const cs_real_t              i_secvis[],
+  const cs_real_t              b_secvis[],
+  const cs_real_t              gradv[][3][3],
+  cs_real_3_t        *restrict rhs
+)
+{
+  /* Initialization
+     -------------- */
+
+  const cs_lnum_t n_cells = m->n_cells;
+
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
+
+  const cs_real_t *restrict weight = mq->weight;
+  const cs_real_t *restrict i_dist = mq->i_dist;
+  const cs_nreal_3_t *restrict i_face_u_normal = mq->i_face_u_normal;
+  const cs_real_t *restrict i_face_surf = mq->i_face_surf;
+  const cs_nreal_3_t *restrict b_face_u_normal = mq->b_face_u_normal;
+  const cs_real_t *restrict b_face_surf = mq->b_face_surf;
+
+  cs_alloc_mode_t amode = ctx.alloc_mode();
+
+  int *bndcel;
+  CS_MALLOC_HD(bndcel, m->n_cells_with_ghosts, int, amode);
+
+  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+  cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
+
+  const int *bc_type = cs_glob_bc_type;
+
+  /* We do not know what condition to put in the inlets and the outlets, so we
+     assume that there is an equilibrium. Moreover, cells containing a
+     coupled face (velocity-wise) are ignored also. */
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+    bndcel[cell_id] = 1;
+  });
+
+  /*
+    Loop on boundary faces first, as this allows setting bndcel,
+    needed for the interior faces loop.
+
+    The whole flux term of the stress tensor is already taken into account
+    (so, no corresponding term in boundary_stress field)
+    TODO in theory we should take the normal component into account (the
+    tangential one is modeled by the wall law).
+  */
+
+  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+
+    int ityp = bc_type[face_id];
+    cs_lnum_t ii = b_face_cells[face_id];
+
+    if (   ityp == CS_OUTLET
+        || ityp == CS_INLET
+        || ityp == CS_FREE_INLET
+        || ityp == CS_CONVECTIVE_INLET
+        || ityp == CS_COUPLED_FD) {
+      bndcel[ii] = 0;
+      return;  // Return from lambda function here since contribution is 0.
+    }
+
+    /* Trace of velocity gradient */
+    cs_real_t grdtrv = (gradv[ii][0][0]+gradv[ii][1][1]+gradv[ii][2][2]);
+    cs_real_t secvis = b_secvis[face_id]; /* - 2/3 * mu */
+    cs_real_t mult = thetap * secvis * grdtrv * b_face_surf[face_id];
+
+    cs_real_t flux[3];
+    for (cs_lnum_t isou = 0; isou < 3; isou++) {
+      flux[isou] = mult * b_face_u_normal[face_id][isou];
+    }
+    cs_dispatch_sum<3>(rhs[ii], flux, b_sum_type);
+
+  });
+
+  cs_halo_sync(m->halo, ctx.use_gpu(), bndcel);
+
+  /* Interior faces */
+
+  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+
+    cs_lnum_t ii = i_face_cells[face_id][0];
+    cs_lnum_t jj = i_face_cells[face_id][1];
+
+    cs_real_t w_f = weight[face_id];
+    cs_real_t visco = i_visc[face_id]; /* mu S_ij / d_ij */
+
+    cs_real_t grdtrv =       w_f  * cs_math_33_trace(gradv[ii])
+                       + (1.-w_f) * cs_math_33_trace(gradv[jj]);
+
+    cs_real_t flux0 = i_secvis[face_id] * grdtrv * i_face_surf[face_id];
+
+    cs_real_t ipjp[3];
+    const cs_nreal_t *n = i_face_u_normal[face_id];
+
+    /* I'J' */
+    for (cs_lnum_t i = 0; i < 3; i++)
+      ipjp[i] = n[i] * i_dist[face_id];
+
+    /* We need to compute trans_grad(u).I'J' which is equal to I'J'.grad(u) */
+
+    cs_real_t  flux_p[3], flux_m[3];
+    cs_real_t  theta_bc_mult_i = thetap * bndcel[ii];
+    cs_real_t  theta_bc_mult_j = thetap * bndcel[jj];
+
+    for (cs_lnum_t isou = 0; isou < 3; isou++) {
+
+      cs_real_t tgrdfl =   ipjp[0] * (      w_f *gradv[ii][0][isou]
+                                      + (1.-w_f)*gradv[jj][0][isou])
+                         + ipjp[1] * (      w_f *gradv[ii][1][isou]
+                                      + (1.-w_f)*gradv[jj][1][isou])
+                         + ipjp[2] * (      w_f *gradv[ii][2][isou]
+                                      + (1.-w_f)*gradv[jj][2][isou]);
+
+      cs_real_t flux =   flux0*i_face_u_normal[face_id][isou]
+                       + visco*tgrdfl;
+
+      flux_p[isou] =  theta_bc_mult_i * flux;
+      flux_m[isou] = -theta_bc_mult_j * flux;
+
+    }
+
+    if (ii < n_cells)
+      cs_dispatch_sum<3>(rhs[ii], flux_p, i_sum_type);
+    if (jj < n_cells)
+      cs_dispatch_sum<3>(rhs[jj], flux_m, i_sum_type);
+
+  });
+
+  ctx.wait();
+  CS_FREE(bndcel);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute balance contribution of the transpose grad(vel) term
+ *        and grad(-2/3 div(vel)) with anisotropic
+ *
+ * Compute \f$ \mu \transpose{\gradt\vect{\varia}}
+ * + \lambda \trace{\gradt\vect{\varia}} \f$, where \f$ \lambda \f$ is
+ * the secondary viscosity, i.e. usually \f$ -\frac{2}{3} \mu \f$.
+ *
+ * \warning
+ * - \f$ \vect{Rhs} \f$ must already have been initialized.
+ * - mind the minus sign
+ *
+ * \param[in, out]  ctx       reference to dispatch context
+ * \param[in]       m         pointer to mesh structure
+ * \param[in]       mq        pointer to mesh quantities
+ * \param[in]       i_visc    \f$ \mu_\fij \dfrac{S_\fij}{\ipf \jpf} \f$
+ *                            at interior faces for the r.h.s.
+ * \param[in]       i_secvis  secondary viscosity at interior faces
+ * \param[in]       b_secvis  secondary viscosity at boundary faces
+ * \param[in]       grad      velocity gradient
+ * \param[in, out]  rhs       right hand side \f$ \vect{Rhs} \f$
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_convection_anisotropic_leff_diffusion_secvis
+(
+  cs_dispatch_context         &ctx,
+  const cs_mesh_t             *m,
+  const cs_mesh_quantities_t  *mq,
+  const cs_real_33_t           i_visc[],
+  const cs_real_t              i_secvis[],
+  const cs_real_t              gradv[][3][3],
+  cs_real_3_t        *restrict rhs
+)
+{
+  /* Initialization
+     -------------- */
+
+  const cs_lnum_t n_cells = m->n_cells;
+
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
+
+  const cs_real_t *restrict weight = mq->weight;
+  const cs_real_t *restrict i_dist = mq->i_dist;
+  const cs_nreal_3_t *restrict i_face_u_normal = mq->i_face_u_normal;
+  const cs_real_t *restrict i_face_surf = mq->i_face_surf;
+
+  cs_alloc_mode_t amode = ctx.alloc_mode();
+
+  int *bndcel;
+  CS_MALLOC_HD(bndcel, m->n_cells_with_ghosts, int, amode);
+
+  cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+
+  const int *bc_type = cs_glob_bc_type;
+
+  /* We do not know what condition to put in the inlets and the outlets, so we
+     assume that there is an equilibrium. Moreover, cells containing a
+     coupled face (velocity-wise) are ignored also. */
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+    bndcel[cell_id] = 1;
+  });
+
+  /*
+    Loop on boundary faces first, as this allows setting bndcel,
+    needed for the interior faces loop.
+
+    The whole flux term of the stress tensor is already taken into account
+    (so, no corresponding term in boundary_stress field)
+    TODO in theory we should take the normal component into account (the
+    tangential one is modeled by the wall law).
+  */
+
+  ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+
+    int ityp = bc_type[face_id];
+    cs_lnum_t ii = b_face_cells[face_id];
+
+    if (   ityp == CS_OUTLET
+        || ityp == CS_INLET
+        || ityp == CS_FREE_INLET
+        || ityp == CS_CONVECTIVE_INLET
+        || ityp == CS_COUPLED_FD) {
+      bndcel[ii] = 0;
+      return;  // Return from lambda function here since contribution is 0.
+    }
+
+  });
+
+  cs_halo_sync(m->halo, ctx.use_gpu(), bndcel);
+
+  /* Interior faces */
+
+  ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+
+    cs_lnum_t ii = i_face_cells[face_id][0];
+    cs_lnum_t jj = i_face_cells[face_id][1];
+
+    cs_real_t w_f = weight[face_id];
+
+    cs_real_t grdtrv =       w_f  * cs_math_33_trace(gradv[ii])
+                       + (1.-w_f) * cs_math_33_trace(gradv[jj]);
+
+    cs_real_t flux0 = i_secvis[face_id] * grdtrv * i_face_surf[face_id];
+
+    cs_real_t ipjp[3];
+    const cs_nreal_t *n = i_face_u_normal[face_id];
+
+    /* I'J' */
+    for (cs_lnum_t i = 0; i < 3; i++)
+      ipjp[i] = n[i] * i_dist[face_id];
+
+    cs_real_t fluxi[3], fluxj[3];
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      cs_real_t flux = flux0*i_face_u_normal[face_id][i];
+
+      /* We need to compute (K grad(u)^T) .I'J'
+         which is equal to I'J' . (grad(u) . K^T)
+         But: (I'J' . (grad(u) . K^T))_i = I'J'_k grad(u)_kj K_ij
+      */
+
+      for (cs_lnum_t j = 0; j < 3; j++) {
+        for (cs_lnum_t k = 0; k < 3; k++) {
+          flux +=   ipjp[k]
+                  * (w_f*gradv[ii][k][j]+(1.-w_f)*gradv[jj][k][j])
+                  * i_visc[face_id][i][j];
+        }
+      }
+
+      fluxi[i] =  flux * bndcel[ii];
+      fluxj[i] = -flux * bndcel[jj];
+    }
+
+    if (ii < n_cells)
+      cs_dispatch_sum<3>(rhs[ii], fluxi, i_sum_type);
+    if (jj < n_cells)
+      cs_dispatch_sum<3>(rhs[jj], fluxj, i_sum_type);
+  });
+
+  ctx.wait();
+  CS_FREE(bndcel);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Add the explicit part of the convection/diffusion terms of a transport
  *  equation of a vector field \f$ \vect{\varia} \f$.
  *
@@ -5161,53 +5476,6 @@ cs_convection_diffusion_vector(int                         idtvar,
   if (pvara == nullptr)
     pvara = (const cs_real_3_t *)pvar;
 
-  /* Marker for inlet/outlet cells for transpose gradient
-     ----------------------------------------------------
-
-     We start the computation now, so that on a GPU, this can be done
-     in a separate stream, concurrently with the heavier computation
-     below. This is done so as to compensate for the kernel launch
-     latency of this very light operation.
-  */
-
-  short *bndcel = nullptr;
-  cs_dispatch_context ctx_c;
-  ctx_c.set_use_gpu(ctx.use_gpu()); /* Follows behavior of main context */
-#if defined(HAVE_CUDA)
-  if (ctx_c.use_gpu())
-    ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
-#endif
-#if defined(HAVE_HIP)
-  if (ctx_c.use_gpu())
-    ctx_c.set_hip_stream(cs_hip_get_stream(1));
-#endif
-
-  if (ivisep == 1 && eqp.idiff == 1) {
-    const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
-    const int *bc_type = cs_glob_bc_type;
-
-    /* We do not know what condition to put in the inlets and the outlets, so we
-       assume that there is an equilibrium. Moreover, cells containing a
-       coupled face (velocity-wise) are ignored also. */
-
-    /* Allocate a temporary array */
-    CS_MALLOC_HD(bndcel, n_cells_ext, short, amode);
-
-    ctx_c.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-      bndcel[cell_id] = 1;
-    });
-
-    ctx_c.parallel_for(m->n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-      int ityp = bc_type[face_id];
-      if (   ityp == CS_OUTLET
-          || ityp == CS_INLET
-          || ityp == CS_FREE_INLET
-          || ityp == CS_CONVECTIVE_INLET
-          || ityp == CS_COUPLED_FD)
-        bndcel[b_face_cells[face_id]] = 0;
-    });
-  }
-
   /* Compute the gradient of the vector (velocity)
      ----------------------------------
 
@@ -5326,112 +5594,20 @@ cs_convection_diffusion_vector(int                         idtvar,
   /* Computation of the transpose grad(vel) term and grad(-2/3 div(vel))
      ------------------------------------------------------------------- */
 
-  if (ivisep == 1 && eqp.idiff == 1) {
-
-    cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
-
-    const cs_lnum_t n_cells = m->n_cells;
-
-    const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
-    const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
-
-    const cs_real_t *restrict weight = fvq->weight;
-    const cs_real_t *restrict i_dist = fvq->i_dist;
-    const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
-    const cs_real_t *restrict i_f_face_surf = fvq->i_face_surf;
-    const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
-    const cs_real_t *restrict b_f_face_surf = fvq->b_face_surf;
-
-    const double thetap = eqp.theta;
-
-    cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
-    cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
-
-    ctx_c.wait();  /* We now need bndcel, computed by ctx_c */
-
-    /* Interior faces */
-
-    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
-
-      cs_lnum_t ii = i_face_cells[face_id][0];
-      cs_lnum_t jj = i_face_cells[face_id][1];
-
-      cs_real_t w_f = weight[face_id];
-      cs_real_t secvis = i_secvis[face_id]; /* - 2/3 * mu */
-      cs_real_t visco = i_visc[face_id]; /* mu S_ij / d_ij */
-
-      cs_real_t grdtrv =      w_f  * cs_math_33_trace(grad[ii])
-                        + (1.-w_f) * cs_math_33_trace(grad[jj]);
-
-      cs_real_t ipjp[3];
-      const cs_nreal_t *n = i_face_u_normal[face_id];
-
-      /* I'J' */
-      for (cs_lnum_t i = 0; i < 3; i++)
-        ipjp[i] = n[i] * i_dist[face_id];
-
-      cs_real_t _i_f_face_surf = i_f_face_surf[face_id];
-      /* We need to compute trans_grad(u).I'J' which is equal to I'J'.grad(u) */
-
-      cs_real_t  flux_p[3], flux_m[3];
-      cs_real_t  theta_bc_mult_i = thetap * bndcel[ii];
-      cs_real_t  theta_bc_mult_j = thetap * bndcel[jj];
-
-      for (cs_lnum_t isou = 0; isou < 3; isou++) {
-
-        cs_real_t tgrdfl =   ipjp[0] * (      w_f*grad[ii][0][isou]
-                                        + (1.-w_f)*grad[jj][0][isou])
-                           + ipjp[1] * (      w_f*grad[ii][1][isou]
-                                        + (1.-w_f)*grad[jj][1][isou])
-                           + ipjp[2] * (      w_f*grad[ii][2][isou]
-                                        + (1.-w_f)*grad[jj][2][isou]);
-
-        cs_real_t flux =   visco*tgrdfl
-                         + secvis*grdtrv*i_face_u_normal[face_id][isou]
-                                        *_i_f_face_surf;
-
-        flux_p[isou] =  theta_bc_mult_i * flux;
-        flux_m[isou] = -theta_bc_mult_j * flux;
-
-      }
-
-      if (ii < n_cells)
-        cs_dispatch_sum<3>(rhs[ii], flux_p, i_sum_type);
-      if (jj < n_cells)
-        cs_dispatch_sum<3>(rhs[jj], flux_m, i_sum_type);
-
-    });
-
-    /* Boundary faces
-       the whole flux term of the stress tensor is already taken into account
-       (so, no corresponding term in forbr)
-       TODO in theory we should take the normal component into account (the
-       tangential one is modeled by the wall law) */
-
-    ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
-
-      cs_lnum_t ii = b_face_cells[face_id];
-
-      /* Trace of velocity gradient */
-      cs_real_t grdtrv = (grad[ii][0][0]+grad[ii][1][1]+grad[ii][2][2]);
-      cs_real_t secvis = b_secvis[face_id]; /* - 2/3 * mu */
-      cs_real_t mult = thetap * bndcel[ii]
-        * secvis * grdtrv * b_f_face_surf[face_id];
-
-      cs_real_t flux[3];
-      for (cs_lnum_t isou = 0; isou < 3; isou++) {
-        flux[isou] = mult * b_face_u_normal[face_id][isou];
-      }
-      cs_dispatch_sum<3>(rhs[ii], flux, b_sum_type);
-
-    });
-
-  }
+  if (ivisep == 1 && eqp.idiff == 1)
+    cs_convection_diffusion_secvis(ctx,
+                                   m,
+                                   cs_glob_mesh_quantities,
+                                   eqp.theta,
+                                   i_visc,
+                                   i_secvis,
+                                   b_secvis,
+                                   grad,
+                                   rhs);
 
   ctx.wait();
 
   /* Free memory */
-  CS_FREE(bndcel);
   CS_FREE(bounds);
   CS_FREE(grad);
 
@@ -6362,15 +6538,9 @@ cs_anisotropic_left_diffusion_vector
 
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
-  const cs_real_t *restrict weight = fvq->weight;
-  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
-  const cs_nreal_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
-  const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_rreal_3_t *restrict diipf = fvq->diipf;
   const cs_rreal_3_t *restrict djjpf = fvq->djjpf;
   const cs_rreal_3_t *restrict diipb = fvq->diipb;
-
-  const int *bc_type = cs_glob_bc_type;
 
   /* Local variables */
 
@@ -6688,89 +6858,20 @@ cs_anisotropic_left_diffusion_vector
   } /* idtvar */
 
   /* 3. Computation of the transpose grad(vel) term and grad(-2/3 div(vel)) */
-  short *bndcel = nullptr;
 
   if (ivisep == 1 && idiffp == 1) {
-
-    /* We do not know what condition to put in the inlets and the outlets, so we
-       assume that there is an equilibrium. Moreover, cells containing a coupled
-       are removed. */
-
-    /* Allocate a temporary array */
-    CS_MALLOC_HD(bndcel, n_cells_ext, short, cs_alloc_mode);
-
-    ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-      bndcel[cell_id] = 1;
-    });
-
-    ctx.parallel_for(m->n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
-      int ityp = bc_type[face_id];
-      if (   ityp == CS_OUTLET
-          || ityp == CS_INLET
-          || ityp == CS_FREE_INLET
-          || ityp == CS_CONVECTIVE_INLET
-          || ityp == CS_COUPLED_FD)
-        bndcel[b_face_cells[face_id]] = 0;
-    });
-
-    /* ---> Interior faces */
-
-    ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
-
-      cs_lnum_t ii = i_face_cells[face_id][0];
-      cs_lnum_t jj = i_face_cells[face_id][1];
-
-      cs_real_t pnd = weight[face_id];
-      cs_real_t grdtrv =       pnd  * cs_math_33_trace(gradv[ii])
-                         + (1.-pnd) * cs_math_33_trace(gradv[jj]);
-
-      cs_real_t flux0 = i_secvis[face_id] * grdtrv * i_face_surf[face_id];
-
-      cs_real_t ipjp[3];
-      const cs_nreal_t *n = i_face_u_normal[face_id];
-
-      /* I'J' */
-      for (cs_lnum_t i = 0; i < 3; i++)
-        ipjp[i] = n[i] * i_dist[face_id];
-
-      cs_real_t fluxi[3], fluxj[3];
-      for (cs_lnum_t i = 0; i < 3; i++) {
-        cs_real_t flux = flux0*i_face_u_normal[face_id][i];
-
-        /* We need to compute (K grad(u)^T) .I'J'
-           which is equal to I'J' . (grad(u) . K^T)
-           But: (I'J' . (grad(u) . K^T))_i = I'J'_k grad(u)_kj K_ij
-        */
-
-        for (cs_lnum_t j = 0; j < 3; j++) {
-          for (cs_lnum_t k = 0; k < 3; k++) {
-            flux +=   ipjp[k]
-                    * (pnd*gradv[ii][k][j]+(1.-pnd)*gradv[jj][k][j])
-                    * i_visc[face_id][i][j];
-          }
-        }
-
-        fluxi[i] =  flux * bndcel[ii];
-        fluxj[i] = -flux * bndcel[jj];
-      }
-
-      if (ii < n_cells)
-        cs_dispatch_sum<3>(rhs[ii], fluxi, i_sum_type);
-      if (jj < n_cells)
-        cs_dispatch_sum<3>(rhs[jj], fluxj, i_sum_type);
-    });
-
-    /* ---> Boundary FACES
-       the whole flux term of the stress tensor is already taken into account
-       (so, no corresponding term in forbr)
-       TODO in theory we should take the normal component into account (the
-       tangential one is modeled by the wall law) */
+    cs_convection_anisotropic_leff_diffusion_secvis
+      (ctx,
+       m, cs_glob_mesh_quantities,
+       i_visc,
+       i_secvis,
+       gradv,
+       rhs);
   }
 
   ctx.wait();
 
   /* Free memory */
-  CS_FREE(bndcel);
   CS_FREE(bounds);
   CS_FREE(gradv);
 }

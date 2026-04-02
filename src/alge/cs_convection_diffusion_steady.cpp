@@ -74,7 +74,6 @@
 #include "base/cs_velocity_pressure.h"
 
 #include "alge/cs_blas.h"
-#include "alge/cs_bad_cells_regularisation.h"
 #include "alge/cs_gradient.h"
 #include "alge/cs_gradient_boundary.h"
 #include "mesh/cs_mesh_quantities.h"
@@ -1351,8 +1350,6 @@ cs_convection_diffusion_steady_scalar
   if (pvara == nullptr)
     pvara = (const cs_real_t *)pvar;
 
-  const cs_real_t  *restrict _pvar = (pvar != nullptr) ? pvar : pvara;
-
   /* Limiters */
   int df_limiter_id = eqp.diffusion_limiter_id;
   if (df_limiter_id > -1)
@@ -1451,7 +1448,7 @@ cs_convection_diffusion_steady_scalar
                                     eqp.climgr,
                                     nullptr, /* f_ext exterior force */
                                     bc_coeffs,
-                                    _pvar,
+                                    pvar,
                                     gweight, /* Weighted gradient */
                                     grad,
                                     nullptr);
@@ -1479,7 +1476,7 @@ cs_convection_diffusion_steady_scalar
                              ctx,
                              (const cs_real_3_t *)grad,
                              gradst,
-                             _pvar,
+                             pvar,
                              val_f,
                              i_massflux);
 
@@ -1502,7 +1499,7 @@ cs_convection_diffusion_steady_scalar
                          bc_coeffs,
                          i_massflux,
                          b_massflux,
-                         _pvar,
+                         pvar,
                          gradup);
 
     }
@@ -1554,8 +1551,8 @@ cs_convection_diffusion_steady_scalar
                             djjpf[face_id],
                             grad[ii],
                             grad[jj],
-                            _pvar[ii],
-                            _pvar[jj],
+                            pvar[ii],
+                            pvar[jj],
                             pvara[ii],
                             pvara[jj],
                             &pifri,
@@ -1570,8 +1567,8 @@ cs_convection_diffusion_steady_scalar
       cs_i_conv_flux(iconvp,
                      1.,
                      1,
-                     _pvar[ii],
-                     _pvar[jj],
+                     pvar[ii],
+                     pvar[jj],
                      pifri,
                      pifrj,
                      pjfri,
@@ -1645,8 +1642,8 @@ cs_convection_diffusion_steady_scalar
                      grad[jj],
                      gradup[ii],
                      gradup[jj],
-                     _pvar[ii],
-                     _pvar[jj],
+                     pvar[ii],
+                     pvar[jj],
                      pvara[ii],
                      pvara[jj],
                      &pifri,
@@ -1661,8 +1658,8 @@ cs_convection_diffusion_steady_scalar
       cs_i_conv_flux(iconvp,
                      1.,
                      1,
-                     _pvar[ii],
-                     _pvar[jj],
+                     pvar[ii],
+                     pvar[jj],
                      pifri,
                      pifrj,
                      pjfri,
@@ -1745,8 +1742,8 @@ cs_convection_diffusion_steady_scalar
                                 gradup[jj],
                                 gradst[ii],
                                 gradst[jj],
-                                _pvar[ii],
-                                _pvar[jj],
+                                pvar[ii],
+                                pvar[jj],
                                 pvara[ii],
                                 pvara[jj],
                                 &pifri,
@@ -1761,8 +1758,8 @@ cs_convection_diffusion_steady_scalar
       cs_i_conv_flux(iconvp,
                      1.,
                      1,
-                     _pvar[ii],
-                     _pvar[jj],
+                     pvar[ii],
+                     pvar[jj],
                      pifri,
                      pifrj,
                      pjfri,
@@ -1863,7 +1860,7 @@ cs_convection_diffusion_steady_scalar
                      relaxp,
                      diipb[face_id],
                      grad[ii],
-                     _pvar[ii],
+                     pvar[ii],
                      pvara[ii],
                      &pir,
                      &pipr);
@@ -1877,7 +1874,7 @@ cs_convection_diffusion_steady_scalar
                        1.,
                        1,
                        bc_type[face_id],
-                       _pvar[ii],
+                       pvar[ii],
                        pir,
                        val_f_steady,
                        b_massflux[face_id],
@@ -1915,7 +1912,7 @@ cs_convection_diffusion_steady_scalar
                        relaxp,
                        diipb[face_id],
                        grad[jj],
-                       _pvar[jj],
+                       pvar[jj],
                        pvara[jj],
                        &pip,
                        &pipr);
@@ -1960,7 +1957,7 @@ cs_convection_diffusion_steady_scalar
                        relaxp,
                        diipb[face_id],
                        grad[jj],
-                       _pvar[jj],
+                       pvar[jj],
                        pvara[jj],
                        &pip,
                        &pipr);
@@ -2018,7 +2015,7 @@ cs_convection_diffusion_steady_scalar
                      relaxp,
                      diipb[face_id],
                      grad[ii],
-                     _pvar[ii],
+                     pvar[ii],
                      pvara[ii],
                      &pir,
                      &pipr);
@@ -2034,7 +2031,7 @@ cs_convection_diffusion_steady_scalar
                                inc,
                                bc_type[face_id],
                                icvfli[face_id],
-                               _pvar[ii],
+                               pvar[ii],
                                pir,
                                pipr,
                                coface[face_id],
@@ -2197,8 +2194,6 @@ cs_face_convection_steady_scalar
   if (pvara == nullptr)
     pvara = (const cs_real_t *)pvar;
 
-  const cs_real_t  *restrict _pvar = (pvar != nullptr) ? pvar : pvara;
-
   /* Slope limiters */
   int df_limiter_id = eqp.diffusion_limiter_id;
   if (df_limiter_id > -1)
@@ -2289,7 +2284,7 @@ cs_face_convection_steady_scalar
                                     eqp.d_climgr,
                                     nullptr, /* f_ext exterior force */
                                     bc_coeffs,
-                                    _pvar,
+                                    pvar,
                                     gweight, /* Weighted gradient */
                                     grad,
                                     nullptr);
@@ -2318,7 +2313,7 @@ cs_face_convection_steady_scalar
                              ctx,
                              (const cs_real_3_t *)grad,
                              gradst,
-                             _pvar,
+                             pvar,
                              val_f,
                              i_massflux);
 
@@ -2341,7 +2336,7 @@ cs_face_convection_steady_scalar
                          bc_coeffs,
                          i_massflux,
                          b_massflux,
-                         _pvar,
+                         pvar,
                          gradup);
 
     }
@@ -2385,8 +2380,8 @@ cs_face_convection_steady_scalar
                             djjpf[face_id],
                             grad[ii],
                             grad[jj],
-                            _pvar[ii],
-                            _pvar[jj],
+                            pvar[ii],
+                            pvar[jj],
                             pvara[ii],
                             pvara[jj],
                             &pifri,
@@ -2401,8 +2396,8 @@ cs_face_convection_steady_scalar
       cs_i_conv_flux(iconvp,
                      1.,
                      1,
-                     _pvar[ii],
-                     _pvar[jj],
+                     pvar[ii],
+                     pvar[jj],
                      pifri,
                      pifrj,
                      pjfri,
@@ -2452,8 +2447,8 @@ cs_face_convection_steady_scalar
                      grad[jj],
                      gradup[ii],
                      gradup[jj],
-                     _pvar[ii],
-                     _pvar[jj],
+                     pvar[ii],
+                     pvar[jj],
                      pvara[ii],
                      pvara[jj],
                      &pifri,
@@ -2468,8 +2463,8 @@ cs_face_convection_steady_scalar
       cs_i_conv_flux(iconvp,
                      1.,
                      1,
-                     _pvar[ii],
-                     _pvar[jj],
+                     pvar[ii],
+                     pvar[jj],
                      pifri,
                      pifrj,
                      pjfri,
@@ -2530,8 +2525,8 @@ cs_face_convection_steady_scalar
                                 gradup[jj],
                                 gradst[ii],
                                 gradst[jj],
-                                _pvar[ii],
-                                _pvar[jj],
+                                pvar[ii],
+                                pvar[jj],
                                 pvara[ii],
                                 pvara[jj],
                                 &pifri,
@@ -2546,8 +2541,8 @@ cs_face_convection_steady_scalar
       cs_i_conv_flux(iconvp,
                      1.,
                      1,
-                     _pvar[ii],
-                     _pvar[jj],
+                     pvar[ii],
+                     pvar[jj],
                      pifri,
                      pifrj,
                      pjfri,
@@ -2629,7 +2624,7 @@ cs_face_convection_steady_scalar
                      relaxp,
                      diipb[face_id],
                      grad[ii],
-                     _pvar[ii],
+                     pvar[ii],
                      pvara[ii],
                      &pir,
                      &pipr);
@@ -2639,7 +2634,7 @@ cs_face_convection_steady_scalar
                        1,
                        inc,
                        bc_type[face_id],
-                       _pvar[ii],
+                       pvar[ii],
                        pir,
                        pipr,
                        coefap[face_id],
@@ -2680,7 +2675,7 @@ cs_face_convection_steady_scalar
                      relaxp,
                      diipb[face_id],
                      grad[ii],
-                     _pvar[ii],
+                     pvar[ii],
                      pvara[ii],
                      &pir,
                      &pipr);
@@ -2695,7 +2690,7 @@ cs_face_convection_steady_scalar
                              inc,
                              bc_type[face_id],
                              icvfli[face_id],
-                             _pvar[ii],
+                             pvar[ii],
                              pir,
                              pipr,
                              coface[face_id],
@@ -2868,9 +2863,6 @@ cs_convection_diffusion_steady_strided
 
   grad_t *grdpa = nullptr;
 
-  const var_t *restrict _pvar
-    = (pvar != nullptr) ? (const var_t *)pvar : pvara;
-
   /* Slope limiters */
 
   if (iwarnp >= 2 && iconvp == 1) {
@@ -2900,7 +2892,7 @@ cs_convection_diffusion_steady_strided
     cs_slope_test_gradient_strided<stride>(ctx,
                                            (const grad_t *)grad,
                                            grdpa,
-                                           _pvar,
+                                           pvar,
                                            val_f,
                                            i_massflux);
     ctx.wait();
@@ -2946,8 +2938,8 @@ cs_convection_diffusion_steady_strided
       var_t _pi, _pj, _pia, _pja;
 
       for (cs_lnum_t i = 0; i < stride; i++) {
-        _pi[i]  = _pvar[ii][i];
-        _pj[i]  = _pvar[jj][i];
+        _pi[i]  = pvar[ii][i];
+        _pj[i]  = pvar[jj][i];
         _pia[i] = pvara[ii][i];
         _pja[i] = pvara[jj][i];
       }
@@ -2989,8 +2981,8 @@ cs_convection_diffusion_steady_strided
       cs_i_conv_flux_strided<stride>(iconvp,
                                      1.,
                                      1,
-                                     _pvar[ii],
-                                     _pvar[jj],
+                                     pvar[ii],
+                                     pvar[jj],
                                      pifri,
                                      pifrj,
                                      pjfri,
@@ -3047,8 +3039,8 @@ cs_convection_diffusion_steady_strided
       var_t _pi, _pj, _pia, _pja;
 
       for (cs_lnum_t i = 0; i < stride; i++) {
-        _pi[i]  = _pvar[ii][i];
-        _pj[i]  = _pvar[jj][i];
+        _pi[i]  = pvar[ii][i];
+        _pj[i]  = pvar[jj][i];
         _pia[i] = pvara[ii][i];
         _pja[i] = pvara[jj][i];
       }
@@ -3096,8 +3088,8 @@ cs_convection_diffusion_steady_strided
       cs_i_conv_flux_strided<stride>(iconvp,
                                      1.,
                                      1,
-                                     _pvar[ii],
-                                     _pvar[jj],
+                                     pvar[ii],
+                                     pvar[jj],
                                      pifri,
                                      pifrj,
                                      pjfri,
@@ -3155,8 +3147,8 @@ cs_convection_diffusion_steady_strided
       var_t _pi, _pj, _pia, _pja;
 
       for (cs_lnum_t i = 0; i < stride; i++) {
-        _pi[i]  = _pvar[ii][i];
-        _pj[i]  = _pvar[jj][i];
+        _pi[i]  = pvar[ii][i];
+        _pj[i]  = pvar[jj][i];
         _pia[i] = pvara[ii][i];
         _pja[i] = pvara[jj][i];
       }
@@ -3212,8 +3204,8 @@ cs_convection_diffusion_steady_strided
       cs_i_conv_flux_strided<stride>(iconvp,
                                      1.,
                                      1,
-                                     _pvar[ii],
-                                     _pvar[jj],
+                                     pvar[ii],
+                                     pvar[jj],
                                      pifri,
                                      pifrj,
                                      pjfri,
@@ -3286,7 +3278,7 @@ cs_convection_diffusion_steady_strided
       var_t pir, pipr, _val_f, _flux_d;
       var_t _pi, _pia;
       for (int i = 0; i < stride; i++) {
-        _pi[i]  = _pvar[ii][i];
+        _pi[i]  = pvar[ii][i];
         _pia[i] = pvara[ii][i];
       }
 
@@ -3373,7 +3365,7 @@ cs_convection_diffusion_steady_strided
       var_t _pi, _pia;
 
       for (cs_lnum_t i = 0; i < stride; i++) {
-        _pi[i]  = _pvar[ii][i];
+        _pi[i]  = pvar[ii][i];
         _pia[i] = pvara[ii][i];
       }
 
@@ -3416,7 +3408,7 @@ cs_convection_diffusion_steady_strided
                                              inc,
                                              bc_type[face_id],
                                              icvfli[face_id],
-                                             _pvar[ii],
+                                             pvar[ii],
                                              pir,
                                              pipr,
                                              coface[face_id],
