@@ -1303,7 +1303,7 @@ _update_fluid_vel(const cs_mesh_t             *m,
       cs_runge_kutta_integrator_t *rk_u =
         cs_runge_kutta_integrator_by_id(eqp_u->rk_def.rk_id);
       if (rk_u != nullptr)
-        cs_runge_kutta_stage_projection_rhs<3>(ctx, rk_u, (cs_real_t*) cpro_gradp);
+        rk_u->stage_projection_rhs(ctx, (cs_real_t*)cpro_gradp);
     }
 
     /*  Update the velocity field */
@@ -3070,7 +3070,7 @@ _velocity_prediction(const cs_mesh_t             *m,
       rk_u = cs_runge_kutta_integrator_by_id(eqp_u->rk_def.rk_id);
 
       if (cs_runge_kutta_is_active(rk_u)) {
-        cs_runge_kutta_stage_set_initial_rhs<3>(ctx, rk_u,(cs_real_t*)smbr);
+        rk_u->stage_set_initial_rhs(ctx, (cs_real_t*)smbr);
         cs_runge_kutta_stage_complete_rhs<3>(ctx,
                                              rk_u,
                                              cs_glob_time_step_options->idtvar,
@@ -3090,7 +3090,7 @@ _velocity_prediction(const cs_mesh_t             *m,
                                              icvflb,
                                              icvfli,
                                              vel);
-        cs_runge_kutta_staging<3>(ctx, rk_u, (cs_real_t*) vel);
+        rk_u->solve_stage(ctx, (cs_real_t*)vel);
 
         CS_FREE(smbr);
         CS_FREE(fimp);
@@ -3875,11 +3875,8 @@ cs_solve_navier_stokes(const int        iterns,
   if (eqp_u->rk_def.rk_id > -1) {
     rk_u = cs_runge_kutta_integrator_by_id(eqp_u->rk_def.rk_id);
 
-    cs_runge_kutta_init_state<3>(ctx,
-                                 rk_u,
-                                 crom,
-                                 mq->cell_vol,
-                                 (cs_real_t *)vela);
+    if (rk_u != nullptr)
+      rk_u->init_state(ctx, crom, mq->cell_vol, (cs_real_t *)vela);
   }
 
   /* Prediction of the mass flux in case of Low Mach compressible algorithm
@@ -4757,10 +4754,8 @@ cs_solve_navier_stokes(const int        iterns,
                    rs_ell[0], rs_ell[0] + rs_ell[1]);
     }
 
-    if (rk_u != nullptr)
-      do_step = cs_runge_kutta_is_staging(rk_u);
-    else
-      do_step = false;  // done
+    // The function tests if the pointer is null and returns false in that case
+    do_step = cs_runge_kutta_is_staging(rk_u);
   }
 
   CS_FREE(trav);

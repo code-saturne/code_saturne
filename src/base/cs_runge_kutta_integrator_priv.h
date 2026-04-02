@@ -80,15 +80,6 @@ typedef enum {
   CS_RK4
 } cs_runge_kutta_scheme_t;
 
-/* Coeffients adapted from the Butcher tableau */
-/* ------------------------------------------- */
-
-typedef struct {
-
-  double *a;
-  double *c;
-
-} cs_runge_kutta_coeff_t;
 
 /*  Descriptor of a Runge-Kutta integrator */
 /* --------------------------------------- */
@@ -99,34 +90,5 @@ typedef struct {
   cs_runge_kutta_scheme_t scheme;
 
 } cs_runge_kutta_def_t;
-
-/* Generic Runge-Kutta integrator */
-/* -------------------------------*/
-
-typedef struct {
-
-  cs_runge_kutta_scheme_t scheme;     // Selected RK scheme
-  char                   *name;       // associated equation's or field's name
-  int                     n_stages;   // number of stages
-  int                     i_stage;    // Current stage index
-
-  const cs_real_t        *dt;         // time step array
-
-  cs_lnum_t               n_elts;     // number of computational elements
-
-  /* variable storage */
-  cs_real_t *u_old;       // variable at beginning of the time stepping
-  cs_real_t *u_new;       // updated variable
-
-  cs_real_t *rhs_stages;  // RHS temporary storage
-
-
-  cs_real_t *mass;         // mass array for the variables, equivalent to
-                           // diag elements of mass matrix in an explicit
-                           // time scheme
-
-  cs_runge_kutta_coeff_t rk_coeff;
-
-} cs_runge_kutta_integrator_t;
 
 #endif /* __RK_INTEGRATOR_PRIV_H__ */

@@ -67,136 +67,6 @@ int  _n_rk_integrators = 0;
  * Private function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Fill integrator coeffs for a given scheme.
- *
- * Reference: Accuracy analysis of explicit Runge–Kutta methods
- * applied to the incompressible Navier–Stokes equations.
- * J.Comput.Phys. 231 (2012) 3041–3063
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_runge_kutta_integrator_init_scheme(cs_runge_kutta_integrator_t   *rk,
-                                    cs_runge_kutta_scheme_t        scheme)
-{
-  double *a = rk->rk_coeff.a;
-  double *c = rk->rk_coeff.c;
-
-  memset(a, 0., RK_HIGHEST_ORDER*RK_HIGHEST_ORDER*sizeof(double));
-  memset(c, 0., RK_HIGHEST_ORDER*sizeof(double));
-
-  switch (scheme) {
-
-  case CS_RK_NONE:
-    return;
-
-  case CS_RK1:
-    rk->n_stages = 1;
-    a[0] = 1.;
-    c[0] = 1.;
-
-    break;
-
-  case CS_RK2:
-    [[fallthrough]];
-  case CS_RK2_HEUN:
-    rk->n_stages = 2;
-
-    a[0] = 1.;
-    a[4] = 0.5, a[5] = 0.5;
-
-    c[0] = 1., c[1] = 1.;
-
-    break;
-
-  case CS_RK2_MP:
-    rk->n_stages = 2;
-
-    a[0] = 0.5;
-    a[4] = 0., a[5] = 1;
-
-    c[0] = 0.5, c[1] = 1.;
-
-    break;
-
-  case CS_RK3:
-    [[fallthrough]];
-  case CS_RK3_WRAY:
-    rk->n_stages = 3;
-
-    a[0] = 8.0/15.0;
-    a[4] = 1.0/4.0, a[5] = 5.0/12.0;
-    a[8] = 1.0/4.0, a[9] = 0.,  a[10] = 3./4.;
-
-    c[0] = 8.0/15.0, c[1] = 2./3., c[2] = 1.0;
-
-    break;
-
-  case CS_RK3_SSP:
-
-    rk->n_stages = 3;
-
-    a[0] = 1.0;
-    a[4] = 1.0/4.0, a[5] = 1.0/4.0;
-    a[8] = 1.0/6.0, a[9] = 1.0/6.0, a[10] = 2./3.;
-
-    c[0] = 1.0, c[1] = 1./2., c[2] = 1.0;
-
-    break;
-
-  case CS_RK4:
-    rk->n_stages = 4;
-
-    a[0] = 1.0;
-    a[4] = 3.0/8.0,  a[5] = 1.0/8.0;
-    a[8] = -1.0/8.0, a[9] = -3.0/8.0,   a[10] = 3.0/2.0;
-    a[12] = 1.0/6.0, a[13] = -1.0/18.0, a[14] = 2.0/3.0, a[15] = 2.0/9.0;
-
-    c[0] = 1.0, c[1] = 1.0/2.0, c[2] = 1.0, c[3] = 1.0;
-
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Type of Runge-Kutta not available.\n"
-              "%s: Stop building Runge-Kutta integrator.\n",
-              __func__, __func__);
-    break;
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Free memory
- * \param[in]  rk      double pointer to a runge-kutta integrator
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_runge_kutta_integrator_free(cs_runge_kutta_integrator_t  **rk)
-{
-  cs_runge_kutta_integrator_t *_rk = *rk;
-
-  if (_rk == nullptr)
-    return;
-
-  CS_FREE(_rk->rhs_stages);
-  CS_FREE(_rk->rk_coeff.a);
-  CS_FREE(_rk->rk_coeff.c);
-
-  CS_FREE(_rk->name);
-
-  CS_FREE(_rk->mass);
-
-  CS_FREE(_rk->u_old);
-  CS_FREE(_rk->u_new);
-  CS_FREE(_rk);
-
-  *rk = nullptr;
-}
-
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
@@ -222,37 +92,8 @@ cs_runge_kutta_integrator_create(cs_runge_kutta_scheme_t      scheme,
                                  int                          dim,
                                  cs_lnum_t                    n_elts)
 {
-  cs_runge_kutta_integrator_t *rk = nullptr;
-  cs_lnum_t stride = dim;
-
-  CS_MALLOC(rk, 1, cs_runge_kutta_integrator_t);
-
-  rk->scheme = scheme;
-
-  CS_MALLOC(rk->name, strlen(name) + 1, char);
-  strcpy(rk->name, name);
-
-  rk->dt = dt;
-
-  rk->n_elts = n_elts;
-  rk->n_stages = 1;
-  rk->i_stage = 0;
-
-  CS_MALLOC_HD(rk->rk_coeff.a, RK_HIGHEST_ORDER*RK_HIGHEST_ORDER,
-               double, cs_alloc_mode);
-  CS_MALLOC_HD(rk->rk_coeff.c, RK_HIGHEST_ORDER,
-               double, cs_alloc_mode);
-
-  _runge_kutta_integrator_init_scheme(rk, scheme);
-
-  CS_MALLOC_HD(rk->rhs_stages, rk->n_stages*stride*n_elts,
-               cs_real_t, cs_alloc_mode);
-
-  CS_MALLOC_HD(rk->u_old, stride*n_elts, cs_real_t, cs_alloc_mode);
-
-  CS_MALLOC_HD(rk->mass, n_elts, cs_real_t, cs_alloc_mode);
-
-  CS_MALLOC_HD(rk->u_new, stride*n_elts, cs_real_t, cs_alloc_mode);
+  cs_runge_kutta_integrator_t *rk =
+    new cs_runge_kutta_integrator_t(scheme, name, dt, dim, n_elts);
 
   int _rk_integrator_id = _n_rk_integrators;
 
@@ -329,7 +170,7 @@ void
 cs_runge_kutta_integrators_destroy()
 {
   for (int i = 0; i < _n_rk_integrators; i++)
-    _runge_kutta_integrator_free(&_rk_lst[i]);
+    delete _rk_lst[i];
 
   CS_FREE(_rk_lst);
   _n_rk_integrators = 0;
@@ -352,12 +193,13 @@ cs_runge_kutta_staging_potential(cs_dispatch_context          &ctx,
 {
   assert(rk != nullptr);
 
-  const int n_elts = rk->n_elts;
+  const cs_lnum_t n_elts = rk->n_elts();
 
   // get the last stage index
-  const int i_stg = rk->i_stage - 1;
+  const int i_stg = rk->i_stage() - 1;
 
-  const cs_real_t *a = rk->rk_coeff.a + RK_HIGHEST_ORDER*i_stg;
+  auto a = rk->get_stage_coeff_a(i_stg);
+//  const cs_real_t *a = rk->rk_coeff.a + RK_HIGHEST_ORDER*i_stg;
 
   ctx.parallel_for (n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t i_elt) {
      phi_stage[i_elt] /= a[i_stg];
@@ -441,11 +283,12 @@ cs_runge_kutta_stage_complete_scalar_rhs
    const cs_real_t              xcpp[])
 {
   assert(rk != nullptr);
-  const int n_elts = rk->n_elts;
-  // get the current stage index
-  const int i_stg = rk->i_stage;
+  assert(rk->stride() == 1);
 
-  cs_real_t *rhs = rk->rhs_stages + i_stg*n_elts;
+  // get the current stage index
+  const int i_stg = rk->i_stage();
+
+  cs_real_t *rhs = rk->get_rhs_stage_sub_array(i_stg);
 
   /* We compute the total explicit balance. */
 

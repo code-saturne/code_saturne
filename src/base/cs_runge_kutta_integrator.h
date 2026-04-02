@@ -60,6 +60,469 @@
 
 /*----------------------------------------------------------------------------*/
 
+#if defined(__cplusplus)
+namespace cs {
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Generic Runge-Kutta integrator class
+ */
+/*----------------------------------------------------------------------------*/
+
+class runge_kutta_integrator {
+
+/*=============================================================================
+ * Public methods
+ *============================================================================*/
+
+public:
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Default constructor method.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST
+  runge_kutta_integrator()
+  {}
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Constructor method with input arguments.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST
+  runge_kutta_integrator
+  (
+    cs_runge_kutta_scheme_t  scheme, /*!<[in] Selected RK scheme */
+    const char              *name,   /*!<[in] Associated equation or field's
+                                              name */
+    const cs_real_t         *dt,     /*!<[in] time step array (ptr) */
+    int                      dim,    /*!<[in] Field's dimension */
+    cs_lnum_t                n_elts  /*!<[in] Number of computational elements */
+  )
+  {
+    _scheme = scheme;
+    CS_MALLOC(_name, strlen(name) + 1, char);
+    strcpy(_name, name);
+
+    _dt.update_data((cs_real_t *)dt, n_elts);
+
+    _stride = dim;
+    _n_elts = n_elts;
+    _n_stages = 1;
+    _i_stage = 0;
+
+    _a.reshape(RK_HIGHEST_ORDER, RK_HIGHEST_ORDER);
+    _c.reshape(RK_HIGHEST_ORDER);
+
+    init_scheme_();
+
+    _rhs_stages.reshape(_n_stages, _n_elts, _stride);
+    _u_old.reshape(_n_elts, _stride);
+    _u_new.reshape(_n_elts, _stride);
+    _mass.reshape(_n_elts);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Destructor method.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST
+  ~runge_kutta_integrator()
+  {
+    CS_FREE(_name);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief IDefault constructor method.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST
+  void
+  init_state
+  (
+    cs_dispatch_context &ctx,  /*!<[in] Reference to dispatch context */
+    const cs_real_t     *rho,  /*!<[in] mass density within the geometry
+                                        support */
+    const cs_real_t     *vol,  /*!<[in] measure of the geometry support */
+    cs_real_t           *pvara /*!<[in] high level variable array at the
+                                        begining of a time step */
+  )
+  {
+    _i_stage = 0;
+
+    auto mass = _mass.view();
+    auto u_old = _u_old.view();
+
+    ctx.parallel_for(_n_elts, CS_LAMBDA (cs_lnum_t e_id) {
+      mass[e_id] = rho[e_id] * vol[e_id];
+      for (cs_lnum_t i = 0; i < _stride; i++)
+        u_old(e_id, i) = pvara[_stride*e_id + i];
+    });
+    ctx.wait();
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Perform one Runge-Kutta staging.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST
+  void
+  solve_stage
+  (
+    cs_dispatch_context &ctx,       /*!<[in] Reference to dispatch context */
+    cs_real_t           *pvar_stage /*!<[in] high level variable array along
+                                             stages */
+  )
+  {
+    auto dt = _dt.view_1d();
+    auto mass = _mass.view();
+
+    const int i_stg = _i_stage;
+
+    auto u0 = _u_old.view();
+    auto u_new = _u_new.view();
+    auto rhs_stage = _rhs_stages.view();
+
+    const auto a = _a.sub_view(i_stg);
+
+    ctx.parallel_for(_n_elts, CS_LAMBDA (cs_lnum_t e_id) {
+      for (cs_lnum_t i = 0; i < _stride; i++)
+        u_new(e_id, i) = u0(e_id, i);
+
+      for (int j_stg = 0; j_stg <= i_stg; j_stg++) {
+        for (cs_lnum_t i = 0; i < _stride; i++)
+          u_new(e_id, i) += rhs_stage(j_stg, e_id, i)* a[j_stg] * dt[e_id]
+                          / mass[e_id];
+      }
+
+      for (cs_lnum_t i = 0; i < _stride; i++)
+        pvar_stage[_stride*e_id + i] = u_new(e_id, i);
+    });
+
+    ctx.wait();
+
+    _i_stage += 1;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Perform one Runge-Kutta staging for the potential in the NS system.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST
+  void
+  stage_projection_rhs
+  (
+    cs_dispatch_context &ctx,    /*!<[in] Reference to dispatch context */
+    cs_real_t           *grad_dp /*!<[in] pressure increment gradient */
+  )
+  {
+    const int i_stg = _i_stage - 1;
+    const auto a = _a.sub_view(i_stg);
+
+    auto rhs = _rhs_stages.sub_view(i_stg);
+    auto mass = _mass.view();
+
+    ctx.parallel_for(_n_elts, CS_LAMBDA (cs_lnum_t e_id) {
+      for (cs_lnum_t i = 0; i < _stride; i++) {
+        rhs(e_id, i) -= grad_dp[_stride*e_id + i] * mass[e_id];
+        grad_dp[_stride*e_id + i] *= a[i_stg];
+      }
+    });
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Set initial rhs per stage for Runge-Kutta integrator.
+   *        Align with legacy equations' building sequence.
+   *        1) Collect initial rhs done in
+   *        cs_solve_navier_stokes/cs_solve_equation_scalar
+   *        2) Complete rhs with adding explicit part of the
+   *        convection/diffusion balance
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST
+  void
+  stage_set_initial_rhs
+  (
+    cs_dispatch_context &ctx,     /*!<[in] Reference to dispatch context */
+    cs_real_t           *rhs_pvar /*!<[in] pointer to high level rhs array */
+  )
+  {
+    const int i_stg = _i_stage - 1;
+    auto rhs = _rhs_stages.sub_view(i_stg);
+
+    ctx.parallel_for(_n_elts, CS_LAMBDA (cs_lnum_t e_id) {
+      for (cs_lnum_t i = 0; i < _stride; i++)
+        rhs(e_id, i) = rhs_pvar[_stride*e_id + i];
+    });
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Check if integrator is active.
+   *
+   * \return true if active, false otherwise.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  inline bool
+  is_active() const
+  {
+    return (_scheme > CS_RK_NONE);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Check if integrator is still in the staging process
+   *
+   * \return true if staging, false otherwise
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  inline bool
+  is_staging() const
+  {
+    return (_i_stage < _n_stages);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Get scheme used by integrator
+   *
+   * \return sheme type of the integrator (cs_runge_kutta_scheme_t)
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  inline cs_runge_kutta_scheme_t
+  scheme() const
+  {
+    return _scheme;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Get number of elements used for resolution.
+   *
+   * \return number of elements (cs_lnum_t)
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  inline cs_lnum_t
+  n_elts() const
+  {
+    return _n_elts;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Get current stage of RK resolution
+   *
+   * \return current stage id (int)
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  inline int
+  i_stage() const
+  {
+    return _i_stage;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Get solved variable stride
+   *
+   * \return variable stride (int)
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  inline int
+  stride() const
+  {
+    return _stride;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Get raw pointer to rhs of a given stage
+   *
+   * \return raw pointer (cs_real_t *)
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST
+  cs_real_t *
+  get_rhs_stage_sub_array
+  (
+    int stage_id /*!<[in] stage id */
+  )
+  {
+    return _rhs_stages.sub_array(stage_id);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief Get "a" coefficients for a given stage
+   *
+   * \return 1D span (cs_span<cs_real_t>) of the coefficients
+   */
+  /*--------------------------------------------------------------------------*/
+  CS_F_HOST
+  cs_span<cs_real_t>
+  get_stage_coeff_a
+  (
+    int i /*!<[in] stage id */
+  )
+  {
+    return _a.sub_view(i);
+  }
+
+private:
+
+  /*===========================================================================
+   * Private methods
+   *==========================================================================*/
+
+  /*--------------------------------------------------------------------------*/
+  /*!
+   * \brief  Fill integrator coeffs for a given scheme.
+   *
+   * Reference: Accuracy analysis of explicit Runge–Kutta methods
+   * applied to the incompressible Navier–Stokes equations.
+   * J.Comput.Phys. 231 (2012) 3041–3063
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST
+  void
+  init_scheme_()
+  {
+    _a.zero();
+    _c.zero();
+
+    switch (_scheme) {
+    case CS_RK_NONE:
+      return;
+
+    case CS_RK1:
+      _n_stages = 1;
+      _a(0, 0) = 1.;
+      _c[0]    = 1.;
+
+      break;
+
+    case CS_RK2:
+      [[fallthrough]];
+    case CS_RK2_HEUN:
+      _n_stages = 2;
+      _a(0,0) = 1.;
+      _a(1,0) = 0.5, _a(1,1) = 0.5;
+
+      _c[0] = 1.;
+      _c[1] = 1.;
+
+      break;
+
+    case CS_RK3:
+      [[fallthrough]];
+    case CS_RK3_WRAY:
+      _n_stages = 3;
+
+      _a(0,0) = 8. / 15.;
+      _a(1,0) = 1./4., _a(1,1) = 5./12.;
+      _a(2,0) = 1./4., _a(2,1) = 0., _a(2,2) = 3./4.;
+
+      _c[0] = 8./15.;
+      _c[1] = 2./3.;
+      _c[2] = 1.;
+
+      break;
+
+    case CS_RK3_SSP:
+      _n_stages = 3;
+      _a(0,0) = 1.;
+      _a(1,0) = 1./4., _a(1,1) = 1./4.;
+      _a(2,0) = 1./6., _a(2,1) = 1./6., _a(2,2) = 2./3.;
+
+      _c[0] = 1.;
+      _c[1] = 1./2.;
+      _c[2] = 1.;
+
+      break;
+
+    case CS_RK4:
+      _n_stages = 4;
+      _a(0,0) = 1.;
+      _a(1,0) = 3./8., _a(1,1) = 1./8.;
+      _a(2,0) = -1./8., _a(2,1) = -3./8., _a(2,2) = 3./2.;
+      _a(3,0) = 1./6., _a(3,1) = -1./18., _a(3,2) = 2./3., _a(3,3) = 2./9.;
+
+      _c[0] = 1.;
+      _c[1] = 1./2.;
+      _c[2] = 1.;
+      _c[3] = 1.;
+
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Type of Runge-Kutta not available.\n"
+                "%s: Stop building Runge-Kutta integrator.\n",
+                __func__, __func__);
+      break;
+    }
+  }
+
+  /*===========================================================================
+   * Private members
+   *==========================================================================*/
+
+  cs_runge_kutta_scheme_t  _scheme{CS_RK_NONE}; /*!< Selected RK scheme */
+  char                    *_name{nullptr};      /*!< Associated equation's or
+                                                     field name */
+  int                      _n_stages{0};        /*!< Number of stages */
+  int                      _i_stage{0};         /*!< Current stage index */
+  cs_span<cs_real_t>       _dt;                 /*!< View of time step array */
+
+  int                      _stride{0};          /*!< Variable stride */
+  cs_lnum_t                _n_elts{0};          /*!< Number of computational
+                                                     elements */
+
+  /* variable storage */
+  cs_array_2d<cs_real_t>   _u_old;              /*!< Variable at beginning of
+                                                     the time step */
+  cs_array_2d<cs_real_t>   _u_new;              /*!< Updated variable */
+  cs_array_3d<cs_real_t>   _rhs_stages;         /*!< RHS temporary storage */
+  cs_array<cs_real_t>      _mass;               /*!< Mass array for the
+                                                     variables' resolution. */
+
+  /* Coeffients adapted from the Butcher tableau */
+  cs_array_2d<cs_real_t>   _a;            /*!< a RK coefficient */
+  cs_array<cs_real_t>      _c;            /*!< c RK coefficient */
+};
+}
+
+using cs_runge_kutta_integrator_t = cs::runge_kutta_integrator;
+#endif
+
 /*============================================================================
  * Global variables
  *============================================================================*/
@@ -100,95 +563,6 @@ cs_runge_kutta_integrators_initialize();
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initialize a RK integrator at the begining of a time step.
- *
- * \param[in]      ctx         Reference to dispatch context
- * \param[in,out]  rk          pointer to a Runge-Kutta integrator
- * \param[in]      rho         mass density within the geometry support
- * \param[in]      vol         measure of the geometry support
- * \param[in]      pvara       high level variable array at the begining
- *                             of a time step
- */
-/*----------------------------------------------------------------------------*/
-
-template<cs_lnum_t stride>
-void
-cs_runge_kutta_init_state(cs_dispatch_context          &ctx,
-                          cs_runge_kutta_integrator_t  *rk,
-                          const cs_real_t              *rho,
-                          const cs_real_t              *vol,
-                          cs_real_t                    *pvara)
-{
-  if (rk == nullptr)
-    return;
-
-  rk->i_stage = 0;
-
-  const cs_lnum_t n_elts = rk->n_elts;
-
-  cs_real_t *mass = rk->mass;
-  cs_real_t *u_old = rk->u_old;
-
-  ctx.parallel_for(n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t i_elt) {
-    mass[i_elt] = rho[i_elt]*vol[i_elt];
-    for (cs_lnum_t k = 0; k < stride; k++)
-      u_old[stride*i_elt + k] = pvara[stride*i_elt + k];
-  });
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Perform one Runge-Kutta staging.
- *
- * \param[in]      ctx         Reference to dispatch context
- * \param[in,out]  rk          pointer to a Runge-Kutta integrator
- * \param[in,out]  pvar_stage  high level variable array along stages
- */
-/*----------------------------------------------------------------------------*/
-
-template<cs_lnum_t stride>
-void
-cs_runge_kutta_staging(cs_dispatch_context          &ctx,
-                       cs_runge_kutta_integrator_t  *rk,
-                       cs_real_t                    *pvar_stage)
-{
-  assert(rk != nullptr);
-
-  const int n_elts = rk->n_elts;
-  const cs_real_t *dt = rk->dt;
-  const cs_real_t *mass = rk->mass;
-
-  // get the current stage index
-  const int i_stg = rk->i_stage;
-
-  cs_real_t *u0    = rk->u_old;
-  cs_real_t *u_new = rk->u_new;
-  cs_real_t *rhs_stages = rk->rhs_stages;
-
-  const cs_real_t *a = rk->rk_coeff.a + RK_HIGHEST_ORDER*i_stg;
-
-  ctx.parallel_for (n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t i_elt) {
-    for (cs_lnum_t k = 0; k < stride; k++)
-      u_new[stride*i_elt + k] = u0[stride*i_elt + k];
-
-    for (int j_stg = 0; j_stg <= i_stg; j_stg++) {
-      cs_real_t *rhs  = rhs_stages + j_stg*stride*n_elts;
-      for (cs_lnum_t k = 0; k < stride; k++)
-        u_new[stride*i_elt + k] += dt[i_elt]/mass[i_elt]*a[j_stg]
-                                 * rhs[i_elt*stride + k];
-    }
-
-    for (cs_lnum_t k = 0; k < stride; k++)
-      pvar_stage[stride*i_elt + k] = u_new[stride*i_elt + k];
-  });
-
-  ctx.wait();
-
-  rk->i_stage++;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Perform one Runge-Kutta staging for the potential in the NS system.
  *
  * \param[in]      ctx         Reference to dispatch context
@@ -201,71 +575,6 @@ void
 cs_runge_kutta_staging_potential(cs_dispatch_context          &ctx,
                                  cs_runge_kutta_integrator_t  *rk,
                                  cs_real_t                    *phi_stage);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Perform one Runge-Kutta staging for the potential in the NS system.
- *
- * \param[in]      ctx         Reference to dispatch context
- * \param[in,out]  rk          pointer to a Runge-Kutta integrator
- * \param[in,out]  grad_dp     pressure increment gradient
- */
-/*----------------------------------------------------------------------------*/
-
-template<int stride>
-void
-cs_runge_kutta_stage_projection_rhs(cs_dispatch_context          &ctx,
-                                    cs_runge_kutta_integrator_t  *rk,
-                                    cs_real_t                    *grad_dp)
-{
-  assert(rk != nullptr);
-  const int n_elts = rk->n_elts;
-  // get the last stage index
-  const int i_stg = rk->i_stage - 1;
-  const cs_real_t *a = rk->rk_coeff.a + RK_HIGHEST_ORDER*i_stg;
-  const cs_real_t *mass = rk->mass;
-
-  cs_real_t *rhs  = rk->rhs_stages + i_stg*stride*n_elts;
-  ctx.parallel_for (n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t i_elt) {
-    for (cs_lnum_t k = 0; k < stride; k++) {
-      rhs[stride*i_elt + k] -= grad_dp[stride*i_elt + k]*mass[i_elt];
-      grad_dp[stride*i_elt + k] *= a[i_stg];
-    }
-  });
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set initial rhs per stage for Runge-Kutta integrator.
- *        Align with legacy equations' building sequence.
- *        1) Collect initial rhs done in
- *        cs_solve_navier_stokes/cs_solve_equation_scalar
- *        2) Complete rhs with adding explicit part of the
- *        convection/diffusion balance
- *
- * \param[in]      ctx         Reference to dispatch context
- * \param[in,out]  rk          pointer to a Runge-Kutta integrator
- * \param[in]      rhs_pvar    pointer to high level rhs array
- */
-/*----------------------------------------------------------------------------*/
-
-template<int stride>
-void
-cs_runge_kutta_stage_set_initial_rhs(cs_dispatch_context         &ctx,
-                                     cs_runge_kutta_integrator_t *rk,
-                                     cs_real_t                   *rhs_pvar)
-{
-  assert(rk != nullptr);
-  const int n_elts = rk->n_elts;
-  // get the current stage index
-  const int i_stg = rk->i_stage;
-
-  cs_real_t *rhs  = rk->rhs_stages + i_stg*stride*n_elts;
-  ctx.parallel_for (n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t i_elt) {
-    for (cs_lnum_t k = 0; k < stride; k++)
-      rhs[stride*i_elt + k] = rhs_pvar[stride*i_elt + k];
-  });
-}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -425,12 +734,14 @@ cs_runge_kutta_stage_complete_rhs(cs_dispatch_context         &ctx,
                                   const int                    icvfli[],
                                   cs_real_t                    pvar[][stride])
 {
+  // Sanity check
   assert(rk != nullptr);
-  const int n_elts = rk->n_elts;
-  // get the current stage index
-  const int i_stg = rk->i_stage;
+  assert(stride == rk->stride());
 
-  cs_real_t *rhs = rk->rhs_stages + i_stg*stride*n_elts;
+  // get the current stage index
+  const int i_stg = rk->i_stage();
+
+  cs_real_t *rhs = rk->get_rhs_stage_sub_array(i_stg);
 
   /* Allocate non reconstructed face value only if presence of limiter */
 
@@ -509,7 +820,7 @@ cs_runge_kutta_is_active(cs_runge_kutta_integrator_t  *rk)
   if (rk == nullptr)
     return false;
   else
-    return (rk->scheme > CS_RK_NONE);
+    return rk->is_active();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -526,7 +837,7 @@ cs_runge_kutta_is_staging(cs_runge_kutta_integrator_t  *rk)
   if (rk == nullptr)
     return false;
 
-  return (rk->i_stage < rk->n_stages);
+  return rk->is_staging();
 }
 
 /*----------------------------------------------------------------------------*/

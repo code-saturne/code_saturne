@@ -1060,11 +1060,8 @@ cs_solve_equation_scalar(cs_field_t        *f,
   if (eqp->rk_def.rk_id > -1) {
     rk_p = cs_runge_kutta_integrator_by_id(eqp->rk_def.rk_id);
 
-    cs_runge_kutta_init_state<1>(ctx,
-                                 rk_p,
-                                 crom,
-                                 cell_f_vol,
-                                 cvara_var);
+    if (rk_p != nullptr)
+      rk_p->init_state(ctx, crom, cell_f_vol, cvara_var);
   }
 
   /* Source terms
@@ -1755,7 +1752,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
   if (cs_runge_kutta_is_active(rk_p)) {
 
     while (cs_runge_kutta_is_staging(rk_p)) {
-      cs_runge_kutta_stage_set_initial_rhs<1>(ctx, rk_p, rhs);
+      rk_p->stage_set_initial_rhs(ctx, rhs);
       cs_runge_kutta_stage_complete_scalar_rhs(ctx,
                                                rk_p,
                                                cs_glob_time_step_options->idtvar,
@@ -1774,7 +1771,7 @@ cs_solve_equation_scalar(cs_field_t        *f,
                                                nullptr, //icvfli
                                                cvar_var,
                                                xcpp);
-      cs_runge_kutta_staging<1>(ctx, rk_p, cvar_var);
+      rk_p->solve_stage(ctx, cvar_var);
     }
 
     if (cs_glob_timer_kernels_flag > 0) {
@@ -2152,11 +2149,11 @@ cs_solve_equation_vector(cs_field_t       *f,
   if (eqp->rk_def.rk_id > -1) {
     rk_p = cs_runge_kutta_integrator_by_id(eqp->rk_def.rk_id);
 
-    cs_runge_kutta_init_state<3>(ctx,
-                                 rk_p,
-                                 CS_F_(rho)->val,
-                                 cell_f_vol,
-                                 (cs_real_t *)cvara_var);
+    if (rk_p != nullptr)
+      rk_p->init_state(ctx,
+                       CS_F_(rho)->val,
+                       cell_f_vol,
+                       (cs_real_t *)cvara_var);
   }
 
   /* Source terms
@@ -2455,7 +2452,7 @@ cs_solve_equation_vector(cs_field_t       *f,
   if (cs_runge_kutta_is_active(rk_p)) {
 
     while (cs_runge_kutta_is_staging(rk_p)) {
-      cs_runge_kutta_stage_set_initial_rhs<3>(ctx, rk_p, (cs_real_t *)rhs);
+      rk_p->stage_set_initial_rhs(ctx, (cs_real_t *)rhs);
       cs_runge_kutta_stage_complete_rhs<3>(ctx,
                                            rk_p,
                                            cs_glob_time_step_options->idtvar,
@@ -2475,7 +2472,7 @@ cs_solve_equation_vector(cs_field_t       *f,
                                            0,        //icvflb
                                            nullptr,  //icvfli
                                            cvar_var);
-      cs_runge_kutta_staging<3>(ctx, rk_p, (cs_real_t *)cvar_var);
+      rk_p->solve_stage(ctx, (cs_real_t *)cvar_var);
     }
     /* After the Explicit Runge-Kutta scheme, finish here */
     return;
