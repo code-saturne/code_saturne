@@ -570,13 +570,14 @@ _equation_iterative_solve_strided(int                   idtvar,
                       (cs_real_6_t *)rhs);
 
   if (CS_F_(vel) != nullptr && CS_F_(vel)->id == f_id) {
-    cs_field_t *f_ex = cs_field_by_name_try("velocity_explicit_balance");
+    cs_field_t *f_ex = cs_field_by_name_try("algo:velocity_explicit_balance");
     CS_PROFILE_MARK_LINE();
     if (f_ex != nullptr) {
       cs_real_3_t *cpro_cv_df_v = (cs_real_3_t *)f_ex->val;
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+        cs_real_t dvol = 1. / cell_vol[c_id];
         for (cs_lnum_t i = 0; i < stride; i++)
-          cpro_cv_df_v[c_id][i] = rhs[c_id][i];
+          cpro_cv_df_v[c_id][i] = rhs[c_id][i] * dvol;
       });
     }
   }
@@ -1239,8 +1240,9 @@ _equation_iterative_solve_strided(int                   idtvar,
     /* Contribution of the current component to the L2 norm stored in eswork */
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      cs_real_t dvol = 1. / cell_vol[c_id];
       for (cs_lnum_t i = 0; i < stride; i++)
-        eswork[c_id][i] = cs_math_pow2(rhs[c_id][i] / cell_vol[c_id]);
+        eswork[c_id][i] = cs_math_pow2(rhs[c_id][i] * dvol);
     });
     ctx.wait();
 

@@ -57,7 +57,8 @@
 
   Current reserved fields are:
 
-
+  - <tt> algo:velocity_explicit_balance </tt>
+    Explicit balance of volcity during the prediction step, cell-based field of dimension 3.
   - <tt> algo:predicted_velocity </tt>
     Velocity field after the prediction step, cell-based field of dimension 3.
   - <tt> algo:predicted_velocity_divergence </tt>
