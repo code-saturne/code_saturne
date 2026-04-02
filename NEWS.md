@@ -3,11 +3,13 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Radiative FSCK model: fix out-of-bounds error in interpolation.
+
 - Fix missing ghost cell synchronization for boundary-adjacent cells
   when computing transposed velocity gradient contribution.
 
 - Fix setting of solid particles elasticity coefficient in the GUI for
-  neptune_cfd
+  neptune_cfd.
 
 - Fix incorrect restart handling of some variables (e.g. density) when
   reading the auxiliary restart file is disabled.
