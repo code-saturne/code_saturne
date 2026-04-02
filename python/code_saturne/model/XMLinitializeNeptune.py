@@ -722,10 +722,7 @@ class XMLinitNeptune(BaseXmlInit):
 
                 model = "none"
                 if interface_sharpening == "on":
-                    if unsharpened_cells == "on":
-                        model = "Olsson_Partial_Interface_Sharpening"
-                    else:
-                        model = "Olsson_Interface_Sharpening"
+                    model = "Olsson_Interface_Sharpening"
                 forces_xml_model.setInterfaceSharpeningModel("1", "2", model)
                 force_node.xmlRemoveNode()
             except ValueError:  # Remnants of continuous interfacial forces but no complete information, so do nothing

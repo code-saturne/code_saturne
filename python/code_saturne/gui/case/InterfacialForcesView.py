@@ -232,9 +232,7 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
         # TODO : move interface sharpening and surface tension options to InterfacialForcesModel.py
         self.modelInterfaceSharpening.addItemList(
             [[self.tr('None'), 'none'],
-             [self.tr('Olsson Interface Sharpening'), 'Olsson_Interface_Sharpening'],
-             [self.tr('Olsson Partial Interface Sharpening'), "Olsson_Partial_Interface_Sharpening"]
-             ]
+             [self.tr('Olsson Interface Sharpening'), 'Olsson_Interface_Sharpening']]
         )
         self.modelSurfaceTension.addItemList(
             [[self.tr('None'), 'none'],
