@@ -728,7 +728,7 @@ _interpolation4d(cs_real_t trad,
                    c,
                    d);
 
-            kint1(ig, itrad, ig, ico2)
+            kint1(ig, itrad, it, ico2)
               = _seval(nargs,
                        xh2o,
                        kg_x2,
