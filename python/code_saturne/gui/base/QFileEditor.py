@@ -701,7 +701,7 @@ class QFileEditor(QMainWindow):
         # Open file action
         open_img_path = os.path.join(icons_path, 'document-open.png')
         icon_open     = QtGui.QIcon()
-        icon_open.addPixmap(QtGui.QPixmap(_fromUtf8(open_img_path)),
+        icon_open.addPixmap(QtGui.QPixmap(open_img_path),
                             QtGui.QIcon.Mode.Normal,
                             QtGui.QIcon.State.Off)
         self.openFileAction = QAction(icon_open, "Open", self)
