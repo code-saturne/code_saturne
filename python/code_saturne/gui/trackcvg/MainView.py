@@ -401,6 +401,7 @@ class MyMplCanvas(FigureCanvas):
         super(MyMplCanvas,self).__init__(self.fig)
         self.yAxe = numpy.array([0])
         self.xAxe = numpy.array([0])
+        self.x_labels = {}
         self.axes = []
 
         if subplotNb == 1:
@@ -482,7 +483,7 @@ class MyMplCanvas(FigureCanvas):
     def drawFigure(self):
         for it in range(len(self.axes)):
             self.axes[it].grid(True)
-            self.axes[it].set_xlabel("time (s)")
+            self.axes[it].set_xlabel(self.x_labels.get(it, "Time (s)"))
         self.axes[0].set_yscale('log')
 
         self.fig.canvas.draw()
@@ -686,6 +687,7 @@ class MainView(object):
         self.fileList = []
         self.listingVariable = []
         self.listFileProbes = {}
+        self.xLabel = "Time (s)"
         self.modelCases = CaseStandardItemModel(self.parent, [], [])
         self.treeViewDirectory.setModel(self.modelCases)
         self.modelCases.dataChanged.connect(self.treeViewChanged)
@@ -862,6 +864,7 @@ class MainView(object):
             else:
                 if fl == 'residuals.csv':
                     self.listingVariable = self.readResidualsVariableListCSV(rep)
+                    self.xLabel = self.detectXLabelCsv(rep)
                     self.fileList.append([fl, rep, "on", 1, len(self.listingVariable) + 1])
                     # read variable list for Time residual
                     idx = 0
@@ -873,6 +876,7 @@ class MainView(object):
                     self.listFileProbes[fl] = ll
                 elif fl == 'residuals.dat':
                     self.listingVariable = self.readResidualsVariableListDAT(rep)
+                    self.xLabel = self.detectXLabelDat(rep)
                     self.fileList.append([fl, rep, "on", 1, len(self.listingVariable) + 1])
                     # read variable list for Time residual
                     idx = 0
@@ -975,22 +979,22 @@ class MainView(object):
         """
         """
         self.dc.clear()
+        self.dc.x_labels = {}
         for (name, fle, status, subplot_id, probes_number) in self.fileList:
             if status == "on" or status == "onoff":
                 base, ext = os.path.splitext(fle)
-                if name == 'residuals.csv':
-                    data = self.ReadCsvFile(fle, probes_number)
-                    if status == "on" or status == "onoff":
-                        self.dc.update_figure_listing(self.listingVariable,
-                                                      data,
-                                                      probes_number,
-                                                      self.listFileProbes[name])
-                elif name == 'residuals.dat':
-                    data = self.ReadDatFile(fle, probes_number)
+                if name == 'residuals.csv' or name == 'residuals.dat':
+                    if name == 'residuals.csv':
+                        data = self.ReadCsvFile(fle, probes_number)
+                    else:
+                        data = self.ReadDatFile(fle, probes_number)
                     if status == "on" or status == "onoff":
                         self.dc.update_figure_listing(self.listingVariable,
                                                       data, probes_number,
                                                       self.listFileProbes[name])
+                        for probe in self.listFileProbes[name]:
+                            if probe.status == "on":
+                                self.dc.x_labels[probe.subplot_id - 1] = self.xLabel
                 elif ext == ".csv":
                     data = self.ReadCsvFile(fle, probes_number)
                     nm, ext = os.path.splitext(name)
@@ -1144,6 +1148,32 @@ class MainView(object):
         return lst
 
 
+    def detectXLabelCsv(self, name):
+        """
+        Detect x-axis label from CSV header first column.
+        """
+        with open(name, 'r') as f:
+            header = f.readline()
+            first_col = header.split(',')[0].strip().lower()
+            if first_col in ('iteration', 'nt'):
+                return "Iteration number"
+        return "Time (s)"
+
+
+    def detectXLabelDat(self, name):
+        """
+        Detect x-axis label from DAT header first column.
+        """
+        with open(name, 'r') as f:
+            header = f.readline().lstrip()
+            if header.startswith('#'):
+                header = header[1:].lstrip()
+            tokens = header.split()
+            if tokens and tokens[0].strip().lower() in ('iteration', 'nt'):
+                return "Iteration number"
+        return "Time (s)"
+
+
     def SaveState(self):
         """
         """
@@ -1263,6 +1293,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.fileList = []
         self.listingVariable = []
         self.listFileProbes = {}
+        self.xLabel = "Time (s)"
         self.timer = QTimer()
         self.timer.start(int(self.timeRefresh * 1000))
 
