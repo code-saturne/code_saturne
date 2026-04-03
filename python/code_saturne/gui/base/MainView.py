@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2024 EDF S.A.
+# Copyright (C) 1998-2026 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -31,7 +31,7 @@ This module defines the following classes:
 - NewCaseDialogView
 - MainView
 
-    @copyright: 1998-2024 EDF S.A., France
+    @copyright: 1998-2026 EDF S.A., France
     @author: U{EDF<mailto:saturne-support@edf.fr>}
     @license: GNU GPL v2 or later, see COPYING for details.
 """
@@ -828,7 +828,10 @@ class MainView(object):
         """
         Update Icon, Window Title Name and package name.
         """
-        icondir = os.path.dirname(os.path.abspath(__file__)) + '/'
+        try:
+            icondir = os.path.join(self.package.get_dir("pkgdatadir"), "images")
+        except Exception:
+            icondir = os.path.dirname(os.path.abspath(__file__))
 
         title = ""
 
@@ -864,7 +867,7 @@ class MainView(object):
         if hasattr(self, 'case'):
             module_name = self.case.module_name()
 
-        icon = QIcon(QPixmap(icondir+"logo_salome_cfd.png"))
+        icon = QIcon(QPixmap(os.path.join(icondir, "logo_salome_cfd.png")))
         self.setWindowIcon(icon)
         self.setWindowTitle(title)
 
