@@ -3,6 +3,8 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- GUI: fix splash-screen and application icon (purely cosmetic).
+
 - Radiative FSCK model: fix out-of-bounds error in interpolation.
 
 - Fix missing ghost cell synchronization for boundary-adjacent cells

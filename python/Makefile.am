@@ -4,7 +4,7 @@
 
 # This file is part of code_saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2024 EDF S.A.
+# Copyright (C) 1998-2026 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -40,6 +40,14 @@ endif
 
 # Copy all files in pythondir
 EXTRA_DIST = ${srcdir}/*
+
+# Install data
+
+iconsdir = ${pkgdatadir}/images
+
+icons_DATA = \
+${abs_top_srcdir}/python/code_saturne/data/icons/splashscreen.png \
+${abs_top_srcdir}/python/code_saturne/data/icons/logo_salome_cfd.png
 
 clean-local:
 	if test -d build; then \
