@@ -219,7 +219,7 @@ class ImmersedBoundariesBoundaryConditionsWallView(QWidget, Ui_ImmersedBoundarie
         INPUT choice of method of calculation of the energy
         """
 
-        text = self.comboBoxEnergy.currentText()  
+        text = self.comboBoxEnergy.currentText()
         energy_mode = self.__modelEnergy.dicoV2M[str(text)]
         self.ibm.setObjectBoundaryEnergyMode(self.current_obj, energy_mode)
 
@@ -255,7 +255,7 @@ class ImmersedBoundariesBoundaryConditionsWallView(QWidget, Ui_ImmersedBoundarie
 
 
 
-    @Slot()
+    @Slot(str)
     def __slotEnergy(self, text):
         """
         INPUT energy value

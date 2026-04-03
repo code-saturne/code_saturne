@@ -249,7 +249,7 @@ class ImmersedBoundariesBoundaryViewNeptune(QWidget, Ui_ImmersedBoundariesBounda
 
 
     @Slot()
-    def slotChangedSelection(self, index):
+    def slotChangedSelection(self):
         """
         detect change in selection and update view
         """

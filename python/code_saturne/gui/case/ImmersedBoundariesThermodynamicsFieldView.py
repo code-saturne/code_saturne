@@ -363,41 +363,41 @@ class ImmersedBoundariesThermodynamicsFieldView(QWidget, Ui_ImmersedBoundariesTh
                 __button.setStyleSheet("background-color: red")
 
 
-    @Slot()
+    @Slot(str)
     def slotObjDensity(self, text):
         if self.lineEditDensity.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.ibm.setObjectDensity(self.current_obj, val)
 
 
-    @Slot()
+    @Slot(str)
     def slotObjMass(self, text):
         if self.lineEditMass.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.ibm.setObjectMass(self.current_obj, val)
 
 
-    @Slot()
+    @Slot(str)
     def slotObjStiffness(self, text):
         if self.lineEditStiffness.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.ibm.setObjectStiffness(self.current_obj, val)
 
 
-    @Slot()
+    @Slot(str)
     def slotObjDamping(self, text):
         if self.lineEditDamping.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.ibm.setObjectDamping(self.current_obj, val)
 
 
-    @Slot()
+    @Slot(str)
     def slotObjSpecificHeat(self, text):
         if self.lineEditSpecificHeat.validator().state == QValidator.State.Acceptable:
             val = float(text)
             self.ibm.setObjectSpecificHeat(self.current_obj, val)
 
-    @Slot()
+    @Slot(str)
     def slotObjThermalConductivity(self, text):
         if self.lineEditThermalConductivity.validator().state == QValidator.State.Acceptable:
             val = float(text)

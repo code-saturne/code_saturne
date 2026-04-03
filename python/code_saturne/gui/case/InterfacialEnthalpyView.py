@@ -221,7 +221,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         self.lineEditRelaxationTimeFieldb.textChanged[str].connect(self.slotRelaxationTimeFieldb)
         self.checkBoxActivatePool.stateChanged.connect(self.slotPoolBoilingModel)
 
-    @Slot()
+    @Slot(str)
     def slotSelectInteraction(self, value):
         """
         Select a Field in the QTable
@@ -323,7 +323,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
                 self.modelFieldaModel.addItem(self.tr("Droplet model for vapour"), "droplet_model_for_vapour")
                 self.modelFieldbModel.addItem(self.tr("Droplet model for liquid"), "droplet_model_for_liquid")
 
-    @Slot()
+    @Slot(str)
     def slotSolidEnergyTransfer(self, text):
         """
         set model for solid enthalpy transfer
@@ -331,7 +331,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         choice = self.modelSolidEnergyTransfer.dicoV2M[text]
         self.mdl.setSolidEnergyTransfer(choice)
 
-    @Slot()
+    @Slot(str)
     def slotFieldaModel(self, text):
         """
         set model for field a
@@ -353,7 +353,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         self.mdl.setPonderationCoef(self.field_a, self.field_b, self.field_a, choice)
 
 
-    @Slot()
+    @Slot(str)
     def slotFieldbModel(self, text):
         """
         set model for field b
@@ -376,7 +376,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
         self.mdl.setPonderationCoef(self.field_a, self.field_b, self.field_b, choice)
 
 
-    @Slot()
+    @Slot(str)
     def slotRelaxationTimeFielda(self, text):
         """
         Update the relaxation time for field a
@@ -387,7 +387,7 @@ class InterfacialEnthalpyView(QWidget, Ui_InterfacialEnthalpy):
             self.mdl.setRelaxationTime(self.field_a, self.field_b, self.field_a, value)
 
 
-    @Slot()
+    @Slot(str)
     def slotRelaxationTimeFieldb(self, text):
         """
         Update the relaxation time for field b

@@ -334,7 +334,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
             self.lineEditTimeAnalysis.hide()
 
 
-    @Slot()
+    @Slot(str)
     def slotReferenceTimeStep(self, var):
         """
         """
@@ -343,7 +343,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
             self.mdl.setTimeStep(value)
 
 
-    @Slot()
+    @Slot(str)
     def slotNumberTimeStep(self, var):
         """
         """
@@ -352,7 +352,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
             self.mdl.setTimeStepsNumber(value)
 
 
-    @Slot()
+    @Slot(str)
     def slotTimeAnalysis(self, var):
         """
         """
@@ -361,7 +361,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
             self.mdl.setMaximumTime(value)
 
 
-    @Slot()
+    @Slot(str)
     def slotDtMin(self, var):
         """
         """
@@ -370,7 +370,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
             self.mdl.setMinDtDt0Variation(value)
 
 
-    @Slot()
+    @Slot(str)
     def slotDtMax(self, var):
         """
         """
@@ -379,7 +379,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
             self.mdl.setMaxDtDt0Variation(value)
 
 
-    @Slot()
+    @Slot(str)
     def slotDtIncreasingMax(self, var):
         """
         """
@@ -388,7 +388,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
             self.mdl.setMaxDtVariationIncreasing(value)
 
 
-    @Slot()
+    @Slot(str)
     def slotDtDecreasingMax(self, var):
         """
         """

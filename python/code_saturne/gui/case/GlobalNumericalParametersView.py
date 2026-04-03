@@ -369,7 +369,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
             self.mdl.setMultigridStatus('off')
 
 
-    @Slot()
+    @Slot(str)
     def slotMinimumPressure(self, text):
         """
         Input value of minimum pressure
@@ -379,7 +379,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
             self.mdl.setMinPressure(value)
 
 
-    @Slot()
+    @Slot(str)
     def slotMaximumPressure(self, text):
         """
         Input value of maximum pressure
@@ -413,7 +413,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
             self.mdl.setAlphaPressureCycles(result['alpha_p_cycle'])
 
 
-    @Slot()
+    @Slot(str)
     def slotMaxRestart(self, text):
         """
         Input value of Maximum number of restart
@@ -423,7 +423,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
             self.mdl.setMaxNumberOfRestart(value)
 
 
-    @Slot()
+    @Slot(str)
     def slotTimeSplitting(self, text):
         """
         Input value of time-step splitting
@@ -433,7 +433,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
             self.mdl.setTimeSplit(value)
 
 
-    @Slot()
+    @Slot(str)
     def slotPressureRelaxation(self, text):
         """
         Input value of pressure increment relaxation

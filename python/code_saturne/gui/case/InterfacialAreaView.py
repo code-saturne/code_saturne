@@ -189,7 +189,7 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
         self.mdl.setSourceTerm(self.currentid, model)
 
 
-    @Slot()
+    @Slot(str)
     def slotDefaultDiameter(self, var):
         """
         """
@@ -198,7 +198,7 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
             self.mdl.setInitialDiameter(self.currentid, value)
 
 
-    @Slot()
+    @Slot(str)
     def slotMinDiameter(self, var):
         """
         """
@@ -207,7 +207,7 @@ class InterfacialAreaView(QWidget, Ui_InterfacialArea):
             self.mdl.setMinDiameter(self.currentid, value)
 
 
-    @Slot()
+    @Slot(str)
     def slotMaxDiameter(self, var):
         """
         """

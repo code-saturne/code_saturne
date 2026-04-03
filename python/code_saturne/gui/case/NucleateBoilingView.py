@@ -255,7 +255,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
            self.lineEditYPlus.hide()
 
 
-    @Slot()
+    @Slot(str)
     def slotYPlusValue(self, text):
         """
         Update the Yplus value
@@ -265,7 +265,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
             self.mdl.setYPlusValue(value)
 
 
-    @Slot()
+    @Slot(str)
     def slotMaxRadius(self, text):
         """
         Update the max radius
@@ -275,7 +275,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
             self.mdl.setMaxRadius(value)
 
 
-    @Slot()
+    @Slot(str)
     def slotMaxDiam(self, text):
         """
         Update the max diameter
@@ -285,7 +285,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
             self.mdl.setMaxDiameter(value)
 
 
-    @Slot()
+    @Slot(str)
     def slotMaxOverSaturation(self, text):
         """
         Update the maximum oversaturation temperature
@@ -295,7 +295,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
             self.mdl.setMaxOverSaturation(value)
 
 
-    @Slot()
+    @Slot(str)
     def slotThermalConductivity(self, text):
         """
         Update the thermal conductivity
@@ -305,7 +305,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
             self.mdl.setThermalConductivity(value)
 
 
-    @Slot()
+    @Slot(str)
     def slotDensity(self, text):
         """
         Update the density
@@ -315,7 +315,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
             self.mdl.setDensity(value)
 
 
-    @Slot()
+    @Slot(str)
     def slotSpecificHeat(self, text):
         """
         Update the specific heat
@@ -325,7 +325,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
             self.mdl.setSpecificHeat(value)
 
 
-    @Slot()
+    @Slot(bool)
     def slotThickness(self, checked):
         """
         check box for Y Plus
@@ -346,7 +346,7 @@ class NucleateBoilingView(QWidget, Ui_NucleateBoiling):
             self.labelThickness2.hide()
 
 
-    @Slot()
+    @Slot(str)
     def slotThicknessValue(self, text):
         """
         Update the thickness value

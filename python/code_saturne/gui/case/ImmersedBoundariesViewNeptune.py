@@ -600,7 +600,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
 
 
     @Slot()
-    def slotChangedSelection(self, index):
+    def slotChangedSelection(self):
         """
         detect change in selection and update view
         """
@@ -610,7 +610,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         self.updatePageView()
 
 
-    @Slot()
+    @Slot(int)
     def slotCheckActivate(self, val):
 
         # Set the method state

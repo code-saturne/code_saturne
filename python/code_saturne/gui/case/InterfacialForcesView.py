@@ -282,7 +282,7 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
         self.tableViewInteractions.resizeRowsToContents()
         self.tableViewInteractions.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
 
-    @Slot()
+    @Slot("QModelIndex")
     def slotSelectInteraction(self, index):
         if not(index.isValid()):
             self.groupBoxContinuousMomentumTransfer.hide()
@@ -309,7 +309,7 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
         elif predefined_flow == "multiregime":
             self.lockMultiregimeFlowOptions()
 
-    @Slot()
+    @Slot(str)
     def slotContinuousMomentumTransfer(self, text):
         """
         configure momentum transfer for continuous phases
@@ -326,7 +326,7 @@ class InterfacialForcesView(QWidget, Ui_InterfacialForces):
         log.debug("slotInterfaceSharpening -> %s" % model)
         self.mdl.setInterfaceSharpeningModel(self.field_id_a, self.field_id_b, model)
 
-    @Slot()
+    @Slot(str)
     def slotSurfaceTensionModel(self, text):
         model = self.modelSurfaceTension.dicoV2M[text]
         log.debug("slotSurfaceTension -> %s" % model)

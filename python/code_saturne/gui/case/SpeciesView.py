@@ -412,7 +412,7 @@ class SpeciesView(QWidget, Ui_Species):
         self.groupBoxScalarProperties.hide()
 
 
-    @Slot()
+    @Slot(str)
     def slotDiffusionCoef(self, text):
         """
         Update the diffusion coefficient
@@ -422,7 +422,7 @@ class SpeciesView(QWidget, Ui_Species):
             self.mdl.setDiffusionCoef(self.currentid, value)
 
 
-    @Slot()
+    @Slot(str)
     def slotSchmidt(self, text):
         """
         Update the schmidt
@@ -432,7 +432,7 @@ class SpeciesView(QWidget, Ui_Species):
             self.mdl.setSchmidt(self.currentid, value)
 
 
-    @Slot()
+    @Slot(str)
     def slotMinValue(self, text):
         """
         Update the minimum value
@@ -442,7 +442,7 @@ class SpeciesView(QWidget, Ui_Species):
             self.mdl.setMinValue(self.currentid, value)
 
 
-    @Slot()
+    @Slot(str)
     def slotMaxValue(self, text):
         """
         Update the maximum value
@@ -452,7 +452,7 @@ class SpeciesView(QWidget, Ui_Species):
             self.mdl.setMaxValue(self.currentid, value)
 
 
-    @Slot()
+    @Slot(bool)
     def slotTimeDepend(self, checked):
         """
         check box for time depend
@@ -463,7 +463,7 @@ class SpeciesView(QWidget, Ui_Species):
         self.mdl.setTimeDependStatus(self.currentid, status)
 
 
-    @Slot()
+    @Slot(bool)
     def slotDiffusion(self, checked):
         """
         check box for diffusion

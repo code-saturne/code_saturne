@@ -582,7 +582,7 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquation):
             self.tableViewScheme.resizeColumnToContents(col)
 
 
-    @Slot()
+    @Slot(int)
     def slotchanged(self, index):
         """
         Changed tab
