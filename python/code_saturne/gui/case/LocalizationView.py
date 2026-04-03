@@ -248,7 +248,7 @@ class DefineZonesTableModel(QStandardItemModel):
             return Qt.ItemFlag.ItemIsEnabled
         if (index.row(), index.column()) in self._disable:
             return Qt.ItemFlag.ItemIsSelectable
-        return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
+        return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
     def headerData(self, section, orientation, role):
         if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:

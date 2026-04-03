@@ -581,11 +581,11 @@ class StandardItemModelMesh(QStandardItemModel):
         col_id = index.column()
         if index.row() in self.defaultItem:
             if col_id == 1 or col_id == 2:
-                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+                return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         else:
             if col_id == 1:
-                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
-        return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
+                return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+        return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
@@ -751,11 +751,11 @@ class StandardItemModelLagrangianMesh(QStandardItemModel):
         col_id = index.column()
         if index.row() in self.defaultItem:
             if col_id == 1 or col_id == 2:
-                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+                return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         else:
             if col_id == 1:
-                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
-        return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
+                return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+        return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
@@ -915,9 +915,9 @@ class StandardItemModelWriter(QStandardItemModel):
             return Qt.ItemFlag.ItemIsEnabled
         # default item
         if index.column() == 1:
-            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
@@ -1038,7 +1038,7 @@ class StandardItemModelAssociatedWriter(QStandardItemModel):
     def flags(self, index):
         if not index.isValid():
             return Qt.ItemFlag.ItemIsEnabled
-        return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
+        return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
@@ -1159,9 +1159,9 @@ class StandardItemModelMonitoring(QStandardItemModel):
         if not index.isValid():
             return Qt.ItemFlag.ItemIsEnabled
         if index.column() == 0:
-            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):

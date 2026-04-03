@@ -254,7 +254,7 @@ class StandardItemModelSpecies(QStandardItemModel):
         if not index.isValid():
             return Qt.ItemFlag.ItemIsEnabled
         if index.column() != 0:
-            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
         else:
             return Qt.ItemFlag.ItemIsSelectable
 

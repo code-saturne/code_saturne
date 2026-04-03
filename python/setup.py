@@ -142,7 +142,8 @@ class _cs_egg_info(egg_info):
         build_command = self.distribution.command_obj.get('build', None)
         if build_command:
             self.egg_base = build_command.build_base
-            self.egg_info = os.path.join(self.egg_base, os.path.basename(self.egg_info))
+            self.egg_info = os.path.join(self.egg_base,
+                                         os.path.basename(self.egg_info))
 
         super().run()
 

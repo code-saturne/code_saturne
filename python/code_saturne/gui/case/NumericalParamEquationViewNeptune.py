@@ -288,15 +288,15 @@ class StandardItemModelScheme(QStandardItemModel):
             return Qt.ItemFlag.ItemIsEnabled
 
         elif index.column() == 0 :
-            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         elif index.column() == 2:
             data = self._data[index.row()][1]
             if data == 'upwind':
                 return Qt.ItemFlag.ItemIsSelectable
             else:
-                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsUserCheckable
+                return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsUserCheckable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
@@ -404,9 +404,9 @@ class StandardItemModelSolver(QStandardItemModel):
             return Qt.ItemFlag.ItemIsEnabled
 
         if index.column() == 0 :
-            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):

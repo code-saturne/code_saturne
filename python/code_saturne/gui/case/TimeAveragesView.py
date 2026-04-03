@@ -266,9 +266,9 @@ class StandardItemModelAverage(QStandardItemModel):
         else:
             col = index.column()
             if col > 0 and col < 5:
-                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
+                return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
             else:
-                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+                return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
 
 
     def headerData(self, section, orientation, role):

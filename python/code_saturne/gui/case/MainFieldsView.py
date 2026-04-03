@@ -378,26 +378,26 @@ class StandardItemModelMainFields(QStandardItemModel):
         if not index.isValid():
             return Qt.ItemFlag.ItemIsEnabled
         if index.column() == 4:
-            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsUserCheckable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsUserCheckable
         elif index.column() == 5:
             if self.mdl.getPredefinedFlow() != "None" \
                     and self.mdl.getPredefinedFlow() != "particles_flow" \
                     and self.mdl.getPhaseChangeTransferStatus() == "on":
                 return Qt.ItemFlag.ItemIsSelectable
             else:
-                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
+                return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
         elif index.column() == 1 or index.column() == 2:
 
             field = self.mdl.list_of_fields[index.row()]
             if self.mdl.getPredefinedFlow() != "None" and (index.row()==0 or index.row()==1):
-                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+                return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
             elif field.phase == "solid" and index.column() == 2:
-                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+                return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
             else:
-                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
+                return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
         else:
-            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):

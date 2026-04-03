@@ -134,9 +134,9 @@ class StandardItemModelVolumicNames(QStandardItemModel):
         if not index.isValid():
             return Qt.ItemFlag.ItemIsEnabled
         elif index.column() == [0,1]:
-            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsUserCheckable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsUserCheckable
 
 
     def headerData(self, section, orientation, role):
@@ -246,9 +246,9 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
         if not index.isValid():
             return Qt.ItemFlag.ItemIsEnabled
         elif index.column() == 0:
-            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsUserCheckable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsUserCheckable
 
 
     def headerData(self, section, orientation, role):

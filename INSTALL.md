@@ -151,7 +151,7 @@ first:
   - C, C++, and Fortran compilers
   - Python
   - MPI (optional, strongly recommended)
-  - PyQt (optional, required for the GUI)
+  - PySide6 or PyQt5 (optional, required for the GUI)
   - Zlib (optional)
 
 Using the `setup` file
@@ -424,7 +424,7 @@ For a minimal build of code_saturne on a Linux or Posix system, the requirements
 * A Python interpreter, with Python version 3.4 or above, and the setuptools module.
 
 For parallel runs, an MPI library is also necessary (MPI-2 or MPI-3 conforming).
-To build and use the GUI, PyQt 4 or 5 (which in turn requires Qt 4 or 5 and SIP)
+To build and use the GUI, PySide6 or PyQt5 (which in turn requires Qt 6 or 5)
 are required. Other libraries may be used for additional mesh format options,
 as well as to improve performance. A list of those libraries
 and their role is given in a dedicated [section](@ref cs_install_list_ext_lib)).
@@ -519,8 +519,8 @@ main script may fail due to "library not found" issues.
 Optional third-party libraries
 ==============================
 
-In addition to an MPI library (for parallelism) and PyQt library (for the GUI),
-other libraries may be used for additional mesh format options,
+In addition to an MPI library (for parallelism) and PySide or PyQt library
+(for the GUI), other libraries may be used for additional mesh format options,
 as well as to improve performance. A list of those libraries
 and their role is detailed in this section.
 
@@ -568,15 +568,16 @@ List of third-party libraries usable by code_saturne
 
 The list of third-party software usable with code_saturne is provided here:
 
-* [PyQt](https://riverbankcomputing.com/software/pyqt/intro)
-  version 4 or 5 is required by the code_saturne GUI. PyQt in turn requires
-  Qt (4 or 5), Python, and SIP. Without this library, the GUI may not be
+* [PySide6](https://wiki.qt.io/Qt_for_Python)
+  or [PyQt](https://riverbankcomputing.com/software/pyqt/intro)
+  version 5 or 6 is required by the code_saturne GUI. These in turn require
+  Qt (6 or 5), Python, and binding generators (Shiboken for PySide,
+  SIP for PyQt). Without one of these libraries, the GUI may not be
   built, although XML files generated with another install of code_saturne
   may be used.
 
-  If desired, Using Qt for Python (PySide2) instead of PyQt should
-  require a relatively small porting effort, as most of the preparatory work
-  has been done. The development team should be contacted in this case.
+  PyQt5 is supported since 2016, and PySide6 support is almost complete.
+  PyQt6 support is still at an experimental stage.
 
 * [HDF5](https://www.hdfgroup.org/solutions/hdf5/)
   is necessary for MED, and may also be used by CGNS.
@@ -690,7 +691,7 @@ The list of third-party software usable with code_saturne is provided here:
   `--prefix` configure option are correctly detected by the
   code_saturne build scripts.
 
-* [HYPRE](http://www.llnl.gov/casc/hypre/) (high performance preconditioners)
+* [HYPRE](https://computing.llnl.gov/projects/hypre-scalable-linear-solvers-multigrid-methods) (high performance preconditioners)
   is a library of high performance preconditioners and solvers featuring
   multigrid methods for the solution of large, sparse linear systems of equations
   on massively parallel computers.
@@ -724,19 +725,42 @@ Special notes on some third-party tools and libraries
 
 ### Python and PyQt
 
-The GUI is written in PyQt (Python bindings for Qt), so Qt (version 4 or 5)
+The GUI is written in PyQt (Python bindings for Qt), so Qt (version 5 or 6)
 and the matching Python bindings must be available. On most modern
 Linux distributions, this is available through the package manager,
 which is by far the preferred solution.
 
-On systems on which both PyQt6 and Pyqt5 are available, PyQt5 will be selected
+On systems on which both PySide6 and Pyqt5 are available, PyQt5 will be selected
 by default, but the selection may be forced by defining
-`QT_SELECT=6` or `QT_SELECT=5`.
+`QT_SELECT=6` or `QT_SELECT=5` (`QT_SELECT=pyside6`, `QT_SELECT=pyqt6`,
+and `QT_SELECT=pyqt5`) syntax alternatives are also allowed.
+
+It may also be necessary to specify the location of some tools used
+by these libraries.
+
+- For PySide6, the `pyside6-uic` and `pyside6-rcc` utilities are needed to
+  build the GUI. When not detected automatically, their paths may be specified
+  using `PYSIDE6UIC=<path>` and `PYSIDE6RCC=<path>`. If they are not available,
+  Qt's `uic` and `rcc` tools may be used directly to generate the bindings and
+  specified using `UIC=<path>` and `RCC=<path>` (in practice, `pyside6-uic`
+  and `pyside6-rcc` are wrappers to `uic -g python` and `rcc -g python`
+  respectively; on systems with multiple Qt version installed, one must be
+  careful to use the matching version).
+
+- For PyQt5, the `pyuic5` and `pyrcc5` utilities are needed, and if not found
+  automatically, their paths may be specified using `PYUIC5=<path>` and
+  `PYRCC5=<path>`.
+
+- For PyQt6, the `pyuic6` utility is needed, and its location may be specified
+  using `PYUIC6=<path>` if needed. PyQt6 has chosen not to not use a resource
+  compiler, considering this "not pythonistic enough". To work around this
+  limitation, code_saturne uses Qt's `rcc` tool (which can optionally output Python
+  code). As with PySide6, its location can be specified using `RCC=<path>`.
 
 When running on a system which does
 not provide these libraries, there are several alternatives:
 
-* build code_saturne without the GUI. XML files produced with the GUI are
+* Build code_saturne without the GUI. XML files produced with the GUI are
   still usable, so if an install of code_saturne with the GUI is available
   on an other machine, the XML files may be copied on the current machine.
   This is not an optimal solution, but in the case where users have a mix of
@@ -744,39 +768,15 @@ not provide these libraries, there are several alternatives:
   and a compute cluster with a more limited or older system, this may avoid
   requiring a build of Qt and PyQt on the cluster if users find this too daunting.
 
-* Install a local Python interpreter, and add Qt5 bindings to this interpreter.
+* Install these libraries. On a local system, this can usually be done through
+  a Linux package manager, and can also be done without any administrator
+  privileges using `pip install PySide6` or `pip install PyQt5` respectively.
+  For clusters or systems with no internet access, these may also be
+  [built from sources](https://pypi.org/project/PySide6).
 
-  [Python](http://www.python.org) and [Qt](https://www.qt.io) must be downloaded
-  and installed first, in any order. The installation instructions of both of these
-  tools are quite clear, and though the installation of these large packages
-  (especially Qt) may be a lengthy process in terms of compilation time, but is
-  well automated and usually devoid of nasty surprises.
-
-  Once Python is installed, the [SIP](http://riverbankcomputing.co.uk/software/sip/intro)
-  bindings generator must also be installed. This is a small package, and
-  configuring it simply requires running `python configure.py` in its source
-  tree, using the Python interpreter just installed.
-
-  Finally, the [PyQt](http://riverbankcomputing.co.uk/software/pyqt/intro)
-  bindings, in a manner similar to SIP.
-
-  When this is finished, the local Python interpreter contains the PyQt bindings, and
-  may be used by code_saturne's `configure` script by passing
+  If this requires building or using a specific (i.e. non-default) Python
+  interpreter, it may be used by code_saturne's `configure` script by passing
   `PYTHON=<path_to_python_executable`.
-
-* add Python Qt bindings as a Python extension module for an existing
-  Python installation. This is a more elegant solution than the previous
-  one, and avoids requiring rebuilding Python, but if the user does not
-  have administrator privileges, the extensions will be placed in a
-  directory that is not on the default Python extension search path, and
-  that must be added to the `PYTHONPATH` environment variable.
-  This works fine, but for all users using this build of code_saturne, the
-  `PYTHONPATH` environment variable will need to be set.
-
-  The process is similar to the previous one, but SIP and PyQt installation
-  requires a few additional configuration options in this case. See the SIP
-  and PyQt reference guides for detailed instructions, especially the
-  *Building a Private Copy of the SIP Module` section of the SIP guide*.
 
 ### Scotch and PT-Scotch
 

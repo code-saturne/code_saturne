@@ -304,7 +304,7 @@ class StandardItemModelProperty(QStandardItemModel):
             return Qt.ItemFlag.NoItemFlags
         # Lock fields with non condensable gas
         field_id = index.row() + 1
-        return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
+        return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):

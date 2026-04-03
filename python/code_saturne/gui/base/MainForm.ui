@@ -16,13 +16,10 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>:/icons/22x22/logo_salome_cfd.png</normaloff>:/icons/22x22/logo_salome_cfd.png</iconset>
+    <normaloff>:data/icons/logo_salome_cfd.png</normaloff>:data/icons/logo_salome_cfd.png</iconset>
   </property>
   <property name="dockNestingEnabled">
    <bool>true</bool>
-  </property>
-  <property name="dockOptions">
-   <set>QMainWindow::AllowNestedDocks|QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks</set>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout">

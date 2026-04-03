@@ -1022,7 +1022,7 @@ fi
 
 if test "x$cs_have_gui" = "xcheck" ; then
 
-  if test "x$QT_SELECT" = "x" -o "x$QT_SELECT" = "pyqt6" ; then
+  if test "x$QT_SELECT" = "x" -o "x$QT_SELECT" = "xpyqt6" ; then
 
     AC_MSG_CHECKING([for PyQt6])
 
@@ -1078,7 +1078,7 @@ sys.stdout.write(path)]"
 
 fi
 
-# Test for Pyside6
+# Test for PySide6
 #------------------
 
 if test "x$cs_have_gui" = "xcheck" ; then

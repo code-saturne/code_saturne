@@ -148,6 +148,12 @@ class config:
         for k in ('cc', 'cxx', 'fc', 'nvcc', 'hipcc', 'ld'):
             self.compilers[k] = d.get(k, None)
 
+        self.compiler_versions = {}
+        for k in ('cc_version', 'cxx_version', 'fc_version',
+                  'nvcc_version', 'nvcc_hc_version',
+                  'hipcc_version', 'hipcc_hc_version'):
+            self.compiler_versions[k] = d.get(k, None)
+
         self.flags = {}
         for k in ('cflags', 'cxxflags', 'fcflags', 'nvccflags', 'nvccflags_cpp',
                   'hipccflags', 'hipccflags_cpp',

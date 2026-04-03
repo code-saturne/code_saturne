@@ -318,10 +318,10 @@ class StandardItemModelScalars(QStandardItemModel):
         # first variable if thermal scalar
         if self.mdl.getThermalScalarName():
             if index.row() == 0 and index.column() == 0 :
-                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+                return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         if not index.isValid():
             return Qt.ItemFlag.ItemIsEnabled
-        return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
+        return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
@@ -447,7 +447,7 @@ class StandardItemModelVariance(QStandardItemModel):
     def flags(self, index):
         if not index.isValid():
             return Qt.ItemFlag.ItemIsEnabled
-        return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
+        return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):

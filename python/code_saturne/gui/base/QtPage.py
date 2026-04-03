@@ -1345,7 +1345,7 @@ class BasicTableModel(QAbstractTableModel):
         if not index.isValid():
             return Qt.ItemFlag.NoItemFlags
         else:
-            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
 
     def setData(self, index, value, role=Qt.ItemDataRole.EditRole):
         if (role == Qt.ItemDataRole.EditRole) and (index.isValid()):

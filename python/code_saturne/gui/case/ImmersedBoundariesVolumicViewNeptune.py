@@ -192,7 +192,7 @@ class StandardItemVolume(QStandardItemModel):
             return Qt.ItemFlag.ItemIsSelectable
 
         elif (col == 1):
-            return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsUserCheckable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsUserCheckable
 
         elif (col == 2):
             is_fsi = self.data_vol[row][1]
@@ -200,14 +200,14 @@ class StandardItemVolume(QStandardItemModel):
                 # The moving type is always 'computed' when solving FSI
                 return Qt.ItemFlag.ItemIsSelectable
             else:
-                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
+                return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
         elif col == 3:
             if self.is_thermal == False:
                 # CHT can't be activated without thermal
                 return Qt.ItemFlag.ItemIsSelectable
             else:
-                return Qt.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsUserCheckable
+                return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsUserCheckable
 
         elif (col == 4):
             return Qt.ItemFlag.ItemIsSelectable

@@ -601,12 +601,12 @@ class MainView(object):
             reply = QMessageBox.question(self,
                                          title,
                                          msg,
-                                         QMessageBox.Yes|
-                                         QMessageBox.No|
-                                         QMessageBox.Cancel)
-            if reply == QMessageBox.Cancel:
+                                         QMessageBox.StandardButton.Yes|
+                                         QMessageBox.StandardButton.No|
+                                         QMessageBox.StandardButton.Cancel)
+            if reply == QMessageBox.StandardButton.Cancel:
                 return False
-            elif reply == QMessageBox.Yes:
+            elif reply == QMessageBox.StandardButton.Yes:
                 self.fileSave()
 
         return True
@@ -832,7 +832,10 @@ class MainView(object):
         """
         Update Icon, Window Title Name and package name.
         """
-        icondir = os.path.dirname(os.path.abspath(__file__)) + '/'
+        try:
+            icondir = os.path.join(self.package.get_dir("pkgdatadir"), "images")
+        except Exception:
+            icondir = os.path.dirname(os.path.abspath(__file__))
 
         title = ""
 
@@ -868,7 +871,7 @@ class MainView(object):
         if hasattr(self, 'case'):
             module_name = self.case.module_name()
 
-        icon = QIcon(QPixmap(icondir+"logo_salome_cfd.png"))
+        icon = QIcon(QPixmap(os.path.join(icondir, "logo_salome_cfd.png")))
         self.setWindowIcon(icon)
         self.setWindowTitle(title)
 
@@ -1540,13 +1543,42 @@ class MainView(object):
          - version
          - contact
         """
-        msg = self.package.code_name + "\n"                      +\
-              "version " + self.package.version_full + "\n\n"    +\
-              "For information about this application "          +\
-              "please contact:\n\n"                              +\
-              self.package.bugreport + "\n\n"                    +\
-              "Please visit our site:\n"                         +\
-              self.package.url
+        msg = "<html><head/><body>\n" + \
+              "<p><b>" + self.package.code_name.lower() + "</b></p>\n" + \
+              "<p><b>version: " + self.package.version_full + "</b></p>\n\n" + \
+              "<p>For information about this application please contact<br/>\n" +\
+              self.package.bugreport + "</p>\n" + \
+              "<p>Please visit our site:<br/>\n" + \
+              "<a href=https://code-saturne.org><span>https://code-saturne.org</span></a><br/></p>\n"
+
+        msg += "<table>\n" + \
+               "<tr><th align=\"left\"> Component <th align=\"left\"> Version </tr>\n"
+
+        msg += "<tr><td> Python </td><td>" + sys.version.split(' ')[0] + "</td></tr>\n"
+        if QT_API == "PYSIDE6":
+            from PySide6.QtCore import __version__ as qt_version
+            from PySide6 import __version__ as pyside_version
+            msg += "<tr><td> Pyside </td><td>" + pyside_version + "</td></tr>\n"
+            msg += "<tr><td> Qt </td><td>" + qt_version + "</td></tr>\n"
+        elif QT_API in ("PYQT6", "PYQT5"):
+            msg += "<tr><td> PyQt </td><td>" + PYQT_VERSION_STR + "</td></tr>\n"
+            msg += "<tr><td> Qt </td><td>" + QT_VERSION_STR + "</td></tr>\n"
+
+        d = self.package.config.compiler_versions
+        compiler_names = {'C compiler': 'cc_version',
+                          'C++ compiler': 'cxx_version',
+                          'Fortran compiler': 'fc_version',
+                          'CUDA compiler': 'nvcc_version',
+                          'HIP compiler': 'hipcc_version'}
+        for name in compiler_names.keys():
+            k = compiler_names[name]
+            v = d.get(k)
+            if v:
+                msg += "<tr><td>" + name + "</td><td>" + v + "</td></tr>\n"
+
+        msg += "</table>\n" + \
+               "</body></html>"
+
         QMessageBox.about(self, self.package.name, msg)
 
 
@@ -1667,6 +1699,12 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         QMainWindow.__init__(self)
         Ui_MainForm.__init__(self)
+
+        self.setDockNestingEnabled(True)
+        if QT_API in ("PYQT5"):
+            self.setDockOptions(QMainWindow.AllowNestedDocks|QMainWindow.AllowTabbedDocks|QMainWindow.AnimatedDocks)
+        else:
+            self.setDockOptions(QMainWindow.DockOption.AllowNestedDocks|QMainWindow.DockOption.AllowTabbedDocks|QMainWindow.DockOption.AnimatedDocks)
 
         self.setupUi(self)
 
