@@ -148,7 +148,6 @@ cs_lagr_car(int                         iprev,
 
   cs_lagr_extra_module_t *extra_i = cs_get_lagr_extra_module();
   cs_lagr_extra_module_t *extra = extra_i;
-  int n_phases = extra->n_phases;
 
   iprev = cs::min(iprev, extra->vel->n_time_vals -1);
 
