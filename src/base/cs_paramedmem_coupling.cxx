@@ -76,7 +76,7 @@
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_medcoupling_mesh.hxx"
+#include "base/cs_medcoupling_mesh.hxx"
 #include "base/cs_paramedmem_coupling.h"
 
 #if defined(HAVE_PARAMEDMEM)
