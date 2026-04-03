@@ -1558,7 +1558,7 @@ class MainView(object):
         if QT_API == "PYSIDE6":
             from PySide6.QtCore import __version__ as qt_version
             from PySide6 import __version__ as pyside_version
-            msg += "<tr><td> Pyside </td><td>" + pyside_version + "</td></tr>\n"
+            msg += "<tr><td> PySide </td><td>" + pyside_version + "</td></tr>\n"
             msg += "<tr><td> Qt </td><td>" + qt_version + "</td></tr>\n"
         elif QT_API in ("PYQT6", "PYQT5"):
             msg += "<tr><td> PyQt </td><td>" + PYQT_VERSION_STR + "</td></tr>\n"
