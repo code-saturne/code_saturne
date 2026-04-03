@@ -109,8 +109,63 @@
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Basic functions used to compute polynomials for local Mach number
+ *        at the interface (AUSM+up scheme)
+ *
+ * \param[in]   mach   Cell Mach number
+ * \param[in]   sgn    Indicator for left/right state
+ */
+/*----------------------------------------------------------------------------*/
+
+CS_F_HOST_DEVICE static inline cs_real_t
+_mach_poly1(const cs_real_t   mach,
+            const int         sgn)
+{
+  return 1./2.*(mach + sgn*fabs(mach));
+}
+
+ CS_F_HOST_DEVICE static inline cs_real_t
+_mach_poly2(const cs_real_t   mach,
+            const int         sgn)
+{
+  return sgn*1./4.*cs_math_pow2(mach + sgn*1.0);
+}
+
+CS_F_HOST_DEVICE static inline cs_real_t
+_mach_poly4(const cs_real_t   mach,
+            const int         sgn)
+{
+  if (fabs(mach) >= 1)
+    return _mach_poly1(mach, sgn);
+  else
+    return _mach_poly2(mach, sgn)*(1 + (-sgn)*16.0*1./8.*_mach_poly2(mach, -sgn));
+}
+
+CS_F_HOST_DEVICE static inline cs_real_t
+_mach_p(const cs_real_t    machl,
+        const cs_real_t    machr,
+        const cs_real_t    mach_ref,
+        const cs_real_t    pl,
+        const cs_real_t    pr,
+        const cs_real_t    rhof,
+        const cs_real_t    af)
+{
+  const cs_real_t kp = 0.1;
+  cs_real_t mach_avg_square, machp, m0, fa;
+
+  mach_avg_square = 1./2.*(machl*machl + machr*machr);
+
+  m0 = sqrt(cs::min(1, cs::max(mach_avg_square, mach_ref*mach_ref)));
+  fa = m0*(2.0 - m0);
+  machp = - kp/fa*cs::max(1.0 - mach_avg_square, 0.0)*(pr - pl)/(rhof*af*af);
+
+  return machp;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the "mass flux" at the faces for the CFL restriction
- *        computation and the solving of the pressure
+ *        computation and the solving of the pressure (Centered scheme)
  *
  * \param[in]   iterns            Navier-Stokes iteration number
  * \param[out]  i_mass_flux       Internal faces mass flux
@@ -119,10 +174,10 @@
 /*----------------------------------------------------------------------------*/
 
 static void
-_compressible_pressure_mass_flux(cs_dispatch_context &ctx,
-                                 int                  iterns, // cfmsfp en fortran
-                                 cs_real_t            i_mass_flux[],
-                                 cs_real_t            b_mass_flux[])
+_compressible_pressure_centered_mass_flux(cs_dispatch_context &ctx,
+                                          int                  iterns, // cfmsfp en fortran
+                                          cs_real_t            i_mass_flux[],
+                                          cs_real_t            b_mass_flux[])
 {
   const cs_mesh_t *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
@@ -466,6 +521,173 @@ _compressible_pressure_mass_flux(cs_dispatch_context &ctx,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the "mass flux" at the faces for the CFL restriction
+ *        computation and the solving of the pressure (AUSM+up scheme)
+ *
+ * \param[in]   ctx            dispatch context
+ * \param[in]   vel            velocity vector
+ * \param[in]   crom           cell density
+ * \param[in]   brom           density at boundary faces
+ * \param[in]   p              thermodynamic pressure
+ * \param[in]   bc_coeffs_v    BC structure for velocity vector
+ * \param[in]   bc_coeffs_p    BC structure for pressure
+ * \param[out]  imasfl         Internal faces mass flux
+ * \param[out]  bmasfl         Boundary faces mass flux
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_compressible_pressure_ausm_mass_flux(cs_dispatch_context  &ctx,
+                                        const cs_real_3_t    *vel,
+                                        const cs_real_t      *crom,
+                                        const cs_real_t      *brom,
+                                        const cs_real_t      *p,
+                                        cs_field_bc_coeffs_t *bc_coeffs_v,
+                                        cs_field_bc_coeffs_t *bc_coeffs_p,
+                                        cs_real_t            *imasfl,
+                                        cs_real_t            *bmasfl)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+  const cs_lnum_t n_cells     = m->n_cells;
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_b_faces   = m->n_b_faces;
+  const cs_lnum_t n_i_faces   = m->n_i_faces;
+
+  const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
+
+  const cs_real_3_t *restrict i_face_u_normal = fvq->i_face_u_normal;
+  const cs_nreal_3_t *restrict b_face_u_normal = fvq->b_face_u_normal;
+
+  const cs_real_t *restrict b_face_surf = fvq->b_face_surf;
+  const cs_real_t *restrict i_face_surf = fvq->i_face_surf;
+
+  const cs_real_t mach_ref = 1.0;
+
+  /* Initialization
+     -------------- */
+
+  cs_real_3_t *coefav = (cs_real_3_t *)bc_coeffs_v->a;
+  cs_real_33_t *coefbv = (cs_real_33_t *)bc_coeffs_v->b;
+
+  cs_real_t *coefa_p = bc_coeffs_p->a;
+  cs_real_t *coefb_p = bc_coeffs_p->b;
+
+  /* Allocate work arrays */
+  cs_array<cs_real_t> c2star(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> i_machl(n_i_faces, cs_alloc_mode);
+  cs_array<cs_real_t> i_machr(n_i_faces, cs_alloc_mode);
+  cs_array<cs_real_t> i_machf(n_i_faces, cs_alloc_mode);
+  cs_array<cs_real_t> i_af(n_i_faces, cs_alloc_mode);
+
+  cs_array<cs_real_t> b_machl(n_b_faces, cs_alloc_mode);
+  cs_array<cs_real_t> b_machr(n_b_faces, cs_alloc_mode);
+  cs_array<cs_real_t> b_machf(n_b_faces, cs_alloc_mode);
+  cs_array<cs_real_t> b_af(n_b_faces, cs_alloc_mode);
+
+  cs_field_t *f_ener = cs_field_by_name_try("total_energy");
+
+  cs_real_t *cvar_ener = f_ener->val;
+  const cs_real_t cp0 = cs_glob_fluid_properties->cp0;
+  const cs_real_t cv0 = cs_glob_fluid_properties->cv0;
+  const cs_real_t gamma0 = cp0/cv0;
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    cs_real_t htot = cvar_ener[c_id] + p[c_id]/crom[c_id];
+    c2star[c_id] = 2.*(gamma0 - 1.0)/(gamma0 + 1.0)*htot;
+  });
+
+  ctx.wait();
+
+  /* ---> Periodicity and parallelism treatment */
+
+  cs_halo_sync(m->halo, CS_HALO_STANDARD, ctx.use_gpu(), c2star);
+
+  ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+    cs_lnum_t ii = i_face_cells[f_id][0];
+    cs_lnum_t jj = i_face_cells[f_id][1];
+
+    cs_real_t ul[3] = {0., 0., 0.}, ur[3] = {0., 0., 0.};
+
+    for (cs_lnum_t isou = 0; isou < 3; isou++) {
+      ul[isou] = vel[ii][isou], ur[isou] = vel[jj][isou];
+    }
+
+    cs_real_t uln = cs_math_3_dot_product(ul, i_face_u_normal[f_id]);
+    cs_real_t urn = cs_math_3_dot_product(ur, i_face_u_normal[f_id]);
+
+    cs_real_t al = c2star[ii]/(cs::max(sqrt(c2star[ii]), fabs(uln)));
+    cs_real_t ar = c2star[jj]/(cs::max(sqrt(c2star[jj]), fabs(urn)));
+
+    i_af[f_id] = cs::min(al, ar);
+
+    i_machl[f_id] = uln/i_af[f_id], i_machr[f_id] = urn/i_af[f_id];
+
+    const cs_real_t pl = p[ii];
+    const cs_real_t pr = p[jj];
+
+    cs_real_t rhol = crom[ii], rhor = crom[jj];
+
+    cs_real_t rhof = (imasfl[f_id] >= 0.) ? rhol:rhor;
+    i_machf[f_id] =   _mach_poly4(i_machl[f_id], 1)
+                    + _mach_poly4(i_machr[f_id],-1)
+                    + _mach_p(i_machl[f_id],
+                              i_machr[f_id],
+                              mach_ref,
+                              pl,
+                              pr,
+                              rhof,
+                              i_af[f_id]);
+
+    imasfl[f_id] = i_machf[f_id]*i_af[f_id]*rhof*i_face_surf[f_id];
+  }); /* end for f_id */
+
+  ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+    cs_lnum_t ii = b_face_cells[f_id];
+
+    cs_real_t ul[3] = {0.0, 0.0, 0.0}, ur[3] = {0.0, 0.0, 0.0};
+    for (cs_lnum_t isou = 0; isou < 3; isou++) {
+      ul[isou] = vel[ii][isou];
+      ur[isou] = coefav[f_id][isou];
+
+      for (int jsou = 0; jsou < 3; jsou++) {
+        ur[isou] += vel[ii][jsou]*coefbv[f_id][jsou][isou];
+      }
+    }
+
+    cs_real_t uln = cs_math_3_dot_product(ul, b_face_u_normal[f_id]);
+    cs_real_t urn = cs_math_3_dot_product(ur, b_face_u_normal[f_id]);
+
+    cs_real_t al = c2star[ii]/(cs::max(sqrt(c2star[ii]), fabs(uln)));
+    cs_real_t ar = c2star[ii]/(cs::max(sqrt(c2star[ii]), fabs(urn)));
+
+    b_af[f_id] = cs::min(al, ar);
+
+    b_machl[f_id] = uln/b_af[f_id], b_machr[f_id] = urn/b_af[f_id];
+
+    const cs_real_t pl = p[ii];
+    const cs_real_t pr = coefa_p[f_id] + p[ii]*coefb_p[f_id];
+
+    cs_real_t rhol = crom[ii], rhor = brom[f_id];
+
+    cs_real_t rhof = (bmasfl[f_id] >= 0.) ? rhol:rhor;
+    b_machf[f_id] =   _mach_poly4(b_machr[f_id], 1)
+                    + _mach_poly4(b_machr[f_id],-1)
+                    + _mach_p(b_machl[f_id],
+                              b_machr[f_id],
+                              mach_ref,
+                              pl,
+                              pr,
+                              rhof,
+                              b_af[f_id]);
+
+    bmasfl[f_id] = b_machf[f_id]*b_af[f_id]*rhof*b_face_surf[f_id];
+  });
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Update the convective mass flux before the velocity prediction step.
  *        It is the first step of the compressible algorithm at each time
           iteration.
@@ -653,10 +875,10 @@ cs_cf_convective_mass_flux(int  iterns)
   /* Computation of the "convective flux" for the density */
 
   /* Volumic flux (u + dt f) */
-  _compressible_pressure_mass_flux(ctx,
-                                   iterns,
-                                   ivolfl.data(),
-                                   bvolfl.data());
+  _compressible_pressure_centered_mass_flux(ctx,
+                                            iterns,
+                                            ivolfl.data(),
+                                            bvolfl.data());
 
   /* Mass flux at internal faces (upwind scheme for the density)
      (negative because added to RHS) */
@@ -913,10 +1135,10 @@ cs_cf_cfl_compute(cs_real_t wcf[]) // before : cfdttv
   ctx.wait();
 
   int iterns = 1;
-  _compressible_pressure_mass_flux(ctx,
-                                   iterns,
-                                   i_mass_flux.data(),
-                                   b_mass_flux.data());
+  _compressible_pressure_centered_mass_flux(ctx,
+                                            iterns,
+                                            i_mass_flux.data(),
+                                            b_mass_flux.data());
 
   /* Summation at each cell taking only outward flux */
   i_visc.zero(ctx);

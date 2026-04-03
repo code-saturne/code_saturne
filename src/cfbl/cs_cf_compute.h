@@ -46,6 +46,34 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the "mass flux" at the faces for the CFL restriction
+ *        computation and the solving of the pressure (AUSM+up scheme)
+ *
+ * \param[in]   ctx            dispatch context
+ * \param[in]   vel            velocity vector
+ * \param[in]   crom           cell density
+ * \param[in]   brom           density at boundary faces
+ * \param[in]   p              thermodynamic pressure
+ * \param[in]   bc_coeffs_v    BC structure for velocity vector
+ * \param[in]   bc_coeffs_p    BC structure for pressure
+ * \param[out]  imasfl         Internal faces mass flux
+ * \param[out]  bmasfl         Boundary faces mass flux
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_compressible_pressure_ausm_mass_flux(cs_dispatch_context  &ctx,
+                                        const cs_real_3_t    *vel,
+                                        const cs_real_t      *crom,
+                                        const cs_real_t      *brom,
+                                        const cs_real_t      *p,
+                                        cs_field_bc_coeffs_t *bc_coeffs_v,
+                                        cs_field_bc_coeffs_t *bc_coeffs_p,
+                                        cs_real_t            *imasfl,
+                                        cs_real_t            *bmasfl);
+
+/*----------------------------------------------------------------------------*/
 /*
  * \param[in]     iterns        Navier-Stokes iteration number
  */

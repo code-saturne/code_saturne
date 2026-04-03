@@ -86,6 +86,7 @@
 #include "pprt/cs_physical_model.h"
 #include "atmo/cs_air_props.h"
 #include "atmo/cs_atmo.h"
+#include "cfbl/cs_cf_compute.h"
 #include "cfbl/cs_cf_thermo.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
@@ -1205,10 +1206,9 @@ _pressure_correction_fv(int                   iterns,
     int istat = eqp_p->istat;
     if (istat != 0) {
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        rovsdt[c_id] += istat*(cell_vol[c_id]/(dt[c_id]*c2[c_id]));
+        rovsdt[c_id] += cell_vol[c_id]/(dt[c_id]*c2[c_id]);
       });
     }
-
   }
 
   /* Face diffusivity */
@@ -1438,7 +1438,7 @@ _pressure_correction_fv(int                   iterns,
   /* Sync for parallelism and periodicity */
   cs_halo_sync_r(m->halo, on_device, wrk);
 
-  {
+  if (compressible_flag < 0) {
     int inc = 1;
     int iflmb0 = (cs_glob_ale > CS_ALE_NONE) ? 0 : 1;
     int itypfl = (vof_parameters->vof_model > 0) ? 0 : 1;
@@ -1460,6 +1460,18 @@ _pressure_correction_fv(int                   iterns,
                  wrk,
                  bc_coeffs_v,
                  imasfl, bmasfl);
+  }
+  else {
+    cs_compressible_pressure_ausm_mass_flux(
+      ctx,
+      vel,
+      crom,
+      brom,
+      cvar_pr,
+      bc_coeffs_v,
+      bc_coeffs_p,
+      imasfl,
+      bmasfl);
   }
 
   if (vp_param->staggered == 1) {
@@ -2542,23 +2554,11 @@ _pressure_correction_fv(int                   iterns,
     }
   }
 
-  /* Update density
-     -------------- */
-
-  if (compressible_flag == 3) {
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      crom_eos[c_id] += phi[c_id]/c2[c_id];
-    });
-    ctx.wait();
-  }
-
   /* Suppression of the grid hierarchy (release solver setup)
      --------------------------------- */
 
   cs_sles_free(sc);
   cs_sles_default_release_matrix(&a);
-
-  CS_FREE(c2);
 
   /* Weakly compressible algorithm: semi analytic scheme
      2nd step solving a convection diffusion equation
@@ -2603,12 +2603,23 @@ _pressure_correction_fv(int                   iterns,
     }
   }
 
+  /* Update density
+     -------------- */
+
+  if (compressible_flag == 3) {
+    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      crom_eos[c_id] += phi[c_id]/c2[c_id];
+    });
+  }
+
   ctx.wait();
+
+  CS_FREE(c2);
 
   /* Transformation of volume fluxes into mass fluxes */
 
   /* Update the density when solving the Helmholtz equation */
-  if (ieos != CS_EOS_NONE) {
+  if (idilat == 2 && ieos != CS_EOS_NONE) {
     cs_real_t *cpro_rho_mass = cs_field_by_name("density_mass")->val;
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       cs_real_t drop = (  _coef * cvar_pr[c_id] - (_coef - 1.) * cvara_pr[c_id]
