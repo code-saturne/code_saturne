@@ -269,13 +269,13 @@ _prepare_ke(const cs_mesh_t            *mesh,
  * \brief Function used to define the exchange coefficients for tangential and
  *        normal components. (1-velocity scales method)
  *
- * \param[in]      eqp  pointer to a cs_equation_param_t
- * \param[in]      nu   laminar kinematic viscosity
- * \param[in]      k    turbulent kinetic energy
- * \param[in]      hfc  distance from cell center to the wall
- * \param[in]      uct  norm of tangential components of cell velocity
- * \param[in]      uft  norm of tangential components of face velocity
- * \param[in, out] res  value of the resulting exchange coefficients
+ * \param[in]      pena_bc_coeff  pena coefficient used as Dirichlet BC
+ * \param[in]      nu             laminar kinematic viscosity
+ * \param[in]      k              turbulent kinetic energy
+ * \param[in]      hfc            distance from cell center to the wall
+ * \param[in]      uct            norm of tangential components of cell velocity
+ * \param[in]      uft            norm of tangential components of face velocity
+ * \param[in, out] res            value of the resulting exchange coefficients
  */
 /*----------------------------------------------------------------------------*/
 
@@ -341,13 +341,13 @@ _wall_function_1scale_log(const double    pena_bc_coeff,
  * \brief Function used to define the exchange coefficients for tangential and
  *        normal components. (2-velocity scales method)
  *
- * \param[in]      eqp  pointer to a cs_equation_param_t
- * \param[in]      nu   laminar kinematic viscosity
- * \param[in]      k    turbulent kinetic energy
- * \param[in]      hfc  distance from cell center to the wall
- * \param[in]      uct  norm of tangential components of cell velocity
- * \param[in]      uft  norm of tangential components of face velocity
- * \param[in, out] res  value of the resulting exchange coefficients
+ * \param[in]      pena_bc_coeff  pena coefficient used as Dirichlet BC
+ * \param[in]      nu             laminar kinematic viscosity
+ * \param[in]      k              turbulent kinetic energy
+ * \param[in]      hfc            distance from cell center to the wall
+ * \param[in]      uct            norm of tangential components of cell velocity
+ * \param[in]      uft            norm of tangential components of face velocity
+ * \param[in, out] res            value of the resulting exchange coefficients
  */
 /*----------------------------------------------------------------------------*/
 
