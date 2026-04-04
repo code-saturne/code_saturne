@@ -264,6 +264,117 @@ _prepare_ke(const cs_mesh_t            *mesh,
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function used to define the exchange coefficients for tangential and
+ *        normal components. (1-velocity scales method)
+ *
+ * \param[in]      eqp  pointer to a cs_equation_param_t
+ * \param[in]      nu   laminar kinematic viscosity
+ * \param[in]      k    turbulent kinetic energy
+ * \param[in]      hfc  distance from cell center to the wall
+ * \param[in]      uct  norm of tangential components of cell velocity
+ * \param[in]      uft  norm of tangential components of face velocity
+ * \param[in, out] res  value of the resulting exchange coefficients
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_wall_function_1scale_log(const double    pena_bc_coeff,
+                          const double    nu,
+                          const double    k,
+                          const double    hfc,
+                          const double    uct,
+                          const double    uft,
+                          cs_real_t      *res)
+{
+  CS_UNUSED(k);
+
+  const double ypluli = cs_get_glob_wall_functions()->ypluli;
+
+  double ustar, ustarwer, ustarmin, ustaro;
+  double y_over_nu = hfc/nu;
+
+  double re = uct*y_over_nu;
+
+  const double eps = 1e-4;
+  const int n_max_iter = 100;
+
+  if (re <= ypluli * ypluli) {
+
+    /* In the viscous sub-layer: U+ = y+ */
+    res[0] = pena_bc_coeff;
+  }
+  else {
+    /* In the logaritim laye */
+
+    /* The initial value is Wener or the minimun ustar to ensure convergence */
+
+    ustarwer = pow(fabs(uct)/cs_turb_apow/pow(y_over_nu, cs_turb_bpow),
+               cs_turb_dpow);
+    ustarmin = exp(-cs_turb_cstlog*cs_turb_xkappa)/y_over_nu;
+    ustaro = cs::max(ustarwer, ustarmin);
+    ustar = (cs_turb_xkappa * uct + ustaro)
+           / (log(y_over_nu * ustaro) + cs_turb_xkappa * cs_turb_cstlog + 1.);
+
+    int iter = 0;
+    while (fabs(ustar - ustaro) >= eps * ustaro && iter < n_max_iter) {
+      ustaro = ustar;
+      ustar = (cs_turb_xkappa * uct + ustaro)
+            / (log(y_over_nu * ustaro) + cs_turb_xkappa * cs_turb_cstlog + 1.);
+      iter ++;
+    }
+
+    if (iter >= n_max_iter) {
+      bft_printf(_("WARNING: non-convergence in the computation\n"
+                   "******** of the friction velocity\n\n"
+                   "friction vel: %f \n" ), ustar);
+    }
+
+    double h_t = ustar*ustar/uft;
+    res[0] = cs::max(h_t, 0.0);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Function used to define the exchange coefficients for tangential and
+ *        normal components. (2-velocity scales method)
+ *
+ * \param[in]      eqp  pointer to a cs_equation_param_t
+ * \param[in]      nu   laminar kinematic viscosity
+ * \param[in]      k    turbulent kinetic energy
+ * \param[in]      hfc  distance from cell center to the wall
+ * \param[in]      uct  norm of tangential components of cell velocity
+ * \param[in]      uft  norm of tangential components of face velocity
+ * \param[in, out] res  value of the resulting exchange coefficients
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_wall_function_2scales_log(const double    pena_bc_coeff,
+                           const double    nu,
+                           const double    k,
+                           const double    hfc,
+                           const double    uct,
+                           const double    uft,
+                           cs_real_t      *res)
+{
+  const double ypluli = cs_get_glob_wall_functions()->ypluli;
+
+  double re = sqrt(k)*hfc/nu;
+  double g = exp(-re/11.);
+  double uk = sqrt((1.-g)*sqrt(cs_turb_cmu)*k + g*nu*uct/hfc);
+  double yplus = hfc*uk/nu;
+  double ustar = uct/(log(yplus)/cs_turb_xkappa + cs_turb_cstlog);
+  double h_t = uk*ustar/uft;
+
+  if (yplus > ypluli) /* In the logarithm zone */
+    res[0] = cs::max(h_t, 0.0);
+  else /* In the linear zone */
+    res[0] = pena_bc_coeff;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1029,19 +1140,37 @@ cs_turb_compute_wall_bc_coeffs(const cs_equation_param_t  *eqp,
                                const double                uft,
                                cs_real_t                  *res)
 {
-  const double ypluli = cs_get_glob_wall_functions()->ypluli;
+  const cs_wall_functions_t *glob_wf = cs_get_glob_wall_functions();
+  const cs_wall_f_type_t iwallf = glob_wf->iwallf;
 
-  double re = sqrt(k)*hfc/nu;
-  double g = exp(-re/11.);
-  double uk = sqrt((1.-g)*sqrt(cs_turb_cmu)*k + g*nu*uct/hfc);
-  double yplus = hfc*uk/nu;
-  double ustar = uct/(log(yplus)/cs_turb_xkappa + cs_turb_cstlog);
-  double h_t = uk*ustar/uft;
-
-  if (yplus > ypluli) /* In the logarithm zone */
-    res[0] = cs::max(h_t, 0.0);
-  else /* In the linear zone */
-    res[0] = eqp->strong_pena_bc_coeff;
+  switch (iwallf) {
+    case CS_WALL_F_DISABLED:
+      res[0] = eqp->strong_pena_bc_coeff;
+      break;
+    case CS_WALL_F_1SCALE_LOG:
+      _wall_function_1scale_log(eqp->strong_pena_bc_coeff,
+                                 nu,
+                                 k,
+                                 hfc,
+                                 uct,
+                                 uft,
+                                 res);
+      break;
+    case CS_WALL_F_SCALABLE_2SCALES_LOG:
+      _wall_function_2scales_log(eqp->strong_pena_bc_coeff,
+                                 nu,
+                                 k,
+                                 hfc,
+                                 uct,
+                                 uft,
+                                 res);
+      break;
+    default:
+      bft_error(__FILE__, __LINE__, 0, " %s: Invalid wall function type.\n"
+                " Expected wall function types in CDO turbulence: \n"
+                " CS_WALL_F_DISABLED, CS_WALL_F_1SCALE_LOG"
+                " or CS_WALL_F_SCALABLE_2SCALES_LOG.", __func__);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

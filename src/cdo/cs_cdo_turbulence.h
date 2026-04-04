@@ -498,7 +498,7 @@ cs_turb_update_shared_legacy(const cs_mesh_t           *mesh,
                              const cs_turbulence_t     *tbs);
 
 /*----------------------------------------------------------------------------*/
-/*
+/*!
  * \brief Function used to define the exchange coefficients for tangential and
  *        normal components.
  *
