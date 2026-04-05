@@ -250,7 +250,7 @@ class FormulaCoupling(Coupling):
                                 required = self.__required,
                                 symbols = self.__symbols,
                                 examples = self.__examples)
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("FormulaCoupling -> %s" % str(result))
             self.setBoundaryDefinedValue(result)
@@ -517,7 +517,7 @@ class BoundaryConditionsMobileMeshView(QWidget,
                                 condition     = c,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaMobileMeshBoundary -> %s" % str(result))
             self.__boundary.setFormula(str(result))

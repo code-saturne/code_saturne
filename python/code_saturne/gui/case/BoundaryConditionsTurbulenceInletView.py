@@ -282,7 +282,7 @@ epsilon = ustar2^1.5/(kappa*dh*0.1);"""
                                     examples      = exa)
 
 
-            if dialog.exec_():
+            if dialog.exec():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
                 self.__boundary.setTurbFormula(str(result))
@@ -325,7 +325,7 @@ r23 = 0;
                                     symbols       = sym,
                                     examples      = exa)
 
-            if dialog.exec_():
+            if dialog.exec():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
                 self.__boundary.setTurbFormula(str(result))
@@ -370,7 +370,7 @@ alpha =  1.;
                                     symbols       = sym,
                                     examples      = exa)
 
-            if dialog.exec_():
+            if dialog.exec():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
                 self.__boundary.setTurbFormula(str(result))
@@ -406,7 +406,7 @@ alpha = 0;"""
                                     condition = 'formula',
                                     examples = exa)
 
-            if dialog.exec_():
+            if dialog.exec():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
                 self.__boundary.setTurbFormula(str(result))
@@ -438,7 +438,7 @@ omega = epsilon/(cmu * k);"""
                                     condition     = 'formula',
                                     examples      = exa)
 
-            if dialog.exec_():
+            if dialog.exec():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
                 self.__boundary.setTurbFormula(str(result))
@@ -470,7 +470,7 @@ nu_tilda = _epsilon/(cmu * _k);"""
                                     condition     = 'formula',
                                     examples      = exa)
 
-            if dialog.exec_():
+            if dialog.exec():
                 result = dialog.get_result()
                 log.debug("slotFormulaTurb -> %s" % str(result))
                 self.__boundary.setTurbFormula(str(result))

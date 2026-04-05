@@ -234,7 +234,7 @@ if (xray2 < xr2) {
                                 symbols       = symb,
                                 known_fields  = [],
                                 examples      = exa)
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaMobileMeshView -> %s" % str(result))
             self.mdl.setFormula(str(result))

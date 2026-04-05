@@ -77,13 +77,13 @@
   <customwidget>
    <class>NucleateBoilingView</class>
    <extends>QWidget</extends>
-   <header>NucleateBoilingView.h</header>
+   <header>code_saturne.gui.case.NucleateBoilingView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>DropletCondensationEvaporationView</class>
    <extends>QWidget</extends>
-   <header>DropletCondensationEvaporationView.h</header>
+   <header>code_saturne.gui.case.DropletCondensationEvaporationView</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

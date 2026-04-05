@@ -36,7 +36,7 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
 
-from NeptuneThermodynamics import Ui_NeptuneThermodynamics
+from code_saturne.gui.case.NeptuneThermodynamics import Ui_NeptuneThermodynamics
 
 
 class NeptuneThermodynamicsView(QWidget, Ui_NeptuneThermodynamics):

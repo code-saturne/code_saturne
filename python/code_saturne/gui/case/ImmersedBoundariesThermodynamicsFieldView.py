@@ -475,7 +475,7 @@ class ImmersedBoundariesThermodynamicsFieldView(QWidget, Ui_ImmersedBoundariesTh
                                 known_fields  = [],
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaPorousVelocity -> %s" % str(result))
             self.pushButtonImposed.setStyleSheet("background-color: green")
@@ -506,7 +506,7 @@ rho = 1.293 * (273.15 / temperature);"""
                                 known_fields  = [],
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaPorousRho -> %s" % str(result))
             self.pushButtonDensity.setStyleSheet("background-color: green")
@@ -536,7 +536,7 @@ rho = 1.293 * (273.15 / temperature);"""
                                 known_fields  = [],
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaPorousCp -> %s" % str(result))
             self.pushButtonSpecificHeat.setStyleSheet("background-color: green")
@@ -566,7 +566,7 @@ rho = 1.293 * (273.15 / temperature);"""
                                 known_fields  = [],
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaPorousAl -> %s" % str(result))
             self.pushButtonThermalConductivity.setStyleSheet("background-color: green")
@@ -607,7 +607,7 @@ rho = 1.293 * (273.15 / temperature);"""
                                 known_fields  = [],
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaPorousInertia -> %s" % str(result))
             self.pushButtonThermalConductivity.setStyleSheet("background-color: green")

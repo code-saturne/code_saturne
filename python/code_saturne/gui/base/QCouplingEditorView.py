@@ -119,18 +119,15 @@ class domain_entry(object):
 
     # ---------------------------------------------------------------
     def __create_label__(self, text):
-
         label = QLabel()
 
         label.setText(text)
-        label.setAlignment(Qt.AlignLeft|Qt.AlignVCenter)
-
+        label.setAlignment(Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlagAlignVCenter)
         return label
     # ---------------------------------------------------------------
 
     # ---------------------------------------------------------------
     def __create_line__(self, val):
-
         line = QLineEdit()
         line.setText(str(val))
 
@@ -218,7 +215,7 @@ class CouplingEditorView(QWidget):
         # Title
         l1 = QLabel()
         l1.setText("Coupled cases")
-        l1.setAlignment(Qt.AlignCenter)
+        l1.setAlignment(Qt.AlignmentFlag.AlignCenter)
         lfont = QFont()
         lfont.setBold(True)
         l1.setFont(lfont)

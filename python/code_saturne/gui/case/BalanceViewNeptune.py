@@ -344,9 +344,9 @@ class BalanceView(QWidget, Ui_BalanceForm):
         self.DragList.setModel(self.modelDrag)
         self.DropList.setModel(self.modelDrop)
         self.DragList.setAlternatingRowColors(True)
-        self.DragList.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.DragList.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.DropList.setAlternatingRowColors(True)
-        self.DropList.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.DropList.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         # Connections
         self.pushButtonAddPressureDrop.clicked.connect(self.slotAddPressureDrop)
@@ -495,7 +495,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     BalanceView = BalanceView(app)
     BalanceView.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 #-------------------------------------------------------------------------------
 # End

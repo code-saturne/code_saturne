@@ -134,7 +134,7 @@ class StandardItemBoundary(QStandardItemModel):
             return self.data[row][col]
 
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
 
         return None
 

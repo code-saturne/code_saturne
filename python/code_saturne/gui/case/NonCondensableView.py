@@ -115,7 +115,7 @@ class LabelDelegate(QItemDelegate):
 
                 from code_saturne.gui.case.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
-                if dialog.exec_():
+                if dialog.exec():
                     result = dialog.get_result()
                     new_plabel = result['label']
                     log.debug("setModelData -> result = %s" % result)
@@ -285,7 +285,7 @@ class StandardItemModelNonCondensable(QStandardItemModel):
                 return None
 
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
 
         return None
 

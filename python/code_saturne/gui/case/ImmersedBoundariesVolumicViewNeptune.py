@@ -176,7 +176,7 @@ class StandardItemVolume(QStandardItemModel):
             return self.data_vol[row][col]
 
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
 
         return None
 

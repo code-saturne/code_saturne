@@ -165,7 +165,7 @@ class MainFieldsSourceTermsView(QWidget, Ui_MainFieldsSourceTerms):
                                 examples      = exa,
                                 source_type   = 'thermal_source_term')
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaThermal -> %s" % str(result))
             self.mdl.setThermalFormula(self.zone_id,

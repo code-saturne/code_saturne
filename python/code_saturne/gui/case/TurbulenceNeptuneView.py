@@ -54,7 +54,7 @@ from code_saturne.gui.base.QtWidgets import *
 from code_saturne.model.Common import GuiParam
 from code_saturne.gui.base.QtPage import ComboModel, DoubleValidator
 from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
-from TurbulenceNeptune import Ui_Turbulence
+from code_saturne.gui.case.TurbulenceNeptune import Ui_Turbulence
 from code_saturne.model.TurbulenceNeptuneModel import TurbulenceModel, TurbulenceModelsDescription
 
 #-------------------------------------------------------------------------------
@@ -294,7 +294,7 @@ class StandardItemModelTurbulence(QStandardItemModel):
                 return None
 
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
 
         return None
 

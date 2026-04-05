@@ -52,6 +52,9 @@ from code_saturne.gui.base.QtPage import LabelDelegate, FloatDelegate, ComboDele
 from code_saturne.gui.case.NotebookForm import Ui_NotebookForm
 from code_saturne.model.NotebookModel import NotebookModel
 
+if QT_API == "PYQT6":
+    from code_saturne.gui.case import resources_pages_rc
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------

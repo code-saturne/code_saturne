@@ -50,7 +50,7 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.gui.base.QtPage import ComboModel, DoubleValidator, from_qvariant
-from Solid import Ui_Solid
+from code_saturne.gui.case.Solid import Ui_Solid
 from code_saturne.model.SolidModel import SolidModel
 
 #-------------------------------------------------------------------------------

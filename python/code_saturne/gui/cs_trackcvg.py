@@ -115,7 +115,7 @@ def main(argv, pkg):
         print("  Please check your display environment.\n")
         sys.exit(0)
 
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 #-------------------------------------------------------------------------------
 # End

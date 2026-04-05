@@ -313,7 +313,7 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
 
         # run the dialog
         dialog = FluidStructureInteractionAdvancedOptionsView(self, self.case, default)
-        if dialog.exec_():
+        if dialog.exec():
             # Set the model with the dialog results
             result = dialog.get_result()
             log.debug("slotAdvanced -> %s" % str(result))

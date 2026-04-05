@@ -81,7 +81,7 @@ class StandardItemModelProfile(QStandardItemModel):
         if role == Qt.ItemDataRole.DisplayRole:
             return self.dataProfile[index.row()][index.column()]
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
         return None
 
 
@@ -99,7 +99,7 @@ class StandardItemModelProfile(QStandardItemModel):
             elif section == 1:
                 return self.tr("Variables")
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
         return None
 
 
@@ -192,9 +192,9 @@ class ProfilesView(QWidget, Ui_ProfilesForm):
         self.DragList.setModel(self.modelDrag)
         self.DropList.setModel(self.modelDrop)
         self.DragList.setAlternatingRowColors(True)
-        self.DragList.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.DragList.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.DropList.setAlternatingRowColors(True)
-        self.DropList.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.DropList.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         # Combo items
         self.modelFreq = ComboModel(self.comboBoxFreq, 3, 1)

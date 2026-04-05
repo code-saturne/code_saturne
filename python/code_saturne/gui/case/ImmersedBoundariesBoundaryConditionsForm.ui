@@ -58,7 +58,7 @@
   <customwidget>
    <class>ImmersedBoundariesBoundaryConditionsWallView</class>
    <extends>QWidget</extends>
-   <header location="global">ImmersedBoundariesBoundaryConditionsWallView.h</header>
+   <header>code_saturne.gui.case.ImmersedBoundariesBoundaryConditionsWallView</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

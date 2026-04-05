@@ -173,7 +173,7 @@ class CodeEditor(QPlainTextEdit):
         # Just to make sure I use the right font
         x = int(0)
         h = int(self.fontMetrics().height())
-        flags = int(QtCore.Qt.AlignRight)
+        flags = int(QtCore.Qt.AlignmentFlag.AlignRight)
         while block.isValid() and (top <= event.rect().bottom()):
             if block.isVisible() and (bottom >= event.rect().top()):
                 number = str(blockNumber + 1)
@@ -658,7 +658,7 @@ class Explorer():
             if not os.path.isdir(os.path.join(path2file, fname)):
                 self._contextMenu.addAction(self._explorerActions['view'])
 
-        self._contextMenu.exec_(self.explorer.viewport().mapToGlobal(position))
+        self._contextMenu.exec(self.explorer.viewport().mapToGlobal(position))
     # ---------------------------------------------------------------
 
 

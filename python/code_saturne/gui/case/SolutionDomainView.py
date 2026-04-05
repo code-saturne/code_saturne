@@ -91,7 +91,7 @@ class MeshNameDelegate(QItemDelegate):
             value = index.data(Qt.ItemDataRole.DisplayRole)
             if value != None:
                 text = from_qvariant(value, to_text_string)
-                painter.drawText(option.rect, Qt.AlignLeft, text)
+                painter.drawText(option.rect, Qt.AlignmentFlag.AlignLeft, text)
             painter.restore()
 
 
@@ -172,7 +172,7 @@ class MeshFormatDelegate(QItemDelegate):
             if value != None:
                 if value.isValid():
                     text = from_qvariant(value, to_text_string)
-                    painter.drawText(option.rect, Qt.AlignLeft, text)
+                    painter.drawText(option.rect, Qt.AlignmentFlag.AlignLeft, text)
             painter.restore()
 
 
@@ -433,9 +433,9 @@ class StandardItemModelMeshes(QStandardItemModel):
 
         elif role == Qt.ItemDataRole.TextAlignmentRole:
             if col == 7:
-                return Qt.AlignLeft
+                return Qt.AlignmentFlag.AlignLeft
             else:
-                return Qt.AlignCenter
+                return Qt.AlignmentFlag.AlignCenter
 
         elif role == Qt.ItemDataRole.CheckStateRole:
             if col in (3, 4):

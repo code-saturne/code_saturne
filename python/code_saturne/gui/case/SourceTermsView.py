@@ -281,7 +281,7 @@ dSudu = - rho / tau; # Jacobian of the source term"""
                                 examples=exa,
                                 source_type='momentum_source_term')
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaVelocity -> %s" % str(result))
             self.mdl.setMomentumFormula(self.zone_id, str(result))
@@ -309,7 +309,7 @@ dSudu = - rho / tau; # Jacobian of the source term"""
                                 examples=exa,
                                 source_type='scalar_source_term')
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaSpecies -> %s" % str(result))
             self.mdl.setSpeciesFormula(self.zone_id, self.scalar, str(result))
@@ -337,7 +337,7 @@ dSudu = - rho / tau; # Jacobian of the source term"""
                                 examples=exa,
                                 source_type='scalar_source_term')
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotSpeciesGroundWaterFormula -> %s" % str(result))
             self.mdl.setGroundWaterSpeciesFormula(self.zone_id, self.scalar, str(result))
@@ -364,7 +364,7 @@ dSudu = - rho / tau; # Jacobian of the source term"""
                                 examples=exa,
                                 source_type='momentum_source_term')
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotRichardsFormula -> %s" % str(result))
             self.mdl.setRichardsFormula(self.zone_id, str(result))
@@ -393,7 +393,7 @@ dSudu = - rho / tau; # Jacobian of the source term"""
                                 examples=exa,
                                 source_type='thermal_source_term')
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaThermal -> %s" % str(result))
             self.mdl.setThermalFormula(self.zone_id, self.th_sca_name, str(result))

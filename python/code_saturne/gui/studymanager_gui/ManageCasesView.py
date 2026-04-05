@@ -849,7 +849,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         dialog.setDirectory(path)
         dialog.setFileMode(QFileDialog.FileMode.DirectoryOnly)
 
-        if dialog.exec_() == 1:
+        if dialog.exec() == 1:
 
             s = dialog.selectedFiles()
             dir_path = str(s[0])
@@ -880,7 +880,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         dialog.setDirectory(path)
         dialog.setFileMode(QFileDialog.FileMode.DirectoryOnly)
 
-        if dialog.exec_() == 1:
+        if dialog.exec() == 1:
 
             s = dialog.selectedFiles()
             dir_path = str(s[0])

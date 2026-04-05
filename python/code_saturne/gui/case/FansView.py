@@ -520,7 +520,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     FanView = FanView(app)
     FanView.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 #-------------------------------------------------------------------------------
 # End

@@ -425,7 +425,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
                                 symbols=sym,
                                 examples=exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormula -> %s" % str(result))
             self.mdl.setGroundwaterLawFormula(name, str(result))

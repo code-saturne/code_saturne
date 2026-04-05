@@ -132,7 +132,7 @@ class ImmersedBoundariesSourceTermView(QWidget, Ui_ImmersedBoundariesSourceTerm)
                                 symbols       = sym,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaThermalSourceTerm -> %s" % str(result))
             self.ibm.setObjectThermalSourceTermFormula(self.current_obj-1, result)

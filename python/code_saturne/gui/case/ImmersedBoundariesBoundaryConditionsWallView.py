@@ -301,7 +301,7 @@ flux = 1000.;"""
                                 known_fields  = [],
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotBoundaryThermalFormula -> %s" % str(result))
             self.pushButtonEnergy.setToolTip(result)

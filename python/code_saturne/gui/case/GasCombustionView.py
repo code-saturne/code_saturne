@@ -113,7 +113,7 @@ class NameDelegate(QItemDelegate):
 
                 from code_saturne.gui.case.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
-                if dialog.exec_():
+                if dialog.exec():
                     result = dialog.get_result()
                     new_pname = result['name']
                     log.debug("setModelData -> result = %s" % result)
@@ -169,7 +169,7 @@ class ChemicalFormulaDelegate(QItemDelegate):
 
                 from code_saturne.gui.case.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
-                if dialog.exec_():
+                if dialog.exec():
                     result = dialog.get_result()
                     new_pname = result['name']
                     log.debug("setModelData -> result = %s" % result)
@@ -744,7 +744,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
             self.pushButtonThermochemistryData.setStyleSheet("background-color: green")
 
 
-    @Slot("QModelIndex, QModelIndex")
+    @Slot()
     def dataChanged(self, topLeft, bottomRight):
         for row in range(topLeft.row(), bottomRight.row()+1):
             self.tableViewSpecies.resizeRowToContents(row)

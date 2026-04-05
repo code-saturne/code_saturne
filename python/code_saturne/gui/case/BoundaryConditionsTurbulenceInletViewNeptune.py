@@ -382,7 +382,7 @@ R12-23 = 5e-05;"""
                                 condition     = "formula",
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaTurb -> %s" % str(result))
             self.__boundary.setTurbFormula(self.__currentField, result)

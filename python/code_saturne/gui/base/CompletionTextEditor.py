@@ -4,9 +4,9 @@ Provide a supercharged QTextEdit method to allow for Autocompletion
 
 from types import MethodType
 
-from QtGui import *
-from QtWidgets import *
-from QtCore import *
+from code_saturne.gui.base.QtGui import *
+from code_saturne.gui.base.QtWidgets import *
+from code_saturne.gui.base.QtCore import *
 
 # ------------------------------------------------------------------------------
 # QTextEdit with autocompletion

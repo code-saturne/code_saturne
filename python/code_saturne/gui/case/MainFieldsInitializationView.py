@@ -50,7 +50,7 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.gui.base.QtPage import ComboModel, DoubleValidator
-from MainFieldsInitialization import Ui_MainFieldsInitialization
+from code_saturne.gui.case.MainFieldsInitialization import Ui_MainFieldsInitialization
 from code_saturne.model.MainFieldsInitializationModel import MainFieldsInitializationModel
 from code_saturne.model.LocalizationModel import VolumicLocalizationModel, LocalizationModel
 from code_saturne.model.NonCondensableModel import NonCondensableModel
@@ -430,7 +430,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
                                 symbols       = sym,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
             self.mdl.setFormula(self.zone_id, self.currentid, 'velocity', result)
@@ -466,7 +466,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
                                 symbols       = sym,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
             self.mdl.setFormula(self.zone_id, self.currentid, 'volume_fraction', result)
@@ -550,7 +550,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
                                 symbols       = sym,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
             TurbulenceModel(self.case).setFormula(self.zone_id, self.currentid, turbModel, result)
@@ -596,7 +596,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
                                 symbols       = sym,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
             self.mdl.setFormula(self.zone_id, self.currentid, 'enthalpy', result)
@@ -632,7 +632,7 @@ pressure = P0 + rho0 * g * (zmax - z);"""
                                 symbols       = sym,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
             self.mdl.setFormulaPressure(self.zone_id, result)
@@ -665,7 +665,7 @@ pressure = P0 + rho0 * g * (zmax - z);"""
                                 symbols       = sym,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
             self.mdl.setFormulaNonCondensable(self.zone_id, self.currentid, self.currentNonCond, result)
@@ -698,7 +698,7 @@ pressure = P0 + rho0 * g * (zmax - z);"""
                                 symbols       = sym,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
             self.mdl.setFormulaScalar(self.zone_id, self.currentid, self.currentScalar, result)

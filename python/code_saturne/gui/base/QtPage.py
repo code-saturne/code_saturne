@@ -248,9 +248,9 @@ def getexistingdirectory(parent=None, caption='', basedir='',
     # Calling QFileDialog static method
 
     # Try for PyQt5 and PyQt6 variants
-    try:
+    if QT_API in ("PYQT5", "PYQT6"):
         options = QFileDialog.Option.ShowDirsOnly | QFileDialog.Option.DontResolveSymlinks
-    except Exception:
+    else:
         options = QFileDialog.Options.ShowDirsOnly | QFileDialog.Options.DontResolveSymlinks
 
     if sys.platform == "win32":
@@ -811,7 +811,10 @@ class DoubleValidator(QDoubleValidator):
         Initialization for validator
         """
         QDoubleValidator.__init__(self, parent)
-        self.setLocale(QLocale(QLocale.C, QLocale.Country.AnyCountry))
+        if QT_API in ("PYQT6"):
+            self.setLocale(QLocale(QLocale.c()))
+        else:
+            self.setLocale(QLocale(QLocale.C, QLocale.Country.AnyCountry))
         self.parent = parent
         self.state = QValidator.State.Invalid
         self.__min = min

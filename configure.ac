@@ -1069,7 +1069,7 @@ sys.stdout.write(path)]"
       AC_PATH_PROG([RCC], [rcc], [], [${PYPATH}:$PATH])
     fi
 
-    if test "x$PYUIC" = "x" -o "x$RCC" = "x" ; then
+    if test "x$PYUIC6" = "x" -o "x$RCC" = "x" ; then
       AC_MSG_FAILURE([cannot find PyQt6 dev tools, Graphical User Interface cannot be installed])
       cs_have_gui=no
     fi

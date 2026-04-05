@@ -53,6 +53,9 @@ from code_saturne.gui.case.TimeAveragesForm import Ui_TimeAveragesForm
 from code_saturne.model.StartRestartModel import StartRestartModel
 from code_saturne.model.TimeAveragesModel import TimeAveragesModel
 
+if QT_API == "PYQT6":
+    from code_saturne.gui.case import resources_pages_rc
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -256,7 +259,7 @@ class StandardItemModelAverage(QStandardItemModel):
         if role == Qt.ItemDataRole.DisplayRole:
             return self.dataAverage[index.row()][index.column()]
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
         return None
 
 
@@ -275,7 +278,7 @@ class StandardItemModelAverage(QStandardItemModel):
         if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
         return None
 
 
@@ -424,9 +427,9 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.listViewDrag.setModel(self.modelDrag)
         self.listViewDrop.setModel(self.modelDrop)
         self.listViewDrag.setAlternatingRowColors(True)
-        self.listViewDrag.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.listViewDrag.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.listViewDrop.setAlternatingRowColors(True)
-        self.listViewDrop.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.listViewDrop.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         # Delegates
         delegateLabel = LabelDelegate(self.treeViewAverage, self.mdl)

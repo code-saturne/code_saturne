@@ -207,7 +207,7 @@ class ThermodynamicsInteractionView(QWidget, Ui_ThermodynamicsInteraction):
                                 known_fields=sca,
                                 examples=exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaSt -> %s" % str(result))
             self.model.setFormula(self.field_id_a, self.field_id_b, "surface_tension", result, self.zone_id)

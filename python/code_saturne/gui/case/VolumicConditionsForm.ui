@@ -94,55 +94,55 @@
   <customwidget>
    <class>InitializationView</class>
    <extends>QWidget</extends>
-   <header>InitializationView</header>
+   <header>code_saturne.gui.case.InitializationView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>PorosityView</class>
    <extends>QWidget</extends>
-   <header>PorosityView</header>
+   <header>code_saturne.gui.case.PorosityView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>HeadLossesView</class>
    <extends>QWidget</extends>
-   <header>HeadLossesView</header>
+   <header>code_saturne.gui.case.HeadLossesView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>SourceTermsView</class>
    <extends>QWidget</extends>
-   <header>SourceTermsView</header>
+   <header>code_saturne.gui.case.SourceTermsView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>GroundwaterLawView</class>
    <extends>QWidget</extends>
-   <header>GroundwaterLawView</header>
+   <header>code_saturne.gui.case.GroundwaterLawView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>MainFieldsInitializationView</class>
    <extends>QWidget</extends>
-   <header>MainFieldsInitializationView</header>
+   <header>code_saturne.gui.case.MainFieldsInitializationView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>MainFieldsSourceTermsView</class>
    <extends>QWidget</extends>
-   <header>MainFieldsSourceTermsView</header>
+   <header>code_saturne.gui.case.MainFieldsSourceTermsView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>FluidCharacteristicsView</class>
    <extends>QWidget</extends>
-   <header>FluidCharacteristicsView</header>
+   <header>code_saturne.gui.case.FluidCharacteristicsView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>NeptuneThermodynamicsView</class>
    <extends>QWidget</extends>
-   <header>NeptuneThermodynamicsView</header>
+   <header>code_saturne.gui.case.NeptuneThermodynamicsView</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

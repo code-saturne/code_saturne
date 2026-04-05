@@ -1222,7 +1222,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                                 known_fields  = sca,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
             self.mdl.setFormula('density', str(result), self.zone_id)
@@ -1262,7 +1262,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                                 known_fields  = sca,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaMu -> %s" % str(result))
             self.mdl.setFormula('molecular_viscosity', str(result), self.zone_id)
@@ -1290,7 +1290,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                                 known_fields  = sca,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
             self.mdl.setFormula('specific_heat', str(result), self.zone_id)
@@ -1318,7 +1318,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                                 known_fields  = sca,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaViscv0 -> %s" % str(result))
             self.mdl.setFormula('volume_viscosity', str(result), self.zone_id)
@@ -1355,7 +1355,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                                 known_fields  = sca,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaAl -> %s" % str(result))
             self.mdl.setFormula('thermal_conductivity', str(result), self.zone_id)
@@ -1385,7 +1385,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                                 known_fields  = sca,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaDiff -> %s" % str(result))
             self.mdl.m_sca.setDiffFormula(self.scalar, str(result), self.zone_id)

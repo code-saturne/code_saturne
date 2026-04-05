@@ -226,7 +226,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         default = {}
         default['lines'] = self.logText.document().maximumBlockCount()
         dlg = CommandMgrLinesDisplayedDialogView(self, default)
-        if dlg.exec_():
+        if dlg.exec():
             result = dlg.get_result()
             n = int(result['lines'])
             if n != default['lines']:

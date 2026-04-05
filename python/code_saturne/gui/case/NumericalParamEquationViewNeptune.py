@@ -56,7 +56,7 @@ from code_saturne.gui.base.QtWidgets import *
 from code_saturne.model.Common import GuiParam
 from code_saturne.gui.base.QtPage import ComboModel, DoubleValidator, IntValidator
 from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
-from NumericalParamEquationNeptune import Ui_NumericalParamEquation
+from code_saturne.gui.case.NumericalParamEquationNeptune import Ui_NumericalParamEquation
 from code_saturne.model.NumericalParamEquationModelNeptune import NumericalParamEquatModel
 from code_saturne.model.GlobalNumericalParametersModel import GlobalNumericalParametersModel
 
@@ -278,7 +278,7 @@ class StandardItemModelScheme(QStandardItemModel):
                     return Qt.CheckState.Unchecked
 
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
 
         return None
 
@@ -394,7 +394,7 @@ class StandardItemModelSolver(QStandardItemModel):
                 return None
 
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
 
         return None
 

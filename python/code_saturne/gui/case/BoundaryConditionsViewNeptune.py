@@ -107,7 +107,7 @@ class StandardItemModelMainFields(QStandardItemModel):
                 return None
 
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
 
         return None
 

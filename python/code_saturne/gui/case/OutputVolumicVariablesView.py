@@ -281,7 +281,7 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
         elif role == Qt.ItemDataRole.CheckStateRole:
             return item.data(index.column(), role)
         #if role == Qt.ItemDataRole.TextAlignmentRole and index.column() > 1:
-        #    return Qt.AlignHCenter
+        #    return Qt.AlignmentFlag.AlignHCenter
 
         return None
 

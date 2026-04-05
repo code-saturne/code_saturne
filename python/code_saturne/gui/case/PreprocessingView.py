@@ -203,7 +203,7 @@ class StandardItemModelThinWall(QStandardItemModel):
                 return None
 
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
 
         return None
 
@@ -317,7 +317,7 @@ class StandardItemModelExtrude(QStandardItemModel):
                 return None
 
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
 
         return None
 

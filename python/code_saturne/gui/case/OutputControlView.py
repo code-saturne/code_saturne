@@ -334,7 +334,7 @@ class TypeMeshDelegate(QItemDelegate):
             value = index.data(Qt.ItemDataRole.DisplayRole)
             if value.isValid():
                 text = from_qvariant(value, to_text_string)
-                painter.drawText(option.rect, Qt.AlignLeft, text)
+                painter.drawText(option.rect, Qt.AlignmentFlag.AlignLeft, text)
             painter.restore()
 
 
@@ -567,9 +567,9 @@ class StandardItemModelMesh(QStandardItemModel):
 
         elif role == Qt.ItemDataRole.TextAlignmentRole:
             if index.column() != 3:
-                return Qt.AlignCenter
+                return Qt.AlignmentFlag.AlignCenter
             else:
-                return Qt.AlignLeft | Qt.AlignVCenter
+                return Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
 
         return None
 
@@ -737,9 +737,9 @@ class StandardItemModelLagrangianMesh(QStandardItemModel):
 
         elif role == Qt.ItemDataRole.TextAlignmentRole:
             if index.column() != 4:
-                return Qt.AlignCenter
+                return Qt.AlignmentFlag.AlignCenter
             else:
-                return Qt.AlignLeft | Qt.AlignVCenter
+                return Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
 
         return None
 
@@ -905,7 +905,7 @@ class StandardItemModelWriter(QStandardItemModel):
                 return None
 
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
 
         return None
 
@@ -1150,7 +1150,7 @@ class StandardItemModelMonitoring(QStandardItemModel):
                 return None
 
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
 
         return None
 

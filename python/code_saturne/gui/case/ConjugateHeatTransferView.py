@@ -98,7 +98,7 @@ class StandardItemModelSyrthes(QStandardItemModel):
         if role == Qt.ItemDataRole.DisplayRole:
             return self.dataSyrthes[index.row()][index.column()]
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
         return None
 
 

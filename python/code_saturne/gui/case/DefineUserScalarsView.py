@@ -63,6 +63,9 @@ from code_saturne.model.TurbulenceModel import TurbulenceModel
 from code_saturne.model.GroundwaterModel import GroundwaterModel
 from code_saturne.model.GasCombustionModel import GasCombustionModel
 
+if QT_API == "PYQT6":
+    from code_saturne.gui.case import resources_pages_rc
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -120,7 +123,7 @@ class NameDelegate(QItemDelegate):
 
                 from code_saturne.gui.case.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
-                if dialog.exec_():
+                if dialog.exec():
                     result = dialog.get_result()
                     new_pname = result['label']
                     result['name'] = new_pname
@@ -227,7 +230,7 @@ class VarianceNameDelegate(QItemDelegate):
 
                 from code_saturne.gui.case.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
-                if dialog.exec_():
+                if dialog.exec():
                     result = dialog.get_result()
                     new_pname = result['name']
                     log.debug("setModelData -> result = %s" % result)
@@ -713,7 +716,7 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         self.tableVariance.clearSelection()
 
 
-    @Slot("QModelIndex, QModelIndex")
+    @Slot()
     def dataChanged(self, topLeft, bottomRight):
         for row in range(topLeft.row(), bottomRight.row()+1):
             self.tableView.resizeRowToContents(row)

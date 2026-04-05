@@ -256,7 +256,7 @@ if __name__ == "__main__":
     dlg = XMLEditorView(parent)
     dlg.show()
     signal.signal(signal.SIGINT, signal.SIG_DFL)
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 #-------------------------------------------------------------------------------
 # End

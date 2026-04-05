@@ -80,25 +80,25 @@
   <customwidget>
    <class>ImmersedBoundariesInitializationView</class>
    <extends>QWidget</extends>
-   <header>ImmersedBoundariesInitializationView</header>
+   <header>code_saturne.gui.case.ImmersedBoundariesInitializationView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>ImmersedBoundariesThermodynamicsFieldView</class>
    <extends>QWidget</extends>
-   <header>ImmersedBoundariesThermodynamicsFieldView</header>
+   <header>code_saturne.gui.case.ImmersedBoundariesThermodynamicsFieldView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>ImmersedBoundariesFSIView</class>
    <extends>QWidget</extends>
-   <header>ImmersedBoundariesFSIView</header>
+   <header>code_saturne.gui.case.ImmersedBoundariesFSIView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>ImmersedBoundariesSourceTermView</class>
    <extends>QWidget</extends>
-   <header>ImmersedBoundariesSourceTermView</header>
+   <header>code_saturne.gui.case.ImmersedBoundariesSourceTermView</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

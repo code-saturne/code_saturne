@@ -502,7 +502,7 @@
   <customwidget>
    <class>FacesSelectionView</class>
    <extends>QWidget</extends>
-   <header location="global">FacesSelectionView.h</header>
+   <header>code_saturne.gui.case.FacesSelectionView</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

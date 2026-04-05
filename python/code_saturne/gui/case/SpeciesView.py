@@ -53,7 +53,7 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.gui.base.QtPage import ComboModel, IntValidator, DoubleValidator, RegExpValidator
 from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
-from Species import Ui_Species
+from code_saturne.gui.case.Species import Ui_Species
 from code_saturne.model.SpeciesModel import SpeciesModel
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 
@@ -113,7 +113,7 @@ class LabelDelegate(QItemDelegate):
 
                 from code_saturne.gui.case.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
-                if dialog.exec_():
+                if dialog.exec():
                     result = dialog.get_result()
                     new_plabel = result['label']
                     log.debug("setModelData -> result = %s" % result)
@@ -203,7 +203,7 @@ class StandardItemModelUserScalar(QStandardItemModel):
                 return None
 
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
 
         return None
 

@@ -50,6 +50,9 @@ from code_saturne.gui.base.QtPage import DoubleValidator, from_qvariant
 from code_saturne.model.AtmosphericFlowsModel  import AtmosphericFlowsModel
 from code_saturne.gui.case.AtmosphericFlowsForm   import Ui_AtmosphericFlowsForm
 
+if QT_API == "PYQT6":
+    from code_saturne.gui.case import resources_pages_rc
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------

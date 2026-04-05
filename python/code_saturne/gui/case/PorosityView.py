@@ -179,7 +179,7 @@ class PorosityView(QWidget, Ui_PorosityForm):
                                 known_fields=sca,
                                 examples=exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaPorosity -> %s" % str(result))
             self.model.setPorosityFormula(zone_id, str(result))

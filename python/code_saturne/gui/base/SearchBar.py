@@ -124,4 +124,4 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     SearchBar = SearchBar(None)
     SearchBar.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())

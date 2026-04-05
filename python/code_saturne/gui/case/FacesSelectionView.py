@@ -386,7 +386,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     FacesSelectionView = FacesSelectionView(app)
     FacesSelectionView.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 #-------------------------------------------------------------------------------
 # End

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>441</width>
-    <height>451</height>
+    <height>305</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -43,12 +43,11 @@
       <item>
        <layout class="QGridLayout" name="gridLayout">
         <item row="0" column="0">
-         <widget class="QLabel" name="label_17">
+         <widget class="QLabel" name="label_hl_coeff">
           <property name="font">
            <font>
             <family>Sans Serif</family>
             <pointsize>9</pointsize>
-            <weight>50</weight>
             <italic>false</italic>
             <bold>false</bold>
            </font>
@@ -217,7 +216,7 @@
         </property>
         <layout class="QGridLayout" name="_6">
          <item row="0" column="0">
-          <widget class="QLabel" name="label">
+          <widget class="QLabel" name="label_fram_transform">
            <property name="font">
             <font>
              <family>Sans Serif</family>
@@ -288,7 +287,6 @@
                 <font>
                  <family>LMRoman10</family>
                  <pointsize>10</pointsize>
-                 <weight>50</weight>
                  <italic>true</italic>
                  <bold>false</bold>
                 </font>

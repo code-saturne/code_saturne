@@ -184,7 +184,7 @@ class StandardItemModel(QStandardItemModel):
             return self.dataObject[index.row()][index.column()]
 
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
 
         return None
 
@@ -298,7 +298,7 @@ class StandardItemModelSTLPoints(QStandardItemModel):
                 return None
 
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
 
         return None
 
@@ -588,7 +588,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         dialog.setSidebarUrls(l_mesh_dirs)
         dialog.setFileMode(QFileDialog.FileMode.ExistingFiles)
 
-        if dialog.exec_() == 1:
+        if dialog.exec() == 1:
             s = dialog.selectedFiles()
             count = len(s)
             for i in range(count):
@@ -773,7 +773,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
                                 known_fields  = [],
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotExplicitFormula -> %s" % str(result))
             self.pushButtonExplicit.setStyleSheet("background-color: green")

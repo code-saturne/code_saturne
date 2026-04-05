@@ -182,103 +182,103 @@
   <customwidget>
    <class>BoundaryConditionsRoughWallView</class>
    <extends>QWidget</extends>
-   <header location="global">BoundaryConditionsRoughWallView.h</header>
+   <header>code_saturne.gui.case.BoundaryConditionsRoughWallView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>BoundaryConditionsSlidingWallView</class>
    <extends>QWidget</extends>
-   <header location="global">BoundaryConditionsSlidingWallView.h</header>
+   <header>code_saturne.gui.case.BoundaryConditionsSlidingWallView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>BoundaryConditionsVelocityInletView</class>
    <extends>QWidget</extends>
-   <header location="global">BoundaryConditionsVelocityInletView.h</header>
+   <header>code_saturne.gui.case.BoundaryConditionsVelocityInletView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>BoundaryConditionsMappedInletView</class>
    <extends>QWidget</extends>
-   <header location="global">BoundaryConditionsMappedInletView.h</header>
+   <header>code_saturne.gui.case.BoundaryConditionsMappedInletView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>BoundaryConditionsCoalInletView</class>
    <extends>QWidget</extends>
-   <header location="global">BoundaryConditionsCoalInletView.h</header>
+   <header>code_saturne.gui.case.BoundaryConditionsCoalInletView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>BoundaryConditionsExternalHeadLossesView</class>
    <extends>QWidget</extends>
-   <header location="global">BoundaryConditionsExternalHeadLossesView.h</header>
+   <header>code_saturne.gui.case.BoundaryConditionsExternalHeadLossesView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>BoundaryConditionsCompressibleOutletView</class>
    <extends>QWidget</extends>
-   <header location="global">BoundaryConditionsCompressibleOutletView.h</header>
+   <header>code_saturne.gui.case.BoundaryConditionsCompressibleOutletView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>BoundaryConditionsTurbulenceInletView</class>
    <extends>QWidget</extends>
-   <header location="global">BoundaryConditionsTurbulenceInletView.h</header>
+   <header>code_saturne.gui.case.BoundaryConditionsTurbulenceInletView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>BoundaryConditionsMeteoView</class>
    <extends>QWidget</extends>
-   <header location="global">BoundaryConditionsMeteoView.h</header>
+   <header>code_saturne.gui.case.BoundaryConditionsMeteoView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>BoundaryConditionsScalarsView</class>
    <extends>QWidget</extends>
-   <header location="global">BoundaryConditionsScalarsView.h</header>
+   <header>code_saturne.gui.case.BoundaryConditionsScalarsView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>BoundaryConditionsMobileMeshView</class>
    <extends>QWidget</extends>
-   <header location="global">BoundaryConditionsMobileMeshView.h</header>
+   <header>code_saturne.gui.case.BoundaryConditionsMobileMeshView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>BoundaryConditionsWallRadiativeTransferView</class>
    <extends>QWidget</extends>
-   <header location="global">BoundaryConditionsWallRadiativeTransferView.h</header>
+   <header>code_saturne.gui.case.BoundaryConditionsWallRadiativeTransferView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>BoundaryConditionsElectricalView</class>
    <extends>QWidget</extends>
-   <header location="global">BoundaryConditionsElectricalView.h</header>
+   <header>code_saturne.gui.case.BoundaryConditionsElectricalView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>BoundaryConditionsHydraulicHeadView</class>
    <extends>QWidget</extends>
-   <header location="global">BoundaryConditionsHydraulicHeadView.h</header>
+   <header>code_saturne.gui.case.BoundaryConditionsHydraulicHeadView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>BoundaryConditionsPressureView</class>
    <extends>QWidget</extends>
-   <header location="global">BoundaryConditionsPressureView.h</header>
+   <header>code_saturne.gui.case.BoundaryConditionsPressureView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>BoundaryConditionsConvectiveInletView</class>
    <extends>QWidget</extends>
-   <header>BoundaryConditionsConvectiveInletView.h</header>
+   <header>code_saturne.gui.case.BoundaryConditionsConvectiveInletView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>LagrangianBoundaryView</class>
    <extends>QWidget</extends>
-   <header location="global">LagrangianBoundaryView.h</header>
+   <header>code_saturne.gui.case.LagrangianBoundaryView</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

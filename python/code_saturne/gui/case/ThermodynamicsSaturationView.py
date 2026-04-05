@@ -207,7 +207,7 @@ class ThermodynamicsSaturationView(QWidget, Ui_ThermodynamicsSaturation):
                                 known_fields  = sca,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             _k = self.sat_ppts[name]
             _button  = getattr(self, "pushButton" + _k)

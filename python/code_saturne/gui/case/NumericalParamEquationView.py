@@ -713,7 +713,7 @@ class StandardItemModelScheme(QStandardItemModel):
                 return dico[key]
 
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
 
         return None
 
@@ -1133,7 +1133,7 @@ class StandardItemModelGradient(QStandardItemModel):
                 return dico[key]
 
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
 
         return None
 
@@ -1327,7 +1327,7 @@ class StandardItemModelSolver(QStandardItemModel):
                 return None
 
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
 
         return None
 
@@ -1565,7 +1565,7 @@ class StandardItemModelClipping(QStandardItemModel):
             else:
                 return None
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
 
         return None
 

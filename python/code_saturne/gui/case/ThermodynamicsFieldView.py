@@ -914,7 +914,7 @@ temperature = enthalpy / 1000;
                                 known_fields  = sca,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
             self.mdl.setFormula(str(fieldId), 'density', result, zone=self.zone_id)
@@ -944,7 +944,7 @@ temperature = enthalpy / 1000;
                                 known_fields  = sca,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaMu -> %s" % str(result))
             self.mdl.setFormula(str(fieldId), 'molecular_viscosity', result, zone=self.zone_id)
@@ -974,7 +974,7 @@ temperature = enthalpy / 1000;
                                 known_fields  = sca,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaCp -> %s" % str(result))
             self.mdl.setFormula(str(fieldId), 'specific_heat', result, zone=self.zone_id)
@@ -1004,7 +1004,7 @@ temperature = enthalpy / 1000;
                                 known_fields  = sca,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaAl -> %s" % str(result))
             self.mdl.setFormula(str(fieldId), 'thermal_conductivity', result, zone=self.zone_id)
@@ -1056,7 +1056,7 @@ temperature = enthalpy / 1000;
                                 known_fields  = sca,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaTemperature -> %s" % str(result))
             self.mdl.setFormula(str(fieldId), 'temperature', result, zone=self.zone_id)
@@ -1085,7 +1085,7 @@ temperature = enthalpy / 1000;
                                 known_fields  = sca,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormuladrodp -> %s" % str(result))
             self.mdl.setFormula(str(fieldId), 'd_rho_d_P', result, zone=self.zone_id)
@@ -1114,7 +1114,7 @@ temperature = enthalpy / 1000;
                                 known_fields  = sca,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormuladrodh -> %s" % str(result))
             self.mdl.setFormula(str(fieldId), 'd_rho_d_h', result, zone=self.zone_id)

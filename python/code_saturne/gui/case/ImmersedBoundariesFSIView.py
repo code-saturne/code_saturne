@@ -415,7 +415,7 @@ class ImmersedBoundariesFSIView(QWidget, Ui_ImmersedBoundariesFSI):
                                 known_fields  = [],
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaPorousRho -> %s" % str(result))
             self.pushButtonDensity.setStyleSheet("background-color: green")

@@ -403,7 +403,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
         log.debug("slotAdvancedOptions -> %s" % str(default))
 
         dialog = GlobalNumericalParametersAdvancedOptionsDialogView(self, self.case, default)
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotAdvancedOptions -> %s" % str(result))
             self.mdl.setVelocityUpdate(result['velocity_update'])

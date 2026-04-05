@@ -250,7 +250,7 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
                                 condition     = choice,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotScalarFormula -> %s" % str(result))
             self.__boundary.setScalarValue(_fid, _s, result)

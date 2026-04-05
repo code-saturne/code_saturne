@@ -54,6 +54,9 @@ from code_saturne.gui.case.TimeTablesForm import Ui_TimeTablesForm
 from code_saturne.model.SolutionDomainModel import RelOrAbsPath, MeshModel, SolutionDomainModel
 from code_saturne.model.TimeTablesModel import TimeTablesModel
 
+if QT_API == "PYQT6":
+    from code_saturne.gui.case import resources_pages_rc
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------

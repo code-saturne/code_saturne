@@ -112,7 +112,7 @@ class LabelFuelDelegate(QItemDelegate):
 
                 from code_saturne.gui.case.VerifyExistenceLabelDialogView import VerifyExistenceLabelDialogView
                 dialog = VerifyExistenceLabelDialogView(self.parent, default)
-                if dialog.exec_():
+                if dialog.exec():
                     result = dialog.get_result()
                     new_plabel = result['label']
                     log.debug("setModelData -> result = %s" % result)
@@ -180,7 +180,7 @@ class TypeFuelDelegate(QItemDelegate):
             value = index.data(Qt.ItemDataRole.DisplayRole)
             if value.isValid():
                 text = from_qvariant(value, to_text_string)
-                painter.drawText(option.rect, Qt.AlignLeft, text)
+                painter.drawText(option.rect, Qt.AlignmentFlag.AlignLeft, text)
             painter.restore()
 
 #-------------------------------------------------------------------------------
@@ -322,7 +322,7 @@ class StandardItemModelCoals(QStandardItemModel):
                 return None
 
         elif role == Qt.ItemDataRole.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
 
         return None
 

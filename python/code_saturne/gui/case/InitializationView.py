@@ -534,7 +534,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                                 symbols=sym,
                                 examples=exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaVelocity -> %s" % str(result))
             self.init.setVelocityFormula(zone_id, str(result))
@@ -575,7 +575,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                                 symbols=sym,
                                 examples=exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaVoidFraction -> %s" % str(result))
             self.init.setVoidFractionFormula(zone_id, str(result))
@@ -690,7 +690,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                                 symbols=sym,
                                 examples=exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaTurb -> %s" % str(result))
             self.init.setTurbFormula(zone_id, str(result))
@@ -718,7 +718,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                                 known_fields=knf,
                                 examples=exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaThermal -> %s" % str(result))
             self.init.setThermalFormula(zone_id, str(result))
@@ -747,7 +747,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                                 known_fields=knf,
                                 examples=exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaSpecies -> %s" % str(result))
             self.init.setSpeciesFormula(zone_id, self.scalar, str(result))
@@ -774,7 +774,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                                 symbols=sym,
                                 examples=exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaMeteo -> %s" % str(result))
             self.init.setMeteoFormula(zone_id, self.scalar_meteo, str(result))
@@ -802,7 +802,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                                 symbols=sym,
                                 examples=exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaCombustion -> %s" % str(result))
             self.init.setCombustionFormula(zone_id, self.scalar_combustion, str(result))
@@ -981,7 +981,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                                 symbols=sym,
                                 examples=exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotPressureFormula -> %s" % str(result))
             self.init.setPressureFormula(zone_id, str(result))
@@ -1008,7 +1008,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                                 symbols=sym,
                                 examples=exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotHydraulicHeadFormula -> %s" % str(result))
             self.init.setHydraulicHeadFormula(zone_id, str(result))
@@ -1035,7 +1035,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                                 symbols=sym,
                                 examples=exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotDensityFormula -> %s" % str(result))
             self.init.setDensityFormula(zone_id, str(result))
@@ -1062,7 +1062,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                                 symbols=sym,
                                 examples=exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotTemperatureFormula -> %s" % str(result))
             self.init.setTemperatureFormula(zone_id, str(result))
@@ -1090,7 +1090,7 @@ class InitializationView(QWidget, Ui_InitializationForm):
                                 symbols=sym,
                                 examples=exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotEnergyFormula -> %s" % str(result))
             self.init.setEnergyFormula(zone_id, str(result))

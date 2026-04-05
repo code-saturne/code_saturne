@@ -213,7 +213,7 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
                                 condition     = 'dirichlet_formula',
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotHydraulicHeadFormula -> %s" % str(result))
             self.__boundary.setHydraulicHeadFormula(str(result))

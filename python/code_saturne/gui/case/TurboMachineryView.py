@@ -460,7 +460,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     TurboMachineryView = TurboMachineryView(app)
     TurboMachineryView.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 #-------------------------------------------------------------------------------
 # End

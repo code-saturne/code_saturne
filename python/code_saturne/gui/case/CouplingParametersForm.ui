@@ -47,25 +47,25 @@
   <customwidget>
    <class>InternalCouplingView</class>
    <extends>QWidget</extends>
-   <header location="global">InternalCouplingView.h</header>
+   <header>code_saturne.gui.case.InternalCouplingView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>ConjugateHeatTransferView</class>
    <extends>QWidget</extends>
-   <header location="global">ConjugateHeatTransferView.h</header>
+   <header>code_saturne.gui.case.ConjugateHeatTransferView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>FluidStructureInteractionView</class>
    <extends>QWidget</extends>
-   <header>FluidStructureInteractionView.h</header>
+   <header>code_saturne.gui.case.FluidStructureInteractionView</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>CathareCouplingView</class>
    <extends>QWidget</extends>
-   <header>CathareCouplingView.h</header>
+   <header>code_saturne.gui.case.CathareCouplingView</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>373</width>
-    <height>289</height>
+    <height>158</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,17 +15,17 @@
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
    <item row="0" column="0">
-       <widget class="QGroupBox" name="groupBoxType">
-           <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select
+    <widget class="QGroupBox" name="groupBoxType">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select
                    a type
                    of porosity between isotropic and anisotropic.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
                </string>
-           </property>
-           <property name="title">
-               <string>Porosity type</string>
-           </property>
-           <layout class="QGridLayout" name="gridLayout_3">
+     </property>
+     <property name="title">
+      <string>Porosity type</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_3">
       <item row="0" column="0">
        <layout class="QHBoxLayout" name="horizontalLayout_4">
         <item>
@@ -66,30 +66,30 @@
      </layout>
     </widget>
    </item>
-      <item row="2" column="0">
-          <spacer name="spacer">
-              <property name="orientation">
-                  <enum>Qt::Vertical</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-                  <size>
-                      <width>17</width>
-                      <height>152</height>
-                  </size>
-              </property>
+   <item row="2" column="0">
+    <spacer name="spacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>17</width>
+       <height>152</height>
+      </size>
+     </property>
     </spacer>
    </item>
-      <item row="1" column="0">
-          <widget class="QGroupBox" name="groupBoxDef">
-              <property name="title">
-                  <string/>
-              </property>
-              <layout class="QGridLayout" name="gridLayout">
-                  <item row="0" column="0">
-                      <layout class="QHBoxLayout" name="horizontalLayout">
-                          <item>
-                              <spacer name="horizontalSpacer_4">
-                                  <property name="orientation">
+   <item row="1" column="0">
+    <widget class="QGroupBox" name="groupBoxDef">
+     <property name="title">
+      <string/>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <spacer name="horizontalSpacer_4">
+          <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
           <property name="sizeHint" stdset="0">
@@ -123,7 +123,7 @@ p, li { white-space: pre-wrap; }
            <string/>
           </property>
           <property name="icon">
-           <iconset resource="resources_pages.qrc">
+           <iconset>
             <normaloff>:data/icons/22x22/edit-find-replace.png</normaloff>:data/icons/22x22/edit-find-replace.png</iconset>
           </property>
           <property name="iconSize">

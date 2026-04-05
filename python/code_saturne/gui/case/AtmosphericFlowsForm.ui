@@ -397,12 +397,6 @@
               <height>16777215</height>
              </size>
             </property>
-            <property name="font">
-             <font>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the meteorological data file to read (&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;meteo&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; file, see /DATA/REFERENCE/meteo for an example). This file must be put in the DATA directory and must be called &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;meteo&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>

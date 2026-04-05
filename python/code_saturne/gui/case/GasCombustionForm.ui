@@ -523,13 +523,6 @@
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
-     <property name="font">
-      <font>
-       <weight>50</weight>
-       <italic>false</italic>
-       <bold>false</bold>
-      </font>
-     </property>
      <property name="title">
       <string>Gas Combustion Option</string>
      </property>
@@ -604,12 +597,6 @@
         </item>
         <item row="2" column="0" colspan="4">
          <widget class="QLabel" name="labelThermochemistryFile">
-          <property name="font">
-           <font>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
           <property name="layoutDirection">
            <enum>Qt::LeftToRight</enum>
           </property>
@@ -672,7 +659,7 @@
   </layout>
  </widget>
  <resources>
-  <include location="../../../../../../../../netdata/I51157/Version_electrique/saturne_trunk/gui/Pages/resources_pages.qrc"/>
+  <include location="resources_pages.qrc"/>
  </resources>
  <connections/>
 </ui>

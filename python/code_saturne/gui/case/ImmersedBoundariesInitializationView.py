@@ -128,7 +128,7 @@ temperature = 273.15;"""
                                 symbols       = sym,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotFormulaTemperatureInit -> %s" % str(result))
             self.ibm.setObjectTemperatureFormula(self.current_obj-1, result)

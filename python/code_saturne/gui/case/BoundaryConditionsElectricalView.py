@@ -383,7 +383,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
                                 condition     = c,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotSpeciesFormula -> %s" % str(result))
             self.__b.setElecScalarFormula(variable_name, exp_type, str(result))
@@ -451,7 +451,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
                                 condition     = c,
                                 examples      = exa)
 
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotPotVectorFormula -> %s" % str(result))
             self.__b.setElecScalarFormula(self.potVect, self.potVec_type, str(result))

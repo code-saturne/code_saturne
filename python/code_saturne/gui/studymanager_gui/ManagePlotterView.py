@@ -582,7 +582,7 @@ class StandardItemModelSubplot(QStandardItemModel):
             return dico[key]
 
         elif role == Qt.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
 
         elif role == Qt.CheckStateRole and column == 4:
             st = dico[key]
@@ -734,7 +734,7 @@ class StandardItemModelFigure(QStandardItemModel):
             return dico[key]
 
         elif role == Qt.TextAlignmentRole:
-            return Qt.AlignCenter
+            return Qt.AlignmentFlag.AlignCenter
 
         return None
 
@@ -1573,7 +1573,7 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
 
         dialog = ManageSubplotDialogView(self, self.case, self.mdl,
                                          self.current_study, default)
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotAssociatedFiguresSubplot -> %s" % str(result))
             self.mdl.setFigureIdList(self.current_study, idx, result['idlist'])
@@ -1599,7 +1599,7 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         dialog = ManageSubplotDialogView(self, self.case, self.mdl,
                                          self.current_study,
                                          default)
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotAssociatedMeasurementSubplot -> %s" % str(result))
             self.mdl.setDataIdList(m_node, idx, result['idlist'])
@@ -1678,7 +1678,7 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
 
         dialog = ManagePlotDialogView(self, self.case, self.mdl,
                                       self.current_study, default)
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotAssociatedMeasurementSubplot -> %s" % str(result))
 
@@ -1724,7 +1724,7 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
 
         dialog = ManagePlotDialogView(self, self.case, self.mdl,
                                       self.current_study, default)
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotAssociatedMeasurementSubplot -> %s" % str(result))
             self.mdl.setDataDict(m_node, p_idx, result)
@@ -1782,7 +1782,7 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
 
         dialog = ManagePlotDialogView(self, self.case, self.mdl,
                                       self.current_study, default)
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotAssociatedCaseSubplot -> %s" % str(result))
 
@@ -1826,7 +1826,7 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
 
         dialog = ManagePlotDialogView(self, self.case, self.mdl,
                                       self.current_study, default)
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotAssociatedCaseSubplot -> %s" % str(result))
             self.mdl.setDataDict(d_node, p_idx, result)
@@ -1850,7 +1850,7 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
 
         dialog = ManageSubplotDialogView(self, self.case, self.mdl,
                                          self.current_study, default)
-        if dialog.exec_():
+        if dialog.exec():
             result = dialog.get_result()
             log.debug("slotAssociatedCaseSubplot -> %s" % str(result))
             self.mdl.setDataIdList(d_node, p_idx, result['idlist'])
