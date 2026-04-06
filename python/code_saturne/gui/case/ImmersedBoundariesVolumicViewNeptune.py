@@ -239,7 +239,7 @@ class StandardItemVolume(QStandardItemModel):
             self.data_vol[row][3] = "off"
 
         if col == 1:
-            state = from_qvariant(value, int)
+            state = int(value)
 
             if state == Qt.CheckState.Unchecked:
                 self.data_vol[row][col] = "off"
@@ -296,7 +296,7 @@ class StandardItemVolume(QStandardItemModel):
 
 
         elif col == 3: #CHT
-            state = from_qvariant(value, int)
+            state = int(value)
 
             if (self.is_thermal == False):
                 self.data_vol[row][col] = "off"
@@ -353,7 +353,7 @@ class StandardItemVolume(QStandardItemModel):
 
 
         elif col == 4:
-            state = from_qvariant(value, int)
+            state = int(value)
             if state == Qt.CheckState.Unchecked:
                 self.data_vol[row][col] = "off"
             else:
@@ -362,7 +362,7 @@ class StandardItemVolume(QStandardItemModel):
             self.__model.setObjectInit(num, self.data_vol[row][col])
 
         elif col == 5:
-            state = from_qvariant(value, int)
+            state = int(value)
             if state == Qt.CheckState.Unchecked:
                 self.data_vol[row][col] = "off"
             else:
@@ -371,7 +371,7 @@ class StandardItemVolume(QStandardItemModel):
             self.__model.setObjectPhysicalProperties(num, self.data_vol[row][col])
 
         elif col == 6:
-            state = from_qvariant(value, int)
+            state = int(value)
             if state == Qt.CheckState.Unchecked:
                 self.data_vol[row][col] = "off"
             else:

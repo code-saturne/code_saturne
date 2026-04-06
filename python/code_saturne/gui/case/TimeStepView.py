@@ -424,7 +424,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
 
             value = c_prev
             if model in ("iterations", "iterations_add"):
-                value = from_qvariant(text, int)
+                value = int(text)
                 self.mdl.setStopCriterion(model, value)
             elif model in ("maximum_time", "maximum_time_add"):
                 value = from_qvariant(text, float)

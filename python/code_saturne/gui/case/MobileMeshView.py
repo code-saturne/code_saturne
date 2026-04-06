@@ -174,8 +174,8 @@ if (xray2 < xr2) {
         Input viscosity type of mesh : isotrop or orthotrop.
         """
         if self.lineEditNALINF.validator().state == QValidator.State.Acceptable:
-            nalinf = from_qvariant(text, int)
-            self.mdl.setSubIterations(int(nalinf))
+            nalinf = int(text)
+            self.mdl.setSubIterations(nalinf)
 
     @Slot(int)
     def slotViscosityType(self, idx):

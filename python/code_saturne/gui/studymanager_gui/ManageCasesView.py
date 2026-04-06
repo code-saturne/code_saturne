@@ -495,7 +495,7 @@ class CaseStandardItemModel(QAbstractItemModel):
         item = index.internalPointer()
 
         if index.column() == 1:
-            v = from_qvariant(value, int)
+            v = int(value)
             if v == Qt.Checked:
                 item.item.status = "on"
             else:
@@ -508,7 +508,7 @@ class CaseStandardItemModel(QAbstractItemModel):
                 self.mdl.setStudyStatus(item.item.name, item.item.status)
 
         elif index.column() == 2:
-            v = from_qvariant(value, int)
+            v = int(value)
             if v == Qt.Checked:
                 item.item.compute = "on"
             else:
@@ -519,7 +519,7 @@ class CaseStandardItemModel(QAbstractItemModel):
                                           item.item.compute)
 
         elif index.column() == 3:
-            v = from_qvariant(value, int)
+            v = int(value)
             if v == Qt.Checked:
                 item.item.post = "on"
             else:
@@ -686,7 +686,7 @@ class PostScriptItemModel(QStandardItemModel):
                                        self.scripts[row][col])
 
         elif col == 2 and role == Qt.CheckStateRole:
-            state = from_qvariant(value, int)
+            state = int(value)
             if state == Qt.Unchecked:
                 self.scripts[row][col] = 'off'
             else:

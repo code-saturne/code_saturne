@@ -153,7 +153,7 @@ class CodeNumberDelegate(QItemDelegate):
 
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.State.Acceptable:
-            value = from_qvariant(editor.text(), int)
+            value = int(editor.text())
 
             # Check for unicity
             if value != self.value and str(value) in self.mdl.getCodeNumbersList():
@@ -272,7 +272,7 @@ class DefineZonesTableModel(QStandardItemModel):
             self._data[row][col] = new_label
 
         elif col == 1:
-            new_code = from_qvariant(value, int)
+            new_code = int(value)
             self._data[row][col] = new_code
 
         elif col == 2:

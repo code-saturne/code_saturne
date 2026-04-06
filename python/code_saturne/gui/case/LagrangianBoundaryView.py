@@ -393,7 +393,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
         Input IJNBP.
         """
         if self.lineEditIJNBP.validator().state == QValidator.State.Acceptable:
-            value = from_qvariant(text, int)
+            value = int(text)
             self.model.setNumberOfParticulesInSetValue(self.zone.getLabel(), self.iset, value)
 
     @Slot()
@@ -402,7 +402,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
         Input IJFRE.
         """
         if self.lineEditIJFRE.validator().state == QValidator.State.Acceptable:
-            value = from_qvariant(text, int)
+            value = int(text)
             self.model.setInjectionFrequencyValue(self.zone.getLabel(), self.iset, value)
 
     @Slot()
@@ -411,7 +411,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
         Input ICLST.
         """
         if self.lineEditICLST.validator().state == QValidator.State.Acceptable:
-            value = from_qvariant(text, int)
+            value = int(text)
             self.model.setParticleGroupNumberValue(self.zone.getLabel(), self.iset, value)
 
     @Slot()
@@ -595,7 +595,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
         Input IHPT.
         """
         if self.lineEditINUCHL.validator().state == QValidator.State.Acceptable:
-            value = from_qvariant(text, int)
+            value = int(text)
             self.model.setCoalNumberValue(self.zone.getLabel(), self.iset, value)
 
     @Slot()

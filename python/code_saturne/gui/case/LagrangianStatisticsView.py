@@ -158,7 +158,7 @@ class StandardItemModelVolumicNames(QStandardItemModel):
             name = self.dataVolumicNames[index.row()][0]
 
         elif index.column() == 2:
-            v = from_qvariant(value, int)
+            v = int(value)
             if v == Qt.CheckState.Unchecked:
                 status = "off"
                 self.dataVolumicNames[index.row()][index.column()] = "off"
@@ -270,7 +270,7 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
             name = self.dataBoundariesNames[index.row()][0]
 
         elif index.column() == 2:
-            v = from_qvariant(value, int)
+            v = int(value)
             if v == Qt.CheckState.Unchecked:
                 status = "off"
                 self.dataBoundariesNames[index.row()][index.column()] = "off"
@@ -416,7 +416,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         Input NBCLST.
         """
         if self.lineEditNBCLST.validator().state == QValidator.State.Acceptable:
-            value = from_qvariant(text, int)
+            value = int(text)
             self.model.setGroupOfParticlesValue(int(value))
 
     @Slot()
@@ -443,14 +443,14 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         """
         if self.lineEditIDSTNT.validator().state == QValidator.State.Acceptable:
             text = self.lineEditIDSTNT.text()
-            value = from_qvariant(text, int)
+            value = int(text)
             valnds =  self.model.getIterSteadyStart()
 
             if value > valnds:
                 self.lineEditNSTIST.setText(str(value))
                 self.model.setIterSteadyStart(value)
             else:
-                valndsl = from_qvariant(self.lineEditNSTIST.text(), int)
+                valndsl = int(self.lineEditNSTIST.text())
                 self.model.setIterSteadyStart(valndsl)
 
             self.model.setIterationStart(value)
@@ -463,14 +463,14 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         """
         if self.lineEditNSTIST.validator().state == QValidator.State.Acceptable:
             text = self.lineEditNSTIST.text()
-            value = from_qvariant(text, int)
+            value = int(text)
             valids =  self.model.getIterationStart()
 
             if value < valids:
                 self.lineEditIDSTNT.setText(str(value))
                 self.model.setIterationStart(value)
             else:
-                validsl = from_qvariant(self.lineEditIDSTNT.text(), int)
+                validsl = int(self.lineEditIDSTNT.text())
                 self.model.setIterationStart(validsl)
 
             self.model.setIterSteadyStart(value)
@@ -509,7 +509,7 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
         Input NSTBOR.
         """
         if self.lineEditNSTBOR.validator().state == QValidator.State.Acceptable:
-            value = from_qvariant(text, int)
+            value = int(text)
             self.model.setIterationStartBoundary(value)
 
 

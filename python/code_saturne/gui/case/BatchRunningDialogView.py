@@ -152,7 +152,7 @@ class BatchRunningStopByIterationDialogView(QDialog,
         Private slot to set an iteration number to stop the code.
         """
         if self.sender().validator().state == QValidator.State.Acceptable:
-            iter = from_qvariant(text, int)
+            iter = int(text)
             self.iter = iter
 
 

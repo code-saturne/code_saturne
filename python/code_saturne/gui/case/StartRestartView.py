@@ -176,7 +176,7 @@ class StartRestartAdvancedDialogView(QDialog, Ui_StartRestartAdvancedDialogForm)
     @Slot(str)
     def slotNsuit(self, text):
         if self.lineEditNSUIT.validator().state == QValidator.State.Acceptable:
-            n = from_qvariant(text, int)
+            n = int(text)
             self.nsuit = n
             log.debug("getNsuit-> nsuit = %s" % n)
 

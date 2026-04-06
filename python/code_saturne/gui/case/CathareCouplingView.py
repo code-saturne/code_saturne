@@ -132,7 +132,7 @@ class StandardItemModelCathare(QStandardItemModel):
         if index.column() in (0, 3, 4):
             self.dataCathare[row][index.column()] = str(from_qvariant(value, to_text_string))
         else:
-            self.dataCathare[row][index.column()] = from_qvariant(value, int)
+            self.dataCathare[row][index.column()] = int(value)
 
         num = row + 1
         self.__model.setCathareEltName(num, self.dataCathare[row][0])

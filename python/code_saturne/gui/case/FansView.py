@@ -88,7 +88,7 @@ class LineEditDelegateIndex(QItemDelegate):
 
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.State.Acceptable:
-            value = from_qvariant(editor.text(), int)
+            value = int(editor.text())
             model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 
@@ -222,7 +222,7 @@ class StandardItemModelFans(QStandardItemModel):
         col = index.column()
 
         if col == 0:
-            new_code = from_qvariant(value, int)
+            new_code = int(value)
             self._data[row][col] = new_code
         elif col == 1:
             criteria = str(from_qvariant(value, to_text_string))

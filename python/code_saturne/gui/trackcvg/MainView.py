@@ -324,7 +324,7 @@ class CaseStandardItemModel(QAbstractItemModel):
         item = index.internalPointer()
 
         if index.column() == 1:
-            v = from_qvariant(value, int)
+            v = int(value)
             if v == Qt.Checked:
                 item.item.status = "on"
             else:
@@ -359,7 +359,7 @@ class CaseStandardItemModel(QAbstractItemModel):
                     idx = idx + 1
 
         elif index.column() == 2:
-            v = from_qvariant(value, int)
+            v = int(value)
             item.item.subplot_id = v
             if item in self.noderoot.values():
                 (name, name_long, status,

@@ -460,7 +460,7 @@ class StandardItemModelMainFields(QStandardItemModel):
 
         # Compressible
         elif col == 4:
-            state = from_qvariant(value, int)
+            state = int(value)
             if state == Qt.CheckState.Unchecked:
                 self._data[row][col] = "off"
                 field.compressible = "off"

@@ -323,7 +323,7 @@ class StandardItemModelScheme(QStandardItemModel):
 
         # Slope Test
         elif col == 2:
-            state = from_qvariant(value, int)
+            state = int(value)
             if state == Qt.CheckState.Unchecked:
                 self._data[row][col] = "off"
                 self.mdl.setSlopeTestStatus(var,"off")
@@ -438,7 +438,7 @@ class StandardItemModelSolver(QStandardItemModel):
 
         # Maximum iteration
         elif col == 3:
-            coeff  = from_qvariant(value, int)
+            coeff  = int(value)
             self._data[row][col] = coeff
             self.mdl.setMaximumIteration(var, coeff)
 

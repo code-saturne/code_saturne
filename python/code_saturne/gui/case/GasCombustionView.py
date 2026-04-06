@@ -621,8 +621,8 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         Input Number of points for the tabulation (ENTH-TEMP)
         """
         if self.lineEditNbPointsTabu.validator().state == QValidator.State.Acceptable:
-            NbPointsTabu = from_qvariant(text, int)
-            self.thermodata.setNbPointsTabu(int(NbPointsTabu))
+            NbPointsTabu = int(text)
+            self.thermodata.setNbPointsTabu(NbPointsTabu)
 
     @Slot(str)
     def slotMaximumTemp(self, text):

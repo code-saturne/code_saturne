@@ -144,10 +144,10 @@ class ThermalRadiationAdvancedDialogView(QDialog, Ui_ThermalRadiationAdvancedDia
         What to do when user clicks on 'OK'.
         """
         if self.lineEditFreq.validator().state == QValidator.State.Acceptable:
-            self.result['frequency'] = from_qvariant(self.lineEditFreq.text(), int)
-        self.result['idiver']    = from_qvariant(self.comboBoxTSRay.currentText(), int)
-        self.result['tempP']     = from_qvariant(self.comboBoxPrintT.currentText(), int)
-        self.result['intensity'] = from_qvariant(self.comboBoxPrintL.currentText(), int)
+            self.result['frequency'] = int(self.lineEditFreq.text())
+        self.result['idiver']    = int(self.comboBoxTSRay.currentText())
+        self.result['tempP']     = int(self.comboBoxPrintT.currentText())
+        self.result['intensity'] = int(self.comboBoxPrintL.currentText())
 
         QDialog.accept(self)
 
@@ -576,7 +576,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
         """
         """
         if self.lineEditNdirec.validator().state == QValidator.State.Acceptable:
-            n = from_qvariant(text, int)
+            n = int(text)
             self.rmdl.setNbDir(n)
 
 

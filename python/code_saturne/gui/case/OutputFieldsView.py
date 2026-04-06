@@ -297,7 +297,7 @@ class StandardItemModelGlobalVariables(QStandardItemModel):
             self.mdl.setVariableLabel(self.currentid, new_plabel, oldlabel)
         # Listing
         elif col == 1:
-            state = from_qvariant(value, int)
+            state = int(value)
             label = self._data[row][0]
             if state == Qt.CheckState.Unchecked:
                 self._data[row][col] = "off"
@@ -307,7 +307,7 @@ class StandardItemModelGlobalVariables(QStandardItemModel):
                 self.mdl.setListingStatus(self.currentid, label, "on")
         # Writer
         elif col == 2:
-            state = from_qvariant(value, int)
+            state = int(value)
             label = self._data[row][0]
             if state == Qt.CheckState.Unchecked:
                 self._data[row][col] = "off"

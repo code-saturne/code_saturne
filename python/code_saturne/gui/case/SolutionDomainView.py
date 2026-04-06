@@ -320,7 +320,7 @@ class IntDelegate(QItemDelegate):
 
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.State.Acceptable:
-            value = from_qvariant(editor.text(), int)
+            value = int(editor.text())
             model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 
@@ -494,7 +494,7 @@ class StandardItemModelMeshes(QStandardItemModel):
                 self.mdl.setMeshNumbers(mesh, v)
 
         elif col == 3 and role == Qt.ItemDataRole.CheckStateRole:
-            state = from_qvariant(value, int)
+            state = int(value)
             if state == Qt.CheckState.Unchecked:
                 self.dataMeshes[row][col] = False
             else:
@@ -502,7 +502,7 @@ class StandardItemModelMeshes(QStandardItemModel):
             self.mdl.setMeshReorient(mesh, self.dataMeshes[row][col])
 
         elif col == 4 and role == Qt.ItemDataRole.CheckStateRole:
-            state = from_qvariant(value, int)
+            state = int(value)
             if state == Qt.CheckState.Unchecked:
                 self.dataMeshes[row][col] = False
             else:

@@ -512,7 +512,7 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         Input NSTITS.
         """
         if self.lineEditNSTITS.validator().state == QValidator.State.Acceptable:
-            value = from_qvariant(text, int)
+            value = int(text)
             self.model.set2WayCouplingStartIteration(value)
 
 

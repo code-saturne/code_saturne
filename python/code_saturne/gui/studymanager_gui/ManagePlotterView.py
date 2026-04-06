@@ -272,7 +272,7 @@ class IntDelegate(QItemDelegate):
 
 
     def setModelData(self, editor, model, index):
-        value = from_qvariant(editor.text(), int)
+        value = int(editor.text())
         if editor.validator().state == QValidator.State.Acceptable:
             selectionModel = self.parent.selectionModel()
             for idx in selectionModel.selectedIndexes():
@@ -624,7 +624,7 @@ class StandardItemModelSubplot(QStandardItemModel):
         # set legstatus
         elif column == 4:
             key = self.keys[column]
-            v = from_qvariant(value, int)
+            v = int(value)
             if v == Qt.Unchecked:
                 self.dataSubplot[row][key] = "off"
             else:

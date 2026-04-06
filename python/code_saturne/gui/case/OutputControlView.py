@@ -1182,7 +1182,7 @@ class StandardItemModelMonitoring(QStandardItemModel):
     def setData(self, index, value, role=None):
         row = index.row()
         if index.column() == 0:
-            n = from_qvariant(value, int)
+            n = int(value)
             self.dataMonitoring[row]['n'] = n
         elif index.column() == 1:
             name = from_qvariant(value, str)
@@ -1781,7 +1781,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
         elif listing == "Frequency_l":
             self.lineEditNTLAL.setEnabled(True)
-            ntlist = from_qvariant(self.lineEditNTLAL.text(), int)
+            ntlist = int(self.lineEditNTLAL.text())
             if int(ntlist) < 1:
                 ntlist = 1
                 self.mdl.setListingFrequencyLagrangian(ntlist)
@@ -1794,7 +1794,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         Input the frequency of the listing output
         """
         if self.lineEditNTLIST.validator().state == QValidator.State.Acceptable:
-            n = from_qvariant(text, int)
+            n = int(text)
             log.debug("slotListingFrequency-> NTLIST = %s" % n)
             self.mdl.setListingFrequency(int(n))
 
@@ -1805,7 +1805,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         Input the frequency of the listing output for lagrangian variables
         """
         if self.lineEditNTLAL.validator().state == QValidator.State.Acceptable:
-            n = from_qvariant(text, int)
+            n = int(text)
             log.debug("slotNTLAL-> NTLIST = %s" % n)
             self.mdl.setListingFrequencyLagrangian(int(n))
 
@@ -2068,7 +2068,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.lineEditFrequency.setEnabled(True)
             # Robustness to avoid crash when text is empty:
             if self.lineEditFrequency.text() != '':
-                n = from_qvariant(self.lineEditFrequency.text(), int)
+                n = int(self.lineEditFrequency.text())
             else:
                 n = 1
             if self.lineEditFrequency.validator().state == QValidator.State.Acceptable:
@@ -2792,7 +2792,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         Input the frequency of the monitoring point output
         """
         if self.lineEditTimePlot.validator().state == QValidator.State.Acceptable:
-            n = from_qvariant(text, int)
+            n = int(text)
             log.debug("slotMonitoringPointFrequency-> NTHIST = %s" % n)
             self.mdl.setMonitoringPointFrequency(n)
 

@@ -98,7 +98,7 @@ class CommandMgrLinesDisplayedDialogView(QDialog, Ui_CommandMgrLinesDisplayedDia
         """
         Private slot. Manage the number of lines allowed in the display zone.
         """
-        lines = from_qvariant(text, int)
+        lines = int(text)
         if self.sender().validator().state == QValidator.State.Acceptable:
             self.lines = lines
 

@@ -161,7 +161,7 @@ class IntDelegate(QItemDelegate):
 
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.State.Acceptable:
-            value = from_qvariant(editor.text(), int)
+            value = int(editor.text())
             model.setData(index, value, Qt.ItemDataRole.DisplayRole)
 
 
@@ -347,7 +347,7 @@ class StandardItemModelExtrude(QStandardItemModel):
         name = row
 
         if col == 1:
-            new_sup = from_qvariant(value, int)
+            new_sup = int(value)
             self._data[row][col] = new_sup
             self.mdl.setExtrudeLayer(name, new_sup)
         elif col == 2:

@@ -348,8 +348,7 @@ class TimeStepView(QWidget, Ui_TimeStep):
         """
         """
         if self.lineEditNumberTimeStep.validator().state == QValidator.State.Acceptable:
-            value = from_qvariant(var, int)
-            self.mdl.setTimeStepsNumber(value)
+            self.mdl.setTimeStepsNumber(int(var))
 
 
     @Slot(str)

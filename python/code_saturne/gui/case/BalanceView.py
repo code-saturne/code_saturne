@@ -120,8 +120,7 @@ class StandardItemModelPressureDrop(QStandardItemModel):
         col = index.column()
 
         if col == 0:
-            new_code = from_qvariant(value, int)
-            self._data[row][col] = new_code
+            self._data[row][col] = int(value)
         elif col == 1:
             criteria = from_qvariant(value, to_text_string)
             self._data[row][col] = criteria

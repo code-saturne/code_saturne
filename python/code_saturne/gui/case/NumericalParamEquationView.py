@@ -274,7 +274,7 @@ class SolverDelegate(QItemDelegate):
             if index.column() == 3 or index.column() == 5:
                 value = from_qvariant(editor.text(), float)
             elif (index.column() == 2 or index.column() == 4):
-                value = from_qvariant(editor.text(), int)
+                value = int(editor.text())
             selectionModel = self.parent.selectionModel()
             for idx in selectionModel.selectedIndexes():
                 if idx.column() == index.column():
@@ -862,7 +862,7 @@ class StandardItemModelScheme(QStandardItemModel):
 
         # set NSWRSM
         elif column == 8:
-            self.dataScheme[row]['nswrsm'] = from_qvariant(value, int)
+            self.dataScheme[row]['nswrsm'] = int(value)
             self.NPE.setRhsReconstruction(name, int(self.dataScheme[row]['nswrsm']))
 
         self.dataChanged.emit(index, index)
@@ -1391,7 +1391,7 @@ class StandardItemModelSolver(QStandardItemModel):
             self.NPE.setSolverPrecision(name, self.dataSolver[row]['epsilo'])
 
         elif index.column() == 4:
-            self.dataSolver[row]['verbo'] = from_qvariant(value, int)
+            self.dataSolver[row]['verbo'] = int(value)
             self.NPE.setVerbosity(name, self.dataSolver[row]['verbo'])
 
         elif index.column() == 5:
@@ -1464,7 +1464,7 @@ class VerbosityDelegate(QItemDelegate):
 
     def setModelData(self, editor, model, index):
         if editor.validator().state == QValidator.State.Acceptable:
-            value = from_qvariant(editor.text(), int)
+            value = int(editor.text())
             selectionModel = self.parent.selectionModel()
             for idx in selectionModel.selectedIndexes():
                 if idx.column() == index.column():

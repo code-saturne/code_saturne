@@ -419,7 +419,7 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
         Input value of Maximum number of restart
         """
         if self.lineEditMaxRestart.validator().state == QValidator.State.Acceptable:
-            value = from_qvariant(text, int)
+            value = int(text)
             self.mdl.setMaxNumberOfRestart(value)
 
 

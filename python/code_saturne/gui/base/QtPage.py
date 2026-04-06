@@ -190,52 +190,32 @@ def to_text_string(obj, encoding=None):
 #
 # Note: to_qvariant was removed recently; from_qvariant may be removed in
 #       many_places and the "to_text_string" variants could be replaced
-#       by "to_str"; where the value is already known to be of the correct
+#       by "str"; where the value is already known to be of the correct
 #       type, or None handled in the associated code,
 #       this could even be ignored
 #==============================================================================
 
 import collections
 
-if os.environ.get('QT_API', 'pyqt') == 'pyqt':
-
-    def from_qvariant(qobj=None, convfunc=None):
-        """Convert QVariant object to Python object
+def from_qvariant(qobj=None, convfunc=None):
+    """Convert QVariant object to Python object
         This is a transitional function from PyQt API #1 (QVariant exists)
         to PyQt API #2 and Pyside (QVariant does not exist)"""
-        if (qobj != None):
-            if convfunc in TEXT_TYPES or convfunc is to_text_string:
-                return str(qobj)
-            elif convfunc is int:
-                return int(qobj)
-            elif convfunc is float:
-                try:
-                    return float(qobj)
-                except Exception:
-                    return locale.atof(qobj)
-            else:
-                return qobj
+    if (qobj != None):
+        if convfunc in TEXT_TYPES or convfunc is to_text_string:
+            return str(qobj)
+        elif convfunc is int:
+            return int(qobj)
+        elif convfunc is float:
+            try:
+                return float(qobj)
+            except Exception:
+                return locale.atof(qobj)
         else:
             return qobj
-
-else:
-
-    def from_qvariant(qobj=None, pytype=None):
-        """Convert QVariant object to Python object
-        This is a transitional function from PyQt API #1 (QVariant exist)
-        to PyQt API #2 and Pyside (QVariant does not exist)"""
+    else:
         return qobj
 
-def qbytearray_to_str(qba):
-    """Convert QByteArray object to str in a way compatible with Python 2/3"""
-    return str(bytes(qba.toHex().data()).decode())
-
-
-def to_str(s):
-    """Convert argument to string, using an empty string for None"""
-    if s is None:
-        return ''
-    return str(s)
 
 #==============================================================================
 # Wrappers around QFileDialog static methods
@@ -767,7 +747,7 @@ class IntValidator(QIntValidator):
         state = QIntValidator.validate(self, stri, pos)[0]
 
         try:
-            x = from_qvariant(stri, int)
+            x = int(stri)
             valid = True
             pass
         except (TypeError, ValueError):
@@ -901,7 +881,7 @@ class DoubleValidator(QDoubleValidator):
 
         if state == QValidator.State.Acceptable:
             try:
-                x = from_qvariant(stri, float)
+                x = float(stri)
             except Exception: # may be type error or localization issue
                 x = 0.0
                 state = QValidator.State.Intermediate
@@ -1128,8 +1108,7 @@ class LabelDelegate(QItemDelegate):
 
         editor.setAutoFillBackground(True)
 
-        v = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole),
-                          to_text_string)
+        v = index.model().data(index, Qt.ItemDataRole.DisplayRole)
         self.p_value = str(v)
 
         editor.setText(v)
@@ -1177,14 +1156,13 @@ class FloatDelegate(QItemDelegate):
 
         editor.setAutoFillBackground(True)
 
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole),
-                              to_text_string)
-        editor.setText(value)
+        value = index.model().data(index, Qt.ItemDataRole.DisplayRole)
+        editor.setText(str(value))
 
     def setModelData(self, editor, model, index):
 
         if editor.validator().state == QValidator.State.Acceptable:
-            value = from_qvariant(editor.text(), float)
+            value = float(editor.text())
             selectionModel = self.parent.selectionModel()
 
             for idx in selectionModel.selectedIndexes():
@@ -1225,13 +1203,12 @@ class IntegerDelegate(QItemDelegate):
 
         editor.setAutoFillBackground(True)
 
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole),
-                              to_text_string)
-        editor.setText(value)
+        value = index.model().data(index, Qt.ItemDataRole.DisplayRole)
+        editor.setText(str(value))
 
     def setModelData(self, editor, model, index):
 
-        value = from_qvariant(editor.text(), int)
+        value = int(editor.text())
 
         if editor.validator().state == QValidator.State.Acceptable:
             selectionModel = self.parent.selectionModel()
@@ -1301,8 +1278,7 @@ class ComboDelegate(QItemDelegate):
 
     def setEditorData(self, comboBox, index):
 
-        string = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole),
-                               to_text_string)
+        string = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         comboBox.setEditText(string)
 
     def setModelData(self, comboBox, model, index):

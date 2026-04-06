@@ -330,7 +330,7 @@ class StandardItemModelSTLPoints(QStandardItemModel):
         num_pt = row + 1
 
         if index.column() == 0:
-            n = from_qvariant(value, int)
+            n = int(value)
             self.data_points[row]['n'] = n
         elif index.column() == 1:
             X = from_qvariant(value, float)

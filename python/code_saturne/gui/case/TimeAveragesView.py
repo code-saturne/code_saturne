@@ -182,7 +182,7 @@ class StartValueDelegate(QItemDelegate):
             row = index.row()
             stype = index.model().getData(row, 2)
             if stype == 'time step':
-                value = from_qvariant(editor.text(), int)
+                value = int(editor.text())
             else:
                 value = from_qvariant(editor.text(), float)
             model.setData(index, value, Qt.ItemDataRole.DisplayRole)
@@ -306,7 +306,7 @@ class StandardItemModelAverage(QStandardItemModel):
             elif col == 3:
                 stype = self.dataAverage[row][2]
                 if stype == 'time step':
-                    stime = from_qvariant(value, int)
+                    stime = int(value)
                     self.mdl.setTimeStepStart(name, stime)
                 else:
                     stime = from_qvariant(value, float)
