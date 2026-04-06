@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>953</width>
-    <height>524</height>
+    <width>800</width>
+    <height>682</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -21,6 +21,152 @@
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
    <item row="2" column="0">
+    <widget class="QGroupBox" name="groupBoxMeteoData">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>0</height>
+      </size>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>16777215</width>
+       <height>100</height>
+      </size>
+     </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the meteorological data file to read (&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;meteo&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; file, see /DATA/REFERENCE/meteo for an example). This file must be put in the DATA directory and must be called &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;meteo&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+     <property name="title">
+      <string/>
+     </property>
+     <property name="checkable">
+      <bool>false</bool>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="labelMeteoData">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the meteorological data file to read (&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;meteo&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; file, see /DATA/REFERENCE/meteo for an example). This file must be put in the DATA directory and must be called &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;meteo&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Data file: </string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLabel" name="labelMeteoFile">
+        <property name="minimumSize">
+         <size>
+          <width>250</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>300</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the meteorological data file to read (&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;meteo&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; file, see /DATA/REFERENCE/meteo for an example). This file must be put in the DATA directory and must be called &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;meteo&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="layoutDirection">
+         <enum>Qt::LeftToRight</enum>
+        </property>
+        <property name="autoFillBackground">
+         <bool>false</bool>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::Box</enum>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QPushButton" name="pushButtonMeteoData">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the meteorological data file to read (&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;meteo&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; file, see /DATA/REFERENCE/meteo for an example). This file must be put in the DATA directory and must be called &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;meteo&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>:data/icons/22x22/weather-few-clouds.png</normaloff>:data/icons/22x22/weather-few-clouds.png</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>22</width>
+          <height>22</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="3">
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>19</width>
+          <height>27</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QGroupBox" name="groupBoxActChemistry">
+     <property name="title">
+      <string>Activate chemistry</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_4">
+      <item>
+       <spacer name="horizontalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QRadioButton" name="radioButtonMeteoData">
+     <property name="text">
+      <string>Meteorological data from file</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QRadioButton" name="radioButtonLargeScaleMeteo">
+     <property name="text">
+      <string>Idealized large scale meteorological data</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
     <widget class="QGroupBox" name="groupBoxLargeScaleMeteo">
      <property name="enabled">
       <bool>true</bool>
@@ -38,13 +184,13 @@
       </size>
      </property>
      <property name="title">
-      <string>Idealized large scale meteorological data</string>
+      <string/>
      </property>
      <property name="flat">
       <bool>false</bool>
      </property>
      <property name="checkable">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <property name="checked">
       <bool>false</bool>
@@ -52,6 +198,20 @@
      <layout class="QHBoxLayout" name="horizontalLayout_3">
       <item>
        <layout class="QGridLayout" name="gridLayout_4">
+        <item row="5" column="2">
+         <widget class="QLabel" name="labelDimPressureSeaLevel">
+          <property name="text">
+           <string>Pa</string>
+          </property>
+         </widget>
+        </item>
+        <item row="12" column="1">
+         <widget class="QLineEdit" name="lineEditHumidityFriction">
+          <property name="text">
+           <string>0.0</string>
+          </property>
+         </widget>
+        </item>
         <item row="8" column="0">
          <widget class="QComboBox" name="comboBoxUstarOrdLMO">
           <item>
@@ -64,128 +224,6 @@
             <string>Inverse Monin-Obukhov length</string>
            </property>
           </item>
-         </widget>
-        </item>
-        <item row="6" column="2">
-         <widget class="QLabel" name="labelDimTemperatureSeaLevel">
-          <property name="text">
-           <string>K</string>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="1">
-         <widget class="QLineEdit" name="lineEditTemperatureSeaLevel">
-          <property name="text">
-           <string>0.0</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="1">
-         <widget class="QDateTimeEdit" name="dateTimeEdit"/>
-        </item>
-        <item row="10" column="2">
-         <widget class="QLabel" name="labelDimZref">
-          <property name="text">
-           <string>m</string>
-          </property>
-         </widget>
-        </item>
-        <item row="10" column="0">
-         <widget class="QLabel" name="labelReferenceHeight">
-          <property name="text">
-           <string>Reference Height, z_ref</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="0">
-         <widget class="QLabel" name="labelLargeScaleRoughness">
-          <property name="text">
-           <string>Large scale roughness z0</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="1">
-         <widget class="QLineEdit" name="lineEditLargeScaleRoughness">
-          <property name="text">
-           <string>0.0</string>
-          </property>
-         </widget>
-        </item>
-        <item row="9" column="0">
-         <widget class="QComboBox" name="comboBoxUrefOrdLMO">
-          <item>
-           <property name="text">
-            <string>Reference velocity u_ref</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Inverse Monin-Obukhov length</string>
-           </property>
-          </item>
-         </widget>
-        </item>
-        <item row="8" column="2">
-         <widget class="QLabel" name="labelDimZRef">
-          <property name="text">
-           <string>m</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="labelLatCenter">
-          <property name="text">
-           <string>Latitude of the domain center</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="labelStartTime">
-          <property name="text">
-           <string>Start Time</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QLineEdit" name="lineEditLongCenter">
-          <property name="text">
-           <string>0.0</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="2">
-         <widget class="QLabel" name="labelDimZ0">
-          <property name="text">
-           <string>m</string>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="0">
-         <widget class="QLabel" name="labelPressureSeaLevel">
-          <property name="text">
-           <string>Pressure at ground level</string>
-          </property>
-         </widget>
-        </item>
-        <item row="9" column="1">
-         <widget class="QLineEdit" name="lineEditUrefOrDlmo">
-          <property name="text">
-           <string>0.0</string>
-          </property>
-         </widget>
-        </item>
-        <item row="9" column="2">
-         <widget class="QLabel" name="labelDimRefVel">
-          <property name="text">
-           <string>m/s</string>
-          </property>
-         </widget>
-        </item>
-        <item row="7" column="0">
-         <widget class="QLabel" name="labelWindDir">
-          <property name="text">
-           <string>Wind direction in degrees</string>
-          </property>
          </widget>
         </item>
         <item row="2" column="0">
@@ -204,10 +242,45 @@
           </property>
          </widget>
         </item>
+        <item row="6" column="2">
+         <widget class="QLabel" name="labelDimTemperatureSeaLevel">
+          <property name="text">
+           <string>K</string>
+          </property>
+         </widget>
+        </item>
+        <item row="6" column="0">
+         <widget class="QLabel" name="labelTemperatureSeaLevel">
+          <property name="text">
+           <string>Temperature at ground level</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="labelLatCenter">
+          <property name="text">
+           <string>Latitude of the domain center</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="2">
+         <widget class="QLabel" name="labelDimZ0">
+          <property name="text">
+           <string>m</string>
+          </property>
+         </widget>
+        </item>
         <item row="10" column="1">
          <widget class="QLineEdit" name="lineEditZref">
           <property name="text">
            <string>0.0</string>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="0">
+         <widget class="QLabel" name="labelWindDir">
+          <property name="text">
+           <string>Wind direction in degrees</string>
           </property>
          </widget>
         </item>
@@ -218,11 +291,18 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="1">
-         <widget class="QLineEdit" name="lineEditLatCenter">
-          <property name="text">
-           <string>0.0</string>
-          </property>
+        <item row="9" column="0">
+         <widget class="QComboBox" name="comboBoxUrefOrdLMO">
+          <item>
+           <property name="text">
+            <string>Reference velocity u_ref</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Inverse Monin-Obukhov length</string>
+           </property>
+          </item>
          </widget>
         </item>
         <item row="5" column="1">
@@ -239,24 +319,17 @@
           </property>
          </widget>
         </item>
-        <item row="7" column="1">
-         <widget class="QSpinBox" name="spinBoxWindDir">
-          <property name="maximum">
-           <number>360</number>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="QSpinBox" name="spinBoxDomainOrientation">
-          <property name="maximum">
-           <number>360</number>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="2">
-         <widget class="QLabel" name="labelDimPressureSeaLevel">
+        <item row="9" column="1">
+         <widget class="QLineEdit" name="lineEditUrefOrDlmo">
           <property name="text">
-           <string>Pa</string>
+           <string>0.0</string>
+          </property>
+         </widget>
+        </item>
+        <item row="8" column="2">
+         <widget class="QLabel" name="labelDimZRef">
+          <property name="text">
+           <string>m</string>
           </property>
          </widget>
         </item>
@@ -267,10 +340,55 @@
           </property>
          </widget>
         </item>
-        <item row="6" column="0">
-         <widget class="QLabel" name="labelTemperatureSeaLevel">
+        <item row="3" column="1">
+         <widget class="QDateTimeEdit" name="dateTimeEdit"/>
+        </item>
+        <item row="4" column="0">
+         <widget class="QLabel" name="labelLargeScaleRoughness">
           <property name="text">
-           <string>Temperature at ground level</string>
+           <string>Large scale roughness z0</string>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="2">
+         <widget class="QLabel" name="labelDimRefVel">
+          <property name="text">
+           <string>m/s</string>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="0">
+         <widget class="QLabel" name="labelReferenceHeight">
+          <property name="text">
+           <string>Reference Height, z_ref</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLineEdit" name="lineEditLongCenter">
+          <property name="text">
+           <string>0.0</string>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="2">
+         <widget class="QLabel" name="labelDimZref">
+          <property name="text">
+           <string>m</string>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="1">
+         <widget class="QLineEdit" name="lineEditHumiditySeaLevel">
+          <property name="text">
+           <string>0.0</string>
+          </property>
+         </widget>
+        </item>
+        <item row="12" column="2">
+         <widget class="QLabel" name="labelDimFrictionHumidity">
+          <property name="text">
+           <string>kg of water /kg of air</string>
           </property>
          </widget>
         </item>
@@ -288,17 +406,17 @@
           </property>
          </widget>
         </item>
-        <item row="11" column="1">
-         <widget class="QLineEdit" name="lineEditHumiditySeaLevel">
+        <item row="4" column="1">
+         <widget class="QLineEdit" name="lineEditLargeScaleRoughness">
           <property name="text">
            <string>0.0</string>
           </property>
          </widget>
         </item>
-        <item row="11" column="2">
-         <widget class="QLabel" name="labelDimHumiditySeaLevel">
+        <item row="5" column="0">
+         <widget class="QLabel" name="labelPressureSeaLevel">
           <property name="text">
-           <string>kg of water /kg of air</string>
+           <string>Pressure at ground level</string>
           </property>
          </widget>
         </item>
@@ -309,15 +427,43 @@
           </property>
          </widget>
         </item>
-        <item row="12" column="2">
-         <widget class="QLabel" name="labelDimFrictionHumidity">
+        <item row="3" column="0">
+         <widget class="QLabel" name="labelStartTime">
+          <property name="text">
+           <string>Start Time</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QSpinBox" name="spinBoxDomainOrientation">
+          <property name="maximum">
+           <number>360</number>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QLineEdit" name="lineEditLatCenter">
+          <property name="text">
+           <string>0.0</string>
+          </property>
+         </widget>
+        </item>
+        <item row="7" column="1">
+         <widget class="QSpinBox" name="spinBoxWindDir">
+          <property name="maximum">
+           <number>360</number>
+          </property>
+         </widget>
+        </item>
+        <item row="11" column="2">
+         <widget class="QLabel" name="labelDimHumiditySeaLevel">
           <property name="text">
            <string>kg of water /kg of air</string>
           </property>
          </widget>
         </item>
-        <item row="12" column="1">
-         <widget class="QLineEdit" name="lineEditHumidityFriction">
+        <item row="6" column="1">
+         <widget class="QLineEdit" name="lineEditTemperatureSeaLevel">
           <property name="text">
            <string>0.0</string>
           </property>
@@ -339,156 +485,11 @@
        </spacer>
       </item>
      </layout>
-     <zorder>horizontalSpacer</zorder>
-    </widget>
-   </item>
-   <item row="1" column="0">
-    <widget class="QGroupBox" name="groupBoxMeteoData">
-     <property name="enabled">
-      <bool>true</bool>
-     </property>
-     <property name="minimumSize">
-      <size>
-       <width>0</width>
-       <height>0</height>
-      </size>
-     </property>
-     <property name="maximumSize">
-      <size>
-       <width>16777215</width>
-       <height>100</height>
-      </size>
-     </property>
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the meteorological data file to read (&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;meteo&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; file, see /DATA/REFERENCE/meteo for an example). This file must be put in the DATA directory and must be called &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;meteo&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="title">
-      <string>File of meteorological data</string>
-     </property>
-     <property name="checkable">
-      <bool>true</bool>
-     </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
-      <item>
-       <layout class="QGridLayout" name="gridLayout">
-        <item row="0" column="0" colspan="2">
-         <layout class="QHBoxLayout" name="horizontalLayout">
-          <item>
-           <widget class="QLabel" name="labelMeteoData">
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the meteorological data file to read (&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;meteo&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; file, see /DATA/REFERENCE/meteo for an example). This file must be put in the DATA directory and must be called &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;meteo&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="text">
-             <string>Name of the data file: </string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLabel" name="labelMeteoFile">
-            <property name="minimumSize">
-             <size>
-              <width>250</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>300</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the meteorological data file to read (&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;meteo&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; file, see /DATA/REFERENCE/meteo for an example). This file must be put in the DATA directory and must be called &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;meteo&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="layoutDirection">
-             <enum>Qt::LeftToRight</enum>
-            </property>
-            <property name="autoFillBackground">
-             <bool>false</bool>
-            </property>
-            <property name="frameShape">
-             <enum>QFrame::Box</enum>
-            </property>
-            <property name="text">
-             <string/>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="pushButtonMeteoData">
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the meteorological data file to read (&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;meteo&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; file, see /DATA/REFERENCE/meteo for an example). This file must be put in the DATA directory and must be called &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;meteo&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="text">
-             <string/>
-            </property>
-            <property name="icon">
-             <iconset resource="resources_pages.qrc">
-              <normaloff>:data/icons/22x22/weather-few-clouds.png</normaloff>:data/icons/22x22/weather-few-clouds.png</iconset>
-            </property>
-            <property name="iconSize">
-             <size>
-              <width>22</width>
-              <height>22</height>
-             </size>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <spacer name="horizontalSpacer_2">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>19</width>
-          <height>27</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="3" column="0">
-    <widget class="QGroupBox" name="groupBoxActChemistry">
-     <property name="title">
-      <string>Activate chemistry</string>
-     </property>
-     <property name="checkable">
-      <bool>true</bool>
-     </property>
-     <property name="checked">
-      <bool>false</bool>
-     </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_4">
-      <item>
-       <layout class="QGridLayout" name="gridLayout_3"/>
-      </item>
-      <item>
-       <spacer name="horizontalSpacer_3">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-     </layout>
     </widget>
    </item>
   </layout>
  </widget>
  <tabstops>
-  <tabstop>pushButtonMeteoData</tabstop>
   <tabstop>lineEditLongCenter</tabstop>
   <tabstop>lineEditLatCenter</tabstop>
   <tabstop>spinBoxDomainOrientation</tabstop>

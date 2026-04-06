@@ -86,10 +86,10 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         self.case.undoStopGlobal()
 
         # Define connection
-        self.groupBoxMeteoData.clicked[bool].connect(self.__slotGroupBoxMeteoData)
+        self.radioButtonMeteoData.clicked.connect(self.__slotButtonMeteoData)
         self.pushButtonMeteoData.pressed.connect(self.__slotSearchMeteoData)
 
-        self.groupBoxLargeScaleMeteo.clicked[bool].connect(self.__slotGroupBoxLargeScaleMeteo)
+        self.radioButtonLargeScaleMeteo.clicked.connect(self.__slotButtonLargeScaleMeteo)
         #TODO not yet connected
         #self.groupBoxActChemistry.clicked[bool].connect(self.__slotGroupBoxActChemistry)
         self.__slotGroupBoxActChemistry(False)
@@ -116,7 +116,8 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
 
         # Initialize the widgets in groupBoxMeteoData
         isMeteoDataChecked = model.getMeteoDataStatus() == 'on'
-        self.groupBoxMeteoData.setChecked(isMeteoDataChecked)
+        self.radioButtonMeteoData.setChecked(isMeteoDataChecked)
+        #self.groupBoxMeteoData.setChecked(isMeteoDataChecked)
         self.labelMeteoFile.setText(str(self.__model.getMeteoDataFileName()))
 
         # Validate lineEdits in groupBoxLargeScaleMeteo
@@ -149,7 +150,8 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         self.lineEditHumidityFriction.setValidator(validatorQwstar)
         # Initialize the widgets in groupBoxLargeScaleMeteo
         isLargeScaleMeteoChecked = model.getLargeScaleMeteoStatus() == 'on'
-        self.groupBoxLargeScaleMeteo.setChecked(isLargeScaleMeteoChecked)
+        self.radioButtonLargeScaleMeteo.setChecked(isLargeScaleMeteoChecked)
+        #self.groupBoxLargeScaleMeteo.setChecked(isLargeScaleMeteoChecked)
 
         tmpVar = model.getLongitude();
         self.lineEditLongCenter.setText(str(tmpVar))
@@ -209,6 +211,16 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         isChemistryChecked = model.getChemistryStatus() == 'on'
         self.groupBoxActChemistry.setChecked(isChemistryChecked)
 
+        if isMeteoDataChecked == isLargeScaleMeteoChecked:
+            if isMeteoDataChecked == True:
+                isLargeScaleMeteoChecked = False
+                self.__model.setLargeScaleMeteoStatus('off')
+            else:
+                isMeteoDataChecked = True
+                self.__model.setMeteoDataStatus('on')
+
+        self.__updateMeteoDataType()
+
         self.case.undoStartGlobal()
 
 
@@ -256,31 +268,6 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
             self.__model.setMeteoDlmo(val)
             self.__model.setMeteoUstar(-1.)
 
-    @Slot(bool)
-    def __slotGroupBoxLargeScaleMeteo(self, checked):
-        """
-        Called when groupBox state changed
-        """
-        status = 'off'
-        if checked:
-            status = 'on'
-            self.__slotGroupBoxMeteoData(False)
-
-        self.groupBoxLargeScaleMeteo.setChecked(checked)
-        self.__model.setLargeScaleMeteoStatus(status)
-
-    @Slot(bool)
-    def __slotApplyLargeScaleMeteo(self, checked):
-        """
-        Called when groupBox state changed
-        """
-        status = 'off'
-        if checked:
-            status = 'on'
-            self.__slotGroupBoxMeteoData(False)
-
-        self.groupBoxLargeScaleMeteo.setChecked(checked)
-        self.__model.setLargeScaleMeteoStatus(status)
 
     @Slot(str)
     def slotLongitude(self, text):
@@ -361,8 +348,6 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
             self.__model.setMeteoQwstar(val)
 
 
-
-
     #--------------- Functions for the groupBox Activate Chemistry--------------
     @Slot(bool)
     def __slotGroupBoxActChemistry(self, checked):
@@ -380,19 +365,49 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
 
     #--------------- Functions for the groupBox  MeteoDataFile-----------------
 
-    @Slot(bool)
-    def __slotGroupBoxMeteoData(self, checked):
+    def __updateMeteoDataType(self):
+        """
+        Called when radioButton clicked
+        """
+        if self.__model.getMeteoDataStatus() == 'on':
+            self.radioButtonMeteoData.setChecked(True)
+            self.groupBoxMeteoData.show()
+        else:
+            self.radioButtonMeteoData.setChecked(False)
+            self.groupBoxMeteoData.hide()
+
+        if self.__model.getLargeScaleMeteoStatus() == 'on':
+            self.radioButtonLargeScaleMeteo.setChecked(True)
+            self.groupBoxLargeScaleMeteo.show()
+        else:
+            self.radioButtonLargeScaleMeteo.setChecked(False)
+            self.groupBoxLargeScaleMeteo.hide()
+
+
+    @Slot()
+    def __slotButtonMeteoData(self):
+        """
+        Called when radioButton clicked
+        """
+        if self.radioButtonMeteoData.isChecked():
+            if self.__model.getMeteoDataStatus() == 'on':
+                return # No change
+            self.__model.setMeteoDataStatus('on')
+            self.__model.setLargeScaleMeteoStatus('off')
+            self.__updateMeteoDataType()
+
+
+    @Slot()
+    def __slotButtonLargeScaleMeteo(self):
         """
         Called when groupBox state changed
         """
-        status = 'off'
-        if checked:
-            status = 'on'
-
-        self.groupBoxMeteoData.setChecked(checked)
-        self.__model.setMeteoDataStatus(status)
-        if checked:
-            self.__slotGroupBoxLargeScaleMeteo(False)
+        if self.radioButtonLargeScaleMeteo.isChecked():
+            if self.__model.getLargeScaleMeteoStatus() == 'on':
+                return # No change
+            self.__model.setMeteoDataStatus('off')
+            self.__model.setLargeScaleMeteoStatus('on')
+            self.__updateMeteoDataType()
 
 
     @Slot()
