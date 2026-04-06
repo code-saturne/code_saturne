@@ -49,7 +49,6 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.gui.base.QtPage import IntValidator, DoubleValidator, RegExpValidator, ComboModel
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
 from code_saturne.gui.case.ImmersedBoundariesBoundaryFormNeptune import Ui_ImmersedBoundariesBoundaryFormNeptune
 from code_saturne.model.ImmersedBoundariesModel import ImmersedBoundariesModel
 from code_saturne.model.MainFieldsModel import MainFieldsModel
@@ -170,7 +169,7 @@ class StandardItemBoundary(QStandardItemModel):
         num = row + 1
 
         if col == 1:
-            self.data[row][col] = str(from_qvariant(value, to_text_string))
+            self.data[row][col] = str(value)
             self.__model.setObjectBoundaryConditionNature(num, self.data[row][col])
 
         id1 = self.index(0, 0)

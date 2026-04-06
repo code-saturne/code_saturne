@@ -49,7 +49,7 @@ from code_saturne.gui.base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.gui.base.QtPage import RegExpValidator, DoubleValidator
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
+from code_saturne.gui.base.QtPage import from_qvariant
 from code_saturne.model.Common import GuiParam, GuiLabelManager
 from code_saturne.gui.case.FacesSelectionForm import Ui_FacesSelectionForm
 
@@ -84,7 +84,7 @@ class LineEditDelegateVerbosity(QItemDelegate):
 
 
     def setEditorData(self, lineEdit, index):
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         lineEdit.setText(value)
 
 
@@ -125,7 +125,7 @@ class LineEditDelegateSelector(QItemDelegate):
         # This line is used to avoid an overlay of old and new text
         lineEdit.setAutoFillBackground(True)
 
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         lineEdit.setText(value)
 
 
@@ -152,7 +152,7 @@ class FractionPlaneDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 
@@ -259,15 +259,15 @@ class StandardItemModelFaces(QStandardItemModel):
         col = index.column()
 
         if col == 0:
-            self.dataFaces[row]['fraction'] = str(from_qvariant(value, to_text_string))
+            self.dataFaces[row]['fraction'] = str(value)
         elif col == 1:
-            self.dataFaces[row]['plane'] = str(from_qvariant(value, to_text_string))
+            self.dataFaces[row]['plane'] = str(value)
         elif col == 2:
-            self.dataFaces[row]['verbosity'] = str(from_qvariant(value, to_text_string))
+            self.dataFaces[row]['verbosity'] = str(value)
         elif col == 3:
-            self.dataFaces[row]['visualization'] = str(from_qvariant(value, to_text_string))
+            self.dataFaces[row]['visualization'] = str(value)
         elif col == 4:
-            self.dataFaces[row]['selector'] = str(from_qvariant(value, to_text_string))
+            self.dataFaces[row]['selector'] = str(value)
 
         if self.tag == "face_joining":
             self.mdl.replaceJoinFaces(row, self.dataFaces[row])

@@ -73,7 +73,7 @@ from code_saturne.gui.case.WelcomeView import WelcomeView
 from code_saturne.model.IdentityAndPathesModel import IdentityAndPathesModel
 from code_saturne.gui.case.XMLEditorView import XMLEditorView
 from code_saturne.gui.base.QtPage import getexistingdirectory
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string, getopenfilename, getsavefilename
+from code_saturne.gui.base.QtPage import getopenfilename, getsavefilename
 
 #-------------------------------------------------------------------------------
 # log config
@@ -210,7 +210,7 @@ class MainView(object):
                 if not self.font_default:
                     self.font_default = self.font()
                 font = QFont()
-                if (font.fromString(from_qvariant(f, to_text_string))):
+                if font.fromString(str(f)):
                     self.setFont(font)
                     app.setFont(font)
 

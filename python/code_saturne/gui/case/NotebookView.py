@@ -46,7 +46,7 @@ from code_saturne.gui.base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam, GuiLabelManager
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
+from code_saturne.gui.base.QtPage import from_qvariant
 from code_saturne.gui.base.QtPage import DoubleValidator, RegExpValidator
 from code_saturne.gui.base.QtPage import LabelDelegate, FloatDelegate, ComboDelegate
 from code_saturne.gui.case.NotebookForm import Ui_NotebookForm
@@ -344,7 +344,7 @@ class VariableStandardItemModel(QAbstractItemModel):
         item = index.internalPointer()
 
         if index.column() == 0:
-            v = from_qvariant(value, to_text_string)
+            v = str(value)
             item.item.name = v
             self.mdl.setVariableName(item.item.index, item.item.name)
 
@@ -354,7 +354,7 @@ class VariableStandardItemModel(QAbstractItemModel):
             self.mdl.setVariableValue(item.item.value, idx=item.item.index)
 
         elif index.column() == 2:
-            value = from_qvariant(value, to_text_string)
+            value = str(value)
             item.item.oturns = value
             self.mdl.setVariableOt(item.item.index, item.item.oturns)
             # Input OT variables not editable and not written in log file
@@ -371,7 +371,7 @@ class VariableStandardItemModel(QAbstractItemModel):
                 item.item.log = "Yes"
 
         elif index.column() == 3:
-            editable = from_qvariant(value, to_text_string)
+            editable = str(value)
             item.item.edit = editable
             self.mdl.setVariableEditable(item.item.index, item.item.edit)
             if editable == "Yes":
@@ -379,17 +379,17 @@ class VariableStandardItemModel(QAbstractItemModel):
                 item.item.log = "Yes"
 
         elif index.column() == 4:
-            restart = from_qvariant(value, to_text_string)
+            restart = str(value)
             item.item.restart = restart
             self.mdl.setVariableRestart(item.item.restart, idx=item.item.index)
 
         elif index.column() == 5:
-            log = from_qvariant(value, to_text_string)
+            log = str(value)
             item.item.log = log
             self.mdl.setVariableLog(item.item.index, item.item.log)
 
         elif index.column() == 6:
-            description = from_qvariant(value, to_text_string)
+            description = str(value)
             item.item.descr = description
             self.mdl.setVariableDescription(item.item.index, item.item.descr)
 

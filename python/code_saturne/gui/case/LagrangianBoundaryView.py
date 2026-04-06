@@ -49,7 +49,7 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.gui.base.QtPage import IntValidator, DoubleValidator, ComboModel
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
+from code_saturne.gui.base.QtPage import from_qvariant
 
 from code_saturne.gui.case.LagrangianBoundaryForm import Ui_LagrangianBoundaryForm
 from code_saturne.model.LagrangianBoundariesModel import LagrangianBoundariesModel
@@ -274,7 +274,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
 
     @Slot()
     def slotNbSets(self):
-        nb_sets = from_qvariant(self.lineEditNbSets.text(), to_text_string)
+        nb_sets = str(self.lineEditNbSets.text())
         try:
             nb_sets = int(nb_sets)
         except Exception:

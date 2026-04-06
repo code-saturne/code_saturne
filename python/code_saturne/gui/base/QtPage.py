@@ -71,8 +71,6 @@ log.setLevel(GuiParam.DEBUG)
 # Data types
 #==============================================================================
 
-TEXT_TYPES = (str,)
-
 #==============================================================================
 # Classes used to handle ComboBox subsections (groups)
 #==============================================================================
@@ -166,33 +164,11 @@ class GroupItem():
         return item
 
 #==============================================================================
-# Strings
-#==============================================================================
-
-def is_text_string(obj):
-    """Return True if `obj` is a text string,
-              False if it is anything else,
-                    like binary data"""
-    return isinstance(obj, str)
-
-def to_text_string(obj, encoding=None):
-    """Convert `obj` to (unicode) text string"""
-    if encoding is None:
-        return str(obj)
-    elif isinstance(obj, str):
-        # In case this function is not used properly, this could happen
-        return obj
-    else:
-        return str(obj, encoding)
-
-#==============================================================================
 # QVariant conversion utilities
 #
-# Note: to_qvariant was removed recently; from_qvariant may be removed in
-#       many_places and the "to_text_string" variants could be replaced
-#       by "str"; where the value is already known to be of the correct
-#       type, or None handled in the associated code,
-#       this could even be ignored
+# Note: to_qvariant was removed recently; from_qvariant has been removed in
+#       many_places, and only the conversion to float is still used.
+#       this should be replaced by a to_floar function.
 #==============================================================================
 
 import collections
@@ -201,20 +177,14 @@ def from_qvariant(qobj=None, convfunc=None):
     """Convert QVariant object to Python object
         This is a transitional function from PyQt API #1 (QVariant exists)
         to PyQt API #2 and Pyside (QVariant does not exist)"""
-    if (qobj != None):
-        if convfunc in TEXT_TYPES or convfunc is to_text_string:
-            return str(qobj)
-        elif convfunc is int:
-            return int(qobj)
-        elif convfunc is float:
-            try:
-                return float(qobj)
-            except Exception:
-                return locale.atof(qobj)
-        else:
-            return qobj
+    if convfunc is float:
+        try:
+            return float(qobj)
+        except Exception:
+            return locale.atof(qobj)
     else:
-        return qobj
+        raise Exception("from_qvariant is deprecated and should only be used for float conversion.")
+    return obj
 
 
 #==============================================================================
@@ -244,9 +214,9 @@ def getexistingdirectory(parent=None, caption='', basedir='',
         if sys.platform == "win32":
             # On Windows platforms: restore standard outputs
             sys.stdout, sys.stderr = _temp1, _temp2
-    if not is_text_string(result):
-        # PyQt API #1
-        result = to_text_string(result)
+    if not isinstance(result, str):
+        # PyQt API #1 may use binary data (TODO remove this)
+        result = str(result)
     return result
 
 

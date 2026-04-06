@@ -51,7 +51,7 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.gui.base.QtPage import ComboModel, DoubleValidator, RegExpValidator
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
+from code_saturne.gui.base.QtPage import from_qvariant
 
 from code_saturne.gui.case.CoalCombustionForm import Ui_CoalCombustionForm
 from code_saturne.model.Boundary import Boundary
@@ -91,7 +91,7 @@ class LabelFuelDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = index.model().data(index, Qt.ItemDataRole.DisplayRole)
         self.old_plabel = str(value)
         editor.setText(value)
 
@@ -179,7 +179,7 @@ class TypeFuelDelegate(QItemDelegate):
             painter.setPen(QPen(Qt.black))
             value = index.data(Qt.ItemDataRole.DisplayRole)
             if value.isValid():
-                text = from_qvariant(value, to_text_string)
+                text = str(value)
                 painter.drawText(option.rect, Qt.AlignmentFlag.AlignLeft, text)
             painter.restore()
 
@@ -203,7 +203,7 @@ class DiameterDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 
@@ -232,7 +232,7 @@ class RefusalDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 
@@ -260,7 +260,7 @@ class OxidantDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 
@@ -348,12 +348,12 @@ class StandardItemModelCoals(QStandardItemModel):
         # Label
         if col == 0:
             old_plabel = self.dataCoals[row]['name']
-            new_plabel = str(from_qvariant(value, to_text_string))
+            new_plabel = str(value)
             self.dataCoals[row]['name'] = new_plabel
             self.mdl.setFuelLabel(row + 1, new_plabel)
 
         elif col == 1:
-            self.dataCoals[row]['type'] = self.dicoV2M[str(from_qvariant(value, to_text_string))]
+            self.dataCoals[row]['type'] = self.dicoV2M[str(value)]
             self.mdl.setFuelType(row + 1, self.dataCoals[row]['type'])
 
         self.dataChanged.emit(index, index)

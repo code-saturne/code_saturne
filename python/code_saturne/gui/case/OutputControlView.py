@@ -56,7 +56,7 @@ import os, re
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam, GuiLabelManager
 from code_saturne.gui.base.QtPage import ComboModel, DoubleValidator, IntValidator
 from code_saturne.gui.base.QtPage import RegExpValidator
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
+from code_saturne.gui.base.QtPage import from_qvariant
 from code_saturne.gui.case.OutputControlForm import Ui_OutputControlForm
 from code_saturne.model.OutputControlModel import OutputControlModel
 from code_saturne.gui.case.QMegEditorView import QMegEditorView
@@ -98,7 +98,7 @@ class LabelWriterDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = index.model().data(index, Qt.ItemDataRole.DisplayRole)
         self.old_plabel = str(value)
         editor.setText(value)
 
@@ -155,7 +155,7 @@ class LabelMeshDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = index.model().data(index, Qt.ItemDataRole.DisplayRole)
         self.old_plabel = str(value)
         editor.setText(value)
 
@@ -333,7 +333,7 @@ class TypeMeshDelegate(QItemDelegate):
             painter.setPen(QPen(Qt.black))
             value = index.data(Qt.ItemDataRole.DisplayRole)
             if value.isValid():
-                text = from_qvariant(value, to_text_string)
+                text = str(value)
                 painter.drawText(option.rect, Qt.AlignmentFlag.AlignLeft, text)
             painter.restore()
 
@@ -385,8 +385,7 @@ class LocationSelectorDelegate(QItemDelegate):
     def setEditorData(self, editor, index):
         # This line is used to avoid an overlay of old and new text
         editor.setAutoFillBackground(True)
-        self.value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole),
-                                   to_text_string)
+        self.value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         if self.editor_type == 'line':
             editor.setText(self.value)
         else:
@@ -431,7 +430,7 @@ class DensitySelectorDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        self.value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        self.value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(self.value)
 
 
@@ -615,13 +614,13 @@ class StandardItemModelMesh(QStandardItemModel):
         # Label
         if col == 0:
             old_plabel = self.dataMesh[row]['name']
-            new_plabel = str(from_qvariant(value, to_text_string))
+            new_plabel = str(value)
             self.dataMesh[row]['name'] = new_plabel
             self.mdl.setMeshLabel(str(self.dataMesh[row]['id']), new_plabel)
 
         if index.column() == 2:
             old_type = self.dataMesh[row]['type']
-            new_type = self.dicoV2M[str(from_qvariant(value, to_text_string))]
+            new_type = self.dicoV2M[str(value)]
 
             if new_type in zone_list and old_type != new_type:
                 _ntype = new_type.split("_")[0]
@@ -635,7 +634,7 @@ class StandardItemModelMesh(QStandardItemModel):
             self.mdl.setMeshType(self.dataMesh[row]['id'], self.dataMesh[row]['type'])
 
         if index.column() == 3:
-            new_location = str(from_qvariant(value, to_text_string))
+            new_location = str(value)
             self.dataMesh[row]['location'] = new_location
             self.mdl.setMeshLocation(self.dataMesh[row]['id'], new_location)
         self.dataChanged.emit(index, index)
@@ -782,20 +781,20 @@ class StandardItemModelLagrangianMesh(QStandardItemModel):
         # Label
         if col == 0:
             old_plabel = self.dataMesh[row]['name']
-            new_plabel = str(from_qvariant(value, to_text_string))
+            new_plabel = str(value)
             self.dataMesh[row]['name'] = new_plabel
             self.mdl.setMeshLabel(str(self.dataMesh[row]['id']), new_plabel)
 
         if index.column() == 2:
-            self.dataMesh[row]['type'] = self.dicoV2M[str(from_qvariant(value, to_text_string))]
+            self.dataMesh[row]['type'] = self.dicoV2M[str(value)]
             self.mdl.setLagrangianMeshType(self.dataMesh[row]['id'], self.dataMesh[row]['type'])
 
         if index.column() == 3:
-            self.dataMesh[row]['density'] = str(from_qvariant(value, to_text_string))
+            self.dataMesh[row]['density'] = str(value)
             self.mdl.setMeshDensity(self.dataMesh[row]['id'], self.dataMesh[row]['density'])
 
         if index.column() == 4:
-            new_location = str(from_qvariant(value, to_text_string))
+            new_location = str(value)
             self.dataMesh[row]['location'] = new_location
             self.mdl.setMeshLocation(self.dataMesh[row]['id'], new_location)
 
@@ -943,13 +942,13 @@ class StandardItemModelWriter(QStandardItemModel):
         # Label
         if col == 0:
             old_plabel = self.dataWriter[row]['name']
-            new_plabel = str(from_qvariant(value, to_text_string))
+            new_plabel = str(value)
             self.dataWriter[row]['name'] = new_plabel
             self.mdl.setWriterLabel(writer_id, new_plabel)
 
         elif col == 2:
             f_old = self.mdl.getWriterFormat(writer_id)
-            self.dataWriter[row]['format'] = self.dicoV2M[str(from_qvariant(value, to_text_string))]
+            self.dataWriter[row]['format'] = self.dicoV2M[str(value)]
             if self.dataWriter[row]['format'] != f_old:
                 self.mdl.setWriterFormat(writer_id,
                                          self.dataWriter[row]['format'])
@@ -960,7 +959,7 @@ class StandardItemModelWriter(QStandardItemModel):
                 self.mdl.setWriterOptions(writer_id, new_options)
         elif col == 3:
             old_rep = self.dataWriter[row]['directory']
-            new_rep = str(from_qvariant(value, to_text_string))
+            new_rep = str(value)
             self.dataWriter[row]['directory'] = new_rep
             self.mdl.setWriterDirectory(writer_id, new_rep)
 
@@ -1056,7 +1055,7 @@ class StandardItemModelAssociatedWriter(QStandardItemModel):
 
         # Label
         if col == 0:
-            writer = str(from_qvariant(value, to_text_string))
+            writer = str(value)
             self._data[row] = writer
             writer_list = []
             for r in range(self.rowCount()):
@@ -1185,7 +1184,7 @@ class StandardItemModelMonitoring(QStandardItemModel):
             n = int(value)
             self.dataMonitoring[row]['n'] = n
         elif index.column() == 1:
-            name = from_qvariant(value, str)
+            name = str(value)
             self.dataMonitoring[row]['name'] = name
         elif index.column() == 2:
             X = from_qvariant(value, float)
@@ -1294,7 +1293,7 @@ class MonitoringPointDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        text = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        text = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         if isinstance(editor, QLineEdit):
             editor.setText(text)
 

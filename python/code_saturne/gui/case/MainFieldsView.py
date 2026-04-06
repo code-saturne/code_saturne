@@ -55,7 +55,6 @@ from code_saturne.gui.base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.gui.base.QtPage import ComboModel, RegExpValidator
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 
 from code_saturne.gui.case.MainFields import Ui_MainFields
@@ -97,7 +96,7 @@ class LabelDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = index.model().data(index, Qt.ItemDataRole.DisplayRole)
         self.old_plabel = str(value)
         editor.setText(value)
 
@@ -418,7 +417,7 @@ class StandardItemModelMainFields(QStandardItemModel):
 
         # Label
         if col == 0:
-            new_plabel = from_qvariant(value, to_text_string)
+            new_plabel = str(value)
 
             # Since all fields' labels are using the phase label, we rename
             # the labels in all formulas!
@@ -434,14 +433,14 @@ class StandardItemModelMainFields(QStandardItemModel):
 
         # Nature of field
         elif col == 1:
-            new_nature = from_qvariant(value, to_text_string)
+            new_nature = str(value)
             self._data[row][col] = new_nature
             field.phase = new_nature
             self.updateItem()
 
         # Interfacial criterion
         elif col == 2:
-            new_crit = from_qvariant(value, to_text_string)
+            new_crit = str(value)
             self._data[row][col] = new_crit
             self.mdl.setCriterion(FieldId, new_crit)
             # update carrier field
@@ -449,7 +448,7 @@ class StandardItemModelMainFields(QStandardItemModel):
 
         # Carrier field
         elif col == 3:
-            new_carrier = from_qvariant(value, to_text_string)
+            new_carrier = str(value)
             self._data[row][col] = new_carrier
             # set carrier field Id in XML
             if self._data[row][col] not in ["off", "all"] : # TODO move this test to model part ?
@@ -470,7 +469,7 @@ class StandardItemModelMainFields(QStandardItemModel):
 
         # Energy resolution
         elif col == 5:
-            state = from_qvariant(value, to_text_string)
+            state = str(value)
             self._data[row][col] = state
             field.enthalpy_model = state
 

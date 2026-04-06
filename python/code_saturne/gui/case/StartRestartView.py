@@ -50,7 +50,7 @@ from code_saturne.gui.base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.model.Common import GuiParam
-from code_saturne.gui.base.QtPage import ComboModel, IntValidator, from_qvariant
+from code_saturne.gui.base.QtPage import ComboModel, IntValidator
 from code_saturne.model.SolutionDomainModel import RelOrAbsPath
 from code_saturne.gui.case.StartRestartForm import Ui_StartRestartForm
 from code_saturne.gui.case.StartRestartAdvancedDialogForm import Ui_StartRestartAdvancedDialogForm

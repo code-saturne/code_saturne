@@ -56,7 +56,7 @@ from code_saturne.gui.base.QtWidgets import *
 # -------------------------------------------------------------------------------
 
 from code_saturne.model.Common import GuiParam
-from code_saturne.gui.base.QtPage import ComboModel, from_qvariant, to_text_string, BasicTableModel, DoubleValidator
+from code_saturne.gui.base.QtPage import ComboModel, BasicTableModel, DoubleValidator
 from code_saturne.gui.case.InterfacialForces import Ui_InterfacialForces
 from code_saturne.model.InterfacialForcesModel import InterfacialForcesModel
 

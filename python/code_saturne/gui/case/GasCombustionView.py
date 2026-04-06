@@ -52,7 +52,6 @@ from code_saturne.gui.base.QtWidgets import *
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.gui.base.QtPage import ComboModel, RegExpValidator
 from code_saturne.gui.base.QtPage import DoubleValidator, from_qvariant
-from code_saturne.gui.base.QtPage import to_text_string
 from code_saturne.gui.base.QtPage import IntValidator
 from code_saturne.gui.case.GasCombustionForm import Ui_GasCombustionForm
 from code_saturne.model.GasCombustionModel import GasCombustionModel
@@ -92,7 +91,7 @@ class NameDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = index.model().data(index, Qt.ItemDataRole.DisplayRole)
         self.old_pname = str(value)
         editor.setText(value)
 
@@ -148,7 +147,7 @@ class ChemicalFormulaDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = index.model().data(index, Qt.ItemDataRole.DisplayRole)
         self.old_pname = str(value)
         editor.setText(value)
 
@@ -197,7 +196,7 @@ class ValueDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = index.model().data(index, Qt.ItemDataRole.DisplayRole)
         editor.setText(value)
 
 
@@ -279,35 +278,35 @@ class StandardItemModelSpecies(QStandardItemModel):
 
         # Chemical formula
         elif col == 1:
-            ChemicalFormula = str(from_qvariant(value, to_text_string))
+            ChemicalFormula = str(value)
             self._data[row][col] = ChemicalFormula
             label = self._data[row][0]
             self.mdl.setSpeciesChemicalFormula(label, ChemicalFormula)
 
         # Fuel Composition
         elif col == 2:
-            CompFuel = str(from_qvariant(value, to_text_string))
+            CompFuel = str(value)
             self._data[row][col] = CompFuel
             label = self._data[row][0]
             self.mdl.setCompFuel(label, CompFuel)
 
         # Oxi Composition
         elif col == 3:
-            CompOxi = str(from_qvariant(value, to_text_string))
+            CompOxi = str(value)
             self._data[row][col] = CompOxi
             label = self._data[row][0]
             self.mdl.setCompOxi(label, CompOxi)
 
         # Product Composition
         elif col == 4:
-            CompProd = str(from_qvariant(value, to_text_string))
+            CompProd = str(value)
             self._data[row][col] = CompProd
             label = self._data[row][0]
             self.mdl.setCompProd(label, CompProd)
 
         # Coeff absorption
         elif col == 5:
-            CoeffAbsorp = str(from_qvariant(value, to_text_string))
+            CoeffAbsorp = str(value)
             self._data[row][col] = CoeffAbsorp
             label = self._data[row][0]
             self.mdl.setCoeffAbsorp(label, CoeffAbsorp)
@@ -648,7 +647,7 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
         Input the chemical formula for the Fuel
         """
         if self.lineEditFuel.validator().state == QValidator.State.Acceptable:
-            ChemicalFormula = from_qvariant(text, to_text_string)
+            ChemicalFormula = text
             self.thermodata.setChemicalFormulaFuel(ChemicalFormula)
 
     @Slot(str)

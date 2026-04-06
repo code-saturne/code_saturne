@@ -46,7 +46,7 @@ from code_saturne.gui.base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
-from code_saturne.gui.base.QtPage import RegExpValidator, from_qvariant, to_text_string
+from code_saturne.gui.base.QtPage import RegExpValidator
 from code_saturne.gui.studymanager_gui.ManageCasesForm import Ui_ManageCasesForm
 from code_saturne.gui.studymanager_gui.ManageCasesModel import ManageCasesModel
 
@@ -188,7 +188,7 @@ class LabelDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        v = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        v = index.model().data(index, Qt.DisplayRole)
         self.p_value = str(v)
         editor.setText(v)
 
@@ -290,8 +290,7 @@ class TextDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        v = from_qvariant(index.model().data(index, Qt.DisplayRole),
-                          to_text_string)
+        v = index.model().data(index, Qt.DisplayRole)
         self.p_value = str(v)
         editor.setText(v)
 
@@ -530,7 +529,7 @@ class CaseStandardItemModel(QAbstractItemModel):
                                        item.item.post)
 
         elif index.column() == 4:
-            run_id = str(from_qvariant(value, to_text_string))
+            run_id = str(value)
             if item not in self.noderoot.values():
                 itm = item.parentItem
                 # Return False is name is already taken
@@ -539,7 +538,7 @@ class CaseStandardItemModel(QAbstractItemModel):
                     item.item.run_id = run_id
 
         elif index.column() == 5:
-            tags = str(from_qvariant(value, to_text_string))
+            tags = str(value)
             atags = str(tags).replace(",", " ").split()
             if len(atags) > 1:
                 tags = ",".join(atags)
@@ -555,7 +554,7 @@ class CaseStandardItemModel(QAbstractItemModel):
                 self.mdl.setStudyTags(item.item.name, item.item.tags)
 
         elif index.column() == 6:
-            exp_time = str(from_qvariant(value, to_text_string))
+            exp_time = str(value)
             if item not in self.noderoot.values():
                 itm = item.parentItem
                 item.item.exp_time = exp_time
@@ -564,7 +563,7 @@ class CaseStandardItemModel(QAbstractItemModel):
                                     item.item.exp_time)
 
         elif index.column() == 7:
-            n_procs = str(from_qvariant(value, to_text_string))
+            n_procs = str(value)
             if item not in self.noderoot.values():
                 itm = item.parentItem
                 item.item.n_procs = n_procs
@@ -678,7 +677,7 @@ class PostScriptItemModel(QStandardItemModel):
 
         if col == 1:
             if value:
-                v = from_qvariant(value, to_text_string)
+                v = str(value)
             else:
                 v = ''
             self.scripts[row][col] = v

@@ -62,7 +62,6 @@ from code_saturne.gui.case.BatchRunningStopByIterationDialogForm import Ui_Batch
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.gui.base.QtPage import ComboModel, IntValidator, RegExpValidator
-from code_saturne.gui.base.QtPage import from_qvariant
 from code_saturne.gui.base.CommandMgrDialogView import CommandMgrDialogView
 from code_saturne.model.BatchRunningModel import BatchRunningModel
 from code_saturne.model.ScriptRunningModel import ScriptRunningModel

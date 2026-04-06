@@ -49,7 +49,7 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.gui.base.Toolbox   import GuiParam
 from code_saturne.gui.case.MobileMeshForm  import Ui_MobileMeshForm
-from code_saturne.gui.base.QtPage    import IntValidator,  ComboModel, from_qvariant
+from code_saturne.gui.base.QtPage    import IntValidator, ComboModel
 from code_saturne.model.MobileMeshModel import MobileMeshModel
 
 from code_saturne.gui.case.QMegEditorView import QMegEditorView

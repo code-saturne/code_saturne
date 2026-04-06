@@ -49,7 +49,7 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam, GuiLabelManager
 from code_saturne.gui.base.QtPage import ComboModel, DoubleValidator, RegExpValidator, IntValidator
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
+from code_saturne.gui.base.QtPage import from_qvariant
 from code_saturne.gui.case.PreprocessingForm import Ui_PreprocessingForm
 from code_saturne.model.SolutionDomainModel import RelOrAbsPath, MeshModel, SolutionDomainModel
 from code_saturne.gui.case.SolutionDomainView import MeshNumberDelegate
@@ -98,7 +98,7 @@ class LineEditDelegateSelector(QItemDelegate):
 
 
     def setEditorData(self, lineEdit, index):
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         lineEdit.setText(value)
 
 
@@ -126,7 +126,7 @@ class FloatDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 
@@ -155,7 +155,7 @@ class IntDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 
@@ -233,7 +233,7 @@ class StandardItemModelThinWall(QStandardItemModel):
         name = row
 
         if col == 1:
-            new_sup = from_qvariant(value, to_text_string)
+            new_sup = str(value)
             self._data[row][col] = new_sup
             self.mdl.replaceThinWall(name, new_sup)
 
@@ -359,7 +359,7 @@ class StandardItemModelExtrude(QStandardItemModel):
             self._data[row][col] = new_sup
             self.mdl.setExtrudeReason(name, new_sup)
         elif col == 4:
-            new_sup = from_qvariant(value, to_text_string)
+            new_sup = str(value)
             self._data[row][col] = new_sup
             self.mdl.setExtrudeSelector(name, new_sup)
 

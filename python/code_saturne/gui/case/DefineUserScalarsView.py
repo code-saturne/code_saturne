@@ -54,7 +54,6 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.gui.base.QtPage import ComboModel, DoubleValidator, RegExpValidator
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
 
 from code_saturne.gui.case.DefineUserScalarsForm import Ui_DefineUserScalarsForm
 from code_saturne.model.LocalizationModel import LocalizationModel
@@ -101,7 +100,7 @@ class NameDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = index.model().data(index, Qt.ItemDataRole.DisplayRole)
         self.old_pname = str(value)
         editor.setText(value)
 
@@ -208,7 +207,7 @@ class VarianceNameDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = index.model().data(index, Qt.ItemDataRole.DisplayRole)
         self.old_pname = str(value)
         editor.setText(value)
 
@@ -262,8 +261,7 @@ class VarianceDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole),
-                              to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         if value in index.model().mdl.getGasCombScalarsNameList():
             self.modelCombo.addItem(value, value)
             return
@@ -346,13 +344,13 @@ class StandardItemModelScalars(QStandardItemModel):
             old_pname = self._data[row][col]
             if self.mdl.getScalarType(old_pname) == 'var_model':
                 return
-            new_pname = str(from_qvariant(value, to_text_string))
+            new_pname = str(value)
             self._data[row][col] = new_pname
             self.mdl.renameScalarLabel(old_pname, new_pname)
 
         # GGDH
         elif col == 1:
-            turbFlux = str(from_qvariant(value, to_text_string))
+            turbFlux = str(value)
             self._data[row][col] = turbFlux
             name = self._data[row][0]
             self.mdl.setTurbulentFluxModel(name, turbFlux)
@@ -472,14 +470,14 @@ class StandardItemModelVariance(QStandardItemModel):
             old_pname = self._data[row][col]
             if self.mdl.getScalarType(old_pname) == 'var_model':
                 return
-            new_pname = str(from_qvariant(value, to_text_string))
+            new_pname = str(value)
             self._data[row][col] = new_pname
             self.mdl.renameScalarLabel(old_pname, new_pname)
 
 
         # Variance (associated scalar name)
         elif col == 1:
-            variance = str(from_qvariant(value, to_text_string))
+            variance = str(value)
             self._data[row][col] = variance
             name = self._data[row][0]
             if self.mdl.getScalarType(name) == 'var_model':

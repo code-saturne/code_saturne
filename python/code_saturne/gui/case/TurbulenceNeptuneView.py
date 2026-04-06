@@ -53,7 +53,7 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.gui.base.QtPage import ComboModel, DoubleValidator
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
+from code_saturne.gui.base.QtPage import from_qvariant
 from code_saturne.gui.case.TurbulenceNeptune import Ui_Turbulence
 from code_saturne.model.TurbulenceNeptuneModel import TurbulenceModel, TurbulenceModelsDescription
 
@@ -340,7 +340,7 @@ class StandardItemModelTurbulence(QStandardItemModel):
 
         # turbulence model
         if col == 2:
-            new_pmodel = from_qvariant(value, to_text_string)
+            new_pmodel = str(value)
             self._data[row][col] = new_pmodel
             self.mdl.setTurbulenceModel(FieldId, self.dicoV2M[new_pmodel])
 
@@ -366,14 +366,14 @@ class StandardItemModelTurbulence(QStandardItemModel):
 
         # Turbulent thermal fluxes (for continuous phases)
         elif col == 3:
-            new_pmodel = from_qvariant(value, to_text_string)
+            new_pmodel = str(value)
             self._data[row][col] = new_pmodel
             self.mdl.setThermalTurbulentFlux(FieldId, self.dicoV2M[new_pmodel])
             self.updateItem()
 
         # two way coupling
         elif col == 4:
-            new_pmodel = from_qvariant(value, to_text_string)
+            new_pmodel = str(value)
             self._data[row][col] = new_pmodel
             self.mdl.setTwoWayCouplingModel(FieldId, self.dicoV2M[new_pmodel])
             self.updateItem()

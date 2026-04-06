@@ -52,7 +52,7 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.gui.base.QtPage import ComboModel, DoubleValidator, IntValidator
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
+from code_saturne.gui.base.QtPage import from_qvariant
 from code_saturne.gui.case.TimeStep import Ui_TimeStep
 from code_saturne.model.TimeStepModelNeptune import TimeStepModel
 
@@ -84,7 +84,7 @@ class ValueDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 

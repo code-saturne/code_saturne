@@ -49,7 +49,7 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.gui.base.QtPage import ComboModel, IntValidator, DoubleValidator
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
+from code_saturne.gui.base.QtPage import from_qvariant
 from code_saturne.gui.case.LagrangianForm import Ui_LagrangianForm
 from code_saturne.model.LagrangianModel import LagrangianModel
 from code_saturne.model.CoalCombustionModel import CoalCombustionModel
@@ -88,7 +88,7 @@ class LabelDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = index.model().data(index, Qt.ItemDataRole.DisplayRole)
         self.old_plabel = str(value)
         editor.setText(value)
 
@@ -115,7 +115,7 @@ class ValueDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 

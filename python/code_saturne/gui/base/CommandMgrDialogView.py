@@ -49,7 +49,7 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.gui.base.CommandMgrDialogForm import Ui_CommandMgrDialogForm
 from code_saturne.gui.base.CommandMgrLinesDisplayedDialogForm import Ui_CommandMgrLinesDisplayedDialogForm
-from code_saturne.gui.base.QtPage import IntValidator, from_qvariant, to_text_string
+from code_saturne.gui.base.QtPage import IntValidator
 
 #-------------------------------------------------------------------------------
 # log config

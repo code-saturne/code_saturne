@@ -49,7 +49,7 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.gui.base.QtPage import DoubleValidator, IntValidator
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
+from code_saturne.gui.base.QtPage import from_qvariant
 from code_saturne.gui.case.NumericalParamEquationForm import Ui_NumericalParamEquationForm
 from code_saturne.model.NumericalParamEquationModel import NumericalParamEquationModel
 from code_saturne.model.TurbulenceModel import TurbulenceModel
@@ -194,7 +194,7 @@ class BlendingFactorDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 
@@ -226,7 +226,7 @@ class RhsReconstructionDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 
@@ -265,7 +265,7 @@ class SolverDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 
@@ -777,7 +777,7 @@ class StandardItemModelScheme(QStandardItemModel):
         name = self.dataScheme[row]['name']
 
         # for Pressure, most fields are empty
-        if column > 0 and str(from_qvariant(value, to_text_string)) in ['', 'None']:
+        if column > 0 and str(value) in ['', 'None']:
             if column not in (3, 4, 7):
                 if (row, column) not in self.disabledItem:
                     self.disabledItem.append((row, column))
@@ -789,7 +789,7 @@ class StandardItemModelScheme(QStandardItemModel):
         # set ISCHCV
         if column == 1:
             ischcv_prev = self.dataScheme[row]['ischcv']
-            ischcv = self.dicoV2M[str(from_qvariant(value, to_text_string))]
+            ischcv = self.dicoV2M[str(value)]
             self.dataScheme[row]['ischcv'] = ischcv
             self.NPE.setScheme(name, ischcv)
             self.NPE.setBlendingFactor(name, float(self.dataScheme[row]['blencv']))
@@ -814,17 +814,17 @@ class StandardItemModelScheme(QStandardItemModel):
 
         # set ISSTPC
         elif column == 3:
-            self.dataScheme[row]['isstpc'] = self.dicoV2M_isstpc[str(from_qvariant(value, to_text_string))]
+            self.dataScheme[row]['isstpc'] = self.dicoV2M_isstpc[str(value)]
             self.NPE.setSlopeTest(name, self.dataScheme[row]['isstpc'])
 
         # set limiter
         elif column == 4:
-            self.dataScheme[row]['nvd_limiter'] = str(from_qvariant(value, to_text_string)).lower()
+            self.dataScheme[row]['nvd_limiter'] = str(value).lower()
             self.NPE.setNVDLimiter(name, self.dataScheme[row]['nvd_limiter'])
 
         # set IRCFLU
         elif column == 5:
-            s = str(from_qvariant(value, to_text_string))
+            s = str(value)
             rc_clip_factor = self.dataScheme[row]['rc_clip_factor']
             rc_clip_factor_n = None
             idx = self.ircflu_and_clip_keys.index(s)
@@ -852,7 +852,7 @@ class StandardItemModelScheme(QStandardItemModel):
 
         # set b_diff_flux_rc
         elif column == 6:
-            self.dataScheme[row]['b_diff_flux_rc'] = self.dicoV2M_b_diff_flux_rc[str(from_qvariant(value, to_text_string))]
+            self.dataScheme[row]['b_diff_flux_rc'] = self.dicoV2M_b_diff_flux_rc[str(value)]
             self.NPE.setBoundaryDiffFluxReconstruction(name, self.dataScheme[row]['b_diff_flux_rc'])
 
         # set rc_clip_factor
@@ -981,7 +981,7 @@ class GradientFloatDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 
@@ -1178,17 +1178,17 @@ class StandardItemModelGradient(QStandardItemModel):
         name = self.dataScheme[row]['name']
 
         if column == 1:
-            c_gradient_r = self.dicoV2M[str(from_qvariant(value, to_text_string))]
+            c_gradient_r = self.dicoV2M[str(value)]
             self.dataScheme[row]['c_gradient_r'] = c_gradient_r
             self.NPE.setCellGradientType(name, c_gradient_r)
 
         elif column == 2:
-            d_gradient_r = self.dicoV2M[str(from_qvariant(value, to_text_string))]
+            d_gradient_r = self.dicoV2M[str(value)]
             self.dataScheme[row]['d_gradient_r'] = d_gradient_r
             self.NPE.setDiffusionGradientType(name, d_gradient_r)
 
         elif column == 3:
-            b_rc_gradient = self.dicoV2M[str(from_qvariant(value, to_text_string))]
+            b_rc_gradient = self.dicoV2M[str(value)]
             self.dataScheme[row]['b_rc_gradient'] = b_rc_gradient
             self.NPE.setBoundaryGradientType(name, b_rc_gradient)
 
@@ -1198,7 +1198,7 @@ class StandardItemModelGradient(QStandardItemModel):
             self.NPE.setGradientEpsilon(name, v)
 
         elif column == 5:
-            imligr = self.dicoV2M_imligr[str(from_qvariant(value, to_text_string))]
+            imligr = self.dicoV2M_imligr[str(value)]
             self.dataScheme[row]['imligr'] = imligr
             self.NPE.setGradientLimiter(name, imligr)
 
@@ -1379,11 +1379,11 @@ class StandardItemModelSolver(QStandardItemModel):
         name = self.dataSolver[row]['name']
 
         if index.column() == 1:
-            self.dataSolver[row]['iresol'] = self.dicoV2M[from_qvariant(value, to_text_string)]
+            self.dataSolver[row]['iresol'] = self.dicoV2M[str(value)]
             self.NPE.setSolverChoice(name, self.dataSolver[row]['iresol'])
 
         elif index.column() == 2:
-            self.dataSolver[row]['precond'] = self.dicoV2M[from_qvariant(value, to_text_string)]
+            self.dataSolver[row]['precond'] = self.dicoV2M[str(value)]
             self.NPE.setPreconditioningChoice(name, self.dataSolver[row]['precond'])
 
         elif index.column() == 3:
@@ -1421,7 +1421,7 @@ class MinimumDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
     def setModelData(self, editor, model, index):
@@ -1458,7 +1458,7 @@ class VerbosityDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 
@@ -1490,7 +1490,7 @@ class MaximumDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 

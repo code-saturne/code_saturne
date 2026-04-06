@@ -52,7 +52,7 @@ from code_saturne.gui.base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.gui.base.QtPage import ComboModel, IntValidator, DoubleValidator, RegExpValidator
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
+from code_saturne.gui.base.QtPage import from_qvariant
 from code_saturne.gui.case.Species import Ui_Species
 from code_saturne.model.SpeciesModel import SpeciesModel
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
@@ -92,7 +92,7 @@ class LabelDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = index.model().data(index, Qt.ItemDataRole.DisplayRole)
         self.old_plabel = str(value)
         editor.setText(value)
 
@@ -231,12 +231,12 @@ class StandardItemModelUserScalar(QStandardItemModel):
 
         # Label
         if col == 0:
-            new_label = from_qvariant(value, to_text_string)
+            new_label = str(value)
             self._data[row][col] = new_label
             self.mdl.setScalarLabel(name, new_label)
         # field Id
         elif col == 1:
-            new_field= from_qvariant(value, to_text_string)
+            new_field= str(value)
             self._data[row][col] = new_field
             if self._data[row][col] == "none":
                 id = "none"

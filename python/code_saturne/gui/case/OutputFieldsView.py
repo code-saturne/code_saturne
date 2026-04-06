@@ -53,7 +53,7 @@ from code_saturne.gui.base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.gui.base.QtPage import ComboModel, RegExpValidator
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
+from code_saturne.gui.base.QtPage import from_qvariant
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.gui.case.OutputFields import Ui_OutputFields
 from code_saturne.model.OutputFieldsModel import *
@@ -140,7 +140,7 @@ class ProbesDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 
@@ -179,7 +179,7 @@ class NameDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = index.model().data(index, Qt.ItemDataRole.DisplayRole)
         self.old_plabel = str(value)
         editor.setText(value)
 
@@ -292,7 +292,7 @@ class StandardItemModelGlobalVariables(QStandardItemModel):
         # Name
         if col == 0:
             oldlabel = self._data[row][col]
-            new_plabel = from_qvariant(value, to_text_string)
+            new_plabel = str(value)
             self._data[row][col] = new_plabel
             self.mdl.setVariableLabel(self.currentid, new_plabel, oldlabel)
         # Listing
@@ -318,7 +318,7 @@ class StandardItemModelGlobalVariables(QStandardItemModel):
         # Probe
         elif col == 3:
             label = self._data[row][0]
-            lst = from_qvariant(value, to_text_string)
+            lst = str(value)
             self._data[row][col] = lst
             self.mdl.setProbesList(self.currentid, label, lst)
 

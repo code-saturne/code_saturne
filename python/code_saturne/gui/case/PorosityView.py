@@ -50,7 +50,6 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.gui.base.QtPage import ComboModel
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
 from code_saturne.gui.case.PorosityForm import Ui_PorosityForm
 from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 from code_saturne.gui.case.QMegEditorView import QMegEditorView

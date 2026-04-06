@@ -47,7 +47,6 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.gui.base.QtPage import IntValidator, DoubleValidator, RegExpValidator, ComboModel
-from code_saturne.gui.base.QtPage import from_qvariant
 from code_saturne.gui.case.ProfilesForm import Ui_ProfilesForm
 from code_saturne.model.ProfilesModel import ProfilesModel
 from code_saturne.gui.case.QMegEditorView import QMegEditorView

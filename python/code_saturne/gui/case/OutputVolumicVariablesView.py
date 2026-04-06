@@ -46,7 +46,7 @@ from code_saturne.gui.base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
-from code_saturne.gui.base.QtPage import RegExpValidator, from_qvariant, to_text_string
+from code_saturne.gui.base.QtPage import RegExpValidator
 from code_saturne.gui.base.QtPage import ComboModel
 from code_saturne.gui.case.OutputVolumicVariablesForm import Ui_OutputVolumicVariablesForm
 from code_saturne.model.OutputControlModel import OutputControlModel
@@ -86,7 +86,7 @@ class LabelDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        v = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        v = index.model().data(index, Qt.ItemDataRole.DisplayRole)
         self.p_value = str(v)
         editor.setText(v)
 
@@ -464,7 +464,7 @@ class VolumicOutputStandardItemModel(QAbstractItemModel):
         item = index.internalPointer()
 
         if index.column() == 0:
-            label = str(from_qvariant(value, to_text_string))
+            label = str(value)
             if label == "":
                 label = item.label
             if item not in self.noderoot.values():

@@ -49,7 +49,7 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.gui.base.QtPage import ComboModel, DoubleValidator, RegExpValidator, IntValidator
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
+from code_saturne.gui.base.QtPage import from_qvariant
 from code_saturne.gui.case.SolutionDomainForm import Ui_SolutionDomainForm
 from code_saturne.model.SolutionDomainModel import RelOrAbsPath, MeshModel, SolutionDomainModel
 
@@ -90,7 +90,7 @@ class MeshNameDelegate(QItemDelegate):
             painter.setPen(QPen(Qt.black))
             value = index.data(Qt.ItemDataRole.DisplayRole)
             if value != None:
-                text = from_qvariant(value, to_text_string)
+                text = str(value)
                 painter.drawText(option.rect, Qt.AlignmentFlag.AlignLeft, text)
             painter.restore()
 
@@ -171,7 +171,7 @@ class MeshFormatDelegate(QItemDelegate):
             value = index.data(Qt.ItemDataRole.DisplayRole)
             if value != None:
                 if value.isValid():
-                    text = from_qvariant(value, to_text_string)
+                    text = str(value)
                     painter.drawText(option.rect, Qt.AlignmentFlag.AlignLeft, text)
             painter.restore()
 
@@ -257,7 +257,7 @@ class LineEditDelegateSelector(QItemDelegate):
 
 
     def setEditorData(self, lineEdit, index):
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         lineEdit.setText(value)
 
 
@@ -285,7 +285,7 @@ class FloatDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 
@@ -314,7 +314,7 @@ class IntDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 
@@ -482,13 +482,13 @@ class StandardItemModelMeshes(QStandardItemModel):
         mesh = (self.dataMeshes[row][0], self.dataMeshes[row][7])
 
         if col == 1:
-            v = from_qvariant(value, to_text_string)
+            v = str(value)
             self.dataMeshes[row][col] = v
             if v:
                 self.mdl.setMeshFormat(mesh, v)
 
         elif col == 2:
-            v = from_qvariant(value, to_text_string)
+            v = str(value)
             self.dataMeshes[row][col] = v
             if value:
                 self.mdl.setMeshNumbers(mesh, v)
@@ -511,7 +511,7 @@ class StandardItemModelMeshes(QStandardItemModel):
 
         elif col == 5:
             if value:
-                v = from_qvariant(value, to_text_string)
+                v = str(value)
             else:
                 v = ''
             self.dataMeshes[row][col] = v
@@ -520,7 +520,7 @@ class StandardItemModelMeshes(QStandardItemModel):
 
         elif col == 6:
             if value:
-                v = from_qvariant(value, to_text_string)
+                v = str(value)
             else:
                 v = ''
             self.dataMeshes[row][col] = v

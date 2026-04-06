@@ -62,7 +62,7 @@ except:
     from code_saturne.gui.trackcvg.MainForm import Ui_MainForm
 
 from code_saturne.gui.base.QtPage import getexistingdirectory
-from code_saturne.gui.base.QtPage import DoubleValidator, from_qvariant, to_text_string
+from code_saturne.gui.base.QtPage import DoubleValidator, from_qvariant
 
 import numpy
 import matplotlib
@@ -616,7 +616,7 @@ class MainView(object):
                 if not self.font_default:
                     self.font_default = self.font()
                 font = QFont()
-                if (font.fromString(from_qvariant(f, to_text_string))):
+                if font.fromString(str(f)):
                     self.setFont(font)
                     app.setFont(font)
 

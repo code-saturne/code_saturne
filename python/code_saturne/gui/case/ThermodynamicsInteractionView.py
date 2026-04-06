@@ -31,7 +31,7 @@ import logging
 from code_saturne.gui.base.QtCore import *
 from code_saturne.gui.base.QtGui import *
 from code_saturne.gui.base.QtWidgets import *
-from code_saturne.gui.base.QtPage import ComboModel, from_qvariant, to_text_string, BasicTableModel, DoubleValidator
+from code_saturne.gui.base.QtPage import ComboModel, BasicTableModel, DoubleValidator
 
 # -------------------------------------------------------------------------------
 # Application modules import

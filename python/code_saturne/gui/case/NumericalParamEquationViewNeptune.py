@@ -55,7 +55,7 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.gui.base.QtPage import ComboModel, DoubleValidator, IntValidator
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
+from code_saturne.gui.base.QtPage import from_qvariant
 from code_saturne.gui.case.NumericalParamEquationNeptune import Ui_NumericalParamEquation
 from code_saturne.model.NumericalParamEquationModelNeptune import NumericalParamEquatModel
 from code_saturne.model.GlobalNumericalParametersModel import GlobalNumericalParametersModel
@@ -185,7 +185,7 @@ class PrecisionDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 
@@ -218,7 +218,7 @@ class IterationDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 
@@ -316,7 +316,7 @@ class StandardItemModelScheme(QStandardItemModel):
 
         # Scheme
         if col == 1:
-            new_scheme = from_qvariant(value, to_text_string)
+            new_scheme = str(value)
             self._data[row][col] = new_scheme
             self.mdl.setSchemeModel(var, self.dicoV2M[new_scheme])
             self._data[row][2] = str(self.mdl.getSlopeTestStatus(var))
@@ -426,7 +426,7 @@ class StandardItemModelSolver(QStandardItemModel):
 
         # Solver
         if col == 1:
-            new_solver = from_qvariant(value, to_text_string)
+            new_solver = str(value)
             self._data[row][col] = new_solver
             self.mdl.setSolverModel(var, self.dicoV2M[new_solver])
 

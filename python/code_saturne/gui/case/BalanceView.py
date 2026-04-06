@@ -46,7 +46,6 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam, GuiLabelManager
 from code_saturne.gui.base.QtPage import RegExpValidator, IntValidator
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
 from code_saturne.gui.base.QtPage import LabelDelegate, IntegerDelegate
 from code_saturne.gui.case.BalanceForm import Ui_BalanceForm
 from code_saturne.gui.case.FacesSelectionView import StandardItemModelFaces
@@ -122,7 +121,7 @@ class StandardItemModelPressureDrop(QStandardItemModel):
         if col == 0:
             self._data[row][col] = int(value)
         elif col == 1:
-            criteria = from_qvariant(value, to_text_string)
+            criteria = str(value)
             self._data[row][col] = criteria
             self.mdl.setPressureDropCriteria(row, criteria)
 
@@ -220,7 +219,7 @@ class StandardItemModelScalarBalance(QStandardItemModel):
         col = index.column()
 
         if col == 2:
-            criteria = from_qvariant(value, to_text_string)
+            criteria = str(value)
             self._data[row][col] = criteria
             self.mdl.setScalarBalanceCriteria(row, criteria)
 

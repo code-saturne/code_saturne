@@ -49,7 +49,7 @@ import os
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.gui.base.QtPage import ComboModel, DoubleValidator, IntValidator
 from code_saturne.gui.base.QtPage import RegExpValidator
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
+from code_saturne.gui.base.QtPage import from_qvariant
 from code_saturne.gui.studymanager_gui.ManagePlotForm import Ui_ManagePlotForm
 from code_saturne.gui.studymanager_gui.ManagePlotterForm import Ui_ManagePlotterForm
 from code_saturne.gui.studymanager_gui.ManagePlotterSubplotForm import Ui_ManagePlotterSubplotForm
@@ -235,8 +235,7 @@ class FloatDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole),
-                              to_text_string)
+        value = str(index.model().data(index, Qt.DisplayRole))
         editor.setText(value)
 
 
@@ -267,7 +266,7 @@ class IntDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.DisplayRole))
         editor.setText(value)
 
 
@@ -297,13 +296,12 @@ class TextDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole),
-                              to_text_string)
+        value = str(index.model().data(index, Qt.DisplayRole))
         editor.setText(value)
 
 
     def setModelData(self, editor, model, index):
-        value = from_qvariant(editor.text(), str)
+        value = str(editor.text())
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
@@ -327,13 +325,12 @@ class FigSizeDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole),
-                              to_text_string)
+        value = str(index.model().data(index, Qt.DisplayRole))
         editor.setText(value)
 
 
     def setModelData(self, editor, model, index):
-        value = from_qvariant(editor.text(), str)
+        value = str(editor.text())
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
@@ -365,13 +362,12 @@ class RangeAxisDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole),
-                              to_text_string)
+        value = str(index.model().data(index, Qt.DisplayRole))
         editor.setText(value)
 
 
     def setModelData(self, editor, model, index):
-        value = from_qvariant(editor.text(), str)
+        value = str(editor.text())
         selectionModel = self.parent.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
@@ -443,7 +439,7 @@ class LabelDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        v = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        v = index.model().data(index, Qt.DisplayRole)
         self.p_value = str(v)
         editor.setText(v)
 
@@ -476,7 +472,7 @@ class SpidDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        v = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
+        v = index.model().data(index, Qt.DisplayRole)
         self.p_value = str(v)
         editor.setText(v)
 
@@ -617,7 +613,7 @@ class StandardItemModelSubplot(QStandardItemModel):
         # set id
         if column == 0:
             old_idx = idx
-            new_idx = str(from_qvariant(value, to_text_string))
+            new_idx = str(value)
             if self.mdl.setSubplotId(self.study, idx, new_idx):
                 self.dataSubplot[row]['id'] = new_idx
 
@@ -635,7 +631,7 @@ class StandardItemModelSubplot(QStandardItemModel):
         # set title, xlabel, ylabel, legpos, xlim, ylim
         else:
             key = self.keys[column]
-            self.dataSubplot[row][key] = str(from_qvariant(value, to_text_string))
+            self.dataSubplot[row][key] = str(value)
             self.mdl.setNode(self.study,"subplot",key,
                              idx, self.dataSubplot[row][key])
 
@@ -764,23 +760,23 @@ class StandardItemModelFigure(QStandardItemModel):
         # set name title figsize
         if column == 0 or column == 2 or column == 5:
             key = self.keys[column]
-            self.dataFigure[row][key] = str(from_qvariant(value, to_text_string))
+            self.dataFigure[row][key] = str(value)
             self.mdl.setNodeByIdx(self.study,"figure",key,
                                   idx, self.dataFigure[row][key])
 
         # set nbrow
         elif column == 3:
-            self.dataFigure[row]['nbrow'] = str(from_qvariant(value, to_text_string))
+            self.dataFigure[row]['nbrow'] = str(value)
             self.mdl.setFigureRows(self.study, idx, self.dataFigure[row]['nbrow'])
 
         # set nbcol
         elif column == 4:
-            self.dataFigure[row]['nbcol'] = str(from_qvariant(value, to_text_string))
+            self.dataFigure[row]['nbcol'] = str(value)
             self.mdl.setFigureColumns(self.study, idx, self.dataFigure[row]['nbcol'])
 
         # set format
         elif column == 6:
-            self.dataFigure[row]['format'] = str(from_qvariant(value, to_text_string))
+            self.dataFigure[row]['format'] = str(value)
             self.mdl.setFigureFormat(self.study, idx, self.dataFigure[row]['format'])
 
         self.dataChanged.emit(index, index)

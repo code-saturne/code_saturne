@@ -50,7 +50,6 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.gui.base.QtPage import IntValidator, RegExpValidator
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
 from code_saturne.gui.case.BoundaryNatureForm import Ui_BoundaryNatureForm
 from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 
@@ -162,7 +161,7 @@ class StandardItemModelLocalization(QStandardItemModel):
         if col == 1:
             row = index.row()
 
-            nature = str(from_qvariant(value, to_text_string))
+            nature = str(value)
             self._data[row][1] = nature
 
             self.mdl.setNature(self._data[row][0], nature)

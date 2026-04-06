@@ -48,7 +48,7 @@ from code_saturne.gui.base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.gui.base.Toolbox           import GuiParam
-from code_saturne.gui.base.QtPage            import ComboModel, from_qvariant, DoubleValidator
+from code_saturne.gui.base.QtPage            import ComboModel, DoubleValidator
 from code_saturne.gui.case.GroundwaterForm  import Ui_GroundwaterForm
 from code_saturne.model.GroundwaterModel import GroundwaterModel
 from code_saturne.model.DefineUserScalarsModel import DefineUserScalarsModel

@@ -52,7 +52,6 @@ from code_saturne.gui.base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.gui.base.QtPage import ComboModel, RegExpValidator
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
 from code_saturne.gui.case.UserCalculatorForm import Ui_UserCalculator
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.gui.case.QMegEditorView import QMegEditorView
@@ -93,7 +92,7 @@ class NameDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = index.model().data(index, Qt.ItemDataRole.DisplayRole)
         self.old_pname = str(value)
         editor.setText(value)
 
@@ -273,7 +272,7 @@ class StandardItemModelCalculator(QStandardItemModel):
         col = index.column()
 
         name = self._data[row][0]
-        new_val = from_qvariant(value, to_text_string)
+        new_val = str(value)
 
         # Name
         if col == 0:

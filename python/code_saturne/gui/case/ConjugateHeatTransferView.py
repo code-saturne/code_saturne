@@ -53,7 +53,6 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.gui.base.QtPage import IntValidator, DoubleValidator, RegExpValidator, ComboModel
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
 from code_saturne.gui.case.ConjugateHeatTransferForm import Ui_ConjugateHeatTransferForm
 from code_saturne.model.ConjugateHeatTransferModel import ConjugateHeatTransferModel
 from code_saturne.model.LocalizationModel import LocalizationModel
@@ -119,7 +118,7 @@ class StandardItemModelSyrthes(QStandardItemModel):
             return
 
         row = index.row()
-        self.dataSyrthes[row][index.column()] = str(from_qvariant(value, to_text_string))
+        self.dataSyrthes[row][index.column()] = str(value)
         id1 = self.index(0, 0)
         id2 = self.index(self.rowCount(), 0)
         self.dataChanged.emit(id1, id2)

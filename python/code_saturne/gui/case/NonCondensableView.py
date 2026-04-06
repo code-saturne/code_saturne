@@ -54,7 +54,7 @@ from code_saturne.gui.base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.gui.base.QtPage import ComboModel, RegExpValidator, DoubleValidator
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
+from code_saturne.gui.base.QtPage import from_qvariant
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.gui.case.Noncondensable import Ui_NonCondensable
 from code_saturne.model.NonCondensableModel import *
@@ -94,7 +94,7 @@ class LabelDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = index.model().data(index, Qt.ItemDataRole.DisplayRole)
         self.old_plabel = str(value)
         editor.setText(value)
 
@@ -316,18 +316,18 @@ class StandardItemModelNonCondensable(QStandardItemModel):
 
         # Label
         if col == 0:
-            new_label = from_qvariant(value, to_text_string)
+            new_label = str(value)
             self._data[row][col] = new_label
             self.mdl.setNonCondLabel(name, new_label)
         # Type
         elif col == 1:
-            new_type = from_qvariant(value, to_text_string)
+            new_type = str(value)
             self._data[row][col] = new_type
             self.mdl.setNonCondType(name, new_type)
             self.updateItem(index)
         # field Id
         elif col == 2:
-            new_field = from_qvariant(value, to_text_string)
+            new_field = str(value)
             self._data[row][col] = new_field
             self.mdl.setNonCondFieldId(name, new_field)
         # mass molar

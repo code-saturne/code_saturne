@@ -49,7 +49,7 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.gui.base.QtPage import IntValidator, DoubleValidator, RegExpValidator, ComboModel
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
+from code_saturne.gui.base.QtPage import from_qvariant
 from code_saturne.gui.case.ImmersedBoundariesNeptune import Ui_ImmersedBoundariesNeptune
 from code_saturne.model.ImmersedBoundariesModel import ImmersedBoundariesModel
 from code_saturne.gui.case.QMegEditorView import QMegEditorView
@@ -79,8 +79,7 @@ class ObjectNameDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        self.value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole),
-                                   to_text_string)
+        self.value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(self.value)
 
 
@@ -222,7 +221,7 @@ class StandardItemModel(QStandardItemModel):
         num = row + 1
 
         if col < 2:
-            self.dataObject[row][col] = str(from_qvariant(value, to_text_string))
+            self.dataObject[row][col] = str(value)
             self.__model.setObjectName(num, self.dataObject[row][0])
             self.__model.setObjectMethod(num, self.dataObject[row][1])
             self.browser.configureTree(self.case)
@@ -425,8 +424,7 @@ class STLPointDelegate(QItemDelegate):
 
 
     def setEditorData(self, editor, index):
-        self.value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole),
-                                   to_text_string)
+        self.value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(self.value)
 
 

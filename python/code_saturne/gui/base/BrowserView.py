@@ -51,7 +51,6 @@ from code_saturne.model.Common import GuiParam
 
 from code_saturne.gui.base.BrowserForm import Ui_BrowserForm
 from code_saturne.gui.base.Toolbox import displaySelectedPage
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
 
 import code_saturne.gui.base.resource_base_rc
 
@@ -179,7 +178,7 @@ class TreeModel(QAbstractItemModel):
         @param index: used to locate data in a data model
         @type role: C{Qt.ItemDataRole}
         @param role: used by the view to indicate to the model which type of data it needs
-        @return: C{QVariant}
+        @return: C
         """
         if not index.isValid():
             return None
@@ -277,7 +276,7 @@ class TreeModel(QAbstractItemModel):
     def headerData(self, section, orientation, role):
         """Return the header of the tree.*
 
-        @return: C{QVariant}
+        @return: C
         """
         if orientation == Qt.ItemDataRole.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.rootItem.data(section)
@@ -349,7 +348,7 @@ class TreeModel(QAbstractItemModel):
         """
         @type start: C{QModelIndex}
         @type role: C{Qt.ItemDataRole}
-        @type value: C{QVarient}
+        @type value: C
         @type hits: C{int}
         @type flags: C{Qt.MatchFlag}
         """
@@ -379,7 +378,7 @@ class TreeModel(QAbstractItemModel):
 
     def itemLocalization(self, data, role=Qt.ItemDataRole.DisplayRole):
         info = []
-        search_item = from_qvariant(data, to_text_string)
+        search_item = str(data)
 
         start = self.index(0, 0, QModelIndex())
         indexList = self.match(start, role, search_item, -1, Qt.MatchFlag.MatchExactly)
@@ -451,7 +450,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
         tree = self._browser()
         self.model = TreeModel(tree)
         # TODO check how self.model should be initialized
-        # self.model = TreeModel(from_qvariant(tree, to_text_string))
+        # self.model = TreeModel(str(tree))
 
         self.treeView.setModel(self.model)
         self.treeView.header().hide()

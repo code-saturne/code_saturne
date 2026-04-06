@@ -48,7 +48,7 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.gui.base.QtPage import IntValidator, DoubleValidator, RegExpValidator
-from code_saturne.gui.base.QtPage import ComboModel, from_qvariant, to_text_string
+from code_saturne.gui.base.QtPage import ComboModel, from_qvariant
 from code_saturne.gui.case.TimeAveragesForm import Ui_TimeAveragesForm
 from code_saturne.model.StartRestartModel import StartRestartModel
 from code_saturne.model.TimeAveragesModel import TimeAveragesModel
@@ -90,7 +90,7 @@ class LabelDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = index.model().data(index, Qt.ItemDataRole.DisplayRole)
         self.old_p_value = str(value)
         editor.setText(value)
 
@@ -174,7 +174,7 @@ class StartValueDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = index.model().data(index, Qt.ItemDataRole.DisplayRole)
         editor.setText(str(value))
 
     def setModelData(self, editor, model, index):
@@ -286,7 +286,7 @@ class StandardItemModelAverage(QStandardItemModel):
         col = index.column()
         row = index.row()
         if col in (1, 2, 4):
-            s_value = str(from_qvariant(value, to_text_string))
+            s_value = str(value)
         if col == 1:
             self.dataAverage[row][col] = s_value
         elif col > 1 and col < 5:

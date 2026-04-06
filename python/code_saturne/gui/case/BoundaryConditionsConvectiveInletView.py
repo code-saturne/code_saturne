@@ -48,7 +48,7 @@ from code_saturne.gui.base.QtWidgets import *
 from code_saturne.gui.case.BoundaryConditionsConvectiveInletForm import Ui_BoundaryConditionsConvectiveInletForm
 
 from code_saturne.model.Common import GuiParam
-from code_saturne.gui.base.QtPage import DoubleValidator, ComboModel, from_qvariant
+from code_saturne.gui.base.QtPage import DoubleValidator, ComboModel
 from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 from code_saturne.model.Boundary import Boundary
 from code_saturne.model.CompressibleModel import CompressibleModel

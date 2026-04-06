@@ -55,7 +55,6 @@ from code_saturne.gui.base import QtPage
 
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam, GuiLabelManager
 from code_saturne.gui.base.QtPage import IntValidator, DoubleValidator, RegExpValidator, ComboModel
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
 from code_saturne.gui.base.QtPage import LabelDelegate, IntegerDelegate
 from code_saturne.gui.base.QtPage import FloatDelegate, ComboDelegate
 from code_saturne.gui.case.CathareCouplingForm import Ui_CathareCouplingForm
@@ -130,7 +129,7 @@ class StandardItemModelCathare(QStandardItemModel):
 
         row = index.row()
         if index.column() in (0, 3, 4):
-            self.dataCathare[row][index.column()] = str(from_qvariant(value, to_text_string))
+            self.dataCathare[row][index.column()] = str(value)
         else:
             self.dataCathare[row][index.column()] = int(value)
 

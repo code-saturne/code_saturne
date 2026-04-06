@@ -49,7 +49,6 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 from code_saturne.gui.base.QtPage import IntValidator, DoubleValidator, RegExpValidator, ComboModel
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
 from code_saturne.gui.case.ImmersedBoundariesVolumicFormNeptune import Ui_ImmersedBoundariesVolumicFormNeptune
 from code_saturne.model.ImmersedBoundariesModel import ImmersedBoundariesModel
 from code_saturne.model.MainFieldsModel import MainFieldsModel
@@ -278,7 +277,7 @@ class StandardItemVolume(QStandardItemModel):
 
 
         elif col == 2:
-            self.data_vol[row][col] = str(from_qvariant(value, to_text_string))
+            self.data_vol[row][col] = str(value)
             self.__model.setObjectMoving(num, self.data_vol[row][col])
 
             is_moving = self.data_vol[row][col]

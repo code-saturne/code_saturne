@@ -57,7 +57,6 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam, GuiLabelManager
 from code_saturne.gui.base.QtPage import IntValidator, RegExpValidator
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
 from code_saturne.gui.case.LocalizationForm import Ui_LocalizationForm
 from code_saturne.gui.case.VolumicZoneAdvancedDialogForm import Ui_VolumicZoneAdvancedDialogForm
 from code_saturne.gui.case.PreProcessingInformationsView import Informations, preprocessorFile
@@ -97,7 +96,7 @@ class LabelDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        v = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        v = index.model().data(index, Qt.ItemDataRole.DisplayRole)
         self.p_value = str(v)
         editor.setText(v)
 
@@ -147,7 +146,7 @@ class CodeNumberDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        v = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        v = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(self.value)
 
 
@@ -195,7 +194,7 @@ class LocalizationSelectorDelegate(QItemDelegate):
         # This line is used to avoid an overlay of old and new text
         editor.setAutoFillBackground(True)
 
-        self.value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        self.value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(self.value)
 
 
@@ -268,7 +267,7 @@ class DefineZonesTableModel(QStandardItemModel):
         new_local = old_local
 
         if col == 0:
-            new_label = from_qvariant(value, to_text_string)
+            new_label = str(value)
             self._data[row][col] = new_label
 
         elif col == 1:
@@ -276,7 +275,7 @@ class DefineZonesTableModel(QStandardItemModel):
             self._data[row][col] = new_code
 
         elif col == 2:
-            new_local = str(from_qvariant(value, to_text_string))
+            new_local = str(value)
             self._data[row][col] = new_local
 
         new_zone = Zone(self.zoneType,

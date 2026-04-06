@@ -50,7 +50,7 @@ from code_saturne.gui.base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.model.Common import GuiParam
-from code_saturne.gui.base.QtPage import ComboModel, IntValidator, DoubleValidator, from_qvariant
+from code_saturne.gui.base.QtPage import ComboModel, IntValidator, DoubleValidator
 from code_saturne.gui.case.OpenTurnsDialogForm import Ui_OpenTurnsDialogForm
 from code_saturne.model.OpenTurnsModel import OpenTurnsModel
 

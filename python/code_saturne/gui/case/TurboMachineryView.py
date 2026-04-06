@@ -46,7 +46,7 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.gui.base.QtPage import ComboModel, RegExpValidator, DoubleValidator
-from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
+from code_saturne.gui.base.QtPage import from_qvariant
 from code_saturne.gui.case.TurboMachineryForm import Ui_TurboMachineryForm
 from code_saturne.model.TurboMachineryModel import TurboMachineryModel
 from code_saturne.gui.case.FacesSelectionView import StandardItemModelFaces
@@ -79,7 +79,7 @@ class LineEditDelegateSelector(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 
@@ -107,7 +107,7 @@ class VelocityDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 
@@ -182,7 +182,7 @@ class StandardItemModelRotor(QStandardItemModel):
             self._data[row][col] = vel
             self.mdl.setRotorVelocity(row, vel)
         elif col == 1:
-            criteria = from_qvariant(value, to_text_string)
+            criteria = str(value)
             self._data[row][col] = criteria
             self.mdl.setRotorCriteria(row, criteria)
 

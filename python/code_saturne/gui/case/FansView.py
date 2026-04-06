@@ -46,7 +46,7 @@ from code_saturne.gui.base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.gui.base.QtPage import RegExpValidator, IntValidator, DoubleValidator
-from code_saturne.gui.base.QtPage import ComboModel, from_qvariant, to_text_string
+from code_saturne.gui.base.QtPage import ComboModel, from_qvariant
 from code_saturne.gui.case.FansForm import Ui_FansForm
 from code_saturne.model.FansModel import FansModel
 from code_saturne.gui.case.FacesSelectionView import StandardItemModelFaces
@@ -82,7 +82,7 @@ class LineEditDelegateIndex(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 
@@ -114,7 +114,7 @@ class LineEditDelegateFloat(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.ItemDataRole.DisplayRole), to_text_string)
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 
@@ -225,23 +225,23 @@ class StandardItemModelFans(QStandardItemModel):
             new_code = int(value)
             self._data[row][col] = new_code
         elif col == 1:
-            criteria = str(from_qvariant(value, to_text_string))
+            criteria = str(value)
             self._data[row][col] = criteria
             self.mdl.setFanMeshDimension(row, criteria)
         elif col == 2:
-            criteria = str(from_qvariant(value, to_text_string))
+            criteria = str(value)
             self._data[row][col] = criteria
             self.mdl.setFanProperty(row, "fan_radius", criteria)
         elif col == 3:
-            criteria = str(from_qvariant(value, to_text_string))
+            criteria = str(value)
             self._data[row][col] = criteria
             self.mdl.setFanProperty(row, "hub_radius", criteria)
         elif col == 4:
-            criteria = str(from_qvariant(value, to_text_string))
+            criteria = str(value)
             self._data[row][col] = criteria
             self.mdl.setFanProperty(row, "axial_torque", criteria)
         elif col == 5:
-            criteria = str(from_qvariant(value, to_text_string))
+            criteria = str(value)
             self._data[row][col] = criteria
             self.mdl.setFanProperty(row, "blades_radius", criteria)
 
