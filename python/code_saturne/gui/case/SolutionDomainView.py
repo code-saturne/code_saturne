@@ -110,10 +110,10 @@ class MeshFormatDelegate(QItemDelegate):
         self.lst = MeshModel().getBuildFormatList()
         # Compute width based on longest possible string and font metrics
         fm = self.parent.fontMetrics()
-        self.textSize = fm.size(Qt.TextSingleLine, 'I-deas universal')
+        self.textSize = fm.size(Qt.TextFlag.TextSingleLine, 'I-deas universal')
         self.textSize.setHeight(1)
         for i in range(len(self.lst)):
-            w = fm.size(Qt.TextSingleLine, str(self.lst[i][1])).width()
+            w = fm.size(Qt.TextFlag.TextSingleLine, str(self.lst[i][1])).width()
             if w > self.textSize.width():
                 self.textSize.setWidth(w)
 
@@ -1032,7 +1032,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
             elif row[1] in ['med', 'ensight']:
                 n_num += 1
             if row[7] != None:
-                cmp_width = fm.size(Qt.TextSingleLine, str(row[7])).width()
+                cmp_width = fm.size(Qt.TextFlag.TextSingleLine, str(row[7])).width()
                 if cmp_width > last_width:
                     last_width = cmp_width
 

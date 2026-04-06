@@ -1,5 +1,5 @@
 <RCC>
-  <qresource prefix="/new/prefix1">
+  <qresource prefix="/">
     <file>../../data/icons/22x22/edit-clear.png</file>
     <file>../../data/icons/22x22/add.png</file>
     <file>../../data/icons/22x22/remove.png</file>

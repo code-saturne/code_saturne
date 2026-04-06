@@ -22,7 +22,7 @@ def CompletionTextEdit(target):
 
         completer.setWidget(target)
         completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
-        completer.setCaseSensitivity(Qt.CaseInsensitive)
+        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         target.completer = completer
         completer.setWidget(target)
         completer.activated.connect(target.insertCompletion)

@@ -53,6 +53,9 @@ from code_saturne.gui.base.QtPage import from_qvariant, to_text_string
 from code_saturne.model.Common import GuiParam, GuiLabelManager
 from code_saturne.gui.case.FacesSelectionForm import Ui_FacesSelectionForm
 
+if QT_API == "PYQT6":
+    from code_saturne.gui.case import resources_pages_rc
+
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -320,11 +323,11 @@ class StandardItemModelFaces(QStandardItemModel):
 class FacesSelectionView(QWidget, Ui_FacesSelectionForm):
     """
     """
-    def __init__(self, *args):
+    def __init__(self, parent):
         """
         Constructor.
         """
-        QWidget.__init__(self, *args)
+        QWidget.__init__(self, parent)
         Ui_FacesSelectionForm.__init__(self)
         self.setupUi(self)
 

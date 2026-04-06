@@ -180,7 +180,7 @@ class StandardItemModelThinWall(QStandardItemModel):
                          self.tr("selector")]
 
         self.setColumnCount(len(self.headers))
-        self.parent = parent
+        self.parent_widget = parent
 
         self.tooltip = []
 
@@ -294,7 +294,7 @@ class StandardItemModelExtrude(QStandardItemModel):
                          self.tr("selector")]
 
         self.setColumnCount(len(self.headers))
-        self.parent = parent
+        self.parent_widget = parent
 
         self.tooltip = []
 

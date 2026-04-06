@@ -160,7 +160,7 @@
          </property>
          <property name="icon">
           <iconset resource="resources_pages.qrc">
-           <normaloff>:/new/prefix1/data/icons/22x22/preferences-system.png</normaloff>:/new/prefix1/data/icons/22x22/preferences-system.png</iconset>
+           <normaloff>:data/icons/22x22/preferences-system.png</normaloff>:data/icons/22x22/preferences-system.png</iconset>
          </property>
          <property name="iconSize">
           <size>
