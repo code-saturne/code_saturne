@@ -261,7 +261,7 @@ public:
     cs_real_t           *rhs_pvar /*!<[in] pointer to high level rhs array */
   )
   {
-    const int i_stg = _i_stage - 1;
+    const int i_stg = _i_stage;
     auto rhs = _rhs_stages.sub_view(i_stg);
 
     ctx.parallel_for(_n_elts, CS_LAMBDA (cs_lnum_t e_id) {
