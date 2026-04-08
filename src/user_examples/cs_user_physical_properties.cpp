@@ -256,15 +256,11 @@ cs_user_physical_properties_turb_viscosity
   cs_lnum_t n_cells_ext = domain->mesh->n_cells_with_ghosts;
 
   /* Recompute Mij:Mij and Lij:Mij */
-  cs_real_t  *mijlij;
-  cs_real_t  *mijmij;
-  cs_real_t *s_n, *sf_n;
-  cs_real_3_t *f_vel;
-  CS_MALLOC(mijlij, n_cells_ext, cs_real_t);
-  CS_MALLOC(mijmij, n_cells_ext, cs_real_t);
-  CS_MALLOC(s_n, n_cells_ext, cs_real_t);
-  CS_MALLOC(sf_n, n_cells_ext, cs_real_t);
-  CS_MALLOC(f_vel, n_cells_ext, cs_real_3_t);
+  cs_array<cs_real_t> mijlij(n_cells_ext);
+  cs_array<cs_real_t> mijmij(n_cells_ext);
+  cs_array<cs_real_t> s_n(n_cells_ext);
+  cs_array<cs_real_t> sf_n(n_cells_ext);
+  cs_array_2d<cs_real_t> f_vel(n_cells_ext, 3);
 
   /* Compute:
    *   s_n (aka sqrt(2SijSij))
@@ -273,7 +269,11 @@ cs_user_physical_properties_turb_viscosity
    *   Mij:Mij
    *   Lij:Mij
    */
-  cs_les_mu_t_smago_dyn_prepare(s_n, sf_n, f_vel, mijmij, mijlij);
+  cs_les_mu_t_smago_dyn_prepare(s_n.data(),
+                                sf_n.data(),
+                                f_vel.data<cs_real_3_t>(),
+                                mijmij.data(),
+                                mijlij.data());
 
   const cs_lnum_t n_cells = domain->mesh->n_cells;
   const cs_real_t tot_vol = domain->mesh_quantities->tot_vol;
@@ -289,13 +289,6 @@ cs_user_physical_properties_turb_viscosity
     mijlijmoy += mijlij[c_id]*cell_vol[c_id];
     mijmijmoy += mijmij[c_id]*cell_vol[c_id];
   }
-
-  /* Free memory */
-  CS_FREE(s_n);
-  CS_FREE(sf_n);
-  CS_FREE(f_vel);
-  CS_FREE(mijmij);
-  CS_FREE(mijlij);
 
   cs_parall_sum(1, CS_REAL_TYPE, &mijlijmoy);
   cs_parall_sum(1, CS_REAL_TYPE, &mijmijmoy);

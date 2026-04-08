@@ -671,8 +671,7 @@ cs_user_postprocess_values
 
     if (cs_glob_turb_model->itytur == 3) {
 
-      cs_real_t *s_cell;
-      CS_MALLOC(s_cell, n_cells, cs_real_t);
+      cs_array<cs_real_t> s_cell(n_cells);
 
       const cs_real_6_t *cvar_r = (const cs_real_6_t *)(CS_F_(rij)->val);
       for (cs_lnum_t i = 0; i < n_cells; i++) {
@@ -689,21 +688,20 @@ cs_user_postprocess_values
                         true,                           /* interlace, */
                         false,                          /* use_parent */
                         CS_POST_TYPE_cs_real_t,         /* var_type */
-                        s_cell,                         /* cel_vals */
-                        nullptr,                           /* i_face_vals */
-                        nullptr,                           /* b_face_vals */
+                        s_cell.data(),                  /* cell_vals */
+                        nullptr,                        /* i_face_vals */
+                        nullptr,                        /* b_face_vals */
                         ts);
 
       /* Reynolds stresses invariants:
        * compute xsi and eta invariant of the Lumley triangle */
 
-      cs_real_2_t *inv = nullptr;
-      CS_MALLOC(inv, n_cells, cs_real_2_t);
+      cs_array_2d<cs_real_t> inv(n_cells, 2);
 
       cs_post_anisotropy_invariant(n_cells,
                                    cell_list,
                                    nullptr, /* coords */
-                                   inv);
+                                   inv.data<cs_real_2_t>());
 
       cs_post_write_var(mesh_id,
                         CS_POST_WRITER_ALL_ASSOCIATED,  /* writer id filter */
@@ -712,14 +710,10 @@ cs_user_postprocess_values
                         true,                           /* interlace, */
                         false,                          /* use_parent */
                         CS_POST_TYPE_cs_real_t,         /* var_type */
-                        inv,                            /* cel_vals */
-                        nullptr,                           /* i_face_vals */
-                        nullptr,                           /* b_face_vals */
+                        inv.data<cs_real_2_t>(),        /* cel_vals */
+                        nullptr,                        /* i_face_vals */
+                        nullptr,                        /* b_face_vals */
                         ts);
-
-      CS_FREE(s_cell);
-      CS_FREE(inv);
-
     }
 
   }
@@ -739,12 +733,13 @@ cs_user_postprocess_values
 
     const cs_mesh_t *m = cs_glob_mesh;
 
-    cs_real_t *s_i_faces = nullptr, *s_b_faces = nullptr;
+    cs_array<cs_real_t> s_i_faces;
+    cs_array<cs_real_t> s_b_faces;
 
     /* Interior faces  */
 
     if (n_i_faces > 0) {
-      CS_MALLOC(s_i_faces, n_i_faces, cs_real_t);
+      s_i_faces.reshape(n_i_faces);
 
       for (cs_lnum_t i = 0; i < n_i_faces; i++) {
         cs_lnum_t face_id = i_face_list[i];
@@ -758,7 +753,7 @@ cs_user_postprocess_values
     /* Boundary faces  */
 
     if (n_b_faces > 0) {
-      CS_MALLOC(s_b_faces, n_b_faces, cs_real_t);
+      s_b_faces.reshape(n_b_faces);
 
       for (cs_lnum_t i = 0; i < n_b_faces; i++) {
         cs_lnum_t face_id = b_face_list[i];
@@ -775,13 +770,10 @@ cs_user_postprocess_values
                       true,                           /* interlace, */
                       false,                          /* use_parent */
                       CS_POST_TYPE_cs_real_t,         /* var_type */
-                      nullptr,                           /* cel_vals */
-                      s_i_faces,                      /* i_face_vals */
-                      s_b_faces,                      /* b_face_vals */
+                      nullptr,                        /* cell_vals */
+                      s_i_faces.data(),               /* i_face_vals */
+                      s_b_faces.data(),               /* b_face_vals */
                       ts);
-
-    CS_FREE(s_i_faces);
-    CS_FREE(s_b_faces);
   }
   /*< [postprocess_values_ex_2] */
 

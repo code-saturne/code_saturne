@@ -78,14 +78,12 @@ _g3_boundary_cells([[maybe_unused]] void   *input,
   /* Allocate selection list */
 
   cs_lnum_t n_b_faces = 0;
-  cs_lnum_t *b_face_ids = nullptr;
 
-  CS_MALLOC(b_face_ids, m->n_b_faces, cs_lnum_t);
+  cs_array<cs_lnum_t> b_face_ids(m->n_b_faces);
 
-  cs_selector_get_b_face_list("G3", &n_b_faces, b_face_ids);
+  cs_selector_get_b_face_list("G3", &n_b_faces, b_face_ids.data());
 
-  char *cell_flag;
-  CS_MALLOC(cell_flag, m->n_cells, char);
+  cs_array<char> cell_flag(m->n_cells);
 
   for (cs_lnum_t i = 0; i < m->n_cells; i++)
     cell_flag[i] = 0;
@@ -116,11 +114,6 @@ _g3_boundary_cells([[maybe_unused]] void   *input,
       _n_elts++;
     }
   }
-
-  /* Free memory */
-
-  CS_FREE(b_face_ids);
-  CS_FREE(cell_flag);
 
   /* Set return values */
 
