@@ -64,7 +64,6 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
   /*! [local_variables] */
 
   cs_lnum_t n_faces;
-  cs_lnum_t *face_list;
 
   cs_lnum_t cell_id, cell_id1, cell_id2, face_id;
   int nt_cur = domain->time_step->nt_cur;
@@ -164,23 +163,20 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 
   /* Reconstructed value */
   if (false) {
-    cs_real_3_t *grad;
-    CS_MALLOC(grad, n_cells_ext, cs_real_3_t);
+    cs_array_2d<cs_real_t> grad(n_cells_ext, 3);
 
     cs_field_gradient_scalar(h,
                              true, /* use_previous_t */
                              1, /* inc */
-                             grad);
+                             grad.data<cs_real_3_t>());
 
     for (face_id = 0; face_id < n_b_faces; face_id++) {
       cell_id = b_face_cells[face_id]; // associated boundary cell
       h_reconstructed[face_id] = h->val[cell_id]
-                               + grad[cell_id][0]*diipb[face_id][0]
-                               + grad[cell_id][1]*diipb[face_id][1]
-                               + grad[cell_id][2]*diipb[face_id][2];
+                               + grad(cell_id, 0)*diipb[face_id][0]
+                               + grad(cell_id, 1)*diipb[face_id][1]
+                               + grad(cell_id, 2)*diipb[face_id][2];
     }
-
-    CS_FREE(grad);
 
   /* Non-reconstructed value */
   } else {
@@ -252,9 +248,9 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
     Compute the contribution from walls with colors 2, 3, 4 and 7
     (adiabatic here, so flux should be 0)
   */
-  CS_MALLOC(face_list, n_b_faces, cs_lnum_t);
+  cs_array<cs_lnum_t> face_list(n_b_faces);
 
-  cs_selector_get_b_face_list("2 or 3 or 4 or 7", &n_faces, face_list);
+  cs_selector_get_b_face_list("2 or 3 or 4 or 7", &n_faces, face_list.data());
 
   for (cs_lnum_t i = 0; i < n_faces; i++) {
 
@@ -275,7 +271,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
     Contribution from walls with color 6
     (here at fixed enthalpy; the convective flux should be 0)
   */
-  cs_selector_get_b_face_list("6", &n_faces, face_list);
+  cs_selector_get_b_face_list("6", &n_faces, face_list.data());
 
   for (cs_lnum_t i = 0; i < n_faces; i++) {
 
@@ -295,7 +291,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
   /*
     Contribution from symmetries (should be 0).
   */
-  cs_selector_get_b_face_list("8 or 9", &n_faces, face_list);
+  cs_selector_get_b_face_list("8 or 9", &n_faces, face_list.data());
 
   for (cs_lnum_t i = 0; i < n_faces; i++) {
 
@@ -315,7 +311,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
   /*
     Contribution from inlet (color 1, diffusion and convection flux)
   */
-  cs_selector_get_b_face_list("1", &n_faces, face_list);
+  cs_selector_get_b_face_list("1", &n_faces, face_list.data());
 
   for (cs_lnum_t i = 0; i < n_faces; i++) {
 
@@ -335,7 +331,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
   /*
     Contribution from outlet (color 5, diffusion and convection flux)
   */
-  cs_selector_get_b_face_list("5", &n_faces, face_list);
+  cs_selector_get_b_face_list("5", &n_faces, face_list.data());
 
   for (cs_lnum_t i = 0; i < n_faces; i++) {
 
@@ -353,7 +349,6 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
   }
 
   /* Free memory */
-  CS_FREE(face_list);
 
   /* Sum of values on all ranks (parallel calculations) */
 

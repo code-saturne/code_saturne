@@ -175,8 +175,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
      */
 
     const cs_lnum_t n_cells = domain->mesh->n_cells;
-    cs_real_t *rho_cp = nullptr;
-    CS_MALLOC(rho_cp, n_cells, cs_real_t);
+    cs_array<cs_real_t> rho_cp(n_cells);
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       rho_cp[c_id] = CS_F_(cp)->val[c_id] * CS_F_(rho)->val[c_id];
@@ -185,10 +184,9 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 
     cs_real_t t_bulk = cs_medcoupling_slice_scalar_mean_weighted("disc1",
                                                                  CS_F_(t)->val,
-                                                                 rho_cp,
+                                                                 rho_cp.data(),
                                                                  cvar_vel);
 
-    CS_FREE(rho_cp);
     /*![medcpl_slice_integral_weighted]*/
   }
 }

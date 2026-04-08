@@ -171,14 +171,13 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
   /* on the rotor blades */
 
   cs_lnum_t n_elts;
-  cs_lnum_t *elt_list;
 
-  CS_MALLOC(elt_list, n_b_faces, cs_lnum_t);
-  cs_selector_get_b_face_list("rotor_blades", &n_elts, elt_list);
+  cs_array<cs_lnum_t> elt_list(n_b_faces);
+  cs_selector_get_b_face_list("rotor_blades", &n_elts, elt_list.data());
 
-  cs_real_t c = cs_post_moment_of_force(n_elts, elt_list, axis);
+  cs_real_t c = cs_post_moment_of_force(n_elts, elt_list.data(), axis);
 
-  CS_FREE(elt_list);
+  elt_list.clear(); // Free internal memory now
 
   /* Postprocessing of the head: total pressure increase through the machinery */
 

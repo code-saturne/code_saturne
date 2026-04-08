@@ -145,7 +145,6 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
   int  len;
 
   char  *postlabel = nullptr;
-  double  *ddip = nullptr, *rpex = nullptr;
 
   const double  tcur = time_step->t_cur;
   const cs_lnum_t  n_vertices = cdoq->n_vertices;
@@ -187,9 +186,9 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
        ddip = rpex - pdi
     */
 
-    CS_MALLOC(rpex, n_vertices, double);
-    CS_MALLOC(ddip, n_vertices, double);
-    get_sol(tcur, n_vertices, nullptr, cdoq->vtx_coord, true, nullptr, rpex);
+    cs_array<double> rpex(n_vertices);
+    cs_array<double> ddip(n_vertices);
+    get_sol(tcur, n_vertices, nullptr, cdoq->vtx_coord, true, nullptr, rpex.data());
     for (int i = 0; i < n_vertices; i++)
       ddip[i] = rpex[i] - pdi[i];
 
@@ -204,7 +203,7 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
                              false,       /* interlace */
                              true,        /* parent mesh */
                              CS_POST_TYPE_cs_real_t,
-                             ddip,        /* values on vertices */
+                             ddip.data(), /* values on vertices */
                              time_step);  /* time step structure */
 
     sprintf(postlabel, "%s.RefSol", field->name);
@@ -215,14 +214,12 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
                              false,       /* interlace */
                              true,        /* parent mesh */
                              CS_POST_TYPE_cs_real_t,
-                             rpex,        /* values on vertices */
+                             rpex.data(), /* values on vertices */
                              time_step);  /* time step structure */
 
     /* Free */
 
     CS_FREE(postlabel);
-    CS_FREE(ddip);
-    CS_FREE(rpex);
   }
 }
 

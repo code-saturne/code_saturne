@@ -98,19 +98,17 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
     const cs_field_t *mu = CS_F_(mu);
 
     cs_lnum_t nlelt;
-    cs_lnum_t *lstelt;
-    CS_MALLOC(lstelt, n_b_faces, cs_lnum_t);
+    cs_array<cs_lnum_t> lstelt(n_b_faces);
 
     cs_selector_get_b_face_list
       ("normal[0, -1, 0, 0.1] and box[-1000, -1000, -1000, 1000, 0.01, 1000]",
-       &nlelt, lstelt);
+       &nlelt, lstelt.data());
     /*! [loc_var_f_user] */
 
     /* Compute value reconstructed at I' for boundary faces */
 
     /*! [compute_nusselt] */
-    cs_real_t *treloc;
-    CS_MALLOC(treloc, nlelt, cs_real_t);
+    cs_array<cs_real_t> treloc(nlelt);
 
     int iortho = 0;
     /*! [compute_nusselt] */
@@ -119,7 +117,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 
     /*! [gen_nusselt] */
     if (iortho == 0) {
-      cs_post_field_cell_to_b_face_values(f, nlelt, lstelt, treloc);
+      cs_post_field_cell_to_b_face_values(f, nlelt, lstelt.data(), treloc.data());
     }
     /*! [gen_nusselt] */
 
@@ -146,26 +144,20 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
     cs_gnum_t neltg = nlelt;
     cs_parall_counter(&neltg, 1);
 
-    cs_real_t *xabs = nullptr, *xabsg = nullptr, *xnusselt = nullptr;
-    cs_real_t *treglo = nullptr;
+    cs_array<cs_real_t> xabs(nlelt);
 
-    CS_MALLOC(xabs, nlelt, cs_real_t);
-
-    CS_MALLOC(xnusselt, neltg, cs_real_t);
-    CS_MALLOC(xabsg, neltg, cs_real_t);
-    CS_MALLOC(treglo, neltg, cs_real_t);
+    cs_array<cs_real_t> xnusselt(neltg);
+    cs_array<cs_real_t> xabsg(neltg);
+    cs_array<cs_real_t> treglo(neltg);
 
     for (cs_lnum_t ilelt = 0; ilelt < nlelt; ilelt ++) {
       cs_lnum_t face_id = lstelt[ilelt];
       xabs[ilelt] = cdgfbo[face_id][0];
     }
 
-    cs_parall_allgather_ordered_r(nlelt, neltg, 1, xabs, xabs, xabsg);
-    cs_parall_allgather_ordered_r(nlelt, neltg, 1, xabs, treloc, treglo);
+    cs_parall_allgather_ordered_r(nlelt, neltg, 1, xabs.data(), xabs.data(), xabsg.data());
+    cs_parall_allgather_ordered_r(nlelt, neltg, 1, xabs.data(), treloc.data(), treglo.data());
 
-    CS_FREE(xabs);
-    CS_FREE(treloc);
-    CS_FREE(lstelt);
     /*! [value_ortho_nusselt] */
 
     /* Calculation of the bulk temperature and compute Nusselt number */
@@ -235,9 +227,6 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
     if (file != nullptr)
       fclose(file);
 
-    CS_FREE(xnusselt);
-    CS_FREE(xabsg);
-    CS_FREE(treglo);
     /*! [bulk_nusselt] */
   }
 }

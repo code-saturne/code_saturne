@@ -106,13 +106,12 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 
     cs_lnum_t   n_selected_faces   = 0;
     cs_gnum_t   n_selected_faces_g = 0;
-    cs_lnum_t  *selected_faces = nullptr;
 
-    CS_MALLOC(selected_faces, n_b_faces, cs_lnum_t);
+    cs_array<cs_lnum_t> selected_faces(n_b_faces);
 
     cs_selector_get_b_face_list(criteria,
                                 &n_selected_faces,
-                                selected_faces);
+                                selected_faces.data());
 
     /* Get the total number of faces shared on all ranks */
     n_selected_faces_g = n_selected_faces;
@@ -179,7 +178,6 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
     }
 
     /* Free allocated memory */
-    CS_FREE(selected_faces);
   }
 }
 
