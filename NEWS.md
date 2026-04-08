@@ -3,6 +3,10 @@ Release 8.0.6 (unreleased)
 
 ### Bug fixes:
 
+- MEDCoupling: Fix InterpKernelDEC creation when not all instances communicate.
+  When not all ranks were participating, mainly when more than 2 codes were
+  running, a deadlock could occur in the InterpKernelDEC creation.
+
 - ALE: fix incorrect index for z-component of fluid velocity in
   fixed-displacement boundary conditions..
 
