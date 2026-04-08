@@ -134,6 +134,12 @@ struct _cs_paramedmem_coupling_t {
 
 #endif
 
+#if defined(HAVE_MPI)
+  MPI_Comm comm;
+#else
+  int comm;
+#endif
+
   int  dec_synced;
 
 };
@@ -282,6 +288,7 @@ static int
 _add_paramedmem_coupling(const std::string            cpl_name,
                          ple_coupling_mpi_set_info_t  apps[2])
 {
+#if defined(HAVE_MPI)
   cs_paramedmem_coupling_t *c = new cs_paramedmem_coupling_t();
 
   c->dec_synced = 0;
@@ -291,25 +298,77 @@ _add_paramedmem_coupling(const std::string            cpl_name,
   for (int i = 0; i < 2; i++)
     c->apps[i] = apps[i];
 
+  // Create intracomm if more than 2 apps, to avoid deadlock inside MEDCoupling
+  const ple_coupling_mpi_set_t *mpi_apps = cs_coupling_get_mpi_apps();
+  const int n_apps = ple_coupling_mpi_set_n_apps(mpi_apps);
+
+  const MPI_Comm _set_comm = ple_coupling_mpi_set_get_base_comm(mpi_apps);
+  c->comm = _set_comm;
+
+  std::set<int> grp1_ids;
+  std::set<int> grp2_ids;
+
+  if (n_apps > 2) {
+    const int app_id = ple_coupling_mpi_set_get_app_id(mpi_apps);
+    ple_coupling_mpi_set_info_t _app =
+      ple_coupling_mpi_set_get_info(mpi_apps, app_id);
+
+    int dist_root = -1;
+    int loc_id = -1;
+    if (_app.root_rank == apps[0].root_rank) {
+      dist_root = apps[1].root_rank;
+      loc_id = 0;
+    }
+    else if (_app.root_rank == apps[1].root_rank) {
+      dist_root = apps[0].root_rank;
+      loc_id = 1;
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Could not find partner app...\n", __func__);
+
+    int local_range[2] = {-1, -1};
+    int distant_range[2] = {-1, -1};
+    ple_coupling_mpi_intracomm_create(_set_comm,
+                                      cs_glob_mpi_comm,
+                                      dist_root,
+                                      &(c->comm),
+                                      local_range,
+                                      distant_range);
+    if (loc_id == 0) {
+      for (int i = local_range[0]; i < local_range[1]; i++)
+        grp1_ids.insert(i);
+      for (int i = distant_range[0]; i < distant_range[1]; i++)
+        grp2_ids.insert(i);
+    }
+    else {
+      for (int i = local_range[0]; i < local_range[1]; i++)
+        grp2_ids.insert(i);
+      for (int i = distant_range[0]; i < distant_range[1]; i++)
+        grp1_ids.insert(i);
+    }
+  }
+  else {
+    for (int i = 0; i < apps[0].n_ranks; i++)
+      grp1_ids.insert(apps[0].root_rank + i);
+    for (int i = 0; i < apps[1].n_ranks; i++)
+      grp2_ids.insert(apps[1].root_rank + i);
+  }
   /* Set coupling name */
   c->name = cpl_name;
 
   c->mesh = nullptr;
 
-  std::set<int> grp1_ids;
-  std::set<int> grp2_ids;
-  for (int i = 0; i < apps[0].n_ranks; i++)
-    grp1_ids.insert(apps[0].root_rank + i);
-  for (int i = 0; i < apps[1].n_ranks; i++)
-    grp2_ids.insert(apps[1].root_rank + i);
-
-  c->dec = new InterpKernelDEC(grp1_ids, grp2_ids);
+  c->dec = new InterpKernelDEC(grp1_ids, grp2_ids, c->comm);
 
   _paramed_couplers.push_back(c);
 
   int retval = _paramed_couplers.size() - 1;
 
   return retval;
+#else
+  return -1;
+#endif
 }
 
 /*----------------------------------------------------------------------------*/

@@ -3,6 +3,10 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- MEDCoupling: Fix InterpKernelDEC creation when not all instances communicate.
+  When not all ranks were participating, mainly when more than 2 codes were
+  running, a deadlock could occur in the InterpKernelDEC creation.
+
 - GUI: fix splash-screen and application icon (purely cosmetic).
 
 - Radiative FSCK model: fix out-of-bounds error in interpolation.
