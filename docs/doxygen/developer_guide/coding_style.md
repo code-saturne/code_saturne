@@ -88,6 +88,40 @@ followed:
 - No white space before a closing parenthesis, white-space after a closing
   parenthesis.
 
+- Keep blank lines spacing symmetric: if there is a line after an opening
+  brace, there should also be one after the closing brace, and vice-versa.
+
+  For example, the following styles are valid:
+  ```
+  (
+    for (cs_lnum_t i = 0; i < stride; i++) {
+      w2[c_id][i] = (pvar[c_id][i] - p_mean[i]);
+    }
+  }
+  ```
+
+  and:
+  ```
+  (
+    for (cs_lnum_t i = 0; i < stride; i++) {
+
+      w2[c_id][i] = (pvar[c_id][i] - p_mean[i]);
+
+    }
+  }
+  ```
+
+  though in general, the denser style is preferred for short
+  code blocks, and the one with more spacing for larger blocks.
+
+- There should always be a blank line between code or comments and "full-width"
+  separators, for example:
+  ```
+  /*=========================================================================*/
+
+  /* Section starts here */
+  ```
+
 C and C++ coding style
 ======================
 
