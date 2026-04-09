@@ -380,59 +380,34 @@ public:
    * \param[in]  name    name of field
    * \param[in]  values  array of values to write
    *                     (defined on parent mesh location)
+   * \param[in] use_list_elt  Copy values from associated ParaFIELD structure to
+   * array defined on mesh location corresponding to coupled elements (and
+   * associated ParaMESH).
    */
   /*----------------------------------------------------------------------------*/
 
   void
-  set_values(const char *name, const double values[]);
-
-  /*----------------------------------------------------------------------------*/
-  /*!
-   * \brief Assign values based on mesh location corresponding to coupled
-   *        elements (and associated ParaMESH) to associated ParaFIELD objects.
-   *
-   * If the whole mesh is coupled, the behavior is the sames as that of
-   * \ref set_values.
-   *
-   * \param[in]  name    name of field
-   * \param[in]  values  array of values to write
-   *                     (defined on selected mesh subset)
-   */
-  /*----------------------------------------------------------------------------*/
-
-  void
-  set_values_l(const char *name, const double values[]);
+  set_values(const char  *name,
+             const double values[],
+             const bool   use_list_elt = true);
 
   /*----------------------------------------------------------------------------*/
   /*!
    * \brief Copy values from associated ParaFIELD object to array defined
    *        parent mesh location.
    *
-   * \param[in]  c       pointer to cs_paramedmem_coupling_t structure
    * \param[in]  name    name of field
    * \param[in]  values  array in which values will be stored
+   * \param[in] use_list_elt  Copy values from associated ParaFIELD structure to
+   * array defined on mesh location corresponding to coupled elements (and
+   * associated ParaMESH).
    */
   /*----------------------------------------------------------------------------*/
 
   void
-  get_values(const char *name, double values[]) const;
-
-  /*----------------------------------------------------------------------------*/
-  /*!
-   * \brief Copy values from associated ParaFIELD structure to array defined
-   *        on mesh location corresponding to coupled elements
-   *        (and associated ParaMESH).
-   *
-   * If the whole mesh is coupled, the behavior is the sames as that of
-   * \ref get_values.
-   *
-   * \param[in]  name    name of field
-   * \param[in]  values  array in which values will be stored
-   */
-  /*----------------------------------------------------------------------------*/
-
-  void
-  get_values_l(const char *name, double values[]) const;
+  get_values(const char *name,
+             double      values[],
+             const bool  use_list_elt = true) const;
 
   /*----------------------------------------------------------------------------*/
   /*!
@@ -451,24 +426,16 @@ public:
    *
    * \param[in] name  name of field
    * \param[in] vals  array of values to write
+   * \param[in] use_list_elt  Copy values from associated ParaFIELD structure to
+   * array defined on mesh location corresponding to coupled elements (and
+   * associated ParaMESH).
    */
   /*----------------------------------------------------------------------------*/
 
   void
-  send_data(const char *name, const double *vals);
-
-  /*----------------------------------------------------------------------------*/
-  /*!
-   * \brief Send values of a field. If vals pointer is non-null,
-   * values are updated before send
-   *
-   * \param[in] name  name of field
-   * \param[in] vals  array of values to write
-   */
-  /*----------------------------------------------------------------------------*/
-
-  void
-  send_data_l(const char *name, const double *vals);
+  send_data(const char   *name,
+            const double *vals,
+            const bool    use_list_elt = true);
 
   /*----------------------------------------------------------------------------*/
   /*!
@@ -486,23 +453,14 @@ public:
    *
    * \param[in] name  name of field
    * \param[in] vals  array of values to read
+   * \param[in] use_list_elt  Copy values from associated ParaFIELD structure to
+   * array defined on mesh location corresponding to coupled elements (and
+   * associated ParaMESH).
    */
   /*----------------------------------------------------------------------------*/
 
   void
-  recv_data(const char *name, double *vals);
-
-  /*----------------------------------------------------------------------------*/
-  /*!
-   * \brief Receive values of a field.
-   *
-   * \param[in] name  name of field
-   * \param[in] vals  array of values to read
-   */
-  /*----------------------------------------------------------------------------*/
-
-  void
-  recv_data_l(const char *name, double *vals);
+  recv_data(const char *name, double *vals, const bool use_list_elt = true);
 
   /*----------------------------------------------------------------------------*/
   /*!

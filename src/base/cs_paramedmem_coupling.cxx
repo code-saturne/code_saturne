@@ -1117,11 +1117,16 @@ _cs_paramedmem_coupling_t::add_field(const cs_field_t        *f,
  * \param[in]  name    name of field
  * \param[in]  values  array of values to write
  *                     (defined on parent mesh location)
+ * \param[in] use_list_elt  Copy values from associated ParaFIELD structure to
+ * array defined on mesh location corresponding to coupled elements (and
+ * associated ParaMESH).
  */
 /*----------------------------------------------------------------------------*/
 
 void
-_cs_paramedmem_coupling_t::set_values(const char *name, const double values[])
+_cs_paramedmem_coupling_t::set_values(const char  *name,
+                                      const double values[],
+                                      const bool   use_list_elt)
 {
 #if !defined(HAVE_PARAMEDMEM)
 
@@ -1135,13 +1140,15 @@ _cs_paramedmem_coupling_t::set_values(const char *name, const double values[])
   /* Assign element values */
   cs_lnum_t *elt_list = nullptr;
   cs_lnum_t  n_elts   = 0;
-  if (f->getTypeOfField() == ON_NODES) {
-    elt_list = this->mesh->vtx_list;
-    n_elts   = this->get_n_vertices();
-  }
-  else {
-    elt_list = this->mesh->elt_list;
-    n_elts   = this->get_n_elts();
+  if (use_list_elt) {
+    if (f->getTypeOfField() == ON_NODES) {
+      elt_list = this->mesh->vtx_list;
+      n_elts   = this->get_n_vertices();
+    }
+    else {
+      elt_list = this->mesh->elt_list;
+      n_elts   = this->get_n_elts();
+    }
   }
 
   if (elt_list == nullptr) {
@@ -1164,53 +1171,21 @@ _cs_paramedmem_coupling_t::set_values(const char *name, const double values[])
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Assign values based on mesh location corresponding to coupled
- *        elements (and associated ParaMESH) to associated ParaFIELD objects.
- *
- * If the whole mesh is coupled, the behavior is the sames as that of
- * \ref set_values.
- *
- * \param[in]  name    name of field
- * \param[in]  values  array of values to write
- *                     (defined on selected mesh subset)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-_cs_paramedmem_coupling_t::set_values_l(const char *name, const double values[])
-{
-#if !defined(HAVE_PARAMEDMEM)
-
-  CS_NO_WARN_IF_UNUSED(name);
-  CS_NO_WARN_IF_UNUSED(values);
-
-  this->_error_without_paramedmem();
-
-#else
-
-  MEDCouplingFieldDouble *f = this->_get_field(name);
-
-  double         *val_ptr = f->getArray()->getPointer();
-  const cs_lnum_t n_vals  = (cs_lnum_t)f->getNumberOfValues();
-
-  /* Assign element values */
-  cs_array_copy(n_vals, values, val_ptr);
-
-#endif
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Copy values from associated ParaFIELD object to array defined
  *        parent mesh location.
  *
  * \param[in]  name    name of field
  * \param[in]  values  array in which values will be stored
+ *     \param[in] use_list_elt  Copy values from associated ParaFIELD structure
+ * to array defined on mesh location corresponding to coupled elements (and
+ * associated ParaMESH).
  */
 /*----------------------------------------------------------------------------*/
 
 void
-_cs_paramedmem_coupling_t::get_values(const char *name, double values[]) const
+_cs_paramedmem_coupling_t::get_values(const char *name,
+                                      double      values[],
+                                      const bool  use_list_elt) const
 {
 #if !defined(HAVE_PARAMEDMEM)
 
@@ -1229,7 +1204,7 @@ _cs_paramedmem_coupling_t::get_values(const char *name, double values[]) const
 
   cs_lnum_t *connec = this->mesh->new_to_old;
 
-  if (connec != nullptr) {
+  if (connec != nullptr && use_list_elt) {
     assert(f->getTypeOfField() == ON_CELLS);
     cs_lnum_t _dim   = (cs_lnum_t)f->getNumberOfComponents();
     cs_lnum_t n_elts = this->mesh->n_elts;
@@ -1245,44 +1220,6 @@ _cs_paramedmem_coupling_t::get_values(const char *name, double values[]) const
     const cs_lnum_t n_vals = (cs_lnum_t)f->getNumberOfValues();
     cs_array_copy(n_vals, val_ptr, values);
   }
-
-#endif
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Copy values from associated ParaFIELD structure to array defined
- *        on mesh location corresponding to coupled elements
- *        (and associated ParaMESH).
- *
- * If the whole mesh is coupled, the behavior is the sames as that of
- * \ref get_values.
- *
- * \param[in]  name    name of field
- * \param[in]  values  array in which values will be stored
- */
-/*----------------------------------------------------------------------------*/
-
-void
-_cs_paramedmem_coupling_t::get_values_l(const char *name, double values[]) const
-{
-#if !defined(HAVE_PARAMEDMEM)
-
-  CS_NO_WARN_IF_UNUSED(name);
-  CS_NO_WARN_IF_UNUSED(values);
-
-  this->_error_without_paramedmem();
-
-#else
-
-  MEDCouplingFieldDouble *f = this->_get_field(name);
-
-  const double   *val_ptr = f->getArray()->getConstPointer();
-  const cs_lnum_t n_vals  = (cs_lnum_t)f->getNumberOfValues();
-
-  /* Import element values */
-
-  cs_array_copy(n_vals, val_ptr, values);
 
 #endif
 }
@@ -1343,56 +1280,23 @@ _cs_paramedmem_coupling_t::send_data() const
  *
  * \param[in] name  name of field
  * \param[in] vals  array of values to write
+ * \param[in] use_list_elt  Copy values from associated ParaFIELD structure to
+ * array defined on mesh location corresponding to coupled elements (and
+ * associated ParaMESH).
  *
  */
 /*----------------------------------------------------------------------------*/
 
 void
-_cs_paramedmem_coupling_t::send_data(const char *name, const double *vals)
+_cs_paramedmem_coupling_t::send_data(const char   *name,
+                                     const double *vals,
+                                     const bool    use_list_elt)
 {
 #if defined(HAVE_PARAMEDMEM)
 
   /* If provided, export data to DEC */
   if (vals != nullptr) {
-    this->set_values(name, vals);
-  }
-
-  /* Attach field to DEC for sending */
-  this->attach_field_by_name(name);
-
-  /* Send data */
-  this->sync_dec();
-  this->send_data();
-
-#else
-
-  CS_NO_WARN_IF_UNUSED(name);
-  CS_NO_WARN_IF_UNUSED(vals);
-
-  this->_error_without_paramedmem();
-
-#endif
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Send values of a field. If vals pointer is non-null,
- * values are updated before send
- *
- * \param[in] name  name of field
- * \param[in] vals  array of values to write
- *
- */
-/*----------------------------------------------------------------------------*/
-
-void
-_cs_paramedmem_coupling_t::send_data_l(const char *name, const double *vals)
-{
-#if defined(HAVE_PARAMEDMEM)
-
-  /* If provided, export data to DEC */
-  if (vals != nullptr) {
-    this->set_values_l(name, vals);
+    this->set_values(name, vals, use_list_elt);
   }
 
   /* Attach field to DEC for sending */
@@ -1439,15 +1343,19 @@ _cs_paramedmem_coupling_t::recv_data()
 /*!
  * \brief Recieve values of a field.
  *
- * \param[in] c     pointer to cs_paramedmem_coupling_t structure
  * \param[in] name  name of field
  * \param[in] vals  array of values to read
+ * \param[in] use_list_elt  Copy values from associated ParaFIELD structure to
+ * array defined on mesh location corresponding to coupled elements (and
+ * associated ParaMESH).
  *
  */
 /*----------------------------------------------------------------------------*/
 
 void
-_cs_paramedmem_coupling_t::recv_data(const char *name, double *vals)
+_cs_paramedmem_coupling_t::recv_data(const char *name,
+                                     double     *vals,
+                                     const bool  use_list_elt)
 {
 #if defined(HAVE_PARAMEDMEM)
 
@@ -1459,7 +1367,7 @@ _cs_paramedmem_coupling_t::recv_data(const char *name, double *vals)
   this->recv_data();
 
   /* Read values */
-  this->get_values(name, vals);
+  this->get_values(name, vals, use_list_elt);
 
 #else
 
@@ -1467,41 +1375,6 @@ _cs_paramedmem_coupling_t::recv_data(const char *name, double *vals)
   CS_NO_WARN_IF_UNUSED(vals);
 
   this->_error_without_paramedmem();
-#endif
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Recieve values of a field.
- *
- * \param[in] name  name of field
- * \param[in] vals  array of values to read
- *
- */
-/*----------------------------------------------------------------------------*/
-
-void
-_cs_paramedmem_coupling_t::recv_data_l(const char *name, double *vals)
-{
-#if defined(HAVE_PARAMEDMEM)
-
-  /* Attach field to DEC for receiving */
-  this->attach_field_by_name(name);
-
-  /* Recieve data */
-  this->sync_dec();
-  this->recv_data();
-
-  /* Read values */
-  this->get_values_l(name, vals);
-
-#else
-
-  CS_NO_WARN_IF_UNUSED(name);
-  CS_NO_WARN_IF_UNUSED(vals);
-
-  this->_error_without_paramedmem();
-
 #endif
 }
 

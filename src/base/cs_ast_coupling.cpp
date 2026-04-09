@@ -1042,7 +1042,7 @@ cs_ast_coupling_send_fluid_forces(void)
     bft_printf_flush();
   }
 
-  cpl->mc_faces->send_data_l(_name_f_f, cpl->forc_pred);
+  cpl->mc_faces->send_data(_name_f_f, cpl->forc_pred, false);
 
   if (verbosity > 1) {
     bft_printf(_("[ok]\n"));
@@ -1131,8 +1131,8 @@ cs_ast_coupling_recv_displacement(void)
   cs_array_copy(3 * nb_dyn, cpl->xast_curr[0], cpl->xast_curr[1]);
 
   /* Received discplacement and velocity field */
-  cpl->mc_vertices->recv_data_l(_name_m_d, cpl->xast_curr[0]);
-  cpl->mc_vertices->recv_data_l(_name_m_v, cpl->vast_curr);
+  cpl->mc_vertices->recv_data(_name_m_d, cpl->xast_curr[0], false);
+  cpl->mc_vertices->recv_data(_name_m_v, cpl->vast_curr, false);
 
   if (verbosity > 1) {
     bft_printf(_("[ok]\n"));
