@@ -368,7 +368,7 @@ cs_cf_thermo_te_from_dp(cs_real_t   *cp,
 
     cs_array<cs_real_t> gamma(n_elts);
 
-    cs_cf_thermo_gamma(cp, cv, gamma.data(), n_elts);
+    cs_cf_thermo_gamma(cp, cv, gamma, n_elts);
 
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       /*  temperature */
@@ -434,7 +434,7 @@ cs_cf_thermo_de_from_pt(cs_real_t   *cp,
 
     cs_array<cs_real_t> gamma(n_elts);
 
-    cs_cf_thermo_gamma(cp, cv, gamma.data(), n_elts);
+    cs_cf_thermo_gamma(cp, cv, gamma, n_elts);
 
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       /*  Density */
@@ -505,7 +505,7 @@ cs_cf_thermo_dt_from_pe(cs_real_t   *cp,
 
     cs_array<cs_real_t> gamma(n_elts);
 
-    cs_cf_thermo_gamma(cp, cv, gamma.data(), n_elts);
+    cs_cf_thermo_gamma(cp, cv, gamma, n_elts);
 
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       /*  Internal energy (to avoid the need to divide by the temperature
@@ -573,7 +573,7 @@ cs_cf_thermo_pe_from_dt(cs_real_t   *cp,
     cs_real_t psginf = cs_glob_cf_model->psginf;
     cs_array<cs_real_t> gamma(n_elts);
 
-    cs_cf_thermo_gamma(cp, cv, gamma.data(), n_elts);
+    cs_cf_thermo_gamma(cp, cv, gamma, n_elts);
 
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       /*  Pressure */
@@ -648,7 +648,7 @@ cs_cf_thermo_pt_from_de(cs_real_t   *cp,
     cs_real_t psginf = cs_glob_cf_model->psginf;
     cs_array<cs_real_t> gamma(n_elts);
 
-    cs_cf_thermo_gamma(cp, cv, gamma.data(), n_elts);
+    cs_cf_thermo_gamma(cp, cv, gamma, n_elts);
 
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       /*  Internal energy (to avoid the need to divide by the temperature
@@ -737,7 +737,7 @@ cs_cf_thermo_c_square(cs_real_t *cp,
     cs_real_t psginf = cs_glob_cf_model->psginf;
     cs_array<cs_real_t> gamma(n_elts);
 
-    cs_cf_thermo_gamma(cp, cv, gamma.data(), n_elts);
+    cs_cf_thermo_gamma(cp, cv, gamma, n_elts);
 
     for (cs_lnum_t i = 0; i < n_elts; i++)
       c2[i] = gamma[i] * (pres[i]+psginf) / rho[i];
@@ -800,7 +800,7 @@ cs_cf_thermo_beta(cs_real_t *cp,
   else if (ieos == CS_EOS_GAS_MIX) {
     cs_array<cs_real_t> gamma(n_elts);
 
-    cs_cf_thermo_gamma(cp, cv, gamma.data(), n_elts);
+    cs_cf_thermo_gamma(cp, cv, gamma, n_elts);
 
     for (cs_lnum_t i = 0; i < n_elts; i++)
       beta[i] = pow(rho[i],gamma[i]);
@@ -889,7 +889,7 @@ cs_cf_thermo_s_from_dp(cs_real_t *cp,
 
     cs_array<cs_real_t> gamma(n_elts);
 
-    cs_cf_thermo_gamma(cp, cv, gamma.data(), n_elts);
+    cs_cf_thermo_gamma(cp, cv, gamma, n_elts);
 
     cs_cf_check_density(rho, n_elts);
 

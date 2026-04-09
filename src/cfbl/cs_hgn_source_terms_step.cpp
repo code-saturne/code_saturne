@@ -152,12 +152,12 @@ cs_hgn_source_terms_step(const cs_mesh_t *m)
   }
 
   cs_user_hgn_thermo_relax_time(m,
-                                alpha_eq.data(),
-                                y_eq.data(),
-                                z_eq.data(),
-                                ei.data(),
-                                v.data(),
-                                relax_tau.data());
+                                alpha_eq,
+                                y_eq,
+                                z_eq,
+                                ei,
+                                v,
+                                relax_tau);
 
   /* Update the volume fraction, mass fraction and energy fraction using the
    * equilibrium fractions alpha_eq, y_eq, z_eq computed above. */

@@ -229,8 +229,8 @@ cs_cf_boundary_conditions(int  bc_type[])
   }
 
   if (icalep > 0) { // Local only, no need for parallel sync of icalep.
-    cs_cf_thermo_eps_sup(crom, w5.data(), m->n_cells);
-    cs_cf_thermo_eps_sup(brom, w7.data(), n_b_faces);
+    cs_cf_thermo_eps_sup(crom, w5, m->n_cells);
+    cs_cf_thermo_eps_sup(brom, w7, n_b_faces);
   }
 
   int *ifbet = cs_cf_boundary_conditions_get_ifbet();
@@ -270,7 +270,7 @@ cs_cf_boundary_conditions(int  bc_type[])
              (Pboundary = COEFB*Pi)
              The part deriving from pinf in stiffened gas is explicit for now */
 
-          cs_cf_thermo_wall_bc(wbfa.data(), wbfb.data(), face_id);
+          cs_cf_thermo_wall_bc(wbfa, wbfb, face_id);
 
           if (wbfb[face_id] < r_inf_05 && wbfb[face_id] > 0.) {
             pr_icodcl[face_id] = 12;
@@ -410,8 +410,8 @@ cs_cf_boundary_conditions(int  bc_type[])
         for (cs_lnum_t i = 0; i < 3; i++)
           bc_vel(face_id, i) = vel_rcodcl1[n_b_faces*i + face_id];
 
-        cs_cf_thermo(iccfth, face_id, bc_en.data(),
-                     bc_pr.data(), bc_tk.data(), bc_vel.data<cs_real_3_t>());
+        cs_cf_thermo(iccfth, face_id, bc_en,
+                     bc_pr, bc_tk, bc_vel.data<cs_real_3_t>());
       }
       break;
 
@@ -437,7 +437,7 @@ cs_cf_boundary_conditions(int  bc_type[])
         for (cs_lnum_t i = 0; i < 3; i++)
           bc_vel(face_id, i) = vel_rcodcl1[n_b_faces*i + face_id];
 
-        cs_cf_thermo_subsonic_outlet_bc(bc_en.data(), bc_pr.data(),
+        cs_cf_thermo_subsonic_outlet_bc(bc_en, bc_pr,
                                         bc_vel.data<cs_real_3_t>(), face_id);
       }
       break;
@@ -467,7 +467,7 @@ cs_cf_boundary_conditions(int  bc_type[])
         for (cs_lnum_t i = 0; i < 3; i++)
           bc_vel(face_id, i) = vel_rcodcl1[n_b_faces*i + face_id];
 
-        cs_cf_thermo_ph_inlet_bc(bc_en.data(), bc_pr.data(),
+        cs_cf_thermo_ph_inlet_bc(bc_en, bc_pr,
                                  bc_vel.data<cs_real_3_t>(), face_id);
       }
       break;
@@ -522,7 +522,7 @@ cs_cf_boundary_conditions(int  bc_type[])
       if (bc_type[face_id] == CS_ESICF) {
         // Dirichlet for velocity and pressure are computed in order to
         // impose the Rusanov fluxes in mass, momentum and energy balance.
-        cs_cf_boundary_rusanov(face_id, bc_en.data(), bc_pr.data(),
+        cs_cf_boundary_rusanov(face_id, bc_en, bc_pr,
                                bc_vel.data<cs_real_3_t>());
       }
 
@@ -532,7 +532,7 @@ cs_cf_boundary_conditions(int  bc_type[])
       else if (bc_type[face_id] != CS_SSPCF) {
         // the pressure part of the boundary analytical flux is not added here,
         // but set through the pressure gradient boundary conditions (Dirichlet).
-        cs_cf_boundary_analytical_flux(face_id, bc_en.data(), bc_pr.data(),
+        cs_cf_boundary_analytical_flux(face_id, bc_en, bc_pr,
                                        bc_vel.data<cs_real_3_t>());
       }
 

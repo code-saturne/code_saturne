@@ -424,7 +424,7 @@ cs_cf_energy(int f_sc_id)
   /* Heat volume source term: rho * phi * volume
      -------------------------------------------- */
 
-  cs_user_source_terms(cs_glob_domain, f_sc->id, rhs.data(), rovsdt.data());
+  cs_user_source_terms(cs_glob_domain, f_sc->id, rhs, rovsdt);
 
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -465,8 +465,8 @@ cs_cf_energy(int f_sc_id)
                          energy,
                          smcel_sc,
                          smcel_p,
-                         rhs.data(),
-                         rovsdt.data(),
+                         rhs,
+                         rovsdt,
                          nullptr);
   }
 
@@ -487,7 +487,7 @@ cs_cf_energy(int f_sc_id)
   */
 
   if (eqp_vel->idiff >= 1)
-    _cf_div(rhs.data());
+    _cf_div(rhs);
 
   /*                              __   P        n+1
      Pressure transport term  : - >  (---)  *(Q    .n)  *S
@@ -535,9 +535,9 @@ cs_cf_energy(int f_sc_id)
   /* Divergence */
   cs_divergence(mesh,
                 0, /* init */
-                iprtfl.data(),
-                bprtfl.data(),
-                rhs.data());
+                iprtfl,
+                bprtfl,
+                rhs);
 
   /* Gravitation force term: rho*g.u *cvolume
      ---------------------- */
@@ -617,9 +617,9 @@ cs_cf_energy(int f_sc_id)
     cs_face_viscosity(mesh,
                       fvq,
                       eqp_vel->imvisf,
-                      c_viscs_t.data(),
-                      i_visc.data(),
-                      b_visc.data());
+                      c_viscs_t,
+                      i_visc,
+                      b_visc);
 
     /* Complementary diffusive term: - div( K grad ( epsilon - Cv.T ) )
        ----------------------------                  1  2
@@ -632,10 +632,10 @@ cs_cf_energy(int f_sc_id)
     /* Compute e - CvT */
 
     /* At cell centers */
-    cs_cf_thermo_eps_sup(crom, w9.data(), n_cells);
+    cs_cf_thermo_eps_sup(crom, w9, n_cells);
 
     /* At boundary faces centers */
-    cs_cf_thermo_eps_sup(brom, wb.data(), n_b_faces);
+    cs_cf_thermo_eps_sup(brom, wb, n_b_faces);
 
     /* Divergence computation with reconstruction */
 
@@ -667,7 +667,7 @@ cs_cf_energy(int f_sc_id)
                        eqp_vel->d_climgr,
                        nullptr,          /* f_ext */
                        nullptr,          /* bc_coeffs */
-                       w7.data(),
+                       w7,
                        nullptr,          /* c_weight */
                        nullptr,          /* cpl */
                        grad.data<cs_real_3_t>());
@@ -724,9 +724,9 @@ cs_cf_energy(int f_sc_id)
       cs_face_viscosity(mesh,
                         fvq,
                         eqp_e->imvisf,
-                        kspe.data(),
-                        i_visck.data(),
-                        b_visck.data());
+                        kspe,
+                        i_visck,
+                        b_visck);
 
       kspe.clear(); // free memory
 
@@ -1024,15 +1024,15 @@ cs_cf_energy(int f_sc_id)
                                      energy_pre, energy_pre,
                                      bc_coeffs_sc,
                                      i_mass_flux, b_mass_flux,
-                                     i_visc.data(), b_visc.data(),
-                                     i_visc.data(), b_visc.data(),
+                                     i_visc, b_visc,
+                                     i_visc, b_visc,
                                      nullptr,   /* viscel */
                                      nullptr, nullptr, /* weighf, weighb */
                                      icvflb,
                                      icvfli,
-                                     rovsdt.data(),
-                                     rhs.data(),
-                                     energy, dpvar.data(),
+                                     rovsdt,
+                                     rhs,
+                                     energy, dpvar,
                                      nullptr,   /* xcpp */
                                      nullptr);  /* eswork */
 
@@ -1057,7 +1057,7 @@ cs_cf_energy(int f_sc_id)
                     * (energy[c_id] - energy_pre[c_id])
                     * cs::max(0., cs::min(eqp_e->nswrsm - 2., 1.));
 
-    const cs_real_t sclnor = sqrt(cs_gdot(n_cells, rhs.data(), rhs.data()));
+    const cs_real_t sclnor = sqrt(cs_gdot(n_cells, rhs, rhs));
 
     cs_log_printf(CS_LOG_DEFAULT,
                   _(" %s : EXPLICIT BALANCE = %14.5e"),

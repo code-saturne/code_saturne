@@ -271,12 +271,12 @@ _compressible_pressure_centered_mass_flux(cs_dispatch_context &ctx,
   if (itsqdm != 0) { /* we never enter here since itsqdm is fixed above */
 
     if (vp_model->ivisse == 1)
-      cs_face_viscosity_secondary(secvif.data(), secvib.data());
+      cs_face_viscosity_secondary(secvif, secvib);
 
     cs_user_source_terms(cs_glob_domain,
                          vel->id,
-                         tsexp.data(),
-                         tsimp.data());
+                         tsexp,
+                         tsimp);
 
     /* Mass flux computation */
 
@@ -323,9 +323,9 @@ _compressible_pressure_centered_mass_flux(cs_dispatch_context &ctx,
         cs_face_viscosity(mesh,
                           fvq,
                           imvisp, // a voir avec Thomas
-                          w1.data(),
-                          i_visc.data(),
-                          b_visc.data());
+                          w1,
+                          i_visc,
+                          b_visc);
       }
       /* Tensorial diffusion of the velocity (in case of tensorial porosity) */
       else if (eqp_vel->idften & CS_ANISOTROPIC_LEFT_DIFFUSION) {
@@ -345,7 +345,7 @@ _compressible_pressure_centered_mass_flux(cs_dispatch_context &ctx,
                                              imvisp,
                                              viscce.data<cs_real_6_t>(),
                                              i_visc.data<cs_real_33_t>(),
-                                             b_visc.data());
+                                             b_visc);
       }
 
     }
@@ -386,10 +386,10 @@ _compressible_pressure_centered_mass_flux(cs_dispatch_context &ctx,
                       bc_coeffs_vel,
                       i_mass_flux,
                       b_mass_flux,
-                      i_visc.data(),
-                      b_visc.data(),
-                      secvif.data(),
-                      secvib.data(),
+                      i_visc,
+                      b_visc,
+                      secvif,
+                      secvib,
                       nullptr,   /* viscel */
                       nullptr,   /* weighf */ // rvoid a voir
                       nullptr,   /* weighb */
@@ -431,12 +431,12 @@ _compressible_pressure_centered_mass_flux(cs_dispatch_context &ctx,
                          icetsm,
                          itypsm,
                          cell_f_vol,
-                         vel0.data(),
+                         vel0,
                          smacel_vel,
                          smacel_p,
-                         tsexp.data(),
-                         tsimp.data(),
-                         tsexp.data());
+                         tsexp,
+                         tsimp,
+                         tsexp);
   }
 
 # pragma omp parallel for if(n_cells > CS_THR_MIN)
@@ -860,7 +860,7 @@ cs_cf_convective_mass_flux(int  iterns)
                         cvar_fracv,
                         cvar_fracm,
                         cvar_frace,
-                        c2.data(),
+                        c2,
                         n_cells);
 
 # pragma omp parallel for if(n_cells > CS_THR_MIN)
@@ -877,8 +877,8 @@ cs_cf_convective_mass_flux(int  iterns)
   /* Volumic flux (u + dt f) */
   _compressible_pressure_centered_mass_flux(ctx,
                                             iterns,
-                                            ivolfl.data(),
-                                            bvolfl.data());
+                                            ivolfl,
+                                            bvolfl);
 
   /* Mass flux at internal faces (upwind scheme for the density)
      (negative because added to RHS) */
@@ -902,16 +902,16 @@ cs_cf_convective_mass_flux(int  iterns)
 
   cs_divergence(mesh,
                 0, /* init */
-                wflmas.data(),
-                wflmab.data(),
-                smbrs.data());
+                wflmas,
+                wflmab,
+                smbrs);
 
   cs_field_t *f_divu
     = cs_field_try("algo:predicted_velocity_divergence");
 
   if (f_divu != nullptr) {
     cs_real_t * cpro_divu = f_divu->val;
-    cs_array_real_copy(n_cells, smbrs.data(), cpro_divu);
+    cs_array_real_copy(n_cells, smbrs, cpro_divu);
   }
 
   /* (Delta t)_ij is calculated as the "viscosity" associated to the pressure */
@@ -920,8 +920,8 @@ cs_cf_convective_mass_flux(int  iterns)
                     fvq,
                     1, /* harmonic visc_mean_type */
                     dt,
-                    i_visc.data(),
-                    b_visc.data());
+                    i_visc,
+                    b_visc);
 
   cs_equation_param_t eqp_p_loc = *eqp_p;
 
@@ -941,16 +941,16 @@ cs_cf_convective_mass_flux(int  iterns)
                                      &eqp_p_loc,
                                      cvar_pr_pre, cvar_pr_pre,
                                      &bc_coeffs_loc,
-                                     wflmas.data(), wflmab.data(),
-                                     i_visc.data(), b_visc.data(),
-                                     i_visc.data(), b_visc.data(),
+                                     wflmas, wflmab,
+                                     i_visc, b_visc,
+                                     i_visc, b_visc,
                                      nullptr,   /* viscel */
                                      nullptr, nullptr, /* weighf, weighb */
                                      0,      /* icvflb (upwind conv. flux) */
                                      nullptr,   /* icvfli */
-                                     rovsdt.data(),
-                                     smbrs.data(),
-                                     cvar_pr, dpvar.data(),
+                                     rovsdt,
+                                     smbrs,
+                                     cvar_pr, dpvar,
                                      nullptr,   /* xcpp */
                                      nullptr);  /* eswork */
 
@@ -972,7 +972,7 @@ cs_cf_convective_mass_flux(int  iterns)
                     * (cvar_pr[c_id] - cvar_pr_pre[c_id])
                     * cs::max(0, cs::min(eqp_p->nswrsm-2, 1));
     }
-    const cs_real_t sclnor = sqrt(cs_gdot(n_cells, smbrs.data(), smbrs.data()));
+    const cs_real_t sclnor = sqrt(cs_gdot(n_cells, smbrs, smbrs));
     cs_log_printf(CS_LOG_DEFAULT,
                   _("\n PRESSURE: EXPLICIT BALANCE = %14.5e\n"),
                   sclnor);
@@ -1009,7 +1009,7 @@ cs_cf_convective_mass_flux(int  iterns)
                               nullptr, /* frcxt */
                               cvar_pr,
                               &bc_coeffs_loc,
-                              i_visc.data(), b_visc.data(),
+                              i_visc, b_visc,
                               dt,
                               i_mass_flux_e, b_mass_flux_e);
 
@@ -1137,8 +1137,8 @@ cs_cf_cfl_compute(cs_real_t wcf[]) // before : cfdttv
   int iterns = 1;
   _compressible_pressure_centered_mass_flux(ctx,
                                             iterns,
-                                            i_mass_flux.data(),
-                                            b_mass_flux.data());
+                                            i_mass_flux,
+                                            b_mass_flux);
 
   /* Summation at each cell taking only outward flux */
   i_visc.zero(ctx);
@@ -1152,11 +1152,11 @@ cs_cf_cfl_compute(cs_real_t wcf[]) // before : cfdttv
                       0, // idiffp,
                       2,
                       &bc_coeffs_loc,
-                      i_mass_flux.data(),
-                      b_mass_flux.data(),
-                      i_visc.data(),
-                      b_visc.data(),
-                      w1.data());
+                      i_mass_flux,
+                      b_mass_flux,
+                      i_visc,
+                      b_visc,
+                      w1);
 
   /* Compute the square of the sound celerity */
   cs_array<cs_real_t> c2(n_cells_ext, cs_alloc_mode);
@@ -1168,7 +1168,7 @@ cs_cf_cfl_compute(cs_real_t wcf[]) // before : cfdttv
                         cvar_fracv,
                         cvar_fracm,
                         cvar_frace,
-                        c2.data(),
+                        c2,
                         n_cells);
 
   /* Compute the coefficient CFL/dt */
