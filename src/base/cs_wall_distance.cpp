@@ -335,9 +335,9 @@ cs_wall_distance(int iterns)
   cs_face_viscosity(mesh,
                     mq,
                     eqp_wd->imvisf,
-                    w1.data(),
-                    i_visc.data(),
-                    b_visc.data());
+                    w1,
+                    i_visc,
+                    b_visc);
 
   /* Solve system
      ------------ */
@@ -370,17 +370,17 @@ cs_wall_distance(int iterns)
                                      &eqp_loc,
                                      wall_dist_pre, wall_dist_pre,
                                      bc_coeffs_wd,
-                                     i_mass_flux.data(), b_mass_flux.data(),
-                                     i_visc.data(), b_visc.data(),
-                                     i_visc.data(), b_visc.data(),
+                                     i_mass_flux, b_mass_flux,
+                                     i_visc, b_visc,
+                                     i_visc, b_visc,
                                      nullptr, /* viscel */
                                      nullptr, /* weightf */
                                      nullptr, /* weighb */
                                      icvflb,
                                      nullptr, /* icvfli */
-                                     rovsdt.data(),
-                                     rhs.data(),
-                                     wall_dist, dpvar.data(),
+                                     rovsdt,
+                                     rhs,
+                                     wall_dist, dpvar,
                                      nullptr, /* xcpp */
                                      nullptr); /* eswork */
 
@@ -462,17 +462,17 @@ cs_wall_distance(int iterns)
                                            &eqp_loc,
                                            wall_dist_pre, wall_dist_pre,
                                            bc_coeffs_wd,
-                                           i_mass_flux.data(), b_mass_flux.data(),
-                                           i_visc.data(), b_visc.data(),
-                                           i_visc.data(), b_visc.data(),
+                                           i_mass_flux, b_mass_flux,
+                                           i_visc, b_visc,
+                                           i_visc, b_visc,
                                            nullptr, /* viscel */
                                            nullptr, /* weightf */
                                            nullptr, /* weighb */
                                            icvflb,
                                            nullptr, /* icvfli */
-                                           rovsdt.data(),
-                                           rhs.data(),
-                                           wall_dist, dpvar.data(),
+                                           rovsdt,
+                                           rhs,
+                                           wall_dist, dpvar,
                                            nullptr, /* xcpp */
                                            nullptr); /* eswork */
 
@@ -841,9 +841,9 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
   cs_face_viscosity(mesh,
                     mq,
                     eqp_yp->imvisf,
-                    viscap.data(),
-                    i_visc.data(),
-                    b_visc.data());
+                    viscap,
+                    i_visc,
+                    b_visc);
 
   /* Compute convective mass flux
      here -div(1 grad(y)) */
@@ -861,8 +861,8 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
                               nullptr, /* f_ext */
                               w_dist,
                               bc_coeffs_wd,
-                              i_visc.data(), b_visc.data(),
-                              viscap.data(),
+                              i_visc, b_visc,
+                              viscap,
                               i_mass_flux, b_mass_flux);
 
   /* Diagonal part of the matrix
@@ -966,8 +966,8 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
 
   ctx.wait();
 
-  cs_halo_sync_var(halo, CS_HALO_STANDARD, rovsdp.data());
-  cs_halo_sync_var(halo, CS_HALO_STANDARD, dvarp.data());
+  cs_halo_sync(halo, CS_HALO_STANDARD, rovsdp);
+  cs_halo_sync(halo, CS_HALO_STANDARD, dvarp);
 
   /* Solving
      ------- */
@@ -998,8 +998,8 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
                                      0, /* No error estimate */
                                      xnorm0,
                                      &eqp_loc,
-                                     dvarp.data(),
-                                     dvarp.data(),
+                                     dvarp,
+                                     dvarp,
                                      bc_coeffs_yp,
                                      i_mass_flux, b_mass_flux,
                                      i_mass_flux, b_mass_flux,
@@ -1008,9 +1008,9 @@ cs_wall_distance_yplus(cs_real_t visvdr[])
                                      nullptr,
                                      icvflb,
                                      nullptr,
-                                     rovsdp.data(),
-                                     smbdp.data(),
-                                     dvarp.data(), dpvar.data(),
+                                     rovsdp,
+                                     smbdp,
+                                     dvarp, dpvar,
                                      nullptr, nullptr);
 
   /* Warning: no diffusion so no need of other diffusive

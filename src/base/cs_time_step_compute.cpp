@@ -229,7 +229,7 @@ cs_local_time_step_compute(int  itrale)
      ------------------------------------------------ */
 
   if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0)
-    cs_cf_cfl_compute(wcf.data());
+    cs_cf_cfl_compute(wcf);
 
   /* Compute the diffusivity at the faces
      ------------------------------------ */
@@ -244,9 +244,9 @@ cs_local_time_step_compute(int  itrale)
     cs_face_viscosity(mesh,
                       fvq,
                       eqp_vel->imvisf,
-                      w1.data(),
-                      i_visc.data(),
-                      b_visc.data());
+                      w1,
+                      i_visc,
+                      b_visc);
   }
   else {
     ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
@@ -391,9 +391,9 @@ cs_local_time_step_compute(int  itrale)
                             &bc_coeffs_loc,
                             i_mass_flux_vel,
                             b_mass_flux_vel,
-                            i_visc.data(),
-                            b_visc.data(),
-                            dam.data());
+                            i_visc,
+                            b_visc,
+                            dam);
 
         /* Compute w1 = time step verifying CFL constraint given by the user */
 
@@ -412,9 +412,9 @@ cs_local_time_step_compute(int  itrale)
                               &bc_coeffs_loc,
                               i_mass_flux_volf,
                               b_mass_flux_volf,
-                              i_visc.data(),
-                              b_visc.data(),
-                              dam.data());
+                              i_visc,
+                              b_visc,
+                              dam);
 
           /* Compute w1 = time step verifying CFL constraint
              given by the user */
@@ -480,9 +480,9 @@ cs_local_time_step_compute(int  itrale)
                             &bc_coeffs_loc,
                             i_mass_flux_vel,
                             b_mass_flux_vel,
-                            i_visc.data(),
-                            b_visc.data(),
-                            dam.data());
+                            i_visc,
+                            b_visc,
+                            dam);
 
         const cs_real_t foumax = cs_glob_time_step_options->foumax;
 
@@ -836,7 +836,7 @@ cs_local_time_step_compute(int  itrale)
                                  CS_MESH_LOCATION_CELLS,
                                  true,
                                  1,
-                                 w2.data());
+                                 w2);
 
       if (eqp_p->verbosity >= 2) {
 
@@ -915,8 +915,8 @@ cs_local_time_step_compute(int  itrale)
                         &bc_coeffs_loc,
                         i_mass_flux_vel,
                         b_mass_flux_vel,
-                        i_visc.data(),
-                        b_visc.data(),
+                        i_visc,
+                        b_visc,
                         dt);
 
     const cs_real_t relaxv = eqp_vel->relaxv;
@@ -1061,9 +1061,9 @@ cs_courant_fourier_compute(void)
     cs_face_viscosity(mesh,
                       fvq,
                       eqp_vel->imvisf,
-                      w1.data(),
-                      i_visc.data(),
-                      b_visc.data());
+                      w1,
+                      i_visc,
+                      b_visc);
   }
   else {
     ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
@@ -1167,9 +1167,9 @@ cs_courant_fourier_compute(void)
                         &bc_coeffs_loc,
                         i_mass_flux,
                         b_mass_flux,
-                        i_visc.data(),
-                        b_visc.data(),
-                        dam.data());
+                        i_visc,
+                        b_visc,
+                        dam);
 
     cs_real_t *cpro_tab = cpro_tab_list[i];
 

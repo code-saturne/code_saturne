@@ -451,7 +451,7 @@ _smoothe(const cs_mesh_t              *m,
 
   /* FIXME: the following synchronization should not
      be needed, unless perhaps when using a native matrix format */
-  cs_halo_sync_var(m->halo, CS_HALO_STANDARD, smbdp.data());
+  cs_halo_sync(m->halo, CS_HALO_STANDARD, smbdp);
 
   /* SOLVE SYSTEM
      Linear system initialization is in nc_sles_default
@@ -464,7 +464,7 @@ _smoothe(const cs_mesh_t              *m,
 
   /* Linear system resolution */
   /* Get the residual normalization */
-  cs_real_t rnorm = cs_dot(n_cells, smbdp.data(), smbdp.data());
+  cs_real_t rnorm = cs_dot(n_cells, smbdp, smbdp);
 
   cs_parall_sum(1, CS_REAL_TYPE, &rnorm);
   rnorm = sqrt(rnorm); /* Residual normalization */
@@ -473,12 +473,12 @@ _smoothe(const cs_mesh_t              *m,
                        "ITM_diffusion_equation",
                        true,                   /* symmetric */
                        1, 1,                   /* diag/extradiag block size */
-                       dam.data(), xam.data(),
+                       dam, xam,
                        precision,
                        rnorm,
                        &n_equiv_iter,
                        &residual,
-                       smbdp.data(),
+                       smbdp,
                        pvar);                  /* Distance to the wall */
 
   /* Free solver setup and associated matrix. */
@@ -1102,7 +1102,7 @@ cs_vof_log_mass_budget(const cs_mesh_t             *m,
                   1, /* initialize to 0 */
                   i_massflux,
                   b_massflux,
-                  divro.data());
+                  divro);
 
     double glob_m_budget = 0.;
 
@@ -1206,12 +1206,12 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
 
   ctx.wait();
 
-  cs_halo_sync_var(m->halo, CS_HALO_STANDARD, pvar.data());
+  cs_halo_sync(m->halo, CS_HALO_STANDARD, pvar);
 
   /* Void fraction diffusion solving */
   int ncycles = 5;
   for (cs_lnum_t i = 0; i < ncycles; i++) {
-    _smoothe(m, mq, &bc_coeffs_loc, pvar.data());
+    _smoothe(m, mq, &bc_coeffs_loc, pvar);
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  c_id) {
       pvar[c_id] = (pvar[c_id] <= 0.001) ? 0. : pvar[c_id];
       pvar[c_id] = (pvar[c_id] >= 0.999) ? 1. : pvar[c_id];
@@ -1255,7 +1255,7 @@ cs_vof_surface_tension(const cs_mesh_t             *m,
                      eqp_volf->climgr,
                      nullptr,
                      &bc_coeffs_loc,
-                     pvar.data(),
+                     pvar,
                      gweight,
                      nullptr, /* internal coupling */
                      surfxyz_unnormed.data<cs_real_3_t>());
@@ -1898,7 +1898,7 @@ cs_vof_solve_void_fraction(int  iterns)
                 1, /* init */
                 i_mass_flux_volf,
                 b_mass_flux_volf,
-                divu.data());
+                divu);
 
   /* Free temporary memory now to reduce global overhead */
   if (divu.owner())
@@ -1963,7 +1963,7 @@ cs_vof_solve_void_fraction(int  iterns)
                       eqp_vol->climgr,
                       cvar_voidf,
                       cvara_voidf,
-                      smbrs.data());
+                      smbrs);
   }
 
   /* Solving
@@ -1995,16 +1995,16 @@ cs_vof_solve_void_fraction(int  iterns)
                                      cvara_voidf,
                                      bc_coeffs_vof,
                                      i_mass_flux_volf, b_mass_flux_volf,
-                                     i_visc.data(), b_visc.data(),
-                                     i_visc.data(), b_visc.data(),
+                                     i_visc, b_visc,
+                                     i_visc, b_visc,
                                      nullptr, /* viscel */
                                      nullptr, nullptr, /* weighf, weighb */
                                      icvflb,
                                      nullptr, /* icvfli */
-                                     rovsdt.data(),
-                                     smbrs.data(),
+                                     rovsdt,
+                                     smbrs,
                                      cvar_voidf,
-                                     dpvar.data(),
+                                     dpvar,
                                      nullptr,  /* xcpp */
                                      nullptr); /* eswork */
 
