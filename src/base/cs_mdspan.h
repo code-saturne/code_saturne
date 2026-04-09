@@ -225,6 +225,20 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
+   * \brief Cast operator to "T*" from this class.
+   *
+   * \return raw pointer which points to "_data" member
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  operator T*() const
+  {
+    return _data;
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
    * \brief Overloaded [] operator to access the ith value (val[i]).
    *
    * \returns raw pointer to the i-th value
