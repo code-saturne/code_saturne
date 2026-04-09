@@ -339,7 +339,7 @@ _integral_phi_beta(cs_real_t *z,
     phi_[ii] = 0.0;
   }
 
-  _partition_zz(m0, n0, eps, zz.data());
+  _partition_zz(m0, n0, eps, zz);
 
   sum1 = pow(eps, aa) / aa;
   sum3 = pow(eps, bb) / bb;
@@ -355,7 +355,7 @@ _integral_phi_beta(cs_real_t *z,
 
   denom = sum1 + sum2 + sum3;
 
-  _interp1d(z, phi, zz.data(), phi_.data(), size_z, dim_zz);
+  _interp1d(z, phi, zz, phi_, size_z, dim_zz);
 
   sum1 = phi_[0] * pow(eps, aa) / aa / denom;
   sum3 = phi_[dim_zz - 1] * pow(eps, bb) / bb / denom;

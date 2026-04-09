@@ -216,27 +216,27 @@ cs_combustion_physical_properties_update_d3p(void)
   cs_array<int> indpdf(n_cells, CS_ALLOC_HOST);
 
   cs_combustion_dirac_pdf(n_cells,
-                          indpdf.data(),
-                          tpdf.data(),
+                          indpdf,
+                          tpdf,
                           cvar_fm, cvar_fp2m,
-                          w1.data(),
-                          w2.data(),
-                          dirmin.data(),
-                          dirmax.data(),
-                          fdeb.data(),
-                          ffin.data(),
-                          hrec.data());
+                          w1,
+                          w2,
+                          dirmin,
+                          dirmax,
+                          fdeb,
+                          ffin,
+                          hrec);
 
   /* Integrate probability density function to determine
      temperature, mass fractions, density, radiative qsp. */
 
-  cs_combustion_d3p_integration(indpdf.data(),
-                                dirmin.data(),
-                                dirmax.data(),
-                                fdeb.data(),
-                                ffin.data(),
-                                hrec.data(),
-                                w1.data());
+  cs_combustion_d3p_integration(indpdf,
+                                dirmin,
+                                dirmax,
+                                fdeb,
+                                ffin,
+                                hrec,
+                                w1);
 
   /* Update density at boundary */
 
