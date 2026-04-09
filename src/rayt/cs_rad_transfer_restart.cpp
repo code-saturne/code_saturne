@@ -153,7 +153,7 @@ cs_rad_transfer_write(void)
                              CS_MESH_LOCATION_BOUNDARY_FACES,
                              1,
                              CS_TYPE_cs_real_t,
-                             tb_save.data());
+                             tb_save);
   }
 
   cs_restart_write_field_vals(rp, CS_F_(qinci)->id, 0);

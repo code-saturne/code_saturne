@@ -508,8 +508,8 @@ cs_rad_transfer_rcfsk(const cs_real_t  *restrict pco2,
     const cs_real_t xco2loc = cs::max(pco2[iel], 1e-5);
     const cs_real_t sootloc = cs::min(cs::max(fvsloc[iel], 1e-15), 1e-5);
 
-    _interpolation4d_rcfsk(2, tloc, xco2loc, xh2oloc, sootloc, kgfsk.data());
-    _interpolation4d_rcfsk(1, tloc, xco2loc, xh2oloc, sootloc, agfsk.data());
+    _interpolation4d_rcfsk(2, tloc, xco2loc, xh2oloc, sootloc, kgfsk);
+    _interpolation4d_rcfsk(1, tloc, xco2loc, xh2oloc, sootloc, agfsk);
 
     for (int i = 0; i < cs_glob_rad_transfer_params->nwsgg; i++) {
       kloc[i * cs_glob_mesh->n_cells + iel] = kgfsk[i];
@@ -534,7 +534,7 @@ cs_rad_transfer_rcfsk(const cs_real_t  *restrict pco2,
     const cs_real_t xco2loc = cs::max(pco2[cell_id], 1e-5);
     const cs_real_t sootloc = cs::min(cs::max(fvsloc[cell_id], 1e-15), 1.e-5);
 
-    _interpolation4d_rcfsk(1, tbord, xco2loc, xh2oloc, sootloc, agb.data());
+    _interpolation4d_rcfsk(1, tbord, xco2loc, xh2oloc, sootloc, agb);
 
     for (int i = 0; i < cs_glob_rad_transfer_params->nwsgg; i++) {
       alocb[i * cs_glob_mesh->n_b_faces + ifac] = agb[i];

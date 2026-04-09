@@ -260,7 +260,7 @@ cs_rad_transfer_adf08(const cs_real_t  pco2[],
       for (int j = 0; j < ntsto; j++) {
         cs_array_2d<cs_real_t>temp(2, nysto);
         int nvalues;
-        _line_to_array(radfile, temp.data(), &nvalues);
+        _line_to_array(radfile, temp, &nvalues);
         assert(nvalues == nysto * 2);
         for (int k = 0; k < nysto; k++) {
           ksto2[i + k * nwsgg + j * nysto * nwsgg] = temp(0, k);

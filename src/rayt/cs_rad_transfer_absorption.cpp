@@ -226,7 +226,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
       }
 
       if (rt_params->imgrey == 1) {
-        cs_rad_transfer_modak(cpro_cak0, w1.data(), w2.data(), w3.data(), cpro_temp);
+        cs_rad_transfer_modak(cpro_cak0, w1, w2, w3, cpro_temp);
       }
 
     }
@@ -264,16 +264,16 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
       }
 
       if (rt_params->imgrey == 1)
-        cs_rad_transfer_modak(cpro_cak0, w1.data(), w2.data(), w3.data(), cpro_temp);
+        cs_rad_transfer_modak(cpro_cak0, w1, w2, w3, cpro_temp);
 
       else if (rt_params->imoadf == 1)
-        cs_rad_transfer_adf08(w1.data(), w2.data(), tempk, kgas, agas, agasb);
+        cs_rad_transfer_adf08(w1, w2, tempk, kgas, agas, agasb);
 
       else if (rt_params->imoadf == 2)
-        cs_rad_transfer_adf50(w1.data(), w2.data(), tempk, kgas, agas, agasb);
+        cs_rad_transfer_adf50(w1, w2, tempk, kgas, agas, agasb);
 
       else if (rt_params->imfsck == 1)
-        cs_rad_transfer_fsck(w1.data(), w2.data(), tempk, kgas, agas, agasb);
+        cs_rad_transfer_fsck(w1, w2, tempk, kgas, agas, agasb);
     }
 
     else {
@@ -384,7 +384,7 @@ cs_rad_transfer_absorption(const cs_real_t  tempk[],
 
     }
 
-    cs_rad_transfer_absorption_check_p1(w3.data());
+    cs_rad_transfer_absorption_check_p1(w3);
 
   }
 }
@@ -467,7 +467,7 @@ cs_rad_transfer_rcfsk_absorption(const cs_real_t  tempk[],
     }
 
     /* Calculation of the absorption coefficient using the RCFSK scheme */
-    cs_rad_transfer_rcfsk(w1.data(), w2.data(), w3.data(), tempk, kgas, agas, agasb);
+    cs_rad_transfer_rcfsk(w1, w2, w3, tempk, kgas, agas, agasb);
 
   }
 

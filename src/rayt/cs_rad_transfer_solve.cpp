@@ -267,7 +267,7 @@ _order_by_direction(void)
               cs_lnum_t *order;
               CS_MALLOC(order, n_cells, cs_lnum_t);
 
-              _order_axis(s.data(), order, n_cells);
+              _order_axis(s, order, n_cells);
 
               cs_sles_it_assign_order(sc, &order); /* becomes owner of order */
 
@@ -810,7 +810,7 @@ _cs_rad_transfer_sol(int                        gg_id,
                                              rovsdt,
                                              rhs,
                                              radiance,
-                                             dpvar.data(),
+                                             dpvar,
                                              nullptr,
                                              nullptr);
 
@@ -1134,8 +1134,8 @@ _net_flux_internal_coupling_contribution(cs_internal_coupling_t  *cpl,
 
   cs_internal_coupling_exchange_var(cpl,
                                     1, /* Dimension */
-                                    net_flux_distant.data(),
-                                    net_flux_local.data());
+                                    net_flux_distant,
+                                    net_flux_local);
 
   for (cs_lnum_t i = 0; i < n_local; i++) {
     cs_lnum_t face_id = faces_local[i];
@@ -1430,7 +1430,7 @@ _rad_transfer_solve(int bc_type[])
 
     const cs_real_t *cvara_scalt = CS_F_(h)->vals[1];
 
-    cs_ht_convert_h_to_t_cells(cvara_scalt, tempk.data());
+    cs_ht_convert_h_to_t_cells(cvara_scalt, tempk);
 
     /* Coal particles temperature */
     for (int class_id = 0; class_id < n_classes; class_id++) {
@@ -1469,7 +1469,7 @@ _rad_transfer_solve(int bc_type[])
       || pm_flag[CS_JOULE_EFFECT] >= 0
       || pm_flag[CS_ELECTRIC_ARCS] >= 0
       || pm_flag[CS_GAS_MIX] >= 0)
-    cs_rad_transfer_absorption(tempk.data(), ckg, kgi.data(), agi.data(), w_gg.data());
+    cs_rad_transfer_absorption(tempk, ckg, kgi, agi, w_gg);
 
   else {
 
@@ -1737,22 +1737,22 @@ _rad_transfer_solve(int bc_type[])
       /* Update Boundary condition coefficients */
 
       cs_rad_transfer_bc_coeffs_p1(bc_type,
-                                   ckmix.data(),
+                                   ckmix,
                                    cs_field("emissivity")->val,
-                                   w_gg.data(),   gg_id,
+                                   w_gg,   gg_id,
                                    bc_coeffs_rad);
       /* Solving */
       cs_rad_transfer_pun(gg_id,
                           bc_type,
                           bc_coeffs_rad,
-                          flurds.data(), flurdb.data(),
-                          viscf.data(), viscb.data(),
-                          rhs.data(), rovsdt.data(),
-                          twall.data(), ckmix.data(),
+                          flurds, flurdb,
+                          viscf, viscb,
+                          rhs, rovsdt,
+                          twall, ckmix,
                           iqpar.data<cs_real_3_t>(),
-                          w_gg.data(),
-                          int_rad_domega.data(),
-                          int_abso.data());
+                          w_gg,
+                          int_rad_domega,
+                          int_abso);
 
       /* Precomputed absorption and emission */
       /* Absorption */
@@ -1890,24 +1890,24 @@ _rad_transfer_solve(int bc_type[])
         cs_rad_transfer_bc_coeffs_dom(bc_type,
                                       nullptr, /*no specific direction */
                                       cs_field("emissivity")->val,
-                                      w_gg.data()  , gg_id,
+                                      w_gg  , gg_id,
                                       bc_coeffs_rad);
 
       /* Solving */
       _cs_rad_transfer_sol(gg_id,
-                           w_gg.data(),
-                           tempk.data(),
+                           w_gg,
+                           tempk,
                            ckg,
                            bc_type,
                            bc_coeffs_rad,
-                           flurds.data(), flurdb.data(),
-                           viscf.data(), viscb.data(),
-                           rhs.data(), rovsdt.data(),
+                           flurds, flurdb,
+                           viscf, viscb,
+                           rhs, rovsdt,
                            iqpar.data<cs_real_3_t>(),
-                           int_rad_domega.data(),
-                           int_abso.data(),
-                           int_emi.data(),
-                           int_rad_ist.data());
+                           int_rad_domega,
+                           int_abso,
+                           int_emi,
+                           int_rad_ist);
 
     }
 
@@ -2049,7 +2049,7 @@ _rad_transfer_solve(int bc_type[])
   /* Basic definition for net flux */
 
   // TODO compute net flux per band and global one...
-  _compute_net_flux(bc_type, twall.data(), f_qinci->val, f_eps->val, f_fnet->val);
+  _compute_net_flux(bc_type, twall, f_qinci->val, f_eps->val, f_fnet->val);
 
   /*---> Reading of User data
    * CAREFUL: The user has access to the radiation coefficient (field f_cak1)
@@ -2064,7 +2064,7 @@ _rad_transfer_solve(int bc_type[])
    */
 
   cs_user_rad_transfer_net_flux(bc_type,
-                                twall.data(),
+                                twall,
                                 f_qinci->val,
                                 f_xlam->val,
                                 f_epa->val,
@@ -2104,8 +2104,8 @@ _rad_transfer_solve(int bc_type[])
   }
 
   if (cs_glob_rank_id >= 0) {
-    cs_parall_sum(n_zones, CS_REAL_TYPE, flux.data());
-    cs_parall_max(n_zones, CS_INT_TYPE, iflux.data());
+    cs_parall_sum(n_zones, CS_REAL_TYPE, flux);
+    cs_parall_max(n_zones, CS_INT_TYPE, iflux);
   }
 
   if (verbosity > 0) {
@@ -2524,7 +2524,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
   /* Absorption coefficient for different modules */
 
   if (pm_flag[CS_COMBUSTION_3PT] >= 0)
-    cs_rad_transfer_rcfsk_absorption(tempk, kgi.data(), agi.data(), w_gg.data());
+    cs_rad_transfer_rcfsk_absorption(tempk, kgi, agi, w_gg);
 
   if (pm_flag[CS_COMBUSTION_SLFM] >= 0) {
     for (int gg_id = 0; gg_id < nwsgg; gg_id++) {
@@ -2603,28 +2603,28 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
     cs_rad_transfer_bc_coeffs_dom(bc_type,
                                   nullptr, /*no specific direction */
                                   cs_field("emissivity")->val,
-                                  w_gg.data(),
+                                  w_gg,
                                   gg_id,
                                   bc_coeffs_rad);
 
     /* Solving */
     _cs_rad_transfer_sol(gg_id,
-                         w_gg.data(),
+                         w_gg,
                          tempk,
                          ckg,
                          bc_type,
                          bc_coeffs_rad,
-                         flurds.data(),
-                         flurdb.data(),
-                         viscf.data(),
-                         viscb.data(),
-                         rhs.data(),
-                         rovsdt.data(),
+                         flurds,
+                         flurdb,
+                         viscf,
+                         viscb,
+                         rhs,
+                         rovsdt,
                          iqpar.data<cs_real_3_t>(),
-                         int_rad_domega.data(),
-                         int_abso.data(),
-                         int_emi.data(),
-                         int_rad_ist.data());
+                         int_rad_domega,
+                         int_abso,
+                         int_emi,
+                         int_rad_ist);
 
     /* Summing up the quantities of each grey gas    */
 
@@ -2684,7 +2684,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
 
   /* Basic definition for net flux */
   _compute_net_flux(bc_type,
-                    twall.data(),
+                    twall,
                     f_qinci->val,
                     f_eps->val,
                     f_fnet->val);
@@ -2702,7 +2702,7 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
    */
 
   cs_user_rad_transfer_net_flux(bc_type,
-                                twall.data(),
+                                twall,
                                 f_qinci->val,
                                 f_xlam->val,
                                 f_epa->val,
@@ -2742,8 +2742,8 @@ _rad_transfer_rcfsk_solve(int  bc_type[])
   }
 
   if (cs_glob_rank_id >= 0) {
-    cs_parall_sum(n_zones, CS_REAL_TYPE, flux.data());
-    cs_parall_max(n_zones, CS_INT_TYPE, iflux.data());
+    cs_parall_sum(n_zones, CS_REAL_TYPE, flux);
+    cs_parall_max(n_zones, CS_INT_TYPE, iflux);
   }
 
   if (verbosity > 0) {

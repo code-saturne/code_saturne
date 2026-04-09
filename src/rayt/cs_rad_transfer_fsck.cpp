@@ -1188,7 +1188,7 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
                     kfsk,
                     cs_glob_rad_transfer_params->nwsgg,
                     gq,
-                    kloctmp.data());
+                    kloctmp);
     for (int i = 0; i < cs_glob_rad_transfer_params->nwsgg; i++)
       kloc[i * cs_glob_mesh->n_cells + iel] = kloctmp[i];
 
@@ -1225,7 +1225,7 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
                     as,
                     cs_glob_rad_transfer_params->nwsgg,
                     gq,
-                    ag.data());
+                    ag);
     for (int i = 0; i < cs_glob_rad_transfer_params->nwsgg; i++)
       aloc[i * cs_glob_mesh->n_cells + iel] = ag[i];
 
@@ -1259,7 +1259,7 @@ cs_rad_transfer_fsck(const cs_real_t  *restrict pco2,
                     as,
                     cs_glob_rad_transfer_params->nwsgg,
                     gq,
-                    aw.data());
+                    aw);
     for (int i = 0; i < cs_glob_rad_transfer_params->nwsgg; i++)
       alocb[i * cs_glob_mesh->n_b_faces + ifac] = aw[i];
   }
