@@ -1656,6 +1656,20 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
+   * \brief Cast operator to "mdspan<T,N,L>" from this class
+   *
+   * \return mdspan object with same template parameters.
+   */
+  /*--------------------------------------------------------------------------*/
+
+  CS_F_HOST_DEVICE
+  operator mdspan<T, N, L>() const
+  {
+    return mdspan<T,N,L>(_span::_data, _span::_extent);
+  }
+
+  /*--------------------------------------------------------------------------*/
+  /*!
    * \brief Get span view of array, same dimensions as array.
    *
    * \return mdspan view with same number of dimensions as array.
