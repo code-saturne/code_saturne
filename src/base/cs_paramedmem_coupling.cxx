@@ -114,6 +114,7 @@ _add_paramedmem_coupling(const std::string            cpl_name,
   cs_paramedmem_coupling_t *c = new cs_paramedmem_coupling_t();
 
   c->dec_synced = false;
+  c->_curr_field = nullptr;
   c->para_mesh = nullptr;
 
   /* Apps identification */
@@ -206,7 +207,8 @@ _add_paramedmem_coupling_dry_run(const std::string cpl_name)
 {
   cs_paramedmem_coupling_t *c = new cs_paramedmem_coupling_t();
 
-  c->dec_synced = 0;
+  c->dec_synced  = false;
+  c->_curr_field = nullptr;
   c->para_mesh  = nullptr;
 
   memset(c->apps, 0, 2 * sizeof(ple_coupling_mpi_set_info_t));
@@ -475,6 +477,8 @@ cs_paramedmem_coupling_destroy(cs_paramedmem_coupling_t  *c)
     /* Destroy fields */
     c->fields.clear();
 
+    c->_curr_field = nullptr;
+
     /* Deallocate mesh */
     delete c->para_mesh;
 
@@ -623,6 +627,62 @@ cs_paramedmem_coupling_define_mesh_fields(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Attach a local field
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+#if USE_PARAFIELD == 1
+_cs_paramedmem_coupling_t::_attachLocalField(const ParaFIELD *field)
+#else
+_cs_paramedmem_coupling_t::_attachLocalField(
+  const MEDCouplingFieldDouble *field)
+#endif
+{
+  if (field == nullptr) {
+    return;
+  }
+
+  if (this->_curr_field) {
+    TypeOfField   type, type_curr;
+    NatureOfField nature, nature_curr;
+
+#if USE_PARAFIELD == 1
+    type      = field->getField()->getTypeOfField();
+    type_curr = this->_curr_field->getField()->getTypeOfField();
+
+    nature      = field->getField()->getNature();
+    nature_curr = this->_curr_field->getField()->getNature();
+#else
+    type      = field->getTypeOfField();
+    type_curr = this->_curr_field->getTypeOfField();
+
+    nature      = field->getNature();
+    nature_curr = this->_curr_field->getNature();
+#endif
+
+    if (type != type_curr) {
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                _("%s: Impossible to attach a field with a different nature."),
+                __func__);
+    }
+
+    if (nature != nature_curr) {
+      this->dec_synced = false;
+    }
+  }
+  this->_curr_field = field;
+
+  if (this->dec != nullptr) {
+    this->dec->attachLocalField(field);
+  }
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Get a field by its name
  *
  * \param[in] name          name of field
@@ -674,6 +734,14 @@ _cs_paramedmem_coupling_t::_generate_coupling_mesh(const char *select_criteria,
 {
   cs_mesh_t *parent_mesh = cs_glob_mesh;
 
+  if (this->mesh != nullptr) {
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              _("Error: mesh is already added '%s'."),
+              this->mesh->med_mesh->getName().c_str());
+  }
+
   /* Building the MED representation of the internal mesh */
   int use_bbox = (elt_dim == 3) ? 1 : 0;
   this->mesh   = cs_medcoupling_mesh_from_base(parent_mesh,
@@ -691,6 +759,8 @@ _cs_paramedmem_coupling_t::_generate_coupling_mesh(const char *select_criteria,
 
     this->para_mesh = new ParaMESH(this->mesh->med_mesh, *(Grp), "CoupledMesh");
   }
+
+  this->dec_synced = false;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -711,6 +781,14 @@ _cs_paramedmem_coupling_t::_generate_coupling_mesh_from_ids(
 {
   cs_mesh_t *parent_mesh = cs_glob_mesh;
 
+  if (this->mesh != nullptr) {
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              _("Error: mesh is already added '%s'."),
+              this->mesh->med_mesh->getName().c_str());
+  }
+
   /* Building the MED representation of the internal mesh */
   int use_bbox = (elt_dim == 3) ? 1 : 0;
   this->mesh   = cs_medcoupling_mesh_from_ids(parent_mesh,
@@ -728,6 +806,8 @@ _cs_paramedmem_coupling_t::_generate_coupling_mesh_from_ids(
 
     this->para_mesh = new ParaMESH(this->mesh->med_mesh, *(Grp), "CoupledMesh");
   }
+
+  this->dec_synced = false;
 }
 
 #endif /* HAVE_PARAMEDMEM */
@@ -746,7 +826,9 @@ _cs_paramedmem_coupling_t::add_mesh_from_criteria(const char *sel_crit,
                                                   int         elt_dim)
 {
 #if !defined(HAVE_PARAMEDMEM)
+
   this->_error_without_paramedmem();
+
 #else
 
   this->_generate_coupling_mesh(sel_crit, elt_dim);
@@ -766,8 +848,10 @@ void
 _cs_paramedmem_coupling_t::add_mesh_from_zone(const cs_zone_t *zone)
 {
 #if !defined(HAVE_PARAMEDMEM)
+
   CS_NO_WARN_IF_UNUSED(zone);
   this->_error_without_paramedmem();
+
 #else
 
   /* Get location id */
@@ -813,6 +897,7 @@ _cs_paramedmem_coupling_t::add_mesh_from_ids(cs_lnum_t       n_elts,
 #if !defined(HAVE_PARAMEDMEM)
 
   this->_error_without_paramedmem();
+
 #else
 
   if (elt_dim < 2 || elt_dim > 3)
@@ -1438,8 +1523,7 @@ _cs_paramedmem_coupling_t::attach_field_by_id(int field_id)
 
 #else
 
-  if (this->dec != nullptr)
-    this->dec->attachLocalField(this->fields[field_id]);
+  this->_attachLocalField(this->fields[field_id]);
 
 #endif
 }
@@ -1481,7 +1565,7 @@ _cs_paramedmem_coupling_t::attach_field_by_name(const char *name)
               name);
   }
 
-  this->dec->attachLocalField(pf);
+  this->_attachLocalField(pf);
 
 #else
 
@@ -1501,8 +1585,7 @@ _cs_paramedmem_coupling_t::attach_field_by_name(const char *name)
               _("Error: Could not find field '%s'\n"),
               name);
 
-  if (this->dec != nullptr)
-    this->dec->attachLocalField(f);
+  this->_attachLocalField(f);
 
 #endif
 

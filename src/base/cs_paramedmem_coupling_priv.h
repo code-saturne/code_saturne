@@ -79,6 +79,13 @@ struct _cs_paramedmem_coupling_t {
   std::vector<MEDCouplingFieldDouble *> fields;
 #endif
 
+  /* Current attached local field id */
+#if USE_PARAFIELD == 1
+  const ParaFIELD *_curr_field;
+#else
+  const MEDCouplingFieldDouble *_curr_field;
+#endif
+
 #else
 
   void *para_mesh;
@@ -86,6 +93,8 @@ struct _cs_paramedmem_coupling_t {
   void *fields;
 
 #endif
+
+  /* Current attached local field id */
 
 #if defined(HAVE_MPI)
   MPI_Comm comm;
@@ -113,6 +122,20 @@ private:
   };
 
 #if defined(HAVE_PARAMEDMEM)
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief Attach a local field
+   *
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+#if USE_PARAFIELD == 1
+  _attachLocalField(const ParaFIELD *field);
+#else
+  _attachLocalField(const MEDCouplingFieldDouble *field);
+#endif
 
   /*----------------------------------------------------------------------------*/
   /*!
