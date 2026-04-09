@@ -188,7 +188,7 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
 
     cs_array<double> rpex(n_vertices);
     cs_array<double> ddip(n_vertices);
-    get_sol(tcur, n_vertices, nullptr, cdoq->vtx_coord, true, nullptr, rpex.data());
+    get_sol(tcur, n_vertices, nullptr, cdoq->vtx_coord, true, nullptr, rpex);
     for (int i = 0; i < n_vertices; i++)
       ddip[i] = rpex[i] - pdi[i];
 
@@ -203,7 +203,7 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
                              false,       /* interlace */
                              true,        /* parent mesh */
                              CS_POST_TYPE_cs_real_t,
-                             ddip.data(), /* values on vertices */
+                             ddip,        /* values on vertices */
                              time_step);  /* time step structure */
 
     sprintf(postlabel, "%s.RefSol", field->name);
@@ -214,7 +214,7 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
                              false,       /* interlace */
                              true,        /* parent mesh */
                              CS_POST_TYPE_cs_real_t,
-                             rpex.data(), /* values on vertices */
+                             rpex,        /* values on vertices */
                              time_step);  /* time step structure */
 
     /* Free */

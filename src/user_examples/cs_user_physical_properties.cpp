@@ -269,11 +269,11 @@ cs_user_physical_properties_turb_viscosity
    *   Mij:Mij
    *   Lij:Mij
    */
-  cs_les_mu_t_smago_dyn_prepare(s_n.data(),
-                                sf_n.data(),
+  cs_les_mu_t_smago_dyn_prepare(s_n,
+                                sf_n,
                                 f_vel.data<cs_real_3_t>(),
-                                mijmij.data(),
-                                mijlij.data());
+                                mijmij,
+                                mijlij);
 
   const cs_lnum_t n_cells = domain->mesh->n_cells;
   const cs_real_t tot_vol = domain->mesh_quantities->tot_vol;

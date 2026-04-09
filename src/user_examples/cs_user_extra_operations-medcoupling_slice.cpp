@@ -184,7 +184,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 
     cs_real_t t_bulk = cs_medcoupling_slice_scalar_mean_weighted("disc1",
                                                                  CS_F_(t)->val,
-                                                                 rho_cp.data(),
+                                                                 rho_cp,
                                                                  cvar_vel);
 
     /*![medcpl_slice_integral_weighted]*/

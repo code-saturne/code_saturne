@@ -84,7 +84,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
     const cs_lnum_t n_elts = cs_mesh_location_get_n_elts(location_id)[0];
     cs_array<cs_real_t> boundary_flux(n_elts);
 
-    cs_post_boundary_flux(f->name, n_elts, nullptr, boundary_flux.data());
+    cs_post_boundary_flux(f->name, n_elts, nullptr, boundary_flux);
 
     /* Some declarations -> Declared like this, the arrays are of size 0*/
     cs_array<cs_real_t> glo_nusselt;
@@ -111,7 +111,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 
     cs_selector_get_b_face_list(criteria,
                                 &n_selected_faces,
-                                selected_faces.data());
+                                selected_faces);
 
     /* Get the total number of faces shared on all ranks */
     n_selected_faces_g = n_selected_faces;
@@ -160,11 +160,11 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
     /* Gather the data of all ranks */
     if (cs_glob_n_ranks > 1) {
       cs_parall_allgather_r(n_selected_faces, n_selected_faces_g,
-                            loc_nusselt.data(),      glo_nusselt.data());
+                            loc_nusselt,      glo_nusselt);
       cs_parall_allgather_r(n_selected_faces, n_selected_faces_g,
-                            loc_friction.data(),     glo_friction.data());
+                            loc_friction,     glo_friction);
       cs_parall_allgather_r(n_selected_faces, n_selected_faces_g,
-                            loc_coords.data(),       glo_coords.data());
+                            loc_coords,       glo_coords);
     }
 
     /* Print in file */

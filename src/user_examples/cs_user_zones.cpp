@@ -81,7 +81,7 @@ _g3_boundary_cells([[maybe_unused]] void   *input,
 
   cs_array<cs_lnum_t> b_face_ids(m->n_b_faces);
 
-  cs_selector_get_b_face_list("G3", &n_b_faces, b_face_ids.data());
+  cs_selector_get_b_face_list("G3", &n_b_faces, b_face_ids);
 
   cs_array<char> cell_flag(m->n_cells);
 

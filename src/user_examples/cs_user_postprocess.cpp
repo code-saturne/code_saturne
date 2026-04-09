@@ -688,7 +688,7 @@ cs_user_postprocess_values
                         true,                           /* interlace, */
                         false,                          /* use_parent */
                         CS_POST_TYPE_cs_real_t,         /* var_type */
-                        s_cell.data(),                  /* cell_vals */
+                        s_cell,                         /* cell_vals */
                         nullptr,                        /* i_face_vals */
                         nullptr,                        /* b_face_vals */
                         ts);
@@ -771,8 +771,8 @@ cs_user_postprocess_values
                       false,                          /* use_parent */
                       CS_POST_TYPE_cs_real_t,         /* var_type */
                       nullptr,                        /* cell_vals */
-                      s_i_faces.data(),               /* i_face_vals */
-                      s_b_faces.data(),               /* b_face_vals */
+                      s_i_faces,                      /* i_face_vals */
+                      s_b_faces,                      /* b_face_vals */
                       ts);
   }
   /*< [postprocess_values_ex_2] */

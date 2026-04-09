@@ -250,7 +250,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
   */
   cs_array<cs_lnum_t> face_list(n_b_faces);
 
-  cs_selector_get_b_face_list("2 or 3 or 4 or 7", &n_faces, face_list.data());
+  cs_selector_get_b_face_list("2 or 3 or 4 or 7", &n_faces, face_list);
 
   for (cs_lnum_t i = 0; i < n_faces; i++) {
 
@@ -271,7 +271,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
     Contribution from walls with color 6
     (here at fixed enthalpy; the convective flux should be 0)
   */
-  cs_selector_get_b_face_list("6", &n_faces, face_list.data());
+  cs_selector_get_b_face_list("6", &n_faces, face_list);
 
   for (cs_lnum_t i = 0; i < n_faces; i++) {
 
@@ -291,7 +291,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
   /*
     Contribution from symmetries (should be 0).
   */
-  cs_selector_get_b_face_list("8 or 9", &n_faces, face_list.data());
+  cs_selector_get_b_face_list("8 or 9", &n_faces, face_list);
 
   for (cs_lnum_t i = 0; i < n_faces; i++) {
 
@@ -311,7 +311,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
   /*
     Contribution from inlet (color 1, diffusion and convection flux)
   */
-  cs_selector_get_b_face_list("1", &n_faces, face_list.data());
+  cs_selector_get_b_face_list("1", &n_faces, face_list);
 
   for (cs_lnum_t i = 0; i < n_faces; i++) {
 
@@ -331,7 +331,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
   /*
     Contribution from outlet (color 5, diffusion and convection flux)
   */
-  cs_selector_get_b_face_list("5", &n_faces, face_list.data());
+  cs_selector_get_b_face_list("5", &n_faces, face_list);
 
   for (cs_lnum_t i = 0; i < n_faces; i++) {
 

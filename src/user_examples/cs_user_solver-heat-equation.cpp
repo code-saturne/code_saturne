@@ -148,7 +148,7 @@ cs_user_solver
                           1,         /* location id */
                           1,         /* number of values per location */
                           CS_TYPE_cs_real_t, /* value type */
-                          t_old.data());    /* buffer */
+                          t_old);    /* buffer */
 
   cs_restart_destroy(&restart);
 
@@ -229,7 +229,7 @@ cs_user_solver
                            1,                 /* location id */
                            1,                 /* number of values per location */
                            CS_TYPE_cs_real_t, /* value type */
-                           t.data());                /* buffer */
+                           t);                /* buffer */
 
   cs_restart_destroy(&checkpoint);
 
@@ -251,10 +251,10 @@ cs_user_solver
                     false,                   /* interleave if true */
                     true,                    /* define on parents */
                     CS_POST_TYPE_cs_real_t,  /* type */
-                    t.data(),                       /* value on cells */
-                    nullptr,                    /* value on interior faces */
-                    nullptr,                    /* value on boundary faces */
-                    nullptr);                   /* time-independent output */
+                    t,                       /* value on cells */
+                    nullptr,                 /* value on interior faces */
+                    nullptr,                 /* value on boundary faces */
+                    nullptr);                /* time-independent output */
 
   cs_post_write_var(CS_POST_MESH_VOLUME,
                     CS_POST_WRITER_ALL_ASSOCIATED,
@@ -263,7 +263,7 @@ cs_user_solver
                     false,                   /* interleave if true */
                     true,                    /* define on parents */
                     CS_POST_TYPE_cs_real_t,  /* type */
-                    t_sol.data(),                   /* value on cells */
+                    t_sol,                   /* value on cells */
                     nullptr,                    /* value on interior faces */
                     nullptr,                    /* value on boundary faces */
                     nullptr);                   /* time-independent output */

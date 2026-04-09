@@ -173,9 +173,9 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
   cs_lnum_t n_elts;
 
   cs_array<cs_lnum_t> elt_list(n_b_faces);
-  cs_selector_get_b_face_list("rotor_blades", &n_elts, elt_list.data());
+  cs_selector_get_b_face_list("rotor_blades", &n_elts, elt_list);
 
-  cs_real_t c = cs_post_moment_of_force(n_elts, elt_list.data(), axis);
+  cs_real_t c = cs_post_moment_of_force(n_elts, elt_list, axis);
 
   elt_list.clear(); // Free internal memory now
 

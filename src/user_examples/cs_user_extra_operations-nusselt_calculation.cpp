@@ -102,7 +102,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 
     cs_selector_get_b_face_list
       ("normal[0, -1, 0, 0.1] and box[-1000, -1000, -1000, 1000, 0.01, 1000]",
-       &nlelt, lstelt.data());
+       &nlelt, lstelt);
     /*! [loc_var_f_user] */
 
     /* Compute value reconstructed at I' for boundary faces */
@@ -117,7 +117,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 
     /*! [gen_nusselt] */
     if (iortho == 0) {
-      cs_post_field_cell_to_b_face_values(f, nlelt, lstelt.data(), treloc.data());
+      cs_post_field_cell_to_b_face_values(f, nlelt, lstelt, treloc);
     }
     /*! [gen_nusselt] */
 
@@ -155,8 +155,8 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
       xabs[ilelt] = cdgfbo[face_id][0];
     }
 
-    cs_parall_allgather_ordered_r(nlelt, neltg, 1, xabs.data(), xabs.data(), xabsg.data());
-    cs_parall_allgather_ordered_r(nlelt, neltg, 1, xabs.data(), treloc.data(), treglo.data());
+    cs_parall_allgather_ordered_r(nlelt, neltg, 1, xabs, xabs, xabsg);
+    cs_parall_allgather_ordered_r(nlelt, neltg, 1, xabs, treloc, treglo);
 
     /*! [value_ortho_nusselt] */
 

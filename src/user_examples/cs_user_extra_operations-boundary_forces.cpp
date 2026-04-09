@@ -98,7 +98,7 @@ cs_user_extra_operations([[maybe_unused]] cs_domain_t  *domain)
 
     /* compute static pressure on selected boundary faces */
     cs_array<cs_real_t> p_b_val(zn->n_elts);
-    cs_post_b_pressure(zn->n_elts, zn->elt_ids, p_b_val.data());
+    cs_post_b_pressure(zn->n_elts, zn->elt_ids, p_b_val);
 
     for (cs_lnum_t e_id = 0; e_id < zn->n_elts; e_id++) {
       cs_lnum_t face_id = zn->elt_ids[e_id];
