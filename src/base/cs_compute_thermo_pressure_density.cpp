@@ -365,9 +365,9 @@ cs_compute_thermo_pressure_density(void)
       bft_printf
         ("** Thermodynamic pressure computation:\n"
          "   -----------------------------------------------\n"
-         "-------------------------------------------------------\n"
-         "time       pther(n+1)     pther(n)     Dpther/Dt     ro0"
-         "-------------------------------------------------------\n"
+         "--------------------------------------------------------\n"
+         "time       pther(n+1)     pther(n)     Dpther/Dt     ro0\n"
+         "--------------------------------------------------------\n"
          "%10.16lf       %10.16lf     %10.16lf     %10.16lf     %10.16lf\n",
          cs_glob_time_step->t_cur, fp->pther, fp->pthera,
          (fp->pther-fp->pthera)/CS_F_(dt)->val[0], fp->ro0);
