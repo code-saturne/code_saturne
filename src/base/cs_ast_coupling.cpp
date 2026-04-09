@@ -59,21 +59,21 @@
 #include "fvm/fvm_nodal.h"
 #include "fvm/fvm_nodal_extract.h"
 
+#include "alge/cs_blas.h"
 #include "base/cs_all_to_all.h"
 #include "base/cs_array.h"
-#include "alge/cs_blas.h"
 #include "base/cs_calcium.h"
 #include "base/cs_coupling.h"
 #include "base/cs_interface.h"
 #include "base/cs_log.h"
 #include "base/cs_mem.h"
+#include "base/cs_parall.h"
+#include "base/cs_paramedmem_coupling_priv.h"
+#include "base/cs_part_to_block.h"
+#include "base/cs_post.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_connect.h"
 #include "mesh/cs_mesh_quantities.h"
-#include "base/cs_parall.h"
-#include "base/cs_paramedmem_coupling.h"
-#include "base/cs_part_to_block.h"
-#include "base/cs_post.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -399,9 +399,8 @@ _cs_ast_coupling_post_function(void *coupling, const cs_time_step_t *ts)
      element type) may not align with the selection order, we need to project
      values on parent faces first */
 
-  const cs_lnum_t *face_ids = cs_paramedmem_mesh_get_elt_list(cpl->mc_faces);
-  const cs_lnum_t *vtx_ids =
-    cs_paramedmem_mesh_get_vertex_list(cpl->mc_vertices);
+  const cs_lnum_t *face_ids = cpl->mc_faces->get_elt_list();
+  const cs_lnum_t *vtx_ids  = cpl->mc_vertices->get_vertex_list();
 
   cs_real_t       *values;
   const cs_mesh_t *m      = cs_glob_mesh;
@@ -750,12 +749,12 @@ cs_ast_coupling_geometry(cs_lnum_t        n_faces,
       cs_paramedmem_coupling_create_uncoupled("fsi_vertices_exchange");
   }
 
-  cs_paramedmem_add_mesh_from_ids(cpl->mc_faces, n_faces, face_ids, 2);
+  cpl->mc_faces->add_mesh_from_ids(n_faces, face_ids, 2);
 
-  cs_paramedmem_add_mesh_from_ids(cpl->mc_vertices, n_faces, face_ids, 2);
+  cpl->mc_vertices->add_mesh_from_ids(n_faces, face_ids, 2);
 
   cpl->n_faces    = n_faces;
-  cpl->n_vertices = cs_paramedmem_mesh_get_n_vertices(cpl->mc_vertices);
+  cpl->n_vertices = cpl->mc_vertices->get_n_vertices();
 
   fvm_nodal_t *fsi_mesh =
     cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
@@ -815,26 +814,23 @@ cs_ast_coupling_geometry(cs_lnum_t        n_faces,
 
   /* Define coupled fields */
 
-  cs_paramedmem_def_coupled_field(cpl->mc_vertices,
-                                  _name_m_d,
-                                  3,
-                                  CS_MEDCPL_FIELD_INT_MAXIMUM,
-                                  CS_MEDCPL_ON_NODES,
-                                  CS_MEDCPL_ONE_TIME);
+  cpl->mc_vertices->add_field(_name_m_d,
+                              3,
+                              CS_MEDCPL_FIELD_INT_MAXIMUM,
+                              CS_MEDCPL_ON_NODES,
+                              CS_MEDCPL_ONE_TIME);
 
-  cs_paramedmem_def_coupled_field(cpl->mc_vertices,
-                                  _name_m_v,
-                                  3,
-                                  CS_MEDCPL_FIELD_INT_MAXIMUM,
-                                  CS_MEDCPL_ON_NODES,
-                                  CS_MEDCPL_ONE_TIME);
+  cpl->mc_vertices->add_field(_name_m_v,
+                              3,
+                              CS_MEDCPL_FIELD_INT_MAXIMUM,
+                              CS_MEDCPL_ON_NODES,
+                              CS_MEDCPL_ONE_TIME);
 
-  cs_paramedmem_def_coupled_field(cpl->mc_faces,
-                                  _name_f_f,
-                                  3,
-                                  CS_MEDCPL_FIELD_INT_CONSERVATION,
-                                  CS_MEDCPL_ON_CELLS,
-                                  CS_MEDCPL_ONE_TIME);
+  cpl->mc_faces->add_field(_name_f_f,
+                           3,
+                           CS_MEDCPL_FIELD_INT_CONSERVATION,
+                           CS_MEDCPL_ON_CELLS,
+                           CS_MEDCPL_ONE_TIME);
 
   /* Post-processing */
 
@@ -1046,7 +1042,7 @@ cs_ast_coupling_send_fluid_forces(void)
     bft_printf_flush();
   }
 
-  cs_paramedmem_send_field_vals_l(cpl->mc_faces, _name_f_f, cpl->forc_pred);
+  cpl->mc_faces->send_data_l(_name_f_f, cpl->forc_pred);
 
   if (verbosity > 1) {
     bft_printf(_("[ok]\n"));
@@ -1135,10 +1131,8 @@ cs_ast_coupling_recv_displacement(void)
   cs_array_copy(3 * nb_dyn, cpl->xast_curr[0], cpl->xast_curr[1]);
 
   /* Received discplacement and velocity field */
-  cs_paramedmem_recv_field_vals_l(cpl->mc_vertices,
-                                  _name_m_d,
-                                  cpl->xast_curr[0]);
-  cs_paramedmem_recv_field_vals_l(cpl->mc_vertices, _name_m_v, cpl->vast_curr);
+  cpl->mc_vertices->recv_data_l(_name_m_d, cpl->xast_curr[0]);
+  cpl->mc_vertices->recv_data_l(_name_m_v, cpl->vast_curr);
 
   if (verbosity > 1) {
     bft_printf(_("[ok]\n"));
@@ -1284,8 +1278,7 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
 
   /* Set in disp the values of prescribed displacements */
 
-  const cs_lnum_t *vtx_ids =
-    cs_paramedmem_mesh_get_vertex_list(cpl->mc_vertices);
+  const cs_lnum_t *vtx_ids = cpl->mc_vertices->get_vertex_list();
 
   _scatter_values_r3(cpl->n_vertices,
                      vtx_ids,

@@ -38,11 +38,8 @@
  * Structure definitions
  *============================================================================*/
 
+struct _cs_paramedmem_coupling_t;
 typedef struct _cs_paramedmem_coupling_t cs_paramedmem_coupling_t;
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  *  Global variable definitions
@@ -112,9 +109,9 @@ cs_paramedmem_coupling_by_name(const char *name);
 /*----------------------------------------------------------------------------*/
 
 cs_paramedmem_coupling_t *
-cs_paramedmem_coupling_create(const char  *app1_name,
-                              const char  *app2_name,
-                              const char  *cpl_name);
+cs_paramedmem_coupling_create(const char *app1_name,
+                              const char *app2_name,
+                              const char *cpl_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -135,7 +132,7 @@ cs_paramedmem_coupling_create(const char  *app1_name,
 /*----------------------------------------------------------------------------*/
 
 cs_paramedmem_coupling_t *
-cs_paramedmem_coupling_create_uncoupled(const char  *cpl_name);
+cs_paramedmem_coupling_create_uncoupled(const char *cpl_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -146,7 +143,7 @@ cs_paramedmem_coupling_create_uncoupled(const char  *cpl_name);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_paramedmem_coupling_destroy(cs_paramedmem_coupling_t  *c);
+cs_paramedmem_coupling_destroy(cs_paramedmem_coupling_t *c);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -159,51 +156,6 @@ cs_paramedmem_coupling_all_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define coupled mesh based on a selection criteria
- *
- * \param[in] c         pointer to cs_paramedmem_coupling_t struct
- * \param[in] sel_crit  geometrical selection criteria (string)
- * \param[in] elt_dim   dimension of coupled elements
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_paramedmem_add_mesh_from_criteria(cs_paramedmem_coupling_t  *c,
-                                     const char                *sel_crit,
-                                     int                        elt_dim);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define coupled mesh based on a cs_zone_t pointer
- *
- * \param[in] c     pointer to cs_paramedmem_coupling_t struct
- * \param[in] zone  pointer to cs_zone_t struct
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_paramedmem_add_mesh_from_zone(cs_paramedmem_coupling_t  *c,
-                                 const cs_zone_t           *zone);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define coupled mesh based on a cs_zone_t pointer
- *
- * \param[in] c        pointer to cs_paramedmem_coupling_t struct
- * \param[in] n_elts   local number of elements
- * \param[in] elt_ids  list of local elements
- * \param[in] elt_dim  dimension of elements (2: faces, 3: cells)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_paramedmem_add_mesh_from_ids(cs_paramedmem_coupling_t  *c,
-                                cs_lnum_t                  n_elts,
-                                const cs_lnum_t            elt_ids[],
-                                int                        elt_dim);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Get number of defined couplings
  *
  * \return number of defined couplings (int)
@@ -212,294 +164,6 @@ cs_paramedmem_add_mesh_from_ids(cs_paramedmem_coupling_t  *c,
 
 int
 cs_paramedmem_get_number_of_couplings(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Get number of elements of coupled mesh
- *
- * \param[in] coupling  pointer to cs_paramedmem_coupling_t struct
- *
- * \return number of elements in mesh associated to coupling
- */
-/*----------------------------------------------------------------------------*/
-
-cs_lnum_t
-cs_paramedmem_mesh_get_n_elts(const cs_paramedmem_coupling_t  *coupling);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Get indirection list for elements in coupled mesh
- *
- * \param[in] coupling  pointer to cs_paramedmem_coupling_t struct
- *
- * \return cs_lnum_t pointer to indirection list
- */
-/*----------------------------------------------------------------------------*/
-
-const cs_lnum_t *
-cs_paramedmem_mesh_get_elt_list(const cs_paramedmem_coupling_t  *coupling);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Get number of vertices of coupled mesh
- *
- * \param[in] coupling  pointer to cs_paramedmem_coupling_t struct
- *
- * \return number of elements in mesh associated to coupling
- */
-/*----------------------------------------------------------------------------*/
-
-cs_lnum_t
-cs_paramedmem_mesh_get_n_vertices(const cs_paramedmem_coupling_t  *coupling);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Get indirection list for vertices in coupled mesh.
- *
- * \param[in] coupling  pointer to cs_paramedmem_coupling_t struct
- *
- * \return pointer to indirection list; NULL if locally contiguous or empty
- */
-/*----------------------------------------------------------------------------*/
-
-const cs_lnum_t *
-cs_paramedmem_mesh_get_vertex_list(const cs_paramedmem_coupling_t  *coupling);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define a coupled field
- *
- * \param[in] c             pointer to cs_paramedmem_coupling_t struct
- * \param[in] name          name of field
- * \param[in] dim           field dimension
- * \param[in] field_nature  field nature flag
- * \param[in] space_discr   field space discretisation (nodes or cells)
- * \param[in] time_discr    field coupling time discretisation
- *
- * \return index of field within the storing vector
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_paramedmem_def_coupled_field(cs_paramedmem_coupling_t  *c,
-                                const char                *name,
-                                int                        dim,
-                                cs_medcpl_field_nature_t   field_nature,
-                                cs_medcpl_space_discr_t    space_discr,
-                                cs_medcpl_time_discr_t     time_discr);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Define a coupled field based on a cs_field_t pointer
- *
- * \param[in] c           pointer to cs_paramedmem_coupling_t struct
- * \param[in] f           pointer to cs_field_t struct
- * \param[in] fn          field nature flag
- * \param[in] time_discr  field coupling time discretisation
- *
- * \return index of field within the storing vector
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_paramedmem_def_coupled_field_from_cs_field(cs_paramedmem_coupling_t *c,
-                                              cs_field_t               *f,
-                                              cs_medcpl_field_nature_t  fn,
-                                              cs_medcpl_time_discr_t    td);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Assign values based on parent mesh location to associated
- *        ParaFIELD objects.
- *
- * \param[in]  c       pointer to cs_paramedmem_coupling_t structure
- * \param[in]  name    name of field
- * \param[in]  values  array of values to write
- *                     (defined on parent mesh location)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_paramedmem_field_export(cs_paramedmem_coupling_t  *c,
-                           const char                *name,
-                           const double               values[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Assign values based on mesh location corresponding to coupled
- *        elements (and associated ParaMESH) to associated ParaFIELD objects.
- *
- * If the whole mesh is coupled, the behavior is the sames as that of
- * \ref cs_paramedmem_field_export.
- *
- * \param[in]  c       pointer to cs_paramedmem_coupling_t structure
- * \param[in]  name    name of field
- * \param[in]  values  array of values to write
- *                     (defined on selected mesh subset)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_paramedmem_field_export_l(cs_paramedmem_coupling_t  *c,
-                             const char                *name,
-                             const double               values[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Copy values from associated ParaFIELD object to array defined
- *        parent mesh location.
- *
- * \param[in]  c       pointer to cs_paramedmem_coupling_t structure
- * \param[in]  name    name of field
- * \param[in]  values  array in which values will be stored
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_paramedmem_field_import(cs_paramedmem_coupling_t  *c,
-                           const char                *name,
-                           double                     values[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Copy values from associated ParaFIELD structure to array defined
- *        on mesh location corresponding to coupled elements
- *        (and associated ParaMESH).
- *
- * If the whole mesh is coupled, the behavior is the sames as that of
- * \ref cs_paramedmem_field_import.
- *
- * \param[in]  c       pointer to cs_paramedmem_coupling_t structure
- * \param[in]  name    name of field
- * \param[in]  values  array in which values will be stored
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_paramedmem_field_import_l(cs_paramedmem_coupling_t  *c,
-                             const char                *name,
-                             double                     values[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Sync the coupling's InterpKernelDEC
- *
- * \param[in] c pointer to cs_paramedmem_coupling_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_paramedmem_sync_dec(cs_paramedmem_coupling_t  *c);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Send values of field attached to DEC
- *
- * \param[in] c pointer to cs_paramedmem_coupling_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_paramedmem_send_data(cs_paramedmem_coupling_t  *c);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Recieve values of field attached to DEC
- *
- * \param[in] c pointer to cs_paramedmem_coupling_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_paramedmem_recv_data(cs_paramedmem_coupling_t  *c);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Attach a field to InterpKernelDEC for send operation using its index
- *
- * \param[in] c         pointer to cs_paramedmem_coupling_t structure
- * \param[in] field_id  index of field in storing vector
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_paramedmem_attach_field_by_id(cs_paramedmem_coupling_t  *c,
-                                 int                        field_id);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Attach a field to InterpKernelDEC for send operation using its name
- *
- * \param[in] c     pointer to cs_paramedmem_coupling_t structure
- * \param[in] name  name of field (string)
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_paramedmem_attach_field_by_name(cs_paramedmem_coupling_t  *c,
-                                   const char                *name);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Send values of a field. If vals pointer is non-null,
- * values are updated before send
- *
- * \param[in] c     pointer to cs_paramedmem_coupling_t structure
- * \param[in] name  name of field
- * \param[in] vals  array of values to write
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_paramedmem_send_field_vals(cs_paramedmem_coupling_t *c,
-                              const char               *name,
-                              const double             *vals);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Send values of a field. If vals pointer is non-null,
- * values are updated before send
- *
- * \param[in] c     pointer to cs_paramedmem_coupling_t structure
- * \param[in] name  name of field
- * \param[in] vals  array of values to write
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_paramedmem_send_field_vals_l(cs_paramedmem_coupling_t *c,
-                                const char               *name,
-                                const double             *vals);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Recieve values of a field.
- *
- * \param[in] c     pointer to cs_paramedmem_coupling_t structure
- * \param[in] name  name of field
- * \param[in] vals  array of values to read
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_paramedmem_recv_field_vals(cs_paramedmem_coupling_t *c,
-                              const char               *name,
-                              double                   *vals);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Recieve values of a field.
- *
- * \param[in] c     pointer to cs_paramedmem_coupling_t structure
- * \param[in] name  name of field
- * \param[in] vals  array of values to read
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_paramedmem_recv_field_vals_l(cs_paramedmem_coupling_t *c,
-                                const char               *name,
-                                double                   *vals);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -527,9 +191,5 @@ cs_paramedmem_coupling_define_mesh_fields(void);
 
 void
 cs_paramedmem_coupling_log_setup(void);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_PARAMEDMEM_HXX__ */

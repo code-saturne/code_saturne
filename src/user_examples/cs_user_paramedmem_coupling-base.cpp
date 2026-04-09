@@ -46,6 +46,8 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_paramedmem_coupling_priv.h"
+
 /*============================================================================
  * User function definitions
  *============================================================================*/
@@ -111,7 +113,7 @@ cs_user_paramedmem_define_meshes(void)
   /*! [paramedmem_coupling_define_mesh1] */
   {
     cs_paramedmem_coupling_t *c = cs_paramedmem_coupling_by_name("CPL1");
-    cs_paramedmem_add_mesh_from_criteria(c, "x < 0.5", 3);
+    c->add_mesh_from_criteria("x < 0.5", 3);
   }
   /*! [paramedmem_coupling_define_mesh1] */
 
@@ -125,7 +127,7 @@ cs_user_paramedmem_define_meshes(void)
   {
     cs_paramedmem_coupling_t *c = cs_paramedmem_coupling_by_name("CPL1");
     const cs_zone_t *z = cs_volume_zone_by_name("zone_pmm1");
-    cs_paramedmem_add_mesh_from_zone(c, z);
+    c->add_mesh_from_zone(z);
   }
   /*! [paramedmem_coupling_define_mesh2] */
 }
@@ -172,13 +174,11 @@ cs_user_paramedmem_define_fields(void)
      *
      * function returns the index for the field array.
      */
-    int f_id1 = cs_paramedmem_def_coupled_field
-                  (c,
-                   "f1",
-                   1,
-                   CS_MEDCPL_FIELD_INT_CONSERVATION,
-                   CS_MEDCPL_ON_CELLS,
-                   CS_MEDCPL_NO_TIME);
+    int f_id1 = c->add_field("f1",
+                             1,
+                             CS_MEDCPL_FIELD_INT_CONSERVATION,
+                             CS_MEDCPL_ON_CELLS,
+                             CS_MEDCPL_NO_TIME);
 
     /* Define a coupled array based on a cs_field_t pointer.
      *
@@ -203,10 +203,8 @@ cs_user_paramedmem_define_fields(void)
      *        CS_MEDCPL_LINEAR_TIME
      */
     cs_field_t *f = cs_field_by_name("coupling_field1");
-    int f_id2 = cs_paramedmem_def_coupled_field_from_cs_field
-                 (c, f,
-                  CS_MEDCPL_FIELD_INT_CONSERVATION,
-                  CS_MEDCPL_NO_TIME);
+    int         f_id2 =
+      c->add_field(f, CS_MEDCPL_FIELD_INT_CONSERVATION, CS_MEDCPL_NO_TIME);
   }
   /*! [paramedmem_coupling_define_field1] */
 }

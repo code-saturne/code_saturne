@@ -317,7 +317,6 @@ cs_1d_wall_thermal.cpp \
 cs_ale.cpp \
 cs_array.cpp \
 cs_array_reduce.cpp \
-cs_ast_coupling.cpp \
 cs_boundary.cpp \
 cs_boundary_conditions_check.cpp \
 cs_boundary_conditions_coupling.cpp\
@@ -447,6 +446,7 @@ cs_medcoupling_remapper.h \
 cs_medcoupling_intersector.h \
 cs_medcoupling_postprocess.h \
 cs_paramedmem_coupling.h \
+cs_paramedmem_coupling_priv.h \
 cs_paramedmem_remapper.h
 
 libcs_medcoupling_a_CPPFLAGS = \
@@ -464,7 +464,8 @@ cs_medcoupling_remapper.cxx \
 cs_medcoupling_intersector.cxx \
 cs_medcoupling_postprocess.cxx \
 cs_paramedmem_coupling.cxx \
-cs_paramedmem_remapper.cxx
+cs_paramedmem_remapper.cxx \
+cs_ast_coupling.cpp
 
 noinst_LIBRARIES += libcs_medcoupling.a
 
@@ -491,7 +492,8 @@ libcs_medcoupling_a-cs_medcoupling_postprocess.$(OBJEXT) \
 libcs_medcoupling_a-cs_medcoupling_remapper.$(OBJEXT) \
 libcs_medcoupling_a-cs_medcoupling_utils.$(OBJEXT) \
 libcs_medcoupling_a-cs_paramedmem_coupling.$(OBJEXT) \
-libcs_medcoupling_a-cs_paramedmem_remapper.$(OBJEXT)
+libcs_medcoupling_a-cs_paramedmem_remapper.$(OBJEXT) \
+libcs_medcoupling_a-cs_ast_coupling.$(OBJEXT)
 
 endif
 
