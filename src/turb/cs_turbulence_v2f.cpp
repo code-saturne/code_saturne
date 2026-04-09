@@ -410,9 +410,9 @@ _solve_eq_fbr_al(const int         istprv,
   cs_face_viscosity(m,
                     fvq,
                     imvisf,
-                    visel.data(),
-                    viscf.data(),
-                    viscb.data());
+                    visel,
+                    viscf,
+                    viscb);
 
   /* Translate coefa into cofaf and coefb into cofbf */
   cs_real_t *coefap = CS_F_(phi)->bc_coeffs->a;
@@ -448,10 +448,10 @@ _solve_eq_fbr_al(const int         istprv,
                          nullptr, /* f_ext */
                          CS_F_(phi)->val_pre,
                          CS_F_(phi)->bc_coeffs,
-                         viscf.data(),
-                         viscb.data(),
-                         visel.data(),
-                         w2.data());
+                         viscf,
+                         viscb,
+                         visel,
+                         w2);
 
   /* Explicit term, stores ke temporarily in w5
      w2 is already multiplied by the volume which already contains
@@ -591,10 +591,10 @@ _solve_eq_fbr_al(const int         istprv,
                                      f->bc_coeffs,
                                      i_massflux,
                                      b_massflux,
-                                     viscf.data(),
-                                     viscb.data(),
-                                     viscf.data(),
-                                     viscb.data(),
+                                     viscf,
+                                     viscb,
+                                     viscf,
+                                     viscb,
                                      nullptr,
                                      nullptr,
                                      nullptr,
@@ -603,7 +603,7 @@ _solve_eq_fbr_al(const int         istprv,
                                      rovsdt,
                                      rhs,
                                      cvar_var,
-                                     w2.data(), /* dpvar work array */
+                                     w2, /* dpvar work array */
                                      nullptr,
                                      nullptr);
 
@@ -940,9 +940,9 @@ _solve_eq_phi(const int           istprv,
     cs_face_viscosity(m,
                       fvq,
                       imvisf,
-                      w2.data(),
-                      viscf.data(),
-                      viscb.data());
+                      w2,
+                      viscf,
+                      viscb);
 
     const cs_real_t *distb = fvq->b_dist;
 
@@ -1000,10 +1000,10 @@ _solve_eq_phi(const int           istprv,
                                      f_phi->bc_coeffs,
                                      i_massflux,
                                      b_massflux,
-                                     viscf.data(),
-                                     viscb.data(),
-                                     viscf.data(),
-                                     viscb.data(),
+                                     viscf,
+                                     viscb,
+                                     viscf,
+                                     viscb,
                                      nullptr,
                                      nullptr,
                                      nullptr,
@@ -1012,7 +1012,7 @@ _solve_eq_phi(const int           istprv,
                                      rovsdt,
                                      rhs,
                                      cvar_phi,
-                                     w2.data(),  /* dpvar work array */
+                                     w2,  /* dpvar work array */
                                      nullptr,
                                      nullptr);
 
@@ -1110,7 +1110,7 @@ cs_turbulence_v2f(const cs_real_t   prdv2f[])
 
   cs_array<cs_real_t> grad_pk(n_cells_ext, cs_alloc_mode);
 
-  _gradfi_dot_gradk(n_cells, n_cells_ext, grad_pk.data());
+  _gradfi_dot_gradk(n_cells, n_cells_ext, grad_pk);
 
   /* Solve the equation of f_bar / alpha */
 
@@ -1120,11 +1120,11 @@ cs_turbulence_v2f(const cs_real_t   prdv2f[])
                    viscl,
                    cpro_pcvlo,
                    prdv2f,
-                   grad_pk.data(),
+                   grad_pk,
                    imasfl,
                    bmasfl,
-                   rhs.data(),
-                   rovsdt.data(),
+                   rhs,
+                   rovsdt,
                    c_st_a_p);
 
   /* Solve the equation of phi */
@@ -1134,11 +1134,11 @@ cs_turbulence_v2f(const cs_real_t   prdv2f[])
                 cromo,
                 viscl,
                 prdv2f,
-                grad_pk.data(),
+                grad_pk,
                 imasfl,
                 bmasfl,
-                rhs.data(),
-                rovsdt.data(),
+                rhs,
+                rovsdt,
                 c_st_phi_p);
 
   /* Clipping */

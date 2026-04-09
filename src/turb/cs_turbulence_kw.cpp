@@ -501,13 +501,13 @@ cs_turbulence_kw(int phase_id)
 
   cs_user_source_terms(domain,
                        f_k->id,
-                       smbrk.data(),
-                       usimpk.data());
+                       smbrk,
+                       usimpk);
 
   cs_user_source_terms(domain,
                        f_omg->id,
-                       smbrw.data(),
-                       usimpw.data());
+                       smbrw,
+                       usimpw);
 
   /* If source terms are extrapolated over time */
 
@@ -647,9 +647,9 @@ cs_turbulence_kw(int phase_id)
     cs_face_viscosity(m,
                       fvq,
                       eqp_u->imvisf,
-                      w1.data(),
-                      viscf.data(),
-                      viscb.data());
+                      w1,
+                      viscf,
+                      viscb);
 
     int icvflb = 0;
     int ivisep = 0;
@@ -676,8 +676,8 @@ cs_turbulence_kw(int phase_id)
                       f_vel->bc_coeffs,
                       i_massflux,
                       b_massflux,
-                      viscf.data(),
-                      viscb.data(),
+                      viscf,
+                      viscb,
                       nullptr,
                       nullptr,
                       nullptr,
@@ -817,7 +817,7 @@ cs_turbulence_kw(int phase_id)
     rotfct.reshape(n_cells);
 
     /* Compute the rotation function (gdkgdw array not used) */
-    cs_turbulence_rotation_correction(dt, rotfct.data(), gdkgdw.data());
+    cs_turbulence_rotation_correction(dt, rotfct, gdkgdw);
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       prodk[c_id] *= rotfct[c_id];
@@ -1277,8 +1277,8 @@ cs_turbulence_kw(int phase_id)
                          cvara_k,
                          mst_val,
                          mst_val_p,
-                         smbrk.data(),
-                         tinstk.data(),
+                         smbrk,
+                         tinstk,
                          gapinj_k);
 
     /* For omg */
@@ -1297,8 +1297,8 @@ cs_turbulence_kw(int phase_id)
                          cvara_omg,
                          mst_val,
                          mst_val_p,
-                         smbrw.data(),
-                         tinstw.data(),
+                         smbrw,
+                         tinstw,
                          gapinj_omg);
 
   }
@@ -1396,9 +1396,9 @@ cs_turbulence_kw(int phase_id)
       cs_face_viscosity(m,
                         fvq,
                         eqp_k->imvisf,
-                        w7.data(),
-                        viscf.data(),
-                        viscb.data());
+                        w7,
+                        viscf,
+                        viscb);
 
     }
     else {
@@ -1422,21 +1422,21 @@ cs_turbulence_kw(int phase_id)
                       f_k->bc_coeffs,
                       i_massflux,
                       b_massflux,
-                      viscf.data(),
-                      viscb.data(),
+                      viscf,
+                      viscb,
                       nullptr,
                       nullptr,
                       nullptr,
                       nullptr,
                       0, /* boundary convective upwind flux */
                       nullptr,
-                      w5.data());
+                      w5);
 
     if (eqp_k->verbosity >= 2) {
       cs_log_printf(CS_LOG_DEFAULT,
                     " Variable %s: EXPLICIT BALANCE =  %12.5e\n",
                     cs_field_get_label(f_k),
-                    sqrt(cs_gdot(n_cells, smbrk.data(), smbrk.data())));
+                    sqrt(cs_gdot(n_cells, smbrk, smbrk)));
     }
 
     /* Handle omega */
@@ -1456,9 +1456,9 @@ cs_turbulence_kw(int phase_id)
       cs_face_viscosity(m,
                         fvq,
                         eqp_w->imvisf,
-                        w7.data(),
-                        viscf.data(),
-                        viscb.data());
+                        w7,
+                        viscf,
+                        viscb);
 
     }
     else {
@@ -1482,21 +1482,21 @@ cs_turbulence_kw(int phase_id)
                       f_omg->bc_coeffs,
                       i_massflux,
                       b_massflux,
-                      viscf.data(),
-                      viscb.data(),
+                      viscf,
+                      viscb,
                       nullptr,
                       nullptr,
                       nullptr,
                       nullptr,
                       0, /* boundary convective upwind flux */
                       nullptr,
-                      w6.data());
+                      w6);
 
     if (eqp_w->verbosity >= 2) {
       cs_log_printf(CS_LOG_DEFAULT,
                     " Variable %s: EXPLICIT BALANCE =  %12.5e\n",
                     cs_field_get_label(f_omg),
-                    sqrt(cs_gdot(n_cells, smbrw.data(), smbrw.data())));
+                    sqrt(cs_gdot(n_cells, smbrw, smbrw)));
     }
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
@@ -1590,9 +1590,9 @@ cs_turbulence_kw(int phase_id)
     cs_face_viscosity(m,
                       fvq,
                       eqp_k->imvisf,
-                      w1.data(),
-                      viscf.data(),
-                      viscb.data());
+                      w1,
+                      viscf,
+                      viscb);
 
   } else {
     ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
@@ -1619,19 +1619,19 @@ cs_turbulence_kw(int phase_id)
                                      f_k->bc_coeffs,
                                      i_massflux,
                                      b_massflux,
-                                     viscf.data(),
-                                     viscb.data(),
-                                     viscf.data(),
-                                     viscb.data(),
+                                     viscf,
+                                     viscb,
+                                     viscf,
+                                     viscb,
                                      nullptr,
                                      nullptr,
                                      nullptr,
                                      0, /* boundary convective upwind flux */
                                      nullptr,
-                                     tinstk.data(),
-                                     smbrk.data(),
+                                     tinstk,
+                                     smbrk,
                                      cvar_k,
-                                     dpvar.data(),
+                                     dpvar,
                                      nullptr,
                                      nullptr);
 
@@ -1653,9 +1653,9 @@ cs_turbulence_kw(int phase_id)
     cs_face_viscosity(m,
                       fvq,
                       eqp_w->imvisf,
-                      w1.data(),
-                      viscf.data(),
-                      viscb.data());
+                      w1,
+                      viscf,
+                      viscb);
   }
   else {
     ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
@@ -1682,19 +1682,19 @@ cs_turbulence_kw(int phase_id)
                                      f_omg->bc_coeffs,
                                      i_massflux,
                                      b_massflux,
-                                     viscf.data(),
-                                     viscb.data(),
-                                     viscf.data(),
-                                     viscb.data(),
+                                     viscf,
+                                     viscb,
+                                     viscf,
+                                     viscb,
                                      nullptr,
                                      nullptr,
                                      nullptr,
                                      0, /* boundary convective upwind flux */
                                      nullptr,
-                                     tinstw.data(),
-                                     smbrw.data(),
+                                     tinstw,
+                                     smbrw,
                                      cvar_omg,
-                                     dpvar.data(),
+                                     dpvar,
                                      nullptr,
                                      nullptr);
 

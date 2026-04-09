@@ -846,7 +846,7 @@ cs_les_volume_initialize(void)
     cs_user_les_inflow_advanced(inlet->zone,
                                 vel_m_l.data<cs_real_3_t>(),
                                 rij_l.data<cs_real_6_t>(),
-                                eps_r.data());
+                                eps_r);
 
     /* Generation of the synthetic turbulence
        --------------------------------------*/
@@ -871,7 +871,7 @@ cs_les_volume_initialize(void)
                      (cs_inflow_batten_t *) inlet->inflow,
                      time_step->t_cur,
                      rij_l.data<cs_real_6_t>(),
-                     eps_r.data(),
+                     eps_r,
                      fluctuations.data<cs_real_3_t>());
       break;
     case CS_INFLOW_SEM:
@@ -917,7 +917,7 @@ cs_les_volume_initialize(void)
                                      time_step->dt[0],
                                      vel_m_l.data<cs_real_3_t>(),
                                      rij_l.data<cs_real_6_t>(),
-                                     eps_r.data(),
+                                     eps_r,
                                      fluctuations.data<cs_real_3_t>());
 
         if (inlet->verbosity > 0)
@@ -1034,7 +1034,7 @@ cs_les_inflow_compute(void)
     cs_user_les_inflow_advanced(inlet->zone,
                                 vel_m_l.data<cs_real_3_t>(),
                                 rij_l.data<cs_real_6_t>(),
-                                eps_r.data());
+                                eps_r);
 
     /* Generation of the synthetic turbulence
        --------------------------------------*/
@@ -1059,7 +1059,7 @@ cs_les_inflow_compute(void)
                      (cs_inflow_batten_t *) inlet->inflow,
                      time_step->t_cur,
                      rij_l.data<cs_real_6_t>(),
-                     eps_r.data(),
+                     eps_r,
                      fluctuations.data<cs_real_3_t>());
       break;
     case CS_INFLOW_SEM:
@@ -1081,7 +1081,7 @@ cs_les_inflow_compute(void)
                                      time_step->dt[0],
                                      vel_m_l.data<cs_real_3_t>(),
                                      rij_l.data<cs_real_6_t>(),
-                                     eps_r.data(),
+                                     eps_r,
                                      fluctuations.data<cs_real_3_t>());
 
         if (inlet->verbosity > 0)

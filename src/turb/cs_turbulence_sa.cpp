@@ -233,7 +233,7 @@ _src_terms(const cs_real_t    dt[],
     cs_array<cs_real_t> w1(n_cells_ext);
 
     /* Compute the rotation function (w1 array not used) */
-    cs_turbulence_rotation_correction(dt, csab1r.data(), w1.data());
+    cs_turbulence_rotation_correction(dt, csab1r, w1);
 
     for (cs_lnum_t i = 0; i < n_cells; i++) {
       csab1r[i] *= cs_turb_csab1;
@@ -449,7 +449,7 @@ cs_turbulence_sa(void)
   /* Compute the vorticity omega, the trace of the velocity gradient
      and the gradient of nusa */
 
-  _vort_trace(vort.data(), tr_gr_u.data(), tr_gr_nu.data());
+  _vort_trace(vort, tr_gr_u, tr_gr_nu);
 
   /* Compute the buoyant term:
      gravity is not taken into account at the moment */
@@ -457,12 +457,12 @@ cs_turbulence_sa(void)
   /* Source terms are finalized, stored in st_exp */
 
   _src_terms(dt,
-             tr_gr_nu.data(),
-             vort.data(),
+             tr_gr_nu,
+             vort,
              cpro_rho_o,
              cpro_viscl,
-             rhs_sa.data(),
-             imp_sa.data());
+             rhs_sa,
+             imp_sa);
 
   /* Take user source terms into account */
   /*!
@@ -481,8 +481,8 @@ cs_turbulence_sa(void)
 
   cs_user_source_terms(domain,
                        CS_F_(nusa)->id,
-                       st_exp.data(),
-                       st_imp.data());
+                       st_exp,
+                       st_imp);
 
   /* User source terms and d/dt(rho) and div(rho u) are taken into account
      stored in ext_term */
@@ -547,8 +547,8 @@ cs_turbulence_sa(void)
                          cvara_nusa,
                          mst_val,
                          mst_val_p,
-                         rhs_sa.data(),
-                         imp_sa.data(),
+                         rhs_sa,
+                         imp_sa,
                          gapinj);
 
   }
@@ -584,9 +584,9 @@ cs_turbulence_sa(void)
     cs_face_viscosity(m,
                       fvq,
                       cs_glob_space_disc->imvisf,
-                      w_1.data(),
-                      viscf.data(),
-                      viscb.data());
+                      w_1,
+                      viscf,
+                      viscb);
   }
   else {
     for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++)
@@ -623,19 +623,19 @@ cs_turbulence_sa(void)
                                      bc_coeffs_nusa,
                                      imasfl,
                                      bmasfl,
-                                     viscf.data(),
-                                     viscb.data(),
-                                     viscf.data(),
-                                     viscb.data(),
+                                     viscf,
+                                     viscb,
+                                     viscf,
+                                     viscb,
                                      nullptr,
                                      nullptr,
                                      nullptr,
                                      0, /* boundary convective upwind flux */
                                      nullptr,
-                                     imp_sa.data(),
-                                     rhs_sa.data(),
+                                     imp_sa,
+                                     rhs_sa,
                                      cvar_nusa,
-                                     dpvar.data(),
+                                     dpvar,
                                      nullptr,
                                      nullptr);
 

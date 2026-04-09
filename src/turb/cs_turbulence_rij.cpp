@@ -1413,7 +1413,7 @@ _pre_solve_lrr(const cs_field_t  *f_rij,
     cs_face_viscosity(m,
                       fvq,
                       eqp->imvisf,
-                      w1.data(),
+                      w1,
                       viscf,
                       viscb);
   }
@@ -2025,7 +2025,7 @@ _pre_solve_ssg(const cs_field_t  *f_rij,
     cs_face_viscosity(m,
                       fvq,
                       eqp->imvisf,
-                      w1.data(),
+                      w1,
                       viscf,
                       viscb);
   }
@@ -2434,7 +2434,7 @@ _pre_solve_bfh(const cs_field_t  *f_rij,
     cs_face_viscosity(m,
                       mq,
                       eqp->imvisf,
-                      w1.data(),
+                      w1,
                       viscf,
                       viscb);
   }
@@ -2809,7 +2809,7 @@ _solve_epsilon(int              phase_id,
                                          viscce.data<cs_real_6_t>(),
                                          eqp->verbosity,
                                          weighf.data<cs_real_2_t>(),
-                                         weighb.data(),
+                                         weighb,
                                          viscf,
                                          viscb);
 
@@ -2832,7 +2832,7 @@ _solve_epsilon(int              phase_id,
     cs_face_viscosity(m,
                       fvq,
                       eqp->imvisf,
-                      w1.data(),
+                      w1,
                       viscf,
                       viscb);
   }
@@ -2884,13 +2884,13 @@ _solve_epsilon(int              phase_id,
                                      viscb,
                                      viscce.data<cs_real_6_t>(),
                                      weighf.data<cs_real_2_t>(),
-                                     weighb.data(),
+                                     weighb,
                                      0,  /* boundary convective upwind flux */
                                      nullptr,
                                      fimp,
                                      rhs,
                                      cvar_ep,
-                                     dpvar.data(),
+                                     dpvar,
                                      nullptr,
                                      nullptr);
 
@@ -2998,8 +2998,8 @@ cs_turbulence_rij(int phase_id)
 
   cs_user_source_terms(cs_glob_domain,
                        f_rij->id,
-                       rhs.data(),
-                       fimp.data());
+                       rhs,
+                       fimp);
 
   /* Time extrapolation ? */
   cs_real_6_t *c_st_prv = nullptr;
@@ -3311,8 +3311,8 @@ cs_turbulence_rij(int phase_id)
                          (const cs_real_t*)cvara_rij,
                          mst_val,
                          mst_val_p,
-                         rhs.data(),
-                         fimp.data(),
+                         rhs,
+                         fimp,
                          (cs_real_t*)gatinj);
   }
 
@@ -3340,13 +3340,13 @@ cs_turbulence_rij(int phase_id)
                    prod.data<cs_real_6_t>(),
                    up_rhop.data<cs_real_3_t>(),
                    grav,
-                   viscf.data(),
-                   viscb.data(),
+                   viscf,
+                   viscb,
                    viscce.data<cs_real_6_t>(),
                    rhs.data<cs_real_6_t>(),
                    fimp.data<cs_real_66_t>(),
                    weighf.data<cs_real_2_t>(),
-                   weighb.data());
+                   weighb);
   }
   else if (turb_model->model == CS_TURB_RIJ_EPSILON_BFH)
     _pre_solve_bfh(f_rij, phase_id,
@@ -3354,13 +3354,13 @@ cs_turbulence_rij(int phase_id)
                    prod.data<cs_real_6_t>(),
                    up_rhop.data<cs_real_3_t>(),
                    grav,
-                   viscf.data(),
-                   viscb.data(),
+                   viscf,
+                   viscb,
                    viscce.data<cs_real_6_t>(),
                    rhs.data<cs_real_6_t>(),
                    fimp.data<cs_real_66_t>(),
                    weighf.data<cs_real_2_t>(),
-                   weighb.data());
+                   weighb);
 
   else { /* if (   turb_model->model == CS_TURB_RIJ_EPSILON_SSG
                 || turb_model->model == CS_TURB_RIJ_EPSILON_EBRSM) */
@@ -3369,13 +3369,13 @@ cs_turbulence_rij(int phase_id)
                    prod.data<cs_real_6_t>(),
                    up_rhop.data<cs_real_3_t>(),
                    grav,
-                   viscf.data(),
-                   viscb.data(),
+                   viscf,
+                   viscb,
                    viscce.data<cs_real_6_t>(),
                    rhs.data<cs_real_6_t>(),
                    fimp.data<cs_real_66_t>(),
                    weighf.data<cs_real_2_t>(),
-                   weighb.data());
+                   weighb);
   }
 
   cs_real_6_t  *coefap = (cs_real_6_t *)f_rij->bc_coeffs->a;
@@ -3433,7 +3433,7 @@ cs_turbulence_rij(int phase_id)
 
   ctx.wait();
 
-  cs_solid_zone_set_zero_on_cells(6, rhs.data());
+  cs_solid_zone_set_zero_on_cells(6, rhs);
 
   /* All boundary convective flux with upwind */
   int icvflb = 0;
@@ -3453,13 +3453,13 @@ cs_turbulence_rij(int phase_id)
                                      f_rij->bc_coeffs,
                                      imasfl,
                                      bmasfl,
-                                     viscf.data(),
-                                     viscb.data(),
-                                     viscf.data(),
-                                     viscb.data(),
+                                     viscf,
+                                     viscb,
+                                     viscf,
+                                     viscb,
                                      viscce.data<cs_real_6_t>(),
                                      weighf.data<cs_real_2_t>(),
-                                     weighb.data(),
+                                     weighb,
                                      icvflb,
                                      nullptr,
                                      fimp.data<cs_real_66_t>(),
@@ -3478,10 +3478,10 @@ cs_turbulence_rij(int phase_id)
                    prod.data<cs_real_6_t>(),
                    up_rhop.data<cs_real_3_t>(),
                    grav,
-                   viscf.data(),
-                   viscb.data(),
-                   _rhs.data(),
-                   _fimp.data());
+                   viscf,
+                   viscb,
+                   _rhs,
+                   _fimp);
   }
   else {
     const cs_real_t ales = cs_turb_ales;
@@ -3695,13 +3695,13 @@ cs_turbulence_rij_solve_alpha(int        f_id,
   cs_face_viscosity(m,
                     fvq,
                     eqp->imvisf,
-                    w1.data(),
-                    viscf.data(),
-                    viscb.data());
+                    w1,
+                    viscf,
+                    viscb);
 
   w1.clear(); // Free memory no longer needed
 
-  cs_solid_zone_set_zero_on_cells(1, rhs.data());
+  cs_solid_zone_set_zero_on_cells(1, rhs);
 
   /* Effective resolution of the equation of alpha
      ============================================= */
@@ -3732,19 +3732,19 @@ cs_turbulence_rij_solve_alpha(int        f_id,
                                      bc_coeffs,
                                      imasfl,
                                      bmasfl,
-                                     viscf.data(),
-                                     viscb.data(),
-                                     viscf.data(),
-                                     viscb.data(),
+                                     viscf,
+                                     viscb,
+                                     viscf,
+                                     viscb,
                                      nullptr,
                                      nullptr,
                                      nullptr,
                                      0, /* boundary convective upwind flux */
                                      nullptr,
-                                     fimp.data(),
-                                     rhs.data(),
+                                     fimp,
+                                     rhs,
                                      cvar_al,
-                                     dpvar.data(),
+                                     dpvar,
                                      nullptr,
                                      nullptr);
 
@@ -3780,7 +3780,7 @@ cs_turbulence_rij_solve_alpha(int        f_id,
     alpha_min[c_id] = fimp[c_id]/alpha_min[c_id];
   });
 
-  _clip_alpha(ctx, f_id, n_cells, alpha_min.data());
+  _clip_alpha(ctx, f_id, n_cells, alpha_min);
 
   ctx.wait();
 

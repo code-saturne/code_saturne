@@ -927,8 +927,8 @@ _solve_rit(const cs_field_t     *f,
 
   cs_user_source_terms(cs_glob_domain,
                        f_ut->id,
-                       rhs_ut.data(),
-                       fimp.data());
+                       rhs_ut,
+                       fimp);
 
   const cs_real_t thetv = eqp->theta;
 
@@ -1019,9 +1019,9 @@ _solve_rit(const cs_field_t     *f,
                                            viscce.data<cs_real_6_t>(),
                                            eqp->verbosity,
                                            weighf.data<cs_real_2_t>(),
-                                           weighb.data(),
-                                           viscf.data(),
-                                           viscb.data());
+                                           weighb,
+                                           viscf,
+                                           viscb);
     }
 
     /* Scalar diffusivity */
@@ -1036,9 +1036,9 @@ _solve_rit(const cs_field_t     *f,
       cs_face_viscosity(m,
                         mq,
                         eqp->imvisf,
-                        w1.data(),
-                        viscf.data(),
-                        viscb.data());
+                        w1,
+                        viscf,
+                        viscb);
     }
   }
   /* No diffusion */
@@ -1105,15 +1105,15 @@ _solve_rit(const cs_field_t     *f,
                                      f_ut->bc_coeffs,
                                      imasfl,
                                      bmasfl,
-                                     viscf.data(),
-                                     viscb.data(),
-                                     viscf.data(),
-                                     viscb.data(),
+                                     viscf,
+                                     viscb,
+                                     viscf,
+                                     viscb,
                                      nullptr,
                                      nullptr,
                                      viscce.data<cs_real_6_t>(),
                                      weighf.data<cs_real_2_t>(),
-                                     weighb.data(),
+                                     weighb,
                                      0,
                                      nullptr,
                                      fimp.data<cs_real_33_t>(),
@@ -1273,8 +1273,8 @@ cs_turbulence_rit_div(const int        field_id,
                            gradt.data<cs_real_3_t>(),
                            grad_al.data<cs_real_3_t>(),
                            xut,
-                           thflxf.data(),
-                           thflxb.data(),
+                           thflxf,
+                           thflxb,
                            vistet);
 
   }
@@ -1333,8 +1333,8 @@ cs_turbulence_rit_div(const int        field_id,
                  brom,
                  w1.data<cs_real_3_t>(),
                  &bc_coeffs,
-                 thflxf.data(),
-                 thflxb.data());
+                 thflxf,
+                 thflxb);
 
     bc_coeffs.a = nullptr;
     bc_coeffs.b = nullptr;
@@ -1359,7 +1359,7 @@ cs_turbulence_rit_div(const int        field_id,
       divut = cs_array<cs_real_t>(n_cells_ext, cs_alloc_mode);
     }
 
-    cs_divergence(m, 1, thflxf.data(), thflxb.data(), divut.data());
+    cs_divergence(m, 1, thflxf, thflxb, divut);
 
     ctx.parallel_for(n_cells_ext, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       rhs[c_id] -= divut[c_id];

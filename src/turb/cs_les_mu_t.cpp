@@ -158,7 +158,7 @@ cs_les_mu_t_smago_dyn_prepare(cs_real_t  s_n[],
 
   /* In case of constant density, xrof is 1.0 */
 
-  cs_les_filter_scalar(xro.data(), xrof.data());
+  cs_les_filter_scalar(xro, xrof);
 
   /* Computation of velocity gradient and of
    * S11^2+S22^2+S33^2+2*(S12^2+S13^2+S23^2)
@@ -364,7 +364,7 @@ cs_les_mu_t_smago_dyn(void)
 
   /* In case of constant density, xrof always 1.0 */
 
-  cs_les_filter_scalar(xro.data(), xrof.data());
+  cs_les_filter_scalar(xro, xrof);
 
   /* Allocate work arrays */
   cs_array<cs_real_t> s_n(n_cells_ext, cs_alloc_mode);
@@ -382,15 +382,15 @@ cs_les_mu_t_smago_dyn(void)
    *   Lij:Mij
    */
 
-  cs_les_mu_t_smago_dyn_prepare(s_n.data(), sf_n.data(),
-                                f_vel.data<cs_real_3_t>(), w2.data(), w1.data());
+  cs_les_mu_t_smago_dyn_prepare(s_n, sf_n,
+                                f_vel.data<cs_real_3_t>(), w2, w1);
 
   /* By default we compute a local average of the numerator and of the
      denominator, then only compute  the quotient. The user can overwrite
      this in cs_user_physical_properties_turb_viscosity. */
 
-  cs_les_filter_scalar(w1.data(), w3.data());
-  cs_les_filter_scalar(w2.data(), w4.data());
+  cs_les_filter_scalar(w1, w3);
+  cs_les_filter_scalar(w2, w4);
 
   cs_gnum_t iclipc = 0;
 
@@ -585,7 +585,7 @@ cs_les_mu_t_smago_dyn(void)
 
       ctx.wait();
 
-      cs_les_filter_scalar(w0.data(), w4.data());
+      cs_les_filter_scalar(w0, w4);
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         w4[c_id] /= xrof[c_id];
@@ -616,7 +616,7 @@ cs_les_mu_t_smago_dyn(void)
                          eqp_fld->climgr,
                          nullptr,
                          bc_coeffs,
-                         w4.data(),
+                         w4,
                          nullptr,
                          nullptr, /* internal coupling */
                          gradsf.data<cs_real_3_t>());
@@ -666,8 +666,8 @@ cs_les_mu_t_smago_dyn(void)
 
       ctx.wait();
 
-      cs_les_filter_scalar(w1.data(), w3.data());
-      cs_les_filter_scalar(w2.data(), w4.data());
+      cs_les_filter_scalar(w1, w3);
+      cs_les_filter_scalar(w2, w4);
 
       /*
        * Compute the SGS flux coefficient and SGS diffusivity

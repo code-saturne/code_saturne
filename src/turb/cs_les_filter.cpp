@@ -311,7 +311,7 @@ cs_les_filter_scalar(const cs_real_t  val[],
                        cell_vol,
                        val,
                        nullptr,
-                       v_val.data());
+                       v_val);
 
   cs_cell_to_vertex<1>(CS_CELL_TO_VERTEX_LR,
                        0,
@@ -319,7 +319,7 @@ cs_les_filter_scalar(const cs_real_t  val[],
                        nullptr,
                        cell_vol,
                        nullptr,
-                       v_weight.data());
+                       v_weight);
 
   /* Build cell average */
 
@@ -397,7 +397,7 @@ cs_les_filter_strided(const cs_real_t  val[][stride],
                             cell_vol,
                             reinterpret_cast<const cs_real_t *>(val),
                             nullptr,
-                            v_val.data());
+                            v_val);
 
   cs_cell_to_vertex<1>(CS_CELL_TO_VERTEX_LR,
                        0,
@@ -405,7 +405,7 @@ cs_les_filter_strided(const cs_real_t  val[][stride],
                        nullptr,
                        cell_vol,
                        nullptr,
-                       v_weight.data());
+                       v_weight);
 
   /* Build cell average */
 
