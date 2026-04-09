@@ -1079,7 +1079,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
       ym[0] = 1.;
 
       for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-        CS_F_(t)->val[iel] = cs_elec_convert_h_to_t(ym.data(), CS_F_(h)->val[iel]);
+        CS_F_(t)->val[iel] = cs_elec_convert_h_to_t(ym, CS_F_(h)->val[iel]);
     }
     else {
 
@@ -1091,7 +1091,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
           ym[n_gas - 1] -= ym[ii];
         }
 
-        CS_F_(t)->val[iel] = cs_elec_convert_h_to_t(ym.data(), CS_F_(h)->val[iel]);
+        CS_F_(t)->val[iel] = cs_elec_convert_h_to_t(ym, CS_F_(h)->val[iel]);
       }
     }
 
@@ -1945,7 +1945,7 @@ cs_elec_fields_initialize(const cs_mesh_t   *mesh)
           ym[i] = 0.;
 
       cs_real_t tinit = cs_glob_fluid_properties->t0;
-      hinit = cs_elec_convert_t_to_h(ym.data(), tinit);
+      hinit = cs_elec_convert_t_to_h(ym, tinit);
     }
 
     for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
@@ -2187,7 +2187,7 @@ cs_elec_convert_h_to_t_faces(const cs_real_t  h[],
         ym[n_gasses - 1] -= ym[gas_id];
       }
 
-      t[f_id] = cs_elec_convert_h_to_t(ym.data(), h[f_id]);
+      t[f_id] = cs_elec_convert_h_to_t(ym, h[f_id]);
 
     }
 
@@ -2294,7 +2294,7 @@ cs_elec_convert_t_to_h_cells(const cs_real_t  t[],
         ym[n_gasses - 1] -= ym[gas_id];
       }
 
-      h[c_id] = cs_elec_convert_t_to_h(ym.data(), t[c_id]);
+      h[c_id] = cs_elec_convert_t_to_h(ym, t[c_id]);
 
     }
 
@@ -2351,7 +2351,7 @@ cs_elec_convert_t_to_h_faces(const cs_lnum_t  n_faces,
         ym[n_gasses - 1] -= ym[gas_id];
       }
 
-      h[f_id] = cs_elec_convert_t_to_h(ym.data(), t[f_id]);
+      h[f_id] = cs_elec_convert_t_to_h(ym, t[f_id]);
 
     }
 
