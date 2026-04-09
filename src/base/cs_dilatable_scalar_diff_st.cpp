@@ -187,7 +187,7 @@ cs_dilatable_scalar_diff_st(int iterns)
 
     /* Handle parallelism and periodicity */
     if (mesh->halo != nullptr) {
-      cs_halo_sync_var(mesh->halo, CS_HALO_STANDARD, xcpp.data());
+      cs_halo_sync(mesh->halo, CS_HALO_STANDARD, xcpp);
     }
 
     cs_equation_param_t *eqp_sc = cs_field_get_equation_param(f_scal);
@@ -238,9 +238,9 @@ cs_dilatable_scalar_diff_st(int iterns)
       cs_face_viscosity(mesh,
                         fvq,
                         eqp_sc->imvisf,
-                        vistot.data(),
-                        i_visc.data(),
-                        b_visc.data());
+                        vistot,
+                        i_visc,
+                        b_visc);
 
     }
     else {
@@ -286,9 +286,9 @@ cs_dilatable_scalar_diff_st(int iterns)
                       cvar_scal, cvar_scal,
                       bc_coeffs_sc,
                       i_mass_flux, b_mass_flux,
-                      i_visc.data(), b_visc.data(),
+                      i_visc, b_visc,
                       nullptr,  /* viscel */
-                      xcpp.data(),
+                      xcpp,
                       nullptr,  /* weighf */
                       nullptr,  /* weighb */
                       0,     /* icvflb; upwind scheme */

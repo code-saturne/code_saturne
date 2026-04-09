@@ -458,14 +458,14 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
       w1.copy_data(ctx, crom, n_cells);
 
       if (mesh->halo != nullptr)
-        cs_halo_sync(mesh->halo, CS_HALO_STANDARD, ctx.use_gpu(), w1.data());
+        cs_halo_sync(mesh->halo, CS_HALO_STANDARD, ctx.use_gpu(), w1);
 
       cs_face_viscosity(mesh,
                         fvq,
                         eqp_sc->imvisf,
-                        w1.data(),
-                        i_visc.data(),
-                        b_visc.data());
+                        w1,
+                        i_visc,
+                        b_visc);
 
       /* Homogeneous Neumann BC */
       {
@@ -497,11 +497,11 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
                                   1, /* inc */
                                   0, /* iphydr */
                                   nullptr, /* frcxt */
-                                  viscce.data(),
+                                  viscce,
                                   &bc_coeffs_loc,
-                                  i_visc.data(), b_visc.data(),
-                                  w1.data(),
-                                  flumas.data(), flumab.data());
+                                  i_visc, b_visc,
+                                  w1,
+                                  flumas, flumab);
 
       /* TODO add extradiagonal part */
 
@@ -559,7 +559,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
                         vel, vel,
                         bc_coeffs_vel,
                         i_mass_flux_mix, b_mass_flux_mix,
-                        i_visc.data(), b_visc.data(),
+                        i_visc, b_visc,
                         nullptr, nullptr, /* secvif, secvib */
                         nullptr, nullptr, nullptr,
                         0, nullptr, /* icvflb, icvfli */
@@ -663,7 +663,7 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
                    crom, brom,
                    cpro_drift,
                    &bc_coeffs1_loc,
-                   flumas.data(), flumab.data());
+                   flumas, flumab);
 
       /* Update the convective flux, exception for the Gas "class" */
       ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
@@ -794,9 +794,9 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
     cs_divergence(mesh,
                   1, /* init */
-                  flumas.data(),
-                  flumab.data(),
-                  divflu.data());
+                  flumas,
+                  flumab,
+                  divflu);
 
     const int iconvp = eqp_sc->iconv;
 
