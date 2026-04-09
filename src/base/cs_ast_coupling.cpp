@@ -143,13 +143,15 @@ struct _cs_ast_coupling_t {
 
   cs_real_t *xast_curr[2]; /* Mesh displacement at iteration k+1, k, k-1*/
   cs_real_t *xsat_pred[2]; /* Predicted mesh at iteration k+1, k, k-1*/
-  cs_real_t *vast_curr;    /* Mesh velocity last received (current iteration) */
-  cs_real_t *vast_prev;    /* Mesh velocity at previous time step n-1 */
-  cs_real_t *vast_pprev;   /* Mesh velocity at previous time step n-2 */
+  cs_array<cs_real_t>
+    vast_curr; /* Mesh velocity last received (current iteration) */
+  cs_array<cs_real_t> vast_prev;  /* Mesh velocity at previous time step n-1 */
+  cs_array<cs_real_t> vast_pprev; /* Mesh velocity at previous time step n-2 */
 
-  cs_real_t *forc_curr; /* Fluid forces at current sub-iteration */
-  cs_real_t *forc_prev; /* Fluid forces at previous time step */
-  cs_real_t *forc_pred; /* Predicted fluid forces at current sub-iteration */
+  cs_array<cs_real_t> forc_curr; /* Fluid forces at current sub-iteration */
+  cs_array<cs_real_t> forc_prev; /* Fluid forces at previous time step */
+  cs_array<cs_real_t>
+    forc_pred; /* Predicted fluid forces at current sub-iteration */
 
   cs_real_t aexxst; /*!< coefficient for the predicted displacement */
   cs_real_t bexxst; /*!< coefficient for the predicted displacement */
@@ -184,7 +186,7 @@ cs_ast_coupling_t *cs_glob_ast_coupling = nullptr;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Allocate and initialize dynamic vectors (cs_real_t) based on the 'nb_dyn'
+ * Allocate and initialize dynamic vectors (cs_real_t) based on the 'n_vertices'
  * number of points.
  *----------------------------------------------------------------------------*/
 
@@ -197,19 +199,19 @@ _get_current_verbosity(const cs_ast_coupling_t *ast_cpl)
 static void
 _allocate_arrays(cs_ast_coupling_t *ast_cpl)
 {
-  const cs_lnum_t nb_dyn = ast_cpl->n_vertices;
-  const cs_lnum_t nb_for = ast_cpl->n_faces;
+  const cs_lnum_t n_vertices = ast_cpl->n_vertices;
+  const cs_lnum_t n_faces    = ast_cpl->n_faces;
 
   for (int i = 0; i < 2; i++) {
-    CS_MALLOC(ast_cpl->xast_curr[i], 3 * nb_dyn, cs_real_t);
-    CS_MALLOC(ast_cpl->xsat_pred[i], 3 * nb_dyn, cs_real_t);
+    CS_MALLOC(ast_cpl->xast_curr[i], 3 * n_vertices, cs_real_t);
+    CS_MALLOC(ast_cpl->xsat_pred[i], 3 * n_vertices, cs_real_t);
   }
 
-  CS_MALLOC(ast_cpl->vast_curr, 3 * nb_dyn, cs_real_t);
-  CS_MALLOC(ast_cpl->vast_prev, 3 * nb_dyn, cs_real_t);
-  CS_MALLOC(ast_cpl->vast_pprev, 3 * nb_dyn, cs_real_t);
+  ast_cpl->vast_curr.reshape(3 * n_vertices);
+  ast_cpl->vast_prev.reshape(3 * n_vertices);
+  ast_cpl->vast_pprev.reshape(3 * n_vertices);
 
-  cs_arrays_set_value<cs_real_t, 1>(3 * nb_dyn,
+  cs_arrays_set_value<cs_real_t, 1>(3 * n_vertices,
                                     0.,
                                     ast_cpl->xast_curr[0],
                                     ast_cpl->xast_curr[1],
@@ -219,18 +221,18 @@ _allocate_arrays(cs_ast_coupling_t *ast_cpl)
                                     ast_cpl->vast_prev,
                                     ast_cpl->vast_pprev);
 
-  CS_MALLOC(ast_cpl->forc_curr, 3 * nb_for, cs_real_t);
-  CS_MALLOC(ast_cpl->forc_prev, 3 * nb_for, cs_real_t);
-  CS_MALLOC(ast_cpl->forc_pred, 3 * nb_for, cs_real_t);
+  ast_cpl->forc_curr.reshape(3 * n_faces);
+  ast_cpl->forc_prev.reshape(3 * n_faces);
+  ast_cpl->forc_pred.reshape(3 * n_faces);
 
-  cs_arrays_set_value<cs_real_t, 1>(3 * nb_for,
+  cs_arrays_set_value<cs_real_t, 1>(3 * n_faces,
                                     0.,
                                     ast_cpl->forc_curr,
                                     ast_cpl->forc_prev,
                                     ast_cpl->forc_pred);
 
   for (int i = 0; i < 3; i++) {
-    CS_MALLOC(ast_cpl->tmp[i], 3 * cs::max(nb_dyn, nb_for), cs_real_t);
+    CS_MALLOC(ast_cpl->tmp[i], 3 * cs::max(n_vertices, n_faces), cs_real_t);
   }
 }
 
@@ -425,7 +427,7 @@ _cs_ast_coupling_post_function(void *coupling, const cs_time_step_t *ts)
 
   _scatter_values_r3(cpl->n_vertices,
                      vtx_ids,
-                     (const cs_real_3_t *)cpl->vast_curr,
+                     (const cs_real_3_t *)cpl->vast_curr.data(),
                      (cs_real_3_t *)values);
 
   cs_post_write_vertex_var(cpl->post_mesh_id,
@@ -440,7 +442,7 @@ _cs_ast_coupling_post_function(void *coupling, const cs_time_step_t *ts)
 
   _scatter_values_r3(cpl->n_faces,
                      face_ids,
-                     (const cs_real_3_t *)cpl->forc_curr,
+                     (const cs_real_3_t *)cpl->forc_curr.data(),
                      (cs_real_3_t *)values);
 
   cs_post_write_var(cpl->post_mesh_id,
@@ -557,13 +559,13 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
     cpl->xast_curr[i] = nullptr;
     cpl->xsat_pred[i] = nullptr;
   }
-  cpl->vast_curr  = nullptr;
-  cpl->vast_prev  = nullptr;
-  cpl->vast_pprev = nullptr;
+  cpl->vast_curr.clear();
+  cpl->vast_prev.clear();
+  cpl->vast_pprev.clear();
 
-  cpl->forc_curr = nullptr;
-  cpl->forc_prev = nullptr;
-  cpl->forc_pred = nullptr;
+  cpl->forc_curr.clear();
+  cpl->forc_prev.clear();
+  cpl->forc_pred.clear();
 
   for (int i = 0; i < 3; i++) {
     cpl->tmp[i] = nullptr;
@@ -669,13 +671,13 @@ cs_ast_coupling_finalize(void)
     CS_FREE(cpl->xsat_pred[i]);
   }
 
-  CS_FREE(cpl->vast_curr);
-  CS_FREE(cpl->vast_prev);
-  CS_FREE(cpl->vast_pprev);
+  cpl->vast_curr.clear();
+  cpl->vast_prev.clear();
+  cpl->vast_pprev.clear();
 
-  CS_FREE(cpl->forc_curr);
-  CS_FREE(cpl->forc_prev);
-  CS_FREE(cpl->forc_pred);
+  cpl->forc_curr.clear();
+  cpl->forc_prev.clear();
+  cpl->forc_pred.clear();
 
   for (int i = 0; i < 3; i++) {
     CS_FREE(cpl->tmp[i]);
@@ -975,7 +977,7 @@ cs_ast_coupling_get_fluid_forces_pointer(void)
   cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
   if (cpl != nullptr)
-    f_forces = (cs_real_3_t *)cpl->forc_curr;
+    f_forces = (cs_real_3_t *)cpl->forc_curr.data();
 
   return f_forces;
 }
@@ -1022,7 +1024,7 @@ cs_ast_coupling_send_fluid_forces(void)
     /* Implicit prediction */
     c1 = 1.0;
     c2 = 0.0;
-    cs_array_copy(3 * n_faces, cpl->forc_curr, cpl->forc_pred);
+    cpl->forc_pred.copy_data(cpl->forc_curr);
   }
 
   if (verbosity > 0)
@@ -1126,9 +1128,9 @@ cs_ast_coupling_recv_displacement(void)
   }
 
   /* Update values */
-  const cs_lnum_t nb_dyn = cpl->n_vertices;
+  const cs_lnum_t n_vertices = cpl->n_vertices;
 
-  cs_array_copy(3 * nb_dyn, cpl->xast_curr[0], cpl->xast_curr[1]);
+  cs_array_copy(3 * n_vertices, cpl->xast_curr[0], cpl->xast_curr[1]);
 
   /* Received discplacement and velocity field */
   cpl->mc_vertices->recv_data(_name_m_d, cpl->xast_curr[0], false);
@@ -1141,7 +1143,7 @@ cs_ast_coupling_recv_displacement(void)
 
   /* For dry run, reset values to zero to avoid uninitialized values */
   if (cpl->aci.root_rank < 0) {
-    cs_arrays_set_value<cs_real_t, 1>(3 * nb_dyn,
+    cs_arrays_set_value<cs_real_t, 1>(3 * n_vertices,
                                       0.,
                                       cpl->xast_curr[0],
                                       cpl->vast_curr);
@@ -1161,17 +1163,16 @@ cs_ast_coupling_save_values(void)
 {
   cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
-  const cs_lnum_t nb_dyn = cpl->n_vertices;
-  const cs_lnum_t nb_for = cpl->n_faces;
+  const cs_lnum_t n_vertices = cpl->n_vertices;
 
   /* record efforts */
-  cs_array_copy(3 * nb_for, cpl->forc_pred, cpl->forc_prev);
+  cpl->forc_prev.copy_data(cpl->forc_pred);
 
   /* record dynamic data */
-  cs_array_copy(3 * nb_dyn, cpl->vast_prev, cpl->vast_pprev);
-  cs_array_copy(3 * nb_dyn, cpl->vast_curr, cpl->vast_prev);
+  cpl->vast_pprev.copy_data(cpl->vast_prev);
+  cpl->vast_prev.copy_data(cpl->vast_curr);
 
-  cs_arrays_set_value<cs_real_t, 1>(3 * nb_dyn,
+  cs_arrays_set_value<cs_real_t, 1>(3 * n_vertices,
                                     0.,
                                     cpl->xast_curr[1],
                                     cpl->xsat_pred[0],
@@ -1202,7 +1203,7 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
   if (cpl->iteration < 0)
     return;
 
-  const cs_lnum_t nb_dyn = cpl->n_vertices;
+  const cs_lnum_t n_vertices = cpl->n_vertices;
 
   /* Predict displacements */
 
@@ -1227,7 +1228,7 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
           c1,
           c2,
           c3,
-          nb_dyn);
+          n_vertices);
   }
   else {
     /* rexxst could be defined differently to have a better convergence */
@@ -1245,7 +1246,7 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
     c2 = 1. - rexxst;
     c3 = 0.;
 
-    cs_array_copy(3 * nb_dyn, cpl->xsat_pred[0], cpl->xsat_pred[1]);
+    cs_array_copy(3 * n_vertices, cpl->xsat_pred[0], cpl->xsat_pred[1]);
 
     _pred(cpl->xsat_pred[0],
           cpl->xast_curr[0],
@@ -1254,7 +1255,7 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
           c1,
           c2,
           c3,
-          nb_dyn);
+          n_vertices);
   }
 
   int verbosity = _get_current_verbosity(cpl);
