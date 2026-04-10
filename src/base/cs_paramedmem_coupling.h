@@ -47,7 +47,8 @@ typedef struct _cs_paramedmem_coupling_t cs_paramedmem_coupling_t;
 
 typedef enum {
   CS_MEDCPL_ON_CELLS,
-  CS_MEDCPL_ON_NODES
+  CS_MEDCPL_ON_NODES,
+  CS_MEDCPL_ON_NODES_FE
 } cs_medcpl_space_discr_t;
 
 typedef enum {
@@ -63,6 +64,11 @@ typedef enum {
   CS_MEDCPL_FIELD_EXT_MAXIMUM,
   CS_MEDCPL_FIELD_N_NATURE
 } cs_medcpl_field_nature_t;
+
+typedef enum {
+  CS_MEDCPL_INTERPKERNELDEC,
+  CS_MEDCPL_CFEMDEC,
+} cs_medcpl_dec_t;
 
 /*============================================================================
  * Public C++ function prototypes
@@ -103,15 +109,17 @@ cs_paramedmem_coupling_by_name(const char *name);
  * \param[in] app2_name  Name of app n°2 or NULL if calling app is app2
  * \param[in] cpl_name   Name of the coupling.
  *                       If NULL an automatic name is generated.
+ * \param[in] type_dec   Type of DEC used for Data exchange
  *
  * \return pointer to newly created cs_paramedmem_coupling_t structure.
  */
 /*----------------------------------------------------------------------------*/
 
 cs_paramedmem_coupling_t *
-cs_paramedmem_coupling_create(const char *app1_name,
-                              const char *app2_name,
-                              const char *cpl_name);
+cs_paramedmem_coupling_create(const char     *app1_name,
+                              const char     *app2_name,
+                              const char     *cpl_name,
+                              cs_medcpl_dec_t type_dec);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -122,8 +130,6 @@ cs_paramedmem_coupling_create(const char *app1_name,
  *
  * In this case, data "received" matches the initialized values.
  *
- * \param[in] app1_name  Name of app n°1 or NULL if calling app is app1
- * \param[in] app2_name  Name of app n°2 or NULL if calling app is app2
  * \param[in] cpl_name   Name of the coupling.
  *                       If NULL an automatic name is generated.
  *

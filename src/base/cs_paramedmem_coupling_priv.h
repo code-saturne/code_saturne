@@ -37,7 +37,8 @@
 #include <MEDCouplingField.hxx>
 #include <MEDCouplingFieldDouble.hxx>
 
-#include <InterpKernelDEC.hxx>
+#include <CFEMDEC.hxx>
+#include <InterpKernelDECWithOverlap.hxx>
 #include <ParaFIELD.hxx>
 #include <ParaMESH.hxx>
 
@@ -71,7 +72,10 @@ struct _cs_paramedmem_coupling_t {
 
   ParaMESH *para_mesh; /* Associated ParaMESH structure. */
 
-  InterpKernelDEC *dec; /* Data Exchange Channel */
+  InterpKernelDECWithOverlap *dec; /* Data Exchange Channel */
+  CFEMDEC *cdec; /* Data Exchange Channel with FE interpolation*/
+
+  DataArrayIdType *global_node_ids; /* Global node ids of the local mesh */
 
 #if USE_PARAFIELD == 1
   std::vector<ParaFIELD *> fields;
@@ -122,6 +126,16 @@ private:
   };
 
 #if defined(HAVE_PARAMEDMEM)
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief Compute global vertex numbering
+   *
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  _computeGlobalNodeIds();
 
   /*----------------------------------------------------------------------------*/
   /*!

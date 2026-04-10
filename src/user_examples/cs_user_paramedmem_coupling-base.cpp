@@ -68,9 +68,11 @@ cs_user_paramedmem_define_couplings(void)
    */
   /*! [paramedmem_coupling_define1] */
   {
-    cs_paramedmem_coupling_t *c = cs_paramedmem_coupling_create("SAT",
-                                                                "NCFD",
-                                                                "CPL1");
+    cs_paramedmem_coupling_t *c =
+      cs_paramedmem_coupling_create("SAT",
+                                    "NCFD",
+                                    "CPL1",
+                                    CS_MEDCPL_INTERPKERNELDEC);
   }
   /*! [paramedmem_coupling_define1] */
 
@@ -82,9 +84,11 @@ cs_user_paramedmem_define_couplings(void)
    */
   /*! [paramedmem_coupling_define2] */
   {
-    cs_paramedmem_coupling_t *c = cs_paramedmem_coupling_create(nullptr,
-                                                                "PARTNER",
-                                                                nullptr);
+    cs_paramedmem_coupling_t *c =
+      cs_paramedmem_coupling_create(nullptr,
+                                    "PARTNER",
+                                    nullptr,
+                                    CS_MEDCPL_INTERPKERNELDEC);
   }
   /*! [paramedmem_coupling_define2] */
 
