@@ -1260,15 +1260,10 @@ cs_boundary_conditions_set_dirichlet_conv_neumann_diff_scalar
  * \param[in]      need_compute_bc_flux  flux must be computed
  * \param[in]      hyd_p_flag            hydrostatic pressure indicator
  * \param[in]      f_ext                 exterior force generating pressure
- * \param[in]      visel                 viscosity by cell, or nullptr
- * \param[in]      viscel                symmetric cell tensor
-                                         \f$ \tens{\mu}_\celli \f$,
-                                         or nullptr
+ * \param[in]      c_weight              viscosity by cell, or nullptr
  * \param[in]      weighb                boundary face weight for cells i in
  *                                       case of tensor diffusion, or nullptr
  * \param[in]      var                   variable values at cell centers
- * \param[in,out]  var_f                 face values for the gradient computation
- * \param[in,out]  flux                  face values for the diffusion computation
  *
  */
 /*----------------------------------------------------------------------------*/
@@ -1284,8 +1279,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
    const bool                  need_compute_bc_flux,
    int                         hyd_p_flag,
    cs_real_t                   f_ext[][3],
-   cs_real_t                   visel[],
-   cs_real_t                   viscel[][6],
+   cs_real_t                  *c_weight,
    const cs_real_t             weighb[],
    const cs_real_t             pvar[]);
 
@@ -1301,9 +1295,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
  * \param[in]       need_compute_bc_flux  flux must be computed
  * \param[in]       hyd_p_flag            flag for hydrostatic pressure
  * \param[in]       f_ext                 exterior force generating pressure
- * \param[in]       viscel                symmetric cell tensor
-                                          \f$ \tens{\mu}_\celli \f$,
-                                          or nullptr
+ * \param[in]       c_weight              viscosity by cell, or nullptr
  * \param[in]       weighb                boundary face weight for cells i in
  *                                        case of tensor diffusion, or nullptr
  * \param[in]       pvar                  variable values at cell centers
@@ -1319,7 +1311,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
    const bool                  need_compute_bc_flux,
    int                         hyd_p_flag,
    cs_real_t                   f_ext[][3],
-   cs_real_t                   viscel[][6],
+   cs_real_t                  *c_weight,
    const cs_real_t             weighb[],
    const cs_real_t             pvar[]);
 

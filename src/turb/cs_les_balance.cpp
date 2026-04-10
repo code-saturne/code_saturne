@@ -460,6 +460,7 @@ _les_balance_laplacian(cs_real_t   *wa,
                                  &bc_coeffs_loc, /* coefa & b not used */
                                  i_visc,         /* mass flux (not used) */
                                  b_visc,         /* mass flux (not used) */
+                                 nullptr,        /* c_visc */
                                  i_visc,
                                  b_visc,
                                  res,

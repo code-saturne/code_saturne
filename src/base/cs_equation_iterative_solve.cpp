@@ -2271,7 +2271,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
      eqp,
      true, true,
      false, nullptr, // hyd_p_flag, f_ext
-     nullptr, viscel, weighb,
+     nullptr, weighb,
      pvar);
 
   /*==========================================================================

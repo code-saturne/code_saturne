@@ -1756,6 +1756,7 @@ _adjust_and_check_bounds_strided
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
+ * \param[in]     c_weight      cell viscosity
  * \param[in]     xcpp          array of specific heat (\f$ C_p \f$), or nullptr
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  * \param[in,out] i_flux        interior flux (or nullptr)
@@ -1779,6 +1780,7 @@ _convection_diffusion_scalar_unsteady
    const cs_real_t             b_massflux[],
    const cs_real_t             i_visc[],
    const cs_real_t             b_visc[],
+   const cs_real_t            *c_weight,
    const cs_real_t             xcpp[],
    cs_real_t         *restrict rhs,
    cs_real_2_t       *restrict i_flux,
@@ -1848,8 +1850,6 @@ _convection_diffusion_scalar_unsteady
 
   cs_real_t *cv_limiter = nullptr;
   cs_real_t *df_limiter = nullptr;
-
-  cs_real_t *gweight = nullptr;
 
   const int key_lim_choice = cs_field_key_id("limiter_choice");
 
@@ -1952,38 +1952,6 @@ _convection_diffusion_scalar_unsteady
       || (   iconvp != 0 && pure_upwind == false
           && (ircflp == 1 || isstpp == 0 || is_ischcp)));
 
-  if (gradient_reco && f != nullptr) {
-    /* Get the calculation option from the field */
-    if (f->type & CS_FIELD_VARIABLE && eqp.iwgrec == 1) {
-      if (eqp.idiff > 0) {
-        int key_id = cs_field_key_id("gradient_weighting_id");
-        int diff_id = cs_field_get_key_int(f, key_id);
-        if (diff_id > -1) {
-          cs_field_t *weight_f = cs_field_by_id(diff_id);
-          gweight = weight_f->val;
-          w_stride = weight_f->dim;
-          cs_field_synchronize(weight_f, halo_type);
-        }
-      }
-    }
-  }
-
-  const bool need_compute_bc_flux = (idiffp > 0) ? true : false;
-  const bool need_compute_bc_grad = true;
-
-  cs_boundary_conditions_update_bc_coeff_face_values
-    (ctx,
-     (const cs_field_t *)f,
-     bc_coeffs,
-     inc,
-     &eqp,
-     need_compute_bc_grad, need_compute_bc_flux,
-     -1, nullptr, // hyd_p_flag, f_ext,
-     gweight,
-     nullptr, // viscel (aniso)
-     nullptr, // weighb (aniso)
-     _pvar);
-
   /* Compute the balance with reconstruction */
 
   /* Compute the gradient of the variable */
@@ -2015,7 +1983,7 @@ _convection_diffusion_scalar_unsteady
                                     nullptr, /* f_ext exterior force */
                                     bc_coeffs,
                                     _pvar,
-                                    gweight, /* Weighted gradient */
+                                    c_weight, /* Weighted gradient */
                                     grad,
                                     bounds);
 
@@ -3060,7 +3028,6 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
      need_compute_bc_grad, need_compute_bc_flux,
      -1, nullptr,
      gweight,
-     nullptr, // viscel (aniso)
      nullptr, // weighb (aniso)
      pvar);
 
@@ -4878,6 +4845,7 @@ cs_beta_limiter_building(int                   f_id,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
+ * \param[in]     c_visc        cell viscosity                                \
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  * \param[in,out] i_flux        interior flux (or nullptr)
  * \param[in,out] b_flux        boundary flux (or nullptr)
@@ -4898,6 +4866,7 @@ cs_convection_diffusion_scalar(const cs_field_t           *f,
                                const cs_real_t             b_massflux[],
                                const cs_real_t             i_visc[],
                                const cs_real_t             b_visc[],
+                               const cs_real_t            *c_visc,
                                cs_real_t                  *rhs,
                                cs_real_2_t                 i_flux[],
                                cs_real_t                   b_flux[])
@@ -4915,7 +4884,7 @@ cs_convection_diffusion_scalar(const cs_field_t           *f,
        icvfli,
        bc_coeffs,
        i_massflux, b_massflux,
-       i_visc, b_visc,
+       i_visc, b_visc, c_visc,
        nullptr, rhs, i_flux, b_flux);
   else
     _convection_diffusion_scalar_unsteady<false, true>
@@ -4924,7 +4893,7 @@ cs_convection_diffusion_scalar(const cs_field_t           *f,
        icvfli,
        bc_coeffs,
        i_massflux, b_massflux,
-       i_visc, b_visc,
+       i_visc, b_visc, c_visc,
        nullptr, rhs, i_flux, b_flux);
 
   if (cs_glob_timer_kernels_flag > 0) {
@@ -5850,6 +5819,7 @@ cs_convection_diffusion_tensor(int                          idtvar,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
+ * \param[in]     c_visc        cell viscosity
  * \param[in]     xcpp          array of specific heat (\f$ C_p \f$)
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
@@ -5867,6 +5837,7 @@ cs_convection_diffusion_thermal(const cs_field_t           *f,
                                 const cs_real_t             b_massflux[],
                                 const cs_real_t             i_visc[],
                                 const cs_real_t             b_visc[],
+                                const cs_real_t            *c_visc,
                                 const cs_real_t             xcpp[],
                                 cs_real_t        *restrict  rhs)
 {
@@ -5880,7 +5851,7 @@ cs_convection_diffusion_thermal(const cs_field_t           *f,
      nullptr, /* icvfli */
      bc_coeffs,
      i_massflux, b_massflux,
-     i_visc, b_visc,
+     i_visc, b_visc, c_visc,
      xcpp, rhs, nullptr, nullptr);
 }
 
@@ -5914,7 +5885,7 @@ cs_convection_diffusion_thermal(const cs_field_t           *f,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
- * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
+ * \param[in]     c_weight      symmetric cell tensor \f$ \tens{\mu}_\celli \f$
  * \param[in]     weighf        internal face weight between cells i j in case
  *                               of tensor diffusion
  * \param[in]     weighb        boundary face weight for cells i in case
@@ -5933,7 +5904,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
                                 cs_field_bc_coeffs_t       *bc_coeffs,
                                 const cs_real_t             i_visc[],
                                 const cs_real_t             b_visc[],
-                                cs_real_6_t      *restrict  viscel,
+                                cs_real_6_t      *restrict  c_visc,
                                 const cs_real_2_t           weighf[],
                                 const cs_real_t             weighb[],
                                 cs_real_t        *restrict  rhs)
@@ -5949,7 +5920,6 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
   const double thetap = eqp.theta;
 
   const cs_mesh_t  *m = cs_glob_mesh;
-  const cs_halo_t  *halo = m->halo;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
 
   const cs_lnum_t n_cells = m->n_cells;
@@ -5969,8 +5939,6 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
-  const bool on_device = ctx.use_gpu();
-
   /* Local variables */
 
   cs_real_t *df_limiter = nullptr;
@@ -5979,14 +5947,11 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
 
   int w_stride = 1;
 
-  cs_real_6_t *viscce = nullptr;
   cs_real_6_t *w2 = nullptr;
   cs_real_3_t *grad;
   cs_real_2_t *bounds = nullptr;
 
   cs_field_t *f = nullptr;
-
-  cs_real_t *gweight = nullptr;
 
   /* 1. Initialization */
 
@@ -6012,14 +5977,6 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
                              &gradient_type,
                              &halo_type);
 
-  /* Handle cases where only the previous values (already synchronized)
-     or current values are provided */
-
-  if (pvar != nullptr)
-    cs_halo_sync(m->halo, halo_type, on_device, pvar);
-  if (pvara == nullptr)
-    pvara = (const cs_real_t *)pvar;
-
   const cs_real_t  *restrict _pvar = (pvar != nullptr) ? pvar : pvara;
 
   int df_limiter_id = eqp.diffusion_limiter_id;
@@ -6035,85 +5992,6 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
   else
     strncpy(var_name, "[anisotropic diffusion, scalar]", 63);
   var_name[63] = '\0';
-
-  /* Porosity fields */
-  cs_field_t *fporo = cs_field_by_name_try("porosity");
-  cs_field_t *ftporo = cs_field_by_name_try("tensorial_porosity");
-
-  cs_real_t *porosi = nullptr;
-  cs_real_6_t *porosf = nullptr;
-
-  if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2) {
-    porosi = fporo->val;
-    if (ftporo != nullptr) {
-      porosf = (cs_real_6_t *)ftporo->val;
-    }
-  }
-
-  /* Without porosity */
-  if (porosi == nullptr) {
-    viscce = viscel;
-
-    /* With porosity */
-  }
-  else if (porosi != nullptr && porosf == nullptr) {
-    CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-      for (cs_lnum_t isou = 0; isou < 6; isou++) {
-        w2[cell_id][isou] = porosi[cell_id]*viscel[cell_id][isou];
-      }
-    });
-    ctx.wait();
-    viscce = w2;
-
-    /* With tensorial porosity */
-  }
-  else if (porosi != nullptr && porosf != nullptr) {
-    CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
-    ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-      cs_math_sym_33_product(porosf[cell_id],
-                             viscel[cell_id],
-                             w2[cell_id]);
-    });
-    ctx.wait();
-    viscce = w2;
-  }
-
-  /* ---> Periodicity and parallelism treatment of symmetric tensors */
-  cs_halo_sync_r(halo, halo_type, false, viscce);
-
-  // Update Bcs
-  const bool need_compute_bc_flux = true;
-  const bool need_compute_bc_grad = true;
-
-  if (ircflp && f_id != -1) {
-    /* Get the calculation option from the field */
-    if (f->type & CS_FIELD_VARIABLE && eqp.iwgrec == 1) {
-      if (eqp.idifft > 0) {
-        int key_id = cs_field_key_id("gradient_weighting_id");
-        int diff_id = cs_field_get_key_int(f, key_id);
-        if (diff_id > -1) {
-          cs_field_t *weight_f = cs_field_by_id(diff_id);
-          gweight = weight_f->val;
-          w_stride = weight_f->dim;
-          cs_field_synchronize(weight_f, halo_type);
-        }
-      }
-    }
-  }
-
-  cs_boundary_conditions_update_bc_coeff_face_values
-    (ctx,
-     f,
-     bc_coeffs,
-     inc,
-     &eqp,
-     need_compute_bc_grad, need_compute_bc_flux,
-     -1, nullptr, // hyd_p_flag, f_ext,
-     nullptr, //visel,
-     viscce,
-     weighb,
-     _pvar);
 
   /* 2. Compute the diffusive part with reconstruction technics */
 
@@ -6137,7 +6015,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
                                     nullptr, /* f_ext exterior force */
                                     bc_coeffs,
                                     _pvar,
-                                    gweight, /* Weighted gradient */
+                                    (cs_real_t *)c_visc, /* Weighted gradient */
                                     grad,
                                     bounds);
 
@@ -6192,15 +6070,15 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
 
       cs_real_t visci[3][3], viscj[3][3];
 
-      visci[0][0] = viscce[ii][0];
-      visci[1][1] = viscce[ii][1];
-      visci[2][2] = viscce[ii][2];
-      visci[1][0] = viscce[ii][3];
-      visci[0][1] = viscce[ii][3];
-      visci[2][1] = viscce[ii][4];
-      visci[1][2] = viscce[ii][4];
-      visci[2][0] = viscce[ii][5];
-      visci[0][2] = viscce[ii][5];
+      visci[0][0] = c_visc[ii][0];
+      visci[1][1] = c_visc[ii][1];
+      visci[2][2] = c_visc[ii][2];
+      visci[1][0] = c_visc[ii][3];
+      visci[0][1] = c_visc[ii][3];
+      visci[2][1] = c_visc[ii][4];
+      visci[1][2] = c_visc[ii][4];
+      visci[2][0] = c_visc[ii][5];
+      visci[0][2] = c_visc[ii][5];
 
       /* IF.Ki.S / ||Ki.S||^2 */
       cs_real_t fikdvi = weighf[face_id][0];
@@ -6216,15 +6094,15 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
                             *i_face_surf[face_id];
       }
 
-      viscj[0][0] = viscce[jj][0];
-      viscj[1][1] = viscce[jj][1];
-      viscj[2][2] = viscce[jj][2];
-      viscj[1][0] = viscce[jj][3];
-      viscj[0][1] = viscce[jj][3];
-      viscj[2][1] = viscce[jj][4];
-      viscj[1][2] = viscce[jj][4];
-      viscj[2][0] = viscce[jj][5];
-      viscj[0][2] = viscce[jj][5];
+      viscj[0][0] = c_visc[jj][0];
+      viscj[1][1] = c_visc[jj][1];
+      viscj[2][2] = c_visc[jj][2];
+      viscj[1][0] = c_visc[jj][3];
+      viscj[0][1] = c_visc[jj][3];
+      viscj[2][1] = c_visc[jj][4];
+      viscj[1][2] = c_visc[jj][4];
+      viscj[2][0] = c_visc[jj][5];
+      viscj[0][2] = c_visc[jj][5];
 
       /* FJ.Kj.S / ||Kj.S||^2 */
       cs_real_t fjkdvi = weighf[face_id][1];
@@ -6294,15 +6172,15 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
 
       cs_real_t visci[3][3], viscj[3][3];
 
-      visci[0][0] = viscce[ii][0];
-      visci[1][1] = viscce[ii][1];
-      visci[2][2] = viscce[ii][2];
-      visci[1][0] = viscce[ii][3];
-      visci[0][1] = viscce[ii][3];
-      visci[2][1] = viscce[ii][4];
-      visci[1][2] = viscce[ii][4];
-      visci[2][0] = viscce[ii][5];
-      visci[0][2] = viscce[ii][5];
+      visci[0][0] = c_visc[ii][0];
+      visci[1][1] = c_visc[ii][1];
+      visci[2][2] = c_visc[ii][2];
+      visci[1][0] = c_visc[ii][3];
+      visci[0][1] = c_visc[ii][3];
+      visci[2][1] = c_visc[ii][4];
+      visci[1][2] = c_visc[ii][4];
+      visci[2][0] = c_visc[ii][5];
+      visci[0][2] = c_visc[ii][5];
 
       /* IF.Ki.S / ||Ki.S||^2 */
       cs_real_t fikdvi = weighf[face_id][0];
@@ -6318,15 +6196,15 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
                             *i_face_surf[face_id];
       }
 
-      viscj[0][0] = viscce[jj][0];
-      viscj[1][1] = viscce[jj][1];
-      viscj[2][2] = viscce[jj][2];
-      viscj[1][0] = viscce[jj][3];
-      viscj[0][1] = viscce[jj][3];
-      viscj[2][1] = viscce[jj][4];
-      viscj[1][2] = viscce[jj][4];
-      viscj[2][0] = viscce[jj][5];
-      viscj[0][2] = viscce[jj][5];
+      viscj[0][0] = c_visc[jj][0];
+      viscj[1][1] = c_visc[jj][1];
+      viscj[2][2] = c_visc[jj][2];
+      viscj[1][0] = c_visc[jj][3];
+      viscj[0][1] = c_visc[jj][3];
+      viscj[2][1] = c_visc[jj][4];
+      viscj[1][2] = c_visc[jj][4];
+      viscj[2][0] = c_visc[jj][5];
+      viscj[0][2] = c_visc[jj][5];
 
       /* FJ.Kj.S / ||Kj.S||^2 */
       cs_real_t fjkdvi = weighf[face_id][1];
@@ -6392,15 +6270,15 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
 
       cs_real_t visci[3][3];
 
-      visci[0][0] = viscce[ii][0];
-      visci[1][1] = viscce[ii][1];
-      visci[2][2] = viscce[ii][2];
-      visci[1][0] = viscce[ii][3];
-      visci[0][1] = viscce[ii][3];
-      visci[2][1] = viscce[ii][4];
-      visci[1][2] = viscce[ii][4];
-      visci[2][0] = viscce[ii][5];
-      visci[0][2] = viscce[ii][5];
+      visci[0][0] = c_visc[ii][0];
+      visci[1][1] = c_visc[ii][1];
+      visci[2][2] = c_visc[ii][2];
+      visci[1][0] = c_visc[ii][3];
+      visci[0][1] = c_visc[ii][3];
+      visci[2][1] = c_visc[ii][4];
+      visci[1][2] = c_visc[ii][4];
+      visci[2][0] = c_visc[ii][5];
+      visci[0][2] = c_visc[ii][5];
 
       /* IF.Ki.S / ||Ki.S||^2 */
       cs_real_t fikdvi = weighb[face_id];
@@ -8119,7 +7997,6 @@ cs_face_diffusion_potential(const cs_field_t           *f,
      need_compute_bc_grad, need_compute_bc_flux,
      iphydp, frcxt,
      gweight,
-     nullptr, // viscel (aniso)
      nullptr, // weighb (aniso)
      pvar);
 
@@ -8308,7 +8185,7 @@ cs_face_anisotropic_diffusion_potential
   char var_name[64];
   int w_stride = 6;
 
-  cs_real_t *gweight = nullptr;
+  cs_real_t *c_visc = nullptr;
 
   /* Parallel or device dispatch */
   cs_dispatch_context ctx, ctx_b;
@@ -8385,8 +8262,12 @@ cs_face_anisotropic_diffusion_potential
 
   cs_real_6_t *viscce = nullptr;
 
+  bool need_compute_bc_grad = false;
+
   // Weight for gradient
   if (ircflp) {
+
+    need_compute_bc_grad = true;
 
     /* Without porosity */
     if (porosi == nullptr) {
@@ -8420,28 +8301,23 @@ cs_face_anisotropic_diffusion_potential
     /* Periodicity and parallelism treatment of symmetric tensors */
     cs_halo_sync_r(halo, CS_HALO_STANDARD, on_device, viscce);
 
+    c_visc = (cs_real_t *)viscce;
+
     /* Allocate a work array for the gradient calculation */
     CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, amode);
 
     if (eqp->rc_clip_factor >= 0)
       CS_MALLOC_HD(bounds, n_cells_ext, cs_real_2_t, cs_alloc_mode);
 
-    /* Compute gradient */
-    if (eqp->iwgrec > 0) {
-      gweight = (cs_real_t *)viscce;
-    }
-
-    else if (f != nullptr) {
+    if (f != nullptr) {
       /* Get the calculation option from the field */
-      const cs_equation_param_t *eqp_f
-        = cs_field_get_equation_param_const(f);
-      if (f->type & CS_FIELD_VARIABLE && eqp_f->iwgrec == 1) {
+      if (f->type & CS_FIELD_VARIABLE) {
         if (eqp->idifft > 0) {
           int key_id = cs_field_key_id("gradient_weighting_id");
           int diff_id = cs_field_get_key_int(f, key_id);
           if (diff_id > -1) {
             cs_field_t *weight_f = cs_field_by_id(diff_id);
-            gweight = weight_f->val;
+            c_visc = weight_f->val;
             w_stride = weight_f->dim;
             cs_field_synchronize(weight_f, halo_type, on_device);
           }
@@ -8451,7 +8327,6 @@ cs_face_anisotropic_diffusion_potential
   }
 
   const bool need_compute_bc_flux = true;
-  const bool need_compute_bc_grad = true;
 
   cs_boundary_conditions_update_bc_coeff_face_values
     (ctx,
@@ -8461,8 +8336,7 @@ cs_face_anisotropic_diffusion_potential
      eqp,
      need_compute_bc_grad, need_compute_bc_flux,
      iphydp, frcxt,
-     nullptr, //visel,
-     (cs_real_6_t *)gweight,
+     c_visc,
      weighb,
      pvar);
 
@@ -8503,7 +8377,7 @@ cs_face_anisotropic_diffusion_potential
                                     frcxt,
                                     bc_coeffs,
                                     pvar,
-                                    gweight, /* Weighted gradient */
+                                    c_visc, /* Weighted gradient */
                                     grad,
                                     bounds);
 
@@ -8523,6 +8397,8 @@ cs_face_anisotropic_diffusion_potential
 
     /* Mass flow through interior faces */
 
+    cs_real_6_t *c_visc_t = (cs_real_6_t *)c_visc;
+
     ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
       cs_lnum_t ii = i_face_cells[face_id][0];
       cs_lnum_t jj = i_face_cells[face_id][1];
@@ -8536,15 +8412,15 @@ cs_face_anisotropic_diffusion_potential
       cs_real_t visci[3][3], viscj[3][3];
       cs_real_t diippf[3], djjppf[3];
 
-      visci[0][0] = viscce[ii][0];
-      visci[1][1] = viscce[ii][1];
-      visci[2][2] = viscce[ii][2];
-      visci[1][0] = viscce[ii][3];
-      visci[0][1] = viscce[ii][3];
-      visci[2][1] = viscce[ii][4];
-      visci[1][2] = viscce[ii][4];
-      visci[2][0] = viscce[ii][5];
-      visci[0][2] = viscce[ii][5];
+      visci[0][0] = c_visc_t[ii][0];
+      visci[1][1] = c_visc_t[ii][1];
+      visci[2][2] = c_visc_t[ii][2];
+      visci[1][0] = c_visc_t[ii][3];
+      visci[0][1] = c_visc_t[ii][3];
+      visci[2][1] = c_visc_t[ii][4];
+      visci[1][2] = c_visc_t[ii][4];
+      visci[2][0] = c_visc_t[ii][5];
+      visci[0][2] = c_visc_t[ii][5];
 
       cs_real_t bldfrp = (cs_real_t) ircflp;
       /* Local limitation of the reconstruction */
@@ -8562,15 +8438,15 @@ cs_face_anisotropic_diffusion_potential
                                   + visci[2][i]*i_face_u_normal[face_id][2]);
       }
 
-      viscj[0][0] = viscce[jj][0];
-      viscj[1][1] = viscce[jj][1];
-      viscj[2][2] = viscce[jj][2];
-      viscj[1][0] = viscce[jj][3];
-      viscj[0][1] = viscce[jj][3];
-      viscj[2][1] = viscce[jj][4];
-      viscj[1][2] = viscce[jj][4];
-      viscj[2][0] = viscce[jj][5];
-      viscj[0][2] = viscce[jj][5];
+      viscj[0][0] = c_visc_t[jj][0];
+      viscj[1][1] = c_visc_t[jj][1];
+      viscj[2][2] = c_visc_t[jj][2];
+      viscj[1][0] = c_visc_t[jj][3];
+      viscj[0][1] = c_visc_t[jj][3];
+      viscj[2][1] = c_visc_t[jj][4];
+      viscj[1][2] = c_visc_t[jj][4];
+      viscj[2][0] = c_visc_t[jj][5];
+      viscj[0][2] = c_visc_t[jj][5];
 
       /* FJ.Kj.S / ||Kj.S||^2 */
       cs_real_t fjkdvi_s = weighf[face_id][1] * i_face_surf[face_id];
@@ -8770,7 +8646,6 @@ cs_diffusion_potential(const cs_field_t           *f,
      need_compute_bc_grad, need_compute_bc_flux,
      iphydp, frcxt,
      gweight,
-     nullptr, // viscel (aniso)
      nullptr, // weighb (aniso)
      pvar);
 
@@ -8995,8 +8870,6 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
   cs_real_3_t *grad = nullptr;
   cs_real_2_t *bounds = nullptr;
 
-  cs_real_t *gweight = nullptr;
-
   /* Parallel or device dispatch */
   cs_dispatch_context ctx;
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
@@ -9055,9 +8928,11 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
 
   cs_halo_sync(m->halo, halo_type, on_device, pvar);
 
-  /* Update BC coeffs */
+  cs_real_t *c_visc = nullptr;
+  bool need_compute_bc_grad = false;
 
   if (eqp->ircflu) {
+    need_compute_bc_grad = true;
 
     viscce = nullptr;
     w2 = nullptr;
@@ -9103,21 +8978,19 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
       CS_MALLOC_HD(bounds, n_cells_ext, cs_real_2_t, cs_alloc_mode);
 
     /* Compute gradient */
-    if (eqp->iwgrec > 0) {
-      gweight = (cs_real_t *)viscce;
-    }
+    c_visc = (cs_real_t *)viscce;
 
-    else if (f != nullptr) {
+    if (f != nullptr) {
       /* Get the calculation option from the field */
       const cs_equation_param_t *eqp_f
         = cs_field_get_equation_param_const(f);
-      if (f->type & CS_FIELD_VARIABLE && eqp_f->iwgrec == 1) {
+      if (f->type & CS_FIELD_VARIABLE) {
         if (eqp_f->idifft > 0) {
           int key_id = cs_field_key_id("gradient_weighting_id");
           int diff_id = cs_field_get_key_int(f, key_id);
           if (diff_id > -1) {
             cs_field_t *weight_f = cs_field_by_id(diff_id);
-            gweight = weight_f->val;
+            c_visc = weight_f->val;
             w_stride = weight_f->dim;
             cs_field_synchronize(weight_f, halo_type, on_device);
           }
@@ -9127,7 +9000,6 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
   }
 
   const bool need_compute_bc_flux = true;
-  const bool need_compute_bc_grad = true;
 
   cs_boundary_conditions_update_bc_coeff_face_values
     (ctx,
@@ -9137,8 +9009,7 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
      eqp,
      need_compute_bc_grad, need_compute_bc_flux,
      iphydp, frcxt,
-     nullptr, //visel,
-     (cs_real_6_t *)gweight,
+     c_visc,
      weighb,
      pvar);
 
@@ -9187,7 +9058,7 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
                                     frcxt,
                                     bc_coeffs,
                                     pvar,
-                                    gweight, /* Weighted gradient */
+                                    c_visc, /* Weighted gradient */
                                     grad,
                                     bounds);
 
@@ -9206,6 +9077,8 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
                                       bounds);
 
     /* Mass flow through interior faces */
+
+    cs_real_6_t *c_visc_t = (cs_real_6_t *)c_visc;
 
     ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
@@ -9226,15 +9099,15 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
 
       cs_real_t visci[3][3], viscj[3][3];
 
-      visci[0][0] = viscce[ii][0];
-      visci[1][1] = viscce[ii][1];
-      visci[2][2] = viscce[ii][2];
-      visci[1][0] = viscce[ii][3];
-      visci[0][1] = viscce[ii][3];
-      visci[2][1] = viscce[ii][4];
-      visci[1][2] = viscce[ii][4];
-      visci[2][0] = viscce[ii][5];
-      visci[0][2] = viscce[ii][5];
+      visci[0][0] = c_visc_t[ii][0];
+      visci[1][1] = c_visc_t[ii][1];
+      visci[2][2] = c_visc_t[ii][2];
+      visci[1][0] = c_visc_t[ii][3];
+      visci[0][1] = c_visc_t[ii][3];
+      visci[2][1] = c_visc_t[ii][4];
+      visci[1][2] = c_visc_t[ii][4];
+      visci[2][0] = c_visc_t[ii][5];
+      visci[0][2] = c_visc_t[ii][5];
 
       /* IF.Ki.S / ||Ki.S||^2 */
       cs_real_t fikdvi = weighf[face_id][0] * i_face_surf[face_id];
@@ -9250,15 +9123,15 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
                               + visci[2][i]*i_face_u_normal[face_id][2]);
       }
 
-      viscj[0][0] = viscce[jj][0];
-      viscj[1][1] = viscce[jj][1];
-      viscj[2][2] = viscce[jj][2];
-      viscj[1][0] = viscce[jj][3];
-      viscj[0][1] = viscce[jj][3];
-      viscj[2][1] = viscce[jj][4];
-      viscj[1][2] = viscce[jj][4];
-      viscj[2][0] = viscce[jj][5];
-      viscj[0][2] = viscce[jj][5];
+      viscj[0][0] = c_visc_t[jj][0];
+      viscj[1][1] = c_visc_t[jj][1];
+      viscj[2][2] = c_visc_t[jj][2];
+      viscj[1][0] = c_visc_t[jj][3];
+      viscj[0][1] = c_visc_t[jj][3];
+      viscj[2][1] = c_visc_t[jj][4];
+      viscj[1][2] = c_visc_t[jj][4];
+      viscj[2][0] = c_visc_t[jj][5];
+      viscj[0][2] = c_visc_t[jj][5];
 
       /* FJ.Kj.S / ||Kj.S||^2 */
       cs_real_t fjkdvi = weighf[face_id][1] * i_face_surf[face_id];

@@ -168,9 +168,8 @@ cs_gradient_boundary_iprime_lsq_s_ani
    cs_real_t                    f_ext[][3],
    cs_real_t                   *df_limiter,
    const cs_field_bc_coeffs_t  *bc_coeffs,
-   cs_real_t                    viscel[][6],
-   const cs_real_t              weighb[],
    const cs_real_t              c_weight[][6],
+   const cs_real_t              weighb[],
    const cs_real_t              var[],
    cs_real_t                   *var_iprime,
    cs_real_t                    var_iprime_lim[]);

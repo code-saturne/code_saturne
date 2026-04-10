@@ -156,6 +156,7 @@ cs_beta_limiter_building(int              f_id,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
+ * \param[in]     c_visc        cell viscosity
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  * \param[in,out] i_flux        interior flux (or nullptr)
  * \param[in,out] b_flux        boundary flux (or nullptr)
@@ -176,6 +177,7 @@ cs_convection_diffusion_scalar(const cs_field_t           *f,
                                const cs_real_t             b_massflux[],
                                const cs_real_t             i_visc[],
                                const cs_real_t             b_visc[],
+                               const cs_real_t            *c_visc,
                                cs_real_t                  *rhs,
                                cs_real_2_t                 i_flux[],
                                cs_real_t                   b_flux[]);
@@ -394,6 +396,7 @@ cs_convection_diffusion_tensor(int                          idtvar,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
+ * \param[in]     c_visc        cell viscosity
  * \param[in]     xcpp          array of specific heat (\f$ C_p \f$)
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
@@ -411,6 +414,7 @@ cs_convection_diffusion_thermal(const cs_field_t           *f,
                                 const cs_real_t             b_massflux[],
                                 const cs_real_t             i_visc[],
                                 const cs_real_t             b_visc[],
+                                const cs_real_t            *c_visc,
                                 const cs_real_t             xcpp[],
                                 cs_real_t                  *rhs);
 

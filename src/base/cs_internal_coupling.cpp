@@ -1690,14 +1690,12 @@ cs_ic_field_dist_data_by_face_id(const int         field_id,
  * \param[in]     clip_coeff       clipping coefficient
  * \param[in]     hyd_p_flag       flag for hydrostatic pressure
  * \param[in]     f_ext            exterior force generating pressure
- * \param[in]     viscel           symmetric cell tensor
- *                                 \f$ \tens{\mu}_\celli \f$, or nullptr
+ * \param[in]     c_weight         weighted gradient coefficient variable,
+ *                                 or nullptr
  * \param[in]     weighb           boundary face weight for cells i in case
  *                                 of tensor diffusion, or nullptr
  * \param[in]     df_limiter       diffusion limiter array
  * \param[in]     var              gradient's base variable
- * \param[in]     c_weight         weighted gradient coefficient variable,
- *                                 or nullptr
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1713,11 +1711,10 @@ cs_internal_coupling_update_bc_coeffs_s
  double                         clip_coeff,
  int                            hyd_p_flag,
  cs_real_t                      f_ext[][3],
- cs_real_t                      viscel[][6],
+ const cs_real_t               *c_weight,
  const cs_real_t                weighb[],
  cs_real_t                     *df_limiter,
- const cs_real_t               *var,
- const cs_real_t               *c_weight
+ const cs_real_t               *var
 )
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;
@@ -1792,9 +1789,8 @@ cs_internal_coupling_update_bc_coeffs_s
                                               f_ext,
                                               df_limiter,
                                               bc_coeffs,
-                                              viscel,
-                                              weighb,
                                               (const cs_real_6_t *)c_weight,
+                                              weighb,
                                               var,
                                               var_distant,
                                               var_distant_d);

@@ -2375,7 +2375,7 @@ cs_flux_through_surface(const char         *scalar_name,
        &eqp_loc,
        true, true,
        false, nullptr, // hyp_p_flag, f_ext
-       nullptr, nullptr, nullptr,
+       nullptr, nullptr,
        f->val);
 
   }

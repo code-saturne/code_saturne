@@ -604,7 +604,7 @@ cs_gradient_boundary_iprime_lsq_s
 
       /* var_iprime_flux is the same as var_iprime for gradient except
          if we applied a diffusion limiter, or for anisotropic case
-         where viscel array goes to the flux definition */
+         where viscel (c_weight) array goes to the flux definition */
       assert(df_limiter != nullptr);
       cs_real_t clip_d = cs::max(df_limiter[c_id], 0.);
 
@@ -658,11 +658,9 @@ cs_gradient_boundary_iprime_lsq_s
  * \param[in]   f_ext           exterior force generating pressure
  * \param[in]   df_limiter      diffusion clipping (limiter) field
  * \param[in]   bc_coeffs       boundary condition structure
- * \param[in]   viscce          symmetric cell tensor \f$ \tens{\mu}_\celli \f$,
-                                or nullptr
+ * \param[in]   c_weight        cell variable weight, or null
  * \param[in]   weighb          boundary face weight for cells i in case
  *                              of tensor diffusion, or nullptr
- * \param[in]   c_weight        cell variable weight, or null
  * \param[in]   var             variable values et cell centers
  * \param[out]  var_iprime      variable values et face iprime locations
                                 for gradient
@@ -683,9 +681,8 @@ cs_gradient_boundary_iprime_lsq_s_ani
    cs_real_t                    f_ext[][3],
    cs_real_t                   *df_limiter,
    const cs_field_bc_coeffs_t  *bc_coeffs,
-   cs_real_t                    viscce[][6],
-   const cs_real_t              weighb[],
    const cs_real_t              c_weight[][6],
+   const cs_real_t              weighb[],
    const cs_real_t              var[],
    cs_real_t         *restrict  var_iprime,
    cs_real_t                    var_iprime_flux[])
@@ -1020,7 +1017,7 @@ cs_gradient_boundary_iprime_lsq_s_ani
       cs_real_t clip_d = (df_limiter != nullptr) ?
                          cs::max(df_limiter[c_id], 0.) : 1.0;
 
-      assert(weighb != nullptr && viscce != nullptr);
+      assert(weighb != nullptr && c_weight != nullptr);
 
       cs_real_t fikdvi_s = weighb[f_id] * b_face_surf[f_id];
 
@@ -1029,15 +1026,15 @@ cs_gradient_boundary_iprime_lsq_s_ani
 
       cs_real_t visci[3][3];
 
-      visci[0][0] = viscce[c_id][0];
-      visci[1][1] = viscce[c_id][1];
-      visci[2][2] = viscce[c_id][2];
-      visci[1][0] = viscce[c_id][3];
-      visci[0][1] = viscce[c_id][3];
-      visci[2][1] = viscce[c_id][4];
-      visci[1][2] = viscce[c_id][4];
-      visci[2][0] = viscce[c_id][5];
-      visci[0][2] = viscce[c_id][5];
+      visci[0][0] = c_weight[c_id][0];
+      visci[1][1] = c_weight[c_id][1];
+      visci[2][2] = c_weight[c_id][2];
+      visci[1][0] = c_weight[c_id][3];
+      visci[0][1] = c_weight[c_id][3];
+      visci[2][1] = c_weight[c_id][4];
+      visci[1][2] = c_weight[c_id][4];
+      visci[2][0] = c_weight[c_id][5];
+      visci[0][2] = c_weight[c_id][5];
 
       cs_real_t diippf[3];
 

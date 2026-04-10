@@ -4290,10 +4290,7 @@ cs_boundary_conditions_set_generalized_dirichlet_vector_aniso
  * \param[in]      need_compute_bc_flux  flux must be computed
  * \param[in]      hyd_p_flag            hydrostatic pressure indicator
  * \param[in]      f_ext                 exterior force generating pressure
- * \param[in]      visel                 viscosity by cell, or nullptr
- * \param[in]      viscel                symmetric cell tensor
-                                         \f$ \tens{\mu}_\celli \f$,
-                                         or nullptr
+ * \param[in]      c_weight              viscosity by cell, or nullptr
  * \param[in]      weighb                boundary face weight for cells i in
  *                                       case of tensor diffusion, or nullptr
  * \param[in]      var                   variable values at cell centers
@@ -4312,8 +4309,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
    const bool                  need_compute_bc_flux,
    int                         hyd_p_flag,
    cs_real_t                   f_ext[][3],
-   cs_real_t                   visel[],
-   cs_real_t                   viscel[][6],
+   cs_real_t                  *c_weight,
    const cs_real_t             weighb[],
    const cs_real_t             pvar[])
 {
@@ -4377,6 +4373,20 @@ cs_boundary_conditions_update_bc_coeff_face_values
       cpl = cs_internal_coupling_by_id(coupling_id);
     }
 
+    /* gradient weighting */
+    if ((f->type & CS_FIELD_VARIABLE) && eqp->iwgrec == 1) {
+      if (eqp->idiff > 0) {
+        CS_PROFILE_MARK_LINE();
+        int key_id = cs_field_key_id("gradient_weighting_id");
+        int diff_id = cs_field_get_key_int(f, key_id);
+        if (diff_id > -1) {
+          cs_field_t *weight_f = cs_field_by_id(diff_id);
+          c_weight = weight_f->val;
+          cs_field_synchronize(weight_f, halo_type);
+        }
+      }
+    }
+
  }
 
   /* gradient clipping on boundary */
@@ -4400,11 +4410,10 @@ cs_boundary_conditions_update_bc_coeff_face_values
        b_rc_clip_factor,
        hyd_p_flag,
        f_ext,
-       viscel,
+       c_weight,
        weighb,
        df_limiter,
-       pvar,
-       visel);
+       pvar);
   }
 
   /* Compute boundary face and diffusive flux values */
@@ -4431,7 +4440,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
                                         f_ext,
                                         df_limiter,
                                         bc_coeffs,
-                                        visel,
+                                        c_weight,
                                         pvar,
                                         val_ip_grad,
                                         val_ip_flux);
@@ -4451,9 +4460,8 @@ cs_boundary_conditions_update_bc_coeff_face_values
                                             f_ext,
                                             df_limiter,
                                             bc_coeffs,
-                                            viscel,
+                                            (const cs_real_6_t *)c_weight,
                                             weighb,
-                                            viscel,
                                             pvar,
                                             val_ip_grad,
                                             val_ip_flux);
@@ -4536,7 +4544,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
  * \param[in]       need_compute_bc_flux  flux must be computed
  * \param[in]       hyd_p_flag            flag for hydrostatic pressure
  * \param[in]       f_ext                 exterior force generating pressure
- * \param[in]       viscel                symmetric cell tensor
+ * \param[in]       c_weight              anisotrop or symmetric cell tensor
                                           \f$ \tens{\mu}_\celli \f$,
                                           or nullptr
  * \param[in]       weighb                boundary face weight for cells i in
@@ -4555,8 +4563,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
   const bool                  need_compute_bc_flux,
   int                         hyd_p_flag,
   cs_real_t                   f_ext[][3],
-  //FIXME add diffusivity scalar
-  cs_real_t                   viscel[][6],
+  cs_real_t                  *c_weight,
   const cs_real_t             weighb[],
   const cs_real_t             pvar[]
 )
@@ -4570,8 +4577,7 @@ cs_boundary_conditions_update_bc_coeff_face_values
      need_compute_bc_flux,
      hyd_p_flag,
      f_ext,
-     nullptr, // visel
-     viscel,
+     c_weight,
      weighb,
      pvar);
 }

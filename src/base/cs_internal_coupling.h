@@ -488,11 +488,10 @@ cs_internal_coupling_update_bc_coeffs_s
  double                         clip_coeff,
  int                            hyd_p_flag,
  cs_real_t                      f_ext[][3],
- cs_real_t                      viscel[][6],
+ const cs_real_t               *c_weight,
  const cs_real_t                weighb[],
  cs_real_t                     *df_limiter,
- const cs_real_t               *var,
- const cs_real_t               *c_weight
+ const cs_real_t               *var
 );
 
 /*----------------------------------------------------------------------------*/

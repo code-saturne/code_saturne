@@ -7660,6 +7660,7 @@ _gradient_scalar(cs_dispatch_context           &ctx,
   cs_real_t *tensor_f_weight = nullptr;
   if (c_weight != nullptr && w_stride == 6) {
     CS_MALLOC_HD(tensor_f_weight, mesh->n_i_faces, cs_real_t, amode);
+
     _compute_f_weight_tensor(mesh,
                              fvq,
                              ctx,
@@ -8895,11 +8896,10 @@ cs_gradient_scalar(const char                    *var_name,
                                               _clip_coeff,
                                               hyd_p_flag,
                                               f_ext,
-                                              nullptr, // viscel
+                                              c_weight,
                                               nullptr, // weighb
                                               nullptr, // df_limiter
-                                              var,
-                                              c_weight);
+                                              var);
 
 
       ctx.wait();

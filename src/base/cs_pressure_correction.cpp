@@ -612,12 +612,12 @@ _pressure_correction_fv(int                   iterns,
   cs_real_t *restrict dt = CS_F_(dt)->val;
 
   cs_real_t *cvar_hydro_pres = nullptr, *cvar_hydro_pres_prev = nullptr;
-  cs_real_t *c_visc = nullptr;
-  cs_real_6_t *vitenp = nullptr;
   cs_real_t *taui = nullptr, *taub = nullptr;
 
   cs_real_6_t *cpro_vitenp = nullptr;
   cs_real_t *weighbtp = nullptr;
+
+  cs_real_t *c_visc = nullptr;
 
   cs_field_t  *f_hp = cs_field_by_name_try("hydrostatic_pressure");
   if (f_hp != nullptr) {
@@ -656,7 +656,7 @@ _pressure_correction_fv(int                   iterns,
   c_visc = dt;
 
   if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION)
-    vitenp = (cs_real_6_t *)(cs_field_by_name("dttens")->val);
+    c_visc = cs_field_by_name("dttens")->val;
 
   /* Index of the field */
   const int ksinfo = cs_field_key_id("solving_info");
@@ -779,6 +779,8 @@ _pressure_correction_fv(int                   iterns,
                                    & CS_VOF_MERKLE_MASS_TRANSFER);
 
   if ((eqp_p->idften & CS_ANISOTROPIC_DIFFUSION) && vp_param->rcfact == 0) {
+    cs_real_6_t *vitenp = (cs_real_6_t *)c_visc;
+
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
       for (cs_lnum_t j = 0; j < 6; j++)
         da_uu[c_id][j] = vitenp[c_id][j];
@@ -804,9 +806,13 @@ _pressure_correction_fv(int                   iterns,
       ctx.wait();
 
       cs_halo_sync(m->halo, on_device, xdtsro);
+
+      /* Associate pointers to pressure diffusion coefficient */
+      c_visc = xdtsro;
     }
     else if (eqp_p->idften & CS_ANISOTROPIC_DIFFUSION) {
       CS_MALLOC_HD(tpusro, n_cells_ext, cs_real_6_t, amode);
+      cs_real_6_t *vitenp = (cs_real_6_t *)c_visc;
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
         const cs_real_t drom = 1. / crom[c_id];
@@ -817,13 +823,8 @@ _pressure_correction_fv(int                   iterns,
 
       cs_halo_sync_r(m->halo, on_device, tpusro);
 
-      vitenp = tpusro;
+      c_visc = (cs_real_t *)tpusro;
     }
-
-    /* Associate pointers to pressure diffusion coefficient */
-
-    c_visc = xdtsro;
-
   }
 
   if (vp_param->staggered == 1) {
@@ -953,6 +954,8 @@ _pressure_correction_fv(int                   iterns,
       const int *auto_flag = cs_glob_bc_pm_info->iautom;
       const cs_real_t *b_head_loss
         = cs_boundary_conditions_get_b_head_loss(false);
+
+      cs_real_6_t *vitenp = (cs_real_6_t *)c_visc;
 
       ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
 
@@ -1247,6 +1250,8 @@ _pressure_correction_fv(int                   iterns,
       /* Allocate temporary arrays */
       CS_MALLOC_HD(weighf, n_i_faces, cs_real_2_t, amode);
       CS_MALLOC_HD(weighb, n_b_faces, cs_real_t, amode);
+
+      cs_real_6_t *vitenp = (cs_real_6_t *)c_visc;
 
       cs_face_anisotropic_viscosity_scalar(m,
                                            fvq,
@@ -1589,7 +1594,7 @@ _pressure_correction_fv(int                   iterns,
                                     coefbf_dp,
                                     i_visc,
                                     b_visc,
-                                    vitenp,
+                                    (cs_real_6_t *)c_visc,
                                     weighf,
                                     imasfl,
                                     bmasfl);
@@ -2068,7 +2073,7 @@ _pressure_correction_fv(int                   iterns,
                                          phi,
                                          bc_coeffs_dp,
                                          i_visc, b_visc,
-                                         vitenp,
+                                         (cs_real_6_t *)c_visc,
                                          weighf, weighb,
                                          rhs);
 
@@ -2209,7 +2214,7 @@ _pressure_correction_fv(int                   iterns,
                                            dphi,
                                            bc_coeffs_dp,
                                            i_visc, b_visc,
-                                           vitenp,
+                                           (cs_real_6_t *)c_visc,
                                            weighf, weighb,
                                            adxk);
       }
@@ -2371,7 +2376,7 @@ _pressure_correction_fv(int                   iterns,
                                            phi,
                                            bc_coeffs_dp,
                                            i_visc, b_visc,
-                                           vitenp,
+                                           (cs_real_6_t *)c_visc,
                                            weighf, weighb,
                                            rhs);
       }
@@ -2505,7 +2510,7 @@ _pressure_correction_fv(int                   iterns,
                                               phia,
                                               bc_coeffs_dp,
                                               i_visc, b_visc,
-                                              vitenp,
+                                              (cs_real_6_t *)c_visc,
                                               weighf, weighb,
                                               imasfl, bmasfl);
     }
@@ -2548,7 +2553,7 @@ _pressure_correction_fv(int                   iterns,
                                               dphi,
                                               bc_coeffs_dp,
                                               i_visc, b_visc,
-                                              vitenp,
+                                              (cs_real_6_t *)c_visc,
                                               weighf, weighb,
                                               imasfl, bmasfl);
     }
@@ -2705,20 +2710,6 @@ _pressure_correction_fv(int                   iterns,
   }
 
   /* Update boundary condition for pressure */
-  cs_real_6_t *viten_p = nullptr;
-  cs_real_t *weighb_p = nullptr;
-
-  //FIXME rm do it in a different manner
-  if (vitenp != nullptr)
-    viten_p = vitenp;
-  if (cpro_vitenp != nullptr)
-    viten_p = cpro_vitenp;
-
-  if (weighb != nullptr)
-    weighb_p = weighb;
-  if (cpro_vitenp != nullptr)
-    weighb_p = weighbtp;
-
   cs_halo_sync(m->halo, halo_type, ctx.use_gpu(), cvar_pr);
 
   cs_boundary_conditions_update_bc_coeff_face_values
@@ -2726,26 +2717,18 @@ _pressure_correction_fv(int                   iterns,
      CS_F_(p),
      eqp_p,
      true, true,
-     vp_param->iphydr,
-     frcxt,
-     viten_p,
-     weighb_p,
+     vp_param->iphydr, frcxt,
+     c_visc, weighb,
      cvar_pr);
 
   /* Update pressure increment BC */
   cs_boundary_conditions_update_bc_coeff_face_values
     (ctx_c,
-     f_iddp, // field
-     bc_coeffs_dp,
-     1, //inc
+     f_iddp,
      eqp_p,
-     true,
-     true,
-     vp_param->iphydr,
-     dfrcxt,
-     c_visc,
-     vitenp,
-     weighb,
+     true, true,
+     vp_param->iphydr, dfrcxt,
+     c_visc, weighb,
      phi);
 
   ctx.wait();

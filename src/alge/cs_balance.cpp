@@ -52,26 +52,30 @@
 #include "bft/bft_printf.h"
 
 #include "alge/cs_blas.h"
+#include "alge/cs_convection_diffusion.h"
+#include "alge/cs_convection_diffusion_priv.h"
+#include "alge/cs_gradient.h"
+
+#include "base/cs_boundary_conditions_set_coeffs.h"
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
-#include "mesh/cs_mesh.h"
-#include "alge/cs_convection_diffusion.h"
-#include "alge/cs_convection_diffusion_priv.h"
 #include "base/cs_field.h"
 #include "base/cs_field_default.h"
 #include "base/cs_field_operator.h"
 #include "base/cs_field_pointer.h"
-#include "alge/cs_gradient.h"
 #include "base/cs_ext_neighborhood.h"
-#include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
+#include "base/cs_porous_model.h"
 #include "base/cs_timer.h"
 #include "base/cs_timer_stats.h"
 #include "base/cs_velocity_pressure.h"
+
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -98,6 +102,124 @@
 /* Timer statistics */
 
 static int _balance_stat_id = -1;
+
+/*============================================================================
+ * Private function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update the cell viscosity for balance
+ *
+ * \param[in]     context       reference to dispatch context
+ * \param[in]     f             pointer to field or nullptr
+ * \param[in]     eqp           equation parameters
+ * \param[in]     halo_type     halo type
+ * \param[in]     anisotropic   isotropic or anisotropic case
+ * \param[inout]  viscel        initial viscosity by cell
+ * \param[inout]  c_weight      viscosity by cell
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_balance_cell_weight(cs_dispatch_context        &ctx,
+                     const cs_field_t           *f,
+                     const cs_equation_param_t  *eqp,
+                     const cs_halo_type_t        halo_type,
+                     const bool                  anisotropic,
+                     cs_real_6_t                *viscel,
+                     cs_real_t                  *c_weight)
+{
+  cs_mesh_t *mesh = cs_glob_mesh;
+  const cs_lnum_t n_cells = mesh->n_cells;
+  const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
+
+  if (!(anisotropic)) {
+    if (f != nullptr) {
+    /* Get the calculation option from the field */
+      if (f->type & CS_FIELD_VARIABLE && eqp->iwgrec == 1) {
+        if (eqp->idiff > 0) {
+          int key_id = cs_field_key_id("gradient_weighting_id");
+          int diff_id = cs_field_get_key_int(f, key_id);
+          if (diff_id > -1) {
+            cs_field_t *weight_f = cs_field_by_id(diff_id);
+            c_weight = weight_f->val;
+            cs_field_synchronize(weight_f, halo_type);
+            assert(viscel == nullptr);
+            return;
+          }
+        }
+      }
+    }
+  }
+  else {
+
+    if (f != nullptr) {
+      /* Get the calculation option from the field */
+      if (f->type & CS_FIELD_VARIABLE) {
+        if (eqp->idiff > 0) {
+          int key_id = cs_field_key_id("gradient_weighting_id");
+          int diff_id = cs_field_get_key_int(f, key_id);
+          if (diff_id > -1) {
+            cs_field_t *weight_f = cs_field_by_id(diff_id);
+            c_weight = weight_f->val;
+            cs_field_synchronize(weight_f, halo_type);
+            assert(viscel == nullptr);
+            return;
+          }
+        }
+      }
+    }
+
+    cs_real_6_t *w2 = nullptr;
+
+    /* Porosity fields */
+    cs_field_t *fporo = cs_field_by_name_try("porosity");
+    cs_field_t *ftporo = cs_field_by_name_try("tensorial_porosity");
+
+    cs_real_t *porosi = nullptr;
+    cs_real_6_t *porosf = nullptr;
+
+    if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2) {
+      porosi = fporo->val;
+      if (ftporo != nullptr) {
+        porosf = (cs_real_6_t *)ftporo->val;
+      }
+    }
+
+    /* Without porosity */
+    if (porosi == nullptr) {
+      c_weight = (cs_real_t *)viscel;
+
+      /* With porosity */
+    }
+    else if (porosi != nullptr && porosf == nullptr) {
+      CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+        for (cs_lnum_t isou = 0; isou < 6; isou++) {
+          w2[cell_id][isou] = porosi[cell_id]*viscel[cell_id][isou];
+        }
+      });
+      ctx.wait();
+      c_weight = (cs_real_t *)w2;
+
+      /* With tensorial porosity */
+    }
+    else if (porosi != nullptr && porosf != nullptr) {
+      CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+        cs_math_sym_33_product(porosf[cell_id],
+                               viscel[cell_id],
+                               w2[cell_id]);
+      });
+      ctx.wait();
+      c_weight = (cs_real_t *)w2;
+    }
+
+    /* ---> Periodicity and parallelism treatment of symmetric tensors */
+    cs_halo_sync_r(cs_glob_mesh->halo, halo_type, false, (cs_real_6_t *)c_weight);
+  }
+}
 
 /*============================================================================
  * Public function definitions
@@ -339,9 +461,55 @@ cs_balance_scalar(int                         idtvar,
     eqp_loc.theta = eqp->theta;
   }
 
+  /* Handle cases where only the previous values (already synchronized)
+     or current values are provided */
+
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+
+  cs_gradient_type_by_imrgra(eqp->d_gradient_r,
+                             &gradient_type,
+                             &halo_type);
+
+  /* Parallel or device dispatch */
+  cs_dispatch_context ctx;
+
+  if (pvar != nullptr) {
+    const bool on_device = ctx.use_gpu();
+    cs_halo_sync(cs_glob_mesh->halo, halo_type, on_device, pvar);
+  }
+  if (pvara == nullptr)
+    pvara = (const cs_real_t *)pvar;
+
+  bool anisotropic = false;
+  if (eqp->idften & CS_ANISOTROPIC_DIFFUSION)
+    anisotropic = true;
+
+  cs_real_t *c_visc = nullptr;
+  _balance_cell_weight(ctx,
+                       f, eqp,
+                       halo_type,
+                       anisotropic,
+                       viscel,
+                       c_visc);
+
+  const bool need_compute_bc_flux = true;
+  const bool need_compute_bc_grad = true;
+
+  cs_boundary_conditions_update_bc_coeff_face_values
+    (ctx,
+     (const cs_field_t *)f,
+     bc_coeffs,
+     inc,
+     (const cs_equation_param_t *)eqp,
+     need_compute_bc_grad, need_compute_bc_flux,
+     -1, nullptr, // hyd_p_flag, f_ext,
+     c_visc,
+     weighb,
+     pvar);
+
   bool anisotropic_diffusion = false;
-  if (   eqp->idften & CS_ANISOTROPIC_DIFFUSION
-      && eqp->idiff == 1) {
+  if (anisotropic && eqp->idiff == 1) {
     eqp_loc.idiff = 0;
     anisotropic_diffusion = true;
   }
@@ -362,7 +530,7 @@ cs_balance_scalar(int                         idtvar,
          nullptr, rhs);
     }
     else
-      cs_convection_diffusion_scalar(f,  eqp_loc,
+      cs_convection_diffusion_scalar(f, eqp_loc,
                                      icvflb,
                                      inc,
                                      imasac,
@@ -370,7 +538,7 @@ cs_balance_scalar(int                         idtvar,
                                      icvfli,
                                      bc_coeffs,
                                      i_massflux, b_massflux,
-                                     i_visc, b_visc,
+                                     i_visc, b_visc, c_visc,
                                      rhs,
                                      i_flux, b_flux);
   }
@@ -395,7 +563,7 @@ cs_balance_scalar(int                         idtvar,
                                       pvar, pvara,
                                       bc_coeffs,
                                       i_massflux, b_massflux,
-                                      i_visc, b_visc,
+                                      i_visc, b_visc, c_visc,
                                       xcpp,
                                       rhs);
   }
@@ -414,7 +582,7 @@ cs_balance_scalar(int                         idtvar,
                                     bc_coeffs,
                                     i_visc,
                                     b_visc,
-                                    viscel,
+                                    (cs_real_6_t *)c_visc,
                                     weighf,
                                     weighb,
                                     rhs);
