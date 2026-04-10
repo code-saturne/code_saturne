@@ -4075,7 +4075,7 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
 
       cs_real_t sum[6];
       for (cs_lnum_t ll = 0; ll < 6; ll++)
-        sum[ll] = fw*wi[ll] + (1. - fw)*wj[ii];
+        sum[ll] = fw*wi[ll] + (1. - fw)*wj[ll];
 
       /* cocg contribution (inverse of the face viscosity tensor and
          anisotropic vector taking into account the weight coefficients) */
