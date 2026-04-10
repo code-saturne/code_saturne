@@ -90,25 +90,23 @@
 
 static std::vector<cs_paramedmem_coupling_t *> _paramed_couplers;
 
-#endif
-
-#if defined(HAVE_PARAMEDMEM)
-
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Create a paramedmem coupling based on an InterpKernelDEC.
+ * \brief Create a paramedmem coupling based on a DEC.
  *
  * The latter is created using the the lists of ranks provided as
  * input to this function.
  *
  * \param[in]  cpl_name  coupling name
  * \param[in]  apps      array containing ple_coupling_mpi_set_info_t
+ *  \param[in] type_dec   Type of DEC used for Data exchange
  */
 /*----------------------------------------------------------------------------*/
 
 static int
-_add_paramedmem_coupling(const std::string            cpl_name,
-                         ple_coupling_mpi_set_info_t  apps[2])
+_add_paramedmem_coupling(const std::string           cpl_name,
+                         ple_coupling_mpi_set_info_t apps[2],
+                         cs_medcpl_dec_t             type_dec)
 {
 #if defined(HAVE_MPI)
   cs_paramedmem_coupling_t *c = new cs_paramedmem_coupling_t();
@@ -116,6 +114,7 @@ _add_paramedmem_coupling(const std::string            cpl_name,
   c->dec_synced = false;
   c->_curr_field = nullptr;
   c->para_mesh = nullptr;
+  c->global_node_ids = nullptr;
 
   /* Apps identification */
   for (int i = 0; i < 2; i++)
@@ -182,7 +181,21 @@ _add_paramedmem_coupling(const std::string            cpl_name,
 
   c->mesh = nullptr;
 
-  c->dec = new InterpKernelDEC(grp1_ids, grp2_ids, c->comm);
+  switch (type_dec) {
+    case CS_MEDCPL_INTERPKERNELDEC:
+      c->dec  = new InterpKernelDECWithOverlap(grp1_ids, grp2_ids, c->comm);
+      c->cdec = nullptr;
+      break;
+
+    case CS_MEDCPL_CFEMDEC:
+      c->dec  = nullptr;
+      c->cdec = new CFEMDEC(grp1_ids, grp2_ids, c->comm);
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0, _("Error: Unknown DEC type \n"));
+      break;
+  }
 
   _paramed_couplers.push_back(c);
 
@@ -210,6 +223,7 @@ _add_paramedmem_coupling_dry_run(const std::string cpl_name)
   c->dec_synced  = false;
   c->_curr_field = nullptr;
   c->para_mesh  = nullptr;
+  c->global_node_ids = nullptr;
 
   memset(c->apps, 0, 2 * sizeof(ple_coupling_mpi_set_info_t));
 
@@ -219,6 +233,7 @@ _add_paramedmem_coupling_dry_run(const std::string cpl_name)
   c->mesh = nullptr;
 
   c->dec = nullptr;
+  c->cdec = nullptr;
 
   _paramed_couplers.push_back(c);
 
@@ -318,15 +333,17 @@ cs_paramedmem_coupling_by_name(const char *name)
  * \param[in] app2_name  Name of app n°2 or null if calling app is app2
  * \param[in] cpl_name   Name of the coupling.
  *                       If null an automatic name is generated.
+ * \param[in] type_dec   Type of DEC used for Data exchange
  *
  * \return pointer to newly created cs_paramedmem_coupling_t structure.
  */
 /*----------------------------------------------------------------------------*/
 
 cs_paramedmem_coupling_t *
-cs_paramedmem_coupling_create(const char  *app1_name,
-                              const char  *app2_name,
-                              const char  *cpl_name)
+cs_paramedmem_coupling_create(const char     *app1_name,
+                              const char     *app2_name,
+                              const char     *cpl_name,
+                              cs_medcpl_dec_t type_dec)
 {
   cs_paramedmem_coupling_t *c = nullptr;
 
@@ -398,7 +415,7 @@ cs_paramedmem_coupling_create(const char  *app1_name,
     _name = cpl_name;
   }
 
-  int cpl_id = _add_paramedmem_coupling(_name, apps);
+  int cpl_id = _add_paramedmem_coupling(_name, apps, type_dec);
 
   c = cs_paramedmem_coupling_by_id(cpl_id);
 
@@ -416,8 +433,6 @@ cs_paramedmem_coupling_create(const char  *app1_name,
  *
  * In this case, data "received" matches the initialized values.
  *
- * \param[in] app1_name  Name of app n°1 or null if calling app is app1
- * \param[in] app2_name  Name of app n°2 or null if calling app is app2
  * \param[in] cpl_name   Name of the coupling.
  *                       If null an automatic name is generated.
  *
@@ -426,7 +441,7 @@ cs_paramedmem_coupling_create(const char  *app1_name,
 /*----------------------------------------------------------------------------*/
 
 cs_paramedmem_coupling_t *
-cs_paramedmem_coupling_create_uncoupled(const char  *cpl_name)
+cs_paramedmem_coupling_create_uncoupled(const char *cpl_name)
 {
   cs_paramedmem_coupling_t *c = nullptr;
 
@@ -486,7 +501,12 @@ cs_paramedmem_coupling_destroy(cs_paramedmem_coupling_t  *c)
     c->mesh = nullptr;
 
     /* Destroy DECs */
-    delete c->dec;
+    if (c->dec != nullptr) {
+      delete c->dec;
+    }
+    if (c->cdec != nullptr) {
+      delete c->cdec;
+    }
 
     delete c;
   }
@@ -561,10 +581,8 @@ cs_paramedmem_coupling_log_setup(void)
                     "  number of couplings: %d\n"),
                   ncpls);
 
-    for (int cpl_id = 0; cpl_id < ncpls; cpl_id++) {
-      cs_paramedmem_coupling_t *c = _paramed_couplers[cpl_id];
-
-      c->log();
+    for (auto &cpl : _paramed_couplers) {
+      cpl->log();
     }
 
     cs_log_printf(CS_LOG_SETUP,
@@ -627,6 +645,23 @@ cs_paramedmem_coupling_define_mesh_fields(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute global vertex numbering
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_cs_paramedmem_coupling_t::_computeGlobalNodeIds()
+{
+  // MCAuto<DataArrayIdType> ret = DataArrayIdType::New();
+
+  this->global_node_ids = nullptr;
+
+  /* FIXME: add global nodes numbering */
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Attach a local field
  *
  */
@@ -671,7 +706,10 @@ _cs_paramedmem_coupling_t::_attachLocalField(
     }
 
     if (nature != nature_curr) {
-      this->dec_synced = false;
+      if (this->dec != nullptr) {
+        this->dec_synced = false;
+      }
+      /* CFEMDEC depends only on mesh and not on the nature of the field */
     }
   }
   this->_curr_field = field;
@@ -752,12 +790,17 @@ _cs_paramedmem_coupling_t::_generate_coupling_mesh(const char *select_criteria,
 
   /* Define associated ParaMESH */
 
-  if (this->dec != nullptr) {
+  if (this->dec != nullptr || this->cdec != nullptr) {
     ProcessorGroup *Grp = this->dec->isInSourceSide()
                             ? this->dec->getSourceGrp()
                             : this->dec->getTargetGrp();
 
     this->para_mesh = new ParaMESH(this->mesh->med_mesh, *(Grp), "CoupledMesh");
+  }
+
+  if (this->cdec != nullptr) {
+    this->_computeGlobalNodeIds();
+    this->cdec->attachLocalMesh(this->mesh->med_mesh, this->global_node_ids);
   }
 
   this->dec_synced = false;
@@ -799,12 +842,17 @@ _cs_paramedmem_coupling_t::_generate_coupling_mesh_from_ids(
                                               use_bbox);
 
   /* Define associated ParaMESH */
-  if (this->dec != nullptr) {
+  if (this->dec != nullptr || this->cdec != nullptr) {
     ProcessorGroup *Grp = this->dec->isInSourceSide()
                             ? this->dec->getSourceGrp()
                             : this->dec->getTargetGrp();
 
     this->para_mesh = new ParaMESH(this->mesh->med_mesh, *(Grp), "CoupledMesh");
+  }
+
+  if (this->cdec != nullptr) {
+    this->_computeGlobalNodeIds();
+    this->cdec->attachLocalMesh(this->mesh->med_mesh, this->global_node_ids);
   }
 
   this->dec_synced = false;
@@ -951,10 +999,36 @@ _cs_paramedmem_coupling_t::add_field(const char              *name,
   switch (space_discr) {
     case CS_MEDCPL_ON_CELLS:
       type = ON_CELLS;
+      if (this->cdec != nullptr) {
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
+                  _("%s: Field ON_CELLS is not supported by CFEMDEC"),
+                  __func__);
+      }
       break;
 
     case CS_MEDCPL_ON_NODES:
       type = ON_NODES;
+      if (this->cdec != nullptr) {
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
+                  _("%s: Field ON_NODES is not supported by CFEMDEC"),
+                  __func__);
+      }
+      break;
+
+    case CS_MEDCPL_ON_NODES_FE:
+      type = ON_NODES;
+      if (this->dec != nullptr) {
+        bft_error(
+          __FILE__,
+          __LINE__,
+          0,
+          _("%s: Field ON_NODES_FE is not supported by InterpKernelDEC"),
+          __func__);
+      }
       break;
 
     default:
@@ -1095,7 +1169,7 @@ _cs_paramedmem_coupling_t::add_field(const cs_field_t        *f,
       loc_type == CS_MESH_LOCATION_BOUNDARY_FACES)
     sd = CS_MEDCPL_ON_CELLS;
   else if (loc_type == CS_MESH_LOCATION_VERTICES)
-    sd = CS_MEDCPL_ON_NODES;
+    sd = CS_MEDCPL_ON_NODES_FE;
   else
     bft_error(__FILE__,
               __LINE__,
@@ -1158,6 +1232,7 @@ _cs_paramedmem_coupling_t::set_values(const char  *name,
   else {
     const cs_lnum_t _dim = (cs_lnum_t)f->getNumberOfComponents();
     assert(n_elts * _dim == f->getNumberOfValues());
+#pragma omp parallel for if (n_elts > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       cs_lnum_t c_id = elt_list[i];
       for (cs_lnum_t j = 0; j < _dim; j++) {
@@ -1209,6 +1284,7 @@ _cs_paramedmem_coupling_t::get_values(const char *name,
     cs_lnum_t _dim   = (cs_lnum_t)f->getNumberOfComponents();
     cs_lnum_t n_elts = this->mesh->n_elts;
     assert(n_elts * _dim == f->getNumberOfValues());
+#pragma omp parallel for if (n_elts > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       cs_lnum_t c_id = connec[i];
       for (cs_lnum_t j = 0; j < _dim; j++) {
@@ -1226,7 +1302,7 @@ _cs_paramedmem_coupling_t::get_values(const char *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Sync the coupling's InterpKernelDEC
+ * \brief Sync the coupling's DEC
  *
  */
 /*----------------------------------------------------------------------------*/
@@ -1243,6 +1319,9 @@ _cs_paramedmem_coupling_t::sync_dec()
   if (!this->dec_synced) {
     if (this->dec != nullptr) {
       this->dec->synchronize();
+    }
+    if (this->cdec != nullptr) {
+      this->cdec->synchronize();
     }
     this->dec_synced = true;
   }
@@ -1268,6 +1347,14 @@ _cs_paramedmem_coupling_t::send_data() const
 
   if (this->dec != nullptr) {
     this->dec->sendData();
+  }
+  if (this->cdec != nullptr && this->_curr_field != nullptr) {
+    if (this->cdec->isInSourceSide()) {
+      this->cdec->sendToTarget(this->_curr_field->getField());
+    }
+    else {
+      this->cdec->sendToSource(this->_curr_field->getField());
+    }
   }
 
 #endif
@@ -1334,6 +1421,18 @@ _cs_paramedmem_coupling_t::recv_data()
 
   if (this->dec != nullptr) {
     this->dec->recvData();
+  }
+  if (this->cdec != nullptr && this->_curr_field != nullptr) {
+    MEDCouplingFieldDouble *field = nullptr;
+
+    if (this->cdec->isInSourceSide()) {
+      field = this->cdec->receiveFromTarget();
+    }
+    else {
+      field = this->cdec->receiveFromSource();
+    }
+    this->_curr_field->getField()->setArray(field->getArray());
+    field = nullptr;
   }
 
 #endif

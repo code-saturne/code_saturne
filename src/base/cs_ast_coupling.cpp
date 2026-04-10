@@ -738,10 +738,12 @@ cs_ast_coupling_geometry(cs_lnum_t        n_faces,
   if (cpl->aci.root_rank > -1) {
     cpl->mc_faces    = cs_paramedmem_coupling_create(nullptr,
                                                      cpl->aci.app_name,
-                                                     "fsi_faces_exchange");
+                                                     "fsi_faces_exchange",
+                                                     CS_MEDCPL_INTERPKERNELDEC);
     cpl->mc_vertices = cs_paramedmem_coupling_create(nullptr,
                                                      cpl->aci.app_name,
-                                                     "fsi_vertices_exchange");
+                                                     "fsi_vertices_exchange",
+                                                     CS_MEDCPL_CFEMDEC);
   }
   else {
     cpl->mc_faces =
@@ -818,13 +820,13 @@ cs_ast_coupling_geometry(cs_lnum_t        n_faces,
   cpl->mc_vertices->add_field(_name_m_d,
                               3,
                               CS_MEDCPL_FIELD_INT_MAXIMUM,
-                              CS_MEDCPL_ON_NODES,
+                              CS_MEDCPL_ON_NODES_FE,
                               CS_MEDCPL_ONE_TIME);
 
   cpl->mc_vertices->add_field(_name_m_v,
                               3,
                               CS_MEDCPL_FIELD_INT_MAXIMUM,
-                              CS_MEDCPL_ON_NODES,
+                              CS_MEDCPL_ON_NODES_FE,
                               CS_MEDCPL_ONE_TIME);
 
   cpl->mc_faces->add_field(_name_f_f,
