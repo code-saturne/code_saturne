@@ -668,12 +668,7 @@ _cs_paramedmem_coupling_t::_computeGlobalNodeIds()
 /*----------------------------------------------------------------------------*/
 
 void
-#if USE_PARAFIELD == 1
 _cs_paramedmem_coupling_t::_attachLocalField(const ParaFIELD *field)
-#else
-_cs_paramedmem_coupling_t::_attachLocalField(
-  const MEDCouplingFieldDouble *field)
-#endif
 {
   if (field == nullptr) {
     return;
@@ -683,19 +678,11 @@ _cs_paramedmem_coupling_t::_attachLocalField(
     TypeOfField   type, type_curr;
     NatureOfField nature, nature_curr;
 
-#if USE_PARAFIELD == 1
     type      = field->getField()->getTypeOfField();
     type_curr = this->_curr_field->getField()->getTypeOfField();
 
     nature      = field->getField()->getNature();
     nature_curr = this->_curr_field->getField()->getNature();
-#else
-    type      = field->getTypeOfField();
-    type_curr = this->_curr_field->getTypeOfField();
-
-    nature      = field->getNature();
-    nature_curr = this->_curr_field->getNature();
-#endif
 
     if (type != type_curr) {
       bft_error(__FILE__,
@@ -734,17 +721,10 @@ _cs_paramedmem_coupling_t::_get_field(const char *name) const
 {
   MEDCouplingFieldDouble *f = nullptr;
   for (size_t i = 0; i < this->fields.size(); i++) {
-#if USE_PARAFIELD == 1
     if (strcmp(name, this->fields[i]->getField()->getName().c_str()) == 0) {
       f = this->fields[i]->getField();
       break;
     }
-#else
-    if (strcmp(name, this->fields[i]->getName().c_str()) == 0) {
-      f = this->fields[i];
-      break;
-    }
-#endif
   }
 
   if (f == nullptr)
@@ -1063,18 +1043,7 @@ _cs_paramedmem_coupling_t::add_field(const char              *name,
 
   /* Build ParaFIELD object if required */
   ComponentTopology comp_topo(dim);
-#if USE_PARAFIELD == 1
-  ParaFIELD *pf = new ParaFIELD(type, td, this->para_mesh, comp_topo);
-#else
-  MEDCouplingFieldDouble *pf = MEDCouplingFieldDouble::New(type, td);
-  pf->setMesh(this->mesh->med_mesh);
-  this->mesh->med_mesh->decrRef();
-  DataArrayDouble *arr = DataArrayDouble::New();
-  int n_elts = (type == ON_CELLS) ? this->mesh->n_elts : get_n_vertices(c);
-  arr->alloc(n_elts, dim);
-  pf->setArray(arr);
-  pf->getArray()->decrRef();
-#endif
+  ParaFIELD        *pf = new ParaFIELD(type, td, this->para_mesh, comp_topo);
 
   if (this->dec != nullptr) {
     if (type == ON_CELLS)
@@ -1118,15 +1087,9 @@ _cs_paramedmem_coupling_t::add_field(const char              *name,
                 __func__);
   }
 
-#if USE_PARAFIELD == 1
   pf->getField()->setNature(nature);
   pf->getField()->setName(name);
   pf->getField()->getArray()->fillWithZero();
-#else
-  pf->setNature(nature);
-  pf->setName(name);
-  pf->getArray()->fillWithZero();
-#endif
 
 #endif
 
@@ -1518,8 +1481,6 @@ _cs_paramedmem_coupling_t::attach_field_by_name(const char *name)
 
 #else
 
-#if USE_PARAFIELD == 1
-
   ParaFIELD *pf = nullptr;
 
   for (size_t i = 0; i < this->fields.size(); i++) {
@@ -1538,28 +1499,6 @@ _cs_paramedmem_coupling_t::attach_field_by_name(const char *name)
   }
 
   this->_attachLocalField(pf);
-
-#else
-
-  MEDCouplingFieldDouble *f = nullptr;
-
-  for (size_t i = 0; i < this->fields.size(); i++) {
-    if (strcmp(name, this->fields[i]->getName().c_str()) == 0) {
-      f = this->fields[i];
-      break;
-    }
-  }
-
-  if (f == nullptr)
-    bft_error(__FILE__,
-              __LINE__,
-              0,
-              _("Error: Could not find field '%s'\n"),
-              name);
-
-  this->_attachLocalField(f);
-
-#endif
 
 #endif
 }

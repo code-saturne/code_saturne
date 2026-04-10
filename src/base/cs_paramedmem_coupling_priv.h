@@ -45,10 +45,6 @@
 using namespace MEDCoupling;
 #endif
 
-#define USE_PARAFIELD 1
-/* 1 to use <ParaFIELD> fields,                                            \
- 0 to directly use          MEDCouplingFieldDouble */
-
 /*----------------------------------------------------------------------------*/
 
 /*============================================================================
@@ -77,18 +73,10 @@ struct _cs_paramedmem_coupling_t {
 
   DataArrayIdType *global_node_ids; /* Global node ids of the local mesh */
 
-#if USE_PARAFIELD == 1
   std::vector<ParaFIELD *> fields;
-#else
-  std::vector<MEDCouplingFieldDouble *> fields;
-#endif
 
   /* Current attached local field id */
-#if USE_PARAFIELD == 1
   const ParaFIELD *_curr_field;
-#else
-  const MEDCouplingFieldDouble *_curr_field;
-#endif
 
 #else
 
@@ -145,11 +133,7 @@ private:
   /*----------------------------------------------------------------------------*/
 
   void
-#if USE_PARAFIELD == 1
   _attachLocalField(const ParaFIELD *field);
-#else
-  _attachLocalField(const MEDCouplingFieldDouble *field);
-#endif
 
   /*----------------------------------------------------------------------------*/
   /*!
