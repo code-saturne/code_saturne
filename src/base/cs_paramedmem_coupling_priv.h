@@ -71,8 +71,6 @@ struct _cs_paramedmem_coupling_t {
   InterpKernelDECWithOverlap *dec; /* Data Exchange Channel */
   CFEMDEC *cdec; /* Data Exchange Channel with FE interpolation*/
 
-  DataArrayIdType *global_node_ids; /* Global node ids of the local mesh */
-
   std::vector<ParaFIELD *> fields;
 
   /* Current attached local field id */
@@ -122,8 +120,8 @@ private:
    */
   /*----------------------------------------------------------------------------*/
 
-  void
-  _computeGlobalNodeIds();
+  DataArrayIdType *
+  _computeGlobalNodeIds(const cs_mesh_t *parent_mesh);
 
   /*----------------------------------------------------------------------------*/
   /*!

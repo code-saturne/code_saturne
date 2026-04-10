@@ -113,8 +113,7 @@ _add_paramedmem_coupling(const std::string           cpl_name,
 
   c->dec_synced = false;
   c->_curr_field = nullptr;
-  c->para_mesh = nullptr;
-  c->global_node_ids = nullptr;
+  c->para_mesh   = nullptr;
 
   /* Apps identification */
   for (int i = 0; i < 2; i++)
@@ -222,8 +221,7 @@ _add_paramedmem_coupling_dry_run(const std::string cpl_name)
 
   c->dec_synced  = false;
   c->_curr_field = nullptr;
-  c->para_mesh  = nullptr;
-  c->global_node_ids = nullptr;
+  c->para_mesh   = nullptr;
 
   memset(c->apps, 0, 2 * sizeof(ple_coupling_mpi_set_info_t));
 
@@ -650,14 +648,38 @@ cs_paramedmem_coupling_define_mesh_fields(void)
  */
 /*----------------------------------------------------------------------------*/
 
-void
-_cs_paramedmem_coupling_t::_computeGlobalNodeIds()
+DataArrayIdType *
+_cs_paramedmem_coupling_t::_computeGlobalNodeIds(const cs_mesh_t *parent_mesh)
 {
-  // MCAuto<DataArrayIdType> ret = DataArrayIdType::New();
+  const cs_lnum_t n_vtx = this->mesh->n_vtx;
 
-  this->global_node_ids = nullptr;
+  DataArrayIdType *global_node_ids = DataArrayIdType::New();
 
-  /* FIXME: add global nodes numbering */
+  global_node_ids->alloc(n_vtx, 1);
+
+  mcIdType *array = global_node_ids->getPointer();
+
+  if (parent_mesh->global_vtx_num == nullptr) {
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              _("%s: global node numbering is missing."),
+              __func__);
+  }
+
+  if (this->mesh->vtx_list != nullptr) {
+    for (cs_lnum_t i = 0; i < n_vtx; i++) {
+      cs_lnum_t v_id = this->mesh->vtx_list[i];
+      array[i]       = parent_mesh->global_vtx_num[v_id];
+    }
+  }
+  else {
+    for (cs_lnum_t i = 0; i < parent_mesh->n_vertices; i++) {
+      array[i] = parent_mesh->global_vtx_num[i];
+    }
+  }
+
+  return global_node_ids;
 };
 
 /*----------------------------------------------------------------------------*/
@@ -779,8 +801,10 @@ _cs_paramedmem_coupling_t::_generate_coupling_mesh(const char *select_criteria,
   }
 
   if (this->cdec != nullptr) {
-    this->_computeGlobalNodeIds();
-    this->cdec->attachLocalMesh(this->mesh->med_mesh, this->global_node_ids);
+    DataArrayIdType *global_node_ids = this->_computeGlobalNodeIds(parent_mesh);
+    this->cdec->attachLocalMesh(this->mesh->med_mesh, global_node_ids);
+    this->para_mesh->setNodeGlobal(global_node_ids);
+    global_node_ids->decrRef();
   }
 
   this->dec_synced = false;
@@ -831,8 +855,10 @@ _cs_paramedmem_coupling_t::_generate_coupling_mesh_from_ids(
   }
 
   if (this->cdec != nullptr) {
-    this->_computeGlobalNodeIds();
-    this->cdec->attachLocalMesh(this->mesh->med_mesh, this->global_node_ids);
+    DataArrayIdType *global_node_ids = this->_computeGlobalNodeIds(parent_mesh);
+    this->cdec->attachLocalMesh(this->mesh->med_mesh, global_node_ids);
+    this->para_mesh->setNodeGlobal(global_node_ids);
+    global_node_ids->decrRef();
   }
 
   this->dec_synced = false;
