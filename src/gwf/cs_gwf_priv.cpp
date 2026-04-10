@@ -325,7 +325,7 @@ cs_gwf_darcy_flux_define(const cs_cdo_connect_t    *connect,
 
     cs_xdef_t *bdy_def
       = cs_advection_field_def_boundary_flux_by_array(adv,
-                                                      nullptr, /* all cells */
+                                                      nullptr, /* all boundary faces */
                                                       array_location,
                                                       darcy->boundary_flux_val,
                                                       false, /* not owner */

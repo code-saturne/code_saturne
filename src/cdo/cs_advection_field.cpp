@@ -119,11 +119,8 @@ _get_dim_def(const cs_adv_field_t *adv)
   else if (adv->status & CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX)
     dim = 1;
   else
-    bft_error(__FILE__,
-              __LINE__,
-              0,
-              "%s: Invalid dimension for the advection field.",
-              __func__);
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid dimension for the advection field.", __func__);
 
   return dim;
 }
@@ -469,8 +466,9 @@ cs_advection_field_add(const char                  *name,
     return adv;
   }
 
-  if (!(status & CS_ADVECTION_FIELD_USER) && !(status & CS_ADVECTION_FIELD_GWF)
-      && !(status & CS_ADVECTION_FIELD_NAVSTO))
+  if (!(status & CS_ADVECTION_FIELD_USER) &&
+      !(status & CS_ADVECTION_FIELD_GWF)  &&
+      !(status & CS_ADVECTION_FIELD_NAVSTO))
     bft_error(__FILE__, __LINE__, 0,
               "%s: No category associated to the advection field %s.",
               __func__, name);
