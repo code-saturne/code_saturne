@@ -367,48 +367,6 @@ cs_blas_cuda_set_stream(cudaStream_t  stream)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return pointers to reduction buffers needed for 2-stage reductions.
- *
- * These buffers are used internally by all cs_blas_cuda 2-stage operations,
- * allocated and resized updon demand, and freed when calling
- * cs_blas_cuda_finalize, so it is assumed no two operations (in different
- * streams) use this simultaneously.
- *
- * Also check initialization of work arrays.
- *
- * \param[in]   n           size of arrays
- * \param[in]   tuple_size  number of values per tuple simultaneously reduced
- * \param[in]   grid_size   associated grid size
- * \param[out]  r_grid      first stage reduce buffer
- * \param[out]  r_reduce    second stage (final result) reduce buffer
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_blas_cuda_get_2_stage_reduce_buffers(cs_lnum_t      n,
-                                        cs_lnum_t      tuple_size,
-                                        unsigned int   grid_size,
-                                        double*       &r_grid,
-                                        double*       &r_reduce)
-{
-  unsigned int t_grid_size = grid_size * tuple_size;
-
-  if (_r_tuple_size < (unsigned int)tuple_size) {
-    _r_tuple_size = tuple_size;
-    CS_REALLOC_HD(_r_reduce, _r_tuple_size, double, CS_ALLOC_HOST_DEVICE_SHARED);
-  }
-
-  if (_r_grid_size < t_grid_size) {
-    _r_grid_size = t_grid_size;
-    CS_REALLOC_HD(_r_grid, _r_grid_size, double, CS_ALLOC_DEVICE);
-  }
-
-  r_grid = _r_grid;
-  r_reduce = _r_reduce;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Return the absolute sum of vector values using CUDA.
  *
  * \param[in]  n  size of array x
@@ -420,7 +378,7 @@ cs_blas_cuda_get_2_stage_reduce_buffers(cs_lnum_t      n,
 
 double
 cs_blas_cuda_asum(cs_lnum_t        n,
-                 const cs_real_t  x[])
+                  const cs_real_t  x[])
 {
   const unsigned int block_size = 256;
   unsigned int grid_size = _grid_size(n, block_size);

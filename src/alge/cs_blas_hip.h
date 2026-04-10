@@ -387,32 +387,6 @@ cs_blas_hip_get_stream(void);
 void
 cs_blas_hip_set_stream(hipStream_t  stream);
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Return pointers to reduction buffers needed for 2-stage reductions.
- *
- * These buffers are used internally by all cs_blas_hip 2-stage operations,
- * allocated and resized updon demand, and freed when calling
- * cs_blas_hip_finalize, so it is assumed no two operations (in different
- * streams) use this simultaneously.
- *
- * Also check initialization of work arrays.
- *
- * \param[in]   n           size of arrays
- * \param[in]   tuple_size  number of values per tuple simultaneously reduced
- * \param[in]   grid_size   associated grid size
- * \param[out]  r_grid      first stage reduce buffer
- * \param[out]  r_reduce    second stage (final result) reduce buffer
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_blas_hip_get_2_stage_reduce_buffers(cs_lnum_t      n,
-                                        cs_lnum_t      tuple_size,
-                                        unsigned int   grid_size,
-                                        double*       &r_grid,
-                                        double*       &r_reduce);
-
 #endif /* defined(__HIPCC__) */
 
 /*----------------------------------------------------------------------------*/
