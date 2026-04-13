@@ -521,6 +521,19 @@ cs_user_model(void)
 
   /*--------------------------------------------------------------------------*/
 
+  /* Activate LES balance */
+  {
+    cs_les_balance_t *les_balance = cs_get_glob_les_balance();
+    les_balance->i_les_balance = 1;
+    les_balance->type = CS_LES_BALANCE_RIJ_FULL;
+    les_balance->nt_start = 1;
+    /* Time to start time averages */
+    les_balance->t_start = 1.;
+    les_balance->frequency_n = 1;
+  }
+
+  /*--------------------------------------------------------------------------*/
+
   /*! [thermal_model_choice] */
 
   /* Example: Choose a thermal model
