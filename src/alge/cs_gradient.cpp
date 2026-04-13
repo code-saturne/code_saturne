@@ -2323,6 +2323,7 @@ _add_hb_faces_cocg_lsq_cell(cs_lnum_t         c_id,
 }
 
 #if (B_DIRECTION_LSQ == CS_IPRIME_F_LSQ)
+
 /*----------------------------------------------------------------------------
  * Add compute 3x3 cocg for least squares algorithm contribution from hidden
  * faces to a single cell when boundary face value for gradient (val_f) is
@@ -2370,7 +2371,9 @@ _add_hb_faces_cocg_lsq_cell_iprime_f(cs_lnum_t         c_id,
     cocg[5] += dddij[0]*dddij[2];
   }
 }
+
 #elif (B_DIRECTION_LSQ == CS_IF_LSQ)
+
 /*----------------------------------------------------------------------------
  * Add compute 3x3 cocg for least squares algorithm contribution from hidden
  * faces to a single cell when boundary face value for gradient (val_f) is
