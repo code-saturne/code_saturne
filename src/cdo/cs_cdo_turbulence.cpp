@@ -1149,14 +1149,15 @@ cs_turb_compute_wall_bc_coeffs(const cs_equation_param_t  *eqp,
       break;
     case CS_WALL_F_1SCALE_LOG:
       _wall_function_1scale_log(eqp->strong_pena_bc_coeff,
-                                 nu,
-                                 k,
-                                 hfc,
-                                 uct,
-                                 uft,
-                                 res);
+                                nu,
+                                k,
+                                hfc,
+                                uct,
+                                uft,
+                                res);
       break;
     case CS_WALL_F_SCALABLE_2SCALES_LOG:
+    case CS_WALL_F_2SCALES_LOG:
       _wall_function_2scales_log(eqp->strong_pena_bc_coeff,
                                  nu,
                                  k,
