@@ -510,6 +510,8 @@ cs_paramedmem_coupling_destroy(cs_paramedmem_coupling_t  *c)
     }
 
     delete c;
+
+    c = nullptr;
   }
 
 #endif
@@ -1512,7 +1514,6 @@ _cs_paramedmem_coupling_t::recv_data()
     assert(field->getArray() != nullptr);
 
     this->_curr_field->getField()->setArray(field->getArray());
-    field->decrRef();
   }
 
   if (CS_PARAMEDMEM_DBG) {
