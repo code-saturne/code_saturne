@@ -2508,6 +2508,8 @@ class aster_domain(base_domain):
         args = " "
         # set proc0 to save results correctly
         args += f" --proc0-is={n_tot_procs-self.n_procs}"
+        # already run under mpiexec
+        args += " --no-mpi"
         if self.logfile:
             # only proc0 write log file
             args += " --only-proc0"
