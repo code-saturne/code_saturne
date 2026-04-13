@@ -86,6 +86,9 @@
  * Private global variables
  *============================================================================*/
 
+/* Switch off/on debug information */
+static constexpr bool CS_PARAMEDMEM_DBG = false;
+
 #if defined(HAVE_PARAMEDMEM)
 
 static std::vector<cs_paramedmem_coupling_t *> _paramed_couplers;
@@ -659,7 +662,7 @@ _cs_paramedmem_coupling_t::_computeGlobalNodeIds(const cs_mesh_t *parent_mesh)
 
   mcIdType *array = global_node_ids->getPointer();
 
-  if (parent_mesh->global_vtx_num == nullptr) {
+  if (parent_mesh->global_vtx_num == nullptr && cs_glob_n_ranks > 1) {
     bft_error(__FILE__,
               __LINE__,
               0,
@@ -667,15 +670,30 @@ _cs_paramedmem_coupling_t::_computeGlobalNodeIds(const cs_mesh_t *parent_mesh)
               __func__);
   }
 
-  if (this->mesh->vtx_list != nullptr) {
-    for (cs_lnum_t i = 0; i < n_vtx; i++) {
-      cs_lnum_t v_id = this->mesh->vtx_list[i];
-      array[i]       = parent_mesh->global_vtx_num[v_id];
+  if (cs_glob_n_ranks > 1 || parent_mesh->global_vtx_num != nullptr) {
+    if (this->mesh->vtx_list != nullptr) {
+      for (cs_lnum_t i = 0; i < n_vtx; i++) {
+        cs_lnum_t v_id = this->mesh->vtx_list[i];
+        array[i]       = parent_mesh->global_vtx_num[v_id];
+      }
+    }
+    else {
+      for (cs_lnum_t i = 0; i < parent_mesh->n_vertices; i++) {
+        array[i] = parent_mesh->global_vtx_num[i];
+      }
     }
   }
   else {
-    for (cs_lnum_t i = 0; i < parent_mesh->n_vertices; i++) {
-      array[i] = parent_mesh->global_vtx_num[i];
+    if (this->mesh->vtx_list != nullptr) {
+      for (cs_lnum_t i = 0; i < n_vtx; i++) {
+        cs_lnum_t v_id = this->mesh->vtx_list[i];
+        array[i]       = v_id;
+      }
+    }
+    else {
+      for (cs_lnum_t i = 0; i < parent_mesh->n_vertices; i++) {
+        array[i] = i;
+      }
     }
   }
 
@@ -694,6 +712,13 @@ _cs_paramedmem_coupling_t::_attachLocalField(const ParaFIELD *field)
 {
   if (field == nullptr) {
     return;
+  }
+
+  if (CS_PARAMEDMEM_DBG) {
+    bft_printf("%s: attach local field %s \n",
+               __func__,
+               field->getField()->getName().c_str());
+    bft_printf_flush();
   }
 
   if (this->_curr_field) {
@@ -715,10 +740,10 @@ _cs_paramedmem_coupling_t::_attachLocalField(const ParaFIELD *field)
     }
 
     if (nature != nature_curr) {
+      /* CFEMDEC depends only on mesh and not on the nature of the field */
       if (this->dec != nullptr) {
         this->dec_synced = false;
       }
-      /* CFEMDEC depends only on mesh and not on the nature of the field */
     }
   }
   this->_curr_field = field;
@@ -742,19 +767,20 @@ MEDCouplingFieldDouble *
 _cs_paramedmem_coupling_t::_get_field(const char *name) const
 {
   MEDCouplingFieldDouble *f = nullptr;
-  for (size_t i = 0; i < this->fields.size(); i++) {
-    if (strcmp(name, this->fields[i]->getField()->getName().c_str()) == 0) {
-      f = this->fields[i]->getField();
+  for (auto &pfield : this->fields) {
+    if (strcmp(name, pfield->getField()->getName().c_str()) == 0) {
+      f = pfield->getField();
       break;
     }
   }
 
-  if (f == nullptr)
+  if (f == nullptr) {
     bft_error(__FILE__,
               __LINE__,
               0,
               _("Error: Could not find field '%s'."),
               name);
+  }
 
   return f;
 }
@@ -846,13 +872,18 @@ _cs_paramedmem_coupling_t::_generate_coupling_mesh_from_ids(
                                               use_bbox);
 
   /* Define associated ParaMESH */
-  if (this->dec != nullptr || this->cdec != nullptr) {
-    ProcessorGroup *Grp = this->dec->isInSourceSide()
-                            ? this->dec->getSourceGrp()
-                            : this->dec->getTargetGrp();
-
-    this->para_mesh = new ParaMESH(this->mesh->med_mesh, *(Grp), "CoupledMesh");
+  ProcessorGroup *grp = nullptr;
+  if (this->dec != nullptr) {
+    grp = this->dec->isInSourceSide() ? this->dec->getSourceGrp()
+                                      : this->dec->getTargetGrp();
   }
+  else if (this->cdec != nullptr) {
+    grp = this->cdec->isInSourceSide() ? this->cdec->getSourceGrp()
+                                       : this->cdec->getTargetGrp();
+  }
+  assert(grp != nullptr);
+
+  this->para_mesh = new ParaMESH(this->mesh->med_mesh, *(grp), "CoupledMesh");
 
   if (this->cdec != nullptr) {
     DataArrayIdType *global_node_ids = this->_computeGlobalNodeIds(parent_mesh);
@@ -1026,7 +1057,7 @@ _cs_paramedmem_coupling_t::add_field(const char              *name,
       break;
 
     case CS_MEDCPL_ON_NODES_FE:
-      type = ON_NODES;
+      type = ON_NODES_FE;
       if (this->dec != nullptr) {
         bft_error(
           __FILE__,
@@ -1204,7 +1235,7 @@ _cs_paramedmem_coupling_t::set_values(const char  *name,
   cs_lnum_t *elt_list = nullptr;
   cs_lnum_t  n_elts   = 0;
   if (use_list_elt) {
-    if (f->getTypeOfField() == ON_NODES) {
+    if (f->getTypeOfField() == ON_NODES || f->getTypeOfField() == ON_NODES_FE) {
       elt_list = this->mesh->vtx_list;
       n_elts   = this->get_n_vertices();
     }
@@ -1260,19 +1291,38 @@ _cs_paramedmem_coupling_t::get_values(const char *name,
 
 #else
 
+  assert(values != nullptr);
+
   MEDCouplingFieldDouble *f = this->_get_field(name);
+  assert(f != nullptr);
 
   const double *val_ptr = f->getArray()->getConstPointer();
+  assert(val_ptr != nullptr);
 
   /* Import element values */
 
-  cs_lnum_t *connec = this->mesh->new_to_old;
+  const cs_lnum_t *connec = this->mesh->new_to_old;
 
   if (connec != nullptr && use_list_elt) {
-    assert(f->getTypeOfField() == ON_CELLS);
+    if (f->getTypeOfField() == ON_NODES || f->getTypeOfField() == ON_NODES_FE) {
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                "Filter not implemented for field ON_NODES.");
+    }
+
     cs_lnum_t _dim   = (cs_lnum_t)f->getNumberOfComponents();
     cs_lnum_t n_elts = this->mesh->n_elts;
     assert(n_elts * _dim == f->getNumberOfValues());
+
+    if (CS_PARAMEDMEM_DBG) {
+      bft_printf("%s: copy values with filter for field %s with size %d.\n",
+                 __func__,
+                 f->getName().c_str(),
+                 n_elts * _dim);
+      bft_printf_flush();
+    }
+
 #pragma omp parallel for if (n_elts > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < n_elts; i++) {
       cs_lnum_t c_id = connec[i];
@@ -1283,6 +1333,15 @@ _cs_paramedmem_coupling_t::get_values(const char *name,
   }
   else {
     const cs_lnum_t n_vals = (cs_lnum_t)f->getNumberOfValues();
+
+    if (CS_PARAMEDMEM_DBG) {
+      bft_printf("%s: copy values without filter for field %s with size %d.\n",
+                 __func__,
+                 f->getName().c_str(),
+                 n_vals);
+      bft_printf_flush();
+    }
+
     cs_array_copy(n_vals, val_ptr, values);
   }
 
@@ -1307,9 +1366,19 @@ _cs_paramedmem_coupling_t::sync_dec()
 
   if (!this->dec_synced) {
     if (this->dec != nullptr) {
+      if (CS_PARAMEDMEM_DBG) {
+        bft_printf("%s: synchronize InterpKernelDECWithOverlap \n", __func__);
+        bft_printf_flush();
+      }
+
       this->dec->synchronize();
     }
     if (this->cdec != nullptr) {
+      if (CS_PARAMEDMEM_DBG) {
+        bft_printf("%s: synchronize CFEMDEC \n", __func__);
+        bft_printf_flush();
+      }
+
       this->cdec->synchronize();
     }
     this->dec_synced = true;
@@ -1334,6 +1403,13 @@ _cs_paramedmem_coupling_t::send_data() const
 
 #else
 
+  if (CS_PARAMEDMEM_DBG) {
+    bft_printf("%s: sending data for field %s...",
+               __func__,
+               this->_curr_field->getField()->getName().c_str());
+    bft_printf_flush();
+  }
+
   if (this->dec != nullptr) {
     this->dec->sendData();
   }
@@ -1344,6 +1420,11 @@ _cs_paramedmem_coupling_t::send_data() const
     else {
       this->cdec->sendToSource(this->_curr_field->getField());
     }
+  }
+
+  if (CS_PARAMEDMEM_DBG) {
+    bft_printf(" [ok]\n");
+    bft_printf_flush();
   }
 
 #endif
@@ -1408,11 +1489,18 @@ _cs_paramedmem_coupling_t::recv_data()
 
 #else
 
+  if (CS_PARAMEDMEM_DBG) {
+    bft_printf("%s: receiving data for field %s ...",
+               __func__,
+               this->_curr_field->getField()->getName().c_str());
+    bft_printf_flush();
+  }
+
   if (this->dec != nullptr) {
     this->dec->recvData();
   }
   if (this->cdec != nullptr && this->_curr_field != nullptr) {
-    MEDCouplingFieldDouble *field = nullptr;
+    MCAuto<MEDCouplingFieldDouble> field = nullptr;
 
     if (this->cdec->isInSourceSide()) {
       field = this->cdec->receiveFromTarget();
@@ -1420,8 +1508,16 @@ _cs_paramedmem_coupling_t::recv_data()
     else {
       field = this->cdec->receiveFromSource();
     }
+    assert(field != nullptr);
+    assert(field->getArray() != nullptr);
+
     this->_curr_field->getField()->setArray(field->getArray());
-    field = nullptr;
+    field->decrRef();
+  }
+
+  if (CS_PARAMEDMEM_DBG) {
+    bft_printf(" [ok]\n");
+    bft_printf_flush();
   }
 
 #endif
