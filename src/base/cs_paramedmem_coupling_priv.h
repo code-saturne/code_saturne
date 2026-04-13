@@ -121,7 +121,17 @@ private:
   /*----------------------------------------------------------------------------*/
 
   DataArrayIdType *
-  _computeGlobalNodeIds(const cs_mesh_t *parent_mesh);
+  _computeGlobalNodeIds(const cs_mesh_t *parent_mesh) const;
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief Create ParaMESH object
+   *
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  _creare_paraMesh(const cs_mesh_t *parent_mesh);
 
   /*----------------------------------------------------------------------------*/
   /*!
