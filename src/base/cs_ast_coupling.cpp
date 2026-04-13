@@ -143,15 +143,13 @@ struct _cs_ast_coupling_t {
 
   cs_real_t *xast_curr[2]; /* Mesh displacement at iteration k+1, k, k-1*/
   cs_real_t *xsat_pred[2]; /* Predicted mesh at iteration k+1, k, k-1*/
-  cs_array<cs_real_t>
-    vast_curr; /* Mesh velocity last received (current iteration) */
-  cs_array<cs_real_t> vast_prev;  /* Mesh velocity at previous time step n-1 */
-  cs_array<cs_real_t> vast_pprev; /* Mesh velocity at previous time step n-2 */
+  cs_real_t *vast_curr;    /* Mesh velocity last received (current iteration) */
+  cs_real_t *vast_prev;    /* Mesh velocity at previous time step n-1 */
+  cs_real_t *vast_pprev;   /* Mesh velocity at previous time step n-2 */
 
-  cs_array<cs_real_t> forc_curr; /* Fluid forces at current sub-iteration */
-  cs_array<cs_real_t> forc_prev; /* Fluid forces at previous time step */
-  cs_array<cs_real_t>
-    forc_pred; /* Predicted fluid forces at current sub-iteration */
+  cs_real_t *forc_curr; /* Fluid forces at current sub-iteration */
+  cs_real_t *forc_prev; /* Fluid forces at previous time step */
+  cs_real_t *forc_pred; /* Predicted fluid forces at current sub-iteration */
 
   cs_real_t aexxst; /*!< coefficient for the predicted displacement */
   cs_real_t bexxst; /*!< coefficient for the predicted displacement */
@@ -207,9 +205,9 @@ _allocate_arrays(cs_ast_coupling_t *ast_cpl)
     CS_MALLOC(ast_cpl->xsat_pred[i], 3 * n_vertices, cs_real_t);
   }
 
-  ast_cpl->vast_curr.reshape(3 * n_vertices);
-  ast_cpl->vast_prev.reshape(3 * n_vertices);
-  ast_cpl->vast_pprev.reshape(3 * n_vertices);
+  CS_MALLOC(ast_cpl->vast_curr, 3 * n_vertices, cs_real_t);
+  CS_MALLOC(ast_cpl->vast_prev, 3 * n_vertices, cs_real_t);
+  CS_MALLOC(ast_cpl->vast_pprev, 3 * n_vertices, cs_real_t);
 
   cs_arrays_set_value<cs_real_t, 1>(3 * n_vertices,
                                     0.,
@@ -221,9 +219,9 @@ _allocate_arrays(cs_ast_coupling_t *ast_cpl)
                                     ast_cpl->vast_prev,
                                     ast_cpl->vast_pprev);
 
-  ast_cpl->forc_curr.reshape(3 * n_faces);
-  ast_cpl->forc_prev.reshape(3 * n_faces);
-  ast_cpl->forc_pred.reshape(3 * n_faces);
+  CS_MALLOC(ast_cpl->forc_curr, 3 * n_faces, cs_real_t);
+  CS_MALLOC(ast_cpl->forc_prev, 3 * n_faces, cs_real_t);
+  CS_MALLOC(ast_cpl->forc_pred, 3 * n_faces, cs_real_t);
 
   cs_arrays_set_value<cs_real_t, 1>(3 * n_faces,
                                     0.,
@@ -427,7 +425,7 @@ _cs_ast_coupling_post_function(void *coupling, const cs_time_step_t *ts)
 
   _scatter_values_r3(cpl->n_vertices,
                      vtx_ids,
-                     (const cs_real_3_t *)cpl->vast_curr.data(),
+                     (const cs_real_3_t *)cpl->vast_curr,
                      (cs_real_3_t *)values);
 
   cs_post_write_vertex_var(cpl->post_mesh_id,
@@ -442,7 +440,7 @@ _cs_ast_coupling_post_function(void *coupling, const cs_time_step_t *ts)
 
   _scatter_values_r3(cpl->n_faces,
                      face_ids,
-                     (const cs_real_3_t *)cpl->forc_curr.data(),
+                     (const cs_real_3_t *)cpl->forc_curr,
                      (cs_real_3_t *)values);
 
   cs_post_write_var(cpl->post_mesh_id,
@@ -546,7 +544,7 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
 
   cpl->aexxst = 1.0;
   cpl->bexxst = 0.5;
-  cpl->rexxst = 0.5;
+  cpl->rexxst = 1.0; /* No relaxation by default */
   cpl->cfopre = 2.0;
 
   cpl->icv1 = 0;
@@ -559,13 +557,14 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
     cpl->xast_curr[i] = nullptr;
     cpl->xsat_pred[i] = nullptr;
   }
-  cpl->vast_curr.clear();
-  cpl->vast_prev.clear();
-  cpl->vast_pprev.clear();
 
-  cpl->forc_curr.clear();
-  cpl->forc_prev.clear();
-  cpl->forc_pred.clear();
+  cpl->vast_curr  = nullptr;
+  cpl->vast_prev  = nullptr;
+  cpl->vast_pprev = nullptr;
+
+  cpl->forc_curr = nullptr;
+  cpl->forc_prev = nullptr;
+  cpl->forc_pred = nullptr;
 
   for (int i = 0; i < 3; i++) {
     cpl->tmp[i] = nullptr;
@@ -671,13 +670,13 @@ cs_ast_coupling_finalize(void)
     CS_FREE(cpl->xsat_pred[i]);
   }
 
-  cpl->vast_curr.clear();
-  cpl->vast_prev.clear();
-  cpl->vast_pprev.clear();
+  CS_FREE(cpl->vast_curr);
+  CS_FREE(cpl->vast_prev);
+  CS_FREE(cpl->vast_pprev);
 
-  cpl->forc_curr.clear();
-  cpl->forc_prev.clear();
-  cpl->forc_pred.clear();
+  CS_FREE(cpl->forc_curr);
+  CS_FREE(cpl->forc_prev);
+  CS_FREE(cpl->forc_pred);
 
   for (int i = 0; i < 3; i++) {
     CS_FREE(cpl->tmp[i]);
@@ -694,7 +693,7 @@ cs_ast_coupling_finalize(void)
 
   CS_FREE(cpl);
 
-  cs_glob_ast_coupling = cpl;
+  cpl = nullptr;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -738,15 +737,15 @@ cs_ast_coupling_geometry(cs_lnum_t        n_faces,
 
   if (cpl->aci.root_rank > -1) {
     cpl->mc_faces    = cs_paramedmem_coupling_create(nullptr,
-                                                  cpl->aci.app_name,
-                                                  "fsi_face_exchange");
+                                                     cpl->aci.app_name,
+                                                     "fsi_faces_exchange");
     cpl->mc_vertices = cs_paramedmem_coupling_create(nullptr,
                                                      cpl->aci.app_name,
                                                      "fsi_vertices_exchange");
   }
   else {
     cpl->mc_faces =
-      cs_paramedmem_coupling_create_uncoupled("fsi_face_exchange");
+      cs_paramedmem_coupling_create_uncoupled("fsi_faces_exchange");
     cpl->mc_vertices =
       cs_paramedmem_coupling_create_uncoupled("fsi_vertices_exchange");
   }
@@ -977,7 +976,7 @@ cs_ast_coupling_get_fluid_forces_pointer(void)
   cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
   if (cpl != nullptr)
-    f_forces = (cs_real_3_t *)cpl->forc_curr.data();
+    f_forces = (cs_real_3_t *)cpl->forc_curr;
 
   return f_forces;
 }
@@ -1024,7 +1023,7 @@ cs_ast_coupling_send_fluid_forces(void)
     /* Implicit prediction */
     c1 = 1.0;
     c2 = 0.0;
-    cpl->forc_pred.copy_data(cpl->forc_curr);
+    cs_array_copy(3 * n_faces, cpl->forc_curr, cpl->forc_pred);
   }
 
   if (verbosity > 0)
@@ -1164,13 +1163,14 @@ cs_ast_coupling_save_values(void)
   cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
   const cs_lnum_t n_vertices = cpl->n_vertices;
+  const cs_lnum_t nb_faces   = cpl->n_faces;
 
   /* record efforts */
-  cpl->forc_prev.copy_data(cpl->forc_pred);
+  cs_array_copy(3 * nb_faces, cpl->forc_pred, cpl->forc_prev);
 
   /* record dynamic data */
-  cpl->vast_pprev.copy_data(cpl->vast_prev);
-  cpl->vast_prev.copy_data(cpl->vast_curr);
+  cs_array_copy(3 * n_vertices, cpl->vast_prev, cpl->vast_pprev);
+  cs_array_copy(3 * n_vertices, cpl->vast_curr, cpl->vast_prev);
 
   cs_arrays_set_value<cs_real_t, 1>(3 * n_vertices,
                                     0.,
