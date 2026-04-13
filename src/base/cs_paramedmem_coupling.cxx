@@ -648,13 +648,57 @@ cs_paramedmem_coupling_define_mesh_fields(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Create ParaMESH object
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+_cs_paramedmem_coupling_t::_creare_paraMesh(const cs_mesh_t *parent_mesh)
+{
+  assert(this->mesh != nullptr);
+
+  /* Define associated ParaMESH */
+  ProcessorGroup *grp = nullptr;
+  if (this->dec != nullptr) {
+    grp = this->dec->isInSourceSide() ? this->dec->getSourceGrp()
+                                      : this->dec->getTargetGrp();
+  }
+  else if (this->cdec != nullptr) {
+    grp = this->cdec->isInSourceSide() ? this->cdec->getSourceGrp()
+                                       : this->cdec->getTargetGrp();
+  }
+  else {
+    bft_error(__FILE__, __LINE__, 0, _("No DEC are initialized.\n"));
+  }
+  assert(grp != nullptr);
+
+  this->para_mesh = new ParaMESH(this->mesh->med_mesh, *(grp), "CoupledMesh");
+
+  // With dec, this is possible to add a global numbering for cells to
+  // deals with overlap. Not the case in code_saturne for the moment
+  // If needed use: setCellGlobal
+
+  if (this->cdec != nullptr) {
+    DataArrayIdType *global_node_ids = this->_computeGlobalNodeIds(parent_mesh);
+    this->cdec->attachLocalMesh(this->mesh->med_mesh, global_node_ids);
+    this->para_mesh->setNodeGlobal(global_node_ids);
+    global_node_ids->decrRef();
+  }
+
+  this->dec_synced = false;
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute global vertex numbering
  *
  */
 /*----------------------------------------------------------------------------*/
 
 DataArrayIdType *
-_cs_paramedmem_coupling_t::_computeGlobalNodeIds(const cs_mesh_t *parent_mesh)
+_cs_paramedmem_coupling_t::_computeGlobalNodeIds(
+  const cs_mesh_t *parent_mesh) const
 {
   const cs_lnum_t n_vtx = this->mesh->n_vtx;
 
@@ -819,23 +863,7 @@ _cs_paramedmem_coupling_t::_generate_coupling_mesh(const char *select_criteria,
                                                use_bbox);
 
   /* Define associated ParaMESH */
-
-  if (this->dec != nullptr || this->cdec != nullptr) {
-    ProcessorGroup *Grp = this->dec->isInSourceSide()
-                            ? this->dec->getSourceGrp()
-                            : this->dec->getTargetGrp();
-
-    this->para_mesh = new ParaMESH(this->mesh->med_mesh, *(Grp), "CoupledMesh");
-  }
-
-  if (this->cdec != nullptr) {
-    DataArrayIdType *global_node_ids = this->_computeGlobalNodeIds(parent_mesh);
-    this->cdec->attachLocalMesh(this->mesh->med_mesh, global_node_ids);
-    this->para_mesh->setNodeGlobal(global_node_ids);
-    global_node_ids->decrRef();
-  }
-
-  this->dec_synced = false;
+  this->_creare_paraMesh(parent_mesh);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -874,27 +902,7 @@ _cs_paramedmem_coupling_t::_generate_coupling_mesh_from_ids(
                                               use_bbox);
 
   /* Define associated ParaMESH */
-  ProcessorGroup *grp = nullptr;
-  if (this->dec != nullptr) {
-    grp = this->dec->isInSourceSide() ? this->dec->getSourceGrp()
-                                      : this->dec->getTargetGrp();
-  }
-  else if (this->cdec != nullptr) {
-    grp = this->cdec->isInSourceSide() ? this->cdec->getSourceGrp()
-                                       : this->cdec->getTargetGrp();
-  }
-  assert(grp != nullptr);
-
-  this->para_mesh = new ParaMESH(this->mesh->med_mesh, *(grp), "CoupledMesh");
-
-  if (this->cdec != nullptr) {
-    DataArrayIdType *global_node_ids = this->_computeGlobalNodeIds(parent_mesh);
-    this->cdec->attachLocalMesh(this->mesh->med_mesh, global_node_ids);
-    this->para_mesh->setNodeGlobal(global_node_ids);
-    global_node_ids->decrRef();
-  }
-
-  this->dec_synced = false;
+  this->_creare_paraMesh(parent_mesh);
 }
 
 #endif /* HAVE_PARAMEDMEM */
