@@ -78,7 +78,7 @@ int  _n_rk_integrators = 0;
  * \param[in] scheme  RK scheme type (RK_NONE, RK1, RK2, RK3, RK4)
  * \param[in] name    associated equation or field's name
  * \param[in] dt      time step
- * \param[in] dim     variable dimentsion
+ * \param[in] dim     variable dimension
  * \param[in] n_elts  number of computational elements
  *
  * return the RK integrator's id in the RK list
@@ -199,7 +199,6 @@ cs_runge_kutta_staging_potential(cs_dispatch_context          &ctx,
   const int i_stg = rk->i_stage() - 1;
 
   auto a = rk->get_stage_coeff_a(i_stg);
-//  const cs_real_t *a = rk->rk_coeff.a + RK_HIGHEST_ORDER*i_stg;
 
   ctx.parallel_for (n_elts, [=] CS_F_HOST_DEVICE (cs_lnum_t i_elt) {
      phi_stage[i_elt] /= a[i_stg];

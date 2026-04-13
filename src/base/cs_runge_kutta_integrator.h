@@ -160,11 +160,12 @@ public:
 
     auto mass = _mass.view();
     auto u_old = _u_old.view();
+    const int stride = _stride;
 
     ctx.parallel_for(_n_elts, CS_LAMBDA (cs_lnum_t e_id) {
       mass[e_id] = rho[e_id] * vol[e_id];
-      for (cs_lnum_t i = 0; i < _stride; i++)
-        u_old(e_id, i) = pvara[_stride*e_id + i];
+      for (cs_lnum_t i = 0; i < stride; i++)
+        u_old(e_id, i) = pvara[stride*e_id + i];
     });
     ctx.wait();
   }
@@ -188,6 +189,7 @@ public:
     auto mass = _mass.view();
 
     const int i_stg = _i_stage;
+    const int stride = _stride;
 
     auto u0 = _u_old.view();
     auto u_new = _u_new.view();
@@ -196,17 +198,17 @@ public:
     const auto a = _a.sub_view(i_stg);
 
     ctx.parallel_for(_n_elts, CS_LAMBDA (cs_lnum_t e_id) {
-      for (cs_lnum_t i = 0; i < _stride; i++)
+      for (cs_lnum_t i = 0; i < stride; i++)
         u_new(e_id, i) = u0(e_id, i);
 
       for (int j_stg = 0; j_stg <= i_stg; j_stg++) {
-        for (cs_lnum_t i = 0; i < _stride; i++)
+        for (cs_lnum_t i = 0; i < stride; i++)
           u_new(e_id, i) += rhs_stage(j_stg, e_id, i)* a[j_stg] * dt[e_id]
                           / mass[e_id];
       }
 
-      for (cs_lnum_t i = 0; i < _stride; i++)
-        pvar_stage[_stride*e_id + i] = u_new(e_id, i);
+      for (cs_lnum_t i = 0; i < stride; i++)
+        pvar_stage[stride*e_id + i] = u_new(e_id, i);
     });
 
     ctx.wait();
@@ -233,11 +235,12 @@ public:
 
     auto rhs = _rhs_stages.sub_view(i_stg);
     auto mass = _mass.view();
+    const int stride = _stride;
 
     ctx.parallel_for(_n_elts, CS_LAMBDA (cs_lnum_t e_id) {
-      for (cs_lnum_t i = 0; i < _stride; i++) {
-        rhs(e_id, i) -= grad_dp[_stride*e_id + i] * mass[e_id];
-        grad_dp[_stride*e_id + i] *= a[i_stg];
+      for (cs_lnum_t i = 0; i < stride; i++) {
+        rhs(e_id, i) -= grad_dp[stride*e_id + i] * mass[e_id];
+        grad_dp[stride*e_id + i] *= a[i_stg];
       }
     });
   }
@@ -263,10 +266,11 @@ public:
   {
     const int i_stg = _i_stage;
     auto rhs = _rhs_stages.sub_view(i_stg);
+    const int stride = _stride;
 
     ctx.parallel_for(_n_elts, CS_LAMBDA (cs_lnum_t e_id) {
-      for (cs_lnum_t i = 0; i < _stride; i++)
-        rhs(e_id, i) = rhs_pvar[_stride*e_id + i];
+      for (cs_lnum_t i = 0; i < stride; i++)
+        rhs(e_id, i) = rhs_pvar[stride*e_id + i];
     });
   }
 
@@ -437,6 +441,16 @@ private:
       _a(1,0) = 0.5, _a(1,1) = 0.5;
 
       _c[0] = 1.;
+      _c[1] = 1.;
+
+      break;
+
+    case CS_RK2_MP:
+      _n_stages = 2;
+      _a(0,0) = 0.5;
+      _a(1,0) = 0. , _a(1,1) = 1.;
+
+      _c[0] = 0.5;
       _c[1] = 1.;
 
       break;
