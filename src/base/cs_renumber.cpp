@@ -6309,13 +6309,11 @@ cs_renumber_b_faces_select_ignore(cs_mesh_t        *mesh,
     fvm_io_num_t *n_io_num
       = fvm_io_num_create_from_select(nullptr,
                                       mesh->global_b_face_num,
-                                      n_b_faces,
-                                      0);
+                                      n_b_faces);
     fvm_io_num_t *n_io_num_end
       = fvm_io_num_create_from_select(nullptr,
                                       mesh->global_b_face_num + mesh->n_b_faces,
-                                      n_b_faces_ext,
-                                      0);
+                                      n_b_faces_ext);
 
     const cs_gnum_t *b_gnum = fvm_io_num_get_global_num(n_io_num);
     const cs_gnum_t *b_gnum_end = fvm_io_num_get_global_num(n_io_num_end);

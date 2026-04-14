@@ -1503,8 +1503,7 @@ _discard_free_vertices(cs_mesh_t  *mesh)
 
     fvm_io_num_t *tmp_num = fvm_io_num_create(nullptr,
                                               mesh->global_vtx_num,
-                                              mesh->n_vertices,
-                                              0);
+                                              mesh->n_vertices);
 
     if (mesh->n_vertices > 0)
       memcpy(mesh->global_vtx_num,
@@ -2182,7 +2181,7 @@ cs_mesh_compact_gnum(cs_lnum_t   n_elts,
 
   if (cs_glob_n_ranks > 1 || elt_gnum != nullptr) {
 
-    fvm_io_num_t *tmp_num = fvm_io_num_create(nullptr, elt_gnum, n_elts, 0);
+    fvm_io_num_t *tmp_num = fvm_io_num_create(nullptr, elt_gnum, n_elts);
 
     if (n_elts > 0)
       memcpy(elt_gnum,

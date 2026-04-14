@@ -3279,8 +3279,7 @@ _add_new_border_faces(const cs_join_select_t     *join_select,
 
     fvm_io_num_t  *new_io_num = fvm_io_num_create(nullptr,
                                                   new_fgnum,
-                                                  n_fb_faces,
-                                                  0); /* Not shared */
+                                                  n_fb_faces);
 
     const cs_gnum_t  *new_io_gnum = fvm_io_num_get_global_num(new_io_num);
 
@@ -3619,7 +3618,7 @@ _add_new_interior_faces(const cs_join_select_t     *join_select,
         new_fgnum[n_fi_faces++] = jmesh->face_gnum[i] + n_g_ii_faces;
     }
 
-    new_io_num = fvm_io_num_create(nullptr, new_fgnum, n_fi_faces, 0);
+    new_io_num = fvm_io_num_create(nullptr, new_fgnum, n_fi_faces);
     new_io_gnum = fvm_io_num_get_global_num(new_io_num);
     mesh->n_g_i_faces = fvm_io_num_get_global_count(new_io_num);
 
@@ -3712,8 +3711,7 @@ _clean_vertices(cs_join_param_t   param,
 
     vtx_io_num = fvm_io_num_create(nullptr,
                                    mesh->global_vtx_num,
-                                   mesh->n_vertices,
-                                   0); /* Not shared */
+                                   mesh->n_vertices);
 
     io_gnum = fvm_io_num_get_global_num(vtx_io_num);
     mesh->n_g_vertices = fvm_io_num_get_global_count(vtx_io_num);

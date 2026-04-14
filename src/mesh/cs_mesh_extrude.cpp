@@ -673,13 +673,11 @@ _build_face_edges(cs_mesh_t         *m,
 
     *i_e_io_num  = fvm_io_num_create_from_select(i_edges,
                                                  e_gnum,
-                                                 _n_i_edges,
-                                                 0);
+                                                 _n_i_edges);
 
     *b_e_io_num  = fvm_io_num_create_from_select(b_edges,
                                                  e_gnum,
-                                                 _n_b_edges,
-                                                 0);
+                                                 _n_b_edges);
 
     CS_FREE(i_edges);
     CS_FREE(b_edges);
@@ -807,8 +805,7 @@ _add_extruded_vertices(cs_mesh_t          *m,
     fvm_io_num_t *v_io_num
       = fvm_io_num_create_from_select(vertices,
                                       m->global_vtx_num,
-                                      n_vertices,
-                                      0);
+                                      n_vertices);
 
     fvm_io_num_t *v_add_io_num
       = fvm_io_num_create_from_sub(v_io_num, n_layers);
@@ -924,8 +921,7 @@ _add_extruded_cells(cs_mesh_t          *m,
     fvm_io_num_t *c_io_num
       = fvm_io_num_create_from_select(faces,
                                       m->global_b_face_num,
-                                      n_faces,
-                                      0);
+                                      n_faces);
 
     cs_lnum_t *n_f_sub;
     CS_MALLOC(n_f_sub, n_faces, cs_lnum_t);

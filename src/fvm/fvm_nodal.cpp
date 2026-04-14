@@ -1482,8 +1482,7 @@ fvm_nodal_init_io_num(fvm_nodal_t       *this_nodal,
     this_nodal->global_vertex_num
       = fvm_io_num_create_from_select(this_nodal->parent_vertex_id,
                                       parent_global_numbers,
-                                      this_nodal->n_vertices,
-                                      0);
+                                      this_nodal->n_vertices);
     _remove_global_vertex_labels(this_nodal);
   }
 
@@ -1494,8 +1493,7 @@ fvm_nodal_init_io_num(fvm_nodal_t       *this_nodal,
         section->global_element_num
           = fvm_io_num_create_from_select(section->parent_element_id,
                                           parent_global_numbers,
-                                          section->n_elements,
-                                          0);
+                                          section->n_elements);
       }
     }
   }

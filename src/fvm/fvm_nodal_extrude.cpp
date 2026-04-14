@@ -159,8 +159,7 @@ _extrude_strided_section(fvm_nodal_section_t  * this_section,
     fvm_io_num_destroy(this_section->global_element_num);
     this_section->global_element_num = fvm_io_num_create(nullptr,
                                                          global_element_num,
-                                                         n_elements * n_layers,
-                                                         0);
+                                                         n_elements * n_layers);
 
   }
 
@@ -329,8 +328,7 @@ fvm_nodal_extrude(fvm_nodal_t        *this_nodal,
     fvm_io_num_destroy(this_nodal->global_vertex_num);
     this_nodal->global_vertex_num = fvm_io_num_create(nullptr,
                                                       global_vertex_num,
-                                                      n_vertices * n_planes,
-                                                      0);
+                                                      n_vertices * n_planes);
 
   }
 

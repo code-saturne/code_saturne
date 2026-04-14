@@ -1579,14 +1579,12 @@ _boundary_insert(cs_mesh_t           *mesh,
     fvm_io_num_t *global_number_i_faces
       = fvm_io_num_create_from_select(face_id_c,
                                       mesh->global_i_face_num,
-                                      new_n_i_faces,
-                                      0);
+                                      new_n_i_faces);
 
     fvm_io_num_t *global_number_b_faces
       = fvm_io_num_create_from_select(face_id,
                                       mesh->global_i_face_num,
-                                      n_faces,
-                                      0);
+                                      n_faces);
 
     b_face_gnum
       = fvm_io_num_transfer_global_num(global_number_b_faces);
@@ -1661,8 +1659,7 @@ _boundary_insert(cs_mesh_t           *mesh,
     if (counter[1] > 0) {
       fvm_io_num_t *bf_io_num = fvm_io_num_create(nullptr,
                                                   mesh->global_b_face_num,
-                                                  mesh->n_b_faces,
-                                                  0);
+                                                  mesh->n_b_faces);
       CS_FREE(mesh->global_b_face_num);
       mesh->global_b_face_num = fvm_io_num_transfer_global_num(bf_io_num);
       mesh->n_g_b_faces = fvm_io_num_get_global_count(bf_io_num);

@@ -303,8 +303,7 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
     fvm_io_num_t *n_io_num
       = fvm_io_num_create_from_select(nullptr,
                                       m->global_cell_num,
-                                      n_cells_new,
-                                      0);
+                                      n_cells_new);
 
     CS_FREE(m->global_cell_num);
 

@@ -561,7 +561,7 @@ _n2o_update_global_num(cs_lnum_t          n_new,
     return n_g_new;
 
   fvm_io_num_t *n_io_num
-    = fvm_io_num_create_from_select(n2o, *global_num, n_new, 0);
+    = fvm_io_num_create_from_select(n2o, *global_num, n_new);
 
   CS_FREE(*global_num);
 
@@ -1684,8 +1684,7 @@ _update_vertices(cs_mesh_t  *m,
 
     fvm_io_num_t *tmp_num = fvm_io_num_create(nullptr,
                                               m->global_vtx_num,
-                                              m->n_vertices,
-                                              0);
+                                              m->n_vertices);
 
     if (m->n_vertices > 0)
       memcpy(m->global_vtx_num,

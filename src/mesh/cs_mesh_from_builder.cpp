@@ -450,8 +450,7 @@ _extract_face_gnum(cs_mesh_t         *mesh,
 
   tmp_face_num = fvm_io_num_create(global_i_face,
                                    global_face_num,
-                                   n_i_faces,
-                                   0);
+                                   n_i_faces);
 
   memcpy(mesh->global_i_face_num,
          fvm_io_num_get_global_num(tmp_face_num),
@@ -467,8 +466,7 @@ _extract_face_gnum(cs_mesh_t         *mesh,
 
   tmp_face_num = fvm_io_num_create(global_b_face,
                                    global_face_num,
-                                   n_b_faces,
-                                   0);
+                                   n_b_faces);
 
   if (n_b_faces > 0)
     memcpy(mesh->global_b_face_num,

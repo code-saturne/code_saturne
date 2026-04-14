@@ -117,8 +117,7 @@ extern const char  *fvm_io_num_sfc_type_name[];
 fvm_io_num_t *
 fvm_io_num_create(const cs_lnum_t   parent_entity_number[],
                   const cs_gnum_t   parent_global_number[],
-                  const size_t      n_entities,
-                  const int         share_parent_global);
+                  const size_t      n_entities);
 
 /*----------------------------------------------------------------------------
  * Creation of an I/O numbering structure based on a selection of entities.
@@ -130,8 +129,6 @@ fvm_io_num_create(const cs_lnum_t   parent_entity_number[],
  *   parent_global_number <-- pointer to list of global (i.e. domain splitting
  *                            independent) parent entity numbers
  *   n_entities           <-- number of entities considered
- *   share_parent_global  <-- if non zero, try to share parent_global_number
- *                            instead of using a local copy
  *
  * returns:
  *  pointer to I/O numbering structure
@@ -140,8 +137,7 @@ fvm_io_num_create(const cs_lnum_t   parent_entity_number[],
 fvm_io_num_t *
 fvm_io_num_create_from_select(const cs_lnum_t   parent_entity_id[],
                               const cs_gnum_t   parent_global_number[],
-                              size_t            n_entities,
-                              int               share_parent_global);
+                              size_t            n_entities);
 
 /*----------------------------------------------------------------------------
  * Creation of an I/O numbering structure,

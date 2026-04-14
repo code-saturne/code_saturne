@@ -588,7 +588,7 @@ cs_join_perio_apply(cs_join_t          *this_join,
     for (i = 0, shift = n_init_vertices; i < n_init_vertices; i++, shift++)
       gnum[i] = jmesh->vertices[shift].gnum;
 
-    io_num = fvm_io_num_create(nullptr, gnum, n_init_vertices, 0);
+    io_num = fvm_io_num_create(nullptr, gnum, n_init_vertices);
     io_gnum = fvm_io_num_get_global_num(io_num);
 
     for (i = 0, shift = n_init_vertices; i < n_init_vertices; i++, shift++) {
@@ -893,7 +893,7 @@ cs_join_perio_merge_back(cs_join_t          *this_join,
     for (i = 0, shift = jmesh->n_vertices; i < n_new_vertices; i++, shift++)
       gnum[i] = jmesh->vertices[shift].gnum;
 
-    io_num = fvm_io_num_create(nullptr, gnum, n_new_vertices, 0);
+    io_num = fvm_io_num_create(nullptr, gnum, n_new_vertices);
     io_gnum = fvm_io_num_get_global_num(io_num);
 
     for (i = 0, shift = jmesh->n_vertices; i < n_new_vertices; i++, shift++) {
@@ -1265,7 +1265,7 @@ cs_join_perio_split_back(cs_join_t          *this_join,
       if (f_tag[i] < 0)
         f2_gnum[n2_faces++] = jmesh->face_gnum[i];
 
-    io_num = fvm_io_num_create(nullptr, f2_gnum, n2_faces, 0);
+    io_num = fvm_io_num_create(nullptr, f2_gnum, n2_faces);
     io_gnum = fvm_io_num_get_global_num(io_num);
 
     for (i = 0; i < n2_faces; i++)
@@ -1442,7 +1442,7 @@ cs_join_perio_split_back(cs_join_t          *this_join,
            i++, shift++)
         gnum[i] = jmesh->vertices[shift].gnum;
 
-      io_num = fvm_io_num_create(nullptr, gnum, n_vertices_to_add, 0);
+      io_num = fvm_io_num_create(nullptr, gnum, n_vertices_to_add);
       io_gnum = fvm_io_num_get_global_num(io_num);
 
       for (i = 0, shift = jmesh->n_vertices; i < n_vertices_to_add;
@@ -1598,7 +1598,7 @@ cs_join_perio_split_back(cs_join_t          *this_join,
     fvm_io_num_t  *io_num = nullptr;
     const cs_gnum_t  *io_gnum = nullptr;
 
-    io_num = fvm_io_num_create(nullptr, jmesh->face_gnum, jmesh->n_faces, 0);
+    io_num = fvm_io_num_create(nullptr, jmesh->face_gnum, jmesh->n_faces);
     io_gnum = fvm_io_num_get_global_num(io_num);
 
     for (i = 0; i < jmesh->n_faces; i++) {

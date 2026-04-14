@@ -1782,8 +1782,7 @@ _create_from_coords_hilbert(const cs_coord_t coords[],
 fvm_io_num_t *
 fvm_io_num_create(const cs_lnum_t   parent_entity_number[],
                   const cs_gnum_t   parent_global_number[],
-                  size_t            n_entities,
-                  int               share_parent_global)
+                  size_t            n_entities)
 {
   cs_lnum_t *parent_entity_id = nullptr;
 
@@ -1796,8 +1795,7 @@ fvm_io_num_create(const cs_lnum_t   parent_entity_number[],
   fvm_io_num_t  *this_io_num
     = fvm_io_num_create_from_select(parent_entity_id,
                                     parent_global_number,
-                                    n_entities,
-                                    share_parent_global);
+                                    n_entities);
 
   CS_FREE(parent_entity_id);
 
@@ -1814,8 +1812,6 @@ fvm_io_num_create(const cs_lnum_t   parent_entity_number[],
  *   parent_global_number <-- pointer to list of global (i.e. domain splitting
  *                            independent) parent entity numbers
  *   n_entities           <-- number of entities considered
- *   share_parent_global  <-- if non zero, try to share parent_global_number
- *                            instead of using a local copy
  *
  * returns:
  *  pointer to I/O numbering structure
@@ -1824,8 +1820,7 @@ fvm_io_num_create(const cs_lnum_t   parent_entity_number[],
 fvm_io_num_t *
 fvm_io_num_create_from_select(const cs_lnum_t   parent_entity_id[],
                               const cs_gnum_t   parent_global_number[],
-                              size_t            n_entities,
-                              int               share_parent_global)
+                              size_t            n_entities)
 {
   size_t  i;
   cs_lnum_t  *order = nullptr;
@@ -1902,10 +1897,6 @@ fvm_io_num_create_from_select(const cs_lnum_t   parent_entity_id[],
     CS_FREE(tmp_num);
     CS_FREE(order);
   }
-
-  if (share_parent_global != 0)
-    _fvm_io_num_try_to_set_shared(this_io_num,
-                                  parent_global_number);
 
   return this_io_num;
 }

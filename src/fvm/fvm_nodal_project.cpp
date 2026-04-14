@@ -372,8 +372,7 @@ _compact_mesh(fvm_nodal_t   *this_nodal,
 
     new_vtx_io_num = fvm_io_num_create(new_to_old,
                                        old_global_vtx_num,
-                                       n_vertices_new,
-                                       0);
+                                       n_vertices_new);
 
     fvm_io_num_destroy(this_nodal->global_vertex_num);
 

@@ -693,8 +693,7 @@ _define_vertices(cs_join_param_t        param,
 
     fvm_io_num_t  *select_vtx_io_num = fvm_io_num_create(selection->vertices,
                                                          vtx_gnum,
-                                                         selection->n_vertices,
-                                                         0);
+                                                         selection->n_vertices);
 
     selection->n_g_vertices = fvm_io_num_get_global_count(select_vtx_io_num);
 
@@ -1700,7 +1699,7 @@ cs_join_mesh_create_from_subset(const char            *mesh_name,
 
     /* Get the global number of faces in the subset */
 
-    io_num = fvm_io_num_create(nullptr, mesh->face_gnum, subset_size, 0);
+    io_num = fvm_io_num_create(nullptr, mesh->face_gnum, subset_size);
 
     mesh->n_g_faces = fvm_io_num_get_global_count(io_num);
 
@@ -1713,7 +1712,7 @@ cs_join_mesh_create_from_subset(const char            *mesh_name,
     for (i = 0; i < mesh->n_vertices; i++)
       vtx_gnum[i] = mesh->vertices[i].gnum;
 
-    io_num = fvm_io_num_create(nullptr, vtx_gnum, mesh->n_vertices, 0);
+    io_num = fvm_io_num_create(nullptr, vtx_gnum, mesh->n_vertices);
 
     mesh->n_g_vertices = fvm_io_num_get_global_count(io_num);
 
@@ -3216,7 +3215,7 @@ cs_join_mesh_update(cs_join_mesh_t         *mesh,
     for (i = 0; i < n_new_vertices; i++)
       vtx_gnum[i] = (mesh->vertices[i]).gnum;
 
-    io_num = fvm_io_num_create(nullptr, vtx_gnum, n_new_vertices, 0);
+    io_num = fvm_io_num_create(nullptr, vtx_gnum, n_new_vertices);
 
     mesh->n_g_vertices = fvm_io_num_get_global_count(io_num);
 

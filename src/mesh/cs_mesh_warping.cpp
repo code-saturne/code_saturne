@@ -390,8 +390,7 @@ _update_cut_faces_num(cs_mesh_t      *mesh,
 
     previous_io_num = fvm_io_num_create(nullptr,
                                         *p_global_face_num,
-                                        n_init_faces,
-                                        0);
+                                        n_init_faces);
     new_io_num = fvm_io_num_create_from_sub(previous_io_num,
                                             n_sub_elt_lst);
 
