@@ -1667,7 +1667,10 @@ cs_equation_param_unlock_settings(cs_equation_param_t *eqp)
   if (eqp == nullptr)
     return;
 
-  eqp->flag -= CS_EQUATION_LOCKED;
+  if (eqp->flag < CS_EQUATION_LOCKED)
+    eqp->flag = 0;              // Avoid a problematic behavior
+  else
+    eqp->flag -= CS_EQUATION_LOCKED;
 }
 
 /*----------------------------------------------------------------------------*/
