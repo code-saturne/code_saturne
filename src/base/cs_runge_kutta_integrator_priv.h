@@ -1,5 +1,5 @@
-#ifndef __RK_INTEGRATOR_PRIV_H__
-#define __RK_INTEGRATOR_PRIV_H__
+#ifndef RK_INTEGRATOR_PRIV_H
+#define RK_INTEGRATOR_PRIV_H
 
 /*============================================================================
  * Explicit Runge-Kutta integrator utilities.
@@ -80,15 +80,16 @@ typedef enum {
   CS_RK4
 } cs_runge_kutta_scheme_t;
 
-
 /*  Descriptor of a Runge-Kutta integrator */
 /* --------------------------------------- */
 
 typedef struct {
 
-  int rk_id;
-  cs_runge_kutta_scheme_t scheme;
+  int                      rk_id;
+  cs_runge_kutta_scheme_t  scheme;
 
 } cs_runge_kutta_def_t;
 
-#endif /* __RK_INTEGRATOR_PRIV_H__ */
+/*----------------------------------------------------------------------------*/
+
+#endif /* RK_INTEGRATOR_PRIV_H */

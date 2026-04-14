@@ -7370,15 +7370,10 @@ cs_post_write_probe_function(int                              mesh_id,
 void
 cs_post_renum_cells(const cs_lnum_t  init_cell_num[])
 {
-  int        i;
-  cs_lnum_t  icel;
-  cs_lnum_t  n_elts;
-
   cs_lnum_t  *renum_ent_parent = nullptr;
 
   bool  need_doing = false;
 
-  cs_post_mesh_t   *post_mesh;
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
   if (init_cell_num == nullptr)
@@ -7386,9 +7381,9 @@ cs_post_renum_cells(const cs_lnum_t  init_cell_num[])
 
   /* Loop on meshes */
 
-  for (i = 0; i < _cs_post_n_meshes; i++) {
+  for (int i = 0; i < _cs_post_n_meshes; i++) {
 
-    post_mesh = _cs_post_meshes + i;
+    cs_post_mesh_t *post_mesh = _cs_post_meshes + i;
     if (post_mesh->ext_def)
       continue;
 
@@ -7401,18 +7396,18 @@ cs_post_renum_cells(const cs_lnum_t  init_cell_num[])
 
     /* Prepare renumbering */
 
-    n_elts = mesh->n_cells;
+    cs_lnum_t  n_elts = mesh->n_cells;
 
     CS_MALLOC(renum_ent_parent, n_elts, cs_lnum_t);
 
-    for (icel = 0; icel < mesh->n_cells; icel++)
+    for (cs_lnum_t icel = 0; icel < mesh->n_cells; icel++)
       renum_ent_parent[init_cell_num[icel]] = icel;
 
     /* Effective modification */
 
-    for (i = 0; i < _cs_post_n_meshes; i++) {
+    for (int i = 0; i < _cs_post_n_meshes; i++) {
 
-      post_mesh = _cs_post_meshes + i;
+      cs_post_mesh_t *post_mesh = _cs_post_meshes + i;
       if (post_mesh->ext_def)
         continue;
 
@@ -7430,7 +7425,6 @@ cs_post_renum_cells(const cs_lnum_t  init_cell_num[])
     CS_FREE(renum_ent_parent);
 
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

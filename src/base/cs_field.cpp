@@ -1373,9 +1373,9 @@ cs_f_field_get_label(int           f_id,
 
 void
 cs_field_get_bc_coeff_mult(const cs_field_t  *f,
-                           int               *i_mult,
-                           int               *a_mult,
-                           int               *b_mult)
+                           cs_lnum_t         *i_mult,
+                           cs_lnum_t         *a_mult,
+                           cs_lnum_t         *b_mult)
 {
   *i_mult = f->dim;
   *a_mult = f->dim;

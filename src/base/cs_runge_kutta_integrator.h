@@ -108,7 +108,7 @@ public:
     CS_MALLOC(_name, strlen(name) + 1, char);
     strcpy(_name, name);
 
-    _dt.update_data((cs_real_t *)dt, n_elts);
+    _dt.update_data(const_cast<cs_real_t *>(dt), n_elts);
 
     _stride = dim;
     _n_elts = n_elts;

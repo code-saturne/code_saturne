@@ -1572,7 +1572,7 @@ _sat_coupling_send_bnd_data
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Send varialbes data related to surface coupling.
+ * \brief Send variables data related to surface coupling.
  */
 /*----------------------------------------------------------------------------*/
 

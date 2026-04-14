@@ -3392,10 +3392,18 @@ cs_boundary_conditions_inlet_set_turbulence_intensity(const  cs_zone_t  *zone,
   c->turb_intensity = ti;
 }
 
-void
-cs_boundary_conditions_get_bc_type_addr(int **bc_type[])
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get address of global boundary conditions type array.
+ *
+ * \return  address of  boundary conditions type array
+ */
+/*----------------------------------------------------------------------------*/
+
+int **
+cs_boundary_conditions_get_bc_type_addr(void)
 {
-  *bc_type = &_bc_type;
+  return &_bc_type;
 }
 
 #ifdef __cplusplus
@@ -3403,7 +3411,6 @@ cs_boundary_conditions_get_bc_type_addr(int **bc_type[])
 /*----------------------------------------------------------------------------*/
 /*
  * \brief Update mapping.
- *
  */
 /*----------------------------------------------------------------------------*/
 

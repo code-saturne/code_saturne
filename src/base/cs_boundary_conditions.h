@@ -698,8 +698,16 @@ void
 cs_boundary_conditions_inlet_set_turbulence_intensity(const  cs_zone_t  *zone,
                                                       cs_real_t          ti);
 
-void
-cs_boundary_conditions_get_bc_type_addr(int **bc_type[]);
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get address of global boundary conditions type array.
+ *
+ * \return  address of  boundary conditions type array
+ */
+/*----------------------------------------------------------------------------*/
+
+int **
+cs_boundary_conditions_get_bc_type_addr(void);
 
 /*----------------------------------------------------------------------------*/
 

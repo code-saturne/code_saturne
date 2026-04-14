@@ -2959,8 +2959,8 @@ cs_atmo_bcond(void)
 
       if (icodcl_theta[face_id] < 0)
         icodcl_theta[face_id] = cs::abs(icodcl_theta[face_id]);
-      else if ((icodcl_theta[face_id] == 1
-            || icodcl_theta[face_id] == 5 || icodcl_theta[face_id] == 6)
+      else if (  (icodcl_theta[face_id] == 1
+               || icodcl_theta[face_id] == 5 || icodcl_theta[face_id] == 6)
          && rcodcl1_theta[face_id] < 0.5 * cs_math_infinite_r) {
 
         cs_real_t z_in = b_face_cog[face_id][2];

@@ -1142,9 +1142,7 @@ private:
   using _span = mdspan<T,N,L>;
 
 public:
-
   using mdspan<T,N,L>::copy_data;
-
 
   /*--------------------------------------------------------------------------*/
   /*!
@@ -1247,7 +1245,7 @@ public:
     !defined(__HIP_DEVICE_COMPILE__)
     _mode = cs_alloc_mode;
 #else
-   // use default and avoid compiler warnings
+    // use default and avoid compiler warnings
     _mode = CS_ALLOC_HOST_DEVICE_SHARED;
 #endif
   }
@@ -1444,7 +1442,7 @@ public:
     !defined(__HIP_DEVICE_COMPILE__)
     _mode = cs_alloc_mode;
 #else
-   // use default and avoid compiler warnings
+    // use default and avoid compiler warnings
     _mode = CS_ALLOC_HOST_DEVICE_SHARED;
 #endif
   }
@@ -1470,7 +1468,7 @@ public:
     !defined(__HIP_DEVICE_COMPILE__)
     _mode = cs_alloc_mode;
 #else
-   // use default and avoid compiler warnings
+    // use default and avoid compiler warnings
     _mode = CS_ALLOC_HOST_DEVICE_SHARED;
 #endif
   }

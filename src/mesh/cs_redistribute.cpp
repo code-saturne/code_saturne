@@ -136,7 +136,7 @@ _cmp_gnum(const void  *a,
 static bool
 _distribute_face(cs_mesh_t *mesh,
                  cs_lnum_t f_id,
-                 int rank,
+                 int       rank,
                  const int cell_rank[])
 {
   bool distribute = true;
@@ -175,7 +175,6 @@ template <typename T>
 static void
 _exchange_and_order(cs_all_to_all_t  *d,
                     int               stride,
-                    bool              reverse,
                     const T           send_data[],
                     T                 recv_data[],
                     const cs_lnum_t   b_face_order[],
@@ -185,7 +184,7 @@ _exchange_and_order(cs_all_to_all_t  *d,
 
   cs_all_to_all_copy_array(d,
                            stride,
-                           reverse,
+                           false, // reverse
                            send_data,
                            recv_data);
 
@@ -195,11 +194,11 @@ _exchange_and_order(cs_all_to_all_t  *d,
   CS_MALLOC(copy, n_elem_recv*stride, T);
   memcpy(copy, recv_data, n_elem_recv*stride*sizeof(T));
 
-  for (cs_lnum_t new_slot = 0; new_slot < n_elem_recv; new_slot++) {
-    cs_lnum_t old_slot = b_face_n2o ? b_face_n2o[new_slot] : new_slot;
-    cs_lnum_t pre_slot = b_face_order ? b_face_order[old_slot] : old_slot;
-    const T *orig = copy + stride*pre_slot;
-    T *dest = recv_data + stride*new_slot;
+  for (cs_lnum_t new_id = 0; new_id < n_elem_recv; new_id++) {
+    cs_lnum_t old_id = b_face_n2o ? b_face_n2o[new_id] : new_id;
+    cs_lnum_t pre_id = b_face_order ? b_face_order[old_id] : old_id;
+    const T *orig = copy + stride*pre_id;
+    T *dest = recv_data + stride*new_id;
     for (int i = 0; i < stride; i++)
       dest[i] = orig[i];
   }
@@ -246,7 +245,6 @@ _distribute_bc_coeff(cs_all_to_all_t  *bfd,
 
   _exchange_and_order(bfd,
                       stride,
-                      false,
                       copy_buf,
                       *coeff,
                       b_face_order,
@@ -277,21 +275,20 @@ _distribute_bc_type(cs_all_to_all_t  *bfd,
 
   memcpy(copy, pm->izfppp, n_b_faces_ini*sizeof(int));
   CS_REALLOC(pm->izfppp, mesh->n_b_faces, int);
-  _exchange_and_order(bfd, 1, false, copy, pm->izfppp,
+  _exchange_and_order(bfd, 1, copy, pm->izfppp,
                       b_face_order, b_face_n2o);
 
   if (pm->iautom) {
     memcpy(copy, pm->iautom, n_b_faces_ini*sizeof(int));
     CS_REALLOC(pm->iautom, mesh->n_b_faces, int);
-    _exchange_and_order(bfd, 1, false, copy, pm->iautom,
+    _exchange_and_order(bfd, 1, copy, pm->iautom,
                         b_face_order, b_face_n2o);
   }
 
-  int **bc_type = nullptr;
-  cs_boundary_conditions_get_bc_type_addr(&bc_type);
+  int **bc_type = cs_boundary_conditions_get_bc_type_addr();
   memcpy(copy, *bc_type, n_b_faces_ini*sizeof(int));
   CS_REALLOC(*bc_type, mesh->n_b_faces, int);
-  _exchange_and_order(bfd, 1, false, copy, *bc_type,
+  _exchange_and_order(bfd, 1, copy, *bc_type,
                       b_face_order, b_face_n2o);
 
   CS_FREE(copy);
@@ -320,18 +317,18 @@ _distribute_bc_type(cs_all_to_all_t  *bfd,
 
 static void
 _distribute_fields(cs_all_to_all_t  *cd,
-                   int               n_cells_ini,
-                   const int         cell_order[],
-                   const int         cell_n2o[],
+                   cs_lnum_t         n_cells_ini,
+                   const cs_lnum_t   cell_order[],
+                   const cs_lnum_t   cell_n2o[],
                    cs_all_to_all_t  *bfd,
-                   int               n_b_faces_ini,
-                   const int         b_face_order[],
-                   const int         b_face_n2o[],
+                   cs_lnum_t         n_b_faces_ini,
+                   const cs_lnum_t   b_face_order[],
+                   const cs_lnum_t   b_face_n2o[],
                    cs_all_to_all_t  *ifd,
-                   int               n_i_faces_ini,
-                   const int         i_face_lst[],
-                   const int         i_face_order[],
-                   const int         i_face_n2o[])
+                   cs_lnum_t         n_i_faces_ini,
+                   const cs_lnum_t   i_face_lst[],
+                   const cs_lnum_t   i_face_order[],
+                   const cs_lnum_t   i_face_n2o[])
 {
   cs_mesh_t *mesh = cs_glob_mesh;
 
@@ -341,7 +338,8 @@ _distribute_fields(cs_all_to_all_t  *cd,
 
   for (int i = 0; i < n_fields; i++) {
     cs_field_t *field = cs_field_by_id(i);
-    if (field->location_id != CS_MESH_LOCATION_CELLS) continue;
+    if (field->location_id != CS_MESH_LOCATION_CELLS)
+      continue;
 
     // Make a copy before resizing the field pointers.
 
@@ -369,12 +367,12 @@ _distribute_fields(cs_all_to_all_t  *cd,
 
       CS_FREE(copy[j]);
 
-      for (cs_lnum_t new_slot = 0; new_slot < mesh->n_cells; new_slot++) {
-        cs_lnum_t old_slot = cell_n2o ? cell_n2o[new_slot] : new_slot;
-        cs_lnum_t pre_slot = cell_order[old_slot];
+      for (cs_lnum_t new_id = 0; new_id < mesh->n_cells; new_id++) {
+        cs_lnum_t old_id = cell_n2o ? cell_n2o[new_id] : new_id;
+        cs_lnum_t pre_id = cell_order[old_id];
 
-        const cs_real_t *orig = recv_buf + field->dim*pre_slot;
-        cs_real_t *dest = field->vals[j] + field->dim*new_slot;
+        const cs_real_t *orig = recv_buf + field->dim*pre_id;
+        cs_real_t *dest = field->vals[j] + field->dim*new_id;
         for (int dim = 0; dim < field->dim; dim++) {
           dest[dim] = orig[dim];
         }
@@ -390,11 +388,11 @@ _distribute_fields(cs_all_to_all_t  *cd,
     CS_FREE(copy);
 
     // Distribute bc_coeffs if they exist for the current field.
-    cs_field_bc_coeffs_t *fc = field->bc_coeffs;
+    cs_field_bc_coeffs_t *bcc = field->bc_coeffs;
+    if (!bcc)
+      continue;
 
-    if (!fc) continue;
-
-    int i_mult, a_mult, b_mult;
+    cs_lnum_t i_mult = 1, a_mult = 1, b_mult = 1;
     cs_field_get_bc_coeff_mult(field, &i_mult, &a_mult, &b_mult);
 
     cs_real_t *a_copy;
@@ -404,16 +402,15 @@ _distribute_fields(cs_all_to_all_t  *cd,
 
     int *i_copy;
     CS_MALLOC(i_copy, n_b_faces_ini*i_mult, int);
-    memcpy(i_copy, fc->icodcl, n_b_faces_ini*i_mult*sizeof(int));
-    CS_REALLOC(fc->icodcl, mesh->n_b_faces*i_mult, int);
+    memcpy(i_copy, bcc->icodcl, n_b_faces_ini*i_mult*sizeof(int));
+    CS_REALLOC(bcc->icodcl, mesh->n_b_faces*i_mult, int);
 
     _exchange_and_order(bfd,
-                          i_mult,
-                          false,
-                          i_copy,
-                          fc->icodcl,
-                          b_face_order,
-                          b_face_n2o);
+                        i_mult,
+                        i_copy,
+                        bcc->icodcl,
+                        b_face_order,
+                        b_face_n2o);
 
     CS_FREE(i_copy);
 
@@ -421,73 +418,70 @@ _distribute_fields(cs_all_to_all_t  *cd,
     cs_real_t *rcod;
     CS_MALLOC(rcod, n_b_faces_ini*a_mult, cs_real_t);
 
-    memcpy(rcod, fc->rcodcl1, n_b_faces_ini*a_mult*sizeof(cs_real_t));
-    CS_REALLOC(fc->rcodcl1, mesh->n_b_faces*a_mult, cs_real_t);
+    memcpy(rcod, bcc->rcodcl1, n_b_faces_ini*a_mult*sizeof(cs_real_t));
+    CS_REALLOC(bcc->rcodcl1, mesh->n_b_faces*a_mult, cs_real_t);
     for (int dim = 0; dim < field->dim; dim++) {
-      cs_real_t *buf = fc->rcodcl1 + dim*mesh->n_b_faces;
+      cs_real_t *buf = bcc->rcodcl1 + dim*mesh->n_b_faces;
       _exchange_and_order(bfd,
-                            1,
-                            false,
-                            rcod + dim*n_b_faces_ini,
-                            buf,
-                            b_face_order,
-                            b_face_n2o);
+                          1,
+                          rcod + dim*n_b_faces_ini,
+                          buf,
+                          b_face_order,
+                          b_face_n2o);
     }
 
-    memcpy(rcod, fc->rcodcl2, n_b_faces_ini*a_mult*sizeof(cs_real_t));
-    CS_REALLOC(fc->rcodcl2, mesh->n_b_faces*a_mult, cs_real_t);
+    memcpy(rcod, bcc->rcodcl2, n_b_faces_ini*a_mult*sizeof(cs_real_t));
+    CS_REALLOC(bcc->rcodcl2, mesh->n_b_faces*a_mult, cs_real_t);
     for (int dim = 0; dim < field->dim; dim++) {
-      cs_real_t *buf = fc->rcodcl2 + dim*mesh->n_b_faces;
+      cs_real_t *buf = bcc->rcodcl2 + dim*mesh->n_b_faces;
       _exchange_and_order(bfd,
-                            1,
-                            false,
-                            rcod + dim*n_b_faces_ini,
-                            buf,
-                            b_face_order,
-                            b_face_n2o);
+                          1,
+                          rcod + dim*n_b_faces_ini,
+                          buf,
+                          b_face_order,
+                          b_face_n2o);
     }
 
-    memcpy(rcod, fc->rcodcl3, n_b_faces_ini*a_mult*sizeof(cs_real_t));
-    CS_REALLOC(fc->rcodcl3, mesh->n_b_faces*a_mult, cs_real_t);
+    memcpy(rcod, bcc->rcodcl3, n_b_faces_ini*a_mult*sizeof(cs_real_t));
+    CS_REALLOC(bcc->rcodcl3, mesh->n_b_faces*a_mult, cs_real_t);
     for (int dim = 0; dim < field->dim; dim++) {
-      cs_real_t *buf = fc->rcodcl3 + dim*mesh->n_b_faces;
+      cs_real_t *buf = bcc->rcodcl3 + dim*mesh->n_b_faces;
       _exchange_and_order(bfd,
-                            1,
-                            false,
-                            rcod + dim*n_b_faces_ini,
-                            buf,
-                            b_face_order,
-                            b_face_n2o);
+                          1,
+                          rcod + dim*n_b_faces_ini,
+                          buf,
+                          b_face_order,
+                          b_face_n2o);
     }
 
     CS_FREE(rcod);
 
-    _distribute_bc_coeff(bfd, n_b_faces_ini, a_mult, a_copy, &fc->a,
+    _distribute_bc_coeff(bfd, n_b_faces_ini, a_mult, a_copy, &bcc->a,
                          b_face_order, b_face_n2o);
-    _distribute_bc_coeff(bfd, n_b_faces_ini, b_mult, b_copy, &fc->b,
+    _distribute_bc_coeff(bfd, n_b_faces_ini, b_mult, b_copy, &bcc->b,
                          b_face_order, b_face_n2o);
-    _distribute_bc_coeff(bfd, n_b_faces_ini, a_mult, a_copy, &fc->af,
+    _distribute_bc_coeff(bfd, n_b_faces_ini, a_mult, a_copy, &bcc->af,
                          b_face_order, b_face_n2o);
-    _distribute_bc_coeff(bfd, n_b_faces_ini, b_mult, b_copy, &fc->bf,
+    _distribute_bc_coeff(bfd, n_b_faces_ini, b_mult, b_copy, &bcc->bf,
                          b_face_order, b_face_n2o);
-    _distribute_bc_coeff(bfd, n_b_faces_ini, a_mult, a_copy, &fc->ad,
+    _distribute_bc_coeff(bfd, n_b_faces_ini, a_mult, a_copy, &bcc->ad,
                          b_face_order, b_face_n2o);
-    _distribute_bc_coeff(bfd, n_b_faces_ini, b_mult, b_copy, &fc->bd,
+    _distribute_bc_coeff(bfd, n_b_faces_ini, b_mult, b_copy, &bcc->bd,
                          b_face_order, b_face_n2o);
-    _distribute_bc_coeff(bfd, n_b_faces_ini, a_mult, a_copy, &fc->ac,
+    _distribute_bc_coeff(bfd, n_b_faces_ini, a_mult, a_copy, &bcc->ac,
                          b_face_order, b_face_n2o);
-    _distribute_bc_coeff(bfd, n_b_faces_ini, b_mult, b_copy, &fc->bc,
-                         b_face_order, b_face_n2o);
-
-    _distribute_bc_coeff(bfd, n_b_faces_ini, 1, a_copy, &fc->h_int_tot,
+    _distribute_bc_coeff(bfd, n_b_faces_ini, b_mult, b_copy, &bcc->bc,
                          b_face_order, b_face_n2o);
 
-    _distribute_bc_coeff(bfd, n_b_faces_ini, field->dim, a_copy, &fc->val_f,
+    _distribute_bc_coeff(bfd, n_b_faces_ini, 1, a_copy, &bcc->h_int_tot,
+                         b_face_order, b_face_n2o);
+
+    _distribute_bc_coeff(bfd, n_b_faces_ini, field->dim, a_copy, &bcc->val_f,
                          b_face_order, b_face_n2o);
     _distribute_bc_coeff(bfd, n_b_faces_ini, field->dim, a_copy,
-                         &fc->val_f_pre, b_face_order, b_face_n2o);
+                         &bcc->val_f_pre, b_face_order, b_face_n2o);
 
-    _distribute_bc_coeff(bfd, n_b_faces_ini, field->dim, a_copy, &fc->flux_diff,
+    _distribute_bc_coeff(bfd, n_b_faces_ini, field->dim, a_copy, &bcc->flux_diff,
                          b_face_order, b_face_n2o);
 
     CS_FREE(a_copy);
@@ -498,7 +492,8 @@ _distribute_fields(cs_all_to_all_t  *cd,
 
   for (int i = 0; i < n_fields; i++) {
     cs_field_t *field = cs_field_by_id(i);
-    if (field->location_id != CS_MESH_LOCATION_BOUNDARY_FACES) continue;
+    if (field->location_id != CS_MESH_LOCATION_BOUNDARY_FACES)
+      continue;
 
     cs_real_t **copy;
     CS_MALLOC(copy, field->n_time_vals*field->dim, cs_real_t *);
@@ -524,12 +519,12 @@ _distribute_fields(cs_all_to_all_t  *cd,
 
       CS_FREE(copy[j]);
 
-      for (cs_lnum_t new_slot = 0; new_slot < mesh->n_b_faces; new_slot++) {
-        cs_lnum_t old_slot = b_face_n2o ? b_face_n2o[new_slot] : new_slot;
-        cs_lnum_t pre_slot = b_face_order[old_slot];
+      for (cs_lnum_t new_id = 0; new_id < mesh->n_b_faces; new_id++) {
+        cs_lnum_t old_id = b_face_n2o ? b_face_n2o[new_id] : new_id;
+        cs_lnum_t pre_id = b_face_order[old_id];
 
-        const cs_real_t *orig = recv_buf + field->dim*pre_slot;
-        cs_real_t *dest = field->vals[j] + field->dim*new_slot;
+        const cs_real_t *orig = recv_buf + field->dim*pre_id;
+        cs_real_t *dest = field->vals[j] + field->dim*new_id;
 
         for (int dim = 0; dim < field->dim; dim++) {
           dest[dim] = orig[dim];
@@ -549,7 +544,8 @@ _distribute_fields(cs_all_to_all_t  *cd,
 
   for (int i = 0; i < n_fields; i++) {
     cs_field_t *field = cs_field_by_id(i);
-    if (field->location_id != CS_MESH_LOCATION_INTERIOR_FACES) continue;
+    if (field->location_id != CS_MESH_LOCATION_INTERIOR_FACES)
+      continue;
 
     cs_real_t **copy;
     CS_MALLOC(copy, field->n_time_vals, cs_real_t *);
@@ -577,12 +573,12 @@ _distribute_fields(cs_all_to_all_t  *cd,
 
       CS_FREE(copy[j]);
 
-      for (cs_lnum_t new_slot = 0; new_slot < mesh->n_i_faces; new_slot++) {
-        cs_lnum_t old_slot = i_face_n2o ? i_face_n2o[new_slot] : new_slot;
-        cs_lnum_t pre_slot = i_face_order[old_slot];
+      for (cs_lnum_t new_id = 0; new_id < mesh->n_i_faces; new_id++) {
+        cs_lnum_t old_id = i_face_n2o ? i_face_n2o[new_id] : new_id;
+        cs_lnum_t pre_id = i_face_order[old_id];
 
-        const cs_real_t *orig = recv_buf + field->dim*pre_slot;
-        cs_real_t *dest = field->vals[j] + field->dim*new_slot;
+        const cs_real_t *orig = recv_buf + field->dim*pre_id;
+        cs_real_t *dest = field->vals[j] + field->dim*new_id;
 
         for (int dim = 0; dim < field->dim; dim++) {
           dest[dim] = orig[dim];
@@ -653,10 +649,10 @@ _distribute_data(cs_all_to_all_t *cd,
   if (data->c_r_level) {
     int *c_r_level = cs_all_to_all_copy_array(cd, 1, false, data->c_r_level);
     CS_REALLOC(data->c_r_level, mesh->n_cells_with_ghosts, int);
-    for (cs_lnum_t new_slot = 0; new_slot < mesh->n_cells; new_slot++) {
-      int old_slot = cell_n2o ? cell_n2o[new_slot] : new_slot;
-      int pre_slot = cell_order ? cell_order[old_slot] : old_slot;
-      data->c_r_level[new_slot] = c_r_level[pre_slot];
+    for (cs_lnum_t new_id = 0; new_id < mesh->n_cells; new_id++) {
+      int old_id = cell_n2o ? cell_n2o[new_id] : new_id;
+      int pre_id = cell_order ? cell_order[old_id] : old_id;
+      data->c_r_level[new_id] = c_r_level[pre_id];
     }
     CS_FREE(c_r_level);
 
@@ -669,10 +665,10 @@ _distribute_data(cs_all_to_all_t *cd,
   if (data->c_r_flag) {
     int *c_r_flag = cs_all_to_all_copy_array(cd, 1, false, data->c_r_flag);
     CS_REALLOC(data->c_r_flag, mesh->n_cells_with_ghosts, int);
-    for (cs_lnum_t new_slot = 0; new_slot < mesh->n_cells; new_slot++) {
-      int old_slot = cell_n2o ? cell_n2o[new_slot] : new_slot;
-      int pre_slot = cell_order ? cell_order[old_slot] : old_slot;
-      data->c_r_flag[new_slot] = c_r_flag[pre_slot];
+    for (cs_lnum_t new_id = 0; new_id < mesh->n_cells; new_id++) {
+      int old_id = cell_n2o ? cell_n2o[new_id] : new_id;
+      int pre_id = cell_order ? cell_order[old_id] : old_id;
+      data->c_r_flag[new_id] = c_r_flag[pre_id];
     }
     CS_FREE(c_r_flag);
 
@@ -685,10 +681,10 @@ _distribute_data(cs_all_to_all_t *cd,
   if (data->indic) {
     int *indic = cs_all_to_all_copy_array(cd, 1, false, data->indic);
     CS_REALLOC(data->indic, mesh->n_cells_with_ghosts, int);
-    for (cs_lnum_t new_slot = 0; new_slot < mesh->n_cells; new_slot++) {
-      int old_slot = cell_n2o ? cell_n2o[new_slot] : new_slot;
-      int pre_slot = cell_order ? cell_order[old_slot] : old_slot;
-      data->indic[new_slot] = indic[pre_slot];
+    for (cs_lnum_t new_id = 0; new_id < mesh->n_cells; new_id++) {
+      int old_id = cell_n2o ? cell_n2o[new_id] : new_id;
+      int pre_id = cell_order ? cell_order[old_id] : old_id;
+      data->indic[new_id] = indic[pre_id];
     }
     CS_FREE(indic);
 

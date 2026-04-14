@@ -392,18 +392,17 @@ cs_field_map_and_init_bcs(void)
     if (! (f->type & CS_FIELD_VARIABLE))
       continue;
     if (f->type & CS_FIELD_CDO) {
-      bool continu = true;
+      bool skip = true;
       if (cs_glob_param_cdo_mode == CS_PARAM_CDO_MODE_NS_WITH_FV &&
           (f == cs_field_by_name("velocity") ||
            f == cs_field_by_name("pressure"))) {
         // Velocity and pressure solved with CDO
         // Turbulence solved with FV
-        continu = false;
+        skip = false;
       }
 
-      if (continu) {
+      if (skip)
         continue;
-      }
     }
 
     bc_flags[f->id * 4] = true;
