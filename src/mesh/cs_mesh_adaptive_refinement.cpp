@@ -74,6 +74,7 @@
 #include "base/cs_field_default.h"
 #include "base/cs_parall.h"
 #include "base/cs_renumber.h"
+#include "base/cs_renumber_update.h"
 #include "mesh/cs_redistribute.h"
 
 /*----------------------------------------------------------------------------
@@ -1191,39 +1192,22 @@ _update_post_adaptation_mesh_data(cs_mesh_t  *mesh)
 {
   /* Free quantities that will become invalid and can be recomputed */
 
-  cs_mesh_quantities_free_all(cs_glob_mesh_quantities);
-  cs_gradient_free_quantities();
   cs_adaptive_refinement_free_gradients();
 
-  /* Renumber mesh based on code options. Only do it if no load balancing
-     is to be done, as it would otherwise be redundant. */
-
-  cs_renumber_mesh(mesh, nullptr, nullptr, nullptr, nullptr);
-
-  /* Re-compute mesh related quantities */
-
-  cs_mesh_update_auxiliary(mesh);
-  cs_mesh_quantities_compute(mesh, cs_glob_mesh_quantities);
-  cs_ext_neighborhood_reduce(mesh, cs_glob_mesh_quantities);
-
-  /* Initialize selectors and locations for the mesh */
-
-  cs_mesh_update_selectors(mesh);
-  cs_mesh_location_build(mesh, -1);
-  cs_volume_zone_build_all(true);
-  cs_boundary_zone_build_all(true);
-
-#if defined(DEBUG)
-  cs_mesh_coherency_check();
-#endif
-
-  cs_mesh_adjacencies_update_mesh();
-  cs_matrix_update_mesh();
+  cs_mesh_quantities_free_all(cs_glob_mesh_quantities);
+  cs_gradient_free_quantities();
 
   /* Reset boundary conditions */
 
   cs_boundary_conditions_realloc();
   cs_field_map_and_init_bcs();
+
+  /* Renumber mesh based on code options. Only do it if no load balancing
+     is to be done, as it would otherwise be redundant. */
+
+  cs_renumber_update();
+
+  cs_ext_neighborhood_reduce(mesh, cs_glob_mesh_quantities);
 }
 
 /*----------------------------------------------------------------------------

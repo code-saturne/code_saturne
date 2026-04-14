@@ -160,6 +160,7 @@ cs_random.h \
 cs_range_set.h \
 cs_reducers.h \
 cs_renumber.h \
+cs_renumber_update.h \
 cs_resource.h \
 cs_restart.h \
 cs_restart_default.h \
@@ -377,6 +378,7 @@ cs_pressure_correction.cpp \
 cs_probe.cpp \
 cs_random.cpp \
 cs_range_set.cpp \
+cs_renumber_update.cpp \
 cs_resource.cpp \
 cs_restart.cpp \
 cs_restart_default.cpp \
