@@ -995,22 +995,6 @@ _display_histograms_gnum(int               n_vals,
 
 }
 
-#if defined(HAVE_IBM_RENUMBERING_LIB)
-
-/*----------------------------------------------------------------------------
- * Try to apply renumbering of faces and cells for multiple threads.
- *
- * parameters:
- *   mesh  <-> pointer to global mesh structure
- *----------------------------------------------------------------------------*/
-
-static void
-_renumber_for_threads_ibm(cs_mesh_t  *mesh)
-{
-}
-
-#endif /* defined(HAVE_IBM_RENUMBERING_LIB) */
-
 /*----------------------------------------------------------------------------
  * Create a CSR graph structure from a native face-based connectivity.
  *
@@ -2605,7 +2589,7 @@ _renum_b_faces_no_share_cell_across_thread(cs_mesh_t   *mesh,
   }
 
   if (mesh->n_b_faces > mesh->n_b_faces_all) {
-    /* The second groups contains all the IBM faces */
+    /* The second groups contains all the immersed boundary faces */
     cs_lnum_t g_id = 1;
     cs_lnum_t ip = n_b_faces_connect;
     cs_lnum_t group_size = mesh->n_b_faces - n_b_faces_connect;
@@ -5603,16 +5587,6 @@ _renumber_mesh(cs_mesh_t   *mesh,
       return;
     }
 
-#if defined(HAVE_IBM_RENUMBERING_LIB)
-    if (strcmp(p, "IBM") == 0) {
-      bft_printf("\n Use IBM Mesh renumbering.\n\n");
-      _renumber_for_threads_ibm(mesh);
-      _renumber_i_test(mesh);
-      _renumber_b_test(mesh);
-      return;
-    }
-#endif
-
   }
 
   /* Cell pre-numbering may be ignored if not useful for the
@@ -5995,7 +5969,7 @@ cs_renumber_cells(cs_mesh_t  *mesh)
   p = getenv("CS_RENUMBER");
 
   if (p != nullptr) {
-    if (strcmp(p, "off") == 0 || strcmp(p, "IBM") == 0) {
+    if (strcmp(p, "off") == 0) {
       if (mesh->cell_numbering == nullptr)
         mesh->cell_numbering = cs_numbering_create_default(mesh->n_cells);
       return;
@@ -6045,7 +6019,7 @@ cs_renumber_i_faces(cs_mesh_t  *mesh)
   p = getenv("CS_RENUMBER");
 
   if (p != nullptr) {
-    if (strcmp(p, "off") == 0 || strcmp(p, "IBM") == 0) {
+    if (strcmp(p, "off") == 0) {
       if (mesh->i_face_numbering == nullptr)
         mesh->i_face_numbering = cs_numbering_create_default(mesh->n_i_faces);
       return;
@@ -6127,7 +6101,7 @@ cs_renumber_b_faces(cs_mesh_t  *mesh)
   p = getenv("CS_RENUMBER");
 
   if (p != nullptr) {
-    if (strcmp(p, "off") == 0 || strcmp(p, "IBM") == 0) {
+    if (strcmp(p, "off") == 0) {
       if (mesh->b_face_numbering == nullptr)
         mesh->b_face_numbering = cs_numbering_create_default(mesh->n_b_faces);
       return;
