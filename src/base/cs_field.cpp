@@ -5107,6 +5107,95 @@ cs_field_t::get_vals_t
 
 /*--------------------------------------------------------------------------*/
 /*!
+ * \brief Return a 2D span view of gradient values. If the field is not a
+ *        scalar or if the gradient member is nullptr, a fatal error is
+ *        provoked.
+ *
+ * \return cs_span_2d<cs_real_t>(:,3) view of the gradient values.
+ */
+/*--------------------------------------------------------------------------*/
+
+cs_span_2d<cs_real_t>
+cs_field_t::get_grad_s
+() const
+{
+  if (this->dim != 1)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not a scalar and has dimension %d\n"),
+              __func__, this->name, this->dim);
+
+  if (this->grad == nullptr)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" does not contain a gradient member\n"),
+              __func__, this->name);
+
+  return cs_span_2d<cs_real_t>(this->grad,
+                               this->_vals[0]->extent(0),
+                               3);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 3D span view of gradient values. If the field is not a
+ *        vector or if the gradient member is nullptr, a fatal error is
+ *        provoked.
+ *
+ * \return cs_span_3d<cs_real_t>(:,3,3) view of the gradient values.
+ */
+/*--------------------------------------------------------------------------*/
+
+cs_span_3d<cs_real_t>
+cs_field_t::get_grad_v
+() const
+{
+  if (this->dim != 3)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not a vector and has dimension %d\n"),
+              __func__, this->name, this->dim);
+
+  if (this->grad == nullptr)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" does not contain a gradient member\n"),
+              __func__, this->name);
+
+  return cs_span_3d<cs_real_t>(this->grad,
+                               this->_vals[0]->extent(0),
+                               this->dim,
+                               3);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Return a 3D span view of gradient values. If the field is not a
+ *        tensor or if the gradient member is nullptr, a fatal error is
+ *        provoked.
+ *
+ * \return cs_span_3d<cs_real_t>(:,6,3) view of the gradient values.
+ */
+/*--------------------------------------------------------------------------*/
+
+cs_span_3d<cs_real_t>
+cs_field_t::get_grad_t
+() const
+{
+  if (this->dim != 6)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" is not a tensor and has dimension %d\n"),
+              __func__, this->name, this->dim);
+
+  if (this->grad == nullptr)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Field \"%s\" does not contain a gradient member\n"),
+              __func__, this->name);
+
+  return cs_span_3d<cs_real_t>(this->grad,
+                               this->_vals[0]->extent(0),
+                               this->dim,
+                               3);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
  * \brief Return a 3D span view of field values. The view is of dimensions
  * (ns_fields, n_vals, dim)
  *

@@ -270,6 +270,18 @@ typedef struct cs_field_t {
     const int time_id = 0
   ) const;
 
+  cs_span_2d<cs_real_t>
+  get_grad_s
+  () const;
+
+  cs_span_3d<cs_real_t>
+  get_grad_v
+  () const;
+
+  cs_span_3d<cs_real_t>
+  get_grad_t
+  () const;
+
   cs_alloc_mode_t
   get_vals_alloc_mode
   (
