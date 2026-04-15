@@ -124,7 +124,7 @@ _mach_poly1(const cs_real_t   mach,
   return 1./2.*(mach + sgn*fabs(mach));
 }
 
- CS_F_HOST_DEVICE static inline cs_real_t
+CS_F_HOST_DEVICE static inline cs_real_t
 _mach_poly2(const cs_real_t   mach,
             const int         sgn)
 {
@@ -140,6 +140,21 @@ _mach_poly4(const cs_real_t   mach,
   else
     return _mach_poly2(mach, sgn)*(1 + (-sgn)*16.0*1./8.*_mach_poly2(mach, -sgn));
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Smoother for local Mach number at the interface (AUSM+up scheme)
+ *        to avoid ocilliations
+ *
+ * \param[in]   machl    face left Mach number
+ * \param[in]   machr    face right Mach number
+ * \param[in]   mach_ref reference Mach number
+ * \param[in]   pl       face left pressure
+ * \param[in]   pr       face right pressure
+ * \param[in]   rhof     face density
+ * \param[in]   af       face sound speed
+ */
+/*----------------------------------------------------------------------------*/
 
 CS_F_HOST_DEVICE static inline cs_real_t
 _mach_p(const cs_real_t    machl,

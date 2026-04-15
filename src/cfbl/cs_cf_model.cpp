@@ -290,6 +290,22 @@ cs_cf_add_variable_fields(void)
       f->set_key_int(keyrf, CS_RESTART_MAIN);
     }
   }
+
+  /* By defaut,Set upwind convection scheme for all fields,
+     including the velocity, specific modifications are allowed
+     in cs_user_parameters */
+
+  const int n_fields = cs_field_n_fields();
+  for (int f_id = 0; f_id < n_fields; f_id++) {
+    cs_field_t *f = cs_field(f_id);
+    if (   f->type & CS_FIELD_VARIABLE
+        && !(f->type & CS_FIELD_CDO)) {
+      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+      if (eqp != nullptr) {
+        eqp->blencv = 0;
+      }
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -370,20 +386,6 @@ cs_cf_setup(void)
   // another manner, which migh be the case using Cv instead of Cp...
 
   cs_field("temperature")->set_key_int("is_temperature", 0);
-
-  // Set upwind convection scheme fo all fields
-
-  const int n_fields = cs_field_n_fields();
-  for (int f_id = 0; f_id < n_fields; f_id++) {
-    cs_field_t *f = cs_field(f_id);
-    if (   f->type & CS_FIELD_VARIABLE
-        && !(f->type & CS_FIELD_CDO)) {
-      cs_equation_param_t *eqp = cs_field_get_equation_param(f);
-      if (eqp != nullptr) {
-        eqp->blencv = 0;
-      }
-    }
-  }
 
   /* Default computation options
      --------------------------- */
