@@ -53,6 +53,7 @@ from code_saturne.gui.base.QtPage import from_qvariant
 from code_saturne.gui.case.NumericalParamEquationForm import Ui_NumericalParamEquationForm
 from code_saturne.model.NumericalParamEquationModel import NumericalParamEquationModel
 from code_saturne.model.TurbulenceModel import TurbulenceModel
+from code_saturne.model.CompressibleModel import CompressibleModel
 
 #-------------------------------------------------------------------------------
 # log config
@@ -535,6 +536,8 @@ class StandardItemModelScheme(QStandardItemModel):
         """
         QStandardItemModel.__init__(self)
         self.NPE = NPE
+        self.is_compressible = \
+            CompressibleModel(NPE.case).getCompressibleModel() != 'off'
         self.dataScheme = []
         # list of items to be disabled in the QTableView
         self.disabledItem = []
@@ -669,6 +672,10 @@ class StandardItemModelScheme(QStandardItemModel):
 
         if role == Qt.ItemDataRole.ToolTipRole:
             col = index.column()
+            if self.is_compressible and col in (1, 2, 3):
+                return self.tr(
+                    "Forced to first-order upwind for the compressible"
+                    " model (set in cs_cf_setup).")
             if col > 0 and col < 9:
                 return self.tooltips[col-1]
             elif col > 0:
@@ -676,8 +683,16 @@ class StandardItemModelScheme(QStandardItemModel):
 
         elif role == Qt.ItemDataRole.DisplayRole:
             if key == 'ischcv':
+                if self.is_compressible:
+                    return "Upwind"
                 return self.dicoM2V[dico[key]]
+            elif key == 'blencv':
+                if self.is_compressible:
+                    return 0.
+                return dico[key]
             elif key == 'isstpc':
+                if self.is_compressible:
+                    return ""
                 if self.dataScheme[row]['blencv'] > 0:
                     return self.dicoM2V_isstpc[dico[key]]
                 else:
@@ -730,9 +745,19 @@ class StandardItemModelScheme(QStandardItemModel):
 
         if column == 0:
             return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
-        elif column in (1, 2, 6):
+        elif column in (1, 2):
+            # For compressible flows, the convection scheme is forced
+            # to first-order upwind (blencv=0) in cs_cf_setup,
+            # so these columns are not editable.
+            if self.is_compressible:
+                return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
+        elif column == 6:
             return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
         elif column == 3:
+            # For compressible flows, slope test is irrelevant (blencv=0)
+            if self.is_compressible:
+                return Qt.ItemFlag.NoItemFlags
             if self.dataScheme[row]['blencv'] > 0:
                 return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
             else:
@@ -775,6 +800,11 @@ class StandardItemModelScheme(QStandardItemModel):
         row = index.row()
         column = index.column()
         name = self.dataScheme[row]['name']
+
+        # For compressible flows, scheme/blending/slope test are forced
+        # to upwind in cs_cf_setup and should not be modified here.
+        if self.is_compressible and column in (1, 2, 3):
+            return False
 
         # for Pressure, most fields are empty
         if column > 0 and str(value) in ['', 'None']:
