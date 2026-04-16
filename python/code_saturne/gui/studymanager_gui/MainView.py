@@ -73,7 +73,7 @@ from code_saturne.gui.case.WelcomeView import WelcomeView
 from code_saturne.model.IdentityAndPathesModel import IdentityAndPathesModel
 from code_saturne.gui.case.XMLEditorView import XMLEditorView
 from code_saturne.gui.base.QtPage import getexistingdirectory
-from code_saturne.gui.base.QtPage import getopenfilename, getsavefilename
+from code_saturne.gui.base.QtPage import from_qvariant, getopenfilename, getsavefilename
 
 #-------------------------------------------------------------------------------
 # log config
@@ -86,6 +86,22 @@ log.setLevel(GuiParam.DEBUG)
 #-------------------------------------------------------------------------------
 # Base Main Window
 #-------------------------------------------------------------------------------
+
+def _msgbox_yes():
+    try:
+        return QMessageBox.StandardButton.Yes
+    except AttributeError:
+        return QMessageBox.Yes
+
+def _msgbox_no():
+    try:
+        return QMessageBox.StandardButton.No
+    except AttributeError:
+        return QMessageBox.No
+
+def _msgbox_yes_no():
+    return _msgbox_yes() | _msgbox_no()
+
 
 class MainView(object):
     """
@@ -126,9 +142,9 @@ class MainView(object):
         self.dockWidgetBrowser.setWidget(self.Browser)
 
         self.scrollArea = QScrollArea(self.frame)
-        self.gridlayout1.addWidget(self.scrollArea,0,0,1,1)
-        self.gridlayout1.setSpacing(0)
-        self.gridlayout.addWidget(self.frame,0,0,1,1)
+        getattr(self, 'gridLayout1', getattr(self, 'gridlayout1', None)).addWidget(self.scrollArea,0,0,1,1)
+        getattr(self, 'gridLayout1', getattr(self, 'gridlayout1', None)).setSpacing(0)
+        getattr(self, 'gridLayout', getattr(self, 'gridlayout', None)).addWidget(self.frame,0,0,1,1)
 
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setFrameShape(QFrame.StyledPanel)
@@ -210,7 +226,7 @@ class MainView(object):
                 if not self.font_default:
                     self.font_default = self.font()
                 font = QFont()
-                if font.fromString(str(f)):
+                if (font.fromString(str(f))):
                     self.setFont(font)
                     app.setFont(font)
 
@@ -369,7 +385,7 @@ class MainView(object):
                                          QMessageBox.Cancel)
             if reply == QMessageBox.Cancel:
                 return False
-            elif reply == QMessageBox.Yes:
+            elif reply == _msgbox_yes():
                 self.fileSave()
 
         return True
@@ -777,8 +793,8 @@ class MainView(object):
 
         reply = QMessageBox.question(self, "Restore defaults",
                                      "Restore default color and font ?",
-                                     QMessageBox.Yes | QMessageBox.No)
-        if reply == QMessageBox.Yes:
+                                     _msgbox_yes_no())
+        if reply == _msgbox_yes():
             app = QCoreApplication.instance()
             if self.palette_default:
                 app.setPalette(self.palette_default)
@@ -878,9 +894,14 @@ def isAlive(qobj):
     @param qobj: the name of the attribute
     @return: C{True} or C{False}
     """
-    import sip
     try:
+        import sip
         sip.unwrapinstance(qobj)
+    except ImportError:
+        try:
+            qobj.objectName()
+        except RuntimeError:
+            return False
     except RuntimeError:
         return False
     return True

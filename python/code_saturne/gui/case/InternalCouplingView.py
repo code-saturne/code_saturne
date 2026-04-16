@@ -122,7 +122,7 @@ class InternalCouplingView(QWidget):
                 self.checkBoxScalars.setChecked(True)
 
 
-    @Slot()
+    @Slot(int)
     def slotScalarState(self, val):
 
         if val == 0:

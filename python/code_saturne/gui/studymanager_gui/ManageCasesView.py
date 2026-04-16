@@ -46,7 +46,7 @@ from code_saturne.gui.base.QtWidgets import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
-from code_saturne.gui.base.QtPage import RegExpValidator
+from code_saturne.gui.base.QtPage import RegExpValidator, from_qvariant
 from code_saturne.gui.studymanager_gui.ManageCasesForm import Ui_ManageCasesForm
 from code_saturne.gui.studymanager_gui.ManageCasesModel import ManageCasesModel
 
@@ -62,6 +62,22 @@ log.setLevel(GuiParam.DEBUG)
 #-------------------------------------------------------------------------------
 # item class
 #-------------------------------------------------------------------------------
+
+def _msgbox_yes():
+    try:
+        return QMessageBox.StandardButton.Yes
+    except AttributeError:
+        return QMessageBox.Yes
+
+def _msgbox_no():
+    try:
+        return QMessageBox.StandardButton.No
+    except AttributeError:
+        return QMessageBox.No
+
+def _msgbox_yes_no():
+    return _msgbox_yes() | _msgbox_no()
+
 
 class item_class(object):
     '''
@@ -124,33 +140,33 @@ class TreeItem(object):
             else:
                 return None
         else:
-            if column == 0 and role == Qt.DisplayRole:
+            if column == 0 and role == Qt.ItemDataRole.DisplayRole:
                 return self.item.name
-            elif column == 1 and role == Qt.CheckStateRole:
+            elif column == 1 and role == Qt.ItemDataRole.CheckStateRole:
                 value = self.item.status
                 if value == 'on':
-                    return Qt.Checked
+                    return Qt.CheckState.Checked
                 else:
-                    return Qt.Unchecked
-            elif column == 2 and role == Qt.CheckStateRole:
+                    return Qt.CheckState.Unchecked
+            elif column == 2 and role == Qt.ItemDataRole.CheckStateRole:
                 value = self.item.compute
                 if value == 'on':
-                    return Qt.Checked
+                    return Qt.CheckState.Checked
                 else:
-                    return Qt.Unchecked
-            elif column == 3 and role == Qt.CheckStateRole:
+                    return Qt.CheckState.Unchecked
+            elif column == 3 and role == Qt.ItemDataRole.CheckStateRole:
                 value = self.item.post
                 if value == 'on':
-                    return Qt.Checked
+                    return Qt.CheckState.Checked
                 else:
-                    return Qt.Unchecked
-            elif column == 4 and role == Qt.DisplayRole:
+                    return Qt.CheckState.Unchecked
+            elif column == 4 and role == Qt.ItemDataRole.DisplayRole:
                 return self.item.run_id
-            elif column == 5 and role == Qt.DisplayRole:
+            elif column == 5 and role == Qt.ItemDataRole.DisplayRole:
                 return self.item.tags
-            elif column == 6 and role == Qt.DisplayRole:
+            elif column == 6 and role == Qt.ItemDataRole.DisplayRole:
                 return self.item.exp_time
-            elif column == 7 and role == Qt.DisplayRole:
+            elif column == 7 and role == Qt.ItemDataRole.DisplayRole:
                 return self.item.n_procs
         return None
 
@@ -174,7 +190,7 @@ class LabelDelegate(QItemDelegate):
     """
     def __init__(self, parent=None):
         super(LabelDelegate, self).__init__(parent)
-        self.parent = parent
+        self.parent_widget = parent
 
 
     def createEditor(self, parent, option, index):
@@ -188,7 +204,7 @@ class LabelDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        v = index.model().data(index, Qt.DisplayRole)
+        v = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         self.p_value = str(v)
         editor.setText(v)
 
@@ -199,7 +215,7 @@ class LabelDelegate(QItemDelegate):
 
         if editor.validator().state == QValidator.State.Acceptable:
             p_value = str(editor.text())
-            model.setData(index, p_value, Qt.DisplayRole)
+            model.setData(index, p_value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -222,7 +238,7 @@ class TagsDelegate(LabelDelegate):
         if not editor.isModified():
             return
         p_value = str(editor.text())
-        model.setData(index, p_value, Qt.DisplayRole)
+        model.setData(index, p_value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -245,7 +261,7 @@ class ExpTimeDelegate(LabelDelegate):
         if not editor.isModified():
             return
         p_value = str(editor.text())
-        model.setData(index, p_value, Qt.DisplayRole)
+        model.setData(index, p_value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -268,7 +284,7 @@ class NProcsDelegate(LabelDelegate):
         if not editor.isModified():
             return
         p_value = str(editor.text())
-        model.setData(index, p_value, Qt.DisplayRole)
+        model.setData(index, p_value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -280,7 +296,7 @@ class TextDelegate(QItemDelegate):
     """
     def __init__(self, parent=None):
         super(TextDelegate, self).__init__(parent)
-        self.parent = parent
+        self.parent_widget = parent
 
 
     def createEditor(self, parent, option, index):
@@ -290,7 +306,7 @@ class TextDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        v = index.model().data(index, Qt.DisplayRole)
+        v = index.model().data(index, Qt.ItemDataRole.DisplayRole)
         self.p_value = str(v)
         editor.setText(v)
 
@@ -299,7 +315,7 @@ class TextDelegate(QItemDelegate):
             return
 
         p_value = str(editor.text())
-        model.setData(index, p_value, Qt.DisplayRole)
+        model.setData(index, p_value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -313,7 +329,7 @@ class CaseStandardItemModel(QAbstractItemModel):
         """
         QAbstractItemModel.__init__(self)
 
-        self.parent = parent
+        self.parent_widget = parent
         self.case   = case
         self.mdl    = mdl
 
@@ -343,11 +359,11 @@ class CaseStandardItemModel(QAbstractItemModel):
         item = index.internalPointer()
 
         # ToolTips
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return None
 
         # StatusTips
-        if role == Qt.StatusTipRole:
+        if role == Qt.ItemDataRole.StatusTipRole:
             if index.column() == 0:
                 return self.tr("Case name")
             elif index.column() == 1:
@@ -366,9 +382,9 @@ class CaseStandardItemModel(QAbstractItemModel):
                 return self.tr("Number of processes")
 
         # Display
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return item.data(index.column(), role)
-        elif role == Qt.CheckStateRole:
+        elif role == Qt.ItemDataRole.CheckStateRole:
             return item.data(index.column(), role)
 
         return None
@@ -376,7 +392,7 @@ class CaseStandardItemModel(QAbstractItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         item = index.internalPointer()
 
@@ -385,15 +401,15 @@ class CaseStandardItemModel(QAbstractItemModel):
             return Qt.NoItemFlags
 
         if index.column() == 1 or index.column() == 2 or index.column() == 3:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsUserCheckable
         elif index.column() == 0:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             if section == 0:
                 return self.tr("Case name")
             elif section == 1:
@@ -495,7 +511,7 @@ class CaseStandardItemModel(QAbstractItemModel):
 
         if index.column() == 1:
             v = int(value)
-            if v == Qt.Checked:
+            if v == Qt.CheckState.Checked or v == 2:
                 item.item.status = "on"
             else:
                 item.item.status = "off"
@@ -508,7 +524,7 @@ class CaseStandardItemModel(QAbstractItemModel):
 
         elif index.column() == 2:
             v = int(value)
-            if v == Qt.Checked:
+            if v == Qt.CheckState.Checked or v == 2:
                 item.item.compute = "on"
             else:
                 item.item.compute = "off"
@@ -519,7 +535,7 @@ class CaseStandardItemModel(QAbstractItemModel):
 
         elif index.column() == 3:
             v = int(value)
-            if v == Qt.Checked:
+            if v == Qt.CheckState.Checked or v == 2:
                 item.item.post = "on"
             else:
                 item.item.post = "off"
@@ -607,7 +623,7 @@ class PostScriptItemModel(QStandardItemModel):
             return None
 
         # ToolTips
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             col = index.column()
             if index.column() == 0:
                 return self.tr("Script file, in study POST directory")
@@ -619,7 +635,7 @@ class PostScriptItemModel(QStandardItemModel):
             return None
 
         # StatusTips
-        if role == Qt.StatusTipRole:
+        if role == Qt.ItemDataRole.StatusTipRole:
             if index.column() == 0:
                 return self.tr("Script")
             elif index.column() == 1:
@@ -628,15 +644,15 @@ class PostScriptItemModel(QStandardItemModel):
                 return self.tr("Status")
 
         # Display
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             if index.column() in (0, 1):
                 return self.scripts[index.row()][index.column()]
-        elif role == Qt.CheckStateRole:
+        elif role == Qt.ItemDataRole.CheckStateRole:
             if index.column() == 2:
                 if self.scripts[index.row()][2] == 'off':
-                    return Qt.Unchecked
+                    return Qt.CheckState.Unchecked
                 else:
-                    return Qt.Checked
+                    return Qt.CheckState.Checked
             else:
                 return None
 
@@ -646,19 +662,19 @@ class PostScriptItemModel(QStandardItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         col = index.column()
         if col == 0:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         elif col == 1:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsUserCheckable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
@@ -684,7 +700,7 @@ class PostScriptItemModel(QStandardItemModel):
             self.mdl.setPostScriptArgs(self.study_name, self.case_idx, row,
                                        self.scripts[row][col])
 
-        elif col == 2 and role == Qt.CheckStateRole:
+        elif col == 2 and role == Qt.ItemDataRole.CheckStateRole:
             state = int(value)
             if state == Qt.Unchecked:
                 self.scripts[row][col] = 'off'
@@ -733,7 +749,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.setupUi(self)
 
         self.case = case
-        self.parent = parent
+        self.parent_widget = parent
         self.mdl = ManageCasesModel(self.case)
 
         if not self.mdl.list_study:
@@ -846,7 +862,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         dialog = QFileDialog()
         dialog.setWindowTitle(title)
         dialog.setDirectory(path)
-        dialog.setFileMode(QFileDialog.FileMode.DirectoryOnly)
+        dialog.setFileMode(QFileDialog.FileMode.Directory)
 
         if dialog.exec() == 1:
 
@@ -877,7 +893,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         dialog = QFileDialog()
         dialog.setWindowTitle(title)
         dialog.setDirectory(path)
-        dialog.setFileMode(QFileDialog.FileMode.DirectoryOnly)
+        dialog.setFileMode(QFileDialog.FileMode.Directory)
 
         if dialog.exec() == 1:
 
@@ -899,7 +915,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
                                              msg,
                                              QMessageBox.Yes|
                                              QMessageBox.No)
-                if reply == QMessageBox.Yes:
+                if reply == _msgbox_yes():
                     self.mdl.loadCases(dir_path)
 
             log.debug("add_study -> %s" % dir_path)

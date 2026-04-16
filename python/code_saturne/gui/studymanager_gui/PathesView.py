@@ -61,6 +61,22 @@ log.setLevel(GuiParam.DEBUG)
 #
 #-------------------------------------------------------------------------------
 
+def _msgbox_yes():
+    try:
+        return QMessageBox.StandardButton.Yes
+    except AttributeError:
+        return QMessageBox.Yes
+
+def _msgbox_no():
+    try:
+        return QMessageBox.StandardButton.No
+    except AttributeError:
+        return QMessageBox.No
+
+def _msgbox_yes_no():
+    return _msgbox_yes() | _msgbox_no()
+
+
 class PathesView(QWidget, Ui_PathesForm):
     """
     Class to open Pathes Page.
@@ -75,7 +91,7 @@ class PathesView(QWidget, Ui_PathesForm):
         self.setupUi(self)
 
         self.case = case
-        self.parent = parent
+        self.parent_widget = parent
 
         self.mdl = PathesModel(self.case)
 
@@ -119,9 +135,8 @@ class PathesView(QWidget, Ui_PathesForm):
             reply = QMessageBox.question(self,
                                          title,
                                          msg,
-                                         QMessageBox.Yes|
-                                         QMessageBox.No)
-            if reply == QMessageBox.Yes:
+                                         _msgbox_yes_no())
+            if reply == _msgbox_yes():
                 self.mdl.loadStudyAndCases(self.repo_path)
 
 

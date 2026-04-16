@@ -141,17 +141,17 @@ class TreeItem(object):
             else:
                 return None
         else:
-            if column == 0 and role == Qt.DisplayRole:
+            if column == 0 and role == Qt.ItemDataRole.DisplayRole:
                 return self.item.name
-            elif column == 1 and role == Qt.CheckStateRole:
+            elif column == 1 and role == Qt.ItemDataRole.CheckStateRole:
                 value = self.item.status
                 if value == 'on':
-                    return Qt.Checked
+                    return Qt.CheckState.Checked
                 elif value == 'onoff':
-                    return Qt.PartiallyChecked
+                    return Qt.CheckState.PartiallyChecked
                 else:
-                    return Qt.Unchecked
-            elif column == 2 and role == Qt.DisplayRole:
+                    return Qt.CheckState.Unchecked
+            elif column == 2 and role == Qt.ItemDataRole.DisplayRole:
                 return self.item.subplot_id
         return None
 
@@ -202,11 +202,11 @@ class CaseStandardItemModel(QAbstractItemModel):
         item = index.internalPointer()
 
         # ToolTips
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return None
 
         # StatusTips
-        if role == Qt.StatusTipRole:
+        if role == Qt.ItemDataRole.StatusTipRole:
             if index.column() == 0:
                 return self.tr("File name")
             elif index.column() == 1:
@@ -215,9 +215,9 @@ class CaseStandardItemModel(QAbstractItemModel):
                 return self.tr("Subplot")
 
         # Display
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return item.data(index.column(), role)
-        elif role == Qt.CheckStateRole:
+        elif role == Qt.ItemDataRole.CheckStateRole:
             return item.data(index.column(), role)
 
         return None
@@ -225,29 +225,29 @@ class CaseStandardItemModel(QAbstractItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
         itm = index.internalPointer()
 
         if itm in self.noderoot.values():
             # traitement des categories
             if index.column() == 0:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+                return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
             elif index.column() == 1:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable | Qt.ItemIsTristate
+                return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsAutoTristate
             elif index.column() == 2:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+                return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
         else:
             if index.column() == 0:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+                return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
             elif index.column() == 1:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
+                return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsUserCheckable
             elif index.column() == 2:
-                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+                return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             if section == 0:
                 return self.tr("File name")
             elif section == 1:
@@ -325,7 +325,7 @@ class CaseStandardItemModel(QAbstractItemModel):
 
         if index.column() == 1:
             v = int(value)
-            if v == Qt.Checked:
+            if v == Qt.CheckState.Checked or v == 2:
                 item.item.status = "on"
             else:
                 item.item.status = "off"
@@ -401,7 +401,6 @@ class MyMplCanvas(FigureCanvas):
         super(MyMplCanvas,self).__init__(self.fig)
         self.yAxe = numpy.array([0])
         self.xAxe = numpy.array([0])
-        self.x_labels = {}
         self.axes = []
 
         if subplotNb == 1:
@@ -426,7 +425,6 @@ class MyMplCanvas(FigureCanvas):
         self.compute_initial_figure()
 
         #
-        FigureCanvas.__init__(self, self.fig)
         self.setParent(parent)
 
         FigureCanvas.setSizePolicy(self,
@@ -483,7 +481,7 @@ class MyMplCanvas(FigureCanvas):
     def drawFigure(self):
         for it in range(len(self.axes)):
             self.axes[it].grid(True)
-            self.axes[it].set_xlabel(self.x_labels.get(it, "Time (s)"))
+            self.axes[it].set_xlabel("time (s)")
         self.axes[0].set_yscale('log')
 
         self.fig.canvas.draw()
@@ -518,6 +516,22 @@ class MyMplCanvas(FigureCanvas):
 # Base Main Window
 #-------------------------------------------------------------------------------
 
+def _msgbox_yes():
+    try:
+        return QMessageBox.StandardButton.Yes
+    except AttributeError:
+        return QMessageBox.Yes
+
+def _msgbox_no():
+    try:
+        return QMessageBox.StandardButton.No
+    except AttributeError:
+        return QMessageBox.No
+
+def _msgbox_yes_no():
+    return _msgbox_yes() | _msgbox_no()
+
+
 class MainView(object):
     """
     Abstract class
@@ -543,7 +557,7 @@ class MainView(object):
 
 
     def ui_initialize(self):
-        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         MainView.Instances.add(self)
 
         iconpath = os.path.split(os.path.dirname(os.path.abspath(__file__)))[0]
@@ -617,7 +631,7 @@ class MainView(object):
                 if not self.font_default:
                     self.font_default = self.font()
                 font = QFont()
-                if font.fromString(str(f)):
+                if (font.fromString(str(f))):
                     self.setFont(font)
                     app.setFont(font)
 
@@ -677,8 +691,8 @@ class MainView(object):
             title = self.tr("Close Case")
             msg   = self.tr("Save current state?")
             reply = QMessageBox.question(self, title, msg,
-                                         QMessageBox.Yes | QMessageBox.No)
-            if reply == QMessageBox.Yes:
+                                         _msgbox_yes_no())
+            if reply == _msgbox_yes():
                 self.SaveState()
 
         self.toolButtonDir.setStyleSheet("background-color: red")
@@ -687,7 +701,6 @@ class MainView(object):
         self.fileList = []
         self.listingVariable = []
         self.listFileProbes = {}
-        self.xLabel = "Time (s)"
         self.modelCases = CaseStandardItemModel(self.parent, [], [])
         self.treeViewDirectory.setModel(self.modelCases)
         self.modelCases.dataChanged.connect(self.treeViewChanged)
@@ -816,10 +829,8 @@ class MainView(object):
         Restore default style.
         """
 
-        reply = QMessageBox.question(self, "Restore defaults",
-                                     "Restore default color and font ?",
-                                     QMessageBox.Yes | QMessageBox.No)
-        if reply == QMessageBox.Yes:
+        reply = QMessageBox.question(self, "Restore defaults","Restore default color and font ?", _msgbox_yes_no())
+        if reply == _msgbox_yes():
             app = QCoreApplication.instance()
             if self.palette_default:
                 app.setPalette(self.palette_default)
@@ -864,7 +875,6 @@ class MainView(object):
             else:
                 if fl == 'residuals.csv':
                     self.listingVariable = self.readResidualsVariableListCSV(rep)
-                    self.xLabel = self.detectXLabelCsv(rep)
                     self.fileList.append([fl, rep, "on", 1, len(self.listingVariable) + 1])
                     # read variable list for Time residual
                     idx = 0
@@ -876,7 +886,6 @@ class MainView(object):
                     self.listFileProbes[fl] = ll
                 elif fl == 'residuals.dat':
                     self.listingVariable = self.readResidualsVariableListDAT(rep)
-                    self.xLabel = self.detectXLabelDat(rep)
                     self.fileList.append([fl, rep, "on", 1, len(self.listingVariable) + 1])
                     # read variable list for Time residual
                     idx = 0
@@ -979,22 +988,22 @@ class MainView(object):
         """
         """
         self.dc.clear()
-        self.dc.x_labels = {}
         for (name, fle, status, subplot_id, probes_number) in self.fileList:
             if status == "on" or status == "onoff":
                 base, ext = os.path.splitext(fle)
-                if name == 'residuals.csv' or name == 'residuals.dat':
-                    if name == 'residuals.csv':
-                        data = self.ReadCsvFile(fle, probes_number)
-                    else:
-                        data = self.ReadDatFile(fle, probes_number)
+                if name == 'residuals.csv':
+                    data = self.ReadCsvFile(fle, probes_number)
+                    if status == "on" or status == "onoff":
+                        self.dc.update_figure_listing(self.listingVariable,
+                                                      data,
+                                                      probes_number,
+                                                      self.listFileProbes[name])
+                elif name == 'residuals.dat':
+                    data = self.ReadDatFile(fle, probes_number)
                     if status == "on" or status == "onoff":
                         self.dc.update_figure_listing(self.listingVariable,
                                                       data, probes_number,
                                                       self.listFileProbes[name])
-                        for probe in self.listFileProbes[name]:
-                            if probe.status == "on":
-                                self.dc.x_labels[probe.subplot_id - 1] = self.xLabel
                 elif ext == ".csv":
                     data = self.ReadCsvFile(fle, probes_number)
                     nm, ext = os.path.splitext(name)
@@ -1148,32 +1157,6 @@ class MainView(object):
         return lst
 
 
-    def detectXLabelCsv(self, name):
-        """
-        Detect x-axis label from CSV header first column.
-        """
-        with open(name, 'r') as f:
-            header = f.readline()
-            first_col = header.split(',')[0].strip().lower()
-            if first_col in ('iteration', 'nt'):
-                return "Iteration number"
-        return "Time (s)"
-
-
-    def detectXLabelDat(self, name):
-        """
-        Detect x-axis label from DAT header first column.
-        """
-        with open(name, 'r') as f:
-            header = f.readline().lstrip()
-            if header.startswith('#'):
-                header = header[1:].lstrip()
-            tokens = header.split()
-            if tokens and tokens[0].strip().lower() in ('iteration', 'nt'):
-                return "Iteration number"
-        return "Time (s)"
-
-
     def SaveState(self):
         """
         """
@@ -1293,7 +1276,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.fileList = []
         self.listingVariable = []
         self.listFileProbes = {}
-        self.xLabel = "Time (s)"
         self.timer = QTimer()
         self.timer.start(int(self.timeRefresh * 1000))
 
@@ -1384,9 +1366,15 @@ def isAlive(qobj):
     @param qobj: the name of the attribute
     @return: C{True} or C{False}
     """
-    import sip
     try:
+        import sip
         sip.unwrapinstance(qobj)
+    except ImportError:
+        # PySide6/PyQt6: sip not available, use a different check
+        try:
+            qobj.objectName()
+        except RuntimeError:
+            return False
     except RuntimeError:
         return False
     return True

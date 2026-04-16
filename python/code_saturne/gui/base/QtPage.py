@@ -558,10 +558,7 @@ class ComboModel:
                 self.combo.setCurrentIndex(index)
             except Exception:
                 self._displayWarning(str_model)
-                # Throw signals to ensure XML is updated (not very elegant)
-                self.combo.activated[int].emit(self.dicoM2V[self.items[0]])
-                self.combo.currentTextChanged[str].emit(self.dicoM2V[self.items[0]])
-                self.combo.currentIndexChanged[int].emit(0)
+                self.combo.setCurrentIndex(0)
                 index = 0
 
         elif str_view:

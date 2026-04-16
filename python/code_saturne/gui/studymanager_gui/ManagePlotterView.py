@@ -223,7 +223,7 @@ class ManagePlotDialogView(QDialog, Ui_ManagePlotForm):
 class FloatDelegate(QItemDelegate):
     def __init__(self, parent=None):
         super(FloatDelegate, self).__init__(parent)
-        self.parent = parent
+        self.parent_widget = parent
 
 
     def createEditor(self, parent, option, index):
@@ -235,7 +235,7 @@ class FloatDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = str(index.model().data(index, Qt.DisplayRole))
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 
@@ -254,7 +254,7 @@ class FloatDelegate(QItemDelegate):
 class IntDelegate(QItemDelegate):
     def __init__(self, parent=None):
         super(IntDelegate, self).__init__(parent)
-        self.parent = parent
+        self.parent_widget = parent
 
 
     def createEditor(self, parent, option, index):
@@ -266,7 +266,7 @@ class IntDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = str(index.model().data(index, Qt.DisplayRole))
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 
@@ -286,7 +286,7 @@ class IntDelegate(QItemDelegate):
 class TextDelegate(QItemDelegate):
     def __init__(self, parent=None):
         super(TextDelegate, self).__init__(parent)
-        self.parent = parent
+        self.parent_widget = parent
 
 
     def createEditor(self, parent, option, index):
@@ -296,7 +296,7 @@ class TextDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = str(index.model().data(index, Qt.DisplayRole))
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 
@@ -315,7 +315,7 @@ class TextDelegate(QItemDelegate):
 class FigSizeDelegate(QItemDelegate):
     def __init__(self, parent=None):
         super(FigSizeDelegate, self).__init__(parent)
-        self.parent = parent
+        self.parent_widget = parent
 
 
     def createEditor(self, parent, option, index):
@@ -325,7 +325,7 @@ class FigSizeDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = str(index.model().data(index, Qt.DisplayRole))
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 
@@ -352,7 +352,7 @@ class FigSizeDelegate(QItemDelegate):
 class RangeAxisDelegate(QItemDelegate):
     def __init__(self, parent=None):
         super(RangeAxisDelegate, self).__init__(parent)
-        self.parent = parent
+        self.parent_widget = parent
 
 
     def createEditor(self, parent, option, index):
@@ -362,7 +362,7 @@ class RangeAxisDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        value = str(index.model().data(index, Qt.DisplayRole))
+        value = str(index.model().data(index, Qt.ItemDataRole.DisplayRole))
         editor.setText(value)
 
 
@@ -393,7 +393,7 @@ class FormatFigureDelegate(QItemDelegate):
     """
     def __init__(self, parent=None):
         super(FormatFigureDelegate, self).__init__(parent)
-        self.parent = parent
+        self.parent_widget = parent
 
 
     def createEditor(self, parent, option, index):
@@ -429,7 +429,7 @@ class LabelDelegate(QItemDelegate):
     """
     def __init__(self, parent=None):
         super(LabelDelegate, self).__init__(parent)
-        self.parent = parent
+        self.parent_widget = parent
 
 
     def createEditor(self, parent, option, index):
@@ -439,7 +439,7 @@ class LabelDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        v = index.model().data(index, Qt.DisplayRole)
+        v = index.model().data(index, Qt.ItemDataRole.DisplayRole)
         self.p_value = str(v)
         editor.setText(v)
 
@@ -449,7 +449,7 @@ class LabelDelegate(QItemDelegate):
             return
 
         p_value = str(editor.text())
-        model.setData(index, p_value, Qt.DisplayRole)
+        model.setData(index, p_value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -461,7 +461,7 @@ class SpidDelegate(QItemDelegate):
     """
     def __init__(self, parent=None, xml_model=None):
         super(SpidDelegate, self).__init__(parent)
-        self.parent = parent
+        self.parent_widget = parent
         self.mdl = xml_model
 
 
@@ -472,7 +472,7 @@ class SpidDelegate(QItemDelegate):
 
     def setEditorData(self, editor, index):
         editor.setAutoFillBackground(True)
-        v = index.model().data(index, Qt.DisplayRole)
+        v = index.model().data(index, Qt.ItemDataRole.DisplayRole)
         self.p_value = str(v)
         editor.setText(v)
 
@@ -482,7 +482,7 @@ class SpidDelegate(QItemDelegate):
             return
 
         p_value = str(editor.text())
-        model.setData(index, p_value, Qt.DisplayRole)
+        model.setData(index, p_value, Qt.ItemDataRole.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -517,9 +517,9 @@ class StandardItemModelSubplot(QStandardItemModel):
             for column in range(self.columnCount()):
                 # legend status
                 if column == 4:
-                    role = Qt.CheckStateRole
+                    role = Qt.ItemDataRole.CheckStateRole
                 else:
-                    role = Qt.DisplayRole
+                    role = Qt.ItemDataRole.DisplayRole
                 index = self.index(row, column)
                 value = self.data(index, role)
                 self.setData(index, value)
@@ -571,36 +571,36 @@ class StandardItemModelSubplot(QStandardItemModel):
             return None
 
         # ToolTips
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return self.tooltip[column]
 
-        if role == Qt.DisplayRole and column != 4:
+        if role == Qt.ItemDataRole.DisplayRole and column != 4:
             return dico[key]
 
         elif role == Qt.TextAlignmentRole:
-            return Qt.AlignmentFlag.AlignCenter
+            return Qt.AlignCenter
 
-        elif role == Qt.CheckStateRole and column == 4:
+        elif role == Qt.ItemDataRole.CheckStateRole and column == 4:
             st = dico[key]
             if st == 'on':
-                return Qt.Checked
+                return Qt.CheckState.Checked
             else:
-                return Qt.Unchecked
+                return Qt.CheckState.Unchecked
 
         return None
 
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         if index.column() == 4:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsUserCheckable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
@@ -621,7 +621,7 @@ class StandardItemModelSubplot(QStandardItemModel):
         elif column == 4:
             key = self.keys[column]
             v = int(value)
-            if v == Qt.Unchecked:
+            if v == Qt.CheckState.Unchecked:
                 self.dataSubplot[row][key] = "off"
             else:
                 self.dataSubplot[row][key] = "on"
@@ -668,7 +668,7 @@ class StandardItemModelFigure(QStandardItemModel):
         # Initialize the flags
         for row in range(self.rowCount()):
             for column in range(self.columnCount()):
-                role = Qt.DisplayRole
+                role = Qt.ItemDataRole.DisplayRole
                 index = self.index(row, column)
                 value = self.data(index, role)
                 self.setData(index, value)
@@ -723,29 +723,29 @@ class StandardItemModelFigure(QStandardItemModel):
             return None
 
         # ToolTips
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return self.tooltip[column]
 
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return dico[key]
 
         elif role == Qt.TextAlignmentRole:
-            return Qt.AlignmentFlag.AlignCenter
+            return Qt.AlignCenter
 
         return None
 
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
         if index.column() == 1:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ToolTip
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable | Qt.ToolTip
+            return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             return self.headers[section]
         return None
 
@@ -840,11 +840,11 @@ class TreeItem(object):
             else:
                 return None
         else:
-            if column == 0 and role == Qt.DisplayRole:
+            if column == 0 and role == Qt.ItemDataRole.DisplayRole:
                 return self.item.tpe
-            elif column == 1 and role == Qt.DisplayRole:
+            elif column == 1 and role == Qt.ItemDataRole.DisplayRole:
                 return self.item.name
-            elif column == 2 and role == Qt.DisplayRole:
+            elif column == 2 and role == Qt.ItemDataRole.DisplayRole:
                 return self.item.idlist
         return None
 
@@ -894,11 +894,11 @@ class StandardItemModelMeasurement(QAbstractItemModel):
         item = index.internalPointer()
 
         # ToolTips
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return None
 
         # StatusTips
-        if role == Qt.StatusTipRole:
+        if role == Qt.ItemDataRole.StatusTipRole:
             if index.column() == 0:
                 return self.tr("measurement file")
             elif index.column() == 1:
@@ -907,7 +907,7 @@ class StandardItemModelMeasurement(QAbstractItemModel):
                 return self.tr("subplot id")
 
         # Display
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return item.data(index.column(), role)
 
         return None
@@ -915,13 +915,13 @@ class StandardItemModelMeasurement(QAbstractItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             if section == 0:
                 return self.tr("measurement file")
             elif section == 1:
@@ -1036,11 +1036,11 @@ class StandardItemModelCase(QAbstractItemModel):
         item = index.internalPointer()
 
         # ToolTips
-        if role == Qt.ToolTipRole:
+        if role == Qt.ItemDataRole.ToolTipRole:
             return None
 
         # StatusTips
-        if role == Qt.StatusTipRole:
+        if role == Qt.ItemDataRole.StatusTipRole:
             if index.column() == 0:
                 return self.tr("type")
             elif index.column() == 1:
@@ -1049,7 +1049,7 @@ class StandardItemModelCase(QAbstractItemModel):
                 return self.tr("subplot ids")
 
         # Display
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return item.data(index.column(), role)
 
         return None
@@ -1057,13 +1057,13 @@ class StandardItemModelCase(QAbstractItemModel):
 
     def flags(self, index):
         if not index.isValid():
-            return Qt.ItemIsEnabled
+            return Qt.ItemFlag.ItemIsEnabled
 
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
 
 
     def headerData(self, section, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
             if section == 0:
                 return self.tr("type")
             elif section == 1:
@@ -1310,7 +1310,7 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
             p_idx = self.treeViewMeasurement.currentIndex().row()
 
         m_name = self.treeViewMeasurement.model().data(m_idx,
-                                                       Qt.DisplayRole)
+                                                       Qt.ItemDataRole.DisplayRole)
 
         m_node = self.mdl.getMeasurementNode(self.current_study, m_name)
 
@@ -1337,7 +1337,7 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
 
         c_idx = c_idx.siblingAtColumn(1)
         c_name = self.treeViewCases.model().data(c_idx,
-                                                 Qt.DisplayRole)
+                                                 Qt.ItemDataRole.DisplayRole)
         if d_idx is not None:
             d_idx = d_idx.siblingAtColumn(1)
 
@@ -1370,9 +1370,9 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         c_idx = c_idx.siblingAtColumn(1)
         d_idx = d_idx.siblingAtColumn(1)
         c_name = self.treeViewCases.model().data(c_idx,
-                                                 Qt.DisplayRole)
+                                                 Qt.ItemDataRole.DisplayRole)
         d_name = self.treeViewCases.model().data(d_idx,
-                                                 Qt.DisplayRole)
+                                                 Qt.ItemDataRole.DisplayRole)
 
         d_node = self.mdl.getCaseDataNode(self.current_study, c_name, d_name)
 

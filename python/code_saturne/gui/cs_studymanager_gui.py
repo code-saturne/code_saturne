@@ -115,12 +115,22 @@ def main(argv, pkg):
     app.setApplicationName("studymanagergui")
     app.lastWindowClosed.connect(app.quit)
 
-    # Locale detection
+
+    # Locale detection - compatible PyQt5/PyQt6/PySide6
     locale = QLocale.system().name()
     translator = QTranslator(app)
-    if translator.load("qt_" + locale,
-                       QLibraryInfo.location(QLibraryInfo.LibraryPath.TranslationsPath)):
+    try:
+        # PyQt6 / PySide6
+        path = QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)
+    except AttributeError:
+        try:
+            # PyQt5
+            path = QLibraryInfo.location(QLibraryInfo.TranslationsPath)
+        except AttributeError:
+            path = ""
+    if path and translator.load("qt_" + locale, path):
         app.installTranslator(translator)
+
 
     from code_saturne.gui.studymanager_gui.MainView import MainView
     mv = MainView(cmd_package = pkg, cmd_case = case)

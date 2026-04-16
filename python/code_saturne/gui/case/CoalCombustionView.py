@@ -1261,7 +1261,7 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         """
         Change the diameter type
         """
-        text = self.comboBoxKineticModel.textChanged()
+        text = self.comboBoxKineticModel.currentText()
         key = self.modelKineticModel.dicoV2M[str(text)]
         self.model.setKineticModel(key)
 

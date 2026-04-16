@@ -150,7 +150,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         Ui_CommandMgrDialogForm.__init__(self)
         self.setupUi(self)
         self.setWindowTitle(title)
-        self.setWindowModality(Qt.NonModal)
+        self.setWindowModality(Qt.WindowModality.NonModal)
         self.setModal(False)
         self.pushButtonOK.setEnabled(False)
 
@@ -173,7 +173,7 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
 
         self.cmd = cmd
 
-        cursor = QCursor(Qt.BusyCursor)
+        cursor = QCursor(Qt.CursorShape.BusyCursor)
         QApplication.setOverrideCursor(cursor)
 
 

@@ -36,10 +36,46 @@ from code_saturne import get_cs_data_path
 from code_saturne.gui.base import QtGui, QtCore, QtWidgets
 
 from code_saturne.gui.base.QtWidgets import QMainWindow, QMessageBox, \
-    QAction, QFileDialog, QTextEdit, QPlainTextEdit, QSizePolicy, QMenu, QMessageBox
+    QFileDialog, QTextEdit, QPlainTextEdit, QSizePolicy, QMenu, QMessageBox
+from code_saturne.gui.base.QtWidgets import QAction
 
 import code_saturne.gui.base.resource_base_rc
 from code_saturne.gui.base.SearchBar import SearchBar
+
+#-------------------------------------------------------------------------------
+# Optional Pygments import — used for syntax highlighting when available.
+# Falls back gracefully to the built-in regex highlighter if not installed.
+#-------------------------------------------------------------------------------
+
+try:
+    from pygments import lex
+    from pygments.lexers import get_lexer_for_filename, guess_lexer, TextLexer
+    from pygments.lexers import CLexer, CppLexer, PythonLexer
+    from pygments.token import Token
+    _PYGMENTS_AVAILABLE = True
+except ImportError:
+    _PYGMENTS_AVAILABLE = False
+
+#-------------------------------------------------------------------------------
+# Compatibility helper: detect which Qt binding is used
+#-------------------------------------------------------------------------------
+
+def _fromUtf8(s):
+    return s
+
+# Detect Qt binding for compatibility
+try:
+    from PySide6 import QtCore as _qtc
+    _QT_BINDING = 'pyside6'
+except ImportError:
+    try:
+        from PyQt6 import QtCore as _qtc
+        _QT_BINDING = 'pyqt6'
+    except ImportError:
+        _QT_BINDING = 'pyqt5'
+
+def _is_qt6():
+    return _QT_BINDING in ('pyside6', 'pyqt6')
 
 #-------------------------------------------------------------------------------
 # Local constants
@@ -77,10 +113,21 @@ format_styles = {'keyword'    : loc_format('blue', 'bold'),
                  'brace'      : loc_format('orange', 'bold'),
                  'string'     : loc_format('magenta', 'italic'),
                  'comment'    : loc_format('darkGreen', 'italic'),
-                 'expression' : loc_format('black')}
+                 'expression' : loc_format('black'),
+                 'cs_keyword' : loc_format('darkCyan', 'bold')}
 
 #-------------------------------------------------------------------------------
-# HighlightingRule class
+# Code_Saturne-specific keywords (applied as a second pass in both backends)
+#-------------------------------------------------------------------------------
+
+_CS_KEYWORDS = [
+    'cs_real_t', 'cs_lnum_t', 'cs_real_3_t',
+    'bft_printf', 'bft_printf_flush', 'bft_error',
+    'BEGIN_C_DECLS', 'END_C_DECLS',
+]
+
+#-------------------------------------------------------------------------------
+# HighlightingRule class  (used by the regex fallback backend only)
 #-------------------------------------------------------------------------------
 
 class HighlightingRule():
@@ -100,9 +147,7 @@ class HighlightingRule():
 class LineNumberArea(QtWidgets.QWidget):
 
     def __init__(self, editor):
-        # Handle the python2/python3 differences for super
         super(LineNumberArea, self).__init__(editor)
-
         self.editor = editor
 
     def sizeHint(self):
@@ -113,7 +158,6 @@ class LineNumberArea(QtWidgets.QWidget):
 
 class CodeEditor(QPlainTextEdit):
     def __init__(self):
-        # Handle the python2/python3 differences for super
         super(CodeEditor, self).__init__()
 
         self.lineNumberArea = LineNumberArea(self)
@@ -131,7 +175,11 @@ class CodeEditor(QPlainTextEdit):
         while count >= 10:
             count /= 10
             digits += 1
-        space = 3 + self.fontMetrics().width('9') * digits
+        # horizontalAdvance replaces width() which is removed in Qt6
+        try:
+            space = 3 + self.fontMetrics().horizontalAdvance('9') * digits
+        except AttributeError:
+            space = 3 + self.fontMetrics().width('9') * digits
         return space
 
 
@@ -152,7 +200,6 @@ class CodeEditor(QPlainTextEdit):
 
 
     def resizeEvent(self, event):
-        # Handle the python2/python3 differences for super
         super(CodeEditor, self).resizeEvent(event)
 
         cr = self.contentsRect();
@@ -163,21 +210,34 @@ class CodeEditor(QPlainTextEdit):
     def lineNumberAreaPaintEvent(self, event):
         mypainter = QtGui.QPainter(self.lineNumberArea)
 
-        mypainter.fillRect(event.rect(), QtCore.Qt.lightGray)
+        # Qt.lightGray -> Qt.GlobalColor.lightGray in Qt6
+        try:
+            mypainter.fillRect(event.rect(), QtCore.Qt.GlobalColor.lightGray)
+        except AttributeError:
+            mypainter.fillRect(event.rect(), QtCore.Qt.lightGray)
 
         block = self.firstVisibleBlock()
         blockNumber = block.blockNumber()
         top = self.blockBoundingGeometry(block).translated(self.contentOffset()).top()
         bottom = top + self.blockBoundingRect(block).height()
 
-        # Just to make sure I use the right font
         x = int(0)
         h = int(self.fontMetrics().height())
-        flags = int(QtCore.Qt.AlignmentFlag.AlignRight)
+
+        # Qt.AlignRight -> Qt.AlignmentFlag.AlignRight in Qt6
+        try:
+            flags = int(QtCore.Qt.AlignmentFlag.AlignRight)
+        except AttributeError:
+            flags = int(QtCore.Qt.AlignRight)
+
         while block.isValid() and (top <= event.rect().bottom()):
             if block.isVisible() and (bottom >= event.rect().top()):
                 number = str(blockNumber + 1)
-                mypainter.setPen(QtCore.Qt.black)
+                # Qt.black -> Qt.GlobalColor.black in Qt6
+                try:
+                    mypainter.setPen(QtCore.Qt.GlobalColor.black)
+                except AttributeError:
+                    mypainter.setPen(QtCore.Qt.black)
                 y = int(top)
                 w = int(self.lineNumberArea.width())
                 mypainter.drawText(x, y, w, h, flags, number)
@@ -194,65 +254,272 @@ class CodeEditor(QPlainTextEdit):
         if not self.isReadOnly():
             selection = QTextEdit.ExtraSelection()
 
-            lineColor = QtGui.QColor(QtCore.Qt.yellow).lighter(160)
+            # Qt.yellow -> Qt.GlobalColor.yellow in Qt6
+            try:
+                lineColor = QtGui.QColor(QtCore.Qt.GlobalColor.yellow).lighter(160)
+            except AttributeError:
+                lineColor = QtGui.QColor(QtCore.Qt.yellow).lighter(160)
 
             selection.format.setBackground(lineColor)
-            selection.format.setProperty(QtGui.QTextFormat.FullWidthSelection, True)
+            # QTextFormat.FullWidthSelection -> QTextFormat.Property.FullWidthSelection in Qt6
+            try:
+                selection.format.setProperty(QtGui.QTextFormat.Property.FullWidthSelection, True)
+            except AttributeError:
+                selection.format.setProperty(QtGui.QTextFormat.FullWidthSelection, True)
             selection.cursor = self.textCursor()
             selection.cursor.clearSelection()
             extraSelections.append(selection)
         self.setExtraSelections(extraSelections)
 
 #-------------------------------------------------------------------------------
-# QtextHighlighter class
+# QtextHighlighter — public facade
+#
+# Instantiates the Pygments backend when available, the regex backend otherwise.
+# The caller (QFileEditor.newFile) does not need to change.
 #-------------------------------------------------------------------------------
 
-class QtextHighlighter(QtGui.QSyntaxHighlighter):
+def QtextHighlighter(parent, extension):
     """
-    Syntax highighting
+    Factory function returning the best available highlighter for *extension*.
+
+    Returns a QSyntaxHighlighter subclass instance attached to *parent*
+    (a QTextDocument). Uses Pygments when installed, falls back to the
+    built-in regex highlighter otherwise.
+    """
+    if _PYGMENTS_AVAILABLE:
+        return _PygmentsHighlighter(parent, extension)
+    else:
+        return _RegexHighlighter(parent, extension)
+
+
+#-------------------------------------------------------------------------------
+# _PygmentsHighlighter — Pygments-based backend
+#-------------------------------------------------------------------------------
+
+# Map file extensions to Pygments lexer classes.
+# Plain text (unknown extension) gets the null TextLexer so Pygments still
+# runs and the CS keyword pass still fires.
+_EXT_TO_LEXER = {
+    'c'   : None,  # resolved dynamically via get_lexer_for_filename
+    'cpp' : None,
+    'cxx' : None,
+    'c++' : None,
+    'h'   : None,
+    'hxx' : None,
+    'f90' : None,
+    'F90' : None,
+    'F'   : None,
+    'f77' : None,
+    'py'  : None,
+}
+
+# Map Pygments token types to our format_styles keys.
+# Order matters: more specific entries first.
+_TOKEN_FORMAT = [
+    (Token.Comment,               'comment'),
+    (Token.Literal.String,        'string'),
+    (Token.Literal.String.Doc,    'comment'),   # docstrings → green italic
+    (Token.Keyword,               'keyword'),
+    (Token.Keyword.Type,          'keyword'),
+    (Token.Name.Builtin,          'keyword'),
+    (Token.Operator,              'operator'),
+    (Token.Punctuation,           'brace'),
+    (Token.Literal.Number,        'expression'),
+]
+
+
+class _PygmentsHighlighter(QtGui.QSyntaxHighlighter):
+    """
+    Syntax highlighter backed by Pygments.
+
+    For each document block (line), Pygments tokenizes the *entire* document
+    text once (cached), then we apply Qt formats token by token for the
+    current line.  A second pass applies the CS-specific keywords on top.
     """
 
     # ---------------------------------------------------------------
-    def __init__(self, parent, extension):
+    def __init__(self, parent_doc, extension):
+        QtGui.QSyntaxHighlighter.__init__(self, parent_doc)
+        self.parent_doc = parent_doc
+        self.extension  = extension
 
-        QtGui.QSyntaxHighlighter.__init__(self, parent)
-        self.parent = parent
+        # Resolve the Pygments lexer for this extension.
+        self._lexer = self._get_lexer(extension)
+
+        # Pre-build CS keyword patterns (QRegularExpression or QRegExp).
+        self._cs_patterns = self._build_cs_patterns()
+    # ---------------------------------------------------------------
+
+    # ---------------------------------------------------------------
+    def _get_lexer(self, extension):
+        """Return the best Pygments lexer for *extension*."""
+        fake_filename = 'file.' + extension
+        try:
+            lexer = get_lexer_for_filename(fake_filename, stripnl=False)
+        except Exception:
+            lexer = TextLexer(stripnl=False)
+        return lexer
+    # ---------------------------------------------------------------
+
+    # ---------------------------------------------------------------
+    def _build_cs_patterns(self):
+        """
+        Pre-compile regex patterns for Code_Saturne keywords.
+        Returns a list of compiled pattern objects (QRegularExpression or QRegExp).
+        """
+        patterns = []
+        for kw in _CS_KEYWORDS:
+            if _is_qt6():
+                patterns.append(QtCore.QRegularExpression(r'\b' + kw + r'\b'))
+            else:
+                patterns.append(QtCore.QRegExp(r'\b' + kw + r'\b'))
+        return patterns
+    # ---------------------------------------------------------------
+
+    # ---------------------------------------------------------------
+    def _get_tokens_for_block(self, block_text, block_start):
+        """
+        Run Pygments on the full document text and extract only the tokens
+        that fall inside [block_start, block_start + len(block_text)].
+
+        Returns list of (relative_start, length, format_key) tuples.
+        """
+        # Retrieve full document text each time.
+        # QSyntaxHighlighter gives us no cheap way to cache across blocks
+        # without subclassing QTextDocument, so we accept the overhead —
+        # acceptable for files up to a few thousand lines.
+        doc = self.document()
+        full_text = doc.toPlainText()
+
+        results = []
+        pos = 0
+        block_end = block_start + len(block_text)
+
+        for ttype, value in lex(full_text, self._lexer):
+            token_start = pos
+            token_end   = pos + len(value)
+            pos = token_end
+
+            # Skip tokens entirely outside this block.
+            if token_end <= block_start:
+                continue
+            if token_start >= block_end:
+                break
+
+            # Clamp to block boundaries.
+            rel_start  = max(token_start, block_start) - block_start
+            rel_end    = min(token_end,   block_end)   - block_start
+            rel_length = rel_end - rel_start
+            if rel_length <= 0:
+                continue
+
+            fmt_key = self._resolve_format(ttype)
+            if fmt_key:
+                results.append((rel_start, rel_length, fmt_key))
+
+        return results
+    # ---------------------------------------------------------------
+
+    # ---------------------------------------------------------------
+    @staticmethod
+    def _resolve_format(ttype):
+        """
+        Map a Pygments token type to a format_styles key.
+        Walks the token hierarchy from specific to generic.
+        """
+        for base_type, fmt_key in _TOKEN_FORMAT:
+            if ttype is base_type or ttype in base_type:
+                return fmt_key
+        return None
+    # ---------------------------------------------------------------
+
+    # ---------------------------------------------------------------
+    def highlightBlock(self, text):
+        """Apply Pygments-based highlighting, then the CS keyword pass."""
+
+        # Compute absolute offset of this block in the document.
+        block       = self.currentBlock()
+        block_start = block.position()
+
+        # --- Pygments pass ---
+        for rel_start, length, fmt_key in self._get_tokens_for_block(text, block_start):
+            self.setFormat(rel_start, length, format_styles[fmt_key])
+
+        # --- Code_Saturne keyword pass (second pass, always overwrites) ---
+        self._apply_cs_keywords(text)
+    # ---------------------------------------------------------------
+
+    # ---------------------------------------------------------------
+    def _apply_cs_keywords(self, text):
+        """Highlight Code_Saturne-specific identifiers in *text*."""
+        fmt = format_styles['cs_keyword']
+        for pat in self._cs_patterns:
+            if _is_qt6():
+                it = pat.globalMatch(text)
+                while it.hasNext():
+                    m = it.next()
+                    self.setFormat(m.capturedStart(), m.capturedLength(), fmt)
+            else:
+                idx = pat.indexIn(text)
+                while idx >= 0:
+                    self.setFormat(idx, pat.matchedLength(), fmt)
+                    idx = pat.indexIn(text, idx + pat.matchedLength())
+    # ---------------------------------------------------------------
+
+
+#-------------------------------------------------------------------------------
+# _RegexHighlighter — pure-Qt regex fallback backend
+#
+# Functionally equivalent to the original QtextHighlighter, with:
+#   - cleaner rule construction (one helper instead of duplicated Qt5/Qt6 blocks)
+#   - Code_Saturne keywords integrated into the C/C++ keyword list
+#   - CS keyword second pass (same as the Pygments backend, for consistency)
+#-------------------------------------------------------------------------------
+
+class _RegexHighlighter(QtGui.QSyntaxHighlighter):
+    """
+    Syntax highlighter using QRegularExpression (Qt6) or QRegExp (Qt5).
+    Zero external dependencies.
+    """
+
+    # ---------------------------------------------------------------
+    def __init__(self, parent_doc, extension):
+        QtGui.QSyntaxHighlighter.__init__(self, parent_doc)
+        self.parent_doc = parent_doc
         self.highlightingRules = []
 
-        # Keywords (C or Fortran)
+        # --- Keyword lists ---
+
         fortran_kw = ['if', 'else', 'endif', 'do', 'enddo', 'end',
                       'implicit none', 'use', 'subroutine', 'function',
                       'double precision', 'real', 'integer', 'char',
                       'allocatable', 'allocate', 'deallocate', 'dimension',
                       'select case', 'call']
 
-        c_kw       = ['if', 'else', 'for', 'switch', 'while',
-                      '\#', 'include', 'pass', 'return', 'del', 'delete',
-                      'assert', 'true', 'false', 'continue', 'break',
-                      'fprintf', 'bft_printf', 'bft_printf_flush', 'bft_error',
-                      'cs_real_t', 'cs_lnum_t', 'cs_real_3_t', 'int', 'char',
-                      'string', 'void', 'double', 'const',
-                      'BEGIN_C_DECLS', 'END_C_DECLS']
+        # Standard C/C++ keywords + Code_Saturne-specific identifiers.
+        c_kw = ['if', 'else', 'for', 'switch', 'while',
+                '\#', 'include', 'pass', 'return', 'del', 'delete',
+                'assert', 'true', 'false', 'continue', 'break',
+                'fprintf', 'bft_printf', 'bft_printf_flush', 'bft_error',
+                'cs_real_t', 'cs_lnum_t', 'cs_real_3_t',
+                'int', 'char', 'string', 'void', 'double', 'const',
+                'BEGIN_C_DECLS', 'END_C_DECLS']
 
-        py_kw      = ['if', 'elif', 'for', 'range', 'while', 'return', 'def',
-                      'True', 'False']
+        py_kw = ['if', 'elif', 'for', 'range', 'while', 'return', 'def',
+                 'True', 'False']
 
         self.kw = []
-        # Fortran
         if extension in ['f90', 'F90', 'F', 'f77']:
             for kw in fortran_kw:
                 self.kw.append(kw)
                 self.kw.append(kw.upper())
-        # C/C++
         elif extension in ['c', 'cpp', 'cxx', 'c++']:
             for kw in c_kw:
                 self.kw.append(kw)
                 self.kw.append(kw.upper())
-        # Python
         elif extension == 'py':
             for kw in py_kw:
                 self.kw.append(kw)
-
 
         # Operators
         self.op = ['=', '==', '!=', '<', '>', '<=', '>=',
@@ -263,107 +530,193 @@ class QtextHighlighter(QtGui.QSyntaxHighlighter):
         # Braces
         self.br = ['\(', '\)', '\{', '\}', '\[', '\]']
 
-        # RULES
-        for kw in self.kw:
-            p    = QtCore.QRegExp("\\b"+kw+ '\\b')
-            rule = HighlightingRule(p, format_styles['keyword'])
-            self.highlightingRules.append(rule)
+        # Build rules using the appropriate regex class.
+        self._build_rules()
 
-        for op in self.op:
-            p    = QtCore.QRegExp(op)
-            rule = HighlightingRule(p, format_styles['operator'])
-            self.highlightingRules.append(rule)
-
-        for br in self.br:
-            p    = QtCore.QRegExp(br)
-            rule = HighlightingRule(p, format_styles['brace'])
-            self.highlightingRules.append(rule)
-
-        # strings
-        ps = QtCore.QRegExp('"[^"\\]*(\\.[^"\\]*)*"')
-        rs = HighlightingRule(ps, format_styles['string'])
-        self.highlightingRules.append(rs)
-
-        # comments
-        pc = QtCore.QRegExp('//[^\n]*')
-        rc = HighlightingRule(pc, format_styles['comment'])
-        self.highlightingRules.append(rc)
-
-        pcf = QtCore.QRegExp('![^\n]*')
-        rcf = HighlightingRule(pcf, format_styles['comment'])
-        self.highlightingRules.append(rcf)
-
-        # numerals
-        pn1 = QtCore.QRegExp('[+-]?[0-9]+[lL]?')
-        rn1 = HighlightingRule(pn1, format_styles['expression'])
-        self.highlightingRules.append(rn1)
-        pn2 = QtCore.QRegExp('[+-]?0[xX][0-9A-Fa-f]+[lL]?')
-        rn2 = HighlightingRule(pn2, format_styles['expression'])
-        self.highlightingRules.append(rn2)
-        pn3 = QtCore.QRegExp('[+-]?[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?')
-        rn3 = HighlightingRule(pn3, format_styles['expression'])
-        self.highlightingRules.append(rn3)
+        # CS keyword patterns (second pass, same as Pygments backend).
+        self._cs_patterns = self._build_cs_patterns()
     # ---------------------------------------------------------------
 
+    # ---------------------------------------------------------------
+    def _make_pattern(self, expr):
+        """Return a QRegularExpression (Qt6) or QRegExp (Qt5) for *expr*."""
+        if _is_qt6():
+            return QtCore.QRegularExpression(expr)
+        else:
+            return QtCore.QRegExp(expr)
+    # ---------------------------------------------------------------
+
+    # ---------------------------------------------------------------
+    def _build_rules(self):
+        """Construct all highlighting rules."""
+        R = HighlightingRule
+
+        for kw in self.kw:
+            self.highlightingRules.append(
+                R(self._make_pattern(r'\b' + kw + r'\b'), format_styles['keyword'])
+            )
+
+        for op in self.op:
+            self.highlightingRules.append(
+                R(self._make_pattern(op), format_styles['operator'])
+            )
+
+        for br in self.br:
+            self.highlightingRules.append(
+                R(self._make_pattern(br), format_styles['brace'])
+            )
+
+        # String literals — pattern differs slightly between Qt5 and Qt6
+        # due to backslash handling in QRegExp vs QRegularExpression.
+        if _is_qt6():
+            str_pat  = r'"[^"\\]*(\\.[^"\\]*)*"'
+            cmt_pat  = r'//[^\n]*'
+            fcmt_pat = r'![^\n]*'
+            num_pats = [r'[+-]?[0-9]+[lL]?',
+                        r'[+-]?0[xX][0-9A-Fa-f]+[lL]?',
+                        r'[+-]?[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?']
+        else:
+            str_pat  = r'"[^"\\]*(\\.[^"\\]*)*"'
+            cmt_pat  = r'//[^\n]*'
+            fcmt_pat = r'![^\n]*'
+            num_pats = [r'[+-]?[0-9]+[lL]?',
+                        r'[+-]?0[xX][0-9A-Fa-f]+[lL]?',
+                        r'[+-]?[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?']
+
+        self.highlightingRules.append(
+            R(self._make_pattern(str_pat), format_styles['string'])
+        )
+        self.highlightingRules.append(
+            R(self._make_pattern(cmt_pat), format_styles['comment'])
+        )
+        self.highlightingRules.append(
+            R(self._make_pattern(fcmt_pat), format_styles['comment'])
+        )
+        for np in num_pats:
+            self.highlightingRules.append(
+                R(self._make_pattern(np), format_styles['expression'])
+            )
+    # ---------------------------------------------------------------
+
+    # ---------------------------------------------------------------
+    def _build_cs_patterns(self):
+        """Pre-compile patterns for the CS keyword second pass."""
+        patterns = []
+        for kw in _CS_KEYWORDS:
+            patterns.append(self._make_pattern(r'\b' + kw + r'\b'))
+        return patterns
+    # ---------------------------------------------------------------
 
     # ---------------------------------------------------------------
     def highlightBlock(self, text):
-        """
-        Apply the syntax highlighting
-        """
+        """Apply regex rules, then the CS keyword pass."""
+
         for rule in self.highlightingRules:
-            exp   = QtCore.QRegExp(rule.pattern)
-            index = exp.indexIn(text)
-
-            while index >= 0:
-                length = exp.matchedLength()
-                ok_to_highlight = True
-                if len(text) > index+length:
-                    if text[index+length] not in self.op+[' ']:
-                        ok_to_highlight = False
-                if text[index:index+length] not in self.op+self.br:
-                    ok_to_highlight = True
-
-                if ok_to_highlight:
+            if _is_qt6():
+                it = rule.pattern.globalMatch(text)
+                while it.hasNext():
+                    m = it.next()
+                    index  = m.capturedStart()
+                    length = m.capturedLength()
                     self.setFormat(index, length, rule.format)
-                index = text.find(exp.cap(), index + length)
+            else:
+                exp   = QtCore.QRegExp(rule.pattern)
+                index = exp.indexIn(text)
+
+                while index >= 0:
+                    length = exp.matchedLength()
+                    ok_to_highlight = True
+                    if len(text) > index + length:
+                        if text[index + length] not in self.op + [' ']:
+                            ok_to_highlight = False
+                    if text[index:index + length] not in self.op + self.br:
+                        ok_to_highlight = True
+
+                    if ok_to_highlight:
+                        self.setFormat(index, length, rule.format)
+                    index = text.find(exp.cap(), index + length)
 
         self.setCurrentBlockState(0)
 
-        # C/C++ comments
-        self.highlightCommentsOverLines(text, "/\\*", "\\*/")
+        # C/C++ multi-line comments  /* … */
+        self.highlightCommentsOverLines(text, r'/\*', r'\*/')
+
+        # CS keyword second pass.
+        self._apply_cs_keywords(text)
     # ---------------------------------------------------------------
 
+    # ---------------------------------------------------------------
+    def _apply_cs_keywords(self, text):
+        """Highlight Code_Saturne-specific identifiers (second pass)."""
+        fmt = format_styles['cs_keyword']
+        for pat in self._cs_patterns:
+            if _is_qt6():
+                it = pat.globalMatch(text)
+                while it.hasNext():
+                    m = it.next()
+                    self.setFormat(m.capturedStart(), m.capturedLength(), fmt)
+            else:
+                idx = pat.indexIn(text)
+                while idx >= 0:
+                    self.setFormat(idx, pat.matchedLength(), fmt)
+                    idx = pat.indexIn(text, idx + pat.matchedLength())
+    # ---------------------------------------------------------------
 
     # ---------------------------------------------------------------
     def highlightCommentsOverLines(self, text, dls, dle):
+        """Handle C/C++ block comments spanning multiple lines."""
 
-        startExpression = QtCore.QRegExp(dls)
-        endExpression   = QtCore.QRegExp(dle)
-        ref_state = 1
+        if _is_qt6():
+            startExpression = QtCore.QRegularExpression(dls)
+            endExpression   = QtCore.QRegularExpression(dle)
+            ref_state = 1
 
-        if self.previousBlockState() == ref_state:
-            start = 0
-            add   = 0
-
-        else:
-            start = startExpression.indexIn(text)
-            add   = startExpression.matchedLength()
-
-
-        while start >= 0:
-            end = endExpression.indexIn(text, start + add)
-
-            if end >= add:
-                length = end - start + add + endExpression.matchedLength()
-                self.setCurrentBlockState(0)
-
+            if self.previousBlockState() == ref_state:
+                start = 0
+                add   = 0
             else:
-                self.setCurrentBlockState(ref_state)
-                length = len(text) - start + add
+                m     = startExpression.match(text)
+                start = m.capturedStart() if m.hasMatch() else -1
+                add   = m.capturedLength() if m.hasMatch() else 0
 
-            self.setFormat(start, length, format_styles['comment'])
-            start = endExpression.indexIn(text, start + length)
+            while start >= 0:
+                m_end = endExpression.match(text, start + add)
+                end   = m_end.capturedStart() if m_end.hasMatch() else -1
+
+                if end >= add:
+                    length = end - start + add + m_end.capturedLength()
+                    self.setCurrentBlockState(0)
+                else:
+                    self.setCurrentBlockState(ref_state)
+                    length = len(text) - start + add
+
+                self.setFormat(start, length, format_styles['comment'])
+                m_next = endExpression.match(text, start + length)
+                start  = m_next.capturedStart() if m_next.hasMatch() else -1
+        else:
+            startExpression = QtCore.QRegExp(dls)
+            endExpression   = QtCore.QRegExp(dle)
+            ref_state = 1
+
+            if self.previousBlockState() == ref_state:
+                start = 0
+                add   = 0
+            else:
+                start = startExpression.indexIn(text)
+                add   = startExpression.matchedLength()
+
+            while start >= 0:
+                end = endExpression.indexIn(text, start + add)
+
+                if end >= add:
+                    length = end - start + add + endExpression.matchedLength()
+                    self.setCurrentBlockState(0)
+                else:
+                    self.setCurrentBlockState(ref_state)
+                    length = len(text) - start + add
+
+                self.setFormat(start, length, format_styles['comment'])
+                start = endExpression.indexIn(text, start + length)
     # ---------------------------------------------------------------
 
 
@@ -429,6 +782,26 @@ class FileSystemModel(QtWidgets.QFileSystemModel):
 
 
 #-------------------------------------------------------------------------------
+# Helper for QMessageBox Yes/No compatibility
+#-------------------------------------------------------------------------------
+
+def _msgbox_yes():
+    try:
+        return QMessageBox.StandardButton.Yes
+    except AttributeError:
+        return QMessageBox.Yes
+
+def _msgbox_no():
+    try:
+        return QMessageBox.StandardButton.No
+    except AttributeError:
+        return QMessageBox.No
+
+def _msgbox_yes_no():
+    return _msgbox_yes() | _msgbox_no()
+
+
+#-------------------------------------------------------------------------------
 # Explorer class
 #-------------------------------------------------------------------------------
 
@@ -441,7 +814,7 @@ class Explorer():
     def __init__(self, parent=None, root_dir=None, dir_type=None,
                  case_name=None, readOnly=False):
 
-        self.parent = parent
+        self.parent_widget = parent  # renamed to avoid collision with Qt parent()
 
         self.root_dir = root_dir
         self.dir_type = dir_type
@@ -511,27 +884,27 @@ class Explorer():
 
         _editAction = QAction(self.explorer.model())
         _editAction.setText('Edit file')
-        _editAction.triggered.connect(self.parent._editSelectedFile)
+        _editAction.triggered.connect(self.parent_widget._editSelectedFile)
 
         _viewAction = QAction(self.explorer.model())
         _viewAction.setText('View file')
-        _viewAction.triggered.connect(self.parent._viewSelectedFile)
+        _viewAction.triggered.connect(self.parent_widget._viewSelectedFile)
 
         _copyAction = QAction(self.explorer.model())
         _copyAction.setText('Copy to ' + case_dir_name)
-        _copyAction.triggered.connect(self.parent._copySelectedFile)
+        _copyAction.triggered.connect(self.parent_widget._copySelectedFile)
 
         _removeAction = QAction(self.explorer.model())
         _removeAction.setText('Remove from ' + case_dir_name)
-        _removeAction.triggered.connect(self.parent._removeSelectedFile)
+        _removeAction.triggered.connect(self.parent_widget._removeSelectedFile)
 
         _restoreAction = QAction(self.explorer.model())
         _restoreAction.setText('Move to ' + case_dir_name)
-        _restoreAction.triggered.connect(self.parent._restoreSelectedFile)
+        _restoreAction.triggered.connect(self.parent_widget._restoreSelectedFile)
 
         _deleteAction = QAction(self.explorer.model())
         _deleteAction.setText('Delete')
-        _deleteAction.triggered.connect(self.parent._deleteSelectedFile)
+        _deleteAction.triggered.connect(self.parent_widget._deleteSelectedFile)
 
         self._explorerActions = {'edit': _editAction,
                                  'view': _viewAction,
@@ -547,7 +920,6 @@ class Explorer():
         """
         Update the current selection
         """
-        # Find file position (SRC, REFERENCE, EXAMPLES, other)
         path2file = ''
         fname = ''
         for idx in self.explorer.selectedIndexes():
@@ -558,7 +930,7 @@ class Explorer():
             while True:
                 ctxt = c.data(QtCore.Qt.ItemDataRole.DisplayRole)
                 ptxt = p.data(QtCore.Qt.ItemDataRole.DisplayRole)
-                if ptxt in [None, self.parent.case_name]:
+                if ptxt in [None, self.parent_widget.case_name]:
                     pe = ptxt
                     break
                 path2file = ptxt + '/' + path2file
@@ -566,7 +938,7 @@ class Explorer():
                 p = c.parent()
 
         if len(fname) > 0:
-            self.parent._currentSelection = {'filename':fname,
+            self.parent_widget._currentSelection = {'filename':fname,
                                              'subpath' :path2file,
                                              'filedir' :ps,
                                              'origdir' :pe}
@@ -583,21 +955,19 @@ class Explorer():
 
         self._updateCurrentSelection()
 
-        clicked = os.path.join(self.parent._currentSelection['subpath'],
-                               self.parent._currentSelection['filename'])
+        clicked = os.path.join(self.parent_widget._currentSelection['subpath'],
+                               self.parent_widget._currentSelection['filename'])
 
-        # To ensure that os.path.isdir works correctly we use the full path
-        # to the object which is selected in the menu
         if self.root_dir:
             clicked = os.path.join(self.root_dir, clicked)
 
         edit_list = ['SRC']
 
         if not os.path.isdir(clicked):
-            if self.parent._currentSelection['filedir'] in edit_list:
-                self.parent._editSelectedFile()
+            if self.parent_widget._currentSelection['filedir'] in edit_list:
+                self.parent_widget._editSelectedFile()
             else:
-                self.parent._viewSelectedFile()
+                self.parent_widget._viewSelectedFile()
 
     # ---------------------------------------------------------------
 
@@ -606,17 +976,14 @@ class Explorer():
     def explorerContextMenu(self, position):
         """
         Custom menu for the mouse right-click.
-        Depends on whether the file is in the SRC, SRC/subfolder
-        or RESU/subfolder.
-        Possible actions are 'edit', 'view' and 'copy' (to SRC)
         """
 
         self._updateCurrentSelection()
 
-        path2file = self.parent._currentSelection['subpath']
-        fname     = self.parent._currentSelection['filename']
-        pe        = self.parent._currentSelection['origdir']
-        ps        = self.parent._currentSelection['filedir']
+        path2file = self.parent_widget._currentSelection['subpath']
+        fname     = self.parent_widget._currentSelection['filename']
+        pe        = self.parent_widget._currentSelection['origdir']
+        ps        = self.parent_widget._currentSelection['filedir']
 
         self._contextMenu = QMenu()
 
@@ -658,7 +1025,11 @@ class Explorer():
             if not os.path.isdir(os.path.join(path2file, fname)):
                 self._contextMenu.addAction(self._explorerActions['view'])
 
-        self._contextMenu.exec(self.explorer.viewport().mapToGlobal(position))
+        # exec_() -> exec() in Qt6
+        try:
+            self._contextMenu.exec(self.explorer.viewport().mapToGlobal(position))
+        except AttributeError:
+            self._contextMenu.exec_(self.explorer.viewport().mapToGlobal(position))
     # ---------------------------------------------------------------
 
 
@@ -678,7 +1049,7 @@ class QFileEditor(QMainWindow):
         self.setGeometry(50, 50, 500, 300)
 
         self.setWindowTitle("code_saturne built-in file editor")
-        self.parent = parent
+        self.parent_widget = parent  # renamed to avoid collision with Qt parent()
 
         self.case_dir = case_dir
         if self.case_dir:
@@ -689,7 +1060,6 @@ class QFileEditor(QMainWindow):
         self.readOnly = readOnly
         self.readerMode = readOnly
 
-        # Activate text highlight
         self.useHighlight = useHighlight
 
         self.opened = False
@@ -701,7 +1071,7 @@ class QFileEditor(QMainWindow):
         # Open file action
         open_img_path = os.path.join(icons_path, 'document-open.png')
         icon_open     = QtGui.QIcon()
-        icon_open.addPixmap(QtGui.QPixmap(open_img_path),
+        icon_open.addPixmap(QtGui.QPixmap(_fromUtf8(open_img_path)),
                             QtGui.QIcon.Mode.Normal,
                             QtGui.QIcon.State.Off)
         self.openFileAction = QAction(icon_open, "Open", self)
@@ -792,13 +1162,28 @@ class QFileEditor(QMainWindow):
                                  root_dir=self.case_dir,
                                  dir_type=self.case_name,
                                  case_name=self.case_name)
-        dock = QtWidgets.QDockWidget("User files explorer", self)
-        dock.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea)
-        dock.setFeatures(QtWidgets.QDockWidget.NoDockWidgetFeatures)
-        dock.setWidget(self.explorer.explorer)
-        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, dock)
 
-        # Explorer
+        # DockWidget flags compatibility
+        try:
+            _no_features = QtWidgets.QDockWidget.DockWidgetFeature.NoDockWidgetFeatures
+            _left_area   = QtCore.Qt.DockWidgetArea.LeftDockWidgetArea
+            _right_area  = QtCore.Qt.DockWidgetArea.RightDockWidgetArea
+            _top_area    = QtCore.Qt.DockWidgetArea.TopDockWidgetArea
+            _bottom_area = QtCore.Qt.DockWidgetArea.BottomDockWidgetArea
+        except AttributeError:
+            _no_features = QtWidgets.QDockWidget.NoDockWidgetFeatures
+            _left_area   = QtCore.Qt.LeftDockWidgetArea
+            _right_area  = QtCore.Qt.RightDockWidgetArea
+            _top_area    = QtCore.Qt.TopDockWidgetArea
+            _bottom_area = QtCore.Qt.BottomDockWidgetArea
+
+        dock = QtWidgets.QDockWidget("User files explorer", self)
+        dock.setAllowedAreas(_left_area | _right_area)
+        dock.setFeatures(_no_features)
+        dock.setWidget(self.explorer.explorer)
+        self.addDockWidget(_left_area, dock)
+
+        # Explorer ref
         self.explorer_ref = None
         if reference_dir:
             self.explorer_ref = Explorer(parent=self,
@@ -806,10 +1191,10 @@ class QFileEditor(QMainWindow):
                                          dir_type='SHARE',
                                          case_name=self.case_name)
             dock = QtWidgets.QDockWidget("Reference files explorer", self)
-            dock.setAllowedAreas(QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea)
-            dock.setFeatures(QtWidgets.QDockWidget.NoDockWidgetFeatures)
+            dock.setAllowedAreas(_left_area | _right_area)
+            dock.setFeatures(_no_features)
             dock.setWidget(self.explorer_ref.explorer)
-            self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, dock)
+            self.addDockWidget(_left_area, dock)
 
         # Editor
         self.textEdit = self._initFileEditor()
@@ -819,11 +1204,9 @@ class QFileEditor(QMainWindow):
         settings = QtCore.QSettings()
 
         try:
-            # API 2
             self.restoreGeometry(settings.value("MainWindow/Geometry", QtCore.QByteArray()))
             self.restoreState(settings.value("MainWindow/State", QtCore.QByteArray()))
         except:
-            # API 1
             self.recentFiles = settings.value("RecentFiles").toStringList()
             self.restoreGeometry(settings.value("MainWindow/Geometry").toByteArray())
             self.restoreState(settings.value("MainWindow/State").toByteArray())
@@ -836,10 +1219,10 @@ class QFileEditor(QMainWindow):
         self.searchBar = SearchBar(self.textEdit)
 
         dock = QtWidgets.QDockWidget("Editor search bar", self)
-        dock.setAllowedAreas(QtCore.Qt.TopDockWidgetArea | QtCore.Qt.BottomDockWidgetArea)
-        dock.setFeatures(QtWidgets.QDockWidget.NoDockWidgetFeatures)
+        dock.setAllowedAreas(_top_area | _bottom_area)
+        dock.setFeatures(_no_features)
         dock.setWidget(self.searchBar)
-        self.addDockWidget(QtCore.Qt.TopDockWidgetArea, dock)
+        self.addDockWidget(_top_area, dock)
 
 
     # ---------------------------------------------------------------
@@ -848,7 +1231,6 @@ class QFileEditor(QMainWindow):
         Create the Editor widget based on QTextEdit
         """
 
-        # Font
         base_font = QtGui.QFont()
         base_font.setFamily("Courier")
         base_font.setStyleHint(QtGui.QFont.StyleHint.Monospace)
@@ -860,7 +1242,6 @@ class QFileEditor(QMainWindow):
         for i in range(_tab_size):
             _tab_string += ' '
 
-        # Main text zone
         textEdit = CodeEditor()
         textEdit.setFont(base_font)
         textEdit.textChanged.connect(self.updateFileState)
@@ -869,8 +1250,14 @@ class QFileEditor(QMainWindow):
         policy.setHorizontalPolicy(QSizePolicy.Policy.Expanding)
         textEdit.setSizePolicy(policy)
 
-        # tab
-        textEdit.setTabStopWidth(font_metrics.width(_tab_string))
+        # setTabStopWidth removed in Qt6, use setTabStopDistance
+        try:
+            textEdit.setTabStopDistance(font_metrics.horizontalAdvance(_tab_string))
+        except AttributeError:
+            try:
+                textEdit.setTabStopWidth(font_metrics.horizontalAdvance(_tab_string))
+            except AttributeError:
+                textEdit.setTabStopWidth(font_metrics.width(_tab_string))
 
         return textEdit
     # ---------------------------------------------------------------
@@ -882,7 +1269,6 @@ class QFileEditor(QMainWindow):
         Create the File explorer object based on the QFileSystemModel widget.
         """
 
-        #model = QtWidgets.QFileSystemModel()
         model = FileSystemModel(name)
         rootp = ''
         if base_dir:
@@ -899,17 +1285,14 @@ class QFileEditor(QMainWindow):
         tree.setWindowTitle('Explorer')
         tree.setRootIndex(model.index(rootp))
 
-        # Hide unnecessary columns
         nc = tree.header().count()
 
         for i in range(1, nc):
             tree.hideColumn(i)
 
-        # Right click menu
         tree.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
         tree.customContextMenuRequested.connect(self.explorerContextMenu)
 
-        # Double click
         tree.doubleClicked.connect(self._explorerDoubleClick)
 
         return tree;
@@ -955,8 +1338,7 @@ class QFileEditor(QMainWindow):
     # ---------------------------------------------------------------
     def _copySelectedFile(self):
         """
-        Copy files in subdirectories, such as REFERENCES or EXAMPLES
-        to the SRC folder. Used by the mouse right-click
+        Copy files to the SRC folder.
         """
 
         src_path = os.path.join(self.case_dir,
@@ -990,16 +1372,12 @@ class QFileEditor(QMainWindow):
         title = "Remove file"
         question = "Remove %s from the SRC folder (Stored in DRAFT) ?" % (self._currentSelection['filename'])
 
-        choice = QMessageBox.question(self,
-                                      title,
-                                      question,
-                                      QMessageBox.Yes | QMessageBox.No)
+        choice = QMessageBox.question(self, title, question, _msgbox_yes_no())
 
-        if choice == QMessageBox.Yes:
+        if choice == _msgbox_yes():
             fn = os.path.join(self.case_dir,
                               self._currentSelection['subpath'],
                               self._currentSelection['filename'])
-
 
             draft = os.path.join(self.case_dir,
                                self._currentSelection['subpath'],
@@ -1010,11 +1388,8 @@ class QFileEditor(QMainWindow):
 
             if os.path.exists(fn2):
                 q = 'A file named %s allready exists in DRAFT.\nDo you want to overwrite it?' % (self._currentSelection['filename'])
-                choice2 = QMessageBox.question(self,
-                                                     '',
-                                                     q,
-                                                     QMessageBox.Yes | QMessageBox.No)
-                if choice2 == QMessageBox.No:
+                choice2 = QMessageBox.question(self, '', q, _msgbox_yes_no())
+                if choice2 == _msgbox_no():
                     return
 
             shutil.move(fn, fn2)
@@ -1032,12 +1407,9 @@ class QFileEditor(QMainWindow):
         title = "Move to SRC"
         question = "Move file %s from DRAFT to SRC folder ?" % (self._currentSelection['filename'])
 
-        choice = QMessageBox.question(self,
-                                      title,
-                                      question,
-                                      QMessageBox.Yes | QMessageBox.No)
+        choice = QMessageBox.question(self, title, question, _msgbox_yes_no())
 
-        if choice == QMessageBox.Yes:
+        if choice == _msgbox_yes():
             fn = os.path.join(self.case_dir,
                               self._currentSelection['subpath'],
                               self._currentSelection['filename'])
@@ -1046,10 +1418,9 @@ class QFileEditor(QMainWindow):
 
             if os.path.exists(fn2):
                 q = 'A file named %s allready exists in SRC\nDo you want to overwrite it?' % (self._currentSelection['filename'])
-                choice2 = QMessageBox.question(self, '', q,
-                                               QMessageBox.Yes | QMessageBox.No)
+                choice2 = QMessageBox.question(self, '', q, _msgbox_yes_no())
 
-                if choice2 == QMessageBox.No:
+                if choice2 == _msgbox_no():
                     return
 
             shutil.move(fn, fn2)
@@ -1068,12 +1439,9 @@ class QFileEditor(QMainWindow):
         title = "Delete file"
         question = "Really delete %s ?" % (self._currentSelection['filename'])
 
-        choice = QMessageBox.question(self,
-                                      title,
-                                      question,
-                                      QMessageBox.Yes | QMessageBox.No)
+        choice = QMessageBox.question(self, title, question, _msgbox_yes_no())
 
-        if choice == QMessageBox.Yes:
+        if choice == _msgbox_yes():
             fn = os.path.join(self.case_dir,
                               self._currentSelection['subpath'],
                               self._currentSelection['filename'])
@@ -1081,7 +1449,6 @@ class QFileEditor(QMainWindow):
             try:
                 os.remove(fn)
             except Exception:
-                # TODO add error popup
                 pass
 
             d = os.path.split(fn)[0]
@@ -1103,7 +1470,6 @@ class QFileEditor(QMainWindow):
         Update file state (saved or not)
         """
         self.saved  = new_state
-        # To ensure syntax highlighting while modifying the text
         self.textEdit.viewport().update()
     # ---------------------------------------------------------------
 
@@ -1224,8 +1590,8 @@ class QFileEditor(QMainWindow):
         if self.saved == False and self.readOnly == False:
             choice = QMessageBox.question(self, 'Built-in editor',
                                           'File changed.\nDo you want to save?',
-                                          QMessageBox.Yes | QMessageBox.No)
-            if choice == QMessageBox.Yes:
+                                          _msgbox_yes_no())
+            if choice == _msgbox_yes():
                 self.saveFile()
             else:
                 pass
@@ -1246,11 +1612,11 @@ class QFileEditor(QMainWindow):
         if self.opened == True:
             choice = QMessageBox.question(self, 'Built-in editor',
                                           "Exit text editor?",
-                                          QMessageBox.Yes | QMessageBox.No)
+                                          _msgbox_yes_no())
         else:
-            choice = QMessageBox.Yes
+            choice = _msgbox_yes()
 
-        if choice == QMessageBox.Yes:
+        if choice == _msgbox_yes():
             self.closeOpenedFile()
 
             settings = QtCore.QSettings()
