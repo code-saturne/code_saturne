@@ -1610,6 +1610,28 @@ cs_weighted_sum(cs_lnum_t         n,
 /*!
  * \brief Return the dot product of 2 vectors: x.y
  *
+ * \param[in]  ctx  reference to dispatch context
+ * \param[in]  n    size of arrays x and y
+ * \param[in]  x    array of floating-point values
+ * \param[in]  y    array of floating-point values
+ *
+ * \return  dot product
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_dot(cs_dispatch_context   &ctx,
+       cs_lnum_t              n,
+       const cs_real_t       *x,
+       const cs_real_t       *y)
+{
+  return _cs_glob_dot(n, x, y);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return the dot product of 2 vectors: x.y
+ *
  * \param[in]  n  size of arrays x and y
  * \param[in]  x  array of floating-point values
  * \param[in]  y  array of floating-point values
@@ -1632,16 +1654,38 @@ cs_dot(cs_lnum_t         n,
  *
  * For better precision, a superblock algorithm is used.
  *
- * \param[in]  n  size of array x
- * \param[in]  x  array of floating-point values
+ * \param[in]  ctx  reference to dispatch context
+ * \param[in]  n    size of array x
+ * \param[in]  x    array of floating-point values
  *
  * \return  dot product
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_dot_xx(cs_lnum_t         n,
-          const cs_real_t  *x)
+cs_dot_xx(cs_dispatch_context  &ctx,
+          cs_lnum_t             n,
+          const cs_real_t      *x)
+{
+  return _cs_glob_dot_xx(n, x);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return dot products of a vector with itself: x.x
+ *
+ * For better precision, a superblock algorithm is used.
+ *
+ * \param[in]  n    size of array x
+ * \param[in]  x    array of floating-point values
+ *
+ * \return  dot product
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_dot_xx(cs_lnum_t             n,
+          const cs_real_t      *x)
 {
   return _cs_glob_dot_xx(n, x);
 }

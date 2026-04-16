@@ -1,8 +1,8 @@
-#ifndef __CS_BLAS_HIP_H__
-#define __CS_BLAS_HIP_H__
+#ifndef CS_BLAS_HIP_H
+#define CS_BLAS_HIP_H
 
 /*============================================================================
- * BLAS (Basic Linear Algebra Subroutine) functions
+ * BLAS (Basic Linear Algebra Subroutine) functions using HIP.
  *============================================================================*/
 
 /*
@@ -34,15 +34,11 @@
  *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_base.h"
 #include "base/cs_base_hip.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -51,8 +47,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type definitions
  *============================================================================*/
-
-END_C_DECLS
 
 /*============================================================================
  * Templated function definitions
@@ -137,10 +131,6 @@ cs_blas_hip_warp_reduce_sum(volatile T  *stmp,
  * \brief Compute dot product x.y, summing result over all threads of a block.
  *
  * blockSize must be a power of 2.
- *
- * This kernel uses explicit loop unrolling, which seems to offer equal or
- * slightly better performance than the non-unrolled version on an Ampere
- * architecure with HIP 11.
  *
  * \tparam  blockSize  size of HIP block
  * \tparam  stride     vector stride
@@ -270,8 +260,8 @@ cs_blas_hip_block_reduce_sum(T       *stmp,
 template <size_t blockSize, size_t stride, typename T>
 __global__ static void
 cs_blas_hip_reduce_single_block(size_t   n,
-                                 T       *g_idata,
-                                 T       *g_odata)
+                                 T      *g_idata,
+                                 T      *g_odata)
 {
   __shared__ T sdata[blockSize * stride];
 
@@ -341,140 +331,118 @@ cs_blas_hip_reduce_single_block(size_t   n,
 
 #endif /* defined(__HIPCC__) */
 
-BEGIN_C_DECLS
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Finalize HIP BLAS API.
  *
- * This frees resources such as the cuBLAS handle, if used.
+ * This frees resources such as the hipBLAS handle, if used.
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_blas_hip_finalize(void);
 
 #if defined(__HIPCC__)
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Return HIP stream for next HIP-based blas operations.
- *
- * This function is callable only from HIP code.
- */
-/*----------------------------------------------------------------------------*/
-
-hipStream_t
-cs_blas_hip_get_stream(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Assign HIP stream for next HIP-based blas operations.
- *
- * If a stream other than the default stream (0) is used, it will not be
- * synchronized automatically after sparse matrix-vector products (so as to
- * avoid the corresponding overhead), so the caller will need to manage
- * stream syncronization manually.
- *
- * This function is callable only from HIP code.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_blas_hip_set_stream(hipStream_t  stream);
-
-#endif /* defined(__HIPCC__) */
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Return the absolute sum of vector values using HIP.
  *
- * \param[in]  n  size of array x
- * \param[in]  x  array of floating-point values (on device)
+ * \param[in]  stream  associated HIP stream
+ * \param[in]  n       size of array x
+ * \param[in]  x       array of floating-point values (on device)
  *
  * \return  sum of absolute array values
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_blas_hip_asum(cs_lnum_t        n,
+cs_blas_hip_asum(hipStream_t      stream,
+                 cs_lnum_t        n,
                  const cs_real_t  x[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return the dot product of 2 vectors: x.y using HIP.
  *
- * \param[in]  n  size of arrays x and y
- * \param[in]  x  array of floating-point values (on device)
- * \param[in]  y  array of floating-point values (on device)
+ * \param[in]  stream  associated HIP stream
+ * \param[in]  n       size of arrays x and y
+ * \param[in]  x       array of floating-point values (on device)
+ * \param[in]  y       array of floating-point values (on device)
  *
  * \return  dot product
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_blas_hip_dot(cs_lnum_t        n,
-                 const cs_real_t  x[],
-                 const cs_real_t  y[]);
+cs_blas_hip_dot(hipStream_t      stream,
+                cs_lnum_t        n,
+                const cs_real_t  x[],
+                const cs_real_t  y[]);
 
-#if defined(HAVE_CUBLAS)
+#if defined(HAVE_HIPBLAS)
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Return the absolute sum of vector values using cuBLAS.
+/*
+ * \brief Return the absolute sum of vector values using hipBLAS.
  *
- * \param[in]  n  size of arrays x and y
- * \param[in]  x  array of floating-point values (on device)
+ * \param[in]  stream  associated HIP stream
+ * \param[in]  n       size of arrays x and y
+ * \param[in]  x       array of floating-point values (on device)
  *
  * \return  sum of absolute array values
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_blas_cublas_asum(cs_lnum_t        n,
-                    const cs_real_t  x[]);
+cs_blas_hipblas_asum(hipStream_t      stream,
+                     cs_lnum_t        n,
+                     const cs_real_t  x[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief Return the dot product of 2 vectors: x.y using cuBLAS.
+/*
+ * \brief Return the dot product of 2 vectors: x.y using hipBLAS.
  *
- * \param[in]  n  size of arrays x and y
- * \param[in]  x  array of floating-point values (on device)
- * \param[in]  y  array of floating-point values (on device)
+ * \param[in]  stream  associated HIP stream
+ * \param[in]  n       size of arrays x and y
+ * \param[in]  x       array of floating-point values (on device)
+ * \param[in]  y       array of floating-point values (on device)
  *
  * \return  dot product
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_blas_cublas_dot(cs_lnum_t        n,
-                   const cs_real_t  x[],
-                   const cs_real_t  y[]);
+cs_blas_hipblas_dot(hipStream_t      stream,
+                    cs_lnum_t        n,
+                    const cs_real_t  x[],
+                    const cs_real_t  y[]);
 
-#endif  /* defined(HAVE_CUBLAS) */
+#endif  /* defined(HAVE_HIPBLAS) */
 
 /*----------------------------------------------------------------------------
  * Compute x <- alpha.x
  *
- * This function may be set to use either cuBLAS or a local kernel.
+ * This function may be set to use either hipBLAS or a local kernel.
  *
- * parameters:
- *   n      <-- number of elements
- *   alpha  <-- constant value (on device)
- *   x      <-> vector of elements (on device)
+ * \param[in]  stream  associated HIP stream
+ * \param[in]  n       number of elements
+ * \param[in]  alpha   constant value (on device)
+ * \param[in]  x       vector of elements (on device)
  *----------------------------------------------------------------------------*/
 
 void
-cs_blas_hip_scal(cs_lnum_t         n,
-                  const cs_real_t  *alpha,
-                  cs_real_t        *x);
+cs_blas_hip_scal(hipStream_t       stream,
+                 cs_lnum_t         n,
+                 const cs_real_t  *alpha,
+                 cs_real_t        *x);
+
+#endif /* defined(__HIPCC__)
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_BLAS_HIP_H__ */
+#endif /* CS_BLAS_HIP_H */

@@ -40,11 +40,6 @@
 
 #include <cuda_runtime.h>
 #include <cuda_runtime_api.h>
-#if (CUDART_VERSION >= 11000)
-#include <cooperative_groups.h>
-#include <cooperative_groups/reduce.h>
-namespace cg = cooperative_groups;
-#endif
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -73,8 +68,6 @@ namespace cg = cooperative_groups;
 /*============================================================================
  *  Global variables
  *============================================================================*/
-
-static cudaStream_t _stream = 0;
 
 static double  *_r_reduce = nullptr;
 static double  *_r_grid = nullptr;
@@ -233,6 +226,34 @@ _scal(cs_lnum_t         n,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Check cuBLAS status.
+ *
+ * \param[in]  func_name  name of caller function
+ * \param[in]  file_name  name of source file from which error handler called
+ * \param[in]  line_num   line of source file from which error handler called
+ * \param[in]  status     cuBLAS status code
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_check_cublas_status(const char      *func_name,
+                     const char      *file_name,
+                     int              line_num,
+                     cublasStatus_t   status)
+{
+  if (status != CUBLAS_STATUS_SUCCESS) {
+#if CUBLAS_VERSION >= 11600
+    bft_error(file_name, line_num, 0, _("%s: %s."),
+              func_name, cublasGetStatusString(status));
+#else
+    bft_error(file_name, line_num, 0, _("%s: cuBLAS error %d."),
+              func_name, (int)status);
+#endif
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Initialize cuBLAS and return a handle.
  *
  * \return  pointer to global cuBLAS handle
@@ -243,17 +264,37 @@ static cublasHandle_t
 _init_cublas(void)
 {
   cublasStatus_t status = cublasCreate(&_handle);
-
-  if (status != CUBLAS_STATUS_SUCCESS)
-#if CUBLAS_VERSION >= 11600
-    bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
-              __func__, cublasGetStatusString(status));
-#else
-  bft_error(__FILE__, __LINE__, 0, _("%s: cuBLAS error %d."),
-            __func__, (int)status);
-#endif
+  _check_cublas_status(__func__, __FILE__, __LINE__, status);
 
   return _handle;
+}
+
+/*----------------------------------------------------------------------------
+ * Compute x <- alpha.x
+ *
+ * This function may be set to use either cuBLAS or a local kernel.
+ *
+ * parameters:
+ *   stream <-- associated CUDA stream
+ *   n      <-- number of elements
+ *   alpha  <-- constant value (on device)
+ *   x      <-> vector of elements (on device)
+ *----------------------------------------------------------------------------*/
+
+static void
+_set_cublas_stream(cudaStream_t  stream)
+{
+  if (_handle == nullptr)
+    _handle = _init_cublas();
+
+  cudaStream_t  cublas_stream = 0;
+  cublasStatus_t status = cublasGetStream(_handle, &cublas_stream);
+  _check_cublas_status(__func__, __FILE__, __LINE__ -1, status);
+
+  if (status == CUBLAS_STATUS_SUCCESS && cublas_stream != stream) {
+    status = cublasSetStream(_handle, stream);
+    _check_cublas_status(__func__, __FILE__, __LINE__ -1, status);
+  }
 }
 
 #endif /* defined(HAVE_CUBLAS) */
@@ -280,7 +321,9 @@ _grid_size(cs_lnum_t     n,
   if (_r_reduce == nullptr) {
     // large enough for 4-way combined dot product.
     _r_tuple_size = 4;
-    CS_REALLOC_HD(_r_reduce, _r_tuple_size, double, CS_ALLOC_HOST_DEVICE_SHARED);
+    CS_REALLOC_HD(_r_reduce, _r_tuple_size, double, CS_ALLOC_HOST_DEVICE_PINNED);
+    // Note that host pinned memory will be directly accessible from
+    // device on 64-bit systems; we consider that means all current systems.
   }
 
   if (_r_grid_size < grid_size) {
@@ -292,8 +335,6 @@ _grid_size(cs_lnum_t     n,
 }
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Public function definitions
@@ -307,7 +348,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_blas_cuda_finalize(void)
 {
   CS_FREE(_r_reduce);
@@ -324,74 +365,37 @@ cs_blas_cuda_finalize(void)
 #endif
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Return CUDA stream for next CUDA-based blas operations.
- *
- * This function is callable only from CUDA code.
- */
-/*----------------------------------------------------------------------------*/
-
-cudaStream_t
-cs_blas_cuda_get_stream(void)
-{
-  return _stream;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Assign CUDA stream for next CUDA-based blas operations.
- *
- * If a stream other than the default stream (0) is used, it will not be
- * synchronized automatically after sparse matrix-vector products (so as to
- * avoid the corresponding overhead), so the caller will need to manage
- * stream syncronization manually.
- *
- * This function is callable only from CUDA code.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_blas_cuda_set_stream(cudaStream_t  stream)
-{
-  _stream = stream;
-
-#if defined(HAVE_CUBLAS)
-
-  if (_handle != nullptr) {
-    cublasSetStream(_handle, stream);
-  }
-
-#endif
-}
+#if defined(__CUDACC__)
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return the absolute sum of vector values using CUDA.
  *
- * \param[in]  n  size of array x
- * \param[in]  x  array of floating-point values (on device)
+ * \param[in]  stream  associated CUDA stream
+ * \param[in]  n       size of array x
+ * \param[in]  x       array of floating-point values (on device)
  *
  * \return  sum of absolute array values
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_blas_cuda_asum(cs_lnum_t        n,
+cs_blas_cuda_asum(cudaStream_t     stream,
+                  cs_lnum_t        n,
                   const cs_real_t  x[])
 {
   const unsigned int block_size = 256;
   unsigned int grid_size = _grid_size(n, block_size);
 
-  _asum_stage_1_of_2<block_size><<<grid_size, block_size, 0, _stream>>>
+  _asum_stage_1_of_2<block_size><<<grid_size, block_size, 0, stream>>>
     (n, x, _r_grid);
-  cs_blas_cuda_reduce_single_block<block_size, 1><<<1, block_size, 0, _stream>>>
+  cs_blas_cuda_reduce_single_block<block_size, 1><<<1, block_size, 0, stream>>>
     (grid_size, _r_grid, _r_reduce);
 
   /* Need to synchronize stream in all cases so as to
      have up-to-date value in returned _r_reduce[0] */
 
-  CS_CUDA_CHECK(cudaStreamSynchronize(_stream));
+  CS_CUDA_CHECK(cudaStreamSynchronize(stream));
   CS_CUDA_CHECK(cudaGetLastError());
 
   return _r_reduce[0];
@@ -401,16 +405,18 @@ cs_blas_cuda_asum(cs_lnum_t        n,
 /*!
  * \brief Return the dot product of 2 vectors: x.y using CUDA.
  *
- * \param[in]  n  size of arrays x and y
- * \param[in]  x  array of floating-point values (on device)
- * \param[in]  y  array of floating-point values (on device)
+ * \param[in]  stream  associated CUDA stream
+ * \param[in]  n       size of arrays x and y
+ * \param[in]  x       array of floating-point values (on device)
+ * \param[in]  y       array of floating-point values (on device)
  *
  * \return  dot product
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_blas_cuda_dot(cs_lnum_t        n,
+cs_blas_cuda_dot(cudaStream_t     stream,
+                 cs_lnum_t        n,
                  const cs_real_t  x[],
                  const cs_real_t  y[])
 {
@@ -418,18 +424,18 @@ cs_blas_cuda_dot(cs_lnum_t        n,
   unsigned int grid_size = _grid_size(n, block_size);
 
   if (x != y)
-    _dot_xy_stage_1_of_2<block_size><<<grid_size, block_size, 0, _stream>>>
+    _dot_xy_stage_1_of_2<block_size><<<grid_size, block_size, 0, stream>>>
       (n, x, y, _r_grid);
   else
-    _dot_xx_stage_1_of_2<block_size><<<grid_size, block_size, 0, _stream>>>
+    _dot_xx_stage_1_of_2<block_size><<<grid_size, block_size, 0, stream>>>
       (n, x, _r_grid);
-  cs_blas_cuda_reduce_single_block<block_size, 1><<<1, block_size, 0, _stream>>>
+  cs_blas_cuda_reduce_single_block<block_size, 1><<<1, block_size, 0, stream>>>
     (grid_size, _r_grid, _r_reduce);
 
   /* Need to synchronize stream in all cases so as to
      have up-to-date value in returned _r_reduce[0] */
 
-  CS_CUDA_CHECK(cudaStreamSynchronize(_stream));
+  CS_CUDA_CHECK(cudaStreamSynchronize(stream));
   CS_CUDA_CHECK(cudaGetLastError());
 
   return _r_reduce[0];
@@ -441,23 +447,24 @@ cs_blas_cuda_dot(cs_lnum_t        n,
 /*!
  * \brief Return the absolute sum of vector values using cuBLAS.
  *
- * \param[in]  n  size of arrays x and y
- * \param[in]  x  array of floating-point values (on device)
+ * \param[in]  stream  associated CUDA stream
+ * \param[in]  n       size of arrays x and y
+ * \param[in]  x       array of floating-point values (on device)
  *
  * \return  sum of absolute array values
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_blas_cublas_asum(cs_lnum_t        n,
+cs_blas_cublas_asum(cudaStream_t     stream,
+                    cs_lnum_t        n,
                     const cs_real_t  x[])
 {
   double dot = 0.;
 
   cublasStatus_t status = CUBLAS_STATUS_SUCCESS;
 
-  if (_handle == nullptr)
-    _handle = _init_cublas();
+  _set_cublas_stream(stream);
 
   if (sizeof(cs_real_t) == 8)
     status = cublasDasum(_handle, n, (const double *)x, 1, &dot);
@@ -467,15 +474,7 @@ cs_blas_cublas_asum(cs_lnum_t        n,
     dot = fdot;
   }
 
-  if (status != CUBLAS_STATUS_SUCCESS) {
-#if CUBLAS_VERSION >= 11600
-    bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
-              __func__, cublasGetStatusString(status));
-#else
-    bft_error(__FILE__, __LINE__, 0, _("%s: cuBLAS error %d."),
-              __func__, (int)status);
-#endif
-  }
+  _check_cublas_status(__func__, __FILE__, __LINE__, status);
 
   return dot;
 }
@@ -484,26 +483,26 @@ cs_blas_cublas_asum(cs_lnum_t        n,
 /*!
  * \brief Return the dot product of 2 vectors: x.y using cuBLAS.
  *
- * \param[in]  n  size of arrays x and y
- * \param[in]  x  array of floating-point values (on device)
- * \param[in]  y  array of floating-point values (on device)
+ * \param[in]  stream  associated CUDA stream
+ * \param[in]  n       size of arrays x and y
+ * \param[in]  x       array of floating-point values (on device)
+ * \param[in]  y       array of floating-point values (on device)
  *
  * \return  dot product
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_blas_cublas_dot(cs_lnum_t        n,
+cs_blas_cublas_dot(cudaStream_t     stream,
+                   cs_lnum_t        n,
                    const cs_real_t  x[],
                    const cs_real_t  y[])
 {
   double dot = 0.;
 
+  _set_cublas_stream(stream);
+
   cublasStatus_t status = CUBLAS_STATUS_SUCCESS;
-
-  if (_handle == nullptr)
-    _handle = _init_cublas();
-
   if (sizeof(cs_real_t) == 8)
     cublasDdot(_handle, n, (const double *)x, 1, (const double *)y, 1, &dot);
   else if (sizeof(cs_real_t) == 4) {
@@ -511,16 +510,7 @@ cs_blas_cublas_dot(cs_lnum_t        n,
     cublasSdot(_handle, n, (const float *)x, 1, (const float *)y, 1, &fdot);
     dot = fdot;
   }
-
-  if (status != CUBLAS_STATUS_SUCCESS) {
-#if CUBLAS_VERSION >= 11600
-    bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
-              __func__, cublasGetStatusString(status));
-#else
-    bft_error(__FILE__, __LINE__, 0, _("%s: cuBLAS error %d."),
-              __func__, (int)status);
-#endif
-  }
+  _check_cublas_status(__func__, __FILE__, __LINE__, status);
 
   return dot;
 }
@@ -532,24 +522,24 @@ cs_blas_cublas_dot(cs_lnum_t        n,
  *
  * This function may be set to use either cuBLAS or a local kernel.
  *
- * parameters:
- *   n      <-- number of elements
- *   alpha  <-- constant value (on device)
- *   x      <-> vector of elements (on device)
+ * \param[in]  stream  associated CUDA stream
+ * \param[in]  n       number of elements
+ * \param[in]  alpha   constant value (on device)
+ * \param[in]  x       vector of elements (on device)
  *----------------------------------------------------------------------------*/
 
 void
-cs_blas_cuda_scal(cs_lnum_t         n,
+cs_blas_cuda_scal(cudaStream_t      stream,
+                  cs_lnum_t         n,
                   const cs_real_t  *alpha,
-                  cs_real_t        *restrict x)
+                  cs_real_t        *x)
 {
 #if defined(HAVE_CUBLAS)
 
-  if (_prefer_cublas && _handle != nullptr) {
-    _handle = _init_cublas();
+  if (_prefer_cublas) {
+    _set_cublas_stream(stream);
 
     cublasStatus_t status = CUBLAS_STATUS_SUCCESS;
-
     if (sizeof(cs_real_t) == 8)
       status = cublasDscal(_handle, n,
                            (const double *)alpha,
@@ -558,16 +548,7 @@ cs_blas_cuda_scal(cs_lnum_t         n,
       status = cublasSscal(_handle, n,
                            (const float *)alpha,
                            (float *)x, 1);
-
-    if (status != CUBLAS_STATUS_SUCCESS) {
-#if CUBLAS_VERSION >= 11600
-      bft_error(__FILE__, __LINE__, 0, _("%s: %s."),
-                __func__, cublasGetStatusString(status));
-#else
-      bft_error(__FILE__, __LINE__, 0, _("%s: cuBLAS error %d."),
-                __func__, (int)status);
-#endif
-    }
+    _check_cublas_status(__func__, __FILE__, __LINE__, status);
 
     return;
   }
@@ -581,9 +562,9 @@ cs_blas_cuda_scal(cs_lnum_t         n,
   unsigned int gridsize = cs_cuda_grid_size(n, blocksize);
   // gridsize = min(gridsize, 640;
 
-  _scal<<<gridsize, blocksize, 0, _stream>>>(n, alpha, x);
+  _scal<<<gridsize, blocksize, 0, stream>>>(n, alpha, x);
 }
 
-/*----------------------------------------------------------------------------*/
+#endif // defined(__CUDACC__)
 
-END_C_DECLS
+/*----------------------------------------------------------------------------*/

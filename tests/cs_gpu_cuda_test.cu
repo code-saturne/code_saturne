@@ -612,7 +612,7 @@ _dot_products_1(double   t_measure,
             cudaStreamSynchronize(0);
             break;
           case 1:
-            cs_blas_cuda_dot(n, x_d, y_d);
+            cs_blas_cuda_dot(0, n, x_d, y_d);
             break;
           case 2:
             _dot_xy_stage_1_of_2_wr<block_size><<<grid_size, block_size, 0>>>
@@ -630,7 +630,7 @@ _dot_products_1(double   t_measure,
             break;
           case 4:
 #if defined(HAVE_CUBLAS)
-            cs_blas_cublas_dot(n, x_d, y_d);
+            cs_blas_cublas_dot(0, n, x_d, y_d);
 #else
             run_id = n_runs;
             v_enabled = false;
@@ -713,11 +713,11 @@ _dot_products_1(double   t_measure,
 
     cs_blas_cuda_finalize();
 
-    CS_FREE_HD(y);
-    CS_FREE_HD(x);
-    CS_FREE_HD(r);
+    CS_FREE(y);
+    CS_FREE(x);
+    CS_FREE(r);
 
-    CS_FREE_HD(r_grid);
+    CS_FREE(r_grid);
 
   }
 

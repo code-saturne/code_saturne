@@ -1,8 +1,8 @@
-#ifndef __CS_BLAS_CUDA_H__
-#define __CS_BLAS_CUDA_H__
+#ifndef CS_BLAS_CUDA_H
+#define CS_BLAS_CUDA_H
 
 /*============================================================================
- * BLAS (Basic Linear Algebra Subroutine) functions
+ * BLAS (Basic Linear Algebra Subroutine) functions using CUDA.
  *============================================================================*/
 
 /*
@@ -34,15 +34,11 @@
  *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_base.h"
 #include "base/cs_base_cuda.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -51,8 +47,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Type definitions
  *============================================================================*/
-
-END_C_DECLS
 
 /*============================================================================
  * Templated function definitions
@@ -321,8 +315,6 @@ cs_blas_cuda_reduce_single_block(size_t   n,
 
 #endif /* defined(__CUDACC__) */
 
-BEGIN_C_DECLS
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -335,69 +327,44 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_blas_cuda_finalize(void);
 
 #if defined(__CUDACC__)
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief Return CUDA stream for next CUDA-based blas operations.
- *
- * This function is callable only from CUDA code.
- */
-/*----------------------------------------------------------------------------*/
-
-cudaStream_t
-cs_blas_cuda_get_stream(void);
-
-/*----------------------------------------------------------------------------*/
-/*
- * \brief Assign CUDA stream for next CUDA-based blas operations.
- *
- * If a stream other than the default stream (0) is used, it will not be
- * synchronized automatically after sparse matrix-vector products (so as to
- * avoid the corresponding overhead), so the caller will need to manage
- * stream syncronization manually.
- *
- * This function is callable only from CUDA code.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_blas_cuda_set_stream(cudaStream_t  stream);
-
-#endif /* defined(__CUDACC__) */
-
-/*----------------------------------------------------------------------------*/
-/*
  * \brief Return the absolute sum of vector values using CUDA.
  *
- * \param[in]  n  size of array x
- * \param[in]  x  array of floating-point values (on device)
+ * \param[in]  stream  associated CUDA stream
+ * \param[in]  n       size of array x
+ * \param[in]  x       array of floating-point values (on device)
  *
  * \return  sum of absolute array values
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_blas_cuda_asum(cs_lnum_t        n,
-                 const cs_real_t  x[]);
+cs_blas_cuda_asum(cudaStream_t     stream,
+                  cs_lnum_t        n,
+                  const cs_real_t  x[]);
 
 /*----------------------------------------------------------------------------*/
 /*
  * \brief Return the dot product of 2 vectors: x.y using CUDA.
  *
- * \param[in]  n  size of arrays x and y
- * \param[in]  x  array of floating-point values (on device)
- * \param[in]  y  array of floating-point values (on device)
+ * \param[in]  stream  associated CUDA stream
+ * \param[in]  n       size of arrays x and y
+ * \param[in]  x       array of floating-point values (on device)
+ * \param[in]  y       array of floating-point values (on device)
  *
  * \return  dot product
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_blas_cuda_dot(cs_lnum_t        n,
+cs_blas_cuda_dot(cudaStream_t     stream,
+                 cs_lnum_t        n,
                  const cs_real_t  x[],
                  const cs_real_t  y[]);
 
@@ -407,31 +374,35 @@ cs_blas_cuda_dot(cs_lnum_t        n,
 /*
  * \brief Return the absolute sum of vector values using cuBLAS.
  *
- * \param[in]  n  size of arrays x and y
- * \param[in]  x  array of floating-point values (on device)
+ * \param[in]  stream  associated CUDA stream
+ * \param[in]  n       size of arrays x and y
+ * \param[in]  x       array of floating-point values (on device)
  *
  * \return  sum of absolute array values
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_blas_cublas_asum(cs_lnum_t        n,
+cs_blas_cublas_asum(cudaStream_t     stream,
+                    cs_lnum_t        n,
                     const cs_real_t  x[]);
 
 /*----------------------------------------------------------------------------*/
 /*
  * \brief Return the dot product of 2 vectors: x.y using cuBLAS.
  *
- * \param[in]  n  size of arrays x and y
- * \param[in]  x  array of floating-point values (on device)
- * \param[in]  y  array of floating-point values (on device)
+ * \param[in]  stream  associated CUDA stream
+ * \param[in]  n       size of arrays x and y
+ * \param[in]  x       array of floating-point values (on device)
+ * \param[in]  y       array of floating-point values (on device)
  *
  * \return  dot product
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_blas_cublas_dot(cs_lnum_t        n,
+cs_blas_cublas_dot(cudaStream_t     stream,
+                   cs_lnum_t        n,
                    const cs_real_t  x[],
                    const cs_real_t  y[]);
 
@@ -442,19 +413,20 @@ cs_blas_cublas_dot(cs_lnum_t        n,
  *
  * This function may be set to use either cuBLAS or a local kernel.
  *
- * parameters:
- *   n      <-- number of elements
- *   alpha  <-- constant value (on device)
- *   x      <-> vector of elements (on device)
+ * \param[in]  stream  associated CUDA stream
+ * \param[in]  n       number of elements
+ * \param[in]  alpha   constant value (on device)
+ * \param[in]  x       vector of elements (on device)
  *----------------------------------------------------------------------------*/
 
 void
-cs_blas_cuda_scal(cs_lnum_t         n,
+cs_blas_cuda_scal(cudaStream_t      stream,
+                  cs_lnum_t         n,
                   const cs_real_t  *alpha,
                   cs_real_t        *x);
 
+#endif /* defined(__CUDACC__) */
+
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_BLAS_CUDA_H__ */
+#endif /* CS_BLAS_CUDA_H */

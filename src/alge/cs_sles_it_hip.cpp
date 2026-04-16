@@ -2604,7 +2604,6 @@ cs_sles_it_hip_fcg(cs_sles_it_t              *c,
 
   unsigned int gridsize = cs_hip_grid_size(n_rows, blocksize);
 
-  cs_blas_hip_set_stream(stream);
   if (local_stream)
     cs_matrix_spmv_hip_set_stream(stream);
 
@@ -2688,7 +2687,6 @@ cs_sles_it_hip_fcg(cs_sles_it_t              *c,
   if (_aux_vectors != aux_vectors)
     CS_FREE(_aux_vectors);
 
-  cs_blas_hip_set_stream(0);
   if (local_stream) {
     cs_matrix_spmv_hip_set_stream(0);
   }
@@ -2825,7 +2823,6 @@ cs_sles_it_hip_gcr(cs_sles_it_t              *c,
 
   cs_device_context ctx(gridsize_blas1, blocksize_rsb, stream);
 
-  cs_blas_hip_set_stream(stream);
   if (local_stream)
     cs_matrix_spmv_hip_set_stream(stream);
 
@@ -2977,7 +2974,6 @@ cs_sles_it_hip_gcr(cs_sles_it_t              *c,
   CS_FREE(_aux_arrays);
   CS_FREE(gkj_inv);
 
-  cs_blas_hip_set_stream(0);
   if (local_stream) {
     cs_matrix_spmv_hip_set_stream(0);
   }

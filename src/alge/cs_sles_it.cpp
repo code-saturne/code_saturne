@@ -772,7 +772,6 @@ cs_sles_it_set_exec_location
       local_stream = true;
       stream = cs_cuda_get_stream(0);
     }
-    cs_blas_cuda_set_stream(stream);
     if (local_stream)
       cs_matrix_spmv_cuda_set_stream(stream);
     ctx.set_cuda_stream(stream);
@@ -785,7 +784,6 @@ cs_sles_it_set_exec_location
       local_stream = true;
       stream = cs_hip_get_stream(0);
     }
-    cs_blas_hip_set_stream(stream);
     if (local_stream)
       cs_matrix_spmv_hip_set_stream(stream);
     ctx.set_hip_stream(stream);
@@ -804,13 +802,11 @@ void
 cs_sles_it_restore_exec_location([[maybe_unused]] bool  &local_stream)
 {
 #if defined(__CUDACC__)
-  cs_blas_cuda_set_stream(0);
   if (local_stream) {
     cs_matrix_spmv_cuda_set_stream(0);
   }
 
 #elif defined(__HIPCC__)
-  cs_blas_hip_set_stream(0);
   if (local_stream) {
     cs_matrix_spmv_hip_set_stream(0);
   }

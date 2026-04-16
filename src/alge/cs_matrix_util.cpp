@@ -102,9 +102,9 @@
  * Compute dot product, summing result over all ranks.
  *
  * parameters:
- *   a  <-- pointer to matrix
- *   n  <-- local number of elements
- *   x  <-- vector in s = x.x
+ *   a      <-- pointer to matrix
+ *   n      <-- local number of elements
+ *   x      <-- vector in s = x.x
  *
  * returns:
  *   result of s = x.x
@@ -122,8 +122,8 @@ _dot_xx([[maybe_unused]] const cs_matrix_t  *a,
     use_gpu = true;
 
   if (use_gpu) {
-    cudaStream_t stream = cs_blas_cuda_get_stream();
-    double s = cs_blas_cuda_dot(n, x, x);
+    cudaStream_t stream = cs_cuda_get_stream(0);
+    double s = cs_blas_cuda_dot(stream, n, x, x);
     CS_CUDA_CHECK(cudaStreamSynchronize(stream));
 
     return s;
@@ -138,7 +138,7 @@ _dot_xx([[maybe_unused]] const cs_matrix_t  *a,
     use_gpu = true;
 
   if (use_gpu) {
-    hipStream_t stream = cs_blas_hip_get_stream();
+    hipStream_t stream = cs_hip_get_stream();
     double s = cs_blas_hip_dot(n, x, x);
     CS_HIP_CHECK(hipStreamSynchronize(stream));
 

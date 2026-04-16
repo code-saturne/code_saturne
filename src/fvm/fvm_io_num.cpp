@@ -542,34 +542,6 @@ _fvm_io_num_copy_on_write(fvm_io_num_t  *const this_io_num)
   assert(this_io_num->global_num == this_io_num->_global_num);
 }
 
-/*----------------------------------------------------------------------------
- * Copy selected shared global ordering information to private ordering
- * information for an I/O numbering structure.
- *
- * parameters:
- *   this_io_num          <-> pointer to numbering structure
- *   parent_global_number <-- pointer to shared list of global parent
- *                            entity numbers
- *----------------------------------------------------------------------------*/
-
-static void
-_fvm_io_num_try_to_set_shared(fvm_io_num_t      *const this_io_num,
-                              const cs_gnum_t          parent_global_number[])
-{
-  if (this_io_num->_global_num != nullptr && parent_global_number != nullptr) {
-    cs_lnum_t i;
-    for (i = 0; i < this_io_num->global_num_size; i++)
-      if (this_io_num->_global_num[i] != parent_global_number[i])
-        break;
-    if (i < this_io_num->global_num_size)
-      this_io_num->global_num = this_io_num->_global_num;
-    else {
-      this_io_num->global_num = parent_global_number;
-      CS_FREE(this_io_num->_global_num);
-    }
-  }
-}
-
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------

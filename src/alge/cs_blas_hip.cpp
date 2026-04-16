@@ -39,10 +39,6 @@
 
 #include <hip/hip_runtime.h>
 #include <hip/hip_runtime_api.h>
-//#if (CUDART_VERSION >= 11000)
-#include <hip/hip_cooperative_groups.h>
-namespace cg = cooperative_groups;
-//#endif
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -72,8 +68,6 @@ namespace cg = cooperative_groups;
  *  Global variables
  *============================================================================*/
 
-static hipStream_t _stream = 0;
-
 static double  *_r_reduce = nullptr;
 static double  *_r_grid = nullptr;
 static unsigned int  _r_grid_size = 0;
@@ -81,7 +75,7 @@ static unsigned int  _r_tuple_size = 0;
 
 #if defined(HAVE_HIPBLAS)
 
-static bool            _prefer_cublas = false;
+static bool             _prefer_hipblas = false;
 static hipblasHandle_t  _handle = nullptr;
 
 #endif
@@ -231,22 +225,69 @@ _scal(cs_lnum_t         n,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Initialize cuBLAS and return a handle.
+ * \brief Check hipBLAS status.
  *
- * \return  pointer to global cuBLAS handle
+ * \param[in]  func_name  name of caller function
+ * \param[in]  file_name  name of source file from which error handler called
+ * \param[in]  line_num   line of source file from which error handler called
+ * \param[in]  status     hipBLAS status code
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_check_hipblas_status(const char       *func_name,
+                      const char       *file_name,
+                      int               line_num,
+                      hipblasStatus_t   status)
+{
+  if (status != HIPBLAS_STATUS_SUCCESS)
+    bft_error(file_name, line_num, 0, _("%s: hipBLAS error %d."),
+              func_name, (int)status);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize hipBLAS and return a handle.
+ *
+ * \return  pointer to global hipBLAS handle
  */
 /*----------------------------------------------------------------------------*/
 
 static hipblasHandle_t
-_init_cublas(void)
+_init_hipblas(void)
 {
   hipblasStatus_t status = hipblasCreate(&_handle);
-
-  if (status != HIPBLAS_STATUS_SUCCESS)
-    bft_error(__FILE__, __LINE__, 0, _("%s: hipBLAS error %d."),
-              __func__, (int)status);
+  _check_hipblas_status(__func__, __FILE__, __LINE__, status);
 
   return _handle;
+}
+
+/*----------------------------------------------------------------------------
+ * Compute x <- alpha.x
+ *
+ * This function may be set to use either hipBLAS or a local kernel.
+ *
+ * parameters:
+ *   stream <-- associated CUDA stream
+ *   n      <-- number of elements
+ *   alpha  <-- constant value (on device)
+ *   x      <-> vector of elements (on device)
+ *----------------------------------------------------------------------------*/
+
+static void
+_set_hipblas_stream(hipStream_t  stream)
+{
+  if (_handle == nullptr)
+    _handle = _init_hipblas();
+
+  hipStream_t  hipblas_stream = 0;
+  hipblasStatus_t status = hipblasGetStream(_handle, &hipblas_stream);
+  _check_hipblas_status(__func__, __FILE__, __LINE__ -1, status);
+
+  if (status == HIPBLAS_STATUS_SUCCESS && hipblas_stream != stream) {
+    status = hipblasSetStream(_handle, stream);
+    _check_hipblas_status(__func__, __FILE__, __LINE__ -1, status);
+  }
 }
 
 #endif /* defined(HAVE_HIPBLAS) */
@@ -286,8 +327,6 @@ _grid_size(cs_lnum_t     n,
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*============================================================================
  * Public function definitions
  *============================================================================*/
@@ -296,11 +335,11 @@ BEGIN_C_DECLS
 /*!
  * \brief Finalize HIP BLAS API.
  *
- * This frees resources such as the cuBLAS handle, if used.
+ * This frees resources such as the hipBLAS handle, if used.
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_blas_hip_finalize(void)
 {
   CS_FREE(_r_reduce);
@@ -317,74 +356,37 @@ cs_blas_hip_finalize(void)
 #endif
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Return HIP stream for next HIP-based blas operations.
- *
- * This function is callable only from HIP code.
- */
-/*----------------------------------------------------------------------------*/
-
-hipStream_t
-cs_blas_hip_get_stream(void)
-{
-  return _stream;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Assign HIP stream for next HIP-based blas operations.
- *
- * If a stream other than the default stream (0) is used, it will not be
- * synchronized automatically after sparse matrix-vector products (so as to
- * avoid the corresponding overhead), so the caller will need to manage
- * stream syncronization manually.
- *
- * This function is callable only from HIP code.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_blas_hip_set_stream(hipStream_t  stream)
-{
-  _stream = stream;
-
-#if defined(HAVE_HIPBLAS)
-
-  if (_handle != nullptr) {
-    hipblasSetStream(_handle, stream);
-  }
-
-#endif
-}
+#if defined(__HIPCC__)
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return the absolute sum of vector values using HIP.
  *
- * \param[in]  n  size of array x
- * \param[in]  x  array of floating-point values (on device)
+ * \param[in]  stream  associated HIP stream
+ * \param[in]  n       size of array x
+ * \param[in]  x       array of floating-point values (on device)
  *
  * \return  sum of absolute array values
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_blas_hip_asum(cs_lnum_t        n,
+cs_blas_hip_asum(hipStream_t      stream,
+                 cs_lnum_t        n,
                  const cs_real_t  x[])
 {
   const unsigned int block_size = 256;
   unsigned int grid_size = _grid_size(n, block_size);
 
-  _asum_stage_1_of_2<block_size><<<grid_size, block_size, 0, _stream>>>
+  _asum_stage_1_of_2<block_size><<<grid_size, block_size, 0, stream>>>
     (n, x, _r_grid);
-  cs_blas_hip_reduce_single_block<block_size, 1><<<1, block_size, 0, _stream>>>
+  cs_blas_hip_reduce_single_block<block_size, 1><<<1, block_size, 0, stream>>>
     (grid_size, _r_grid, _r_reduce);
 
   /* Need to synchronize stream in all cases so as to
      have up-to-date value in returned _r_reduce[0] */
 
-  CS_HIP_CHECK(hipStreamSynchronize(_stream));
+  CS_HIP_CHECK(hipStreamSynchronize(stream));
   CS_HIP_CHECK(hipGetLastError());
 
   return _r_reduce[0];
@@ -394,16 +396,18 @@ cs_blas_hip_asum(cs_lnum_t        n,
 /*!
  * \brief Return the dot product of 2 vectors: x.y using HIP.
  *
- * \param[in]  n  size of arrays x and y
- * \param[in]  x  array of floating-point values (on device)
- * \param[in]  y  array of floating-point values (on device)
+ * \param[in]  stream  associated HIP stream
+ * \param[in]  n       size of arrays x and y
+ * \param[in]  x       array of floating-point values (on device)
+ * \param[in]  y       array of floating-point values (on device)
  *
  * \return  dot product
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_blas_hip_dot(cs_lnum_t        n,
+cs_blas_hip_dot(hipStream_t      stream,
+                cs_lnum_t        n,
                 const cs_real_t  x[],
                 const cs_real_t  y[])
 {
@@ -411,15 +415,15 @@ cs_blas_hip_dot(cs_lnum_t        n,
   unsigned int grid_size = _grid_size(n, block_size);
 
   if (x != y)
-    _dot_xy_stage_1_of_2<block_size><<<grid_size, block_size, 0, _stream>>>
+    _dot_xy_stage_1_of_2<block_size><<<grid_size, block_size, 0, stream>>>
       (n, x, y, _r_grid);
   else
-    _dot_xx_stage_1_of_2<block_size><<<grid_size, block_size, 0, _stream>>>
+    _dot_xx_stage_1_of_2<block_size><<<grid_size, block_size, 0, stream>>>
       (n, x, _r_grid);
 
   CS_HIP_CHECK(hipGetLastError());
 
-  cs_blas_hip_reduce_single_block<block_size, 1><<<1, block_size, 0, _stream>>>
+  cs_blas_hip_reduce_single_block<block_size, 1><<<1, block_size, 0, stream>>>
     (grid_size, _r_grid, _r_reduce);
 
   CS_HIP_CHECK(hipGetLastError());
@@ -427,7 +431,7 @@ cs_blas_hip_dot(cs_lnum_t        n,
   /* Need to synchronize stream in all cases so as to
      have up-to-date value in returned _r_reduce[0] */
 
-  CS_HIP_CHECK(hipStreamSynchronize(_stream));
+  CS_HIP_CHECK(hipStreamSynchronize(stream));
 
   return _r_reduce[0];
 }
@@ -436,25 +440,26 @@ cs_blas_hip_dot(cs_lnum_t        n,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return the absolute sum of vector values using cuBLAS.
+ * \brief Return the absolute sum of vector values using hipBLAS.
  *
- * \param[in]  n  size of arrays x and y
- * \param[in]  x  array of floating-point values (on device)
+ * \param[in]  stream  associated HIP stream
+ * \param[in]  n       size of arrays x and y
+ * \param[in]  x       array of floating-point values (on device)
  *
  * \return  sum of absolute array values
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_blas_hipblas_asum(cs_lnum_t        n,
-                    const cs_real_t  x[])
+cs_blas_hipblas_asum(hipStream_t      stream,
+                     cs_lnum_t        n,
+                     const cs_real_t  x[])
 {
   double dot = 0.;
 
   hipblasStatus_t status = HIPBLAS_STATUS_SUCCESS;
 
-  if (_handle == nullptr)
-    _handle = _init_cublas();
+  _set_hipblas_stream(stream);
 
   if (sizeof(cs_real_t) == 8)
     status = hipblasDasum(_handle, n, (const double *)x, 1, &dot);
@@ -464,38 +469,35 @@ cs_blas_hipblas_asum(cs_lnum_t        n,
     dot = fdot;
   }
 
-  if (status != HIPBLAS_STATUS_SUCCESS) {
-    bft_error(__FILE__, __LINE__, 0, _("%s: hipBLAS error %d."),
-              __func__, (int)status);
-  }
+  _check_hipblas_status(__func__, __FILE__, __LINE__, status);
 
   return dot;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return the dot product of 2 vectors: x.y using cuBLAS.
+ * \brief Return the dot product of 2 vectors: x.y using hipBLAS.
  *
- * \param[in]  n  size of arrays x and y
- * \param[in]  x  array of floating-point values (on device)
- * \param[in]  y  array of floating-point values (on device)
+ * \param[in]  stream  associated HIP stream
+ * \param[in]  n       size of arrays x and y
+ * \param[in]  x       array of floating-point values (on device)
+ * \param[in]  y       array of floating-point values (on device)
  *
  * \return  dot product
  */
 /*----------------------------------------------------------------------------*/
 
 double
-cs_blas_hipblas_dot(cs_lnum_t        n,
-                   const cs_real_t  x[],
-                   const cs_real_t  y[])
+cs_blas_hipblas_dot(hipStream_t      stream,
+                    cs_lnum_t        n,
+                    const cs_real_t  x[],
+                    const cs_real_t  y[])
 {
   double dot = 0.;
 
+  _set_hipblas_stream(stream);
+
   hipblasStatus_t status = HIPBLAS_STATUS_SUCCESS;
-
-  if (_handle == nullptr)
-    _handle = _init_cublas();
-
   if (sizeof(cs_real_t) == 8)
     hipblasDdot(_handle, n, (const double *)x, 1, (const double *)y, 1, &dot);
   else if (sizeof(cs_real_t) == 4) {
@@ -503,11 +505,7 @@ cs_blas_hipblas_dot(cs_lnum_t        n,
     hipblasSdot(_handle, n, (const float *)x, 1, (const float *)y, 1, &fdot);
     dot = fdot;
   }
-
-  if (status != HIPBLAS_STATUS_SUCCESS) {
-    bft_error(__FILE__, __LINE__, 0, _("%s: hipBLAS error %d."),
-              __func__, (int)status);
-  }
+  _check_hipblas_status(__func__, __FILE__, __LINE__, status);
 
   return dot;
 }
@@ -517,26 +515,26 @@ cs_blas_hipblas_dot(cs_lnum_t        n,
 /*----------------------------------------------------------------------------
  * Compute x <- alpha.x
  *
- * This function may be set to use either cuBLAS or a local kernel.
+ * This function may be set to use either hipBLAS or a local kernel.
  *
- * parameters:
- *   n      <-- number of elements
- *   alpha  <-- constant value (on device)
- *   x      <-> vector of elements (on device)
+ * \param[in]  stream  associated HIP stream
+ * \param[in]  n       number of elements
+ * \param[in]  alpha   constant value (on device)
+ * \param[in]  x       vector of elements (on device)
  *----------------------------------------------------------------------------*/
 
 void
-cs_blas_hip_scal(cs_lnum_t         n,
-                  const cs_real_t  *alpha,
-                  cs_real_t        *restrict x)
+cs_blas_hip_scal(hipStream_t       stream,
+                 cs_lnum_t         n,
+                 const cs_real_t  *alpha,
+                 cs_real_t        *x)
 {
 #if defined(HAVE_HIPBLAS)
 
-  if (_prefer_cublas && _handle != nullptr) {
-    _handle = _init_cublas();
+  if (_prefer_hipblas && _handle != nullptr) {
+    _set_hipblas_stream(stream);
 
     hipblasStatus_t status = HIPBLAS_STATUS_SUCCESS;
-
     if (sizeof(cs_real_t) == 8)
       status = hipblasDscal(_handle, n,
                            (const double *)alpha,
@@ -545,27 +543,23 @@ cs_blas_hip_scal(cs_lnum_t         n,
       status = hipblasSscal(_handle, n,
                            (const float *)alpha,
                            (float *)x, 1);
-
-    if (status != HIPBLAS_STATUS_SUCCESS) {
-      bft_error(__FILE__, __LINE__, 0, _("%s: hipBLAS error %d."),
-                __func__, (int)status);
-    }
+    _check_hipblas_status(__func__, __FILE__, __LINE__, status);
 
     return;
   }
 
 #endif /* defined(HAVE_HIPBLAS) */
 
-  /* If not using cuBLAS for this operation */
+  /* If not using hipBLAS for this operation */
 
   const unsigned int blocksize = 256;  // try 640 also
 
   unsigned int gridsize = cs_hip_grid_size(n, blocksize);
   // gridsize = min(gridsize, 640;
 
-  _scal<<<gridsize, blocksize, 0, _stream>>>(n, alpha, x);
+  _scal<<<gridsize, blocksize, 0, stream>>>(n, alpha, x);
 }
 
-/*----------------------------------------------------------------------------*/
+#endif /* defined(__HIPCC__)
 
-END_C_DECLS
+/*----------------------------------------------------------------------------*/

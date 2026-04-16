@@ -2765,12 +2765,9 @@ _dot_xx(const cs_multigrid_t  *mg,
 
   if (use_gpu) {
     cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
-    if (stream == 0) {
+    if (stream == 0)
       stream = cs_cuda_get_stream(0);
-    }
-    cs_blas_cuda_set_stream(stream);
-    s = cs_blas_cuda_dot(n, x, x);
-    cs_blas_cuda_set_stream(0);
+    s = cs_blas_cuda_dot(stream, n, x, x);
   }
   else
     s = cs_dot_xx(n, x);
@@ -2790,9 +2787,7 @@ _dot_xx(const cs_multigrid_t  *mg,
     if (stream == 0) {
       stream = cs_hip_get_stream(0);
     }
-    cs_blas_hip_set_stream(stream);
-    s = cs_blas_hip_dot(n, x, x);
-    cs_blas_hip_set_stream(0);
+    s = cs_blas_hip_dot(stream, n, x, x);
   }
   else
     s = cs_dot_xx(n, x);

@@ -1153,11 +1153,11 @@ _dot_product(const cs_sles_it_t  *c,
   /* Alternatives */
 
   if (_use_cublas == false)
-    s = cs_blas_cuda_dot(c->setup_data->n_rows, x, y);
+    s = cs_blas_cuda_dot(stream, c->setup_data->n_rows, x, y);
 
 #if defined(HAVE_CUBLAS)
   if (_use_cublas)
-    s = cs_blas_cublas_dot(c->setup_data->n_rows, x, y);
+    s = cs_blas_cublas_dot(stream, c->setup_data->n_rows, x, y);
 #endif
 
 #if defined(HAVE_MPI)
@@ -1533,10 +1533,10 @@ _dot_products_vr_vw_vq_rr(const cs_sles_it_t  *c,
 
   if (_use_cublas) {
 
-    s[0] = cs_blas_cublas_dot(c->setup_data->n_rows, v, r);
-    s[1] = cs_blas_cublas_dot(c->setup_data->n_rows, v, w);
-    s[2] = cs_blas_cublas_dot(c->setup_data->n_rows, v, q);
-    s[3] = cs_blas_cublas_dot(c->setup_data->n_rows, r, r);
+    s[0] = cs_blas_cublas_dot(stream, c->setup_data->n_rows, v, r);
+    s[1] = cs_blas_cublas_dot(stream, c->setup_data->n_rows, v, w);
+    s[2] = cs_blas_cublas_dot(stream, c->setup_data->n_rows, v, q);
+    s[3] = cs_blas_cublas_dot(stream, c->setup_data->n_rows, r, r);
 
 #if defined(HAVE_MPI)
 
@@ -1616,7 +1616,7 @@ cs_sles_it_dot_product
 
   if (_use_cublas) {
 
-    s[0] = cs_blas_cublas_dot(c->setup_data->n_rows, x, x);
+    s[0] = cs_blas_cublas_dot(stream, c->setup_data->n_rows, x, x);
 
 #if defined(HAVE_MPI)
 
@@ -1687,7 +1687,7 @@ cs_sles_it_dot_product_xx
 
   if (_use_cublas) {
 
-    s[0] = cs_blas_cublas_dot(c->setup_data->n_rows, x, x);
+    s[0] = cs_blas_cublas_dot(stream, c->setup_data->n_rows, x, x);
 
 #if defined(HAVE_MPI)
 
@@ -1761,8 +1761,8 @@ cs_sles_it_dot_products_xx_xy
 
   if (_use_cublas) {
 
-    s[0] = cs_blas_cublas_dot(c->setup_data->n_rows, x, x);
-    s[1] = cs_blas_cublas_dot(c->setup_data->n_rows, x, y);
+    s[0] = cs_blas_cublas_dot(stream, c->setup_data->n_rows, x, x);
+    s[1] = cs_blas_cublas_dot(stream, c->setup_data->n_rows, x, y);
 
 #if defined(HAVE_MPI)
 
@@ -1839,8 +1839,8 @@ cs_sles_it_dot_products_xy_yz
 
   if (_use_cublas) {
 
-    s[0] = cs_blas_cublas_dot(c->setup_data->n_rows, x, x);
-    s[1] = cs_blas_cublas_dot(c->setup_data->n_rows, x, y);
+    s[0] = cs_blas_cublas_dot(stream, c->setup_data->n_rows, x, x);
+    s[1] = cs_blas_cublas_dot(stream, c->setup_data->n_rows, x, y);
 
 #if defined(HAVE_MPI)
 
@@ -1919,9 +1919,9 @@ cs_sles_it_dot_products_xx_xy_yz
 
   if (_use_cublas) {
 
-    s[0] = cs_blas_cublas_dot(c->setup_data->n_rows, x, x);
-    s[1] = cs_blas_cublas_dot(c->setup_data->n_rows, x, y);
-    s[2] = cs_blas_cublas_dot(c->setup_data->n_rows, y, z);
+    s[0] = cs_blas_cublas_dot(stream, c->setup_data->n_rows, x, x);
+    s[1] = cs_blas_cublas_dot(stream, c->setup_data->n_rows, x, y);
+    s[2] = cs_blas_cublas_dot(stream, c->setup_data->n_rows, y, z);
 
 #if defined(HAVE_MPI)
 
@@ -2005,11 +2005,11 @@ cs_sles_it_dot_products_xx_yy_xy_xz_yz
 
   if (_use_cublas) {
 
-    s[0] = cs_blas_cublas_dot(c->setup_data->n_rows, x, x);
-    s[1] = cs_blas_cublas_dot(c->setup_data->n_rows, y, y);
-    s[2] = cs_blas_cublas_dot(c->setup_data->n_rows, x, y);
-    s[3] = cs_blas_cublas_dot(c->setup_data->n_rows, x, z);
-    s[4] = cs_blas_cublas_dot(c->setup_data->n_rows, y, z);
+    s[0] = cs_blas_cublas_dot(stream, c->setup_data->n_rows, x, x);
+    s[1] = cs_blas_cublas_dot(stream, c->setup_data->n_rows, y, y);
+    s[2] = cs_blas_cublas_dot(stream, c->setup_data->n_rows, x, y);
+    s[3] = cs_blas_cublas_dot(stream, c->setup_data->n_rows, x, z);
+    s[4] = cs_blas_cublas_dot(stream, c->setup_data->n_rows, y, z);
 
 #if defined(HAVE_MPI)
 
@@ -2617,7 +2617,6 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
 
   unsigned int gridsize = cs_cuda_grid_size(n_rows, blocksize);
 
-  cs_blas_cuda_set_stream(stream);
   if (local_stream)
     cs_matrix_spmv_cuda_set_stream(stream);
 
@@ -2701,7 +2700,6 @@ cs_sles_it_cuda_fcg(cs_sles_it_t              *c,
   if (_aux_vectors != aux_vectors)
     CS_FREE(_aux_vectors);
 
-  cs_blas_cuda_set_stream(0);
   if (local_stream) {
     cs_matrix_spmv_cuda_set_stream(0);
   }
@@ -2838,7 +2836,6 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
 
   cs_device_context ctx(gridsize_blas1, blocksize_rsb, stream);
 
-  cs_blas_cuda_set_stream(stream);
   if (local_stream)
     cs_matrix_spmv_cuda_set_stream(stream);
 
@@ -2990,7 +2987,6 @@ cs_sles_it_cuda_gcr(cs_sles_it_t              *c,
   CS_FREE(_aux_arrays);
   CS_FREE(gkj_inv);
 
-  cs_blas_cuda_set_stream(0);
   if (local_stream) {
     cs_matrix_spmv_cuda_set_stream(0);
   }
