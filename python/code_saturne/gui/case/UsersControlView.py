@@ -158,7 +158,7 @@ class LocationDelegate(QItemDelegate):
         value = self.modelCombo.dicoV2M[txt]
         log.debug("LocationDelegate value = %s"%value)
 
-        selectionModel = self.parent.selectionModel()
+        selectionModel = self.parent_widget.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
                 model.setData(idx, value, Qt.ItemDataRole.DisplayRole)
@@ -201,7 +201,7 @@ class UserDimensionDelegate(QItemDelegate):
         value = self.modelCombo.dicoV2M[txt]
         log.debug("UserDimensionDelegate value = %s"%value)
 
-        selectionModel = self.parent.selectionModel()
+        selectionModel = self.parent_widget.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
                 model.setData(idx, value, Qt.ItemDataRole.DisplayRole)
