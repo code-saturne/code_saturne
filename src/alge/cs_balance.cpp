@@ -111,28 +111,32 @@ static int _balance_stat_id = -1;
 /*!
  * \brief Update the cell viscosity for balance
  *
- * \param[in]     context       reference to dispatch context
- * \param[in]     f             pointer to field or nullptr
- * \param[in]     eqp           equation parameters
- * \param[in]     halo_type     halo type
- * \param[in]     anisotropic   isotropic or anisotropic case
- * \param[inout]  viscel        initial viscosity by cell
- * \param[inout]  c_weight      viscosity by cell
+ * \param[in]     context           reference to dispatch context
+ * \param[in]     f                 pointer to field or nullptr
+ * \param[in]     eqp               equation parameters
+ * \param[in]     halo_type         halo type
+ * \param[in]     anisotropic       isotropic or anisotropic case
+ * \param[in]     c_visc            initial viscosity by cell
+ * \param[inout]  need_free_c_visc  if c_visc is a work array to free
+
+ * return  c_weight (viscosity by cell)
  */
 /*----------------------------------------------------------------------------*/
 
-static void
+static cs_real_t *
 _balance_cell_weight(cs_dispatch_context        &ctx,
                      const cs_field_t           *f,
                      const cs_equation_param_t  *eqp,
                      const cs_halo_type_t        halo_type,
                      const bool                  anisotropic,
-                     cs_real_6_t                *viscel,
-                     cs_real_t                  *c_weight)
+                     cs_real_6_t                *c_visc,
+                     bool                       &need_free_c_visc)
 {
   cs_mesh_t *mesh = cs_glob_mesh;
   const cs_lnum_t n_cells = mesh->n_cells;
   const cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
+
+  cs_real_t *c_weight = nullptr;
 
   if (!(anisotropic)) {
     if (f != nullptr) {
@@ -145,8 +149,7 @@ _balance_cell_weight(cs_dispatch_context        &ctx,
             cs_field_t *weight_f = cs_field_by_id(diff_id);
             c_weight = weight_f->val;
             cs_field_synchronize(weight_f, halo_type);
-            assert(viscel == nullptr);
-            return;
+            assert(c_visc == nullptr);
           }
         }
       }
@@ -164,61 +167,68 @@ _balance_cell_weight(cs_dispatch_context        &ctx,
             cs_field_t *weight_f = cs_field_by_id(diff_id);
             c_weight = weight_f->val;
             cs_field_synchronize(weight_f, halo_type);
-            assert(viscel == nullptr);
-            return;
+            assert(c_visc == nullptr);
           }
         }
       }
     }
 
-    cs_real_6_t *w2 = nullptr;
+    if (c_weight == nullptr) {
 
-    /* Porosity fields */
-    cs_field_t *fporo = cs_field_by_name_try("porosity");
-    cs_field_t *ftporo = cs_field_by_name_try("tensorial_porosity");
+      cs_real_6_t *w2 = nullptr;
 
-    cs_real_t *porosi = nullptr;
-    cs_real_6_t *porosf = nullptr;
+      /* Porosity fields */
+      cs_field_t *fporo = cs_field_by_name_try("porosity");
+      cs_field_t *ftporo = cs_field_by_name_try("tensorial_porosity");
 
-    if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2) {
-      porosi = fporo->val;
-      if (ftporo != nullptr) {
-        porosf = (cs_real_6_t *)ftporo->val;
-      }
-    }
+      cs_real_t *porosi = nullptr;
+      cs_real_6_t *porosf = nullptr;
 
-    /* Without porosity */
-    if (porosi == nullptr) {
-      c_weight = (cs_real_t *)viscel;
-
-      /* With porosity */
-    }
-    else if (porosi != nullptr && porosf == nullptr) {
-      CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
-      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-        for (cs_lnum_t isou = 0; isou < 6; isou++) {
-          w2[cell_id][isou] = porosi[cell_id]*viscel[cell_id][isou];
+      if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2) {
+        porosi = fporo->val;
+        if (ftporo != nullptr) {
+          porosf = (cs_real_6_t *)ftporo->val;
         }
-      });
-      ctx.wait();
-      c_weight = (cs_real_t *)w2;
+      }
 
-      /* With tensorial porosity */
-    }
-    else if (porosi != nullptr && porosf != nullptr) {
-      CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
-      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
-        cs_math_sym_33_product(porosf[cell_id],
-                               viscel[cell_id],
-                               w2[cell_id]);
-      });
-      ctx.wait();
-      c_weight = (cs_real_t *)w2;
-    }
+      /* Without porosity */
+      if (porosi == nullptr) {
+        c_weight = (cs_real_t *)c_visc;
 
-    /* ---> Periodicity and parallelism treatment of symmetric tensors */
-    cs_halo_sync_r(cs_glob_mesh->halo, halo_type, false, (cs_real_6_t *)c_weight);
+        /* With porosity */
+      }
+      else if (porosi != nullptr && porosf == nullptr) {
+        CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+          for (cs_lnum_t isou = 0; isou < 6; isou++) {
+            w2[cell_id][isou] = porosi[cell_id]*c_visc[cell_id][isou];
+          }
+        });
+        ctx.wait();
+        need_free_c_visc = true;
+        c_weight = (cs_real_t *)w2;
+
+        /* With tensorial porosity */
+      }
+      else if (porosi != nullptr && porosf != nullptr) {
+        CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode);
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t cell_id) {
+          cs_math_sym_33_product(porosf[cell_id],
+                                 c_visc[cell_id],
+                                 w2[cell_id]);
+        });
+        ctx.wait();
+        need_free_c_visc = true;
+        c_weight = (cs_real_t *)w2;
+      }
+
+      /* ---> Periodicity and parallelism treatment of symmetric tensors */
+      cs_halo_sync_r(cs_glob_mesh->halo, halo_type,
+                     false, (cs_real_6_t *)c_weight);
+    }
   }
+
+  return c_weight;
 }
 
 /*============================================================================
@@ -295,7 +305,7 @@ cs_balance_initialize(void)
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at boundary faces for the r.h.s.
- * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
+ * \param[in]     c_visc        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
  * \param[in]     xcpp          array of specific heat (Cp)
  * \param[in]     weighf        internal face weight between cells i j in case
  *                               of tensor diffusion
@@ -325,7 +335,7 @@ cs_balance_scalar(int                         idtvar,
                   const cs_real_t             b_massflux[],
                   const cs_real_t             i_visc[],
                   const cs_real_t             b_visc[],
-                  cs_real_6_t                 viscel[],
+                  cs_real_6_t                 c_visc[],
                   const cs_real_t             xcpp[],
                   const cs_real_2_t           weighf[],
                   const cs_real_t             weighb[],
@@ -342,7 +352,7 @@ cs_balance_scalar(int                         idtvar,
                     bc_coeffs,
                     i_massflux, b_massflux,
                     i_visc, b_visc,
-                    viscel,
+                    c_visc,
                     xcpp,
                     weighf, weighb,
                     icvflb, icvfli,
@@ -402,7 +412,7 @@ cs_balance_scalar(int                         idtvar,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at boundary faces for the r.h.s.
- * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
+ * \param[in]     c_visc        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
  * \param[in]     xcpp          array of specific heat (Cp)
  * \param[in]     weighf        internal face weight between cells i j in case
  *                               of tensor diffusion
@@ -434,7 +444,7 @@ cs_balance_scalar(int                         idtvar,
                   const cs_real_t             b_massflux[],
                   const cs_real_t             i_visc[],
                   const cs_real_t             b_visc[],
-                  cs_real_6_t                 viscel[],
+                  cs_real_6_t                 c_visc[],
                   const cs_real_t             xcpp[],
                   const cs_real_2_t           weighf[],
                   const cs_real_t             weighb[],
@@ -481,21 +491,25 @@ cs_balance_scalar(int                         idtvar,
   if (pvara == nullptr)
     pvara = (const cs_real_t *)pvar;
 
-  bool anisotropic = false;
-  if (eqp->idften & CS_ANISOTROPIC_DIFFUSION)
-    anisotropic = true;
+  const cs_real_t *restrict _pvar = (pvar != nullptr) ? pvar : pvara;
 
-  cs_real_t *c_visc = nullptr;
-  _balance_cell_weight(ctx,
-                       f, eqp,
-                       halo_type,
-                       anisotropic,
-                       viscel,
-                       c_visc);
+  bool anisotropic = false;
+  if (eqp->idften & CS_ANISOTROPIC_DIFFUSION) {
+    anisotropic = true;
+  }
+
+  bool need_free_c_weight = false;
+  cs_real_t *c_weight_diff = _balance_cell_weight(ctx,
+                                                  f, eqp,
+                                                  halo_type,
+                                                  anisotropic,
+                                                  c_visc,
+                                                  need_free_c_weight);
 
   const bool need_compute_bc_flux = true;
   const bool need_compute_bc_grad = true;
 
+  // Compute val_f_diff and flux_diff
   cs_boundary_conditions_update_bc_coeff_face_values
     (ctx,
      (const cs_field_t *)f,
@@ -504,9 +518,9 @@ cs_balance_scalar(int                         idtvar,
      (const cs_equation_param_t *)eqp,
      need_compute_bc_grad, need_compute_bc_flux,
      -1, nullptr, // hyd_p_flag, f_ext,
-     c_visc,
+     c_weight_diff,
      weighb,
-     pvar);
+     _pvar);
 
   bool anisotropic_diffusion = false;
   if (anisotropic && eqp->idiff == 1) {
@@ -534,11 +548,11 @@ cs_balance_scalar(int                         idtvar,
                                      icvflb,
                                      inc,
                                      imasac,
-                                     pvar, pvara,
+                                     _pvar,
                                      icvfli,
                                      bc_coeffs,
                                      i_massflux, b_massflux,
-                                     i_visc, b_visc, c_visc,
+                                     i_visc, b_visc, c_weight_diff,
                                      rhs,
                                      i_flux, b_flux);
   }
@@ -549,7 +563,7 @@ cs_balance_scalar(int                         idtvar,
         (f, eqp_loc,
          false, /* icvflb */
          inc,
-         pvar, pvara,
+         _pvar, pvara,
          nullptr, /* icvfli */
          bc_coeffs,
          i_massflux, b_massflux,
@@ -560,10 +574,10 @@ cs_balance_scalar(int                         idtvar,
     else
       cs_convection_diffusion_thermal(f, eqp_loc,
                                       inc, imasac,
-                                      pvar, pvara,
+                                      _pvar,
                                       bc_coeffs,
                                       i_massflux, b_massflux,
-                                      i_visc, b_visc, c_visc,
+                                      i_visc, b_visc, c_weight_diff,
                                       xcpp,
                                       rhs);
   }
@@ -577,16 +591,20 @@ cs_balance_scalar(int                         idtvar,
                                     f_id,
                                     eqp_loc,
                                     inc,
-                                    pvar,
+                                    _pvar,
                                     pvara,
                                     bc_coeffs,
                                     i_visc,
                                     b_visc,
-                                    (cs_real_6_t *)c_visc,
+                                    (cs_real_6_t *)c_weight_diff,
                                     weighf,
                                     weighb,
                                     rhs);
 
+  }
+
+  if (need_free_c_weight) {
+    CS_FREE(c_weight_diff);
   }
 
   cs_timer_t t1 = cs_timer_time();
@@ -652,7 +670,7 @@ cs_balance_scalar(int                         idtvar,
  *                               at boundary faces for the r.h.s.
  * \param[in]     secvif        secondary viscosity at interior faces
  * \param[in]     secvib        secondary viscosity at boundary faces
- * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
+ * \param[in]     c_visc        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
  * \param[in]     weighf        internal face weight between cells i j in case
  *                               of tensor diffusion
  * \param[in]     weighb        boundary face weight for cells i in case
@@ -683,7 +701,7 @@ cs_balance_vector(int                         idtvar,
                   const cs_real_t             b_visc[],
                   const cs_real_t             secvif[],
                   const cs_real_t             secvib[],
-                  cs_real_6_t                 viscel[],
+                  cs_real_6_t                 c_visc[],
                   const cs_real_2_t           weighf[],
                   const cs_real_t             weighb[],
                   int                         icvflb,
@@ -780,7 +798,7 @@ cs_balance_vector(int                         idtvar,
                                             bc_coeffs,
                                             i_visc,
                                             b_visc,
-                                            viscel,
+                                            c_visc,
                                             weighf,
                                             weighb,
                                             smbr);
@@ -851,7 +869,7 @@ cs_balance_vector(int                         idtvar,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at boundary faces for the r.h.s.
- * \param[in]     viscel        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
+ * \param[in]     c_visc        symmetric cell tensor \f$ \tens{\mu}_\celli \f$
  * \param[in]     weighf        internal face weight between cells i j in case
  *                               of tensor diffusion
  * \param[in]     weighb        boundary face weight for cells i in case
@@ -879,7 +897,7 @@ cs_balance_tensor(int                         idtvar,
                   const cs_real_t             b_massflux[],
                   const cs_real_t             i_visc[],
                   const cs_real_t             b_visc[],
-                  cs_real_6_t                 viscel[],
+                  cs_real_6_t                 c_visc[],
                   const cs_real_2_t           weighf[],
                   const cs_real_t             weighb[],
                   int                         icvflb,
@@ -958,7 +976,7 @@ cs_balance_tensor(int                         idtvar,
                                       bc_coeffs,
                                       i_visc,
                                       b_visc,
-                                      viscel,
+                                      c_visc,
                                       weighf,
                                       weighb,
                                       rhs);

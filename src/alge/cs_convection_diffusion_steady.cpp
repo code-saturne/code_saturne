@@ -1236,7 +1236,7 @@ cs_convection_diffusion_steady_scalar
   const cs_equation_param_t  &eqp,
   bool                        icvflb,
   int                         inc,
-  cs_real_t         *restrict pvar,
+  const cs_real_t   *restrict pvar,
   const cs_real_t   *restrict pvara,
   const int                   icvfli[],
   const cs_field_bc_coeffs_t *bc_coeffs,
@@ -1345,8 +1345,6 @@ cs_convection_diffusion_steady_scalar
   /* Handle cases where only the previous values (already synchronized)
      or current values are provided */
 
-  if (pvar != nullptr)
-    cs_sync_scalar_halo(m, halo_type, pvar);
   if (pvara == nullptr)
     pvara = (const cs_real_t *)pvar;
 

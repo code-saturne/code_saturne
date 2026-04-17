@@ -144,8 +144,7 @@ cs_beta_limiter_building(int              f_id,
  *                               - 0 when solving an increment
  *                               - 1 otherwise
  * \param[in]     imasac        take mass accumulation into account?
- * \param[in]     pvar          solved variable (current time step)
- * \param[in]     pvara         solved variable (previous time step)
+ * \param[in]     pvar          solved variable
  * \param[in]     icvfli        boundary face indicator array of convection flux
  *                               - 0 upwind scheme
  *                               - 1 imposed flux
@@ -156,7 +155,7 @@ cs_beta_limiter_building(int              f_id,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
- * \param[in]     c_visc        cell viscosity
+ * \param[in]     c_weight      gradient weighting for diffusion
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  * \param[in,out] i_flux        interior flux (or nullptr)
  * \param[in,out] b_flux        boundary flux (or nullptr)
@@ -169,15 +168,14 @@ cs_convection_diffusion_scalar(const cs_field_t           *f,
                                int                         icvflb,
                                int                         inc,
                                int                         imasac,
-                               cs_real_t                  *pvar,
-                               const cs_real_t            *pvara,
+                               const cs_real_t            *pvar,
                                const int                   icvfli[],
                                cs_field_bc_coeffs_t       *bc_coeffs,
                                const cs_real_t             i_massflux[],
                                const cs_real_t             b_massflux[],
                                const cs_real_t             i_visc[],
                                const cs_real_t             b_visc[],
-                               const cs_real_t            *c_visc,
+                               const cs_real_t            *c_weight,
                                cs_real_t                  *rhs,
                                cs_real_2_t                 i_flux[],
                                cs_real_t                   b_flux[]);
@@ -387,8 +385,7 @@ cs_convection_diffusion_tensor(int                          idtvar,
  *                               - 0 when solving an increment
  *                               - 1 otherwise
  * \param[in]     imasac        take mass accumulation into account?
- * \param[in]     pvar          solved variable (current time step)
- * \param[in]     pvara         solved variable (previous time step)
+ * \param[in]     pvar          solved variable
  * \param[in]     bc_coeffs     boundary condition structure for the variable
  * \param[in]     i_massflux    mass flux at interior faces
  * \param[in]     b_massflux    mass flux at boundary faces
@@ -396,7 +393,7 @@ cs_convection_diffusion_tensor(int                          idtvar,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
- * \param[in]     c_visc        cell viscosity
+ * \param[in]     c_weight      gradient_weighting for diffusion
  * \param[in]     xcpp          array of specific heat (\f$ C_p \f$)
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
@@ -407,14 +404,13 @@ cs_convection_diffusion_thermal(const cs_field_t           *f,
                                 const cs_equation_param_t   eqp,
                                 int                         inc,
                                 int                         imasac,
-                                cs_real_t                  *pvar,
-                                const cs_real_t            *pvara,
+                                const cs_real_t            *pvar,
                                 cs_field_bc_coeffs_t       *bc_coeffs,
                                 const cs_real_t             i_massflux[],
                                 const cs_real_t             b_massflux[],
                                 const cs_real_t             i_visc[],
                                 const cs_real_t             b_visc[],
-                                const cs_real_t            *c_visc,
+                                const cs_real_t            *c_weight,
                                 const cs_real_t             xcpp[],
                                 cs_real_t                  *rhs);
 
@@ -462,7 +458,7 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
                                 int                         f_id,
                                 const cs_equation_param_t   eqp,
                                 int                         inc,
-                                cs_real_t                  *pvar,
+                                const cs_real_t            *pvar,
                                 const cs_real_t            *pvara,
                                 cs_field_bc_coeffs_t       *bc_coeffs,
                                 const cs_real_t             i_visc[],

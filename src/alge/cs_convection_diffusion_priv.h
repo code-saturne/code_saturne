@@ -2575,7 +2575,7 @@ cs_convection_diffusion_steady_scalar
   const cs_equation_param_t  &eqp,
   bool                        icvflb,
   int                         inc,
-  cs_real_t         *restrict pvar,
+  const cs_real_t   *restrict pvar,
   const cs_real_t   *restrict pvara,
   const int                   icvfli[],
   const cs_field_bc_coeffs_t *bc_coeffs,
