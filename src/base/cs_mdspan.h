@@ -804,38 +804,6 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Copy data from raw pointer, we suppose that data size is same
-   *        as that of the array.
-   */
-  /*--------------------------------------------------------------------------*/
-
-  CS_F_HOST
-  void
-  copy_data
-  (
-    T               *data,       /*!<[in] Pointer to copy */
-    const cs_lnum_t  n_vals = -1 /*!<[in] Number of values to copy.
-                                          If -1, default, we use array size */
-  )
-  {
-    assert(n_vals <= _size);
-
-    const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
-
-    // Explicit pointer, avoid passing internal member of class to the functor
-    T* data_ptr = _data;
-
-    cs_dispatch_context ctx;
-
-    ctx.parallel_for(loop_size, CS_LAMBDA (cs_lnum_t e_id) {
-        data_ptr[e_id] = data[e_id];
-    });
-
-    ctx.wait();
-  }
-
-  /*--------------------------------------------------------------------------*/
-  /*!
    * \brief Copy data from const raw pointer, we suppose that data size is same
    *        as that of the array.
    */
