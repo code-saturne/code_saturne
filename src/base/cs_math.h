@@ -86,49 +86,33 @@ typedef enum {
 
 /* Numerical constants */
 
-#if  (defined(__NVCC__) && defined(__CUDA_ARCH__)) \
-  || (defined(__HIPCC__) && defined(__HIP_DEVICE_COMPILE__)) \
-  || defined(SYCL_LANGUAGE_VERSION) \
-  || defined(HAVE_OPENMP_TARGET)
+static constexpr cs_real_t cs_math_zero_threshold = std::numeric_limits<float>::min();
 
-/* On GPU, global variables are usually not accessible. */
+/*! epsilon \f$ 10^{-12}\f$ */
+static constexpr cs_real_t cs_math_epzero = 1e-12;
 
-constexpr cs_real_t cs_math_zero_threshold = std::numeric_limits<float>::min();
-#define cs_math_epzero 1e-12
-#define cs_math_infinite_r 1.e30
-#define cs_math_big_r 1.e12
-#define cs_math_pi 3.14159265358979323846
+/*! infinite \f$ 10^{+30}\f$ */
+static constexpr cs_real_t cs_math_infinite_r = 1.e30;
 
-#else
+/*! big value \f$ 10^{+12}\f$ */
+static constexpr cs_real_t cs_math_big_r = 1.e12;
 
-/* General constants accessible on CPU */
+/*! \f$ \pi \f$ value with 20 digits */
+static constexpr cs_real_t cs_math_pi = 3.14159265358979323846;
 
-extern const cs_real_t cs_math_zero_threshold;
-extern const cs_real_t cs_math_epzero;
-extern const cs_real_t cs_math_infinite_r;
-extern const cs_real_t cs_math_big_r;
-extern const cs_real_t cs_math_pi;
+static constexpr cs_real_t cs_math_1ov3  = 1./3.;
+static constexpr cs_real_t cs_math_2ov3  = 2./3.;
+static constexpr cs_real_t cs_math_4ov3  = 4./3.;
+static constexpr cs_real_t cs_math_5ov3  = 5./3.;
+static constexpr cs_real_t cs_math_1ov6  = 1./6.;
+static constexpr cs_real_t cs_math_1ov12 = 1./12.;
+static constexpr cs_real_t cs_math_1ov24 = 1./24.;
 
-#endif
-
-#if !(defined(__NVCC__) && defined(__CUDA_ARCH__)) \
-  && !(defined(__HIPCC__))
-
-extern const cs_real_t cs_math_1ov3;
-extern const cs_real_t cs_math_2ov3;
-extern const cs_real_t cs_math_4ov3;
-extern const cs_real_t cs_math_5ov3;
-extern const cs_real_t cs_math_1ov6;
-extern const cs_real_t cs_math_1ov12;
-extern const cs_real_t cs_math_1ov24;
-
-/* Identity matrix in dimension 3 */
-static const cs_real_33_t cs_math_33_identity = {{1., 0., 0.,},
-                                                 {0., 1., 0.},
-                                                 {0., 0., 1.}};
-static const cs_real_6_t cs_math_sym_33_identity  = {1., 1., 1., 0. ,0., 0.};
-
-#endif
+static constexpr cs_real_33_t cs_math_33_identity = {{1., 0., 0.,},
+                                                     {0., 1., 0.},
+                                                     {0., 0., 1.}};
+static constexpr cs_real_6_t cs_math_sym_33_identity  = {1., 1., 1.,
+                                                         0. ,0., 0.};
 
 /*----------------------------------------------------------------------------*/
 
