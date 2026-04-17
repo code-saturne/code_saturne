@@ -274,7 +274,7 @@ class BoundaryConditionsVelocityInletView(QWidget, Ui_BoundaryConditionsVelocity
             self.pushButtonVelocityFormula.setStyleSheet("background-color: green")
 
 
-    @Slot()
+    @Slot(int)
     def __slotChoiceDirection(self, text):
         """
         Input the direction type choice.

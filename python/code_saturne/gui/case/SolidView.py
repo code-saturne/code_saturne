@@ -137,7 +137,7 @@ class SolidView(QWidget, Ui_Solid):
         self.comboBoxFriction.activated[int].connect(self.slotFriction)
         self.comboBoxGranular.activated[int].connect(self.slotGranular)
         self.comboBoxKinetic.activated[int].connect(self.slotKinetic)
-        self.lineEditCompaction.textChanged[str.connect(self.slotCompaction)
+        self.lineEditCompaction.textChanged[str].connect(self.slotCompaction)
         self.lineEditFrictonalThres.textChanged.connect(self.slotFrictionalThreshold)
         self.lineEditElastCoef.textChanged.connect(self.slotSetElasticity)
         self.checkBoxCoupling.clicked.connect(self.slotCoupling)
@@ -201,7 +201,7 @@ class SolidView(QWidget, Ui_Solid):
         self.mdl.setKineticModel(self.currentid, model)
 
 
-    @Slot()
+    @Slot(str)
     def slotCompaction(self, var):
         """
         """
@@ -210,7 +210,7 @@ class SolidView(QWidget, Ui_Solid):
             self.mdl.setCompaction(value)
 
 
-    @Slot()
+    @Slot(str)
     def slotFrictionalThreshold(self, var):
         """
         Setter slot.
@@ -220,7 +220,7 @@ class SolidView(QWidget, Ui_Solid):
             self.mdl.setMinFrictionalThreshold(value)
 
 
-    @Slot()
+    @Slot(str)
     def slotSetElasticity(self, var):
         """
         Set elasiticity coefficient
