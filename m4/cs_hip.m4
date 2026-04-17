@@ -436,5 +436,6 @@ fi
 AC_LANG_POP(C++)
 
 AM_CONDITIONAL([HAVE_HIP_CPP], [test "$cs_enable_hip_cpp" = "yes"])
+AC_SUBST(cs_enable_hip_cpp)
 
 ])dnl

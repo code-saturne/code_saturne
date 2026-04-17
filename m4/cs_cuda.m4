@@ -404,5 +404,6 @@ ncclCommInitRank(comm, 1, Id, 0);]])
 fi
 
 AM_CONDITIONAL([HAVE_CUDA_CPP], [test "$cs_enable_cuda_cpp" = "yes"])
+AC_SUBST(cs_enable_cuda_cpp)
 
 ])dnl
