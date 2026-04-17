@@ -498,7 +498,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
         self.browser.configureTree(self.case)
 
 
-    @Slot()
+    @Slot(str)
     def slotEmissivityField(self, text):
         """
         Update current field id for particles radiaitive model.

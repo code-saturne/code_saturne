@@ -571,7 +571,7 @@ class TurbulenceView(QWidget, Ui_Turbulence):
                     self.mdl.setThermalTurbulentFlux(fieldId, 'sgdh')
 
 
-    @Slot()
+    @Slot(str)
     def slotMixingLength(self, text):
         """
         Update the mixing length

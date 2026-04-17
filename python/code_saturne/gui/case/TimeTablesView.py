@@ -310,7 +310,7 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         self.lineEditTimeOffset.setEnabled(use_offset)
 
 
-    @Slot()
+    @Slot("QModelIndex")
     def slotSelectTable(self, index):
         """
         Action when user clicks on the table
@@ -359,7 +359,7 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         self.mdl.deleteTable(idx)
 
 
-    @Slot()
+    @Slot(int)
     def slotRowsToSkip(self, val):
         """
         Set number of rows to skip when importing table
@@ -375,7 +375,7 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         self.mdl.setTableProperty(self.table_id, 'cols2import', str(text))
         self._update_page_view()
 
-    @Slot()
+    @Slot(str)
     def slotColToImport(self, text):
         """
         Set selection criteria for columns (if user defined import mode)
@@ -394,7 +394,7 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
 
         self._update_page_view()
 
-    @Slot()
+    @Slot(str)
     def slotHeadToImport(self, text):
         """
         Set headers value
@@ -419,7 +419,7 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         return
 
 
-    @Slot()
+    @Slot(int)
     def slotHeadLine(self, val):
         """
         Define line from which to import headers
@@ -427,18 +427,19 @@ class TimeTablesView(QWidget, Ui_TimeTablesForm):
         self.mdl.setTableProperty(self.table_id, 'headers_line', int(val))
 
 
-    @Slot()
-    def slotTimeOffsetMode(self, mode):
+    @Slot(int)
+    def slotTimeOffsetMode(self, idx):
         """
         Set Offset mode if needed.
         """
+        mode = self.comboBoxTimeOffset.currentText()
         self.mdl.setTableProperty(self.table_id, 'time_offset_choice', str(mode))
         if mode == "no":
             self.lineEditTimeOffset.setText('0')
         self._update_page_view()
 
 
-    @Slot()
+    @Slot(str)
     def slotTimeOffsetVal(self, val):
         """
         Set Offset mode if needed.

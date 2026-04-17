@@ -639,7 +639,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
 
 
     @Slot(int)
-    def slotJobWallTime(self):
+    def slotJobWallTime(self, v):
 
         h_cput = self.spinBoxDays.value()*24 + self.spinBoxHours.value()
         m_cput = self.spinBoxMinutes.value()
@@ -649,7 +649,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
 
 
     @Slot(int)
-    def slotClass(self):
+    def slotClass(self, v):
 
         self.jmdl.batch.params['job_class'] \
             = str(self.comboBoxClass.currentText())

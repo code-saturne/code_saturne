@@ -396,7 +396,7 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
                                                         field_name,
                                                         value)
 
-    @Slot()
+    @Slot(str)
     def slotSetSoilDensity(self, text):
         """
         """

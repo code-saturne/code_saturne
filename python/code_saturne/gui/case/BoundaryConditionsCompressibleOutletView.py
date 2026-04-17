@@ -140,7 +140,7 @@ class BoundaryConditionsCompressibleOutletView(QWidget, Ui_BoundaryConditionsCom
 
 
     @Slot(int)
-    def slotOutletType(self, text):
+    def slotOutletType(self, idx):
         """
         INPUT outlet type
         """

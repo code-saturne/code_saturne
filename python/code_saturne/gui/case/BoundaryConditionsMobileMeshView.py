@@ -175,11 +175,8 @@ class LineEditCoupling(Coupling):
         self.getWidget().setText(str(value))
 
 
-    # NOTE: using a decorated slot to connect to a signal is usually recommended,
-    # as it is slightly faster and uses less memory, but is causes a crash
-    # with PyQt5 (not PyQt4) when connecting to a signal from another class.
-
-    # @Slot(str)
+    
+    @Slot(str)
     def __slotTextChanged(self, text):
         """
         Update the model
@@ -227,9 +224,8 @@ class FormulaCoupling(Coupling):
         # call getter to create default value if needed
         self.getBoundaryDefinedValue()
 
-    # NOTE: as above, do not use decorator to avoid crash in PyQt5.
 
-    # @Slot(bool)
+    @Slot(bool)
     def __slotFormula(self, checked):
         """
         Run formula editor.

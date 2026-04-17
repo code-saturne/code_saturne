@@ -691,35 +691,39 @@ temperature = enthalpy / 1000;
         self.mdl.setPropertyMode(currentFluid, tag, choice)
 
 
-    @Slot()
-    def slotStateRho(self, text):
+    @Slot(int)
+    def slotStateRho(self, idx):
         """
         Method to call 'getState' with correct arguements for 'rho'
         """
+        text = self.comboBoxDensity.currentText()
         self.__changeChoice(str(text), 'Density', 'density')
 
 
-    @Slot()
-    def slotStateMu(self, text):
+    @Slot(int)
+    def slotStateMu(self, idx):
         """
         Method to call 'getState' with correct arguements for 'Mu'
         """
+        text = self.comboBoxViscosity.currentText()
         self.__changeChoice(str(text), 'Viscosity', 'molecular_viscosity')
 
 
-    @Slot()
-    def slotStateCp(self, text):
+    @Slot(int)
+    def slotStateCp(self, idx):
         """
         Method to call 'getState' with correct arguements for 'Cp'
         """
+        text = self.comboBoxSpecificHeat.currentText()
         self.__changeChoice(str(text), 'SpecificHeat', 'specific_heat')
 
 
-    @Slot()
-    def slotStateAl(self, text):
+    @Slot(int)
+    def slotStateAl(self, idx):
         """
         Method to call 'getState' with correct arguements for 'Al'
         """
+        text = self.comboBoxThermalConductivity.currentText()
         self.__changeChoice(str(text), 'ThermalConductivity', 'thermal_conductivity')
 
 
@@ -847,7 +851,7 @@ temperature = enthalpy / 1000;
             self.groupBoxConstantProperties.hide()
 
 
-    @Slot()
+    @Slot(str)
     def slotRho(self, text):
         """
         Update the density
@@ -858,7 +862,7 @@ temperature = enthalpy / 1000;
             self.mdl.setInitialValueDensity(fieldId, rho)
 
 
-    @Slot()
+    @Slot(str)
     def slotMu(self, text):
         """
         Update the molecular viscosity
@@ -869,7 +873,7 @@ temperature = enthalpy / 1000;
             self.mdl.setInitialValueViscosity(fieldId,mu)
 
 
-    @Slot()
+    @Slot(str)
     def slotCp(self, text):
         """
         Update the specific heat
@@ -880,7 +884,7 @@ temperature = enthalpy / 1000;
             self.mdl.setInitialValueHeat(fieldId,cp)
 
 
-    @Slot()
+    @Slot(str)
     def slotAl(self, text):
         """
         Update the thermal conductivity

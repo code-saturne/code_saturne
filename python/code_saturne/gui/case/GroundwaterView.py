@@ -174,7 +174,7 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
         self.mdl.setChemistryModel(scal, choice)
 
 
-    @Slot()
+    @Slot(str)
     def slotDecayRate(self, text):
         """
         """

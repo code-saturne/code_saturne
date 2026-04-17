@@ -336,7 +336,7 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
             self.__b.setElecScalarValue(self.potElecIm, self.potElecIm_type, value)
 
 
-    @Slot()
+    @Slot(str)
     def slotSpecies(self, var):
         """
         """

@@ -357,8 +357,9 @@ class QMegEditorView(QDialog, Ui_QMegDialog):
             block_format.clearBackground()
             cursor.setBlockFormat(block_format)
 
-    @Slot()
-    def _addOperator(self, _operator):
+    @Slot(int)
+    def _addOperator(self, idx):
+        _operator = self.comboBox_Insert.itemText(idx)
         self.textEditExpression.textCursor().insertText(_operator)
 
     def accept(self):

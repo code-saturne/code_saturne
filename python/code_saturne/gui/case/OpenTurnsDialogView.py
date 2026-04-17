@@ -249,7 +249,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.mdl.setDistWorkdir(text)
 
 
-    @Slot()
+    @Slot(int)
     def slotUpdateNodesNumber(self, v):
         """
         Update the number of required computation nodes
@@ -267,7 +267,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         n = int(self.spinBoxLocalProcs.text())
         self.mdl.setNprocs(n)
 
-    @Slot()
+    @Slot(int)
     def slotUpdateTasksNumber(self, v):
         """
         Update the number of required mpi tasks per node
@@ -277,7 +277,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.mdl.setClusterParams(ntasks=n)
 
 
-    @Slot()
+    @Slot(int)
     def slotUpdateThreadsNumber(self, v):
         """
         Update the number of required threads per processor
@@ -287,7 +287,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.mdl.setClusterParams(nthreads=n)
 
 
-    @Slot()
+    @Slot(int)
     def slotUpdateWCDays(self, v):
         """
         Update the wall clock days value
@@ -299,7 +299,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.mdl.setWallClockTime(d, h, m, s)
 
 
-    @Slot()
+    @Slot(int)
     def slotUpdateWCHours(self, v):
         """
         Update the wall clock hours value
@@ -311,7 +311,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.mdl.setWallClockTime(d, h, m, s)
 
 
-    @Slot()
+    @Slot(int)
     def slotUpdateWCMinutes(self, v):
         """
         Update the wall clock minutes value
@@ -323,7 +323,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.mdl.setWallClockTime(d, h, m, s)
 
 
-    @Slot()
+    @Slot(int)
     def slotUpdateWCSeconds(self, v):
         """
         Update the wall clock seconds value
@@ -335,7 +335,7 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         self.mdl.setWallClockTime(d, h, m, s)
 
 
-    @Slot()
+    @Slot(str)
     def slotUpdateWckey(self, text):
         """
         Update the WCKEY variable

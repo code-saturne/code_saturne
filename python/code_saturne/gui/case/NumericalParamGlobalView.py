@@ -270,7 +270,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             log.debug("slotRELAXP-> %s" % relaxp)
 
 
-    @Slot()
+    @Slot(str)
     def slotSRROM(self, text):
         """
         Set value for parameter SRROM

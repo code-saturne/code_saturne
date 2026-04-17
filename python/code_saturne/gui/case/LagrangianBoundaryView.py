@@ -297,7 +297,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             self.lineEditNbSets.setText("0")
             self.groupBoxNbSets.hide()
 
-    @Slot()
+    @Slot(int)
     def slotICLAS(self, iset):
         """
         Input ICLAS.
@@ -387,7 +387,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             rho = self.model.getDensityValue(label, self.iset)
             self.lineEditIROPT.setText(str(rho))
 
-    @Slot()
+    @Slot(str)
     def slotIJNBP(self, text):
         """
         Input IJNBP.
@@ -396,7 +396,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = int(text)
             self.model.setNumberOfParticulesInSetValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot()
+    @Slot(str)
     def slotIJFRE(self, text):
         """
         Input IJFRE.
@@ -405,7 +405,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = int(text)
             self.model.setInjectionFrequencyValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot()
+    @Slot(str)
     def slotICLST(self, text):
         """
         Input ICLST.
@@ -414,7 +414,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = int(text)
             self.model.setParticleGroupNumberValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot()
+    @Slot(str)
     def slotIDEBT(self, text):
         """
         Input IDEBT.
@@ -443,7 +443,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             weight = self.model.getStatisticalWeightValue(self.zone.getLabel(), self.iset)
             self.lineEditIPOIT.setText(str(weight))
 
-    @Slot()
+    @Slot(str)
     def slotIPOIT(self, text):
         """
         Input IPOIT.
@@ -452,7 +452,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, float)
             self.model.setStatisticalWeightValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot()
+    @Slot(str)
     def slotIROPT(self, text):
         """
         Input IROPT.
@@ -461,7 +461,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, float)
             self.model.setDensityValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot()
+    @Slot(str)
     def slotIRCOLM(self, text):
         """
         Input IRCOLM.
@@ -493,7 +493,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             self.lineEditIVPT.setText(str(vv))
             self.lineEditIWPT.setText(str(vw))
 
-    @Slot()
+    @Slot(str)
     def slotIUNO(self, text):
         """
         Input IUNO.
@@ -502,7 +502,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, float)
             self.model.setVelocityNormValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot()
+    @Slot(str)
     def slotIUPT(self, text):
         """
         Input IUPT.
@@ -511,7 +511,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, float)
             self.model.setVelocityDirectionValue(self.zone.getLabel(), self.iset, "x", value)
 
-    @Slot()
+    @Slot(str)
     def slotIVPT(self, text):
         """
         Input IVPT.
@@ -520,7 +520,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, float)
             self.model.setVelocityDirectionValue(self.zone.getLabel(), self.iset, "y", value)
 
-    @Slot()
+    @Slot(str)
     def slotIWPT(self, text):
         """
         Input IWPT.
@@ -544,7 +544,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
         else:
             self.frameTemperature.hide()
 
-    @Slot()
+    @Slot(str)
     def slotITPT(self, text):
         """
         Input ITPT.
@@ -553,7 +553,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, float)
             self.model.setTemperatureValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot()
+    @Slot(str)
     def slotICPT(self, text):
         """
         Input ICPT.
@@ -562,7 +562,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, float)
             self.model.setSpecificHeatValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot()
+    @Slot(str)
     def slotIEPSI(self, text):
         """
         Input IEPSI.
@@ -571,7 +571,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, float)
             self.model.setEmissivityValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot()
+    @Slot(str)
     def slotIDPT(self, text):
         """
         Input IDPT.
@@ -580,7 +580,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, float)
             self.model.setDiameterValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot()
+    @Slot(str)
     def slotIVDPT(self, text):
         """
         Input IVDPT.
@@ -589,7 +589,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = from_qvariant(text, float)
             self.model.setDiameterVarianceValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot()
+    @Slot(str)
     def slotINUCHL(self, text):
         """
         Input IHPT.
@@ -598,7 +598,7 @@ class LagrangianBoundaryView(QWidget, Ui_LagrangianBoundaryForm):
             value = int(text)
             self.model.setCoalNumberValue(self.zone.getLabel(), self.iset, value)
 
-    @Slot()
+    @Slot(str)
     def slotIHPT(self, text):
         """
         Input IHPT.
