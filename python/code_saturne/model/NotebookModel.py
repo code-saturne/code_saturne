@@ -338,14 +338,19 @@ class NotebookModel(Model):
         when reading a restart file.
         """
         if idx != None:
-            node = self.node_note.xmlInitChildNode("var", id = idx)
+            self._setVariableAttr(idx, 'restart', restart)
         elif var != None:
             node = self.node_note.xmlInitChildNode("var", name = var)
+            node['restart'] = restart
+
+            # If default value set the hidden value for cleanup
+            if restart == self.defaultNotebookValues()['restart']:
+                node["_{}".format('restart')] = restart
+            else:
+                node.xmlDelAttribute("_{}".format('restart'))
+
         else:
             raise Exception("No id or name were specified for setVariableRestart")
-
-        node['restart'] = restart
-
 
     @Variables.noUndo
     def getVariableLog(self, idx):

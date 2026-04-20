@@ -44,6 +44,8 @@ Release 9.1.1 (unreleased)
 
 - Fix `--mem-log` run option which was broken before release.
 
+- Notebook: fixes related to notebook variables properties (restart and logging)
+
 Release 9.1.0 (2025-12-30)
 --------------------------
 
