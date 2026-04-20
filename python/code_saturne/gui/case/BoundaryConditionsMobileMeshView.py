@@ -164,7 +164,7 @@ class LineEditCoupling(Coupling):
         # Add validator.
         validator = DoubleValidator(lineEdit)
         lineEdit.setValidator(validator)
-        lineEdit.textChanged[str].connect(self.__slotTextChanged)
+        lineEdit.textChanged[str].connect(lambda text: self._slotTextChanged(text))
 
 
     def onBoundarySet(self):
@@ -176,8 +176,7 @@ class LineEditCoupling(Coupling):
 
 
     
-    @Slot(str)
-    def __slotTextChanged(self, text):
+    def _slotTextChanged(self, text):
         """
         Update the model
         """
@@ -215,7 +214,7 @@ class FormulaCoupling(Coupling):
         elif getter == "getFluidForce":
             self.object_type = 'fluid_force'
 
-        button.clicked.connect(self.__slotFormula)
+        button.clicked.connect(lambda checked: self._slotFormula(checked))
 
     def onBoundarySet(self):
         """
@@ -226,7 +225,7 @@ class FormulaCoupling(Coupling):
 
 
     @Slot(bool)
-    def __slotFormula(self, checked):
+    def _slotFormula(self, checked):
         """
         Run formula editor.
         """
@@ -452,14 +451,14 @@ class BoundaryConditionsMobileMeshView(QWidget,
         self.__comboModel.addItem(self.tr("Fixed displacement"), "fixed_displacement")
         self.__comboModel.addItem(self.tr("Internal coupling"), "internal_coupling")
         self.__comboModel.addItem(self.tr("External coupling"), "external_coupling")
-        self.comboMobilBoundary.activated[int].connect(self.__slotCombo)
-        self.pushButtonMobilBoundary.clicked.connect(self.__slotFormula)
+        self.comboMobilBoundary.activated[int].connect(self._slotCombo)
+        self.pushButtonMobilBoundary.clicked.connect(self._slotFormula)
 
         # Combo model FSISOLVER
         self.__modelExtSOLVER = ComboModel(self.comboMobilExternalSolver, 2, 1)
         self.__modelExtSOLVER.addItem(self.tr("code_aster"), "code_aster")
         self.__modelExtSOLVER.addItem(self.tr("user"), "user")
-        self.comboMobilExternalSolver.activated[int].connect(self.__slotExtSolverType)
+        self.comboMobilExternalSolver.activated[int].connect(self._slotExtSolverType)
 
         # Coupling Manager
         self.__couplingManager = CouplingManager(self, case)
@@ -467,7 +466,7 @@ class BoundaryConditionsMobileMeshView(QWidget,
         self.case.undoStartGlobal()
 
     @Slot()
-    def __slotFormula(self):
+    def _slotFormula(self):
         """
         Run formula editor.
         """
@@ -521,7 +520,7 @@ class BoundaryConditionsMobileMeshView(QWidget,
             self.pushButtonMobilBoundary.setToolTip(result)
 
     @Slot(int)
-    def __slotExtSolverType(self, idx):
+    def _slotExtSolverType(self, idx):
         """
         Input External solver : code_aster or user.
         """
@@ -534,7 +533,7 @@ class BoundaryConditionsMobileMeshView(QWidget,
         self.__boundary.setALEExtSolver(solver)
 
     @Slot(int)
-    def __slotCombo(self, idx):
+    def _slotCombo(self, idx):
         """
         Called when the combobox changed.
         """
