@@ -41,6 +41,14 @@
 struct _cs_paramedmem_coupling_t;
 typedef struct _cs_paramedmem_coupling_t cs_paramedmem_coupling_t;
 
+#ifdef __cplusplus
+
+namespace cs {
+using paramedmem_coupling_t = cs_paramedmem_coupling_t;
+}
+
+#endif
+
 /*============================================================================
  *  Global variable definitions
  *============================================================================*/
