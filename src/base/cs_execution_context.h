@@ -148,14 +148,21 @@ class environment {
 public:
   environment()
   {
+    mpi = nullptr;
+    ctx = nullptr;
   }
 
   ~environment()
   {
+    if (mpi != nullptr)
+      delete mpi;
+
+    if (ctx != nullptr)
+      delete ctx;
   }
 
-  mpi_wrapper         mpi;
-  cs_dispatch_context g_ctx;
+  mpi_wrapper         *mpi;
+  cs_dispatch_context *ctx;
 };
 
 const environment *
@@ -446,6 +453,15 @@ cs_execution_context_glob_get_h_ctx(void);
 void
 cs_execution_default_env_init(void);
 
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize context (CPU/GPU)
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_execution_default_env_init_context(void);
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Free the global execution context pointer.
@@ -481,7 +497,8 @@ bool
 parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
   auto& _ctx = (_EXEC_ != exec_type::host) ?
     cs::execution::default_context() : cs::execution::default_h_context();
-  return _ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+  _ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+  return true;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -494,7 +511,8 @@ template <class F, class... Args>
 bool
 parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
   auto& _ctx = cs::execution::default_context();
-  return _ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+  _ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+  return true;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -506,7 +524,8 @@ parallel_for(cs_lnum_t n, F&& f, Args&&... args) {
 template <class F, class... Args>
 bool
 parallel_for(cs_dispatch_context& ctx, cs_lnum_t n, F&& f, Args&&... args) {
-  return ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+  ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+  return true;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -518,7 +537,8 @@ parallel_for(cs_dispatch_context& ctx, cs_lnum_t n, F&& f, Args&&... args) {
 template <class F, class... Args>
 bool
 parallel_for(cs_host_context& ctx, cs_lnum_t n, F&& f, Args&&... args) {
-  return ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+  ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+  return true;
 }
 
 // paralell_for_i_faces
@@ -535,7 +555,8 @@ parallel_for_i_faces(const M* m, F&& f, Args&&... args) {
   const cs_lnum_t n = m->n_i_faces;
   auto& _ctx = (_EXEC_ != exec_type::host) ?
     cs::execution::default_context() : cs::execution::default_h_context();
-  return _ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+  _ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+  return true;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -550,7 +571,8 @@ bool
 parallel_for_i_faces(const M* m, F&& f, Args&&... args) {
   const cs_lnum_t n = m->n_i_faces;
   auto& _ctx = cs::execution::default_context();
-  return _ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+  _ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+  return true;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -563,7 +585,8 @@ template <class M, class F, class... Args>
 bool
 parallel_for_i_faces(cs_dispatch_context& ctx, const M* m, F&& f, Args&&... args) {
   const cs_lnum_t n = m->n_i_faces;
-  return ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+  ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+  return true;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -576,7 +599,8 @@ template <class M, class F, class... Args>
 bool
 parallel_for_i_faces(cs_host_context& ctx, const M* m, F&& f, Args&&... args) {
   const cs_lnum_t n = m->n_i_faces;
-  return ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+  ctx.parallel_for(n, static_cast<F&&>(f), static_cast<Args&&>(args)...);
+  return true;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -596,10 +620,11 @@ parallel_for_reduce_sum(
 {
   auto& _ctx = (_EXEC_ != exec_type::host) ?
     cs::execution::default_context() : cs::execution::default_h_context();
-  return _ctx.parallel_for_reduce_sum(n,
-                                      sum,
-                                      static_cast<F&&>(f),
-                                      static_cast<Args&&>(args)...);
+  _ctx.parallel_for_reduce_sum(n,
+                               sum,
+                               static_cast<F&&>(f),
+                               static_cast<Args&&>(args)...);
+  return true;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -618,10 +643,11 @@ parallel_for_reduce_sum(
   Args&&... args)
 {
   auto& _ctx = cs::execution::default_context();
-  return _ctx.parallel_for_reduce_sum(n,
-                                      sum,
-                                      static_cast<F&&>(f),
-                                      static_cast<Args&&>(args)...);
+  _ctx.parallel_for_reduce_sum(n,
+                               sum,
+                               static_cast<F&&>(f),
+                               static_cast<Args&&>(args)...);
+  return true;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -640,10 +666,11 @@ parallel_for_reduce_sum(
   F&&                  f,
   Args&&...            args)
 {
-  return ctx.parallel_for_reduce_sum(n,
-                                     sum,
-                                     static_cast<F&&>(f),
-                                     static_cast<Args&&>(args)...);
+  ctx.parallel_for_reduce_sum(n,
+                              sum,
+                              static_cast<F&&>(f),
+                              static_cast<Args&&>(args)...);
+  return true;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -662,10 +689,11 @@ parallel_for_reduce_sum(
   F&&              f,
   Args&&...        args)
 {
-  return ctx.parallel_for_reduce_sum(n,
-                                     sum,
-                                     static_cast<F&&>(f),
-                                     static_cast<Args&&>(args)...);
+  ctx.parallel_for_reduce_sum(n,
+                              sum,
+                              static_cast<F&&>(f),
+                              static_cast<Args&&>(args)...);
+  return true;
 }
 
 // Parallel reduction with general reducer.
@@ -687,11 +715,12 @@ parallel_for_reduce (
 {
   auto& _ctx = (_EXEC_ != exec_type::host) ?
     cs::execution::default_context() : cs::execution::default_h_context();
-  return _ctx.parallel_for_reduce(n,
-                                  result,
-                                  reducer,
-                                  static_cast<F&&>(f),
-                                  static_cast<Args&&>(args)...);
+  _ctx.parallel_for_reduce(n,
+                           result,
+                           reducer,
+                           static_cast<F&&>(f),
+                           static_cast<Args&&>(args)...);
+  return true;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -711,11 +740,12 @@ parallel_for_reduce (
   Args&&... args)
 {
   auto& _ctx = cs::execution::default_context();
-  return _ctx.parallel_for_reduce(n,
-                                  result,
-                                  reducer,
-                                  static_cast<F&&>(f),
-                                  static_cast<Args&&>(args)...);
+  _ctx.parallel_for_reduce(n,
+                           result,
+                           reducer,
+                           static_cast<F&&>(f),
+                           static_cast<Args&&>(args)...);
+  return true;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -735,11 +765,12 @@ parallel_for_reduce (
   F&&                  f,
   Args&&...            args)
 {
-  return ctx.parallel_for_reduce(n,
-                                 result,
-                                 reducer,
-                                 static_cast<F&&>(f),
-                                 static_cast<Args&&>(args)...);
+  ctx.parallel_for_reduce(n,
+                          result,
+                          reducer,
+                          static_cast<F&&>(f),
+                          static_cast<Args&&>(args)...);
+  return true;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -759,11 +790,12 @@ parallel_for_reduce (
   F&&              f,
   Args&&...        args)
 {
-  return ctx.parallel_for_reduce(n,
-                                 result,
-                                 reducer,
-                                 static_cast<F&&>(f),
-                                 static_cast<Args&&>(args)...);
+  ctx.parallel_for_reduce(n,
+                          result,
+                          reducer,
+                          static_cast<F&&>(f),
+                          static_cast<Args&&>(args)...);
+  return true;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -779,7 +811,8 @@ wait(void)
 {
   auto& _ctx = (_EXEC_ != exec_type::host) ?
     cs::execution::default_context() : cs::execution::default_h_context();
-  return _ctx.wait();
+  _ctx.wait();
+  return true;
 }
 
 /*--------------------------------------------------------------------------*/
@@ -828,7 +861,8 @@ wait
   cs_host_context& ctx
 )
 {
-  return ctx.wait();
+  ctx.wait();
+  return true;
 }
 
 }

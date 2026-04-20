@@ -238,7 +238,7 @@ _run(void)
     cs_halo_set_buffer_alloc_mode(CS_ALLOC_HOST);
 
   /* Initialize execution context */
-  cs_execution_default_env_init();
+  cs_execution_default_env_init_context();
 
   cs_timer_stats_initialize();
   cs_timer_stats_define_defaults();

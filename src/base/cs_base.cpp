@@ -1425,6 +1425,7 @@ cs_base_mpi_init(int    *argc,
 
 #endif /* defined(HAVE_ACCEL) */
 
+  cs_execution_default_env_init();
 }
 
 /*----------------------------------------------------------------------------

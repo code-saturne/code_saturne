@@ -61,7 +61,7 @@ cs::execution::default_env(void)
 cs_dispatch_context&
 cs::execution::default_context(void)
 {
-  return _default_env->g_ctx;
+  return *(_default_env->ctx);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -71,15 +71,16 @@ cs::execution::default_context(void)
 cs_host_context&
 cs::execution::default_h_context(void)
 {
-  cs_host_context h_ctx = static_cast<cs_host_context>(_default_env->g_ctx);
+  cs_host_context h_ctx = static_cast<cs_host_context>(*(_default_env->ctx));
   return h_ctx;
 }
 
 cs::execution::mpi_wrapper&
 cs::execution::default_mpi(void)
 {
-  return _default_env->mpi;
+  return *(_default_env->mpi);
 }
+
 /*----------------------------------------------------------------------------*/
 /* Initialize the global execution context. */
 /*----------------------------------------------------------------------------*/
@@ -89,8 +90,19 @@ cs_execution_default_env_init(void)
 {
   _default_env = new cs::execution::environment();
 #if defined(HAVE_MPI)
-  _default_env->mpi.set_comm(cs_glob_mpi_comm);
+  _default_env->mpi = new cs_mpi_wrapper();
+  _default_env->mpi->set_comm(cs_glob_mpi_comm);
 #endif
+}
+
+/*----------------------------------------------------------------------------*/
+/* Initialize the global execution context.(CPU/GPU) */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_execution_default_env_init_context(void)
+{
+  _default_env->ctx = new cs_dispatch_context();
 }
 
 /*----------------------------------------------------------------------------*/
