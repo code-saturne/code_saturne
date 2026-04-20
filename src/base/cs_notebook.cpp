@@ -328,10 +328,10 @@ cs_notebook_load_from_file(void)
         restart = false;
 
     /* Editable values are printed by default */
-    bool log = editable;
+    bool log = false;
     if (c_log != nullptr)
-      if (strcmp(c_log, "No") == 0)
-        log = false;
+      if (strcmp(c_log, "Yes") == 0)
+        log = true;
 
     /* If the variable is uncertain then :
      * - an input cannot be modifed, hence editable = false
@@ -640,7 +640,7 @@ cs_notebook_log(void)
      in default log file. Also compute the maximum length of names */
   if (_max_size_name < 1)
     for (int i = 0; i < _n_entries; i++) {
-      log_needed = _entries[i]->log;
+      log_needed = log_needed || _entries[i]->log;
       _max_size_name = cs::max(_max_size_name, strlen(_entries[i]->name));
     }
 
