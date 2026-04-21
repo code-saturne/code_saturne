@@ -1584,7 +1584,7 @@ _check_cvg_nl(cs_param_nl_algo_t        nl_algo_type,
 
   if (nl_algo_type == CS_PARAM_NL_ALGO_ANDERSON) {
 
-    /* pg_* arrays gather pg and pb (this is done during the solve step) */
+    /* pa_* arrays gather pa and pb (this is done during the solve step) */
 
     cs_iter_algo_update_anderson(algo,
                                  pa_cur_iter, /* updated during the process */
@@ -3166,6 +3166,7 @@ cs_gwf_tpf_compute(const cs_mesh_t           *mesh,
 
     case CS_PARAM_NL_ALGO_PICARD:
     case CS_PARAM_NL_ALGO_MODIFIED_PICARD:
+    case CS_PARAM_NL_ALGO_ANDERSON:
       _compute_plpc_incr_mpicard(mesh, connect, cdoq, time_step,
                                  option_flag,
                                  tpf);
