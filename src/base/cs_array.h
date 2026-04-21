@@ -2217,6 +2217,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST
+  inline
   void
   copy_data
   (
@@ -2225,21 +2226,8 @@ public:
                                          If -1, default, we use array size */
   )
   {
-    const cs_lnum_t loop_size = (n_vals == -1) ? _span::_size : n_vals;
-
-    assert(loop_size <= _span::size());
-    assert(loop_size <= other.size());
-
-    // Explicit pointer, avoid passing internal member of class to the functor
-    T* data_ptr = _span::data();
-    T* o_data_ptr = other.data();
-
-    cs_dispatch_context ctx;
-
-    ctx.parallel_for(loop_size, CS_LAMBDA (cs_lnum_t e_id) {
-      data_ptr[e_id] = o_data_ptr[e_id];
-    });
-
+    auto& ctx = cs::execution::default_context();
+    copy_data(ctx, other, n_vals);
     ctx.wait();
   }
 

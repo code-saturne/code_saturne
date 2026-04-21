@@ -40,6 +40,7 @@
 #include "base/cs_defs.h"
 
 #include "base/cs_dispatch.h"
+#include "base/cs_execution_context.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -637,6 +638,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST
+  inline
   void set_to_val
   (
     T               val,        /*!<[in] Value to set to entire data array. */
@@ -644,19 +646,8 @@ public:
                                          If -1, default, we use array size */
   )
   {
-    assert(n_vals <= _size);
-
-    const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
-
-    // Explicit pointer, avoid passing internal member of class to the functor
-    T* data_ptr = _data;
-
-    cs_dispatch_context ctx;
-
-    ctx.parallel_for(loop_size, CS_LAMBDA (cs_lnum_t e_id) {
-      data_ptr[e_id] = val;
-    });
-
+    auto& ctx = cs::execution::default_context();
+    set_to_val(ctx, val, n_vals);
     ctx.wait();
   }
 
@@ -697,6 +688,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST
+  inline
   void set_to_val_on_subset
   (
     T               val,      /*!<[in] Value to set to entire data array. */
@@ -704,24 +696,8 @@ public:
     const cs_lnum_t elt_ids[] /*!<[in] list of ids in the subset or null (size:n_elts) */
   )
   {
-    assert(n_elts <= _size && n_elts >= 0);
-
-    if (n_elts < 1)
-      return;
-
-    cs_dispatch_context ctx;
-
-    if (elt_ids == nullptr)
-      set_to_val(ctx, val, n_elts);
-    else {
-      // Explicit pointer, avoid passing internal member of class to the functor
-      T* data_ptr = _data;
-
-      ctx.parallel_for(n_elts, CS_LAMBDA (cs_lnum_t e_id) {
-        data_ptr[elt_ids[e_id]] = val;
-      });
-    }
-
+    auto& ctx = cs::execution::default_context();
+    set_to_val_on_subset(ctx, val, n_elts, elt_ids);
     ctx.wait();
   }
 
@@ -766,18 +742,12 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST
+  inline
   void
   zero()
   {
-    cs_dispatch_context ctx;
-
-    // Explicit pointer, avoid passing internal member of class to the functor
-    T* data_ptr = _data;
-
-    ctx.parallel_for(_size, CS_LAMBDA (cs_lnum_t e_id) {
-      data_ptr[e_id] = static_cast<T>(0);
-    });
-
+    auto& ctx = cs::execution::default_context();
+    zero(ctx);
     ctx.wait();
   }
 
@@ -811,6 +781,7 @@ public:
 
   CS_F_HOST
   void
+  inline
   copy_data
   (
     const T         *data,       /*!<[in] Pointer to copy */
@@ -818,19 +789,8 @@ public:
                                           If -1, default, we use array size */
   )
   {
-    assert(n_vals <= _size);
-
-    const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
-
-    // Explicit pointer, avoid passing internal member of class to the functor
-    T* data_ptr = _data;
-
-    cs_dispatch_context ctx;
-
-    ctx.parallel_for(loop_size, CS_LAMBDA (cs_lnum_t e_id) {
-        data_ptr[e_id] = data[e_id];
-    });
-
+    auto& ctx = cs::execution::default_context();
+    copy_data(ctx, data, n_vals);
     ctx.wait();
   }
 
@@ -842,6 +802,7 @@ public:
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST
+  inline
   void
   copy_data
   (
@@ -850,21 +811,8 @@ public:
                                          If -1, default, we use array size */
   )
   {
-    const cs_lnum_t loop_size = (n_vals == -1) ? _size : n_vals;
-
-    assert(loop_size <= _size);
-    assert(loop_size <= other.size());
-
-    // Explicit pointer, avoid passing internal member of class to the functor
-    T* data_ptr = _data;
-    T* o_data_ptr = other._data;
-
-    cs_dispatch_context ctx;
-
-    ctx.parallel_for(loop_size, CS_LAMBDA (cs_lnum_t e_id) {
-      data_ptr[e_id] = o_data_ptr[e_id];
-    });
-
+    auto& ctx = cs::execution::default_context();
+    copy_data(ctx, other, n_vals);
     ctx.wait();
   }
 
