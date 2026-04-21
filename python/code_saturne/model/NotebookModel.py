@@ -344,8 +344,8 @@ class NotebookModel(Model):
             node['restart'] = restart
 
             # If default value set the hidden value for cleanup
-            if val == self.defaultNotebookValues()['restart']:
-                node["_{}".format('restart')] = val
+            if restart == self.defaultNotebookValues()['restart']:
+                node["_{}".format('restart')] = restart
             else:
                 node.xmlDelAttribute("_{}".format('restart'))
 
