@@ -1475,64 +1475,22 @@ public:
 
   /*--------------------------------------------------------------------------*/
   /*!
-   * \brief Constructor method using copy. May be a shallow copy.
-   *
-   * Important !
-   * The default mode is shallow copy, since we want for lambda captures
-   * to have a lightweight copy. Otherwise, with the deep copy as default,
-   * this may lead to segmentation faults and unnecessary allocations.
+   * \brief Constructor method using copy results in a shallow copy.
+   *        If a deep copy is needed, use "get_deep_copy" method!
    */
   /*--------------------------------------------------------------------------*/
 
   CS_F_HOST_DEVICE
   array
   (
-    const array&      other, /*!<[in] Reference of data array to copy */
-    bool        deep_copy=false, /*!<[in] Make a deep copy (owner) or not. */
-#if (defined(__GNUC__) || defined(__clang__)) && \
-  __has_builtin(__builtin_LINE) && \
-  __has_builtin(__builtin_FILE)
-    const char *file_name   = __builtin_FILE(), /*!<[in] Caller file (for log) */
-    const int   line_number = __builtin_LINE()  /*!<[in] Caller line (for log) */
-#else
-    const char *file_name   = __FILE__, /*!<[in] Caller file (for log) */
-    const int   line_number = __LINE__  /*!<[in] Caller line (for log) */
-#endif
+    const array& other /*!<[in] Reference of data array to copy */
   )
   :_span()
   {
     _span::set_size_(other._extent);
     _mode = other._mode;
-
-    /* If shallow copy new instance is not owner. Otherwise same ownership
-     * as original instance since we copy it.
-     */
-#if !defined(__CUDA_ARCH__) && \
-    !defined(SYCL_LANGUAGE_VERSION) && \
-    !defined(__HIP_DEVICE_COMPILE__)
-    _owner = deep_copy;
-#else
     _owner = false;
-#endif
-
-    if (_owner) {
-#if !defined(__CUDA_ARCH__) && \
-    !defined(SYCL_LANGUAGE_VERSION) && \
-    !defined(__HIP_DEVICE_COMPILE__)
-    // Only HOST can allocate and be owner. We avoid a compiler warning
-    // since a static test is done above.
-      allocate_(file_name, line_number);
-      copy_data(other.data());
-#else
-      CS_UNUSED(file_name);
-      CS_UNUSED(line_number);
-#endif
-    }
-    else {
-      CS_UNUSED(file_name);
-      CS_UNUSED(line_number);
-      _span::set_data_ptr(other.data());
-    }
+    _span::set_data_ptr(other.data());
   }
 
   /*--------------------------------------------------------------------------*/
