@@ -1073,9 +1073,9 @@ sum(T (&first)[N], Vals &&...values)
 
 template <typename T, int N, typename... Vals>
 static void
-sum(const cs_execution_context *ec, T (&first)[N], Vals &&...values)
+sum(const cs_mpi_wrapper& mpi_w, T (&first)[N], Vals &&...values)
 {
-  sum<N>(ec, first, std::forward<Vals>(values)...);
+  sum<N>(mpi_w, first, std::forward<Vals>(values)...);
 }
 
 /*----------------------------------------------------------------------------*/
