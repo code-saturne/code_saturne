@@ -253,7 +253,7 @@ cs_thermal_system_needs_navsto(void)
   if (cs_thermal_system == nullptr)
     return false;
 
-  if (cs_thermal_system->model & CS_THERMAL_MODEL_NAVSTO_ADVECTION)
+  if (cs_thermal_system->model & CS_THERMAL_MODEL_NAVSTO)
     return true;
   else
     return false;
@@ -293,12 +293,11 @@ cs_thermal_system_activate(cs_thermal_model_type_t model,
                            cs_flag_t               numeric,
                            cs_flag_t               post)
 {
-  cs_thermal_system_t *thm = nullptr;
-  if (cs_thermal_system == nullptr)
-    thm = _init_thermal_system();
-  else
-    thm = cs_thermal_system; /* Previously allocated when setting the
-                                reference temperature for instance */
+  if (cs_thermal_system != nullptr)
+    // Free the previous settings before applying the new one
+    cs_thermal_system_destroy();
+
+  cs_thermal_system_t *thm = _init_thermal_system();
 
   /* Set the physical model type */
 
@@ -358,11 +357,8 @@ cs_thermal_system_activate(cs_thermal_model_type_t model,
                          CS_BC_HMG_NEUMANN);
 
     /* TODO */
-    bft_error(__FILE__,
-              __LINE__,
-              0,
-              " %s: Not yet fully available.\n",
-              __func__);
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Not yet fully available.\n", __func__);
   }
   else { /* Default settings: use temperature as variable */
 
@@ -391,9 +387,14 @@ cs_thermal_system_activate(cs_thermal_model_type_t model,
 
   thm->thermal_eq = eq;
 
-  /* Add an advection term  */
+  ////////////////////
+  // ADVECTION TERM //
+  ////////////////////
 
-  if (thm->model & CS_THERMAL_MODEL_NAVSTO_ADVECTION) {
+  if (thm->model & CS_THERMAL_MODEL_NAVSTO) {
+
+    thm->model |= CS_THERMAL_MODEL_ADVECTION;
+
     cs_equation_add_advection(eqp, cs_advection_field_by_name("mass_flux"));
 
     /* Set the space discretization by default. One should be consistent with
@@ -404,21 +405,29 @@ cs_thermal_system_activate(cs_thermal_model_type_t model,
     cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "ocs");
     cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
 
-    if (thm->model & CS_THERMAL_MODEL_USE_TEMPERATURE) {
-      /* The formulation used for the thermal equation with temperature as main
-         unknown needs a non-conservative formulation of the advective term */
+  }
 
+  /* Add an advection term  */
+
+  if (thm->model & CS_THERMAL_MODEL_ADVECTION) {
+
+    /* The formulation used for the thermal equation with temperature as main
+       unknown needs a non-conservative formulation of the advective term */
+
+    if (thm->model & CS_THERMAL_MODEL_USE_TEMPERATURE) {
       cs_equation_add_advection_scaling_property(eqp, thm->cp);
       cs_equation_param_set(eqp, CS_EQKEY_ADV_FORMULATION, "non_conservative");
     }
 
     cs_equation_param_set(eqp, CS_EQKEY_ADV_SCHEME, "upwind");
+
   }
   else { /* Stand-alone i.e. not associated to the Navier--Stokes system */
 
     cs_equation_param_set(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
     cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "bubble");
     cs_equation_param_set(eqp, CS_EQKEY_HODGE_DIFF_COEF, "frac23");
+
   }
 
   /* Linear algebra default settings */
@@ -913,8 +922,10 @@ cs_thermal_system_log_setup(void)
   cs_log_printf(CS_LOG_SETUP, "  * Thermal | Model:");
   if (thm->model & CS_THERMAL_MODEL_STEADY)
     cs_log_printf(CS_LOG_SETUP, " Steady-state");
-  if (thm->model & CS_THERMAL_MODEL_NAVSTO_ADVECTION)
-    cs_log_printf(CS_LOG_SETUP, " + Navsto advection");
+  if (thm->model & CS_THERMAL_MODEL_ADVECTION)
+    cs_log_printf(CS_LOG_SETUP, " + Advection");
+  if (thm->model & CS_THERMAL_MODEL_NAVSTO)
+    cs_log_printf(CS_LOG_SETUP, " + Navier-Stokes");
   if (thm->model & CS_THERMAL_MODEL_ANISOTROPIC_CONDUCTIVITY)
     cs_log_printf(CS_LOG_SETUP, " + Anistropic conductivity");
   cs_log_printf(CS_LOG_SETUP, "\n");

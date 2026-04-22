@@ -77,9 +77,12 @@ typedef cs_flag_t  cs_thermal_model_type_t;
  * \def CS_THERMAL_MODEL_STEADY
  * \brief Disable the unsteady term of the thermal equation
  *
- * \def CS_THERMAL_MODEL_NAVSTO_ADVECTION
- * \brief Add an advection term arising from the velocity field (more precisely
- *        the mass flux) solution of the Navier-Stokes equations
+ * \def CS_THERMAL_MODEL_ADVECTION
+ * \brief Add an advection term to the thermal model
+ *
+ * \def CS_THERMAL_MODEL_NAVSTO
+ * \brief The thermal model is associated with the Navier-Stokes equations
+ *  (for instance the mass flux is the advection field)
  *
  * \def CS_THERMAL_MODEL_USE_TEMPERATURE
  * \brief The thermal equation solved using the temperature variable
@@ -102,19 +105,23 @@ typedef cs_flag_t  cs_thermal_model_type_t;
 typedef enum {
 
   CS_THERMAL_MODEL_STEADY                     = 1<<0,  /* =  1 */
-  CS_THERMAL_MODEL_NAVSTO_ADVECTION           = 1<<1,  /* =  2 */
+  CS_THERMAL_MODEL_ADVECTION                  = 1<<1,  /* =  2 */
+
+  /* Physical model associated with the thermal system */
+
+  CS_THERMAL_MODEL_NAVSTO                     = 1<<2,  /* =  4 */
 
   /* Main variable to consider (by default the temperature in Kelvin)
      ---------------------------------------------------------------- */
 
-  CS_THERMAL_MODEL_USE_TEMPERATURE            = 1<<2,  /* =  4 */
-  CS_THERMAL_MODEL_USE_ENTHALPY               = 1<<3,  /* =  8 */
-  CS_THERMAL_MODEL_USE_TOTAL_ENERGY           = 1<<4,  /* = 16 */
+  CS_THERMAL_MODEL_USE_TEMPERATURE            = 1<<3,  /* =  8 */
+  CS_THERMAL_MODEL_USE_ENTHALPY               = 1<<4,  /* = 16 */
+  CS_THERMAL_MODEL_USE_TOTAL_ENERGY           = 1<<5,  /* = 32 */
 
   /* Treatment of the diffusion term
      ------------------------------- */
 
-  CS_THERMAL_MODEL_ANISOTROPIC_CONDUCTIVITY   = 1<<5,  /* = 32 */
+  CS_THERMAL_MODEL_ANISOTROPIC_CONDUCTIVITY   = 1<<6,  /* = 64 */
 
   /* Additional bit settings
      ----------------------- */

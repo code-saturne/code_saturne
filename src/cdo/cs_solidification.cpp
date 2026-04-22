@@ -3323,7 +3323,7 @@ cs_solidification_activate(cs_solidification_model_t       model,
 
     ns_model_flag |=
       CS_NAVSTO_MODEL_BOUSSINESQ | CS_NAVSTO_MODEL_WITH_SOLIDIFICATION;
-    thm_model |= CS_THERMAL_MODEL_NAVSTO_ADVECTION;
+    thm_model |= CS_THERMAL_MODEL_NAVSTO;
 
     /* Add a property taking into account the head losses induced by the
        solidification process */

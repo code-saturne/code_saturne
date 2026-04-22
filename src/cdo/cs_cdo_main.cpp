@@ -163,9 +163,9 @@ _needs_solving_thermal(void)
 
   /* Is there an advection term arising from the Navier--Stokes ? */
 
-  if (thm_model & CS_THERMAL_MODEL_NAVSTO_ADVECTION)
+  if (cs_flag_test(thm_model, CS_THERMAL_MODEL_NAVSTO))
     return false; /* This is managed inside the function
-                     cs_navsto_system_compute_steady_state() */
+                     cs_navsto_system_compute_*() */
   else
     return true;
 }
