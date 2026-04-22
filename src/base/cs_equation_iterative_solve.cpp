@@ -2266,12 +2266,15 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
    * as the last increment has not been recontructed
    *==========================================================================*/
 
+  cs_real_6_t *c_weight_ani = (eqp->idften & CS_ISOTROPIC_DIFFUSION) ?
+                               nullptr : viscel;
+
   cs_boundary_conditions_update_bc_coeff_face_values
     (ctx, f, bc_coeffs, 1,
      eqp,
      true, true,
      false, nullptr, // hyd_p_flag, f_ext
-     (cs_real_t *)viscel, weighb,
+     (cs_real_t *)c_weight_ani, weighb,
      pvar);
 
   /*==========================================================================

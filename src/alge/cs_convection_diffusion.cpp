@@ -8364,15 +8364,17 @@ cs_face_anisotropic_diffusion_potential
     /* Periodicity and parallelism treatment of symmetric tensors */
     cs_halo_sync_r(halo, CS_HALO_STANDARD, on_device, viscce);
 
-    c_visc = (cs_real_t *)viscce;
-
     /* Allocate a work array for the gradient calculation */
     CS_MALLOC_HD(grad, n_cells_ext, cs_real_3_t, amode);
 
     if (eqp->rc_clip_factor >= 0)
       CS_MALLOC_HD(bounds, n_cells_ext, cs_real_2_t, cs_alloc_mode);
 
-    if (f != nullptr) {
+    /* Compute gradient */
+    if (eqp->iwgrec > 0) {
+      c_visc = (cs_real_t *)viscce;
+    }
+    else if (f != nullptr) {
       /* Get the calculation option from the field */
       if (f->type & CS_FIELD_VARIABLE) {
         if (eqp->idifft > 0) {
@@ -8399,7 +8401,7 @@ cs_face_anisotropic_diffusion_potential
      eqp,
      need_compute_bc_grad, need_compute_bc_flux,
      iphydp, frcxt,
-     c_visc,
+     (cs_real_t *)viscce,
      weighb,
      pvar);
 
@@ -8460,8 +8462,6 @@ cs_face_anisotropic_diffusion_potential
 
     /* Mass flow through interior faces */
 
-    cs_real_6_t *c_visc_t = (cs_real_6_t *)c_visc;
-
     ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
       cs_lnum_t ii = i_face_cells[face_id][0];
       cs_lnum_t jj = i_face_cells[face_id][1];
@@ -8475,15 +8475,15 @@ cs_face_anisotropic_diffusion_potential
       cs_real_t visci[3][3], viscj[3][3];
       cs_real_t diippf[3], djjppf[3];
 
-      visci[0][0] = c_visc_t[ii][0];
-      visci[1][1] = c_visc_t[ii][1];
-      visci[2][2] = c_visc_t[ii][2];
-      visci[1][0] = c_visc_t[ii][3];
-      visci[0][1] = c_visc_t[ii][3];
-      visci[2][1] = c_visc_t[ii][4];
-      visci[1][2] = c_visc_t[ii][4];
-      visci[2][0] = c_visc_t[ii][5];
-      visci[0][2] = c_visc_t[ii][5];
+      visci[0][0] = viscce[ii][0];
+      visci[1][1] = viscce[ii][1];
+      visci[2][2] = viscce[ii][2];
+      visci[1][0] = viscce[ii][3];
+      visci[0][1] = viscce[ii][3];
+      visci[2][1] = viscce[ii][4];
+      visci[1][2] = viscce[ii][4];
+      visci[2][0] = viscce[ii][5];
+      visci[0][2] = viscce[ii][5];
 
       cs_real_t bldfrp = (cs_real_t) ircflp;
       /* Local limitation of the reconstruction */
@@ -8501,15 +8501,15 @@ cs_face_anisotropic_diffusion_potential
                                   + visci[2][i]*i_face_u_normal[face_id][2]);
       }
 
-      viscj[0][0] = c_visc_t[jj][0];
-      viscj[1][1] = c_visc_t[jj][1];
-      viscj[2][2] = c_visc_t[jj][2];
-      viscj[1][0] = c_visc_t[jj][3];
-      viscj[0][1] = c_visc_t[jj][3];
-      viscj[2][1] = c_visc_t[jj][4];
-      viscj[1][2] = c_visc_t[jj][4];
-      viscj[2][0] = c_visc_t[jj][5];
-      viscj[0][2] = c_visc_t[jj][5];
+      viscj[0][0] = viscce[jj][0];
+      viscj[1][1] = viscce[jj][1];
+      viscj[2][2] = viscce[jj][2];
+      viscj[1][0] = viscce[jj][3];
+      viscj[0][1] = viscce[jj][3];
+      viscj[2][1] = viscce[jj][4];
+      viscj[1][2] = viscce[jj][4];
+      viscj[2][0] = viscce[jj][5];
+      viscj[0][2] = viscce[jj][5];
 
       /* FJ.Kj.S / ||Kj.S||^2 */
       cs_real_t fjkdvi_s = weighf[face_id][1] * i_face_surf[face_id];
@@ -9041,9 +9041,10 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
       CS_MALLOC_HD(bounds, n_cells_ext, cs_real_2_t, cs_alloc_mode);
 
     /* Compute gradient */
-    c_visc = (cs_real_t *)viscce;
-
-    if (f != nullptr) {
+    if (eqp->iwgrec > 0) {
+      c_visc = (cs_real_t *)viscce;
+    }
+    else if (f != nullptr) {
       /* Get the calculation option from the field */
       const cs_equation_param_t *eqp_f
         = cs_field_get_equation_param_const(f);
@@ -9072,7 +9073,7 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
      eqp,
      need_compute_bc_grad, need_compute_bc_flux,
      iphydp, frcxt,
-     c_visc,
+     (cs_real_t *)viscce,
      weighb,
      pvar);
 
@@ -9141,8 +9142,6 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
 
     /* Mass flow through interior faces */
 
-    cs_real_6_t *c_visc_t = (cs_real_6_t *)c_visc;
-
     ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
       cs_lnum_t ii = i_face_cells[face_id][0];
@@ -9162,15 +9161,15 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
 
       cs_real_t visci[3][3], viscj[3][3];
 
-      visci[0][0] = c_visc_t[ii][0];
-      visci[1][1] = c_visc_t[ii][1];
-      visci[2][2] = c_visc_t[ii][2];
-      visci[1][0] = c_visc_t[ii][3];
-      visci[0][1] = c_visc_t[ii][3];
-      visci[2][1] = c_visc_t[ii][4];
-      visci[1][2] = c_visc_t[ii][4];
-      visci[2][0] = c_visc_t[ii][5];
-      visci[0][2] = c_visc_t[ii][5];
+      visci[0][0] = viscce[ii][0];
+      visci[1][1] = viscce[ii][1];
+      visci[2][2] = viscce[ii][2];
+      visci[1][0] = viscce[ii][3];
+      visci[0][1] = viscce[ii][3];
+      visci[2][1] = viscce[ii][4];
+      visci[1][2] = viscce[ii][4];
+      visci[2][0] = viscce[ii][5];
+      visci[0][2] = viscce[ii][5];
 
       /* IF.Ki.S / ||Ki.S||^2 */
       cs_real_t fikdvi = weighf[face_id][0] * i_face_surf[face_id];
@@ -9186,15 +9185,15 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
                               + visci[2][i]*i_face_u_normal[face_id][2]);
       }
 
-      viscj[0][0] = c_visc_t[jj][0];
-      viscj[1][1] = c_visc_t[jj][1];
-      viscj[2][2] = c_visc_t[jj][2];
-      viscj[1][0] = c_visc_t[jj][3];
-      viscj[0][1] = c_visc_t[jj][3];
-      viscj[2][1] = c_visc_t[jj][4];
-      viscj[1][2] = c_visc_t[jj][4];
-      viscj[2][0] = c_visc_t[jj][5];
-      viscj[0][2] = c_visc_t[jj][5];
+      viscj[0][0] = viscce[jj][0];
+      viscj[1][1] = viscce[jj][1];
+      viscj[2][2] = viscce[jj][2];
+      viscj[1][0] = viscce[jj][3];
+      viscj[0][1] = viscce[jj][3];
+      viscj[2][1] = viscce[jj][4];
+      viscj[1][2] = viscce[jj][4];
+      viscj[2][0] = viscce[jj][5];
+      viscj[0][2] = viscce[jj][5];
 
       /* FJ.Kj.S / ||Kj.S||^2 */
       cs_real_t fjkdvi = weighf[face_id][1] * i_face_surf[face_id];
