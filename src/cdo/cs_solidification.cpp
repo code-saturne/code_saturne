@@ -4905,52 +4905,56 @@ cs_solidification_init_values(const cs_mesh_t              *mesh,
   const cs_real_t  cp0 = solid->cp->ref_value;
   const cs_real_t  rho0 = solid->mass_density->ref_value;
 
-  for (int i = 0; i < cs_volume_zone_n_zones(); i++) {
+  if (!cs_flag_test(solid->options, CS_SOLIDIFICATION_NO_VELOCITY_FIELD)) {
 
-    const cs_zone_t  *z = cs_volume_zone_by_id(i);
+    for (int i = 0; i < cs_volume_zone_n_zones(); i++) {
 
-    if (z->type & CS_VOLUME_ZONE_SOLID) /* permanent solid zone */
-      continue;
+      const cs_zone_t  *z = cs_volume_zone_by_id(i);
 
-    else { /* fluid/solid zone according to thermodynamics conditions */
-
-      if (z->n_elts == 0)
+      if (z->type & CS_VOLUME_ZONE_SOLID) /* permanent solid zone */
         continue;
 
-      if (solid->first_cell < 0)
-        solid->first_cell = z->elt_ids[0];
+      else { /* fluid/solid zone according to thermodynamics conditions */
 
-      else {
+        if (z->n_elts == 0)
+          continue;
 
-        cs_real_t  rho = cs_property_get_cell_value(z->elt_ids[0],
-                                                    time_step->t_cur,
-                                                    solid->mass_density);
+        if (solid->first_cell < 0)
+          solid->first_cell = z->elt_ids[0];
 
-        if (fabs(rho - rho0) > cs_math_zero_threshold)
-          bft_error(__FILE__, __LINE__, 0,
-                    "%s: A uniform value of the mass density in the"
-                    " solidification/melting area is assumed.\n"
-                    " Please check your settings.\n"
-                    " rho0= %5.3e and rho= %5.3e in zone %s\n",
-                    __func__, rho0, rho, z->name);
+        else {
 
-        cs_real_t  cp = cs_property_get_cell_value(z->elt_ids[0],
-                                                   time_step->t_cur,
-                                                   solid->cp);
+          cs_real_t  rho = cs_property_get_cell_value(z->elt_ids[0],
+                                                      time_step->t_cur,
+                                                      solid->mass_density);
 
-        if (fabs(cp - cp0) > cs_math_zero_threshold)
-          bft_error(__FILE__, __LINE__, 0,
-                    "%s: A uniform value of the Cp property in the"
-                    " solidification/melting area is assumed.\n"
-                    " Please check your settings.\n"
-                    " cp0= %5.3e and cp= %5.3e in zone %s\n",
-                    __func__, cp0, cp, z->name);
+          if (fabs(rho - rho0) > cs_math_zero_threshold)
+            bft_error(__FILE__, __LINE__, 0,
+                      "%s: A uniform value of the mass density in the"
+                      " solidification/melting area is assumed.\n"
+                      " Please check your settings.\n"
+                      " rho0= %5.3e and rho= %5.3e in zone %s\n",
+                      __func__, rho0, rho, z->name);
 
-      }
+          cs_real_t  cp = cs_property_get_cell_value(z->elt_ids[0],
+                                                     time_step->t_cur,
+                                                     solid->cp);
 
-    } /* solidification/melting zone */
+          if (fabs(cp - cp0) > cs_math_zero_threshold)
+            bft_error(__FILE__, __LINE__, 0,
+                      "%s: A uniform value of the Cp property in the"
+                      " solidification/melting area is assumed.\n"
+                      " Please check your settings.\n"
+                      " cp0= %5.3e and cp= %5.3e in zone %s\n",
+                      __func__, cp0, cp, z->name);
 
-  } /* Loop on volume zones */
+        }
+
+      } /* solidification/melting zone */
+
+    } /* Loop on volume zones */
+
+  } // There is a velocity field to solve
 
   switch (solid->model) {
 
