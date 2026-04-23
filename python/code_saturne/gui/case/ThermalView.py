@@ -275,7 +275,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
                 if self._current_particle_f_id == None:
                     self._current_particle_f_id = name
 
-            self.comboBoxEmissivity.activated[int].connect(self.slotEmissivityField)
+            self.comboBoxEmissivity.activated[str].connect(lambda text: self.slotEmissivityField(text))
 
             self.partRadiationModel = ThermalParticlesRadiationModel(self.case)
             self.__setParticlesRadiation__()
@@ -498,7 +498,6 @@ class ThermalView(QWidget, Ui_ThermalForm):
         self.browser.configureTree(self.case)
 
 
-    @Slot(str)
     def slotEmissivityField(self, text):
         """
         Update current field id for particles radiaitive model.
