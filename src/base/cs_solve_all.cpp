@@ -475,7 +475,7 @@ _solve_most(int              n_var,
   cs_real_t *theipb = nullptr;
   cs_real_t *visvdr = nullptr;
 
-  CS_MALLOC_HD(isostd, n_b_faces+1, int, cs_alloc_mode);
+  CS_MALLOC_HD(isostd, n_b_faces, int, cs_alloc_mode);
 
   cs_real_3_t *trava = nullptr;
   if (cs_glob_velocity_pressure_param->nterup > 1)

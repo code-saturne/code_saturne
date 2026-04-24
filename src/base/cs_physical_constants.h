@@ -62,6 +62,11 @@ typedef struct {
 
   int           ixyzp0;       /* indicator for filling of reference point for
                                  total pressure */
+  cs_lnum_t     p0_face_id;   /* id of the pressure reference face,
+                                 on rank p0_rank_id*/
+  int           p0_rank_id;   /* id of the rank containing the pressure
+                                 reference face*/
+  bool          have_std_outlet; /* indicator on the existence of outlet faces*/
   int           icp;          /* property index of the isobaric specific heat */
   int           icv;          /* property index of the isochoric specific
                                  heat */

@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_base.h"
+#include "base/cs_field.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -536,11 +537,22 @@ cs_atmo_z_ground_compute(void);
  *   \varia = \left(\dfrac{P_{sea}}{p_s}\right)^{R/C_p} \textrm{on the ground}
  *  \f]
  *  and Neumann elsewhere.
+ *
+ * \param[in,out] meteo_pressure total pressure field
+ * \param[in,out] meteo_p_hyd    hydrostatic pressure field
+ * \param[in]     potemp         potential temperature field
+ * \param[in,out] density        density field
+ * \param[in,out] temp           temperature field
+ *
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmo_hydrostatic_profiles_compute(void);
+cs_atmo_hydrostatic_profiles_compute(cs_field_t *meteo_pressure,
+                                     cs_field_t *meteo_p_hyd,
+                                     cs_field_t *potemp,
+                                     cs_field_t *density,
+                                     cs_field_t *temp);
 
 /*----------------------------------------------------------------------------*/
 /*!

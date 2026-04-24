@@ -4051,14 +4051,9 @@ cs_boundary_conditions_set_coeffs_init(void)
   if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >= 1)
     _specific_physical_model_bc_types(true, bc_type);
 
-  int *isostd;
-  CS_MALLOC_HD(isostd, n_b_faces+1, int, cs_alloc_mode);
-
   cs_boundary_conditions_type(true,
                               bc_type,
-                              isostd);
-
-  CS_FREE(isostd);
+                              nullptr); /* isostd, not used in init */
 
   /* Check the consistency of the BCs
      -------------------------------- */

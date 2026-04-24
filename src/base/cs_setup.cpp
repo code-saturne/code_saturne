@@ -2245,9 +2245,14 @@ _additional_fields_stage_2(void)
   }
 
   if (cs_glob_atmo_option->meteo_profile >= 2) {
-    cs_field_t *f = _add_variable_field("meteo_pressure",
-                                        "Meteo pressure",
-                                        1);
+
+    cs_field_t *f = _add_variable_field("algo:meteo_pressure_corrected",
+                            "algo:meteo_pressure_corrected",
+                            1);
+
+    cs_field_set_key_int(f, keyvis, 0);
+    cs_field_set_key_int(f, keylog, 0);
+    cs_field_set_key_str(f, keylbl, "algo:meteo_pressure_corrected");
 
     cs_equation_param_t *eqp = cs_field_get_equation_param(f);
     eqp->iconv = 0;
@@ -2267,6 +2272,11 @@ _additional_fields_stage_2(void)
     eqp->idften = 1;
     eqp->relaxv = 1.; // No relaxation, even for steady algorithm
     eqp->theta = 1;
+
+    _add_property_field("meteo_pressure",
+                        "Meteo pressure",
+                        1,
+                        false);
 
     _add_property_field("meteo_density",
                         "Meteo density",

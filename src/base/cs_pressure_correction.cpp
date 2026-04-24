@@ -143,7 +143,7 @@ static cs_pressure_correction_cdo_t *cs_pressure_correction_cdo = nullptr;
  *
  * \param[in]      m                pointer to glob mesh
  * \param[in]      mq               pointer to glob mesh quantiites
- * \param[out]     indhyd           indicateur de mise a jour de cvar_hydro_pres
+ * \param[out]     need_update           indicateur de mise a jour de cvar_hydro_pres
  * \param[in]      iterns           Navier-Stokes iteration number
  * \param[in]      frcxt            external force generating hydrostatic pressure
  * \param[in]      dfrcxt           external force increment
@@ -158,33 +158,38 @@ static cs_pressure_correction_cdo_t *cs_pressure_correction_cdo = nullptr;
  */
 /*----------------------------------------------------------------------------*/
 
-static void
-_hydrostatic_pressure_compute(const cs_mesh_t       *m,
-                              cs_mesh_quantities_t  *mq,
-                              int                   *indhyd,
-                              int                    iterns,
-                              const cs_real_t        frcxt[][3],
-                              const cs_real_t        dfrcxt[][3],
-                              cs_real_t              cvar_hydro_pres[],
-                              cs_real_t              iflux[],
-                              cs_real_t              bflux[],
-                              cs_real_t              i_visc[],
-                              cs_real_t              b_visc[],
-                              cs_real_t              dphi[],
-                              cs_real_t              rhs[])
+void
+cs_hydrostatic_pressure_compute(const cs_mesh_t       *m,
+                                cs_mesh_quantities_t  *mq,
+                                int                   *need_update,
+                                int                    iterns,
+                                const cs_real_t        frcxt[][3],
+                                const cs_real_t        dfrcxt[][3],
+                                cs_field_t             *f,
+                                cs_real_t              iflux[],
+                                cs_real_t              bflux[],
+                                cs_real_t              i_visc[],
+                                cs_real_t              b_visc[],
+                                cs_real_t              dphi[],
+                                cs_real_t              rhs[])
 {
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_b_faces = m->n_b_faces;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t *b_face_cells = m->b_face_cells;
 
+  const cs_real_3_t *b_face_cog = mq->b_face_cog;
+  const cs_real_3_t *cell_cen = mq->cell_cen;
+
+  const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
   int *c_disable_flag = mq->c_disable_flag;
   cs_lnum_t has_dc = mq->has_disable_flag;
 
   const int ksinfo = cs_field_key_id("solving_info");
-  cs_field_t *f = cs_field_by_name_try("hydrostatic_pressure");
+  cs_real_t *cvar_hydro_pres = f->val;
   cs_solving_info_t *sinfo =
     static_cast<cs_solving_info_t*>(cs_field_get_key_struct_ptr(f, ksinfo));
-  const cs_equation_param_t *eqp_pr = cs_field_get_equation_param_const(f);
+  cs_equation_param_t *eqp_pr = cs_field_get_equation_param(f);
 
   cs_dispatch_context ctx, ctx_c;
 #if defined(HAVE_CUDA)
@@ -222,7 +227,7 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
 
     cs_parall_counter(&ical_g, 1);
     if (ical_g == 0) {
-      *indhyd = 0;
+      *need_update = 0;
       return;
     }
   }
@@ -232,7 +237,7 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
                "    updating the Dirichlets at the end"
                " (_hydrostatic_pressure_compute)\n");
 
-  *indhyd = 1;
+  *need_update = 1;
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
@@ -270,21 +275,51 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
   /* Prepare matrix and boundary conditions
      -------------------------------------- */
 
+  /* To solve hydrostatic pressure:
+   * 0 on reference face, homogeneous Neumann everywhere else
+   * TODO: generalise; this behaviour only applies to atmo for now...
+   */
+
+  eqp_pr->ndircl = 0;
+
   ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
 
-    /* Neumann BC (qimp=0 --> a=af=bf=0, b=1) */
+    cs_real_t hint = 1. / mq->b_dist[face_id];
+    bool is_atmo = cs_glob_physical_model_flag[CS_ATMOSPHERIC] > 0;
 
-    // Gradient BCs
-    coefa_hp[face_id] = 0.;
-    coefb_hp[face_id] = 1.;
+    if (   is_atmo
+        && cs_glob_rank_id == fluid_props->p0_rank_id
+        && face_id         == fluid_props->p0_face_id) {
 
-    // Flux BCs
-    cofaf_hp[face_id] = 0.;
-    cofbf_hp[face_id] = 0.;
+      cs_real_t pimp = 0;
+      cs_boundary_conditions_set_dirichlet_scalar(coefa_hp[face_id],
+                                                  cofaf_hp[face_id],
+                                                  coefb_hp[face_id],
+                                                  cofbf_hp[face_id],
+                                                  pimp,
+                                                  hint,
+                                                  cs_math_big_r);
+      eqp_pr->ndircl = 1;
+
+    } else {
+
+      /* Neumann BC (qimp=0 --> a=af=bf=0, b=1) */
+
+      // Gradient BCs
+      coefa_hp[face_id] = 0.;
+      coefb_hp[face_id] = 1.;
+
+      // Flux BCs
+      cofaf_hp[face_id] = 0.;
+      cofbf_hp[face_id] = 0.;
+
+    }
 
   });
 
   ctx_c.wait();
+
+  cs_parall_max(1, CS_INT_TYPE, &(eqp_pr->ndircl));
 
   cs_face_viscosity(m,
                     mq,
@@ -303,7 +338,7 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
                            f,
                            eqp_pr->iconv,
                            eqp_pr->idiff,
-                           0,     // ndircp
+                           eqp_pr->ndircl,
                            eqp_pr->theta,
                            1,     // relaxp
                            0,
@@ -438,6 +473,34 @@ _hydrostatic_pressure_compute(const cs_mesh_t       *m,
                "@\n", eqp_pr->nswrsm);
 
   /* For logging */
+
+  // TODO: this renormalisation could be fully replace by a Dirichlet at
+  //       p0_face_id
+  cs_real_t phydr0 = 0;
+  ctx.parallel_for_reduce_sum
+    (1, phydr0, [=] CS_F_HOST_DEVICE(cs_lnum_t i,
+    CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+
+      cs_lnum_t f_id_0 = fluid_props->p0_face_id;
+      if (fluid_props->p0_rank_id == cs_glob_rank_id) {
+        cs_lnum_t c_id_0 = b_face_cells[f_id_0];
+        cs_real_t d[3] = {b_face_cog[f_id_0][0] - cell_cen[c_id_0][0],
+                          b_face_cog[f_id_0][1] - cell_cen[c_id_0][1],
+                          b_face_cog[f_id_0][2] - cell_cen[c_id_0][2]};
+        sum +=   cvar_hydro_pres[c_id_0]
+               + d[0] * (dfrcxt[c_id_0][0] + frcxt[c_id_0][0])
+               + d[1] * (dfrcxt[c_id_0][1] + frcxt[c_id_0][1])
+               + d[2] * (dfrcxt[c_id_0][2] + frcxt[c_id_0][2]);
+      }
+     });
+
+  ctx.wait();
+  cs_parall_sum(1, CS_REAL_TYPE, &phydr0);  /* > 0 only on one rank */
+
+  /* Rescale cvar_hydro_pres so that it is 0 on the reference face */
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+    cvar_hydro_pres[c_id] -= phydr0;
+  });
 
   sinfo->res_norm = 0;
   if (fabs(rnorm) > 0)
@@ -888,21 +951,48 @@ _pressure_correction_fv(int                   iterns,
   /* Compute a pseudo hydrostatic pressure increment stored
      in cvar_hydro_pres(.) with Homogeneous Neumann BCs everywhere. */
 
-  int indhyd = 0;
+  int need_update = 0;
+  bool is_atmo = (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > 0);
+  bool context_compute_p_hydro =    vp_param->iphydr == 1
+                                 && vp_param->icalhy == 1
+                                 && (   fluid_props->have_std_outlet
+                                     || open_bcs_flag !=0);
 
-  if (vp_param->iphydr == 1 && vp_param->icalhy == 1) {
+  cs_atmo_option_t *at_opt =   is_atmo
+                             ? cs_glob_atmo_option
+                             : nullptr;
 
-    int ifcsor = isostd[n_b_faces];
-    cs_parall_max(1, CS_INT_TYPE, &ifcsor);
+  if (   context_compute_p_hydro
+      && at_opt != nullptr
+      && at_opt->meteo_profile > 1){
+    int nt_cur  = cs_glob_domain->time_step->nt_cur;
+    int nt_prev = cs_glob_domain->time_step->nt_prev;
+    bool is_first_step = (nt_cur == nt_prev+1);
 
-    /* This computation is needed only if there are outlet faces */
+    // depending of at_opt->meteo_profile, hydrostatic pressure is computed:
+    // - only at first step if at_opt->meteo_profile = 2 or 3
+    // - at every step      if at_opt->meteo_profile = 4
 
-    if (ifcsor > -1 || open_bcs_flag != 0)
-      _hydrostatic_pressure_compute(m, fvq,
-                                    &indhyd, iterns,
-                                    frcxt, dfrcxt, cvar_hydro_pres,
-                                    iflux, bflux, i_visc, b_visc,
-                                    dphi, rhs);
+    if (   is_first_step
+        || at_opt->meteo_profile == 4) {
+    cs_field_t *meteo_pressure = cs_field_by_name("meteo_pressure");
+    cs_field_t *meteo_potemp = cs_field_by_name("meteo_pot_temperature");
+    cs_field_t *meteo_density = cs_field_by_name("meteo_density");
+    cs_field_t *meteo_temp = cs_field_by_name("meteo_temperature");
+    cs_atmo_hydrostatic_profiles_compute(meteo_pressure,
+                                         f_hp,
+                                         meteo_potemp,
+                                         meteo_density,
+                                         meteo_temp);
+    need_update = 1;
+    }
+  } else if (context_compute_p_hydro){
+
+    cs_hydrostatic_pressure_compute(m, fvq,
+                            &need_update, iterns,
+                            frcxt, dfrcxt, f_hp,
+                            iflux, bflux, i_visc, b_visc,
+                            dphi, rhs);
   }
 
   /* Compute the BCs for the pressure increment
@@ -913,42 +1003,9 @@ _pressure_correction_fv(int                   iterns,
 
   if (vp_param->iphydr == 1 || vp_param->iifren == 1) {
 
-    cs_real_t phydr0 = 0.;
-
-    if (f_hp != nullptr && indhyd == 1) {
-
-      /* Use parallel reducer with a single value per rank,
-         so as to be able to access device-only arrays on GPU. */
-      ctx.parallel_for_reduce_sum
-        (1, phydr0, [=] CS_F_HOST_DEVICE(cs_lnum_t i,
-         CS_DISPATCH_REDUCER_TYPE(double) &sum) {
-
-        cs_lnum_t f_id_0 = isostd[n_b_faces];
-        if (f_id_0 > -1 && i == 0) {
-          cs_lnum_t c_id_0 = b_face_cells[f_id_0];
-          cs_real_t d[3] = {b_face_cog[f_id_0][0] - cell_cen[c_id_0][0],
-                            b_face_cog[f_id_0][1] - cell_cen[c_id_0][1],
-                            b_face_cog[f_id_0][2] - cell_cen[c_id_0][2]};
-          sum +=   cvar_hydro_pres[c_id_0]
-                 + d[0] * (dfrcxt[c_id_0][0] + frcxt[c_id_0][0])
-                 + d[1] * (dfrcxt[c_id_0][1] + frcxt[c_id_0][1])
-                 + d[2] * (dfrcxt[c_id_0][2] + frcxt[c_id_0][2]);
-        }
-      });
-
-      ctx.wait();
-      cs_parall_sum(1, CS_REAL_TYPE, &phydr0);  /* > 0 only on one rank */
-
-      /* Rescale cvar_hydro_pres so that it is 0 on the reference face */
-      ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-        cvar_hydro_pres[c_id] -= phydr0;
-      });
-
-    }
-
     /* If hydrostatic pressure increment or free entrance Inlet. */
 
-    if (indhyd == 1 || vp_param->iifren == 1) {
+    if (need_update == 1 || vp_param->iifren == 1) {
 
       const int idften = eqp_p->idften;
       const int *auto_flag = cs_glob_bc_pm_info->iautom;
@@ -1022,7 +1079,7 @@ _pressure_correction_fv(int                   iterns,
 
           }
 
-          if (indhyd == 1) {
+          if (need_update == 1) {
             if (f_hp != nullptr) {
               coefa_dp[f_id] =   cvar_hydro_pres[c_id]
                                - cvar_hydro_pres_prev[c_id];
@@ -1081,7 +1138,7 @@ _pressure_correction_fv(int                   iterns,
 
       }); /* End of loop on boundary faces */
 
-    }  /* if (indhyd == 1 || vp_param->iifren == 1) */
+    }  /* if (need_update == 1 || vp_param->iifren == 1) */
 
   } /* if (vp_param->iphydr == 1 && vp_param->iifren == 1) */
 
@@ -1139,7 +1196,6 @@ _pressure_correction_fv(int                   iterns,
         cpro_cp = CS_F_(cp)->val;
       if (fluid_props->icv >= 0)
         cpro_cv = cs_field_by_name("isobaric_heat_capacity")->val;
-
 
       /* Get mass fractions if needed */
       if (ieos == CS_EOS_MOIST_AIR) {
@@ -2514,7 +2570,6 @@ _pressure_correction_fv(int                   iterns,
                                               weighf, weighb,
                                               imasfl, bmasfl);
     }
-
 
     /* The last increment is not reconstructed so as to fulfill exactly
        the continuity equation (see theory guide). The value of dfrcxt has
