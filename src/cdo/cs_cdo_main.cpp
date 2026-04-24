@@ -159,11 +159,9 @@ _needs_solving_thermal(void)
   if (cs_thermal_system_is_activated() == false)
     return false;
 
-  cs_flag_t  thm_model = cs_thermal_system_get_model();
+  /* Is thermal system coupled with the Navier--Stokes equations ? */
 
-  /* Is there an advection term arising from the Navier--Stokes ? */
-
-  if (cs_flag_test(thm_model, CS_THERMAL_MODEL_NAVSTO))
+  if (cs_thermal_system_needs_navsto())
     return false; /* This is managed inside the function
                      cs_navsto_system_compute_*() */
   else
