@@ -180,9 +180,11 @@ _set_key(cs_equation_param_t *eqp,
     break;
 
   case CS_EQKEY_ADV_FORMULATION:
-    if (strcmp(keyval, "conservative") == 0)
+    if (strcmp(keyval, "conservative") == 0 ||
+        strcmp(keyval, "divergence") == 0)
       eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
-    else if (strcmp(keyval, "non_conservative") == 0)
+    else if (strcmp(keyval, "non_conservative") == 0 ||
+             strcmp(keyval, "gradient") == 0)
       eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_NONCONS;
     else if (strcmp(keyval, "skew_symmetric") == 0)
       eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_SKEWSYM;
