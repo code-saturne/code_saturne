@@ -53,9 +53,13 @@
  * @{
  */
 
-/*!  1: Perform the computation and post-processing of the Courant number */
+/*!
+  1: No post-processing of the advection field(s)
+  2: Perform the computation and post-processing of the Courant number
+*/
 
-#define CS_ADVECTION_FIELD_POST_COURANT (1 << 0)
+#define CS_ADVECTION_FIELD_POST_NONE    (1 << 0)
+#define CS_ADVECTION_FIELD_POST_COURANT (1 << 1)
 
 /*! @} */
 

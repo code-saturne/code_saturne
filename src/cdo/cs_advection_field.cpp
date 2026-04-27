@@ -655,9 +655,13 @@ cs_advection_field_log_setup(void)
       cs_log_printf(
         CS_LOG_SETUP, "  * %s | Time status: Unsteady\n", adv->name);
 
+    if (adv->post_flag & CS_ADVECTION_FIELD_POST_NONE)
+      cs_log_printf(CS_LOG_SETUP,
+                    "  * %s | No postprocessing of the adv. field\n",
+                    adv->name);
     if (adv->post_flag & CS_ADVECTION_FIELD_POST_COURANT)
-      cs_log_printf(
-        CS_LOG_SETUP, "  * %s | Postprocess the Courant number\n", adv->name);
+      cs_log_printf(CS_LOG_SETUP,
+                    "  * %s | Postprocess the Courant number\n", adv->name);
 
     /* Where fields are defined */
 
@@ -711,7 +715,7 @@ cs_advection_field_log_setup(void)
 
 void
 cs_advection_field_set_postprocess(cs_adv_field_t *adv,
-                                   cs_flag_t      post_flag)
+                                   cs_flag_t       post_flag)
 {
   if (adv == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_adv));
@@ -1167,6 +1171,7 @@ cs_advection_field_create_fields(void)
 
         adv->cell_field_id = cs_field_id_by_name("velocity");
         assert(adv->cell_field_id > -1);
+
       }
       else {
 
@@ -1183,11 +1188,14 @@ cs_advection_field_create_fields(void)
                                           has_previous);
 
         cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
-        cs_field_set_key_int(fld, cs_field_key_id("post_vis"), 1);
+
+        if (!cs_flag_test(adv->post_flag, CS_ADVECTION_FIELD_POST_NONE))
+          cs_field_set_key_int(fld, cs_field_key_id("post_vis"), 1);
 
         adv->cell_field_id = cs_field_id_by_name(field_name);
 
         CS_FREE(field_name);
+
       }
 
     } /* Add a field at cells */
@@ -1208,7 +1216,9 @@ cs_advection_field_create_fields(void)
                                         has_previous);
 
       cs_field_set_key_int(fld, cs_field_key_id("log"), 1);
-      cs_field_set_key_int(fld, cs_field_key_id("post_vis"), 1);
+
+      if (!cs_flag_test(adv->post_flag, CS_ADVECTION_FIELD_POST_NONE))
+        cs_field_set_key_int(fld, cs_field_key_id("post_vis"), 1);
 
       adv->vtx_field_id = cs_field_id_by_name(field_name);
 
