@@ -415,10 +415,17 @@ cs_thermal_system_activate(cs_thermal_model_type_t model,
        unknown needs a non-conservative formulation of the advective term */
 
     if (thm->model & CS_THERMAL_MODEL_USE_TEMPERATURE) {
-      cs_equation_add_advection_scaling_property(eqp, thm->cp);
-      cs_equation_param_set(eqp, CS_EQKEY_ADV_FORMULATION, "non_conservative");
+
+      if (thm->model & CS_THERMAL_MODEL_NAVSTO)
+        cs_equation_add_advection_scaling_property(eqp, thm->cp);
+      else {
+        assert(thm->unsteady_property != nullptr);
+        cs_equation_add_advection_scaling_property(eqp, thm->unsteady_property);
+      }
+
     }
 
+    cs_equation_param_set(eqp, CS_EQKEY_ADV_FORMULATION, "non_conservative");
     cs_equation_param_set(eqp, CS_EQKEY_ADV_SCHEME, "upwind");
 
   }
