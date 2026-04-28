@@ -239,7 +239,7 @@ class FormatWriterDelegate(QItemDelegate):
 
     def setModelData(self, comboBox, model, index):
         value = comboBox.currentText()
-        selectionModel = self.parent.selectionModel()
+        selectionModel = self.parent_widget.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
                 model.setData(idx, value)
@@ -306,7 +306,7 @@ class TypeMeshDelegate(QItemDelegate):
 
     def setModelData(self, comboBox, model, index):
         value = comboBox.currentText()
-        selectionModel = self.parent.selectionModel()
+        selectionModel = self.parent_widget.selectionModel()
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
                 model.setData(idx, value)
