@@ -96,7 +96,7 @@
 
   The multigrid solver is based on an aggregation approach, with optional
   relaxation parameter.
-  
+
   The idea behind the relaxation is that for an unstructured finite volume
   approach on arbitrary shaped cells, it is possible to improve the scaled
   Galerkin approach based on piecewise constant interpolation for the R0

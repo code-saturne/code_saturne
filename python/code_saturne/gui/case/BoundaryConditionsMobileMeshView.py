@@ -175,7 +175,7 @@ class LineEditCoupling(Coupling):
         self.getWidget().setText(str(value))
 
 
-    
+
     def _slotTextChanged(self, text):
         """
         Update the model
