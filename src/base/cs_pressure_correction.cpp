@@ -926,10 +926,30 @@ _pressure_correction_fv(int                   iterns,
     iflux[f_id] = 0.;
   });
 
+  /* For not staggered scheme, CL(dp) = CL(p|_n^{n+1} - CL(p^n) */
   if (vp_param->staggered == 0) {
     ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-      coefa_dp[f_id] = 0.;
-      coefaf_dp[f_id] = 0.;
+      coefa_dp[f_id] = -coefa_p[f_id];
+      coefaf_dp[f_id] = 0;
+      coefb_dp[f_id] = coefb_p[f_id];
+      coefbf_dp[f_id] = coefbf_p[f_id];
+      bflux[f_id] = 0.;
+    });
+  }
+
+  ctx.wait();
+  ctx_c.wait();
+
+  /* Update pressure boundary condition coeffs for time stpe [n->n+1]
+   * and update increment of pressure coeffs
+   *
+   * Now CL(dp) = CL(p|_n^{n+1} - CL(p^n) */
+  cs_boundary_conditions_set_coeffs_pressure(f_p, bc_coeffs_p);
+
+  if (vp_param->staggered == 0) {
+    ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+      coefa_dp[f_id] += coefa_p[f_id];
+      coefaf_dp[f_id] = 0;
       coefb_dp[f_id] = coefb_p[f_id];
       coefbf_dp[f_id] = coefbf_p[f_id];
       bflux[f_id] = 0.;
@@ -1081,7 +1101,7 @@ _pressure_correction_fv(int                   iterns,
 
           if (need_update == 1) {
             if (f_hp != nullptr) {
-              coefa_dp[f_id] =   cvar_hydro_pres[c_id]
+              coefa_dp[f_id] +=   cvar_hydro_pres[c_id]
                                - cvar_hydro_pres_prev[c_id];
             }
             coefa_dp[f_id] += cs_math_3_distance_dot_product(cell_cen[c_id],
