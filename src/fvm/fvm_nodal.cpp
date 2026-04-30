@@ -435,7 +435,7 @@ _renumber_vertices(fvm_nodal_t  *this_nodal)
     if (this_nodal->parent_vertex_id != nullptr) {
       for (size_t i = 0; i < section->connectivity_size; i++) {
         cs_lnum_t vertex_num
-          = this_nodal->parent_vertex_id[section->vertex_num[i]] + 1;
+          = this_nodal->parent_vertex_id[section->vertex_num[i] - 1] + 1;
         if (vertex_num > max_vertex_num)
           max_vertex_num = vertex_num;
       }
