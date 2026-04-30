@@ -2422,12 +2422,13 @@ _convection_diffusion_scalar_unsteady
           i_flux[face_id][0] += diff_contrib;
           i_flux[face_id][1] += diff_contrib;
         }
-
-        if (ii < n_cells)
-          cs_dispatch_sum(&rhs[ii], -fluxi, i_sum_type);
-        if (jj < n_cells)
-          cs_dispatch_sum(&rhs[jj],  fluxj, i_sum_type);
       }
+
+      if (ii < n_cells)
+        cs_dispatch_sum(&rhs[ii], -fluxi, i_sum_type);
+      if (jj < n_cells)
+        cs_dispatch_sum(&rhs[jj],  fluxj, i_sum_type);
+
     });
 
   /* --> Flux with slope test
