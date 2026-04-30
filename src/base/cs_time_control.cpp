@@ -173,15 +173,26 @@ cs_time_control_is_active(cs_time_control_t     *tc,
         break;
 
       case CS_TIME_CONTROL_TIME:
-        {
-          double  delta_t = ts->t_cur - tc->last_t;
-          if (   delta_t >= tc->interval_t*(1-1e-6)
-              && tc->interval_t > 0)
+        if (tc->interval_t > 0) {
+          double delta_t = ts->t_cur - tc->last_t;
+          /* Ensure output is not spaced more than required interval
+             (avoid missing output when time step varies) */
+          if (delta_t >= tc->interval_t * (1. + 1e-6))
             retval = true;
+
+          /* Try to align output with frequency */
+          else {
+            double dt = ts->dt[0];
+            double tp =   ts->t_cur
+                        - tc->interval_t*floor(ts->t_cur/tc->interval_t);
+            if (tp < dt && tp < (ts->t_cur - tc->last_t))
+              retval = true;
+          }
           if (tc->start_t > ts->t_cur)
             retval = false;
           if (tc->end_t >= 0 && tc->end_t < ts->nt_cur)
             retval = false;
+
         }
         break;
 
