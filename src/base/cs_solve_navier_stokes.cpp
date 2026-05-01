@@ -3726,7 +3726,8 @@ cs_solve_navier_stokes(const int        iterns,
 
   cs_dispatch_context ctx, ctx_c;
 #if defined(HAVE_CUDA)
-  ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
+  if (ctx.use_gpu())
+    ctx_c.set_stream(cs_cuda_get_stream(1));
 #endif
 
   const bool on_device = ctx.use_gpu();

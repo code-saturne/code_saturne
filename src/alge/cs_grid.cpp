@@ -6767,7 +6767,7 @@ _compute_coarse_quantities_msr(const cs_grid_t  *fine_grid,
  *
  * \param[in]       f              fine grid structure
  * \param[in, out]  c              coarse grid structure
- * \param[in, out]  ctx             reference to dispatch context
+ * \param[in, out]  ctx            reference to dispatch context
  * \param[in]       f_row_index    fine matrix row index
  * \param[in]       f_col_id       fine matrix column ids
  * \param[in]       f_d_val        fine matrix diagonal values

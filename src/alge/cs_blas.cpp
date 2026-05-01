@@ -51,6 +51,12 @@
 
 #include "alge/cs_blas.h"
 
+#if defined(HAVE_CUDA)
+#include "alge/cs_blas_cuda.h"
+#elif defined(HAVE_HIP)
+#include "alge/cs_blas_hip.h"
+#endif
+
 /*=============================================================================
  * Additional doxygen documentation
  *============================================================================*/
@@ -1374,7 +1380,7 @@ cs_axpy(cs_dispatch_context  &ctx,
     const unsigned int blocksize = 256;  // try 640 also
     unsigned int gridsize = cs_cuda_grid_size(n, blocksize);
 
-    _axpy<<<gridsize, blocksize, 0, ctx.cuda_stream()>>>(n, a, x, y);
+    _axpy<<<gridsize, blocksize, 0, ctx.stream()>>>(n, a, x, y);
 #else
     cs_device_context &d_ctx = static_cast<cs_device_context&>(ctx);
     d_ctx.parallel_for(n, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
@@ -1625,6 +1631,16 @@ cs_dot(cs_dispatch_context   &ctx,
        const cs_real_t       *x,
        const cs_real_t       *y)
 {
+#if defined(HAVE_ACCEL)
+  if (ctx.use_gpu()) {
+#   if defined(HAVE_CUDA)
+    return cs_blas_cuda_dot(ctx.stream(), n, x, y);
+#   elif defined(HAVE_HIP)
+    return cs_blas_hip_dot(ctx.stream(), n, x, y);
+#   endif
+  }
+#endif
+
   return _cs_glob_dot(n, x, y);
 }
 
@@ -1663,10 +1679,20 @@ cs_dot(cs_lnum_t         n,
 /*----------------------------------------------------------------------------*/
 
 double
-cs_dot_xx(cs_dispatch_context  &ctx,
-          cs_lnum_t             n,
-          const cs_real_t      *x)
+cs_dot_xx([[maybe_unused]] cs_dispatch_context  &ctx,
+          cs_lnum_t                              n,
+          const cs_real_t                       *x)
 {
+#if defined(HAVE_ACCEL)
+  if (ctx.use_gpu()) {
+#   if defined(HAVE_CUDA)
+    return cs_blas_cuda_dot(ctx.stream(), n, x, x);
+#   elif defined(HAVE_HIP)
+    return cs_blas_hip_dot(ctx.stream(), n, x, x);
+#   endif
+  }
+#endif
+
   return _cs_glob_dot_xx(n, x);
 }
 

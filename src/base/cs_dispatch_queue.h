@@ -262,13 +262,13 @@ public:
 #if defined(__CUDACC__)
     cudaStream_t new_stream;
     cudaStreamCreate(&new_stream);
-    context_.set_cuda_stream(new_stream);
-    cudaEventRecord(~start_event, context_.cuda_stream());
+    context_.set_stream(new_stream);
+    cudaEventRecord(~start_event, context_.stream());
 #elif defined(__HIPCC__)
     hipStream_t new_stream;
     hipStreamCreate(&new_stream);
-    context_.set_cuda_stream(new_stream);
-    hipEventRecord(~start_event, context_.hip_stream());
+    context_.set_stream(new_stream);
+    hipEventRecord(~start_event, context_.stream());
 #else
     ~start_event = std::chrono::steady_clock::now();
 #endif
@@ -279,9 +279,9 @@ public:
   add_dependency(cs_event_ref event)
   {
 #if defined(__CUDACC__)
-    cudaStreamWaitEvent(context_.cuda_stream(), ~event);
+    cudaStreamWaitEvent(context_.stream(), ~event);
 #elif defined(__HIPCC__)
-    hipStreamWaitEvent(context_.hip_stream(), ~event);
+    hipStreamWaitEvent(context_.stream(), ~event);
 #endif
   }
 
@@ -309,9 +309,9 @@ public:
   record_end_event()
   {
 #if defined(__CUDACC__)
-    cudaEventRecord(~end_event, context_.cuda_stream());
+    cudaEventRecord(~end_event, context_.stream());
 #elif defined(__HIPCC__)
-    hipEventRecord(~end_event, context_.hip_stream());
+    hipEventRecord(~end_event, context_.stream());
 #else
     ~end_event = std::chrono::steady_clock::now();
 #endif
@@ -347,9 +347,9 @@ public:
   {
     context_.wait();
 #if defined(__CUDACC__)
-    cudaStreamDestroy(context_.cuda_stream());
+    cudaStreamDestroy(context_.stream());
 #elif defined(__HIPCC__)
-    hipStreamDestroy(context_.hip_stream());
+    hipStreamDestroy(context_.stream());
 #endif
   }
 };
@@ -415,7 +415,7 @@ public:
 
       // Async launch on the task's own stream
       return cudaLaunchHostFunc
-        (get_context().cuda_stream(),
+        (get_context().stream(),
          // Wrapper lambda: unwraps the parameter passed as a void* pointer
          // to invoke the host function
          [](void *data_tuple_ptr) -> void {
@@ -437,7 +437,7 @@ public:
 
       // Async launch on the task's own stream
       return hipLaunchHostFunc
-        (get_context().hip_stream(),
+        (get_context().stream(),
          // Wrapper lambda: unwraps the parameter passed as a void* pointer
          // to invoke the host function
          [](void *data_tuple_ptr) -> void {

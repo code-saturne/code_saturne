@@ -998,13 +998,8 @@ cs_boundary_conditions_set_coeffs(int         nvar,
   cs_equation_param_t *eqp_vel = cs_field_get_equation_param(vel);
 
   cs_real_3_t *b_stress   = nullptr;
-  const cs_real_6_t *dttens = nullptr;
 
   /* Pointers to specific fields */
-
-  cs_field_t *f_dttens  = cs_field_by_name_try("dttens");
-  if (f_dttens != nullptr)
-    dttens = (const cs_real_6_t *)f_dttens->val;
 
   cs_field_t *f_b_stress = cs_field_by_name_try("boundary_stress");
 
@@ -3735,7 +3730,6 @@ void
 cs_boundary_conditions_set_coeffs_init(void)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;;
-  const cs_lnum_t n_b_faces   = mesh->n_b_faces;
   const cs_lnum_t n_vertices  = mesh->n_vertices;
   const cs_real_3_t *vtx_coord = (const cs_real_3_t *)mesh->vtx_coord;
 

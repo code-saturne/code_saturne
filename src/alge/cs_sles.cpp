@@ -679,9 +679,17 @@ _needs_solving(const  char        *name,
   const cs_lnum_t diag_block_size = cs_matrix_get_diag_block_size(a);
   const cs_lnum_t n_rows = cs_matrix_get_n_rows(a) * diag_block_size;
 
-  double r[2] = {cs_dot_xx(n_rows, rhs), 0};
+  cs_dispatch_context ctx;
+#if defined(HAVE_ACCEL)
+  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
+  if (amode == CS_ALLOC_HOST) {
+    ctx.set_use_gpu(false);
+  }
+#endif
+
+  double r[2] = {cs_dot_xx(ctx, n_rows, rhs), 0};
   if (vx_ini != nullptr)
-    r[1] = cs_dot_xx(n_rows, vx_ini);
+    r[1] = cs_dot_xx(ctx, n_rows, vx_ini);
   cs_parall_sum(2, CS_DOUBLE, r);
 
   /* If the initial solution is "true" zero (increment mode), we can determine

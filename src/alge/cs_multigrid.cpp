@@ -2735,96 +2735,21 @@ _setup_k_cycle_hpc_sub(cs_multigrid_t     *mg,
 }
 
 /*----------------------------------------------------------------------------
- * Compute dot product, summing result over all ranks.
- *
- * parameters:
- *   mg <-- pointer to solver context info
- *   n  <-- local number of elements
- *   x  <-- vector in s = x.x
- *
- * returns:
- *   result of s = x.x
- *----------------------------------------------------------------------------*/
-
-inline static double
-_dot_xx(const cs_multigrid_t  *mg,
-        cs_lnum_t              n,
-        const cs_real_t       *x)
-{
-  double s = -1;
-
-#if defined(__CUDACC__)
-
-  bool use_gpu = false;
-  {
-    const cs_multigrid_setup_data_t *mgd = mg->setup_data;
-    const cs_matrix_t *a = cs_grid_get_matrix(mgd->grid_hierarchy[0]);
-    if (cs_matrix_get_alloc_mode(a) > CS_ALLOC_HOST)
-      use_gpu = true;
-  }
-
-  if (use_gpu) {
-    cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
-    if (stream == 0)
-      stream = cs_cuda_get_stream(0);
-    s = cs_blas_cuda_dot(stream, n, x, x);
-  }
-  else
-    s = cs_dot_xx(n, x);
-
-#elif defined(__HIPCC__)
-
-  bool use_gpu = false;
-  {
-    const cs_multigrid_setup_data_t *mgd = mg->setup_data;
-    const cs_matrix_t *a = cs_grid_get_matrix(mgd->grid_hierarchy[0]);
-    if (cs_matrix_get_alloc_mode(a) > CS_ALLOC_HOST)
-      use_gpu = true;
-  }
-
-  if (use_gpu) {
-    hipStream_t stream = cs_matrix_spmv_hip_get_stream();
-    if (stream == 0) {
-      stream = cs_hip_get_stream(0);
-    }
-    s = cs_blas_hip_dot(stream, n, x, x);
-  }
-  else
-    s = cs_dot_xx(n, x);
-
-#else
-
-  s = cs_dot_xx(n, x);
-
-#endif
-
-#if defined(HAVE_MPI)
-
-  if (mg->comm != MPI_COMM_NULL) {
-    double _sum;
-    MPI_Allreduce(&s, &_sum, 1, MPI_DOUBLE, MPI_SUM, mg->comm);
-    s = _sum;
-  }
-
-#endif /* defined(HAVE_MPI) */
-
-  return s;
-}
-
-/*----------------------------------------------------------------------------
  * Compute 2 dot products x.x and y.y, summing result over all ranks.
  *
  * parameters:
- *   mg <-- pointer to solver context info
- *   n  <-- number of associated values
- *   x  <-- vector in s1 = x.x
- *   y  <-- vector in s2 = y.y
- *   s1 --> result of s1 = x.x
- *   s2 --> result of s2 = y.y
+ *   mg  <-- pointer to solver context info
+ *   ctx <-> reference to dispatch context
+ *   n   <-- number of associated values
+ *   x   <-- vector in s1 = x.x
+ *   y   <-- vector in s2 = y.y
+ *   s1  --> result of s1 = x.x
+ *   s2  --> result of s2 = y.y
  *----------------------------------------------------------------------------*/
 
 inline static void
 _dot_xx_yy(const cs_multigrid_t  *mg,
+           cs_dispatch_context   &ctx,
            cs_lnum_t              n,
            const cs_real_t       *x,
            const cs_real_t       *y,
@@ -2833,19 +2758,13 @@ _dot_xx_yy(const cs_multigrid_t  *mg,
 {
   double s[2];
 
-  s[0] = cs_dot_xx(n, x);
-  s[1] = cs_dot_xx(n, y);
+  s[0] = cs_dot_xx(ctx, n, x);
+  s[1] = cs_dot_xx(ctx, n, y);
 
 #if defined(HAVE_MPI)
-
-  if (mg->comm != MPI_COMM_NULL) {
-    double _sum[2];
-    MPI_Allreduce(s, _sum, 2, MPI_DOUBLE, MPI_SUM, mg->comm);
-    s[0] = _sum[0];
-    s[1] = _sum[1];
-  }
-
-#endif /* defined(HAVE_MPI) */
+  if (mg->comm != MPI_COMM_NULL)
+    MPI_Allreduce(MPI_IN_PLACE, s, 2, MPI_DOUBLE, MPI_SUM, mg->comm);
+#endif
 
   *s1 = s[0];
   *s2 = s[1];
@@ -2945,6 +2864,7 @@ _dot_xu_xv_xw(const cs_multigrid_t  *mg,
  *
  * parameters:
  *   mg               <-- associated multigrid structure
+ *   ctx              <-> reference to dispatch context
  *   var_name         <-- variable name
  *   n_f_rows         <-- number of rows on fine mesh
  *   n_max_cycles     <-- maximum number of cycles
@@ -2964,6 +2884,7 @@ _dot_xu_xv_xw(const cs_multigrid_t  *mg,
 
 static cs_sles_convergence_state_t
 _convergence_test(cs_multigrid_t        *mg,
+                  cs_dispatch_context   &ctx,
                   const char            *var_name,
                   cs_lnum_t              n_f_rows,
                   int                    n_max_cycles,
@@ -2994,7 +2915,13 @@ _convergence_test(cs_multigrid_t        *mg,
 
   /* Compute residual */
 
-  *residual = sqrt(_dot_xx(mg, n_f_rows, rhs));
+  double r2 = cs_dot_xx(ctx, n_f_rows, rhs);
+#if defined(HAVE_MPI)
+  if (mg->comm != MPI_COMM_NULL)
+    MPI_Allreduce(MPI_IN_PLACE, &r2, 1, MPI_DOUBLE, MPI_SUM, mg->comm);
+#endif
+
+  *residual = sqrt(r2);
 
   if (cycle_id == 1)
     initial_residual = *residual;
@@ -3340,11 +3267,11 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
 #if defined(HAVE_CUDA)
       cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
       if (stream != 0)
-        ctx.set_cuda_stream(stream);
+        ctx.set_stream(stream);
 #elif defined(HAVE_HIP)
       hipStream_t stream = cs_matrix_spmv_hip_get_stream();
       if (stream != 0)
-        ctx.set_hip_stream(stream);
+        ctx.set_stream(stream);
 #endif
       cs_matrix_vector_multiply_d(_matrix, vx_lv, wr);
     }
@@ -3363,6 +3290,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
     if (level == 0) {
 
       cvg = _convergence_test(mg,
+                              ctx,
                               lv_names[0],
                               _n_rows,
                               mg->info.n_max_cycles,
@@ -3805,11 +3733,11 @@ _multigrid_v_cycle_pc(cs_multigrid_t        *mg,
 #if defined(HAVE_CUDA)
       cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
       if (stream != 0)
-        ctx.set_cuda_stream(stream);
+        ctx.set_stream(stream);
 #elif defined(HAVE_HIP)
       hipStream_t stream = cs_matrix_spmv_hip_get_stream();
       if (stream != 0)
-        ctx.set_hip_stream(stream);
+        ctx.set_stream(stream);
 #endif
       cs_matrix_vector_multiply_d(_matrix, vx_lv, wr);
     }
@@ -3976,11 +3904,11 @@ _multigrid_v_cycle_pc(cs_multigrid_t        *mg,
 #if defined(HAVE_CUDA)
         cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
         if (stream != 0)
-          ctx.set_cuda_stream(stream);
+          ctx.set_stream(stream);
 #elif defined(HAVE_HIP)
         hipStream_t stream = cs_matrix_spmv_hip_get_stream();
         if (stream != 0)
-          ctx.set_hip_stream(stream);
+          ctx.set_stream(stream);
 #endif
         if (amode_p == CS_ALLOC_HOST)
           cs_prefetch_h2d(vx_lv1, _n_rows*sizeof(cs_real_t));
@@ -4195,14 +4123,14 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
 # if defined(HAVE_CUDA)
   cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
   if (stream != 0) {
-    ctx_f.set_cuda_stream(stream);
-    ctx_c.set_cuda_stream(stream);
+    ctx_f.set_stream(stream);
+    ctx_c.set_stream(stream);
   }
 #elif defined(HAVE_HIP)
   hipStream_t stream = cs_matrix_spmv_hip_get_stream();
   if (stream != 0) {
-    ctx_f.set_hip_stream(stream);
-    ctx_c.set_hip_stream(stream);
+    ctx_f.set_stream(stream);
+    ctx_c.set_stream(stream);
   }
 # endif
 #endif
@@ -4271,6 +4199,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
 
     if (c_cvg >= CS_SLES_BREAKDOWN)
       cvg = _convergence_test(mg,
+                              ctx_f,
                               lv_names[0],
                               f_n_rows*db_size,
                               mg->info.n_max_cycles,
@@ -4374,13 +4303,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
     cs_real_t *restrict v_lv1 = mgd->rhs_vx[(level+1)*na + 6];
     cs_real_t *restrict rt_lv1 = mgd->rhs_vx[(level+1)*na + 7];
 
-#if defined(HAVE_ACCEL)
-    if (c_use_gpu) {
-      cs_matrix_vector_multiply_d(c_matrix, vx_lv1, rt_lv1);
-    }
-    else
-#endif
-      cs_matrix_vector_multiply(c_matrix, vx_lv1, v_lv1);
+    cs_matrix_vector_multiply(ctx_c, c_matrix, vx_lv1, v_lv1);
 
     /* Coefficients for the Krylov iteration */
 
@@ -4395,8 +4318,10 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
 
     cs_real_t  rt_lv1_norm = 1.0, r_lv1_norm = 0.0;
 
-    if (trsh > 0)
-      _dot_xx_yy(mg, _c_n_rows, rt_lv1, rhs_lv1, &rt_lv1_norm, &r_lv1_norm);
+    if (trsh > 0) {
+      _dot_xx_yy(mg, ctx_c, _c_n_rows, rt_lv1, rhs_lv1,
+                 &rt_lv1_norm, &r_lv1_norm);
+    }
 
     /* Free (unmap) arrays that were needed only for the descent phase */
     rhs_lv1 = nullptr;
@@ -4438,13 +4363,8 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
 
       t1 = cs_timer_time();
 
-#if defined(HAVE_ACCEL)
-      if (c_use_gpu) {
-        cs_matrix_vector_multiply_d(c_matrix, vx2_lv1, w_lv1);
-      }
-      else
-#endif
-        cs_matrix_vector_multiply(c_matrix, vx2_lv1, w_lv1);
+      cs_matrix_vector_multiply(ctx_c, c_matrix, vx2_lv1, w_lv1);
+      ctx_c.wait();
 
       /* Krylov iteration */
 

@@ -340,10 +340,10 @@ cs_face_viscosity(const cs_mesh_t               *m,
 
   cs_dispatch_context ctx, ctx_b;
 #if defined(HAVE_CUDA)
-  ctx_b.set_cuda_stream(cs_cuda_get_stream(1));
+  ctx_b.set_stream(cs_cuda_get_stream(1));
 #endif
 #if defined(HAVE_HIP)
-  ctx_b.set_hip_stream(cs_hip_get_stream(1));
+  ctx_b.set_stream(cs_hip_get_stream(1));
 #endif
 
   /* Porosity field */
@@ -513,10 +513,10 @@ cs_face_anisotropic_viscosity_vector(const cs_mesh_t             *m,
   /* Parallel or device dispatch */
   cs_dispatch_context ctx, ctx_c;
 #if defined(HAVE_CUDA)
-  ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
+  ctx_c.set_stream(cs_cuda_get_stream(1));
 #endif
 #if defined(HAVE_HIP)
-  ctx_c.set_hip_stream(cs_hip_get_stream(1));
+  ctx_c.set_stream(cs_hip_get_stream(1));
 #endif
 
   cs_real_6_t *c_poro_visc = nullptr;
@@ -752,10 +752,10 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
   /* Parallel or device dispatch */
   cs_dispatch_context ctx, ctx_c;
 #if defined(HAVE_CUDA)
-  ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
+  ctx_c.set_stream(cs_cuda_get_stream(1));
 #endif
 #if defined(HAVE_HIP)
-  ctx_c.set_hip_stream(cs_hip_get_stream(1));
+  ctx_c.set_stream(cs_hip_get_stream(1));
 #endif
 
   short *i_clip = nullptr, *b_clip = nullptr;

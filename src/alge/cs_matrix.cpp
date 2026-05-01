@@ -4160,11 +4160,11 @@ cs_matrix_vector_multiply([[maybe_unused]] cs_dispatch_context  &ctx,
 
 #if defined(HAVE_CUDA)
     cudaStream_t prev_stream = cs_matrix_spmv_cuda_get_stream();
-    cs_matrix_spmv_cuda_set_stream(ctx.cuda_stream());
+    cs_matrix_spmv_cuda_set_stream(ctx.stream());
 #endif
 #if defined(HAVE_HIP)
     hipStream_t prev_stream = cs_matrix_spmv_hip_get_stream();
-    cs_matrix_spmv_hip_set_stream(ctx.hip_stream());
+    cs_matrix_spmv_hip_set_stream(ctx.stream());
 #endif
 
     if (matrix->halo != nullptr)
@@ -4247,11 +4247,11 @@ cs_matrix_vector_multiply_partial
 
 #if defined(HAVE_CUDA)
     cudaStream_t prev_stream = cs_matrix_spmv_cuda_get_stream();
-    cs_matrix_spmv_cuda_set_stream(ctx.cuda_stream());
+    cs_matrix_spmv_cuda_set_stream(ctx.stream());
 #endif
 #if defined(HAVE_HIP)
     hipStream_t prev_stream = cs_matrix_spmv_hip_get_stream();
-    cs_matrix_spmv_hip_set_stream(ctx.hip_stream());
+    cs_matrix_spmv_hip_set_stream(ctx.stream());
 #endif
 
     if (matrix->halo != nullptr)

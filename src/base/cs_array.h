@@ -244,11 +244,7 @@ cs_arrays_set_value(cs_dispatch_context  &ctx,
 
 #if defined (__CUDACC__) || defined (__HIPCC__)
   if (ctx.use_gpu()) {
-#if defined (__CUDACC__)
-    cudaStream_t stream_ = ctx.cuda_stream();
-#else
-    hipStream_t stream_ = ctx.hip_stream();
-#endif
+    cs_stream_t stream_ = ctx.stream();
     cs_arrays_set_value<T, stride>(stream_,
                                    true,
                                    n_elts,
@@ -307,11 +303,7 @@ cs_arrays_set_value(cs_dispatch_context  &ctx,
 
 #if defined (__CUDACC__) || defined (__HIPCC__)
   if (ctx.use_gpu()) {
-#if defined (__CUDACC__)
-    cudaStream_t stream_ = ctx.cuda_stream();
-#else
-    hipStream_t stream_ = ctx.hip_stream();
-#endif
+    cs_stream_t stream_ = ctx.stream();
     cs_arrays_set_value<T, stride>(stream_,
                                    true,
                                    n_elts,
@@ -369,11 +361,7 @@ cs_arrays_set_zero(cs_dispatch_context  &ctx,
 
 #if defined (__CUDACC__) || defined (__HIPCC__)
   if (ctx.use_gpu()) {
-#if defined (__CUDACC__)
-    cudaStream_t stream_ = ctx.cuda_stream();
-#else
-    hipStream_t stream_ = ctx.hip_stream();
-#endif
+    cs_stream_t stream_ = ctx.stream();
     cs_arrays_set_zero<T, stride>(stream_,
                                   true,
                                   n_elts,

@@ -94,6 +94,44 @@ cs_axpy(cs_dispatch_context  &ctx,
         const cs_real_t      *x,
         cs_real_t            *restrict y);
 
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Return the dot product of 2 vectors: x.y
+ *
+ * \param[in]  ctx  reference to dispatch context
+ * \param[in]  n    size of arrays x and y
+ * \param[in]  x    array of floating-point values
+ * \param[in]  y    array of floating-point values
+ *
+ * \return  dot product
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_dot(cs_dispatch_context   &ctx,
+       cs_lnum_t              n,
+       const cs_real_t       *x,
+       const cs_real_t       *y);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Return dot products of a vector with itself: x.x
+ *
+ * For better precision, a superblock algorithm is used.
+ *
+ * \param[in]  ctx  reference to dispatch context
+ * \param[in]  n    size of array x
+ * \param[in]  x    array of floating-point values
+ *
+ * \return  dot product
+ */
+/*----------------------------------------------------------------------------*/
+
+double
+cs_dot_xx([[maybe_unused]] cs_dispatch_context  &ctx,
+          cs_lnum_t                              n,
+          const cs_real_t                       *x);
+
 #endif // __cplusplus
 
 BEGIN_C_DECLS
@@ -170,6 +208,7 @@ double
 cs_weighted_sum(cs_lnum_t         n,
                 const cs_real_t  *w,
                 const cs_real_t  *x);
+
 
 /*----------------------------------------------------------------------------
  * Return the dot product of 2 vectors: x.y

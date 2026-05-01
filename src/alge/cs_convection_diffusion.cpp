@@ -7959,11 +7959,11 @@ cs_face_diffusion_potential(const cs_field_t           *f,
   cs_dispatch_context ctx_i, ctx_b;
 #if defined(HAVE_CUDA)
   if (ctx_b.use_gpu())
-    ctx_b.set_cuda_stream(cs_cuda_get_stream(1));
+    ctx_b.set_stream(cs_cuda_get_stream(1));
 #endif
 #if defined(HAVE_HIP)
   if (ctx_b.use_gpu())
-    ctx_b.set_hip_stream(cs_hip_get_stream(1));
+    ctx_b.set_stream(cs_hip_get_stream(1));
 #endif
 
   const bool on_device = ctx_i.use_gpu();
@@ -8255,11 +8255,11 @@ cs_face_anisotropic_diffusion_potential
   cs_dispatch_context ctx, ctx_b;
 #if defined(HAVE_CUDA)
   if (ctx_b.use_gpu())
-    ctx_b.set_cuda_stream(cs_cuda_get_stream(1));
+    ctx_b.set_stream(cs_cuda_get_stream(1));
 #endif
 #if defined(HAVE_HIP)
   if (ctx_b.use_gpu())
-    ctx_b.set_hip_stream(cs_hip_get_stream(1));
+    ctx_b.set_stream(cs_hip_get_stream(1));
 #endif
 
   const bool on_device = ctx.use_gpu();

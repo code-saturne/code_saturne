@@ -3316,12 +3316,12 @@ _lsq_scalar_gradient_hyd_p(const cs_mesh_t                *m,
   ctx_b.set_use_gpu(ctx.use_gpu()); /* Follows behavior of main context */
 #if defined(HAVE_CUDA)
   if (ctx_b.use_gpu())
-    ctx_b.set_cuda_stream(cs_cuda_get_stream(1));
+    ctx_b.set_stream(cs_cuda_get_stream(1));
 #endif
 
 #if defined(HAVE_HIP)
   if (ctx_b.use_gpu())
-    ctx_b.set_hip_stream(cs_hip_get_stream(1));
+    ctx_b.set_stream(cs_hip_get_stream(1));
 #endif
 
   const cs_alloc_mode_t amode = (ctx.use_gpu()) ?
@@ -4335,12 +4335,12 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
   ctx_b.set_use_gpu(ctx.use_gpu()); /* Follows behavior of main context */
 #if defined(HAVE_CUDA)
   if (ctx_b.use_gpu())
-    ctx_b.set_cuda_stream(cs_cuda_get_stream(1));
+    ctx_b.set_stream(cs_cuda_get_stream(1));
 #endif
 
 #if defined(HAVE_HIP)
   if (ctx_b.use_gpu())
-    ctx_b.set_hip_stream(cs_hip_get_stream(1));
+    ctx_b.set_stream(cs_hip_get_stream(1));
 #endif
 
   /* Initialize gradient */
@@ -6232,12 +6232,12 @@ _reconstruct_strided_gradient
   ctx_b.set_use_gpu(on_device); /* Follows behavior of main context */
 #if defined(HAVE_CUDA)
   if (on_device)
-    ctx_b.set_cuda_stream(cs_cuda_get_stream(1));
+    ctx_b.set_stream(cs_cuda_get_stream(1));
 #endif
 
 #if defined(HAVE_HIP)
   if (on_device)
-    ctx_b.set_hip_stream(cs_hip_get_stream(1));
+    ctx_b.set_stream(cs_hip_get_stream(1));
 #endif
 
   /* Initialize gradient */

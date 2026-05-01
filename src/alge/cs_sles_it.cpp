@@ -351,11 +351,11 @@ _dot_product
   if (ctx.use_gpu()) {
 
 #if defined(__CUDACC__)
-    return  cs_sles_it_dot_product(c, ctx.cuda_stream(), x, y);
+    return  cs_sles_it_dot_product(c, ctx.stream(), x, y);
 #endif
 
 #if defined(__HIPCC__)
-    return  cs_sles_it_dot_product(c, ctx.hip_stream(), x, y);
+    return  cs_sles_it_dot_product(c, ctx.stream(), x, y);
 #endif
 
   }
@@ -402,11 +402,11 @@ _dot_product_xx
   if (ctx.use_gpu()) {
 
 #if defined(__CUDACC__)
-    return  cs_sles_it_dot_product_xx(c, ctx.cuda_stream(), x);
+    return  cs_sles_it_dot_product_xx(c, ctx.stream(), x);
 #endif
 
 #if defined(__HIPCC__)
-    return  cs_sles_it_dot_product_xx(c, ctx.hip_stream(), x);
+    return  cs_sles_it_dot_product_xx(c, ctx.stream(), x);
 #endif
 
   }
@@ -456,13 +456,13 @@ _dot_products_xx_xy
   if (ctx.use_gpu()) {
 
 #if defined(__CUDACC__)
-    cs_sles_it_dot_products_xx_xy(c, ctx.cuda_stream(),
+    cs_sles_it_dot_products_xx_xy(c, ctx.stream(),
                                   x, y, xx, xy);
     return;
 #endif
 
 #if defined(__HIPCC__)
-    cs_sles_it_dot_products_xx_xy(c, ctx.hip_stream(),
+    cs_sles_it_dot_products_xx_xy(c, ctx.stream(),
                                   x, y, xx, xy);
     return;
 #endif
@@ -515,14 +515,8 @@ _dot_products_xy_yz
 
   if (ctx.use_gpu()) {
 
-#if defined(__CUDACC__)
-    cs_sles_it_dot_products_xy_yz(c, ctx.cuda_stream(),
-                                  x, y, z, s1, s2);
-    return;
-#endif
-
-#if defined(__HIPCC__)
-    cs_sles_it_dot_products_xy_yz(c, ctx.hip_stream(),
+#if defined(__CUDACC__) || defined(__HIPCC__)
+    cs_sles_it_dot_products_xy_yz(c, ctx.stream(),
                                   x, y, z, s1, s2);
     return;
 #endif
@@ -581,14 +575,8 @@ _dot_products_xx_xy_yz
 
   if (ctx.use_gpu()) {
 
-#if defined(__CUDACC__)
-    cs_sles_it_dot_products_xx_xy_yz(c, ctx.cuda_stream(),
-                                     x, y, z, xx, xy, yz);
-    return;
-#endif
-
-#if defined(__HIPCC__)
-    cs_sles_it_dot_products_xx_xy_yz(c, ctx.hip_stream(),
+#if defined(__CUDACC__) || defined(__HIPCC__)
+    cs_sles_it_dot_products_xx_xy_yz(c, ctx.stream(),
                                      x, y, z, xx, xy, yz);
     return;
 #endif
@@ -650,13 +638,13 @@ _dot_products_xx_yy_xy_xz_yz
   if (ctx.use_gpu()) {
 
 #if defined(__CUDACC__)
-    cs_sles_it_dot_products_xx_yy_xy_xz_yz(c, ctx.cuda_stream(),
+    cs_sles_it_dot_products_xx_yy_xy_xz_yz(c, ctx.stream(),
                                            x, y, z, xx, yy, xy, xz, yz);
     return;
 #endif
 
 #if defined(__HIPCC__)
-    cs_sles_it_dot_products_xx_yy_xy_xz_yz(c, ctx.hip_stream(),
+    cs_sles_it_dot_products_xx_yy_xy_xz_yz(c, ctx.stream(),
                                            x, y, z, xx, yy, xy, xz, yz);
     return;
 #endif
@@ -749,7 +737,7 @@ void
 cs_sles_it_set_exec_location
 (
   [[maybe_unused]] cs_dispatch_context  &ctx,
-  const cs_matrix_t                     *a,
+  [[maybe_unused]] const cs_matrix_t    *a,
   bool                                  &local_stream,
   [[maybe_unused]] cs_stream_t          &stream
 )
@@ -774,7 +762,7 @@ cs_sles_it_set_exec_location
     }
     if (local_stream)
       cs_matrix_spmv_cuda_set_stream(stream);
-    ctx.set_cuda_stream(stream);
+    ctx.set_stream(stream);
   }
 
 #elif defined(__HIPCC__)
@@ -786,7 +774,7 @@ cs_sles_it_set_exec_location
     }
     if (local_stream)
       cs_matrix_spmv_hip_set_stream(stream);
-    ctx.set_hip_stream(stream);
+    ctx.set_stream(stream);
   }
 #endif
 }

@@ -306,9 +306,9 @@ _equation_iterative_solve_strided(int                   idtvar,
     ctx.set_use_gpu(false);  /* steady case not ported to GPU */
 
 #if defined(HAVE_CUDA)
-  ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
+  ctx_c.set_stream(cs_cuda_get_stream(1));
 #elif defined(HAVE_HIP)
-  ctx_c.set_hip_stream(cs_hip_get_stream(1));
+  ctx_c.set_stream(cs_hip_get_stream(1));
 #endif
 
   cs_alloc_mode_t amode = ctx.alloc_mode(false);
@@ -1452,9 +1452,9 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   /* Parallel or device dispatch */
   cs_dispatch_context ctx, ctx_c;
 #if defined(HAVE_CUDA)
-  ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
+  ctx_c.set_stream(cs_cuda_get_stream(1));
 #elif defined(HAVE_HIP)
-  ctx_c.set_hip_stream(cs_hip_get_stream(1));
+  ctx_c.set_stream(cs_hip_get_stream(1));
 #endif
 
   cs_alloc_mode_t amode = ctx.alloc_mode(false);

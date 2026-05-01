@@ -718,21 +718,21 @@ public:
   //! Change stream, but keep the grid and device configuration
 
   void
-  set_cuda_stream(cudaStream_t stream) {
+  set_stream(cudaStream_t  stream) {
     this->stream_ = stream;
   }
 
   //! Change stream, but keep the grid and device configuration
 
   void
-  set_cuda_stream(int  stream_id) {
+  set_stream(int  stream_id) {
     this->stream_ = cs_cuda_get_stream(stream_id);
   }
 
   //! Get associated stream
 
   cudaStream_t
-  cuda_stream(void) {
+  stream(void) {
     return this->stream_;
   }
 
@@ -1266,23 +1266,18 @@ public:
   //! Change stream, but keep the grid and device configuration
 
   void
-  set_hip_stream(hipStream_t stream) {
+  set_stream(hipStream_t  stream) {
     this->stream_ = stream;
   }
 
   //! Change stream, but keep the grid and device configuration
 
   void
-  set_hip_stream(int  stream_id) {
+  set_stream(int  stream_id) {
     this->stream_ = cs_hip_get_stream(stream_id);
   }
 
   //! Get associated stream
-
-  hipStream_t
-  hip_stream(void) {
-    return this->stream_;
-  }
 
   //! Change HIP device
 
@@ -1939,22 +1934,26 @@ public:
   cs_void_context(void)
   {}
 
-#if !defined(__CUDACC__)
-
-  /* Fill-in for CUDA methods, so as to allow using these methods
+  /* Fill-in for CUDA or HIP methods, so as to allow using these methods
      in final cs_dispatch_context even when CUDA is not available,
      and without requiring a static cast of the form
 
      static_cast<cs_device_context&>(ctx).set_use_gpu(true);
   */
 
+#if !defined(__CUDACC__) && !defined(__HIPCC__)
+
+  void
+  set_stream([[maybe_unused]] int  stream_id) {
+  }
+
+#endif
+
+#if !defined(__CUDACC__)
+
   void
   set_cuda_grid([[maybe_unused]] long  grid_size,
                 [[maybe_unused]] long  block_size) {
-  }
-
-  void
-  set_cuda_stream([[maybe_unused]] int  stream_id) {
   }
 
   void
@@ -1965,20 +1964,9 @@ public:
 
 #if !defined(__HIPCC__)
 
-  /* Fill-in for HIP methods, so as to allow using these methods
-     in final cs_dispatch_context even when HIP is not available,
-     and without requiring a static cast of the form
-
-     static_cast<cs_device_context&>(ctx).set_use_gpu(true);
-  */
-
   void
   set_hip_grid([[maybe_unused]] long  grid_size,
                 [[maybe_unused]] long  block_size) {
-  }
-
-  void
-  set_hip_stream([[maybe_unused]] int  stream_id) {
   }
 
   void
