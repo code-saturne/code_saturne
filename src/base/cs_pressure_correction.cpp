@@ -193,9 +193,9 @@ cs_hydrostatic_pressure_compute(const cs_mesh_t       *m,
 
   cs_dispatch_context ctx, ctx_c;
 #if defined(HAVE_CUDA)
-  ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
+  ctx_c.set_stream(cs_cuda_get_stream(1));
 #elif defined(HAVE_HIP)
-  ctx_c.set_hip_stream(cs_hip_get_stream(1));
+  ctx_c.set_stream(cs_hip_get_stream(1));
 #endif
   cs_alloc_mode_t amode = ctx.alloc_mode();
 
@@ -282,14 +282,17 @@ cs_hydrostatic_pressure_compute(const cs_mesh_t       *m,
 
   eqp_pr->ndircl = 0;
 
+  int p0_face_id = -1;
+  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > 0) {
+    if (cs_glob_rank_id == fluid_props->p0_rank_id)
+      p0_face_id = fluid_props->p0_face_id;
+  }
+
   ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
 
     cs_real_t hint = 1. / mq->b_dist[face_id];
-    bool is_atmo = cs_glob_physical_model_flag[CS_ATMOSPHERIC] > 0;
 
-    if (   is_atmo
-        && cs_glob_rank_id == fluid_props->p0_rank_id
-        && face_id         == fluid_props->p0_face_id) {
+    if (face_id == p0_face_id) {
 
       cs_real_t pimp = 0;
       cs_boundary_conditions_set_dirichlet_scalar(coefa_hp[face_id],
@@ -474,15 +477,16 @@ cs_hydrostatic_pressure_compute(const cs_mesh_t       *m,
 
   /* For logging */
 
-  // TODO: this renormalisation could be fully replace by a Dirichlet at
+  // TODO: this renormalization could be fully replaced by a Dirichlet at
   //       p0_face_id
   cs_real_t phydr0 = 0;
-  ctx.parallel_for_reduce_sum
-    (1, phydr0, [=] CS_F_HOST_DEVICE(cs_lnum_t i,
-    CS_DISPATCH_REDUCER_TYPE(double) &sum) {
 
-      cs_lnum_t f_id_0 = fluid_props->p0_face_id;
-      if (fluid_props->p0_rank_id == cs_glob_rank_id) {
+  if (fluid_props->p0_rank_id == cs_glob_rank_id) {
+    cs_lnum_t f_id_0 = fluid_props->p0_face_id;
+    ctx.parallel_for_reduce_sum
+      (1, phydr0, [=] CS_F_HOST_DEVICE(cs_lnum_t i,
+                                       CS_DISPATCH_REDUCER_TYPE(double) &sum) {
+
         cs_lnum_t c_id_0 = b_face_cells[f_id_0];
         cs_real_t d[3] = {b_face_cog[f_id_0][0] - cell_cen[c_id_0][0],
                           b_face_cog[f_id_0][1] - cell_cen[c_id_0][1],
@@ -491,8 +495,8 @@ cs_hydrostatic_pressure_compute(const cs_mesh_t       *m,
                + d[0] * (dfrcxt[c_id_0][0] + frcxt[c_id_0][0])
                + d[1] * (dfrcxt[c_id_0][1] + frcxt[c_id_0][1])
                + d[2] * (dfrcxt[c_id_0][2] + frcxt[c_id_0][2]);
-      }
      });
+  }
 
   ctx.wait();
   cs_parall_sum(1, CS_REAL_TYPE, &phydr0);  /* > 0 only on one rank */
@@ -622,9 +626,9 @@ _pressure_correction_fv(int                   iterns,
   /* Parallel or device dispatch */
   cs_dispatch_context ctx, ctx_c;
 #if defined(HAVE_CUDA)
-  ctx_c.set_cuda_stream(cs_cuda_get_stream(1));
+  ctx_c.set_stream(cs_cuda_get_stream(1));
 #elif defined(HAVE_HIP)
-  ctx_c.set_hip_stream(cs_hip_get_stream(1));
+  ctx_c.set_stream(cs_hip_get_stream(1));
 #endif
   cs_alloc_mode_t amode = ctx.alloc_mode();
 
