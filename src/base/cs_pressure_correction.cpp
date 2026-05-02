@@ -143,7 +143,7 @@ static cs_pressure_correction_cdo_t *cs_pressure_correction_cdo = nullptr;
  *
  * \param[in]      m                pointer to glob mesh
  * \param[in]      mq               pointer to glob mesh quantiites
- * \param[out]     need_update           indicateur de mise a jour de cvar_hydro_pres
+ * \param[out]     need_update      indicator for cvar_hydro_pres update
  * \param[in]      iterns           Navier-Stokes iteration number
  * \param[in]      frcxt            external force generating hydrostatic pressure
  * \param[in]      dfrcxt           external force increment
@@ -179,6 +179,7 @@ cs_hydrostatic_pressure_compute(const cs_mesh_t       *m,
   const cs_lnum_t *b_face_cells = m->b_face_cells;
 
   const cs_real_3_t *b_face_cog = mq->b_face_cog;
+  const cs_real_t *b_dist = mq->b_dist;
   const cs_real_3_t *cell_cen = mq->cell_cen;
 
   const cs_fluid_properties_t *fluid_props = cs_glob_fluid_properties;
@@ -290,11 +291,10 @@ cs_hydrostatic_pressure_compute(const cs_mesh_t       *m,
 
   ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
 
-    cs_real_t hint = 1. / mq->b_dist[face_id];
-
     if (face_id == p0_face_id) {
 
       cs_real_t pimp = 0;
+      cs_real_t hint = 1. / b_dist[face_id];
       cs_boundary_conditions_set_dirichlet_scalar(coefa_hp[face_id],
                                                   cofaf_hp[face_id],
                                                   coefb_hp[face_id],
@@ -304,7 +304,8 @@ cs_hydrostatic_pressure_compute(const cs_mesh_t       *m,
                                                   cs_math_big_r);
       eqp_pr->ndircl = 1;
 
-    } else {
+    }
+    else {
 
       /* Neumann BC (qimp=0 --> a=af=bf=0, b=1) */
 
@@ -1010,7 +1011,8 @@ _pressure_correction_fv(int                   iterns,
                                          meteo_temp);
     need_update = 1;
     }
-  } else if (context_compute_p_hydro){
+  }
+  else if (context_compute_p_hydro){
 
     cs_hydrostatic_pressure_compute(m, fvq,
                             &need_update, iterns,
