@@ -24,6 +24,12 @@ Master (not on release branches yet)
 
 ### User changes:
 
+- Expand use of optional `CATALYST_IMPLEMENTATION_NAME` environment variable
+  from "stub", "paraview", and "legacty" to "ensight", "med", and "cgns".
+  This is useful when running or debugging an existing case on a build where
+  Catalyst is not available, or when loading Catalyst under a debugger is
+  very slow.
+
 - Add high level API which is GPU compatible for users. This allows not having
   to specify a context directly. This modification also now defines a
   default context which is reachable in all routines.

@@ -932,21 +932,29 @@ fvm_writer_get_format_id(const char  *format_name)
   else if (strncmp(tmp_name, "catalyst", 8) == 0) {
     strcpy(closest_name, "Catalyst");
 
-    /* If both Catalyst2 is available, prefer if to the legacy implmentation
+    /* If Catalyst2 is available, prefer if to the legacy implementation
        by default, and extend the use of the CATALYST_IMPLEMENTATION_NAME
-       environment logic to allow reverting to the legacy implementation. */
+       environment logic to allow reverting to the legacy implementation.
+       Also extend this to allow use of another format when Catalyst
+       is not available. */
+    const char *s = getenv("CATALYST_IMPLEMENTATION_NAME");
+    if (s != nullptr) {
+      if (strcmp(s, "legacy") == 0)
+        strcpy(closest_name, "Catalyst");
+      else if (strcmp(s, "ensight") == 0)
+        strcpy(closest_name, "EnSight Gold");
+      else if (strncmp(s, "med", 3) == 0)
+        strcpy(closest_name, "MED");
+      else if (strncmp(s, "cgns", 4) == 0)
+        strcpy(closest_name, "CGNS");
+    }
 #   if defined(HAVE_CATALYST2)
     strcpy(closest_name, "Catalyst2");
-    const char *s = getenv("CATALYST_IMPLEMENTATION_NAME");
     if (s == nullptr) {
       const char path_c[] = "analysis_control/output/catalyst";
       cs_tree_node_t *tn_c = cs_tree_get_node(cs_glob_tree, path_c);
       if (tn_c != nullptr)
         s = cs_tree_node_get_child_value_str(tn_c, "implementation");
-    }
-    if (s != nullptr) {
-      if (strcmp(s, "legacy") == 0)
-        strcpy(closest_name, "Catalyst");
     }
 #   endif
   }
