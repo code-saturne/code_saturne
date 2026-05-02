@@ -938,6 +938,17 @@ fvm_writer_get_format_id(const char  *format_name)
        Also extend this to allow use of another format when Catalyst
        is not available. */
     const char *s = getenv("CATALYST_IMPLEMENTATION_NAME");
+
+#   if defined(HAVE_CATALYST2)
+    strcpy(closest_name, "Catalyst2");
+    if (s == nullptr) {
+      const char path_c[] = "analysis_control/output/catalyst";
+      cs_tree_node_t *tn_c = cs_tree_get_node(cs_glob_tree, path_c);
+      if (tn_c != nullptr)
+        s = cs_tree_node_get_child_value_str(tn_c, "implementation");
+    }
+#   endif
+
     if (s != nullptr) {
       if (strcmp(s, "legacy") == 0)
         strcpy(closest_name, "Catalyst");
@@ -948,15 +959,6 @@ fvm_writer_get_format_id(const char  *format_name)
       else if (strncmp(s, "cgns", 4) == 0)
         strcpy(closest_name, "CGNS");
     }
-#   if defined(HAVE_CATALYST2)
-    strcpy(closest_name, "Catalyst2");
-    if (s == nullptr) {
-      const char path_c[] = "analysis_control/output/catalyst";
-      cs_tree_node_t *tn_c = cs_tree_get_node(cs_glob_tree, path_c);
-      if (tn_c != nullptr)
-        s = cs_tree_node_get_child_value_str(tn_c, "implementation");
-    }
-#   endif
   }
   else if (strncmp(tmp_name, "ccm", 3) == 0)
     strcpy(closest_name, "CCM-IO");
