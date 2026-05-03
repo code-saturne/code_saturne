@@ -4905,6 +4905,8 @@ cs_boundary_conditions_set_coeffs_pressure(cs_field_t            *f_p,
          dimp, hint);
     }
   });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/
