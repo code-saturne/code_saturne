@@ -2912,6 +2912,13 @@ cs_set_alloc_mode(void             **host_ptr,
       // mode == CS_ALLOC_HOST_DEVICE_SHARED already handle above.
 
       if (mode == CS_ALLOC_DEVICE) {
+        if (me_new.device_ptr == nullptr) {
+          me_new.device_ptr = _malloc_device(me.size,
+                                             "me.device_ptr",
+                                             __FILE__,
+                                             __LINE__);
+          cs_copy_h2d(me_new.device_ptr, me.host_ptr, me.size);
+        }
         _free_hd_host(me, var_name, __FILE__, __LINE__);
         me_new.host_ptr = nullptr;
         ret_ptr = me_new.device_ptr;
