@@ -281,47 +281,42 @@ cs_hydrostatic_pressure_compute(const cs_mesh_t       *m,
    * TODO: generalize; this behavior only applies to atmo for now...
    */
 
-  eqp_pr->ndircl = 0;
-
-  int p0_face_id = -1;
-  if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] > 0) {
-    if (cs_glob_rank_id == fluid_props->p0_rank_id)
-      p0_face_id = fluid_props->p0_face_id;
-  }
+  /* Initialize for all faces */
 
   ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t face_id) {
+    /* Neumann BC (qimp=0 --> a=af=bf=0, b=1) */
 
-    if (face_id == p0_face_id) {
+    // Gradient BCs
+    coefa_hp[face_id] = 0.;
+    coefb_hp[face_id] = 1.;
 
+    // Flux BCs
+    cofaf_hp[face_id] = 0.;
+    cofbf_hp[face_id] = 0.;
+  });
+  ctx_c.wait();
+
+  /* 0 on reference face */
+
+  eqp_pr->ndircl = 0;
+
+  if (   cs_glob_physical_model_flag[CS_ATMOSPHERIC] > 0
+      && cs_glob_rank_id == fluid_props->p0_rank_id) {
+    int p0_face_id = fluid_props->p0_face_id;
+
+    if (p0_face_id > -1) {
       cs_real_t pimp = 0;
-      cs_real_t hint = 1. / b_dist[face_id];
-      cs_boundary_conditions_set_dirichlet_scalar(coefa_hp[face_id],
-                                                  cofaf_hp[face_id],
-                                                  coefb_hp[face_id],
-                                                  cofbf_hp[face_id],
+      cs_real_t hint = 1. / b_dist[p0_face_id];
+      cs_boundary_conditions_set_dirichlet_scalar(coefa_hp[p0_face_id],
+                                                  cofaf_hp[p0_face_id],
+                                                  coefb_hp[p0_face_id],
+                                                  cofbf_hp[p0_face_id],
                                                   pimp,
                                                   hint,
                                                   cs_math_big_r);
       eqp_pr->ndircl = 1;
-
     }
-    else {
-
-      /* Neumann BC (qimp=0 --> a=af=bf=0, b=1) */
-
-      // Gradient BCs
-      coefa_hp[face_id] = 0.;
-      coefb_hp[face_id] = 1.;
-
-      // Flux BCs
-      cofaf_hp[face_id] = 0.;
-      cofbf_hp[face_id] = 0.;
-
-    }
-
-  });
-
-  ctx_c.wait();
+  }
 
   cs_parall_max(1, CS_INT_TYPE, &(eqp_pr->ndircl));
 
