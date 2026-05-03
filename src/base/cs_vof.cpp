@@ -1910,6 +1910,7 @@ cs_vof_smoothe(const cs_mesh_t              *m,
 
   cs_dispatch_context ctx;
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
+  cs_alloc_mode_t amode = ctx.alloc_mode();
 
   const cs_real_t d_tau = 0.1; /* Sharpening interface on 5 cells
                                   (0.1 for 3 cells) */
@@ -1925,11 +1926,11 @@ cs_vof_smoothe(const cs_mesh_t              *m,
     = cs_field_get_equation_param_const(CS_F_(void_f));
 
   cs_real_t *xam, *dam;
-  CS_MALLOC_HD(xam, n_i_faces, cs_real_t, cs_alloc_mode);
-  CS_MALLOC_HD(dam, n_cells, cs_real_t, cs_alloc_mode);
+  CS_MALLOC_HD(xam, n_i_faces, cs_real_t, amode);
+  CS_MALLOC_HD(dam, n_cells, cs_real_t, amode);
 
-  cs_array<cs_real_t> smbdp(n_cells_ext, cs_alloc_mode);
-  cs_array<cs_real_t> vol_cbrt(n_cells_ext, cs_alloc_mode);
+  cs_array<cs_real_t> smbdp(n_cells_ext, amode);
+  cs_array<cs_real_t> vol_cbrt(n_cells_ext, amode);
 
   /* Prepare system to solve */
   /* Compute the gradient of "diffused void fraction" */
@@ -2084,6 +2085,10 @@ cs_vof_smoothe(const cs_mesh_t              *m,
   const char sles_name[] = "ITM_diffusion_equation";
 
   cs_matrix_t *a = cs_sles_default_get_matrix(-1, sles_name, 1, 1, true);
+
+#if defined(HAVE_ACCEL)
+  cs_matrix_set_alloc_mode(a, amode);
+#endif
 
   cs_matrix_transfer_coefficients(a,
                                   true,
