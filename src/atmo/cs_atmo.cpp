@@ -110,6 +110,7 @@
 #include "atmo/cs_atmo_1d_rad.h"
 #include "atmo/cs_at_data_assim.h"
 #include "base/cs_pressure_correction.h"
+
 /*----------------------------------------------------------------------------*/
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -401,8 +402,8 @@ _convert_from_l93_to_wgs84(void)
 
   cs_real_t lambda_0 = 3.; // longitude of the reference meridian in degrees
 
-  // domain_orientation is the angle between the geographic north and the positive y-axis
-  // in the direct (right-handed) frame of code_saturne.
+  // domain_orientation is the angle between the geographic north and the
+  // positive y-axis in the direct (right-handed) frame of code_saturne.
   at_opt->domain_orientation = n * (at_opt->longitude - lambda_0);
 }
 
@@ -438,8 +439,8 @@ _convert_from_wgs84_to_l93(void)
 
   cs_real_t lambda_0 = 3.; // longitude of the reference meridian in degrees
 
-  // domain_orientation is the angle between the geographic north and the positive y-axis
-  // in the direct (right-handed) frame of code_saturne.
+  // domain_orientation is the angle between the geographic north and the
+  // positive y-axis in the direct (right-handed) frame of code_saturne.
   at_opt->domain_orientation = n* (at_opt->longitude - lambda_0);
 }
 
@@ -5093,13 +5094,16 @@ _tangential_to_wgs84(cs_real_t  x,
  * transformation is not available.
  *
  * \param[in]  origin_projection   Input projection enum (cs_atmo_projection_t).
- * \param[in]  target_projection   Desired output projection enum (cs_atmo_projection_t).
- * \param[in]  x_origin            X coordinate in the origin projection (lon for WGS84).
- * \param[in]  y_origin            Y coordinate in the origin projection (lat for WGS84).
- * \param[out] x_target            Resulting X coordinate in the target projection.
- * \param[out] y_target            Resulting Y coordinate in the target projection.
- * \param[in]  utm_fixed_zone      Optional forced UTM zone number when converting to UTM.
- *
+ * \param[in]  target_projection   Desired output projection enum
+ *                                 (cs_atmo_projection_t).
+ * \param[in]  x_origin            X coordinate in the origin projection
+ *                                 (lon for WGS84).
+ * \param[in]  y_origin            Y coordinate in the origin projection
+ *                                 (lat for WGS84).
+ * \param[out] x_target            Resulting X coordinate in target projection.
+ * \param[out] y_target            Resulting Y coordinate in target projection.
+ * \param[in]  utm_fixed_zone      Optional forced UTM zone number when
+ *                                 converting to UTM.
  */
 /*----------------------------------------------------------------------------*/
 

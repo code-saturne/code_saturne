@@ -2247,8 +2247,8 @@ _additional_fields_stage_2(void)
   if (cs_glob_atmo_option->meteo_profile >= 2) {
 
     cs_field_t *f = _add_variable_field("algo:meteo_pressure_corrected",
-                            "algo:meteo_pressure_corrected",
-                            1);
+                                        "algo:meteo_pressure_corrected",
+                                        1);
 
     cs_field_set_key_int(f, keyvis, 0);
     cs_field_set_key_int(f, keylog, 0);
@@ -2380,7 +2380,9 @@ _additional_fields_stage_2(void)
 
     /* for classification */
     if (cs_glob_porosity_from_scan_opt->has_classification) {
-      for (int i = 0; i < cs_glob_porosity_from_scan_opt->n_classifications; i++) {
+      for (int i = 0;
+           i < cs_glob_porosity_from_scan_opt->n_classifications;
+           i++) {
         char field_name[64];
         snprintf(field_name, sizeof(field_name), "nb_scan_points_class_%d",
             (int)cs_glob_porosity_from_scan_opt->classification_values[i]);
@@ -2443,11 +2445,12 @@ _additional_fields_stage_2(void)
   if (   cs_glob_wall_condensation->icondb >= 0
       || cs_glob_wall_condensation->icondv >= 0) {
     int f_id = cs_field_by_name_try("yplus")->id;
-    cs_field_t *f = cs_field_find_or_create("yplus",
-                                            CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
-                                            CS_MESH_LOCATION_BOUNDARY_FACES,
-                                            1,
-                                            false);
+    cs_field_t *f = cs_field_find_or_create
+                      ("yplus",
+                       CS_FIELD_INTENSIVE | CS_FIELD_PROPERTY,
+                       CS_MESH_LOCATION_BOUNDARY_FACES,
+                       1,
+                       false);
     if (f_id < 0) { // Set some properties if the field is new
       cs_field_set_key_str(f, keylbl, "Yplus");
       cs_field_set_key_int(f, keylog, 1);
