@@ -508,8 +508,8 @@ cs_boundary_conditions_type(bool  init,
    * else if case hase P dirichlet : closest dirichlet face to xyzp0
    */
 
-  /* face_id_p_ref = closest free standard outlet face to xyzp0 (icodcl not modified)
-   * (or closest free inlet)
+  /* face_id_p_ref = closest free standard outlet face to xyzp0
+   * (icodcl not modified or closest free inlet)
    * face_id_p_ref_g = max of face_id_p_ref on all ranks,
    * standard outlet face presence indicator
    */
@@ -528,14 +528,14 @@ cs_boundary_conditions_type(bool  init,
 
     cs_real_t d0min = cs_math_infinite_r;
 
-    if (is_atmo){
+    if (is_atmo) {
       for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++){
         const cs_real_t d0 = cs_math_3_square_distance(xyzp0,
-                                                 b_face_cog[f_id]);
+                                                       b_face_cog[f_id]);
         if (d0 < d0min) {
           face_id_p_ref = f_id;
           d0min = d0;
-          }
+        }
       }
 
       face_id_p_ref_g = face_id_p_ref;
@@ -547,138 +547,141 @@ cs_boundary_conditions_type(bool  init,
          _("\n"
            "Atmospheric computation, updating xyzp0 to nearest face.\n"));
         fluid_props->ixyzp0 = 1;
-
-    } else {
-
-    const int o_type_id[2] = {CS_OUTLET-1,
-                              CS_FREE_INLET-1};
-
-    for (int jj = 0; jj < 2; jj++) {
-      cs_lnum_t s_id = bc_type_idx[o_type_id[jj]];
-      cs_lnum_t e_id = bc_type_idx[o_type_id[jj] + 1];
-      for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
-        const cs_lnum_t f_id = bc_type_faces[ii];
-        if (icodcl_p[f_id] == CS_BC_UNDEF) {
-          const cs_real_t d0 = cs_math_3_square_distance(xyzp0,
-                                                         b_face_cog[f_id]);
-          if (d0 < d0min) {
-            face_id_p_ref = f_id;
-            d0min = d0;
-          }
-        }
-      }
     }
+    else {
+      const int o_type_id[2] = {CS_OUTLET-1,
+                                CS_FREE_INLET-1};
 
-    /* If we have free outlet faces, rank_p_ref and face_id_p_ref_g will
-       contain respectively the rank having the boundary face whose
-       center is closest to xyzp0, and the local number of that face
-       on that rank (also equal to p_ref_face_id on that rank).
-       If we do not have free outlet faces, than face_id_p_ref_g = -1
-       (as it was initialized that way on all ranks). */
-
-    face_id_p_ref_g = face_id_p_ref;
-    rank_p_ref = cs_glob_rank_id;
-
-    cs_parall_min_id_rank_r(&face_id_p_ref_g, &rank_p_ref, d0min);
-
-    if (face_id_p_ref_g > -1){
-    cs_log_printf
-        (CS_LOG_DEFAULT,
-         _("\n"
-           "Boundary faces with free inlet/outlet detected.\n"
-           "Old reference point for total pressure.\n"
-           "  xyzp0 = (%14.5e,%14.5e,%14.5e)\n"),
-         xyzp0[0], xyzp0[1], xyzp0[2]);
-        fluid_props->ixyzp0 = 1;
-
-    } else {
-      /* If there are no outlet faces, we search for possible Dirichlets
-       specified by the user so as to locate the reference point.
-       As before, we chose the face closest to xyzp0 so as to
-       be mesh numbering (and partitioning) independent. */
-
-      for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-        if (abs(icodcl_p[f_id]) == CS_BC_DIRICHLET) {
-          const cs_real_t d0 = cs_math_3_square_distance(xyzp0,
-                                                         b_face_cog[f_id]);
-          if (d0 < d0min) {
-            face_id_p_ref = f_id;
-            d0min = d0;
+      for (int jj = 0; jj < 2; jj++) {
+        cs_lnum_t s_id = bc_type_idx[o_type_id[jj]];
+        cs_lnum_t e_id = bc_type_idx[o_type_id[jj] + 1];
+        for (cs_lnum_t ii = s_id; ii < e_id; ii++) {
+          const cs_lnum_t f_id = bc_type_faces[ii];
+          if (icodcl_p[f_id] == CS_BC_UNDEF) {
+            const cs_real_t d0 = cs_math_3_square_distance(xyzp0,
+                                                           b_face_cog[f_id]);
+            if (d0 < d0min) {
+              face_id_p_ref = f_id;
+              d0min = d0;
+            }
           }
         }
       }
+
+      /* If we have free outlet faces, rank_p_ref and face_id_p_ref_g will
+         contain respectively the rank having the boundary face whose
+         center is closest to xyzp0, and the local number of that face
+         on that rank (also equal to p_ref_face_id on that rank).
+         If we do not have free outlet faces, than face_id_p_ref_g = -1
+         (as it was initialized that way on all ranks). */
 
       face_id_p_ref_g = face_id_p_ref;
       rank_p_ref = cs_glob_rank_id;
+
       cs_parall_min_id_rank_r(&face_id_p_ref_g, &rank_p_ref, d0min);
+
       if (face_id_p_ref_g > -1) {
         cs_log_printf
           (CS_LOG_DEFAULT,
            _("\n"
-             "Boundary faces with pressure Dirichlet condition detected.\n"
-             "Old reference point for total pressure\n"
-             "  xyzp0 = (%14.5e,%14.5e,%14.5e)"),
+             "Boundary faces with free inlet/outlet detected.\n"
+             "Old reference point for total pressure.\n"
+             "  xyzp0 = (%14.5e,%14.5e,%14.5e)\n"),
            xyzp0[0], xyzp0[1], xyzp0[2]);
+        fluid_props->ixyzp0 = 1;
+
+      }
+      else {
+        /* If there are no outlet faces, we search for possible Dirichlets
+           specified by the user so as to locate the reference point.
+           As before, we chose the face closest to xyzp0 so as to
+           be mesh numbering (and partitioning) independent. */
+
+        for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+          if (abs(icodcl_p[f_id]) == CS_BC_DIRICHLET) {
+            const cs_real_t d0 = cs_math_3_square_distance(xyzp0,
+                                                           b_face_cog[f_id]);
+            if (d0 < d0min) {
+              face_id_p_ref = f_id;
+              d0min = d0;
+            }
+          }
+        }
+
+        face_id_p_ref_g = face_id_p_ref;
+        rank_p_ref = cs_glob_rank_id;
+        cs_parall_min_id_rank_r(&face_id_p_ref_g, &rank_p_ref, d0min);
+        if (face_id_p_ref_g > -1) {
+          cs_log_printf
+            (CS_LOG_DEFAULT,
+             _("\n"
+               "Boundary faces with pressure Dirichlet condition detected.\n"
+               "Old reference point for total pressure\n"
+               "  xyzp0 = (%14.5e,%14.5e,%14.5e)"),
+             xyzp0[0], xyzp0[1], xyzp0[2]);
           fluid_props->ixyzp0 = 1;
-      }
-    }
-  }
-
-  if (face_id_p_ref_g > -1) {
-
-    /* If irangd is the local rank, we assign PI' to xyzref(4)
-       (this is always the case in serial mode) */
-    fluid_props->p0_face_id = face_id_p_ref_g;
-    fluid_props->p0_rank_id = rank_p_ref;
-    if (cs_glob_rank_id == rank_p_ref) {
-      if (vp_param->iphydr == 1 || vp_param->iifren == 1){
-        fluid_props->xyzp0[0] = b_face_cog[fluid_props->p0_face_id][0];
-        fluid_props->xyzp0[1] = b_face_cog[fluid_props->p0_face_id][1];
-        fluid_props->xyzp0[2] = b_face_cog[fluid_props->p0_face_id][2];
+        }
       }
     }
 
-    /* Broadcast PI' and pressure reference
-       from irangd to all other ranks. */
+    if (face_id_p_ref_g > -1) {
 
-    cs_parall_bcast(fluid_props->p0_rank_id, 3, CS_REAL_TYPE, fluid_props->xyzp0);
+      /* If irangd is the local rank, we assign PI' to xyzref(4)
+         (this is always the case in serial mode) */
+      fluid_props->p0_face_id = face_id_p_ref_g;
+      fluid_props->p0_rank_id = rank_p_ref;
+      if (cs_glob_rank_id == rank_p_ref) {
+        if (vp_param->iphydr == 1 || vp_param->iifren == 1){
+          fluid_props->xyzp0[0] = b_face_cog[fluid_props->p0_face_id][0];
+          fluid_props->xyzp0[1] = b_face_cog[fluid_props->p0_face_id][1];
+          fluid_props->xyzp0[2] = b_face_cog[fluid_props->p0_face_id][2];
+        }
+      }
 
-    cs_log_printf
+      /* Broadcast PI' and pressure reference
+         from irangd to all other ranks. */
+
+      cs_parall_bcast(fluid_props->p0_rank_id, 3, CS_REAL_TYPE,
+                      fluid_props->xyzp0);
+
+      cs_log_printf
         (CS_LOG_DEFAULT,
          _("\n"
            "New reference point for total pressure\n"
            "  xyzp0 = (%14.5e,%14.5e,%14.5e)\n\n"),
          fluid_props->xyzp0[0], fluid_props->xyzp0[1], fluid_props->xyzp0[2]);
-  }
+    }
 
-  if (fluid_props->ixyzp0 == -1) {
-    /* ixyzp0 is currently deprecated but could be used again to implement
-     * time varying pressure reference face choice
-     */
-    fluid_props->ixyzp0 = 0;
+    if (fluid_props->ixyzp0 == -1) {
+      /* ixyzp0 is currently deprecated but could be used again to implement
+       * time varying pressure reference face choice
+       */
+      fluid_props->ixyzp0 = 0;
 
-  }
+    }
 
-  bool is_modified_xyzp0 =    (fabs(xyzp0[0]-xyzp0_old[0]) >= cs_math_epzero)
-                           || (fabs(xyzp0[1]-xyzp0_old[1]) >= cs_math_epzero)
-                           || (fabs(xyzp0[2]-xyzp0_old[2]) >= cs_math_epzero);
+    bool is_modified_xyzp0
+      = (    fabs(xyzp0[0]-xyzp0_old[0]) >= cs_math_epzero)
+         || (fabs(xyzp0[1]-xyzp0_old[1]) >= cs_math_epzero)
+         || (fabs(xyzp0[2]-xyzp0_old[2]) >= cs_math_epzero);
 
-  if (   (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0)
-      && (is_modified_xyzp0)) {
-    /* Update of total_pressure is needed in the case a dirichlet is set in
-     * total pressure (conversion is done in bc_type
-     */
+    if (   (cs_glob_physical_model_flag[CS_COMPRESSIBLE] < 0)
+        && (is_modified_xyzp0)) {
+      /* Update of total_pressure is needed in the case a dirichlet is set in
+       * total pressure (conversion is done in bc_type
+       */
 
-    cs_real_t *cpro_prtot = cs_field_by_name_try("total_pressure")->val;
-    if (cpro_prtot != nullptr) {
-      cs_real_t prtot_shift = -ro0 * cs_math_3_distance_dot_product(xyzp0_old,
-                                                                    fluid_props->xyzp0,
-                                                                    gxyz);
-      for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-        cpro_prtot[c_id] += prtot_shift;
+      cs_real_t *cpro_prtot = cs_field_by_name_try("total_pressure")->val;
+      if (cpro_prtot != nullptr) {
+        cs_real_t prtot_shift
+          = -ro0 * cs_math_3_distance_dot_product(xyzp0_old,
+                                                  fluid_props->xyzp0,
+                                                  gxyz);
+        for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+          cpro_prtot[c_id] += prtot_shift;
+        }
       }
     }
-  }
   } // end is_first_iter (end pressure face ref choice)
 
   if (   (vp_param->iphydr == 1 || vp_param->iifren == 1)
