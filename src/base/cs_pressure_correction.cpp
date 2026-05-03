@@ -278,7 +278,7 @@ cs_hydrostatic_pressure_compute(const cs_mesh_t       *m,
 
   /* To solve hydrostatic pressure:
    * 0 on reference face, homogeneous Neumann everywhere else
-   * TODO: generalise; this behaviour only applies to atmo for now...
+   * TODO: generalize; this behavior only applies to atmo for now...
    */
 
   eqp_pr->ndircl = 0;
@@ -989,7 +989,7 @@ _pressure_correction_fv(int                   iterns,
 
   if (   context_compute_p_hydro
       && at_opt != nullptr
-      && at_opt->meteo_profile > 1){
+      && at_opt->meteo_profile > 1) {
     int nt_cur  = cs_glob_domain->time_step->nt_cur;
     int nt_prev = cs_glob_domain->time_step->nt_prev;
     bool is_first_step = (nt_cur == nt_prev+1);
@@ -1000,25 +1000,24 @@ _pressure_correction_fv(int                   iterns,
 
     if (   is_first_step
         || at_opt->meteo_profile == 4) {
-    cs_field_t *meteo_pressure = cs_field_by_name("meteo_pressure");
-    cs_field_t *meteo_potemp = cs_field_by_name("meteo_pot_temperature");
-    cs_field_t *meteo_density = cs_field_by_name("meteo_density");
-    cs_field_t *meteo_temp = cs_field_by_name("meteo_temperature");
-    cs_atmo_hydrostatic_profiles_compute(meteo_pressure,
-                                         f_hp,
-                                         meteo_potemp,
-                                         meteo_density,
-                                         meteo_temp);
-    need_update = 1;
+      cs_field_t *meteo_pressure = cs_field_by_name("meteo_pressure");
+      cs_field_t *meteo_potemp = cs_field_by_name("meteo_pot_temperature");
+      cs_field_t *meteo_density = cs_field_by_name("meteo_density");
+      cs_field_t *meteo_temp = cs_field_by_name("meteo_temperature");
+      cs_atmo_hydrostatic_profiles_compute(meteo_pressure,
+                                           f_hp,
+                                           meteo_potemp,
+                                           meteo_density,
+                                           meteo_temp);
+      need_update = 1;
     }
   }
-  else if (context_compute_p_hydro){
-
+  else if (context_compute_p_hydro) {
     cs_hydrostatic_pressure_compute(m, fvq,
-                            &need_update, iterns,
-                            frcxt, dfrcxt, f_hp,
-                            iflux, bflux, i_visc, b_visc,
-                            dphi, rhs);
+                                    &need_update, iterns,
+                                    frcxt, dfrcxt, f_hp,
+                                    iflux, bflux, i_visc, b_visc,
+                                    dphi, rhs);
   }
 
   /* Compute the BCs for the pressure increment

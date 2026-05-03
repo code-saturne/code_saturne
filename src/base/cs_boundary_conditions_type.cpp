@@ -529,7 +529,7 @@ cs_boundary_conditions_type(bool  init,
     cs_real_t d0min = cs_math_infinite_r;
 
     if (is_atmo) {
-      for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++){
+      for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
         const cs_real_t d0 = cs_math_3_square_distance(xyzp0,
                                                        b_face_cog[f_id]);
         if (d0 < d0min) {
@@ -631,7 +631,7 @@ cs_boundary_conditions_type(bool  init,
       fluid_props->p0_face_id = face_id_p_ref_g;
       fluid_props->p0_rank_id = rank_p_ref;
       if (cs_glob_rank_id == rank_p_ref) {
-        if (vp_param->iphydr == 1 || vp_param->iifren == 1){
+        if (vp_param->iphydr == 1 || vp_param->iifren == 1) {
           fluid_props->xyzp0[0] = b_face_cog[fluid_props->p0_face_id][0];
           fluid_props->xyzp0[1] = b_face_cog[fluid_props->p0_face_id][1];
           fluid_props->xyzp0[2] = b_face_cog[fluid_props->p0_face_id][2];
