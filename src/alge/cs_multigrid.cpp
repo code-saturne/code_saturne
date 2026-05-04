@@ -3028,22 +3028,27 @@ _log_residual(const cs_multigrid_t   *mg,
   for (cs_lnum_t i = 0; i < n_rows; i++)
     r[i] -= rhs[i];
 
-  double s = cs_dot_xx(n_rows, r);
+  double s[2];
+  s[0] = cs_dot_xx(n_rows, r);
+
+  /* norm of RHS */
+  s[1] = cs_dot_xx(n_rows, rhs);
 
   CS_FREE(r);
 
 #if defined(HAVE_MPI)
 
   if (mg->comm != MPI_COMM_NULL) {
-    double _sum;
-    MPI_Allreduce(&s, &_sum, 1, MPI_DOUBLE, MPI_SUM, mg->comm);
-    s = _sum;
+    double _sum[2];
+    MPI_Allreduce(s, _sum, 2, MPI_DOUBLE, MPI_SUM, mg->comm);
+    s[0] = _sum[0];
+    s[1] = _sum[1];
   }
 
 #endif /* defined(HAVE_MPI) */
 
-  cs_log_printf(CS_LOG_DEFAULT, "  mg cycle %d: %s residual: %.3g\n",
-                cycle_id, var_name, s);
+  cs_log_printf(CS_LOG_DEFAULT, "  mg cycle %d: %s residual: %.3g, rhs: %.3g\n",
+                cycle_id, var_name, s[0], s[1]);
 }
 
 /*----------------------------------------------------------------------------
