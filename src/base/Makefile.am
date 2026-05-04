@@ -86,7 +86,6 @@ cs_boundary_conditions_set_coeffs_symmetry.h \
 cs_boundary_conditions_set_coeffs_turb.h \
 cs_boundary_conditions_type.h \
 cs_boundary_zone.h \
-cs_calcium.h \
 cs_compute_thermo_pressure_density.h \
 cs_time_step_compute.h \
 cs_control.h \
@@ -329,7 +328,6 @@ cs_boundary_conditions_set_coeffs.cpp \
 cs_boundary_conditions_type.cpp \
 cs_boundary_conditions.cpp \
 cs_boundary_zone.cpp \
-cs_calcium.cpp \
 cs_compute_thermo_pressure_density.cpp \
 cs_control.cpp \
 cs_coupling.cpp \

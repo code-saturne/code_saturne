@@ -62,7 +62,6 @@
 #include "alge/cs_blas.h"
 #include "base/cs_all_to_all.h"
 #include "base/cs_array.h"
-#include "base/cs_calcium.h"
 #include "base/cs_coupling.h"
 #include "base/cs_interface.h"
 #include "base/cs_log.h"
@@ -193,8 +192,115 @@ cs_ast_coupling_t *cs_glob_ast_coupling = nullptr;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Allocate and initialize dynamic vectors (cs_real_t) based on the 'n_vertices'
- * number of points.
+ * Read values, blocking until they are available.
+ *
+ * parameters:
+ *   rank_id    <-- communicating MPI rank id
+ *   iteration  <-> iteration number of read
+ *   var_name   <-- name of the variable to read
+ *   val        --> values read
+ *
+ * returns:
+ *   0 in case of success, error code otherwise
+ *----------------------------------------------------------------------------*/
+
+template <typename T>
+int
+_cs_ast_sync_recv_value(int         rank_id,
+                        int         iteration,
+                        const char *var_name,
+                        T          &val)
+{
+  int success = -1;
+
+#if defined(HAVE_MPI)
+  if (rank_id > -1) {
+    /* Set datatype for global communication */
+    cs_datatype_t datatype = cs_datatype_from_type<T>();
+
+    MPI_Status status;
+    MPI_Recv(&val,
+             1,
+             cs_datatype_to_mpi[datatype],
+             rank_id,
+             iteration,
+             MPI_COMM_WORLD,
+             &status);
+    success = 0;
+  }
+#else
+  bft_error(__FILE__,
+            __LINE__,
+            0,
+            _("Error: %s cannot be called without MPI support."),
+            __func__);
+#endif
+
+  if (_verbosity > 0) {
+    bft_printf(
+      "[ok] receving value %s from code_aster at iteration %d: %14.7e.\n",
+      var_name,
+      iteration,
+      double(val));
+  }
+  return success;
+}
+
+/*----------------------------------------------------------------------------
+ * Write double-precision float values.
+ *
+ * parameters:
+ *   rank_id    <-- communicating MPI rank id
+ *   iteration  <-- iteration number
+ *   var_name   <-- name of the variable to read
+ *   val        <-- values written
+ *
+ * returns:
+ *   0 in case of success, error code otherwise
+ *----------------------------------------------------------------------------*/
+
+template <typename T>
+int
+_cs_ast_sync_send_value(int         rank_id,
+                        int         iteration,
+                        const char *var_name,
+                        const T     val)
+{
+  int success = -1;
+
+#if defined(HAVE_MPI)
+  if (rank_id > -1) {
+    /* Set datatype for global communication */
+    cs_datatype_t datatype = cs_datatype_from_type<T>();
+    MPI_Send(&val,
+             1,
+             cs_datatype_to_mpi[datatype],
+             rank_id,
+             iteration,
+             MPI_COMM_WORLD);
+    success = 0;
+  }
+#else
+  bft_error(__FILE__,
+            __LINE__,
+            0,
+            _("Error: %s cannot be called without MPI support."),
+            __func__);
+#endif
+
+  if (_verbosity > 0) {
+    bft_printf("[ok] sending value %s to code_aster at iteration %d: %14.7e.\n",
+               var_name,
+               iteration,
+               double(val));
+  }
+
+  return success;
+}
+
+/*----------------------------------------------------------------------------
+ * Allocate and initialize dynamic vectors (cs_real_t) based on the
+ * 'n_vertices' number of points.
  *----------------------------------------------------------------------------*/
 
 static int
@@ -341,9 +447,11 @@ _dinorm(cs_real_t *vect1, cs_real_t *vect2, cs_lnum_t nbpts)
   cs_real_t rescale = (cs_real_t)nbpts;
 
 #if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1) {
+  const auto &mpi_w = cs::execution::default_mpi();
+
+  if (mpi_w.n_ranks() > 1) {
     cs_real_t val[2] = { norm, rescale };
-    cs_parall_sum(2, CS_DOUBLE, &val);
+    cs::parall::sum(mpi_w, val);
 
     norm = val[0], rescale = val[1];
   }
@@ -582,8 +690,6 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
 
   cs_glob_ast_coupling = cpl;
 
-  cs_calcium_set_verbosity(cpl->verbosity);
-
   /* Find root rank of coupling */
 
 #if defined(PLE_HAVE_MPI)
@@ -651,13 +757,13 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
 
     /* Send data */
 
-    cs_calcium_write_int(cpl->aci.root_rank, 0, "NBSSIT", 1, &(cpl->nbssit));
-    cs_calcium_write_int(cpl->aci.root_rank, 0, "TADAPT", 1, &idtvar);
+    _cs_ast_sync_send_value(cpl->aci.root_rank, 0, "NBSSIT", cpl->nbssit);
+    _cs_ast_sync_send_value(cpl->aci.root_rank, 0, "TADAPT", idtvar);
 
-    cs_calcium_write_double(cpl->aci.root_rank, 0, "EPSILO", 1, &(cpl->epsilo));
-    cs_calcium_write_double(cpl->aci.root_rank, 0, "TTINIT", 1, &ttinit);
-    cs_calcium_write_double(cpl->aci.root_rank, 0, "TTMAX", 1, &ttmax);
-    cs_calcium_write_double(cpl->aci.root_rank, 0, "PDTREF", 1, &(cpl->dtref));
+    _cs_ast_sync_send_value(cpl->aci.root_rank, 0, "EPSILO", cpl->epsilo);
+    _cs_ast_sync_send_value(cpl->aci.root_rank, 0, "TTINIT", ttinit);
+    _cs_ast_sync_send_value(cpl->aci.root_rank, 0, "TTMAX", ttmax);
+    _cs_ast_sync_send_value(cpl->aci.root_rank, 0, "PDTREF", cpl->dtref);
   }
 }
 
@@ -898,21 +1004,16 @@ cs_ast_coupling_exchange_time_step(cs_real_t c_dt[])
   cpl->iteration += 1;
 
   if (cs_glob_rank_id <= 0) {
-    cs_real_t dt_sat     = c_dt[0];
-    int       n_val_read = 0;
+    cs_real_t dt_sat = c_dt[0];
 
     /* Receive time step sent by code_aster */
 
-    err_code = cs_calcium_read_double(cpl->aci.root_rank,
-                                      &(cpl->iteration),
-                                      "DTAST",
-                                      1,
-                                      &n_val_read,
-                                      &dt_ast);
+    err_code = _cs_ast_sync_recv_value(cpl->aci.root_rank,
+                                       cpl->iteration,
+                                       "DTAST",
+                                       dt_ast);
 
-    if (err_code >= 0) {
-      assert(n_val_read == 1);
-
+    if (err_code == 0) {
       /* Choose smallest time step */
 
       if (dt_ast < dttmp)
@@ -920,11 +1021,10 @@ cs_ast_coupling_exchange_time_step(cs_real_t c_dt[])
       if (dt_sat < dttmp)
         dttmp = dt_sat;
 
-      err_code = cs_calcium_write_double(cpl->aci.root_rank,
-                                         cpl->iteration,
-                                         "DTCALC",
-                                         1,
-                                         &dttmp);
+      _cs_ast_sync_send_value(cpl->aci.root_rank,
+                              cpl->iteration,
+                              "DTCALC",
+                              dttmp);
     }
     else {
       /* In case of error (probably disconnect) stop at next iteration */
@@ -943,10 +1043,11 @@ cs_ast_coupling_exchange_time_step(cs_real_t c_dt[])
   }
 
 #if defined(HAVE_MPI)
+  const auto &mpi_w = cs::execution::default_mpi();
 
-  if (cs_glob_n_ranks > 1)
-    MPI_Bcast(&dttmp, 1, CS_MPI_REAL, 0, cs_glob_mpi_comm);
-
+  if (mpi_w.n_ranks() > 1) {
+    MPI_Bcast(&dttmp, 1, CS_MPI_REAL, 0, mpi_w.comm());
+  }
 #endif
 
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
@@ -1361,11 +1462,10 @@ cs_ast_coupling_set_final_cvg(int icved)
   if (cs_glob_rank_id > 0)
     return;
 
-  cs_calcium_write_int(cpl->aci.root_rank,
-                       cpl->iteration,
-                       "ICVAST",
-                       1,
-                       &cpl->icv2);
+  _cs_ast_sync_send_value(cpl->aci.root_rank,
+                          cpl->iteration,
+                          "ICVAST",
+                          cpl->icv2);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1398,7 +1498,6 @@ cs_ast_coupling_set_verbosity(int verbosity)
   cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
   if (cpl != nullptr) {
     cpl->verbosity = verbosity;
-    cs_calcium_set_verbosity(verbosity);
   }
 }
 
