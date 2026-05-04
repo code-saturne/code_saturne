@@ -799,8 +799,8 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             msg+= "This will reset your multiphase modeling choices.\n"
             msg+= "Do you wish to continue ?"
             choice = QMessageBox.question(self, 'Warning', msg,
-                                          QMessageBox.Yes | QMessageBox.No)
-            if choice == QMessageBox.Yes:
+                                          QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+            if choice == QMessageBox.StandardButton.Yes:
                 self.nept.setPredefinedFlow(model)
                 #TODO : the setDefaultParameters method should be moved to setPredefinedFlow
                 # For now, this is not possible as it would introduce circular dependencies
@@ -820,7 +820,7 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             self.checkBoxNeptuneHeatMass.setEnabled(False)
         else:
             phase_change_transfer = self.nept.getPhaseChangeTransferStatus()
-            check_state = {"on": Qt.Checked, "off": Qt.CheckState.Unchecked}[phase_change_transfer]
+            check_state = {"on": Qt.CheckState.Checked, "off": Qt.CheckState.Unchecked}[phase_change_transfer]
             self.checkBoxNeptuneHeatMass.setEnabled(True)
             self.checkBoxNeptuneHeatMass.setCheckState(check_state)
 
