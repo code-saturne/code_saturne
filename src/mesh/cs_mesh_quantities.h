@@ -33,6 +33,7 @@
 
 #include "base/cs_base.h"
 #include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_adjacencies.h"
 
 /*=============================================================================
  * Macro definitions
@@ -519,17 +520,22 @@ cs_mesh_quantities_check_vol(const cs_mesh_t             *mesh,
  * The corresponding array is allocated by this function, and it is the
  * caller's responsability to free it when they are no longer needed.
  *
- * \param[in]   m          pointer to mesh structure
- * \param[in]   tolerance  addition to local extents of each element:
- *                         extent = base_extent * (1 + tolerance)
+ * \param[in]   m            pointer to mesh structure
+ * \param[in]   location_id  mesh location
+ * \param[in]   v2v          vertex to vextex connectivity, v0 < V1
+ *                           if vertex mesh entity, or nullptr
+ * \param[in]   tolerance    addition to local extents of each element:
+ *                           extent = base_extent * (1 + tolerance)
  *
  * \return  pointer to newly allocated cell volumes array
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_6_t *
-cs_mesh_quantities_cell_extents(const cs_mesh_t  *m,
-                                cs_real_t         tolerance);
+cs_mesh_quantities_extents(const cs_mesh_t        *m,
+                           const int               location_id,
+                           const cs_adjacency_t   *v2v,
+                           const cs_real_t         tolerance);
 
 /*----------------------------------------------------------------------------
  * Return the number of times mesh quantities have been computed.

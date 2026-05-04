@@ -122,24 +122,39 @@ _read_plane_data(cs_real_t  p_normals[],
 void
 cs_user_mesh_modify([[maybe_unused]] cs_mesh_t  *mesh)
 {
-  cs_array<cs_real_t> p_normals(3 * mesh->n_cells);
-  cs_array<cs_real_t> p_origins(3 * mesh->n_cells);
+  /* Example 1: Cut mesh cells by planes (standard plane cut) */
+  /*
+  {
+    cs_array<cs_real_t> p_normals(3 * mesh->n_cells);
+    cs_array<cs_real_t> p_origins(3 * mesh->n_cells);
 
-  /* Modify the input strings here. */
-  const char *file_name = "file_name.csc";
-  const char *absolute_file_path = "/home/...";
-  const char *var_normals_name = "plane_normals";
-  const char *var_origins_name = "plane_origins";
+    const char *file_name = "file_name.csc";
+    const char *absolute_file_path = "/home/...";
+    const char *var_normals_name = "plane_normals";
+    const char *var_origins_name = "plane_origins";
 
-  int ret = _read_plane_data(p_normals,
-                             p_origins,
-                             file_name,
-                             absolute_file_path,
-                             var_normals_name, var_origins_name);
+    int ret = _read_plane_data(p_normals,
+                               p_origins,
+                               file_name,
+                               absolute_file_path,
+                               var_normals_name, var_origins_name);
 
-  if (ret != 0) return;
+    if (ret == 0) {
+      cs_mesh_cut(mesh, (cs_real_3_t *)p_normals, (cs_real_3_t *)p_origins);
+    }
+  }
+  */
 
-  cs_mesh_cut(mesh, (cs_real_3_t *)p_normals, (cs_real_3_t *)p_origins);
+  /* Example 2: Cut cell edges by STL triangulated surfaces (conformal IBM) */
+  {
+    /* Configure the mesh cutting options if needed */
+    cs_glob_mesh_cut_options.poro_min = 0.02;
+    cs_glob_mesh_cut_options.eps_corr_grad_lin = 0.05;
+
+    /* Cut mesh edges by the given STL file */
+    const char *stl_file_name = "obstacle.stl";
+    cs_mesh_cut_edges_by_stl(stl_file_name, mesh);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

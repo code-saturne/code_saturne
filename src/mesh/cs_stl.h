@@ -32,6 +32,9 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
+
+#include "mesh/cs_mesh_adjacencies.h"
+
 #include "fvm/fvm_nodal.h"
 #include "fvm/fvm_writer.h"
 
@@ -75,7 +78,7 @@ typedef struct {
   bool           is_porous;        /*!< If true the STL is used for porosity
                                       computation. (Default : False) */
 
-  fvm_nodal_t    *ext_mesh;         /*!< Associated external mesh */
+  fvm_nodal_t   *ext_mesh;         /*!< Associated external mesh */
 
 } cs_stl_mesh_t ;
 
@@ -227,7 +230,7 @@ cs_stl_mesh_scale(cs_stl_mesh_t  *stl_mesh,
 
 void
 cs_stl_set_porosity_seed(cs_stl_mesh_t  *stl_mesh,
-                         int            n_points,
+                         int             n_points,
                          cs_real_t      *coords);
 
 /*----------------------------------------------------------------------------*/
@@ -289,30 +292,36 @@ void
 cs_stl_file_write(cs_stl_mesh_t  *stl_mesh,
                   const char     *path);
 
-/*----------------------------------------------------------------------------
- * Compute intersection between a STL mesh and the main mesh.
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Compute intersection between a STL mesh and the main mesh.
  *
- * parameters:
- *   stl_mesh         <-- pointer to the associated STL mesh structure
- *   n_input          <-- number of cells on which intersection is done
- *   input_index      <-- index of input cells (size: n_input)
- *   n_selected_cells --> number of intersecting cells
- *   selected_cells   --> index of output cells (size: n_output)
- *   tria_in_cell_idx --> start index of triangle intersecting each cell
- *                        (size: n_output)
- *   tria_in_cell_lst --> list of triangles in intersecting cells
- *   max_size         --> maximum size of tria_in_cell_lst array
- *----------------------------------------------------------------------------*/
+ * \param[in]     stl_mesh          pointer to the associated STL mesh structure
+ * \param[in]     location_id       mesh location
+ * \param[in]     v2v               vertex to vextex connectivity, v0 < V1
+ *                                  if vertex mesh entity, or nullptr
+ * \param[in]     n_input           number of mesh entity on which intersection is done
+ * \param[in]     input_idx         index of input (size: input_idx)
+ * \param[out]    n_selected_cells  number of output intersecting
+ * \param[out]    selected_cells    index of output (size: output_idx)
+ * \param[out]    tria_in_cell_idx  start index of triangle intersecting
+                                    each mesh entity (size: n_output)
+ * \param[out]    tria_in_cell_lst  list of triangles in intersecting cells
+ * \param[in,out] max_size          maximum size of tria_in_cell_lst array
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_stl_intersection(cs_stl_mesh_t *stl_mesh,
-                    cs_lnum_t     n_input,
-                    cs_lnum_t     *input_idx,
-                    cs_lnum_t     *n_selected_cells,
-                    cs_lnum_t     *selected_cells,
-                    cs_lnum_t     *tria_in_cell_idx,
-                    cs_lnum_t     **tria_in_cell_lst,
-                    cs_lnum_t     *max_size);
+cs_stl_intersection(const cs_stl_mesh_t  *stl_mesh,
+                    const int             location_id,
+                    const cs_adjacency_t *v2v,
+                    cs_lnum_t             n_input,
+                    cs_lnum_t            *input_idx,
+                    cs_lnum_t            *n_selected_cells,
+                    cs_lnum_t            *selected_cells,
+                    cs_lnum_t            *tria_in_cell_idx,
+                    cs_lnum_t           **tria_in_cell_lst,
+                    cs_lnum_t            *max_size);
 
 /*----------------------------------------------------------------------------
  * Refine the mesh following a given STL mesh

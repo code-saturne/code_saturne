@@ -2172,39 +2172,43 @@ cs_stl_file_write(cs_stl_mesh_t  *stl_mesh,
 /*!
  * \brief Compute intersection between a STL mesh and the main mesh.
  *
- * \param[in]     stl_mesh         pointer to the associated STL mesh structure
- * \param[in]     n_input          number of cells on which intersection is done
- * \param[in]     input_idx        index of input cells (size: input_idx)
- * \param[out]    n_selected_cells number of output intersecting cells
- * \param[out]    selected_cells   index of output cells (size: output_idx)
- * \param[out]    tria_in_cell_idx start index of triangle intersecting each cell
- *                                  (size: n_output)
- * \param[out]    tria_in_cell_lst list of triangles in intersecting cells
- * \param[in,out] max_size         maximum size of tria_in_cell_lst array
+ * \param[in]     stl_mesh          pointer to the associated STL mesh structure
+ * \param[in]     location_id       mesh location
+ * \param[in]     v2v               vertex to vextex connectivity, v0 < V1
+ *                                  if vertex mesh entity, or nullptr
+ * \param[in]     n_input           number of mesh entity on which intersection is done
+ * \param[in]     input_idx         index of input (size: input_idx)
+ * \param[out]    n_selected_cells  number of output intersecting
+ * \param[out]    selected_cells    index of output (size: output_idx)
+ * \param[out]    tria_in_cell_idx  start index of triangle intersecting
+                                    each mesh entity (size: n_output)
+ * \param[out]    tria_in_cell_lst  list of triangles in intersecting cells
+ * \param[in,out] max_size          maximum size of tria_in_cell_lst array
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_stl_intersection(cs_stl_mesh_t *stl_mesh,
-                    cs_lnum_t      n_input,
-                    cs_lnum_t     *input_idx,
-                    cs_lnum_t     *n_selected_cells,
-                    cs_lnum_t     *selected_cells,
-                    cs_lnum_t     *tria_in_cell_idx,
-                    cs_lnum_t    **tria_in_cell_lst,
-                    cs_lnum_t     *max_size)
+cs_stl_intersection(const cs_stl_mesh_t  *stl_mesh,
+                    const int             location_id,
+                    const cs_adjacency_t *v2v,
+                    cs_lnum_t             n_input,
+                    cs_lnum_t            *input_idx,
+                    cs_lnum_t            *n_selected,
+                    cs_lnum_t            *selected,
+                    cs_lnum_t            *tria_idx,
+                    cs_lnum_t           **tria_lst,
+                    cs_lnum_t            *max_size)
 {
   cs_mesh_t *m = cs_glob_mesh;
 
-  cs_lnum_t  n_cells = n_input;// Local number of cells of the main mesh
   cs_lnum_t  n_tria_stl = stl_mesh->n_faces; // Local number of triangles of the STL
   const cs_lnum_3_t *tria_vtx_ids = stl_mesh->tria_vtx_ids;
-  cs_lnum_t  n_boxes = n_cells + n_tria_stl;
+  cs_lnum_t  n_boxes = n_input + n_tria_stl;
   int dim = 3;
 
-  cs_lnum_t *_tria_in_cell_lst = nullptr;
-  if (tria_in_cell_lst != nullptr)
-    _tria_in_cell_lst = *tria_in_cell_lst;
+  cs_lnum_t *_tria_lst = nullptr;
+  if (tria_lst != nullptr)
+    _tria_lst = *tria_lst;
 
   cs_gnum_t *box_gnum = nullptr;
   cs_coord_t *extents = nullptr;
@@ -2213,20 +2217,19 @@ cs_stl_intersection(cs_stl_mesh_t *stl_mesh,
   CS_MALLOC(extents , 2*dim*n_boxes, cs_coord_t);
 
   /* Global numbering construction */
-  for (cs_lnum_t i = 0; i < n_cells; i++)
+  for (cs_lnum_t i = 0; i < n_input; i++)
     box_gnum[i] = i + 1;
 
   for (cs_lnum_t i = 0; i < n_tria_stl; i++)
-    box_gnum[i + n_cells] = n_cells + i + 1;
-
+    box_gnum[i + n_input] = n_input + i + 1;
 
   /* Compute extents */
 
   // For the main mesh
   cs_real_6_t *bbox = nullptr;
-  bbox = cs_mesh_quantities_cell_extents(m, 0.0);
+  bbox = cs_mesh_quantities_extents(m, location_id, v2v, 0.0);
 
-  for (cs_lnum_t i = 0; i < n_cells; i++)
+  for (cs_lnum_t i = 0; i < n_input; i++)
     for (int id = 0; id < 6; id ++)
       extents[6*i + id] = bbox[input_idx[i]][id];
 
@@ -2258,7 +2261,7 @@ cs_stl_intersection(cs_stl_mesh_t *stl_mesh,
 
   for (cs_lnum_t i = 0; i < n_tria_stl; i++) {
     for (cs_lnum_t id = 0; id < 6; id ++)
-      extents[6*(i+n_cells) + id] = bbox[i][id];
+      extents[6*(i+n_input) + id] = bbox[i][id];
   }
 
   CS_FREE(bbox);
@@ -2292,19 +2295,19 @@ cs_stl_intersection(cs_stl_mesh_t *stl_mesh,
                                  &neighbor_index,
                                  &neighbor_num);
 
-  cs_gnum_t _n_cells = n_cells;
-  cs_lnum_t _n_selected_cells = 0;
+  cs_gnum_t _n_input = n_input;
+  cs_lnum_t _n_selected = 0;
   cs_lnum_t idx_num = 0;
 
   /* Init of list if needed */
-  if (tria_in_cell_idx != nullptr)
-    tria_in_cell_idx[_n_selected_cells] = 0;
+  if (tria_idx != nullptr)
+    tria_idx[_n_selected] = 0;
 
   /* Loop on the elements that have neighbors */
   for (cs_lnum_t i = 0; i < n_elts; i++) {
 
     // Check if the element is a box from the main mesh
-    if (elt_num[i] <= _n_cells) {
+    if (elt_num[i] <= _n_input) {
 
       cs_lnum_t cell_id = elt_num[i] - 1;
       cs_lnum_t nb_tri_in_cell = 0;
@@ -2315,10 +2318,10 @@ cs_stl_intersection(cs_stl_mesh_t *stl_mesh,
         // If the current neighbor is a box from the STL,
         // -> the BB from the cell intersects the BB from
         // the STL
-        if (neighbor_num[j] > _n_cells) {
+        if (neighbor_num[j] > _n_input) {
 
           // Local number of the triangle
-          cs_lnum_t tria_id = neighbor_num[j] - n_cells - 1;
+          cs_lnum_t tria_id = neighbor_num[j] - n_input - 1;
 
           const cs_lnum_t vtx_ids_l[3] = {tria_vtx_ids[tria_id][0],
                                           tria_vtx_ids[tria_id][1],
@@ -2339,12 +2342,12 @@ cs_stl_intersection(cs_stl_mesh_t *stl_mesh,
 
           if (triangle_box_intersect) {
             nb_tri_in_cell++;
-            if (tria_in_cell_lst != nullptr) {
+            if (tria_lst != nullptr) {
               if (idx_num >= *max_size) {
                 *max_size *= 2;
-                CS_REALLOC(_tria_in_cell_lst, *max_size, cs_lnum_t);
+                CS_REALLOC(_tria_lst, *max_size, cs_lnum_t);
               }
-              _tria_in_cell_lst[idx_num] = tria_id;
+              _tria_lst[idx_num] = tria_id;
               idx_num ++;
             }
 
@@ -2357,18 +2360,18 @@ cs_stl_intersection(cs_stl_mesh_t *stl_mesh,
       // If at least one time a triangle neigbor was found in the
       // previous loop, tag the cell.
       if (nb_tri_in_cell > 0) {
-        selected_cells[_n_selected_cells] = input_idx[cell_id];
-        if (tria_in_cell_idx != nullptr)
-          tria_in_cell_idx[_n_selected_cells + 1] = idx_num;
-        _n_selected_cells ++;
+        selected[_n_selected] = input_idx[cell_id];
+        if (tria_idx != nullptr)
+          tria_idx[_n_selected + 1] = idx_num;
+        _n_selected ++;
       }
 
     }
   }
 
-  *n_selected_cells  = _n_selected_cells;
-  if (tria_in_cell_lst != nullptr)
-    *tria_in_cell_lst = _tria_in_cell_lst;
+  *n_selected  = _n_selected;
+  if (tria_lst != nullptr)
+    *tria_lst = _tria_lst;
 
   fvm_neighborhood_destroy(&cell_neighborhood);
 
@@ -2391,8 +2394,8 @@ cs_stl_intersection(cs_stl_mesh_t *stl_mesh,
 
 void
 cs_stl_refine(cs_stl_mesh_t *stl_mesh,
-              int           n_ref,
-              int           n_add_layer)
+              int            n_ref,
+              int            n_add_layer)
 {
   cs_mesh_t *m = cs_glob_mesh;
 
@@ -2425,14 +2428,16 @@ cs_stl_refine(cs_stl_mesh_t *stl_mesh,
     }
 
     /* Compute mesh/STL intersection  */
-    cs_stl_intersection( stl_mesh,
-                         n_input_cells,
-                         input_cells,
-                         &n_selected_cells,
-                         selected_cells,
-                         nullptr,
-                         nullptr,
-                         nullptr);
+    cs_stl_intersection(stl_mesh,
+                        CS_MESH_LOCATION_CELLS,
+                        nullptr,
+                        n_input_cells,
+                        input_cells,
+                        &n_selected_cells,
+                        selected_cells,
+                        nullptr,
+                        nullptr,
+                        nullptr);
 
     /* If no intersected cells, do not perform refinement */
     cs_lnum_t n_intersected_cells = n_selected_cells;
@@ -2611,6 +2616,8 @@ cs_stl_compute_porosity(cs_stl_mesh_t *stl_mesh,
   /* Get the intersection
    * ==================== */
   cs_stl_intersection(stl_mesh,
+                      CS_MESH_LOCATION_CELLS,
+                      nullptr,
                       n_input_cells,
                       input_cells,
                       &n_selected_cells,
@@ -2621,7 +2628,10 @@ cs_stl_compute_porosity(cs_stl_mesh_t *stl_mesh,
 
   /* Compute the bounding boxes of the main mesh */
   cs_real_6_t *bbox = nullptr;
-  bbox = cs_mesh_quantities_cell_extents(m, 0.0);
+  bbox = cs_mesh_quantities_extents(m,
+                                    CS_MESH_LOCATION_CELLS,
+                                    nullptr,
+                                    0.0);
 
   /* If a cell is overlaped by more than 1 triangle,
    * replace those triangles by a mean plane

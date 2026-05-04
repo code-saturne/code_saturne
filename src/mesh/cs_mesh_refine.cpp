@@ -63,6 +63,7 @@
 
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
+#include "mesh/cs_mesh_algorithm.h"
 #include "mesh/cs_mesh_location.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "mesh/cs_mesh_adaptive_refinement.h"
@@ -2132,87 +2133,6 @@ _v2v_edge_id(cs_lnum_t              v0,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Sync edges flag for parallelism and determine associated
- *        added vertices global numbers.
- *
- * \param[in]       m            pointer to mesh structure
- * \param[in]       v2v          vertex adjacency
- * \param[in, out]  e_v_flag     for each edge, flag (count) for added vertices
- * \param[out]      g_edges_num  global edges number, or nullptr
- *
- * \return: global number of edges
- */
-/*----------------------------------------------------------------------------*/
-
-static cs_gnum_t
-_sync_edges_flag(const cs_mesh_t        *m,
-                 const cs_adjacency_t   *v2v,
-                 cs_lnum_t               e_v_flag[],
-                 cs_gnum_t              *g_edges_num)
-{
-  const cs_lnum_t n_vertices = v2v->n_elts;
-  const cs_lnum_t n_edges = v2v->idx[v2v->n_elts];
-
-  cs_gnum_t n_g_edges = n_edges;
-
-  /* Build global edge numbering and edges interface */
-
-  cs_gnum_t *g_e_vtx;
-  CS_MALLOC(g_e_vtx, n_edges*2, cs_gnum_t);
-
-  cs_lnum_t edge_id = 0;
-
-  for (cs_lnum_t i = 0; i < n_vertices; i++) {
-    cs_gnum_t g_v0 = m->global_vtx_num[i];
-    cs_lnum_t e_id = v2v->idx[i+1];
-    for (cs_lnum_t j = v2v->idx[i]; j < e_id; j++) {
-      cs_gnum_t g_v1 = m->global_vtx_num[v2v->ids[j]];
-      if (g_v0 < g_v1) {
-        g_e_vtx[edge_id*2]   = g_v0;
-        g_e_vtx[edge_id*2+1] = g_v1;
-      }
-      else {
-        g_e_vtx[edge_id*2]   = g_v1;
-        g_e_vtx[edge_id*2+1] = g_v0;
-      }
-      edge_id++;
-    }
-  }
-
-  fvm_io_num_t *edge_io_num
-    = fvm_io_num_create_from_adj_s(nullptr, g_e_vtx, n_edges, 2);
-
-  CS_FREE(g_e_vtx);
-
-  if (cs_glob_n_ranks > 1 || g_edges_num != nullptr) {
-    n_g_edges = fvm_io_num_get_global_count(edge_io_num);
-    const cs_gnum_t *_g_num =  fvm_io_num_get_global_num(edge_io_num);
-    for (cs_lnum_t i = 0; i < n_edges; i++)
-      g_edges_num[i] = _g_num[i];
-    /* Rebuild as shared to free a bit of memory */
-    edge_io_num = fvm_io_num_destroy(edge_io_num);
-    edge_io_num = fvm_io_num_create_shared(g_edges_num, n_g_edges, n_edges);
-  }
-
-  cs_interface_set_t *e_if
-    = cs_interface_set_create(n_edges,
-                              nullptr,
-                              fvm_io_num_get_global_num(edge_io_num),
-                              nullptr, 0, nullptr, nullptr, nullptr);
-
-  /* Synchronize added vertex counts */
-
-  cs_interface_set_max(e_if, n_edges, 1, true, CS_LNUM_TYPE, e_v_flag);
-
-  cs_interface_set_destroy(&e_if);
-
-  edge_io_num = fvm_io_num_destroy(edge_io_num);
-
-  return n_g_edges;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Synchronize interior faces flag for parallelism.
  *
  * \param[in]       m         pointer to mesh structure
@@ -2555,7 +2475,8 @@ _new_edge_and_face_vertex_ids(cs_mesh_t                    *m,
   /* Parallel synchronization */
 
   if (cs_glob_n_ranks > 1) {
-    n_g_edges = _sync_edges_flag(m, v2v, e_v_idx+1, g_edges_num);
+    n_g_edges = cs_mesh_algorithm_sync_edges_flag(m, v2v,
+                                                  e_v_idx+1, g_edges_num);
     _sync_i_faces_flag(m,
                        f_v_idx + m->n_b_faces + 1,
                        f_r_flag + m->n_b_faces);
@@ -3092,91 +3013,6 @@ _build_cell_vertices(cs_mesh_t                    *m,
     }
 
   }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Build global numbers for new vertices on edges, faces, or cells.
- *
- * These vertices are appended at the end of the initial vertex definitions.
- * The numbering arrays should be resized before calling this function
- * (to allow for vertices inserted on edges, faces, and possibly
- * cells with a single resize).
- *
- * Each call of this function updates the global number of vertices
- * member of the mesh structure.
- *
- * \param[in, out]  m          mesh
- * \param[in]       n_elts     number of parent elements
- * \param[in]       n_g_elts   global number of parent elements
- * \param[in]       elt_v_idx  for each element, start index of added vertices
- * \param[in]       g_elt_num  global number of each element
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_build_vertices_gnum(cs_mesh_t       *m,
-                     cs_lnum_t        n_elts,
-                     cs_gnum_t        n_g_elts,
-                     const cs_lnum_t  elt_v_idx[],
-                     const cs_gnum_t  g_elt_num[])
-{
-  cs_gnum_t n_g_add_vtx = 0;
-
-  /* Loop on elements */
-
-  if (cs_glob_n_ranks == 1 && g_elt_num == nullptr) {
-
-    if (m->global_vtx_num != nullptr) {
-      for (cs_lnum_t i = 0; i < n_elts; i++) {
-        for (cs_lnum_t j = elt_v_idx[i]; j < elt_v_idx[i+1]; j++)
-          m->global_vtx_num[j] = j+1;
-      }
-    }
-
-    n_g_add_vtx = elt_v_idx[n_elts] - m->n_g_vertices;
-
-  }
-  else {
-
-    /* Build associated global numbering */
-
-    fvm_io_num_t *elt_io_num
-      = fvm_io_num_create_shared(g_elt_num, n_g_elts, n_elts);
-
-    cs_lnum_t *n_sub;
-    CS_MALLOC(n_sub, n_elts, cs_lnum_t);
-    cs_lnum_t *restrict _n_sub = n_sub;
-    for (cs_lnum_t i = 0; i < n_elts; i++)
-      _n_sub[i] = elt_v_idx[i+1] - elt_v_idx[i];
-    _n_sub = nullptr;
-
-    fvm_io_num_t *vtx_io_num
-      = fvm_io_num_create_from_sub(elt_io_num, n_sub);
-
-    elt_io_num = fvm_io_num_destroy(elt_io_num);
-
-    CS_FREE(n_sub);
-
-    const cs_gnum_t *add_vtx_gnum = fvm_io_num_get_global_num(vtx_io_num);
-    n_g_add_vtx = fvm_io_num_get_global_count(vtx_io_num);
-
-    assert(   elt_v_idx[n_elts] - elt_v_idx[0]
-           == fvm_io_num_get_local_count(vtx_io_num));
-
-    if (m->global_vtx_num != nullptr) {
-      cs_lnum_t k = 0;
-      for (cs_lnum_t i = 0; i < n_elts; i++) {
-        for (cs_lnum_t j = elt_v_idx[i]; j < elt_v_idx[i+1]; j++, k++)
-          m->global_vtx_num[j] = add_vtx_gnum[k] + m->n_g_vertices;
-      }
-    }
-
-    vtx_io_num = fvm_io_num_destroy(vtx_io_num);
-
-  }
-
-  m->n_g_vertices += n_g_add_vtx;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5592,55 +5428,6 @@ _update_face_connectivity(const cs_adjacency_t         *v2v,
 }
 
 /*----------------------------------------------------------------------------
- * Update a global numbering array in case of entity renumbering
- *
- * parameters:
- *   n_old      <-- old number of elements
- *   n_g_old    <-- old global number of elements
- *   o2n_idx    <-- old to new index
- *   global_num <-> global numbering (allocated if initially nullptr)
- *
- * returns:
- *   new global number of elements
- *----------------------------------------------------------------------------*/
-
-static cs_gnum_t
-_o2n_idx_update_global_num(cs_lnum_t          n_old,
-                           cs_gnum_t          n_g_old,
-                           const cs_lnum_t    o2n_idx[],
-                           cs_gnum_t        **global_num)
-{
-  cs_gnum_t n_g_new = o2n_idx[n_old];
-
-  if (cs_glob_n_ranks == 1 && *global_num == nullptr)
-    return n_g_new;
-
-  fvm_io_num_t *o_io_num
-    = fvm_io_num_create_shared(*global_num, n_g_old, n_old);
-
-  cs_lnum_t *n_sub;
-  CS_MALLOC(n_sub, n_old, cs_lnum_t);
-  for (cs_lnum_t i = 0; i < n_old; i++)
-    n_sub[i] = o2n_idx[i+1] - o2n_idx[i];
-
-  fvm_io_num_t *n_io_num
-    = fvm_io_num_create_from_sub(o_io_num, n_sub);
-
-  o_io_num = fvm_io_num_destroy(o_io_num);
-
-  CS_FREE(n_sub);
-  CS_FREE(*global_num);
-
-  *global_num = fvm_io_num_transfer_global_num(n_io_num);
-
-  n_g_new = fvm_io_num_get_global_count(n_io_num);
-
-  n_io_num = fvm_io_num_destroy(n_io_num);
-
-  return n_g_new;
-}
-
-/*----------------------------------------------------------------------------
  * Complete a global numbering array in case of entity renumbering
  *
  * parameters:
@@ -5743,8 +5530,10 @@ _o2n_idx_update_cell_arrays(cs_mesh_t        *m,
   /* Update global numbering */
 
   m->n_g_cells
-    = _o2n_idx_update_global_num(n_c_ini, m->n_g_cells,
-                                 o2n_idx, &(m->global_cell_num));
+    = cs_mesh_algorithm_o2n_idx_update_global_num(n_c_ini,
+                                                  m->n_g_cells,
+                                                  o2n_idx,
+                                                  &(m->global_cell_num));
   m->n_cells = n_new;
   m->n_cells_with_ghosts = n_new;
 
@@ -5822,8 +5611,10 @@ _o2n_idx_update_i_face_arrays(cs_mesh_t        *m,
   /* Update global numbering */
 
   m->n_g_i_faces
-    = _o2n_idx_update_global_num(n_old, m->n_g_i_faces,
-                                 o2n_idx, &(m->global_i_face_num));
+    = cs_mesh_algorithm_o2n_idx_update_global_num(n_old,
+                                                  m->n_g_i_faces,
+                                                  o2n_idx,
+                                                  &(m->global_i_face_num));
 
   m->n_i_faces = n_new;
   m->i_face_vtx_connect_size = m->i_face_vtx_idx[n_new];
@@ -5875,8 +5666,10 @@ _o2n_idx_update_b_face_arrays(cs_mesh_t        *m,
   /* Update global numbering */
 
   m->n_g_b_faces
-    = _o2n_idx_update_global_num(n_old, m->n_g_b_faces,
-                                 o2n_idx, &(m->global_b_face_num));
+    = cs_mesh_algorithm_o2n_idx_update_global_num(n_old,
+                                                  m->n_g_b_faces,
+                                                  o2n_idx,
+                                                  &(m->global_b_face_num));
   m->n_b_faces = n_new;
   m->b_face_vtx_connect_size = m->b_face_vtx_idx[n_new];
 }
@@ -6289,7 +6082,11 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
     CS_REALLOC(m->global_vtx_num, n_vtx_new, cs_gnum_t);
 
   _build_edge_vertices(m, v2v, n_add_vtx[0], e_v_idx, g_edges_num);
-  _build_vertices_gnum(m, n_edges, n_g_edges, e_v_idx, g_edges_num);
+  cs_mesh_algorithm_build_add_vertices_gnum(m,
+                                            n_edges,
+                                            n_g_edges,
+                                            e_v_idx,
+                                            g_edges_num);
 
   CS_FREE(g_edges_num);
 
@@ -6311,10 +6108,10 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   CS_FREE(b_face_cen_o);
   CS_FREE(i_face_cen_o);
 
-  _build_vertices_gnum(m, m->n_b_faces, m->n_g_b_faces,
-                       f_v_idx, m->global_b_face_num);
-  _build_vertices_gnum(m, m->n_i_faces, m->n_g_i_faces,
-                       f_v_idx + m->n_b_faces, m->global_i_face_num);
+  cs_mesh_algorithm_build_add_vertices_gnum(m, m->n_b_faces, m->n_g_b_faces,
+                                            f_v_idx, m->global_b_face_num);
+  cs_mesh_algorithm_build_add_vertices_gnum(m, m->n_i_faces, m->n_g_i_faces,
+                         f_v_idx + m->n_b_faces, m->global_i_face_num);
 
   _build_cell_vertices(m,
                        c2f,
@@ -6327,8 +6124,8 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
 
   CS_FREE(cell_cen_o);
 
-  _build_vertices_gnum(m, m->n_cells, m->n_g_cells,
-                       c_v_idx, m->global_cell_num);
+  cs_mesh_algorithm_build_add_vertices_gnum(m, m->n_cells, m->n_g_cells,
+                                            c_v_idx, m->global_cell_num);
 
   /* Update counts */
 

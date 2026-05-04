@@ -5220,94 +5220,136 @@ cs_mesh_quantities_check_vol(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the bounding box for cells.
+ * \brief  Compute the bounding box for a mesh entity.
  *
  * The corresponding array is allocated by this function, and it is the
  * caller's responsability to free it when they are no longer needed.
  *
- * \param[in]   m          pointer to mesh structure
- * \param[in]   tolerance  addition to local extents of each element:
- *                         extent = base_extent * (1 + tolerance)
+ * \param[in]   m            pointer to mesh structure
+ * \param[in]   location_id  mesh location
+ * \param[in]   v2v          vertex to vextex connectivity, v0 < V1
+ *                           if vertex mesh entity, or nullptr
+ * \param[in]   tolerance    addition to local extents of each element:
+ *                           extent = base_extent * (1 + tolerance)
  *
  * \return  pointer to newly allocated cell volumes array
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_6_t *
-cs_mesh_quantities_cell_extents(const cs_mesh_t  *m,
-                                cs_real_t         tolerance)
+cs_mesh_quantities_extents(const cs_mesh_t      *m,
+                           const int             location_id,
+                           const cs_adjacency_t *v2v,
+                           const cs_real_t       tolerance)
 {
+  assert(   location_id == CS_MESH_LOCATION_CELLS
+         || location_id == CS_MESH_LOCATION_VERTICES);
+
   cs_real_6_t *bbox;
 
-  CS_MALLOC(bbox, m->n_cells_with_ghosts, cs_real_6_t);
+  if (location_id == CS_MESH_LOCATION_CELLS) {
 
-  for (cs_lnum_t i = 0; i < m->n_cells_with_ghosts; i++) {
-    bbox[i][0] = HUGE_VAL;
-    bbox[i][1] = HUGE_VAL;
-    bbox[i][2] = HUGE_VAL;
-    bbox[i][3] = -HUGE_VAL;
-    bbox[i][4] = -HUGE_VAL;
-    bbox[i][5] = -HUGE_VAL;
-  }
+    CS_MALLOC(bbox, m->n_cells_with_ghosts, cs_real_6_t);
 
-  const cs_lnum_t n_i_faces = m->n_i_faces;
+    for (cs_lnum_t i = 0; i < m->n_cells_with_ghosts; i++) {
+      bbox[i][0] = HUGE_VAL;
+      bbox[i][1] = HUGE_VAL;
+      bbox[i][2] = HUGE_VAL;
+      bbox[i][3] = -HUGE_VAL;
+      bbox[i][4] = -HUGE_VAL;
+      bbox[i][5] = -HUGE_VAL;
+    }
 
-  for (cs_lnum_t i = 0; i < n_i_faces; i++) {
-    cs_lnum_t c_id_0 = m->i_face_cells[i][0];
-    cs_lnum_t c_id_1 = m->i_face_cells[i][1];
-    cs_lnum_t s_id = m->i_face_vtx_idx[i];
-    cs_lnum_t e_id = m->i_face_vtx_idx[i+1];
-    for (cs_lnum_t j = s_id; j < e_id; j++) {
-      cs_lnum_t vtx_id = m->i_face_vtx_lst[j];
-      const cs_real_t *coo = m->vtx_coord + vtx_id*3;
-      if (c_id_0 > -1) {
-        for (cs_lnum_t k = 0; k < 3; k++) {
-          bbox[c_id_0][k] = cs::min(bbox[c_id_0][k], coo[k]);
-          bbox[c_id_0][k+3] = cs::max(bbox[c_id_0][k+3], coo[k]);
+    const cs_lnum_t n_i_faces = m->n_i_faces;
+
+    for (cs_lnum_t i = 0; i < n_i_faces; i++) {
+      cs_lnum_t c_id_0 = m->i_face_cells[i][0];
+      cs_lnum_t c_id_1 = m->i_face_cells[i][1];
+      cs_lnum_t s_id = m->i_face_vtx_idx[i];
+      cs_lnum_t e_id = m->i_face_vtx_idx[i+1];
+      for (cs_lnum_t j = s_id; j < e_id; j++) {
+        cs_lnum_t vtx_id = m->i_face_vtx_lst[j];
+        const cs_real_t *coo = m->vtx_coord + vtx_id*3;
+        if (c_id_0 > -1) {
+          for (cs_lnum_t k = 0; k < 3; k++) {
+            bbox[c_id_0][k] = cs::min(bbox[c_id_0][k], coo[k]);
+            bbox[c_id_0][k+3] = cs::max(bbox[c_id_0][k+3], coo[k]);
+          }
         }
-      }
-      if (c_id_1 > -1) {
-        for (cs_lnum_t k = 0; k < 3; k++) {
-          bbox[c_id_1][k] = cs::min(bbox[c_id_1][k], coo[k]);
-          bbox[c_id_1][k+3] = cs::max(bbox[c_id_1][k+3], coo[k]);
+        if (c_id_1 > -1) {
+          for (cs_lnum_t k = 0; k < 3; k++) {
+            bbox[c_id_1][k] = cs::min(bbox[c_id_1][k], coo[k]);
+            bbox[c_id_1][k+3] = cs::max(bbox[c_id_1][k+3], coo[k]);
+          }
         }
       }
     }
-  }
 
-  const cs_lnum_t n_b_faces = m->n_b_faces;
+    const cs_lnum_t n_b_faces = m->n_b_faces;
 
-  for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-    cs_lnum_t c_id = m->b_face_cells[i];
-    cs_lnum_t s_id = m->b_face_vtx_idx[i];
-    cs_lnum_t e_id = m->b_face_vtx_idx[i+1];
-    for (cs_lnum_t j = s_id; j < e_id; j++) {
-      cs_lnum_t vtx_id = m->b_face_vtx_lst[j];
-      const cs_real_t *coo = m->vtx_coord + vtx_id*3;
-      if (c_id > -1) {
-        for (cs_lnum_t k = 0; k < 3; k++) {
-          bbox[c_id][k] = cs::min(bbox[c_id][k], coo[k]);
-          bbox[c_id][k+3] = cs::max(bbox[c_id][k+3], coo[k]);
+    for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+      cs_lnum_t c_id = m->b_face_cells[i];
+      cs_lnum_t s_id = m->b_face_vtx_idx[i];
+      cs_lnum_t e_id = m->b_face_vtx_idx[i+1];
+      for (cs_lnum_t j = s_id; j < e_id; j++) {
+        cs_lnum_t vtx_id = m->b_face_vtx_lst[j];
+        const cs_real_t *coo = m->vtx_coord + vtx_id*3;
+        if (c_id > -1) {
+          for (cs_lnum_t k = 0; k < 3; k++) {
+            bbox[c_id][k] = cs::min(bbox[c_id][k], coo[k]);
+            bbox[c_id][k+3] = cs::max(bbox[c_id][k+3], coo[k]);
+          }
         }
       }
     }
-  }
 
-  {
-    const cs_lnum_t n_cells = m->n_cells;
+    {
+      const cs_lnum_t n_cells = m->n_cells;
 
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-      cs_real_t delta[3];
+        cs_real_t delta[3];
 
-      for (cs_lnum_t i = 0; i < 3; i++)
-        delta[i] = (bbox[c_id][3+i] - bbox[c_id][i]) * tolerance;
+        for (cs_lnum_t i = 0; i < 3; i++)
+          delta[i] = (bbox[c_id][3+i] - bbox[c_id][i]) * tolerance;
 
-      for (cs_lnum_t i = 0; i < 3; i++) {
-        bbox[c_id][i]   = bbox[c_id][i]   - delta[i];
-        bbox[c_id][3+i] = bbox[c_id][3+i] + delta[i];
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          bbox[c_id][i]   = bbox[c_id][i]   - delta[i];
+          bbox[c_id][3+i] = bbox[c_id][3+i] + delta[i];
+        }
+
       }
+    }
+  }
+  else if (location_id == CS_MESH_LOCATION_VERTICES) {
+    const cs_lnum_t n_vtx = m->n_vertices;
+    const cs_real_3_t *restrict vtx_coord
+      = (const cs_real_3_t *)m->vtx_coord;
+    cs_lnum_t *v2v_idx = v2v->idx;
+    cs_lnum_t *v2v_ids = v2v->ids;
+    cs_lnum_t n_edges = v2v_idx[n_vtx];
 
+    CS_MALLOC(bbox, n_edges, cs_real_6_t);
+
+    for (cs_lnum_t v0 = 0; v0 < n_vtx; v0++) {
+      cs_lnum_t s_id = v2v_idx[v0];
+      cs_lnum_t e_id = v2v_idx[v0+1];
+
+      for (cs_lnum_t vidx = s_id; vidx < e_id; vidx++) {
+        cs_lnum_t v1 = v2v_ids[vidx];
+
+        for (cs_lnum_t k = 0; k < 3; k++) {
+          bbox[vidx][k] = cs::min(vtx_coord[v0][k], vtx_coord[v1][k]);
+          bbox[vidx][k+3] = cs::max(vtx_coord[v0][k], vtx_coord[v1][k]);
+        }
+
+        cs_real_t delta[3];
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          delta[i] = (bbox[vidx][3+i] - bbox[vidx][i]) * tolerance;
+          bbox[vidx][i]   = bbox[vidx][i]   - delta[i];
+          bbox[vidx][3+i] = bbox[vidx][3+i] + delta[i];
+        }
+      }
     }
   }
 

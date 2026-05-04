@@ -58,6 +58,7 @@ cs_join_util.h \
 cs_mesh.h \
 cs_mesh_adaptive_refinement.h \
 cs_mesh_adjacencies.h \
+cs_mesh_algorithm.h \
 cs_mesh_bad_cells.h \
 cs_mesh_boundary.h \
 cs_mesh_boundary_layer.h \
@@ -107,6 +108,7 @@ cs_join_util.cpp \
 cs_mesh.cpp \
 cs_mesh_adaptive_refinement.cpp \
 cs_mesh_adjacencies.cpp \
+cs_mesh_algorithm.cpp \
 cs_mesh_bad_cells.cpp \
 cs_mesh_boundary.cpp \
 cs_mesh_boundary_layer.cpp \

@@ -44,6 +44,13 @@
  * Type definitions
  *============================================================================*/
 
+typedef struct {
+  cs_real_t  poro_min;            /* Minimum cell porosity (default: 0.05) */
+  double     eps_corr_grad_lin;   /* Linear gradient correction tolerance (default: 0.1) */
+} cs_mesh_cut_options_t;
+
+extern cs_mesh_cut_options_t cs_glob_mesh_cut_options;
+
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -76,6 +83,27 @@ void
 cs_mesh_cut(cs_mesh_t       *mesh,
             const cs_real_t  p_normals[][3],
             const cs_real_t  p_origins[][3]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Cut cells edges with STL triangles.
+ *
+ * Cells mesh are cutted by triangles according to the STL format. The algorithm
+ * computes the intersection between edges mesh and STL triangles to conserves
+ * conformity but the results can be warped immersed faces.
+ *
+ * The polygons created by the cut are added to a new group,
+ * "auto:closing_polygons".
+ *
+ *
+ * \param[in]       stl_mesh    STL mesh
+ * \param[in, out]  mesh        mesh to cut
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_cut_edges_by_stl(const char  *stl_file_name,
+                         cs_mesh_t   *mesh);
 
 /*----------------------------------------------------------------------------*/
 

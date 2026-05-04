@@ -18,6 +18,9 @@
 
 ### Mesh generation:
 
+- Add a new conformal mesh-cutting algorithm by STL triangulated surfaces
+  for the Immersed Boundary Method (conformal IBM).
+
 - Add fully hexahedral conformed 5-block O-grid cylinder mesh generation
   option in cartesian mesh generator.
 

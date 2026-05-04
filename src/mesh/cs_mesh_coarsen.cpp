@@ -58,6 +58,7 @@
 
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
+#include "mesh/cs_mesh_algorithm.h"
 #include "mesh/cs_mesh_builder.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "mesh/cs_mesh_location.h"
@@ -446,39 +447,6 @@ _cell_equiv(cs_mesh_t  *mesh,
 }
 
 /*----------------------------------------------------------------------------
- * Build new to old array from old to new array
- *
- * The caller is responsible for freeing the returned array.
- *
- * parameters:
- *   n_old      <-- old number of elements
- *   n_new      <-- new number of elements
- *   o2n        <-- old to new array
- *
- * returns:
- *   new to old numbering
- *----------------------------------------------------------------------------*/
-
-static cs_lnum_t *
-_build_n2o(cs_lnum_t          n_old,
-           cs_lnum_t          n_new,
-           const cs_lnum_t    o2n[])
-{
-  cs_lnum_t *n2o;
-  CS_MALLOC(n2o, n_new, cs_lnum_t);
-  for (cs_lnum_t i = 0; i < n_new; i++)
-    n2o[i] = -1;
-
-  for (cs_lnum_t i = 0; i < n_old; i++) {
-    cs_lnum_t j = o2n[i];
-    if (n2o[j] < 0)
-      n2o[j] = i;
-  }
-
-  return n2o;
-}
-
-/*----------------------------------------------------------------------------
  * Build indexed mapping from new to old array.
  *
  * The caller is responsible for freeing the returned array.
@@ -536,257 +504,6 @@ _build_n2o_indexed(cs_lnum_t          n_old,
 
   *n2o_idx = _n2o_idx;
   *n2o = _n2o;
-}
-
-/*----------------------------------------------------------------------------
- * Update a global numbering array in case of entity renumbering
- *
- * parameters:
- *   n_new      <-- new number of elements
- *   n2o        <-- new to old array (same as old element ids list)
- *   global_num <-> global numbering (allocated if initially nullptr)
- *
- * returns:
- *   new global number of elements
- *----------------------------------------------------------------------------*/
-
-static cs_gnum_t
-_n2o_update_global_num(cs_lnum_t          n_new,
-                       const cs_lnum_t    n2o[],
-                       cs_gnum_t        **global_num)
-{
-  cs_gnum_t n_g_new = n_new;
-
-  if (cs_glob_n_ranks == 1 && *global_num == nullptr)
-    return n_g_new;
-
-  fvm_io_num_t *n_io_num
-    = fvm_io_num_create_from_select(n2o, *global_num, n_new);
-
-  CS_FREE(*global_num);
-
-  *global_num = fvm_io_num_transfer_global_num(n_io_num);
-
-  n_g_new = fvm_io_num_get_global_count(n_io_num);
-
-  n_io_num = fvm_io_num_destroy(n_io_num);
-
-  return n_g_new;
-}
-
-/*----------------------------------------------------------------------------
- * Update arrays related to interior faces.
- *
- * parameters:
- *   m     <-> pointer to global mesh structure
- *   n_new <-- number of new faces
- *   f_n2o <-- new to old interior faces array
- *----------------------------------------------------------------------------*/
-
-static void
-_update_i_face_arrays(cs_mesh_t        *m,
-                      cs_lnum_t         n_new,
-                      const cs_lnum_t   f_n2o[])
-{
-  /* Allocate new arrays */
-
-  cs_lnum_2_t *i_face_cells;
-  int *i_face_family;
-  char *i_face_r_gen;
-
-  CS_MALLOC(i_face_cells, n_new, cs_lnum_2_t);
-  CS_MALLOC(i_face_family, n_new, int);
-  CS_MALLOC(i_face_r_gen, n_new, char);
-
-# pragma omp parallel for if (n_new > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_new; i++) {
-    cs_lnum_t j = f_n2o[i];
-    /* update faces -> cells connectivity */
-    i_face_cells[i][0] = m->i_face_cells[j][0];
-    i_face_cells[i][1] = m->i_face_cells[j][1];
-    /* update family */
-    i_face_family[i] = m->i_face_family[j];
-    /* update generation */
-    i_face_r_gen[i] = m->i_face_r_gen[j];
-  }
-
-  CS_FREE(m->i_face_r_gen);
-  CS_FREE(m->i_face_family);
-  CS_FREE(m->i_face_cells);
-  m->i_face_r_gen = i_face_r_gen;
-  m->i_face_cells = i_face_cells;
-  m->i_face_family = i_face_family;
-
-  /* Update global numbering */
-
-  m->n_g_i_faces
-    = _n2o_update_global_num(n_new, f_n2o, &(m->global_i_face_num));
-
-  m->n_i_faces = n_new;
-
-  /* Update connectivity */
-
-  cs_lnum_t *i_face_vtx_idx, *i_face_vtx;
-  CS_MALLOC(i_face_vtx_idx, n_new+1, cs_lnum_t);
-  CS_MALLOC(i_face_vtx, m->i_face_vtx_connect_size, cs_lnum_t);
-
-  i_face_vtx_idx[0] = 0;
-  for (cs_lnum_t i = 0; i < n_new; i++) {
-    cs_lnum_t j = f_n2o[i];
-    cs_lnum_t dst = i_face_vtx_idx[i];
-    cs_lnum_t src = m->i_face_vtx_idx[j];
-    cs_lnum_t n_f_vtx = m->i_face_vtx_idx[j+1] - src;
-    for (cs_lnum_t k = 0; k < n_f_vtx; k++)
-      i_face_vtx[dst+k] = m->i_face_vtx_lst[src+k];
-    i_face_vtx_idx[i+1] = i_face_vtx_idx[i] + n_f_vtx;
-  }
-
-  CS_FREE(m->i_face_vtx_idx);
-  CS_FREE(m->i_face_vtx_lst);
-
-  m->i_face_vtx_idx = i_face_vtx_idx;
-  m->i_face_vtx_lst = i_face_vtx;
-
-  i_face_vtx_idx = nullptr;
-  i_face_vtx = nullptr;
-
-  m->i_face_vtx_connect_size = m->i_face_vtx_idx[n_new];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Merge cells based on renumbering array.
- *
- * Interior faces separating merged cells are removed.
- *
- * \param[in, out]  m              mesh
- * \param[in]       n_new          new number of cells
- * \param[in]       c_o2n          cell old to new renumbering
- * \param[out]      i_f_n2o_pre    new-to-old map of interior faces induced by
- *                                 cell merge
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_merge_cells(cs_mesh_t       *m,
-             cs_lnum_t        n_new,
-             const cs_lnum_t  c_o2n[],
-             cs_lnum_t       *i_f_n2o[])
-{
-  const cs_lnum_t n_old = m->n_cells;
-
-  cs_lnum_t *c_n2o = _build_n2o(n_old, n_new, c_o2n);
-
-  int  *cell_family;
-  CS_MALLOC(cell_family, n_new, int);
-  for (cs_lnum_t i = 0; i < n_new; i++) {
-    cs_lnum_t j = c_n2o[i];
-    cell_family[i] = m->cell_family[j];
-  }
-  CS_FREE(m->cell_family);
-  m->cell_family = cell_family;
-  cell_family = nullptr;
-
-  int *indic = nullptr;
-  CS_MALLOC(indic, n_new, int);
-  for (cs_lnum_t c_id = 0; c_id < n_new; c_id++) {
-    cs_lnum_t old_id = c_n2o[c_id];
-    indic[c_id] = cs_glob_amr_info->indic_cells[old_id];
-  }
-  CS_FREE(cs_glob_amr_info->indic_cells);
-  cs_glob_amr_info->indic_cells = indic;
-
-  /* Update global numbering */
-
-  m->n_g_cells
-    = _n2o_update_global_num(n_new, c_n2o, &(m->global_cell_num));
-
-  CS_FREE(c_n2o);
-
-  /* Transfer (cell-based) halo information to (face-based) mesh builder
-     in case of periodicity, before operation modifying cell numbering  */
-
-  cs_mesh_builder_t *mb = nullptr;
-
-  if (m->halo != nullptr) {
-    if (m->n_init_perio > 0) {
-      const cs_gnum_t n_g_faces = m->n_g_i_faces + m->n_g_b_faces;
-      int rank_id = cs::max(cs_glob_rank_id, 0);
-      mb = cs_mesh_builder_create();
-      cs_mesh_builder_define_block_dist(mb,
-                                        rank_id,
-                                        cs_glob_n_ranks,
-                                        1,
-                                        0,
-                                        m->n_g_cells,
-                                        n_g_faces,
-                                        m->n_g_vertices);
-      cs_mesh_to_builder_perio_faces(m, mb);
-    }
-    cs_halo_destroy(&(m->halo));
-  }
-
-  /* Update face references */
-
-  const cs_lnum_t n_i_faces = m->n_i_faces;
-  const cs_lnum_t n_b_faces = m->n_b_faces;
-
-# pragma omp for schedule(dynamic, CS_CL_SIZE)
-  for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
-    cs_lnum_t i0 = m->i_face_cells[f_id][0];
-    cs_lnum_t i1 = m->i_face_cells[f_id][1];
-    if (i0 >= n_old)
-      m->i_face_cells[f_id][0] = -1;
-    else if (i0 > -1)
-      m->i_face_cells[f_id][0] = c_o2n[i0];
-    if (i1 >= n_old)
-      m->i_face_cells[f_id][1] = -1;
-    else if (i1 > -1)
-      m->i_face_cells[f_id][1] = c_o2n[i1];
-  }
-
-# pragma omp for schedule(dynamic, CS_CL_SIZE)
-  for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-    cs_lnum_t i = m->b_face_cells[f_id];
-    if (i > -1)
-      m->b_face_cells[f_id] = c_o2n[i];
-  }
-
-  m->n_cells = n_new;
-  m->n_cells_with_ghosts = n_new;
-
-  /* We can now rebuild halos (and in case of periodicity, do so before
-     faces are removed or merged, to convert face-based to cell-based
-     information) */
-
-  if (   m->n_domains > 1 || m->n_init_perio > 0
-      || m->halo_type == CS_HALO_EXTENDED) {
-
-    cs_mesh_init_halo(m, mb, m->halo_type, -1, false);
-
-    if (mb != nullptr)
-      cs_mesh_builder_destroy(&mb);
-  }
-
-  /* Remove excess interior faces */
-
-  cs_lnum_t n_i_faces_new = 0;
-
-  {
-    CS_MALLOC(*i_f_n2o, m->n_i_faces, cs_lnum_t);
-    cs_lnum_t *_i_f_n2o = *i_f_n2o;
-
-    for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
-      cs_lnum_t i0 = m->i_face_cells[f_id][0];
-      cs_lnum_t i1 = m->i_face_cells[f_id][1];
-      if (i0 != i1) {
-        _i_f_n2o[n_i_faces_new] = f_id;
-        n_i_faces_new++;
-      }
-    }
-
-    _update_i_face_arrays(m, n_i_faces_new, _i_f_n2o);
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1299,7 +1016,8 @@ _merge_i_faces(cs_mesh_t       *m,
   /* Update global numbering */
 
   m->n_g_i_faces
-    = _n2o_update_global_num(n_new, n2o, &(m->global_i_face_num));
+    = cs_mesh_algorithm_n2o_update_global_num(n_new, n2o,
+                                              &(m->global_i_face_num));
 
   m->n_i_faces = n_new;
 
@@ -1561,7 +1279,8 @@ _merge_b_faces(cs_mesh_t       *m,
   /* Update global numbering */
 
   m->n_g_b_faces
-    = _n2o_update_global_num(n_new, n2o, &(m->global_b_face_num));
+    = cs_mesh_algorithm_n2o_update_global_num(n_new, n2o,
+                                              &(m->global_b_face_num));
 
   m->n_b_faces = n_new;
 
@@ -2014,8 +1733,7 @@ cs_mesh_coarsen_simple(cs_mesh_t  *m,
 
   cs_lnum_t *i_face_n2o_pre = nullptr;
 
-  _merge_cells(m, n_c_new, c_o2n, &i_face_n2o_pre);
-
+  cs_mesh_algorithm_merge_cells(m, n_c_new, c_o2n, &i_face_n2o_pre);
 
   /* Flag merged cells (> 0 for merged cells) */
 
