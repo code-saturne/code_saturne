@@ -2998,6 +2998,7 @@ _convergence_test(cs_multigrid_t        *mg,
  *
  * parameters:
  *   mg              <-- pointer to multigrid context info
+ *   ctx             <-> reference to dispatch context
  *   int cycle_id    <-- cycle id
  *   var_name        <-- variable name
  *   a               <-- matrix
@@ -3010,6 +3011,7 @@ _convergence_test(cs_multigrid_t        *mg,
 
 static void
 _log_residual(const cs_multigrid_t   *mg,
+              cs_dispatch_context    &ctx,
               int                     cycle_id,
               const char             *var_name,
               const cs_matrix_t      *a,
@@ -3021,31 +3023,15 @@ _log_residual(const cs_multigrid_t   *mg,
   const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
 
   cs_real_t  *r;
-  CS_MALLOC(r, n_cols, cs_real_t);
+  CS_MALLOC_HD(r, n_cols, cs_real_t, ctx.alloc_mode());
 
-  cs_matrix_vector_multiply(a, vx, r);
+  cs_matrix_vector_multiply(ctx, a, vx, r);
+  cs_axpy(ctx, n_rows, -1.0, rhs, r);
 
-  for (cs_lnum_t i = 0; i < n_rows; i++)
-    r[i] -= rhs[i];
-
-  double s[2];
-  s[0] = cs_dot_xx(n_rows, r);
-
-  /* norm of RHS */
-  s[1] = cs_dot_xx(n_rows, rhs);
+  double s[2];   /* Norms of r and RHS */
+  _dot_xx_yy(mg, ctx, n_rows, r, rhs, s, s+1);
 
   CS_FREE(r);
-
-#if defined(HAVE_MPI)
-
-  if (mg->comm != MPI_COMM_NULL) {
-    double _sum[2];
-    MPI_Allreduce(s, _sum, 2, MPI_DOUBLE, MPI_SUM, mg->comm);
-    s[0] = _sum[0];
-    s[1] = _sum[1];
-  }
-
-#endif /* defined(HAVE_MPI) */
 
   cs_log_printf(CS_LOG_DEFAULT, "  mg cycle %d: %s residual: %.3g, rhs: %.3g\n",
                 cycle_id, var_name, s[0], s[1]);
@@ -3219,6 +3205,8 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
 
 #if defined(HAVE_ACCEL)
     cs_alloc_mode_t amode_l = cs_matrix_get_alloc_mode(_matrix);
+    bool use_gpu = (amode_l > CS_ALLOC_HOST) ? true : false;
+    ctx.set_use_gpu(use_gpu);
 #endif
 
     cs_mg_sles_t  *mg_sles = &(mgd->sles_hierarchy[level*2]);
@@ -3250,7 +3238,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
       *initial_residual = _initial_residual;
 
     if (verbosity > 1)
-      _log_residual(mg, cycle_id, lv_names[level*2],
+      _log_residual(mg, ctx, cycle_id, lv_names[level*2],
                     _matrix, rhs_lv, vx_lv);
 
     if (c_cvg < CS_SLES_BREAKDOWN) {
@@ -3264,25 +3252,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
        correct sign and meaning of the residual
        (regarding timing, this stage is part of the descent smoother) */
 
-#if defined(HAVE_ACCEL)
-    bool use_gpu = (amode_l > CS_ALLOC_HOST) ? true : false;
-    ctx.set_use_gpu(use_gpu);
-
-    if (use_gpu) {
-#if defined(HAVE_CUDA)
-      cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
-      if (stream != 0)
-        ctx.set_stream(stream);
-#elif defined(HAVE_HIP)
-      hipStream_t stream = cs_matrix_spmv_hip_get_stream();
-      if (stream != 0)
-        ctx.set_stream(stream);
-#endif
-      cs_matrix_vector_multiply_d(_matrix, vx_lv, wr);
-    }
-    else
-#endif
-      cs_matrix_vector_multiply(_matrix, vx_lv, wr);
+    cs_matrix_vector_multiply(ctx, _matrix, vx_lv, wr);
 
     _n_rows = n_rows*db_size;
     ctx.parallel_for(_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
@@ -3402,9 +3372,15 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
 
     *n_equiv_iter += n_iter * n_g_rows * denom_n_g_rows_0;
 
-    if (verbosity > 1)
-      _log_residual(mg, cycle_id, lv_names[level*2],
+    if (verbosity > 1) {
+#if defined(HAVE_ACCEL)
+      bool use_gpu = (cs_matrix_get_alloc_mode(_matrix) > CS_ALLOC_HOST) ?
+        true : false;
+      ctx.set_use_gpu(use_gpu);
+#endif
+      _log_residual(mg, ctx, cycle_id, lv_names[level*2],
                     _matrix, rhs_lv, vx_lv);
+    }
 
     if (c_cvg < CS_SLES_BREAKDOWN)
       end_cycle = true;
@@ -3436,6 +3412,13 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
                        nullptr,
                        &n_g_rows);
 
+      _matrix = cs_grid_get_matrix(f);
+
+#if defined(HAVE_ACCEL)
+      bool use_gpu = (cs_matrix_get_alloc_mode(_matrix) > CS_ALLOC_HOST) ?
+        true : false;
+      ctx.set_use_gpu(use_gpu);
+#endif
       /* Prolong correction */
 
       t0 = cs_timer_time();
@@ -3459,8 +3442,6 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
       if (level > 0) {
 
         rhs_lv = mgd->rhs_vx[level*2];
-
-        _matrix = cs_grid_get_matrix(f);
 
         cs_mg_sles_t  *mg_sles = &(mgd->sles_hierarchy[level*2 + 1]);
 
@@ -3492,7 +3473,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
         *n_equiv_iter += n_iter * n_g_rows * denom_n_g_rows_0;
 
         if (verbosity > 1)
-          _log_residual(mg, cycle_id, lv_names[level*2+1],
+          _log_residual(mg, ctx, cycle_id, lv_names[level*2+1],
                         _matrix, rhs_lv, vx_lv);
 
         if (c_cvg < CS_SLES_BREAKDOWN)
@@ -3672,6 +3653,9 @@ _multigrid_v_cycle_pc(cs_multigrid_t        *mg,
         cs_prefetch_d2h(mgd->rhs_vx[level*2], _n_rows*sizeof(cs_real_t));
       assert(aux_size_h >= wr_size*sizeof(cs_real_t));
     }
+
+    bool use_gpu = (amode_f > CS_ALLOC_HOST) ? true : false;
+    ctx.set_use_gpu(use_gpu);
 #else
     assert(aux_size >= wr_size*sizeof(cs_real_t));
 #endif
@@ -3716,7 +3700,7 @@ _multigrid_v_cycle_pc(cs_multigrid_t        *mg,
       *initial_residual = _initial_residual;
 
     if (verbosity > 1)
-      _log_residual(mg, cycle_id, lv_names[level*2],
+      _log_residual(mg, ctx, cycle_id, lv_names[level*2],
                     _matrix, rhs_lv, vx_lv);
 
     if (c_cvg < CS_SLES_BREAKDOWN) {
@@ -3730,25 +3714,7 @@ _multigrid_v_cycle_pc(cs_multigrid_t        *mg,
        correct sign and meaning of the residual
        (regarding timing, this stage is part of the descent smoother) */
 
-#if defined(HAVE_ACCEL)
-    bool use_gpu = (amode_f > CS_ALLOC_HOST) ? true : false;
-    ctx.set_use_gpu(use_gpu);
-
-    if (use_gpu) {
-#if defined(HAVE_CUDA)
-      cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
-      if (stream != 0)
-        ctx.set_stream(stream);
-#elif defined(HAVE_HIP)
-      hipStream_t stream = cs_matrix_spmv_hip_get_stream();
-      if (stream != 0)
-        ctx.set_stream(stream);
-#endif
-      cs_matrix_vector_multiply_d(_matrix, vx_lv, wr);
-    }
-    else
-#endif
-      cs_matrix_vector_multiply(_matrix, vx_lv, wr);
+    cs_matrix_vector_multiply(ctx, _matrix, vx_lv, wr);
 
     ctx.parallel_for(_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       wr[ii] = rhs_lv[ii] - wr[ii];
@@ -3857,7 +3823,7 @@ _multigrid_v_cycle_pc(cs_multigrid_t        *mg,
     *n_equiv_iter += n_iter * n_g_rows * denom_n_g_rows_0;
 
     if (verbosity > 1)
-      _log_residual(mg, cycle_id, lv_names[level*2],
+      _log_residual(mg, ctx, cycle_id, lv_names[level*2],
                     _matrix, rhs_lv, vx_lv);
 
     if (c_cvg < CS_SLES_BREAKDOWN)
@@ -3906,15 +3872,6 @@ _multigrid_v_cycle_pc(cs_multigrid_t        *mg,
       amode_f = cs_matrix_get_alloc_mode(_matrix);
       if (amode_f > CS_ALLOC_HOST) {
         ctx.set_use_gpu(true);
-#if defined(HAVE_CUDA)
-        cudaStream_t stream = cs_matrix_spmv_cuda_get_stream();
-        if (stream != 0)
-          ctx.set_stream(stream);
-#elif defined(HAVE_HIP)
-        hipStream_t stream = cs_matrix_spmv_hip_get_stream();
-        if (stream != 0)
-          ctx.set_stream(stream);
-#endif
         if (amode_p == CS_ALLOC_HOST)
           cs_prefetch_h2d(vx_lv1, _n_rows*sizeof(cs_real_t));
       }
@@ -3991,7 +3948,7 @@ _multigrid_v_cycle_pc(cs_multigrid_t        *mg,
       *n_equiv_iter += n_iter * n_g_rows * denom_n_g_rows_0;
 
       if (verbosity > 1)
-        _log_residual(mg, cycle_id, lv_names[level*2+1],
+        _log_residual(mg, ctx, cycle_id, lv_names[level*2+1],
                       _matrix, rhs_lv, vx_lv);
 
       if (c_cvg < CS_SLES_BREAKDOWN)
@@ -4180,7 +4137,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
   *n_equiv_iter += n_iter * f_n_g_rows * denom_n_g_rows_0;
 
   if (verbosity > 0)
-    _log_residual(mg, cycle_id, lv_names[level*2],
+    _log_residual(mg, ctx_f, cycle_id, lv_names[level*2],
                   f_matrix, rhs_lv, vx_lv);
 
   /* Compute new residual */
@@ -4277,7 +4234,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
     _lv_info_update_stage_iter(lv_info->n_it_solve, n_iter);
 
     if (verbosity > 0)
-      _log_residual(mg, cycle_id, lv_names[coarsest_level*2],
+      _log_residual(mg, ctx_c, cycle_id, lv_names[coarsest_level*2],
                     c_matrix, rhs_lv1, vx_lv1);
 
     *n_equiv_iter += n_iter * c_n_g_rows * denom_n_g_rows_0;
@@ -4465,7 +4422,7 @@ _multigrid_k_cycle(cs_multigrid_t       *mg,
   *n_equiv_iter += n_iter * f_n_g_rows * denom_n_g_rows_0;
 
   if (verbosity > 0)
-    _log_residual(mg, cycle_id, lv_names[level*2 + 1],
+    _log_residual(mg, ctx_f, cycle_id, lv_names[level*2 + 1],
                   c_matrix, rb_lv, z2_lv);
 
   ctx_f.parallel_for(_f_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
