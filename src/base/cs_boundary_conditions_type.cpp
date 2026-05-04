@@ -781,7 +781,6 @@ cs_boundary_conditions_type(bool  init,
     cs_dispatch_context ctx;
 
     ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-
       const cs_lnum_t c_id = b_face_cells[f_id];
 
       /* IF: Direction of projection of the pressure gradient */
@@ -824,10 +823,10 @@ cs_boundary_conditions_type(bool  init,
     CS_FREE(vel_dir_profile);
     CS_FREE(grad);
 
-
     if (cs_glob_rank_id == fluid_props->p0_rank_id)
       pref = pripb[fluid_props->p0_face_id];
 
+    assert(fluid_props->p0_rank_id >= 0 || cs_glob_n_ranks == 1);
     cs_parall_bcast(fluid_props->p0_rank_id, 1, CS_REAL_TYPE, &pref);
 
     ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
