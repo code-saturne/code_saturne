@@ -36,6 +36,9 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_base.h"
+#include "base/cs_zone.h"
+#include "fvm/fvm_nodal.h"
+#include "fvm/fvm_writer.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -148,6 +151,76 @@ extern const cs_1d_wall_thermal_t  *cs_glob_1d_wall_thermal;
 void
 cs_1d_wall_thermal_create(void);
 
+/*--------------------------------------------------------------------------*/
+/*
+ * \brief Add faces of a boundary zone to 1D wall module
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_thermal_add_zone
+(
+  const cs_zone_t *zone
+);
+
+/*--------------------------------------------------------------------------*/
+/*
+ * \brief Set postprocessing status
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_thermal_post_set_status
+(
+  bool new_status
+);
+
+/*--------------------------------------------------------------------------*/
+/*
+ * \brief Create and return a nodal fvm export of the 1D mesh
+ *
+ * \return fvm_nodal_t pointer. Lifecycle is handled by caller!
+ */
+/*--------------------------------------------------------------------------*/
+
+fvm_nodal_t *
+cs_1d_wall_thermal_export_nodal(void);
+
+/*--------------------------------------------------------------------------*/
+/*
+ * \brief Create post-processing mesh
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_thermal_create_post_mesh(void);
+
+/*--------------------------------------------------------------------------*/
+/*
+ * \brief Write temperature field (postprocessing)
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_post_temperature_field
+(
+ fvm_writer_t       *writer,
+ const fvm_nodal_t  *nm,
+ int                 nt_cur,
+ double              t_cur
+);
+
+/*--------------------------------------------------------------------------*/
+/*
+ * \brief Check if postprocessing is activated
+ *
+ * \return true if postprocessing is used, false otherwise.
+ */
+/*--------------------------------------------------------------------------*/
+
+bool
+cs_1d_wall_thermal_post_activated(void);
+
 /*----------------------------------------------------------------------------*/
 /*
  * \brief Allocate the array of structures local_models.
@@ -252,6 +325,17 @@ cs_1d_wall_thermal_log(void);
 
 void
 cs_1d_wall_thermal_check(int  iappel);
+
+/*--------------------------------------------------------------------------*/
+/*
+ * \brief Check if 1d wall thermal module is used
+ *
+ * \return true if active, false otherwise
+ */
+/*--------------------------------------------------------------------------*/
+
+bool
+cs_1d_wall_thermal_is_used(void);
 
 /*----------------------------------------------------------------------------*/
 

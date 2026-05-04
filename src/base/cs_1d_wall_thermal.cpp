@@ -47,11 +47,15 @@
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
 #include "base/cs_mem.h"
+#include "fvm/fvm_writer.h"
+#include "fvm/fvm_nodal_append.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_location.h"
+#include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters_check.h"
 #include "base/cs_physical_constants.h"
+#include "base/cs_post.h"
 #include "base/cs_restart.h"
 #include "base/cs_restart_default.h"
 #include "base/cs_wall_condensation.h"
@@ -162,6 +166,8 @@
  * Static global variable
  *============================================================================*/
 
+static bool _module_initialized = false;
+
 static cs_1d_wall_thermal_t _1d_wall_thermal =
 {
   .nfpt1d = 0,
@@ -177,6 +183,8 @@ static cs_1d_wall_thermal_t _1d_wall_thermal =
 const cs_1d_wall_thermal_t *cs_glob_1d_wall_thermal = &_1d_wall_thermal;
 
 static cs_restart_t *cs_glob_tpar1d_suite = nullptr;
+
+static bool _post_activated = false;
 
 /*============================================================================
  * Private function definitions
@@ -256,6 +264,240 @@ cs_1d_wall_thermal_create(void)
   for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
     _1d_wall_thermal.izft1d[ifac] = 0;
   }
+
+  _module_initialized = true;
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Add faces of a boundary zone to 1D wall module
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_thermal_add_zone
+(
+  const cs_zone_t *zone /*!<[in] boundary zone to add */
+)
+{
+  // sanity check
+  assert(zone != nullptr);
+
+  if (!_module_initialized)
+    cs_1d_wall_thermal_create();
+
+  // Increment number of faces used for 1D thermal module
+  _1d_wall_thermal.nfpt1d += zone->n_elts;
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Set postprocessing status
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_thermal_post_set_status
+(
+  bool new_status /*!<[in] postprocessing status to set */
+)
+{
+  _post_activated = new_status;
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Create post-processing mesh
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_thermal_create_post_mesh(void)
+{
+  int  post_mesh_id = cs_post_get_free_mesh_id();
+  /* Attach to default writer for the moment */
+  int n_writers = 1;
+  int writer_ids[1] = {CS_POST_WRITER_DEFAULT};
+  cs_post_define_1d_thermal_mesh(post_mesh_id,
+                                 false, /* No time varying for the moment */
+                                 true,  /* Output temperature */
+                                 n_writers,
+                                 writer_ids);
+
+  cs_post_write_meshes(cs_glob_time_step);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Create and return a nodal fvm export of the 1D mesh
+ *
+ * \return fvm_nodal_t pointer. Lifecycle is handled by caller!
+ */
+/*--------------------------------------------------------------------------*/
+
+fvm_nodal_t *
+cs_1d_wall_thermal_export_nodal(void)
+{
+  fvm_nodal_t *nm = fvm_nodal_create("wall_1d_thermal_mesh", 3);
+
+  // Count number of edges:
+  cs_lnum_t n_edges = 0;
+  cs_lnum_t n_vtx = 0;
+  for (cs_lnum_t e_id = 0; e_id < _1d_wall_thermal.nfpt1d; e_id++) {
+    n_edges += _1d_wall_thermal.local_models[e_id].nppt1d - 1;
+    n_vtx += _1d_wall_thermal.local_models[e_id].nppt1d;
+  }
+
+  cs_lnum_t *_connect = nullptr;
+  cs_real_t *_coords = nullptr;
+  if (n_edges > 0) {
+    CS_MALLOC(_connect, 2*n_edges, cs_lnum_t);
+    CS_MALLOC(_coords, 3*n_vtx, cs_real_t);
+  }
+
+  /* Span view for easier management */
+  cs_span_2d<cs_lnum_t> connect(_connect, n_edges, 2);
+  cs_span_2d<cs_real_t> coords(_coords, n_vtx, 3);
+  connect.zero();
+  coords.zero();
+
+  cs_lnum_t _o_edge = 0;
+  cs_lnum_t _o_vtx = 0;
+
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  cs_real_3_t *b_face_cog = mq->b_face_cog;
+  cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
+  for (cs_lnum_t e_id = 0; e_id < _1d_wall_thermal.nfpt1d; e_id++) {
+    cs_lnum_t _n_vtx = _1d_wall_thermal.local_models[e_id].nppt1d;
+    cs_lnum_t f_id = _1d_wall_thermal.ifpt1d[e_id] - 1;
+
+    cs_real_t *face_cog = b_face_cog[f_id];
+    cs_nreal_t *face_u_normal = b_face_u_normal[f_id];
+
+    cs_real_t *zz = _1d_wall_thermal.local_models->z;
+
+    for (cs_lnum_t ii = 0; ii < _n_vtx - 1; ii++) {
+      connect(_o_edge + ii, 0) = _o_vtx + ii + 1;
+      connect(_o_edge + ii, 1) = _o_vtx + ii + 2;
+    }
+
+    for (cs_lnum_t ii = 0; ii < _n_vtx; ii++) {
+      for (int k = 0; k < 3; k++)
+        coords(_o_vtx + ii, k) = face_cog[k] + face_u_normal[k]*zz[ii];
+    }
+
+    _o_edge += (_n_vtx - 1);
+    _o_vtx += _n_vtx;
+  }
+
+  fvm_nodal_append_by_transfer(nm,
+                               n_edges,
+                               FVM_EDGE,
+                               nullptr,
+                               nullptr,
+                               nullptr,
+                               connect.data(),
+                               nullptr);
+  fvm_nodal_set_shared_vertices(nm, coords.data());
+
+  /* In parallel, ensure correct renumbering */
+  if (cs_glob_n_ranks > 1) {
+    cs_gnum_t r_dummy[2] = {0,0};
+    cs_gnum_t s_dummy[2] = {0,0};
+
+#if defined(HAVE_MPI)
+    MPI_Status status;
+    if (cs_glob_rank_id > 0)
+      MPI_Recv(r_dummy, 2, CS_MPI_GNUM,
+          cs_glob_rank_id - 1, 1, cs_glob_mpi_comm, &status);
+
+    s_dummy[0] = r_dummy[0] + n_vtx;
+    s_dummy[1] = r_dummy[1] + n_edges;
+
+    if (cs_glob_rank_id < cs_glob_n_ranks - 1)
+      MPI_Send(s_dummy, 2, CS_MPI_GNUM,
+          cs_glob_rank_id + 1, 1, cs_glob_mpi_comm);
+#endif
+
+    cs_array<cs_gnum_t> vtx_gnum(n_vtx, CS_ALLOC_HOST);
+    cs_array<cs_gnum_t> edge_gnum(n_edges, CS_ALLOC_HOST);
+
+    for (cs_lnum_t v_id = 0; v_id < n_vtx; v_id++)
+      vtx_gnum[v_id] = r_dummy[0] + v_id + 1;
+    for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++)
+      edge_gnum[e_id] = r_dummy[1] + e_id + 1;
+
+    if (n_vtx > 0) {
+      fvm_nodal_init_io_num(nm, edge_gnum.data(), 1);
+      fvm_nodal_init_io_num(nm, vtx_gnum.data(), 0);
+    }
+    else {
+      fvm_nodal_init_io_num(nm, nullptr, 1);
+      fvm_nodal_init_io_num(nm, nullptr, 0);
+    }
+  }
+
+  return nm;
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Write temperature field (postprocessing)
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_post_temperature_field
+(
+ fvm_writer_t       *writer, /*!<[in] pointer to fvm_writer_t to use */
+ const fvm_nodal_t  *nm,     /*!<[in] pointer to fvm_nodal_t (1D mesh) */
+ int                 nt_cur, /*!<[in] current time step */
+ double              t_cur   /*!<[in] current time */
+)
+{
+  if (!_post_activated) {
+    bft_error(__FILE__,__LINE__,0,
+              _("%s cannot be called while postprocessing not activated!\n"),
+              __func__);
+  }
+  const cs_real_t *var_ptr[1] = {nullptr};
+
+  cs_lnum_t n_vtx = 0;
+  for (cs_lnum_t e_id = 0; e_id < _1d_wall_thermal.nfpt1d; e_id++)
+    n_vtx += _1d_wall_thermal.local_models[e_id].nppt1d;
+
+  cs_array<cs_real_t> vals(n_vtx);
+  for (cs_lnum_t e_id = 0; e_id < vals.size(); e_id++)
+    vals[e_id] = _1d_wall_thermal.local_models->t[e_id];
+
+  var_ptr[0] = vals.data();
+
+  fvm_writer_export_field(writer,
+                          nm,
+                          _("wall_1d_temperature"),
+                          FVM_WRITER_PER_NODE,
+                          1,
+                          CS_INTERLACE,
+                          0,
+                          0,
+                          CS_DOUBLE,
+                          nt_cur,
+                          t_cur,
+                          (const void * *)var_ptr);
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Check if postprocessing is activated
+ *
+ * \return true if postprocessing is used, false otherwise.
+ */
+/*--------------------------------------------------------------------------*/
+
+bool
+cs_1d_wall_thermal_post_activated(void)
+{
+  return _post_activated;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1302,6 +1544,20 @@ cs_1d_wall_thermal_check(int  iappel)
          (long)error_count[2], (long)error_count[3]);
     }
   }
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Check if 1d wall thermal module is used
+ *
+ * \return true if active, false otherwise
+ */
+/*--------------------------------------------------------------------------*/
+
+bool
+cs_1d_wall_thermal_is_used(void)
+{
+  return (_1d_wall_thermal.nfpt1t > 0);
 }
 
 /*----------------------------------------------------------------------------*/

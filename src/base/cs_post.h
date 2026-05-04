@@ -84,6 +84,7 @@ BEGIN_C_DECLS
 #define CS_POST_MESH_PARTICLES        -3       /*!< particle output */
 #define CS_POST_MESH_TRAJECTORIES     -4       /*!< particle output */
 #define CS_POST_MESH_PROBES           -5       /*!< probes output */
+#define CS_POST_MESH_1D_THERMAL       -6       /*!< 1D thermal output */
 
 /* Additional categories (no associated default mesh) */
 
@@ -542,6 +543,22 @@ cs_post_define_particles_mesh_by_func(int                    mesh_id,
                                       bool                   auto_variables,
                                       int                    n_writers,
                                       const int              writer_ids[]);
+
+/*--------------------------------------------------------------------------*/
+/*
+ * \brief Define 1D mesh for the 1D wall thermal module
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_post_define_1d_thermal_mesh
+(
+  int       mesh_id,
+  bool      time_varying,
+  bool      auto_variable,
+  int       n_writers,
+  const int writer_ids[]
+);
 
 END_C_DECLS
 

@@ -54,6 +54,16 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief setup function for 1D wall thermal module, used to define global
+ * parameters and options, such as postprocessing.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_1d_wall_thermal_setup(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Data Entry of the 1D wall thermal module.
  *
  * \param[in]   iappel   Call number:

@@ -27,6 +27,14 @@
 /*!
   \page us_pt1d Data setting for the 1D-wall thermal module (cs_user_1d_wall_thermal.cpp)
 
+  The \ref cs_user_1d_wall_thermal_setup subroutine is used to set global
+  parameters for the 1D-wall thermal module, and will soon replace the
+  \ref cs_user_1d_wall_thermal subroutine.
+
+  Currently it allows activating postprocessing for the module thermal field:
+
+  \snippet cs_user_1d_wall_thermal.cpp th1d_activate_postprocessing
+
   The \ref cs_user_1d_wall_thermal subroutine is used to set the 1D-wall thermal
   module parameters.
 

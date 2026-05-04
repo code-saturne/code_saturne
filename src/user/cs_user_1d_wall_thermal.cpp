@@ -43,6 +43,12 @@
  * User function definitions
  *============================================================================*/
 
+#pragma weak cs_user_1d_wall_thermal_setup
+void
+cs_user_1d_wall_thermal_setup(void)
+{
+}
+
 /*----------------------------------------------------------------------------*/
 /*
  * Data Entry of the 1D wall thermal module.

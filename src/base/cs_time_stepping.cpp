@@ -277,7 +277,7 @@ cs_time_stepping(void)
   if (cs_glob_rank_id > -1)
     cs_parall_counter(&cs_get_glob_1d_wall_thermal()->nfpt1t, 1);
 
-  if (cs_get_glob_1d_wall_thermal()->nfpt1t > 0) {
+  if (cs_1d_wall_thermal_is_used()) {
 
     cs_log_printf
       (CS_LOG_DEFAULT,
@@ -310,7 +310,7 @@ cs_time_stepping(void)
     cs_wall_condensation_create();
   }
 
-  if (cs_get_glob_1d_wall_thermal()->nfpt1t > 0)
+  if (cs_1d_wall_thermal_is_used())
     cs_1d_wall_thermal_local_models_create();
 
   /* Map arrays from Lagrangian module */
@@ -437,7 +437,7 @@ cs_time_stepping(void)
      We call cs_user_1d_wall_thermal when there are at least some
      boundary faces with a 1D thermal module. */
 
-  if (cs_get_glob_1d_wall_thermal()->nfpt1t > 0) {
+  if (cs_1d_wall_thermal_is_used()) {
 
     /* Second call: filling in the geometry definition and
        initialization arrays."(IFPT1D,NPPT1D,EPPT1D,RGPT1D,TPPT1D)
@@ -451,6 +451,9 @@ cs_time_stepping(void)
     else
       /* Create mesh, initialize temperature */
       cs_1d_wall_thermal_mesh_create();
+
+    if (cs_1d_wall_thermal_post_activated())
+      cs_1d_wall_thermal_create_post_mesh();
   }
 
   /* First pass for the BCs:

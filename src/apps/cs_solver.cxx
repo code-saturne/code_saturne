@@ -365,6 +365,9 @@ _run(void)
 
   cs_paramedmem_coupling_all_init();
 
+  /* Initialize 1D thermal modeule */
+  cs_user_1d_wall_thermal_setup();
+
   /* Initialize main post-processing */
 
   cs_gui_postprocess_writers();

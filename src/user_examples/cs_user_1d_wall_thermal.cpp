@@ -45,6 +45,21 @@
 
 /*----------------------------------------------------------------------------*/
 /*
+ * \brief setup function for 1D wall thermal module, used to define global
+ * parameters and options, such as postprocessing.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_1d_wall_thermal_setup()
+{
+  /*! [th1d_activate_postprocessing] */
+  cs_1d_wall_thermal_post_set_status(true);
+  /*! [th1d_activate_postprocessing] */
+}
+
+/*----------------------------------------------------------------------------*/
+/*
  * Data Entry of the 1D wall thermal module.
  *
  * \param[in]   iappel   Call number:

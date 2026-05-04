@@ -1,6 +1,14 @@
 Master (not on release branches yet)
 ------------------------------------
 
+### User changes:
+
+- 1D wall thermal module : allow postprocessing of the thermal field using
+  a user function (cs_user_1d_wall_thermal_setup). Currently, the output
+  is linked to the default writer, but future work will provide access
+  through the GUI for these parameters.
+  This is part of an ongoing modernization work of the module.
+
 ### Numerics:
 
 - Gradients: added computation mode for cell-based gradient clipping,

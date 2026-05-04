@@ -46,6 +46,7 @@
 #include "fvm/fvm_nodal_append.h"
 #include "fvm/fvm_nodal_extract.h"
 
+#include "base/cs_1d_wall_thermal.h"
 #include "base/cs_array.h"
 #include "base/cs_base.h"
 #include "base/cs_boundary_zone.h"
@@ -229,6 +230,7 @@ typedef enum {
   CS_POST_LOCATION_B_FACE,       /* Values located at boundary faces */
   CS_POST_LOCATION_VERTEX,       /* Values located at vertices */
   CS_POST_LOCATION_PARTICLE,     /* Values located at particles */
+  CS_POST_LOCATION_THERMAL_1D,   /* Values located at wall 1d mesh */
 
 } cs_post_location_t;
 
@@ -268,24 +270,25 @@ typedef struct {
                                             mesh, > 0 for user mesh */
 
   char                   *name;          /* Mesh name */
-  char                   *criteria[5];   /* Base selection criteria for
+  char                   *criteria[6];   /* Base selection criteria for
                                             cells, interior faces,
                                             boundary faces, and particles
                                             respectively */
-  cs_post_elt_select_t   *sel_func[5];   /* Advanced selection functions for
+  cs_post_elt_select_t   *sel_func[6];   /* Advanced selection functions for
                                             cells, interior faces,
                                             boundary faces, particles and
                                             probes respectively */
-  void                   *sel_input[5];  /* Advanced selection input for
+  void                   *sel_input[6];  /* Advanced selection input for
                                             matching selection functions */
   bool                    ext_def;       /* External definition */
-  int                     ent_flag[5];   /* Presence of cells (ent_flag[0],
+  int                     ent_flag[6];   /* Presence of cells (ent_flag[0],
                                             interior faces (ent_flag[1]),
                                             boundary faces (ent_flag[2]),
                                             or particles (ent_flag[3] = 1
                                             for particles, 2 for trajectories),
                                             probes (ent_flag[4] = 1 for
-                                            monitoring probes, 2 for profile)
+                                            monitoring probes, 2 for profile),
+                                            wall 1d thermal (ent_flag[5])
                                             on one processor at least */
 
   int                     location_id;   /* Associated location id if defined
@@ -1103,7 +1106,7 @@ _predefine_mesh(int        mesh_id,
       post_mesh = _cs_post_meshes + i;
 
       CS_FREE(post_mesh->name);
-      for (j = 0; j < 5; j++)
+      for (j = 0; j < 6; j++)
         CS_FREE(post_mesh->criteria[j]);
       CS_FREE(post_mesh->writer_id);
       CS_FREE(post_mesh->nt_last);
@@ -1158,7 +1161,7 @@ _predefine_mesh(int        mesh_id,
   post_mesh->time_varying = time_varying;
   post_mesh->centers_only = false;
 
-  for (j = 0; j < 5; j++) {
+  for (j = 0; j < 6; j++) {
     post_mesh->criteria[j] = nullptr;
     post_mesh->sel_func[j] = nullptr;
     post_mesh->sel_input[j] = nullptr;
@@ -1200,6 +1203,8 @@ _predefine_mesh(int        mesh_id,
   else if (mode == 3 || mode == 4)     /* Probe or profile mesh */
     post_mesh->ent_flag[4] = mode - 2; /* 1 = probe monitoring,
                                           2 = profile */
+  else if (mode == 5)                  /* 1D thermal mesh based on faces */
+    post_mesh->ent_flag[5] = mode;
 
   _update_mesh_writer_associations(post_mesh);
 
@@ -1809,6 +1814,27 @@ _define_probe_export_mesh(cs_post_mesh_t  *post_mesh)
 }
 
 /*----------------------------------------------------------------------------
+ * Initialize a post-processing mesh based 1D wall thermal module
+ *
+ * parameters:
+ *   post_mesh <-> pointer to partially initialized post-processing mesh
+ *----------------------------------------------------------------------------*/
+
+static void
+_define_wall_1d_thermal_export_mesh
+(
+  cs_post_mesh_t *post_mesh
+)
+{
+  assert(post_mesh != nullptr);
+
+  fvm_nodal_t *exp_mesh = cs_1d_wall_thermal_export_nodal();
+
+  post_mesh->exp_mesh = exp_mesh;
+  post_mesh->_exp_mesh = exp_mesh;
+}
+
+/*----------------------------------------------------------------------------
  * Initialize a post-processing mesh based on its selection criteria
  * or selection functions.
  *
@@ -1903,6 +1929,13 @@ _define_mesh(cs_post_mesh_t        *post_mesh,
 
     _define_probe_export_mesh(post_mesh);
 
+  }
+
+  /* Wall 1D thermal mesh */
+
+  else if (post_mesh->ent_flag[5] != 0) {
+
+    _define_wall_1d_thermal_export_mesh(post_mesh);
   }
 
   /* Standard (non-particle) meshes */
@@ -3116,6 +3149,41 @@ _cs_post_output_profile_coords(cs_post_mesh_t        *post_mesh,
 }
 
 /*----------------------------------------------------------------------------
+ * Output function for wall 1d thermal module
+ *
+ * parameters:
+ *   post_mesh   <-- pointer to post-processing mesh structure
+ *   ts          <-- time step status structure, or null
+ *----------------------------------------------------------------------------*/
+
+static void
+_cs_post_output_1d_thermal
+(
+  cs_post_mesh_t       *post_mesh,
+  const cs_time_step_t *ts
+)
+{
+  bft_printf("%s[L%d] - DBG\n", __func__,__LINE__);
+  bft_printf_flush();
+  assert(post_mesh != nullptr);
+
+  int nt_cur = (ts != nullptr) ? ts->nt_cur : -1;
+  double t_cur = (ts != nullptr) ? ts->t_cur : 0.;
+
+  for (int i = 0; i < post_mesh->n_writers; i++) {
+    cs_post_writer_t *writer = _cs_post_writers + post_mesh->writer_id[i];
+  bft_printf("%s[L%d] - DBG\n", __func__,__LINE__);
+  bft_printf_flush();
+    if (writer->active == 1 && writer->writer != nullptr) {
+      cs_1d_wall_post_temperature_field(writer->writer,
+                                        post_mesh->exp_mesh,
+                                        nt_cur,
+                                        t_cur);
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Main post-processing output of variables.
  *
  * parameters:
@@ -3991,6 +4059,7 @@ _cs_post_define_probe_mesh(int                    mesh_id,
   }
 }
 
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -4664,6 +4733,31 @@ cs_post_define_particles_mesh_by_func(int                    mesh_id,
 
   if (auto_variables)
     post_mesh->cat_id = CS_POST_MESH_PARTICLES;
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Define 1D mesh for the 1D wall thermal module
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_post_define_1d_thermal_mesh
+(
+  int       mesh_id,
+  bool      time_varying,
+  bool      auto_variable,
+  int       n_writers,
+  const int writer_ids[]
+)
+{
+  cs_post_mesh_t *post_mesh = _predefine_mesh(mesh_id, time_varying, 5,
+                                              n_writers, writer_ids);
+  CS_MALLOC(post_mesh->name, strlen("thermal_1d") + 1, char);
+  strcpy(post_mesh->name, "thermal_1d");
+
+  post_mesh->add_groups = false;
+  post_mesh->cat_id = CS_POST_MESH_1D_THERMAL;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -8027,6 +8121,10 @@ cs_post_time_step_output(const cs_time_step_t  *ts)
       _cs_post_write_transient_zone_info(post_mesh, ts);
 
       /* Standard post-processing */
+
+      if (post_mesh->ent_flag[CS_POST_LOCATION_THERMAL_1D] > 0
+          && post_mesh->cat_id == CS_POST_MESH_1D_THERMAL)
+        _cs_post_output_1d_thermal(post_mesh, ts);
 
       if (post_mesh->sel_input[4] != nullptr)
         _cs_post_output_profile_coords(post_mesh, ts);
