@@ -6080,7 +6080,7 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
   for (cs_lnum_t ic = 0; ic < c_n_cells_ext*db_stride; ic++)
     c_da[ic] = 0.;
 
-  cs_gnum_t n_g_diag = 0;
+  cs_gnum_t n_g_neg_diag = 0;
 
   if (db_size == 1) {
     for (cs_lnum_t ii = 0; ii < f_n_cells; ii++) {
@@ -6089,7 +6089,7 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
         if (w1[ii] > 0.)
           c_da[ic] += w1[ii];
         else
-          n_g_diag++;
+          n_g_neg_diag++;
       }
     }
   }
@@ -6100,7 +6100,7 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
         for (cs_lnum_t jj = 0; jj < db_size; jj++) {
           for (cs_lnum_t kk = 0; kk < db_size; kk++) {
             if (jj == kk && w1[ii*db_stride + db_size*jj + kk] < 0.)
-              n_g_diag++;
+              n_g_neg_diag++;
             else
               c_da[ic*db_stride + db_size*jj + kk]
                 += w1[ii*db_stride + db_size*jj + kk];
@@ -6110,10 +6110,14 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
     }
   }
 
-  cs_parall_counter(&n_g_diag, 1);
-
-  if (verbosity > 2)
-    bft_printf("WARNING in cs_grid: number of negative diag is %llu.\n");
+  if (verbosity > 2) {
+    cs_parall_counter(&n_g_neg_diag, 1);
+    cs_base_warn(__FILE__, __LINE__);
+    cs_log_printf(CS_LOG_WARNINGS,
+                  _("%s: %llu negative diagonal matrix entries.\n"),
+                  __func__, (unsigned long long)n_g_neg_diag);
+    cs_log_printf_flush(CS_LOG_WARNINGS);
+  }
 
   for (cs_lnum_t c_face = 0; c_face < c_n_faces; c_face++) {
     cs_lnum_t ic = c_face_cell[c_face][0];
@@ -6475,7 +6479,8 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
     bft_error(__FILE__, __LINE__, 0, "interp incorrectly defined.");
 
   /* Diagonal term */
-  cs_gnum_t n_g_diag = 0;
+
+  cs_gnum_t n_g_neg_diag = 0;
 
   if (db_size == 1) {
     for (cs_lnum_t ii = 0; ii < f_n_cells; ii++) {
@@ -6484,7 +6489,7 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
         if (w1[ii] > 0.)
           c_da[ic] += w1[ii];
         else
-          n_g_diag++;
+          n_g_neg_diag++;
       }
     }
   }
@@ -6495,7 +6500,7 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
         for (cs_lnum_t jj = 0; jj < db_size; jj++) {
           for (cs_lnum_t kk = 0; kk < db_size; kk++) {
             if (jj == kk && w1[ii*db_stride + db_size*jj + kk] < 0.)
-              n_g_diag++;
+              n_g_neg_diag++;
             else
               c_da[ic*db_stride + db_size*jj + kk]
                 += w1[ii*db_stride + db_size*jj + kk];
@@ -6505,10 +6510,14 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
     }
   }
 
-  cs_parall_counter(&n_g_diag, 1);
-
-  if (verbosity > 2)
-    bft_printf("WARNING in cs_grid: number of negative diag is %llu\n");
+  if (verbosity > 2) {
+    cs_parall_counter(&n_g_neg_diag, 1);
+    cs_base_warn(__FILE__, __LINE__);
+    cs_log_printf(CS_LOG_WARNINGS,
+                  _("%s: %llu negative diagonal matrix entries.\n"),
+                  __func__, (unsigned long long)n_g_neg_diag);
+    cs_log_printf_flush(CS_LOG_WARNINGS);
+  }
 
   for (cs_lnum_t c_face = 0; c_face < c_n_faces; c_face++) {
     cs_lnum_t ic = c_face_cell[c_face][0];
@@ -7719,9 +7728,10 @@ _force_diag_dom(double        clip_factor,
   const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
   assert(db_size == 1);
 
-  cs_gnum_t n_g_diag = 0;
+  cs_gnum_t n_g_neg_diag = 0;
+  bool need_log = (verbosity > 1 && cs_log_default_is_active());
 
-# pragma omp parallel for
+# pragma omp parallel for reduction(+:n_g_neg_diag)
   for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
     cs_real_t dii = d_val[ii];
     const cs_real_t *restrict m_row = x_val + c2c_idx[ii];
@@ -7733,14 +7743,15 @@ _force_diag_dom(double        clip_factor,
     sii *= x_mult;
     if (dii < sii) {
       d_val[ii] = sii;
-      n_g_diag++;
+      n_g_neg_diag++;
     }
   }
 
-  cs_parall_counter(&n_g_diag, 1);
-
-  if (verbosity > 1)
-    bft_printf("Force diagonal dominance of %llu elements.\n");
+  if (need_log) {
+    cs_parall_counter(&n_g_neg_diag, 1);
+    bft_printf("Multigrid: force diagonal dominance of %llu elements.\n",
+               (unsigned long long)n_g_neg_diag);
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -8493,7 +8504,6 @@ cs_grid_coarsen(const cs_grid_t      *f,
      relax allocation mode requirements. */
 
 #if defined(HAVE_ACCEL)
-  cs_alloc_mode_t alloc_mode_ref = alloc_mode;
   if (alloc_mode == CS_ALLOC_DEVICE)
     alloc_mode = CS_ALLOC_HOST_DEVICE_SHARED;
 #endif
