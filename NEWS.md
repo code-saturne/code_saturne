@@ -3,6 +3,10 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Fix robustness issues of multigrid linear solver for steady
+  convection/diffusion equations (related to loss of diagonal dominance
+  through truncation errors).
+
 - Atmo: fix bug reading meteo file.
 
 - GUI: Fix bug in outlet backflow conditions using formulae for NCFD
