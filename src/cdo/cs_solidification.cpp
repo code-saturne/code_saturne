@@ -4886,14 +4886,14 @@ cs_solidification_log_setup(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solidification_init_values(const cs_mesh_t              *mesh,
-                              const cs_cdo_connect_t       *connect,
-                              const cs_cdo_quantities_t    *quant,
-                              const cs_time_step_t         *time_step)
+cs_solidification_init_values
+(
+ [[maybe_unused]] const cs_mesh_t        *mesh,    /*<[in] mesh structure */
+ [[maybe_unused]] const cs_cdo_connect_t *connect, /*
+ const cs_cdo_quantities_t               *quant,
+ const cs_time_step_t                    *time_step
+)
 {
-  CS_UNUSED(mesh);
-  CS_UNUSED(connect);
-
   cs_solidification_t  *solid = cs_solidification_structure;
 
   if (solid == nullptr)
@@ -4902,7 +4902,6 @@ cs_solidification_init_values(const cs_mesh_t              *mesh,
   /* Set the first fluid/solid cell and sanity check for the mass density in the
      fluid/solid zone */
 
-  const cs_real_t  cp0 = solid->cp->ref_value;
   const cs_real_t  rho0 = solid->mass_density->ref_value;
 
   if (!cs_flag_test(solid->options, CS_SOLIDIFICATION_NO_VELOCITY_FIELD)) {
@@ -4935,18 +4934,6 @@ cs_solidification_init_values(const cs_mesh_t              *mesh,
                       " Please check your settings.\n"
                       " rho0= %5.3e and rho= %5.3e in zone %s\n",
                       __func__, rho0, rho, z->name);
-
-          cs_real_t  cp = cs_property_get_cell_value(z->elt_ids[0],
-                                                     time_step->t_cur,
-                                                     solid->cp);
-
-          if (fabs(cp - cp0) > cs_math_zero_threshold)
-            bft_error(__FILE__, __LINE__, 0,
-                      "%s: A uniform value of the Cp property in the"
-                      " solidification/melting area is assumed.\n"
-                      " Please check your settings.\n"
-                      " cp0= %5.3e and cp= %5.3e in zone %s\n",
-                      __func__, cp0, cp, z->name);
 
         }
 
