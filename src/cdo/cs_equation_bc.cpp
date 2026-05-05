@@ -233,7 +233,6 @@ _assign_vb_dirichlet_values(int                dim,
  * \param[in]      bc_map      pointer to a cs_bc_map_t structure
  * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
  * \param[in]      val_c      pointer to a cs_field_t structure
- * \param[in]      val_f      pointer to a cs_real_t structure
  * \param[in]      normalize  normalize values to conserve the initial norm
  * \param[in, out] values     pointer to the array of values to set
  *                            size = 3*n_b_faces
@@ -244,14 +243,13 @@ void
 _compute_mapped_cdofb(cs_bc_map_t               *bc_map,
                       const cs_cdo_quantities_t *cdoq,
                       const cs_field_t          *val_c,
-                      const cs_real_t           *val_f,
                       bool                       normalize,
                       cs_real_t                 *values)
 {
   /* Check */
   assert(bc_map != nullptr);
+  assert(cdoq != nullptr);
   assert(val_c != nullptr);
-  assert(val_f != nullptr);
   assert(values != nullptr);
 
   /* Update */
@@ -269,7 +267,6 @@ _compute_mapped_cdofb(cs_bc_map_t               *bc_map,
   const cs_lnum_t *bfaces =
     cs_mesh_location_get_elt_ids_try(bc_map->bc_location_id);
   assert(bfaces != nullptr);
-  const cs_lnum_t n_i_faces = cdoq->n_i_faces;
 
   const int          dim         = val_c->dim;
   const ple_lnum_t   n_dist      = ple_locator_get_n_dist_points(locator);
@@ -321,7 +318,7 @@ _compute_mapped_cdofb(cs_bc_map_t               *bc_map,
 
   /* Compute normalization if applicable */
 
-  cs_real_t scaling[3] = { 1.0, 1.0, 1.0 };
+  cs_real_t scaling[3]  = { 1.0, 1.0, 1.0 };
   bool      use_proj[3] = { true, true, true };
   assert(dim <= 3);
 
@@ -334,14 +331,13 @@ _compute_mapped_cdofb(cs_bc_map_t               *bc_map,
     /* Compute integral on boundary faces */
     for (cs_lnum_t bf_i = 0; bf_i < n_bfaces; bf_i++) {
       const cs_lnum_t  bf_id  = bfaces[bf_i];
-      const cs_lnum_t  f_id   = n_i_faces + bf_id;
-      const cs_real_t  f_meas = cdoq->get_face_surf(f_id);
-      const cs_real_t *_val_f = val_f + f_id * dim;
+      const cs_real_t  f_meas = cdoq->get_bface_surf(bf_id);
+      const cs_real_t *_val_d = values + bf_id * dim;
       const cs_real_t *_local = local_var + bf_i * dim;
       for (cs_lnum_t j = 0; j < dim; j++) {
-        inlet_sum_0[j] += f_meas * _val_f[j];
+        inlet_sum_0[j] += f_meas * _val_d[j];
         inlet_sum_1[j] += f_meas * _local[j];
-        inlet_norm2_0[j] += f_meas * _val_f[j] * _val_f[j];
+        inlet_norm2_0[j] += f_meas * _val_d[j] * _val_d[j];
         inlet_norm2_1[j] += f_meas * _local[j] * _local[j];
       }
     }
@@ -373,20 +369,17 @@ _compute_mapped_cdofb(cs_bc_map_t               *bc_map,
   }
 
   /* Copy values with scaling */
+#pragma omp parallel for if (n_bfaces > CS_THR_MIN)
   for (cs_lnum_t bf_i = 0; bf_i < n_bfaces; bf_i++) {
     const cs_lnum_t  bf_id  = bfaces[bf_i];
-    const cs_lnum_t    f_id   = n_i_faces + bf_id;
     cs_real_t       *_val   = values + bf_id * dim;
-    const cs_real_t   *_val_f = val_f + f_id * dim;
     const cs_real_t *_local = local_var + bf_i * dim;
 
     for (cs_lnum_t j = 0; j < dim; j++) {
       if (use_proj[j]) {
         _val[j] = scaling[j] * _local[j];
       }
-      else {
-        _val[j] = _val_f[j];
-      }
+      /* else do not modifiy dirichlet values */
     }
   }
 
@@ -2132,7 +2125,6 @@ cs_equation_compute_full_neumann_sfb(cs_real_t                  t_eval,
  *
  * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
  * \param[in]      val_c      pointer to a cs_field_t structure
- * \param[in]      val_f      pointer to a cs_real_t structure
  * \param[in]      ts         pointer to a cs_time_step_t structure
  * \param[in, out] values     pointer to the array of values to set
  */
@@ -2141,7 +2133,6 @@ cs_equation_compute_full_neumann_sfb(cs_real_t                  t_eval,
 void
 cs_equation_bc_mapped_inlet_at_faces(const cs_cdo_quantities_t *quant,
                                      const cs_field_t          *val_c,
-                                     const cs_real_t           *val_f,
                                      const cs_time_step_t      *ts,
                                      cs_real_t                 *values)
 {
@@ -2160,7 +2151,7 @@ cs_equation_bc_mapped_inlet_at_faces(const cs_cdo_quantities_t *quant,
   for (int map_id = 0; map_id < nb_maps; map_id++) {
     cs_bc_map_t *bc_map = bc_maps + map_id;
 
-    _compute_mapped_cdofb(bc_map, quant, val_c, val_f, normalize, values);
+    _compute_mapped_cdofb(bc_map, quant, val_c, normalize, values);
   }
 };
 

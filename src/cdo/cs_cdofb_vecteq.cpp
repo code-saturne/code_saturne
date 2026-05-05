@@ -314,11 +314,7 @@ cs_cdofb_vecteq_setup(cs_real_t                  t_eval,
   /* Mapped inlet */
   const cs_time_step_t *ts = cs_shared_time_step;
   const cs_field_t     *vel_c = cs_field_by_id(eqc->var_field_id);
-  cs_equation_bc_mapped_inlet_at_faces(quant,
-                                       vel_c,
-                                       eqc->face_values,
-                                       ts,
-                                       eqb->dir_values);
+  cs_equation_bc_mapped_inlet_at_faces(quant, vel_c, ts, eqb->dir_values);
 }
 
 /*----------------------------------------------------------------------------*/

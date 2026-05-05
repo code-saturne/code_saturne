@@ -285,6 +285,23 @@ typedef struct cs_cdo_quantities_t { /* Specific mesh quantities */
 
   /*----------------------------------------------------------------------------*/
   /*!
+   * \brief Get the face surface for a border primal face
+   *
+   * \param[in]  bf_id    id related to the border face
+   *
+   * \return the value of the border face surface
+   */
+  /*----------------------------------------------------------------------------*/
+
+  inline cs_real_t
+  get_bface_surf(const cs_lnum_t bf_id) const
+  {
+    assert(bf_id >= 0 && bf_id < this->n_b_faces);
+    return this->b_face_surf[bf_id];
+  };
+
+  /*----------------------------------------------------------------------------*/
+  /*!
    * \brief Get the face vector which the face_area * face_normal for a
    *        primal face (interior or border)
    *
