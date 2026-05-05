@@ -3299,7 +3299,7 @@ cs_solidification_activate(cs_solidification_model_t       model,
     options |= CS_SOLIDIFICATION_NO_VELOCITY_FIELD;
   solid->options = options;
 
-  if (post_flag & CS_SOLIDIFICATION_ADVANCED_ANALYSIS)
+  if (post_flag & CS_SOLIDIFICATION_POST_ADVANCED_ANALYSIS)
     post_flag |= CS_SOLIDIFICATION_POST_LIQUIDUS_TEMPERATURE;
   solid->post_flag = post_flag;
 
@@ -4279,7 +4279,7 @@ cs_solidification_destroy_all(void)
       if (solid->post_flag & CS_SOLIDIFICATION_POST_LIQUIDUS_TEMPERATURE)
         CS_FREE(alloy->t_liquidus);
 
-      if (solid->post_flag & CS_SOLIDIFICATION_ADVANCED_ANALYSIS) {
+      if (solid->post_flag & CS_SOLIDIFICATION_POST_ADVANCED_ANALYSIS) {
         CS_FREE(alloy->tbulk_minus_tliq);
         CS_FREE(alloy->cliq_minus_cbulk);
       }
@@ -4648,7 +4648,7 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
                              false, /* not owner */
                              true); /* full length */
 
-    if (solid->post_flag & CS_SOLIDIFICATION_ADVANCED_ANALYSIS) {
+    if (solid->post_flag & CS_SOLIDIFICATION_POST_ADVANCED_ANALYSIS) {
       CS_MALLOC(alloy->tbulk_minus_tliq, n_cells, cs_real_t);
       cs_array_real_fill_zero(n_cells, alloy->tbulk_minus_tliq);
 
@@ -4875,21 +4875,21 @@ cs_solidification_log_setup(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set an initial values for all quantities related to this module
- *         This is done after the setup step.
+ * \brief Set an initial values for all quantities related to this module
+ *        This is done after the setup step.
  *
- * \param[in]      mesh       pointer to a cs_mesh_t structure
- * \param[in]      connect    pointer to a cs_cdo_connect_t structure
- * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]      time_step  pointer to a cs_time_step_t structure
+ * \param[in] mesh       pointer to a cs_mesh_t structure
+ * \param[in] connect    pointer to a cs_cdo_connect_t structure
+ * \param[in] quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in] time_step  pointer to a cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_solidification_init_values
 (
- [[maybe_unused]] const cs_mesh_t        *mesh,    /*<[in] mesh structure */
- [[maybe_unused]] const cs_cdo_connect_t *connect, /*
+ [[maybe_unused]] const cs_mesh_t        *mesh,
+ [[maybe_unused]] const cs_cdo_connect_t *connect,
  const cs_cdo_quantities_t               *quant,
  const cs_time_step_t                    *time_step
 )
@@ -5270,7 +5270,7 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
 
     }
 
-    if ((solid->post_flag & CS_SOLIDIFICATION_ADVANCED_ANALYSIS) > 0) {
+    if ((solid->post_flag & CS_SOLIDIFICATION_POST_ADVANCED_ANALYSIS) > 0) {
 
       assert(alloy->t_liquidus != nullptr && alloy->cliq_minus_cbulk != nullptr
              && alloy->tbulk_minus_tliq != nullptr);
@@ -5401,7 +5401,7 @@ cs_solidification_extra_post(void                      *input,
                                    time_step);
       }
 
-      if (solid->post_flag & CS_SOLIDIFICATION_ADVANCED_ANALYSIS) {
+      if (solid->post_flag & CS_SOLIDIFICATION_POST_ADVANCED_ANALYSIS) {
 
         cs_post_write_probe_values(mesh_id,
                                    CS_POST_WRITER_ALL_ASSOCIATED,
@@ -5469,7 +5469,7 @@ cs_solidification_extra_post(void                      *input,
 
       cs_real_t  *wb = cs_cdo_toolbox_get_tmpbuf();
 
-      if (solid->post_flag & CS_SOLIDIFICATION_ADVANCED_ANALYSIS) {
+      if (solid->post_flag & CS_SOLIDIFICATION_POST_ADVANCED_ANALYSIS) {
 
         if (alloy->cliq_minus_cbulk != nullptr)
           cs_post_write_var(CS_POST_MESH_VOLUME,

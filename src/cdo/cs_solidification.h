@@ -80,7 +80,7 @@
  *        for each time step of the integral over the computational domain
  *        of the solid fraction divided by the volume of the domain.
  *
- * \def CS_SOLIDIFICATION_ADVANCED_ANALYSIS
+ * \def CS_SOLIDIFICATION_POST_ADVANCED_ANALYSIS
  * \brief Activate a set of post-processing (Advanced usage. Only for the
  * understanding of the solidification process)
  *
@@ -94,7 +94,7 @@
 #define CS_SOLIDIFICATION_POST_LIQUIDUS_TEMPERATURE   (1 << 4) /* =  16 */
 #define CS_SOLIDIFICATION_POST_SEGREGATION_INDEX      (1 << 5) /* =  32 */
 #define CS_SOLIDIFICATION_POST_SOLIDIFICATION_RATE    (1 << 6) /* =  64 */
-#define CS_SOLIDIFICATION_ADVANCED_ANALYSIS           (1 << 7) /* = 128 */
+#define CS_SOLIDIFICATION_POST_ADVANCED_ANALYSIS      (1 << 7) /* = 128 */
 
 /*!
  * @name Flags specifying options specific to the solidification module
