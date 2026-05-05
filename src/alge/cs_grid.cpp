@@ -8850,7 +8850,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
                                    nullptr,
                                    nullptr);
 
-  const double diag_dom_clip_factor = 0.; // also 1e-12 can be used;
+  const double diag_dom_clip_factor = -1.; // Use positive value to enable.
   _force_diag_dom(diag_dom_clip_factor, verbosity, c->_matrix);
 
   /* Optional verification */
