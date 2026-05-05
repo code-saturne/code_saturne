@@ -636,7 +636,7 @@ cs_boundary_conditions_check(int  bc_type[],
 
             if (icodcl[f_id] != 3) {
               icod_turb_outlet = false;
-              id_turb_consis = ii;
+              id_turb_consis = f_turb->id;
               icodcl_consis_turb[0] = icodcl[f_id];
             }
 
@@ -778,7 +778,8 @@ cs_boundary_conditions_check(int  bc_type[],
 
     if (n_turb_error != 0) {
 
-      const cs_field_t *f_turb = cs_field_by_id(id_turb);
+      const cs_field_t *f_turb = (id_turb > -1) ?
+        cs_field_by_id(id_turb) : CS_F_(vel);
       cs_log_printf
         (CS_LOG_DEFAULT,
          _("@\n"
@@ -853,15 +854,16 @@ cs_boundary_conditions_check(int  bc_type[],
 
     /* Velocity-turbulence consistency */
 
-    _synchronize_boundary_conditions_error(&n_turb_consis_error, 2, icodcl_consis_turb);
+    _synchronize_boundary_conditions_error
+      (&n_turb_consis_error, 2, icodcl_consis_turb);
     if (n_turb_consis_error != 0) {
-      const cs_field_t *f_turb = cs_field_by_id(id_turb_consis);
-
+      const cs_field_t *f_turb = (id_turb_consis > -1) ?
+        cs_field_by_id(id_turb_consis) : CS_F_(vel);
       cs_log_printf
         (CS_LOG_DEFAULT,
          _("@\n"
-           "@ Incoherency boundary conditions velocity-turbulent variables\n"
-           "@   Total consistency error number: %llu\n"
+           "@ Incoherent boundary conditions, velocity-turbulence variables\n"
+           "@   Total coherency error count: %llu\n"
            "@\n"
            "@ Turbulent variable (last): %s\n"
            "@   icodcl for last face: %d\n"
@@ -880,7 +882,7 @@ cs_boundary_conditions_check(int  bc_type[],
       cs_log_printf
         (CS_LOG_DEFAULT,
          _("@\n"
-           "@ Incoherent boundary conditions velocity-scalars\n"
+           "@ Incoherent boundary conditions, velocity-scalars\n"
            "@   Total consistency error number: %llu\n"
            "@\n"
            "@ Scalar example: %s\n"
