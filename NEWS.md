@@ -3,6 +3,8 @@ Release 9.1.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix bug in Rij clipping visualization.
+
 - Fix setting of solid particles elasticity coefficient in the GUI for
   neptune_cfd
 
