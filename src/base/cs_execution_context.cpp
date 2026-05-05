@@ -71,8 +71,7 @@ cs::execution::default_context(void)
 cs_host_context&
 cs::execution::default_h_context(void)
 {
-  cs_host_context h_ctx = static_cast<cs_host_context>(*(_default_env->ctx));
-  return h_ctx;
+  return static_cast<cs_host_context&>(*(_default_env->ctx));
 }
 
 cs::execution::mpi_wrapper&
