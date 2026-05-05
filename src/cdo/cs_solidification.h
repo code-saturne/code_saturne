@@ -108,6 +108,9 @@
  * \brief The system of equations does not involve the Navier-Stokes equations.
  *        No velocity is taken into account.
  *
+ * \def CS_SOLIDIFICATION_SKIP_RHO_CHECK
+ * \brief Skip rho (mass density) uniformity check
+ *
  * \def CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM
  * \brief The solute equation related to the transport of the bulk concentration
  *        is treated with a source term related to an explicit advection of the
@@ -136,11 +139,12 @@
  * @{
  */
 
-#define CS_SOLIDIFICATION_USE_ENTHALPY_VARIABLE             (1 << 0) /*=    1 */
-#define CS_SOLIDIFICATION_NO_VELOCITY_FIELD                 (1 << 1) /*=    2 */
-#define CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM           (1 << 2) /*=    4 */
-#define CS_SOLIDIFICATION_USE_EXTRAPOLATION                 (1 << 3) /*=    8 */
-#define CS_SOLIDIFICATION_WITH_PENALIZED_EUTECTIC           (1 << 4) /*=   16 */
+#define CS_SOLIDIFICATION_USE_ENTHALPY_VARIABLE          (1 << 0) /*=    1 */
+#define CS_SOLIDIFICATION_NO_VELOCITY_FIELD              (1 << 1) /*=    2 */
+#define CS_SOLIDIFICATION_SKIP_RHO_CHECK                 (1 << 2) /*=    4 */
+#define CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM        (1 << 3) /*=    8 */
+#define CS_SOLIDIFICATION_USE_EXTRAPOLATION              (1 << 4) /*=   16 */
+#define CS_SOLIDIFICATION_WITH_PENALIZED_EUTECTIC        (1 << 5) /*=   32 */
 
 /*
  *

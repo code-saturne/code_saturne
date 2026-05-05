@@ -4904,7 +4904,13 @@ cs_solidification_init_values
 
   const cs_real_t  rho0 = solid->mass_density->ref_value;
 
-  if (!cs_flag_test(solid->options, CS_SOLIDIFICATION_NO_VELOCITY_FIELD)) {
+  bool do_rho_check = true;
+  if (cs_flag_test(solid->options, CS_SOLIDIFICATION_NO_VELOCITY_FIELD))
+    do_rho_check = false;
+  if (cs_flag_test(solid->options, CS_SOLIDIFICATION_SKIP_RHO_CHECK))
+    do_rho_check = false;
+
+  if (do_rho_check) {
 
     for (int i = 0; i < cs_volume_zone_n_zones(); i++) {
 
