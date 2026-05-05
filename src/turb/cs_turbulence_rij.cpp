@@ -3903,6 +3903,7 @@ cs_turbulence_rij_clip(int        phase_id,
   }
   int clip_r_id = f_rij->get_key_int(kclipp);
   if (clip_r_id > -1) {
+    cpro_rij_clipped = (cs_real_6_t *)cs_field(clip_r_id)->val;
     cs_real_t *p_cpro_rij_clipped = cs_field(clip_r_id)->val;
     ctx.parallel_for(n_cells*f_rij->dim, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
       p_cpro_rij_clipped[ii] = 0.;
@@ -3968,7 +3969,7 @@ cs_turbulence_rij_clip(int        phase_id,
   struct cs_reduce_sum_ni<7> reducer_sum;
 
   for (int j = 0; j < 7; j++)
-    rd_sum.i[j] = 0.;
+    rd_sum.i[j] = 0;
 
   if (is_rij_clipped > -1) {
     ctx.parallel_for_reduce
