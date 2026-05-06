@@ -67,6 +67,7 @@ csbase_includedir=$(pkgincludedir)/base
 csbase_include_HEADERS = \
 cs_1d_wall_thermal.h \
 cs_ale.h \
+cs_algorithm.h \
 cs_all_to_all.h \
 cs_array.h \
 cs_array_reduce.h \
@@ -271,6 +272,7 @@ endif
 libcscore_a_LIBADD = cs_base.$(OBJEXT)
 
 libcscore_a_SOURCES = \
+cs_algorithm.cpp \
 cs_all_to_all.cpp \
 cs_block_dist.cpp \
 cs_block_to_part.cpp \

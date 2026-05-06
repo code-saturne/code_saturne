@@ -61,6 +61,7 @@
 #include "base/cs_base.h"
 #include "base/cs_base_accel.h"
 #include "alge/cs_blas.h"
+#include "base/cs_algorithm.h"
 #include "base/cs_dispatch.h"
 #include "base/cs_halo.h"
 #include "base/cs_halo_perio.h"
@@ -1105,8 +1106,6 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
               jj = 0;
             }
           }
-          for (cs_lnum_t ii = 0; ii < jj; ii++) {
-          }
 
           cs_matrix_assembler_values_add_g(mav, jj, g_row_id, g_col_id, val);
         }
@@ -1175,6 +1174,52 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
   CS_FREE(da);
 }
 
+/*----------------------------------------------------------------------------
+ * Measure intermediate matrix assembly functions performance.
+ *
+ * parameters:
+ *   accel <-- use accelerated version if available.
+ *----------------------------------------------------------------------------*/
+
+static void
+_matrix_check_assmb_fine(bool  accel)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+  const cs_lnum_t n_cells = m->n_cells;
+
+  cs_dispatch_context ctx;
+  if (accel == false)
+    ctx.set_use_gpu(false);
+
+  cs_lnum_t *idx = nullptr;
+  CS_MALLOC_HD(idx, n_cells+1, cs_lnum_t, ctx.alloc_mode());
+
+  std::chrono::high_resolution_clock::time_point wt0, wt1;
+  std::chrono::microseconds wt_r0_m;
+
+  ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t  i) {
+    idx[i] = 2 + i%5;
+  });
+  ctx.wait();
+
+  wt0 = std::chrono::high_resolution_clock::now();
+
+  cs::count_to_index(ctx, n_cells, idx);
+  ctx.wait();
+
+  wt1 = std::chrono::high_resolution_clock::now();
+  wt_r0_m =  std::chrono::duration_cast
+            <std::chrono::microseconds>(wt1 - wt0);
+  double wt_r0 = wt_r0_m.count() * 1.e-6;
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                "\n"
+                "Count to index, in-place\n"
+                "------------------------\n");
+
+  _print_stats(1, n_cells, cs_glob_mesh->n_g_cells, wt_r0);
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1240,6 +1285,8 @@ cs_benchmark(int  mpi_trace_mode)
                      n_faces,
                      i_face_cells,
                      mesh->halo);
+
+  _matrix_check_assmb_fine(false);
 
   /* Allocate and initialize  working arrays */
   /*-----------------------------------------*/
