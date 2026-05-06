@@ -1082,7 +1082,7 @@ cs_gui_postprocess_meshes(void)
                                          n_writers, writer_ids);
     }
     else if (   cs_gui_strcmp(type, "VolumicZone")
-             || cs_gui_strcmp(type, "volume_czone")) {
+             || cs_gui_strcmp(type, "volume_zone")) {
       const cs_zone_t *z = cs_volume_zone_by_name(location);
       cs_post_define_mesh_by_location(id, label, z->location_id,
                                       add_groups, auto_vars,
