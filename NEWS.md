@@ -3,6 +3,9 @@ Release 9.1.1 (unreleased)
 
 ### Bug fixes:
 
+- [GUI] Fix bug in outlet backflow conditions using formulae for NCFD.
+  Temperature backflow condition used with formulae were wrongly applied.
+
 - Fix bug in Rij clipping visualization.
 
 - Fix setting of solid particles elasticity coefficient in the GUI for
