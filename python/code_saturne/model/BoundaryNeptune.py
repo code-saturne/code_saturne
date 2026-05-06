@@ -1080,7 +1080,7 @@ class OutletBoundary(Boundary) :
         choice = self.getEnthalpyChoice(fieldId)
 
         if "formula" == choice[-7:]:
-            value = XMLEnergyNode.xmlGetChildString(choice)
+            value = XMLEnergyNode.xmlGetChildString("value")
         else:
             value = XMLEnergyNode.xmlGetChildDouble('value')
 
