@@ -37,16 +37,13 @@
 #include <MEDCouplingField.hxx>
 #include <MEDCouplingFieldDouble.hxx>
 
-#include <InterpKernelDEC.hxx>
+#include <CFEMDEC.hxx>
+#include <InterpKernelDECWithOverlap.hxx>
 #include <ParaFIELD.hxx>
 #include <ParaMESH.hxx>
 
 using namespace MEDCoupling;
 #endif
-
-#define USE_PARAFIELD 1
-/* 1 to use <ParaFIELD> fields,                                            \
- 0 to directly use          MEDCouplingFieldDouble */
 
 /*----------------------------------------------------------------------------*/
 
@@ -71,20 +68,13 @@ struct _cs_paramedmem_coupling_t {
 
   ParaMESH *para_mesh; /* Associated ParaMESH structure. */
 
-  InterpKernelDEC *dec; /* Data Exchange Channel */
+  InterpKernelDECWithOverlap *dec; /* Data Exchange Channel */
+  CFEMDEC *cdec; /* Data Exchange Channel with FE interpolation*/
 
-#if USE_PARAFIELD == 1
   std::vector<ParaFIELD *> fields;
-#else
-  std::vector<MEDCouplingFieldDouble *> fields;
-#endif
 
   /* Current attached local field id */
-#if USE_PARAFIELD == 1
   const ParaFIELD *_curr_field;
-#else
-  const MEDCouplingFieldDouble *_curr_field;
-#endif
 
 #else
 
@@ -125,17 +115,33 @@ private:
 
   /*----------------------------------------------------------------------------*/
   /*!
+   * \brief Compute global vertex numbering
+   *
+   */
+  /*----------------------------------------------------------------------------*/
+
+  DataArrayIdType *
+  _computeGlobalNodeIds(const cs_mesh_t *parent_mesh) const;
+
+  /*----------------------------------------------------------------------------*/
+  /*!
+   * \brief Create ParaMESH object
+   *
+   */
+  /*----------------------------------------------------------------------------*/
+
+  void
+  _creare_paraMesh(const cs_mesh_t *parent_mesh);
+
+  /*----------------------------------------------------------------------------*/
+  /*!
    * \brief Attach a local field
    *
    */
   /*----------------------------------------------------------------------------*/
 
   void
-#if USE_PARAFIELD == 1
   _attachLocalField(const ParaFIELD *field);
-#else
-  _attachLocalField(const MEDCouplingFieldDouble *field);
-#endif
 
   /*----------------------------------------------------------------------------*/
   /*!

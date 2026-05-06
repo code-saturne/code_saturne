@@ -102,6 +102,12 @@ typedef struct {
 
 #endif
 
+typedef enum {
+  None,
+  Relaxation,
+  Aitken,
+} cs_acceleration_t;
+
 /* Main code_aster coupling structure */
 
 struct _cs_ast_coupling_t {
@@ -113,8 +119,8 @@ struct _cs_ast_coupling_t {
   cs_gnum_t n_g_faces;    /* Global number of coupled faces */
   cs_gnum_t n_g_vertices; /* Global number of coupld vertices */
 
-  cs_paramedmem_coupling_t *mc_faces;
-  cs_paramedmem_coupling_t *mc_vertices;
+  cs::paramedmem_coupling_t *mc_faces;
+  cs::paramedmem_coupling_t *mc_vertices;
 
   int verbosity;     /* verbosity level */
   int visualization; /* visualization level */
@@ -136,6 +142,7 @@ struct _cs_ast_coupling_t {
   int icv2; /* Convergence indicator (final) */
 
   cs_real_t rcv1; /* Value of the residual */
+  cs_real_t rcv2; /* Value of the residual */
 
   cs_real_t lref; /* Characteristic macroscopic domain length */
 
@@ -147,15 +154,17 @@ struct _cs_ast_coupling_t {
   cs_real_t *vast_prev;    /* Mesh velocity at previous time step n-1 */
   cs_real_t *vast_pprev;   /* Mesh velocity at previous time step n-2 */
 
-  cs_real_t *forc_curr; /* Fluid forces at current sub-iteration */
-  cs_real_t *forc_prev; /* Fluid forces at previous time step */
-  cs_real_t *forc_pred; /* Predicted fluid forces at current sub-iteration */
+  cs_real_t *pres_curr; /* Fluid pressure at current sub-iteration */
+  cs_real_t *pres_prev; /* Fluid pressure at previous time step */
+  cs_real_t *pres_pred; /* Predicted fluid pressure at current sub-iteration */
 
   cs_real_t aexxst; /*!< coefficient for the predicted displacement */
   cs_real_t bexxst; /*!< coefficient for the predicted displacement */
   cs_real_t rexxst; /*!< coefficient for the relaxation displacement */
 
-  cs_real_t cfopre; /*!< coefficient for the predicted force */
+  cs_acceleration_t pred_disp;
+
+  cs_real_t cfopre; /*!< coefficient for the predicted pressure */
 
   cs_real_t *tmp[3]; /* Temporary array */
 };
@@ -164,7 +173,7 @@ struct _cs_ast_coupling_t {
  * Static global variables
  *============================================================================*/
 
-static const char _name_f_f[] = "fluid_forces";
+static const char _name_f_p[] = "fluid_pressure";
 static const char _name_m_d[] = "mesh_displacement";
 static const char _name_m_v[] = "mesh_velocity";
 
@@ -219,15 +228,15 @@ _allocate_arrays(cs_ast_coupling_t *ast_cpl)
                                     ast_cpl->vast_prev,
                                     ast_cpl->vast_pprev);
 
-  CS_MALLOC(ast_cpl->forc_curr, 3 * n_faces, cs_real_t);
-  CS_MALLOC(ast_cpl->forc_prev, 3 * n_faces, cs_real_t);
-  CS_MALLOC(ast_cpl->forc_pred, 3 * n_faces, cs_real_t);
+  CS_MALLOC(ast_cpl->pres_curr, 3 * n_faces, cs_real_t);
+  CS_MALLOC(ast_cpl->pres_prev, 3 * n_faces, cs_real_t);
+  CS_MALLOC(ast_cpl->pres_pred, 3 * n_faces, cs_real_t);
 
   cs_arrays_set_value<cs_real_t, 1>(3 * n_faces,
                                     0.,
-                                    ast_cpl->forc_curr,
-                                    ast_cpl->forc_prev,
-                                    ast_cpl->forc_pred);
+                                    ast_cpl->pres_curr,
+                                    ast_cpl->pres_prev,
+                                    ast_cpl->pres_pred);
 
   for (int i = 0; i < 3; i++) {
     CS_MALLOC(ast_cpl->tmp[i], 3 * cs::max(n_vertices, n_faces), cs_real_t);
@@ -271,7 +280,7 @@ _scatter_values_r3(cs_lnum_t         n_elts,
 }
 
 /*----------------------------------------------------------------------------
- * Predict displacement or forces based on values of the current and
+ * Predict displacement or pressure based on values of the current and
  * previous time step(s)
  *
  * valpre = c1 * val1 + c2 * val2 + c3 * val3
@@ -357,7 +366,7 @@ _aitken(const cs_real_t *dp_k,
   cs_ast_coupling_t *cpl  = cs_glob_ast_coupling;
   const cs_lnum_t    size = 3 * cpl->n_vertices;
 
-  cs_real_t *tmp1 = cpl->tmp[1], *tmp2 = cpl->tmp[2];
+  cs_real_t *tmp0 = cpl->tmp[0], *tmp1 = cpl->tmp[1], *tmp2 = cpl->tmp[2];
 
   /* Note that for vertices, vertices at shared parallel boundaries
    will appear multiple tiles, so have a higher "weight" than
@@ -365,7 +374,7 @@ _aitken(const cs_real_t *dp_k,
    so we avoid a more complex test here */
 
   /* difference */
-  cs_array_difference(size, dp_k, dp_km, cpl->tmp[0]);
+  cs_array_difference(size, dp_k, dp_km, tmp0);
   cs_array_difference(size, d_kp, dp_k, tmp1);
   cs_array_difference(size, d_k, dp_km, tmp2);
 
@@ -374,7 +383,7 @@ _aitken(const cs_real_t *dp_k,
     tmp1[ii] += tmp2[ii];
 
   cs_real_t xx, xy;
-  cs_gdot_xx_xy(size, tmp1, cpl->tmp[0], &xx, &xy);
+  cs_gdot_xx_xy(size, tmp1, tmp0, &xx, &xy);
 
   return xy / xx;
 }
@@ -440,7 +449,7 @@ _cs_ast_coupling_post_function(void *coupling, const cs_time_step_t *ts)
 
   _scatter_values_r3(cpl->n_faces,
                      face_ids,
-                     (const cs_real_3_t *)cpl->forc_curr,
+                     (const cs_real_3_t *)cpl->pres_curr,
                      (cs_real_3_t *)values);
 
   cs_post_write_var(cpl->post_mesh_id,
@@ -487,9 +496,9 @@ cs_ast_coupling_n_couplings(void)
 /*!
  * \brief Initial exchange with code_aster.
  *
- * \param[in]  nalimx  maximum number of implicitation iterations of
+ * \param[in]  nalimx  maximum number of Noneation iterations of
  *                     the structure displacement
- * \param[in]  epalim  relative precision of implicitation of
+ * \param[in]  epalim  relative precision of Noneation of
  *                     the structure displacement
  */
 /*----------------------------------------------------------------------------*/
@@ -545,6 +554,7 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
   cpl->aexxst = 1.0;
   cpl->bexxst = 0.5;
   cpl->rexxst = 1.0; /* No relaxation by default */
+  cpl->pred_disp = None; /* No relaxation by default */
   cpl->cfopre = 2.0;
 
   cpl->icv1 = 0;
@@ -562,9 +572,9 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
   cpl->vast_prev  = nullptr;
   cpl->vast_pprev = nullptr;
 
-  cpl->forc_curr = nullptr;
-  cpl->forc_prev = nullptr;
-  cpl->forc_pred = nullptr;
+  cpl->pres_curr = nullptr;
+  cpl->pres_prev = nullptr;
+  cpl->pres_pred = nullptr;
 
   for (int i = 0; i < 3; i++) {
     cpl->tmp[i] = nullptr;
@@ -674,9 +684,9 @@ cs_ast_coupling_finalize(void)
   CS_FREE(cpl->vast_prev);
   CS_FREE(cpl->vast_pprev);
 
-  CS_FREE(cpl->forc_curr);
-  CS_FREE(cpl->forc_prev);
-  CS_FREE(cpl->forc_pred);
+  CS_FREE(cpl->pres_curr);
+  CS_FREE(cpl->pres_prev);
+  CS_FREE(cpl->pres_pred);
 
   for (int i = 0; i < 3; i++) {
     CS_FREE(cpl->tmp[i]);
@@ -738,10 +748,12 @@ cs_ast_coupling_geometry(cs_lnum_t        n_faces,
   if (cpl->aci.root_rank > -1) {
     cpl->mc_faces    = cs_paramedmem_coupling_create(nullptr,
                                                      cpl->aci.app_name,
-                                                     "fsi_faces_exchange");
+                                                     "fsi_faces_exchange",
+                                                     CS_MEDCPL_INTERPKERNELDEC);
     cpl->mc_vertices = cs_paramedmem_coupling_create(nullptr,
                                                      cpl->aci.app_name,
-                                                     "fsi_vertices_exchange");
+                                                     "fsi_vertices_exchange",
+                                                     CS_MEDCPL_CFEMDEC);
   }
   else {
     cpl->mc_faces =
@@ -818,16 +830,16 @@ cs_ast_coupling_geometry(cs_lnum_t        n_faces,
   cpl->mc_vertices->add_field(_name_m_d,
                               3,
                               CS_MEDCPL_FIELD_INT_MAXIMUM,
-                              CS_MEDCPL_ON_NODES,
+                              CS_MEDCPL_ON_NODES_FE,
                               CS_MEDCPL_ONE_TIME);
 
   cpl->mc_vertices->add_field(_name_m_v,
                               3,
                               CS_MEDCPL_FIELD_INT_MAXIMUM,
-                              CS_MEDCPL_ON_NODES,
+                              CS_MEDCPL_ON_NODES_FE,
                               CS_MEDCPL_ONE_TIME);
 
-  cpl->mc_faces->add_field(_name_f_f,
+  cpl->mc_faces->add_field(_name_f_p,
                            3,
                            CS_MEDCPL_FIELD_INT_CONSERVATION,
                            CS_MEDCPL_ON_CELLS,
@@ -961,24 +973,24 @@ cs_ast_coupling_exchange_time_step(cs_real_t c_dt[])
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return pointer to array of fluid forces at faces coupled with
+ * \brief Return pointer to array of fluid pressure at faces coupled with
  *        code_aster.
  *
- * \return  array of forces from fluid at coupled faces
+ * \return  array of pressure from fluid at coupled faces
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_3_t *
-cs_ast_coupling_get_fluid_forces_pointer(void)
+cs_ast_coupling_get_fluid_pressure_pointer(void)
 {
-  cs_real_3_t *f_forces = nullptr;
+  cs_real_3_t *f_pressure = nullptr;
 
   cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
   if (cpl != nullptr)
-    f_forces = (cs_real_3_t *)cpl->forc_curr;
+    f_pressure = (cs_real_3_t *)cpl->pres_curr;
 
-  return f_forces;
+  return f_pressure;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -988,10 +1000,10 @@ cs_ast_coupling_get_fluid_forces_pointer(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_send_fluid_forces(void)
+cs_ast_coupling_send_fluid_pressure(void)
 {
   if (DEBUG_LEVEL_CPL > 0) {
-    bft_printf(_("cs_ast_coupling_send_fluid_forces function\n"));
+    bft_printf(_("cs_ast_coupling_send_fluid_pressure function\n"));
     bft_printf_flush();
   }
 
@@ -1010,9 +1022,9 @@ cs_ast_coupling_send_fluid_forces(void)
     /* Explicit synchrone prediction */
     c1 = cpl->cfopre;
     c2 = 1.0 - cpl->cfopre;
-    _pred(cpl->forc_pred,
-          cpl->forc_curr,
-          cpl->forc_prev,
+    _pred(cpl->pres_pred,
+          cpl->pres_curr,
+          cpl->pres_prev,
           nullptr,
           c1,
           c2,
@@ -1020,22 +1032,22 @@ cs_ast_coupling_send_fluid_forces(void)
           n_faces);
   }
   else {
-    /* Implicit prediction */
+    /* None prediction */
     c1 = 1.0;
     c2 = 0.0;
-    cs_array_copy(3 * n_faces, cpl->forc_curr, cpl->forc_pred);
+    cs_array_copy(3 * n_faces, cpl->pres_curr, cpl->pres_pred);
   }
 
   if (verbosity > 0)
     bft_printf("--------------------------------------\n"
-               "Forces prediction coefficients\n"
+               "pressure prediction coefficients\n"
                " C1: %4.2le\n"
                " C2: %4.2le\n"
                "--------------------------------------\n\n",
                c1,
                c2);
 
-  /* Send forces */
+  /* Send pressure */
 
   if (verbosity > 1) {
     bft_printf(_("code_aster: starting MEDCoupling send of values "
@@ -1043,7 +1055,7 @@ cs_ast_coupling_send_fluid_forces(void)
     bft_printf_flush();
   }
 
-  cpl->mc_faces->send_data(_name_f_f, cpl->forc_pred, false);
+  cpl->mc_faces->send_data(_name_f_p, cpl->pres_pred, false);
 
   if (verbosity > 1) {
     bft_printf(_("[ok]\n"));
@@ -1072,25 +1084,28 @@ cs_ast_coupling_evaluate_cvg(void)
   int icv = 1;
 
   if (cpl->nbssit > 1) {
-    /* implicit case: requires a convergence test */
+    /* None case: requires a convergence test */
 
     /* compute icv */
 
-    cpl->rcv1 = _dinorm(cpl->xast_curr[0], cpl->xsat_pred[0], cpl->n_vertices) /
+    cpl->rcv1 = _dinorm(cpl->xast_curr[0], cpl->xast_curr[1], cpl->n_vertices) /
+                cpl->lref;
+    cpl->rcv2 = _dinorm(cpl->xsat_pred[0], cpl->xsat_pred[1], cpl->n_vertices) /
                 cpl->lref;
 
-    if (verbosity > 0)
+    if (verbosity > 0) {
       bft_printf("--------------------------------\n"
-                 "convergence test:\n"
-                 "residual = %4.2le\n",
-                 cpl->rcv1);
+                 "convergence test:\n");
+      bft_printf("residual displacement = %4.2le\n", cpl->rcv1);
+      bft_printf("residual relaxation = %4.2le\n", cpl->rcv2);
+    }
 
-    if (cpl->rcv1 <= cpl->epsilo) {
+    if (cpl->rcv1 <= cpl->epsilo && cpl->rcv2 <= cpl->epsilo) {
       icv = 1;
 
       if (verbosity > 0)
         bft_printf("icv = %d\n"
-                   "convergence of sub iteration\n"
+                   "convergence of sub-iteration\n"
                    "----------------------------\n",
                    icv);
     }
@@ -1098,7 +1113,7 @@ cs_ast_coupling_evaluate_cvg(void)
       icv = 0;
       if (verbosity > 0)
         bft_printf("icv = %i\n"
-                   "non convergence of sub iteration\n"
+                   "non convergence of sub-iteration\n"
                    "--------------------------------\n",
                    icv);
     }
@@ -1166,7 +1181,7 @@ cs_ast_coupling_save_values(void)
   const cs_lnum_t nb_faces   = cpl->n_faces;
 
   /* record efforts */
-  cs_array_copy(3 * nb_faces, cpl->forc_pred, cpl->forc_prev);
+  cs_array_copy(3 * nb_faces, cpl->pres_pred, cpl->pres_prev);
 
   /* record dynamic data */
   cs_array_copy(3 * n_vertices, cpl->vast_prev, cpl->vast_pprev);
@@ -1211,7 +1226,7 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
 
   /* Prediction ared defined in Fabien Huvelin PhD*/
 
-  /* separate prediction for explicit/implicit cases */
+  /* separate prediction for explicit/None cases */
   if (cpl->s_it_id == 0) {
     /* Adams-Bashforth scheme of order 2 if aexxst = 1, bexxst = 0.5 */
     /* Euler explicit scheme of order 1 if aexxst = 1, bexxst = 0 */
@@ -1233,11 +1248,14 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
   else {
     /* rexxst could be defined differently to have a better convergence */
     cs_real_t rexxst;
-    if (cpl->rexxst < 0.) {
+    if (cpl->pred_disp == Aitken) {
       rexxst = _aitken(cpl->xsat_pred[0],
                        cpl->xsat_pred[1],
                        cpl->xast_curr[0],
                        cpl->xast_curr[1]);
+    }
+    else if (cpl->pred_disp == None) {
+      rexxst = 1.0;
     }
     else {
       rexxst = cpl->rexxst;
@@ -1248,21 +1266,26 @@ cs_ast_coupling_compute_displacement(cs_real_t disp[][3])
 
     cs_array_copy(3 * n_vertices, cpl->xsat_pred[0], cpl->xsat_pred[1]);
 
-    _pred(cpl->xsat_pred[0],
-          cpl->xast_curr[0],
-          cpl->xsat_pred[1],
-          nullptr,
-          c1,
-          c2,
-          c3,
-          n_vertices);
+    if (cpl->pred_disp == None) {
+      cs_array_copy(3 * n_vertices, cpl->xast_curr[0], cpl->xsat_pred[0]);
+    }
+    else {
+      _pred(cpl->xsat_pred[0],
+            cpl->xast_curr[0],
+            cpl->xsat_pred[1],
+            nullptr,
+            c1,
+            c2,
+            c3,
+            n_vertices);
+    }
   }
 
   int verbosity = _get_current_verbosity(cpl);
 
   if (verbosity > 0) {
     bft_printf("*********************************\n"
-               "*     sub - iteration %i        *\n"
+               "*     sub-iteration %i        *\n"
                "*********************************\n\n",
                cpl->s_it_id);
 
@@ -1317,7 +1340,7 @@ cs_ast_coupling_get_current_residual(void)
 {
   cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
-  return cpl->rcv1;
+  return cs::max(cpl->rcv1, cpl->rcv2);
 }
 
 /*----------------------------------------------------------------------------*/

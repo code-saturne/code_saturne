@@ -1577,9 +1577,9 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
     }
   }
 
-  cs_real_3_t *forast = nullptr;
+  cs_real_3_t *pres_ast = nullptr;
   if (n_ast_structs > 0)
-    forast = cs_ast_coupling_get_fluid_forces_pointer();
+    pres_ast = cs_ast_coupling_get_fluid_pressure_pointer();
 
   const int *idfstr  = ms->idfstr;
   const cs_mobile_structure_type_t *idftype = ms->idftype;
@@ -1593,9 +1593,9 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
         ms->forstr[i][j] += b_stress[face_id][j] * b_face_surf[face_id];
     }
     else if (str_type == CS_STRUCTURE_EXTERNAL_CODE_ASTER) {
-      /* code_aster needs a surfacic force in Pa = N.m-2*/
+      /* code_aster needs a surfacic force in Pa = N.m-2 */
       for (cs_lnum_t j = 0; j < 3; j++)
-        forast[indast][j] = b_stress[face_id][j];
+        pres_ast[indast][j] = b_stress[face_id][j];
       indast += 1;
     }
   }
@@ -1671,7 +1671,7 @@ cs_mobile_structures_displacement(int itrale, int italim, int *itrfin)
   /* Send effort applied to external structures */
 
   if (n_ast_structs > 0) {
-    cs_ast_coupling_send_fluid_forces();
+    cs_ast_coupling_send_fluid_pressure();
     cs_ast_coupling_evaluate_cvg();
   }
 

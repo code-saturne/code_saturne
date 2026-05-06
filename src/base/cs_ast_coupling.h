@@ -134,15 +134,15 @@ cs_ast_coupling_exchange_time_step(cs_real_t  c_dt[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Return pointer to array of fluid forces at faces coupled with
+ * \brief Return pointer to array of fluid pressure at faces coupled with
  *        code_aster.
  *
- * \return  array of forces from fluid at coupled faces
+ * \return  array of pressure from fluid at coupled faces
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_3_t *
-cs_ast_coupling_get_fluid_forces_pointer(void);
+cs_ast_coupling_get_fluid_pressure_pointer(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -151,7 +151,7 @@ cs_ast_coupling_get_fluid_forces_pointer(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_ast_coupling_send_fluid_forces(void);
+cs_ast_coupling_send_fluid_pressure(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
