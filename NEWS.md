@@ -3,6 +3,9 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- GUI: Fix bug in outlet backflow conditions using formulae for NCFD
+  Temperature backflow condition used with formulae were wrongly applied.
+
 - MEDCoupling: Fix InterpKernelDEC creation when not all instances communicate.
   When not all ranks were participating, mainly when more than 2 codes were
   running, a deadlock could occur in the InterpKernelDEC creation.
