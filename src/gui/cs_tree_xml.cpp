@@ -650,6 +650,50 @@ _read_header(cs_xml_t  *doc)
   assert(found);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Replace XML comments with spaces in-place in the buffer.
+ *
+ * \param[in, out]  buf   buffer to process (null-terminated)
+ * \param[in]       size  buffer size
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_strip_comments(char    *buf,
+                size_t   size)
+{
+  size_t i = 0;
+
+  while (i + 3 < size) {
+    if (   buf[i] == '<' && buf[i+1] == '!'
+        && buf[i+2] == '-' && buf[i+3] == '-') {
+      /* found '<!--', replace until '-->' */
+      buf[i] = ' ';
+      buf[i+1] = ' ';
+      buf[i+2] = ' ';
+      buf[i+3] = ' ';
+      i += 4;
+      while (i + 2 < size) {
+        if (buf[i] == '-' && buf[i+1] == '-' && buf[i+2] == '>') {
+          buf[i]   = ' ';
+          buf[i+1] = ' ';
+          buf[i+2] = ' ';
+          i += 3;
+          break;
+        }
+        /* preserve newlines for line counting */
+        if (buf[i] != '\n')
+          buf[i] = ' ';
+        i++;
+      }
+    }
+    else {
+      i++;
+    }
+  }
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -700,6 +744,9 @@ cs_tree_xml_read(cs_tree_node_t  *r,
   f = cs_file_free(f);
 
   doc->buf[doc->size] = '\0';
+
+  /* Strip XML comments before parsing */
+  _strip_comments(doc->buf, doc->size);
 
   /* Now parse buffer */
 
