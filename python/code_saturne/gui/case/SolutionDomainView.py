@@ -1124,7 +1124,7 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
 
             self.modifyInputMesh(mi)
 
-    @Slot()
+    @Slot(str)
     def modifyInputMesh(self, text):
         """
         Modify the mesh_input/mesh_output value

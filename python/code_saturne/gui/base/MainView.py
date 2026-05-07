@@ -98,6 +98,38 @@ from code_saturne.model.SolutionDomainModel import getRunType
 from code_saturne.base.cs_meg_to_c import meg_to_c_interpreter
 
 #-------------------------------------------------------------------------------
+# Theme
+#-------------------------------------------------------------------------------
+
+def _apply_cs_theme(app, theme=None):
+    """
+    Apply QSS theme to the application.
+    theme: 'dark', 'light', or None (reads from QSettings)
+    Loads cs_theme_dark.qss or cs_theme_light.qss from the same directory.
+    Falls back to cs_theme.qss if specific file not found.
+    """
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+
+    if theme is None:
+        settings = QSettings()
+        theme = settings.value("MainWindow/Theme", "light")
+
+    qss_file = "cs_theme_%s.qss" % theme
+    qss_path = os.path.join(base_dir, qss_file)
+
+    if not os.path.isfile(qss_path):
+        qss_path = os.path.join(base_dir, "cs_theme.qss")
+
+    if os.path.isfile(qss_path):
+        try:
+            with open(qss_path, "r", encoding="utf-8") as f:
+                app.setStyleSheet(f.read())
+            settings = QSettings()
+            settings.setValue("MainWindow/Theme", theme)
+        except Exception as e:
+            log.warning("Could not load %s: %s" % (qss_file, e))
+
+#-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
 
@@ -392,6 +424,19 @@ class MainView(object):
         self.actionFont.triggered.connect(self.setFontSize)
         self.RestoreStyleDefaults.triggered.connect(self.restoreStyleDefaults)
 
+        # Theme menu — added dynamically
+        try:
+            from code_saturne.gui.base.QtGui import QAction as _QAction
+        except ImportError:
+            from code_saturne.gui.base.QtWidgets import QAction as _QAction
+        self._themeMenu = self.menu_Window.addMenu("Theme")
+        self.actionThemeDark = _QAction("Dark", self)
+        self.actionThemeLight = _QAction("Light", self)
+        self._themeMenu.addAction(self.actionThemeDark)
+        self._themeMenu.addAction(self.actionThemeLight)
+        self.actionThemeDark.triggered.connect(self.setThemeDark)
+        self.actionThemeLight.triggered.connect(self.setThemeLight)
+
         self.displayLicenceAction.triggered.connect(self.displayLicence)
 
         # connection for page layout
@@ -430,6 +475,7 @@ class MainView(object):
             self.restoreState(settings.value("MainWindow/State").toByteArray())
 
         app = QCoreApplication.instance()
+        _apply_cs_theme(app)
 
         self.palette_default = None
         self.font_default = None
@@ -1637,6 +1683,20 @@ class MainView(object):
             settings.setValue("MainWindow/Font",
                               self.font().toString())
 
+
+    def setThemeDark(self):
+        """
+        Switch to dark theme.
+        """
+        app = QCoreApplication.instance()
+        _apply_cs_theme(app, 'dark')
+
+    def setThemeLight(self):
+        """
+        Switch to light theme.
+        """
+        app = QCoreApplication.instance()
+        _apply_cs_theme(app, 'light')
 
     def restoreStyleDefaults(self):
         """
