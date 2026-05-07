@@ -848,7 +848,7 @@ _scalar_gradient_clipping(const cs_mesh_t              *m,
      operators pipeline could allow optimizing this. */
 
   if (halo_type == CS_HALO_EXTENDED)
-    cs_halo_sync_r(m->halo, halo_type, on_device, grad);
+    cs_halo_sync_r(m->halo, halo_type, use_gpu, grad);
 
   const cs_lnum_t *c2c_idx = ma->cell_cells_idx;
   const cs_lnum_t *c2c = ma->cell_cells;
