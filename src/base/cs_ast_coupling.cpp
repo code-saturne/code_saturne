@@ -60,6 +60,7 @@
 #include "fvm/fvm_nodal_extract.h"
 
 #include "alge/cs_blas.h"
+#include "alge/cs_face_to_vertex.h"
 #include "base/cs_all_to_all.h"
 #include "base/cs_array.h"
 #include "base/cs_coupling.h"
@@ -166,6 +167,12 @@ struct _cs_ast_coupling_t {
   cs_real_t cfopre; /*!< coefficient for the predicted pressure */
 
   cs_real_t *tmp[3]; /* Temporary array */
+
+  // For conversion in case of interpolation FACE->VTX
+  cs_real_t *pres_bface;  /* Fluid pressure at boundary faces */
+  cs_real_t *pres_bcoeff; /* Interpolation at boundary faces */
+  cs_real_t *pres_bvtx;   /* Fluid pressure at boundary vertex */
+  cs_real_t *pres_vtx;    /* Fluid pressure at interface vertex */
 };
 
 /*============================================================================
@@ -180,6 +187,10 @@ static int _verbosity     = 1;
 static int _visualization = 1;
 
 #define DEBUG_LEVEL_CPL 0
+
+// Projection with InterpKernelDEC is bugged if surface is not plane
+// For the moment use nodal projection (but loose conservativity)
+#define USE_CFEMDEC_FFORCES true
 
 /*============================================================================
  * Global variables
@@ -346,6 +357,22 @@ _allocate_arrays(cs_ast_coupling_t *ast_cpl)
 
   for (int i = 0; i < 3; i++) {
     CS_MALLOC(ast_cpl->tmp[i], 3 * cs::max(n_vertices, n_faces), cs_real_t);
+  }
+
+  if (USE_CFEMDEC_FFORCES) {
+    const cs_mesh_t *m            = cs_glob_mesh;
+    const cs_lnum_t  n_m_bfaces   = m->n_b_faces;
+    const cs_lnum_t  n_m_vertices = m->n_vertices;
+
+    CS_MALLOC(ast_cpl->pres_bface, 3 * n_m_bfaces, cs_real_t);
+    CS_MALLOC(ast_cpl->pres_bcoeff, 3 * n_m_bfaces, cs_real_t);
+    CS_MALLOC(ast_cpl->pres_bvtx, 3 * n_m_vertices, cs_real_t);
+    CS_MALLOC(ast_cpl->pres_vtx, 3 * n_vertices, cs_real_t);
+
+    cs_arrays_set_value<cs_real_t, 1>(3 * n_m_bfaces,
+                                      0.,
+                                      ast_cpl->pres_bface,
+                                      ast_cpl->pres_bcoeff);
   }
 }
 
@@ -516,7 +543,7 @@ _cs_ast_coupling_post_function(void *coupling, const cs_time_step_t *ts)
      element type) may not align with the selection order, we need to project
      values on parent faces first */
 
-  const cs_lnum_t *face_ids = cpl->mc_faces->get_elt_list();
+  const cs_lnum_t *face_ids = cpl->mc_vertices->get_elt_list();
   const cs_lnum_t *vtx_ids  = cpl->mc_vertices->get_vertex_list();
 
   cs_real_t       *values;
@@ -688,6 +715,11 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
     cpl->tmp[i] = nullptr;
   }
 
+  cpl->pres_bface  = nullptr;
+  cpl->pres_bcoeff = nullptr;
+  cpl->pres_bvtx   = nullptr;
+  cpl->pres_vtx    = nullptr;
+
   cs_glob_ast_coupling = cpl;
 
   /* Find root rank of coupling */
@@ -746,7 +778,7 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
 
 #endif
 
-  /* Calcium  (communication) initialization */
+  /* Coupling (communication) initialization */
 
   if (cs_glob_rank_id <= 0) {
     int verbosity = _get_current_verbosity(cpl);
@@ -756,6 +788,11 @@ cs_ast_coupling_initialize(int nalimx, cs_real_t epalim)
     }
 
     /* Send data */
+
+    _cs_ast_sync_send_value(cpl->aci.root_rank,
+                            0,
+                            "ALGOP",
+                            int(USE_CFEMDEC_FFORCES));
 
     _cs_ast_sync_send_value(cpl->aci.root_rank, 0, "NBSSIT", cpl->nbssit);
     _cs_ast_sync_send_value(cpl->aci.root_rank, 0, "TADAPT", idtvar);
@@ -797,6 +834,11 @@ cs_ast_coupling_finalize(void)
   for (int i = 0; i < 3; i++) {
     CS_FREE(cpl->tmp[i]);
   }
+
+  CS_FREE(cpl->pres_bface);
+  CS_FREE(cpl->pres_bcoeff);
+  CS_FREE(cpl->pres_bvtx);
+  CS_FREE(cpl->pres_vtx);
 
   if (cpl->post_mesh != nullptr)
     cpl->post_mesh = fvm_nodal_destroy(cpl->post_mesh);
@@ -852,23 +894,29 @@ cs_ast_coupling_geometry(cs_lnum_t        n_faces,
   cs_ast_coupling_t *cpl = cs_glob_ast_coupling;
 
   if (cpl->aci.root_rank > -1) {
-    cpl->mc_faces    = cs_paramedmem_coupling_create(nullptr,
-                                                     cpl->aci.app_name,
-                                                     "fsi_faces_exchange",
-                                                     CS_MEDCPL_INTERPKERNELDEC);
+    if (!USE_CFEMDEC_FFORCES) {
+      cpl->mc_faces = cs_paramedmem_coupling_create(nullptr,
+                                                    cpl->aci.app_name,
+                                                    "fsi_faces_exchange",
+                                                    CS_MEDCPL_INTERPKERNELDEC);
+    }
     cpl->mc_vertices = cs_paramedmem_coupling_create(nullptr,
                                                      cpl->aci.app_name,
                                                      "fsi_vertices_exchange",
                                                      CS_MEDCPL_CFEMDEC);
   }
   else {
-    cpl->mc_faces =
-      cs_paramedmem_coupling_create_uncoupled("fsi_faces_exchange");
+    if (!USE_CFEMDEC_FFORCES) {
+      cpl->mc_faces =
+        cs_paramedmem_coupling_create_uncoupled("fsi_faces_exchange");
+    }
     cpl->mc_vertices =
       cs_paramedmem_coupling_create_uncoupled("fsi_vertices_exchange");
   }
 
-  cpl->mc_faces->add_mesh_from_ids(n_faces, face_ids, 2);
+  if (!USE_CFEMDEC_FFORCES) {
+    cpl->mc_faces->add_mesh_from_ids(n_faces, face_ids, 2);
+  }
 
   cpl->mc_vertices->add_mesh_from_ids(n_faces, face_ids, 2);
 
@@ -945,11 +993,26 @@ cs_ast_coupling_geometry(cs_lnum_t        n_faces,
                               CS_MEDCPL_ON_NODES_FE,
                               CS_MEDCPL_ONE_TIME);
 
-  cpl->mc_faces->add_field(_name_f_p,
-                           3,
-                           CS_MEDCPL_FIELD_INT_CONSERVATION,
-                           CS_MEDCPL_ON_CELLS,
-                           CS_MEDCPL_ONE_TIME);
+  if (USE_CFEMDEC_FFORCES) {
+    cpl->mc_vertices->add_field(_name_f_p,
+                                3,
+                                CS_MEDCPL_FIELD_INT_MAXIMUM,
+                                CS_MEDCPL_ON_NODES_FE,
+                                CS_MEDCPL_ONE_TIME);
+
+    /* Set coefficient to one only for faces on the interface */
+    const cs_lnum_t *v_face_ids = cpl->mc_vertices->get_elt_list();
+    for (cs_lnum_t f_id = 0; f_id < n_faces; ++f_id) {
+      cpl->pres_bcoeff[v_face_ids[f_id]] = 1.0;
+    }
+  }
+  else {
+    cpl->mc_faces->add_field(_name_f_p,
+                             3,
+                             CS_MEDCPL_FIELD_INT_CONSERVATION,
+                             CS_MEDCPL_ON_CELLS,
+                             CS_MEDCPL_ONE_TIME);
+  }
 
   /* Post-processing */
 
@@ -1156,7 +1219,43 @@ cs_ast_coupling_send_fluid_pressure(void)
     bft_printf_flush();
   }
 
-  cpl->mc_faces->send_data(_name_f_p, cpl->pres_pred, false);
+  if (USE_CFEMDEC_FFORCES) {
+    // Convertion FACE->VTX
+    const cs_lnum_t *face_ids = cpl->mc_vertices->get_elt_list();
+    const cs_lnum_t *vtx_ids  = cpl->mc_vertices->get_vertex_list();
+
+    cs_arrays_set_value<cs_real_t, 1>(3 * cpl->n_vertices, 0., cpl->pres_vtx);
+
+    _scatter_values_r3(cpl->n_faces,
+                       face_ids,
+                       (const cs_real_3_t *)cpl->pres_pred,
+                       (cs_real_3_t *)cpl->pres_bface);
+    cs_bface_to_vertex<3>(CS_FACE_TO_VERTEX_SURFACE,
+                          0,
+                          true,
+                          cpl->pres_bcoeff,
+                          cpl->pres_bface,
+                          cpl->pres_bvtx);
+    if (vtx_ids != nullptr) {
+      for (cs_lnum_t v_id = 0; v_id < cpl->n_vertices; ++v_id) {
+        const cs_lnum_t vg_id = vtx_ids[v_id];
+        for (cs_lnum_t j = 0; j < 3; ++j) {
+          cpl->pres_vtx[3 * v_id + j] = cpl->pres_bvtx[3 * vg_id + j];
+        }
+      }
+    }
+    else {
+      for (cs_lnum_t v_id = 0; v_id < cpl->n_vertices; ++v_id) {
+        for (cs_lnum_t j = 0; j < 3; ++j) {
+          cpl->pres_vtx[3 * v_id + j] = cpl->pres_bvtx[3 * v_id + j];
+        }
+      }
+    }
+    cpl->mc_vertices->send_data(_name_f_p, cpl->pres_vtx, false);
+  }
+  else {
+    cpl->mc_faces->send_data(_name_f_p, cpl->pres_pred, false);
+  }
 
   if (verbosity > 1) {
     bft_printf(_("[ok]\n"));
