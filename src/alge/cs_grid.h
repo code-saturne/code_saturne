@@ -83,6 +83,15 @@ extern const char *cs_grid_coarsening_type_name[];
  * documented than private static functions)
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set factor to ensure diagonal dominance.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_grid_set_diag_dom_clip_factor(double  factor);
+
 /*----------------------------------------------------------------------------
  * Create base grid by mapping from shared mesh values.
  *

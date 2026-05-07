@@ -269,6 +269,9 @@ typedef struct _cs_graph_m_ptr_t {
  *  Global variables
  *============================================================================*/
 
+/* Enforce diagonal dominance if non-negative */
+static double _grid_diag_dom_clip_factor = -1.; // Use positive value to enable.
+
 cs_real_t _penalization_threshold = 1e4;
 
  /* Threshold under which diagonal dominant rows are ignored in the
@@ -7710,7 +7713,10 @@ _force_diag_dom(double        clip_factor,
                 int           verbosity,
                 cs_matrix_t  *a)
 {
-  if (clip_factor < 0)
+  const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
+
+  /* bloc matrices are not coded yet */
+  if (clip_factor < 0 && db_size != 1)
     return;
 
   const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
@@ -7724,9 +7730,6 @@ _force_diag_dom(double        clip_factor,
                            &d_val_c, &x_val);
 
   cs_real_t *d_val = const_cast<cs_real_t *>(d_val_c);
-
-  const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
-  assert(db_size == 1);
 
   cs_gnum_t n_g_neg_diag = 0;
   bool need_log = (verbosity > 1 && cs_log_default_is_active());
@@ -7876,6 +7879,18 @@ _prolong_row_int(const cs_grid_t  *c,
  * (cs_multigrid.c), not directly by the user, so they are no more
  * documented than private static functions)
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set factor to ensure diagonal dominance.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_grid_set_diag_dom_clip_factor(double  factor)
+{
+  _grid_diag_dom_clip_factor = factor;
+}
 
 /*----------------------------------------------------------------------------
  * Create base grid by mapping from shared mesh values.
@@ -8850,8 +8865,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
                                    nullptr,
                                    nullptr);
 
-  const double diag_dom_clip_factor = -1.; // Use positive value to enable.
-  _force_diag_dom(diag_dom_clip_factor, verbosity, c->_matrix);
+  _force_diag_dom(_grid_diag_dom_clip_factor, verbosity, c->_matrix);
 
   /* Optional verification */
 
