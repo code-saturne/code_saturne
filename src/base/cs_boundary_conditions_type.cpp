@@ -757,17 +757,17 @@ cs_boundary_conditions_type(bool  init,
         const cs_lnum_t c_id = b_face_cells[f_id];
 
         //TODO altitude relative ??
-        vel_dir_profile[f_id][0] = cs_intprf(met_1d_nlevels_t,
+        vel_dir_profile[f_id][0] = cs_intprf(met_1d_nlevels_d,
                                              met_1d_ntimes,
-                                             cs_glob_atmo_option->z_temp_met,
+                                             cs_glob_atmo_option->z_dyn_met,
                                              cs_glob_atmo_option->time_met,
                                              cs_glob_atmo_option->u_met,
                                              cell_cen[c_id][2],
                                              cs_glob_time_step->t_cur);
 
-        vel_dir_profile[f_id][1] = cs_intprf(met_1d_nlevels_t,
+        vel_dir_profile[f_id][1] = cs_intprf(met_1d_nlevels_d,
                                              met_1d_ntimes,
-                                             cs_glob_atmo_option->z_temp_met,
+                                             cs_glob_atmo_option->z_dyn_met,
                                              cs_glob_atmo_option->time_met,
                                              cs_glob_atmo_option->v_met,
                                              cell_cen[c_id][2],
