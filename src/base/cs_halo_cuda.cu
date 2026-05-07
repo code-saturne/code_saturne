@@ -238,6 +238,29 @@ cs_halo_cuda_pack_send_buffer(const cs_halo_t   *halo,
     }
 
   }
+  else if (data_type == CS_FLOAT) {
+
+    float *buffer = (float *)send_buffer;
+    const float *var = (const float *)val;
+
+    if (stride == 1) {
+      if (send_blocks == nullptr)
+        _gather_full_cu<<<n_blocks, block_size, 0, stream>>>
+          (n_send, send_list, var, buffer);
+      else
+        _gather_block_cu<<<n_blocks, block_size, 0, stream>>>
+          (send_blocks, send_list, var, buffer);
+    }
+    else {
+      if (send_blocks == nullptr)
+        _gather_full_strided_cu<<<n_blocks*stride, block_size, 0, stream>>>
+          (n_send, stride, send_list, var, buffer);
+      else
+        _gather_block_strided_cu<<<n_blocks, block_size, 0, stream>>>
+          (send_blocks, stride, send_list, var, buffer);
+    }
+
+  }
   else {
 
     unsigned char *buffer = (unsigned char *)send_buffer;
@@ -246,7 +269,7 @@ cs_halo_cuda_pack_send_buffer(const cs_halo_t   *halo,
     cs_lnum_t elt_size = cs_datatype_size[data_type] * stride;
 
     if (send_blocks == nullptr)
-      _gather_full_strided_cu<<<n_blocks, block_size, 0, stream>>>
+      _gather_full_strided_cu<<<n_blocks*elt_size, block_size, 0, stream>>>
         (n_send, elt_size, send_list, var, buffer);
     else
       _gather_block_strided_cu<<<n_blocks, block_size, 0, stream>>>
