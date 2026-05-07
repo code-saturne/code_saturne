@@ -3,6 +3,9 @@ Release 9.1.1 (unreleased)
 
 ### Bug fixes:
 
+- Fix incomplete ghost cell synchronization for scalar least-squares
+  gradient with limiter.
+
 - [GUI] Fix bug in outlet backflow conditions using formulae for NCFD.
   Temperature backflow condition used with formulae were wrongly applied.
 
