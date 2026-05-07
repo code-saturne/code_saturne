@@ -684,32 +684,32 @@ cs_boundary_conditions_type(bool  init,
     }
   } // end is_first_iter (end pressure face ref choice)
 
-  if (   (vp_param->iphydr == 1 || vp_param->iifren == 1)
-      && (isostd != nullptr)) {
-
-    /* If the hydrostatic pressure is taken into account,
-       we fill the isostd array.
-       0 -> not a standard outlet face (i.e. not outlet or outlet with
-            modified pressure BC)
-       1 -> free outlet face with automatic pressure BC.
-       the reference face number is stored in isostd[]
-       which is first initialized to -1 (i.e. no standard output face) */
-
-    for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-      isostd[f_id] = 0;
-      if (   (bc_type[f_id] == CS_OUTLET || bc_type[f_id] == CS_FREE_INLET)
-          && (icodcl_p[f_id] == CS_BC_UNDEF))
-        isostd[f_id] = 1;
-    }
-
+  if (vp_param->iphydr == 1 || vp_param->iifren == 1) {
     cs_gnum_t n_outlet = 0;
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-      n_outlet += isostd[face_id];
+
+    if (isostd != nullptr) {
+      /* If the hydrostatic pressure is taken into account,
+         we fill the isostd array.
+         0 -> not a standard outlet face (i.e. not outlet or outlet with
+              modified pressure BC)
+         1 -> free outlet face with automatic pressure BC.
+         the reference face number is stored in isostd[]
+         which is first initialized to -1 (i.e. no standard output face) */
+
+      for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+        isostd[f_id] = 0;
+        if (   (bc_type[f_id] == CS_OUTLET || bc_type[f_id] == CS_FREE_INLET)
+            && (icodcl_p[f_id] == CS_BC_UNDEF))
+          isostd[f_id] = 1;
+      }
+
+      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
+        n_outlet += isostd[face_id];
     }
 
     cs_parall_sum(1, CS_GNUM_TYPE, &n_outlet);
     fluid_props->have_std_outlet = (n_outlet > 0) ? true : false;
-  } // end filling isostd
+  }
 
   /* No need to compute pressure gradient for frozen field computations */
 
