@@ -883,6 +883,62 @@ cs_cdofb_navsto_init_face_pressure(const cs_navsto_param_t     *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Check initial state
+ *
+ * \param[in]       nsp     pointer to a \ref cs_navsto_param_t structure
+ * \param[in]       connect pointer to a \ref cs_cdo_connect_t structure
+ * \param[in]       quant   pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in]       ts      pointer to a \ref cs_time_step_t structure
+ * \param[in]  velocity     pointer to the velocity \ref cs_field_t structure
+ * \param[in]  face_vel     pointer to the face velocity
+ * \param[in]  pressue      pointer to the pressure \ref cs_field_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_check_init([[maybe_unused]] const cs_navsto_param_t *nsp,
+                           const cs_cdo_connect_t                   *connect,
+                           const cs_cdo_quantities_t                *quant,
+                           [[maybe_unused]] const cs_time_step_t    *ts,
+                           [[maybe_unused]] const cs_field_t        *velocity,
+                           const cs_real_t                          *face_vel,
+                           [[maybe_unused]] const cs_field_t        *pressure)
+{
+  // Check that divergence is close to zero since the fluid is incompressible
+  double div_norm2 = 0.;
+
+  /* Only the face velocity is used */
+#pragma omp parallel for if (quant->n_cells > CS_THR_MIN)                      \
+  reduction(+ : div_norm2)
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+    const double div_c =
+      cs_cdofb_navsto_cell_divergence(c_id, quant, connect->c2f, face_vel);
+
+    div_norm2 += quant->cell_vol[c_id] * div_c * div_c;
+  } /* Loop on cells */
+
+  cs::parall::sum(div_norm2);
+  div_norm2 = sqrt(div_norm2);
+
+  // We choose 1e-6 since it is small but not enougth to avoid to detect false
+  // error
+  if (div_norm2 > 1e-6) {
+    bft_error(
+      __FILE__,
+      __LINE__,
+      0,
+      _(" %s: The norm of the divergence velocity field is not close to zero "
+        "(norm=%f).\n"
+        "- Check that initial and boundary conditions are compatible.\n"),
+      __func__,
+      div_norm2);
+  }
+
+  // Other check could be done like that the problem is equilibrated
+};
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Update the pressure field in order to get a field with a mean-value
  *         equal to the reference value
  *
@@ -1430,12 +1486,12 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_block_dirichlet_alge(short int                  f,
-                              const cs_equation_param_t *eqp,
-                              const cs_cell_mesh_t      *cm,
-                              const cs_property_data_t  *pty,
-                              cs_cell_builder_t         *cb,
-                              cs_cell_sys_t             *csys)
+cs_cdofb_block_dirichlet_alge(short int                              f,
+                              const cs_equation_param_t             *eqp,
+                              [[maybe_unused]] const cs_cell_mesh_t *cm,
+                              const cs_property_data_t              *pty,
+                              cs_cell_builder_t                     *cb,
+                              cs_cell_sys_t                         *csys)
 {
   CS_UNUSED(eqp);
   CS_UNUSED(pty);
@@ -1532,12 +1588,12 @@ cs_cdofb_block_dirichlet_alge(short int                  f,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_block_dirichlet_pena(short int                  f,
-                              const cs_equation_param_t *eqp,
-                              const cs_cell_mesh_t      *cm,
-                              const cs_property_data_t  *pty,
-                              cs_cell_builder_t         *cb,
-                              cs_cell_sys_t             *csys)
+cs_cdofb_block_dirichlet_pena(short int                              f,
+                              const cs_equation_param_t             *eqp,
+                              [[maybe_unused]] const cs_cell_mesh_t *cm,
+                              const cs_property_data_t              *pty,
+                              cs_cell_builder_t                     *cb,
+                              cs_cell_sys_t                         *csys)
 {
   CS_UNUSED(cb);
   CS_UNUSED(pty);

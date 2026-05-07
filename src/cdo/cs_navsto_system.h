@@ -128,6 +128,29 @@ typedef void
                       const cs_navsto_param_t      *nsp,
                       void                         *scheme_context);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  According to the model, coupling algorithm and the space
+ *         discretization, check initializion of the field values
+ *
+ * \param[in]       nsp      pointer to a \ref cs_navsto_param_t structure
+ * \param[in]       connect  pointer to a \ref cs_cdo_connect_t structure
+ * \param[in]       quant    pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in]       ts       pointer to a \ref cs_time_step_t structure
+ * \param[in]  velocity      pointer to a \ref cs_field_t structure
+ * \param[in]  face_vel     pointer to the face velocity
+ * \param[in]  pressure      pointer to a \ref cs_field_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void(cs_navsto_check_init_t)(const cs_navsto_param_t   *nsp,
+                                     const cs_cdo_connect_t    *connect,
+                                     const cs_cdo_quantities_t *quant,
+                                     const cs_time_step_t      *ts,
+                                     const cs_field_t          *velocity,
+                                     const cs_real_t           *face_vel,
+                                     const cs_field_t          *pressure);
+
 /*=============================================================================
  * Structure definitions
  *============================================================================*/
@@ -355,6 +378,12 @@ typedef struct {
    *       Case of the pressure
    */
   cs_navsto_init_values_t           *init_pressure;
+
+  /*! \var check_init
+   *       Pointer of functions related to the checking of initialization
+   * values.
+   */
+  cs_navsto_check_init_t *check_init;
 
   /*! \var compute_steady
    *       Pointer of functions related to resolution of the Navier-Stokes

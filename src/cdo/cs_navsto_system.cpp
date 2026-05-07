@@ -277,6 +277,7 @@ _allocate_navsto_system(void)
   navsto->free_scheme_context = nullptr;
   navsto->init_velocity       = nullptr;
   navsto->init_pressure       = nullptr;
+  navsto->check_init          = nullptr;
   navsto->compute_steady      = nullptr;
   navsto->compute             = nullptr;
 
@@ -1086,6 +1087,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
       ns->free_scheme_context = cs_cdofb_ac_free_scheme_context;
       ns->init_velocity       = nullptr;
       ns->init_pressure       = cs_cdofb_navsto_init_pressure;
+      ns->check_init          = cs_cdofb_navsto_check_init;
       ns->compute_steady      = nullptr;
 
       switch (mom_eqp->time_scheme) {
@@ -1128,6 +1130,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
       ns->free_scheme_context = cs_cdofb_monolithic_free_scheme_context;
       ns->init_velocity       = nullptr;
       ns->init_pressure       = cs_cdofb_navsto_init_pressure;
+      ns->check_init          = cs_cdofb_navsto_check_init;
 
       if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
         ns->compute_steady = cs_cdofb_monolithic_steady;
@@ -1191,6 +1194,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
       ns->free_scheme_context = cs_cdofb_predco_free_scheme_context;
       ns->init_velocity       = nullptr;
       ns->init_pressure       = cs_cdofb_navsto_init_pressure;
+      ns->check_init          = cs_cdofb_navsto_check_init;
       ns->compute_steady      = nullptr;
 
       switch (mom_eqp->time_scheme) {
@@ -1249,6 +1253,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
       ns->free_scheme_context = cs_macfb_monolithic_free_scheme_context;
       ns->init_velocity       = nullptr;
       ns->init_pressure       = cs_macfb_navsto_init_pressure;
+      ns->check_init          = nullptr;
 
       if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
         ns->compute_steady = cs_macfb_monolithic_steady;
@@ -1450,11 +1455,21 @@ cs_navsto_system_init_values(const cs_mesh_t           *mesh,
     const cs_equation_t *mom_eq   = cs_navsto_system_get_momentum_eq();
     const cs_real_t     *face_vel = cs_equation_get_face_values(mom_eq, false);
     cs_cdofb_navsto_mass_flux(nsp, quant, face_vel, ns->mass_flux_array);
+
+    /* Check initial conditions */
+
+    if (ns->check_init != nullptr) {
+      ns->check_init(nsp,
+                     connect,
+                     quant,
+                     time_step,
+                     ns->velocity,
+                     face_vel,
+                     ns->pressure);
+    }
   }
   else if (nsp->space_scheme == CS_SPACE_SCHEME_MACFB) {
-
-    if (   nsp->coupling == CS_NAVSTO_COUPLING_PROJECTION) {
-
+    if (nsp->coupling == CS_NAVSTO_COUPLING_PROJECTION) {
       /* The call to the initialization of the cell pressure should be done
          before */
 
@@ -1466,6 +1481,18 @@ cs_navsto_system_init_values(const cs_mesh_t           *mesh,
     const cs_equation_t *mom_eq   = cs_navsto_system_get_momentum_eq();
     const cs_real_t     *face_vel = cs_equation_get_face_values(mom_eq, false);
     cs_macfb_navsto_mass_flux(nsp, quant, face_vel, ns->mass_flux_array);
+
+    /* Check initial conditions */
+
+    if (ns->check_init != nullptr) {
+      ns->check_init(nsp,
+                     connect,
+                     quant,
+                     time_step,
+                     ns->velocity,
+                     face_vel,
+                     ns->pressure);
+    }
 
   } /* Face-based schemes */
 

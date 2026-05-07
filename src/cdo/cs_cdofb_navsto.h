@@ -349,6 +349,29 @@ cs_cdofb_navsto_init_pressure(const cs_navsto_param_t     *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Check initial state
+ *
+ * \param[in]       nsp     pointer to a \ref cs_navsto_param_t structure
+ * \param[in]       connect pointer to a \ref cs_cdo_connect_t structure
+ * \param[in]       quant   pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in]       ts      pointer to a \ref cs_time_step_t structure
+ * \param[in]  velocity     pointer to the velocity \ref cs_field_t structure
+ * \param[in]  face_vel     pointer to the face velocity
+ * \param[in]  pressue      pointer to the pressure \ref cs_field_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_check_init(const cs_navsto_param_t   *nsp,
+                           const cs_cdo_connect_t    *connect,
+                           const cs_cdo_quantities_t *quant,
+                           const cs_time_step_t      *ts,
+                           const cs_field_t          *velocity,
+                           const cs_real_t           *face_vel,
+                           const cs_field_t          *pressure);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Initialize the pressure values when the pressure is defined at
  *         faces
  *
