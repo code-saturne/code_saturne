@@ -3,6 +3,8 @@ Release 9.0.3 (unreleased)
 
 ### Bug fixes:
 
+- Atmo: fix bug reading meteo file.
+
 - GUI: Fix bug in outlet backflow conditions using formulae for NCFD
   Temperature backflow condition used with formulae were wrongly applied.
 
