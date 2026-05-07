@@ -630,6 +630,9 @@ if test "x$cs_gxx" = "xg++"; then
     g++-[567]*)
       cxxflags_default="$cxxflags_default -std=c++14"
       ;;
+    g++-1[67]*)
+      cxxflags_default="$cxxflags_default -std=c++17"
+      ;;
   esac
 
   # Warning flags as are available by compiler version
