@@ -750,7 +750,7 @@ cs_boundary_conditions_type(bool  init,
     if (meteo_profile == 1) {
       CS_MALLOC_HD(vel_dir_profile, n_b_faces, cs_real_2_t, cs_alloc_mode);
 
-      const int met_1d_nlevels_t = cs_glob_atmo_option->met_1d_nlevels_t;
+      const int met_1d_nlevels_d = cs_glob_atmo_option->met_1d_nlevels_d;
       const int met_1d_ntimes = cs_glob_atmo_option->met_1d_ntimes;
 
       for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
