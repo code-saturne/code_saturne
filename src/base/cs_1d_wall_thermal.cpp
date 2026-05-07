@@ -43,6 +43,7 @@
 #include "bft/bft_printf.h"
 
 #include "base/cs_base.h"
+#include "base/cs_boundary_zone.h"
 #include "base/cs_math.h"
 #include "base/cs_field.h"
 #include "base/cs_field_pointer.h"
@@ -162,6 +163,42 @@
  * Local structure definitions
  *============================================================================*/
 
+namespace cs {
+namespace w1dth {
+struct layer_mesh {
+  int       n_points;
+  cs_real_t thickness;
+  cs_real_t refine_factor;
+};
+
+struct layer_properties {
+  cs_real_t thermal_conductivity_ref;
+  cs_real_t density_ref;
+  cs_real_t heat_capacity_ref;
+  cs_real_t t_init;
+};
+
+struct bc_def {
+  int       bc_type;
+  cs_real_t t_ext;
+  cs_real_t h_ext;
+  cs_real_t phi_ext;
+};
+
+struct zone {
+  int zone_id;
+  int n_layers;
+  int n_points_tot;
+
+  cs_lnum_t offset_index;
+
+  bc_def bc;
+  layer_mesh *mesh_defs;
+
+  layer_properties *properties;
+};
+}
+}
 /*============================================================================
  * Static global variable
  *============================================================================*/
@@ -185,6 +222,10 @@ const cs_1d_wall_thermal_t *cs_glob_1d_wall_thermal = &_1d_wall_thermal;
 static cs_restart_t *cs_glob_tpar1d_suite = nullptr;
 
 static bool _post_activated = false;
+
+static int _n_zones = 0;
+
+static cs::w1dth::zone *_zones = nullptr;
 
 /*============================================================================
  * Private function definitions
@@ -237,6 +278,152 @@ _1d_wall_thermal_local_models_init(void)
   }
 }
 
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Get internal zone number for a given boundary zone id.
+ *
+ * \return internal id of coupled zone. Raises an error if not found.
+ */
+/*--------------------------------------------------------------------------*/
+
+static int
+_get_zone_id
+(
+  const int z_id /*!<[in] Id of the boundary zone. */
+)
+{
+  int retval = -1;
+  for (int i = 0; i < _n_zones; i++) {
+    if (_zones[i].zone_id == z_id) {
+      retval = i;
+      break;
+    }
+  }
+
+  if (retval == -1)
+    bft_error(__FILE__, __LINE__, 0,
+              _("%s: Zone #%d is not coupled to the 1D wall thermal module.\n"),
+              __func__, z_id);
+
+  return retval;
+}
+
+namespace cs {
+namespace w1dth {
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Set boundary conditions based on zones
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+_set_bc(void)
+{
+  if (_n_zones > 0) {
+    for (int z_id = 0; z_id < _n_zones; z_id++) {
+      const cs_zone_t *z = cs_boundary_zone_by_id(_zones[z_id].zone_id);
+      cs_lnum_t _offset = _zones[z_id].offset_index;
+      switch (_zones[z_id].bc.bc_type) {
+      case 1:
+        {
+          cs_real_t _t_ext = _zones[z_id].bc.t_ext;
+          for (cs_lnum_t e_id = 0; e_id < z->n_elts; e_id++) {
+            _1d_wall_thermal.local_models[_offset + e_id].iclt1d = 1;
+            _1d_wall_thermal.local_models[_offset + e_id].tept1d = _t_ext;
+          }
+        }
+        break;
+
+      case 2:
+        {
+          cs_real_t _t_ext = _zones[z_id].bc.t_ext;
+          cs_real_t _h_ext = _zones[z_id].bc.h_ext;
+          for (cs_lnum_t e_id = 0; e_id < z->n_elts; e_id++) {
+            _1d_wall_thermal.local_models[_offset + e_id].iclt1d = 1;
+            _1d_wall_thermal.local_models[_offset + e_id].tept1d = _t_ext;
+            _1d_wall_thermal.local_models[_offset + e_id].hept1d = _h_ext;
+          }
+        }
+        break;
+
+      case 3:
+        {
+          cs_real_t _phi_ext = _zones[z_id].bc.phi_ext;
+          for (cs_lnum_t e_id = 0; e_id < z->n_elts; e_id++) {
+            _1d_wall_thermal.local_models[_offset + e_id].iclt1d = 3;
+            _1d_wall_thermal.local_models[_offset + e_id].fept1d = _phi_ext;
+          }
+        }
+        break;
+
+      default:
+        {
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Unknown boundary condition type %d for zone %d\n",
+                    __func__, _zones[z_id].bc.bc_type, z_id);
+        }
+        break;
+      }
+    }
+  }
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Apply physical properties based on zones' definitions
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+_set_properties_from_definitions(void)
+{
+  if (_n_zones > 0) {
+    for (int z_id = 0; z_id < _n_zones; z_id++) {
+      const cs_zone_t *z = cs_boundary_zone_by_id(_zones[z_id].zone_id);
+      cs_lnum_t _offset = _zones[z_id].offset_index;
+      for (cs_lnum_t e_id = 0; e_id < z->n_elts; e_id++) {
+        _1d_wall_thermal.local_models[_offset + e_id].xlmbt1 =
+          _zones[z_id].properties[0].thermal_conductivity_ref;
+
+        _1d_wall_thermal.local_models[_offset + e_id].rcpt1d =
+          _zones[z_id].properties[0].density_ref *
+          _zones[z_id].properties[0].heat_capacity_ref;
+      }
+    }
+  }
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Set time step used for computation.
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+_set_time_step
+(
+  bool constant_time /*!<[in] Constant time step, or per face time step */
+)
+{
+  if (constant_time) {
+    for (cs_lnum_t e_id = 0; e_id < _1d_wall_thermal.nfpt1d; e_id++) {
+      _1d_wall_thermal.local_models[e_id].dtpt1d = cs_glob_time_step->dt[0];
+    }
+  }
+  else {
+    const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
+    for (cs_lnum_t e_id = 0; e_id < _1d_wall_thermal.nfpt1d; e_id++) {
+      cs_lnum_t f_id = _1d_wall_thermal.ifpt1d[e_id] - 1;
+      cs_lnum_t c_id = b_face_cells[f_id];
+      _1d_wall_thermal.local_models[e_id].dtpt1d = CS_F_(dt)->val[c_id];
+    }
+  }
+}
+
+} // namsepace w1dth
+} // namespace cs
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -277,7 +464,8 @@ cs_1d_wall_thermal_create(void)
 void
 cs_1d_wall_thermal_add_zone
 (
-  const cs_zone_t *zone /*!<[in] boundary zone to add */
+  const cs_zone_t *zone,    /*!<[in] boundary zone to add */
+  const int        n_layers /*!<[in] number of layers */
 )
 {
   // sanity check
@@ -286,8 +474,218 @@ cs_1d_wall_thermal_add_zone
   if (!_module_initialized)
     cs_1d_wall_thermal_create();
 
-  // Increment number of faces used for 1D thermal module
-  _1d_wall_thermal.nfpt1d += zone->n_elts;
+  // Check if zone is allready defined, if so, raise error.
+  if (_n_zones > 0) {
+    for (int z_id = 0; z_id < _n_zones; z_id++) {
+      if (_zones[z_id].zone_id == zone->id)
+        bft_error(__FILE__,__LINE__,0,
+                  _("%s: Trying to define 1D wall thermal condition for "
+                    "boundary condition \"%s\" which is allready defined.\n"),
+                  __func__, zone->name);
+    }
+  }
+
+  // Limitation to 1 Layer currently
+  if (n_layers > 1)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Only 1 layer is currently allowed.\n",
+              __func__);
+
+  CS_REALLOC(_zones, _n_zones + 1, cs::w1dth::zone);
+  _zones[_n_zones].zone_id = zone->id;
+  _zones[_n_zones].n_layers = n_layers;
+
+  CS_MALLOC(_zones[_n_zones].mesh_defs, n_layers, cs::w1dth::layer_mesh);
+  CS_MALLOC(_zones[_n_zones].properties, n_layers, cs::w1dth::layer_properties);
+
+  _n_zones += 1;
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Define a layers' mesh
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_thermal_zone_define_layer_mesh
+(
+  const cs_zone_t *zone,
+  const int        layer_id,
+  const int        n_points,
+  const cs_real_t  thickness,
+  const cs_real_t  refine_factor
+)
+{
+  assert(zone != nullptr);
+  int z_id = _get_zone_id(zone->id);
+
+  if (layer_id >= _zones[z_id].n_layers)
+    bft_error(__FILE__,__LINE__,0,
+              "%s: Layer id \"%d\" while zone has %d layers as parameter.\n",
+              __func__, layer_id, _zones[z_id].n_layers);
+
+  _zones[z_id].mesh_defs[layer_id].n_points = n_points;
+  _zones[z_id].mesh_defs[layer_id].thickness = thickness;
+  _zones[z_id].mesh_defs[layer_id].refine_factor = refine_factor;
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Define layer's physical properties
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_thermal_zone_define_layer_properties_const
+(
+  const cs_zone_t *zone,
+  const int        layer_id,
+  const cs_real_t  initial_temperature,
+  const cs_real_t  thermal_conductivity,
+  const cs_real_t  density,
+  const cs_real_t  heat_capacity
+)
+{
+  assert(zone != nullptr);
+  int z_id = _get_zone_id(zone->id);
+
+  if (layer_id >= _zones[z_id].n_layers)
+    bft_error(__FILE__,__LINE__,0,
+              "%s: Layer id \"%d\" while zone has %d layers as parameter.\n",
+              __func__, layer_id, _zones[z_id].n_layers);
+
+  _zones[z_id].properties[layer_id].thermal_conductivity_ref = thermal_conductivity;
+  _zones[z_id].properties[layer_id].density_ref = density;
+  _zones[z_id].properties[layer_id].heat_capacity_ref = heat_capacity;
+  _zones[z_id].properties[layer_id].t_init = initial_temperature;
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Define a dirichlet boundary condition
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_thermal_zone_define_dirichlet_bc_const
+(
+  const cs_zone_t *zone,
+  const cs_real_t  t_ext
+)
+{
+  assert(zone != nullptr);
+  int z_id = _get_zone_id(zone->id);
+  _zones[z_id].bc.bc_type = 1;
+  _zones[z_id].bc.t_ext = t_ext;
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Define nuemann (flux) boundary conditions
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_thermal_zone_define_neumann_bc_const
+(
+  const cs_zone_t *zone,
+  const cs_real_t  phi_ext
+)
+{
+  assert(zone != nullptr);
+  int z_id = _get_zone_id(zone->id);
+  _zones[z_id].bc.bc_type = 3;
+  _zones[z_id].bc.phi_ext = phi_ext;
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Define Robin boundary condition
+ *
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_thermal_zone_define_robin_bc_const
+(
+  const cs_zone_t *zone,
+  const cs_real_t  t_ext,
+  const cs_real_t  h_ext
+)
+{
+  assert(zone != nullptr);
+  int z_id = _get_zone_id(zone->id);
+  _zones[z_id].bc.bc_type = 2;
+  _zones[z_id].bc.t_ext = t_ext;
+  _zones[z_id].bc.h_ext = h_ext;
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Compute total number of coupled faces.
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_thermal_compute_n_faces_from_definitions(void)
+{
+  if (_n_zones > 0) {
+    cs_lnum_t n_total_pts = 0;
+    for (int z_id = 0; z_id < _n_zones; z_id++) {
+      const cs_zone_t *z = cs_boundary_zone_by_id(_zones[z_id].zone_id);
+      _zones[z_id].offset_index = n_total_pts;
+      n_total_pts += z->n_elts;
+    }
+    _1d_wall_thermal.nfpt1d = n_total_pts;
+  }
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Initialization step based on zones
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_thermal_initialize(void)
+{
+  if (_n_zones > 0) {
+    for (int z_id = 0; z_id < _n_zones; z_id++) {
+      const cs_zone_t *z = cs_boundary_zone_by_id(_zones[z_id].zone_id);
+      cs_lnum_t _offset = _zones[z_id].offset_index;
+      for (cs_lnum_t e_id = 0; e_id < z->n_elts; e_id++) {
+        _1d_wall_thermal.ifpt1d[_offset + e_id] = z->elt_ids[e_id] + 1;
+
+        // Currently only one layer is supported for mesh
+        _1d_wall_thermal.local_models[_offset + e_id].nppt1d =
+          _zones[z_id].mesh_defs[0].n_points;
+        _1d_wall_thermal.local_models[_offset + e_id].eppt1d =
+          _zones[z_id].mesh_defs[0].thickness;
+        _1d_wall_thermal.local_models[_offset + e_id].rgpt1d =
+          _zones[z_id].mesh_defs[0].refine_factor;
+        _1d_wall_thermal.tppt1d[_offset + e_id] =
+          _zones[z_id].properties[0].t_init;
+      }
+    }
+  }
+}
+
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Update properties, time step and boundary conditions before solve step
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_thermal_prepare_solve
+(
+  const bool use_constant_time_step /*! [in] Use constant time step or not */
+)
+{
+  cs::w1dth::_set_properties_from_definitions();
+  cs::w1dth::_set_bc();
+  cs::w1dth::_set_time_step(use_constant_time_step);
 }
 
 /*--------------------------------------------------------------------------*/

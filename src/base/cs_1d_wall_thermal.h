@@ -156,7 +156,112 @@ cs_1d_wall_thermal_create(void);
 void
 cs_1d_wall_thermal_add_zone
 (
-  const cs_zone_t *zone
+  const cs_zone_t *zone,
+  const int        n_layers /*<[in] number of layers */
+);
+
+/*--------------------------------------------------------------------------*/
+/*
+ * \brief Define a layers' mesh
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_thermal_zone_define_layer_mesh
+(
+  const cs_zone_t *zone,
+  const int        layer_id,
+  const int        n_points,
+  const cs_real_t  thickness,
+  const cs_real_t  refine_factor
+);
+
+/*--------------------------------------------------------------------------*/
+/*
+ * \brief Define layer's physical properties
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_thermal_zone_define_layer_properties_const
+(
+  const cs_zone_t *zone,
+  const int        layer_id,
+  const cs_real_t  initial_temperature,
+  const cs_real_t  thermal_conductivity,
+  const cs_real_t  density,
+  const cs_real_t  heat_capacity
+);
+
+/*--------------------------------------------------------------------------*/
+/*
+ * \brief Define a dirichlet boundary condition
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_thermal_zone_define_dirichlet_bc_const
+(
+  const cs_zone_t *zone,
+  const cs_real_t  t_ext
+);
+
+/*--------------------------------------------------------------------------*/
+/*
+ * \brief Define nuemann (flux) boundary conditions
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_thermal_zone_define_neumann_bc_const
+(
+  const cs_zone_t *zone,
+  const cs_real_t  phi_ext
+);
+
+/*--------------------------------------------------------------------------*/
+/*
+ * \brief Define Robin boundary condition
+ *
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_thermal_zone_define_robin_bc_const
+(
+  const cs_zone_t *zone,
+  const cs_real_t  t_ext,
+  const cs_real_t  h_ext
+);
+
+/*--------------------------------------------------------------------------*/
+/*
+ * \brief Compute total number of coupled faces.
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_thermal_compute_n_faces_from_definitions(void);
+
+/*--------------------------------------------------------------------------*/
+/*
+ * \brief Initialization step based on zones
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_thermal_initialize(void);
+
+/*--------------------------------------------------------------------------*/
+/*
+ * \brief Update properties, time step and boundary conditions before solve step
+ */
+/*--------------------------------------------------------------------------*/
+
+void
+cs_1d_wall_thermal_prepare_solve
+(
+  const bool use_constant_time_step /*! [in] Use constant time step or not */
 );
 
 /*--------------------------------------------------------------------------*/

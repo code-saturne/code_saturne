@@ -271,6 +271,9 @@ cs_time_stepping(void)
     isuit1 = 0;
 
   cs_1d_wall_thermal_create();
+  /* New 1D thermal API */
+  cs_1d_wall_thermal_compute_n_faces_from_definitions();
+  /* Legacy 1D thermal API */
   cs_user_1d_wall_thermal(1);
 
   cs_get_glob_1d_wall_thermal()->nfpt1t = cs_glob_1d_wall_thermal->nfpt1d;
@@ -442,6 +445,7 @@ cs_time_stepping(void)
     /* Second call: filling in the geometry definition and
        initialization arrays."(IFPT1D,NPPT1D,EPPT1D,RGPT1D,TPPT1D)
     */
+    cs_1d_wall_thermal_initialize();
     cs_user_1d_wall_thermal(2);
 
     cs_1d_wall_thermal_check(2);

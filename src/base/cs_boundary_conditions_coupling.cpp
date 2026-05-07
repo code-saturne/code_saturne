@@ -217,6 +217,7 @@ cs_boundary_conditions_coupling_t_out(cs_real_t  hbord[],
   }
 
   // Update external boudary condition
+  cs_1d_wall_thermal_prepare_solve(false);
   cs_user_1d_wall_thermal(3);
 
   cs_1d_wall_thermal_check(3);
