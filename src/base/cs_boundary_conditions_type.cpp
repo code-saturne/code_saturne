@@ -742,20 +742,20 @@ cs_boundary_conditions_type(bool  init,
 
         cs_real_t vel_dir[3] = {0, 0, 0};
         if (meteo_profile == 1) {
-          const int met_1d_nlevels_t = cs_glob_atmo_option->met_1d_nlevels_t;
+          const int met_1d_nlevels_d = cs_glob_atmo_option->met_1d_nlevels_d;
           const int met_1d_ntimes = cs_glob_atmo_option->met_1d_ntimes;
 
-          const cs_real_t xuent = cs_intprf(met_1d_nlevels_t,
+          const cs_real_t xuent = cs_intprf(met_1d_nlevels_d,
                                             met_1d_ntimes,
-                                            cs_glob_atmo_option->z_temp_met,
+                                            cs_glob_atmo_option->z_dyn_met,
                                             cs_glob_atmo_option->time_met,
                                             cs_glob_atmo_option->u_met,
                                             cell_cen[c_id][2],
                                             cs_glob_time_step->t_cur);
 
-          const cs_real_t xvent = cs_intprf(met_1d_nlevels_t,
+          const cs_real_t xvent = cs_intprf(met_1d_nlevels_d,
                                             met_1d_ntimes,
-                                            cs_glob_atmo_option->z_temp_met,
+                                            cs_glob_atmo_option->z_dyn_met,
                                             cs_glob_atmo_option->time_met,
                                             cs_glob_atmo_option->v_met,
                                             cell_cen[c_id][2],
