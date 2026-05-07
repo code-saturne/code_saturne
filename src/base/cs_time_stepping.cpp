@@ -619,6 +619,9 @@ cs_time_stepping(void)
         cs_time_step_increment(ts->dt_ref);
       else  // time step computed in cs_time_step_compute
         cs_time_step_increment(ts->dt[0]);
+
+      if (ts->nt_cur == ts->nt_ini)
+        cs_timer_stats_increment_stage();
     }
 
     if (profile_time_step == ts->nt_cur) {

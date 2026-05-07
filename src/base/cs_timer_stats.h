@@ -35,10 +35,6 @@
 #include "base/cs_timer.h"
 #include "base/cs_time_plot.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Public types
  *============================================================================*/
@@ -48,7 +44,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Initialize timer statistics handling.
  *
  * This creates 2 statistic timer trees, whose roots ids are:
@@ -57,20 +53,20 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_timer_stats_initialize(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Finalize timer statistics handling.
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_timer_stats_finalize(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set a start time for time stats.
  *
  * This is useful to shift the time id for restarts. This function must
@@ -80,11 +76,11 @@ cs_timer_stats_finalize(void);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_timer_stats_set_start_time(int time_id);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Set global timer statistics plot options.
  *
  * This function is only effective before the first call to
@@ -99,23 +95,23 @@ cs_timer_stats_set_start_time(int time_id);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_timer_stats_set_plot_options(cs_time_plot_format_t   format,
                                 int                     frequency,
                                 int                     n_buffer_steps,
                                 double                  flush_wtime);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Increment time step for timer statistics.
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_timer_stats_increment_time_step(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Create a timer statistics structure.
  *
  * \param[in]  parent_name  name of parent statistic, or NULL
@@ -126,13 +122,13 @@ cs_timer_stats_increment_time_step(void);
  */
 /*----------------------------------------------------------------------------*/
 
-int
+extern "C" int
 cs_timer_stats_create(const char  *parent_name,
                       const char  *name,
                       const char  *label);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Return the id of a defined statistic based on its name.
  *
  * If no timer with the given name exists, -1 is returned.
@@ -143,11 +139,11 @@ cs_timer_stats_create(const char  *parent_name,
  */
 /*----------------------------------------------------------------------------*/
 
-int
+extern "C" int
 cs_timer_stats_id_by_name(const char  *name);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Enable or disable plotting for a timer statistic.
  *
  * By default plotting is enabled for all statistics, except root statistic 1
@@ -161,12 +157,12 @@ cs_timer_stats_id_by_name(const char  *name);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_timer_stats_set_plot(int  id,
                         int  plot);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief indicate if a timer for a given statistic is currently active.
  *
  * \param[in]  id  id of statistic
@@ -175,11 +171,11 @@ cs_timer_stats_set_plot(int  id,
  */
 /*----------------------------------------------------------------------------*/
 
-int
+extern "C" int
 cs_timer_stats_is_active(int  id);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Start a timer for a given statistic.
  *
  * Parents of the current statistic are also started, if not active.
@@ -192,11 +188,11 @@ cs_timer_stats_is_active(int  id);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_timer_stats_start(int  id);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Stop a timer for a given statistic.
  *
  * Children of the current statistic are also stopped, if active.
@@ -205,11 +201,11 @@ cs_timer_stats_start(int  id);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_timer_stats_stop(int  id);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Start a timer for a given statistic, stopping previous timers
  *        of the same type which are not a parent, and starting inactive
  *        parent timers if necessary.
@@ -220,11 +216,11 @@ cs_timer_stats_stop(int  id);
  */
 /*----------------------------------------------------------------------------*/
 
-int
+extern "C" int
 cs_timer_stats_switch(int  id);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Add a timing range to an inactive timer.
  *
  * This does not modify parent timers, so consistency of active and inactive
@@ -236,13 +232,13 @@ cs_timer_stats_switch(int  id);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_timer_stats_add_diff(int  id,
                         const cs_timer_t    *t0,
                         const cs_timer_t    *t1);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief Define default timer statistics
  *
  * This creates 2 statistic timer trees, whose roots ids are:
@@ -251,11 +247,20 @@ cs_timer_stats_add_diff(int  id,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_timer_stats_define_defaults(void);
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief Switch stage for time statistics.
+ *
+ * This saves current totals then resets them.
+ */
+/*----------------------------------------------------------------------------*/
 
-END_C_DECLS
+extern "C" void
+cs_timer_stats_increment_stage(void);
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* __CS_TIMER_STATS_H__ */

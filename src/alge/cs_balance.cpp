@@ -250,6 +250,7 @@ cs_balance_initialize(void)
     _balance_stat_id = cs_timer_stats_create("operations",
                                              "balances",
                                              "balances");
+    cs_timer_stats_set_plot(_balance_stat_id, 0);
   }
 }
 
@@ -607,10 +608,10 @@ cs_balance_scalar(int                         idtvar,
     CS_FREE(c_weight_diff);
   }
 
-  cs_timer_t t1 = cs_timer_time();
-
-  if (_balance_stat_id > -1)
+  if (_balance_stat_id > -1) {
+    cs_timer_t t1 = cs_timer_time();
     cs_timer_stats_add_diff(_balance_stat_id, &t0, &t1);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -983,10 +984,10 @@ cs_balance_tensor(int                         idtvar,
     }
   }
 
-  cs_timer_t t1 = cs_timer_time();
-
-  if (_balance_stat_id > -1)
+  if (_balance_stat_id > -1) {
+    cs_timer_t t1 = cs_timer_time();
     cs_timer_stats_add_diff(_balance_stat_id, &t0, &t1);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

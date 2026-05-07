@@ -71,6 +71,7 @@
 #include "alge/cs_sles_it.h"
 #include "alge/cs_sles_pc.h"
 #include "base/cs_timer.h"
+#include "base/cs_timer_stats.h"
 #include "base/cs_time_plot.h"
 #include "base/cs_time_step.h"
 
@@ -393,6 +394,11 @@ static unsigned int _grid_max_level_for_device = 25; /* grids over this level ar
 /* Force GPU settings (for CPU/GPU comparisons) */
 
 constexpr bool _force_gpu_settings = false;
+
+/* Timer statistics */
+
+static int _mg_setup_stat_id = -1;
+static int _mg_solve_stat_id = -1;
 
 /*============================================================================
  * Private function prototypes for recursive
@@ -1683,8 +1689,8 @@ _pc_from_mg_destroy(void  **context)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Create a multigrid preconditioner based onusing a K cycle for coarse-level
- * solvers used by high-performance system variant of K-cycle.
+ * \brief Create a multigrid preconditioner based on using a K cycle for
+ * coarse-level solvers used by high-performance system variant of K-cycle.
  *
  * \param[in]  mg  associated coarse level multigrid structure
  *
@@ -4602,11 +4608,24 @@ cs_multigrid_define(int                   f_id,
 cs_multigrid_t *
 cs_multigrid_create(cs_multigrid_type_t  mg_type)
 {
-  int ii;
-  cs_multigrid_t *mg;
+  if (_mg_setup_stat_id < 0) {
+    int stats_root = cs_timer_stats_id_by_name("operations");
+
+    if (stats_root > -1) {
+      _mg_setup_stat_id = cs_timer_stats_create("operations",
+                                                "mg_build",
+                                                "MG build");
+      _mg_solve_stat_id = cs_timer_stats_create("operations",
+                                                "mg_solve",
+                                                "MG solve");
+      cs_timer_stats_set_plot(_mg_setup_stat_id, 0);
+      cs_timer_stats_set_plot(_mg_solve_stat_id, 0);
+    }
+  }
 
   /* Increment number of setups */
 
+  cs_multigrid_t *mg;
   CS_MALLOC(mg, 1, cs_multigrid_t);
 
   mg->type = mg_type;
@@ -4678,7 +4697,7 @@ cs_multigrid_create(cs_multigrid_type_t  mg_type)
 
   CS_MALLOC(mg->lv_info, mg->n_levels_max, cs_multigrid_level_info_t);
 
-  for (ii = 0; ii < mg->n_levels_max; ii++)
+  for (int ii = 0; ii < mg->n_levels_max; ii++)
     _multigrid_level_info_init(mg->lv_info + ii);
 
   mg->post_row_num = nullptr;
@@ -5256,6 +5275,9 @@ cs_multigrid_setup_conv_diff(void               *context,
 
   t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(mg->info.t_tot[0]), &t0, &t1);
+
+  if (_mg_setup_stat_id > -1)
+    cs_timer_stats_add_diff(_mg_setup_stat_id, &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5321,6 +5343,8 @@ cs_multigrid_solve(void                *context,
     /* Stop solve timer to switch to setup timer */
     t1 = cs_timer_time();
     cs_timer_counter_add_diff(&(mg->info.t_tot[1]), &t0, &t1);
+    if (_mg_setup_stat_id > -1)
+      cs_timer_stats_add_diff(_mg_setup_stat_id, &t0, &t1);
 
     /* Setup grid hierarchy */
     cs_multigrid_setup(context, name, a, verbosity);
@@ -5504,6 +5528,9 @@ cs_multigrid_solve(void                *context,
   mg_info->n_calls[1] += 1;
   cs_timer_counter_add_diff(&(mg->info.t_tot[1]), &t0, &t1);
 
+  if (_mg_solve_stat_id > -1)
+    cs_timer_stats_add_diff(_mg_solve_stat_id, &t0, &t1);
+
   return cvg;
 }
 
@@ -5583,6 +5610,9 @@ cs_multigrid_free(void  *context)
 
   t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(mg->info.t_tot[0]), &t0, &t1);
+
+  if (_mg_setup_stat_id > -1)
+    cs_timer_stats_add_diff(_mg_setup_stat_id, &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/

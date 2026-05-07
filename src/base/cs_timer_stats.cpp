@@ -52,6 +52,7 @@
 
 #include "bft/bft_error.h"
 
+#include "base/cs_log.h"
 #include "base/cs_map.h"
 #include "base/cs_mem.h"
 #include "base/cs_timer.h"
@@ -102,6 +103,8 @@ typedef struct {
   cs_timer_t           t_start;         /* Start time if active */
 
   cs_timer_counter_t   t_cur;           /* Counter since last output */
+  cs_timer_counter_t   t_plot;          /* Counter for plotting
+                                           (mean over plot interval) */
   cs_timer_counter_t   t_tot;           /* Total time counter */
 
 } cs_timer_stats_t;
@@ -114,7 +117,7 @@ typedef struct {
  * Local static variable definitions
  *-----------------------------------------------------------------------------*/
 
-/* timer options */
+/* Timer plotting options */
 
 static int                    _plot_frequency = 1;
 static int                    _plot_buffer_steps = -1;
@@ -135,6 +138,12 @@ static int  _n_stats_max = 0;
 static cs_timer_stats_t  *_stats= nullptr;
 
 static cs_map_name_to_id_t  *_name_map = nullptr;
+
+/* Logging values */
+
+static int _n_stages = 0;
+static int *_stage_ts = nullptr;
+static cs_real_t **_stage_vals = nullptr;
 
 /*============================================================================
  * Private function definitions
@@ -243,6 +252,83 @@ _build_time_plot(void)
 }
 
 /*----------------------------------------------------------------------------
+ * Output to performance log
+ *----------------------------------------------------------------------------*/
+
+static void
+_log_performance(void)
+{
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+                  "Summary of timer statistics:\n"
+                  "---------------------------\n"));
+
+  // Ignore timer 0 throughout this function, as the 2 first stats represent
+  // the totals (roots) for operation types and stages, and should contain
+  // the same values.
+
+  int max_label_width = 0;
+  for (int stats_id = 1; stats_id < _n_stats; stats_id++) {
+    cs_timer_stats_t  *s = _stats + stats_id;
+    int l = strlen(s->label);
+    max_label_width = cs::max(max_label_width, l);
+  }
+
+  for (int i = 0; i < _n_stages; i++) {
+
+    int prev_ts_id = (i == 0) ? _start_time_id : _stage_ts[i-1];
+    if (prev_ts_id >= _stage_ts[i] - 1)
+      continue;
+
+    // Print header
+
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  _("\n"
+                    "  Stage %d (time steps %d - %d):\n\n"),
+                  i, prev_ts_id, _stage_ts[i]-1);
+
+    cs_real_t div = _stage_ts[i] - prev_ts_id;
+
+    char tmp_s[3][64] =  {"", "", ""};
+    cs_log_strpadl(tmp_s[0], _("timer"), max_label_width, 64);
+    cs_log_strpadl(tmp_s[1], _("total (s)"), 14, 64);
+    cs_log_strpadl(tmp_s[2], _("mean (s/ts)"), 14, 64);
+
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  "    %s  %s  %s\n",
+                  tmp_s[0], tmp_s[1], tmp_s[2]);
+
+    // Underline
+    for (size_t col = 0; col < 3; col++) {
+      size_t w0 = (col == 0) ? max_label_width : 14;
+      for (size_t j = 0; j < w0; j++)
+        tmp_s[col][j] = '-';
+      tmp_s[col][w0] = '\0';
+    }
+
+    cs_log_printf(CS_LOG_PERFORMANCE,
+                  "    %s  %s  %s\n",
+                  tmp_s[0], tmp_s[1], tmp_s[2]);
+
+    /* Print statistics */
+
+    const cs_real_t *vals = _stage_vals[i];
+    for (int stats_id = 1; stats_id < _n_stats; stats_id++) {
+      cs_timer_stats_t  *s = _stats + stats_id;
+      char label[64];
+      cs_log_strpadl(label, s->label, max_label_width, 64);
+      cs_log_printf(CS_LOG_PERFORMANCE,
+                    "    %s  %14.3g  %14.3g\n",
+                    label, vals[stats_id], vals[stats_id]/div);
+    }
+
+  }
+
+  cs_log_printf(CS_LOG_PERFORMANCE, "\n");
+  cs_log_separator(CS_LOG_PERFORMANCE);
+}
+
+/*----------------------------------------------------------------------------
  * Output time plots
  *----------------------------------------------------------------------------*/
 
@@ -258,9 +344,10 @@ _output_time_plot(void)
 
     cs_timer_stats_t  *s = _stats + stats_id;
     if (s->plot) {
-      vals[stats_count] = s->t_cur.nsec*1e-9;
+      vals[stats_count] = (s->t_plot.nsec*1e-9 / _plot_frequency);
       stats_count++;
     }
+    CS_TIMER_COUNTER_INIT(s->t_plot);
 
   }
 
@@ -321,9 +408,17 @@ void
 cs_timer_stats_finalize(void)
 {
   cs_timer_stats_increment_time_step();
+  cs_timer_stats_increment_stage();
 
   if (_time_plot != nullptr)
     cs_time_plot_finalize(&_time_plot);
+
+  _log_performance();
+
+  for (int i = 0; i < _n_stages; i++)
+    CS_FREE(_stage_vals[i]);
+  CS_FREE(_stage_vals);
+  CS_FREE(_stage_ts);
 
   _time_id = -1;
 
@@ -428,6 +523,7 @@ cs_timer_stats_increment_time_step(void)
     for (int stats_id = 0; stats_id < _n_stats; stats_id++) {
       cs_timer_stats_t  *s = _stats + stats_id;
       CS_TIMER_COUNTER_ADD(s->t_tot, s->t_tot, s->t_cur);
+      CS_TIMER_COUNTER_ADD(s->t_plot, s->t_plot, s->t_cur);
       CS_TIMER_COUNTER_INIT(s->t_cur);
     }
 
@@ -532,6 +628,7 @@ cs_timer_stats_create(const char  *parent_name,
   s->active = false;
 
   CS_TIMER_COUNTER_INIT(s->t_cur);
+  CS_TIMER_COUNTER_INIT(s->t_plot);
   CS_TIMER_COUNTER_INIT(s->t_tot);
 
   return stats_id;
@@ -800,11 +897,6 @@ cs_timer_stats_define_defaults(void)
                         "mesh_processing",
                         "mesh processing");
 
-  id = cs_timer_stats_create("mesh_processing",
-                             "mesh_io",
-                             "mesh io");
-  cs_timer_stats_set_plot(id, 0);
-
   id = cs_timer_stats_create("operations",
                              "postprocessing_output",
                              "post-processing output");
@@ -819,6 +911,34 @@ cs_timer_stats_define_defaults(void)
   id = cs_timer_stats_create("stages",
                              "postprocessing_stage",
                              "post-processing");
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Switch stage for time statistics.
+ *
+ * This saves current totals then resets them.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_timer_stats_increment_stage(void)
+{
+  cs_real_t *vals;
+  CS_MALLOC(vals, _n_stats, cs_real_t);
+
+  for (int stats_id = 0; stats_id < _n_stats; stats_id++) {
+    cs_timer_stats_t  *s = _stats + stats_id;
+    vals[stats_id] = s->t_tot.nsec*1e-9;
+    CS_TIMER_COUNTER_INIT(s->t_tot);
+  }
+
+  CS_REALLOC(_stage_vals, _n_stages+1, cs_real_t *);
+  _stage_vals[_n_stages] = vals;
+
+  CS_REALLOC(_stage_ts, _n_stages+1, int);
+  _stage_ts[_n_stages] = _time_id;
+  _n_stages++;
 }
 
 /*-----------------------------------------------------------------------------*/
