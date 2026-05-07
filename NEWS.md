@@ -16,6 +16,9 @@ Release 9.0.3 (unreleased)
 
 - Radiative FSCK model: fix out-of-bounds error in interpolation.
 
+- Fix incomplete ghost cell synchronization for scalar least-squares
+  gradient with limiter.
+
 - Fix missing ghost cell synchronization for boundary-adjacent cells
   when computing transposed velocity gradient contribution.
 
