@@ -1,5 +1,5 @@
-#ifndef __CS_MEDCOUPLING_POSTPROCESS_HXX__
-#define __CS_MEDCOUPLING_POSTPROCESS_HXX__
+#ifndef CS_MEDCOUPLING_POSTPROCESS_HXX
+#define CS_MEDCOUPLING_POSTPROCESS_HXX
 
 /*============================================================================
  * Postprocessing utilities based on MEDCoupling functions
@@ -32,10 +32,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Type definitions
@@ -253,6 +249,4 @@ cs_medcoupling_slice_destroy_all(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_MEDCOUPLING_POSTPROCESS_HXX__ */
+#endif /* CS_MEDCOUPLING_POSTPROCESS_HXX */

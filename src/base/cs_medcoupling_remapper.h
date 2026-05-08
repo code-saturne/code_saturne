@@ -1,5 +1,5 @@
-#ifndef __CS_MEDCOUPLING_REMAPPER_HXX__
-#define __CS_MEDCOUPLING_REMAPPER_HXX__
+#ifndef CS_MEDCOUPLING_REMAPPER_HXX
+#define CS_MEDCOUPLING_REMAPPER_HXX
 
 /*============================================================================
  * Interpolation using MEDCoupling Remapper.
@@ -28,14 +28,12 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
  * MED library headers
  *----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Structure definitions
@@ -44,7 +42,7 @@ BEGIN_C_DECLS
 typedef struct _cs_medcoupling_remapper_t cs_medcoupling_remapper_t;
 
 /*============================================================================
- * Public C function prototypes
+ * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
@@ -252,10 +250,13 @@ cs_medcoupling_remapper_get_time_from_index(cs_medcoupling_remapper_t *r,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_medcoupling_remapper_get_iter_order_from_index(cs_medcoupling_remapper_t *r,
-                                                  int                        id,
-                                                  int                       *it,
-                                                  int                       *order);
+cs_medcoupling_remapper_get_iter_order_from_index
+(
+   cs_medcoupling_remapper_t *r,
+   int                        id,
+   int                       *it,
+   int                       *order
+);
 
 /*----------------------------------------------------------------------------*/
 /*! \brief Load the time value corresponding to id.
@@ -268,6 +269,7 @@ cs_medcoupling_remapper_get_iter_order_from_index(cs_medcoupling_remapper_t *r,
 void
 cs_medcoupling_remapper_update_time_value(cs_medcoupling_remapper_t *r,
                                           int                        id);
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Destroy all remappers
@@ -279,6 +281,4 @@ cs_medcoupling_remapper_destroy_all(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_MEDCOUPLING_REMAPPER_HXX__ */
+#endif /* CS_MEDCOUPLING_REMAPPER_HXX */

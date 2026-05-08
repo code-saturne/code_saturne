@@ -1,5 +1,5 @@
-#ifndef __CS_PARAM_SLES_H__
-#define __CS_PARAM_SLES_H__
+#ifndef CS_PARAM_SLES_H
+#define CS_PARAM_SLES_H
 
 /*============================================================================
  * Routines to handle the SLES (Sparse Linear Equation Solver) settings
@@ -37,8 +37,6 @@
 #include "base/cs_param_types.h"
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*!
   \file cs_param_sles.h
@@ -618,8 +616,6 @@ cs_param_sles_hpddm_reset(cs_param_sles_t *slesp);
  */
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-
 void
 cs_param_sles_hpddm(cs_param_sles_t *slesp,
                     const bool       use_neumann,
@@ -627,8 +623,6 @@ cs_param_sles_hpddm(cs_param_sles_t *slesp,
                     const int        harmonic_overlap,
                     const double     relative_threshold,
                     const int        p = -1);
-
-#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -684,6 +678,4 @@ cs_param_sles_check_class(cs_param_solver_class_t  wanted_class);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_PARAM_SLES_H__ */
+#endif /* CS_PARAM_SLES_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_CONVECTION_DIFFUSION_H__
-#define __CS_CONVECTION_DIFFUSION_H__
+#ifndef CS_CONVECTION_DIFFUSION_H
+#define CS_CONVECTION_DIFFUSION_H
 
 /*============================================================================
  * Convection-diffusion operators.
@@ -39,10 +39,6 @@
 #include "base/cs_math.h"
 #include "mesh/cs_mesh_quantities.h"
 #include "cdo/cs_equation_param.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -867,12 +863,6 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
                                    cs_real_t         *restrict diverg);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
-
-#ifdef __cplusplus
-
-/*----------------------------------------------------------------------------*/
 /*
  * \brief Compute the upwind gradient used in the slope tests.
  *
@@ -1050,6 +1040,4 @@ cs_convection_anisotropic_leff_diffusion_secvis
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* cplusplus */
-
-#endif /* __CS_CONVECTION_DIFFUSION_H__ */
+#endif /* CS_CONVECTION_DIFFUSION_H */

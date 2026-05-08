@@ -1,5 +1,5 @@
-#ifndef __CS_MATRIX_DEFAULT_H__
-#define __CS_MATRIX_DEFAULT_H__
+#ifndef CS_MATRIX_DEFAULT_H
+#define CS_MATRIX_DEFAULT_H
 
 /*============================================================================
  * Default Sparse Matrix structure and Tuning.
@@ -38,10 +38,6 @@
 #include "alge/cs_matrix.h"
 #include "base/cs_numbering.h"
 #include "base/cs_halo_perio.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -270,9 +266,6 @@ cs_matrix_default_set_type(cs_matrix_fill_type_t  fill_type,
 const cs_gnum_t *
 cs_matrix_get_block_row_g_id(const cs_matrix_t  *m);
 
-END_C_DECLS
-#ifdef __cplusplus
-
 /*----------------------------------------------------------------------------*/
 /*
  * \brief Return a (0-based) global block row numbering for a given matrix.
@@ -292,9 +285,6 @@ END_C_DECLS
 const cs_gnum_t *
 cs_matrix_get_block_row_g_id(const cs_matrix_t  *m,
                              const cs_halo_t    *halo);
-
-#endif /* cplusplus */
-BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -355,6 +345,4 @@ cs_matrix_release(cs_matrix_t  **m);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_MATRIX_DEFAULT_H__ */
+#endif /* CS_MATRIX_DEFAULT_H */

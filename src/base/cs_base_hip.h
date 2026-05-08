@@ -1,5 +1,5 @@
-#ifndef __CS_BASE_HIP_H__
-#define __CS_BASE_HIP_H__
+#ifndef CS_BASE_HIP_H
+#define CS_BASE_HIP_H
 
 /*============================================================================
  * Definitions, global variables, and base functions for HIP
@@ -80,11 +80,6 @@ using cs_hip_mask_t = uint64_t;
   #define CS_HIP_WARP_SIZE 32
 using cs_hip_mask_t = uint32_t;
 #endif
-
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Type definitions
@@ -275,8 +270,6 @@ cs_hip_grid_size(cs_lnum_t     n,
   return (n % block_size) ?  n/block_size + 1 : n/block_size;
 }
 
-END_C_DECLS
-
 #if defined(__HIPCC__)
 
 /*----------------------------------------------------------------------------
@@ -412,8 +405,6 @@ cs_hip_get_2_stage_reduce_buffers(int            stream_id,
 
 #endif /* defined(__NVCC__) */
 
-BEGIN_C_DECLS
-
 /*----------------------------------------------------------------------------*/
 /*
  * \brief  Log information on available HIP devices.
@@ -487,6 +478,4 @@ cs_base_hip_get_device(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_BASE_HIP_H__ */
+#endif /* CS_BASE_HIP_H */

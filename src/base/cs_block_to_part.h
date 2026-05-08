@@ -1,5 +1,5 @@
-#ifndef __CS_BLOCK_TO_PART_H__
-#define __CS_BLOCK_TO_PART_H__
+#ifndef CS_BLOCK_TO_PART_H
+#define CS_BLOCK_TO_PART_H
 
 /*============================================================================
  * Convert between block distribution and general domain partition.
@@ -37,10 +37,6 @@
 
 #include "base/cs_defs.h"
 #include "base/cs_block_dist.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -148,6 +144,4 @@ cs_block_to_part_global_to_local(cs_lnum_t        n_ents,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_BLOCK_TO_PART_H__ */
+#endif /* CS_BLOCK_TO_PART_H */

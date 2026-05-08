@@ -1,5 +1,5 @@
-#ifndef __CS_VELOCITY_PRESSURE_H__
-#define __CS_VELOCITY_PRESSURE_H__
+#ifndef CS_VELOCITY_PRESSURE_H
+#define CS_VELOCITY_PRESSURE_H
 
 /*============================================================================
  * Velocity-pressure coupling model and parameters.
@@ -34,10 +34,6 @@
 #include "base/cs_defs.h"
 
 #include "base/cs_time_control.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -262,6 +258,4 @@ cs_velocity_pressure_param_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_VELOCITY_PRESSURE_H__ */
+#endif /* CS_VELOCITY_PRESSURE_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_MASS_SOURCE_TERMS_H__
-#define __CS_MASS_SOURCE_TERMS_H__
+#ifndef CS_MASS_SOURCE_TERMS_H
+#define CS_MASS_SOURCE_TERMS_H
 
 /*============================================================================
  * Mass source terms computation.
@@ -30,10 +30,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_base.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Public function prototypes
@@ -78,6 +74,4 @@ cs_mass_source_terms(int                   iterns,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_MASS_SOURCE_TERMS_H__ */
+#endif /* CS_MASS_SOURCE_TERMS_H */

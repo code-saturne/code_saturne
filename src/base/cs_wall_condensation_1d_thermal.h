@@ -1,5 +1,5 @@
-#ifndef __CS_WALLCONDENSATION_1DTHERMAL_H__
-#define __CS_WALLCONDENSATION_1DTHERMAL_H__
+#ifndef CS_WALLCONDENSATION_1DTHERMAL_H
+#define CS_WALLCONDENSATION_1DTHERMAL_H
 
 /*============================================================================
  * Base wall condensation model data.
@@ -32,11 +32,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
-
-/*----------------------------------------------------------------------------*/
-
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Local Macro definitions
@@ -247,6 +242,4 @@ cs_wall_condensation_1d_thermal_compute_temperature(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_WALLCONDENSATION_1DTHERMAL_H__ */
+#endif /* CS_WALLCONDENSATION_1DTHERMAL_H */

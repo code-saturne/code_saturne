@@ -1,5 +1,5 @@
-#ifndef __CS_WALL_CONDENSATION_H__
-#define __CS_WALL_CONDENSATION_H__
+#ifndef CS_WALL_CONDENSATION_H
+#define CS_WALL_CONDENSATION_H
 
 /*============================================================================
  * Base wall condensation model.
@@ -32,10 +32,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Type definitions
@@ -332,6 +328,4 @@ cs_wall_condensation_source_terms(const cs_field_t  *f,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_WALL_CONDENSATION_H__ */
+#endif /* CS_WALL_CONDENSATION_H */

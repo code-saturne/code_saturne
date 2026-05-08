@@ -1,5 +1,5 @@
-#ifndef __CS_TIME_STEP_COMPUTE__
-#define __CS_TIME_STEP_COMPUTE__
+#ifndef CS_TIME_STEP_COMPUTE
+#define CS_TIME_STEP_COMPUTE
 
 /*============================================================================
  * Compute the local time step and the local Courant and Fourier number
@@ -37,10 +37,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -68,6 +64,4 @@ cs_courant_fourier_compute(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_TIME_STEP_COMPUTE__ */
+#endif /* CS_TIME_STEP_COMPUTE */

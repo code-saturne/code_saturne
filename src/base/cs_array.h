@@ -1,5 +1,5 @@
-#ifndef __CS_ARRAY_H__
-#define __CS_ARRAY_H__
+#ifndef CS_ARRAY_H
+#define CS_ARRAY_H
 
 /*============================================================================
  * Array handling utilities.
@@ -82,8 +82,6 @@
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
-
-#if defined(__cplusplus)
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -566,10 +564,6 @@ cs_array_difference(cs_lnum_t   size,
   for (cs_lnum_t ii = 0; ii < size; ii++)
     diff[ii] -= y[ii];
 }
-
-#endif // __cplusplus
-
-BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -1104,12 +1098,6 @@ cs_array_set_value_real(cs_lnum_t  n_elts,
                         cs_real_t  a[]);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
-
-/*----------------------------------------------------------------------------*/
-
-#if defined(__cplusplus)
 
 namespace cs {
 
@@ -2316,6 +2304,6 @@ using cs_mdarray_r = cs::array<T,N,cs::layout::right>;
 template<class T, int N>
 using cs_mdarray_l = cs::array<T,N,cs::layout::left>;
 
-#endif /* __cplusplus */
+/*----------------------------------------------------------------------------*/
 
-#endif /* __CS_ARRAY_H__ */
+#endif /* CS_ARRAY_H */

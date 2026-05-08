@@ -1,5 +1,5 @@
-#ifndef __CS_MEDCOUPLING_UTILS_H__
-#define __CS_MEDCOUPLING_UTILS_H__
+#ifndef CS_MEDCOUPLING_UTILS_H
+#define CS_MEDCOUPLING_UTILS_H
 
 /*============================================================================
  * Usage of MEDCoupling base components.
@@ -25,13 +25,9 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
-/*----------------------------------------------------------------------------*/
-
 /*----------------------------------------------------------------------------
- * Standard C library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Public functions
@@ -46,6 +42,6 @@ BEGIN_C_DECLS
 void
 cs_medcoupling_free_meshes(void);
 
-END_C_DECLS
+/*----------------------------------------------------------------------------*/
 
-#endif /* __CS_MEDCOUPLING_UTILS_H__ */
+#endif /* CS_MEDCOUPLING_UTILS_H */

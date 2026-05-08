@@ -1,5 +1,5 @@
-#ifndef __CS_ALL_TO_ALL_H__
-#define __CS_ALL_TO_ALL_H__
+#ifndef CS_ALL_TO_ALL_H
+#define CS_ALL_TO_ALL_H
 
 /*============================================================================
  * All-to-all parallel data exchange.
@@ -39,10 +39,6 @@
 #include "base/cs_defs.h"
 #include "base/cs_parall.h"
 #include "base/cs_rank_neighbors.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -418,11 +414,7 @@ cs_all_to_all_log_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
 #if defined(HAVE_MPI)
-
-#if defined(__cplusplus)
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -602,8 +594,8 @@ cs_all_to_all_copy_indexed(cs_all_to_all_t *d,
                              dest_data);
 };
 
-#endif //__cplusplus
-
 #endif
 
-#endif /* __CS_ALL_TO_ALL_H__ */
+/*----------------------------------------------------------------------------*/
+
+#endif /* CS_ALL_TO_ALL_H */

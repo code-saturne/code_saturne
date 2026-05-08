@@ -1,5 +1,5 @@
-#ifndef __CS_BASE_CUDA_H__
-#define __CS_BASE_CUDA_H__
+#ifndef CS_BASE_CUDA_H
+#define CS_BASE_CUDA_H
 
 /*============================================================================
  * Definitions, global variables, and base functions for CUDA
@@ -71,10 +71,6 @@
    replace this macro with a global variable */
 
 #define CS_CUDA_WARP_SIZE 32
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Type definitions
@@ -265,8 +261,6 @@ cs_cuda_grid_size(cs_lnum_t     n,
   return (n % block_size) ?  n/block_size + 1 : n/block_size;
 }
 
-END_C_DECLS
-
 #if defined(__NVCC__)
 
 /*----------------------------------------------------------------------------
@@ -402,8 +396,6 @@ cs_cuda_get_2_stage_reduce_buffers(int            stream_id,
 
 #endif /* defined(__NVCC__) */
 
-BEGIN_C_DECLS
-
 /*----------------------------------------------------------------------------*/
 /*
  * \brief  Log information on available CUDA devices.
@@ -412,7 +404,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_base_cuda_device_info(cs_log_t  log_id);
 
 /*----------------------------------------------------------------------------*/
@@ -423,7 +415,7 @@ cs_base_cuda_device_info(cs_log_t  log_id);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_base_cuda_version_info(cs_log_t  log_id);
 
 /*----------------------------------------------------------------------------*/
@@ -434,7 +426,7 @@ cs_base_cuda_version_info(cs_log_t  log_id);
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_base_cuda_compiler_info(cs_log_t  log_id);
 
 /*----------------------------------------------------------------------------*/
@@ -459,7 +451,7 @@ cs_base_cuda_nccl_info(cs_log_t  log_id);
  */
 /*----------------------------------------------------------------------------*/
 
-int
+extern "C" int
 cs_base_cuda_select_default_device(void);
 
 /*----------------------------------------------------------------------------*/
@@ -470,13 +462,11 @@ cs_base_cuda_select_default_device(void);
  */
 /*----------------------------------------------------------------------------*/
 
-int
+extern "C" int
 cs_base_cuda_get_device(void);
 
 #endif  /* CS_HAVE_CUDA */
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_BASE_CUDA_H__ */
+#endif /* CS_BASE_CUDA_H */

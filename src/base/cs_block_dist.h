@@ -1,5 +1,5 @@
-#ifndef __CS_BLOCK_DIST_H__
-#define __CS_BLOCK_DIST_H__
+#ifndef CS_BLOCK_DIST_H
+#define CS_BLOCK_DIST_H
 
 /*============================================================================
  * Definition of a block distribution.
@@ -32,10 +32,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -108,6 +104,4 @@ cs_block_dist_compute_sizes_nr(int        rank_id,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_BLOCK_DIST_H__ */
+#endif /* CS_BLOCK_DIST_H */

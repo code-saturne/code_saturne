@@ -1,5 +1,5 @@
-#ifndef __CS_MATRIX_H__
-#define __CS_MATRIX_H__
+#ifndef CS_MATRIX_H
+#define CS_MATRIX_H
 
 /*============================================================================
  * Sparse Matrix Representation and Operations.
@@ -33,17 +33,11 @@
 
 #include "base/cs_defs.h"
 
-#if defined(__cplusplus)
 #include "base/cs_dispatch.h"
-#endif
 
 #include "base/cs_halo.h"
 #include "base/cs_numbering.h"
 #include "alge/cs_matrix_assembler.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -142,15 +136,9 @@ extern const char  *cs_matrix_fill_type_name[];
 
 extern const char  *cs_matrix_spmv_type_name[];
 
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
-
 /*=============================================================================
  * Public C++ function prototypes
  *============================================================================*/
-
-#if defined(__cplusplus)
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -198,12 +186,6 @@ cs_matrix_vector_multiply_partial
   cs_real_t                              x[],
   cs_real_t                              y[]
 );
-
-/*----------------------------------------------------------------------------*/
-
-#endif // defined(__cplusplus)
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Public function prototypes
@@ -1351,6 +1333,4 @@ cs_matrix_variant_type(const cs_matrix_variant_t  *mv);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_MATRIX_H__ */
+#endif /* CS_MATRIX_H */

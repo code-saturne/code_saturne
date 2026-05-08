@@ -1,5 +1,5 @@
-#ifndef __CS_POST_H__
-#define __CS_POST_H__
+#ifndef CS_POST_H
+#define CS_POST_H
 
 /*============================================================================
  * Post-processing management
@@ -46,10 +46,6 @@
 #include "base/cs_probe.h"
 #include "base/cs_time_step.h"
 #include "base/cs_time_control.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -560,10 +556,6 @@ cs_post_define_1d_thermal_mesh
   const int writer_ids[]
 );
 
-END_C_DECLS
-
-#if defined(__cplusplus)
-
 /*----------------------------------------------------------------------------*/
 /*
  * \brief Create a post-processing mesh associated with an existing exportable
@@ -607,10 +599,6 @@ cs_post_define_existing_mesh(int           mesh_id,
                              bool          child_of_global,
                              int           n_writers,
                              const int     writer_ids[]);
-
-#endif // defined(__cplusplus)
-
-BEGIN_C_DECLS
 
 void
 cs_post_define_existing_mesh(int           mesh_id,
@@ -1679,6 +1667,4 @@ cs_post_add_time_mesh_dep_output(cs_post_time_mesh_dep_output_t  *function,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_POST_H__ */
+#endif /* CS_POST_H */

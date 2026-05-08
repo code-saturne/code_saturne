@@ -1,5 +1,5 @@
-#ifndef __CS_BASE_ACCEL_H__
-#define __CS_BASE_ACCEL_H__
+#ifndef CS_BASE_ACCEL_H
+#define CS_BASE_ACCEL_H
 
 /*============================================================================
  * Definitions, global variables, and base functions for accelerators.
@@ -49,10 +49,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_mem.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Type definitions
@@ -148,6 +144,4 @@ cs_sycl_select_default_device(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_BASE_ACCEL_H__ */
+#endif /* CS_BASE_ACCEL_H */

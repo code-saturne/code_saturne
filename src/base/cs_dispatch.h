@@ -25,10 +25,6 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
-// Valid only for C++
-
-#ifdef __cplusplus
-
 /*----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
@@ -2539,7 +2535,5 @@ cs_dispatch_sum(T                       *dest,
 #endif // __CUDA_ARCH__
 
 /*----------------------------------------------------------------------------*/
-
-#endif /* __cplusplus */
 
 #endif /* CS_DISPATCH_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_FIELD_DEFAULT_H__
-#define __CS_FIELD_DEFAULT_H__
+#ifndef CS_FIELD_DEFAULT_H
+#define CS_FIELD_DEFAULT_H
 
 /*============================================================================
  * Field utility functions.
@@ -33,10 +33,6 @@
 
 #include "base/cs_defs.h"
 #include "cdo/cs_equation_param.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -170,6 +166,4 @@ cs_field_n_scalar_fields(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_FIELD_DEFAULT_H__ */
+#endif /* CS_FIELD_DEFAULT_H */

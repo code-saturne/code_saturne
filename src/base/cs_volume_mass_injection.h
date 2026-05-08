@@ -1,5 +1,5 @@
-#ifndef __CS_VOLUME_MASS_INJECTION_H__
-#define __CS_VOLUME_MASS_INJECTION_H__
+#ifndef CS_VOLUME_MASS_INJECTION_H
+#define CS_VOLUME_MASS_INJECTION_H
 
 /*============================================================================
  * Mass source terms computation.
@@ -30,10 +30,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_base.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Type definitions
@@ -101,6 +97,4 @@ cs_volume_mass_injection_get_arrays(const cs_field_t   *f,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_VOLUME_MASS_INJECTION_H__ */
+#endif /* CS_VOLUME_MASS_INJECTION_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_HALO_PERIO_H__
-#define __CS_HALO_PERIO_H__
+#ifndef CS_HALO_PERIO_H
+#define CS_HALO_PERIO_H
 
 /*============================================================================
  * Structure and function headers associated to periodicity
@@ -35,10 +35,6 @@
 
 #include "base/cs_base.h"
 #include "base/cs_halo.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Type definitions
@@ -76,12 +72,6 @@ void
 cs_halo_perio_sync_var_sym_tens(const cs_halo_t  *halo,
                                 cs_halo_type_t    sync_mode,
                                 cs_real_t         var[]);
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
-
-#ifdef __cplusplus
 
 /*----------------------------------------------------------------------------
  * Synchronize values for a real vector (interleaved) between periodic cells.
@@ -131,6 +121,6 @@ cs_halo_perio_sync_var_sym_tens_grad(const cs_halo_t  *halo,
                                      cs_halo_type_t    sync_mode,
                                      T                 var[]);
 
-#endif /* cplusplus */
+/*----------------------------------------------------------------------------*/
 
-#endif /* __CS_HALO_PERIO_H__ */
+#endif /* CS_HALO_PERIO_H */

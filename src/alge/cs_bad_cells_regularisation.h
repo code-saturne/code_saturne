@@ -1,5 +1,5 @@
-#ifndef __CS_BAD_CELLS_REGULARISATION_H__
-#define __CS_BAD_CELLS_REGULARISATION_H__
+#ifndef CS_BAD_CELLS_REGULARISATION_H
+#define CS_BAD_CELLS_REGULARISATION_H
 
 /*============================================================================
  * Divergence operators.
@@ -33,10 +33,6 @@
 
 #include "base/cs_base.h"
 #include "base/cs_halo.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Local Macro definitions
@@ -94,12 +90,6 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t *var,
                                    int          boundary_projection);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
-
-#ifdef __cplusplus
-
-/*----------------------------------------------------------------------------*/
 /*!
  * \brief Regularisation on bad cells for vectors
  *
@@ -112,6 +102,6 @@ void
 cs_bad_cells_regularisation_vector(T      (*var)[3],
                                    int     boundary_projection);
 
-#endif /* cplusplus */
+/*----------------------------------------------------------------------------*/
 
-#endif /* __CS_BAD_CELLS_REGULARISATION_H__ */
+#endif /* CS_BAD_CELLS_REGULARISATION_H */

@@ -47,10 +47,6 @@
 #include "mesh/cs_mesh_quantities.h"
 #include "base/cs_parameters.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -350,11 +346,14 @@ cs_internal_coupling_matrix_add_values(const cs_field_t              *f,
  *----------------------------------------------------------------------------*/
 
 void
-cs_internal_coupling_coupled_faces(const cs_internal_coupling_t  *cpl,
-                                   cs_lnum_t                     *n_local,
-                                   const cs_lnum_t               *faces_local[],
-                                   cs_lnum_t                     *n_distant,
-                                   const cs_lnum_t               *faces_distant[]);
+cs_internal_coupling_coupled_faces
+(
+  const cs_internal_coupling_t  *cpl,
+  cs_lnum_t                     *n_local,
+  const cs_lnum_t               *faces_local[],
+  cs_lnum_t                     *n_distant,
+  const cs_lnum_t               *faces_distant[]
+);
 
 /*----------------------------------------------------------------------------
  * Log information about a given internal coupling entity
@@ -442,18 +441,12 @@ cs_ic_field_dist_data_by_face_id(const int         field_id,
                                  const cs_real_t   tab_distant[],
                                  cs_real_t         tab_local[]);
 
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
-
-#if defined(__cplusplus)
-
 /*=============================================================================
  * Public C++ functions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Update scalar boundary condition coefficients for internal coupling.
  *
  * \param[in]     ctx              reference to dispatch context
@@ -465,8 +458,6 @@ END_C_DECLS
  * \param[in]     clip_coeff       clipping coefficient
  * \param[in]     hyd_p_flag       flag for hydrostatic pressure
  * \param[in]     f_ext            exterior force generating pressure
- * \param[in]     viscel           symmetric cell tensor \f$ \tens{\mu}_\celli \f$,
-                                   or nullptr
  * \param[in]     weighb           boundary face weight for cells i in case
  *                                 of tensor diffusion, or nullptr
  * \param[in]     df_limiter       diffusion limiter array
@@ -479,23 +470,23 @@ END_C_DECLS
 void
 cs_internal_coupling_update_bc_coeffs_s
 (
- cs_dispatch_context           &ctx,
- const cs_field_bc_coeffs_t    *bc_coeffs,
- const cs_internal_coupling_t  *cpl,
- const bool                     compute_diffusion_coeffs,
- cs_halo_type_t                 halo_type,
- int                            w_stride,
- double                         clip_coeff,
- int                            hyd_p_flag,
- cs_real_t                      f_ext[][3],
- const cs_real_t               *c_weight,
- const cs_real_t                weighb[],
- cs_real_t                     *df_limiter,
- const cs_real_t               *var
+  cs_dispatch_context           &ctx,
+  const cs_field_bc_coeffs_t    *bc_coeffs,
+  const cs_internal_coupling_t  *cpl,
+  const bool                     compute_diffusion_coeffs,
+  cs_halo_type_t                 halo_type,
+  int                            w_stride,
+  double                         clip_coeff,
+  int                            hyd_p_flag,
+  cs_real_t                      f_ext[][3],
+  const cs_real_t               *c_weight,
+  const cs_real_t                weighb[],
+  cs_real_t                     *df_limiter,
+  const cs_real_t               *var
 );
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Update vector boundary condition coefficients for internal coupling.
  *
  * \param[in]     ctx              reference to dispatch context
@@ -525,7 +516,5 @@ cs_internal_coupling_update_bc_coeffs_strided
 );
 
 /*----------------------------------------------------------------------------*/
-
-#endif // __cplusplus
 
 #endif /* CS_INTERNAL_COUPLING_H */

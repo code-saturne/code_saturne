@@ -1,5 +1,5 @@
-#ifndef __CS_COUPLING_H__
-#define __CS_COUPLING_H__
+#ifndef CS_COUPLING_H
+#define CS_COUPLING_H
 
 /*============================================================================
  * Common functionnality for various coupling types.
@@ -42,10 +42,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_base.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -305,6 +301,4 @@ cs_coupling_point_in_mesh_p(const void         *mesh,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_COUPLING_H__ */
+#endif /* CS_COUPLING_H */

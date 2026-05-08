@@ -1,5 +1,5 @@
-#ifndef __CS_LOG_ITERATION_H__
-#define __CS_LOG_ITERATION_H__
+#ifndef CS_LOG_ITERATION_H
+#define CS_LOG_ITERATION_H
 
 /*============================================================================
  * Log field and other array statistics at relevant time steps.
@@ -25,8 +25,6 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
-/*----------------------------------------------------------------------------*/
-
 /*----------------------------------------------------------------------------
  * Standard C library headers
  *----------------------------------------------------------------------------*/
@@ -39,10 +37,6 @@
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_time_control.h"
 #include "base/cs_time_step.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -219,6 +213,4 @@ cs_log_iteration_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_LOG_ITERATION_H__ */
+#endif /* CS_LOG_ITERATION_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_ASSERT_H__
-#define __CS_ASSERT_H__
+#ifndef CS_ASSERT_H
+#define CS_ASSERT_H
 
 /*============================================================================
  * File and directory operations, with parallel file I/O
@@ -40,8 +40,6 @@
 
 /*----------------------------------------------------------------------------*/
 
-BEGIN_C_DECLS
-
 /*!
   \file cs_assert.h
         Assertion usable in all build types.
@@ -71,6 +69,4 @@ if (!(expr)) bft_error(__FILE__, __LINE__, 0,                  \
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_FILE_H__ */
+#endif /* CS_ASSERT_H */

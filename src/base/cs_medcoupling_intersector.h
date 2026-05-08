@@ -1,5 +1,5 @@
-#ifndef __CS_MEDCOUPLING_INTERSECTOR_HXX__
-#define __CS_MEDCOUPLING_INTERSECTOR_HXX__
+#ifndef CS_MEDCOUPLING_INTERSECTOR_HXX
+#define CS_MEDCOUPLING_INTERSECTOR_HXX
 
 /*============================================================================
  * Interpolation using MEDCoupling Intersector.
@@ -33,10 +33,6 @@
 
 #include "base/cs_defs.h"
 #include "fvm/fvm_writer.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Type definitions
@@ -337,6 +333,4 @@ cs_mi_post_add_mesh(cs_medcoupling_intersector_t  *mi);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_MEDCOUPLING_INTERSECTOR_HXX__ */
+#endif /* CS_MEDCOUPLING_INTERSECTOR_HXX */

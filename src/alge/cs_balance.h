@@ -1,5 +1,5 @@
-#ifndef __CS_BALANCE_H__
-#define __CS_BALANCE_H__
+#ifndef CS_BALANCE_H
+#define CS_BALANCE_H
 
 /*============================================================================
  * Building of the right hand side for a transport of a field.
@@ -39,9 +39,6 @@
 
 #include "base/cs_parameters.h"
 
-/*----------------------------------------------------------------------------*/
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -54,10 +51,6 @@ BEGIN_C_DECLS
 
 void
 cs_balance_initialize(void);
-
-END_C_DECLS
-
-#if defined(__cplusplus)
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -243,10 +236,6 @@ cs_balance_scalar(int                         idtvar,
                   cs_real_2_t                 i_flux[],
                   cs_real_t                   b_flux[]);
 
-#endif // defined(__cplusplus)
-
-BEGIN_C_DECLS
-
 /*----------------------------------------------------------------------------*/
 /*
  * \brief Wrapper to the function which adds the explicit part of the
@@ -423,6 +412,4 @@ cs_balance_tensor(int                         idtvar,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_BALANCE_H__ */
+#endif /* CS_BALANCE_H */

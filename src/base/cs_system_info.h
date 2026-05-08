@@ -1,5 +1,5 @@
-#ifndef __CS_SYSTEM_INFO_H__
-#define __CS_SYSTEM_INFO_H__
+#ifndef CS_SYSTEM_INFO_H
+#define CS_SYSTEM_INFO_H
 
 /*============================================================================
  * Base system information (System and Library dependent)
@@ -28,10 +28,6 @@
 /*----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Public types
@@ -83,6 +79,4 @@ cs_system_info_no_log(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_SYSTEM_INFO_H__ */
+#endif /* CS_SYSTEM_INFO_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_GRID_H__
-#define __CS_GRID_H__
+#ifndef CS_GRID_H
+#define CS_GRID_H
 
 /*============================================================================
  * Grid connectivity and data used for multigrid coarsening
@@ -37,10 +37,6 @@
 #include "base/cs_dispatch.h"
 #include "base/cs_halo.h"
 #include "alge/cs_matrix.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -451,10 +447,6 @@ cs_grid_finalize(void);
 void
 cs_grid_dump(const cs_grid_t  *g);
 
-END_C_DECLS
-
-#ifdef __cplusplus
-
 /*----------------------------------------------------------------------------
  * Compute coarse row variable values from fine row values
  *
@@ -496,10 +488,6 @@ cs_grid_prolong_row_var(cs_dispatch_context  &ctx,
                         cs_real_t            *c_var,
                         cs_real_t            *f_var);
 
-#endif
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -532,6 +520,4 @@ cs_grid_set_matrix_tuning(cs_matrix_fill_type_t  fill_type,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_GRID_H__ */
+#endif /* CS_GRID_H */
