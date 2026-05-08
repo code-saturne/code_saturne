@@ -504,6 +504,17 @@ BEGIN_C_DECLS
  * Public function prototypes
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Set factor to ensure diagonal dominance.
+ *
+ * \param[in]  factor  clip margin factor (ignored if < 0).
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_grid_set_diag_dom_clip_factor(double  factor);
+
 /*----------------------------------------------------------------------------
  * Set matrix tuning behavior for multigrid coarse meshes.
  *

@@ -5724,6 +5724,32 @@ _verify_grid_quantities_msr(const cs_grid_t  *grid,
 }
 
 /*----------------------------------------------------------------------------
+ * Warn aubout negative diagonal entries (called if verbosity > 2)
+ *
+ * parameters:
+ *   g             <-- grid structure
+ *   call_site     <-- caller function name or info
+ *   n_g_n_eg_diag <-> number of negative entries (local in, global out)
+ *----------------------------------------------------------------------------*/
+
+static void
+_warn_neg_diag(const cs_grid_t  *g,
+               const char       *call_site,
+               cs_gnum_t        *n_g_neg_diag)
+{
+#if defined(HAVE_MPI)
+  if (g->comm != MPI_COMM_NULL)
+    MPI_Allreduce(MPI_IN_PLACE, n_g_neg_diag, 1, CS_MPI_GNUM, MPI_SUM, g->comm);
+#endif
+  if (*n_g_neg_diag > 0) {
+    // Do not use higher-level CS_LOG_WARNING here, as the following
+    // message is related to high-verbosity debug output.
+    bft_printf(_("Warning: %s: %llu negative diagonal matrix entries.\n"),
+               call_site, (unsigned long long)(*n_g_neg_diag));
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Build a coarse level from a finer level using face->cells connectivity
  *
  * parameters:
@@ -6113,14 +6139,8 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
     }
   }
 
-  if (verbosity > 2) {
-    cs_parall_counter(&n_g_neg_diag, 1);
-    cs_base_warn(__FILE__, __LINE__);
-    cs_log_printf(CS_LOG_WARNINGS,
-                  _("%s: %llu negative diagonal matrix entries.\n"),
-                  __func__, (unsigned long long)n_g_neg_diag);
-    cs_log_printf_flush(CS_LOG_WARNINGS);
-  }
+  if (verbosity > 2)
+    _warn_neg_diag(fine_grid, __func__, &n_g_neg_diag);
 
   for (cs_lnum_t c_face = 0; c_face < c_n_faces; c_face++) {
     cs_lnum_t ic = c_face_cell[c_face][0];
@@ -6482,7 +6502,6 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
     bft_error(__FILE__, __LINE__, 0, "interp incorrectly defined.");
 
   /* Diagonal term */
-
   cs_gnum_t n_g_neg_diag = 0;
 
   if (db_size == 1) {
@@ -6513,14 +6532,8 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
     }
   }
 
-  if (verbosity > 2) {
-    cs_parall_counter(&n_g_neg_diag, 1);
-    cs_base_warn(__FILE__, __LINE__);
-    cs_log_printf(CS_LOG_WARNINGS,
-                  _("%s: %llu negative diagonal matrix entries.\n"),
-                  __func__, (unsigned long long)n_g_neg_diag);
-    cs_log_printf_flush(CS_LOG_WARNINGS);
-  }
+  if (verbosity > 2)
+    _warn_neg_diag(fine_grid, __func__, &n_g_neg_diag);
 
   for (cs_lnum_t c_face = 0; c_face < c_n_faces; c_face++) {
     cs_lnum_t ic = c_face_cell[c_face][0];
@@ -7703,15 +7716,17 @@ _matrix_from_native(cs_matrix_type_t   cm_type,
  * Force matrix diagonal dominance.
  *
  * parameters:
+ *   g           <-- grid structure
  *   clip_factor <-- diagonal dominance clip factor (0: exact).
- *   verbosity  <-- verbosity level
+ *   verbosity   <-- verbosity level
  *   a           <-> matrix
  *----------------------------------------------------------------------------*/
 
 static void
-_force_diag_dom(double        clip_factor,
-                int           verbosity,
-                cs_matrix_t  *a)
+_force_diag_dom(const cs_grid_t  *g,
+                double            clip_factor,
+                int               verbosity,
+                cs_matrix_t      *a)
 {
   const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
 
@@ -7751,9 +7766,14 @@ _force_diag_dom(double        clip_factor,
   }
 
   if (need_log) {
-    cs_parall_counter(&n_g_neg_diag, 1);
-    bft_printf("Multigrid: force diagonal dominance of %llu elements.\n",
-               (unsigned long long)n_g_neg_diag);
+#if defined(HAVE_MPI)
+    if (g->comm != MPI_COMM_NULL)
+      MPI_Allreduce(MPI_IN_PLACE, &n_g_neg_diag, 1, CS_MPI_GNUM, MPI_SUM,
+                    g->comm);
+#endif
+
+    bft_printf("mg level %d: force diagonal dominance of %llu elements.\n",
+               g->level, (unsigned long long)n_g_neg_diag);
   }
 }
 
@@ -7879,18 +7899,6 @@ _prolong_row_int(const cs_grid_t  *c,
  * (cs_multigrid.c), not directly by the user, so they are no more
  * documented than private static functions)
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set factor to ensure diagonal dominance.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_grid_set_diag_dom_clip_factor(double  factor)
-{
-  _grid_diag_dom_clip_factor = factor;
-}
 
 /*----------------------------------------------------------------------------
  * Create base grid by mapping from shared mesh values.
@@ -8865,7 +8873,7 @@ cs_grid_coarsen(const cs_grid_t      *f,
                                    nullptr,
                                    nullptr);
 
-  _force_diag_dom(_grid_diag_dom_clip_factor, verbosity, c->_matrix);
+  _force_diag_dom(c, _grid_diag_dom_clip_factor, verbosity, c->_matrix);
 
   /* Optional verification */
 
@@ -9450,6 +9458,20 @@ cs_grid_dump(const cs_grid_t  *g)
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set factor to ensure diagonal dominance.
+ *
+ * \param[in]  factor  clip margin factor (ignored if < 0).
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_grid_set_diag_dom_clip_factor(double  factor)
+{
+  _grid_diag_dom_clip_factor = factor;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
