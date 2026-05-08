@@ -68,6 +68,7 @@
 #include "base/cs_log.h"
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
+#include "base/cs_reducers.h"
 #include "alge/cs_matrix.h"
 #include "alge/cs_matrix_default.h"
 #include "alge/cs_matrix_tuning.h"
@@ -7731,7 +7732,7 @@ _force_diag_dom(const cs_grid_t  *g,
   const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
 
   /* bloc matrices are not coded yet */
-  if (clip_factor < 0 && db_size != 1)
+  if (clip_factor < 0 || db_size != 1)
     return;
 
   const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
@@ -7746,26 +7747,29 @@ _force_diag_dom(const cs_grid_t  *g,
 
   cs_real_t *d_val = const_cast<cs_real_t *>(d_val_c);
 
-  cs_gnum_t n_g_neg_diag = 0;
   bool need_log = (verbosity > 1 && cs_log_default_is_active());
 
-# pragma omp parallel for reduction(+:n_g_neg_diag)
-  for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
-    cs_real_t dii = d_val[ii];
-    const cs_real_t *restrict m_row = x_val + c2c_idx[ii];
-    cs_lnum_t n_cols = c2c_idx[ii+1] - c2c_idx[ii];
-    cs_real_t sii = 0.0;
-    for (cs_lnum_t jj = 0; jj < n_cols; jj++)
-      sii += fabs(m_row[jj]);
-
-    sii *= x_mult;
-    if (dii < sii) {
-      d_val[ii] = sii;
-      n_g_neg_diag++;
-    }
-  }
+  cs_dispatch_context ctx;
 
   if (need_log) {
+    cs_gnum_t n_g_neg_diag = 0;
+    ctx.parallel_for_reduce_sum(n_rows, n_g_neg_diag, [=] CS_F_HOST_DEVICE
+                                (cs_lnum_t ii,
+                                 CS_DISPATCH_REDUCER_TYPE(cs_gnum_t) &count) {
+      cs_real_t dii = d_val[ii];
+      const cs_real_t *restrict m_row = x_val + c2c_idx[ii];
+      cs_lnum_t n_cols = c2c_idx[ii+1] - c2c_idx[ii];
+      cs_real_t sii = 0.0;
+      for (cs_lnum_t jj = 0; jj < n_cols; jj++)
+        sii += cs::abs(m_row[jj]);
+      sii *= x_mult;
+      if (dii < sii) {
+        d_val[ii] = sii;
+        count += 1;
+      }
+    });
+    ctx.wait();
+
 #if defined(HAVE_MPI)
     if (g->comm != MPI_COMM_NULL)
       MPI_Allreduce(MPI_IN_PLACE, &n_g_neg_diag, 1, CS_MPI_GNUM, MPI_SUM,
@@ -7774,6 +7778,22 @@ _force_diag_dom(const cs_grid_t  *g,
 
     bft_printf("mg level %d: force diagonal dominance of %llu elements.\n",
                g->level, (unsigned long long)n_g_neg_diag);
+  }
+
+  /* Version with no global reductions when logging not needed */
+  else {
+    ctx.parallel_for(n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t ii) {
+      cs_real_t dii = d_val[ii];
+      const cs_real_t *restrict m_row = x_val + c2c_idx[ii];
+      cs_lnum_t n_cols = c2c_idx[ii+1] - c2c_idx[ii];
+      cs_real_t sii = 0.0;
+      for (cs_lnum_t jj = 0; jj < n_cols; jj++)
+        sii += cs::abs(m_row[jj]);
+      sii *= x_mult;
+      if (dii < sii)
+        d_val[ii] = sii;
+    });
+    ctx.wait();
   }
 }
 
