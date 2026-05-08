@@ -6,7 +6,7 @@
 /*
   This file is part of code_saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2025 EDF S.A.
+  Copyright (C) 1998-2026 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -248,6 +248,9 @@ typedef struct _cs_graph_m_ptr_t {
 /*============================================================================
  *  Global variables
  *============================================================================*/
+
+/* Enforce diagonal dominance if non-negative */
+static double _grid_diag_dom_clip_factor = -1.; // Use positive value to enable.
 
 cs_real_t _penalization_threshold = 1e4;
 
@@ -5527,6 +5530,32 @@ _build_coarse_matrix_msr(cs_grid_t *c,
 }
 
 /*----------------------------------------------------------------------------
+ * Warn aubout negative diagonal entries (called if verbosity > 2)
+ *
+ * parameters:
+ *   g             <-- grid structure
+ *   call_site     <-- caller function name or info
+ *   n_g_n_eg_diag <-> number of negative entries (local in, global out)
+ *----------------------------------------------------------------------------*/
+
+static void
+_warn_neg_diag(const cs_grid_t  *g,
+               const char       *call_site,
+               cs_gnum_t        *n_g_neg_diag)
+{
+#if defined(HAVE_MPI)
+  if (g->comm != MPI_COMM_NULL)
+    MPI_Allreduce(MPI_IN_PLACE, n_g_neg_diag, 1, CS_MPI_GNUM, MPI_SUM, g->comm);
+#endif
+  if (*n_g_neg_diag > 0) {
+    // Do not use higher-level CS_LOG_WARNING here, as the following
+    // message is related to high-verbosity debug output.
+    bft_printf(_("Warning: %s: %llu negative diagonal matrix entries.\n"),
+               call_site, (unsigned long long)(*n_g_neg_diag));
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Build a coarse level from a finer level using face->cells connectivity
  *
  * parameters:
@@ -5875,11 +5904,17 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
   for (cs_lnum_t ic = 0; ic < c_n_cells_ext*db_stride; ic++)
     c_da[ic] = 0.;
 
+  cs_gnum_t n_g_neg_diag = 0;
+
   if (db_size == 1) {
     for (ii = 0; ii < f_n_cells; ii++) {
       cs_lnum_t ic = c_coarse_row[ii];
-      if (ic > -1)
-        c_da[ic] += w1[ii];
+      if (ic > -1) {
+        if (w1[ii] > 0.)
+          c_da[ic] += w1[ii];
+        else
+          n_g_neg_diag++;
+      }
     }
   }
   else {
@@ -5887,13 +5922,20 @@ _compute_coarse_quantities_native(const cs_grid_t  *fine_grid,
       cs_lnum_t ic = c_coarse_row[ii];
       if (ic > -1) {
         for (jj = 0; jj < db_size; jj++) {
-          for (kk = 0; kk < db_size; kk++)
-            c_da[ic*db_stride + db_size*jj + kk]
-              += w1[ii*db_stride + db_size*jj + kk];
+          for (kk = 0; kk < db_size; kk++) {
+            if (jj == kk && w1[ii*db_stride + db_size*jj + kk] < 0.)
+              n_g_neg_diag++;
+            else
+              c_da[ic*db_stride + db_size*jj + kk]
+                += w1[ii*db_stride + db_size*jj + kk];
+          }
         }
       }
     }
   }
+
+  if (verbosity > 2)
+    _warn_neg_diag(fine_grid, __func__, &n_g_neg_diag);
 
   for (cs_lnum_t c_face = 0; c_face < c_n_faces; c_face++) {
     cs_lnum_t ic = c_face_cell[c_face][0];
@@ -5946,7 +5988,7 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
   if (cs_glob_timer_kernels_flag > 0)
     t_start = std::chrono::high_resolution_clock::now();
 
-  cs_lnum_t ic, jc, ii, jj, c_face, face_id;
+  cs_lnum_t ii, jj, c_face, face_id;
 
   cs_real_t dsigjg, dsxaij, agij;
 
@@ -6142,7 +6184,7 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
   /* Initialize coarse matrix storage on (c_da, c_xa) */
 
 # pragma omp parallel for if(c_n_cells_ext > CS_THR_MIN)
-  for (ic = 0; ic < c_n_cells_ext*db_stride; ic++) {
+  for (cs_lnum_t ic = 0; ic < c_n_cells_ext*db_stride; ic++) {
     c_da[ic] = 0.;
   }
 
@@ -6161,8 +6203,8 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
   if (interp == 1) {
    for (c_face = 0; c_face < c_n_faces; c_face++) {
 
-      ic = c_face_cell[c_face][0];
-      jc = c_face_cell[c_face][1];
+      cs_lnum_t ic = c_face_cell[c_face][0];
+      cs_lnum_t jc = c_face_cell[c_face][1];
 
       dsigjg =   (  c_cell_cen[3*jc]
                   - c_cell_cen[3*ic])    * c_face_normal[3*c_face]
@@ -6206,30 +6248,42 @@ _compute_coarse_quantities_conv_diff(const cs_grid_t  *fine_grid,
     bft_error(__FILE__, __LINE__, 0, "interp incorrectly defined.");
 
   /* Diagonal term */
+  cs_gnum_t n_g_neg_diag = 0;
 
   if (db_size == 1) {
     for (ii = 0; ii < f_n_cells; ii++) {
-      ic = c_coarse_row[ii];
-      if (ic > -1)
-        c_da[ic] += w1[ii];
+      cs_lnum_t ic = c_coarse_row[ii];
+      if (ic > -1) {
+        if (w1[ii] > 0.)
+          c_da[ic] += w1[ii];
+        else
+          n_g_neg_diag++;
+      }
     }
   }
   else {
     for (ii = 0; ii < f_n_cells; ii++) {
-      ic = c_coarse_row[ii];
+      cs_lnum_t ic = c_coarse_row[ii];
       if (ic > -1) {
         for (jj = 0; jj < db_size; jj++) {
-          for (cs_lnum_t kk = 0; kk < db_size; kk++)
-            c_da[ic*db_stride + db_size*jj + kk]
-              += w1[ii*db_stride + db_size*jj + kk];
+          for (cs_lnum_t kk = 0; kk < db_size; kk++) {
+            if (jj == kk && w1[ii*db_stride + db_size*jj + kk] < 0.)
+              n_g_neg_diag++;
+            else
+              c_da[ic*db_stride + db_size*jj + kk]
+                += w1[ii*db_stride + db_size*jj + kk];
+          }
         }
       }
     }
   }
 
+  if (verbosity > 2)
+    _warn_neg_diag(fine_grid, __func__, &n_g_neg_diag);
+
   for (c_face = 0; c_face < c_n_faces; c_face++) {
-    ic = c_face_cell[c_face][0];
-    jc = c_face_cell[c_face][1];
+    cs_lnum_t ic = c_face_cell[c_face][0];
+    cs_lnum_t jc = c_face_cell[c_face][1];
     for (cs_lnum_t kk = 0; kk < db_size; kk++) {
       c_da[ic*db_stride + db_size*kk + kk] -=   c_xa_conv[2*c_face]
                                               + c_xa_diff[c_face];
@@ -7316,6 +7370,71 @@ _matrix_from_native(cs_matrix_type_t   cm_type,
 }
 
 /*----------------------------------------------------------------------------
+ * Force matrix diagonal dominance.
+ *
+ * parameters:
+ *   g           <-- grid structure
+ *   clip_factor <-- diagonal dominance clip factor (0: exact).
+ *   verbosity   <-- verbosity level
+ *   a           <-> matrix
+ *----------------------------------------------------------------------------*/
+
+static void
+_force_diag_dom(const cs_grid_t  *g,
+                double            clip_factor,
+                int               verbosity,
+                cs_matrix_t      *a)
+{
+  const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
+
+  /* bloc matrices are not coded yet */
+  if (clip_factor < 0 && db_size != 1)
+    return;
+
+  const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
+
+  const cs_lnum_t *c2c_idx, *c2c;
+  const cs_real_t *d_val_c, *x_val;
+  const cs_real_t x_mult = 1. + clip_factor;
+
+  cs_matrix_get_msr_arrays(a,
+                           &c2c_idx, &c2c,
+                           &d_val_c, &x_val);
+
+  cs_real_t *d_val = const_cast<cs_real_t *>(d_val_c);
+
+  cs_gnum_t n_g_neg_diag = 0;
+  bool need_log = (verbosity > 1 && cs_log_default_is_active());
+
+# pragma omp parallel for
+  for (cs_lnum_t ii = 0; ii < n_rows; ii++) {
+    cs_real_t dii = d_val[ii];
+    const cs_real_t *restrict m_row = x_val + c2c_idx[ii];
+    cs_lnum_t n_cols = c2c_idx[ii+1] - c2c_idx[ii];
+    cs_real_t sii = 0.0;
+    for (cs_lnum_t jj = 0; jj < n_cols; jj++)
+      sii += fabs(m_row[jj]);
+
+    sii *= x_mult;
+    if (dii < sii) {
+      d_val[ii] = sii;
+      n_g_neg_diag++;
+    }
+  }
+
+  if (need_log) {
+#if defined(HAVE_MPI)
+    if (g->comm != MPI_COMM_NULL)
+      MPI_Allreduce(MPI_IN_PLACE, &n_g_neg_diag, 1, CS_MPI_GNUM, MPI_SUM,
+                    g->comm);
+#endif
+
+    bft_printf("mg level %d: force diagonal dominance of %llu elements.\n",
+               g->level, (unsigned long long)n_g_neg_diag);
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Project coarse grid row numbers to parent grid.
  *
  * parameters:
@@ -8380,6 +8499,8 @@ cs_grid_coarsen(const cs_grid_t      *f,
                                    (const cs_real_t *)c->cell_vol,
                                    (const cs_real_3_t *)c->_face_normal);
 
+  _force_diag_dom(c, _grid_diag_dom_clip_factor, verbosity, c->_matrix);
+
   /* Optional verification */
 
   if (verbosity > 3) {
@@ -8907,6 +9028,20 @@ cs_grid_dump(const cs_grid_t  *g)
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set factor to ensure diagonal dominance.
+ *
+ * \param[in]  factor  clip margin factor (ignored if < 0).
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_grid_set_diag_dom_clip_factor(double  factor)
+{
+  _grid_diag_dom_clip_factor = factor;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
