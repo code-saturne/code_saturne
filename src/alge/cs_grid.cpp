@@ -7388,7 +7388,7 @@ _force_diag_dom(const cs_grid_t  *g,
   const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
 
   /* bloc matrices are not coded yet */
-  if (clip_factor < 0 && db_size != 1)
+  if (clip_factor < 0 || db_size != 1)
     return;
 
   const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);

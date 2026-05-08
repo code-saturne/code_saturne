@@ -6,6 +6,8 @@ Release 9.0.3 (unreleased)
 - Fix robustness issues of multigrid linear solver for steady
   convection/diffusion equations (related to loss of diagonal dominance
   through truncation errors).
+  * Also allow forcing diagonal dominance of coarse grids (on CPU,
+    for scalars) using `cs_grid_set_diag_dom_clip_factor`.
 
 - Atmo: fix bug reading meteo file.
 
