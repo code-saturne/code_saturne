@@ -1,5 +1,5 @@
-#ifndef __CS_TIME_STEP_H__
-#define __CS_TIME_STEP_H__
+#ifndef CS_TIME_STEP_H
+#define CS_TIME_STEP_H
 
 /*============================================================================
  * Base time step data.
@@ -33,10 +33,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -61,7 +57,9 @@ typedef enum {
 /* time step descriptor */
 /*----------------------*/
 
-typedef struct cs_time_step_t {
+class cs_time_step_t {
+
+public:
 
   int           is_variable;  /* 0 if time step is fixed in time,
                                  1 if the time step is variable. */
@@ -84,16 +82,12 @@ typedef struct cs_time_step_t {
   double        dt_ref;       /* reference time step. */
   double        dt_next;      /* next (predicted) time step. */
 
-#if defined(__cplusplus)
-
   /* Helper function to check if code needs to do at least one more iteration.
      ------------------------------------------------------------------------ */
 
   bool needs_iteration() const;
 
-#endif
-
-} cs_time_step_t;
+};
 
 /* Time step options descriptor */
 /*------------------------------*/
@@ -266,6 +260,4 @@ cs_time_step_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_TIME_STEP_H__ */
+#endif /* CS_TIME_STEP_H */

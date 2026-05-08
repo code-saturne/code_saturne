@@ -1,5 +1,5 @@
-#ifndef __CS_TIME_STEPPING_H__
-#define __CS_TIME_STEPPING_H__
+#ifndef CS_TIME_STEPPING_H
+#define CS_TIME_STEPPING_H
 
 /*============================================================================
  * Main time loop.
@@ -36,10 +36,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Type definitions
@@ -95,6 +91,4 @@ cs_time_stepping_write_checkpoint(bool  checkpoint_mesh);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_TIME_STEPPING_H__ */
+#endif /* CS_TIME_STEPPING_H */

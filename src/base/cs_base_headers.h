@@ -42,9 +42,7 @@
 #include "base/cs_block_to_part.h"
 #include "base/cs_boundary.h"
 #include "base/cs_boundary_conditions.h"
-#ifdef __cplusplus
 #include "base/cs_boundary_conditions_set_coeffs.h"
-#endif
 #include "base/cs_boundary_zone.h"
 #include "base/cs_coupling.h"
 #include "base/cs_defs.h"
@@ -95,9 +93,7 @@
 #include "base/cs_preprocess.h"
 #include "base/cs_preprocessor_data.h"
 #include "base/cs_probe.h"
-#ifdef __cplusplus
 #include "base/cs_profiling.h"
-#endif
 #include "base/cs_prototypes.h"
 #include "base/cs_random.h"
 #include "base/cs_reducers.h"

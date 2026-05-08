@@ -1,5 +1,5 @@
-#ifndef __CS_COOLPROP_HXX__
-#define __CS_COOLPROP_HXX__
+#ifndef CS_COOLPROP_HXX
+#define CS_COOLPROP_HXX
 
 /*============================================================================
  * Equation of state
@@ -39,10 +39,6 @@
 
 #include "base/cs_base.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Local Macro Definitions
  *============================================================================*/
@@ -77,7 +73,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_phys_prop_coolprop(char                              *coolprop_material,
                       const char                        *coolprop_backend,
                       cs_phys_prop_thermo_plane_type_t   thermo_plane,
@@ -93,12 +89,10 @@ cs_phys_prop_coolprop(char                              *coolprop_material,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_coolprop_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_COOLPROP_HXX__ */
+#endif /* CS_COOLPROP_HXX */
 

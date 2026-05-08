@@ -3770,7 +3770,6 @@ cs_atmo_hydrostatic_profiles_compute(cs_field_t *meteo_pressure,
   const cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
-  const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
   const cs_real_3_t *restrict cell_cen = mq->cell_cen;
 
   cs_physical_constants_t *phys_cst = cs_get_glob_physical_constants();
@@ -3830,12 +3829,14 @@ cs_atmo_hydrostatic_profiles_compute(cs_field_t *meteo_pressure,
     temp->val[cell_id] = aopt->meteo_t0 * factor;
 
     /* Do not overwrite pressure in case of restart */
-    if (has_restart == 0)
+    if (has_restart == 0) {
       meteo_pressure->val[cell_id] = p_ground * pow(factor, 1./rscp)
                           /* correction factor for z > 11000m */
                         * exp(- g/(rair*temp->val[cell_id]) * (height - zt));
 
-      meteo_p_hyd->val[cell_id] = meteo_pressure->val[cell_id] - p_ground - g_dot_x * ro0;
+      meteo_p_hyd->val[cell_id] =   meteo_pressure->val[cell_id]
+                                  - p_ground - g_dot_x * ro0;
+    }
 
     if (idilat > 0)
       temp->val[cell_id] =   potemp->val[cell_id]
@@ -3848,7 +3849,7 @@ cs_atmo_hydrostatic_profiles_compute(cs_field_t *meteo_pressure,
       density->val[cell_id] = ro0;
   } // end init loop
 
-  if ((has_restart == 1 && nt_loc <= 1)
+  if (   (has_restart == 1 && nt_loc <= 1)
       || (cs_glob_physical_model_flag[CS_ATMOSPHERIC]
           == CS_ATMO_CONSTANT_DENSITY))
     return;
@@ -3931,7 +3932,9 @@ cs_atmo_hydrostatic_profiles_compute(cs_field_t *meteo_pressure,
   cs_real_t inf_norm = 1.;
   int iterns = 0;
   /* Loop to compute pressure profile */
-  for (int sweep = 0; sweep < eqp_p->nswrsm && inf_norm > eqp_p->epsrsm; sweep++) {
+  for (int sweep = 0;
+       sweep < eqp_p->nswrsm && inf_norm > eqp_p->epsrsm;
+       sweep++) {
     //FIXME 100 or nswrsm
 
     /* Update previous values of pressure for the convergence test */
@@ -5206,8 +5209,8 @@ cs_atmo_projection(cs_atmo_projection_t origin_projection,
     break;
 
   default:
-    bft_printf("Unknown target projection type\n");
-    exit(1);
+    bft_error(__FILE__, __LINE__, 0,
+              _("Unknown target projection type."));
   }
 }
 

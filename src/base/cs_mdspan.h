@@ -1,5 +1,5 @@
-#ifndef __CS_MDSPAN_H__
-#define __CS_MDSPAN_H__
+#ifndef CS_MDSPAN_H
+#define CS_MDSPAN_H
 
 /*============================================================================
  * mdspan class and handling utilities.
@@ -28,7 +28,7 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- * Standard C and C++ library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
 #include <string.h>
@@ -43,8 +43,6 @@
 #include "base/cs_execution_context.h"
 
 /*----------------------------------------------------------------------------*/
-
-#if defined(__cplusplus)
 
 namespace cs {
 
@@ -1106,8 +1104,6 @@ using cs_mdspan_r = cs::mdspan<T, N, cs::layout::right>;
 template<class T, int N>
 using cs_mdspan_l = cs::mdspan<T, N, cs::layout::left>;
 
-#endif /* __cplusplus */
-
 /*--------------------------------------------------------------------------*/
 
-#endif /* __CS_MDSPAN_H__ */
+#endif /* CS_MDSPAN_H */

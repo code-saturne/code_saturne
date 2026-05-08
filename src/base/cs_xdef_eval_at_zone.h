@@ -1,5 +1,5 @@
-#ifndef __CS_XDEF_EVAL_AT_ZONE__
-#define __CS_XDEF_EVAL_AT_ZONE__
+#ifndef CS_XDEF_EVAL_AT_ZONE
+#define CS_XDEF_EVAL_AT_ZONE
 
 /*============================================================================
  * Mass source terms computation.
@@ -31,10 +31,6 @@
 
 #include "base/cs_base.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -52,6 +48,4 @@ cs_xdef_eval_at_zone(const cs_xdef_t   *def,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_XDEF_EVAL_AT_ZONE__ */
+#endif /* CS_XDEF_EVAL_AT_ZONE */

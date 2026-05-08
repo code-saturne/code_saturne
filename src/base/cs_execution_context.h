@@ -25,12 +25,6 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
-// Valid only for C++
-
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-#ifdef __cplusplus
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
 /*----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
@@ -186,12 +180,6 @@ cs_execution_default_env_init(void);
 void
 cs_execution_default_env_finalize();
 
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-#endif /* __cplusplus */
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*----------------------------------------------------------------------------*/
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Initialize the global execution context.
@@ -221,9 +209,6 @@ cs_execution_default_env_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 
-
-#if defined(__cplusplus)
-
 namespace cs {
 
 enum class exec_type {
@@ -231,7 +216,6 @@ enum class exec_type {
   host,
   unknown
 };
-
 
 /*--------------------------------------------------------------------------*/
 /*!
@@ -445,6 +429,7 @@ parallel_for_reduce_sum(
 }
 
 // Parallel reduction with general reducer.
+
 /*--------------------------------------------------------------------------*/
 /*!
  * \brief parallel_for_reduce construct using a dispatch context based on
@@ -613,8 +598,10 @@ wait
   return true;
 }
 
-}
+} // namespace cs
 
 using cs_mpi_wrapper = cs::execution::mpi_wrapper;
-#endif
+
+/*--------------------------------------------------------------------------*/
+
 #endif /* __CS_EXECUTION_CONTEXT_H__ */

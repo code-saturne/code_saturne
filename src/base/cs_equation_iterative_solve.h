@@ -1,5 +1,5 @@
-#ifndef __CS_EQUATION_ITERATIVE_SOLVE_H__
-#define __CS_EQUATION_ITERATIVE_SOLVE_H__
+#ifndef CS_EQUATION_ITERATIVE_SOLVE_H
+#define CS_EQUATION_ITERATIVE_SOLVE_H
 
 /*============================================================================
  * Scalar convection diffusion equation solver.
@@ -34,8 +34,6 @@
 #include "base/cs_defs.h"
 #include "base/cs_dispatch.h"
 #include "base/cs_parameters.h"
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Public function prototypes
@@ -406,8 +404,6 @@ cs_equation_iterative_solve_tensor(int                         idtvar,
                                    cs_real_t                   rhs[][6],
                                    cs_real_t                   pvar[][6]);
 
-END_C_DECLS
-
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_EQUATION_ITERATIVE_SOLVE_H__ */
+#endif /* CS_EQUATION_ITERATIVE_SOLVE_H */

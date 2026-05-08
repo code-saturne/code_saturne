@@ -1,5 +1,5 @@
-#ifndef __CS_FIELD_H__
-#define __CS_FIELD_H__
+#ifndef CS_FIELD_H
+#define CS_FIELD_H
 
 /*============================================================================
  * Field management.
@@ -28,12 +28,10 @@
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------
- * Standard C++ library headers
+ * Standard library headers
  *----------------------------------------------------------------------------*/
 
-#if defined(__cplusplus)
 #include <string>
-#endif /* __cplusplus */
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -41,10 +39,6 @@
 
 #include "base/cs_defs.h"
 #include "base/cs_array.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -110,7 +104,9 @@ typedef enum {
 /*! Field boundary condition descriptor (for variables) */
 /*------------------------------------------------------*/
 
-typedef struct {
+class cs_field_bc_coeffs_t {
+
+public:
 
   int               *icodcl;       /* low-level BC type code */
   cs_real_t         *rcodcl1;      /* 1st component of low-level BC */
@@ -137,12 +133,14 @@ typedef struct {
   cs_real_t         *ac;           /* Explicit coefficient for convection */
   cs_real_t         *bc;           /* Implicit coefficient for convection */
 
-} cs_field_bc_coeffs_t;
+};
 
 /* Field descriptor */
 /*------------------*/
 
-typedef struct cs_field_t {
+class cs_field_t {
+
+public:
 
   const char             *name;         /* Canonical name */
 
@@ -182,8 +180,6 @@ typedef struct cs_field_t {
   int                     ns_size;      /* Multidim series size */
   int                     ns_idx;       /* Multidim series index of field */
   int                     ns_owner;     /* Multidim series owner id */
-
-#if defined(__cplusplus)
 
   /* Setter and getter methods for key-based values
      ---------------------------------------------- */
@@ -312,6 +308,9 @@ typedef struct cs_field_t {
     const int time_id = 0
   ) const;
 
+  /* State update methods
+     -------------------- */
+
   void
   update_public_pointers(void);
 
@@ -340,8 +339,6 @@ typedef struct cs_field_t {
   cs_array_2d<cs_real_t> **_vals;
   cs_array_3d<cs_real_t> **_ns_vals;
 
-public:
-
   CS_F_HOST_DEVICE
   void
   set_ns_owner
@@ -365,6 +362,9 @@ public:
     ns_idx   = series_idx;
     ns_owner = series_owner;
   }
+
+  /* Query methods
+     ------------- */
 
   CS_F_HOST_DEVICE
   inline
@@ -449,9 +449,7 @@ public:
   void
   map_to_ns_data(void);
 
-#endif
-
-} cs_field_t;
+};
 
 /*----------------------------------------------------------------------------
  * Function pointer for structure associated to field key
@@ -775,7 +773,7 @@ cs_field_allocate_or_map_all(void);
  *   pointer to the field structure
  *----------------------------------------------------------------------------*/
 
-cs_field_t  *
+extern "C" cs_field_t  *
 cs_field_by_id(int  id);
 
 /*----------------------------------------------------------------------------
@@ -931,7 +929,7 @@ cs_field_key_id(const char  *name);
  *   id associated with key, or -1
  *----------------------------------------------------------------------------*/
 
-int
+extern "C" int
 cs_field_key_id_try(const char  *name);
 
 /*----------------------------------------------------------------------------
@@ -1177,7 +1175,7 @@ cs_field_set_key_int(cs_field_t  *f,
  *   integer value associated with the key id for this field
  *----------------------------------------------------------------------------*/
 
-int
+extern "C" int
 cs_field_get_key_int(const cs_field_t  *f,
                      int                key_id);
 
@@ -1264,7 +1262,7 @@ cs_field_set_key_double(cs_field_t  *f,
  *   floating point value associated with the key id for this field
  *----------------------------------------------------------------------------*/
 
-double
+extern "C" double
 cs_field_get_key_double(const cs_field_t  *f,
                         int                key_id);
 
@@ -1509,15 +1507,9 @@ cs_field_get_bc_coeff_mult(const cs_field_t  *f,
                            cs_lnum_t         *a_mult,
                            cs_lnum_t         *b_mult);
 
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS
-
 /*=============================================================================
  * C++ functions
  *============================================================================*/
-
-#if defined(__cplusplus)
 
 /*----------------------------------------------------------------------------*/
 /* Getter function based on field name, raises error if fails */
@@ -1563,8 +1555,4 @@ cs_field_try(const int id);
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __cplusplus */
-
-/*----------------------------------------------------------------------------*/
-
-#endif /* __CS_FIELD_H__ */
+#endif /* CS_FIELD_H */

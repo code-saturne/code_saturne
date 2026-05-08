@@ -1,5 +1,5 @@
-#ifndef __CS_FAN_H__
-#define __CS_FAN_H__
+#ifndef CS_FAN_H
+#define CS_FAN_H
 
 /*============================================================================
  * Fan modeling through velocity source terms.
@@ -39,10 +39,6 @@
 
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Structure definition
@@ -211,6 +207,4 @@ cs_fan_cells_select(void         *input,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_FAN_H__ */
+#endif /* CS_FAN_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_TURBOMACHINERY_H__
-#define __CS_TURBOMACHINERY_H__
+#ifndef CS_TURBOMACHINERY_H
+#define CS_TURBOMACHINERY_H
 
 /*============================================================================
  * Turbomachinery modeling features.
@@ -38,10 +38,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_restart.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Local Type Definitions
@@ -386,6 +382,4 @@ cs_turbomachinery_define_functions(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_TURBOMACHINERY_H__ */
+#endif /* CS_TURBOMACHINERY_H */

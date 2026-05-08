@@ -1,5 +1,5 @@
-#ifndef __CS_BOUNDARY_CONDITIONS_CHECK_H__
-#define __CS_BOUNDARY_CONDITIONS_CHECK_H__
+#ifndef CS_BOUNDARY_CONDITIONS_CHECK_H
+#define CS_BOUNDARY_CONDITIONS_CHECK_H
 
 /*============================================================================
  * Handle boundary condition type codes.
@@ -37,10 +37,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -65,6 +61,4 @@ cs_boundary_conditions_check(int   bc_type[],
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_BOUNDARY_CONDITIONS_CHECK_H__ */
+#endif /* CS_BOUNDARY_CONDITIONS_CHECK_H */

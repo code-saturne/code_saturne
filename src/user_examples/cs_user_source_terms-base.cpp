@@ -83,7 +83,7 @@ cs_user_source_terms
      is a variance of field var_f_id */
 
   /*! [field_is_variance] */
-  int var_f_id = cs_field_get_key_int(f, cs_field_key_id("first_moment_id"));
+  int var_f_id = f->get_key_int("first_moment_id");
   /*! [field_is_variance] */
 
   /* Density */

@@ -25,10 +25,6 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
-// Valid only for C++
-
-#ifdef __cplusplus
-
 /*----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
@@ -732,6 +728,4 @@ cs_elapsed_time(cs_task  &task)
 }
 
 /*----------------------------------------------------------------------------*/
-
-#endif /* __cplusplus */
 

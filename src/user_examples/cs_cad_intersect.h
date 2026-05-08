@@ -1,5 +1,5 @@
-#ifndef __CS_CAD_INTERSECT_H__
-#define __CS_CAD_INTERSECT_H__
+#ifndef CS_CAD_INTERSECT_H
+#define CS_CAD_INTERSECT_H
 
 /*============================================================================
  * Intersect cells with CAD object.
@@ -32,10 +32,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_headers.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Type definitions
@@ -89,6 +85,4 @@ cs_cad_intersect(const cs_mesh_t        *m,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_CAD_INTERSECT_H__ */
+#endif /* CS_CAD_INTERSECT_H */

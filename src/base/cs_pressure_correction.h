@@ -1,5 +1,5 @@
-#ifndef __CS_PRESSURE_CORRECTION_H__
-#define __CS_PRESSURE_CORRECTION_H__
+#ifndef CS_PRESSURE_CORRECTION_H
+#define CS_PRESSURE_CORRECTION_H
 
 /*============================================================================
  * Pressure correction.
@@ -34,10 +34,6 @@
 #include "base/cs_defs.h"
 
 #include "cdo/cs_equation.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Type definitions
@@ -277,6 +273,4 @@ cs_pressure_correction(int                   iterns,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_PRESSURE_CORRECTION_H__ */
+#endif /* CS_PRESSURE_CORRECTION_H */

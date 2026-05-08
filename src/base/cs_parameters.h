@@ -1,5 +1,5 @@
-#ifndef __CS_PARAMETERS_H__
-#define __CS_PARAMETERS_H__
+#ifndef CS_PARAMETERS_H
+#define CS_PARAMETERS_H
 
 /*============================================================================
  * General parameters management.
@@ -41,10 +41,6 @@
 #include "cdo/cs_equation_param.h"
 #include "base/cs_field.h"
 #include "base/cs_tree.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -537,6 +533,4 @@ cs_space_disc_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_PARAMETERS_H__ */
+#endif /* CS_PARAMETERS_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_EXT_LIBRARY_INFO_H__
-#define __CS_EXT_LIBRARY_INFO_H__
+#ifndef CS_EXT_LIBRARY_INFO_H
+#define CS_EXT_LIBRARY_INFO_H
 
 /*============================================================================
  * External library information.
@@ -29,10 +29,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Public types
  *============================================================================*/
@@ -61,6 +57,4 @@ cs_ext_library_info_no_log(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_EXT_LIBRARY_INFO_H__ */
+#endif /* CS_EXT_LIBRARY_INFO_H */

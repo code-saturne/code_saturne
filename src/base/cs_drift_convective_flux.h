@@ -1,5 +1,5 @@
-#ifndef __CS_DRIFT_CONVECTIVE_FLUX_H__
-#define __CS_DRIFT_CONVECTIVE_FLUX_H__
+#ifndef CS_DRIFT_CONVECTIVE_FLUX_H
+#define CS_DRIFT_CONVECTIVE_FLUX_H
 
 /*============================================================================
  * Compute the modified convective flux for scalars with a drift.
@@ -32,10 +32,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Public function prototypes
@@ -75,6 +71,4 @@ cs_drift_convective_flux(cs_field_t  *f_sc,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_DRIFT_CONVECTIVE_FLUX_H__ */
+#endif /* CS_DRIFT_CONVECTIVE_FLUX_H */

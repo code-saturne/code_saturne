@@ -34,20 +34,13 @@
 
 #include "base/cs_defs.h"
 
+#include "base/cs_dispatch.h"
 #include "base/cs_profiling.h"
 #include "bft/bft_error.h"
 #include "base/cs_field.h"
 #include "base/cs_math.h"
 #include "base/cs_profiling.h"
 #include "cdo/cs_equation_param.h"
-
-#ifdef __cplusplus
-#include "base/cs_dispatch.h"
-#endif
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Public function prototypes
@@ -145,6 +138,10 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 void
 cs_boundary_conditions_set_coeffs_init(void);
 
+/*============================================================================
+ * Public C++ function definitions
+ *============================================================================*/
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Set Neumann BC for a scalar for a given face.
@@ -158,7 +155,7 @@ cs_boundary_conditions_set_coeffs_init(void);
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE inline static void
+CS_F_HOST_DEVICE inline void
 cs_boundary_conditions_set_neumann_vector(cs_real_t             a[3],
                                           cs_real_t             af[3],
                                           cs_real_t             b[3][3],
@@ -199,13 +196,13 @@ cs_boundary_conditions_set_neumann_vector(cs_real_t             a[3],
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE inline static void
-cs_boundary_conditions_set_neumann_vector_aniso(cs_real_t             a[3],
-                                                cs_real_t             af[3],
-                                                cs_real_t             b[3][3],
-                                                cs_real_t             bf[3][3],
-                                                const cs_real_t       qimpv[3],
-                                                const cs_real_t       hint[6])
+CS_F_HOST_DEVICE inline void
+cs_boundary_conditions_set_neumann_vector_aniso(cs_real_t        a[3],
+                                                cs_real_t        af[3],
+                                                cs_real_t        b[3][3],
+                                                cs_real_t        bf[3][3],
+                                                const cs_real_t  qimpv[3],
+                                                const cs_real_t  hint[6])
 {
   cs_real_t m[6] = {0., 0., 0., 0., 0., 0.};
   m[0] = hint[1]*hint[2] - hint[4]*hint[4];
@@ -254,7 +251,7 @@ cs_boundary_conditions_set_neumann_vector_aniso(cs_real_t             a[3],
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE inline static void
+CS_F_HOST_DEVICE inline void
 cs_boundary_conditions_set_neumann_tensor(cs_real_t        a[6],
                                           cs_real_t        af[6],
                                           cs_real_t        b[6][6],
@@ -295,7 +292,7 @@ cs_boundary_conditions_set_neumann_tensor(cs_real_t        a[6],
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE inline static void
+CS_F_HOST_DEVICE inline void
 cs_boundary_conditions_set_dirichlet_vector(cs_real_t             a[3],
                                             cs_real_t             af[3],
                                             cs_real_t             b[3][3],
@@ -383,7 +380,7 @@ cs_boundary_conditions_set_convective_outlet_scalar
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE inline static void
+CS_F_HOST_DEVICE inline void
 cs_boundary_conditions_set_dirichlet_vector_aniso
   (cs_real_t              a[3],
    cs_real_t              af[3],
@@ -442,7 +439,7 @@ cs_boundary_conditions_set_dirichlet_vector_aniso
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE inline static void
+CS_F_HOST_DEVICE inline void
 cs_boundary_conditions_set_dirichlet_tensor(cs_real_t        a[6],
                                             cs_real_t        af[6],
                                             cs_real_t        b[6][6],
@@ -509,7 +506,7 @@ cs_boundary_conditions_set_dirichlet_tensor(cs_real_t        a[6],
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE inline static void
+CS_F_HOST_DEVICE inline void
 cs_boundary_conditions_set_generalized_sym_vector
   (cs_real_t              a[3],
    cs_real_t              af[3],
@@ -592,7 +589,7 @@ cs_boundary_conditions_set_generalized_sym_vector_aniso
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE inline static void
+CS_F_HOST_DEVICE inline void
 cs_boundary_conditions_set_generalized_dirichlet_vector
   (cs_real_t              a[3],
    cs_real_t              af[3],
@@ -650,7 +647,7 @@ cs_boundary_conditions_set_generalized_dirichlet_vector
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE inline static void
+CS_F_HOST_DEVICE inline void
 cs_boundary_conditions_set_generalized_dirichlet_sym_tensor
   (cs_real_t              a[6],
    cs_real_t              af[6],
@@ -760,7 +757,7 @@ cs_boundary_conditions_set_generalized_dirichlet_vector_aniso
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE inline static void
+CS_F_HOST_DEVICE inline void
 cs_boundary_conditions_set_convective_outlet_vector
   (cs_real_t              a[3],
    cs_real_t              af[3],
@@ -806,7 +803,7 @@ cs_boundary_conditions_set_convective_outlet_vector
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE inline static void
+CS_F_HOST_DEVICE inline void
 cs_boundary_conditions_set_convective_outlet_tensor(cs_real_t        a[6],
                                                     cs_real_t        af[6],
                                                     cs_real_t        b[6][6],
@@ -851,7 +848,7 @@ cs_boundary_conditions_set_convective_outlet_tensor(cs_real_t        a[6],
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE inline static void
+CS_F_HOST_DEVICE inline void
 cs_boundary_conditions_set_convective_outlet_vector_aniso
   (cs_real_t              a[3],
    cs_real_t              af[3],
@@ -904,7 +901,7 @@ cs_boundary_conditions_set_convective_outlet_vector_aniso
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE inline static void
+CS_F_HOST_DEVICE inline void
 cs_boundary_conditions_set_dirichlet_conv_neumann_diff_vector
   (cs_real_t              a[3],
    cs_real_t              af[3],
@@ -941,7 +938,7 @@ cs_boundary_conditions_set_dirichlet_conv_neumann_diff_vector
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE inline static void
+CS_F_HOST_DEVICE inline void
 cs_boundary_conditions_set_dirichlet_conv_neumann_diff_tensor
   (cs_real_t        a[6],
    cs_real_t        af[6],
@@ -967,16 +964,6 @@ cs_boundary_conditions_set_dirichlet_conv_neumann_diff_tensor
 }
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
-
-#ifdef __cplusplus
-
-/*============================================================================
- * Public C++ function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
 /*!
  * \brief Set Neumann BC for a scalar for a given face.
  *
@@ -989,7 +976,7 @@ END_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE inline static void
+CS_F_HOST_DEVICE inline void
 cs_boundary_conditions_set_neumann_scalar(cs_real_t  &a,
                                           cs_real_t  &af,
                                           cs_real_t  &b,
@@ -1017,7 +1004,7 @@ cs_boundary_conditions_set_neumann_scalar(cs_real_t  &a,
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE inline static void
+CS_F_HOST_DEVICE inline void
 cs_boundary_conditions_set_neumann_scalar_hmg(cs_real_t  &a,
                                               cs_real_t  &af,
                                               cs_real_t  &b,
@@ -1047,7 +1034,7 @@ cs_boundary_conditions_set_neumann_scalar_hmg(cs_real_t  &a,
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE inline static void
+CS_F_HOST_DEVICE inline void
 cs_boundary_conditions_set_dirichlet_scalar(cs_real_t  &a,
                                             cs_real_t  &af,
                                             cs_real_t  &b,
@@ -1094,7 +1081,7 @@ cs_boundary_conditions_set_dirichlet_scalar(cs_real_t  &a,
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE inline static void
+CS_F_HOST_DEVICE inline void
 cs_boundary_conditions_set_neumann_conv_h_neumann_diff_scalar
   (cs_real_t  &a,
    cs_real_t  &af,
@@ -1131,7 +1118,7 @@ cs_boundary_conditions_set_neumann_conv_h_neumann_diff_scalar
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE inline static void
+CS_F_HOST_DEVICE inline void
 cs_boundary_conditions_set_affine_function_scalar
   (cs_real_t  &a,
    cs_real_t  &af,
@@ -1165,7 +1152,7 @@ cs_boundary_conditions_set_affine_function_scalar
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE inline static void
+CS_F_HOST_DEVICE inline void
 cs_boundary_conditions_set_affine_function_conv_neumann_diff_scalar
   (cs_real_t  &a,
    cs_real_t  &af,
@@ -1197,7 +1184,7 @@ cs_boundary_conditions_set_affine_function_conv_neumann_diff_scalar
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE inline static void
+CS_F_HOST_DEVICE inline void
 cs_boundary_conditions_set_total_flux(cs_real_t  &a,
                                       cs_real_t  &af,
                                       cs_real_t  &b,
@@ -1228,7 +1215,7 @@ cs_boundary_conditions_set_total_flux(cs_real_t  &a,
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE inline static void
+CS_F_HOST_DEVICE inline void
 cs_boundary_conditions_set_dirichlet_conv_neumann_diff_scalar
   (cs_real_t  &a,
    cs_real_t  &af,
@@ -1394,8 +1381,6 @@ void
 cs_boundary_conditions_set_coeffs_pressure(cs_field_t            *f_p,
                                            cs_field_bc_coeffs_t  *bc_coeffs);
 
-#endif /* cplusplus */
-
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_BOUNDARY_CONDITIONS_SET_COEFFS_H__ */
+#endif /* CS_BOUNDARY_CONDITIONS_SET_COEFFS_H */

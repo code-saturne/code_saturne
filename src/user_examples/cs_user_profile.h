@@ -39,8 +39,6 @@
 
 #define HAVE_OT 0
 
-BEGIN_C_DECLS
-
 typedef struct _user_profile_med_t user_profile_med_t;
 
 /*----------------------------------------------------------------------------
@@ -344,7 +342,5 @@ void
 user_free_profiles(void);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* defined (CS_USER_PROFILE_H) */

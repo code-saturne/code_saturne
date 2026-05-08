@@ -1,5 +1,5 @@
-#ifndef __CS_FILE_CSV_PARSER_H__
-#define __CS_FILE_CSV_PARSER_H__
+#ifndef CS_FILE_CSV_PARSER_H
+#define CS_FILE_CSV_PARSER_H
 
 /*============================================================================
  * Read data from CSV files
@@ -30,10 +30,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Public function prototypes
@@ -72,6 +68,4 @@ cs_file_csv_parse(const char  *file_name,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_FILE_CSV_PARSER_H__ */
+#endif /* CS_FILE_CSV_PARSER_H */

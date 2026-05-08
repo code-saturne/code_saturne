@@ -38,10 +38,6 @@
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 
-/*----------------------------------------------------------------------------*/
-
-#ifdef __cplusplus
-
 /*=============================================================================
  * Local Macro definitions
  *============================================================================*/
@@ -235,7 +231,5 @@ cs_gradient_boundary_iprime_lsq_strided
    cs_real_t                   var_iprime_lim[][stride]);
 
 /*----------------------------------------------------------------------------*/
-
-#endif /* cplusplus */
 
 #endif /* CS_GRADIENT_BOUNDARY */

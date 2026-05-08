@@ -140,9 +140,12 @@ _mumps_hook(void     *context,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_system_sles_init(int                          n_eqs,
-                             cs_equation_system_param_t  *sysp,
-                             cs_equation_core_t         **blocks)
+cs_equation_system_sles_init
+(
+  [[maybe_unused]] int                   n_eqs,
+  cs_equation_system_param_t            *sysp,
+  [[maybe_unused]] cs_equation_core_t  **blocks
+)
 {
   assert(sysp != nullptr);
 

@@ -1,5 +1,5 @@
-#ifndef __CS_SORT_H__
-#define __CS_SORT_H__
+#ifndef CS_SORT_H
+#define CS_SORT_H
 
 /*============================================================================
  * Functions related to in-place sorting of arrays.
@@ -50,8 +50,6 @@
 /*=============================================================================
  * Public function prototypes
  *===========================================================================*/
-
-#if defined(__cplusplus)
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -106,12 +104,6 @@ cs_sort_coupled_shell(cs_lnum_t   l,
 
   } /* End of loop on stride */
 }
-
-#endif // (__cplusplus)
-
-/*---------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------
  * Sort an array "a" between its left bound "l" and its right bound "r"
@@ -338,6 +330,4 @@ cs_sort_and_compact_gnum_2(cs_lnum_t  n_elts,
 
 /*---------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_SORT_H__ */
+#endif /* CS_SORT_H */

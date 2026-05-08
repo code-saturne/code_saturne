@@ -1,5 +1,5 @@
-#ifndef __CS_EXT_NEIGHBOR_H__
-#define __CS_EXT_NEIGHBOR_H__
+#ifndef CS_EXT_NEIGHBOR_H
+#define CS_EXT_NEIGHBOR_H
 
 /*============================================================================
  * Extendend neighborhood hnalding and filtering.
@@ -34,10 +34,6 @@
 #include "base/cs_base.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Local Macro definitions
@@ -177,6 +173,4 @@ cs_ext_neighborhood_define(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_EXT_NEIGHBOR_H__ */
+#endif /* CS_EXT_NEIGHBOR_H */

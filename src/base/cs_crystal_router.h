@@ -1,5 +1,5 @@
-#ifndef __CS_CRYSTAL_ROUTER_H__
-#define __CS_CRYSTAL_ROUTER_H__
+#ifndef CS_CRYSTAL_ROUTER_H
+#define CS_CRYSTAL_ROUTER_H
 
 /*============================================================================
  * Crystal Router parallel exchange algorithm based operations.
@@ -37,10 +37,6 @@
 
 #include "base/cs_defs.h"
 #include "base/cs_block_dist.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -300,6 +296,4 @@ cs_crystal_router_log_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_CRYSTAL_ROUTER_H__ */
+#endif /* CS_CRYSTAL_ROUTER_H */

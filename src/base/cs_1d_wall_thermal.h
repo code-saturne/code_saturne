@@ -1,5 +1,5 @@
-#ifndef __CS_1D_WALL_THERMAL_H__
-#define __CS_1D_WALL_THERMAL_H__
+#ifndef CS_1D_WALL_THERMAL_H
+#define CS_1D_WALL_THERMAL_H
 
 /*============================================================================
  * Modelling the thermal wall with 1D approach
@@ -39,10 +39,6 @@
 #include "base/cs_zone.h"
 #include "fvm/fvm_nodal.h"
 #include "fvm/fvm_writer.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Macro definitions
@@ -339,6 +335,4 @@ cs_1d_wall_thermal_is_used(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_1D_WALL_THERMAL_H__ */
+#endif /* CS_1D_WALL_THERMAL_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_DILATABLE_SCALAR_DIFF_ST_H__
-#define __CS_DILATABLE_SCALAR_DIFF_ST_H__
+#ifndef CS_DILATABLE_SCALAR_DIFF_ST_H
+#define CS_DILATABLE_SCALAR_DIFF_ST_H
 
 /*============================================================================
  * Weakly compressible algorithm (semi-analytic):
@@ -36,10 +36,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -58,6 +54,4 @@ cs_dilatable_scalar_diff_st(int iterns);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_DILATABLE_SCALAR_DIFF_ST_H__ */
+#endif /* CS_DILATABLE_SCALAR_DIFF_ST_H */

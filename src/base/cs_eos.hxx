@@ -1,5 +1,5 @@
-#ifndef __CS_EOS_HXX__
-#define __CS_EOS_HXX__
+#ifndef CS_EOS_HXX
+#define CS_EOS_HXX
 
 /*============================================================================
  * Equation of state
@@ -65,10 +65,7 @@
  *   EOSRef     <-- reference table for EOS thermo properties
  *----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C"
-#endif
-void
+extern "C" void
 cs_eos_create(const char *EOSMethod,
               char       *EOSRef);
 
@@ -76,10 +73,7 @@ cs_eos_create(const char *EOSMethod,
  * Delete EOS instances
  *----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C"
-#endif
-void
+extern "C" void
 cs_eos_destroy(void);
 
 /*----------------------------------------------------------------------------*/
@@ -96,10 +90,7 @@ cs_eos_destroy(void);
  */
 /*----------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C"
-#endif
-void
+extern "C" void
 cs_phys_prop_eos(cs_phys_prop_thermo_plane_type_t   thermo_plane,
                  cs_phys_prop_type_t                property,
                  const cs_lnum_t                    n_vals,
@@ -109,4 +100,4 @@ cs_phys_prop_eos(cs_phys_prop_thermo_plane_type_t   thermo_plane,
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_EOS_HXX__ */
+#endif /* CS_EOS_HXX */

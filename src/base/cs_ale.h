@@ -1,5 +1,5 @@
-#ifndef __CS_ALE_H__
-#define __CS_ALE_H__
+#ifndef CS_ALE_H
+#define CS_ALE_H
 
 /*============================================================================
  * Functions associated to ALE formulation
@@ -39,10 +39,6 @@
 #include "base/cs_base.h"
 #include "cdo/cs_domain.h"
 #include "base/cs_restart.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Type definitions
@@ -367,6 +363,4 @@ cs_ale_restart_write(cs_restart_t  *r);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_ALE_H__ */
+#endif /* CS_ALE_H */

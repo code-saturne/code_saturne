@@ -63,8 +63,6 @@ typedef cs_real_t  cs_cocg_33_t[3][3];
  * Semi-private inline functions
  *============================================================================*/
 
-#if defined(__cplusplus)
-
 #if defined(HAVE_ACCEL)
 
 /*----------------------------------------------------------------------------
@@ -388,8 +386,6 @@ cs_gradient_strided_gg_r_hip
 );
 
 #endif /* defined(HAVE_HIP) */
-
-#endif /* defined(__cplusplus) */
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 

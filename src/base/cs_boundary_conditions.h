@@ -1,5 +1,5 @@
-#ifndef __CS_BOUNDARY_CONDITIONS_H__
-#define __CS_BOUNDARY_CONDITIONS_H__
+#ifndef CS_BOUNDARY_CONDITIONS_H
+#define CS_BOUNDARY_CONDITIONS_H
 
 /*============================================================================
  * Boundary condition handling.
@@ -44,10 +44,6 @@
 #include "mesh/cs_mesh_location.h"
 #include "base/cs_time_control.h"
 #include "base/cs_zone.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -103,7 +99,10 @@ extern cs_boundary_condition_pm_info_t  *cs_glob_bc_pm_info;
 /* Mapped inlet */
 /*--------------*/
 
-typedef struct {
+class cs_bc_map_t {
+
+public:
+
   int       bc_location_id;     /* location id of boundary zone */
   int       source_location_id; /* location id of source elements */
   cs_real_t coord_shift[3];     /* coordinates shift relative to
@@ -111,8 +110,6 @@ typedef struct {
   double tolerance;             /* search tolerance */
 
   ple_locator_t *locator; /* associated locator */
-
-#ifdef __cplusplus
 
   /*--------------------------------------------------------------------------*/
   /*
@@ -122,9 +119,8 @@ typedef struct {
 
   void
   update();
-#endif
 
-} cs_bc_map_t;
+};
 
 /*============================================================================
  * Public function prototypes
@@ -711,6 +707,4 @@ cs_boundary_conditions_get_bc_type_addr(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_BOUNDARY_CONDITIONS_H__ */
+#endif /* CS_BOUNDARY_CONDITIONS_H */

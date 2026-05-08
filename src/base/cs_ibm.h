@@ -1,5 +1,5 @@
-#ifndef __CS_IBM_H__
-#define __CS_IBM_H__
+#ifndef CS_IBM_H
+#define CS_IBM_H
 
 /*============================================================================
  * Time and space immersed boundaries model.
@@ -40,8 +40,6 @@
 /*----------------------------------------------------------------------------*/
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-
-BEGIN_C_DECLS
 
 #endif /* DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -630,6 +628,4 @@ cs_user_ibm_modify(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_IBM_H__ */
+#endif /* CS_IBM_H */

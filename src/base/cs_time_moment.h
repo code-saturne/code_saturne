@@ -1,5 +1,5 @@
-#ifndef __CS_TIME_MOMENT_H__
-#define __CS_TIME_MOMENT_H__
+#ifndef CS_TIME_MOMENT_H
+#define CS_TIME_MOMENT_H
 
 /*============================================================================
  * Moments management
@@ -39,10 +39,6 @@
 #include "base/cs_field.h"
 #include "base/cs_restart.h"
 #include "base/cs_function.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -375,10 +371,6 @@ cs_time_moment_get_field(int  moment_id);
 int
 cs_time_moment_is_active(int  moment_id);
 
-END_C_DECLS
-
-#ifdef __cplusplus
-
 /*----------------------------------------------------------------------------*/
 /*
  * \brief Reset selected time step for starting time step of selected moment.
@@ -410,10 +402,6 @@ cs_time_moment_set_start_time(int   moment_id,
 void
 cs_time_moment_set_start_time(int     moment_id,
                               double  t_start);
-
-#endif //ifdef __cplusplus
-
-BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -480,7 +468,5 @@ void
 cs_time_moment_restart_write(cs_restart_t  *restart);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
 
 #endif /* __CS_TIME_MOMENT_H__ */

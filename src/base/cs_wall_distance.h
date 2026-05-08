@@ -1,5 +1,5 @@
-#ifndef __CS_WALL_DISTANCE_H__
-#define __CS_WALL_DISTANCE_H__
+#ifndef CS_WALL_DISTANCE_H
+#define CS_WALL_DISTANCE_H
 
 /*============================================================================
  * Compute distance to wall.
@@ -36,10 +36,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Type definitions
@@ -124,6 +120,4 @@ cs_get_glob_wall_distance_options(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_WALL_DISTANCE_H__ */
+#endif /* CS_WALL_DISTANCE_H */

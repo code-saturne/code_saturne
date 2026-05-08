@@ -1,5 +1,5 @@
-#ifndef __CS_AST_COUPLING_H__
-#define __CS_AST_COUPLING_H__
+#ifndef CS_AST_COUPLING_H
+#define CS_AST_COUPLING_H
 
 /*============================================================================
  * code_aster coupling
@@ -36,10 +36,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_base.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Local Macro Definitions
@@ -272,6 +268,4 @@ cs_ast_coupling_set_visualization(int  visualization);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_AST_COUPLING_H__ */
+#endif /* CS_AST_COUPLING_H */

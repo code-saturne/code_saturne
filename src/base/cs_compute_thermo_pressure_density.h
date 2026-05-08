@@ -1,5 +1,5 @@
-#ifndef __CS_COMPUTE_THERMO_PRESSURE_DENSITY_H__
-#define __CS_COMPUTE_THERMO_PRESSURE_DENSITY_H__
+#ifndef CS_COMPUTE_THERMO_PRESSURE_DENSITY_H
+#define CS_COMPUTE_THERMO_PRESSURE_DENSITY_H
 
 /*============================================================================
  * Thermodynamic pressure and density.
@@ -33,10 +33,6 @@
 
 #include "base/cs_defs.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -61,6 +57,4 @@ cs_compute_thermo_pressure_density(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_COMPUTE_THERMO_PRESSURE_DENSITY_H__ */
+#endif /* CS_COMPUTE_THERMO_PRESSURE_DENSITY_H */

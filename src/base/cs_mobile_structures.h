@@ -1,5 +1,5 @@
-#ifndef __CS_MOBILE_STRUCTURES_H__
-#define __CS_MOBILE_STRUCTURES_H__
+#ifndef CS_MOBILE_STRUCTURES_H
+#define CS_MOBILE_STRUCTURES_H
 
 /*============================================================================
  * Mobile structures management.
@@ -38,8 +38,6 @@
 #include "base/cs_time_plot.h"
 
 /*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /* Bit values for mobile boundary
    ----------------------------- */
@@ -342,6 +340,4 @@ cs_mobile_structures_restart_write(cs_restart_t  *r);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_MOBILE_STRUCTURES_H__ */
+#endif /* CS_MOBILE_STRUCTURES_H */

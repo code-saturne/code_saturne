@@ -1,5 +1,5 @@
-#ifndef __CS_FLAG_CHECK_H__
-#define __CS_FLAG_CHECK_H__
+#ifndef CS_FLAG_CHECK_H
+#define CS_FLAG_CHECK_H
 
 /*============================================================================
  * Mesh element flag checking and error handling.
@@ -37,10 +37,6 @@
 
 #include "base/cs_base.h"
 #include "mesh/cs_mesh_location.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -148,6 +144,4 @@ cs_flag_check_error_info(const char   *err_elt_descr,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_FLAG_CHECK_H__ */
+#endif /* CS_FLAG_CHECK_H */

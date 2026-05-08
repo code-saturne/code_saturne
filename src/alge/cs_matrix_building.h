@@ -1,5 +1,5 @@
-#ifndef __CS_MATRIX_BUILDING_H__
-#define __CS_MATRIX_BUILDING_H__
+#ifndef CS_MATRIX_BUILDING_H
+#define CS_MATRIX_BUILDING_H
 
 /*============================================================================
  * Matrix building
@@ -55,8 +55,6 @@
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
-
-#if defined(__cplusplus)
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -201,12 +199,6 @@ cs_matrix_wrapper(int                         iconvp,
                   cs_real_t                   xa[]);
 
 /*----------------------------------------------------------------------------*/
-
-#endif //defined(__cplusplus)
-
-BEGIN_C_DECLS
-
-/*----------------------------------------------------------------------------*/
 /*
  * \brief Build the diagonal of the advection/diffusion matrix
  * for determining the variable time step, flow, Fourier.
@@ -246,6 +238,4 @@ cs_matrix_time_step(const cs_mesh_t            *m,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_MATRIX_BUILDING_H__ */
+#endif /* CS_MATRIX_BUILDING_H */

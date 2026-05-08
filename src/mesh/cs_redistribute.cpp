@@ -822,9 +822,6 @@ cs_redistribute(const int                cell_dest_rank[],
   cs_gradient_free_quantities();
   cs_cell_to_vertex_free();
 
-  static int iter = 0;
-  iter++;
-
   MPI_Comm comm = cs_glob_mpi_comm;
 
   const cs_lnum_t n_cells_ini = mesh->n_cells;

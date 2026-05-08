@@ -106,7 +106,7 @@ static cs_coolprop_state_t *_states = nullptr;
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_phys_prop_coolprop(char                              *coolprop_material,
                       const char                        *coolprop_backend,
                       cs_phys_prop_thermo_plane_type_t   thermo_plane,
@@ -200,8 +200,9 @@ cs_phys_prop_coolprop(char                              *coolprop_material,
   char outputs[32];
   switch (property) {
     case CS_PHYS_PROP_PRESSURE:
-      bft_error(__FILE__, __LINE__, 0,
-                _("bad choice: you can't choose pressure as an output variable"));
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("bad choice: you can't choose pressure as an output variable"));
       break;
     case CS_PHYS_PROP_TEMPERATURE:
       /* temperature is in K */
@@ -285,12 +286,13 @@ cs_phys_prop_coolprop(char                              *coolprop_material,
 
       if (resdim1 != n_vals) {
         get_global_param_string("errstring", message_buffer, mb_size);
-        bft_error(__FILE__, __LINE__, 0,
-                  _("CoolProp was unable to compute some fluid properties with\n"
-                    "input variable names: \"%s\", \"%s\" and backend \"%s\".\n\n"
-                    "Fluid(s) considered: \"%s\".\n\n"
-                    "%s."),
-                  name1, name2, backend, fluid_names, message_buffer);
+        bft_error
+          (__FILE__, __LINE__, 0,
+           _("CoolProp was unable to compute some fluid properties with\n"
+             "input variable names: \"%s\", \"%s\" and backend \"%s\".\n\n"
+             "Fluid(s) considered: \"%s\".\n\n"
+             "%s."),
+           name1, name2, backend, fluid_names, message_buffer);
       }
       assert(resdim2 == 1);
     }
@@ -303,12 +305,13 @@ cs_phys_prop_coolprop(char                              *coolprop_material,
                                      result,
                                      &errcode, message_buffer, mb_size);
       if (errcode != 0)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("CoolProp was unable to compute property \"%s\" with\n"
-                    "input variable names: \"%s\", \"%s\" and backend \"%s\".\n\n"
-                    "Fluid(s) considered: \"%s\".\n\n"
-                    "%s."),
-                  outputs, name1, name2, backend, fluid_names, message_buffer);
+        bft_error
+          (__FILE__, __LINE__, 0,
+           _("CoolProp was unable to compute property \"%s\" with\n"
+             "input variable names: \"%s\", \"%s\" and backend \"%s\".\n\n"
+             "Fluid(s) considered: \"%s\".\n\n"
+             "%s."),
+           outputs, name1, name2, backend, fluid_names, message_buffer);
     }
     break;
 
@@ -320,14 +323,16 @@ cs_phys_prop_coolprop(char                              *coolprop_material,
                              &errcode, message_buffer, mb_size);
         if (errcode == 0)
           result[i] = AbstractState_keyed_output(state_handle, output_key,
-                                                 &errcode, message_buffer, mb_size);
+                                                 &errcode,
+                                                 message_buffer, mb_size);
         if (errcode != 0)
-          bft_error(__FILE__, __LINE__, 0,
-                    _("CoolProp was unable to compute property \"%s\" with\n"
-                      "input variable names: \"%s\", \"%s\" and backend \"%s\".\n\n"
-                      "Fluid(s) considered: \"%s\".\n\n"
-                      "%s."),
-                    outputs, name1, name2, backend, fluid_names, message_buffer);
+          bft_error
+            (__FILE__, __LINE__, 0,
+             _("CoolProp was unable to compute property \"%s\" with\n"
+               "input variable names: \"%s\", \"%s\" and backend \"%s\".\n\n"
+               "Fluid(s) considered: \"%s\".\n\n"
+               "%s."),
+             outputs, name1, name2, backend, fluid_names, message_buffer);
       }
     }
     break;
@@ -354,7 +359,7 @@ cs_phys_prop_coolprop(char                              *coolprop_material,
  */
 /*----------------------------------------------------------------------------*/
 
-void
+extern "C" void
 cs_coolprop_finalize(void)
 {
   for (int i = 0; i < _n_states; i++) {

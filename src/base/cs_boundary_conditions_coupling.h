@@ -1,5 +1,5 @@
-#ifndef __CS_BOUNDARY_CONDITIONS_COUPLING_H__
-#define __CS_BOUNDARY_CONDITIONS_COUPLING_H__
+#ifndef CS_BOUNDARY_CONDITIONS_COUPLING_H
+#define CS_BOUNDARY_CONDITIONS_COUPLING_H
 
 /*============================================================================
  * Update boundary conditions for thermal field.
@@ -36,10 +36,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -87,6 +83,4 @@ cs_boundary_conditions_coupling_t_out(cs_real_t  hbord[],
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_BOUNDARY_CONDITIONS_COUPLING_H__ */
+#endif /* CS_BOUNDARY_CONDITIONS_COUPLING_H */

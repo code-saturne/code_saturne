@@ -35,10 +35,6 @@
 #include "base/cs_field.h"
 #include "alge/cs_gradient.h"
 
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
-
 /*=============================================================================
  * Macro definitions
  *============================================================================*/
@@ -282,12 +278,6 @@ cs_field_synchronize(cs_field_t      *f,
                      cs_halo_type_t   halo_type);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
-
-#ifdef __cplusplus
-
-/*----------------------------------------------------------------------------*/
 /*!
  * \brief Synchronize current parallel and periodic field values.
  *
@@ -303,8 +293,6 @@ void
 cs_field_synchronize(cs_field_t            *f,
                      cs_halo_type_t         halo_type,
                      bool                   on_device);
-
-#endif // __cplusplus
 
 /*----------------------------------------------------------------------------*/
 

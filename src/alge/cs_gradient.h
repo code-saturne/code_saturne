@@ -1,5 +1,5 @@
-#ifndef __CS_GRADIENT_H__
-#define __CS_GRADIENT_H__
+#ifndef CS_GRADIENT_H
+#define CS_GRADIENT_H
 
 /*============================================================================
  * Gradient reconstruction.
@@ -36,10 +36,6 @@
 #include "base/cs_internal_coupling.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*=============================================================================
  * Local Macro definitions
@@ -436,12 +432,6 @@ void
 cs_gradient_porosity_balance(int inc);
 
 /*----------------------------------------------------------------------------*/
-
-END_C_DECLS
-
-#ifdef __cplusplus
-
-/*----------------------------------------------------------------------------*/
 /*
  * \brief  Compute cell gradient of scalar field or component of vector or
  *         tensor field.
@@ -538,6 +528,6 @@ cs_gradient_vector_synced_input(const char                  *var_name,
                                 T                            grad[][3][3],
                                 cs_real_t                   *bounds);
 
-#endif /* __cplusplus */
+/*----------------------------------------------------------------------------*/
 
 #endif /* __CS_GRADIENT__ */
