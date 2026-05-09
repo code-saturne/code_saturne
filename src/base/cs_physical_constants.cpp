@@ -370,9 +370,6 @@ static cs_physical_constants_t _physical_constants = {
 
 static cs_fluid_properties_t  _fluid_properties = {
   .ixyzp0   = -1,
-  .p0_face_id = -1,
-  .p0_rank_id = -1,
-  .have_std_outlet = false,
   .icp      = -1,
   .icv      = -1,
   .iviscv   = -1,

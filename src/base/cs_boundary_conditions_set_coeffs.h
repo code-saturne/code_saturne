@@ -1368,19 +1368,5 @@ cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
    cs_alloc_mode_t        amode);
 
 /*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update boundary condition coefficient. This function is separated
- *         from the main set_coef function because pressure bc coefs must be
- *         set between velocity prediction and corrections
- * \param[in]      f_p                   pointer to field
- * \param[in,out]  bc_coeffs             boundary condition structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_boundary_conditions_set_coeffs_pressure(cs_field_t            *f_p,
-                                           cs_field_bc_coeffs_t  *bc_coeffs);
-
-/*----------------------------------------------------------------------------*/
 
 #endif /* CS_BOUNDARY_CONDITIONS_SET_COEFFS_H */

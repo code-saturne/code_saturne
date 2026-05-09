@@ -998,8 +998,13 @@ cs_boundary_conditions_set_coeffs(int         nvar,
   cs_equation_param_t *eqp_vel = cs_field_get_equation_param(vel);
 
   cs_real_3_t *b_stress   = nullptr;
+  const cs_real_6_t *dttens = nullptr;
 
   /* Pointers to specific fields */
+
+  cs_field_t *f_dttens  = cs_field_by_name_try("dttens");
+  if (f_dttens != nullptr)
+    dttens = (const cs_real_6_t *)f_dttens->val;
 
   cs_field_t *f_b_stress = cs_field_by_name_try("boundary_stress");
 
@@ -1575,13 +1580,223 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
   if (_active_dyn) {
 
-    /*------------------------------------------------------------------------
-     * 10) Pressure: note that pressure BCs are updated
-     * between prediction and correction step in pressure_correction by calling
-     * cs_boundary_conditions_set_coeffs_pressure.
-     *------------------------------------------------------------------------*/
+    /*--------------------------------------------------------------------------
+     * 10) Pressure: Dirichlet and Neumann and convective outlet
+     *--------------------------------------------------------------------------*/
 
-    /*------------------------------------------------------------------------
+    CS_PROFILE_MARK_LINE();
+
+    {
+      cs_field_t *p = CS_F_(p);
+
+      cs_real_t *coefa_p = p->bc_coeffs->a;
+      cs_real_t *coefb_p = p->bc_coeffs->b;
+      cs_real_t *cofaf_p = p->bc_coeffs->af;
+      cs_real_t *cofbf_p = p->bc_coeffs->bf;
+
+      const int *icodcl_p = (const int *)p->bc_coeffs->icodcl;
+      const cs_real_t *rcodcl1_p = (const cs_real_t *)p->bc_coeffs->rcodcl1;
+      const cs_real_t *rcodcl2_p = (const cs_real_t *)p->bc_coeffs->rcodcl2;
+      const cs_real_t *rcodcl3_p = (const cs_real_t *)p->bc_coeffs->rcodcl3;
+
+      cs_equation_param_t *eqp_p = cs_field_get_equation_param(p);
+      cs_real_t *crom = nullptr;
+
+      int idften_p = eqp_p->idften;
+
+      if (vof_model > 0)
+        crom = CS_F_(rho)->val; // FIXME consistency with correction step
+
+      ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
+
+        const cs_lnum_t c_id = b_face_cells[f_id];
+        cs_real_t hint  = 0.0;
+
+        /* geometric quantities */
+        const cs_real_t distbf = b_dist[f_id];
+        cs_real_t visci[3][3], dist[3];
+        const cs_nreal_t *n = b_face_u_normal[f_id];
+
+        /* if a flux dt.grad p (w/m2) is set in cs_user_boundary_conditions */
+        if (idften_p & CS_ISOTROPIC_DIFFUSION) {
+          hint = dt[c_id]/distbf;
+
+          if (vof_model > 0)
+            hint = hint / crom[c_id];
+        }
+        else if (idften_p & CS_ORTHOTROPIC_DIFFUSION) {
+
+          hint = (  dttens[c_id][0] * cs_math_pow2(n[0])
+                  + dttens[c_id][1] * cs_math_pow2(n[1])
+                  + dttens[c_id][2] * cs_math_pow2(n[2]))
+                 / distbf;
+
+          if (vof_model > 0)
+            hint = hint / crom[c_id];
+        }
+
+        /* symmetric tensor diffusivity */
+        else if (idften_p & CS_ANISOTROPIC_DIFFUSION) {
+
+          visci[0][0] = dttens[c_id][0];
+          visci[1][1] = dttens[c_id][1];
+          visci[2][2] = dttens[c_id][2];
+          visci[0][1] = dttens[c_id][3];
+          visci[1][0] = dttens[c_id][3];
+          visci[1][2] = dttens[c_id][4];
+          visci[2][1] = dttens[c_id][4];
+          visci[0][2] = dttens[c_id][5];
+          visci[2][0] = dttens[c_id][5];
+
+          dist[0] = b_face_cog[f_id][0] - cell_cen[c_id][0];
+          dist[1] = b_face_cog[f_id][1] - cell_cen[c_id][1];
+          dist[2] = b_face_cog[f_id][2] - cell_cen[c_id][2];
+
+          // ||ki.s||^2
+          const cs_real_t viscis = cs_math_pow2(  visci[0][0]*n[0]
+                                                + visci[1][0]*n[1]
+                                                + visci[2][0]*n[2])
+                                 + cs_math_pow2(  visci[0][1]*n[0]
+                                                + visci[1][1]*n[1]
+                                                + visci[2][1]*n[2])
+                                 + cs_math_pow2(  visci[0][2]*n[0]
+                                                + visci[1][2]*n[1]
+                                                + visci[2][2]*n[2]);
+
+          // if.ki.s
+          cs_real_t fikis
+            = (  cs_math_3_dot_product(dist, visci[0]) * n[0]
+               + cs_math_3_dot_product(dist, visci[1]) * n[1]
+               + cs_math_3_dot_product(dist, visci[2]) * n[2]);
+
+          /* take i" so that i"f= eps*||fi||*ki.n when j" is in cell rji
+             nb: eps =1.d-1 must be consistent
+             with `cs_face_anisotropic_viscosity_scalar`. */
+          fikis = cs::max(fikis, 1.e-1*sqrt(viscis)*distbf);
+
+          hint = viscis / fikis;
+          if (vof_model > 0)
+            hint = hint / crom[c_id];
+        }
+
+        /* We must modify the Dirichlet pressure value again so as to obtain P*
+           Because in cs_boundary_conditions_type we have used the total pressure
+           provided by the user: ptotal= p*+ rho.g.r.
+           In the compressible case, we leave rcodcl as such. */
+
+        /* Dirichlet boundary condition
+           ----------------------------- */
+
+        if (icodcl_p[f_id] == CS_BC_DIRICHLET) {
+
+          const cs_real_t hext = rcodcl2_p[f_id];
+          const cs_real_t pimp = rcodcl1_p[f_id];
+
+          cs_boundary_conditions_set_dirichlet_scalar(coefa_p[f_id],
+                                                      cofaf_p[f_id],
+                                                      coefb_p[f_id],
+                                                      cofbf_p[f_id],
+                                                      pimp,
+                                                      hint,
+                                                      hext);
+        }
+
+        /* Neumann boundary conditions
+           ---------------------------- */
+
+        if (icodcl_p[f_id] == CS_BC_NEUMANN) {
+
+          const cs_real_t dimp = rcodcl3_p[f_id];
+
+          cs_boundary_conditions_set_neumann_scalar(coefa_p[f_id],
+                                                    cofaf_p[f_id],
+                                                    coefb_p[f_id],
+                                                    cofbf_p[f_id],
+                                                    dimp,
+                                                    hint);
+        }
+
+        /* Convective boundary conditions
+           ------------------------------ */
+
+        else if (icodcl_p[f_id] == CS_BC_RADIATIVE_OUTLET) {
+
+          const cs_real_t pimp = rcodcl1_p[f_id];
+          const cs_real_t cfl  = rcodcl2_p[f_id];
+
+          cs_boundary_conditions_set_convective_outlet_scalar(coefa_p[f_id],
+                                                              cofaf_p[f_id],
+                                                              coefb_p[f_id],
+                                                              cofbf_p[f_id],
+                                                              pimp,
+                                                              cfl,
+                                                              hint);
+
+        }
+
+        /* Boundary value proportional to boundary cell value
+           -------------------------------------------------- */
+
+        else if (icodcl_p[f_id] == 10) {
+
+          const cs_real_t pinf  = rcodcl1_p[f_id];
+          const cs_real_t ratio = rcodcl2_p[f_id];
+
+          cs_boundary_conditions_set_affine_function_scalar(coefa_p[f_id],
+                                                            cofaf_p[f_id],
+                                                            coefb_p[f_id],
+                                                            cofbf_p[f_id],
+                                                            pinf,
+                                                            ratio,
+                                                            hint);
+        }
+
+        /* Imposed value for the convection operator is proportional to boundary
+           cell value, imposed flux for diffusion
+           --------------------------------------------------------------------- */
+
+        else if (icodcl_p[f_id] == 12) {
+
+          const cs_real_t pinf  = rcodcl1_p[f_id];
+          const cs_real_t ratio = rcodcl2_p[f_id];
+          const cs_real_t dimp  = rcodcl3_p[f_id];
+
+          cs_boundary_conditions_set_affine_function_conv_neumann_diff_scalar
+            (coefa_p[f_id], cofaf_p[f_id],
+             coefb_p[f_id], cofbf_p[f_id],
+             pinf, ratio, dimp);
+        }
+
+        /* Imposed value for the convection operator, imposed flux for diffusion
+           --------------------------------------------------------------------- */
+
+        else if (icodcl_p[f_id] == 13) {
+
+          const cs_real_t pimp = rcodcl1_p[f_id];
+          const cs_real_t dimp = rcodcl3_p[f_id];
+
+          cs_boundary_conditions_set_dirichlet_conv_neumann_diff_scalar
+            (coefa_p[f_id], cofaf_p[f_id],
+             coefb_p[f_id], cofbf_p[f_id],
+             pimp, dimp);
+        }
+
+        /* Neumann for the convection operator, zero flux for diffusion
+           ------------------------------------------------------------ */
+
+        else if (icodcl_p[f_id] == 15) {
+
+          const cs_real_t dimp = rcodcl3_p[f_id];
+
+          cs_boundary_conditions_set_neumann_conv_h_neumann_diff_scalar
+            (coefa_p[f_id], cofaf_p[f_id],
+             coefb_p[f_id], cofbf_p[f_id],
+             dimp, hint);
+        }
+      });
+    } /* pressure */
+
+    /*-------------------------------------------------------------------------
      * 11) void fraction (VOF): Dirichlet and Neumann and convective outlet
      *------------------------------------------------------------------------*/
 
@@ -1656,7 +1871,7 @@ cs_boundary_conditions_set_coeffs(int         nvar,
 
   } // _active_dyn
 
-  /*--------------------------------------------------------------------------
+  /*----------------------------------------------------------------------------
     12. turbulent quantities: Dirichlet and Neumann and convective outlet
     --------------------------------------------------------------------------*/
 
@@ -3730,6 +3945,7 @@ void
 cs_boundary_conditions_set_coeffs_init(void)
 {
   const cs_mesh_t  *mesh = cs_glob_mesh;;
+  const cs_lnum_t n_b_faces   = mesh->n_b_faces;
   const cs_lnum_t n_vertices  = mesh->n_vertices;
   const cs_real_3_t *vtx_coord = (const cs_real_3_t *)mesh->vtx_coord;
 
@@ -3835,9 +4051,14 @@ cs_boundary_conditions_set_coeffs_init(void)
   if (cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] >= 1)
     _specific_physical_model_bc_types(true, bc_type);
 
+  int *isostd;
+  CS_MALLOC_HD(isostd, n_b_faces+1, int, cs_alloc_mode);
+
   cs_boundary_conditions_type(true,
                               bc_type,
-                              nullptr); /* isostd, not used in init */
+                              isostd);
+
+  CS_FREE(isostd);
 
   /* Check the consistency of the BCs
      -------------------------------- */
@@ -4673,240 +4894,6 @@ cs_boundary_conditions_ensure_bc_coeff_face_values_allocated
     CS_MALLOC_HD(bc_coeffs->flux_diff, dim*n_b_faces, cs_real_t, amode);
     cs_array_real_fill_zero(dim*n_b_faces, bc_coeffs->flux_diff);
   }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update boundary condition coefficient. This function is separated
- *         from the main set_coef function because pressure bc coefs must be
- *         set between velocity prediction and corrections
- * \param[in]      f_p                   pointer to field
- * \param[in,out]  bc_coeffs             boundary condition structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_boundary_conditions_set_coeffs_pressure(cs_field_t            *f_p,
-                                           cs_field_bc_coeffs_t  *bc_coeffs)
-{
-  int vof_model = cs_glob_vof_parameters->vof_model;
-  cs_mesh_t *m = cs_glob_mesh;
-  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-  const cs_lnum_t n_b_faces = m->n_b_faces;
-  const cs_nreal_3_t *b_face_u_normal = mq->b_face_u_normal;
-  const cs_real_3_t *restrict b_face_cog = mq->b_face_cog;
-  const cs_real_3_t *restrict cell_cen = mq->cell_cen;
-  const cs_lnum_t *b_face_cells = m->b_face_cells;
-  const cs_real_t *b_dist = mq->b_dist;
-
-  cs_real_t *dt = CS_F_(dt)->val;
-  const cs_real_6_t *dttens = nullptr;
-  cs_field_t *f_dttens  = cs_field_by_name_try("dttens");
-  if (f_dttens != nullptr)
-    dttens = (const cs_real_6_t *) f_dttens->val;
-
-  cs_dispatch_context ctx;
-
-  cs_real_t *coefa_p = bc_coeffs->a;
-  cs_real_t *coefb_p = bc_coeffs->b;
-  cs_real_t *cofaf_p = bc_coeffs->af;
-  cs_real_t *cofbf_p = bc_coeffs->bf;
-
-  const int *icodcl_p = bc_coeffs->icodcl;
-  const cs_real_t *rcodcl1_p = bc_coeffs->rcodcl1;
-  const cs_real_t *rcodcl2_p = bc_coeffs->rcodcl2;
-  const cs_real_t *rcodcl3_p = bc_coeffs->rcodcl3;
-
-  cs_equation_param_t *eqp_p = cs_field_get_equation_param(f_p);
-  cs_real_t *crom = nullptr;
-
-  int idften_p = eqp_p->idften;
-
-  if (vof_model > 0)
-    crom = CS_F_(rho)->val; // FIXME consistency with correction step
-
-  ctx.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-
-    const cs_lnum_t c_id = b_face_cells[f_id];
-    cs_real_t hint  = 0.0;
-
-    /* geometric quantities */
-    const cs_real_t distbf = b_dist[f_id];
-    cs_real_t visci[3][3], dist[3];
-    const cs_nreal_t *n = b_face_u_normal[f_id];
-
-    /* if a flux dt.grad p (w/m2) is set in cs_user_boundary_conditions */
-    if (idften_p & CS_ISOTROPIC_DIFFUSION) {
-      hint = dt[c_id]/distbf;
-
-      if (vof_model > 0)
-        hint = hint / crom[c_id];
-    }
-    else if (idften_p & CS_ORTHOTROPIC_DIFFUSION) {
-      assert(dttens != nullptr);
-      hint = (  dttens[c_id][0] * cs_math_pow2(n[0])
-              + dttens[c_id][1] * cs_math_pow2(n[1])
-              + dttens[c_id][2] * cs_math_pow2(n[2]))
-             / distbf;
-
-      if (vof_model > 0)
-        hint = hint / crom[c_id];
-    }
-
-    /* symmetric tensor diffusivity */
-    else if (idften_p & CS_ANISOTROPIC_DIFFUSION) {
-      assert(dttens != nullptr);
-
-      visci[0][0] = dttens[c_id][0];
-      visci[1][1] = dttens[c_id][1];
-      visci[2][2] = dttens[c_id][2];
-      visci[0][1] = dttens[c_id][3];
-      visci[1][0] = dttens[c_id][3];
-      visci[1][2] = dttens[c_id][4];
-      visci[2][1] = dttens[c_id][4];
-      visci[0][2] = dttens[c_id][5];
-      visci[2][0] = dttens[c_id][5];
-
-      dist[0] = b_face_cog[f_id][0] - cell_cen[c_id][0];
-      dist[1] = b_face_cog[f_id][1] - cell_cen[c_id][1];
-      dist[2] = b_face_cog[f_id][2] - cell_cen[c_id][2];
-
-      // ||ki.s||^2
-      const cs_real_t viscis = cs_math_pow2(  visci[0][0]*n[0]
-                                            + visci[1][0]*n[1]
-                                            + visci[2][0]*n[2])
-                             + cs_math_pow2(  visci[0][1]*n[0]
-                                            + visci[1][1]*n[1]
-                                            + visci[2][1]*n[2])
-                             + cs_math_pow2(  visci[0][2]*n[0]
-                                            + visci[1][2]*n[1]
-                                            + visci[2][2]*n[2]);
-
-      // if.ki.s
-      cs_real_t fikis
-        = (  cs_math_3_dot_product(dist, visci[0]) * n[0]
-           + cs_math_3_dot_product(dist, visci[1]) * n[1]
-           + cs_math_3_dot_product(dist, visci[2]) * n[2]);
-
-      /* take i" so that i"f= eps*||fi||*ki.n when j" is in cell rji
-         nb: eps =1.d-1 must be consistent
-         with `cs_face_anisotropic_viscosity_scalar`. */
-      fikis = cs::max(fikis, 1.e-1*sqrt(viscis)*distbf);
-
-      hint = viscis / fikis;
-      if (vof_model > 0)
-        hint = hint / crom[c_id];
-    }
-
-    /* We must modify the Dirichlet pressure value again so as to obtain P*
-       Because in cs_boundary_conditions_type we have used the total pressure
-       provided by the user: ptotal= p*+ rho.g.r.
-       In the compressible case, we leave rcodcl as such. */
-
-    /* Dirichlet boundary condition
-       ----------------------------- */
-
-    if (icodcl_p[f_id] == 1) {
-      const cs_real_t hext = rcodcl2_p[f_id];
-      const cs_real_t pimp = rcodcl1_p[f_id];
-
-      cs_boundary_conditions_set_dirichlet_scalar(coefa_p[f_id],
-                                                  cofaf_p[f_id],
-                                                  coefb_p[f_id],
-                                                  cofbf_p[f_id],
-                                                  pimp,
-                                                  hint,
-                                                  hext);
-    }
-
-    /* Neumann boundary conditions
-       ---------------------------- */
-
-    if (icodcl_p[f_id] == CS_BC_NEUMANN) {
-      const cs_real_t dimp = rcodcl3_p[f_id];
-
-      cs_boundary_conditions_set_neumann_scalar(coefa_p[f_id],
-                                                cofaf_p[f_id],
-                                                coefb_p[f_id],
-                                                cofbf_p[f_id],
-                                                dimp,
-                                                hint);
-    }
-
-    /* Convective boundary conditions
-       ------------------------------ */
-
-    else if (icodcl_p[f_id] == CS_BC_RADIATIVE_OUTLET) {
-      const cs_real_t pimp = rcodcl1_p[f_id];
-      const cs_real_t cfl  = rcodcl2_p[f_id];
-
-      cs_boundary_conditions_set_convective_outlet_scalar(coefa_p[f_id],
-                                                          cofaf_p[f_id],
-                                                          coefb_p[f_id],
-                                                          cofbf_p[f_id],
-                                                          pimp,
-                                                          cfl,
-                                                          hint);
-    }
-
-    /* Boundary value proportional to boundary cell value
-       -------------------------------------------------- */
-
-    else if (icodcl_p[f_id] == 10) {
-      const cs_real_t pinf  = rcodcl1_p[f_id];
-      const cs_real_t ratio = rcodcl2_p[f_id];
-
-      cs_boundary_conditions_set_affine_function_scalar(coefa_p[f_id],
-                                                        cofaf_p[f_id],
-                                                        coefb_p[f_id],
-                                                        cofbf_p[f_id],
-                                                        pinf,
-                                                        ratio,
-                                                        hint);
-    }
-
-    /* Imposed value for the convection operator is proportional to boundary
-       cell value, imposed flux for diffusion
-       --------------------------------------------------------------------- */
-
-    else if (icodcl_p[f_id] == 12) {
-      const cs_real_t pinf  = rcodcl1_p[f_id];
-      const cs_real_t ratio = rcodcl2_p[f_id];
-      const cs_real_t dimp  = rcodcl3_p[f_id];
-
-      cs_boundary_conditions_set_affine_function_conv_neumann_diff_scalar
-        (coefa_p[f_id], cofaf_p[f_id],
-         coefb_p[f_id], cofbf_p[f_id],
-         pinf, ratio, dimp);
-    }
-
-    /* Imposed value for the convection operator, imposed flux for diffusion
-       --------------------------------------------------------------------- */
-
-    else if (icodcl_p[f_id] == 13) {
-      const cs_real_t pimp = rcodcl1_p[f_id];
-      const cs_real_t dimp = rcodcl3_p[f_id];
-
-      cs_boundary_conditions_set_dirichlet_conv_neumann_diff_scalar
-        (coefa_p[f_id], cofaf_p[f_id],
-         coefb_p[f_id], cofbf_p[f_id],
-         pimp, dimp);
-    }
-
-    /* Neumann for the convection operator, zero flux for diffusion
-       ------------------------------------------------------------ */
-
-    else if (icodcl_p[f_id] == 15) {
-      const cs_real_t dimp = rcodcl3_p[f_id];
-
-      cs_boundary_conditions_set_neumann_conv_h_neumann_diff_scalar
-        (coefa_p[f_id], cofaf_p[f_id],
-         coefb_p[f_id], cofbf_p[f_id],
-         dimp, hint);
-    }
-  });
-
-  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/

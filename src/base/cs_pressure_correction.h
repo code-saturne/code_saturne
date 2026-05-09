@@ -88,44 +88,7 @@ typedef struct {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*
- *  \brief Poisson equation resolution for hydrostatic pressure:
- *         \f$ \divs ( \grad P ) = \divs ( f ) \f$
- *
- * \param[in]      m                pointer to glob mesh
- * \param[in]      mq               pointer to glob mesh quantiites
- * \param[out]     need_update      indicator for cvar_hydro_pres update
- * \param[in]      iterns           Navier-Stokes iteration number
- * \param[in]      frcxt            external force generating hydrostatic pressure
- * \param[in]      dfrcxt           external force increment
- *                                  generating hydrostatic pressure
- * \param[out]     cvar_hydro_pres  hydrostatic pressure increment
- * \param[in]      iflux            work array
- * \param[in]      bflux            work array
- * \param[in,out]  i_visc           work array
- * \param[in,out]  b_visc           work array
- * \param[out]     dphi             work array
- * \param[in,out]  rhs              work array
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_hydrostatic_pressure_compute(const cs_mesh_t       *m,
-                                cs_mesh_quantities_t  *mq,
-                                int                   *need_update,
-                                int                    iterns,
-                                const cs_real_t        frcxt[][3],
-                                const cs_real_t        dfrcxt[][3],
-                                cs_field_t             *f,
-                                cs_real_t              iflux[],
-                                cs_real_t              bflux[],
-                                cs_real_t              i_visc[],
-                                cs_real_t              b_visc[],
-                                cs_real_t              dphi[],
-                                cs_real_t              rhs[]);
-
-/*----------------------------------------------------------------------------*/
-/*
+/*!
  * \brief  Activate the pressure increment solving with Legacy FV
  */
 /*----------------------------------------------------------------------------*/
@@ -217,8 +180,7 @@ cs_pressure_correction_cdo_finalize_setup(const cs_domain_t   *domain);
  *
  * \remark:
  * - an iterative process is used to solve the Poisson equation.
- * - if the arak coefficient is set to 1, the Rhie & Chow filter is
- *   activated.
+ * - if the arak coefficient is set to 1, the Rhie & Chow filter is activated.
  *
  * Please refer to the
  * <a href="../../theory.pdf#resopv"><b>resopv</b></a>
