@@ -657,7 +657,6 @@ cs_boundary_conditions_type(bool  init,
        * time varying pressure reference face choice
        */
       fluid_props->ixyzp0 = 0;
-
     }
 
     bool is_modified_xyzp0
@@ -711,7 +710,12 @@ cs_boundary_conditions_type(bool  init,
     fluid_props->have_std_outlet = (n_outlet > 0) ? true : false;
   }
 
-  /* No need to compute pressure gradient for frozen field computations */
+  // No need to compute pressure gradient for frozen field computations
+
+  // FIXME: use cs_glob_velocity_param->time control for this.
+  //        Why should we ignore pressure gradient for Lagrangian
+  //        frozen fields and not for scalar transport on frozen
+  //        velocity field ? This is certainely a bug.
 
   if (   fluid_props->have_std_outlet
       && cs_glob_lagr_time_scheme->iilagr != CS_LAGR_FROZEN_CONTINUOUS_PHASE) {
