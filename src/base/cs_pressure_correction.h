@@ -88,13 +88,13 @@ typedef struct {
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  *  \brief Poisson equation resolution for hydrostatic pressure:
  *         \f$ \divs ( \grad P ) = \divs ( f ) \f$
  *
  * \param[in]      m                pointer to glob mesh
  * \param[in]      mq               pointer to glob mesh quantiites
- * \param[out]     need_update           indicateur de mise a jour de cvar_hydro_pres
+ * \param[out]     need_update      indicator for cvar_hydro_pres update
  * \param[in]      iterns           Navier-Stokes iteration number
  * \param[in]      frcxt            external force generating hydrostatic pressure
  * \param[in]      dfrcxt           external force increment
@@ -125,7 +125,7 @@ cs_hydrostatic_pressure_compute(const cs_mesh_t       *m,
                                 cs_real_t              rhs[]);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Activate the pressure increment solving with Legacy FV
  */
 /*----------------------------------------------------------------------------*/
@@ -134,14 +134,13 @@ void
 cs_pressure_correction_fv_activate(void);
 
 /*----------------------------------------------------------------------------*/
-/*!
+/*
  * \brief  Free the main structure related to the pressure correction
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_pressure_correction_cdo_destroy_all(void);
-
 
 /*----------------------------------------------------------------------------*/
 /*
@@ -216,9 +215,9 @@ cs_pressure_correction_cdo_finalize_setup(const cs_domain_t   *domain);
  *                    - \Delta t \grad_\fij \delta p \cdot \vect{S}_\ij
  * \f]
  *
- * \Remark:
+ * \remark:
  * - an iterative process is used to solve the Poisson equation.
- * - if the arak coefficient is set to 1, the the Rhie & Chow filter is
+ * - if the arak coefficient is set to 1, the Rhie & Chow filter is
  *   activated.
  *
  * Please refer to the
@@ -243,7 +242,8 @@ cs_pressure_correction_cdo_finalize_setup(const cs_domain_t   *domain);
  *                                flow rate
  *                                \f$ \Gamma_{s,cond}^n \f$)
  * \param[in]       svcond        variable value associated to the condensation
- *                                source term (for ivar=ipr, svcond is the flow rate
+ *                                source term (for ivar=ipr, svcond is the
+ *                                flow rate
  *                                \f$ \Gamma_{v, cond}^n \f$)
  * \param[in]       frcxt         external forces making hydrostatic pressure
  * \param[in]       dfrcxt        variation of the external forces

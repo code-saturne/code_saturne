@@ -2834,7 +2834,6 @@ _pressure_correction_fv(int                   iterns,
 
   CS_FREE(cpro_rho_tc);
   CS_FREE(bpro_rho_tc);
-
 }
 
 /*----------------------------------------------------------------------------*/
