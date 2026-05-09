@@ -624,6 +624,28 @@ cs_mass_flux(const cs_mesh_t             *m,
     });
   }
 
+  /* Cancel mass flux at faces adjacent to disabled cells
+     ==================================================== */
+
+  if (fvq->has_disable_flag) {
+    const int *restrict c_disable_flag = fvq->c_disable_flag;
+
+    ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+      cs_lnum_t ii = i_face_cells[face_id][0];
+      cs_lnum_t jj = i_face_cells[face_id][1];
+
+      if (c_disable_flag[ii] || c_disable_flag[jj])
+        i_massflux[face_id] = 0;
+    });
+
+    ctx_c.parallel_for(n_b_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
+      cs_lnum_t ii = b_face_cells[face_id];
+
+      if (c_disable_flag[ii])
+        b_massflux[face_id] = 0;
+    });
+  }
+
   ctx.wait();
   ctx_c.wait();
 
