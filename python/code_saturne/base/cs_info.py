@@ -38,6 +38,8 @@ This module defines the following functions:
 import os, sys, shutil, stat, fnmatch
 from optparse import OptionParser
 
+from code_saturne.base import cs_exec_environment
+
 #-------------------------------------------------------------------------------
 # Licence text
 #-------------------------------------------------------------------------------
@@ -99,11 +101,19 @@ def process_cmd_line(argv, pkg):
                       action="store_true",
                       help="print version number")
 
+    parser.add_option("--build", dest="build",
+                      action="store_true",
+                      help="print build information")
+
     parser.set_defaults(pdf_reader=None)
     parser.set_defaults(guides=[])
     parser.set_defaults(version=False)
 
     (options, args) = parser.parse_args(argv)
+
+    if options.build:
+        print_build(pkg)
+        sys.exit(0)
 
     if options.version:
         print_version(pkg)
@@ -119,6 +129,24 @@ def process_cmd_line(argv, pkg):
 
     return options.guides, options.pdf_reader
 
+#-------------------------------------------------------------------------------
+# Print code_saturne build information
+#-------------------------------------------------------------------------------
+
+def print_build(pkg):
+    """
+    Print code_saturne build information.
+    """
+
+    # Set environment modules if present
+
+    cs_exec_environment.set_modules(pkg)
+    cs_exec_environment.source_rcfile(pkg)
+
+    # Run executable
+
+    cmd = [pkg.get_solver(), '--system-info']
+    return cs_exec_environment.run_command(cmd)
 
 #-------------------------------------------------------------------------------
 # Print code_saturne version

@@ -823,7 +823,12 @@ _omp_version_info(bool  log)
     strncpy(omp_version, "5.0", 31);
     break;
   case 202011:
+    [[fallthrough]];
+  case 202111:  // Some OpenMP specs mention Nov 2020, others Nov . 2021.
     strncpy(omp_version, "5.1", 31);
+    break;
+  case 202311:
+    strncpy(omp_version, "5.2", 31);
     break;
   case 202411:
     strncpy(omp_version, "6.0", 31);
