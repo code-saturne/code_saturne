@@ -1040,5 +1040,27 @@ cs_convection_anisotropic_leff_diffusion_secvis
 );
 
 /*----------------------------------------------------------------------------*/
+/*
+ * \brief Query convection-diffusion scheme variants.
+ *
+ * \return  specific scheme (i.e. 90 for v9.0) or -1 for current.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_convection_diffusion_get_scheme_version(void);
+
+/*----------------------------------------------------------------------------*/
+/*
+ * \brief Allow reverting to older convection-diffusion scheme variants.
+ *
+ * \param[in]  version  Scheme version (90 for v9.0) -1 for current)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_convection_diffusion_set_scheme_version(int  version);
+
+/*----------------------------------------------------------------------------*/
 
 #endif /* CS_CONVECTION_DIFFUSION_H */

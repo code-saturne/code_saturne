@@ -11,12 +11,18 @@ Master (not on release branches yet)
 
 ### Numerics:
 
+- Scheme versioning: add `cs_convection_diffusion_set_scheme_version` function,
+  to make it possible to revert to schemes as similar as possible to those
+  used in older versions. This will allow making more significant updates
+  in the combination of diffusion and convection schemes while keeping
+  a safety net until sufficient feedback is available.
+
 - Gradients: added computation mode for cell-based gradient clipping,
   to ensure reconstruction at I'/J' values does not break monotonicity
   for scalars, and remains within the bounds of the maximum variation
   between cell and neighbor values for vectors and tensors.
-  The cast of this new CS_GRADIENT_LIMIT_RC implementation is comparable
-  to that of the CS_GRADIENT_LIMIT_FACE one, but should provide for better
+  The cast of this new `CS_GRADIENT_LIMIT_RC` implementation is comparable
+  to that of the `CS_GRADIENT_LIMIT_FACE` one, but should provide for better
   boundedness with less clipping (so higher precision).
 
 - CDO: Change the default algorithm to compute geometrical quantities in
@@ -65,7 +71,7 @@ Master (not on release branches yet)
 - Make Fortran compiler an optional prerequisite
   * Fortran dependency is now only required for Atmo module, and more
     specifically for the Polyphemus chemistry functions.
-  * Disabling fortran at configure step is done using the "--disable-fortran"
+  * Disabling Fortran at configure step is done using the `--disable-fortran`
     configure flag.
   * If fortran is disable in configure step, the corresponding code is not
     compiled, and if any Fortran functions are needed from the atmospherical
@@ -73,13 +79,13 @@ Master (not on release branches yet)
     with a specific error message.
 
 - Add multi-dimensional arrays for "linked" fields.
-  * It is now possible to define, for a cs_field_t object, that it is a part of
+  * It is now possible to define, for a `cs_field_t` object, that it is a part of
     a series. By doing so, one of the linked fields is defined as the owner of
     the series, and handles the data allocation. The other fields then
     only use a view of the data (non owners).
-  * This new mechanism uses "cs_array_3d" objects which are owned and managed
-    by the series' owner. The other fields have ther "_vals" (cs_array_2d)
-    objects pointing to sub_arrays of the owner cs_array_3d.
+  * This new mechanism uses `cs_array_3d` objects which are owned and managed
+    by the series' owner. The other fields have their `_vals` (cs_array_2d)
+    objects pointing to sub_arrays of the `cs_array_3d` owner.
 
 - Mesh refinement: restuctured handling of polyhedral cells refinement,
   based on the hypothesis than in most cases, only a small subset of all

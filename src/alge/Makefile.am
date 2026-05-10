@@ -177,6 +177,7 @@ cs_blas.cpp \
 cs_bw_time_diff.cpp \
 cs_cell_to_vertex.cpp \
 cs_convection_diffusion.cpp \
+cs_convection_diffusion_v9.cpp \
 cs_convection_diffusion_steady.cpp \
 cs_divergence.cpp \
 cs_face_viscosity.cpp \

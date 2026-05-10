@@ -167,6 +167,13 @@
  *============================================================================*/
 
 /*============================================================================
+ *  Global variables
+ *============================================================================*/
+
+// Use versioned schemes: -1 for unversioned, 90 for version 9.0 and older
+static int _convection_diffusion_scheme_version = -1;
+
+/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -249,6 +256,7 @@ _beta_limiter_denom(cs_field_t                 *f,
     /* local extrema computation */
     CS_MALLOC_HD(local_max, n_cells_ext, cs_real_t, cs_alloc_mode);
     CS_MALLOC_HD(local_min, n_cells_ext, cs_real_t, cs_alloc_mode);
+    // FIXME replace this with bounds such as those computed with gradients.
     cs_field_local_extrema_scalar(f->id,
                                   halo_type,
                                   local_max,
@@ -1388,90 +1396,6 @@ _reconstruction_check_bounds_scalar
     _reconstruction_check_bounds_log(var_name, ircflb, rd_4r_4i);
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Adust bounds if rc_clip_factor < or > 1, adn check bounds
- * if required by verbosity level or postprocessing.
- *
- * parameters:
- *   ctx            <-> dispatch context
- *   var_name       <-- associated variable name
- *   eqp            <-- equation parameters
- *   face_gradient  <-- use face averaged gradient (instead of cell gradient)
- *                      for reconstruction
- *   ircflb         <-- if > 0, reconstruction at boundary faces
- *   m              <-- pointer to associated mesh structure
- *   fvq            <-- pointer to associated finite volume quantities
- *   ircflu         <-- 1 if reconstruction should be done at boundaries
- *   pvar           <-- variable
- *   grad           <-- gradient of pvar (du/dx_j : grad[][j])
- *   df_limiter     <-- optional reconstruction limiter factor, or null
- *   bounds         <-> variable bounds (min, max)
- */
-/*----------------------------------------------------------------------------*/
-
-template <typename T>
-static void
-_adjust_and_check_bounds_scalar
-(
-  cs_dispatch_context         &ctx,
-  const char                  *var_name,
-  const cs_equation_param_t   &eqp,
-  bool                         face_gradient,
-  int                          ircflb,
-  const cs_mesh_t              *m,
-  const cs_mesh_quantities_t   *fvq,
-  const cs_real_t              *restrict pvar,
-  const T                     (*restrict grad)[3],
-  const cs_real_t              *df_limiter,
-  cs_real_t                   (*restrict bounds)[2]
-)
-{
-  bool no_op = true;
-
-  /* Adjust bounds of reconstruction clip factor is >= 0 and != 1. */
-
-  if (eqp.rc_clip_factor < 1 || eqp.rc_clip_factor > 1) {
-    cs_real_t rc_clip_factor = eqp.rc_clip_factor;
-    no_op = false;
-
-    ctx.parallel_for(m->n_cells_with_ghosts,
-                     [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
-      cs_real_t var_i = pvar[c_id];
-      cs_real_t d_min = bounds[c_id][0] - var_i;
-      cs_real_t d_max = bounds[c_id][1] - var_i;
-      bounds[c_id][0] = var_i + d_min*rc_clip_factor;
-      bounds[c_id][1] = var_i + d_max*rc_clip_factor;
-    });
-  }
-
-  cs_field_t *f_cr
-    = cs_field_by_composite_name_try("algo:reconstruction_clip_ratio",
-                                     var_name);
-  cs_real_t *c_ratio = (f_cr != nullptr) ? f_cr->val : nullptr;
-
-  if (bounds != nullptr && (f_cr != nullptr || eqp.verbosity >= 2)) {
-    no_op = false;
-    if (face_gradient)
-      _reconstruction_check_bounds_scalar<true>
-        (var_name, eqp.verbosity,
-         m, fvq, cs_glob_mesh_adjacencies,
-         ircflb,
-         pvar, grad, bounds, df_limiter,
-         c_ratio);
-    else
-      _reconstruction_check_bounds_scalar<false>
-        (var_name, eqp.verbosity,
-         m, fvq, cs_glob_mesh_adjacencies,
-         ircflb,
-         pvar, grad, bounds, df_limiter,
-         c_ratio);
-  }
-
-  if (no_op == false)
-    ctx.wait();
-}
-
 /*----------------------------------------------------------------------------
  * Compute statistics and possibly extract reconstruction clipping
  * information for a vector or tensor.
@@ -1891,6 +1815,7 @@ _convection_diffusion_scalar_unsteady
       limiter_choice = (cs_nvd_type_t)(cs_field_get_key_int(f, key_lim_choice));
       CS_MALLOC_HD(local_max, n_cells_ext, cs_real_t, cs_alloc_mode);
       CS_MALLOC_HD(local_min, n_cells_ext, cs_real_t, cs_alloc_mode);
+      // FIXME replace this with bounds such as those computed with gradients.
       cs_field_local_extrema_scalar(f_id,
                                     halo_type,
                                     local_max,
@@ -1945,9 +1870,9 @@ _convection_diffusion_scalar_unsteady
        || (is_thermal == false && (ischcp == 0 || ischcp == 3 || ischcp == 4)));
 
   bool gradient_reco
-    =    (   (idiffp != 0 && ircflp == 1)
-      || (   iconvp != 0 && pure_upwind == false
-          && (ircflp == 1 || isstpp == 0 || is_ischcp)));
+    = (   (idiffp != 0 && ircflp == 1)
+       || (   iconvp != 0 && pure_upwind == false
+           && (ircflp == 1 || isstpp == 0 || is_ischcp)));
 
   /* Compute the balance with reconstruction */
 
@@ -2011,18 +1936,20 @@ _convection_diffusion_scalar_unsteady
     }
 
     /* Adjust bounds if reconstruction clip factor is >= 0 and != 1. */
-    if (rc_clip_factor >= 0)
-      _adjust_and_check_bounds_scalar(ctx,
-                                      var_name,
-                                      eqp,
-                                      ircflb,
-                                      true, /* face_gradient */
-                                      m,
-                                      fvq,
-                                      pvar,
-                                      grad_conv,
-                                      df_limiter,
-                                      bounds);
+    if (rc_clip_factor >= 0) {
+      cs_convection_diffusion_adjust_and_check_bounds_scalar
+        (ctx,
+         var_name,
+         eqp,
+         ircflb,
+         true, /* face_gradient */
+         m,
+         fvq,
+         pvar,
+         grad_conv,
+         df_limiter,
+         bounds);
+    }
 
   }
   else {
@@ -3133,18 +3060,20 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
 
 
     /* Adjust bounds of reconstruction clip factor is >= 0 and != 1. */
-    if (eqp.rc_clip_factor >= 0)
-      _adjust_and_check_bounds_scalar(ctx,
-                                      var_name,
-                                      eqp,
-                                      ircflb,
-                                      true, /* face_gradient */
-                                      m,
-                                      fvq,
-                                      _pvar,
+    if (eqp.rc_clip_factor >= 0) {
+      cs_convection_diffusion_adjust_and_check_bounds_scalar
+        (ctx,
+         var_name,
+         eqp,
+         ircflb,
+         true, /* face_gradient */
+         m,
+         fvq,
+         _pvar,
                                       grad,
-                                      df_limiter,
-                                      bounds);
+         df_limiter,
+         bounds);
+    }
 
   }
   else {
@@ -4700,6 +4629,94 @@ _convection_diffusion_unsteady_strided
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
+ * Semi-private function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Adust bounds if rc_clip_factor < or > 1, adn check bounds
+ * if required by verbosity level or postprocessing.
+ *
+ * parameters:
+ *   ctx            <-> dispatch context
+ *   var_name       <-- associated variable name
+ *   eqp            <-- equation parameters
+ *   face_gradient  <-- use face averaged gradient (instead of cell gradient)
+ *                      for reconstruction
+ *   ircflb         <-- if > 0, reconstruction at boundary faces
+ *   m              <-- pointer to associated mesh structure
+ *   fvq            <-- pointer to associated finite volume quantities
+ *   ircflu         <-- 1 if reconstruction should be done at boundaries
+ *   pvar           <-- variable
+ *   grad           <-- gradient of pvar (du/dx_j : grad[][j])
+ *   df_limiter     <-- optional reconstruction limiter factor, or null
+ *   bounds         <-> variable bounds (min, max)
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_convection_diffusion_adjust_and_check_bounds_scalar
+(
+  cs_dispatch_context         &ctx,
+  const char                  *var_name,
+  const cs_equation_param_t   &eqp,
+  bool                         face_gradient,
+  int                          ircflb,
+  const cs_mesh_t              *m,
+  const cs_mesh_quantities_t   *fvq,
+  const cs_real_t              *restrict pvar,
+  const T                     (*restrict grad)[3],
+  const cs_real_t              *df_limiter,
+  cs_real_t                   (*restrict bounds)[2]
+)
+{
+  bool no_op = true;
+
+  /* Adjust bounds of reconstruction clip factor is >= 0 and != 1. */
+
+  if (eqp.rc_clip_factor < 1 || eqp.rc_clip_factor > 1) {
+    cs_real_t rc_clip_factor = eqp.rc_clip_factor;
+    no_op = false;
+
+    ctx.parallel_for(m->n_cells_with_ghosts,
+                     [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
+      cs_real_t var_i = pvar[c_id];
+      cs_real_t d_min = bounds[c_id][0] - var_i;
+      cs_real_t d_max = bounds[c_id][1] - var_i;
+      bounds[c_id][0] = var_i + d_min*rc_clip_factor;
+      bounds[c_id][1] = var_i + d_max*rc_clip_factor;
+    });
+  }
+
+  cs_field_t *f_cr
+    = cs_field_by_composite_name_try("algo:reconstruction_clip_ratio",
+                                     var_name);
+  cs_real_t *c_ratio = (f_cr != nullptr) ? f_cr->val : nullptr;
+
+  if (bounds != nullptr && (f_cr != nullptr || eqp.verbosity >= 2)) {
+    no_op = false;
+    if (face_gradient)
+      _reconstruction_check_bounds_scalar<true>
+        (var_name, eqp.verbosity,
+         m, fvq, cs_glob_mesh_adjacencies,
+         ircflb,
+         pvar, grad, bounds, df_limiter,
+         c_ratio);
+    else
+      _reconstruction_check_bounds_scalar<false>
+        (var_name, eqp.verbosity,
+         m, fvq, cs_glob_mesh_adjacencies,
+         ircflb,
+         pvar, grad, bounds, df_limiter,
+         c_ratio);
+  }
+
+  if (no_op == false)
+    ctx.wait();
+}
+
+/*============================================================================
  * Public function definitions
  *============================================================================*/
 
@@ -4918,6 +4935,16 @@ cs_convection_diffusion_scalar(const cs_field_t           *f,
                                cs_real_2_t                 i_flux[],
                                cs_real_t                   b_flux[])
 {
+  if (_convection_diffusion_scheme_version == 90) {
+    bool prev_scheme = cs_convection_diffusion_scalar_v9
+                         (f, eqp, icvflb, inc, imasac,
+                          pvar, icvfli, bc_coeffs,
+                          i_massflux, b_massflux, i_visc, b_visc,
+                          c_weight,
+                          rhs, i_flux, b_flux);
+    if (prev_scheme)
+      return;
+  }
   CS_PROFILE_FUNC_RANGE();
 
   std::chrono::high_resolution_clock::time_point t_start;
@@ -5888,6 +5915,17 @@ cs_convection_diffusion_thermal(const cs_field_t           *f,
                                 const cs_real_t             xcpp[],
                                 cs_real_t        *restrict  rhs)
 {
+  if (_convection_diffusion_scheme_version == 90) {
+    bool prev_scheme = cs_convection_diffusion_thermal_v9
+                         (f, eqp, inc, imasac,
+                          pvar, bc_coeffs,
+                          i_massflux, b_massflux, i_visc, b_visc,
+                          c_weight, xcpp,
+                          rhs);
+    if (prev_scheme)
+      return;
+  }
+
   CS_PROFILE_FUNC_RANGE();
 
   _convection_diffusion_scalar_unsteady<true, false>
@@ -6067,18 +6105,20 @@ cs_anisotropic_diffusion_scalar(int                         idtvar,
                                     bounds);
 
     /* Adjust bounds if reconstruction clip factor is >= 0 and != 1. */
-    if (eqp.rc_clip_factor >= 0)
-      _adjust_and_check_bounds_scalar(ctx,
-                                      var_name,
-                                      eqp,
-                                      ircflb,
-                                      false, // cell gradient reconstruction
-                                      m,
-                                      fvq,
-                                      pvar,
-                                      grad,
-                                      df_limiter,
-                                      bounds);
+    if (eqp.rc_clip_factor >= 0) {
+      cs_convection_diffusion_adjust_and_check_bounds_scalar
+        (ctx,
+         var_name,
+         eqp,
+         ircflb,
+         false, // cell gradient reconstruction
+         m,
+         fvq,
+         pvar,
+         grad,
+         df_limiter,
+         bounds);
+    }
 
   }
   else {
@@ -8409,18 +8449,20 @@ cs_face_anisotropic_diffusion_potential
                                     bounds);
 
     /* Adjust bounds if reconstruction clip factor is >= 0 and != 1. */
-    if (eqp->rc_clip_factor >= 0)
-      _adjust_and_check_bounds_scalar(ctx,
-                                      var_name,
-                                      *eqp,
-                                      0,     // ircflb, no boundary rc here,
-                                      false, // cell gradient reconstruction
-                                      m,
-                                      fvq,
-                                      pvar,
-                                      grad,
-                                      df_limiter,
-                                      bounds);
+    if (eqp->rc_clip_factor >= 0) {
+      cs_convection_diffusion_adjust_and_check_bounds_scalar
+        (ctx,
+         var_name,
+         *eqp,
+         0,     // ircflb, no boundary rc here,
+         false, // cell gradient reconstruction
+         m,
+         fvq,
+         pvar,
+         grad,
+         df_limiter,
+         bounds);
+    }
 
     /* Mass flow through interior faces */
 
@@ -9088,18 +9130,20 @@ cs_anisotropic_diffusion_potential(const cs_field_t           *f,
                                     bounds);
 
     /* Adjust bounds if reconstruction clip factor is >= 0 and != 1. */
-    if (eqp->rc_clip_factor >= 0)
-      _adjust_and_check_bounds_scalar(ctx,
-                                      var_name,
-                                      *eqp,
-                                      0,     // ircflb, no boundary rc here
-                                      false, // cell gradient reconstruction
-                                      m,
-                                      fvq,
-                                      pvar,
-                                      grad,
-                                      df_limiter,
-                                      bounds);
+    if (eqp->rc_clip_factor >= 0) {
+      cs_convection_diffusion_adjust_and_check_bounds_scalar
+        (ctx,
+         var_name,
+         *eqp,
+         0,     // ircflb, no boundary rc here
+         false, // cell gradient reconstruction
+         m,
+         fvq,
+         pvar,
+         grad,
+         df_limiter,
+         bounds);
+    }
 
     /* Mass flow through interior faces */
 
@@ -9354,9 +9398,7 @@ cs_slope_test_gradient(int                         f_id,
 
   /* Synchronization for parallelism or periodicity */
 
-  if (m->halo != nullptr) {
-    cs_halo_sync_r(m->halo, CS_HALO_STANDARD, use_gpu, grdpa);
-  }
+  cs_halo_sync_r(m->halo, CS_HALO_STANDARD, use_gpu, grdpa);
 
   if (cs_glob_timer_kernels_flag > 0) {
     std::chrono::high_resolution_clock::time_point
@@ -9643,5 +9685,36 @@ cs_upwind_gradient(cs_dispatch_context          &ctx,
                    const cs_real_t               b_massflux[],
                    const cs_real_t     *restrict pvar,
                    float              (*restrict grdpa)[3]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Query convection-diffusion scheme variants.
+ *
+ * \return  specific scheme (i.e. 90 for v9.0) or -1 for current.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_convection_diffusion_get_scheme_version(void)
+{
+  return _convection_diffusion_scheme_version;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Allow reverting to older convection-diffusion scheme variants.
+ *
+ * \param[in]  version  Scheme version (90 for v9.0) -1 for current)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_convection_diffusion_set_scheme_version(int  version)
+{
+  if (version == 90)
+    _convection_diffusion_scheme_version = 90;
+  else
+    _convection_diffusion_scheme_version = -1;
+}
 
 /*----------------------------------------------------------------------------*/

@@ -36,6 +36,7 @@
 #include "base/cs_math.h"
 #include "base/cs_field.h"
 #include "base/cs_parameters.h"  // for BC types
+#include "base/cs_reducers.h"
 
 #include "alge/cs_convection_diffusion.h"
 
@@ -2571,6 +2572,45 @@ cs_b_diff_flux_coupling_strided(int              idiffp,
  * Semi private functions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Adust bounds if rc_clip_factor < or > 1, adn check bounds
+ * if required by verbosity level or postprocessing.
+ *
+ * parameters:
+ *   ctx            <-> dispatch context
+ *   var_name       <-- associated variable name
+ *   eqp            <-- equation parameters
+ *   face_gradient  <-- use face averaged gradient (instead of cell gradient)
+ *                      for reconstruction
+ *   ircflb         <-- if > 0, reconstruction at boundary faces
+ *   m              <-- pointer to associated mesh structure
+ *   fvq            <-- pointer to associated finite volume quantities
+ *   ircflu         <-- 1 if reconstruction should be done at boundaries
+ *   pvar           <-- variable
+ *   grad           <-- gradient of pvar (du/dx_j : grad[][j])
+ *   df_limiter     <-- optional reconstruction limiter factor, or null
+ *   bounds         <-> variable bounds (min, max)
+ */
+/*----------------------------------------------------------------------------*/
+
+template <typename T>
+void
+cs_convection_diffusion_adjust_and_check_bounds_scalar
+(
+  cs_dispatch_context         &ctx,
+  const char                  *var_name,
+  const cs_equation_param_t   &eqp,
+  bool                         face_gradient,
+  int                          ircflb,
+  const cs_mesh_t              *m,
+  const cs_mesh_quantities_t   *fvq,
+  const cs_real_t              *restrict pvar,
+  const T                     (*restrict grad)[3],
+  const cs_real_t              *df_limiter,
+  cs_real_t                   (*restrict bounds)[2]
+);
+
 /*----------------------------------------------------------------------------*
  * Add the explicit part of the convection/diffusion terms of a
  * standard transport equation of a scalar field \f$ \varia \f$.
@@ -2648,6 +2688,49 @@ cs_face_convection_steady_scalar
   cs_real_t                   i_conv_flux[][2],
   cs_real_t                   b_conv_flux[]
 );
+
+/*----------------------------------------------------------------------------
+ * Add the explicit part of the convection/diffusion terms of a
+ * standard transport equation of a scalar field \f$ \varia \f$.
+ *----------------------------------------------------------------------------*/
+
+bool
+cs_convection_diffusion_scalar_v9(const cs_field_t           *f,
+                                  const cs_equation_param_t   eqp,
+                                  int                         icvflb,
+                                  int                         inc,
+                                  int                         imasac,
+                                  const cs_real_t            *restrict pvar,
+                                  const int                   icvfli[],
+                                  cs_field_bc_coeffs_t       *bc_coeffs,
+                                  const cs_real_t             i_massflux[],
+                                  const cs_real_t             b_massflux[],
+                                  const cs_real_t             i_visc[],
+                                  const cs_real_t             b_visc[],
+                                  const cs_real_t            *c_weight,
+                                  cs_real_t                  *rhs,
+                                  cs_real_2_t                 i_flux[],
+                                  cs_real_t                   b_flux[]);
+
+/*----------------------------------------------------------------------------
+ * Add the explicit part of the convection/diffusion terms of a transport
+ * equation of a scalar field \f$ \varia \f$ such as the temperature.
+ *----------------------------------------------------------------------------*/
+
+bool
+cs_convection_diffusion_thermal_v9(const cs_field_t           *f,
+                                   const cs_equation_param_t   eqp,
+                                   int                         inc,
+                                   int                         imasac,
+                                   const cs_real_t           * pvar,
+                                   cs_field_bc_coeffs_t       *bc_coeffs,
+                                   const cs_real_t             i_massflux[],
+                                   const cs_real_t             b_massflux[],
+                                   const cs_real_t             i_visc[],
+                                   const cs_real_t             b_visc[],
+                                   const cs_real_t            *c_weight,
+                                   const cs_real_t             xcpp[],
+                                   cs_real_t        *restrict  rhs);
 
 /*----------------------------------------------------------------------------*/
 
