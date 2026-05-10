@@ -2350,7 +2350,8 @@ _convection_diffusion_scalar_unsteady
         if (i_massflux[face_id] >= 0.) {
           ic = ii;
           id = jj;
-        } else {
+        }
+        else {
           ic = jj;
           id = ii;
         }
@@ -2418,10 +2419,6 @@ _convection_diffusion_scalar_unsteady
             cs_clip_quantity(bounds[ii], pip);
             cs_clip_quantity(bounds[jj], pjp);
           }
-        }
-        else {
-          pip = pvar[ii];
-          pjp = pvar[jj];
         }
 
         cs_real_t diff_contrib = thetap*i_visc[face_id]*(pip - pjp);
@@ -2610,7 +2607,7 @@ _convection_diffusion_scalar_unsteady
 
       if (idiffp > 0) {
 
-        if (ircflp == 1) {
+        if (ircflp == 1 && grad_diff != grad_conv) {
           cs_rreal_t bldfrp = 1.;
           if (df_limiter != nullptr)  /* Local limiter */
             bldfrp = cs::max(cs::min(df_limiter[ii], df_limiter[jj]),
@@ -2628,10 +2625,6 @@ _convection_diffusion_scalar_unsteady
             cs_clip_quantity(bounds[ii], pip);
             cs_clip_quantity(bounds[jj], pjp);
           }
-        }
-        else {
-          pip = pvar[ii];
-          pjp = pvar[jj];
         }
 
         cs_real_t diff_contrib = thetap*i_visc[face_id]*(pip - pjp);
