@@ -49,6 +49,7 @@
  *============================================================================*/
 
 namespace cs {
+namespace algorithm {
 
 /*=============================================================================
  * Public inline functions
@@ -104,8 +105,9 @@ l_binary_search(cs_lnum_t        l_id_array_size,
  * For n input elements, the array size should be size n+1, to account
  * for the past-the-end count.
  *
- * \param[in]       n     number of elements
- * \param[in, out]  a <-> count in, index out (size: n+1)
+ * \param[in]       ctx  associated dispatch context
+ * \param[in]       n    number of elements
+ * \param[in, out]  a    count in, index out (size: n+1)
  */
 /*--------------------------------------------------------------------------*/
 
@@ -114,6 +116,24 @@ count_to_index(cs_dispatch_context  &ctx,
                cs_lnum_t             n,
                cs_lnum_t             a[]);
 
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Sum a local counter.
+ *
+ * \param[in]  ctx      associated dispatch context
+ * \param[in]  n        number of elements
+ * \param[in]  counter  local counter
+ *
+ * \return sum of local counter values
+ */
+/*--------------------------------------------------------------------------*/
+
+cs_gnum_t
+count_reduce_sum(cs_dispatch_context  &ctx,
+                 cs_lnum_t             n,
+                 short                 counter[]);
+
 /*----------------------------------------------------------------------------*/
 
+} // namespace algorithm
 } // namespace cs

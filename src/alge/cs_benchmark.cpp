@@ -1204,7 +1204,7 @@ _matrix_check_assmb_fine(bool  accel)
 
   wt0 = std::chrono::high_resolution_clock::now();
 
-  cs::count_to_index(ctx, n_cells, idx);
+  cs::algorithm::count_to_index(ctx, n_cells, idx);
   ctx.wait();
 
   wt1 = std::chrono::high_resolution_clock::now();

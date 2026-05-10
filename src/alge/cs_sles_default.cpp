@@ -1207,13 +1207,19 @@ cs_sles_solve_native(int                  f_id,
     cs_lnum_t n_cols_ext = cs_matrix_get_n_columns(a);
     assert(n_rows == m->n_cells);
     cs_lnum_t _n_rows = n_rows*stride;
-    CS_MALLOC(_rhs, n_cols_ext*stride, cs_real_t);
-    CS_MALLOC(_vx, n_cols_ext*stride, cs_real_t);
-#   pragma omp parallel for  if(_n_rows > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < _n_rows; i++) {
+
+   bool on_device = cs_check_device_ptr(rhs) && cs_check_device_ptr(vx);
+   cs_alloc_mode_t amode = (on_device) ? cs_alloc_mode : CS_ALLOC_HOST;
+   cs_dispatch_context ctx;
+   ctx.set_use_gpu(amode >= CS_ALLOC_HOST_DEVICE_SHARED);
+
+    CS_MALLOC_HD(_rhs, n_cols_ext*stride, cs_real_t, amode);
+    CS_MALLOC_HD(_vx, n_cols_ext*stride, cs_real_t, amode);
+    ctx.parallel_for(_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
       _rhs[i] = rhs[i];
       _vx[i] = vx[i];
-    }
+    });
+    ctx.wait();
     cs_matrix_pre_vector_multiply_sync(a, _rhs);
     rhs_p = _rhs;
 
@@ -1238,9 +1244,15 @@ cs_sles_solve_native(int                  f_id,
     size_t stride = diag_block_size;
     cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
     cs_lnum_t _n_rows = n_rows*stride;
-#   pragma omp parallel for  if(_n_rows > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < _n_rows; i++)
+
+    cs_dispatch_context ctx;
+    ctx.set_use_gpu(cs_check_device_ptr(_vx));
+
+    ctx.parallel_for(_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
       vx[i] = _vx[i];
+    });
+    ctx.wait();
+
     CS_FREE(_vx);
   }
 

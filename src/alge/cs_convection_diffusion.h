@@ -372,8 +372,8 @@ cs_convection_diffusion_tensor(int                          idtvar,
  *      - \lambda_\fij \gradv_\fij \varia \cdot \vect{S}_\ij  \right)
  * \f]
  *
- * Warning:
- * \f$ Rhs \f$ must have been initialized before calling this function!
+ * \warning \f$ Rhs \f$ must have been initialized before calling this function!
+ * \warning The ghost cell values of pvar must already have been synchronized.
  *
  * \param[in]     f             pointer to field, or null
  * \param[in]     eqp           equation parameters)
@@ -426,6 +426,7 @@ cs_convection_diffusion_thermal(const cs_field_t           *f,
  * - \f$ Rhs \f$ has already been initialized before
  *   calling cs_anisotropic_diffusion_scalar!
  * - mind the sign minus
+ * - the ghost cell values of pvar must already be synchronized
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable

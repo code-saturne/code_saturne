@@ -52,6 +52,7 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
+#include "base/cs_algorithm.h"
 #include "base/cs_array.h"
 #include "base/cs_boundary_conditions.h"
 #include "base/cs_boundary_conditions_set_coeffs.h"
@@ -2675,16 +2676,8 @@ _convection_diffusion_scalar_unsteady
 
   if (eqp.verbosity >= 2) {
     cs_gnum_t n_upwind = 0;
-
     if (i_upwind != nullptr) {
-      ctx.parallel_for_reduce_sum
-        (n_i_faces, n_upwind, [=] CS_F_HOST_DEVICE
-         (cs_lnum_t i,
-          CS_DISPATCH_REDUCER_TYPE(cs_gnum_t) &sum) {
-        sum += (cs_gnum_t)i_upwind[i];
-      });
-
-      ctx.wait();
+      n_upwind = cs::algorithm::count_reduce_sum(ctx, n_i_faces, i_upwind);
       cs_parall_counter(&n_upwind, 1);
     }
     else if (pure_upwind)
@@ -3653,14 +3646,7 @@ _face_convection_scalar_unsteady(const cs_field_t           *f,
     cs_gnum_t n_upwind = 0;
 
     if (i_upwind != nullptr) {
-      ctx.parallel_for_reduce_sum
-        (n_i_faces, n_upwind, [=] CS_F_HOST_DEVICE
-         (cs_lnum_t i,
-          CS_DISPATCH_REDUCER_TYPE(cs_gnum_t) &sum) {
-        sum += (cs_gnum_t)i_upwind[i];
-      });
-
-      ctx.wait();
+      n_upwind = cs::algorithm::count_reduce_sum(ctx, n_i_faces, i_upwind);
       cs_parall_counter(&n_upwind, 1);
     }
     else if (pure_upwind)
@@ -4531,14 +4517,7 @@ _convection_diffusion_unsteady_strided
     cs_gnum_t n_upwind = 0;
 
     if (i_upwind != nullptr) {
-      ctx.parallel_for_reduce_sum
-        (n_i_faces, n_upwind, [=] CS_F_HOST_DEVICE
-         (cs_lnum_t i,
-          CS_DISPATCH_REDUCER_TYPE(cs_gnum_t) &sum) {
-        sum += (cs_gnum_t)i_upwind[i];
-      });
-
-      ctx.wait();
+      n_upwind = cs::algorithm::count_reduce_sum(ctx, n_i_faces, i_upwind);
       cs_parall_counter(&n_upwind, 1);
     }
     else if (pure_upwind)
@@ -4769,10 +4748,8 @@ cs_get_v_slope_test(int                        f_id,
       v_slope_test = (cs_field_by_id(f_track_slope_test_id))->val;
 
     if (v_slope_test != nullptr) {
-      const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-#     pragma omp parallel for
-      for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
-        v_slope_test[cell_id] = 0.;
+      cs_arrays_set_value<cs_real_t, 1>
+        (cs_glob_mesh->n_cells_with_ghosts, 0., v_slope_test);
     }
 
   }
@@ -5768,9 +5745,8 @@ cs_convection_diffusion_tensor(int                          idtvar,
   /* Handle cases where only the previous values (already synchronized)
      or current values are provided */
 
-  if (pvar != nullptr && m->halo != nullptr) {
+  if (pvar != nullptr)
     cs_halo_sync_r(m->halo, halo_type, ctx.use_gpu(), pvar);
-  }
   if (pvara == nullptr)
     pvara = (const cs_real_6_t *)pvar;
 
@@ -5880,8 +5856,8 @@ cs_convection_diffusion_tensor(int                          idtvar,
  *      - \lambda_\fij \gradv_\fij \varia \cdot \vect{S}_\ij  \right)
  * \f]
  *
- * Warning:
- * \f$ Rhs \f$ must have been initialized before calling this function!
+ * \warning \f$ Rhs \f$ must have been initialized before calling this function!
+ * \warning The ghost cell values of pvar must already have been synchronized.
  *
  * \param[in]     f             pointer to field, or null
  * \param[in]     eqp           equation parameters)
@@ -5909,7 +5885,7 @@ cs_convection_diffusion_thermal(const cs_field_t           *f,
                                 const cs_equation_param_t   eqp,
                                 int                         inc,
                                 int                         imasac,
-                                const cs_real_t  *restrict  pvar,
+                                const cs_real_t           * pvar,
                                 cs_field_bc_coeffs_t       *bc_coeffs,
                                 const cs_real_t             i_massflux[],
                                 const cs_real_t             b_massflux[],
@@ -5949,6 +5925,7 @@ cs_convection_diffusion_thermal(const cs_field_t           *f,
  * - \f$ Rhs \f$ has already been initialized before
  *   calling cs_anisotropic_diffusion_scalar!
  * - mind the sign minus
+ * - the ghost cell values of pvar must already be synchronized
  *
  * \param[in]     idtvar        indicator of the temporal scheme
  * \param[in]     f_id          index of the current variable
@@ -6485,11 +6462,6 @@ cs_anisotropic_left_diffusion_vector
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_threads = m->b_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
-  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
@@ -6510,6 +6482,9 @@ cs_anisotropic_left_diffusion_vector
 
   /* Dispatch */
   cs_dispatch_context ctx;
+  if (idtvar < 0)
+    ctx.set_use_gpu(false);  /* steady case not ported to GPU */
+
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
@@ -6530,9 +6505,8 @@ cs_anisotropic_left_diffusion_vector
   /* Handle cases where only the previous values (already synchronized)
      or current values are provided */
 
-  if (pvar != nullptr && halo != nullptr) {
+  if (pvar != nullptr)
     cs_halo_sync_r(halo, halo_type, false, pvar);
-  }
   if (pvara == nullptr)
     pvara = (const cs_real_3_t *)pvar;
 
@@ -6621,76 +6595,67 @@ cs_anisotropic_left_diffusion_vector
   /* Steady */
   if (idtvar < 0) {
 
-    for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for
-      for (int t_id = 0; t_id < n_i_threads; t_id++) {
-        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-             face_id++) {
+    cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
 
-          cs_lnum_t ii = i_face_cells[face_id][0];
-          cs_lnum_t jj = i_face_cells[face_id][1];
+    h_ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
-          cs_real_t pip[3], pjp[3], pipr[3], pjpr[3];
+      cs_lnum_t ii = i_face_cells[face_id][0];
+      cs_lnum_t jj = i_face_cells[face_id][1];
 
-          cs_real_t bldfrp = (cs_real_t) ircflp;
-          /* Local limitation of the reconstruction */
-          if (df_limiter != nullptr && ircflp > 0)
-            bldfrp = cs::max(cs::min(df_limiter[ii], df_limiter[jj]),
-                             0.);
+      cs_real_t pip[3], pjp[3], pipr[3], pjpr[3], fluxi[3], fluxj[3];
 
-          /* X-Y-Z components, p = u, v, w */
-          for (cs_lnum_t isou = 0; isou < 3; isou++) {
+      cs_real_t bldfrp = (cs_real_t) ircflp;
+      /* Local limitation of the reconstruction */
+      if (df_limiter != nullptr && ircflp > 0)
+        bldfrp = cs::max(cs::min(df_limiter[ii], df_limiter[jj]), 0.);
 
-            cs_real_t dpvf[3];
+      /* X-Y-Z components, p = u, v, w */
+      for (cs_lnum_t isou = 0; isou < 3; isou++) {
 
-            for (cs_lnum_t jsou = 0; jsou < 3; jsou++) {
-              dpvf[jsou] = 0.5*(gradv[ii][isou][jsou] + gradv[jj][isou][jsou]);
-            }
+        cs_real_t dpvf[3];
 
-            cs_real_t pi  = _pvar[ii][isou];
-            cs_real_t pj  = _pvar[jj][isou];
-
-            cs_real_t pia = pvara[ii][isou];
-            cs_real_t pja = pvara[jj][isou];
-
-            /* reconstruction only if IRCFLP = 1 */
-            pip[isou] = pi + bldfrp * (cs_math_3_dot_product(dpvf,
-                                                             diipf[face_id]));
-            pjp[isou] = pj + bldfrp * (cs_math_3_dot_product(dpvf,
-                                                             djjpf[face_id]));
-
-            pipr[isou] = pi /relaxp - (1.-relaxp)/relaxp * pia
-                         + bldfrp * (cs_math_3_dot_product(dpvf,
-                                                           diipf[face_id]));
-            pjpr[isou] = pj /relaxp - (1.-relaxp)/relaxp * pja
-                         + bldfrp * (cs_math_3_dot_product(dpvf,
-                                                           djjpf[face_id]));
-
-          }
-
-          for (cs_lnum_t isou = 0; isou < 3; isou++) {
-
-            cs_real_t fluxi =   i_visc[face_id][0][isou]*(pipr[0] - pjp[0])
-                              + i_visc[face_id][1][isou]*(pipr[1] - pjp[1])
-                              + i_visc[face_id][2][isou]*(pipr[2] - pjp[2]);
-            cs_real_t fluxj =   i_visc[face_id][0][isou]*(pip[0] - pjpr[0])
-                              + i_visc[face_id][1][isou]*(pip[1] - pjpr[1])
-                              + i_visc[face_id][2][isou]*(pip[2] - pjpr[2]);
-
-            if (ii < n_cells)
-              rhs[ii][isou] = rhs[ii][isou] - fluxi;
-            if (jj < n_cells)
-              rhs[jj][isou] = rhs[jj][isou] + fluxj;
-
-          }
-
+        for (cs_lnum_t jsou = 0; jsou < 3; jsou++) {
+          dpvf[jsou] = 0.5*(gradv[ii][isou][jsou] + gradv[jj][isou][jsou]);
         }
-      }
-    }
 
-    /* Unsteady */
+        cs_real_t pi  = _pvar[ii][isou];
+        cs_real_t pj  = _pvar[jj][isou];
+
+        cs_real_t pia = pvara[ii][isou];
+        cs_real_t pja = pvara[jj][isou];
+
+        /* reconstruction only if IRCFLP = 1 */
+        pip[isou] = pi + bldfrp * (cs_math_3_dot_product(dpvf,
+                                                         diipf[face_id]));
+        pjp[isou] = pj + bldfrp * (cs_math_3_dot_product(dpvf,
+                                                         djjpf[face_id]));
+
+        pipr[isou] = pi /relaxp - (1.-relaxp)/relaxp * pia
+                     + bldfrp * (cs_math_3_dot_product(dpvf,
+                                                       diipf[face_id]));
+        pjpr[isou] = pj /relaxp - (1.-relaxp)/relaxp * pja
+                     + bldfrp * (cs_math_3_dot_product(dpvf,
+                                                       djjpf[face_id]));
+
+      }
+
+      for (cs_lnum_t isou = 0; isou < 3; isou++) {
+        fluxi[isou] = - i_visc[face_id][0][isou]*(pipr[0] - pjp[0])
+                      - i_visc[face_id][1][isou]*(pipr[1] - pjp[1])
+                      - i_visc[face_id][2][isou]*(pipr[2] - pjp[2]);
+        fluxj[isou] =   i_visc[face_id][0][isou]*(pip[0] - pjpr[0])
+                      + i_visc[face_id][1][isou]*(pip[1] - pjpr[1])
+                      + i_visc[face_id][2][isou]*(pip[2] - pjpr[2]);
+      }
+
+      if (ii < n_cells)
+        cs_dispatch_sum<3>(rhs[ii], fluxi, i_sum_type);
+      if (jj < n_cells)
+        cs_dispatch_sum<3>(rhs[jj], fluxj, i_sum_type);
+    });
   }
+
+  /* Unsteady */
   else {
 
     ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
@@ -6706,8 +6671,7 @@ cs_anisotropic_left_diffusion_vector
         bldfrp = cs::max(cs::min(df_limiter[ii], df_limiter[jj]),
                          0.);
 
-      /*-----------------
-        X-Y-Z components, p = u, v, w */
+      /* X-Y-Z components, p = u, v, w */
       for (cs_lnum_t isou = 0; isou < 3; isou++) {
         cs_real_t dpvf[3];
 
@@ -6751,51 +6715,47 @@ cs_anisotropic_left_diffusion_vector
     const cs_real_3_t  *cofafv = (const cs_real_3_t  *)bc_coeffs->af;
     const cs_real_33_t *cofbfv = (const cs_real_33_t *)bc_coeffs->bf;
 
-#   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
-    for (int t_id = 0; t_id < n_b_threads; t_id++) {
-      for (cs_lnum_t face_id = b_group_index[t_id*2];
-           face_id < b_group_index[t_id*2 + 1];
-           face_id++) {
+    cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
 
-        cs_lnum_t cell_id = b_face_cells[face_id];
+    h_ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
-        cs_real_t bldfrp = (cs_real_t) ircflb;
-        /* Local limitation of the reconstruction */
-        if (df_limiter != nullptr && ircflb > 0)
-          bldfrp = cs::max(df_limiter[cell_id], 0.);
+      cs_lnum_t cell_id = b_face_cells[face_id];
 
-        const cs_rreal_t *diipbv = diipb[face_id];
-        cs_real_t pipr[3];
+      cs_real_t bldfrp = (cs_real_t) ircflb;
+      /* Local limitation of the reconstruction */
+      if (df_limiter != nullptr && ircflb > 0)
+        bldfrp = cs::max(df_limiter[cell_id], 0.);
 
-        for (cs_lnum_t k = 0; k < 3; k++) {
-          cs_real_t pir  =   _pvar[cell_id][k]/relaxp
-                           - (1.-relaxp)/relaxp*pvara[cell_id][k];
+      const cs_rreal_t *diipbv = diipb[face_id];
+      cs_real_t pipr[3], fluxi[3];
 
-          pipr[k] = pir + bldfrp*(  gradv[cell_id][k][0]*diipbv[0]
-                                  + gradv[cell_id][k][1]*diipbv[1]
-                                  + gradv[cell_id][k][2]*diipbv[2]);
+      for (cs_lnum_t k = 0; k < 3; k++) {
+        cs_real_t pir  =   _pvar[cell_id][k]/relaxp
+                         - (1.-relaxp)/relaxp*pvara[cell_id][k];
 
-        }
-
-        /* X-Y-Z components, p = u, v, w */
-        for (cs_lnum_t i = 0; i < 3; i++) {
-
-          cs_real_t pfacd = inc*cofafv[face_id][i];
-
-          /*coefu and cofuf and b_visc are matrices */
-          for (cs_lnum_t j = 0; j < 3; j++) {
-            pfacd += cofbfv[face_id][i][j]*pipr[j];
-          }
-
-          rhs[cell_id][i] -= b_visc[face_id] * pfacd;
-
-        } /* i */
+        pipr[k] = pir + bldfrp*(  gradv[cell_id][k][0]*diipbv[0]
+                                + gradv[cell_id][k][1]*diipbv[1]
+                                + gradv[cell_id][k][2]*diipbv[2]);
 
       }
-    }
 
-    /* Unsteady */
+      /* X-Y-Z components, p = u, v, w */
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        cs_real_t pfacd = inc*cofafv[face_id][i];
+
+        /*coefu and cofuf and b_visc are matrices */
+        for (cs_lnum_t j = 0; j < 3; j++) {
+          pfacd += cofbfv[face_id][i][j]*pipr[j];
+        }
+
+        fluxi[i] -= b_visc[face_id] * pfacd;
+      }
+
+      cs_dispatch_sum<3>(rhs[cell_id], fluxi, b_sum_type);
+    });
   }
+
+  /* Unsteady */
   else {
 
     const var_t *flux_d = (var_t *)bc_coeffs->flux_diff;
@@ -6905,11 +6865,6 @@ cs_anisotropic_right_diffusion_vector
 
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const int n_b_threads = m->b_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
-  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
 
   const cs_lnum_2_t *restrict i_face_cells = m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells = m->b_face_cells;
@@ -6923,6 +6878,9 @@ cs_anisotropic_right_diffusion_vector
 
   /* Dispatch */
   cs_dispatch_context ctx;
+  if (idtvar < 0)
+    ctx.set_use_gpu(false);  /* steady case not ported to GPU */
+
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
@@ -6957,9 +6915,8 @@ cs_anisotropic_right_diffusion_vector
   /* Handle cases where only the previous values (already synchronized)
      or current values are provided */
 
-  if (pvar != nullptr && halo != nullptr) {
+  if (pvar != nullptr)
     cs_halo_sync_r(halo, halo_type, false, pvar);
-  }
   if (pvara == nullptr)
     pvara = (const cs_real_3_t *)pvar;
 
@@ -7051,112 +7008,109 @@ cs_anisotropic_right_diffusion_vector
   /* Steady */
   if (idtvar < 0) {
 
-    for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#     pragma omp parallel for
-      for (int t_id = 0; t_id < n_i_threads; t_id++) {
-        for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-             face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-             face_id++) {
+    cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
 
-          cs_lnum_t ii = i_face_cells[face_id][0];
-          cs_lnum_t jj = i_face_cells[face_id][1];
+    h_ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
-          cs_real_t visci[3][3], viscj[3][3];
-          cs_real_t diippf[3], djjppf[3], pipp[3], pjpp[3];
-          cs_real_t  pir[3], pjr[3], pippr[3], pjppr[3];
-          cs_real_t  pi[3], pj[3], pia[3], pja[3];
+      cs_lnum_t ii = i_face_cells[face_id][0];
+      cs_lnum_t jj = i_face_cells[face_id][1];
 
-          for (cs_lnum_t isou = 0; isou < 3; isou++) {
-            pi[isou] = _pvar[ii][isou];
-            pj[isou] = _pvar[jj][isou];
-            pia[isou] = pvara[ii][isou];
-            pja[isou] = pvara[jj][isou];
-          }
+      cs_real_t visci[3][3], viscj[3][3];
+      cs_real_t diippf[3], djjppf[3], pipp[3], pjpp[3];
+      cs_real_t  pir[3], pjr[3], pippr[3], pjppr[3];
+      cs_real_t  pi[3], pj[3], pia[3], pja[3];
 
-          cs_real_t bldfrp = (cs_real_t) ircflp;
-          /* Local limitation of the reconstruction */
-          if (df_limiter != nullptr && ircflp > 0)
-            bldfrp = cs::max(cs::min(df_limiter[ii], df_limiter[jj]),
-                             0.);
-
-          /* Recompute II' and JJ' at this level */
-
-          visci[0][0] = viscce[ii][0];
-          visci[1][1] = viscce[ii][1];
-          visci[2][2] = viscce[ii][2];
-          visci[1][0] = viscce[ii][3];
-          visci[0][1] = viscce[ii][3];
-          visci[2][1] = viscce[ii][4];
-          visci[1][2] = viscce[ii][4];
-          visci[2][0] = viscce[ii][5];
-          visci[0][2] = viscce[ii][5];
-
-          /* IF.Ki.S / ||Ki.S||^2 */
-          cs_real_t fikdvi_s = weighf[face_id][0] * i_face_surf[face_id];
-
-          /* II" = IF + FI" */
-          for (cs_lnum_t i = 0; i < 3; i++) {
-            diippf[i] =   i_face_cog[face_id][i]-cell_cen[ii][i]
-                        - fikdvi_s*(  visci[0][i]*i_face_u_normal[face_id][0]
-                                    + visci[1][i]*i_face_u_normal[face_id][1]
-                                    + visci[2][i]*i_face_u_normal[face_id][2]);
-          }
-
-          viscj[0][0] = viscce[jj][0];
-          viscj[1][1] = viscce[jj][1];
-          viscj[2][2] = viscce[jj][2];
-          viscj[1][0] = viscce[jj][3];
-          viscj[0][1] = viscce[jj][3];
-          viscj[2][1] = viscce[jj][4];
-          viscj[1][2] = viscce[jj][4];
-          viscj[2][0] = viscce[jj][5];
-          viscj[0][2] = viscce[jj][5];
-
-          /* FJ.Kj.S / ||Kj.S||^2 */
-          cs_real_t fjkdvi_s = weighf[face_id][1] * i_face_surf[face_id];
-
-          /* JJ" = JF + FJ" */
-          for (cs_lnum_t i = 0; i < 3; i++) {
-            djjppf[i] = i_face_cog[face_id][i]-cell_cen[jj][i]
-                      + fjkdvi_s*(  viscj[0][i]*i_face_u_normal[face_id][0]
-                                  + viscj[1][i]*i_face_u_normal[face_id][1]
-                                  + viscj[2][i]*i_face_u_normal[face_id][2]);
-          }
-
-          for (cs_lnum_t isou = 0; isou < 3; isou++) {
-            /* p in I" and J" */
-            pipp[isou] = pi[isou] + bldfrp*( grad[ii][isou][0]*diippf[0]
-                                           + grad[ii][isou][1]*diippf[1]
-                                           + grad[ii][isou][2]*diippf[2]);
-            pjpp[isou] = pj[isou] + bldfrp*( grad[jj][isou][0]*djjppf[0]
-                                           + grad[jj][isou][1]*djjppf[1]
-                                           + grad[jj][isou][2]*djjppf[2]);
-
-            pir[isou] = pi[isou]/relaxp - (1.-relaxp)/relaxp * pia[isou];
-            pjr[isou] = pj[isou]/relaxp - (1.-relaxp)/relaxp * pja[isou];
-
-            /* pr in I" and J" */
-            pippr[isou] = pir[isou] + bldfrp*( grad[ii][isou][0]*diippf[0]
-                                             + grad[ii][isou][1]*diippf[1]
-                                             + grad[ii][isou][2]*diippf[2]);
-            pjppr[isou] = pjr[isou] + bldfrp*( grad[jj][isou][0]*djjppf[0]
-                                             + grad[jj][isou][1]*djjppf[1]
-                                             + grad[jj][isou][2]*djjppf[2]);
-
-            cs_real_t fluxi = i_visc[face_id]*(pippr[isou] - pjpp[isou]);
-            cs_real_t fluxj = i_visc[face_id]*(pipp[isou] - pjppr[isou]);
-
-            if (ii < n_cells)
-              rhs[ii][isou] -= fluxi;
-            if (jj < n_cells)
-              rhs[jj][isou] += fluxj;
-          }
-        }
+      for (cs_lnum_t isou = 0; isou < 3; isou++) {
+        pi[isou] = _pvar[ii][isou];
+        pj[isou] = _pvar[jj][isou];
+        pia[isou] = pvara[ii][isou];
+        pja[isou] = pvara[jj][isou];
       }
-    }
 
-    /* Unsteady */
+      cs_real_t bldfrp = (cs_real_t) ircflp;
+      /* Local limitation of the reconstruction */
+      if (df_limiter != nullptr && ircflp > 0)
+        bldfrp = cs::max(cs::min(df_limiter[ii], df_limiter[jj]), 0.);
+
+      /* Recompute II' and JJ' at this level */
+
+      visci[0][0] = viscce[ii][0];
+      visci[1][1] = viscce[ii][1];
+      visci[2][2] = viscce[ii][2];
+      visci[1][0] = viscce[ii][3];
+      visci[0][1] = viscce[ii][3];
+      visci[2][1] = viscce[ii][4];
+      visci[1][2] = viscce[ii][4];
+      visci[2][0] = viscce[ii][5];
+      visci[0][2] = viscce[ii][5];
+
+      /* IF.Ki.S / ||Ki.S||^2 */
+      cs_real_t fikdvi_s = weighf[face_id][0] * i_face_surf[face_id];
+
+      /* II" = IF + FI" */
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        diippf[i] =   i_face_cog[face_id][i]-cell_cen[ii][i]
+                    - fikdvi_s*(  visci[0][i]*i_face_u_normal[face_id][0]
+                                + visci[1][i]*i_face_u_normal[face_id][1]
+                                + visci[2][i]*i_face_u_normal[face_id][2]);
+      }
+
+      viscj[0][0] = viscce[jj][0];
+      viscj[1][1] = viscce[jj][1];
+      viscj[2][2] = viscce[jj][2];
+      viscj[1][0] = viscce[jj][3];
+      viscj[0][1] = viscce[jj][3];
+      viscj[2][1] = viscce[jj][4];
+      viscj[1][2] = viscce[jj][4];
+      viscj[2][0] = viscce[jj][5];
+      viscj[0][2] = viscce[jj][5];
+
+      /* FJ.Kj.S / ||Kj.S||^2 */
+      cs_real_t fjkdvi_s = weighf[face_id][1] * i_face_surf[face_id];
+
+      /* JJ" = JF + FJ" */
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        djjppf[i] =  i_face_cog[face_id][i]-cell_cen[jj][i]
+                    + fjkdvi_s*(  viscj[0][i]*i_face_u_normal[face_id][0]
+                                + viscj[1][i]*i_face_u_normal[face_id][1]
+                                + viscj[2][i]*i_face_u_normal[face_id][2]);
+      }
+
+      cs_real_t fluxi[3], fluxj[3];
+
+      for (cs_lnum_t isou = 0; isou < 3; isou++) {
+        /* p in I" and J" */
+        pipp[isou] = pi[isou] + bldfrp*(  grad[ii][isou][0]*diippf[0]
+                                        + grad[ii][isou][1]*diippf[1]
+                                        + grad[ii][isou][2]*diippf[2]);
+        pjpp[isou] = pj[isou] + bldfrp*(  grad[jj][isou][0]*djjppf[0]
+                                        + grad[jj][isou][1]*djjppf[1]
+                                        + grad[jj][isou][2]*djjppf[2]);
+
+        pir[isou] = pi[isou]/relaxp - (1.-relaxp)/relaxp * pia[isou];
+        pjr[isou] = pj[isou]/relaxp - (1.-relaxp)/relaxp * pja[isou];
+
+        /* pr in I" and J" */
+        pippr[isou] = pir[isou] + bldfrp*(  grad[ii][isou][0]*diippf[0]
+                                          + grad[ii][isou][1]*diippf[1]
+                                          + grad[ii][isou][2]*diippf[2]);
+        pjppr[isou] = pjr[isou] + bldfrp*(  grad[jj][isou][0]*djjppf[0]
+                                          + grad[jj][isou][1]*djjppf[1]
+                                          + grad[jj][isou][2]*djjppf[2]);
+
+        fluxi[isou] = - i_visc[face_id]*(pippr[isou] - pjpp[isou]);
+        fluxj[isou] =   i_visc[face_id]*(pipp[isou] - pjppr[isou]);
+      }
+
+      if (ii < n_cells)
+        cs_dispatch_sum<3>(rhs[ii], fluxi, i_sum_type);
+      if (jj < n_cells)
+        cs_dispatch_sum<3>(rhs[jj], fluxj, i_sum_type);
+    });
+
   }
+
+  /* Unsteady */
   else {
 
     ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
@@ -7263,73 +7217,71 @@ cs_anisotropic_right_diffusion_vector
     const cs_real_3_t  *cofafv = (const cs_real_3_t  *)bc_coeffs->af;
     const cs_real_33_t *cofbfv = (const cs_real_33_t *)bc_coeffs->bf;
 
-#   pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
-    for (int t_id = 0; t_id < n_b_threads; t_id++) {
-      for (cs_lnum_t face_id = b_group_index[t_id*2];
-           face_id < b_group_index[t_id*2 + 1];
-           face_id++) {
+    cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
 
-        cs_lnum_t ii = b_face_cells[face_id];
+    h_ctx.parallel_for_b_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
-        cs_real_t pi[3], pia[3], pir[3], pippr[3];
-        cs_real_t visci[3][3];
-        cs_real_t diippf[3];
+      cs_lnum_t ii = b_face_cells[face_id];
 
-        for (cs_lnum_t isou = 0; isou < 3; isou++) {
-          pi[isou] = pvar[ii][isou];
-          pia[isou] = pvara[ii][isou];
-          pir[isou] = pi[isou]/relaxp - (1.-relaxp)/relaxp*pia[isou];
-        }
+      cs_real_t pi[3], pia[3], pir[3], pippr[3];
+      cs_real_t visci[3][3];
+      cs_real_t diippf[3];
 
-        cs_real_t bldfrp = (cs_real_t) ircflb;
-        /* Local limitation of the reconstruction */
-        if (df_limiter != nullptr && ircflb > 0)
-          bldfrp = cs::max(df_limiter[ii], 0.);
-
-        /* Recompute II"
-           --------------*/
-
-        visci[0][0] = viscce[ii][0];
-        visci[1][1] = viscce[ii][1];
-        visci[2][2] = viscce[ii][2];
-        visci[1][0] = viscce[ii][3];
-        visci[0][1] = viscce[ii][3];
-        visci[2][1] = viscce[ii][4];
-        visci[1][2] = viscce[ii][4];
-        visci[2][0] = viscce[ii][5];
-        visci[0][2] = viscce[ii][5];
-
-        /* IF.Ki.S / ||Ki.S||^2 */
-        cs_real_t fikdvi_s = weighb[face_id] * b_face_surf[face_id];
-
-        /* II" = IF + FI" */
-        for (cs_lnum_t i = 0; i < 3; i++) {
-          diippf[i] = b_face_cog[face_id][i] - cell_cen[ii][i]
-                      - fikdvi_s*(  visci[0][i]*b_face_u_normal[face_id][0]
-                                  + visci[1][i]*b_face_u_normal[face_id][1]
-                                  + visci[2][i]*b_face_u_normal[face_id][2]);
-        }
-        for (cs_lnum_t isou = 0; isou < 3; isou++) {
-          pippr[isou] = pir[isou] + bldfrp*(  grad[ii][isou][0]*diippf[0]
-                                            + grad[ii][isou][1]*diippf[1]
-                                            + grad[ii][isou][2]*diippf[2]);
-        }
-        for (cs_lnum_t isou = 0; isou < 3; isou++) {
-          cs_real_t pfacd = inc*cofafv[face_id][isou];
-          for (cs_lnum_t jsou = 0; jsou < 3; jsou++) {
-            pfacd += cofbfv[face_id][isou][jsou]*pippr[jsou];
-          }
-
-          cs_real_t flux = b_visc[face_id]*pfacd;
-          rhs[ii][isou] -= flux;
-
-        } /* isou */
-
+      for (cs_lnum_t isou = 0; isou < 3; isou++) {
+        pi[isou] = pvar[ii][isou];
+        pia[isou] = pvara[ii][isou];
+        pir[isou] = pi[isou]/relaxp - (1.-relaxp)/relaxp*pia[isou];
       }
-    }
 
-    /* Unsteady */
+      cs_real_t bldfrp = (cs_real_t) ircflb;
+      /* Local limitation of the reconstruction */
+      if (df_limiter != nullptr && ircflb > 0)
+        bldfrp = cs::max(df_limiter[ii], 0.);
+
+      /* Recompute II"
+         --------------*/
+
+      visci[0][0] = viscce[ii][0];
+      visci[1][1] = viscce[ii][1];
+      visci[2][2] = viscce[ii][2];
+      visci[1][0] = viscce[ii][3];
+      visci[0][1] = viscce[ii][3];
+      visci[2][1] = viscce[ii][4];
+      visci[1][2] = viscce[ii][4];
+      visci[2][0] = viscce[ii][5];
+      visci[0][2] = viscce[ii][5];
+
+      /* IF.Ki.S / ||Ki.S||^2 */
+      cs_real_t fikdvi_s = weighb[face_id] * b_face_surf[face_id];
+
+      /* II" = IF + FI" */
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        diippf[i] = b_face_cog[face_id][i] - cell_cen[ii][i]
+                    - fikdvi_s*(  visci[0][i]*b_face_u_normal[face_id][0]
+                                + visci[1][i]*b_face_u_normal[face_id][1]
+                                + visci[2][i]*b_face_u_normal[face_id][2]);
+      }
+      for (cs_lnum_t isou = 0; isou < 3; isou++) {
+        pippr[isou] = pir[isou] + bldfrp*(  grad[ii][isou][0]*diippf[0]
+                                          + grad[ii][isou][1]*diippf[1]
+                                          + grad[ii][isou][2]*diippf[2]);
+      }
+
+      cs_real_t fluxi[3];
+      for (cs_lnum_t isou = 0; isou < 3; isou++) {
+        cs_real_t pfacd = inc*cofafv[face_id][isou];
+        for (cs_lnum_t jsou = 0; jsou < 3; jsou++) {
+          pfacd += cofbfv[face_id][isou][jsou]*pippr[jsou];
+        }
+        fluxi[isou] = -b_visc[face_id]*pfacd;
+      }
+
+      cs_dispatch_sum<3>(rhs[ii], fluxi, b_sum_type);
+
+    });
+
   }
+      /* Unsteady */
   else {
 
     /* Working diffusive flux value */
@@ -7437,6 +7389,9 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
 
   /* Dispatch */
   cs_dispatch_context ctx;
+  if (idtvar < 0)
+    ctx.set_use_gpu(false);  /* steady case not ported to GPU */
+
   cs_dispatch_sum_type_t i_sum_type = ctx.get_parallel_for_i_faces_sum_type(m);
   cs_dispatch_sum_type_t b_sum_type = ctx.get_parallel_for_b_faces_sum_type(m);
 
@@ -7466,9 +7421,8 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
   /* Handle cases where only the previous values (already synchronized)
      or current values are provided */
 
-  if (pvar != nullptr && m->halo != nullptr) {
+  if (pvar != nullptr)
     cs_halo_sync(m->halo, halo_type, false, pvar);
-  }
   if (pvara == nullptr)
     pvara = (const cs_real_6_t *)pvar;
 
@@ -7595,7 +7549,6 @@ cs_anisotropic_diffusion_tensor(int                          idtvar,
   if (idtvar < 0) {
 
     cs_host_context &h_ctx = static_cast<cs_host_context&>(ctx);
-    i_sum_type = CS_DISPATCH_SUM_SIMPLE;
 
     h_ctx.parallel_for_i_faces(m, [=] CS_F_HOST_DEVICE (cs_lnum_t  face_id) {
 
@@ -8032,8 +7985,7 @@ cs_face_diffusion_potential(const cs_field_t           *f,
 
   /* Handle parallelism and periodicity */
 
-  if (halo != nullptr)
-    cs_halo_sync(halo, halo_type, on_device, pvar);
+  cs_halo_sync(halo, halo_type, on_device, pvar);
 
   cs_real_3_t *grad = nullptr;
 
@@ -8683,8 +8635,7 @@ cs_diffusion_potential(const cs_field_t           *f,
 
   /* Handle parallelism and periodicity */
 
-  if (halo != nullptr)
-    cs_halo_sync(halo, halo_type, ctx.use_gpu(), pvar);
+  cs_halo_sync(halo, halo_type, ctx.use_gpu(), pvar);
 
   /* Update BC coeffs */
 

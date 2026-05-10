@@ -52,6 +52,7 @@
 #include "base/cs_math.h"
 #include "base/cs_mem.h"
 #include "base/cs_parall.h"
+#include "base/cs_reducers.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -203,6 +204,7 @@ _count_to_index_inplace_serial(cs_lnum_t  n,
 }
 
 namespace cs {
+namespace algorithm {
 
 /*=============================================================================
  * Public function definitions
@@ -215,8 +217,9 @@ namespace cs {
  * For n input elements, the array size should be size n+1, to account
  * for the past-the-end count.
  *
- * \param[in]       n     number of elements
- * \param[in, out]  a <-> count in, index out (size: n+1)
+ * \param[in]       ctx  associated dispatch context
+ * \param[in]       n    number of elements
+ * \param[in, out]  a    count in, index out (size: n+1)
  */
 /*--------------------------------------------------------------------------*/
 
@@ -247,6 +250,36 @@ count_to_index(cs_dispatch_context  &ctx,
   _count_to_index_inplace_serial(n, a);
 }
 
+/*--------------------------------------------------------------------------*/
+/*!
+ * \brief Sum a local counter.
+ *
+ * \param[in]  ctx      associated dispatch context
+ * \param[in]  n        number of elements
+ * \param[in]  counter  local counter
+ *
+ * \return sum of local counter values
+ */
+/*--------------------------------------------------------------------------*/
+
+cs_gnum_t
+count_reduce_sum(cs_dispatch_context  &ctx,
+                 cs_lnum_t             n,
+                 short                 counter[])
+{
+  cs_gnum_t count = 0;
+
+  ctx.parallel_for_reduce_sum
+    (n, count, [=] CS_F_HOST_DEVICE
+     (cs_lnum_t i, CS_DISPATCH_REDUCER_TYPE(cs_gnum_t) &sum) {
+      sum += (cs_gnum_t)counter[i];
+    });
+  ctx.wait();
+
+  return count;
+}
+
 /*----------------------------------------------------------------------------*/
 
+} // namespace algorithm
 } // namespace cs

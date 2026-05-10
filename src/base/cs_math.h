@@ -2264,7 +2264,7 @@ cs_nvec3(const cs_real_t    v[3],
  */
 /*----------------------------------------------------------------------------*/
 
-CS_F_HOST_DEVICE static inline void
+CS_F_HOST_DEVICE inline void
 cs_math_sym_44_factor_ldlt(cs_real_t  ldlt[10])
 {
   /* Factorization */

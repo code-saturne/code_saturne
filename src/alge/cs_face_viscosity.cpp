@@ -48,6 +48,7 @@
 #include "bft/bft_printf.h"
 
 #include "alge/cs_blas.h"
+#include "base/cs_algorithm.h"
 #include "base/cs_dispatch.h"
 #include "base/cs_ext_neighborhood.h"
 #include "base/cs_field.h"
@@ -792,11 +793,10 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
 
   /* Without porosity */
   if (porosi == nullptr) {
-
     c_poro_visc = c_visc;
+  }
 
   /* With porosity */
-  }
   else if (porosi != nullptr && porosf == nullptr) {
 
     CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode_device);
@@ -811,8 +811,9 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
 
     c_poro_visc = w2;
 
-  /* With tensorial porosity */
   }
+
+  /* With tensorial porosity */
   else if (porosi != nullptr && porosf != nullptr) {
 
     CS_MALLOC_HD(w2, n_cells_ext, cs_real_6_t, cs_alloc_mode_device);
@@ -829,9 +830,8 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
 
   }
 
-  /* ---> Periodicity and parallelism treatment */
-  if (halo != nullptr)
-    cs_halo_sync_r(halo, ctx.use_gpu(), c_poro_visc);
+  /* Periodicity and parallelism treatment */
+  cs_halo_sync_r(halo, ctx.use_gpu(), c_poro_visc);
 
   /* Always Harmonic mean */
   ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
@@ -904,7 +904,7 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
    * Section are different */
   if (cs_glob_porous_model == 3) {
      ctx.parallel_for(n_i_faces, [=] CS_F_HOST_DEVICE (cs_lnum_t f_id) {
-      i_visc[f_id] *= i_f_face_surf[f_id] / i_face_surf[f_id];
+       i_visc[f_id] *= i_f_face_surf[f_id] / i_face_surf[f_id];
      });
   }
 
@@ -986,18 +986,9 @@ cs_face_anisotropic_viscosity_scalar(const cs_mesh_t               *m,
   ctx_c.wait();
 
   if (iwarnp >= 3) {
-    cs_gnum_t n_i_clip = 0, n_b_clip = 0;
-
-#   pragma omp parallel for reduction(+:n_i_clip)
-    for (cs_lnum_t i = 0; i < n_i_faces; i++) {
-      n_i_clip += i_clip[i];
-    }
-#   pragma omp parallel for reduction(+:n_b_clip)
-    for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-      n_b_clip += b_clip[i];
-    }
-
-    cs_gnum_t count_clip[2] = {n_i_clip, n_b_clip};
+    cs_gnum_t count_clip[2];
+    count_clip[0] = cs::algorithm::count_reduce_sum(ctx, n_i_faces, i_clip);
+    count_clip[1] = cs::algorithm::count_reduce_sum(ctx_c, n_b_faces, b_clip);
     cs_parall_counter(count_clip, 2);
 
     bft_printf("Computing the face viscosity from the tensorial viscosity:\n"

@@ -48,6 +48,7 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
+#include "base/cs_array.h"
 #include "base/cs_base.h"
 #include "alge/cs_blas.h"
 #include "base/cs_dispatch.h"
@@ -737,17 +738,13 @@ static void
 _zero_x(const cs_matrix_t   *a,
         cs_real_t           *vx)
 {
-  cs_alloc_mode_t amode = cs_matrix_get_alloc_mode(a);
-
   const cs_lnum_t db_size = cs_matrix_get_diag_block_size(a);
   const cs_lnum_t _n_rows = cs_matrix_get_n_rows(a) * db_size;
 
   cs_dispatch_context ctx;
-  ctx.set_use_gpu(amode >= CS_ALLOC_HOST_DEVICE_SHARED);
+  ctx.set_use_gpu(cs_matrix_get_alloc_mode(a) >= CS_ALLOC_HOST_DEVICE_SHARED);
 
-  ctx.parallel_for(_n_rows, [=] CS_F_HOST_DEVICE (cs_lnum_t i) {
-    vx[i] = 0;
-  });
+  cs_arrays_set_zero<cs_real_t, 1>(ctx, _n_rows, vx);
   ctx.wait();
 }
 
@@ -844,7 +841,8 @@ _ensure_alloc_post(cs_sles_t          *sles,
     sles->post_info->n_rows = cs_matrix_get_n_rows(a);
     sles->post_info->block_size = diag_block_size;
 
-    CS_REALLOC(sles->post_info->row_residual, n_vals, cs_real_t);
+    CS_REALLOC_HD(sles->post_info->row_residual, n_vals, cs_real_t,
+                  cs_matrix_get_alloc_mode(a));
   }
 }
 
@@ -1675,9 +1673,10 @@ cs_sles_setup(cs_sles_t          *sles,
     const cs_lnum_t n_vals
       = cs_matrix_get_n_columns(a) * sles->post_info->block_size;
     cs_real_t *r = sles->post_info->row_residual;
-#   pragma omp parallel for if(n_vals > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < n_vals; i++)
-      r[i] = 0;
+    cs_dispatch_context ctx;
+    ctx.set_use_gpu(cs_matrix_get_alloc_mode(a) >= CS_ALLOC_HOST_DEVICE_SHARED);
+
+    cs_arrays_set_zero<cs_real_t, 1>(ctx, n_vals, r);
   }
 
   cs_timer_stats_switch(t_top_id);

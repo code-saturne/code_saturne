@@ -431,9 +431,11 @@ _cell_to_vertex_f_lsq(int  tr_ignore)
                             tr_ignore,
                             w);
 
-# pragma omp parallel for if(n_vertices > CS_THR_MIN)
-  for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
+  ctx.parallel_for(n_vertices, [=] CS_F_HOST_DEVICE (cs_lnum_t v_id) {
     cs_math_sym_44_factor_ldlt(w + v_id*10);
+  });
+
+  ctx.wait();
 }
 
 /*----------------------------------------------------------------------------*/

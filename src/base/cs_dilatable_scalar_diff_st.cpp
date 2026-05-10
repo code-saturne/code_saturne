@@ -67,7 +67,7 @@
 #include "base/cs_dilatable_scalar_diff_st.h"
 
 /*=============================================================================
- * Additional doxygen documentation
+ * Additional Doxygen documentation
  *============================================================================*/
 
 /*!
@@ -121,6 +121,8 @@ cs_dilatable_scalar_diff_st(int iterns)
   const int kscacp  = cs_field_key_id("is_temperature");
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
 
+  cs_dispatch_context ctx;
+
   /* Memory allocation */
   cs_array<cs_real_t> vistot(n_cells_ext, cs_alloc_mode);
 
@@ -134,6 +136,7 @@ cs_dilatable_scalar_diff_st(int iterns)
 
   /* Index for turbulent diffusivity */
   const cs_real_t *visct = CS_F_(mu_t)->val;
+
 
   /* Loop on scalars */
   for (int ii = 0; ii < n_fields; ii++) {
@@ -167,14 +170,14 @@ cs_dilatable_scalar_diff_st(int iterns)
     if (imucpp == 0)
       xcpp.set_to_val(1.0, n_cells);
     else if (imucpp == 1) { // TODO: humid air
-
       if (icp >= 0) {
         if (iscacp == 1)
           xcpp.copy_data(cpro_cp, n_cells);
         else if (iscacp == 2) {
-#         pragma omp parallel for if (n_cells > CS_THR_MIN)
-          for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+          ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
             xcpp[c_id] = cpro_cp[c_id] - rair;
+          });
+          ctx.wait();
         }
       }
       else {
@@ -186,29 +189,22 @@ cs_dilatable_scalar_diff_st(int iterns)
     }
 
     /* Handle parallelism and periodicity */
-    if (mesh->halo != nullptr) {
-      cs_halo_sync(mesh->halo, CS_HALO_STANDARD, xcpp);
-    }
+    cs_halo_sync(mesh->halo, CS_HALO_STANDARD, xcpp);
 
     cs_equation_param_t *eqp_sc = cs_field_get_equation_param(f_scal);
 
     /* Pointers to the mass fluxes */
-    const int iflmas
-      = cs_field_get_key_int(CS_F_(vel), cs_field_key_id("inner_mass_flux_id"));
+    const int iflmas = CS_F_(vel)->get_key_int("inner_mass_flux_id");
     const cs_real_t *i_mass_flux = cs_field_by_id(iflmas)->val;
 
-    const int iflmab
-      = cs_field_get_key_int(CS_F_(vel),
-                             cs_field_key_id("boundary_mass_flux_id"));
+    const int iflmab = CS_F_(vel)->get_key_int("boundary_mass_flux_id");
     const cs_real_t *b_mass_flux = cs_field_by_id(iflmab)->val;
 
     /* Diffusion velocity */
 
     /* Index for molecular diffusivity */
-    const int ifcvsl = cs_field_get_key_int(f_scal, kivisl);
-    cs_real_t *viscls = nullptr;
-    if (ifcvsl > -1)
-      viscls = cs_field_by_id(ifcvsl)->val;
+    const int ifcvsl = f_scal->get_key_int(kivisl);
+    cs_real_t *viscls = (ifcvsl > -1) ? cs_field_by_id(ifcvsl)->val : nullptr;
 
     if (eqp_sc->idiff >= 1) {
 
@@ -218,22 +214,25 @@ cs_dilatable_scalar_diff_st(int iterns)
          should allow negative K_t that is considered non physical here */
 
       const cs_real_t turb_schmidt = cs_field_get_key_double(f_scal, ksigmas);
+      int idifft = eqp_sc->idifft;
 
       if (ifcvsl < 0) {
         const cs_real_t visls_0 = cs_field_get_key_double(f_scal, kvisl0);
-#       pragma omp parallel for if (n_cells > CS_THR_MIN)
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           vistot[c_id] = visls_0
-            +   eqp_sc->idifft*xcpp[c_id]*cs::max(visct[c_id], 0.)
+            +   idifft*xcpp[c_id]*cs::max(visct[c_id], 0.)
               / turb_schmidt;
+        });
       }
       else {
-#       pragma omp parallel for if (n_cells > CS_THR_MIN)
-        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
           vistot[c_id] = viscls[c_id]
-            +   eqp_sc->idifft*xcpp[c_id]*cs::max(visct[c_id], 0.)
+            +   idifft*xcpp[c_id]*cs::max(visct[c_id], 0.)
               / turb_schmidt;
+        });
       }
+
+      ctx.wait();
 
       cs_face_viscosity(mesh,
                         fvq,
@@ -295,7 +294,6 @@ cs_dilatable_scalar_diff_st(int iterns)
                       nullptr,
                       cpro_tsscal);
   } /* end loop on fields */
-
 }
 
 /*---------------------------------------------------------------------------- */
