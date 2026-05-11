@@ -1156,6 +1156,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
       switch (mom_eqp->time_scheme) {
 
       case CS_TIME_SCHEME_STEADY:
+        ns->check_init = nullptr;
         if (nsp->nl_algo_type == CS_PARAM_NL_ALGO_NONE)
           ns->compute = cs_cdofb_monolithic_steady;
         else
