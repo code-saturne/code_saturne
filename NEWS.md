@@ -3,7 +3,13 @@ Master (not on release branches yet)
 
 ### User changes:
 
-- 1D wall thermal module : allow postprocessing of the thermal field using
+- 1D wall thermal module: Users can now use `cs_user_1d_wall_thermal_setup` to
+  define a 1D wall thermal condition using high-level API based on boundary
+  zones.
+  This update now sets `cs_user_1d_wall_thermal` as deprecated.
+  The function is not yet removed to allow update by users.
+
+- 1D wall thermal module: allow postprocessing of the thermal field using
   a user function (cs_user_1d_wall_thermal_setup). Currently, the output
   is linked to the default writer, but future work will provide access
   through the GUI for these parameters.
