@@ -59,6 +59,8 @@ Release 9.0.3 (unreleased)
   the computation stop is imposed by either another instance (coupling) or
   the wall time limit test.
 
+- Notebook: fixes related to notebook variables properties (restart and logging)
+
 ### User changes:
 
 - Increase maximum number of scalars (nscamx) to 1500.
