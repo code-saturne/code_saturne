@@ -2503,7 +2503,10 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
                      double            vsum[],
                      double            wsum[])
 {
-  assert(dim <= 10);
+  // Maximal allowed dimension (limited by GPU shared memory)
+  static constexpr int _max_dim = 10;
+
+  assert(dim <= _max_dim);
 
   for (cs_lnum_t j = 0; j < dim; j++) {
     vmin[j] = HUGE_VAL;
@@ -2526,8 +2529,8 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
 
     const int dim2 = dim*2;
 
-    cs_real_t lmin[10], lmax[10];
-    double lsum[20];
+    cs_real_t lmin[_max_dim], lmax[_max_dim];
+    double lsum[2*_max_dim];
 
     for (cs_lnum_t j = 0; j < dim; j++) {
       lmin[j] = HUGE_VAL;
@@ -2538,7 +2541,7 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
 
     for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
 
-      double s[20];
+      double s[2*_max_dim];
       for (cs_lnum_t j = 0; j < dim2; j++)
         s[j] = 0.;
 
@@ -2552,7 +2555,7 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
           cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
           if (end_id > _n)
             end_id = _n;
-          double c[20];
+          double c[2*_max_dim];
           for (cs_lnum_t j = 0; j < dim2; j++)
             c[j] = 0.;
           for (cs_lnum_t i = start_id; i < end_id; i++) {
@@ -2580,7 +2583,7 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
           cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
           if (end_id > _n)
             end_id = _n;
-          double c[20];
+          double c[2*_max_dim];
           for (cs_lnum_t j = 0; j < dim2; j++)
             c[j] = 0.;
           for (cs_lnum_t i = start_id; i < end_id; i++) {
@@ -2608,7 +2611,7 @@ _cs_real_sstats_nd_w(cs_lnum_t         n,
           cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
           if (end_id > _n)
             end_id = _n;
-          double c[20];
+          double c[2*_max_dim];
           for (cs_lnum_t j = 0; j < dim2; j++)
             c[j] = 0.;
           for (cs_lnum_t li = start_id; li < end_id; li++) {
