@@ -56,6 +56,77 @@ cs_user_1d_wall_thermal_setup()
   /*! [th1d_activate_postprocessing] */
   cs_1d_wall_thermal_post_set_status(true);
   /*! [th1d_activate_postprocessing] */
+
+  /*! [th1d_activate_restart] */
+  cs_1d_wall_thermal_t *wall_thermal = cs_get_glob_1d_wall_thermal();
+
+  wall_thermal->use_restart = cs_restart_present() ? true : false;
+  /*! [th1d_activate_restart] */
+
+  /*! [th1d_add_one_layer_zone] */
+  // Get pointer to boundary zone to couple
+  const cs_zone_t *zone = cs_boundary_zone_by_name("BC_1");
+
+  // Define a one layer 1D wall
+  cs_1d_wall_thermal_add_zone(zone, 1);
+  /*! [th1d_add_one_layer_zone] */
+
+  /*! [th1d_define_layer_mesh] */
+  // Define layer's mesh properties
+  {
+    const int layer_id = 0; /* layer id */
+    const int n_pts = 8;    /* number of points in 1D mesh */
+    const cs_real_t thickness = 0.01144; /* layer's thickness */
+    const cs_real_t geom_factor = 1.;    /* mesh geometrical factor */
+    cs_1d_wall_thermal_zone_define_layer_mesh(zone,
+                                              layer_id,
+                                              n_pts,
+                                              thickness,
+                                              geom_factor);
+  }
+  /*! [th1d_define_layer_mesh] */
+
+
+  /*! [th1d_define_layer_properties] */
+  {
+    // Define layer's initial Temperature and physical properties
+    const int layer_id = 0; /* layer id */
+    const cs_real_t T_ini = 20.; /* Initial temperature in 1D wall */
+    const cs_real_t lambda = 0.16; /* thermal conductivity */
+    const cs_real_t rho = 900.; /* density */
+    const cs_real_t Cp = 790.;  /* heat capacity */
+    cs_1d_wall_thermal_zone_define_layer_properties_const(zone,
+                                                          layer_id,
+                                                          T_ini,
+                                                          lambda, rho, Cp);
+  }
+  /*! [th1d_define_layer_properties] */
+
+  /*! [th1d_define_dirichlet_bc] */
+  {
+    // Define layer's Dirichlet boundary condition
+    const cs_real_t Text = 70.; /* Exterior temperature */
+    cs_1d_wall_thermal_zone_define_dirichlet_bc_const(zone, Text);
+  }
+  /*! [th1d_define_dirichlet_bc] */
+
+  /*! [th1d_define_neumann_bc] */
+  {
+    // Define layer's Neumann boundary condition
+    const cs_real_t phi_ext = 1000.; /* Exterior flux */
+    cs_1d_wall_thermal_zone_define_neumann_bc_const(zone, phi_ext);
+  }
+  /*! [th1d_define_neumann_bc] */
+
+  /*! [th1d_define_robin_bc] */
+  {
+    // Define layer's Robin boundary condition
+    const cs_real_t Text = 70.; /* Exterior temperature */
+    const cs_real_t hext = 10.; /* Exterior exchange coefficient */
+    cs_1d_wall_thermal_zone_define_robin_bc_const(zone, Text, hext);
+  }
+  /*! [th1d_define_robin_bc] */
+
 }
 
 /*----------------------------------------------------------------------------*/

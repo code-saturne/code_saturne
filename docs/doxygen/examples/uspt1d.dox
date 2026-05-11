@@ -31,12 +31,37 @@
   parameters for the 1D-wall thermal module, and will soon replace the
   \ref cs_user_1d_wall_thermal subroutine.
 
-  Currently it allows activating postprocessing for the module thermal field:
+  Postprocessing for the module thermal field can be activated as follows:
 
   \snippet cs_user_1d_wall_thermal.cpp th1d_activate_postprocessing
 
-  The \ref cs_user_1d_wall_thermal subroutine is used to set the 1D-wall thermal
-  module parameters.
+  To add a 1D wall thermal condition to a given boundary zone, one first
+  needs to define in \ref cs_user_1d_wall_thermal_setup the different
+  parameters related to the zone.
+
+  First the zone to couple and number of layers in the 1D mesh:
+
+  \snippet cs_user_1d_wall_thermal.cpp th1d_add_one_layer_zone
+
+  Define the mesh parameters for each layer:
+
+  \snippet cs_user_1d_wall_thermal.cpp th1d_define_layer_mesh
+
+  Define layer's properties:
+
+  \snippet cs_user_1d_wall_thermal.cpp th1d_define_layer_properties
+
+  And finally define a boundary condition, which is either a Dirichlet,
+  Neumann or a Robin boundary condition:
+
+  \snippet cs_user_1d_wall_thermal.cpp th1d_define_dirichlet_bc
+
+  \snippet cs_user_1d_wall_thermal.cpp th1d_define_neumann_bc
+
+  \snippet cs_user_1d_wall_thermal.cpp th1d_define_robin_bc
+
+  The \ref cs_user_1d_wall_thermal subroutine, which is now deprecated,
+  is used to set the 1D-wall thermal module parameters.
 
   This function is called 3 times:
   - A first call (`iappel == 1`) to count faces in the selected zones.
