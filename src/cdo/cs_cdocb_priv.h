@@ -1,5 +1,5 @@
-#ifndef __CS_CDOCB_PRIV_H__
-#define __CS_CDOCB_PRIV_H__
+#ifndef CS_CDOCB_PRIV_H
+#define CS_CDOCB_PRIV_H
 
 /*============================================================================
  * Structure and functions common to all CDO cell-based schemes but not public
@@ -29,12 +29,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "alge/cs_saddle_solver.h"
 #include "cdo/cs_cdo_assembly.h"
 #include "cdo/cs_equation_bc.h"
 #include "cdo/cs_equation_builder.h"
 #include "cdo/cs_equation_param.h"
 #include "cdo/cs_hodge.h"
-#include "alge/cs_saddle_solver.h"
 
 /*============================================================================
  * Macro definitions
@@ -204,4 +204,4 @@ struct _cs_cdocb_t {
 void
 cs_cdocb_init_default_param(cs_equation_param_t  *eqp);
 
-#endif /* __CS_CDOCB_PRIV_H__ */
+#endif /* CS_CDOCB_PRIV_H */

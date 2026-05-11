@@ -1,5 +1,5 @@
-#ifndef __CS_CDO_DIFFUSION_H__
-#define __CS_CDO_DIFFUSION_H__
+#ifndef CS_CDO_DIFFUSION_H
+#define CS_CDO_DIFFUSION_H
 
 /*============================================================================
  * Build discrete stiffness matrices and handled boundary conditions for the
@@ -885,4 +885,4 @@ void cs_macfb_diffusion(const cs_cell_mesh_t     *cm,
                         cs_sdm_t                 *mat,
                         cs_real_t                *rhs);
 
-#endif /* __CS_CDO_DIFFUSION_H__ */
+#endif /* CS_CDO_DIFFUSION_H */

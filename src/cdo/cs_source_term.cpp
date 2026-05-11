@@ -28,27 +28,26 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <float.h>
+#include <cassert>
+#include <cfloat>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_log.h"
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
-
+#include "base/cs_volume_zone.h"
 #include "cdo/cs_basis_func.h"
 #include "cdo/cs_evaluate.h"
 #include "cdo/cs_hho_builder.h"
 #include "cdo/cs_hodge.h"
-#include "base/cs_log.h"
 #include "cdo/cs_macfb_builder.h"
-#include "base/cs_math.h"
 #include "cdo/cs_scheme_geometry.h"
-#include "base/cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

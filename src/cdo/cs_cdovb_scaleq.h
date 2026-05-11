@@ -1,5 +1,5 @@
-#ifndef __CS_CDOVB_SCALEQ_H__
-#define __CS_CDOVB_SCALEQ_H__
+#ifndef CS_CDOVB_SCALEQ_H
+#define CS_CDOVB_SCALEQ_H
 
 /*============================================================================
  * Build an algebraic CDO vertex-based system for unsteady convection diffusion
@@ -30,18 +30,18 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "alge/cs_matrix.h"
 #include "base/cs_base.h"
+#include "base/cs_field.h"
+#include "base/cs_time_step.h"
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_local.h"
 #include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_cdo_toolbox.h"
 #include "cdo/cs_equation_builder.h"
 #include "cdo/cs_equation_param.h"
-#include "base/cs_field.h"
-#include "alge/cs_matrix.h"
-#include "mesh/cs_mesh.h"
 #include "cdo/cs_source_term.h"
-#include "base/cs_time_step.h"
+#include "mesh/cs_mesh.h"
 
 /*============================================================================
  * Macro definitions
@@ -647,4 +647,4 @@ cs_cdovb_scaleq_extra_post(const cs_equation_param_t  *eqp,
                            cs_equation_builder_t      *eqb,
                            void                       *context);
 
-#endif /* __CS_CDOVB_SCALEQ_H__ */
+#endif /* CS_CDOVB_SCALEQ_H */

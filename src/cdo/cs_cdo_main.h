@@ -1,5 +1,5 @@
-#ifndef __CS_CDO_MAIN_H__
-#define __CS_CDO_MAIN_H__
+#ifndef CS_CDO_MAIN_H
+#define CS_CDO_MAIN_H
 
 /*============================================================================
  * Functions for solving equations with CDO discretizations
@@ -137,4 +137,4 @@ cs_cdo_is_initialized(bool  *setup,
 void
 cs_cdo_main(cs_domain_t   *domain);
 
-#endif /* __CS_CDO_MAIN_H__ */
+#endif /* CS_CDO_MAIN_H */

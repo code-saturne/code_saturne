@@ -1,5 +1,5 @@
-#ifndef __CS_MACFB_MONOLITHIC_H__
-#define __CS_MACFB_MONOLITHIC_H__
+#ifndef CS_MACFB_MONOLITHIC_H
+#define CS_MACFB_MONOLITHIC_H
 
 /*============================================================================
  * Build an algebraic MAC face-based system for the Navier-Stokes equations
@@ -40,13 +40,12 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_base.h"
+#include "base/cs_time_step.h"
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_equation.h"
-#include "mesh/cs_mesh.h"
 #include "cdo/cs_navsto_param.h"
-#include "base/cs_time_step.h"
-
+#include "mesh/cs_mesh.h"
 
 /*============================================================================
  * Macro definitions
@@ -207,4 +206,4 @@ void cs_macfb_monolithic_nl(const cs_mesh_t         *mesh,
                             const cs_navsto_param_t *nsp,
                             void                    *scheme_context);
 
-#endif /* __CS_MACFB_MONOLITHIC_H__ */
+#endif /* CS_MACFB_MONOLITHIC_H */

@@ -32,7 +32,7 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
+#include <cassert>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -41,14 +41,14 @@
 #include "base/cs_mem.h"
 #include "bft/bft_error.h"
 
+#include "alge/cs_matrix_assembler.h"
+#include "alge/cs_matrix_assembler_priv.h"
+#include "alge/cs_matrix_priv.h"
 #include "base/cs_defs.h"
 #include "base/cs_log.h"
-#include "alge/cs_matrix_priv.h"
-#include "alge/cs_matrix_assembler_priv.h"
-#include "alge/cs_matrix_assembler.h"
-#include "cdo/cs_param_cdo.h"
 #include "base/cs_parall.h"
 #include "base/cs_sort.h"
+#include "cdo/cs_param_cdo.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cdo/cs_dbg.h"

@@ -1,5 +1,5 @@
-#ifndef __CS_QUADRATURE_H__
-#define __CS_QUADRATURE_H__
+#ifndef CS_QUADRATURE_H
+#define CS_QUADRATURE_H
 
 /*============================================================================
  * Functions to handle quadrature rules
@@ -29,13 +29,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft/bft_error.h"
-
 #include "base/cs_base.h"
 #include "base/cs_defs.h"
-#include "cdo/cs_flag.h"
 #include "base/cs_math.h"
 #include "base/cs_param_types.h"
+#include "bft/bft_error.h"
+#include "cdo/cs_flag.h"
 
 /*============================================================================
  * Macro definitions
@@ -440,18 +439,12 @@ cs_quadrature_tria_1pt(const cs_real_3_t   v1,
                        cs_real_3_t         gpts[],
                        double             *w)
 {
-#ifdef __cplusplus
   constexpr cs_real_t c_1ov3 = 1./3.;
+
   gpts[0][0] = c_1ov3 * (v1[0] + v2[0] + v3[0]);
   gpts[0][1] = c_1ov3 * (v1[1] + v2[1] + v3[1]);
   gpts[0][2] = c_1ov3 * (v1[2] + v2[2] + v3[2]);
-  w[0] = area;
-#else
-  gpts[0][0] = cs_math_1ov3 * (v1[0] + v2[0] + v3[0]);
-  gpts[0][1] = cs_math_1ov3 * (v1[1] + v2[1] + v3[1]);
-  gpts[0][2] = cs_math_1ov3 * (v1[2] + v2[2] + v3[2]);
-  w[0] = area;
-#endif
+  w[0]       = area;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -893,16 +886,11 @@ cs_quadrature_tria_1pt_scal(double                 tcur,
   double  evaluation;
 
   /* Copied from cs_quadrature_1pt */
-#ifdef __cplusplus
   constexpr cs_real_t c_1ov3 = 1./3.;
+
   xg[0] = c_1ov3 * (v1[0] + v2[0] + v3[0]);
   xg[1] = c_1ov3 * (v1[1] + v2[1] + v3[1]);
   xg[2] = c_1ov3 * (v1[2] + v2[2] + v3[2]);
-#else
-  xg[0] = cs_math_1ov3 * (v1[0] + v2[0] + v3[0]);
-  xg[1] = cs_math_1ov3 * (v1[1] + v2[1] + v3[1]);
-  xg[2] = cs_math_1ov3 * (v1[2] + v2[2] + v3[2]);
-#endif
 
   ana(tcur, 1, NULL, xg, false, input, &evaluation);
 
@@ -1060,16 +1048,11 @@ cs_quadrature_tria_1pt_vect(double                 tcur,
   double evaluation[3];
 
   /* Copied from cs_quadrature_1pt */
-#ifdef __cplusplus
   constexpr cs_real_t c_1ov3 = 1./3.;
+
   xg[0] = c_1ov3 * (v1[0] + v2[0] + v3[0]);
   xg[1] = c_1ov3 * (v1[1] + v2[1] + v3[1]);
   xg[2] = c_1ov3 * (v1[2] + v2[2] + v3[2]);
-#else
-  xg[0] = cs_math_1ov3 * (v1[0] + v2[0] + v3[0]);
-  xg[1] = cs_math_1ov3 * (v1[1] + v2[1] + v3[1]);
-  xg[2] = cs_math_1ov3 * (v1[2] + v2[2] + v3[2]);
-#endif
 
   ana(tcur, 1, NULL, xg, false, input, evaluation);
 
@@ -1235,16 +1218,11 @@ cs_quadrature_tria_1pt_tens(double                 tcur,
   double evaluation[9];
 
   /* Copied from cs_quadrature_1pt */
-#ifdef __cplusplus
   constexpr cs_real_t c_1ov3 = 1./3.;
+
   xg[0] = c_1ov3 * (v1[0] + v2[0] + v3[0]);
   xg[1] = c_1ov3 * (v1[1] + v2[1] + v3[1]);
   xg[2] = c_1ov3 * (v1[2] + v2[2] + v3[2]);
-#else
-  xg[0] = cs_math_1ov3 * (v1[0] + v2[0] + v3[0]);
-  xg[1] = cs_math_1ov3 * (v1[1] + v2[1] + v3[1]);
-  xg[2] = cs_math_1ov3 * (v1[2] + v2[2] + v3[2]);
-#endif
 
   ana(tcur, 1, NULL, xg, false, input, evaluation);
 
@@ -2193,4 +2171,4 @@ cs_eflag_t
 cs_quadrature_get_flag(const cs_quadrature_type_t  qtype,
                        const cs_flag_t             loc);
 
-#endif /* __CS_QUADRATURE_H__ */
+#endif /* CS_QUADRATURE_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_WALLDISTANCE_H__
-#define __CS_WALLDISTANCE_H__
+#ifndef CS_WALLDISTANCE_H
+#define CS_WALLDISTANCE_H
 
 /*============================================================================
  * Compute the wall distance using the CDO framework
@@ -90,4 +90,4 @@ cs_walldistance_compute(const cs_mesh_t              *mesh,
                         const cs_cdo_connect_t       *connect,
                         const cs_cdo_quantities_t    *cdoq);
 
-#endif /* __CS_WALLDISTANCE_H__ */
+#endif /* CS_WALLDISTANCE_H */

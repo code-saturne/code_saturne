@@ -1,5 +1,5 @@
-#ifndef __CS_CDOFB_NAVSTO_H__
-#define __CS_CDOFB_NAVSTO_H__
+#ifndef CS_CDOFB_NAVSTO_H
+#define CS_CDOFB_NAVSTO_H
 
 /*============================================================================
  * Functions shared among all face-based schemes for the discretization of the
@@ -38,18 +38,18 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_base.h"
-#include "cdo/cs_cdo_connect.h"
-#include "cdo/cs_cdo_quantities.h"
-#include "base/cs_field.h"
-#include "cdo/cs_iter_algo.h"
-#include "base/cs_math.h"
 #include "alge/cs_matrix.h"
-#include "mesh/cs_mesh.h"
-#include "cdo/cs_navsto_param.h"
+#include "base/cs_base.h"
+#include "base/cs_field.h"
+#include "base/cs_math.h"
 #include "base/cs_time_plot.h"
 #include "base/cs_time_step.h"
+#include "cdo/cs_cdo_connect.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "cdo/cs_iter_algo.h"
+#include "cdo/cs_navsto_param.h"
 #include "cdo/cs_sdm.h"
+#include "mesh/cs_mesh.h"
 
 /*============================================================================
  * Macro definitions
@@ -784,4 +784,4 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
                         const cs_boundary_type_t    *bf_type,
                         const cs_real_t             *pr_c);
 
-#endif /* __CS_CDOFB_NAVSTO_H__ */
+#endif /* CS_CDOFB_NAVSTO_H */

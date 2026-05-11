@@ -1,5 +1,5 @@
-#ifndef __CS_EQUATION_PARAM_H__
-#define __CS_EQUATION_PARAM_H__
+#ifndef CS_EQUATION_PARAM_H
+#define CS_EQUATION_PARAM_H
 
 /*============================================================================
  * Functions related to the structure cs_equation_param_t storing the settings
@@ -32,6 +32,8 @@
 
 #include "alge/cs_param_saddle.h"
 #include "alge/cs_param_sles.h"
+#include "base/cs_runge_kutta_integrator_priv.h"
+#include "base/cs_time_control.h"
 #include "cdo/cs_advection_field.h"
 #include "cdo/cs_enforcement.h"
 #include "cdo/cs_hodge.h"
@@ -39,12 +41,6 @@
 #include "cdo/cs_param_cdo.h"
 #include "cdo/cs_property.h"
 #include "cdo/cs_xdef.h"
-#include "base/cs_runge_kutta_integrator_priv.h"
-#include "base/cs_time_control.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -2635,6 +2631,4 @@ cs_equation_time_control_add_default(cs_equation_param_t *eqp);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_EQUATION_PARAM_H__ */
+#endif /* CS_EQUATION_PARAM_H */

@@ -32,16 +32,12 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <float.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#if defined(HAVE_OPENMP)
-#include <omp.h>
-#endif
+#include <cassert>
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -49,7 +45,11 @@
 
 #include "alge/cs_blas.h"
 #include "base/cs_array.h"
+#include "base/cs_log.h"
 #include "base/cs_mem.h"
+#include "base/cs_parall.h"
+#include "base/cs_post.h"
+#include "base/cs_timer.h"
 #include "cdo/cs_cdo_bc.h"
 #include "cdo/cs_cdo_blas.h"
 #include "cdo/cs_cdofb_monolithic_sles.h"
@@ -57,13 +57,6 @@
 #include "cdo/cs_cdofb_priv.h"
 #include "cdo/cs_cdofb_scaleq.h"
 #include "cdo/cs_cdofb_vecteq.h"
-#if defined(DEBUG) && !defined(NDEBUG)
-#include "cdo/cs_dbg.h"
-#endif
-#include "base/cs_log.h"
-#include "base/cs_parall.h"
-#include "base/cs_post.h"
-#include "base/cs_timer.h"
 #include "cdo/cs_equation_bc.h"
 #include "cdo/cs_equation_builder.h"
 #include "cdo/cs_equation_priv.h"
@@ -73,6 +66,10 @@
 #include "cdo/cs_solid_selection.h"
 #include "cdo/cs_source_term.h"
 #include "cdo/cs_static_condensation.h"
+
+#if defined(DEBUG) && !defined(NDEBUG)
+#include "cdo/cs_dbg.h"
+#endif
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

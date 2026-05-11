@@ -31,11 +31,11 @@
  *----------------------------------------------------------------------------*/
 
 #include <array>
-#include <assert.h>
-#include <float.h>
-#include <limits.h>
-#include <math.h>
-#include <string.h>
+#include <cassert>
+#include <cfloat>
+#include <climits>
+#include <cmath>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -1691,8 +1691,6 @@ cs_cdo_quantities_build(const cs_mesh_t            *m,
   return cdoq;
 }
 
-#ifdef __cplusplus
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Check that global quantities are consistently computed
@@ -1859,7 +1857,7 @@ cs_cdo_quantities_t::check(int                         verb,
   cs_cdo_quantities_time += time_count.nsec;
 }
 
-#endif
+
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1938,7 +1936,7 @@ cs_cdo_quantities_free_cell_vol(cs_cdo_quantities_t *cdoq)
     CS_FREE(cdoq->cell_vol);
 }
 
-#ifdef __cplusplus
+
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2079,7 +2077,7 @@ cs_cdo_quantities_t::dump() const
   CS_FREE(fname);
 }
 
-#endif
+
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2541,7 +2539,7 @@ cs_cdo_quantities_compute_b_wvf(const cs_cdo_connect_t       *connect,
   for (cs_lnum_t  v = 0; v < n_vf; v++) wvf[v] *= coef;
 }
 
-#ifdef __cplusplus
+
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2690,7 +2688,6 @@ cs_cdo_quantities_t::get_dedge_nvec(cs_lnum_t shift) const
   return nv;
 }
 
-#endif
 
 /*----------------------------------------------------------------------------*/
 /*!

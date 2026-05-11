@@ -1,5 +1,5 @@
-#ifndef __CS_EQUATION_SYSTEM_H__
-#define __CS_EQUATION_SYSTEM_H__
+#ifndef CS_EQUATION_SYSTEM_H
+#define CS_EQUATION_SYSTEM_H
 
 /*============================================================================
  * Functions to handle a set of coupled equations hinging on the cs_equation_t
@@ -30,10 +30,10 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_param_types.h"
 #include "cdo/cs_equation.h"
 #include "cdo/cs_equation_priv.h"
 #include "cdo/cs_equation_system_param.h"
-#include "base/cs_param_types.h"
 
 /*============================================================================
  * Macro definitions
@@ -413,4 +413,4 @@ cs_equation_system_assign_param(int                       row_id,
                                 cs_equation_param_t      *eqp,
                                 cs_equation_system_t     *eqsys);
 
-#endif /* __CS_EQUATION_SYSTEM_H__ */
+#endif /* CS_EQUATION_SYSTEM_H */

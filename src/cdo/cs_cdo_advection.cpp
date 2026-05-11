@@ -31,11 +31,11 @@
  *----------------------------------------------------------------------------*/
 
 #include <algorithm>
-#include <assert.h>
+#include <cassert>
 #include <cmath>
-#include <float.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cfloat>
+#include <cstdio>
+#include <cstdlib>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -49,8 +49,8 @@
 #include "cdo/cs_scheme_geometry.h"
 
 #if defined(DEBUG) && !defined(NDEBUG) /* For debugging purpose */
-#include "cdo/cs_dbg.h"
 #include "base/cs_log.h"
+#include "cdo/cs_dbg.h"
 #endif
 
 /*----------------------------------------------------------------------------

@@ -1,5 +1,5 @@
-#ifndef __CS_XDEF_CW_EVAL_H__
-#define __CS_XDEF_CW_EVAL_H__
+#ifndef CS_XDEF_CW_EVAL_H
+#define CS_XDEF_CW_EVAL_H
 
 /*============================================================================
  * Manage the (generic) evaluation of extended definitions
@@ -25,8 +25,6 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 */
 
-/*----------------------------------------------------------------------------*/
-
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
@@ -36,7 +34,6 @@
 #include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_quadrature.h"
 #include "cdo/cs_xdef.h"
-
 #include "mesh/cs_mesh.h"
 
 /*=============================================================================
@@ -1145,8 +1142,6 @@ cs_xdef_cw_eval_vect_avg_reduction_by_analytic(const cs_cell_mesh_t    *cm,
 
 #undef _dp3
 
-#if defined(__cplusplus)
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Function pointer for evaluating the normal flux of a quantity
@@ -1178,6 +1173,4 @@ cs_xdef_cw_eval_flux_by_tensor_val(const cs_cell_mesh_t     *cm,
     eval[3*f+k] *= fq.meas;
 }
 
-#endif // defined(__cplusplus)
-
-#endif /* __CS_XDEF_CW_EVAL_H__ */
+#endif /* CS_XDEF_CW_EVAL_H */

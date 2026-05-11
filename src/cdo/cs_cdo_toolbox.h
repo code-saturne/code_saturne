@@ -1,5 +1,5 @@
-#ifndef __CS_CDO_TOOLBOX_H__
-#define __CS_CDO_TOOLBOX_H__
+#ifndef CS_CDO_TOOLBOX_H
+#define CS_CDO_TOOLBOX_H
 
 /*============================================================================
  * Set of toolbox functions: shared buffer, balance, synchronization
@@ -261,4 +261,4 @@ cs_cdo_sync_vertex_mean_values(int                         dim,
                                int                        *counter,
                                cs_real_t                  *values);
 
-#endif /* __CS_CDO_TOOLBOX_H__ */
+#endif /* CS_CDO_TOOLBOX_H */

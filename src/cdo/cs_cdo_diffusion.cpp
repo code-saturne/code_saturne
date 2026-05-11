@@ -31,10 +31,10 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <math.h>
+#include <cassert>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -42,9 +42,9 @@
 
 #include "base/cs_mem.h"
 
-#include "cdo/cs_hodge.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "cdo/cs_hodge.h"
 #include "cdo/cs_property.h"
 #include "cdo/cs_reco.h"
 #include "cdo/cs_reco_cw.h"

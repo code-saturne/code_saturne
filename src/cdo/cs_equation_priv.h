@@ -1,5 +1,5 @@
-#ifndef __CS_EQUATION_PRIV_H__
-#define __CS_EQUATION_PRIV_H__
+#ifndef CS_EQUATION_PRIV_H
+#define CS_EQUATION_PRIV_H
 
 /*============================================================================
  * Functions to handle cs_equation_t structure and its related structures
@@ -29,11 +29,11 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cdo/cs_cdo_toolbox.h"
-#include "cdo/cs_equation_param.h"
-#include "cdo/cs_equation_builder.h"
 #include "base/cs_field.h"
 #include "base/cs_restart.h"
+#include "cdo/cs_cdo_toolbox.h"
+#include "cdo/cs_equation_builder.h"
+#include "cdo/cs_equation_param.h"
 
 /*============================================================================
  * Macro definitions
@@ -465,4 +465,4 @@ struct _cs_equation_t {
  * Public function prototypes
  *============================================================================*/
 
-#endif /* __CS_EQUATION_PRIV_H__ */
+#endif /* CS_EQUATION_PRIV_H */

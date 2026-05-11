@@ -1,5 +1,5 @@
-#ifndef __CS_ITER_ALGO_H__
-#define __CS_ITER_ALGO_H__
+#ifndef CS_ITER_ALGO_H
+#define CS_ITER_ALGO_H
 
 /*============================================================================
  * Set of functions to manage high-level iterative algorithms
@@ -29,16 +29,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cdo/cs_cdo_blas.h"
-#include "base/cs_math.h"
 #include "alge/cs_param_sles.h"
-#include "base/cs_param_types.h"
-#include "cdo/cs_sdm.h"
 #include "alge/cs_sles.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
+#include "base/cs_math.h"
+#include "base/cs_param_types.h"
+#include "cdo/cs_cdo_blas.h"
+#include "cdo/cs_sdm.h"
 
 /*============================================================================
  * Macro definitions
@@ -668,6 +664,4 @@ cs_iter_algo_check_warning(const char            *func_name,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_ITER_ALGO_H__ */
+#endif /* CS_ITER_ALGO_H */

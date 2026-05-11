@@ -1,5 +1,5 @@
-#ifndef __CS_SOLID_CELLS_H__
-#define __CS_SOLID_CELLS_H__
+#ifndef CS_SOLID_CELLS_H
+#define CS_SOLID_CELLS_H
 
 /*============================================================================
  * Manage the list of solid cells and associated helper functions
@@ -88,4 +88,4 @@ cs_solid_selection_sync(const cs_cdo_connect_t *connect);
 void
 cs_solid_selection_free(void);
 
-#endif /* __CS_SOLID_CELLS_H__ */
+#endif /* CS_SOLID_CELLS_H */

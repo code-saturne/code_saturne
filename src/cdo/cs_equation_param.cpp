@@ -31,10 +31,10 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <ctype.h>  /* tolower() function */
-#include <stdlib.h>
-#include <string.h>
+#include <cassert>
+#include <cctype> /* tolower() function */
+#include <cstdlib>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -44,8 +44,8 @@
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
 
-#include "alge/cs_saddle_solver_setup.h"
 #include "alge/cs_param_sles_setup.h"
+#include "alge/cs_saddle_solver_setup.h"
 #include "base/cs_boundary_zone.h"
 #include "base/cs_log.h"
 #include "base/cs_volume_zone.h"

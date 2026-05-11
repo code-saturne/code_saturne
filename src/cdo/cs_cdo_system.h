@@ -1,5 +1,5 @@
-#ifndef __CS_CDO_SYSTEM_H__
-#define __CS_CDO_SYSTEM_H__
+#ifndef CS_CDO_SYSTEM_H
+#define CS_CDO_SYSTEM_H
 
 /*============================================================================
  * Structure and functions used to manipulate elementary structures related to
@@ -40,12 +40,12 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cdo/cs_cdo_assembly.h"
-#include "cdo/cs_cdo_connect.h"
-#include "base/cs_param_types.h"
 #include "alge/cs_matrix.h"
 #include "alge/cs_matrix_assembler.h"
+#include "base/cs_param_types.h"
 #include "base/cs_range_set.h"
+#include "cdo/cs_cdo_assembly.h"
+#include "cdo/cs_cdo_connect.h"
 
 /*============================================================================
  * Macro definitions
@@ -761,4 +761,4 @@ cs_cdo_system_allocate_assembly(void);
 void
 cs_cdo_system_destroy_all(void);
 
-#endif /* __CS_CDO_SYSTEM_H__ */
+#endif /* CS_CDO_SYSTEM_H */

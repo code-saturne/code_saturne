@@ -31,40 +31,35 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <float.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cassert>
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #if defined(HAVE_OPENMP)
 #include <omp.h>
 #endif
 
 /*----------------------------------------------------------------------------
- *  BFT headers
- *----------------------------------------------------------------------------*/
-
-#include "base/cs_mem.h"
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_array.h"
 #include "alge/cs_blas.h"
+#include "alge/cs_matrix_default.h"
+#include "alge/cs_param_sles_setup.h"
+#include "alge/cs_saddle_solver_setup.h"
+#include "base/cs_array.h"
+#include "base/cs_fp_exception.h"
+#include "base/cs_mem.h"
+#include "base/cs_parall.h"
+#include "base/cs_timer.h"
 #include "cdo/cs_cdo_blas.h"
 #include "cdo/cs_cdo_solve.h"
 #include "cdo/cs_cdofb_monolithic_sles.h"
 #include "cdo/cs_equation.h"
-#include "base/cs_fp_exception.h"
-#include "alge/cs_matrix_default.h"
-#include "base/cs_parall.h"
-#include "alge/cs_param_sles_setup.h"
-#include "alge/cs_saddle_solver_setup.h"
 #include "cdo/cs_saddle_system.h"
-#include "base/cs_timer.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cdo/cs_dbg.h"

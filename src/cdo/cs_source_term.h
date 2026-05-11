@@ -1,5 +1,5 @@
-#ifndef __CS_SOURCE_TERM_H__
-#define __CS_SOURCE_TERM_H__
+#ifndef CS_SOURCE_TERM_H
+#define CS_SOURCE_TERM_H
 
 /*============================================================================
  * Functions and structures to deal with source term computation
@@ -32,12 +32,11 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_base.h"
-#include "cdo/cs_cdo_quantities.h"
-#include "cdo/cs_cdo_local.h"
 #include "base/cs_param_types.h"
+#include "cdo/cs_cdo_local.h"
+#include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_quadrature.h"
 #include "cdo/cs_xdef.h"
-
 
 /*============================================================================
  * Macro definitions
@@ -1005,6 +1004,4 @@ cs_source_term_dfsf_by_value(const cs_xdef_t           *source,
 
 /*----------------------------------------------------------------------------*/
 
-
-
-#endif /* __CS_SOURCE_TERM_H__ */
+#endif /* CS_SOURCE_TERM_H */

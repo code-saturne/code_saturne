@@ -1,5 +1,5 @@
-#ifndef __CS_XDEF_H__
-#define __CS_XDEF_H__
+#ifndef CS_XDEF_H
+#define CS_XDEF_H
 
 /*============================================================================
  * Functions to handle extended definitions of quantities
@@ -31,7 +31,7 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <string.h>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -44,10 +44,6 @@
 #include "base/cs_volume_zone.h"
 #include "cdo/cs_quadrature.h"
 #include "mesh/cs_mesh_adjacencies.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -811,6 +807,5 @@ cs_xdef_field_get_values(cs_xdef_t     *def);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
 
-#endif /* __CS_XDEF_H__ */
+#endif /* CS_XDEF_H */

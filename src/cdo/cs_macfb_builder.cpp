@@ -32,9 +32,9 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <float.h>
-#include <limits.h>
+#include <cassert>
+#include <cfloat>
+#include <climits>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -44,16 +44,15 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
-#include "bft/bft_error.h"
-#include "bft/bft_printf.h"
-
 #include "base/cs_array.h"
-#include "cdo/cs_cdo_bc.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
-#include "cdo/cs_property.h"
+#include "base/cs_mem.h"
 #include "base/cs_time_step.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
+#include "cdo/cs_cdo_bc.h"
+#include "cdo/cs_property.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

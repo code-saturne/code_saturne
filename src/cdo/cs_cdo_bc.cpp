@@ -30,9 +30,8 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <errno.h>
-#include <locale.h>
-#include <assert.h>
+#include <cassert>
+#include <clocale>
 
 /*----------------------------------------------------------------------------
  *  Local headers

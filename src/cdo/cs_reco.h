@@ -1,5 +1,5 @@
-#ifndef __CS_RECO_H__
-#define __CS_RECO_H__
+#ifndef CS_RECO_H
+#define CS_RECO_H
 
 /*============================================================================
  * Functions to handle the reconstruction of fields
@@ -761,4 +761,4 @@ cs_reco_scalar_ebyc2c_full(const cs_adjacency_t        *c2e,
   cs_reco_scalar_ebyc2c(cdoq->n_cells, NULL, c2e, cdoq, array, false, reco);
 }
 
-#endif /* __CS_RECO_H__ */
+#endif /* CS_RECO_H */

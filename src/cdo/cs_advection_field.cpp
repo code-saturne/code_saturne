@@ -30,12 +30,12 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <ctype.h>
-#include <float.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cassert>
+#include <cctype>
+#include <cfloat>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -45,17 +45,17 @@
 
 #include "base/cs_array.h"
 #include "base/cs_boundary_zone.h"
-#include "cdo/cs_cdo_toolbox.h"
-#include "cdo/cs_evaluate.h"
 #include "base/cs_field.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
-#include "mesh/cs_mesh_location.h"
+#include "base/cs_volume_zone.h"
+#include "base/cs_zone.h"
+#include "cdo/cs_cdo_toolbox.h"
+#include "cdo/cs_evaluate.h"
 #include "cdo/cs_param_cdo.h"
 #include "cdo/cs_reco.h"
-#include "base/cs_volume_zone.h"
 #include "cdo/cs_xdef.h"
-#include "base/cs_zone.h"
+#include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

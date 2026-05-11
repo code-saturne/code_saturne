@@ -1,5 +1,5 @@
-#ifndef __CS_PARAM_CDO_H__
-#define __CS_PARAM_CDO_H__
+#ifndef CS_PARAM_CDO_H
+#define CS_PARAM_CDO_H
 
 /*============================================================================
  * High-level metadata related to CDO/HHO schemes
@@ -211,4 +211,4 @@ cs_param_cdo_has_cdo(void);
 bool
 cs_param_cdo_has_NS_with_fv(void);
 
-#endif /* __CS_PARAM_CDO_H__ */
+#endif /* CS_PARAM_CDO_H */

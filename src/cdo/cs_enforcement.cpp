@@ -31,19 +31,18 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <string.h>
-#include <float.h>
+#include <cassert>
+#include <cfloat>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
-
 #include "base/cs_array.h"
-#include "cdo/cs_cdo_bc.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
+#include "cdo/cs_cdo_bc.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

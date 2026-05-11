@@ -1,5 +1,5 @@
-#ifndef __CS_HHO_BUILDER_H__
-#define __CS_HHO_BUILDER_H__
+#ifndef CS_HHO_BUILDER_H
+#define CS_HHO_BUILDER_H
 
 /*============================================================================
  * Low-level functions and structures used to build the algebraic system with
@@ -279,4 +279,4 @@ cs_hho_builder_compute_dirichlet_v(const cs_xdef_t         *def,
                                    cs_hho_builder_t        *hhob,
                                    cs_real_t                res[]);
 
-#endif /* __CS_HHO_BUILDER_H__ */
+#endif /* CS_HHO_BUILDER_H */

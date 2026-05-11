@@ -1,5 +1,5 @@
-#ifndef __CS_PROPERTY_H__
-#define __CS_PROPERTY_H__
+#ifndef CS_PROPERTY_H
+#define CS_PROPERTY_H
 
 /*============================================================================
  * Manage the definition/setting of properties
@@ -32,15 +32,11 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_field.h"
-#include "cdo/cs_flag.h"
 #include "base/cs_param_types.h"
+#include "cdo/cs_flag.h"
 #include "cdo/cs_xdef.h"
 #include "cdo/cs_xdef_cw_eval.h"
 #include "cdo/cs_xdef_eval.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -1329,6 +1325,4 @@ cs_property_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_PROPERTY_H__ */
+#endif /* CS_PROPERTY_H */

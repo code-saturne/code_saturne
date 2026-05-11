@@ -1,5 +1,5 @@
-#ifndef __CS_CDO_ADVECTION_H__
-#define __CS_CDO_ADVECTION_H__
+#ifndef CS_CDO_ADVECTION_H
+#define CS_CDO_ADVECTION_H
 
 /*============================================================================
  * Build discrete convection operators for CDO schemes
@@ -37,7 +37,6 @@
 #include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_equation_param.h"
 #include "cdo/cs_property.h"
-
 
 /*============================================================================
  * Macro definitions
@@ -1151,4 +1150,4 @@ cs_cdo_advection_cell_upwind_coef(const cs_cdo_quantities_t    *cdoq,
                                   cs_param_advection_scheme_t   scheme,
                                   cs_real_t                     coefval[]);
 
-#endif /* __CS_CDO_ADVECTION_H__ */
+#endif /* CS_CDO_ADVECTION_H */

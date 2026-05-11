@@ -1,5 +1,5 @@
-#ifndef __CS_MACFB_ADVECTION_H__
-#define __CS_MACFB_ADVECTION_H__
+#ifndef CS_MACFB_ADVECTION_H
+#define CS_MACFB_ADVECTION_H
 
 /*============================================================================
  * Build discrete convection operators for MAC schemes
@@ -38,7 +38,6 @@
 #include "cdo/cs_equation_param.h"
 #include "cdo/cs_macfb_builder.h"
 #include "cdo/cs_property.h"
-
 
 /*============================================================================
  * Macro definitions
@@ -346,4 +345,4 @@ void cs_macfb_advection_cencsv(const cs_cell_mesh_t     *cm,
                                cs_sdm_t                 *adv,
                                cs_real_t                *rhs);
 
-#endif /* __CS_MACFB_ADVECTION_H__ */
+#endif /* CS_MACFB_ADVECTION_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_CDOCB_SCALEQ_H__
-#define __CS_CDOCB_SCALEQ_H__
+#ifndef CS_CDOCB_SCALEQ_H
+#define CS_CDOCB_SCALEQ_H
 
 /*============================================================================
  * Build an algebraic CDO cell-based system for the diffusion equations
@@ -350,4 +350,4 @@ cs_cdocb_scaleq_extra_post(const cs_equation_param_t  *eqp,
                            cs_equation_builder_t      *eqb,
                            void                       *context);
 
-#endif /* __CS_CDOCB_SCALEQ_H__ */
+#endif /* CS_CDOCB_SCALEQ_H */

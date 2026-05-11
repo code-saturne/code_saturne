@@ -31,42 +31,36 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <float.h>
-#include <assert.h>
-#include <string.h>
-
-#if defined(HAVE_OPENMP)
-#include <omp.h>
-#endif
-
+#include <cassert>
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
-
-#include "base/cs_array.h"
 #include "alge/cs_blas.h"
+#include "base/cs_array.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "base/cs_mem.h"
+#include "base/cs_post.h"
+#include "base/cs_timer.h"
 #include "cdo/cs_cdo_assembly.h"
 #include "cdo/cs_cdo_bc.h"
 #include "cdo/cs_cdo_solve.h"
+#include "cdo/cs_cdofb_navsto.h"
 #include "cdo/cs_cdofb_priv.h"
 #include "cdo/cs_cdofb_scaleq.h"
 #include "cdo/cs_cdofb_vecteq.h"
-#include "cdo/cs_cdofb_navsto.h"
 #include "cdo/cs_equation_bc.h"
 #include "cdo/cs_equation_priv.h"
 #include "cdo/cs_evaluate.h"
-#include "base/cs_log.h"
-#include "base/cs_math.h"
-#include "base/cs_post.h"
 #include "cdo/cs_reco.h"
 #include "cdo/cs_source_term.h"
 #include "cdo/cs_static_condensation.h"
-#include "base/cs_timer.h"
 
 #if defined(HAVE_PETSC)
 #include "alge/cs_sles_petsc.h"

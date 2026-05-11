@@ -1,5 +1,5 @@
-#ifndef __CS_CDO_QUANTITIES_H__
-#define __CS_CDO_QUANTITIES_H__
+#ifndef CS_CDO_QUANTITIES_H
+#define CS_CDO_QUANTITIES_H
 
 /*============================================================================
  * Manage geometrical quantities needed in CDO/MAC schemes
@@ -32,9 +32,9 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_base.h"
+#include "base/cs_math.h"
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_flag.h"
-#include "base/cs_math.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_quantities.h"
 
@@ -264,8 +264,6 @@ typedef struct cs_cdo_quantities_t { /* Specific mesh quantities */
 
   cs_real_t        *dual_vol;
 
-#ifdef __cplusplus
-
   /*----------------------------------------------------------------------------*/
   /*!
    * \brief Get the face surface for a primal face (interior or border)
@@ -441,8 +439,6 @@ typedef struct cs_cdo_quantities_t { /* Specific mesh quantities */
   check(int                         verb,
         const cs_mesh_quantities_t *mq,
         const cs_cdo_connect_t     *topo) const;
-
-#endif
 
 } cs_cdo_quantities_t;
 
@@ -762,4 +758,4 @@ cs_cdo_quantities_compute_b_wvf(const cs_cdo_connect_t       *connect,
 void
 cs_quant_dump(FILE *f, cs_lnum_t num, const cs_quant_t q);
 
-#endif /* __CS_CDO_QUANTITIES_H__ */
+#endif /* CS_CDO_QUANTITIES_H */

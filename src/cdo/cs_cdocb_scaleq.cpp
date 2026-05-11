@@ -32,43 +32,39 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <float.h>
-#include <assert.h>
-#include <string.h>
-
-#if defined(HAVE_OPENMP)
-#include <omp.h>
-#endif
+#include <cassert>
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
-
-#include "base/cs_array.h"
 #include "alge/cs_blas.h"
-#include "cdo/cs_domain.h"
+#include "base/cs_array.h"
+#include "base/cs_field_operator.h"
+#include "base/cs_log.h"
+#include "base/cs_mem.h"
+#include "base/cs_parall.h"
+#include "base/cs_post.h"
+#include "base/cs_timer.h"
 #include "cdo/cs_cdo_bc.h"
 #include "cdo/cs_cdo_blas.h"
 #include "cdo/cs_cdocb_scaleq_sles.h"
-#if defined(DEBUG) && !defined(NDEBUG)
-#include "cdo/cs_dbg.h"
-#endif
+#include "cdo/cs_domain.h"
 #include "cdo/cs_equation_bc.h"
 #include "cdo/cs_equation_builder.h"
 #include "cdo/cs_equation_priv.h"
 #include "cdo/cs_evaluate.h"
-#include "base/cs_field_operator.h"
-#include "base/cs_log.h"
-#include "base/cs_parall.h"
-#include "base/cs_post.h"
 #include "cdo/cs_sdm.h"
 #include "cdo/cs_source_term.h"
-#include "base/cs_timer.h"
+
+#if defined(DEBUG) && !defined(NDEBUG)
+#include "cdo/cs_dbg.h"
+#endif
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

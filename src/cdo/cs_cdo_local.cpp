@@ -32,9 +32,9 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <float.h>
-#include <limits.h>
+#include <cassert>
+#include <cfloat>
+#include <climits>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -337,8 +337,6 @@ cs_cell_sys_create(int  n_max_dofbyc,
   return csys;
 }
 
-#ifdef __cplusplus
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Reset all members related to BC and some other ones in a
@@ -380,8 +378,6 @@ cs_cell_sys_t::reset(int n_fbyc)
          cs::max(n_fbyc, this->n_dofs) * sizeof(double) * n_robin_parameters);
 }
 
-#endif
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Free a \ref cs_cell_sys_t structure
@@ -420,8 +416,6 @@ cs_cell_sys_free(cs_cell_sys_t **p_csys)
   CS_FREE(csys);
   *p_csys = nullptr;
 }
-
-#ifdef __cplusplus
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -490,8 +484,6 @@ cs_cell_sys_t::dump(const char msg[]) const
                  this->val_nm1[i]);
   }
 }
-
-#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -666,8 +658,6 @@ cs_cdo_local_get_cell_mesh(int    mesh_id)
 
   return cm;
 }
-
-#ifdef __cplusplus
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -886,8 +876,12 @@ cs_cell_mesh_t::dump() const
         for (int i = f2e_idx[f]; i < f2e_idx[f + 1]; i++) {
           if (e == f2e_ids[i]) {
             cs_nvec3_t _s = sefc[i];
-            bft_printf(" | %2d |  %.4e (%- .4e %- .4e %- .4e)", f,
-                       _s.meas, _s.unitv[0], _s.unitv[1], _s.unitv[2]);
+            bft_printf(" | %2d |  %.4e (%- .4e %- .4e %- .4e)",
+                       f,
+                       _s.meas,
+                       _s.unitv[0],
+                       _s.unitv[1],
+                       _s.unitv[2]);
             count++;
           }
         } /* Loop on face edges */
@@ -900,8 +894,6 @@ cs_cell_mesh_t::dump() const
     } /* Loop on edges */
   }
 };
-
-#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2013,8 +2005,6 @@ cs_face_mesh_light_build(const cs_cell_mesh_t    *cm,
   for (short int v = 0; v < fm->n_vf; v++) fm->wvf[v] *= invf;
 }
 
-#ifdef __cplusplus
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Retrieve the list of vertices attached to a face
@@ -2048,7 +2038,6 @@ cs_cell_mesh_t::get_f2v(short int f, short int *n_vf, short int *vids) const
       vids[*n_vf] = v, *n_vf += 1;
   }
 }
-#endif
 
 /*----------------------------------------------------------------------------*/
 

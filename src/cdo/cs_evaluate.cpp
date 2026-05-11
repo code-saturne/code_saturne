@@ -28,27 +28,27 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <float.h>
+#include <cassert>
+#include <cfloat>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
 
 #include "base/cs_array.h"
 #include "base/cs_array_reduce.h"
 #include "base/cs_halo.h"
 #include "base/cs_math.h"
-#include "mesh/cs_mesh.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_range_set.h"
 #include "base/cs_volume_zone.h"
 #include "cdo/cs_quadrature.h"
+#include "mesh/cs_mesh.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

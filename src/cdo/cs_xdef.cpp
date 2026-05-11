@@ -28,21 +28,20 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
+#include <cassert>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
-
 #include "base/cs_array.h"
 #include "base/cs_field.h"
-#include "cdo/cs_flag.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
+#include "cdo/cs_flag.h"
 #include "mesh/cs_mesh_location.h"
 
 /*----------------------------------------------------------------------------

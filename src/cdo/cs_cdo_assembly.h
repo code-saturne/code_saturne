@@ -1,5 +1,5 @@
-#ifndef __CS_CDO_ASSEMBLY_H__
-#define __CS_CDO_ASSEMBLY_H__
+#ifndef CS_CDO_ASSEMBLY_H
+#define CS_CDO_ASSEMBLY_H
 
 /*============================================================================
  * Set of functions and structures to handle the assembly of cellwise local CDO
@@ -36,7 +36,6 @@
 #include "base/cs_param_types.h"
 #include "base/cs_range_set.h"
 #include "cdo/cs_sdm.h"
-
 
 /*============================================================================
  * Macro definitions
@@ -662,4 +661,4 @@ cs_cdo_assembly_eblock_matrix_mpit(const cs_sdm_t                *m,
                                    cs_matrix_assembler_values_t  *mav);
 #endif /* defined(HAVE_MPI) */
 
-#endif /* __CS_CDO_ASSEMBLY_H__ */
+#endif /* CS_CDO_ASSEMBLY_H */

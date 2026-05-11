@@ -30,9 +30,9 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -46,8 +46,8 @@
 
 #include "base/cs_post.h"
 #include "base/cs_wall_functions.h"
-#include "turb/cs_turbulence_model.h"
 #include "cdo/cs_reco.h"
+#include "turb/cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

@@ -1,5 +1,5 @@
-#ifndef __CS_CDOFB_MONOLITHIC_PRIV_H__
-#define __CS_CDOFB_MONOLITHIC_PRIV_H__
+#ifndef CS_CDOFB_MONOLITHIC_PRIV_H
+#define CS_CDOFB_MONOLITHIC_PRIV_H
 
 /*============================================================================
  * Build an algebraic CDO face-based system for the Navier-Stokes equations
@@ -39,23 +39,23 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "alge/cs_saddle_solver.h"
+#include "alge/cs_sles.h"
+#include "base/cs_timer.h"
 #include "cdo/cs_cdo_assembly.h"
 #include "cdo/cs_cdo_bc.h"
 #include "cdo/cs_cdo_system.h"
+#include "cdo/cs_cdofb_monolithic_sles.h"
+#include "cdo/cs_cdofb_navsto.h"
 #include "cdo/cs_cdofb_priv.h"
 #include "cdo/cs_cdofb_scaleq.h"
 #include "cdo/cs_cdofb_vecteq.h"
-#include "cdo/cs_cdofb_monolithic_sles.h"
-#include "cdo/cs_cdofb_navsto.h"
 #include "cdo/cs_equation_bc.h"
 #include "cdo/cs_equation_priv.h"
 #include "cdo/cs_iter_algo.h"
 #include "cdo/cs_navsto_coupling.h"
 #include "cdo/cs_navsto_param.h"
-#include "alge/cs_saddle_solver.h"
-#include "alge/cs_sles.h"
 #include "cdo/cs_static_condensation.h"
-#include "base/cs_timer.h"
 
 /*=============================================================================
  * Additional doxygen documentation
@@ -359,4 +359,4 @@ struct _cdofb_monolithic_t {
  * Public function prototypes
  *============================================================================*/
 
-#endif /* __CS_CDOFB_MONOLITHIC_PRIV_H__ */
+#endif /* CS_CDOFB_MONOLITHIC_PRIV_H */

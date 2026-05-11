@@ -1,5 +1,5 @@
-#ifndef __CS_DOMAIN_OP_H__
-#define __CS_DOMAIN_OP_H__
+#ifndef CS_DOMAIN_OP_H
+#define CS_DOMAIN_OP_H
 
 /*============================================================================
  * Manage specific post-processing related to a computational domain and
@@ -30,8 +30,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cdo/cs_domain.h"
 #include "base/cs_time_step.h"
+#include "cdo/cs_domain.h"
 
 /*============================================================================
  * Macro definitions
@@ -110,4 +110,4 @@ cs_domain_read_restart(cs_domain_t  *domain);
 void
 cs_domain_write_restart(const cs_domain_t  *domain);
 
-#endif /* __CS_DOMAIN_OP_H__ */
+#endif /* CS_DOMAIN_OP_H */

@@ -1,5 +1,5 @@
-#ifndef __CS_CDO_BC_H__
-#define __CS_CDO_BC_H__
+#ifndef CS_CDO_BC_H
+#define CS_CDO_BC_H
 
 /*============================================================================
  * Manage the low-level structure dedicated to boundary conditions
@@ -30,9 +30,9 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_base.h"
-#include "cdo/cs_cdo_quantities.h"
 #include "base/cs_param_types.h"
 #include "base/cs_time_step.h"
+#include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_xdef.h"
 
 /*============================================================================
@@ -400,4 +400,4 @@ cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
 cs_cdo_bc_face_t *
 cs_cdo_bc_free(cs_cdo_bc_face_t   *face_bc);
 
-#endif /* __CS_CDO_BC_H__ */
+#endif /* CS_CDO_BC_H */

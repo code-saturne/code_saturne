@@ -1,5 +1,5 @@
-#ifndef __CS_EQUATION_SYSTEM_SLES_H__
-#define __CS_EQUATION_SYSTEM_SLES_H__
+#ifndef CS_EQUATION_SYSTEM_SLES_H
+#define CS_EQUATION_SYSTEM_SLES_H
 
 /*============================================================================
  * Functions to handle the solving step of systems of equations hinging on the
@@ -60,4 +60,4 @@ cs_equation_system_sles_init(int                            n_eqs,
                              cs_equation_system_param_t    *sysp,
                              cs_equation_core_t           **blocks);
 
-#endif /* __CS_EQUATION_SYSTEM_SLES_H__ */
+#endif /* CS_EQUATION_SYSTEM_SLES_H */

@@ -28,10 +28,10 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
+#include <cassert>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -40,8 +40,8 @@
 #include "base/cs_mem.h"
 #include "bft/bft_error.h"
 
-#include "base/cs_log.h"
 #include "alge/cs_matrix_util.h"
+#include "base/cs_log.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

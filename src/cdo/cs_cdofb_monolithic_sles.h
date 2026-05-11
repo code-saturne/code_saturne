@@ -1,5 +1,5 @@
-#ifndef __CS_CDOFB_MONOLITHIC_SLES_H__
-#define __CS_CDOFB_MONOLITHIC_SLES_H__
+#ifndef CS_CDOFB_MONOLITHIC_SLES_H
+#define CS_CDOFB_MONOLITHIC_SLES_H
 
 /*============================================================================
  * Functions dedicated to the linear algebra settings and operations in case
@@ -263,4 +263,4 @@ cs_cdofb_monolithic_sles_afs(const cs_navsto_param_t  *nsp,
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_CDOFB_MONOLITHIC_SLES_H__ */
+#endif /* CS_CDOFB_MONOLITHIC_SLES_H */

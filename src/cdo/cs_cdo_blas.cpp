@@ -28,8 +28,8 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <string.h>
-#include <assert.h>
+#include <cassert>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  * Local headers

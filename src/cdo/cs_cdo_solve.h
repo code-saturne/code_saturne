@@ -1,5 +1,5 @@
-#ifndef __CS_CDO_SOLVE_H__
-#define __CS_CDO_SOLVE_H__
+#ifndef CS_CDO_SOLVE_H
+#define CS_CDO_SOLVE_H
 
 /*============================================================================
  * Set of helper functions to prepare or solve linear systems
@@ -31,8 +31,8 @@
 
 #include "alge/cs_matrix.h"
 #include "alge/cs_param_sles.h"
-#include "base/cs_range_set.h"
 #include "alge/cs_sles.h"
+#include "base/cs_range_set.h"
 
 /*============================================================================
  * Macro definitions
@@ -184,4 +184,4 @@ cs_cdo_solve_vector_system(cs_lnum_t               n_scatter_elts,
                            cs_real_t              *x,
                            cs_real_t              *b);
 
-#endif /* __CS_CDO_SOLVE_H__ */
+#endif /* CS_CDO_SOLVE_H */

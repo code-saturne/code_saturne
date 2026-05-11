@@ -1,5 +1,5 @@
-#ifndef __CS_CDOCB_SCALEQ_SLES_H__
-#define __CS_CDOCB_SCALEQ_SLES_H__
+#ifndef CS_CDOCB_SCALEQ_SLES_H
+#define CS_CDOCB_SCALEQ_SLES_H
 
 /*============================================================================
  * Functions dedicated to the linear algebra settings and operations in case
@@ -220,4 +220,4 @@ cs_cdocb_scaleq_sles_uzawa_cg(cs_saddle_solver_t  *solver,
                               cs_real_t           *flux,
                               cs_real_t           *pot);
 
-#endif /* __CS_CDOCB_SCALEQ_SLES_H__ */
+#endif /* CS_CDOCB_SCALEQ_SLES_H */

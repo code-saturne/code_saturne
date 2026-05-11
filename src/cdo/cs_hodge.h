@@ -1,5 +1,5 @@
-#ifndef __CS_HODGE_H__
-#define __CS_HODGE_H__
+#ifndef CS_HODGE_H
+#define CS_HODGE_H
 
 /*============================================================================
  * Manage discrete Hodge operators and closely related operators
@@ -1023,4 +1023,4 @@ void
 cs_hodge_compute_wbs_surfacic(const cs_face_mesh_t    *fm,
                               cs_sdm_t                *hf);
 
-#endif /* __CS_HODGE_H__ */
+#endif /* CS_HODGE_H */

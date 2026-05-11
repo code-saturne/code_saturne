@@ -1,5 +1,5 @@
-#ifndef __CS_SOLIDIFICATION_H__
-#define __CS_SOLIDIFICATION_H__
+#ifndef CS_SOLIDIFICATION_H
+#define CS_SOLIDIFICATION_H
 
 /*============================================================================
  * Header to handle the solidification module with CDO schemes
@@ -31,11 +31,11 @@
 
 #include "base/cs_base.h"
 #include "base/cs_boundary.h"
+#include "base/cs_time_plot.h"
+#include "base/cs_time_step.h"
 #include "cdo/cs_equation.h"
 #include "cdo/cs_iter_algo.h"
 #include "cdo/cs_navsto_param.h"
-#include "base/cs_time_plot.h"
-#include "base/cs_time_step.h"
 
 /*============================================================================
  * Macro definitions
@@ -1054,4 +1054,4 @@ cs_solidification_extra_post(void                      *input,
                              const cs_lnum_t            b_face_ids[],
                              const cs_time_step_t      *time_step);
 
-#endif /* __CS_SOLIDIFICATION_H__ */
+#endif /* CS_SOLIDIFICATION_H */

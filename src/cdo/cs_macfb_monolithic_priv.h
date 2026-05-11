@@ -1,5 +1,5 @@
-#ifndef __CS_MACFB_MONOLITHIC_PRIV_H__
-#define __CS_MACFB_MONOLITHIC_PRIV_H__
+#ifndef CS_MACFB_MONOLITHIC_PRIV_H
+#define CS_MACFB_MONOLITHIC_PRIV_H
 
 /*============================================================================
  * Build an algebraic MACface-based system for the Navier-Stokes equations
@@ -39,6 +39,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "alge/cs_sles.h"
+#include "base/cs_timer.h"
 #include "cdo/cs_cdo_assembly.h"
 #include "cdo/cs_cdo_bc.h"
 #include "cdo/cs_cdo_system.h"
@@ -52,10 +54,7 @@
 #include "cdo/cs_macfb_vecteq.h"
 #include "cdo/cs_navsto_coupling.h"
 #include "cdo/cs_navsto_param.h"
-#include "alge/cs_sles.h"
 #include "cdo/cs_static_condensation.h"
-#include "base/cs_timer.h"
-
 
 /*=============================================================================
  * Additional doxygen documentation
@@ -344,4 +343,4 @@ struct _macfb_monolithic_t {
  * Public function prototypes
  *============================================================================*/
 
-#endif /* __CS_MACFB_MONOLITHIC_PRIV_H__ */
+#endif /* CS_MACFB_MONOLITHIC_PRIV_H */

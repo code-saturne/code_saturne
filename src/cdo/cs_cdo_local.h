@@ -1,5 +1,5 @@
-#ifndef __CS_CDO_LOCAL_H__
-#define __CS_CDO_LOCAL_H__
+#ifndef CS_CDO_LOCAL_H
+#define CS_CDO_LOCAL_H
 
 /*============================================================================
  * Functions to handle low-level functions related to CDO local quantities:
@@ -36,7 +36,6 @@
 #include "cdo/cs_flag.h"
 #include "cdo/cs_param_cdo.h"
 #include "cdo/cs_sdm.h"
-
 
 /*============================================================================
  * Macro definitions
@@ -133,8 +132,6 @@ typedef struct cs_cell_builder_t {
    * @}
    */
 
-#ifdef __cplusplus
-
   /*--------------------------------------------------------------------------*/
   /*!
    * \brief Check if at least one entity of the cell belongs to the boundary
@@ -153,8 +150,6 @@ typedef struct cs_cell_builder_t {
     else
       return false;
   };
-
-#endif
 
 } cs_cell_builder_t;
 
@@ -207,8 +202,6 @@ typedef struct cs_cell_sys_t {
    * @}
    */
 
-#ifdef __cplusplus
-
   /*--------------------------------------------------------------------------*/
   /*!
    * \brief  Reset all members related to BC and some other ones in a
@@ -231,8 +224,6 @@ typedef struct cs_cell_sys_t {
 
   void
   dump(const char msg[]) const;
-
-#endif
 
 } cs_cell_sys_t;
 
@@ -314,8 +305,6 @@ typedef struct cs_cell_mesh_t {
 
   short int   *e2f_ids;  /*!< cell-wise edge -> faces connectivity */
   cs_nvec3_t  *sefc;     /*!< portion of dual faces (2 triangles by edge) */
-
-#ifdef __cplusplus
 
   /*----------------------------------------------------------------------------*/
   /*!
@@ -430,8 +419,6 @@ typedef struct cs_cell_mesh_t {
   void
   dump() const;
 
-#endif
-
 } cs_cell_mesh_t;
 
 /*! \struct cs_face_mesh_t
@@ -474,10 +461,6 @@ typedef struct {
   /* Local e2v connectivity: size 2*n_ec (allocated to 2*n_max_ebyf) */
 
   short int *e2v_ids; /*!< face-wise edge -> vertices connectivity */
-
-#ifdef __cplusplus
-
-#endif
 
 } cs_face_mesh_t;
 
@@ -816,4 +799,4 @@ cs_face_mesh_light_build(const cs_cell_mesh_t    *cm,
                          short int                f,
                          cs_face_mesh_light_t    *fm);
 
-#endif /* __CS_CDO_LOCAL_H__ */
+#endif /* CS_CDO_LOCAL_H */

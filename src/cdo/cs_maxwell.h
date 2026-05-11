@@ -1,5 +1,5 @@
-#ifndef __CS_MAXWELL_H__
-#define __CS_MAXWELL_H__
+#ifndef CS_MAXWELL_H
+#define CS_MAXWELL_H
 
 /*============================================================================
  * Header to handle the maxwell module with CDO schemes
@@ -281,4 +281,4 @@ cs_maxwell_extra_post(void                      *input,
                       const cs_lnum_t            b_face_ids[],
                       const cs_time_step_t      *time_step);
 
-#endif /* __CS_MAXWELL_H__ */
+#endif /* CS_MAXWELL_H */

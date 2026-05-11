@@ -1,5 +1,5 @@
-#ifndef __CS_CDO_TURBULENCE_H__
-#define __CS_CDO_TURBULENCE_H__
+#ifndef CS_CDO_TURBULENCE_H
+#define CS_CDO_TURBULENCE_H
 
 /*============================================================================
  * Functions to handle the resolution of the turbulence modelling
@@ -29,13 +29,13 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_field.h"
+#include "base/cs_time_step.h"
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_equation.h"
-#include "base/cs_field.h"
-#include "mesh/cs_mesh.h"
 #include "cdo/cs_property.h"
-#include "base/cs_time_step.h"
+#include "mesh/cs_mesh.h"
 #include "turb/cs_turbulence_model.h"
 
 /*============================================================================
@@ -534,4 +534,4 @@ cs_turb_compute_wall_bc_coeffs(const cs_equation_param_t  *eqp,
 bool
 cs_turb_wall_functions_is_activated(const cs_turbulence_param_t *turbulence);
 
-#endif /* __CS_CDO_TURBULENCE_H__ */
+#endif /* CS_CDO_TURBULENCE_H */

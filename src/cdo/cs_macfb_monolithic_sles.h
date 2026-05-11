@@ -1,5 +1,5 @@
-#ifndef __CS_MACFB_MONOLITHIC_SLES_H__
-#define __CS_MACFB_MONOLITHIC_SLES_H__
+#ifndef CS_MACFB_MONOLITHIC_SLES_H
+#define CS_MACFB_MONOLITHIC_SLES_H
 
 /*============================================================================
  * Functions dedicated to the linear algebra settings and operations in case
@@ -39,7 +39,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "cdo/cs_macfb_monolithic_priv.h"
-
 
 /*============================================================================
  * Macro definitions
@@ -187,4 +186,4 @@ int cs_macfb_monolithic_sles_uzawa_cg(const cs_navsto_param_t *nsp,
                                       cs_real_t               *u_f,
                                       cs_real_t               *p_c);
 
-#endif /* __CS_MACFB_MONOLITHIC_SLES_H__ */
+#endif /* CS_MACFB_MONOLITHIC_SLES_H */

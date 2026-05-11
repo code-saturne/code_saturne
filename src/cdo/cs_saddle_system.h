@@ -1,5 +1,5 @@
-#ifndef __CS_SADDLE_SYSTEM_H__
-#define __CS_SADDLE_SYSTEM_H__
+#ifndef CS_SADDLE_SYSTEM_H
+#define CS_SADDLE_SYSTEM_H
 
 /*============================================================================
  * Operations on cs_cdo_system_t structures: matrix/vector multiplications
@@ -167,4 +167,4 @@ cs_saddle_system_residual(const cs_cdo_system_helper_t  *sh,
                           cs_real_t                     *res1,
                           cs_real_t                     *res2);
 
-#endif /* __CS_SADDLE_SYSTEM_H__ */
+#endif /* CS_SADDLE_SYSTEM_H */

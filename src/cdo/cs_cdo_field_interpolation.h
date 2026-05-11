@@ -1,5 +1,5 @@
-#ifndef __CS_CDO_FIELD_INTERPOLATION_H__
-#define __CS_CDO_FIELD_INTERPOLATION_H__
+#ifndef CS_CDO_FIELD_INTERPOLATION_H
+#define CS_CDO_FIELD_INTERPOLATION_H
 
 /*============================================================================
  * Functions to handle field interpolation with CDO schemes
@@ -110,4 +110,4 @@ cs_cdo_field_interpolation_cell_to_faces(const cs_mesh_t    *mesh,
                                          const cs_real_t    *cell_values,
                                          cs_real_t          *face_values);
 
-#endif /* __CS_CDO_FIELD_INTERPOLATION_H__ */
+#endif /* CS_CDO_FIELD_INTERPOLATION_H */

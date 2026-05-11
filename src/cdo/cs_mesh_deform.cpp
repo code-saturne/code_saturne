@@ -30,12 +30,12 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
-#include <math.h>
+#include <cassert>
+#include <climits>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -45,19 +45,17 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_boundary_zone.h"
 #include "base/cs_mem.h"
+#include "base/cs_parall.h"
 #include "bft/bft_error.h"
 #include "bft/bft_printf.h"
-
-#include "fvm/fvm_io_num.h"
-
-#include "base/cs_boundary_zone.h"
 #include "cdo/cs_domain.h"
 #include "cdo/cs_domain_setup.h"
 #include "cdo/cs_equation.h"
+#include "fvm/fvm_io_num.h"
 #include "mesh/cs_mesh_builder.h"
 #include "mesh/cs_mesh_group.h"
-#include "base/cs_parall.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

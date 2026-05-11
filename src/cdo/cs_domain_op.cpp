@@ -33,8 +33,8 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <string.h>
+#include <cassert>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -42,25 +42,25 @@
 
 #include "base/cs_mem.h"
 
-#include "cdo/cs_advection_field.h"
 #include "base/cs_array_reduce.h"
-#include "cdo/cs_cdo_quantities.h"
 #include "base/cs_dispatch.h"
-#include "cdo/cs_equation.h"
-#include "cdo/cs_equation_param.h"
-#include "gwf/cs_gwf.h"
 #include "base/cs_log.h"
 #include "base/cs_log_iteration.h"
-#include "cdo/cs_maxwell.h"
-#include "cdo/cs_navsto_system.h"
 #include "base/cs_parall.h"
 #include "base/cs_post.h"
-#include "cdo/cs_property.h"
 #include "base/cs_prototypes.h"
 #include "base/cs_restart.h"
 #include "base/cs_restart_default.h"
+#include "cdo/cs_advection_field.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "cdo/cs_equation.h"
+#include "cdo/cs_equation_param.h"
+#include "cdo/cs_maxwell.h"
+#include "cdo/cs_navsto_system.h"
+#include "cdo/cs_property.h"
 #include "cdo/cs_solidification.h"
 #include "cdo/cs_walldistance.h"
+#include "gwf/cs_gwf.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

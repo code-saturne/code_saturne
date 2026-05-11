@@ -1,5 +1,5 @@
-#ifndef __CS_ADVECTION_FIELD_H__
-#define __CS_ADVECTION_FIELD_H__
+#ifndef CS_ADVECTION_FIELD_H
+#define CS_ADVECTION_FIELD_H
 
 /*============================================================================
  * Manage the definition/setting of advection fields
@@ -31,16 +31,16 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_field.h"
+#include "base/cs_param_types.h"
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_local.h"
 #include "cdo/cs_cdo_quantities.h"
-#include "base/cs_field.h"
 #include "cdo/cs_macfb_builder.h"
-#include "mesh/cs_mesh_location.h"
-#include "base/cs_param_types.h"
 #include "cdo/cs_property.h"
 #include "cdo/cs_xdef.h"
 #include "cdo/cs_xdef_eval.h"
+#include "mesh/cs_mesh_location.h"
 
 /*============================================================================
  * Macro definitions
@@ -939,4 +939,4 @@ cs_real_t *
 cs_advection_field_divergence_at_vertices(const cs_adv_field_t     *adv,
                                           cs_real_t                 t_eval);
 
-#endif /* __CS_ADVECTION_FIELD_H__ */
+#endif /* CS_ADVECTION_FIELD_H */

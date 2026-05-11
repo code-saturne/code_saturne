@@ -30,23 +30,22 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <float.h>
+#include <cassert>
+#include <cfloat>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
-#include "bft/bft_error.h"
-
 #include "base/cs_array.h"
+#include "base/cs_mem.h"
+#include "base/cs_parall.h"
+#include "base/cs_post.h"
+#include "bft/bft_error.h"
 #include "cdo/cs_cdofb_scaleq.h"
 #include "cdo/cs_navsto_system.h"
-#include "base/cs_parall.h"
-#include "pprt/cs_physical_model.h"
-#include "base/cs_post.h"
 #include "cdo/cs_solid_selection.h"
+#include "pprt/cs_physical_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

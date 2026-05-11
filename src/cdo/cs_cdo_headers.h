@@ -1,5 +1,5 @@
-#ifndef __CS_CDO_HEADERS_H__
-#define __CS_CDO_HEADERS_H__
+#ifndef CS_CDO_HEADERS_H
+#define CS_CDO_HEADERS_H
 
 /*============================================================================
  * Global code_saturne headers file for easier include
@@ -29,6 +29,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "alge/cs_saddle_solver.h"
 #include "cdo/cs_advection_field.h"
 #include "cdo/cs_basis_func.h"
 #include "cdo/cs_cdo_advection.h"
@@ -87,7 +88,6 @@
 #include "cdo/cs_quadrature.h"
 #include "cdo/cs_reco.h"
 #include "cdo/cs_reco_cw.h"
-#include "alge/cs_saddle_solver.h"
 #include "cdo/cs_scheme_geometry.h"
 #include "cdo/cs_sdm.h"
 #include "cdo/cs_solid_selection.h"
@@ -102,4 +102,4 @@
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_CDO_HEADERS_H__ */
+#endif /* CS_CDO_HEADERS_H */

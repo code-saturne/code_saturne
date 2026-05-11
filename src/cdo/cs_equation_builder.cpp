@@ -30,18 +30,17 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <stdlib.h>
-#include <string.h>
-#include <float.h>
+#include <cassert>
+#include <cfloat>
+#include <cstdlib>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
-
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)

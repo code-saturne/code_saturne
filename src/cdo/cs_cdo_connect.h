@@ -1,5 +1,5 @@
-#ifndef __CS_CDO_CONNECT_H__
-#define __CS_CDO_CONNECT_H__
+#ifndef CS_CDO_CONNECT_H
+#define CS_CDO_CONNECT_H
 
 /*============================================================================
  * Manage connectivity (Topological features of the mesh)
@@ -34,12 +34,11 @@
 #include "fvm/fvm_defs.h"
 
 #include "base/cs_base.h"
-#include "cdo/cs_flag.h"
 #include "base/cs_param_types.h"
+#include "base/cs_range_set.h"
+#include "cdo/cs_flag.h"
 #include "mesh/cs_mesh.h"
 #include "mesh/cs_mesh_adjacencies.h"
-#include "base/cs_range_set.h"
-
 
 /*============================================================================
  * Macro definitions
@@ -379,4 +378,4 @@ cs_cdo_connect_discrete_curl(const cs_cdo_connect_t    *connect,
 void
 cs_cdo_connect_dump(const cs_cdo_connect_t  *connect);
 
-#endif /* __CS_CDO_CONNECT_H__ */
+#endif /* CS_CDO_CONNECT_H */

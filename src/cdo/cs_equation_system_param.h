@@ -1,5 +1,5 @@
-#ifndef __CS_EQUATION_SYSTEM_PARAM_H__
-#define __CS_EQUATION_SYSTEM_PARAM_H__
+#ifndef CS_EQUATION_SYSTEM_PARAM_H
+#define CS_EQUATION_SYSTEM_PARAM_H
 
 /*============================================================================
  * Functions to handle a set of coupled equations hinging on the cs_equation_t
@@ -34,10 +34,6 @@
 #include "base/cs_param_types.h"
 #include "cdo/cs_equation_param.h"
 #include "cdo/cs_iter_algo.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
 
 /*============================================================================
  * Macro definitions
@@ -232,6 +228,4 @@ cs_equation_system_param_set(cs_equation_system_param_t *sysp,
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_EQUATION_SYSTEM_PARAM_H__ */
+#endif /* CS_EQUATION_SYSTEM_PARAM_H */

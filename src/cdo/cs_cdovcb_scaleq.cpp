@@ -31,11 +31,11 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <assert.h>
-#include <string.h>
+#include <cassert>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -43,7 +43,12 @@
 
 #include "base/cs_mem.h"
 
+#include "alge/cs_sles.h"
 #include "base/cs_array.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "base/cs_post.h"
+#include "base/cs_timer.h"
 #include "cdo/cs_cdo_advection.h"
 #include "cdo/cs_cdo_assembly.h"
 #include "cdo/cs_cdo_bc.h"
@@ -56,18 +61,13 @@
 #include "cdo/cs_equation_builder.h"
 #include "cdo/cs_evaluate.h"
 #include "cdo/cs_hodge.h"
-#include "base/cs_log.h"
-#include "base/cs_math.h"
-#include "mesh/cs_mesh_location.h"
-#include "base/cs_post.h"
 #include "cdo/cs_quadrature.h"
 #include "cdo/cs_reco.h"
 #include "cdo/cs_reco_cw.h"
 #include "cdo/cs_scheme_geometry.h"
-#include "alge/cs_sles.h"
 #include "cdo/cs_source_term.h"
 #include "cdo/cs_static_condensation.h"
-#include "base/cs_timer.h"
+#include "mesh/cs_mesh_location.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cdo/cs_dbg.h"

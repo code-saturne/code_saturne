@@ -30,9 +30,9 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <stdlib.h>
-#include <float.h>
+#include <cassert>
+#include <limits>
+#include <cstdlib>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -40,8 +40,8 @@
 
 #include "base/cs_mem.h"
 
-#include "base/cs_array.h"
 #include "alge/cs_blas.h"
+#include "base/cs_array.h"
 #include "base/cs_math.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
@@ -76,6 +76,9 @@
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_SOLVE_DBG > 1
 static int cs_cdo_solve_dbg_counter = 0;  /* Id number for debug */
 #endif
+
+#define DBL_MIN std::numeric_limits<double>::min()
+#define DBL_MAX std::numeric_limits<double>::max()
 
 /*============================================================================
  * Private function prototypes

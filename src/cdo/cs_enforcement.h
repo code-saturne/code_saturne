@@ -1,5 +1,5 @@
-#ifndef __CS_ENFORCEMENT_H__
-#define __CS_ENFORCEMENT_H__
+#ifndef CS_ENFORCEMENT_H
+#define CS_ENFORCEMENT_H
 
 /*============================================================================
  * Manage the list of solid cells and associated helper functions
@@ -249,4 +249,4 @@ cs_enforcement_dofs_cw(const cs_real_t      *forced_values,
                        cs_cell_sys_t        *csys,
                        cs_real_t            *cw_forced_values);
 
-#endif /* __CS_ENFORCEMENT_H__ */
+#endif /* CS_ENFORCEMENT_H */

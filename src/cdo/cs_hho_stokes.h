@@ -1,5 +1,5 @@
-#ifndef __CS_HHO_STOKES_H__
-#define __CS_HHO_STOKES_H__
+#ifndef CS_HHO_STOKES_H
+#define CS_HHO_STOKES_H
 
 /*============================================================================
  * Build an algebraic system for scalar conv./diff. eq. with Hybrid High Order
@@ -30,18 +30,18 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "alge/cs_matrix.h"
+#include "alge/cs_matrix_assembler.h"
 #include "base/cs_base.h"
-#include "base/cs_time_step.h"
-#include "mesh/cs_mesh.h"
 #include "base/cs_field.h"
+#include "base/cs_time_step.h"
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_local.h"
 #include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_equation_param.h"
 #include "cdo/cs_hho_builder.h"
-#include "alge/cs_matrix.h"
-#include "alge/cs_matrix_assembler.h"
 #include "cdo/cs_source_term.h"
+#include "mesh/cs_mesh.h"
 
 /*============================================================================
  * Macro definitions
@@ -270,4 +270,4 @@ cs_hho_stokes_extra_op(const char                 *eqname,
                        cs_equation_builder_t      *eqb,
                        void                       *data);
 
-#endif /* __CS_HHO_STOKES_H__ */
+#endif /* CS_HHO_STOKES_H */

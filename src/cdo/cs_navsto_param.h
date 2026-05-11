@@ -1,5 +1,5 @@
-#ifndef __CS_NAVSTO_PARAM_H__
-#define __CS_NAVSTO_PARAM_H__
+#ifndef CS_NAVSTO_PARAM_H
+#define CS_NAVSTO_PARAM_H
 
 /*============================================================================
  * Functions to handle cs_navsto_param_t structure
@@ -29,15 +29,14 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "alge/cs_param_sles.h"
 #include "base/cs_boundary.h"
+#include "base/cs_math.h"
+#include "base/cs_physical_constants.h"
+#include "cdo/cs_cdo_blas.h"
 #include "cdo/cs_cdo_turbulence.h"
 #include "cdo/cs_equation_param.h"
 #include "cdo/cs_iter_algo.h"
-#include "cdo/cs_cdo_blas.h"
-#include "base/cs_math.h"
-#include "alge/cs_param_sles.h"
-#include "base/cs_physical_constants.h"
-
 
 /*============================================================================
  * Macro definitions
@@ -1179,4 +1178,4 @@ void
 cs_navsto_add_oseen_field(cs_navsto_param_t   *nsp,
                           cs_adv_field_t      *adv_fld);
 
-#endif /* __CS_NAVSTO_PARAM_H__ */
+#endif /* CS_NAVSTO_PARAM_H */

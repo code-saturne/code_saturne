@@ -28,20 +28,19 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdlib.h>
-#include <assert.h>
-#include <float.h>
-#include <limits.h>
+#include <cassert>
+#include <cfloat>
+#include <climits>
+#include <cstdlib>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
-
 #include "alge/cs_blas.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
 #include "base/cs_sort.h"
 
@@ -2159,8 +2158,6 @@ cs_sdm_block_fprintf(FILE           *fp,
     fclose(fout);
 }
 
-#ifdef __cplusplus
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Destructor
@@ -2580,7 +2577,5 @@ _cs_sdm_t::map_array(int n_max_rows_, int n_max_cols_, cs_real_t *array)
   val                 = array;
   block_desc          = nullptr;
 }
-
-#endif
 
 /*----------------------------------------------------------------------------*/

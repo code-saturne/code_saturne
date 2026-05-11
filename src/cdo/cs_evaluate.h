@@ -1,5 +1,5 @@
-#ifndef __CS_EVALUATE_H__
-#define __CS_EVALUATE_H__
+#ifndef CS_EVALUATE_H
+#define CS_EVALUATE_H
 
 /*============================================================================
  * Functions and structures to deal with evaluation of quantities
@@ -526,4 +526,4 @@ cs_real_t
 cs_evaluate_scal_domain_integral_by_array(cs_flag_t         array_loc,
                                           const cs_real_t  *array_val);
 
-#endif /* __CS_EVALUATE_H__ */
+#endif /* CS_EVALUATE_H */

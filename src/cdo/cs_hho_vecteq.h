@@ -1,5 +1,5 @@
-#ifndef __CS_HHO_VECTEQ_H__
-#define __CS_HHO_VECTEQ_H__
+#ifndef CS_HHO_VECTEQ_H
+#define CS_HHO_VECTEQ_H
 
 /*============================================================================
  * Build an algebraic system for vector conv./diff. eq. with Hybrid High Order
@@ -30,20 +30,20 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "alge/cs_matrix.h"
+#include "alge/cs_matrix_assembler.h"
 #include "base/cs_base.h"
+#include "base/cs_field.h"
+#include "base/cs_restart.h"
+#include "base/cs_time_step.h"
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_local.h"
 #include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_equation_builder.h"
 #include "cdo/cs_equation_param.h"
-#include "base/cs_field.h"
 #include "cdo/cs_hho_builder.h"
-#include "alge/cs_matrix.h"
-#include "alge/cs_matrix_assembler.h"
-#include "mesh/cs_mesh.h"
-#include "base/cs_restart.h"
 #include "cdo/cs_source_term.h"
-#include "base/cs_time_step.h"
+#include "mesh/cs_mesh.h"
 
 /*============================================================================
  * Macro definitions
@@ -296,4 +296,4 @@ cs_hho_vecteq_extra_post(const cs_equation_param_t  *eqp,
                          cs_equation_builder_t      *eqb,
                          void                       *context);
 
-#endif /* __CS_HHO_VECTEQ_H__ */
+#endif /* CS_HHO_VECTEQ_H */

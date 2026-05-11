@@ -30,23 +30,22 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <ctype.h>
-#include <float.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
+#include <cassert>
+#include <cctype>
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
-
 #include "base/cs_array.h"
 #include "base/cs_defs.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_volume_zone.h"
 #include "cdo/cs_param_cdo.h"
 #include "cdo/cs_reco.h"

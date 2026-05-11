@@ -1,5 +1,5 @@
-#ifndef __CS_BASIS_FUNC_H__
-#define __CS_BASIS_FUNC_H__
+#ifndef CS_BASIS_FUNC_H
+#define CS_BASIS_FUNC_H
 
 /*============================================================================
  * Build a set of basis functions for cells and faces and cell gradients
@@ -361,4 +361,4 @@ cs_basis_func_fprintf(FILE                   *fp,
                       const char             *fname,
                       const cs_basis_func_t  *pbf);
 
-#endif /* __CS_BASIS_FUNC_H__ */
+#endif /* CS_BASIS_FUNC_H */

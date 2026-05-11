@@ -32,28 +32,26 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <errno.h>
-#include <float.h>
-#include <locale.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cassert>
+#include <cfloat>
+#include <clocale>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
-
-#include "base/cs_mem.h"
-#include "bft/bft_printf.h"
 
 #include "alge/cs_blas.h"
 #include "base/cs_boundary.h"
 #include "base/cs_field.h"
 #include "base/cs_log.h"
 #include "base/cs_math.h"
+#include "base/cs_mem.h"
 #include "base/cs_post.h"
+#include "bft/bft_printf.h"
 #include "cdo/cs_equation.h"
 #include "cdo/cs_reco.h"
 #include "mesh/cs_mesh.h"

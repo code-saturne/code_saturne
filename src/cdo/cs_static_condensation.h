@@ -1,5 +1,5 @@
-#ifndef __CS_STATIC_CONDENSATION_H__
-#define __CS_STATIC_CONDENSATION_H__
+#ifndef CS_STATIC_CONDENSATION_H
+#define CS_STATIC_CONDENSATION_H
 
 /*============================================================================
  * Functions to handle manipulations related to the static condensation
@@ -31,7 +31,6 @@
 
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_local.h"
-
 
 /*============================================================================
  * Macro definitions
@@ -135,4 +134,4 @@ cs_static_condensation_recover_vector(const cs_adjacency_t    *c2x,
                                       const cs_real_t         *px,
                                       cs_real_t               *pc);
 
-#endif /* __CS_STATIC_CONDENSATION_H__ */
+#endif /* CS_STATIC_CONDENSATION_H */

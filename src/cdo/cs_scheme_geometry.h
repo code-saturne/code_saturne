@@ -1,5 +1,5 @@
-#ifndef __CS_CDO_SCHEME_GEOMETRY_H__
-#define __CS_CDO_SCHEME_GEOMETRY_H__
+#ifndef CS_CDO_SCHEME_GEOMETRY_H
+#define CS_CDO_SCHEME_GEOMETRY_H
 
 /*============================================================================
  * Geometric computations for building discretization operators which is
@@ -34,9 +34,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cdo/cs_cdo_local.h"
 #include "base/cs_math.h"
-
+#include "cdo/cs_cdo_local.h"
 
 /*============================================================================
  * Macro definitions
@@ -286,4 +285,4 @@ cs_compute_wef_wvf(short int                 f,
                    cs_real_t                *wvf,
                    cs_real_t                *wef);
 
-#endif /* __CS_CDO_SCHEME_GEOMETRY_H__ */
+#endif /* CS_CDO_SCHEME_GEOMETRY_H */

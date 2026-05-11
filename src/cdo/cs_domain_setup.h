@@ -1,5 +1,5 @@
-#ifndef __CS_DOMAIN_SETUP_H__
-#define __CS_DOMAIN_SETUP_H__
+#ifndef CS_DOMAIN_SETUP_H
+#define CS_DOMAIN_SETUP_H
 
 /*============================================================================
  * Manage the definition/setting of a computation
@@ -33,8 +33,8 @@
 
 #include "base/cs_defs.h"
 
-#include "cdo/cs_domain.h"
 #include "base/cs_param_types.h"
+#include "cdo/cs_domain.h"
 
 /*============================================================================
  * Macro definitions
@@ -183,4 +183,4 @@ cs_domain_setup_init_state(cs_domain_t *domain);
 void
 cs_domain_setup_log(const cs_domain_t   *domain);
 
-#endif /* __CS_DOMAIN_SETUP_H__ */
+#endif /* CS_DOMAIN_SETUP_H */

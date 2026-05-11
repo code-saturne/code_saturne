@@ -30,9 +30,9 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -41,11 +41,11 @@
 #include "base/cs_mem.h"
 
 #include "base/cs_boundary_zone.h"
-#include "cdo/cs_cdo_local.h"
 #include "base/cs_log.h"
-#include "cdo/cs_macfb_builder.h"
 #include "base/cs_parall.h"
 #include "base/cs_parameters.h"
+#include "cdo/cs_cdo_local.h"
+#include "cdo/cs_macfb_builder.h"
 #include "cdo/cs_xdef_eval.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)

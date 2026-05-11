@@ -1,5 +1,5 @@
-#ifndef __CS_NAVSTO_COUPLING_H__
-#define __CS_NAVSTO_COUPLING_H__
+#ifndef CS_NAVSTO_COUPLING_H
+#define CS_NAVSTO_COUPLING_H
 
 /*============================================================================
  * Functions and structures to handle the settings of different
@@ -33,8 +33,8 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cdo/cs_equation.h"
 #include "base/cs_field.h"
+#include "cdo/cs_equation.h"
 #include "cdo/cs_navsto_param.h"
 
 /*============================================================================
@@ -377,4 +377,4 @@ cs_navsto_projection_last_setup(const cs_cdo_quantities_t  *quant,
 cs_equation_t *
 cs_navsto_projection_get_momentum_eq(void       *context);
 
-#endif /* __CS_NAVSTO_COUPLING_H__ */
+#endif /* CS_NAVSTO_COUPLING_H */

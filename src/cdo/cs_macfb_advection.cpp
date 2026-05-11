@@ -30,28 +30,27 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <float.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cassert>
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_math.h"
 #include "base/cs_mem.h"
-
 #include "cdo/cs_cdo_bc.h"
 #include "cdo/cs_flag.h"
 #include "cdo/cs_macfb_builder.h"
-#include "base/cs_math.h"
 #include "cdo/cs_property.h"
 #include "cdo/cs_scheme_geometry.h"
 
 #if defined(DEBUG) && !defined(NDEBUG) /* For debugging purpose */
-#include "cdo/cs_dbg.h"
 #include "base/cs_log.h"
+#include "cdo/cs_dbg.h"
 #endif
 
 /*----------------------------------------------------------------------------

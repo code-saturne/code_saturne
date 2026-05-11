@@ -1,5 +1,5 @@
-#ifndef __CS_DBG_H__
-#define __CS_DBG_H__
+#ifndef CS_DBG_H
+#define CS_DBG_H
 
 /*============================================================================
  * General functions or variables for the INNOV module
@@ -29,15 +29,15 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include <float.h>
+#include <limits>
 
+#include "alge/cs_matrix.h"
 #include "base/cs_base.h"
+#include "base/cs_defs.h"
+#include "base/cs_math.h"
 #include "cdo/cs_cdo_bc.h"
 #include "cdo/cs_cdo_local.h"
-#include "base/cs_defs.h"
 #include "cdo/cs_equation_param.h"
-#include "base/cs_math.h"
-#include "alge/cs_matrix.h"
 
 /*============================================================================
  * Macro definitions
@@ -70,7 +70,7 @@ cs_dbg_check_hmg_dirichlet_cw(const char           *fname,
 {
   for (short int i = 0; i < csys->n_dofs; i++) {
     if (csys->dof_flag[i] & CS_CDO_BC_HMG_DIRICHLET)
-      if (fabs(csys->dir_values[i]) > 100*DBL_MIN)
+      if (cs::abs(csys->dir_values[i]) > 100*std::numeric_limits<double>::min())
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid value for a homogeneous Dirichlet condition",
                   fname);
@@ -250,4 +250,4 @@ cs_dbg_binary_dump_system(const char         *basename,
                           const cs_real_t    *rhs,
                           const cs_real_t    *sol);
 
-#endif /* __CS_DBG_H__ */
+#endif /* CS_DBG_H */

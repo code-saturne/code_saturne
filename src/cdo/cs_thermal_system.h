@@ -1,5 +1,5 @@
-#ifndef __CS_THERMAL_SYSTEM_H__
-#define __CS_THERMAL_SYSTEM_H__
+#ifndef CS_THERMAL_SYSTEM_H
+#define CS_THERMAL_SYSTEM_H
 
 /*============================================================================
  * Functions to handle cs_thermal_system_t structure
@@ -29,14 +29,14 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_field.h"
+#include "base/cs_time_step.h"
 #include "cdo/cs_advection_field.h"
 #include "cdo/cs_equation.h"
-#include "base/cs_field.h"
 #include "cdo/cs_property.h"
-#include "mesh/cs_mesh.h"
 #include "cdo/cs_source_term.h"
-#include "base/cs_time_step.h"
 #include "cdo/cs_xdef.h"
+#include "mesh/cs_mesh.h"
 
 /*============================================================================
  * Macro definitions
@@ -448,4 +448,4 @@ cs_thermal_system_log_setup(void);
 void
 cs_thermal_system_cht_boundary_conditions_setup(void);
 
-#endif /* __CS_THERMAL_SYSTEM_H__ */
+#endif /* CS_THERMAL_SYSTEM_H */

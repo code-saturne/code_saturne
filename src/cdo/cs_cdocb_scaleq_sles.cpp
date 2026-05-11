@@ -31,8 +31,8 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <string.h>
+#include <cassert>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  *  BFT headers
@@ -44,18 +44,18 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_array.h"
 #include "alge/cs_blas.h"
+#include "alge/cs_matrix_default.h"
+#include "alge/cs_saddle_solver.h"
+#include "base/cs_array.h"
+#include "base/cs_fp_exception.h"
+#include "base/cs_parall.h"
+#include "base/cs_timer.h"
 #include "cdo/cs_cdo_blas.h"
 #include "cdo/cs_cdo_solve.h"
-#include "cdo/cs_equation.h"
 #include "cdo/cs_cdocb_scaleq.h"
-#include "base/cs_fp_exception.h"
-#include "alge/cs_matrix_default.h"
-#include "base/cs_parall.h"
-#include "alge/cs_saddle_solver.h"
+#include "cdo/cs_equation.h"
 #include "cdo/cs_saddle_system.h"
-#include "base/cs_timer.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cdo/cs_dbg.h"

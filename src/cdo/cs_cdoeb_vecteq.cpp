@@ -32,18 +32,24 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <float.h>
-#include <assert.h>
-#include <string.h>
+#include <cassert>
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_array.h"
 #include "base/cs_mem.h"
+#include "cdo/cs_cdo_diffusion.h"
+#include "cdo/cs_cdo_solve.h"
+#include "cdo/cs_cdo_toolbox.h"
+#include "cdo/cs_evaluate.h"
+#include "cdo/cs_reco.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cdo/cs_dbg.h"
@@ -52,13 +58,6 @@
 /*----------------------------------------------------------------------------
  *  Header for the current file
  *----------------------------------------------------------------------------*/
-
-#include "base/cs_array.h"
-#include "cdo/cs_cdo_diffusion.h"
-#include "cdo/cs_cdo_toolbox.h"
-#include "cdo/cs_cdo_solve.h"
-#include "cdo/cs_evaluate.h"
-#include "cdo/cs_reco.h"
 
 #include "cdo/cs_cdoeb_vecteq.h"
 

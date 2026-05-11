@@ -1,5 +1,5 @@
-#ifndef __CS_MESH_DEFORM_H__
-#define __CS_MESH_DEFORM_H__
+#ifndef CS_MESH_DEFORM_H
+#define CS_MESH_DEFORM_H
 
 /*============================================================================
  * Mesh deformation.
@@ -184,4 +184,4 @@ cs_mesh_deform_get_displacement(void);
 void
 cs_mesh_deform_finalize(void);
 
-#endif /* __CS_MESH_DEFORM_H__ */
+#endif /* CS_MESH_DEFORM_H */

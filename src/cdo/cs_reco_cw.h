@@ -1,5 +1,5 @@
-#ifndef __CS_RECO_CW_H__
-#define __CS_RECO_CW_H__
+#ifndef CS_RECO_CW_H
+#define CS_RECO_CW_H
 
 /*============================================================================
  * Functions to handle the cell-wise reconstruction of fields relying on the
@@ -279,4 +279,4 @@ cs_reco_cw_scalar_ebyc2c(const cs_cell_mesh_t      *cm,
   return val_c;
 }
 
-#endif /* __CS_RECO_CW_H__ */
+#endif /* CS_RECO_CW_H */

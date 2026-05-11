@@ -1,5 +1,5 @@
-#ifndef __CS_EQUATION_H__
-#define __CS_EQUATION_H__
+#ifndef CS_EQUATION_H
+#define CS_EQUATION_H
 
 /*============================================================================
  * Functions to handle the cs_equation_t structure and its related structures
@@ -29,15 +29,15 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_field.h"
+#include "base/cs_restart.h"
+#include "base/cs_time_step.h"
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_cdo_toolbox.h"
 #include "cdo/cs_equation_builder.h"
 #include "cdo/cs_equation_param.h"
-#include "base/cs_field.h"
 #include "mesh/cs_mesh.h"
-#include "base/cs_restart.h"
-#include "base/cs_time_step.h"
 
 /*============================================================================
  * Macro definitions
@@ -1290,4 +1290,4 @@ cs_equation_apply_stiffness(cs_equation_t       *eq,
 void
 cs_equation_extra_post(void);
 
-#endif /* __CS_EQUATION_H__ */
+#endif /* CS_EQUATION_H */

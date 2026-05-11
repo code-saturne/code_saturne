@@ -1,5 +1,5 @@
-#ifndef __CS_MACFB_BUILDER_H__
-#define __CS_MACFB_BUILDER_H__
+#ifndef CS_MACFB_BUILDER_H
+#define CS_MACFB_BUILDER_H
 
 /*============================================================================
  * Low-level functions and structures used to build the algebraic system with
@@ -37,7 +37,6 @@
 #include "cdo/cs_property.h"
 #include "cdo/cs_sdm.h"
 #include "cdo/cs_xdef.h"
-
 
 /*============================================================================
  * Macro definitions
@@ -203,4 +202,4 @@ cs_macfb_builder_cellwise_setup(const cs_cell_mesh_t      *cm,
 void
 cs_macfb_builder_dump(const cs_macfb_builder_t *macb);
 
-#endif /* __CS_MACFB_BUILDER_H__ */
+#endif /* CS_MACFB_BUILDER_H */

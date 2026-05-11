@@ -1,5 +1,5 @@
-#ifndef __CS_EQUATION_BC_H__
-#define __CS_EQUATION_BC_H__
+#ifndef CS_EQUATION_BC_H
+#define CS_EQUATION_BC_H
 
 /*============================================================================
  * Functions to handle the evaluation of boundary conditions when building the
@@ -30,13 +30,13 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "base/cs_time_step.h"
 #include "cdo/cs_cdo_bc.h"
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_local.h"
 #include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_equation_param.h"
 #include "cdo/cs_macfb_builder.h"
-#include "base/cs_time_step.h"
 #include "cdo/cs_xdef_eval.h"
 
 /*============================================================================
@@ -537,4 +537,4 @@ cs_equation_bc_circulation_at_edges(cs_real_t                    t_eval,
 void
 cs_equation_bc_update_for_increment(cs_cell_sys_t  *csys);
 
-#endif /* __CS_EQUATION_BC_H__ */
+#endif /* CS_EQUATION_BC_H */

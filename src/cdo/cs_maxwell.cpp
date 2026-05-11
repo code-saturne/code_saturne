@@ -30,17 +30,16 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
+#include <cassert>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_mem.h"
-#include "bft/bft_error.h"
-
-#include "cdo/cs_hodge.h"
 #include "base/cs_post.h"
+#include "bft/bft_error.h"
+#include "cdo/cs_hodge.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

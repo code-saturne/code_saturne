@@ -31,20 +31,23 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <float.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cassert>
+#include <cfloat>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
-
 #include "base/cs_array.h"
+#include "base/cs_log.h"
+#include "base/cs_math.h"
+#include "base/cs_mem.h"
+#include "base/cs_post.h"
+#include "base/cs_search.h"
 #include "cdo/cs_cdo_advection.h"
 #include "cdo/cs_cdo_bc.h"
 #include "cdo/cs_cdo_diffusion.h"
@@ -53,13 +56,9 @@
 #include "cdo/cs_equation_bc.h"
 #include "cdo/cs_evaluate.h"
 #include "cdo/cs_hodge.h"
-#include "base/cs_log.h"
-#include "base/cs_math.h"
-#include "mesh/cs_mesh_location.h"
-#include "base/cs_post.h"
 #include "cdo/cs_quadrature.h"
 #include "cdo/cs_reco.h"
-#include "base/cs_search.h"
+#include "mesh/cs_mesh_location.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cdo/cs_dbg.h"

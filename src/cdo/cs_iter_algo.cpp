@@ -30,21 +30,20 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <float.h>
-#include <assert.h>
-#include <string.h>
+#include <cassert>
+#include <cfloat>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "base/cs_mem.h"
-#include "bft/bft_error.h"
-#include "bft/bft_printf.h"
-
 #include "base/cs_array.h"
 #include "base/cs_log.h"
+#include "base/cs_mem.h"
 #include "base/cs_parall.h"
+#include "bft/bft_error.h"
+#include "bft/bft_printf.h"
 #include "cdo/cs_param_cdo.h"
 #include "cdo/cs_sdm.h"
 

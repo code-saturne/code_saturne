@@ -1,5 +1,5 @@
-#ifndef __CS_EQUATION_BUILDER_H__
-#define __CS_EQUATION_BUILDER_H__
+#ifndef CS_EQUATION_BUILDER_H
+#define CS_EQUATION_BUILDER_H
 
 /*============================================================================
  * Functions to handle the equation builder structure
@@ -29,6 +29,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "alge/cs_matrix.h"
 #include "cdo/cs_cdo_bc.h"
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_local.h"
@@ -37,7 +38,6 @@
 #include "cdo/cs_enforcement.h"
 #include "cdo/cs_equation_param.h"
 #include "cdo/cs_flag.h"
-#include "alge/cs_matrix.h"
 #include "cdo/cs_source_term.h"
 
 /*============================================================================
@@ -486,4 +486,4 @@ cs_equation_builder_enforce_block_dofs(const cs_equation_builder_t   *eqb,
                                        cs_cell_builder_t             *cb,
                                        cs_cell_sys_t                 *csys);
 
-#endif /* __CS_EQUATION_BUILDER_H__ */
+#endif /* CS_EQUATION_BUILDER_H */

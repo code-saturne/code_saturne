@@ -1,5 +1,5 @@
-#ifndef __CS_DOMAIN_H__
-#define __CS_DOMAIN_H__
+#ifndef CS_DOMAIN_H
+#define CS_DOMAIN_H
 
 /*============================================================================
  * Manage a computational domain
@@ -27,29 +27,19 @@
 */
 
 /*----------------------------------------------------------------------------
- *  Standard C library headers
- *----------------------------------------------------------------------------*/
-
-#include <stdbool.h>
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_boundary.h"
-#include "cdo/cs_cdo_connect.h"
-#include "cdo/cs_cdo_quantities.h"
-#include "mesh/cs_mesh.h"
-#include "mesh/cs_mesh_quantities.h"
-#include "cdo/cs_param_cdo.h"
 #include "base/cs_time_control.h"
 #include "base/cs_time_step.h"
 #include "base/cs_timer.h"
+#include "cdo/cs_cdo_connect.h"
+#include "cdo/cs_cdo_quantities.h"
+#include "cdo/cs_param_cdo.h"
 #include "cdo/cs_xdef.h"
-
-/*----------------------------------------------------------------------------*/
-
-BEGIN_C_DECLS
+#include "mesh/cs_mesh.h"
+#include "mesh/cs_mesh_quantities.h"
 
 /*============================================================================
  * Type definitions
@@ -362,6 +352,4 @@ cs_domain_increment_time(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 
-END_C_DECLS
-
-#endif /* __CS_DOMAIN_H__ */
+#endif /* CS_DOMAIN_H */

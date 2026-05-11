@@ -1,5 +1,5 @@
-#ifndef __CS_CDOEB_PRIV_H__
-#define __CS_CDOEB_PRIV_H__
+#ifndef CS_CDOEB_PRIV_H
+#define CS_CDOEB_PRIV_H
 
 /*============================================================================
  * Definition of cs_cdovb_scaleq_t and cs_cdovb_vecteq structures
@@ -30,8 +30,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_defs.h"
-#include "cdo/cs_hodge.h"
 #include "cdo/cs_equation_bc.h"
+#include "cdo/cs_hodge.h"
 
 /*!
   \file cs_cdoeb_priv.h
@@ -96,4 +96,4 @@ struct _cs_cdoeb_t {
  * Public function prototypes
  *============================================================================*/
 
-#endif /* __CS_CDOEB_PRIV_H__ */
+#endif /* CS_CDOEB_PRIV_H */

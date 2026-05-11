@@ -1,5 +1,5 @@
-#ifndef __CS_XDEF_EVAL_H__
-#define __CS_XDEF_EVAL_H__
+#ifndef CS_XDEF_EVAL_H
+#define CS_XDEF_EVAL_H
 
 /*============================================================================
  * Manage the (generic) evaluation of extended definitions
@@ -33,9 +33,9 @@
 
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_quantities.h"
-#include "mesh/cs_mesh.h"
 #include "cdo/cs_quadrature.h"
 #include "cdo/cs_xdef.h"
+#include "mesh/cs_mesh.h"
 
 /*============================================================================
  * Function pointer type definitions
@@ -697,4 +697,4 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
                                         int                          dim,
                                         cs_real_t                   *eval);
 
-#endif /* __CS_XDEF_EVAL_H__ */
+#endif /* CS_XDEF_EVAL_H */

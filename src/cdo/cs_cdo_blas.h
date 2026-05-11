@@ -1,5 +1,5 @@
-#ifndef __CS_CDO_BLAS_H__
-#define __CS_CDO_BLAS_H__
+#ifndef CS_CDO_BLAS_H
+#define CS_CDO_BLAS_H
 
 /*============================================================================
  * Functions computing BLAS 1 operations (like square norms and dot products
@@ -471,4 +471,4 @@ cs_cdo_blas_square_norm_pfsf_hdiv_diff(const cs_real_t *a, const cs_real_t *b);
 cs_real_t
 cs_cdo_blas_dotprod_pfsf_hdiv(const cs_real_t *a, const cs_real_t *b);
 
-#endif /* __CS_CDO_BLAS_H__ */
+#endif /* CS_CDO_BLAS_H */

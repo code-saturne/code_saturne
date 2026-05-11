@@ -1,5 +1,5 @@
-#ifndef __CS_CDOFB_VECTEQ_H__
-#define __CS_CDOFB_VECTEQ_H__
+#ifndef CS_CDOFB_VECTEQ_H
+#define CS_CDOFB_VECTEQ_H
 
 /*============================================================================
  * Build an algebraic CDO face-based system for unsteady convection/diffusion
@@ -38,20 +38,20 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "alge/cs_matrix.h"
+#include "alge/cs_sles.h"
 #include "base/cs_base.h"
+#include "base/cs_field.h"
+#include "base/cs_restart.h"
+#include "base/cs_time_step.h"
 #include "cdo/cs_cdo_assembly.h"
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_cdofb_priv.h"
 #include "cdo/cs_equation_builder.h"
 #include "cdo/cs_equation_param.h"
-#include "base/cs_field.h"
-#include "alge/cs_matrix.h"
-#include "mesh/cs_mesh.h"
-#include "base/cs_restart.h"
-#include "alge/cs_sles.h"
 #include "cdo/cs_source_term.h"
-#include "base/cs_time_step.h"
+#include "mesh/cs_mesh.h"
 
 /*============================================================================
  * Macro definitions
@@ -587,4 +587,4 @@ cs_cdofb_vecteq_write_restart(cs_restart_t    *restart,
                               const char      *eqname,
                               void            *scheme_context);
 
-#endif /* __CS_CDOFB_VECTEQ_H__ */
+#endif /* CS_CDOFB_VECTEQ_H */

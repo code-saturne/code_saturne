@@ -1,5 +1,5 @@
-#ifndef __CS_FLAG_H__
-#define __CS_FLAG_H__
+#ifndef CS_FLAG_H
+#define CS_FLAG_H
 
 /*============================================================================
  * Manage the definition/setting of a computation
@@ -400,4 +400,4 @@ cs_eflag_test(cs_eflag_t flag_to_check,
 const char *
 cs_flag_str_location(cs_flag_t  loc);
 
-#endif /* __CS_FLAG_H__ */
+#endif /* CS_FLAG_H */

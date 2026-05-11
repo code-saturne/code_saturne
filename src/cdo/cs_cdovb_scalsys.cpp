@@ -32,11 +32,11 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cassert>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -44,14 +44,14 @@
 
 #include "base/cs_mem.h"
 
+#include "alge/cs_matrix.h"
+#include "alge/cs_sles.h"
 #include "base/cs_array.h"
+#include "base/cs_parameters.h"
 #include "cdo/cs_cdo_assembly.h"
 #include "cdo/cs_cdo_system.h"
 #include "cdo/cs_cdovb_priv.h"
 #include "cdo/cs_cdovb_scaleq.h"
-#include "alge/cs_matrix.h"
-#include "base/cs_parameters.h"
-#include "alge/cs_sles.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cdo/cs_dbg.h"

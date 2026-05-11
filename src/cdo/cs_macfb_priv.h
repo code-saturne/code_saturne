@@ -1,5 +1,5 @@
-#ifndef __CS_MACFB_PRIV_H__
-#define __CS_MACFB_PRIV_H__
+#ifndef CS_MACFB_PRIV_H
+#define CS_MACFB_PRIV_H
 
 /*============================================================================
  * Definition of cs_macfb_scaleq_t and cs_macfb_vecteq structures
@@ -33,7 +33,6 @@
 #include "cdo/cs_equation_builder.h"
 #include "cdo/cs_hodge.h"
 #include "cdo/cs_macfb_advection.h"
-
 
 /*============================================================================
  * Macro definitions
@@ -113,4 +112,4 @@ void cs_macfb_set_advection_function(const cs_equation_param_t *eqp,
                                      cs_equation_builder_t     *eqb,
                                      cs_macfb_priv_t           *eqc);
 
-#endif /* __CS_MACFB_PRIV_H__ */
+#endif /* CS_MACFB_PRIV_H */

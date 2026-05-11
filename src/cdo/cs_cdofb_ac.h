@@ -1,5 +1,5 @@
-#ifndef __CS_CDOFB_AC_H__
-#define __CS_CDOFB_AC_H__
+#ifndef CS_CDOFB_AC_H
+#define CS_CDOFB_AC_H
 
 /*============================================================================
  * Build an algebraic CDO face-based system for the Navier-Stokes equations
@@ -39,14 +39,14 @@
  *----------------------------------------------------------------------------*/
 
 #include "base/cs_base.h"
+#include "base/cs_time_step.h"
 #include "cdo/cs_cdo_connect.h"
 #include "cdo/cs_cdo_quantities.h"
 #include "cdo/cs_equation.h"
-#include "mesh/cs_mesh.h"
 #include "cdo/cs_navsto_coupling.h"
 #include "cdo/cs_navsto_param.h"
 #include "cdo/cs_source_term.h"
-#include "base/cs_time_step.h"
+#include "mesh/cs_mesh.h"
 
 /*============================================================================
  * Macro definitions
@@ -167,4 +167,4 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
                                 const cs_navsto_param_t      *nsp,
                                 void                         *scheme_context);
 
-#endif /* __CS_CDOFB_AC_H__ */
+#endif /* CS_CDOFB_AC_H */

@@ -31,7 +31,7 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
+#include <cassert>
 
 /*----------------------------------------------------------------------------
  * Local headers
@@ -40,9 +40,9 @@
 #include "base/cs_mem.h"
 #include "bft/bft_error.h"
 
+#include "alge/cs_matrix_priv.h"
 #include "base/cs_array.h"
 #include "cdo/cs_flag.h"
-#include "alge/cs_matrix_priv.h"
 #include "cdo/cs_param_cdo.h"
 
 #if defined(HAVE_HYPRE)

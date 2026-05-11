@@ -1,5 +1,5 @@
-#ifndef __CS_CDOFB_PRIV_H__
-#define __CS_CDOFB_PRIV_H__
+#ifndef CS_CDOFB_PRIV_H
+#define CS_CDOFB_PRIV_H
 
 /*============================================================================
  * Definition of cs_cdofb_scaleq_t and cs_cdofb_vecteq structures
@@ -33,7 +33,6 @@
 #include "cdo/cs_equation_bc.h"
 #include "cdo/cs_equation_builder.h"
 #include "cdo/cs_hodge.h"
-
 
 /*============================================================================
  * Macro definitions
@@ -125,4 +124,4 @@ cs_cdofb_set_advection_function(const cs_equation_param_t   *eqp,
                                 cs_equation_builder_t       *eqb,
                                 cs_cdofb_priv_t             *eqc);
 
-#endif /* __CS_CDOFB_PRIV_H__ */
+#endif /* CS_CDOFB_PRIV_H */

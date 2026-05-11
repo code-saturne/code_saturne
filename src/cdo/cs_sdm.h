@@ -1,5 +1,5 @@
-#ifndef __CS_SDM_H__
-#define __CS_SDM_H__
+#ifndef CS_SDM_H
+#define CS_SDM_H
 
 /*============================================================================
  * Set of operations to handle Small Dense Matrices (SDM)
@@ -29,10 +29,10 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
-#include <assert.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
+#include <cassert>
+#include <cmath>
+#include <cstdio>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -86,8 +86,6 @@ struct _cs_sdm_t {
 
   /* Structure describing the matrix in terms of blocks */
   cs_sdm_block_t   *block_desc;
-
-#ifdef __cplusplus
 
   /*----------------------------------------------------------------------------*/
   /*!
@@ -377,17 +375,11 @@ struct _cs_sdm_t {
 
   void
   map_array(int n_max_rows_, int n_max_cols_, cs_real_t *array);
-
-#endif
 };
-
-#ifdef __cplusplus
 
 namespace cs {
 using sdm_t = cs_sdm_t;
 }
-
-#endif
 
 /*============================================================================
  * Public function prototypes
@@ -1342,4 +1334,4 @@ cs_sdm_block_fprintf(FILE             *fp,
                      cs_real_t         thd,
                      const cs_sdm_t   *m);
 
-#endif /* __CS_SDM_H__ */
+#endif /* CS_SDM_H */
