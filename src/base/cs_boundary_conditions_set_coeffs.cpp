@@ -4329,7 +4329,6 @@ cs_boundary_conditions_update_bc_coeff_face_values
   cs_real_t *df_limiter = nullptr;
   cs_internal_coupling_t *cpl = nullptr;
   cs_real_t *val_ip_flux = nullptr;
-  int w_stride = 1;
 
   const int ircflp = eqp->ircflu;
   const int ircflb = (ircflp > 0) ? eqp->b_diff_flux_rc : 0;
@@ -4400,6 +4399,11 @@ cs_boundary_conditions_update_bc_coeff_face_values
     // Internal coupling overwrites coeff "a" so that we get the
     // correct flux, so it should not be mute by inc
     assert(inc == 1);
+
+    int w_stride = 1;
+    if (eqp->idften & CS_ANISOTROPIC_DIFFUSION)
+      w_stride = 6;
+
     cs_internal_coupling_update_bc_coeffs_s
       (ctx,
        bc_coeffs,
