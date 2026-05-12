@@ -174,8 +174,8 @@ _build_edge_based_vector_fields(const cs_cdo_quantities_t   *quant,
   assert(ep_values != nullptr && fd_values != nullptr);
   assert(c_ep_values != nullptr && c_fd_values != nullptr);
 
-  memset(c_ep_values, 0, 3*quant->n_cells*sizeof(cs_real_t));
-  memset(c_fd_values, 0, 3*quant->n_cells*sizeof(cs_real_t));
+  std::memset(c_ep_values, 0, 3 * quant->n_cells * sizeof(cs_real_t));
+  std::memset(c_fd_values, 0, 3 * quant->n_cells * sizeof(cs_real_t));
 
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
@@ -231,8 +231,8 @@ _build_face_based_vector_fields(const cs_cdo_quantities_t   *quant,
   assert(fp_values != nullptr && ed_values != nullptr);
   assert(c_fp_values != nullptr && c_ed_values != nullptr);
 
-  memset(c_fp_values, 0, 3*quant->n_cells*sizeof(cs_real_t));
-  memset(c_ed_values, 0, 3*quant->n_cells*sizeof(cs_real_t));
+  std::memset(c_fp_values, 0, 3 * quant->n_cells * sizeof(cs_real_t));
+  std::memset(c_ed_values, 0, 3 * quant->n_cells * sizeof(cs_real_t));
 
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
@@ -592,15 +592,14 @@ cs_maxwell_finalize_setup(const cs_cdo_connect_t       *connect,
     /* Electric field array along edges */
 
     CS_MALLOC(mxl->e_field_array, quant->n_edges, cs_real_t);
-    memset(mxl->e_field_array, 0, quant->n_edges*sizeof(cs_real_t));
+    std::memset(mxl->e_field_array, 0, quant->n_edges * sizeof(cs_real_t));
 
     /* Electric induction (flux density) across dual faces */
 
     const cs_adjacency_t  *c2e = connect->c2e;
     const cs_lnum_t  array_size = c2e->idx[quant->n_cells];
     CS_MALLOC(mxl->d_field_array, array_size, cs_real_t);
-    memset(mxl->d_field_array, 0, array_size*sizeof(cs_real_t));
-
+    std::memset(mxl->d_field_array, 0, array_size * sizeof(cs_real_t));
   }
 
   if (mxl->model & CS_MAXWELL_MODEL_MAGNETOSTATIC) {
@@ -615,13 +614,12 @@ cs_maxwell_finalize_setup(const cs_cdo_connect_t       *connect,
     const cs_adjacency_t  *c2f = connect->c2f;
     const cs_lnum_t  array_size = c2f->idx[quant->n_cells];
     CS_MALLOC(mxl->h_field_array, array_size, cs_real_t);
-    memset(mxl->h_field_array, 0, array_size*sizeof(cs_real_t));
+    std::memset(mxl->h_field_array, 0, array_size * sizeof(cs_real_t));
 
     /* Magnetic induction (flux density) across primal faces */
 
     CS_MALLOC(mxl->b_field_array, quant->n_faces, cs_real_t);
-    memset(mxl->b_field_array, 0, quant->n_faces*sizeof(cs_real_t));
-
+    std::memset(mxl->b_field_array, 0, quant->n_faces * sizeof(cs_real_t));
   }
 }
 

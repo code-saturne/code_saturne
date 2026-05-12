@@ -362,7 +362,7 @@ cs_cdo_balance_reset(cs_cdo_balance_t   *b)
 
   size_t  bufsize = b->size *sizeof(cs_real_t);
 
-  memset(b->balance, 0, 7*bufsize);
+  std::memset(b->balance, 0, 7 * bufsize);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -492,8 +492,8 @@ cs_cdo_sync_vol_def_at_vertices(int                      n_defs,
 
   cs_lnum_t *count = nullptr;
   CS_MALLOC(count, n_defs, cs_lnum_t);
-  memset(count, 0, n_defs*sizeof(cs_lnum_t));
-  memset(def2v_idx, 0, (n_defs+1)*sizeof(cs_lnum_t));
+  std::memset(count, 0, n_defs * sizeof(cs_lnum_t));
+  std::memset(def2v_idx, 0, (n_defs + 1) * sizeof(cs_lnum_t));
 
   /* 1. Count number of vertices related to each definition */
 
@@ -594,8 +594,8 @@ cs_cdo_sync_vol_def_at_edges(int                      n_defs,
 
   cs_lnum_t *count = nullptr;
   CS_MALLOC(count, n_defs, cs_lnum_t);
-  memset(count, 0, n_defs*sizeof(cs_lnum_t));
-  memset(def2e_idx, 0, (n_defs+1)*sizeof(cs_lnum_t));
+  std::memset(count, 0, n_defs * sizeof(cs_lnum_t));
+  std::memset(def2e_idx, 0, (n_defs + 1) * sizeof(cs_lnum_t));
 
   /* 1. Count the number of edges related to each definition */
 
@@ -693,8 +693,8 @@ cs_cdo_sync_vol_def_at_faces(int         n_defs,
 
   cs_lnum_t *count = nullptr;
   CS_MALLOC(count, n_defs, cs_lnum_t);
-  memset(count, 0, n_defs*sizeof(cs_lnum_t));
-  memset(def2f_idx, 0, (n_defs+1)*sizeof(cs_lnum_t));
+  std::memset(count, 0, n_defs * sizeof(cs_lnum_t));
+  std::memset(def2f_idx, 0, (n_defs + 1) * sizeof(cs_lnum_t));
 
   /* 1. Count number of faces related to each definition */
 

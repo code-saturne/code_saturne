@@ -90,7 +90,9 @@ _create_sdm(cs_flag_t   flag,
   mat->n_cols = n_max_cols;
 
   CS_MALLOC(mat->val, mat->n_max_rows * mat->n_max_cols, cs_real_t);
-  memset(mat->val, 0, sizeof(cs_real_t)*mat->n_max_rows*mat->n_max_cols);
+  std::memset(mat->val,
+              0,
+              sizeof(cs_real_t) * mat->n_max_rows * mat->n_max_cols);
 
   if (flag & CS_SDM_BY_BLOCK) {
 
@@ -170,7 +172,7 @@ cs_sdm_create_copy(const cs_sdm_t  *m)
 
   c->n_rows = m->n_rows;
   c->n_cols = m->n_cols;
-  memcpy(c->val, m->val, sizeof(cs_real_t)*m->n_rows*m->n_cols);
+  std::memcpy(c->val, m->val, sizeof(cs_real_t) * m->n_rows * m->n_cols);
 
   return c;
 }
@@ -382,7 +384,7 @@ cs_sdm_block_init(cs_sdm_t      *m,
   for (int i = 0; i < n_col_blocks; i++)
     m->n_cols += col_block_sizes[i];
 
-  memset(m->val, 0, m->n_rows*m->n_cols*sizeof(cs_real_t));
+  std::memset(m->val, 0, m->n_rows * m->n_cols * sizeof(cs_real_t));
 
   cs_real_t  *p_val = m->val;
   int  shift = 0;
@@ -432,7 +434,7 @@ cs_sdm_block33_init(cs_sdm_t     *m,
   m->n_rows = 3*n_row_blocks;
   m->n_cols = 3*n_col_blocks;
 
-  memset(m->val, 0, m->n_rows*m->n_cols*sizeof(cs_real_t));
+  std::memset(m->val, 0, m->n_rows * m->n_cols * sizeof(cs_real_t));
 
   cs_real_t  *p_val = m->val;
   for (int i = 0; i < bd->n_row_blocks*bd->n_col_blocks; i++) {
@@ -527,7 +529,9 @@ cs_sdm_block_create_copy(const cs_sdm_t  *mref)
 
   /* Copy values */
 
-  memcpy(m->val, mref->val, sizeof(cs_real_t)*m->n_max_rows*m->n_max_cols);
+  std::memcpy(m->val,
+              mref->val,
+              sizeof(cs_real_t) * m->n_max_rows * m->n_max_cols);
 
   /* Define the block description */
 
@@ -951,7 +955,7 @@ cs_sdm_block_matvec(const cs_sdm_t *mat, const cs_real_t *vec, cs_real_t *mv)
   const cs_sdm_block_t *mat_desc = mat->block_desc;
 
   assert(mat_desc != nullptr);
-  memset(mv, 0, mat->n_rows * sizeof(cs_real_t));
+  std::memset(mv, 0, mat->n_rows * sizeof(cs_real_t));
 
   int c_shift = 0, r_shift = 0;
 
@@ -996,7 +1000,7 @@ cs_sdm_add_mult(cs_sdm_t        *mat,
   assert(mat->n_rows == add->n_rows);
   assert(mat->n_cols == add->n_cols);
 
-  if (fabs(alpha) < cs_math_zero_threshold)
+  if (cs::abs(alpha) < cs_math_zero_threshold)
     return;
 
   for (int i = 0; i < mat->n_rows*mat->n_cols; i++)
@@ -1317,7 +1321,7 @@ cs_sdm_33_lu_compute(const cs_sdm_t   *m,
   /* j=0: first row */
 
   const cs_real_t  d00 = m->val[0];
-  if (fabs(d00) < cs_math_zero_threshold)
+  if (cs::abs(d00) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
   const cs_real_t  invd00 = 1./d00;
 
@@ -1356,7 +1360,7 @@ cs_sdm_lu_compute(const cs_sdm_t   *m,
 
   /* Initialization */
 
-  memcpy(facto, m->val, n*n*sizeof(cs_real_t));
+  std::memcpy(facto, m->val, n * n * sizeof(cs_real_t));
 
   /* Each step work on a smaller block */
 
@@ -1365,7 +1369,7 @@ cs_sdm_lu_compute(const cs_sdm_t   *m,
     /* Pivot */
 
     cs_real_t  pivot = facto[k*(n+1)];
-    if (fabs(pivot) < cs_math_zero_threshold)
+    if (cs::abs(pivot) < cs_math_zero_threshold)
       bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
     const cs_real_t  invp = 1./pivot;
     const cs_real_t *rk_fact = facto + k * n;
@@ -1499,7 +1503,7 @@ cs_sdm_33_ldlt_compute(const cs_sdm_t   *m,
   /* j=0: first row */
 
   const cs_real_t  d00 = m->val[0];
-  if (fabs(d00) < cs_math_zero_threshold)
+  if (cs::abs(d00) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
 
   facto[0] = 1. / d00;
@@ -1509,7 +1513,7 @@ cs_sdm_33_ldlt_compute(const cs_sdm_t   *m,
   /* j=1: second row */
 
   const cs_real_t  d11 = m->val[4] - l10*l10 * d00;
-  if (fabs(d11) < cs_math_zero_threshold)
+  if (cs::abs(d11) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
   facto[2] = 1. / d11;
   const cs_real_t l21 = facto[4] = (m->val[5] - l20*d00*l10) * facto[2];
@@ -1517,7 +1521,7 @@ cs_sdm_33_ldlt_compute(const cs_sdm_t   *m,
   /* j=2: third row */
 
   const cs_real_t  d22 = m->val[8] - l20*l20*d00 - l21*l21*d11;
-  if (fabs(d22) < cs_math_zero_threshold)
+  if (cs::abs(d22) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
   facto[5] = 1. / d22;
 }
@@ -1548,7 +1552,7 @@ cs_sdm_44_ldlt_compute(const cs_sdm_t   *m,
   /* j=0: first row */
 
   const cs_real_t  d00 = m->val[0];
-  if (fabs(d00) < cs_math_zero_threshold)
+  if (cs::abs(d00) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
 
   facto[0] = 1. / d00;
@@ -1559,7 +1563,7 @@ cs_sdm_44_ldlt_compute(const cs_sdm_t   *m,
   /* j=1: second row */
 
   const cs_real_t  d11 = m->val[5] - l10*l10 * d00;
-  if (fabs(d11) < cs_math_zero_threshold)
+  if (cs::abs(d11) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
   facto[2] = 1. / d11;
   const cs_real_t  l21 = facto[4] = (m->val[6] - l20*d00*l10) * facto[2];
@@ -1568,7 +1572,7 @@ cs_sdm_44_ldlt_compute(const cs_sdm_t   *m,
   /* j=2: third row */
 
   const cs_real_t  d22 = m->val[10] - l20*l20*d00 - l21*l21*d11;
-  if (fabs(d22) < cs_math_zero_threshold)
+  if (cs::abs(d22) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
   facto[5] = 1. / d22;
   const cs_real_t  l32 = facto[8] =
@@ -1577,7 +1581,7 @@ cs_sdm_44_ldlt_compute(const cs_sdm_t   *m,
   /* j=3: row 4 */
 
   const cs_real_t  d33 = m->val[15] - l30*l30*d00 - l31*l31*d11 - l32*l32*d22;
-  if (fabs(d33) < cs_math_zero_threshold)
+  if (cs::abs(d33) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
   facto[9] = 1. / d33;
 }
@@ -1608,7 +1612,7 @@ cs_sdm_66_ldlt_compute(const cs_sdm_t   *m,
   /* j=0: first row */
 
   const cs_real_t  d00 = m->val[0];
-  if (fabs(d00) < cs_math_zero_threshold)
+  if (cs::abs(d00) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
 
   facto[0] = 1. / d00;
@@ -1621,7 +1625,7 @@ cs_sdm_66_ldlt_compute(const cs_sdm_t   *m,
   /* j=1: second row */
 
   const cs_real_t  d11 = m->val[7] - l10*l10 * d00;
-  if (fabs(d11) < cs_math_zero_threshold)
+  if (cs::abs(d11) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
   facto[2] = 1. / d11;
   const cs_real_t  d0l10 = d00*l10;
@@ -1633,7 +1637,7 @@ cs_sdm_66_ldlt_compute(const cs_sdm_t   *m,
   /* j=2: third row */
 
   const cs_real_t  d22 = m->val[14] - l20*l20*d00 - l21*l21*d11;
-  if (fabs(d22) < cs_math_zero_threshold)
+  if (cs::abs(d22) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
   facto[5] = 1. / d22;
   const cs_real_t  d1l21 = d11*l21, d0l20 = d00*l20;
@@ -1647,7 +1651,7 @@ cs_sdm_66_ldlt_compute(const cs_sdm_t   *m,
   /* j=3: row 4 */
 
   const cs_real_t  d33 = m->val[21] - l30*l30*d00 - l31*l31*d11 - l32*l32*d22;
-  if (fabs(d33) < cs_math_zero_threshold)
+  if (cs::abs(d33) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
   facto[9] = 1. / d33;
   const cs_real_t  d1l31 = d11*l31, d0l30 = d00*l30, d2l32 = d22*l32;
@@ -1660,7 +1664,7 @@ cs_sdm_66_ldlt_compute(const cs_sdm_t   *m,
 
   const cs_real_t  d44 =
     m->val[28] - l40*l40*d00 - l41*l41*d11 - l42*l42*d22 - l43*l43*d33;
-  if (fabs(d44) < cs_math_zero_threshold)
+  if (cs::abs(d44) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
   facto[14] = 1. / d44;
   const cs_real_t  l54 = facto[19] = facto[14] *
@@ -1670,7 +1674,7 @@ cs_sdm_66_ldlt_compute(const cs_sdm_t   *m,
 
   const cs_real_t  d55 = m->val[35]
     - l50*l50*d00 - l51*l51*d11 - l52*l52*d22 - l53*l53*d33 - l54*l54*d44;
-  if (fabs(d55) < cs_math_zero_threshold)
+  if (cs::abs(d55) < cs_math_zero_threshold)
     bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
   facto[20] = 1. / d55;
 }
@@ -1722,7 +1726,7 @@ cs_sdm_ldlt_compute(const cs_sdm_t     *m,
       {
         dkk[0] = m->val[0]; /* d00 */
 
-        if (fabs(dkk[0]) < cs_math_zero_threshold)
+        if (cs::abs(dkk[0]) < cs_math_zero_threshold)
           bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
         const cs_real_t  inv_d00 = facto[0] = 1. / dkk[0];
 
@@ -1746,7 +1750,7 @@ cs_sdm_ldlt_compute(const cs_sdm_t     *m,
         cs_real_t  *l_1 = facto + rowj_idx;
 
         const cs_real_t  d11 = dkk[1] = m->val[n+1] - l_1[0]*l_1[0]*dkk[0];
-        if (fabs(d11) < cs_math_zero_threshold)
+        if (cs::abs(d11) < cs_math_zero_threshold)
           bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
 
         const cs_real_t  inv_d11 = facto[djj_idx] = 1. / d11;
@@ -1777,7 +1781,7 @@ cs_sdm_ldlt_compute(const cs_sdm_t     *m,
           sum += l_j[k]*l_j[k] * dkk[k];
         const cs_real_t  djj = dkk[j] = m->val[j*n+j] - sum;
 
-        if (fabs(djj) < cs_math_zero_threshold)
+        if (cs::abs(djj) < cs_math_zero_threshold)
           bft_error(__FILE__, __LINE__, 0, _msg_small_p, __func__);
 
         const cs_real_t  inv_djj = facto[djj_idx] = 1. / djj;
@@ -1999,8 +2003,8 @@ cs_sdm_test_symmetry(const cs_sdm_t     *mat)
         cs_sdm_t *bIJ = copy->get_block(bi, bj);
 
         for (int i = 0; i < bIJ->n_rows*bIJ->n_cols; i++)
-          if (fabs(bIJ->val[i]) > sym_eval)
-            sym_eval = fabs(bIJ->val[i]);
+          if (cs::abs(bIJ->val[i]) > sym_eval)
+            sym_eval = cs::abs(bIJ->val[i]);
 
       } /* Loop on column blocks */
 
@@ -2016,8 +2020,8 @@ cs_sdm_test_symmetry(const cs_sdm_t     *mat)
     cs_sdm_square_asymm(copy);
 
     for (int i = 0; i < copy->n_rows*copy->n_cols; i++)
-      if (fabs(copy->val[i]) > sym_eval)
-        sym_eval = fabs(copy->val[i]);
+      if (cs::abs(copy->val[i]) > sym_eval)
+        sym_eval = cs::abs(copy->val[i]);
 
     copy = cs_sdm_free(copy);
 
@@ -2139,7 +2143,7 @@ cs_sdm_block_fprintf(FILE           *fp,
         const cs_real_t *mval_i = bij->val + i * n_cols;
 
         for (int j = 0; j < n_cols; j++) {
-          if (fabs(mval_i[j]) > thd)
+          if (cs::abs(mval_i[j]) > thd)
             fprintf(fout, " % -9.5e", mval_i[j]);
           else
             fprintf(fout, " % -9.5e", 0.);
@@ -2202,7 +2206,7 @@ _cs_sdm_t::_cs_sdm_t(const cs_flag_t flag_,
     n_max_cols(n_max_cols_), n_cols(n_max_cols_)
 {
   CS_MALLOC(val, n_max_rows * n_max_cols, cs_real_t);
-  memset(val, 0, sizeof(cs_real_t) * n_max_rows * n_max_cols);
+  std::memset(val, 0, sizeof(cs_real_t) * n_max_rows * n_max_cols);
 
   if (flag & CS_SDM_BY_BLOCK) {
     cs_sdm_block_t *bd = nullptr;
@@ -2232,7 +2236,7 @@ _cs_sdm_t::_cs_sdm_t(const _cs_sdm_t &other)
   n_rows = other.n_rows;
   n_cols = other.n_cols;
 
-  memcpy(val, other.data(), sizeof(cs_real_t) * this->size());
+  std::memcpy(val, other.data(), sizeof(cs_real_t) * this->size());
 };
 
 /*----------------------------------------------------------------------------*/
@@ -2292,7 +2296,7 @@ _cs_sdm_t::init(const int nrows, const int ncols)
   n_rows = nrows;
   n_cols = ncols;
 
-  memset(val, 0, n_rows * n_cols * sizeof(cs_real_t));
+  std::memset(val, 0, n_rows * n_cols * sizeof(cs_real_t));
 };
 
 /*----------------------------------------------------------------------------*/
@@ -2539,7 +2543,7 @@ _cs_sdm_t::dump(FILE *fp, const char *fname, cs_real_t thd) const
   for (int i = 0; i < n_rows; i++) {
     const cs_real_t *mval_i = this->row(i);
     for (int j = 0; j < n_cols; j++) {
-      if (fabs(mval_i[j]) > thd)
+      if (cs::abs(mval_i[j]) > thd)
         fprintf(fout, " % -9.5e", mval_i[j]);
       else
         fprintf(fout, " % -9.5e", 0.);

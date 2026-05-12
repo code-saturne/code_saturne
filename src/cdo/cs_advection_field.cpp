@@ -2824,7 +2824,7 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t *cm,
 
     /* Reset fluxes across dual faces */
 
-    memset(fluxes, 0, cm->n_ec * sizeof(cs_real_t));
+    std::memset(fluxes, 0, cm->n_ec * sizeof(cs_real_t));
 
     switch (qtype) {
 
@@ -3085,8 +3085,7 @@ cs_advection_field_macb_dface_flux(const cs_macfb_builder_t *macb,
   assert(def != nullptr); /* Sanity check */
 
   if (adv->status & CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX) {
-
-    memset(fluxes, 0, macb->n_max_dofs * sizeof(cs_real_t));
+    std::memset(fluxes, 0, macb->n_max_dofs * sizeof(cs_real_t));
 
     switch (def->type) {
 
@@ -3316,7 +3315,7 @@ cs_advection_get_courant(const cs_adv_field_t *adv,
     cs_real_t _courant = 0.;
     for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id + 1]; i++) {
       const cs_real_t *f_area = cdoq->get_face_vector_area(c2f->ids[i]);
-      _courant = fmax(_courant, fabs(_dp3(f_area, vel_c)) * ovol_c);
+      _courant = cs::max(_courant, cs::abs(_dp3(f_area, vel_c)) * ovol_c);
     }
     courant[c_id] = _courant * dt_cur;
 

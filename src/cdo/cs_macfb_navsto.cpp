@@ -944,7 +944,7 @@ cs_macfb_block_dirichlet_alge(short int                  f,
 
   bool is_non_homogeneous = false; /* Assume homogeneous by default */
 
-  memset(cb->values, 0, 2 * sizeof(double));
+  std::memset(cb->values, 0, 2 * sizeof(double));
 
   if (csys->dof_flag[f] & CS_CDO_BC_DIRICHLET) {
     x_dir[0]           = csys->dir_values[f];

@@ -370,31 +370,31 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
   case CS_SPACE_SCHEME_CDOVB:
     size = cs::max(4*n_ec + 3*n_vc, n_ec*(n_ec+1));
     CS_MALLOC(cb->values, size, double);
-    memset(cb->values, 0, size*sizeof(cs_real_t));
+    std::memset(cb->values, 0, size * sizeof(cs_real_t));
 
     size = 2*n_ec;
     CS_MALLOC(cb->vectors, size, cs_real_3_t);
-    memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
+    std::memset(cb->vectors, 0, size * sizeof(cs_real_3_t));
     break;
 
   case CS_SPACE_SCHEME_CDOVCB:
     size = 2*n_vc + 3*n_ec + n_fc;
     CS_MALLOC(cb->values, size, double);
-    memset(cb->values, 0, size*sizeof(cs_real_t));
+    std::memset(cb->values, 0, size * sizeof(cs_real_t));
 
     size = 2*n_ec + n_vc;
     CS_MALLOC(cb->vectors, size, cs_real_3_t);
-    memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
+    std::memset(cb->vectors, 0, size * sizeof(cs_real_3_t));
     break;
 
   case CS_SPACE_SCHEME_CDOFB:
     size = n_fc*(n_fc+1);
     CS_MALLOC(cb->values, size, double);
-    memset(cb->values, 0, size*sizeof(cs_real_t));
+    std::memset(cb->values, 0, size * sizeof(cs_real_t));
 
     size = 2*n_fc;
     CS_MALLOC(cb->vectors, size, cs_real_3_t);
-    memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
+    std::memset(cb->vectors, 0, size * sizeof(cs_real_3_t));
     break;
 
   case CS_SPACE_SCHEME_CDOEB:
@@ -403,11 +403,11 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
 
       size = n_ent*(n_ent+1);
       CS_MALLOC(cb->values, size, double);
-      memset(cb->values, 0, size*sizeof(cs_real_t));
+      std::memset(cb->values, 0, size * sizeof(cs_real_t));
 
       size = 2*n_ent;
       CS_MALLOC(cb->vectors, size, cs_real_3_t);
-      memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
+      std::memset(cb->vectors, 0, size * sizeof(cs_real_3_t));
     }
     break;
 

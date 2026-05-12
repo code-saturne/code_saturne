@@ -207,15 +207,15 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
 
   int  size = n_vc + 1;
   CS_MALLOC(cb->ids, size, int);
-  memset(cb->ids, 0, size*sizeof(int));
+  std::memset(cb->ids, 0, size * sizeof(int));
 
   size = 2*n_vc + 3*n_ec + n_fc;
   CS_MALLOC(cb->values, size, double);
-  memset(cb->values, 0, size*sizeof(cs_real_t));
+  std::memset(cb->values, 0, size * sizeof(cs_real_t));
 
   size = 2*n_ec + n_vc;
   CS_MALLOC(cb->vectors, size, cs_real_3_t);
-  memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
+  std::memset(cb->vectors, 0, size * sizeof(cs_real_3_t));
 
   /* Local square dense matrices used during the construction of
      operators */
@@ -1590,7 +1590,7 @@ cs_cdovcb_scaleq_interpolate(const cs_mesh_t            *mesh,
 
         /* Reset the local contribution */
 
-        memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
+        std::memset(csys->source, 0, csys->n_dofs * sizeof(cs_real_t));
 
         /* Source term contribution to the algebraic system
            If the equation is steady, the source term has already been computed
@@ -1823,7 +1823,7 @@ cs_cdovcb_scaleq_solve_steady_state(bool                        cur2prev,
                                                     * =========== */
         /* Reset the local contribution */
 
-        memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
+        std::memset(csys->source, 0, csys->n_dofs * sizeof(cs_real_t));
 
         /* Source term contribution to the algebraic system
            If the equation is steady, the source term has already been computed
@@ -2064,7 +2064,7 @@ cs_cdovcb_scaleq_solve_implicit(bool                        cur2prev,
                                                     * =========== */
         /* Reset the local contribution */
 
-        memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
+        std::memset(csys->source, 0, csys->n_dofs * sizeof(cs_real_t));
 
         /* Source term contribution to the algebraic system
            If the equation is steady, the source term has already been computed
@@ -2417,7 +2417,7 @@ cs_cdovcb_scaleq_solve_theta(bool                        cur2prev,
 
           /* Reset the local contribution */
 
-          memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
+          std::memset(csys->source, 0, csys->n_dofs * sizeof(cs_real_t));
 
           cs_source_term_compute_cellwise(eqp->n_source_terms,
                       (cs_xdef_t *const *)eqp->source_terms,
@@ -2444,7 +2444,7 @@ cs_cdovcb_scaleq_solve_theta(bool                        cur2prev,
 
         /* Reset the local contribution */
 
-        memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
+        std::memset(csys->source, 0, csys->n_dofs * sizeof(cs_real_t));
 
         /* Source term contribution to the algebraic system
            If the equation is steady, the source term has already been computed
@@ -2845,7 +2845,7 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t           *pot_v,
 
       switch (face_bc->flag[bf_id]) {
         case CS_CDO_BC_HMG_NEUMANN:
-          memset(_flx, 0, (idx[1] - idx[0]) * sizeof(cs_real_t));
+          std::memset(_flx, 0, (idx[1] - idx[0]) * sizeof(cs_real_t));
           break;
 
         case CS_CDO_BC_NEUMANN:

@@ -748,33 +748,31 @@ _build_cell_epcd_upw(const cs_cell_mesh_t      *cm,
     const short int  sgn_v1 = cm->e2v_sgn[e];
     const cs_real_t  beta_flx = fluxes[e] * sgn_v1;
 
-    if (fabs(beta_flx) > 0) {
-
+    if (cs::abs(beta_flx) > 0) {
       /* Compute the upwind coefficient knowing that fd(e),cd(v) = -v,e */
 
-      const double  wv1 = get_weight(-sgn_v1 * upwcoef[e]);
-      const double  c1mw = beta_flx * (1 - wv1);
-      const double  cw = beta_flx * wv1;
+      const double wv1  = get_weight(-sgn_v1 * upwcoef[e]);
+      const double c1mw = beta_flx * (1 - wv1);
+      const double cw   = beta_flx * wv1;
 
       /* Update local convection matrix.
          Remember that sgn_v2 = -sgn_v1 */
 
-      short int  v1 = cm->e2v_ids[2*e];
-      short int  v2 = cm->e2v_ids[2*e+1];
-      assert(v1 != -1 && v2 != -1);  /* Sanity check */
+      short int v1 = cm->e2v_ids[2 * e];
+      short int v2 = cm->e2v_ids[2 * e + 1];
+      assert(v1 != -1 && v2 != -1); /* Sanity check */
 
       /* Update for the vertex v1 */
 
-      double  *m1 = adv->val + v1*adv->n_rows;
-      m1[v1] +=  c1mw;           /* diagonal term */
-      m1[v2] =  -c1mw;           /* extra-diag term */
-
+      double *m1 = adv->val + v1 * adv->n_rows;
+      m1[v1] += c1mw; /* diagonal term */
+      m1[v2] = -c1mw; /* extra-diag term */
 
       /* Update for the vertex v2 */
 
-      double  *m2 = adv->val + v2*adv->n_rows;
-      m2[v2] += -cw;           /* diagonal term */
-      m2[v1] =   cw;           /* extra-diag term */
+      double *m2 = adv->val + v2 * adv->n_rows;
+      m2[v2] += -cw; /* diagonal term */
+      m2[v1] = cw;   /* extra-diag term */
 
     } /* Convective flux is greater than zero */
 
@@ -793,18 +791,16 @@ _build_cell_epcd_upw(const cs_cell_mesh_t      *cm,
 /*----------------------------------------------------------------------------*/
 
 static void
-_build_cell_epcd_cen(const cs_cell_mesh_t          *cm,
-                     const cs_real_t                fluxes[],
-                     cs_sdm_t                      *adv)
+_build_cell_epcd_cen(const cs_cell_mesh_t *cm,
+                     const cs_real_t       fluxes[],
+                     cs_sdm_t             *adv)
 {
   /* Weight is always equal to 0.5 Loop on cell edges */
 
   for (short int e = 0; e < cm->n_ec; e++) {
+    const cs_real_t wflx = 0.5 * fluxes[e] * cm->e2v_sgn[e]; /* sgn_v1 */
 
-    const cs_real_t  wflx = 0.5 * fluxes[e] * cm->e2v_sgn[e]; /* sgn_v1 */
-
-    if (fabs(wflx) > 0) {
-
+    if (cs::abs(wflx) > 0) {
       /* Update local convection matrix */
 
       short int  v1 = cm->e2v_ids[2*e];
@@ -853,38 +849,37 @@ _build_cell_epcd_mcu(const cs_cell_mesh_t    *cm,
 
     const cs_real_t  beta_flx = fluxes[e];
 
-    if (fabs(beta_flx) > 0) {
-
-      short int  sgn_v1 = cm->e2v_sgn[e];
+    if (cs::abs(beta_flx) > 0) {
+      short int sgn_v1 = cm->e2v_sgn[e];
 
       /* Compute the upwind coefficient knowing that fd(e),cd(v) = -v,e */
 
-      const double  wup1 = _get_upwind_weight(-sgn_v1*beta_flx); /* 0 or 1 */
+      const double wup1 = _get_upwind_weight(-sgn_v1 * beta_flx); /* 0 or 1 */
 
       /* (1-upwp)*0.5 --> centered scheme contribution
          upwp * wup1  --> upwind scheme contribution */
 
-      const double  wv1 = wup1 * upwp + 0.5*(1 - upwp);
-      const double  cw1 = sgn_v1 * beta_flx * wv1;
-      const double  cw2 = sgn_v1 * beta_flx * (1 - wv1);
+      const double wv1 = wup1 * upwp + 0.5 * (1 - upwp);
+      const double cw1 = sgn_v1 * beta_flx * wv1;
+      const double cw2 = sgn_v1 * beta_flx * (1 - wv1);
 
       /* Update local convection matrix */
 
-      short int  v1 = cm->e2v_ids[2*e];
-      short int  v2 = cm->e2v_ids[2*e+1];
-      assert(v1 != -1 && v2 != -1);  /* Sanity check */
+      short int v1 = cm->e2v_ids[2 * e];
+      short int v2 = cm->e2v_ids[2 * e + 1];
+      assert(v1 != -1 && v2 != -1); /* Sanity check */
 
       /* Update for the vertex v1 */
 
-      double  *m1 = adv->val + v1*adv->n_rows;
-      m1[v1] +=  cw2;           /* diagonal term */
-      m1[v2] =  -cw2;           /* extra-diag term */
+      double *m1 = adv->val + v1 * adv->n_rows;
+      m1[v1] += cw2; /* diagonal term */
+      m1[v2] = -cw2; /* extra-diag term */
 
       /* Update for the vertex v2 */
 
-      double  *m2 = adv->val + v2*adv->n_rows;
-      m2[v2] += -cw1;           /* diagonal term */
-      m2[v1] =   cw1;           /* extra-diag term */
+      double *m2 = adv->val + v2 * adv->n_rows;
+      m2[v2] += -cw1; /* diagonal term */
+      m2[v1] = cw1;   /* extra-diag term */
 
     } /* Convective flux is greater than zero */
 
@@ -905,20 +900,18 @@ _build_cell_epcd_mcu(const cs_cell_mesh_t    *cm,
 /*----------------------------------------------------------------------------*/
 
 static void
-_build_cell_vpfd_upw(const cs_cell_mesh_t          *cm,
-                     _upwind_weight_t              *get_weight,
-                     const cs_real_t                fluxes[],
-                     const cs_real_t                upwcoef[],
-                     cs_sdm_t                      *adv)
+_build_cell_vpfd_upw(const cs_cell_mesh_t *cm,
+                     _upwind_weight_t     *get_weight,
+                     const cs_real_t       fluxes[],
+                     const cs_real_t       upwcoef[],
+                     cs_sdm_t             *adv)
 {
   /* Loop on cell edges */
 
   for (short int e = 0; e < cm->n_ec; e++) {
+    const cs_real_t beta_flx = fluxes[e];
 
-    const cs_real_t  beta_flx = fluxes[e];
-
-    if (fabs(beta_flx) > 0) {
-
+    if (cs::abs(beta_flx) > 0) {
       short int  sgn_v1 = cm->e2v_sgn[e];
 
       /* Compute the upwind coefficient knowing that fd(e),cd(v) = -v,e */
@@ -972,7 +965,7 @@ _build_cell_vpfd_cen(const cs_cell_mesh_t          *cm,
 
     const cs_real_t  wflx = 0.5*fluxes[e]*cm->e2v_sgn[e];
 
-    if (fabs(wflx) > 0) { /* Update local convection matrix */
+    if (cs::abs(wflx) > 0) { /* Update local convection matrix */
 
       short int  v1 = cm->e2v_ids[2*e];
       short int  v2 = cm->e2v_ids[2*e+1];
@@ -1019,8 +1012,7 @@ _build_cell_vpfd_mcu(const cs_cell_mesh_t    *cm,
 
     const cs_real_t  beta_flx = fluxes[e];
 
-    if (fabs(beta_flx) > 0) {
-
+    if (cs::abs(beta_flx) > 0) {
       short int  sgn_v1 = cm->e2v_sgn[e];
 
       /* Compute the upwind coefficient knowing that fd(e),cd(v) = -v,e */
@@ -2048,12 +2040,12 @@ cs_cdofb_advection_no_diffusion(const cs_equation_param_t *eqp,
 
   cs_real_t max_abs_flux = 0.;
   for (int f = 0; f < cm->n_fc; f++)
-    max_abs_flux = fmax(max_abs_flux, fabs(cb->adv_fluxes[f]));
+    max_abs_flux = cs::max(max_abs_flux, cs::abs(cb->adv_fluxes[f]));
 
   const cs_real_t threshold = max_abs_flux * cs_math_epzero;
 
   for (int f = 0; f < cm->n_fc; f++) {
-    if (fabs(cb->adv_fluxes[f]) < threshold) {
+    if (cs::abs(cb->adv_fluxes[f]) < threshold) {
       cs_real_t *f_row = adv->val + f * adv->n_rows;
 
       f_row[cm->n_fc] += -1;
@@ -2289,8 +2281,8 @@ cs_cdofb_advection_upwnoc_v8(int                   dim,
 
     for (short int f = 0; f < cm->n_fc; f++) {
       const cs_real_t beta_flx   = cm->f_sgn[f] * fluxes[f];
-      const cs_real_t beta_minus = 0.5 * (fabs(beta_flx) - beta_flx);
-      const cs_real_t beta_plus  = 0.5 * (fabs(beta_flx) + beta_flx);
+      const cs_real_t beta_minus = 0.5 * (cs::abs(beta_flx) - beta_flx);
+      const cs_real_t beta_plus  = 0.5 * (cs::abs(beta_flx) + beta_flx);
 
       /* Access the row containing the current face */
 
@@ -2326,8 +2318,8 @@ cs_cdofb_advection_upwnoc_v8(int                   dim,
 
     for (short int f = 0; f < cm->n_fc; f++) {
       const cs_real_t beta_flx   = cm->f_sgn[f] * fluxes[f];
-      const cs_real_t beta_minus = 0.5 * (fabs(beta_flx) - beta_flx);
-      const cs_real_t beta_plus  = 0.5 * (fabs(beta_flx) + beta_flx);
+      const cs_real_t beta_minus = 0.5 * (cs::abs(beta_flx) - beta_flx);
+      const cs_real_t beta_plus  = 0.5 * (cs::abs(beta_flx) + beta_flx);
 
       /* Access the row containing the current face */
 
@@ -2382,8 +2374,8 @@ cs_cdofb_advection_upwcsv_v8(int                   dim,
 
     for (short int f = 0; f < cm->n_fc; f++) {
       const cs_real_t beta_flx   = cm->f_sgn[f] * fluxes[f];
-      const cs_real_t beta_minus = 0.5 * (fabs(beta_flx) - beta_flx);
-      const cs_real_t beta_plus  = 0.5 * (fabs(beta_flx) + beta_flx);
+      const cs_real_t beta_minus = 0.5 * (cs::abs(beta_flx) - beta_flx);
+      const cs_real_t beta_plus  = 0.5 * (cs::abs(beta_flx) + beta_flx);
 
       /* Access the row containing the current face */
 
@@ -2419,8 +2411,8 @@ cs_cdofb_advection_upwcsv_v8(int                   dim,
 
     for (short int f = 0; f < cm->n_fc; f++) {
       const cs_real_t beta_flx   = cm->f_sgn[f] * fluxes[f];
-      const cs_real_t beta_minus = 0.5 * (fabs(beta_flx) - beta_flx);
-      const cs_real_t beta_plus  = 0.5 * (fabs(beta_flx) + beta_flx);
+      const cs_real_t beta_minus = 0.5 * (cs::abs(beta_flx) - beta_flx);
+      const cs_real_t beta_plus  = 0.5 * (cs::abs(beta_flx) + beta_flx);
 
       /* Access the row containing the current face */
 
@@ -2489,7 +2481,7 @@ cs_cdofb_advection_cennoc_v8(int                   dim,
     if (csys->bf_ids[f] > -1) { /* This is a boundary face */
       if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
           csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
-        const cs_real_t beta_minus = 0.5 * fabs(fluxes[f]) - half_beta_flx;
+        const cs_real_t beta_minus = 0.5 * cs::abs(fluxes[f]) - half_beta_flx;
 
         /* Inward flux: add beta_minus = 0.5*(abs(flux) - flux) */
 
@@ -2501,7 +2493,7 @@ cs_cdofb_advection_cennoc_v8(int                   dim,
       }
       else {
         /* Outward flux: */
-        const cs_real_t beta_plus = 0.5 * fabs(fluxes[f]) + half_beta_flx;
+        const cs_real_t beta_plus = 0.5 * cs::abs(fluxes[f]) + half_beta_flx;
         f_row[f] += beta_plus;
       }
     }
@@ -2567,7 +2559,7 @@ cs_cdofb_advection_cencsv_v8(int                   dim,
     if (csys->bf_ids[f] > -1) { /* This is a boundary face */
       if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET ||
           csys->bf_flag[f] & CS_CDO_BC_HMG_DIRICHLET) {
-        const cs_real_t beta_minus = 0.5 * fabs(fluxes[f]) - half_beta_flx;
+        const cs_real_t beta_minus = 0.5 * cs::abs(fluxes[f]) - half_beta_flx;
 
         /* Inward flux: add beta_minus = 0.5*(abs(flux) - flux) */
 
@@ -2579,7 +2571,7 @@ cs_cdofb_advection_cencsv_v8(int                   dim,
       }
       else {
         /* Outward flux: */
-        const cs_real_t beta_plus = 0.5 * fabs(fluxes[f]) + half_beta_flx;
+        const cs_real_t beta_plus = 0.5 * cs::abs(fluxes[f]) + half_beta_flx;
         f_row[f] += beta_plus;
       }
     }
@@ -3951,7 +3943,7 @@ cs_cdo_advection_vcb_bc(const cs_cell_mesh_t        *cm,
     const short int  f = csys->_f_ids[i];
     const cs_real_t  nflx = cs_advection_field_cw_boundary_face_flux(t_eval, f,
                                                                      cm, adv);
-    const cs_real_t  beta_nflx = 0.5 * (fabs(nflx) - nflx);
+    const cs_real_t  beta_nflx = 0.5 * (cs::abs(nflx) - nflx);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_ADVECTION_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))

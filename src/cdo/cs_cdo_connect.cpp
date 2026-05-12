@@ -872,7 +872,7 @@ _assign_edge_ifs_rs(const cs_mesh_t     *mesh,
     CS_FREE(e2v_gnum);
 
     const cs_gnum_t *_g_num = fvm_io_num_get_global_num(edge_io_num);
-    memcpy(edge_gnum, _g_num, n_edges * sizeof(cs_gnum_t));
+    std::memcpy(edge_gnum, _g_num, n_edges * sizeof(cs_gnum_t));
 
     connect->n_g_edges = fvm_io_num_get_global_count(edge_io_num);
     edge_io_num        = fvm_io_num_destroy(edge_io_num);
@@ -1441,17 +1441,17 @@ cs_cdo_connect_allocate_cw_buffer(const cs_cdo_connect_t *connect)
     CS_MALLOC(cs_cdo_connect_cw_buffer[t_id],
               cs_cdo_connect_cw_buffer_size,
               double);
-    memset(cs_cdo_connect_cw_buffer[t_id],
-           0,
-           cs_cdo_connect_cw_buffer_size * sizeof(double));
+    std::memset(cs_cdo_connect_cw_buffer[t_id],
+                0,
+                cs_cdo_connect_cw_buffer_size * sizeof(double));
   }
 #else
   assert(cs_glob_n_threads == 1);
 
   CS_MALLOC(cs_cdo_connect_cw_buffer[0], cs_cdo_connect_cw_buffer_size, double);
-  memset(cs_cdo_connect_cw_buffer[0],
-         0,
-         cs_cdo_connect_cw_buffer_size * sizeof(double));
+  std::memset(cs_cdo_connect_cw_buffer[0],
+              0,
+              cs_cdo_connect_cw_buffer_size * sizeof(double));
 #endif /* openMP */
 }
 

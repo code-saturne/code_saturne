@@ -497,7 +497,7 @@ cs_equation_builder_set_reaction_pty_cw(const cs_equation_param_t     *eqp,
                                                 eqp->reaction_properties[r],
                                                 cb->t_pty_eval);
 
-  if (fabs(cb->rpty_val) > 0)
+  if (cs::abs(cb->rpty_val) > 0)
     return true;
   else
     return false;
@@ -591,7 +591,7 @@ cs_equation_builder_enforce_dofs(const cs_equation_builder_t     *eqb,
   double  *x_vals = cb->values; /* define with cs_enforcement_dofs_cw() */
   double  *ax = cb->values + csys->n_dofs;
 
-  memset(cb->values, 0, 2*csys->n_dofs*sizeof(double));
+  std::memset(cb->values, 0, 2 * csys->n_dofs * sizeof(double));
 
   bool do_enforcement = cs_enforcement_dofs_cw(eqb->enforced_values,
                                                csys,
@@ -614,7 +614,9 @@ cs_equation_builder_enforce_dofs(const cs_equation_builder_t     *eqb,
 
       /* Reset row i */
 
-      memset(csys->mat->val + csys->n_dofs*i, 0, csys->n_dofs*sizeof(double));
+      std::memset(csys->mat->val + csys->n_dofs * i,
+                  0,
+                  csys->n_dofs * sizeof(double));
 
       /* Reset column i */
 
@@ -660,7 +662,7 @@ cs_equation_builder_enforce_block_dofs(const cs_equation_builder_t   *eqb,
 {
   /* Enforcement of internal DoFs */
 
-  memset(cb->values, 0, 2*csys->n_dofs*sizeof(double));
+  std::memset(cb->values, 0, 2 * csys->n_dofs * sizeof(double));
 
   double  *x_vals = cb->values; /* define with cs_enforcement_dofs_cw() */
   double  *ax = cb->values + csys->n_dofs;
@@ -699,7 +701,7 @@ cs_equation_builder_enforce_block_dofs(const cs_equation_builder_t   *eqb,
 
       /* Identity for the diagonal block */
 
-      memset(db->val, 0, sizeof(cs_real_t)*bsize);
+      std::memset(db->val, 0, sizeof(cs_real_t) * bsize);
       for (int i = 0; i < db->n_rows; i++) {
         db->val[i*(1+db->n_rows)] = 1;
         assert(csys->dof_is_forced[s+i]);
@@ -709,22 +711,20 @@ cs_equation_builder_enforce_block_dofs(const cs_equation_builder_t   *eqb,
 
       for (int jj = 0; jj < ii; jj++) {
         cs_sdm_t *bij = csys->mat->get_block(ii, jj);
-        memset(bij->val, 0, sizeof(cs_real_t)*bsize);
+        std::memset(bij->val, 0, sizeof(cs_real_t) * bsize);
 
         cs_sdm_t *bji = csys->mat->get_block(jj, ii);
-        memset(bji->val, 0, sizeof(cs_real_t)*bsize);
-
+        std::memset(bji->val, 0, sizeof(cs_real_t) * bsize);
       }
 
       /* Reset column and row block jj < ii */
 
       for (int jj = ii+1; jj < db->n_rows; jj++) {
         cs_sdm_t *bij = csys->mat->get_block(ii, jj);
-        memset(bij->val, 0, sizeof(cs_real_t)*bsize);
+        std::memset(bij->val, 0, sizeof(cs_real_t) * bsize);
 
         cs_sdm_t *bji = csys->mat->get_block(jj, ii);
-        memset(bji->val, 0, sizeof(cs_real_t)*bsize);
-
+        std::memset(bji->val, 0, sizeof(cs_real_t) * bsize);
       }
 
     } /* DoF associated to an enforcement of their values*/

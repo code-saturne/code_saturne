@@ -154,7 +154,7 @@ _synchronize_reduction(int              dim,
     /* Sums */
 
     cs_real_t  sums[3] = {wsum[0], asum[0], ssum[0]};
-    cs_parall_sum(3, CS_REAL_TYPE, sums);
+    cs::parall::sum(sums);
 
     wsum[0] = sums[0];
     asum[0] = sums[1];
@@ -178,7 +178,7 @@ _synchronize_reduction(int              dim,
     for (int i = 0; i < 4; i++)
       sums[i] = wsum[i], sums[4+i] = asum[i], sums[8+i] = ssum[i];
 
-    cs_parall_sum(12, CS_REAL_TYPE, sums);
+    cs::parall::sum(sums);
 
     for (int i = 0; i < 4; i++)
       wsum[i] = sums[i], asum[i] = sums[4+i], ssum[i] = sums[8+i];

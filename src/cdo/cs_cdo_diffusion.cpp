@@ -870,7 +870,7 @@ cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
   double  *x_dir = cb->values;
   double  *ax_dir = cb->values + csys->n_dofs;
 
-  memset(cb->values, 0, 2*csys->n_dofs*sizeof(double));
+  std::memset(cb->values, 0, 2 * csys->n_dofs * sizeof(double));
 
   /* Build x_dir */
 
@@ -890,7 +890,9 @@ cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
                                                         homogeneous or not */
       /* Reset row i */
 
-      memset(csys->mat->val + csys->n_dofs*i, 0, csys->n_dofs*sizeof(double));
+      std::memset(csys->mat->val + csys->n_dofs * i,
+                  0,
+                  csys->n_dofs * sizeof(double));
 
       /* Reset column i */
 
@@ -960,7 +962,7 @@ cs_cdo_diffusion_alge_dirichlet_extra_block(const cs_equation_param_t   *eqp,
   double  *x_dir = cb->values;
   double  *ax_dir = cb->values + csys->n_dofs;
 
-  memset(cb->values, 0, 2*csys->n_dofs*sizeof(double));
+  std::memset(cb->values, 0, 2 * csys->n_dofs * sizeof(double));
 
   /* Build x_dir */
 
@@ -980,7 +982,9 @@ cs_cdo_diffusion_alge_dirichlet_extra_block(const cs_equation_param_t   *eqp,
                                                         homogeneous or not */
       /* Reset row i */
 
-      memset(csys->mat->val + csys->n_dofs*i, 0, csys->n_dofs*sizeof(double));
+      std::memset(csys->mat->val + csys->n_dofs * i,
+                  0,
+                  csys->n_dofs * sizeof(double));
 
       /* Reset column i */
 
@@ -1049,7 +1053,7 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
   cs_sdm_block_t  *bd = m->block_desc;
   assert(bd != nullptr);
 
-  memset(cb->values, 0, 2*csys->n_dofs*sizeof(double));
+  std::memset(cb->values, 0, 2 * csys->n_dofs * sizeof(double));
 
   /* Build x_dir */
 
@@ -1093,13 +1097,12 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
           cs_sdm_t *mIJ = m->get_block(bi, bj);
           cs_sdm_t *mJI = m->get_block(bj, bi);
 
-          memset(mIJ->val, 0, mIJ->n_rows*mIJ->n_cols*sizeof(double));
-          memset(mJI->val, 0, mJI->n_rows*mJI->n_cols*sizeof(double));
-
+          std::memset(mIJ->val, 0, mIJ->n_rows * mIJ->n_cols * sizeof(double));
+          std::memset(mJI->val, 0, mJI->n_rows * mJI->n_cols * sizeof(double));
         }
         else { /* mII block --> diagonal */
 
-          memset(mII->val, 0, mII->n_rows*mII->n_rows*sizeof(double));
+          std::memset(mII->val, 0, mII->n_rows * mII->n_rows * sizeof(double));
 
           for (int i = 0; i < mII->n_rows; i++) {
             mII->val[i + mII->n_rows*i] = 1;
@@ -1159,8 +1162,8 @@ cs_cdo_diffusion_sfb_weak_dirichlet(const cs_equation_param_t      *eqp,
   assert(cm != nullptr && cb != nullptr);
 
   const cs_property_data_t  *pdata = hodge->pty_data;
-  const double chi =
-    eqp->weak_pena_bc_coeff * fabs(pdata->eigen_ratio)*pdata->eigen_max;
+  const double               chi =
+    eqp->weak_pena_bc_coeff * cs::abs(pdata->eigen_ratio) * pdata->eigen_max;
 
   /* First step: pre-compute the product between diffusion property and the
      face vector areas */
@@ -1267,8 +1270,8 @@ cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
   assert(cm != nullptr && cb != nullptr && csys != nullptr && hodge);
 
   const cs_property_data_t  *pty = hodge->pty_data;
-  const double  chi =
-    eqp->weak_pena_bc_coeff * fabs(pty->eigen_ratio)*pty->eigen_max;
+  const double               chi =
+    eqp->weak_pena_bc_coeff * cs::abs(pty->eigen_ratio) * pty->eigen_max;
 
   /* First step: pre-compute the product between diffusion property and the
      face vector areas */
@@ -1393,8 +1396,8 @@ cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   assert(cm != nullptr && cb != nullptr && csys != nullptr);
 
   const cs_property_data_t  *pty = hodge->pty_data;
-  const double  chi =
-    eqp->weak_pena_bc_coeff * fabs(pty->eigen_ratio)*pty->eigen_max;
+  const double               chi =
+    eqp->weak_pena_bc_coeff * cs::abs(pty->eigen_ratio) * pty->eigen_max;
 
   /* First step: pre-compute the product between diffusion property and the
      face vector areas */
@@ -1432,7 +1435,7 @@ cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
   /* Putting the face DoFs of the BC, into a face- and cell-DoFs array */
 
-  memcpy(dir_val, csys->dir_values, n_f*sizeof(cs_real_t));
+  std::memcpy(dir_val, csys->dir_values, n_f * sizeof(cs_real_t));
   dir_val[n_f] = 0.;
 
   /* Update bc_op = bc_op + transp and transp = transpose(bc_op) cb->loc
@@ -1516,8 +1519,8 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   assert(cm != nullptr && cb != nullptr && csys != nullptr && hodge != nullptr);
 
   const cs_property_data_t  *pty = hodge->pty_data;
-  const double  chi =
-    eqp->weak_pena_bc_coeff * fabs(pty->eigen_ratio)*pty->eigen_max;
+  const double               chi =
+    eqp->weak_pena_bc_coeff * cs::abs(pty->eigen_ratio) * pty->eigen_max;
 
   /* First step: pre-compute the product between diffusion property and the
      face vector areas */
@@ -1672,8 +1675,8 @@ cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
   assert(cm != nullptr && cb != nullptr);
   assert(pty->is_iso == true); /* if not the case something else TODO ? */
 
-  const double  chi =
-    eqp->weak_pena_bc_coeff * fabs(pty->eigen_ratio)*pty->eigen_max;
+  const double chi =
+    eqp->weak_pena_bc_coeff * cs::abs(pty->eigen_ratio) * pty->eigen_max;
   const short int  n_f = cm->n_fc;
   const short int  n_dofs = n_f + 1; /* n_blocks or n_scalar_dofs */
 
@@ -1966,8 +1969,8 @@ cs_cdo_diffusion_svb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
 
   const cs_property_data_t  *pty = hodge->pty_data;
   const cs_hodge_param_t  *hodgep = hodge->param;
-  const double  chi =
-    eqp->weak_pena_bc_coeff * fabs(pty->eigen_ratio)*pty->eigen_max;
+  const double               chi =
+    eqp->weak_pena_bc_coeff * cs::abs(pty->eigen_ratio) * pty->eigen_max;
   const cs_real_t  dbeta =
     (hodgep->algo == CS_HODGE_ALGO_BUBBLE) ? hodgep->coef : 3*hodgep->coef;
 
@@ -2056,8 +2059,8 @@ cs_cdo_diffusion_vvb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
   assert(cm != nullptr && cb != nullptr && hodge != nullptr);
 
   const cs_property_data_t  *pty = hodge->pty_data;
-  const double  chi =
-    eqp->weak_pena_bc_coeff * fabs(pty->eigen_ratio)*pty->eigen_max;
+  const double               chi =
+    eqp->weak_pena_bc_coeff * cs::abs(pty->eigen_ratio) * pty->eigen_max;
   const cs_hodge_param_t  *hodgep = hodge->param;
   const cs_real_t  dbeta =
     (hodgep->algo == CS_HODGE_ALGO_BUBBLE) ? hodgep->coef : 3*hodgep->coef;
@@ -2315,8 +2318,8 @@ cs_cdo_diffusion_svb_ocs_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
   const cs_hodge_param_t  *hodgep = hodge->param;
   const cs_property_data_t  *pty = hodge->pty_data;
-  const double  chi =
-    eqp->weak_pena_bc_coeff * fabs(pty->eigen_ratio)*pty->eigen_max;
+  const double               chi =
+    eqp->weak_pena_bc_coeff * cs::abs(pty->eigen_ratio) * pty->eigen_max;
 
   assert(pty->need_tensor);
 
@@ -2443,7 +2446,7 @@ cs_cdo_diffusion_svb_wbs_robin(const cs_equation_param_t      *eqp,
       const double  u0 = csys->rob_values[3*f+1];
       const double  beta = csys->rob_values[3*f+2];
 
-      memset(g, 0, sizeof(cs_real_t)*cm->n_vc);
+      std::memset(g, 0, sizeof(cs_real_t) * cm->n_vc);
       for (short int v = 0; v < fm->n_vf; v++) {
         const short int  vi = fm->v_ids[v];
         g[vi] = alpha*u0 - beta;
@@ -2517,8 +2520,8 @@ cs_cdo_diffusion_svb_wbs_weak_dirichlet(const cs_equation_param_t      *eqp,
   assert(cm != nullptr && cb != nullptr && hodge != nullptr);
 
   const cs_property_data_t  *pty = hodge->pty_data;
-  const double  chi =
-    eqp->weak_pena_bc_coeff * fabs(pty->eigen_ratio)*pty->eigen_max;
+  const double               chi =
+    eqp->weak_pena_bc_coeff * cs::abs(pty->eigen_ratio) * pty->eigen_max;
 
   assert(pty->need_tensor);
 
@@ -2604,8 +2607,8 @@ cs_cdo_diffusion_svb_wbs_wsym_dirichlet(const cs_equation_param_t     *eqp,
   assert(cm != nullptr && cb != nullptr && hodge != nullptr);
 
   const cs_property_data_t  *pty = hodge->pty_data;
-  const double  chi =
-    eqp->weak_pena_bc_coeff * fabs(pty->eigen_ratio)*pty->eigen_max;
+  const double               chi =
+    eqp->weak_pena_bc_coeff * cs::abs(pty->eigen_ratio) * pty->eigen_max;
 
   assert(pty->need_tensor);
 
@@ -2706,8 +2709,8 @@ cs_cdo_diffusion_vcb_weak_dirichlet(const cs_equation_param_t      *eqp,
   assert(cm != nullptr && cb != nullptr && hodge != nullptr);
 
   const cs_property_data_t  *pty = hodge->pty_data;
-  const double  chi =
-    eqp->weak_pena_bc_coeff * fabs(pty->eigen_ratio)*pty->eigen_max;
+  const double               chi =
+    eqp->weak_pena_bc_coeff * cs::abs(pty->eigen_ratio) * pty->eigen_max;
 
   assert(pty->need_tensor);
 
@@ -2793,8 +2796,8 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   assert(cm != nullptr && cb != nullptr && hodge != nullptr);
 
   const cs_property_data_t  *pty = hodge->pty_data;
-  const double  chi =
-    eqp->weak_pena_bc_coeff * fabs(pty->eigen_ratio)*pty->eigen_max;
+  const double               chi =
+    eqp->weak_pena_bc_coeff * cs::abs(pty->eigen_ratio) * pty->eigen_max;
 
   assert(pty->need_tensor);
 
@@ -3048,7 +3051,7 @@ cs_cdo_diffusion_svb_vbyf_flux(short int                   f,
 
   /* Reset the fluxes */
 
-  memset(flux, 0, cm->n_vc*sizeof(cs_real_t));
+  std::memset(flux, 0, cm->n_vc * sizeof(cs_real_t));
 
   /* Compute the product: matpty*face unit normal */
 
@@ -3289,7 +3292,7 @@ cs_cdo_diffusion_wbs_vbyf_flux(short int                   f,
 
   /* Reset the fluxes */
 
-  memset(flux, 0, cm->n_vc*sizeof(cs_real_t));
+  std::memset(flux, 0, cm->n_vc * sizeof(cs_real_t));
 
   /* Compute the product: matpty*face unit normal */
 

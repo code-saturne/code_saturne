@@ -882,8 +882,8 @@ cs_reco_scalar_c2f(const cs_cdo_connect_t     *connect,
   double *pvol_f;
   CS_MALLOC(pvol_f, cdoq->n_faces, double);
 
-  memset(pvol_f, 0.0, cdoq->n_faces*sizeof(double));
-  memset(p_reco_f, 0.0, cdoq->n_faces*sizeof(double));
+  std::memset(pvol_f, 0.0, cdoq->n_faces * sizeof(double));
+  std::memset(p_reco_f, 0.0, cdoq->n_faces * sizeof(double));
 
   /* Reconstruction at face centers */
 

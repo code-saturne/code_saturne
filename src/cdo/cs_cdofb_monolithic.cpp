@@ -382,7 +382,7 @@ _mono_system_augmentation(const cs_cell_mesh_t            *cm,
   cs_cdofb_navsto_add_grad_div(cm->n_fc, gamma_ov_cell, div_op, csys->mat);
 
   // Update the cellwise RHS (face-based part)
-  if (fabs(nsb->mass_rhs) > 0) {
+  if (cs::abs(nsb->mass_rhs) > 0) {
     const double cell_coef = gamma_ov_cell * nsb->mass_rhs;
 
     for (int i = 0; i < 3 * cm->n_fc; i++)
@@ -554,7 +554,7 @@ _velocity_full_assembly(const cs_cell_sys_t             *csys,
    * ============================================ */
 
   cs_real_t *_div = sc->block21_op + 3 * connect->c2f->idx[cm->c_id];
-  memcpy(_div, nsb->div_op, 3 * n_f * sizeof(cs_real_t));
+  std::memcpy(_div, nsb->div_op, 3 * n_f * sizeof(cs_real_t));
 
   // Output the divergence operator really considered for debug purpose
 
@@ -905,7 +905,7 @@ _notay_full_system_assembly(const cs_cell_sys_t             *csys,
 
   cs_real_t *_div = sc->block21_op + 3 * cs_shared_connect->c2f->idx[cm->c_id];
 
-  memcpy(_div, nsb->div_op, 3 * cm->n_fc * sizeof(cs_real_t));
+  std::memcpy(_div, nsb->div_op, 3 * cm->n_fc * sizeof(cs_real_t));
 }
 
 /*----------------------------------------------------------------------------*/

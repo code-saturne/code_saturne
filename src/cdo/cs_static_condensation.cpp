@@ -94,7 +94,7 @@ cs_static_condensation_scalar_eq(const cs_adjacency_t    *c2x,
   const int  n_xc = n_dofs - 1;
   const double  cell_rhs = csys->rhs[n_xc];
   const double  *row_c = csys->mat->val + n_dofs*n_xc;
-  assert(fabs(row_c[n_xc]) > cs_math_zero_threshold);
+  assert(cs::abs(row_c[n_xc]) > cs_math_zero_threshold);
   const double  inv_acc = 1./row_c[n_xc];
 
   /* Compute and store rc_tilda */

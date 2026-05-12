@@ -241,7 +241,7 @@ cs_hodge_param_is_similar(const cs_hodge_param_t    h1_info,
     return false;
   if (h1_info.algo == CS_HODGE_ALGO_COST ||
       h1_info.algo == CS_HODGE_ALGO_BUBBLE) {
-    if (fabs(h1_info.coef - h2_info.coef) > 0)
+    if (cs::abs(h1_info.coef - h2_info.coef) > 0)
       return false;
     else
       return true;

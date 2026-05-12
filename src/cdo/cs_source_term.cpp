@@ -2079,7 +2079,7 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
   /* Temporary buffers */
 
   double *contrib = cb->values;
-  memset(contrib, 0, cm->n_vc*sizeof(double));
+  std::memset(contrib, 0, cm->n_vc * sizeof(double));
 
   /* Main loop on faces */
 
@@ -3039,7 +3039,7 @@ cs_source_term_hhosd_by_value(const cs_xdef_t           *source,
   default:
     /* Reset cell values */
 
-    memset(cell_values, 0, sizeof(cs_real_t)*cbf->size);
+    std::memset(cell_values, 0, sizeof(cs_real_t) * cbf->size);
 
     /* Switch according to the cell type: optimised version for tetra */
 
@@ -3159,7 +3159,7 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
 
   /* Reset cell values */
 
-  memset(cell_values, 0, sizeof(cs_real_t)*cbf->size);
+  std::memset(cell_values, 0, sizeof(cs_real_t) * cbf->size);
 
   /* Switch according to the cell type: optimised version for tetra */
 
@@ -3276,7 +3276,7 @@ cs_source_term_hhovd_by_analytic(const cs_xdef_t           *source,
 
   /* Reset cell values */
 
-  memset(cell_values, 0, 3*sizeof(cs_real_t)*cbf->size);
+  std::memset(cell_values, 0, 3 * sizeof(cs_real_t) * cbf->size);
 
   /* Switch according to the cell type: optimised version for tetra */
 

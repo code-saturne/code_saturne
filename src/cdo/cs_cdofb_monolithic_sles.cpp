@@ -327,7 +327,7 @@ _get_scaled_diag_m22(const cs_navsto_param_t  *nsp,
 
     cs_property_eval_at_cells(ts->t_cur, pty, m22_mass_diag);
 
-    if (fabs(gamma) > 0) {
+    if (cs::abs(gamma) > 0) {
 #     pragma omp parallel for if (n_cells > CS_THR_MIN)
       for (cs_lnum_t i = 0; i < n_cells; i++) {
         m22_mass_diag[i] += gamma;

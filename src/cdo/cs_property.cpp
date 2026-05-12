@@ -471,15 +471,12 @@ _set_pty_state_flag(cs_property_t *pty)
 
           if (unset)
             _value = cs_xdef_get_scalar_value(def), unset = false;
-          else
-            if (fabs(_value - cs_xdef_get_scalar_value(def)) > eps)
-              is_uniform = false;
-
+          else if (cs::abs(_value - cs_xdef_get_scalar_value(def)) > eps)
+            is_uniform = false;
         }
         else
-          is_uniform = false;   // Multiple definitions and not isotropic -->
-                                // switch to non-uniform
-
+          is_uniform = false; // Multiple definitions and not isotropic -->
+                              // switch to non-uniform
       }
       else
         is_uniform = false;
@@ -493,7 +490,6 @@ _set_pty_state_flag(cs_property_t *pty)
       pty->state_flag |= CS_FLAG_STATE_UNIFORM;
     if (is_steady)
       pty->state_flag |= CS_FLAG_STATE_STEADY;
-
   }
 }
 
@@ -507,39 +503,43 @@ _set_pty_state_flag(cs_property_t *pty)
 /*----------------------------------------------------------------------------*/
 
 static void
-_invert_tensor(cs_real_3_t          *tens,
-               cs_property_type_t    type)
+_invert_tensor(cs_real_3_t *tens, cs_property_type_t type)
 {
-#if defined(DEBUG) && !defined(NDEBUG) && CS_PROPERTY_DBG > 0 /* Sanity check */
-  bool  is_ok =true;
+#if defined(DEBUG) && !defined(NDEBUG) && CS_PROPERTY_DBG > 0 /* Sanity check  \
+                                                               */
+  bool is_ok = true;
   for (int k = 0; k < 3; k++)
-    if (fabs(tensor[k][k]) < cs_math_zero_threshold)
+    if (cs::abs(tensor[k][k]) < cs_math_zero_threshold)
       is_ok = false;
 
   if (is_ok)
     _is_tensor_symmetric(tens);
 
   if (!is_ok) {
-    _print_tensor((const cs_real_t (*)[3])tens);
-    bft_error(__FILE__, __LINE__, 0,
+    _print_tensor((const cs_real_t(*)[3])tens);
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " %s: A problem has been detected during the definition of the"
-              " property %s in the cell %d.\n", __func__, pty->name, c_id);
+              " property %s in the cell %d.\n",
+              __func__,
+              pty->name,
+              c_id);
   }
 #endif
 
   if (type & CS_PROPERTY_ISO || type & CS_PROPERTY_ORTHO)
     for (int k = 0; k < 3; k++)
-      tens[k][k] = 1.0/tens[k][k];
+      tens[k][k] = 1.0 / tens[k][k];
 
   else { /* anisotropic (sym. or not) */
 
-    cs_real_33_t  invmat;
+    cs_real_33_t invmat;
 
-    cs_math_33_inv_cramer((const cs_real_3_t (*))tens, invmat);
+    cs_math_33_inv_cramer((const cs_real_3_t(*))tens, invmat);
     for (int ki = 0; ki < 3; ki++)
       for (int kj = 0; kj < 3; kj++)
         tens[ki][kj] = invmat[ki][kj];
-
   }
 }
 
@@ -556,20 +556,21 @@ _invert_tensor(cs_real_3_t          *tens,
 /*----------------------------------------------------------------------------*/
 
 static void
-_get_cell_tensor(cs_lnum_t               c_id,
-                 cs_real_t               t_eval,
-                 const cs_property_t    *pty,
-                 cs_real_t               tensor[3][3])
+_get_cell_tensor(cs_lnum_t            c_id,
+                 cs_real_t            t_eval,
+                 const cs_property_t *pty,
+                 cs_real_t            tensor[3][3])
 {
-  int         def_id = _get_cell_def_id(c_id, pty);
-  cs_xdef_t  *def = pty->defs[def_id];
+  int        def_id = _get_cell_def_id(c_id, pty);
+  cs_xdef_t *def    = pty->defs[def_id];
 
   assert(pty->get_eval_at_cell[def_id] != nullptr);
 
   if (pty->type & CS_PROPERTY_ISO) {
-
-    double  eval;
-    pty->get_eval_at_cell[def_id](1, &c_id, true,  /* dense output */
+    double eval;
+    pty->get_eval_at_cell[def_id](1,
+                                  &c_id,
+                                  true, /* dense output */
                                   cs_mesh,
                                   cs_cdo_connect,
                                   cs_cdo_quant,
@@ -578,12 +579,12 @@ _get_cell_tensor(cs_lnum_t               c_id,
                                   &eval);
 
     tensor[0][0] = tensor[1][1] = tensor[2][2] = eval;
-
   }
   else if (pty->type & CS_PROPERTY_ORTHO) {
-
-    double  eval[3];
-    pty->get_eval_at_cell[def_id](1, &c_id, true,  /* dense output */
+    double eval[3];
+    pty->get_eval_at_cell[def_id](1,
+                                  &c_id,
+                                  true, /* dense output */
                                   cs_mesh,
                                   cs_cdo_connect,
                                   cs_cdo_quant,
@@ -593,12 +594,12 @@ _get_cell_tensor(cs_lnum_t               c_id,
 
     for (int k = 0; k < 3; k++)
       tensor[k][k] = eval[k];
-
   }
   else if (pty->type & CS_PROPERTY_ANISO_SYM) {
-
-    double  eval[6];
-    pty->get_eval_at_cell[def_id](1, &c_id, true,  /* dense output */
+    double eval[6];
+    pty->get_eval_at_cell[def_id](1,
+                                  &c_id,
+                                  true, /* dense output */
                                   cs_mesh,
                                   cs_cdo_connect,
                                   cs_cdo_quant,
@@ -617,19 +618,18 @@ _get_cell_tensor(cs_lnum_t               c_id,
     tensor[0][1] = tensor[1][0] = eval[3];
     tensor[0][2] = tensor[2][0] = eval[4];
     tensor[1][2] = tensor[2][1] = eval[5];
-
   }
   else {
-
     assert(pty->type & CS_PROPERTY_ANISO);
-    pty->get_eval_at_cell[def_id](1, &c_id, true,  /* dense output */
+    pty->get_eval_at_cell[def_id](1,
+                                  &c_id,
+                                  true, /* dense output */
                                   cs_mesh,
                                   cs_cdo_connect,
                                   cs_cdo_quant,
                                   t_eval,
                                   def->context,
                                   (cs_real_t *)tensor);
-
   }
 }
 
@@ -646,17 +646,17 @@ _get_cell_tensor(cs_lnum_t               c_id,
 /*----------------------------------------------------------------------------*/
 
 static void
-_get_cell_tensor_by_property_product(cs_lnum_t               c_id,
-                                     cs_real_t               t_eval,
-                                     const cs_property_t    *pty,
-                                     cs_real_t               tensor[3][3])
+_get_cell_tensor_by_property_product(cs_lnum_t            c_id,
+                                     cs_real_t            t_eval,
+                                     const cs_property_t *pty,
+                                     cs_real_t            tensor[3][3])
 {
   assert(pty->related_properties != nullptr);
-  const cs_property_t  *a = pty->related_properties[0];
-  const cs_property_t  *b = pty->related_properties[1];
+  const cs_property_t *a = pty->related_properties[0];
+  const cs_property_t *b = pty->related_properties[1];
 
-  cs_real_t  tensor_a[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
-  cs_real_t  tensor_b[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+  cs_real_t tensor_a[3][3] = { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } };
+  cs_real_t tensor_b[3][3] = { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } };
 
   /* Evaluate each property */
 
@@ -667,11 +667,12 @@ _get_cell_tensor_by_property_product(cs_lnum_t               c_id,
 
   if (pty->type & CS_PROPERTY_ISO) {
     /*  a and b are isotropic */
-    tensor[0][0] = tensor[1][1] = tensor[2][2] = tensor_a[0][0]*tensor_b[0][0];
+    tensor[0][0] = tensor[1][1] = tensor[2][2] =
+      tensor_a[0][0] * tensor_b[0][0];
   }
   else if (pty->type & CS_PROPERTY_ORTHO) {
     for (int k = 0; k < 3; k++)
-      tensor[k][k] = tensor_a[k][k]*tensor_b[k][k];
+      tensor[k][k] = tensor_a[k][k] * tensor_b[k][k];
   }
   else {
     assert(pty->type & CS_PROPERTY_ANISO);
@@ -694,34 +695,29 @@ _get_cell_tensor_by_property_product(cs_lnum_t               c_id,
 /*----------------------------------------------------------------------------*/
 
 static void
-_tensor_in_cell(const cs_cell_mesh_t   *cm,
-                const cs_property_t    *pty,
-                cs_real_t               t_eval,
-                cs_real_t               tensor[3][3])
+_tensor_in_cell(const cs_cell_mesh_t *cm,
+                const cs_property_t  *pty,
+                cs_real_t             t_eval,
+                cs_real_t             tensor[3][3])
 {
-  int         def_id = _get_cell_def_id(cm->c_id, pty);
-  cs_xdef_t  *def = pty->defs[def_id];
+  int        def_id = _get_cell_def_id(cm->c_id, pty);
+  cs_xdef_t *def    = pty->defs[def_id];
 
   assert(pty->get_eval_at_cell_cw[def_id] != nullptr);
 
   if (pty->type & CS_PROPERTY_ISO) {
-
-    double  eval;
+    double eval;
     pty->get_eval_at_cell_cw[def_id](cm, t_eval, def->context, &eval);
     tensor[0][0] = tensor[1][1] = tensor[2][2] = eval;
-
   }
   else if (pty->type & CS_PROPERTY_ORTHO) {
-
-    double  eval[3];
+    double eval[3];
     pty->get_eval_at_cell_cw[def_id](cm, t_eval, def->context, eval);
     for (int k = 0; k < 3; k++)
       tensor[k][k] = eval[k];
-
   }
   else if (pty->type & CS_PROPERTY_ANISO_SYM) {
-
-    double  eval[6];
+    double eval[6];
     pty->get_eval_at_cell_cw[def_id](cm, t_eval, def->context, eval);
 
     /* Diag. values */
@@ -735,14 +731,13 @@ _tensor_in_cell(const cs_cell_mesh_t   *cm,
     tensor[0][1] = tensor[1][0] = eval[3];
     tensor[0][2] = tensor[2][0] = eval[4];
     tensor[1][2] = tensor[2][1] = eval[5];
-
   }
   else {
-
     assert(pty->type & CS_PROPERTY_ANISO);
-    pty->get_eval_at_cell_cw[def_id](cm, t_eval, def->context,
+    pty->get_eval_at_cell_cw[def_id](cm,
+                                     t_eval,
+                                     def->context,
                                      (cs_real_t *)tensor);
-
   }
 }
 
@@ -761,17 +756,17 @@ _tensor_in_cell(const cs_cell_mesh_t   *cm,
 /*----------------------------------------------------------------------------*/
 
 static void
-_tensor_in_cell_by_property_product(const cs_cell_mesh_t   *cm,
-                                    const cs_property_t    *pty,
-                                    cs_real_t               t_eval,
-                                    cs_real_t               tensor[3][3])
+_tensor_in_cell_by_property_product(const cs_cell_mesh_t *cm,
+                                    const cs_property_t  *pty,
+                                    cs_real_t             t_eval,
+                                    cs_real_t             tensor[3][3])
 {
   assert(pty->related_properties != nullptr);
-  const cs_property_t  *a = pty->related_properties[0];
-  const cs_property_t  *b = pty->related_properties[1];
+  const cs_property_t *a = pty->related_properties[0];
+  const cs_property_t *b = pty->related_properties[1];
 
-  cs_real_t  tensor_a[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
-  cs_real_t  tensor_b[3][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
+  cs_real_t tensor_a[3][3] = { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } };
+  cs_real_t tensor_b[3][3] = { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } };
 
   /* Evaluate each property */
 
@@ -782,11 +777,12 @@ _tensor_in_cell_by_property_product(const cs_cell_mesh_t   *cm,
 
   if (pty->type & CS_PROPERTY_ISO) {
     /* a and b are isotropic */
-    tensor[0][0] = tensor[1][1] = tensor[2][2] = tensor_a[0][0]*tensor_b[0][0];
+    tensor[0][0] = tensor[1][1] = tensor[2][2] =
+      tensor_a[0][0] * tensor_b[0][0];
   }
   else if (pty->type & CS_PROPERTY_ORTHO) {
     for (int k = 0; k < 3; k++)
-      tensor[k][k] = tensor_a[k][k]*tensor_b[k][k];
+      tensor[k][k] = tensor_a[k][k] * tensor_b[k][k];
   }
   else {
     assert(pty->type & CS_PROPERTY_ANISO);
@@ -804,7 +800,7 @@ _tensor_in_cell_by_property_product(const cs_cell_mesh_t   *cm,
 /*----------------------------------------------------------------------------*/
 
 static void
-_define_pty_by_product(cs_property_t          *pty)
+_define_pty_by_product(cs_property_t *pty)
 {
   /* Only one definition is added in this case specifying that the definition
    * relies on other definitions to be defined. The exact way to specify values
@@ -812,7 +808,7 @@ _define_pty_by_product(cs_property_t          *pty)
    * the standard algorithm)
    */
 
-  int  id = _add_new_def(pty);
+  int id = _add_new_def(pty);
   assert(id == 0);
 
   int dim = 1;
@@ -823,8 +819,8 @@ _define_pty_by_product(cs_property_t          *pty)
   else if (pty->type & CS_PROPERTY_ANISO)
     dim = 9;
 
-  cs_flag_t  state_flag = 0;
-  cs_flag_t  meta_flag = 0;
+  cs_flag_t state_flag = 0;
+  cs_flag_t meta_flag  = 0;
 
   cs_xdef_t *d = cs_xdef_volume_create(CS_XDEF_BY_SUB_DEFINITIONS,
                                        dim,
@@ -835,7 +831,7 @@ _define_pty_by_product(cs_property_t          *pty)
 
   /* Set pointers */
 
-  pty->defs[id] = d;
+  pty->defs[id]                = d;
   pty->get_eval_at_cell[id]    = nullptr;
   pty->get_eval_at_cell_cw[id] = nullptr;
 }
@@ -853,35 +849,37 @@ _define_pty_by_product(cs_property_t          *pty)
 /*----------------------------------------------------------------------------*/
 
 static void
-_assign_ref_value(int                 pty_dim,
-                  cs_lnum_t           n_elts,
-                  const cs_lnum_t    *elt_ids,
-                  const cs_real_t     ref_val[],
-                  cs_real_t          *array)
+_assign_ref_value(int              pty_dim,
+                  cs_lnum_t        n_elts,
+                  const cs_lnum_t *elt_ids,
+                  const cs_real_t  ref_val[],
+                  cs_real_t       *array)
 {
   switch (pty_dim) {
+    case 1: /* Isotropic */
+      cs_array_real_set_scalar_on_subset(n_elts, elt_ids, ref_val[0], array);
+      break;
 
-  case 1: /* Isotropic */
-    cs_array_real_set_scalar_on_subset(n_elts, elt_ids, ref_val[0], array);
-    break;
+    case 3: /* Orthotropic */
+      cs_array_real_set_vector_on_subset(n_elts, elt_ids, ref_val, array);
+      break;
 
-  case 3: /* Orthotropic */
-    cs_array_real_set_vector_on_subset(n_elts, elt_ids, ref_val, array);
-    break;
-
-  case 9: /* Anisotropic */
+    case 9: /* Anisotropic */
     {
-      cs_real_t  tens[3][3] = {{ref_val[0], ref_val[1], ref_val[2]},
-                               {ref_val[3], ref_val[4], ref_val[5]},
-                               {ref_val[6], ref_val[7], ref_val[8]}};
+      cs_real_t tens[3][3] = { { ref_val[0], ref_val[1], ref_val[2] },
+                               { ref_val[3], ref_val[4], ref_val[5] },
+                               { ref_val[6], ref_val[7], ref_val[8] } };
       cs_array_real_set_tensor_on_subset(n_elts, elt_ids, tens, array);
-    }
-    break;
+    } break;
 
-  default:
-    /* Include the anisotropic with symmetric storage (pty_dim = 6) */
-    cs_array_real_set_value_on_subset(n_elts, pty_dim, elt_ids, ref_val, array);
-    break;
+    default:
+      /* Include the anisotropic with symmetric storage (pty_dim = 6) */
+      cs_array_real_set_value_on_subset(n_elts,
+                                        pty_dim,
+                                        elt_ids,
+                                        ref_val,
+                                        array);
+      break;
   }
 }
 
@@ -899,24 +897,27 @@ _assign_ref_value(int                 pty_dim,
 /*----------------------------------------------------------------------------*/
 
 static void
-_evaluate_property_at_boundary_from_cells(const cs_property_t    *pty,
-                                          const cs_lnum_t        *def_idx,
-                                          const cs_lnum_t        *cell_ids,
-                                          double                  t_eval,
-                                          cs_real_t              *eval)
+_evaluate_property_at_boundary_from_cells(const cs_property_t *pty,
+                                          const cs_lnum_t     *def_idx,
+                                          const cs_lnum_t     *cell_ids,
+                                          double               t_eval,
+                                          cs_real_t           *eval)
 {
   if (pty == nullptr)
     return;
   if (eval == nullptr)
-    bft_error(__FILE__, __LINE__, 0, "%s: Property \"%s\". Empty array.",
-              __func__, pty->name);
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              "%s: Property \"%s\". Empty array.",
+              __func__,
+              pty->name);
 
   const cs_lnum_t  n_b_faces = cs_mesh->n_b_faces;
-  const cs_lnum_t  *b_f2c = cs_mesh->b_face_cells;
+  const cs_lnum_t *b_f2c     = cs_mesh->b_face_cells;
 
   if (pty->n_definitions == 1) {
-
-    cs_xdef_t  *def = pty->defs[0];
+    cs_xdef_t *def = pty->defs[0];
 
     pty->get_eval_at_cell[0](n_b_faces,
                              b_f2c,
@@ -927,15 +928,12 @@ _evaluate_property_at_boundary_from_cells(const cs_property_t    *pty,
                              t_eval,
                              def->context,
                              eval);
-
   }
   else {
-
-    const cs_lnum_t  *count = def_idx + pty->n_definitions + 1;
+    const cs_lnum_t *count = def_idx + pty->n_definitions + 1;
 
     for (int def_id = 0; def_id < pty->n_definitions; def_id++) {
-
-      cs_xdef_t  *def = pty->defs[def_id];
+      cs_xdef_t *def = pty->defs[def_id];
 
       pty->get_eval_at_cell[def_id](count[def_id],
                                     cell_ids + def_idx[def_id],
@@ -946,9 +944,7 @@ _evaluate_property_at_boundary_from_cells(const cs_property_t    *pty,
                                     t_eval,
                                     def->context,
                                     eval + def_idx[def_id]);
-
     }
-
   }
 }
 
@@ -970,10 +966,10 @@ _evaluate_property_at_boundary_from_cells(const cs_property_t    *pty,
 /*----------------------------------------------------------------------------*/
 
 static void
-_build_def_idx_from_bdy_selection(const cs_property_t    *pty,
-                                  cs_lnum_t             **p_def_idx,
-                                  cs_lnum_t             **p_cell_ids,
-                                  cs_lnum_t             **p_bf_ids)
+_build_def_idx_from_bdy_selection(const cs_property_t *pty,
+                                  cs_lnum_t          **p_def_idx,
+                                  cs_lnum_t          **p_cell_ids,
+                                  cs_lnum_t          **p_bf_ids)
 {
   if (pty == nullptr)
     return;
@@ -983,20 +979,20 @@ _build_def_idx_from_bdy_selection(const cs_property_t    *pty,
   assert(pty->def_ids != nullptr);
 
   const cs_lnum_t  n_b_faces = cs_mesh->n_b_faces;
-  const cs_lnum_t  *b_f2c = cs_mesh->b_face_cells;
+  const cs_lnum_t *b_f2c     = cs_mesh->b_face_cells;
 
-  cs_lnum_t  *def_idx = *p_def_idx;
-  cs_lnum_t  *cell_ids = *p_cell_ids;
-  cs_lnum_t  *bf_ids = *p_bf_ids;
+  cs_lnum_t *def_idx  = *p_def_idx;
+  cs_lnum_t *cell_ids = *p_cell_ids;
+  cs_lnum_t *bf_ids   = *p_bf_ids;
 
   /* Allocations and initializations */
 
   if (def_idx == nullptr)
     CS_MALLOC(def_idx, 2 * pty->n_definitions + 1, cs_lnum_t);
 
-  memset(def_idx, 0, sizeof(cs_lnum_t)*(2*pty->n_definitions + 1));
+  std::memset(def_idx, 0, sizeof(cs_lnum_t) * (2 * pty->n_definitions + 1));
 
-  cs_lnum_t  *count = def_idx + pty->n_definitions + 1;
+  cs_lnum_t *count = def_idx + pty->n_definitions + 1;
 
   if (cell_ids == nullptr)
     CS_MALLOC(cell_ids, n_b_faces, cs_lnum_t);
@@ -1016,27 +1012,25 @@ _build_def_idx_from_bdy_selection(const cs_property_t    *pty,
     def_idx[pty->def_ids[b_f2c[i]] + 1] += 1;
 
   for (int i = 0; i < pty->n_definitions; i++)
-    def_idx[i+1] += def_idx[i];
+    def_idx[i + 1] += def_idx[i];
 
   /* Define the list of cell ids for each definition */
 
   for (cs_lnum_t i = 0; i < n_b_faces; i++) {
-
-    const cs_lnum_t  c_id = b_f2c[i];
-    const short int  def_id = pty->def_ids[c_id];
-    const cs_lnum_t  shift = def_idx[def_id] + count[def_id];
+    const cs_lnum_t c_id   = b_f2c[i];
+    const short int def_id = pty->def_ids[c_id];
+    const cs_lnum_t shift  = def_idx[def_id] + count[def_id];
 
     cell_ids[shift] = c_id;
-    bf_ids[shift] = i;
+    bf_ids[shift]   = i;
     count[def_id] += 1;
-
   }
 
   /* Return pointers */
 
-  *p_def_idx = def_idx;
+  *p_def_idx  = def_idx;
   *p_cell_ids = cell_ids;
-  *p_bf_ids = bf_ids;
+  *p_bf_ids   = bf_ids;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1052,15 +1046,13 @@ _build_def_idx_from_bdy_selection(const cs_property_t    *pty,
 /*----------------------------------------------------------------------------*/
 
 static cs_property_t *
-_create_property(const char           *name,
-                 int                   id,
-                 cs_property_type_t    type)
+_create_property(const char *name, int id, cs_property_type_t type)
 {
-  int n_types = 0;
-  const int flags[] = {CS_PROPERTY_ISO,
-                       CS_PROPERTY_ORTHO,
-                       CS_PROPERTY_ANISO_SYM,
-                       CS_PROPERTY_ANISO};
+  int       n_types = 0;
+  const int flags[] = { CS_PROPERTY_ISO,
+                        CS_PROPERTY_ORTHO,
+                        CS_PROPERTY_ANISO_SYM,
+                        CS_PROPERTY_ANISO };
 
   for (int i = 0; i < 4; i++) {
     if (type & flags[i])
@@ -1068,49 +1060,51 @@ _create_property(const char           *name,
   }
 
   if (n_types > 1) {
-
-    const char *names[] = {"CS_PROPERTY_ISO",
-                           "CS_PROPERTY_ORTHO",
-                           "CS_PROPERTY_ANISO_SYM",
-                           "CS_PROPERTY_ANISO"};
-    int l = 0;
-    char prop_list[256] = "";
+    const char *names[]        = { "CS_PROPERTY_ISO",
+                                   "CS_PROPERTY_ORTHO",
+                                   "CS_PROPERTY_ANISO_SYM",
+                                   "CS_PROPERTY_ANISO" };
+    int         l              = 0;
+    char        prop_list[256] = "";
 
     for (int i = 0; i < 4 && l > 0; i++) {
       if (type & flags[i]) {
-        snprintf(prop_list+l, 256-l, "  %s\n", names[i]);
+        snprintf(prop_list + l, 256 - l, "  %s\n", names[i]);
         prop_list[255] = '\0';
-        l = strlen(prop_list);
+        l              = strlen(prop_list);
       }
     }
-
   }
   else if (n_types < 1)
     if ((type & CS_PROPERTY_ANISO) == 0)
-      bft_error(__FILE__, __LINE__, 0,
+      bft_error(__FILE__,
+                __LINE__,
+                0,
                 "%s: No known type specified for property %s\n"
                 " Set one among\n"
                 "   CS_PROPERTY_ISO,\n"
                 "   CS_PROPERTY_ORTHO,\n"
                 "   CS_PROPERTY_ANISO_SYM,\n"
-                "   CS_PROPERTY_ANISO.\n", __func__, name);
+                "   CS_PROPERTY_ANISO.\n",
+                __func__,
+                name);
 
   cs_property_t *pty = nullptr;
   CS_MALLOC(pty, 1, cs_property_t);
 
   /* Copy name */
 
-  size_t  len = strlen(name);
+  size_t len = strlen(name);
   CS_MALLOC(pty->name, len + 1, char);
   strncpy(pty->name, name, len + 1);
 
-  pty->id = id;
-  pty->type = type;
-  pty->state_flag = 0;
+  pty->id           = id;
+  pty->type         = type;
+  pty->state_flag   = 0;
   pty->process_flag = 0;
 
-  pty->ref_value = 1.0;         /* default setting */
-  pty->scaling_factor = 1.0;    /* default setting */
+  pty->ref_value      = 1.0; /* default setting */
+  pty->scaling_factor = 1.0; /* default setting */
 
   pty->n_definitions = 0;
   pty->defs          = nullptr;
@@ -1146,12 +1140,12 @@ _create_property(const char           *name,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_init_sharing(const cs_mesh_t              *mesh,
-                         const cs_cdo_quantities_t    *quant,
-                         const cs_cdo_connect_t       *connect)
+cs_property_init_sharing(const cs_mesh_t           *mesh,
+                         const cs_cdo_quantities_t *quant,
+                         const cs_cdo_connect_t    *connect)
 {
-  cs_mesh = mesh;
-  cs_cdo_quant = quant;
+  cs_mesh        = mesh;
+  cs_cdo_quant   = quant;
   cs_cdo_connect = connect;
 }
 
@@ -1181,21 +1175,22 @@ cs_property_get_n_properties(void)
 /*----------------------------------------------------------------------------*/
 
 cs_property_t *
-cs_property_add(const char            *name,
-                cs_property_type_t     type)
+cs_property_add(const char *name, cs_property_type_t type)
 {
-  cs_property_t  *pty = cs_property_by_name(name);
+  cs_property_t *pty = cs_property_by_name(name);
 
   if (pty != nullptr) {
     cs_base_warn(__FILE__, __LINE__);
     cs_log_printf(CS_LOG_WARNINGS,
                   _(" %s: An existing property has already the name %s.\n"
-                    " Stop adding this property.\n"), __func__, name);
+                    " Stop adding this property.\n"),
+                  __func__,
+                  name);
     cs_log_printf_flush(CS_LOG_WARNINGS);
-    return  pty;
+    return pty;
   }
 
-  int  pty_id = _n_properties;
+  int pty_id = _n_properties;
 
   if (pty_id == 0) {
     _n_max_properties = 3;
@@ -1229,8 +1224,7 @@ cs_property_add(const char            *name,
 /*----------------------------------------------------------------------------*/
 
 cs_property_t *
-cs_property_subcell_add(const char            *name,
-                        cs_property_type_t     type)
+cs_property_subcell_add(const char *name, cs_property_type_t type)
 {
   return cs_property_add(name, type | CS_PROPERTY_SUBCELL_DEFINITION);
 }
@@ -1251,16 +1245,16 @@ cs_property_subcell_add(const char            *name,
 /*----------------------------------------------------------------------------*/
 
 cs_property_t *
-cs_property_add_as_product(const char             *name,
-                           const cs_property_t    *pty_a,
-                           const cs_property_t    *pty_b)
+cs_property_add_as_product(const char          *name,
+                           const cs_property_t *pty_a,
+                           const cs_property_t *pty_b)
 {
   if (pty_a == nullptr || pty_b == nullptr)
     return nullptr;
 
   /* Determine the type for the new property */
 
-  cs_property_type_t  type = CS_PROPERTY_BY_PRODUCT;
+  cs_property_type_t type = CS_PROPERTY_BY_PRODUCT;
 
   /*              | pty_a->iso | pty_a->ortho | pty_a->aniso
    * pty_b->iso   |    iso     |   ortho      |    aniso
@@ -1276,8 +1270,11 @@ cs_property_add_as_product(const char             *name,
     else if (pty_b->type & CS_PROPERTY_ANISO)
       type |= CS_PROPERTY_ANISO;
     else
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid type of property.", __func__);
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                " %s: Invalid type of property.",
+                __func__);
   }
   else if (pty_a->type & CS_PROPERTY_ANISO) {
     type |= CS_PROPERTY_ANISO;
@@ -1289,10 +1286,13 @@ cs_property_add_as_product(const char             *name,
       type |= CS_PROPERTY_ORTHO;
   }
   else
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid type of property.", __func__);
+    bft_error(__FILE__,
+              __LINE__,
+              0,
+              " %s: Invalid type of property.",
+              __func__);
 
-  cs_property_t  *pty_ab = cs_property_add(name, type);
+  cs_property_t *pty_ab = cs_property_add(name, type);
 
   pty_ab->n_related_properties = 2;
   CS_MALLOC(pty_ab->related_properties, 2, const cs_property_t *);
@@ -1314,14 +1314,14 @@ cs_property_add_as_product(const char             *name,
 /*----------------------------------------------------------------------------*/
 
 cs_property_t *
-cs_property_by_name(const char   *name)
+cs_property_by_name(const char *name)
 {
   if (_n_properties < 0)
     return nullptr;
   assert(name != nullptr);
 
   for (int i = 0; i < _n_properties; i++) {
-    cs_property_t  *pty = _properties[i];
+    cs_property_t *pty = _properties[i];
     assert(pty->name != nullptr);
     if (strcmp(pty->name, name) == 0)
       return pty;
@@ -1341,14 +1341,14 @@ cs_property_by_name(const char   *name)
 /*----------------------------------------------------------------------------*/
 
 cs_property_t *
-cs_property_by_id(int         id)
+cs_property_by_id(int id)
 {
   if (_n_properties < 0)
     return nullptr;
   if (id < 0 || id >= _n_max_properties)
     return nullptr;
 
-  return  _properties[id];
+  return _properties[id];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1361,22 +1361,22 @@ cs_property_by_id(int         id)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_set_option(cs_property_t       *pty,
-                       cs_property_key_t    key)
+cs_property_set_option(cs_property_t *pty, cs_property_key_t key)
 {
   if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
-  switch(key) {
+  switch (key) {
+    case CS_PTYKEY_POST_FOURIER:
+      pty->process_flag |= CS_PROPERTY_POST_FOURIER;
+      break;
 
-  case CS_PTYKEY_POST_FOURIER:
-    pty->process_flag |= CS_PROPERTY_POST_FOURIER;
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" Key not implemented for setting a property."));
-    break;
+    default:
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                _(" Key not implemented for setting a property."));
+      break;
 
   } /* Switch on keys */
 }
@@ -1392,8 +1392,7 @@ cs_property_set_option(cs_property_t       *pty,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_set_reference_value(cs_property_t    *pty,
-                                double            refval)
+cs_property_set_reference_value(cs_property_t *pty, double refval)
 {
   if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
@@ -1414,8 +1413,7 @@ cs_property_set_reference_value(cs_property_t    *pty,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_set_scaling_factor(cs_property_t    *pty,
-                               double            val)
+cs_property_set_scaling_factor(cs_property_t *pty, double val)
 {
   if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
@@ -1436,7 +1434,7 @@ cs_property_set_scaling_factor(cs_property_t    *pty,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_unscale(cs_property_t    *pty)
+cs_property_unscale(cs_property_t *pty)
 {
   if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
@@ -1460,8 +1458,7 @@ cs_property_destroy_all(void)
     return;
 
   for (int i = 0; i < _n_properties; i++) {
-
-    cs_property_t  *pty = _properties[i];
+    cs_property_t *pty = _properties[i];
 
     if (pty == nullptr)
       bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
@@ -1490,7 +1487,7 @@ cs_property_destroy_all(void)
   } /* Loop on properties */
 
   CS_FREE(_properties);
-  _n_properties = 0;
+  _n_properties     = 0;
   _n_max_properties = 0;
 }
 
@@ -1508,8 +1505,7 @@ cs_property_finalize_setup(void)
     return;
 
   for (int i = 0; i < _n_properties; i++) {
-
-    cs_property_t  *pty = _properties[i];
+    cs_property_t *pty = _properties[i];
 
     if (pty == nullptr)
       bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
@@ -1529,23 +1525,22 @@ cs_property_finalize_setup(void)
 
     if (pty->n_definitions > 1) { /* Initialization of def_ids */
 
-      const cs_lnum_t  n_cells = cs_cdo_quant->n_cells;
+      const cs_lnum_t n_cells = cs_cdo_quant->n_cells;
 
       CS_MALLOC(pty->def_ids, n_cells, short int);
 
-#     pragma omp parallel for if (n_cells > CS_THR_MIN)
+#pragma omp parallel for if (n_cells > CS_THR_MIN)
       for (cs_lnum_t j = 0; j < n_cells; j++)
         pty->def_ids[j] = -1; /* Unset by default */
 
       for (int id = 0; id < pty->n_definitions; id++) {
-
-        cs_xdef_t  *def = pty->defs[id];
+        cs_xdef_t *def = pty->defs[id];
         assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
-        const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+        const cs_zone_t *z = cs_volume_zone_by_id(def->z_id);
         assert(z != nullptr);
 
-#       pragma omp parallel for if (z->n_elts > CS_THR_MIN)
+#pragma omp parallel for if (z->n_elts > CS_THR_MIN)
         for (cs_lnum_t j = 0; j < z->n_elts; j++)
           pty->def_ids[z->elt_ids[j]] = id;
 
@@ -1555,19 +1550,20 @@ cs_property_finalize_setup(void)
          */
 
         if (def->type == CS_XDEF_BY_ARRAY) {
-
-          cs_xdef_array_context_t *cx
-            = static_cast<cs_xdef_array_context_t *>(def->context);
+          cs_xdef_array_context_t *cx =
+            static_cast<cs_xdef_array_context_t *>(def->context);
 
           if (!cx->full_length) {
-
             if (def->z_id != cx->z_id)
-              bft_error(__FILE__, __LINE__, 0,
+              bft_error(__FILE__,
+                        __LINE__,
+                        0,
                         "%s: Issue found with the volume definition by array"
-                        " for the property \"%s\"\n", __func__, pty->name);
+                        " for the property \"%s\"\n",
+                        __func__,
+                        pty->name);
 
             cs_xdef_array_build_full2subset(def);
-
           }
 
         } /* Definition by array */
@@ -1578,37 +1574,42 @@ cs_property_finalize_setup(void)
 
       for (cs_lnum_t j = 0; j < n_cells; j++)
         if (pty->def_ids[j] == -1)
-          bft_error(__FILE__, __LINE__, 0,
+          bft_error(__FILE__,
+                    __LINE__,
+                    0,
                     " %s: cell %ld is unset for the property \"%s\"\n",
-                    __func__, (long)j, pty->name);
-
+                    __func__,
+                    (long)j,
+                    pty->name);
     }
     else if (pty->n_definitions == 0) {
-
       /* Default definition based on the reference value */
 
       if (pty->type & CS_PROPERTY_ISO)
         cs_property_def_iso_by_value(pty, nullptr, pty->ref_value);
       else if (pty->type & CS_PROPERTY_ORTHO) {
-        cs_real_t  ref[3] =  {pty->ref_value, pty->ref_value, pty->ref_value};
+        cs_real_t ref[3] = { pty->ref_value, pty->ref_value, pty->ref_value };
         cs_property_def_ortho_by_value(pty, nullptr, ref);
       }
       else if (pty->type & CS_PROPERTY_ANISO) {
-        cs_real_t  ref[3][3] = { {pty->ref_value, 0, 0},
-                                 {0, pty->ref_value, 0},
-                                 {0, 0, pty->ref_value} };
+        cs_real_t ref[3][3] = { { pty->ref_value, 0, 0 },
+                                { 0, pty->ref_value, 0 },
+                                { 0, 0, pty->ref_value } };
         cs_property_def_aniso_by_value(pty, nullptr, ref);
       }
       else
-        bft_error(__FILE__, __LINE__, 0, "%s: Incompatible property type.",
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
+                  "%s: Incompatible property type.",
                   __func__);
 
       cs_base_warn(__FILE__, __LINE__);
       cs_log_printf(CS_LOG_WARNINGS,
                     "\n The property \"%s\" will be defined using its reference"
-                    " value.\n", pty->name);
+                    " value.\n",
+                    pty->name);
       cs_log_printf_flush(CS_LOG_WARNINGS);
-
     }
 
     /* Boundary definitions */
@@ -1616,25 +1617,24 @@ cs_property_finalize_setup(void)
 
     if (pty->n_b_definitions > 1) { /* Initialization of b_def_ids */
 
-      const cs_lnum_t  n_b_faces = cs_cdo_quant->n_b_faces;
+      const cs_lnum_t n_b_faces = cs_cdo_quant->n_b_faces;
 
       CS_MALLOC(pty->b_def_ids, n_b_faces, short int);
 
-#     pragma omp parallel for if (n_b_faces > CS_THR_MIN)
+#pragma omp parallel for if (n_b_faces > CS_THR_MIN)
       for (cs_lnum_t j = 0; j < n_b_faces; j++)
         pty->b_def_ids[j] = -1; /* Unset by default */
 
       for (int id = 0; id < pty->n_b_definitions; id++) {
-
-        cs_xdef_t  *def = pty->b_defs[id];
+        cs_xdef_t *def = pty->b_defs[id];
 
         assert(def->z_id > 0);
         assert(def->support == CS_XDEF_SUPPORT_BOUNDARY);
 
-        const cs_zone_t  *z = cs_boundary_zone_by_id(def->z_id);
+        const cs_zone_t *z = cs_boundary_zone_by_id(def->z_id);
         assert(z != nullptr);
 
-#       pragma omp parallel for if (z->n_elts > CS_THR_MIN)
+#pragma omp parallel for if (z->n_elts > CS_THR_MIN)
         for (cs_lnum_t j = 0; j < z->n_elts; j++)
           pty->b_def_ids[z->elt_ids[j]] = id;
 
@@ -1644,19 +1644,20 @@ cs_property_finalize_setup(void)
          */
 
         if (def->type == CS_XDEF_BY_ARRAY) {
-
-          cs_xdef_array_context_t *cx
-            = static_cast<cs_xdef_array_context_t *>(def->context);
+          cs_xdef_array_context_t *cx =
+            static_cast<cs_xdef_array_context_t *>(def->context);
 
           if (!cx->full_length) {
-
             if (def->z_id != cx->z_id)
-              bft_error(__FILE__, __LINE__, 0,
+              bft_error(__FILE__,
+                        __LINE__,
+                        0,
                         "%s: Issue found with the boundary definition by array"
-                        " for the property \"%s\"\n", __func__, pty->name);
+                        " for the property \"%s\"\n",
+                        __func__,
+                        pty->name);
 
             cs_xdef_array_build_full2subset(def);
-
           }
 
         } /* Definition by array */
@@ -1667,10 +1668,13 @@ cs_property_finalize_setup(void)
 
       for (cs_lnum_t j = 0; j < n_b_faces; j++)
         if (pty->b_def_ids[j] == -1)
-          bft_error(__FILE__, __LINE__, 0,
+          bft_error(__FILE__,
+                    __LINE__,
+                    0,
                     " %s: Boundary face %ld is unset for the property \"%s\"\n",
-                    __func__, (long)j, pty->name);
-
+                    __func__,
+                    (long)j,
+                    pty->name);
     }
 
   } /* Loop on properties */
@@ -1678,15 +1682,13 @@ cs_property_finalize_setup(void)
   // Second loop to treat properties defined from a product of properties
 
   for (int i = 0; i < _n_properties; i++) {
-
-    cs_property_t  *pty = _properties[i];
+    cs_property_t *pty = _properties[i];
 
     if (pty->type & CS_PROPERTY_BY_PRODUCT) {
-
       assert(pty->n_related_properties == 2);
 
-      const cs_property_t  *pty_a = pty->related_properties[0];
-      const cs_property_t  *pty_b = pty->related_properties[1];
+      const cs_property_t *pty_a = pty->related_properties[0];
+      const cs_property_t *pty_b = pty->related_properties[1];
 
       pty->ref_value = pty_a->ref_value * pty_b->ref_value;
 
@@ -1696,7 +1698,6 @@ cs_property_finalize_setup(void)
 
   } /* Loop on properties */
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1711,14 +1712,14 @@ cs_property_finalize_setup(void)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_property_get_array(const cs_property_t     *pty)
+cs_property_get_array(const cs_property_t *pty)
 {
   if (pty == nullptr)
     return nullptr;
   if (pty->n_definitions > 1)
     return nullptr; /* May be too restrictive */
 
-  const cs_xdef_t  *def = pty->defs[0];
+  const cs_xdef_t *def = pty->defs[0];
   assert(def != nullptr);
 
   if (def->type == CS_XDEF_BY_ARRAY)
@@ -1750,26 +1751,25 @@ cs_property_data_define(bool                 need_tensor,
 
   // Default initialization for the first set of members
 
-  data.property = property;
-  data.is_iso = false;
-  data.is_unity = false;
+  data.property    = property;
+  data.is_iso      = false;
+  data.is_unity    = false;
   data.need_tensor = need_tensor;
-  data.need_eigen = need_eigen;
+  data.need_eigen  = need_eigen;
   data.eigen_ratio = 1.0; // Computed only if needed
 
   if (property == nullptr)
     data.is_iso = true, data.is_unity = true;
 
   else {
-
     if (property->type & CS_PROPERTY_ISO) {
       data.is_iso = true;
 
       if (property->n_definitions == 1) {
-        cs_xdef_t  *d = property->defs[0];
+        cs_xdef_t *d = property->defs[0];
         if (d->type == CS_XDEF_BY_VALUE) {
-          double  *dval = (double *)d->context;
-          if (fabs(dval[0] - 1) < cs_math_zero_threshold)
+          double *dval = (double *)d->context;
+          if (cs::abs(dval[0] - 1) < cs_math_zero_threshold)
             data.is_unity = true;
         }
       }
@@ -1781,8 +1781,8 @@ cs_property_data_define(bool                 need_tensor,
 
   // Second set of members
 
-  data.eigen_max = ref_val;
-  data.value = ref_val;
+  data.eigen_max    = ref_val;
+  data.value        = ref_val;
   data.tensor[0][0] = ref_val, data.tensor[0][1] = 0, data.tensor[0][2] = 0;
   data.tensor[1][0] = 0, data.tensor[1][1] = ref_val, data.tensor[1][2] = 0;
   data.tensor[2][0] = 0, data.tensor[2][1] = 0, data.tensor[2][2] = ref_val;
@@ -1803,48 +1803,46 @@ cs_property_data_define(bool                 need_tensor,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_data_init(bool                     need_tensor,
-                      bool                     need_eigen,
-                      const cs_property_t     *property,
-                      cs_property_data_t      *data)
+cs_property_data_init(bool                 need_tensor,
+                      bool                 need_eigen,
+                      const cs_property_t *property,
+                      cs_property_data_t  *data)
 {
   if (data == nullptr)
     return;
 
   data->property = property;
   data->is_unity = false;
-  data->is_iso = false;
+  data->is_iso   = false;
 
   if (property == nullptr) {
-    data->is_iso = true;
+    data->is_iso   = true;
     data->is_unity = true;
   }
   else {
-
     if (property->type & CS_PROPERTY_ISO) {
       data->is_iso = true;
 
       if (property->n_definitions == 1) {
-        cs_xdef_t  *d = property->defs[0];
+        cs_xdef_t *d = property->defs[0];
         if (d->type == CS_XDEF_BY_VALUE) {
-          double  *dval = (double *)d->context;
-          if (fabs(dval[0] - 1) < cs_math_zero_threshold)
+          double *dval = (double *)d->context;
+          if (cs::abs(dval[0] - 1) < cs_math_zero_threshold)
             data->is_unity = true;
         }
       }
     }
-
   }
 
   const cs_real_t ref_val = (property == nullptr) ? 1. : property->ref_value;
 
-  data->need_eigen = need_eigen;
-  data->eigen_max = ref_val;
+  data->need_eigen  = need_eigen;
+  data->eigen_max   = ref_val;
   data->eigen_ratio = 1.0;
 
   data->need_tensor = need_tensor;
 
-  data->value = ref_val;
+  data->value        = ref_val;
   data->tensor[0][0] = ref_val, data->tensor[0][1] = 0, data->tensor[0][2] = 0;
   data->tensor[1][0] = 0, data->tensor[1][1] = ref_val, data->tensor[1][2] = 0;
   data->tensor[2][0] = 0, data->tensor[2][1] = 0, data->tensor[2][2] = ref_val;
@@ -1865,49 +1863,52 @@ cs_property_data_init(bool                     need_tensor,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_def_constant_value(cs_property_t *pty,
-                               double         val)
+cs_property_def_constant_value(cs_property_t *pty, double val)
 {
   if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
   if ((pty->type & CS_PROPERTY_ISO) == 0)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " Invalid setting: property %s is not isotropic.\n"
-              " Please check your settings.", pty->name);
+              " Please check your settings.",
+              pty->name);
 
   cs_xdef_t *d = nullptr;
 
   if (pty->n_definitions == 0) { // First call to this function
 
-    int new_id = _add_new_def(pty);
-    cs_flag_t state_flag
-      = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE | CS_FLAG_STATE_STEADY;
+    int       new_id = _add_new_def(pty);
+    cs_flag_t state_flag =
+      CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE | CS_FLAG_STATE_STEADY;
     cs_flag_t meta_flag = 0; /* metadata */
 
     d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
-                              1,     /* dim */
-                              0,     /* all cells */
+                              1, /* dim */
+                              0, /* all cells */
                               state_flag,
                               meta_flag,
                               &val); /* context */
 
-    pty->defs[new_id] = d;
-    pty->get_eval_at_cell[new_id] = cs_xdef_eval_scalar_by_val;
+    pty->defs[new_id]                = d;
+    pty->get_eval_at_cell[new_id]    = cs_xdef_eval_scalar_by_val;
     pty->get_eval_at_cell_cw[new_id] = cs_xdef_cw_eval_scalar_by_val;
-
   }
   else {
-
     if (pty->n_definitions > 1)
-      bft_error(__FILE__, __LINE__, 0,
+      bft_error(__FILE__,
+                __LINE__,
+                0,
                 "%s: Property \"%s\"\n"
                 " Definition by a constant. Only one definition is possible.\n"
                 " Currently: n_definitions = %d.\n Please check your settings.",
-                __func__, pty->name, pty->n_definitions);
+                __func__,
+                pty->name,
+                pty->n_definitions);
 
     d = pty->defs[0];
     cs_xdef_set_scalar_value(d, val);
-
   }
 
   /* Set automatically the reference value in this case */
@@ -1933,32 +1934,33 @@ cs_property_def_constant_value(cs_property_t *pty,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_def_iso_by_value(cs_property_t *pty,
-                             const char    *zname,
-                             double         val)
+cs_property_def_iso_by_value(cs_property_t *pty, const char *zname, double val)
 {
   if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
   if ((pty->type & CS_PROPERTY_ISO) == 0)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " Invalid setting: property \"%s\" is not isotropic.\n"
-              " Please check your settings.", pty->name);
+              " Please check your settings.",
+              pty->name);
 
-  int  z_id = cs_volume_zone_id_by_name(zname);
-  int  def_id = _find_or_add_def(pty, z_id);
+  int z_id   = cs_volume_zone_id_by_name(zname);
+  int def_id = _find_or_add_def(pty, z_id);
 
-  cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE |
-    CS_FLAG_STATE_STEADY;
+  cs_flag_t state_flag =
+    CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE | CS_FLAG_STATE_STEADY;
   cs_flag_t  meta_flag = 0; /* metadata */
-  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
-                                        1,     /* dim */
-                                        z_id,
-                                        state_flag,
-                                        meta_flag,
-                                        &val); /* context */
+  cs_xdef_t *d         = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
+                                               1, /* dim */
+                                               z_id,
+                                               state_flag,
+                                               meta_flag,
+                                               &val); /* context */
 
-  pty->defs[def_id] = d;
-  pty->get_eval_at_cell[def_id] = cs_xdef_eval_scalar_by_val;
+  pty->defs[def_id]                = d;
+  pty->get_eval_at_cell[def_id]    = cs_xdef_eval_scalar_by_val;
   pty->get_eval_at_cell_cw[def_id] = cs_xdef_cw_eval_scalar_by_val;
 
   /* Set automatically the reference value if all cells are selected */
@@ -1994,22 +1996,25 @@ cs_property_boundary_def_iso_by_value(cs_property_t *pty,
   if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
   if ((pty->type & CS_PROPERTY_ISO) == 0)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " Invalid setting: property \"%s\" is not isotropic.\n"
-              " Please check your settings.", pty->name);
+              " Please check your settings.",
+              pty->name);
 
-  int  z_id = cs_boundary_zone_id_by_name(zname);
-  int  def_id = _find_or_add_b_def(pty, z_id);
+  int z_id   = cs_boundary_zone_id_by_name(zname);
+  int def_id = _find_or_add_b_def(pty, z_id);
 
-  cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_FACEWISE |
-    CS_FLAG_STATE_STEADY;
+  cs_flag_t state_flag =
+    CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_FACEWISE | CS_FLAG_STATE_STEADY;
   cs_flag_t  meta_flag = 0; /* metadata */
-  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
-                                          1,     /* dim */
-                                          z_id,
-                                          state_flag,
-                                          meta_flag,
-                                          &val); /* context */
+  cs_xdef_t *d         = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
+                                                 1, /* dim */
+                                                 z_id,
+                                                 state_flag,
+                                                 meta_flag,
+                                                 &val); /* context */
 
   pty->b_defs[def_id] = d;
 
@@ -2040,25 +2045,28 @@ cs_property_def_ortho_by_value(cs_property_t *pty,
   if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
   if ((pty->type & CS_PROPERTY_ORTHO) == 0)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " Invalid setting: property \"%s\" is not orthotropic.\n"
-              " Please check your settings.", pty->name);
+              " Please check your settings.",
+              pty->name);
 
-  int  z_id = cs_volume_zone_id_by_name(zname);
-  int  def_id = _find_or_add_def(pty, z_id);
+  int z_id   = cs_volume_zone_id_by_name(zname);
+  int def_id = _find_or_add_def(pty, z_id);
 
-  cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE |
-        CS_FLAG_STATE_STEADY;
+  cs_flag_t state_flag =
+    CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE | CS_FLAG_STATE_STEADY;
   cs_flag_t  meta_flag = 0; /* metadata */
-  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
-                                        3, /* dim */
-                                        z_id,
-                                        state_flag,
-                                        meta_flag,
-                                        (void *)val);
+  cs_xdef_t *d         = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
+                                               3, /* dim */
+                                               z_id,
+                                               state_flag,
+                                               meta_flag,
+                                               (void *)val);
 
-  pty->defs[def_id] = d;
-  pty->get_eval_at_cell[def_id] = cs_xdef_eval_vector_by_val;
+  pty->defs[def_id]                = d;
+  pty->get_eval_at_cell[def_id]    = cs_xdef_eval_vector_by_val;
   pty->get_eval_at_cell_cw[def_id] = cs_xdef_cw_eval_vector_by_val;
 
   return d;
@@ -2082,29 +2090,32 @@ cs_property_def_ortho_by_value(cs_property_t *pty,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_boundary_def_ortho_by_value(cs_property_t  *pty,
-                                        const char     *zname,
-                                        double          vals[])
+cs_property_boundary_def_ortho_by_value(cs_property_t *pty,
+                                        const char    *zname,
+                                        double         vals[])
 {
   if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
   if ((pty->type & CS_PROPERTY_ORTHO) == 0)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " Invalid setting: property \"%s\" is not orthotropic.\n"
-              " Please check your settings.", pty->name);
+              " Please check your settings.",
+              pty->name);
 
-  int  z_id = cs_boundary_zone_id_by_name(zname);
-  int  def_id = _find_or_add_b_def(pty, z_id);
+  int z_id   = cs_boundary_zone_id_by_name(zname);
+  int def_id = _find_or_add_b_def(pty, z_id);
 
-  cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_FACEWISE |
-    CS_FLAG_STATE_STEADY;
+  cs_flag_t state_flag =
+    CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_FACEWISE | CS_FLAG_STATE_STEADY;
   cs_flag_t  meta_flag = 0; /* metadata */
-  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
-                                          3,     /* dim */
-                                          z_id,
-                                          state_flag,
-                                          meta_flag,
-                                          vals); /* context */
+  cs_xdef_t *d         = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
+                                                 3, /* dim */
+                                                 z_id,
+                                                 state_flag,
+                                                 meta_flag,
+                                                 vals); /* context */
 
   pty->b_defs[def_id] = d;
 
@@ -2135,34 +2146,40 @@ cs_property_def_aniso_by_value(cs_property_t *pty,
   if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
   if ((pty->type & CS_PROPERTY_ANISO) == 0)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " Invalid setting: property \"%s\" is not anisotropic.\n"
-              " Please check your settings.", pty->name);
+              " Please check your settings.",
+              pty->name);
 
   /* Check the symmetry */
 
-  if (!_is_tensor_symmetric((const cs_real_t (*)[3])tens))
-    bft_error(__FILE__, __LINE__, 0,
+  if (!_is_tensor_symmetric((const cs_real_t(*)[3])tens))
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " %s: The definition of the tensor related to the property"
               " \"%s\" is not symmetric.\n"
               " This case is not handled. Please check your settings.\n",
-              __func__, pty->name);
+              __func__,
+              pty->name);
 
-  int  z_id = cs_volume_zone_id_by_name(zname);
-  int  def_id = _find_or_add_def(pty, z_id);
+  int z_id   = cs_volume_zone_id_by_name(zname);
+  int def_id = _find_or_add_def(pty, z_id);
 
-  cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE |
-        CS_FLAG_STATE_STEADY;
+  cs_flag_t state_flag =
+    CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE | CS_FLAG_STATE_STEADY;
   cs_flag_t  meta_flag = 0; /* metadata */
-  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
-                                        9, /* dim */
-                                        z_id,
-                                        state_flag,
-                                        meta_flag,
-                                        tens);
+  cs_xdef_t *d         = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
+                                               9, /* dim */
+                                               z_id,
+                                               state_flag,
+                                               meta_flag,
+                                               tens);
 
-  pty->defs[def_id] = d;
-  pty->get_eval_at_cell[def_id] = cs_xdef_eval_tensor_by_val;
+  pty->defs[def_id]                = d;
+  pty->get_eval_at_cell[def_id]    = cs_xdef_eval_tensor_by_val;
   pty->get_eval_at_cell_cw[def_id] = cs_xdef_cw_eval_tensor_by_val;
 
   return d;
@@ -2186,35 +2203,41 @@ cs_property_def_aniso_by_value(cs_property_t *pty,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_boundary_def_aniso_by_value(cs_property_t  *pty,
-                                        const char     *zname,
-                                        double          tens[3][3])
+cs_property_boundary_def_aniso_by_value(cs_property_t *pty,
+                                        const char    *zname,
+                                        double         tens[3][3])
 {
   if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
   if ((pty->type & CS_PROPERTY_ANISO) == 0)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " Invalid setting: property \"%s\" is not orthotropic.\n"
-              " Please check your settings.", pty->name);
-  if (!_is_tensor_symmetric((const cs_real_t (*)[3])tens))
-    bft_error(__FILE__, __LINE__, 0,
+              " Please check your settings.",
+              pty->name);
+  if (!_is_tensor_symmetric((const cs_real_t(*)[3])tens))
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " %s: The definition of the tensor related to the property"
               " \"%s\" is not symmetric.\n"
               " This case is not handled. Please check your settings.\n",
-              __func__, pty->name);
+              __func__,
+              pty->name);
 
-  int  z_id = cs_boundary_zone_id_by_name(zname);
-  int  def_id = _find_or_add_b_def(pty, z_id);
+  int z_id   = cs_boundary_zone_id_by_name(zname);
+  int def_id = _find_or_add_b_def(pty, z_id);
 
-  cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_FACEWISE |
-    CS_FLAG_STATE_STEADY;
+  cs_flag_t state_flag =
+    CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_FACEWISE | CS_FLAG_STATE_STEADY;
   cs_flag_t  meta_flag = 0; /* metadata */
-  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
-                                          9,      /* dim */
-                                          z_id,
-                                          state_flag,
-                                          meta_flag,
-                                          tens);  /* context */
+  cs_xdef_t *d         = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
+                                                 9, /* dim */
+                                                 z_id,
+                                                 state_flag,
+                                                 meta_flag,
+                                                 tens); /* context */
 
   pty->b_defs[def_id] = d;
 
@@ -2239,33 +2262,36 @@ cs_property_boundary_def_aniso_by_value(cs_property_t  *pty,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_def_aniso_sym_by_value(cs_property_t  *pty,
-                                   const char     *zname,
-                                   cs_real_t       symtens[6])
+cs_property_def_aniso_sym_by_value(cs_property_t *pty,
+                                   const char    *zname,
+                                   cs_real_t      symtens[6])
 {
   if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
   if ((pty->type & CS_PROPERTY_ANISO_SYM) == 0)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " Invalid setting: property \"%s\" is not anisotropic"
               " with a symmetric storage.\n"
-              " Please check your settings.", pty->name);
+              " Please check your settings.",
+              pty->name);
 
-  int  z_id = cs_volume_zone_id_by_name(zname);
-  int  def_id = _find_or_add_def(pty, z_id);
+  int z_id   = cs_volume_zone_id_by_name(zname);
+  int def_id = _find_or_add_def(pty, z_id);
 
-  cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE |
-    CS_FLAG_STATE_STEADY;
+  cs_flag_t state_flag =
+    CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE | CS_FLAG_STATE_STEADY;
   cs_flag_t  meta_flag = 0; /* metadata */
-  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
-                                        6, /* dim */
-                                        z_id,
-                                        state_flag,
-                                        meta_flag,
-                                        symtens);
+  cs_xdef_t *d         = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
+                                               6, /* dim */
+                                               z_id,
+                                               state_flag,
+                                               meta_flag,
+                                               symtens);
 
-  pty->defs[def_id] = d;
-  pty->get_eval_at_cell[def_id] = cs_xdef_eval_symtens_by_val;
+  pty->defs[def_id]                = d;
+  pty->get_eval_at_cell[def_id]    = cs_xdef_eval_symtens_by_val;
   pty->get_eval_at_cell_cw[def_id] = cs_xdef_cw_eval_symtens_by_val;
 
   return d;
@@ -2297,23 +2323,26 @@ cs_property_boundary_def_aniso_sym_by_value(cs_property_t *pty,
   if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
   if ((pty->type & CS_PROPERTY_ANISO_SYM) == 0)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " Invalid setting: property \"%s\" is not anisotropic"
               " with a symmetric storage.\n"
-              " Please check your settings.", pty->name);
+              " Please check your settings.",
+              pty->name);
 
-  int  z_id = cs_boundary_zone_id_by_name(zname);
-  int  def_id = _find_or_add_b_def(pty, z_id);
+  int z_id   = cs_boundary_zone_id_by_name(zname);
+  int def_id = _find_or_add_b_def(pty, z_id);
 
-  cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_FACEWISE |
-    CS_FLAG_STATE_STEADY;
+  cs_flag_t state_flag =
+    CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_FACEWISE | CS_FLAG_STATE_STEADY;
   cs_flag_t  meta_flag = 0; /* metadata */
-  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
-                                          6,      /* dim */
-                                          z_id,
-                                          state_flag,
-                                          meta_flag,
-                                          tens); /* context */
+  cs_xdef_t *d         = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
+                                                 6, /* dim */
+                                                 z_id,
+                                                 state_flag,
+                                                 meta_flag,
+                                                 tens); /* context */
 
   pty->b_defs[def_id] = d;
 
@@ -2338,55 +2367,60 @@ cs_property_boundary_def_aniso_sym_by_value(cs_property_t *pty,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_def_by_time_func(cs_property_t   *pty,
-                             const char      *zname,
-                             cs_time_func_t  *func,
-                             void            *input)
+cs_property_def_by_time_func(cs_property_t  *pty,
+                             const char     *zname,
+                             cs_time_func_t *func,
+                             void           *input)
 {
   if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
-  int  z_id = cs_volume_zone_id_by_name(zname);
-  int  def_id = _find_or_add_def(pty, z_id);
+  int z_id   = cs_volume_zone_id_by_name(zname);
+  int def_id = _find_or_add_def(pty, z_id);
 
   cs_flag_t state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
-  cs_flag_t meta_flag = 0; /* metadata */
-  cs_xdef_time_func_context_t tfc
-    = { .z_id = z_id, .func = func, .input = input, .free_input = nullptr };
+  cs_flag_t meta_flag  = 0; /* metadata */
+  cs_xdef_time_func_context_t tfc = { .z_id       = z_id,
+                                      .func       = func,
+                                      .input      = input,
+                                      .free_input = nullptr };
 
   /* Default initialization */
 
   pty->get_eval_at_cell[def_id]    = nullptr;
   pty->get_eval_at_cell_cw[def_id] = cs_xdef_cw_eval_by_time_func;
 
-  int  dim = 0;
+  int dim = 0;
   if (pty->type & CS_PROPERTY_ISO) {
-    dim = 1;
+    dim                           = 1;
     pty->get_eval_at_cell[def_id] = cs_xdef_eval_scalar_by_time_func;
   }
   else if (pty->type & CS_PROPERTY_ORTHO) {
-    dim = 3;
+    dim                           = 3;
     pty->get_eval_at_cell[def_id] = cs_xdef_eval_vector_by_time_func;
   }
   else if (pty->type & CS_PROPERTY_ANISO_SYM) {
-    dim = 6;
+    dim                           = 6;
     pty->get_eval_at_cell[def_id] = cs_xdef_eval_symtens_by_time_func;
   }
   else if (pty->type & CS_PROPERTY_ANISO) {
-    dim = 9;
+    dim                           = 9;
     pty->get_eval_at_cell[def_id] = cs_xdef_eval_tensor_by_time_func;
   }
   else
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               "%s: Incompatible type for the property \"%s\".",
-              __func__, pty->name);
+              __func__,
+              pty->name);
 
-  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_TIME_FUNCTION,
-                                        dim,
-                                        z_id,
-                                        state_flag,
-                                        meta_flag,
-                                        &tfc);
+  cs_xdef_t *d = cs_xdef_volume_create(CS_XDEF_BY_TIME_FUNCTION,
+                                       dim,
+                                       z_id,
+                                       state_flag,
+                                       meta_flag,
+                                       &tfc);
 
   pty->defs[def_id] = d;
 
@@ -2421,27 +2455,32 @@ cs_property_boundary_def_by_time_func(cs_property_t  *pty,
   if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
-  int  z_id = cs_boundary_zone_id_by_name(zname);
-  int  def_id = _find_or_add_b_def(pty, z_id);
+  int z_id   = cs_boundary_zone_id_by_name(zname);
+  int def_id = _find_or_add_b_def(pty, z_id);
 
-  cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
-  cs_flag_t  meta_flag = 0; /* metadata */
-  cs_xdef_time_func_context_t tfc
-    = { .z_id = z_id, .func = func, .input = input, .free_input = nullptr };
+  cs_flag_t state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
+  cs_flag_t meta_flag  = 0; /* metadata */
+  cs_xdef_time_func_context_t tfc = { .z_id       = z_id,
+                                      .func       = func,
+                                      .input      = input,
+                                      .free_input = nullptr };
 
-  int  dim = cs_property_get_dim(pty);
+  int dim = cs_property_get_dim(pty);
 
   if (dim == 0)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               "%s: Incompatible type for the property \"%s\".",
-              __func__, pty->name);
+              __func__,
+              pty->name);
 
-  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_TIME_FUNCTION,
-                                          dim,
-                                          z_id,
-                                          state_flag,
-                                          meta_flag,
-                                          &tfc);
+  cs_xdef_t *d = cs_xdef_boundary_create(CS_XDEF_BY_TIME_FUNCTION,
+                                         dim,
+                                         z_id,
+                                         state_flag,
+                                         meta_flag,
+                                         &tfc);
 
   pty->b_defs[def_id] = d;
 
@@ -2474,24 +2513,26 @@ cs_property_def_by_analytic(cs_property_t      *pty,
   if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
-  cs_flag_t  state_flag = 0, meta_flag = 0; /* metadata */
-  int  z_id = cs_volume_zone_id_by_name(zname);
-  cs_xdef_analytic_context_t ac
-    = { .z_id = z_id, .func = func, .input = input, .free_input = nullptr };
+  cs_flag_t                  state_flag = 0, meta_flag = 0; /* metadata */
+  int                        z_id = cs_volume_zone_id_by_name(zname);
+  cs_xdef_analytic_context_t ac   = { .z_id       = z_id,
+                                      .func       = func,
+                                      .input      = input,
+                                      .free_input = nullptr };
 
-  int  dim = cs_property_get_dim(pty);
+  int dim = cs_property_get_dim(pty);
 
-  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
-                                        dim,
-                                        z_id,
-                                        state_flag,
-                                        meta_flag,
-                                        &ac);
+  cs_xdef_t *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
+                                       dim,
+                                       z_id,
+                                       state_flag,
+                                       meta_flag,
+                                       &ac);
 
-  int  def_id = _find_or_add_def(pty, z_id);
+  int def_id = _find_or_add_def(pty, z_id);
 
-  pty->defs[def_id] = d;
-  pty->get_eval_at_cell[def_id] = cs_xdef_eval_at_cells_by_analytic;
+  pty->defs[def_id]                = d;
+  pty->get_eval_at_cell[def_id]    = cs_xdef_eval_at_cells_by_analytic;
   pty->get_eval_at_cell_cw[def_id] = cs_xdef_cw_eval_by_analytic;
 
   return d;
@@ -2526,19 +2567,21 @@ cs_property_boundary_def_by_analytic(cs_property_t      *pty,
   if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
-  int  z_id = cs_boundary_zone_id_by_name(zname);
-  int  def_id = _find_or_add_b_def(pty, z_id);
-  int  dim = cs_property_get_dim(pty);
-  cs_flag_t  state_flag = 0, meta_flag = 0; /* metadata */
-  cs_xdef_analytic_context_t ac
-    = { .z_id = z_id, .func = func, .input = input, .free_input = nullptr };
+  int                        z_id       = cs_boundary_zone_id_by_name(zname);
+  int                        def_id     = _find_or_add_b_def(pty, z_id);
+  int                        dim        = cs_property_get_dim(pty);
+  cs_flag_t                  state_flag = 0, meta_flag = 0; /* metadata */
+  cs_xdef_analytic_context_t ac = { .z_id       = z_id,
+                                    .func       = func,
+                                    .input      = input,
+                                    .free_input = nullptr };
 
-  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
-                                          dim,
-                                          z_id,
-                                          state_flag,
-                                          meta_flag,
-                                          &ac);
+  cs_xdef_t *d = cs_xdef_boundary_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
+                                         dim,
+                                         z_id,
+                                         state_flag,
+                                         meta_flag,
+                                         &ac);
 
   pty->b_defs[def_id] = d;
 
@@ -2576,22 +2619,22 @@ cs_property_def_by_func(cs_property_t     *pty,
   if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
-  int  z_id = cs_volume_zone_id_by_name(zname);
-  int  def_id = _find_or_add_def(pty, z_id);
-  cs_flag_t  state_flag = 0;
-  cs_flag_t  meta_flag = 0; /* metadata */
+  int       z_id       = cs_volume_zone_id_by_name(zname);
+  int       def_id     = _find_or_add_def(pty, z_id);
+  cs_flag_t state_flag = 0;
+  cs_flag_t meta_flag  = 0; /* metadata */
 
-  int  dim = cs_property_get_dim(pty);
+  int dim = cs_property_get_dim(pty);
 
-  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_FUNCTION,
-                                        dim,
-                                        z_id,
-                                        state_flag,
-                                        meta_flag,
-                                        context);
+  cs_xdef_t *d = cs_xdef_volume_create(CS_XDEF_BY_FUNCTION,
+                                       dim,
+                                       z_id,
+                                       state_flag,
+                                       meta_flag,
+                                       context);
 
-  pty->defs[def_id] = d;
-  pty->get_eval_at_cell[def_id] = get_eval_at_cell;
+  pty->defs[def_id]                = d;
+  pty->get_eval_at_cell[def_id]    = get_eval_at_cell;
   pty->get_eval_at_cell_cw[def_id] = get_eval_at_cell_cw;
 
   return d;
@@ -2636,24 +2679,23 @@ cs_property_def_by_array(cs_property_t *pty,
   if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
-  int  z_id = cs_volume_zone_id_by_name(zname);
-  int  def_id = _find_or_add_def(pty, z_id);
+  int z_id   = cs_volume_zone_id_by_name(zname);
+  int def_id = _find_or_add_def(pty, z_id);
 
-  int  dim = cs_property_get_dim(pty);
-  cs_flag_t  state_flag = 0; /* Will be updated during the creation */
-  cs_flag_t  meta_flag = 0;  /* metadata */
+  int       dim        = cs_property_get_dim(pty);
+  cs_flag_t state_flag = 0; /* Will be updated during the creation */
+  cs_flag_t meta_flag  = 0; /* metadata */
 
   if (z_id == 0 && full_length == false) {
-
     full_length = true;
 
     cs_base_warn(__FILE__, __LINE__);
     cs_log_printf(CS_LOG_WARNINGS,
                   "%s: Invalid settings detected for property \"%s\"\n"
                   "    A full-length array is set since z_id=0.",
-                  __func__, pty->name);
+                  __func__,
+                  pty->name);
     cs_log_printf_flush(CS_LOG_WARNINGS);
-
   }
 
   cs_xdef_array_context_t input = { .z_id           = z_id,
@@ -2668,12 +2710,12 @@ cs_property_def_by_array(cs_property_t *pty,
                                     .elt_ids     = nullptr,
                                     .adjacency   = nullptr };
 
-  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ARRAY,
-                                        dim,
-                                        z_id,
-                                        state_flag,
-                                        meta_flag,
-                                        &input);
+  cs_xdef_t *d = cs_xdef_volume_create(CS_XDEF_BY_ARRAY,
+                                       dim,
+                                       z_id,
+                                       state_flag,
+                                       meta_flag,
+                                       &input);
 
   /* Build the indirection array if only a subset is used */
 
@@ -2690,14 +2732,17 @@ cs_property_def_by_array(cs_property_t *pty,
     pty->get_eval_at_cell[def_id] = cs_xdef_eval_nd_at_cells_by_array;
   pty->get_eval_at_cell_cw[def_id] = cs_xdef_cw_eval_by_array;
 
-  if (cs_flag_test(val_location, cs_flag_primal_cell)     == false &&
-      cs_flag_test(val_location, cs_flag_primal_vtx)      == false &&
+  if (cs_flag_test(val_location, cs_flag_primal_cell) == false &&
+      cs_flag_test(val_location, cs_flag_primal_vtx) == false &&
       cs_flag_test(val_location, cs_flag_primal_edge_byc) == false &&
-      cs_flag_test(val_location, cs_flag_dual_face_byc)   == false &&
-      cs_flag_test(val_location, cs_flag_dual_cell_byc)   == false)
-    bft_error(__FILE__, __LINE__, 0,
+      cs_flag_test(val_location, cs_flag_dual_face_byc) == false &&
+      cs_flag_test(val_location, cs_flag_dual_cell_byc) == false)
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " %s: Property \"%s\". Case not available.\n",
-              __func__, pty->name);
+              __func__,
+              pty->name);
 
   return d;
 }
@@ -2740,24 +2785,23 @@ cs_property_boundary_def_by_array(cs_property_t *pty,
   if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
-  int  z_id = cs_boundary_zone_id_by_name(zname);
-  int  def_id = _find_or_add_b_def(pty, z_id);
+  int z_id   = cs_boundary_zone_id_by_name(zname);
+  int def_id = _find_or_add_b_def(pty, z_id);
 
-  int  dim = cs_property_get_dim(pty);
-  cs_flag_t  state_flag = 0;
-  cs_flag_t  meta_flag = 0;
+  int       dim        = cs_property_get_dim(pty);
+  cs_flag_t state_flag = 0;
+  cs_flag_t meta_flag  = 0;
 
   if (z_id == 0 && full_length == false) {
-
     full_length = true;
 
     cs_base_warn(__FILE__, __LINE__);
     cs_log_printf(CS_LOG_WARNINGS,
                   "%s: Invalid settings detected for property \"%s\"\n"
                   "    A full-length array is set since z_id=0.",
-                  __func__, pty->name);
+                  __func__,
+                  pty->name);
     cs_log_printf_flush(CS_LOG_WARNINGS);
-
   }
 
   cs_xdef_array_context_t input = { .z_id           = z_id,
@@ -2772,12 +2816,12 @@ cs_property_boundary_def_by_array(cs_property_t *pty,
                                     .elt_ids     = nullptr,
                                     .adjacency   = nullptr };
 
-  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
-                                          dim,
-                                          z_id, /* zone_id */
-                                          state_flag,
-                                          meta_flag,
-                                          &input);
+  cs_xdef_t *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
+                                         dim,
+                                         z_id, /* zone_id */
+                                         state_flag,
+                                         meta_flag,
+                                         &input);
 
   /* Build the indirection array if only a subset is used */
 
@@ -2786,12 +2830,15 @@ cs_property_boundary_def_by_array(cs_property_t *pty,
 
   pty->b_defs[def_id] = d;
 
-  if (cs_flag_test(val_loc, cs_flag_primal_face)   == false &&
-      cs_flag_test(val_loc, cs_flag_primal_vtx)    == false &&
+  if (cs_flag_test(val_loc, cs_flag_primal_face) == false &&
+      cs_flag_test(val_loc, cs_flag_primal_vtx) == false &&
       cs_flag_test(val_loc, cs_flag_boundary_face) == false)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " %s: Property \"%s\". Case not available.\n",
-              __func__, pty->name);
+              __func__,
+              pty->name);
 
   return d;
 }
@@ -2811,46 +2858,51 @@ cs_property_boundary_def_by_array(cs_property_t *pty,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_def_by_field(cs_property_t *pty,
-                         cs_field_t    *field)
+cs_property_def_by_field(cs_property_t *pty, cs_field_t *field)
 {
   if (field == nullptr)
     return nullptr;
   if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
-  int  z_id = 0; // Always the case for a definition by field
-  int  def_id = _find_or_add_def(pty, z_id);
+  int z_id   = 0; // Always the case for a definition by field
+  int def_id = _find_or_add_def(pty, z_id);
 
-  int  dim = cs_property_get_dim(pty);
-  cs_flag_t  state_flag = CS_FLAG_STATE_CELLWISE;
-  cs_flag_t  meta_flag = 0; /* metadata */
+  int       dim        = cs_property_get_dim(pty);
+  cs_flag_t state_flag = CS_FLAG_STATE_CELLWISE;
+  cs_flag_t meta_flag  = 0; /* metadata */
 
   assert(dim == field->dim);
 
-  const cs_zone_t  *z = cs_volume_zone_by_id(z_id);
+  const cs_zone_t *z = cs_volume_zone_by_id(z_id);
   if (field->location_id != z->location_id)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " Property defined by field requests that the field location"
               " is supported by cells\n"
-              " Property %s\n", pty->name);
+              " Property %s\n",
+              pty->name);
   if (pty->n_definitions > 1)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " When a definition by field is requested, the max. number"
               " of subdomains to consider should be equal to 1.\n"
               " Current value is %d for property \"%s\".\n"
               " Please modify your settings.",
-              pty->n_definitions, pty->name);
+              pty->n_definitions,
+              pty->name);
 
-  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_FIELD,
-                                        dim,
-                                        z_id,
-                                        state_flag,
-                                        meta_flag,
-                                        field);
+  cs_xdef_t *d = cs_xdef_volume_create(CS_XDEF_BY_FIELD,
+                                       dim,
+                                       z_id,
+                                       state_flag,
+                                       meta_flag,
+                                       field);
 
-  pty->defs[def_id] = d;
-  pty->get_eval_at_cell[def_id] = cs_xdef_eval_cell_by_field;
+  pty->defs[def_id]                = d;
+  pty->get_eval_at_cell[def_id]    = cs_xdef_eval_cell_by_field;
   pty->get_eval_at_cell_cw[def_id] = cs_xdef_cw_eval_by_field;
 
   return d;
@@ -2872,48 +2924,54 @@ cs_property_def_by_field(cs_property_t *pty,
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
-cs_property_boundary_def_by_field(cs_property_t *pty,
-                                  cs_field_t    *field)
+cs_property_boundary_def_by_field(cs_property_t *pty, cs_field_t *field)
 {
   if (field == nullptr)
     return nullptr;
   if (pty == nullptr)
     bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
-  int  z_id = 0; // Always the case for a definition by field
-  int  def_id = _find_or_add_b_def(pty, z_id);
+  int z_id   = 0; // Always the case for a definition by field
+  int def_id = _find_or_add_b_def(pty, z_id);
 
-  int  dim = cs_property_get_dim(pty);
+  int dim = cs_property_get_dim(pty);
 
   /* Only one definition if one uses a definition by field. No zone name is
      given since one assumes that z_id = 0 */
 
   if (pty->n_definitions > 1)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " %s: When a definition by field is requested, the max. number"
               " of zones to consider should be equal to 1.\n"
               " Current value is %d for property \"%s\".\n"
               " Please check your settings.",
-              __func__, pty->n_definitions, pty->name);
+              __func__,
+              pty->n_definitions,
+              pty->name);
 
-  const cs_zone_t  *z = cs_boundary_zone_by_id(z_id);
+  const cs_zone_t *z = cs_boundary_zone_by_id(z_id);
 
   assert(dim == field->dim);
   if (field->location_id != z->location_id)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " Property defined by field requests that the field location"
               " is supported by cells\n"
-              " Property %s\n", pty->name);
+              " Property %s\n",
+              pty->name);
 
-  cs_flag_t  state_flag = CS_FLAG_STATE_FACEWISE;
-  cs_flag_t  meta_flag = 0; /* metadata */
+  cs_flag_t state_flag = CS_FLAG_STATE_FACEWISE;
+  cs_flag_t meta_flag  = 0; /* metadata */
 
-  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_FIELD,
-                                          dim,
-                                          z_id,
-                                          state_flag,
-                                          meta_flag,
-                                          field);
+  cs_xdef_t *d = cs_xdef_boundary_create(CS_XDEF_BY_FIELD,
+                                         dim,
+                                         z_id,
+                                         state_flag,
+                                         meta_flag,
+                                         field);
 
   pty->b_defs[def_id] = d;
 
@@ -2942,26 +3000,30 @@ cs_property_boundary_def_by_field(cs_property_t *pty,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_evaluate_def(const cs_property_t    *pty,
-                         int                     def_id,
-                         bool                    dense_output,
-                         double                  t_eval,
-                         cs_real_t              *eval)
+cs_property_evaluate_def(const cs_property_t *pty,
+                         int                  def_id,
+                         bool                 dense_output,
+                         double               t_eval,
+                         cs_real_t           *eval)
 {
   if (pty == nullptr)
     return;
   assert(def_id > -1 && def_id < pty->n_definitions);
 
-  const cs_xdef_t  *def = pty->defs[def_id];
+  const cs_xdef_t *def = pty->defs[def_id];
   if (def == nullptr)
     return;
 
-  const cs_zone_t  *z = cs_volume_zone_by_id(def->z_id);
+  const cs_zone_t *z = cs_volume_zone_by_id(def->z_id);
 
   if (def->type == CS_XDEF_BY_SUB_DEFINITIONS)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               "%s: Invalid type of definition. Property \"%s\"; Zone \"%s\".\n",
-              __func__, pty->name, z->name);
+              __func__,
+              pty->name,
+              z->name);
 
   if (def->z_id != 0) /* Not the full support */
     pty->get_eval_at_cell[def_id](z->n_elts,
@@ -3006,27 +3068,27 @@ cs_property_evaluate_def(const cs_property_t    *pty,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_evaluate_boundary_def(const cs_property_t  *pty,
-                                  int                   def_id,
-                                  bool                  dense_output,
-                                  double                t_eval,
-                                  cs_real_t            *array)
+cs_property_evaluate_boundary_def(const cs_property_t *pty,
+                                  int                  def_id,
+                                  bool                 dense_output,
+                                  double               t_eval,
+                                  cs_real_t           *array)
 {
   if (pty == nullptr)
     return;
   assert(def_id > -1 && def_id < pty->n_b_definitions);
 
-  const cs_xdef_t  *def = pty->b_defs[def_id];
+  const cs_xdef_t *def = pty->b_defs[def_id];
   if (def == nullptr)
     return;
 
   assert(def->support == CS_XDEF_SUPPORT_BOUNDARY);
-  int  pty_dim = cs_property_get_dim(pty);
+  int pty_dim = cs_property_get_dim(pty);
 
-  const cs_zone_t  *z = cs_boundary_zone_by_id(def->z_id);
+  const cs_zone_t *z = cs_boundary_zone_by_id(def->z_id);
 
-  cs_lnum_t  n_elts = z->n_elts;
-  const cs_lnum_t  *elt_ids;
+  cs_lnum_t        n_elts = z->n_elts;
+  const cs_lnum_t *elt_ids;
 
   if (def->z_id != 0) /* Not the full support */
     elt_ids = z->elt_ids;
@@ -3034,159 +3096,176 @@ cs_property_evaluate_boundary_def(const cs_property_t  *pty,
     elt_ids = nullptr;
 
   switch (def->type) {
+    case CS_XDEF_BY_ANALYTIC_FUNCTION:
+      /* ---------------------------- */
+      {
+        cs_xdef_analytic_context_t *cx =
+          static_cast<cs_xdef_analytic_context_t *>(def->context);
+        assert(cx != nullptr);
 
-  case CS_XDEF_BY_ANALYTIC_FUNCTION:
-    /* ---------------------------- */
-    {
-      cs_xdef_analytic_context_t *cx
-        = static_cast<cs_xdef_analytic_context_t *>(def->context);
-      assert(cx != nullptr);
+        switch (def->qtype) {
+          case CS_QUADRATURE_BARY_SUBDIV:
+          case CS_QUADRATURE_HIGHER:
+          case CS_QUADRATURE_HIGHEST:
+            cs_xdef_eval_avg_at_b_faces_by_analytic(n_elts,
+                                                    elt_ids,
+                                                    dense_output,
+                                                    cs_mesh,
+                                                    cs_cdo_connect,
+                                                    cs_cdo_quant,
+                                                    t_eval,
+                                                    cx,
+                                                    def->qtype,
+                                                    pty_dim,
+                                                    array);
+            break;
 
-      switch (def->qtype) {
-
-      case CS_QUADRATURE_BARY_SUBDIV:
-      case CS_QUADRATURE_HIGHER:
-      case CS_QUADRATURE_HIGHEST:
-        cs_xdef_eval_avg_at_b_faces_by_analytic(n_elts, elt_ids,
+          default:
+            cs_xdef_eval_at_b_faces_by_analytic(n_elts,
+                                                elt_ids,
                                                 dense_output,
                                                 cs_mesh,
                                                 cs_cdo_connect,
                                                 cs_cdo_quant,
                                                 t_eval,
-                                                cx,
-                                                def->qtype,
-                                                pty_dim,
+                                                def->context,
                                                 array);
-        break;
-
-      default:
-        cs_xdef_eval_at_b_faces_by_analytic(n_elts, elt_ids,
-                                            dense_output,
-                                            cs_mesh,
-                                            cs_cdo_connect,
-                                            cs_cdo_quant,
-                                            t_eval,
-                                            def->context,
-                                            array);
-        break;
+            break;
+        }
       }
-    }
-    break;
+      break;
 
-  case CS_XDEF_BY_ARRAY:
-    /* ---------------- */
-    {
-      cs_xdef_array_context_t *cx
-        = static_cast<cs_xdef_array_context_t *>(def->context);
-      assert(cx->stride == pty_dim);
+    case CS_XDEF_BY_ARRAY:
+      /* ---------------- */
+      {
+        cs_xdef_array_context_t *cx =
+          static_cast<cs_xdef_array_context_t *>(def->context);
+        assert(cx->stride == pty_dim);
 
-      if (cs_flag_test(cx->value_location, cs_flag_primal_face)) {
+        if (cs_flag_test(cx->value_location, cs_flag_primal_face)) {
+          if (elt_ids == nullptr) /* All the boundary is considered */
+            cs_array_real_copy(pty_dim * cs_mesh->n_b_faces, cx->values, array);
 
-        if (elt_ids == nullptr) /* All the boundary is considered */
-          cs_array_real_copy(pty_dim*cs_mesh->n_b_faces, cx->values, array);
+          else { /* Only a part of the boundary is considered */
 
-        else { /* Only a part of the boundary is considered */
+            if (cx->full_length) {
+              if (dense_output)
+                cs_array_real_copy_subset(n_elts,
+                                          pty_dim,
+                                          elt_ids,
+                                          CS_ARRAY_SUBSET_IN,
+                                          cx->values,
+                                          array);
+              else
+                cs_array_real_copy_subset(n_elts,
+                                          pty_dim,
+                                          elt_ids,
+                                          CS_ARRAY_SUBSET_INOUT,
+                                          cx->values,
+                                          array);
+            }
+            else {
+              if (dense_output)
+                cs_array_real_copy(pty_dim * n_elts, cx->values, array);
+              else
+                cs_array_real_copy_subset(n_elts,
+                                          pty_dim,
+                                          elt_ids,
+                                          CS_ARRAY_SUBSET_OUT,
+                                          cx->values,
+                                          array);
+            }
 
-          if (cx->full_length) {
-
-            if (dense_output)
-              cs_array_real_copy_subset(n_elts, pty_dim, elt_ids,
-                                        CS_ARRAY_SUBSET_IN,
-                                        cx->values,
-                                        array);
-            else
-              cs_array_real_copy_subset(n_elts, pty_dim, elt_ids,
-                                        CS_ARRAY_SUBSET_INOUT,
-                                        cx->values,
-                                        array);
-
-          }
-          else {
-
-            if (dense_output)
-              cs_array_real_copy(pty_dim*n_elts, cx->values, array);
-            else
-              cs_array_real_copy_subset(n_elts, pty_dim, elt_ids,
-                                        CS_ARRAY_SUBSET_OUT,
-                                        cx->values,
-                                        array);
-
-          }
-
-        } /* Only a part of the boundary is defined */
-
+          } /* Only a part of the boundary is defined */
+        }
+        else
+          bft_error(__FILE__,
+                    __LINE__,
+                    0,
+                    "%s: Invalid location. Property \"%s\"; Zone \"%s\".\n",
+                    __func__,
+                    pty->name,
+                    z->name);
       }
-      else
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: Invalid location. Property \"%s\"; Zone \"%s\".\n",
-                  __func__, pty->name, z->name);
-    }
-    break;
+      break;
 
-  case CS_XDEF_BY_DOF_FUNCTION:
-    /* ----------------------- */
-    {
-      const cs_xdef_dof_context_t *cx
-        = static_cast<cs_xdef_dof_context_t *>(def->context);
-      assert(cx != nullptr);
+    case CS_XDEF_BY_DOF_FUNCTION:
+      /* ----------------------- */
+      {
+        const cs_xdef_dof_context_t *cx =
+          static_cast<cs_xdef_dof_context_t *>(def->context);
+        assert(cx != nullptr);
 
-      if (cs_flag_test(cx->dof_location, cs_flag_primal_face))
-        cx->func(n_elts, elt_ids, dense_output, cx->input, array);
-      else
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: Invalid location. Property \"%s\"; Zone \"%s\".\n",
-                  __func__, pty->name, z->name);
-    }
-    break;
+        if (cs_flag_test(cx->dof_location, cs_flag_primal_face))
+          cx->func(n_elts, elt_ids, dense_output, cx->input, array);
+        else
+          bft_error(__FILE__,
+                    __LINE__,
+                    0,
+                    "%s: Invalid location. Property \"%s\"; Zone \"%s\".\n",
+                    __func__,
+                    pty->name,
+                    z->name);
+      }
+      break;
 
-  case CS_XDEF_BY_FIELD:
-    /* ---------------- */
-    {
-      cs_field_t  *field = (cs_field_t *)def->context;
+    case CS_XDEF_BY_FIELD:
+      /* ---------------- */
+      {
+        cs_field_t *field = (cs_field_t *)def->context;
 
-      if (cs_mesh_location_get_type(field->location_id) !=
-          CS_MESH_LOCATION_BOUNDARY_FACES)
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: Invalid field location. Property \"%s\"; Zone \"%s\".\n",
-                  __func__, pty->name, z->name);
+        if (cs_mesh_location_get_type(field->location_id) !=
+            CS_MESH_LOCATION_BOUNDARY_FACES)
+          bft_error(
+            __FILE__,
+            __LINE__,
+            0,
+            "%s: Invalid field location. Property \"%s\"; Zone \"%s\".\n",
+            __func__,
+            pty->name,
+            z->name);
 
-      cs_array_real_copy(field->dim*cs_mesh->n_b_faces, field->val, array);
-    }
-    break;
+        cs_array_real_copy(field->dim * cs_mesh->n_b_faces, field->val, array);
+      }
+      break;
 
-  case CS_XDEF_BY_TIME_FUNCTION:
-    /* ------------------------ */
-    {
-      const cs_xdef_time_func_context_t *tfc
-        = static_cast<cs_xdef_time_func_context_t *>(def->context);
-      assert(tfc != nullptr);
+    case CS_XDEF_BY_TIME_FUNCTION:
+      /* ------------------------ */
+      {
+        const cs_xdef_time_func_context_t *tfc =
+          static_cast<cs_xdef_time_func_context_t *>(def->context);
+        assert(tfc != nullptr);
 
-      cs_real_t  ref_val[9];
-      tfc->func(t_eval, tfc->input, ref_val);
+        cs_real_t ref_val[9];
+        tfc->func(t_eval, tfc->input, ref_val);
 
-      if (dense_output)
-        _assign_ref_value(pty_dim, n_elts, nullptr, ref_val, array);
-      else
-        _assign_ref_value(pty_dim, n_elts, elt_ids, ref_val, array);
-    }
-    break;
+        if (dense_output)
+          _assign_ref_value(pty_dim, n_elts, nullptr, ref_val, array);
+        else
+          _assign_ref_value(pty_dim, n_elts, elt_ids, ref_val, array);
+      }
+      break;
 
-  case CS_XDEF_BY_VALUE:
-    /* ---------------- */
-    {
-      const cs_real_t *ref_val = static_cast<const cs_real_t *>(def->context);
+    case CS_XDEF_BY_VALUE:
+      /* ---------------- */
+      {
+        const cs_real_t *ref_val = static_cast<const cs_real_t *>(def->context);
 
-      if (dense_output)
-        _assign_ref_value(pty_dim, n_elts, nullptr, ref_val, array);
-      else
-        _assign_ref_value(pty_dim, n_elts, elt_ids, ref_val, array);
-    }
-    break;
+        if (dense_output)
+          _assign_ref_value(pty_dim, n_elts, nullptr, ref_val, array);
+        else
+          _assign_ref_value(pty_dim, n_elts, elt_ids, ref_val, array);
+      }
+      break;
 
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid definition type. Property \"%s\"; Zone \"%s\".\n",
-              __func__, pty->name, z->name);
+    default:
+      bft_error(__FILE__,
+                __LINE__,
+                0,
+                "%s: Invalid definition type. Property \"%s\"; Zone \"%s\".\n",
+                __func__,
+                pty->name,
+                z->name);
 
   } /* Type of definition */
 }
@@ -3206,20 +3285,19 @@ cs_property_evaluate_boundary_def(const cs_property_t  *pty,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_iso_get_cell_values(cs_real_t               t_eval,
-                                const cs_property_t    *pty,
-                                int                    *pty_stride,
-                                cs_real_t             **p_pty_vals)
+cs_property_iso_get_cell_values(cs_real_t            t_eval,
+                                const cs_property_t *pty,
+                                int                 *pty_stride,
+                                cs_real_t          **p_pty_vals)
 {
   if (pty == nullptr)
     return;
   assert(pty->type & CS_PROPERTY_ISO);
 
-  bool        allocate = (*p_pty_vals == nullptr) ? true : false;
-  cs_real_t  *values = *p_pty_vals;
+  bool       allocate = (*p_pty_vals == nullptr) ? true : false;
+  cs_real_t *values   = *p_pty_vals;
 
   if (cs_property_is_uniform(pty)) {
-
     *pty_stride = 0;
     if (allocate)
       CS_MALLOC(values, 1, cs_real_t);
@@ -3230,10 +3308,8 @@ cs_property_iso_get_cell_values(cs_real_t               t_eval,
     values[0] = cs_property_get_cell_value(0, t_eval, pty);
 
     /* scaling is performed if requested inside the previous call */
-
   }
   else {
-
     *pty_stride = 1;
     if (allocate)
       CS_MALLOC(values, cs_cdo_quant->n_cells, cs_real_t);
@@ -3241,7 +3317,6 @@ cs_property_iso_get_cell_values(cs_real_t               t_eval,
     cs_property_eval_at_cells(t_eval, pty, values);
 
     /* scaling is performed if requested inside the previous call */
-
   }
 
   /* Return the pointer to values */
@@ -3261,25 +3336,24 @@ cs_property_iso_get_cell_values(cs_real_t               t_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_eval_at_cells(cs_real_t               t_eval,
-                          const cs_property_t    *pty,
-                          cs_real_t              *array)
+cs_property_eval_at_cells(cs_real_t            t_eval,
+                          const cs_property_t *pty,
+                          cs_real_t           *array)
 {
   if (pty == nullptr)
     return;
   assert(array != nullptr);
 
-  const cs_cdo_quantities_t  *quant = cs_cdo_quant;
-  const cs_lnum_t  n_cells = quant->n_cells;
+  const cs_cdo_quantities_t *quant   = cs_cdo_quant;
+  const cs_lnum_t            n_cells = quant->n_cells;
 
-  double  scaling_factor =
+  double scaling_factor =
     (pty->type & CS_PROPERTY_SCALED) ? pty->scaling_factor : 1.0;
 
   if (pty->type & CS_PROPERTY_BY_PRODUCT) {
-
     assert(pty->related_properties != nullptr);
-    const cs_property_t  *a = pty->related_properties[0];
-    const cs_property_t  *b = pty->related_properties[1];
+    const cs_property_t *a = pty->related_properties[0];
+    const cs_property_t *b = pty->related_properties[1];
 
     if (a->type & CS_PROPERTY_SCALED)
       scaling_factor *= a->scaling_factor;
@@ -3291,7 +3365,6 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
     cs_array_real_fill_zero(n_cells, tmp_val);
 
     if (pty->type & CS_PROPERTY_ISO) {
-
       /* 1. Evaluate the property A */
 
       for (int def_id = 0; def_id < a->n_definitions; def_id++)
@@ -3314,12 +3387,9 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
 
       for (cs_lnum_t i = 0; i < n_cells; i++)
         array[i] *= tmp_val[i];
-
     }
     else {
-
       if (a->type & CS_PROPERTY_ISO) {
-
         /* 1. Evaluate the property A */
 
         for (int def_id = 0; def_id < a->n_definitions; def_id++)
@@ -3331,7 +3401,7 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
 
         /* 2. Evaluate the property B */
 
-        int  b_dim = cs_property_get_dim(b);
+        int b_dim = cs_property_get_dim(b);
 
         for (int def_id = 0; def_id < b->n_definitions; def_id++)
           cs_property_evaluate_def(b,
@@ -3343,15 +3413,13 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
         /* 3. Operate the product of the two evaluations */
 
         for (cs_lnum_t i = 0; i < n_cells; i++) {
-          const cs_real_t  acoef = tmp_val[i];
-          cs_real_t  *_a = array + b_dim*i;
+          const cs_real_t acoef = tmp_val[i];
+          cs_real_t      *_a    = array + b_dim * i;
           for (int k = 0; k < b_dim; k++)
             _a[k] *= acoef;
         }
-
       }
       else if (b->type & CS_PROPERTY_ISO) {
-
         /* 1. Evaluate the property B */
 
         for (int def_id = 0; def_id < b->n_definitions; def_id++)
@@ -3363,7 +3431,7 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
 
         /* 2. Evaluate the property A */
 
-        int  a_dim = cs_property_get_dim(a);
+        int a_dim = cs_property_get_dim(a);
 
         for (int def_id = 0; def_id < a->n_definitions; def_id++)
           cs_property_evaluate_def(a,
@@ -3375,17 +3443,19 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
         /* 3. Operate the product of the two evaluations */
 
         for (cs_lnum_t i = 0; i < n_cells; i++) {
-          const cs_real_t  bcoef = tmp_val[i];
-          cs_real_t  *_a = array + a_dim*i;
+          const cs_real_t bcoef = tmp_val[i];
+          cs_real_t      *_a    = array + a_dim * i;
           for (int k = 0; k < a_dim; k++)
             _a[k] *= bcoef;
         }
-
       }
       else
-        bft_error(__FILE__, __LINE__, 0,
+        bft_error(__FILE__,
+                  __LINE__,
+                  0,
                   " %s: Property \"%s\". Case not handled yet.\n",
-                  __func__, pty->name);
+                  __func__,
+                  pty->name);
 
     } /* Either a or b is an isotropic property */
 
@@ -3409,7 +3479,7 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
 
   /* Apply a scaling factor is requested */
 
-  if (fabs(scaling_factor - 1.0) > 10 * cs_math_zero_threshold)
+  if (cs::abs(scaling_factor - 1.0) > 10 * cs_math_zero_threshold)
     cs_array_real_scale(n_cells,
                         cs_property_get_dim(pty),
                         nullptr,
@@ -3664,9 +3734,11 @@ cs_property_eval_at_boundary_faces(cs_real_t            t_eval,
           int        dim     = cs_property_get_dim(pty);
           cs_real_t *tmp_val = nullptr;
           CS_MALLOC(tmp_val, n_b_faces * dim, cs_real_t);
-          cs_array_real_fill_zero(n_b_faces*dim, tmp_val);
+          cs_array_real_fill_zero(n_b_faces * dim, tmp_val);
 
-          _evaluate_property_at_boundary_from_cells(pty, def_idx, cell_ids,
+          _evaluate_property_at_boundary_from_cells(pty,
+                                                    def_idx,
+                                                    cell_ids,
                                                     t_eval,
                                                     tmp_val);
 
@@ -3698,9 +3770,12 @@ cs_property_eval_at_boundary_faces(cs_real_t            t_eval,
 
   /* Apply a scaling factor is requested */
 
-  if (fabs(scaling_factor - 1.0) > 10*cs_math_zero_threshold)
-    cs_array_real_scale(
-      n_b_faces, cs_property_get_dim(pty), nullptr, scaling_factor, array);
+  if (cs::abs(scaling_factor - 1.0) > 10 * cs_math_zero_threshold)
+    cs_array_real_scale(n_b_faces,
+                        cs_property_get_dim(pty),
+                        nullptr,
+                        scaling_factor,
+                        array);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3717,11 +3792,11 @@ cs_property_eval_at_boundary_faces(cs_real_t            t_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_get_cell_tensor(cs_lnum_t               c_id,
-                            cs_real_t               t_eval,
-                            const cs_property_t    *pty,
-                            bool                    do_inversion,
-                            cs_real_t               tensor[3][3])
+cs_property_get_cell_tensor(cs_lnum_t            c_id,
+                            cs_real_t            t_eval,
+                            const cs_property_t *pty,
+                            bool                 do_inversion,
+                            cs_real_t            tensor[3][3])
 {
   if (pty == nullptr)
     return;
@@ -3732,23 +3807,21 @@ cs_property_get_cell_tensor(cs_lnum_t               c_id,
   tensor[0][2] = tensor[1][2] = tensor[2][1] = 0;
 
   if (pty->type & CS_PROPERTY_BY_PRODUCT) {
-
     _get_cell_tensor_by_property_product(c_id, t_eval, pty, tensor);
 
-    const cs_property_t  *pty_a = pty->related_properties[0];
+    const cs_property_t *pty_a = pty->related_properties[0];
     if (pty_a->type & CS_PROPERTY_SCALED) {
       for (int ki = 0; ki < 3; ki++)
         for (int kj = 0; kj < 3; kj++)
           tensor[ki][kj] *= pty_a->scaling_factor;
     }
 
-    const cs_property_t  *pty_b = pty->related_properties[1];
+    const cs_property_t *pty_b = pty->related_properties[1];
     if (pty_b->type & CS_PROPERTY_SCALED) {
       for (int ki = 0; ki < 3; ki++)
         for (int kj = 0; kj < 3; kj++)
           tensor[ki][kj] *= pty_b->scaling_factor;
     }
-
   }
   else
     _get_cell_tensor(c_id, t_eval, pty, tensor);
@@ -3791,32 +3864,32 @@ cs_property_get_cell_value(cs_lnum_t            c_id,
     return result;
 
   if ((pty->type & CS_PROPERTY_ISO) == 0)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " %s: Invalid type of property for this function.\n"
-              " Property %s has to be isotropic.", __func__, pty->name);
+              " Property %s has to be isotropic.",
+              __func__,
+              pty->name);
 
   if (pty->type & CS_PROPERTY_BY_PRODUCT) {
-
     assert(pty->related_properties != nullptr);
 
-    const cs_property_t  *pty_a = pty->related_properties[0];
-    result = _get_cell_value(c_id, t_eval, pty_a);
+    const cs_property_t *pty_a = pty->related_properties[0];
+    result                     = _get_cell_value(c_id, t_eval, pty_a);
     if (pty_a->type & CS_PROPERTY_SCALED)
       result *= pty_a->scaling_factor;
 
-    const cs_property_t  *pty_b = pty->related_properties[1];
+    const cs_property_t *pty_b = pty->related_properties[1];
     result *= _get_cell_value(c_id, t_eval, pty_b);
     if (pty_b->type & CS_PROPERTY_SCALED)
       result *= pty_b->scaling_factor;
-
   }
   else {
-
     if (cs_property_is_constant(pty))
       result = pty->ref_value;
     else
       result = _get_cell_value(c_id, t_eval, pty);
-
   }
 
   if (pty->type & CS_PROPERTY_SCALED)
@@ -3840,11 +3913,11 @@ cs_property_get_cell_value(cs_lnum_t            c_id,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_tensor_in_cell(const cs_cell_mesh_t   *cm,
-                           const cs_property_t    *pty,
-                           cs_real_t               t_eval,
-                           bool                    do_inversion,
-                           cs_real_t               tensor[3][3])
+cs_property_tensor_in_cell(const cs_cell_mesh_t *cm,
+                           const cs_property_t  *pty,
+                           cs_real_t             t_eval,
+                           bool                  do_inversion,
+                           cs_real_t             tensor[3][3])
 {
   if (pty == nullptr)
     return;
@@ -3855,23 +3928,21 @@ cs_property_tensor_in_cell(const cs_cell_mesh_t   *cm,
   tensor[0][2] = tensor[1][2] = tensor[2][1] = 0;
 
   if (pty->type & CS_PROPERTY_BY_PRODUCT) {
-
     _tensor_in_cell_by_property_product(cm, pty, t_eval, tensor);
 
-    const cs_property_t  *pty_a = pty->related_properties[0];
+    const cs_property_t *pty_a = pty->related_properties[0];
     if (pty_a->type & CS_PROPERTY_SCALED) {
       for (int ki = 0; ki < 3; ki++)
         for (int kj = 0; kj < 3; kj++)
           tensor[ki][kj] *= pty_a->scaling_factor;
     }
 
-    const cs_property_t  *pty_b = pty->related_properties[1];
+    const cs_property_t *pty_b = pty->related_properties[1];
     if (pty_b->type & CS_PROPERTY_SCALED) {
       for (int ki = 0; ki < 3; ki++)
         for (int kj = 0; kj < 3; kj++)
           tensor[ki][kj] *= pty_b->scaling_factor;
     }
-
   }
   else
     _tensor_in_cell(cm, pty, t_eval, tensor);
@@ -3886,8 +3957,10 @@ cs_property_tensor_in_cell(const cs_cell_mesh_t   *cm,
     _invert_tensor(tensor, pty->type);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_PROPERTY_DBG > 1
-  cs_log_printf(CS_LOG_DEFAULT, "\n pty: %s, cell_id: %d\n",
-                pty->name, cm->c_id);
+  cs_log_printf(CS_LOG_DEFAULT,
+                "\n pty: %s, cell_id: %d\n",
+                pty->name,
+                cm->c_id);
   _print_tensor(tensor);
 #endif
 }
@@ -3906,42 +3979,41 @@ cs_property_tensor_in_cell(const cs_cell_mesh_t   *cm,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_property_value_in_cell(const cs_cell_mesh_t   *cm,
-                          const cs_property_t    *pty,
-                          cs_real_t               t_eval)
+cs_property_value_in_cell(const cs_cell_mesh_t *cm,
+                          const cs_property_t  *pty,
+                          cs_real_t             t_eval)
 {
-  cs_real_t  result = 0;
+  cs_real_t result = 0;
 
   if (pty == nullptr)
     return result;
 
   if ((pty->type & CS_PROPERTY_ISO) == 0)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               " Invalid type of property for this function.\n"
-              " Property %s has to be isotropic.", pty->name);
+              " Property %s has to be isotropic.",
+              pty->name);
 
   if (pty->type & CS_PROPERTY_BY_PRODUCT) {
-
     assert(pty->related_properties != nullptr);
 
-    const cs_property_t  *pty_a = pty->related_properties[0];
-    result = _value_in_cell(cm, pty_a, t_eval);
+    const cs_property_t *pty_a = pty->related_properties[0];
+    result                     = _value_in_cell(cm, pty_a, t_eval);
     if (pty_a->type & CS_PROPERTY_SCALED)
       result *= pty_a->scaling_factor;
 
-    const cs_property_t  *pty_b = pty->related_properties[1];
+    const cs_property_t *pty_b = pty->related_properties[1];
     result *= _value_in_cell(cm, pty_b, t_eval);
     if (pty_b->type & CS_PROPERTY_SCALED)
       result *= pty_b->scaling_factor;
-
   }
   else {
-
     if (cs_property_is_constant(pty))
       result = pty->ref_value;
     else
       result = _value_in_cell(cm, pty, t_eval);
-
   }
 
   if (pty->type & CS_PROPERTY_SCALED)
@@ -3972,68 +4044,60 @@ cs_property_c2v_values(const cs_cell_mesh_t *cm,
     return;
 
   if ((pty->type & CS_PROPERTY_ISO) == 0)
-    bft_error(__FILE__, __LINE__, 0,
+    bft_error(__FILE__,
+              __LINE__,
+              0,
               "%s: Invalid type of property for this function.\n"
-              " Property %s has to be isotropic.", __func__, pty->name);
+              " Property %s has to be isotropic.",
+              __func__,
+              pty->name);
 
   assert(cs_property_is_subcell(pty));
   assert(eval != nullptr);
 
   const cs_xdef_t *def = pty->defs[_get_cell_def_id(cm->c_id, pty)];
 
-  switch(def->type) {
-
-  case CS_XDEF_BY_ANALYTIC_FUNCTION:
-    {
-      cs_xdef_analytic_context_t  *cx =
+  switch (def->type) {
+    case CS_XDEF_BY_ANALYTIC_FUNCTION: {
+      cs_xdef_analytic_context_t *cx =
         (cs_xdef_analytic_context_t *)def->context;
       assert(cx != nullptr);
 
       /* Evaluate the function for this time inside each portion of dual cell */
 
       for (int i = 0; i < cm->n_vc; i++) {
-
-        double xvc[3] = { 0.5*cm->xc[0] + 0.5*cm->xv[3*i],
-                          0.5*cm->xc[1] + 0.5*cm->xv[3*i+1],
-                          0.5*cm->xc[2] + 0.5*cm->xv[3*i+2] };
+        double xvc[3] = { 0.5 * cm->xc[0] + 0.5 * cm->xv[3 * i],
+                          0.5 * cm->xc[1] + 0.5 * cm->xv[3 * i + 1],
+                          0.5 * cm->xc[2] + 0.5 * cm->xv[3 * i + 2] };
 
         cx->func(t_eval, 1, nullptr, xvc, true, cx->input, eval + i);
       }
-    }
-    break;
+    } break;
 
-  case CS_XDEF_BY_ARRAY:
-    {
+    case CS_XDEF_BY_ARRAY: {
       cs_xdef_array_context_t *ctx = (cs_xdef_array_context_t *)def->context;
 
       assert(ctx->stride == 1);
 
       if (ctx->value_location == cs_flag_primal_vtx ||
           ctx->value_location == cs_flag_dual_cell) {
-
         for (int i = 0; i < cm->n_vc; i++)
           eval[i] = ctx->values[cm->v_ids[i]];
-
       }
       else if (ctx->value_location == cs_flag_primal_cell) {
-
         const cs_real_t val_c = ctx->values[cm->c_id];
         for (int i = 0; i < cm->n_vc; i++)
           eval[i] = val_c;
-
       }
       else if (ctx->value_location == cs_flag_dual_cell_byc) {
-
-        const cs_adjacency_t *adj = ctx->adjacency;
-        const cs_real_t *_val = ctx->values + adj->idx[cm->c_id];
-        memcpy(eval, _val, cm->n_vc*sizeof(cs_real_t));
-
+        const cs_adjacency_t *adj  = ctx->adjacency;
+        const cs_real_t      *_val = ctx->values + adj->idx[cm->c_id];
+        std::memcpy(eval, _val, cm->n_vc * sizeof(cs_real_t));
       }
       else
         bft_error(__FILE__, __LINE__, 0,
                   "%s: Invalid location for array.", __func__);
-    }
-    break;
+    } break;
 
   case CS_XDEF_BY_FIELD:
     {

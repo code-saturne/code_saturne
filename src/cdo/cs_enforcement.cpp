@@ -123,7 +123,7 @@ cs_enforcement_param_create(cs_enforcement_selection_t    sel_type,
               "%s: No value for the enforcement\n", __func__);
 
   CS_MALLOC(efp->elt_ids, n_elts, cs_lnum_t);
-  memcpy(efp->elt_ids, elt_ids, n_elts*sizeof(cs_lnum_t));
+  std::memcpy(efp->elt_ids, elt_ids, n_elts * sizeof(cs_lnum_t));
 
   switch (type) {
 
@@ -185,7 +185,7 @@ cs_enforcement_param_reset(cs_enforcement_param_t       *efp,
               "%s: No value for the enforcement\n", __func__);
 
   CS_REALLOC(efp->elt_ids, n_elts, cs_lnum_t);
-  memcpy(efp->elt_ids, elt_ids, n_elts*sizeof(cs_lnum_t));
+  std::memcpy(efp->elt_ids, elt_ids, n_elts * sizeof(cs_lnum_t));
 
   switch (type) {
 

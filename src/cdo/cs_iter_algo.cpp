@@ -162,17 +162,15 @@ _condition_number(int               n_rows,
                   const cs_sdm_t   *R)
 {
   int  n_cols = R->n_cols;
-  cs_real_t  vmax = fabs(R->val[0]);
-  cs_real_t  vmin = fabs(R->val[0]);
+  cs_real_t vmax   = cs::abs(R->val[0]);
+  cs_real_t vmin   = cs::abs(R->val[0]);
 
   for (int i = 1; i < n_rows; i++){
-
-    vmax = fmax(vmax, fabs(R->val[i*(1+n_cols)]));
-    vmin = fmin(vmin, fabs(R->val[i*(1+n_cols)]));
-
+    vmax = cs::max(vmax, cs::abs(R->val[i * (1 + n_cols)]));
+    vmin = cs::min(vmin, cs::abs(R->val[i * (1 + n_cols)]));
   }
 
-  return vmax/fmax(vmin, cs_math_epzero);
+  return vmax / cs::max(vmin, cs_math_epzero);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -195,8 +193,7 @@ _anderson_shift_dg(cs_iter_algo_aac_t   *c)
     cs_real_t *dg_i = c->dg + i*c->n_elts;
     cs_real_t *dg_ip1 = c->dg + (i+1)*c->n_elts;
 
-    memcpy(dg_i, dg_ip1, dir_size); /* dg_i <= dg_(i+1) */
-
+    std::memcpy(dg_i, dg_ip1, dir_size); /* dg_i <= dg_(i+1) */
   }
 }
 
@@ -373,7 +370,7 @@ _allocate_anderson_arrays(cs_iter_algo_aac_t     *c)
   cs_array_real_fill_zero(c->n_elts*n_max_dir, c->dg);
 
   CS_MALLOC(c->gamma, n_max_dir, cs_real_t);
-  memset(c->gamma, 0, sizeof(cs_real_t)*n_max_dir);
+  std::memset(c->gamma, 0, sizeof(cs_real_t) * n_max_dir);
 
   CS_MALLOC(c->Q, c->n_elts * n_max_dir, cs_real_t);
   cs_array_real_fill_zero(c->n_elts*n_max_dir, c->Q);
@@ -1397,8 +1394,9 @@ cs_iter_algo_update_cvg_tol_auto(cs_iter_algo_t         *algo)
   /* Set the tolerance criterion (computed at each call if the normalization is
      modified between two successive calls) */
 
-  double  tol = fmax(algo->cvg_param.rtol*cs_iter_algo_get_normalization(algo),
-                     algo->cvg_param.atol);
+  double tol =
+    cs::max(algo->cvg_param.rtol * cs_iter_algo_get_normalization(algo),
+            algo->cvg_param.atol);
 
   return cs_iter_algo_update_cvg_tol_given(algo, tol);
 }

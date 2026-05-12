@@ -126,18 +126,18 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
   cs_cell_builder_t *cb = cs_cell_builder_create();
 
   CS_MALLOC(cb->adv_fluxes, n_fc, double);
-  memset(cb->adv_fluxes, 0, n_fc*sizeof(double));
+  std::memset(cb->adv_fluxes, 0, n_fc * sizeof(double));
 
   CS_MALLOC(cb->ids, n_fc, int);
-  memset(cb->ids, 0, n_fc*sizeof(int));
+  std::memset(cb->ids, 0, n_fc * sizeof(int));
 
   int  size = n_fc*(n_fc+1);
   CS_MALLOC(cb->values, size, double);
-  memset(cb->values, 0, size*sizeof(double));
+  std::memset(cb->values, 0, size * sizeof(double));
 
   size = 2*n_fc;
   CS_MALLOC(cb->vectors, size, cs_real_3_t);
-  memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
+  std::memset(cb->vectors, 0, size * sizeof(cs_real_3_t));
 
   /* Local square dense matrices used during the construction of operators */
 
@@ -1379,7 +1379,7 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
 
         /* Reset the local contribution */
 
-        memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
+        std::memset(csys->source, 0, csys->n_dofs * sizeof(cs_real_t));
 
         /* Source term contribution to the algebraic system
            If the equation is steady, the source term has already been computed
@@ -1616,7 +1616,7 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
 
         /* Reset the local contribution */
 
-        memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
+        std::memset(csys->source, 0, csys->n_dofs * sizeof(cs_real_t));
 
         /* Source term contribution to the algebraic system
            If the equation is steady, the source term has already been computed
@@ -1854,7 +1854,7 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
 
         /* Reset the local contribution */
 
-        memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
+        std::memset(csys->source, 0, csys->n_dofs * sizeof(cs_real_t));
 
         /* Source term contribution to the algebraic system
            If the equation is steady, the source term has already been computed
@@ -2156,7 +2156,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
 
           /* Reset the local contribution */
 
-          memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
+          std::memset(csys->source, 0, csys->n_dofs * sizeof(cs_real_t));
 
           cs_source_term_compute_cellwise(eqp->n_source_terms,
                       (cs_xdef_t *const *)eqp->source_terms,
@@ -2179,7 +2179,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
 
         /* Reset the local contribution */
 
-        memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
+        std::memset(csys->source, 0, csys->n_dofs * sizeof(cs_real_t));
 
         /* Source term contribution to the algebraic system
            If the equation is steady, the source term has already been computed
@@ -2585,7 +2585,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
         eqc->get_stiffness_matrix(cm, diff_hodge, cb);
 
         cs_real_t  *res = cb->values;
-        memset(res, 0, (cm->n_fc + 1)*sizeof(cs_real_t));
+        std::memset(res, 0, (cm->n_fc + 1) * sizeof(cs_real_t));
         cb->loc->dot(p_theta, res);
 
         eb->diffusion_term[cm->c_id] += res[cm->n_fc];
@@ -2613,7 +2613,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
                             cb);
 
         cs_real_t  *res = cb->values;
-        memset(res, 0, (cm->n_fc + 1)*sizeof(cs_real_t));
+        std::memset(res, 0, (cm->n_fc + 1) * sizeof(cs_real_t));
         cb->loc->dot(p_theta, res);
 
         eb->advection_term[cm->c_id] += res[cm->n_fc];
@@ -2627,7 +2627,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
         /* Reset the local contribution */
 
         cs_real_t  *src = cb->values;
-        memset(src, 0, (cm->n_fc + 1)*sizeof(cs_real_t));
+        std::memset(src, 0, (cm->n_fc + 1) * sizeof(cs_real_t));
 
         /* Source term contribution to the algebraic system
            If the equation is steady, the source term has already been computed
@@ -2706,7 +2706,7 @@ cs_cdofb_scaleq_diff_flux_faces(const cs_real_t             *f_values,
   /* If no diffusion, return after resetting */
 
   if (cs_equation_param_has_diffusion(eqp) == false) {
-    memset(diff_flux, 0, quant->n_faces*sizeof(cs_real_t));
+    std::memset(diff_flux, 0, quant->n_faces * sizeof(cs_real_t));
     return;
   }
 
@@ -2858,7 +2858,7 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t           *pot_f,
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   if (cs_equation_param_has_diffusion(eqp) == false) {
-    memset(bflux, 0, quant->n_b_faces*sizeof(cs_real_t));
+    std::memset(bflux, 0, quant->n_b_faces * sizeof(cs_real_t));
 
     cs_timer_t  t1 = cs_timer_time();
     cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);
@@ -2886,7 +2886,7 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t           *pot_f,
 
     cs_real_t *bc_values = nullptr;
     CS_MALLOC(bc_values, 3*connect->n_max_fbyc, cs_real_t);
-    memset(bc_values, 0, 3*connect->n_max_fbyc*sizeof(cs_real_t));
+    std::memset(bc_values, 0, 3 * connect->n_max_fbyc * sizeof(cs_real_t));
 
     /* Each thread get back its related structures:
        Get the cellwise view of the mesh and the algebraic system */

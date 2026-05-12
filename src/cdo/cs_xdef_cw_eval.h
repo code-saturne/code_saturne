@@ -448,7 +448,7 @@ cs_xdef_cw_eval_vector_face_avg_by_value(const cs_cell_mesh_t     *cm,
 
   assert(input != NULL);
 
-  memcpy(eval, (const cs_real_t *)input, 3*sizeof(cs_real_t));
+  std::memcpy(eval, (const cs_real_t *)input, 3 * sizeof(cs_real_t));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -487,7 +487,7 @@ cs_xdef_cw_eval_vector_face_avg_by_array(const cs_cell_mesh_t     *cm,
   assert(input != NULL);
   assert(cs_flag_test(cx->value_location, cs_flag_primal_face));
 
-  memcpy(eval, cx->values + 3*cm->f_ids[f], 3*sizeof(cs_real_t));
+  std::memcpy(eval, cx->values + 3 * cm->f_ids[f], 3 * sizeof(cs_real_t));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -566,7 +566,7 @@ cs_xdef_cw_eval_tensor_face_avg_by_array(const cs_cell_mesh_t     *cm,
   assert(input != NULL);
   assert(cs_flag_test(cx->value_location, cs_flag_primal_face));
 
-  memcpy(eval, cx->values + 9*cm->f_ids[f], 9*sizeof(cs_real_t));
+  std::memcpy(eval, cx->values + 9 * cm->f_ids[f], 9 * sizeof(cs_real_t));
 }
 
 /*============================================================================

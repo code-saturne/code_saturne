@@ -231,7 +231,7 @@ cs_mesh_deform_define_dirichlet_bc_zones(cs_lnum_t  n_boundary_zones,
   if (n_boundary_zones != _n_b_zones) {
     _n_b_zones = n_boundary_zones;
     CS_REALLOC(_b_zone_ids, _n_b_zones, int);
-    memcpy(_b_zone_ids, boundary_zone_ids, sizeof(int)*_n_b_zones);
+    std::memcpy(_b_zone_ids, boundary_zone_ids, sizeof(int) * _n_b_zones);
   }
 }
 

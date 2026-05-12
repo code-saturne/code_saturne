@@ -422,7 +422,7 @@ cs_compute_grd_ve(const short int      v1,
      Height from this plane to the vertex v1 */
   cs_math_3_cross_product(uvc[v2], deq.unitv, unormal);
   hv = lvc[v1] * _dp3(uvc[v1], unormal);
-  assert(fabs(hv) > cs_dbl_epsilon); /* Sanity check */
+  assert(cs::abs(hv) > cs_dbl_epsilon); /* Sanity check */
 
   const double  ohv1 = 1/hv;
   for (int k = 0; k < 3; k++) grd_v1[k] = unormal[k] * ohv1;
@@ -432,7 +432,7 @@ cs_compute_grd_ve(const short int      v1,
      Height from this plane to the vertex v2 */
   cs_math_3_cross_product(uvc[v1], deq.unitv, unormal);
   hv = lvc[v2] * _dp3(uvc[v2], unormal);
-  assert(fabs(hv) > cs_dbl_epsilon); /* Sanity check */
+  assert(cs::abs(hv) > cs_dbl_epsilon); /* Sanity check */
 
   const double  ohv2 = 1/hv;
   for (int k = 0; k < 3; k++) grd_v2[k] = unormal[k] * ohv2;
@@ -460,8 +460,8 @@ cs_compute_wef_wvf(short int                 f,
                    cs_real_t                *wef)
 {
   /* Reset weights */
-  memset(wvf, 0, cm->n_vc*sizeof(cs_real_t));
-  memset(wef, 0, cm->n_ec*sizeof(cs_real_t));
+  std::memset(wvf, 0, cm->n_vc * sizeof(cs_real_t));
+  std::memset(wef, 0, cm->n_ec * sizeof(cs_real_t));
 
   const short int  *f2e_idx = cm->f2e_idx + f;
   const short int  *f2e_ids = cm->f2e_ids + f2e_idx[0];

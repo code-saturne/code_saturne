@@ -231,11 +231,11 @@ cs_cell_sys_create(int  n_max_dofbyc,
 
   csys->dof_flag = nullptr;
   CS_MALLOC(csys->dof_flag, n_max_dofbyc, cs_flag_t);
-  memset(csys->dof_flag, 0, sizeof(cs_flag_t) * n_max_dofbyc);
+  std::memset(csys->dof_flag, 0, sizeof(cs_flag_t) * n_max_dofbyc);
 
   csys->dof_ids = nullptr;
   CS_MALLOC(csys->dof_ids, n_max_dofbyc, cs_lnum_t);
-  memset(csys->dof_ids, 0, sizeof(cs_lnum_t) * n_max_dofbyc);
+  std::memset(csys->dof_ids, 0, sizeof(cs_lnum_t) * n_max_dofbyc);
 
   /* Cell-wise view of the system and its DoF values */
 
@@ -268,19 +268,19 @@ cs_cell_sys_create(int  n_max_dofbyc,
 
   csys->rhs = nullptr;
   CS_MALLOC(csys->rhs, n_max_dofbyc, double);
-  memset(csys->rhs, 0, s);
+  std::memset(csys->rhs, 0, s);
 
   csys->source = nullptr;
   CS_MALLOC(csys->source, n_max_dofbyc, double);
-  memset(csys->source, 0, s);
+  std::memset(csys->source, 0, s);
 
   csys->val_n = nullptr;
   CS_MALLOC(csys->val_n, n_max_dofbyc, double);
-  memset(csys->val_n, 0, s);
+  std::memset(csys->val_n, 0, s);
 
   csys->val_nm1 = nullptr;
   CS_MALLOC(csys->val_nm1, n_max_dofbyc, double);
-  memset(csys->val_nm1, 0, s);
+  std::memset(csys->val_nm1, 0, s);
 
   /* Internal enforcement */
 
@@ -296,29 +296,29 @@ cs_cell_sys_create(int  n_max_dofbyc,
 
   csys->bf_flag = nullptr;
   CS_MALLOC(csys->bf_flag, n_max_fbyc, cs_flag_t);
-  memset(csys->bf_flag, 0, sizeof(cs_flag_t) * n_max_fbyc);
+  std::memset(csys->bf_flag, 0, sizeof(cs_flag_t) * n_max_fbyc);
 
   csys->_f_ids = nullptr;
   CS_MALLOC(csys->_f_ids, n_max_fbyc, short int);
-  memset(csys->_f_ids, 0, sizeof(short int) * n_max_fbyc);
+  std::memset(csys->_f_ids, 0, sizeof(short int) * n_max_fbyc);
 
   csys->bf_ids = nullptr;
   CS_MALLOC(csys->bf_ids, n_max_fbyc, cs_lnum_t);
-  memset(csys->bf_ids, 0, sizeof(cs_lnum_t) * n_max_fbyc);
+  std::memset(csys->bf_ids, 0, sizeof(cs_lnum_t) * n_max_fbyc);
 
   /* Dirichlet */
 
   csys->has_dirichlet = false;
   csys->dir_values    = nullptr; /* Warning: values on DoFs */
   CS_MALLOC(csys->dir_values, n_max_dofbyc, double);
-  memset(csys->dir_values, 0, s);
+  std::memset(csys->dir_values, 0, s);
 
   /* Neumann */
 
   csys->has_nhmg_neumann = false;
   csys->neu_values       = nullptr;
   CS_MALLOC(csys->neu_values, n_max_dofbyc, double);
-  memset(csys->neu_values, 0, s);
+  std::memset(csys->neu_values, 0, s);
 
   /* Robin */
 
@@ -326,7 +326,7 @@ cs_cell_sys_create(int  n_max_dofbyc,
   csys->has_robin  = false;
   csys->rob_values = nullptr;
   CS_MALLOC(csys->rob_values, n_rob_size, double);
-  memset(csys->rob_values, 0, n_rob_size * sizeof(cs_real_t));
+  std::memset(csys->rob_values, 0, n_rob_size * sizeof(cs_real_t));
 
   /* Sliding (only for vector-valued system) */
 
@@ -352,28 +352,29 @@ cs_cell_sys_t::reset(int n_fbyc)
 
   const size_t s = this->n_dofs * sizeof(double);
 
-  memset(this->rhs, 0, s);
-  memset(this->source, 0, s);
+  std::memset(this->rhs, 0, s);
+  std::memset(this->source, 0, s);
 
   this->has_internal_enforcement = false;
   for (int i = 0; i < this->n_dofs; i++)
     this->dof_is_forced[i] = false; /* Not selected */
 
-  memset(this->dof_flag, 0, sizeof(cs_flag_t) * this->n_dofs);
+  std::memset(this->dof_flag, 0, sizeof(cs_flag_t) * this->n_dofs);
 
   this->n_bc_faces    = 0;
   this->has_dirichlet = this->has_nhmg_neumann = false;
   this->has_robin = this->has_sliding = false;
 
-  memset(this->bf_flag, 0, sizeof(cs_flag_t) * n_fbyc);
-  memset(this->_f_ids, 0, sizeof(short int) * n_fbyc);
-  memset(this->bf_ids, 0, sizeof(cs_lnum_t) * n_fbyc);
+  std::memset(this->bf_flag, 0, sizeof(cs_flag_t) * n_fbyc);
+  std::memset(this->_f_ids, 0, sizeof(short int) * n_fbyc);
+  std::memset(this->bf_ids, 0, sizeof(cs_lnum_t) * n_fbyc);
 
-  memset(this->dir_values, 0, s);
-  memset(this->neu_values, 0, s);
-  memset(this->rob_values,
-         0,
-         cs::max(n_fbyc, this->n_dofs) * sizeof(double) * n_robin_parameters);
+  std::memset(this->dir_values, 0, s);
+  std::memset(this->neu_values, 0, s);
+  std::memset(this->rob_values,
+              0,
+              cs::max(n_fbyc, this->n_dofs) * sizeof(double) *
+                n_robin_parameters);
 }
 
 /*----------------------------------------------------------------------------*/

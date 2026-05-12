@@ -118,18 +118,18 @@ _cell_builder_create(const cs_cdo_connect_t *connect)
   /* Since it relies on the scalar case, n_fc should be enough */
 
   CS_MALLOC(cb->adv_fluxes, n_dofs, double);
-  memset(cb->adv_fluxes, 0, n_dofs * sizeof(double));
+  std::memset(cb->adv_fluxes, 0, n_dofs * sizeof(double));
 
   CS_MALLOC(cb->ids, n_dofs, int);
-  memset(cb->ids, 0, n_dofs * sizeof(int));
+  std::memset(cb->ids, 0, n_dofs * sizeof(int));
 
   int size = n_fc * n_dofs;
   CS_MALLOC(cb->values, size, double);
-  memset(cb->values, 0, size * sizeof(cs_real_t));
+  std::memset(cb->values, 0, size * sizeof(cs_real_t));
 
   size = 2 * n_fc;
   CS_MALLOC(cb->vectors, size, cs_real_3_t);
-  memset(cb->vectors, 0, size * sizeof(cs_real_3_t));
+  std::memset(cb->vectors, 0, size * sizeof(cs_real_3_t));
 
   /* Local square dense matrices used during the construction of
      operators */
@@ -514,7 +514,7 @@ cs_macfb_vecteq_sourceterm(const cs_cell_mesh_t      *cm,
 
   /* Reset the local contribution */
 
-  memset(csys->source, 0, csys->n_dofs * sizeof(cs_real_t));
+  std::memset(csys->source, 0, csys->n_dofs * sizeof(cs_real_t));
 
   cs_source_term_compute_cellwise(eqp->n_source_terms,
                                   (cs_xdef_t *const *)eqp->source_terms,

@@ -507,7 +507,7 @@ cs_cdofb_navsto_cell_divergence(const cs_lnum_t            c_id,
 
 #if 0 // Advanced debug output
   double div_threshold = 1e-6;
-  if (fabs(div) > div_threshold) {
+  if (cs::abs(div) > div_threshold) {
 
     printf("\n cell_id: %d --> DIV=% 10.8e\n", c_id, div);
     for (cs_lnum_t f = c2f->idx[c_id]; f < c2f->idx[c_id+1]; f++) {
@@ -1076,7 +1076,9 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
 
   cs_real_t *boundary_fluxes = nullptr;
   CS_MALLOC(boundary_fluxes, boundaries->n_boundaries + 1, cs_real_t);
-  memset(boundary_fluxes, 0, (boundaries->n_boundaries + 1)*sizeof(cs_real_t));
+  std::memset(boundary_fluxes,
+              0,
+              (boundaries->n_boundaries + 1) * sizeof(cs_real_t));
 
   for (int b_id = 0; b_id < boundaries->n_boundaries; b_id++) {
 
@@ -1502,7 +1504,7 @@ cs_cdofb_block_dirichlet_alge(short int                              f,
 
   bool is_non_homogeneous = false; /* Assume homogeneous by default */
 
-  memset(cb->values, 0, 6 * sizeof(double));
+  std::memset(cb->values, 0, 6 * sizeof(double));
 
   for (int k = 0; k < 3; k++) {
     if (csys->dof_flag[3 * f + k] & CS_CDO_BC_DIRICHLET) {
@@ -1543,7 +1545,7 @@ cs_cdofb_block_dirichlet_alge(short int                              f,
       /* Reset block (I,F) which is a 3x3 block */
 
       cs_sdm_t *mIF = m->get_block(bi, f);
-      memset(mIF->val, 0, 9 * sizeof(double));
+      std::memset(mIF->val, 0, 9 * sizeof(double));
     }
     else { /* bi == f */
 
@@ -1551,7 +1553,7 @@ cs_cdofb_block_dirichlet_alge(short int                              f,
 
       for (int bj = 0; bj < bd->n_col_blocks; bj++) {
         cs_sdm_t *mFJ = m->get_block(f, bj);
-        memset(mFJ->val, 0, 9 * sizeof(double));
+        std::memset(mFJ->val, 0, 9 * sizeof(double));
       }
 
       cs_sdm_t *mFF = m->get_block(f, f);
@@ -2607,7 +2609,7 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
         cs_cdofb_vecteq_diffusion(eqp, eqb, eqc, cm, diff_hodge, csys, cb);
 
         cs_real_t  *res = cb->values;
-        memset(res, 0, 3*(cm->n_fc + 1)*sizeof(cs_real_t));
+        std::memset(res, 0, 3 * (cm->n_fc + 1) * sizeof(cs_real_t));
         cs_sdm_block_matvec(csys->mat, p_theta, res);
 
         for (short int i = 0; i < cm->n_fc; i++) {
@@ -2651,7 +2653,7 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
           csys->dump("\n>> Cell system after advection");
 #endif
         cs_real_t  *res = cb->values;
-        memset(res, 0, 3*(cm->n_fc + 1)*sizeof(cs_real_t));
+        std::memset(res, 0, 3 * (cm->n_fc + 1) * sizeof(cs_real_t));
         cs_sdm_block_matvec(csys->mat, p_theta, res);
 
         for (short int i = 0; i < cm->n_fc; i++) {
@@ -2672,7 +2674,7 @@ cs_cdofb_navsto_balance(const cs_navsto_param_t     *nsp,
         /* Reset the local contribution */
 
         cs_real_t  *src = cb->values;
-        memset(src, 0, 3*(cm->n_fc + 1)*sizeof(cs_real_t));
+        std::memset(src, 0, 3 * (cm->n_fc + 1) * sizeof(cs_real_t));
 
         /* Source term contribution to the algebraic system
            If the equation is steady, the source term has already been computed

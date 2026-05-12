@@ -190,19 +190,16 @@ _prepare_ke(const cs_mesh_t            *mesh,
       cs_reco_grad_33_cell_from_fb_dofs(c_id, connect, quant,
                                         u_cell, u_face, (cs_real_t *)grd_uc);
 
-      cs_real_t strain_sq = 2.
-        * (  cs_math_pow2(  d2s3*grd_uc[0][0]
-                          - d1s3*grd_uc[1][1]
-                          - d1s3*grd_uc[2][2])
-           + cs_math_pow2(- d1s3*grd_uc[0][0]
-                          + d2s3*grd_uc[1][1]
-                          - d1s3*grd_uc[2][2])
-           + cs_math_pow2(- d1s3*grd_uc[0][0]
-                          - d1s3*grd_uc[1][1]
-                          + d2s3*grd_uc[2][2]))
-        + cs_math_pow2(grd_uc[0][1] + grd_uc[1][0])
-        + cs_math_pow2(grd_uc[0][2] + grd_uc[2][0])
-        + cs_math_pow2(grd_uc[1][2] + grd_uc[2][1]);
+      cs_real_t strain_sq =
+        2. * (cs::pow2(d2s3 * grd_uc[0][0] - d1s3 * grd_uc[1][1] -
+                       d1s3 * grd_uc[2][2]) +
+              cs::pow2(-d1s3 * grd_uc[0][0] + d2s3 * grd_uc[1][1] -
+                       d1s3 * grd_uc[2][2]) +
+              cs::pow2(-d1s3 * grd_uc[0][0] - d1s3 * grd_uc[1][1] +
+                       d2s3 * grd_uc[2][2])) +
+        cs::pow2(grd_uc[0][1] + grd_uc[1][0]) +
+        cs::pow2(grd_uc[0][2] + grd_uc[2][0]) +
+        cs::pow2(grd_uc[1][2] + grd_uc[2][1]);
 
       tke_source_term[c_id] = mu_t[c_id] * strain_sq;
     }
@@ -217,24 +214,21 @@ _prepare_ke(const cs_mesh_t            *mesh,
       cs_reco_grad_33_cell_from_fb_dofs(c_id, connect, quant,
                                         u_cell, u_face, (cs_real_t *)grd_uc);
 
-      cs_real_t strain_sq = 2.
-        * (  cs_math_pow2(  d2s3*grd_uc[0][0]
-                          - d1s3*grd_uc[1][1]
-                          - d1s3*grd_uc[2][2])
-           + cs_math_pow2(- d1s3*grd_uc[0][0]
-                          + d2s3*grd_uc[1][1]
-                          - d1s3*grd_uc[2][2])
-           + cs_math_pow2(- d1s3*grd_uc[0][0]
-                          - d1s3*grd_uc[1][1]
-                          + d2s3*grd_uc[2][2]))
-        + cs_math_pow2(grd_uc[0][1] + grd_uc[1][0])
-        + cs_math_pow2(grd_uc[0][2] + grd_uc[2][0])
-        + cs_math_pow2(grd_uc[1][2] + grd_uc[2][1]);
+      cs_real_t strain_sq =
+        2. * (cs::pow2(d2s3 * grd_uc[0][0] - d1s3 * grd_uc[1][1] -
+                       d1s3 * grd_uc[2][2]) +
+              cs::pow2(-d1s3 * grd_uc[0][0] + d2s3 * grd_uc[1][1] -
+                       d1s3 * grd_uc[2][2]) +
+              cs::pow2(-d1s3 * grd_uc[0][0] - d1s3 * grd_uc[1][1] +
+                       d2s3 * grd_uc[2][2])) +
+        cs::pow2(grd_uc[0][1] + grd_uc[1][0]) +
+        cs::pow2(grd_uc[0][2] + grd_uc[2][0]) +
+        cs::pow2(grd_uc[1][2] + grd_uc[2][1]);
 
       cs_real_t strain = sqrt(strain_sq);
       const cs_real_t sqrcmu = sqrt(cs_turb_cmu);
-      cs_real_t cmueta =
-        fmin(cs_turb_cmu*tke_cell[c_id]/eps_cell[c_id] * strain, sqrcmu);
+      cs_real_t       cmueta =
+        cs::min(cs_turb_cmu * tke_cell[c_id] / eps_cell[c_id] * strain, sqrcmu);
 
       tke_source_term[c_id] = rho[c_id*rho_stride] * cmueta * strain * tke_cell[c_id];
 
@@ -308,15 +302,15 @@ _wall_function_1scale_log(const double    pena_bc_coeff,
 
     /* The initial value is Wener or the minimun ustar to ensure convergence */
 
-    ustarwer = pow(fabs(uct)/cs_turb_apow/pow(y_over_nu, cs_turb_bpow),
-               cs_turb_dpow);
+    ustarwer = pow(cs::abs(uct) / cs_turb_apow / pow(y_over_nu, cs_turb_bpow),
+                   cs_turb_dpow);
     ustarmin = exp(-cs_turb_cstlog*cs_turb_xkappa)/y_over_nu;
     ustaro = cs::max(ustarwer, ustarmin);
     ustar = (cs_turb_xkappa * uct + ustaro)
            / (log(y_over_nu * ustaro) + cs_turb_xkappa * cs_turb_cstlog + 1.);
 
     int iter = 0;
-    while (fabs(ustar - ustaro) >= eps * ustaro && iter < n_max_iter) {
+    while (cs::abs(ustar - ustaro) >= eps * ustaro && iter < n_max_iter) {
       ustaro = ustar;
       ustar = (cs_turb_xkappa * uct + ustaro)
             / (log(y_over_nu * ustaro) + cs_turb_xkappa * cs_turb_cstlog + 1.);
@@ -644,7 +638,7 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
   /* Define the property related to the total viscosity */
 
   CS_MALLOC(tbs->mu_tot_array, quant->n_cells, cs_real_t);
-  memset(tbs->mu_tot_array, 0, quant->n_cells*sizeof(cs_real_t));
+  std::memset(tbs->mu_tot_array, 0, quant->n_cells * sizeof(cs_real_t));
 
   cs_property_def_by_array(tbs->mu_tot,
                            nullptr, /* all cells */
@@ -713,7 +707,7 @@ cs_turbulence_finalize_setup(const cs_mesh_t            *mesh,
       /* Initialize TKE */
 
       cs_turb_ref_values_t *t_ref= cs_get_glob_turb_ref_values();
-      cs_real_t tke_ref = 1.5 * cs_math_pow2(0.02 * t_ref->uref);
+      cs_real_t             tke_ref = 1.5 * cs::pow2(0.02 * t_ref->uref);
       cs_equation_add_ic_by_value(tke_eqp, nullptr, &tke_ref);
 
       /* Initialize epsilon */
@@ -962,9 +956,8 @@ cs_turb_update_k_eps(const cs_mesh_t              *mesh,
 
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++) {
-
-    mu_t[cell_id] = cs_turb_cmu * rho[cell_id*rho_stride] *
-      cs_math_pow2(k[cell_id]) / eps[cell_id];
+    mu_t[cell_id] = cs_turb_cmu * rho[cell_id * rho_stride] *
+                    cs::pow2(k[cell_id]) / eps[cell_id];
 
     tbs->mu_tot_array[cell_id] = mu_t[cell_id] + mu_l[cell_id*mu_stride];
 

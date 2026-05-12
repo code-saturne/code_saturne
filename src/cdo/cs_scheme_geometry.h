@@ -178,7 +178,7 @@ cs_compute_wvf(short int                 f,
 
   /* Reset weights */
 
-  memset(wvf, 0, cm->n_vc*sizeof(cs_real_t));
+  std::memset(wvf, 0, cm->n_vc * sizeof(cs_real_t));
 
   const short int  *f2e_idx = cm->f2e_idx + f;
   const short int  *f2e_ids = cm->f2e_ids + f2e_idx[0];

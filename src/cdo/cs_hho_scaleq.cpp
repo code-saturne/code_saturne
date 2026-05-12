@@ -173,16 +173,16 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
   case CS_SPACE_SCHEME_HHO_P0:  /* TODO */
     {
     CS_MALLOC(cb->ids, n_fc + 1, int);
-    memset(cb->ids, 0, (n_fc + 1) * sizeof(int));
+    std::memset(cb->ids, 0, (n_fc + 1) * sizeof(int));
 
     /* For post-processing errors = 38 */
     size = cs::max(38, n_fc * (n_fc + 1));
     CS_MALLOC(cb->values, size, double);
-    memset(cb->values, 0, size * sizeof(cs_real_t));
+    std::memset(cb->values, 0, size * sizeof(cs_real_t));
 
     size = cs::max(2 * n_fc, 15);
     CS_MALLOC(cb->vectors, size, cs_real_3_t);
-    memset(cb->vectors, 0, size * sizeof(cs_real_3_t));
+    std::memset(cb->vectors, 0, size * sizeof(cs_real_3_t));
 
     /* Local square dense matrices used during the construction of
        operators */
@@ -196,7 +196,7 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
       /* Store the block size description */
       size = n_fc + 1;
       CS_MALLOC(cb->ids, size, int);
-      memset(cb->ids, 0, size*sizeof(int));
+      std::memset(cb->ids, 0, size * sizeof(int));
 
       /* Store the face, cell and gradient basis function evaluations and
          the Gauss point weights
@@ -210,12 +210,12 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
       */
       size = cs::max(54, (3*n_fc + 4)*2);
       CS_MALLOC(cb->values, size, double);
-      memset(cb->values, 0, size*sizeof(cs_real_t));
+      std::memset(cb->values, 0, size * sizeof(cs_real_t));
 
       /* Store Gauss points and tensor.n_f products */
       size = cs::max(15, 5 + n_fc);
       CS_MALLOC(cb->vectors, size, cs_real_3_t);
-      memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
+      std::memset(cb->vectors, 0, size * sizeof(cs_real_3_t));
 
       /* Local dense matrices used during the construction of operators */
       const int g_size = 9;                   /* basis (P_(k+1)) - 1 */
@@ -231,7 +231,7 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
       /* Store the block size description */
       size = n_fc + 1;
       CS_MALLOC(cb->ids, size, int);
-      memset(cb->ids, 0, size*sizeof(int));
+      std::memset(cb->ids, 0, size * sizeof(int));
 
       /* Store the face, cell and gradient basis function evaluations and
          the Gauss point weights */
@@ -246,11 +246,11 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
       */
       size = cs::max(209, 2*(6*n_fc + 20));
       CS_MALLOC(cb->values, size, double);
-      memset(cb->values, 0, size*sizeof(cs_real_t));
+      std::memset(cb->values, 0, size * sizeof(cs_real_t));
 
       size = 15 + n_fc;  /* Store Gauss points and tensor.n_f products */
       CS_MALLOC(cb->vectors, size, cs_real_3_t);
-      memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
+      std::memset(cb->vectors, 0, size * sizeof(cs_real_3_t));
 
       /* Local dense matrices used during the construction of operators */
       const int g_size = 19; /* basis (P_(k+1)) - 1 */
@@ -394,7 +394,7 @@ _shho_init_cell_system(const cs_cell_mesh_t         *cm,
 #if defined(DEBUG) && !defined(NDEBUG) /* Sanity check */
     for (short int f = 0; f < eqc->n_face_dofs*cm->n_fc; f++) {
       if (csys->dof_flag[f] & CS_CDO_BC_HMG_DIRICHLET)
-        if (fabs(csys->dir_values[f]) > 10 * cs_dbl_min)
+        if (cs::abs(csys->dir_values[f]) > 10 * cs_dbl_min)
           bft_error(__FILE__, __LINE__, 0,
                     " %s: Invalid enforcement of Dirichlet BCs on faces",
                     __func__);
@@ -847,17 +847,17 @@ cs_hho_scaleq_init_context(cs_equation_param_t    *eqp,
   /* Values of each DoF related to the cells */
   const cs_lnum_t  n_cell_dofs = n_cells * eqc->n_cell_dofs;
   CS_MALLOC(eqc->cell_values, n_cell_dofs, cs_real_t);
-  memset(eqc->cell_values, 0, sizeof(cs_real_t)*n_cell_dofs);
+  std::memset(eqc->cell_values, 0, sizeof(cs_real_t) * n_cell_dofs);
 
   /* Values at each face (interior and border) i.e. take into account BCs */
   CS_MALLOC(eqc->face_values, eqc->n_dofs, cs_real_t);
-  memset(eqc->face_values, 0, sizeof(cs_real_t)*eqc->n_dofs);
+  std::memset(eqc->face_values, 0, sizeof(cs_real_t) * eqc->n_dofs);
 
   /* Source term */
   eqc->source_terms = nullptr;
   if (cs_equation_param_has_sourceterm(eqp)) {
     CS_MALLOC(eqc->source_terms, n_cell_dofs, cs_real_t);
-    memset(eqc->source_terms, 0, sizeof(cs_real_t)*n_cell_dofs);
+    std::memset(eqc->source_terms, 0, sizeof(cs_real_t) * n_cell_dofs);
 
   } /* There is at least one source term */
 
@@ -865,7 +865,7 @@ cs_hho_scaleq_init_context(cs_equation_param_t    *eqp,
      The transposed of acf_tilda is stored to speed-up the computation of
      the static condensation */
   CS_MALLOC(eqc->rc_tilda, n_cell_dofs, cs_real_t);
-  memset(eqc->rc_tilda, 0, sizeof(cs_real_t)*n_cell_dofs);
+  std::memset(eqc->rc_tilda, 0, sizeof(cs_real_t) * n_cell_dofs);
 
   cs_lnum_t  n_row_blocks = connect->c2f->idx[n_cells];
   int       *row_block_sizes = nullptr;
@@ -999,8 +999,8 @@ cs_hho_scaleq_init_values(cs_real_t                     t_eval,
   cs_real_t  *f_vals = eqc->face_values;
   cs_real_t  *c_vals = eqc->cell_values;
 
-  memset(f_vals, 0, quant->n_faces * eqc->n_face_dofs * sizeof(cs_real_t));
-  memset(c_vals, 0, quant->n_cells * eqc->n_cell_dofs * sizeof(cs_real_t));
+  std::memset(f_vals, 0, quant->n_faces * eqc->n_face_dofs * sizeof(cs_real_t));
+  std::memset(c_vals, 0, quant->n_cells * eqc->n_cell_dofs * sizeof(cs_real_t));
 
 #if 0 /* TODO */
   const cs_cdo_connect_t  *connect = cs_shared_connect;
@@ -1214,7 +1214,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
       if (cs_equation_param_has_sourceterm(eqp)) {
 
         /* Reset the local contribution */
-        memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
+        std::memset(csys->source, 0, csys->n_dofs * sizeof(cs_real_t));
 
         /* Source term contribution to the algebraic system
            If the equation is steady, the source term has already been computed
@@ -1358,8 +1358,9 @@ cs_hho_scaleq_update_field(const cs_real_t            *solu,
   cs_hho_scaleq_t  *eqc = (cs_hho_scaleq_t  *)data;
 
   /* Reset the solution at cells */
-  memset(eqc->cell_values, 0,
-         sizeof(cs_real_t) * eqc->n_cell_dofs * quant->n_cells);
+  std::memset(eqc->cell_values,
+              0,
+              sizeof(cs_real_t) * eqc->n_cell_dofs * quant->n_cells);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
   shared(quant, connect, eqp, eqb, eqc, rhs, solu, field_val,           \
@@ -1396,7 +1397,7 @@ cs_hho_scaleq_update_field(const cs_real_t            *solu,
       cs_real_t  *f_contrib = cb->values + eqc->n_cell_dofs;
       cs_real_t  *c_vals = eqc->cell_values + c_id * eqc->n_cell_dofs;
 
-      memset(f_contrib, 0, sizeof(cs_real_t)*eqc->n_cell_dofs);
+      std::memset(f_contrib, 0, sizeof(cs_real_t) * eqc->n_cell_dofs);
 
       /* Recover the cell DoFs
          x_C = A_CC^-1 b_C (--> rc_tilda) - acf_tilda * x_F  */
@@ -1425,7 +1426,7 @@ cs_hho_scaleq_update_field(const cs_real_t            *solu,
   } /* OPENMP Block */
 
   /* Set the computed solution in field array */
-  memcpy(eqc->face_values, solu, sizeof(cs_real_t)*eqc->n_dofs);
+  std::memcpy(eqc->face_values, solu, sizeof(cs_real_t) * eqc->n_dofs);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_SCALEQ_DBG > 2
   cs_dbg_darray_to_listing("FINAL FACE_VALUES",

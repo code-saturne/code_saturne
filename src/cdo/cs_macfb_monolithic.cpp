@@ -617,7 +617,7 @@ _velocity_full_assembly(const cs_cell_sys_t             *csys,
     }
   }
   else {
-    memcpy(_div, nsb->div_op, n_f * sizeof(cs_real_t));
+    std::memcpy(_div, nsb->div_op, n_f * sizeof(cs_real_t));
   }
 
   /* 1. Matrix assembly

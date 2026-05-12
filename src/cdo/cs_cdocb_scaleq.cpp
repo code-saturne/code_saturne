@@ -144,7 +144,7 @@ _scb_apply_neumann(const cs_equation_param_t    *eqp,
 
       bool  is_non_homogeneous = false; /* Assume homogeneous by default */
 
-      memset(cb->values, 0, 2*sizeof(double));
+      std::memset(cb->values, 0, 2 * sizeof(double));
 
       if (csys->bf_flag[f] & CS_CDO_BC_NEUMANN) {
         *x_neu = csys->neu_values[f];
@@ -244,18 +244,18 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
   cs_cell_builder_t *cb = cs_cell_builder_create();
 
   CS_MALLOC(cb->adv_fluxes, n_fc, double);
-  memset(cb->adv_fluxes, 0, n_fc*sizeof(double));
+  std::memset(cb->adv_fluxes, 0, n_fc * sizeof(double));
 
   CS_MALLOC(cb->ids, n_fc, int);
-  memset(cb->ids, 0, n_fc*sizeof(int));
+  std::memset(cb->ids, 0, n_fc * sizeof(int));
 
   int  size = (n_fc + 1)*(n_fc + 1);
   CS_MALLOC(cb->values, size, double);
-  memset(cb->values, 0, size*sizeof(double));
+  std::memset(cb->values, 0, size * sizeof(double));
 
   size = 2*(n_fc + 1);
   CS_MALLOC(cb->vectors, size, cs_real_3_t);
-  memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
+  std::memset(cb->vectors, 0, size * sizeof(cs_real_3_t));
 
   /* Local square dense matrices used during the construction of operators */
 
@@ -391,7 +391,7 @@ _block11_assembly(const cs_cell_sys_t   *csys,
 
   }
   else
-    memcpy(_div, div_c, n_f*sizeof(cs_real_t));
+    std::memcpy(_div, div_c, n_f * sizeof(cs_real_t));
 
   /* 1. Matrix assembly
    * ================== */
@@ -598,7 +598,7 @@ _scb_init_cell_system(const cs_cell_mesh_t         *cm,
   csys->reset(cm->n_fc);
   csys->mat->init(cm->n_fc);
 
-  memset(csys->rhs, 0, (cm->n_fc + 1)*sizeof(cs_real_t));
+  std::memset(csys->rhs, 0, (cm->n_fc + 1) * sizeof(cs_real_t));
 
   for (short int f = 0; f < cm->n_fc; f++) {
 
@@ -749,7 +749,7 @@ _scb_steady_build(const cs_equation_param_t  *eqp,
 
         /* Reset the local contribution */
 
-        memset(csys->source, 0, (cm->n_fc + 1)*sizeof(cs_real_t));
+        std::memset(csys->source, 0, (cm->n_fc + 1) * sizeof(cs_real_t));
 
         /* Source term contribution to the algebraic system
            If the equation is steady, the source term has already been computed
@@ -1849,7 +1849,7 @@ cs_cdocb_scaleq_balance(const cs_equation_param_t     *eqp,
         /* Reset the local contribution */
 
         cs_real_t  *src = cb->values;
-        memset(src, 0, (cm->n_fc + 1)*sizeof(cs_real_t));
+        std::memset(src, 0, (cm->n_fc + 1) * sizeof(cs_real_t));
 
         /* Source term contribution to the algebraic system
            If the equation is steady, the source term has already been computed

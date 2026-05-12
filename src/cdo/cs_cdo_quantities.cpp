@@ -308,9 +308,9 @@ _get_fspec(cs_lnum_t                    f_id,
 
   /* Define a direct basis such that n[Z] maximal */
 
-  nx = fabs(fspec.q.unitv[X]);
-  ny = fabs(fspec.q.unitv[Y]);
-  nz = fabs(fspec.q.unitv[Z]);
+  nx = cs::abs(fspec.q.unitv[X]);
+  ny = cs::abs(fspec.q.unitv[Y]);
+  nz = cs::abs(fspec.q.unitv[Z]);
 
   if (nx > ny && nx > nz)
     fspec.XYZ[Z] = X;
@@ -553,13 +553,13 @@ _compute_face_based_quantities(const cs_cdo_connect_t  *topo,
         normal[2] = cdoq->b_face_u_normal[bf_id][2];
       }
 
-      if (fabs(normal[0]) > 0.9999) {
+      if (cs::abs(normal[0]) > 0.9999) {
         cdoq->face_axis[f_id] = CS_FLAG_X_AXIS;
       }
-      else if (fabs(normal[1]) > 0.9999) {
+      else if (cs::abs(normal[1]) > 0.9999) {
         cdoq->face_axis[f_id] = CS_FLAG_Y_AXIS;
       }
-      else if (fabs(normal[2]) > 0.9999) {
+      else if (cs::abs(normal[2]) > 0.9999) {
         cdoq->face_axis[f_id] = CS_FLAG_Z_AXIS;
       }
       else {
@@ -665,7 +665,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t *topo,
       /* Initialization of cell_dface by each thread */
 
       cs_real_t *cell_dface = quant->dface_normal + 3 * c2e_idx[0];
-      memset(cell_dface, 0, 3 * n_ec * sizeof(cs_real_t));
+      std::memset(cell_dface, 0, 3 * n_ec * sizeof(cs_real_t));
 
       /* Get the cell center */
 
@@ -709,7 +709,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t *topo,
           cs_nvec3_t tria;
           cs_nvec3(tria_vect, &tria);
           const double orient = _dp3(tria.unitv, edge.unitv);
-          CS_CDO_OMP_ASSERT(fabs(orient) > 0);
+          CS_CDO_OMP_ASSERT(cs::abs(orient) > 0);
 
           /* Store this portion of dual face area at the right place */
 
@@ -1119,7 +1119,7 @@ _update_subdiv_cell_quantities(const cs_mesh_t            *mesh,
           for (int k = 0; k < 3; k++)
             xfc[k] = ref_xc[k] - xf[k];
 
-          const double voltet = c_1ov3 * fabs(_dp3(nf, xfc));
+          const double voltet = c_1ov3 * cs::abs(_dp3(nf, xfc));
 
           volc += voltet;
 

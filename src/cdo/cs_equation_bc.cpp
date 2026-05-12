@@ -454,8 +454,8 @@ _sync_circulation_def_at_edges(const cs_cdo_connect_t *connect,
 
   cs_lnum_t *count = nullptr;
   CS_MALLOC(count, n_defs, cs_lnum_t);
-  memset(count, 0, n_defs*sizeof(cs_lnum_t));
-  memset(def2e_idx, 0, (n_defs+1)*sizeof(cs_lnum_t));
+  std::memset(count, 0, n_defs * sizeof(cs_lnum_t));
+  std::memset(def2e_idx, 0, (n_defs + 1) * sizeof(cs_lnum_t));
 
   /* 1. Count the number of edges related to each definition */
 
@@ -1439,7 +1439,9 @@ cs_equation_bc_dirichlet_at_vertices(cs_real_t                   t_eval,
 #     pragma omp for
       for (cs_lnum_t v_id = 0; v_id < quant->n_vertices; v_id++) {
         if (bcflag[v_id] & CS_CDO_BC_HMG_DIRICHLET)
-          memset(bcvals + eqp->dim*v_id, 0, eqp->dim*sizeof(cs_real_t));
+          std::memset(bcvals + eqp->dim * v_id,
+                      0,
+                      eqp->dim * sizeof(cs_real_t));
       }
 
       /* BC value overwrites the initial value */
@@ -2299,7 +2301,7 @@ cs_equation_bc_cw_robin(cs_real_t                  t_eval,
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
     {
       cs_real_t  buffer_params[16];
-      memset(buffer_params, 0, 16 * sizeof(cs_real_t));
+      std::memset(buffer_params, 0, 16 * sizeof(cs_real_t));
 
       cs_xdef_analytic_context_t *ac = (cs_xdef_analytic_context_t *)def->context;
 
@@ -2412,7 +2414,7 @@ cs_equation_bc_cw_turb_smooth_wall(cs_real_t                  t_eval,
     case CS_XDEF_BY_ANALYTIC_FUNCTION:
       {
         cs_real_t  buffer_params[16];
-        memset(buffer_params, 0, 16 * sizeof(cs_real_t));
+        std::memset(buffer_params, 0, 16 * sizeof(cs_real_t));
 
         cs_xdef_analytic_context_t *ac = (cs_xdef_analytic_context_t *)def->context;
 
@@ -2637,7 +2639,7 @@ cs_equation_bc_update_for_increment(cs_cell_sys_t *csys)
 
   if (csys->has_dirichlet) { /* Switch to homogeneous Dirichlet BCs */
 
-    memset(csys->dir_values, 0, csys->n_dofs*sizeof(double));
+    std::memset(csys->dir_values, 0, csys->n_dofs * sizeof(double));
 
     for (int i = 0; i < csys->n_dofs; i++) {
       if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET) {
@@ -2650,7 +2652,7 @@ cs_equation_bc_update_for_increment(cs_cell_sys_t *csys)
 
   if (csys->has_nhmg_neumann) { /* Switch to homogeneous Neumann BCs */
 
-    memset(csys->neu_values, 0, csys->n_dofs*sizeof(double));
+    std::memset(csys->neu_values, 0, csys->n_dofs * sizeof(double));
 
     for (int i = 0; i < csys->n_dofs; i++) {
       if (csys->dof_flag[i] & CS_CDO_BC_NEUMANN) {

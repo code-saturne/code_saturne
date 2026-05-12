@@ -1267,7 +1267,7 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
 
       /* Resetting */
 
-      memset(val_i, 0, dim*sizeof(double));
+      std::memset(val_i, 0, dim * sizeof(double));
 
       switch (end - start) {
 
@@ -1318,7 +1318,7 @@ cs_xdef_eval_avg_at_b_faces_by_analytic(cs_lnum_t                    n_elts,
 
       /* Resetting */
 
-      memset(val_i, 0, dim*sizeof(double));
+      std::memset(val_i, 0, dim * sizeof(double));
 
       switch (end - start) {
 

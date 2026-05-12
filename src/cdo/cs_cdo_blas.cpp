@@ -1082,12 +1082,12 @@ cs_cdo_blas_square_norm_pcsp_ndiff(const cs_real_t *a,
   if (cs_glob_n_ranks > 1) {
 
     cs_real_t  sums[2] = {num, denum};
-    cs_parall_sum(2, CS_REAL_TYPE, sums);
+    cs::parall::sum( sums);
     num = sums[0], denum = sums[1];
 
   }
 
-  if (fabs(denum) > cs_math_zero_threshold)
+  if (cs::abs(denum) > cs_math_zero_threshold)
     num /= denum;
 
   return (cs_real_t)num;

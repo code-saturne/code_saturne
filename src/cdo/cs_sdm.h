@@ -30,6 +30,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <cassert>
+#include <cstring>
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -645,7 +646,9 @@ cs_sdm_copy(cs_sdm_t        *recv,
   recv->n_cols = send->n_cols;
 
   /* Copy values */
-  memcpy(recv->val, send->val, sizeof(cs_real_t)*send->n_rows*send->n_cols);
+  std::memcpy(recv->val,
+              send->val,
+              sizeof(cs_real_t) * send->n_rows * send->n_cols);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -693,7 +696,7 @@ cs_sdm_copy_block(const cs_sdm_t       *m,
 
   const cs_real_t *_start = m->val + c_id + r_id*m->n_cols;
   for (short int i = 0; i < nr; i++, _start += m->n_cols)
-    memcpy(b->val + i*nc, _start, sizeof(cs_real_t)*nc);
+    std::memcpy(b->val + i * nc, _start, sizeof(cs_real_t) * nc);
 }
 
 /*----------------------------------------------------------------------------*/

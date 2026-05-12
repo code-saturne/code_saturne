@@ -1487,7 +1487,7 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
   cs_real_t  *f_rhs = c_rhs + cbf->size;
 
   /* Initialize cell related array */
-  memset(c_rhs, 0, cbf->size*sizeof(cs_real_t));
+  std::memset(c_rhs, 0, cbf->size * sizeof(cs_real_t));
 
   /* Switch according to the cell type: optimised version for tetra */
   switch (cm->type) {
@@ -1510,7 +1510,7 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
         assert(fbf->facto != nullptr);
         assert(cbf->size >= fbf->size);
 
-        memset(f_rhs, 0, fbf->size*sizeof(cs_real_t));
+        std::memset(f_rhs, 0, fbf->size * sizeof(cs_real_t));
 
         cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
 
@@ -1541,7 +1541,7 @@ cs_hho_builder_reduction_from_analytic(const cs_xdef_t         *def,
       const short int *f2e_ids = cm->f2e_ids + start;
       const cs_basis_func_t  *fbf = hhob->face_basis[f];
 
-      memset(f_rhs, 0, fbf->size*sizeof(cs_real_t));
+      std::memset(f_rhs, 0, fbf->size * sizeof(cs_real_t));
 
       assert(fbf->facto != nullptr);
       assert(cbf->size >= fbf->size);
@@ -1666,7 +1666,7 @@ cs_hho_builder_reduction_from_analytic_v(const cs_xdef_t         *def,
      =  118 for k =2 < 465 + 30 */
 
   /* Initialize cell related array (Vector case: multiply by 3) */
-  memset(c_rhs, 0, 3*cbf->size*sizeof(cs_real_t));
+  std::memset(c_rhs, 0, 3 * cbf->size * sizeof(cs_real_t));
 
   /* Switch according to the cell type: optimised version for tetra */
   switch (cm->type) {
@@ -1691,7 +1691,7 @@ cs_hho_builder_reduction_from_analytic_v(const cs_xdef_t         *def,
         assert(cbf->size >= fbf->size);
 
         /* Vector case: multiply by 3 */
-        memset(f_rhs, 0, 3*fbf->size*sizeof(cs_real_t));
+        std::memset(f_rhs, 0, 3 * fbf->size * sizeof(cs_real_t));
 
         cs_cell_mesh_get_next_3_vertices(f2e_ids, cm->e2v_ids, &v0, &v1, &v2);
 
@@ -1729,7 +1729,7 @@ cs_hho_builder_reduction_from_analytic_v(const cs_xdef_t         *def,
         const cs_basis_func_t  *fbf = hhob->face_basis[f];
 
         /* Vector case: multiply by 3 */
-        memset(f_rhs, 0, 3*fbf->size*sizeof(cs_real_t));
+        std::memset(f_rhs, 0, 3 * fbf->size * sizeof(cs_real_t));
 
         assert(fbf->facto != nullptr);
         assert(cbf->size >= fbf->size);
@@ -1857,8 +1857,8 @@ cs_hho_builder_compute_dirichlet(const cs_xdef_t         *def,
                        CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
-  memset(res, 0, fbf->size*sizeof(cs_real_t));
-  memset(rhs, 0, fbf->size*sizeof(cs_real_t));
+  std::memset(res, 0, fbf->size * sizeof(cs_real_t));
+  std::memset(rhs, 0, fbf->size * sizeof(cs_real_t));
 
   switch(def->type) {
 
@@ -1986,8 +1986,8 @@ cs_hho_builder_compute_dirichlet_v(const cs_xdef_t         *def,
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   /* In vector case we multiply by 3*/
-  memset(res, 0, 3*fbf->size*sizeof(cs_real_t));
-  memset(rhs, 0, 3*fbf->size*sizeof(cs_real_t));
+  std::memset(res, 0, 3 * fbf->size * sizeof(cs_real_t));
+  std::memset(rhs, 0, 3 * fbf->size * sizeof(cs_real_t));
 
   switch(def->type) {
 

@@ -107,16 +107,16 @@ _ebs_create_cell_builder(const cs_cdo_connect_t   *connect)
   cs_cell_builder_t  *cb = cs_cell_builder_create();
 
   CS_MALLOC(cb->ids, n_max, int);
-  memset(cb->ids, 0, n_max*sizeof(int));
+  std::memset(cb->ids, 0, n_max * sizeof(int));
 
   int  size = n_max*(n_max+1);
   size = cs::max(7*n_max, size);
   CS_MALLOC(cb->values, size, double);
-  memset(cb->values, 0, size*sizeof(cs_real_t));
+  std::memset(cb->values, 0, size * sizeof(cs_real_t));
 
   size = 2*n_max;
   CS_MALLOC(cb->vectors, size, cs_real_3_t);
-  memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
+  std::memset(cb->vectors, 0, size * sizeof(cs_real_3_t));
 
   /* Local square dense matrices used during the construction of operators */
 
@@ -1026,7 +1026,7 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
 
         /* Reset the local contribution */
 
-        memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
+        std::memset(csys->source, 0, csys->n_dofs * sizeof(cs_real_t));
 
         /* Source term contribution to the algebraic system */
 

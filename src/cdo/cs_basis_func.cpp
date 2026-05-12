@@ -163,15 +163,15 @@ static inline bool
 _is_nearly_diag(const cs_real_t    M[3][3],
                 const cs_real_t    tolerance)
 {
-  assert(fabs(M[0][0]) > cs_math_zero_threshold &&
-         fabs(M[1][1]) > cs_math_zero_threshold &&
-         fabs(M[2][2]) > cs_math_zero_threshold);
+  assert(cs::abs(M[0][0]) > cs_math_zero_threshold &&
+         cs::abs(M[1][1]) > cs_math_zero_threshold &&
+         cs::abs(M[2][2]) > cs_math_zero_threshold);
 
-  if (fabs(M[0][1]) + fabs(M[0][2]) > tolerance * fabs(M[0][0]))
+  if (cs::abs(M[0][1]) + cs::abs(M[0][2]) > tolerance * cs::abs(M[0][0]))
     return false;
-  if (fabs(M[1][0]) + fabs(M[1][2]) > tolerance * fabs(M[1][1]))
+  if (cs::abs(M[1][0]) + cs::abs(M[1][2]) > tolerance * cs::abs(M[1][1]))
     return false;
-  if (fabs(M[2][1]) + fabs(M[2][0]) > tolerance * fabs(M[2][2]))
+  if (cs::abs(M[2][1]) + cs::abs(M[2][0]) > tolerance * cs::abs(M[2][2]))
     return false;
 
   return true;
@@ -303,14 +303,12 @@ _add_contrib(const int           n_gpts,
     for (short int i = first_row; i < n_rows; i++) {
 
       const cs_real_t  wphi_i = w * phi_eval[i];
-      if (fabs(wphi_i) > cs_math_zero_threshold) {
-        cs_real_t  *val_i = values + n_rows*i;
+      if (cs::abs(wphi_i) > cs_math_zero_threshold) {
+        cs_real_t *val_i = values + n_rows * i;
         for (int j = i; j < n_rows; j++)
           val_i[j] += wphi_i * phi_eval[j];
       } /* wphi_i not zero */
-
     }
-
   }
 }
 
@@ -325,15 +323,14 @@ _add_contrib(const int           n_gpts,
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_symmetrize_and_clean(const int           n_rows,
-                      cs_real_t           values[])
+_symmetrize_and_clean(const int n_rows, cs_real_t values[])
 {
   for (short int i = 0; i < n_rows; i++) {
-    const cs_real_t  *const val_i = values + n_rows*i;
+    const cs_real_t *const val_i = values + n_rows * i;
     assert(val_i[i] > 0);
-    const cs_real_t  coef = 1/val_i[i];
+    const cs_real_t coef = 1 / val_i[i];
     for (short int j = i + 1; j < n_rows; j++) {
-      if (fabs(val_i[j]*coef) > _clean_threshold)
+      if (cs::abs(val_i[j] * coef) > _clean_threshold)
         values[n_rows*j+i] = val_i[j];
       else
         values[n_rows*j+i] = values[i*n_rows + j] = 0.;
@@ -539,7 +536,7 @@ _mono_face_basis_setup(void                    *pbf,
   const short int n_e = cm->f2e_idx[f+1] - cm->f2e_idx[f];
   for (short int i = 0; i < n_e; i++) {
     for (short int j = i+1; j < n_e; j++) {
-      const cs_real_t  dp_ij = fabs(_dp3(xexf_vect[i], xexf_vect[j]));
+      const cs_real_t dp_ij = cs::abs(_dp3(xexf_vect[i], xexf_vect[j]));
       if (dp_ij < min)
         e1 = i, e2 = j, min = dp_ij;
     }
@@ -601,7 +598,7 @@ _iner_face_basis_setup(void                    *pbf,
 
   /* Advanced parameters for controlling the algorithm */
   const double  tolerance = 1e-6;
-  const cs_real_t cov_score = fabs(cov[1])/sqrt(cov[0]*cov[2]);
+  const cs_real_t cov_score = cs::abs(cov[1]) / sqrt(cov[0] * cov[2]);
 
   if (cov_score < tolerance)
     /* axis is already an approximation of the inertial axes, that's ok

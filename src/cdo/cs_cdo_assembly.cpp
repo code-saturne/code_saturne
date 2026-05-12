@@ -448,7 +448,7 @@ _set_col_idx_scal_loc(const cs_matrix_assembler_t     *ma,
    * Diagonal is treated separately */
 
   for (int j = 0; j < row->i; j++) { /* Lower part */
-    if (fabs(row->val[j]) > 0.0) {
+    if (cs::abs(row->val[j]) > 0.0) {
       row->col_idx[j]
         = _l_binary_search(0,
                            n_l_cols,
@@ -462,7 +462,7 @@ _set_col_idx_scal_loc(const cs_matrix_assembler_t     *ma,
   }
 
   for (int j = row->i + 1; j < row->n_cols; j++) { /* Upper part */
-    if (fabs(row->val[j]) > 0.0) {
+    if (cs::abs(row->val[j]) > 0.0) {
       row->col_idx[j]
         = _l_binary_search(0,
                            n_l_cols,
@@ -508,7 +508,7 @@ _set_col_idx_scal_locdist(const cs_matrix_assembler_t    *ma,
 
   for (int j = 0; j < row->i; j++) { /* Before the diag. */
 
-    if (fabs(row->val[j]) > 0.0) {
+    if (cs::abs(row->val[j]) > 0.0) {
       const cs_gnum_t g_c_id = row->col_g_id[j];
 
       if (g_c_id >= ma->l_range[0]
@@ -538,7 +538,7 @@ _set_col_idx_scal_locdist(const cs_matrix_assembler_t    *ma,
   } /* Loop on columns of the row */
 
   for (int j = row->i + 1; j < row->n_cols; j++) { /* After the diag. */
-    if (fabs(row->val[j]) > 0.0) {
+    if (cs::abs(row->val[j]) > 0.0) {
       const cs_gnum_t g_c_id = row->col_g_id[j];
 
       if (g_c_id >= ma->l_range[0]
@@ -867,24 +867,21 @@ _assemble_scal_dist_row_threaded(cs_matrix_assembler_values_t     *mav,
   /* Loop on extra-diagonal entries */
 
   for (int j = 0; j < row->i; j++) { /* Lower-part */
-    if (fabs(row->val[j]) > 0.0) {
-
-      const cs_lnum_t e_id
-        = r_start
-          + _g_binary_search(n_e_rows, row->col_g_id[j], coeff_send_g_id);
+    if (cs::abs(row->val[j]) > 0.0) {
+      const cs_lnum_t e_id =
+        r_start + _g_binary_search(n_e_rows, row->col_g_id[j], coeff_send_g_id);
 
       assert(e_id > r_start - 1);
 
       /* Now add values to send coefficients */
 
-#   pragma omp atomic
-    mav->coeff_send[e_id] += row->val[j];
+#pragma omp atomic
+      mav->coeff_send[e_id] += row->val[j];
     }
   }
 
   for (int j = row->i + 1; j < row->n_cols; j++) { /* Upper-part */
-    if (fabs(row->val[j]) > 0.0) {
-
+    if (cs::abs(row->val[j]) > 0.0) {
       const cs_lnum_t e_id
         = r_start
           + _g_binary_search(n_e_rows, row->col_g_id[j], coeff_send_g_id);
@@ -949,11 +946,9 @@ _assemble_scal_dist_row_single(cs_matrix_assembler_values_t     *mav,
   /* Loop on extra-diagonal entries */
 
   for (int j = 0; j < row->i; j++) { /* Lower-part */
-    if (fabs(row->val[j]) > 0.0) {
-
-      const cs_lnum_t e_id
-        = r_start
-          + _g_binary_search(n_e_rows, row->col_g_id[j], coeff_send_g_id);
+    if (cs::abs(row->val[j]) > 0.0) {
+      const cs_lnum_t e_id =
+        r_start + _g_binary_search(n_e_rows, row->col_g_id[j], coeff_send_g_id);
 
       assert(e_id > r_start - 1);
 
@@ -964,8 +959,7 @@ _assemble_scal_dist_row_single(cs_matrix_assembler_values_t     *mav,
   }
 
   for (int j = row->i + 1; j < row->n_cols; j++) { /* Upper-part */
-    if (fabs(row->val[j]) > 0.0) {
-
+    if (cs::abs(row->val[j]) > 0.0) {
       const cs_lnum_t e_id
         = r_start
           + _g_binary_search(n_e_rows, row->col_g_id[j], coeff_send_g_id);
@@ -1458,9 +1452,9 @@ cs_cdo_assembly_matrix_scal_generic(const cs_sdm_t               *m,
     cs_real_t values[CS_CDO_ASSEMBLY_BUFSIZE];
 
 #if defined(DEBUG) && !defined(NDEBUG)
-    memset(r_gids, 0, CS_CDO_ASSEMBLY_BUFSIZE * sizeof(cs_gnum_t));
-    memset(c_gids, 0, CS_CDO_ASSEMBLY_BUFSIZE * sizeof(cs_gnum_t));
-    memset(values, 0, CS_CDO_ASSEMBLY_BUFSIZE * sizeof(cs_real_t));
+    std::memset(r_gids, 0, CS_CDO_ASSEMBLY_BUFSIZE * sizeof(cs_gnum_t));
+    std::memset(c_gids, 0, CS_CDO_ASSEMBLY_BUFSIZE * sizeof(cs_gnum_t));
+    std::memset(values, 0, CS_CDO_ASSEMBLY_BUFSIZE * sizeof(cs_real_t));
 #endif
 
     /* Diagonal entries */
@@ -1479,9 +1473,9 @@ cs_cdo_assembly_matrix_scal_generic(const cs_sdm_t               *m,
     bufsize = 0;
 
 #if defined(DEBUG) && !defined(NDEBUG)
-    memset(r_gids, 0, CS_CDO_ASSEMBLY_BUFSIZE * sizeof(cs_gnum_t));
-    memset(c_gids, 0, CS_CDO_ASSEMBLY_BUFSIZE * sizeof(cs_gnum_t));
-    memset(values, 0, CS_CDO_ASSEMBLY_BUFSIZE * sizeof(cs_real_t));
+    std::memset(r_gids, 0, CS_CDO_ASSEMBLY_BUFSIZE * sizeof(cs_gnum_t));
+    std::memset(c_gids, 0, CS_CDO_ASSEMBLY_BUFSIZE * sizeof(cs_gnum_t));
+    std::memset(values, 0, CS_CDO_ASSEMBLY_BUFSIZE * sizeof(cs_real_t));
 #endif
 
     /* Extra-diagonal entries */
@@ -1497,9 +1491,9 @@ cs_cdo_assembly_matrix_scal_generic(const cs_sdm_t               *m,
         bufsize = 0;
 
 #if defined(DEBUG) && !defined(NDEBUG)
-        memset(r_gids, 0, CS_CDO_ASSEMBLY_BUFSIZE * sizeof(cs_gnum_t));
-        memset(c_gids, 0, CS_CDO_ASSEMBLY_BUFSIZE * sizeof(cs_gnum_t));
-        memset(values, 0, CS_CDO_ASSEMBLY_BUFSIZE * sizeof(cs_real_t));
+        std::memset(r_gids, 0, CS_CDO_ASSEMBLY_BUFSIZE * sizeof(cs_gnum_t));
+        std::memset(c_gids, 0, CS_CDO_ASSEMBLY_BUFSIZE * sizeof(cs_gnum_t));
+        std::memset(values, 0, CS_CDO_ASSEMBLY_BUFSIZE * sizeof(cs_real_t));
 #endif
       }
 
@@ -1549,9 +1543,9 @@ cs_cdo_assembly_matrix_scal_generic(const cs_sdm_t               *m,
     bufsize = 0;
 
 #if defined(DEBUG) && !defined(NDEBUG)
-    memset(row_gids, 0, max_buf_size*sizeof(cs_gnum_t));
-    memset(col_gids, 0, max_buf_size*sizeof(cs_gnum_t));
-    memset(m_values, 0, max_buf_size*sizeof(cs_real_t));
+    std::memset(row_gids, 0, max_buf_size * sizeof(cs_gnum_t));
+    std::memset(col_gids, 0, max_buf_size * sizeof(cs_gnum_t));
+    std::memset(m_values, 0, max_buf_size * sizeof(cs_real_t));
 #endif
 
     /* Extra-diagonal entries */
@@ -1568,9 +1562,9 @@ cs_cdo_assembly_matrix_scal_generic(const cs_sdm_t               *m,
         bufsize = 0;
 
 #if defined(DEBUG) && !defined(NDEBUG)
-        memset(row_gids, 0, max_buf_size*sizeof(cs_gnum_t));
-        memset(col_gids, 0, max_buf_size*sizeof(cs_gnum_t));
-        memset(m_values, 0, max_buf_size*sizeof(cs_real_t));
+        std::memset(row_gids, 0, max_buf_size * sizeof(cs_gnum_t));
+        std::memset(col_gids, 0, max_buf_size * sizeof(cs_gnum_t));
+        std::memset(m_values, 0, max_buf_size * sizeof(cs_real_t));
 #endif
 
       }

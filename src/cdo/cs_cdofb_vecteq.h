@@ -98,7 +98,7 @@ cs_cdofb_vecteq_sourceterm(const cs_cell_mesh_t         *cm,
 {
   /* Reset the local contribution */
 
-  memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
+  std::memset(csys->source, 0, csys->n_dofs * sizeof(cs_real_t));
 
   cs_source_term_compute_cellwise(eqp->n_source_terms,
               (cs_xdef_t *const *)eqp->source_terms,

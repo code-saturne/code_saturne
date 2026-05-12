@@ -1324,8 +1324,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t           *mesh,
               __func__);
   }
 
-  if (fabs(nsp->reference_pressure) > 0 && nsp->n_pressure_ic_defs == 0) {
-
+  if (cs::abs(nsp->reference_pressure) > 0 && nsp->n_pressure_ic_defs == 0) {
     /* Initialize the initial pressure to the reference pressure */
 
     cs_navsto_add_pressure_ic_by_value(nsp, nullptr, nsp->reference_pressure);
@@ -1659,7 +1658,7 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t           *mesh,
 
     cs_real_t inv_tref = cs_thermal_system_get_reference_temperature();
 
-    if (fabs(inv_tref) > cs_math_zero_threshold)
+    if (cs::abs(inv_tref) > cs_math_zero_threshold)
       inv_tref = 1. / inv_tref;
     else
       inv_tref = 1.;
@@ -1690,7 +1689,7 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t           *mesh,
 
       cs_real_t delta = -1;
       for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-        cs_real_t _delta       = fabs(th_var[c_id] - th_var_iter_prev[c_id]);
+        cs_real_t _delta       = cs::abs(th_var[c_id] - th_var_iter_prev[c_id]);
         th_var_iter_prev[c_id] = th_var[c_id];
         if (_delta > delta)
           delta = _delta;

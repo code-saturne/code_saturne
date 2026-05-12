@@ -160,7 +160,7 @@ cs_dbg_array_fprintf(FILE           *fp,
 
   for (cs_lnum_t i = 0; i < n_rows; i++) {
     for (cs_lnum_t j = i * n_cols; j < (i + 1) * n_cols; j++) {
-      if (fabs(array[j]) < thd)
+      if (cs::abs(array[j]) < thd)
         fprintf(fout, " % -8.5e", 0.);
       else
         fprintf(fout, " % -8.5e", array[j]);
@@ -170,7 +170,7 @@ cs_dbg_array_fprintf(FILE           *fp,
 
   if (n_rows * n_cols < n_elts) {
     for (cs_lnum_t j = n_rows * n_cols; j < n_elts; j++) {
-      if (fabs(array[j]) < thd)
+      if (cs::abs(array[j]) < thd)
         fprintf(fout, " % -8.5e", 0.);
       else
         fprintf(fout, " % -8.5e", array[j]);
