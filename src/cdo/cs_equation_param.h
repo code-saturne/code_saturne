@@ -282,7 +282,7 @@ typedef struct {
    * - 0: Second Order Linear Upwind
    * - 1: Centered
    * - 2: Second Order with upwind-gradient reconstruction (SOLU)
-   * - 3: Blending between SOLU and Centered scheme
+   * - 3: Blending between SOLU and Centered scheme based on "hybrid_blend" field
    * - 4: NVD/TVD Scheme
    * Then "limiter_choice" keyword must be set:
    * - 0: Gamma
