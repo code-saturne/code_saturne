@@ -321,7 +321,7 @@
         to one in the RANS region:
           - 1: True (default)
           - 0: False
-        Useful if and only if \ref hybrid_turb=4
+        Useful if and only if \ref hybrid_turb=CS_HYBRID_HTLES
 
   \var  cs_turb_hybrid_model_t::ishield
         Applied or not the two-fold shielding
@@ -330,7 +330,7 @@
         transition in the vicinity of the wall:
           - 1: True (default)
           - 0: False
-        Useful if and only if \ref hybrid_turb=4
+        Useful if and only if \ref hybrid_turb=CS_HYBRID_HTLES
 */
 
 /*----------------------------------------------------------------------------*/
@@ -751,18 +751,21 @@ double cs_turb_ckwc1 = 10.0;
 
 /*!
  * Constant \f$ C_{DDES} \f$ for the \f$k-\omega\f$ SST model.
- * Useful if and only if \ref model=60 (\f$k-\omega\f$ SST) and hybrid_turb=1.
+ * Useful if and only if \ref model=60 (\f$k-\omega\f$ SST)
+ * and hybrid_turb=CS_HYBRID_DES.
  */
 double cs_turb_cddes = 0.65;
 
 /*!
  * Constant \f$ C_{SAS}\f$ for the hybrid \f$k-\omega\f$ SST model.
- * Useful if and only if \ref model=60 (\f$k-\omega\f$ SST) and hybrid_turb=3.
+ * Useful if and only if \ref model=60 (\f$k-\omega\f$ SST)
+ * and hybrid_turb=CS_HYBRID_SAS.
  */
 double cs_turb_csas = 0.11;
 
 /*! constant \f$ C_{DDES}\f$ for the hybrid \f$k-\omega\f$ SST model.
- * Useful if and only if \ref model=60 (\f$k-\omega\f$ SST) and hybrid_turb=3.
+ * Useful if and only if \ref model=60 (\f$k-\omega\f$ SST)
+ * and hybrid_turb=CS_HYBRID_SAS.
  */
 double cs_turb_csas_eta2 = 3.51;
 
@@ -770,7 +773,7 @@ double cs_turb_csas_eta2 = 3.51;
  * Constant \f$ \beta_0 \f$ for the HTLES model.
  * Useful if and only if \ref model=60 (\f$k-\omega\f$ SST)
  * or if \ref model=51 (\f$BL-v^2-k\f$)
- * and hybrid_turb=4.
+ * and hybrid_turb=CS_HYBRID_HTLES.
  */
 double cs_turb_chtles_bt0 = 0.48;
 
@@ -1290,9 +1293,9 @@ cs_turb_compute_constants(int phase_id)
 
   if (cs_glob_turb_model->model == CS_TURB_K_OMEGA){
     /* SST DDES */
-    if (cs_glob_turb_model->hybrid_turb == 2)
+    if (cs_glob_turb_model->hybrid_turb == CS_HYBRID_DDES)
       cs_turb_cddes = 0.65;
-    else if (cs_glob_turb_model->hybrid_turb == 1)
+    else if (cs_glob_turb_model->hybrid_turb == CS_HYBRID_DES)
       cs_turb_cddes = 0.61;
   }
   else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K) {

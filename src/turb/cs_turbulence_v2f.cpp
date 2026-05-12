@@ -352,7 +352,7 @@ _solve_eq_fbr_al(const int         istprv,
   /* Initialization of work arrays in case of HTLES */
   cs_real_t *htles_psi = nullptr;
   cs_real_t *htles_r   = nullptr;
-  if (cs_glob_turb_model->hybrid_turb == 4) {
+  if (cs_glob_turb_model->hybrid_turb == CS_HYBRID_HTLES) {
     htles_psi = cs_field("htles_psi")->val;
     htles_r   = cs_field("htles_r")->val;
   }
@@ -540,7 +540,7 @@ _solve_eq_fbr_al(const int         istprv,
       l2 = cs_math_pow2(cs_turb_cv2fcl*cs::max(ll_ke, ll_min));
     }
     else if (cs_glob_turb_model->model == CS_TURB_V2F_BL_V2K) {
-      if (cs_glob_turb_model->hybrid_turb == 4) {
+      if (cs_glob_turb_model->hybrid_turb == CS_HYBRID_HTLES) {
       /* HTLES method */
         const cs_real_t x_psi  = htles_psi[i];
         const cs_real_t x_r    = htles_r[i];
@@ -694,7 +694,7 @@ _solve_eq_phi(const int           istprv,
 
   /* Initialization of work arrays in case of HTLES */
   cs_real_t *htles_psi = nullptr;
-  if (cs_glob_turb_model->hybrid_turb == 4) {
+  if (cs_glob_turb_model->hybrid_turb == CS_HYBRID_HTLES) {
     htles_psi = cs_field("htles_psi")->val;
   }
 
@@ -816,7 +816,7 @@ _solve_eq_phi(const int           istprv,
       const cs_real_t x_rho = cromo[i];
       const cs_real_t x_nu = viscl[i] / crom[i];
 
-      if (cs_glob_turb_model->hybrid_turb == 4) {
+      if (cs_glob_turb_model->hybrid_turb == CS_HYBRID_HTLES) {
         /* HTLES method */
         const cs_real_t x_psi = htles_psi[i];
         const cs_real_t tt_ke = x_k/(x_psi*x_e);
@@ -882,7 +882,7 @@ _solve_eq_phi(const int           istprv,
       const cs_real_t prdv2f_m = cs::max(prdv2f[i], 0.0);
       const cs_real_t al_3 = cs_math_pow3(cvara_al[i]);
 
-      if (cs_glob_turb_model->hybrid_turb == 4) {
+      if (cs_glob_turb_model->hybrid_turb == CS_HYBRID_HTLES) {
         /* HTLES method */
         const cs_real_t x_psi = htles_psi[i];
         rhs[i] -= cell_f_vol[i] * (  prdv2f[i] + x_rho*(x_psi*cvara_ep[i])/2.
@@ -1166,14 +1166,14 @@ cs_turbulence_v2f_phi_mu_t(void)
   const cs_real_t *cvar_phi = CS_F_(phi)->val;
 
   /* HTLES method */
-  if (cs_glob_turb_model->hybrid_turb == 4) {
+  if (cs_glob_turb_model->hybrid_turb == CS_HYBRID_HTLES) {
 
     // cs_real_t *psi = cs_field("htles_psi")->val;
     // cs_real_t *blend = cs_field("hybrid_blend")->val;
 
     //TODO VD
     bft_error(__FILE__, __LINE__, 0,
-              _("%s: not implemented for hybrid_turb = 4."), __func__);
+              _("%s: not implemented for hybrid_turb = CS_HYBRID_HTLES."), __func__);
   }
   else {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -1270,7 +1270,7 @@ cs_turbulence_v2f_bl_v2k_mu_t(void)
   const cs_real_t f1 = 0.6 / sqrt(3.) / cs_turb_cmu;
 
   /* HTLES method */
-  if (cs_glob_turb_model->hybrid_turb == 4) {
+  if (cs_glob_turb_model->hybrid_turb == CS_HYBRID_HTLES) {
 
     cs_real_t *psi = cs_field("htles_psi")->val;
     cs_real_t *blend = cs_field("hybrid_blend")->val;

@@ -161,7 +161,7 @@ typedef struct {
                                    - CS_HYBRID_DES:   Detached Eddy Simulation
                                    - CS_HYBRID_DDES:  Delayed Detached Eddy
                                                       Simulation
-                                   - CS_HYBRID_SAM:   Scale Adaptive Model
+                                   - CS_HYBRID_SAS:   Scale Adaptive Model
                                    - CS_HYBRID_HTLES: Hybrid Temporal Large
                                                       Eddy Simulation */
   int           type;  /*! Type of turbulence modelling:

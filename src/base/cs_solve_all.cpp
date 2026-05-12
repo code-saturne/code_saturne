@@ -835,7 +835,7 @@ _solve_turbulence(cs_lnum_t   n_cells,
     }
 
     // HTLES
-    if (cs_glob_turb_model->hybrid_turb == 4)
+    if (cs_glob_turb_model->hybrid_turb == CS_HYBRID_HTLES)
       cs_turbulence_htles();
 
   }

@@ -818,12 +818,12 @@ _create_property_fields(void)
       }
     }
 
-    if (turb_model->hybrid_turb == 3) {
+    if (turb_model->hybrid_turb == CS_HYBRID_SAS) {
       _add_property_field("hybrid_sas_source_term",
                           "SAS hybrid source term",
                           1, false);
     }
-    else if (turb_model->hybrid_turb == 4) {
+    else if (turb_model->hybrid_turb == CS_HYBRID_HTLES) {
       _add_property_field("k_tot",   "Energy total",     1, false);
       _add_property_field("k_mod",   "Modelised Energy", 1, false);
       _add_property_field("k_res",   "Resolved Energy",  1, false);
@@ -2161,14 +2161,14 @@ _additional_fields_stage_2(void)
    * and for Lagrangian multilayer deposition for DRSM models, needed for inlets */
   cs_wall_distance_options_t *wdo = cs_get_glob_wall_distance_options();
   if (   cs_glob_turb_model->model == CS_TURB_K_EPSILON_QUAD
-      || cs_glob_turb_model->itytur == 3
+      || cs_glob_turb_model->order == CS_TURB_SECOND_ORDER
       || (   cs_glob_turb_model->model == CS_TURB_RIJ_EPSILON_LRR
           && cs_glob_turb_rans_model->irijec == 1)
       || (cs_glob_turb_model->itytur == 4 && cs_glob_turb_les_model->idries == 1)
       || cs_glob_turb_model->model == CS_TURB_K_OMEGA
       || cs_glob_turb_model->model == CS_TURB_SPALART_ALLMARAS
       || cs_glob_lagr_reentrained_model->iflow == 1
-      || cs_glob_turb_model->hybrid_turb == 4)
+      || cs_glob_turb_model->hybrid_turb == CS_HYBRID_HTLES)
     wdo->need_compute = 1;
 
   if (wdo->need_compute == 1) {

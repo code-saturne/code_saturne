@@ -348,7 +348,7 @@ cs_turbulence_ke(int              phase_id,
   cs_real_t *htles_psi       = nullptr;
   cs_real_t *htles_t         = nullptr;
   cs_real_t *hybrid_fd_coeff = nullptr;
-  if (cs_glob_turb_model->hybrid_turb == 4) {
+  if (cs_glob_turb_model->hybrid_turb == CS_HYBRID_HTLES) {
     htles_psi = cs_field("htles_psi")->val;
     htles_t   = cs_field("htles_t")->val;
     hybrid_fd_coeff = cs_field("hybrid_blend")->val;
@@ -957,7 +957,7 @@ cs_turbulence_ke(int              phase_id,
       w10[c_id] = tanh(pow(fabs(w10[c_id]), 1.5));
       cs_real_t xcr_m1 = 1.;
       /* HTLES method */
-      if (hybrid_turb == 4)
+      if (hybrid_turb == CS_HYBRID_HTLES)
         xcr_m1 = 1. - hybrid_fd_coeff[c_id];
       ce2rc[c_id] *= (1.
                         -  (ce2-cpale4) / ce2
@@ -1362,7 +1362,7 @@ cs_turbulence_ke(int              phase_id,
 
     const cs_real_t cpalct = cs_turb_cpalct;
 
-    if (cs_glob_turb_model->hybrid_turb == 0) {
+    if (cs_glob_turb_model->hybrid_turb == CS_HYBRID_NONE) {
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
 
@@ -1396,7 +1396,7 @@ cs_turbulence_ke(int              phase_id,
               + cs::max(d2s3*ce1*ttke*divu[c_id], 0.));
       });
     }
-    else if (cs_glob_turb_model->hybrid_turb == 4) {
+    else if (cs_glob_turb_model->hybrid_turb == CS_HYBRID_HTLES) {
       /* HTLES */
 
       ctx.parallel_for(n_cells, [=] CS_F_HOST_DEVICE (cs_lnum_t c_id) {
